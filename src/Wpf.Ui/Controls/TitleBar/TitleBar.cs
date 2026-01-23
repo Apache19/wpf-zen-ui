@@ -3,165 +3,74 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-using System.Diagnostics;
-using System.Windows.Data;
-using System.Windows.Input;
+using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
+using System.Windows.Shell;
 using Windows.Win32;
+using Windows.Win32.Foundation;
 using Wpf.Ui.Designer;
-using Wpf.Ui.Input;
-using Wpf.Ui.Interop;
+using Wpf.Ui.Extensions.Wpf;
+using Wpf.Ui.Hardware;
+using Wpf.Ui.Win32;
 
+// ReSharper disable SuspiciousTypeConversion.Global
 // ReSharper disable once CheckNamespace
 namespace Wpf.Ui.Controls;
 
 /// <summary>
-/// Custom navigation buttons for the window.
+/// Represents a customizable window title bar that bridges non-client
+/// area behavior with WPF rendering and interaction.
 /// </summary>
-[TemplatePart(Name = ElementMainGrid, Type = typeof(System.Windows.Controls.Grid))]
-[TemplatePart(Name = ElementIcon, Type = typeof(System.Windows.Controls.Image))]
-[TemplatePart(Name = ElementHelpButton, Type = typeof(TitleBarButton))]
-[TemplatePart(Name = ElementMinimizeButton, Type = typeof(TitleBarButton))]
-[TemplatePart(Name = ElementMaximizeButton, Type = typeof(TitleBarButton))]
-[TemplatePart(Name = ElementRestoreButton, Type = typeof(TitleBarButton))]
-[TemplatePart(Name = ElementCloseButton, Type = typeof(TitleBarButton))]
-public partial class TitleBar : System.Windows.Controls.Control, IThemeControl
+/// <remarks>
+/// <see cref="TitleBar"/> participates directly in non-client area processing
+/// to provide native window behaviors such as caption buttons, window dragging,
+/// resizing, and system interactions, while allowing full control over layout
+/// and visual presentation using WPF.
+/// <para/>
+/// The control is responsible for resolving non-client hit testing results
+/// and synchronizing window state, activation state, and mouse interaction
+/// information with its child elements.
+/// <para/>
+/// <see cref="TitleBar"/> is intended to be used as part of a window's title
+/// bar infrastructure. Using it outside a window context or without the
+/// associated non-client handling may result in undefined behavior.
+/// <para/>
+/// This control complements, rather than replaces, the window's native
+/// non-client processing. It coordinates with the underlying window and
+/// message loop instead of attempting to reimplement system behavior.
+/// </remarks>
+public class TitleBar : Control
 {
-    private const string ElementIcon = "PART_Icon";
-    private const string ElementMainGrid = "PART_MainGrid";
-    private const string ElementHelpButton = "PART_HelpButton";
-    private const string ElementMinimizeButton = "PART_MinimizeButton";
-    private const string ElementMaximizeButton = "PART_MaximizeButton";
-    private const string ElementRestoreButton = "PART_RestoreButton";
-    private const string ElementCloseButton = "PART_CloseButton";
+    static TitleBar()
+    {
+        // Ensure a non-null Background by default to preserve hit-testing behavior.
+        // A Transparent brush is used as a safe fallback to prevent hit testing from
+        // being disabled when Background is explicitly set to null.
+        BackgroundProperty.OverrideMetadata(
+            typeof(TitleBar),
+            new FrameworkPropertyMetadata(
+                Brushes.Transparent,
+                null,
+                static (_, baseValue) => baseValue ?? Brushes.Transparent
+            )
+        );
 
-    private static DpiScale? dpiScale;
+        // Set the default vertical alignment of the TitleBar to Top.
+        // This aligns the control with typical window chrome positioning
+        // and avoids unintended vertical centering when hosted in layout containers.
+        VerticalAlignmentProperty.OverrideMetadata(
+            typeof(TitleBar),
+            new FrameworkPropertyMetadata(VerticalAlignment.Top)
+        );
+    }
 
-    private DependencyObject? _parentWindow;
+    #region DP: Icon, Title, UserContent, IsIconInteractionEnabled, IsNcActive, WindowStyle, WindowResizeMode, ElementIdentity
 
-    public event EventHandler<HwndProcEventArgs>? WndProcInvoked;
-
-    /// <summary>Identifies the <see cref="ApplicationTheme"/> dependency property.</summary>
-    public static readonly DependencyProperty ApplicationThemeProperty = DependencyProperty.Register(
-        nameof(ApplicationTheme),
-        typeof(Appearance.ApplicationTheme),
-        typeof(TitleBar),
-        new PropertyMetadata(Appearance.ApplicationTheme.Unknown)
-    );
-
-    /// <summary>Identifies the <see cref="Title"/> dependency property.</summary>
-    public static readonly DependencyProperty TitleProperty = DependencyProperty.Register(
-        nameof(Title),
-        typeof(string),
-        typeof(TitleBar),
-        new PropertyMetadata(null)
-    );
+    #region Icon
 
     /// <summary>
-    /// Property for <see cref="Header"/>.
+    /// Identifies the <see cref="Icon"/> dependency property.
     /// </summary>
-    public static readonly DependencyProperty HeaderProperty = DependencyProperty.Register(
-        nameof(Header),
-        typeof(object),
-        typeof(TitleBar),
-        new PropertyMetadata(null)
-    );
-
-    /// <summary>
-    /// Property for <see cref="CenterContent"/>.
-    /// </summary>
-    public static readonly DependencyProperty CenterContentProperty = DependencyProperty.Register(
-        nameof(CenterContent),
-        typeof(object),
-        typeof(TitleBar),
-        new PropertyMetadata(null)
-    );
-
-    /// <summary>
-    /// Property for <see cref="TrailingContent"/>.
-    /// </summary>
-    public static readonly DependencyProperty TrailingContentProperty = DependencyProperty.Register(
-        nameof(TrailingContent),
-        typeof(object),
-        typeof(TitleBar),
-        new PropertyMetadata(null)
-    );
-
-    /// <summary>Identifies the <see cref="ButtonsForeground"/> dependency property.</summary>
-    public static readonly DependencyProperty ButtonsForegroundProperty = DependencyProperty.Register(
-        nameof(ButtonsForeground),
-        typeof(Brush),
-        typeof(TitleBar),
-        new FrameworkPropertyMetadata(
-            SystemColors.ControlTextBrush,
-            FrameworkPropertyMetadataOptions.Inherits
-        )
-    );
-
-    /// <summary>Identifies the <see cref="ButtonsBackground"/> dependency property.</summary>
-    public static readonly DependencyProperty ButtonsBackgroundProperty = DependencyProperty.Register(
-        nameof(ButtonsBackground),
-        typeof(Brush),
-        typeof(TitleBar),
-        new FrameworkPropertyMetadata(SystemColors.ControlBrush, FrameworkPropertyMetadataOptions.Inherits)
-    );
-
-    /// <summary>Identifies the <see cref="IsMaximized"/> dependency property.</summary>
-    public static readonly DependencyProperty IsMaximizedProperty = DependencyProperty.Register(
-        nameof(IsMaximized),
-        typeof(bool),
-        typeof(TitleBar),
-        new PropertyMetadata(false)
-    );
-
-    /// <summary>Identifies the <see cref="ForceShutdown"/> dependency property.</summary>
-    public static readonly DependencyProperty ForceShutdownProperty = DependencyProperty.Register(
-        nameof(ForceShutdown),
-        typeof(bool),
-        typeof(TitleBar),
-        new PropertyMetadata(false)
-    );
-
-    /// <summary>Identifies the <see cref="ShowMaximize"/> dependency property.</summary>
-    public static readonly DependencyProperty ShowMaximizeProperty = DependencyProperty.Register(
-        nameof(ShowMaximize),
-        typeof(bool),
-        typeof(TitleBar),
-        new PropertyMetadata(true)
-    );
-
-    /// <summary>Identifies the <see cref="ShowMinimize"/> dependency property.</summary>
-    public static readonly DependencyProperty ShowMinimizeProperty = DependencyProperty.Register(
-        nameof(ShowMinimize),
-        typeof(bool),
-        typeof(TitleBar),
-        new PropertyMetadata(true)
-    );
-
-    /// <summary>Identifies the <see cref="ShowHelp"/> dependency property.</summary>
-    public static readonly DependencyProperty ShowHelpProperty = DependencyProperty.Register(
-        nameof(ShowHelp),
-        typeof(bool),
-        typeof(TitleBar),
-        new PropertyMetadata(false)
-    );
-
-    /// <summary>Identifies the <see cref="ShowClose"/> dependency property.</summary>
-    public static readonly DependencyProperty ShowCloseProperty = DependencyProperty.Register(
-        nameof(ShowClose),
-        typeof(bool),
-        typeof(TitleBar),
-        new PropertyMetadata(true)
-    );
-
-    /// <summary>Identifies the <see cref="CanMaximize"/> dependency property.</summary>
-    public static readonly DependencyProperty CanMaximizeProperty = DependencyProperty.Register(
-        nameof(CanMaximize),
-        typeof(bool),
-        typeof(TitleBar),
-        new PropertyMetadata(true)
-    );
-
-    /// <summary>Identifies the <see cref="Icon"/> dependency property.</summary>
     public static readonly DependencyProperty IconProperty = DependencyProperty.Register(
         nameof(Icon),
         typeof(IconElement),
@@ -169,611 +78,732 @@ public partial class TitleBar : System.Windows.Controls.Control, IThemeControl
         new PropertyMetadata(null)
     );
 
-    /// <summary>Identifies the <see cref="CloseWindowByDoubleClickOnIcon"/> dependency property.</summary>
-    public static readonly DependencyProperty CloseWindowByDoubleClickOnIconProperty =
-        DependencyProperty.Register(
-            nameof(CloseWindowByDoubleClickOnIcon),
-            typeof(bool),
-            typeof(TitleBar),
-            new PropertyMetadata(false)
-        );
-
-    /// <summary>Identifies the <see cref="CloseClicked"/> routed event.</summary>
-    public static readonly RoutedEvent CloseClickedEvent = EventManager.RegisterRoutedEvent(
-        nameof(CloseClicked),
-        RoutingStrategy.Bubble,
-        typeof(TypedEventHandler<TitleBar, RoutedEventArgs>),
-        typeof(TitleBar)
-    );
-
-    /// <summary>Identifies the <see cref="MaximizeClicked"/> routed event.</summary>
-    public static readonly RoutedEvent MaximizeClickedEvent = EventManager.RegisterRoutedEvent(
-        nameof(MaximizeClicked),
-        RoutingStrategy.Bubble,
-        typeof(TypedEventHandler<TitleBar, RoutedEventArgs>),
-        typeof(TitleBar)
-    );
-
-    /// <summary>Identifies the <see cref="MinimizeClicked"/> routed event.</summary>
-    public static readonly RoutedEvent MinimizeClickedEvent = EventManager.RegisterRoutedEvent(
-        nameof(MinimizeClicked),
-        RoutingStrategy.Bubble,
-        typeof(TypedEventHandler<TitleBar, RoutedEventArgs>),
-        typeof(TitleBar)
-    );
-
-    /// <summary>Identifies the <see cref="HelpClicked"/> routed event.</summary>
-    public static readonly RoutedEvent HelpClickedEvent = EventManager.RegisterRoutedEvent(
-        nameof(HelpClicked),
-        RoutingStrategy.Bubble,
-        typeof(TypedEventHandler<TitleBar, RoutedEventArgs>),
-        typeof(TitleBar)
-    );
-
-    /// <summary>Identifies the <see cref="TemplateButtonCommand"/> dependency property.</summary>
-    public static readonly DependencyProperty TemplateButtonCommandProperty = DependencyProperty.Register(
-        nameof(TemplateButtonCommand),
-        typeof(IRelayCommand),
-        typeof(TitleBar),
-        new PropertyMetadata(null)
-    );
-
-    /// <inheritdoc />
-    public Appearance.ApplicationTheme ApplicationTheme
-    {
-        get => (Appearance.ApplicationTheme)GetValue(ApplicationThemeProperty);
-        set => SetValue(ApplicationThemeProperty, value);
-    }
-
     /// <summary>
-    /// Gets or sets title displayed on the left.
+    /// Gets or sets the icon displayed in the title bar.
     /// </summary>
-    public string? Title
-    {
-        get => (string?)GetValue(TitleProperty);
-        set => SetValue(TitleProperty, value);
-    }
-
-    /// <summary>
-    /// Gets or sets the content displayed in the left side of the <see cref="TitleBar"/>.
-    /// </summary>
-    public object? Header
-    {
-        get => GetValue(HeaderProperty);
-        set => SetValue(HeaderProperty, value);
-    }
-
-    /// <summary>
-    /// Gets or sets the content displayed in the center of the <see cref="TitleBar"/>.
-    /// </summary>
-    public object? CenterContent
-    {
-        get => GetValue(CenterContentProperty);
-        set => SetValue(CenterContentProperty, value);
-    }
-
-    /// <summary>
-    /// Gets or sets the content displayed in right side of the <see cref="TitleBar"/>.
-    /// </summary>
-    public object? TrailingContent
-    {
-        get => GetValue(TrailingContentProperty);
-        set => SetValue(TrailingContentProperty, value);
-    }
-
-    /// <summary>
-    /// Gets or sets the foreground of the navigation buttons.
-    /// </summary>
-    [Bindable(true)]
-    [Category("Appearance")]
-    public Brush ButtonsForeground
-    {
-        get => (Brush)GetValue(ButtonsForegroundProperty);
-        set => SetValue(ButtonsForegroundProperty, value);
-    }
-
-    /// <summary>
-    /// Gets or sets the background of the navigation buttons when hovered.
-    /// </summary>
-    [Bindable(true)]
-    [Category("Appearance")]
-    public Brush ButtonsBackground
-    {
-        get => (Brush)GetValue(ButtonsBackgroundProperty);
-        set => SetValue(ButtonsBackgroundProperty, value);
-    }
-
-    /// <summary>
-    /// Gets a value indicating whether the current window is maximized.
-    /// </summary>
-    public bool IsMaximized
-    {
-        get => (bool)GetValue(IsMaximizedProperty);
-        internal set => SetValue(IsMaximizedProperty, value);
-    }
-
-    /// <summary>
-    /// Gets or sets a value indicating whether the controls affect main application window.
-    /// </summary>
-    public bool ForceShutdown
-    {
-        get => (bool)GetValue(ForceShutdownProperty);
-        set => SetValue(ForceShutdownProperty, value);
-    }
-
-    /// <summary>
-    /// Gets or sets a value indicating whether to show the maximize button.
-    /// </summary>
-    public bool ShowMaximize
-    {
-        get => (bool)GetValue(ShowMaximizeProperty);
-        set => SetValue(ShowMaximizeProperty, value);
-    }
-
-    /// <summary>
-    /// Gets or sets a value indicating whether to show the minimize button.
-    /// </summary>
-    public bool ShowMinimize
-    {
-        get => (bool)GetValue(ShowMinimizeProperty);
-        set => SetValue(ShowMinimizeProperty, value);
-    }
-
-    /// <summary>
-    /// Gets or sets a value indicating whether to show the help button
-    /// </summary>
-    public bool ShowHelp
-    {
-        get => (bool)GetValue(ShowHelpProperty);
-        set => SetValue(ShowHelpProperty, value);
-    }
-
-    /// <summary>
-    /// Gets or sets a value indicating whether to show the close button.
-    /// </summary>
-    public bool ShowClose
-    {
-        get => (bool)GetValue(ShowCloseProperty);
-        set => SetValue(ShowCloseProperty, value);
-    }
-
-    /// <summary>
-    /// Gets or sets a value indicating whether the maximize functionality is enabled. If disabled the MaximizeActionOverride action won't be called
-    /// </summary>
-    public bool CanMaximize
-    {
-        get => (bool)GetValue(CanMaximizeProperty);
-        set => SetValue(CanMaximizeProperty, value);
-    }
-
-    /// <summary>
-    /// Gets or sets the titlebar icon.
-    /// </summary>
+    /// <remarks>
+    /// This property represents the window icon shown in the title bar, following
+    /// conventional Windows window icon behavior.
+    ///
+    /// When the icon is double-clicked, the window may be closed, consistent with
+    /// standard system title bar semantics. This behavior is controlled by the
+    /// <see cref="IsIconInteractionEnabled"/> property.
+    ///
+    /// If set to <see langword="null"/>, no icon is displayed and no icon-related
+    /// interactions are available.
+    /// </remarks>
     public IconElement? Icon
     {
         get => (IconElement?)GetValue(IconProperty);
         set => SetValue(IconProperty, value);
     }
 
+    #endregion
+
+    #region Title
+
     /// <summary>
-    /// Gets or sets a value indicating whether the window can be closed by double clicking on the icon
+    /// Identifies the <see cref="Title"/> dependency property.
     /// </summary>
-    public bool CloseWindowByDoubleClickOnIcon
+    public static readonly DependencyProperty TitleProperty = DependencyProperty.Register(
+        nameof(Title),
+        typeof(object),
+        typeof(TitleBar),
+        new PropertyMetadata(null)
+    );
+
+    /// <summary>
+    /// Gets or sets the title content displayed in the title bar.
+    /// </summary>
+    /// <remarks>
+    /// This property represents the content displayed as the window title.
+    /// Although commonly set to a <see cref="string"/>, it accepts any object.
+    ///
+    /// If a <see cref="string"/> is provided, it is automatically rendered as text.
+    /// If a UI element is provided, it will be displayed directly, allowing
+    /// full customization of the title presentation.
+    ///
+    /// The layout, alignment, and visual appearance of the title content are
+    /// the responsibility of the consumer.
+    ///
+    /// If set to <see langword="null"/>, no title content is displayed.
+    /// </remarks>
+    public object? Title
     {
-        get => (bool)GetValue(CloseWindowByDoubleClickOnIconProperty);
-        set => SetValue(CloseWindowByDoubleClickOnIconProperty, value);
+        get => (object?)GetValue(TitleProperty);
+        set => SetValue(TitleProperty, value);
+    }
+
+    #endregion
+
+    #region UserContent
+
+    /// <summary>
+    /// Identifies the <see cref="UserContent"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty UserContentProperty = DependencyProperty.Register(
+        nameof(UserContent),
+        typeof(object),
+        typeof(TitleBar),
+        new PropertyMetadata(null)
+    );
+
+    /// <summary>
+    /// Gets or sets the custom content displayed in the center area of the TitleBar.
+    /// </summary>
+    /// <remarks>
+    /// This property allows developers to inject arbitrary UI elements into the middle
+    /// section of the title bar, such as search boxes, navigation controls, or status indicators.
+    ///
+    /// The TitleBar does not perform any automatic layout or styling for this content.
+    /// Consumers are responsible for arranging, aligning, and styling the provided UI
+    /// to ensure visual consistency with the rest of the application.
+    ///
+    /// If this property is not set, the center area of the title bar remains empty.
+    /// </remarks>
+    /// <example>
+    /// &lt;ui:TitleBar&gt;
+    ///     &lt;ui:TitleBar.UserContent&gt;
+    ///         &lt;StackPanel Orientation="Horizontal" VerticalAlignment="Center"&gt;
+    ///             &lt;Button Content="User Button"/&gt;
+    ///             &lt;TextBlock Text="User Content"/&gt;
+    ///         &lt;/StackPanel&gt;
+    ///     &lt;/ui:TitleBar.UserContent&gt;
+    /// &lt;/ui:TitleBar&gt;
+    /// </example>
+    public object? UserContent
+    {
+        get => GetValue(UserContentProperty);
+        set => SetValue(UserContentProperty, value);
+    }
+
+    #endregion
+
+    #region IsIconInteractionEnabled
+
+    /// <summary>
+    /// Identifies the <see cref="IsIconInteractionEnabled"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty IsIconInteractionEnabledProperty =
+        DependencyProperty.Register(
+            nameof(IsIconInteractionEnabled),
+            typeof(bool),
+            typeof(TitleBar),
+            new PropertyMetadata(false)
+        );
+
+    /// <summary>
+    /// Gets or sets a value indicating whether standard system-defined
+    /// interactions for the title bar icon are permitted.
+    /// </summary>
+    /// <remarks>
+    /// When enabled, the title bar does not restrict system-defined
+    /// interactions associated with the window icon.
+    ///
+    /// When disabled, such interactions are not permitted, and the icon
+    /// area behaves as a non-interactive part of the title bar.
+    ///
+    /// The default value is <see langword="false"/>.
+    /// </remarks>
+    public bool IsIconInteractionEnabled
+    {
+        get => (bool)GetValue(IsIconInteractionEnabledProperty);
+        set => SetValue(IsIconInteractionEnabledProperty, value);
+    }
+
+    #endregion
+
+    #region IsNcActive
+
+    private static readonly DependencyPropertyKey IsNcActivePropertyKey =
+        DependencyProperty.RegisterReadOnly(
+            nameof(IsNcActive),
+            typeof(bool),
+            typeof(TitleBar),
+            new FrameworkPropertyMetadata(false)
+        );
+
+    /// <summary>
+    /// Identifies the <see cref="IsNcActive"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty IsNcActiveProperty =
+        IsNcActivePropertyKey.DependencyProperty;
+
+    /// <summary>
+    /// Gets or sets a value indicating whether the window is currently in an active
+    /// non-client (title bar) state.
+    /// </summary>
+    /// <remarks>
+    /// This property reflects the activation state of the window as it applies
+    /// to the title bar and other non-client visuals.
+    ///
+    /// The value is updated internally in response to non-client related window
+    /// messages (such as <c>WM_NCACTIVATE</c>) and is intended for visual state
+    /// updates only.
+    ///
+    /// This property is read-only and should not be set by consumers.
+    /// </remarks>
+    public bool IsNcActive
+    {
+        get => (bool)GetValue(IsNcActiveProperty);
+        protected set => SetValue(IsNcActivePropertyKey, value);
+    }
+
+    #endregion
+
+    #region WindowStyle
+
+    private static readonly DependencyPropertyKey WindowStylePropertyKey =
+        DependencyProperty.RegisterReadOnly(
+            nameof(WindowStyle),
+            typeof(WindowStyle),
+            typeof(TitleBar),
+            new PropertyMetadata(WindowStyle.SingleBorderWindow)
+        );
+
+    /// <summary>
+    /// Identifies the <see cref="WindowStyle"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty WindowStyleProperty =
+        WindowStylePropertyKey.DependencyProperty;
+
+    /// <summary>
+    /// Gets or sets the current <see cref="System.Windows.WindowStyle"/> of the associated window.
+    /// </summary>
+    /// <remarks>
+    /// This property reflects the window style as observed by the title bar and is
+    /// updated internally when the window style changes.
+    ///
+    /// It is intended for visual state updates, allowing the title bar to adjust its
+    /// appearance when the window switches between different styles, such as
+    /// a standard window and a tool window.
+    ///
+    /// This property is read-only and does not control the window style.
+    /// </remarks>
+    public WindowStyle WindowStyle
+    {
+        get => (WindowStyle)GetValue(WindowStyleProperty);
+        protected set => SetValue(WindowStylePropertyKey, value);
+    }
+
+    private static readonly DependencyPropertyDescriptor WindowStylePropertyDescriptor =
+        DependencyPropertyDescriptor.FromProperty(
+            Window.WindowStyleProperty,
+            typeof(Window)
+        );
+
+    #endregion
+
+    #region WindowResizeMode
+
+    private static readonly DependencyPropertyKey WindowResizeModePropertyKey =
+        DependencyProperty.RegisterReadOnly(
+            nameof(WindowResizeMode),
+            typeof(ResizeMode),
+            typeof(TitleBar),
+            new PropertyMetadata(ResizeMode.CanResize)
+        );
+
+    /// <summary>
+    /// Identifies the <see cref="WindowResizeMode"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty WindowResizeModeProperty =
+        WindowResizeModePropertyKey.DependencyProperty;
+
+    /// <summary>
+    /// Gets or sets the current <see cref="System.Windows.ResizeMode"/> of the associated window.
+    /// </summary>
+    /// <remarks>
+    /// This property reflects the resize mode of the window as observed by the title bar
+    /// and is updated internally when the window resize mode changes.
+    ///
+    /// It is intended for visual state updates, allowing the title bar to adjust its
+    /// presentation and available controls. Typical scenarios include disabling the
+    /// maximize button, or hiding minimize and maximize buttons when resizing is not
+    /// permitted.
+    ///
+    /// This property is read-only and does not control the window resize mode.
+    /// </remarks>
+    public ResizeMode WindowResizeMode
+    {
+        get => (ResizeMode)GetValue(WindowResizeModeProperty);
+        protected set => SetValue(WindowResizeModePropertyKey, value);
+    }
+
+    private static readonly DependencyPropertyDescriptor WindowResizeModePropertyDescriptor =
+        DependencyPropertyDescriptor.FromProperty(
+            Window.ResizeModeProperty,
+            typeof(Window)
+        );
+
+    #endregion
+
+    #region ElementIdentity
+
+    /// <summary>
+    /// Identifies the semantic role of an element within the title bar.
+    /// </summary>
+    /// <remarks>
+    /// This attached property is used to associate a visual element in the title bar
+    /// with a specific non-client area identity. The assigned value is used internally
+    /// to participate in non-client hit testing and window interaction logic.
+    ///
+    /// The property value is inherited, allowing container elements to define an
+    /// identity that applies to their visual children.
+    ///
+    /// This property is not intended for general application logic and should only be
+    /// used when integrating custom elements into the title bar interaction model.
+    /// </remarks>
+    public static readonly DependencyProperty ElementIdentityProperty =
+        DependencyProperty.RegisterAttached(
+            "ElementIdentity",
+            typeof(TitleBarElementIdentity),
+            typeof(TitleBar),
+            new FrameworkPropertyMetadata(
+                TitleBarElementIdentity.Unknown,
+                FrameworkPropertyMetadataOptions.Inherits
+            )
+        );
+
+    /// <summary>
+    /// Helper for getting <see cref="ElementIdentityProperty"/> from <paramref name="obj"/>.
+    /// </summary>
+    /// <param name="obj">
+    /// <see cref="DependencyObject"/> to read <see cref="ElementIdentityProperty"/> from.
+    /// </param>
+    /// <returns>
+    /// ElementIdentity property value.
+    /// </returns>
+    [AttachedPropertyBrowsableForType(typeof(DependencyObject))]
+    public static TitleBarElementIdentity GetElementIdentity(DependencyObject obj)
+    {
+        if (obj == null)
+        {
+            throw new ArgumentNullException(nameof(obj));
+        }
+
+        return (TitleBarElementIdentity)obj.GetValue(ElementIdentityProperty);
     }
 
     /// <summary>
-    /// Event triggered after clicking close button.
+    /// Helper for setting <see cref="ElementIdentityProperty"/> on <paramref name="obj"/>.
     /// </summary>
-    public event TypedEventHandler<TitleBar, RoutedEventArgs> CloseClicked
+    /// <param name="obj">
+    /// <see cref="DependencyObject"/> to set <see cref="ElementIdentityProperty"/> on.
+    /// </param>
+    /// <param name="value">
+    /// ElementIdentity property value.
+    /// </param>
+    public static void SetElementIdentity(DependencyObject obj, TitleBarElementIdentity value)
     {
-        add => AddHandler(CloseClickedEvent, value);
-        remove => RemoveHandler(CloseClickedEvent, value);
+        if (obj == null)
+        {
+            throw new ArgumentNullException(nameof(obj));
+        }
+
+        obj.SetValue(ElementIdentityProperty, value);
     }
 
+    #endregion
+
+    #region WindowChrome
+
+    private static readonly DependencyPropertyDescriptor WindowChromePropertyDescriptor =
+        DependencyPropertyDescriptor.FromProperty(
+            WindowChrome.WindowChromeProperty,
+            typeof(Window)
+        );
+
+    #endregion
+
+    #endregion
+
     /// <summary>
-    /// Event triggered after clicking maximize or restore button.
+    /// A custom window message indicating that a non-client hit test has been resolved.
     /// </summary>
-    public event TypedEventHandler<TitleBar, RoutedEventArgs> MaximizeClicked
-    {
-        add => AddHandler(MaximizeClickedEvent, value);
-        remove => RemoveHandler(MaximizeClickedEvent, value);
-    }
+    /// <remarks>
+    /// This message is registered and used internally to notify interested components
+    /// that the final result of a non-client hit test has been determined.
+    ///
+    /// It is sent after the hit-test decision is made, allowing title bar elements
+    /// (such as system buttons) and other components that have registered an
+    /// <see cref="HwndSourceHook"/> to update their visual or interaction state
+    /// based on the resolved target.
+    ///
+    /// This message complements <c>WM_NCHITTEST</c> and is intended for coordination
+    /// and state synchronization only; it does not perform hit testing itself.
+    ///
+    /// <para>
+    /// Message parameters:
+    /// </para>
+    /// <list type="bullet">
+    ///   <item>
+    ///     <description>
+    ///     <c>wParam</c>: Indicates whether a title bar button was hit.
+    ///     A value of <c>1</c> means a button was hit; any other value means no button was hit.
+    ///     This can be used by receivers as a fast-path check.
+    ///     </description>
+    ///   </item>
+    ///   <item>
+    ///     <description>
+    ///     <c>lParam</c>: When a button is hit, contains the hash code of the hit button instance;
+    ///     otherwise, the value is <c>0</c>.
+    ///     </description>
+    ///   </item>
+    /// </list>
+    /// </remarks>
+    internal static readonly uint WM_NCHITTEST_RESOLVED = PInvoke.RegisterWindowMessage("WM_NCHITTEST_RESOLVED");
+
+    private Window?       _window;
+    private HwndSource?   _hwndSource;
+    private WindowChrome? _chrome;
 
     /// <summary>
-    /// Event triggered after clicking minimize button.
-    /// </summary>
-    public event TypedEventHandler<TitleBar, RoutedEventArgs> MinimizeClicked
-    {
-        add => AddHandler(MinimizeClickedEvent, value);
-        remove => RemoveHandler(MinimizeClickedEvent, value);
-    }
-
-    /// <summary>
-    /// Event triggered after clicking help button
-    /// </summary>
-    public event TypedEventHandler<TitleBar, RoutedEventArgs> HelpClicked
-    {
-        add => AddHandler(HelpClickedEvent, value);
-        remove => RemoveHandler(HelpClickedEvent, value);
-    }
-
-    /// <summary>
-    /// Gets the command triggered when clicking the titlebar button.
-    /// </summary>
-    public IRelayCommand TemplateButtonCommand => (IRelayCommand)GetValue(TemplateButtonCommandProperty);
-
-    /// <summary>
-    /// Gets or sets the <see cref="Action"/> that should be executed when the Maximize button is clicked."/>
-    /// </summary>
-    public Action<TitleBar, System.Windows.Window>? MaximizeActionOverride { get; set; }
-
-    /// <summary>
-    /// Gets or sets what <see cref="Action"/> should be executed when the Minimize button is clicked.
-    /// </summary>
-    public Action<TitleBar, System.Windows.Window>? MinimizeActionOverride { get; set; }
-
-    private readonly TitleBarButton[] _buttons = new TitleBarButton[4];
-    private readonly TextBlock _titleBlock;
-    private System.Windows.Window _currentWindow = null!;
-
-    /*private System.Windows.Controls.Grid _mainGrid = null!;*/
-    private System.Windows.Controls.ContentPresenter _icon = null!;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="TitleBar"/> class and sets the default <see cref="FrameworkElement.Loaded"/> event.
+    /// Initializes a new instance of the <see cref="TitleBar"/> class.
     /// </summary>
     public TitleBar()
     {
-        SetValue(TemplateButtonCommandProperty, new RelayCommand<TitleBarButtonType>(OnTemplateButtonClick));
+        AddHandler(ButtonBase.ClickEvent, new RoutedEventHandler(OnButtonClick));
 
-        dpiScale ??= VisualTreeHelper.GetDpi(this);
-
-        _titleBlock = new TextBlock();
-        _titleBlock.VerticalAlignment = VerticalAlignment.Center;
-        _ = _titleBlock.SetBinding(
-            System.Windows.Controls.TextBlock.TextProperty,
-            new Binding(nameof(Title)) { Source = this }
-        );
-        _ = _titleBlock.SetBinding(
-            System.Windows.Controls.TextBlock.FontSizeProperty,
-            new Binding(nameof(FontSize)) { Source = this }
-        );
-        _ = _titleBlock.SetBinding(
-            System.Windows.Controls.TextBlock.FontWeightProperty,
-            new Binding(nameof(FontWeight)) { Source = this }
-        );
-        Header = _titleBlock;
-
-        Loaded += OnLoaded;
+        Loaded   += OnLoaded;
         Unloaded += OnUnloaded;
     }
 
-    /// <inheritdoc />
-    protected override void OnInitialized(EventArgs e)
-    {
-        base.OnInitialized(e);
-
-        SetCurrentValue(ApplicationThemeProperty, Appearance.ApplicationThemeManager.GetAppTheme());
-        Appearance.ApplicationThemeManager.Changed += OnThemeChanged;
-    }
-
-    protected virtual void OnLoaded(object sender, RoutedEventArgs e)
+    private void OnLoaded(object sender, RoutedEventArgs e)
     {
         if (DesignerHelper.IsInDesignMode)
         {
             return;
         }
 
-        _currentWindow =
-            System.Windows.Window.GetWindow(this) ?? throw new InvalidOperationException("Window is null");
-        if (_currentWindow.WindowState == WindowState.Maximized)
+        _window = Window.GetWindow(this);
+
+        if (_window is not null)
         {
-            SetCurrentValue(IsMaximizedProperty, true);
-            _currentWindow.SetCurrentValue(Window.WindowStateProperty, WindowState.Maximized);
+            _chrome = WindowChrome.GetWindowChrome(_window);
+
+            IsNcActive       = _window.IsActive;
+            WindowStyle      = _window.WindowStyle;
+            WindowResizeMode = _window.ResizeMode;
+
+            WindowChromePropertyDescriptor.AddValueChanged(_window, OnWindowChromeChanged);
+            WindowStylePropertyDescriptor.AddValueChanged(_window, OnWindowStyleChanged);
+            WindowResizeModePropertyDescriptor.AddValueChanged(_window, OnWindowResizeModeChanged);
+
+            _hwndSource = PresentationSource.FromVisual(_window) as HwndSource;
+            _hwndSource?.AddHook(OwnerWindowSourceHook);
         }
-
-        _currentWindow.StateChanged += OnParentWindowStateChanged;
-        _currentWindow.ContentRendered += OnWindowContentRendered;
-
-        SubscribeToSystemParameters();
     }
 
     private void OnUnloaded(object sender, RoutedEventArgs e)
     {
-        Loaded -= OnLoaded;
-        Unloaded -= OnUnloaded;
+        if (_hwndSource is not null)
+        {
+            _hwndSource?.RemoveHook(OwnerWindowSourceHook);
+            _hwndSource = null;
+        }
 
-        Appearance.ApplicationThemeManager.Changed -= OnThemeChanged;
-        UnsubscribeToSystemParameters();
+        if (_window is not null)
+        {
+            WindowChromePropertyDescriptor.RemoveValueChanged(_window, OnWindowChromeChanged);
+            WindowStylePropertyDescriptor.RemoveValueChanged(_window, OnWindowStyleChanged);
+            WindowResizeModePropertyDescriptor.RemoveValueChanged(_window, OnWindowResizeModeChanged);
+
+            _window = null;
+        }
     }
+
+    private IntPtr OwnerWindowSourceHook(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
+    {
+        var uMsg = (uint)msg;
+
+        if (uMsg == WM_NCHITTEST_RESOLVED)
+        {
+            handled = true;
+            return IntPtr.Zero;
+        }
+
+        switch (uMsg)
+        {
+            case PInvoke.WM_NCHITTEST:
+            {
+                var screenPoint = LParamToPoint(lParam);
+
+                // When WindowChrome is in use, WindowChromeWorker prioritizes user content
+                // during hit testing. This can cause the resize border area to be covered
+                // by client content, making window resizing via the border impossible.
+                //
+                // To address this, when the window supports resizing, the resize border
+                // is hit-tested explicitly here and the corresponding HT value is returned
+                // with higher priority.
+                //
+                // When WindowChrome is not used, this step is unnecessary because the
+                // window itself correctly handles non-client resize hit testing.
+
+                if (_chrome is not null && WindowResizeMode is ResizeMode.CanResize or ResizeMode.CanResizeWithGrip)
+                {
+                    var dpi     = GetDpi(hwnd);
+                    var wndRect = GetWindowRect(hwnd);
+
+                    var ht = HitTestResizeBorder(
+                        DpiHelper.DeviceRectToLogical(wndRect, dpi.DpiScaleX, dpi.DpiScaleY),
+                        DpiHelper.DevicePixelsToLogical(screenPoint, dpi.DpiScaleX, dpi.DpiScaleY)
+                    );
+
+                    if ((uint)ht is >= PInvoke.HTLEFT and <= PInvoke.HTBOTTOMRIGHT)
+                    {
+                        // The resize border has been hit and the hit-test result is finalized.
+                        // Notify other components participating in non-client interaction
+                        // so they can update their state accordingly.
+                        PInvoke.SendMessage((HWND)hwnd, WM_NCHITTEST_RESOLVED, 0, 0);
+
+                        handled = true;
+                        return ht;
+                    }
+                }
+
+                // Perform hit testing within the title bar area.
+                // If the hit element (or one of its ancestors) defines an ElementIdentity
+                // attached property, its semantic identity is mapped to the corresponding
+                // non-client hit-test result.
+                //
+                // When a title bar button is hit, a WM_NCHITTEST_RESOLVED message is broadcast
+                // with the identity of the hit button, allowing all title bar buttons to
+                // synchronize their visual state.
+
+                var relativePoint = PointFromScreen(screenPoint);
+
+                if (relativePoint is { X: >= 0, Y: >= 0 } &&
+                    relativePoint.X <= ActualWidth && relativePoint.Y <= ActualHeight)
+                {
+                    if (InputHitTest(relativePoint) is DependencyObject hitElement)
+                    {
+                        var id = GetElementIdentity(hitElement);
+
+                        if (id != TitleBarElementIdentity.Unknown)
+                        {
+                            var button = hitElement.FindAncestor<TitleBarButton>();
+
+                            if (button is not null)
+                            {
+                                // A title bar button has been hit. Broadcast the identity of
+                                // the hit button via WM_NCHITTEST_RESOLVED, allowing each
+                                // button to determine whether it needs to update its own
+                                // visual state.
+                                var hash = new LPARAM(button.GetHashCode());
+                                PInvoke.SendMessage((HWND)hwnd, WM_NCHITTEST_RESOLVED, 1, hash);
+                            }
+
+                            // When icon interaction is disabled, redirect icon hit testing to the caption.
+                            // This causes the icon area to behave like a normal title bar region,
+                            // allowing dragging but suppressing system-defined icon interactions.
+                            if (id == TitleBarElementIdentity.Icon && !IsIconInteractionEnabled)
+                            {
+                                id = TitleBarElementIdentity.Caption;
+                            }
+
+                            handled = true;
+                            return (IntPtr)id;
+                        }
+                    }
+                }
+
+                // No specific non-client element was hit during this pass.
+                // Still send WM_NCHITTEST_RESOLVED as a completion notification,
+                // allowing title bar buttons and other participants to reset
+                // their visual state if necessary.
+                PInvoke.SendMessage((HWND)hwnd, WM_NCHITTEST_RESOLVED, 0, 0);
+                break;
+            }
+
+            case PInvoke.WM_NCACTIVATE:
+                IsNcActive = wParam != IntPtr.Zero;
+                break;
+
+            // Intercept non-client mouse interactions for specific hit-test targets
+            // (typically system buttons) to suppress the default system rendering and
+            // behavior in the title bar.
+            //
+            // This prevents the window from drawing native system button visuals over
+            // the custom title bar implementation.
+            case PInvoke.WM_NCLBUTTONDOWN:
+            case PInvoke.WM_NCLBUTTONUP:
+            {
+                handled = (uint)wParam switch
+                {
+                    PInvoke.HTMAXBUTTON => true, PInvoke.HTMINBUTTON => true,
+                    PInvoke.HTCLOSE     => true, PInvoke.HTHELP      => true,
+                    _                   => handled
+                };
+
+                break;
+            }
+        }
+
+        return IntPtr.Zero;
+
+        static Point LParamToPoint(IntPtr lParam)
+        {
+            var yx = lParam.ToInt32();
+            var x  = (short)yx;
+            var y  = (short)(yx >> 16);
+            return new Point(x, y);
+        }
+    }
+
+    private DisplayDpi GetDpi(IntPtr hwnd)
+    {
+        if (Utilities.IsOSWindows10_14393_OrNewer)
+        {
+            return DpiHelper.GetWindowDpi(hwnd);
+        }
+
+        var dpiScale = VisualTreeHelper.GetDpi(this);
+        return new DisplayDpi(dpiScale.DpiScaleX, dpiScale.DpiScaleY);
+    }
+
+    private static readonly IntPtr[,] _HitTestBorders = new[,]
+    {
+        // @formatter:off
+        { (IntPtr)PInvoke.HTTOPLEFT,    (IntPtr)PInvoke.HTTOP,     (IntPtr)PInvoke.HTTOPRIGHT    },
+        { (IntPtr)PInvoke.HTLEFT,       IntPtr.Zero,               (IntPtr)PInvoke.HTRIGHT       },
+        { (IntPtr)PInvoke.HTBOTTOMLEFT, (IntPtr)PInvoke.HTBOTTOM,  (IntPtr)PInvoke.HTBOTTOMRIGHT },
+        // @formatter:on
+    };
 
     /// <summary>
-    /// Invoked whenever application code or an internal process,
-    /// such as a rebuilding layout pass, calls the ApplyTemplate method.
+    /// Maps the current mouse position to a resize border or corner hit-test result
+    /// within the specified window rectangle.
     /// </summary>
-    public override void OnApplyTemplate()
+    /// <remarks>
+    /// Inspired by the internal hit-testing logic used by WPF's WindowChromeWorker.
+    /// Requires window chrome to be initialized; otherwise, returns <see cref="IntPtr.Zero"/>.
+    /// </remarks>
+    /// <param name="wRect">The window rectangle used for resize border hit testing.</param>
+    /// <param name="mPoint">The current mouse position.</param>
+    /// <returns>
+    /// A hit-test handle corresponding to the resize border or corner under the mouse,
+    /// or <see cref="IntPtr.Zero"/> if chrome is not available.
+    /// </returns>
+    private IntPtr HitTestResizeBorder(Rect wRect, Point mPoint)
     {
-        base.OnApplyTemplate();
-
-        _parentWindow = VisualTreeHelper.GetParent(this);
-
-        while (_parentWindow is not null and not Window)
-        {
-            _parentWindow = VisualTreeHelper.GetParent(_parentWindow);
-        }
-
-        MouseRightButtonUp += TitleBar_MouseRightButtonUp;
-
-        /*_mainGrid = GetTemplateChild<System.Windows.Controls.Grid>(ElementMainGrid);*/
-        _icon = GetTemplateChild<System.Windows.Controls.ContentPresenter>(ElementIcon);
-
-        TitleBarButton helpButton = GetTemplateChild<TitleBarButton>(ElementHelpButton);
-        TitleBarButton minimizeButton = GetTemplateChild<TitleBarButton>(ElementMinimizeButton);
-        TitleBarButton maximizeButton = GetTemplateChild<TitleBarButton>(ElementMaximizeButton);
-        TitleBarButton closeButton = GetTemplateChild<TitleBarButton>(ElementCloseButton);
-
-        _buttons[0] = maximizeButton;
-        _buttons[1] = minimizeButton;
-        _buttons[2] = closeButton;
-        _buttons[3] = helpButton;
-    }
-
-    /// <summary>
-    /// This virtual method is triggered when the app's theme changes.
-    /// </summary>
-    protected virtual void OnThemeChanged(
-        Appearance.ApplicationTheme currentApplicationTheme,
-        Color systemAccent
-    )
-    {
-        Debug.WriteLine(
-            $"INFO | {typeof(TitleBar)} received theme -  {currentApplicationTheme}",
-            "Wpf.Ui.TitleBar"
-        );
-
-        SetCurrentValue(ApplicationThemeProperty, currentApplicationTheme);
-    }
-
-    private void CloseWindow()
-    {
-        Debug.WriteLine(
-            $"INFO | {typeof(TitleBar)}.CloseWindow:ForceShutdown -  {ForceShutdown}",
-            "Wpf.Ui.TitleBar"
-        );
-
-        if (ForceShutdown)
-        {
-            UiApplication.Current.Shutdown();
-            return;
-        }
-
-        _currentWindow.Close();
-    }
-
-    private void MinimizeWindow()
-    {
-        if (MinimizeActionOverride is not null)
-        {
-            MinimizeActionOverride(this, _currentWindow);
-
-            return;
-        }
-
-        _currentWindow.SetCurrentValue(Window.WindowStateProperty, WindowState.Minimized);
-    }
-
-    private void MaximizeWindow()
-    {
-        if (!CanMaximize)
-        {
-            return;
-        }
-
-        if (MaximizeActionOverride is not null)
-        {
-            MaximizeActionOverride(this, _currentWindow);
-
-            return;
-        }
-
-        if (_currentWindow.WindowState == WindowState.Normal)
-        {
-            SetCurrentValue(IsMaximizedProperty, true);
-            _currentWindow.SetCurrentValue(Window.WindowStateProperty, WindowState.Maximized);
-        }
-        else
-        {
-            SetCurrentValue(IsMaximizedProperty, false);
-            _currentWindow.SetCurrentValue(Window.WindowStateProperty, WindowState.Normal);
-        }
-    }
-
-    private void OnParentWindowStateChanged(object? sender, EventArgs e)
-    {
-        if (IsMaximized != (_currentWindow.WindowState == WindowState.Maximized))
-        {
-            SetCurrentValue(IsMaximizedProperty, _currentWindow.WindowState == WindowState.Maximized);
-        }
-    }
-
-    private void OnTemplateButtonClick(TitleBarButtonType buttonType)
-    {
-        switch (buttonType)
-        {
-            case TitleBarButtonType.Maximize or TitleBarButtonType.Restore:
-                RaiseEvent(new RoutedEventArgs(MaximizeClickedEvent, this));
-                MaximizeWindow();
-                break;
-
-            case TitleBarButtonType.Close:
-                RaiseEvent(new RoutedEventArgs(CloseClickedEvent, this));
-                CloseWindow();
-                break;
-
-            case TitleBarButtonType.Minimize:
-                RaiseEvent(new RoutedEventArgs(MinimizeClickedEvent, this));
-                MinimizeWindow();
-                break;
-
-            case TitleBarButtonType.Help:
-                RaiseEvent(new RoutedEventArgs(HelpClickedEvent, this));
-                break;
-        }
-    }
-
-    /// <summary>
-    ///  Listening window hooks after rendering window content to SizeToContent support
-    /// </summary>
-    private void OnWindowContentRendered(object? sender, EventArgs e)
-    {
-        if (sender is not Window window)
-        {
-            return;
-        }
-
-        window.ContentRendered -= OnWindowContentRendered;
-
-        IntPtr handle = new WindowInteropHelper(window).Handle;
-        if (handle == IntPtr.Zero)
-        {
-            return;
-        }
-
-        HwndSource? windowSource = HwndSource.FromHwnd(handle);
-        if (windowSource == null)
-        {
-            return;
-        }
-
-        windowSource.AddHook(HwndSourceHook);
-    }
-
-    private IntPtr HwndSourceHook(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
-    {
-        var message = (uint)msg;
-
-        // Invalidate cached border size on DPI change message
-        if (message == PInvoke.WM_DPICHANGED)
-        {
-            InvalidateBorderCache();
-        }
-
-        if (
-            message
-            is not (
-                PInvoke.WM_NCHITTEST
-                or PInvoke.WM_NCMOUSELEAVE
-                or PInvoke.WM_NCLBUTTONDOWN
-                or PInvoke.WM_NCLBUTTONUP
-            )
-        )
+        if (_chrome is null)
         {
             return IntPtr.Zero;
         }
 
-        foreach (TitleBarButton button in _buttons)
+        var row = 1;
+        var col = 1;
+
+        if (mPoint.X >= wRect.Left && mPoint.X < wRect.Left + (int)_chrome.ResizeBorderThickness.Left)
         {
-            if (!button.ReactToHwndHook(message, lParam, out IntPtr returnIntPtr))
-            {
-                continue;
-            }
-
-            // Fix for when sometimes, button hover backgrounds aren't cleared correctly, causing multiple buttons to appear as if hovered.
-            foreach (TitleBarButton anotherButton in _buttons)
-            {
-                if (anotherButton == button)
-                {
-                    continue;
-                }
-
-                if (anotherButton.IsHovered && button.IsHovered)
-                {
-                    anotherButton.RemoveHover();
-                }
-            }
-
-            handled = true;
-            return returnIntPtr;
+            col = 0; // left
+        }
+        else if (mPoint.X < wRect.Right && mPoint.X >= wRect.Right - _chrome.ResizeBorderThickness.Right)
+        {
+            col = 2; // right
         }
 
-        bool isMouseOverHeaderContent = false;
-        IntPtr htResult = (IntPtr)PInvoke.HTNOWHERE;
-
-        if (message == PInvoke.WM_NCHITTEST)
+        if (mPoint.Y >= wRect.Top && mPoint.Y < wRect.Top + _chrome.ResizeBorderThickness.Top)
         {
-            if (TrailingContent is UIElement || Header is UIElement || CenterContent is UIElement)
-            {
-                UIElement? headerLeftUIElement = Header as UIElement;
-                UIElement? headerCenterUIElement = CenterContent as UIElement;
-                UIElement? headerRightUiElement = TrailingContent as UIElement;
-
-                isMouseOverHeaderContent = (headerLeftUIElement is not null && headerLeftUIElement != _titleBlock && headerLeftUIElement.IsMouseOverElement(lParam))
-                    || (headerCenterUIElement?.IsMouseOverElement(lParam) ?? false)
-                    || (headerRightUiElement?.IsMouseOverElement(lParam) ?? false);
-            }
-
-            htResult = GetWindowBorderHitTestResult(hwnd, lParam);
+            row = 0; // top
+        }
+        else if (mPoint.Y < wRect.Bottom && mPoint.Y >= wRect.Bottom - (int)_chrome.ResizeBorderThickness.Bottom)
+        {
+            row = 2; // bottom
         }
 
-        var e = new HwndProcEventArgs(hwnd, msg, wParam, lParam, isMouseOverHeaderContent);
-        WndProcInvoked?.Invoke(this, e);
-
-        if (e.ReturnValue != null)
-        {
-            handled = e.Handled;
-            return e.ReturnValue ?? IntPtr.Zero;
-        }
-
-        switch (message)
-        {
-            case PInvoke.WM_NCHITTEST when CloseWindowByDoubleClickOnIcon && _icon.IsMouseOverElement(lParam):
-                // Ideally, clicking on the icon should open the system menu, but when the system menu is opened manually, double-clicking on the icon does not close the window
-                handled = true;
-                return (IntPtr)PInvoke.HTSYSMENU;
-            case PInvoke.WM_NCHITTEST when htResult != (IntPtr)PInvoke.HTNOWHERE:
-                handled = true;
-                return htResult;
-            case PInvoke.WM_NCHITTEST when this.IsMouseOverElement(lParam) && !isMouseOverHeaderContent:
-                handled = true;
-                return (IntPtr)PInvoke.HTCAPTION;
-            default:
-                return IntPtr.Zero;
-        }
+        return _HitTestBorders[row, col];
     }
 
     /// <summary>
-    /// Show 'SystemMenu' on mouse right button up.
+    /// Get the bounding rectangle for the window in physical coordinates.
     /// </summary>
-    private void TitleBar_MouseRightButtonUp(object sender, MouseButtonEventArgs e)
+    /// <returns>The bounding rectangle for the window.</returns>
+    private static Rect GetWindowRect(IntPtr hwnd)
     {
-        Point point = PointToScreen(e.GetPosition(this));
-
-        if (dpiScale is null)
+        if (PInvoke.GetWindowRect((HWND)hwnd, out RECT rect))
         {
-            throw new InvalidOperationException("dpiScale is not initialized.");
+            return new Rect(rect.left, rect.top, rect.Width, rect.Height);
         }
 
-        SystemCommands.ShowSystemMenu(
-            _parentWindow as Window,
-            new Point(point.X / dpiScale.Value.DpiScaleX, point.Y / dpiScale.Value.DpiScaleY)
-        );
+        throw new Win32Exception();
     }
 
-    private T GetTemplateChild<T>(string name)
-        where T : DependencyObject
+    private void CloseWindow()
     {
-        DependencyObject element = GetTemplateChild(name);
-
-        if (element is not T tElement)
+        if (_window is not null)
         {
-            throw new InvalidOperationException(
-                $"Template part '{name}' is not found or is not of type {typeof(T)}"
-            );
+            SystemCommands.CloseWindow(_window);
         }
+    }
 
-        return tElement;
+    private void MinimizeWindow()
+    {
+        if (_window is not null)
+        {
+            SystemCommands.MinimizeWindow(_window);
+        }
+    }
+
+    private void MaximizeWindow()
+    {
+        if (_window is not null)
+        {
+            if (_window.WindowState == WindowState.Normal)
+            {
+                SystemCommands.MaximizeWindow(_window);
+            }
+            else
+            {
+                SystemCommands.RestoreWindow(_window);
+            }
+        }
+    }
+
+    private void OnButtonClick(object sender, RoutedEventArgs e)
+    {
+        if (e.OriginalSource is TitleBarButton d)
+        {
+            var id = GetElementIdentity(d);
+            switch (id)
+            {
+                case TitleBarElementIdentity.MaximizeButton:
+                    MaximizeWindow();
+                    break;
+
+                case TitleBarElementIdentity.CloseButton:
+                    CloseWindow();
+                    break;
+
+                case TitleBarElementIdentity.MinimizeButton:
+                    MinimizeWindow();
+                    break;
+            }
+        }
+    }
+
+    private void OnWindowChromeChanged(object? sender, EventArgs e)
+    {
+        if (sender is Window window)
+        {
+            _chrome = WindowChrome.GetWindowChrome(window);
+        }
+    }
+
+    private void OnWindowStyleChanged(object? sender, EventArgs e)
+    {
+        if (sender is Window window)
+        {
+            WindowStyle = window.WindowStyle;
+        }
+    }
+
+    private void OnWindowResizeModeChanged(object? sender, EventArgs e)
+    {
+        if (sender is Window window)
+        {
+            WindowResizeMode = window.ResizeMode;
+        }
     }
 }
