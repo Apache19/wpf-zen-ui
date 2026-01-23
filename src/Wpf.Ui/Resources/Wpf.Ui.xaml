@@ -44,7 +44,6 @@
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/Expander/Expander.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/FluentWindow/FluentWindow.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/Flyout/Flyout.xaml" />
-        <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/Frame/Frame.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/GridView/GridViewColumnHeader.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/HyperlinkButton/HyperlinkButton.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/Image/Image.xaml" />
@@ -67,7 +66,6 @@
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/NavigationView/NavigationViewItemHeader.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/NavigationView/NavigationViewItemSeparator.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/NumberBox/NumberBox.xaml" />
-        <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/Page/Page.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/PasswordBox/PasswordBox.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/ProgressBar/ProgressBar.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/ProgressRing/ProgressRing.xaml" />

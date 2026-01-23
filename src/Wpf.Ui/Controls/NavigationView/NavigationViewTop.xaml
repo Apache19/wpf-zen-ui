@@ -155,7 +155,6 @@
                             Content="{TemplateBinding Content}"
                             ContentTemplate="{TemplateBinding ContentTemplate}"
                             RecognizesAccessKey="True"
-                            TextElement.FontSize="14"
                             TextElement.Foreground="{TemplateBinding Foreground}" />
                         <Grid
                             x:Name="PART_ChevronGrid"
@@ -283,7 +282,6 @@
                                                         Content="{TemplateBinding Content}"
                                                         ContentTemplate="{TemplateBinding ContentTemplate}"
                                                         RecognizesAccessKey="True"
-                                                        TextElement.FontSize="14"
                                                         TextElement.Foreground="{DynamicResource NavigationViewItemForeground}" />
                                                 </Grid>
                                             </Border>

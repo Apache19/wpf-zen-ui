@@ -18,8 +18,7 @@
 <ResourceDictionary
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:controls="clr-namespace:Wpf.Ui.Controls"
-    xmlns:system="clr-namespace:System;assembly=System.Runtime">
+    xmlns:controls="clr-namespace:Wpf.Ui.Controls">
 
     <ResourceDictionary.MergedDictionaries>
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/CheckBox/CheckBox.xaml" />
@@ -35,7 +34,6 @@
 
     <!--  TODO  -->
     <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
-    <system:Double x:Key="DefaultDataGridFontSize">14</system:Double>
 
     <!-- <Color x:Key="ControlLightColor">White</Color> -->
     <!-- <Color x:Key="ControlMediumColor">#FF7381F9</Color> -->
@@ -765,7 +763,6 @@
         <Setter Property="HorizontalGridLinesBrush" Value="{DynamicResource ControlElevationBorderBrush}" />
         <Setter Property="VerticalGridLinesBrush" Value="{DynamicResource ControlElevationBorderBrush}" />
         <Setter Property="GridLinesVisibility" Value="None" />
-        <Setter Property="FontSize" Value="{StaticResource DefaultDataGridFontSize}" />
         <Setter Property="RowDetailsVisibilityMode" Value="VisibleWhenSelected" />
         <Setter Property="ScrollViewer.CanContentScroll" Value="True" />
         <Setter Property="ScrollViewer.PanningMode" Value="Both" />
@@ -955,7 +952,6 @@
         <Setter Property="ContextMenu" Value="{DynamicResource DefaultControlContextMenu}" />
         <Setter Property="Foreground" Value="{DynamicResource TextControlForeground}" />
         <Setter Property="Background" Value="Transparent" />
-        <Setter Property="FontSize" Value="{DynamicResource ControlContentThemeFontSize}" />
         <Setter Property="HorizontalAlignment" Value="Stretch" />
         <Setter Property="VerticalAlignment" Value="Center" />
         <Setter Property="MinHeight" Value="{DynamicResource TextControlThemeMinHeight}" />

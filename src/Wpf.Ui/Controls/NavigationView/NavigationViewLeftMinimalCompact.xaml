@@ -62,7 +62,6 @@
                         Content="{TemplateBinding Content}"
                         ContentTemplate="{TemplateBinding ContentTemplate}"
                         RecognizesAccessKey="True"
-                        TextElement.FontSize="14"
                         TextElement.Foreground="{TemplateBinding Foreground}" />
 
                     <ContentPresenter
@@ -144,7 +143,6 @@
                                                 Content="{TemplateBinding Content}"
                                                 ContentTemplate="{TemplateBinding ContentTemplate}"
                                                 RecognizesAccessKey="True"
-                                                TextElement.FontSize="14"
                                                 TextElement.Foreground="{TemplateBinding Foreground}" />
 
                                             <ContentPresenter

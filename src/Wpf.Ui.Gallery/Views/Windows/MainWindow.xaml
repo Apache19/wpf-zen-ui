@@ -79,8 +79,7 @@
         <ui:TitleBar
             x:Name="TitleBar"
             Title="{Binding ViewModel.ApplicationTitle}"
-            Grid.Row="0"
-            IsIconInteractionEnabled="True">
+            Grid.Row="0">
             <ui:TitleBar.Icon>
                 <ui:ImageIcon Source="pack://application:,,,/Assets/wpfui.png" />
             </ui:TitleBar.Icon>
