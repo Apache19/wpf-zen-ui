@@ -63,6 +63,11 @@ internal sealed class Utilities
     public static bool IsOSWindows10OrNewer => _osVersion.Build >= 10240;
 
     /// <summary>
+    /// Gets a value indicating whether the operating system version is greater than or equal to 10.0* (build 14393).
+    /// </summary>
+    public static bool IsOSWindows10_14393_OrNewer => _osVersion.Build >= 14393;
+
+    /// <summary>
     /// Gets a value indicating whether the operating system version is greater than or equal to 10.0* (build 22000).
     /// </summary>
     public static bool IsOSWindows11OrNewer => _osVersion.Build >= 22000;

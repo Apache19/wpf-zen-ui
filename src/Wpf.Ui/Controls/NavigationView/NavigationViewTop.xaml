@@ -29,6 +29,7 @@
                 <controls:Button
                     x:Name="PART_BackButton"
                     Grid.Column="0"
+                    controls:TitleBar.ElementIdentity="UserContent"
                     IsEnabled="{TemplateBinding IsBackEnabled}"
                     Style="{StaticResource BasePaneButtonStyle}"
                     Visibility="{TemplateBinding IsBackButtonVisible,

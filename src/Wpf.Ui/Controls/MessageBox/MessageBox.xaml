@@ -21,7 +21,6 @@
         <Setter Property="Padding" Value="12" />
         <Setter Property="Foreground" Value="{DynamicResource MessageBoxForeground}" />
         <Setter Property="TextElement.FontWeight" Value="Regular" />
-        <Setter Property="WindowStyle" Value="ToolWindow" />
         <Setter Property="ShowInTaskbar" Value="False" />
         <!--<Setter Property="AllowsTransparency" Value="False" />-->
         <Setter Property="RenderOptions.BitmapScalingMode" Value="Fant" />
@@ -41,7 +40,6 @@
                     GlassFrameThickness="-1"
                     NonClientFrameEdges="None"
                     ResizeBorderThickness="0"
-                    ResizeGripDirection="None"
                     UseAeroCaptionButtons="False" />
             </Setter.Value>
         </Setter>
@@ -66,11 +64,7 @@
                                     Text="{TemplateBinding Title}"
                                     TextWrapping="Wrap" />
 
-                                <controls:TitleBar
-                                    Grid.Row="0"
-                                    ForceShutdown="False"
-                                    ShowMaximize="False"
-                                    ShowMinimize="False" />
+                                <controls:TitleBar Grid.Row="0" Height="36" />
 
                                 <ContentPresenter
                                     x:Name="ContentPresenter"

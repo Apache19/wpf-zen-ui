@@ -3,263 +3,357 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-using System.Windows.Automation.Peers;
-using System.Windows.Automation.Provider;
+using System.Runtime.InteropServices;
+using System.Windows.Controls.Primitives;
+using System.Windows.Input;
+using System.Windows.Threading;
 using Windows.Win32;
+using Windows.Win32.Foundation;
+using Windows.Win32.UI.Input.KeyboardAndMouse;
 
+#pragma warning disable SA1512 // Single-line comments should not be followed by blank line
+// ReSharper disable SuspiciousTypeConversion.Global
 // ReSharper disable once CheckNamespace
 namespace Wpf.Ui.Controls;
 
-public class TitleBarButton : Wpf.Ui.Controls.Button
+/// <summary>
+/// Represents a button designed specifically for use within a <see cref="TitleBar"/>.
+/// </summary>
+/// <remarks>
+/// <see cref="TitleBarButton"/> integrates with non-client area input handling
+/// to provide native caption button behavior while still supporting WPF
+/// interactions such as commands and visual states.
+/// <para/>
+/// This control is intended to be hosted exclusively within a <see cref="TitleBar"/>.
+/// When used outside a TitleBar, its behavior is undefined and may not meet
+/// typical button interaction expectations.
+/// </remarks>
+public class TitleBarButton : ButtonBase
 {
-    /// <summary>Identifies the <see cref="ButtonType"/> dependency property.</summary>
-    public static readonly DependencyProperty ButtonTypeProperty = DependencyProperty.Register(
-        nameof(ButtonType),
-        typeof(TitleBarButtonType),
-        typeof(TitleBarButton),
-        new PropertyMetadata(TitleBarButtonType.Unknown, OnButtonTypeChanged)
-    );
+    #region Static constructor
 
-    /// <summary>Identifies the <see cref="ButtonsForeground"/> dependency property.</summary>
-    public static readonly DependencyProperty ButtonsForegroundProperty = DependencyProperty.Register(
-        nameof(ButtonsForeground),
-        typeof(Brush),
-        typeof(TitleBarButton),
-        new FrameworkPropertyMetadata(
-            SystemColors.ControlTextBrush,
-            FrameworkPropertyMetadataOptions.Inherits
-        )
-    );
-
-    /// <summary>Identifies the <see cref="MouseOverButtonsForeground"/> dependency property.</summary>
-    public static readonly DependencyProperty MouseOverButtonsForegroundProperty =
-        DependencyProperty.Register(
-            nameof(MouseOverButtonsForeground),
-            typeof(Brush),
+    static TitleBarButton()
+    {
+        DefaultStyleKeyProperty.OverrideMetadata(
             typeof(TitleBarButton),
-            new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.Inherits)
+            new FrameworkPropertyMetadata(typeof(TitleBarButton))
         );
 
-    /// <summary>Identifies the <see cref="RenderButtonsForeground"/> dependency property.</summary>
-    public static readonly DependencyProperty RenderButtonsForegroundProperty = DependencyProperty.Register(
-        nameof(RenderButtonsForeground),
-        typeof(Brush),
-        typeof(TitleBarButton),
-        new FrameworkPropertyMetadata(
-            SystemColors.ControlTextBrush,
-            FrameworkPropertyMetadataOptions.Inherits
-        )
-    );
+        // Title bar buttons must not participate in keyboard focus navigation.
+        // Non-client interactions are driven by hit testing and system commands;
+        // introducing focus or tab stops would desynchronize visual states and
+        // conflict with the system-driven non-client interaction model.
+
+        FocusableProperty.OverrideMetadata(
+            typeof(TitleBarButton),
+            new FrameworkPropertyMetadata(
+                false,
+                null,
+                static (_, _) => false
+            )
+        );
+
+        IsTabStopProperty.OverrideMetadata(
+            typeof(TitleBarButton),
+            new FrameworkPropertyMetadata(
+                false,
+                null,
+                static (_, _) => false
+            )
+        );
+
+        // Title bar buttons must trigger clicks on Release.
+        // Hover and Press states must not participate in non-client mouse resolution;
+        // otherwise they would interfere with window behaviors such as dragging,
+        // resizing, and system command dispatch.
+        ClickModeProperty.OverrideMetadata(
+            typeof(TitleBarButton),
+            new FrameworkPropertyMetadata(
+                System.Windows.Controls.ClickMode.Release,
+                null,
+                static (_, _) => System.Windows.Controls.ClickMode.Release
+            )
+        );
+
+        // Ensure a non-null Background by default to preserve hit-testing behavior.
+        // A Transparent brush is used as a safe fallback to prevent hit testing from
+        // being disabled when Background is explicitly set to null.
+        BackgroundProperty.OverrideMetadata(
+            typeof(TitleBarButton),
+            new FrameworkPropertyMetadata(
+                Brushes.Transparent,
+                null,
+                static (_, baseValue) => baseValue ?? Brushes.Transparent
+            )
+        );
+    }
+
+    #endregion
+
+    #region DP: WindowState, IsMouseActualOver
+
+    #region WindowState
+
+    private static readonly DependencyPropertyKey WindowStatePropertyKey =
+        DependencyProperty.RegisterReadOnly(
+            nameof(WindowState),
+            typeof(WindowState),
+            typeof(TitleBarButton),
+            new PropertyMetadata(WindowState.Normal)
+        );
 
     /// <summary>
-    /// Gets or sets the type of the button.
+    /// Identifies the <see cref="WindowState"/> dependency property.
     /// </summary>
-    public TitleBarButtonType ButtonType
-    {
-        get => (TitleBarButtonType)GetValue(ButtonTypeProperty);
-        set => SetValue(ButtonTypeProperty, value);
-    }
+    public static readonly DependencyProperty WindowStateProperty =
+        WindowStatePropertyKey.DependencyProperty;
 
     /// <summary>
-    /// Gets or sets the foreground of the navigation buttons.
+    /// Gets or sets the current state of the window as observed by the TitleBarButton.
     /// </summary>
-    public Brush ButtonsForeground
+    /// <remarks>
+    /// This property does not change the window state.
+    /// It is updated internally based on system notifications so that the
+    /// TitleBarButton can remain visually consistent with the current window state.
+    /// </remarks>
+    public WindowState WindowState
     {
-        get => (Brush)GetValue(ButtonsForegroundProperty);
-        set => SetValue(ButtonsForegroundProperty, value);
+        get => (WindowState)GetValue(WindowStateProperty);
+        protected set => SetValue(WindowStatePropertyKey, value);
     }
+
+    #endregion
+
+    #region IsMouseActualOver
+
+    private static readonly DependencyPropertyKey IsMouseActualOverPropertyKey =
+        DependencyProperty.RegisterReadOnly(
+            nameof(IsMouseActualOver),
+            typeof(bool),
+            typeof(TitleBarButton),
+            new PropertyMetadata(false)
+        );
 
     /// <summary>
-    /// Gets or sets the foreground of the navigation buttons when moused over.
+    /// Identifies the <see cref="IsMouseActualOver"/> dependency property.
     /// </summary>
-    public Brush? MouseOverButtonsForeground
+    public static readonly DependencyProperty IsMouseActualOverProperty =
+        IsMouseActualOverPropertyKey.DependencyProperty;
+
+    /// <summary>
+    /// Gets or sets a value indicating whether the mouse pointer is currently
+    /// considered to be over this element.
+    /// </summary>
+    /// <remarks>
+    /// This property represents the final, resolved mouse-over state for the element.
+    /// It is independent of mouse capture, button state, keyboard modifiers,
+    /// or any other interaction context.
+    /// <para/>
+    /// This property is only meaningful when the element is hosted within a
+    /// <see cref="TitleBar"/>. Outside a TitleBar, the value is not guaranteed
+    /// to be accurate or stable.
+    /// </remarks>
+    public bool IsMouseActualOver
     {
-        get => (Brush?)GetValue(MouseOverButtonsForegroundProperty);
-        set => SetValue(MouseOverButtonsForegroundProperty, value);
+        get => (bool)GetValue(IsMouseActualOverProperty);
+        protected set => SetValue(IsMouseActualOverPropertyKey, value);
     }
 
-    public Brush RenderButtonsForeground
-    {
-        get => (Brush)GetValue(RenderButtonsForegroundProperty);
-        set => SetValue(RenderButtonsForegroundProperty, value);
-    }
+    #endregion
 
-    public bool IsHovered { get; private set; }
+    #endregion
 
-    private readonly Brush _defaultBackgroundBrush = Brushes.Transparent; // REVIEW: Should it be transparent?
-    private uint _returnValue;
+    private HwndSource? _hwndSource;
+    private Window?     _window;
+    private bool        _isHitTestTarget;
 
-    private bool _isClickedDown;
-
+    /// <summary>
+    /// Initializes a new instance of the <see cref="TitleBarButton"/> class.
+    /// </summary>
     public TitleBarButton()
     {
-        Loaded += TitleBarButton_Loaded;
-        Unloaded += TitleBarButton_Unloaded;
+        Loaded   += OnLoaded;
+        Unloaded += OnUnloaded;
     }
 
-    private void TitleBarButton_Unloaded(object sender, RoutedEventArgs e)
+    private void OnLoaded(object sender, RoutedEventArgs e)
     {
-        DependencyPropertyDescriptor
-            .FromProperty(ButtonsForegroundProperty, typeof(Brush))
-            .RemoveValueChanged(this, OnButtonsForegroundChanged);
-    }
+        _window = Window.GetWindow(this);
 
-    private void TitleBarButton_Loaded(object sender, RoutedEventArgs e)
-    {
-        SetCurrentValue(RenderButtonsForegroundProperty, ButtonsForeground);
-        DependencyPropertyDescriptor
-            .FromProperty(ButtonsForegroundProperty, typeof(Brush))
-            .AddValueChanged(this, OnButtonsForegroundChanged);
-    }
+        if (_window is not null)
+        {
+            _window.StateChanged += WindowStateChanged;
+            WindowState          =  _window.WindowState;
+        }
 
-    private void OnButtonsForegroundChanged(object? sender, EventArgs e)
-    {
-        SetCurrentValue(
-            RenderButtonsForegroundProperty,
-            IsHovered ? MouseOverButtonsForeground : ButtonsForeground
+        // Defer adding the HwndSource hook until the window is fully loaded,
+        // ensuring that this hook is invoked before the TitleBar processes
+        // window messages.
+        Dispatcher.BeginInvoke(
+            () =>
+            {
+                if (_window is not null)
+                {
+                    _hwndSource = PresentationSource.FromVisual(_window) as HwndSource;
+                    _hwndSource?.AddHook(HwndSourceHook);
+                }
+            },
+            DispatcherPriority.Loaded
         );
     }
 
-    /// <summary>
-    /// Forces button background to change.
-    /// </summary>
-    public void Hover()
+    private void OnUnloaded(object sender, RoutedEventArgs e)
     {
-        if (IsHovered)
-        {
-            return;
-        }
+        _hwndSource?.RemoveHook(HwndSourceHook);
+        _window?.StateChanged -= WindowStateChanged;
 
-        SetCurrentValue(BackgroundProperty, MouseOverBackground);
-        if (MouseOverButtonsForeground != null)
-        {
-            SetCurrentValue(RenderButtonsForegroundProperty, MouseOverButtonsForeground);
-        }
-
-        IsHovered = true;
+        _hwndSource = null;
+        _window     = null;
     }
 
-    /// <summary>
-    /// Forces button background to change.
-    /// </summary>
-    public void RemoveHover()
+    private void WindowStateChanged(object? sender, EventArgs e)
     {
-        if (!IsHovered)
+        if (sender is Window window)
         {
-            return;
+            WindowState = window.WindowState;
         }
-
-        SetCurrentValue(BackgroundProperty, _defaultBackgroundBrush);
-        SetCurrentValue(RenderButtonsForegroundProperty, ButtonsForeground);
-
-        IsHovered = false;
-        _isClickedDown = false;
     }
 
-    /// <summary>
-    /// Invokes click on the button.
-    /// </summary>
-    public void InvokeClick()
+    protected override void OnMouseEnter(MouseEventArgs e)
     {
-        if (
-            new ButtonAutomationPeer(this).GetPattern(PatternInterface.Invoke)
-            is IInvokeProvider invokeProvider
-        )
-        {
-            invokeProvider.Invoke();
-        }
-
-        _isClickedDown = false;
+        base.OnMouseEnter(e);
+        IsMouseActualOver = true;
     }
 
-    internal bool ReactToHwndHook(uint msg, IntPtr lParam, out IntPtr returnIntPtr)
+    protected override void OnMouseMove(MouseEventArgs e)
     {
-        returnIntPtr = IntPtr.Zero;
+        base.OnMouseMove(e);
 
-        switch (msg)
+        if (IsMouseCaptured && Mouse.LeftButton == MouseButtonState.Pressed)
         {
-            case PInvoke.WM_NCHITTEST:
-                if (this.IsMouseOverElement(lParam))
+            IsMouseActualOver = IsPressed;
+        }
+        else
+        {
+            IsMouseActualOver = IsMouseOver;
+        }
+    }
+
+    protected override void OnMouseLeftButtonUp(MouseButtonEventArgs e)
+    {
+        if (!IsPressed)
+        {
+            IsMouseActualOver = false;
+        }
+
+        base.OnMouseLeftButtonUp(e);
+    }
+
+    protected override void OnLostMouseCapture(MouseEventArgs e)
+    {
+        if (_hwndSource is not null)
+        {
+            // Restore non-client mouse leave tracking that was explicitly canceled
+            // during client-area interaction, ensuring that subsequent non-client
+            // transitions are handled correctly.
+            var tme = new TRACKMOUSEEVENT
+            {
+                cbSize      = (uint)Marshal.SizeOf<TRACKMOUSEEVENT>(),
+                dwFlags     = TRACKMOUSEEVENT_FLAGS.TME_NONCLIENT | TRACKMOUSEEVENT_FLAGS.TME_LEAVE,
+                hwndTrack   = (HWND)_hwndSource.Handle,
+                dwHoverTime = 0
+            };
+            PInvoke.TrackMouseEvent(ref tme);
+        }
+
+        base.OnLostMouseCapture(e);
+    }
+
+    private IntPtr HwndSourceHook(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
+    {
+        if (msg == TitleBar.WM_NCHITTEST_RESOLVED)
+        {
+            _isHitTestTarget = wParam.ToInt32() == 1 && lParam.ToInt32() == GetHashCode();
+        }
+
+        switch ((uint)msg)
+        {
+            // Handle WM_NCMOUSEMOVE to update IsMouseActualOver when the resolved
+            // non-client hit target corresponds to a caption button.
+            case PInvoke.WM_NCMOUSEMOVE:
+            {
+                var isRelevantHitTest = (uint)wParam switch
                 {
-                    /*Debug.WriteLine($"Hitting {ButtonType} | return code {_returnValue}");*/
-                    Hover();
-                    returnIntPtr = (IntPtr)_returnValue;
-                    return true;
+                    PInvoke.HTMAXBUTTON => true, PInvoke.HTMINBUTTON => true,
+                    PInvoke.HTCLOSE     => true, PInvoke.HTHELP      => true,
+                    _                   => false
+                };
+
+                if (isRelevantHitTest)
+                {
+                    IsMouseActualOver = _isHitTestTarget;
+                    break;
                 }
 
-                RemoveHover();
-                return false;
-            case PInvoke.WM_NCMOUSELEAVE: // Mouse leaves the window
-                RemoveHover();
-                return false;
-            case PInvoke.WM_NCLBUTTONDOWN when this.IsMouseOverElement(lParam): // Left button clicked down
-                _isClickedDown = true;
-                return true;
-            case PInvoke.WM_NCLBUTTONUP when _isClickedDown && this.IsMouseOverElement(lParam): // Left button clicked up
-                InvokeClick();
-                return true;
-            default:
-                return false;
+                IsMouseActualOver = false;
+                break;
+            }
+
+            // When a non-client mouse button is pressed, capture the mouse to transition the button
+            // into client-area interaction mode.
+            // This controlled switch between non-client and client behavior allows the button to
+            // preserve native system features (such as tooltips and Snap Layout) while still enabling
+            // normal WPF click, command, and interaction handling.
+            case PInvoke.WM_NCLBUTTONDOWN:
+            {
+                if (_isHitTestTarget)
+                {
+                    // Only handle caption button hit targets.
+                    var isRelevantHitTest = (uint)wParam switch
+                    {
+                        PInvoke.HTMAXBUTTON => true, PInvoke.HTMINBUTTON => true,
+                        PInvoke.HTCLOSE     => true, PInvoke.HTHELP      => true,
+                        _                   => false
+                    };
+
+                    if (isRelevantHitTest && Mouse.Captured == null)
+                    {
+                        // Cancel non-client mouse tracking before capturing the mouse
+                        // to prevent spurious WM_NCMOUSELEAVE messages when entering
+                        // client-area interaction mode.
+                        var tme = new TRACKMOUSEEVENT
+                        {
+                            cbSize      = (uint)Marshal.SizeOf<TRACKMOUSEEVENT>(),
+                            dwFlags     = TRACKMOUSEEVENT_FLAGS.TME_NONCLIENT | TRACKMOUSEEVENT_FLAGS.TME_LEAVE | TRACKMOUSEEVENT_FLAGS.TME_CANCEL,
+                            hwndTrack   = (HWND)hwnd,
+                            dwHoverTime = 0
+                        };
+                        PInvoke.TrackMouseEvent(ref tme);
+
+                        // Directly set pressed state and capture mouse.
+
+                        #pragma warning disable WPF0041
+                        IsPressed = true;
+                        #pragma warning restore WPF0041
+
+                        CaptureMouse();
+                    }
+                }
+
+                break;
+            }
+
+            case PInvoke.WM_NCMOUSELEAVE:
+            {
+                // Unconditionally reset all non-client hover-related state.
+                _isHitTestTarget  = false;
+                IsMouseActualOver = false;
+
+                break;
+            }
         }
+
+        return IntPtr.Zero;
     }
-
-    private static void OnButtonTypeChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
-    {
-        if (d is not TitleBarButton titleBarButton)
-        {
-            return;
-        }
-
-        titleBarButton.OnButtonTypeChanged(e);
-    }
-
-    protected void OnButtonTypeChanged(DependencyPropertyChangedEventArgs e)
-    {
-        var buttonType = (TitleBarButtonType)e.NewValue;
-
-        _returnValue = buttonType switch
-        {
-            TitleBarButtonType.Unknown => PInvoke.HTNOWHERE,
-            TitleBarButtonType.Help => PInvoke.HTHELP,
-            TitleBarButtonType.Minimize => PInvoke.HTMINBUTTON,
-            TitleBarButtonType.Close => PInvoke.HTCLOSE,
-            TitleBarButtonType.Restore => PInvoke.HTMAXBUTTON,
-            TitleBarButtonType.Maximize => PInvoke.HTMAXBUTTON,
-            _ => throw new ArgumentOutOfRangeException(
-                "e.NewValue",
-                buttonType,
-                $"Unsupported button type: {buttonType}."
-            ),
-        };
-    }
-
-    // TODO: Incorrectly calculates mouse position for high DPI displays.
-    // PresentationSource presentationSource = null;
-    // protected bool IsMouseOverElement(nint lParam)
-    // {
-    //    System.Drawing.Point winPoint;
-    //    bool gotCursorPos = User32.GetCursorPos(out winPoint);
-
-    //    if (!gotCursorPos)
-    //    {
-    //        int fallbackX = unchecked((short)((long)lParam & 0xFFFF));
-    //        int fallbackY = unchecked((short)(((long)lParam >> 16) & 0xFFFF));
-    //        winPoint = new System.Drawing.Point(fallbackX, fallbackY);
-    //    }
-
-    //    var screenPoint = new System.Windows.Point(winPoint.X, winPoint.Y);
-
-    //    presentationSource ??= PresentationSource.FromVisual(this);
-
-    //    if (presentationSource?.CompositionTarget != null)
-    //    {
-    //        screenPoint = presentationSource.CompositionTarget.TransformFromDevice.Transform(screenPoint);
-    //    }
-
-    //    var localPoint = this.PointFromScreen(screenPoint);
-
-    //    var hitTestRect = new System.Windows.Rect(0, 0, this.ActualWidth, this.ActualHeight);
-
-    //    return hitTestRect.Contains(localPoint);
-    //}
 }
+#pragma warning restore SA1512 // Single-line comments should not be followed by blank line

@@ -630,6 +630,13 @@
     <SolidColorBrush x:Key="TimePickerButtonForegroundPressed" Color="{StaticResource TextFillColorSecondary}" />
     <SolidColorBrush x:Key="TimePickerButtonForegroundDisabled" Color="{StaticResource TextFillColorDisabled}" />
 
+    <!--  TitleBar  -->
+    <SolidColorBrush x:Key="TitleBarButtonBackgroundPointerOver" Color="{StaticResource ControlAltFillColorQuarternary}" />
+    <SolidColorBrush x:Key="TitleBarButtonBackgroundPressed" Color="{StaticResource ControlAltFillColorTertiary}" />
+    <SolidColorBrush x:Key="TitleBarForeground" Color="{StaticResource TextFillColorPrimary}" />
+    <SolidColorBrush x:Key="TitleBarForegroundHot" Color="{StaticResource TextFillColorPrimary}" />
+    <SolidColorBrush x:Key="TitleBarForegroundInactive" Color="{StaticResource TextFillColorDisabled}" />
+
     <!--  ToggleButton  -->
     <SolidColorBrush x:Key="ToggleButtonBackground" Color="{StaticResource ControlFillColorDefault}" />
     <SolidColorBrush x:Key="ToggleButtonBackgroundPointerOver" Color="{StaticResource ControlFillColorSecondary}" />
