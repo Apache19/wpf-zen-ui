@@ -3,6 +3,7 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
+using System.Security.Policy;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Shell;
@@ -592,6 +593,10 @@ public class TitleBar : Control
                                 // visual state.
                                 var hash = new LPARAM(button.GetHashCode());
                                 PInvoke.SendMessage((HWND)hwnd, WM_NCHITTEST_RESOLVED, 1, hash);
+                            }
+                            else
+                            {
+                                PInvoke.SendMessage((HWND)hwnd, WM_NCHITTEST_RESOLVED, 0, 0);
                             }
 
                             // When icon interaction is disabled, redirect icon hit testing to the caption.

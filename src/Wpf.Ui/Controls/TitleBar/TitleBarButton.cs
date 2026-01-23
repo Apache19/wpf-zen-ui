@@ -4,6 +4,7 @@
 // All Rights Reserved.
 
 using System.Runtime.InteropServices;
+using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Threading;
@@ -69,9 +70,9 @@ public class TitleBarButton : ButtonBase
         ClickModeProperty.OverrideMetadata(
             typeof(TitleBarButton),
             new FrameworkPropertyMetadata(
-                System.Windows.Controls.ClickMode.Release,
+                ClickMode.Release,
                 null,
-                static (_, _) => System.Windows.Controls.ClickMode.Release
+                static (_, _) => ClickMode.Release
             )
         );
 
@@ -278,24 +279,10 @@ public class TitleBarButton : ButtonBase
 
         switch ((uint)msg)
         {
-            // Handle WM_NCMOUSEMOVE to update IsMouseActualOver when the resolved
-            // non-client hit target corresponds to a caption button.
+            // Handle WM_NCMOUSEMOVE to update IsMouseActualOver
             case PInvoke.WM_NCMOUSEMOVE:
             {
-                var isRelevantHitTest = (uint)wParam switch
-                {
-                    PInvoke.HTMAXBUTTON => true, PInvoke.HTMINBUTTON => true,
-                    PInvoke.HTCLOSE     => true, PInvoke.HTHELP      => true,
-                    _                   => false
-                };
-
-                if (isRelevantHitTest)
-                {
-                    IsMouseActualOver = _isHitTestTarget;
-                    break;
-                }
-
-                IsMouseActualOver = false;
+                IsMouseActualOver = _isHitTestTarget;
                 break;
             }
 
