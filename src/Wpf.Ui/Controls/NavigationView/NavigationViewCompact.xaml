@@ -129,8 +129,8 @@
                                     <Border
                                         x:Name="MainBorder"
                                         Height="40"
-                                        Background="Transparent"
                                         HorizontalAlignment="Stretch"
+                                        Background="Transparent"
                                         BorderThickness="{DynamicResource NavigationViewItemThickness}"
                                         CornerRadius="4">
                                         <Grid Margin="30,0,0,0" HorizontalAlignment="Stretch">
@@ -315,6 +315,7 @@
                                 Grid.Row="0"
                                 Margin="0,5,0,5"
                                 HorizontalAlignment="Left"
+                                controls:TitleBar.ElementIdentity="UserContent"
                                 AutomationProperties.AutomationId="NavigationBackButton"
                                 IsEnabled="{TemplateBinding IsBackEnabled}"
                                 Style="{StaticResource BasePaneButtonStyle}"

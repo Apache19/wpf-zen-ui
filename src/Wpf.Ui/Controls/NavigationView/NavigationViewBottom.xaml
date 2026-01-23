@@ -56,6 +56,7 @@
                 <controls:Button
                     x:Name="PART_BackButton"
                     Grid.Column="0"
+                    controls:TitleBar.ElementIdentity="UserContent"
                     AutomationProperties.AutomationId="NavigationBackButton"
                     IsEnabled="{TemplateBinding IsBackEnabled}"
                     Style="{StaticResource BasePaneButtonStyle}"

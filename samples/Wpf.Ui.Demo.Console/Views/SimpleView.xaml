@@ -8,13 +8,14 @@
   xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
   Width="64"
   Height="64"
+  ResizeMode="NoResize"
   DataContext="{Binding RelativeSource={RelativeSource Self}}"
   ExtendsContentIntoTitleBar="True"
   WindowStartupLocation="CenterScreen"
   mc:Ignorable="d"
 >
   <StackPanel>
-    <ui:TitleBar Title="Simple View" CanMaximize="False" ShowMaximize="False" ShowMinimize="False" />
+    <ui:TitleBar Title="Simple View" />
     <StackPanel Margin="8">
       <ui:CardAction Click="CardAction_Click">
                 Change Theme

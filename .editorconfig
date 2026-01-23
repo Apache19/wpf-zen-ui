@@ -345,8 +345,13 @@ dotnet_diagnostic.CA2240.severity = warning
 dotnet_diagnostic.CA2241.severity = warning
 dotnet_diagnostic.CA2242.severity = warning
 
+# IDE0008: Use explicit type instead of "var"
+dotnet_diagnostic.IDE0008.severity = none
+
+dotnet_diagnostic.IDE0060.severity = none
+
 # Require file header OR A source file contains a header that does not match the required text
-dotnet_diagnostic.IDE0073.severity = error
+dotnet_diagnostic.IDE0073.severity = warning
 
 dotnet_diagnostic.IDE0058.severity = silent
 
@@ -360,11 +365,19 @@ dotnet_diagnostic.SA1009.severity = none
 # Hide warnings when using the new() expression from C# 9.
 dotnet_diagnostic.SA1000.severity = none
 dotnet_diagnostic.SA1011.severity = none
+
+# SA1025: Code should not contain multiple whitespace in a row
+dotnet_diagnostic.SA1025.severity = none
+
 dotnet_diagnostic.SA1101.severity = none
 
 # Hide warnings when accessing properties without "this".
 dotnet_diagnostic.SA1101.severity = none
 dotnet_diagnostic.SA1118.severity = none
+
+# SA1124: Do not use regions
+dotnet_diagnostic.SA1124.severity = none
+
 dotnet_diagnostic.SA1200.severity = none
 dotnet_diagnostic.SA1201.severity = none
 dotnet_diagnostic.SA1202.severity = none
@@ -379,6 +392,12 @@ dotnet_diagnostic.SA1314.severity = none
 
 # UseTrailingCommasInMultiLineInitializers: This would also mean a lot of changes at the end of all multiline initializers. It's also debatable if we want this or not.
 dotnet_diagnostic.SA1413.severity = none
+
+# SA1512: Single-line comments should not be followed by blank line
+dotnet_diagnostic.SA1512.severity = none
+
+# SA1515: Single-line comment should be preceded by blank line
+dotnet_diagnostic.SA1515.severity = none
 
 dotnet_diagnostic.SA1600.severity = none
 dotnet_diagnostic.SA1602.severity = none
