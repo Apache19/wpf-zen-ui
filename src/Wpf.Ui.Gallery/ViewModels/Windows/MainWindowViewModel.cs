@@ -21,6 +21,7 @@ using Wpf.Ui.Gallery.Views.Pages.OpSystem;
 using Wpf.Ui.Gallery.Views.Pages.StatusAndInfo;
 using Wpf.Ui.Gallery.Views.Pages.Text;
 using Wpf.Ui.Gallery.Views.Pages.Windows;
+using Separator = Wpf.Ui.Controls.Separator;
 
 namespace Wpf.Ui.Gallery.ViewModels.Windows;
 
