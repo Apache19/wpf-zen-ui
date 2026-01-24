@@ -3,12 +3,12 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-using System.Security.Policy;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Shell;
 using Windows.Win32;
 using Windows.Win32.Foundation;
+using Windows.Win32.UI.WindowsAndMessaging;
 using Wpf.Ui.Designer;
 using Wpf.Ui.Extensions.Wpf;
 using Wpf.Ui.Hardware;
@@ -295,6 +295,47 @@ public class TitleBar : Control
 
     #endregion
 
+    #region WindowState
+
+    private static readonly DependencyPropertyKey WindowStatePropertyKey =
+        DependencyProperty.RegisterReadOnly(
+            nameof(WindowState),
+            typeof(WindowState),
+            typeof(TitleBar),
+            new FrameworkPropertyMetadata(
+                WindowState.Normal,
+                static (d, e) =>
+                {
+                    if (d is TitleBar titleBar && e.NewValue is WindowState state)
+                    {
+                        titleBar.WindowStateChanged(state);
+                    }
+                }
+            )
+        );
+
+    /// <summary>
+    /// Identifies the <see cref="WindowState"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty WindowStateProperty =
+        WindowStatePropertyKey.DependencyProperty;
+
+    /// <summary>
+    /// Gets or sets the current state of the window as observed by the TitleBarButton.
+    /// </summary>
+    /// <remarks>
+    /// This property does not change the window state.
+    /// It is updated internally based on system notifications so that the
+    /// TitleBarButton can remain visually consistent with the current window state.
+    /// </remarks>
+    public WindowState WindowState
+    {
+        get => (WindowState)GetValue(WindowStateProperty);
+        protected set => SetValue(WindowStatePropertyKey, value);
+    }
+
+    #endregion
+
     #region WindowResizeMode
 
     private static readonly DependencyPropertyKey WindowResizeModePropertyKey =
@@ -526,6 +567,46 @@ public class TitleBar : Control
 
         switch (uMsg)
         {
+            // WRONG: Do not rely on WM_SIZE for WindowState synchronization.
+            //
+            // Using WM_SIZE to infer WindowState is unreliable.
+            //
+            // After a window has been maximized, Windows may still allow limited resizing
+            // (e.g. via resize borders). In this situation, the WS_MAXIMIZE style can be
+            // cleared while WPF's Window.WindowState remains Maximized.
+            // This creates a mismatch between the actual native window state and WPF's
+            // logical WindowState.
+            //
+            // This example is intentionally kept here as a reference for what *not* to do.
+            // case PInvoke.WM_SIZE:
+            // {
+            //     WindowState = (uint)wParam switch
+            //     {
+            //         PInvoke.SIZE_RESTORED  => WindowState.Normal,
+            //         PInvoke.SIZE_MAXIMIZED => WindowState.Maximized,
+            //         PInvoke.SIZE_MINIMIZED => WindowState.Minimized,
+            //         _                      => WindowState
+            //     };
+            // }
+
+            // CORRECT: Determine the actual state by inspecting native window styles.
+            //
+            // We listen to WM_WINDOWPOSCHANGED and determine the effective WindowState
+            // by inspecting native window styles *after* the position/state change
+            // has been committed.
+            case PInvoke.WM_WINDOWPOSCHANGED:
+            {
+                var style = PInvoke.GetWindowLong((HWND)hwnd, WINDOW_LONG_PTR_INDEX.GWL_STYLE);
+
+                var windowState =
+                    (style & (nint)WINDOW_STYLE.WS_MINIMIZE) != 0 ? WindowState.Minimized :
+                    (style & (nint)WINDOW_STYLE.WS_MAXIMIZE) != 0 ? WindowState.Maximized :
+                                                                    WindowState.Normal;
+
+                WindowState = windowState;
+                break;
+            }
+
             case PInvoke.WM_NCHITTEST:
             {
                 var screenPoint = LParamToPoint(lParam);
@@ -755,7 +836,7 @@ public class TitleBar : Control
     {
         if (_window is not null)
         {
-            if (_window.WindowState == WindowState.Normal)
+            if (WindowState == WindowState.Normal)
             {
                 SystemCommands.MaximizeWindow(_window);
             }
@@ -788,11 +869,19 @@ public class TitleBar : Control
         }
     }
 
+    // WindowChrome 的原始调整尺寸边框
+    private Thickness _originalResizeBorder;
+
     private void OnWindowChromeChanged(object? sender, EventArgs e)
     {
         if (sender is Window window)
         {
             _chrome = WindowChrome.GetWindowChrome(window);
+
+            if (_chrome.ResizeBorderThickness != default)
+            {
+                _originalResizeBorder = _chrome.ResizeBorderThickness;
+            }
         }
     }
 
@@ -801,6 +890,27 @@ public class TitleBar : Control
         if (sender is Window window)
         {
             WindowStyle = window.WindowStyle;
+        }
+    }
+
+    private void WindowStateChanged(WindowState newState)
+    {
+        if (_chrome is not null)
+        {
+            switch (newState)
+            {
+                case WindowState.Maximized:
+                    _chrome.SetCurrentValue(WindowChrome.ResizeBorderThicknessProperty, default(Thickness));
+                    return;
+
+                case WindowState.Normal:
+                    _chrome.SetCurrentValue(WindowChrome.ResizeBorderThicknessProperty, _originalResizeBorder);
+                    break;
+
+                case WindowState.Minimized:
+                default:
+                    break;
+            }
         }
     }
 

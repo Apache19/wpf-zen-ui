@@ -52,12 +52,12 @@
         </Border>
         <ControlTemplate.Triggers>
             <!--  Icon  -->
-            <Trigger Property="WindowState" Value="Maximized">
+            <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=controls:TitleBar}, Path=WindowState}" Value="Maximized">
                 <Setter TargetName="IconPath" Property="Data" Value="{StaticResource TitleBarRestoreIconData}" />
-            </Trigger>
-            <Trigger Property="WindowState" Value="Normal">
+            </DataTrigger>
+            <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=controls:TitleBar}, Path=WindowState}" Value="Normal">
                 <Setter TargetName="IconPath" Property="Data" Value="{StaticResource TitleBarMaximizeIconData}" />
-            </Trigger>
+            </DataTrigger>
             <!--  Hover  -->
             <Trigger Property="IsMouseActualOver" Value="True">
                 <Setter TargetName="RootBorder" Property="Background" Value="{DynamicResource TitleBarButtonBackgroundPointerOver}" />
