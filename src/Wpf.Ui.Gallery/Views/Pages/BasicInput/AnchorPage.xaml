@@ -29,12 +29,24 @@
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
-                <ui:Anchor
-                    Grid.Column="0"
-                    Content="WPF UI anchor"
-                    Icon="{ui:SymbolIcon Link24}"
-                    IsEnabled="{Binding ViewModel.IsAnchorEnabled, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:AnchorPage}, Mode=OneWay}"
-                    NavigateUri="https://lepo.co/" />
+                <StackPanel Grid.Column="0" Orientation="Horizontal">
+                    <StackPanel.Resources>
+                        <Style BasedOn="{StaticResource {x:Type ui:Separator}}" TargetType="{x:Type ui:Separator}">
+                            <Setter Property="Margin" Value="10" />
+                        </Style>
+                    </StackPanel.Resources>
+                    <ui:Anchor
+                        Content="WPF UI anchor"
+                        Icon="{ui:SymbolIcon Link24}"
+                        IsEnabled="{Binding ViewModel.IsAnchorEnabled, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:AnchorPage}, Mode=OneWay}"
+                        NavigateUri="https://lepo.co/" />
+                    <ui:Separator Orientation="Vertical" />
+                    <ui:Anchor
+                        Content="WPF UI anchor"
+                        Icon="{ui:SymbolIcon Link24}"
+                        IsEnabled="{Binding ViewModel.IsAnchorEnabled, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:AnchorPage}, Mode=OneWay}"
+                        NavigateUri="https://lepo.co/" />
+                </StackPanel>
                 <CheckBox
                     Grid.Column="1"
                     Command="{Binding ViewModel.AnchorCheckboxCheckedCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:AnchorPage}, Mode=OneWay}"
