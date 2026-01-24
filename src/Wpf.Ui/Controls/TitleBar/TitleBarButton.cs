@@ -91,41 +91,7 @@ public class TitleBarButton : ButtonBase
 
     #endregion
 
-    #region DP: WindowState, IsMouseActualOver
-
-    #region WindowState
-
-    private static readonly DependencyPropertyKey WindowStatePropertyKey =
-        DependencyProperty.RegisterReadOnly(
-            nameof(WindowState),
-            typeof(WindowState),
-            typeof(TitleBarButton),
-            new PropertyMetadata(WindowState.Normal)
-        );
-
-    /// <summary>
-    /// Identifies the <see cref="WindowState"/> dependency property.
-    /// </summary>
-    public static readonly DependencyProperty WindowStateProperty =
-        WindowStatePropertyKey.DependencyProperty;
-
-    /// <summary>
-    /// Gets or sets the current state of the window as observed by the TitleBarButton.
-    /// </summary>
-    /// <remarks>
-    /// This property does not change the window state.
-    /// It is updated internally based on system notifications so that the
-    /// TitleBarButton can remain visually consistent with the current window state.
-    /// </remarks>
-    public WindowState WindowState
-    {
-        get => (WindowState)GetValue(WindowStateProperty);
-        protected set => SetValue(WindowStatePropertyKey, value);
-    }
-
-    #endregion
-
-    #region IsMouseActualOver
+    #region DependencyProperty: IsMouseActualOver
 
     private static readonly DependencyPropertyKey IsMouseActualOverPropertyKey =
         DependencyProperty.RegisterReadOnly(
@@ -162,10 +128,7 @@ public class TitleBarButton : ButtonBase
 
     #endregion
 
-    #endregion
-
     private HwndSource? _hwndSource;
-    private Window?     _window;
     private bool        _isHitTestTarget;
 
     /// <summary>
@@ -179,23 +142,16 @@ public class TitleBarButton : ButtonBase
 
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
-        _window = Window.GetWindow(this);
-
-        if (_window is not null)
-        {
-            _window.StateChanged += WindowStateChanged;
-            WindowState          =  _window.WindowState;
-        }
-
         // Defer adding the HwndSource hook until the window is fully loaded,
         // ensuring that this hook is invoked before the TitleBar processes
         // window messages.
         Dispatcher.BeginInvoke(
             () =>
             {
-                if (_window is not null)
+                var window = Window.GetWindow(this);
+                if (window is not null)
                 {
-                    _hwndSource = PresentationSource.FromVisual(_window) as HwndSource;
+                    _hwndSource = PresentationSource.FromVisual(window) as HwndSource;
                     _hwndSource?.AddHook(HwndSourceHook);
                 }
             },
@@ -206,18 +162,7 @@ public class TitleBarButton : ButtonBase
     private void OnUnloaded(object sender, RoutedEventArgs e)
     {
         _hwndSource?.RemoveHook(HwndSourceHook);
-        _window?.StateChanged -= WindowStateChanged;
-
         _hwndSource = null;
-        _window     = null;
-    }
-
-    private void WindowStateChanged(object? sender, EventArgs e)
-    {
-        if (sender is Window window)
-        {
-            WindowState = window.WindowState;
-        }
     }
 
     protected override void OnMouseEnter(MouseEventArgs e)
