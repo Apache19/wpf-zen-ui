@@ -557,15 +557,7 @@ public class TitleBar : Control
 
     private IntPtr OwnerWindowSourceHook(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
     {
-        var uMsg = (uint)msg;
-
-        if (uMsg == WM_NCHITTEST_RESOLVED)
-        {
-            handled = true;
-            return IntPtr.Zero;
-        }
-
-        switch (uMsg)
+        switch ((uint)msg)
         {
             // WRONG: Do not rely on WM_SIZE for WindowState synchronization.
             //
