@@ -10,7 +10,7 @@ namespace Wpf.Ui.Converters;
 public class ClipConverter : IMultiValueConverter
 {
     /// <inheritdoc />
-    public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
+    public object? Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
     {
         if (values.Length != 3)
         {

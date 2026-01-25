@@ -1,4 +1,4 @@
-﻿// This Source Code Form is subject to the terms of the MIT License.
+// This Source Code Form is subject to the terms of the MIT License.
 // If a copy of the MIT was not distributed with this file, You can obtain one at https://opensource.org/licenses/MIT.
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
@@ -21,7 +21,7 @@ public sealed class NavigationTests : UiTest
 
         autoSuggestBox.As<AutoSuggestBox>().Enter("Settings");
 
-        await Wait(1);
+        await Wait(1, TestContext.Current.CancellationToken);
 
         FindFirst(c => c.ByText("About"))
             .Should()
@@ -37,7 +37,7 @@ public sealed class NavigationTests : UiTest
         settingsButton.Should().NotBeNull("because NavigationView should be present in the main window");
         settingsButton.Click();
 
-        await Wait(1);
+        await Wait(1, TestContext.Current.CancellationToken);
 
         FindFirst(c => c.ByText("About"))
             .Should()

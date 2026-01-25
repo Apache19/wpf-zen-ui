@@ -93,7 +93,9 @@ public partial class App
     {
         _host.StopAsync().Wait();
 
+#pragma warning disable IDISP007 // Don't dispose injected
         _host.Dispose();
+#pragma warning restore IDISP007 // Don't dispose injected
     }
 
     /// <summary>

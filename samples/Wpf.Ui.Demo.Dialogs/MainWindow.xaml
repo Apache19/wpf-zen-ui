@@ -25,6 +25,6 @@
       Click="OnShowDialogClick"
       Content="Show dialog"
     />
-    <ContentPresenter x:Name="ContentPresenterForDialogs" Grid.Row="0" />
+    <ui:ContentDialogHost x:Name="ContentDialogHost" Grid.Row="0" />
   </Grid>
 </Window>

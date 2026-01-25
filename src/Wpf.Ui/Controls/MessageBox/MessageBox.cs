@@ -17,7 +17,7 @@ namespace Wpf.Ui.Controls;
 /// <summary>
 /// Customized window for notifications.
 /// </summary>
-public class MessageBox : System.Windows.Window
+public class MessageBox : Window
 {
     /// <summary>Identifies the <see cref="ShowTitle"/> dependency property.</summary>
     public static readonly DependencyProperty ShowTitleProperty = DependencyProperty.Register(
@@ -313,10 +313,9 @@ public class MessageBox : System.Windows.Window
             cancellationToken
         );
 
-        try
+#if NET6_0_OR_GREATER
+        await using (tokenRegistration)
         {
-            RemoveTitleBarAndApplyMica();
-
             if (showAsDialog)
             {
                 base.ShowDialog();
@@ -328,14 +327,21 @@ public class MessageBox : System.Windows.Window
 
             return await Tcs.Task;
         }
-        finally
-        {
-#if NET6_0_OR_GREATER
-            await tokenRegistration.DisposeAsync();
 #else
-            tokenRegistration.Dispose();
-#endif
+        using (tokenRegistration)
+        {
+            if (showAsDialog)
+            {
+                base.ShowDialog();
+            }
+            else
+            {
+                base.Show();
+            }
+
+            return await Tcs.Task;
         }
+#endif
     }
 
     /// <summary>
@@ -367,6 +373,12 @@ public class MessageBox : System.Windows.Window
             default:
                 throw new InvalidOperationException();
         }
+    }
+
+    protected override void OnSourceInitialized(EventArgs e)
+    {
+        base.OnSourceInitialized(e);
+        RemoveTitleBarAndApplyMica();
     }
 
     // CanCenterOverWPFOwner property see https://source.dot.net/#PresentationFramework/System/Windows/Window.cs,e679e433777b21b8

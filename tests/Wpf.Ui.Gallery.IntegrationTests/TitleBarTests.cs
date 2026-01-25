@@ -1,4 +1,4 @@
-﻿// This Source Code Form is subject to the terms of the MIT License.
+// This Source Code Form is subject to the terms of the MIT License.
 // If a copy of the MIT was not distributed with this file, You can obtain one at https://opensource.org/licenses/MIT.
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
@@ -18,7 +18,7 @@ public sealed class TitleBarTests : UiTest
         closeButton.Should().NotBeNull("because CloseButton should be present in the main window title bar");
         closeButton.Click(moveMouse: false);
 
-        await Wait(2);
+        await Wait(2, TestContext.Current.CancellationToken);
 
         Application
             ?.HasExited.Should()
@@ -35,9 +35,9 @@ public sealed class TitleBarTests : UiTest
             .NotBeNull("because MinimizeButton should be present in the main window title bar");
         minimizeButton.Click(moveMouse: false);
 
-        await Wait(2);
+        await Wait(2, TestContext.Current.CancellationToken);
 
-        MainWindow
+        MainWindow?
             .Patterns.Window.Pattern.WindowVisualState.ValueOrDefault.Should()
             .Be(
                 WindowVisualState.Minimized,
@@ -55,9 +55,9 @@ public sealed class TitleBarTests : UiTest
             .NotBeNull("because MaximizeButton should be present in the main window title bar");
         maximizeButton.Click(moveMouse: false);
 
-        await Wait(2);
+        await Wait(2, TestContext.Current.CancellationToken);
 
-        MainWindow
+        MainWindow?
             .Patterns.Window.Pattern.WindowVisualState.ValueOrDefault.Should()
             .Be(
                 WindowVisualState.Maximized,

@@ -11,6 +11,7 @@ namespace Wpf.Ui.Controls;
 
 internal class NavigationViewBreadcrumbItem : DependencyObject
 {
+    /// <summary>Identifies the <see cref="Content"/> dependency property.</summary>
     public static readonly DependencyProperty ContentProperty = DependencyProperty.Register(
         nameof(Content),
         typeof(object),
@@ -25,7 +26,7 @@ internal class NavigationViewBreadcrumbItem : DependencyObject
         Content = item.Content;
     }
 
-    public object Content
+    public object? Content
     {
         get => GetValue(ContentProperty);
         set => SetValue(ContentProperty, value);
