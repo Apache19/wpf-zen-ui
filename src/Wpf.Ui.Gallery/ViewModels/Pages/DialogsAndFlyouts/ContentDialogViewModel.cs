@@ -39,7 +39,7 @@ public partial class ContentDialogViewModel(IContentDialogService contentDialogS
     [RelayCommand]
     private async Task OnShowSignInContentDialog()
     {
-        var termsOfUseContentDialog = new TermsOfUseContentDialog(contentDialogService.GetDialogHost());
+        var termsOfUseContentDialog = new TermsOfUseContentDialog(contentDialogService.GetDialogHostEx());
 
         _ = await termsOfUseContentDialog.ShowAsync();
     }

@@ -168,7 +168,9 @@ public class PageControlDocumentation : Control
         {
             ProcessStartInfo sInfo = new(navigationUrl) { UseShellExecute = true };
 
-            _ = Process.Start(sInfo);
+            using (Process.Start(sInfo))
+            {
+            }
         }
         catch (Exception e)
         {

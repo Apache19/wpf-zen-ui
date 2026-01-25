@@ -73,5 +73,3 @@ public partial class ComboBoxViewModel : ViewModel
         new("Grains", "Quinoa"),
     ];
 }
-
-public record GroupedComboBoxItem(string Category, string Name);

@@ -624,7 +624,7 @@ public class TitleBar : Control
 
                 if (_chrome is not null && WindowResizeMode is ResizeMode.CanResize or ResizeMode.CanResizeWithGrip)
                 {
-                    var dpi     = GetDpi(hwnd);
+                    var dpi     = DpiHelper.GetWindowDpi(hwnd);
                     var wndRect = GetWindowRect(hwnd);
 
                     var ht = HitTestResizeBorder(
@@ -735,17 +735,6 @@ public class TitleBar : Control
             var y  = (short)(yx >> 16);
             return new Point(x, y);
         }
-    }
-
-    private DisplayDpi GetDpi(IntPtr hwnd)
-    {
-        if (Utilities.IsOSWindows10_14393_OrNewer)
-        {
-            return DpiHelper.GetWindowDpi(hwnd);
-        }
-
-        var dpiScale = VisualTreeHelper.GetDpi(this);
-        return new DisplayDpi(dpiScale.DpiScaleX, dpiScale.DpiScaleY);
     }
 
     private static readonly IntPtr[,] _HitTestBorders = new[,]

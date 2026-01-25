@@ -98,7 +98,7 @@ public class UiApplication
                 {
                     if (ApplySystemAccentColor)
                     {
-                        Wpf.Ui.Appearance.ApplicationAccentColorManager.ApplySystemAccent();
+                        Appearance.ApplicationAccentColorManager.ApplySystemAccent();
                     }
 
                     var themesDictionary = new Markup.ThemesDictionary();
@@ -106,7 +106,10 @@ public class UiApplication
                     _resources.MergedDictionaries.Add(themesDictionary);
                     _resources.MergedDictionaries.Add(controlsDictionary);
                 }
-                catch { }
+                catch
+                {
+                    // ignored
+                }
             }
 
             return _application?.Resources ?? _resources;

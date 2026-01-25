@@ -20,26 +20,32 @@ public partial class MainWindow
 
     private async void OnShowDialogClick(object sender, RoutedEventArgs e)
     {
-        // Dispatch to the UI queue
-        await Application.Current.Dispatcher.InvokeAsync(ShowSampleDialogAsync);
+        try
+        {
+            // Dispatch to the UI queue
+            _ = await ShowSampleDialogAsync();
+        }
+        catch
+        {
+            // ignored
+        }
     }
 
-    private async Task ShowSampleDialogAsync()
+    private Task<ContentDialogResult> ShowSampleDialogAsync()
     {
         // Defining dialog object
         ContentDialog myDialog = new()
         {
-            Title = "My sample dialog",
-            Content = "Content of the dialog",
-            CloseButtonText = "Close button",
-            PrimaryButtonText = "Primary button",
+            Title               = "My sample dialog",
+            Content             = "Content of the dialog",
+            CloseButtonText     = "Close button",
+            PrimaryButtonText   = "Primary button",
             SecondaryButtonText = "Secondary button",
+            // Setting the dialog container
+            DialogHostEx        = ContentDialogHost
         };
 
-        // Setting the dialog container
-        myDialog.DialogHost = ContentPresenterForDialogs;
-
         // Showing the dialog
-        await myDialog.ShowAsync(CancellationToken.None);
+        return myDialog.ShowAsync(CancellationToken.None);
     }
 }

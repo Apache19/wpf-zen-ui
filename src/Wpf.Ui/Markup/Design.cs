@@ -29,8 +29,7 @@ public static class Design
     /// </summary>
     private static bool InDesignMode =>
         _inDesignMode ??=
-            (bool)
-                DependencyPropertyDescriptor
+            (bool)DependencyPropertyDescriptor
                     .FromProperty(DesignerProperties.IsInDesignModeProperty, typeof(FrameworkElement))
                     .Metadata.DefaultValue
             || DesignProcesses.Any(process =>
@@ -41,14 +40,14 @@ public static class Design
 
     public static readonly DependencyProperty BackgroundProperty = DependencyProperty.RegisterAttached(
         "Background",
-        typeof(System.Windows.Media.Brush),
+        typeof(Brush),
         typeof(Design),
         new PropertyMetadata(OnBackgroundChanged)
     );
 
     public static readonly DependencyProperty ForegroundProperty = DependencyProperty.RegisterAttached(
         "Foreground",
-        typeof(System.Windows.Media.Brush),
+        typeof(Brush),
         typeof(Design),
         new PropertyMetadata(OnForegroundChanged)
     );
@@ -61,13 +60,13 @@ public static class Design
         "WPF0033:Add [AttachedPropertyBrowsableForType]",
         Justification = "Because"
     )]
-    public static System.Windows.Media.Brush? GetBackground(DependencyObject dependencyObject) =>
-        (System.Windows.Media.Brush)dependencyObject.GetValue(BackgroundProperty);
+    public static Brush? GetBackground(DependencyObject dependencyObject) =>
+        (Brush)dependencyObject.GetValue(BackgroundProperty);
 
     /// <summary>Helper for setting <see cref="BackgroundProperty"/> on <paramref name="dependencyObject"/>.</summary>
     /// <param name="dependencyObject"><see cref="DependencyObject"/> to set <see cref="BackgroundProperty"/> on.</param>
     /// <param name="value">Background property value.</param>
-    public static void SetBackground(DependencyObject dependencyObject, System.Windows.Media.Brush? value) =>
+    public static void SetBackground(DependencyObject dependencyObject, Brush? value) =>
         dependencyObject.SetValue(BackgroundProperty, value);
 
     /// <summary>Helper for getting <see cref="ForegroundProperty"/> from <paramref name="dependencyObject"/>.</summary>
@@ -78,13 +77,13 @@ public static class Design
         "WPF0033:Add [AttachedPropertyBrowsableForType]",
         Justification = "Because"
     )]
-    public static System.Windows.Media.Brush? GetForeground(DependencyObject dependencyObject) =>
-        (System.Windows.Media.Brush)dependencyObject.GetValue(ForegroundProperty);
+    public static Brush? GetForeground(DependencyObject dependencyObject) =>
+        (Brush)dependencyObject.GetValue(ForegroundProperty);
 
     /// <summary>Helper for setting <see cref="ForegroundProperty"/> on <paramref name="dependencyObject"/>.</summary>
     /// <param name="dependencyObject"><see cref="DependencyObject"/> to set <see cref="ForegroundProperty"/> on.</param>
     /// <param name="value">Foreground property value.</param>
-    public static void SetForeground(DependencyObject dependencyObject, System.Windows.Media.Brush? value) =>
+    public static void SetForeground(DependencyObject dependencyObject, Brush? value) =>
         dependencyObject.SetValue(ForegroundProperty, value);
 
     private static void OnBackgroundChanged(DependencyObject? d, DependencyPropertyChangedEventArgs e)

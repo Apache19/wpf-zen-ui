@@ -7,6 +7,7 @@
    and is intended for use on Windows systems only.
    This Source Code is partially based on the source code provided by the .NET Foundation. */
 
+using System.Runtime.InteropServices;
 using Microsoft.Win32;
 using Windows.Win32;
 using Windows.Win32.Foundation;
@@ -244,17 +245,24 @@ internal static class UnsafeNativeMethods
             return false;
         }
 
-        if (!PInvoke.IsWindow(new HWND(handle)))
+        var hwnd = new HWND(handle);
+
+        if (!PInvoke.IsWindow(hwnd))
         {
             return false;
         }
 
-        var windowStyleLong = PInvoke.GetWindowLong(new HWND(handle), WINDOW_LONG_PTR_INDEX.GWL_STYLE);
-        windowStyleLong &= ~(int)WINDOW_STYLE.WS_SYSMENU;
+        const int SysMenuFlag = (int)WINDOW_STYLE.WS_SYSMENU;
 
-        IntPtr result = SetWindowLong(handle, WINDOW_LONG_PTR_INDEX.GWL_STYLE, windowStyleLong);
+        var style   = PInvoke.GetWindowLong(hwnd, WINDOW_LONG_PTR_INDEX.GWL_STYLE);
+        var updated = style & ~SysMenuFlag;
 
-        return result.ToInt64() > 0;
+        if (updated != style)
+        {
+            _ = PInvoke.SetWindowLong(hwnd, WINDOW_LONG_PTR_INDEX.GWL_STYLE, updated);
+        }
+
+        return (PInvoke.GetWindowLong(hwnd, WINDOW_LONG_PTR_INDEX.GWL_STYLE) & SysMenuFlag) == 0;
     }
 
     /// <summary>
@@ -305,6 +313,7 @@ internal static class UnsafeNativeMethods
             return false;
         }
 
+        // ReSharper disable once SuspiciousTypeConversion.Global
         if (new TaskbarList() is not ITaskbarList4 taskbarList)
         {
             return false;
@@ -338,6 +347,7 @@ internal static class UnsafeNativeMethods
 
         /* TODO: Get existing taskbar class */
 
+        // ReSharper disable once SuspiciousTypeConversion.Global
         if (new TaskbarList() is not ITaskbarList4 taskbarList)
         {
             return false;
@@ -408,12 +418,5 @@ internal static class UnsafeNativeMethods
         windowHandle = new WindowInteropHelper(window).Handle;
 
         return windowHandle != IntPtr.Zero;
-    }
-
-    private static IntPtr SetWindowLong(IntPtr handle, WINDOW_LONG_PTR_INDEX nIndex, long windowStyleLong)
-    {
-        return IntPtr.Size == 4
-            ? new IntPtr(PInvoke.SetWindowLong(new HWND(handle), nIndex, (int)windowStyleLong))
-            : PInvoke.SetWindowLongPtr(new HWND(handle), nIndex, (nint)windowStyleLong);
     }
 }

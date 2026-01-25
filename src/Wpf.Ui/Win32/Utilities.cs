@@ -98,36 +98,6 @@ internal sealed class Utilities
         }
     }
 
-    public static void SafeDispose<T>(ref T disposable)
-        where T : IDisposable
-    {
-        // Dispose can safely be called on an object multiple times.
-        IDisposable t = disposable;
-        disposable = default;
-
-        if (t is null)
-        {
-            return;
-        }
-
-        t.Dispose();
-    }
-
-    public static void SafeRelease<T>(ref T comObject)
-        where T : class
-    {
-        T t = comObject;
-        comObject = default;
-
-        if (t is null)
-        {
-            return;
-        }
-
-        Debug.Assert(Marshal.IsComObject(t), "Object is not a COM object.");
-        _ = Marshal.ReleaseComObject(t);
-    }
-
     /// <summary>
     /// Tries to get the currently active window from the foreground HWND.
     /// </summary>

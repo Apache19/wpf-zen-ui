@@ -189,7 +189,7 @@ public class EffectThicknessDecorator : Decorator
             popup.Opened += (sender, args) => Opened?.Invoke(sender, args);
         }
 
-        public event EventHandler Opened;
+        public event EventHandler? Opened;
 
         public FrameworkElement? FrameworkElement =>
             _contextMenu ?? _toolTip ?? _popup?.Child as FrameworkElement;
