@@ -263,6 +263,12 @@ internal sealed class ContentDialogHostController
     {
         foreach (var obj in _disabledElements)
         {
+            if (obj is TitleBar titleBar)
+            {
+                titleBar.IsUserContentEnabled = true;
+                continue;
+            }
+
             switch (obj)
             {
                 case UIElement ui:
@@ -291,25 +297,33 @@ internal sealed class ContentDialogHostController
             return;
         }
 
-        var dp = d;
-
         // Special handling for the TitleBar
         if (d is TitleBar titleBar)
         {
-            dp = titleBar.UserContent as DependencyObject;
+            try
+            {
+                titleBar.IsUserContentEnabled = false;
+                _disabledElements.Add(d);
+            }
+            catch
+            {
+                // Ignore single element disable failure.
+            }
+
+            return;
         }
 
         try
         {
-            switch (dp)
+            switch (d)
             {
                 case UIElement { IsEnabled: true } ui:
-                    _disabledElements.Add(dp);
+                    _disabledElements.Add(d);
                     ui.SetCurrentValue(UIElement.IsEnabledProperty, false);
                     break;
 
                 case FrameworkContentElement { IsEnabled: true } fce:
-                    _disabledElements.Add(dp);
+                    _disabledElements.Add(d);
                     fce.SetCurrentValue(ContentElement.IsEnabledProperty, false);
                     break;
             }
