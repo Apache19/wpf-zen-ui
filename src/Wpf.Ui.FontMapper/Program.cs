@@ -3,6 +3,7 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
+using System.Diagnostics.CodeAnalysis;
 using System.Net.Http;
 using System.Net.Http.Json;
 using Wpf.Ui.FontMapper;
@@ -11,7 +12,7 @@ Console.WriteLine("Fluent System Icons Mapper");
 System.Diagnostics.Debug.WriteLine("INFO | Fluent System Icons Mapper", "Wpf.Ui.FontMapper");
 
 var workingDirectory =
-    Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)
+    Path.GetDirectoryName(AppContext.BaseDirectory)
     ?? throw new InvalidOperationException("Could not determine the working directory.");
 
 var regularIcons = new FontSource(
@@ -64,6 +65,8 @@ string FormatIconName(string rawIconName)
     return iconName;
 }
 
+[UnconditionalSuppressMessage("Trimming", "IL2026:Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code", Justification = "<Pending>")]
+[UnconditionalSuppressMessage("AOT", "IL3050:Calling members annotated with 'RequiresDynamicCodeAttribute' may break functionality when AOT compiling.", Justification = "<Pending>")]
 async Task FetchFontContents(FontSource source, string version)
 {
     using var httpClient = new HttpClient();

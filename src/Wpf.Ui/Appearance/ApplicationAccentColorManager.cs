@@ -32,6 +32,11 @@ namespace Wpf.Ui.Appearance;
 /// </example>
 public static class ApplicationAccentColorManager
 {
+    /// <summary>
+    /// The maximum value of the background HSV brightness after which the text on the accent will be turned dark.
+    /// </summary>
+    private const double BackgroundBrightnessThresholdValue = 80d;
+
     private static readonly IUISettings3? _uisettings;
     private static readonly bool _isSupported;
 
@@ -48,11 +53,6 @@ public static class ApplicationAccentColorManager
             // If we can't get the instance, we will use the fallback accent color.
         }
     }
-
-    /// <summary>
-    /// The maximum value of the background HSV brightness after which the text on the accent will be turned dark.
-    /// </summary>
-    private const double BackgroundBrightnessThresholdValue = 80d;
 
     /// <summary>
     /// Gets the SystemAccentColor.

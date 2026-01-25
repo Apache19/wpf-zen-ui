@@ -3,9 +3,9 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-namespace Wpf.Ui.Converters;
-
 using System.Windows.Data;
+
+namespace Wpf.Ui.Converters;
 
 public class CornerRadiusSplitConverter : IMultiValueConverter
 {

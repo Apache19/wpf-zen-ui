@@ -58,7 +58,7 @@ public abstract class UiTest : IAsyncLifetime
     /// After the specified time delay, the Task is completed in RanToCompletion state. If the <paramref name="cancellationToken"/>
     /// is cancelled, the returned task will be cancelled and an <see cref="OperationCanceledException"/> will be thrown.
     /// </remarks>
-    protected Task Wait(int seconds, CancellationToken cancellationToken = default) =>
+    protected static Task Wait(int seconds, CancellationToken cancellationToken = default) =>
         Task.Delay(TimeSpan.FromSeconds(seconds), cancellationToken);
 
     /// <summary>

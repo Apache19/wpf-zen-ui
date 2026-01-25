@@ -13,7 +13,7 @@ public static class ThemeUtilities
     {
         ApplicationThemeManager.Apply(frameworkElement);
 
-        void themeChanged(ApplicationTheme sender, Color args)
+        void ThemeChanged(ApplicationTheme sender, Color args)
         {
             ApplicationThemeManager.Apply(frameworkElement);
             if (frameworkElement is Window window)
@@ -23,7 +23,7 @@ public static class ThemeUtilities
                     WindowBackgroundManager.UpdateBackground(
                         window,
                         sender,
-                        Wpf.Ui.Controls.WindowBackdropType.None
+                        Controls.WindowBackdropType.None
                     );
                 }
             }
@@ -31,22 +31,22 @@ public static class ThemeUtilities
 
         if (frameworkElement.IsLoaded)
         {
-            ApplicationThemeManager.Changed += themeChanged;
+            ApplicationThemeManager.Changed += ThemeChanged;
         }
 
         frameworkElement.Loaded += (s, e) =>
         {
-            ApplicationThemeManager.Changed += themeChanged;
+            ApplicationThemeManager.Changed += ThemeChanged;
         };
         frameworkElement.Unloaded += (s, e) =>
         {
-            ApplicationThemeManager.Changed -= themeChanged;
+            ApplicationThemeManager.Changed -= ThemeChanged;
         };
 
 #if DEBUG
-        if (frameworkElement is Window window)
+        if (frameworkElement is Window dbgWindow)
         {
-            window.KeyDown += (s, e) =>
+            dbgWindow.KeyDown += (s, e) =>
             {
                 if (e.Key == System.Windows.Input.Key.T)
                 {

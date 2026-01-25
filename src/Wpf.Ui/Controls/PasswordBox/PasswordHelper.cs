@@ -67,7 +67,7 @@ public partial class PasswordBox
         /// <returns>The updated password string.</returns>
         private string HandleHiddenModeChanges(ICollection<TextChange> textChanges)
         {
-            string password = _currentPassword ?? "";
+            string password = _currentPassword ?? string.Empty;
 
             foreach (TextChange textChange in textChanges)
             {

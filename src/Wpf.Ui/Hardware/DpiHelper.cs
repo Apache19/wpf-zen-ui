@@ -6,6 +6,7 @@
 using Windows.Win32;
 using Windows.Win32.Foundation;
 using Wpf.Ui.Interop;
+using Wpf.Ui.Win32;
 
 namespace Wpf.Ui.Hardware;
 
@@ -33,20 +34,6 @@ internal static class DpiHelper
     */
 
     /// <summary>
-    /// Gets DPI of the selected <see cref="Window"/>.
-    /// </summary>
-    /// <param name="window">The window that you want to get information about.</param>
-    public static DisplayDpi GetWindowDpi(Window? window)
-    {
-        if (window is null)
-        {
-            return new DisplayDpi(DefaultDpi, DefaultDpi);
-        }
-
-        return GetWindowDpi(new WindowInteropHelper(window).Handle);
-    }
-
-    /// <summary>
     /// Gets DPI of the selected <see cref="Window"/> based on it's handle.
     /// </summary>
     /// <param name="windowHandle">Handle of the window that you want to get information about.</param>
@@ -57,9 +44,32 @@ internal static class DpiHelper
             return new DisplayDpi(DefaultDpi, DefaultDpi);
         }
 
-        var windowDpi = (int)PInvoke.GetDpiForWindow(new HWND(windowHandle));
+        if (Utilities.IsOSWindows10_14393_OrNewer)
+        {
+            #pragma warning disable CA1416
+            var windowDpi = (int)PInvoke.GetDpiForWindow(new HWND(windowHandle));
+            #pragma warning restore CA1416
 
-        return new DisplayDpi(windowDpi, windowDpi);
+            return new DisplayDpi(windowDpi, windowDpi);
+        }
+
+        return GetWindowDpi(HwndSource.FromHwnd(windowHandle)?.RootVisual as Window);
+    }
+
+    /// <summary>
+    /// Gets DPI of the selected <see cref="Window"/>.
+    /// </summary>
+    /// <param name="window">The window that you want to get information about.</param>
+    public static DisplayDpi GetWindowDpi(Window? window)
+    {
+        if (window is null)
+        {
+            return new DisplayDpi(DefaultDpi, DefaultDpi);
+        }
+
+        var dpiScale = VisualTreeHelper.GetDpi(window);
+
+        return new DisplayDpi(dpiScale.DpiScaleX, dpiScale.DpiScaleY);
     }
 
     // TODO: Look into utilizing preprocessor symbols for more functionality

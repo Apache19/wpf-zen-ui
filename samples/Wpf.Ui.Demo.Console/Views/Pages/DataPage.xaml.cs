@@ -13,14 +13,14 @@ namespace Wpf.Ui.Demo.Console.Views.Pages;
 /// </summary>
 public partial class DataPage
 {
-    public ObservableCollection<DataColor> ColorsCollection = [];
+    private readonly ObservableCollection<DataColor> _colorsCollection = [];
 
     public DataPage()
     {
         InitializeData();
         InitializeComponent();
 
-        ColorsItemsControl.ItemsSource = ColorsCollection;
+        ColorsItemsControl.ItemsSource = _colorsCollection;
 
         this.ApplyTheme();
     }
@@ -31,12 +31,12 @@ public partial class DataPage
 
         for (int i = 0; i < 8192; i++)
         {
-            ColorsCollection.Add(
+            _colorsCollection.Add(
                 new DataColor
                 {
                     Color = new SolidColorBrush(
                         Color.FromArgb(
-                            (byte)200,
+                            200,
                             (byte)random.Next(0, 250),
                             (byte)random.Next(0, 250),
                             (byte)random.Next(0, 250)
