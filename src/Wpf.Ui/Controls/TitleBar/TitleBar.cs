@@ -12,7 +12,6 @@ using Windows.Win32.UI.WindowsAndMessaging;
 using Wpf.Ui.Designer;
 using Wpf.Ui.Extensions.Wpf;
 using Wpf.Ui.Hardware;
-using Wpf.Ui.Win32;
 
 // ReSharper disable SuspiciousTypeConversion.Global
 // ReSharper disable once CheckNamespace
@@ -40,10 +39,15 @@ namespace Wpf.Ui.Controls;
 /// non-client processing. It coordinates with the underlying window and
 /// message loop instead of attempting to reimplement system behavior.
 /// </remarks>
-public class TitleBar : Control
+public class TitleBar : ContentControl
 {
     static TitleBar()
     {
+        DefaultStyleKeyProperty.OverrideMetadata(
+            typeof(TitleBar),
+            new FrameworkPropertyMetadata(typeof(TitleBar))
+        );
+
         // Ensure a non-null Background by default to preserve hit-testing behavior.
         // A Transparent brush is used as a safe fallback to prevent hit testing from
         // being disabled when Background is explicitly set to null.
@@ -65,7 +69,7 @@ public class TitleBar : Control
         );
     }
 
-    #region DP: Icon, Title, UserContent, IsIconInteractionEnabled, IsNcActive, WindowStyle, WindowResizeMode, ElementIdentity
+    #region DP: Icon, Title, IsIconInteractionEnabled, IsNcActive, WindowStyle, WindowResizeMode, ElementIdentity
 
     #region Icon
 
@@ -133,49 +137,6 @@ public class TitleBar : Control
     {
         get => (object?)GetValue(TitleProperty);
         set => SetValue(TitleProperty, value);
-    }
-
-    #endregion
-
-    #region UserContent
-
-    /// <summary>
-    /// Identifies the <see cref="UserContent"/> dependency property.
-    /// </summary>
-    public static readonly DependencyProperty UserContentProperty = DependencyProperty.Register(
-        nameof(UserContent),
-        typeof(object),
-        typeof(TitleBar),
-        new PropertyMetadata(null)
-    );
-
-    /// <summary>
-    /// Gets or sets the custom content displayed in the center area of the TitleBar.
-    /// </summary>
-    /// <remarks>
-    /// This property allows developers to inject arbitrary UI elements into the middle
-    /// section of the title bar, such as search boxes, navigation controls, or status indicators.
-    ///
-    /// The TitleBar does not perform any automatic layout or styling for this content.
-    /// Consumers are responsible for arranging, aligning, and styling the provided UI
-    /// to ensure visual consistency with the rest of the application.
-    ///
-    /// If this property is not set, the center area of the title bar remains empty.
-    /// </remarks>
-    /// <example>
-    /// &lt;ui:TitleBar&gt;
-    ///     &lt;ui:TitleBar.UserContent&gt;
-    ///         &lt;StackPanel Orientation="Horizontal" VerticalAlignment="Center"&gt;
-    ///             &lt;Button Content="User Button"/&gt;
-    ///             &lt;TextBlock Text="User Content"/&gt;
-    ///         &lt;/StackPanel&gt;
-    ///     &lt;/ui:TitleBar.UserContent&gt;
-    /// &lt;/ui:TitleBar&gt;
-    /// </example>
-    public object? UserContent
-    {
-        get => GetValue(UserContentProperty);
-        set => SetValue(UserContentProperty, value);
     }
 
     #endregion
@@ -248,6 +209,35 @@ public class TitleBar : Control
     {
         get => (bool)GetValue(IsNcActiveProperty);
         protected set => SetValue(IsNcActivePropertyKey, value);
+    }
+
+    #endregion
+
+    #region IsUserContentEnabled
+
+    /// <summary>
+    /// Identifies the <see cref="IsUserContentEnabled"/> dependency property.
+    /// </summary>
+    internal static readonly DependencyProperty IsUserContentEnabledProperty =
+        DependencyProperty.Register(
+            nameof(IsUserContentEnabled),
+            typeof(bool),
+            typeof(TitleBar),
+            new PropertyMetadata(true)
+        );
+
+    /// <summary>
+    /// Gets or sets a value indicating whether user-provided content is enabled.
+    ///
+    /// This property is intended for internal coordination between <see cref="TitleBar"/>
+    /// and <see cref="ContentDialog"/> to support input isolation while a dialog is shown.
+    /// Exposing this behavior publicly has no meaningful use case, as consumers are expected
+    /// to manage the enabled state of their own content directly.
+    /// </summary>
+    internal bool IsUserContentEnabled
+    {
+        get => (bool)GetValue(IsUserContentEnabledProperty);
+        set => SetValue(IsUserContentEnabledProperty, value);
     }
 
     #endregion

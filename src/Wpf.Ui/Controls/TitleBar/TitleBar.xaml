@@ -30,10 +30,9 @@
             <!--  User content  -->
             <ContentPresenter
                 Grid.Column="1"
-                HorizontalAlignment="Stretch"
                 VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
                 controls:TitleBar.ElementIdentity="UserContent"
-                Content="{TemplateBinding UserContent}" />
+                IsEnabled="{TemplateBinding IsUserContentEnabled}" />
             <!--  Close Button  -->
             <controls:TitleBarButton
                 Grid.Column="2"
@@ -51,7 +50,6 @@
         <Setter Property="Foreground" Value="{DynamicResource TitleBarForeground}" />
         <Setter Property="Padding" Value="16,4,16,4" />
         <Setter Property="Height" Value="48" />
-        <Setter Property="ElementIdentity" Value="Caption" />
         <Setter Property="VerticalContentAlignment" Value="Stretch" />
         <Setter Property="Template">
             <Setter.Value>
@@ -60,6 +58,7 @@
                         x:Name="MainGrid"
                         HorizontalAlignment="Stretch"
                         VerticalAlignment="Stretch"
+                        controls:TitleBar.ElementIdentity="Caption"
                         Background="{TemplateBinding Background}">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto" />
@@ -107,10 +106,9 @@
                             <!--  User content  -->
                             <ContentPresenter
                                 Grid.Column="1"
-                                HorizontalAlignment="Stretch"
                                 VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
                                 controls:TitleBar.ElementIdentity="UserContent"
-                                Content="{TemplateBinding UserContent}" />
+                                IsEnabled="{TemplateBinding IsUserContentEnabled}" />
 
                             <!--  System buttons - Close, Restore, Maximize, Minimize  -->
                             <Grid
