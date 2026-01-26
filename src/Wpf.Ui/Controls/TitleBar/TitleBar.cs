@@ -227,17 +227,17 @@ public class TitleBar : ContentControl
         );
 
     /// <summary>
-    /// Gets or sets a value indicating whether user-provided content is enabled.
+    /// Gets a value indicating whether user-provided content is enabled.
     ///
     /// This property is intended for internal coordination between <see cref="TitleBar"/>
     /// and <see cref="ContentDialog"/> to support input isolation while a dialog is shown.
     /// Exposing this behavior publicly has no meaningful use case, as consumers are expected
     /// to manage the enabled state of their own content directly.
     /// </summary>
-    internal bool IsUserContentEnabled
+    public bool IsUserContentEnabled
     {
         get => (bool)GetValue(IsUserContentEnabledProperty);
-        set => SetValue(IsUserContentEnabledProperty, value);
+        internal set => SetValue(IsUserContentEnabledProperty, value);
     }
 
     #endregion
@@ -386,7 +386,7 @@ public class TitleBar : ContentControl
     /// This property is not intended for general application logic and should only be
     /// used when integrating custom elements into the title bar interaction model.
     /// </remarks>
-    public static readonly DependencyProperty ElementIdentityProperty =
+    private static readonly DependencyProperty ElementIdentityProperty =
         DependencyProperty.RegisterAttached(
             "ElementIdentity",
             typeof(TitleBarElementIdentity),
