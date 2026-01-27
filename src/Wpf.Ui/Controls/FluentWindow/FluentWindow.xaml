@@ -26,9 +26,7 @@
                 <ControlTemplate TargetType="{x:Type Window}">
                     <AdornerDecorator>
                         <controls:ClientAreaBorder
-                            Background="{TemplateBinding Background}"
-                            BorderBrush="{TemplateBinding BorderBrush}"
-                            BorderThickness="{TemplateBinding BorderThickness}">
+                            Background="{TemplateBinding Background}">
                             <ContentPresenter x:Name="ContentPresenter" />
                         </controls:ClientAreaBorder>
                     </AdornerDecorator>

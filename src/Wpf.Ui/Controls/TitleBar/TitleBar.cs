@@ -591,6 +591,14 @@ public class TitleBar : ContentControl
 
             case PInvoke.WM_NCHITTEST:
             {
+
+                var b = PInvoke.DwmDefWindowProc(new HWND(hwnd), (uint)msg, new WPARAM((uint)wParam), new LPARAM(lParam), out LRESULT plResult);
+                if (b)
+                {
+                    PInvoke.SendMessage((HWND)hwnd, WM_NCHITTEST_RESOLVED, 0, 0);
+                    return plResult;
+                }
+
                 var screenPoint = LParamToPoint(lParam);
 
                 // When WindowChrome is in use, WindowChromeWorker prioritizes user content

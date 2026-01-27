@@ -21,7 +21,7 @@
     ui:Design.Foreground="{DynamicResource TextFillColorPrimaryBrush}"
     ExtendsContentIntoTitleBar="True"
     SizeChanged="MainWindow_OnSizeChanged"
-    WindowBackdropType="Mica"
+    WindowBackdropType="Acrylic"
     WindowCornerPreference="Default"
     WindowStartupLocation="CenterScreen"
     mc:Ignorable="d">

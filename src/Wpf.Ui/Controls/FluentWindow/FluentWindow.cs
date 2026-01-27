@@ -3,9 +3,15 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Windows.Shell;
+using Windows.Win32;
+using Windows.Win32.Foundation;
+using Windows.Win32.UI.Controls;
+using Windows.Win32.UI.WindowsAndMessaging;
 using Wpf.Ui.Appearance;
+using Wpf.Ui.Hardware;
 using Wpf.Ui.Interop;
 using Wpf.Ui.Win32;
 
@@ -32,7 +38,10 @@ public class FluentWindow : System.Windows.Window
         nameof(WindowCornerPreference),
         typeof(WindowCornerPreference),
         typeof(FluentWindow),
-        new PropertyMetadata(WindowCornerPreference.Round, OnWindowCornerPreferenceChanged)
+        new PropertyMetadata(
+            WindowCornerPreference.Round // ,
+            // OnWindowCornerPreferenceChanged
+        )
     );
 
     /// <summary>Identifies the <see cref="WindowBackdropType"/> dependency property.</summary>
@@ -40,7 +49,10 @@ public class FluentWindow : System.Windows.Window
         nameof(WindowBackdropType),
         typeof(WindowBackdropType),
         typeof(FluentWindow),
-        new PropertyMetadata(WindowBackdropType.None, OnWindowBackdropTypeChanged)
+        new PropertyMetadata(
+            WindowBackdropType.None // ,
+            // OnWindowBackdropTypeChanged
+        )
     );
 
     /// <summary>Identifies the <see cref="ExtendsContentIntoTitleBar"/> dependency property.</summary>
@@ -49,7 +61,10 @@ public class FluentWindow : System.Windows.Window
             nameof(ExtendsContentIntoTitleBar),
             typeof(bool),
             typeof(FluentWindow),
-            new PropertyMetadata(false, OnExtendsContentIntoTitleBarChanged)
+            new PropertyMetadata(
+                false // ,
+                // OnExtendsContentIntoTitleBarChanged
+            )
         );
 
     /// <summary>
@@ -121,6 +136,55 @@ public class FluentWindow : System.Windows.Window
         OnBackdropTypeChanged(default, WindowBackdropType);
 
         base.OnSourceInitialized(e);
+
+        if (PresentationSource.FromVisual(this) is HwndSource hwndSource)
+        {
+            hwndSource.AddHook(FluentWindowSourceHook);
+        }
+    }
+
+    private IntPtr FluentWindowSourceHook(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
+    {
+        var uMsg = (uint)msg;
+
+        switch (uMsg)
+        {
+            case PInvoke.WM_NCCALCSIZE:
+            {
+                handled = true;
+
+                if (wParam.ToInt32() != 0)
+                {
+                    var p = Marshal.PtrToStructure<NCCALCSIZE_PARAMS>(lParam);
+
+                    p.rgrc._2 = p.rgrc._1;
+                    p.rgrc._1 = p.rgrc._0;
+
+                    p.rgrc._0.left   += 8;
+                    p.rgrc._0.right  -= 8;
+                    p.rgrc._0.top    += 2;
+                    p.rgrc._0.bottom -= 8;
+
+                    Marshal.StructureToPtr(p, lParam, false);
+
+                    return (IntPtr)PInvoke.WVR_REDRAW;
+                }
+                else
+                {
+                    var rcClientArea = Marshal.PtrToStructure<RECT>(lParam);
+
+                    rcClientArea.left   += 8;
+                    rcClientArea.right  -= 8;
+                    rcClientArea.top    += 2;
+                    rcClientArea.bottom -= 8;
+
+                    Marshal.StructureToPtr(rcClientArea, lParam, false);
+                    return IntPtr.Zero;
+                }
+            }
+        }
+
+        return IntPtr.Zero;
     }
 
     /// <inheritdoc />
@@ -219,7 +283,7 @@ public class FluentWindow : System.Windows.Window
             return;
         }
 
-        SetWindowChrome();
+        // SetWindowChrome();
 
         if (newValue == WindowBackdropType.None)
         {
@@ -290,7 +354,7 @@ public class FluentWindow : System.Windows.Window
                     new WindowChrome
                     {
                         CaptionHeight = 0,
-                        CornerRadius = default,
+                        CornerRadius  = default,
                         GlassFrameThickness =
                             WindowBackdropType == WindowBackdropType.None
                                 ? new Thickness(0.00001)

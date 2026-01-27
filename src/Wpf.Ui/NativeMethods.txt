@@ -1,6 +1,5 @@
 S_OK
 DwmIsCompositionEnabled
-DwmExtendFrameIntoClientArea
 SetWindowThemeAttribute
 GetDpiForWindow
 GetForegroundWindow
@@ -16,6 +15,8 @@ GetSystemMetrics
 IsWindow
 DwmSetWindowAttribute
 DwmGetWindowAttribute
+DefWindowProc
+DwmDefWindowProc
 ITaskbarList4
 TaskbarList
 DWM_SYSTEMBACKDROP_TYPE
@@ -25,6 +26,8 @@ WINDOW_STYLE
 WTA_OPTIONS
 WTNCA_*
 WM_*
+WVR_*
+NCCALCSIZE_PARAMS
 HTERROR
 HTTRANSPARENT
 HTNOWHERE
