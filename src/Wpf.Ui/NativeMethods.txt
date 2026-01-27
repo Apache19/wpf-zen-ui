@@ -13,7 +13,6 @@ SendMessage
 TrackMouseEvent
 RegisterWindowMessage
 GetSystemMetrics
-GetSystemMetricsForDpi
 IsWindow
 DwmSetWindowAttribute
 DwmGetWindowAttribute
@@ -26,7 +25,6 @@ WINDOW_STYLE
 WTA_OPTIONS
 WTNCA_*
 WM_*
-WVR_*
 HTERROR
 HTTRANSPARENT
 HTNOWHERE

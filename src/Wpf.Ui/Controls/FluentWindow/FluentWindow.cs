@@ -3,14 +3,9 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Windows.Shell;
-using Windows.Win32;
-using Windows.Win32.Foundation;
-using Windows.Win32.UI.WindowsAndMessaging;
 using Wpf.Ui.Appearance;
-using Wpf.Ui.Hardware;
 using Wpf.Ui.Interop;
 using Wpf.Ui.Win32;
 
@@ -22,12 +17,6 @@ namespace Wpf.Ui.Controls;
 /// </summary>
 public class FluentWindow : System.Windows.Window
 {
-    private static readonly object _systemMetricCacheLock = new();
-    private static volatile bool _systemMetricCacheInvalidated = true;
-    private static int _cachedSmCxSizeFrame;
-    private static int _cachedSmCySizeFrame;
-    private static int _cachedSmCxPaddedBorder;
-
     private WindowInteropHelper? _interopHelper = null;
 
     /// <summary>
@@ -96,6 +85,17 @@ public class FluentWindow : System.Windows.Window
     public FluentWindow()
     {
         SetResourceReference(StyleProperty, typeof(FluentWindow));
+
+        if (Utilities.IsOSWindows11OrNewer)
+        {
+            ApplicationThemeManager.Changed += (_, _) =>
+            {
+                if (IsActive && ApplicationAccentColorManager.IsAccentColorOnTitleBarsEnabled)
+                {
+                    UnsafeNativeMethods.ApplyBorderColor(this, ApplicationAccentColorManager.SystemAccent);
+                }
+            };
+        }
     }
 
     /// <summary>
@@ -121,138 +121,28 @@ public class FluentWindow : System.Windows.Window
         OnBackdropTypeChanged(default, WindowBackdropType);
 
         base.OnSourceInitialized(e);
+    }
 
-        if (PresentationSource.FromVisual(this) is HwndSource hwndSource)
+    /// <inheritdoc />
+    protected override void OnActivated(EventArgs e)
+    {
+        base.OnActivated(e);
+
+        if (Utilities.IsOSWindows11OrNewer && ApplicationAccentColorManager.IsAccentColorOnTitleBarsEnabled)
         {
-            hwndSource.AddHook(FluentWindowSourceHook);
-            var chrome = WindowChrome.GetWindowChrome(this);
-            if (chrome is not null)
-            {
-                chrome.ResizeBorderThickness = GetWindowBorderThickness(hwndSource.Handle);
-            }
+            UnsafeNativeMethods.ApplyBorderColor(this, ApplicationAccentColorManager.SystemAccent);
         }
     }
 
-    // 包含 SM_CXPADDINGBORDER + SYSTEM_METRICS_INDEX.SM_CXSIZEFRAME/SYSTEM_METRICS_INDEX.SM_CYSIZEFRAME 的边框厚度，
-    // 其中是否包含 SM_CXPADDINGBORDER 根据窗口是否有 WINDOW_STYLE.WS_CAPTION 风格决定
-    private Thickness GetWindowBorderThickness(IntPtr hwnd)
+    /// <inheritdoc />
+    protected override void OnDeactivated(EventArgs e)
     {
-        if (hwnd == IntPtr.Zero)
+        base.OnDeactivated(e);
+
+        if (Utilities.IsOSWindows11OrNewer)
         {
-            return default;
-        }
-
-        var    dpi    = DpiHelper.GetSystemDpi();
-        double scaleX = dpi.DpiX / (double)DpiHelper.DefaultDpi;
-        double scaleY = dpi.DpiY / (double)DpiHelper.DefaultDpi;
-
-        var paddingBorder = 0;
-
-        WINDOW_STYLE style = 0;
-
-        try
-        {
-            style = (WINDOW_STYLE)PInvoke.GetWindowLong(new HWND(hwnd), WINDOW_LONG_PTR_INDEX.GWL_STYLE);
-        }
-        catch
-        {
-            style = 0;
-        }
-
-        EnsureSystemMetricCache();
-
-        if ((style & WINDOW_STYLE.WS_CAPTION) != 0)
-        {
-            paddingBorder = _cachedSmCxPaddedBorder;
-        }
-
-        var max = (style & WINDOW_STYLE.WS_MAXIMIZE) == WINDOW_STYLE.WS_MAXIMIZE;
-
-        var frameX = _cachedSmCxSizeFrame;
-        var frameY = _cachedSmCySizeFrame;
-
-        return new Thickness(
-            (paddingBorder + frameX) / scaleX,
-            max ? (paddingBorder + frameY) / scaleY : 1, // 给顶部留1像素边框,最大化时则按全量
-            (paddingBorder + frameX) / scaleX,
-            (paddingBorder + frameY) / scaleY
-        );
-    }
-
-    private IntPtr FluentWindowSourceHook(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
-    {
-        var uMsg = (uint)msg;
-
-        switch (uMsg)
-        {
-            case PInvoke.WM_WININICHANGE:
-            {
-                InvalidateSystemMetricCache();
-                break;
-            }
-
-            // 纠正 WindowChrome 无脑将客户区内容放进所有非客户区的行为，我们只需要把客户区内容放进标题栏的功能。
-            // 此外，WindowChrome 的非客户区计算方法已过时，它没有考虑 SM_CXPADDINGBORDER（带有标题的窗口有这个填充边框）。
-            case PInvoke.WM_NCCALCSIZE:
-            {
-                // todo 当wParam==true时，窗口位置、大小可能发生了变化，此时应该读取窗口样式，根据最大化、最小化等状态重新计算客户区尺寸。
-                // todo 最大化时系统会按照全量窗口边框将其放置在工作区外，所以此时计算客户区大小应该谨慎。
-                // todo 关于在Win7系统里使用WindowChrome会导致边框黑屏，我怀疑就是因为WindowChrome强制将边框设为0，
-                //      而系统需要绘制边框，但此时计算出的客户区与系统认为的窗口非客户区（边框）重叠而导致的。
-                // todo 最终解决方案应该是不管什么系统，都应按照系统认为的窗口边框宽度来调整客户区大小，这样有2个好处，一是窗口可以像正常窗口一样
-                //      调整大小，而不是在窗口内部，二是解决了Win7系统边框黑屏的问题
-                // todo 实际上WindowChrome无脑让客户区内容放进“所有非客户区”的做法是错误的。真正应该实现的是只让客户区内容可以放进“标题栏”（不应干涉窗口边框）。
-                var rcClientArea = Marshal.PtrToStructure<RECT>(lParam);
-
-                var dpi    = DpiHelper.GetWindowDpi(hwnd);
-                var border = DpiHelper.LogicalThicknessToDevice(GetWindowBorderThickness(hwnd), dpi.DpiScaleX, dpi.DpiScaleY) ;
-
-                // Debug border
-                Debug.WriteLine($"Border Thickness: Left={border.Left}, Top={border.Top}, Right={border.Right}, Bottom={border.Bottom}");
-
-                rcClientArea.left   += (int)border.Left;
-                rcClientArea.right  -= (int)border.Right;
-                rcClientArea.top    += (int)border.Top;
-                rcClientArea.bottom -= (int)border.Bottom;
-
-                Marshal.StructureToPtr(rcClientArea, lParam, false);
-
-                handled = true;
-
-                IntPtr retVal = IntPtr.Zero;
-                if (wParam.ToInt32() != 0) // wParam == TRUE
-                {
-                    retVal = (IntPtr)PInvoke.WVR_REDRAW;
-                }
-
-                return retVal;
-            }
-        }
-
-        return IntPtr.Zero;
-    }
-
-    private static void InvalidateSystemMetricCache() => _systemMetricCacheInvalidated = true;
-
-    private static void EnsureSystemMetricCache()
-    {
-        if (!_systemMetricCacheInvalidated)
-        {
-            return;
-        }
-
-        lock (_systemMetricCacheLock)
-        {
-            if (!_systemMetricCacheInvalidated)
-            {
-                return;
-            }
-
-            _cachedSmCxSizeFrame = PInvoke.GetSystemMetrics(SYSTEM_METRICS_INDEX.SM_CXSIZEFRAME);
-            _cachedSmCySizeFrame = PInvoke.GetSystemMetrics(SYSTEM_METRICS_INDEX.SM_CYSIZEFRAME);
-            _cachedSmCxPaddedBorder = PInvoke.GetSystemMetrics(SYSTEM_METRICS_INDEX.SM_CXPADDEDBORDER);
-
-            _systemMetricCacheInvalidated = false;
+            // DWMWA_COLOR_DEFAULT.
+            UnsafeNativeMethods.ApplyBorderColor(this, unchecked((int)0xFFFFFFFF));
         }
     }
 
@@ -400,7 +290,7 @@ public class FluentWindow : System.Windows.Window
                     new WindowChrome
                     {
                         CaptionHeight = 0,
-                        CornerRadius  = default,
+                        CornerRadius = default,
                         GlassFrameThickness =
                             WindowBackdropType == WindowBackdropType.None
                                 ? new Thickness(0.00001)
