@@ -142,7 +142,7 @@ public class FluentWindow : System.Windows.Window
         if (PresentationSource.FromVisual(this) is HwndSource hwndSource)
         {
             hwndSource.AddHook(FluentWindowSourceHook);
-
+  
             unsafe
             {
                 // DWMNCRENDERINGPOLICY ncrp = DWMNCRENDERINGPOLICY.DWMNCRP_DISABLED;
@@ -151,7 +151,7 @@ public class FluentWindow : System.Windows.Window
                 // bool b = false;
                 // PInvoke.DwmSetWindowAttribute((HWND)hwndSource.Handle, DWMWINDOWATTRIBUTE.DWMWA_ALLOW_NCPAINT, &b, sizeof(bool));
 
-                // PInvoke.DwmExtendFrameIntoClientArea((HWND)hwndSource.Handle, new MARGINS() { cxLeftWidth = -2, cxRightWidth = -2, cyTopHeight = -2, cyBottomHeight = -2 });
+                PInvoke.DwmExtendFrameIntoClientArea((HWND)hwndSource.Handle, new MARGINS() { cxLeftWidth = 0, cxRightWidth = 0, cyTopHeight = -1, cyBottomHeight = 0 });
             }
         }
     }
@@ -162,48 +162,59 @@ public class FluentWindow : System.Windows.Window
 
         switch (uMsg)
         {
+            // WindowChromeWorker 说lParam是-1时，不会绘制标题栏，但看起来似乎没有用处
             case PInvoke.WM_NCACTIVATE:
-                IntPtr lRet = PInvoke.DefWindowProc((HWND)hwnd, (uint)msg, new WPARAM((uint)wParam), new LPARAM(-1));
+                var b = PInvoke.DefWindowProc(new HWND(hwnd), uMsg, new WPARAM((uint)wParam), -1);
                 handled = true;
-                return lRet;
+                return b;
 
             case PInvoke.WM_NCCALCSIZE:
             {
-                handled = true;
-
                 if (wParam.ToInt32() != 0)
                 {
                     var p = Marshal.PtrToStructure<NCCALCSIZE_PARAMS>(lParam);
 
-                    PInvoke.CopyRect(out p.rgrc._2, in p.rgrc._1);
-                    PInvoke.CopyRect(out p.rgrc._1, in p.rgrc._0);
+                    // PInvoke.CopyRect(out p.rgrc._2, in p.rgrc._1);
+                    // PInvoke.CopyRect(out p.rgrc._1, in p.rgrc._0);
+                    // PInvoke.CopyRect(out p.rgrc._0, in p.rgrc._1);
 
-                    p.rgrc._0.left   += 10;
-                    p.rgrc._0.right  -= 10;
-                    p.rgrc._0.top    += 2;
-                    p.rgrc._0.bottom -= 10;
+                    p.rgrc._0.left   += 13;
+                    p.rgrc._0.right  -= 13;
+                    p.rgrc._0.top    += 0;
+                    p.rgrc._0.bottom -= 13;
+
+                    // p.rgrc._1.left   += 10;
+                    // p.rgrc._1.right  -= 10;
+                    // p.rgrc._1.top    += 2;
+                    // p.rgrc._1.bottom -= 8;
+
+                    // p.rgrc._2.left   += 10;
+                    // p.rgrc._2.right  -= 10;
+                    // p.rgrc._2.top    += 0;
+                    // p.rgrc._2.bottom -= 10;
 
                     Marshal.StructureToPtr(p, lParam, false);
-
-                    return (IntPtr)(PInvoke.WVR_VALIDRECTS);
+                    handled = true;
+                    return new IntPtr(PInvoke.WVR_REDRAW);
                 }
-                else
-                {
-                    var rcClientArea = Marshal.PtrToStructure<RECT>(lParam);
 
-                    rcClientArea.left   += 10;
-                    rcClientArea.right  -= 10;
-                    rcClientArea.top    += 2;
-                    rcClientArea.bottom -= 10;
-
-                    Marshal.StructureToPtr(rcClientArea, lParam, false);
-                }
+                // else
+                // {
+                //     var rcClientArea = Marshal.PtrToStructure<RECT>(lParam);
+                //
+                //     rcClientArea.left   += 10;
+                //     rcClientArea.right  -= 10;
+                //     rcClientArea.top    += 2;
+                //     rcClientArea.bottom -= 10;
+                //
+                //     Marshal.StructureToPtr(rcClientArea, lParam, false);
+                // }
 
                 break;
             }
         }
 
-        return IntPtr.Zero;
+        return new IntPtr(-1);
     }
 
     /// <inheritdoc />
