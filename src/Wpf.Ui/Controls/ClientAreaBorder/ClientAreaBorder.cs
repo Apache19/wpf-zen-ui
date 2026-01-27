@@ -14,6 +14,8 @@ using Size = System.Windows.Size;
 // ReSharper disable once CheckNamespace
 namespace Wpf.Ui.Controls;
 
+#warning 如果非客户区尺寸计算正确，则不再需要此类。
+
 /// <summary>
 /// If you use <see cref="WindowChrome"/> to extend the UI elements to the non-client area, you can include this container
 /// in the template of <see cref="Window"/> so that the content inside automatically fills the client area.

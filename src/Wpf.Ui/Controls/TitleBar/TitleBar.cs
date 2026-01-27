@@ -293,14 +293,14 @@ public class TitleBar : ContentControl
             typeof(WindowState),
             typeof(TitleBar),
             new FrameworkPropertyMetadata(
-                WindowState.Normal,
-                static (d, e) =>
-                {
-                    if (d is TitleBar titleBar && e.NewValue is WindowState state)
-                    {
-                        titleBar.WindowStateChanged(state);
-                    }
-                }
+                WindowState.Normal // ,
+                // static (d, e) =>
+                // {
+                //     if (d is TitleBar titleBar && e.NewValue is WindowState state)
+                //     {
+                //         titleBar.WindowStateChanged(state);
+                //     }
+                // }
             )
         );
 
@@ -864,6 +864,7 @@ public class TitleBar : ContentControl
         }
     }
 
+    // todo 如果客户区计算正确，则不需要判断窗口状态来重新调整Chrome的尺寸调整边框厚度。
     private void WindowStateChanged(WindowState newState)
     {
         if (_chrome is not null)
