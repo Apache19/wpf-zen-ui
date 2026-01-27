@@ -1,5 +1,4 @@
 S_OK
-DwmIsCompositionEnabled
 SetWindowThemeAttribute
 GetDpiForWindow
 GetForegroundWindow
@@ -13,8 +12,14 @@ TrackMouseEvent
 RegisterWindowMessage
 GetSystemMetrics
 IsWindow
+CopyRect
+DwmIsCompositionEnabled
 DwmSetWindowAttribute
 DwmGetWindowAttribute
+DwmEnableComposition
+DwmExtendFrameIntoClientArea
+DWM_EC_DISABLECOMPOSITION
+DWMNCRENDERINGPOLICY
 DefWindowProc
 DwmDefWindowProc
 ITaskbarList4

@@ -8,12 +8,14 @@ using System.Runtime.InteropServices;
 using System.Windows.Shell;
 using Windows.Win32;
 using Windows.Win32.Foundation;
+using Windows.Win32.Graphics.Dwm;
 using Windows.Win32.UI.Controls;
 using Windows.Win32.UI.WindowsAndMessaging;
 using Wpf.Ui.Appearance;
 using Wpf.Ui.Hardware;
 using Wpf.Ui.Interop;
 using Wpf.Ui.Win32;
+using static Wpf.Ui.Appearance.UISettingsRCW;
 
 // ReSharper disable once CheckNamespace
 namespace Wpf.Ui.Controls;
@@ -131,15 +133,26 @@ public class FluentWindow : System.Windows.Window
     /// <inheritdoc />
     protected override void OnSourceInitialized(EventArgs e)
     {
-        OnCornerPreferenceChanged(default, WindowCornerPreference);
-        OnExtendsContentIntoTitleBarChanged(false, ExtendsContentIntoTitleBar);
-        OnBackdropTypeChanged(default, WindowBackdropType);
+        // OnCornerPreferenceChanged(default, WindowCornerPreference);
+        // OnExtendsContentIntoTitleBarChanged(false, ExtendsContentIntoTitleBar);
+        // OnBackdropTypeChanged(default, WindowBackdropType);
 
         base.OnSourceInitialized(e);
 
         if (PresentationSource.FromVisual(this) is HwndSource hwndSource)
         {
             hwndSource.AddHook(FluentWindowSourceHook);
+
+            unsafe
+            {
+                // DWMNCRENDERINGPOLICY ncrp = DWMNCRENDERINGPOLICY.DWMNCRP_DISABLED;
+                // PInvoke.DwmSetWindowAttribute((HWND)hwndSource.Handle, DWMWINDOWATTRIBUTE.DWMWA_NCRENDERING_POLICY, &ncrp, sizeof(DWMNCRENDERINGPOLICY));
+                //
+                // bool b = false;
+                // PInvoke.DwmSetWindowAttribute((HWND)hwndSource.Handle, DWMWINDOWATTRIBUTE.DWMWA_ALLOW_NCPAINT, &b, sizeof(bool));
+
+                // PInvoke.DwmExtendFrameIntoClientArea((HWND)hwndSource.Handle, new MARGINS() { cxLeftWidth = -2, cxRightWidth = -2, cyTopHeight = -2, cyBottomHeight = -2 });
+            }
         }
     }
 
@@ -149,6 +162,11 @@ public class FluentWindow : System.Windows.Window
 
         switch (uMsg)
         {
+            case PInvoke.WM_NCACTIVATE:
+                IntPtr lRet = PInvoke.DefWindowProc((HWND)hwnd, (uint)msg, new WPARAM((uint)wParam), new LPARAM(-1));
+                handled = true;
+                return lRet;
+
             case PInvoke.WM_NCCALCSIZE:
             {
                 handled = true;
@@ -157,30 +175,31 @@ public class FluentWindow : System.Windows.Window
                 {
                     var p = Marshal.PtrToStructure<NCCALCSIZE_PARAMS>(lParam);
 
-                    p.rgrc._2 = p.rgrc._1;
-                    p.rgrc._1 = p.rgrc._0;
+                    PInvoke.CopyRect(out p.rgrc._2, in p.rgrc._1);
+                    PInvoke.CopyRect(out p.rgrc._1, in p.rgrc._0);
 
-                    p.rgrc._0.left   += 8;
-                    p.rgrc._0.right  -= 8;
+                    p.rgrc._0.left   += 10;
+                    p.rgrc._0.right  -= 10;
                     p.rgrc._0.top    += 2;
-                    p.rgrc._0.bottom -= 8;
+                    p.rgrc._0.bottom -= 10;
 
                     Marshal.StructureToPtr(p, lParam, false);
 
-                    return (IntPtr)PInvoke.WVR_REDRAW;
+                    return (IntPtr)(PInvoke.WVR_VALIDRECTS);
                 }
                 else
                 {
                     var rcClientArea = Marshal.PtrToStructure<RECT>(lParam);
 
-                    rcClientArea.left   += 8;
-                    rcClientArea.right  -= 8;
+                    rcClientArea.left   += 10;
+                    rcClientArea.right  -= 10;
                     rcClientArea.top    += 2;
-                    rcClientArea.bottom -= 8;
+                    rcClientArea.bottom -= 10;
 
                     Marshal.StructureToPtr(rcClientArea, lParam, false);
-                    return IntPtr.Zero;
                 }
+
+                break;
             }
         }
 
@@ -283,7 +302,9 @@ public class FluentWindow : System.Windows.Window
             return;
         }
 
-        // SetWindowChrome();
+        // Win10 不设置 WindowChrome 可以正常绘制边框
+        // Win11 需要设置 WindowChrome 才能绘制背景效果
+        SetWindowChrome();
 
         if (newValue == WindowBackdropType.None)
         {
@@ -324,7 +345,7 @@ public class FluentWindow : System.Windows.Window
             return;
         }
 
-        window.OnExtendsContentIntoTitleBarChanged((bool)e.OldValue, (bool)e.NewValue);
+        // window.OnExtendsContentIntoTitleBarChanged((bool)e.OldValue, (bool)e.NewValue);
     }
 
     /// <summary>
@@ -333,7 +354,7 @@ public class FluentWindow : System.Windows.Window
     protected virtual void OnExtendsContentIntoTitleBarChanged(bool oldValue, bool newValue)
     {
         // AllowsTransparency = true;
-        SetCurrentValue(WindowStyleProperty, WindowStyle.SingleBorderWindow);
+        // SetCurrentValue(WindowStyleProperty, WindowStyle.SingleBorderWindow);
 
         // WindowStyleProperty.OverrideMetadata(typeof(FluentWindow), new FrameworkPropertyMetadata(WindowStyle.SingleBorderWindow));
         // AllowsTransparencyProperty.OverrideMetadata(typeof(FluentWindow), new FrameworkPropertyMetadata(false));
