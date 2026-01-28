@@ -20,6 +20,7 @@ DwmEnableComposition
 DwmExtendFrameIntoClientArea
 DWM_EC_DISABLECOMPOSITION
 DWMNCRENDERINGPOLICY
+DWMFLIP3DWINDOWPOLICY
 DefWindowProc
 DwmDefWindowProc
 ITaskbarList4
