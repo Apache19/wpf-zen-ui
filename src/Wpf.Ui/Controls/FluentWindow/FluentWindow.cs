@@ -23,7 +23,7 @@ namespace Wpf.Ui.Controls;
 /// <summary>
 /// A custom WinUI Window with more convenience methods.
 /// </summary>
-public class FluentWindow : System.Windows.Window
+public class FluentWindow : Window
 {
     private WindowInteropHelper? _interopHelper = null;
 
@@ -303,7 +303,7 @@ public class FluentWindow : System.Windows.Window
     /// </summary>
     protected virtual void OnBackdropTypeChanged(WindowBackdropType oldValue, WindowBackdropType newValue)
     {
-        if (Appearance.ApplicationThemeManager.GetAppTheme() == Appearance.ApplicationTheme.HighContrast)
+        if (ApplicationThemeManager.GetAppTheme() == ApplicationTheme.HighContrast)
         {
             newValue = WindowBackdropType.None;
         }

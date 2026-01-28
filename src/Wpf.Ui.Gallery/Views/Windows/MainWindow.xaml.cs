@@ -32,7 +32,7 @@ public partial class MainWindow : IWindow
         contentDialogService.SetDialogHost(RootContentDialog);
         SetupTrayMenuEvents();
     }
-
+     
     public MainWindowViewModel ViewModel { get; }
 
     private bool _isUserClosedPane;
