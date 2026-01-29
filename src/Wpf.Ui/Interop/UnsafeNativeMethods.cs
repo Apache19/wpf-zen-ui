@@ -378,12 +378,14 @@ internal static class UnsafeNativeMethods
 
         var wtaOptions = new WTA_OPTIONS()
         {
-            dwFlags = PInvoke.WTNCA_NODRAWCAPTION,
-            dwMask =
-                PInvoke.WTNCA_NODRAWCAPTION
-                | PInvoke.WTNCA_NODRAWICON
-                | PInvoke.WTNCA_NOMIRRORHELP
-                | PInvoke.WTNCA_NOSYSMENU,
+            dwFlags = PInvoke.WTNCA_NODRAWCAPTION
+                    | PInvoke.WTNCA_NODRAWICON
+                    | PInvoke.WTNCA_NOMIRRORHELP
+                    | PInvoke.WTNCA_NOSYSMENU,
+            dwMask = PInvoke.WTNCA_NODRAWCAPTION
+                   | PInvoke.WTNCA_NODRAWICON
+                   | PInvoke.WTNCA_NOMIRRORHELP
+                   | PInvoke.WTNCA_NOSYSMENU,
         };
 
         return PInvoke.SetWindowThemeAttribute(

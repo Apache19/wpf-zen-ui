@@ -25,7 +25,8 @@ namespace Wpf.Ui.Controls;
 /// </summary>
 public class FluentWindow : Window
 {
-    private WindowInteropHelper? _interopHelper = null;
+    private WindowInteropHelper? _interopHelper       = null;
+    private DwmWindowAttributes  _dwmWindowAttributes = new DwmWindowAttributes();
 
     /// <summary>
     /// Gets contains helper for accessing this window handle.
@@ -142,7 +143,17 @@ public class FluentWindow : Window
         if (PresentationSource.FromVisual(this) is HwndSource hwndSource)
         {
             hwndSource.AddHook(FluentWindowSourceHook);
-  
+            // _dwmWindowAttributes.SystemBackdrop(DWM_SYSTEMBACKDROP_TYPE.DWMSBT_MAINWINDOW).UseHostBackdropBrush(true);
+
+            var r = UnsafeNativeMethods.RemoveWindowCaption(hwndSource.Handle);
+            Debug.WriteLine($"RemoveWindowCaption result: {r}");
+
+            r = UnsafeNativeMethods.ApplyWindowDarkMode(hwndSource.Handle);
+            Debug.WriteLine($"ApplyWindowDarkMode result: {r}");
+
+            r = WindowBackdrop.ApplyBackdrop(hwndSource.Handle, WindowBackdropType.Acrylic);
+            Debug.WriteLine($"ApplyBackdrop result: {r}");
+
             unsafe
             {
                 // DWMNCRENDERINGPOLICY ncrp = DWMNCRENDERINGPOLICY.DWMNCRP_DISABLED;
@@ -151,7 +162,7 @@ public class FluentWindow : Window
                 // bool b = false;
                 // PInvoke.DwmSetWindowAttribute((HWND)hwndSource.Handle, DWMWINDOWATTRIBUTE.DWMWA_ALLOW_NCPAINT, &b, sizeof(bool));
 
-                PInvoke.DwmExtendFrameIntoClientArea((HWND)hwndSource.Handle, new MARGINS() { cxLeftWidth = 0, cxRightWidth = 0, cyTopHeight = -1, cyBottomHeight = 0 });
+                // PInvoke.DwmExtendFrameIntoClientArea((HWND)hwndSource.Handle, new MARGINS() { cxLeftWidth = 25, cxRightWidth = 25, cyTopHeight = 25, cyBottomHeight = 25 });
             }
         }
     }
@@ -168,6 +179,10 @@ public class FluentWindow : Window
                 handled = true;
                 return b;
 
+            case PInvoke.WM_NCCREATE:
+
+                break;
+
             case PInvoke.WM_NCCALCSIZE:
             {
                 if (wParam.ToInt32() != 0)
@@ -180,7 +195,7 @@ public class FluentWindow : Window
 
                     p.rgrc._0.left   += 13;
                     p.rgrc._0.right  -= 13;
-                    p.rgrc._0.top    += 0;
+                    p.rgrc._0.top    += 2;
                     p.rgrc._0.bottom -= 13;
 
                     // p.rgrc._1.left   += 10;
@@ -195,7 +210,7 @@ public class FluentWindow : Window
 
                     Marshal.StructureToPtr(p, lParam, false);
                     handled = true;
-                    return new IntPtr(PInvoke.WVR_REDRAW);
+                    return new IntPtr(PInvoke.WVR_REDRAW | PInvoke.WVR_ALIGNTOP | PInvoke.WVR_ALIGNBOTTOM);
                 }
 
                 // else
