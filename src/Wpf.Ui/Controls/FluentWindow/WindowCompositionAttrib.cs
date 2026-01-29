@@ -39,7 +39,7 @@ internal enum WindowCompositionAttrib
     WCA_EXCLUDED_FROM_DDA             = 24, // 这是公开的
 }
 
-/*
+/* https://learn.microsoft.com/en-us/windows/win32/dwm/windowcompositionattribdata
 typedef struct _WINDOWCOMPOSITIONATTRIBDATA
 {
     WINDOWCOMPOSITIONATTRIB Attrib;
