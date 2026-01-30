@@ -13,9 +13,6 @@ using Wpf.Ui.Interop;
 // ReSharper disable once CheckNamespace
 namespace Wpf.Ui.Controls;
 
-/// <summary>
-/// A custom WinUI Window with more convenience methods.
-/// </summary>
 public class FluentWindow : Window
 {
     private DwmWindowAttributes  _dwmWindowAttributes = new DwmWindowAttributes();
