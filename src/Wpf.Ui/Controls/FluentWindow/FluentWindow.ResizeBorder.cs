@@ -63,11 +63,10 @@ public partial class FluentWindow
             return default;
         }
 
-        var test = SystemParameters.ResizeFrameHorizontalBorderHeight;
-
         // dpi转换逻辑需要修正：从GetSystemMetrics读取出来的参数是设备相关像素（系统或监视器），而应用在窗口上时，需要转换成窗口本身的dpi。
 
-        var dpi    = DpiHelper.GetSystemDpi();
+        var dpi = DpiHelper.GetSystemDpi();
+
         double scaleX = dpi.DpiX / (double)DpiHelper.DefaultDpi;
         double scaleY = dpi.DpiY / (double)DpiHelper.DefaultDpi;
 
@@ -90,7 +89,7 @@ public partial class FluentWindow
         var xw = (paddingBorder + frameX) / scaleX;
         var yh = (paddingBorder + frameY) / scaleY;
 
-        // 给顶部留1像素边框,最大化时则按全量
+        // 给顶部留1像素边框,最大化时则按全边框
         return new Thickness(xw, maximize ? yh : 1, xw, yh);
     }
 
@@ -105,11 +104,6 @@ public partial class FluentWindow
 
     private IntPtr HitTestResizeBorder(Rect wRect, Point mPoint)
     {
-        if (_chrome is null)
-        {
-            return IntPtr.Zero;
-        }
-
         var row = 1;
         var col = 1;
 
