@@ -47,6 +47,8 @@ public partial class FluentWindow
                 return;
             }
 
+            DpiHelper.GetSystemDpi()
+
             _cachedSmCxPaddedBorder = PInvoke.GetSystemMetrics(SYSTEM_METRICS_INDEX.SM_CXPADDEDBORDER);
             _cachedSmCxSizeFrame    = PInvoke.GetSystemMetrics(SYSTEM_METRICS_INDEX.SM_CXSIZEFRAME);
             _cachedSmCySizeFrame    = PInvoke.GetSystemMetrics(SYSTEM_METRICS_INDEX.SM_CYSIZEFRAME);
@@ -63,12 +65,7 @@ public partial class FluentWindow
             return default;
         }
 
-        // dpi转换逻辑需要修正：从GetSystemMetrics读取出来的参数是设备相关像素（系统或监视器），而应用在窗口上时，需要转换成窗口本身的dpi。
-
-        var dpi = DpiHelper.GetSystemDpi();
-
-        double scaleX = dpi.DpiX / (double)DpiHelper.DefaultDpi;
-        double scaleY = dpi.DpiY / (double)DpiHelper.DefaultDpi;
+        var dpi = DpiHelper.GetWindowDpi(hwnd);
 
         var paddingBorder = 0;
 
@@ -86,8 +83,8 @@ public partial class FluentWindow
         var frameX = _cachedSmCxSizeFrame;
         var frameY = _cachedSmCySizeFrame;
 
-        var xw = (paddingBorder + frameX) / scaleX;
-        var yh = (paddingBorder + frameY) / scaleY;
+        var xw = (paddingBorder + frameX) / dpi.DpiScaleX;
+        var yh = (paddingBorder + frameY) / dpi.DpiScaleY;
 
         // 给顶部留1像素边框,最大化时则按全边框
         return new Thickness(xw, maximize ? yh : 1, xw, yh);
@@ -102,12 +99,14 @@ public partial class FluentWindow
         // @formatter:on
     };
 
-    private IntPtr HitTestResizeBorder(Rect wRect, Point mPoint)
+    private IntPtr HitTestResizeBorder(RECT wRect, Point mPoint)
     {
         var row = 1;
         var col = 1;
 
-        if (mPoint.X >= wRect.Left && mPoint.X < wRect.Left + (int)_chrome.ResizeBorderThickness.Left)
+        EnsureSystemMetricCache();
+
+        if (mPoint.X >= wRect.left && mPoint.X < wRect.left + (int)_chrome.ResizeBorderThickness.Left)
         {
             col = 0; // left
         }
@@ -132,11 +131,11 @@ public partial class FluentWindow
     /// Get the bounding rectangle for the window in physical coordinates.
     /// </summary>
     /// <returns>The bounding rectangle for the window.</returns>
-    private static Rect GetWindowRect(IntPtr hwnd)
+    private static RECT GetWindowRect(IntPtr hwnd)
     {
         if (PInvoke.GetWindowRect((HWND)hwnd, out RECT rect))
         {
-            return new Rect(rect.left, rect.top, rect.Width, rect.Height);
+            return rect;
         }
 
         throw new Win32Exception();

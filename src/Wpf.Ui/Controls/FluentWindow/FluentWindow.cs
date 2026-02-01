@@ -64,11 +64,12 @@ public partial class FluentWindow : Window
                 if (Utilities.IsOSWindows11OrNewer)
                 {
                     var rcClientArea = Marshal.PtrToStructure<RECT>(lParam);
+                    var windowBorder = GetWindowBorderThickness(hwnd);
 
-                    rcClientArea.left   += 10;
-                    rcClientArea.right  -= 10;
-                    rcClientArea.top    += 2;
-                    rcClientArea.bottom -= 10;
+                    rcClientArea.left   += windowBorder.Left;
+                    rcClientArea.right  -= windowBorder.Right;
+                    rcClientArea.top    += windowBorder.Top;
+                    rcClientArea.bottom -= windowBorder.Bottom;
 
                     Marshal.StructureToPtr(rcClientArea, lParam, false);
 
