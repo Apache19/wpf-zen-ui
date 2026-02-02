@@ -199,6 +199,8 @@ public class TitleBarButton : ButtonBase
     protected override void OnMouseLeave(MouseEventArgs e)
     {
         base.OnMouseLeave(e);
+
+        // 如果工作在标题栏模式，则不需要
         IsMouseActualOver = false;
     }
 
@@ -229,7 +231,6 @@ public class TitleBarButton : ButtonBase
         if (uMsg == FluentWindow.WM_NCHITTEST_RESOLVED)
         {
             _isHitTestTarget = wParam.ToInt32() == 1 && lParam.ToInt32() == GetHashCode();
-            Debug.WriteLine($"TitleBarButton: WM_NCHITTEST_RESOLVED [{TitleBar.GetElementIdentity(this)}] {_isHitTestTarget}");
             return IntPtr.Zero;
         }
 

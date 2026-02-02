@@ -335,11 +335,11 @@ public class TitleBar : ContentControl
                         if (button is not null)
                         {
                             var hash = new LPARAM(button.GetHashCode());
-                            PInvoke.PostMessage((HWND)hwnd, FluentWindow.WM_NCHITTEST_RESOLVED, 1, hash);
+                            PInvoke.SendMessage((HWND)hwnd, FluentWindow.WM_NCHITTEST_RESOLVED, 1, hash);
                         }
                         else
                         {
-                            PInvoke.PostMessage((HWND)hwnd, FluentWindow.WM_NCHITTEST_RESOLVED, 0, 0);
+                            PInvoke.SendMessage((HWND)hwnd, FluentWindow.WM_NCHITTEST_RESOLVED, 0, 0);
                         }
 
                         if (id == TitleBarElementIdentity.Icon && !IsIconInteractionEnabled)

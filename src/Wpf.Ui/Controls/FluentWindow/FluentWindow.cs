@@ -330,7 +330,7 @@ public partial class FluentWindow : Window
                         // The resize border has been hit and the hit-test result is finalized.
                         // Notify other components participating in non-client interaction
                         // so they can update their state accordingly.
-                        PInvoke.PostMessage((HWND)hwnd, WM_NCHITTEST_RESOLVED, 0, 0);
+                        PInvoke.SendMessage((HWND)hwnd, WM_NCHITTEST_RESOLVED, 0, 0);
 
                         handled = true;
                         return ht;
@@ -350,7 +350,7 @@ public partial class FluentWindow : Window
                 // Still send WM_NCHITTEST_RESOLVED as a completion notification,
                 // allowing title bar buttons and other participants to reset
                 // their visual state if necessary.
-                PInvoke.PostMessage((HWND)hwnd, WM_NCHITTEST_RESOLVED, 0, 0);
+                PInvoke.SendMessage((HWND)hwnd, WM_NCHITTEST_RESOLVED, 0, 0);
 
                 break;
             }
