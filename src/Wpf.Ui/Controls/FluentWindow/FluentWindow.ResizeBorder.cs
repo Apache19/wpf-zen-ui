@@ -19,21 +19,39 @@ namespace Wpf.Ui.Controls;
 /// </summary>
 public partial class FluentWindow
 {
-    #if NET9_0_OR_GREATER
-    private static readonly Lock _systemMetricCacheLock = new();
-    #else
-    private static readonly object _systemMetricCacheLock = new();
-    #endif
+    private enum WindowBorderKind
+    {
+        Layout, // 布局 / 视觉边框（WindowBorder）
+        Resize  // 命中测试 / Resize 边框
+    }
 
-    private static int  _cachedSmCxPaddedBorder;
-    private static int  _cachedSmCxSizeFrame;
-    private static int  _cachedSmCySizeFrame;
-    private static bool _systemMetricCacheInvalidated;
+#if NET9_0_OR_GREATER
+    private readonly Lock _systemMetricCacheLock = new();
+#else
+    private readonly object _systemMetricCacheLock = new();
+#endif
 
-    // 调查一下哪些消息和参数是触发相关值变化的
-    private static void InvalidateSystemMetricCache() => _systemMetricCacheInvalidated = true;
+    private DisplayDpi _cachedDpi; // 当窗口从一个监视器移动到另一个监视器，会不会收到dpi更改消息？
+    private bool       _dpiCacheInvalidated;
 
-    private static void EnsureSystemMetricCache()
+    private int  _cachedSmCxPaddedBorder;
+    private int  _cachedSmCxSizeFrame;
+    private int  _cachedSmCySizeFrame;
+    private bool _systemMetricCacheInvalidated;
+
+    // todo 调查一下哪些消息和参数是触发相关值变化的，考虑改名为只失效Border相关
+    private void InvalidateSystemMetricCache()
+    {
+        _systemMetricCacheInvalidated = true;
+    }
+
+    // todo 同样，要调查哪些消息需要监听
+    private void InvalidateDpi()
+    {
+        _dpiCacheInvalidated = true;
+    }
+
+    private void EnsureSystemMetricCache()
     {
         if (!_systemMetricCacheInvalidated)
         {
@@ -47,8 +65,6 @@ public partial class FluentWindow
                 return;
             }
 
-            DpiHelper.GetSystemDpi()
-
             _cachedSmCxPaddedBorder = PInvoke.GetSystemMetrics(SYSTEM_METRICS_INDEX.SM_CXPADDEDBORDER);
             _cachedSmCxSizeFrame    = PInvoke.GetSystemMetrics(SYSTEM_METRICS_INDEX.SM_CXSIZEFRAME);
             _cachedSmCySizeFrame    = PInvoke.GetSystemMetrics(SYSTEM_METRICS_INDEX.SM_CYSIZEFRAME);
@@ -57,37 +73,70 @@ public partial class FluentWindow
         }
     }
 
-    // todo 缓存dpi
-    private static Thickness GetWindowBorderThickness(IntPtr hwnd)
+    private void EnsureWindowDpi(IntPtr hwnd)
+    {
+        if (!_dpiCacheInvalidated)
+        {
+            return;
+        }
+
+        _cachedDpi           = DpiHelper.GetWindowDpi(hwnd);
+        _dpiCacheInvalidated = false;
+    }
+
+    private Thickness GetLogicalWindowBorderThickness(IntPtr hwnd, WindowBorderKind kind)
     {
         if (hwnd == IntPtr.Zero)
         {
             return default;
         }
 
-        var dpi = DpiHelper.GetWindowDpi(hwnd);
-
-        var paddingBorder = 0;
-
         WINDOW_STYLE style = (WINDOW_STYLE)PInvoke.GetWindowLong(new HWND(hwnd), WINDOW_LONG_PTR_INDEX.GWL_STYLE);
 
         EnsureSystemMetricCache();
 
-        if ((style & WINDOW_STYLE.WS_CAPTION) == WINDOW_STYLE.WS_CAPTION)
+        var paddingBorder = 0;
+        if ((style & WINDOW_STYLE.WS_CAPTION) != 0)
         {
             paddingBorder = _cachedSmCxPaddedBorder;
         }
 
-        var maximize = (style & WINDOW_STYLE.WS_MAXIMIZE) == WINDOW_STYLE.WS_MAXIMIZE;
+        var isMaximized = (style & WINDOW_STYLE.WS_MAXIMIZE) != 0;
 
         var frameX = _cachedSmCxSizeFrame;
         var frameY = _cachedSmCySizeFrame;
 
+        EnsureWindowDpi(hwnd);
+        var dpi = _cachedDpi;
+
         var xw = (paddingBorder + frameX) / dpi.DpiScaleX;
         var yh = (paddingBorder + frameY) / dpi.DpiScaleY;
 
-        // 给顶部留1像素边框,最大化时则按全边框
-        return new Thickness(xw, maximize ? yh : 1, xw, yh);
+        switch (kind)
+        {
+            case WindowBorderKind.Layout:
+            {
+                // 顶部：Win11 保留 1px 用于显示原生边框，最大化则吃满
+                var top = isMaximized ? yh : 1;
+                return new Thickness(xw, top, xw, yh);
+            }
+
+            case WindowBorderKind.Resize:
+            {
+                // 最大化不可调整尺寸，返回 0 厚度
+                if (isMaximized)
+                {
+                    return new Thickness(0);
+                }
+
+                // 顶部：排除 PaddingBorder，只包含 SmCySizeFrame
+                var top = frameX / dpi.DpiScaleY;
+                return new Thickness(xw, top, xw, yh);
+            }
+
+            default:
+                return default;
+        }
     }
 
     private static readonly IntPtr[,] _HitTestBorders = new[,]
@@ -99,27 +148,26 @@ public partial class FluentWindow
         // @formatter:on
     };
 
-    private IntPtr HitTestResizeBorder(RECT wRect, Point mPoint)
+    // 传进参数全部是逻辑坐标
+    private static IntPtr HitTestResizeBorder(in Rect wRect, in Point mPoint, in Thickness borderThickness)
     {
         var row = 1;
         var col = 1;
 
-        EnsureSystemMetricCache();
-
-        if (mPoint.X >= wRect.left && mPoint.X < wRect.left + (int)_chrome.ResizeBorderThickness.Left)
+        if (mPoint.X >= wRect.Left && mPoint.X < wRect.Left + (int)borderThickness.Left)
         {
             col = 0; // left
         }
-        else if (mPoint.X < wRect.Right && mPoint.X >= wRect.Right - _chrome.ResizeBorderThickness.Right)
+        else if (mPoint.X < wRect.Right && mPoint.X >= wRect.Right - borderThickness.Right)
         {
             col = 2; // right
         }
 
-        if (mPoint.Y >= wRect.Top && mPoint.Y < wRect.Top + _chrome.ResizeBorderThickness.Top)
+        if (mPoint.Y >= wRect.Top && mPoint.Y < wRect.Top + borderThickness.Top)
         {
             row = 0; // top
         }
-        else if (mPoint.Y < wRect.Bottom && mPoint.Y >= wRect.Bottom - (int)_chrome.ResizeBorderThickness.Bottom)
+        else if (mPoint.Y < wRect.Bottom && mPoint.Y >= wRect.Bottom - (int)borderThickness.Bottom)
         {
             row = 2; // bottom
         }
@@ -131,11 +179,11 @@ public partial class FluentWindow
     /// Get the bounding rectangle for the window in physical coordinates.
     /// </summary>
     /// <returns>The bounding rectangle for the window.</returns>
-    private static RECT GetWindowRect(IntPtr hwnd)
+    private static Rect GetWindowRect(IntPtr hwnd)
     {
         if (PInvoke.GetWindowRect((HWND)hwnd, out RECT rect))
         {
-            return rect;
+            return new Rect(rect.left, rect.top, rect.Width, rect.Height);
         }
 
         throw new Win32Exception();

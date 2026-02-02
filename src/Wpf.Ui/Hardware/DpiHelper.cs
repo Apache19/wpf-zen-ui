@@ -216,4 +216,24 @@ internal static class DpiHelper
 
         return new Thickness(topLeft.X, topLeft.Y, bottomRight.X, bottomRight.Y);
     }
+
+    public static Thickness DeviceThicknessToLogical(
+        Thickness deviceThickness,
+        double dpiScaleX,
+        double dpiScaleY
+    )
+    {
+        Point topLeft = DevicePixelsToLogical(
+            new Point(deviceThickness.Left, deviceThickness.Top),
+            dpiScaleX,
+            dpiScaleY
+        );
+        Point bottomRight = DevicePixelsToLogical(
+            new Point(deviceThickness.Right, deviceThickness.Bottom),
+            dpiScaleX,
+            dpiScaleY
+        );
+
+        return new Thickness(topLeft.X, topLeft.Y, bottomRight.X, bottomRight.Y);
+    }
 }
