@@ -10,7 +10,6 @@
   Height="64"
   ResizeMode="NoResize"
   DataContext="{Binding RelativeSource={RelativeSource Self}}"
-  ExtendsContentIntoTitleBar="True"
   WindowStartupLocation="CenterScreen"
   mc:Ignorable="d"
 >

@@ -60,4 +60,13 @@ public readonly struct DisplayDpi
     /// Gets the DPI scale on the Y axis.
     /// </summary>
     public double DpiScaleY { get; }
+
+    /// <summary>
+    /// Returns a string representation of the display DPI information.
+    /// </summary>
+    /// <returns>A formatted string containing the DPI values and scale factors.</returns>
+    public override string ToString()
+    {
+        return $"DisplayDpi (DpiX: {DpiX}, DpiY: {DpiY}, ScaleX: {DpiScaleX:F2}, ScaleY: {DpiScaleY:F2})";
+    }
 }

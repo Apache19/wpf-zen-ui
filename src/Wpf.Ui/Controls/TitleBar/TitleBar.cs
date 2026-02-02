@@ -3,19 +3,19 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
+using System.Diagnostics;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
-using System.Windows.Shell;
 using Windows.Win32;
 using Windows.Win32.Foundation;
-using Windows.Win32.UI.WindowsAndMessaging;
 using Wpf.Ui.Designer;
 using Wpf.Ui.Extensions.Wpf;
-using Wpf.Ui.Hardware;
 
 // ReSharper disable SuspiciousTypeConversion.Global
 // ReSharper disable once CheckNamespace
 namespace Wpf.Ui.Controls;
+
+// todo 文档需要更新，因为已不再处理窗口尺寸调整
 
 /// <summary>
 /// Represents a customizable window title bar that bridges non-client
@@ -69,7 +69,7 @@ public class TitleBar : ContentControl
         );
     }
 
-    #region DP: Icon, Title, IsIconInteractionEnabled, IsNcActive, WindowStyle, WindowResizeMode, ElementIdentity
+    #region DP: Icon, Title, IsIconInteractionEnabled, IsUserContentEnabled, ElementIdentity
 
     #region Icon
 
@@ -175,44 +175,6 @@ public class TitleBar : ContentControl
 
     #endregion
 
-    #region IsNcActive
-
-    private static readonly DependencyPropertyKey IsNcActivePropertyKey =
-        DependencyProperty.RegisterReadOnly(
-            nameof(IsNcActive),
-            typeof(bool),
-            typeof(TitleBar),
-            new FrameworkPropertyMetadata(false)
-        );
-
-    /// <summary>
-    /// Identifies the <see cref="IsNcActive"/> dependency property.
-    /// </summary>
-    public static readonly DependencyProperty IsNcActiveProperty =
-        IsNcActivePropertyKey.DependencyProperty;
-
-    /// <summary>
-    /// Gets or sets a value indicating whether the window is currently in an active
-    /// non-client (title bar) state.
-    /// </summary>
-    /// <remarks>
-    /// This property reflects the activation state of the window as it applies
-    /// to the title bar and other non-client visuals.
-    ///
-    /// The value is updated internally in response to non-client related window
-    /// messages (such as <c>WM_NCACTIVATE</c>) and is intended for visual state
-    /// updates only.
-    ///
-    /// This property is read-only and should not be set by consumers.
-    /// </remarks>
-    public bool IsNcActive
-    {
-        get => (bool)GetValue(IsNcActiveProperty);
-        protected set => SetValue(IsNcActivePropertyKey, value);
-    }
-
-    #endregion
-
     #region IsUserContentEnabled
 
     /// <summary>
@@ -239,134 +201,6 @@ public class TitleBar : ContentControl
         get => (bool)GetValue(IsUserContentEnabledProperty);
         internal set => SetValue(IsUserContentEnabledProperty, value);
     }
-
-    #endregion
-
-    #region WindowStyle
-
-    private static readonly DependencyPropertyKey WindowStylePropertyKey =
-        DependencyProperty.RegisterReadOnly(
-            nameof(WindowStyle),
-            typeof(WindowStyle),
-            typeof(TitleBar),
-            new PropertyMetadata(WindowStyle.SingleBorderWindow)
-        );
-
-    /// <summary>
-    /// Identifies the <see cref="WindowStyle"/> dependency property.
-    /// </summary>
-    public static readonly DependencyProperty WindowStyleProperty =
-        WindowStylePropertyKey.DependencyProperty;
-
-    /// <summary>
-    /// Gets or sets the current <see cref="System.Windows.WindowStyle"/> of the associated window.
-    /// </summary>
-    /// <remarks>
-    /// This property reflects the window style as observed by the title bar and is
-    /// updated internally when the window style changes.
-    ///
-    /// It is intended for visual state updates, allowing the title bar to adjust its
-    /// appearance when the window switches between different styles, such as
-    /// a standard window and a tool window.
-    ///
-    /// This property is read-only and does not control the window style.
-    /// </remarks>
-    public WindowStyle WindowStyle
-    {
-        get => (WindowStyle)GetValue(WindowStyleProperty);
-        protected set => SetValue(WindowStylePropertyKey, value);
-    }
-
-    private static readonly DependencyPropertyDescriptor WindowStylePropertyDescriptor =
-        DependencyPropertyDescriptor.FromProperty(
-            Window.WindowStyleProperty,
-            typeof(Window)
-        );
-
-    #endregion
-
-    #region WindowState
-
-    private static readonly DependencyPropertyKey WindowStatePropertyKey =
-        DependencyProperty.RegisterReadOnly(
-            nameof(WindowState),
-            typeof(WindowState),
-            typeof(TitleBar),
-            new FrameworkPropertyMetadata(
-                WindowState.Normal,
-                static (d, e) =>
-                {
-                    if (d is TitleBar titleBar && e.NewValue is WindowState state)
-                    {
-                        titleBar.WindowStateChanged(state);
-                    }
-                }
-            )
-        );
-
-    /// <summary>
-    /// Identifies the <see cref="WindowState"/> dependency property.
-    /// </summary>
-    public static readonly DependencyProperty WindowStateProperty =
-        WindowStatePropertyKey.DependencyProperty;
-
-    /// <summary>
-    /// Gets or sets the current state of the window as observed by the TitleBarButton.
-    /// </summary>
-    /// <remarks>
-    /// This property does not change the window state.
-    /// It is updated internally based on system notifications so that the
-    /// TitleBarButton can remain visually consistent with the current window state.
-    /// </remarks>
-    public WindowState WindowState
-    {
-        get => (WindowState)GetValue(WindowStateProperty);
-        protected set => SetValue(WindowStatePropertyKey, value);
-    }
-
-    #endregion
-
-    #region WindowResizeMode
-
-    private static readonly DependencyPropertyKey WindowResizeModePropertyKey =
-        DependencyProperty.RegisterReadOnly(
-            nameof(WindowResizeMode),
-            typeof(ResizeMode),
-            typeof(TitleBar),
-            new PropertyMetadata(ResizeMode.CanResize)
-        );
-
-    /// <summary>
-    /// Identifies the <see cref="WindowResizeMode"/> dependency property.
-    /// </summary>
-    public static readonly DependencyProperty WindowResizeModeProperty =
-        WindowResizeModePropertyKey.DependencyProperty;
-
-    /// <summary>
-    /// Gets or sets the current <see cref="System.Windows.ResizeMode"/> of the associated window.
-    /// </summary>
-    /// <remarks>
-    /// This property reflects the resize mode of the window as observed by the title bar
-    /// and is updated internally when the window resize mode changes.
-    ///
-    /// It is intended for visual state updates, allowing the title bar to adjust its
-    /// presentation and available controls. Typical scenarios include disabling the
-    /// maximize button, or hiding minimize and maximize buttons when resizing is not
-    /// permitted.
-    ///
-    /// This property is read-only and does not control the window resize mode.
-    /// </remarks>
-    public ResizeMode WindowResizeMode
-    {
-        get => (ResizeMode)GetValue(WindowResizeModeProperty);
-        protected set => SetValue(WindowResizeModePropertyKey, value);
-    }
-
-    private static readonly DependencyPropertyDescriptor WindowResizeModePropertyDescriptor =
-        DependencyPropertyDescriptor.FromProperty(
-            Window.ResizeModeProperty,
-            typeof(Window)
-        );
 
     #endregion
 
@@ -438,59 +272,9 @@ public class TitleBar : ContentControl
 
     #endregion
 
-    #region WindowChrome
-
-    private static readonly DependencyPropertyDescriptor WindowChromePropertyDescriptor =
-        DependencyPropertyDescriptor.FromProperty(
-            WindowChrome.WindowChromeProperty,
-            typeof(Window)
-        );
-
     #endregion
 
-    #endregion
-
-    /// <summary>
-    /// A custom window message indicating that a non-client hit test has been resolved.
-    /// </summary>
-    /// <remarks>
-    /// This message is registered and used internally to notify interested components
-    /// that the final result of a non-client hit test has been determined.
-    ///
-    /// It is sent after the hit-test decision is made, allowing title bar elements
-    /// (such as system buttons) and other components that have registered an
-    /// <see cref="HwndSourceHook"/> to update their visual or interaction state
-    /// based on the resolved target.
-    ///
-    /// This message complements <c>WM_NCHITTEST</c> and is intended for coordination
-    /// and state synchronization only; it does not perform hit testing itself.
-    ///
-    /// <para>
-    /// Message parameters:
-    /// </para>
-    /// <list type="bullet">
-    ///   <item>
-    ///     <description>
-    ///     <c>wParam</c>: Indicates whether a title bar button was hit.
-    ///     A value of <c>1</c> means a button was hit; any other value means no button was hit.
-    ///     This can be used by receivers as a fast-path check.
-    ///     </description>
-    ///   </item>
-    ///   <item>
-    ///     <description>
-    ///     <c>lParam</c>: When a button is hit, contains the hash code of the hit button instance;
-    ///     otherwise, the value is <c>0</c>.
-    ///     </description>
-    ///   </item>
-    /// </list>
-    /// </remarks>
-    internal static readonly uint WM_NCHITTEST_RESOLVED = PInvoke.RegisterWindowMessage("WM_NCHITTEST_RESOLVED");
-
-    internal const nuint HitTestContext = 0x5442_0001;
-
-    private Window?       _window;
-    private HwndSource?   _hwndSource;
-    private WindowChrome? _chrome;
+    private Window? _window;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="TitleBar"/> class.
@@ -514,148 +298,66 @@ public class TitleBar : ContentControl
 
         if (_window is not null)
         {
-            _chrome = WindowChrome.GetWindowChrome(_window);
-
-            IsNcActive       = _window.IsActive;
-            WindowStyle      = _window.WindowStyle;
-            WindowResizeMode = _window.ResizeMode;
-
-            WindowChromePropertyDescriptor.AddValueChanged(_window, OnWindowChromeChanged);
-            WindowStylePropertyDescriptor.AddValueChanged(_window, OnWindowStyleChanged);
-            WindowResizeModePropertyDescriptor.AddValueChanged(_window, OnWindowResizeModeChanged);
-
-            _hwndSource = PresentationSource.FromVisual(_window) as HwndSource;
-            _hwndSource?.AddHook(OwnerWindowSourceHook);
+            var hwndSource = PresentationSource.FromVisual(_window) as HwndSource;
+            hwndSource?.AddHook(OwnerWindowSourceHook);
         }
     }
 
     private void OnUnloaded(object sender, RoutedEventArgs e)
     {
-        if (_hwndSource is not null)
-        {
-            _hwndSource?.RemoveHook(OwnerWindowSourceHook);
-            _hwndSource = null;
-        }
-
         if (_window is not null)
         {
-            WindowChromePropertyDescriptor.RemoveValueChanged(_window, OnWindowChromeChanged);
-            WindowStylePropertyDescriptor.RemoveValueChanged(_window, OnWindowStyleChanged);
-            WindowResizeModePropertyDescriptor.RemoveValueChanged(_window, OnWindowResizeModeChanged);
-
+            var hwndSource = PresentationSource.FromVisual(_window) as HwndSource;
+            hwndSource?.RemoveHook(OwnerWindowSourceHook);
             _window = null;
         }
     }
 
     private IntPtr OwnerWindowSourceHook(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
     {
-        switch ((uint)msg)
+        var uMsg = (uint)msg;
+
+        if (uMsg == FluentWindow.WM_NCHITTEST_REQUEST)
         {
-            // WRONG: Do not rely on WM_SIZE for WindowState synchronization.
-            //
-            // Using WM_SIZE to infer WindowState is unreliable.
-            //
-            // After a window has been maximized, Windows may still allow limited resizing
-            // (e.g. via resize borders). In this situation, the WS_MAXIMIZE style can be
-            // cleared while WPF's Window.WindowState remains Maximized.
-            // This creates a mismatch between the actual native window state and WPF's
-            // logical WindowState.
-            //
-            // This example is intentionally kept here as a reference for what *not* to do.
-            // case PInvoke.WM_SIZE:
-            // {
-            //     WindowState = (uint)wParam switch
-            //     {
-            //         PInvoke.SIZE_RESTORED  => WindowState.Normal,
-            //         PInvoke.SIZE_MAXIMIZED => WindowState.Maximized,
-            //         PInvoke.SIZE_MINIMIZED => WindowState.Minimized,
-            //         _                      => WindowState
-            //     };
-            // }
+            var sPoint = LParamToPoint(lParam);
+            var rPoint = PointFromScreen(sPoint);
 
-            // CORRECT: Determine the actual state by inspecting native window styles.
-            //
-            // We listen to WM_WINDOWPOSCHANGED and determine the effective WindowState
-            // by inspecting native window styles *after* the position/state change
-            // has been committed.
-            case PInvoke.WM_WINDOWPOSCHANGED:
+            if (rPoint is { X: >= 0, Y: >= 0 } && rPoint.X <= ActualWidth && rPoint.Y <= ActualHeight)
             {
-                var style = PInvoke.GetWindowLong((HWND)hwnd, WINDOW_LONG_PTR_INDEX.GWL_STYLE);
-
-                var windowState =
-                    (style & (nint)WINDOW_STYLE.WS_MINIMIZE) != 0 ? WindowState.Minimized :
-                    (style & (nint)WINDOW_STYLE.WS_MAXIMIZE) != 0 ? WindowState.Maximized :
-                                                                    WindowState.Normal;
-
-                WindowState = windowState;
-                break;
-            }
-
-            // 标题栏不应直接处理系统发送的 WM_NCHITTEST 消息，而应该只处理从窗口发送的 WM_NCHITTEST 消息以便处理标题栏元素的非客户区命中测试。
-            // 不能对该消息进行拦截，必须让此消息贯穿整个窗口消息过程链，否则可能使其它依赖此消息提供非客户区命中测试的控件失去相应功能。
-            // 如有命中测试结果，返回正确的结果即可；反之，返回 HTNOWHERE 即可。
-            case PInvoke.WM_NCHITTEST:
-            {
-                if ((uint)wParam == FluentWindow.NcHitTestContext.TitleBar)
+                if (InputHitTest(rPoint) is DependencyObject hitElement)
                 {
-                    // Perform hit testing within the title bar area.
-                    // If the hit element (or one of its ancestors) defines an ElementIdentity
-                    // attached property, its semantic identity is mapped to the corresponding
-                    // non-client hit-test result.
-                    //
-                    // When a title bar button is hit, a WM_NCHITTEST_RESOLVED message is broadcast
-                    // with the identity of the hit button, allowing all title bar buttons to
-                    // synchronize their visual state.
+                    var id = GetElementIdentity(hitElement);
+                    Debug.WriteLine($"TitleBar: WM_NCHITTEST_REQUEST - id = {id}");
 
-                    var screenPoint   = LParamToPoint(lParam);
-                    var relativePoint = PointFromScreen(screenPoint);
-
-                    if (relativePoint is { X: >= 0, Y: >= 0 } &&
-                        relativePoint.X <= ActualWidth && relativePoint.Y <= ActualHeight)
+                    if (id != TitleBarElementIdentity.Unknown)
                     {
-                        if (InputHitTest(relativePoint) is DependencyObject hitElement)
+                        var button = hitElement.FindAncestor<TitleBarButton>();
+                        if (button is not null)
                         {
-                            var id = GetElementIdentity(hitElement);
-
-                            if (id != TitleBarElementIdentity.Unknown)
-                            {
-                                var button = hitElement.FindAncestor<TitleBarButton>();
-
-                                if (button is not null)
-                                {
-                                    // A title bar button has been hit. Broadcast the identity of
-                                    // the hit button via WM_NCHITTEST_RESOLVED, allowing each
-                                    // button to determine whether it needs to update its own
-                                    // visual state.
-                                    var hash = new LPARAM(button.GetHashCode());
-                                    PInvoke.SendMessage((HWND)hwnd, WM_NCHITTEST_RESOLVED, 1, hash);
-                                }
-                                else
-                                {
-                                    PInvoke.SendMessage((HWND)hwnd, WM_NCHITTEST_RESOLVED, 0, 0);
-                                }
-
-                                // When icon interaction is disabled, redirect icon hit testing to the caption.
-                                // This causes the icon area to behave like a normal title bar region,
-                                // allowing dragging but suppressing system-defined icon interactions.
-                                if (id == TitleBarElementIdentity.Icon && !IsIconInteractionEnabled)
-                                {
-                                    id = TitleBarElementIdentity.Caption;
-                                }
-
-                                return (IntPtr)id;
-                            }
+                            var hash = new LPARAM(button.GetHashCode());
+                            PInvoke.PostMessage((HWND)hwnd, FluentWindow.WM_NCHITTEST_RESOLVED, 1, hash);
                         }
+                        else
+                        {
+                            PInvoke.PostMessage((HWND)hwnd, FluentWindow.WM_NCHITTEST_RESOLVED, 0, 0);
+                        }
+
+                        if (id == TitleBarElementIdentity.Icon && !IsIconInteractionEnabled)
+                        {
+                            id = TitleBarElementIdentity.Caption;
+                        }
+
+                        handled = true;
+                        return (IntPtr)id;
                     }
                 }
-
-                break;
             }
 
-            case PInvoke.WM_NCACTIVATE:
-                IsNcActive = wParam != IntPtr.Zero;
-                break;
+            return IntPtr.Zero;
+        }
 
+        switch (uMsg)
+        {
             // Intercept non-client mouse interactions for specific hit-test targets
             // (typically system buttons) to suppress the default system rendering and
             // behavior in the title bar.
@@ -687,74 +389,6 @@ public class TitleBar : ContentControl
         }
     }
 
-    private static readonly IntPtr[,] _HitTestBorders = new[,]
-    {
-        // @formatter:off
-        { (IntPtr)PInvoke.HTTOPLEFT,    (IntPtr)PInvoke.HTTOP,     (IntPtr)PInvoke.HTTOPRIGHT    },
-        { (IntPtr)PInvoke.HTLEFT,       IntPtr.Zero,               (IntPtr)PInvoke.HTRIGHT       },
-        { (IntPtr)PInvoke.HTBOTTOMLEFT, (IntPtr)PInvoke.HTBOTTOM,  (IntPtr)PInvoke.HTBOTTOMRIGHT },
-        // @formatter:on
-    };
-
-    /// <summary>
-    /// Maps the current mouse position to a resize border or corner hit-test result
-    /// within the specified window rectangle.
-    /// </summary>
-    /// <remarks>
-    /// Inspired by the internal hit-testing logic used by WPF's WindowChromeWorker.
-    /// Requires window chrome to be initialized; otherwise, returns <see cref="IntPtr.Zero"/>.
-    /// </remarks>
-    /// <param name="wRect">The window rectangle used for resize border hit testing.</param>
-    /// <param name="mPoint">The current mouse position.</param>
-    /// <returns>
-    /// A hit-test handle corresponding to the resize border or corner under the mouse,
-    /// or <see cref="IntPtr.Zero"/> if chrome is not available.
-    /// </returns>
-    private IntPtr HitTestResizeBorder(Rect wRect, Point mPoint)
-    {
-        if (_chrome is null)
-        {
-            return IntPtr.Zero;
-        }
-
-        var row = 1;
-        var col = 1;
-
-        if (mPoint.X >= wRect.Left && mPoint.X < wRect.Left + (int)_chrome.ResizeBorderThickness.Left)
-        {
-            col = 0; // left
-        }
-        else if (mPoint.X < wRect.Right && mPoint.X >= wRect.Right - _chrome.ResizeBorderThickness.Right)
-        {
-            col = 2; // right
-        }
-
-        if (mPoint.Y >= wRect.Top && mPoint.Y < wRect.Top + _chrome.ResizeBorderThickness.Top)
-        {
-            row = 0; // top
-        }
-        else if (mPoint.Y < wRect.Bottom && mPoint.Y >= wRect.Bottom - (int)_chrome.ResizeBorderThickness.Bottom)
-        {
-            row = 2; // bottom
-        }
-
-        return _HitTestBorders[row, col];
-    }
-
-    /// <summary>
-    /// Get the bounding rectangle for the window in physical coordinates.
-    /// </summary>
-    /// <returns>The bounding rectangle for the window.</returns>
-    private static Rect GetWindowRect(IntPtr hwnd)
-    {
-        if (PInvoke.GetWindowRect((HWND)hwnd, out RECT rect))
-        {
-            return new Rect(rect.left, rect.top, rect.Width, rect.Height);
-        }
-
-        throw new Win32Exception();
-    }
-
     private void CloseWindow()
     {
         if (_window is not null)
@@ -773,15 +407,15 @@ public class TitleBar : ContentControl
 
     private void MaximizeWindow()
     {
-        if (_window is not null)
+        if (_window is FluentWindow fluentWindow)
         {
-            if (WindowState == WindowState.Normal)
+            if (fluentWindow.ActualWindowState == WindowState.Normal)
             {
-                SystemCommands.MaximizeWindow(_window);
+                SystemCommands.MaximizeWindow(fluentWindow);
             }
             else
             {
-                SystemCommands.RestoreWindow(_window);
+                SystemCommands.RestoreWindow(fluentWindow);
             }
         }
     }
@@ -805,59 +439,6 @@ public class TitleBar : ContentControl
                     MinimizeWindow();
                     break;
             }
-        }
-    }
-
-    // WindowChrome 的原始调整尺寸边框
-    private Thickness _originalResizeBorder;
-
-    private void OnWindowChromeChanged(object? sender, EventArgs e)
-    {
-        if (sender is Window window)
-        {
-            _chrome = WindowChrome.GetWindowChrome(window);
-
-            if (_chrome.ResizeBorderThickness != default)
-            {
-                _originalResizeBorder = _chrome.ResizeBorderThickness;
-            }
-        }
-    }
-
-    private void OnWindowStyleChanged(object? sender, EventArgs e)
-    {
-        if (sender is Window window)
-        {
-            WindowStyle = window.WindowStyle;
-        }
-    }
-
-    private void WindowStateChanged(WindowState newState)
-    {
-        if (_chrome is not null)
-        {
-            switch (newState)
-            {
-                case WindowState.Maximized:
-                    _chrome.SetCurrentValue(WindowChrome.ResizeBorderThicknessProperty, default(Thickness));
-                    return;
-
-                case WindowState.Normal:
-                    _chrome.SetCurrentValue(WindowChrome.ResizeBorderThicknessProperty, _originalResizeBorder);
-                    break;
-
-                case WindowState.Minimized:
-                default:
-                    break;
-            }
-        }
-    }
-
-    private void OnWindowResizeModeChanged(object? sender, EventArgs e)
-    {
-        if (sender is Window window)
-        {
-            WindowResizeMode = window.ResizeMode;
         }
     }
 }

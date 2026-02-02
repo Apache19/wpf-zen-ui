@@ -31,13 +31,13 @@ public partial class FluentWindow
     private readonly object _systemMetricCacheLock = new();
 #endif
 
-    private DisplayDpi _cachedDpi; // 当窗口从一个监视器移动到另一个监视器，会不会收到dpi更改消息？
-    private bool       _dpiCacheInvalidated;
+    private DisplayDpi _cachedDpi;
+    private bool       _dpiCacheInvalidated = true;
 
     private int  _cachedSmCxPaddedBorder;
     private int  _cachedSmCxSizeFrame;
     private int  _cachedSmCySizeFrame;
-    private bool _systemMetricCacheInvalidated;
+    private bool _systemMetricCacheInvalidated = true;
 
     // todo 调查一下哪些消息和参数是触发相关值变化的，考虑改名为只失效Border相关
     private void InvalidateSystemMetricCache()
@@ -131,7 +131,7 @@ public partial class FluentWindow
 
                 // 顶部：排除 PaddingBorder，只包含 SmCySizeFrame
                 var top = frameX / dpi.DpiScaleY;
-                return new Thickness(xw, top, xw, yh);
+                return new Thickness(xw, yh, xw, yh);
             }
 
             default:
@@ -149,7 +149,7 @@ public partial class FluentWindow
     };
 
     // 传进参数全部是逻辑坐标
-    private static IntPtr HitTestResizeBorder(in Point mPoint,  in Rect wRect, in Thickness borderThickness)
+    private static IntPtr HitTestResizeBorder(in Rect wRect, in Point mPoint, in Thickness borderThickness)
     {
         var row = 1;
         var col = 1;

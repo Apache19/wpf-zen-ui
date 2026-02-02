@@ -11,6 +11,7 @@
     xmlns:controls="clr-namespace:Wpf.Ui.Controls">
 
 
+    <!--
     <ControlTemplate x:Key="&#397;" TargetType="{x:Type Window}">
         <Border
             Background="{TemplateBinding Background}"
@@ -31,13 +32,6 @@
         </Border>
         <ControlTemplate.Triggers>
             <MultiTrigger>
-                <!--
-                    There may be perf implications b/c of the following conditions.  We may cause
-                    an extra layout to happen when WindowState changes to Minimized and ResizeMode
-                    is set to CanResizeWithGrip.
-                    NavigationWindow's style requires the ResizeMode condition tag even though
-                    Window's style already takes care of this condition.
-                -->
                 <MultiTrigger.Conditions>
                     <Condition Property="Window.ResizeMode" Value="CanResizeWithGrip" />
                     <Condition Property="Window.WindowState" Value="Normal" />
@@ -48,12 +42,12 @@
     </ControlTemplate>
 
 
-    <Style x:Key="{x:Type Window}" TargetType="{x:Type Window}">
+    <Style TargetType="{x:Type controls:FluentWindow}">
         <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.WindowTextBrushKey}}" />
         <Setter Property="Background" Value="{DynamicResource {x:Static SystemColors.WindowBrushKey}}" />
         <Setter Property="Template">
             <Setter.Value>
-                <ControlTemplate TargetType="{x:Type Window}">
+                <ControlTemplate TargetType="{x:Type controls:FluentWindow}">
                     <Border
                         Background="{TemplateBinding Background}"
                         BorderBrush="{TemplateBinding BorderBrush}"
@@ -71,5 +65,7 @@
             </Trigger>
         </Style.Triggers>
     </Style>
+    
+    -->
 
 </ResourceDictionary>

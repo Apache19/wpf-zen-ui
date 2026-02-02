@@ -52,10 +52,10 @@
         </Border>
         <ControlTemplate.Triggers>
             <!--  Icon  -->
-            <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=controls:TitleBar}, Path=WindowState}" Value="Maximized">
+            <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=controls:FluentWindow}, Path=ActualWindowState}" Value="Maximized">
                 <Setter TargetName="IconPath" Property="Data" Value="{StaticResource TitleBarRestoreIconData}" />
             </DataTrigger>
-            <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=controls:TitleBar}, Path=WindowState}" Value="Normal">
+            <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=controls:FluentWindow}, Path=ActualWindowState}" Value="Normal">
                 <Setter TargetName="IconPath" Property="Data" Value="{StaticResource TitleBarMaximizeIconData}" />
             </DataTrigger>
             <!--  Hover  -->

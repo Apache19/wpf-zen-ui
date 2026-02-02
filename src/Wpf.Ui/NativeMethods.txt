@@ -8,6 +8,7 @@ GetWindowLong
 SetWindowRgn
 GetWindowRect
 SendMessage
+PostMessage
 TrackMouseEvent
 RegisterWindowMessage
 GetSystemMetrics
@@ -29,6 +30,8 @@ DWM_SYSTEMBACKDROP_TYPE
 DWM_WINDOW_CORNER_PREFERENCE
 DWMWA_COLOR_NONE
 DWMWA_COLOR_DEFAULT
+
+STYLESTRUCT
 
 ITaskbarList4
 TaskbarList

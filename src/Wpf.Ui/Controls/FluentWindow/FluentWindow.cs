@@ -5,13 +5,11 @@
 
 using System.Diagnostics;
 using System.Runtime.InteropServices;
-using System.Windows.Controls.Primitives;
 using Windows.Win32;
 using Windows.Win32.Foundation;
+using Windows.Win32.UI.Controls;
 using Windows.Win32.UI.WindowsAndMessaging;
-using Wpf.Ui.Extensions.Wpf;
 using Wpf.Ui.Hardware;
-using Wpf.Ui.Interop;
 using Wpf.Ui.Win32;
 
 // ReSharper disable once CheckNamespace
@@ -24,15 +22,15 @@ public partial class FluentWindow : Window
 {
     static FluentWindow()
     {
-        DefaultStyleKeyProperty.OverrideMetadata(
-            typeof(FluentWindow),
-            new FrameworkPropertyMetadata(typeof(FluentWindow))
-        );
-
-        OverridesDefaultStyleProperty.OverrideMetadata(
-            typeof(FluentWindow),
-            new FrameworkPropertyMetadata(true)
-        );
+        // DefaultStyleKeyProperty.OverrideMetadata(
+        //     typeof(FluentWindow),
+        //     new FrameworkPropertyMetadata(typeof(FluentWindow))
+        // );
+        //
+        // OverridesDefaultStyleProperty.OverrideMetadata(
+        //     typeof(FluentWindow),
+        //     new FrameworkPropertyMetadata(true)
+        // );
     }
 
     #region ActualWindowState 依赖属性
@@ -200,6 +198,7 @@ public partial class FluentWindow : Window
     #endregion
 
     internal static readonly uint WM_NCHITTEST_RESOLVED = PInvoke.RegisterWindowMessage("WM_NCHITTEST_RESOLVED");
+    internal static readonly uint WM_NCHITTEST_REQUEST  = PInvoke.RegisterWindowMessage("WM_NCHITTEST_REQUEST");
 
     protected override void OnSourceInitialized(EventArgs e)
     {
@@ -208,21 +207,20 @@ public partial class FluentWindow : Window
         if (PresentationSource.FromVisual(this) is HwndSource hwndSource)
         {
             hwndSource.AddHook(FluentWindowSourceHook);
+
+            if (!Utilities.IsOSWindows11OrNewer)
+            {
+                var margins = new MARGINS()
+                {
+                    cxLeftWidth    = 10,
+                    cxRightWidth   = 10,
+                    cyBottomHeight = 10,
+                    cyTopHeight    = 10,
+                };
+
+                PInvoke.DwmExtendFrameIntoClientArea((HWND)hwndSource.Handle, in margins);
+            }
         }
-    }
-
-    internal static class NcHitTestContext
-    {
-        // 高 16 位作为协议签名
-        public const nuint SignatureMask = 0xFFFF_0000;
-        public const nuint Signature     = 0x5442_0000; // 'TB'
-
-        // 低 16 位留给参与者
-        public const nuint TitleBar     = Signature | 0x0001;
-        public const nuint OtherControl = Signature | 0x0002;
-
-        public static bool IsNcContext(nuint value)
-            => (value & SignatureMask) == Signature;
     }
 
     private IntPtr FluentWindowSourceHook(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
@@ -238,6 +236,25 @@ public partial class FluentWindow : Window
             case PInvoke.WM_WININICHANGE:
                 InvalidateSystemMetricCache();
                 break;
+
+            case PInvoke.WM_STYLECHANGED:
+            {
+                if ((wParam & (nint)WINDOW_LONG_PTR_INDEX.GWL_STYLE) != 0)
+                {
+                    var ss    = Marshal.PtrToStructure<STYLESTRUCT>(lParam);
+                    var style = ss.styleNew;
+
+                    var actualState =
+                        (style & (nint)WINDOW_STYLE.WS_MINIMIZE) != 0 ? WindowState.Minimized :
+                        (style & (nint)WINDOW_STYLE.WS_MAXIMIZE) != 0 ? WindowState.Maximized :
+                                                                        WindowState.Normal;
+
+                    // 只更新 ActualWindowState，不触碰 WindowState
+                    ActualWindowState = actualState;
+                }
+
+                break;
+            }
 
             // WRONG: Do not rely on WM_SIZE for WindowState synchronization.
             //
@@ -280,11 +297,12 @@ public partial class FluentWindow : Window
                 break;
             }
 
-            // WindowChromeWorker 说lParam是-1时不会绘制标题栏，但看起来似乎没有用处
             case PInvoke.WM_NCACTIVATE:
             {
                 IsNcActive = wParam != IntPtr.Zero;
 
+                // WindowChromeWorker 说lParam是-1时不会绘制标题栏，但看起来似乎没有用处，需要进一步调查
+                // todo 调查使用 DwmDefWindowProc 会不会有效果
                 var b = PInvoke.DefWindowProc(new HWND(hwnd), uMsg, new WPARAM((uint)wParam), -1);
                 handled = true;
                 return b;
@@ -293,73 +311,64 @@ public partial class FluentWindow : Window
             // 窗口处理调整尺寸边框和相关逻辑，没有结果再将消息转发给标题栏。
             case PInvoke.WM_NCHITTEST:
             {
-                // 只处理系统发来的 WM_NCHITTEST
-                if (NcHitTestContext.IsNcContext((uint)wParam))
+                var screenPoint = LParamToPoint(lParam);
+
+                if (ResizeMode is ResizeMode.CanResize or ResizeMode.CanResizeWithGrip)
                 {
-                    // 如果使用自带的系统按钮，则需要将消息传递给 DwmDefWindowProc 以提供命中测试
-                    var b = PInvoke.DwmDefWindowProc(new HWND(hwnd), (uint)msg, new WPARAM((uint)wParam), new LPARAM(lParam), out LRESULT plResult);
-                    if (b)
+                    var dpi     = DpiHelper.GetWindowDpi(hwnd);
+                    var wndRect = GetWindowRect(hwnd);
+                    var border  = GetLogicalWindowBorderThickness(hwnd, WindowBorderKind.Resize);
+
+                    var ht = HitTestResizeBorder(
+                        DpiHelper.DeviceRectToLogical(wndRect, dpi.DpiScaleX, dpi.DpiScaleY),
+                        DpiHelper.DevicePixelsToLogical(screenPoint, dpi.DpiScaleX, dpi.DpiScaleY),
+                        border
+                    );
+
+                    if ((uint)ht is >= PInvoke.HTLEFT and <= PInvoke.HTBOTTOMRIGHT)
                     {
-                        PInvoke.SendMessage((HWND)hwnd, WM_NCHITTEST_RESOLVED, 0, 0);
-                        return plResult;
-                    }
+                        // The resize border has been hit and the hit-test result is finalized.
+                        // Notify other components participating in non-client interaction
+                        // so they can update their state accordingly.
+                        PInvoke.PostMessage((HWND)hwnd, WM_NCHITTEST_RESOLVED, 0, 0);
 
-                    var screenPoint = LParamToPoint(lParam);
-
-                    if (ResizeMode is ResizeMode.CanResize or ResizeMode.CanResizeWithGrip)
-                    {
-                        var dpi     = DpiHelper.GetWindowDpi(hwnd);
-                        var wndRect = GetWindowRect(hwnd);
-                        var border  = GetLogicalWindowBorderThickness(hwnd, WindowBorderKind.Resize);
-
-                        var ht = HitTestResizeBorder(
-                            DpiHelper.DevicePixelsToLogical(screenPoint, dpi.DpiScaleX, dpi.DpiScaleY),
-                            DpiHelper.DeviceRectToLogical(wndRect, dpi.DpiScaleX, dpi.DpiScaleY),
-                            DpiHelper.DeviceThicknessToLogical(border, dpi.DpiScaleX, dpi.DpiScaleY)
-                        );
-
-                        if ((uint)ht is >= PInvoke.HTLEFT and <= PInvoke.HTBOTTOMRIGHT)
-                        {
-                            // The resize border has been hit and the hit-test result is finalized.
-                            // Notify other components participating in non-client interaction
-                            // so they can update their state accordingly.
-                            PInvoke.SendMessage((HWND)hwnd, WM_NCHITTEST_RESOLVED, 0, 0);
-
-                            handled = true;
-                            return ht;
-                        }
-                    }
-
-                    // 没有结果，将消息转发给标题栏，让标题栏处理拖动窗口、图标、和系统按钮的命中测试。
-                    // 标题栏处理此消息时必须且应只在有结果时发送 WM_NCHITTEST_RESOLVED 消息以便使依赖此消息更新状态的元素更新状态
-                    var rht = PInvoke.SendMessage((HWND)hwnd, PInvoke.WM_NCHITTEST, NcHitTestContext.TitleBar, lParam);
-                    if (rht != IntPtr.Zero)
-                    {
                         handled = true;
-                        return rht;
+                        return ht;
                     }
-
-                    // No specific non-client element was hit during this pass.
-                    // Still send WM_NCHITTEST_RESOLVED as a completion notification,
-                    // allowing title bar buttons and other participants to reset
-                    // their visual state if necessary.
-                    PInvoke.SendMessage((HWND)hwnd, WM_NCHITTEST_RESOLVED, 0, 0);
                 }
+
+                // 没有结果，将消息转发给标题栏，让标题栏处理拖动窗口、图标、和系统按钮的命中测试。
+                // 标题栏在有结果的情况下应该处理 WM_NCHITTEST_RESOLVED 消息。
+                var lResult = PInvoke.SendMessage((HWND)hwnd, WM_NCHITTEST_REQUEST, 0, lParam);
+                if (lResult != IntPtr.Zero)
+                {
+                    handled = true;
+                    return lResult;
+                }
+
+                // No specific non-client element was hit during this pass.
+                // Still send WM_NCHITTEST_RESOLVED as a completion notification,
+                // allowing title bar buttons and other participants to reset
+                // their visual state if necessary.
+                PInvoke.PostMessage((HWND)hwnd, WM_NCHITTEST_RESOLVED, 0, 0);
 
                 break;
             }
 
             // 非客户端尺寸计算，经测试，目前只有Win11工作正常。
             // Win10 则只能更改三条边，如果更改全部四条边，则会使DWM绘制出一个完整的假标题栏（包括系统按钮）但无法交互。
-            // 此行为需要进一步测试，尝试不更改（返回非零的其他值），
+            // 此行为需要进一步测试，尝试不更改（返回非零的其他值），而使用DwmExtendFrameIntoClientArea
             case PInvoke.WM_NCCALCSIZE:
             {
+                handled = true;
+
                 if (Utilities.IsOSWindows11OrNewer)
                 {
+                    var rcClientArea = Marshal.PtrToStructure<RECT>(lParam);
+
                     EnsureWindowDpi(hwnd);
 
                     var dpi          = _cachedDpi;
-                    var rcClientArea = Marshal.PtrToStructure<RECT>(lParam);
                     var windowBorder = GetLogicalWindowBorderThickness(hwnd, WindowBorderKind.Layout);
                     var thickness    = DpiHelper.LogicalThicknessToDevice(windowBorder, dpi.DpiScaleX, dpi.DpiScaleY);
 
@@ -369,14 +378,6 @@ public partial class FluentWindow : Window
                     rcClientArea.bottom -= (int)Math.Ceiling(thickness.Bottom);
 
                     Marshal.StructureToPtr(rcClientArea, lParam, false);
-
-                    handled = true;
-
-                    // Per MSDN for NCCALCSIZE, always return 0 when wParam == FALSE
-                    //
-                    // Returning 0 when wParam == TRUE is not appropriate - it will preserve
-                    // the old client area and align it with the upper-left corner of the new
-                    // client area. So we simply ask for a redraw (WVR_REDRAW)
 
                     IntPtr retVal = IntPtr.Zero;
                     if (wParam.ToInt32() != 0) // wParam == TRUE

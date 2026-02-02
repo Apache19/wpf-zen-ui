@@ -15,9 +15,6 @@
     d:DesignWidth="900"
     ui:Design.Background="{DynamicResource ApplicationBackgroundBrush}"
     ui:Design.Foreground="{DynamicResource TextFillColorPrimaryBrush}"
-    ExtendsContentIntoTitleBar="True"
-    WindowBackdropType="Tabbed"
-    WindowCornerPreference="Default"
     WindowStartupLocation="CenterOwner"
     mc:Ignorable="d">
     <Grid>

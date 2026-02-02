@@ -3,6 +3,7 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -195,6 +196,12 @@ public class TitleBarButton : ButtonBase
         base.OnMouseLeftButtonUp(e);
     }
 
+    protected override void OnMouseLeave(MouseEventArgs e)
+    {
+        base.OnMouseLeave(e);
+        IsMouseActualOver = false;
+    }
+
     protected override void OnLostMouseCapture(MouseEventArgs e)
     {
         if (_hwndSource is not null)
@@ -217,12 +224,16 @@ public class TitleBarButton : ButtonBase
 
     private IntPtr HwndSourceHook(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
     {
-        if (msg == TitleBar.WM_NCHITTEST_RESOLVED)
+        var uMsg = (uint)msg;
+
+        if (uMsg == FluentWindow.WM_NCHITTEST_RESOLVED)
         {
             _isHitTestTarget = wParam.ToInt32() == 1 && lParam.ToInt32() == GetHashCode();
+            Debug.WriteLine($"TitleBarButton: WM_NCHITTEST_RESOLVED [{TitleBar.GetElementIdentity(this)}] {_isHitTestTarget}");
+            return IntPtr.Zero;
         }
 
-        switch ((uint)msg)
+        switch (uMsg)
         {
             // Handle WM_NCMOUSEMOVE to update IsMouseActualOver
             case PInvoke.WM_NCMOUSEMOVE:
@@ -277,7 +288,6 @@ public class TitleBarButton : ButtonBase
 
             case PInvoke.WM_NCMOUSELEAVE:
             {
-                // Unconditionally reset all non-client hover-related state.
                 _isHitTestTarget  = false;
                 IsMouseActualOver = false;
 

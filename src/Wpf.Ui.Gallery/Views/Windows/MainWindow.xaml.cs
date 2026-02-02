@@ -148,14 +148,14 @@ public partial class MainWindow : IWindow
 
     private void MainWindow_OnSizeChanged(object sender, SizeChangedEventArgs e)
     {
-        if (_isUserClosedPane)
-        {
-            return;
-        }
-
-        _isPaneOpenedOrClosedFromCode = true;
-        NavigationView.SetCurrentValue(NavigationView.IsPaneOpenProperty, e.NewSize.Width > 1200);
-        _isPaneOpenedOrClosedFromCode = false;
+        // if (_isUserClosedPane)
+        // {
+        //     return;
+        // }
+        //
+        // _isPaneOpenedOrClosedFromCode = true;
+        // NavigationView.SetCurrentValue(NavigationView.IsPaneOpenProperty, e.NewSize.Width > 1200);
+        // _isPaneOpenedOrClosedFromCode = false;
     }
 
     private void NavigationView_OnPaneOpened(NavigationView sender, RoutedEventArgs args)
