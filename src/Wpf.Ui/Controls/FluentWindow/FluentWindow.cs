@@ -5,6 +5,7 @@
 
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.Windows.Controls.Primitives;
 using Windows.Win32;
 using Windows.Win32.Foundation;
 using Windows.Win32.UI.WindowsAndMessaging;
@@ -210,12 +211,58 @@ public partial class FluentWindow : Window
         }
     }
 
+    internal static class NcHitTestContext
+    {
+        // 高 16 位作为协议签名
+        public const nuint SignatureMask = 0xFFFF_0000;
+        public const nuint Signature     = 0x5442_0000; // 'TB'
+
+        // 低 16 位留给参与者
+        public const nuint TitleBar     = Signature | 0x0001;
+        public const nuint OtherControl = Signature | 0x0002;
+
+        public static bool IsNcContext(nuint value)
+            => (value & SignatureMask) == Signature;
+    }
+
     private IntPtr FluentWindowSourceHook(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
     {
         var uMsg = (uint)msg;
 
         switch (uMsg)
         {
+            case PInvoke.WM_DPICHANGED:
+                InvalidateDpi();
+                break;
+
+            case PInvoke.WM_WININICHANGE:
+                InvalidateSystemMetricCache();
+                break;
+
+            // WRONG: Do not rely on WM_SIZE for WindowState synchronization.
+            //
+            // Using WM_SIZE to infer WindowState is unreliable.
+            //
+            // After a window has been maximized, Windows may still allow limited resizing
+            // (e.g. via resize borders). In this situation, the WS_MAXIMIZE style can be
+            // cleared while WPF's Window.WindowState remains Maximized.
+            // This creates a mismatch between the actual native window state and WPF's
+            // logical WindowState.
+            //
+            // This example is intentionally kept here as a reference for what *not* to do.
+            // case PInvoke.WM_SIZE:
+            // {
+            //     WindowState = (uint)wParam switch
+            //     {
+            //         PInvoke.SIZE_RESTORED  => WindowState.Normal,
+            //         PInvoke.SIZE_MAXIMIZED => WindowState.Maximized,
+            //         PInvoke.SIZE_MINIMIZED => WindowState.Minimized,
+            //         _                      => WindowState
+            //     };
+            // }
+            //
+            // CORRECT: Determine the actual state by inspecting native window styles.
+            //
             // We listen to WM_WINDOWPOSCHANGED and determine the effective WindowState
             // by inspecting native window styles *after* the position/state change
             // has been committed.
@@ -233,135 +280,78 @@ public partial class FluentWindow : Window
                 break;
             }
 
-            case PInvoke.WM_DPICHANGED:
-                InvalidateDpi();
-                break;
-
-            case PInvoke.WM_WININICHANGE:
-                InvalidateSystemMetricCache();
-                break;
-
-            // WindowChromeWorker 说lParam是-1时，不会绘制标题栏，但看起来似乎没有用处
+            // WindowChromeWorker 说lParam是-1时不会绘制标题栏，但看起来似乎没有用处
             case PInvoke.WM_NCACTIVATE:
             {
+                IsNcActive = wParam != IntPtr.Zero;
+
                 var b = PInvoke.DefWindowProc(new HWND(hwnd), uMsg, new WPARAM((uint)wParam), -1);
                 handled = true;
-                // IsNcActive = wParam != IntPtr.Zero;
                 return b;
             }
 
+            // 窗口处理调整尺寸边框和相关逻辑，没有结果再将消息转发给标题栏。
             case PInvoke.WM_NCHITTEST:
             {
-                // 如果使用自带的系统按钮，则需要将消息传递给 DwmDefWindowProc 以提供命中测试
-                var b = PInvoke.DwmDefWindowProc(new HWND(hwnd), (uint)msg, new WPARAM((uint)wParam), new LPARAM(lParam), out LRESULT plResult);
-                if (b)
+                // 只处理系统发来的 WM_NCHITTEST
+                if (NcHitTestContext.IsNcContext((uint)wParam))
                 {
-                    PInvoke.SendMessage((HWND)hwnd, WM_NCHITTEST_RESOLVED, 0, 0);
-                    return plResult;
-                }
-
-                var screenPoint = LParamToPoint(lParam);
-
-                if (ResizeMode is ResizeMode.CanResize or ResizeMode.CanResizeWithGrip)
-                {
-                    var dpi       = DpiHelper.GetWindowDpi(hwnd);
-                    var wndRect   = GetWindowRect(hwnd);
-                    var thickness = GetLogicalWindowBorderThickness(hwnd, WindowBorderKind.Resize);
-                    var scaleX    = dpi.DpiScaleX;
-                    var scaleY    = dpi.DpiScaleY;
-
-                    var ht = HitTestResizeBorder(
-                        DpiHelper.DeviceRectToLogical(wndRect, scaleX, scaleY),
-                        DpiHelper.DevicePixelsToLogical(screenPoint, scaleX, scaleY),
-                        DpiHelper.DeviceThicknessToLogical(thickness, scaleX, scaleY)
-                    );
-
-                    if ((uint)ht is >= PInvoke.HTLEFT and <= PInvoke.HTBOTTOMRIGHT)
+                    // 如果使用自带的系统按钮，则需要将消息传递给 DwmDefWindowProc 以提供命中测试
+                    var b = PInvoke.DwmDefWindowProc(new HWND(hwnd), (uint)msg, new WPARAM((uint)wParam), new LPARAM(lParam), out LRESULT plResult);
+                    if (b)
                     {
-                        // The resize border has been hit and the hit-test result is finalized.
-                        // Notify other components participating in non-client interaction
-                        // so they can update their state accordingly.
                         PInvoke.SendMessage((HWND)hwnd, WM_NCHITTEST_RESOLVED, 0, 0);
-
-                        handled = true;
-                        return ht;
+                        return plResult;
                     }
-                }
 
-                // Perform hit testing within the title bar area.
-                // If the hit element (or one of its ancestors) defines an ElementIdentity
-                // attached property, its semantic identity is mapped to the corresponding
-                // non-client hit-test result.
-                //
-                // When a title bar button is hit, a WM_NCHITTEST_RESOLVED message is broadcast
-                // with the identity of the hit button, allowing all title bar buttons to
-                // synchronize their visual state.
+                    var screenPoint = LParamToPoint(lParam);
 
-                // todo 在窗口上使用，可以直接offset
-                var relativePoint = PointFromScreen(screenPoint);
-
-                if (InputHitTest(relativePoint) is DependencyObject hitElement)
-                {
-                    var id = GetElementIdentity(hitElement);
-
-                    if (id != TitleBarElementIdentity.Unknown)
+                    if (ResizeMode is ResizeMode.CanResize or ResizeMode.CanResizeWithGrip)
                     {
-                        var button = hitElement.FindAncestor<TitleBarButton>();
+                        var dpi     = DpiHelper.GetWindowDpi(hwnd);
+                        var wndRect = GetWindowRect(hwnd);
+                        var border  = GetLogicalWindowBorderThickness(hwnd, WindowBorderKind.Resize);
 
-                        if (button is not null)
+                        var ht = HitTestResizeBorder(
+                            DpiHelper.DevicePixelsToLogical(screenPoint, dpi.DpiScaleX, dpi.DpiScaleY),
+                            DpiHelper.DeviceRectToLogical(wndRect, dpi.DpiScaleX, dpi.DpiScaleY),
+                            DpiHelper.DeviceThicknessToLogical(border, dpi.DpiScaleX, dpi.DpiScaleY)
+                        );
+
+                        if ((uint)ht is >= PInvoke.HTLEFT and <= PInvoke.HTBOTTOMRIGHT)
                         {
-                            // A title bar button has been hit. Broadcast the identity of
-                            // the hit button via WM_NCHITTEST_RESOLVED, allowing each
-                            // button to determine whether it needs to update its own
-                            // visual state.
-                            var hash = new LPARAM(button.GetHashCode());
-                            PInvoke.SendMessage((HWND)hwnd, WM_NCHITTEST_RESOLVED, 1, hash);
-                        }
-                        else
-                        {
+                            // The resize border has been hit and the hit-test result is finalized.
+                            // Notify other components participating in non-client interaction
+                            // so they can update their state accordingly.
                             PInvoke.SendMessage((HWND)hwnd, WM_NCHITTEST_RESOLVED, 0, 0);
-                        }
 
-                        // When icon interaction is disabled, redirect icon hit testing to the caption.
-                        // This causes the icon area to behave like a normal title bar region,
-                        // allowing dragging but suppressing system-defined icon interactions.
-                        if (id == TitleBarElementIdentity.Icon && !IsIconInteractionEnabled)
-                        {
-                            id = TitleBarElementIdentity.Caption;
+                            handled = true;
+                            return ht;
                         }
-
-                        handled = true;
-                        return (IntPtr)id;
                     }
+
+                    // 没有结果，将消息转发给标题栏，让标题栏处理拖动窗口、图标、和系统按钮的命中测试。
+                    // 标题栏处理此消息时必须且应只在有结果时发送 WM_NCHITTEST_RESOLVED 消息以便使依赖此消息更新状态的元素更新状态
+                    var rht = PInvoke.SendMessage((HWND)hwnd, PInvoke.WM_NCHITTEST, NcHitTestContext.TitleBar, lParam);
+                    if (rht != IntPtr.Zero)
+                    {
+                        handled = true;
+                        return rht;
+                    }
+
+                    // No specific non-client element was hit during this pass.
+                    // Still send WM_NCHITTEST_RESOLVED as a completion notification,
+                    // allowing title bar buttons and other participants to reset
+                    // their visual state if necessary.
+                    PInvoke.SendMessage((HWND)hwnd, WM_NCHITTEST_RESOLVED, 0, 0);
                 }
 
-                // No specific non-client element was hit during this pass.
-                // Still send WM_NCHITTEST_RESOLVED as a completion notification,
-                // allowing title bar buttons and other participants to reset
-                // their visual state if necessary.
-                PInvoke.SendMessage((HWND)hwnd, WM_NCHITTEST_RESOLVED, 0, 0);
                 break;
             }
 
-            // Intercept non-client mouse interactions for specific hit-test targets
-            // (typically system buttons) to suppress the default system rendering and
-            // behavior in the title bar.
-            //
-            // This prevents the window from drawing native system button visuals over
-            // the custom title bar implementation.
-            case PInvoke.WM_NCLBUTTONDOWN:
-            case PInvoke.WM_NCLBUTTONUP:
-            {
-                handled = (uint)wParam switch
-                {
-                    PInvoke.HTMAXBUTTON => true, PInvoke.HTMINBUTTON => true,
-                    PInvoke.HTCLOSE     => true, PInvoke.HTHELP      => true,
-                    _                   => handled
-                };
-
-                break;
-            }
-
+            // 非客户端尺寸计算，经测试，目前只有Win11工作正常。
+            // Win10 则只能更改三条边，如果更改全部四条边，则会使DWM绘制出一个完整的假标题栏（包括系统按钮）但无法交互。
+            // 此行为需要进一步测试，尝试不更改（返回非零的其他值），
             case PInvoke.WM_NCCALCSIZE:
             {
                 if (Utilities.IsOSWindows11OrNewer)
@@ -379,6 +369,22 @@ public partial class FluentWindow : Window
                     rcClientArea.bottom -= (int)Math.Ceiling(thickness.Bottom);
 
                     Marshal.StructureToPtr(rcClientArea, lParam, false);
+
+                    handled = true;
+
+                    // Per MSDN for NCCALCSIZE, always return 0 when wParam == FALSE
+                    //
+                    // Returning 0 when wParam == TRUE is not appropriate - it will preserve
+                    // the old client area and align it with the upper-left corner of the new
+                    // client area. So we simply ask for a redraw (WVR_REDRAW)
+
+                    IntPtr retVal = IntPtr.Zero;
+                    if (wParam.ToInt32() != 0) // wParam == TRUE
+                    {
+                        retVal = new IntPtr(PInvoke.WVR_REDRAW);
+                    }
+
+                    return retVal;
                 }
 
                 break;

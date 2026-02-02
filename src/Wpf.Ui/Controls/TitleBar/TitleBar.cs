@@ -486,6 +486,8 @@ public class TitleBar : ContentControl
     /// </remarks>
     internal static readonly uint WM_NCHITTEST_RESOLVED = PInvoke.RegisterWindowMessage("WM_NCHITTEST_RESOLVED");
 
+    internal const nuint HitTestContext = 0x5442_0001;
+
     private Window?       _window;
     private HwndSource?   _hwndSource;
     private WindowChrome? _chrome;
@@ -589,106 +591,64 @@ public class TitleBar : ContentControl
                 break;
             }
 
+            // 标题栏不应直接处理系统发送的 WM_NCHITTEST 消息，而应该只处理从窗口发送的 WM_NCHITTEST 消息以便处理标题栏元素的非客户区命中测试。
+            // 不能对该消息进行拦截，必须让此消息贯穿整个窗口消息过程链，否则可能使其它依赖此消息提供非客户区命中测试的控件失去相应功能。
+            // 如有命中测试结果，返回正确的结果即可；反之，返回 HTNOWHERE 即可。
             case PInvoke.WM_NCHITTEST:
             {
-
-                var b = PInvoke.DwmDefWindowProc(new HWND(hwnd), (uint)msg, new WPARAM((uint)wParam), new LPARAM(lParam), out LRESULT plResult);
-                if (b)
+                if ((uint)wParam == FluentWindow.NcHitTestContext.TitleBar)
                 {
-                    PInvoke.SendMessage((HWND)hwnd, WM_NCHITTEST_RESOLVED, 0, 0);
-                    return plResult;
-                }
+                    // Perform hit testing within the title bar area.
+                    // If the hit element (or one of its ancestors) defines an ElementIdentity
+                    // attached property, its semantic identity is mapped to the corresponding
+                    // non-client hit-test result.
+                    //
+                    // When a title bar button is hit, a WM_NCHITTEST_RESOLVED message is broadcast
+                    // with the identity of the hit button, allowing all title bar buttons to
+                    // synchronize their visual state.
 
-                var screenPoint = LParamToPoint(lParam);
+                    var screenPoint   = LParamToPoint(lParam);
+                    var relativePoint = PointFromScreen(screenPoint);
 
-                // When WindowChrome is in use, WindowChromeWorker prioritizes user content
-                // during hit testing. This can cause the resize border area to be covered
-                // by client content, making window resizing via the border impossible.
-                //
-                // To address this, when the window supports resizing, the resize border
-                // is hit-tested explicitly here and the corresponding HT value is returned
-                // with higher priority.
-                //
-                // When WindowChrome is not used, this step is unnecessary because the
-                // window itself correctly handles non-client resize hit testing.
-
-                if (_chrome is not null && WindowResizeMode is ResizeMode.CanResize or ResizeMode.CanResizeWithGrip)
-                {
-                    var dpi     = DpiHelper.GetWindowDpi(hwnd);
-                    var wndRect = GetWindowRect(hwnd);
-
-                    var ht = HitTestResizeBorder(
-                        DpiHelper.DeviceRectToLogical(wndRect, dpi.DpiScaleX, dpi.DpiScaleY),
-                        DpiHelper.DevicePixelsToLogical(screenPoint, dpi.DpiScaleX, dpi.DpiScaleY)
-                    );
-
-                    if ((uint)ht is >= PInvoke.HTLEFT and <= PInvoke.HTBOTTOMRIGHT)
+                    if (relativePoint is { X: >= 0, Y: >= 0 } &&
+                        relativePoint.X <= ActualWidth && relativePoint.Y <= ActualHeight)
                     {
-                        // The resize border has been hit and the hit-test result is finalized.
-                        // Notify other components participating in non-client interaction
-                        // so they can update their state accordingly.
-                        PInvoke.SendMessage((HWND)hwnd, WM_NCHITTEST_RESOLVED, 0, 0);
-
-                        handled = true;
-                        return ht;
-                    }
-                }
-
-                // Perform hit testing within the title bar area.
-                // If the hit element (or one of its ancestors) defines an ElementIdentity
-                // attached property, its semantic identity is mapped to the corresponding
-                // non-client hit-test result.
-                //
-                // When a title bar button is hit, a WM_NCHITTEST_RESOLVED message is broadcast
-                // with the identity of the hit button, allowing all title bar buttons to
-                // synchronize their visual state.
-
-                var relativePoint = PointFromScreen(screenPoint);
-
-                if (relativePoint is { X: >= 0, Y: >= 0 } &&
-                    relativePoint.X <= ActualWidth && relativePoint.Y <= ActualHeight)
-                {
-                    if (InputHitTest(relativePoint) is DependencyObject hitElement)
-                    {
-                        var id = GetElementIdentity(hitElement);
-
-                        if (id != TitleBarElementIdentity.Unknown)
+                        if (InputHitTest(relativePoint) is DependencyObject hitElement)
                         {
-                            var button = hitElement.FindAncestor<TitleBarButton>();
+                            var id = GetElementIdentity(hitElement);
 
-                            if (button is not null)
+                            if (id != TitleBarElementIdentity.Unknown)
                             {
-                                // A title bar button has been hit. Broadcast the identity of
-                                // the hit button via WM_NCHITTEST_RESOLVED, allowing each
-                                // button to determine whether it needs to update its own
-                                // visual state.
-                                var hash = new LPARAM(button.GetHashCode());
-                                PInvoke.SendMessage((HWND)hwnd, WM_NCHITTEST_RESOLVED, 1, hash);
-                            }
-                            else
-                            {
-                                PInvoke.SendMessage((HWND)hwnd, WM_NCHITTEST_RESOLVED, 0, 0);
-                            }
+                                var button = hitElement.FindAncestor<TitleBarButton>();
 
-                            // When icon interaction is disabled, redirect icon hit testing to the caption.
-                            // This causes the icon area to behave like a normal title bar region,
-                            // allowing dragging but suppressing system-defined icon interactions.
-                            if (id == TitleBarElementIdentity.Icon && !IsIconInteractionEnabled)
-                            {
-                                id = TitleBarElementIdentity.Caption;
-                            }
+                                if (button is not null)
+                                {
+                                    // A title bar button has been hit. Broadcast the identity of
+                                    // the hit button via WM_NCHITTEST_RESOLVED, allowing each
+                                    // button to determine whether it needs to update its own
+                                    // visual state.
+                                    var hash = new LPARAM(button.GetHashCode());
+                                    PInvoke.SendMessage((HWND)hwnd, WM_NCHITTEST_RESOLVED, 1, hash);
+                                }
+                                else
+                                {
+                                    PInvoke.SendMessage((HWND)hwnd, WM_NCHITTEST_RESOLVED, 0, 0);
+                                }
 
-                            handled = true;
-                            return (IntPtr)id;
+                                // When icon interaction is disabled, redirect icon hit testing to the caption.
+                                // This causes the icon area to behave like a normal title bar region,
+                                // allowing dragging but suppressing system-defined icon interactions.
+                                if (id == TitleBarElementIdentity.Icon && !IsIconInteractionEnabled)
+                                {
+                                    id = TitleBarElementIdentity.Caption;
+                                }
+
+                                return (IntPtr)id;
+                            }
                         }
                     }
                 }
 
-                // No specific non-client element was hit during this pass.
-                // Still send WM_NCHITTEST_RESOLVED as a completion notification,
-                // allowing title bar buttons and other participants to reset
-                // their visual state if necessary.
-                PInvoke.SendMessage((HWND)hwnd, WM_NCHITTEST_RESOLVED, 0, 0);
                 break;
             }
 

@@ -149,7 +149,7 @@ public partial class FluentWindow
     };
 
     // 传进参数全部是逻辑坐标
-    private static IntPtr HitTestResizeBorder(in Rect wRect, in Point mPoint, in Thickness borderThickness)
+    private static IntPtr HitTestResizeBorder(in Point mPoint,  in Rect wRect, in Thickness borderThickness)
     {
         var row = 1;
         var col = 1;
