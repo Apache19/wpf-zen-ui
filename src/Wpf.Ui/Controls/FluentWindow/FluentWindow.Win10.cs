@@ -5,7 +5,13 @@
 
 using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using System.Text;
+using Windows.Win32;
+using Windows.Win32.Foundation;
+using Windows.Win32.UI.Controls;
+using Windows.Win32.UI.WindowsAndMessaging;
+using Wpf.Ui.Hardware;
 
 // ReSharper disable once CheckNamespace
 namespace Wpf.Ui.Controls;
@@ -15,11 +21,49 @@ namespace Wpf.Ui.Controls;
 /// </summary>
 public partial class FluentWindow
 {
-    private IntPtr Win10WindowSourceHook(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
+    private void OnSourceInitialized_Win10(HwndSource hwndSource)
     {
+        var margins = new MARGINS()
+        {
+            cxLeftWidth    = -1,
+            cxRightWidth   = -1,
+            cyBottomHeight = -1,
+            cyTopHeight    = -1,
+        };
 
-
-        return IntPtr.Zero;
+        // PInvoke.DwmExtendFrameIntoClientArea((HWND)hwndSource.Handle, in margins);
     }
 
+    private IntPtr NcCalcSizeHandler_Win10(IntPtr hwnd, uint msg, IntPtr wParam, IntPtr lParam, out bool handled)
+    {
+        var rcClientArea = Marshal.PtrToStructure<RECT>(lParam);
+
+        EnsureWindowDpi(hwnd);
+
+        var dpi          = _cachedDpi;
+        var windowBorder = GetLogicalWindowBorderThickness(hwnd, WindowBorderKind.Layout);
+        var thickness    = DpiHelper.LogicalThicknessToDevice(windowBorder, dpi.DpiScaleX, dpi.DpiScaleY);
+
+        rcClientArea.left  += (int)Math.Ceiling(thickness.Left);
+        rcClientArea.right -= (int)Math.Ceiling(thickness.Right);
+
+        //if (IsMaximized((HWND)hwnd))
+        {
+            rcClientArea.top += (int)Math.Ceiling(thickness.Top);
+        }
+
+        rcClientArea.bottom -= (int)Math.Ceiling(thickness.Bottom);
+
+        Marshal.StructureToPtr(rcClientArea, lParam, false);
+
+        handled = true;
+
+        IntPtr retVal = IntPtr.Zero;
+        if (wParam.ToInt32() != 0) // wParam == TRUE
+        {
+            retVal = new IntPtr(PInvoke.WVR_REDRAW);
+        }
+
+        return retVal;
+    }
 }

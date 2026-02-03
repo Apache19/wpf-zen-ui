@@ -20,20 +20,7 @@ namespace Wpf.Ui.Controls;
 /// </summary>
 public partial class FluentWindow : Window
 {
-    static FluentWindow()
-    {
-        // DefaultStyleKeyProperty.OverrideMetadata(
-        //     typeof(FluentWindow),
-        //     new FrameworkPropertyMetadata(typeof(FluentWindow))
-        // );
-        //
-        // OverridesDefaultStyleProperty.OverrideMetadata(
-        //     typeof(FluentWindow),
-        //     new FrameworkPropertyMetadata(true)
-        // );
-    }
-
-    #region ActualWindowState 依赖属性
+    #region ActualWindowState
 
     /// <summary>
     /// Identifies the <see cref="ActualWindowState"/> dependency property.
@@ -73,6 +60,8 @@ public partial class FluentWindow : Window
 
     #endregion
 
+    #region IsNcActive
+
     private static readonly DependencyPropertyKey IsNcActivePropertyKey =
         DependencyProperty.RegisterReadOnly(
             nameof(IsNcActive),
@@ -110,6 +99,8 @@ public partial class FluentWindow : Window
         get => (bool)GetValue(IsNcActiveProperty);
         private set => SetValue(IsNcActivePropertyKey, value);
     }
+
+    #endregion
 
     #region ElementIdentity
 
@@ -200,6 +191,43 @@ public partial class FluentWindow : Window
     internal static readonly uint WM_NCHITTEST_RESOLVED = PInvoke.RegisterWindowMessage("WM_NCHITTEST_RESOLVED");
     internal static readonly uint WM_NCHITTEST_REQUEST  = PInvoke.RegisterWindowMessage("WM_NCHITTEST_REQUEST");
 
+    private static bool IsMaximized(HWND hwnd)
+    {
+        WINDOW_STYLE style = (WINDOW_STYLE)PInvoke.GetWindowLong(hwnd, WINDOW_LONG_PTR_INDEX.GWL_STYLE);
+        return (style & WINDOW_STYLE.WS_MAXIMIZE) != 0;
+    }
+
+    private readonly MessageHandler           _ncCalcSizeh;
+    private readonly SourceInitializedHandler _sourceInitialized;
+
+    public FluentWindow()
+    {
+        SetResourceReference(StyleProperty, typeof(FluentWindow));
+
+        switch (Utilities.OsVersion)
+        {
+            case OsVersion.Unknown:
+                _ncCalcSizeh       = NcCalcSizeHandler_Win11;
+                _sourceInitialized = OnSourceInitialized_Win11;
+                break;
+
+            case OsVersion.Vista:
+            case OsVersion.Win7:
+            case OsVersion.Win8:
+            case OsVersion.Win10:
+                _ncCalcSizeh       = NcCalcSizeHandler_Win10;
+                _sourceInitialized = OnSourceInitialized_Win10;
+                break;
+
+            case OsVersion.Win11:
+
+            default:
+                _ncCalcSizeh       = NcCalcSizeHandler_Win11;
+                _sourceInitialized = OnSourceInitialized_Win11;
+                break;
+        }
+    }
+
     protected override void OnSourceInitialized(EventArgs e)
     {
         base.OnSourceInitialized(e);
@@ -207,19 +235,7 @@ public partial class FluentWindow : Window
         if (PresentationSource.FromVisual(this) is HwndSource hwndSource)
         {
             hwndSource.AddHook(FluentWindowSourceHook);
-
-            if (!Utilities.IsOSWindows11OrNewer)
-            {
-                var margins = new MARGINS()
-                {
-                    cxLeftWidth    = 10,
-                    cxRightWidth   = 10,
-                    cyBottomHeight = 10,
-                    cyTopHeight    = 10,
-                };
-
-                PInvoke.DwmExtendFrameIntoClientArea((HWND)hwndSource.Handle, in margins);
-            }
+            _sourceInitialized(hwndSource);
         }
     }
 
@@ -313,7 +329,7 @@ public partial class FluentWindow : Window
             {
                 var screenPoint = LParamToPoint(lParam);
 
-                if (ResizeMode is ResizeMode.CanResize or ResizeMode.CanResizeWithGrip)
+                if ((ResizeMode is ResizeMode.CanResize or ResizeMode.CanResizeWithGrip) && !IsMaximized((HWND)hwnd))
                 {
                     var dpi     = DpiHelper.GetWindowDpi(hwnd);
                     var wndRect = GetWindowRect(hwnd);
@@ -359,37 +375,7 @@ public partial class FluentWindow : Window
             // Win10 则只能更改三条边，如果更改全部四条边，则会使DWM绘制出一个完整的假标题栏（包括系统按钮）但无法交互。
             // 此行为需要进一步测试，尝试不更改（返回非零的其他值），而使用DwmExtendFrameIntoClientArea
             case PInvoke.WM_NCCALCSIZE:
-            {
-                handled = true;
-
-                if (Utilities.IsOSWindows11OrNewer)
-                {
-                    var rcClientArea = Marshal.PtrToStructure<RECT>(lParam);
-
-                    EnsureWindowDpi(hwnd);
-
-                    var dpi          = _cachedDpi;
-                    var windowBorder = GetLogicalWindowBorderThickness(hwnd, WindowBorderKind.Layout);
-                    var thickness    = DpiHelper.LogicalThicknessToDevice(windowBorder, dpi.DpiScaleX, dpi.DpiScaleY);
-
-                    rcClientArea.left   += (int)Math.Ceiling(thickness.Left);
-                    rcClientArea.right  -= (int)Math.Ceiling(thickness.Right);
-                    rcClientArea.top    += (int)Math.Ceiling(thickness.Top);
-                    rcClientArea.bottom -= (int)Math.Ceiling(thickness.Bottom);
-
-                    Marshal.StructureToPtr(rcClientArea, lParam, false);
-
-                    IntPtr retVal = IntPtr.Zero;
-                    if (wParam.ToInt32() != 0) // wParam == TRUE
-                    {
-                        retVal = new IntPtr(PInvoke.WVR_REDRAW);
-                    }
-
-                    return retVal;
-                }
-
-                break;
-            }
+                return _ncCalcSizeh(hwnd, uMsg, wParam, lParam, out handled);
         }
 
         return IntPtr.Zero;
@@ -402,4 +388,8 @@ public partial class FluentWindow : Window
             return new Point(x, y);
         }
     }
+
+    private delegate IntPtr MessageHandler(IntPtr hwnd, uint uMsg, IntPtr wParam, IntPtr lParam, out bool handled);
+
+    private delegate void SourceInitializedHandler(HwndSource hwndSource);
 }

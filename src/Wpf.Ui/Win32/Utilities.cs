@@ -24,18 +24,16 @@ internal sealed class Utilities
 {
     private static readonly PlatformID _osPlatform = Environment.OSVersion.Platform;
 
-    public static readonly Version Vista = new(6, 0);
-
+    public static readonly Version Vista    = new(6, 0);
     public static readonly Version Windows7 = new(6, 1);
-
     public static readonly Version Windows8 = new(6, 2);
 
     private static readonly Version _osVersion =
-#if NET5_0_OR_GREATER
-    Environment.OSVersion.Version;
-#else
-    GetOSVersionFromRegistry();
-#endif
+        #if NET5_0_OR_GREATER
+        Environment.OSVersion.Version;
+    #else
+        GetOSVersionFromRegistry();
+    #endif
 
     /// <summary>
     /// Gets a value indicating whether the operating system is NT or newer.
@@ -82,6 +80,14 @@ internal sealed class Utilities
     /// </summary>
     public static bool IsOSWindows11Insider2OrNewer => _osVersion.Build >= 22557;
 
+    public static OsVersion OsVersion =
+        IsOSWindows11OrNewer ? OsVersion.Win11 :
+        IsOSWindows10OrNewer ? OsVersion.Win10 :
+        IsOSWindows8OrNewer  ? OsVersion.Win8 :
+        IsOSWindows7OrNewer  ? OsVersion.Win7 :
+        IsOSVistaOrNewer     ? OsVersion.Vista :
+                               OsVersion.Unknown;
+
     /// <summary>
     /// Gets a value indicating whether Desktop Window Manager (DWM) composition is enabled.
     /// </summary>
@@ -115,9 +121,9 @@ internal sealed class Utilities
             var src = HwndSource.FromHwnd(hwnd);
             return src?.RootVisual switch
             {
-                Window w => w,
+                Window w            => w,
                 DependencyObject rd => Window.GetWindow(rd),
-                _ => null,
+                _                   => null,
             };
         }
         catch
@@ -126,7 +132,7 @@ internal sealed class Utilities
         }
     }
 
-#if !NET5_0_OR_GREATER
+    #if !NET5_0_OR_GREATER
     /// <summary>
     /// Tries to get the OS version from the Windows registry.
     /// </summary>
@@ -246,5 +252,5 @@ internal sealed class Utilities
         }
     }
 
-#endif
+    #endif
 }

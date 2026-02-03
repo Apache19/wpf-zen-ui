@@ -130,7 +130,7 @@ public partial class FluentWindow
                 }
 
                 // 顶部：排除 PaddingBorder，只包含 SmCySizeFrame
-                var top = frameX / dpi.DpiScaleY;
+                // var top = frameX / dpi.DpiScaleY;
                 return new Thickness(xw, yh, xw, yh);
             }
 

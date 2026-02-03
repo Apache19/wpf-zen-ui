@@ -10,9 +10,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Ui.Controls">
 
-
-    <!--
-    <ControlTemplate x:Key="&#397;" TargetType="{x:Type Window}">
+    <ControlTemplate x:Key="FluentWindow_ResizeGrip_Win10_Template" TargetType="{x:Type controls:FluentWindow}">
         <Border
             Background="{TemplateBinding Background}"
             BorderBrush="{TemplateBinding BorderBrush}"
@@ -21,7 +19,6 @@
                 <AdornerDecorator>
                     <ContentPresenter />
                 </AdornerDecorator>
-
                 <ResizeGrip
                     x:Name="WindowResizeGrip"
                     HorizontalAlignment="Right"
@@ -41,8 +38,85 @@
         </ControlTemplate.Triggers>
     </ControlTemplate>
 
+    <ControlTemplate x:Key="FluentWindow_Win10_Template" TargetType="{x:Type controls:FluentWindow}">
+        <Border
+            Background="{TemplateBinding Background}"
+            BorderBrush="{TemplateBinding BorderBrush}"
+            BorderThickness="{TemplateBinding BorderThickness}">
+            <AdornerDecorator>
+                <ContentPresenter />
+            </AdornerDecorator>
+        </Border>
+    </ControlTemplate>
 
-    <Style TargetType="{x:Type controls:FluentWindow}">
+    <ControlTemplate x:Key="FluentWindow_ResizeGrip_Win11_Template" TargetType="{x:Type controls:FluentWindow}">
+        <Border
+            Background="{TemplateBinding Background}"
+            BorderBrush="{TemplateBinding BorderBrush}"
+            BorderThickness="{TemplateBinding BorderThickness}">
+            <Grid>
+                <AdornerDecorator>
+                    <ContentPresenter />
+                </AdornerDecorator>
+                <ResizeGrip
+                    x:Name="WindowResizeGrip"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Bottom"
+                    IsTabStop="false"
+                    Visibility="Collapsed" />
+            </Grid>
+        </Border>
+        <ControlTemplate.Triggers>
+            <MultiTrigger>
+                <MultiTrigger.Conditions>
+                    <Condition Property="Window.ResizeMode" Value="CanResizeWithGrip" />
+                    <Condition Property="Window.WindowState" Value="Normal" />
+                </MultiTrigger.Conditions>
+                <Setter TargetName="WindowResizeGrip" Property="Visibility" Value="Visible" />
+            </MultiTrigger>
+        </ControlTemplate.Triggers>
+    </ControlTemplate>
+
+    <ControlTemplate x:Key="FluentWindow_Win11_Template" TargetType="{x:Type controls:FluentWindow}">
+        <Border
+            Background="{TemplateBinding Background}"
+            BorderBrush="{TemplateBinding BorderBrush}"
+            BorderThickness="{TemplateBinding BorderThickness}">
+            <AdornerDecorator>
+                <ContentPresenter />
+            </AdornerDecorator>
+        </Border>
+    </ControlTemplate>
+
+    <ControlTemplate x:Key="FluentWindow_ResizeGrip_Template" TargetType="{x:Type controls:FluentWindow}">
+        <Border
+            Background="{TemplateBinding Background}"
+            BorderBrush="{TemplateBinding BorderBrush}"
+            BorderThickness="{TemplateBinding BorderThickness}">
+            <Grid>
+                <AdornerDecorator>
+                    <ContentPresenter />
+                </AdornerDecorator>
+                <ResizeGrip
+                    x:Name="WindowResizeGrip"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Bottom"
+                    IsTabStop="false"
+                    Visibility="Collapsed" />
+            </Grid>
+        </Border>
+        <ControlTemplate.Triggers>
+            <MultiTrigger>
+                <MultiTrigger.Conditions>
+                    <Condition Property="Window.ResizeMode" Value="CanResizeWithGrip" />
+                    <Condition Property="Window.WindowState" Value="Normal" />
+                </MultiTrigger.Conditions>
+                <Setter TargetName="WindowResizeGrip" Property="Visibility" Value="Visible" />
+            </MultiTrigger>
+        </ControlTemplate.Triggers>
+    </ControlTemplate>
+
+    <Style x:Key="DefaultFluentWindowStyle" TargetType="{x:Type controls:FluentWindow}">
         <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.WindowTextBrushKey}}" />
         <Setter Property="Background" Value="{DynamicResource {x:Static SystemColors.WindowBrushKey}}" />
         <Setter Property="Template">
@@ -61,11 +135,11 @@
         </Setter>
         <Style.Triggers>
             <Trigger Property="Window.ResizeMode" Value="CanResizeWithGrip">
-                <Setter Property="Template" Value="{StaticResource &#397;}" />
+                <Setter Property="Template" Value="{StaticResource ResizeGripFluentWindowTemplate}" />
             </Trigger>
         </Style.Triggers>
     </Style>
-    
-    -->
+
+    <Style BasedOn="{StaticResource DefaultFluentWindowStyle}" TargetType="{x:Type controls:FluentWindow}" />
 
 </ResourceDictionary>

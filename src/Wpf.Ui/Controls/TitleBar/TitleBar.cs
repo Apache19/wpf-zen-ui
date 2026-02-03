@@ -327,7 +327,6 @@ public class TitleBar : ContentControl
                 if (InputHitTest(rPoint) is DependencyObject hitElement)
                 {
                     var id = GetElementIdentity(hitElement);
-                    Debug.WriteLine($"TitleBar: WM_NCHITTEST_REQUEST - id = {id}");
 
                     if (id != TitleBarElementIdentity.Unknown)
                     {
