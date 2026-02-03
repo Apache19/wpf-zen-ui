@@ -12,6 +12,7 @@ using Windows.Win32.Foundation;
 using Windows.Win32.UI.Controls;
 using Windows.Win32.UI.WindowsAndMessaging;
 using Wpf.Ui.Hardware;
+using Wpf.Ui.Win32;
 
 // ReSharper disable once CheckNamespace
 namespace Wpf.Ui.Controls;
@@ -34,8 +35,9 @@ public partial class FluentWindow
         PInvoke.DwmExtendFrameIntoClientArea((HWND)hwndSource.Handle, in margins);
     }
 
-    private IntPtr NcCalcSizeHandler_Win10(IntPtr hwnd, uint msg, IntPtr wParam, IntPtr lParam, out bool handled)
+    private IntPtr NcCalcSizeHandler_Win10(IntPtr hwndIntPtr, uint msg, IntPtr wParam, IntPtr lParam, out bool handled)
     {
+        var hwnd         = (HWND)hwndIntPtr;
         var rcClientArea = Marshal.PtrToStructure<RECT>(lParam);
 
         EnsureWindowDpi(hwnd);
@@ -47,7 +49,7 @@ public partial class FluentWindow
         rcClientArea.left  += (int)thickness.Left;
         rcClientArea.right -= (int)thickness.Right;
 
-        if (IsMaximized((HWND)hwnd))
+        if (Utilities.GetHwndState(hwnd) == WindowState.Maximized)
         {
             rcClientArea.top += (int)thickness.Top;
         }

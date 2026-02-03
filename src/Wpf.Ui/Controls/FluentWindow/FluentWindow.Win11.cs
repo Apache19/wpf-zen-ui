@@ -20,10 +20,11 @@ public partial class FluentWindow
     {
     }
 
-    private IntPtr NcCalcSizeHandler_Win11(IntPtr hwnd, uint msg, IntPtr wParam, IntPtr lParam, out bool handled)
+    private IntPtr NcCalcSizeHandler_Win11(IntPtr hwndIntPtr, uint msg, IntPtr wParam, IntPtr lParam, out bool handled)
     {
         handled = true;
 
+        var hwnd         = (HWND)hwndIntPtr;
         var rcClientArea = Marshal.PtrToStructure<RECT>(lParam);
 
         EnsureWindowDpi(hwnd);

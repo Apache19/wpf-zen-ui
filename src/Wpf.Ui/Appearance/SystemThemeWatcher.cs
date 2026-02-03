@@ -4,8 +4,8 @@
 // All Rights Reserved.
 
 using Windows.Win32;
+using Windows.Win32.Foundation;
 using Wpf.Ui.Controls;
-using Wpf.Ui.Interop;
 
 namespace Wpf.Ui.Appearance;
 
@@ -157,15 +157,15 @@ public static class SystemThemeWatcher
             || msg == (int)PInvoke.WM_SYSCOLORCHANGE
         )
         {
-            UpdateObservedWindow(hWnd);
+            UpdateObservedWindow((HWND)hWnd);
         }
 
         return IntPtr.Zero;
     }
 
-    private static void UpdateObservedWindow(nint hWnd)
+    private static void UpdateObservedWindow(HWND hWnd)
     {
-        if (!UnsafeNativeMethods.IsValidWindow(hWnd))
+        if (!PInvoke.IsWindow(hWnd))
         {
             return;
         }

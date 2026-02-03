@@ -381,6 +381,8 @@ public class TitleBar : ContentControl
 
             case PInvoke.WM_NCRBUTTONUP:
             {
+                // todo 菜单更新似乎不需要像WindowChromeWorker里那么复杂，可能只需要发送一个什么消息触发系统自动更新即可。
+                // 实测鼠标按下
                 if (wParam.ToInt32() != PInvoke.HTCAPTION)
                 {
                     break;
@@ -403,7 +405,7 @@ public class TitleBar : ContentControl
 
                     if (cmd)
                     {
-                        PInvoke.PostMessage((HWND)hwnd, PInvoke.WM_SYSCOMMAND, new WPARAM((uint)cmd.Value), IntPtr.Zero);
+                        PInvoke.PostMessage((HWND)hwnd, PInvoke.WM_SYSCOMMAND, (nuint)cmd.Value, 0);
                     }
                 }
 
