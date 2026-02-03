@@ -18,7 +18,6 @@ public partial class FluentWindow
 {
     private void OnSourceInitialized_Win11(HwndSource hwndSource)
     {
-
     }
 
     private IntPtr NcCalcSizeHandler_Win11(IntPtr hwnd, uint msg, IntPtr wParam, IntPtr lParam, out bool handled)
@@ -29,14 +28,14 @@ public partial class FluentWindow
 
         EnsureWindowDpi(hwnd);
 
-        var dpi          = _cachedDpi;
-        var windowBorder = GetLogicalWindowBorderThickness(hwnd, WindowBorderKind.Layout);
-        var thickness    = DpiHelper.LogicalThicknessToDevice(windowBorder, dpi.DpiScaleX, dpi.DpiScaleY);
+        var dpi       = _cachedDpi;
+        var winBorder = GetLogicalWindowBorderThickness(hwnd, WindowBorderKind.Layout);
+        var thickness = DpiHelper.LogicalThicknessToDevice(winBorder, dpi.DpiScaleX, dpi.DpiScaleY);
 
-        rcClientArea.left   += (int)Math.Ceiling(thickness.Left);
-        rcClientArea.right  -= (int)Math.Ceiling(thickness.Right);
-        rcClientArea.top    += (int)Math.Ceiling(thickness.Top);
-        rcClientArea.bottom -= (int)Math.Ceiling(thickness.Bottom);
+        rcClientArea.left   += (int)thickness.Left;
+        rcClientArea.right  -= (int)thickness.Right;
+        rcClientArea.top    += (int)thickness.Top;
+        rcClientArea.bottom -= (int)thickness.Bottom;
 
         Marshal.StructureToPtr(rcClientArea, lParam, false);
 

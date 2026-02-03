@@ -397,14 +397,6 @@ internal static class UnsafeNativeMethods
     }
 
     /// <summary>
-    /// Checks if provided pointer represents existing window.
-    /// </summary>
-    public static bool IsValidWindow(IntPtr hWnd)
-    {
-        return PInvoke.IsWindow(new HWND(hWnd));
-    }
-
-    /// <summary>
     /// Tries to get the pointer to the window handle.
     /// </summary>
     /// <returns><see langword="true"/> if the handle is not <see cref="IntPtr.Zero"/>.</returns>

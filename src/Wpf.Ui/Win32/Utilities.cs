@@ -3,13 +3,10 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-#pragma warning disable CS8601
-#pragma warning disable CS8625
-
-using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Windows.Win32;
 using Windows.Win32.Foundation;
+using Windows.Win32.UI.WindowsAndMessaging;
 using static Wpf.Ui.Appearance.UISettingsRCW;
 
 namespace Wpf.Ui.Win32;
@@ -24,15 +21,14 @@ internal sealed class Utilities
 {
     private static readonly PlatformID _osPlatform = Environment.OSVersion.Platform;
 
-    public static readonly Version Vista    = new(6, 0);
-    public static readonly Version Windows7 = new(6, 1);
-    public static readonly Version Windows8 = new(6, 2);
+    private static readonly Version Vista    = new(6, 0);
+    private static readonly Version Windows7 = new(6, 1);
+    private static readonly Version Windows8 = new(6, 2);
 
-    private static readonly Version _osVersion =
-        #if NET5_0_OR_GREATER
-        Environment.OSVersion.Version;
+    #if NET5_0_OR_GREATER
+    private static readonly Version _osVersion = Environment.OSVersion.Version;
     #else
-        GetOSVersionFromRegistry();
+    private static readonly Version _osVersion = GetOSVersionFromRegistry();
     #endif
 
     /// <summary>
@@ -80,13 +76,34 @@ internal sealed class Utilities
     /// </summary>
     public static bool IsOSWindows11Insider2OrNewer => _osVersion.Build >= 22557;
 
-    public static OsVersion OsVersion =
+    public static readonly OsVersion OsVersion =
         IsOSWindows11OrNewer ? OsVersion.Win11 :
         IsOSWindows10OrNewer ? OsVersion.Win10 :
         IsOSWindows8OrNewer  ? OsVersion.Win8 :
         IsOSWindows7OrNewer  ? OsVersion.Win7 :
         IsOSVistaOrNewer     ? OsVersion.Vista :
                                OsVersion.Unknown;
+
+    /// <summary>
+    /// Get the WindowState as the native HWND knows it to be.
+    /// This isn't necessarily the same as what Window thinks.
+    /// </summary>
+    public static WindowState GetHwndState(HWND hwnd)
+    {
+        WINDOWPLACEMENT wpl = new() { length = (uint)Marshal.SizeOf<WINDOWPLACEMENT>() };
+
+        if (PInvoke.GetWindowPlacement(hwnd, ref wpl))
+        {
+            return wpl.showCmd switch
+            {
+                SHOW_WINDOW_CMD.SW_MINIMIZE => WindowState.Minimized,
+                SHOW_WINDOW_CMD.SW_MAXIMIZE => WindowState.Maximized,
+                _                           => WindowState.Normal
+            };
+        }
+
+        throw new Win32Exception();
+    }
 
     /// <summary>
     /// Gets a value indicating whether Desktop Window Manager (DWM) composition is enabled.

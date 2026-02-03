@@ -4,12 +4,15 @@
 // All Rights Reserved.
 
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using Windows.Win32;
 using Windows.Win32.Foundation;
+using Windows.Win32.UI.WindowsAndMessaging;
 using Wpf.Ui.Designer;
 using Wpf.Ui.Extensions.Wpf;
+using static Wpf.Ui.Appearance.UISettingsRCW;
 
 // ReSharper disable SuspiciousTypeConversion.Global
 // ReSharper disable once CheckNamespace
@@ -319,12 +322,12 @@ public class TitleBar : ContentControl
 
         if (uMsg == FluentWindow.WM_NCHITTEST_REQUEST)
         {
-            var sPoint = LParamToPoint(lParam);
-            var rPoint = PointFromScreen(sPoint);
+            var screenPoint = LParamToPoint(lParam);
+            var localPoint  = PointFromScreen(screenPoint);
 
-            if (rPoint is { X: >= 0, Y: >= 0 } && rPoint.X <= ActualWidth && rPoint.Y <= ActualHeight)
+            if (localPoint is { X: >= 0, Y: >= 0 } && localPoint.X <= ActualWidth && localPoint.Y <= ActualHeight)
             {
-                if (InputHitTest(rPoint) is DependencyObject hitElement)
+                if (InputHitTest(localPoint) is DependencyObject hitElement)
                 {
                     var id = GetElementIdentity(hitElement);
 
@@ -372,6 +375,37 @@ public class TitleBar : ContentControl
                     PInvoke.HTCLOSE     => true, PInvoke.HTHELP      => true,
                     _                   => handled
                 };
+
+                break;
+            }
+
+            case PInvoke.WM_NCRBUTTONUP:
+            {
+                if (wParam.ToInt32() != PInvoke.HTCAPTION)
+                {
+                    break;
+                }
+
+                unsafe
+                {
+                    var screenPoint = LParamToPoint(lParam);
+
+                    HMENU hmenu = PInvoke.GetSystemMenu((HWND)hwnd, false);
+
+                    var cmd = PInvoke.TrackPopupMenuEx(
+                        hmenu,
+                        (uint)(TRACK_POPUP_MENU_FLAGS.TPM_LEFTBUTTON | TRACK_POPUP_MENU_FLAGS.TPM_RIGHTBUTTON |
+                               TRACK_POPUP_MENU_FLAGS.TPM_RETURNCMD),
+                        (int)screenPoint.X,
+                        (int)screenPoint.Y,
+                        (HWND)hwnd
+                    );
+
+                    if (cmd)
+                    {
+                        PInvoke.PostMessage((HWND)hwnd, PInvoke.WM_SYSCOMMAND, new WPARAM((uint)cmd.Value), IntPtr.Zero);
+                    }
+                }
 
                 break;
             }

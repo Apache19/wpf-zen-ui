@@ -25,13 +25,13 @@ public partial class FluentWindow
     {
         var margins = new MARGINS()
         {
-            cxLeftWidth    = -1,
-            cxRightWidth   = -1,
-            cyBottomHeight = -1,
-            cyTopHeight    = -1,
+            cxLeftWidth    = 0,
+            cxRightWidth   = 0,
+            cyBottomHeight = 0,
+            cyTopHeight    = 0,
         };
 
-        // PInvoke.DwmExtendFrameIntoClientArea((HWND)hwndSource.Handle, in margins);
+        PInvoke.DwmExtendFrameIntoClientArea((HWND)hwndSource.Handle, in margins);
     }
 
     private IntPtr NcCalcSizeHandler_Win10(IntPtr hwnd, uint msg, IntPtr wParam, IntPtr lParam, out bool handled)
@@ -44,15 +44,15 @@ public partial class FluentWindow
         var windowBorder = GetLogicalWindowBorderThickness(hwnd, WindowBorderKind.Layout);
         var thickness    = DpiHelper.LogicalThicknessToDevice(windowBorder, dpi.DpiScaleX, dpi.DpiScaleY);
 
-        rcClientArea.left  += (int)Math.Ceiling(thickness.Left);
-        rcClientArea.right -= (int)Math.Ceiling(thickness.Right);
+        rcClientArea.left  += (int)thickness.Left;
+        rcClientArea.right -= (int)thickness.Right;
 
-        //if (IsMaximized((HWND)hwnd))
+        if (IsMaximized((HWND)hwnd))
         {
-            rcClientArea.top += (int)Math.Ceiling(thickness.Top);
+            rcClientArea.top += (int)thickness.Top;
         }
 
-        rcClientArea.bottom -= (int)Math.Ceiling(thickness.Bottom);
+        rcClientArea.bottom -= (int)thickness.Bottom;
 
         Marshal.StructureToPtr(rcClientArea, lParam, false);
 

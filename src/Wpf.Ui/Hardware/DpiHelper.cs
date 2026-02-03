@@ -36,10 +36,10 @@ internal static class DpiHelper
     /// <summary>
     /// Gets DPI of the selected <see cref="Window"/> based on it's handle.
     /// </summary>
-    /// <param name="windowHandle">Handle of the window that you want to get information about.</param>
-    public static DisplayDpi GetWindowDpi(IntPtr windowHandle)
+    /// <param name="hwnd">Handle of the window that you want to get information about.</param>
+    public static DisplayDpi GetWindowDpi(HWND hwnd)
     {
-        if (windowHandle == IntPtr.Zero || !UnsafeNativeMethods.IsValidWindow(windowHandle))
+        if (hwnd == IntPtr.Zero || !PInvoke.IsWindow(hwnd))
         {
             return new DisplayDpi(DefaultDpi, DefaultDpi);
         }
@@ -47,13 +47,13 @@ internal static class DpiHelper
         if (Utilities.IsOSWindows10_14393_OrNewer)
         {
             #pragma warning disable CA1416
-            var windowDpi = (int)PInvoke.GetDpiForWindow(new HWND(windowHandle));
+            var windowDpi = (int)PInvoke.GetDpiForWindow(hwnd);
             #pragma warning restore CA1416
 
             return new DisplayDpi(windowDpi, windowDpi);
         }
 
-        return GetWindowDpi(HwndSource.FromHwnd(windowHandle)?.RootVisual as Window);
+        return GetWindowDpi(HwndSource.FromHwnd(hwnd)?.RootVisual as Window);
     }
 
     /// <summary>

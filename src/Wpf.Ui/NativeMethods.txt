@@ -7,6 +7,13 @@ SetWindowLong
 GetWindowLong
 SetWindowRgn
 GetWindowRect
+GetWindowPlacement
+GetSystemMenu
+
+TrackPopupMenuEx
+TPM_LEFTBUTTON
+
+SetWindowPos
 SendMessage
 PostMessage
 TrackMouseEvent

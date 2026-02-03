@@ -191,12 +191,6 @@ public partial class FluentWindow : Window
     internal static readonly uint WM_NCHITTEST_RESOLVED = PInvoke.RegisterWindowMessage("WM_NCHITTEST_RESOLVED");
     internal static readonly uint WM_NCHITTEST_REQUEST  = PInvoke.RegisterWindowMessage("WM_NCHITTEST_REQUEST");
 
-    private static bool IsMaximized(HWND hwnd)
-    {
-        WINDOW_STYLE style = (WINDOW_STYLE)PInvoke.GetWindowLong(hwnd, WINDOW_LONG_PTR_INDEX.GWL_STYLE);
-        return (style & WINDOW_STYLE.WS_MAXIMIZE) != 0;
-    }
-
     private readonly MessageHandler           _ncCalcSizeh;
     private readonly SourceInitializedHandler _sourceInitialized;
 
@@ -239,15 +233,33 @@ public partial class FluentWindow : Window
         }
     }
 
-    private IntPtr FluentWindowSourceHook(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
+    private IntPtr FluentWindowSourceHook(IntPtr hwndIntPtr, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
     {
         var uMsg = (uint)msg;
+        var hwnd = (HWND)hwndIntPtr;
 
         switch (uMsg)
         {
             case PInvoke.WM_DPICHANGED:
-                InvalidateDpi();
+            {
+                // 更新缓存的DPI
+                var yx = wParam.ToInt32();
+                _cachedDpi = new DisplayDpi((short)yx, (short)(yx >> 16));
+
+                // 更新窗口大小
+                var rc = Marshal.PtrToStructure<RECT>(lParam);
+                PInvoke.SetWindowPos(
+                    hwnd,
+                    HWND.Null,
+                    rc.left,
+                    rc.top,
+                    rc.Width,
+                    rc.Height,
+                    SET_WINDOW_POS_FLAGS.SWP_NOZORDER | SET_WINDOW_POS_FLAGS.SWP_NOACTIVATE
+                );
+
                 break;
+            }
 
             case PInvoke.WM_WININICHANGE:
                 InvalidateSystemMetricCache();
@@ -264,8 +276,6 @@ public partial class FluentWindow : Window
                         (style & (nint)WINDOW_STYLE.WS_MINIMIZE) != 0 ? WindowState.Minimized :
                         (style & (nint)WINDOW_STYLE.WS_MAXIMIZE) != 0 ? WindowState.Maximized :
                                                                         WindowState.Normal;
-
-                    // 只更新 ActualWindowState，不触碰 WindowState
                     ActualWindowState = actualState;
                 }
 
@@ -301,14 +311,12 @@ public partial class FluentWindow : Window
             // has been committed.
             case PInvoke.WM_WINDOWPOSCHANGED:
             {
-                var style = PInvoke.GetWindowLong((HWND)hwnd, WINDOW_LONG_PTR_INDEX.GWL_STYLE);
+                var style = PInvoke.GetWindowLong(hwnd, WINDOW_LONG_PTR_INDEX.GWL_STYLE);
 
                 var actualState =
                     (style & (nint)WINDOW_STYLE.WS_MINIMIZE) != 0 ? WindowState.Minimized :
                     (style & (nint)WINDOW_STYLE.WS_MAXIMIZE) != 0 ? WindowState.Maximized :
                                                                     WindowState.Normal;
-
-                // 只更新 ActualWindowState，不触碰 WindowState
                 ActualWindowState = actualState;
                 break;
             }
@@ -319,7 +327,7 @@ public partial class FluentWindow : Window
 
                 // WindowChromeWorker 说lParam是-1时不会绘制标题栏，但看起来似乎没有用处，需要进一步调查
                 // todo 调查使用 DwmDefWindowProc 会不会有效果
-                var b = PInvoke.DefWindowProc(new HWND(hwnd), uMsg, new WPARAM((uint)wParam), -1);
+                var b = PInvoke.DefWindowProc(hwnd, uMsg, new WPARAM((uint)wParam), -1);
                 handled = true;
                 return b;
             }
@@ -328,8 +336,9 @@ public partial class FluentWindow : Window
             case PInvoke.WM_NCHITTEST:
             {
                 var screenPoint = LParamToPoint(lParam);
+                var isMaximized = Utilities.GetHwndState(hwnd) == WindowState.Maximized;
 
-                if ((ResizeMode is ResizeMode.CanResize or ResizeMode.CanResizeWithGrip) && !IsMaximized((HWND)hwnd))
+                if ((ResizeMode is ResizeMode.CanResize or ResizeMode.CanResizeWithGrip) && !isMaximized)
                 {
                     var dpi     = DpiHelper.GetWindowDpi(hwnd);
                     var wndRect = GetWindowRect(hwnd);
@@ -346,7 +355,7 @@ public partial class FluentWindow : Window
                         // The resize border has been hit and the hit-test result is finalized.
                         // Notify other components participating in non-client interaction
                         // so they can update their state accordingly.
-                        PInvoke.SendMessage((HWND)hwnd, WM_NCHITTEST_RESOLVED, 0, 0);
+                        PInvoke.SendMessage(hwnd, WM_NCHITTEST_RESOLVED, 0, 0);
 
                         handled = true;
                         return ht;
@@ -355,7 +364,7 @@ public partial class FluentWindow : Window
 
                 // 没有结果，将消息转发给标题栏，让标题栏处理拖动窗口、图标、和系统按钮的命中测试。
                 // 标题栏在有结果的情况下应该处理 WM_NCHITTEST_RESOLVED 消息。
-                var lResult = PInvoke.SendMessage((HWND)hwnd, WM_NCHITTEST_REQUEST, 0, lParam);
+                var lResult = PInvoke.SendMessage(hwnd, WM_NCHITTEST_REQUEST, 0, lParam);
                 if (lResult != IntPtr.Zero)
                 {
                     handled = true;
@@ -366,7 +375,7 @@ public partial class FluentWindow : Window
                 // Still send WM_NCHITTEST_RESOLVED as a completion notification,
                 // allowing title bar buttons and other participants to reset
                 // their visual state if necessary.
-                PInvoke.SendMessage((HWND)hwnd, WM_NCHITTEST_RESOLVED, 0, 0);
+                PInvoke.SendMessage(hwnd, WM_NCHITTEST_RESOLVED, 0, 0);
 
                 break;
             }

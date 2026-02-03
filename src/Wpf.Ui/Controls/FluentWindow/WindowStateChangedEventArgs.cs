@@ -3,10 +3,6 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-using System;
-using System.Collections.Generic;
-using System.Text;
-
 // ReSharper disable once CheckNamespace
 namespace Wpf.Ui.Controls;
 
@@ -16,14 +12,14 @@ namespace Wpf.Ui.Controls;
 public class WindowStateChangedEventArgs : EventArgs
 {
     /// <summary>
-    /// 获取新的窗口状态。
+    /// Gets the new window state.
     /// </summary>
     public WindowState NewState { get; }
 
     /// <summary>
-    /// 初始化 <see cref="WindowStateChangedEventArgs"/> 类的新实例。
+    /// Initializes a new instance of the <see cref="WindowStateChangedEventArgs"/> class.
     /// </summary>
-    /// <param name="newState">新的窗口状态。</param>
+    /// <param name="newState">The new window state.</param>
     public WindowStateChangedEventArgs(WindowState newState)
     {
         NewState = newState;

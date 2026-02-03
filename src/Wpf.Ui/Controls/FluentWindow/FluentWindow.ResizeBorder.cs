@@ -10,6 +10,7 @@ using Windows.Win32;
 using Windows.Win32.Foundation;
 using Windows.Win32.UI.WindowsAndMessaging;
 using Wpf.Ui.Hardware;
+using Wpf.Ui.Win32;
 
 // ReSharper disable once CheckNamespace
 namespace Wpf.Ui.Controls;
@@ -73,7 +74,7 @@ public partial class FluentWindow
         }
     }
 
-    private void EnsureWindowDpi(IntPtr hwnd)
+    private void EnsureWindowDpi(HWND hwnd)
     {
         if (!_dpiCacheInvalidated)
         {
@@ -84,14 +85,14 @@ public partial class FluentWindow
         _dpiCacheInvalidated = false;
     }
 
-    private Thickness GetLogicalWindowBorderThickness(IntPtr hwnd, WindowBorderKind kind)
+    private Thickness GetLogicalWindowBorderThickness(HWND hwnd, WindowBorderKind kind)
     {
         if (hwnd == IntPtr.Zero)
         {
             return default;
         }
 
-        WINDOW_STYLE style = (WINDOW_STYLE)PInvoke.GetWindowLong(new HWND(hwnd), WINDOW_LONG_PTR_INDEX.GWL_STYLE);
+        WINDOW_STYLE style = (WINDOW_STYLE)PInvoke.GetWindowLong(hwnd, WINDOW_LONG_PTR_INDEX.GWL_STYLE);
 
         EnsureSystemMetricCache();
 
@@ -101,7 +102,7 @@ public partial class FluentWindow
             paddingBorder = _cachedSmCxPaddedBorder;
         }
 
-        var isMaximized = (style & WINDOW_STYLE.WS_MAXIMIZE) != 0;
+        var isMaximized = Utilities.GetHwndState(hwnd) == WindowState.Maximized;
 
         var frameX = _cachedSmCxSizeFrame;
         var frameY = _cachedSmCySizeFrame;
