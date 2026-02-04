@@ -52,6 +52,8 @@ public sealed partial class SettingsViewModel(INavigationService navigationServi
         ApplicationThemeManager.Changed += OnThemeChanged;
 
         _isInitialized = true;
+
+        Debug.WriteLine($"设置视图模型初始化 - CurrentApplicationTheme = {CurrentApplicationTheme}");
     }
 
     private void OnThemeChanged(ApplicationTheme currentApplicationTheme, Color systemAccent)

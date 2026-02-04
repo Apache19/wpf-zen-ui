@@ -3,17 +3,17 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-using System;
-using System.Collections.Generic;
 using System.Runtime.InteropServices;
-using System.Text;
 using Windows.Win32;
 using Windows.Win32.Foundation;
 using Wpf.Ui.Hardware;
-using Wpf.Ui.Win32;
 
+// ReSharper disable once CheckNamespace
 namespace Wpf.Ui.Controls;
 
+/// <summary>
+/// FluentWindow Win11
+/// </summary>
 public partial class FluentWindow
 {
     private void OnSourceInitialized_Win11(HwndSource hwndSource)
@@ -41,7 +41,7 @@ public partial class FluentWindow
         Marshal.StructureToPtr(rcClientArea, lParam, false);
 
         IntPtr retVal = IntPtr.Zero;
-        if (wParam.ToInt32() != 0) // wParam == TRUE
+        if (wParam.ToInt32() != 0)
         {
             retVal = new IntPtr(PInvoke.WVR_REDRAW);
         }

@@ -20,6 +20,19 @@ namespace Wpf.Ui.Controls;
 /// </summary>
 public partial class FluentWindow : Window
 {
+    static FluentWindow()
+    {
+        // DefaultStyleKeyProperty.OverrideMetadata(
+        //     typeof(FluentWindow),
+        //     new FrameworkPropertyMetadata(typeof(FluentWindow))
+        // );
+        //
+        // OverridesDefaultStyleProperty.OverrideMetadata(
+        //     typeof(FluentWindow),
+        //     new FrameworkPropertyMetadata(true)
+        // );
+    }
+
     #region ActualWindowState
 
     /// <summary>
@@ -262,91 +275,40 @@ public partial class FluentWindow : Window
             }
 
             case PInvoke.WM_WININICHANGE:
-                InvalidateSystemMetricCache();
-                break;
-
-            case PInvoke.WM_STYLECHANGED:
             {
-                if ((wParam & (nint)WINDOW_LONG_PTR_INDEX.GWL_STYLE) != 0)
-                {
-                    var ss    = Marshal.PtrToStructure<STYLESTRUCT>(lParam);
-                    var style = ss.styleNew;
-
-                    var actualState =
-                        (style & (nint)WINDOW_STYLE.WS_MINIMIZE) != 0 ? WindowState.Minimized :
-                        (style & (nint)WINDOW_STYLE.WS_MAXIMIZE) != 0 ? WindowState.Maximized :
-                                                                        WindowState.Normal;
-                    ActualWindowState = actualState;
-                }
-
+                InvalidateSystemMetricCache();
                 break;
             }
 
-            // WRONG: Do not rely on WM_SIZE for WindowState synchronization.
-            //
-            // Using WM_SIZE to infer WindowState is unreliable.
-            //
-            // After a window has been maximized, Windows may still allow limited resizing
-            // (e.g. via resize borders). In this situation, the WS_MAXIMIZE style can be
-            // cleared while WPF's Window.WindowState remains Maximized.
-            // This creates a mismatch between the actual native window state and WPF's
-            // logical WindowState.
-            //
-            // This example is intentionally kept here as a reference for what *not* to do.
-            // case PInvoke.WM_SIZE:
-            // {
-            //     WindowState = (uint)wParam switch
-            //     {
-            //         PInvoke.SIZE_RESTORED  => WindowState.Normal,
-            //         PInvoke.SIZE_MAXIMIZED => WindowState.Maximized,
-            //         PInvoke.SIZE_MINIMIZED => WindowState.Minimized,
-            //         _                      => WindowState
-            //     };
-            // }
-            //
-            // CORRECT: Determine the actual state by inspecting native window styles.
-            //
-            // We listen to WM_WINDOWPOSCHANGED and determine the effective WindowState
-            // by inspecting native window styles *after* the position/state change
-            // has been committed.
+            case PInvoke.WM_SIZE:
+            case PInvoke.WM_STYLECHANGED:
             case PInvoke.WM_WINDOWPOSCHANGED:
             {
-                var style = PInvoke.GetWindowLong(hwnd, WINDOW_LONG_PTR_INDEX.GWL_STYLE);
-
-                var actualState =
-                    (style & (nint)WINDOW_STYLE.WS_MINIMIZE) != 0 ? WindowState.Minimized :
-                    (style & (nint)WINDOW_STYLE.WS_MAXIMIZE) != 0 ? WindowState.Maximized :
-                                                                    WindowState.Normal;
-                ActualWindowState = actualState;
+                ActualWindowState = Utilities.GetHwndState(hwnd);
                 break;
             }
 
             case PInvoke.WM_NCACTIVATE:
             {
                 IsNcActive = wParam != IntPtr.Zero;
-
-                // WindowChromeWorker 说lParam是-1时不会绘制标题栏，但看起来似乎没有用处，需要进一步调查
-                // todo 调查使用 DwmDefWindowProc 会不会有效果
-                var b = PInvoke.DefWindowProc(hwnd, uMsg, new WPARAM((uint)wParam), -1);
-                handled = true;
-                return b;
+                break;
             }
 
             // 窗口处理调整尺寸边框和相关逻辑，没有结果再将消息转发给标题栏。
             case PInvoke.WM_NCHITTEST:
             {
-                var screenPoint = LParamToPoint(lParam);
                 var isMaximized = Utilities.GetHwndState(hwnd) == WindowState.Maximized;
 
                 if ((ResizeMode is ResizeMode.CanResize or ResizeMode.CanResizeWithGrip) && !isMaximized)
                 {
+                    var point   = LParamToPoint(lParam);
                     var dpi     = DpiHelper.GetWindowDpi(hwnd);
                     var wndRect = GetWindowRect(hwnd);
                     var border  = GetLogicalWindowBorderThickness(hwnd, WindowBorderKind.Resize);
 
                     var ht = HitTestResizeBorder(
                         DpiHelper.DeviceRectToLogical(wndRect, dpi.DpiScaleX, dpi.DpiScaleY),
-                        DpiHelper.DevicePixelsToLogical(screenPoint, dpi.DpiScaleX, dpi.DpiScaleY),
+                        DpiHelper.DevicePixelsToLogical(point, dpi.DpiScaleX, dpi.DpiScaleY),
                         border
                     );
 
@@ -364,11 +326,11 @@ public partial class FluentWindow : Window
 
                 // 没有结果，将消息转发给标题栏，让标题栏处理拖动窗口、图标、和系统按钮的命中测试。
                 // 标题栏在有结果的情况下应该处理 WM_NCHITTEST_RESOLVED 消息。
-                var lResult = PInvoke.SendMessage(hwnd, WM_NCHITTEST_REQUEST, 0, lParam);
-                if (lResult != IntPtr.Zero)
+                var tbResult = PInvoke.SendMessage(hwnd, WM_NCHITTEST_REQUEST, 0, lParam);
+                if (tbResult != IntPtr.Zero)
                 {
                     handled = true;
-                    return lResult;
+                    return tbResult;
                 }
 
                 // No specific non-client element was hit during this pass.
@@ -376,7 +338,6 @@ public partial class FluentWindow : Window
                 // allowing title bar buttons and other participants to reset
                 // their visual state if necessary.
                 PInvoke.SendMessage(hwnd, WM_NCHITTEST_RESOLVED, 0, 0);
-
                 break;
             }
 

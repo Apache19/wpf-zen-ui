@@ -12,11 +12,9 @@
     Title="{Binding ViewModel.ApplicationTitle, Mode=OneWay}"
     Width="800"
     Height="600"
-    MinWidth="400"
     d:DataContext="{d:DesignInstance local:MainWindow, IsDesignTimeCreatable=False}"
     d:DesignHeight="650"
     d:DesignWidth="800"
-    ui:Design.Background="{DynamicResource ApplicationBackgroundBrush}"
     SizeChanged="MainWindow_OnSizeChanged"
     WindowStartupLocation="CenterScreen"
     mc:Ignorable="d">
@@ -74,8 +72,8 @@
         <ui:TitleBar
             x:Name="TitleBar"
             Title="{Binding ViewModel.ApplicationTitle}"
-            IsIconInteractionEnabled="True"
-            Grid.Row="0">
+            Grid.Row="0"
+            IsIconInteractionEnabled="True">
             <ui:TitleBar.Icon>
                 <ui:ImageIcon Source="pack://application:,,,/Assets/wpfui.png" />
             </ui:TitleBar.Icon>

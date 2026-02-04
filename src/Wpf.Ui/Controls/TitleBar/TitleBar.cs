@@ -3,8 +3,6 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-using System.Diagnostics;
-using System.Runtime.InteropServices;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using Windows.Win32;
@@ -13,7 +11,6 @@ using Windows.Win32.UI.WindowsAndMessaging;
 using Wpf.Ui.Designer;
 using Wpf.Ui.Extensions.Wpf;
 using Wpf.Ui.Win32;
-using static Wpf.Ui.Appearance.UISettingsRCW;
 
 // ReSharper disable SuspiciousTypeConversion.Global
 // ReSharper disable once CheckNamespace
@@ -328,7 +325,7 @@ public class TitleBar : ContentControl
             var screenPoint = new Point((short)lyx, (short)(lyx >> 16));
             var localPoint  = PointFromScreen(screenPoint);
 
-            if (localPoint is { X: >= 0, Y: >= 0 } && localPoint.X <= ActualWidth && localPoint.Y <= ActualHeight)
+            if (localPoint is { X: >= 0, Y: >= 0 } && localPoint.X < ActualWidth && localPoint.Y < ActualHeight)
             {
                 if (InputHitTest(localPoint) is DependencyObject hitElement)
                 {
@@ -382,6 +379,8 @@ public class TitleBar : ContentControl
                 break;
             }
 
+            // todo 可能需要拦截在按钮区HT的鼠标移动事件并使用API获取鼠标坐标，考察没有主题的时候是否会闪烁原生按钮
+
             case PInvoke.WM_NCRBUTTONUP:
             {
                 if (wParam.ToInt32() != PInvoke.HTCAPTION)
@@ -389,32 +388,36 @@ public class TitleBar : ContentControl
                     break;
                 }
 
-                const TRACK_POPUP_MENU_FLAGS flag
-                    = TRACK_POPUP_MENU_FLAGS.TPM_LEFTBUTTON | TRACK_POPUP_MENU_FLAGS.TPM_RIGHTBUTTON |
-                      TRACK_POPUP_MENU_FLAGS.TPM_RETURNCMD;
-
-                var hmenu = PInvoke.GetSystemMenu(hwnd, false);
-                var style = (WINDOW_STYLE)PInvoke.GetWindowLong(hwnd, WINDOW_LONG_PTR_INDEX.GWL_STYLE);
-                var state = Utilities.GetHwndState(hwnd);
-
-                UpdateSystemMenu(hmenu, style, state);
-
-                unsafe
-                {
-                    var lyx = lParam.ToInt32();
-                    var cmd = PInvoke.TrackPopupMenuEx(hmenu, (uint)flag, (short)lyx, (short)(lyx >> 16), hwnd, null);
-
-                    if (cmd)
-                    {
-                        PInvoke.PostMessage(hwnd, PInvoke.WM_SYSCOMMAND, (nuint)cmd.Value, 0);
-                    }
-                }
+                var yx = lParam.ToInt32();
+                ShowSystemMenuPhysicalCoordinates(hwnd, (short)yx, (short)(yx >> 16));
 
                 break;
             }
         }
 
         return IntPtr.Zero;
+    }
+
+    private static void ShowSystemMenuPhysicalCoordinates(HWND hwnd, short x, short y)
+    {
+        const TRACK_POPUP_MENU_FLAGS flag
+            = TRACK_POPUP_MENU_FLAGS.TPM_LEFTBUTTON | TRACK_POPUP_MENU_FLAGS.TPM_RIGHTBUTTON |
+              TRACK_POPUP_MENU_FLAGS.TPM_RETURNCMD;
+
+        var hmenu = PInvoke.GetSystemMenu(hwnd, false);
+        var style = (WINDOW_STYLE)PInvoke.GetWindowLong(hwnd, WINDOW_LONG_PTR_INDEX.GWL_STYLE);
+        var state = Utilities.GetHwndState(hwnd);
+
+        UpdateSystemMenu(hmenu, style, state);
+
+        unsafe
+        {
+            var cmd = PInvoke.TrackPopupMenuEx(hmenu, (uint)flag, x, y, hwnd);
+            if (cmd)
+            {
+                PInvoke.PostMessage(hwnd, PInvoke.WM_SYSCOMMAND, (nuint)cmd.Value, 0);
+            }
+        }
     }
 
     private static void UpdateSystemMenu(HMENU hmenu, WINDOW_STYLE style, WindowState state)
