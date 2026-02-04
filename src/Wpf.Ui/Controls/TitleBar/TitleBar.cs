@@ -493,6 +493,17 @@ public class TitleBar : ContentControl
                 SystemCommands.RestoreWindow(fluentWindow);
             }
         }
+        else if (_window is not null)
+        {
+            if (_window.WindowState == WindowState.Normal)
+            {
+                SystemCommands.MaximizeWindow(_window);
+            }
+            else
+            {
+                SystemCommands.RestoreWindow(_window);
+            }
+        }
     }
 
     private void OnButtonClick(object sender, RoutedEventArgs e)
