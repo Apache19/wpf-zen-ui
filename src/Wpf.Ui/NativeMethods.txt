@@ -9,9 +9,17 @@ SetWindowRgn
 GetWindowRect
 GetWindowPlacement
 GetSystemMenu
-
+EnableMenuItem
 TrackPopupMenuEx
-TPM_LEFTBUTTON
+TRACK_POPUP_MENU_FLAGS
+
+SC_RESTORE
+SC_MOVE
+SC_SIZE
+SC_MINIMIZE
+SC_MAXIMIZE
+
+MF_BYCOMMAND
 
 SetWindowPos
 SendMessage

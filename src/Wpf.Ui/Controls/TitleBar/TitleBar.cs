@@ -12,6 +12,7 @@ using Windows.Win32.Foundation;
 using Windows.Win32.UI.WindowsAndMessaging;
 using Wpf.Ui.Designer;
 using Wpf.Ui.Extensions.Wpf;
+using Wpf.Ui.Win32;
 using static Wpf.Ui.Appearance.UISettingsRCW;
 
 // ReSharper disable SuspiciousTypeConversion.Global
@@ -316,13 +317,15 @@ public class TitleBar : ContentControl
         }
     }
 
-    private IntPtr OwnerWindowSourceHook(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
+    private IntPtr OwnerWindowSourceHook(IntPtr hwndIntPtr, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
     {
+        var hwnd = (HWND)hwndIntPtr;
         var uMsg = (uint)msg;
 
         if (uMsg == FluentWindow.WM_NCHITTEST_REQUEST)
         {
-            var screenPoint = LParamToPoint(lParam);
+            var lyx         = lParam.ToInt32();
+            var screenPoint = new Point((short)lyx, (short)(lyx >> 16));
             var localPoint  = PointFromScreen(screenPoint);
 
             if (localPoint is { X: >= 0, Y: >= 0 } && localPoint.X <= ActualWidth && localPoint.Y <= ActualHeight)
@@ -337,11 +340,11 @@ public class TitleBar : ContentControl
                         if (button is not null)
                         {
                             var hash = new LPARAM(button.GetHashCode());
-                            PInvoke.SendMessage((HWND)hwnd, FluentWindow.WM_NCHITTEST_RESOLVED, 1, hash);
+                            PInvoke.SendMessage(hwnd, FluentWindow.WM_NCHITTEST_RESOLVED, 1, hash);
                         }
                         else
                         {
-                            PInvoke.SendMessage((HWND)hwnd, FluentWindow.WM_NCHITTEST_RESOLVED, 0, 0);
+                            PInvoke.SendMessage(hwnd, FluentWindow.WM_NCHITTEST_RESOLVED, 0, 0);
                         }
 
                         if (id == TitleBarElementIdentity.Icon && !IsIconInteractionEnabled)
@@ -381,31 +384,29 @@ public class TitleBar : ContentControl
 
             case PInvoke.WM_NCRBUTTONUP:
             {
-                // todo 菜单更新似乎不需要像WindowChromeWorker里那么复杂，可能只需要发送一个什么消息触发系统自动更新即可。
-                // 实测鼠标按下
                 if (wParam.ToInt32() != PInvoke.HTCAPTION)
                 {
                     break;
                 }
 
+                const TRACK_POPUP_MENU_FLAGS flag
+                    = TRACK_POPUP_MENU_FLAGS.TPM_LEFTBUTTON | TRACK_POPUP_MENU_FLAGS.TPM_RIGHTBUTTON |
+                      TRACK_POPUP_MENU_FLAGS.TPM_RETURNCMD;
+
+                var hmenu = PInvoke.GetSystemMenu(hwnd, false);
+                var style = (WINDOW_STYLE)PInvoke.GetWindowLong(hwnd, WINDOW_LONG_PTR_INDEX.GWL_STYLE);
+                var state = Utilities.GetHwndState(hwnd);
+
+                UpdateSystemMenu(hmenu, style, state);
+
                 unsafe
                 {
-                    var screenPoint = LParamToPoint(lParam);
-
-                    HMENU hmenu = PInvoke.GetSystemMenu((HWND)hwnd, false);
-
-                    var cmd = PInvoke.TrackPopupMenuEx(
-                        hmenu,
-                        (uint)(TRACK_POPUP_MENU_FLAGS.TPM_LEFTBUTTON | TRACK_POPUP_MENU_FLAGS.TPM_RIGHTBUTTON |
-                               TRACK_POPUP_MENU_FLAGS.TPM_RETURNCMD),
-                        (int)screenPoint.X,
-                        (int)screenPoint.Y,
-                        (HWND)hwnd
-                    );
+                    var lyx = lParam.ToInt32();
+                    var cmd = PInvoke.TrackPopupMenuEx(hmenu, (uint)flag, (short)lyx, (short)(lyx >> 16), hwnd, null);
 
                     if (cmd)
                     {
-                        PInvoke.PostMessage((HWND)hwnd, PInvoke.WM_SYSCOMMAND, (nuint)cmd.Value, 0);
+                        PInvoke.PostMessage(hwnd, PInvoke.WM_SYSCOMMAND, (nuint)cmd.Value, 0);
                     }
                 }
 
@@ -414,13 +415,49 @@ public class TitleBar : ContentControl
         }
 
         return IntPtr.Zero;
+    }
 
-        static Point LParamToPoint(IntPtr lParam)
+    private static void UpdateSystemMenu(HMENU hmenu, WINDOW_STYLE style, WindowState state)
+    {
+        const MENU_ITEM_FLAGS en = MENU_ITEM_FLAGS.MF_ENABLED | MENU_ITEM_FLAGS.MF_BYCOMMAND;
+        const MENU_ITEM_FLAGS di = MENU_ITEM_FLAGS.MF_GRAYED | MENU_ITEM_FLAGS.MF_DISABLED | MENU_ITEM_FLAGS.MF_BYCOMMAND;
+
+        var canMinimize = (style & WINDOW_STYLE.WS_MINIMIZEBOX) != 0;
+        var canMaximize = (style & WINDOW_STYLE.WS_MAXIMIZEBOX) != 0;
+        var canSize     = (style & WINDOW_STYLE.WS_THICKFRAME) != 0;
+
+        switch (state)
         {
-            var yx = lParam.ToInt32();
-            var x  = (short)yx;
-            var y  = (short)(yx >> 16);
-            return new Point(x, y);
+            case WindowState.Maximized:
+            {
+                PInvoke.EnableMenuItem(hmenu, PInvoke.SC_RESTORE,  en);
+                PInvoke.EnableMenuItem(hmenu, PInvoke.SC_MOVE,     di);
+                PInvoke.EnableMenuItem(hmenu, PInvoke.SC_SIZE,     di);
+                PInvoke.EnableMenuItem(hmenu, PInvoke.SC_MINIMIZE, canMinimize ? en : di);
+                PInvoke.EnableMenuItem(hmenu, PInvoke.SC_MAXIMIZE, di);
+                break;
+            }
+
+            case WindowState.Minimized:
+            {
+                PInvoke.EnableMenuItem(hmenu, PInvoke.SC_RESTORE,  en);
+                PInvoke.EnableMenuItem(hmenu, PInvoke.SC_MOVE,     di);
+                PInvoke.EnableMenuItem(hmenu, PInvoke.SC_SIZE,     di);
+                PInvoke.EnableMenuItem(hmenu, PInvoke.SC_MINIMIZE, di);
+                PInvoke.EnableMenuItem(hmenu, PInvoke.SC_MAXIMIZE, canMaximize ? en : di);
+                break;
+            }
+
+            case WindowState.Normal:
+            default:
+            {
+                PInvoke.EnableMenuItem(hmenu, PInvoke.SC_RESTORE,  di);
+                PInvoke.EnableMenuItem(hmenu, PInvoke.SC_MOVE,     en);
+                PInvoke.EnableMenuItem(hmenu, PInvoke.SC_SIZE,     canSize ? en : di);
+                PInvoke.EnableMenuItem(hmenu, PInvoke.SC_MINIMIZE, canMinimize ? en : di);
+                PInvoke.EnableMenuItem(hmenu, PInvoke.SC_MAXIMIZE, canMaximize ? en : di);
+                break;
+            }
         }
     }
 
