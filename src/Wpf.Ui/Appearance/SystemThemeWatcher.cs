@@ -3,195 +3,120 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-using Windows.Win32;
-using Windows.Win32.Foundation;
-using Wpf.Ui.Controls;
+using System.Diagnostics;
+using Microsoft.Win32;
 
 namespace Wpf.Ui.Appearance;
 
-/// <summary>
-/// Automatically updates the application background if the system theme or color is changed.
-/// <para><see cref="SystemThemeWatcher"/> settings work globally and cannot be changed for each <see cref="System.Windows.Window"/>.</para>
-/// </summary>
-/// <example>
-/// <code lang="csharp">
-/// SystemThemeWatcher.Watch(this as System.Windows.Window);
-/// SystemThemeWatcher.UnWatch(this as System.Windows.Window);
-/// </code>
-/// <code lang="csharp">
-/// SystemThemeWatcher.Watch(
-///     _serviceProvider.GetRequiredService&lt;MainWindow&gt;()
-/// );
-/// </code>
-/// </example>
+// todo 改为库内部监听，增加System主题
 public static class SystemThemeWatcher
 {
-    private static readonly List<ObservedWindow> _observedWindows = [];
+    private const int DebounceDelayMs = 300;
 
-    /// <summary>
-    /// Watches the <see cref="Window"/> and applies the background effect and theme according to the system theme.
-    /// </summary>
-    /// <param name="window">The window that will be updated.</param>
-    /// <param name="backdrop">Background effect to be applied when changing the theme.</param>
-    /// <param name="updateAccents">If <see langword="true"/>, the accents will be updated when the change is detected.</param>
-    public static void Watch(
-        Window? window,
-        WindowBackdropType backdrop = WindowBackdropType.Mica,
-        bool updateAccents = true
-    )
+    #if NET9_0_OR_GREATER
+    private static readonly Lock DebounceLock = new();
+    #else
+    private static readonly object DebounceLock = new();
+    #endif
+
+    private static Timer? _debounceTimer;
+
+    private static volatile bool _isWatching;
+    private static volatile bool _updateAccents;
+
+    public static void Watch(bool updateAccents = true)
     {
-        if (window is null)
+        if (!_isWatching)
         {
-            return;
-        }
+            _updateAccents = updateAccents;
 
-        if (window.IsLoaded)
-        {
-            ObserveLoadedWindow(window, backdrop, updateAccents);
-        }
-        else
-        {
-            ObserveWindowWhenLoaded(window, backdrop, updateAccents);
-        }
+            SystemEvents.UserPreferenceChanged     += SystemEvents_UserPreferenceChanged;
+            SystemParameters.StaticPropertyChanged += SystemParameters_StaticPropertyChanged;
 
-        if (_observedWindows.Count == 0)
-        {
-            System.Diagnostics.Debug.WriteLine(
-                $"INFO | {typeof(SystemThemeWatcher)} changed the app theme on initialization.",
-                nameof(SystemThemeWatcher)
-            );
-            ApplicationThemeManager.ApplySystemTheme(updateAccents);
+            _isWatching = true;
+
+            OnSystemThemeChanged();
         }
     }
 
-    private static void ObserveLoadedWindow(Window window, WindowBackdropType backdrop, bool updateAccents)
-    {
-        IntPtr hWnd =
-            (hWnd = new WindowInteropHelper(window).Handle) == IntPtr.Zero
-                ? throw new InvalidOperationException("Could not get window handle.")
-                : hWnd;
-
-        if (hWnd == IntPtr.Zero)
-        {
-            throw new InvalidOperationException("Window handle cannot be empty");
-        }
-
-        ObserveLoadedHandle(new ObservedWindow(hWnd, backdrop, updateAccents));
-    }
-
-    private static void ObserveWindowWhenLoaded(
-        Window window,
-        WindowBackdropType backdrop,
-        bool updateAccents
-    )
-    {
-        window.Loaded += (_, _) =>
-        {
-            IntPtr hWnd =
-                (hWnd = new WindowInteropHelper(window).Handle) == IntPtr.Zero
-                    ? throw new InvalidOperationException("Could not get window handle.")
-                    : hWnd;
-
-            if (hWnd == IntPtr.Zero)
-            {
-                throw new InvalidOperationException("Window handle cannot be empty");
-            }
-
-            ObserveLoadedHandle(new ObservedWindow(hWnd, backdrop, updateAccents));
-        };
-    }
-
-    private static void ObserveLoadedHandle(ObservedWindow observedWindow)
-    {
-        if (!observedWindow.HasHook)
-        {
-            System.Diagnostics.Debug.WriteLine(
-                $"INFO | {observedWindow.Handle} ({observedWindow.RootVisual?.Title}) registered as watched window.",
-                nameof(SystemThemeWatcher)
-            );
-            observedWindow.AddHook(WndProc);
-            _observedWindows.Add(observedWindow);
-        }
-    }
-
-    /// <summary>
-    /// Unwatches the window and removes the hook to receive messages from the system.
-    /// </summary>
     public static void UnWatch(Window? window)
     {
-        if (window is null)
+        if (_isWatching)
         {
-            return;
+            _isWatching = false;
+
+            lock (DebounceLock)
+            {
+                _debounceTimer?.Dispose();
+                _debounceTimer = null;
+            }
+
+            SystemEvents.UserPreferenceChanged     -= SystemEvents_UserPreferenceChanged;
+            SystemParameters.StaticPropertyChanged -= SystemParameters_StaticPropertyChanged;
         }
-
-        if (!window.IsLoaded)
-        {
-            throw new InvalidOperationException("You cannot unwatch a window that is not yet loaded.");
-        }
-
-        IntPtr hWnd =
-            (hWnd = new WindowInteropHelper(window).Handle) == IntPtr.Zero
-                ? throw new InvalidOperationException("Could not get window handle.")
-                : hWnd;
-
-        ObservedWindow? observedWindow = _observedWindows.FirstOrDefault(x => x.Handle == hWnd);
-
-        if (observedWindow is null)
-        {
-            return;
-        }
-
-        observedWindow.RemoveHook(WndProc);
-
-        _ = _observedWindows.Remove(observedWindow);
     }
 
-    /// <summary>
-    /// Listens to system messages on the application windows.
-    /// </summary>
-    private static IntPtr WndProc(IntPtr hWnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
+    private static void SystemParameters_StaticPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (
-            msg == (int)PInvoke.WM_DWMCOLORIZATIONCOLORCHANGED
-            || msg == (int)PInvoke.WM_THEMECHANGED
-            || msg == (int)PInvoke.WM_SYSCOLORCHANGE
-        )
-        {
-            UpdateObservedWindow((HWND)hWnd);
-        }
-
-        return IntPtr.Zero;
+        ScheduleThemeChangedDebounced();
     }
 
-    private static void UpdateObservedWindow(HWND hWnd)
+    private static void SystemEvents_UserPreferenceChanged(object sender, UserPreferenceChangedEventArgs e)
     {
-        if (!PInvoke.IsWindow(hWnd))
+        Debug.WriteLine($"SystemEvents_UserPreferenceChanged: {e.Category}");
+
+        if (e.Category is
+            UserPreferenceCategory.General or
+            UserPreferenceCategory.VisualStyle or
+            UserPreferenceCategory.Color)
         {
-            return;
+            ScheduleThemeChangedDebounced();
+        }
+    }
+
+    private static void ScheduleThemeChangedDebounced()
+    {
+        lock (DebounceLock)
+        {
+            if (_debounceTimer is null)
+            {
+                _debounceTimer = new Timer(_ => DebounceTimerCallback(), null, DebounceDelayMs, Timeout.Infinite);
+                return;
+            }
+
+            // reset timer
+            _debounceTimer.Change(DebounceDelayMs, Timeout.Infinite);
+        }
+    }
+
+    private static void DebounceTimerCallback()
+    {
+        lock (DebounceLock)
+        {
+            _debounceTimer?.Change(Timeout.Infinite, Timeout.Infinite);
         }
 
-        ObservedWindow? observedWindow = _observedWindows.FirstOrDefault(x => x.Handle == hWnd);
-
-        if (observedWindow is null)
+        // Ensure theme application runs on UI thread
+        try
         {
-            return;
+            var dispatcher = Application.Current?.Dispatcher;
+            if (dispatcher is not null)
+            {
+                dispatcher.BeginInvoke(OnSystemThemeChanged);
+            }
+            else
+            {
+                OnSystemThemeChanged();
+            }
         }
-
-        ApplicationThemeManager.ApplySystemTheme(observedWindow.UpdateAccents);
-        ApplicationTheme currentApplicationTheme = ApplicationThemeManager.GetAppTheme();
-
-        System.Diagnostics.Debug.WriteLine(
-            $"INFO | {observedWindow.Handle} ({observedWindow.RootVisual?.Title}) triggered the application theme change to {ApplicationThemeManager.GetSystemTheme()}.",
-            nameof(SystemThemeWatcher)
-        );
-
-        if (observedWindow.RootVisual is not null)
+        catch
         {
-            WindowBackgroundManager.UpdateBackground(
-                observedWindow.RootVisual,
-                currentApplicationTheme,
-                observedWindow.Backdrop
-            );
+            // swallow any exceptions coming from dispatcher invocation
         }
+    }
+
+    private static void OnSystemThemeChanged()
+    {
+        ApplicationThemeManager.ApplySystemTheme(_updateAccents);
     }
 }

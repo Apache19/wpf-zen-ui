@@ -26,10 +26,10 @@ public partial class FluentWindow
     {
         var margins = new MARGINS()
         {
-            cxLeftWidth    = 0,
-            cxRightWidth   = 0,
-            cyBottomHeight = 0,
-            cyTopHeight    = 0,
+            cxLeftWidth    = -1,
+            cxRightWidth   = -1,
+            cyBottomHeight = -1,
+            cyTopHeight    = -1,
         };
 
         PInvoke.DwmExtendFrameIntoClientArea((HWND)hwndSource.Handle, in margins);
@@ -37,35 +37,33 @@ public partial class FluentWindow
 
     private IntPtr NcCalcSizeHandler_Win10(IntPtr hwndIntPtr, uint msg, IntPtr wParam, IntPtr lParam, out bool handled)
     {
-        var hwnd         = (HWND)hwndIntPtr;
-        var rcClientArea = Marshal.PtrToStructure<RECT>(lParam);
-
-        EnsureWindowDpi(hwnd);
-
-        var dpi          = _cachedDpi;
-        var windowBorder = GetLogicalWindowBorderThickness(hwnd, WindowBorderKind.Layout);
-        var thickness    = DpiHelper.LogicalThicknessToDevice(windowBorder, dpi.DpiScaleX, dpi.DpiScaleY);
-
-        rcClientArea.left  += (int)thickness.Left;
-        rcClientArea.right -= (int)thickness.Right;
+        var hwnd = (HWND)hwndIntPtr;
 
         if (Utilities.GetHwndState(hwnd) == WindowState.Maximized)
         {
-            rcClientArea.top += (int)thickness.Top;
+            var rcClientArea = Marshal.PtrToStructure<RECT>(lParam);
+
+            EnsureWindowDpi(hwnd);
+
+            var dpi          = _cachedDpi;
+            var windowBorder = GetLogicalWindowBorderThickness(hwnd, WindowBorderKind.Layout);
+            var thickness    = DpiHelper.LogicalThicknessToDevice(windowBorder, dpi.DpiScaleX, dpi.DpiScaleY);
+
+            rcClientArea.left   += (int)thickness.Left;
+            rcClientArea.right  -= (int)thickness.Right;
+            rcClientArea.top    += (int)thickness.Top;
+            rcClientArea.bottom -= (int)thickness.Bottom;
+
+            Marshal.StructureToPtr(rcClientArea, lParam, false);
         }
-
-        rcClientArea.bottom -= (int)thickness.Bottom;
-
-        Marshal.StructureToPtr(rcClientArea, lParam, false);
 
         handled = true;
 
-        IntPtr retVal = IntPtr.Zero;
-        if (wParam.ToInt32() != 0) // wParam == TRUE
+        if (wParam != IntPtr.Zero)
         {
-            retVal = new IntPtr(PInvoke.WVR_REDRAW);
+            return new IntPtr(PInvoke.WVR_REDRAW);
         }
 
-        return retVal;
+        return IntPtr.Zero;
     }
 }

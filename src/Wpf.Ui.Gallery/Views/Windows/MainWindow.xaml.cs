@@ -3,6 +3,7 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
+using Wpf.Ui.Appearance;
 using Wpf.Ui.Controls;
 using Wpf.Ui.Gallery.Services.Contracts;
 using Wpf.Ui.Gallery.ViewModels.Windows;
@@ -20,7 +21,7 @@ public partial class MainWindow : IWindow
         IContentDialogService contentDialogService
     )
     {
-        Appearance.SystemThemeWatcher.Watch(this);
+        SystemThemeWatcher.Watch();
 
         ViewModel = viewModel;
         DataContext = this;
@@ -32,7 +33,7 @@ public partial class MainWindow : IWindow
         contentDialogService.SetDialogHost(RootContentDialog);
         SetupTrayMenuEvents();
     }
-     
+
     public MainWindowViewModel ViewModel { get; }
 
     private bool _isUserClosedPane;

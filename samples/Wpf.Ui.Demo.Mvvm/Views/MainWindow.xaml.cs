@@ -4,6 +4,7 @@
 // All Rights Reserved.
 
 using Wpf.Ui.Abstractions;
+using Wpf.Ui.Appearance;
 using Wpf.Ui.Controls;
 
 namespace Wpf.Ui.Demo.Mvvm.Views;
@@ -20,7 +21,7 @@ public partial class MainWindow : INavigationWindow
         ViewModel = viewModel;
         DataContext = this;
 
-        Appearance.SystemThemeWatcher.Watch(this);
+        SystemThemeWatcher.Watch();
 
         InitializeComponent();
 
