@@ -11,6 +11,8 @@ namespace Wpf.Ui.Appearance;
 // todo 改为库内部监听，增加System主题
 public static class SystemThemeWatcher
 {
+    #region 防抖机制字段和常量
+
     private const int DebounceDelayMs = 300;
 
     #if NET9_0_OR_GREATER
@@ -20,6 +22,8 @@ public static class SystemThemeWatcher
     #endif
 
     private static Timer? _debounceTimer;
+
+    #endregion
 
     private static volatile bool _isWatching;
     private static volatile bool _updateAccents;
@@ -39,7 +43,7 @@ public static class SystemThemeWatcher
         }
     }
 
-    public static void UnWatch(Window? window)
+    public static void UnWatch()
     {
         if (_isWatching)
         {
@@ -65,8 +69,10 @@ public static class SystemThemeWatcher
     {
         Debug.WriteLine($"SystemEvents_UserPreferenceChanged: {e.Category}");
 
+        // todo 寻找更精确的监听方式
+
         if (e.Category is
-            UserPreferenceCategory.General or
+            UserPreferenceCategory.General or // 明暗模式变化触发此类别多次
             UserPreferenceCategory.VisualStyle or
             UserPreferenceCategory.Color)
         {
@@ -84,7 +90,7 @@ public static class SystemThemeWatcher
                 return;
             }
 
-            // reset timer
+            // 重置计时器
             _debounceTimer.Change(DebounceDelayMs, Timeout.Infinite);
         }
     }
@@ -96,9 +102,9 @@ public static class SystemThemeWatcher
             _debounceTimer?.Change(Timeout.Infinite, Timeout.Infinite);
         }
 
-        // Ensure theme application runs on UI thread
         try
         {
+            // 确保主题应用在UI线程上运行
             var dispatcher = Application.Current?.Dispatcher;
             if (dispatcher is not null)
             {
@@ -111,7 +117,7 @@ public static class SystemThemeWatcher
         }
         catch
         {
-            // swallow any exceptions coming from dispatcher invocation
+            // 吞掉来自调度器调用的任何异常
         }
     }
 

@@ -79,24 +79,18 @@ public static class ApplicationThemeManager
 
         ResourceDictionaryManager appDictionaries = new(LibraryNamespace);
 
-        string themeDictionaryName = "Light";
-
-        switch (applicationTheme)
+        string themeDictionaryName = applicationTheme switch
         {
-            case ApplicationTheme.Dark:
-                themeDictionaryName = "Dark";
-                break;
-            case ApplicationTheme.HighContrast:
-                themeDictionaryName = ApplicationThemeManager.GetSystemTheme() switch
-                {
-                    SystemTheme.HC1     => "HC1",
-                    SystemTheme.HC2     => "HC2",
-                    SystemTheme.HCBlack => "HCBlack",
-                    SystemTheme.HCWhite => "HCWhite",
-                    _                   => "HCWhite",
-                };
-                break;
-        }
+            ApplicationTheme.Dark => "Dark",
+            ApplicationTheme.HighContrast => GetSystemTheme() switch
+            {
+                SystemTheme.HC1     => "HC1",
+                SystemTheme.HC2     => "HC2",
+                SystemTheme.HCBlack => "HCBlack",
+                _                   => "HCWhite",
+            },
+            _ => "Light"
+        };
 
         bool isUpdated = appDictionaries.UpdateDictionary(
             "theme",
@@ -132,9 +126,9 @@ public static class ApplicationThemeManager
         }
 
         ResourceDictionary[] resourcesRemove = frameworkElement
-           .Resources.MergedDictionaries.Where(e => e.Source is not null)
-           .Where(e => e.Source.ToString().Contains(LibraryNamespace, StringComparison.OrdinalIgnoreCase))
-           .ToArray();
+            .Resources.MergedDictionaries.Where(e => e.Source is not null)
+            .Where(e => e.Source.ToString().Contains(LibraryNamespace, StringComparison.OrdinalIgnoreCase))
+            .ToArray();
 
         foreach (ResourceDictionary? resource in UiApplication.Current.Resources.MergedDictionaries)
         {
@@ -174,20 +168,19 @@ public static class ApplicationThemeManager
     {
         SystemThemeManager.UpdateSystemThemeCache();
 
-        SystemTheme systemTheme = GetSystemTheme();
+        var systemTheme = GetSystemTheme();
 
-        ApplicationTheme themeToSet = ApplicationTheme.Light;
-
-        if (systemTheme is SystemTheme.Dark or SystemTheme.CapturedMotion or SystemTheme.Glow)
+        ApplicationTheme themeToSet = systemTheme switch
         {
-            themeToSet = ApplicationTheme.Dark;
-        }
-        else if (
-            systemTheme is SystemTheme.HC1 or SystemTheme.HC2 or SystemTheme.HCBlack or SystemTheme.HCWhite
-        )
-        {
-            themeToSet = ApplicationTheme.HighContrast;
-        }
+            SystemTheme.Dark           => ApplicationTheme.Dark,
+            SystemTheme.CapturedMotion => ApplicationTheme.Dark,
+            SystemTheme.Glow           => ApplicationTheme.Dark,
+            SystemTheme.HC1            => ApplicationTheme.HighContrast,
+            SystemTheme.HC2            => ApplicationTheme.HighContrast,
+            SystemTheme.HCBlack        => ApplicationTheme.HighContrast,
+            SystemTheme.HCWhite        => ApplicationTheme.HighContrast,
+            _                          => ApplicationTheme.Light
+        };
 
         Apply(themeToSet, updateAccent: updateAccent);
     }
@@ -228,12 +221,12 @@ public static class ApplicationThemeManager
         {
             ApplicationTheme.Dark => sysTheme
                 is SystemTheme.Dark
-             or SystemTheme.CapturedMotion
-             or SystemTheme.Glow,
+                or SystemTheme.CapturedMotion
+                or SystemTheme.Glow,
             ApplicationTheme.Light => sysTheme
                 is SystemTheme.Light
-             or SystemTheme.Flow
-             or SystemTheme.Sunrise,
+                or SystemTheme.Flow
+                or SystemTheme.Sunrise,
             _ => appApplicationTheme == ApplicationTheme.HighContrast && SystemThemeManager.HighContrast,
         };
     }

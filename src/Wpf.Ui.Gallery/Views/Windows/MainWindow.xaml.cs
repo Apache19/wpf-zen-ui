@@ -21,8 +21,6 @@ public partial class MainWindow : IWindow
         IContentDialogService contentDialogService
     )
     {
-        SystemThemeWatcher.Watch();
-
         ViewModel = viewModel;
         DataContext = this;
 

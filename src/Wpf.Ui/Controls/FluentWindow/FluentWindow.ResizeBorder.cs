@@ -97,7 +97,7 @@ public partial class FluentWindow
         EnsureSystemMetricCache();
 
         var paddingBorder = 0;
-        if ((style & WINDOW_STYLE.WS_CAPTION) != 0)
+        //if ((style & WINDOW_STYLE.WS_CAPTION) != 0)
         {
             paddingBorder = _cachedSmCxPaddedBorder;
         }

@@ -3,6 +3,7 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
+using System;
 using Wpf.Ui.Demo.Simple.Views.Pages;
 
 namespace Wpf.Ui.Demo.Simple;
@@ -16,10 +17,16 @@ public partial class MainWindow
     {
         DataContext = this;
 
-        Appearance.SystemThemeWatcher.Watch(this);
+        Appearance.SystemThemeWatcher.Watch();
 
         InitializeComponent();
 
         Loaded += (_, _) => RootNavigation.Navigate(typeof(DashboardPage));
+    }
+
+    protected override void OnClosed(EventArgs e)
+    {
+        Appearance.SystemThemeWatcher.UnWatch();
+        base.OnClosed(e);
     }
 }

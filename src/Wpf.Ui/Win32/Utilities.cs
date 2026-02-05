@@ -4,6 +4,7 @@
 // All Rights Reserved.
 
 using System.Runtime.InteropServices;
+using System.Windows.Data;
 using Windows.Win32;
 using Windows.Win32.Foundation;
 using Windows.Win32.UI.WindowsAndMessaging;
@@ -25,11 +26,11 @@ internal sealed class Utilities
     private static readonly Version Windows7 = new(6, 1);
     private static readonly Version Windows8 = new(6, 2);
 
-    #if NET5_0_OR_GREATER
+#if NET5_0_OR_GREATER
     private static readonly Version _osVersion = Environment.OSVersion.Version;
-    #else
+#else
     private static readonly Version _osVersion = GetOSVersionFromRegistry();
-    #endif
+#endif
 
     /// <summary>
     /// Gets a value indicating whether the operating system is NT or newer.
@@ -149,7 +150,7 @@ internal sealed class Utilities
         }
     }
 
-    #if !NET5_0_OR_GREATER
+#if !NET5_0_OR_GREATER
     /// <summary>
     /// Tries to get the OS version from the Windows registry.
     /// </summary>
@@ -269,5 +270,5 @@ internal sealed class Utilities
         }
     }
 
-    #endif
+#endif
 }

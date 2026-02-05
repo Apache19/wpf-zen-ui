@@ -5,7 +5,7 @@
 
 namespace Wpf.Ui.Win32;
 
-internal enum OsVersion
+public enum OsVersion
 {
     Unknown = 0,
 

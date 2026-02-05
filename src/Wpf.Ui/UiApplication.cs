@@ -3,7 +3,11 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
+using System.Diagnostics;
+
 namespace Wpf.Ui;
+
+// todo 多此一举的玩意儿
 
 /// <summary>
 /// Represents a UI application.
@@ -22,7 +26,7 @@ public class UiApplication
     /// <summary>
     /// Initializes a new instance of the <see cref="UiApplication"/> class.
     /// </summary>
-    public UiApplication(Application application)
+    public UiApplication(Application? application)
     {
         if (application is null)
         {
@@ -36,10 +40,7 @@ public class UiApplication
 
         _application = application;
 
-        System.Diagnostics.Debug.WriteLine(
-            $"INFO | {typeof(UiApplication)} application is {_application}",
-            "Wpf.Ui"
-        );
+        Debug.WriteLine($"INFO | {typeof(UiApplication)} application is {_application}", "Wpf.Ui");
     }
 
     /// <summary>

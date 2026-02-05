@@ -22,8 +22,6 @@ public partial class FluentWindow
 
     private IntPtr NcCalcSizeHandler_Win11(IntPtr hwndIntPtr, uint msg, IntPtr wParam, IntPtr lParam, out bool handled)
     {
-        handled = true;
-
         var hwnd         = (HWND)hwndIntPtr;
         var rcClientArea = Marshal.PtrToStructure<RECT>(lParam);
 
@@ -40,12 +38,8 @@ public partial class FluentWindow
 
         Marshal.StructureToPtr(rcClientArea, lParam, false);
 
-        IntPtr retVal = IntPtr.Zero;
-        if (wParam.ToInt32() != 0)
-        {
-            retVal = new IntPtr(PInvoke.WVR_REDRAW);
-        }
+        handled = true;
 
-        return retVal;
+        return wParam.ToInt32() != 0 ? new IntPtr(PInvoke.WVR_REDRAW) : IntPtr.Zero;
     }
 }

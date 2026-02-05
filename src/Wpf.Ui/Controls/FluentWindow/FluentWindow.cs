@@ -11,6 +11,7 @@ using Windows.Win32.UI.Controls;
 using Windows.Win32.UI.WindowsAndMessaging;
 using Wpf.Ui.Hardware;
 using Wpf.Ui.Win32;
+using static Wpf.Ui.Appearance.UISettingsRCW;
 
 // ReSharper disable once CheckNamespace
 namespace Wpf.Ui.Controls;
@@ -22,15 +23,15 @@ public partial class FluentWindow : Window
 {
     static FluentWindow()
     {
-        // DefaultStyleKeyProperty.OverrideMetadata(
-        //     typeof(FluentWindow),
-        //     new FrameworkPropertyMetadata(typeof(FluentWindow))
-        // );
-        //
-        // OverridesDefaultStyleProperty.OverrideMetadata(
-        //     typeof(FluentWindow),
-        //     new FrameworkPropertyMetadata(true)
-        // );
+        DefaultStyleKeyProperty.OverrideMetadata(
+            typeof(FluentWindow),
+            new FrameworkPropertyMetadata(typeof(FluentWindow))
+        );
+
+        OverridesDefaultStyleProperty.OverrideMetadata(
+            typeof(FluentWindow),
+            new FrameworkPropertyMetadata(true)
+        );
     }
 
     #region ActualWindowState
@@ -183,6 +184,35 @@ public partial class FluentWindow : Window
 
     #endregion
 
+    #region OsVersion
+
+    /// <summary>
+    /// 标识操作系统版本的依赖属性。
+    /// </summary>
+    private static readonly DependencyPropertyKey OsVersionPropertyKey =
+        DependencyProperty.RegisterReadOnly(
+            nameof(OsVersion),
+            typeof(OsVersion),
+            typeof(FluentWindow),
+            new PropertyMetadata(OsVersion.Unknown)
+        );
+
+    /// <summary>
+    /// 操作系统版本的依赖属性标识符。
+    /// </summary>
+    public static readonly DependencyProperty OsVersionProperty = OsVersionPropertyKey.DependencyProperty;
+
+    /// <summary>
+    /// 获取当前操作系统的版本。
+    /// </summary>
+    public OsVersion OsVersion
+    {
+        get { return (OsVersion)GetValue(OsVersionProperty); }
+        private set { SetValue(OsVersionPropertyKey, value); }
+    }
+
+    #endregion
+
     #region 事件
 
     /// <summary>
@@ -205,10 +235,13 @@ public partial class FluentWindow : Window
     internal static readonly uint WM_NCHITTEST_REQUEST  = PInvoke.RegisterWindowMessage("WM_NCHITTEST_REQUEST");
 
     private readonly MessageHandler           _ncCalcSizeh;
+    private readonly MessageHandler?          _sysCommand;
     private readonly SourceInitializedHandler _sourceInitialized;
 
     public FluentWindow()
     {
+        OsVersion = Utilities.OsVersion;
+
         SetResourceReference(StyleProperty, typeof(FluentWindow));
 
         switch (Utilities.OsVersion)
@@ -224,6 +257,7 @@ public partial class FluentWindow : Window
             case OsVersion.Win10:
                 _ncCalcSizeh       = NcCalcSizeHandler_Win10;
                 _sourceInitialized = OnSourceInitialized_Win10;
+                _sysCommand        = SysCommandHandler_Win10;
                 break;
 
             case OsVersion.Win11:
@@ -260,16 +294,11 @@ public partial class FluentWindow : Window
                 _cachedDpi = new DisplayDpi((short)yx, (short)(yx >> 16));
 
                 // 更新窗口大小
+                const SET_WINDOW_POS_FLAGS swpFlag
+                    = SET_WINDOW_POS_FLAGS.SWP_NOZORDER | SET_WINDOW_POS_FLAGS.SWP_NOACTIVATE;
+
                 var rc = Marshal.PtrToStructure<RECT>(lParam);
-                PInvoke.SetWindowPos(
-                    hwnd,
-                    HWND.Null,
-                    rc.left,
-                    rc.top,
-                    rc.Width,
-                    rc.Height,
-                    SET_WINDOW_POS_FLAGS.SWP_NOZORDER | SET_WINDOW_POS_FLAGS.SWP_NOACTIVATE
-                );
+                PInvoke.SetWindowPos(hwnd, HWND.Null, rc.left, rc.top, rc.Width, rc.Height, swpFlag);
 
                 break;
             }
@@ -277,6 +306,16 @@ public partial class FluentWindow : Window
             case PInvoke.WM_WININICHANGE:
             {
                 InvalidateSystemMetricCache();
+                break;
+            }
+
+            case PInvoke.WM_SYSCOMMAND:
+            {
+                if (_sysCommand is not null)
+                {
+                    return _sysCommand(hwnd, uMsg, wParam, lParam, out handled);
+                }
+
                 break;
             }
 
@@ -291,8 +330,27 @@ public partial class FluentWindow : Window
             case PInvoke.WM_NCACTIVATE:
             {
                 IsNcActive = wParam != IntPtr.Zero;
-                break;
+
+                // 确实可以消除在没有 WS_CAPTION 时激活瞬间显示标题栏的问题（包括系统按钮）
+                var lRet = PInvoke.DefWindowProc(hwnd, uMsg, new WPARAM((uint)wParam), new IntPtr(-1));
+                handled = true;
+
+                return lRet;
             }
+
+            // 如果彻底拦截，则临时修改样式后执行SysCommand会导致非客户区无法绘制
+            // case PInvoke.WM_NCPAINT:
+            // {
+            //     // 拦截传统的非客户区绘制消息，让 DWM 绘制非客户区即可
+            //     PInvoke.DwmDefWindowProc(hwnd, uMsg, new WPARAM((uint)wParam), lParam, out LRESULT result);
+            //     handled = true;
+            //
+            //     return result;
+            // }
+
+            /*
+             * todo 在临时修改样式后设置一个标志，让NCCALCSIZE消息重新计算，暂时去掉下边框，这样瞬时变化就不明显了
+             */
 
             // 窗口处理调整尺寸边框和相关逻辑，没有结果再将消息转发给标题栏。
             case PInvoke.WM_NCHITTEST:
@@ -343,7 +401,7 @@ public partial class FluentWindow : Window
 
             // 非客户端尺寸计算，经测试，目前只有Win11工作正常。
             // Win10 则只能更改三条边，如果更改全部四条边，则会使DWM绘制出一个完整的假标题栏（包括系统按钮）但无法交互。
-            // 此行为需要进一步测试，尝试不更改（返回非零的其他值），而使用DwmExtendFrameIntoClientArea
+            // todo 此行为需要进一步测试，尝试不更改（返回非零值），并使用DwmExtendFrameIntoClientArea
             case PInvoke.WM_NCCALCSIZE:
                 return _ncCalcSizeh(hwnd, uMsg, wParam, lParam, out handled);
         }
