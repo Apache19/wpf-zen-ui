@@ -7,14 +7,17 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Windows.Win32;
 using Windows.Win32.Foundation;
-using Windows.Win32.UI.Controls;
 using Windows.Win32.UI.WindowsAndMessaging;
+using Microsoft.Win32;
+using Wpf.Ui.Appearance;
 using Wpf.Ui.Hardware;
 using Wpf.Ui.Win32;
-using static Wpf.Ui.Appearance.UISettingsRCW;
 
 // ReSharper disable once CheckNamespace
 namespace Wpf.Ui.Controls;
+
+// todo 对于Win8.1 以下，直接使用窗口边框色，无视是否开启
+// todo WM_NCMOUSELEAVE 如果要使用Dwm绘制系统按钮，则需要调用DwmDefWindowProc，否则按钮高亮不会去除
 
 /// <summary>
 /// FluentWindow
@@ -81,7 +84,13 @@ public partial class FluentWindow : Window
             nameof(IsNcActive),
             typeof(bool),
             typeof(FluentWindow),
-            new PropertyMetadata(false)
+            new PropertyMetadata(
+                false,
+                static (d, e) =>
+                {
+                    ((FluentWindow)d)._isNcActivePropertyChanged((bool)e.NewValue);
+                }
+            )
         );
 
     /// <summary>
@@ -112,74 +121,6 @@ public partial class FluentWindow : Window
     {
         get => (bool)GetValue(IsNcActiveProperty);
         private set => SetValue(IsNcActivePropertyKey, value);
-    }
-
-    #endregion
-
-    #region ElementIdentity
-
-    /// <summary>
-    /// Identifies the semantic role of an element within the title bar.
-    /// </summary>
-    /// <remarks>
-    /// This attached property is used to associate a visual element in the title bar
-    /// with a specific non-client area identity. The assigned value is used internally
-    /// to participate in non-client hit testing and window interaction logic.
-    ///
-    /// The property value is inherited, allowing container elements to define an
-    /// identity that applies to their visual children.
-    ///
-    /// This property is not intended for general application logic and should only be
-    /// used when integrating custom elements into the title bar interaction model.
-    /// </remarks>
-    private static readonly DependencyProperty ElementIdentityProperty =
-        DependencyProperty.RegisterAttached(
-            "ElementIdentity",
-            typeof(TitleBarElementIdentity),
-            typeof(FluentWindow),
-            new FrameworkPropertyMetadata(
-                TitleBarElementIdentity.Unknown,
-                FrameworkPropertyMetadataOptions.Inherits
-            )
-        );
-
-    /// <summary>
-    /// Helper for getting <see cref="ElementIdentityProperty"/> from <paramref name="obj"/>.
-    /// </summary>
-    /// <param name="obj">
-    /// <see cref="DependencyObject"/> to read <see cref="ElementIdentityProperty"/> from.
-    /// </param>
-    /// <returns>
-    /// ElementIdentity property value.
-    /// </returns>
-    [AttachedPropertyBrowsableForType(typeof(DependencyObject))]
-    public static TitleBarElementIdentity GetElementIdentity(DependencyObject obj)
-    {
-        if (obj == null)
-        {
-            throw new ArgumentNullException(nameof(obj));
-        }
-
-        return (TitleBarElementIdentity)obj.GetValue(ElementIdentityProperty);
-    }
-
-    /// <summary>
-    /// Helper for setting <see cref="ElementIdentityProperty"/> on <paramref name="obj"/>.
-    /// </summary>
-    /// <param name="obj">
-    /// <see cref="DependencyObject"/> to set <see cref="ElementIdentityProperty"/> on.
-    /// </param>
-    /// <param name="value">
-    /// ElementIdentity property value.
-    /// </param>
-    public static void SetElementIdentity(DependencyObject obj, TitleBarElementIdentity value)
-    {
-        if (obj == null)
-        {
-            throw new ArgumentNullException(nameof(obj));
-        }
-
-        obj.SetValue(ElementIdentityProperty, value);
     }
 
     #endregion
@@ -244,12 +185,11 @@ public partial class FluentWindow : Window
     private readonly MessageHandler           _sysCommand = DefaultMessageHandler;
     private readonly MessageHandler           _ncPaint    = DefaultMessageHandler;
     private readonly SourceInitializedHandler _sourceInitialized;
+    private readonly Action<bool>             _isNcActivePropertyChanged = _ => { };
 
     public FluentWindow()
     {
         OsVersion = Utilities.OsVersion;
-
-        SetResourceReference(StyleProperty, typeof(FluentWindow));
 
         switch (Utilities.OsVersion)
         {
@@ -268,6 +208,11 @@ public partial class FluentWindow : Window
                 _sourceInitialized = OnSourceInitialized_Win11;
                 break;
         }
+
+        SetResourceReference(StyleProperty, typeof(FluentWindow));
+
+        // 启动时可以使用 DwmGetColorizationColor 来获取颜色
+        // https://learn.microsoft.com/en-us/windows/win32/api/dwmapi/nf-dwmapi-dwmgetcolorizationcolor
     }
 
     protected override void OnSourceInitialized(EventArgs e)
@@ -288,6 +233,11 @@ public partial class FluentWindow : Window
 
         switch (uMsg)
         {
+            case PInvoke.WM_DWMCOLORIZATIONCOLORCHANGED:
+                Debug.WriteLine("WM_DWMCOLORIZATIONCOLORCHANGED");
+                break;
+
+            // 窗口在不同DPI的监视器之间移动，会收到
             case PInvoke.WM_DPICHANGED:
             {
                 // 更新缓存的DPI
@@ -304,8 +254,11 @@ public partial class FluentWindow : Window
                 break;
             }
 
-            case PInvoke.WM_WININICHANGE:
+            case PInvoke.WM_SETTINGCHANGE:
             {
+                Debug.WriteLine($"[WM_SETTINGCHANGE] wParam: 0x{wParam:X8} ({wParam}), lParam: \"{Marshal.PtrToStringAuto(lParam)}\"");
+                // 设置颜色设置，包括是否在标题栏和边框显示主题色 lParam == "ImmersiveColorSet"
+                // 同时收到 WM_DWMCOLORIZATIONCOLORCHANGED 多个
                 InvalidateSystemMetricCache();
                 break;
             }

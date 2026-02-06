@@ -337,7 +337,7 @@ public class TitleBar : ContentControl
                         if (button is not null)
                         {
                             var hash = button.GetHashCode();
-                            PInvoke.SendMessage(hwnd, FluentWindow.WM_NCHITTEST_RESOLVED, 1, hash);
+                            PInvoke.SendMessage(hwnd, FluentWindow.WM_NCHITTEST_RESOLVED, 1, new LPARAM(hash));
                         }
                         else
                         {

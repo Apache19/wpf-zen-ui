@@ -39,6 +39,9 @@ internal sealed class DwmWindowAttributes
         return this;
     }
 
+    /// <summary>
+    /// 让窗口任务栏略缩图只显示一个图标，而不是窗口内容预览
+    /// </summary>
     public DwmWindowAttributes ForceIconicRepresentation(bool enabled)
     {
         Enqueue(DWMWINDOWATTRIBUTE.DWMWA_FORCE_ICONIC_REPRESENTATION, enabled ? 1 : 0);
