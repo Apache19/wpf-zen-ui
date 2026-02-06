@@ -336,7 +336,7 @@ public class TitleBar : ContentControl
                         var button = hitElement.FindAncestor<TitleBarButton>();
                         if (button is not null)
                         {
-                            var hash = new LPARAM(button.GetHashCode());
+                            var hash = button.GetHashCode();
                             PInvoke.SendMessage(hwnd, FluentWindow.WM_NCHITTEST_RESOLVED, 1, hash);
                         }
                         else

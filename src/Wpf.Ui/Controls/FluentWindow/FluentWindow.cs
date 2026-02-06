@@ -234,8 +234,15 @@ public partial class FluentWindow : Window
     internal static readonly uint WM_NCHITTEST_RESOLVED = PInvoke.RegisterWindowMessage("WM_NCHITTEST_RESOLVED");
     internal static readonly uint WM_NCHITTEST_REQUEST  = PInvoke.RegisterWindowMessage("WM_NCHITTEST_REQUEST");
 
-    private readonly MessageHandler           _ncCalcSizeh;
-    private readonly MessageHandler?          _sysCommand;
+    private static IntPtr DefaultMessageHandler(IntPtr hwndIntPtr, uint msg, IntPtr wParam, IntPtr lParam, out bool handled)
+    {
+        handled = false;
+        return IntPtr.Zero;
+    }
+
+    private readonly MessageHandler           _ncCalcSize;
+    private readonly MessageHandler           _sysCommand = DefaultMessageHandler;
+    private readonly MessageHandler           _ncPaint    = DefaultMessageHandler;
     private readonly SourceInitializedHandler _sourceInitialized;
 
     public FluentWindow()
@@ -247,7 +254,7 @@ public partial class FluentWindow : Window
         switch (Utilities.OsVersion)
         {
             case OsVersion.Unknown:
-                _ncCalcSizeh       = NcCalcSizeHandler_Win11;
+                _ncCalcSize       = NcCalcSizeHandler_Win11;
                 _sourceInitialized = OnSourceInitialized_Win11;
                 break;
 
@@ -255,15 +262,16 @@ public partial class FluentWindow : Window
             case OsVersion.Win7:
             case OsVersion.Win8:
             case OsVersion.Win10:
-                _ncCalcSizeh       = NcCalcSizeHandler_Win10;
+                _ncCalcSize       = NcCalcSizeHandler_Win10;
                 _sourceInitialized = OnSourceInitialized_Win10;
                 _sysCommand        = SysCommandHandler_Win10;
+                _ncPaint           = On_WM_NCPAINT_Win10;
                 break;
 
             case OsVersion.Win11:
 
             default:
-                _ncCalcSizeh       = NcCalcSizeHandler_Win11;
+                _ncCalcSize       = NcCalcSizeHandler_Win11;
                 _sourceInitialized = OnSourceInitialized_Win11;
                 break;
         }
@@ -310,14 +318,7 @@ public partial class FluentWindow : Window
             }
 
             case PInvoke.WM_SYSCOMMAND:
-            {
-                if (_sysCommand is not null)
-                {
-                    return _sysCommand(hwnd, uMsg, wParam, lParam, out handled);
-                }
-
-                break;
-            }
+                return _sysCommand(hwnd, uMsg, wParam, lParam, out handled);
 
             case PInvoke.WM_SIZE:
             case PInvoke.WM_STYLECHANGED:
@@ -331,22 +332,15 @@ public partial class FluentWindow : Window
             {
                 IsNcActive = wParam != IntPtr.Zero;
 
-                // 确实可以消除在没有 WS_CAPTION 时激活瞬间显示标题栏的问题（包括系统按钮）
-                var lRet = PInvoke.DefWindowProc(hwnd, uMsg, new WPARAM((uint)wParam), new IntPtr(-1));
+                // 可以消除在没有 WS_CAPTION 时激活瞬间绘制原生标题栏的问题（包括系统按钮）
+                // https://learn.microsoft.com/en-us/windows/win32/winmsg/wm-ncactivate
                 handled = true;
-
-                return lRet;
+                return PInvoke.DefWindowProc(hwnd, uMsg, (uint)wParam, -1);
             }
 
             // 如果彻底拦截，则临时修改样式后执行SysCommand会导致非客户区无法绘制
-            // case PInvoke.WM_NCPAINT:
-            // {
-            //     // 拦截传统的非客户区绘制消息，让 DWM 绘制非客户区即可
-            //     PInvoke.DwmDefWindowProc(hwnd, uMsg, new WPARAM((uint)wParam), lParam, out LRESULT result);
-            //     handled = true;
-            //
-            //     return result;
-            // }
+            case PInvoke.WM_NCPAINT:
+                return _ncPaint(hwnd, uMsg, wParam, lParam, out handled);
 
             /*
              * todo 在临时修改样式后设置一个标志，让NCCALCSIZE消息重新计算，暂时去掉下边框，这样瞬时变化就不明显了
@@ -403,7 +397,7 @@ public partial class FluentWindow : Window
             // Win10 则只能更改三条边，如果更改全部四条边，则会使DWM绘制出一个完整的假标题栏（包括系统按钮）但无法交互。
             // todo 此行为需要进一步测试，尝试不更改（返回非零值），并使用DwmExtendFrameIntoClientArea
             case PInvoke.WM_NCCALCSIZE:
-                return _ncCalcSizeh(hwnd, uMsg, wParam, lParam, out handled);
+                return _ncCalcSize(hwnd, uMsg, wParam, lParam, out handled);
         }
 
         return IntPtr.Zero;

@@ -24,22 +24,24 @@ public partial class FluentWindow
 {
     private void OnSourceInitialized_Win10(HwndSource hwndSource)
     {
-        var margins = new MARGINS()
-        {
-            cxLeftWidth    = -1,
-            cxRightWidth   = -1,
-            cyBottomHeight = -1,
-            cyTopHeight    = -1,
-        };
-
+        // var margins = new MARGINS()
+        // {
+        //     cxLeftWidth    = 0,
+        //     cxRightWidth   = 0,
+        //     cyBottomHeight = 0,
+        //     cyTopHeight    = 0,
+        // };
+        //
         // PInvoke.DwmExtendFrameIntoClientArea((HWND)hwndSource.Handle, in margins);
 
-        // 移除 WS_SYSMENU 和 WS_CAPTION 样式
+        // 移除 WS_CAPTION 样式
         var hwnd  = (HWND)hwndSource.Handle;
         var style = (WINDOW_STYLE)PInvoke.GetWindowLong(hwnd, WINDOW_LONG_PTR_INDEX.GWL_STYLE);
-        style &= ~(WINDOW_STYLE.WS_CAPTION);
-        PInvoke.SetWindowLong(hwnd, WINDOW_LONG_PTR_INDEX.GWL_STYLE, (int)style);
+        style &= ~WINDOW_STYLE.WS_CAPTION;
+        _     =  PInvoke.SetWindowLong(hwnd, WINDOW_LONG_PTR_INDEX.GWL_STYLE, (int)style);
     }
+
+    private bool _alignBottom;
 
     private IntPtr NcCalcSizeHandler_Win10(IntPtr hwndIntPtr, uint msg, IntPtr wParam, IntPtr lParam, out bool handled)
     {
@@ -55,13 +57,12 @@ public partial class FluentWindow
 
         rcClientArea.left  += (int)Math.Ceiling(thickness.Left) - 1;
         rcClientArea.right -= (int)Math.Ceiling(thickness.Right) - 1;
+        rcClientArea.top   += (int)Math.Ceiling(thickness.Top);
 
-        // if (Utilities.GetHwndState(hwnd) == WindowState.Maximized)
+        if (!_alignBottom)
         {
-            rcClientArea.top += (int)Math.Ceiling(thickness.Top);
+            rcClientArea.bottom -= (int)Math.Ceiling(thickness.Bottom) - 1;
         }
-
-        rcClientArea.bottom -= (int)Math.Ceiling(thickness.Bottom);
 
         Marshal.StructureToPtr(rcClientArea, lParam, false);
 
@@ -77,7 +78,12 @@ public partial class FluentWindow
             = SET_WINDOW_POS_FLAGS.SWP_NOZORDER | SET_WINDOW_POS_FLAGS.SWP_NOACTIVATE |
               SET_WINDOW_POS_FLAGS.SWP_NOMOVE | SET_WINDOW_POS_FLAGS.SWP_NOSIZE;
 
+        SystemParameters.ClientAreaAnimation
+
         var hwnd = (HWND)hwndIntPtr;
+
+        // 准备恢复 WS_CAPTION，让非客户区尺寸计算对齐底部边距（平常状态是对齐顶部）
+        _alignBottom = true;
 
         // 处理系统命令，临时恢复窗口标题栏以支持标准窗口操作的动画
         var cmd = (uint)wParam & 0xFFF0;
@@ -85,12 +91,13 @@ public partial class FluentWindow
         {
             // 临时恢复 WS_CAPTION 样式
             var style = (WINDOW_STYLE)PInvoke.GetWindowLong(hwnd, WINDOW_LONG_PTR_INDEX.GWL_STYLE);
-            PInvoke.SetWindowLong(hwnd, WINDOW_LONG_PTR_INDEX.GWL_STYLE, (int)(style | WINDOW_STYLE.WS_CAPTION));
+            _ = PInvoke.SetWindowLong(hwnd, WINDOW_LONG_PTR_INDEX.GWL_STYLE, (int)(style | WINDOW_STYLE.WS_CAPTION));
 
-            // PInvoke.SetWindowPos(hwnd, HWND.Null, 0, 0, 0, 0, swpFlag);
+            // 允许下一次非客户区绘制。
+            _requestNcPaint = true;
 
             // 延迟移除 WS_CAPTION 样式
-            Task.Delay(1).ContinueWith(
+            Task.Delay(0).ContinueWith(
                 _ =>
                 {
                     // 检查窗口句柄是否仍然有效
@@ -99,7 +106,8 @@ public partial class FluentWindow
                         var currentStyle = (WINDOW_STYLE)PInvoke.GetWindowLong(hwnd, WINDOW_LONG_PTR_INDEX.GWL_STYLE);
                         PInvoke.SetWindowLong(hwnd, WINDOW_LONG_PTR_INDEX.GWL_STYLE, (int)(currentStyle & ~WINDOW_STYLE.WS_CAPTION));
 
-                        // PInvoke.SetWindowPos(hwnd, HWND.Null, 0, 0, 0, 0, swpFlag);
+                        _alignBottom    = false;
+                        _requestNcPaint = true;
                     }
                 },
                 TaskScheduler.FromCurrentSynchronizationContext()
@@ -107,6 +115,16 @@ public partial class FluentWindow
         }
 
         handled = false;
+        return IntPtr.Zero;
+    }
+
+    private bool _requestNcPaint;
+
+    private IntPtr On_WM_NCPAINT_Win10(IntPtr hwndIntPtr, uint msg, IntPtr wParam, IntPtr lParam, out bool handled)
+    {
+        handled         = !_requestNcPaint;
+        _requestNcPaint = false;
+
         return IntPtr.Zero;
     }
 
