@@ -254,24 +254,17 @@ public partial class FluentWindow : Window
         switch (Utilities.OsVersion)
         {
             case OsVersion.Unknown:
-                _ncCalcSize       = NcCalcSizeHandler_Win11;
-                _sourceInitialized = OnSourceInitialized_Win11;
-                break;
-
             case OsVersion.Vista:
             case OsVersion.Win7:
             case OsVersion.Win8:
             case OsVersion.Win10:
-                _ncCalcSize       = NcCalcSizeHandler_Win10;
+                _ncCalcSize        = NcCalcSizeHandler_Win10;
                 _sourceInitialized = OnSourceInitialized_Win10;
-                _sysCommand        = SysCommandHandler_Win10;
-                _ncPaint           = On_WM_NCPAINT_Win10;
                 break;
 
             case OsVersion.Win11:
-
             default:
-                _ncCalcSize       = NcCalcSizeHandler_Win11;
+                _ncCalcSize        = NcCalcSizeHandler_Win11;
                 _sourceInitialized = OnSourceInitialized_Win11;
                 break;
         }
@@ -335,7 +328,7 @@ public partial class FluentWindow : Window
                 // 可以消除在没有 WS_CAPTION 时激活瞬间绘制原生标题栏的问题（包括系统按钮）
                 // https://learn.microsoft.com/en-us/windows/win32/winmsg/wm-ncactivate
                 handled = true;
-                return PInvoke.DefWindowProc(hwnd, uMsg, (uint)wParam, -1);
+                return PInvoke.DefWindowProc(hwnd, uMsg, new WPARAM((uint)wParam), -1);
             }
 
             // 如果彻底拦截，则临时修改样式后执行SysCommand会导致非客户区无法绘制

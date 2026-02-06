@@ -18,7 +18,7 @@
         <Border
             Background="{TemplateBinding Background}"
             BorderBrush="{TemplateBinding BorderBrush}"
-            BorderThickness="0,0,0,0">
+            BorderThickness="1">
             <Grid>
                 <AdornerDecorator>
                     <ContentPresenter />
@@ -46,7 +46,7 @@
         <Border
             Background="{TemplateBinding Background}"
             BorderBrush="{TemplateBinding BorderBrush}"
-            BorderThickness="0,0,0,0">
+            BorderThickness="1">
             <AdornerDecorator>
                 <ContentPresenter />
             </AdornerDecorator>
