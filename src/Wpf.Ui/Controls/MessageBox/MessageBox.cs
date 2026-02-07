@@ -17,7 +17,7 @@ namespace Wpf.Ui.Controls;
 /// <summary>
 /// Customized window for notifications.
 /// </summary>
-public class MessageBox : Window
+public class MessageBox : FluentWindow
 {
     /// <summary>Identifies the <see cref="ShowTitle"/> dependency property.</summary>
     public static readonly DependencyProperty ShowTitleProperty = DependencyProperty.Register(

@@ -41,7 +41,6 @@
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/DynamicScrollBar/DynamicScrollBar.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/DynamicScrollViewer/DynamicScrollViewer.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/Expander/Expander.xaml" />
-        <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/FluentWindow/FluentWindow.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/Flyout/Flyout.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/GridView/GridViewColumnHeader.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/HyperlinkButton/HyperlinkButton.xaml" />

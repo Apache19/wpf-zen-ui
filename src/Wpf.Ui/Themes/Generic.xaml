@@ -1,0 +1,8 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!--  窗口是树根，它的资源查找比较特殊，必须遵循 WPF 主题资源查找机制  -->
+    <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/FluentWindow/FluentWindow.xaml" />
+    </ResourceDictionary.MergedDictionaries>
+
+</ResourceDictionary>

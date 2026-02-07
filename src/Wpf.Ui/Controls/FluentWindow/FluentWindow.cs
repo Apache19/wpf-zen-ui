@@ -28,11 +28,6 @@ public partial class FluentWindow : Window
             typeof(FluentWindow),
             new FrameworkPropertyMetadata(typeof(FluentWindow))
         );
-
-        OverridesDefaultStyleProperty.OverrideMetadata(
-            typeof(FluentWindow),
-            new FrameworkPropertyMetadata(true)
-        );
     }
 
     #region DependencyProperties
@@ -117,6 +112,7 @@ public partial class FluentWindow : Window
     #endregion
 
     #region OsVersion
+
     // todo 将来移植到静态资源类里
 
     private static readonly DependencyPropertyKey OsVersionPropertyKey =
@@ -209,8 +205,6 @@ public partial class FluentWindow : Window
                 _sourceInitialized = OnSourceInitialized_Win11;
                 break;
         }
-
-        SetResourceReference(StyleProperty, typeof(FluentWindow));
 
         UpdateSystemAccentColor();
         IsAccentOnTitleBarAndBorder = ApplicationAccentColorManager.IsAccentColorOnTitleBarsEnabled;
@@ -371,6 +365,7 @@ public partial class FluentWindow : Window
         }
     }
 
+    // 暂时在窗口上处理主题色的监听，将来使用主题管理器来管理
     private void UpdateSystemAccentColor()
     {
         var hResult = PInvoke.DwmGetColorizationColor(out uint colorizationColor, out BOOL opaqueBlend);

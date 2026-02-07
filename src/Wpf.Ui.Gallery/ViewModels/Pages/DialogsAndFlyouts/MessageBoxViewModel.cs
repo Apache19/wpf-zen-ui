@@ -27,6 +27,14 @@ public partial class MessageBoxViewModel : ViewModel
                 "Never gonna give you up, never gonna let you down Never gonna run around and desert you Never gonna make you cry, never gonna say goodbye",
         };
 
+        if (sender is DependencyObject d)
+        {
+            if (Window.GetWindow(d) is { } window)
+            {
+                uiMessageBox.Owner = window;
+            }
+        }
+
         _ = await uiMessageBox.ShowDialogAsync();
     }
 }

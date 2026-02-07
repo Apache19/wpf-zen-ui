@@ -8,8 +8,7 @@
 <ResourceDictionary
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:controls="clr-namespace:Wpf.Ui.Controls"
-    xmlns:win32="clr-namespace:Wpf.Ui.Win32">
+    xmlns:controls="clr-namespace:Wpf.Ui.Controls">
 
     <!--  ReSharper disable InconsistentNaming  -->
 
@@ -130,18 +129,15 @@
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="Template" Value="{StaticResource FluentWindow_Win10_Template}" />
         <Style.Triggers>
-
             <!--  默认 Win10 窗口带 ResizeGrip  -->
             <Trigger Property="ResizeMode" Value="CanResizeWithGrip">
                 <Setter Property="Template" Value="{StaticResource FluentWindow_Win10_ResizeGrip_Template}" />
             </Trigger>
-
             <!--  Win11 窗口  -->
             <Trigger Property="OsVersion" Value="Win11">
                 <Setter Property="BorderThickness" Value="0" />
                 <Setter Property="Template" Value="{StaticResource FluentWindow_Win11_Template}" />
             </Trigger>
-
             <!--  Win11 带 ResizeGrip  -->
             <MultiTrigger>
                 <MultiTrigger.Conditions>
@@ -150,7 +146,6 @@
                 </MultiTrigger.Conditions>
                 <Setter Property="Template" Value="{StaticResource FluentWindow_Win11_ResizeGrip_Template}" />
             </MultiTrigger>
-
         </Style.Triggers>
     </Style>
 
