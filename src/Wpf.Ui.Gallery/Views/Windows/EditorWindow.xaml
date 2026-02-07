@@ -13,7 +13,7 @@
                                      IsDesignTimeCreatable=False}"
     d:DesignHeight="650"
     d:DesignWidth="900"
-    ui:Design.Background="{DynamicResource ApplicationBackgroundBrush}"
+    ui:Design.Background="{DynamicResource WindowBackgroundBrush}"
     ui:Design.Foreground="{DynamicResource TextFillColorPrimaryBrush}"
     WindowStartupLocation="CenterOwner"
     mc:Ignorable="d">

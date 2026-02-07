@@ -16,8 +16,9 @@
         https://github.com/microsoft/microsoft-ui-xaml/blob/main/dev/CommonStyles/Common_themeresources_any.xaml
     -->
 
-    <Color x:Key="ApplicationBackgroundColor">#FF202020</Color>
-    <SolidColorBrush x:Key="ApplicationBackgroundBrush" Color="{StaticResource ApplicationBackgroundColor}" />
+    <Color x:Key="WindowBackgroundColor">#FF202020</Color>
+    <Color x:Key="WindowBorderColor">#FF3A3A3A</Color>
+    <Color x:Key="WindowBorderColorInactive">#FF454545</Color>
 
     <Color x:Key="KeyboardFocusBorderColor">#87FFFFFF</Color>
     <SolidColorBrush x:Key="KeyboardFocusBorderColorBrush" Color="{StaticResource KeyboardFocusBorderColor}" />
@@ -452,8 +453,10 @@
     <SolidColorBrush x:Key="ExpanderContentBackground" Color="{StaticResource CardBackgroundFillColorSecondary}" />
 
     <!--  FluentWindow  -->
-    <SolidColorBrush x:Key="WindowBackground" Color="{StaticResource ApplicationBackgroundColor}" />
-    <SolidColorBrush x:Key="WindowForeground" Color="{StaticResource TextFillColorPrimary}" />
+    <SolidColorBrush x:Key="WindowBackgroundBrush" Color="{StaticResource WindowBackgroundColor}" />
+    <SolidColorBrush x:Key="WindowForegroundBrush" Color="{StaticResource TextFillColorPrimary}" />
+    <SolidColorBrush x:Key="WindowBorderBrush" Color="{StaticResource WindowBorderColor}" />
+    <SolidColorBrush x:Key="WindowBorderInactiveBrush" Color="{StaticResource WindowBorderColorInactive}" />
 
     <!--  Flyout  -->
     <SolidColorBrush x:Key="FlyoutBackground" Color="{StaticResource AcrylicBackgroundFillColorDefault}" />
@@ -511,7 +514,7 @@
     <SolidColorBrush x:Key="ListViewItemBackgroundPointerOver" Color="{StaticResource SubtleFillColorSecondary}" />
 
     <!--  LoadingScreen  -->
-    <SolidColorBrush x:Key="LoadingScreenBackground" Color="{StaticResource ApplicationBackgroundColor}" />
+    <SolidColorBrush x:Key="LoadingScreenBackground" Color="{StaticResource WindowBackgroundColor}" />
     <SolidColorBrush x:Key="LoadingScreenForeground" Color="{StaticResource TextFillColorPrimary}" />
 
     <!--  Menu  -->

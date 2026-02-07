@@ -34,8 +34,8 @@ public enum ThemeResource
     AccentTextFillColorTertiaryBrush,
 
     // Background
-    ApplicationBackgroundColor,
-    ApplicationBackgroundBrush,
+    WindowBackgroundColor,
+    WindowBackgroundBrush,
 
     // Focus
     KeyboardFocusBorderColor,

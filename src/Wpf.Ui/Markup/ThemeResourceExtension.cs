@@ -31,7 +31,7 @@ public class ThemeResourceExtension : DynamicResourceExtension
     /// </summary>
     public ThemeResourceExtension()
     {
-        ResourceKey = ThemeResource.ApplicationBackgroundBrush.ToString();
+        ResourceKey = ThemeResource.WindowBackgroundBrush.ToString();
     }
 
     /// <summary>

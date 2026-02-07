@@ -12,7 +12,7 @@ namespace Wpf.Ui.Markup;
 /// <code lang="xml">
 /// &lt;ui:FluentWindow
 ///     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
-///     ui:Design.Background="{DynamicResource ApplicationBackgroundBrush}"
+///     ui:Design.Background="{DynamicResource WindowBackgroundBrush}"
 ///     ui:Design.Foreground="{DynamicResource TextFillColorPrimaryBrush}"&gt;
 ///     &lt;Button Content="Hello World" /&gt;
 /// &lt;/FluentWindow&gt;

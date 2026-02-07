@@ -31,9 +31,9 @@
     <Color x:Key="SystemColorHotlightColor">#1C5E75</Color>
     <Color x:Key="SystemColorGrayTextColor">#676767</Color>
 
-    <Color x:Key="ApplicationBackgroundColor">#FFFAEF</Color>
-    <!--  Same as SystemColorWindowColor  -->
-    <SolidColorBrush x:Key="ApplicationBackgroundBrush" Color="{StaticResource ApplicationBackgroundColor}" />
+    <Color x:Key="WindowBackgroundColor">#FFFAEF</Color>
+    <Color x:Key="WindowBorderColor">#FF3A3A3A</Color>
+    <Color x:Key="WindowBorderColorInactive">#FF454545</Color>
 
     <Color x:Key="KeyboardFocusBorderColor">#3D3D3D</Color>
     <!--  Same as SystemColorWindowTextColor  -->
@@ -336,8 +336,10 @@
     <SolidColorBrush x:Key="ExpanderContentBackground" Color="{StaticResource SystemColorWindowColor}" />
 
     <!--  FluentWindow  -->
-    <SolidColorBrush x:Key="WindowBackground" Color="{StaticResource SystemColorWindowColor}" />
-    <SolidColorBrush x:Key="WindowForeground" Color="{StaticResource SystemColorWindowTextColor}" />
+    <SolidColorBrush x:Key="WindowBackgroundBrush" Color="{StaticResource SystemColorWindowColor}" />
+    <SolidColorBrush x:Key="WindowForegroundBrush" Color="{StaticResource SystemColorWindowTextColor}" />
+    <SolidColorBrush x:Key="WindowBorderBrush" Color="{StaticResource WindowBorderColor}" />
+    <SolidColorBrush x:Key="WindowBorderInactiveBrush" Color="{StaticResource WindowBorderColorInactive}" />
 
     <!--  Flyout  -->
     <SolidColorBrush x:Key="FlyoutBackground" Color="{StaticResource SystemColorWindowColor}" />

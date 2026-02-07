@@ -15,7 +15,6 @@ using Wpf.Ui.Win32;
 // ReSharper disable once CheckNamespace
 namespace Wpf.Ui.Controls;
 
-// todo 对于Win8.1 以下，直接使用窗口边框色，无视是否开启
 // todo WM_NCMOUSELEAVE 如果要使用Dwm绘制系统按钮，则需要调用DwmDefWindowProc，否则按钮高亮不会去除
 
 /// <summary>
@@ -36,6 +35,8 @@ public partial class FluentWindow : Window
         );
     }
 
+    #region DependencyProperties
+
     #region ActualWindowState
 
     /// <summary>
@@ -46,16 +47,7 @@ public partial class FluentWindow : Window
             nameof(ActualWindowState),
             typeof(WindowState),
             typeof(FluentWindow),
-            new FrameworkPropertyMetadata(
-                WindowState.Normal,
-                static (d, e) =>
-                {
-                    if (d is FluentWindow window)
-                    {
-                        window.OnActualWindowStateChanged((WindowState)e.NewValue);
-                    }
-                }
-            )
+            new FrameworkPropertyMetadata(WindowState.Normal)
         );
 
     /// <summary>
@@ -65,8 +57,8 @@ public partial class FluentWindow : Window
         ActualWindowStatePropertyKey.DependencyProperty;
 
     /// <summary>
-    /// Gets 获取窗口的真实状态（只读）。
-    /// 这个属性反映 Windows 原生窗口的实际状态，通过窗口消息处理更新。
+    /// Gets the real state of the window.
+    /// This property reflects the actual state of the native Windows window, updated through window message handling.
     /// </summary>
     public WindowState ActualWindowState
     {
@@ -125,10 +117,8 @@ public partial class FluentWindow : Window
     #endregion
 
     #region OsVersion
+    // todo 将来移植到静态资源类里
 
-    /// <summary>
-    /// 标识操作系统版本的依赖属性。
-    /// </summary>
     private static readonly DependencyPropertyKey OsVersionPropertyKey =
         DependencyProperty.RegisterReadOnly(
             nameof(OsVersion),
@@ -138,12 +128,13 @@ public partial class FluentWindow : Window
         );
 
     /// <summary>
-    /// 操作系统版本的依赖属性标识符。
+    /// Identifies the <see cref="OsVersion"/> dependency property.
     /// </summary>
-    public static readonly DependencyProperty OsVersionProperty = OsVersionPropertyKey.DependencyProperty;
+    public static readonly DependencyProperty OsVersionProperty =
+        OsVersionPropertyKey.DependencyProperty;
 
     /// <summary>
-    /// 获取当前操作系统的版本。
+    /// Gets the version of the current operating system.
     /// </summary>
     public OsVersion OsVersion
     {
@@ -155,9 +146,6 @@ public partial class FluentWindow : Window
 
     #region IsAccentOnTitleBarAndBorder
 
-    /// <summary>
-    /// 标识是否在标题栏和窗口边框上使用主题色的依赖属性。
-    /// </summary>
     private static readonly DependencyPropertyKey IsAccentOnTitleBarAndBorderPropertyKey =
         DependencyProperty.RegisterReadOnly(
             nameof(IsAccentOnTitleBarAndBorder),
@@ -167,13 +155,13 @@ public partial class FluentWindow : Window
         );
 
     /// <summary>
-    /// 标识是否在标题栏和窗口边框上使用主题色的依赖属性。
+    /// Identifies the <see cref="IsAccentOnTitleBarAndBorder"/> dependency property.
     /// </summary>
     public static readonly DependencyProperty IsAccentOnTitleBarAndBorderProperty =
         IsAccentOnTitleBarAndBorderPropertyKey.DependencyProperty;
 
     /// <summary>
-    /// 获取一个值，该值指示是否在标题栏和窗口边框上使用主题色。
+    /// Gets a value indicating whether the accent color is applied to the title bar and window border.
     /// </summary>
     public bool IsAccentOnTitleBarAndBorder
     {
@@ -182,22 +170,6 @@ public partial class FluentWindow : Window
     }
 
     #endregion
-
-    #region 事件
-
-    /// <summary>
-    /// 当 ActualWindowState 属性发生变化时发生。
-    /// </summary>
-    public event EventHandler<WindowStateChangedEventArgs>? ActualWindowStateChanged;
-
-    /// <summary>
-    /// 引发 ActualWindowStateChanged 事件。
-    /// </summary>
-    /// <param name="newState">新的窗口状态。</param>
-    protected virtual void OnActualWindowStateChanged(WindowState newState)
-    {
-        ActualWindowStateChanged?.Invoke(this, new WindowStateChangedEventArgs(newState));
-    }
 
     #endregion
 
@@ -263,7 +235,6 @@ public partial class FluentWindow : Window
         switch (uMsg)
         {
             case PInvoke.WM_DWMCOLORIZATIONCOLORCHANGED:
-                Debug.WriteLine("WM_DWMCOLORIZATIONCOLORCHANGED");
                 InvalidateBorderMetricsCache();
 
                 var colorizationColor = (COLORREF)(uint)wParam;
@@ -297,8 +268,6 @@ public partial class FluentWindow : Window
 
             case PInvoke.WM_SETTINGCHANGE:
             {
-                Debug.WriteLine($"[WM_SETTINGCHANGE] wParam: 0x{wParam:X8} ({wParam}), lParam: \"{Marshal.PtrToStringAuto(lParam)}\"");
-
                 if (lParam != IntPtr.Zero)
                 {
                     var spiStr = Marshal.PtrToStringAuto(lParam);
@@ -336,10 +305,6 @@ public partial class FluentWindow : Window
             // 如果彻底拦截，则临时修改样式后执行SysCommand会导致非客户区无法绘制
             case PInvoke.WM_NCPAINT:
                 return _ncPaint(hwnd, uMsg, wParam, lParam, out handled);
-
-            /*
-             * todo 在临时修改样式后设置一个标志，让NCCALCSIZE消息重新计算，暂时去掉下边框，这样瞬时变化就不明显了
-             */
 
             // 窗口处理调整尺寸边框和相关逻辑，没有结果再将消息转发给标题栏。
             case PInvoke.WM_NCHITTEST:
@@ -409,9 +374,6 @@ public partial class FluentWindow : Window
     private void UpdateSystemAccentColor()
     {
         var hResult = PInvoke.DwmGetColorizationColor(out uint colorizationColor, out BOOL opaqueBlend);
-
-        Debug.WriteLine($"DwmGetColorizationColor result: {hResult}, color: {colorizationColor:X}, opaqueBlend: {opaqueBlend}");
-
         if (hResult.Succeeded)
         {
             UpdateSystemAccentColor((COLORREF)colorizationColor);

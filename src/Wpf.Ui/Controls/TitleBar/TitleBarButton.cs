@@ -191,7 +191,6 @@ public class TitleBarButton : ButtonBase
         // todo 逻辑似乎有问题，鼠标在别处按下，进入按钮放开鼠标，则会消失背景色
         if (!IsPressed)
         {
-            Debug.WriteLine("OnMouseLeftButtonUp IsMouseActualOver = false");
             IsMouseActualOver = false;
         }
 

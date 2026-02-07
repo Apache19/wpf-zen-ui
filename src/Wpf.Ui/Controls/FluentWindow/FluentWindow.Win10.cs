@@ -40,14 +40,6 @@ public partial class FluentWindow
         };
 
         PInvoke.DwmExtendFrameIntoClientArea((HWND)hwndSource.Handle, in margins);
-
-        new DwmWindowAttributes()
-            .AllowNcPaint(false)
-            .NcRenderingPolicy(DWMNCRENDERINGPOLICY.DWMNCRP_USEWINDOWSTYLE)
-            .CaptionColor(0)
-            .ForceIconicRepresentation(true)
-            .SystemBackdrop(DWM_SYSTEMBACKDROP_TYPE.DWMSBT_AUTO)
-            .SetToWindow(this);
     }
 
     private IntPtr NcCalcSizeHandler_Win10(IntPtr hwndIntPtr, uint msg, IntPtr wParam, IntPtr lParam, out bool handled)

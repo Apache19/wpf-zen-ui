@@ -15,7 +15,7 @@
                                      IsDesignTimeCreatable=False}"
     d:DesignHeight="450"
     d:DesignWidth="850"
-    ui:Design.Background="{DynamicResource ApplicationBackgroundBrush}"
+    ui:Design.Background="{DynamicResource WindowBackgroundBrush}"
     ui:Design.Foreground="{DynamicResource TextFillColorPrimaryBrush}"
     Foreground="{DynamicResource TextFillColorPrimaryBrush}"
     WindowWidth="850"

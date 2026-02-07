@@ -41,7 +41,7 @@
                 <Setter TargetName="WindowResizeGrip" Property="Visibility" Value="Visible" />
             </MultiTrigger>
             <Trigger Property="IsNcActive" Value="False">
-                <Setter TargetName="WindowBorder" Property="BorderBrush" Value="#AAAAAA"></Setter>
+                <Setter TargetName="WindowBorder" Property="BorderBrush" Value="{DynamicResource WindowBorderInactiveBrush}" />
             </Trigger>
             <MultiTrigger>
                 <MultiTrigger.Conditions>
@@ -68,7 +68,7 @@
         </Border>
         <ControlTemplate.Triggers>
             <Trigger Property="IsNcActive" Value="False">
-                <Setter TargetName="WindowBorder" Property="BorderBrush" Value="#AAAAAA"></Setter>
+                <Setter TargetName="WindowBorder" Property="BorderBrush" Value="{DynamicResource WindowBorderInactiveBrush}" />
             </Trigger>
             <MultiTrigger>
                 <MultiTrigger.Conditions>
@@ -123,9 +123,9 @@
     </ControlTemplate>
 
     <Style x:Key="DefaultFluentWindowStyle" TargetType="{x:Type controls:FluentWindow}">
-        <Setter Property="Background" Value="{DynamicResource WindowBackground}" />
-        <Setter Property="Foreground" Value="{DynamicResource WindowForeground}" />
-        <Setter Property="BorderBrush" Value="#707070" />
+        <Setter Property="Background" Value="{DynamicResource WindowBackgroundBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource WindowForegroundBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource WindowBorderBrush}" />
         <!--  默认 Win10 窗口  -->
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="Template" Value="{StaticResource FluentWindow_Win10_Template}" />

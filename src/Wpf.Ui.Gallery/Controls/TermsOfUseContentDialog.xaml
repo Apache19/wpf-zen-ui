@@ -1,4 +1,4 @@
-﻿<ui:ContentDialog
+<ui:ContentDialog
     x:Class="Wpf.Ui.Gallery.Controls.TermsOfUseContentDialog"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -9,7 +9,7 @@
     Title="Terms of use"
     d:DesignHeight="1000"
     d:DesignWidth="750"
-    ui:Design.Background="{DynamicResource ApplicationBackgroundBrush}"
+    ui:Design.Background="{DynamicResource WindowBackgroundBrush}"
     ui:Design.Foreground="{DynamicResource TextFillColorPrimaryBrush}"
     CloseButtonText="Close"
     DialogMaxWidth="750"
