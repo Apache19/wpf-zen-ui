@@ -36,6 +36,7 @@ DwmSetWindowAttribute
 DwmGetWindowAttribute
 DwmEnableComposition
 DwmExtendFrameIntoClientArea
+DwmGetColorizationColor
 
 DWM_EC_DISABLECOMPOSITION
 DWMNCRENDERINGPOLICY
@@ -46,6 +47,7 @@ DWMWA_COLOR_NONE
 DWMWA_COLOR_DEFAULT
 
 STYLESTRUCT
+COLORREF
 
 ITaskbarList4
 TaskbarList

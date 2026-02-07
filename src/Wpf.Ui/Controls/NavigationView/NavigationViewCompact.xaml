@@ -259,7 +259,7 @@
                 <Setter TargetName="ActiveRectangle" Property="Opacity" Value="1.0" />
                 <Setter TargetName="MainBorder" Property="Background" Value="{DynamicResource NavigationViewItemBackgroundSelected}" />
                 <!--<Setter TargetName="IconContentPresenter" Property="Filled" Value="True" /> -->
-                <!--<Setter TargetName="IconContentPresenter" Property="Foreground" Value="{DynamicResource SystemAccentBrush}" />-->
+                <!--<Setter TargetName="IconContentPresenter" Property="Foreground" Value="{DynamicResource SystemAccentColorBrush}" />-->
             </Trigger>
             <Trigger Property="Icon" Value="{x:Null}">
                 <Setter TargetName="IconContentPresenter" Property="Visibility" Value="Collapsed" />

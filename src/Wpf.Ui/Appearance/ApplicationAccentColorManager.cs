@@ -58,7 +58,7 @@ public static class ApplicationAccentColorManager
     /// <summary>
     /// Gets the SystemAccentColor.
     /// </summary>
-    public static Color SystemAccent
+    public static Color SystemAccentColor
     {
         get
         {
@@ -76,12 +76,12 @@ public static class ApplicationAccentColorManager
     /// <summary>
     /// Gets the <see cref="Brush"/> of the SystemAccentColor.
     /// </summary>
-    public static Brush SystemAccentBrush => new SolidColorBrush(SystemAccent);
+    public static Brush SystemAccentColorBrush => new SolidColorBrush(SystemAccentColor);
 
     /// <summary>
     /// Gets the SystemAccentColorPrimary.
     /// </summary>
-    public static Color PrimaryAccent
+    public static Color PrimaryAccentColor
     {
         get
         {
@@ -99,12 +99,12 @@ public static class ApplicationAccentColorManager
     /// <summary>
     /// Gets the <see cref="Brush"/> of the SystemAccentColorPrimary.
     /// </summary>
-    public static Brush PrimaryAccentBrush => new SolidColorBrush(PrimaryAccent);
+    public static Brush PrimaryAccentColorBrush => new SolidColorBrush(PrimaryAccentColor);
 
     /// <summary>
     /// Gets the SystemAccentColorSecondary.
     /// </summary>
-    public static Color SecondaryAccent
+    public static Color SecondaryAccentColor
     {
         get
         {
@@ -122,12 +122,12 @@ public static class ApplicationAccentColorManager
     /// <summary>
     /// Gets the <see cref="Brush"/> of the SystemAccentColorSecondary.
     /// </summary>
-    public static Brush SecondaryAccentBrush => new SolidColorBrush(SecondaryAccent);
+    public static Brush SecondaryAccentColorBrush => new SolidColorBrush(SecondaryAccentColor);
 
     /// <summary>
     /// Gets the SystemAccentColorTertiary.
     /// </summary>
-    public static Color TertiaryAccent
+    public static Color TertiaryAccentColor
     {
         get
         {
@@ -145,7 +145,7 @@ public static class ApplicationAccentColorManager
     /// <summary>
     /// Gets the <see cref="Brush"/> of the SystemAccentColorTertiary.
     /// </summary>
-    public static Brush TertiaryAccentBrush => new SolidColorBrush(TertiaryAccent);
+    public static Brush TertiaryAccentColorBrush => new SolidColorBrush(TertiaryAccentColor);
 
     /// <summary>
     /// Gets a value indicating whether the user has enabled accent color on title bars and window borders in Windows settings.
@@ -287,7 +287,7 @@ public static class ApplicationAccentColorManager
         UiApplication.Current.Resources["SystemAccentColorSecondary"] = secondaryAccent;
         UiApplication.Current.Resources["SystemAccentColorTertiary"]  = tertiaryAccent;
 
-        UiApplication.Current.Resources["SystemAccentBrush"]             = systemAccent.ToBrush();
+        UiApplication.Current.Resources["SystemAccentColorBrush"]        = systemAccent.ToBrush();
         UiApplication.Current.Resources["SystemFillColorAttentionBrush"] = secondaryAccent.ToBrush();
 
         UiApplication.Current.Resources["AccentTextFillColorPrimaryBrush"]   = secondaryAccent.ToBrush();

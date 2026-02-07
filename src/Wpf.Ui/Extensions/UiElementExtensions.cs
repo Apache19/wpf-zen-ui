@@ -45,12 +45,12 @@ internal static class UiElementExtensions
 
     private static int Get_X_LParam(IntPtr lParam)
     {
-        return (short)(lParam.ToInt32() & 0xFFFF);
+        return (short)(lParam.ToInt64() & 0xFFFF);
     }
 
     private static int Get_Y_LParam(IntPtr lParam)
     {
-        return (short)(lParam.ToInt32() >> 16);
+        return (short)(lParam.ToInt64() >> 16);
     }
 
     private static bool IsChildHitTestVisibleAtPointFromScreen(

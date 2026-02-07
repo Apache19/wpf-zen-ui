@@ -8,7 +8,6 @@ using System.Runtime.InteropServices;
 using Windows.Win32;
 using Windows.Win32.Foundation;
 using Windows.Win32.UI.WindowsAndMessaging;
-using Microsoft.Win32;
 using Wpf.Ui.Appearance;
 using Wpf.Ui.Hardware;
 using Wpf.Ui.Win32;
@@ -241,6 +240,7 @@ public partial class FluentWindow : Window
 
         SetResourceReference(StyleProperty, typeof(FluentWindow));
 
+        UpdateSystemAccentColor();
         IsAccentOnTitleBarAndBorder = ApplicationAccentColorManager.IsAccentColorOnTitleBarsEnabled;
     }
 
@@ -265,6 +265,10 @@ public partial class FluentWindow : Window
             case PInvoke.WM_DWMCOLORIZATIONCOLORCHANGED:
                 Debug.WriteLine("WM_DWMCOLORIZATIONCOLORCHANGED");
                 InvalidateBorderMetricsCache();
+
+                var colorizationColor = (COLORREF)(uint)wParam;
+                UpdateSystemAccentColor(colorizationColor);
+
                 break;
 
             // 窗口在不同DPI的监视器之间移动，会收到
@@ -273,7 +277,7 @@ public partial class FluentWindow : Window
                 InvalidateBorderMetricsCache();
 
                 // 更新缓存的DPI
-                var yx = wParam.ToInt32();
+                var yx = wParam.ToInt64();
                 _cachedDpi = new DisplayDpi((short)yx, (short)(yx >> 16));
 
                 // 更新窗口大小
@@ -395,11 +399,38 @@ public partial class FluentWindow : Window
 
         static Point LParamToPoint(IntPtr lParam)
         {
-            var yx = lParam.ToInt32();
+            var yx = lParam.ToInt64();
             var x  = (short)yx;
             var y  = (short)(yx >> 16);
             return new Point(x, y);
         }
+    }
+
+    private void UpdateSystemAccentColor()
+    {
+        var hResult = PInvoke.DwmGetColorizationColor(out uint colorizationColor, out BOOL opaqueBlend);
+
+        Debug.WriteLine($"DwmGetColorizationColor result: {hResult}, color: {colorizationColor:X}, opaqueBlend: {opaqueBlend}");
+
+        if (hResult.Succeeded)
+        {
+            UpdateSystemAccentColor((COLORREF)colorizationColor);
+        }
+    }
+
+    private void UpdateSystemAccentColor(COLORREF color)
+    {
+        var v = color.Value;
+
+        var a = (byte)((v >> 24) & 0xFF);
+        var r = (byte)((v >> 16) & 0xFF);
+        var g = (byte)((v >> 8) & 0xFF);
+        var b = (byte)(v & 0xFF);
+
+        var accentColor = Color.FromArgb(a, r, g, b).UpdateBrightness(6f);
+
+        Resources["SystemAccentColor"]      = accentColor;
+        Resources["SystemAccentColorBrush"] = accentColor.ToBrush();
     }
 
     private delegate IntPtr MessageHandler(IntPtr hwnd, uint uMsg, IntPtr wParam, IntPtr lParam, out bool handled);

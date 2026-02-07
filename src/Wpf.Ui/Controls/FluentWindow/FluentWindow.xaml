@@ -16,9 +16,10 @@
     <!--  Win10 窗口用一个 Border 模拟边框  -->
     <ControlTemplate x:Key="FluentWindow_Win10_ResizeGrip_Template" TargetType="{x:Type controls:FluentWindow}">
         <Border
+            x:Name="WindowBorder"
             Background="{TemplateBinding Background}"
             BorderBrush="{TemplateBinding BorderBrush}"
-            BorderThickness="1">
+            BorderThickness="{TemplateBinding BorderThickness}">
             <Grid>
                 <AdornerDecorator>
                     <ContentPresenter />
@@ -39,41 +40,47 @@
                 </MultiTrigger.Conditions>
                 <Setter TargetName="WindowResizeGrip" Property="Visibility" Value="Visible" />
             </MultiTrigger>
+            <Trigger Property="IsNcActive" Value="False">
+                <Setter TargetName="WindowBorder" Property="BorderBrush" Value="#AAAAAA"></Setter>
+            </Trigger>
             <MultiTrigger>
                 <MultiTrigger.Conditions>
                     <Condition Property="IsAccentOnTitleBarAndBorder" Value="True" />
                     <Condition Property="IsNcActive" Value="True" />
                 </MultiTrigger.Conditions>
-                <Setter Property="BorderBrush" Value="{DynamicResource SystemAccentColorBrush}" />
+                <Setter TargetName="WindowBorder" Property="BorderBrush" Value="{DynamicResource SystemAccentColorBrush}" />
             </MultiTrigger>
             <Trigger Property="ActualWindowState" Value="Maximized">
-                <Setter Property="BorderThickness" Value="0" />
+                <Setter TargetName="WindowBorder" Property="BorderThickness" Value="0" />
             </Trigger>
         </ControlTemplate.Triggers>
     </ControlTemplate>
 
     <ControlTemplate x:Key="FluentWindow_Win10_Template" TargetType="{x:Type controls:FluentWindow}">
         <Border
+            x:Name="WindowBorder"
             Background="{TemplateBinding Background}"
             BorderBrush="{TemplateBinding BorderBrush}"
-            BorderThickness="1">
+            BorderThickness="{TemplateBinding BorderThickness}">
             <AdornerDecorator>
                 <ContentPresenter />
             </AdornerDecorator>
         </Border>
         <ControlTemplate.Triggers>
+            <Trigger Property="IsNcActive" Value="False">
+                <Setter TargetName="WindowBorder" Property="BorderBrush" Value="#AAAAAA"></Setter>
+            </Trigger>
             <MultiTrigger>
                 <MultiTrigger.Conditions>
                     <Condition Property="IsAccentOnTitleBarAndBorder" Value="True" />
                     <Condition Property="IsNcActive" Value="True" />
                 </MultiTrigger.Conditions>
-                <Setter Property="BorderBrush" Value="{DynamicResource SystemAccentColorBrush}" />
+                <Setter TargetName="WindowBorder" Property="BorderBrush" Value="{DynamicResource SystemAccentColorBrush}" />
             </MultiTrigger>
             <Trigger Property="ActualWindowState" Value="Maximized">
-                <Setter Property="BorderThickness" Value="0" />
+                <Setter TargetName="WindowBorder" Property="BorderThickness" Value="0" />
             </Trigger>
         </ControlTemplate.Triggers>
-
     </ControlTemplate>
 
     <ControlTemplate x:Key="FluentWindow_Win11_ResizeGrip_Template" TargetType="{x:Type controls:FluentWindow}">
@@ -118,7 +125,9 @@
     <Style x:Key="DefaultFluentWindowStyle" TargetType="{x:Type controls:FluentWindow}">
         <Setter Property="Background" Value="{DynamicResource WindowBackground}" />
         <Setter Property="Foreground" Value="{DynamicResource WindowForeground}" />
+        <Setter Property="BorderBrush" Value="#707070" />
         <!--  默认 Win10 窗口  -->
+        <Setter Property="BorderThickness" Value="1" />
         <Setter Property="Template" Value="{StaticResource FluentWindow_Win10_Template}" />
         <Style.Triggers>
 
@@ -129,6 +138,7 @@
 
             <!--  Win11 窗口  -->
             <Trigger Property="OsVersion" Value="Win11">
+                <Setter Property="BorderThickness" Value="0" />
                 <Setter Property="Template" Value="{StaticResource FluentWindow_Win11_Template}" />
             </Trigger>
 

@@ -321,7 +321,7 @@ public class TitleBar : ContentControl
 
         if (uMsg == FluentWindow.WM_NCHITTEST_REQUEST)
         {
-            var lyx         = lParam.ToInt32();
+            var lyx         = lParam.ToInt64();
             var screenPoint = new Point((short)lyx, (short)(lyx >> 16));
             var localPoint  = PointFromScreen(screenPoint);
 
@@ -388,7 +388,7 @@ public class TitleBar : ContentControl
                     break;
                 }
 
-                var yx = lParam.ToInt32();
+                var yx = lParam.ToInt64();
                 ShowSystemMenuPhysicalCoordinates(hwnd, (short)yx, (short)(yx >> 16));
 
                 break;

@@ -39,7 +39,7 @@ public partial class FluentWindow
             cyTopHeight    = -1,
         };
 
-        // PInvoke.DwmExtendFrameIntoClientArea((HWND)hwndSource.Handle, in margins);
+        PInvoke.DwmExtendFrameIntoClientArea((HWND)hwndSource.Handle, in margins);
 
         new DwmWindowAttributes()
             .AllowNcPaint(false)

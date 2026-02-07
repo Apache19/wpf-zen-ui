@@ -106,7 +106,7 @@ public static class ApplicationThemeManager
 
         _cachedApplicationTheme = applicationTheme;
 
-        Changed?.Invoke(applicationTheme, ApplicationAccentColorManager.SystemAccent);
+        Changed?.Invoke(applicationTheme, ApplicationAccentColorManager.SystemAccentColor);
 
         // todo 禁用，可能需要遍历每个窗口，根据暗黑模式、背景，单独处理
         // if (UiApplication.Current.MainWindow is Window mainWindow)
