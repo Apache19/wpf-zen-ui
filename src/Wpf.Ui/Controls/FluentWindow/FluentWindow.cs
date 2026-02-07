@@ -154,6 +154,36 @@ public partial class FluentWindow : Window
 
     #endregion
 
+    #region IsAccentOnTitleBarAndBorder
+
+    /// <summary>
+    /// 标识是否在标题栏和窗口边框上使用主题色的依赖属性。
+    /// </summary>
+    private static readonly DependencyPropertyKey IsAccentOnTitleBarAndBorderPropertyKey =
+        DependencyProperty.RegisterReadOnly(
+            nameof(IsAccentOnTitleBarAndBorder),
+            typeof(bool),
+            typeof(FluentWindow),
+            new PropertyMetadata(false)
+        );
+
+    /// <summary>
+    /// 标识是否在标题栏和窗口边框上使用主题色的依赖属性。
+    /// </summary>
+    public static readonly DependencyProperty IsAccentOnTitleBarAndBorderProperty =
+        IsAccentOnTitleBarAndBorderPropertyKey.DependencyProperty;
+
+    /// <summary>
+    /// 获取一个值，该值指示是否在标题栏和窗口边框上使用主题色。
+    /// </summary>
+    public bool IsAccentOnTitleBarAndBorder
+    {
+        get { return (bool)GetValue(IsAccentOnTitleBarAndBorderProperty); }
+        private set { SetValue(IsAccentOnTitleBarAndBorderPropertyKey, value); }
+    }
+
+    #endregion
+
     #region 事件
 
     /// <summary>
@@ -211,8 +241,7 @@ public partial class FluentWindow : Window
 
         SetResourceReference(StyleProperty, typeof(FluentWindow));
 
-        // 启动时可以使用 DwmGetColorizationColor 来获取颜色
-        // https://learn.microsoft.com/en-us/windows/win32/api/dwmapi/nf-dwmapi-dwmgetcolorizationcolor
+        IsAccentOnTitleBarAndBorder = ApplicationAccentColorManager.IsAccentColorOnTitleBarsEnabled;
     }
 
     protected override void OnSourceInitialized(EventArgs e)
@@ -235,11 +264,14 @@ public partial class FluentWindow : Window
         {
             case PInvoke.WM_DWMCOLORIZATIONCOLORCHANGED:
                 Debug.WriteLine("WM_DWMCOLORIZATIONCOLORCHANGED");
+                InvalidateBorderMetricsCache();
                 break;
 
             // 窗口在不同DPI的监视器之间移动，会收到
             case PInvoke.WM_DPICHANGED:
             {
+                InvalidateBorderMetricsCache();
+
                 // 更新缓存的DPI
                 var yx = wParam.ToInt32();
                 _cachedDpi = new DisplayDpi((short)yx, (short)(yx >> 16));
@@ -254,12 +286,25 @@ public partial class FluentWindow : Window
                 break;
             }
 
+            case PInvoke.WM_THEMECHANGED:
+                // 比 WM_SETTINGCHANGE 更可靠地反应 SM_CXPADDEDBORDER 的变化
+                InvalidateBorderMetricsCache();
+                break;
+
             case PInvoke.WM_SETTINGCHANGE:
             {
                 Debug.WriteLine($"[WM_SETTINGCHANGE] wParam: 0x{wParam:X8} ({wParam}), lParam: \"{Marshal.PtrToStringAuto(lParam)}\"");
-                // 设置颜色设置，包括是否在标题栏和边框显示主题色 lParam == "ImmersiveColorSet"
-                // 同时收到 WM_DWMCOLORIZATIONCOLORCHANGED 多个
-                InvalidateSystemMetricCache();
+
+                if (lParam != IntPtr.Zero)
+                {
+                    var spiStr = Marshal.PtrToStringAuto(lParam);
+                    if (spiStr == "ImmersiveColorSet")
+                    {
+                        IsAccentOnTitleBarAndBorder = ApplicationAccentColorManager.IsAccentColorOnTitleBarsEnabled;
+                    }
+                }
+
+                InvalidateBorderMetricsCache();
                 break;
             }
 

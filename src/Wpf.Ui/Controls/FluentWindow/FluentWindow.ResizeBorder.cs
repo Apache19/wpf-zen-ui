@@ -40,11 +40,11 @@ public partial class FluentWindow
     private int  _cachedSmCySizeFrame;
     private bool _systemMetricCacheInvalidated = true;
 
-    // todo 调查一下哪些消息和参数是触发相关值变化的，考虑改名为只失效Border相关
-    private void InvalidateSystemMetricCache()
+    private void InvalidateBorderMetricsCache()
     {
         _systemMetricCacheInvalidated = true;
     }
+
 
     // todo 同样，要调查哪些消息需要监听
     private void InvalidateDpi()

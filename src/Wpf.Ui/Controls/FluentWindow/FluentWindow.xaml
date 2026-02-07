@@ -39,6 +39,16 @@
                 </MultiTrigger.Conditions>
                 <Setter TargetName="WindowResizeGrip" Property="Visibility" Value="Visible" />
             </MultiTrigger>
+            <MultiTrigger>
+                <MultiTrigger.Conditions>
+                    <Condition Property="IsAccentOnTitleBarAndBorder" Value="True" />
+                    <Condition Property="IsNcActive" Value="True" />
+                </MultiTrigger.Conditions>
+                <Setter Property="BorderBrush" Value="{DynamicResource SystemAccentColorBrush}" />
+            </MultiTrigger>
+            <Trigger Property="ActualWindowState" Value="Maximized">
+                <Setter Property="BorderThickness" Value="0" />
+            </Trigger>
         </ControlTemplate.Triggers>
     </ControlTemplate>
 
@@ -51,6 +61,19 @@
                 <ContentPresenter />
             </AdornerDecorator>
         </Border>
+        <ControlTemplate.Triggers>
+            <MultiTrigger>
+                <MultiTrigger.Conditions>
+                    <Condition Property="IsAccentOnTitleBarAndBorder" Value="True" />
+                    <Condition Property="IsNcActive" Value="True" />
+                </MultiTrigger.Conditions>
+                <Setter Property="BorderBrush" Value="{DynamicResource SystemAccentColorBrush}" />
+            </MultiTrigger>
+            <Trigger Property="ActualWindowState" Value="Maximized">
+                <Setter Property="BorderThickness" Value="0" />
+            </Trigger>
+        </ControlTemplate.Triggers>
+
     </ControlTemplate>
 
     <ControlTemplate x:Key="FluentWindow_Win11_ResizeGrip_Template" TargetType="{x:Type controls:FluentWindow}">

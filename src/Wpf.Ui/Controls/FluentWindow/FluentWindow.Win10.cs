@@ -54,7 +54,7 @@ public partial class FluentWindow
     {
         var hwnd = (HWND)hwndIntPtr;
 
-        //if (Utilities.GetHwndState(hwnd) == WindowState.Maximized)
+        if (Utilities.GetHwndState(hwnd) == WindowState.Maximized)
         {
             var rect = Marshal.PtrToStructure<RECT>(lParam);
 
