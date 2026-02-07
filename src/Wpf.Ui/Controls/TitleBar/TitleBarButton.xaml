@@ -23,6 +23,7 @@
                 VerticalAlignment="Center"
                 Data="{StaticResource TitleBarMinimizeIconData}"
                 Fill="{TemplateBinding Foreground}"
+                SnapsToDevicePixels="True"
                 Stretch="Uniform" />
         </Border>
         <ControlTemplate.Triggers>
@@ -48,6 +49,7 @@
                 VerticalAlignment="Center"
                 Data="{StaticResource TitleBarMaximizeIconData}"
                 Fill="{TemplateBinding Foreground}"
+                SnapsToDevicePixels="True"
                 Stretch="Uniform" />
         </Border>
         <ControlTemplate.Triggers>
@@ -80,6 +82,7 @@
                 VerticalAlignment="Center"
                 Data="{StaticResource TitleBarCloseIconData}"
                 Fill="{TemplateBinding Foreground}"
+                SnapsToDevicePixels="True"
                 Stretch="Uniform" />
         </Border>
         <ControlTemplate.Triggers>
@@ -106,6 +109,7 @@
                 VerticalAlignment="Center"
                 Data="{StaticResource TitleBarHelpIconData}"
                 Fill="{TemplateBinding Foreground}"
+                SnapsToDevicePixels="True"
                 Stretch="Uniform" />
         </Border>
         <ControlTemplate.Triggers>
@@ -157,6 +161,7 @@
                             VerticalAlignment="Center"
                             Data="{StaticResource TitleBarCloseIconData}"
                             Fill="{TemplateBinding Foreground}"
+                            SnapsToDevicePixels="True"
                             Stretch="Uniform" />
                     </Border>
                     <ControlTemplate.Triggers>
