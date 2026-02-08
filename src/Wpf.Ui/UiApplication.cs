@@ -39,8 +39,6 @@ public class UiApplication
         }
 
         _application = application;
-
-        Debug.WriteLine($"INFO | {typeof(UiApplication)} application is {_application}", "Wpf.Ui");
     }
 
     /// <summary>

@@ -132,29 +132,29 @@ public static class ApplicationThemeManager
 
         foreach (ResourceDictionary? resource in UiApplication.Current.Resources.MergedDictionaries)
         {
-            System.Diagnostics.Debug.WriteLine(
-                $"INFO | {typeof(ApplicationThemeManager)} Add {resource.Source}",
-                "Wpf.Ui.Appearance"
-            );
+            // System.Diagnostics.Debug.WriteLine(
+            //     $"INFO | {typeof(ApplicationThemeManager)} Add {resource.Source}",
+            //     "Wpf.Ui.Appearance"
+            // );
             frameworkElement.Resources.MergedDictionaries.Add(resource);
         }
 
         foreach (ResourceDictionary resource in resourcesRemove)
         {
-            System.Diagnostics.Debug.WriteLine(
-                $"INFO | {typeof(ApplicationThemeManager)} Remove {resource.Source}",
-                "Wpf.Ui.Appearance"
-            );
+            // System.Diagnostics.Debug.WriteLine(
+            //     $"INFO | {typeof(ApplicationThemeManager)} Remove {resource.Source}",
+            //     "Wpf.Ui.Appearance"
+            // );
 
             _ = frameworkElement.Resources.MergedDictionaries.Remove(resource);
         }
 
         foreach (System.Collections.DictionaryEntry resource in UiApplication.Current.Resources)
         {
-            System.Diagnostics.Debug.WriteLine(
-                $"INFO | {typeof(ApplicationThemeManager)} Copy Resource {resource.Key} - {resource.Value}",
-                "Wpf.Ui.Appearance"
-            );
+            // System.Diagnostics.Debug.WriteLine(
+            //     $"INFO | {typeof(ApplicationThemeManager)} Copy Resource {resource.Key} - {resource.Value}",
+            //     "Wpf.Ui.Appearance"
+            // );
             frameworkElement.Resources[resource.Key] = resource.Value;
         }
     }

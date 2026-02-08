@@ -99,8 +99,6 @@ public class CodeBlock : System.Windows.Controls.ContentControl
 
     private void OnTemplateButtonClick(string? _)
     {
-        Debug.WriteLine($"INFO | CodeBlock source: \n{_sourceCode}", "Wpf.Ui.CodeBlock");
-
         try
         {
             Clipboard.Clear();

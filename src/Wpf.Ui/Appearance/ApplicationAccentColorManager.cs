@@ -258,14 +258,14 @@ public static class ApplicationAccentColorManager
         Color secondaryAccent,
         Color tertiaryAccent)
     {
-        Debug.WriteLine($"INFO | SystemAccentColor: {systemAccent}", "Wpf.Ui.Accent");
-        Debug.WriteLine($"INFO | SystemAccentColorPrimary: {primaryAccent}", "Wpf.Ui.Accent");
-        Debug.WriteLine($"INFO | SystemAccentColorSecondary: {secondaryAccent}", "Wpf.Ui.Accent");
-        Debug.WriteLine($"INFO | SystemAccentColorTertiary: {tertiaryAccent}", "Wpf.Ui.Accent");
+        // Debug.WriteLine($"INFO | SystemAccentColor: {systemAccent}", "Wpf.Ui.Accent");
+        // Debug.WriteLine($"INFO | SystemAccentColorPrimary: {primaryAccent}", "Wpf.Ui.Accent");
+        // Debug.WriteLine($"INFO | SystemAccentColorSecondary: {secondaryAccent}", "Wpf.Ui.Accent");
+        // Debug.WriteLine($"INFO | SystemAccentColorTertiary: {tertiaryAccent}", "Wpf.Ui.Accent");
 
         if (secondaryAccent.GetBrightness() > BackgroundBrightnessThresholdValue)
         {
-            Debug.WriteLine("INFO | Text on accent is DARK", "Wpf.Ui.Accent");
+            // Debug.WriteLine("INFO | Text on accent is DARK", "Wpf.Ui.Accent");
             UiApplication.Current.Resources["TextOnAccentFillColorPrimary"]      = Color.FromArgb(0xFF, 0x00, 0x00, 0x00);
             UiApplication.Current.Resources["TextOnAccentFillColorSecondary"]    = Color.FromArgb(0x80, 0x00, 0x00, 0x00);
             UiApplication.Current.Resources["TextOnAccentFillColorDisabled"]     = Color.FromArgb(0x77, 0x00, 0x00, 0x00);
@@ -274,7 +274,7 @@ public static class ApplicationAccentColorManager
         }
         else
         {
-            Debug.WriteLine("INFO | Text on accent is LIGHT", "Wpf.Ui.Accent");
+            // Debug.WriteLine("INFO | Text on accent is LIGHT", "Wpf.Ui.Accent");
             UiApplication.Current.Resources["TextOnAccentFillColorPrimary"]      = Color.FromArgb(0xFF, 0xFF, 0xFF, 0xFF);
             UiApplication.Current.Resources["TextOnAccentFillColorSecondary"]    = Color.FromArgb(0x80, 0xFF, 0xFF, 0xFF);
             UiApplication.Current.Resources["TextOnAccentFillColorDisabled"]     = Color.FromArgb(0x87, 0xFF, 0xFF, 0xFF);

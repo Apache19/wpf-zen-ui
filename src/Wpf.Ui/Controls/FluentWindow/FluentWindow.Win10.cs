@@ -3,16 +3,11 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-using System;
-using System.Collections.Generic;
 using System.Runtime.InteropServices;
-using System.Text;
 using Windows.Win32;
 using Windows.Win32.Foundation;
-using Windows.Win32.Graphics.Dwm;
 using Windows.Win32.UI.Controls;
 using Windows.Win32.UI.WindowsAndMessaging;
-using Wpf.Ui.Hardware;
 using Wpf.Ui.Win32;
 
 // ReSharper disable once CheckNamespace
@@ -27,10 +22,8 @@ public partial class FluentWindow
 
     private void OnSourceInitialized_Win10(HwndSource hwndSource)
     {
-        // 如果全部设置为 -1 则会使DWM把非客户区框架扩展到整个窗口。
-        // 对于Win7，则是“毛玻璃效果”，Win10则视背景是否开启。
-        // 由于把整个窗口作为客户区，DWM不会绘制窗口阴影。这样设置可使 DWM 阴影显示出来。
-        // 但这会带来性能开销。
+        // 由于通过 WM_NCCALCSIZE 删除了标准帧，DWM不会绘制窗口阴影。
+        // 使用 DwmExtendFrameIntoClientArea 并传入 -1 边距，把整个窗口扩展成非客户区即可解决。
         var margins = new MARGINS()
         {
             cxLeftWidth    = -1,
@@ -42,7 +35,10 @@ public partial class FluentWindow
         PInvoke.DwmExtendFrameIntoClientArea((HWND)hwndSource.Handle, in margins);
     }
 
-    private IntPtr NcCalcSizeHandler_Win10(IntPtr hwndIntPtr, uint msg, IntPtr wParam, IntPtr lParam, out bool handled)
+    // 旧系统的 DWM 存在一些问题，如果调整全部四个边距会出现假标题栏
+    // 但只调整三个边框，DWM 却不会绘制另一个边框
+    // 所以只能采取折中方案，移除全部边框，并用Border冒充窗口边框
+    private IntPtr OnWmNcCalcSize_Win10(IntPtr hwndIntPtr, uint msg, IntPtr wParam, IntPtr lParam, out bool handled)
     {
         if (wParam.ToInt32() != 0)
         {
@@ -52,18 +48,17 @@ public partial class FluentWindow
             var p = Marshal.PtrToStructure<NCCALCSIZE_PARAMS>(lParam);
 
             var l = Math.Abs(p.rgrc._1.left - p.rgrc._2.left);
-            var r = Math.Abs(p.rgrc._1.right - p.rgrc._2.right);
-            var y = Math.Abs(p.rgrc._1.bottom - p.rgrc._2.bottom);
+            var b = Math.Abs(p.rgrc._1.bottom - p.rgrc._2.bottom);
 
-            _cxBorder = l;
-            _cyBorder = y;
+            var cx = _cxBorder = l > 0 ? l : _cxBorder;
+            var cy = _cyBorder = b > 0 ? b : _cyBorder;
 
             if (isMaximized)
             {
-                p.rgrc._0.left   += l;
-                p.rgrc._0.right  -= r;
-                p.rgrc._0.top    += y;
-                p.rgrc._0.bottom -= y;
+                p.rgrc._0.left   += cx;
+                p.rgrc._0.right  -= cx;
+                p.rgrc._0.top    += cy;
+                p.rgrc._0.bottom -= cy;
 
                 Marshal.StructureToPtr(p, lParam, false);
             }

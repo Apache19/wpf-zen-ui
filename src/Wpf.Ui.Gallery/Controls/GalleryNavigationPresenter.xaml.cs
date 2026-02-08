@@ -52,10 +52,5 @@ public class GalleryNavigationPresenter : System.Windows.Controls.Control
         {
             _ = navigationService.Navigate(pageType);
         }
-
-        System.Diagnostics.Debug.WriteLine(
-            $"INFO | {nameof(GalleryNavigationPresenter)} navigated, ({pageType})",
-            "Wpf.Ui.Gallery"
-        );
     }
 }

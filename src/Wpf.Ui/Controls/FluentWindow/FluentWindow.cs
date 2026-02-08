@@ -3,6 +3,7 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Windows.Win32;
 using Windows.Win32.Foundation;
@@ -68,13 +69,7 @@ public partial class FluentWindow : Window
             nameof(IsNcActive),
             typeof(bool),
             typeof(FluentWindow),
-            new PropertyMetadata(
-                false,
-                static (d, e) =>
-                {
-                    ((FluentWindow)d)._isNcActivePropertyChanged((bool)e.NewValue);
-                }
-            )
+            new PropertyMetadata(false)
         );
 
     /// <summary>
@@ -170,17 +165,8 @@ public partial class FluentWindow : Window
     internal static readonly uint WM_NCHITTEST_RESOLVED = PInvoke.RegisterWindowMessage("WM_NCHITTEST_RESOLVED");
     internal static readonly uint WM_NCHITTEST_REQUEST  = PInvoke.RegisterWindowMessage("WM_NCHITTEST_REQUEST");
 
-    private static IntPtr DefaultMessageHandler(IntPtr hwndIntPtr, uint msg, IntPtr wParam, IntPtr lParam, out bool handled)
-    {
-        handled = false;
-        return IntPtr.Zero;
-    }
-
-    private readonly MessageHandler           _ncCalcSize;
-    private readonly MessageHandler           _sysCommand = DefaultMessageHandler;
-    private readonly MessageHandler           _ncPaint    = DefaultMessageHandler;
-    private readonly SourceInitializedHandler _sourceInitialized;
-    private readonly Action<bool>             _isNcActivePropertyChanged = _ => { };
+    private readonly MessageHandler     _onNcCalcSize;
+    private readonly Action<HwndSource> _onSourceInitialized;
 
     public FluentWindow()
     {
@@ -193,14 +179,14 @@ public partial class FluentWindow : Window
             case OsVersion.Win7:
             case OsVersion.Win8:
             case OsVersion.Win10:
-                _ncCalcSize        = NcCalcSizeHandler_Win10;
-                _sourceInitialized = OnSourceInitialized_Win10;
+                _onNcCalcSize        = OnWmNcCalcSize_Win10;
+                _onSourceInitialized = OnSourceInitialized_Win10;
                 break;
 
             case OsVersion.Win11:
             default:
-                _ncCalcSize        = NcCalcSizeHandler_Win11;
-                _sourceInitialized = OnSourceInitialized_Win11;
+                _onNcCalcSize        = OnWmNcCalcSize_Win11;
+                _onSourceInitialized = OnSourceInitialized_Win11;
                 break;
         }
 
@@ -215,7 +201,7 @@ public partial class FluentWindow : Window
         if (PresentationSource.FromVisual(this) is HwndSource hwndSource)
         {
             hwndSource.AddHook(FluentWindowSourceHook);
-            _sourceInitialized(hwndSource);
+            _onSourceInitialized(hwndSource);
         }
     }
 
@@ -247,6 +233,9 @@ public partial class FluentWindow : Window
 
             case PInvoke.WM_SETTINGCHANGE:
             {
+                // gpt 调试输出 WM_SETTINGCHANGE 消息，以及wParam(uint), lParam(string)
+                Debug.WriteLine($"[WM_SETTINGCHANGE] wParam: {wParam:x8}, lParam: \"{Marshal.PtrToStringAuto(lParam)}\"");
+
                 if (lParam != IntPtr.Zero)
                 {
                     var spiStr = Marshal.PtrToStringAuto(lParam);
@@ -258,9 +247,6 @@ public partial class FluentWindow : Window
 
                 break;
             }
-
-            case PInvoke.WM_SYSCOMMAND:
-                return _sysCommand(hwnd, uMsg, wParam, lParam, out handled);
 
             case PInvoke.WM_SIZE:
             case PInvoke.WM_STYLECHANGED:
@@ -279,10 +265,6 @@ public partial class FluentWindow : Window
                 handled = true;
                 return PInvoke.DefWindowProc(hwnd, uMsg, new WPARAM((uint)wParam), -1);
             }
-
-            // 如果彻底拦截，则临时修改样式后执行SysCommand会导致非客户区无法绘制
-            case PInvoke.WM_NCPAINT:
-                return _ncPaint(hwnd, uMsg, wParam, lParam, out handled);
 
             // 窗口处理调整尺寸边框和相关逻辑，没有结果再将消息转发给标题栏。
             case PInvoke.WM_NCHITTEST:
@@ -329,7 +311,7 @@ public partial class FluentWindow : Window
             // Win10 则只能更改三条边，如果更改全部四条边，则会使DWM绘制出一个完整的假标题栏（包括系统按钮）但无法交互。
             // todo 此行为需要进一步测试，尝试不更改（返回非零值），并使用DwmExtendFrameIntoClientArea
             case PInvoke.WM_NCCALCSIZE:
-                return _ncCalcSize(hwnd, uMsg, wParam, lParam, out handled);
+                return _onNcCalcSize(hwnd, uMsg, wParam, lParam, out handled);
         }
 
         return IntPtr.Zero;
@@ -369,6 +351,4 @@ public partial class FluentWindow : Window
     }
 
     private delegate IntPtr MessageHandler(IntPtr hwnd, uint uMsg, IntPtr wParam, IntPtr lParam, out bool handled);
-
-    private delegate void SourceInitializedHandler(HwndSource hwndSource);
 }

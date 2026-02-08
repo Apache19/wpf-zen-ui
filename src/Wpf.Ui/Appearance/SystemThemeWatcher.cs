@@ -67,7 +67,7 @@ public static class SystemThemeWatcher
 
     private static void SystemEvents_UserPreferenceChanged(object sender, UserPreferenceChangedEventArgs e)
     {
-        Debug.WriteLine($"SystemEvents_UserPreferenceChanged: {e.Category}");
+        // Debug.WriteLine($"SystemEvents_UserPreferenceChanged: {e.Category}");
 
         // todo 寻找更精确的监听方式
 
