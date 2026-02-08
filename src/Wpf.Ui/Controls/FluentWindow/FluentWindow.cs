@@ -3,13 +3,11 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Windows.Win32;
 using Windows.Win32.Foundation;
 using Windows.Win32.UI.WindowsAndMessaging;
 using Wpf.Ui.Appearance;
-using Wpf.Ui.Hardware;
 using Wpf.Ui.Win32;
 
 // ReSharper disable once CheckNamespace
@@ -229,8 +227,6 @@ public partial class FluentWindow : Window
         switch (uMsg)
         {
             case PInvoke.WM_DWMCOLORIZATIONCOLORCHANGED:
-                InvalidateBorderMetricsCache();
-
                 var colorizationColor = (COLORREF)(uint)wParam;
                 UpdateSystemAccentColor(colorizationColor);
 
@@ -239,12 +235,6 @@ public partial class FluentWindow : Window
             // 窗口在不同DPI的监视器之间移动，会收到
             case PInvoke.WM_DPICHANGED:
             {
-                InvalidateBorderMetricsCache();
-
-                // 更新缓存的DPI
-                var yx = wParam.ToInt64();
-                _cachedDpi = new DisplayDpi((short)yx, (short)(yx >> 16));
-
                 // 更新窗口大小
                 const SET_WINDOW_POS_FLAGS swpFlag
                     = SET_WINDOW_POS_FLAGS.SWP_NOZORDER | SET_WINDOW_POS_FLAGS.SWP_NOACTIVATE;
@@ -254,11 +244,6 @@ public partial class FluentWindow : Window
 
                 break;
             }
-
-            case PInvoke.WM_THEMECHANGED:
-                // 比 WM_SETTINGCHANGE 更可靠地反应 SM_CXPADDEDBORDER 的变化
-                InvalidateBorderMetricsCache();
-                break;
 
             case PInvoke.WM_SETTINGCHANGE:
             {
@@ -271,7 +256,6 @@ public partial class FluentWindow : Window
                     }
                 }
 
-                InvalidateBorderMetricsCache();
                 break;
             }
 
@@ -308,15 +292,9 @@ public partial class FluentWindow : Window
                 if ((ResizeMode is ResizeMode.CanResize or ResizeMode.CanResizeWithGrip) && !isMaximized)
                 {
                     var point   = LParamToPoint(lParam);
-                    var dpi     = DpiHelper.GetWindowDpi(hwnd);
                     var wndRect = GetWindowRect(hwnd);
-                    var border  = GetLogicalWindowBorderThickness(hwnd, WindowBorderKind.Resize);
 
-                    var ht = HitTestResizeBorder(
-                        DpiHelper.DeviceRectToLogical(wndRect, dpi.DpiScaleX, dpi.DpiScaleY),
-                        DpiHelper.DevicePixelsToLogical(point, dpi.DpiScaleX, dpi.DpiScaleY),
-                        border
-                    );
+                    var ht = HitTestResizeBorder(wndRect, point);
 
                     if ((uint)ht is >= PInvoke.HTLEFT and <= PInvoke.HTBOTTOMRIGHT)
                     {
@@ -356,12 +334,12 @@ public partial class FluentWindow : Window
 
         return IntPtr.Zero;
 
-        static Point LParamToPoint(IntPtr lParam)
+        static System.Drawing.Point LParamToPoint(IntPtr lParam)
         {
             var yx = lParam.ToInt64();
             var x  = (short)yx;
             var y  = (short)(yx >> 16);
-            return new Point(x, y);
+            return new System.Drawing.Point(x, y);
         }
     }
 

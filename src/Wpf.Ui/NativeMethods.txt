@@ -9,6 +9,7 @@ SetWindowRgn
 GetWindowRect
 GetWindowPlacement
 GetSystemMenu
+GetCursorPos
 EnableMenuItem
 TrackPopupMenuEx
 TRACK_POPUP_MENU_FLAGS

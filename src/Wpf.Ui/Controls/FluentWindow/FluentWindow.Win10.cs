@@ -44,27 +44,35 @@ public partial class FluentWindow
 
     private IntPtr NcCalcSizeHandler_Win10(IntPtr hwndIntPtr, uint msg, IntPtr wParam, IntPtr lParam, out bool handled)
     {
-        var hwnd = (HWND)hwndIntPtr;
-
-        if (Utilities.GetHwndState(hwnd) == WindowState.Maximized)
+        if (wParam.ToInt32() != 0)
         {
-            var rect = Marshal.PtrToStructure<RECT>(lParam);
+            var hwnd        = (HWND)hwndIntPtr;
+            var isMaximized = Utilities.GetHwndState(hwnd) == WindowState.Maximized;
 
-            EnsureWindowDpi(hwnd);
+            var p = Marshal.PtrToStructure<NCCALCSIZE_PARAMS>(lParam);
 
-            var dpi       = _cachedDpi;
-            var winBorder = GetLogicalWindowBorderThickness(hwnd, WindowBorderKind.Layout);
-            var thickness = DpiHelper.LogicalThicknessToDevice(winBorder, dpi.DpiScaleX, dpi.DpiScaleY);
+            var l = Math.Abs(p.rgrc._1.left - p.rgrc._2.left);
+            var r = Math.Abs(p.rgrc._1.right - p.rgrc._2.right);
+            var y = Math.Abs(p.rgrc._1.bottom - p.rgrc._2.bottom);
 
-            rect.left   += (int)thickness.Left;
-            rect.right  -= (int)thickness.Right;
-            rect.top    += (int)thickness.Top;
-            rect.bottom -= (int)thickness.Bottom;
+            _cxBorder = l;
+            _cyBorder = y;
 
-            Marshal.StructureToPtr(rect, lParam, false);
+            if (isMaximized)
+            {
+                p.rgrc._0.left   += l;
+                p.rgrc._0.right  -= r;
+                p.rgrc._0.top    += y;
+                p.rgrc._0.bottom -= y;
+
+                Marshal.StructureToPtr(p, lParam, false);
+            }
+
+            handled = true;
+            return new IntPtr(PInvoke.WVR_REDRAW);
         }
 
-        handled = true;
-        return wParam != IntPtr.Zero ? new IntPtr(PInvoke.WVR_REDRAW) : IntPtr.Zero;
+        handled = false;
+        return IntPtr.Zero;
     }
 }

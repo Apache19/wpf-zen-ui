@@ -21,10 +21,10 @@
         <Setter Property="Foreground" Value="{DynamicResource MessageBoxForeground}" />
         <Setter Property="TextElement.FontWeight" Value="Regular" />
         <Setter Property="ShowInTaskbar" Value="False" />
-        <!--<Setter Property="AllowsTransparency" Value="False" />-->
         <Setter Property="RenderOptions.BitmapScalingMode" Value="Fant" />
         <Setter Property="ResizeMode" Value="NoResize" />
         <Setter Property="WindowState" Value="Normal" />
+        <Setter Property="SizeToContent" Value="Height" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
         <Setter Property="Template">
             <Setter.Value>

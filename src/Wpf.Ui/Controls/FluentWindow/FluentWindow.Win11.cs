@@ -6,7 +6,9 @@
 using System.Runtime.InteropServices;
 using Windows.Win32;
 using Windows.Win32.Foundation;
+using Windows.Win32.UI.WindowsAndMessaging;
 using Wpf.Ui.Hardware;
+using Wpf.Ui.Win32;
 
 // ReSharper disable once CheckNamespace
 namespace Wpf.Ui.Controls;
@@ -22,7 +24,7 @@ public partial class FluentWindow
 
     private IntPtr NcCalcSizeHandler_Win11(IntPtr hwndIntPtr, uint msg, IntPtr wParam, IntPtr lParam, out bool handled)
     {
-        var hwnd         = (HWND)hwndIntPtr;
+        /*var hwnd         = (HWND)hwndIntPtr;
         var rcClientArea = Marshal.PtrToStructure<RECT>(lParam);
 
         EnsureWindowDpi(hwnd);
@@ -40,6 +42,34 @@ public partial class FluentWindow
 
         handled = true;
 
-        return wParam.ToInt32() != 0 ? new IntPtr(PInvoke.WVR_REDRAW) : IntPtr.Zero;
+        return wParam.ToInt32() != 0 ? new IntPtr(PInvoke.WVR_REDRAW) : IntPtr.Zero;*/
+
+        if (wParam.ToInt32() != 0)
+        {
+            var hwnd        = (HWND)hwndIntPtr;
+            var isMaximized = Utilities.GetHwndState(hwnd) == WindowState.Maximized;
+
+            var p = Marshal.PtrToStructure<NCCALCSIZE_PARAMS>(lParam);
+
+            var l = Math.Abs(p.rgrc._1.left - p.rgrc._2.left);
+            var r = Math.Abs(p.rgrc._1.right - p.rgrc._2.right);
+            var y = Math.Abs(p.rgrc._1.bottom - p.rgrc._2.bottom);
+
+            _cxBorder = l;
+            _cyBorder = y;
+
+            p.rgrc._0.left   += l;
+            p.rgrc._0.right  -= r;
+            p.rgrc._0.top    += isMaximized ? y : 1;
+            p.rgrc._0.bottom -= y;
+
+            Marshal.StructureToPtr(p, lParam, false);
+
+            handled = true;
+            return new IntPtr(PInvoke.WVR_REDRAW);
+        }
+
+        handled = false;
+        return IntPtr.Zero;
     }
 }
