@@ -57,6 +57,7 @@
 
     <ControlTemplate x:Key="FluentWindow_Win10_Template" TargetType="{x:Type controls:FluentWindow}">
         <Border
+            Margin="50 50 0 0"
             x:Name="WindowBorder"
             Background="{TemplateBinding Background}"
             BorderBrush="{TemplateBinding BorderBrush}"

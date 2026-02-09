@@ -88,7 +88,7 @@ public partial class FluentWindow
             return;
         }
 
-        _cachedDpi           = DpiHelper.GetSystemDpi();
+        _cachedDpi           = DpiHelper.GetWindowDpi(hwnd);
         _dpiCacheInvalidated = false;
 
         // gpt Debug 输出 _cachedDpi(已实现ToString)
