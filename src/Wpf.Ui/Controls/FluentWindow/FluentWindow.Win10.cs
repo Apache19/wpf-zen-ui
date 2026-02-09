@@ -18,21 +18,38 @@ namespace Wpf.Ui.Controls;
 /// </summary>
 public partial class FluentWindow
 {
-    // 虽然能通过各种方式实现
-
     private void OnSourceInitialized_Win10(HwndSource hwndSource)
     {
         // 由于通过 WM_NCCALCSIZE 删除了标准帧，DWM不会绘制窗口阴影。
         // 使用 DwmExtendFrameIntoClientArea 并传入 -1 边距，把整个窗口扩展成非客户区即可解决。
+        hwndSource.CompositionTarget?.BackgroundColor = Color.FromArgb(0, 0, 0, 0);
+
+    }
+
+    // https://github.com/MicrosoftDocs/win32/blob/docs/desktop-src/dwm/customframe.md
+
+    private IntPtr OnWmActive_Win10(IntPtr hwndIntPtr, uint msg, IntPtr wParam, IntPtr lParam, out bool handled)
+    {
         var margins = new MARGINS()
         {
-            cxLeftWidth    = -1,
-            cxRightWidth   = -1,
-            cyBottomHeight = -1,
-            cyTopHeight    = -1,
+            cxLeftWidth    = 30,
+            cxRightWidth   = 30,
+            cyBottomHeight = 30,
+            cyTopHeight    = 30,
         };
 
-        PInvoke.DwmExtendFrameIntoClientArea((HWND)hwndSource.Handle, in margins);
+        var hwnd    = (HWND)hwndIntPtr;
+        var hResult = PInvoke.DwmExtendFrameIntoClientArea(hwnd, in margins);
+
+        if (hResult.Succeeded)
+        {
+            handled = true;
+            var lResult = PInvoke.DefWindowProc(hwnd, msg, (uint)wParam, lParam);
+            return lResult.Value;
+        }
+
+        handled = false;
+        return IntPtr.Zero;
     }
 
     // 旧系统的 DWM 存在一些问题，如果调整全部四个边距会出现假标题栏

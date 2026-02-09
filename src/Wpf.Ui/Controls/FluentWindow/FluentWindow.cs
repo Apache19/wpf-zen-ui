@@ -5,6 +5,7 @@
 
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.Windows.Controls;
 using Windows.Win32;
 using Windows.Win32.Foundation;
 using Windows.Win32.UI.WindowsAndMessaging;
@@ -165,7 +166,8 @@ public partial class FluentWindow : Window
     internal static readonly uint WM_NCHITTEST_RESOLVED = PInvoke.RegisterWindowMessage("WM_NCHITTEST_RESOLVED");
     internal static readonly uint WM_NCHITTEST_REQUEST  = PInvoke.RegisterWindowMessage("WM_NCHITTEST_REQUEST");
 
-    private readonly MessageHandler     _onNcCalcSize;
+    private readonly MessageHandler     _msgNcCalcSize;
+    private readonly MessageHandler?    _msgActive;
     private readonly Action<HwndSource> _onSourceInitialized;
 
     public FluentWindow()
@@ -179,13 +181,14 @@ public partial class FluentWindow : Window
             case OsVersion.Win7:
             case OsVersion.Win8:
             case OsVersion.Win10:
-                _onNcCalcSize        = OnWmNcCalcSize_Win10;
+                _msgNcCalcSize       = OnWmNcCalcSize_Win10;
+                _msgActive           = OnWmActive_Win10;
                 _onSourceInitialized = OnSourceInitialized_Win10;
                 break;
 
             case OsVersion.Win11:
             default:
-                _onNcCalcSize        = OnWmNcCalcSize_Win11;
+                _msgNcCalcSize       = OnWmNcCalcSize_Win11;
                 _onSourceInitialized = OnSourceInitialized_Win11;
                 break;
         }
@@ -212,11 +215,23 @@ public partial class FluentWindow : Window
 
         switch (uMsg)
         {
+            case PInvoke.WM_ACTIVATE:
+            {
+                if (_msgActive is not null)
+                {
+                    return _msgActive(hwnd, uMsg, wParam, lParam, out handled);
+                }
+
+                break;
+            }
+
             case PInvoke.WM_DWMCOLORIZATIONCOLORCHANGED:
+            {
                 var colorizationColor = (COLORREF)(uint)wParam;
                 UpdateSystemAccentColor(colorizationColor);
 
                 break;
+            }
 
             // 窗口在不同DPI的监视器之间移动，会收到
             case PInvoke.WM_DPICHANGED:
@@ -311,7 +326,7 @@ public partial class FluentWindow : Window
             // Win10 则只能更改三条边，如果更改全部四条边，则会使DWM绘制出一个完整的假标题栏（包括系统按钮）但无法交互。
             // todo 此行为需要进一步测试，尝试不更改（返回非零值），并使用DwmExtendFrameIntoClientArea
             case PInvoke.WM_NCCALCSIZE:
-                return _onNcCalcSize(hwnd, uMsg, wParam, lParam, out handled);
+                return _msgNcCalcSize(hwnd, uMsg, wParam, lParam, out handled);
         }
 
         return IntPtr.Zero;

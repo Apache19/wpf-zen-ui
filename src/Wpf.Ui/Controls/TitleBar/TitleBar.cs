@@ -379,6 +379,7 @@ public class TitleBar : ContentControl
                 break;
             }
 
+            // todo 鼠标在标题栏按下，500ms过后有很大几率会使窗口移动1个逻辑像素
             // todo 可能需要拦截在按钮区HT的鼠标移动事件并使用API获取鼠标坐标，考察没有主题的时候是否会闪烁原生按钮
 
             case PInvoke.WM_NCRBUTTONUP:
