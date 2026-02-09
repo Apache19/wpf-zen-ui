@@ -5,11 +5,11 @@
 
 using System.Diagnostics;
 using System.Runtime.InteropServices;
-using System.Windows.Controls;
 using Windows.Win32;
 using Windows.Win32.Foundation;
 using Windows.Win32.UI.WindowsAndMessaging;
 using Wpf.Ui.Appearance;
+using Wpf.Ui.Hardware;
 using Wpf.Ui.Win32;
 using Point = System.Drawing.Point;
 
@@ -169,7 +169,6 @@ public partial class FluentWindow : Window
 
     private readonly MessageHandler     _msgNcCalcSize;
     private readonly MessageHandler?    _msgActive;
-    private readonly MessageHandler?    _msgNcPaint;
     private readonly Action<HwndSource> _onSourceInitialized;
 
     public FluentWindow()
@@ -183,16 +182,22 @@ public partial class FluentWindow : Window
             case OsVersion.Win7:
             case OsVersion.Win8:
             case OsVersion.Win10:
+            {
                 _msgNcCalcSize       = OnWmNcCalcSize_Win10;
                 _msgActive           = OnWmActive_Win10;
                 _onSourceInitialized = OnSourceInitialized_Win10;
+
+                Loaded += OnLoaded_Win10;
                 break;
+            }
 
             case OsVersion.Win11:
             default:
+            {
                 _msgNcCalcSize       = OnWmNcCalcSize_Win11;
                 _onSourceInitialized = OnSourceInitialized_Win11;
                 break;
+            }
         }
 
         UpdateSystemAccentColor();
@@ -215,11 +220,11 @@ public partial class FluentWindow : Window
         var uMsg = (uint)msg;
         var hwnd = (HWND)hwndIntPtr;
 
-        var l = PInvoke.DwmDefWindowProc(hwnd, uMsg, (uint)wParam, lParam, out LRESULT lresult);
-        if (l)
-        {
-            return lresult;
-        }
+        // var l = PInvoke.DwmDefWindowProc(hwnd, uMsg, (uint)wParam, lParam, out LRESULT lresult);
+        // if (l)
+        // {
+        //     return lresult;
+        // }
 
         switch (uMsg)
         {
@@ -230,6 +235,7 @@ public partial class FluentWindow : Window
             {
                 var colorizationColor = (COLORREF)(uint)wParam;
                 UpdateSystemAccentColor(colorizationColor);
+                InvalidateBorderMetricsCache();
 
                 break;
             }
@@ -237,21 +243,13 @@ public partial class FluentWindow : Window
             // 窗口在不同DPI的监视器之间移动，会收到此消息
             case PInvoke.WM_DPICHANGED:
             {
-                var dpi = (uint)wParam;
-                var dpiX = (int)(dpi & 0xFFFF);
-                var dpiY = (int)(dpi >> 16);
-                Debug.WriteLine($"WM_DPICHANGED: DPI X={dpiX}, Y={dpiY}");
+                InvalidateBorderMetricsCache();
 
-                /*
-                 * 经测试，修改DPI设置时只能收到：
-                   08:27:13:269 [WM_SETTINGCHANGE] wParam: 0000009f, lParam: ""
-                   08:27:13:269 [WM_SETTINGCHANGE] wParam: 0000002f, lParam: ""
-                   08:27:13:269 [WM_SETTINGCHANGE] wParam: 0000002f, lParam: ""
-                   08:27:13:269 [WM_SETTINGCHANGE] wParam: 0000002f, lParam: ""
-                   反而收不到WM_DPICHANGED消息
-                 */
+                // 更新缓存的DPI
+                var yx = wParam.ToInt64();
+                _cachedDpi = new DisplayDpi((short)yx, (short)(yx >> 16));
 
-                // 可以在这里更新Dpi缓存，但目前只需要更新窗口大小
+                // 更新窗口大小
                 const SET_WINDOW_POS_FLAGS swpFlag
                     = SET_WINDOW_POS_FLAGS.SWP_NOZORDER | SET_WINDOW_POS_FLAGS.SWP_NOACTIVATE;
 
@@ -260,6 +258,10 @@ public partial class FluentWindow : Window
 
                 break;
             }
+
+            case PInvoke.WM_THEMECHANGED:
+                InvalidateBorderMetricsCache();
+                break;
 
             case PInvoke.WM_SETTINGCHANGE:
             {
@@ -274,6 +276,12 @@ public partial class FluentWindow : Window
                     }
                 }
 
+                if (wParam == (uint)SYSTEM_PARAMETERS_INFO_ACTION.SPI_SETLOGICALDPIOVERRIDE)
+                {
+                    InvalidateDpi();
+                }
+
+                InvalidateBorderMetricsCache();
                 break;
             }
 
@@ -295,9 +303,6 @@ public partial class FluentWindow : Window
                 return PInvoke.DefWindowProc(hwnd, uMsg, new WPARAM((uint)wParam), -1);
             }
 
-            case PInvoke.WM_NCPAINT:
-                return _msgNcPaint?.Invoke(hwnd, uMsg, wParam, lParam, out handled) ?? IntPtr.Zero;
-
             // 窗口处理调整尺寸边框和相关逻辑，没有结果再将消息转发给标题栏。
             case PInvoke.WM_NCHITTEST:
             {
@@ -305,10 +310,11 @@ public partial class FluentWindow : Window
 
                 if ((ResizeMode is ResizeMode.CanResize or ResizeMode.CanResizeWithGrip) && !isMaximized)
                 {
-                    var point   = LParamToPoint(lParam);
-                    var wndRect = GetWindowRect(hwnd);
+                    var point  = LParamToPoint(lParam);
+                    var rect   = GetWindowRect(hwnd);
+                    var border = GetWindowBorderThickness(hwnd);
 
-                    var ht = HitTestResizeBorder(wndRect, point);
+                    var ht = HitTestResizeBorder(rect, point, border);
 
                     if ((uint)ht is >= PInvoke.HTLEFT and <= PInvoke.HTBOTTOMRIGHT)
                     {
@@ -351,9 +357,7 @@ public partial class FluentWindow : Window
         static Point LParamToPoint(IntPtr lParam)
         {
             var yx = lParam.ToInt64();
-            var x  = (short)yx;
-            var y  = (short)(yx >> 16);
-            return new Point(x, y);
+            return new Point((short)yx, (short)(yx >> 16));
         }
     }
 

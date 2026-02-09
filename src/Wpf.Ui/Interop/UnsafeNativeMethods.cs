@@ -413,4 +413,7 @@ internal static class UnsafeNativeMethods
 
         return windowHandle != IntPtr.Zero;
     }
+
+    [DllImport("user32.dll", CharSet = CharSet.Unicode, ExactSpelling = true, SetLastError = true)]
+    internal static extern int SetWindowCompositionAttribute(IntPtr hwnd, ref WindowCompositionAttributeData data);
 }
