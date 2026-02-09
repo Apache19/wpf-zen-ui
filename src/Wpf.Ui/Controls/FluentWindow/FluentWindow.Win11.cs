@@ -54,7 +54,7 @@ public partial class FluentWindow
 
     private IntPtr OnWmNcCalcSize_Win11(IntPtr hwndIntPtr, uint msg, IntPtr wParam, IntPtr lParam, out bool handled)
     {
-        var hwnd         = (HWND)hwndIntPtr;
+        /*var hwnd         = (HWND)hwndIntPtr;
         var rcClientArea = Marshal.PtrToStructure<RECT>(lParam);
 
         EnsureWindowDpi(hwnd);
@@ -70,6 +70,33 @@ public partial class FluentWindow
         Marshal.StructureToPtr(rcClientArea, lParam, false);
 
         handled = true;
-        return wParam.ToInt32() != 0 ? new IntPtr(PInvoke.WVR_REDRAW) : IntPtr.Zero;
+        return wParam.ToInt32() != 0 ? new IntPtr(PInvoke.WVR_REDRAW) : IntPtr.Zero;*/
+
+        if (wParam.ToInt32() != 0)
+        {
+            var hwnd        = (HWND)hwndIntPtr;
+            var isMaximized = Utilities.GetHwndState(hwnd) == WindowState.Maximized;
+
+            var p = Marshal.PtrToStructure<NCCALCSIZE_PARAMS>(lParam);
+
+            var l = Math.Abs(p.rgrc._1.left - p.rgrc._2.left);
+            var b = Math.Abs(p.rgrc._1.bottom - p.rgrc._2.bottom);
+
+            var cx = _cxBorder = l > 0 ? l : _cxBorder;
+            var cy = _cyBorder = b > 0 ? b : _cyBorder;
+
+            p.rgrc._0.left   += cx;
+            p.rgrc._0.right  -= cx;
+            p.rgrc._0.top    += isMaximized ? cy : 0;
+            p.rgrc._0.bottom -= cy;
+
+            Marshal.StructureToPtr(p, lParam, false);
+
+            handled = true;
+            return IntPtr.Zero;
+        }
+
+        handled = false;
+        return IntPtr.Zero;
     }
 }

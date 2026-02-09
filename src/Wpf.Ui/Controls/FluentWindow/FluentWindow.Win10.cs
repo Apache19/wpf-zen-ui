@@ -38,7 +38,7 @@ public partial class FluentWindow
         // PInvoke.SetWindowLong((HWND)hwndSource.Handle, WINDOW_LONG_PTR_INDEX.GWL_STYLE, style);
 
         // 必须设置窗口背景为透明色，窗口背景合成效果才能生效
-        // hwndSource.CompositionTarget?.BackgroundColor = Color.FromArgb(0, 0, 0, 0);
+        hwndSource.CompositionTarget?.BackgroundColor = Color.FromArgb(0, 0, 0, 0);
     }
 
     // https://github.com/MicrosoftDocs/win32/blob/docs/desktop-src/dwm/customframe.md
@@ -56,7 +56,7 @@ public partial class FluentWindow
         };
 
         var hwnd = (HWND)hwndIntPtr;
-        // _ = PInvoke.DwmExtendFrameIntoClientArea(hwnd, in margins);
+        _ = PInvoke.DwmExtendFrameIntoClientArea(hwnd, in margins);
 
         handled = false;
         return IntPtr.Zero;
@@ -65,44 +65,37 @@ public partial class FluentWindow
     private IntPtr OnWmNcCalcSize_Win10(IntPtr hwndIntPtr, uint msg, IntPtr wParam, IntPtr lParam, out bool handled)
     {
         var hwnd = (HWND)hwndIntPtr;
-
         var rect = Marshal.PtrToStructure<RECT>(lParam);
 
         var isMaximized = Utilities.GetHwndState(hwnd) == WindowState.Maximized;
 
-        EnsureWindowDpi(hwnd);
-
-        var dpi       = _cachedDpi;
-        var winBorder = GetLogicalWindowBorderThickness(hwnd, WindowBorderKind.Layout);
-        var thickness = DpiHelper.LogicalThicknessToDevice(winBorder, dpi.DpiScaleX, dpi.DpiScaleY);
-
         if (isMaximized)
         {
-            rect.left   += (int)thickness.Left;
-            rect.right  -= (int)thickness.Right;
-            rect.top    += (int)thickness.Top;
-            rect.bottom -= (int)thickness.Bottom;
+            var (cx, cy) = GetWindowBorderThickness(hwnd);
+
+            rect.left   += cx;
+            rect.right  -= cx;
+            rect.top    += cy;
+            rect.bottom -= cy;
         }
         else
         {
             EnsureWindowDpi(hwnd);
 
+            var dpi = _cachedDpi;
+
             var cx = (int)(1 * dpi.DpiScaleX);
             var cy = (int)(1 * dpi.DpiScaleY);
 
-            rect.left   += (int)thickness.Left;
-            rect.right  -= (int)thickness.Right;
-            rect.bottom -= (int)thickness.Bottom;
-
-            // rect.left   += cx;
-            // rect.right  -= cx;
-            // rect.bottom -= cy;
+            rect.left   += cx;
+            rect.right  -= cx;
+            rect.bottom -= cy;
         }
 
         Marshal.StructureToPtr(rect, lParam, false);
 
         handled = true;
-        return wParam != IntPtr.Zero ? new IntPtr(PInvoke.WVR_REDRAW) : IntPtr.Zero;
+        return IntPtr.Zero;
     }
 
     private void OnLoaded_Win10(object sender, RoutedEventArgs e)
@@ -128,7 +121,7 @@ public partial class FluentWindow
                 SizeOfData = themeDataSize
             };
 
-            //_ = UnsafeNativeMethods.SetWindowCompositionAttribute(_hwnd, ref wca);
+            _ = UnsafeNativeMethods.SetWindowCompositionAttribute(_hwnd, ref wca);
         }
         finally
         {

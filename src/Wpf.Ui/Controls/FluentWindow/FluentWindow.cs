@@ -302,6 +302,7 @@ public partial class FluentWindow : Window
                 return PInvoke.DefWindowProc(hwnd, uMsg, new WPARAM((uint)wParam), -1);
             }
 
+            /*
             // 窗口处理调整尺寸边框和相关逻辑，没有结果再将消息转发给标题栏。
             case PInvoke.WM_NCHITTEST:
             {
@@ -348,6 +349,50 @@ public partial class FluentWindow : Window
                 PInvoke.SendMessage(hwnd, WM_NCHITTEST_RESOLVED, 0, 0);
                 break;
             }
+            */
+
+            // 窗口处理调整尺寸边框和相关逻辑，没有结果再将消息转发给标题栏。
+            case PInvoke.WM_NCHITTEST:
+            {
+                var isMaximized = Utilities.GetHwndState(hwnd) == WindowState.Maximized;
+
+                if ((ResizeMode is ResizeMode.CanResize or ResizeMode.CanResizeWithGrip) && !isMaximized)
+                {
+                    var point  = LParamToPoint(lParam);
+                    var rect   = GetWindowRect(hwnd);
+                    var border = GetWindowBorderThickness(hwnd);
+
+                    var ht = HitTestResizeBorder(rect, point, border);
+
+                    if ((uint)ht is >= PInvoke.HTLEFT and <= PInvoke.HTBOTTOMRIGHT)
+                    {
+                        // The resize border has been hit and the hit-test result is finalized.
+                        // Notify other components participating in non-client interaction
+                        // so they can update their state accordingly.
+                        PInvoke.SendMessage(hwnd, WM_NCHITTEST_RESOLVED, 0, 0);
+
+                        handled = true;
+                        return ht;
+                    }
+                }
+
+                // 没有结果，将消息转发给标题栏，让标题栏处理拖动窗口、图标、和系统按钮的命中测试。
+                // 标题栏在有结果的情况下应该处理 WM_NCHITTEST_RESOLVED 消息。
+                var tbResult = PInvoke.SendMessage(hwnd, WM_NCHITTEST_REQUEST, 0, lParam);
+                if (tbResult != IntPtr.Zero)
+                {
+                    handled = true;
+                    return tbResult;
+                }
+
+                // No specific non-client element was hit during this pass.
+                // Still send WM_NCHITTEST_RESOLVED as a completion notification,
+                // allowing title bar buttons and other participants to reset
+                // their visual state if necessary.
+                PInvoke.SendMessage(hwnd, WM_NCHITTEST_RESOLVED, 0, 0);
+                break;
+            }
+
 
             // 非客户端尺寸计算，经测试，目前只有Win11工作正常。
             // Win10 则只能更改三条边，如果更改全部四条边，则会使DWM绘制出一个完整的假标题栏（包括系统按钮）但无法交互。
