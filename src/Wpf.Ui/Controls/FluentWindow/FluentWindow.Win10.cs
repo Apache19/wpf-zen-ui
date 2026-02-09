@@ -3,13 +3,17 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Windows.Win32;
 using Windows.Win32.Foundation;
+using Windows.Win32.Graphics.Gdi;
 using Windows.Win32.UI.Controls;
 using Windows.Win32.UI.WindowsAndMessaging;
 using Wpf.Ui.Win32;
 
+#pragma warning disable SA1027 // Use tabs correctly
+#pragma warning disable SA1028
 // ReSharper disable once CheckNamespace
 namespace Wpf.Ui.Controls;
 
@@ -18,12 +22,93 @@ namespace Wpf.Ui.Controls;
 /// </summary>
 public partial class FluentWindow
 {
+    [StructLayout(LayoutKind.Sequential)]
+    private struct WindowCompositionAttributeData
+    {
+        public WindowCompositionAttrib Attribute;
+        public IntPtr                  Data;
+        public int                     SizeOfData;
+    }
+
+    private enum AccentState
+    {
+        ACCENT_DISABLED                   = 0,
+        ACCENT_ENABLE_GRADIENT            = 1,
+        ACCENT_ENABLE_TRANSPARENTGRADIENT = 2,
+        ACCENT_ENABLE_BLURBEHIND          = 3,
+        ACCENT_ENABLE_ACRYLICBLURBEHIND   = 4,
+        ACCENT_INVALID_STATE              = 5,
+    }
+
+    [Flags]
+    public enum AccentFlags : uint
+    {
+        None = 0x0, // 无特殊标志
+
+        // EnableGradient    = 0x1, // 启用渐变 已弃用
+        EnableAcrylicBlur = 0x2,   // 自定义名称
+        DrawLeftBorder    = 0x20,  // 绘制左侧边框
+        DrawTopBorder     = 0x40,  // 绘制顶部边框
+        DrawRightBorder   = 0x80,  // 绘制右侧边框
+        DrawBottomBorder  = 0x100, // 绘制底部边框
+        DrawAllBorders    = DrawLeftBorder | DrawTopBorder | DrawRightBorder | DrawBottomBorder
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct AccentPolicy
+    {
+        public AccentState AccentState;
+        public AccentFlags AccentFlags;
+        public uint        GradientColor;
+        public int         AnimationId;
+    }
+
+    [DllImport("user32.dll", CharSet = CharSet.Unicode, ExactSpelling = true, SetLastError = true)]
+    private static extern int SetWindowCompositionAttribute(IntPtr hwnd, ref WindowCompositionAttributeData data);
+
     private void OnSourceInitialized_Win10(HwndSource hwndSource)
     {
-        // 由于通过 WM_NCCALCSIZE 删除了标准帧，DWM不会绘制窗口阴影。
-        // 使用 DwmExtendFrameIntoClientArea 并传入 -1 边距，把整个窗口扩展成非客户区即可解决。
-        hwndSource.CompositionTarget?.BackgroundColor = Color.FromArgb(0, 0, 0, 0);
+        // 移除 WS_SYSMENU 风格，否则会出现原生系统按钮，即使顶部标题栏已被去除
+        // 但带来的后果就是无法用 Alt + Space 弹出窗口菜单了
+        var style = PInvoke.GetWindowLong((HWND)hwndSource.Handle, WINDOW_LONG_PTR_INDEX.GWL_STYLE);
+        style &= ~(int)WINDOW_STYLE.WS_SYSMENU;
+        PInvoke.SetWindowLong((HWND)hwndSource.Handle, WINDOW_LONG_PTR_INDEX.GWL_STYLE, style);
 
+        // ACCENT_ENABLE_ACRYLICBLURBEHIND 会是蓝色的
+
+        // 创建 AccentPolicy 结构体
+        var accentPolicy = new AccentPolicy
+        {
+            AccentState   = AccentState.ACCENT_ENABLE_GRADIENT,
+            GradientColor = 0xFF707070, // 设置颜色（ARGB格式）
+            AnimationId   = 0,
+            AccentFlags   = AccentFlags.EnableAcrylicBlur,
+        };
+
+        // 分配内存并复制结构体数据
+        int    accentPolicySize = Marshal.SizeOf(accentPolicy);
+        IntPtr accentPolicyPtr  = Marshal.AllocHGlobal(accentPolicySize);
+        Marshal.StructureToPtr(accentPolicy, accentPolicyPtr, false);
+
+        try
+        {
+            // 创建 WindowCompositionAttributeData 结构体
+            var wca = new WindowCompositionAttributeData
+            {
+                Attribute  = WindowCompositionAttrib.WCA_ACCENT_POLICY,
+                Data       = accentPolicyPtr,
+                SizeOfData = accentPolicySize
+            };
+
+            _ = SetWindowCompositionAttribute(hwndSource.Handle, ref wca);
+        }
+        finally
+        {
+            Marshal.FreeHGlobal(accentPolicyPtr);
+        }
+
+        // 设置窗口背景为透明
+        hwndSource.CompositionTarget?.BackgroundColor = Color.FromArgb(0, 0, 0, 0);
     }
 
     // https://github.com/MicrosoftDocs/win32/blob/docs/desktop-src/dwm/customframe.md
@@ -32,21 +117,79 @@ public partial class FluentWindow
     {
         var margins = new MARGINS()
         {
-            cxLeftWidth    = 30,
-            cxRightWidth   = 30,
-            cyBottomHeight = 30,
-            cyTopHeight    = 30,
+            cxLeftWidth    = 2,
+            cxRightWidth   = 2,
+            cyBottomHeight = 2,
+            cyTopHeight    = 2,
         };
 
         var hwnd    = (HWND)hwndIntPtr;
-        var hResult = PInvoke.DwmExtendFrameIntoClientArea(hwnd, in margins);
+        // _ = PInvoke.DwmExtendFrameIntoClientArea(hwnd, in margins);
 
-        if (hResult.Succeeded)
+        handled = false;
+        return IntPtr.Zero;
+    }
+
+    private IntPtr OnWmNcPaint_Win10(IntPtr hwndIntPtr, uint msg, IntPtr wParam, IntPtr lParam, out bool handled)
+    {
+        var hwnd       = (HWND)hwndIntPtr;
+        var isNcActive = IsNcActive;
+        var isMaximize = Utilities.GetHwndState(hwnd) == WindowState.Maximized;
+
+        // gpt 请帮我处理 WM_NCPAINT 消息，在isNcActive == true、isMaximize == false时给窗口画一个黑色边框
+
+        // 以下是处理 `WM_NCPAINT` 消息的代码，在 `isNcActive == true` 且 `isMaximize == false` 时给窗口画一个黑色边框：
+        // 当窗口非最大化且非客户区处于活动状态时，绘制黑色边框
+        if (isNcActive && !isMaximize)
         {
-            // gpt Debug
-            // Debug: Log the result of DwmExtendFrameIntoClientArea
-            System.Diagnostics.Debug.WriteLine($"DwmExtendFrameIntoClientArea succeeded: {hResult.Succeeded}");
-            System.Diagnostics.Debug.WriteLine($"Extended margins: Left={margins.cxLeftWidth}, Right={margins.cxRightWidth}, Top={margins.cyTopHeight}, Bottom={margins.cyBottomHeight}");
+            var ret = PInvoke.DefWindowProc(hwnd, msg, (uint)wParam, lParam);
+            // 获取窗口非客户区的设备上下文
+            var hdc = PInvoke.GetWindowDC(hwnd);
+
+            if (hdc != IntPtr.Zero)
+            {
+                try
+                {
+                    // 获取窗口矩形
+                    RECT windowRect;
+                    PInvoke.GetWindowRect(hwnd, out windowRect);
+
+                    // 计算边框矩形（整个窗口外框）
+                    RECT borderRect = new RECT
+                    {
+                        left   = 13,
+                        top    = 0,
+                        right  = windowRect.right - windowRect.left,
+                        bottom = windowRect.bottom - windowRect.top
+                    };
+
+                    // 创建黑色画笔
+                    var hPen   = PInvoke.CreatePen(PEN_STYLE.PS_SOLID, 2, (COLORREF)0x00FFFF); // 黑色
+                    var oldPen = PInvoke.SelectObject(hdc, hPen);
+
+                    // 创建空画刷（透明填充）
+                    var hBrush   = PInvoke.GetStockObject(GET_STOCK_OBJECT_FLAGS.NULL_BRUSH);
+                    var oldBrush = PInvoke.SelectObject(hdc, hBrush);
+
+                    // 绘制矩形边框
+                    PInvoke.Rectangle(hdc, borderRect.left, borderRect.top, borderRect.right, borderRect.bottom);
+
+                    // 恢复原来的对象
+                    PInvoke.SelectObject(hdc, oldPen);
+                    PInvoke.SelectObject(hdc, oldBrush);
+
+                    // 删除创建的画笔
+                    PInvoke.DeleteObject(hPen);
+                }
+                finally
+                {
+                    // 释放设备上下文
+                    PInvoke.ReleaseDC(hwnd, hdc);
+                }
+
+                handled = true;
+                return ret;
+            }
         }
 
         handled = false;
@@ -71,12 +214,12 @@ public partial class FluentWindow
             var cx = _cxBorder = l > 0 ? l : _cxBorder;
             var cy = _cyBorder = b > 0 ? b : _cyBorder;
 
-            if (isMaximized)
+            // if (isMaximized)
             {
-                p.rgrc._0.left   += cx;
-                p.rgrc._0.right  -= cx;
-                p.rgrc._0.top    += cy;
-                p.rgrc._0.bottom -= cy;
+                p.rgrc._0.left   += 2;
+                p.rgrc._0.right  -= 2;
+                p.rgrc._0.top    += isMaximized ? cy : 0;
+                p.rgrc._0.bottom -= 2;
 
                 Marshal.StructureToPtr(p, lParam, false);
             }

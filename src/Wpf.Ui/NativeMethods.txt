@@ -14,6 +14,14 @@ EnableMenuItem
 TrackPopupMenuEx
 TRACK_POPUP_MENU_FLAGS
 
+SetWindowCompositionAttribute
+GetWindowDC
+CreatePen
+GetStockObject
+SelectObject
+Rectangle
+ReleaseDC
+
 SC_RESTORE
 SC_MOVE
 SC_SIZE

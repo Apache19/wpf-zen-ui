@@ -11,6 +11,7 @@ using Windows.Win32.Foundation;
 using Windows.Win32.UI.WindowsAndMessaging;
 using Wpf.Ui.Appearance;
 using Wpf.Ui.Win32;
+using Point = System.Drawing.Point;
 
 // ReSharper disable once CheckNamespace
 namespace Wpf.Ui.Controls;
@@ -168,6 +169,7 @@ public partial class FluentWindow : Window
 
     private readonly MessageHandler     _msgNcCalcSize;
     private readonly MessageHandler?    _msgActive;
+    private readonly MessageHandler?    _msgNcPaint;
     private readonly Action<HwndSource> _onSourceInitialized;
 
     public FluentWindow()
@@ -213,17 +215,16 @@ public partial class FluentWindow : Window
         var uMsg = (uint)msg;
         var hwnd = (HWND)hwndIntPtr;
 
+        var l = PInvoke.DwmDefWindowProc(hwnd, uMsg, (uint)wParam, lParam, out LRESULT lresult);
+        if (l)
+        {
+            return lresult;
+        }
+
         switch (uMsg)
         {
             case PInvoke.WM_ACTIVATE:
-            {
-                if (_msgActive is not null)
-                {
-                    return _msgActive(hwnd, uMsg, wParam, lParam, out handled);
-                }
-
-                break;
-            }
+                return _msgActive?.Invoke(hwnd, uMsg, wParam, lParam, out handled) ?? IntPtr.Zero;
 
             case PInvoke.WM_DWMCOLORIZATIONCOLORCHANGED:
             {
@@ -294,6 +295,9 @@ public partial class FluentWindow : Window
                 return PInvoke.DefWindowProc(hwnd, uMsg, new WPARAM((uint)wParam), -1);
             }
 
+            case PInvoke.WM_NCPAINT:
+                return _msgNcPaint?.Invoke(hwnd, uMsg, wParam, lParam, out handled) ?? IntPtr.Zero;
+
             // 窗口处理调整尺寸边框和相关逻辑，没有结果再将消息转发给标题栏。
             case PInvoke.WM_NCHITTEST:
             {
@@ -344,12 +348,12 @@ public partial class FluentWindow : Window
 
         return IntPtr.Zero;
 
-        static System.Drawing.Point LParamToPoint(IntPtr lParam)
+        static Point LParamToPoint(IntPtr lParam)
         {
             var yx = lParam.ToInt64();
             var x  = (short)yx;
             var y  = (short)(yx >> 16);
-            return new System.Drawing.Point(x, y);
+            return new Point(x, y);
         }
     }
 
