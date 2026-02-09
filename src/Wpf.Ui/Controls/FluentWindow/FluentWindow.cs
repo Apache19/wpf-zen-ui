@@ -230,6 +230,19 @@ public partial class FluentWindow : Window
             case PInvoke.WM_ACTIVATE:
                 return _msgActive?.Invoke(hwnd, uMsg, wParam, lParam, out handled) ?? IntPtr.Zero;
 
+                /*
+                 在 WndProc 中拦截 WM_NCACTIVATE
+                   if (msg == WM_NCACTIVATE) {
+                       // 立即更改 WPF 绑定的属性（如 TitleBarBrush）
+                       this.TitleBarBrush = wParam == (IntPtr)1 ? ActiveBrush : InactiveBrush;
+                       // 关键：强制刷新渲染队列
+                       Dispatcher.Invoke(DispatcherPriority.Render, new Action(() => { }));
+                   }
+
+另外一个细节：
+                   当你通过 WM_NCHITTEST 返回 HTCAPTION 时，Windows 会进入一个内部的死循环来处理拖动。为了让按钮在拖动那一刻不闪烁，请确保你的 Border 开启了 RenderOptions.EdgeMode="Aliased"，这能避免 DWM 在混合透明度时产生的微小边缘延迟感。
+                 */
+
             case PInvoke.WM_DWMCOLORIZATIONCOLORCHANGED:
             {
                 var colorizationColor = (COLORREF)(uint)wParam;
