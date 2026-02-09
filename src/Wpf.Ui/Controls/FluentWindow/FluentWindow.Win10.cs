@@ -70,28 +70,33 @@ public partial class FluentWindow
 
         var isMaximized = Utilities.GetHwndState(hwnd) == WindowState.Maximized;
 
+        EnsureWindowDpi(hwnd);
+
+        var dpi       = _cachedDpi;
+        var winBorder = GetLogicalWindowBorderThickness(hwnd, WindowBorderKind.Layout);
+        var thickness = DpiHelper.LogicalThicknessToDevice(winBorder, dpi.DpiScaleX, dpi.DpiScaleY);
+
         if (isMaximized)
         {
-            var (cx, cy) = GetWindowBorderThickness(hwnd);
-
-            rect.left   += cx;
-            rect.right  -= cx;
-            rect.top    += cy;
-            rect.bottom -= cy;
+            rect.left   += (int)thickness.Left;
+            rect.right  -= (int)thickness.Right;
+            rect.top    += (int)thickness.Top;
+            rect.bottom -= (int)thickness.Bottom;
         }
         else
         {
             EnsureWindowDpi(hwnd);
 
-            var dpi = _cachedDpi;
-
             var cx = (int)(1 * dpi.DpiScaleX);
             var cy = (int)(1 * dpi.DpiScaleY);
 
-            rect.left   += cx;
-            rect.right  -= cx;
-            rect.top    += 0;
-            rect.bottom -= cy;
+            rect.left   += (int)thickness.Left;
+            rect.right  -= (int)thickness.Right;
+            rect.bottom -= (int)thickness.Bottom;
+
+            // rect.left   += cx;
+            // rect.right  -= cx;
+            // rect.bottom -= cy;
         }
 
         Marshal.StructureToPtr(rect, lParam, false);

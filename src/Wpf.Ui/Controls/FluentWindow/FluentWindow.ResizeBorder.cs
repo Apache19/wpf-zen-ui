@@ -3,13 +3,15 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
+using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Text;
 using Windows.Win32;
 using Windows.Win32.Foundation;
 using Windows.Win32.UI.WindowsAndMessaging;
 using Wpf.Ui.Hardware;
 using Wpf.Ui.Win32;
-using Point = System.Drawing.Point;
 
 // ReSharper disable once CheckNamespace
 namespace Wpf.Ui.Controls;
@@ -39,11 +41,13 @@ public partial class FluentWindow
     private int  _cachedSmCySizeFrame;
     private bool _systemMetricCacheInvalidated = true;
 
+    // todo 调查一下哪些消息和参数是触发相关值变化的，考虑改名为只失效Border相关
     private void InvalidateBorderMetricsCache()
     {
         _systemMetricCacheInvalidated = true;
     }
 
+    // todo 同样，要调查哪些消息需要监听
     private void InvalidateDpi()
     {
         _dpiCacheInvalidated = true;
@@ -67,6 +71,9 @@ public partial class FluentWindow
             _cachedSmCxSizeFrame    = PInvoke.GetSystemMetrics(SYSTEM_METRICS_INDEX.SM_CXSIZEFRAME);
             _cachedSmCySizeFrame    = PInvoke.GetSystemMetrics(SYSTEM_METRICS_INDEX.SM_CYSIZEFRAME);
 
+            // gpt Debug 输出 _cachedSmCxSizeFrame _cachedSmCxPaddedBorder
+            Debug.WriteLine($"_cachedSmCxSizeFrame: {_cachedSmCxSizeFrame}, _cachedSmCxPaddedBorder: {_cachedSmCxPaddedBorder}");
+
             _systemMetricCacheInvalidated = false;
         }
     }
@@ -78,21 +85,14 @@ public partial class FluentWindow
             return;
         }
 
-        _cachedDpi           = DpiHelper.GetWindowDpi(hwnd);
+        _cachedDpi           = DpiHelper.GetSystemDpi();
         _dpiCacheInvalidated = false;
-    }
 
-    private (int CX, int CY) GetWindowBorderThickness(HWND hwnd)
-    {
-        EnsureSystemMetricCache();
+        // gpt Debug 输出 _cachedDpi(已实现ToString)
+        Debug.WriteLine($"Cached DPI: {_cachedDpi}");
 
-        int cxBorder = _cachedSmCxSizeFrame + _cachedSmCxPaddedBorder;
-        int cyBorder = _cachedSmCySizeFrame + _cachedSmCxPaddedBorder;
-
-        // gpt Debug 输出 _cachedSmCxSizeFrame _cachedSmCySizeFrame _cachedSmCxPaddedBorder
-        Debug.WriteLine($"_cachedSmCxSizeFrame: {_cachedSmCxSizeFrame}, _cachedSmCySizeFrame: {_cachedSmCySizeFrame}, _cachedSmCxPaddedBorder: {_cachedSmCxPaddedBorder}");
-
-        return (cxBorder, cyBorder);
+        var windowDpi = DpiHelper.GetWindowDpi(hwnd);
+        Debug.WriteLine($"windowDpi: {windowDpi}");
     }
 
     private Thickness GetLogicalWindowBorderThickness(HWND hwnd, WindowBorderKind kind)
@@ -102,16 +102,22 @@ public partial class FluentWindow
             return default;
         }
 
+        WINDOW_STYLE style = (WINDOW_STYLE)PInvoke.GetWindowLong(hwnd, WINDOW_LONG_PTR_INDEX.GWL_STYLE);
+
         EnsureSystemMetricCache();
 
-        var paddingBorder = _cachedSmCxPaddedBorder;
-        var isMaximized   = Utilities.GetHwndState(hwnd) == WindowState.Maximized;
+        var paddingBorder = 0;
+        if ((style & WINDOW_STYLE.WS_CAPTION) != 0)
+        {
+            paddingBorder = _cachedSmCxPaddedBorder;
+        }
+
+        var isMaximized = Utilities.GetHwndState(hwnd) == WindowState.Maximized;
 
         var frameX = _cachedSmCxSizeFrame;
         var frameY = _cachedSmCySizeFrame;
 
         EnsureWindowDpi(hwnd);
-
         var dpi = _cachedDpi;
 
         var xw = (paddingBorder + frameX) / dpi.DpiScaleX;
@@ -154,28 +160,25 @@ public partial class FluentWindow
     };
 
     // 传进参数全部是逻辑坐标
-    private static IntPtr HitTestResizeBorder(in RECT wRect, in Point mPoint, (int CX, int CY) border)
+    private static IntPtr HitTestResizeBorder(in Rect wRect, in Point mPoint, in Thickness borderThickness)
     {
         var row = 1;
         var col = 1;
 
-        var cx = border.CX;
-        var cy = border.CY;
-
-        if (mPoint.X >= wRect.left && mPoint.X < wRect.left + cx)
+        if (mPoint.X >= wRect.Left && mPoint.X < wRect.Left + (int)borderThickness.Left)
         {
             col = 0; // left
         }
-        else if (mPoint.X < wRect.right && mPoint.X >= wRect.right - cx)
+        else if (mPoint.X < wRect.Right && mPoint.X >= wRect.Right - borderThickness.Right)
         {
             col = 2; // right
         }
 
-        if (mPoint.Y >= wRect.top && mPoint.Y < wRect.top + cy)
+        if (mPoint.Y >= wRect.Top && mPoint.Y < wRect.Top + borderThickness.Top)
         {
             row = 0; // top
         }
-        else if (mPoint.Y < wRect.bottom && mPoint.Y >= wRect.bottom - cy)
+        else if (mPoint.Y < wRect.Bottom && mPoint.Y >= wRect.Bottom - (int)borderThickness.Bottom)
         {
             row = 2; // bottom
         }
@@ -187,11 +190,11 @@ public partial class FluentWindow
     /// Get the bounding rectangle for the window in physical coordinates.
     /// </summary>
     /// <returns>The bounding rectangle for the window.</returns>
-    private static RECT GetWindowRect(IntPtr hwnd)
+    private static Rect GetWindowRect(IntPtr hwnd)
     {
         if (PInvoke.GetWindowRect((HWND)hwnd, out RECT rect))
         {
-            return rect;
+            return new Rect(rect.left, rect.top, rect.Width, rect.Height);
         }
 
         throw new Win32Exception();

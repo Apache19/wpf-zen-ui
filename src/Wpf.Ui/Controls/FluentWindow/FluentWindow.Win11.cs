@@ -54,16 +54,18 @@ public partial class FluentWindow
 
     private IntPtr OnWmNcCalcSize_Win11(IntPtr hwndIntPtr, uint msg, IntPtr wParam, IntPtr lParam, out bool handled)
     {
-        var hwnd           = (HWND)hwndIntPtr;
-        var rcClientArea   = Marshal.PtrToStructure<RECT>(lParam);
-        var isMisMaximized = Utilities.GetHwndState(hwnd) == WindowState.Maximized;
+        var hwnd         = (HWND)hwndIntPtr;
+        var rcClientArea = Marshal.PtrToStructure<RECT>(lParam);
 
-        var (cx, cy) = GetWindowBorderThickness(hwnd);
+        EnsureWindowDpi(hwnd);
 
-        rcClientArea.left   += cx;
-        rcClientArea.right  -= cx;
-        rcClientArea.top    += isMisMaximized ? cy : 0;
-        rcClientArea.bottom -= cy;
+        var dpi       = _cachedDpi;
+        var winBorder = GetLogicalWindowBorderThickness(hwnd, WindowBorderKind.Layout);
+        var thickness = DpiHelper.LogicalThicknessToDevice(winBorder, dpi.DpiScaleX, dpi.DpiScaleY);
+
+        rcClientArea.left   += (int)thickness.Left;
+        rcClientArea.right  -= (int)thickness.Right;
+        rcClientArea.bottom -= (int)thickness.Bottom;
 
         Marshal.StructureToPtr(rcClientArea, lParam, false);
 

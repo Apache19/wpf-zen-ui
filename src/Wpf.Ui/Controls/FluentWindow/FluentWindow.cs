@@ -11,7 +11,6 @@ using Windows.Win32.UI.WindowsAndMessaging;
 using Wpf.Ui.Appearance;
 using Wpf.Ui.Hardware;
 using Wpf.Ui.Win32;
-using Point = System.Drawing.Point;
 
 // ReSharper disable once CheckNamespace
 namespace Wpf.Ui.Controls;
@@ -310,11 +309,16 @@ public partial class FluentWindow : Window
 
                 if ((ResizeMode is ResizeMode.CanResize or ResizeMode.CanResizeWithGrip) && !isMaximized)
                 {
-                    var point  = LParamToPoint(lParam);
-                    var rect   = GetWindowRect(hwnd);
-                    var border = GetWindowBorderThickness(hwnd);
+                    var point = LParamToPoint(lParam);
+                    var dpi = DpiHelper.GetWindowDpi(hwnd);
+                    var wndRect = GetWindowRect(hwnd);
+                    var border = GetLogicalWindowBorderThickness(hwnd, WindowBorderKind.Resize);
 
-                    var ht = HitTestResizeBorder(rect, point, border);
+                    var ht = HitTestResizeBorder(
+                        DpiHelper.DeviceRectToLogical(wndRect, dpi.DpiScaleX, dpi.DpiScaleY),
+                        DpiHelper.DevicePixelsToLogical(point, dpi.DpiScaleX, dpi.DpiScaleY),
+                        border
+                    );
 
                     if ((uint)ht is >= PInvoke.HTLEFT and <= PInvoke.HTBOTTOMRIGHT)
                     {
