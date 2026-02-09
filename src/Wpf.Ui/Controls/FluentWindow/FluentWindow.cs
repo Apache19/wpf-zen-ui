@@ -233,10 +233,24 @@ public partial class FluentWindow : Window
                 break;
             }
 
-            // 窗口在不同DPI的监视器之间移动，会收到
+            // 窗口在不同DPI的监视器之间移动，会收到此消息
             case PInvoke.WM_DPICHANGED:
             {
-                // 更新窗口大小
+                var dpi = (uint)wParam;
+                var dpiX = (int)(dpi & 0xFFFF);
+                var dpiY = (int)(dpi >> 16);
+                Debug.WriteLine($"WM_DPICHANGED: DPI X={dpiX}, Y={dpiY}");
+
+                /*
+                 * 经测试，修改DPI设置时只能收到：
+                   08:27:13:269 [WM_SETTINGCHANGE] wParam: 0000009f, lParam: ""
+                   08:27:13:269 [WM_SETTINGCHANGE] wParam: 0000002f, lParam: ""
+                   08:27:13:269 [WM_SETTINGCHANGE] wParam: 0000002f, lParam: ""
+                   08:27:13:269 [WM_SETTINGCHANGE] wParam: 0000002f, lParam: ""
+                   反而收不到WM_DPICHANGED消息
+                 */
+
+                // 可以在这里更新Dpi缓存，但目前只需要更新窗口大小
                 const SET_WINDOW_POS_FLAGS swpFlag
                     = SET_WINDOW_POS_FLAGS.SWP_NOZORDER | SET_WINDOW_POS_FLAGS.SWP_NOACTIVATE;
 
@@ -248,7 +262,6 @@ public partial class FluentWindow : Window
 
             case PInvoke.WM_SETTINGCHANGE:
             {
-                // gpt 调试输出 WM_SETTINGCHANGE 消息，以及wParam(uint), lParam(string)
                 Debug.WriteLine($"[WM_SETTINGCHANGE] wParam: {wParam:x8}, lParam: \"{Marshal.PtrToStringAuto(lParam)}\"");
 
                 if (lParam != IntPtr.Zero)
