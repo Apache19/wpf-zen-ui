@@ -43,9 +43,10 @@ public partial class FluentWindow
 
         if (hResult.Succeeded)
         {
-            handled = true;
-            var lResult = PInvoke.DefWindowProc(hwnd, msg, (uint)wParam, lParam);
-            return lResult.Value;
+            // gpt Debug
+            // Debug: Log the result of DwmExtendFrameIntoClientArea
+            System.Diagnostics.Debug.WriteLine($"DwmExtendFrameIntoClientArea succeeded: {hResult.Succeeded}");
+            System.Diagnostics.Debug.WriteLine($"Extended margins: Left={margins.cxLeftWidth}, Right={margins.cxRightWidth}, Top={margins.cyTopHeight}, Bottom={margins.cyBottomHeight}");
         }
 
         handled = false;
@@ -81,7 +82,7 @@ public partial class FluentWindow
             }
 
             handled = true;
-            return new IntPtr(PInvoke.WVR_REDRAW);
+            return IntPtr.Zero;
         }
 
         handled = false;
