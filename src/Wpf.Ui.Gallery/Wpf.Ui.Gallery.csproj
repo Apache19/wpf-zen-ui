@@ -11,7 +11,6 @@
     <NoWarn>$(NoWarn);SA1601</NoWarn>
     <GenerateDocumentationFile>True</GenerateDocumentationFile>
     <Platforms>AnyCPU;x86;x64;arm64</Platforms>
-    <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
 
   <ItemGroup>
