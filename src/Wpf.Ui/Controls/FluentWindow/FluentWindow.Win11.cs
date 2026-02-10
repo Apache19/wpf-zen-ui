@@ -28,12 +28,15 @@ public partial class FluentWindow
 
         Background = Brushes.Transparent;
 
-        hwndSource.CompositionTarget?.BackgroundColor = Color.FromArgb(128, 255, 255, 255);
+        hwndSource.CompositionTarget?.BackgroundColor
+            = Color.FromArgb(0x80, 0xff, 0xff, 0xff);
+
+        var hwnd = (HWND)hwndSource.Handle;
 
         new DwmWindowAttributes()
-            .SystemBackdrop(DWM_SYSTEMBACKDROP_TYPE.DWMSBT_TRANSIENTWINDOW)
-            //.UseImmersiveDarkMode(true)
-            .SetToWindow(this);
+           .SystemBackdrop(DWM_SYSTEMBACKDROP_TYPE.DWMSBT_TRANSIENTWINDOW)
+           .UseImmersiveDarkMode(true)
+           .SetToWindow(this);
 
         var margins = new MARGINS()
         {
@@ -42,6 +45,9 @@ public partial class FluentWindow
             cyBottomHeight = -1,
             cyTopHeight    = -1,
         };
+
+        // 移除窗口菜单前先获取一次，以便系统生成菜单，否则移除 WS_SYSMENU 风格后无法弹出窗口菜单
+        PInvoke.GetSystemMenu(hwnd, false);
 
         // 移除 WS_SYSMENU 风格，否则会出现原生系统按钮，即使顶部标题栏已被去除
         // 但带来的后果就是无法用 Alt + Space 弹出窗口菜单了
