@@ -30,6 +30,15 @@ public partial class FluentWindow : Window
             typeof(FluentWindow),
             new FrameworkPropertyMetadata(typeof(FluentWindow))
         );
+
+        if (Utilities.IsOSWindows11OrNewer)
+        {
+            InitializeStatic_Win11();
+        }
+        else
+        {
+            // InitializeForLegacyWindows();
+        }
     }
 
     #region DependencyProperties
