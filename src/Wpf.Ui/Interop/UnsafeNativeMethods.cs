@@ -416,4 +416,19 @@ internal static class UnsafeNativeMethods
 
     [DllImport("user32.dll", CharSet = CharSet.Unicode, ExactSpelling = true, SetLastError = true)]
     internal static extern int SetWindowCompositionAttribute(IntPtr hwnd, ref WindowCompositionAttributeData data);
+
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct DWM_COLORIZATION_PARAMS
+    {
+        public COLORREF Color;
+        public COLORREF Afterglow;
+        public uint     Intensity;
+        public uint     AfterGlowBalance;
+        public uint     BlurBalance;
+        public uint     GlassReflectionIntensity;
+        public bool     Opaque;
+    }
+
+    [DllImport("dwmapi.dll", EntryPoint = "#127", PreserveSig = false)]
+    internal static extern void DwmGetColorizationParameters(out DWM_COLORIZATION_PARAMS parameters);
 }
