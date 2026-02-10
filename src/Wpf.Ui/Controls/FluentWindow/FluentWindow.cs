@@ -5,6 +5,7 @@
 
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.Windows.Threading;
 using Windows.Win32;
 using Windows.Win32.Foundation;
 using Windows.Win32.UI.WindowsAndMessaging;
@@ -166,9 +167,11 @@ public partial class FluentWindow : Window
     internal static readonly uint WM_NCHITTEST_RESOLVED = PInvoke.RegisterWindowMessage("WM_NCHITTEST_RESOLVED");
     internal static readonly uint WM_NCHITTEST_REQUEST  = PInvoke.RegisterWindowMessage("WM_NCHITTEST_REQUEST");
 
-    private readonly MessageHandler     _msgNcCalcSize;
-    private readonly MessageHandler?    _msgActive;
+    private readonly MessageHandler?    _msgNcCalcSize = null;
+    private readonly MessageHandler?    _msgActive     = null;
     private readonly Action<HwndSource> _onSourceInitialized;
+
+    private HWND _hwnd;
 
     public FluentWindow()
     {
@@ -182,18 +185,13 @@ public partial class FluentWindow : Window
             case OsVersion.Win8:
             case OsVersion.Win10:
             {
-                _msgNcCalcSize       = OnWmNcCalcSize_Win10;
-                _msgActive           = OnWmActive_Win10;
                 _onSourceInitialized = OnSourceInitialized_Win10;
-
-                Loaded += OnLoaded_Win10;
                 break;
             }
 
             case OsVersion.Win11:
             default:
             {
-                _msgNcCalcSize       = OnWmNcCalcSize_Win11;
                 _onSourceInitialized = OnSourceInitialized_Win11;
                 break;
             }
@@ -209,6 +207,7 @@ public partial class FluentWindow : Window
 
         if (PresentationSource.FromVisual(this) is HwndSource hwndSource)
         {
+            _hwnd = (HWND)hwndSource.Handle;
             hwndSource.AddHook(FluentWindowSourceHook);
             _onSourceInitialized(hwndSource);
         }
@@ -228,25 +227,23 @@ public partial class FluentWindow : Window
         switch (uMsg)
         {
             case PInvoke.WM_ACTIVATE:
+            {
                 return _msgActive?.Invoke(hwnd, uMsg, wParam, lParam, out handled) ?? IntPtr.Zero;
+            }
 
-                /*
-                 在 WndProc 中拦截 WM_NCACTIVATE
-                   if (msg == WM_NCACTIVATE) {
-                       // 立即更改 WPF 绑定的属性（如 TitleBarBrush）
-                       this.TitleBarBrush = wParam == (IntPtr)1 ? ActiveBrush : InactiveBrush;
-                       // 关键：强制刷新渲染队列
-                       Dispatcher.Invoke(DispatcherPriority.Render, new Action(() => { }));
-                   }
+            /*
+             在 WndProc 中拦截 WM_NCACTIVATE
+               if (msg == WM_NCACTIVATE) {
+
+               }
 
 另外一个细节：
-                   当你通过 WM_NCHITTEST 返回 HTCAPTION 时，Windows 会进入一个内部的死循环来处理拖动。为了让按钮在拖动那一刻不闪烁，请确保你的 Border 开启了 RenderOptions.EdgeMode="Aliased"，这能避免 DWM 在混合透明度时产生的微小边缘延迟感。
-                 */
+               当你通过 WM_NCHITTEST 返回 HTCAPTION 时，Windows 会进入一个内部的死循环来处理拖动。为了让按钮在拖动那一刻不闪烁，请确保你的 Border 开启了 RenderOptions.EdgeMode="Aliased"，这能避免 DWM 在混合透明度时产生的微小边缘延迟感。
+             */
 
             case PInvoke.WM_DWMCOLORIZATIONCOLORCHANGED:
             {
-                var colorizationColor = (COLORREF)(uint)wParam;
-                UpdateSystemAccentColor(colorizationColor);
+                UpdateSystemAccentColor();
                 InvalidateBorderMetricsCache();
 
                 break;
@@ -308,6 +305,9 @@ public partial class FluentWindow : Window
             case PInvoke.WM_NCACTIVATE:
             {
                 IsNcActive = wParam != IntPtr.Zero;
+
+                // 关键：强制刷新渲染队列
+                Dispatcher.Invoke(DispatcherPriority.Render, new Action(() => { }));
 
                 // 可以消除在没有 WS_CAPTION 时激活瞬间绘制原生标题栏的问题（包括系统按钮）
                 // https://learn.microsoft.com/en-us/windows/win32/winmsg/wm-ncactivate
@@ -371,11 +371,10 @@ public partial class FluentWindow : Window
 
                 if ((ResizeMode is ResizeMode.CanResize or ResizeMode.CanResizeWithGrip) && !isMaximized)
                 {
-                    var point  = LParamToPoint(lParam);
-                    var rect   = GetWindowRect(hwnd);
-                    var border = GetWindowBorderThickness(hwnd);
+                    var point = LParamToPoint(lParam);
+                    var rect  = GetWindowRect(hwnd);
 
-                    var ht = HitTestResizeBorder(rect, point, border);
+                    var ht = HitTestResizeBorder(rect, point);
 
                     if ((uint)ht is >= PInvoke.HTLEFT and <= PInvoke.HTBOTTOMRIGHT)
                     {
@@ -406,12 +405,37 @@ public partial class FluentWindow : Window
                 break;
             }
 
-
-            // 非客户端尺寸计算，经测试，目前只有Win11工作正常。
-            // Win10 则只能更改三条边，如果更改全部四条边，则会使DWM绘制出一个完整的假标题栏（包括系统按钮）但无法交互。
-            // todo 此行为需要进一步测试，尝试不更改（返回非零值），并使用DwmExtendFrameIntoClientArea
             case PInvoke.WM_NCCALCSIZE:
-                return _msgNcCalcSize(hwnd, uMsg, wParam, lParam, out handled);
+            {
+                if (_msgNcCalcSize != null)
+                {
+                    return _msgNcCalcSize(hwnd, uMsg, wParam, lParam, out handled);
+                }
+
+                if (wParam.ToInt32() != 0)
+                {
+                    var isMaximized = Utilities.GetHwndState(hwnd) == WindowState.Maximized;
+
+                    var p = Marshal.PtrToStructure<NCCALCSIZE_PARAMS>(lParam);
+
+                    var l = Math.Abs(p.rgrc._1.left - p.rgrc._2.left);
+                    var b = Math.Abs(p.rgrc._1.bottom - p.rgrc._2.bottom);
+
+                    var cx = _cxBorder = l > 0 ? l : _cxBorder;
+                    var cy = _cyBorder = b > 0 ? b : _cyBorder;
+
+                    p.rgrc._0.left   += cx;
+                    p.rgrc._0.right  -= cx;
+                    p.rgrc._0.top    += isMaximized ? cy : 0;
+                    p.rgrc._0.bottom -= cy;
+
+                    Marshal.StructureToPtr(p, lParam, false);
+
+                    handled = true;
+                }
+
+                break;
+            }
         }
 
         return IntPtr.Zero;
@@ -426,26 +450,20 @@ public partial class FluentWindow : Window
     // 暂时在窗口上处理主题色的监听，将来使用主题管理器来管理
     private void UpdateSystemAccentColor()
     {
-        var hResult = PInvoke.DwmGetColorizationColor(out uint colorizationColor, out BOOL opaqueBlend);
-        if (hResult.Succeeded)
-        {
-            UpdateSystemAccentColor((COLORREF)colorizationColor);
-        }
-    }
+        DwmGetColorizationParameters(out DWM_COLORIZATION_PARAMS p);
+        var c = p.clrColor;
 
-    private void UpdateSystemAccentColor(COLORREF color)
-    {
-        var v = color.Value;
+        var a = (byte)(c >> 24);
+        var r = (byte)(c >> 16);
+        var g = (byte)(c >> 8);
+        var b = (byte)c;
 
-        var a = (byte)((v >> 24) & 0xFF);
-        var r = (byte)((v >> 16) & 0xFF);
-        var g = (byte)((v >> 8) & 0xFF);
-        var b = (byte)(v & 0xFF);
-
-        var accentColor = Color.FromArgb(a, r, g, b).UpdateBrightness(6f);
+        var accentColor = Color.FromRgb(r, g, b).UpdateBrightness(6f);
 
         Resources["SystemAccentColor"]      = accentColor;
         Resources["SystemAccentColorBrush"] = accentColor.ToBrush();
+
+        Debug.WriteLine($"SystemAccentColor: {accentColor}");
     }
 
     private delegate IntPtr MessageHandler(IntPtr hwnd, uint uMsg, IntPtr wParam, IntPtr lParam, out bool handled);

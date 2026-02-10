@@ -8,13 +8,13 @@ GetWindowLong
 SetWindowRgn
 GetWindowRect
 GetWindowPlacement
-GetSystemMenu
 GetCursorPos
+DWM_COLORIZATION_PARAMS
+GetSystemMenu
 EnableMenuItem
 TrackPopupMenuEx
 TRACK_POPUP_MENU_FLAGS
 
-SetWindowCompositionAttribute
 GetWindowDC
 CreatePen
 GetStockObject

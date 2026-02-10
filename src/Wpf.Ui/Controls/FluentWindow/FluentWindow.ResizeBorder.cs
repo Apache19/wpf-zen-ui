@@ -173,13 +173,13 @@ public partial class FluentWindow
         // @formatter:on
     };
 
-    private static IntPtr HitTestResizeBorder(in RECT wRect, in Point mPoint, (int CX, int CY) border)
+    private IntPtr HitTestResizeBorder(in RECT wRect, in Point mPoint)
     {
         var row = 1;
         var col = 1;
 
-        var cx = border.CX;
-        var cy = border.CY;
+        var cx = _cxBorder;
+        var cy = _cyBorder;
 
         if (mPoint.X >= wRect.left && mPoint.X < wRect.left + cx)
         {

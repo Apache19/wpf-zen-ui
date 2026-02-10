@@ -17,8 +17,10 @@
         <Border
             x:Name="WindowBorder"
             Background="{TemplateBinding Background}"
-            BorderBrush="{TemplateBinding BorderBrush}"
-            BorderThickness="{TemplateBinding BorderThickness}">
+            BorderBrush="{DynamicResource WindowBorderBrush}"
+            BorderThickness="0,1,0,0"
+            RenderOptions.EdgeMode="Aliased"
+            SnapsToDevicePixels="True">
             <Grid>
                 <AdornerDecorator>
                     <ContentPresenter />
@@ -57,11 +59,12 @@
 
     <ControlTemplate x:Key="FluentWindow_Win10_Template" TargetType="{x:Type controls:FluentWindow}">
         <Border
-            Margin="50 50 0 0"
             x:Name="WindowBorder"
             Background="{TemplateBinding Background}"
-            BorderBrush="{TemplateBinding BorderBrush}"
-            BorderThickness="0">
+            BorderBrush="{DynamicResource WindowBorderBrush}"
+            BorderThickness="0,1,0,0"
+            RenderOptions.EdgeMode="Aliased"
+            SnapsToDevicePixels="True">
             <AdornerDecorator>
                 <ContentPresenter />
             </AdornerDecorator>

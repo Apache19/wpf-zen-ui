@@ -33,7 +33,7 @@
                         x:Name="WindowBorder"
                         Background="{TemplateBinding Background}"
                         BorderBrush="{DynamicResource WindowBorderBrush}"
-                        BorderThickness="{TemplateBinding BorderThickness}">
+                        BorderThickness="0,1,0,0">
                         <AdornerDecorator>
                             <Grid>
                                 <Grid.RowDefinitions>
