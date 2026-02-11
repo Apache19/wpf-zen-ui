@@ -116,10 +116,9 @@ internal static class UnsafeNativeMethods
     /// <returns><see langword="true"/> if accent color on title bars is enabled.</returns>
     public static bool IsAccentColorOnTitleBarsEnabled()
     {
+        RegistryKey? key = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\DWM");
         try
         {
-            using RegistryKey? key = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\DWM");
-
             if (key?.GetValue("ColorPrevalence") is int value)
             {
                 return value == 1;
@@ -128,6 +127,10 @@ internal static class UnsafeNativeMethods
         catch
         {
             // Ignore registry access errors
+        }
+        finally
+        {
+            key?.Dispose();
         }
 
         return false;

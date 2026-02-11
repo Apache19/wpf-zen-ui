@@ -25,12 +25,12 @@ public static class WindowBackdrop
     {
         return backdropType switch
         {
-            WindowBackdropType.Auto => Win32.Utilities.IsOSWindows11Insider1OrNewer,
-            WindowBackdropType.Tabbed => Win32.Utilities.IsOSWindows11Insider1OrNewer,
-            WindowBackdropType.Mica => Win32.Utilities.IsOSWindows11OrNewer,
-            WindowBackdropType.Acrylic => Win32.Utilities.IsOSWindows7OrNewer,
-            WindowBackdropType.None => true,
-            _ => false,
+            WindowBackdropType.Auto     => Win32.Utilities.IsOSWindows11Insider1OrNewer,
+            WindowBackdropType.Mica_Alt => Win32.Utilities.IsOSWindows11Insider1OrNewer,
+            WindowBackdropType.Mica     => Win32.Utilities.IsOSWindows11OrNewer,
+            WindowBackdropType.Acrylic  => Win32.Utilities.IsOSWindows7OrNewer,
+            WindowBackdropType.None     => true,
+            _                           => false,
         };
     }
 
@@ -125,7 +125,7 @@ public static class WindowBackdrop
                 hWnd,
                 DWM_SYSTEMBACKDROP_TYPE.DWMSBT_TRANSIENTWINDOW
             ),
-            WindowBackdropType.Tabbed => ApplyDwmwWindowAttribute(
+            WindowBackdropType.Mica_Alt => ApplyDwmwWindowAttribute(
                 hWnd,
                 DWM_SYSTEMBACKDROP_TYPE.DWMSBT_TABBEDWINDOW
             ),
@@ -250,11 +250,11 @@ public static class WindowBackdrop
             uint titlebarPvAttribute = PInvoke.DWMWA_COLOR_NONE;
 
             return PInvoke.DwmSetWindowAttribute(
-                    new HWND(windowSource.Handle),
-                    DWMWINDOWATTRIBUTE.DWMWA_CAPTION_COLOR,
-                    &titlebarPvAttribute,
-                    sizeof(uint)
-                ) == HRESULT.S_OK;
+                new HWND(windowSource.Handle),
+                DWMWINDOWATTRIBUTE.DWMWA_CAPTION_COLOR,
+                &titlebarPvAttribute,
+                sizeof(uint)
+            ) == HRESULT.S_OK;
         }
 
         return true;
@@ -275,11 +275,11 @@ public static class WindowBackdrop
         DWM_SYSTEMBACKDROP_TYPE backdropPvAttribute = dwmSbt;
 
         return PInvoke.DwmSetWindowAttribute(
-                new HWND(hWnd),
-                DWMWINDOWATTRIBUTE.DWMWA_SYSTEMBACKDROP_TYPE,
-                &backdropPvAttribute,
-                sizeof(DWM_SYSTEMBACKDROP_TYPE)
-            ) == HRESULT.S_OK;
+            new HWND(hWnd),
+            DWMWINDOWATTRIBUTE.DWMWA_SYSTEMBACKDROP_TYPE,
+            &backdropPvAttribute,
+            sizeof(DWM_SYSTEMBACKDROP_TYPE)
+        ) == HRESULT.S_OK;
     }
 
     private static unsafe bool ApplyLegacyMicaBackdrop(IntPtr hWnd)
@@ -287,11 +287,11 @@ public static class WindowBackdrop
         BOOL backdropPvAttribute = true;
 
         return PInvoke.DwmSetWindowAttribute(
-                new HWND(hWnd),
-                DWMWINDOWATTRIBUTE.DWMWA_MICA_EFFECT,
-                &backdropPvAttribute,
-                (uint)sizeof(BOOL)
-            ) == HRESULT.S_OK;
+            new HWND(hWnd),
+            DWMWINDOWATTRIBUTE.DWMWA_MICA_EFFECT,
+            &backdropPvAttribute,
+            (uint)sizeof(BOOL)
+        ) == HRESULT.S_OK;
     }
 
     private static bool RestoreContentBackground(IntPtr hWnd)
@@ -336,15 +336,15 @@ public static class WindowBackdrop
         {
             ApplicationTheme.HighContrast => ApplicationThemeManager.GetSystemTheme() switch
             {
-                SystemTheme.HC1 => new SolidColorBrush(Color.FromArgb(0xFF, 0x2D, 0x32, 0x36)),
-                SystemTheme.HC2 => new SolidColorBrush(Color.FromArgb(0xFF, 0x00, 0x00, 0x00)),
+                SystemTheme.HC1     => new SolidColorBrush(Color.FromArgb(0xFF, 0x2D, 0x32, 0x36)),
+                SystemTheme.HC2     => new SolidColorBrush(Color.FromArgb(0xFF, 0x00, 0x00, 0x00)),
                 SystemTheme.HCBlack => new SolidColorBrush(Color.FromArgb(0xFF, 0x20, 0x20, 0x20)),
                 SystemTheme.HCWhite => new SolidColorBrush(Color.FromArgb(0xFF, 0x20, 0x20, 0x20)),
-                _ => new SolidColorBrush(Color.FromArgb(0xFF, 0xFF, 0xFA, 0xEF)),
+                _                   => new SolidColorBrush(Color.FromArgb(0xFF, 0xFF, 0xFA, 0xEF)),
             },
-            ApplicationTheme.Dark => new SolidColorBrush(Color.FromArgb(0xFF, 0x20, 0x20, 0x20)),
+            ApplicationTheme.Dark  => new SolidColorBrush(Color.FromArgb(0xFF, 0x20, 0x20, 0x20)),
             ApplicationTheme.Light => new SolidColorBrush(Color.FromArgb(0xFF, 0xFA, 0xFA, 0xFA)),
-            _ => new SolidColorBrush(Color.FromArgb(0xFF, 0xFA, 0xFA, 0xFA)),
+            _                      => new SolidColorBrush(Color.FromArgb(0xFF, 0xFA, 0xFA, 0xFA)),
         };
     }
 }

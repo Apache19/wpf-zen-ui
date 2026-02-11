@@ -23,6 +23,8 @@ namespace Wpf.Ui.Controls;
 /// </summary>
 public partial class FluentWindow
 {
+    //
+
     private static void InitializeStatic_Win11()
     {
         BackgroundProperty.OverrideMetadata(
@@ -54,7 +56,7 @@ public partial class FluentWindow
 
         hwndSource.CompositionTarget?.BackgroundColor = Color.FromArgb(0, 0x00, 0x00, 0x00);
 
-        new DwmWindowAttributes()
+        new Dwm()
            .SystemBackdrop(DWM_SYSTEMBACKDROP_TYPE.DWMSBT_TRANSIENTWINDOW)
            .UseImmersiveDarkMode(true)
            .SetToWindow(this);

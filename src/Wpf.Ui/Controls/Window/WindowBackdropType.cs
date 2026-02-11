@@ -4,6 +4,7 @@
 // All Rights Reserved.
 
 // ReSharper disable once CheckNamespace
+
 namespace Wpf.Ui.Controls;
 
 public enum WindowBackdropType
@@ -19,17 +20,17 @@ public enum WindowBackdropType
     Auto,
 
     /// <summary>
-    /// Windows 11 Mica effect.
-    /// </summary>
-    Mica,
-
-    /// <summary>
     /// Windows Acrylic effect.
     /// </summary>
     Acrylic,
 
     /// <summary>
-    /// Windows 11 wallpaper blur effect.
+    /// Windows 11 云母效果，Windows 10 没有效果
     /// </summary>
-    Tabbed,
+    Mica,
+
+    /// <summary>
+    /// Windows 11 增强的云母效果，Windows 10 没有效果
+    /// </summary>
+    Mica_Alt,
 }
