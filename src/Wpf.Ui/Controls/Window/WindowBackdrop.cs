@@ -25,10 +25,10 @@ public static class WindowBackdrop
     {
         return backdropType switch
         {
-            WindowBackdropType.Auto     => Win32.Utilities.IsOSWindows11Insider1OrNewer,
-            WindowBackdropType.Mica_Alt => Win32.Utilities.IsOSWindows11Insider1OrNewer,
-            WindowBackdropType.Mica     => Win32.Utilities.IsOSWindows11OrNewer,
-            WindowBackdropType.Acrylic  => Win32.Utilities.IsOSWindows7OrNewer,
+            WindowBackdropType.Auto     => Win32.Utilities.IsWin_11_Insider1_Or_Greater,
+            WindowBackdropType.Mica_Alt => Win32.Utilities.IsWin_11_Insider1_Or_Greater,
+            WindowBackdropType.Mica     => Win32.Utilities.IsWin_11_Or_Greater,
+            WindowBackdropType.Acrylic  => Win32.Utilities.IsWin_7_Or_Greater,
             WindowBackdropType.None     => true,
             _                           => false,
         };
@@ -104,7 +104,7 @@ public static class WindowBackdrop
         _ = UnsafeNativeMethods.RemoveWindowCaption(hWnd);
 
         // 22H1
-        if (!Win32.Utilities.IsOSWindows11Insider1OrNewer)
+        if (!Win32.Utilities.IsWin_11_Insider1_Or_Greater)
         {
             if (backdropType != WindowBackdropType.None)
             {

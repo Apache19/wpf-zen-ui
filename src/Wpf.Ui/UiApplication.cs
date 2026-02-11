@@ -7,7 +7,9 @@ using System.Diagnostics;
 
 namespace Wpf.Ui;
 
-// todo 多此一举的玩意儿
+// todo 多此一举的玩意儿，WPF只认识Application，
+//   此类中包含的_resources不会被WPF隐式查找，只是简单的复制了一份放在内存中，并没有发挥任何实际效果。
+//   待删除
 
 /// <summary>
 /// Represents a UI application.

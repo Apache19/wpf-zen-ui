@@ -17,7 +17,7 @@ public static class TaskBarProgress
     /// </summary>
     private static bool IsSupported()
     {
-        return Win32.Utilities.IsOSWindows7OrNewer;
+        return Win32.Utilities.IsWin_7_Or_Greater;
     }
 
     /// <summary>

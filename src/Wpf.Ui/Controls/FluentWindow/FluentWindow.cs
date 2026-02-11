@@ -31,7 +31,7 @@ public partial class FluentWindow : Window
             new FrameworkPropertyMetadata(typeof(FluentWindow))
         );
 
-        if (Utilities.IsOSWindows11OrNewer)
+        if (Utilities.IsWin_11_Or_Greater)
         {
             InitializeStatic_Win11();
         }
@@ -172,13 +172,85 @@ public partial class FluentWindow : Window
 
     #endregion
 
+    #region WindowBackdropType
+
+    /// <summary>
+    /// Identifies the <see cref="WindowBackdropType"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty WindowBackdropTypeProperty =
+        DependencyProperty.Register(
+            nameof(WindowBackdropType),
+            typeof(WindowBackdropType),
+            typeof(FluentWindow),
+            new PropertyMetadata(
+                WindowBackdropType.None,
+                static (d, e) =>
+                {
+                    if (d is FluentWindow fw && e.NewValue is WindowBackdropType wbt)
+                    {
+                        fw._OnWindowBackdropTypeChanged?.Invoke(wbt);
+                    }
+                }
+            )
+        );
+
+    /// <summary>
+    /// Gets or sets a value determining preferred backdrop type for current <see cref="Window"/>.
+    /// </summary>
+    public WindowBackdropType WindowBackdropType
+    {
+        get => (WindowBackdropType)GetValue(WindowBackdropTypeProperty);
+        set => SetValue(WindowBackdropTypeProperty, value);
+    }
+
+    #endregion
+
+    #region WindowCornerPreference
+
+    /// <summary>
+    /// Identifies the <see cref="WindowCornerPreference"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty WindowCornerPreferenceProperty =
+        DependencyProperty.Register(
+            nameof(WindowCornerPreference),
+            typeof(WindowCornerPreference),
+            typeof(FluentWindow),
+            new PropertyMetadata(
+                WindowCornerPreference.Default,
+                static (d, e) =>
+                {
+                    if (d is FluentWindow fw &&
+                        e.NewValue is WindowCornerPreference wcp)
+                    {
+                        fw.OnWindowCornerPreferenceChanged(wcp);
+                    }
+                }
+            )
+        );
+
+    /// <summary>
+    /// 获取或设置窗口圆角，此选项只在 Windows 11 以上操作系统起作用
+    /// </summary>
+    public WindowCornerPreference WindowCornerPreference
+    {
+        get => (WindowCornerPreference)GetValue(WindowCornerPreferenceProperty);
+        set => SetValue(WindowCornerPreferenceProperty, value);
+    }
+
+    #endregion
+
     #endregion
 
     internal static readonly uint WM_NCHITTEST_RESOLVED = PInvoke.RegisterWindowMessage("WM_NCHITTEST_RESOLVED");
     internal static readonly uint WM_NCHITTEST_REQUEST  = PInvoke.RegisterWindowMessage("WM_NCHITTEST_REQUEST");
 
-    private readonly MessageHandler?    _msgNcCalcSize = null;
-    private readonly Action<HwndSource> _onSourceInitialized;
+    #pragma warning disable SA1306 // Field names should begin with lower-case letter
+
+    private readonly MessageHandler?             _MSG_NCCALCSIZE = null;
+    private readonly Action<HwndSource>          _OnSourceInitialized;
+    private readonly Action<WindowBackdropType>? _OnWindowBackdropTypeChanged;
+
+    #pragma warning restore SA1306 // Field names should begin with lower-case letter
 
     public FluentWindow()
     {
@@ -192,20 +264,43 @@ public partial class FluentWindow : Window
             case OsVersion.Win8:
             case OsVersion.Win10:
             {
-                _onSourceInitialized = OnSourceInitialized_Win10;
+                _OnSourceInitialized = OnSourceInitialized_Win10;
                 break;
             }
 
             case OsVersion.Win11:
             default:
             {
-                _onSourceInitialized = OnSourceInitialized_Win11;
+                _OnSourceInitialized = OnSourceInitialized_Win11;
                 break;
             }
         }
 
+        WeakEventManager<ApplicationThemeManager, EventArgs>
+           .AddHandler(
+                ApplicationThemeManager.Instance,
+                nameof(ApplicationThemeManager.Changed),
+                OnAppThemeChanged
+            );
+
         UpdateSystemAccentColor();
         IsAccentOnTitleBarAndBorder = ApplicationAccentColorManager.IsAccentColorOnTitleBarsEnabled;
+    }
+
+    private void OnAppThemeChanged(object? sender, EventArgs e)
+    {
+    }
+
+    protected override void OnClosed(EventArgs e)
+    {
+        WeakEventManager<ApplicationThemeManager, EventArgs>
+           .RemoveHandler(
+                ApplicationThemeManager.Instance,
+                nameof(ApplicationThemeManager.Changed),
+                OnAppThemeChanged
+            );
+
+        base.OnClosed(e);
     }
 
     protected override void OnSourceInitialized(EventArgs e)
@@ -215,8 +310,10 @@ public partial class FluentWindow : Window
         if (PresentationSource.FromVisual(this) is HwndSource hwndSource)
         {
             hwndSource.AddHook(FluentWindowSourceHook);
-            _onSourceInitialized(hwndSource);
+            _OnSourceInitialized(hwndSource);
         }
+
+        OnWindowCornerPreferenceChanged(WindowCornerPreference);
     }
 
     private IntPtr FluentWindowSourceHook(IntPtr hwndIntPtr, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
@@ -287,9 +384,9 @@ public partial class FluentWindow : Window
             // 注意：WindowChrome已过时，请不要在FluentWindow上使用。
             case PInvoke.WM_NCCALCSIZE:
             {
-                if (_msgNcCalcSize != null)
+                if (_MSG_NCCALCSIZE != null)
                 {
-                    return _msgNcCalcSize(hwnd, uMsg, wParam, lParam, out handled);
+                    return _MSG_NCCALCSIZE(hwnd, uMsg, wParam, lParam, out handled);
                 }
 
                 if (wParam.ToInt32() != 0)
@@ -355,11 +452,11 @@ public partial class FluentWindow : Window
 
                 // 没有结果，将消息转发给标题栏，让标题栏处理拖动窗口、图标、和系统按钮的命中测试。
                 // 标题栏在有结果的情况下应该处理 WM_NCHITTEST_RESOLVED 消息。
-                var tbResult = PInvoke.SendMessage(hwnd, WM_NCHITTEST_REQUEST, 0, lParam);
-                if (tbResult != IntPtr.Zero)
+                var tResult = PInvoke.SendMessage(hwnd, WM_NCHITTEST_REQUEST, 0, lParam);
+                if (tResult != IntPtr.Zero)
                 {
                     handled = true;
-                    return tbResult;
+                    return tResult;
                 }
 
                 // No specific non-client element was hit during this pass.

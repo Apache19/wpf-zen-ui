@@ -15,6 +15,10 @@ namespace Wpf.Ui.Controls;
 /// </summary>
 public partial class FluentWindow
 {
+    // todo 想到一个新方案：平常状态去除WS_CAPTION风格，则不会绘制完整标题栏
+    //   最大化最小化时同时 +WS_CAPTION -WS_VISIBLE，动画完成后立即重设
+    //   没有WS_VIS
+
     private void OnSourceInitialized_Win10(HwndSource hwndSource)
     {
         /* 此方法可以用一个渲染窗口来实现，而WPF窗口本身不适合

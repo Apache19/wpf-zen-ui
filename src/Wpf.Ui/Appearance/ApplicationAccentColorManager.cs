@@ -218,7 +218,7 @@ public static class ApplicationAccentColorManager
     )
     {
         UpdateColorResources(
-            ApplicationThemeManager.GetAppTheme(),
+            ApplicationThemeManager.AppTheme,
             systemAccent,
             primaryAccent,
             secondaryAccent,
@@ -231,7 +231,7 @@ public static class ApplicationAccentColorManager
     /// </summary>
     public static void ApplySystemAccent()
     {
-        Apply(GetColorizationColor(), ApplicationThemeManager.GetAppTheme(), systemAccentColor: true);
+        Apply(GetColorizationColor(), ApplicationThemeManager.AppTheme, systemAccentColor: true);
     }
 
     /// <summary>
@@ -344,7 +344,7 @@ public static class ApplicationAccentColorManager
     /// </summary>
     private static object? GetWinRTInstance()
     {
-        if (!Utilities.IsOSWindows10OrNewer)
+        if (!Utilities.IsWin_10_Or_Greater)
         {
             return null;
         }

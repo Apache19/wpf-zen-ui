@@ -26,11 +26,11 @@ internal sealed class Utilities
     private static readonly Version Windows7 = new(6, 1);
     private static readonly Version Windows8 = new(6, 2);
 
-#if NET5_0_OR_GREATER
+    #if NET5_0_OR_GREATER
     private static readonly Version _osVersion = Environment.OSVersion.Version;
-#else
+    #else
     private static readonly Version _osVersion = GetOSVersionFromRegistry();
-#endif
+    #endif
 
     /// <summary>
     /// Gets a value indicating whether the operating system is NT or newer.
@@ -40,50 +40,53 @@ internal sealed class Utilities
     /// <summary>
     /// Gets a value indicating whether the operating system version is greater than or equal to 6.0.
     /// </summary>
-    public static bool IsOSVistaOrNewer => _osVersion >= Vista;
+    public static bool IsVista_Or_Greater => _osVersion >= Vista;
 
     /// <summary>
     /// Gets a value indicating whether the operating system version is greater than or equal to 6.1.
     /// </summary>
-    public static bool IsOSWindows7OrNewer => _osVersion >= Windows7;
+    public static bool IsWin_7_Or_Greater => _osVersion >= Windows7;
 
     /// <summary>
     /// Gets a value indicating whether the operating system version is greater than or equal to 6.2.
     /// </summary>
-    public static bool IsOSWindows8OrNewer => _osVersion >= Windows8;
+    public static bool IsWin_8_Or_Greater => _osVersion >= Windows8;
 
     /// <summary>
     /// Gets a value indicating whether the operating system version is greater than or equal to 10.0* (build 10240).
     /// </summary>
-    public static bool IsOSWindows10OrNewer => _osVersion.Build >= 10240;
+    public static bool IsWin_10_Or_Greater => _osVersion.Build >= 10240;
 
     /// <summary>
     /// Gets a value indicating whether the operating system version is greater than or equal to 10.0* (build 14393).
     /// </summary>
-    public static bool IsOSWindows10_14393_OrNewer => _osVersion.Build >= 14393;
+    public static bool IsWin_10_1607_Or_Greater => _osVersion.Build >= 14393;
 
     /// <summary>
     /// Gets a value indicating whether the operating system version is greater than or equal to 10.0* (build 22000).
     /// </summary>
-    public static bool IsOSWindows11OrNewer => _osVersion.Build >= 22000;
+    public static bool IsWin_11_Or_Greater => _osVersion.Build >= 22000;
 
     /// <summary>
     /// Gets a value indicating whether the operating system version is greater than or equal to 10.0* (build 22523).
     /// </summary>
-    public static bool IsOSWindows11Insider1OrNewer => _osVersion.Build >= 22523;
+    public static bool IsWin_11_Insider1_Or_Greater => _osVersion.Build >= 22523;
 
     /// <summary>
     /// Gets a value indicating whether the operating system version is greater than or equal to 10.0* (build 22557).
     /// </summary>
-    public static bool IsOSWindows11Insider2OrNewer => _osVersion.Build >= 22557;
+    public static bool IsWin_11_Insider2_Or_Greater => _osVersion.Build >= 22557;
+
+    // 这是正式支持 SYSTEMBACKDROP 的版本
+    public static bool IsWin_11_22H2_Or_Greater => _osVersion.Build >= 22621;
 
     public static readonly OsVersion OsVersion =
-        IsOSWindows11OrNewer ? OsVersion.Win11 :
-        IsOSWindows10OrNewer ? OsVersion.Win10 :
-        IsOSWindows8OrNewer  ? OsVersion.Win8 :
-        IsOSWindows7OrNewer  ? OsVersion.Win7 :
-        IsOSVistaOrNewer     ? OsVersion.Vista :
-                               OsVersion.Unknown;
+        IsWin_11_Or_Greater ? OsVersion.Win11 :
+        IsWin_10_Or_Greater ? OsVersion.Win10 :
+        IsWin_8_Or_Greater  ? OsVersion.Win8 :
+        IsWin_7_Or_Greater  ? OsVersion.Win7 :
+        IsVista_Or_Greater  ? OsVersion.Vista :
+                              OsVersion.Unknown;
 
     /// <summary>
     /// Get the WindowState as the native HWND knows it to be.
@@ -113,7 +116,7 @@ internal sealed class Utilities
     {
         get
         {
-            if (!IsOSVistaOrNewer)
+            if (!IsVista_Or_Greater)
             {
                 return false;
             }
@@ -150,7 +153,7 @@ internal sealed class Utilities
         }
     }
 
-#if !NET5_0_OR_GREATER
+    #if !NET5_0_OR_GREATER
     /// <summary>
     /// Tries to get the OS version from the Windows registry.
     /// </summary>
@@ -270,5 +273,5 @@ internal sealed class Utilities
         }
     }
 
-#endif
+    #endif
 }

@@ -11,7 +11,7 @@ using Wpf.Ui.Win32;
 // ReSharper disable once CheckNamespace
 namespace Wpf.Ui.Controls;
 
-internal sealed class Dwm
+internal static class DwmAttributes
 {
     public static bool SetNcRenderingPolicy(HWND hwnd, DWMNCRENDERINGPOLICY policy) =>
         SetWindowAttribute(
@@ -115,28 +115,23 @@ internal sealed class Dwm
     // 出于兼容性考虑，所有窗口默认都使用浅色模式，无论系统设置如何。
     // pvAttribute参数指向一个BOOL类型的值。
     // TRUE表示窗口遵循深色模式，FALSE表示始终使用浅色模式。
-    public static bool UseImmersiveDarkMode(HWND hwnd, bool enabled)
+    public static bool SetUseImmersiveDarkMode(HWND hwnd, bool enabled)
     {
-        int value  = enabled ? 1 : 0;
+        int value = enabled ? 1 : 0;
 
-        // todo 调查旧版本 Win11 属性值不一样？
-        if (!Win32.Utilities.IsOSWindows11Insider1OrNewer)
+        if (Utilities.IsWin_11_Or_Greater)
         {
-            var result = SetWindowAttribute(
+            return SetWindowAttribute(
                 hwnd,
-                DWMWINDOWATTRIBUTE.DMWA_USE_IMMERSIVE_DARK_MODE_OLD,
+                DWMWINDOWATTRIBUTE.DWMWA_USE_IMMERSIVE_DARK_MODE,
                 value
             );
-
-            if (result)
-            {
-                return true;
-            }
         }
 
+        // todo 22000版本以前是 19，难道Win10也支持？
         return SetWindowAttribute(
             hwnd,
-            DWMWINDOWATTRIBUTE.DWMWA_USE_IMMERSIVE_DARK_MODE,
+            DWMWINDOWATTRIBUTE.DMWA_USE_IMMERSIVE_DARK_MODE_OLD,
             value
         );
     }
@@ -184,16 +179,6 @@ internal sealed class Dwm
     // 检索或指定窗口的系统绘制背景材质，包括非客户区后面的背景。pvAttribute参数指向DWM_SYSTEMBACKDROP_TYPE类型的值。
     public static bool SetSystemBackdrop(HWND hwnd, DWM_SYSTEMBACKDROP_TYPE backdrop)
     {
-        // todo 调查 22621 之前只能支持云母效果？
-
-        if (backdrop != DWM_SYSTEMBACKDROP_TYPE.DWMSBT_NONE)
-        {
-            if (Utilities.IsOSWindows11Insider2OrNewer)
-            {
-                
-            }
-        }
-
         return SetWindowAttribute(
             hwnd,
             DWMWINDOWATTRIBUTE.DWMWA_SYSTEMBACKDROP_TYPE,
@@ -287,24 +272,24 @@ internal sealed class Dwm
        {
            // 1. 过滤不支持的系统 (Win10 及以下)
            if (Environment.OSVersion.Version.Build < 22000) return;
-       
+
            // 2. 检查远程桌面环境 (性能/视觉优化)
-           if (SystemParameters.IsRemoteSession) return; 
-       
+           if (SystemParameters.IsRemoteSession) return;
+
            // 3. 分版本调用
-           if (Environment.OSVersion.Version.Build >= 22621) 
+           if (Environment.OSVersion.Version.Build >= 22621)
            {
                // 使用新版 API (Attribute 38)
                SetBackdropType(hwnd, DWMSBT_MAINWINDOW);
            }
-           else 
+           else
            {
                // 使用旧版 API (Attribute 1029)
                SetMicaOld(hwnd, true);
            }
        }
        Use code with caution.
-       
+
        4. 补充一个属性：DWMWA_USE_IMMERSIVE_DARK_MODE
        在 Windows 11 上，无论新旧版，Mica 都需要窗口意识到自己处于深色模式才能正确显示。
        属性 ID：20

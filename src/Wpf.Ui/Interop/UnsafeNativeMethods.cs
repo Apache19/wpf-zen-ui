@@ -164,7 +164,7 @@ internal static class UnsafeNativeMethods
         BOOL pvAttribute = false;
         DWMWINDOWATTRIBUTE dwAttribute = DWMWINDOWATTRIBUTE.DWMWA_USE_IMMERSIVE_DARK_MODE;
 
-        if (!Win32.Utilities.IsOSWindows11Insider1OrNewer)
+        if (!Win32.Utilities.IsWin_11_Insider1_Or_Greater)
         {
             dwAttribute = DWMWINDOWATTRIBUTE.DMWA_USE_IMMERSIVE_DARK_MODE_OLD;
         }
@@ -201,7 +201,7 @@ internal static class UnsafeNativeMethods
         BOOL pvAttribute = true;
         DWMWINDOWATTRIBUTE dwAttribute = DWMWINDOWATTRIBUTE.DWMWA_USE_IMMERSIVE_DARK_MODE;
 
-        if (!Win32.Utilities.IsOSWindows11Insider1OrNewer)
+        if (!Win32.Utilities.IsWin_11_Insider1_Or_Greater)
         {
             dwAttribute = DWMWINDOWATTRIBUTE.DMWA_USE_IMMERSIVE_DARK_MODE_OLD;
         }

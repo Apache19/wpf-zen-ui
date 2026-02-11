@@ -44,7 +44,7 @@ internal static class DpiHelper
             return new DisplayDpi(DefaultDpi, DefaultDpi);
         }
 
-        if (Utilities.IsOSWindows10_14393_OrNewer)
+        if (Utilities.IsWin_10_1607_Or_Greater)
         {
             #pragma warning disable CA1416
             var windowDpi = (int)PInvoke.GetDpiForWindow(hwnd);
