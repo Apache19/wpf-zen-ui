@@ -51,7 +51,7 @@ public sealed class ApplicationThemeManager
     /// <summary>
     /// Event triggered when the application's theme is changed.
     /// </summary>
-    public event ThemeChangedEvent? Changed;
+    public event EventHandler<ThemeChangedEventArgs>? Changed;
 
     /// <summary>
     /// Gets a value that indicates whether the application is currently using the high contrast theme.

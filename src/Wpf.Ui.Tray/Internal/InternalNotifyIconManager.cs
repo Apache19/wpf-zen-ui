@@ -64,7 +64,12 @@ internal class InternalNotifyIconManager : IDisposable, INotifyIcon
 
     public InternalNotifyIconManager()
     {
-        ApplicationThemeManager.Instance.Changed += OnThemeChanged;
+        GenericWeakEventManager<ApplicationThemeManager, ThemeChangedEventArgs>
+           .AddHandler(
+                ApplicationThemeManager.Instance,
+                nameof(ApplicationThemeManager.Changed),
+                OnThemeChanged
+            );
     }
 
     ~InternalNotifyIconManager()
@@ -75,7 +80,12 @@ internal class InternalNotifyIconManager : IDisposable, INotifyIcon
     /// <inheritdoc />
     public void Dispose()
     {
-        ApplicationThemeManager.Instance.Changed -= OnThemeChanged;
+        GenericWeakEventManager<ApplicationThemeManager, ThemeChangedEventArgs>
+           .RemoveHandler(
+                ApplicationThemeManager.Instance,
+                nameof(ApplicationThemeManager.Changed),
+                OnThemeChanged
+            );
 
         Dispose(true);
         GC.SuppressFinalize(this);
@@ -181,7 +191,7 @@ internal class InternalNotifyIconManager : IDisposable, INotifyIcon
         _ = Interop.User32.SetForegroundWindow(HookWindow.Handle);
 
         // Set placement properties for better positioning
-        ContextMenu.SetCurrentValue(ContextMenu.PlacementProperty, PlacementMode.MousePoint);
+        ContextMenu.SetCurrentValue(ContextMenu.PlacementProperty,       PlacementMode.MousePoint);
         ContextMenu.SetCurrentValue(ContextMenu.PlacementTargetProperty, null);
 
         // ContextMenu.ApplyMica();

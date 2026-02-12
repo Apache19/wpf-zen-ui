@@ -50,7 +50,7 @@ public sealed partial class SettingsViewModel(INavigationService navigationServi
 
         AppVersion = $"{GetAssemblyVersion()}";
 
-        WeakEventManager<ApplicationThemeManager, ThemeChangedEventArgs>
+        GenericWeakEventManager<ApplicationThemeManager, ThemeChangedEventArgs>
            .AddHandler(
                 ApplicationThemeManager.Instance,
                 nameof(ApplicationThemeManager.Changed),
@@ -58,8 +58,6 @@ public sealed partial class SettingsViewModel(INavigationService navigationServi
             );
 
         _isInitialized = true;
-
-        Debug.WriteLine($"设置视图模型初始化 - CurrentApplicationTheme = {CurrentApplicationTheme}");
     }
 
     private void OnThemeChanged(object? sender, ThemeChangedEventArgs e)
