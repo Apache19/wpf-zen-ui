@@ -64,7 +64,7 @@ internal class InternalNotifyIconManager : IDisposable, INotifyIcon
 
     public InternalNotifyIconManager()
     {
-        GenericWeakEventManager<ApplicationThemeManager, ThemeChangedEventArgs>
+        WeakEventManager<ApplicationThemeManager, ThemeChangedEventArgs>
            .AddHandler(
                 ApplicationThemeManager.Instance,
                 nameof(ApplicationThemeManager.Changed),
@@ -80,7 +80,7 @@ internal class InternalNotifyIconManager : IDisposable, INotifyIcon
     /// <inheritdoc />
     public void Dispose()
     {
-        GenericWeakEventManager<ApplicationThemeManager, ThemeChangedEventArgs>
+        WeakEventManager<ApplicationThemeManager, ThemeChangedEventArgs>
            .RemoveHandler(
                 ApplicationThemeManager.Instance,
                 nameof(ApplicationThemeManager.Changed),

@@ -46,6 +46,8 @@ public static class SystemThemeManager
             return _cachedTheme;
         }
 
+        SystemParameters.UxThemeName
+
         UpdateSystemThemeCache();
 
         return _cachedTheme;

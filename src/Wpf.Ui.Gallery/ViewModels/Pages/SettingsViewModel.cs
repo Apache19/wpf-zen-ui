@@ -50,7 +50,7 @@ public sealed partial class SettingsViewModel(INavigationService navigationServi
 
         AppVersion = $"{GetAssemblyVersion()}";
 
-        GenericWeakEventManager<ApplicationThemeManager, ThemeChangedEventArgs>
+        WeakEventManager<ApplicationThemeManager, ThemeChangedEventArgs>
            .AddHandler(
                 ApplicationThemeManager.Instance,
                 nameof(ApplicationThemeManager.Changed),

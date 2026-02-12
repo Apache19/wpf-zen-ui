@@ -276,7 +276,7 @@ public partial class FluentWindow : Window
             }
         }
 
-        GenericWeakEventManager<ApplicationThemeManager, EventArgs>
+        WeakEventManager<ApplicationThemeManager, ThemeChangedEventArgs>
            .AddHandler(
                 ApplicationThemeManager.Instance,
                 nameof(ApplicationThemeManager.Changed),
@@ -293,7 +293,7 @@ public partial class FluentWindow : Window
 
     protected override void OnClosed(EventArgs e)
     {
-        GenericWeakEventManager<ApplicationThemeManager, EventArgs>
+        WeakEventManager<ApplicationThemeManager, ThemeChangedEventArgs>
            .RemoveHandler(
                 ApplicationThemeManager.Instance,
                 nameof(ApplicationThemeManager.Changed),
