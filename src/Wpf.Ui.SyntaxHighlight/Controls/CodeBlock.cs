@@ -59,11 +59,31 @@ public class CodeBlock : System.Windows.Controls.ContentControl
     public CodeBlock()
     {
         SetValue(ButtonCommandProperty, new RelayCommand<string>(OnTemplateButtonClick));
-
-        ApplicationThemeManager.Changed += ThemeOnChanged;
+        Unloaded += CodeBlock_Unloaded;
+        Loaded   += CodeBlock_Loaded;
     }
 
-    private void ThemeOnChanged(ApplicationTheme currentApplicationTheme, Color systemAccent)
+    private void CodeBlock_Loaded(object sender, RoutedEventArgs e)
+    {
+        WeakEventManager<ApplicationThemeManager, ThemeChangedEventArgs>
+           .AddHandler(
+                ApplicationThemeManager.Instance,
+                nameof(ApplicationThemeManager.Changed),
+                ThemeOnChanged
+            );
+    }
+
+    private void CodeBlock_Unloaded(object sender, RoutedEventArgs e)
+    {
+        WeakEventManager<ApplicationThemeManager, ThemeChangedEventArgs>
+           .RemoveHandler(
+                ApplicationThemeManager.Instance,
+                nameof(ApplicationThemeManager.Changed),
+                ThemeOnChanged
+            );
+    }
+
+    private void ThemeOnChanged(object? sender, ThemeChangedEventArgs e)
     {
         UpdateSyntax();
     }
@@ -84,10 +104,10 @@ public class CodeBlock : System.Windows.Controls.ContentControl
 
         var richTextBox = new RichTextBox()
         {
-            IsTextSelectionEnabled = true,
-            VerticalContentAlignment = VerticalAlignment.Center,
-            VerticalAlignment = VerticalAlignment.Center,
-            HorizontalAlignment = HorizontalAlignment.Left,
+            IsTextSelectionEnabled     = true,
+            VerticalContentAlignment   = VerticalAlignment.Center,
+            VerticalAlignment          = VerticalAlignment.Center,
+            HorizontalAlignment        = HorizontalAlignment.Left,
             HorizontalContentAlignment = HorizontalAlignment.Left,
         };
 

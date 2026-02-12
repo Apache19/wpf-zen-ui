@@ -64,7 +64,7 @@ internal class InternalNotifyIconManager : IDisposable, INotifyIcon
 
     public InternalNotifyIconManager()
     {
-        ApplicationThemeManager.Changed += OnThemeChanged;
+        ApplicationThemeManager.Instance.Changed += OnThemeChanged;
     }
 
     ~InternalNotifyIconManager()
@@ -75,8 +75,9 @@ internal class InternalNotifyIconManager : IDisposable, INotifyIcon
     /// <inheritdoc />
     public void Dispose()
     {
-        Dispose(true);
+        ApplicationThemeManager.Instance.Changed -= OnThemeChanged;
 
+        Dispose(true);
         GC.SuppressFinalize(this);
     }
 
@@ -117,7 +118,7 @@ internal class InternalNotifyIconManager : IDisposable, INotifyIcon
     /// <summary>
     /// Occurs when the application theme is changing.
     /// </summary>
-    protected virtual void OnThemeChanged(ApplicationTheme currentApplicationTheme, Color systemAccent)
+    protected virtual void OnThemeChanged(object? sender, ThemeChangedEventArgs e)
     {
         ContextMenu?.UpdateDefaultStyle();
         ContextMenu?.UpdateLayout();

@@ -13,15 +13,15 @@ namespace Wpf.Ui;
 public partial class ThemeService : IThemeService
 {
     /// <inheritdoc />
-    public virtual ApplicationTheme GetTheme() => ApplicationThemeManager.GetAppTheme();
+    public virtual ApplicationTheme GetTheme() => ApplicationThemeManager.AppTheme;
 
     /// <inheritdoc />
-    public virtual SystemTheme GetNativeSystemTheme() => ApplicationThemeManager.GetSystemTheme();
+    public virtual SystemTheme GetNativeSystemTheme() => ApplicationThemeManager.Instance.GetSystemTheme();
 
     /// <inheritdoc />
     public virtual ApplicationTheme GetSystemTheme()
     {
-        SystemTheme systemTheme = ApplicationThemeManager.GetSystemTheme();
+        SystemTheme systemTheme = ApplicationThemeManager.Instance.GetSystemTheme();
 
         return systemTheme switch
         {
@@ -42,12 +42,12 @@ public partial class ThemeService : IThemeService
     /// <inheritdoc />
     public virtual bool SetTheme(ApplicationTheme applicationTheme)
     {
-        if (ApplicationThemeManager.GetAppTheme() == applicationTheme)
+        if (ApplicationThemeManager.AppTheme == applicationTheme)
         {
             return false;
         }
 
-        ApplicationThemeManager.Apply(applicationTheme);
+        ApplicationThemeManager.Instance.Apply(applicationTheme);
 
         return true;
     }

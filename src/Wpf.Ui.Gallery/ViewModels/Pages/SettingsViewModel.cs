@@ -33,7 +33,7 @@ public sealed partial class SettingsViewModel(INavigationService navigationServi
 
     partial void OnCurrentApplicationThemeChanged(ApplicationTheme oldValue, ApplicationTheme newValue)
     {
-        ApplicationThemeManager.Apply(newValue);
+        ApplicationThemeManager.Instance.Apply(newValue);
     }
 
     partial void OnCurrentApplicationNavigationStyleChanged(
@@ -46,22 +46,28 @@ public sealed partial class SettingsViewModel(INavigationService navigationServi
 
     private void InitializeViewModel()
     {
-        CurrentApplicationTheme = ApplicationThemeManager.GetAppTheme();
+        CurrentApplicationTheme = ApplicationThemeManager.AppTheme;
+
         AppVersion = $"{GetAssemblyVersion()}";
 
-        ApplicationThemeManager.Changed += OnThemeChanged;
+        WeakEventManager<ApplicationThemeManager, ThemeChangedEventArgs>
+           .AddHandler(
+                ApplicationThemeManager.Instance,
+                nameof(ApplicationThemeManager.Changed),
+                OnThemeChanged
+            );
 
         _isInitialized = true;
 
         Debug.WriteLine($"设置视图模型初始化 - CurrentApplicationTheme = {CurrentApplicationTheme}");
     }
 
-    private void OnThemeChanged(ApplicationTheme currentApplicationTheme, Color systemAccent)
+    private void OnThemeChanged(object? sender, ThemeChangedEventArgs e)
     {
         // Update the theme if it has been changed elsewhere than in the settings.
-        if (CurrentApplicationTheme != currentApplicationTheme)
+        if (CurrentApplicationTheme != e.CurrentApplicationTheme)
         {
-            CurrentApplicationTheme = currentApplicationTheme;
+            CurrentApplicationTheme = e.CurrentApplicationTheme;
         }
     }
 

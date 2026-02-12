@@ -115,7 +115,13 @@ public sealed class ApplicationThemeManager
 
         _cachedApplicationTheme = applicationTheme;
 
-        Changed?.Invoke(applicationTheme, ApplicationAccentColorManager.SystemAccentColor);
+        Changed?.Invoke(
+            this,
+            new ThemeChangedEventArgs(
+                applicationTheme,
+                ApplicationAccentColorManager.SystemAccentColor
+            )
+        );
     }
 
     /// <summary>
@@ -163,7 +169,7 @@ public sealed class ApplicationThemeManager
         ApplySystemTheme(true);
     }
 
-    private void ApplySystemTheme(bool updateAccent)
+    public void ApplySystemTheme(bool updateAccent)
     {
         SystemThemeManager.UpdateSystemThemeCache();
 

@@ -4,6 +4,7 @@
 // All Rights Reserved.
 
 using System.Windows.Controls;
+using Wpf.Ui.Appearance;
 using Wpf.Ui.Controls;
 
 namespace Wpf.Ui.Gallery.Controls;
@@ -94,7 +95,7 @@ public class PageControlDocumentation : Control
 
         SetValue(
             TemplateButtonCommandProperty,
-            new CommunityToolkit.Mvvm.Input.RelayCommand<string>(OnClick)
+            new RelayCommand<string>(OnClick)
         );
     }
 
@@ -210,12 +211,12 @@ public class PageControlDocumentation : Control
 
     private static void SwitchThemes()
     {
-        Appearance.ApplicationTheme currentTheme = Wpf.Ui.Appearance.ApplicationThemeManager.GetAppTheme();
+        ApplicationTheme currentTheme = ApplicationThemeManager.AppTheme;
 
-        Wpf.Ui.Appearance.ApplicationThemeManager.Apply(
-            currentTheme == Wpf.Ui.Appearance.ApplicationTheme.Light
-                ? Wpf.Ui.Appearance.ApplicationTheme.Dark
-                : Wpf.Ui.Appearance.ApplicationTheme.Light
+        ApplicationThemeManager.Instance.Apply(
+            currentTheme == ApplicationTheme.Light
+                ? ApplicationTheme.Dark
+                : ApplicationTheme.Light
         );
     }
 }

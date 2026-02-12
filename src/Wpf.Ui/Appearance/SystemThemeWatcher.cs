@@ -123,6 +123,8 @@ public static class SystemThemeWatcher
 
     private static void OnSystemThemeChanged()
     {
-        ApplicationThemeManager.ApplySystemTheme(_updateAccents);
+        // 当前只对主题进行刷新，没有跟随强调色，也没有读取系统高对比度主题。。。
+
+        ApplicationThemeManager.Instance.ApplySystemTheme(_updateAccents);
     }
 }

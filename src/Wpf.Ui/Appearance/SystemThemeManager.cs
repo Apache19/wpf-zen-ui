@@ -21,6 +21,8 @@ namespace Wpf.Ui.Appearance;
 /// </example>
 public static class SystemThemeManager
 {
+    // todo 关于高对比度主题，似乎应该实现一个Theme文件读取工具，从Theme文件里获得各种颜色信息
+    //   思路是使用API获取当前Theme文件路径，然后读取
     private static SystemTheme _cachedTheme = SystemTheme.Unknown;
 
     /// <summary>

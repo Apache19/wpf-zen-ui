@@ -6,8 +6,12 @@
 namespace Wpf.Ui.Appearance;
 
 /// <summary>
-/// Event triggered when application theme is updated.
+/// Represents the method that will handle the application theme changed event.
 /// </summary>
-/// <param name="currentApplicationTheme">Current application <see cref="ApplicationTheme"/>.</param>
-/// <param name="systemAccent">Current base system accent <see cref="Color"/>.</param>
-public delegate void ThemeChangedEvent(ApplicationTheme currentApplicationTheme, Color systemAccent);
+/// <param name="sender">The source of the event, typically the object that triggered the theme change.</param>
+/// <param name="e">An object that contains theme change related event data.</param>
+/// <remarks>
+/// This event is raised when the application theme (such as light/dark mode) changes.
+/// Subscribe to this event to perform UI updates when the theme changes.
+/// </remarks>
+public delegate void ThemeChangedEvent(object? sender, ThemeChangedEventArgs e);

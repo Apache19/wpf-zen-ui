@@ -92,7 +92,7 @@ public static class WindowBackdrop
             return false;
         }
 
-        if (ApplicationThemeManager.GetAppTheme() == ApplicationTheme.Dark)
+        if (ApplicationThemeManager.AppTheme == ApplicationTheme.Dark)
         {
             _ = UnsafeNativeMethods.ApplyWindowDarkMode(hWnd);
         }
@@ -332,9 +332,9 @@ public static class WindowBackdrop
 
     private static SolidColorBrush GetFallbackBackgroundBrush()
     {
-        return ApplicationThemeManager.GetAppTheme() switch
+        return ApplicationThemeManager.AppTheme switch
         {
-            ApplicationTheme.HighContrast => ApplicationThemeManager.GetSystemTheme() switch
+            ApplicationTheme.HighContrast => ApplicationThemeManager.Instance.GetSystemTheme() switch
             {
                 SystemTheme.HC1     => new SolidColorBrush(Color.FromArgb(0xFF, 0x2D, 0x32, 0x36)),
                 SystemTheme.HC2     => new SolidColorBrush(Color.FromArgb(0xFF, 0x00, 0x00, 0x00)),

@@ -32,7 +32,7 @@ internal static class ContextMenuExtensions
             return;
         }
 
-        if (ApplicationThemeManager.GetAppTheme() == ApplicationTheme.Dark)
+        if (ApplicationThemeManager.AppTheme == ApplicationTheme.Dark)
         {
             _ = UnsafeNativeMethods.ApplyWindowDarkMode(source.Handle);
         }
