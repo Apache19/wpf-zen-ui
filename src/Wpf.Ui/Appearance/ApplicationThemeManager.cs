@@ -3,301 +3,143 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-using Wpf.Ui.Controls;
+using System.Collections;
+using System.Windows.Threading;
+using Microsoft.Win32;
+using Wpf.Ui.Designer;
+using Wpf.Ui.Markup;
+using Wpf.Ui.Threading;
 
 namespace Wpf.Ui.Appearance;
 
 /// <summary>
-/// Allows to manage the application theme by swapping resource dictionaries containing dynamic resources with color information.
+/// 负责管理应用程序主题状态，监听系统主题事件，同步系统主题，协调主题资源加载
 /// </summary>
-/// <example>
-/// <code lang="csharp">
-/// ApplicationThemeManager.Apply(
-///     ApplicationTheme.Light
-/// );
-/// </code>
-/// <code lang="csharp">
-/// if (ApplicationThemeManager.GetAppTheme() == ApplicationTheme.Dark)
-/// {
-///     ApplicationThemeManager.Apply(
-///         ApplicationTheme.Light
-///     );
-/// }
-/// </code>
-/// <code>
-/// ApplicationThemeManager.Changed += (theme, accent) =>
-/// {
-///     Debug.WriteLine($"Application theme changed to {theme.ToString()}");
-/// };
-/// </code>
-/// </example>
+[System.Diagnostics.CodeAnalysis.SuppressMessage(
+    "Design",
+    "CA1001:Types that own disposable fields should be disposable",
+    Justification = "ApplicationThemeManager has application lifetime; disposal is unnecessary.")]
 public sealed class ApplicationThemeManager
 {
-    private ApplicationTheme _cachedApplicationTheme = ApplicationTheme.Unknown;
+    /// <summary>
+    /// Gets singleton instance of <see cref="ApplicationThemeManager"/>.
+    /// </summary>
+    public static ApplicationThemeManager Instance { get; } = new();
+
+    private readonly DebounceDispatcher _themeChangedDebouncer = new();
 
     /// <summary>
-    /// Singleton instance of <see cref="ApplicationThemeManager"/>.
+    /// Gets or sets a value indicating whether the application theme follows the system theme.
+    /// When set to <see langword="true"/>, the application theme will automatically update to match the system theme.
     /// </summary>
-    public static ApplicationThemeManager Instance { get; } = new ApplicationThemeManager();
+    public bool FollowSystemTheme { get; set; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether the application uses the system accent color.
+    /// When set to <see langword="true"/>, the application will automatically apply the system accent color.
+    /// 开启后，系统主题色将会替换主题色资源
+    /// </summary>
+    /// <remarks>
+    /// 此设置在设计模式无效（设计模式不会监听系统事件，也不会读取系统主题文件）
+    /// </remarks>
+    public bool UseSystemAccentColor { get; set; }
+
+    // 读取或设置，设置时会使 App 级主题生效
+    public ThemeMode ThemeMode { get; set; }
+
+    public event EventHandler<ThemeChangedEventArgs>? Changed;
 
     private ApplicationThemeManager()
     {
+        Initialize();
     }
 
-    internal const string LibraryNamespace = "wpf.ui;";
-
-    internal const string ThemesDictionaryPath = "pack://application:,,,/Wpf.Ui;component/Resources/Theme/";
-
-    /// <summary>
-    /// Event triggered when the application's theme is changed.
-    /// </summary>
-    public event EventHandler<ThemeChangedEventArgs>? Changed;
-
-    /// <summary>
-    /// Gets a value that indicates whether the application is currently using the high contrast theme.
-    /// </summary>
-    /// <returns><see langword="true"/> if application uses high contrast theme.</returns>
-    public bool IsHighContrast() => _cachedApplicationTheme == ApplicationTheme.HighContrast;
-
-    /// <summary>
-    /// Gets a value that indicates whether the Windows is currently using the high contrast theme.
-    /// </summary>
-    /// <returns><see langword="true"/> if system uses high contrast theme.</returns>
-    public bool IsSystemHighContrast() => SystemThemeManager.HighContrast;
-
-    /// <summary>
-    /// Changes the current application theme.
-    /// </summary>
-    /// <param name="applicationTheme">Theme to set.</param>
-    /// <param name="updateAccent">Whether the color accents should be changed.</param>
-    public void Apply(ApplicationTheme applicationTheme, bool updateAccent = true)
+    private void Initialize()
     {
-        if (updateAccent)
-        {
-            ApplicationAccentColorManager.Apply(
-                ApplicationAccentColorManager.GetColorizationColor(),
-                applicationTheme,
-                false
-            );
-        }
-
-        if (applicationTheme == ApplicationTheme.Unknown)
+        // 合并主题资源字典
+        if (DesignerHelper.IsInDesignMode)
         {
             return;
         }
 
-        ResourceDictionaryManager appDictionaries = new(LibraryNamespace);
-
-        string themeDictionaryName = applicationTheme switch
+        var application = Application.Current;
+        if (application == null)
         {
-            ApplicationTheme.Dark => "Dark",
-            ApplicationTheme.HighContrast => GetSystemTheme() switch
-            {
-                SystemTheme.HC1     => "HC1",
-                SystemTheme.HC2     => "HC2",
-                SystemTheme.HCBlack => "HCBlack",
-                _                   => "HCWhite",
-            },
-            _ => "Light"
-        };
-
-        bool isUpdated = appDictionaries.UpdateDictionary(
-            "theme",
-            new Uri(ThemesDictionaryPath + themeDictionaryName + ".xaml", UriKind.Absolute)
-        );
-
-        if (!isUpdated)
-        {
+            // 如果 Application 尚未创建，通过 Dispatcher 调度延迟重试
+            Dispatcher.CurrentDispatcher.BeginInvoke(Initialize, DispatcherPriority.ApplicationIdle);
             return;
         }
 
-        SystemThemeManager.UpdateSystemThemeCache();
+        SystemEvents.UserPreferenceChanged     += SystemEvents_UserPreferenceChanged;
+        SystemParameters.StaticPropertyChanged += SystemParameters_StaticPropertyChanged;
 
-        _cachedApplicationTheme = applicationTheme;
-
-        Changed?.Invoke(
-            this,
-            new ThemeChangedEventArgs(
-                applicationTheme,
-                ApplicationAccentColorManager.SystemAccentColor
-            )
-        );
+        application.Exit += Application_Exit;
     }
 
-    /// <summary>
-    /// Applies Resources in the <paramref name="frameworkElement"/>.
-    /// </summary>
-    public static void Apply(FrameworkElement frameworkElement)
+    private void Application_Exit(object sender, ExitEventArgs e)
     {
-        if (frameworkElement is null)
+        if (sender is Application application)
         {
-            return;
+            application.Exit -= Application_Exit;
         }
 
-        ResourceDictionary[] resourcesRemove = frameworkElement
-           .Resources.MergedDictionaries.Where(e => e.Source is not null)
-           .Where(e => e.Source.ToString().Contains(LibraryNamespace, StringComparison.OrdinalIgnoreCase))
-           .ToArray();
+        SystemEvents.UserPreferenceChanged     -= SystemEvents_UserPreferenceChanged;
+        SystemParameters.StaticPropertyChanged -= SystemParameters_StaticPropertyChanged;
 
-        foreach (ResourceDictionary? resource in UiApplication.Current.Resources.MergedDictionaries)
+        _themeChangedDebouncer.Dispose();
+    }
+
+    private void SystemParameters_StaticPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        ScheduleThemeChangedDebounced();
+    }
+
+    private void SystemEvents_UserPreferenceChanged(object sender, UserPreferenceChangedEventArgs e)
+    {
+        // Debug.WriteLine($"SystemEvents_UserPreferenceChanged: {e.Category}");
+
+        // SystemEvents 和 SystemParameters 的事件早就过时了，且触发过于粗糙，
+        // 可能需要寻找更精确的监听方式。
+        // 考虑使用隐身窗口接收正确的消息并过滤，来实现更精细的监听器。
+
+        if (e.Category is
+            UserPreferenceCategory.General or // 明暗模式变化会触发此类别多次（）
+            UserPreferenceCategory.VisualStyle or
+            UserPreferenceCategory.Color)
         {
-            frameworkElement.Resources.MergedDictionaries.Add(resource);
-        }
-
-        foreach (ResourceDictionary resource in resourcesRemove)
-        {
-            // System.Diagnostics.Debug.WriteLine(
-            //     $"INFO | {typeof(ApplicationThemeManager)} Remove {resource.Source}",
-            //     "Wpf.Ui.Appearance"
-            // );
-
-            _ = frameworkElement.Resources.MergedDictionaries.Remove(resource);
-        }
-
-        foreach (System.Collections.DictionaryEntry resource in UiApplication.Current.Resources)
-        {
-            // System.Diagnostics.Debug.WriteLine(
-            //     $"INFO | {typeof(ApplicationThemeManager)} Copy Resource {resource.Key} - {resource.Value}",
-            //     "Wpf.Ui.Appearance"
-            // );
-            frameworkElement.Resources[resource.Key] = resource.Value;
+            ScheduleThemeChangedDebounced();
         }
     }
 
-    public void ApplySystemTheme()
+    private void ScheduleThemeChangedDebounced()
     {
-        ApplySystemTheme(true);
+        _themeChangedDebouncer.DebounceAsync(TimeSpan.FromMilliseconds(250), OnSystemThemeChanged);
     }
 
-    public void ApplySystemTheme(bool updateAccent)
+    private void OnSystemThemeChanged()
     {
-        SystemThemeManager.UpdateSystemThemeCache();
+        // 更新系统主题色。系统主题色资源独立于
 
-        var systemTheme = GetSystemTheme();
-
-        ApplicationTheme themeToSet = systemTheme switch
+        if (FollowSystemTheme)
         {
-            SystemTheme.Dark           => ApplicationTheme.Dark,
-            SystemTheme.CapturedMotion => ApplicationTheme.Dark,
-            SystemTheme.Glow           => ApplicationTheme.Dark,
-            SystemTheme.HC1            => ApplicationTheme.HighContrast,
-            SystemTheme.HC2            => ApplicationTheme.HighContrast,
-            SystemTheme.HCBlack        => ApplicationTheme.HighContrast,
-            SystemTheme.HCWhite        => ApplicationTheme.HighContrast,
-            _                          => ApplicationTheme.Light
-        };
+            // 1、读取系统主题名
+            // 2、系统主题转换为AppTheme
+            // 3、设置当前主题
 
-        Apply(themeToSet, updateAccent: updateAccent);
-    }
-
-    /// <summary>
-    /// Gets currently set application theme.
-    /// </summary>
-    /// <returns><see cref="ApplicationTheme.Unknown"/> if something goes wrong.</returns>
-    private ApplicationTheme GetAppTheme()
-    {
-        if (_cachedApplicationTheme == ApplicationTheme.Unknown)
-        {
-            FetchApplicationTheme();
+            /*
+             * 关于高亮主题：去主题目录里找出所有高亮主题（有些是定制的）
+             * 再展示，不要使用固定资源
+             * 如果没有找到任何高亮主题资源，则使用默认高亮主题
+             */
         }
 
-        return _cachedApplicationTheme;
-    }
-
-    public static ApplicationTheme AppTheme { get => Instance.GetAppTheme(); }
-
-    /// <summary>
-    /// Gets currently set system theme.
-    /// </summary>
-    /// <returns><see cref="SystemTheme.Unknown"/> if something goes wrong.</returns>
-    public SystemTheme GetSystemTheme()
-    {
-        return SystemThemeManager.GetCachedSystemTheme();
-    }
-
-    /// <summary>
-    /// Gets a value that indicates whether the application is matching the system theme.
-    /// </summary>
-    /// <returns><see langword="true"/> if the application has the same theme as the system.</returns>
-    public bool IsAppMatchesSystem()
-    {
-        ApplicationTheme appApplicationTheme = GetAppTheme();
-        SystemTheme      sysTheme            = GetSystemTheme();
-
-        return appApplicationTheme switch
+        if (UseSystemAccentColor)
         {
-            ApplicationTheme.Dark => sysTheme
-                is SystemTheme.Dark
-             or SystemTheme.CapturedMotion
-             or SystemTheme.Glow,
-            ApplicationTheme.Light => sysTheme
-                is SystemTheme.Light
-             or SystemTheme.Flow
-             or SystemTheme.Sunrise,
-            _ => appApplicationTheme == ApplicationTheme.HighContrast && SystemThemeManager.HighContrast,
-        };
-    }
-
-    /// <summary>
-    /// Checks if the application and the operating system are currently working in a dark theme.
-    /// </summary>
-    public bool IsMatchedDark()
-    {
-        ApplicationTheme appApplicationTheme = GetAppTheme();
-        SystemTheme      sysTheme            = GetSystemTheme();
-
-        if (appApplicationTheme != ApplicationTheme.Dark)
-        {
-            return false;
+            // 用强调色管理器替换强调色
         }
-
-        return sysTheme is SystemTheme.Dark or SystemTheme.CapturedMotion or SystemTheme.Glow;
-    }
-
-    /// <summary>
-    /// Checks if the application and the operating system are currently working in a light theme.
-    /// </summary>
-    public bool IsMatchedLight()
-    {
-        ApplicationTheme appApplicationTheme = GetAppTheme();
-        SystemTheme      sysTheme            = GetSystemTheme();
-
-        if (appApplicationTheme != ApplicationTheme.Light)
+        else
         {
-            return false;
-        }
-
-        return sysTheme is SystemTheme.Light or SystemTheme.Flow or SystemTheme.Sunrise;
-    }
-
-    /// <summary>
-    /// Tries to guess the currently set application theme.
-    /// </summary>
-    private void FetchApplicationTheme()
-    {
-        ResourceDictionaryManager appDictionaries = new(LibraryNamespace);
-        ResourceDictionary?       themeDictionary = appDictionaries.GetDictionary("theme");
-
-        if (themeDictionary == null)
-        {
-            return;
-        }
-
-        string themeUri = themeDictionary.Source.ToString();
-
-        if (themeUri.Contains("light", StringComparison.OrdinalIgnoreCase))
-        {
-            _cachedApplicationTheme = ApplicationTheme.Light;
-        }
-
-        if (themeUri.Contains("dark", StringComparison.OrdinalIgnoreCase))
-        {
-            _cachedApplicationTheme = ApplicationTheme.Dark;
-        }
-
-        if (themeUri.Contains("highcontrast", StringComparison.OrdinalIgnoreCase))
-        {
-            _cachedApplicationTheme = ApplicationTheme.HighContrast;
+            // 合并强调色资源
         }
     }
 }

@@ -5,28 +5,15 @@
 
 namespace Wpf.Ui.Appearance;
 
-/// <summary>
-/// Theme in which an application using WPF UI is displayed.
-/// </summary>
-public enum ApplicationTheme
+public enum ThemeMode
 {
     /// <summary>
-    /// Unknown application theme.
-    /// </summary>
-    Unknown,
-
-    /// <summary>
-    /// Dark application theme.
-    /// </summary>
-    Dark,
-
-    /// <summary>
-    /// Light application theme.
+    /// Light application theme mode.
     /// </summary>
     Light,
 
     /// <summary>
-    /// High contract application theme.
+    /// Dark application theme mode.
     /// </summary>
-    HighContrast,
+    Dark,
 }

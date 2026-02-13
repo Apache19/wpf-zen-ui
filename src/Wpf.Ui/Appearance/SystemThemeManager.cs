@@ -7,19 +7,8 @@ using Microsoft.Win32;
 
 namespace Wpf.Ui.Appearance;
 
-/// <summary>
-/// Provides information about Windows system themes.
-/// </summary>
-/// <example>
-/// <code lang="csharp">
-/// var currentWindowTheme = SystemThemeManager.GetCachedSystemTheme();
-/// </code>
-/// <code lang="csharp">
-/// SystemThemeManager.UpdateSystemThemeCache();
-/// var currentWindowTheme = SystemThemeManager.GetCachedSystemTheme();
-/// </code>
-/// </example>
-public static class SystemThemeManager
+// 负责从系统主题里读取信息
+internal static class SystemThemeManager
 {
     // todo 关于高对比度主题，似乎应该实现一个Theme文件读取工具，从Theme文件里获得各种颜色信息
     //   思路是使用API获取当前Theme文件路径，然后读取

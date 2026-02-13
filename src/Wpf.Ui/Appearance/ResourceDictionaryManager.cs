@@ -4,6 +4,7 @@
 // All Rights Reserved.
 
 using System.Collections.ObjectModel;
+using System.Windows.Threading;
 
 namespace Wpf.Ui.Appearance;
 
@@ -12,10 +13,14 @@ namespace Wpf.Ui.Appearance;
 /// </summary>
 internal class ResourceDictionaryManager
 {
+    internal const string LibraryNamespace = "wpf.ui;";
+
+    internal const string ThemesDictionaryPath = "pack://application:,,,/Wpf.Ui;component/Resources/Theme/";
+
     /// <summary>
     /// Gets the namespace, e.g. the library the resource is being searched for.
     /// </summary>
-    public string SearchNamespace { get; }
+    private string SearchNamespace { get; }
 
     public ResourceDictionaryManager(string searchNamespace)
     {
@@ -56,7 +61,7 @@ internal class ResourceDictionaryManager
 
                 if (
                     resourceDictionaryUri.Contains(SearchNamespace, StringComparison.OrdinalIgnoreCase)
-                    && resourceDictionaryUri.Contains(resourceLookup, StringComparison.OrdinalIgnoreCase)
+                 && resourceDictionaryUri.Contains(resourceLookup,  StringComparison.OrdinalIgnoreCase)
                 )
                 {
                     return t;
@@ -74,7 +79,7 @@ internal class ResourceDictionaryManager
 
                 if (
                     !resourceDictionaryUri.Contains(SearchNamespace, StringComparison.OrdinalIgnoreCase)
-                    || !resourceDictionaryUri.Contains(resourceLookup, StringComparison.OrdinalIgnoreCase)
+                 || !resourceDictionaryUri.Contains(resourceLookup,  StringComparison.OrdinalIgnoreCase)
                 )
                 {
                     continue;
@@ -87,18 +92,12 @@ internal class ResourceDictionaryManager
         return null;
     }
 
-    /// <summary>
-    /// Shows whether the application contains the <see cref="ResourceDictionary"/>.
-    /// </summary>
-    /// <param name="resourceLookup">Any part of the resource name.</param>
-    /// <param name="newResourceUri">A valid <see cref="Uri"/> for the replaced resource.</param>
-    /// <returns><see langword="true"/> if the dictionary <see cref="Uri"/> was updated. <see langword="false"/> otherwise.</returns>
     public bool UpdateDictionary(string resourceLookup, Uri? newResourceUri)
     {
         Collection<ResourceDictionary> applicationDictionaries = UiApplication
-            .Current
-            .Resources
-            .MergedDictionaries;
+           .Current
+           .Resources
+           .MergedDictionaries;
 
         if (applicationDictionaries.Count == 0 || newResourceUri is null)
         {
@@ -113,10 +112,8 @@ internal class ResourceDictionaryManager
             {
                 sourceUri = applicationDictionaries[i].Source.ToString();
 
-                if (
-                    sourceUri.Contains(SearchNamespace, StringComparison.OrdinalIgnoreCase)
-                    && sourceUri.Contains(resourceLookup, StringComparison.OrdinalIgnoreCase)
-                )
+                if (sourceUri.Contains(SearchNamespace, StringComparison.OrdinalIgnoreCase)
+                 && sourceUri.Contains(resourceLookup,  StringComparison.OrdinalIgnoreCase))
                 {
                     applicationDictionaries[i] = new() { Source = newResourceUri };
 
@@ -133,10 +130,8 @@ internal class ResourceDictionaryManager
 
                 sourceUri = applicationDictionaries[i].MergedDictionaries[j].Source.ToString();
 
-                if (
-                    !sourceUri.Contains(SearchNamespace, StringComparison.OrdinalIgnoreCase)
-                    || !sourceUri.Contains(resourceLookup, StringComparison.OrdinalIgnoreCase)
-                )
+                if (!sourceUri.Contains(SearchNamespace, StringComparison.OrdinalIgnoreCase)
+                 || !sourceUri.Contains(resourceLookup,  StringComparison.OrdinalIgnoreCase))
                 {
                     continue;
                 }
@@ -152,6 +147,11 @@ internal class ResourceDictionaryManager
 
     private Collection<ResourceDictionary> GetApplicationMergedDictionaries()
     {
-        return UiApplication.Current.Resources.MergedDictionaries;
+        return EnsureApplication().Resources.MergedDictionaries;
+    }
+
+    private static Application EnsureApplication()
+    {
+        return Application.Current ?? new Application();
     }
 }

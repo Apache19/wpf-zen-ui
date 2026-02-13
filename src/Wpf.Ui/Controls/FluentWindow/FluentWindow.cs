@@ -22,6 +22,9 @@ namespace Wpf.Ui.Controls;
 /// <summary>
 /// FluentWindow
 /// </summary>
+/// <remarks>
+/// 注意不要在此窗口上使用WindowChrome
+/// </remarks>
 public partial class FluentWindow : Window
 {
     static FluentWindow()
