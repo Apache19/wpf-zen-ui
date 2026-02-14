@@ -23,6 +23,11 @@ public sealed class ApplicationThemeManager
 {
     public static ApplicationThemeManager Instance { get; } = new();
 
+    private const string ThemeBaseUri = "pack://application:,,,/Wpf.Ui;component/Resources/Theme/";
+
+    private static readonly Uri LightThemeUri = new(ThemeBaseUri + "Light.xaml", UriKind.Absolute);
+    private static readonly Uri DarkThemeUri  = new(ThemeBaseUri + "Dark.xaml", UriKind.Absolute);
+
     private readonly DebounceDispatcher _themeChangedDebouncer = new();
 
     private ThemeMode _themeMode = ThemeMode.Light;
@@ -41,7 +46,7 @@ public sealed class ApplicationThemeManager
         }
     }
 
-    public event EventHandler? Changed;
+    public event EventHandler<ThemeChangedEventArgs>? Changed;
 
     private ApplicationThemeManager()
     {
@@ -93,115 +98,36 @@ public sealed class ApplicationThemeManager
 
     private void OnSystemThemeChanged()
     {
-        UpdateTheme();
+        UpdateTheme(ThemeChangeSource.System);
     }
 
-    private void UpdateTheme()
+    private void UpdateTheme(ThemeChangeSource source = ThemeChangeSource.Manual)
     {
-        // gptc 考虑到UpdateTheme可能被手动设置ThemeMode触发或是系统触发，系统触发时也要更新ThemeMode状态，所以如何解决这个冲突？
-        // 		这是一个典型的状态同步问题。需要区分"用户手动设置"和"系统自动更新"两种场景。以下是解决方案：
-        // 		
-        // 		## 核心思路
-        // 		添加一个标志位来区分触发源，避免循环更新。
-        // 		
-        // 		## 具体实现
-        // 		
-        // 		### 1. 添加触发源枚举
-        // 		```csharp
-        // 		private enum ThemeChangeSource
-        // 		{
-        // 		    Manual,     // 用户手动设置
-        // 		    System,     // 系统触发
-        // 		    Initial     // 初始化
-        // 		}
-        // 		```
-        // 		
-        // 		### 2. 修改 UpdateTheme 方法
-        // 		```csharp
-        // 		private void UpdateTheme(ThemeChangeSource source = ThemeChangeSource.Manual)
-        // 		{
-        // 		    // 如果是系统触发，先更新内部状态
-        // 		    if (source == ThemeChangeSource.System && FollowSystemTheme)
-        // 		    {
-        // 		        _themeMode = GetSystemThemeMode();
-        // 		    }
-        // 		    
-        // 		    // 应用主题的逻辑保持不变...
-        // 		    ApplyTheme(_themeMode);
-        // 		    
-        // 		    // 其他逻辑...
-        // 		}
-        // 		```
-        // 		
-        // 		### 3. 修改属性设置器
-        // 		```csharp
-        // 		public ThemeMode ThemeMode
-        // 		{
-        // 		    get => _themeMode;
-        // 		    set
-        // 		    {
-        // 		        if (_themeMode == value) return;
-        // 		        
-        // 		        _themeMode = value;
-        // 		        UpdateTheme(ThemeChangeSource.Manual);
-        // 		    }
-        // 		}
-        // 		```
-        // 		
-        // 		### 4. 修改系统触发处理
-        // 		```csharp
-        // 		private void OnSystemThemeChanged()
-        // 		{
-        // 		    if (!FollowSystemTheme) return; // 如果不跟随系统，忽略系统变化
-        // 		    
-        // 		    UpdateTheme(ThemeChangeSource.System);
-        // 		}
-        // 		```
-        // 		
-        // 		## 关键设计点
-        // 		
-        // 		1. **状态一致性**：系统触发时，自动更新 `_themeMode` 以保持状态一致
-        // 		2. **避免循环**：手动设置时不会触发系统监听器的响应
-        // 		3. **条件检查**：系统触发前检查 `FollowSystemTheme` 标志
-        // 		4. **事件通知**：无论哪种触发源，最终都触发 `Changed` 事件
-        // 		
-        // 		## 额外建议
-        // 		
-        // 		考虑添加一个只读属性来反映实际应用的主题：
-        // 		```csharp
-        // 		public ThemeMode AppliedTheme => _themeMode;
-        // 		```
-        // 		
-        // 		这样外部可以知道当前实际生效的主题，而不是用户设置的主题（当 `FollowSystemTheme=true` 时两者可能不同）。
-        // gptc 
-
+        VerifyAccess();
 
         // 系统高对比度主题是系统易用性机制的一部分，它的优先级高于主题系统，
-        // 我们不能自己搞一套“高对比度主题”出来，这样不仅增加了实现复杂度，
-        // 还会造成可访问性的不一致性。
-        // 另外，高对比度环境下也没有“强调色”，所以，也要把高对比度颜色应用到强调色资源键上。
+        // 当系统被设置为“高对比度”模式时，我们必须遵循这一模式，
+        // 而不是自己搞一套“高对比度主题”出来，这样不仅增加了实现复杂度，
+        // 还会造成可访问性的不一致。
+        // 另外，高对比度环境下没有单独的“强调色”，所以也要用高对比度颜色覆盖强调色。
         if (SystemParameters.HighContrast)
         {
             ApplySystemHighContrastColors();
             return;
         }
-
-        // 更新系统主题色。系统主题色资源独立于
-
-        // todo 要考虑手动设置或是系统设置
-        if (FollowSystemTheme)
+        else
         {
-            // 1、读取系统主题名
-            // 2、系统主题转换为AppTheme
-            // 3、设置当前主题
+            // 退出高对比度模式后，要把合并进Application的高对比度颜色删除
+        }
 
-            var theme = GetSystemTehmeMode();
-            ApplyTheme(theme);
+        if (source == ThemeChangeSource.System && FollowSystemTheme)
+        {
+            _themeMode = GetSystemThemeMode();
+            ApplyTheme(_themeMode);
         }
         else
         {
-            var theme = ThemeMode;
-            ApplyTheme(theme);
+            ApplyTheme(_themeMode);
         }
 
         if (UseSystemAccentColor)
@@ -213,18 +139,64 @@ public sealed class ApplicationThemeManager
             ApplyDefaultAccent();
         }
 
-        Changed?.Invoke(this, EventArgs.Empty);
+        Changed?.Invoke(this, new ThemeChangedEventArgs(_themeMode, source));
     }
 
     private void ApplySystemHighContrastColors()
     {
         // 实现系统高对比度颜色方案的逻辑
-        // 并且不管是否开启 UseSystemAccentColor，都要把高对比度颜色应用到
+        // 并且不管是否开启 UseSystemAccentColor，都要把高对比度颜色应用到强调色里去
+
+        var app = EnsureApplication();
+
+        // 我们需要用高对比度资源来映射高对比度颜色，所以必须先包含
+        // 高对比度资源是经过精心调整的各种控件对应的
+
     }
 
     private void ApplyTheme(ThemeMode mode)
     {
-        // 应用指定主题
+        var app    = EnsureApplication();
+        var merged = app.Resources.MergedDictionaries;
+
+        // 1️ 找到当前已加载的库主题字典（如果存在）
+        ResourceDictionary? existingThemeDict = null;
+
+        foreach (var dict in merged)
+        {
+            if (dict.Source == null)
+            {
+                continue;
+            }
+
+            var src = dict.Source.ToString();
+
+            if (src.StartsWith(ThemeBaseUri, StringComparison.OrdinalIgnoreCase))
+            {
+                existingThemeDict = dict;
+                break;
+            }
+        }
+
+        // 2️ 根据 ThemeMode 决定目标主题 URI
+        Uri targetUri = mode == ThemeMode.Dark ? DarkThemeUri : LightThemeUri;
+
+        // 如果当前已经是目标主题，就不重复加载（幂等）
+        if (existingThemeDict?.Source == targetUri)
+        {
+            return;
+        }
+
+        // 3️ 移除旧主题
+        if (existingThemeDict != null)
+        {
+            merged.Remove(existingThemeDict);
+        }
+
+        // 4️ 加载新主题
+        var newThemeDict = new ResourceDictionary { Source = targetUri };
+
+        merged.Add(newThemeDict);
     }
 
     private void ApplySystemAccent()
@@ -239,12 +211,47 @@ public sealed class ApplicationThemeManager
         // 2、合并默认强调色资源词典
     }
 
-    private ThemeMode GetSystemTehmeMode()
+    private ThemeMode GetSystemThemeMode()
     {
-        // 1、获取系统主题模式（明暗）
-        // 2、返回
+        var value = Registry.GetValue(
+            @"HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize",
+            "AppsUseLightTheme",
+            -1
+        );
 
-        // 临时返回明亮主题
-        return ThemeMode.Light;
+        return value switch
+        {
+            1 => ThemeMode.Light,
+            0 => ThemeMode.Dark,
+            _ => ThemeMode.Light // 没有注册表键值对或者是错误值
+        };
+    }
+
+    private static Application EnsureApplication()
+    {
+        // When WPFUI is used from non-WPF hosts (such as WinForms apps or plugins),
+        // a WPF Application instance may not exist.
+        // Theme switching requires a WPF Application to host resource dictionaries,
+        // so we create one if necessary.
+
+        if (Application.Current != null)
+        {
+            return Application.Current;
+        }
+
+        // Ensure we are on an STA thread before creating Application
+        if (Thread.CurrentThread.GetApartmentState() != ApartmentState.STA)
+        {
+            throw new InvalidOperationException(
+                "A WPF Application must be created on an STA thread."
+            );
+        }
+
+        return new Application();
+    }
+
+    private static void VerifyAccess()
+    {
+        Application.Current?.Dispatcher.VerifyAccess();
     }
 }

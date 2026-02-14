@@ -18,18 +18,11 @@ public class ThemeChangedEventArgs : EventArgs
 {
     public ThemeMode AppliedTheme { get; }
 
-    public Color SystemAccentColor { get; }
-
     public ThemeChangeSource ChangeSource { get; }
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="ThemeChangedEventArgs"/> class.
-    /// </summary>
-    /// <param name="currentApplicationTheme">The current application theme.</param>
-    /// <param name="systemAccentColor">The system accent color.</param>
-    public ThemeChangedEventArgs(ThemeMode appliedTheme, Color systemAccentColor)
+    public ThemeChangedEventArgs(ThemeMode appliedTheme, ThemeChangeSource changeSource)
     {
-        CurrentApplicationTheme = currentApplicationTheme;
-        SystemAccentColor       = systemAccentColor;
+        AppliedTheme = appliedTheme;
+        ChangeSource = changeSource;
     }
 }

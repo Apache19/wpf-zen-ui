@@ -94,7 +94,7 @@ internal class ResourceDictionaryManager
 
     public bool UpdateDictionary(string resourceLookup, Uri? newResourceUri)
     {
-        Collection<ResourceDictionary> applicationDictionaries = UiApplication
+        Collection<ResourceDictionary> applicationDictionaries = Application
            .Current
            .Resources
            .MergedDictionaries;
