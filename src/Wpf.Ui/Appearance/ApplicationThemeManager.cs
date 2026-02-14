@@ -21,31 +21,25 @@ namespace Wpf.Ui.Appearance;
     Justification = "ApplicationThemeManager has application lifetime; disposal is unnecessary.")]
 public sealed class ApplicationThemeManager
 {
-    /// <summary>
-    /// Gets singleton instance of <see cref="ApplicationThemeManager"/>.
-    /// </summary>
     public static ApplicationThemeManager Instance { get; } = new();
 
     private readonly DebounceDispatcher _themeChangedDebouncer = new();
 
-    /// <summary>
-    /// Gets or sets a value indicating whether the application theme follows the system theme.
-    /// When set to <see langword="true"/>, the application theme will automatically update to match the system theme.
-    /// </summary>
+    private ThemeMode _themeMode = ThemeMode.Light;
+
     public bool FollowSystemTheme { get; set; }
 
-    /// <summary>
-    /// Gets or sets a value indicating whether the application uses the system accent color.
-    /// When set to <see langword="true"/>, the application will automatically apply the system accent color.
-    /// 开启后，系统主题色将会替换主题色资源
-    /// </summary>
-    /// <remarks>
-    /// 此设置在设计模式无效（设计模式不会监听系统事件，也不会读取系统主题文件）
-    /// </remarks>
     public bool UseSystemAccentColor { get; set; }
 
-    // 读取或设置，设置时会使 App 级主题生效
-    public ThemeMode ThemeMode { get; set; }
+    public ThemeMode ThemeMode
+    {
+        get => _themeMode;
+        set
+        {
+            _themeMode = value;
+            UpdateTheme();
+        }
+    }
 
     public event EventHandler<ThemeChangedEventArgs>? Changed;
 
@@ -54,39 +48,15 @@ public sealed class ApplicationThemeManager
         Initialize();
     }
 
-    private void Initialize()
+    public void Initialize()
     {
-        // 合并主题资源字典
         if (DesignerHelper.IsInDesignMode)
         {
             return;
         }
 
-        var application = Application.Current;
-        if (application == null)
-        {
-            // 如果 Application 尚未创建，通过 Dispatcher 调度延迟重试
-            Dispatcher.CurrentDispatcher.BeginInvoke(Initialize, DispatcherPriority.ApplicationIdle);
-            return;
-        }
-
         SystemEvents.UserPreferenceChanged     += SystemEvents_UserPreferenceChanged;
         SystemParameters.StaticPropertyChanged += SystemParameters_StaticPropertyChanged;
-
-        application.Exit += Application_Exit;
-    }
-
-    private void Application_Exit(object sender, ExitEventArgs e)
-    {
-        if (sender is Application application)
-        {
-            application.Exit -= Application_Exit;
-        }
-
-        SystemEvents.UserPreferenceChanged     -= SystemEvents_UserPreferenceChanged;
-        SystemParameters.StaticPropertyChanged -= SystemParameters_StaticPropertyChanged;
-
-        _themeChangedDebouncer.Dispose();
     }
 
     private void SystemParameters_StaticPropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -98,7 +68,7 @@ public sealed class ApplicationThemeManager
     {
         // Debug.WriteLine($"SystemEvents_UserPreferenceChanged: {e.Category}");
 
-        // SystemEvents 和 SystemParameters 的事件早就过时了，且触发过于粗糙，
+        // SystemEvents 和 SystemParameters 的事件过时了，且触发过于粗糙，
         // 可能需要寻找更精确的监听方式。
         // 考虑使用隐身窗口接收正确的消息并过滤，来实现更精细的监听器。
 
@@ -118,6 +88,12 @@ public sealed class ApplicationThemeManager
 
     private void OnSystemThemeChanged()
     {
+        UpdateTheme();
+    }
+
+    private void UpdateTheme()
+    {
+        // 系统高对比度主题是系统易用性机制的一部分，它的优先级高于主题系统，我们不能自己搞一套“高对比度主题”出来，这样不仅增加了实现复杂度，还会造成可访问性的不一致性
         // 更新系统主题色。系统主题色资源独立于
 
         if (FollowSystemTheme)
