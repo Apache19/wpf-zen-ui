@@ -5,27 +5,29 @@
 
 namespace Wpf.Ui.Appearance;
 
+public enum ThemeChangeSource
+{
+    Manual, // 用户手动设置
+    System, // 系统触发
+}
+
 /// <summary>
 /// Provides data for the theme changed event.
 /// </summary>
 public class ThemeChangedEventArgs : EventArgs
 {
-    /// <summary>
-    /// Gets the current application theme.
-    /// </summary>
-    public ApplicationTheme CurrentApplicationTheme { get; }
+    public ThemeMode AppliedTheme { get; }
 
-    /// <summary>
-    /// Gets the system accent color.
-    /// </summary>
     public Color SystemAccentColor { get; }
+
+    public ThemeChangeSource ChangeSource { get; }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ThemeChangedEventArgs"/> class.
     /// </summary>
     /// <param name="currentApplicationTheme">The current application theme.</param>
     /// <param name="systemAccentColor">The system accent color.</param>
-    public ThemeChangedEventArgs(ApplicationTheme currentApplicationTheme, Color systemAccentColor)
+    public ThemeChangedEventArgs(ThemeMode appliedTheme, Color systemAccentColor)
     {
         CurrentApplicationTheme = currentApplicationTheme;
         SystemAccentColor       = systemAccentColor;
