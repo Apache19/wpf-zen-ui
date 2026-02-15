@@ -32,14 +32,8 @@
     <SolidColorBrush x:Key="AccentFillColorSelectedTextBackgroundBrush" Color="{StaticResource SystemAccentColor}" />
 
     <SolidColorBrush x:Key="AccentFillColorDefaultBrush" Color="{StaticResource SystemAccentColorSecondary}" />
-    <SolidColorBrush
-        x:Key="AccentFillColorSecondaryBrush"
-        Opacity="0.9"
-        Color="{StaticResource SystemAccentColorSecondary}" />
-    <SolidColorBrush
-        x:Key="AccentFillColorTertiaryBrush"
-        Opacity="0.8"
-        Color="{StaticResource SystemAccentColorSecondary}" />
+    <SolidColorBrush x:Key="AccentFillColorSecondaryBrush" Opacity="0.9" Color="{StaticResource SystemAccentColorSecondary}" />
+    <SolidColorBrush x:Key="AccentFillColorTertiaryBrush" Opacity="0.8" Color="{StaticResource SystemAccentColorSecondary}" />
 
     <SolidColorBrush x:Key="AccentFillColorDisabledBrush" Color="{StaticResource AccentFillColorDisabled}" />
 

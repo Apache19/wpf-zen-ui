@@ -117,7 +117,8 @@ public sealed class ApplicationThemeManager
         }
         else
         {
-            // 退出高对比度模式后，要把合并进Application的高对比度颜色删除
+            // 退出高对比度模式后，要把合并进Application的系统高对比度颜色删除
+            ClearSystemHighContrastColors();
         }
 
         if (source == ThemeChangeSource.System && FollowSystemTheme)
@@ -142,6 +143,20 @@ public sealed class ApplicationThemeManager
         Changed?.Invoke(this, new ThemeChangedEventArgs(_themeMode, source));
     }
 
+    private void ClearSystemHighContrastColors()
+    {
+        var app = EnsureApplication();
+
+        app.Resources.Remove("SystemColorWindowTextColor");
+        app.Resources.Remove("SystemColorWindowColor");
+        app.Resources.Remove("SystemColorHighlightTextColor");
+        app.Resources.Remove("SystemColorHighlightColor");
+        app.Resources.Remove("SystemColorButtonTextColor");
+        app.Resources.Remove("SystemColorButtonFaceColor");
+        app.Resources.Remove("SystemColorHotlightColor");
+        app.Resources.Remove("SystemColorGrayTextColor");
+    }
+
     private void ApplySystemHighContrastColors()
     {
         // 实现系统高对比度颜色方案的逻辑
@@ -153,6 +168,7 @@ public sealed class ApplicationThemeManager
         // 高对比度资源是经过精心调整的各种控件对应的
 
     }
+
 
     private void ApplyTheme(ThemeMode mode)
     {

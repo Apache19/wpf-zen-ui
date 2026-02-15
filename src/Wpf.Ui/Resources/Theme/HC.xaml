@@ -22,15 +22,15 @@
     <Color x:Key="SystemAccentColorTertiary">#4cc2ff</Color>
 
     <!--  Highcontrast theme: DUSK.  -->
-    <Color x:Key="SystemColorWindowTextColor">#FFFFFF</Color>
-    <Color x:Key="SystemColorWindowColor">#2D3236</Color>
-    <Color x:Key="SystemColorHighlightTextColor">#212D3B</Color>
-    <Color x:Key="SystemColorHighlightColor">#ABCFF2</Color>
-    <Color x:Key="SystemColorButtonTextColor">#B6F6F0</Color>
-    <Color x:Key="SystemColorButtonFaceColor">#2D3236</Color>
-    <Color x:Key="SystemColorHotlightColor">#70EBDE</Color>
-    <Color x:Key="SystemColorGrayTextColor">#A6A6A6</Color>
-
+    <!--  Highcontrast theme -->
+    <DynamicResource x:Key="SystemColorWindowTextColor" ResourceKey="{x:Static SystemColors.WindowTextColorKey}" />
+    <DynamicResource x:Key="SystemColorWindowColor" ResourceKey="{x:Static SystemColors.WindowColorKey}" />
+    <DynamicResource x:Key="SystemColorHighlightTextColor" ResourceKey="{x:Static SystemColors.HighlightTextColorKey}" />
+    <DynamicResource x:Key="SystemColorHighlightColor" ResourceKey="{x:Static SystemColors.HighlightColorKey}" />
+    <DynamicResource x:Key="SystemColorButtonTextColor" ResourceKey="{x:Static SystemColors.ControlTextColorKey}" />
+    <DynamicResource x:Key="SystemColorButtonFaceColor" ResourceKey="{x:Static SystemColors.ControlColorKey}" />
+    <DynamicResource x:Key="SystemColorHotlightColor" ResourceKey="{x:Static SystemColors.HotTrackColorKey}" />
+    <DynamicResource x:Key="SystemColorGrayTextColor" ResourceKey="{x:Static SystemColors.GrayTextColorKey}" />
 
     <Color x:Key="WindowBackgroundColor">#2D3236</Color>
     <Color x:Key="WindowBorderColor">#FF3A3A3A</Color>
