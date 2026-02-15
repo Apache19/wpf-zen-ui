@@ -3,11 +3,8 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-using System.Collections;
-using System.Windows.Threading;
 using Microsoft.Win32;
 using Wpf.Ui.Designer;
-using Wpf.Ui.Markup;
 using Wpf.Ui.Threading;
 
 namespace Wpf.Ui.Appearance;
@@ -18,43 +15,54 @@ namespace Wpf.Ui.Appearance;
 [System.Diagnostics.CodeAnalysis.SuppressMessage(
     "Design",
     "CA1001:Types that own disposable fields should be disposable",
-    Justification = "ApplicationThemeManager has application lifetime; disposal is unnecessary.")]
-public sealed class ApplicationThemeManager
+    Justification = "ThemeManager has application lifetime; disposal is unnecessary.")]
+public sealed class ThemeManager
 {
-    private const string ThemeBaseUri = "pack://application:,,,/Wpf.Ui;component/Resources/Theme/";
+    internal const string ThemeBaseUri = "pack://application:,,,/Wpf.Ui;component/Resources/Theme/";
 
     private static readonly Uri LightThemeUri        = new(ThemeBaseUri + "Light.xaml", UriKind.Absolute);
     private static readonly Uri DarkThemeUri         = new(ThemeBaseUri + "Dark.xaml", UriKind.Absolute);
     private static readonly Uri HighContrastThemeUri = new(ThemeBaseUri + "HighContrast.xaml", UriKind.Absolute);
 
-    public static ApplicationThemeManager Instance { get; } = new();
+    public static ThemeManager Instance { get; } = new();
 
-    private readonly DebounceDispatcher _themeChangedDebouncer = new();
+    private static readonly DebounceDispatcher _themeChangedDebouncer = new();
 
-    private ThemeMode _themeMode = ThemeMode.Light;
+    private static bool      _followSystemTheme;
+    private static ThemeMode _themeMode = ThemeMode.Light;
 
-    public bool FollowSystemTheme { get; set; }
+    public static bool FollowSystemTheme
+    {
+        get => _followSystemTheme;
+        set
+        {
+            if (_followSystemTheme != value)
+            {
+                _followSystemTheme = value;
+                UpdateTheme(value ? ThemeChangeSource.System : ThemeChangeSource.Manual);
+            }
+        }
+    }
 
-    public bool UseSystemAccentColor { get; set; } // 只对普通主题生效，高对比度模式会被覆盖
+    public static bool UseSystemAccentColor { get; set; } // 只对普通主题生效，高对比度模式会被覆盖
 
-    public ThemeMode ThemeMode
+    public static ThemeMode ThemeMode
     {
         get => _themeMode;
         set
         {
-            _themeMode = value;
-            UpdateTheme();
+            // 有手动设置的意图，则将跟随系统置为否
+            _followSystemTheme = false;
+
+            if (_themeMode != value)
+            {
+                _themeMode = value;
+                UpdateTheme(ThemeChangeSource.Manual);
+            }
         }
     }
 
-    public event EventHandler<ThemeChangedEventArgs>? Changed;
-
-    private ApplicationThemeManager()
-    {
-        Initialize();
-    }
-
-    public void Initialize()
+    static ThemeManager()
     {
         if (DesignerHelper.IsInDesignMode)
         {
@@ -65,12 +73,12 @@ public sealed class ApplicationThemeManager
         SystemParameters.StaticPropertyChanged += SystemParameters_StaticPropertyChanged;
     }
 
-    private void SystemParameters_StaticPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    private static void SystemParameters_StaticPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         ScheduleThemeChangedDebounced();
     }
 
-    private void SystemEvents_UserPreferenceChanged(object sender, UserPreferenceChangedEventArgs e)
+    private static void SystemEvents_UserPreferenceChanged(object sender, UserPreferenceChangedEventArgs e)
     {
         // Debug.WriteLine($"SystemEvents_UserPreferenceChanged: {e.Category}");
 
@@ -87,7 +95,7 @@ public sealed class ApplicationThemeManager
         }
     }
 
-    private void ScheduleThemeChangedDebounced()
+    private static void ScheduleThemeChangedDebounced()
     {
         // todo 考虑是否要等待
         //   返回的任务是调度进去的任务，上一次调度的会被立即取消
@@ -97,12 +105,12 @@ public sealed class ApplicationThemeManager
         );
     }
 
-    private void OnSystemThemeChanged()
+    private static void OnSystemThemeChanged()
     {
         UpdateTheme(ThemeChangeSource.System);
     }
 
-    private void UpdateTheme(ThemeChangeSource source = ThemeChangeSource.Manual)
+    private static void UpdateTheme(ThemeChangeSource source)
     {
         VerifyAccess();
 
@@ -130,6 +138,8 @@ public sealed class ApplicationThemeManager
         else
         {
             ApplyTheme(_themeMode);
+            // 如果是手动设置的，则自动把FollowSystemTheme.field设置为false
+            _followSystemTheme = false;
         }
 
         if (UseSystemAccentColor)
@@ -141,10 +151,10 @@ public sealed class ApplicationThemeManager
             ApplyDefaultAccent();
         }
 
-        Changed?.Invoke(this, new ThemeChangedEventArgs(_themeMode, source));
+        Instance.Changed?.Invoke(Instance, new ThemeChangedEventArgs(_themeMode, source));
     }
 
-    private void ClearSystemHighContrastColors()
+    private static void ClearSystemHighContrastColors()
     {
         var app = EnsureApplication();
 
@@ -158,16 +168,15 @@ public sealed class ApplicationThemeManager
         app.Resources.Remove("SystemColorGrayTextColor");
     }
 
-    private void ApplySystemHighContrastColors()
+    private static void ApplySystemHighContrastColors()
     {
-        var app = EnsureApplication();
-
-        // 先应用高对比度主题
+        // 先应用高对比度主题测试
         ApplyTheme(_themeMode, true);
 
+        // 下一步：如果直接高对比度主题不起作用，然后把系统高对比度色放进Application资源里
     }
 
-    private void ApplyTheme(ThemeMode mode, bool highContrast = false)
+    private static void ApplyTheme(ThemeMode mode, bool highContrast = false)
     {
         var app    = EnsureApplication();
         var merged = app.Resources.MergedDictionaries;
@@ -215,19 +224,19 @@ public sealed class ApplicationThemeManager
         merged.Add(newThemeDict);
     }
 
-    private void ApplySystemAccent()
+    private static void ApplySystemAccent()
     {
         // 1、清理强调色资源
         // 2、从系统获取强调色指，更新资源
     }
 
-    private void ApplyDefaultAccent()
+    private static void ApplyDefaultAccent()
     {
         // 1、清理强调色资源
         // 2、合并默认强调色资源词典
     }
 
-    private ThemeMode GetSystemThemeMode()
+    private static ThemeMode GetSystemThemeMode()
     {
         var value = Registry.GetValue(
             @"HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize",
@@ -270,4 +279,8 @@ public sealed class ApplicationThemeManager
     {
         Application.Current?.Dispatcher.VerifyAccess();
     }
+
+    public event EventHandler<ThemeChangedEventArgs>? Changed;
+
+    private ThemeManager() { }
 }

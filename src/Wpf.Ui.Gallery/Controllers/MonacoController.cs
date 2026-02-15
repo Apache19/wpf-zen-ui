@@ -7,6 +7,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.Web.WebView2.Wpf;
 using Wpf.Ui.Appearance;
 using Wpf.Ui.Gallery.Models.Monaco;
+using ThemeMode = Wpf.Ui.Appearance.ThemeMode;
 
 namespace Wpf.Ui.Gallery.Controllers;
 
@@ -33,11 +34,11 @@ public class MonacoController
         );
     }
 
-    public async Task SetThemeAsync(ApplicationTheme appApplicationTheme)
+    public async Task SetThemeAsync(ThemeMode appApplicationTheme)
     {
         // TODO: Parse theme from object
         const string uiThemeName = "wpf-ui-app-theme";
-        var baseMonacoTheme = appApplicationTheme == ApplicationTheme.Light ? "vs" : "vs-dark";
+        var baseMonacoTheme = appApplicationTheme == ThemeMode.Light ? "vs" : "vs-dark";
 
         _ = await _webView.ExecuteScriptAsync(
             $$$"""

@@ -10,8 +10,7 @@
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
     Title="Settings Page"
     controls:PageControlDocumentation.Show="False"
-    d:DataContext="{d:DesignInstance local:SettingsPage,
-                                     IsDesignTimeCreatable=False}"
+    d:DataContext="{d:DesignInstance local:SettingsPage, IsDesignTimeCreatable=False}"
     d:DesignHeight="450"
     d:DesignWidth="800"
     mc:Ignorable="d">
@@ -41,12 +40,10 @@
             <ComboBox
                 Grid.Column="1"
                 MinWidth="200"
-                
-                SelectedIndex="{Binding ViewModel.CurrentApplicationTheme, Converter={StaticResource ThemeToIndexConverter}, Mode=TwoWay}">
-                <ComboBoxItem Content="Light" />
-                <ComboBoxItem Content="Dark" />
-                <ComboBoxItem Content="High Contrast" />
-            </ComboBox>
+                DisplayMemberPath="Display"
+                ItemsSource="{Binding ViewModel.ThemeList}"
+                SelectedValue="{Binding ViewModel.CurrentApplicationTheme}"
+                SelectedValuePath="ThemeMode" />
         </ui:CardControl>
 
         <ui:CardControl Margin="0,0,0,12" Icon="{ui:SymbolIcon AlignSpaceEvenlyVertical20}">

@@ -5,6 +5,7 @@
 
 using System.Windows.Markup;
 using Wpf.Ui.Appearance;
+using ThemeMode = Wpf.Ui.Appearance.ThemeMode;
 
 namespace Wpf.Ui.Markup;
 
@@ -33,25 +34,21 @@ public class ThemesDictionary : ResourceDictionary
     /// <summary>
     /// Sets the default application theme.
     /// </summary>
-    public ApplicationTheme Theme
+    public ThemeMode Theme
     {
         set => SetSourceBasedOnSelectedTheme(value);
     }
 
     public ThemesDictionary()
     {
-        SetSourceBasedOnSelectedTheme(ApplicationTheme.Light);
+        SetSourceBasedOnSelectedTheme(ThemeMode.Light);
     }
 
-    private void SetSourceBasedOnSelectedTheme(ApplicationTheme? selectedApplicationTheme)
+    private void SetSourceBasedOnSelectedTheme(ThemeMode? themeMode)
     {
-        var themeName = selectedApplicationTheme switch
-        {
-            ApplicationTheme.Dark => "Dark",
-            ApplicationTheme.HighContrast => "HighContrast",
-            _ => "Light",
-        };
-
-        Source = new Uri($"{ApplicationThemeManager.ThemesDictionaryPath}{themeName}.xaml", UriKind.Absolute);
+        Source = new Uri(
+            $"{ThemeManager.ThemeBaseUri}{(themeMode == ThemeMode.Dark ? "Dark" : "Light")}.xaml",
+            UriKind.Absolute
+        );
     }
 }

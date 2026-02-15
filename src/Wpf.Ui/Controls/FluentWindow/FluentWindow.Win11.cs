@@ -9,6 +9,7 @@ using Windows.Win32.Graphics.Dwm;
 using Windows.Win32.UI.Controls;
 using Windows.Win32.UI.WindowsAndMessaging;
 using Wpf.Ui.Appearance;
+using ThemeMode = Wpf.Ui.Appearance.ThemeMode;
 
 // ReSharper disable once CheckNamespace
 namespace Wpf.Ui.Controls;
@@ -89,14 +90,9 @@ public partial class FluentWindow
         PInvoke.SetWindowLong(hwnd, WINDOW_LONG_PTR_INDEX.GWL_STYLE, style);
     }
 
-    private void UpdateBackdrop_Win11(ApplicationTheme? appTheme = null)
+    private void UpdateBackdrop_Win11()
     {
-        // 如果是高对比度，应该保留白色
-
-
-        if (appTheme is not null)
-        {
-        }
+        // 如果是高对比度，则应移除Backdrop，也要退出暗黑模式
     }
 
     private void OnWindowCornerPreferenceChanged(WindowCornerPreference corner)

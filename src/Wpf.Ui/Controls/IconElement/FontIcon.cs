@@ -112,7 +112,8 @@ public class FontIcon : IconElement
 
     public FontIcon()
     {
-        SetCurrentValue(FontSizeProperty, UiApplication.Current.Resources["DefaultIconFontSize"]);
+        // todo 什么玩意儿，可能要删除，如果有用的话就为它提供默认样式
+        // SetCurrentValue(FontSizeProperty, UiApplication.Current.Resources["DefaultIconFontSize"]);
     }
 
     protected override UIElement InitializeChildren()

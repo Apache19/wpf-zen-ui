@@ -6,6 +6,7 @@
 using System.Windows.Controls;
 using Wpf.Ui.Appearance;
 using Wpf.Ui.Controls;
+using ThemeMode = Wpf.Ui.Appearance.ThemeMode;
 
 namespace Wpf.Ui.Gallery.Controls;
 
@@ -90,7 +91,7 @@ public class PageControlDocumentation : Control
 
     public PageControlDocumentation()
     {
-        Loaded += static (sender, _) => ((PageControlDocumentation)sender).OnLoaded();
+        Loaded   += static (sender, _) => ((PageControlDocumentation)sender).OnLoaded();
         Unloaded += static (sender, _) => ((PageControlDocumentation)sender).OnUnloaded();
 
         SetValue(
@@ -114,7 +115,7 @@ public class PageControlDocumentation : Control
     private void OnUnloaded()
     {
         NavigationView!.Navigated -= NavigationViewOnNavigated;
-        _page = null;
+        _page                     =  null;
     }
 
     private void NavigationViewOnNavigated(NavigationView sender, NavigatedEventArgs args)
@@ -156,8 +157,8 @@ public class PageControlDocumentation : Control
                 documentationType
             ),
             "xaml" => CreateUrlForGithub(_page.GetType(), ".xaml"),
-            "c#" => CreateUrlForGithub(_page.GetType(), ".xaml.cs"),
-            _ => string.Empty,
+            "c#"   => CreateUrlForGithub(_page.GetType(), ".xaml.cs"),
+            _      => string.Empty,
         };
 
         if (string.IsNullOrEmpty(navigationUrl))
@@ -181,7 +182,7 @@ public class PageControlDocumentation : Control
 
     private static string CreateUrlForGithub(Type pageType, ReadOnlySpan<char> fileExtension)
     {
-        const string baseUrl = "https://github.com/lepoco/wpfui/tree/main/src/Wpf.Ui.Gallery/";
+        const string baseUrl       = "https://github.com/lepoco/wpfui/tree/main/src/Wpf.Ui.Gallery/";
         const string baseNamespace = "Wpf.Ui.Gallery";
 
         ReadOnlySpan<char> pageFullNameWithoutBaseNamespace = pageType.FullName.AsSpan()[
@@ -211,12 +212,6 @@ public class PageControlDocumentation : Control
 
     private static void SwitchThemes()
     {
-        ApplicationTheme currentTheme = ApplicationThemeManager.AppTheme;
-
-        ApplicationThemeManager.Instance.Apply(
-            currentTheme == ApplicationTheme.Light
-                ? ApplicationTheme.Dark
-                : ApplicationTheme.Light
-        );
+        ThemeManager.ThemeMode = ThemeManager.ThemeMode == ThemeMode.Dark ? ThemeMode.Light : ThemeMode.Dark;
     }
 }

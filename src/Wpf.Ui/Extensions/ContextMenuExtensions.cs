@@ -24,17 +24,13 @@ internal static class ContextMenuExtensions
 
     private static void ContextMenuOnOpened(object sender, RoutedEventArgs e)
     {
-        if (
-            sender is not ContextMenu contextMenu
-            || PresentationSource.FromVisual(contextMenu) is not HwndSource source
-        )
+        if (sender is ContextMenu contextMenu
+         && PresentationSource.FromVisual(contextMenu) is HwndSource source)
         {
-            return;
-        }
-
-        if (ApplicationThemeManager.AppTheme == ApplicationTheme.Dark)
-        {
-            _ = UnsafeNativeMethods.ApplyWindowDarkMode(source.Handle);
+            if (ThemeManager.ThemeMode == Appearance.ThemeMode.Dark)
+            {
+                _ = UnsafeNativeMethods.ApplyWindowDarkMode(source.Handle);
+            }
         }
 
         // TODO: Needs more work with the Popup service

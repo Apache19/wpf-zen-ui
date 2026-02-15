@@ -8,6 +8,7 @@ using Windows.Win32.Foundation;
 using Windows.Win32.Graphics.Dwm;
 using Wpf.Ui.Appearance;
 using Wpf.Ui.Interop;
+using ThemeMode = Wpf.Ui.Appearance.ThemeMode;
 
 // ReSharper disable once CheckNamespace
 namespace Wpf.Ui.Controls;
@@ -92,7 +93,7 @@ public static class WindowBackdrop
             return false;
         }
 
-        if (ApplicationThemeManager.AppTheme == ApplicationTheme.Dark)
+        if (ThemeManager.ThemeMode == ThemeMode.Dark)
         {
             _ = UnsafeNativeMethods.ApplyWindowDarkMode(hWnd);
         }
@@ -330,21 +331,22 @@ public static class WindowBackdrop
         return true;
     }
 
+    // todo 完全不需要这个东西
     private static SolidColorBrush GetFallbackBackgroundBrush()
     {
-        return ApplicationThemeManager.AppTheme switch
+        return ThemeManager.ThemeMode switch
         {
-            ApplicationTheme.HighContrast => ApplicationThemeManager.Instance.GetSystemTheme() switch
-            {
-                SystemTheme.HC1     => new SolidColorBrush(Color.FromArgb(0xFF, 0x2D, 0x32, 0x36)),
-                SystemTheme.HC2     => new SolidColorBrush(Color.FromArgb(0xFF, 0x00, 0x00, 0x00)),
-                SystemTheme.HCBlack => new SolidColorBrush(Color.FromArgb(0xFF, 0x20, 0x20, 0x20)),
-                SystemTheme.HCWhite => new SolidColorBrush(Color.FromArgb(0xFF, 0x20, 0x20, 0x20)),
-                _                   => new SolidColorBrush(Color.FromArgb(0xFF, 0xFF, 0xFA, 0xEF)),
-            },
-            ApplicationTheme.Dark  => new SolidColorBrush(Color.FromArgb(0xFF, 0x20, 0x20, 0x20)),
-            ApplicationTheme.Light => new SolidColorBrush(Color.FromArgb(0xFF, 0xFA, 0xFA, 0xFA)),
-            _                      => new SolidColorBrush(Color.FromArgb(0xFF, 0xFA, 0xFA, 0xFA)),
+            // ApplicationTheme.HighContrast => ApplicationThemeManager.Instance.GetSystemTheme() switch
+            // {
+            //     SystemTheme.HC1     => new SolidColorBrush(Color.FromArgb(0xFF, 0x2D, 0x32, 0x36)),
+            //     SystemTheme.HC2     => new SolidColorBrush(Color.FromArgb(0xFF, 0x00, 0x00, 0x00)),
+            //     SystemTheme.HCBlack => new SolidColorBrush(Color.FromArgb(0xFF, 0x20, 0x20, 0x20)),
+            //     SystemTheme.HCWhite => new SolidColorBrush(Color.FromArgb(0xFF, 0x20, 0x20, 0x20)),
+            //     _                   => new SolidColorBrush(Color.FromArgb(0xFF, 0xFF, 0xFA, 0xEF)),
+            // },
+            ThemeMode.Dark  => new SolidColorBrush(Color.FromArgb(0xFF, 0x20, 0x20, 0x20)),
+            ThemeMode.Light => new SolidColorBrush(Color.FromArgb(0xFF, 0xFA, 0xFA, 0xFA)),
+            _               => new SolidColorBrush(Color.FromArgb(0xFF, 0xFA, 0xFA, 0xFA)),
         };
     }
 }

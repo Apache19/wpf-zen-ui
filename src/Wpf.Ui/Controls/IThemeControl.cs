@@ -13,5 +13,5 @@ public interface IThemeControl
     /// <summary>
     /// Gets the theme that is currently set.
     /// </summary>
-    public Appearance.ApplicationTheme ApplicationTheme { get; }
+    public Appearance.ThemeMode ThemeMode { get; }
 }

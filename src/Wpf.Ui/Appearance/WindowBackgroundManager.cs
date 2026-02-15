@@ -61,7 +61,7 @@ public static class WindowBackgroundManager
     [Obsolete("Use UpdateBackground(Window, ApplicationTheme, WindowBackdropType) instead.")]
     public static void UpdateBackground(
         Window? window,
-        ApplicationTheme applicationTheme,
+        ThemeMode applicationTheme,
         WindowBackdropType backdrop,
         bool forceBackground
     )
@@ -74,7 +74,7 @@ public static class WindowBackgroundManager
     /// </summary>
     public static void UpdateBackground(
         Window? window,
-        ApplicationTheme applicationTheme,
+        ThemeMode applicationTheme,
         WindowBackdropType backdrop
     )
     {
@@ -85,7 +85,7 @@ public static class WindowBackgroundManager
 
         _ = WindowBackdrop.RemoveBackdrop(window);
 
-        if (applicationTheme == ApplicationTheme.HighContrast)
+        if (SystemParameters.HighContrast)
         {
             backdrop = WindowBackdropType.None;
         }
@@ -101,7 +101,7 @@ public static class WindowBackgroundManager
 
         _ = WindowBackdrop.ApplyBackdrop(window, backdrop);
 
-        if (applicationTheme is ApplicationTheme.Dark)
+        if (applicationTheme is ThemeMode.Dark)
         {
             ApplyDarkThemeToWindow(window);
         }
@@ -118,7 +118,7 @@ public static class WindowBackgroundManager
             {
                 _ = WindowBackdrop.ApplyBackdrop(windowSubWindow, backdrop);
 
-                if (applicationTheme is ApplicationTheme.Dark)
+                if (applicationTheme is ThemeMode.Dark)
                 {
                     ApplyDarkThemeToWindow(windowSubWindow);
                 }

@@ -681,7 +681,7 @@ public partial class NavigationView
         if (e.NewValue is null && e.OldValue is TitleBar oldValue)
         {
             navigationView.FrameMargin = new Thickness(0);
-            oldValue.Margin = new Thickness(0);
+            oldValue.Margin            = new Thickness(0);
 
             if (navigationView.AutoSuggestBox?.Margin == AutoSuggestBoxMarginDefault)
             {
@@ -697,7 +697,7 @@ public partial class NavigationView
         }
 
         navigationView.FrameMargin = FrameMarginDefault;
-        titleBar.Margin = TitleBarPaneOpenMarginDefault;
+        titleBar.Margin            = TitleBarPaneOpenMarginDefault;
 
         if (navigationView.AutoSuggestBox?.Margin is { Bottom: 0, Left: 0, Right: 0, Top: 0 })
         {
@@ -715,7 +715,7 @@ public partial class NavigationView
         if (e.NewValue is null && e.OldValue is AutoSuggestBox oldValue)
         {
             oldValue.SuggestionChosen -= navigationView.AutoSuggestBoxOnSuggestionChosen;
-            oldValue.QuerySubmitted -= navigationView.AutoSuggestBoxOnQuerySubmitted;
+            oldValue.QuerySubmitted   -= navigationView.AutoSuggestBoxOnQuerySubmitted;
             return;
         }
 
@@ -724,14 +724,12 @@ public partial class NavigationView
             return;
         }
 
-        autoSuggestBox.OriginalItemsSource = navigationView._autoSuggestBoxItems;
-        autoSuggestBox.SuggestionChosen += navigationView.AutoSuggestBoxOnSuggestionChosen;
-        autoSuggestBox.QuerySubmitted += navigationView.AutoSuggestBoxOnQuerySubmitted;
+        autoSuggestBox.OriginalItemsSource =  navigationView._autoSuggestBoxItems;
+        autoSuggestBox.SuggestionChosen    += navigationView.AutoSuggestBoxOnSuggestionChosen;
+        autoSuggestBox.QuerySubmitted      += navigationView.AutoSuggestBoxOnQuerySubmitted;
 
-        if (
-            navigationView.TitleBar?.Margin == TitleBarPaneOpenMarginDefault
-            && autoSuggestBox.Margin is { Bottom: 0, Left: 0, Right: 0, Top: 0 }
-        )
+        if (navigationView.TitleBar?.Margin == TitleBarPaneOpenMarginDefault
+         && autoSuggestBox.Margin == default)
         {
             autoSuggestBox.Margin = AutoSuggestBoxMarginDefault;
         }
@@ -757,9 +755,13 @@ public partial class NavigationView
             return;
         }
 
+        // todo 面包屑栏项目源为什么要与导航视图挂钩。。。。。。
         breadcrumbBar.ItemsSource = navigationView._breadcrumbBarItems;
-        breadcrumbBar.ItemTemplate ??=
-            UiApplication.Current.TryFindResource("NavigationViewItemDataTemplate") as DataTemplate;
-        breadcrumbBar.ItemClicked += navigationView.BreadcrumbBarOnItemClicked;
+
+        // todo 调查这个东西为什么要手动查找ItemTemplate
+        breadcrumbBar.ItemTemplate ??= Application.Current?.TryFindResource("NavigationViewItemDataTemplate") as DataTemplate;
+
+        // todo 考察一下使用路由事件是否比强绑定要好一点
+        breadcrumbBar.ItemClicked  +=  navigationView.BreadcrumbBarOnItemClicked;
     }
 }
