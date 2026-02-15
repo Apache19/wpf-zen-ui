@@ -21,12 +21,13 @@ namespace Wpf.Ui.Appearance;
     Justification = "ApplicationThemeManager has application lifetime; disposal is unnecessary.")]
 public sealed class ApplicationThemeManager
 {
-    public static ApplicationThemeManager Instance { get; } = new();
-
     private const string ThemeBaseUri = "pack://application:,,,/Wpf.Ui;component/Resources/Theme/";
 
-    private static readonly Uri LightThemeUri = new(ThemeBaseUri + "Light.xaml", UriKind.Absolute);
-    private static readonly Uri DarkThemeUri  = new(ThemeBaseUri + "Dark.xaml", UriKind.Absolute);
+    private static readonly Uri LightThemeUri        = new(ThemeBaseUri + "Light.xaml", UriKind.Absolute);
+    private static readonly Uri DarkThemeUri         = new(ThemeBaseUri + "Dark.xaml", UriKind.Absolute);
+    private static readonly Uri HighContrastThemeUri = new(ThemeBaseUri + "HighContrast.xaml", UriKind.Absolute);
+
+    public static ApplicationThemeManager Instance { get; } = new();
 
     private readonly DebounceDispatcher _themeChangedDebouncer = new();
 
@@ -78,7 +79,7 @@ public sealed class ApplicationThemeManager
         // 考虑使用隐身窗口接收正确的消息并过滤，来实现更精细的监听器。
 
         if (e.Category is
-            UserPreferenceCategory.General or // 明暗模式变化会触发此类别多次（）
+            UserPreferenceCategory.General or // 明暗模式变化会触发此类别多次
             UserPreferenceCategory.VisualStyle or
             UserPreferenceCategory.Color)
         {
@@ -159,18 +160,14 @@ public sealed class ApplicationThemeManager
 
     private void ApplySystemHighContrastColors()
     {
-        // 实现系统高对比度颜色方案的逻辑
-        // 并且不管是否开启 UseSystemAccentColor，都要把高对比度颜色应用到强调色里去
-
         var app = EnsureApplication();
 
-        // 我们需要用高对比度资源来映射高对比度颜色，所以必须先包含
-        // 高对比度资源是经过精心调整的各种控件对应的
+        // 先应用高对比度主题
+        ApplyTheme(_themeMode, true);
 
     }
 
-
-    private void ApplyTheme(ThemeMode mode)
+    private void ApplyTheme(ThemeMode mode, bool highContrast = false)
     {
         var app    = EnsureApplication();
         var merged = app.Resources.MergedDictionaries;
@@ -195,7 +192,10 @@ public sealed class ApplicationThemeManager
         }
 
         // 2️ 根据 ThemeMode 决定目标主题 URI
-        Uri targetUri = mode == ThemeMode.Dark ? DarkThemeUri : LightThemeUri;
+        Uri targetUri =
+            highContrast           ? HighContrastThemeUri :
+            mode == ThemeMode.Dark ? DarkThemeUri :
+                                     LightThemeUri;
 
         // 如果当前已经是目标主题，就不重复加载（幂等）
         if (existingThemeDict?.Source == targetUri)
