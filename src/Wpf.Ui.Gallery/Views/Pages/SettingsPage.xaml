@@ -43,7 +43,7 @@
                 DisplayMemberPath="Display"
                 ItemsSource="{Binding ViewModel.ThemeList}"
                 SelectedValue="{Binding ViewModel.CurrentApplicationTheme}"
-                SelectedValuePath="ThemeMode" />
+                SelectedValuePath="AppTheme" />
         </ui:CardControl>
 
         <ui:CardControl Margin="0,0,0,12" Icon="{ui:SymbolIcon AlignSpaceEvenlyVertical20}">

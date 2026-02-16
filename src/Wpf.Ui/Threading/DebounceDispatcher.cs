@@ -16,13 +16,13 @@ namespace Wpf.Ui.Threading;
 /// </summary>
 public sealed class DebounceDispatcher : IDisposable
 {
-    private CancellationTokenSource? _cts;
-
-    #if NET9_0_OR_GREATER
-    private static readonly Lock _lock = new();
+#if NET9_0_OR_GREATER
+    private readonly Lock _lock = new();
 #else
-    private static readonly object _lock = new();
+    private readonly object _lock = new();
 #endif
+
+    private CancellationTokenSource? _cts;
 
     /// <summary>
     /// Schedules an asynchronous action using debounce semantics.

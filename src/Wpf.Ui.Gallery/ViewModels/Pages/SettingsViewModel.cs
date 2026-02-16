@@ -105,11 +105,19 @@ public sealed partial class SettingsViewModel(INavigationService navigationServi
 
     private void OnThemeChanged(object? sender, ThemeChangedEventArgs e)
     {
-        // todo:当系统触发更改-设置当前选择-触发主题管理器的主题设置-造成错位
-        // Update the theme if it has been changed elsewhere than in the settings.
-        if (CurrentApplicationTheme != e.AppliedTheme)
+        Debug.WriteLine($"触发系统主题更改：跟随系统={ThemeManager.FollowSystemTheme},当前主题={ThemeManager.ThemeMode}");
+
+        if (ThemeManager.FollowSystemTheme)
         {
-            CurrentApplicationTheme = e.AppliedTheme;
+            CurrentApplicationTheme = AppThemeMode.FollowSystem;
+        }
+        else if (ThemeManager.ThemeMode == ThemeMode.Dark)
+        {
+            CurrentApplicationTheme = AppThemeMode.Dark;
+        }
+        else
+        {
+            CurrentApplicationTheme = AppThemeMode.Light;
         }
     }
 

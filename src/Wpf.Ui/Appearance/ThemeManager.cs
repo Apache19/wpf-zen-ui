@@ -3,6 +3,7 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
+using System.Diagnostics;
 using Microsoft.Win32;
 using Wpf.Ui.Designer;
 using Wpf.Ui.Threading;
@@ -62,6 +63,7 @@ public sealed class ThemeManager
         }
     }
 
+    // todo 启动时需要初始化一次（更新一次）
     static ThemeManager()
     {
         if (DesignerHelper.IsInDesignMode)
@@ -75,12 +77,13 @@ public sealed class ThemeManager
 
     private static void SystemParameters_StaticPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
+        Debug.WriteLine($"ThemeManager: SystemParameters_StaticPropertyChanged - {e.PropertyName}");
         ScheduleThemeChangedDebounced();
     }
 
     private static void SystemEvents_UserPreferenceChanged(object sender, UserPreferenceChangedEventArgs e)
     {
-        // Debug.WriteLine($"SystemEvents_UserPreferenceChanged: {e.Category}");
+        Debug.WriteLine($"ThemeManager: SystemEvents_UserPreferenceChanged: {e.Category}");
 
         // SystemEvents 和 SystemParameters 的事件过时了，且触发过于粗糙，
         // 可能需要寻找更精确的监听方式。
@@ -97,8 +100,6 @@ public sealed class ThemeManager
 
     private static void ScheduleThemeChangedDebounced()
     {
-        // todo 考虑是否要等待
-        //   返回的任务是调度进去的任务，上一次调度的会被立即取消
         _ = _themeChangedDebouncer.DebounceAsync(
             TimeSpan.FromMilliseconds(250),
             OnSystemThemeChanged
@@ -107,7 +108,9 @@ public sealed class ThemeManager
 
     private static void OnSystemThemeChanged()
     {
-        UpdateTheme(ThemeChangeSource.System);
+        Application.Current?.Dispatcher.BeginInvoke(
+            () => UpdateTheme(ThemeChangeSource.System)
+        );
     }
 
     private static void UpdateTheme(ThemeChangeSource source)
