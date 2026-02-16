@@ -21,7 +21,6 @@
     <Color x:Key="SystemAccentColorSecondary">#4cc2ff</Color>
     <Color x:Key="SystemAccentColorTertiary">#4cc2ff</Color>
 
-    <!--  Highcontrast theme: DUSK.  -->
     <!--  Highcontrast theme -->
     <DynamicResource x:Key="SystemColorWindowTextColor" ResourceKey="{x:Static SystemColors.WindowTextColorKey}" />
     <DynamicResource x:Key="SystemColorWindowColor" ResourceKey="{x:Static SystemColors.WindowColorKey}" />

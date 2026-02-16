@@ -63,7 +63,6 @@ public sealed class ThemeManager
         }
     }
 
-    // todo 启动时需要初始化一次（更新一次）
     static ThemeManager()
     {
         if (DesignerHelper.IsInDesignMode)
@@ -127,11 +126,6 @@ public sealed class ThemeManager
             ApplySystemHighContrastColors();
             return;
         }
-        else
-        {
-            // 退出高对比度模式后，要把合并进Application的系统高对比度颜色删除
-            ClearSystemHighContrastColors();
-        }
 
         if (source == ThemeChangeSource.System && FollowSystemTheme)
         {
@@ -141,8 +135,6 @@ public sealed class ThemeManager
         else
         {
             ApplyTheme(_themeMode);
-            // 如果是手动设置的，则自动把FollowSystemTheme.field设置为false
-            _followSystemTheme = false;
         }
 
         if (UseSystemAccentColor)
@@ -151,7 +143,7 @@ public sealed class ThemeManager
         }
         else
         {
-            ApplyDefaultAccent();
+            ClearSystemAccent();
         }
 
         Instance.Changed?.Invoke(Instance, new ThemeChangedEventArgs(_themeMode, source));
@@ -173,10 +165,7 @@ public sealed class ThemeManager
 
     private static void ApplySystemHighContrastColors()
     {
-        // 先应用高对比度主题测试
         ApplyTheme(_themeMode, true);
-
-        // 下一步：如果直接高对比度主题不起作用，然后把系统高对比度色放进Application资源里
     }
 
     private static void ApplyTheme(ThemeMode mode, bool highContrast = false)
@@ -233,7 +222,7 @@ public sealed class ThemeManager
         // 2、从系统获取强调色指，更新资源
     }
 
-    private static void ApplyDefaultAccent()
+    private static void ClearSystemAccent()
     {
         // 1、清理强调色资源
         // 2、合并默认强调色资源词典
