@@ -21,19 +21,15 @@
     <Color x:Key="SystemAccentColorSecondary">#FF003E92</Color>
     <Color x:Key="SystemAccentColorTertiary">#FF001A68</Color>
 
-    <SolidColorBrush x:Key="SystemAccentColorBrush" Color="{StaticResource SystemAccentColor}" />
-    <SolidColorBrush x:Key="SystemAccentColorPrimaryBrush" Color="{StaticResource SystemAccentColorPrimary}" />
-    <SolidColorBrush x:Key="SystemAccentColorSecondaryBrush" Color="{StaticResource SystemAccentColorSecondary}" />
-    <SolidColorBrush x:Key="SystemAccentColorTertiaryBrush" Color="{StaticResource SystemAccentColorTertiary}" />
-    <SolidColorBrush x:Key="AccentTextFillColorPrimaryBrush" Color="{StaticResource SystemAccentColorPrimary}" />
-    <SolidColorBrush x:Key="AccentTextFillColorSecondaryBrush" Color="{StaticResource SystemAccentColorSecondary}" />
-    <SolidColorBrush x:Key="AccentTextFillColorTertiaryBrush" Color="{StaticResource SystemAccentColorTertiary}" />
-    <SolidColorBrush x:Key="AccentFillColorSelectedTextBackgroundBrush" Color="{StaticResource SystemAccentColor}" />
-    <SolidColorBrush x:Key="AccentFillColorDefaultBrush" Color="{StaticResource SystemAccentColorSecondary}" />
-    <SolidColorBrush x:Key="AccentFillColorSecondaryBrush" Opacity="0.9" Color="{StaticResource SystemAccentColorSecondary}" />
-    <SolidColorBrush x:Key="AccentFillColorTertiaryBrush" Opacity="0.8" Color="{StaticResource SystemAccentColorSecondary}" />
-    <SolidColorBrush x:Key="AccentFillColorDisabledBrush" Color="{StaticResource AccentFillColorDisabled}" />
-    <SolidColorBrush x:Key="SystemFillColorAttentionBrush" Color="{StaticResource SystemAccentColor}" />
+    <SolidColorBrush x:Key="AccentTextFillColorPrimaryBrush" Color="{DynamicResource SystemAccentColorPrimary}" />
+    <SolidColorBrush x:Key="AccentTextFillColorSecondaryBrush" Color="{DynamicResource SystemAccentColorSecondary}" />
+    <SolidColorBrush x:Key="AccentTextFillColorTertiaryBrush" Color="{DynamicResource SystemAccentColorTertiary}" />
+    <SolidColorBrush x:Key="AccentFillColorSelectedTextBackgroundBrush" Color="{DynamicResource SystemAccentColor}" />
+    <SolidColorBrush x:Key="AccentFillColorDefaultBrush" Color="{DynamicResource SystemAccentColorSecondary}" />
+    <SolidColorBrush x:Key="AccentFillColorSecondaryBrush" Opacity="0.9" Color="{DynamicResource SystemAccentColorSecondary}" />
+    <SolidColorBrush x:Key="AccentFillColorTertiaryBrush" Opacity="0.8" Color="{DynamicResource SystemAccentColorSecondary}" />
+    <SolidColorBrush x:Key="AccentFillColorDisabledBrush" Color="{DynamicResource AccentFillColorDisabled}" />
+    <SolidColorBrush x:Key="SystemFillColorAttentionBrush" Color="{DynamicResource SystemAccentColor}" />
 
     <Color x:Key="WindowBackgroundColor">#FF202020</Color>
     <Color x:Key="WindowBorderColor">#FF3A3A3A</Color>

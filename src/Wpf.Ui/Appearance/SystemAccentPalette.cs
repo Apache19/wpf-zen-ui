@@ -3,12 +3,15 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-using System;
-using System.Collections.Generic;
-using System.Text;
-
 namespace Wpf.Ui.Appearance;
 
-internal struct AccentPalette
-{
-}
+public readonly record struct SystemAccentPalette(
+    Color Light3,
+    Color Light2,
+    Color Light1,
+    Color Accent,
+    Color Dark1,
+    Color Dark2,
+    Color Dark3,
+    Color Alt
+);

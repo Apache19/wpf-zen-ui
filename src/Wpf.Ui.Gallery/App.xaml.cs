@@ -4,6 +4,7 @@
 // All Rights Reserved.
 
 using Lepo.i18n.DependencyInjection;
+using Wpf.Ui.Appearance;
 using Wpf.Ui.DependencyInjection;
 using Wpf.Ui.Gallery.DependencyModel;
 using Wpf.Ui.Gallery.Resources;
@@ -83,6 +84,9 @@ public partial class App
     /// </summary>
     private void OnStartup(object sender, StartupEventArgs e)
     {
+        ThemeManager.FollowSystemTheme    = true;
+        ThemeManager.ThemeMode            = Appearance.ThemeMode.Dark;
+        ThemeManager.UseSystemAccentColor = true;
         _host.Start();
     }
 
