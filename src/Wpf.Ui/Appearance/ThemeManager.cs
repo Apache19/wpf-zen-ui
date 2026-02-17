@@ -123,6 +123,7 @@ public sealed class ThemeManager
         // 另外，高对比度环境下没有单独的“强调色”，所以也要用高对比度颜色覆盖强调色。
         if (SystemParameters.HighContrast)
         {
+            // 由于两个高亮之间变换，判定为相同主题，未合并字典，造成引用的DynamicResource未刷新
             ApplySystemHighContrastColors();
             return;
         }
@@ -172,6 +173,25 @@ public sealed class ThemeManager
     {
         var app    = EnsureApplication();
         var merged = app.Resources.MergedDictionaries;
+
+        Debug.WriteLine($"SystemColors.WindowTextColor: {SystemColors.WindowTextColor}");
+        Debug.WriteLine($"SystemColors.WindowColor: {SystemColors.WindowColor}");
+        Debug.WriteLine($"SystemColors.HighlightTextColor: {SystemColors.HighlightTextColor}");
+        Debug.WriteLine($"SystemColors.HighlightColor: {SystemColors.HighlightColor}");
+        Debug.WriteLine($"SystemColors.ControlTextColor: {SystemColors.ControlTextColor}");
+        Debug.WriteLine($"SystemColors.ControlColor: {SystemColors.ControlColor}");
+        Debug.WriteLine($"SystemColors.HotTrackColor: {SystemColors.HotTrackColor}");
+        Debug.WriteLine($"SystemColors.GrayTextColor: {SystemColors.GrayTextColor}");
+
+        #if NET9_0_OR_GREATER
+        Debug.WriteLine($"SystemColors.AccentColor: {SystemColors.AccentColor}");
+        Debug.WriteLine($"SystemColors.AccentColorLight1: {SystemColors.AccentColorLight1}");
+        Debug.WriteLine($"SystemColors.AccentColorLight2: {SystemColors.AccentColorLight2}");
+        Debug.WriteLine($"SystemColors.AccentColorLight3: {SystemColors.AccentColorLight3}");
+        Debug.WriteLine($"SystemColors.AccentColorDark1: {SystemColors.AccentColorDark1}");
+        Debug.WriteLine($"SystemColors.AccentColorDark2: {SystemColors.AccentColorDark2}");
+        Debug.WriteLine($"SystemColors.AccentColorDark3: {SystemColors.AccentColorDark3}");
+        #endif
 
         // 1️ 找到当前已加载的库主题字典（如果存在）
         ResourceDictionary? existingThemeDict = null;

@@ -366,7 +366,7 @@ public partial class FluentWindow : Window
                     }
                 }
 
-                if (wParam == (uint)SYSTEM_PARAMETERS_INFO_ACTION.SPI_SETLOGICALDPIOVERRIDE)
+                if (wParam == (nint)SYSTEM_PARAMETERS_INFO_ACTION.SPI_SETLOGICALDPIOVERRIDE)
                 {
                     InvalidateDpi();
                 }
