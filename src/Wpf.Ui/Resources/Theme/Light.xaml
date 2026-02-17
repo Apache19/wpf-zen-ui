@@ -16,18 +16,21 @@
         https://github.com/microsoft/microsoft-ui-xaml/blob/main/dev/CommonStyles/Common_themeresources_any.xaml
     -->
 
+    <!--  应该改名为默认强调色  -->
     <Color x:Key="SystemAccentColor">#0078d4</Color>
     <Color x:Key="SystemAccentColorPrimary">#FF0091F8</Color>
     <Color x:Key="SystemAccentColorSecondary">#FF4CC2FF</Color>
     <Color x:Key="SystemAccentColorTertiary">#FF99EBFF</Color>
 
+    <!--  应该去掉系统强调色，当开启系统强调色时，则用系统强调色覆盖强调色键  -->
     <SolidColorBrush x:Key="SystemAccentColorBrush" Color="{StaticResource SystemAccentColor}" />
     <SolidColorBrush x:Key="SystemAccentColorPrimaryBrush" Color="{StaticResource SystemAccentColorPrimary}" />
     <SolidColorBrush x:Key="SystemAccentColorSecondaryBrush" Color="{StaticResource SystemAccentColorSecondary}" />
     <SolidColorBrush x:Key="SystemAccentColorTertiaryBrush" Color="{StaticResource SystemAccentColorTertiary}" />
-    <SolidColorBrush x:Key="AccentTextFillColorPrimaryBrush" Color="{StaticResource SystemAccentColorSecondary}" />
-    <SolidColorBrush x:Key="AccentTextFillColorSecondaryBrush" Color="{StaticResource SystemAccentColorTertiary}" />
-    <SolidColorBrush x:Key="AccentTextFillColorTertiaryBrush" Color="{StaticResource SystemAccentColorPrimary}" />
+
+    <SolidColorBrush x:Key="AccentTextFillColorPrimaryBrush" Color="{StaticResource SystemAccentColorPrimary}" />
+    <SolidColorBrush x:Key="AccentTextFillColorSecondaryBrush" Color="{StaticResource SystemAccentColorSecondary}" />
+    <SolidColorBrush x:Key="AccentTextFillColorTertiaryBrush" Color="{StaticResource SystemAccentColorTertiary}" />
     <SolidColorBrush x:Key="AccentFillColorSelectedTextBackgroundBrush" Color="{StaticResource SystemAccentColor}" />
     <SolidColorBrush x:Key="AccentFillColorDefaultBrush" Color="{StaticResource SystemAccentColorSecondary}" />
     <SolidColorBrush x:Key="AccentFillColorSecondaryBrush" Opacity="0.9" Color="{StaticResource SystemAccentColorSecondary}" />
