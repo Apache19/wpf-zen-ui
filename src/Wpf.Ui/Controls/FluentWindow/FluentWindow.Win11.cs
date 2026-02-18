@@ -93,6 +93,14 @@ public partial class FluentWindow
     private void UpdateBackdrop_Win11()
     {
         // 如果是高对比度，则应移除Backdrop，也要退出暗黑模式
+        if (SystemParameters.HighContrast)
+        {
+            
+        }
+        else
+        {
+
+        }
     }
 
     private void OnWindowCornerPreferenceChanged(WindowCornerPreference corner)

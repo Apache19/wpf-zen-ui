@@ -253,7 +253,11 @@ public partial class FluentWindow : Window
     private readonly Action<HwndSource>          _OnSourceInitialized;
     private readonly Action<WindowBackdropType>? _OnWindowBackdropTypeChanged;
 
+    private bool _firstShownFired;
+
     #pragma warning restore SA1306 // Field names should begin with lower-case letter
+
+    public event EventHandler? FirstShown;
 
     public FluentWindow()
     {
@@ -279,6 +283,32 @@ public partial class FluentWindow : Window
             }
         }
 
+        ContentRendered += OnContentRenderedInternal;
+
+        IsAccentOnTitleBarAndBorder = ApplicationAccentColorManager.IsAccentColorOnTitleBarsEnabled;
+    }
+
+    private void OnContentRenderedInternal(object? sender, EventArgs e)
+    {
+        // 双保险：防止极端情况下被触发多次
+        if (_firstShownFired)
+        {
+            return;
+        }
+
+        _firstShownFired = true;
+
+        // 立刻取消订阅，生命周期只触发一次
+        ContentRendered -= OnContentRenderedInternal;
+
+        OnFirstShown(EventArgs.Empty);
+    }
+
+    /// <summary>
+    /// 窗口第一次真正显示到屏幕上时触发
+    /// </summary>
+    protected virtual void OnFirstShown(EventArgs e)
+    {
         WeakEventManager<ThemeManager, ThemeChangedEventArgs>
            .AddHandler(
                 ThemeManager.Instance,
@@ -286,7 +316,7 @@ public partial class FluentWindow : Window
                 OnAppThemeChanged
             );
 
-        IsAccentOnTitleBarAndBorder = ApplicationAccentColorManager.IsAccentColorOnTitleBarsEnabled;
+        FirstShown?.Invoke(this, e);
     }
 
     protected override void OnClosed(EventArgs e)
@@ -301,8 +331,9 @@ public partial class FluentWindow : Window
         base.OnClosed(e);
     }
 
-    private void OnAppThemeChanged(object? sender, EventArgs e)
+    private void OnAppThemeChanged(object? sender, ThemeChangedEventArgs e)
     {
+        Debug.WriteLine($"Theme changed from {e.AppliedTheme}");
     }
 
     protected override void OnSourceInitialized(EventArgs e)

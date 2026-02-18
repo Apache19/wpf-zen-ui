@@ -71,7 +71,7 @@ internal static class SystemAccentThemeManager
             [AccentResourceKeys.Accent] = p.Accent
         };
 
-        if (mode == ThemeMode.Dark)
+        if (mode == ThemeMode.Light)
         {
             dic[AccentResourceKeys.AccentPrimary]   = p.Dark1;
             dic[AccentResourceKeys.AccentSecondary] = p.Dark2;

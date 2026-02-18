@@ -17,9 +17,9 @@
     -->
 
     <Color x:Key="SystemAccentColor">#0078d4</Color>
-    <Color x:Key="SystemAccentColorPrimary">#FF0067C0</Color>
-    <Color x:Key="SystemAccentColorSecondary">#FF003E92</Color>
-    <Color x:Key="SystemAccentColorTertiary">#FF001A68</Color>
+    <Color x:Key="SystemAccentColorPrimary">#FF0091F8</Color>
+    <Color x:Key="SystemAccentColorSecondary">#FF4CC2FF</Color>
+    <Color x:Key="SystemAccentColorTertiary">#FF99EBFF</Color>
 
     <SolidColorBrush x:Key="AccentTextFillColorPrimaryBrush" Color="{DynamicResource SystemAccentColorPrimary}" />
     <SolidColorBrush x:Key="AccentTextFillColorSecondaryBrush" Color="{DynamicResource SystemAccentColorSecondary}" />

@@ -77,7 +77,6 @@ public sealed partial class SettingsViewModel(INavigationService navigationServi
 
     private void InitializeViewModel()
     {
-        // todo 根据主题管理器状态设置不同的值，但不触发主题更改
         if (ThemeManager.FollowSystemTheme)
         {
             CurrentApplicationTheme = AppThemeMode.FollowSystem;
@@ -93,32 +92,7 @@ public sealed partial class SettingsViewModel(INavigationService navigationServi
 
         AppVersion = $"{GetAssemblyVersion()}";
 
-        WeakEventManager<ThemeManager, ThemeChangedEventArgs>
-           .AddHandler(
-                ThemeManager.Instance,
-                nameof(ThemeManager.Changed),
-                OnThemeChanged
-            );
-
         _isInitialized = true;
-    }
-
-    private void OnThemeChanged(object? sender, ThemeChangedEventArgs e)
-    {
-        Debug.WriteLine($"触发系统主题更改：跟随系统={ThemeManager.FollowSystemTheme},当前主题={ThemeManager.ThemeMode}");
-
-        if (ThemeManager.FollowSystemTheme)
-        {
-            CurrentApplicationTheme = AppThemeMode.FollowSystem;
-        }
-        else if (ThemeManager.ThemeMode == ThemeMode.Dark)
-        {
-            CurrentApplicationTheme = AppThemeMode.Dark;
-        }
-        else
-        {
-            CurrentApplicationTheme = AppThemeMode.Light;
-        }
     }
 
     private static string GetAssemblyVersion()
