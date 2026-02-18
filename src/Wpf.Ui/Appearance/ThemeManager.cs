@@ -5,6 +5,7 @@
 
 using System.Diagnostics;
 using Microsoft.Win32;
+using Wpf.Ui.Appearance.Accent;
 using Wpf.Ui.Designer;
 using Wpf.Ui.Threading;
 
@@ -132,10 +133,14 @@ public sealed class ThemeManager
         // 而不是自己搞一套“高对比度主题”出来，这样不仅增加了实现复杂度，
         // 还会造成可访问性的不一致。
         // 另外，高对比度环境下没有单独的“强调色”，所以也要用高对比度颜色覆盖强调色。
+
+        var app = EnsureApplication();
+        app.Resources.BeginInit();
+
         if (SystemParameters.HighContrast)
         {
             // 高对比度没有强调色，所以要清理之前可能应用的强调色
-            ClearSystemAccent();
+            SystemAccentThemeManager.Disable();
             ApplySystemHighContrastColors();
         }
         else
@@ -143,22 +148,14 @@ public sealed class ThemeManager
             if (source == ThemeChangeSource.System && FollowSystemTheme)
             {
                 _themeMode = GetSystemThemeMode();
-                ApplyTheme(_themeMode);
-            }
-            else
-            {
-                ApplyTheme(_themeMode);
             }
 
-            if (UseSystemAccentColor)
-            {
-                //ApplySystemAccent();
-            }
-            else
-            {
-                //ClearSystemAccent();
-            }
+            ApplyTheme(_themeMode, false, true);
+
+            SystemAccentThemeManager.Update(UseSystemAccentColor, _themeMode);
         }
+
+        app.Resources.EndInit();
 
         Instance.Changed?.Invoke(Instance, new ThemeChangedEventArgs(_themeMode, source));
     }
@@ -198,7 +195,7 @@ public sealed class ThemeManager
             mode == ThemeMode.Dark ? DarkThemeUri :
                                      LightThemeUri;
 
-        // 如果当前已经是目标主题，就不重复加载（幂等）
+        // 如果非强制且当前已经是目标主题，就不重复加载（幂等）
         if (!forceReload && existingThemeDict?.Source == targetUri)
         {
             return;
@@ -214,51 +211,6 @@ public sealed class ThemeManager
         var newThemeDict = new ResourceDictionary { Source = targetUri };
 
         merged.Add(newThemeDict);
-    }
-
-    private static void ApplySystemAccent()
-    {
-        ClearSystemAccent();
-
-        if (SystemAccentPaletteReader.Read() is SystemAccentPalette palette)
-        {
-            // gpt 调试输出palette的各个颜色值
-            Debug.WriteLine($"SystemAccentPalette:");
-            Debug.WriteLine($"  Accent: {palette.Accent}");
-            Debug.WriteLine($"  AccentDark1: {palette.Dark1}");
-            Debug.WriteLine($"  AccentDark2: {palette.Dark2}");
-            Debug.WriteLine($"  AccentDark3: {palette.Dark3}");
-            Debug.WriteLine($"  AccentLight1: {palette.Light1}");
-            Debug.WriteLine($"  AccentLight2: {palette.Light2}");
-            Debug.WriteLine($"  AccentLight3: {palette.Light3}");
-
-            var app = EnsureApplication();
-
-            app.Resources["SystemAccentColor"] = palette.Accent;
-
-            if (_themeMode == ThemeMode.Dark)
-            {
-                app.Resources["SystemAccentColorPrimary"]   = palette.Dark1;
-                app.Resources["SystemAccentColorSecondary"] = palette.Dark2;
-                app.Resources["SystemAccentColorTertiary"]  = palette.Dark3;
-            }
-            else if (_themeMode == ThemeMode.Light)
-            {
-                app.Resources["SystemAccentColorPrimary"]   = palette.Light1;
-                app.Resources["SystemAccentColorSecondary"] = palette.Light2;
-                app.Resources["SystemAccentColorTertiary"]  = palette.Light3;
-            }
-        }
-    }
-
-    private static void ClearSystemAccent()
-    {
-        var app = EnsureApplication();
-
-        app.Resources.Remove("SystemAccentColor");
-        app.Resources.Remove("SystemAccentColorPrimary");
-        app.Resources.Remove("SystemAccentColorSecondary");
-        app.Resources.Remove("SystemAccentColorTertiary");
     }
 
     private static ThemeMode GetSystemThemeMode()

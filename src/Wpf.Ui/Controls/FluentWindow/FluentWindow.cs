@@ -286,12 +286,7 @@ public partial class FluentWindow : Window
                 OnAppThemeChanged
             );
 
-        UpdateSystemAccentColor();
         IsAccentOnTitleBarAndBorder = ApplicationAccentColorManager.IsAccentColorOnTitleBarsEnabled;
-    }
-
-    private void OnAppThemeChanged(object? sender, EventArgs e)
-    {
     }
 
     protected override void OnClosed(EventArgs e)
@@ -304,6 +299,10 @@ public partial class FluentWindow : Window
             );
 
         base.OnClosed(e);
+    }
+
+    private void OnAppThemeChanged(object? sender, EventArgs e)
+    {
     }
 
     protected override void OnSourceInitialized(EventArgs e)
@@ -487,9 +486,7 @@ public partial class FluentWindow : Window
 
             case PInvoke.WM_DWMCOLORIZATIONCOLORCHANGED:
             {
-                UpdateSystemAccentColor();
                 InvalidateBorderMetricsCache();
-
                 break;
             }
         }
@@ -501,23 +498,6 @@ public partial class FluentWindow : Window
             var yx = lParam.ToInt64();
             return new Point((short)yx, (short)(yx >> 16));
         }
-    }
-
-    // 暂时在窗口上处理主题色的监听，将来使用主题管理器来管理
-    private void UpdateSystemAccentColor()
-    {
-        UnsafeNativeMethods.DwmGetColorizationParameters(out var p);
-        var c = p.Color;
-
-        var a = (byte)(c >> 24);
-        var r = (byte)(c >> 16);
-        var g = (byte)(c >> 8);
-        var b = (byte)c;
-
-        var accentColor = Color.FromRgb(r, g, b).UpdateBrightness(6f);
-
-        Resources["SystemAccentColor"]      = accentColor;
-        Resources["SystemAccentColorBrush"] = accentColor.ToBrush();
     }
 
     private delegate IntPtr MessageHandler(IntPtr hwnd, uint uMsg, IntPtr wParam, IntPtr lParam, out bool handled);

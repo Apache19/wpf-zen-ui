@@ -7,48 +7,49 @@ using Microsoft.Win32;
 
 namespace Wpf.Ui.Appearance;
 
-public static class SystemAccentPaletteReader
+internal static class SystemAccentPaletteReader
 {
-    private const string KeyPath   = @"Software\Microsoft\Windows\CurrentVersion\Explorer\Accent";
-    private const string ValueName = "AccentPalette";
+    private const string AccentKey = @"Software\Microsoft\Windows\CurrentVersion\Explorer\Accent";
 
     public static SystemAccentPalette? Read()
     {
-        using var key = Registry.CurrentUser.OpenSubKey(KeyPath);
-
-        if (key?.GetValue(ValueName) is not byte[] data)
+        using var key = Registry.CurrentUser.OpenSubKey(AccentKey);
+        if (key == null)
         {
             return null;
         }
 
-        if (data.Length != 32)
+        // Win10+ AccentPalette
+        if (key.GetValue("AccentPalette") is byte[] { Length: >= 32 } bytes)
         {
-            return null;
+            return ParsePalette(bytes);
         }
 
-        // 解析 8 个 BGRA
-        Color[] colors = new Color[8];
-
-        for (int i = 0; i < 8; i++)
+        // Win8 fallback
+        if (key.GetValue("AccentColor") is int raw)
         {
-            int offset = i * 4;
-
-            byte b = data[offset + 0];
-            byte g = data[offset + 1];
-            byte r = data[offset + 2];
-
-            colors[i] = Color.FromRgb(r, g, b);
+            var color = FromRawABGR(raw);
+            return SystemAccentPalette.CreateFromAccentOnly(color);
         }
 
+        return null;
+    }
+
+    private static SystemAccentPalette ParsePalette(byte[] data)
+    {
         return new SystemAccentPalette(
-            colors[0], // Light3
-            colors[1], // Light2
-            colors[2], // Light1
-            colors[3], // Accent
-            colors[4], // Dark1
-            colors[5], // Dark2
-            colors[6], // Dark3
-            colors[7]  // Alt
+            B(0), B(4), B(8), B(12), B(16), B(20), B(24), B(28)
         );
+
+        Color B(int i) => Color.FromRgb(data[i], data[i + 1], data[i + 2]);
+    }
+
+    // todo: 考察 RGB byte 顺序
+    private static Color FromRawABGR(int value)
+    {
+        byte r = (byte)(value & 0xFF);
+        byte g = (byte)((value >> 8) & 0xFF);
+        byte b = (byte)((value >> 16) & 0xFF);
+        return Color.FromRgb(r, g, b);
     }
 }
