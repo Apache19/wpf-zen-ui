@@ -15,7 +15,7 @@ public enum WindowBackdropType
     None,
 
     /// <summary>
-    /// Sets <c>DWMWA_SYSTEMBACKDROP_TYPE</c> to <see langword="0"></see>.
+    /// 自动设置，
     /// </summary>
     Auto,
 

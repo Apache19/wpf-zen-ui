@@ -3,11 +3,13 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
+using System.Windows.Controls;
 using Wpf.Ui.Appearance;
 using Wpf.Ui.Controls;
 using Wpf.Ui.Gallery.Services.Contracts;
 using Wpf.Ui.Gallery.ViewModels.Windows;
 using Wpf.Ui.Gallery.Views.Pages;
+using MenuItem = Wpf.Ui.Controls.MenuItem;
 
 namespace Wpf.Ui.Gallery.Views.Windows;
 
@@ -175,5 +177,25 @@ public partial class MainWindow : IWindow
         }
 
         _isUserClosedPane = true;
+    }
+
+    private void BackdropComboBox_OnSelected(object sender, RoutedEventArgs e)
+    {
+        if (sender is ComboBox cb)
+        {
+            var item = cb.SelectedItem as ComboBoxItem;
+            if (item?.Tag is WindowBackdropType wbt)
+            {
+                SetCurrentValue(WindowBackdropTypeProperty, wbt);
+            }
+        }
+    }
+
+    private void ThemeButton_OnClick(object sender, RoutedEventArgs e)
+    {
+        ThemeManager.ThemeMode =
+            ThemeManager.ThemeMode == Appearance.ThemeMode.Dark
+                ? Appearance.ThemeMode.Light
+                : Appearance.ThemeMode.Dark;
     }
 }

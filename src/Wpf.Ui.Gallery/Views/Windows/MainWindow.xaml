@@ -16,8 +16,8 @@
     d:DataContext="{d:DesignInstance local:MainWindow, IsDesignTimeCreatable=False}"
     d:DesignHeight="650"
     d:DesignWidth="800"
-    WindowBackdropType="Mica"
     SizeChanged="MainWindow_OnSizeChanged"
+    WindowBackdropType="Mica"
     WindowStartupLocation="CenterScreen"
     mc:Ignorable="d">
 
@@ -79,6 +79,26 @@
             <ui:TitleBar.Icon>
                 <ui:ImageIcon Source="pack://application:,,,/Assets/wpfui.png" />
             </ui:TitleBar.Icon>
+            <Grid Margin="12 0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <ComboBox
+                    Margin="0 0 8 0"
+                    MinWidth="200"
+                    SelectionChanged="BackdropComboBox_OnSelected"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Center">
+                    <ComboBoxItem Content="None" Tag="{x:Static ui:WindowBackdropType.None}"/>
+                    <ComboBoxItem Content="Auto" Tag="{x:Static ui:WindowBackdropType.Auto}"/>
+                    <ComboBoxItem Content="Acrylic" Tag="{x:Static ui:WindowBackdropType.Acrylic}"/>
+                    <ComboBoxItem Content="Mica" Tag="{x:Static ui:WindowBackdropType.Mica}"/>
+                    <ComboBoxItem Content="Mica_Alt" Tag="{x:Static ui:WindowBackdropType.Mica_Alt}"/>
+                </ComboBox>
+                <ui:Button Grid.Column="1" Click="ThemeButton_OnClick" Padding="9" Icon="{ui:SymbolIcon WeatherSunny24}"></ui:Button>
+            </Grid>
+
         </ui:TitleBar>
 
         <tray:NotifyIcon
