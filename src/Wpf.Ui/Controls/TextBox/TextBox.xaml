@@ -47,7 +47,6 @@
         <Setter Property="Padding" Value="{DynamicResource TextControlThemePadding}" />
         <Setter Property="Border.CornerRadius" Value="{DynamicResource ControlCornerRadius}" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
-        <Setter Property="OverridesDefaultStyle" Value="True" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type TextBox}">
@@ -341,7 +340,6 @@
         <Setter Property="ClearButtonEnabled" Value="True" />
         <Setter Property="IconPlacement" Value="Left" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
-        <Setter Property="OverridesDefaultStyle" Value="True" />
         <Style.Triggers>
             <Trigger Property="IsTextSelectionEnabled" Value="False">
                 <Setter Property="Template" Value="{StaticResource DefaultUiTextBoxControlTemplate}" />

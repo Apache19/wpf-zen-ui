@@ -8,7 +8,7 @@
 namespace Wpf.Ui.Appearance;
 
 #pragma warning disable SA1516 // Elements should be separated by blank line
-public sealed record SystemAccentPalette(
+internal sealed record SystemAccentPalette(
     Color Light3,
     Color Light2,
     Color Light1,

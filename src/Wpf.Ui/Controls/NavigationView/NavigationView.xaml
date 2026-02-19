@@ -28,7 +28,6 @@
         <Setter Property="FocusVisualStyle" Value="{x:Null}" />
         <Setter Property="IsTabStop" Value="False" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
-        <Setter Property="OverridesDefaultStyle" Value="True" />
         <Style.Triggers>
             <Trigger Property="PaneDisplayMode" Value="Left">
                 <Setter Property="Template" Value="{StaticResource LeftNavigationViewTemplate}" />

@@ -32,8 +32,8 @@ public sealed class ThemeManager
 
     private static readonly DebounceDispatcher _themeChangedDebouncer = new();
 
-    private static bool      _followSystemTheme;
-    private static ThemeMode _themeMode = ThemeMode.Light;
+    private static bool        _followSystemTheme;
+    private static UIThemeMode _themeMode = UIThemeMode.Light;
 
     public static bool FollowSystemTheme
     {
@@ -61,7 +61,7 @@ public sealed class ThemeManager
         }
     }
 
-    public static ThemeMode ThemeMode
+    public static UIThemeMode ThemeMode
     {
         get => _themeMode;
         set
@@ -167,7 +167,7 @@ public sealed class ThemeManager
         ApplyTheme(_themeMode, true, true);
     }
 
-    private static void ApplyTheme(ThemeMode mode, bool highContrast = false, bool forceReload = false)
+    private static void ApplyTheme(UIThemeMode mode, bool highContrast = false, bool forceReload = false)
     {
         var app    = EnsureApplication();
         var merged = app.Resources.MergedDictionaries;
@@ -193,9 +193,9 @@ public sealed class ThemeManager
 
         // 2️ 根据 ThemeMode 决定目标主题 URI
         Uri targetUri =
-            highContrast           ? HighContrastThemeUri :
-            mode == ThemeMode.Dark ? DarkThemeUri :
-                                     LightThemeUri;
+            highContrast             ? HighContrastThemeUri :
+            mode == UIThemeMode.Dark ? DarkThemeUri :
+                                       LightThemeUri;
 
         // 如果非强制且当前已经是目标主题，就不重复加载（幂等）
         if (!forceReload && existingThemeDict?.Source == targetUri)
@@ -215,7 +215,7 @@ public sealed class ThemeManager
         merged.Add(newThemeDict);
     }
 
-    private static ThemeMode GetSystemThemeMode()
+    private static UIThemeMode GetSystemThemeMode()
     {
         var value = Registry.GetValue(
             @"HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize",
@@ -225,9 +225,9 @@ public sealed class ThemeManager
 
         return value switch
         {
-            1 => ThemeMode.Light,
-            0 => ThemeMode.Dark,
-            _ => ThemeMode.Light // 没有注册表键值对或者是错误值
+            1 => UIThemeMode.Light,
+            0 => UIThemeMode.Dark,
+            _ => UIThemeMode.Light // 没有注册表键值对或者是错误值
         };
     }
 

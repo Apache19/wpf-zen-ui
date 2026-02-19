@@ -3,7 +3,6 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-using System.Diagnostics;
 using Windows.Win32;
 using Windows.Win32.Foundation;
 using Windows.Win32.Graphics.Dwm;
@@ -119,7 +118,7 @@ public partial class FluentWindow
 
                 DwmAttributes.SetUseImmersiveDarkMode(
                     hwnd,
-                    themeMode == Appearance.ThemeMode.Dark
+                    themeMode == UIThemeMode.Dark
                 );
 
                 // 让 DWM 不绘制标题栏背景色（系统开启了将主题色应用到窗口边框或标题栏时）

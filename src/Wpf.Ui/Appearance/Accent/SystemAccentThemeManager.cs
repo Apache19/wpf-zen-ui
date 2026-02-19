@@ -3,8 +3,6 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-using System.Diagnostics;
-
 namespace Wpf.Ui.Appearance.Accent;
 
 internal static class SystemAccentThemeManager
@@ -12,7 +10,7 @@ internal static class SystemAccentThemeManager
     private static ResourceDictionary? _accentDictionary;
     private static bool                _isEnabled;
 
-    public static void Apply(ThemeMode mode)
+    public static void Apply(UIThemeMode mode)
     {
         var palette = SystemAccentPaletteReader.Read();
         if (palette == null)
@@ -44,7 +42,7 @@ internal static class SystemAccentThemeManager
         _isEnabled = false;
     }
 
-    public static void Update(bool useSystemAccent, ThemeMode mode)
+    public static void Update(bool useSystemAccent, UIThemeMode mode)
     {
         var app = EnsureApplication();
 
@@ -64,14 +62,14 @@ internal static class SystemAccentThemeManager
         }
     }
 
-    private static ResourceDictionary BuildDictionary(SystemAccentPalette p, ThemeMode mode)
+    private static ResourceDictionary BuildDictionary(SystemAccentPalette p, UIThemeMode mode)
     {
         var dic = new ResourceDictionary
         {
             [AccentResourceKeys.Accent] = p.Accent
         };
 
-        if (mode == ThemeMode.Light)
+        if (mode == UIThemeMode.Light)
         {
             dic[AccentResourceKeys.AccentPrimary]   = p.Dark1;
             dic[AccentResourceKeys.AccentSecondary] = p.Dark2;

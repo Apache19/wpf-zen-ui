@@ -6,7 +6,6 @@
 using Wpf.Ui.Appearance;
 using Wpf.Ui.Controls;
 using Wpf.Ui.Extensions;
-using ThemeMode = Wpf.Ui.Appearance.ThemeMode;
 
 namespace Wpf.Ui.Gallery.ViewModels.Pages;
 
@@ -54,10 +53,10 @@ public sealed partial class SettingsViewModel(INavigationService navigationServi
         switch (newValue)
         {
             case AppThemeMode.Light:
-                ThemeManager.ThemeMode = ThemeMode.Light;
+                ThemeManager.ThemeMode = UIThemeMode.Light;
                 break;
             case AppThemeMode.Dark:
-                ThemeManager.ThemeMode = ThemeMode.Dark;
+                ThemeManager.ThemeMode = UIThemeMode.Dark;
                 break;
             case AppThemeMode.FollowSystem:
                 ThemeManager.FollowSystemTheme = true;
@@ -81,7 +80,7 @@ public sealed partial class SettingsViewModel(INavigationService navigationServi
         {
             CurrentApplicationTheme = AppThemeMode.FollowSystem;
         }
-        else if (ThemeManager.ThemeMode == ThemeMode.Dark)
+        else if (ThemeManager.ThemeMode == UIThemeMode.Dark)
         {
             CurrentApplicationTheme = AppThemeMode.Dark;
         }

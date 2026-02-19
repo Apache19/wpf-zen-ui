@@ -3,6 +3,8 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
+using Wpf.Ui.Appearance;
+
 namespace Wpf.Ui.Gallery.Helpers;
 
 internal sealed class EnumToBooleanConverter : IValueConverter
@@ -14,12 +16,12 @@ internal sealed class EnumToBooleanConverter : IValueConverter
             throw new ArgumentException("ExceptionEnumToBooleanConverterParameterMustBeAnEnumName");
         }
 
-        if (!Enum.IsDefined(typeof(Appearance.ThemeMode), value))
+        if (!Enum.IsDefined(typeof(UIThemeMode), value))
         {
             throw new ArgumentException("ExceptionEnumToBooleanConverterValueMustBeAnEnum");
         }
 
-        var enumValue = Enum.Parse(typeof(Appearance.ThemeMode), enumString);
+        var enumValue = Enum.Parse(typeof(UIThemeMode), enumString);
 
         return enumValue.Equals(value);
     }
@@ -31,6 +33,6 @@ internal sealed class EnumToBooleanConverter : IValueConverter
             throw new ArgumentException("ExceptionEnumToBooleanConverterParameterMustBeAnEnumName");
         }
 
-        return Enum.Parse(typeof(Appearance.ThemeMode), enumString);
+        return Enum.Parse(typeof(UIThemeMode), enumString);
     }
 }

@@ -27,7 +27,7 @@ internal static class ContextMenuExtensions
         if (sender is ContextMenu contextMenu
          && PresentationSource.FromVisual(contextMenu) is HwndSource source)
         {
-            if (ThemeManager.ThemeMode == Appearance.ThemeMode.Dark)
+            if (ThemeManager.ThemeMode == UIThemeMode.Dark)
             {
                 _ = UnsafeNativeMethods.ApplyWindowDarkMode(source.Handle);
             }

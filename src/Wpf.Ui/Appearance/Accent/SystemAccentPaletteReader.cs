@@ -25,7 +25,7 @@ internal static class SystemAccentPaletteReader
             return ParsePalette(bytes);
         }
 
-        // Win8 fallback
+        // todo Win8 fallback 注册表不会更新，要换成必须监听消息的方式
         if (key.GetValue("AccentColor") is int raw)
         {
             var color = FromRawABGR(raw);

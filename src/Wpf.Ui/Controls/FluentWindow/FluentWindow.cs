@@ -286,7 +286,7 @@ public partial class FluentWindow : Window
 
         ContentRendered += OnContentRenderedInternal;
 
-        IsAccentOnTitleBarAndBorder = ApplicationAccentColorManager.IsAccentColorOnTitleBarsEnabled;
+        IsAccentOnTitleBarAndBorder = UnsafeNativeMethods.IsAccentColorOnTitleBarsEnabled();
     }
 
     private void OnContentRenderedInternal(object? sender, EventArgs e)
@@ -404,7 +404,7 @@ public partial class FluentWindow : Window
                     var spiStr = Marshal.PtrToStringAuto(lParam);
                     if (spiStr == "ImmersiveColorSet")
                     {
-                        IsAccentOnTitleBarAndBorder = ApplicationAccentColorManager.IsAccentColorOnTitleBarsEnabled;
+                        IsAccentOnTitleBarAndBorder = UnsafeNativeMethods.IsAccentColorOnTitleBarsEnabled();
                     }
                     else if (spiStr == "ThemeElement")
                     {

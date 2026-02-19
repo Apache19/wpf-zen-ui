@@ -9,7 +9,6 @@ using Wpf.Ui.Controls;
 using Wpf.Ui.Gallery.Services.Contracts;
 using Wpf.Ui.Gallery.ViewModels.Windows;
 using Wpf.Ui.Gallery.Views.Pages;
-using MenuItem = Wpf.Ui.Controls.MenuItem;
 
 namespace Wpf.Ui.Gallery.Views.Windows;
 
@@ -44,7 +43,7 @@ public partial class MainWindow : IWindow
     {
         foreach (var menuItem in ViewModel.TrayMenuItems)
         {
-            if (menuItem is MenuItem item)
+            if (menuItem is Ui.Controls.MenuItem item)
             {
                 item.Click += OnTrayMenuItemClick;
             }
@@ -194,8 +193,8 @@ public partial class MainWindow : IWindow
     private void ThemeButton_OnClick(object sender, RoutedEventArgs e)
     {
         ThemeManager.ThemeMode =
-            ThemeManager.ThemeMode == Appearance.ThemeMode.Dark
-                ? Appearance.ThemeMode.Light
-                : Appearance.ThemeMode.Dark;
+            ThemeManager.ThemeMode == UIThemeMode.Dark
+                ? UIThemeMode.Light
+                : UIThemeMode.Dark;
     }
 }

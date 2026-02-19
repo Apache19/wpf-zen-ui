@@ -102,7 +102,6 @@
         <Setter Property="CornerRadius" Value="{DynamicResource ControlCornerRadius}" />
         <Setter Property="IsExpanded" Value="False" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
-        <Setter Property="OverridesDefaultStyle" Value="True" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type controls:CardExpander}">
@@ -142,7 +141,6 @@
                                 Foreground="{TemplateBinding Foreground}"
                                 IsChecked="{Binding IsExpanded, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
                                 IsEnabled="{TemplateBinding IsEnabled}"
-                                OverridesDefaultStyle="True"
                                 Template="{StaticResource DefaultUiCardExpanderToggleButtonStyle}">
                                 <ToggleButton.Content>
                                     <Grid>

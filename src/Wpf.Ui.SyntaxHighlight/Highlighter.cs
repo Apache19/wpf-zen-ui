@@ -5,7 +5,6 @@
 
 // TODO: This class is work in progress.
 //
-using System;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Windows.Documents;
@@ -188,7 +187,7 @@ internal static class Highlighter
 
     private static bool IsLightTheme()
     {
-        return ThemeManager.ThemeMode == ThemeMode.Light;
+        return ThemeManager.ThemeMode == UIThemeMode.Light;
     }
 
     /*

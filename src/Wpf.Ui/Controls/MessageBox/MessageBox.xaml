@@ -25,6 +25,7 @@
         <Setter Property="ResizeMode" Value="NoResize" />
         <Setter Property="WindowState" Value="Normal" />
         <Setter Property="SizeToContent" Value="Height" />
+        <Setter Property="WindowBackdropType" Value="Mica" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
         <Setter Property="Template">
             <Setter.Value>

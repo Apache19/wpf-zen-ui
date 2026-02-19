@@ -5,7 +5,7 @@
 
 namespace Wpf.Ui.Appearance;
 
-public enum ThemeMode
+public enum UIThemeMode
 {
     /// <summary>
     /// Light application theme mode.

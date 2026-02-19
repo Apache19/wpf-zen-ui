@@ -5,7 +5,6 @@
         <Setter Property="Margin" Value="0" />
         <Setter Property="Padding" Value="0" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
-        <Setter Property="OverridesDefaultStyle" Value="True" />
         <Setter Property="VerticalAlignment" Value="Center" />
         <Setter Property="CanContentScroll" Value="False" />
         <Setter Property="HorizontalScrollBarVisibility" Value="Hidden" />

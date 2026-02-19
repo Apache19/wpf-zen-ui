@@ -5,7 +5,6 @@
 
 using System.Reflection;
 using Wpf.Ui.Input;
-using Wpf.Ui.Interop;
 using Size = System.Windows.Size;
 #if NET8_0_OR_GREATER
 using System.Runtime.CompilerServices;
@@ -375,12 +374,6 @@ public class MessageBox : FluentWindow
         }
     }
 
-    protected override void OnSourceInitialized(EventArgs e)
-    {
-        base.OnSourceInitialized(e);
-        RemoveTitleBarAndApplyMica();
-    }
-
     // CanCenterOverWPFOwner property see https://source.dot.net/#PresentationFramework/System/Windows/Window.cs,e679e433777b21b8
     private bool CanCenterOverWPFOwner()
     {
@@ -459,12 +452,6 @@ public class MessageBox : FluentWindow
 
         _ = Tcs?.TrySetResult(result);
         base.Close();
-    }
-
-    private void RemoveTitleBarAndApplyMica()
-    {
-        _ = UnsafeNativeMethods.RemoveWindowTitlebarContents(this);
-        _ = WindowBackdrop.ApplyBackdrop(this, WindowBackdropType.Mica);
     }
 
     private void ResizeWidth(UIElement element)

@@ -6,7 +6,6 @@
 using System.Windows.Controls;
 using Wpf.Ui.Appearance;
 using Wpf.Ui.Controls;
-using ThemeMode = Wpf.Ui.Appearance.ThemeMode;
 
 namespace Wpf.Ui.Gallery.Controls;
 
@@ -212,6 +211,9 @@ public class PageControlDocumentation : Control
 
     private static void SwitchThemes()
     {
-        ThemeManager.ThemeMode = ThemeManager.ThemeMode == ThemeMode.Dark ? ThemeMode.Light : ThemeMode.Dark;
+        ThemeManager.ThemeMode =
+            ThemeManager.ThemeMode == UIThemeMode.Dark
+                ? UIThemeMode.Light
+                : UIThemeMode.Dark;
     }
 }
