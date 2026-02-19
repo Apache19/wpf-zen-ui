@@ -7,6 +7,7 @@
    Copyright(c) Microsoft Corporation.All rights reserved. */
 
 using System.Collections.Specialized;
+using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using Wpf.Ui.Input;
@@ -23,7 +24,7 @@ namespace Wpf.Ui.Controls;
 /// </code>
 /// </example>
 [StyleTypedProperty(Property = nameof(ItemContainerStyle), StyleTargetType = typeof(BreadcrumbBarItem))]
-public class BreadcrumbBar : System.Windows.Controls.ItemsControl
+public class BreadcrumbBar : ItemsControl
 {
     /// <summary>Identifies the <see cref="Command"/> dependency property.</summary>
     public static readonly DependencyProperty CommandProperty = DependencyProperty.Register(
@@ -41,11 +42,6 @@ public class BreadcrumbBar : System.Windows.Controls.ItemsControl
         new PropertyMetadata(null)
     );
 
-    /// <summary>
-    /// Gets the <see cref="RelayCommand{T}"/> triggered after clicking
-    /// </summary>
-    public IRelayCommand TemplateButtonCommand => (IRelayCommand)GetValue(TemplateButtonCommandProperty);
-
     /// <summary>Identifies the <see cref="ItemClicked"/> routed event.</summary>
     public static readonly RoutedEvent ItemClickedEvent = EventManager.RegisterRoutedEvent(
         nameof(ItemClicked),
@@ -53,6 +49,22 @@ public class BreadcrumbBar : System.Windows.Controls.ItemsControl
         typeof(TypedEventHandler<BreadcrumbBar, BreadcrumbBarItemClickedEventArgs>),
         typeof(BreadcrumbBar)
     );
+
+    static BreadcrumbBar()
+    {
+        DefaultStyleKeyProperty.OverrideMetadata(
+            typeof(BreadcrumbBar),
+            new FrameworkPropertyMetadata(typeof(BreadcrumbBar))
+        );
+    }
+
+    /// <summary>
+    /// Gets the <see cref="RelayCommand{T}"/> triggered after clicking
+    /// </summary>
+    public IRelayCommand TemplateButtonCommand
+    {
+        get => (IRelayCommand)GetValue(TemplateButtonCommandProperty);
+    }
 
     /// <summary>
     /// Gets or sets custom command executed after selecting the item.
@@ -82,7 +94,7 @@ public class BreadcrumbBar : System.Windows.Controls.ItemsControl
     {
         SetValue(TemplateButtonCommandProperty, new RelayCommand<object>(OnTemplateButtonClick));
 
-        Loaded += OnLoaded;
+        Loaded   += OnLoaded;
         Unloaded += OnUnloaded;
     }
 
@@ -114,7 +126,7 @@ public class BreadcrumbBar : System.Windows.Controls.ItemsControl
 
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
-        ItemContainerGenerator.ItemsChanged += ItemContainerGeneratorOnItemsChanged;
+        ItemContainerGenerator.ItemsChanged  += ItemContainerGeneratorOnItemsChanged;
         ItemContainerGenerator.StatusChanged += ItemContainerGeneratorOnStatusChanged;
 
         UpdateLastContainer();
@@ -122,10 +134,10 @@ public class BreadcrumbBar : System.Windows.Controls.ItemsControl
 
     private void OnUnloaded(object sender, RoutedEventArgs e)
     {
-        Loaded -= OnLoaded;
+        Loaded   -= OnLoaded;
         Unloaded -= OnUnloaded;
 
-        ItemContainerGenerator.ItemsChanged -= ItemContainerGeneratorOnItemsChanged;
+        ItemContainerGenerator.ItemsChanged  -= ItemContainerGeneratorOnItemsChanged;
         ItemContainerGenerator.StatusChanged -= ItemContainerGeneratorOnStatusChanged;
     }
 
@@ -168,7 +180,7 @@ public class BreadcrumbBar : System.Windows.Controls.ItemsControl
         }
 
         DependencyObject container = ItemContainerGenerator.ContainerFromItem(obj);
-        int index = ItemContainerGenerator.IndexFromContainer(container);
+        int              index     = ItemContainerGenerator.IndexFromContainer(container);
 
         OnItemClicked(obj, index);
     }
@@ -180,7 +192,7 @@ public class BreadcrumbBar : System.Windows.Controls.ItemsControl
             return;
         }
 
-        var item = ItemContainerGenerator.Items[^offsetFromEnd];
+        var item      = ItemContainerGenerator.Items[^offsetFromEnd];
         var container = (BreadcrumbBarItem)ItemContainerGenerator.ContainerFromItem(item);
 
         action.Invoke(container);

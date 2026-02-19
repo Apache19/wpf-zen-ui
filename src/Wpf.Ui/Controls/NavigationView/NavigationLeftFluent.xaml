@@ -9,8 +9,8 @@
     <ControlTemplate x:Key="LeftFluentNavigationViewItemTemplate" TargetType="{x:Type controls:NavigationViewItem}">
         <Border
             x:Name="MainBorder"
-            MinWidth="{StaticResource PaneFluentButtonWidth}"
             Height="{StaticResource PaneFluentButtonHeight}"
+            MinWidth="{StaticResource PaneFluentButtonWidth}"
             Padding="4"
             HorizontalAlignment="Stretch"
             Background="Transparent"

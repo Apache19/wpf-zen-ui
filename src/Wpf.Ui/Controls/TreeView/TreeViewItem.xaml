@@ -335,6 +335,7 @@
         </Style.Triggers>
     </Style>
 
+    <!--  todo 清理全局TreeViewItem默认样式  -->
     <Style BasedOn="{StaticResource DefaultTreeViewItemStyle}" TargetType="{x:Type TreeViewItem}" />
     <Style BasedOn="{StaticResource DefaultUiTreeViewItemStyle}" TargetType="{x:Type controls:TreeViewItem}" />
 

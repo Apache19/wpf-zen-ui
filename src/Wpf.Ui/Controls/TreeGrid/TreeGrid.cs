@@ -5,6 +5,7 @@
 
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
+using System.Windows.Controls.Primitives;
 
 // ReSharper disable once CheckNamespace
 namespace Wpf.Ui.Controls;
@@ -12,15 +13,24 @@ namespace Wpf.Ui.Controls;
 /// <summary>
 /// TODO: Work in progress.
 /// </summary>
-public class TreeGrid : System.Windows.Controls.Primitives.Selector
+public class TreeGrid : Selector
 {
     /// <summary>Identifies the <see cref="Headers"/> dependency property.</summary>
-    public static readonly DependencyProperty HeadersProperty = DependencyProperty.Register(
-        nameof(Headers),
-        typeof(ObservableCollection<TreeGridHeader>),
-        typeof(TreeGrid),
-        new PropertyMetadata(null)
-    );
+    public static readonly DependencyProperty HeadersProperty =
+        DependencyProperty.Register(
+            nameof(Headers),
+            typeof(ObservableCollection<TreeGridHeader>),
+            typeof(TreeGrid),
+            new PropertyMetadata(null)
+        );
+
+    static TreeGrid()
+    {
+        DefaultStyleKeyProperty.OverrideMetadata(
+            typeof(TreeGrid),
+            new FrameworkPropertyMetadata(typeof(TreeGrid))
+        );
+    }
 
     /*
     /// <summary>
@@ -52,7 +62,7 @@ public class TreeGrid : System.Windows.Controls.Primitives.Selector
 
     public TreeGrid()
     {
-        Headers = [];
+        Headers                   =  [];
         Headers.CollectionChanged += Headers_CollectionChanged;
         /*
         var x = new System.Windows.Controls.ContentControl();

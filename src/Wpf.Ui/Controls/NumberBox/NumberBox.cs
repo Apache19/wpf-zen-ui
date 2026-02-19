@@ -23,7 +23,7 @@ namespace Wpf.Ui.Controls;
 [TemplatePart(Name = PART_ClearButton, Type = typeof(Button))]
 [TemplatePart(Name = PART_InlineIncrementButton, Type = typeof(RepeatButton))]
 [TemplatePart(Name = PART_InlineDecrementButton, Type = typeof(RepeatButton))]
-public partial class NumberBox : Wpf.Ui.Controls.TextBox
+public partial class NumberBox : TextBox
 {
     // Template part names
     private const string PART_ClearButton = nameof(PART_ClearButton);
@@ -127,6 +127,14 @@ public partial class NumberBox : Wpf.Ui.Controls.TextBox
         typeof(NumberBox)
     );
 
+    static NumberBox()
+    {
+        DefaultStyleKeyProperty.OverrideMetadata(typeof(NumberBox), new FrameworkPropertyMetadata(typeof(NumberBox)));
+        AcceptsReturnProperty.OverrideMetadata(typeof(NumberBox), new FrameworkPropertyMetadata(false));
+        MaxLinesProperty.OverrideMetadata(typeof(NumberBox), new FrameworkPropertyMetadata(1));
+        MinLinesProperty.OverrideMetadata(typeof(NumberBox), new FrameworkPropertyMetadata(1));
+    }
+
     /// <summary>
     /// Gets or sets the numeric value of a <see cref="NumberBox"/>.
     /// </summary>
@@ -224,13 +232,6 @@ public partial class NumberBox : Wpf.Ui.Controls.TextBox
     {
         add => AddHandler(ValueChangedEvent, value);
         remove => RemoveHandler(ValueChangedEvent, value);
-    }
-
-    static NumberBox()
-    {
-        AcceptsReturnProperty.OverrideMetadata(typeof(NumberBox), new FrameworkPropertyMetadata(false));
-        MaxLinesProperty.OverrideMetadata(typeof(NumberBox), new FrameworkPropertyMetadata(1));
-        MinLinesProperty.OverrideMetadata(typeof(NumberBox), new FrameworkPropertyMetadata(1));
     }
 
     public NumberBox()

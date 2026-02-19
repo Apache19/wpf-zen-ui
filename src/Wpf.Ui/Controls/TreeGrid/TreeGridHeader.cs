@@ -9,7 +9,7 @@ namespace Wpf.Ui.Controls;
 /// <summary>
 /// Work in progress.
 /// </summary>
-public class TreeGridHeader : System.Windows.FrameworkElement
+public class TreeGridHeader : FrameworkElement
 {
     /// <summary>Identifies the <see cref="Title"/> dependency property.</summary>
     public static readonly DependencyProperty TitleProperty = DependencyProperty.Register(

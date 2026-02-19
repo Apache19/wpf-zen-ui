@@ -3,13 +3,15 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
+using System.Windows.Controls.Primitives;
+
 // ReSharper disable once CheckNamespace
 namespace Wpf.Ui.Controls;
 
 /// <summary>
 /// Represents a control that allows a user to pick a time value.
 /// </summary>
-public class TimePicker : System.Windows.Controls.Primitives.ButtonBase
+public class TimePicker : ButtonBase
 {
     /// <summary>Identifies the <see cref="Header"/> dependency property.</summary>
     public static readonly DependencyProperty HeaderProperty = DependencyProperty.Register(
@@ -50,6 +52,14 @@ public class TimePicker : System.Windows.Controls.Primitives.ButtonBase
         typeof(TimePicker),
         new PropertyMetadata(ClockIdentifier.Clock24Hour)
     );
+
+    static TimePicker()
+    {
+        DefaultStyleKeyProperty.OverrideMetadata(
+            typeof(TimePicker),
+            new FrameworkPropertyMetadata(typeof(TimePicker))
+        );
+    }
 
     /// <summary>
     /// Gets or sets the content for the control's header.

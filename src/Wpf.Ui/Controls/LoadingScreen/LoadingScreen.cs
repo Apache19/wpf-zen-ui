@@ -4,9 +4,19 @@
 // All Rights Reserved.
 
 // ReSharper disable once CheckNamespace
+
 namespace Wpf.Ui.Controls;
 
 /// <summary>
 /// Prestyled loading screen with <see cref="ProgressRing"/>.
 /// </summary>
-public class LoadingScreen : System.Windows.Controls.ContentControl { }
+public class LoadingScreen : System.Windows.Controls.ContentControl
+{
+    static LoadingScreen()
+    {
+        DefaultStyleKeyProperty.OverrideMetadata(
+            typeof(LoadingScreen),
+            new FrameworkPropertyMetadata(typeof(LoadingScreen))
+        );
+    }
+}

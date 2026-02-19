@@ -11,10 +11,6 @@
     xmlns:controls="clr-namespace:Wpf.Ui.Controls"
     xmlns:converters="clr-namespace:Wpf.Ui.Converters">
 
-    <Style TargetType="{x:Type controls:TreeGridItem}">
-        <Setter Property="Margin" Value="0" />
-    </Style>
-
     <Style TargetType="{x:Type controls:TreeGrid}">
         <Setter Property="Margin" Value="0" />
         <Setter Property="Padding" Value="0" />

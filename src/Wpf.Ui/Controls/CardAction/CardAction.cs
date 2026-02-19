@@ -3,15 +3,17 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-// ReSharper disable once CheckNamespace
 using System.Windows.Automation.Peers;
+using System.Windows.Controls.Primitives;
+
+// ReSharper disable once CheckNamespace
 
 namespace Wpf.Ui.Controls;
 
 /// <summary>
-/// Inherited from the <see cref="System.Windows.Controls.Primitives.ButtonBase"/> interactive card styled according to Fluent Design.
+/// Inherited from the <see cref="ButtonBase"/> interactive card styled according to Fluent Design.
 /// </summary>
-public class CardAction : System.Windows.Controls.Primitives.ButtonBase
+public class CardAction : ButtonBase
 {
     /// <summary>Identifies the <see cref="IsChevronVisible"/> dependency property.</summary>
     public static readonly DependencyProperty IsChevronVisibleProperty = DependencyProperty.Register(
@@ -28,6 +30,14 @@ public class CardAction : System.Windows.Controls.Primitives.ButtonBase
         typeof(CardAction),
         new PropertyMetadata(null, null, IconElement.Coerce)
     );
+
+    static CardAction()
+    {
+        DefaultStyleKeyProperty.OverrideMetadata(
+            typeof(CardAction),
+            new FrameworkPropertyMetadata(typeof(CardAction))
+        );
+    }
 
     /// <summary>
     /// Gets or sets a value indicating whether to display the chevron icon on the right side of the card.

@@ -21,6 +21,14 @@ public class HyperlinkButton : Button
         new PropertyMetadata(string.Empty)
     );
 
+    static HyperlinkButton()
+    {
+        DefaultStyleKeyProperty.OverrideMetadata(
+            typeof(HyperlinkButton),
+            new FrameworkPropertyMetadata(typeof(HyperlinkButton))
+        );
+    }
+
     /// <summary>
     /// Gets or sets the URL (or application shortcut) to open.
     /// </summary>

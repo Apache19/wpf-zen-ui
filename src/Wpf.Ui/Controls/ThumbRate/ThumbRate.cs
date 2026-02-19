@@ -29,6 +29,14 @@ public class ThumbRate : System.Windows.Controls.Control
         typeof(ThumbRate)
     );
 
+    static ThumbRate()
+    {
+        DefaultStyleKeyProperty.OverrideMetadata(
+            typeof(ThumbRate),
+            new FrameworkPropertyMetadata(typeof(ThumbRate))
+        );
+    }
+
     /// <summary>
     /// Occurs when <see cref="State"/> is changed.
     /// </summary>

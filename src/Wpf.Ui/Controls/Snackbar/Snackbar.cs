@@ -115,6 +115,14 @@ public class Snackbar : ContentControl, IAppearanceControl, IIconControl
         typeof(Snackbar)
     );
 
+    static Snackbar()
+    {
+        DefaultStyleKeyProperty.OverrideMetadata(
+            typeof(Snackbar),
+            new FrameworkPropertyMetadata(typeof(Snackbar))
+        );
+    }
+
     /// <summary>
     /// Gets or sets a value indicating whether the <see cref="Snackbar"/> close button should be visible.
     /// </summary>

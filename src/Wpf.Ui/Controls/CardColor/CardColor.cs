@@ -3,13 +3,16 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
+using System.Windows.Controls;
+
 // ReSharper disable once CheckNamespace
+
 namespace Wpf.Ui.Controls;
 
 /// <summary>
 /// Ala Pa**one color card.
 /// </summary>
-public class CardColor : System.Windows.Controls.Control
+public class CardColor : Control
 {
     /// <summary>Identifies the <see cref="Title"/> dependency property.</summary>
     public static readonly DependencyProperty TitleProperty = DependencyProperty.Register(
@@ -58,6 +61,14 @@ public class CardColor : System.Windows.Controls.Control
         typeof(CardColor),
         new PropertyMetadata(Brushes.Transparent)
     );
+
+    static CardColor()
+    {
+        DefaultStyleKeyProperty.OverrideMetadata(
+            typeof(CardColor),
+            new FrameworkPropertyMetadata(typeof(CardColor))
+        );
+    }
 
     /// <summary>
     /// Gets or sets the main text displayed below the color.

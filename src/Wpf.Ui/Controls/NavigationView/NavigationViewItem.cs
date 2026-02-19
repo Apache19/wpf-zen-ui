@@ -10,6 +10,7 @@ using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.Windows.Automation.Peers;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 
 // ReSharper disable once CheckNamespace
@@ -17,13 +18,10 @@ namespace Wpf.Ui.Controls;
 
 /// <summary>
 /// Represents the container for an item in a NavigationView control.
-/// When needed, it can be used as a normal button with a <see cref="System.Windows.Controls.Primitives.ButtonBase.Click"/> action.
+/// When needed, it can be used as a normal button with a <see cref="ButtonBase.Click"/> action.
 /// </summary>
 [TemplatePart(Name = TemplateElementChevronGrid, Type = typeof(Grid))]
-public class NavigationViewItem
-    : System.Windows.Controls.Primitives.ButtonBase,
-        INavigationViewItem,
-        IIconControl
+public class NavigationViewItem : ButtonBase, INavigationViewItem, IIconControl
 {
     protected const string TemplateElementChevronGrid = "PART_ChevronGrid";
 

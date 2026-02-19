@@ -65,6 +65,14 @@ public class InfoBar : System.Windows.Controls.ContentControl
         new PropertyMetadata(null)
     );
 
+    static InfoBar()
+    {
+        DefaultStyleKeyProperty.OverrideMetadata(
+            typeof(InfoBar),
+            new FrameworkPropertyMetadata(typeof(InfoBar))
+        );
+    }
+
     /// <summary>
     /// Gets or sets a value indicating whether the user can close the <see cref="InfoBar" />. Defaults to <c>true</c>.
     /// </summary>

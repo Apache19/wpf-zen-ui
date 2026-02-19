@@ -45,6 +45,14 @@ namespace Wpf.Ui.Controls;
 /// </example>
 public partial class ContentDialog : ContentControl
 {
+    static ContentDialog()
+    {
+        DefaultStyleKeyProperty.OverrideMetadata(
+            typeof(ContentDialog),
+            new FrameworkPropertyMetadata(typeof(ContentDialog))
+        );
+    }
+
     /// <summary>
     /// Gets command triggered after clicking the button in the template.
     /// </summary>
@@ -215,7 +223,7 @@ public partial class ContentDialog : ContentControl
     }
 
     // Legacy and new host coexist for compatibility during migration.
-    private ContentPresenter? _dialogHost;
+    private ContentPresenter?  _dialogHost;
     private ContentDialogHost? _dialogHostEx;
 
     /// <summary>
@@ -362,11 +370,11 @@ public partial class ContentDialog : ContentControl
         }
         finally
         {
-#if NET6_0_OR_GREATER
+            #if NET6_0_OR_GREATER
             await tokenRegistration.DisposeAsync();
-#else
+            #else
             tokenRegistration.Dispose();
-#endif
+            #endif
 
             // DialogHost is a public container. To prevent the new dialog from being closed immediately when
             // it opens due to the unconditional clearing of the Content upon the closure of the previous dialog,
@@ -424,9 +432,9 @@ public partial class ContentDialog : ContentControl
 
         ContentDialogResult result = button switch
         {
-            ContentDialogButton.Primary => ContentDialogResult.Primary,
+            ContentDialogButton.Primary   => ContentDialogResult.Primary,
             ContentDialogButton.Secondary => ContentDialogResult.Secondary,
-            _ => ContentDialogResult.None,
+            _                             => ContentDialogResult.None,
         };
 
         Hide(result);
@@ -448,7 +456,7 @@ public partial class ContentDialog : ContentControl
         Size newSize = GetNewDialogSize(desiredSize);
 
         SetCurrentValue(DialogHeightProperty, newSize.Height);
-        SetCurrentValue(DialogWidthProperty, newSize.Width);
+        SetCurrentValue(DialogWidthProperty,  newSize.Width);
 
         ResizeWidth(rootElement);
         ResizeHeight(rootElement);
@@ -503,13 +511,13 @@ public partial class ContentDialog : ContentControl
     private Size GetNewDialogSize(Size desiredSize)
     {
         // TODO: Handle negative values
-        var paddingWidth = Padding.Left + Padding.Right;
+        var paddingWidth  = Padding.Left + Padding.Right;
         var paddingHeight = Padding.Top + Padding.Bottom;
 
         var marginHeight = DialogMargin.Bottom + DialogMargin.Top;
-        var marginWidth = DialogMargin.Left + DialogMargin.Right;
+        var marginWidth  = DialogMargin.Left + DialogMargin.Right;
 
-        var width = desiredSize.Width - marginWidth + paddingWidth;
+        var width  = desiredSize.Width - marginWidth + paddingWidth;
         var height = desiredSize.Height - marginHeight + paddingHeight;
 
         return new Size(width, height);

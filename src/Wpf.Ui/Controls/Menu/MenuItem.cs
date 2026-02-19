@@ -4,6 +4,7 @@
 // All Rights Reserved.
 
 // ReSharper disable once CheckNamespace
+
 namespace Wpf.Ui.Controls;
 
 /// <summary>
@@ -13,7 +14,15 @@ public class MenuItem : System.Windows.Controls.MenuItem
 {
     static MenuItem()
     {
-        IconProperty.OverrideMetadata(typeof(MenuItem), new FrameworkPropertyMetadata(null));
+        DefaultStyleKeyProperty.OverrideMetadata(
+            typeof(MenuItem),
+            new FrameworkPropertyMetadata(typeof(MenuItem))
+        );
+
+        IconProperty.OverrideMetadata(
+            typeof(MenuItem),
+            new FrameworkPropertyMetadata(null)
+        );
     }
 
     /// <summary>

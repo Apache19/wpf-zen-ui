@@ -31,9 +31,6 @@
         </Setter>
     </Style>
 
-    <Style
-        x:Key="{x:Type Menu}"
-        BasedOn="{StaticResource DefaultMenuStyle}"
-        TargetType="{x:Type Menu}" />
+    <Style x:Key="{x:Type Menu}" BasedOn="{StaticResource DefaultMenuStyle}" TargetType="{x:Type Menu}" />
 
 </ResourceDictionary>

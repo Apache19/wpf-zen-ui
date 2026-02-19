@@ -31,74 +31,99 @@ namespace Wpf.Ui.Controls;
 public class Button : System.Windows.Controls.Button, IAppearanceControl, IIconControl
 {
     /// <summary>Identifies the <see cref="Icon"/> dependency property.</summary>
-    public static readonly DependencyProperty IconProperty = DependencyProperty.Register(
-        nameof(Icon),
-        typeof(IconElement),
-        typeof(Button),
-        new PropertyMetadata(null, null, IconElement.Coerce)
-    );
+    public static readonly DependencyProperty IconProperty =
+        DependencyProperty.Register(
+            nameof(Icon),
+            typeof(IconElement),
+            typeof(Button),
+            new PropertyMetadata(null, null, IconElement.Coerce)
+        );
 
     /// <summary>Identifies the <see cref="Appearance"/> dependency property.</summary>
-    public static readonly DependencyProperty AppearanceProperty = DependencyProperty.Register(
-        nameof(Appearance),
-        typeof(ControlAppearance),
-        typeof(Button),
-        new PropertyMetadata(ControlAppearance.Primary)
-    );
+    public static readonly DependencyProperty AppearanceProperty =
+        DependencyProperty.Register(
+            nameof(Appearance),
+            typeof(ControlAppearance),
+            typeof(Button),
+            new PropertyMetadata(ControlAppearance.Primary)
+        );
 
     /// <summary>Identifies the <see cref="MouseOverBackground"/> dependency property.</summary>
-    public static readonly DependencyProperty MouseOverBackgroundProperty = DependencyProperty.Register(
-        nameof(MouseOverBackground),
-        typeof(Brush),
-        typeof(Button),
-        new PropertyMetadata(Border.BackgroundProperty.DefaultMetadata.DefaultValue)
-    );
+    public static readonly DependencyProperty MouseOverBackgroundProperty =
+        DependencyProperty.Register(
+            nameof(MouseOverBackground),
+            typeof(Brush),
+            typeof(Button),
+            new PropertyMetadata(
+                Border.BackgroundProperty.DefaultMetadata.DefaultValue
+            )
+        );
 
     /// <summary>Identifies the <see cref="MouseOverBorderBrush"/> dependency property.</summary>
-    public static readonly DependencyProperty MouseOverBorderBrushProperty = DependencyProperty.Register(
-        nameof(MouseOverBorderBrush),
-        typeof(Brush),
-        typeof(Button),
-        new PropertyMetadata(Border.BorderBrushProperty.DefaultMetadata.DefaultValue)
-    );
+    public static readonly DependencyProperty MouseOverBorderBrushProperty =
+        DependencyProperty.Register(
+            nameof(MouseOverBorderBrush),
+            typeof(Brush),
+            typeof(Button),
+            new PropertyMetadata(
+                Border.BorderBrushProperty.DefaultMetadata.DefaultValue
+            )
+        );
 
     /// <summary>Identifies the <see cref="PressedForeground"/> dependency property.</summary>
-    public static readonly DependencyProperty PressedForegroundProperty = DependencyProperty.Register(
-        nameof(PressedForeground),
-        typeof(Brush),
-        typeof(Button),
-        new FrameworkPropertyMetadata(
-            SystemColors.ControlTextBrush,
-            FrameworkPropertyMetadataOptions.Inherits
-        )
-    );
+    public static readonly DependencyProperty PressedForegroundProperty =
+        DependencyProperty.Register(
+            nameof(PressedForeground),
+            typeof(Brush),
+            typeof(Button),
+            new FrameworkPropertyMetadata(
+                SystemColors.ControlTextBrush,
+                FrameworkPropertyMetadataOptions.Inherits
+            )
+        );
 
     /// <summary>Identifies the <see cref="PressedBackground"/> dependency property.</summary>
-    public static readonly DependencyProperty PressedBackgroundProperty = DependencyProperty.Register(
-        nameof(PressedBackground),
-        typeof(Brush),
-        typeof(Button),
-        new PropertyMetadata(Border.BackgroundProperty.DefaultMetadata.DefaultValue)
-    );
+    public static readonly DependencyProperty PressedBackgroundProperty =
+        DependencyProperty.Register(
+            nameof(PressedBackground),
+            typeof(Brush),
+            typeof(Button),
+            new PropertyMetadata(
+                Border.BackgroundProperty.DefaultMetadata.DefaultValue
+            )
+        );
 
     /// <summary>Identifies the <see cref="PressedBorderBrush"/> dependency property.</summary>
-    public static readonly DependencyProperty PressedBorderBrushProperty = DependencyProperty.Register(
-        nameof(PressedBorderBrush),
-        typeof(Brush),
-        typeof(Button),
-        new PropertyMetadata(Border.BorderBrushProperty.DefaultMetadata.DefaultValue)
-    );
+    public static readonly DependencyProperty PressedBorderBrushProperty =
+        DependencyProperty.Register(
+            nameof(PressedBorderBrush),
+            typeof(Brush),
+            typeof(Button),
+            new PropertyMetadata(
+                Border.BorderBrushProperty.DefaultMetadata.DefaultValue
+            )
+        );
 
     /// <summary>Identifies the <see cref="CornerRadius"/> dependency property.</summary>
-    public static readonly DependencyProperty CornerRadiusProperty = DependencyProperty.Register(
-        nameof(CornerRadius),
-        typeof(CornerRadius),
-        typeof(Button),
-        new FrameworkPropertyMetadata(
-            default(CornerRadius),
-            FrameworkPropertyMetadataOptions.AffectsMeasure | FrameworkPropertyMetadataOptions.AffectsRender
-        )
-    );
+    public static readonly DependencyProperty CornerRadiusProperty =
+        DependencyProperty.Register(
+            nameof(CornerRadius),
+            typeof(CornerRadius),
+            typeof(Button),
+            new FrameworkPropertyMetadata(
+                default(CornerRadius),
+                FrameworkPropertyMetadataOptions.AffectsMeasure |
+                FrameworkPropertyMetadataOptions.AffectsRender
+            )
+        );
+
+    static Button()
+    {
+        DefaultStyleKeyProperty.OverrideMetadata(
+            typeof(Button),
+            new FrameworkPropertyMetadata(typeof(Button))
+        );
+    }
 
     /// <summary>
     /// Gets or sets displayed <see cref="IconElement"/>.

@@ -3,6 +3,7 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
+using System.Windows.Controls;
 using System.Windows.Input;
 
 // ReSharper disable once CheckNamespace
@@ -16,7 +17,7 @@ namespace Wpf.Ui.Controls;
 [TemplatePart(Name = "PART_Star3", Type = typeof(SymbolIcon))]
 [TemplatePart(Name = "PART_Star4", Type = typeof(SymbolIcon))]
 [TemplatePart(Name = "PART_Star5", Type = typeof(SymbolIcon))]
-public class RatingControl : System.Windows.Controls.ContentControl
+public class RatingControl : ContentControl
 {
     private enum StarValue
     {
@@ -25,16 +26,16 @@ public class RatingControl : System.Windows.Controls.ContentControl
         Filled,
     }
 
-    private const double MaxValue = 5.0D;
-    private const double MinValue = 0.0D;
-    private const int OffsetTolerance = 8;
-    private static readonly SymbolRegular StarSymbol = SymbolRegular.Star28;
-    private static readonly SymbolRegular StarHalfSymbol = SymbolRegular.StarHalf28;
-    private SymbolIcon? _symbolIconStarOne;
-    private SymbolIcon? _symbolIconStarTwo;
-    private SymbolIcon? _symbolIconStarThree;
-    private SymbolIcon? _symbolIconStarFour;
-    private SymbolIcon? _symbolIconStarFive;
+    private const           double        MaxValue        = 5.0D;
+    private const           double        MinValue        = 0.0D;
+    private const           int           OffsetTolerance = 8;
+    private static readonly SymbolRegular StarSymbol      = SymbolRegular.Star28;
+    private static readonly SymbolRegular StarHalfSymbol  = SymbolRegular.StarHalf28;
+    private                 SymbolIcon?   _symbolIconStarOne;
+    private                 SymbolIcon?   _symbolIconStarTwo;
+    private                 SymbolIcon?   _symbolIconStarThree;
+    private                 SymbolIcon?   _symbolIconStarFour;
+    private                 SymbolIcon?   _symbolIconStarFive;
 
     /// <summary>Identifies the <see cref="Value"/> dependency property.</summary>
     public static readonly DependencyProperty ValueProperty = DependencyProperty.Register(
@@ -67,6 +68,14 @@ public class RatingControl : System.Windows.Controls.ContentControl
         typeof(RoutedEventHandler),
         typeof(RatingControl)
     );
+
+    static RatingControl()
+    {
+        DefaultStyleKeyProperty.OverrideMetadata(
+            typeof(RatingControl),
+            new FrameworkPropertyMetadata(typeof(RatingControl))
+        );
+    }
 
     /// <summary>
     /// Gets or sets the rating value.
@@ -149,7 +158,7 @@ public class RatingControl : System.Windows.Controls.ContentControl
         base.OnMouseMove(e);
 
         Point currentPossition = e.GetPosition(this);
-        var mouseOffset = currentPossition.X * 100 / ActualWidth;
+        var   mouseOffset      = currentPossition.X * 100 / ActualWidth;
 
         if (e.LeftButton != MouseButtonState.Pressed)
         {
@@ -165,7 +174,7 @@ public class RatingControl : System.Windows.Controls.ContentControl
         base.OnMouseDown(e);
 
         Point currentPossition = e.GetPosition(this);
-        var mouseOffset = currentPossition.X * 100 / ActualWidth;
+        var   mouseOffset      = currentPossition.X * 100 / ActualWidth;
 
         if (e.LeftButton == MouseButtonState.Pressed)
         {

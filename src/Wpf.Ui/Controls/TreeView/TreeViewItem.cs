@@ -19,6 +19,14 @@ public class TreeViewItem : System.Windows.Controls.TreeViewItem
         new PropertyMetadata(null)
     );
 
+    static TreeViewItem()
+    {
+        DefaultStyleKeyProperty.OverrideMetadata(
+            typeof(TreeViewItem),
+            new FrameworkPropertyMetadata(typeof(TreeViewItem))
+        );
+    }
+
     /// <summary>
     /// Gets or sets displayed <see cref="IconElement"/>.
     /// </summary>

@@ -87,6 +87,14 @@ public class TextBox : System.Windows.Controls.TextBox
         new PropertyMetadata(null)
     );
 
+    static TextBox()
+    {
+        DefaultStyleKeyProperty.OverrideMetadata(
+            typeof(TextBox),
+            new FrameworkPropertyMetadata(typeof(TextBox))
+        );
+    }
+
     /// <summary>
     /// Gets or sets displayed <see cref="IconElement"/>.
     /// </summary>

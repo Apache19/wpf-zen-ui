@@ -47,6 +47,14 @@ public class VirtualizingGridView : ListView
         new PropertyMetadata(false)
     );
 
+    static VirtualizingGridView()
+    {
+        DefaultStyleKeyProperty.OverrideMetadata(
+            typeof(VirtualizingGridView),
+            new FrameworkPropertyMetadata(typeof(VirtualizingGridView))
+        );
+    }
+
     /// <summary>
     /// Gets or sets a value that specifies the orientation in which items are arranged. The default value is <see cref="Orientation.Vertical"/>.
     /// </summary>
@@ -104,8 +112,8 @@ public class VirtualizingGridView : ListView
             new Binding
             {
                 Source = this,
-                Path = new PropertyPath(nameof(Orientation)),
-                Mode = BindingMode.OneWay,
+                Path   = new PropertyPath(nameof(Orientation)),
+                Mode   = BindingMode.OneWay,
             }
         );
         factory.SetBinding(
@@ -113,8 +121,8 @@ public class VirtualizingGridView : ListView
             new Binding
             {
                 Source = this,
-                Path = new PropertyPath(nameof(SpacingMode)),
-                Mode = BindingMode.OneWay,
+                Path   = new PropertyPath(nameof(SpacingMode)),
+                Mode   = BindingMode.OneWay,
             }
         );
         factory.SetBinding(
@@ -122,8 +130,8 @@ public class VirtualizingGridView : ListView
             new Binding
             {
                 Source = this,
-                Path = new PropertyPath(nameof(StretchItems)),
-                Mode = BindingMode.OneWay,
+                Path   = new PropertyPath(nameof(StretchItems)),
+                Mode   = BindingMode.OneWay,
             }
         );
 

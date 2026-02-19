@@ -59,6 +59,14 @@ public class DynamicScrollViewer : PassiveScrollViewer
         new PropertyMetadata(1200, OnTimeoutChanged)
     );
 
+    static DynamicScrollViewer()
+    {
+        DefaultStyleKeyProperty.OverrideMetadata(
+            typeof(DynamicScrollViewer),
+            new FrameworkPropertyMetadata(typeof(DynamicScrollViewer))
+        );
+    }
+
     /// <summary>
     /// Gets or sets a value indicating whether the user was scrolling vertically for the last few seconds.
     /// </summary>

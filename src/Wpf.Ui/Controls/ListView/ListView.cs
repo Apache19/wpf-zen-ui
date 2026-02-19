@@ -36,6 +36,14 @@ public class ListView : System.Windows.Controls.ListView
         new FrameworkPropertyMetadata(ListViewViewState.Default, OnViewStateChanged)
     );
 
+    static ListView()
+    {
+        DefaultStyleKeyProperty.OverrideMetadata(
+            typeof(ListView),
+            new FrameworkPropertyMetadata(typeof(ListView))
+        );
+    }
+
     /// <summary>
     /// Gets or sets the view state of the <see cref="ListView"/>, enabling custom logic based on the current view.
     /// </summary>
@@ -102,14 +110,6 @@ public class ListView : System.Windows.Controls.ListView
         };
 
         SetCurrentValue(ViewStateProperty, viewState);
-    }
-
-    static ListView()
-    {
-        DefaultStyleKeyProperty.OverrideMetadata(
-            typeof(ListView),
-            new FrameworkPropertyMetadata(typeof(ListView))
-        );
     }
 
     protected override DependencyObject GetContainerForItemOverride()

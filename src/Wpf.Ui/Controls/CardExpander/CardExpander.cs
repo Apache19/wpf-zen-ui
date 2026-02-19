@@ -4,6 +4,7 @@
 // All Rights Reserved.
 
 // ReSharper disable once CheckNamespace
+
 namespace Wpf.Ui.Controls;
 
 /// <summary>
@@ -37,6 +38,14 @@ public class CardExpander : System.Windows.Controls.Expander
             FrameworkPropertyMetadataOptions.AffectsParentMeasure
         )
     );
+
+    static CardExpander()
+    {
+        DefaultStyleKeyProperty.OverrideMetadata(
+            typeof(CardExpander),
+            new FrameworkPropertyMetadata(typeof(CardExpander))
+        );
+    }
 
     /// <summary>
     /// Gets or sets displayed <see cref="IconElement"/>.

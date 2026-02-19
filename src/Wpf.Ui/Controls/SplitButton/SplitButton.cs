@@ -13,7 +13,7 @@ namespace Wpf.Ui.Controls;
 /// <summary>
 /// Represents a button with two parts that can be invoked separately. One part behaves like a standard button and the other part invokes a flyout.
 /// </summary>
-[TemplatePart(Name = TemplateElementToggle, Type = typeof(Border))]
+[TemplatePart(Name = TemplateElementToggle,       Type = typeof(Border))]
 [TemplatePart(Name = TemplateElementToggleButton, Type = typeof(ToggleButton))]
 public class SplitButton : Button
 {
@@ -48,6 +48,14 @@ public class SplitButton : Button
         typeof(SplitButton),
         new PropertyMetadata(false, OnIsDropDownOpenChanged)
     );
+
+    static SplitButton()
+    {
+        DefaultStyleKeyProperty.OverrideMetadata(
+            typeof(SplitButton),
+            new FrameworkPropertyMetadata(typeof(SplitButton))
+        );
+    }
 
     /// <summary>
     /// Gets or sets the flyout associated with this button.
@@ -116,7 +124,7 @@ public class SplitButton : Button
     {
         if (value is ContextMenu contextMenu)
         {
-            _contextMenu = contextMenu;
+            _contextMenu        =  contextMenu;
             _contextMenu.Opened += OnContextMenuOpened;
             _contextMenu.Closed += OnContextMenuClosed;
         }
@@ -187,16 +195,16 @@ public class SplitButton : Button
         }
 
         // Ensure mouse up actually happened inside the toggler, and not outside.
-        var position = e.GetPosition(_splitButtonToggleBorder);
+        var           position      = e.GetPosition(_splitButtonToggleBorder);
         HitTestResult hitTestResult = VisualTreeHelper.HitTest(_splitButtonToggleBorder, position);
         if (hitTestResult?.VisualHit == null)
         {
             return;
         }
 
-        _contextMenu.SetCurrentValue(MinWidthProperty, ActualWidth);
+        _contextMenu.SetCurrentValue(MinWidthProperty,                    ActualWidth);
         _contextMenu.SetCurrentValue(ContextMenu.PlacementTargetProperty, this);
-        _contextMenu.SetCurrentValue(ContextMenu.PlacementProperty, PlacementMode.Bottom);
-        _contextMenu.SetCurrentValue(ContextMenu.IsOpenProperty, true);
+        _contextMenu.SetCurrentValue(ContextMenu.PlacementProperty,       PlacementMode.Bottom);
+        _contextMenu.SetCurrentValue(ContextMenu.IsOpenProperty,          true);
     }
 }

@@ -14,6 +14,14 @@ namespace Wpf.Ui.Controls;
 /// </summary>
 public class DropDownButton : Button
 {
+    static DropDownButton()
+    {
+        DefaultStyleKeyProperty.OverrideMetadata(
+            typeof(DropDownButton),
+            new FrameworkPropertyMetadata(typeof(DropDownButton))
+        );
+    }
+
     private ContextMenu? _contextMenu;
 
     public DropDownButton()
@@ -75,7 +83,7 @@ public class DropDownButton : Button
     {
         if (value is ContextMenu contextMenu)
         {
-            _contextMenu = contextMenu;
+            _contextMenu        =  contextMenu;
             _contextMenu.Opened += OnContextMenuOpened;
             _contextMenu.Closed += OnContextMenuClosed;
         }
@@ -100,7 +108,7 @@ public class DropDownButton : Button
             return;
         }
 
-        _contextMenu.SetCurrentValue(MinWidthProperty, ActualWidth);
+        _contextMenu.SetCurrentValue(MinWidthProperty,                    ActualWidth);
         _contextMenu.SetCurrentValue(ContextMenu.PlacementTargetProperty, this);
         _contextMenu.SetCurrentValue(
             ContextMenu.PlacementProperty,

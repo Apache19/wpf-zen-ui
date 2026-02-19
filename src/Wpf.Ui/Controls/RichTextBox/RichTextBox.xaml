@@ -64,10 +64,7 @@
 
     <Style BasedOn="{StaticResource DefaultRichTextBoxStyle}" TargetType="{x:Type RichTextBox}" />
 
-    <Style
-        x:Key="DefaultUiRichTextBoxStyle"
-        BasedOn="{StaticResource DefaultRichTextBoxStyle}"
-        TargetType="{x:Type controls:RichTextBox}">
+    <Style x:Key="DefaultUiRichTextBoxStyle" BasedOn="{StaticResource DefaultRichTextBoxStyle}" TargetType="{x:Type controls:RichTextBox}">
 
         <Style.Triggers>
             <Trigger Property="IsTextSelectionEnabled" Value="True">

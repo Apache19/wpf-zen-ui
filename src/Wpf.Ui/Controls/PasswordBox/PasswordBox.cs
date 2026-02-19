@@ -14,7 +14,7 @@ namespace Wpf.Ui.Controls;
 public partial class PasswordBox : TextBox
 {
     private readonly PasswordHelper _passwordHelper;
-    private bool _isUpdating;
+    private          bool           _isUpdating;
 
     /// <summary>
     /// Identifies the <see cref="Password"/> dependency property.
@@ -65,6 +65,14 @@ public partial class PasswordBox : TextBox
         typeof(RoutedEventHandler),
         typeof(PasswordBox)
     );
+
+    static PasswordBox()
+    {
+        DefaultStyleKeyProperty.OverrideMetadata(
+            typeof(PasswordBox),
+            new FrameworkPropertyMetadata(typeof(PasswordBox))
+        );
+    }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="PasswordBox"/> class.
@@ -169,7 +177,7 @@ public partial class PasswordBox : TextBox
         if (parameter == "reveal")
         {
             SetCurrentValue(IsPasswordRevealedProperty, !IsPasswordRevealed);
-            _ = Focus();
+            _          = Focus();
             CaretIndex = Text.Length;
         }
         else
@@ -221,12 +229,12 @@ public partial class PasswordBox : TextBox
     /// <param name="textChanges">The text changes.</param>
     private void HandleHiddenModeUpdate(ICollection<TextChange> textChanges)
     {
-        var caretIndex = CaretIndex;
+        var caretIndex  = CaretIndex;
         var newPassword = textChanges.Count > 0 ? _passwordHelper.GetNewPassword(textChanges) : Password;
 
         UpdateWithLock(() =>
         {
-            SetCurrentValue(TextProperty, new string(PasswordChar, newPassword?.Length ?? 0));
+            SetCurrentValue(TextProperty,     new string(PasswordChar, newPassword?.Length ?? 0));
             SetCurrentValue(PasswordProperty, newPassword);
             CaretIndex = caretIndex;
             RaisePasswordChangedEvent();

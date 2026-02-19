@@ -4,6 +4,7 @@
 // All Rights Reserved.
 
 // ReSharper disable once CheckNamespace
+
 namespace Wpf.Ui.Controls;
 
 /// <summary>
@@ -182,6 +183,8 @@ public class TextBlock : System.Windows.Controls.TextBlock
         // Forces execution of TextBlock's type initializer.
     }
 
+    #region Attached FontTypography
+
     /// <summary>Identifies the <see cref="FontTypography"/> dependency property.</summary>
     /// <remarks>
     /// <para>
@@ -226,6 +229,58 @@ public class TextBlock : System.Windows.Controls.TextBlock
                 OnFontTypographyChanged
             )
         );
+
+    /// <summary>
+    /// Helper for getting <see cref="FontTypographyProperty"/> from <paramref name="obj"/>.
+    /// </summary>
+    /// <param name="obj">
+    /// <see cref="DependencyObject"/> to read <see cref="FontTypographyProperty"/> from.
+    /// </param>
+    /// <returns>
+    /// FontTypography property value.
+    /// </returns>
+    [AttachedPropertyBrowsableForType(typeof(DependencyObject))]
+    public static FontTypography? GetFontTypography(DependencyObject obj)
+    {
+        if (obj == null)
+        {
+            throw new ArgumentNullException(nameof(obj));
+        }
+
+        return (FontTypography?)obj.GetValue(FontTypographyProperty);
+    }
+
+    /// <summary>
+    /// Helper for setting <see cref="FontTypographyProperty"/> on <paramref name="obj"/>.
+    /// </summary>
+    /// <param name="obj">
+    /// <see cref="DependencyObject"/> to set <see cref="FontTypographyProperty"/> on.
+    /// </param>
+    /// <param name="value">
+    /// FontTypography property value.
+    /// </param>
+    public static void SetFontTypography(DependencyObject obj, FontTypography? value)
+    {
+        if (obj == null)
+        {
+            throw new ArgumentNullException(nameof(obj));
+        }
+
+        obj.SetValue(FontTypographyProperty, value);
+    }
+
+    /// <summary>
+    /// Gets or sets the <see cref="FontTypography"/> of the text.
+    /// </summary>
+    public FontTypography? FontTypography
+    {
+        get => (FontTypography?)GetValue(FontTypographyProperty);
+        set => SetValue(FontTypographyProperty, value);
+    }
+
+    #endregion
+
+    #region Attached Appearance
 
     /// <summary>Identifies the <see cref="Appearance"/> dependency property.</summary>
     /// <remarks>
@@ -275,6 +330,19 @@ public class TextBlock : System.Windows.Controls.TextBlock
         );
 
     /// <summary>
+    /// Gets or sets the color of the text.
+    /// </summary>
+    public TextColor? Appearance
+    {
+        get => (TextColor?)GetValue(AppearanceProperty);
+        set => SetValue(AppearanceProperty, value);
+    }
+
+    #endregion
+
+    #region Attached DefaultForeground
+
+    /// <summary>
     /// Attached property to hold a resource reference to a Brush that should be
     /// used as the default Foreground when the control's Foreground is not set.
     /// </summary>
@@ -321,11 +389,15 @@ public class TextBlock : System.Windows.Controls.TextBlock
         return (Brush?)element.GetValue(DefaultForegroundProperty);
     }
 
+    #endregion
+
+    #region Attached AppearanceForegroundProxy
+
     /// <summary>
     /// A Puppet dependency property that is used to hold the foreground resource resolved from the Appearance property.
     /// Used only as a resolution proxy, so no accessors are provided."
     /// </summary>
-    public static readonly DependencyProperty AppearanceForegroundProxyProperty =
+    private static readonly DependencyProperty AppearanceForegroundProxyProperty =
         DependencyProperty.RegisterAttached(
             "AppearanceForegroundProxy",
             typeof(Brush),
@@ -341,71 +413,6 @@ public class TextBlock : System.Windows.Controls.TextBlock
                 }
             )
         );
-
-    /// <summary>
-    /// Private Puppet dependency property used to hold a ResourceReference to a FontTypographyPreset.
-    /// </summary>
-    public static readonly DependencyProperty FontTypographyPresetProxyProperty =
-        DependencyProperty.RegisterAttached(
-            "FontTypographyPresetProxy",
-            typeof(FontTypographyPreset),
-            typeof(TextBlock),
-            new PropertyMetadata(
-                null,
-                static (d, _) =>
-                {
-                    if (d is System.Windows.Controls.TextBlock tb)
-                    {
-                        tb.CoerceValue(FontSizeProperty);
-                        tb.CoerceValue(FontWeightProperty);
-                    }
-                }
-            )
-        );
-
-    public TextBlock()
-    {
-        SetResourceReference(DefaultForegroundProperty, TextColor.Primary.ToResourceKey());
-    }
-
-    /// <summary>
-    /// Helper for getting <see cref="FontTypographyProperty"/> from <paramref name="obj"/>.
-    /// </summary>
-    /// <param name="obj">
-    /// <see cref="DependencyObject"/> to read <see cref="FontTypographyProperty"/> from.
-    /// </param>
-    /// <returns>
-    /// FontTypography property value.
-    /// </returns>
-    [AttachedPropertyBrowsableForType(typeof(DependencyObject))]
-    public static FontTypography? GetFontTypography(DependencyObject obj)
-    {
-        if (obj == null)
-        {
-            throw new ArgumentNullException(nameof(obj));
-        }
-
-        return (FontTypography?)obj.GetValue(FontTypographyProperty);
-    }
-
-    /// <summary>
-    /// Helper for setting <see cref="FontTypographyProperty"/> on <paramref name="obj"/>.
-    /// </summary>
-    /// <param name="obj">
-    /// <see cref="DependencyObject"/> to set <see cref="FontTypographyProperty"/> on.
-    /// </param>
-    /// <param name="value">
-    /// FontTypography property value.
-    /// </param>
-    public static void SetFontTypography(DependencyObject obj, FontTypography? value)
-    {
-        if (obj == null)
-        {
-            throw new ArgumentNullException(nameof(obj));
-        }
-
-        obj.SetValue(FontTypographyProperty, value);
-    }
 
     /// <summary>
     /// Helper for getting <see cref="AppearanceProperty"/> from <paramref name="obj"/>.
@@ -446,22 +453,36 @@ public class TextBlock : System.Windows.Controls.TextBlock
         obj.SetValue(AppearanceProperty, value);
     }
 
-    /// <summary>
-    /// Gets or sets the <see cref="FontTypography"/> of the text.
-    /// </summary>
-    public FontTypography? FontTypography
-    {
-        get => (FontTypography?)GetValue(FontTypographyProperty);
-        set => SetValue(FontTypographyProperty, value);
-    }
+    #endregion
+
+    #region Attached FontTypographyPresetProxy
 
     /// <summary>
-    /// Gets or sets the color of the text.
+    /// Private Puppet dependency property used to hold a ResourceReference to a FontTypographyPreset.
     /// </summary>
-    public TextColor? Appearance
+    private static readonly DependencyProperty FontTypographyPresetProxyProperty =
+        DependencyProperty.RegisterAttached(
+            "FontTypographyPresetProxy",
+            typeof(FontTypographyPreset),
+            typeof(TextBlock),
+            new PropertyMetadata(
+                null,
+                static (d, _) =>
+                {
+                    if (d is System.Windows.Controls.TextBlock tb)
+                    {
+                        tb.CoerceValue(FontSizeProperty);
+                        tb.CoerceValue(FontWeightProperty);
+                    }
+                }
+            )
+        );
+
+    #endregion
+
+    public TextBlock()
     {
-        get => (TextColor?)GetValue(AppearanceProperty);
-        set => SetValue(AppearanceProperty, value);
+        SetResourceReference(DefaultForegroundProperty, TextColor.Primary.ToResourceKey());
     }
 
     private static void OnFontTypographyChanged(DependencyObject o, DependencyPropertyChangedEventArgs args)

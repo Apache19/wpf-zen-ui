@@ -4,12 +4,15 @@
 // All Rights Reserved.
 
 // ReSharper disable once CheckNamespace
+
+using System.Windows.Controls;
+
 namespace Wpf.Ui.Controls;
 
 /// <summary>
 /// Simple Card with content and <see cref="Footer"/>.
 /// </summary>
-public class Card : System.Windows.Controls.ContentControl
+public class Card : ContentControl
 {
     /// <summary>Identifies the <see cref="Footer"/> dependency property.</summary>
     public static readonly DependencyProperty FooterProperty = DependencyProperty.Register(
@@ -26,6 +29,14 @@ public class Card : System.Windows.Controls.ContentControl
         typeof(Card),
         new PropertyMetadata(false)
     );
+
+    static Card()
+    {
+        DefaultStyleKeyProperty.OverrideMetadata(
+            typeof(Card),
+            new FrameworkPropertyMetadata(typeof(Card))
+        );
+    }
 
     /// <summary>
     /// Gets or sets additional content displayed at the bottom.

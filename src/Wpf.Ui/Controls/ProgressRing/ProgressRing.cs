@@ -5,8 +5,7 @@
 
 /* https://docs.microsoft.com/en-us/fluent-ui/web-components/components/progress-ring */
 
-using Brush = System.Windows.Media.Brush;
-using Brushes = System.Windows.Media.Brushes;
+using System.Windows.Controls;
 
 // ReSharper disable once CheckNamespace
 namespace Wpf.Ui.Controls;
@@ -14,7 +13,7 @@ namespace Wpf.Ui.Controls;
 /// <summary>
 /// Rotating loading ring.
 /// </summary>
-public class ProgressRing : System.Windows.Controls.Control
+public class ProgressRing : Control
 {
     /// <summary>Identifies the <see cref="Progress"/> dependency property.</summary>
     public static readonly DependencyProperty ProgressProperty = DependencyProperty.Register(
@@ -68,6 +67,14 @@ public class ProgressRing : System.Windows.Controls.Control
         typeof(ProgressRing),
         new PropertyMetadata(Visibility.Visible)
     );
+
+    static ProgressRing()
+    {
+        DefaultStyleKeyProperty.OverrideMetadata(
+            typeof(ProgressRing),
+            new FrameworkPropertyMetadata(typeof(ProgressRing))
+        );
+    }
 
     /// <summary>
     /// Gets or sets the progress.

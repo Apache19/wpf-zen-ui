@@ -6,6 +6,7 @@
 // https://docs.microsoft.com/en-us/fluent-ui/web-components/components/anchor
 
 // ReSharper disable once CheckNamespace
+
 namespace Wpf.Ui.Controls;
 
 /// <summary>
@@ -17,4 +18,13 @@ namespace Wpf.Ui.Controls;
 ///     NavigateUri="https://lepo.co/" /&gt;
 /// </code>
 /// </example>
-public class Anchor : Wpf.Ui.Controls.HyperlinkButton { }
+public class Anchor : HyperlinkButton
+{
+    static Anchor()
+    {
+        DefaultStyleKeyProperty.OverrideMetadata(
+            typeof(Anchor),
+            new FrameworkPropertyMetadata(typeof(Anchor))
+        );
+    }
+}

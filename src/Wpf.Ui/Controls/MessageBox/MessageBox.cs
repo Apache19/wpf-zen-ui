@@ -130,6 +130,14 @@ public class MessageBox : FluentWindow
         new PropertyMetadata(null)
     );
 
+    static MessageBox()
+    {
+        DefaultStyleKeyProperty.OverrideMetadata(
+            typeof(MessageBox),
+            new FrameworkPropertyMetadata(typeof(MessageBox))
+        );
+    }
+
     /// <summary>
     /// Gets or sets a value indicating whether to show the <see cref="System.Windows.Window.Title"/> in <see cref="TitleBar"/>.
     /// </summary>
@@ -252,12 +260,12 @@ public class MessageBox : FluentWindow
     /// </summary>
     public IRelayCommand TemplateButtonCommand => (IRelayCommand)GetValue(TemplateButtonCommandProperty);
 
-#if !NET8_0_OR_GREATER
+    #if !NET8_0_OR_GREATER
     private static readonly PropertyInfo CanCenterOverWPFOwnerPropertyInfo = typeof(Window).GetProperty(
         "CanCenterOverWPFOwner",
         BindingFlags.NonPublic | BindingFlags.Instance
     )!;
-#endif
+    #endif
 
     /// <summary>
     /// Initializes a new instance of the <see cref="MessageBox"/> class.
@@ -312,7 +320,7 @@ public class MessageBox : FluentWindow
             cancellationToken
         );
 
-#if NET6_0_OR_GREATER
+        #if NET6_0_OR_GREATER
         await using (tokenRegistration)
         {
             if (showAsDialog)
@@ -326,7 +334,7 @@ public class MessageBox : FluentWindow
 
             return await Tcs.Task;
         }
-#else
+        #else
         using (tokenRegistration)
         {
             if (showAsDialog)
@@ -340,7 +348,7 @@ public class MessageBox : FluentWindow
 
             return await Tcs.Task;
         }
-#endif
+        #endif
     }
 
     /// <summary>
@@ -377,17 +385,17 @@ public class MessageBox : FluentWindow
     // CanCenterOverWPFOwner property see https://source.dot.net/#PresentationFramework/System/Windows/Window.cs,e679e433777b21b8
     private bool CanCenterOverWPFOwner()
     {
-#if NET8_0_OR_GREATER
+        #if NET8_0_OR_GREATER
         return CanCenterOverWPFOwnerAccessor(this);
-#else
+        #else
         return (bool)CanCenterOverWPFOwnerPropertyInfo.GetValue(this)!;
-#endif
+        #endif
     }
 
-#if NET8_0_OR_GREATER
+    #if NET8_0_OR_GREATER
     [UnsafeAccessor(UnsafeAccessorKind.Method, Name = "get_CanCenterOverWPFOwner")]
     private static extern bool CanCenterOverWPFOwnerAccessor(Window w);
-#endif
+    #endif
 
     /// <summary>
     /// Resizes the MessageBox to fit the content's size, including margins.
@@ -400,7 +408,7 @@ public class MessageBox : FluentWindow
         // left and right margin
         const double margin = 12.0 * 2;
 
-        SetCurrentValue(WidthProperty, desiredSize.Width + margin);
+        SetCurrentValue(WidthProperty,  desiredSize.Width + margin);
         SetCurrentValue(HeightProperty, desiredSize.Height);
 
         ResizeWidth(rootElement);
@@ -421,20 +429,20 @@ public class MessageBox : FluentWindow
 
     protected virtual void CenterWindowOnScreen()
     {
-        double screenWidth = SystemParameters.PrimaryScreenWidth;
+        double screenWidth  = SystemParameters.PrimaryScreenWidth;
         double screenHeight = SystemParameters.PrimaryScreenHeight;
 
         SetCurrentValue(LeftProperty, (screenWidth / 2) - (Width / 2));
-        SetCurrentValue(TopProperty, (screenHeight / 2) - (Height / 2));
+        SetCurrentValue(TopProperty,  (screenHeight / 2) - (Height / 2));
     }
 
     private void CenterWindowOnOwner()
     {
         double left = Owner.Left + ((Owner.Width - Width) / 2);
-        double top = Owner.Top + ((Owner.Height - Height) / 2);
+        double top  = Owner.Top + ((Owner.Height - Height) / 2);
 
         SetCurrentValue(LeftProperty, left);
-        SetCurrentValue(TopProperty, top);
+        SetCurrentValue(TopProperty,  top);
     }
 
     /// <summary>
@@ -445,9 +453,9 @@ public class MessageBox : FluentWindow
     {
         MessageBoxResult result = button switch
         {
-            MessageBoxButton.Primary => MessageBoxResult.Primary,
+            MessageBoxButton.Primary   => MessageBoxResult.Primary,
             MessageBoxButton.Secondary => MessageBoxResult.Secondary,
-            _ => MessageBoxResult.None,
+            _                          => MessageBoxResult.None,
         };
 
         _ = Tcs?.TrySetResult(result);

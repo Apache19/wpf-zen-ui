@@ -28,6 +28,7 @@ public partial class NavigationView : System.Windows.Controls.Control, INavigati
             typeof(NavigationView),
             new FrameworkPropertyMetadata(typeof(NavigationView))
         );
+
         MarginProperty.OverrideMetadata(
             typeof(NavigationView),
             new FrameworkPropertyMetadata(new Thickness(0, 0, 0, 0))

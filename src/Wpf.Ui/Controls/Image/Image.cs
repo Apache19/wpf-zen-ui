@@ -73,6 +73,14 @@ public class Image : Control
     public static readonly DependencyProperty InnerCornerRadiusProperty =
         InnerCornerRadiusPropertyKey.DependencyProperty;
 
+    static Image()
+    {
+        DefaultStyleKeyProperty.OverrideMetadata(
+            typeof(Image),
+            new FrameworkPropertyMetadata(typeof(Image))
+        );
+    }
+
     /// <summary>
     /// Gets or sets the Source on this Image.
     /// The Source property is the ImageSource that holds the actual image drawn.
@@ -123,17 +131,17 @@ public class Image : Control
 
     private static void OnCornerRadiusChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
-        var thickness = (Thickness)d.GetValue(BorderThicknessProperty);
+        var thickness   = (Thickness)d.GetValue(BorderThicknessProperty);
         var outerRarius = (CornerRadius)e.NewValue;
 
         // Inner radius = Outer radius - thickenss/2
         d.SetValue(
             InnerCornerRadiusPropertyKey,
             new CornerRadius(
-                topLeft: Math.Max(0, (int)Math.Round(outerRarius.TopLeft - (thickness.Left / 2), 0)),
-                topRight: Math.Max(0, (int)Math.Round(outerRarius.TopRight - (thickness.Top / 2), 0)),
+                topLeft: Math.Max(0,     (int)Math.Round(outerRarius.TopLeft - (thickness.Left / 2),      0)),
+                topRight: Math.Max(0,    (int)Math.Round(outerRarius.TopRight - (thickness.Top / 2),      0)),
                 bottomRight: Math.Max(0, (int)Math.Round(outerRarius.BottomRight - (thickness.Right / 2), 0)),
-                bottomLeft: Math.Max(0, (int)Math.Round(outerRarius.BottomLeft - (thickness.Bottom / 2), 0))
+                bottomLeft: Math.Max(0,  (int)Math.Round(outerRarius.BottomLeft - (thickness.Bottom / 2), 0))
             )
         );
     }

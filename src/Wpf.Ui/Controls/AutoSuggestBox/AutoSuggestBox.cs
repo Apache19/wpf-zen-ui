@@ -27,14 +27,12 @@ namespace Wpf.Ui.Controls;
 /// &lt;/ui:AutoSuggestBox&gt;
 /// </code>
 /// </example>
-[TemplatePart(Name = ElementTextBox, Type = typeof(TextBox))]
-[TemplatePart(Name = ElementSuggestionsPopup, Type = typeof(Popup))]
-[TemplatePart(Name = ElementSuggestionsList, Type = typeof(ListView))]
+[TemplatePart(Name = ElementTextBox,          Type = typeof(TextBox))]
+[TemplatePart(Name = ElementSuggestionsList,  Type = typeof(ListView))]
 public class AutoSuggestBox : ItemsControl, IIconControl
 {
-    protected const string ElementTextBox = "PART_TextBox";
-    protected const string ElementSuggestionsPopup = "PART_SuggestionsPopup";
-    protected const string ElementSuggestionsList = "PART_SuggestionsList";
+    protected const string ElementTextBox          = "PART_TextBox";
+    protected const string ElementSuggestionsList  = "PART_SuggestionsList";
 
     /// <summary>Identifies the <see cref="OriginalItemsSource"/> dependency property.</summary>
     public static readonly DependencyProperty OriginalItemsSourceProperty = DependencyProperty.Register(
@@ -215,6 +213,14 @@ public class AutoSuggestBox : ItemsControl, IIconControl
         typeof(AutoSuggestBox)
     );
 
+    static AutoSuggestBox()
+    {
+        DefaultStyleKeyProperty.OverrideMetadata(
+            typeof(AutoSuggestBox),
+            new FrameworkPropertyMetadata(typeof(AutoSuggestBox))
+        );
+    }
+
     /// <summary>
     /// Occurs when the user submits a search query.
     /// </summary>
@@ -242,16 +248,14 @@ public class AutoSuggestBox : ItemsControl, IIconControl
         remove => RemoveHandler(TextChangedEvent, value);
     }
 
-    protected TextBox? TextBox { get; set; } = null;
+    protected TextBox? TextBox { get; set; }
+    
+    protected ListView? SuggestionsList { get; set; }
 
-    protected Popup SuggestionsPopup { get; set; } = null!;
-
-    protected ListView? SuggestionsList { get; set; } = null!;
-
-    private bool _changingTextAfterSuggestionChosen;
-    private bool _isChangedTextOutSideOfTextBox;
+    private bool    _changingTextAfterSuggestionChosen;
+    private bool    _isChangedTextOutSideOfTextBox;
     private object? _selectedItem;
-    private bool? _isHwndHookSubscribed;
+    private bool?   _isHwndHookSubscribed;
 
     public AutoSuggestBox()
     {
@@ -276,9 +280,8 @@ public class AutoSuggestBox : ItemsControl, IIconControl
     {
         base.OnApplyTemplate();
 
-        TextBox = GetTemplateChild<TextBox>(ElementTextBox);
-        SuggestionsPopup = GetTemplateChild<Popup>(ElementSuggestionsPopup);
-        SuggestionsList = GetTemplateChild<ListView>(ElementSuggestionsList);
+        TextBox               = GetTemplateChild<TextBox>(ElementTextBox);
+        SuggestionsList       = GetTemplateChild<ListView>(ElementSuggestionsList);
         _isHwndHookSubscribed = false;
 
         AcquireTemplateResources();
@@ -312,22 +315,22 @@ public class AutoSuggestBox : ItemsControl, IIconControl
         // Unsubscription is safe, even if event has never been subscribed to.
         if (TextBox != null)
         {
-            TextBox.PreviewKeyDown -= TextBoxOnPreviewKeyDown;
-            TextBox.PreviewKeyDown += TextBoxOnPreviewKeyDown;
-            TextBox.TextChanged -= TextBoxOnTextChanged;
-            TextBox.TextChanged += TextBoxOnTextChanged;
+            TextBox.PreviewKeyDown    -= TextBoxOnPreviewKeyDown;
+            TextBox.PreviewKeyDown    += TextBoxOnPreviewKeyDown;
+            TextBox.TextChanged       -= TextBoxOnTextChanged;
+            TextBox.TextChanged       += TextBoxOnTextChanged;
             TextBox.LostKeyboardFocus -= TextBoxOnLostKeyboardFocus;
             TextBox.LostKeyboardFocus += TextBoxOnLostKeyboardFocus;
         }
 
         if (SuggestionsList != null)
         {
-            SuggestionsList.SelectionChanged -= SuggestionsListOnSelectionChanged;
-            SuggestionsList.SelectionChanged += SuggestionsListOnSelectionChanged;
-            SuggestionsList.PreviewKeyDown -= SuggestionsListOnPreviewKeyDown;
-            SuggestionsList.PreviewKeyDown += SuggestionsListOnPreviewKeyDown;
-            SuggestionsList.LostKeyboardFocus -= SuggestionsListOnLostKeyboardFocus;
-            SuggestionsList.LostKeyboardFocus += SuggestionsListOnLostKeyboardFocus;
+            SuggestionsList.SelectionChanged         -= SuggestionsListOnSelectionChanged;
+            SuggestionsList.SelectionChanged         += SuggestionsListOnSelectionChanged;
+            SuggestionsList.PreviewKeyDown           -= SuggestionsListOnPreviewKeyDown;
+            SuggestionsList.PreviewKeyDown           += SuggestionsListOnPreviewKeyDown;
+            SuggestionsList.LostKeyboardFocus        -= SuggestionsListOnLostKeyboardFocus;
+            SuggestionsList.LostKeyboardFocus        += SuggestionsListOnLostKeyboardFocus;
             SuggestionsList.PreviewMouseLeftButtonUp -= SuggestionsListOnPreviewMouseLeftButtonUp;
             SuggestionsList.PreviewMouseLeftButtonUp += SuggestionsListOnPreviewMouseLeftButtonUp;
         }
@@ -344,22 +347,22 @@ public class AutoSuggestBox : ItemsControl, IIconControl
     {
         if (TextBox != null)
         {
-            TextBox.PreviewKeyDown -= TextBoxOnPreviewKeyDown;
-            TextBox.TextChanged -= TextBoxOnTextChanged;
+            TextBox.PreviewKeyDown    -= TextBoxOnPreviewKeyDown;
+            TextBox.TextChanged       -= TextBoxOnTextChanged;
             TextBox.LostKeyboardFocus -= TextBoxOnLostKeyboardFocus;
         }
 
         if (SuggestionsList != null)
         {
-            SuggestionsList.SelectionChanged -= SuggestionsListOnSelectionChanged;
-            SuggestionsList.PreviewKeyDown -= SuggestionsListOnPreviewKeyDown;
-            SuggestionsList.LostKeyboardFocus -= SuggestionsListOnLostKeyboardFocus;
+            SuggestionsList.SelectionChanged         -= SuggestionsListOnSelectionChanged;
+            SuggestionsList.PreviewKeyDown           -= SuggestionsListOnPreviewKeyDown;
+            SuggestionsList.LostKeyboardFocus        -= SuggestionsListOnLostKeyboardFocus;
             SuggestionsList.PreviewMouseLeftButtonUp -= SuggestionsListOnPreviewMouseLeftButtonUp;
         }
 
         if (
             (_isHwndHookSubscribed.HasValue && _isHwndHookSubscribed.Value)
-            && PresentationSource.FromVisual(this) is HwndSource source
+         && PresentationSource.FromVisual(this) is HwndSource source
         )
         {
             source.RemoveHook(Hook);
@@ -410,7 +413,7 @@ public class AutoSuggestBox : ItemsControl, IIconControl
         var args = new AutoSuggestBoxTextChangedEventArgs(TextChangedEvent, this)
         {
             Reason = reason,
-            Text = text,
+            Text   = text,
         };
 
         RaiseEvent(args);
@@ -570,15 +573,15 @@ public class AutoSuggestBox : ItemsControl, IIconControl
 
         var splitText = text.Split(' ');
         var suitableItems = OriginalItemsSource
-            .Cast<object>()
-            .Where(item =>
+           .Cast<object>()
+           .Where(item =>
             {
                 var itemText = GetStringFromObj(item);
                 return splitText.All(key =>
                     itemText?.Contains(key, StringComparison.OrdinalIgnoreCase) ?? false
                 );
             })
-            .ToList();
+           .ToList();
 
         SetCurrentValue(ItemsSourceProperty, suitableItems);
     }
@@ -588,7 +591,7 @@ public class AutoSuggestBox : ItemsControl, IIconControl
         // uses reflection. maybe it needs some optimization?
         var displayMemberPathText =
             !string.IsNullOrEmpty(DisplayMemberPath)
-            && obj.GetType().GetProperty(DisplayMemberPath)?.GetValue(obj) is string value
+         && obj.GetType().GetProperty(DisplayMemberPath)?.GetValue(obj) is string value
                 ? value
                 : null;
 
@@ -597,7 +600,7 @@ public class AutoSuggestBox : ItemsControl, IIconControl
 
     private static void OnTextChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
-        var self = (AutoSuggestBox)d;
+        var self    = (AutoSuggestBox)d;
         var newText = (string)e.NewValue;
 
         if (self.TextBox is null)

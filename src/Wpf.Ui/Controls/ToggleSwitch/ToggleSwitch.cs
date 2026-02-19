@@ -39,6 +39,14 @@ public class ToggleSwitch : System.Windows.Controls.Primitives.ToggleButton
         )
     );
 
+    static ToggleSwitch()
+    {
+        DefaultStyleKeyProperty.OverrideMetadata(
+            typeof(ToggleSwitch),
+            new FrameworkPropertyMetadata(typeof(ToggleSwitch))
+        );
+    }
+
     /// <summary>
     /// Gets or sets the content that should be displayed when the <see cref="ToggleSwitch"/> is in the "Off" state.
     /// </summary>

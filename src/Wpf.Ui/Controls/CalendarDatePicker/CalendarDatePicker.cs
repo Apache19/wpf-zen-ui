@@ -19,7 +19,7 @@ namespace Wpf.Ui.Controls;
 /// &lt;ui:CalendarDatePicker /&gt;
 /// </code>
 /// </example>
-public class CalendarDatePicker : Wpf.Ui.Controls.Button
+public class CalendarDatePicker : Button
 {
     private Popup? _popup;
 
@@ -54,6 +54,14 @@ public class CalendarDatePicker : Wpf.Ui.Controls.Button
         typeof(CalendarDatePicker),
         new PropertyMetadata(DateTimeHelper.GetCurrentDateFormat().FirstDayOfWeek)
     );
+
+    static CalendarDatePicker()
+    {
+        DefaultStyleKeyProperty.OverrideMetadata(
+            typeof(CalendarDatePicker),
+            new FrameworkPropertyMetadata(typeof(CalendarDatePicker))
+        );
+    }
 
     /// <summary>
     /// Gets or sets a value indicating whether the current date is highlighted.
@@ -115,8 +123,8 @@ public class CalendarDatePicker : Wpf.Ui.Controls.Button
             System.Windows.Controls.Calendar.SelectedDateProperty,
             new Binding(nameof(Date))
             {
-                Source = this,
-                Mode = BindingMode.TwoWay,
+                Source              = this,
+                Mode                = BindingMode.TwoWay,
                 UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged,
             }
         );
@@ -124,8 +132,8 @@ public class CalendarDatePicker : Wpf.Ui.Controls.Button
             System.Windows.Controls.Calendar.IsTodayHighlightedProperty,
             new Binding(nameof(IsTodayHighlighted))
             {
-                Source = this,
-                Mode = BindingMode.TwoWay,
+                Source              = this,
+                Mode                = BindingMode.TwoWay,
                 UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged,
             }
         );
@@ -133,8 +141,8 @@ public class CalendarDatePicker : Wpf.Ui.Controls.Button
             System.Windows.Controls.Calendar.FirstDayOfWeekProperty,
             new Binding(nameof(FirstDayOfWeek))
             {
-                Source = this,
-                Mode = BindingMode.TwoWay,
+                Source              = this,
+                Mode                = BindingMode.TwoWay,
                 UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged,
             }
         );
@@ -143,14 +151,14 @@ public class CalendarDatePicker : Wpf.Ui.Controls.Button
 
         _popup = new Popup
         {
-            PlacementTarget = this,
-            Placement = PlacementMode.Bottom,
-            Child = calendar,
-            Focusable = false,
-            StaysOpen = false,
-            VerticalOffset = 1D,
-            VerticalAlignment = VerticalAlignment.Center,
-            PopupAnimation = PopupAnimation.None,
+            PlacementTarget    = this,
+            Placement          = PlacementMode.Bottom,
+            Child              = calendar,
+            Focusable          = false,
+            StaysOpen          = false,
+            VerticalOffset     = 1D,
+            VerticalAlignment  = VerticalAlignment.Center,
+            PopupAnimation     = PopupAnimation.None,
             AllowsTransparency = true,
         };
 
@@ -158,8 +166,8 @@ public class CalendarDatePicker : Wpf.Ui.Controls.Button
             Popup.IsOpenProperty,
             new Binding(nameof(IsCalendarOpen))
             {
-                Source = this,
-                Mode = BindingMode.TwoWay,
+                Source              = this,
+                Mode                = BindingMode.TwoWay,
                 UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged,
             }
         );

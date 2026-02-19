@@ -4,9 +4,15 @@
 // All Rights Reserved.
 
 // ReSharper disable once CheckNamespace
+
+using System.Windows.Controls;
+
 namespace Wpf.Ui.Controls;
 
 /// <summary>
 /// Represents a control that lets a user pick a color using a color spectrum, sliders, and text input.
 /// </summary>
-internal class ColorPicker : System.Windows.Controls.Control { }
+internal class ColorPicker : Control
+{
+    // todo 尚未实现
+}

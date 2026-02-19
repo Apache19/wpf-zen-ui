@@ -6,6 +6,7 @@
 /* Based on Windows UI Library */
 
 // ReSharper disable once CheckNamespace
+
 namespace Wpf.Ui.Controls;
 
 /// <summary>
@@ -36,6 +37,14 @@ public class BreadcrumbBarItem : System.Windows.Controls.ContentControl
         typeof(BreadcrumbBarItem),
         new PropertyMetadata(false)
     );
+
+    static BreadcrumbBarItem()
+    {
+        DefaultStyleKeyProperty.OverrideMetadata(
+            typeof(BreadcrumbBarItem),
+            new FrameworkPropertyMetadata(typeof(BreadcrumbBarItem))
+        );
+    }
 
     /// <summary>
     /// Gets or sets displayed <see cref="IconElement"/>.

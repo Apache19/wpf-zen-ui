@@ -9,6 +9,7 @@
 // https://docs.microsoft.com/en-us/uwp/api/windows.ui.xaml.controls.navigationviewitemheader?view=winrt-22621
 
 // ReSharper disable once CheckNamespace
+
 namespace Wpf.Ui.Controls;
 
 /// <summary>
@@ -31,6 +32,14 @@ public class NavigationViewItemHeader : System.Windows.Controls.Control
         typeof(NavigationViewItemHeader),
         new PropertyMetadata(null)
     );
+
+    static NavigationViewItemHeader()
+    {
+        DefaultStyleKeyProperty.OverrideMetadata(
+            typeof(NavigationViewItemHeader),
+            new FrameworkPropertyMetadata(typeof(NavigationViewItemHeader))
+        );
+    }
 
     /// <summary>
     /// Gets or sets the text presented in the header element.

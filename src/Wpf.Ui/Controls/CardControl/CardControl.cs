@@ -37,6 +37,14 @@ public class CardControl : System.Windows.Controls.Primitives.ButtonBase, IIconC
         new PropertyMetadata(new CornerRadius(0))
     );
 
+    static CardControl()
+    {
+        DefaultStyleKeyProperty.OverrideMetadata(
+            typeof(CardControl),
+            new FrameworkPropertyMetadata(typeof(CardControl))
+        );
+    }
+
     /// <summary>
     /// Gets or sets header which is used for each item in the control.
     /// </summary>

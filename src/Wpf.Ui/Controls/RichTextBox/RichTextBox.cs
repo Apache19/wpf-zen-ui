@@ -4,6 +4,7 @@
 // All Rights Reserved.
 
 // ReSharper disable once CheckNamespace
+
 namespace Wpf.Ui.Controls;
 
 /// <summary>
@@ -18,6 +19,14 @@ public class RichTextBox : System.Windows.Controls.RichTextBox
         typeof(RichTextBox),
         new PropertyMetadata(false)
     );
+
+    static RichTextBox()
+    {
+        DefaultStyleKeyProperty.OverrideMetadata(
+            typeof(RichTextBox),
+            new FrameworkPropertyMetadata(typeof(RichTextBox))
+        );
+    }
 
     /// <summary>
     /// Gets or sets a value indicating whether the user can select text in the control.

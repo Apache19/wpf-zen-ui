@@ -42,6 +42,14 @@ public class InfoBadge : System.Windows.Controls.Control
         )
     );
 
+    static InfoBadge()
+    {
+        DefaultStyleKeyProperty.OverrideMetadata(
+            typeof(InfoBadge),
+            new FrameworkPropertyMetadata(typeof(InfoBadge))
+        );
+    }
+
     /// <summary>
     /// Gets or sets the title of the <see cref="Severity" />.
     /// </summary>

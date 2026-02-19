@@ -11,6 +11,7 @@ namespace Wpf.Ui.Controls;
 /// </content>
 public partial class NavigationView
 {
+    // todo 似乎没有必要使用附加属性
     // ============================================================
     // HeaderContent Attached Property
     // ============================================================
