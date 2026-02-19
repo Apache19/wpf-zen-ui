@@ -191,7 +191,7 @@ public partial class FluentWindow : Window
                 {
                     if (d is FluentWindow fw && e.NewValue is WindowBackdropType wbt)
                     {
-                        fw._OnWindowBackdropTypeChanged?.Invoke(wbt);
+                        fw._UpdateBackdrop?.Invoke();
                     }
                 }
             )
@@ -251,7 +251,7 @@ public partial class FluentWindow : Window
 
     private readonly MessageHandler?             _MSG_NCCALCSIZE = null;
     private readonly Action<HwndSource>          _OnSourceInitialized;
-    private readonly Action<WindowBackdropType>? _OnWindowBackdropTypeChanged;
+    private readonly Action?                     _UpdateBackdrop;
 
     private bool _firstShownFired;
 
@@ -278,6 +278,7 @@ public partial class FluentWindow : Window
             case OsVersion.Win11:
             default:
             {
+                _UpdateBackdrop      = UpdateBackdrop_Win11;
                 _OnSourceInitialized = OnSourceInitialized_Win11;
                 break;
             }
@@ -333,7 +334,7 @@ public partial class FluentWindow : Window
 
     private void OnAppThemeChanged(object? sender, ThemeChangedEventArgs e)
     {
-        Debug.WriteLine($"Theme changed from {e.AppliedTheme}");
+        _UpdateBackdrop?.Invoke();
     }
 
     protected override void OnSourceInitialized(EventArgs e)
@@ -343,10 +344,25 @@ public partial class FluentWindow : Window
         if (PresentationSource.FromVisual(this) is HwndSource hwndSource)
         {
             hwndSource.AddHook(FluentWindowSourceHook);
+
             _OnSourceInitialized(hwndSource);
+            _UpdateBackdrop?.Invoke();
         }
 
         OnWindowCornerPreferenceChanged(WindowCornerPreference);
+    }
+
+    private static bool IsSupportedBackdrop(WindowBackdropType backdropType)
+    {
+        return backdropType switch
+        {
+            WindowBackdropType.Auto     => Utilities.IsWin_11_22H2_Or_Greater,
+            WindowBackdropType.Mica_Alt => Utilities.IsWin_11_22H2_Or_Greater,
+            WindowBackdropType.Mica     => Utilities.IsWin_10_Or_Greater,
+            WindowBackdropType.Acrylic  => Utilities.IsWin_7_Or_Greater,
+            WindowBackdropType.None     => true,
+            _                           => false
+        };
     }
 
     private IntPtr FluentWindowSourceHook(IntPtr hwndIntPtr, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
@@ -437,7 +453,7 @@ public partial class FluentWindow : Window
                     var cx = _cxBorder = l > 0 ? l : _cxBorder;
                     var cy = _cyBorder = b > 0 ? b : _cyBorder;
 
-                    // 保留左、下、右三个原边框厚度。
+                    // 保留左、下、右三个原生边框，以便Dwm可以绘制透明的边框范围。
                     // 顶部：
                     // 最大化时则保留顶部边框厚度，可保证客户区显示完整；
                     // 非最大化时则让顶部边框厚度为零，以便移除标题栏，把客户区内容“放进标题区域”。
@@ -452,7 +468,7 @@ public partial class FluentWindow : Window
 
                     // 设置主题色居然也会触发这个消息，
                     // 此时如果窗口尺寸、位置没有任何改变，返回 WVR_REDRAW 会让系统莫名其妙地把客户区移动并“左对齐”，
-                    // 只要返回 0，不让系统后续做任何动作，即可解决。
+                    // 只要截获此消息并返回 0 即可解决。
                     handled = true;
                 }
 

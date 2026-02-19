@@ -17,6 +17,8 @@ using Wpf.Ui.Win32;
 namespace Wpf.Ui.Controls;
 
 // todo 文档需要更新，因为已不再处理窗口尺寸调整
+// todo 开启在标题栏和边框上显示主题色时，让窗口按钮悬浮色用强调色
+
 
 /// <summary>
 /// Represents a customizable window title bar that bridges non-client

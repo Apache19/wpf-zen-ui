@@ -3,13 +3,14 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
+using System.Diagnostics;
 using Windows.Win32;
 using Windows.Win32.Foundation;
 using Windows.Win32.Graphics.Dwm;
 using Windows.Win32.UI.Controls;
 using Windows.Win32.UI.WindowsAndMessaging;
 using Wpf.Ui.Appearance;
-using ThemeMode = Wpf.Ui.Appearance.ThemeMode;
+using Wpf.Ui.Interop;
 
 // ReSharper disable once CheckNamespace
 namespace Wpf.Ui.Controls;
@@ -19,6 +20,9 @@ namespace Wpf.Ui.Controls;
 /// </summary>
 public partial class FluentWindow
 {
+    private static readonly Color BlackTransparentColor = Color.FromArgb(0, 0, 0, 0);
+    private static readonly Brush BlackTransparentBrush = new SolidColorBrush(BlackTransparentColor);
+
     private static void InitializeStatic_Win11()
     {
         BackgroundProperty.OverrideMetadata(
@@ -29,7 +33,8 @@ public partial class FluentWindow
                 static (d, baseValue) =>
                 {
                     // 视是否开启Backdrop返回透明值，这样不会破坏任何原先设置的值以及继承机制
-                    return Brushes.Transparent;
+                    var fw = (FluentWindow)d;
+                    return fw._isBackdropApplied ? BlackTransparentBrush : baseValue;
                 }
             )
         );
@@ -38,18 +43,20 @@ public partial class FluentWindow
     // 必须将非客户区效果扩展到整个窗口，否则任何效果都出不来
     private static void ExtendFrameIntoClientArea(HWND hwnd, bool extend)
     {
-        var margins = new MARGINS()
+        var margins = default(MARGINS);
+        if (extend)
         {
-            cxLeftWidth    = extend ? -1 : 0,
-            cxRightWidth   = extend ? -1 : 0,
-            cyBottomHeight = extend ? -1 : 0,
-            cyTopHeight    = extend ? -1 : 0,
-        };
+            margins.cxLeftWidth    = -1;
+            margins.cxRightWidth   = -1;
+            margins.cyBottomHeight = -1;
+            margins.cyTopHeight    = -1;
+        }
 
         PInvoke.DwmExtendFrameIntoClientArea(hwnd, in margins);
     }
 
-    private Color _originalBackgroundColor;
+    private Color _originalBackgroundColor = Color.FromRgb(0, 0, 0);
+    private bool  _isBackdropApplied;
 
     private void InitializeInstance_Win11()
     {
@@ -57,49 +64,112 @@ public partial class FluentWindow
 
     private void OnSourceInitialized_Win11(HwndSource hwndSource)
     {
-        // 1 设置 Backdrop 即可有大阴影
-        // 2 不将非客户区扩展进客户区，则看不到背景效果
-
-        var hwnd = (HWND)hwndSource.Handle;
-
-        RemoveSystemMenu(hwnd);
-
-        var ct = hwndSource.CompositionTarget;
-        if (ct is not null)
-        {
-            _originalBackgroundColor = ct.BackgroundColor;
-            ct.BackgroundColor       = Color.FromArgb(0, 0, 0, 0);
-        }
-
-        DwmAttributes.SetSystemBackdrop(hwnd, DWM_SYSTEMBACKDROP_TYPE.DWMSBT_TABBEDWINDOW);
-        DwmAttributes.SetUseImmersiveDarkMode(hwnd, false);
-
-        ExtendFrameIntoClientArea(hwnd, true);
+        UnsafeNativeMethods.RemoveWindowCaption(hwndSource.Handle);
     }
 
+    // todo 移除系统菜单以后，应让窗口响应 Alt+Space 弹出系统菜单
     private void RemoveSystemMenu(HWND hwnd)
     {
         // 移除窗口菜单前先获取一次，以便系统生成菜单，
         // 否则移除 WS_SYSMENU 风格后无法再获得窗口菜单句柄、无法弹出窗口菜单
         PInvoke.GetSystemMenu(hwnd, false);
 
-        // 移除 WS_SYSMENU 风格，否则启用 Backdrop 会出现原生系统按钮，即使顶部标题栏已被去除
-        // 但带来的后果就是无法用 Alt + Space 弹出窗口菜单了
+        // 移除 WS_SYSMENU 风格，否则启用 Backdrop 会出现原生系统按钮，即使顶部标题栏已被去除。
+        // 带来的后果就是无法用 Alt + Space 弹出窗口菜单了
         var style = PInvoke.GetWindowLong(hwnd, WINDOW_LONG_PTR_INDEX.GWL_STYLE);
         style &= ~(int)WINDOW_STYLE.WS_SYSMENU;
         PInvoke.SetWindowLong(hwnd, WINDOW_LONG_PTR_INDEX.GWL_STYLE, style);
     }
 
+    // 窗口创建Hwnd时、属性变更时、主题变更时，需要调用此方法
     private void UpdateBackdrop_Win11()
     {
-        // 如果是高对比度，则应移除Backdrop，也要退出暗黑模式
+        if (PresentationSource.FromVisual(this) is not HwndSource hwndSource ||
+            hwndSource.CompositionTarget == null)
+        {
+            return;
+        }
+
+        var hwnd = (HWND)hwndSource.Handle;
+
+        // 如果是高对比度，则移除Backdrop、退出暗黑模式
         if (SystemParameters.HighContrast)
         {
-            
+            if (hwnd != IntPtr.Zero && PInvoke.IsWindow(hwnd))
+            {
+                DwmAttributes.SetUseImmersiveDarkMode(hwnd, false);
+
+                // 移除Backdrop
+                DwmAttributes.SetSystemBackdrop(hwnd, DWM_SYSTEMBACKDROP_TYPE.DWMSBT_NONE);
+
+                // 将窗口背景色还原
+                hwndSource.CompositionTarget.BackgroundColor = _originalBackgroundColor;
+
+                // 还原背景画刷
+                _isBackdropApplied = false;
+                CoerceValue(BackgroundProperty);
+            }
         }
         else
         {
+            if (hwnd != IntPtr.Zero && PInvoke.IsWindow(hwnd))
+            {
+                // 根据 ThemeMode 设置暗黑/明亮模式
+                var themeMode = ThemeManager.ThemeMode;
 
+                DwmAttributes.SetUseImmersiveDarkMode(
+                    hwnd,
+                    themeMode == Appearance.ThemeMode.Dark
+                );
+
+                // 让 DWM 不绘制标题栏背景色（系统开启了将主题色应用到窗口边框或标题栏时）
+                DwmAttributes.SetCaptionColor(hwnd, PInvoke.DWMWA_COLOR_NONE);
+
+                // 删除 WS_SYSMENU 风格，避免 DWM 绘制窗口按钮
+                RemoveSystemMenu(hwnd);
+
+                var dwmResult = false;
+                var wbt       = WindowBackdropType;
+
+                if (IsSupportedBackdrop(wbt))
+                {
+                    var backdrop = wbt switch
+                    {
+                        WindowBackdropType.None     => DWM_SYSTEMBACKDROP_TYPE.DWMSBT_NONE,
+                        WindowBackdropType.Auto     => DWM_SYSTEMBACKDROP_TYPE.DWMSBT_AUTO,
+                        WindowBackdropType.Acrylic  => DWM_SYSTEMBACKDROP_TYPE.DWMSBT_TRANSIENTWINDOW,
+                        WindowBackdropType.Mica     => DWM_SYSTEMBACKDROP_TYPE.DWMSBT_MAINWINDOW,
+                        WindowBackdropType.Mica_Alt => DWM_SYSTEMBACKDROP_TYPE.DWMSBT_TABBEDWINDOW,
+                        _                           => DWM_SYSTEMBACKDROP_TYPE.DWMSBT_NONE
+                    };
+
+                    dwmResult = DwmAttributes.SetSystemBackdrop(hwnd, backdrop);
+                }
+
+                var applied = wbt != WindowBackdropType.None && dwmResult;
+
+                if (applied)
+                {
+                    // 备份窗口背景色
+                    var bkColor = hwndSource.CompositionTarget.BackgroundColor;
+                    if (bkColor != BlackTransparentColor)
+                    {
+                        _originalBackgroundColor = bkColor;
+                    }
+
+                    // 将窗口背景色设置为BlackTransparentBrush
+                    hwndSource.CompositionTarget.BackgroundColor = BlackTransparentColor;
+                }
+                else
+                {
+                    hwndSource.CompositionTarget.BackgroundColor = _originalBackgroundColor;
+                }
+
+                ExtendFrameIntoClientArea(hwnd, applied);
+
+                _isBackdropApplied = applied;
+                CoerceValue(BackgroundProperty);
+            }
         }
     }
 

@@ -20,6 +20,8 @@ namespace Wpf.Ui.Appearance;
     Justification = "ThemeManager has application lifetime; disposal is unnecessary.")]
 public sealed class ThemeManager
 {
+    // todo 实现一个Update方法，传入FollowSystemTheme、UseSystemAccentColor、ThemeMode三个参数，能同时设置三个属性，并只执行一次更新
+
     internal const string ThemeBaseUri = "pack://application:,,,/Wpf.Ui;component/Resources/Theme/";
 
     private static readonly Uri LightThemeUri        = new(ThemeBaseUri + "Light.xaml", UriKind.Absolute);
