@@ -10,16 +10,16 @@
 <ResourceDictionary
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:system="clr-namespace:System;assembly=System.Runtime"
-    xmlns:ui="clr-namespace:Wpf.Ui.Markup">
+    xmlns:keys="clr-namespace:Wpf.Ui.Markup"
+    xmlns:system="clr-namespace:System;assembly=System.Runtime">
 
-    <system:Double x:Key="{x:Static ui:ThemeVariableKeys.DefaultIconFontSize}">16</system:Double>
+    <system:Double x:Key="{x:Static keys:ThemeVariableKeys.DefaultIconFontSize}">16</system:Double>
 
-    <system:Double x:Key="{x:Static ui:ThemeVariableKeys.ControlContentThemeFontSize}">14</system:Double>
+    <system:Double x:Key="{x:Static keys:ThemeVariableKeys.ControlContentThemeFontSize}">14</system:Double>
 
-    <CornerRadius x:Key="{x:Static ui:ThemeVariableKeys.ControlCornerRadius}">4,4,4,4</CornerRadius>
-    <CornerRadius x:Key="{x:Static ui:ThemeVariableKeys.OverlayCornerRadius}">4,4,4,4</CornerRadius>
-    <CornerRadius x:Key="{x:Static ui:ThemeVariableKeys.PopupCornerRadius}">8,8,8,8</CornerRadius>
+    <CornerRadius x:Key="{x:Static keys:ThemeVariableKeys.ControlCornerRadius}">4,4,4,4</CornerRadius>
+    <CornerRadius x:Key="{x:Static keys:ThemeVariableKeys.OverlayCornerRadius}">4,4,4,4</CornerRadius>
+    <CornerRadius x:Key="{x:Static keys:ThemeVariableKeys.PopupCornerRadius}">8,8,8,8</CornerRadius>
 
     <!--
     <system:String x:Key="ControlFastOutSlowInKeySpline">0,0,0,1</system:String>
@@ -29,26 +29,26 @@
     <Duration x:Key="ControlFasterAnimationDuration">00:00:00.083</Duration>
     -->
 
-    <Thickness x:Key="{x:Static ui:ThemeVariableKeys.TextControlBorderThemeThickness}">1</Thickness>
-    <Thickness x:Key="{x:Static ui:ThemeVariableKeys.TextControlBorderThemeThicknessFocused}">2</Thickness>
-    <Thickness x:Key="{x:Static ui:ThemeVariableKeys.TextControlThemePadding}">10,8,10,7</Thickness>
+    <Thickness x:Key="{x:Static keys:ThemeVariableKeys.TextControlBorderThemeThickness}">1</Thickness>
+    <Thickness x:Key="{x:Static keys:ThemeVariableKeys.TextControlBorderThemeThicknessFocused}">2</Thickness>
+    <Thickness x:Key="{x:Static keys:ThemeVariableKeys.TextControlThemePadding}">10,8,10,7</Thickness>
 
-    <system:Double x:Key="{x:Static ui:ThemeVariableKeys.ContentControlFontSize}">14</system:Double>
-    <system:Double x:Key="{x:Static ui:ThemeVariableKeys.TextControlThemeMinHeight}">24</system:Double>
-    <system:Double x:Key="{x:Static ui:ThemeVariableKeys.TextControlThemeMinWidth}">0</system:Double>
-    <system:Double x:Key="{x:Static ui:ThemeVariableKeys.ListViewItemMinHeight}">32</system:Double>
-    <system:Double x:Key="{x:Static ui:ThemeVariableKeys.TreeViewItemMinHeight}">24</system:Double>
-    <system:Double x:Key="{x:Static ui:ThemeVariableKeys.TreeViewItemMultiSelectCheckBoxMinHeight}">24</system:Double>
-    <system:Double x:Key="{x:Static ui:ThemeVariableKeys.TreeViewItemPresenterMargin}">0</system:Double>
-    <system:Double x:Key="{x:Static ui:ThemeVariableKeys.TreeViewItemPresenterPadding}">0</system:Double>
+    <system:Double x:Key="{x:Static keys:ThemeVariableKeys.ContentControlFontSize}">14</system:Double>
+    <system:Double x:Key="{x:Static keys:ThemeVariableKeys.TextControlThemeMinHeight}">24</system:Double>
+    <system:Double x:Key="{x:Static keys:ThemeVariableKeys.TextControlThemeMinWidth}">0</system:Double>
+    <system:Double x:Key="{x:Static keys:ThemeVariableKeys.ListViewItemMinHeight}">32</system:Double>
+    <system:Double x:Key="{x:Static keys:ThemeVariableKeys.TreeViewItemMinHeight}">24</system:Double>
+    <system:Double x:Key="{x:Static keys:ThemeVariableKeys.TreeViewItemMultiSelectCheckBoxMinHeight}">24</system:Double>
+    <system:Double x:Key="{x:Static keys:ThemeVariableKeys.TreeViewItemPresenterMargin}">0</system:Double>
+    <system:Double x:Key="{x:Static keys:ThemeVariableKeys.TreeViewItemPresenterPadding}">0</system:Double>
 
-    <Thickness x:Key="{x:Static ui:ThemeVariableKeys.TimePickerHostPadding}">0,1,0,2</Thickness>
-    <Thickness x:Key="{x:Static ui:ThemeVariableKeys.DatePickerHostPadding}">0,1,0,2</Thickness>
-    <Thickness x:Key="{x:Static ui:ThemeVariableKeys.DatePickerHostMonthPadding}">9,0,0,1</Thickness>
-    <Thickness x:Key="{x:Static ui:ThemeVariableKeys.ComboBoxEditableTextPadding}">10,0,30,0</Thickness>
+    <Thickness x:Key="{x:Static keys:ThemeVariableKeys.TimePickerHostPadding}">0,1,0,2</Thickness>
+    <Thickness x:Key="{x:Static keys:ThemeVariableKeys.DatePickerHostPadding}">0,1,0,2</Thickness>
+    <Thickness x:Key="{x:Static keys:ThemeVariableKeys.DatePickerHostMonthPadding}">9,0,0,1</Thickness>
+    <Thickness x:Key="{x:Static keys:ThemeVariableKeys.ComboBoxEditableTextPadding}">10,0,30,0</Thickness>
 
-    <system:Double x:Key="{x:Static ui:ThemeVariableKeys.ComboBoxMinHeight}">24</system:Double>
-    <Thickness x:Key="{x:Static ui:ThemeVariableKeys.ComboBoxPadding}">12,1,0,3</Thickness>
-    <system:Double x:Key="{x:Static ui:ThemeVariableKeys.NavigationViewItemOnLeftMinHeight}">32</system:Double>
+    <system:Double x:Key="{x:Static keys:ThemeVariableKeys.ComboBoxMinHeight}">24</system:Double>
+    <Thickness x:Key="{x:Static keys:ThemeVariableKeys.ComboBoxPadding}">12,1,0,3</Thickness>
+    <system:Double x:Key="{x:Static keys:ThemeVariableKeys.NavigationViewItemOnLeftMinHeight}">32</system:Double>
 
 </ResourceDictionary>

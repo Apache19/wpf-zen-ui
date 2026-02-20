@@ -84,7 +84,7 @@
                     <ColumnDefinition/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                <ComboBox
+                <ui:ComboBox
                     Margin="0 0 8 0"
                     MinWidth="200"
                     SelectionChanged="BackdropComboBox_OnSelected"
@@ -95,7 +95,7 @@
                     <ComboBoxItem Content="Acrylic" Tag="{x:Static ui:WindowBackdropType.Acrylic}"/>
                     <ComboBoxItem Content="Mica" Tag="{x:Static ui:WindowBackdropType.Mica}"/>
                     <ComboBoxItem Content="Mica_Alt" Tag="{x:Static ui:WindowBackdropType.Mica_Alt}"/>
-                </ComboBox>
+                </ui:ComboBox>
                 <ui:Button Grid.Column="1" Click="ThemeButton_OnClick" Padding="9" Icon="{ui:SymbolIcon WeatherSunny24}"></ui:Button>
             </Grid>
 

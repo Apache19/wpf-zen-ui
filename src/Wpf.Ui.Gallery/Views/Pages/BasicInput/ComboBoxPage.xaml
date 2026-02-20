@@ -9,8 +9,7 @@
     xmlns:system="clr-namespace:System;assembly=System.Runtime"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
     Title="ComboBoxPage"
-    d:DataContext="{d:DesignInstance local:ComboBoxPage,
-                                     IsDesignTimeCreatable=False}"
+    d:DataContext="{d:DesignInstance local:ComboBoxPage, IsDesignTimeCreatable=False}"
     d:DesignHeight="450"
     d:DesignWidth="800"
     ui:Design.Background="{DynamicResource WindowBackgroundBrush}"
@@ -23,7 +22,7 @@
             Margin="0"
             HeaderText="A ComboBox with items defined inline."
             XamlCode="&lt;ComboBox /&gt;">
-            <ComboBox
+            <ui:ComboBox
                 MinWidth="200"
                 HorizontalAlignment="Left"
                 SelectedIndex="0">
@@ -31,24 +30,24 @@
                 <ComboBoxItem Content="Green" />
                 <ComboBoxItem Content="Red" />
                 <ComboBoxItem Content="Yellow" />
-            </ComboBox>
+            </ui:ComboBox>
         </controls:ControlExample>
 
         <controls:ControlExample
             Margin="0,32,0,0"
             HeaderText="A ComboBox with ItemsSource set."
             XamlCode="&lt;ComboBox ItemsSource=&quot;{Binding FontFamilies}&quot; /&gt;">
-            <ComboBox
+            <ui:ComboBox
                 MinWidth="200"
                 HorizontalAlignment="Left"
                 ItemsSource="{Binding ViewModel.ComboBoxFontFamilies, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:ComboBoxPage}, Mode=OneWay}"
                 SelectedIndex="0">
-                <ComboBox.ItemTemplate>
+                <ui:ComboBox.ItemTemplate>
                     <DataTemplate>
                         <TextBlock FontFamily="{Binding}" Text="{Binding}" />
                     </DataTemplate>
-                </ComboBox.ItemTemplate>
-            </ComboBox>
+                </ui:ComboBox.ItemTemplate>
+            </ui:ComboBox>
         </controls:ControlExample>
 
         <controls:ControlExample

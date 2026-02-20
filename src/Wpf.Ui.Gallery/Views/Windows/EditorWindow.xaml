@@ -179,7 +179,7 @@
                 BorderThickness="0"
                 VerticalScrollBarVisibility="Visible">
                 <RichTextBox.Document>
-                    <FlowDocument FontFamily="{StaticResource ContentControlThemeFontFamily}">
+                    <FlowDocument FontFamily="{StaticResource {x:Static ui:FontFamilyKeys.ContentControlThemeFontFamily}}">
                         <FlowDocument.Blocks>
                             <Paragraph>
                                 Evil Is Evil. Lesser, Greater, Middling, Makes No Difference. The Degree Is Arbitrary, The Definitions Blurred.<LineBreak />

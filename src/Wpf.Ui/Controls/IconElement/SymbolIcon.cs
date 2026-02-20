@@ -4,6 +4,9 @@
 // All Rights Reserved.
 
 // ReSharper disable once CheckNamespace
+
+using Wpf.Ui.Markup;
+
 namespace Wpf.Ui.Controls;
 
 /// <summary>
@@ -49,8 +52,8 @@ public class SymbolIcon : FontIcon
 
     public SymbolIcon(SymbolRegular symbol, double fontSize = 14, bool filled = false)
     {
-        Symbol = symbol;
-        Filled = filled;
+        Symbol   = symbol;
+        Filled   = filled;
         FontSize = fontSize;
     }
 
@@ -75,7 +78,11 @@ public class SymbolIcon : FontIcon
 
     private void SetFontReference()
     {
-        SetResourceReference(FontFamilyProperty, Filled ? "FluentSystemIconsFilled" : "FluentSystemIcons");
+        var name = Filled
+            ? FontFamilyKeys.FluentSystemIconsFilled
+            : FontFamilyKeys.FluentSystemIcons;
+
+        SetResourceReference(FontFamilyProperty, name);
     }
 
     private static void OnFilledChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
