@@ -10,12 +10,16 @@
 <ResourceDictionary
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:resourceHelpers="clr-namespace:Wpf.Ui.ResourceHelpers"
     xmlns:system="clr-namespace:System;assembly=System.Runtime">
 
     <system:Double x:Key="DefaultIconFontSize">16</system:Double>
 
     <system:Double x:Key="ControlContentThemeFontSize">14</system:Double>
-    <CornerRadius x:Key="ControlCornerRadius">4,4,4,4</CornerRadius>
+
+    <!--<CornerRadius x:Key="ControlCornerRadius">4,4,4,4</CornerRadius>-->
+    <CornerRadius x:Key="{ComponentResourceKey TypeInTargetAssembly={x:Type resourceHelpers:ThemeResourceAnchor}, ResourceId=ControlCornerRadius}">4</CornerRadius>
+
     <CornerRadius x:Key="OverlayCornerRadius">4,4,4,4</CornerRadius>
     <CornerRadius x:Key="PopupCornerRadius">8,8,8,8</CornerRadius>
 

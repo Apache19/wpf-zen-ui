@@ -46,7 +46,7 @@ public partial class MainWindowViewModel(IStringLocalizer<Translations> localize
             },
         },
         new NavigationViewItem("All samples", SymbolRegular.List24, typeof(AllControlsPage)),
-        new NavigationViewItemSeparator(),
+        new Separator(),
         new NavigationViewItem("Basic Input", SymbolRegular.CheckboxChecked24, typeof(BasicInputPage))
         {
             MenuItemsSource = new object[]

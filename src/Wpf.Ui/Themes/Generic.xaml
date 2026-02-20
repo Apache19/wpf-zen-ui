@@ -15,11 +15,11 @@
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Resources/Theme/Light.xaml" />
 
         <!--  Control Styles  -->
+        <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/Button/Button.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/Anchor/Anchor.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/AutoSuggestBox/AutoSuggestBox.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/Badge/Badge.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/BreadcrumbBar/BreadcrumbBar.xaml" />
-        <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/Button/Button.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/Calendar/Calendar.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/CalendarDatePicker/CalendarDatePicker.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/Card/Card.xaml" />
@@ -61,7 +61,6 @@
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/NavigationView/NavigationViewBreadcrumbItem.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/NavigationView/NavigationViewContentPresenter.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/NavigationView/NavigationViewItemHeader.xaml" />
-        <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/NavigationView/NavigationViewItemSeparator.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/NumberBox/NumberBox.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/PasswordBox/PasswordBox.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/ProgressBar/ProgressBar.xaml" />
