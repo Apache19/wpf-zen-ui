@@ -64,7 +64,7 @@
                                 Grid.Row="1"
                                 Grid.Column="0"
                                 FontSize="12"
-                                Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
+                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                 Text="This is a description text" />
                             <ui:ToggleSwitch
                                 Grid.Row="0"

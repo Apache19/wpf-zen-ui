@@ -73,7 +73,7 @@
 
             <Border
                 Grid.Column="0"
-                BorderBrush="{ui:ThemeResource CardBackgroundFillColorDefaultBrush}"
+                BorderBrush="{DynamicResource CardBackgroundFillColorDefaultBrush}"
                 BorderThickness="1,1,0,0"
                 CornerRadius="8,0,0,0">
                 <ui:VirtualizingItemsControl
@@ -106,8 +106,8 @@
             <Border
                 Grid.Column="1"
                 MinWidth="300"
-                Background="{ui:ThemeResource CardBackgroundFillColorSecondaryBrush}"
-                BorderBrush="{ui:ThemeResource CardBackgroundFillColorDefaultBrush}"
+                Background="{DynamicResource CardBackgroundFillColorSecondaryBrush}"
+                BorderBrush="{DynamicResource CardBackgroundFillColorDefaultBrush}"
                 BorderThickness="0,1,1,0"
                 CornerRadius="0,8,0,0">
                 <Grid Margin="24">
@@ -141,7 +141,7 @@
                         Text="Icon name" />
                     <ui:TextBlock
                         Grid.Row="3"
-                        Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
+                        Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                         Text="{Binding ViewModel.SelectedSymbolName, Mode=OneWay}" />
                     <ui:TextBlock
                         Grid.Row="4"
@@ -150,7 +150,7 @@
                         Text="Unicode point" />
                     <ui:TextBlock
                         Grid.Row="5"
-                        Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
+                        Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                         Text="{Binding ViewModel.SelectedSymbolUnicodePoint, Mode=OneWay}" />
                     <ui:TextBlock
                         Grid.Row="6"
@@ -159,7 +159,7 @@
                         Text="Text glyph" />
                     <ui:TextBlock
                         Grid.Row="7"
-                        Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
+                        Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                         Text="{Binding ViewModel.SelectedSymbolTextGlyph, Mode=OneWay}" />
                     <ui:TextBlock
                         Grid.Row="8"
@@ -169,7 +169,7 @@
                     <ui:TextBlock
                         Grid.Row="9"
                         MaxWidth="250"
-                        Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
+                        Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                         Text="{Binding ViewModel.SelectedSymbolXaml, Mode=OneWay}"
                         TextWrapping="WrapWithOverflow" />
                 </Grid>

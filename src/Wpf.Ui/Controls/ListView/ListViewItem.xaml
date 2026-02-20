@@ -8,7 +8,8 @@
 <ResourceDictionary
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:controls="clr-namespace:Wpf.Ui.Controls">
+    xmlns:controls="clr-namespace:Wpf.Ui.Controls"
+    xmlns:vars="clr-namespace:Wpf.Ui.Markup">
 
     <ControlTemplate x:Key="NullViewItemTemplate" TargetType="{x:Type controls:ListViewItem}">
         <Border
@@ -94,7 +95,7 @@
     <Style x:Key="ListViewItemStyle" TargetType="{x:Type controls:ListViewItem}">
         <Setter Property="Foreground" Value="{DynamicResource ListViewItemForeground}" />
         <Setter Property="Background" Value="Transparent" />
-        <Setter Property="Border.CornerRadius" Value="{DynamicResource ControlCornerRadius}" />
+        <Setter Property="Border.CornerRadius" Value="{DynamicResource {x:Static vars:ThemeVariableKeys.ControlCornerRadius}}" />
         <Setter Property="Margin" Value="0,0,0,2" />
         <Setter Property="Padding" Value="4" />
         <Style.Triggers>

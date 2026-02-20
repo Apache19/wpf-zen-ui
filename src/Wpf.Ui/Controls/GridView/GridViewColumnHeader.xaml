@@ -8,7 +8,7 @@
 <ResourceDictionary
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:controls="clr-namespace:Wpf.Ui.Controls">
+    xmlns:vars="clr-namespace:Wpf.Ui.Markup">
 
     <Style x:Key="UiGridViewColumnHeaderStyle" TargetType="GridViewColumnHeader">
         <Style.Triggers>
@@ -59,7 +59,7 @@
                             Background="{TemplateBinding Background}"
                             BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="0,0,0,0"
-                            CornerRadius="{DynamicResource ControlCornerRadius}">
+                            CornerRadius="{DynamicResource {x:Static vars:ThemeVariableKeys.ControlCornerRadius}}">
                             <Border Margin="6,0,0,0" Padding="{TemplateBinding Padding}">
                                 <ContentPresenter
                                     Name="HeaderContent"

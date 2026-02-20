@@ -12,7 +12,7 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Ui.Controls"
-    xmlns:markup="clr-namespace:Wpf.Ui.Markup">
+    xmlns:vars="clr-namespace:Wpf.Ui.Markup">
 
     <Thickness x:Key="ButtonPadding">11,5,11,6</Thickness>
     <Thickness x:Key="ButtonBorderThemeThickness">1</Thickness>
@@ -32,9 +32,9 @@
         <Setter Property="HorizontalContentAlignment" Value="Center" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
         <Setter Property="Focusable" Value="False" />
-        <Setter Property="FontSize" Value="{DynamicResource ControlContentThemeFontSize}" />
+        <Setter Property="FontSize" Value="{DynamicResource {x:Static vars:ThemeVariableKeys.ControlContentThemeFontSize}}" />
         <Setter Property="FontWeight" Value="Normal" />
-        <Setter Property="Border.CornerRadius" Value="{DynamicResource ControlCornerRadius}" />
+        <Setter Property="Border.CornerRadius" Value="{DynamicResource {x:Static vars:ThemeVariableKeys.ControlCornerRadius}}" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
         <Setter Property="Template">
             <Setter.Value>
@@ -108,9 +108,9 @@
         <Setter Property="VerticalAlignment" Value="Center" />
         <Setter Property="HorizontalContentAlignment" Value="Center" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
-        <Setter Property="FontSize" Value="{DynamicResource ControlContentThemeFontSize}" />
+        <Setter Property="FontSize" Value="{DynamicResource {x:Static vars:ThemeVariableKeys.ControlContentThemeFontSize}}" />
         <Setter Property="FontWeight" Value="Normal" />
-        <Setter Property="CornerRadius" Value="{DynamicResource {x:Static markup:ThemeKeys.ControlCornerRadius}}" />
+        <Setter Property="CornerRadius" Value="{DynamicResource {x:Static vars:ThemeVariableKeys.ControlCornerRadius}}" />
         <Setter Property="Appearance" Value="Secondary" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
         <Setter Property="Template">

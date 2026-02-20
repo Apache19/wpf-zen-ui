@@ -7,44 +7,20 @@ using System.Windows.Markup;
 
 namespace Wpf.Ui.Markup;
 
-/// <summary>
-/// Class for Xaml markup extension for static resource references.
-/// </summary>
-/// <example>
-/// <code lang="xml">
-/// &lt;ui:Button
-///     Appearance="Primary"
-///     Content="WPF UI button with font icon"
-///     Foreground={ui:ThemeResource SystemAccentColorPrimaryBrush} /&gt;
-/// </code>
-/// <code lang="xml">
-/// &lt;ui:TextBox Foreground={ui:ThemeResource TextFillColorSecondaryBrush} /&gt;
-/// </code>
-/// </example>
-[TypeConverter(typeof(DynamicResourceExtensionConverter))]
-[ContentProperty(nameof(ResourceKey))]
 [MarkupExtensionReturnType(typeof(object))]
-public class ThemeResourceExtension : DynamicResourceExtension
+public class ThemeResourceExtension : MarkupExtension
 {
-    /// <summary>
-    /// Initializes a new instance of the <see cref="ThemeResourceExtension"/> class.
-    /// </summary>
-    public ThemeResourceExtension()
+    [ConstructorArgument("key")]
+    public ThemeResource Key { get; }
+
+    public ThemeResourceExtension(ThemeResource key)
     {
-        ResourceKey = ThemeResource.WindowBackgroundBrush.ToString();
+        Key = key;
     }
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="ThemeResourceExtension"/> class.
-    /// Takes the resource key that this is a static reference to.
-    /// </summary>
-    public ThemeResourceExtension(ThemeResource resourceKey)
+    public override object ProvideValue(IServiceProvider serviceProvider)
     {
-        if (resourceKey == ThemeResource.Unknown)
-        {
-            throw new ArgumentNullException(nameof(resourceKey));
-        }
-
-        ResourceKey = resourceKey.ToString();
+        var key = new ComponentResourceKey(typeof(ThemeResourceAnchor), Key);
+        return new DynamicResourceExtension(key).ProvideValue(serviceProvider);
     }
 }

@@ -13,7 +13,8 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Ui.Controls"
     xmlns:converters="clr-namespace:Wpf.Ui.Converters"
-    xmlns:system="clr-namespace:System;assembly=mscorlib">
+    xmlns:system="clr-namespace:System;assembly=mscorlib"
+    xmlns:vars="clr-namespace:Wpf.Ui.Markup">
 
     <ResourceDictionary.MergedDictionaries>
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/TextBox/TextBox.xaml" />
@@ -30,10 +31,7 @@
 
     <converters:DatePickerButtonPaddingConverter x:Key="DatePickerButtonPaddingConverter" />
 
-    <Style
-        x:Key="DefaultDatePickerTextBoxStyle"
-        BasedOn="{StaticResource DefaultTextBoxStyle}"
-        TargetType="{x:Type DatePickerTextBox}">
+    <Style x:Key="DefaultDatePickerTextBoxStyle" BasedOn="{StaticResource DefaultTextBoxStyle}" TargetType="{x:Type DatePickerTextBox}">
         <Setter Property="Border.CornerRadius" Value="{Binding RelativeSource={RelativeSource Self}, Path=Tag}" />
     </Style>
 
@@ -60,10 +58,10 @@
         <Setter Property="VerticalAlignment" Value="Center" />
         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
         <Setter Property="VerticalContentAlignment" Value="Stretch" />
-        <Setter Property="MinHeight" Value="{DynamicResource TextControlThemeMinHeight}" />
-        <Setter Property="MinWidth" Value="{DynamicResource TextControlThemeMinWidth}" />
-        <Setter Property="Padding" Value="{DynamicResource TextControlThemePadding}" />
-        <Setter Property="Border.CornerRadius" Value="{DynamicResource ControlCornerRadius}" />
+        <Setter Property="MinHeight" Value="{DynamicResource {x:Static vars:ThemeVariableKeys.TextControlThemeMinHeight}}" />
+        <Setter Property="MinWidth" Value="{DynamicResource {x:Static vars:ThemeVariableKeys.TextControlThemeMinWidth}}" />
+        <Setter Property="Padding" Value="{DynamicResource {x:Static vars:ThemeVariableKeys.TextControlThemePadding}}" />
+        <Setter Property="Border.CornerRadius" Value="{DynamicResource {x:Static vars:ThemeVariableKeys.ControlCornerRadius}}" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
         <Setter Property="KeyboardNavigation.TabNavigation" Value="Local" />
         <Setter Property="Template">

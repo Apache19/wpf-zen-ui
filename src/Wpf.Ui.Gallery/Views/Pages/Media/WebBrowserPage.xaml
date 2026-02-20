@@ -29,7 +29,7 @@
         <TextBlock
             Grid.Row="1"
             Margin="0,8,0,0"
-            Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
+            Foreground="{DynamicResource TextFillColorSecondaryBrush}"
             Text="The WebBrowser control internally instantiates the native WebBrowser ActiveX control. WPF enables security features by applying feature controls to the WebBrowser ActiveX control. The feature controls that are applied differ for XBAPs and stand-alone applications. Some applications should apply additional feature controls to prevent malicious content from running. For more information, see the 'WebBrowser Control and Feature Controls' section in Security (WPF) and WebBrowser Control Overviews and Tutorials."
             TextAlignment="Justify"
             TextWrapping="WrapWithOverflow" />

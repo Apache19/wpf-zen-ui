@@ -12,7 +12,8 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Ui.Controls"
-    xmlns:system="clr-namespace:System;assembly=System.Runtime">
+    xmlns:system="clr-namespace:System;assembly=System.Runtime"
+    xmlns:vars="clr-namespace:Wpf.Ui.Markup">
 
     <Thickness x:Key="TextBoxBorderThemeThickness">1,1,1,1</Thickness>
     <Thickness x:Key="TextBoxAccentBorderThemeThickness">0,0,0,1</Thickness>
@@ -26,10 +27,10 @@
         <Grid HorizontalAlignment="{TemplateBinding HorizontalAlignment}" VerticalAlignment="{TemplateBinding VerticalAlignment}">
             <Border
                 x:Name="ContentBorder"
-                MinWidth="{TemplateBinding MinWidth}"
-                MinHeight="{TemplateBinding MinHeight}"
                 Width="{TemplateBinding Width}"
                 Height="{TemplateBinding Height}"
+                MinWidth="{TemplateBinding MinWidth}"
+                MinHeight="{TemplateBinding MinHeight}"
                 Padding="0"
                 HorizontalAlignment="Stretch"
                 VerticalAlignment="Stretch"
@@ -188,10 +189,10 @@
         <Grid HorizontalAlignment="{TemplateBinding HorizontalAlignment}" VerticalAlignment="{TemplateBinding VerticalAlignment}">
             <Border
                 x:Name="ContentBorder"
-                MinWidth="{TemplateBinding MinWidth}"
-                MinHeight="{TemplateBinding MinHeight}"
                 Width="{TemplateBinding Width}"
                 Height="{TemplateBinding Height}"
+                MinWidth="{TemplateBinding MinWidth}"
+                MinHeight="{TemplateBinding MinHeight}"
                 Padding="0"
                 HorizontalAlignment="Stretch"
                 VerticalAlignment="Stretch"
@@ -237,10 +238,10 @@
         <Setter Property="VerticalAlignment" Value="Stretch" />
         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
         <Setter Property="VerticalContentAlignment" Value="Top" />
-        <Setter Property="MinHeight" Value="{DynamicResource TextControlThemeMinHeight}" />
-        <Setter Property="MinWidth" Value="{DynamicResource TextControlThemeMinWidth}" />
-        <Setter Property="Padding" Value="{DynamicResource TextControlThemePadding}" />
-        <Setter Property="Border.CornerRadius" Value="{DynamicResource ControlCornerRadius}" />
+        <Setter Property="MinHeight" Value="{DynamicResource {x:Static vars:ThemeVariableKeys.TextControlThemeMinHeight}}" />
+        <Setter Property="MinWidth" Value="{DynamicResource {x:Static vars:ThemeVariableKeys.TextControlThemeMinWidth}}" />
+        <Setter Property="Padding" Value="{DynamicResource {x:Static vars:ThemeVariableKeys.TextControlThemePadding}}" />
+        <Setter Property="Border.CornerRadius" Value="{DynamicResource {x:Static vars:ThemeVariableKeys.ControlCornerRadius}}" />
         <Setter Property="ClearButtonEnabled" Value="True" />
         <Setter Property="IconPlacement" Value="Left" />
         <Setter Property="SnapsToDevicePixels" Value="True" />

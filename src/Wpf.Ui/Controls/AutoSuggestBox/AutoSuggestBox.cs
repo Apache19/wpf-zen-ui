@@ -249,7 +249,7 @@ public class AutoSuggestBox : ItemsControl, IIconControl
     }
 
     protected TextBox? TextBox { get; set; }
-    
+
     protected ListView? SuggestionsList { get; set; }
 
     private bool    _changingTextAfterSuggestionChosen;

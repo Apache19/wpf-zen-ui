@@ -13,7 +13,8 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Ui.Controls"
     xmlns:converters="clr-namespace:Wpf.Ui.Converters"
-    xmlns:system="clr-namespace:System;assembly=mscorlib">
+    xmlns:system="clr-namespace:System;assembly=mscorlib"
+    xmlns:vars="clr-namespace:Wpf.Ui.Markup">
 
     <!--
         I don't see that CheckBox had combined states. Without it,
@@ -45,7 +46,7 @@
         <Setter Property="BorderBrush" Value="{DynamicResource CheckBoxBorderBrush}" />
         <Setter Property="BorderThickness" Value="{StaticResource CheckBoxBorderThemeThickness}" />
         <Setter Property="Padding" Value="{StaticResource CheckBoxPadding}" />
-        <Setter Property="Border.CornerRadius" Value="{DynamicResource ControlCornerRadius}" />
+        <Setter Property="Border.CornerRadius" Value="{DynamicResource {x:Static vars:ThemeVariableKeys.ControlCornerRadius}}" />
         <Setter Property="HorizontalAlignment" Value="Left" />
         <Setter Property="VerticalAlignment" Value="Center" />
         <Setter Property="HorizontalContentAlignment" Value="Left" />

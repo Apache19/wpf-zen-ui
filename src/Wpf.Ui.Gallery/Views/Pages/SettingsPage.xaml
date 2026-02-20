@@ -33,7 +33,7 @@
                         Text="App theme" />
                     <ui:TextBlock
                         Grid.Row="1"
-                        Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
+                        Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                         Text="Select which app theme to display" />
                 </Grid>
             </ui:CardControl.Header>
@@ -87,7 +87,7 @@
                     <ui:TextBlock
                         Grid.Row="1"
                         Grid.Column="0"
-                        Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
+                        Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                         Text="© 2025 lepo.co | Leszek Pomianowski &amp; WPF UI Contributors" />
                     <TextBlock
                         Grid.Row="0"
@@ -95,7 +95,7 @@
                         Grid.Column="1"
                         Margin="0,0,16,0"
                         VerticalAlignment="Center"
-                        Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
+                        Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                         Text="{Binding ViewModel.AppVersion, Mode=OneWay}" />
                 </Grid>
             </ui:CardExpander.Header>
@@ -108,7 +108,7 @@
                     <TextBlock Grid.Column="0" Text="To clone this repository" />
                     <TextBlock
                         Grid.Column="1"
-                        Foreground="{ui:ThemeResource TextFillColorSecondaryBrush}"
+                        Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                         Text="git clone https://github.com/lepoco/wpfui.git" />
                 </Grid>
                 <ui:Anchor

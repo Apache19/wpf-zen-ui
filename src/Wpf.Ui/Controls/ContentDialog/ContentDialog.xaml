@@ -2,7 +2,8 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Ui.Controls"
-    xmlns:converters="clr-namespace:Wpf.Ui.Converters">
+    xmlns:converters="clr-namespace:Wpf.Ui.Converters"
+    xmlns:vars="clr-namespace:Wpf.Ui.Markup">
 
     <converters:ContentDialogButtonEnumToBoolConverter x:Key="EnumToBoolConverter" />
     <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" />
@@ -15,7 +16,7 @@
         <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled" />
         <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto" />
         <Setter Property="ScrollViewer.IsDeferredScrollingEnabled" Value="False" />
-        <Setter Property="Border.CornerRadius" Value="{DynamicResource PopupCornerRadius}" />
+        <Setter Property="Border.CornerRadius" Value="{DynamicResource {x:Static vars:ThemeVariableKeys.PopupCornerRadius}}" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
         <Setter Property="DialogMaxHeight" Value="850" />
         <Setter Property="Padding" Value="24" />

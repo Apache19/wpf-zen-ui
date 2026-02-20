@@ -5,20 +5,21 @@
 
 using System.Windows.Markup;
 
-namespace Wpf.Ui.ResourceHelpers;
+namespace Wpf.Ui.Markup;
 
 [MarkupExtensionReturnType(typeof(ComponentResourceKey))]
 public class ThemeResourceKeyExtension : MarkupExtension
 {
-    public string ResourceId { get; }
+    [ConstructorArgument("key")]
+    private ThemeResource Key { get; }
 
-    public ThemeResourceKeyExtension(string resourceId)
+    public ThemeResourceKeyExtension(ThemeResource key)
     {
-        ResourceId = resourceId;
+        Key = key;
     }
 
     public override object ProvideValue(IServiceProvider serviceProvider)
     {
-        return new ComponentResourceKey(typeof(ThemeResourceAnchor), ResourceId);
+        return new ComponentResourceKey(typeof(ThemeResourceAnchor), Key);
     }
 }

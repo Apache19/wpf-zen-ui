@@ -60,7 +60,7 @@
                 </Grid>
 
                 <controls:TypographyControl
-                    Background="{ui:ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
                     Example="Caption"
                     ExampleFontTypography="Caption"
                     SizeLinHeight="12/16"
@@ -73,7 +73,7 @@
                     VariableFont="Regular" />
 
                 <controls:TypographyControl
-                    Background="{ui:ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
                     Example="Body strong"
                     ExampleFontTypography="BodyStrong"
                     SizeLinHeight="14/20"
@@ -86,7 +86,7 @@
                     VariableFont="SemiBold" />
 
                 <controls:TypographyControl
-                    Background="{ui:ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
                     Example="Title"
                     ExampleFontTypography="Title"
                     SizeLinHeight="28/36"
@@ -99,7 +99,7 @@
                     VariableFont="SemiBold" />
 
                 <controls:TypographyControl
-                    Background="{ui:ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
                     Example="Display"
                     ExampleFontTypography="Display"
                     SizeLinHeight="68/92"

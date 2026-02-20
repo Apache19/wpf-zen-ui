@@ -20,8 +20,6 @@
             </ResourceDictionary.MergedDictionaries>
             <helpers:EnumToBooleanConverter x:Key="EnumToBooleanConverter" />
             <helpers:PaneDisplayModeToIndexConverter x:Key="PaneDisplayModeToIndexConverter" />
-
-            <CornerRadius x:Key="{ComponentResourceKey TypeInTargetAssembly={x:Type ui:ThemeResourceAnchor}, ResourceId=ControlCornerRadius}">12</CornerRadius>
         </ResourceDictionary>
 
     </Application.Resources>
