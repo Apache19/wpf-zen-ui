@@ -953,8 +953,8 @@
                                 TextElement.Foreground="{TemplateBinding Foreground}" />
                             <controls:SymbolIcon
                                 Grid.Column="1"
-                                Margin="{StaticResource ComboBoxChevronMargin}"
-                                FontSize="{StaticResource ComboBoxChevronSize}"
+                                Margin="8,0,10,0"
+                                FontSize="11"
                                 Symbol="ChevronDown24"
                                 Visibility="Hidden" />
                         </Grid>

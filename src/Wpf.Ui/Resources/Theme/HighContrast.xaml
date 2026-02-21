@@ -248,40 +248,12 @@
     <SolidColorBrush x:Key="CardFooterBackground" Color="{StaticResource SystemColorWindowColor}" />
 
     <!--  CheckBox  -->
-    <SolidColorBrush x:Key="CheckBoxBackground" Color="{StaticResource SystemColorButtonFaceColor}" />
-    <SolidColorBrush x:Key="CheckBoxForeground" Color="{StaticResource SystemColorButtonTextColor}" />
-    <SolidColorBrush x:Key="CheckBoxBorderBrush" Color="{StaticResource SystemColorButtonTextColor}" />
-    <SolidColorBrush x:Key="CheckBoxCheckBorderBrush" Color="{StaticResource SystemColorWindowColor}" />
-    <SolidColorBrush x:Key="CheckBoxCheckGlyphForeground" Color="{StaticResource SystemColorHighlightTextColor}" />
-    <SolidColorBrush x:Key="CheckBoxCheckBackgroundFillChecked" Color="{StaticResource SystemColorHighlightColor}" />
-    <SolidColorBrush x:Key="CheckBoxCheckBackgroundFillCheckedPointerOver" Color="{StaticResource SystemColorButtonTextColor}" />
-    <SolidColorBrush x:Key="CheckBoxCheckBackgroundFillCheckedPressed" Color="{StaticResource SystemColorButtonFaceColor}" />
-    <SolidColorBrush x:Key="CheckBoxCheckBackgroundFillUncheckedPointerOver" Color="{StaticResource SystemColorHighlightTextColor}" />
-    <SolidColorBrush x:Key="CheckBoxCheckBackgroundFillUncheckedPressed" Color="{StaticResource SystemColorHighlightColor}" />
-    <SolidColorBrush x:Key="CheckBoxCheckBackgroundFillUncheckedDisabled" Color="{StaticResource SystemColorWindowColor}" />
-    <SolidColorBrush x:Key="CheckBoxCheckBackgroundStrokeUncheckedDisabled" Color="{StaticResource SystemColorGrayTextColor}" />
-    <SolidColorBrush x:Key="CheckBoxForegroundUncheckedDisabled" Color="{StaticResource SystemColorGrayTextColor}" />
 
     <!--  ColorPicker  -->
     <!--  TODO  -->
 
     <!--  ComboBox  -->
-    <SolidColorBrush x:Key="ComboBoxBackground" Color="{StaticResource SystemColorButtonFaceColor}" />
-    <SolidColorBrush x:Key="ComboBoxBackgroundFocused" Color="{StaticResource SystemColorHighlightTextColor}" />
-    <SolidColorBrush x:Key="ComboBoxBackgroundPointerOver" Color="{StaticResource SystemColorHighlightTextColor}" />
-    <SolidColorBrush x:Key="ComboBoxBackgroundDisabled" Color="{StaticResource SystemColorWindowColor}" />
-    <SolidColorBrush x:Key="ComboBoxForeground" Color="{StaticResource SystemColorButtonTextColor}" />
-    <SolidColorBrush x:Key="ComboBoxForegroundDisabled" Color="{StaticResource SystemColorGrayTextColor}" />
-    <!--<SolidColorBrush x:Key="ComboBoxItemBorderBrush" Color="{StaticResource ControlElevationBorderBrush}" />-->
-    <SolidColorBrush x:Key="ComboBoxBorderBrushDisabled" Color="{StaticResource SystemColorWindowColor}" />
-    <SolidColorBrush x:Key="ComboBoxBorderBrushFocused" Color="{StaticResource SystemColorHighlightTextColor}" />
-    <SolidColorBrush x:Key="ComboBoxDropDownGlyphForeground" Color="{StaticResource SystemColorGrayTextColor}" />
-    <SolidColorBrush x:Key="ComboBoxDropDownBackground" Color="{StaticResource SystemColorWindowColor}" />
-    <SolidColorBrush x:Key="ComboBoxDropDownBorderBrush" Color="{StaticResource SystemColorWindowTextColor}" />
-    <SolidColorBrush x:Key="ComboBoxItemPillFillBrush" Color="{StaticResource SystemColorHighlightColor}" />
-    <SolidColorBrush x:Key="ComboBoxItemBackgroundSelected" Color="{StaticResource SystemColorWindowColor}" />
-    <SolidColorBrush x:Key="ComboBoxItemForeground" Color="{StaticResource SystemColorButtonTextColor}" />
-    <SolidColorBrush x:Key="ComboBoxItemForegroundSelected" Color="{StaticResource SystemColorHighlightColor}" />
+    <SolidColorBrush x:Key="AcrylicBackgroundFillColorDefaultBrush" Color="{StaticResource SystemColorWindowColor}" />
 
     <!--  ContentDialog  -->
     <SolidColorBrush

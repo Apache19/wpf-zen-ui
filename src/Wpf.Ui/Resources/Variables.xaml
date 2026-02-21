@@ -45,10 +45,7 @@
     <Thickness x:Key="{x:Static keys:ThemeVariableKeys.TimePickerHostPadding}">0,1,0,2</Thickness>
     <Thickness x:Key="{x:Static keys:ThemeVariableKeys.DatePickerHostPadding}">0,1,0,2</Thickness>
     <Thickness x:Key="{x:Static keys:ThemeVariableKeys.DatePickerHostMonthPadding}">9,0,0,1</Thickness>
-    <Thickness x:Key="{x:Static keys:ThemeVariableKeys.ComboBoxEditableTextPadding}">10,0,30,0</Thickness>
-
     <system:Double x:Key="{x:Static keys:ThemeVariableKeys.ComboBoxMinHeight}">24</system:Double>
-    <Thickness x:Key="{x:Static keys:ThemeVariableKeys.ComboBoxPadding}">12,1,0,3</Thickness>
     <system:Double x:Key="{x:Static keys:ThemeVariableKeys.NavigationViewItemOnLeftMinHeight}">32</system:Double>
 
 </ResourceDictionary>

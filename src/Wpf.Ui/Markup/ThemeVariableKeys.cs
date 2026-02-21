@@ -36,9 +36,7 @@ public static class ThemeVariableKeys
     public static ComponentResourceKey TimePickerHostPadding                    { get; private set; }
     public static ComponentResourceKey DatePickerHostPadding                    { get; private set; }
     public static ComponentResourceKey DatePickerHostMonthPadding               { get; private set; }
-    public static ComponentResourceKey ComboBoxEditableTextPadding              { get; private set; }
     public static ComponentResourceKey ComboBoxMinHeight                        { get; private set; }
-    public static ComponentResourceKey ComboBoxPadding                          { get; private set; }
     public static ComponentResourceKey NavigationViewItemOnLeftMinHeight        { get; private set; }
 
     static ThemeVariableKeys()
