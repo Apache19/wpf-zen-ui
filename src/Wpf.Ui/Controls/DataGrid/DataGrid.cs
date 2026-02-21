@@ -167,10 +167,8 @@ public class DataGrid : System.Windows.Controls.DataGrid
         switch (dataGridColumn)
         {
             case DataGridCheckBoxColumn checkBoxColumn:
-                if (
-                    checkBoxColumn.ReadLocalValue(DataGridBoundColumn.ElementStyleProperty)
-                 == DependencyProperty.UnsetValue
-                )
+                if (checkBoxColumn.ReadLocalValue(DataGridBoundColumn.ElementStyleProperty)
+                 == DependencyProperty.UnsetValue)
                 {
                     _ = BindingOperations.SetBinding(
                         checkBoxColumn,
@@ -183,10 +181,8 @@ public class DataGrid : System.Windows.Controls.DataGrid
                     );
                 }
 
-                if (
-                    checkBoxColumn.ReadLocalValue(DataGridBoundColumn.EditingElementStyleProperty)
-                 == DependencyProperty.UnsetValue
-                )
+                if (checkBoxColumn.ReadLocalValue(DataGridBoundColumn.EditingElementStyleProperty)
+                 == DependencyProperty.UnsetValue)
                 {
                     _ = BindingOperations.SetBinding(
                         checkBoxColumn,
@@ -202,10 +198,8 @@ public class DataGrid : System.Windows.Controls.DataGrid
                 break;
 
             case DataGridComboBoxColumn comboBoxColumn:
-                if (
-                    comboBoxColumn.ReadLocalValue(DataGridBoundColumn.ElementStyleProperty)
-                 == DependencyProperty.UnsetValue
-                )
+                if (comboBoxColumn.ReadLocalValue(DataGridBoundColumn.ElementStyleProperty)
+                 == DependencyProperty.UnsetValue)
                 {
                     _ = BindingOperations.SetBinding(
                         comboBoxColumn,
@@ -218,10 +212,8 @@ public class DataGrid : System.Windows.Controls.DataGrid
                     );
                 }
 
-                if (
-                    comboBoxColumn.ReadLocalValue(DataGridBoundColumn.EditingElementStyleProperty)
-                 == DependencyProperty.UnsetValue
-                )
+                if (comboBoxColumn.ReadLocalValue(DataGridBoundColumn.EditingElementStyleProperty)
+                 == DependencyProperty.UnsetValue)
                 {
                     _ = BindingOperations.SetBinding(
                         comboBoxColumn,
@@ -234,10 +226,8 @@ public class DataGrid : System.Windows.Controls.DataGrid
                     );
                 }
 
-                if (
-                    comboBoxColumn.ReadLocalValue(DataGridBoundColumn.EditingElementStyleProperty)
-                 == DependencyProperty.UnsetValue
-                )
+                if (comboBoxColumn.ReadLocalValue(DataGridBoundColumn.EditingElementStyleProperty)
+                 == DependencyProperty.UnsetValue)
                 {
                     _ = BindingOperations.SetBinding(
                         comboBoxColumn,
@@ -253,10 +243,8 @@ public class DataGrid : System.Windows.Controls.DataGrid
                 break;
 
             case DataGridTextColumn textBoxColumn:
-                if (
-                    textBoxColumn.ReadLocalValue(DataGridBoundColumn.ElementStyleProperty)
-                 == DependencyProperty.UnsetValue
-                )
+                if (textBoxColumn.ReadLocalValue(DataGridBoundColumn.ElementStyleProperty)
+                 == DependencyProperty.UnsetValue)
                 {
                     _ = BindingOperations.SetBinding(
                         textBoxColumn,
@@ -269,10 +257,8 @@ public class DataGrid : System.Windows.Controls.DataGrid
                     );
                 }
 
-                if (
-                    textBoxColumn.ReadLocalValue(DataGridBoundColumn.EditingElementStyleProperty)
-                 == DependencyProperty.UnsetValue
-                )
+                if (textBoxColumn.ReadLocalValue(DataGridBoundColumn.EditingElementStyleProperty)
+                 == DependencyProperty.UnsetValue)
                 {
                     _ = BindingOperations.SetBinding(
                         textBoxColumn,

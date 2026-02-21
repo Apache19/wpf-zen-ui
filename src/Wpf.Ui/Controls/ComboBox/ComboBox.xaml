@@ -132,7 +132,7 @@
         </Setter>
     </Style>
 
-    <Style x:Key="DefaultComboBoxStyle" TargetType="{x:Type controls:ComboBox}">
+    <Style x:Key="{x:Static keys:ThemeStyleKeys.DefaultComboBoxStyle}" TargetType="{x:Type ComboBox}">
         <!--  Universal WPF UI focus  -->
         <Setter Property="FocusVisualStyle" Value="{DynamicResource {x:Static keys:ThemeStyleKeys.DefaultControlFocusVisualStyle}}" />
         <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
@@ -165,7 +165,7 @@
         </Setter>
         <Setter Property="Template">
             <Setter.Value>
-                <ControlTemplate TargetType="{x:Type controls:ComboBox}">
+                <ControlTemplate TargetType="{x:Type ComboBox}">
                     <Grid HorizontalAlignment="{TemplateBinding HorizontalAlignment}" VerticalAlignment="{TemplateBinding VerticalAlignment}">
                         <Border
                             x:Name="ContentBorder"
@@ -385,6 +385,11 @@
         </Setter>
     </Style>
 
-    <Style BasedOn="{StaticResource DefaultComboBoxStyle}" TargetType="{x:Type controls:ComboBox}" />
+    <Style
+        x:Key="{x:Static keys:ThemeStyleKeys.DefaultUiComboBoxStyle}"
+        BasedOn="{StaticResource {x:Static keys:ThemeStyleKeys.DefaultComboBoxStyle}}"
+        TargetType="{x:Type controls:ComboBox}" />
+
+    <Style BasedOn="{StaticResource {x:Static keys:ThemeStyleKeys.DefaultUiComboBoxStyle}}" TargetType="{x:Type controls:ComboBox}" />
 
 </ResourceDictionary>

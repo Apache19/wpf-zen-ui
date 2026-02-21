@@ -14,6 +14,12 @@ public static class ThemeStyleKeys
     public static ComponentResourceKey DefaultCheckBoxStyle            { get; private set; }
     public static ComponentResourceKey DefaultUiCheckBoxStyle          { get; private set; }
 
+    public static ComponentResourceKey DefaultComboBoxStyle            { get; private set; }
+    public static ComponentResourceKey DefaultUiComboBoxStyle          { get; private set; }
+
+    public static ComponentResourceKey DefaultTextBoxStyle             { get; private set; }
+    public static ComponentResourceKey DefaultUiTextBoxStyle           { get; private set; }
+
     public static ComponentResourceKey DefaultUiButtonStyle            { get; private set; }
     public static ComponentResourceKey DefaultTextBoxScrollViewerStyle { get; private set; }
     public static ComponentResourceKey DefaultControlContextMenu       { get; private set; }

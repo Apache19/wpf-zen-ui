@@ -14,6 +14,8 @@ using Wpf.Ui.Interop;
 // ReSharper disable once CheckNamespace
 namespace Wpf.Ui.Controls;
 
+// todo 亚克力界面时，检查是否开启透明，未开启的话，黑暗模式把背景色调暗一点，现在看起来还不够暗
+
 /// <summary>
 /// FluentWindow Win11
 /// </summary>

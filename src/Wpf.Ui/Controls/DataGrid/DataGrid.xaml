@@ -904,22 +904,20 @@
 
     <Style
         x:Key="DefaultDataGridCheckBoxElementStyle"
-        BasedOn="{StaticResource {x:Static keys:ThemeStyleKeys.DefaultUiCheckBoxStyle}}"
-        TargetType="{x:Type controls:CheckBox}">
+        BasedOn="{StaticResource {x:Static keys:ThemeStyleKeys.DefaultCheckBoxStyle}}"
+        TargetType="{x:Type CheckBox}">
         <Setter Property="HorizontalAlignment" Value="Center" />
     </Style>
 
     <Style
         x:Key="DefaultDataGridCheckBoxEditingElementStyle"
-        BasedOn="{StaticResource {x:Static keys:ThemeStyleKeys.DefaultUiCheckBoxStyle}}"
-        TargetType="{x:Type controls:CheckBox}">
+        BasedOn="{StaticResource {x:Static keys:ThemeStyleKeys.DefaultCheckBoxStyle}}"
+        TargetType="{x:Type CheckBox}">
         <Setter Property="HorizontalAlignment" Value="Center" />
     </Style>
 
-    <Style
-        x:Key="DefaultDataGridComboBoxElementStyle"
-        BasedOn="{StaticResource DefaultComboBoxStyle}"
-        TargetType="{x:Type controls:ComboBox}">
+    <Style x:Key="DefaultDataGridComboBoxElementStyle" BasedOn="{StaticResource {x:Static keys:ThemeStyleKeys.DefaultComboBoxStyle}}"
+        TargetType="{x:Type ComboBox}">
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="BorderBrush" Value="Transparent" />
         <Setter Property="Margin" Value="0,0,10,0" />
@@ -966,19 +964,16 @@
 
     <Style
         x:Key="DefaultDataGridComboBoxEditingElementStyle"
-        BasedOn="{StaticResource DefaultComboBoxStyle}"
-        TargetType="{x:Type controls:ComboBox}">
+        BasedOn="{StaticResource {x:Static keys:ThemeStyleKeys.DefaultComboBoxStyle}}"
+        TargetType="{x:Type ComboBox}">
         <Setter Property="IsDropDownOpen" Value="True" />
         <Setter Property="Margin" Value="2,0,0,0" />
     </Style>
 
-    <Style
-        x:Key="DefaultDataGridTextElementStyle"
-        BasedOn="{StaticResource BodyTextBlockStyle}"
-        TargetType="{x:Type TextBlock}">
+    <Style x:Key="DefaultDataGridTextElementStyle" TargetType="{x:Type TextBlock}">
         <Setter Property="FocusVisualStyle" Value="{DynamicResource {x:Static keys:ThemeStyleKeys.DefaultControlFocusVisualStyle}}" />
         <Setter Property="ContextMenu" Value="{DynamicResource {x:Static keys:ThemeStyleKeys.DefaultControlContextMenu}}" />
-        <Setter Property="Foreground" Value="{DynamicResource TextControlForeground}" />
+        <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="HorizontalAlignment" Value="Stretch" />
         <Setter Property="VerticalAlignment" Value="Center" />
@@ -991,7 +986,7 @@
 
     <Style
         x:Key="DefaultDataGridTextEditingElementStyle"
-        BasedOn="{StaticResource DefaultTextBoxStyle}"
+        BasedOn="{StaticResource {x:Static keys:ThemeStyleKeys.DefaultTextBoxStyle}}"
         TargetType="{x:Type TextBox}" />
 
     <Style

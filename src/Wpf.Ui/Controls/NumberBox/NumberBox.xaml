@@ -31,10 +31,10 @@
         <!--  Universal WPF UI ContextMenu  -->
         <Setter Property="ContextMenu" Value="{DynamicResource {x:Static keys:ThemeStyleKeys.DefaultControlContextMenu}}" />
         <!--  Universal WPF UI ContextMenu  -->
-        <Setter Property="Foreground" Value="{DynamicResource TextControlForeground}" />
-        <Setter Property="CaretBrush" Value="{DynamicResource TextControlForeground}" />
+        <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+        <Setter Property="CaretBrush" Value="{DynamicResource TextFillColorPrimaryBrush}" />
         <Setter Property="Cursor" Value="Arrow" />
-        <Setter Property="Background" Value="{DynamicResource TextControlBackground}" />
+        <Setter Property="Background" Value="{DynamicResource ControlFillColorDefaultBrush}" />
         <Setter Property="BorderBrush" Value="{DynamicResource TextControlElevationBorderBrush}" />
         <Setter Property="BorderThickness" Value="{StaticResource NumberBoxBorderThemeThickness}" />
         <Setter Property="FontSize" Value="{DynamicResource {x:Static keys:ThemeVariableKeys.ControlContentThemeFontSize}}" />
@@ -98,7 +98,7 @@
                                             Margin="0"
                                             Padding="1,0"
                                             VerticalAlignment="Top"
-                                            Foreground="{DynamicResource TextControlPlaceholderForeground}"
+                                            Foreground="{DynamicResource TextPlaceholderColorBrush}"
                                             Text="{TemplateBinding PlaceholderText}" />
                                     </Grid>
                                 </Grid>
@@ -120,7 +120,7 @@
                                         Background="Transparent"
                                         BorderBrush="Transparent"
                                         Focusable="False"
-                                        Foreground="{DynamicResource TextControlButtonForeground}"
+                                        Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                         IsTabStop="False">
                                         <controls:SymbolIcon FontSize="{StaticResource NumberBoxButtonIconSize}" Symbol="Dismiss24" />
                                     </Button>
@@ -136,7 +136,7 @@
                                         VerticalContentAlignment="Center"
                                         Background="Transparent"
                                         BorderBrush="Transparent"
-                                        Foreground="{DynamicResource TextControlButtonForeground}"
+                                        Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                         IsTabStop="False"
                                         Visibility="Collapsed">
                                         <controls:SymbolIcon FontSize="{StaticResource NumberBoxButtonIconSize}" Symbol="ChevronUp24" />
@@ -154,7 +154,7 @@
                                         Background="Transparent"
                                         BorderBrush="Transparent"
                                         FontSize="{StaticResource NumberBoxButtonIconSize}"
-                                        Foreground="{DynamicResource TextControlButtonForeground}"
+                                        Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                         IsTabStop="False"
                                         Visibility="Collapsed">
                                         <controls:SymbolIcon FontSize="{StaticResource NumberBoxButtonIconSize}" Symbol="ChevronDown24" />
@@ -217,8 +217,8 @@
                         </Trigger>
                         <Trigger Property="IsFocused" Value="True">
                             <Setter TargetName="AccentBorder" Property="BorderThickness" Value="0,0,0,2" />
-                            <Setter TargetName="AccentBorder" Property="BorderBrush" Value="{DynamicResource TextControlFocusedBorderBrush}" />
-                            <Setter TargetName="ContentBorder" Property="Background" Value="{DynamicResource TextControlBackgroundFocused}" />
+                            <Setter TargetName="AccentBorder" Property="BorderBrush" Value="{DynamicResource SystemAccentColorPrimaryBrush}" />
+                            <Setter TargetName="ContentBorder" Property="Background" Value="{DynamicResource ControlFillColorInputActiveBrush}" />
                         </Trigger>
                         <MultiTrigger>
                             <MultiTrigger.Conditions>
@@ -226,7 +226,7 @@
                                 <Condition Property="IsMouseOver" Value="True" />
                                 <Condition Property="IsFocused" Value="False" />
                             </MultiTrigger.Conditions>
-                            <Setter TargetName="ContentBorder" Property="Background" Value="{DynamicResource TextControlBackgroundPointerOver}" />
+                            <Setter TargetName="ContentBorder" Property="Background" Value="{DynamicResource ControlFillColorSecondaryBrush}" />
                         </MultiTrigger>
                         <Trigger Property="IsReadOnly" Value="True">
                             <Setter Property="SpinButtonPlacementMode" Value="Hidden" />
@@ -238,13 +238,13 @@
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="TextContentArea" Property="Cursor" Value="Arrow" />
-                            <Setter TargetName="ContentBorder" Property="Background" Value="{DynamicResource TextControlBackgroundDisabled}" />
-                            <Setter TargetName="ContentBorder" Property="BorderBrush" Value="{DynamicResource TextControlBorderBrushDisabled}" />
-                            <Setter TargetName="AccentBorder" Property="BorderBrush" Value="{DynamicResource TextControlBorderBrushDisabled}" />
-                            <Setter TargetName="ControlIconLeft" Property="Foreground" Value="{DynamicResource TextControlForegroundDisabled}" />
-                            <Setter TargetName="ControlIconRight" Property="Foreground" Value="{DynamicResource TextControlForegroundDisabled}" />
-                            <Setter TargetName="PlaceholderTextBox" Property="Foreground" Value="{DynamicResource TextControlForegroundDisabled}" />
-                            <Setter Property="Foreground" Value="{DynamicResource TextControlForegroundDisabled}" />
+                            <Setter TargetName="ContentBorder" Property="Background" Value="{DynamicResource ControlFillColorDisabledBrush}" />
+                            <Setter TargetName="ContentBorder" Property="BorderBrush" Value="{DynamicResource ControlStrokeColorDefaultBrush}" />
+                            <Setter TargetName="AccentBorder" Property="BorderBrush" Value="{DynamicResource ControlStrokeColorDefaultBrush}" />
+                            <Setter TargetName="ControlIconLeft" Property="Foreground" Value="{DynamicResource TextFillColorDisabledBrush}" />
+                            <Setter TargetName="ControlIconRight" Property="Foreground" Value="{DynamicResource TextFillColorDisabledBrush}" />
+                            <Setter TargetName="PlaceholderTextBox" Property="Foreground" Value="{DynamicResource TextFillColorDisabledBrush}" />
+                            <Setter Property="Foreground" Value="{DynamicResource TextFillColorDisabledBrush}" />
                             <Setter Property="ClearButtonEnabled" Value="False" />
                             <Setter Property="SpinButtonPlacementMode" Value="Hidden" />
                         </Trigger>
