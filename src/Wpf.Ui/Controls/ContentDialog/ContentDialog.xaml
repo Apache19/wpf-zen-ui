@@ -29,9 +29,9 @@
         <Setter Property="KeyboardNavigation.ControlTabNavigation" Value="Cycle" />
         <Setter Property="DialogMargin" Value="35" />
         <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="Foreground" Value="{DynamicResource ContentDialogForeground}" />
-        <Setter Property="BorderBrush" Value="{DynamicResource ContentDialogBorderBrush}" />
-        <Setter Property="Background" Value="{DynamicResource ContentDialogBackground}" />
+        <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource SurfaceStrokeColorDefaultBrush}" />
+        <Setter Property="Background" Value="{DynamicResource SolidBackgroundFillColorBaseBrush}" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type controls:ContentDialog}">
@@ -65,7 +65,7 @@
                                     <RowDefinition Height="*" />
                                     <RowDefinition Height="Auto" />
                                 </Grid.RowDefinitions>
-                                <Border Background="{DynamicResource ContentDialogTopOverlay}" CornerRadius="{StaticResource DialogOverlayCornerRadius}" />
+                                <Border Background="{DynamicResource LayerFillColorAltBrush}" CornerRadius="{StaticResource DialogOverlayCornerRadius}" />
                                 <Grid
                                     Grid.Row="0"
                                     Margin="24,10"
@@ -119,7 +119,7 @@
                                     Padding="{TemplateBinding Padding}"
                                     HorizontalAlignment="Stretch"
                                     VerticalAlignment="Bottom"
-                                    BorderBrush="{DynamicResource ContentDialogSeparatorBorderBrush}"
+                                    BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
                                     BorderThickness="0,1,0,0"
                                     CornerRadius="{DynamicResource DialogFooterCornerRadius}"
                                     Focusable="False"
@@ -220,11 +220,11 @@
                         </MultiTrigger>
                         <!--
                             When displayed on legacy host, sets the root Grid to legacy style
-                            (Stretch alignment, Background: ContentDialogSmokeFill) to restore
+                            (Stretch alignment, Background: SmokeFillColorDefaultBrush) to restore
                             the legacy appearance and behavior.
                         -->
                         <Trigger Property="IsLegacyHost" Value="True">
-                            <Setter TargetName="DialogRootGrid" Property="Background" Value="{DynamicResource ContentDialogSmokeFill}" />
+                            <Setter TargetName="DialogRootGrid" Property="Background" Value="{DynamicResource SmokeFillColorDefaultBrush}" />
                             <Setter TargetName="DialogRootGrid" Property="HorizontalAlignment" Value="Stretch" />
                             <Setter TargetName="DialogRootGrid" Property="VerticalAlignment" Value="Stretch" />
                         </Trigger>

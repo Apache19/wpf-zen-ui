@@ -120,7 +120,7 @@
     <SolidColorBrush x:Key="CardBackgroundFillColorDefaultBrush" Color="{StaticResource SystemColorWindowColor}" />
     <SolidColorBrush x:Key="CardBackgroundFillColorSecondaryBrush" Color="{StaticResource SystemColorWindowColor}" />
 
-    <SolidColorBrush x:Key="SmokeFillColorDefaultBrush" Color="{StaticResource SystemColorWindowColor}" />
+    <SolidColorBrush x:Key="SmokeFillColorDefaultBrush" Color="Transparent" />
 
     <SolidColorBrush x:Key="LayerFillColorDefaultBrush" Color="{StaticResource SystemColorWindowColor}" />
     <SolidColorBrush x:Key="LayerFillColorAltBrush" Color="{StaticResource SystemColorWindowColor}" />
@@ -256,15 +256,6 @@
     <SolidColorBrush x:Key="AcrylicBackgroundFillColorDefaultBrush" Color="{StaticResource SystemColorWindowColor}" />
 
     <!--  ContentDialog  -->
-    <SolidColorBrush
-        x:Key="ContentDialogSmokeFill"
-        Opacity="0.8"
-        Color="{StaticResource SystemColorWindowColor}" />
-    <SolidColorBrush x:Key="ContentDialogBackground" Color="{StaticResource SystemColorWindowColor}" />
-    <SolidColorBrush x:Key="ContentDialogTopOverlay" Color="Transparent" />
-    <SolidColorBrush x:Key="ContentDialogBorderBrush" Color="{StaticResource SystemColorWindowTextColor}" />
-    <SolidColorBrush x:Key="ContentDialogSeparatorBorderBrush" Color="{StaticResource SystemColorWindowTextColor}" />
-    <SolidColorBrush x:Key="ContentDialogForeground" Color="{StaticResource SystemColorWindowTextColor}" />
 
     <!--  ContextMenu  -->
     <SolidColorBrush x:Key="ContextMenuBackground" Color="{StaticResource SystemColorWindowColor}" />

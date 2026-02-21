@@ -4,7 +4,7 @@
     xmlns:controls="clr-namespace:Wpf.Ui.Controls">
 
     <Style x:Key="DefaultContentDialogHostStyle" TargetType="{x:Type controls:ContentDialogHost}">
-        <Setter Property="Background" Value="{DynamicResource ContentDialogSmokeFill}" />
+        <Setter Property="Background" Value="{DynamicResource SmokeFillColorDefaultBrush}" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type controls:ContentDialogHost}">
