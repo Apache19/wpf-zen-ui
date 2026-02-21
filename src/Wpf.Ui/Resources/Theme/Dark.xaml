@@ -48,7 +48,7 @@
     <Color x:Key="AccentTextFillColorDisabled">#5DFFFFFF</Color>
     <Color x:Key="TextOnAccentFillColorSelectedText">#FFFFFF</Color>
     <Color x:Key="TextOnAccentFillColorPrimary">#000000</Color>
-    <Color x:Key="TextOnAccentFillColorSecondary">#80000000</Color>
+    <Color x:Key="TextOnAccentFillColorSecondary">#B3000000</Color><!-- TextOnAccentFillColorSecondary #80000000-->
     <Color x:Key="TextOnAccentFillColorDisabled">#77000000</Color>
 
     <Color x:Key="ControlFillColorDefault">#0FFFFFFF</Color>
