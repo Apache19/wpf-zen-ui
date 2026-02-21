@@ -90,7 +90,7 @@
         </Setter>
     </Style>
 
-    <Style x:Key="DefaultUiButtonStyle" TargetType="{x:Type controls:Button}">
+    <Style x:Key="{x:Static keys:ThemeStyleKeys.DefaultUiButtonStyle}" TargetType="{x:Type controls:Button}">
         <!--  Universal WPF UI focus  -->
         <Setter Property="FocusVisualStyle" Value="{DynamicResource {x:Static keys:ThemeStyleKeys.DefaultControlFocusVisualStyle}}" />
         <!--  Universal WPF UI focus  -->
@@ -365,6 +365,6 @@
 
     <!--  todo 清理原生 RepeatButton 样式，所有使用到的地方要么自定义样式，要么实现ui:RepeatButton  -->
     <Style BasedOn="{StaticResource DefaultRepeatButtonStyle}" TargetType="{x:Type RepeatButton}" />
-    <Style BasedOn="{StaticResource DefaultUiButtonStyle}" TargetType="{x:Type controls:Button}" />
+    <Style BasedOn="{StaticResource {x:Static keys:ThemeStyleKeys.DefaultUiButtonStyle}}" TargetType="{x:Type controls:Button}" />
 
 </ResourceDictionary>

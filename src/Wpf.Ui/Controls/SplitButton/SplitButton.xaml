@@ -12,7 +12,8 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Ui.Controls"
-    xmlns:converters="clr-namespace:Wpf.Ui.Converters">
+    xmlns:converters="clr-namespace:Wpf.Ui.Converters"
+    xmlns:keys="clr-namespace:Wpf.Ui.Markup">
 
     <ResourceDictionary.MergedDictionaries>
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/Button/Button.xaml" />
@@ -57,10 +58,7 @@
         </Setter>
     </Style>
 
-    <Style
-        x:Key="DefaultUiSplitButtonStyle"
-        BasedOn="{StaticResource DefaultUiButtonStyle}"
-        TargetType="{x:Type controls:SplitButton}">
+    <Style x:Key="DefaultUiSplitButtonStyle" BasedOn="{StaticResource {x:Static keys:ThemeStyleKeys.DefaultUiButtonStyle}}" TargetType="{x:Type controls:SplitButton}">
         <Setter Property="Popup.PopupAnimation" Value="None" />
         <!--  WPF doesn't like centering, the animation is ugly and the mouse button sometimes clicks right away.  -->
         <Setter Property="Popup.Placement" Value="Bottom" />
@@ -89,10 +87,8 @@
                                 Padding="{TemplateBinding Padding}"
                                 Background="{TemplateBinding Background}"
                                 BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness,
-                                                                  Converter={StaticResource LeftSplitThicknessConverter}}"
-                                CornerRadius="{TemplateBinding CornerRadius,
-                                                               Converter={StaticResource LeftSplitCornerRadiusConverter}}">
+                                BorderThickness="{TemplateBinding BorderThickness, Converter={StaticResource LeftSplitThicknessConverter}}"
+                                CornerRadius="{TemplateBinding CornerRadius, Converter={StaticResource LeftSplitCornerRadiusConverter}}">
                                 <Grid HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="Auto" />
@@ -123,10 +119,8 @@
                                 Margin="0"
                                 Background="{TemplateBinding Background}"
                                 BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness,
-                                                                  Converter={StaticResource RightSplitThicknessConverter}}"
-                                CornerRadius="{TemplateBinding CornerRadius,
-                                                               Converter={StaticResource RightSplitCornerRadiusConverter}}">
+                                BorderThickness="{TemplateBinding BorderThickness, Converter={StaticResource RightSplitThicknessConverter}}"
+                                CornerRadius="{TemplateBinding CornerRadius, Converter={StaticResource RightSplitCornerRadiusConverter}}">
                                 <ToggleButton
                                     Name="PART_ToggleButton"
                                     HorizontalAlignment="Stretch"

@@ -21,13 +21,13 @@ public static class TextBlockFontTypographyExtensions
     {
         return typography switch
         {
-            FontTypography.Caption    => TypographyStyleKeys.CaptionFontTypography,
-            FontTypography.Body       => TypographyStyleKeys.BodyFontTypography,
-            FontTypography.BodyStrong => TypographyStyleKeys.BodyStrongFontTypography,
-            FontTypography.Subtitle   => TypographyStyleKeys.SubtitleFontTypography,
-            FontTypography.Title      => TypographyStyleKeys.TitleFontTypography,
-            FontTypography.TitleLarge => TypographyStyleKeys.TitleLargeFontTypography,
-            FontTypography.Display    => TypographyStyleKeys.DisplayFontTypography,
+            FontTypography.Caption    => TypographyKeys.CaptionFontTypography,
+            FontTypography.Body       => TypographyKeys.BodyFontTypography,
+            FontTypography.BodyStrong => TypographyKeys.BodyStrongFontTypography,
+            FontTypography.Subtitle   => TypographyKeys.SubtitleFontTypography,
+            FontTypography.Title      => TypographyKeys.TitleFontTypography,
+            FontTypography.TitleLarge => TypographyKeys.TitleLargeFontTypography,
+            FontTypography.Display    => TypographyKeys.DisplayFontTypography,
             _                         => throw new ArgumentOutOfRangeException(nameof(typography), typography, null),
         };
     }

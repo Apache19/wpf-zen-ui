@@ -20,10 +20,7 @@
 
     <Thickness x:Key="ButtonChevronIconMargin">8,0,0,0</Thickness>
 
-    <Style
-        x:Key="DefaultUiDropDownButtonStyle"
-        BasedOn="{StaticResource DefaultUiButtonStyle}"
-        TargetType="{x:Type controls:DropDownButton}">
+    <Style x:Key="DefaultUiDropDownButtonStyle" BasedOn="{StaticResource {x:Static markup:ThemeStyleKeys.DefaultUiButtonStyle}}" TargetType="{x:Type controls:DropDownButton}">
         <Setter Property="IsDropDownOpen" Value="False" />
         <Setter Property="Template">
             <Setter.Value>

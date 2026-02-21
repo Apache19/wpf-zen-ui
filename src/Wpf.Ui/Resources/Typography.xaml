@@ -5,37 +5,37 @@
     xmlns:controls="clr-namespace:Wpf.Ui.Controls">
 
     <controls:FontTypographyPreset
-        x:Key="{x:Static keys:TypographyStyleKeys.CaptionFontTypography}"
+        x:Key="{x:Static keys:TypographyKeys.CaptionFontTypography}"
         FontSize="12"
         FontWeight="Regular" />
 
     <controls:FontTypographyPreset
-        x:Key="{x:Static keys:TypographyStyleKeys.BodyFontTypography}"
+        x:Key="{x:Static keys:TypographyKeys.BodyFontTypography}"
         FontSize="14"
         FontWeight="Regular" />
 
     <controls:FontTypographyPreset
-        x:Key="{x:Static keys:TypographyStyleKeys.BodyStrongFontTypography}"
+        x:Key="{x:Static keys:TypographyKeys.BodyStrongFontTypography}"
         FontSize="14"
         FontWeight="SemiBold" />
 
     <controls:FontTypographyPreset
-        x:Key="{x:Static keys:TypographyStyleKeys.SubtitleFontTypography}"
+        x:Key="{x:Static keys:TypographyKeys.SubtitleFontTypography}"
         FontSize="20"
         FontWeight="SemiBold" />
 
     <controls:FontTypographyPreset
-        x:Key="{x:Static keys:TypographyStyleKeys.TitleFontTypography}"
+        x:Key="{x:Static keys:TypographyKeys.TitleFontTypography}"
         FontSize="28"
         FontWeight="SemiBold" />
 
     <controls:FontTypographyPreset
-        x:Key="{x:Static keys:TypographyStyleKeys.TitleLargeFontTypography}"
+        x:Key="{x:Static keys:TypographyKeys.TitleLargeFontTypography}"
         FontSize="40"
         FontWeight="SemiBold" />
 
     <controls:FontTypographyPreset
-        x:Key="{x:Static keys:TypographyStyleKeys.DisplayFontTypography}"
+        x:Key="{x:Static keys:TypographyKeys.DisplayFontTypography}"
         FontSize="68"
         FontWeight="SemiBold" />
 

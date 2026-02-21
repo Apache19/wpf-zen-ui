@@ -8,6 +8,8 @@ namespace Wpf.Ui.Markup;
 
 public static class ThemeStyleKeys
 {
+    public static ComponentResourceKey DefaultUiButtonStyle { get; } = Create(nameof(DefaultUiButtonStyle));
+
     public static ComponentResourceKey DefaultTextBoxScrollViewerStyle { get; } = Create(nameof(DefaultTextBoxScrollViewerStyle));
 
     public static ComponentResourceKey DefaultControlContextMenu      { get; } = Create(nameof(DefaultControlContextMenu));

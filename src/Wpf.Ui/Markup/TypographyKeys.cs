@@ -7,7 +7,7 @@ namespace Wpf.Ui.Markup;
 
 #pragma warning disable SA1516 // Elements should be separated by blank line
 
-public static class TypographyStyleKeys
+public static class TypographyKeys
 {
     public static ComponentResourceKey CaptionFontTypography    { get; } = Create(nameof(CaptionFontTypography));
     public static ComponentResourceKey BodyFontTypography       { get; } = Create(nameof(BodyFontTypography));
