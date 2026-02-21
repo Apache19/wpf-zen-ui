@@ -13,7 +13,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Ui.Controls"
     xmlns:system="clr-namespace:System;assembly=System.Runtime"
-    xmlns:vars="clr-namespace:Wpf.Ui.Markup">
+    xmlns:keys="clr-namespace:Wpf.Ui.Markup">
 
     <Thickness x:Key="CardActionPadding">14,16,14,16</Thickness>
     <Thickness x:Key="CardActionBorderThemeThickness">1</Thickness>
@@ -24,7 +24,7 @@
 
     <Style x:Key="DefaultUiCardActionStyle" TargetType="{x:Type controls:CardAction}">
         <!--  Universal WPF UI focus  -->
-        <Setter Property="FocusVisualStyle" Value="{DynamicResource DefaultControlFocusVisualStyle}" />
+        <Setter Property="FocusVisualStyle" Value="{DynamicResource {x:Static keys:ThemeStyleKeys.DefaultControlFocusVisualStyle}}" />
         <!--  Universal WPF UI focus  -->
         <Setter Property="Background" Value="{DynamicResource CardBackground}" />
         <Setter Property="Foreground" Value="{DynamicResource CardForeground}" />
@@ -35,9 +35,9 @@
         <Setter Property="VerticalAlignment" Value="Center" />
         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
-        <Setter Property="FontSize" Value="{DynamicResource {x:Static vars:ThemeVariableKeys.ControlContentThemeFontSize}}" />
+        <Setter Property="FontSize" Value="{DynamicResource {x:Static keys:ThemeVariableKeys.ControlContentThemeFontSize}}" />
         <Setter Property="FontWeight" Value="Normal" />
-        <Setter Property="Border.CornerRadius" Value="{DynamicResource {x:Static vars:ThemeVariableKeys.ControlCornerRadius}}" />
+        <Setter Property="Border.CornerRadius" Value="{DynamicResource {x:Static keys:ThemeVariableKeys.ControlCornerRadius}}" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
         <Setter Property="Template">
             <Setter.Value>

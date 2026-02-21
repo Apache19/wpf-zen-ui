@@ -3,7 +3,10 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Ui.Controls"
     xmlns:system="clr-namespace:System;assembly=System.Runtime"
-    xmlns:vars="clr-namespace:Wpf.Ui.Markup">
+    xmlns:vars="clr-namespace:Wpf.Ui.Markup"
+    xmlns:init="clr-namespace:Wpf.Ui.Extensions">
+
+    <init:LibraryInitializer x:Key="__WpfUiInit" />
 
     <ResourceDictionary.MergedDictionaries>
         <!--  Misc  -->

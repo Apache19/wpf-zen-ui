@@ -15,7 +15,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Ui.Controls"
     xmlns:system="clr-namespace:System;assembly=System.Runtime"
-    xmlns:vars="clr-namespace:Wpf.Ui.Markup">
+    xmlns:keys="clr-namespace:Wpf.Ui.Markup">
 
     <Thickness x:Key="ComboBoxPadding">10,8,10,8</Thickness>
     <Thickness x:Key="ComboBoxAccentBorderThemeThickness">0,0,0,2</Thickness>
@@ -30,7 +30,7 @@
         <Setter Property="FocusVisualStyle" Value="{x:Null}" />
         <!--  Focus by parent element  -->
         <!--  Universal WPF UI ContextMenu  -->
-        <Setter Property="ContextMenu" Value="{DynamicResource DefaultControlContextMenu}" />
+        <Setter Property="ContextMenu" Value="{DynamicResource {x:Static keys:ThemeStyleKeys.DefaultControlContextMenu}}" />
         <!--  Universal WPF UI ContextMenu  -->
         <Setter Property="Foreground" Value="{DynamicResource ComboBoxForeground}" />
         <Setter Property="CaretBrush" Value="{DynamicResource ComboBoxForeground}" />
@@ -47,7 +47,7 @@
                         Margin="{TemplateBinding Padding}"
                         HorizontalAlignment="Stretch"
                         VerticalAlignment="Stretch"
-                        Style="{DynamicResource DefaultTextBoxScrollViewerStyle}"
+                        Style="{DynamicResource {x:Static keys:ThemeStyleKeys.DefaultTextBoxScrollViewerStyle}}"
                         TextElement.Foreground="{TemplateBinding Foreground}" />
                 </ControlTemplate>
             </Setter.Value>
@@ -86,13 +86,13 @@
 
     <Style x:Key="DefaultComboBoxItemStyle" TargetType="{x:Type ComboBoxItem}">
         <!--  Universal WPF UI focus  -->
-        <Setter Property="FocusVisualStyle" Value="{DynamicResource DefaultControlFocusVisualStyle}" />
+        <Setter Property="FocusVisualStyle" Value="{DynamicResource {x:Static keys:ThemeStyleKeys.DefaultControlFocusVisualStyle}}" />
         <!--  Universal WPF UI focus  -->
         <Setter Property="Foreground" Value="{DynamicResource ComboBoxForeground}" />
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="Padding" Value="{StaticResource ComboBoxItemContentMargin}" />
         <Setter Property="Cursor" Value="Hand" />
-        <Setter Property="Border.CornerRadius" Value="{DynamicResource {x:Static vars:ThemeVariableKeys.ControlCornerRadius}}" />
+        <Setter Property="Border.CornerRadius" Value="{DynamicResource {x:Static keys:ThemeVariableKeys.ControlCornerRadius}}" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
         <Setter Property="Template">
             <Setter.Value>
@@ -143,10 +143,10 @@
 
     <Style x:Key="DefaultComboBoxStyle" TargetType="{x:Type controls:ComboBox}">
         <!--  Universal WPF UI focus  -->
-        <Setter Property="FocusVisualStyle" Value="{DynamicResource DefaultControlFocusVisualStyle}" />
+        <Setter Property="FocusVisualStyle" Value="{DynamicResource {x:Static keys:ThemeStyleKeys.DefaultControlFocusVisualStyle}}" />
         <!--  Universal WPF UI focus  -->
         <!--  Universal WPF UI ContextMenu  -->
-        <Setter Property="ContextMenu" Value="{DynamicResource DefaultControlContextMenu}" />
+        <Setter Property="ContextMenu" Value="{DynamicResource {x:Static keys:ThemeStyleKeys.DefaultControlContextMenu}}" />
         <!--  Universal WPF UI ContextMenu  -->
         <Setter Property="Foreground" Value="{DynamicResource ComboBoxForeground}" />
         <Setter Property="Background" Value="{DynamicResource ComboBoxBackground}" />
@@ -161,10 +161,10 @@
         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
         <Setter Property="VerticalContentAlignment" Value="Top" />
         <Setter Property="ItemContainerStyle" Value="{StaticResource DefaultComboBoxItemStyle}" />
-        <Setter Property="MinHeight" Value="{DynamicResource {x:Static vars:ThemeVariableKeys.TextControlThemeMinHeight}}" />
-        <Setter Property="MinWidth" Value="{DynamicResource {x:Static vars:ThemeVariableKeys.TextControlThemeMinWidth}}" />
-        <Setter Property="Padding" Value="{DynamicResource {x:Static vars:ThemeVariableKeys.ComboBoxPadding}}" />
-        <Setter Property="Border.CornerRadius" Value="{DynamicResource {x:Static vars:ThemeVariableKeys.ControlCornerRadius}}" />
+        <Setter Property="MinHeight" Value="{DynamicResource {x:Static keys:ThemeVariableKeys.TextControlThemeMinHeight}}" />
+        <Setter Property="MinWidth" Value="{DynamicResource {x:Static keys:ThemeVariableKeys.TextControlThemeMinWidth}}" />
+        <Setter Property="Padding" Value="{DynamicResource {x:Static keys:ThemeVariableKeys.ComboBoxPadding}}" />
+        <Setter Property="Border.CornerRadius" Value="{DynamicResource {x:Static keys:ThemeVariableKeys.ControlCornerRadius}}" />
         <Setter Property="Popup.PopupAnimation" Value="None" />
         <!--  WPF doesn't like centering, the animation is ugly and the mouse button sometimes clicks right away.  -->
         <Setter Property="Popup.Placement" Value="Bottom" />
@@ -277,7 +277,7 @@
                                             Background="{DynamicResource ComboBoxDropDownBackground}"
                                             BorderBrush="{DynamicResource ComboBoxDropDownBorderBrush}"
                                             BorderThickness="1"
-                                            CornerRadius="{DynamicResource {x:Static vars:ThemeVariableKeys.PopupCornerRadius}}"
+                                            CornerRadius="{DynamicResource {x:Static keys:ThemeVariableKeys.PopupCornerRadius}}"
                                             SnapsToDevicePixels="True">
                                             <Border.RenderTransform>
                                                 <TranslateTransform />

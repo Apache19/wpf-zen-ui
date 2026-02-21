@@ -87,6 +87,7 @@
                 <ui:ComboBox
                     Margin="0 0 8 0"
                     MinWidth="200"
+                    IsEditable="True"
                     SelectionChanged="BackdropComboBox_OnSelected"
                     HorizontalAlignment="Right"
                     VerticalAlignment="Center">

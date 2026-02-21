@@ -13,7 +13,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Ui.Controls"
     xmlns:system="clr-namespace:System;assembly=System.Runtime"
-    xmlns:vars="clr-namespace:Wpf.Ui.Markup">
+    xmlns:keys="clr-namespace:Wpf.Ui.Markup">
 
     <Thickness x:Key="TextBoxBorderThemeThickness">1,1,1,1</Thickness>
     <Thickness x:Key="TextBoxAccentBorderThemeThickness">0,0,0,1</Thickness>
@@ -64,7 +64,7 @@
                             HorizontalScrollBarVisibility="{TemplateBinding ScrollViewer.HorizontalScrollBarVisibility}"
                             IsDeferredScrollingEnabled="{TemplateBinding ScrollViewer.IsDeferredScrollingEnabled}"
                             IsTabStop="{TemplateBinding ScrollViewer.IsTabStop}"
-                            Style="{DynamicResource DefaultTextBoxScrollViewerStyle}"
+                            Style="{DynamicResource {x:Static keys:ThemeStyleKeys.DefaultTextBoxScrollViewerStyle}}"
                             TextElement.Foreground="{TemplateBinding Foreground}"
                             VerticalScrollBarVisibility="{TemplateBinding ScrollViewer.VerticalScrollBarVisibility}" />
                         <TextBlock
@@ -209,7 +209,7 @@
                             HorizontalScrollBarVisibility="{TemplateBinding ScrollViewer.HorizontalScrollBarVisibility}"
                             IsDeferredScrollingEnabled="{TemplateBinding ScrollViewer.IsDeferredScrollingEnabled}"
                             IsTabStop="{TemplateBinding ScrollViewer.IsTabStop}"
-                            Style="{DynamicResource DefaultTextBoxScrollViewerStyle}"
+                            Style="{DynamicResource {x:Static keys:ThemeStyleKeys.DefaultTextBoxScrollViewerStyle}}"
                             TextElement.Foreground="{TemplateBinding Foreground}"
                             VerticalScrollBarVisibility="{TemplateBinding ScrollViewer.VerticalScrollBarVisibility}" />
                     </Grid>
@@ -219,11 +219,8 @@
     </ControlTemplate>
 
     <Style x:Key="DefaultUiTextBoxStyle" TargetType="{x:Type controls:TextBox}">
-        <!--  Universal WPF UI focus  -->
-        <Setter Property="FocusVisualStyle" Value="{DynamicResource DefaultControlFocusVisualStyle}" />
-        <!--  Universal WPF UI focus  -->
         <!--  Universal WPF UI ContextMenu  -->
-        <Setter Property="ContextMenu" Value="{DynamicResource DefaultControlContextMenu}" />
+        <Setter Property="ContextMenu" Value="{DynamicResource {x:Static keys:ThemeStyleKeys.DefaultControlContextMenu}}" />
         <!--  Universal WPF UI ContextMenu  -->
         <Setter Property="Foreground" Value="{DynamicResource TextControlForeground}" />
         <Setter Property="CaretBrush" Value="{DynamicResource TextControlForeground}" />
@@ -238,10 +235,10 @@
         <Setter Property="VerticalAlignment" Value="Stretch" />
         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
         <Setter Property="VerticalContentAlignment" Value="Top" />
-        <Setter Property="MinHeight" Value="{DynamicResource {x:Static vars:ThemeVariableKeys.TextControlThemeMinHeight}}" />
-        <Setter Property="MinWidth" Value="{DynamicResource {x:Static vars:ThemeVariableKeys.TextControlThemeMinWidth}}" />
-        <Setter Property="Padding" Value="{DynamicResource {x:Static vars:ThemeVariableKeys.TextControlThemePadding}}" />
-        <Setter Property="Border.CornerRadius" Value="{DynamicResource {x:Static vars:ThemeVariableKeys.ControlCornerRadius}}" />
+        <Setter Property="MinHeight" Value="{DynamicResource {x:Static keys:ThemeVariableKeys.TextControlThemeMinHeight}}" />
+        <Setter Property="MinWidth" Value="{DynamicResource {x:Static keys:ThemeVariableKeys.TextControlThemeMinWidth}}" />
+        <Setter Property="Padding" Value="{DynamicResource {x:Static keys:ThemeVariableKeys.TextControlThemePadding}}" />
+        <Setter Property="Border.CornerRadius" Value="{DynamicResource {x:Static keys:ThemeVariableKeys.ControlCornerRadius}}" />
         <Setter Property="ClearButtonEnabled" Value="True" />
         <Setter Property="IconPlacement" Value="Left" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
