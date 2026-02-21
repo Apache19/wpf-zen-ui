@@ -902,15 +902,24 @@
         </Style.Triggers>
     </Style>
 
-    <Style x:Key="DefaultDataGridCheckBoxElementStyle" BasedOn="{StaticResource DefaultCheckBoxStyle}" TargetType="{x:Type CheckBox}">
+    <Style
+        x:Key="DefaultDataGridCheckBoxElementStyle"
+        BasedOn="{StaticResource {x:Static keys:ThemeStyleKeys.DefaultUiCheckBoxStyle}}"
+        TargetType="{x:Type controls:CheckBox}">
         <Setter Property="HorizontalAlignment" Value="Center" />
     </Style>
 
-    <Style x:Key="DefaultDataGridCheckBoxEditingElementStyle" BasedOn="{StaticResource DefaultCheckBoxStyle}" TargetType="{x:Type CheckBox}">
+    <Style
+        x:Key="DefaultDataGridCheckBoxEditingElementStyle"
+        BasedOn="{StaticResource {x:Static keys:ThemeStyleKeys.DefaultUiCheckBoxStyle}}"
+        TargetType="{x:Type controls:CheckBox}">
         <Setter Property="HorizontalAlignment" Value="Center" />
     </Style>
 
-    <Style x:Key="DefaultDataGridComboBoxElementStyle" BasedOn="{StaticResource DefaultComboBoxStyle}" TargetType="{x:Type controls:ComboBox}">
+    <Style
+        x:Key="DefaultDataGridComboBoxElementStyle"
+        BasedOn="{StaticResource DefaultComboBoxStyle}"
+        TargetType="{x:Type controls:ComboBox}">
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="BorderBrush" Value="Transparent" />
         <Setter Property="Margin" Value="0,0,10,0" />
@@ -955,12 +964,18 @@
         </Setter>
     </Style>
 
-    <Style x:Key="DefaultDataGridComboBoxEditingElementStyle" BasedOn="{StaticResource DefaultComboBoxStyle}" TargetType="{x:Type controls:ComboBox}">
+    <Style
+        x:Key="DefaultDataGridComboBoxEditingElementStyle"
+        BasedOn="{StaticResource DefaultComboBoxStyle}"
+        TargetType="{x:Type controls:ComboBox}">
         <Setter Property="IsDropDownOpen" Value="True" />
         <Setter Property="Margin" Value="2,0,0,0" />
     </Style>
 
-    <Style x:Key="DefaultDataGridTextElementStyle" BasedOn="{StaticResource BodyTextBlockStyle}" TargetType="{x:Type TextBlock}">
+    <Style
+        x:Key="DefaultDataGridTextElementStyle"
+        BasedOn="{StaticResource BodyTextBlockStyle}"
+        TargetType="{x:Type TextBlock}">
         <Setter Property="FocusVisualStyle" Value="{DynamicResource {x:Static keys:ThemeStyleKeys.DefaultControlFocusVisualStyle}}" />
         <Setter Property="ContextMenu" Value="{DynamicResource {x:Static keys:ThemeStyleKeys.DefaultControlContextMenu}}" />
         <Setter Property="Foreground" Value="{DynamicResource TextControlForeground}" />
@@ -974,17 +989,29 @@
         <Setter Property="SnapsToDevicePixels" Value="True" />
     </Style>
 
-    <Style x:Key="DefaultDataGridTextEditingElementStyle" BasedOn="{StaticResource DefaultTextBoxStyle}" TargetType="{x:Type TextBox}" />
+    <Style
+        x:Key="DefaultDataGridTextEditingElementStyle"
+        BasedOn="{StaticResource DefaultTextBoxStyle}"
+        TargetType="{x:Type TextBox}" />
 
-    <Style x:Key="DefaultUiDataGridCellStyle" BasedOn="{StaticResource DefaultDataGridCellStyle}" TargetType="{x:Type DataGridCell}">
+    <Style
+        x:Key="DefaultUiDataGridCellStyle"
+        BasedOn="{StaticResource DefaultDataGridCellStyle}"
+        TargetType="{x:Type DataGridCell}">
         <Setter Property="Padding" Value="0" />
     </Style>
 
-    <Style x:Key="DefaultUiDataGridColumnHeaderStyle" BasedOn="{StaticResource DefaultDataGridColumnHeaderStyle}" TargetType="{x:Type DataGridColumnHeader}">
+    <Style
+        x:Key="DefaultUiDataGridColumnHeaderStyle"
+        BasedOn="{StaticResource DefaultDataGridColumnHeaderStyle}"
+        TargetType="{x:Type DataGridColumnHeader}">
         <Setter Property="Padding" Value="13,0,12,0" />
     </Style>
 
-    <Style x:Key="DefaultUiDataGridStyle" BasedOn="{StaticResource DefaultDataGridStyle}" TargetType="{x:Type controls:DataGrid}">
+    <Style
+        x:Key="DefaultUiDataGridStyle"
+        BasedOn="{StaticResource DefaultDataGridStyle}"
+        TargetType="{x:Type controls:DataGrid}">
         <Setter Property="CellStyle" Value="{StaticResource DefaultUiDataGridCellStyle}" />
         <Setter Property="ColumnHeaderStyle" Value="{StaticResource DefaultUiDataGridColumnHeaderStyle}" />
         <Setter Property="CheckBoxColumnEditingElementStyle" Value="{StaticResource DefaultDataGridCheckBoxEditingElementStyle}" />

@@ -259,8 +259,8 @@
                     Height="20"
                     Margin="0,0,6,0"
                     VerticalAlignment="Center"
-                    Background="{DynamicResource CheckBoxBackground}"
-                    BorderBrush="{DynamicResource CheckBoxBorderBrush}"
+                    Background="{DynamicResource ControlAltFillColorSecondaryBrush}"
+                    BorderBrush="{DynamicResource ControlStrongStrokeColorDefaultBrush}"
                     BorderThickness="1"
                     CornerRadius="4"
                     Visibility="Collapsed">
@@ -747,8 +747,8 @@
                     Height="20"
                     Margin="0"
                     VerticalAlignment="Center"
-                    Background="{DynamicResource CheckBoxBackground}"
-                    BorderBrush="{DynamicResource CheckBoxBorderBrush}"
+                    Background="{DynamicResource ControlAltFillColorSecondaryBrush}"
+                    BorderBrush="{DynamicResource ControlStrongStrokeColorDefaultBrush}"
                     BorderThickness="1"
                     CornerRadius="4"
                     Visibility="Collapsed">

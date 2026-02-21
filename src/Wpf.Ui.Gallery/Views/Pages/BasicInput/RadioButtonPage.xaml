@@ -42,7 +42,7 @@
                         GroupName="radio_group_one"
                         IsEnabled="{Binding ViewModel.IsRadioButtonEnabled, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:RadioButtonPage}, Mode=OneWay}" />
                 </StackPanel>
-                <CheckBox
+                <ui:CheckBox
                     Grid.Column="1"
                     Command="{Binding ViewModel.RadioButtonCheckboxCheckedCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:RadioButtonPage}, Mode=OneWay}"
                     CommandParameter="{Binding RelativeSource={RelativeSource Self}, Mode=OneWay}"

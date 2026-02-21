@@ -31,7 +31,7 @@
                     Grid.Column="0"
                     Content="Standard ToggleButton"
                     IsEnabled="{Binding ViewModel.IsToggleButtonEnabled, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:ToggleButtonPage}, Mode=OneWay}" />
-                <CheckBox
+                <ui:CheckBox
                     Grid.Column="1"
                     Command="{Binding ViewModel.ToggleButtonCheckboxCheckedCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:ToggleButtonPage}, Mode=OneWay}"
                     CommandParameter="{Binding RelativeSource={RelativeSource Self}, Mode=OneWay}"

@@ -35,7 +35,7 @@
                     Icon="{ui:SymbolIcon Link24}"
                     IsEnabled="{Binding ViewModel.IsHyperlinkEnabled, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:HyperlinkButtonPage}, Mode=OneWay}"
                     NavigateUri="https://lepo.co/" />
-                <CheckBox
+                <ui:CheckBox
                     Grid.Column="1"
                     Command="{Binding ViewModel.HyperlinkCheckboxCheckedCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:HyperlinkButtonPage}, Mode=OneWay}"
                     CommandParameter="{Binding RelativeSource={RelativeSource Self}, Mode=OneWay}"

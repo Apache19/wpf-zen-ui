@@ -40,7 +40,7 @@
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
-                    <CheckBox
+                    <ui:CheckBox
                         Grid.Row="0"
                         MinWidth="0"
                         Content="Is open"
@@ -79,7 +79,7 @@
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
-                    <CheckBox
+                    <ui:CheckBox
                         Grid.Row="0"
                         MinWidth="0"
                         Content="Is open"

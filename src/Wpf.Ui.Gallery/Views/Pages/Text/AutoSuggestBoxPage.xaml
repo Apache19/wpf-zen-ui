@@ -33,7 +33,7 @@
                 Icon="{ui:SymbolIcon Search24}"
                 OriginalItemsSource="{Binding ViewModel.AutoSuggestBoxSuggestions, Mode=OneWay}"
                 PlaceholderText="Search..." />
-            <CheckBox
+            <ui:CheckBox
                 Grid.Column="1"
                 Command="{Binding ViewModel.ShowClearButtonCheckedCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:AutoSuggestBoxPage}, Mode=OneWay}"
                 Content="Show clear button"

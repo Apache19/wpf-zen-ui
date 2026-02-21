@@ -20,15 +20,14 @@
 
     <StackPanel Margin="0,0,0,24">
         <controls:ControlExample HeaderText="A 2-state CheckBox." XamlCode="&lt;CheckBox Content=&quot;Standard WPF checkbox&quot; /&gt;">
-            <CheckBox Content="Two-state CheckBox" />
+            <ui:CheckBox Content="Two-state CheckBox" />
         </controls:ControlExample>
-
 
         <controls:ControlExample
             Margin="0,32,0,0"
             HeaderText="A 3-state CheckBox."
             XamlCode="&lt;CheckBox IsThreeState=&quot;True&quot; /&gt;">
-            <CheckBox
+            <ui:CheckBox
                 Content="Three-state CheckBox"
                 IsChecked="{x:Null}"
                 IsThreeState="True" />
@@ -39,25 +38,25 @@
             HeaderText="Using a 3-state CheckBox."
             XamlCode="&lt;CheckBox IsThreeState=&quot;True&quot; /&gt;">
             <StackPanel>
-                <CheckBox
+                <ui:CheckBox
                     Command="{Binding ViewModel.SelectAllCheckedCommand, Mode=OneWay}"
                     CommandParameter="{Binding RelativeSource={RelativeSource Self}, Mode=OneWay}"
                     Content="Select all"
                     IsChecked="{Binding ViewModel.SelectAllCheckBoxChecked, Mode=TwoWay}"
                     IsThreeState="True" />
-                <CheckBox
+                <ui:CheckBox
                     Margin="24,0,0,0"
                     Command="{Binding ViewModel.SingleCheckedCommand, Mode=OneWay}"
                     CommandParameter="1"
                     Content="Option 1"
                     IsChecked="{Binding ViewModel.OptionOneCheckBoxChecked, Mode=TwoWay}" />
-                <CheckBox
+                <ui:CheckBox
                     Margin="24,0,0,0"
                     Command="{Binding ViewModel.SingleCheckedCommand, Mode=OneWay}"
                     CommandParameter="2"
                     Content="Option 2"
                     IsChecked="{Binding ViewModel.OptionTwoCheckBoxChecked, Mode=TwoWay}" />
-                <CheckBox
+                <ui:CheckBox
                     Margin="24,0,0,0"
                     Command="{Binding ViewModel.SingleCheckedCommand, Mode=OneWay}"
                     CommandParameter="3"

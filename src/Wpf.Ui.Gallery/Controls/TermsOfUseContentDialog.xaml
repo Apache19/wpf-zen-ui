@@ -55,7 +55,7 @@
                 Text="You must accept these terms of use to continue"
                 Visibility="Collapsed" />
 
-            <CheckBox
+            <ui:CheckBox
                 x:Name="CheckBox"
                 Margin="0,15,0,0"
                 HorizontalAlignment="Center"
