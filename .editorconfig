@@ -427,6 +427,7 @@ dotnet_diagnostic.CA1510.severity = none # Use ArgumentNullException throw helpe
 dotnet_diagnostic.SA1518.severity = none
 dotnet_diagnostic.SA1615.severity = none
 dotnet_diagnostic.SA1502.severity = none
+dotnet_diagnostic.SA1503.severity = none # SA1503: Braces should not be omitted
 dotnet_diagnostic.SA1010.severity = none # Opening square brackets should not be preceded by a space
                                          # conflicts with collection expressions and IDE0028
 
@@ -436,5 +437,6 @@ dotnet_diagnostic.WPF0071.severity = none # Add ValueConversion attribute
 dotnet_diagnostic.WPF0070.severity = none # Add default field to converter
 
 # Suppress some IDE warnings
+dotnet_diagnostic.IDE0011.severity = none # IDE0011: 添加大括号
 dotnet_diagnostic.IDE0130.severity = none # Hide warnings about namespaces not matching folder structure
 dotnet_diagnostic.IDE0290.severity = none # Use primary constructor
