@@ -23,6 +23,7 @@ using Wpf.Ui.Gallery.Views.Pages.Text;
 using Wpf.Ui.Gallery.Views.Pages.Windows;
 using CheckBox = Wpf.Ui.Controls.CheckBox;
 using ListBox = Wpf.Ui.Controls.ListBox;
+using RadioButton = Wpf.Ui.Controls.RadioButton;
 using Separator = Wpf.Ui.Controls.Separator;
 
 namespace Wpf.Ui.Gallery.ViewModels.Windows;

@@ -271,18 +271,6 @@
     <!--  ProgressRing  -->
 
     <!--  RadioButton  -->
-    <SolidColorBrush x:Key="RadioButtonForeground" Color="{StaticResource SystemColorButtonTextColor}" />
-    <SolidColorBrush x:Key="RadioButtonForegroundDisabled" Color="{StaticResource SystemColorGrayTextColor}" />
-    <SolidColorBrush x:Key="RadioButtonOuterEllipseCheckedStroke" Color="{StaticResource SystemColorHighlightColor}" />
-    <SolidColorBrush x:Key="RadioButtonOuterEllipseCheckedStrokePointerOver" Color="{StaticResource SystemColorButtonTextColor}" />
-    <SolidColorBrush x:Key="RadioButtonCheckGlyphFill" Color="{StaticResource SystemColorHighlightColor}" />
-    <SolidColorBrush x:Key="RadioButtonOuterEllipseFill" Color="{StaticResource SystemColorButtonFaceColor}" />
-    <SolidColorBrush x:Key="RadioButtonOuterEllipseFillPointerOver" Color="{StaticResource SystemColorHighlightTextColor}" />
-    <SolidColorBrush x:Key="RadioButtonOuterEllipseFillPressed" Color="{StaticResource SystemColorHighlightTextColor}" />
-    <SolidColorBrush x:Key="RadioButtonOuterEllipseFillDisabled" Color="{StaticResource SystemColorWindowColor}" />
-    <SolidColorBrush x:Key="RadioButtonOuterEllipseStroke" Color="{StaticResource SystemColorButtonTextColor}" />
-    <SolidColorBrush x:Key="RadioButtonOuterEllipseStrokePressed" Color="{StaticResource SystemColorHighlightTextColor}" />
-    <SolidColorBrush x:Key="RadioButtonOuterEllipseStrokeDisabled" Color="{StaticResource SystemColorGrayTextColor}" />
 
     <!--  RatingControl  -->
     <SolidColorBrush x:Key="RatingControlSelectedForeground" Color="{StaticResource SystemColorHighlightColor}" />
