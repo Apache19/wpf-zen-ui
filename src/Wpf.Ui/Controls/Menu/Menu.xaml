@@ -11,7 +11,7 @@
     xmlns:controls="clr-namespace:Wpf.Ui.Controls">
 
     <Style x:Key="DefaultMenuStyle" TargetType="{x:Type Menu}">
-        <Setter Property="Background" Value="{DynamicResource MenuBarBackground}" />
+        <Setter Property="Background" Value="{DynamicResource SubtleFillColorTransparentBrush}" />
         <Setter Property="Focusable" Value="False" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
         <Setter Property="Template">

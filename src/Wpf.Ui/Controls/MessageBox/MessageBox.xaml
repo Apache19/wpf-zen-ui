@@ -16,9 +16,9 @@
     <Style TargetType="{x:Type controls:MessageBox}">
         <Setter Property="MaxWidth" Value="450" />
         <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="Background" Value="{DynamicResource MessageBoxBackground}" />
+        <Setter Property="Background" Value="{DynamicResource SolidBackgroundFillColorBaseBrush}" />
         <Setter Property="Padding" Value="12" />
-        <Setter Property="Foreground" Value="{DynamicResource MessageBoxForeground}" />
+        <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
         <Setter Property="TextElement.FontWeight" Value="Regular" />
         <Setter Property="ShowInTaskbar" Value="False" />
         <Setter Property="RenderOptions.BitmapScalingMode" Value="Fant" />
@@ -42,7 +42,7 @@
                                     <RowDefinition Height="*" />
                                     <RowDefinition Height="Auto" />
                                 </Grid.RowDefinitions>
-                                <Border Grid.RowSpan="2" Background="{DynamicResource MessageBoxTopOverlay}" />
+                                <Border Grid.RowSpan="2" Background="{DynamicResource LayerFillColorAltBrush}" />
                                 <TextBlock
                                     x:Name="Title"
                                     Grid.Row="0"
@@ -74,7 +74,7 @@
                                     Padding="{TemplateBinding Padding}"
                                     HorizontalAlignment="Stretch"
                                     VerticalAlignment="Bottom"
-                                    BorderBrush="{DynamicResource MessageBoxSeparatorBorderBrush}"
+                                    BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
                                     BorderThickness="0,1,0,0"
                                     CornerRadius="0">
                                     <Grid>
