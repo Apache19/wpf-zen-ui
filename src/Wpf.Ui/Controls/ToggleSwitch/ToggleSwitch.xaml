@@ -8,8 +8,9 @@
     Copyright (c) Microsoft Corporation. All Rights Reserved.
 -->
 <!--
-    在开启状态，按下鼠标并移开，然后放开鼠标，圆点会瞬间回到左边
+    todo 在开启状态，按下鼠标并移开，然后放开鼠标，圆点会瞬间回到左边
     移动逻辑应该改为状态改变后再移动
+    加入圆角转换器
 -->
 <ResourceDictionary
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
