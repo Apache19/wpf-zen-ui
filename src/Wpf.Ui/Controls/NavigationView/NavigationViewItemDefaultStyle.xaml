@@ -16,9 +16,9 @@
         <Setter Property="Cursor" Value="Hand" />
         <Setter Property="VerticalAlignment" Value="Center" />
         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-        <Setter Property="Background" Value="{DynamicResource NavigationViewItemBackground}" />
-        <Setter Property="Foreground" Value="{DynamicResource NavigationViewItemForeground}" />
-        <Setter Property="BorderBrush" Value="{DynamicResource NavigationViewItemBorderBrush}" />
+        <Setter Property="Background" Value="{DynamicResource SubtleFillColorTransparentBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource SubtleFillColorTransparentBrush}" />
         <Setter Property="KeyboardNavigation.IsTabStop" Value="True" />
         <Setter Property="Focusable" Value="True" />
         <Setter Property="SnapsToDevicePixels" Value="True" />

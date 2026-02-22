@@ -265,23 +265,6 @@
     <!--  MessageDialog  -->
 
     <!--  NavigationView  -->
-    <SolidColorBrush x:Key="NavigationViewItemForeground" Color="{StaticResource SystemColorWindowTextColor}" />
-    <SolidColorBrush x:Key="NavigationViewItemForegroundPointerOver" Color="{StaticResource SystemColorWindowTextColor}" />
-    <SolidColorBrush x:Key="NavigationViewItemForegroundPressed" Color="{StaticResource SystemColorHighlightColor}" />
-    <SolidColorBrush x:Key="NavigationViewSelectionIndicatorForeground" Color="{StaticResource SystemColorHighlightColor}" />
-    <SolidColorBrush x:Key="NavigationViewItemSeparatorForeground" Color="{StaticResource SystemColorWindowTextColor}" />
-    <SolidColorBrush x:Key="NavigationViewItemBackground" Color="{StaticResource SystemColorWindowColor}" />
-    <SolidColorBrush x:Key="NavigationViewItemBackgroundPointerOver" Color="{StaticResource SystemColorWindowColor}" />
-    <SolidColorBrush x:Key="NavigationViewItemBackgroundSelected" Color="{StaticResource SystemColorWindowColor}" />
-    <SolidColorBrush x:Key="NavigationViewItemBackgroundPressed" Color="{StaticResource SystemColorWindowColor}" />
-    <SolidColorBrush x:Key="NavigationViewItemBorderBrush" Color="{StaticResource SystemColorWindowTextColor}" />
-
-    <SolidColorBrush x:Key="NavigationViewContentBackground" Color="{StaticResource SystemColorWindowColor}" />
-    <SolidColorBrush x:Key="NavigationViewContentGridBorderBrush" Color="{StaticResource SystemColorButtonTextColor}" />
-
-    <SolidColorBrush x:Key="NavigationViewItemBackgroundSelectedLeftFluent" Color="{StaticResource SystemColorWindowColor}" />
-    <SolidColorBrush x:Key="NavigationViewItemForegroundLeftFluent" Color="{StaticResource SystemColorWindowTextColor}" />
-    <SolidColorBrush x:Key="NavigationViewItemForegroundPointerOverLeftFluent" Color="{StaticResource SystemColorWindowTextColor}" />
 
     <!--  ProgressBar  -->
     <SolidColorBrush x:Key="ProgressBarForeground" Color="{StaticResource SystemColorHighlightColor}" />

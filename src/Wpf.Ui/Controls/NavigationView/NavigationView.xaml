@@ -18,7 +18,7 @@
     </ResourceDictionary.MergedDictionaries>
 
     <Style x:Key="DefaultNavigationViewStyle" TargetType="{x:Type controls:NavigationView}">
-        <Setter Property="Foreground" Value="{DynamicResource NavigationViewItemForeground}" />
+        <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
         <Setter Property="OpenPaneLength" Value="320" />
         <Setter Property="CompactPaneLength" Value="40" />
         <Setter Property="ScrollViewer.CanContentScroll" Value="False" />

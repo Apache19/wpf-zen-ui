@@ -25,7 +25,7 @@
                     Margin="-4,0,0,0"
                     HorizontalAlignment="Left"
                     VerticalAlignment="Center"
-                    Fill="{DynamicResource NavigationViewSelectionIndicatorForeground}"
+                    Fill="{DynamicResource SystemAccentColorPrimaryBrush}"
                     Opacity="0.0"
                     RadiusX="2"
                     RadiusY="2" />
@@ -42,7 +42,7 @@
                         Margin="0"
                         Content="{TemplateBinding Icon}"
                         TextElement.FontSize="{StaticResource NavigationViewFluentIconSize}"
-                        TextElement.Foreground="{DynamicResource NavigationViewItemForegroundLeftFluent}" />
+                        TextElement.Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
 
                     <Grid
                         x:Name="ContentGrid"
@@ -56,7 +56,7 @@
                             ContentTemplate="{TemplateBinding ContentTemplate}"
                             RecognizesAccessKey="True"
                             TextElement.FontSize="{TemplateBinding FontSize}"
-                            TextElement.Foreground="{DynamicResource NavigationViewItemForegroundLeftFluent}" />
+                            TextElement.Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
                     </Grid>
 
                     <ContentPresenter
@@ -72,8 +72,8 @@
         <ControlTemplate.Triggers>
             <Trigger Property="IsActive" Value="True">
                 <Setter TargetName="ActiveRectangle" Property="Opacity" Value="1.0" />
-                <Setter TargetName="MainBorder" Property="Background" Value="{DynamicResource NavigationViewItemBackgroundSelectedLeftFluent}" />
-                <Setter TargetName="IconContentPresenter" Property="TextElement.Foreground" Value="{DynamicResource NavigationViewSelectionIndicatorForeground}" />
+                <Setter TargetName="MainBorder" Property="Background" Value="{DynamicResource ControlFillColorDefaultBrush}" />
+                <Setter TargetName="IconContentPresenter" Property="TextElement.Foreground" Value="{DynamicResource SystemAccentColorPrimaryBrush}" />
                 <Setter TargetName="ElementContentPresenter" Property="Margin" Value="0" />
                 <Trigger.EnterActions>
                     <BeginStoryboard>
@@ -132,7 +132,7 @@
                 <Setter TargetName="PART_InfoBadge" Property="Visibility" Value="Collapsed" />
             </Trigger>
             <Trigger Property="IsMouseOver" Value="True">
-                <Setter TargetName="MainBorder" Property="Background" Value="{DynamicResource NavigationViewItemBackgroundSelectedLeftFluent}" />
+                <Setter TargetName="MainBorder" Property="Background" Value="{DynamicResource ControlFillColorDefaultBrush}" />
             </Trigger>
             <MultiTrigger>
                 <MultiTrigger.Conditions>
@@ -140,8 +140,8 @@
                     <Condition Property="IsActive" Value="False" />
                 </MultiTrigger.Conditions>
                 <MultiTrigger.Setters>
-                    <Setter TargetName="IconContentPresenter" Property="TextElement.Foreground" Value="{DynamicResource NavigationViewItemForegroundPointerOverLeftFluent}" />
-                    <Setter TargetName="ContentGrid" Property="TextElement.Foreground" Value="{DynamicResource NavigationViewItemForegroundPointerOverLeftFluent}" />
+                    <Setter TargetName="IconContentPresenter" Property="TextElement.Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+                    <Setter TargetName="ContentGrid" Property="TextElement.Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
                 </MultiTrigger.Setters>
             </MultiTrigger>
             <!--
