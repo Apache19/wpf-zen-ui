@@ -101,7 +101,7 @@
                     </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="HeaderBorder" Property="Background" Value="{DynamicResource ListViewItemBackgroundPointerOver}" />
+                            <Setter TargetName="HeaderBorder" Property="Background" Value="{DynamicResource SubtleFillColorSecondaryBrush}" />
                             <Setter TargetName="PART_HeaderGripper" Property="Background" Value="Transparent" />
                         </Trigger>
                         <Trigger Property="IsPressed" Value="True">

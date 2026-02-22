@@ -380,14 +380,8 @@
     <!--  Label  -->
 
     <!--  ListBox  -->
-    <SolidColorBrush x:Key="ListBoxItemForeground" Color="{StaticResource TextFillColorPrimary}" />
-    <SolidColorBrush x:Key="ListBoxItemSelectedBackgroundThemeBrush" Color="{DynamicResource SystemAccentColorPrimary}" />
-    <SolidColorBrush x:Key="ListBoxItemSelectedForegroundThemeBrush" Color="{StaticResource TextOnAccentFillColorPrimary}" />
 
     <!--  ListView  -->
-    <SolidColorBrush x:Key="ListViewItemForeground" Color="{StaticResource TextFillColorPrimary}" />
-    <SolidColorBrush x:Key="ListViewItemPillFillBrush" Color="{DynamicResource SystemAccentColorPrimary}" />
-    <SolidColorBrush x:Key="ListViewItemBackgroundPointerOver" Color="{StaticResource SubtleFillColorSecondary}" />
 
     <!--  LoadingScreen  -->
     <SolidColorBrush x:Key="LoadingScreenBackground" Color="{StaticResource WindowBackgroundColor}" />

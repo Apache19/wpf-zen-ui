@@ -15,7 +15,7 @@
     <system:Double x:Key="AutoSuggestBoxClearButtonIconSize">14</system:Double>
 
     <Style x:Key="DefaultAutoSuggestBoxItemContainerStyle" TargetType="{x:Type controls:ListViewItem}">
-        <Setter Property="Foreground" Value="{DynamicResource ListViewItemForeground}" />
+        <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="Border.CornerRadius" Value="{DynamicResource {x:Static vars:ThemeVariableKeys.ControlCornerRadius}}" />
         <Setter Property="Margin" Value="0,0,0,2" />
@@ -39,7 +39,7 @@
                                 Margin="0"
                                 HorizontalAlignment="Left"
                                 VerticalAlignment="Center"
-                                Fill="{DynamicResource ListViewItemPillFillBrush}"
+                                Fill="{DynamicResource SystemAccentColorPrimaryBrush}"
                                 RadiusX="2"
                                 RadiusY="2"
                                 Visibility="Collapsed" />
@@ -48,7 +48,7 @@
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsSelected" Value="True">
-                            <Setter TargetName="ContentBorder" Property="Background" Value="{DynamicResource ListViewItemBackgroundPointerOver}" />
+                            <Setter TargetName="ContentBorder" Property="Background" Value="{DynamicResource SubtleFillColorSecondaryBrush}" />
                             <Setter TargetName="ActiveRectangle" Property="Visibility" Value="Visible" />
                         </Trigger>
 
@@ -58,7 +58,7 @@
                                 <Condition Property="IsMouseOver" Value="True" />
                             </MultiTrigger.Conditions>
                             <MultiTrigger.Setters>
-                                <Setter TargetName="ContentBorder" Property="Background" Value="{DynamicResource ListViewItemBackgroundPointerOver}" />
+                                <Setter TargetName="ContentBorder" Property="Background" Value="{DynamicResource SubtleFillColorSecondaryBrush}" />
                             </MultiTrigger.Setters>
                             <MultiTrigger.EnterActions>
                                 <BeginStoryboard>

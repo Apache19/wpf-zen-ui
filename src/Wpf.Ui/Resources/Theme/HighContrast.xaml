@@ -255,14 +255,8 @@
     <!--  Label  -->
 
     <!--  ListBox  -->
-    <SolidColorBrush x:Key="ListBoxItemForeground" Color="{StaticResource SystemColorWindowTextColor}" />
-    <SolidColorBrush x:Key="ListBoxItemSelectedBackgroundThemeBrush" Color="{StaticResource SystemColorButtonTextColor}" />
-    <SolidColorBrush x:Key="ListBoxItemSelectedForegroundThemeBrush" Color="{StaticResource SystemColorButtonFaceColor}" />
 
     <!--  ListView  -->
-    <SolidColorBrush x:Key="ListViewItemForeground" Color="{StaticResource SystemColorWindowTextColor}" />
-    <SolidColorBrush x:Key="ListViewItemPillFillBrush" Color="{StaticResource SystemColorHighlightColor}" />
-    <SolidColorBrush x:Key="ListViewItemBackgroundPointerOver" Color="{StaticResource SystemColorWindowColor}" />
 
     <!--  LoadingScreen  -->
     <SolidColorBrush x:Key="LoadingScreenBackground" Color="{StaticResource SystemColorWindowColor}" />

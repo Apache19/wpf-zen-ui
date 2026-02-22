@@ -33,6 +33,8 @@
                 </ItemsPanelTemplate>
             </Setter.Value>
         </Setter>
+
+        <!--  todo 如有必要，将此样式抽离成 DefaultListBoxItemStyle  -->
         <Setter Property="ItemContainerStyle">
             <Setter.Value>
                 <Style TargetType="{x:Type ListBoxItem}">
