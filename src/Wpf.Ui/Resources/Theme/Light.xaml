@@ -394,14 +394,8 @@
     <!--  NavigationView  -->
 
     <!--  ProgressBar  -->
-    <SolidColorBrush x:Key="ProgressBarForeground" Color="{DynamicResource SystemAccentColorPrimary}" />
-    <SolidColorBrush x:Key="ProgressBarBackground" Color="{StaticResource ControlStrongStrokeColorDefault}" />
-    <SolidColorBrush x:Key="ProgressBarBorderBrush" Color="{StaticResource ControlStrokeColorDefault}" />
-    <SolidColorBrush x:Key="ProgressBarIndeterminateBackground" Color="{DynamicResource ControlFillColorTransparent}" />
 
     <!--  ProgressRing  -->
-    <SolidColorBrush x:Key="ProgressRingForegroundThemeBrush" Color="{DynamicResource SystemAccentColorPrimary}" />
-    <SolidColorBrush x:Key="ProgressRingBackgroundThemeBrush" Color="{StaticResource ControlFillColorTransparent}" />
 
     <!--  RadioButton  -->
     <SolidColorBrush x:Key="RadioButtonForeground" Color="{StaticResource TextFillColorPrimary}" />
