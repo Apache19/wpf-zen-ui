@@ -279,12 +279,6 @@
     <SolidColorBrush x:Key="SeparatorBackgroundBrush" Color="{StaticResource SystemColorWindowTextColor}" />
 
     <!--  Slider  -->
-    <SolidColorBrush x:Key="SliderTrackFill" Color="{StaticResource SystemColorWindowTextColor}" />
-    <SolidColorBrush x:Key="SliderTrackFillPointerOver" Color="{StaticResource SystemColorWindowTextColor}" />
-    <SolidColorBrush x:Key="SliderTickBarFill" Color="{StaticResource SystemColorWindowTextColor}" />
-    <SolidColorBrush x:Key="SliderOuterThumbBackground" Color="{StaticResource SystemColorWindowTextColor}" />
-    <SolidColorBrush x:Key="SliderThumbBackground" Color="{StaticResource SystemColorWindowTextColor}" />
-    <SolidColorBrush x:Key="SliderThumbBackgroundPointerOver" Color="{StaticResource SystemColorHighlightColor}" />
 
     <!--  SnackBar  -->
     <SolidColorBrush x:Key="SnackBarBackground" Color="{StaticResource SystemColorWindowColor}" />
