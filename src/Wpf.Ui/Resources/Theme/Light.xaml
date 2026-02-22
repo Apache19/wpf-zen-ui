@@ -356,9 +356,6 @@
     <!--  ContentDialog  -->
 
     <!--  ContextMenu  -->
-    <SolidColorBrush x:Key="ContextMenuBackground" Color="{StaticResource AcrylicBackgroundFillColorDefault}" />
-    <SolidColorBrush x:Key="ContextMenuBorderBrush" Color="{StaticResource SurfaceStrokeColorFlyout}" />
-    <SolidColorBrush x:Key="ContextMenuForeground" Color="{StaticResource TextFillColorPrimary}" />
 
     <!--  DataGrid  -->
     <!--  TODO  -->

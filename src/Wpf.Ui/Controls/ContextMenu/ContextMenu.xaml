@@ -11,10 +11,10 @@
     xmlns:controls="clr-namespace:Wpf.Ui.Controls">
 
     <Style x:Key="UiContextMenu" TargetType="{x:Type ContextMenu}">
-        <Setter Property="TextElement.Foreground" Value="{DynamicResource ContextMenuForeground}" />
-        <Setter Property="Foreground" Value="{DynamicResource ContextMenuForeground}" />
-        <Setter Property="Background" Value="{DynamicResource ContextMenuBackground}" />
-        <Setter Property="BorderBrush" Value="{DynamicResource ContextMenuBorderBrush}" />
+        <Setter Property="TextElement.Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+        <Setter Property="Background" Value="{DynamicResource AcrylicBackgroundFillColorDefaultBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource SurfaceStrokeColorFlyoutBrush}" />
         <Setter Property="MinWidth" Value="140" />
         <Setter Property="Padding" Value="0" />
         <Setter Property="Margin" Value="0" />
