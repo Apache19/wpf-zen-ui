@@ -83,9 +83,9 @@
         <!--  Universal WPF UI focus  -->
         <Setter Property="FocusVisualStyle" Value="{DynamicResource {x:Static keys:ThemeStyleKeys.DefaultControlFocusVisualStyle}}" />
         <!--  Universal WPF UI focus  -->
-        <Setter Property="Background" Value="{DynamicResource ExpanderHeaderBackground}" />
-        <Setter Property="Foreground" Value="{DynamicResource ExpanderHeaderForeground}" />
-        <Setter Property="BorderBrush" Value="{DynamicResource ExpanderHeaderBorderBrush}" />
+        <Setter Property="Background" Value="{DynamicResource CardBackgroundFillColorDefaultBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource CardStrokeColorDefaultBrush}" />
         <Setter Property="BorderThickness" Value="{StaticResource ExpanderBorderThemeThickness}" />
         <Setter Property="Padding" Value="{StaticResource ExpanderPadding}" />
         <Setter Property="HorizontalAlignment" Value="Stretch" />
@@ -138,7 +138,7 @@
                         <Grid Grid.Row="1" ClipToBounds="True">
                             <Border
                                 x:Name="ContentPresenterBorder"
-                                Background="{DynamicResource ExpanderContentBackground}"
+                                Background="{DynamicResource CardBackgroundFillColorSecondaryBrush}"
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="1,0,1,1"
                                 CornerRadius="0,0,4,4"
@@ -201,12 +201,12 @@
                             </Trigger.ExitActions>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter TargetName="ContentPresenter" Property="TextElement.Foreground" Value="{DynamicResource ExpanderHeaderDisabledForeground}" />
-                            <Setter TargetName="ExpanderToggleButton" Property="Foreground" Value="{DynamicResource ExpanderHeaderDisabledForeground}" />
-                            <Setter TargetName="ExpanderToggleButton" Property="BorderBrush" Value="{DynamicResource ExpanderHeaderDisabledBorderBrush}" />
+                            <Setter TargetName="ContentPresenter" Property="TextElement.Foreground" Value="{DynamicResource TextFillColorDisabledBrush}" />
+                            <Setter TargetName="ExpanderToggleButton" Property="Foreground" Value="{DynamicResource TextFillColorDisabledBrush}" />
+                            <Setter TargetName="ExpanderToggleButton" Property="BorderBrush" Value="{DynamicResource CardStrokeColorDefaultBrush}" />
                         </Trigger>
                         <Trigger SourceName="ExpanderToggleButton" Property="IsMouseOver" Value="True">
-                            <Setter TargetName="ExpanderToggleButton" Property="BorderBrush" Value="{DynamicResource ExpanderHeaderBorderPointerOverBrush}" />
+                            <Setter TargetName="ExpanderToggleButton" Property="BorderBrush" Value="{DynamicResource CardStrokeColorDefaultBrush}" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>

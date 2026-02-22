@@ -236,13 +236,6 @@
     <!--  DynamicScrollBar  -->
 
     <!--  Expander  -->
-    <SolidColorBrush x:Key="ExpanderHeaderBackground" Color="{StaticResource SystemColorButtonFaceColor}" />
-    <SolidColorBrush x:Key="ExpanderHeaderForeground" Color="{StaticResource SystemColorButtonTextColor}" />
-    <SolidColorBrush x:Key="ExpanderHeaderBorderBrush" Color="{StaticResource SystemColorWindowTextColor}" />
-    <SolidColorBrush x:Key="ExpanderHeaderBorderPointerOverBrush" Color="{StaticResource SystemColorHighlightColor}" />
-    <SolidColorBrush x:Key="ExpanderHeaderDisabledForeground" Color="{StaticResource SystemColorGrayTextColor}" />
-    <SolidColorBrush x:Key="ExpanderHeaderDisabledBorderBrush" Color="{StaticResource SystemColorGrayTextColor}" />
-    <SolidColorBrush x:Key="ExpanderContentBackground" Color="{StaticResource SystemColorWindowColor}" />
 
     <!--  FluentWindow  -->
     <SolidColorBrush x:Key="WindowBackgroundBrush" Color="{StaticResource SystemColorWindowColor}" />
