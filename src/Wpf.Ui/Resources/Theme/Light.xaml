@@ -375,35 +375,11 @@
     <!--  HyperlinkButton  -->
 
     <!--  InfoBadge  -->
-    <SolidColorBrush x:Key="InfoBadgeValueForeground" Color="{StaticResource TextFillColorInverse}" />
-
-    <SolidColorBrush x:Key="InfoBadgeAttentionSeverityBackgroundBrush" Color="{StaticResource SystemFillColorAttention}" />
-    <SolidColorBrush x:Key="InfoBadgeInformationalSeverityBackgroundBrush" Color="{StaticResource SystemFillColorInformational}" />
-    <SolidColorBrush x:Key="InfoBadgeSuccessSeverityBackgroundBrush" Color="{StaticResource SystemFillColorSuccess}" />
-    <SolidColorBrush x:Key="InfoBadgeCautionSeverityBackgroundBrush" Color="{StaticResource SystemFillColorCaution}" />
-    <SolidColorBrush x:Key="InfoBadgeCriticalSeverityBackgroundBrush" Color="{StaticResource SystemFillColorCritical}" />
+    <SolidColorBrush x:Key="SystemFillColorInformationalBrush" Color="{StaticResource SystemFillColorInformational}" />
 
     <!--  InfoBar  -->
-    <SolidColorBrush x:Key="InfoBarBorderBrush" Color="{StaticResource CardStrokeColorDefault}" />
-    <SolidColorBrush x:Key="InfoBarTitleForeground" Color="{StaticResource TextFillColorPrimary}" />
-
-    <SolidColorBrush x:Key="InfoBarErrorSeverityBorderBrush" Color="{StaticResource CardStrokeColorDefault}" />
-    <SolidColorBrush x:Key="InfoBarWarningSeverityBorderBrush" Color="{StaticResource CardStrokeColorDefault}" />
-    <SolidColorBrush x:Key="InfoBarSuccessSeverityBorderBrush" Color="{StaticResource CardStrokeColorDefault}" />
-    <SolidColorBrush x:Key="InfoBarInformationalSeverityBorderBrush" Color="{StaticResource CardStrokeColorDefault}" />
-
-    <SolidColorBrush x:Key="InfoBarErrorSeverityBackgroundBrush" Color="{StaticResource SystemFillColorCriticalBackground}" />
-    <SolidColorBrush x:Key="InfoBarWarningSeverityBackgroundBrush" Color="{StaticResource SystemFillColorCautionBackground}" />
-    <SolidColorBrush x:Key="InfoBarSuccessSeverityBackgroundBrush" Color="{StaticResource SystemFillColorSuccessBackground}" />
-    <SolidColorBrush x:Key="InfoBarInformationalSeverityBackgroundBrush" Color="{StaticResource SystemFillColorAttentionBackground}" />
-
-    <SolidColorBrush x:Key="InfoBarErrorSeverityIconBackground" Color="{StaticResource SystemFillColorCritical}" />
-    <SolidColorBrush x:Key="InfoBarWarningSeverityIconBackground" Color="{StaticResource SystemFillColorCaution}" />
-    <SolidColorBrush x:Key="InfoBarSuccessSeverityIconBackground" Color="{StaticResource SystemFillColorSuccess}" />
-    <SolidColorBrush x:Key="InfoBarInformationalSeverityIconBackground" Color="{DynamicResource SystemAccentColorPrimary}" />
 
     <!--  Label  -->
-    <SolidColorBrush x:Key="LabelForeground" Color="{StaticResource TextFillColorSecondary}" />
 
     <!--  ListBox  -->
     <SolidColorBrush x:Key="ListBoxItemForeground" Color="{StaticResource TextFillColorPrimary}" />

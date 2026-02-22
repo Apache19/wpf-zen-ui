@@ -35,19 +35,19 @@
                     </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="Severity" Value="Attention">
-                            <Setter TargetName="ContentBorder" Property="Background" Value="{DynamicResource InfoBadgeAttentionSeverityBackgroundBrush}" />
+                            <Setter TargetName="ContentBorder" Property="Background" Value="{DynamicResource SystemFillColorAttentionBrush}" />
                         </Trigger>
                         <Trigger Property="Severity" Value="Informational">
-                            <Setter TargetName="ContentBorder" Property="Background" Value="{DynamicResource InfoBadgeInformationalSeverityBackgroundBrush}" />
+                            <Setter TargetName="ContentBorder" Property="Background" Value="{DynamicResource SystemFillColorInformationalBrush}" />
                         </Trigger>
                         <Trigger Property="Severity" Value="Success">
-                            <Setter TargetName="ContentBorder" Property="Background" Value="{DynamicResource InfoBadgeSuccessSeverityBackgroundBrush}" />
+                            <Setter TargetName="ContentBorder" Property="Background" Value="{DynamicResource SystemFillColorSuccessBrush}" />
                         </Trigger>
                         <Trigger Property="Severity" Value="Caution">
-                            <Setter TargetName="ContentBorder" Property="Background" Value="{DynamicResource InfoBadgeCautionSeverityBackgroundBrush}" />
+                            <Setter TargetName="ContentBorder" Property="Background" Value="{DynamicResource SystemFillColorCautionBrush}" />
                         </Trigger>
                         <Trigger Property="Severity" Value="Critical">
-                            <Setter TargetName="ContentBorder" Property="Background" Value="{DynamicResource InfoBadgeCriticalSeverityBackgroundBrush}" />
+                            <Setter TargetName="ContentBorder" Property="Background" Value="{DynamicResource SystemFillColorCriticalBrush}" />
                         </Trigger>
                     </ControlTemplate.Triggers>
 
@@ -88,24 +88,24 @@
                                 Content="{TemplateBinding Icon}"
                                 Focusable="False"
                                 TextElement.FontSize="{TemplateBinding FontSize}"
-                                TextElement.Foreground="{DynamicResource InfoBadgeValueForeground}" />
+                                TextElement.Foreground="{DynamicResource TextFillColorInverseBrush}" />
                         </Border>
                     </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="Severity" Value="Attention">
-                            <Setter TargetName="ContentBorder" Property="Background" Value="{DynamicResource InfoBadgeAttentionSeverityBackgroundBrush}" />
+                            <Setter TargetName="ContentBorder" Property="Background" Value="{DynamicResource SystemFillColorAttentionBrush}" />
                         </Trigger>
                         <Trigger Property="Severity" Value="Informational">
-                            <Setter TargetName="ContentBorder" Property="Background" Value="{DynamicResource InfoBadgeInformationalSeverityBackgroundBrush}" />
+                            <Setter TargetName="ContentBorder" Property="Background" Value="{DynamicResource SystemFillColorInformationalBrush}" />
                         </Trigger>
                         <Trigger Property="Severity" Value="Success">
-                            <Setter TargetName="ContentBorder" Property="Background" Value="{DynamicResource InfoBadgeSuccessSeverityBackgroundBrush}" />
+                            <Setter TargetName="ContentBorder" Property="Background" Value="{DynamicResource SystemFillColorSuccessBrush}" />
                         </Trigger>
                         <Trigger Property="Severity" Value="Caution">
-                            <Setter TargetName="ContentBorder" Property="Background" Value="{DynamicResource InfoBadgeCautionSeverityBackgroundBrush}" />
+                            <Setter TargetName="ContentBorder" Property="Background" Value="{DynamicResource SystemFillColorCautionBrush}" />
                         </Trigger>
                         <Trigger Property="Severity" Value="Critical">
-                            <Setter TargetName="ContentBorder" Property="Background" Value="{DynamicResource InfoBadgeCriticalSeverityBackgroundBrush}" />
+                            <Setter TargetName="ContentBorder" Property="Background" Value="{DynamicResource SystemFillColorCriticalBrush}" />
                         </Trigger>
 
                     </ControlTemplate.Triggers>
@@ -152,7 +152,7 @@
                                 VerticalAlignment="Center"
                                 Focusable="False"
                                 FontSize="{TemplateBinding FontSize}"
-                                Foreground="{DynamicResource InfoBadgeValueForeground}"
+                                Foreground="{DynamicResource TextFillColorInverseBrush}"
                                 Text="{TemplateBinding Value}"
                                 TextWrapping="Wrap" />
 
@@ -160,19 +160,19 @@
                     </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="Severity" Value="Attention">
-                            <Setter TargetName="ContentBorder" Property="Background" Value="{DynamicResource InfoBadgeAttentionSeverityBackgroundBrush}" />
+                            <Setter TargetName="ContentBorder" Property="Background" Value="{DynamicResource SystemFillColorAttentionBrush}" />
                         </Trigger>
                         <Trigger Property="Severity" Value="Informational">
-                            <Setter TargetName="ContentBorder" Property="Background" Value="{DynamicResource InfoBadgeInformationalSeverityBackgroundBrush}" />
+                            <Setter TargetName="ContentBorder" Property="Background" Value="{DynamicResource SystemFillColorInformationalBrush}" />
                         </Trigger>
                         <Trigger Property="Severity" Value="Success">
-                            <Setter TargetName="ContentBorder" Property="Background" Value="{DynamicResource InfoBadgeSuccessSeverityBackgroundBrush}" />
+                            <Setter TargetName="ContentBorder" Property="Background" Value="{DynamicResource SystemFillColorSuccessBrush}" />
                         </Trigger>
                         <Trigger Property="Severity" Value="Caution">
-                            <Setter TargetName="ContentBorder" Property="Background" Value="{DynamicResource InfoBadgeCautionSeverityBackgroundBrush}" />
+                            <Setter TargetName="ContentBorder" Property="Background" Value="{DynamicResource SystemFillColorCautionBrush}" />
                         </Trigger>
                         <Trigger Property="Severity" Value="Critical">
-                            <Setter TargetName="ContentBorder" Property="Background" Value="{DynamicResource InfoBadgeCriticalSeverityBackgroundBrush}" />
+                            <Setter TargetName="ContentBorder" Property="Background" Value="{DynamicResource SystemFillColorCriticalBrush}" />
                         </Trigger>
 
 
