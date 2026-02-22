@@ -281,9 +281,6 @@
     <!--  Slider  -->
 
     <!--  SnackBar  -->
-    <SolidColorBrush x:Key="SnackBarBackground" Color="{StaticResource SystemColorWindowColor}" />
-    <SolidColorBrush x:Key="SnackBarForeground" Color="{StaticResource SystemColorWindowTextColor}" />
-    <SolidColorBrush x:Key="SnackBarBorderBrush" Color="{StaticResource SystemColorWindowTextColor}" />
 
     <!--  StatusBar  -->
     <!--  TO DO  -->

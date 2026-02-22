@@ -11,10 +11,10 @@
     xmlns:controls="clr-namespace:Wpf.Ui.Controls">
 
     <Style TargetType="{x:Type controls:Snackbar}">
-        <Setter Property="Foreground" Value="{DynamicResource SnackBarForeground}" />
-        <Setter Property="ContentForeground" Value="{DynamicResource SnackBarForeground}" />
-        <Setter Property="Background" Value="{DynamicResource SnackBarBackground}" />
-        <Setter Property="BorderBrush" Value="{DynamicResource SnackBarBorderBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+        <Setter Property="ContentForeground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+        <Setter Property="Background" Value="{DynamicResource AcrylicBackgroundFillColorDefaultBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource SurfaceStrokeColorFlyoutBrush}" />
         <Setter Property="Margin" Value="24" />
         <Setter Property="MinHeight" Value="68" />
         <Setter Property="Focusable" Value="False" />
@@ -240,6 +240,7 @@
                 </Setter>
                 <Setter Property="Background">
                     <Setter.Value>
+                        <!--  todo 调色板颜色还没设置Key，现在还用不了  -->
                         <SolidColorBrush Color="{DynamicResource PaletteLightBlueColor}" />
                     </Setter.Value>
                 </Setter>
