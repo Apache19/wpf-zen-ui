@@ -26,19 +26,19 @@
                 \t&lt;ListBoxItem Content=&quot;Green&quot;/&gt;\n
                 &lt;/ListBox&gt;
             </controls:ControlExample.XamlCode>
-            <ListBox SelectedIndex="0">
+            <ui:ListBox SelectedIndex="0">
                 <ListBoxItem>Blue</ListBoxItem>
                 <ListBoxItem>Green</ListBoxItem>
                 <ListBoxItem>Red</ListBoxItem>
                 <ListBoxItem>Yellow</ListBoxItem>
-            </ListBox>
+            </ui:ListBox>
         </controls:ControlExample>
 
         <controls:ControlExample
             Margin="0,36,0,0"
             HeaderText="A ListBox with its ItemsSource and Height set."
             XamlCode="&lt;ListBox Height=&quot;100&quot; ItemsSource=&quot;{Binding ViewModel.MyItems}&quot; /&gt;">
-            <ListBox
+            <ui:ListBox
                 Height="164"
                 ItemsSource="{Binding ViewModel.ListBoxItems, Mode=TwoWay}"
                 SelectedIndex="2" />

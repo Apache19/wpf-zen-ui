@@ -21,6 +21,14 @@ public class PassiveScrollViewer : ScrollViewer
         new PropertyMetadata(true)
     );
 
+    static PassiveScrollViewer()
+    {
+        DefaultStyleKeyProperty.OverrideMetadata(
+            typeof(PassiveScrollViewer),
+            new FrameworkPropertyMetadata(typeof(PassiveScrollViewer))
+        );
+    }
+
     /// <summary>
     /// Gets or sets a value indicating whether blocked inner scrolling should be propagated forward.
     /// </summary>
@@ -32,11 +40,9 @@ public class PassiveScrollViewer : ScrollViewer
 
     protected override void OnMouseWheel(MouseWheelEventArgs e)
     {
-        if (
-            IsVerticalScrollingDisabled
-            || IsContentSmallerThanViewport
-            || (IsScrollSpillEnabled && HasReachedEndOfScrolling(e))
-        )
+        if (IsVerticalScrollingDisabled
+         || IsContentSmallerThanViewport
+         || (IsScrollSpillEnabled && HasReachedEndOfScrolling(e)))
         {
             return;
         }
@@ -44,15 +50,21 @@ public class PassiveScrollViewer : ScrollViewer
         base.OnMouseWheel(e);
     }
 
-    private bool IsVerticalScrollingDisabled => VerticalScrollBarVisibility == ScrollBarVisibility.Disabled;
+    private bool IsVerticalScrollingDisabled
+    {
+        get => VerticalScrollBarVisibility == ScrollBarVisibility.Disabled;
+    }
 
-    private bool IsContentSmallerThanViewport => ScrollableHeight <= 0;
+    private bool IsContentSmallerThanViewport
+    {
+        get => ScrollableHeight <= 0;
+    }
 
     private bool HasReachedEndOfScrolling(MouseWheelEventArgs e)
     {
-        var isScrollingUp = e.Delta > 0;
-        var isScrollingDown = e.Delta < 0;
-        var isTopOfViewport = VerticalOffset == 0;
+        var isScrollingUp      = e.Delta > 0;
+        var isScrollingDown    = e.Delta < 0;
+        var isTopOfViewport    = VerticalOffset == 0;
         var isBottomOfViewport = VerticalOffset >= ScrollableHeight;
 
         return (isScrollingUp && isTopOfViewport) || (isScrollingDown && isBottomOfViewport);

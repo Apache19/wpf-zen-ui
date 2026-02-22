@@ -25,6 +25,8 @@ public static class ThemeStyleKeys
     public static ComponentResourceKey DefaultControlContextMenu       { get; private set; }
     public static ComponentResourceKey DefaultControlFocusVisualStyle  { get; private set; }
 
+    public static ComponentResourceKey DefaultScrollBarStyle           { get; private set; }
+
     public static ComponentResourceKey NavigationViewItemDataTemplate  { get; private set; }
 
     static ThemeStyleKeys()
