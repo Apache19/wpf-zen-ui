@@ -8,6 +8,7 @@ using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.Windows.Controls;
 using Wpf.Ui.Animations;
+using Wpf.Ui.Markup;
 
 // ReSharper disable once CheckNamespace
 namespace Wpf.Ui.Controls;
@@ -573,8 +574,9 @@ public partial class NavigationView
 
         if (e.NewValue is INotifyCollectionChanged oc)
         {
-            oc.CollectionChanged += (s, e) =>
-                navigationView.OnMenuItemsSource_CollectionChanged(oc, navigationView.MenuItems, e);
+            // todo 由于未取消订阅，如有导航项集合变动，则可能引起内存泄露
+            oc.CollectionChanged += (s, args) =>
+                navigationView.OnMenuItemsSource_CollectionChanged(oc, navigationView.MenuItems, args);
         }
     }
 
@@ -615,8 +617,9 @@ public partial class NavigationView
 
         if (e.NewValue is INotifyCollectionChanged oc)
         {
-            oc.CollectionChanged += (s, e) =>
-                navigationView.OnMenuItemsSource_CollectionChanged(oc, navigationView.FooterMenuItems, e);
+            // todo 同样，未取消订阅，如导航项变动，则会引起内存泄露
+            oc.CollectionChanged += (s, args) =>
+                navigationView.OnMenuItemsSource_CollectionChanged(oc, navigationView.FooterMenuItems, args);
         }
     }
 
@@ -755,11 +758,9 @@ public partial class NavigationView
             return;
         }
 
-        // todo 面包屑栏项目源为什么要与导航视图挂钩。。。。。。
         breadcrumbBar.ItemsSource = navigationView._breadcrumbBarItems;
 
-        // todo 调查这个东西为什么要手动查找ItemTemplate
-        breadcrumbBar.ItemTemplate ??= Application.Current?.TryFindResource("NavigationViewItemDataTemplate") as DataTemplate;
+        breadcrumbBar.ItemTemplate ??= navigationView.TryFindResource(ThemeStyleKeys.NavigationViewItemDataTemplate) as DataTemplate;
 
         // todo 考察一下使用路由事件是否比强绑定要好一点
         breadcrumbBar.ItemClicked  +=  navigationView.BreadcrumbBarOnItemClicked;

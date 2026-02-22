@@ -1,4 +1,4 @@
-﻿<!--
+<!--
     This Source Code Form is subject to the terms of the MIT License.
     If a copy of the MIT was not distributed with this file, You can obtain one at https://opensource.org/licenses/MIT.
     Copyright (C) Leszek Pomianowski and WPF UI Contributors.
@@ -8,9 +8,14 @@
 <ResourceDictionary
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:controls="clr-namespace:Wpf.Ui.Controls">
+    xmlns:controls="clr-namespace:Wpf.Ui.Controls"
+    xmlns:keys="clr-namespace:Wpf.Ui.Markup">
 
-    <DataTemplate x:Key="NavigationViewItemDataTemplate" DataType="{x:Type controls:NavigationViewBreadcrumbItem}">
+    <DataTemplate x:Key="{x:Static keys:ThemeStyleKeys.NavigationViewItemDataTemplate}" DataType="{x:Type controls:NavigationViewBreadcrumbItem}">
+        <!-- 
+            todo 生产环境中用面包屑栏来显示标题很不好看，考虑新增页面标题分部，单纯显示标题。
+            现有面包屑栏则下移一栏，用于显示真正的路径。
+        -->
         <controls:TextBlock FontTypography="Title" Text="{Binding Content}" />
     </DataTemplate>
 
