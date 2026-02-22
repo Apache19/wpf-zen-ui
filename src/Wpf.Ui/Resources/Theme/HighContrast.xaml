@@ -244,18 +244,8 @@
     <SolidColorBrush x:Key="WindowBorderInactiveBrush" Color="{StaticResource WindowBorderColorInactive}" />
 
     <!--  Flyout  -->
-    <SolidColorBrush x:Key="FlyoutBackground" Color="{StaticResource SystemColorWindowColor}" />
-    <SolidColorBrush x:Key="FlyoutBorderBrush" Color="{StaticResource SystemColorWindowTextColor}" />
 
     <!--  HyperlinkButton  -->
-    <SolidColorBrush x:Key="HyperlinkButtonBackground" Color="Transparent" />
-    <SolidColorBrush x:Key="HyperlinkButtonBackgroundPointerOver" Color="{StaticResource SystemColorWindowColor}" />
-    <SolidColorBrush x:Key="HyperlinkButtonBackgroundPressed" Color="{StaticResource SystemColorWindowColor}" />
-    <SolidColorBrush x:Key="HyperlinkButtonBackgroundDisabled" Color="{StaticResource SystemColorWindowColor}" />
-    <SolidColorBrush x:Key="HyperlinkButtonForeground" Color="{StaticResource SystemColorHotlightColor}" />
-    <SolidColorBrush x:Key="HyperlinkButtonForegroundPointerOver" Color="{StaticResource SystemColorWindowTextColor}" />
-    <SolidColorBrush x:Key="HyperlinkButtonForegroundPressed" Color="{StaticResource SystemColorHighlightColor}" />
-    <SolidColorBrush x:Key="HyperlinkButtonForegroundDisabled" Color="{StaticResource SystemColorGrayTextColor}" />
 
     <!--  InfoBadge  -->
     <SolidColorBrush x:Key="InfoBadgeValueForeground" Color="{StaticResource SystemColorHighlightTextColor}" />

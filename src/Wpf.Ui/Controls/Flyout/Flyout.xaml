@@ -15,8 +15,8 @@
     xmlns:vars="clr-namespace:Wpf.Ui.Markup">
 
     <Style x:Key="DefaultFlyoutStyle" TargetType="{x:Type controls:Flyout}">
-        <Setter Property="Background" Value="{DynamicResource FlyoutBackground}" />
-        <Setter Property="BorderBrush" Value="{DynamicResource FlyoutBorderBrush}" />
+        <Setter Property="Background" Value="{DynamicResource AcrylicBackgroundFillColorDefaultBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource SurfaceStrokeColorFlyoutBrush}" />
         <Setter Property="Margin" Value="0" />
         <Setter Property="MinWidth" Value="20" />
         <Setter Property="MinHeight" Value="20" />

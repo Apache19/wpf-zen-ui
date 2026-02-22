@@ -94,8 +94,8 @@
                             x:Name="SubmenuBorder"
                             Margin="12,0,12,18"
                             Padding="0,3,0,3"
-                            Background="{DynamicResource FlyoutBackground}"
-                            BorderBrush="{DynamicResource FlyoutBorderBrush}"
+                            Background="{DynamicResource AcrylicBackgroundFillColorDefaultBrush}"
+                            BorderBrush="{DynamicResource SurfaceStrokeColorFlyoutBrush}"
                             BorderThickness="1"
                             CornerRadius="8"
                             SnapsToDevicePixels="True">
@@ -403,8 +403,8 @@
                         x:Name="SubmenuBorder"
                         Margin="12,10,12,30"
                         Padding="0,3,0,3"
-                        Background="{DynamicResource FlyoutBackground}"
-                        BorderBrush="{DynamicResource FlyoutBorderBrush}"
+                        Background="{DynamicResource AcrylicBackgroundFillColorDefaultBrush}"
+                        BorderBrush="{DynamicResource SurfaceStrokeColorFlyoutBrush}"
                         BorderThickness="1"
                         CornerRadius="8"
                         SnapsToDevicePixels="True">
@@ -574,8 +574,8 @@
                             x:Name="SubmenuBorder"
                             Margin="12,0,12,18"
                             Padding="0,3,0,3"
-                            Background="{DynamicResource FlyoutBackground}"
-                            BorderBrush="{DynamicResource FlyoutBorderBrush}"
+                            Background="{DynamicResource AcrylicBackgroundFillColorDefaultBrush}"
+                            BorderBrush="{DynamicResource SurfaceStrokeColorFlyoutBrush}"
                             BorderThickness="1"
                             CornerRadius="8"
                             SnapsToDevicePixels="True">
@@ -897,8 +897,8 @@
                         x:Name="SubmenuBorder"
                         Margin="12,10,12,18"
                         Padding="0,3,0,3"
-                        Background="{DynamicResource FlyoutBackground}"
-                        BorderBrush="{DynamicResource FlyoutBorderBrush}"
+                        Background="{DynamicResource AcrylicBackgroundFillColorDefaultBrush}"
+                        BorderBrush="{DynamicResource SurfaceStrokeColorFlyoutBrush}"
                         BorderThickness="1"
                         CornerRadius="8"
                         SnapsToDevicePixels="True">
