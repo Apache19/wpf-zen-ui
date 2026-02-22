@@ -35,7 +35,7 @@
                     <Grid>
                         <Rectangle
                             x:Name="TodayBackground"
-                            Fill="{DynamicResource CalendarViewTodayBackground}"
+                            Fill="{DynamicResource SystemAccentColorPrimaryBrush}"
                             Opacity="0"
                             RadiusX="99"
                             RadiusY="99" />
@@ -45,7 +45,7 @@
                             RadiusX="99"
                             RadiusY="99"
                             SnapsToDevicePixels="False"
-                            Stroke="{DynamicResource CalendarViewSelectedBorderBrush}"
+                            Stroke="{DynamicResource SystemAccentColorPrimaryBrush}"
                             StrokeThickness="1"
                             UseLayoutRounding="False" />
                         <Border
@@ -54,7 +54,7 @@
                             BorderThickness="{TemplateBinding BorderThickness}" />
                         <Rectangle
                             x:Name="HighlightBackground"
-                            Fill="{DynamicResource CalendarViewItemBackgroundPointerOver}"
+                            Fill="{DynamicResource SubtleFillColorSecondaryBrush}"
                             Opacity="0"
                             RadiusX="99"
                             RadiusY="99" />
@@ -63,7 +63,7 @@
                             Margin="5,1,5,1"
                             HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
                             VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
-                            TextBlock.Foreground="{DynamicResource CalendarViewForeground}" />
+                            TextBlock.Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
                         <Rectangle
                             x:Name="DayButtonFocusVisual"
                             IsHitTestVisible="False"
@@ -179,7 +179,7 @@
                                             Duration="0" />
                                         <ObjectAnimationUsingKeyFrames Storyboard.TargetName="NormalText" Storyboard.TargetProperty="(TextBlock.Foreground)">
                                             <ObjectAnimationUsingKeyFrames.KeyFrames>
-                                                <DiscreteObjectKeyFrame KeyTime="0:0:0" Value="{DynamicResource CalendarViewTodayForeground}" />
+                                                <DiscreteObjectKeyFrame KeyTime="0:0:0" Value="{DynamicResource TextOnAccentFillColorPrimaryBrush}" />
                                             </ObjectAnimationUsingKeyFrames.KeyFrames>
                                         </ObjectAnimationUsingKeyFrames>
                                     </Storyboard>
@@ -203,7 +203,7 @@
                                 <Condition Binding="{Binding IsToday, RelativeSource={RelativeSource Self}}" Value="True" />
                                 <Condition Binding="{Binding IsMouseOver, RelativeSource={RelativeSource Self}}" Value="True" />
                             </MultiDataTrigger.Conditions>
-                            <Setter TargetName="TodayBackground" Property="Fill" Value="{DynamicResource CalendarViewSelectedBackgroundPointerOver}" />
+                            <Setter TargetName="TodayBackground" Property="Fill" Value="{DynamicResource AccentFillColorSecondaryBrush}" />
                         </MultiDataTrigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -228,13 +228,13 @@
                     <Grid>
                         <Rectangle
                             x:Name="SelectedBackground"
-                            Fill="{DynamicResource CalendarViewSelectedBackground}"
+                            Fill="{DynamicResource SystemAccentColorPrimaryBrush}"
                             Opacity="0"
                             RadiusX="99"
                             RadiusY="99" />
                         <Rectangle
                             x:Name="Background"
-                            Fill="{DynamicResource CalendarViewItemBackgroundPointerOver}"
+                            Fill="{DynamicResource SubtleFillColorSecondaryBrush}"
                             Opacity="0"
                             RadiusX="99"
                             RadiusY="99" />
@@ -243,7 +243,7 @@
                             Margin="1,0,1,1"
                             HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
                             VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
-                            TextBlock.Foreground="{DynamicResource CalendarViewForeground}" />
+                            TextBlock.Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
                         <Rectangle
                             x:Name="CalendarButtonFocusVisual"
                             IsHitTestVisible="false"
@@ -291,7 +291,7 @@
                                             Duration="0" />
                                         <ObjectAnimationUsingKeyFrames Storyboard.TargetName="NormalText" Storyboard.TargetProperty="(TextBlock.Foreground)">
                                             <ObjectAnimationUsingKeyFrames.KeyFrames>
-                                                <DiscreteObjectKeyFrame KeyTime="0:0:0" Value="{DynamicResource CalendarViewTodayForeground}" />
+                                                <DiscreteObjectKeyFrame KeyTime="0:0:0" Value="{DynamicResource TextOnAccentFillColorPrimaryBrush}" />
                                             </ObjectAnimationUsingKeyFrames.KeyFrames>
                                         </ObjectAnimationUsingKeyFrames>
                                     </Storyboard>
@@ -368,9 +368,9 @@
                                     Focusable="True"
                                     FontSize="14"
                                     FontWeight="SemiBold"
-                                    Foreground="{DynamicResource CalendarViewForeground}"
-                                    MouseOverBackground="{DynamicResource CalendarViewItemBackgroundPointerOver}"
-                                    PressedBackground="{DynamicResource CalendarViewItemBackgroundPressed}" />
+                                    Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                                    MouseOverBackground="{DynamicResource SubtleFillColorSecondaryBrush}"
+                                    PressedBackground="{DynamicResource SubtleFillColorTertiaryBrush}" />
 
                                 <controls:Button
                                     x:Name="PART_PreviousButton"
@@ -385,9 +385,9 @@
                                     Background="Transparent"
                                     BorderThickness="0"
                                     Focusable="True"
-                                    Foreground="{DynamicResource CalendarViewNavigationButtonForeground}"
-                                    MouseOverBackground="{DynamicResource CalendarViewItemBackgroundPointerOver}"
-                                    PressedBackground="{DynamicResource CalendarViewItemBackgroundPressed}">
+                                    Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                                    MouseOverBackground="{DynamicResource SubtleFillColorSecondaryBrush}"
+                                    PressedBackground="{DynamicResource SubtleFillColorTertiaryBrush}">
                                     <controls:Button.Content>
                                         <controls:SymbolIcon
                                             Filled="True"
@@ -419,9 +419,9 @@
                                     Background="Transparent"
                                     BorderThickness="0"
                                     Focusable="True"
-                                    Foreground="{DynamicResource CalendarViewNavigationButtonForeground}"
-                                    MouseOverBackground="{DynamicResource CalendarViewItemBackgroundPointerOver}"
-                                    PressedBackground="{DynamicResource CalendarViewItemBackgroundPressed}">
+                                    Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                                    MouseOverBackground="{DynamicResource SubtleFillColorSecondaryBrush}"
+                                    PressedBackground="{DynamicResource SubtleFillColorTertiaryBrush}">
                                     <controls:Button.Content>
                                         <controls:SymbolIcon
                                             Filled="True"
@@ -444,7 +444,7 @@
                             <Border
                                 Grid.Row="1"
                                 Height="0.5"
-                                Background="{DynamicResource CalendarViewBorderBrush}" />
+                                Background="{DynamicResource ControlStrokeColorDefaultBrush}" />
 
                             <!--  HINT: Day picker  -->
                             <Grid
@@ -537,7 +537,7 @@
                                 VerticalAlignment="Center"
                                 FontSize="14"
                                 FontWeight="Bold"
-                                Foreground="{DynamicResource CalendarViewForeground}"
+                                Foreground="{DynamicResource TextFillColorPrimaryBrush}"
                                 Text="{Binding}" />
                         </DataTemplate>
                     </ControlTemplate.Resources>
@@ -552,9 +552,9 @@
         <Setter Property="CalendarButtonStyle" Value="{StaticResource DefaultCalendarButtonStyle}" />
         <Setter Property="CalendarDayButtonStyle" Value="{StaticResource DefaultCalendarDayButtonStyle}" />
         <Setter Property="CalendarItemStyle" Value="{StaticResource DefaultCalendarItemStyle}" />
-        <Setter Property="Foreground" Value="{DynamicResource CalendarViewForeground}" />
-        <Setter Property="Background" Value="{DynamicResource CalendarViewBackground}" />
-        <Setter Property="BorderBrush" Value="{DynamicResource CalendarViewBorderBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+        <Setter Property="Background" Value="{DynamicResource ControlFillColorInputActiveBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource ControlStrokeColorDefaultBrush}" />
         <Setter Property="HorizontalAlignment" Value="Center" />
         <Setter Property="VerticalAlignment" Value="Center" />
         <Setter Property="BorderThickness" Value="1" />
@@ -597,8 +597,8 @@
                             x:Name="PART_Root"
                             Margin="0"
                             Padding="0"
-                            Background="{DynamicResource CalendarViewBackground}"
-                            BorderBrush="{DynamicResource CalendarViewBorderBrush}"
+                            Background="{DynamicResource ControlFillColorInputActiveBrush}"
+                            BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}"
                             BorderThickness="1"
                             CornerRadius="8">
                             <Border.Effect>

@@ -12,9 +12,9 @@
     xmlns:keys="clr-namespace:Wpf.Ui.Markup">
 
     <Style TargetType="{x:Type controls:CardColor}">
-        <Setter Property="Foreground" Value="{DynamicResource CardForeground}" />
-        <Setter Property="Background" Value="{DynamicResource CardBackground}" />
-        <Setter Property="BorderBrush" Value="{DynamicResource CardBorderBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+        <Setter Property="Background" Value="{DynamicResource CardBackgroundFillColorDefaultBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource CardStrokeColorDefaultBrush}" />
         <Setter Property="FocusVisualStyle" Value="{DynamicResource {x:Static keys:ThemeStyleKeys.DefaultControlFocusVisualStyle}}" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
         <Setter Property="Template">
@@ -43,7 +43,7 @@
                             <TextBlock
                                 Margin="0"
                                 FontSize="{TemplateBinding SubtitleFontSize}"
-                                Foreground="{DynamicResource CardForegroundPressed}"
+                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                 Text="{TemplateBinding Subtitle}" />
                         </StackPanel>
                     </Border>

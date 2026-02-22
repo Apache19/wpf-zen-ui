@@ -209,43 +209,14 @@
     <!--  Control brushes  -->
 
     <!--  Badge  -->
-    <SolidColorBrush x:Key="BadgeForeground" Color="{StaticResource SystemColorHighlightTextColor}" />
-    <SolidColorBrush x:Key="BadgeBackground" Color="{StaticResource SystemColorHighlightColor}" />
 
     <!--  BreadcrumbBar  -->
-    <SolidColorBrush x:Key="BreadcrumbBarNormalForegroundBrush" Color="{StaticResource SystemColorButtonTextColor}" />
-    <SolidColorBrush x:Key="BreadcrumbBarHoverForegroundBrush" Color="{StaticResource SystemColorHighlightColor}" />
-    <SolidColorBrush x:Key="BreadcrumbBarCurrentNormalForegroundBrush" Color="{StaticResource SystemColorButtonTextColor}" />
 
     <!--  Button  -->
 
     <!--  Calendar  -->
-    <SolidColorBrush x:Key="CalendarViewForeground" Color="{StaticResource SystemColorButtonTextColor}" />
-    <SolidColorBrush x:Key="CalendarViewBackground" Color="{StaticResource SystemColorWindowColor}" />
-    <SolidColorBrush x:Key="CalendarViewBorderBrush" Color="{StaticResource SystemColorWindowTextColor}" />
-    <SolidColorBrush x:Key="CalendarViewItemBackgroundPointerOver" Color="{StaticResource SystemColorWindowColor}" />
-    <SolidColorBrush x:Key="CalendarViewItemBackgroundPressed" Color="{StaticResource SystemColorWindowColor}" />
-    <SolidColorBrush x:Key="CalendarViewSelectedBackground" Color="{StaticResource SystemColorWindowColor}" />
-    <SolidColorBrush x:Key="CalendarViewSelectedBackgroundPointerOver" Color="{DynamicResource SystemColorWindowColor}" />
-    <SolidColorBrush x:Key="CalendarViewSelectedBorderBrush" Color="{StaticResource SystemColorHighlightColor}" />
-    <SolidColorBrush x:Key="CalendarViewTodayBackground" Color="{StaticResource SystemColorHighlightColor}" />
-    <SolidColorBrush x:Key="CalendarViewTodayForeground" Color="{StaticResource SystemColorHighlightTextColor}" />
-    <SolidColorBrush x:Key="CalendarViewNavigationButtonForeground" Color="{StaticResource SystemColorButtonTextColor}" />
 
     <!--  Card / CardAction / CardColor / CardExpander  -->
-    <SolidColorBrush x:Key="CardBackground" Color="{StaticResource SystemColorWindowColor}" />
-    <SolidColorBrush x:Key="CardBackgroundPointerOver" Color="{StaticResource SystemColorHighlightTextColor}" />
-    <SolidColorBrush x:Key="CardBackgroundPressed" Color="{StaticResource SystemColorHighlightTextColor}" />
-    <SolidColorBrush x:Key="CardBackgroundDisabled" Color="{StaticResource SystemColorWindowColor}" />
-    <SolidColorBrush x:Key="CardForeground" Color="{StaticResource SystemColorButtonTextColor}" />
-    <SolidColorBrush x:Key="CardForegroundPointerOver" Color="{StaticResource SystemColorHighlightColor}" />
-    <SolidColorBrush x:Key="CardForegroundPressed" Color="{StaticResource SystemColorHighlightColor}" />
-    <SolidColorBrush x:Key="CardForegroundDisabled" Color="{StaticResource SystemColorGrayTextColor}" />
-    <SolidColorBrush x:Key="CardBorderBrush" Color="{StaticResource SystemColorButtonTextColor}" />
-    <!--<SolidColorBrush x:Key="CardBorderBrushPointerOver" Color="{StaticResource ControlElevationBorderBrush}" />-->
-    <SolidColorBrush x:Key="CardBorderBrushPressed" Color="Transparent" />
-    <SolidColorBrush x:Key="CardBorderBrushDisabled" Color="Transparent" />
-    <SolidColorBrush x:Key="CardFooterBackground" Color="{StaticResource SystemColorWindowColor}" />
 
     <!--  CheckBox  -->
 

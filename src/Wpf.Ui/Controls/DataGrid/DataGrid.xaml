@@ -43,7 +43,7 @@
 
     <!--  END REMOVE COLORS  -->
 
-    <Style x:Key="{ComponentResourceKey ResourceId=DataGridSelectAllButtonStyle, TypeInTargetAssembly={x:Type DataGrid}}" TargetType="{x:Type Button}">
+    <Style x:Key="DataGridSelectAllButtonStyle" TargetType="{x:Type Button}">
         <Setter Property="Padding" Value="0,0,-4,0" />
         <Setter Property="HorizontalAlignment" Value="Left" />
         <Setter Property="VerticalAlignment" Value="Stretch" />
@@ -124,6 +124,8 @@
         <Setter Property="VerticalContentAlignment" Value="Center" />
         <Setter Property="Padding" Value="6,0" />
         <Setter Property="MinHeight" Value="32" />
+        <!--  For HitTest  -->
+        <Setter Property="Background" Value="Transparent" />
         <Setter Property="IsTabStop" Value="False" />
         <Setter Property="Template">
             <Setter.Value>
@@ -833,7 +835,7 @@
                                             Width="{Binding CellsPanelHorizontalOffset, RelativeSource={RelativeSource AncestorType={x:Type DataGrid}}}"
                                             Command="{x:Static DataGrid.SelectAllCommand}"
                                             Focusable="false"
-                                            Style="{DynamicResource {ComponentResourceKey ResourceId=DataGridSelectAllButtonStyle, TypeInTargetAssembly={x:Type DataGrid}}}"
+                                            Style="{StaticResource DataGridSelectAllButtonStyle}"
                                             Visibility="{Binding HeadersVisibility, ConverterParameter={x:Static DataGridHeadersVisibility.All}, Converter={x:Static DataGrid.HeadersVisibilityConverter}, RelativeSource={RelativeSource AncestorType={x:Type DataGrid}}}" />
 
                                         <DataGridColumnHeadersPresenter
@@ -916,14 +918,16 @@
         <Setter Property="HorizontalAlignment" Value="Center" />
     </Style>
 
-    <Style x:Key="DefaultDataGridComboBoxElementStyle" BasedOn="{StaticResource {x:Static keys:ThemeStyleKeys.DefaultComboBoxStyle}}"
+    <Style
+        x:Key="DefaultDataGridComboBoxElementStyle"
+        BasedOn="{StaticResource {x:Static keys:ThemeStyleKeys.DefaultComboBoxStyle}}"
         TargetType="{x:Type ComboBox}">
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="BorderBrush" Value="Transparent" />
         <Setter Property="Margin" Value="0,0,10,0" />
         <Setter Property="Padding" Value="12,8,0,8" />
-        <Setter Property="IsHitTestVisible" Value="False" />
-        <Setter Property="Template">
+        <Setter Property="IsHitTestVisible" Value="True" />
+        <!--<Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type ComboBox}">
                     <Border
@@ -959,7 +963,7 @@
                     </Border>
                 </ControlTemplate>
             </Setter.Value>
-        </Setter>
+        </Setter>-->
     </Style>
 
     <Style
@@ -994,6 +998,7 @@
         BasedOn="{StaticResource DefaultDataGridCellStyle}"
         TargetType="{x:Type DataGridCell}">
         <Setter Property="Padding" Value="0" />
+        <Setter Property="Background" Value="Transparent" />
     </Style>
 
     <Style

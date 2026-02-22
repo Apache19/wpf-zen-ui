@@ -11,8 +11,8 @@
     xmlns:controls="clr-namespace:Wpf.Ui.Controls">
 
     <Style TargetType="{x:Type controls:Badge}">
-        <Setter Property="Foreground" Value="{DynamicResource BadgeForeground}" />
-        <Setter Property="Background" Value="{DynamicResource BadgeBackground}" />
+        <Setter Property="Foreground" Value="{DynamicResource TextOnAccentFillColorPrimaryBrush}" />
+        <Setter Property="Background" Value="{DynamicResource SystemAccentColorPrimaryBrush}" />
         <!--<Setter Property="BorderBrush" Value="{DynamicResource SystemAccentColorBrush}" />-->
         <Setter Property="BorderBrush" Value="Transparent" />
         <Setter Property="Padding" Value="4" />
@@ -32,7 +32,7 @@
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="Appearance" Value="Primary">
-                            <Setter Property="Foreground" Value="{DynamicResource BadgeForeground}" />
+                            <Setter Property="Foreground" Value="{DynamicResource TextOnAccentFillColorPrimaryBrush}" />
                         </Trigger>
                         <Trigger Property="Appearance" Value="Transparent">
                             <Setter Property="BorderBrush" Value="{DynamicResource ControlElevationBorderBrush}" />
