@@ -7,20 +7,21 @@ using System.Windows.Markup;
 
 namespace Wpf.Ui.Markup;
 
+[ContentProperty(nameof(Key))]
 [MarkupExtensionReturnType(typeof(object))]
-public class ThemeResourceExtension : MarkupExtension
+public class UIResourceStaticExtension : MarkupExtension
 {
     [ConstructorArgument("key")]
     public ThemeResource Key { get; }
 
-    public ThemeResourceExtension(ThemeResource key)
+    public UIResourceStaticExtension(ThemeResource key)
     {
         Key = key;
     }
 
-    public override object ProvideValue(IServiceProvider serviceProvider)
+    public override object? ProvideValue(IServiceProvider serviceProvider)
     {
-        var key = new ComponentResourceKey(typeof(ThemeResourceAnchor), Key);
-        return new DynamicResourceExtension(key).ProvideValue(serviceProvider);
+        var key = UIResourceExtension.KeyMapping(Key);
+        return new StaticResourceExtension(key).ProvideValue(serviceProvider);
     }
 }

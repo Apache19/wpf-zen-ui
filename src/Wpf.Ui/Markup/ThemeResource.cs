@@ -15,6 +15,8 @@ namespace Wpf.Ui.Markup;
 /// </example>
 public enum ThemeResource
 {
+    // todo 目前只加入了Theme Brush资源，调色板、静态画刷这些还没加入
+
     /// <summary>
     /// Unspecified theme resource.
     /// </summary>

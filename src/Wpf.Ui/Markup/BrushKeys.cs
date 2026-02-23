@@ -8,7 +8,7 @@ using System.Reflection;
 
 namespace Wpf.Ui.Markup;
 
-public static class ThemeKeys
+public static class BrushKeys
 {
     public static ComponentResourceKey SystemAccentColorBrush { get; private set; }
 
@@ -143,10 +143,10 @@ public static class ThemeKeys
 
     public static ComponentResourceKey LeftNavigationViewSeparatorBrush { get; private set; }
 
-    static ThemeKeys()
+    static BrushKeys()
     {
         // 使用反射统一设置每个属性值
-        var type       = typeof(ThemeKeys);
+        var type       = typeof(BrushKeys);
         var properties = type.GetProperties(BindingFlags.Public | BindingFlags.Static);
         foreach (var property in properties)
         {
