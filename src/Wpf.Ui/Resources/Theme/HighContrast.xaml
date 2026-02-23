@@ -286,13 +286,6 @@
     <!--  TO DO  -->
 
     <!--  TabControl / TabView  -->
-    <SolidColorBrush x:Key="TabViewBackground" Color="{StaticResource SystemColorWindowColor}" />
-    <SolidColorBrush x:Key="TabViewForeground" Color="{StaticResource SystemColorWindowTextColor}" />
-    <SolidColorBrush x:Key="TabViewItemForegroundSelected" Color="{StaticResource SystemColorHighlightColor}" />
-    <SolidColorBrush x:Key="TabViewBorderBrush" Color="{StaticResource SystemColorWindowTextColor}" />
-    <SolidColorBrush x:Key="TabViewItemHeaderBackground" Color="{StaticResource SystemColorWindowColor}" />
-    <SolidColorBrush x:Key="TabViewItemHeaderBackgroundSelected" Color="{StaticResource SystemColorWindowColor}" />
-    <SolidColorBrush x:Key="TabViewSelectedItemBorderBrush" Color="{StaticResource SystemColorHighlightColor}" />
 
     <!--  TextBox (same brushes are used for AutoSuggestBox / NumberBox / PasswordBox / RichSuggestBox)  -->
 

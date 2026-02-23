@@ -411,13 +411,6 @@
     <!--  TO DO  -->
 
     <!--  TabControl / TabView  -->
-    <SolidColorBrush x:Key="TabViewBackground" Color="{StaticResource SubtleFillColorTransparent}" />
-    <SolidColorBrush x:Key="TabViewForeground" Color="{StaticResource TextFillColorPrimary}" />
-    <SolidColorBrush x:Key="TabViewItemForegroundSelected" Color="{StaticResource TextFillColorPrimary}" />
-    <SolidColorBrush x:Key="TabViewBorderBrush" Color="{StaticResource CardStrokeColorDefault}" />
-    <SolidColorBrush x:Key="TabViewItemHeaderBackground" Color="{StaticResource LayerOnMicaBaseAltFillColorTransparent}" />
-    <SolidColorBrush x:Key="TabViewItemHeaderBackgroundSelected" Color="{StaticResource SolidBackgroundFillColorTertiary}" />
-    <SolidColorBrush x:Key="TabViewSelectedItemBorderBrush" Color="{StaticResource CardStrokeColorDefault}" />
 
     <!--  TextBox (same brushes are used for AutoSuggestBox / NumberBox / PasswordBox / RichSuggestBox)  -->
 

@@ -3,10 +3,15 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-// ReSharper disable once CheckNamespace
 namespace Wpf.Ui.Controls;
 
-/// <summary>
-/// Represents a single tab within a <see cref="TabView"/>.
-/// </summary>
-public class TabViewItem : System.Windows.Controls.TabItem { }
+public class TabControl : System.Windows.Controls.TabControl
+{
+    static TabControl()
+    {
+        DefaultStyleKeyProperty.OverrideMetadata(
+            typeof(TabControl),
+            new FrameworkPropertyMetadata(typeof(TabControl))
+        );
+    }
+}
