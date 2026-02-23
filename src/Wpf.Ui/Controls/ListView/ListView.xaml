@@ -123,7 +123,7 @@
                 Padding="{TemplateBinding Control.Padding}"
                 CanContentScroll="{TemplateBinding ScrollViewer.CanContentScroll}"
                 Focusable="False"
-                Template="{DynamicResource GridViewScrollViewerTemplate}">
+                Template="{StaticResource GridViewScrollViewerTemplate}">
                 <ItemsPresenter />
             </controls:PassiveScrollViewer>
         </Border>
@@ -136,6 +136,7 @@
 
     <Style x:Key="DefaultUiListViewStyle" TargetType="{x:Type controls:ListView}">
         <Setter Property="Margin" Value="0" />
+        <Setter Property="Background" Value="ForestGreen"></Setter>
         <Setter Property="Padding" Value="0" />
         <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto" />
         <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Auto" />
@@ -146,7 +147,7 @@
         <Setter Property="VirtualizingPanel.VirtualizationMode" Value="Standard" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
         <Style.Triggers>
-            <DataTrigger Binding="{Binding Path=ViewState, RelativeSource={RelativeSource Mode=Self}}" Value="{x:Static controls:ListViewViewState.Default}">
+            <Trigger Property="ViewState" Value="Default">
                 <Setter Property="ItemsPanel">
                     <Setter.Value>
                         <ItemsPanelTemplate>
@@ -160,11 +161,11 @@
                         </ItemsPanelTemplate>
                     </Setter.Value>
                 </Setter>
-                <Setter Property="Template" Value="{DynamicResource NullViewTemplate}" />
-            </DataTrigger>
-            <DataTrigger Binding="{Binding Path=ViewState, RelativeSource={RelativeSource Mode=Self}}" Value="{x:Static controls:ListViewViewState.GridView}">
-                <Setter Property="Template" Value="{DynamicResource GridViewTemplate}" />
-            </DataTrigger>
+                <Setter Property="Template" Value="{StaticResource NullViewTemplate}" />
+            </Trigger>
+            <Trigger Property="ViewState" Value="GridView">
+                <Setter Property="Template" Value="{StaticResource GridViewTemplate}" />
+            </Trigger>
         </Style.Triggers>
     </Style>
 
