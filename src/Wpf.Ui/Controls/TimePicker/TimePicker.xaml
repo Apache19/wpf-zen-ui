@@ -13,8 +13,8 @@
         <!--  Universal WPF UI ContextMenu  -->
         <Setter Property="ContextMenu" Value="{DynamicResource {x:Static keys:ThemeStyleKeys.DefaultControlContextMenu}}" />
         <!--  Universal WPF UI ContextMenu  -->
-        <Setter Property="Foreground" Value="{DynamicResource TimePickerButtonForegroundDefault}" />
-        <Setter Property="Background" Value="{DynamicResource TimePickerButtonBackground}" />
+        <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}" />
+        <Setter Property="Background" Value="{DynamicResource ControlFillColorTertiaryBrush}" />
         <Setter Property="BorderBrush" Value="{DynamicResource ControlElevationBorderBrush}" />
         <Setter Property="BorderThickness" Value="{StaticResource TimePickerBorderThemeThickness}" />
         <Setter Property="FontSize" Value="{DynamicResource {x:Static keys:ThemeVariableKeys.ControlContentThemeFontSize}}" />
@@ -88,18 +88,18 @@
                     </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter Property="Background" Value="{DynamicResource TimePickerButtonBackgroundPointerOver}" />
-                            <Setter Property="Foreground" Value="{DynamicResource TimePickerButtonForegroundPointerOver}" />
+                            <Setter Property="Background" Value="{DynamicResource ControlFillColorSecondaryBrush}" />
+                            <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter Property="Background" Value="{DynamicResource TimePickerButtonBackgroundDisabled}" />
-                            <Setter Property="BorderBrush" Value="{DynamicResource TimePickerButtonBorderBrushDisabled}" />
-                            <Setter Property="Foreground" Value="{DynamicResource TimePickerButtonForegroundDisabled}" />
+                            <Setter Property="Background" Value="{DynamicResource ControlFillColorDisabledBrush}" />
+                            <Setter Property="BorderBrush" Value="{DynamicResource ControlStrokeColorDefaultBrush}" />
+                            <Setter Property="Foreground" Value="{DynamicResource TextFillColorDisabledBrush}" />
                         </Trigger>
                         <Trigger Property="IsPressed" Value="True">
-                            <Setter Property="Background" Value="{DynamicResource TimePickerButtonBackgroundPressed}" />
-                            <Setter Property="BorderBrush" Value="{DynamicResource TimePickerButtonBorderBrushPressed}" />
-                            <Setter Property="Foreground" Value="{DynamicResource TimePickerButtonForegroundPressed}" />
+                            <Setter Property="Background" Value="{DynamicResource ControlFillColorTertiaryBrush}" />
+                            <Setter Property="BorderBrush" Value="{DynamicResource ControlStrokeColorDefaultBrush}" />
+                            <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}" />
                         </Trigger>
                         <Trigger Property="ClockIdentifier" Value="Clock24Hour">
                             <Setter TargetName="GridColumnType" Property="Visibility" Value="Hidden" />

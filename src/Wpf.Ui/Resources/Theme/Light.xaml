@@ -417,20 +417,8 @@
     <!--  TextBox (same brushes are used for AutoSuggestBox / NumberBox / PasswordBox / RichSuggestBox)  -->
 
     <!--  ThumbRate  -->
-    <SolidColorBrush x:Key="ThumbRateForeground" Color="{DynamicResource SystemAccentColorPrimary}" />
 
     <!--  TimePicker  -->
-    <SolidColorBrush x:Key="TimePickerButtonBackground" Color="{StaticResource ControlFillColorTertiary}" />
-    <SolidColorBrush x:Key="TimePickerButtonBackgroundPointerOver" Color="{StaticResource ControlFillColorSecondary}" />
-    <SolidColorBrush x:Key="TimePickerButtonBackgroundPressed" Color="{StaticResource ControlFillColorTertiary}" />
-    <SolidColorBrush x:Key="TimePickerButtonBackgroundDisabled" Color="{StaticResource ControlFillColorDisabled}" />
-    <!--<SolidColorBrush x:Key="TimePickerButtonBorderBrush" Color="{StaticResource ControlElevationBorderBrush}" />-->
-    <SolidColorBrush x:Key="TimePickerButtonBorderBrushPressed" Color="{StaticResource ControlStrokeColorDefault}" />
-    <SolidColorBrush x:Key="TimePickerButtonBorderBrushDisabled" Color="{StaticResource ControlStrokeColorDefault}" />
-    <SolidColorBrush x:Key="TimePickerButtonForegroundDefault" Color="{StaticResource TextFillColorSecondary}" />
-    <SolidColorBrush x:Key="TimePickerButtonForegroundPointerOver" Color="{StaticResource TextFillColorPrimary}" />
-    <SolidColorBrush x:Key="TimePickerButtonForegroundPressed" Color="{StaticResource TextFillColorSecondary}" />
-    <SolidColorBrush x:Key="TimePickerButtonForegroundDisabled" Color="{StaticResource TextFillColorDisabled}" />
 
     <!--  TitleBar  -->
     <SolidColorBrush x:Key="TitleBarButtonBackgroundPointerOver" Color="{StaticResource ControlAltFillColorQuarternary}" />
