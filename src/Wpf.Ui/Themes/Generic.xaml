@@ -5,6 +5,8 @@
 
     <init:LibraryInitializer x:Key="__WpfUiInit" />
 
+    <!--  todo 在没有Application的情况下，例如在WinForms应用中使用，考虑将原生控件隐式样式资源和主题加载进Host来让样式生效  -->
+
     <ResourceDictionary.MergedDictionaries>
         <!--  Misc  -->
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Resources/Variables.xaml" />

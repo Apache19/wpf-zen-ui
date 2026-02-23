@@ -300,9 +300,6 @@
     <!--  ToggleSwitch  -->
 
     <!--  ToolTip  -->
-    <SolidColorBrush x:Key="ToolTipBackground" Color="{StaticResource SystemColorWindowColor}" />
-    <SolidColorBrush x:Key="ToolTipBorderBrush" Color="{StaticResource SystemColorWindowTextColor}" />
-    <SolidColorBrush x:Key="ToolTipForeground" Color="{StaticResource SystemColorWindowTextColor}" />
 
     <!--  ToolBar  -->
     <!--  TODO  -->

@@ -427,9 +427,6 @@
     <!--  ToggleSwitch  -->
 
     <!--  ToolTip  -->
-    <SolidColorBrush x:Key="ToolTipBackground" Color="{StaticResource AcrylicBackgroundFillColorDefault}" />
-    <SolidColorBrush x:Key="ToolTipBorderBrush" Color="{StaticResource SurfaceStrokeColorFlyout}" />
-    <SolidColorBrush x:Key="ToolTipForeground" Color="{StaticResource TextFillColorPrimary}" />
 
     <!--  ToolBar  -->
     <!--  TODO  -->
