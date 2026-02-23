@@ -19,12 +19,8 @@ public enum ThemeResource
     /// Unspecified theme resource.
     /// </summary>
     Unknown,
+    SystemAccentColorBrush,
 
-    // Accents
-    SystemAccentColor,
-    SystemAccentColorPrimary,
-    SystemAccentColorSecondary,
-    SystemAccentColorTertiary,
     SystemAccentColorPrimaryBrush,
     SystemAccentColorSecondaryBrush,
     SystemAccentColorTertiaryBrush,
@@ -32,120 +28,15 @@ public enum ThemeResource
     AccentTextFillColorPrimaryBrush,
     AccentTextFillColorSecondaryBrush,
     AccentTextFillColorTertiaryBrush,
+    AccentFillColorSelectedTextBackgroundBrush,
+    AccentFillColorDefaultBrush,
+    AccentFillColorSecondaryBrush,
+    AccentFillColorTertiaryBrush,
+    AccentFillColorDisabledBrush,
+    SystemFillColorAttentionBrush,
 
-    // Background
-    WindowBackgroundColor,
-    WindowBackgroundBrush,
-
-    // Focus
-    KeyboardFocusBorderColor,
     KeyboardFocusBorderColorBrush,
 
-    // Text
-    TextFillColorPrimary,
-    TextFillColorSecondary,
-    TextFillColorTertiary,
-    TextFillColorDisabled,
-    TextPlaceholderColor,
-    TextFillColorInverse,
-
-    AccentTextFillColorDisabled,
-    TextOnAccentFillColorSelectedText,
-    TextOnAccentFillColorPrimary,
-    TextOnAccentFillColorSecondary,
-    TextOnAccentFillColorDisabled,
-
-    ControlFillColorDefault,
-    ControlFillColorSecondary,
-    ControlFillColorTertiary,
-    ControlFillColorDisabled,
-    ControlFillColorTransparent,
-    ControlFillColorInputActive,
-
-    ControlStrongFillColorDefault,
-    ControlStrongFillColorDisabled,
-
-    ControlSolidFillColorDefault,
-
-    SubtleFillColorTransparent,
-    SubtleFillColorSecondary,
-    SubtleFillColorTertiary,
-    SubtleFillColorDisabled,
-
-    ControlAltFillColorTransparent,
-    ControlAltFillColorSecondary,
-    ControlAltFillColorTertiary,
-    ControlAltFillColorQuarternary,
-    ControlAltFillColorDisabled,
-
-    ControlOnImageFillColorDefault,
-    ControlOnImageFillColorSecondary,
-    ControlOnImageFillColorTertiary,
-    ControlOnImageFillColorDisabled,
-
-    AccentFillColorDisabled,
-
-    ControlStrokeColorDefault,
-    ControlStrokeColorSecondary,
-    ControlStrokeColorTertiary,
-    ControlStrokeColorOnAccentDefault,
-    ControlStrokeColorOnAccentSecondary,
-    ControlStrokeColorOnAccentTertiary,
-    ControlStrokeColorOnAccentDisabled,
-
-    ControlStrokeColorForStrongFillWhenOnImage,
-
-    CardStrokeColorDefault,
-    CardStrokeColorDefaultSolid,
-
-    ControlStrongStrokeColorDefault,
-    ControlStrongStrokeColorDisabled,
-
-    SurfaceStrokeColorDefault,
-    SurfaceStrokeColorFlyout,
-    SurfaceStrokeColorInverse,
-
-    DividerStrokeColorDefault,
-
-    FocusStrokeColorOuter,
-    FocusStrokeColorInner,
-
-    CardBackgroundFillColorDefault,
-    CardBackgroundFillColorSecondary,
-
-    SmokeFillColorDefault,
-
-    LayerFillColorDefault,
-    LayerFillColorAlt,
-    LayerOnAcrylicFillColorDefault,
-    LayerOnAccentAcrylicFillColorDefault,
-
-    LayerOnMicaBaseAltFillColorDefault,
-    LayerOnMicaBaseAltFillColorSecondary,
-    LayerOnMicaBaseAltFillColorTertiary,
-    LayerOnMicaBaseAltFillColorTransparent,
-
-    SolidBackgroundFillColorBase,
-    SolidBackgroundFillColorSecondary,
-    SolidBackgroundFillColorTertiary,
-    SolidBackgroundFillColorQuarternary,
-    SolidBackgroundFillColorTransparent,
-    SolidBackgroundFillColorBaseAlt,
-
-    SystemFillColorSuccess,
-    SystemFillColorCaution,
-    SystemFillColorCritical,
-    SystemFillColorNeutral,
-    SystemFillColorSolidNeutral,
-    SystemFillColorAttentionBackground,
-    SystemFillColorSuccessBackground,
-    SystemFillColorCautionBackground,
-    SystemFillColorCriticalBackground,
-    SystemFillColorNeutralBackground,
-    SystemFillColorSolidAttentionBackground,
-    SystemFillColorSolidNeutralBackground,
-
-    // Brushes
     TextFillColorPrimaryBrush,
     TextFillColorSecondaryBrush,
     TextFillColorTertiaryBrush,
@@ -154,9 +45,7 @@ public enum ThemeResource
     TextFillColorInverseBrush,
 
     AccentTextFillColorDisabledBrush,
-
     TextOnAccentFillColorSelectedTextBrush,
-
     TextOnAccentFillColorPrimaryBrush,
     TextOnAccentFillColorSecondaryBrush,
     TextOnAccentFillColorDisabledBrush,
@@ -170,7 +59,6 @@ public enum ThemeResource
 
     ControlStrongFillColorDefaultBrush,
     ControlStrongFillColorDisabledBrush,
-
     ControlSolidFillColorDefaultBrush,
 
     SubtleFillColorTransparentBrush,
@@ -189,8 +77,6 @@ public enum ThemeResource
     ControlOnImageFillColorTertiaryBrush,
     ControlOnImageFillColorDisabledBrush,
 
-    AccentFillColorDisabledBrush,
-
     ControlStrokeColorDefaultBrush,
     ControlStrokeColorSecondaryBrush,
     ControlStrokeColorTertiaryBrush,
@@ -200,10 +86,8 @@ public enum ThemeResource
     ControlStrokeColorOnAccentDisabledBrush,
 
     ControlStrokeColorForStrongFillWhenOnImageBrush,
-
     CardStrokeColorDefaultBrush,
     CardStrokeColorDefaultSolidBrush,
-
     ControlStrongStrokeColorDefaultBrush,
     ControlStrongStrokeColorDisabledBrush,
 
@@ -250,18 +134,21 @@ public enum ThemeResource
     SystemFillColorSolidAttentionBackgroundBrush,
     SystemFillColorSolidNeutralBackgroundBrush,
 
-    /// <summary>
-    /// Gradient <see cref="Brush"/>.
-    /// </summary>
     ControlElevationBorderBrush,
-
-    /// <summary>
-    /// Gradient <see cref="Brush"/>.
-    /// </summary>
     CircleElevationBorderBrush,
-
-    /// <summary>
-    /// Gradient <see cref="Brush"/>.
-    /// </summary>
     AccentControlElevationBorderBrush,
+    TextControlElevationBorderBrush,
+
+    StripedBackgroundBrush,
+
+    AcrylicBackgroundFillColorDefaultBrush,
+
+    WindowBackgroundBrush,
+    WindowForegroundBrush,
+    WindowBorderBrush,
+    WindowBorderInactiveBrush,
+
+    SystemFillColorInformationalBrush,
+
+    LeftNavigationViewSeparatorBrush,
 }
