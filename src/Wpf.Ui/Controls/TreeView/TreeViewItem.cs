@@ -9,6 +9,7 @@ namespace Wpf.Ui.Controls;
 /// <summary>
 /// Extended <see cref="System.Windows.Controls.TreeViewItem"/> with <see cref="SymbolRegular"/> properties.
 /// </summary>
+[StyleTypedProperty(Property = nameof(ItemContainerStyle), StyleTargetType = typeof(TreeViewItem))]
 public class TreeViewItem : System.Windows.Controls.TreeViewItem
 {
     /// <summary>Identifies the <see cref="Icon"/> dependency property.</summary>
@@ -25,6 +26,11 @@ public class TreeViewItem : System.Windows.Controls.TreeViewItem
             typeof(TreeViewItem),
             new FrameworkPropertyMetadata(typeof(TreeViewItem))
         );
+    }
+
+    protected override DependencyObject GetContainerForItemOverride()
+    {
+        return new TreeViewItem();
     }
 
     /// <summary>

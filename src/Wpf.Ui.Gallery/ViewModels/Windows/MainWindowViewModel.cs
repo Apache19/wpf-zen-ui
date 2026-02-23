@@ -26,6 +26,7 @@ using ListBox = Wpf.Ui.Controls.ListBox;
 using RadioButton = Wpf.Ui.Controls.RadioButton;
 using Separator = Wpf.Ui.Controls.Separator;
 using ToggleButton = Wpf.Ui.Controls.ToggleButton;
+using TreeView = Wpf.Ui.Controls.TreeView;
 
 namespace Wpf.Ui.Gallery.ViewModels.Windows;
 

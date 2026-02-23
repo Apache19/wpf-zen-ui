@@ -26,23 +26,23 @@
                 \t&lt;/TreeViewItem&gt;\n
                 &lt;/TreeView&gt;
             </controls:ControlExample.XamlCode>
-            <TreeView AllowDrop="True" ScrollViewer.CanContentScroll="False">
-                <TreeViewItem
+            <ui:TreeView AllowDrop="True" ScrollViewer.CanContentScroll="False">
+                <ui:TreeViewItem
                     Header="Work Documents"
                     IsExpanded="True"
                     IsSelected="True">
-                    <TreeViewItem Header="Feature Schedule" />
-                    <TreeViewItem Header="Overall Project Plan" />
-                </TreeViewItem>
-                <TreeViewItem Header="Personal Documents">
-                    <TreeViewItem Header="Contractor contact info" />
-                    <TreeViewItem Header="Home Remodel">
-                        <TreeViewItem Header="Paint Color Scheme" />
-                        <TreeViewItem Header="Flooring Woodgrain Type" />
-                        <TreeViewItem Header="Kitchen Cabinet Style" />
-                    </TreeViewItem>
-                </TreeViewItem>
-            </TreeView>
+                    <ui:TreeViewItem Header="Feature Schedule" />
+                    <ui:TreeViewItem Header="Overall Project Plan" />
+                </ui:TreeViewItem>
+                <ui:TreeViewItem Header="Personal Documents">
+                    <ui:TreeViewItem Header="Contractor contact info" />
+                    <ui:TreeViewItem Header="Home Remodel">
+                        <ui:TreeViewItem Header="Paint Color Scheme" />
+                        <ui:TreeViewItem Header="Flooring Woodgrain Type" />
+                        <ui:TreeViewItem Header="Kitchen Cabinet Style" />
+                    </ui:TreeViewItem>
+                </ui:TreeViewItem>
+            </ui:TreeView>
         </controls:ControlExample>
     </Grid>
 </Page>
