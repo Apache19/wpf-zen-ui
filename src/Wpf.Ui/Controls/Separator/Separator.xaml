@@ -15,12 +15,12 @@
         behavior, and applies a theme-defined background brush.
     -->
     <Style BasedOn="{StaticResource {x:Type Separator}}" TargetType="{x:Type Separator}">
-        <Setter Property="Background" Value="{DynamicResource SeparatorBackgroundBrush}" />
+        <Setter Property="Background" Value="{DynamicResource DividerStrokeColorDefaultBrush}" />
     </Style>
 
     <!--  Wpf.Ui.Controls.Separator  -->
     <Style x:Key="DefaultUiSeparatorStyle" TargetType="{x:Type controls:Separator}">
-        <Setter Property="Background" Value="{DynamicResource SeparatorBackgroundBrush}" />
+        <Setter Property="Background" Value="{DynamicResource DividerStrokeColorDefaultBrush}" />
         <Setter Property="Focusable" Value="false" />
         <Setter Property="DefaultMarginHorizontal" Value="0,2,0,2" />
         <Setter Property="DefaultMarginVertical" Value="2,0,2,0" />

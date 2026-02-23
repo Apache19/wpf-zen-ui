@@ -23,6 +23,6 @@
         Margin="0"
         HeaderText="A simple RichTextBox"
         XamlCode="&lt;RichTextBox /&gt;">
-        <RichTextBox />
+        <ui:RichTextBox />
     </controls:ControlExample>
 </Page>

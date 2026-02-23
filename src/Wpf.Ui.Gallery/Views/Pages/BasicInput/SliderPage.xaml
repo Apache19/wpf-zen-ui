@@ -28,7 +28,7 @@
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
-                <Slider
+                <ui:Slider
                     Width="200"
                     Margin="0"
                     HorizontalAlignment="Left"
@@ -54,7 +54,7 @@
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
-                <Slider
+                <ui:Slider
                     Width="200"
                     Margin="0"
                     HorizontalAlignment="Left"
@@ -82,7 +82,7 @@
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
-                <Slider
+                <ui:Slider
                     Width="200"
                     Margin="0"
                     HorizontalAlignment="Left"
@@ -111,7 +111,7 @@
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
-                <Slider
+                <ui:Slider
                     Width="200"
                     Margin="0"
                     HorizontalAlignment="Left"

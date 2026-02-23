@@ -54,7 +54,7 @@
             Margin="0,32,0,0"
             HeaderText="An editable ComboBox."
             XamlCode="&lt;ComboBox IsEditable=&quot;True&quot; /&gt;">
-            <ComboBox
+            <ui:ComboBox
                 MinWidth="200"
                 HorizontalAlignment="Left"
                 IsEditable="True"
@@ -73,14 +73,14 @@
                     </CollectionViewSource.GroupDescriptions>
                 </CollectionViewSource>
             </controls:ControlExample.Resources>
-            <ComboBox
+            <ui:ComboBox
                 MinWidth="200"
                 HorizontalAlignment="Left"
                 DisplayMemberPath="Name"
                 ItemsSource="{Binding Source={StaticResource GroupedItemsSource}}"
                 ScrollViewer.VerticalScrollBarVisibility="Auto"
                 SelectedIndex="0">
-                <ComboBox.GroupStyle>
+                <ui:ComboBox.GroupStyle>
                     <GroupStyle>
                         <GroupStyle.HeaderTemplate>
                             <DataTemplate>
@@ -92,8 +92,8 @@
                             </DataTemplate>
                         </GroupStyle.HeaderTemplate>
                     </GroupStyle>
-                </ComboBox.GroupStyle>
-            </ComboBox>
+                </ui:ComboBox.GroupStyle>
+            </ui:ComboBox>
         </controls:ControlExample>
     </StackPanel>
 </Page>

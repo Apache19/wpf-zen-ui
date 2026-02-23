@@ -15,7 +15,7 @@
         <!--  Universal WPF UI focus  -->
         <Setter Property="FocusVisualStyle" Value="{DynamicResource {x:Static keys:ThemeStyleKeys.DefaultControlFocusVisualStyle}}" />
         <!--  Universal WPF UI focus  -->
-        <Setter Property="Foreground" Value="{DynamicResource RatingControlSelectedForeground}" />
+        <Setter Property="Foreground" Value="{DynamicResource SystemAccentColorPrimaryBrush}" />
 
         <Setter Property="FontSize" Value="20" />
         <Setter Property="HorizontalAlignment" Value="Left" />

@@ -332,109 +332,14 @@
         </DrawingBrush.Drawing>
     </DrawingBrush>
 
-
-    <!--  Control brushes  -->
-
-    <!--  Badge  -->
-
-    <!--  BreadcrumbBar  -->
-
-    <!--  Button  -->
-
-    <!--  Calendar  -->
-
-    <!--  Card / CardAction / CardColor / CardExpander  -->
-
-    <!--  CheckBox  -->
-
-    <!--  ColorPicker  -->
-    <!--  TODO  -->
-
-    <!--  ComboBox  -->
     <SolidColorBrush x:Key="AcrylicBackgroundFillColorDefaultBrush" Color="{StaticResource AcrylicBackgroundFillColorDefault}" />
 
-    <!--  ContentDialog  -->
-
-    <!--  ContextMenu  -->
-
-    <!--  DataGrid  -->
-    <!--  TODO  -->
-
-    <!--  DynamicScrollBar  -->
-
-    <!--  Expander  -->
-
-    <!--  FluentWindow / Window  -->
     <SolidColorBrush x:Key="WindowBackgroundBrush" Color="{StaticResource WindowBackgroundColor}" />
     <SolidColorBrush x:Key="WindowForegroundBrush" Color="{StaticResource TextFillColorPrimary}" />
     <SolidColorBrush x:Key="WindowBorderBrush" Color="{StaticResource WindowBorderColor}" />
     <SolidColorBrush x:Key="WindowBorderInactiveBrush" Color="{StaticResource WindowBorderColorInactive}" />
 
-    <!--  Flyout  -->
-
-    <!--  HyperlinkButton  -->
-
-    <!--  InfoBadge  -->
     <SolidColorBrush x:Key="SystemFillColorInformationalBrush" Color="{StaticResource SystemFillColorInformational}" />
-
-    <!--  InfoBar  -->
-
-    <!--  Label  -->
-
-    <!--  ListBox  -->
-
-    <!--  ListView  -->
-
-    <!--  LoadingScreen  -->
-
-    <!--  Menu  -->
-
-    <!--  MessageDialog  -->
-
-    <!--  NavigationView  -->
-
-    <!--  ProgressBar  -->
-
-    <!--  ProgressRing  -->
-
-    <!--  RadioButton  -->
-
-    <!--  RatingControl  -->
-    <SolidColorBrush x:Key="RatingControlSelectedForeground" Color="{DynamicResource SystemAccentColorPrimary}" />
-
-    <!--  Separator  -->
-    <SolidColorBrush x:Key="SeparatorBackgroundBrush" Color="{StaticResource DividerStrokeColorDefault}" />
-
-    <!--  Slider  -->
-
-    <!--  SnackBar  -->
-
-    <!--  StatusBar  -->
-    <!--  TO DO  -->
-
-    <!--  TabControl / TabView  -->
-
-    <!--  TextBox (same brushes are used for AutoSuggestBox / NumberBox / PasswordBox / RichSuggestBox)  -->
-
-    <!--  ThumbRate  -->
-
-    <!--  TimePicker  -->
-
-    <!--  TitleBar  -->
-
-    <!--  ToggleButton  -->
-
-    <!--  ToggleSwitch  -->
-
-    <!--  ToolTip  -->
-
-    <!--  ToolBar  -->
-    <!--  TODO  -->
-
-    <!--  TreeGrid  -->
-    <!--  TODO  -->
-
-    <!--  TreeView  -->
 
     <!--  LeftNavigationViewTemplate  -->
     <LinearGradientBrush x:Key="LeftNavigationViewSeparatorBrush" StartPoint="0,0" EndPoint="1,0">

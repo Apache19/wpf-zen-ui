@@ -4,7 +4,6 @@
 // All Rights Reserved.
 
 using System.Windows.Controls;
-using System.Windows.Controls.Primitives;
 using Microsoft.Extensions.Localization;
 using Wpf.Ui.Controls;
 using Wpf.Ui.Gallery.Resources;
@@ -25,6 +24,7 @@ using CheckBox = Wpf.Ui.Controls.CheckBox;
 using ListBox = Wpf.Ui.Controls.ListBox;
 using RadioButton = Wpf.Ui.Controls.RadioButton;
 using Separator = Wpf.Ui.Controls.Separator;
+using Slider = Wpf.Ui.Controls.Slider;
 using ToggleButton = Wpf.Ui.Controls.ToggleButton;
 using TreeView = Wpf.Ui.Controls.TreeView;
 
