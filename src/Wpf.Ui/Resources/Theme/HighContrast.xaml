@@ -294,11 +294,6 @@
     <!--  TimePicker  -->
 
     <!--  TitleBar  -->
-    <SolidColorBrush x:Key="TitleBarButtonBackgroundPointerOver" Color="{StaticResource SystemColorHotlightColor}" />
-    <SolidColorBrush x:Key="TitleBarButtonBackgroundPressed" Color="{StaticResource SystemColorHighlightColor}" />
-    <SolidColorBrush x:Key="TitleBarForeground" Color="{StaticResource SystemColorWindowTextColor}" />
-    <SolidColorBrush x:Key="TitleBarForegroundHot" Color="{StaticResource SystemColorHighlightTextColor}" />
-    <SolidColorBrush x:Key="TitleBarForegroundInactive" Color="{StaticResource SystemColorGrayTextColor}" />
 
     <!--  ToggleButton  -->
     <SolidColorBrush x:Key="ToggleButtonBackground" Color="{StaticResource SystemColorWindowColor}" />

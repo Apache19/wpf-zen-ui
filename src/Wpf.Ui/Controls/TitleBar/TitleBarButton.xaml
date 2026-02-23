@@ -29,12 +29,12 @@
         <ControlTemplate.Triggers>
             <!--  Hover  -->
             <Trigger Property="IsMouseActualOver" Value="True">
-                <Setter TargetName="RootBorder" Property="Background" Value="{DynamicResource TitleBarButtonBackgroundPointerOver}" />
-                <Setter TargetName="IconPath" Property="Fill" Value="{DynamicResource TitleBarForegroundHot}" />
+                <Setter TargetName="RootBorder" Property="Background" Value="{DynamicResource ControlAltFillColorQuarternaryBrush}" />
+                <Setter TargetName="IconPath" Property="Fill" Value="{DynamicResource TextFillColorPrimaryBrush}" />
             </Trigger>
             <!--  Pressed  -->
             <Trigger Property="IsPressed" Value="True">
-                <Setter TargetName="RootBorder" Property="Background" Value="{DynamicResource TitleBarButtonBackgroundPressed}" />
+                <Setter TargetName="RootBorder" Property="Background" Value="{DynamicResource ControlAltFillColorTertiaryBrush}" />
             </Trigger>
         </ControlTemplate.Triggers>
     </ControlTemplate>
@@ -62,12 +62,12 @@
             </DataTrigger>
             <!--  Hover  -->
             <Trigger Property="IsMouseActualOver" Value="True">
-                <Setter TargetName="RootBorder" Property="Background" Value="{DynamicResource TitleBarButtonBackgroundPointerOver}" />
-                <Setter TargetName="IconPath" Property="Fill" Value="{DynamicResource TitleBarForegroundHot}" />
+                <Setter TargetName="RootBorder" Property="Background" Value="{DynamicResource ControlAltFillColorQuarternaryBrush}" />
+                <Setter TargetName="IconPath" Property="Fill" Value="{DynamicResource TextFillColorPrimaryBrush}" />
             </Trigger>
             <!--  Pressed  -->
             <Trigger Property="IsPressed" Value="True">
-                <Setter TargetName="RootBorder" Property="Background" Value="{DynamicResource TitleBarButtonBackgroundPressed}" />
+                <Setter TargetName="RootBorder" Property="Background" Value="{DynamicResource ControlAltFillColorTertiaryBrush}" />
             </Trigger>
         </ControlTemplate.Triggers>
     </ControlTemplate>
@@ -115,11 +115,11 @@
         <ControlTemplate.Triggers>
             <!--  Hover  -->
             <Trigger Property="IsMouseActualOver" Value="True">
-                <Setter TargetName="RootBorder" Property="Background" Value="{DynamicResource TitleBarButtonBackgroundPointerOver}" />
+                <Setter TargetName="RootBorder" Property="Background" Value="{DynamicResource ControlAltFillColorQuarternaryBrush}" />
             </Trigger>
             <!--  Pressed  -->
             <Trigger Property="IsPressed" Value="True">
-                <Setter TargetName="RootBorder" Property="Background" Value="{DynamicResource TitleBarButtonBackgroundPressed}" />
+                <Setter TargetName="RootBorder" Property="Background" Value="{DynamicResource ControlAltFillColorTertiaryBrush}" />
             </Trigger>
         </ControlTemplate.Triggers>
     </ControlTemplate>
@@ -141,7 +141,7 @@
             </Trigger>
             <!--  Disabled  -->
             <Trigger Property="IsEnabled" Value="False">
-                <Setter Property="Foreground" Value="{DynamicResource TitleBarForegroundInactive}" />
+                <Setter Property="Foreground" Value="{DynamicResource TextFillColorDisabledBrush}" />
             </Trigger>
         </Style.Triggers>
     </Style>
@@ -181,7 +181,7 @@
         </Setter>
         <Style.Triggers>
             <Trigger Property="IsEnabled" Value="False">
-                <Setter Property="Foreground" Value="{DynamicResource TitleBarForegroundInactive}" />
+                <Setter Property="Foreground" Value="{DynamicResource TextFillColorDisabledBrush}" />
             </Trigger>
         </Style.Triggers>
     </Style>

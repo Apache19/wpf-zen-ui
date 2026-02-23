@@ -47,7 +47,7 @@
     </ControlTemplate>
 
     <Style x:Key="DefaultTitleBarStyle" TargetType="{x:Type controls:TitleBar}">
-        <Setter Property="Foreground" Value="{DynamicResource TitleBarForeground}" />
+        <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
         <Setter Property="Padding" Value="16,4,16,4" />
         <Setter Property="Height" Value="48" />
         <Setter Property="VerticalContentAlignment" Value="Stretch" />
@@ -172,7 +172,7 @@
         </Setter>
         <Style.Triggers>
             <DataTrigger Binding="{Binding IsNcActive, RelativeSource={RelativeSource AncestorType=controls:FluentWindow}, FallbackValue=True}" Value="False">
-                <Setter Property="Foreground" Value="{DynamicResource TitleBarForegroundInactive}" />
+                <Setter Property="Foreground" Value="{DynamicResource TextFillColorDisabledBrush}" />
             </DataTrigger>
             <DataTrigger Binding="{Binding WindowStyle, RelativeSource={RelativeSource AncestorType=Window}}" Value="ToolWindow">
                 <Setter Property="Height" Value="28" />
