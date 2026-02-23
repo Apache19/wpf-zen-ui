@@ -121,7 +121,7 @@
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness, Converter={StaticResource RightSplitThicknessConverter}}"
                                 CornerRadius="{TemplateBinding CornerRadius, Converter={StaticResource RightSplitCornerRadiusConverter}}">
-                                <ToggleButton
+                                <controls:ToggleButton
                                     Name="PART_ToggleButton"
                                     HorizontalAlignment="Stretch"
                                     VerticalAlignment="Stretch"
@@ -129,9 +129,9 @@
                                     Focusable="False"
                                     Foreground="{TemplateBinding Foreground}"
                                     IsChecked="{TemplateBinding IsDropDownOpen}"
-                                    Style="{DynamicResource DefaultSplitButtonToggleButtonStyle}">
+                                    Style="{StaticResource DefaultSplitButtonToggleButtonStyle}">
                                     <controls:SymbolIcon FontSize="10" Symbol="ChevronDown24" />
-                                </ToggleButton>
+                                </controls:ToggleButton>
                             </Border>
                         </Grid>
                     </Border>

@@ -14,8 +14,8 @@
     xmlns:animations="clr-namespace:Wpf.Ui.Animations"
     xmlns:controls="clr-namespace:Wpf.Ui.Controls"
     xmlns:converters="clr-namespace:Wpf.Ui.Converters"
-    xmlns:system="clr-namespace:System;assembly=System.Runtime"
-    xmlns:keys="clr-namespace:Wpf.Ui.Markup">
+    xmlns:keys="clr-namespace:Wpf.Ui.Markup"
+    xmlns:system="clr-namespace:System;assembly=System.Runtime">
 
     <Thickness x:Key="CardExpanderPadding">14,16,14,16</Thickness>
     <Thickness x:Key="CardExpanderBorderThemeThickness">1</Thickness>
@@ -130,7 +130,7 @@
                                     <Binding Path="IsExpanded" RelativeSource="{RelativeSource TemplatedParent}" />
                                 </MultiBinding>
                             </Border.CornerRadius>
-                            <ToggleButton
+                            <controls:ToggleButton
                                 x:Name="ExpanderToggleButton"
                                 Margin="0"
                                 Padding="{TemplateBinding Padding}"
@@ -143,7 +143,7 @@
                                 IsChecked="{Binding IsExpanded, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
                                 IsEnabled="{TemplateBinding IsEnabled}"
                                 Template="{StaticResource DefaultUiCardExpanderToggleButtonStyle}">
-                                <ToggleButton.Content>
+                                <controls:ToggleButton.Content>
                                     <Grid>
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="Auto" />
@@ -167,8 +167,8 @@
                                             Content="{TemplateBinding Header}"
                                             TextElement.Foreground="{TemplateBinding Foreground}" />
                                     </Grid>
-                                </ToggleButton.Content>
-                            </ToggleButton>
+                                </controls:ToggleButton.Content>
+                            </controls:ToggleButton>
                         </Border>
 
                         <!--  Collapsed content to expand  -->

@@ -25,6 +25,7 @@ using CheckBox = Wpf.Ui.Controls.CheckBox;
 using ListBox = Wpf.Ui.Controls.ListBox;
 using RadioButton = Wpf.Ui.Controls.RadioButton;
 using Separator = Wpf.Ui.Controls.Separator;
+using ToggleButton = Wpf.Ui.Controls.ToggleButton;
 
 namespace Wpf.Ui.Gallery.ViewModels.Windows;
 

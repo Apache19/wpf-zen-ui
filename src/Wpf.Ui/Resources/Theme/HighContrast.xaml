@@ -296,25 +296,6 @@
     <!--  TitleBar  -->
 
     <!--  ToggleButton  -->
-    <SolidColorBrush x:Key="ToggleButtonBackground" Color="{StaticResource SystemColorWindowColor}" />
-    <SolidColorBrush x:Key="ToggleButtonBackgroundPointerOver" Color="{StaticResource SystemColorHighlightTextColor}" />
-    <SolidColorBrush x:Key="ToggleButtonBackgroundPressed" Color="{StaticResource SystemColorHighlightTextColor}" />
-    <SolidColorBrush x:Key="ToggleButtonBackgroundDisabled" Color="{StaticResource SystemColorGrayTextColor}" />
-    <SolidColorBrush x:Key="ToggleButtonBackgroundChecked" Color="{StaticResource SystemColorHighlightColor}" />
-    <SolidColorBrush x:Key="ToggleButtonForegroundCheckedPointerOver" Color="{StaticResource SystemColorButtonTextColor}" />
-    <SolidColorBrush x:Key="ToggleButtonBackgroundCheckedPressed" Color="{StaticResource SystemColorHighlightTextColor}" />
-    <SolidColorBrush x:Key="ToggleButtonBackgroundCheckedDisabled" Color="{StaticResource SystemColorWindowColor}" />
-    <!--<SolidColorBrush x:Key="ToggleButtonBorderBrush" Color="{StaticResource ControlElevationBorderBrush}" />-->
-    <SolidColorBrush x:Key="ToggleButtonBorderBrushDisabled" Color="{StaticResource SystemColorGrayTextColor}" />
-    <SolidColorBrush x:Key="ToggleButtonBorderBrushPressed" Color="{StaticResource SystemColorWindowColor}" />
-    <SolidColorBrush x:Key="ToggleButtonBorderBrushCheckedPressed" Color="{StaticResource SystemColorWindowColor}" />
-    <SolidColorBrush x:Key="ToggleButtonBorderBrushCheckedDisabled" Color="{StaticResource SystemColorGrayTextColor}" />
-    <SolidColorBrush x:Key="ToggleButtonForeground" Color="{StaticResource SystemColorWindowTextColor}" />
-    <SolidColorBrush x:Key="ToggleButtonForegroundPressed" Color="{StaticResource SystemColorHighlightColor}" />
-    <SolidColorBrush x:Key="ToggleButtonForegroundChecked" Color="{StaticResource SystemColorButtonFaceColor}" />
-    <SolidColorBrush x:Key="ToggleButtonForegroundDisabled" Color="{StaticResource SystemColorGrayTextColor}" />
-    <SolidColorBrush x:Key="ToggleButtonForegroundCheckedPressed" Color="{StaticResource SystemColorHighlightColor}" />
-    <SolidColorBrush x:Key="ToggleButtonForegroundCheckedDisabled" Color="{StaticResource SystemColorGrayTextColor}" />
 
     <!--  ToggleSwitch  -->
 
