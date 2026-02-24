@@ -206,6 +206,6 @@ public class Button : System.Windows.Controls.Button, IAppearanceControl, IIconC
     public CornerRadius CornerRadius
     {
         get => (CornerRadius)GetValue(CornerRadiusProperty);
-        set => SetValue(CornerRadiusProperty, (object)value);
+        set => SetValue(CornerRadiusProperty, value);
     }
 }

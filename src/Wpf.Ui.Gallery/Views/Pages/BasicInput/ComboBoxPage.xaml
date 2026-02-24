@@ -14,7 +14,7 @@
     d:DesignWidth="800"
     d:Background="{ui:BrushResource WindowBackgroundBrush}"
     d:Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
-    Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+    Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
     mc:Ignorable="d">
 
     <StackPanel Margin="0,0,0,24">
@@ -87,7 +87,7 @@
                                 <TextBlock
                                     Margin="8,4,0,4"
                                     FontWeight="SemiBold"
-                                    Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                                    Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
                                     Text="{Binding Name}" />
                             </DataTemplate>
                         </GroupStyle.HeaderTemplate>

@@ -18,7 +18,7 @@
         <Border
             x:Name="WindowBorder"
             Background="{TemplateBinding Background}"
-            BorderBrush="{DynamicResource WindowBorderBrush}"
+            BorderBrush="{markup:BrushResource WindowBorderBrush}"
             BorderThickness="0,1,0,0"
             RenderOptions.EdgeMode="Aliased"
             SnapsToDevicePixels="True">

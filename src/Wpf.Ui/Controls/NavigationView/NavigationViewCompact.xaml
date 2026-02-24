@@ -131,7 +131,7 @@
                                         Height="40"
                                         HorizontalAlignment="Stretch"
                                         Background="Transparent"
-                                        BorderThickness="{markup:BrushResource NavigationViewItemThickness}"
+                                        BorderThickness="{DynamicResource NavigationViewItemThickness}"
                                         CornerRadius="4">
                                         <Grid Margin="30,0,0,0" HorizontalAlignment="Stretch">
                                             <Grid.ColumnDefinitions>

@@ -110,8 +110,8 @@
                 <Setter TargetName="BottomTick" Property="Visibility" Value="Visible" />
             </Trigger>
             <Trigger Property="IsMouseOver" Value="True">
-                <Setter TargetName="TrackBackground" Property="Background" Value="{DynamicResource ControlStrongFillColorDefaultBrush}" />
-                <Setter TargetName="Thumb" Property="Foreground" Value="{DynamicResource AccentFillColorSecondaryBrush}" />
+                <Setter TargetName="TrackBackground" Property="Background" Value="{markup:BrushResource ControlStrongFillColorDefaultBrush}" />
+                <Setter TargetName="Thumb" Property="Foreground" Value="{markup:BrushResource AccentFillColorSecondaryBrush}" />
             </Trigger>
         </ControlTemplate.Triggers>
     </ControlTemplate>

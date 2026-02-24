@@ -12,7 +12,7 @@
     d:DesignWidth="800"
     d:Background="{ui:BrushResource WindowBackgroundBrush}"
     d:Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
-    Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+    Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
     mc:Ignorable="d">
 
     <StackPanel Margin="0,0,0,24">
@@ -32,7 +32,7 @@
         <Border
             Margin="0,12,0,0"
             Padding="12"
-            Background="{DynamicResource ControlFillColorDefaultBrush}"
+            Background="{ui:BrushResource ControlFillColorDefaultBrush}"
             CornerRadius="8">
             <StackPanel>
                 <ui:TextBlock Text="For UI labels and static text" />
@@ -54,9 +54,9 @@
             </Grid.ColumnDefinitions>
             <Border
                 Grid.Column="0"
-                Background="{DynamicResource TextFillColorPrimaryBrush}"
+                Background="{ui:BrushResource TextFillColorPrimaryBrush}"
                 CornerRadius="8,0,0,8"
-                TextElement.Foreground="{DynamicResource TextFillColorInverseBrush}">
+                TextElement.Foreground="{ui:BrushResource TextFillColorInverseBrush}">
                 <Grid Margin="12">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
@@ -73,9 +73,9 @@
             </Border>
             <Border
                 Grid.Column="1"
-                Background="{DynamicResource TextFillColorSecondaryBrush}"
+                Background="{ui:BrushResource TextFillColorSecondaryBrush}"
                 CornerRadius="0"
-                TextElement.Foreground="{DynamicResource TextFillColorInverseBrush}">
+                TextElement.Foreground="{ui:BrushResource TextFillColorInverseBrush}">
                 <Grid Margin="12">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
@@ -92,9 +92,9 @@
             </Border>
             <Border
                 Grid.Column="2"
-                Background="{DynamicResource TextFillColorTertiaryBrush}"
+                Background="{ui:BrushResource TextFillColorTertiaryBrush}"
                 CornerRadius="0"
-                TextElement.Foreground="{DynamicResource TextFillColorInverseBrush}">
+                TextElement.Foreground="{ui:BrushResource TextFillColorInverseBrush}">
                 <Grid Margin="12">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
@@ -111,9 +111,9 @@
             </Border>
             <Border
                 Grid.Column="3"
-                Background="{DynamicResource TextFillColorDisabledBrush}"
+                Background="{ui:BrushResource TextFillColorDisabledBrush}"
                 CornerRadius="0,8,8,0"
-                TextElement.Foreground="{DynamicResource TextFillColorInverseBrush}">
+                TextElement.Foreground="{ui:BrushResource TextFillColorInverseBrush}">
                 <Grid Margin="12">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
@@ -138,7 +138,7 @@
         <Border
             Margin="0,12,0,0"
             Padding="12"
-            Background="{DynamicResource ControlFillColorDefaultBrush}"
+            Background="{ui:BrushResource ControlFillColorDefaultBrush}"
             CornerRadius="8">
             <StackPanel>
                 <ui:TextBlock Text="Recommended for links" />
@@ -147,7 +147,7 @@
                     HorizontalAlignment="Center"
                     FontSize="42"
                     FontWeight="SemiBold"
-                    Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}"
+                    Foreground="{ui:BrushResource AccentTextFillColorPrimaryBrush}"
                     Text="Aa" />
             </StackPanel>
         </Border>
@@ -161,9 +161,9 @@
             </Grid.ColumnDefinitions>
             <Border
                 Grid.Column="0"
-                Background="{DynamicResource AccentTextFillColorPrimaryBrush}"
+                Background="{ui:BrushResource AccentTextFillColorPrimaryBrush}"
                 CornerRadius="8,0,0,8"
-                TextElement.Foreground="{DynamicResource TextFillColorInverseBrush}">
+                TextElement.Foreground="{ui:BrushResource TextFillColorInverseBrush}">
                 <Grid Margin="12">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
@@ -180,9 +180,9 @@
             </Border>
             <Border
                 Grid.Column="1"
-                Background="{DynamicResource AccentTextFillColorSecondaryBrush}"
+                Background="{ui:BrushResource AccentTextFillColorSecondaryBrush}"
                 CornerRadius="0"
-                TextElement.Foreground="{DynamicResource TextFillColorInverseBrush}">
+                TextElement.Foreground="{ui:BrushResource TextFillColorInverseBrush}">
                 <Grid Margin="12">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
@@ -199,9 +199,9 @@
             </Border>
             <Border
                 Grid.Column="2"
-                Background="{DynamicResource AccentTextFillColorTertiaryBrush}"
+                Background="{ui:BrushResource AccentTextFillColorTertiaryBrush}"
                 CornerRadius="0"
-                TextElement.Foreground="{DynamicResource TextFillColorInverseBrush}">
+                TextElement.Foreground="{ui:BrushResource TextFillColorInverseBrush}">
                 <Grid Margin="12">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
@@ -218,9 +218,9 @@
             </Border>
             <Border
                 Grid.Column="3"
-                Background="{DynamicResource AccentTextFillColorDisabledBrush}"
+                Background="{ui:BrushResource AccentTextFillColorDisabledBrush}"
                 CornerRadius="0,8,8,0"
-                TextElement.Foreground="{DynamicResource TextFillColorInverseBrush}">
+                TextElement.Foreground="{ui:BrushResource TextFillColorInverseBrush}">
                 <Grid Margin="12">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />

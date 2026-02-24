@@ -13,7 +13,7 @@ namespace Wpf.Ui.Theming;
 /// &lt;ui:TextBox Foreground={ui:BrushResource TextFillColorSecondaryBrush} /&gt;
 /// </code>
 /// </example>
-public enum ThemeBrush
+public enum BrushKey
 {
     Unknown,
 

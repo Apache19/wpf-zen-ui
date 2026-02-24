@@ -12,7 +12,7 @@
     d:DesignWidth="800"
     d:Background="{ui:BrushResource WindowBackgroundBrush}"
     d:Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
-    Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+    Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
     mc:Ignorable="d">
 
     <StackPanel Margin="0,0,0,24">
@@ -60,7 +60,7 @@
                 </Grid>
 
                 <controls:TypographyControl
-                    Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
+                    Background="{ui:BrushResource CardBackgroundFillColorDefaultBrush}"
                     Example="Caption"
                     ExampleFontTypography="Caption"
                     SizeLinHeight="12/16"
@@ -73,7 +73,7 @@
                     VariableFont="Regular" />
 
                 <controls:TypographyControl
-                    Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
+                    Background="{ui:BrushResource CardBackgroundFillColorDefaultBrush}"
                     Example="Body strong"
                     ExampleFontTypography="BodyStrong"
                     SizeLinHeight="14/20"
@@ -86,7 +86,7 @@
                     VariableFont="SemiBold" />
 
                 <controls:TypographyControl
-                    Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
+                    Background="{ui:BrushResource CardBackgroundFillColorDefaultBrush}"
                     Example="Title"
                     ExampleFontTypography="Title"
                     SizeLinHeight="28/36"
@@ -99,7 +99,7 @@
                     VariableFont="SemiBold" />
 
                 <controls:TypographyControl
-                    Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
+                    Background="{ui:BrushResource CardBackgroundFillColorDefaultBrush}"
                     Example="Display"
                     ExampleFontTypography="Display"
                     SizeLinHeight="68/92"

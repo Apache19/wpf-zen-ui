@@ -17,9 +17,9 @@
         <Setter Property="Cursor" Value="Hand" />
         <Setter Property="VerticalAlignment" Value="Center" />
         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-        <Setter Property="Background" Value="{markup:BrushResource SubtleFillColorTransparentBrush}" />
+        <!--<Setter Property="Background" Value="{markup:BrushResource SubtleFillColorTransparentBrush}" />
         <Setter Property="Foreground" Value="{markup:BrushResource TextFillColorPrimaryBrush}" />
-        <Setter Property="BorderBrush" Value="{markup:BrushResource SubtleFillColorTransparentBrush}" />
+        <Setter Property="BorderBrush" Value="{markup:BrushResource SubtleFillColorTransparentBrush}" />-->
         <Setter Property="KeyboardNavigation.IsTabStop" Value="True" />
         <Setter Property="Focusable" Value="True" />
         <Setter Property="SnapsToDevicePixels" Value="True" />

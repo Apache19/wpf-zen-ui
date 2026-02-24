@@ -236,7 +236,7 @@
                 <StackPanel>
                     <TextBlock FontWeight="Medium" Text="WPF UI - Editor" />
                     <TextBlock
-                        Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                        Foreground="{ui:BrushResource TextFillColorSecondaryBrush}"
                         Text="Congratulations, you clicked the button on the menu"
                         TextAlignment="Justify"
                         TextWrapping="WrapWithOverflow" />

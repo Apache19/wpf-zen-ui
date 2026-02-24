@@ -25,7 +25,7 @@
                             Grid.Row="0"
                             Margin="0,0,0,10"
                             FontTypography="BodyStrong"
-                            Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                            Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
                             Text="{TemplateBinding HeaderText}"
                             Visibility="{TemplateBinding HeaderText,
                                                          Converter={StaticResource NullToVisibilityConverter}}" />
@@ -33,8 +33,8 @@
                         <Border
                             Grid.Row="1"
                             Padding="16"
-                            Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
-                            BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
+                            Background="{ui:BrushResource CardBackgroundFillColorDefaultBrush}"
+                            BorderBrush="{ui:BrushResource CardStrokeColorDefaultBrush}"
                             BorderThickness="1,1,1,0"
                             CornerRadius="8,8,0,0">
                             <ContentPresenter Content="{TemplateBinding ExampleContent}" />
@@ -49,7 +49,7 @@
                                     <ui:TextBlock
                                         Margin="0,0,0,5"
                                         FontTypography="BodyStrong"
-                                        Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                                        Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
                                         Text="XAML" />
 
                                     <syntax:CodeBlock
@@ -70,7 +70,7 @@
                                     <ui:TextBlock
                                         Margin="0,0,0,5"
                                         FontTypography="BodyStrong"
-                                        Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                                        Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
                                         Text="C#" />
 
                                     <syntax:CodeBlock

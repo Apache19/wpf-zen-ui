@@ -13,7 +13,7 @@
     d:DesignWidth="800"
     d:Background="{ui:BrushResource WindowBackgroundBrush}"
     d:Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
-    Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+    Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
     mc:Ignorable="d">
     <StackPanel Margin="0,0,0,24">
         <controls:ControlExample
@@ -30,7 +30,7 @@
                         <ui:TextBlock
                             Margin="0"
                             FontTypography="Body"
-                            Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                            Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
                             Text="This is the header text"
                             TextWrapping="WrapWithOverflow" />
                     </StackPanel>
@@ -51,12 +51,12 @@
                         <ui:TextBlock
                             Margin="0"
                             FontTypography="BodyStrong"
-                            Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                            Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
                             Text="This is the header text"
                             TextWrapping="WrapWithOverflow" />
                         <ui:TextBlock
                             Appearance="Secondary"
-                            Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                            Foreground="{ui:BrushResource TextFillColorSecondaryBrush}"
                             Text="This is a description text."
                             TextWrapping="WrapWithOverflow" />
                     </StackPanel>
