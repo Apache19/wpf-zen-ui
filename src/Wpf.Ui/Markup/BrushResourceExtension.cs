@@ -8,15 +8,15 @@ using System.Windows.Markup;
 namespace Wpf.Ui.Markup;
 
 [ContentProperty(nameof(Key))]
-[MarkupExtensionReturnType(typeof(object))]
-public class UIResourceExtension : MarkupExtension
+[MarkupExtensionReturnType(typeof(Brush))]
+public class BrushResourceExtension : MarkupExtension
 {
-    // 用“ThemeResource”时在 ReSharper 环境无法使用自动补全
+    // 类名用“ThemeResourceExtension”时在 ReSharper 环境无法使用自动补全
 
     [ConstructorArgument("key")]
     public ThemeResource Key { get; }
 
-    public UIResourceExtension(ThemeResource key)
+    public BrushResourceExtension(ThemeResource key)
     {
         Key = key;
     }
@@ -27,7 +27,7 @@ public class UIResourceExtension : MarkupExtension
         return new DynamicResourceExtension(key).ProvideValue(serviceProvider);
     }
 
-    internal static ComponentResourceKey KeyMapping(ThemeResource key)
+    private static ComponentResourceKey KeyMapping(ThemeResource key)
     {
         return key switch
         {
