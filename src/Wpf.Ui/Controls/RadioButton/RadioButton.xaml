@@ -13,7 +13,8 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Ui.Controls"
     xmlns:theming="clr-namespace:Wpf.Ui.Theming"
-    xmlns:system="clr-namespace:System;assembly=System.Runtime">
+    xmlns:system="clr-namespace:System;assembly=System.Runtime"
+    xmlns:markup="clr-namespace:Wpf.Ui.Markup">
 
     <system:Double x:Key="RadioButtonCheckGlyphSize">11</system:Double>
     <system:Double x:Key="RadioButtonOuterEllipseSize">20</system:Double>
@@ -28,8 +29,8 @@
         <!--  Universal WPF UI focus  -->
         <Setter Property="FocusVisualStyle" Value="{DynamicResource {x:Static theming:StyleKeys.DefaultControlFocusVisualStyle}}" />
         <!--  Universal WPF UI focus  -->
-        <Setter Property="Background" Value="{DynamicResource SystemAccentColorPrimaryBrush}" />
-        <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+        <Setter Property="Background" Value="{markup:BrushResource SystemAccentColorPrimaryBrush}" />
+        <Setter Property="Foreground" Value="{markup:BrushResource TextFillColorPrimaryBrush}" />
         <Setter Property="BorderBrush" Value="Transparent" />
         <Setter Property="Margin" Value="0" />
         <Setter Property="Padding" Value="{StaticResource RadioButtonPadding}" />
@@ -62,9 +63,9 @@
                                 x:Name="OuterEllipse"
                                 Width="{StaticResource RadioButtonOuterEllipseSize}"
                                 Height="{StaticResource RadioButtonOuterEllipseSize}"
-                                Fill="{DynamicResource ControlAltFillColorSecondaryBrush}"
+                                Fill="{markup:BrushResource ControlAltFillColorSecondaryBrush}"
                                 SnapsToDevicePixels="False"
-                                Stroke="{DynamicResource ControlStrongStrokeColorDefaultBrush}"
+                                Stroke="{markup:BrushResource ControlStrongStrokeColorDefaultBrush}"
                                 StrokeThickness="{StaticResource RadioButtonStrokeThickness}"
                                 UseLayoutRounding="False" />
                             <!--  A separate element is added since the two orthogonal state groups that cannot touch the same property  -->
@@ -82,7 +83,7 @@
                                 x:Name="CheckGlyph"
                                 Width="{StaticResource RadioButtonCheckGlyphSize}"
                                 Height="{StaticResource RadioButtonCheckGlyphSize}"
-                                Fill="{DynamicResource TextOnAccentFillColorPrimaryBrush}"
+                                Fill="{markup:BrushResource TextOnAccentFillColorPrimaryBrush}"
                                 Opacity="0"
                                 SnapsToDevicePixels="False"
                                 UseLayoutRounding="False">
@@ -156,8 +157,8 @@
                                 <Condition Property="IsEnabled" Value="True" />
                             </MultiTrigger.Conditions>
                             <Setter TargetName="CheckGlyph" Property="Opacity" Value="1.0" />
-                            <Setter TargetName="OuterEllipse" Property="Fill" Value="{DynamicResource ControlAltFillColorQuarternaryBrush}" />
-                            <Setter TargetName="OuterEllipse" Property="Stroke" Value="{DynamicResource ControlStrongStrokeColorDisabledBrush}" />
+                            <Setter TargetName="OuterEllipse" Property="Fill" Value="{markup:BrushResource ControlAltFillColorQuarternaryBrush}" />
+                            <Setter TargetName="OuterEllipse" Property="Stroke" Value="{markup:BrushResource ControlStrongStrokeColorDisabledBrush}" />
                             <MultiTrigger.EnterActions>
                                 <StopStoryboard BeginStoryboardName="IsMouseOverReduce" />
                                 <StopStoryboard BeginStoryboardName="IsMouseOverEnlarge" />
@@ -237,7 +238,7 @@
                                 <Condition Property="IsChecked" Value="False" />
                                 <Condition Property="IsEnabled" Value="True" />
                             </MultiTrigger.Conditions>
-                            <Setter TargetName="OuterEllipse" Property="Fill" Value="{DynamicResource ControlAltFillColorTertiaryBrush}" />
+                            <Setter TargetName="OuterEllipse" Property="Fill" Value="{markup:BrushResource ControlAltFillColorTertiaryBrush}" />
                         </MultiTrigger>
                         <MultiTrigger>
                             <MultiTrigger.Conditions>
@@ -245,27 +246,30 @@
                                 <Condition Property="IsChecked" Value="True" />
                                 <Condition Property="IsEnabled" Value="True" />
                             </MultiTrigger.Conditions>
-                            <Setter TargetName="OuterEllipse" Property="Fill" Value="{DynamicResource ControlAltFillColorTertiaryBrush}" />
-                            <Setter Property="Background" Value="{DynamicResource AccentFillColorTertiaryBrush}" />
+                            <Setter TargetName="OuterEllipse" Property="Fill" Value="{markup:BrushResource ControlAltFillColorTertiaryBrush}" />
+                            <Setter Property="Background" Value="{markup:BrushResource AccentFillColorTertiaryBrush}" />
                         </MultiTrigger>
                         <MultiTrigger>
                             <MultiTrigger.Conditions>
                                 <Condition Property="IsChecked" Value="False" />
                                 <Condition Property="IsEnabled" Value="False" />
                             </MultiTrigger.Conditions>
-                            <Setter Property="Foreground" Value="{DynamicResource TextFillColorDisabledBrush}" />
-                            <Setter TargetName="OuterEllipse" Property="Fill" Value="{DynamicResource ControlAltFillColorDisabledBrush}" />
-                            <Setter TargetName="OuterEllipse" Property="Stroke" Value="{DynamicResource ControlStrongStrokeColorDisabledBrush}" />
+                            <Setter Property="Foreground" Value="{markup:BrushResource TextFillColorDisabledBrush}" />
+                            <Setter TargetName="OuterEllipse" Property="Fill" Value="{markup:BrushResource ControlAltFillColorDisabledBrush}" />
+                            <Setter TargetName="OuterEllipse" Property="Stroke" Value="{markup:BrushResource ControlStrongStrokeColorDisabledBrush}" />
                         </MultiTrigger>
                         <MultiTrigger>
                             <MultiTrigger.Conditions>
                                 <Condition Property="IsChecked" Value="True" />
                                 <Condition Property="IsEnabled" Value="False" />
                             </MultiTrigger.Conditions>
-                            <Setter Property="Foreground" Value="{DynamicResource TextFillColorDisabledBrush}" />
-                            <Setter Property="Foreground" Value="{DynamicResource TextFillColorDisabledBrush}" />
-                            <Setter TargetName="OuterEllipse" Property="Fill" Value="{DynamicResource ControlAltFillColorDisabledBrush}" />
-                            <Setter TargetName="OuterEllipse" Property="Stroke" Value="{DynamicResource RadioButtonOuterEllipseCheckedStrokeDisabled}" />
+                            <Setter Property="Foreground" Value="{markup:BrushResource TextFillColorDisabledBrush}" />
+                            <Setter Property="Foreground" Value="{markup:BrushResource TextFillColorDisabledBrush}" />
+                            <Setter TargetName="OuterEllipse" Property="Fill" Value="{markup:BrushResource ControlAltFillColorDisabledBrush}" />
+                            <!--  todo 找不到这个颜色值和画刷  -->
+                            <!--
+                            <Setter TargetName="OuterEllipse" Property="Stroke" Value="{markup:BrushResource RadioButtonOuterEllipseCheckedStrokeDisabled}" />
+                            -->
                             <Setter TargetName="CheckGlyph" Property="Opacity" Value="0.7" />
                             <Setter TargetName="CheckOuterEllipse" Property="Opacity" Value="0.7" />
                         </MultiTrigger>

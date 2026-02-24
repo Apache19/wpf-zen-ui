@@ -1,7 +1,8 @@
 <ResourceDictionary
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:controls="clr-namespace:Wpf.Ui.Controls">
+    xmlns:controls="clr-namespace:Wpf.Ui.Controls"
+    xmlns:markup="clr-namespace:Wpf.Ui.Markup">
     <ResourceDictionary.MergedDictionaries>
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/NavigationView/NavigationViewBasePaneButtonStyle.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/NavigationView/NavigationViewItemDefaultStyle.xaml" />
@@ -26,10 +27,10 @@
                 CornerRadius="{TemplateBinding Border.CornerRadius}">
                 <Border.Style>
                     <Style TargetType="{x:Type Border}">
-                        <Setter Property="Background" Value="{DynamicResource SubtleFillColorTransparentBrush}" />
+                        <Setter Property="Background" Value="{markup:BrushResource SubtleFillColorTransparentBrush}" />
                         <Style.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Background" Value="{DynamicResource SubtleFillColorSecondaryBrush}" />
+                                <Setter Property="Background" Value="{markup:BrushResource SubtleFillColorSecondaryBrush}" />
                             </Trigger>
                         </Style.Triggers>
                     </Style>
@@ -51,7 +52,7 @@
                             Content="{TemplateBinding Icon}"
                             Focusable="False"
                             TextElement.FontSize="16"
-                            TextElement.Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
+                            TextElement.Foreground="{markup:BrushResource TextFillColorPrimaryBrush}" />
                     </Grid>
 
                     <Rectangle
@@ -62,7 +63,7 @@
                         Margin="0"
                         HorizontalAlignment="Left"
                         VerticalAlignment="Center"
-                        Fill="{DynamicResource SystemAccentColorPrimaryBrush}"
+                        Fill="{markup:BrushResource SystemAccentColorPrimaryBrush}"
                         Opacity="0.0"
                         RadiusX="2"
                         RadiusY="2" />
@@ -94,7 +95,7 @@
                             HorizontalAlignment="Center"
                             VerticalAlignment="Center"
                             FontSize="{StaticResource NavigationViewItemChevronSize}"
-                            Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                            Foreground="{markup:BrushResource TextFillColorPrimaryBrush}"
                             RenderTransformOrigin="0.5, 0.5"
                             Symbol="ChevronDown24">
                             <controls:SymbolIcon.RenderTransform>
@@ -130,7 +131,7 @@
                                         Height="40"
                                         HorizontalAlignment="Stretch"
                                         Background="Transparent"
-                                        BorderThickness="{DynamicResource NavigationViewItemThickness}"
+                                        BorderThickness="{markup:BrushResource NavigationViewItemThickness}"
                                         CornerRadius="4">
                                         <Grid Margin="30,0,0,0" HorizontalAlignment="Stretch">
                                             <Grid.ColumnDefinitions>
@@ -148,7 +149,7 @@
                                                 Margin="0"
                                                 HorizontalAlignment="Left"
                                                 VerticalAlignment="Center"
-                                                Fill="{DynamicResource SystemAccentColorPrimaryBrush}"
+                                                Fill="{markup:BrushResource SystemAccentColorPrimaryBrush}"
                                                 Opacity="0.0"
                                                 RadiusX="2"
                                                 RadiusY="2" />
@@ -162,7 +163,7 @@
                                                 Content="{TemplateBinding Icon}"
                                                 Focusable="False"
                                                 TextElement.FontSize="18"
-                                                TextElement.Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                                                TextElement.Foreground="{markup:BrushResource TextFillColorPrimaryBrush}"
                                                 Visibility="{TemplateBinding Icon,
                                                                              Converter={StaticResource NullToVisibilityConverter}}" />
                                             <ContentPresenter
@@ -182,13 +183,13 @@
                                     <ControlTemplate.Triggers>
                                         <Trigger Property="IsActive" Value="True">
                                             <Setter TargetName="ActiveRectangle" Property="Opacity" Value="1.0" />
-                                            <Setter TargetName="MainBorder" Property="Background" Value="{DynamicResource SubtleFillColorSecondaryBrush}" />
+                                            <Setter TargetName="MainBorder" Property="Background" Value="{markup:BrushResource SubtleFillColorSecondaryBrush}" />
                                         </Trigger>
                                         <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter TargetName="MainBorder" Property="Background" Value="{DynamicResource SubtleFillColorSecondaryBrush}" />
+                                            <Setter TargetName="MainBorder" Property="Background" Value="{markup:BrushResource SubtleFillColorSecondaryBrush}" />
                                         </Trigger>
                                         <Trigger Property="IsPressed" Value="True">
-                                            <Setter TargetName="MainBorder" Property="Background" Value="{DynamicResource SubtleFillColorTertiaryBrush}" />
+                                            <Setter TargetName="MainBorder" Property="Background" Value="{markup:BrushResource SubtleFillColorTertiaryBrush}" />
                                         </Trigger>
                                     </ControlTemplate.Triggers>
                                 </ControlTemplate>
@@ -257,9 +258,9 @@
 
             <Trigger Property="IsActive" Value="True">
                 <Setter TargetName="ActiveRectangle" Property="Opacity" Value="1.0" />
-                <Setter TargetName="MainBorder" Property="Background" Value="{DynamicResource SubtleFillColorSecondaryBrush}" />
+                <Setter TargetName="MainBorder" Property="Background" Value="{markup:BrushResource SubtleFillColorSecondaryBrush}" />
                 <!--<Setter TargetName="IconContentPresenter" Property="Filled" Value="True" /> -->
-                <!--<Setter TargetName="IconContentPresenter" Property="Foreground" Value="{DynamicResource SystemAccentColorBrush}" />-->
+                <!--<Setter TargetName="IconContentPresenter" Property="Foreground" Value="{markup:BrushResource SystemAccentColorBrush}" />-->
             </Trigger>
             <Trigger Property="Icon" Value="{x:Null}">
                 <Setter TargetName="IconContentPresenter" Property="Visibility" Value="Collapsed" />
@@ -270,8 +271,8 @@
                     <Condition Property="IsActive" Value="False" />
                 </MultiTrigger.Conditions>
                 <MultiTrigger.Setters>
-                    <Setter TargetName="IconContentPresenter" Property="TextElement.Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
-                    <Setter TargetName="ElementContentPresenter" Property="TextElement.Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+                    <Setter TargetName="IconContentPresenter" Property="TextElement.Foreground" Value="{markup:BrushResource TextFillColorPrimaryBrush}" />
+                    <Setter TargetName="ElementContentPresenter" Property="TextElement.Foreground" Value="{markup:BrushResource TextFillColorPrimaryBrush}" />
                 </MultiTrigger.Setters>
             </MultiTrigger>
         </ControlTemplate.Triggers>
@@ -369,7 +370,7 @@
                             Grid.Row="1"
                             Height="1"
                             Margin="0,4,0,4"
-                            Background="{DynamicResource LeftNavigationViewSeparatorBrush}" />
+                            Background="{markup:BrushResource LeftNavigationViewSeparatorBrush}" />
 
                         <!--  Scrollable Menu Items  -->
                         <controls:DynamicScrollViewer
@@ -401,7 +402,7 @@
                             Grid.Row="3"
                             Height="1"
                             Margin="0,4,0,4"
-                            Background="{DynamicResource LeftNavigationViewSeparatorBrush}" />
+                            Background="{markup:BrushResource LeftNavigationViewSeparatorBrush}" />
 
                         <!--  Footer (Fixed)  -->
                         <Grid Grid.Row="4">
@@ -438,8 +439,8 @@
             <Border
                 Grid.Column="1"
                 Margin="{TemplateBinding FrameMargin}"
-                Background="{DynamicResource LayerFillColorDefaultBrush}"
-                BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
+                Background="{markup:BrushResource LayerFillColorDefaultBrush}"
+                BorderBrush="{markup:BrushResource CardStrokeColorDefaultBrush}"
                 BorderThickness="1,1,0,0"
                 CornerRadius="8,0,0,0">
                 <Grid>

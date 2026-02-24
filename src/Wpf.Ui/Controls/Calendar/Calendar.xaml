@@ -8,7 +8,8 @@
 <ResourceDictionary
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:controls="clr-namespace:Wpf.Ui.Controls">
+    xmlns:controls="clr-namespace:Wpf.Ui.Controls"
+    xmlns:markup="clr-namespace:Wpf.Ui.Markup">
 
     <!--
         TODO:
@@ -35,7 +36,7 @@
                     <Grid>
                         <Rectangle
                             x:Name="TodayBackground"
-                            Fill="{DynamicResource SystemAccentColorPrimaryBrush}"
+                            Fill="{markup:BrushResource SystemAccentColorPrimaryBrush}"
                             Opacity="0"
                             RadiusX="99"
                             RadiusY="99" />
@@ -45,7 +46,7 @@
                             RadiusX="99"
                             RadiusY="99"
                             SnapsToDevicePixels="False"
-                            Stroke="{DynamicResource SystemAccentColorPrimaryBrush}"
+                            Stroke="{markup:BrushResource SystemAccentColorPrimaryBrush}"
                             StrokeThickness="1"
                             UseLayoutRounding="False" />
                         <Border
@@ -54,7 +55,7 @@
                             BorderThickness="{TemplateBinding BorderThickness}" />
                         <Rectangle
                             x:Name="HighlightBackground"
-                            Fill="{DynamicResource SubtleFillColorSecondaryBrush}"
+                            Fill="{markup:BrushResource SubtleFillColorSecondaryBrush}"
                             Opacity="0"
                             RadiusX="99"
                             RadiusY="99" />
@@ -63,7 +64,7 @@
                             Margin="5,1,5,1"
                             HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
                             VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
-                            TextBlock.Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
+                            TextBlock.Foreground="{markup:BrushResource TextFillColorPrimaryBrush}" />
                         <Rectangle
                             x:Name="DayButtonFocusVisual"
                             IsHitTestVisible="False"
@@ -179,7 +180,7 @@
                                             Duration="0" />
                                         <ObjectAnimationUsingKeyFrames Storyboard.TargetName="NormalText" Storyboard.TargetProperty="(TextBlock.Foreground)">
                                             <ObjectAnimationUsingKeyFrames.KeyFrames>
-                                                <DiscreteObjectKeyFrame KeyTime="0:0:0" Value="{DynamicResource TextOnAccentFillColorPrimaryBrush}" />
+                                                <DiscreteObjectKeyFrame KeyTime="0:0:0" Value="{markup:BrushResource TextOnAccentFillColorPrimaryBrush}" />
                                             </ObjectAnimationUsingKeyFrames.KeyFrames>
                                         </ObjectAnimationUsingKeyFrames>
                                     </Storyboard>
@@ -203,7 +204,7 @@
                                 <Condition Binding="{Binding IsToday, RelativeSource={RelativeSource Self}}" Value="True" />
                                 <Condition Binding="{Binding IsMouseOver, RelativeSource={RelativeSource Self}}" Value="True" />
                             </MultiDataTrigger.Conditions>
-                            <Setter TargetName="TodayBackground" Property="Fill" Value="{DynamicResource AccentFillColorSecondaryBrush}" />
+                            <Setter TargetName="TodayBackground" Property="Fill" Value="{markup:BrushResource AccentFillColorSecondaryBrush}" />
                         </MultiDataTrigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -228,13 +229,13 @@
                     <Grid>
                         <Rectangle
                             x:Name="SelectedBackground"
-                            Fill="{DynamicResource SystemAccentColorPrimaryBrush}"
+                            Fill="{markup:BrushResource SystemAccentColorPrimaryBrush}"
                             Opacity="0"
                             RadiusX="99"
                             RadiusY="99" />
                         <Rectangle
                             x:Name="Background"
-                            Fill="{DynamicResource SubtleFillColorSecondaryBrush}"
+                            Fill="{markup:BrushResource SubtleFillColorSecondaryBrush}"
                             Opacity="0"
                             RadiusX="99"
                             RadiusY="99" />
@@ -243,7 +244,7 @@
                             Margin="1,0,1,1"
                             HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
                             VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
-                            TextBlock.Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
+                            TextBlock.Foreground="{markup:BrushResource TextFillColorPrimaryBrush}" />
                         <Rectangle
                             x:Name="CalendarButtonFocusVisual"
                             IsHitTestVisible="false"
@@ -291,7 +292,7 @@
                                             Duration="0" />
                                         <ObjectAnimationUsingKeyFrames Storyboard.TargetName="NormalText" Storyboard.TargetProperty="(TextBlock.Foreground)">
                                             <ObjectAnimationUsingKeyFrames.KeyFrames>
-                                                <DiscreteObjectKeyFrame KeyTime="0:0:0" Value="{DynamicResource TextOnAccentFillColorPrimaryBrush}" />
+                                                <DiscreteObjectKeyFrame KeyTime="0:0:0" Value="{markup:BrushResource TextOnAccentFillColorPrimaryBrush}" />
                                             </ObjectAnimationUsingKeyFrames.KeyFrames>
                                         </ObjectAnimationUsingKeyFrames>
                                     </Storyboard>
@@ -368,9 +369,9 @@
                                     Focusable="True"
                                     FontSize="14"
                                     FontWeight="SemiBold"
-                                    Foreground="{DynamicResource TextFillColorPrimaryBrush}"
-                                    MouseOverBackground="{DynamicResource SubtleFillColorSecondaryBrush}"
-                                    PressedBackground="{DynamicResource SubtleFillColorTertiaryBrush}" />
+                                    Foreground="{markup:BrushResource TextFillColorPrimaryBrush}"
+                                    MouseOverBackground="{markup:BrushResource SubtleFillColorSecondaryBrush}"
+                                    PressedBackground="{markup:BrushResource SubtleFillColorTertiaryBrush}" />
 
                                 <controls:Button
                                     x:Name="PART_PreviousButton"
@@ -385,9 +386,9 @@
                                     Background="Transparent"
                                     BorderThickness="0"
                                     Focusable="True"
-                                    Foreground="{DynamicResource TextFillColorPrimaryBrush}"
-                                    MouseOverBackground="{DynamicResource SubtleFillColorSecondaryBrush}"
-                                    PressedBackground="{DynamicResource SubtleFillColorTertiaryBrush}">
+                                    Foreground="{markup:BrushResource TextFillColorPrimaryBrush}"
+                                    MouseOverBackground="{markup:BrushResource SubtleFillColorSecondaryBrush}"
+                                    PressedBackground="{markup:BrushResource SubtleFillColorTertiaryBrush}">
                                     <controls:Button.Content>
                                         <controls:SymbolIcon
                                             Filled="True"
@@ -397,7 +398,7 @@
                                                 <Style TargetType="controls:SymbolIcon">
                                                     <Style.Triggers>
                                                         <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType={x:Type controls:Button}}}" Value="True">
-                                                            <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}" />
+                                                            <Setter Property="Foreground" Value="{markup:BrushResource TextFillColorSecondaryBrush}" />
                                                         </DataTrigger>
                                                     </Style.Triggers>
                                                 </Style>
@@ -419,9 +420,9 @@
                                     Background="Transparent"
                                     BorderThickness="0"
                                     Focusable="True"
-                                    Foreground="{DynamicResource TextFillColorPrimaryBrush}"
-                                    MouseOverBackground="{DynamicResource SubtleFillColorSecondaryBrush}"
-                                    PressedBackground="{DynamicResource SubtleFillColorTertiaryBrush}">
+                                    Foreground="{markup:BrushResource TextFillColorPrimaryBrush}"
+                                    MouseOverBackground="{markup:BrushResource SubtleFillColorSecondaryBrush}"
+                                    PressedBackground="{markup:BrushResource SubtleFillColorTertiaryBrush}">
                                     <controls:Button.Content>
                                         <controls:SymbolIcon
                                             Filled="True"
@@ -431,7 +432,7 @@
                                                 <Style TargetType="controls:SymbolIcon">
                                                     <Style.Triggers>
                                                         <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType={x:Type controls:Button}}}" Value="True">
-                                                            <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}" />
+                                                            <Setter Property="Foreground" Value="{markup:BrushResource TextFillColorSecondaryBrush}" />
                                                         </DataTrigger>
                                                     </Style.Triggers>
                                                 </Style>
@@ -444,7 +445,7 @@
                             <Border
                                 Grid.Row="1"
                                 Height="0.5"
-                                Background="{DynamicResource ControlStrokeColorDefaultBrush}" />
+                                Background="{markup:BrushResource ControlStrokeColorDefaultBrush}" />
 
                             <!--  HINT: Day picker  -->
                             <Grid
@@ -500,6 +501,7 @@
                                 x:Name="PART_DisabledVisual"
                                 Grid.Row="0"
                                 Grid.RowSpan="2"
+                                Fill="{markup:BrushResource ControlFillColorDefaultBrush}"
                                 KeyboardNavigation.TabIndex="1"
                                 KeyboardNavigation.TabNavigation="Once"
                                 Opacity="0"
@@ -508,11 +510,7 @@
                                 Stretch="Fill"
                                 Stroke="Transparent"
                                 StrokeThickness="0"
-                                Visibility="Collapsed">
-                                <Rectangle.Fill>
-                                    <SolidColorBrush Color="{DynamicResource ControlFillColorDefault}" />
-                                </Rectangle.Fill>
-                            </Rectangle>
+                                Visibility="Collapsed" />
                         </Grid>
                     </Grid>
                     <ControlTemplate.Triggers>
@@ -552,9 +550,9 @@
         <Setter Property="CalendarButtonStyle" Value="{StaticResource DefaultCalendarButtonStyle}" />
         <Setter Property="CalendarDayButtonStyle" Value="{StaticResource DefaultCalendarDayButtonStyle}" />
         <Setter Property="CalendarItemStyle" Value="{StaticResource DefaultCalendarItemStyle}" />
-        <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
-        <Setter Property="Background" Value="{DynamicResource ControlFillColorInputActiveBrush}" />
-        <Setter Property="BorderBrush" Value="{DynamicResource ControlStrokeColorDefaultBrush}" />
+        <Setter Property="Foreground" Value="{markup:BrushResource TextFillColorPrimaryBrush}" />
+        <Setter Property="Background" Value="{markup:BrushResource ControlFillColorInputActiveBrush}" />
+        <Setter Property="BorderBrush" Value="{markup:BrushResource ControlStrokeColorDefaultBrush}" />
         <Setter Property="HorizontalAlignment" Value="Center" />
         <Setter Property="VerticalAlignment" Value="Center" />
         <Setter Property="BorderThickness" Value="1" />
@@ -597,8 +595,8 @@
                             x:Name="PART_Root"
                             Margin="0"
                             Padding="0"
-                            Background="{DynamicResource ControlFillColorInputActiveBrush}"
-                            BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}"
+                            Background="{markup:BrushResource ControlFillColorInputActiveBrush}"
+                            BorderBrush="{markup:BrushResource ControlStrokeColorDefaultBrush}"
                             BorderThickness="1"
                             CornerRadius="8">
                             <Border.Effect>

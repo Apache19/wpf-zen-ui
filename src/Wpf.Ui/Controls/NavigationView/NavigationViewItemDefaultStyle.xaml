@@ -2,7 +2,8 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Ui.Controls"
-    xmlns:theming="clr-namespace:Wpf.Ui.Theming">
+    xmlns:theming="clr-namespace:Wpf.Ui.Theming"
+    xmlns:markup="clr-namespace:Wpf.Ui.Markup">
 
     <!--  NavigationViewItem core style  -->
 
@@ -16,9 +17,9 @@
         <Setter Property="Cursor" Value="Hand" />
         <Setter Property="VerticalAlignment" Value="Center" />
         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-        <Setter Property="Background" Value="{DynamicResource SubtleFillColorTransparentBrush}" />
-        <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
-        <Setter Property="BorderBrush" Value="{DynamicResource SubtleFillColorTransparentBrush}" />
+        <Setter Property="Background" Value="{markup:BrushResource SubtleFillColorTransparentBrush}" />
+        <Setter Property="Foreground" Value="{markup:BrushResource TextFillColorPrimaryBrush}" />
+        <Setter Property="BorderBrush" Value="{markup:BrushResource SubtleFillColorTransparentBrush}" />
         <Setter Property="KeyboardNavigation.IsTabStop" Value="True" />
         <Setter Property="Focusable" Value="True" />
         <Setter Property="SnapsToDevicePixels" Value="True" />

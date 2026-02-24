@@ -13,6 +13,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Ui.Controls"
     xmlns:converters="clr-namespace:Wpf.Ui.Converters"
+    xmlns:markup="clr-namespace:Wpf.Ui.Markup"
     xmlns:system="clr-namespace:System;assembly=mscorlib"
     xmlns:theming="clr-namespace:Wpf.Ui.Theming">
 
@@ -31,7 +32,10 @@
 
     <converters:DatePickerButtonPaddingConverter x:Key="DatePickerButtonPaddingConverter" />
 
-    <Style x:Key="DefaultDatePickerTextBoxStyle" BasedOn="{StaticResource DefaultTextBoxStyle}" TargetType="{x:Type DatePickerTextBox}">
+    <Style
+        x:Key="DefaultDatePickerTextBoxStyle"
+        BasedOn="{StaticResource DefaultTextBoxStyle}"
+        TargetType="{x:Type DatePickerTextBox}">
         <Setter Property="Border.CornerRadius" Value="{Binding RelativeSource={RelativeSource Self}, Path=Tag}" />
     </Style>
 
@@ -39,20 +43,12 @@
         <!--  Universal WPF UI ContextMenu  -->
         <Setter Property="ContextMenu" Value="{DynamicResource {x:Static theming:StyleKeys.DefaultControlContextMenu}}" />
         <!--  Universal WPF UI ContextMenu  -->
-        <!--  Default WPF UI Calendar style  -->
+        <!--  todo Default WPF UI Calendar style 调查这个样式在哪儿  -->
         <Setter Property="CalendarStyle" Value="{DynamicResource DefaultCalendarDropShadowStyle}" />
         <!--  Default WPF UI Calendar style  -->
-        <Setter Property="Foreground">
-            <Setter.Value>
-                <SolidColorBrush Color="{DynamicResource TextFillColorPrimary}" />
-            </Setter.Value>
-        </Setter>
-        <Setter Property="Background">
-            <Setter.Value>
-                <SolidColorBrush Color="{DynamicResource ControlFillColorDefault}" />
-            </Setter.Value>
-        </Setter>
-        <Setter Property="BorderBrush" Value="{DynamicResource ControlElevationBorderBrush}" />
+        <Setter Property="Foreground" Value="{markup:BrushResource TextFillColorPrimaryBrush}" />
+        <Setter Property="Background" Value="{markup:BrushResource ControlFillColorDefaultBrush}" />
+        <Setter Property="BorderBrush" Value="{markup:BrushResource ControlElevationBorderBrush}" />
         <Setter Property="BorderThickness" Value="{StaticResource DatePickerBorderThemeThickness}" />
         <Setter Property="HorizontalAlignment" Value="Stretch" />
         <Setter Property="VerticalAlignment" Value="Center" />
@@ -117,9 +113,9 @@
                                 BorderBrush="Transparent"
                                 Cursor="Arrow"
                                 KeyboardNavigation.TabIndex="1"
-                                MouseOverBackground="{DynamicResource SubtleFillColorSecondaryBrush}"
+                                MouseOverBackground="{markup:BrushResource SubtleFillColorSecondaryBrush}"
                                 MouseOverBorderBrush="Transparent"
-                                PressedBackground="{DynamicResource SubtleFillColorTertiaryBrush}"
+                                PressedBackground="{markup:BrushResource SubtleFillColorTertiaryBrush}"
                                 PressedBorderBrush="Transparent">
                                 <!--  WPF overrides paddings for button  -->
                                 <controls:SymbolIcon
@@ -135,7 +131,7 @@
                                 x:Name="AccentBorder"
                                 HorizontalAlignment="Stretch"
                                 VerticalAlignment="Stretch"
-                                BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}"
+                                BorderBrush="{markup:BrushResource ControlStrokeColorDefaultBrush}"
                                 BorderThickness="{StaticResource DatePickerAccentBorderThemeThickness}"
                                 CornerRadius="{TemplateBinding Border.CornerRadius}" />
                         </Grid>
@@ -154,7 +150,7 @@
                             <Setter Property="Cursor" Value="IBeam" />
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter Property="Foreground" Value="{DynamicResource TextFillColorDisabledBrush}" />
+                            <Setter Property="Foreground" Value="{markup:BrushResource TextFillColorDisabledBrush}" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>

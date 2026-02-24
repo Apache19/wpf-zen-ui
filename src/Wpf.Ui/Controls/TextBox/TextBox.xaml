@@ -13,7 +13,8 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Ui.Controls"
     xmlns:theming="clr-namespace:Wpf.Ui.Theming"
-    xmlns:system="clr-namespace:System;assembly=System.Runtime">
+    xmlns:system="clr-namespace:System;assembly=System.Runtime"
+    xmlns:markup="clr-namespace:Wpf.Ui.Markup">
 
     <Thickness x:Key="TextBoxBorderThemeThickness">1,1,1,1</Thickness>
     <Thickness x:Key="TextBoxAccentBorderThemeThickness">0,0,0,1</Thickness>
@@ -30,10 +31,10 @@
         <!--  Universal WPF UI ContextMenu  -->
         <Setter Property="ContextMenu" Value="{DynamicResource {x:Static theming:StyleKeys.DefaultControlContextMenu}}" />
         <!--  Universal WPF UI ContextMenu  -->
-        <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
-        <Setter Property="CaretBrush" Value="{DynamicResource TextFillColorPrimaryBrush}" />
-        <Setter Property="Background" Value="{DynamicResource ControlFillColorDefaultBrush}" />
-        <Setter Property="BorderBrush" Value="{DynamicResource TextControlElevationBorderBrush}" />
+        <Setter Property="Foreground" Value="{markup:BrushResource TextFillColorPrimaryBrush}" />
+        <Setter Property="CaretBrush" Value="{markup:BrushResource TextFillColorPrimaryBrush}" />
+        <Setter Property="Background" Value="{markup:BrushResource ControlFillColorDefaultBrush}" />
+        <Setter Property="BorderBrush" Value="{markup:BrushResource TextControlElevationBorderBrush}" />
         <Setter Property="BorderThickness" Value="{StaticResource TextBoxBorderThemeThickness}" />
         <Setter Property="ScrollViewer.CanContentScroll" Value="False" />
         <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Hidden" />
@@ -86,15 +87,15 @@
                             x:Name="AccentBorder"
                             HorizontalAlignment="Stretch"
                             VerticalAlignment="Stretch"
-                            BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}"
+                            BorderBrush="{markup:BrushResource ControlStrokeColorDefaultBrush}"
                             BorderThickness="{StaticResource TextBoxAccentBorderThemeThickness}"
                             CornerRadius="{TemplateBinding Border.CornerRadius}" />
                     </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsFocused" Value="True">
                             <Setter TargetName="AccentBorder" Property="BorderThickness" Value="0,0,0,2" />
-                            <Setter TargetName="AccentBorder" Property="BorderBrush" Value="{DynamicResource SystemAccentColorPrimaryBrush}" />
-                            <Setter TargetName="ContentBorder" Property="Background" Value="{DynamicResource ControlFillColorInputActiveBrush}" />
+                            <Setter TargetName="AccentBorder" Property="BorderBrush" Value="{markup:BrushResource SystemAccentColorPrimaryBrush}" />
+                            <Setter TargetName="ContentBorder" Property="Background" Value="{markup:BrushResource ControlFillColorInputActiveBrush}" />
                         </Trigger>
                         <MultiTrigger>
                             <MultiTrigger.Conditions>
@@ -102,16 +103,16 @@
                                 <Condition Property="IsMouseOver" Value="True" />
                                 <Condition Property="IsFocused" Value="False" />
                             </MultiTrigger.Conditions>
-                            <Setter TargetName="ContentBorder" Property="Background" Value="{DynamicResource ControlFillColorSecondaryBrush}" />
+                            <Setter TargetName="ContentBorder" Property="Background" Value="{markup:BrushResource ControlFillColorSecondaryBrush}" />
                         </MultiTrigger>
                         <Trigger Property="IsEnabled" Value="True">
                             <Setter Property="Cursor" Value="IBeam" />
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter TargetName="ContentBorder" Property="Background" Value="{DynamicResource ControlFillColorDisabledBrush}" />
-                            <Setter TargetName="ContentBorder" Property="BorderBrush" Value="{DynamicResource ControlStrokeColorDefaultBrush}" />
-                            <Setter TargetName="AccentBorder" Property="BorderBrush" Value="{DynamicResource ControlStrokeColorDefaultBrush}" />
-                            <Setter Property="Foreground" Value="{DynamicResource TextFillColorDisabledBrush}" />
+                            <Setter TargetName="ContentBorder" Property="Background" Value="{markup:BrushResource ControlFillColorDisabledBrush}" />
+                            <Setter TargetName="ContentBorder" Property="BorderBrush" Value="{markup:BrushResource ControlStrokeColorDefaultBrush}" />
+                            <Setter TargetName="AccentBorder" Property="BorderBrush" Value="{markup:BrushResource ControlStrokeColorDefaultBrush}" />
+                            <Setter Property="Foreground" Value="{markup:BrushResource TextFillColorDisabledBrush}" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -169,7 +170,7 @@
                             Padding="1,0"
                             VerticalAlignment="Center"
                             FontSize="{TemplateBinding FontSize}"
-                            Foreground="{DynamicResource TextPlaceholderColorBrush}"
+                            Foreground="{markup:BrushResource TextPlaceholderColorBrush}"
                             Text="{TemplateBinding PlaceholderText}" />
                     </Grid>
 
@@ -191,11 +192,11 @@
                         BorderThickness="0"
                         Command="{Binding Path=TemplateButtonCommand, RelativeSource={RelativeSource TemplatedParent}}"
                         Cursor="Arrow"
-                        Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                        Foreground="{markup:BrushResource TextFillColorSecondaryBrush}"
                         IsTabStop="False"
-                        MouseOverBackground="{DynamicResource SubtleFillColorSecondaryBrush}"
+                        MouseOverBackground="{markup:BrushResource SubtleFillColorSecondaryBrush}"
                         MouseOverBorderBrush="Transparent"
-                        PressedBackground="{DynamicResource SubtleFillColorTertiaryBrush}"
+                        PressedBackground="{markup:BrushResource SubtleFillColorTertiaryBrush}"
                         PressedBorderBrush="Transparent">
                         <controls:Button.Icon>
                             <controls:SymbolIcon FontSize="{TemplateBinding FontSize}" Symbol="Dismiss24" />
@@ -217,7 +218,7 @@
                 x:Name="AccentBorder"
                 HorizontalAlignment="Stretch"
                 VerticalAlignment="Stretch"
-                BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}"
+                BorderBrush="{markup:BrushResource ControlStrokeColorDefaultBrush}"
                 BorderThickness="{StaticResource TextBoxAccentBorderThemeThickness}"
                 CornerRadius="{TemplateBinding Border.CornerRadius}" />
         </Grid>
@@ -249,8 +250,8 @@
             </Trigger>
             <Trigger Property="IsFocused" Value="True">
                 <Setter TargetName="AccentBorder" Property="BorderThickness" Value="0,0,0,2" />
-                <Setter TargetName="AccentBorder" Property="BorderBrush" Value="{DynamicResource SystemAccentColorPrimaryBrush}" />
-                <Setter TargetName="ContentBorder" Property="Background" Value="{DynamicResource ControlFillColorInputActiveBrush}" />
+                <Setter TargetName="AccentBorder" Property="BorderBrush" Value="{markup:BrushResource SystemAccentColorPrimaryBrush}" />
+                <Setter TargetName="ContentBorder" Property="Background" Value="{markup:BrushResource ControlFillColorInputActiveBrush}" />
             </Trigger>
             <MultiTrigger>
                 <MultiTrigger.Conditions>
@@ -259,7 +260,7 @@
                     <Condition Property="IsFocused" Value="False" />
                     <Condition SourceName="ClearButton" Property="IsFocused" Value="False" />
                 </MultiTrigger.Conditions>
-                <Setter TargetName="ContentBorder" Property="Background" Value="{DynamicResource ControlFillColorSecondaryBrush}" />
+                <Setter TargetName="ContentBorder" Property="Background" Value="{markup:BrushResource ControlFillColorSecondaryBrush}" />
             </MultiTrigger>
             <Trigger Property="IsReadOnly" Value="True">
                 <Setter TargetName="ClearButton" Property="Visibility" Value="Collapsed" />
@@ -269,13 +270,13 @@
                 <Setter Property="Cursor" Value="IBeam" />
             </Trigger>
             <Trigger Property="IsEnabled" Value="False">
-                <Setter TargetName="ContentBorder" Property="Background" Value="{DynamicResource ControlFillColorDisabledBrush}" />
-                <Setter TargetName="ContentBorder" Property="BorderBrush" Value="{DynamicResource ControlStrokeColorDefaultBrush}" />
-                <Setter TargetName="AccentBorder" Property="BorderBrush" Value="{DynamicResource ControlStrokeColorDefaultBrush}" />
-                <Setter TargetName="ControlIconLeft" Property="TextElement.Foreground" Value="{DynamicResource TextFillColorDisabledBrush}" />
-                <Setter TargetName="ControlIconRight" Property="TextElement.Foreground" Value="{DynamicResource TextFillColorDisabledBrush}" />
-                <Setter TargetName="PlaceholderTextBox" Property="Foreground" Value="{DynamicResource TextFillColorDisabledBrush}" />
-                <Setter Property="Foreground" Value="{DynamicResource TextFillColorDisabledBrush}" />
+                <Setter TargetName="ContentBorder" Property="Background" Value="{markup:BrushResource ControlFillColorDisabledBrush}" />
+                <Setter TargetName="ContentBorder" Property="BorderBrush" Value="{markup:BrushResource ControlStrokeColorDefaultBrush}" />
+                <Setter TargetName="AccentBorder" Property="BorderBrush" Value="{markup:BrushResource ControlStrokeColorDefaultBrush}" />
+                <Setter TargetName="ControlIconLeft" Property="TextElement.Foreground" Value="{markup:BrushResource TextFillColorDisabledBrush}" />
+                <Setter TargetName="ControlIconRight" Property="TextElement.Foreground" Value="{markup:BrushResource TextFillColorDisabledBrush}" />
+                <Setter TargetName="PlaceholderTextBox" Property="Foreground" Value="{markup:BrushResource TextFillColorDisabledBrush}" />
+                <Setter Property="Foreground" Value="{markup:BrushResource TextFillColorDisabledBrush}" />
                 <Setter Property="ClearButtonEnabled" Value="False" />
             </Trigger>
         </ControlTemplate.Triggers>
@@ -318,10 +319,10 @@
         <!--  Universal WPF UI ContextMenu  -->
         <Setter Property="ContextMenu" Value="{DynamicResource {x:Static theming:StyleKeys.DefaultControlContextMenu}}" />
         <!--  Universal WPF UI ContextMenu  -->
-        <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
-        <Setter Property="CaretBrush" Value="{DynamicResource TextFillColorPrimaryBrush}" />
-        <Setter Property="Background" Value="{DynamicResource ControlFillColorDefaultBrush}" />
-        <Setter Property="BorderBrush" Value="{DynamicResource TextControlElevationBorderBrush}" />
+        <Setter Property="Foreground" Value="{markup:BrushResource TextFillColorPrimaryBrush}" />
+        <Setter Property="CaretBrush" Value="{markup:BrushResource TextFillColorPrimaryBrush}" />
+        <Setter Property="Background" Value="{markup:BrushResource ControlFillColorDefaultBrush}" />
+        <Setter Property="BorderBrush" Value="{markup:BrushResource TextControlElevationBorderBrush}" />
         <Setter Property="BorderThickness" Value="{StaticResource TextBoxBorderThemeThickness}" />
         <Setter Property="ScrollViewer.CanContentScroll" Value="False" />
         <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Hidden" />

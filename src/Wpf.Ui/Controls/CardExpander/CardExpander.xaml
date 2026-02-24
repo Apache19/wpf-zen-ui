@@ -15,7 +15,8 @@
     xmlns:controls="clr-namespace:Wpf.Ui.Controls"
     xmlns:converters="clr-namespace:Wpf.Ui.Converters"
     xmlns:theming="clr-namespace:Wpf.Ui.Theming"
-    xmlns:system="clr-namespace:System;assembly=System.Runtime">
+    xmlns:system="clr-namespace:System;assembly=System.Runtime"
+    xmlns:markup="clr-namespace:Wpf.Ui.Markup">
 
     <Thickness x:Key="CardExpanderPadding">14,16,14,16</Thickness>
     <Thickness x:Key="CardExpanderBorderThemeThickness">1</Thickness>
@@ -25,7 +26,7 @@
     <system:Double x:Key="CardExpanderIconSize">24.0</system:Double>
     <system:Double x:Key="CardExpanderChevronSize">16.0</system:Double>
 
-    <ControlTemplate x:Key="DefaultUiCardExpanderToggleButtonStyle" TargetType="{x:Type ToggleButton}">
+    <ControlTemplate x:Key="DefaultUiCardExpanderToggleButtonTemplate" TargetType="{x:Type ToggleButton}">
         <Border Padding="{TemplateBinding Padding}" Background="Transparent">
             <Grid>
                 <Grid.ColumnDefinitions>
@@ -88,9 +89,9 @@
         <!--  Universal WPF UI focus  -->
         <Setter Property="FocusVisualStyle" Value="{DynamicResource {x:Static theming:StyleKeys.DefaultControlFocusVisualStyle}}" />
         <!--  Universal WPF UI focus  -->
-        <Setter Property="Background" Value="{DynamicResource CardBackgroundFillColorDefaultBrush}" />
-        <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
-        <Setter Property="BorderBrush" Value="{DynamicResource CardStrokeColorDefaultBrush}" />
+        <Setter Property="Background" Value="{markup:BrushResource CardBackgroundFillColorDefaultBrush}" />
+        <Setter Property="Foreground" Value="{markup:BrushResource TextFillColorPrimaryBrush}" />
+        <Setter Property="BorderBrush" Value="{markup:BrushResource CardStrokeColorDefaultBrush}" />
         <Setter Property="BorderThickness" Value="{StaticResource CardExpanderBorderThemeThickness}" />
         <Setter Property="Padding" Value="{StaticResource CardExpanderPadding}" />
         <Setter Property="ContentPadding" Value="{StaticResource CardExpanderPadding}" />
@@ -142,7 +143,7 @@
                                 Foreground="{TemplateBinding Foreground}"
                                 IsChecked="{Binding IsExpanded, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
                                 IsEnabled="{TemplateBinding IsEnabled}"
-                                Template="{StaticResource DefaultUiCardExpanderToggleButtonStyle}">
+                                Template="{StaticResource DefaultUiCardExpanderToggleButtonTemplate}">
                                 <controls:ToggleButton.Content>
                                     <Grid>
                                         <Grid.ColumnDefinitions>
@@ -175,7 +176,7 @@
                         <Grid Grid.Row="1" ClipToBounds="True">
                             <Border
                                 x:Name="ContentPresenterBorder"
-                                Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
+                                Background="{markup:BrushResource CardBackgroundFillColorDefaultBrush}"
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="1,0,1,1"
                                 Visibility="Collapsed">
@@ -242,10 +243,10 @@
                             </Trigger.ExitActions>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter Property="Background" Value="{DynamicResource ControlFillColorDisabledBrush}" />
-                            <Setter Property="BorderBrush" Value="{DynamicResource ControlStrokeColorDefaultBrush}" />
-                            <Setter TargetName="ContentPresenter" Property="TextElement.Foreground" Value="{DynamicResource TextFillColorDisabledBrush}" />
-                            <Setter TargetName="ExpanderToggleButton" Property="Foreground" Value="{DynamicResource TextFillColorDisabledBrush}" />
+                            <Setter Property="Background" Value="{markup:BrushResource ControlFillColorDisabledBrush}" />
+                            <Setter Property="BorderBrush" Value="{markup:BrushResource ControlStrokeColorDefaultBrush}" />
+                            <Setter TargetName="ContentPresenter" Property="TextElement.Foreground" Value="{markup:BrushResource TextFillColorDisabledBrush}" />
+                            <Setter TargetName="ExpanderToggleButton" Property="Foreground" Value="{markup:BrushResource TextFillColorDisabledBrush}" />
                         </Trigger>
                         <Trigger Property="Icon" Value="{x:Null}">
                             <Setter TargetName="ControlIcon" Property="Margin" Value="0" />

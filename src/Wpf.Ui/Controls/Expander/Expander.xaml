@@ -15,7 +15,8 @@
     xmlns:controls="clr-namespace:Wpf.Ui.Controls"
     xmlns:converters="clr-namespace:Wpf.Ui.Converters"
     xmlns:system="clr-namespace:System;assembly=System.Runtime"
-    xmlns:theming="clr-namespace:Wpf.Ui.Theming">
+    xmlns:theming="clr-namespace:Wpf.Ui.Theming"
+    xmlns:markup="clr-namespace:Wpf.Ui.Markup">
 
     <Thickness x:Key="ExpanderPadding">11,11,11,11</Thickness>
     <Thickness x:Key="ExpanderBorderThemeThickness">1</Thickness>
@@ -83,9 +84,9 @@
         <!--  Universal WPF UI focus  -->
         <Setter Property="FocusVisualStyle" Value="{DynamicResource {x:Static theming:StyleKeys.DefaultControlFocusVisualStyle}}" />
         <!--  Universal WPF UI focus  -->
-        <Setter Property="Background" Value="{DynamicResource CardBackgroundFillColorDefaultBrush}" />
-        <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
-        <Setter Property="BorderBrush" Value="{DynamicResource CardStrokeColorDefaultBrush}" />
+        <Setter Property="Background" Value="{markup:BrushResource CardBackgroundFillColorDefaultBrush}" />
+        <Setter Property="Foreground" Value="{markup:BrushResource TextFillColorPrimaryBrush}" />
+        <Setter Property="BorderBrush" Value="{markup:BrushResource CardStrokeColorDefaultBrush}" />
         <Setter Property="BorderThickness" Value="{StaticResource ExpanderBorderThemeThickness}" />
         <Setter Property="Padding" Value="{StaticResource ExpanderPadding}" />
         <Setter Property="HorizontalAlignment" Value="Stretch" />
@@ -138,7 +139,7 @@
                         <Grid Grid.Row="1" ClipToBounds="True">
                             <Border
                                 x:Name="ContentPresenterBorder"
-                                Background="{DynamicResource CardBackgroundFillColorSecondaryBrush}"
+                                Background="{markup:BrushResource CardBackgroundFillColorSecondaryBrush}"
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="1,0,1,1"
                                 CornerRadius="0,0,4,4"
@@ -201,12 +202,12 @@
                             </Trigger.ExitActions>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter TargetName="ContentPresenter" Property="TextElement.Foreground" Value="{DynamicResource TextFillColorDisabledBrush}" />
-                            <Setter TargetName="ExpanderToggleButton" Property="Foreground" Value="{DynamicResource TextFillColorDisabledBrush}" />
-                            <Setter TargetName="ExpanderToggleButton" Property="BorderBrush" Value="{DynamicResource CardStrokeColorDefaultBrush}" />
+                            <Setter TargetName="ContentPresenter" Property="TextElement.Foreground" Value="{markup:BrushResource TextFillColorDisabledBrush}" />
+                            <Setter TargetName="ExpanderToggleButton" Property="Foreground" Value="{markup:BrushResource TextFillColorDisabledBrush}" />
+                            <Setter TargetName="ExpanderToggleButton" Property="BorderBrush" Value="{markup:BrushResource CardStrokeColorDefaultBrush}" />
                         </Trigger>
                         <Trigger SourceName="ExpanderToggleButton" Property="IsMouseOver" Value="True">
-                            <Setter TargetName="ExpanderToggleButton" Property="BorderBrush" Value="{DynamicResource CardStrokeColorDefaultBrush}" />
+                            <Setter TargetName="ExpanderToggleButton" Property="BorderBrush" Value="{markup:BrushResource CardStrokeColorDefaultBrush}" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>

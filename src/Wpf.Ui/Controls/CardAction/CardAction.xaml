@@ -13,7 +13,8 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Ui.Controls"
     xmlns:system="clr-namespace:System;assembly=System.Runtime"
-    xmlns:theming="clr-namespace:Wpf.Ui.Theming">
+    xmlns:theming="clr-namespace:Wpf.Ui.Theming"
+    xmlns:markup="clr-namespace:Wpf.Ui.Markup">
 
     <Thickness x:Key="CardActionPadding">14,16,14,16</Thickness>
     <Thickness x:Key="CardActionBorderThemeThickness">1</Thickness>
@@ -26,9 +27,9 @@
         <!--  Universal WPF UI focus  -->
         <Setter Property="FocusVisualStyle" Value="{DynamicResource {x:Static theming:StyleKeys.DefaultControlFocusVisualStyle}}" />
         <!--  Universal WPF UI focus  -->
-        <Setter Property="Background" Value="{DynamicResource CardBackgroundFillColorDefaultBrush}" />
-        <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
-        <Setter Property="BorderBrush" Value="{DynamicResource CardStrokeColorDefaultBrush}" />
+        <Setter Property="Background" Value="{markup:BrushResource CardBackgroundFillColorDefaultBrush}" />
+        <Setter Property="Foreground" Value="{markup:BrushResource TextFillColorPrimaryBrush}" />
+        <Setter Property="BorderBrush" Value="{markup:BrushResource CardStrokeColorDefaultBrush}" />
         <Setter Property="BorderThickness" Value="{StaticResource CardActionBorderThemeThickness}" />
         <Setter Property="Padding" Value="{StaticResource CardActionPadding}" />
         <Setter Property="HorizontalAlignment" Value="Stretch" />
@@ -91,26 +92,26 @@
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter Property="Background" Value="{DynamicResource ControlFillColorSecondaryBrush}" />
-                            <Setter Property="BorderBrush" Value="{DynamicResource ControlElevationBorderBrush}" />
-                            <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+                            <Setter Property="Background" Value="{markup:BrushResource ControlFillColorSecondaryBrush}" />
+                            <Setter Property="BorderBrush" Value="{markup:BrushResource ControlElevationBorderBrush}" />
+                            <Setter Property="Foreground" Value="{markup:BrushResource TextFillColorPrimaryBrush}" />
                         </Trigger>
                         <Trigger Property="IsChevronVisible" Value="False">
                             <Setter TargetName="ChevronIcon" Property="Visibility" Value="Collapsed" />
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter Property="Background" Value="{DynamicResource ControlFillColorDisabledBrush}" />
-                            <Setter Property="BorderBrush" Value="{DynamicResource ControlStrokeColorDefaultBrush}" />
-                            <Setter TargetName="ContentPresenter" Property="TextElement.Foreground" Value="{DynamicResource TextFillColorDisabledBrush}" />
-                            <Setter TargetName="ControlIcon" Property="Foreground" Value="{DynamicResource TextFillColorDisabledBrush}" />
-                            <Setter TargetName="ChevronIcon" Property="Foreground" Value="{DynamicResource TextFillColorDisabledBrush}" />
+                            <Setter Property="Background" Value="{markup:BrushResource ControlFillColorDisabledBrush}" />
+                            <Setter Property="BorderBrush" Value="{markup:BrushResource ControlStrokeColorDefaultBrush}" />
+                            <Setter TargetName="ContentPresenter" Property="TextElement.Foreground" Value="{markup:BrushResource TextFillColorDisabledBrush}" />
+                            <Setter TargetName="ControlIcon" Property="Foreground" Value="{markup:BrushResource TextFillColorDisabledBrush}" />
+                            <Setter TargetName="ChevronIcon" Property="Foreground" Value="{markup:BrushResource TextFillColorDisabledBrush}" />
                         </Trigger>
                         <Trigger Property="IsPressed" Value="True">
-                            <Setter Property="Background" Value="{DynamicResource ControlFillColorTertiaryBrush}" />
-                            <Setter Property="BorderBrush" Value="{DynamicResource ControlStrokeColorDefaultBrush}" />
-                            <Setter TargetName="ContentPresenter" Property="TextElement.Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}" />
-                            <Setter TargetName="ControlIcon" Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}" />
-                            <Setter TargetName="ChevronIcon" Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}" />
+                            <Setter Property="Background" Value="{markup:BrushResource ControlFillColorTertiaryBrush}" />
+                            <Setter Property="BorderBrush" Value="{markup:BrushResource ControlStrokeColorDefaultBrush}" />
+                            <Setter TargetName="ContentPresenter" Property="TextElement.Foreground" Value="{markup:BrushResource TextFillColorSecondaryBrush}" />
+                            <Setter TargetName="ControlIcon" Property="Foreground" Value="{markup:BrushResource TextFillColorSecondaryBrush}" />
+                            <Setter TargetName="ChevronIcon" Property="Foreground" Value="{markup:BrushResource TextFillColorSecondaryBrush}" />
                         </Trigger>
                         <Trigger Property="Content" Value="{x:Null}">
                             <Setter TargetName="ControlIcon" Property="Margin" Value="0" />

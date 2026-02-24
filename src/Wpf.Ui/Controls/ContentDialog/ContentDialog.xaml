@@ -3,7 +3,8 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Ui.Controls"
     xmlns:converters="clr-namespace:Wpf.Ui.Converters"
-    xmlns:theming="clr-namespace:Wpf.Ui.Theming">
+    xmlns:theming="clr-namespace:Wpf.Ui.Theming"
+    xmlns:markup="clr-namespace:Wpf.Ui.Markup">
 
     <converters:ContentDialogButtonEnumToBoolConverter x:Key="EnumToBoolConverter" />
     <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" />
@@ -29,9 +30,9 @@
         <Setter Property="KeyboardNavigation.ControlTabNavigation" Value="Cycle" />
         <Setter Property="DialogMargin" Value="35" />
         <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
-        <Setter Property="BorderBrush" Value="{DynamicResource SurfaceStrokeColorDefaultBrush}" />
-        <Setter Property="Background" Value="{DynamicResource SolidBackgroundFillColorBaseBrush}" />
+        <Setter Property="Foreground" Value="{markup:BrushResource TextFillColorPrimaryBrush}" />
+        <Setter Property="BorderBrush" Value="{markup:BrushResource SurfaceStrokeColorDefaultBrush}" />
+        <Setter Property="Background" Value="{markup:BrushResource SolidBackgroundFillColorBaseBrush}" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type controls:ContentDialog}">
@@ -65,7 +66,7 @@
                                     <RowDefinition Height="*" />
                                     <RowDefinition Height="Auto" />
                                 </Grid.RowDefinitions>
-                                <Border Background="{DynamicResource LayerFillColorAltBrush}" CornerRadius="{StaticResource DialogOverlayCornerRadius}" />
+                                <Border Background="{markup:BrushResource LayerFillColorAltBrush}" CornerRadius="{StaticResource DialogOverlayCornerRadius}" />
                                 <Grid
                                     Grid.Row="0"
                                     Margin="24,10"
@@ -119,9 +120,9 @@
                                     Padding="{TemplateBinding Padding}"
                                     HorizontalAlignment="Stretch"
                                     VerticalAlignment="Bottom"
-                                    BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
+                                    BorderBrush="{markup:BrushResource CardStrokeColorDefaultBrush}"
                                     BorderThickness="0,1,0,0"
-                                    CornerRadius="{DynamicResource DialogFooterCornerRadius}"
+                                    CornerRadius="{StaticResource DialogFooterCornerRadius}"
                                     Focusable="False"
                                     Visibility="{TemplateBinding IsFooterVisible, Converter={StaticResource BoolToVisibilityConverter}}">
 
@@ -224,7 +225,7 @@
                             the legacy appearance and behavior.
                         -->
                         <Trigger Property="IsLegacyHost" Value="True">
-                            <Setter TargetName="DialogRootGrid" Property="Background" Value="{DynamicResource SmokeFillColorDefaultBrush}" />
+                            <Setter TargetName="DialogRootGrid" Property="Background" Value="{markup:BrushResource SmokeFillColorDefaultBrush}" />
                             <Setter TargetName="DialogRootGrid" Property="HorizontalAlignment" Value="Stretch" />
                             <Setter TargetName="DialogRootGrid" Property="VerticalAlignment" Value="Stretch" />
                         </Trigger>

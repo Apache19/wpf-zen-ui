@@ -8,7 +8,8 @@
 <ResourceDictionary
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:controls="clr-namespace:Wpf.Ui.Controls">
+    xmlns:controls="clr-namespace:Wpf.Ui.Controls"
+    xmlns:markup="clr-namespace:Wpf.Ui.Markup">
 
     <!--  ReSharper disable InconsistentNaming  -->
 
@@ -42,14 +43,14 @@
                 <Setter TargetName="WindowResizeGrip" Property="Visibility" Value="Visible" />
             </MultiTrigger>
             <Trigger Property="IsNcActive" Value="False">
-                <Setter TargetName="WindowBorder" Property="BorderBrush" Value="{DynamicResource WindowBorderInactiveBrush}" />
+                <Setter TargetName="WindowBorder" Property="BorderBrush" Value="{markup:BrushResource WindowBorderInactiveBrush}" />
             </Trigger>
             <MultiTrigger>
                 <MultiTrigger.Conditions>
                     <Condition Property="IsAccentOnTitleBarAndBorder" Value="True" />
                     <Condition Property="IsNcActive" Value="True" />
                 </MultiTrigger.Conditions>
-                <Setter TargetName="WindowBorder" Property="BorderBrush" Value="{DynamicResource SystemAccentColorBrush}" />
+                <Setter TargetName="WindowBorder" Property="BorderBrush" Value="{markup:BrushResource SystemAccentColorBrush}" />
             </MultiTrigger>
             <Trigger Property="ActualWindowState" Value="Maximized">
                 <Setter TargetName="WindowBorder" Property="BorderThickness" Value="0" />
@@ -61,7 +62,7 @@
         <Border
             x:Name="WindowBorder"
             Background="{TemplateBinding Background}"
-            BorderBrush="{DynamicResource WindowBorderBrush}"
+            BorderBrush="{markup:BrushResource WindowBorderBrush}"
             BorderThickness="0,1,0,0"
             RenderOptions.EdgeMode="Aliased"
             SnapsToDevicePixels="True">
@@ -71,14 +72,14 @@
         </Border>
         <ControlTemplate.Triggers>
             <Trigger Property="IsNcActive" Value="False">
-                <Setter TargetName="WindowBorder" Property="BorderBrush" Value="{DynamicResource WindowBorderInactiveBrush}" />
+                <Setter TargetName="WindowBorder" Property="BorderBrush" Value="{markup:BrushResource WindowBorderInactiveBrush}" />
             </Trigger>
             <MultiTrigger>
                 <MultiTrigger.Conditions>
                     <Condition Property="IsAccentOnTitleBarAndBorder" Value="True" />
                     <Condition Property="IsNcActive" Value="True" />
                 </MultiTrigger.Conditions>
-                <Setter TargetName="WindowBorder" Property="BorderBrush" Value="{DynamicResource SystemAccentColorBrush}" />
+                <Setter TargetName="WindowBorder" Property="BorderBrush" Value="{markup:BrushResource SystemAccentColorBrush}" />
             </MultiTrigger>
             <Trigger Property="ActualWindowState" Value="Maximized">
                 <Setter TargetName="WindowBorder" Property="BorderThickness" Value="0" />
@@ -126,9 +127,9 @@
     </ControlTemplate>
 
     <Style x:Key="DefaultFluentWindowStyle" TargetType="{x:Type controls:FluentWindow}">
-        <Setter Property="Background" Value="{DynamicResource WindowBackgroundBrush}" />
-        <Setter Property="Foreground" Value="{DynamicResource WindowForegroundBrush}" />
-        <Setter Property="BorderBrush" Value="{DynamicResource WindowBorderBrush}" />
+        <Setter Property="Background" Value="{markup:BrushResource WindowBackgroundBrush}" />
+        <Setter Property="Foreground" Value="{markup:BrushResource WindowForegroundBrush}" />
+        <Setter Property="BorderBrush" Value="{markup:BrushResource WindowBorderBrush}" />
         <!--  默认 Win10 窗口  -->
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="Template" Value="{StaticResource FluentWindow_Win10_Template}" />

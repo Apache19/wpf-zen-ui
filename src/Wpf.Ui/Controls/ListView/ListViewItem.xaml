@@ -9,6 +9,7 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Ui.Controls"
+    xmlns:markup="clr-namespace:Wpf.Ui.Markup"
     xmlns:theming="clr-namespace:Wpf.Ui.Theming">
 
     <ControlTemplate x:Key="NullViewItemTemplate" TargetType="{x:Type controls:ListViewItem}">
@@ -28,7 +29,7 @@
                     Margin="0"
                     HorizontalAlignment="Left"
                     VerticalAlignment="Center"
-                    Fill="{DynamicResource SystemAccentColorPrimaryBrush}"
+                    Fill="{markup:BrushResource SystemAccentColorPrimaryBrush}"
                     RadiusX="2"
                     RadiusY="2"
                     Visibility="Collapsed" />
@@ -40,11 +41,11 @@
                     <Condition Property="IsEnabled" Value="True" />
                     <Condition Property="IsMouseOver" Value="True" />
                 </MultiTrigger.Conditions>
-                <Setter TargetName="Border" Property="Background" Value="{DynamicResource SubtleFillColorSecondaryBrush}" />
+                <Setter TargetName="Border" Property="Background" Value="{markup:BrushResource SubtleFillColorSecondaryBrush}" />
             </MultiTrigger>
             <Trigger Property="IsSelected" Value="True">
                 <Setter TargetName="ActiveRectangle" Property="Visibility" Value="Visible" />
-                <Setter TargetName="Border" Property="Background" Value="{DynamicResource SubtleFillColorSecondaryBrush}" />
+                <Setter TargetName="Border" Property="Background" Value="{markup:BrushResource SubtleFillColorSecondaryBrush}" />
             </Trigger>
         </ControlTemplate.Triggers>
     </ControlTemplate>
@@ -71,7 +72,7 @@
                     Margin="0"
                     HorizontalAlignment="Left"
                     VerticalAlignment="Center"
-                    Fill="{DynamicResource SystemAccentColorPrimaryBrush}"
+                    Fill="{markup:BrushResource SystemAccentColorPrimaryBrush}"
                     RadiusX="2"
                     RadiusY="2"
                     Visibility="Collapsed" />
@@ -83,27 +84,27 @@
                     <Condition Property="IsEnabled" Value="True" />
                     <Condition Property="IsMouseOver" Value="True" />
                 </MultiTrigger.Conditions>
-                <Setter TargetName="Border" Property="Background" Value="{DynamicResource SubtleFillColorSecondaryBrush}" />
+                <Setter TargetName="Border" Property="Background" Value="{markup:BrushResource SubtleFillColorSecondaryBrush}" />
             </MultiTrigger>
             <Trigger Property="IsSelected" Value="True">
                 <Setter TargetName="ActiveRectangle" Property="Visibility" Value="Visible" />
-                <Setter TargetName="Border" Property="Background" Value="{DynamicResource SubtleFillColorSecondaryBrush}" />
+                <Setter TargetName="Border" Property="Background" Value="{markup:BrushResource SubtleFillColorSecondaryBrush}" />
             </Trigger>
         </ControlTemplate.Triggers>
     </ControlTemplate>
 
     <Style x:Key="ListViewItemStyle" TargetType="{x:Type controls:ListViewItem}">
-        <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+        <Setter Property="Foreground" Value="{markup:BrushResource TextFillColorPrimaryBrush}" />
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="Border.CornerRadius" Value="{DynamicResource {x:Static theming:VariableKeys.ControlCornerRadius}}" />
         <Setter Property="Margin" Value="0,0,0,2" />
         <Setter Property="Padding" Value="4" />
         <Style.Triggers>
             <DataTrigger Binding="{Binding Path=ViewState, RelativeSource={RelativeSource AncestorType={x:Type ListView}}}" Value="Default">
-                <Setter Property="Template" Value="{DynamicResource NullViewItemTemplate}" />
+                <Setter Property="Template" Value="{StaticResource NullViewItemTemplate}" />
             </DataTrigger>
             <DataTrigger Binding="{Binding Path=ViewState, RelativeSource={RelativeSource AncestorType={x:Type ListView}}}" Value="GridView">
-                <Setter Property="Template" Value="{DynamicResource GridViewItemTemplate}" />
+                <Setter Property="Template" Value="{StaticResource GridViewItemTemplate}" />
             </DataTrigger>
         </Style.Triggers>
     </Style>

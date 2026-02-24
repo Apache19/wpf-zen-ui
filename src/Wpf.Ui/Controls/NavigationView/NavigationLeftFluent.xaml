@@ -1,7 +1,8 @@
 <ResourceDictionary
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:controls="clr-namespace:Wpf.Ui.Controls">
+    xmlns:controls="clr-namespace:Wpf.Ui.Controls"
+    xmlns:markup="clr-namespace:Wpf.Ui.Markup">
     <ResourceDictionary.MergedDictionaries>
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/NavigationView/NavigationViewConstants.xaml" />
     </ResourceDictionary.MergedDictionaries>
@@ -25,7 +26,7 @@
                     Margin="-4,0,0,0"
                     HorizontalAlignment="Left"
                     VerticalAlignment="Center"
-                    Fill="{DynamicResource SystemAccentColorPrimaryBrush}"
+                    Fill="{markup:BrushResource SystemAccentColorPrimaryBrush}"
                     Opacity="0.0"
                     RadiusX="2"
                     RadiusY="2" />
@@ -42,7 +43,7 @@
                         Margin="0"
                         Content="{TemplateBinding Icon}"
                         TextElement.FontSize="{StaticResource NavigationViewFluentIconSize}"
-                        TextElement.Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
+                        TextElement.Foreground="{markup:BrushResource TextFillColorPrimaryBrush}" />
 
                     <Grid
                         x:Name="ContentGrid"
@@ -56,7 +57,7 @@
                             ContentTemplate="{TemplateBinding ContentTemplate}"
                             RecognizesAccessKey="True"
                             TextElement.FontSize="{TemplateBinding FontSize}"
-                            TextElement.Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
+                            TextElement.Foreground="{markup:BrushResource TextFillColorPrimaryBrush}" />
                     </Grid>
 
                     <ContentPresenter
@@ -72,8 +73,8 @@
         <ControlTemplate.Triggers>
             <Trigger Property="IsActive" Value="True">
                 <Setter TargetName="ActiveRectangle" Property="Opacity" Value="1.0" />
-                <Setter TargetName="MainBorder" Property="Background" Value="{DynamicResource ControlFillColorDefaultBrush}" />
-                <Setter TargetName="IconContentPresenter" Property="TextElement.Foreground" Value="{DynamicResource SystemAccentColorPrimaryBrush}" />
+                <Setter TargetName="MainBorder" Property="Background" Value="{markup:BrushResource ControlFillColorDefaultBrush}" />
+                <Setter TargetName="IconContentPresenter" Property="TextElement.Foreground" Value="{markup:BrushResource SystemAccentColorPrimaryBrush}" />
                 <Setter TargetName="ElementContentPresenter" Property="Margin" Value="0" />
                 <Trigger.EnterActions>
                     <BeginStoryboard>
@@ -132,7 +133,7 @@
                 <Setter TargetName="PART_InfoBadge" Property="Visibility" Value="Collapsed" />
             </Trigger>
             <Trigger Property="IsMouseOver" Value="True">
-                <Setter TargetName="MainBorder" Property="Background" Value="{DynamicResource ControlFillColorDefaultBrush}" />
+                <Setter TargetName="MainBorder" Property="Background" Value="{markup:BrushResource ControlFillColorDefaultBrush}" />
             </Trigger>
             <MultiTrigger>
                 <MultiTrigger.Conditions>
@@ -140,8 +141,8 @@
                     <Condition Property="IsActive" Value="False" />
                 </MultiTrigger.Conditions>
                 <MultiTrigger.Setters>
-                    <Setter TargetName="IconContentPresenter" Property="TextElement.Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
-                    <Setter TargetName="ContentGrid" Property="TextElement.Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+                    <Setter TargetName="IconContentPresenter" Property="TextElement.Foreground" Value="{markup:BrushResource TextFillColorPrimaryBrush}" />
+                    <Setter TargetName="ContentGrid" Property="TextElement.Foreground" Value="{markup:BrushResource TextFillColorPrimaryBrush}" />
                 </MultiTrigger.Setters>
             </MultiTrigger>
             <!--
@@ -151,7 +152,7 @@
                             <Condition Property="IsMouseOver" Value="True" />
                         </MultiTrigger.Conditions>
                         <MultiTrigger.Setters>
-                            <Setter TargetName="MainBorder" Property="Background" Value="{DynamicResource ControlFillColorDefault}" />
+                            <Setter TargetName="MainBorder" Property="Background" Value="{markup:BrushResource ControlFillColorDefaultBrush}" />
                         </MultiTrigger.Setters>
                     </MultiTrigger>
                     <MultiTrigger>
@@ -160,7 +161,7 @@
                             <Condition Property="IsMouseOver" Value="True" />
                         </MultiTrigger.Conditions>
                         <MultiTrigger.Setters>
-                            <Setter TargetName="MainBorder" Property="Background" Value="{DynamicResource ControlFillColorDefault}" />
+                            <Setter TargetName="MainBorder" Property="Background" Value="{markup:BrushResource ControlFillColorDefaultBrush}" />
                         </MultiTrigger.Setters>
                     </MultiTrigger>
             -->

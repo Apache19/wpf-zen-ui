@@ -8,13 +8,14 @@
 <ResourceDictionary
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:controls="clr-namespace:Wpf.Ui.Controls">
+    xmlns:controls="clr-namespace:Wpf.Ui.Controls"
+    xmlns:markup="clr-namespace:Wpf.Ui.Markup">
 
     <Style TargetType="{x:Type controls:Snackbar}">
-        <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
-        <Setter Property="ContentForeground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
-        <Setter Property="Background" Value="{DynamicResource AcrylicBackgroundFillColorDefaultBrush}" />
-        <Setter Property="BorderBrush" Value="{DynamicResource SurfaceStrokeColorFlyoutBrush}" />
+        <Setter Property="Foreground" Value="{markup:BrushResource TextFillColorPrimaryBrush}" />
+        <Setter Property="ContentForeground" Value="{markup:BrushResource TextFillColorPrimaryBrush}" />
+        <Setter Property="Background" Value="{markup:BrushResource AcrylicBackgroundFillColorDefaultBrush}" />
+        <Setter Property="BorderBrush" Value="{markup:BrushResource SurfaceStrokeColorFlyoutBrush}" />
         <Setter Property="Margin" Value="24" />
         <Setter Property="MinHeight" Value="68" />
         <Setter Property="Focusable" Value="False" />
@@ -177,21 +178,9 @@
                 <Setter Property="Background" Value="Transparent" />
             </Trigger>
             <Trigger Property="Appearance" Value="Primary">
-                <Setter Property="Foreground">
-                    <Setter.Value>
-                        <SolidColorBrush Color="{DynamicResource TextOnAccentFillColorPrimary}" />
-                    </Setter.Value>
-                </Setter>
-                <Setter Property="ContentForeground">
-                    <Setter.Value>
-                        <SolidColorBrush Color="{DynamicResource TextOnAccentFillColorSecondary}" />
-                    </Setter.Value>
-                </Setter>
-                <Setter Property="Background">
-                    <Setter.Value>
-                        <SolidColorBrush Color="{DynamicResource SystemAccentColorSecondary}" />
-                    </Setter.Value>
-                </Setter>
+                <Setter Property="Foreground" Value="{markup:BrushResource TextOnAccentFillColorPrimaryBrush}" />
+                <Setter Property="ContentForeground" Value="{markup:BrushResource TextOnAccentFillColorSecondaryBrush}" />
+                <Setter Property="Background" Value="{markup:BrushResource SystemAccentColorSecondaryBrush}" />
             </Trigger>
             <Trigger Property="Appearance" Value="Dark">
                 <Setter Property="Foreground">
@@ -238,12 +227,7 @@
                         <SolidColorBrush Color="#87FFFFFF" />
                     </Setter.Value>
                 </Setter>
-                <Setter Property="Background">
-                    <Setter.Value>
-                        <!--  todo 调色板颜色还没设置Key，现在还用不了  -->
-                        <SolidColorBrush Color="{DynamicResource PaletteLightBlueColor}" />
-                    </Setter.Value>
-                </Setter>
+                <Setter Property="Background" Value="{markup:BrushResource PaletteLightBlueBrush}" />
             </Trigger>
             <Trigger Property="Appearance" Value="Danger">
                 <Setter Property="Foreground">
@@ -256,11 +240,7 @@
                         <SolidColorBrush Color="#87FFFFFF" />
                     </Setter.Value>
                 </Setter>
-                <Setter Property="Background">
-                    <Setter.Value>
-                        <SolidColorBrush Color="{DynamicResource PaletteRedColor}" />
-                    </Setter.Value>
-                </Setter>
+                <Setter Property="Background" Value="{markup:BrushResource PaletteRedBrush}" />
             </Trigger>
             <Trigger Property="Appearance" Value="Success">
                 <Setter Property="Foreground">
@@ -273,11 +253,7 @@
                         <SolidColorBrush Color="#87FFFFFF" />
                     </Setter.Value>
                 </Setter>
-                <Setter Property="Background">
-                    <Setter.Value>
-                        <SolidColorBrush Color="{DynamicResource PaletteGreenColor}" />
-                    </Setter.Value>
-                </Setter>
+                <Setter Property="Background" Value="{markup:BrushResource PaletteGreenBrush}" />
             </Trigger>
             <Trigger Property="Appearance" Value="Caution">
                 <Setter Property="Foreground">
@@ -290,11 +266,7 @@
                         <SolidColorBrush Color="#87FFFFFF" />
                     </Setter.Value>
                 </Setter>
-                <Setter Property="Background">
-                    <Setter.Value>
-                        <SolidColorBrush Color="{DynamicResource PaletteOrangeColor}" />
-                    </Setter.Value>
-                </Setter>
+                <Setter Property="Background" Value="{markup:BrushResource PaletteOrangeBrush}" />
             </Trigger>
         </Style.Triggers>
     </Style>

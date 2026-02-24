@@ -11,7 +11,8 @@
     xmlns:controls="clr-namespace:Wpf.Ui.Controls"
     xmlns:converters="clr-namespace:Wpf.Ui.Converters"
     xmlns:theming="clr-namespace:Wpf.Ui.Theming"
-    xmlns:sys="clr-namespace:System;assembly=mscorlib">
+    xmlns:sys="clr-namespace:System;assembly=mscorlib"
+    xmlns:markup="clr-namespace:Wpf.Ui.Markup">
 
     <Duration x:Key="ScrollAnimationDuration">0:0:0.16</Duration>
     <Duration x:Key="ButtonHoverAnimationDuration">0:0:0.16</Duration>
@@ -22,7 +23,7 @@
     <converters:PillCornerConverter x:Key="PillCornerConverter" />
 
     <Style x:Key="DefaultScrollBarLineButton" TargetType="{x:Type RepeatButton}">
-        <Setter Property="Foreground" Value="{DynamicResource ControlStrongFillColorDefaultBrush}" />
+        <Setter Property="Foreground" Value="{markup:BrushResource ControlStrongFillColorDefaultBrush}" />
         <Setter Property="Width" Value="{StaticResource LineButtonWidth}" />
         <Setter Property="Height" Value="{StaticResource LineButtonHeight}" />
         <Setter Property="FontSize" Value="11" />
@@ -37,7 +38,7 @@
                         Width="{TemplateBinding Width}"
                         Height="{TemplateBinding Height}"
                         Margin="{TemplateBinding Margin}"
-                        Background="{DynamicResource SubtleFillColorTransparentBrush}"
+                        Background="{markup:BrushResource SubtleFillColorTransparentBrush}"
                         CornerRadius="6">
                         <controls:SymbolIcon
                             Margin="0,0,0,0"
@@ -95,7 +96,7 @@
     </Style>
 
     <Style x:Key="DefaultScrollBarThumb" TargetType="{x:Type Thumb}">
-        <Setter Property="Background" Value="{DynamicResource ControlStrongFillColorDefaultBrush}" />
+        <Setter Property="Background" Value="{markup:BrushResource ControlStrongFillColorDefaultBrush}" />
         <Setter Property="Border.CornerRadius" Value="4" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
         <Setter Property="IsTabStop" Value="False" />
@@ -131,7 +132,7 @@
                 Grid.RowSpan="3"
                 Width="12"
                 HorizontalAlignment="Center"
-                Background="{DynamicResource AcrylicBackgroundFillColorDefaultBrush}"
+                Background="{markup:BrushResource AcrylicBackgroundFillColorDefaultBrush}"
                 Opacity="0">
                 <Border.CornerRadius>
                     <MultiBinding Converter="{StaticResource PillCornerConverter}">
@@ -253,7 +254,7 @@
                 Grid.ColumnSpan="3"
                 Height="12"
                 VerticalAlignment="Center"
-                Background="{DynamicResource SubtleFillColorTransparentBrush}"
+                Background="{markup:BrushResource SubtleFillColorTransparentBrush}"
                 Opacity="0">
                 <Border.CornerRadius>
                     <MultiBinding Converter="{StaticResource PillCornerConverter}">
