@@ -8,7 +8,7 @@ using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.Windows.Controls;
 using Wpf.Ui.Animations;
-using Wpf.Ui.Markup;
+using Wpf.Ui.Theming;
 
 // ReSharper disable once CheckNamespace
 namespace Wpf.Ui.Controls;
@@ -760,7 +760,7 @@ public partial class NavigationView
 
         breadcrumbBar.ItemsSource = navigationView._breadcrumbBarItems;
 
-        breadcrumbBar.ItemTemplate ??= navigationView.TryFindResource(ThemeStyleKeys.NavigationViewItemDataTemplate) as DataTemplate;
+        breadcrumbBar.ItemTemplate ??= navigationView.TryFindResource(StyleKeys.NavigationViewItemDataTemplate) as DataTemplate;
 
         // todo 考察一下使用路由事件是否比强绑定要好一点
         breadcrumbBar.ItemClicked  +=  navigationView.BreadcrumbBarOnItemClicked;

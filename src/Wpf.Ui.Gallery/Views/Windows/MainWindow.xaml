@@ -9,6 +9,7 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:tray="http://schemas.lepo.co/wpfui/2022/xaml/tray"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    xmlns:theming="clr-namespace:Wpf.Ui.Theming;assembly=Wpf.Ui"
     Title="{Binding ViewModel.ApplicationTitle, Mode=OneWay}"
     Width="800"
     Height="600"
@@ -90,7 +91,7 @@
                     Padding="9,7"
                     HorizontalAlignment="Right"
                     VerticalAlignment="Center"
-                    FontSize="{DynamicResource {x:Static ui:ThemeVariableKeys.ControlContentThemeFontSize}}"
+                    FontSize="{DynamicResource {x:Static theming:VariableKeys.ControlContentThemeFontSize}}"
                     IsEditable="True"
                     SelectionChanged="BackdropComboBox_OnSelected">
                     <ComboBoxItem Content="None" Tag="{x:Static ui:WindowBackdropType.None}" />

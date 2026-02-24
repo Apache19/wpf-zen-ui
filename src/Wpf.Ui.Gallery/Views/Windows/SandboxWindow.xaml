@@ -14,8 +14,8 @@
                                      IsDesignTimeCreatable=False}"
     d:DesignHeight="650"
     d:DesignWidth="1000"
-    ui:Design.Background="{DynamicResource WindowBackgroundBrush}"
-    ui:Design.Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+    d:Background="{ui:BrushResource WindowBackgroundBrush}"
+    d:Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
     WindowStartupLocation="CenterScreen"
     mc:Ignorable="d">
     <StackPanel>

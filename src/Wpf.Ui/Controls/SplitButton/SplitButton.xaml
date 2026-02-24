@@ -13,7 +13,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Ui.Controls"
     xmlns:converters="clr-namespace:Wpf.Ui.Converters"
-    xmlns:keys="clr-namespace:Wpf.Ui.Markup">
+    xmlns:theming="clr-namespace:Wpf.Ui.Theming">
 
     <ResourceDictionary.MergedDictionaries>
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/Button/Button.xaml" />
@@ -58,7 +58,7 @@
         </Setter>
     </Style>
 
-    <Style x:Key="DefaultUiSplitButtonStyle" BasedOn="{StaticResource {x:Static keys:ThemeStyleKeys.DefaultUiButtonStyle}}" TargetType="{x:Type controls:SplitButton}">
+    <Style x:Key="DefaultUiSplitButtonStyle" BasedOn="{StaticResource {x:Static theming:StyleKeys.DefaultUiButtonStyle}}" TargetType="{x:Type controls:SplitButton}">
         <Setter Property="Popup.PopupAnimation" Value="None" />
         <!--  WPF doesn't like centering, the animation is ugly and the mouse button sometimes clicks right away.  -->
         <Setter Property="Popup.Placement" Value="Bottom" />

@@ -10,16 +10,16 @@
 <ResourceDictionary
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:keys="clr-namespace:Wpf.Ui.Markup">
+    xmlns:theming="clr-namespace:Wpf.Ui.Theming">
 
-    <FontFamily x:Key="{x:Static keys:FontFamilyKeys.ContentControlThemeFontFamily}">Segoe Ui</FontFamily>
+    <FontFamily x:Key="{x:Static theming:FontFamilyKeys.ContentControlThemeFontFamily}">Segoe Ui</FontFamily>
 
-    <FontFamily x:Key="{x:Static keys:FontFamilyKeys.SegoeFluentIcons}">Segoe Fluent Icons</FontFamily>
-
-    <!--  https://github.com/microsoft/fluentui-system-icons  -->
-    <FontFamily x:Key="{x:Static keys:FontFamilyKeys.FluentSystemIcons}">pack://application:,,,/Wpf.Ui;component/Resources/Fonts/#FluentSystemIcons-Regular</FontFamily>
+    <FontFamily x:Key="{x:Static theming:FontFamilyKeys.SegoeFluentIcons}">Segoe Fluent Icons</FontFamily>
 
     <!--  https://github.com/microsoft/fluentui-system-icons  -->
-    <FontFamily x:Key="{x:Static keys:FontFamilyKeys.FluentSystemIconsFilled}">pack://application:,,,/Wpf.Ui;component/Resources/Fonts/#FluentSystemIcons-Filled</FontFamily>
+    <FontFamily x:Key="{x:Static theming:FontFamilyKeys.FluentSystemIcons}">pack://application:,,,/Wpf.Ui;component/Resources/Fonts/#FluentSystemIcons-Regular</FontFamily>
+
+    <!--  https://github.com/microsoft/fluentui-system-icons  -->
+    <FontFamily x:Key="{x:Static theming:FontFamilyKeys.FluentSystemIconsFilled}">pack://application:,,,/Wpf.Ui;component/Resources/Fonts/#FluentSystemIcons-Filled</FontFamily>
 
 </ResourceDictionary>

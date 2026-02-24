@@ -7,9 +7,9 @@ using System.Reflection;
 
 #pragma warning disable CS8618 // 在退出构造函数时，不可为 null 的字段必须包含非 null 值。请考虑添加 'required' 修饰符或声明为可以为 null。
 
-namespace Wpf.Ui.Markup;
+namespace Wpf.Ui.Theming;
 
-public static class ThemeStyleKeys
+public static class StyleKeys
 {
     public static ComponentResourceKey DefaultCheckBoxStyle            { get; private set; }
     public static ComponentResourceKey DefaultUiCheckBoxStyle          { get; private set; }
@@ -29,10 +29,10 @@ public static class ThemeStyleKeys
 
     public static ComponentResourceKey NavigationViewItemDataTemplate  { get; private set; }
 
-    static ThemeStyleKeys()
+    static StyleKeys()
     {
         // 使用反射统一设置每个属性值
-        var type       = typeof(ThemeStyleKeys);
+        var type       = typeof(StyleKeys);
         var properties = type.GetProperties(BindingFlags.Public | BindingFlags.Static);
         foreach (var property in properties)
         {

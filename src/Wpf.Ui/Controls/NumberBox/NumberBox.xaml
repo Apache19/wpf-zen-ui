@@ -13,7 +13,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Ui.Controls"
     xmlns:system="clr-namespace:System;assembly=mscorlib"
-    xmlns:keys="clr-namespace:Wpf.Ui.Markup">
+    xmlns:theming="clr-namespace:Wpf.Ui.Theming">
 
     <Thickness x:Key="NumberBoxBorderThemeThickness">1,1,1,1</Thickness>
     <Thickness x:Key="NumberBoxAccentBorderThemeThickness">0,0,0,1</Thickness>
@@ -26,10 +26,10 @@
 
     <Style x:Key="DefaultUiNumberBoxStyle" TargetType="{x:Type controls:NumberBox}">
         <!--  Universal WPF UI focus  -->
-        <Setter Property="FocusVisualStyle" Value="{DynamicResource {x:Static keys:ThemeStyleKeys.DefaultControlFocusVisualStyle}}" />
+        <Setter Property="FocusVisualStyle" Value="{DynamicResource {x:Static theming:StyleKeys.DefaultControlFocusVisualStyle}}" />
         <!--  Universal WPF UI focus  -->
         <!--  Universal WPF UI ContextMenu  -->
-        <Setter Property="ContextMenu" Value="{DynamicResource {x:Static keys:ThemeStyleKeys.DefaultControlContextMenu}}" />
+        <Setter Property="ContextMenu" Value="{DynamicResource {x:Static theming:StyleKeys.DefaultControlContextMenu}}" />
         <!--  Universal WPF UI ContextMenu  -->
         <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
         <Setter Property="CaretBrush" Value="{DynamicResource TextFillColorPrimaryBrush}" />
@@ -37,15 +37,15 @@
         <Setter Property="Background" Value="{DynamicResource ControlFillColorDefaultBrush}" />
         <Setter Property="BorderBrush" Value="{DynamicResource TextControlElevationBorderBrush}" />
         <Setter Property="BorderThickness" Value="{StaticResource NumberBoxBorderThemeThickness}" />
-        <Setter Property="FontSize" Value="{DynamicResource {x:Static keys:ThemeVariableKeys.ControlContentThemeFontSize}}" />
+        <Setter Property="FontSize" Value="{DynamicResource {x:Static theming:VariableKeys.ControlContentThemeFontSize}}" />
         <Setter Property="HorizontalAlignment" Value="Stretch" />
         <Setter Property="VerticalAlignment" Value="Center" />
         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
         <Setter Property="VerticalContentAlignment" Value="Top" />
-        <Setter Property="MinHeight" Value="{DynamicResource {x:Static keys:ThemeVariableKeys.TextControlThemeMinHeight}}" />
-        <Setter Property="MinWidth" Value="{DynamicResource {x:Static keys:ThemeVariableKeys.TextControlThemeMinWidth}}" />
-        <Setter Property="Padding" Value="{DynamicResource {x:Static keys:ThemeVariableKeys.TextControlThemePadding}}" />
-        <Setter Property="Border.CornerRadius" Value="{DynamicResource {x:Static keys:ThemeVariableKeys.ControlCornerRadius}}" />
+        <Setter Property="MinHeight" Value="{DynamicResource {x:Static theming:VariableKeys.TextControlThemeMinHeight}}" />
+        <Setter Property="MinWidth" Value="{DynamicResource {x:Static theming:VariableKeys.TextControlThemeMinWidth}}" />
+        <Setter Property="Padding" Value="{DynamicResource {x:Static theming:VariableKeys.TextControlThemePadding}}" />
+        <Setter Property="Border.CornerRadius" Value="{DynamicResource {x:Static theming:VariableKeys.ControlCornerRadius}}" />
         <Setter Property="ClearButtonEnabled" Value="True" />
         <Setter Property="IconPlacement" Value="Left" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
@@ -91,7 +91,7 @@
                                     <Grid Margin="{TemplateBinding Padding}">
                                         <controls:PassiveScrollViewer
                                             x:Name="PART_ContentHost"
-                                            Style="{DynamicResource {x:Static keys:ThemeStyleKeys.DefaultTextBoxScrollViewerStyle}}"
+                                            Style="{DynamicResource {x:Static theming:StyleKeys.DefaultTextBoxScrollViewerStyle}}"
                                             TextElement.Foreground="{TemplateBinding Foreground}" />
                                         <TextBlock
                                             x:Name="PlaceholderTextBox"

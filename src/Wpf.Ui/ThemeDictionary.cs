@@ -28,7 +28,7 @@ namespace Wpf.Ui.Markup;
 [Localizability(LocalizationCategory.Ignore)]
 [Ambient]
 [UsableDuringInitialization(true)]
-public class ThemesDictionary : ResourceDictionary
+public class ThemeDictionary : ResourceDictionary
 {
     /// <summary>
     /// Sets the default application theme.
@@ -38,7 +38,7 @@ public class ThemesDictionary : ResourceDictionary
         set => SetSourceBasedOnSelectedTheme(value);
     }
 
-    public ThemesDictionary()
+    public ThemeDictionary()
     {
         SetSourceBasedOnSelectedTheme(UIThemeMode.Light);
     }

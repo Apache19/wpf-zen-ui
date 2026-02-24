@@ -2,30 +2,30 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Ui.Controls"
-    xmlns:keys="clr-namespace:Wpf.Ui.Markup">
+    xmlns:theming="clr-namespace:Wpf.Ui.Theming">
 
     <Thickness x:Key="TimePickerBorderThemeThickness">1,1,1,1</Thickness>
 
     <Style x:Key="DefaultUiTimePickerStyle" TargetType="{x:Type controls:TimePicker}">
         <!--  Universal WPF UI focus  -->
-        <Setter Property="FocusVisualStyle" Value="{DynamicResource {x:Static keys:ThemeStyleKeys.DefaultControlFocusVisualStyle}}" />
+        <Setter Property="FocusVisualStyle" Value="{DynamicResource {x:Static theming:StyleKeys.DefaultControlFocusVisualStyle}}" />
         <!--  Universal WPF UI focus  -->
         <!--  Universal WPF UI ContextMenu  -->
-        <Setter Property="ContextMenu" Value="{DynamicResource {x:Static keys:ThemeStyleKeys.DefaultControlContextMenu}}" />
+        <Setter Property="ContextMenu" Value="{DynamicResource {x:Static theming:StyleKeys.DefaultControlContextMenu}}" />
         <!--  Universal WPF UI ContextMenu  -->
         <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}" />
         <Setter Property="Background" Value="{DynamicResource ControlFillColorTertiaryBrush}" />
         <Setter Property="BorderBrush" Value="{DynamicResource ControlElevationBorderBrush}" />
         <Setter Property="BorderThickness" Value="{StaticResource TimePickerBorderThemeThickness}" />
-        <Setter Property="FontSize" Value="{DynamicResource {x:Static keys:ThemeVariableKeys.ControlContentThemeFontSize}}" />
+        <Setter Property="FontSize" Value="{DynamicResource {x:Static theming:VariableKeys.ControlContentThemeFontSize}}" />
         <Setter Property="HorizontalAlignment" Value="Stretch" />
         <Setter Property="VerticalAlignment" Value="Center" />
         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
         <Setter Property="VerticalContentAlignment" Value="Top" />
-        <Setter Property="MinHeight" Value="{DynamicResource {x:Static keys:ThemeVariableKeys.TextControlThemeMinHeight}}" />
-        <Setter Property="MinWidth" Value="{DynamicResource {x:Static keys:ThemeVariableKeys.TextControlThemeMinWidth}}" />
-        <Setter Property="Padding" Value="{DynamicResource {x:Static keys:ThemeVariableKeys.TextControlThemePadding}}" />
-        <Setter Property="Border.CornerRadius" Value="{DynamicResource {x:Static keys:ThemeVariableKeys.ControlCornerRadius}}" />
+        <Setter Property="MinHeight" Value="{DynamicResource {x:Static theming:VariableKeys.TextControlThemeMinHeight}}" />
+        <Setter Property="MinWidth" Value="{DynamicResource {x:Static theming:VariableKeys.TextControlThemeMinWidth}}" />
+        <Setter Property="Padding" Value="{DynamicResource {x:Static theming:VariableKeys.TextControlThemePadding}}" />
+        <Setter Property="Border.CornerRadius" Value="{DynamicResource {x:Static theming:VariableKeys.ControlCornerRadius}}" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
         <Setter Property="Template">
             <Setter.Value>

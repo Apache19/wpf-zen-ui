@@ -3,7 +3,7 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-namespace Wpf.Ui.Markup;
+namespace Wpf.Ui.Theming;
 
 #pragma warning disable SA1516 // Elements should be separated by blank line
 

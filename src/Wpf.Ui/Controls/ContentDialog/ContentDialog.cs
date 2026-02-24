@@ -206,7 +206,7 @@ public partial class ContentDialog : ContentControl
     {
         // Avoid registering runtime code that triggers designer behavior or throws exceptions
         // at design time (to reduce the possibility of designer crashes/rendering failures).
-        if (!Designer.DesignerHelper.IsInDesignMode)
+        if (!DesignerProperties.GetIsInDesignMode(this))
         {
             Loaded += static (sender, _) =>
             {

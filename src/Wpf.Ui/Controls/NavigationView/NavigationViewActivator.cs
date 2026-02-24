@@ -6,7 +6,6 @@
 using System.Reflection;
 using System.Windows.Controls;
 using Wpf.Ui.Abstractions;
-using Wpf.Ui.Designer;
 
 // ReSharper disable once CheckNamespace
 namespace Wpf.Ui.Controls;
@@ -31,7 +30,7 @@ internal static class NavigationViewActivator
             );
         }
 
-        if (DesignerHelper.IsInDesignMode)
+        if (DesignerProperties.GetIsInDesignMode(new DependencyObject()))
         {
             return new Page
             {

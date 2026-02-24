@@ -3,7 +3,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:system="clr-namespace:System;assembly=mscorlib"
     xmlns:controls="clr-namespace:Wpf.Ui.Controls"
-    xmlns:vars="clr-namespace:Wpf.Ui.Markup">
+    xmlns:theming="clr-namespace:Wpf.Ui.Theming">
 
     <Thickness x:Key="AutoSuggestBoxBorderThemeThickness">1,1,1,0</Thickness>
     <Thickness x:Key="AutoSuggestBoxAccentBorderThemeThickness">0,0,0,1</Thickness>
@@ -17,7 +17,7 @@
     <Style x:Key="DefaultAutoSuggestBoxItemContainerStyle" TargetType="{x:Type controls:ListViewItem}">
         <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
         <Setter Property="Background" Value="Transparent" />
-        <Setter Property="Border.CornerRadius" Value="{DynamicResource {x:Static vars:ThemeVariableKeys.ControlCornerRadius}}" />
+        <Setter Property="Border.CornerRadius" Value="{DynamicResource {x:Static theming:VariableKeys.ControlCornerRadius}}" />
         <Setter Property="Margin" Value="0,0,0,2" />
         <Setter Property="Padding" Value="4" />
         <Setter Property="Template">
@@ -99,10 +99,10 @@
         <Setter Property="VerticalAlignment" Value="Center" />
         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
         <Setter Property="VerticalContentAlignment" Value="Top" />
-        <Setter Property="Padding" Value="{DynamicResource {x:Static vars:ThemeVariableKeys.TextControlThemePadding}}" />
-        <Setter Property="Border.CornerRadius" Value="{DynamicResource {x:Static vars:ThemeVariableKeys.ControlCornerRadius}}" />
+        <Setter Property="Padding" Value="{DynamicResource {x:Static theming:VariableKeys.TextControlThemePadding}}" />
+        <Setter Property="Border.CornerRadius" Value="{DynamicResource {x:Static theming:VariableKeys.ControlCornerRadius}}" />
         <Setter Property="BorderThickness" Value="{StaticResource AutoSuggestBoxBorderThemeThickness}" />
-        <Setter Property="FontSize" Value="{DynamicResource {x:Static vars:ThemeVariableKeys.ControlContentThemeFontSize}}" />
+        <Setter Property="FontSize" Value="{DynamicResource {x:Static theming:VariableKeys.ControlContentThemeFontSize}}" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
         <Setter Property="ItemContainerStyle" Value="{StaticResource DefaultAutoSuggestBoxItemContainerStyle}" />
         <Setter Property="Icon">

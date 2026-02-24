@@ -8,7 +8,6 @@ using System.Windows.Controls.Primitives;
 using Windows.Win32;
 using Windows.Win32.Foundation;
 using Windows.Win32.UI.WindowsAndMessaging;
-using Wpf.Ui.Designer;
 using Wpf.Ui.Extensions.Wpf;
 using Wpf.Ui.Win32;
 
@@ -292,7 +291,7 @@ public class TitleBar : ContentControl
 
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
-        if (DesignerHelper.IsInDesignMode)
+        if (DesignerProperties.GetIsInDesignMode(this))
         {
             return;
         }

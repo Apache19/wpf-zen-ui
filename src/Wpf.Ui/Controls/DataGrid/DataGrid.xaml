@@ -19,7 +19,7 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Ui.Controls"
-    xmlns:keys="clr-namespace:Wpf.Ui.Markup">
+    xmlns:theming="clr-namespace:Wpf.Ui.Theming">
 
     <ResourceDictionary.MergedDictionaries>
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/CheckBox/CheckBox.xaml" />
@@ -195,7 +195,7 @@
                         x:Name="DGR_Border"
                         BorderBrush="{TemplateBinding BorderBrush}"
                         BorderThickness="{TemplateBinding BorderThickness}"
-                        CornerRadius="{DynamicResource {x:Static keys:ThemeVariableKeys.ControlCornerRadius}}"
+                        CornerRadius="{DynamicResource {x:Static theming:VariableKeys.ControlCornerRadius}}"
                         SnapsToDevicePixels="True">
                         <SelectiveScrollingGrid>
                             <SelectiveScrollingGrid.ColumnDefinitions>
@@ -621,7 +621,7 @@
                             Background="{TemplateBinding Background}"
                             BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="{TemplateBinding BorderThickness}"
-                            CornerRadius="{DynamicResource {x:Static keys:ThemeVariableKeys.ControlCornerRadius}}">
+                            CornerRadius="{DynamicResource {x:Static theming:VariableKeys.ControlCornerRadius}}">
                             <Grid
                                 HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
                                 VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
@@ -731,7 +731,7 @@
             <Setter.Value>
                 <!--  DataGridColumnFloatingHeader  is  internal  -->
                 <ControlTemplate TargetType="Control">
-                    <Border Background="{TemplateBinding Background}" CornerRadius="{DynamicResource {x:Static keys:ThemeVariableKeys.ControlCornerRadius}}">
+                    <Border Background="{TemplateBinding Background}" CornerRadius="{DynamicResource {x:Static theming:VariableKeys.ControlCornerRadius}}">
                         <Grid
                             Margin="{TemplateBinding Padding}"
                             HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
@@ -798,7 +798,7 @@
         <Setter Property="ScrollViewer.CanContentScroll" Value="True" />
         <Setter Property="ScrollViewer.PanningMode" Value="Both" />
         <Setter Property="Stylus.IsFlicksEnabled" Value="False" />
-        <Setter Property="Border.CornerRadius" Value="{DynamicResource {x:Static keys:ThemeVariableKeys.ControlCornerRadius}}" />
+        <Setter Property="Border.CornerRadius" Value="{DynamicResource {x:Static theming:VariableKeys.ControlCornerRadius}}" />
         <Setter Property="RowStyle" Value="{StaticResource DefaultDataGridRowStyle}" />
         <Setter Property="RowHeaderStyle" Value="{StaticResource DefaultDataGridRowHeaderStyle}" />
         <Setter Property="CellStyle" Value="{StaticResource DefaultDataGridCellStyle}" />
@@ -857,7 +857,7 @@
                                             Grid.Column="2"
                                             Maximum="{TemplateBinding ScrollableHeight}"
                                             Orientation="Vertical"
-                                            Style="{DynamicResource {x:Static keys:ThemeStyleKeys.DefaultScrollBarStyle}}"
+                                            Style="{DynamicResource {x:Static theming:StyleKeys.DefaultScrollBarStyle}}"
                                             ViewportSize="{TemplateBinding ViewportHeight}"
                                             Visibility="{TemplateBinding ComputedVerticalScrollBarVisibility}"
                                             Value="{Binding VerticalOffset, Mode=OneWay, RelativeSource={RelativeSource TemplatedParent}}" />
@@ -873,7 +873,7 @@
                                                 Grid.Column="1"
                                                 Maximum="{TemplateBinding ScrollableWidth}"
                                                 Orientation="Horizontal"
-                                                Style="{DynamicResource {x:Static keys:ThemeStyleKeys.DefaultScrollBarStyle}}"
+                                                Style="{DynamicResource {x:Static theming:StyleKeys.DefaultScrollBarStyle}}"
                                                 ViewportSize="{TemplateBinding ViewportWidth}"
                                                 Visibility="{TemplateBinding ComputedHorizontalScrollBarVisibility}"
                                                 Value="{Binding HorizontalOffset, Mode=OneWay, RelativeSource={RelativeSource TemplatedParent}}" />
@@ -908,21 +908,21 @@
 
     <Style
         x:Key="DefaultDataGridCheckBoxElementStyle"
-        BasedOn="{StaticResource {x:Static keys:ThemeStyleKeys.DefaultCheckBoxStyle}}"
+        BasedOn="{StaticResource {x:Static theming:StyleKeys.DefaultCheckBoxStyle}}"
         TargetType="{x:Type CheckBox}">
         <Setter Property="HorizontalAlignment" Value="Center" />
     </Style>
 
     <Style
         x:Key="DefaultDataGridCheckBoxEditingElementStyle"
-        BasedOn="{StaticResource {x:Static keys:ThemeStyleKeys.DefaultCheckBoxStyle}}"
+        BasedOn="{StaticResource {x:Static theming:StyleKeys.DefaultCheckBoxStyle}}"
         TargetType="{x:Type CheckBox}">
         <Setter Property="HorizontalAlignment" Value="Center" />
     </Style>
 
     <Style
         x:Key="DefaultDataGridComboBoxElementStyle"
-        BasedOn="{StaticResource {x:Static keys:ThemeStyleKeys.DefaultComboBoxStyle}}"
+        BasedOn="{StaticResource {x:Static theming:StyleKeys.DefaultComboBoxStyle}}"
         TargetType="{x:Type ComboBox}">
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="BorderBrush" Value="Transparent" />
@@ -970,21 +970,21 @@
 
     <Style
         x:Key="DefaultDataGridComboBoxEditingElementStyle"
-        BasedOn="{StaticResource {x:Static keys:ThemeStyleKeys.DefaultComboBoxStyle}}"
+        BasedOn="{StaticResource {x:Static theming:StyleKeys.DefaultComboBoxStyle}}"
         TargetType="{x:Type ComboBox}">
         <Setter Property="IsDropDownOpen" Value="True" />
         <Setter Property="Margin" Value="2,0,0,0" />
     </Style>
 
     <Style x:Key="DefaultDataGridTextElementStyle" TargetType="{x:Type TextBlock}">
-        <Setter Property="FocusVisualStyle" Value="{DynamicResource {x:Static keys:ThemeStyleKeys.DefaultControlFocusVisualStyle}}" />
-        <Setter Property="ContextMenu" Value="{DynamicResource {x:Static keys:ThemeStyleKeys.DefaultControlContextMenu}}" />
+        <Setter Property="FocusVisualStyle" Value="{DynamicResource {x:Static theming:StyleKeys.DefaultControlFocusVisualStyle}}" />
+        <Setter Property="ContextMenu" Value="{DynamicResource {x:Static theming:StyleKeys.DefaultControlContextMenu}}" />
         <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="HorizontalAlignment" Value="Stretch" />
         <Setter Property="VerticalAlignment" Value="Center" />
-        <Setter Property="MinHeight" Value="{DynamicResource {x:Static keys:ThemeVariableKeys.TextControlThemeMinHeight}}" />
-        <Setter Property="MinWidth" Value="{DynamicResource {x:Static keys:ThemeVariableKeys.TextControlThemeMinWidth}}" />
+        <Setter Property="MinHeight" Value="{DynamicResource {x:Static theming:VariableKeys.TextControlThemeMinHeight}}" />
+        <Setter Property="MinWidth" Value="{DynamicResource {x:Static theming:VariableKeys.TextControlThemeMinWidth}}" />
         <Setter Property="Margin" Value="0,0,11,0" />
         <Setter Property="Padding" Value="13,10,2,8" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
@@ -992,7 +992,7 @@
 
     <Style
         x:Key="DefaultDataGridTextEditingElementStyle"
-        BasedOn="{StaticResource {x:Static keys:ThemeStyleKeys.DefaultTextBoxStyle}}"
+        BasedOn="{StaticResource {x:Static theming:StyleKeys.DefaultTextBoxStyle}}"
         TargetType="{x:Type TextBox}" />
 
     <Style

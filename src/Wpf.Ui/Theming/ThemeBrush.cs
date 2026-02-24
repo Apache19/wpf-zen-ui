@@ -3,24 +3,21 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-namespace Wpf.Ui.Markup;
+namespace Wpf.Ui.Theming;
 
 /// <summary>
-/// Collection of theme resources.
+/// Collection of brush resources.
 /// </summary>
 /// <example>
 /// <code lang="xml">
-/// &lt;ui:TextBox Foreground={ui:ThemeResource TextFillColorSecondaryBrush} /&gt;
+/// &lt;ui:TextBox Foreground={ui:BrushResource TextFillColorSecondaryBrush} /&gt;
 /// </code>
 /// </example>
-public enum ThemeResource
+public enum ThemeBrush
 {
-    // todo 目前只加入了Theme Brush资源，调色板、静态画刷这些还没加入
-
-    /// <summary>
-    /// Unspecified theme resource.
-    /// </summary>
     Unknown,
+
+    // Light.xaml / Dark.xaml / HighContrast.xaml
     SystemAccentColorBrush,
 
     SystemAccentColorPrimaryBrush,
@@ -153,4 +150,42 @@ public enum ThemeResource
     SystemFillColorInformationalBrush,
 
     LeftNavigationViewSeparatorBrush,
+
+    // Palette.xaml:
+    PalettePrimaryBrush,
+    PaletteRedBrush,
+    PalettePinkBrush,
+    PalettePurpleBrush,
+    PaletteDeepPurpleBrush,
+    PaletteIndigoBrush,
+    PaletteBlueBrush,
+    PaletteLightBlueBrush,
+    PaletteCyanBrush,
+    PaletteTealBrush,
+    PaletteGreenBrush,
+    PaletteLightGreenBrush,
+    PaletteLimeBrush,
+    PaletteYellowBrush,
+    PaletteAmberBrush,
+    PaletteOrangeBrush,
+    PaletteDeepOrangeBrush,
+    PaletteBrownBrush,
+    PaletteGreyBrush,
+    PaletteBlueGreyBrush,
+
+    // StaticColors.xaml
+    TextFillColorLightPrimaryBrush,
+    TextFillColorLightSecondaryBrush,
+    TextFillColorLightTertiaryBrush,
+    TextFillColorLightDisabledBrush,
+    TextFillColorLightInverseBrush,
+    TextFillColorDarkPrimaryBrush,
+    TextFillColorDarkSecondaryBrush,
+    TextFillColorDarkTertiaryBrush,
+    TextFillColorDarkDisabledBrush,
+    TextFillColorDarkInverseBrush,
+    ApplicationBackgroundColorLightBrush,
+    ApplicationBackgroundColorDarkBrush,
+    ControlStrongFillColorLightBrush,
+    ControlStrongFillColorDarkBrush,
 }

@@ -6,7 +6,6 @@
 using System.Diagnostics;
 using Microsoft.Win32;
 using Wpf.Ui.Appearance.Accent;
-using Wpf.Ui.Designer;
 using Wpf.Ui.Threading;
 
 namespace Wpf.Ui.Appearance;
@@ -79,7 +78,7 @@ public sealed class ThemeManager
 
     static ThemeManager()
     {
-        if (DesignerHelper.IsInDesignMode)
+        if (DesignerProperties.GetIsInDesignMode(new DependencyObject()))
         {
             return;
         }

@@ -7,7 +7,7 @@ using System.Reflection;
 
 // ReSharper disable UnassignedGetOnlyAutoProperty
 
-namespace Wpf.Ui.Markup;
+namespace Wpf.Ui.Theming;
 
 #pragma warning disable CS8618
 #pragma warning disable SA1516 // Elements should be separated by blank line
@@ -15,7 +15,7 @@ namespace Wpf.Ui.Markup;
 /// <summary>
 /// 定义在 Variables.xaml 里的资源键
 /// </summary>
-public static class ThemeVariableKeys
+public static class VariableKeys
 {
     public static ComponentResourceKey DefaultIconFontSize                      { get; private set; }
     public static ComponentResourceKey ControlContentThemeFontSize              { get; private set; }
@@ -39,10 +39,10 @@ public static class ThemeVariableKeys
     public static ComponentResourceKey ComboBoxMinHeight                        { get; private set; }
     public static ComponentResourceKey NavigationViewItemOnLeftMinHeight        { get; private set; }
 
-    static ThemeVariableKeys()
+    static VariableKeys()
     {
         // 使用反射统一设置每个属性值
-        var type       = typeof(ThemeVariableKeys);
+        var type       = typeof(VariableKeys);
         var properties = type.GetProperties(BindingFlags.Public | BindingFlags.Static);
         foreach (var property in properties)
         {

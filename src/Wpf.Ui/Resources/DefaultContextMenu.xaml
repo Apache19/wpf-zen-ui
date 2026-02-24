@@ -8,9 +8,9 @@
 <ResourceDictionary
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:keys="clr-namespace:Wpf.Ui.Markup">
+    xmlns:theming="clr-namespace:Wpf.Ui.Theming">
 
-    <ContextMenu x:Key="{x:Static keys:ThemeStyleKeys.DefaultControlContextMenu}">
+    <ContextMenu x:Key="{x:Static theming:StyleKeys.DefaultControlContextMenu}">
         <MenuItem Command="ApplicationCommands.Copy" />
         <MenuItem Command="ApplicationCommands.Cut" />
         <MenuItem Command="ApplicationCommands.Paste" />

@@ -12,13 +12,13 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Ui.Controls"
-    xmlns:keys="clr-namespace:Wpf.Ui.Markup">
+    xmlns:theming="clr-namespace:Wpf.Ui.Theming">
 
     <ResourceDictionary.MergedDictionaries>
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/Button/Button.xaml" />
     </ResourceDictionary.MergedDictionaries>
 
-    <Style x:Key="DefaultUiAnchorStyle" BasedOn="{StaticResource {x:Static keys:ThemeStyleKeys.DefaultUiButtonStyle}}" TargetType="{x:Type controls:Anchor}" />
+    <Style x:Key="DefaultUiAnchorStyle" BasedOn="{StaticResource {x:Static theming:StyleKeys.DefaultUiButtonStyle}}" TargetType="{x:Type controls:Anchor}" />
     <Style BasedOn="{StaticResource DefaultUiAnchorStyle}" TargetType="{x:Type controls:Anchor}" />
 
 </ResourceDictionary>

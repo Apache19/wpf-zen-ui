@@ -5,7 +5,7 @@
 
 // ReSharper disable once CheckNamespace
 
-using Wpf.Ui.Markup;
+using Wpf.Ui.Theming;
 
 namespace Wpf.Ui.Controls;
 

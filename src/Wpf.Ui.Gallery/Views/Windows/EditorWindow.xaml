@@ -6,6 +6,7 @@
     xmlns:local="clr-namespace:Wpf.Ui.Gallery.Views.Windows"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    xmlns:theming="clr-namespace:Wpf.Ui.Theming;assembly=Wpf.Ui"
     Title="WPF UI - Editor"
     Width="1250"
     Height="652"
@@ -13,8 +14,8 @@
                                      IsDesignTimeCreatable=False}"
     d:DesignHeight="650"
     d:DesignWidth="900"
-    ui:Design.Background="{DynamicResource WindowBackgroundBrush}"
-    ui:Design.Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+    d:Background="{ui:BrushResource WindowBackgroundBrush}"
+    d:Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
     WindowStartupLocation="CenterOwner"
     mc:Ignorable="d">
     <Grid>
@@ -179,7 +180,7 @@
                 BorderThickness="0"
                 VerticalScrollBarVisibility="Visible">
                 <RichTextBox.Document>
-                    <FlowDocument FontFamily="{StaticResource {x:Static ui:FontFamilyKeys.ContentControlThemeFontFamily}}">
+                    <FlowDocument FontFamily="{DynamicResource {x:Static theming:FontFamilyKeys.ContentControlThemeFontFamily}}">
                         <FlowDocument.Blocks>
                             <Paragraph>
                                 Evil Is Evil. Lesser, Greater, Middling, Makes No Difference. The Degree Is Arbitrary, The Definitions Blurred.<LineBreak />

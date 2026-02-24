@@ -6,10 +6,11 @@
 using System.Reflection;
 #pragma warning disable CS8618 // 在退出构造函数时，不可为 null 的字段必须包含非 null 值。请考虑添加 'required' 修饰符或声明为可以为 null。
 
-namespace Wpf.Ui.Markup;
+namespace Wpf.Ui.Theming;
 
 public static class BrushKeys
 {
+    // Light.xaml / Dark.xaml / HighContrast.xaml
     public static ComponentResourceKey SystemAccentColorBrush { get; private set; }
 
     public static ComponentResourceKey SystemAccentColorPrimaryBrush { get; private set; }
@@ -142,6 +143,44 @@ public static class BrushKeys
     public static ComponentResourceKey SystemFillColorInformationalBrush { get; private set; }
 
     public static ComponentResourceKey LeftNavigationViewSeparatorBrush { get; private set; }
+
+    // Palette.xaml:
+    public static ComponentResourceKey PalettePrimaryBrush { get; private set; }
+    public static ComponentResourceKey PaletteRedBrush { get; private set; }
+    public static ComponentResourceKey PalettePinkBrush { get; private set; }
+    public static ComponentResourceKey PalettePurpleBrush { get; private set; }
+    public static ComponentResourceKey PaletteDeepPurpleBrush { get; private set; }
+    public static ComponentResourceKey PaletteIndigoBrush { get; private set; }
+    public static ComponentResourceKey PaletteBlueBrush { get; private set; }
+    public static ComponentResourceKey PaletteLightBlueBrush { get; private set; }
+    public static ComponentResourceKey PaletteCyanBrush { get; private set; }
+    public static ComponentResourceKey PaletteTealBrush { get; private set; }
+    public static ComponentResourceKey PaletteGreenBrush { get; private set; }
+    public static ComponentResourceKey PaletteLightGreenBrush { get; private set; }
+    public static ComponentResourceKey PaletteLimeBrush { get; private set; }
+    public static ComponentResourceKey PaletteYellowBrush { get; private set; }
+    public static ComponentResourceKey PaletteAmberBrush { get; private set; }
+    public static ComponentResourceKey PaletteOrangeBrush { get; private set; }
+    public static ComponentResourceKey PaletteDeepOrangeBrush { get; private set; }
+    public static ComponentResourceKey PaletteBrownBrush { get; private set; }
+    public static ComponentResourceKey PaletteGreyBrush { get; private set; }
+    public static ComponentResourceKey PaletteBlueGreyBrush { get; private set; }
+
+    // StaticColors.xaml
+    public static ComponentResourceKey TextFillColorLightPrimaryBrush { get; private set; }
+    public static ComponentResourceKey TextFillColorLightSecondaryBrush { get; private set; }
+    public static ComponentResourceKey TextFillColorLightTertiaryBrush { get; private set; }
+    public static ComponentResourceKey TextFillColorLightDisabledBrush { get; private set; }
+    public static ComponentResourceKey TextFillColorLightInverseBrush { get; private set; }
+    public static ComponentResourceKey TextFillColorDarkPrimaryBrush { get; private set; }
+    public static ComponentResourceKey TextFillColorDarkSecondaryBrush { get; private set; }
+    public static ComponentResourceKey TextFillColorDarkTertiaryBrush { get; private set; }
+    public static ComponentResourceKey TextFillColorDarkDisabledBrush { get; private set; }
+    public static ComponentResourceKey TextFillColorDarkInverseBrush { get; private set; }
+    public static ComponentResourceKey ApplicationBackgroundColorLightBrush { get; private set; }
+    public static ComponentResourceKey ApplicationBackgroundColorDarkBrush { get; private set; }
+    public static ComponentResourceKey ControlStrongFillColorLightBrush { get; private set; }
+    public static ComponentResourceKey ControlStrongFillColorDarkBrush { get; private set; }
 
     static BrushKeys()
     {

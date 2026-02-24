@@ -10,7 +10,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Ui.Controls"
     xmlns:converters="clr-namespace:Wpf.Ui.Converters"
-    xmlns:keys="clr-namespace:Wpf.Ui.Markup"
+    xmlns:theming="clr-namespace:Wpf.Ui.Theming"
     xmlns:sys="clr-namespace:System;assembly=mscorlib">
 
     <Duration x:Key="ScrollAnimationDuration">0:0:0.16</Duration>
@@ -365,7 +365,7 @@
         </ControlTemplate.Triggers>
     </ControlTemplate>
 
-    <Style x:Key="{x:Static keys:ThemeStyleKeys.DefaultScrollBarStyle}" TargetType="{x:Type ScrollBar}">
+    <Style x:Key="{x:Static theming:StyleKeys.DefaultScrollBarStyle}" TargetType="{x:Type ScrollBar}">
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="Margin" Value="0" />
         <Setter Property="Padding" Value="0" />

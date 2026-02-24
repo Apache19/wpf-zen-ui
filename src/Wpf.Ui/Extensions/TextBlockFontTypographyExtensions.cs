@@ -4,7 +4,7 @@
 // All Rights Reserved.
 
 using Wpf.Ui.Controls;
-using Wpf.Ui.Markup;
+using Wpf.Ui.Theming;
 
 namespace Wpf.Ui.Extensions;
 
