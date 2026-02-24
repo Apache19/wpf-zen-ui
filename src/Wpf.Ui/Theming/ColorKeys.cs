@@ -16,6 +16,15 @@ public static class ColorKeys
     public static ComponentResourceKey SystemAccentColorPrimary { get; private set; }
     public static ComponentResourceKey SystemAccentColorSecondary { get; private set; }
     public static ComponentResourceKey SystemAccentColorTertiary { get; private set; }
+    public static ComponentResourceKey SystemColorWindowTextColor { get; private set; }
+    public static ComponentResourceKey SystemColorWindowColor { get; private set; }
+    public static ComponentResourceKey SystemColorHighlightTextColor { get; private set; }
+    public static ComponentResourceKey SystemColorHighlightColor { get; private set; }
+    public static ComponentResourceKey SystemColorControlTextColor { get; private set; }
+    public static ComponentResourceKey SystemColorControlColor { get; private set; }
+    public static ComponentResourceKey SystemColorHotTrackColor { get; private set; }
+    public static ComponentResourceKey SystemColorGrayTextColor { get; private set; }
+    public static ComponentResourceKey SystemColorWindowFrameColor { get; private set; }
     public static ComponentResourceKey WindowBackgroundColor { get; private set; }
     public static ComponentResourceKey WindowBorderColor { get; private set; }
     public static ComponentResourceKey WindowBorderColorInactive { get; private set; }

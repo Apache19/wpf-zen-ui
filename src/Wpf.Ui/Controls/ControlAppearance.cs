@@ -26,6 +26,16 @@ public enum ControlAppearance
     Info,
 
     /// <summary>
+    /// Dark color theme.
+    /// </summary>
+    Dark,
+
+    /// <summary>
+    /// Light color theme.
+    /// </summary>
+    Light,
+
+    /// <summary>
     /// Red color theme.
     /// </summary>
     Danger,

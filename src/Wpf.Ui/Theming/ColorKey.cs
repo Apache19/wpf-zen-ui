@@ -7,11 +7,22 @@ namespace Wpf.Ui.Theming;
 
 public enum ColorKey
 {
+    Unknown,
+
     // Light.xaml / Dark.xaml / HighContrast.xaml
     SystemAccentColor,
     SystemAccentColorPrimary,
     SystemAccentColorSecondary,
     SystemAccentColorTertiary,
+    SystemColorWindowTextColor,
+    SystemColorWindowColor,
+    SystemColorHighlightTextColor,
+    SystemColorHighlightColor,
+    SystemColorControlTextColor,
+    SystemColorControlColor,
+    SystemColorHotTrackColor,
+    SystemColorGrayTextColor,
+    SystemColorWindowFrameColor,
     WindowBackgroundColor,
     WindowBorderColor,
     WindowBorderColorInactive,

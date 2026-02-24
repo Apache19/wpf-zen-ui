@@ -24,6 +24,16 @@ public enum BrushKey
     SystemAccentColorSecondaryBrush,
     SystemAccentColorTertiaryBrush,
 
+    SystemColorWindowTextBrush,
+    SystemColorWindowBrush,
+    SystemColorHighlightTextBrush,
+    SystemColorHighlightBrush,
+    SystemColorControlTextBrush,
+    SystemColorControlBrush,
+    SystemColorHotTrackBrush,
+    SystemColorGrayTextBrush,
+    SystemColorWindowFrameBrush,
+
     AccentTextFillColorPrimaryBrush,
     AccentTextFillColorSecondaryBrush,
     AccentTextFillColorTertiaryBrush,

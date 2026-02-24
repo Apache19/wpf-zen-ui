@@ -17,6 +17,16 @@ public static class BrushKeys
     public static ComponentResourceKey SystemAccentColorSecondaryBrush { get; private set; }
     public static ComponentResourceKey SystemAccentColorTertiaryBrush { get; private set; }
 
+    public static ComponentResourceKey SystemColorWindowTextBrush { get; private set; }
+    public static ComponentResourceKey SystemColorWindowBrush { get; private set; }
+    public static ComponentResourceKey SystemColorHighlightTextBrush { get; private set; }
+    public static ComponentResourceKey SystemColorHighlightBrush { get; private set; }
+    public static ComponentResourceKey SystemColorControlTextBrush { get; private set; }
+    public static ComponentResourceKey SystemColorControlBrush { get; private set; }
+    public static ComponentResourceKey SystemColorHotTrackBrush { get; private set; }
+    public static ComponentResourceKey SystemColorGrayTextBrush { get; private set; }
+    public static ComponentResourceKey SystemColorWindowFrameBrush { get; private set; }
+
     public static ComponentResourceKey AccentTextFillColorPrimaryBrush { get; private set; }
     public static ComponentResourceKey AccentTextFillColorSecondaryBrush { get; private set; }
     public static ComponentResourceKey AccentTextFillColorTertiaryBrush { get; private set; }

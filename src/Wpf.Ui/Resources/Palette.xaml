@@ -15,46 +15,46 @@
         PaletteRedColor is used for TitleBar > Close
     -->
 
-    <Color x:Key="PalettePrimaryColor">#333333</Color>
-    <Color x:Key="PaletteRedColor">#F44336</Color>
-    <Color x:Key="PalettePinkColor">#E91E63</Color>
-    <Color x:Key="PalettePurpleColor">#9C27B0</Color>
-    <Color x:Key="PaletteDeepPurpleColor">#673AB7</Color>
-    <Color x:Key="PaletteIndigoColor">#3F51B5</Color>
-    <Color x:Key="PaletteBlueColor">#2196F3</Color>
-    <Color x:Key="PaletteLightBlueColor">#03A9F4</Color>
-    <Color x:Key="PaletteCyanColor">#00BCD4</Color>
-    <Color x:Key="PaletteTealColor">#009688</Color>
-    <Color x:Key="PaletteGreenColor">#4CAF50</Color>
-    <Color x:Key="PaletteLightGreenColor">#8BC34A</Color>
-    <Color x:Key="PaletteLimeColor">#CDDC39</Color>
-    <Color x:Key="PaletteYellowColor">#FFEB3B</Color>
-    <Color x:Key="PaletteAmberColor">#FFC107</Color>
-    <Color x:Key="PaletteOrangeColor">#FF9800</Color>
-    <Color x:Key="PaletteDeepOrangeColor">#FF5722</Color>
-    <Color x:Key="PaletteBrownColor">#795548</Color>
-    <Color x:Key="PaletteGreyColor">#9E9E9E</Color>
-    <Color x:Key="PaletteBlueGreyColor">#607D8B</Color>
+    <Color x:Key="{x:Static theming:ColorKey.PalettePrimaryColor}">#333333</Color>
+    <Color x:Key="{x:Static theming:ColorKey.PaletteRedColor}">#F44336</Color>
+    <Color x:Key="{x:Static theming:ColorKey.PalettePinkColor}">#E91E63</Color>
+    <Color x:Key="{x:Static theming:ColorKey.PalettePurpleColor}">#9C27B0</Color>
+    <Color x:Key="{x:Static theming:ColorKey.PaletteDeepPurpleColor}">#673AB7</Color>
+    <Color x:Key="{x:Static theming:ColorKey.PaletteIndigoColor}">#3F51B5</Color>
+    <Color x:Key="{x:Static theming:ColorKey.PaletteBlueColor}">#2196F3</Color>
+    <Color x:Key="{x:Static theming:ColorKey.PaletteLightBlueColor}">#03A9F4</Color>
+    <Color x:Key="{x:Static theming:ColorKey.PaletteCyanColor}">#00BCD4</Color>
+    <Color x:Key="{x:Static theming:ColorKey.PaletteTealColor}">#009688</Color>
+    <Color x:Key="{x:Static theming:ColorKey.PaletteGreenColor}">#4CAF50</Color>
+    <Color x:Key="{x:Static theming:ColorKey.PaletteLightGreenColor}">#8BC34A</Color>
+    <Color x:Key="{x:Static theming:ColorKey.PaletteLimeColor}">#CDDC39</Color>
+    <Color x:Key="{x:Static theming:ColorKey.PaletteYellowColor}">#FFEB3B</Color>
+    <Color x:Key="{x:Static theming:ColorKey.PaletteAmberColor}">#FFC107</Color>
+    <Color x:Key="{x:Static theming:ColorKey.PaletteOrangeColor}">#FF9800</Color>
+    <Color x:Key="{x:Static theming:ColorKey.PaletteDeepOrangeColor}">#FF5722</Color>
+    <Color x:Key="{x:Static theming:ColorKey.PaletteBrownColor}">#795548</Color>
+    <Color x:Key="{x:Static theming:ColorKey.PaletteGreyColor}">#9E9E9E</Color>
+    <Color x:Key="{x:Static theming:ColorKey.PaletteBlueGreyColor}">#607D8B</Color>
 
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.PalettePrimaryBrush}" Color="{StaticResource PalettePrimaryColor}" />
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.PaletteRedBrush}" Color="{StaticResource PaletteRedColor}" />
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.PalettePinkBrush}" Color="{StaticResource PalettePinkColor}" />
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.PalettePurpleBrush}" Color="{StaticResource PalettePurpleColor}" />
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.PaletteDeepPurpleBrush}" Color="{StaticResource PaletteDeepPurpleColor}" />
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.PaletteIndigoBrush}" Color="{StaticResource PaletteIndigoColor}" />
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.PaletteBlueBrush}" Color="{StaticResource PaletteBlueColor}" />
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.PaletteLightBlueBrush}" Color="{StaticResource PaletteLightBlueColor}" />
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.PaletteCyanBrush}" Color="{StaticResource PaletteCyanColor}" />
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.PaletteTealBrush}" Color="{StaticResource PaletteTealColor}" />
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.PaletteGreenBrush}" Color="{StaticResource PaletteGreenColor}" />
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.PaletteLightGreenBrush}" Color="{StaticResource PaletteLightGreenColor}" />
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.PaletteLimeBrush}" Color="{StaticResource PaletteLimeColor}" />
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.PaletteYellowBrush}" Color="{StaticResource PaletteYellowColor}" />
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.PaletteAmberBrush}" Color="{StaticResource PaletteAmberColor}" />
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.PaletteOrangeBrush}" Color="{StaticResource PaletteOrangeColor}" />
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.PaletteDeepOrangeBrush}" Color="{StaticResource PaletteDeepOrangeColor}" />
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.PaletteBrownBrush}" Color="{StaticResource PaletteBrownColor}" />
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.PaletteGreyBrush}" Color="{StaticResource PaletteGreyColor}" />
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.PaletteBlueGreyBrush}" Color="{StaticResource PaletteBlueGreyColor}" />
+    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.PalettePrimaryBrush}" Color="{StaticResource {x:Static theming:ColorKey.PalettePrimaryColor}}" />
+    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.PaletteRedBrush}" Color="{StaticResource {x:Static theming:ColorKey.PaletteRedColor}}" />
+    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.PalettePinkBrush}" Color="{StaticResource {x:Static theming:ColorKey.PalettePinkColor}}" />
+    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.PalettePurpleBrush}" Color="{StaticResource {x:Static theming:ColorKey.PalettePurpleColor}}" />
+    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.PaletteDeepPurpleBrush}" Color="{StaticResource {x:Static theming:ColorKey.PaletteDeepPurpleColor}}" />
+    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.PaletteIndigoBrush}" Color="{StaticResource {x:Static theming:ColorKey.PaletteIndigoColor}}" />
+    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.PaletteBlueBrush}" Color="{StaticResource {x:Static theming:ColorKey.PaletteBlueColor}}" />
+    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.PaletteLightBlueBrush}" Color="{StaticResource {x:Static theming:ColorKey.PaletteLightBlueColor}}" />
+    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.PaletteCyanBrush}" Color="{StaticResource {x:Static theming:ColorKey.PaletteCyanColor}}" />
+    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.PaletteTealBrush}" Color="{StaticResource {x:Static theming:ColorKey.PaletteTealColor}}" />
+    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.PaletteGreenBrush}" Color="{StaticResource {x:Static theming:ColorKey.PaletteGreenColor}}" />
+    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.PaletteLightGreenBrush}" Color="{StaticResource {x:Static theming:ColorKey.PaletteLightGreenColor}}" />
+    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.PaletteLimeBrush}" Color="{StaticResource {x:Static theming:ColorKey.PaletteLimeColor}}" />
+    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.PaletteYellowBrush}" Color="{StaticResource {x:Static theming:ColorKey.PaletteYellowColor}}" />
+    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.PaletteAmberBrush}" Color="{StaticResource {x:Static theming:ColorKey.PaletteAmberColor}}" />
+    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.PaletteOrangeBrush}" Color="{StaticResource {x:Static theming:ColorKey.PaletteOrangeColor}}" />
+    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.PaletteDeepOrangeBrush}" Color="{StaticResource {x:Static theming:ColorKey.PaletteDeepOrangeColor}}" />
+    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.PaletteBrownBrush}" Color="{StaticResource {x:Static theming:ColorKey.PaletteBrownColor}}" />
+    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.PaletteGreyBrush}" Color="{StaticResource {x:Static theming:ColorKey.PaletteGreyColor}}" />
+    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.PaletteBlueGreyBrush}" Color="{StaticResource {x:Static theming:ColorKey.PaletteBlueGreyColor}}" />
 
 </ResourceDictionary>

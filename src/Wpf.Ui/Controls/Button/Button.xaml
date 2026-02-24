@@ -235,6 +235,27 @@
                 <Setter Property="PressedBorderBrush" Value="{markup:BrushResource AccentControlElevationBorderBrush}" />
             </MultiDataTrigger>
 
+            <!--  DARK  -->
+            <Trigger Property="Appearance" Value="Dark">
+                <Setter Property="Background" Value="{markup:BrushResource ControlStrongFillColorDarkBrush}" />
+                <Setter Property="MouseOverBackground" Value="#62000000" />
+                <Setter Property="PressedBackground" Value="#52000000" />
+                <Setter Property="PressedBorderBrush" Value="Transparent" />
+                <Setter Property="Foreground" Value="{markup:BrushResource TextFillColorLightPrimaryBrush}" />
+                <Setter Property="PressedForeground" Value="{markup:BrushResource TextFillColorLightSecondaryBrush}" />
+                <Setter Property="BorderBrush" Value="{markup:BrushResource AccentControlElevationBorderBrush}" />
+                <Setter Property="MouseOverBorderBrush" Value="{markup:BrushResource AccentControlElevationBorderBrush}" />
+            </Trigger>
+
+            <!--  LIGHT  -->
+            <Trigger Property="Appearance" Value="Light">
+                <Setter Property="Background" Value="{markup:BrushResource ControlStrongFillColorLightBrush}" />
+                <Setter Property="MouseOverBackground" Value="#D3FFFFFF" />
+                <Setter Property="PressedBackground" Value="#F3FFFFFF" />
+                <Setter Property="Foreground" Value="{markup:BrushResource TextFillColorDarkPrimaryBrush}" />
+                <Setter Property="PressedForeground" Value="{markup:BrushResource TextFillColorDarkSecondaryBrush}" />
+            </Trigger>
+
             <!--  INFO  -->
             <Trigger Property="Appearance" Value="Info">
                 <Setter Property="Background" Value="{markup:BrushResource PaletteBlueBrush}" />
@@ -252,12 +273,12 @@
                 <Setter Property="Background" Value="{markup:BrushResource PaletteRedBrush}" />
                 <Setter Property="MouseOverBackground">
                     <Setter.Value>
-                        <SolidColorBrush Opacity="0.9" Color="{DynamicResource PaletteRedColor}" />
+                        <SolidColorBrush Opacity="0.8" Color="{markup:ColorResource PaletteRedColor}" />
                     </Setter.Value>
                 </Setter>
                 <Setter Property="PressedBackground">
                     <Setter.Value>
-                        <SolidColorBrush Opacity="0.7" Color="{DynamicResource PaletteRedColor}" />
+                        <SolidColorBrush Opacity="0.6" Color="{markup:ColorResource PaletteRedColor}" />
                     </Setter.Value>
                 </Setter>
                 <Setter Property="PressedBorderBrush" Value="Transparent" />
@@ -267,19 +288,15 @@
 
             <!--  SUCCESS  -->
             <Trigger Property="Appearance" Value="Success">
-                <Setter Property="Background">
-                    <Setter.Value>
-                        <SolidColorBrush Color="{DynamicResource PaletteGreenColor}" />
-                    </Setter.Value>
-                </Setter>
+                <Setter Property="Background" Value="{markup:BrushResource PaletteGreenBrush}" />
                 <Setter Property="MouseOverBackground">
                     <Setter.Value>
-                        <SolidColorBrush Opacity="0.9" Color="{DynamicResource PaletteGreenColor}" />
+                        <SolidColorBrush Opacity="0.8" Color="{markup:ColorResource PaletteGreenColor}" />
                     </Setter.Value>
                 </Setter>
                 <Setter Property="PressedBackground">
                     <Setter.Value>
-                        <SolidColorBrush Opacity="0.7" Color="{DynamicResource PaletteGreenColor}" />
+                        <SolidColorBrush Opacity="0.6" Color="{markup:ColorResource PaletteGreenColor}" />
                     </Setter.Value>
                 </Setter>
                 <Setter Property="PressedBorderBrush" Value="Transparent" />
@@ -289,19 +306,15 @@
 
             <!--  CAUTION  -->
             <Trigger Property="Appearance" Value="Caution">
-                <Setter Property="Background">
-                    <Setter.Value>
-                        <SolidColorBrush Color="{DynamicResource PaletteOrangeColor}" />
-                    </Setter.Value>
-                </Setter>
+                <Setter Property="Background" Value="{markup:BrushResource PaletteOrangeBrush}" />
                 <Setter Property="MouseOverBackground">
                     <Setter.Value>
-                        <SolidColorBrush Opacity="0.9" Color="{DynamicResource PaletteOrangeColor}" />
+                        <SolidColorBrush Opacity="0.8" Color="{markup:ColorResource PaletteOrangeColor}" />
                     </Setter.Value>
                 </Setter>
                 <Setter Property="PressedBackground">
                     <Setter.Value>
-                        <SolidColorBrush Opacity="0.7" Color="{DynamicResource PaletteOrangeColor}" />
+                        <SolidColorBrush Opacity="0.6" Color="{markup:ColorResource PaletteOrangeColor}" />
                     </Setter.Value>
                 </Setter>
                 <Setter Property="PressedBorderBrush" Value="Transparent" />
