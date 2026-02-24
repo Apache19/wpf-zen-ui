@@ -268,7 +268,6 @@
             </Trigger>
 
             <!--  DANGER  -->
-            <!--  todo 细化Palette画刷，不要在这里使用颜色，且不要用透明度来淡化颜色，而是直接使用实色  -->
             <Trigger Property="Appearance" Value="Danger">
                 <Setter Property="Background" Value="{markup:BrushResource PaletteRedBrush}" />
                 <Setter Property="MouseOverBackground">
