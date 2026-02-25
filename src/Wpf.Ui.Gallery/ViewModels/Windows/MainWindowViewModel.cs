@@ -190,7 +190,6 @@ public partial class MainWindowViewModel(IStringLocalizer<Translations> localize
     [ObservableProperty]
     private ObservableCollection<Control> _trayMenuItems =
     [
-        /* todo 注释，排查异常
         new Wpf.Ui.Controls.MenuItem()
         {
             Header = "Home",
@@ -209,6 +208,6 @@ public partial class MainWindowViewModel(IStringLocalizer<Translations> localize
             Header = "Close",
             Tag = "tray_close",
             Icon = new SymbolIcon { Symbol = SymbolRegular.Dismiss24 },
-        },*/
+        }
     ];
 }
