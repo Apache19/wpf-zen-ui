@@ -535,7 +535,7 @@
                                 VerticalAlignment="Center"
                                 FontSize="14"
                                 FontWeight="Bold"
-                                Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                                Foreground="{markup:BrushResource TextFillColorPrimaryBrush}"
                                 Text="{Binding}" />
                         </DataTemplate>
                     </ControlTemplate.Resources>

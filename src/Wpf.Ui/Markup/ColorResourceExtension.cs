@@ -15,15 +15,27 @@ public sealed class ColorResourceExtension : MarkupExtension
     [ConstructorArgument("key")]
     public ColorKey Key { get; }
 
+    [ConstructorArgument("isStatic")]
+    public bool IsStatic { get; }
+
     public ColorResourceExtension(ColorKey key)
     {
         Key = key;
     }
 
-    public override object ProvideValue(IServiceProvider serviceProvider)
+    public ColorResourceExtension(ColorKey key, bool isStatic)
+        : this(key)
+    {
+        IsStatic = isStatic;
+    }
+
+    public override object? ProvideValue(IServiceProvider serviceProvider)
     {
         var key = KeyMapping(Key);
-        return new DynamicResourceExtension(key).ProvideValue(serviceProvider);
+
+        return IsStatic
+            ? new StaticResourceExtension(key).ProvideValue(serviceProvider)
+            : new DynamicResourceExtension(key).ProvideValue(serviceProvider);
     }
 
     private static ComponentResourceKey KeyMapping(ColorKey key)

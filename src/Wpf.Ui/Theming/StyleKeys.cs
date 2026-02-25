@@ -29,6 +29,11 @@ public static class StyleKeys
 
     public static ComponentResourceKey NavigationViewItemDataTemplate  { get; private set; }
 
+    public static ComponentResourceKey IconInfoBadgeStyle { get; private set; }
+    public static ComponentResourceKey ValueInfoBadgeStyle { get; private set; }
+    public static ComponentResourceKey DotInfoBadgeStyle { get; private set; }
+
+
     static StyleKeys()
     {
         // 使用反射统一设置每个属性值

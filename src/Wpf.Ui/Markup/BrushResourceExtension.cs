@@ -15,7 +15,7 @@ public class BrushResourceExtension : MarkupExtension
     // 类名用“ThemeResourceExtension”时在 ReSharper 环境无法使用自动补全
 
     [ConstructorArgument("key")]
-    public BrushKey Key { get; }
+    public BrushKey Key { get; set; }
 
     public BrushResourceExtension(BrushKey key)
     {
@@ -25,7 +25,8 @@ public class BrushResourceExtension : MarkupExtension
     public override object ProvideValue(IServiceProvider serviceProvider)
     {
         var key = KeyMapping(Key);
-        return new DynamicResourceExtension(key).ProvideValue(serviceProvider);
+        var dynamicResource = new DynamicResourceExtension(key);
+        return dynamicResource;
     }
 
     private static ComponentResourceKey KeyMapping(BrushKey key)

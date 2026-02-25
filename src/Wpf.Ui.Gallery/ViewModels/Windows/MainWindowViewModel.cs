@@ -56,7 +56,7 @@ public partial class MainWindowViewModel(IStringLocalizer<Translations> localize
         {
             MenuItemsSource = new object[]
             {
-                new NavigationViewItem(nameof(Anchor), typeof(AnchorPage)),
+                /*new NavigationViewItem(nameof(Anchor), typeof(AnchorPage)),
                 new NavigationViewItem(nameof(Wpf.Ui.Controls.Button), typeof(ButtonPage)),
                 new NavigationViewItem(nameof(DropDownButton), typeof(DropDownButtonPage)),
                 new NavigationViewItem(nameof(HyperlinkButton), typeof(HyperlinkButtonPage)),
@@ -68,7 +68,7 @@ public partial class MainWindowViewModel(IStringLocalizer<Translations> localize
                 new NavigationViewItem(nameof(RatingControl), typeof(RatingPage)),
                 new NavigationViewItem(nameof(ThumbRate), typeof(ThumbRatePage)),
                 new NavigationViewItem(nameof(SplitButton), typeof(SplitButtonPage)),
-                new NavigationViewItem(nameof(Slider), typeof(SliderPage)),
+                new NavigationViewItem(nameof(Slider), typeof(SliderPage)),*/
             },
         },
         new NavigationViewItem
@@ -190,6 +190,7 @@ public partial class MainWindowViewModel(IStringLocalizer<Translations> localize
     [ObservableProperty]
     private ObservableCollection<Control> _trayMenuItems =
     [
+        /* todo 注释，排查异常
         new Wpf.Ui.Controls.MenuItem()
         {
             Header = "Home",
@@ -208,6 +209,6 @@ public partial class MainWindowViewModel(IStringLocalizer<Translations> localize
             Header = "Close",
             Tag = "tray_close",
             Icon = new SymbolIcon { Symbol = SymbolRegular.Dismiss24 },
-        },
+        },*/
     ];
 }

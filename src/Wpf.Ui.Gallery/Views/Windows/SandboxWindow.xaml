@@ -58,10 +58,10 @@
                     </ui:MenuItem>
                 </Menu>
                 <Menu Grid.Column="1" HorizontalAlignment="Right">
-                    <ui:MenuItem Foreground="{DynamicResource PaletteDeepOrangeBrush}" Icon="{ui:SymbolIcon Fire24, True}" />
-                    <ui:MenuItem Foreground="{DynamicResource PaletteGreenBrush}" Icon="{ui:SymbolIcon Play24}" />
-                    <ui:MenuItem Foreground="{DynamicResource PaletteRedBrush}" Icon="{ui:SymbolIcon Stop24}" />
-                    <ui:MenuItem Foreground="{DynamicResource PaletteLightBlueBrush}" Icon="{ui:SymbolIcon ArrowClockwise24}" />
+                    <ui:MenuItem Foreground="{ui:BrushResource PaletteDeepOrangeBrush}" Icon="{ui:SymbolIcon Fire24, True}" />
+                    <ui:MenuItem Foreground="{ui:BrushResource PaletteGreenBrush}" Icon="{ui:SymbolIcon Play24}" />
+                    <ui:MenuItem Foreground="{ui:BrushResource PaletteRedBrush}" Icon="{ui:SymbolIcon Stop24}" />
+                    <ui:MenuItem Foreground="{ui:BrushResource PaletteLightBlueBrush}" Icon="{ui:SymbolIcon ArrowClockwise24}" />
                 </Menu>
             </Grid>
         </ui:TitleBar>

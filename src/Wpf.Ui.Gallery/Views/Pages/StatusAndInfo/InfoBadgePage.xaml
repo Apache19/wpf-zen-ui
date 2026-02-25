@@ -8,6 +8,7 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:system="clr-namespace:System;assembly=System.Runtime"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    xmlns:theming="clr-namespace:Wpf.Ui.Theming;assembly=Wpf.Ui"
     Title="InfoBadgePage"
     controls:PageControlDocumentation.DocumentationType="{x:Type ui:InfoBadge}"
     d:DataContext="{d:DesignInstance local:InfoBadgePage,
@@ -67,18 +68,18 @@
                         CornerRadius="30"
                         Icon="{ui:SymbolIcon Alert16}"
                         Severity="{Binding ViewModel.InfoBadgeSeverity}"
-                        Style="{DynamicResource IconInfoBadgeStyle}" />
+                        Style="{DynamicResource {x:Static theming:StyleKeys.IconInfoBadgeStyle}}" />
 
                     <ui:InfoBadge
                         Margin="10"
                         Severity="{Binding ViewModel.InfoBadgeSeverity}"
-                        Style="{DynamicResource ValueInfoBadgeStyle}"
+                        Style="{DynamicResource {x:Static theming:StyleKeys.ValueInfoBadgeStyle}}"
                         Value="1" />
 
                     <ui:InfoBadge
                         Margin="10"
                         Severity="{Binding ViewModel.InfoBadgeSeverity}"
-                        Style="{DynamicResource DotInfoBadgeStyle}"
+                        Style="{DynamicResource {x:Static theming:StyleKeys.DotInfoBadgeStyle}}"
                         Value="2" />
                 </WrapPanel>
                 <StackPanel Grid.Column="1" Margin="12,0,0,0">
@@ -154,7 +155,7 @@
                             HorizontalAlignment="Right"
                             VerticalAlignment="Top"
                             Severity="Critical"
-                            Style="{DynamicResource DotInfoBadgeStyle}"
+                            Style="{DynamicResource {x:Static theming:StyleKeys.DotInfoBadgeStyle}}"
                             Value="{Binding Value, ElementName=ValueNumberBox}" />
                     </Grid>
                 </ui:Button>

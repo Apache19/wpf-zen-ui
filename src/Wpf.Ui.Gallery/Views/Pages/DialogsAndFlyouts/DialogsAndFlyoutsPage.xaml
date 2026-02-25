@@ -29,8 +29,8 @@
                 <Rectangle VerticalAlignment="Bottom" Height="200" RadiusX="8" RadiusY="8" Panel.ZIndex="0">
                     <Rectangle.Fill>
                         <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                            <GradientStop Color="{DynamicResource SnowflakeGradientTop}" Offset="0"/>
-                            <GradientStop Color="{DynamicResource SnowflakeGradientBottom}" Offset="1"/>
+                            <GradientStop Color="{ui:ColorResource SnowflakeGradientTop}" Offset="0"/>
+                            <GradientStop Color="{ui:ColorResource SnowflakeGradientBottom}" Offset="1"/>
                         </LinearGradientBrush>
                     </Rectangle.Fill>
                 </Rectangle>
