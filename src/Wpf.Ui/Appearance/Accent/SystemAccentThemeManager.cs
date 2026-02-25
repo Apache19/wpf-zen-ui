@@ -3,6 +3,8 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
+using Wpf.Ui.Theming;
+
 namespace Wpf.Ui.Appearance.Accent;
 
 internal static class SystemAccentThemeManager
@@ -64,22 +66,23 @@ internal static class SystemAccentThemeManager
 
     private static ResourceDictionary BuildDictionary(SystemAccentPalette p, UIThemeMode mode)
     {
+        // todo 此处定义的顺序应该与主题里定义的资源顺序匹配
         var dic = new ResourceDictionary
         {
-            [AccentResourceKeys.Accent] = p.Accent
+            [ColorKeys.SystemAccentColor] = p.Accent
         };
 
         if (mode == UIThemeMode.Light)
         {
-            dic[AccentResourceKeys.AccentPrimary]   = p.Dark1;
-            dic[AccentResourceKeys.AccentSecondary] = p.Dark2;
-            dic[AccentResourceKeys.AccentTertiary]  = p.Dark3;
+            dic[ColorKeys.SystemAccentColorPrimary]   = p.Dark1;
+            dic[ColorKeys.SystemAccentColorSecondary] = p.Dark2;
+            dic[ColorKeys.SystemAccentColorTertiary]  = p.Dark3;
         }
         else
         {
-            dic[AccentResourceKeys.AccentPrimary]   = p.Light1;
-            dic[AccentResourceKeys.AccentSecondary] = p.Light2;
-            dic[AccentResourceKeys.AccentTertiary]  = p.Light3;
+            dic[ColorKeys.SystemAccentColorPrimary]   = p.Light1;
+            dic[ColorKeys.SystemAccentColorSecondary] = p.Light2;
+            dic[ColorKeys.SystemAccentColorTertiary]  = p.Light3;
         }
 
         return dic;

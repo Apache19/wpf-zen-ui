@@ -13,283 +13,284 @@
 <ResourceDictionary
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:theming="clr-namespace:Wpf.Ui.Theming">
+    xmlns:t="clr-namespace:Wpf.Ui.Theming"
+    xmlns:m="clr-namespace:Wpf.Ui.Markup">
 
     <!--  高对比度模式核心颜色，直接从系统颜色中获取  -->
-    <DynamicResource x:Key="{x:Static theming:ColorKeys.SystemColorWindowTextColor}"    ResourceKey="{x:Static SystemColors.WindowTextColorKey}" />
-    <DynamicResource x:Key="{x:Static theming:ColorKeys.SystemColorWindowColor}"        ResourceKey="{x:Static SystemColors.WindowColorKey}" />
-    <DynamicResource x:Key="{x:Static theming:ColorKeys.SystemColorHighlightTextColor}" ResourceKey="{x:Static SystemColors.HighlightTextColorKey}" />
-    <DynamicResource x:Key="{x:Static theming:ColorKeys.SystemColorHighlightColor}"     ResourceKey="{x:Static SystemColors.HighlightColorKey}" />
-    <DynamicResource x:Key="{x:Static theming:ColorKeys.SystemColorControlTextColor}"   ResourceKey="{x:Static SystemColors.ControlTextColorKey}" />
-    <DynamicResource x:Key="{x:Static theming:ColorKeys.SystemColorControlColor}"       ResourceKey="{x:Static SystemColors.ControlColorKey}" />
-    <DynamicResource x:Key="{x:Static theming:ColorKeys.SystemColorHotTrackColor}"      ResourceKey="{x:Static SystemColors.HotTrackColorKey}" />
-    <DynamicResource x:Key="{x:Static theming:ColorKeys.SystemColorGrayTextColor}"      ResourceKey="{x:Static SystemColors.GrayTextColorKey}" />
-    <DynamicResource x:Key="{x:Static theming:ColorKeys.SystemColorWindowFrameColor}"   ResourceKey="{x:Static SystemColors.WindowFrameColorKey}" />
+    <DynamicResource x:Key="{x:Static t:ColorKeys.SystemColorWindowTextColor}"    ResourceKey="{x:Static SystemColors.WindowTextColorKey}" />
+    <DynamicResource x:Key="{x:Static t:ColorKeys.SystemColorWindowColor}"        ResourceKey="{x:Static SystemColors.WindowColorKey}" />
+    <DynamicResource x:Key="{x:Static t:ColorKeys.SystemColorHighlightTextColor}" ResourceKey="{x:Static SystemColors.HighlightTextColorKey}" />
+    <DynamicResource x:Key="{x:Static t:ColorKeys.SystemColorHighlightColor}"     ResourceKey="{x:Static SystemColors.HighlightColorKey}" />
+    <DynamicResource x:Key="{x:Static t:ColorKeys.SystemColorControlTextColor}"   ResourceKey="{x:Static SystemColors.ControlTextColorKey}" />
+    <DynamicResource x:Key="{x:Static t:ColorKeys.SystemColorControlColor}"       ResourceKey="{x:Static SystemColors.ControlColorKey}" />
+    <DynamicResource x:Key="{x:Static t:ColorKeys.SystemColorHotTrackColor}"      ResourceKey="{x:Static SystemColors.HotTrackColorKey}" />
+    <DynamicResource x:Key="{x:Static t:ColorKeys.SystemColorGrayTextColor}"      ResourceKey="{x:Static SystemColors.GrayTextColorKey}" />
+    <DynamicResource x:Key="{x:Static t:ColorKeys.SystemColorWindowFrameColor}"   ResourceKey="{x:Static SystemColors.WindowFrameColorKey}" />
 
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.SystemColorWindowTextBrush}"    Color="{StaticResource {x:Static theming:ColorKeys.SystemColorWindowTextColor}}"   />
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.SystemColorWindowBrush}"        Color="{StaticResource {x:Static theming:ColorKeys.SystemColorWindowColor}}"       />
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.SystemColorHighlightTextBrush}" Color="{StaticResource {x:Static theming:ColorKeys.SystemColorHighlightTextColor}}"/>
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.SystemColorHighlightBrush}"     Color="{StaticResource {x:Static theming:ColorKeys.SystemColorHighlightColor}}"    />
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.SystemColorControlTextBrush}"   Color="{StaticResource {x:Static theming:ColorKeys.SystemColorControlTextColor}}"  />
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.SystemColorControlBrush}"       Color="{StaticResource {x:Static theming:ColorKeys.SystemColorControlColor}}"      />
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.SystemColorHotTrackBrush}"      Color="{StaticResource {x:Static theming:ColorKeys.SystemColorHotTrackColor}}"     />
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.SystemColorGrayTextBrush}"      Color="{StaticResource {x:Static theming:ColorKeys.SystemColorGrayTextColor}}"     />
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.SystemColorWindowFrameBrush}"   Color="{StaticResource {x:Static theming:ColorKeys.SystemColorWindowFrameColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.SystemColorWindowTextBrush}"    Color="{StaticResource {x:Static t:ColorKeys.SystemColorWindowTextColor}}"   />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.SystemColorWindowBrush}"        Color="{StaticResource {x:Static t:ColorKeys.SystemColorWindowColor}}"       />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.SystemColorHighlightTextBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorHighlightTextColor}}"/>
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.SystemColorHighlightBrush}"     Color="{StaticResource {x:Static t:ColorKeys.SystemColorHighlightColor}}"    />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.SystemColorControlTextBrush}"   Color="{StaticResource {x:Static t:ColorKeys.SystemColorControlTextColor}}"  />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.SystemColorControlBrush}"       Color="{StaticResource {x:Static t:ColorKeys.SystemColorControlColor}}"      />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.SystemColorHotTrackBrush}"      Color="{StaticResource {x:Static t:ColorKeys.SystemColorHotTrackColor}}"     />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.SystemColorGrayTextBrush}"      Color="{StaticResource {x:Static t:ColorKeys.SystemColorGrayTextColor}}"     />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.SystemColorWindowFrameBrush}"   Color="{StaticResource {x:Static t:ColorKeys.SystemColorWindowFrameColor}}" />
 
     <!--  高对比度模式下没有强调色，所以不应使用这些键  -->
-    <Color x:Key="{x:Static theming:ColorKeys.SystemAccentColor}">#FF0000</Color>
-    <Color x:Key="{x:Static theming:ColorKeys.SystemAccentColorPrimary}">#FF0000</Color>
-    <Color x:Key="{x:Static theming:ColorKeys.SystemAccentColorSecondary}">#FF0000</Color>
-    <Color x:Key="{x:Static theming:ColorKeys.SystemAccentColorTertiary}">#FF0000</Color>
+    <Color x:Key="{x:Static t:ColorKeys.SystemAccentColor}">#FF0000</Color>
+    <Color x:Key="{x:Static t:ColorKeys.SystemAccentColorPrimary}">#FF0000</Color>
+    <Color x:Key="{x:Static t:ColorKeys.SystemAccentColorSecondary}">#FF0000</Color>
+    <Color x:Key="{x:Static t:ColorKeys.SystemAccentColorTertiary}">#FF0000</Color>
 
     <!--  高对比度模式下，所有强调色画刷应按语义直接引用核心颜色，待修改  -->
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.SystemAccentColorBrush}"          Color="{StaticResource {x:Static theming:ColorKeys.SystemColorHighlightColor}}" />
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.SystemAccentColorPrimaryBrush}"   Color="{StaticResource {x:Static theming:ColorKeys.SystemColorHighlightColor}}" />
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.SystemAccentColorSecondaryBrush}" Color="{StaticResource {x:Static theming:ColorKeys.SystemColorHighlightColor}}" />
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.SystemAccentColorTertiaryBrush}"  Color="{StaticResource {x:Static theming:ColorKeys.SystemColorHighlightColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.SystemAccentColorBrush}"          Color="{StaticResource {x:Static t:ColorKeys.SystemColorHighlightColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.SystemAccentColorPrimaryBrush}"   Color="{StaticResource {x:Static t:ColorKeys.SystemColorHighlightColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.SystemAccentColorSecondaryBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorHighlightColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.SystemAccentColorTertiaryBrush}"  Color="{StaticResource {x:Static t:ColorKeys.SystemColorHighlightColor}}" />
 
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.AccentTextFillColorPrimaryBrush}"            Color="{StaticResource {x:Static theming:ColorKeys.SystemColorHighlightTextColor}}" />
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.AccentTextFillColorSecondaryBrush}"          Color="{StaticResource {x:Static theming:ColorKeys.SystemColorHighlightTextColor}}" />
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.AccentTextFillColorTertiaryBrush}"           Color="{StaticResource {x:Static theming:ColorKeys.SystemColorHighlightTextColor}}" />
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.AccentFillColorSelectedTextBackgroundBrush}" Color="{StaticResource {x:Static theming:ColorKeys.SystemColorHighlightColor}}" />
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.AccentFillColorDefaultBrush}"                Color="{StaticResource {x:Static theming:ColorKeys.SystemColorHighlightColor}}" />
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.AccentFillColorSecondaryBrush}"              Color="{StaticResource {x:Static theming:ColorKeys.SystemColorHighlightColor}}" />
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.AccentFillColorTertiaryBrush}"               Color="{StaticResource {x:Static theming:ColorKeys.SystemColorHighlightColor}}" />
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.AccentFillColorDisabledBrush}"               Color="{StaticResource {x:Static theming:ColorKeys.SystemColorControlColor}}" />
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.SystemFillColorAttentionBrush}"              Color="{StaticResource {x:Static theming:ColorKeys.SystemColorHighlightColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.AccentTextFillColorPrimaryBrush}"            Color="{StaticResource {x:Static t:ColorKeys.SystemColorHighlightTextColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.AccentTextFillColorSecondaryBrush}"          Color="{StaticResource {x:Static t:ColorKeys.SystemColorHighlightTextColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.AccentTextFillColorTertiaryBrush}"           Color="{StaticResource {x:Static t:ColorKeys.SystemColorHighlightTextColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.AccentFillColorSelectedTextBackgroundBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorHighlightColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.AccentFillColorDefaultBrush}"                Color="{StaticResource {x:Static t:ColorKeys.SystemColorHighlightColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.AccentFillColorSecondaryBrush}"              Color="{StaticResource {x:Static t:ColorKeys.SystemColorHighlightColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.AccentFillColorTertiaryBrush}"               Color="{StaticResource {x:Static t:ColorKeys.SystemColorHighlightColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.AccentFillColorDisabledBrush}"               Color="{StaticResource {x:Static t:ColorKeys.SystemColorControlColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.SystemFillColorAttentionBrush}"              Color="{StaticResource {x:Static t:ColorKeys.SystemColorHighlightColor}}" />
 
     <!--  高对比度模式下窗口颜色使用系统颜色，此处颜色定义不应使用  -->
-    <Color x:Key="{x:Static theming:ColorKeys.WindowBackgroundColor}">#FF0000</Color>
-    <Color x:Key="{x:Static theming:ColorKeys.WindowBorderColor}">#FF0000</Color>
-    <Color x:Key="{x:Static theming:ColorKeys.WindowBorderColorInactive}">#FF0000</Color>
+    <Color x:Key="{x:Static t:ColorKeys.WindowBackgroundColor}">#FF0000</Color>
+    <Color x:Key="{x:Static t:ColorKeys.WindowBorderColor}">#FF0000</Color>
+    <Color x:Key="{x:Static t:ColorKeys.WindowBorderColorInactive}">#FF0000</Color>
 
     <!--  高对比度模式下不使用专门的焦点颜色，不应使用  -->
-    <Color x:Key="{x:Static theming:ColorKeys.KeyboardFocusBorderColor}">#FF0000</Color>
+    <Color x:Key="{x:Static t:ColorKeys.KeyboardFocusBorderColor}">#FF0000</Color>
 
     <!--  Colors  -->
     <!--  Colors copied from Default theme to match list of keys. Should not be using these keys. These are set to Red to notify that.  -->
-    <Color x:Key="{x:Static theming:ColorKeys.TextFillColorPrimary}">#FF0000</Color>
-    <Color x:Key="{x:Static theming:ColorKeys.TextFillColorSecondary}">#FF0000</Color>
-    <Color x:Key="{x:Static theming:ColorKeys.TextFillColorTertiary}">#FF0000</Color>
-    <Color x:Key="{x:Static theming:ColorKeys.TextFillColorDisabled}">#FF0000</Color>
-    <Color x:Key="{x:Static theming:ColorKeys.TextPlaceholderColor}">#FF0000</Color>
-    <Color x:Key="{x:Static theming:ColorKeys.TextFillColorInverse}">#FF0000</Color>
+    <Color x:Key="{x:Static t:ColorKeys.TextFillColorPrimary}">#FF0000</Color>
+    <Color x:Key="{x:Static t:ColorKeys.TextFillColorSecondary}">#FF0000</Color>
+    <Color x:Key="{x:Static t:ColorKeys.TextFillColorTertiary}">#FF0000</Color>
+    <Color x:Key="{x:Static t:ColorKeys.TextFillColorDisabled}">#FF0000</Color>
+    <Color x:Key="{x:Static t:ColorKeys.TextPlaceholderColor}">#FF0000</Color>
+    <Color x:Key="{x:Static t:ColorKeys.TextFillColorInverse}">#FF0000</Color>
 
-    <Color x:Key="{x:Static theming:ColorKeys.AccentTextFillColorDisabled}">#FF0000</Color>
-    <Color x:Key="{x:Static theming:ColorKeys.TextOnAccentFillColorSelectedText}">#FF0000</Color>
-    <Color x:Key="{x:Static theming:ColorKeys.TextOnAccentFillColorPrimary}">#FF0000</Color>
-    <Color x:Key="{x:Static theming:ColorKeys.TextOnAccentFillColorSecondary}">#FF0000</Color>
-    <Color x:Key="{x:Static theming:ColorKeys.TextOnAccentFillColorDisabled}">#FF0000</Color>
+    <Color x:Key="{x:Static t:ColorKeys.AccentTextFillColorDisabled}">#FF0000</Color>
+    <Color x:Key="{x:Static t:ColorKeys.TextOnAccentFillColorSelectedText}">#FF0000</Color>
+    <Color x:Key="{x:Static t:ColorKeys.TextOnAccentFillColorPrimary}">#FF0000</Color>
+    <Color x:Key="{x:Static t:ColorKeys.TextOnAccentFillColorSecondary}">#FF0000</Color>
+    <Color x:Key="{x:Static t:ColorKeys.TextOnAccentFillColorDisabled}">#FF0000</Color>
 
-    <Color x:Key="{x:Static theming:ColorKeys.ControlFillColorDefault}">#FF0000</Color>
-    <Color x:Key="{x:Static theming:ColorKeys.ControlFillColorSecondary}">#FF0000</Color>
-    <Color x:Key="{x:Static theming:ColorKeys.ControlFillColorTertiary}">#FF0000</Color>
-    <Color x:Key="{x:Static theming:ColorKeys.ControlFillColorDisabled}">#FF0000</Color>
-    <Color x:Key="{x:Static theming:ColorKeys.ControlFillColorTransparent}">#FF0000</Color>
-    <Color x:Key="{x:Static theming:ColorKeys.ControlFillColorInputActive}">#FF0000</Color>
+    <Color x:Key="{x:Static t:ColorKeys.ControlFillColorDefault}">#FF0000</Color>
+    <Color x:Key="{x:Static t:ColorKeys.ControlFillColorSecondary}">#FF0000</Color>
+    <Color x:Key="{x:Static t:ColorKeys.ControlFillColorTertiary}">#FF0000</Color>
+    <Color x:Key="{x:Static t:ColorKeys.ControlFillColorDisabled}">#FF0000</Color>
+    <Color x:Key="{x:Static t:ColorKeys.ControlFillColorTransparent}">#FF0000</Color>
+    <Color x:Key="{x:Static t:ColorKeys.ControlFillColorInputActive}">#FF0000</Color>
 
-    <Color x:Key="{x:Static theming:ColorKeys.ControlStrongFillColorDefault}">#FF0000</Color>
-    <Color x:Key="{x:Static theming:ColorKeys.ControlStrongFillColorDisabled}">#FF0000</Color>
+    <Color x:Key="{x:Static t:ColorKeys.ControlStrongFillColorDefault}">#FF0000</Color>
+    <Color x:Key="{x:Static t:ColorKeys.ControlStrongFillColorDisabled}">#FF0000</Color>
 
-    <Color x:Key="{x:Static theming:ColorKeys.ControlSolidFillColorDefault}">#FF0000</Color>
+    <Color x:Key="{x:Static t:ColorKeys.ControlSolidFillColorDefault}">#FF0000</Color>
 
-    <Color x:Key="{x:Static theming:ColorKeys.SubtleFillColorTransparent}">#FF0000</Color>
-    <Color x:Key="{x:Static theming:ColorKeys.SubtleFillColorSecondary}">#FF0000</Color>
-    <Color x:Key="{x:Static theming:ColorKeys.SubtleFillColorTertiary}">#FF0000</Color>
-    <Color x:Key="{x:Static theming:ColorKeys.SubtleFillColorDisabled}">#FF0000</Color>
+    <Color x:Key="{x:Static t:ColorKeys.SubtleFillColorTransparent}">#FF0000</Color>
+    <Color x:Key="{x:Static t:ColorKeys.SubtleFillColorSecondary}">#FF0000</Color>
+    <Color x:Key="{x:Static t:ColorKeys.SubtleFillColorTertiary}">#FF0000</Color>
+    <Color x:Key="{x:Static t:ColorKeys.SubtleFillColorDisabled}">#FF0000</Color>
 
-    <Color x:Key="{x:Static theming:ColorKeys.ControlAltFillColorTransparent}">#FF0000</Color>
-    <Color x:Key="{x:Static theming:ColorKeys.ControlAltFillColorSecondary}">#FF0000</Color>
-    <Color x:Key="{x:Static theming:ColorKeys.ControlAltFillColorTertiary}">#FF0000</Color>
-    <Color x:Key="{x:Static theming:ColorKeys.ControlAltFillColorQuarternary}">#FF0000</Color>
-    <Color x:Key="{x:Static theming:ColorKeys.ControlAltFillColorDisabled}">#FF0000</Color>
+    <Color x:Key="{x:Static t:ColorKeys.ControlAltFillColorTransparent}">#FF0000</Color>
+    <Color x:Key="{x:Static t:ColorKeys.ControlAltFillColorSecondary}">#FF0000</Color>
+    <Color x:Key="{x:Static t:ColorKeys.ControlAltFillColorTertiary}">#FF0000</Color>
+    <Color x:Key="{x:Static t:ColorKeys.ControlAltFillColorQuarternary}">#FF0000</Color>
+    <Color x:Key="{x:Static t:ColorKeys.ControlAltFillColorDisabled}">#FF0000</Color>
 
-    <Color x:Key="{x:Static theming:ColorKeys.ControlOnImageFillColorDefault}">#FF0000</Color>
-    <Color x:Key="{x:Static theming:ColorKeys.ControlOnImageFillColorSecondary}">#FF0000</Color>
-    <Color x:Key="{x:Static theming:ColorKeys.ControlOnImageFillColorTertiary}">#FF0000</Color>
-    <Color x:Key="{x:Static theming:ColorKeys.ControlOnImageFillColorDisabled}">#FF0000</Color>
+    <Color x:Key="{x:Static t:ColorKeys.ControlOnImageFillColorDefault}">#FF0000</Color>
+    <Color x:Key="{x:Static t:ColorKeys.ControlOnImageFillColorSecondary}">#FF0000</Color>
+    <Color x:Key="{x:Static t:ColorKeys.ControlOnImageFillColorTertiary}">#FF0000</Color>
+    <Color x:Key="{x:Static t:ColorKeys.ControlOnImageFillColorDisabled}">#FF0000</Color>
 
-    <Color x:Key="{x:Static theming:ColorKeys.AccentFillColorDisabled}">#FF0000</Color>
+    <Color x:Key="{x:Static t:ColorKeys.AccentFillColorDisabled}">#FF0000</Color>
 
-    <Color x:Key="{x:Static theming:ColorKeys.ControlStrokeColorDefault}">#FF0000</Color>
-    <Color x:Key="{x:Static theming:ColorKeys.ControlStrokeColorSecondary}">#FF0000</Color>
-    <Color x:Key="{x:Static theming:ColorKeys.ControlStrokeColorTertiary}">#FF0000</Color>
-    <Color x:Key="{x:Static theming:ColorKeys.ControlStrokeColorOnAccentDefault}">#FF0000</Color>
-    <Color x:Key="{x:Static theming:ColorKeys.ControlStrokeColorOnAccentSecondary}">#FF0000</Color>
-    <Color x:Key="{x:Static theming:ColorKeys.ControlStrokeColorOnAccentTertiary}">#FF0000</Color>
-    <Color x:Key="{x:Static theming:ColorKeys.ControlStrokeColorOnAccentDisabled}">#FF0000</Color>
+    <Color x:Key="{x:Static t:ColorKeys.ControlStrokeColorDefault}">#FF0000</Color>
+    <Color x:Key="{x:Static t:ColorKeys.ControlStrokeColorSecondary}">#FF0000</Color>
+    <Color x:Key="{x:Static t:ColorKeys.ControlStrokeColorTertiary}">#FF0000</Color>
+    <Color x:Key="{x:Static t:ColorKeys.ControlStrokeColorOnAccentDefault}">#FF0000</Color>
+    <Color x:Key="{x:Static t:ColorKeys.ControlStrokeColorOnAccentSecondary}">#FF0000</Color>
+    <Color x:Key="{x:Static t:ColorKeys.ControlStrokeColorOnAccentTertiary}">#FF0000</Color>
+    <Color x:Key="{x:Static t:ColorKeys.ControlStrokeColorOnAccentDisabled}">#FF0000</Color>
 
-    <Color x:Key="{x:Static theming:ColorKeys.ControlStrokeColorForStrongFillWhenOnImage}">#FF0000</Color>
+    <Color x:Key="{x:Static t:ColorKeys.ControlStrokeColorForStrongFillWhenOnImage}">#FF0000</Color>
 
-    <Color x:Key="{x:Static theming:ColorKeys.CardStrokeColorDefault}">#FF0000</Color>
-    <Color x:Key="{x:Static theming:ColorKeys.CardStrokeColorDefaultSolid}">#FF0000</Color>
+    <Color x:Key="{x:Static t:ColorKeys.CardStrokeColorDefault}">#FF0000</Color>
+    <Color x:Key="{x:Static t:ColorKeys.CardStrokeColorDefaultSolid}">#FF0000</Color>
 
-    <Color x:Key="{x:Static theming:ColorKeys.ControlStrongStrokeColorDefault}">#FF0000</Color>
-    <Color x:Key="{x:Static theming:ColorKeys.ControlStrongStrokeColorDisabled}">#FF0000</Color>
+    <Color x:Key="{x:Static t:ColorKeys.ControlStrongStrokeColorDefault}">#FF0000</Color>
+    <Color x:Key="{x:Static t:ColorKeys.ControlStrongStrokeColorDisabled}">#FF0000</Color>
 
-    <Color x:Key="{x:Static theming:ColorKeys.SurfaceStrokeColorDefault}">#FF0000</Color>
-    <Color x:Key="{x:Static theming:ColorKeys.SurfaceStrokeColorFlyout}">#FF0000</Color>
-    <Color x:Key="{x:Static theming:ColorKeys.SurfaceStrokeColorInverse}">#FF0000</Color>
+    <Color x:Key="{x:Static t:ColorKeys.SurfaceStrokeColorDefault}">#FF0000</Color>
+    <Color x:Key="{x:Static t:ColorKeys.SurfaceStrokeColorFlyout}">#FF0000</Color>
+    <Color x:Key="{x:Static t:ColorKeys.SurfaceStrokeColorInverse}">#FF0000</Color>
 
-    <Color x:Key="{x:Static theming:ColorKeys.DividerStrokeColorDefault}">#FF0000</Color>
+    <Color x:Key="{x:Static t:ColorKeys.DividerStrokeColorDefault}">#FF0000</Color>
 
-    <Color x:Key="{x:Static theming:ColorKeys.FocusStrokeColorOuter}">#FF0000</Color>
-    <Color x:Key="{x:Static theming:ColorKeys.FocusStrokeColorInner}">#FF0000</Color>
+    <Color x:Key="{x:Static t:ColorKeys.FocusStrokeColorOuter}">#FF0000</Color>
+    <Color x:Key="{x:Static t:ColorKeys.FocusStrokeColorInner}">#FF0000</Color>
 
-    <Color x:Key="{x:Static theming:ColorKeys.CardBackgroundFillColorDefault}">#FF0000</Color>
-    <Color x:Key="{x:Static theming:ColorKeys.CardBackgroundFillColorSecondary}">#FF0000</Color>
+    <Color x:Key="{x:Static t:ColorKeys.CardBackgroundFillColorDefault}">#FF0000</Color>
+    <Color x:Key="{x:Static t:ColorKeys.CardBackgroundFillColorSecondary}">#FF0000</Color>
 
-    <Color x:Key="{x:Static theming:ColorKeys.SmokeFillColorDefault}">#FF0000</Color>
+    <Color x:Key="{x:Static t:ColorKeys.SmokeFillColorDefault}">#FF0000</Color>
 
-    <Color x:Key="{x:Static theming:ColorKeys.LayerFillColorDefault}">#FF0000</Color>
-    <Color x:Key="{x:Static theming:ColorKeys.LayerFillColorAlt}">#FF0000</Color>
-    <Color x:Key="{x:Static theming:ColorKeys.LayerOnAcrylicFillColorDefault}">#FF0000</Color>
-    <Color x:Key="{x:Static theming:ColorKeys.LayerOnAccentAcrylicFillColorDefault}">#FF0000</Color>
+    <Color x:Key="{x:Static t:ColorKeys.LayerFillColorDefault}">#FF0000</Color>
+    <Color x:Key="{x:Static t:ColorKeys.LayerFillColorAlt}">#FF0000</Color>
+    <Color x:Key="{x:Static t:ColorKeys.LayerOnAcrylicFillColorDefault}">#FF0000</Color>
+    <Color x:Key="{x:Static t:ColorKeys.LayerOnAccentAcrylicFillColorDefault}">#FF0000</Color>
 
-    <Color x:Key="{x:Static theming:ColorKeys.AcrylicBackgroundFillColorDefault}">#FF0000</Color>
+    <Color x:Key="{x:Static t:ColorKeys.AcrylicBackgroundFillColorDefault}">#FF0000</Color>
 
-    <Color x:Key="{x:Static theming:ColorKeys.LayerOnMicaBaseAltFillColorDefault}">#FF0000</Color>
-    <Color x:Key="{x:Static theming:ColorKeys.LayerOnMicaBaseAltFillColorSecondary}">#FF0000</Color>
-    <Color x:Key="{x:Static theming:ColorKeys.LayerOnMicaBaseAltFillColorTertiary}">#FF0000</Color>
-    <Color x:Key="{x:Static theming:ColorKeys.LayerOnMicaBaseAltFillColorTransparent}">#FF0000</Color>
+    <Color x:Key="{x:Static t:ColorKeys.LayerOnMicaBaseAltFillColorDefault}">#FF0000</Color>
+    <Color x:Key="{x:Static t:ColorKeys.LayerOnMicaBaseAltFillColorSecondary}">#FF0000</Color>
+    <Color x:Key="{x:Static t:ColorKeys.LayerOnMicaBaseAltFillColorTertiary}">#FF0000</Color>
+    <Color x:Key="{x:Static t:ColorKeys.LayerOnMicaBaseAltFillColorTransparent}">#FF0000</Color>
 
-    <Color x:Key="{x:Static theming:ColorKeys.SolidBackgroundFillColorBase}">#FF0000</Color>
-    <Color x:Key="{x:Static theming:ColorKeys.SolidBackgroundFillColorSecondary}">#FF0000</Color>
-    <Color x:Key="{x:Static theming:ColorKeys.SolidBackgroundFillColorTertiary}">#FF0000</Color>
-    <Color x:Key="{x:Static theming:ColorKeys.SolidBackgroundFillColorQuarternary}">#FF0000</Color>
-    <Color x:Key="{x:Static theming:ColorKeys.SolidBackgroundFillColorTransparent}">#FF0000</Color>
-    <Color x:Key="{x:Static theming:ColorKeys.SolidBackgroundFillColorBaseAlt}">#FF0000</Color>
+    <Color x:Key="{x:Static t:ColorKeys.SolidBackgroundFillColorBase}">#FF0000</Color>
+    <Color x:Key="{x:Static t:ColorKeys.SolidBackgroundFillColorSecondary}">#FF0000</Color>
+    <Color x:Key="{x:Static t:ColorKeys.SolidBackgroundFillColorTertiary}">#FF0000</Color>
+    <Color x:Key="{x:Static t:ColorKeys.SolidBackgroundFillColorQuarternary}">#FF0000</Color>
+    <Color x:Key="{x:Static t:ColorKeys.SolidBackgroundFillColorTransparent}">#FF0000</Color>
+    <Color x:Key="{x:Static t:ColorKeys.SolidBackgroundFillColorBaseAlt}">#FF0000</Color>
 
-    <Color x:Key="{x:Static theming:ColorKeys.SystemFillColorAttention}">#FF0000</Color>
-    <Color x:Key="{x:Static theming:ColorKeys.SystemFillColorInformational}">#FF0000</Color>
-    <Color x:Key="{x:Static theming:ColorKeys.SystemFillColorSuccess}">#FF0000</Color>
-    <Color x:Key="{x:Static theming:ColorKeys.SystemFillColorCaution}">#FF0000</Color>
-    <Color x:Key="{x:Static theming:ColorKeys.SystemFillColorCritical}">#FF0000</Color>
-    <Color x:Key="{x:Static theming:ColorKeys.SystemFillColorNeutral}">#FF0000</Color>
-    <Color x:Key="{x:Static theming:ColorKeys.SystemFillColorSolidNeutral}">#FF0000</Color>
-    <Color x:Key="{x:Static theming:ColorKeys.SystemFillColorAttentionBackground}">#FF0000</Color>
-    <Color x:Key="{x:Static theming:ColorKeys.SystemFillColorSuccessBackground}">#FF0000</Color>
-    <Color x:Key="{x:Static theming:ColorKeys.SystemFillColorCautionBackground}">#FF0000</Color>
-    <Color x:Key="{x:Static theming:ColorKeys.SystemFillColorCriticalBackground}">#FF0000</Color>
-    <Color x:Key="{x:Static theming:ColorKeys.SystemFillColorNeutralBackground}">#FF0000</Color>
-    <Color x:Key="{x:Static theming:ColorKeys.SystemFillColorSolidAttentionBackground}">#FF0000</Color>
-    <Color x:Key="{x:Static theming:ColorKeys.SystemFillColorSolidNeutralBackground}">#FF0000</Color>
+    <Color x:Key="{x:Static t:ColorKeys.SystemFillColorAttention}">#FF0000</Color>
+    <Color x:Key="{x:Static t:ColorKeys.SystemFillColorInformational}">#FF0000</Color>
+    <Color x:Key="{x:Static t:ColorKeys.SystemFillColorSuccess}">#FF0000</Color>
+    <Color x:Key="{x:Static t:ColorKeys.SystemFillColorCaution}">#FF0000</Color>
+    <Color x:Key="{x:Static t:ColorKeys.SystemFillColorCritical}">#FF0000</Color>
+    <Color x:Key="{x:Static t:ColorKeys.SystemFillColorNeutral}">#FF0000</Color>
+    <Color x:Key="{x:Static t:ColorKeys.SystemFillColorSolidNeutral}">#FF0000</Color>
+    <Color x:Key="{x:Static t:ColorKeys.SystemFillColorAttentionBackground}">#FF0000</Color>
+    <Color x:Key="{x:Static t:ColorKeys.SystemFillColorSuccessBackground}">#FF0000</Color>
+    <Color x:Key="{x:Static t:ColorKeys.SystemFillColorCautionBackground}">#FF0000</Color>
+    <Color x:Key="{x:Static t:ColorKeys.SystemFillColorCriticalBackground}">#FF0000</Color>
+    <Color x:Key="{x:Static t:ColorKeys.SystemFillColorNeutralBackground}">#FF0000</Color>
+    <Color x:Key="{x:Static t:ColorKeys.SystemFillColorSolidAttentionBackground}">#FF0000</Color>
+    <Color x:Key="{x:Static t:ColorKeys.SystemFillColorSolidNeutralBackground}">#FF0000</Color>
 
     <!--  Same as SystemColorWindowTextColor  -->
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.KeyboardFocusBorderColorBrush}" Color="{StaticResource {x:Static theming:ColorKeys.SystemColorWindowTextColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.KeyboardFocusBorderColorBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorWindowTextColor}}" />
 
     <!--  Brushes  -->
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.TextFillColorPrimaryBrush}" Color="{StaticResource {x:Static theming:ColorKeys.SystemColorWindowTextColor}}" />
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.TextFillColorSecondaryBrush}" Color="{StaticResource {x:Static theming:ColorKeys.SystemColorWindowTextColor}}" />
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.TextFillColorTertiaryBrush}" Color="{StaticResource {x:Static theming:ColorKeys.SystemColorWindowTextColor}}" />
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.TextFillColorDisabledBrush}" Color="{StaticResource {x:Static theming:ColorKeys.SystemColorGrayTextColor}}" />
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.TextPlaceholderColorBrush}" Color="{StaticResource {x:Static theming:ColorKeys.SystemColorGrayTextColor}}" />
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.TextFillColorInverseBrush}" Color="{StaticResource {x:Static theming:ColorKeys.SystemColorWindowTextColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.TextFillColorPrimaryBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorWindowTextColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.TextFillColorSecondaryBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorWindowTextColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.TextFillColorTertiaryBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorWindowTextColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.TextFillColorDisabledBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorGrayTextColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.TextPlaceholderColorBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorGrayTextColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.TextFillColorInverseBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorWindowTextColor}}" />
 
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.AccentTextFillColorDisabledBrush}" Color="{StaticResource {x:Static theming:ColorKeys.SystemColorWindowTextColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.AccentTextFillColorDisabledBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorWindowTextColor}}" />
 
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.TextOnAccentFillColorSelectedTextBrush}" Color="{StaticResource {x:Static theming:ColorKeys.SystemColorWindowTextColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.TextOnAccentFillColorSelectedTextBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorWindowTextColor}}" />
 
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.TextOnAccentFillColorPrimaryBrush}" Color="{StaticResource {x:Static theming:ColorKeys.SystemColorWindowTextColor}}" />
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.TextOnAccentFillColorSecondaryBrush}" Color="{StaticResource {x:Static theming:ColorKeys.SystemColorWindowTextColor}}" />
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.TextOnAccentFillColorDisabledBrush}" Color="{StaticResource {x:Static theming:ColorKeys.SystemColorGrayTextColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.TextOnAccentFillColorPrimaryBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorWindowTextColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.TextOnAccentFillColorSecondaryBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorWindowTextColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.TextOnAccentFillColorDisabledBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorGrayTextColor}}" />
 
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.ControlFillColorDefaultBrush}" Color="{StaticResource {x:Static theming:ColorKeys.SystemColorControlColor}}" />
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.ControlFillColorSecondaryBrush}" Color="{StaticResource {x:Static theming:ColorKeys.SystemColorControlColor}}" />
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.ControlFillColorTertiaryBrush}" Color="{StaticResource {x:Static theming:ColorKeys.SystemColorControlColor}}" />
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.ControlFillColorDisabledBrush}" Color="{StaticResource {x:Static theming:ColorKeys.SystemColorControlColor}}" />
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.ControlFillColorTransparentBrush}" Color="Transparent" />
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.ControlFillColorInputActiveBrush}" Color="{StaticResource {x:Static theming:ColorKeys.SystemColorControlColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.ControlFillColorDefaultBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorControlColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.ControlFillColorSecondaryBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorControlColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.ControlFillColorTertiaryBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorControlColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.ControlFillColorDisabledBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorControlColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.ControlFillColorTransparentBrush}" Color="Transparent" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.ControlFillColorInputActiveBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorControlColor}}" />
 
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.ControlStrongFillColorDefaultBrush}" Color="{StaticResource {x:Static theming:ColorKeys.SystemColorControlColor}}" />
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.ControlStrongFillColorDisabledBrush}" Color="{StaticResource {x:Static theming:ColorKeys.SystemColorControlColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.ControlStrongFillColorDefaultBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorControlColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.ControlStrongFillColorDisabledBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorControlColor}}" />
 
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.ControlSolidFillColorDefaultBrush}" Color="{StaticResource {x:Static theming:ColorKeys.SystemColorControlColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.ControlSolidFillColorDefaultBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorControlColor}}" />
 
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.SubtleFillColorTransparentBrush}" Color="Transparent" />
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.SubtleFillColorSecondaryBrush}" Color="{StaticResource {x:Static theming:ColorKeys.SystemColorControlColor}}" />
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.SubtleFillColorTertiaryBrush}" Color="{StaticResource {x:Static theming:ColorKeys.SystemColorControlColor}}" />
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.SubtleFillColorDisabledBrush}" Color="{StaticResource {x:Static theming:ColorKeys.SystemColorControlColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.SubtleFillColorTransparentBrush}" Color="Transparent" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.SubtleFillColorSecondaryBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorControlColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.SubtleFillColorTertiaryBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorControlColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.SubtleFillColorDisabledBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorControlColor}}" />
 
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.ControlAltFillColorTransparentBrush}" Color="Transparent" />
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.ControlAltFillColorSecondaryBrush}" Color="{StaticResource {x:Static theming:ColorKeys.SystemColorControlColor}}" />
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.ControlAltFillColorTertiaryBrush}" Color="{StaticResource {x:Static theming:ColorKeys.SystemColorControlColor}}" />
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.ControlAltFillColorQuarternaryBrush}" Color="{StaticResource {x:Static theming:ColorKeys.SystemColorControlColor}}" />
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.ControlAltFillColorDisabledBrush}" Color="{StaticResource {x:Static theming:ColorKeys.SystemColorControlColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.ControlAltFillColorTransparentBrush}" Color="Transparent" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.ControlAltFillColorSecondaryBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorControlColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.ControlAltFillColorTertiaryBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorControlColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.ControlAltFillColorQuarternaryBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorControlColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.ControlAltFillColorDisabledBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorControlColor}}" />
 
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.ControlOnImageFillColorDefaultBrush}" Color="{StaticResource {x:Static theming:ColorKeys.SystemColorControlColor}}" />
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.ControlOnImageFillColorSecondaryBrush}" Color="{StaticResource {x:Static theming:ColorKeys.SystemColorControlColor}}" />
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.ControlOnImageFillColorTertiaryBrush}" Color="{StaticResource {x:Static theming:ColorKeys.SystemColorControlColor}}" />
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.ControlOnImageFillColorDisabledBrush}" Color="{StaticResource {x:Static theming:ColorKeys.SystemColorControlColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.ControlOnImageFillColorDefaultBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorControlColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.ControlOnImageFillColorSecondaryBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorControlColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.ControlOnImageFillColorTertiaryBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorControlColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.ControlOnImageFillColorDisabledBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorControlColor}}" />
 
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.ControlStrokeColorDefaultBrush}" Color="{StaticResource {x:Static theming:ColorKeys.SystemColorControlTextColor}}" />
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.ControlStrokeColorSecondaryBrush}" Color="{StaticResource {x:Static theming:ColorKeys.SystemColorControlTextColor}}" />
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.ControlStrokeColorTertiaryBrush}" Color="{StaticResource {x:Static theming:ColorKeys.SystemColorControlTextColor}}" />
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.ControlStrokeColorOnAccentDefaultBrush}" Color="{StaticResource {x:Static theming:ColorKeys.SystemColorControlTextColor}}" />
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.ControlStrokeColorOnAccentSecondaryBrush}" Color="{StaticResource {x:Static theming:ColorKeys.SystemColorControlTextColor}}" />
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.ControlStrokeColorOnAccentTertiaryBrush}" Color="{StaticResource {x:Static theming:ColorKeys.SystemColorControlTextColor}}" />
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.ControlStrokeColorOnAccentDisabledBrush}" Color="{StaticResource {x:Static theming:ColorKeys.SystemColorControlTextColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.ControlStrokeColorDefaultBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorControlTextColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.ControlStrokeColorSecondaryBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorControlTextColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.ControlStrokeColorTertiaryBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorControlTextColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.ControlStrokeColorOnAccentDefaultBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorControlTextColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.ControlStrokeColorOnAccentSecondaryBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorControlTextColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.ControlStrokeColorOnAccentTertiaryBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorControlTextColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.ControlStrokeColorOnAccentDisabledBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorControlTextColor}}" />
 
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.ControlStrokeColorForStrongFillWhenOnImageBrush}" Color="{StaticResource {x:Static theming:ColorKeys.SystemColorControlTextColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.ControlStrokeColorForStrongFillWhenOnImageBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorControlTextColor}}" />
 
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.CardStrokeColorDefaultBrush}" Color="{StaticResource {x:Static theming:ColorKeys.SystemColorWindowTextColor}}" />
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.CardStrokeColorDefaultSolidBrush}" Color="{StaticResource {x:Static theming:ColorKeys.SystemColorWindowTextColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.CardStrokeColorDefaultBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorWindowTextColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.CardStrokeColorDefaultSolidBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorWindowTextColor}}" />
 
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.ControlStrongStrokeColorDefaultBrush}" Color="{StaticResource {x:Static theming:ColorKeys.SystemColorControlTextColor}}" />
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.ControlStrongStrokeColorDisabledBrush}" Color="{StaticResource {x:Static theming:ColorKeys.SystemColorControlTextColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.ControlStrongStrokeColorDefaultBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorControlTextColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.ControlStrongStrokeColorDisabledBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorControlTextColor}}" />
 
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.SurfaceStrokeColorDefaultBrush}" Color="{StaticResource {x:Static theming:ColorKeys.SystemColorWindowTextColor}}" />
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.SurfaceStrokeColorFlyoutBrush}" Color="{StaticResource {x:Static theming:ColorKeys.SystemColorWindowTextColor}}" />
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.SurfaceStrokeColorInverseBrush}" Color="{StaticResource {x:Static theming:ColorKeys.SystemColorWindowTextColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.SurfaceStrokeColorDefaultBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorWindowTextColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.SurfaceStrokeColorFlyoutBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorWindowTextColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.SurfaceStrokeColorInverseBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorWindowTextColor}}" />
 
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.DividerStrokeColorDefaultBrush}" Color="{StaticResource {x:Static theming:ColorKeys.SystemColorWindowTextColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.DividerStrokeColorDefaultBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorWindowTextColor}}" />
 
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.FocusStrokeColorOuterBrush}" Color="{StaticResource {x:Static theming:ColorKeys.SystemColorWindowTextColor}}" />
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.FocusStrokeColorInnerBrush}" Color="{StaticResource {x:Static theming:ColorKeys.SystemColorWindowColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.FocusStrokeColorOuterBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorWindowTextColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.FocusStrokeColorInnerBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorWindowColor}}" />
 
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.CardBackgroundFillColorDefaultBrush}" Color="{StaticResource {x:Static theming:ColorKeys.SystemColorWindowColor}}" />
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.CardBackgroundFillColorSecondaryBrush}" Color="{StaticResource {x:Static theming:ColorKeys.SystemColorWindowColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.CardBackgroundFillColorDefaultBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorWindowColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.CardBackgroundFillColorSecondaryBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorWindowColor}}" />
 
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.SmokeFillColorDefaultBrush}" Color="Transparent" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.SmokeFillColorDefaultBrush}" Color="Transparent" />
 
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.LayerFillColorDefaultBrush}" Color="{StaticResource {x:Static theming:ColorKeys.SystemColorWindowColor}}" />
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.LayerFillColorAltBrush}" Color="{StaticResource {x:Static theming:ColorKeys.SystemColorWindowColor}}" />
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.LayerOnAcrylicFillColorDefaultBrush}" Color="{StaticResource {x:Static theming:ColorKeys.SystemColorWindowColor}}" />
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.LayerOnAccentAcrylicFillColorDefaultBrush}" Color="{StaticResource {x:Static theming:ColorKeys.SystemColorWindowColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.LayerFillColorDefaultBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorWindowColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.LayerFillColorAltBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorWindowColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.LayerOnAcrylicFillColorDefaultBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorWindowColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.LayerOnAccentAcrylicFillColorDefaultBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorWindowColor}}" />
 
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.LayerOnMicaBaseAltFillColorDefaultBrush}" Color="{StaticResource {x:Static theming:ColorKeys.SystemColorWindowColor}}" />
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.LayerOnMicaBaseAltFillColorSecondaryBrush}" Color="{StaticResource {x:Static theming:ColorKeys.SystemColorWindowColor}}" />
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.LayerOnMicaBaseAltFillColorTertiaryBrush}" Color="{StaticResource {x:Static theming:ColorKeys.SystemColorWindowColor}}" />
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.LayerOnMicaBaseAltFillColorTransparentBrush}" Color="{StaticResource {x:Static theming:ColorKeys.SystemColorWindowColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.LayerOnMicaBaseAltFillColorDefaultBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorWindowColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.LayerOnMicaBaseAltFillColorSecondaryBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorWindowColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.LayerOnMicaBaseAltFillColorTertiaryBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorWindowColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.LayerOnMicaBaseAltFillColorTransparentBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorWindowColor}}" />
 
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.SolidBackgroundFillColorBaseBrush}" Color="{StaticResource {x:Static theming:ColorKeys.SystemColorWindowColor}}" />
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.SolidBackgroundFillColorSecondaryBrush}" Color="{StaticResource {x:Static theming:ColorKeys.SystemColorWindowColor}}" />
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.SolidBackgroundFillColorTertiaryBrush}" Color="{StaticResource {x:Static theming:ColorKeys.SystemColorWindowColor}}" />
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.SolidBackgroundFillColorQuarternaryBrush}" Color="{StaticResource {x:Static theming:ColorKeys.SystemColorWindowColor}}" />
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.SolidBackgroundFillColorBaseAltBrush}" Color="{StaticResource {x:Static theming:ColorKeys.SystemColorWindowColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.SolidBackgroundFillColorBaseBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorWindowColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.SolidBackgroundFillColorSecondaryBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorWindowColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.SolidBackgroundFillColorTertiaryBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorWindowColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.SolidBackgroundFillColorQuarternaryBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorWindowColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.SolidBackgroundFillColorBaseAltBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorWindowColor}}" />
 
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.SystemFillColorSuccessBrush}" Color="{StaticResource {x:Static theming:ColorKeys.SystemColorControlTextColor}}" />
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.SystemFillColorCautionBrush}" Color="{StaticResource {x:Static theming:ColorKeys.SystemColorControlTextColor}}" />
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.SystemFillColorCriticalBrush}" Color="{StaticResource {x:Static theming:ColorKeys.SystemColorControlTextColor}}" />
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.SystemFillColorNeutralBrush}" Color="{StaticResource {x:Static theming:ColorKeys.SystemColorControlTextColor}}" />
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.SystemFillColorSolidNeutralBrush}" Color="{StaticResource {x:Static theming:ColorKeys.SystemColorControlTextColor}}" />
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.SystemFillColorAttentionBackgroundBrush}" Color="Transparent" />
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.SystemFillColorSuccessBackgroundBrush}" Color="Transparent" />
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.SystemFillColorCautionBackgroundBrush}" Color="Transparent" />
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.SystemFillColorCriticalBackgroundBrush}" Color="Transparent" />
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.SystemFillColorNeutralBackgroundBrush}" Color="Transparent" />
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.SystemFillColorSolidAttentionBackgroundBrush}" Color="Transparent" />
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.SystemFillColorSolidNeutralBackgroundBrush}" Color="Transparent" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.SystemFillColorSuccessBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorControlTextColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.SystemFillColorCautionBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorControlTextColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.SystemFillColorCriticalBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorControlTextColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.SystemFillColorNeutralBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorControlTextColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.SystemFillColorSolidNeutralBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorControlTextColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.SystemFillColorAttentionBackgroundBrush}" Color="Transparent" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.SystemFillColorSuccessBackgroundBrush}" Color="Transparent" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.SystemFillColorCautionBackgroundBrush}" Color="Transparent" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.SystemFillColorCriticalBackgroundBrush}" Color="Transparent" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.SystemFillColorNeutralBackgroundBrush}" Color="Transparent" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.SystemFillColorSolidAttentionBackgroundBrush}" Color="Transparent" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.SystemFillColorSolidNeutralBackgroundBrush}" Color="Transparent" />
 
     <!--  Elevation border brushes  -->
 
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.ControlElevationBorderBrush}" Color="{StaticResource {x:Static theming:ColorKeys.SystemColorWindowTextColor}}" />
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.CircleElevationBorderBrush}" Color="{StaticResource {x:Static theming:ColorKeys.SystemColorWindowTextColor}}" />
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.AccentControlElevationBorderBrush}" Color="{StaticResource {x:Static theming:ColorKeys.SystemColorWindowTextColor}}" />
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.TextControlElevationBorderBrush}" Color="{StaticResource {x:Static theming:ColorKeys.SystemColorWindowTextColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.ControlElevationBorderBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorWindowTextColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.CircleElevationBorderBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorWindowTextColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.AccentControlElevationBorderBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorWindowTextColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.TextControlElevationBorderBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorWindowTextColor}}" />
 
     <DrawingBrush
-        x:Key="{x:Static theming:BrushKeys.StripedBackgroundBrush}"
+        x:Key="{x:Static t:BrushKeys.StripedBackgroundBrush}"
         Stretch="UniformToFill"
         TileMode="Tile"
         Viewport="0,0,10,10"
@@ -326,17 +327,17 @@
         </DrawingBrush.Drawing>
     </DrawingBrush>
 
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.AcrylicBackgroundFillColorDefaultBrush}" Color="{StaticResource {x:Static theming:ColorKeys.SystemColorWindowColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.AcrylicBackgroundFillColorDefaultBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorWindowColor}}" />
 
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.WindowBackgroundBrush}" Color="{StaticResource {x:Static theming:ColorKeys.SystemColorWindowColor}}" />
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.WindowForegroundBrush}" Color="{StaticResource {x:Static theming:ColorKeys.SystemColorWindowTextColor}}" />
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.WindowBorderBrush}" Color="{StaticResource {x:Static theming:ColorKeys.SystemColorWindowFrameColor}}" />
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.WindowBorderInactiveBrush}" Color="{StaticResource {x:Static theming:ColorKeys.SystemColorWindowFrameColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.WindowBackgroundBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorWindowColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.WindowForegroundBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorWindowTextColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.WindowBorderBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorWindowFrameColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.WindowBorderInactiveBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorWindowFrameColor}}" />
 
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.SystemFillColorInformationalBrush}" Color="{StaticResource {x:Static theming:ColorKeys.SystemColorHighlightColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.SystemFillColorInformationalBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorHighlightColor}}" />
 
     <!--  LeftNavigationViewTemplate  -->
-    <SolidColorBrush x:Key="{x:Static theming:BrushKeys.LeftNavigationViewSeparatorBrush}" Color="{StaticResource {x:Static theming:ColorKeys.SystemColorWindowTextColor}}">
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.LeftNavigationViewSeparatorBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorWindowTextColor}}">
 
     </SolidColorBrush>
 

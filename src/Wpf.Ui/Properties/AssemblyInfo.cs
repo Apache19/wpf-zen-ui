@@ -15,3 +15,6 @@ using System.Windows.Markup;
 [assembly: XmlnsDefinition("http://schemas.lepo.co/wpfui/2022/xaml", "Wpf.Ui.Controls")]
 [assembly: XmlnsDefinition("http://schemas.lepo.co/wpfui/2022/xaml", "Wpf.Ui.Markup")]
 [assembly: XmlnsDefinition("http://schemas.lepo.co/wpfui/2022/xaml", "Wpf.Ui.Converters")]
+
+[assembly: XmlnsPrefix("http://schemas.lepo.co/wpfui/2022/xaml/theming", "th")]
+[assembly: XmlnsDefinition("http://schemas.lepo.co/wpfui/2022/xaml/theming", "Wpf.Ui.Theming")]

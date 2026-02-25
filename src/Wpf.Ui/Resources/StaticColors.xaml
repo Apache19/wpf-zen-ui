@@ -11,40 +11,40 @@
     xmlns:t="clr-namespace:Wpf.Ui.Theming"
     xmlns:m="clr-namespace:Wpf.Ui.Markup">
 
-    <Color x:Key="{x:Static t:ColorKey.TextFillColorLightPrimary}">#FFFFFF</Color>
-    <Color x:Key="{x:Static t:ColorKey.TextFillColorLightSecondary}">#C5FFFFFF</Color>
-    <Color x:Key="{x:Static t:ColorKey.TextFillColorLightTertiary}">#87FFFFFF</Color>
-    <Color x:Key="{x:Static t:ColorKey.TextFillColorLightDisabled}">#5DFFFFFF</Color>
-    <Color x:Key="{x:Static t:ColorKey.TextFillColorLightInverse}">#E4000000</Color>
+    <Color x:Key="{x:Static t:ColorKeys.TextFillColorLightPrimary}">#FFFFFF</Color>
+    <Color x:Key="{x:Static t:ColorKeys.TextFillColorLightSecondary}">#C5FFFFFF</Color>
+    <Color x:Key="{x:Static t:ColorKeys.TextFillColorLightTertiary}">#87FFFFFF</Color>
+    <Color x:Key="{x:Static t:ColorKeys.TextFillColorLightDisabled}">#5DFFFFFF</Color>
+    <Color x:Key="{x:Static t:ColorKeys.TextFillColorLightInverse}">#E4000000</Color>
 
-    <SolidColorBrush x:Key="{x:Static t:BrushKeys.TextFillColorLightPrimaryBrush}" Color="{m:ColorResource TextFillColorLightPrimary, True}" />
-    <SolidColorBrush x:Key="{x:Static t:BrushKeys.TextFillColorLightSecondaryBrush}" Color="{m:ColorResource TextFillColorLightSecondary, True}" />
-    <SolidColorBrush x:Key="{x:Static t:BrushKeys.TextFillColorLightTertiaryBrush}" Color="{m:ColorResource TextFillColorLightTertiary, True}" />
-    <SolidColorBrush x:Key="{x:Static t:BrushKeys.TextFillColorLightDisabledBrush}" Color="{m:ColorResource TextFillColorLightDisabled, True}" />
-    <SolidColorBrush x:Key="{x:Static t:BrushKeys.TextFillColorLightInverseBrush}" Color="{m:ColorResource TextFillColorLightInverse, True}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.TextFillColorLightPrimaryBrush}" Color="{m:ColorStaticResource TextFillColorLightPrimary}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.TextFillColorLightSecondaryBrush}" Color="{m:ColorStaticResource TextFillColorLightSecondary}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.TextFillColorLightTertiaryBrush}" Color="{m:ColorStaticResource TextFillColorLightTertiary}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.TextFillColorLightDisabledBrush}" Color="{m:ColorStaticResource TextFillColorLightDisabled}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.TextFillColorLightInverseBrush}" Color="{m:ColorStaticResource TextFillColorLightInverse}" />
 
-    <Color x:Key="{x:Static t:ColorKey.TextFillColorDarkPrimary}">#E4000000</Color>
-    <Color x:Key="{x:Static t:ColorKey.TextFillColorDarkSecondary}">#BE000000</Color>
-    <Color x:Key="{x:Static t:ColorKey.TextFillColorDarkTertiary}">#A2000000</Color>
-    <Color x:Key="{x:Static t:ColorKey.TextFillColorDarkDisabled}">#5C000000</Color>
-    <Color x:Key="{x:Static t:ColorKey.TextFillColorDarkInverse}">#FFFFFF</Color>
+    <Color x:Key="{x:Static t:ColorKeys.TextFillColorDarkPrimary}">#E4000000</Color>
+    <Color x:Key="{x:Static t:ColorKeys.TextFillColorDarkSecondary}">#BE000000</Color>
+    <Color x:Key="{x:Static t:ColorKeys.TextFillColorDarkTertiary}">#A2000000</Color>
+    <Color x:Key="{x:Static t:ColorKeys.TextFillColorDarkDisabled}">#5C000000</Color>
+    <Color x:Key="{x:Static t:ColorKeys.TextFillColorDarkInverse}">#FFFFFF</Color>
 
-    <SolidColorBrush x:Key="{x:Static t:BrushKeys.TextFillColorDarkPrimaryBrush}" Color="{m:ColorResource TextFillColorDarkPrimary, True}" />
-    <SolidColorBrush x:Key="{x:Static t:BrushKeys.TextFillColorDarkSecondaryBrush}" Color="{m:ColorResource TextFillColorDarkSecondary, True}" />
-    <SolidColorBrush x:Key="{x:Static t:BrushKeys.TextFillColorDarkTertiaryBrush}" Color="{m:ColorResource TextFillColorDarkTertiary, True}" />
-    <SolidColorBrush x:Key="{x:Static t:BrushKeys.TextFillColorDarkDisabledBrush}" Color="{m:ColorResource TextFillColorDarkDisabled, True}" />
-    <SolidColorBrush x:Key="{x:Static t:BrushKeys.TextFillColorDarkInverseBrush}" Color="{m:ColorResource TextFillColorDarkInverse, True}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.TextFillColorDarkPrimaryBrush}" Color="{m:ColorStaticResource TextFillColorDarkPrimary}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.TextFillColorDarkSecondaryBrush}" Color="{m:ColorStaticResource TextFillColorDarkSecondary}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.TextFillColorDarkTertiaryBrush}" Color="{m:ColorStaticResource TextFillColorDarkTertiary}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.TextFillColorDarkDisabledBrush}" Color="{m:ColorStaticResource TextFillColorDarkDisabled}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.TextFillColorDarkInverseBrush}" Color="{m:ColorStaticResource TextFillColorDarkInverse}" />
 
-    <Color x:Key="{x:Static t:ColorKey.ApplicationBackgroundColorLight}">#FFFAFAFA</Color>
-    <SolidColorBrush x:Key="{x:Static t:BrushKeys.ApplicationBackgroundColorLightBrush}" Color="{m:ColorResource ApplicationBackgroundColorLight, True}" />
+    <Color x:Key="{x:Static t:ColorKeys.ApplicationBackgroundColorLight}">#FFFAFAFA</Color>
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.ApplicationBackgroundColorLightBrush}" Color="{m:ColorStaticResource ApplicationBackgroundColorLight}" />
 
-    <Color x:Key="{x:Static t:ColorKey.ApplicationBackgroundColorDark}">#FF202020</Color>
-    <SolidColorBrush x:Key="{x:Static t:BrushKeys.ApplicationBackgroundColorDarkBrush}" Color="{m:ColorResource ApplicationBackgroundColorDark, True}" />
+    <Color x:Key="{x:Static t:ColorKeys.ApplicationBackgroundColorDark}">#FF202020</Color>
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.ApplicationBackgroundColorDarkBrush}" Color="{m:ColorStaticResource ApplicationBackgroundColorDark}" />
 
-    <Color x:Key="{x:Static t:ColorKey.ControlStrongFillColorLight}">#B3FFFFFF</Color>
-    <SolidColorBrush x:Key="{x:Static t:BrushKeys.ControlStrongFillColorLightBrush}" Color="{m:ColorResource ControlStrongFillColorLight, True}" />
+    <Color x:Key="{x:Static t:ColorKeys.ControlStrongFillColorLight}">#B3FFFFFF</Color>
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.ControlStrongFillColorLightBrush}" Color="{m:ColorStaticResource ControlStrongFillColorLight}" />
 
-    <Color x:Key="{x:Static t:ColorKey.ControlStrongFillColorDark}">#72000000</Color>
-    <SolidColorBrush x:Key="{x:Static t:BrushKeys.ControlStrongFillColorDarkBrush}" Color="{m:ColorResource ControlStrongFillColorDark, True}" />
+    <Color x:Key="{x:Static t:ColorKeys.ControlStrongFillColorDark}">#72000000</Color>
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.ControlStrongFillColorDarkBrush}" Color="{m:ColorStaticResource ControlStrongFillColorDark}" />
 
 </ResourceDictionary>

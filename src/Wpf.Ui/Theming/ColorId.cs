@@ -5,7 +5,7 @@
 
 namespace Wpf.Ui.Theming;
 
-public enum ColorKey
+public enum ColorId
 {
     Unknown,
 

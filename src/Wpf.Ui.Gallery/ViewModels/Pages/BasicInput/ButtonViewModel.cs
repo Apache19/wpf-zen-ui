@@ -3,7 +3,8 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-using System.Windows.Controls;
+using Wpf.Ui.Controls;
+using CheckBox = System.Windows.Controls.CheckBox;
 
 namespace Wpf.Ui.Gallery.ViewModels.Pages.BasicInput;
 
@@ -14,6 +15,9 @@ public partial class ButtonViewModel : ViewModel
 
     [ObservableProperty]
     private bool _isUiButtonEnabled = true;
+
+    [ObservableProperty]
+    private ControlAppearance _buttonAppearance = ControlAppearance.Secondary;
 
     [RelayCommand]
     private void OnSimpleButtonCheckboxChecked(object sender)
