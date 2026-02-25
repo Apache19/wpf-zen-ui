@@ -24,14 +24,14 @@
             Margin="0"
             HeaderText="Standard MessageBox."
             XamlCode="&lt;MessageBox /&gt;">
-            <Button
+            <ui:Button
                 Command="{Binding ViewModel.OpenStandardMessageBoxCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:MessageBoxPage}, Mode=OneWay}"
                 CommandParameter="{Binding RelativeSource={RelativeSource Self}, Mode=OneWay}"
                 Content="Open standard MessageBox" />
         </controls:ControlExample>
 
         <controls:ControlExample Margin="0,36,0,0" HeaderText="WPF UI MessageBox.">
-            <Button
+            <ui:Button
                 Command="{Binding ViewModel.OpenCustomMessageBoxCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:MessageBoxPage}, Mode=OneWay}"
                 CommandParameter="{Binding RelativeSource={RelativeSource Self}, Mode=OneWay}"
                 Content="Open custom MessageBox" />

@@ -37,7 +37,7 @@
                 </Grid.RowDefinitions>
                 <Label Grid.Row="0" Content="I am a Label of the TextBox below." />
                 <!--  Target="{Binding ElementName=TextBoxForLabel}"  -->
-                <TextBox Grid.Row="1" />
+                <ui:TextBox Grid.Row="1" />
             </Grid>
         </controls:ControlExample>
     </StackPanel>

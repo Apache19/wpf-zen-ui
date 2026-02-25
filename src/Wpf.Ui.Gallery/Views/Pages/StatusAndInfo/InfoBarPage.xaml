@@ -45,7 +45,7 @@
                         MinWidth="0"
                         Content="Is open"
                         IsChecked="{Binding ViewModel.IsShortInfoBarOpened, Mode=TwoWay}" />
-                    <ComboBox
+                    <ui:ComboBox
                         Grid.Row="1"
                         MinWidth="140"
                         Margin="0,8,0,0"
@@ -54,7 +54,7 @@
                         <ComboBoxItem Content="Success" />
                         <ComboBoxItem Content="Warning" />
                         <ComboBoxItem Content="Error" />
-                    </ComboBox>
+                    </ui:ComboBox>
                 </Grid>
             </Grid>
         </controls:ControlExample>
@@ -84,7 +84,7 @@
                         MinWidth="0"
                         Content="Is open"
                         IsChecked="{Binding ViewModel.IsLongInfoBarOpened, Mode=TwoWay}" />
-                    <ComboBox
+                    <ui:ComboBox
                         Grid.Row="1"
                         MinWidth="140"
                         Margin="0,8,0,0"
@@ -93,7 +93,7 @@
                         <ComboBoxItem Content="Success" />
                         <ComboBoxItem Content="Warning" />
                         <ComboBoxItem Content="Error" />
-                    </ComboBox>
+                    </ui:ComboBox>
                 </Grid>
             </Grid>
         </controls:ControlExample>

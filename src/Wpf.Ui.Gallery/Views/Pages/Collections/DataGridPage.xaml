@@ -26,7 +26,7 @@
     <StackPanel Margin="0,0,0,24">
         <controls:ControlExample
             Margin="0"
-            HeaderText="Default DataGrid with ItemsSource."
+            HeaderText="Standard DataGrid with ItemsSource."
             XamlCode="&lt;DataGrid ItemsSource=&quot;{Binding ViewModel.ProductsCollection, Mode=TwoWay}&quot; /&gt;">
             <DataGrid Height="400" ItemsSource="{Binding ViewModel.ProductsCollection, Mode=TwoWay}" />
         </controls:ControlExample>

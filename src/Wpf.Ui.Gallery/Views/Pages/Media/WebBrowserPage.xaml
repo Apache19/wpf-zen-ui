@@ -26,7 +26,7 @@
             <WebBrowser MinHeight="300" Source="https://wpfui.lepo.co" />
         </controls:ControlExample>
 
-        <TextBlock
+        <ui:TextBlock
             Grid.Row="1"
             Margin="0,8,0,0"
             Foreground="{ui:BrushResource TextFillColorSecondaryBrush}"

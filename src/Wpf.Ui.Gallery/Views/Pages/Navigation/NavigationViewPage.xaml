@@ -56,7 +56,7 @@
                         Margin="8"
                         Background="{ui:BrushResource StripedBackgroundBrush}"
                         CornerRadius="4">
-                        <TextBlock
+                        <ui:TextBlock
                             Margin="24"
                             VerticalAlignment="Center"
                             FontWeight="Medium"
@@ -69,7 +69,7 @@
                         Margin="0,0,0,8"
                         Background="{ui:BrushResource StripedBackgroundBrush}"
                         CornerRadius="4">
-                        <TextBlock
+                        <ui:TextBlock
                             Margin="24"
                             VerticalAlignment="Center"
                             FontWeight="Medium"
@@ -82,7 +82,7 @@
                         Margin="0,8,0,0"
                         Background="{ui:BrushResource StripedBackgroundBrush}"
                         CornerRadius="4">
-                        <TextBlock
+                        <ui:TextBlock
                             Margin="24"
                             VerticalAlignment="Center"
                             FontWeight="Medium"
@@ -131,7 +131,7 @@
                         Margin="8"
                         Background="{ui:BrushResource StripedBackgroundBrush}"
                         CornerRadius="4">
-                        <TextBlock
+                        <ui:TextBlock
                             Margin="24"
                             VerticalAlignment="Center"
                             FontWeight="Medium"
@@ -146,7 +146,7 @@
                         Margin="0,0,0,8"
                         Background="{ui:BrushResource StripedBackgroundBrush}"
                         CornerRadius="4">
-                        <TextBlock
+                        <ui:TextBlock
                             Margin="0"
                             VerticalAlignment="Center"
                             FontWeight="Medium"
@@ -163,7 +163,7 @@
                         Margin="0,8,0,0"
                         Background="{ui:BrushResource StripedBackgroundBrush}"
                         CornerRadius="4">
-                        <TextBlock
+                        <ui:TextBlock
                             Margin="0"
                             VerticalAlignment="Center"
                             FontWeight="Medium"
@@ -231,7 +231,7 @@
                         VerticalAlignment="Stretch"
                         Background="{ui:BrushResource StripedBackgroundBrush}"
                         CornerRadius="4">
-                        <TextBlock
+                        <ui:TextBlock
                             Margin="24,0"
                             VerticalAlignment="Center"
                             FontWeight="Medium"
@@ -245,7 +245,7 @@
                         VerticalAlignment="Stretch"
                         Background="{ui:BrushResource StripedBackgroundBrush}"
                         CornerRadius="4">
-                        <TextBlock
+                        <ui:TextBlock
                             Margin="24,0"
                             VerticalAlignment="Center"
                             FontWeight="Medium"
@@ -258,7 +258,7 @@
                         Margin="8"
                         Background="{ui:BrushResource StripedBackgroundBrush}"
                         CornerRadius="4">
-                        <TextBlock
+                        <ui:TextBlock
                             Margin="24"
                             VerticalAlignment="Center"
                             FontWeight="Medium"
@@ -319,7 +319,7 @@
                         VerticalAlignment="Stretch"
                         Background="{ui:BrushResource StripedBackgroundBrush}"
                         CornerRadius="4">
-                        <TextBlock
+                        <ui:TextBlock
                             Margin="24,0"
                             VerticalAlignment="Center"
                             FontWeight="Medium"
@@ -333,7 +333,7 @@
                         VerticalAlignment="Stretch"
                         Background="{ui:BrushResource StripedBackgroundBrush}"
                         CornerRadius="4">
-                        <TextBlock
+                        <ui:TextBlock
                             Margin="24,0"
                             VerticalAlignment="Center"
                             FontWeight="Medium"
@@ -346,7 +346,7 @@
                         Margin="8"
                         Background="{ui:BrushResource StripedBackgroundBrush}"
                         CornerRadius="4">
-                        <TextBlock
+                        <ui:TextBlock
                             Margin="24"
                             VerticalAlignment="Center"
                             FontWeight="Medium"

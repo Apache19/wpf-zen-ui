@@ -56,17 +56,17 @@
                     <ui:MenuItem Header="Open..." InputGestureText="CTRL+O" />
                     <ui:MenuItem Header="Save" InputGestureText="CTRL+S" />
                     <ui:MenuItem Header="Save As..." InputGestureText="CTRL+SHIFT+S" />
-                    <Separator />
+                    <ui:Separator />
                     <ui:MenuItem Header="Exit" />
                 </ui:MenuItem>
                 <ui:MenuItem Header="Edit" Icon="{ui:SymbolIcon DocumentEdit20}">
                     <ui:MenuItem Header="Undo" InputGestureText="CTRL+Z" />
-                    <Separator />
+                    <ui:Separator />
                     <ui:MenuItem Header="Cut" InputGestureText="CTRL+X" />
                     <ui:MenuItem Header="Copy" InputGestureText="CTRL+C" />
                     <ui:MenuItem Header="Paste" InputGestureText="CTRL+V" />
                     <ui:MenuItem IsEnabled="False" />
-                    <Separator />
+                    <ui:Separator />
                     <ui:MenuItem
                         Header="Word wrap"
                         InputGestureText="CTRL+SHIFT+W"
@@ -74,10 +74,10 @@
                         IsChecked="True" />
                     <ui:MenuItem Header="Find..." InputGestureText="CTRL+F" />
                     <ui:MenuItem Header="Find next" InputGestureText="F3" />
-                    <Separator />
+                    <ui:Separator />
                     <ui:MenuItem Header="Select All" InputGestureText="CTRL+A" />
                 </ui:MenuItem>
-                <Separator />
+                <ui:Separator />
                 <ui:MenuItem Icon="{ui:SymbolIcon TextBold20}" />
                 <ui:MenuItem Icon="{ui:SymbolIcon TextItalic20}" />
                 <ui:MenuItem Icon="{ui:SymbolIcon TextUnderline20}" />

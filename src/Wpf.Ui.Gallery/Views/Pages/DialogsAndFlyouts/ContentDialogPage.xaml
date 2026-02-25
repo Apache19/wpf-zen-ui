@@ -31,12 +31,12 @@
     <StackPanel Margin="0,0,0,24">
         <controls:ControlExample HeaderText="ContentDialog">
             <StackPanel Orientation="Horizontal">
-                <Button
+                <ui:Button
                     Command="{Binding ShowDialogCommand}"
                     CommandParameter="{StaticResource DialogContent}"
                     Content="Show" />
 
-                <TextBlock
+                <ui:TextBlock
                     Margin="15,0,0,0"
                     VerticalAlignment="Center"
                     FontSize="14"
@@ -45,7 +45,7 @@
         </controls:ControlExample>
 
         <controls:ControlExample Margin="0,36,0,0" HeaderText="Terms of Use ContentDialog example">
-            <Button Command="{Binding ShowSignInContentDialogCommand}" Content="Show" />
+            <ui:Button Command="{Binding ShowSignInContentDialogCommand}" Content="Show" />
         </controls:ControlExample>
     </StackPanel>
 </Page>

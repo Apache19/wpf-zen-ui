@@ -40,7 +40,7 @@
                     </Grid.ColumnDefinitions>
                     <StackPanel Grid.Column="0" Panel.ZIndex="1">
                         <ui:SymbolIcon x:Name="MainSymbolIcon" FontSize="100"/>
-                        <TextBlock 
+                        <ui:TextBlock 
                             x:Name="MainTitle"
                             HorizontalAlignment="Center"
                             VerticalAlignment="Center"                        
@@ -48,7 +48,7 @@
                             FontWeight="Black"/>
                     </StackPanel>
 
-                    <TextBlock  
+                    <ui:TextBlock  
                         Grid.Column="1"
                         HorizontalAlignment="Center"
                         Margin="30"
@@ -60,7 +60,7 @@
                         <LineBreak />
                         <LineBreak />
                         Support the development of WPF UI and other innovative projects by becoming a sponsor on GitHub! Your monthly or one-time contributions help us continue to deliver high-quality, open-source solutions that empower developers worldwide.
-                    </TextBlock>
+                    </ui:TextBlock>
                 </Grid>
 
                 <Canvas x:Name="MainCanvas" Panel.ZIndex="2"/>

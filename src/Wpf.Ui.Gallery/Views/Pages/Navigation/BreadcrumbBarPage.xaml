@@ -75,7 +75,7 @@
                         </DataTemplate>
                     </ui:BreadcrumbBar.ItemTemplate>
                 </ui:BreadcrumbBar>
-                <Button
+                <ui:Button
                     Grid.Column="1"
                     Command="{Binding ViewModel.ResetFoldersCommand, Mode=OneWay}"
                     Content="Reset" />

@@ -29,7 +29,7 @@
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
-                <Button
+                <ui:Button
                     Grid.Column="0"
                     VerticalAlignment="Center"
                     Command="{Binding ViewModel.OpenSnackbarCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:SnackbarPage}, Mode=OneWay}"
@@ -41,7 +41,7 @@
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
-                    <ComboBox
+                    <ui:ComboBox
                         Grid.Row="0"
                         MinWidth="140"
                         Margin="0,8,0,0"
@@ -56,7 +56,7 @@
                         <ComboBoxItem Content="Light" />
                         <ComboBoxItem Content="Dark" />
                         <ComboBoxItem Content="Transparent" />
-                    </ComboBox>
+                    </ui:ComboBox>
                     <Label
                         Grid.Row="1"
                         Margin="0,6,0,0"
