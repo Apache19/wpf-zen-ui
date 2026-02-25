@@ -81,7 +81,7 @@
     <Color x:Key="{x:Static t:ColorKeys.TextOnAccentFillColorDisabled}">#A3FFFFFF</Color>
 
     <Color x:Key="{x:Static t:ColorKeys.ControlFillColorDefault}">#B3FFFFFF</Color>
-    <Color x:Key="{x:Static t:ColorKeys.ControlFillColorSecondary}">#80F9F9F9</Color>
+    <Color x:Key="{x:Static t:ColorKeys.ControlFillColorSecondary}">#80F0F0F0</Color>
     <Color x:Key="{x:Static t:ColorKeys.ControlFillColorTertiary}">#4DF9F9F9</Color>
     <Color x:Key="{x:Static t:ColorKeys.ControlFillColorDisabled}">#4DF9F9F9</Color>
     <Color x:Key="{x:Static t:ColorKeys.ControlFillColorTransparent}">#00FFFFFF</Color>
@@ -135,7 +135,7 @@
     <Color x:Key="{x:Static t:ColorKeys.FocusStrokeColorOuter}">#E4000000</Color>
     <Color x:Key="{x:Static t:ColorKeys.FocusStrokeColorInner}">#B3FFFFFF</Color>
 
-    <Color x:Key="{x:Static t:ColorKeys.CardBackgroundFillColorDefault}">#B3FFFFFF</Color>
+    <Color x:Key="{x:Static t:ColorKeys.CardBackgroundFillColorDefault}">#08000000</Color><!--  原始：#B3FFFFFF  -->
     <Color x:Key="{x:Static t:ColorKeys.CardBackgroundFillColorSecondary}">#80F6F6F6</Color>
 
     <Color x:Key="{x:Static t:ColorKeys.SmokeFillColorDefault}">#4D000000</Color>
