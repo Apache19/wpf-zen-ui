@@ -59,7 +59,7 @@
         </Setter>
     </Style>
 
-    <Style x:Key="DefaultUiSplitButtonStyle" BasedOn="{StaticResource {x:Static theming:StyleKeys.DefaultUiButtonStyle}}" TargetType="{x:Type controls:SplitButton}">
+    <Style x:Key="DefaultUiSplitButtonStyle" BasedOn="{StaticResource {x:Static theming:StyleKeys.UiButtonStyle}}" TargetType="{x:Type controls:SplitButton}">
         <Setter Property="Popup.PopupAnimation" Value="None" />
         <!--  WPF doesn't like centering, the animation is ugly and the mouse button sometimes clicks right away.  -->
         <Setter Property="Popup.Placement" Value="Bottom" />

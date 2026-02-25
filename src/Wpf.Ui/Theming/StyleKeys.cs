@@ -11,6 +11,9 @@ namespace Wpf.Ui.Theming;
 
 public static class StyleKeys
 {
+    public static ComponentResourceKey ButtonStyle                     { get; private set; }
+    public static ComponentResourceKey UiButtonStyle                   { get; private set; }
+
     public static ComponentResourceKey DefaultCheckBoxStyle            { get; private set; }
     public static ComponentResourceKey DefaultUiCheckBoxStyle          { get; private set; }
 
@@ -20,7 +23,6 @@ public static class StyleKeys
     public static ComponentResourceKey DefaultTextBoxStyle             { get; private set; }
     public static ComponentResourceKey DefaultUiTextBoxStyle           { get; private set; }
 
-    public static ComponentResourceKey DefaultUiButtonStyle            { get; private set; }
     public static ComponentResourceKey DefaultTextBoxScrollViewerStyle { get; private set; }
     public static ComponentResourceKey DefaultControlContextMenu       { get; private set; }
     public static ComponentResourceKey DefaultControlFocusVisualStyle  { get; private set; }
@@ -29,10 +31,9 @@ public static class StyleKeys
 
     public static ComponentResourceKey NavigationViewItemDataTemplate  { get; private set; }
 
-    public static ComponentResourceKey IconInfoBadgeStyle { get; private set; }
-    public static ComponentResourceKey ValueInfoBadgeStyle { get; private set; }
-    public static ComponentResourceKey DotInfoBadgeStyle { get; private set; }
-
+    public static ComponentResourceKey IconInfoBadgeStyle              { get; private set; }
+    public static ComponentResourceKey ValueInfoBadgeStyle             { get; private set; }
+    public static ComponentResourceKey DotInfoBadgeStyle               { get; private set; }
 
     static StyleKeys()
     {

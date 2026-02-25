@@ -23,7 +23,7 @@
         x:Shared="False"
         Symbol="CalendarRtl24" />
 
-    <Style x:Key="DefaultUiCalendarDatePickerStyle" BasedOn="{StaticResource {x:Static theming:StyleKeys.DefaultUiButtonStyle}}" TargetType="{x:Type controls:CalendarDatePicker}">
+    <Style x:Key="DefaultUiCalendarDatePickerStyle" BasedOn="{StaticResource {x:Static theming:StyleKeys.UiButtonStyle}}" TargetType="{x:Type controls:CalendarDatePicker}">
         <Setter Property="Icon" Value="{StaticResource CalendarPickerIcon}" />
     </Style>
 
