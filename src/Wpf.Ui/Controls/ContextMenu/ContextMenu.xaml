@@ -77,6 +77,6 @@
         </Setter>
     </Style>
 
-    <Style BasedOn="{StaticResource UiContextMenu}" TargetType="{x:Type ContextMenu}" />
+    <Style BasedOn="{StaticResource UiContextMenu}" TargetType="{x:Type controls:ContextMenu}" />
 
 </ResourceDictionary>

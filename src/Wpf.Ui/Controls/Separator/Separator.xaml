@@ -11,14 +11,6 @@
     xmlns:controls="clr-namespace:Wpf.Ui.Controls"
     xmlns:markup="clr-namespace:Wpf.Ui.Markup">
 
-    <!--
-        Extends the built-in WPF Separator style while preserving its default
-        behavior, and applies a theme-defined background brush.
-    -->
-    <Style x:Key="SeparatorStyle" BasedOn="{StaticResource {x:Type Separator}}" TargetType="{x:Type Separator}">
-        <Setter Property="Background" Value="{markup:BrushResource DividerStrokeColorDefaultBrush}" />
-    </Style>
-
     <!--  Wpf.Ui.Controls.Separator  -->
     <Style x:Key="DefaultUiSeparatorStyle" TargetType="{x:Type controls:Separator}">
         <Setter Property="Background" Value="{markup:BrushResource DividerStrokeColorDefaultBrush}" />

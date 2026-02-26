@@ -32,15 +32,12 @@ public class Separator : System.Windows.Controls.Separator
                     var separator = (Separator)d;
                     if ((Thickness)baseValue == default)
                     {
-                        if (separator.Orientation == Orientation.Horizontal)
+                        return separator.Orientation switch
                         {
-                            return separator.DefaultMarginHorizontal;
-                        }
-
-                        if (separator.Orientation == Orientation.Vertical)
-                        {
-                            return separator.DefaultMarginVertical;
-                        }
+                            Orientation.Horizontal => separator.DefaultMarginHorizontal,
+                            Orientation.Vertical   => separator.DefaultMarginVertical,
+                            _                      => baseValue
+                        };
                     }
 
                     // Preserve the original value if a custom margin is provided
@@ -55,7 +52,7 @@ public class Separator : System.Windows.Controls.Separator
     /// Identifies the <see cref="Orientation"/> dependency property.
     /// </summary>
     public static readonly DependencyProperty OrientationProperty =
-        DependencyProperty.Register(
+        DependencyProperty.RegisterAttached(
             nameof(Orientation),
             typeof(Orientation),
             typeof(Separator),
@@ -70,6 +67,23 @@ public class Separator : System.Windows.Controls.Separator
                 }
             )
         );
+
+    /// <summary>Helper for getting <see cref="OrientationProperty"/> from <paramref name="obj"/>.</summary>
+    /// <param name="obj"><see cref="DependencyObject"/> to read <see cref="OrientationProperty"/> from.</param>
+    /// <returns>Orientation property value.</returns>
+    [AttachedPropertyBrowsableForType(typeof(DependencyObject))]
+    public static Orientation GetOrientation(DependencyObject obj)
+    {
+        return (Orientation)obj.GetValue(OrientationProperty);
+    }
+
+    /// <summary>Helper for setting <see cref="OrientationProperty"/> on <paramref name="obj"/>.</summary>
+    /// <param name="obj"><see cref="DependencyObject"/> to set <see cref="OrientationProperty"/> on.</param>
+    /// <param name="value">Orientation property value.</param>
+    public static void SetOrientation(DependencyObject obj, Orientation value)
+    {
+        obj.SetValue(OrientationProperty, value);
+    }
 
     /// <summary>
     /// Gets or sets the orientation of the <see cref="Separator"/>.
@@ -88,7 +102,7 @@ public class Separator : System.Windows.Controls.Separator
     /// Identifies the <see cref="DefaultMarginHorizontal"/> dependency property.
     /// </summary>
     public static readonly DependencyProperty DefaultMarginHorizontalProperty =
-        DependencyProperty.Register(
+        DependencyProperty.RegisterAttached(
             nameof(DefaultMarginHorizontal),
             typeof(Thickness),
             typeof(Separator),
@@ -103,6 +117,23 @@ public class Separator : System.Windows.Controls.Separator
                 }
             )
         );
+
+    /// <summary>Helper for getting <see cref="DefaultMarginHorizontalProperty"/> from <paramref name="obj"/>.</summary>
+    /// <param name="obj"><see cref="DependencyObject"/> to read <see cref="DefaultMarginHorizontalProperty"/> from.</param>
+    /// <returns>DefaultMarginHorizontal property value.</returns>
+    [AttachedPropertyBrowsableForType(typeof(DependencyObject))]
+    public static Thickness GetDefaultMarginHorizontal(DependencyObject obj)
+    {
+        return (Thickness)obj.GetValue(DefaultMarginHorizontalProperty);
+    }
+
+    /// <summary>Helper for setting <see cref="DefaultMarginHorizontalProperty"/> on <paramref name="obj"/>.</summary>
+    /// <param name="obj"><see cref="DependencyObject"/> to set <see cref="DefaultMarginHorizontalProperty"/> on.</param>
+    /// <param name="value">DefaultMarginHorizontal property value.</param>
+    public static void SetDefaultMarginHorizontal(DependencyObject obj, Thickness value)
+    {
+        obj.SetValue(DefaultMarginHorizontalProperty, value);
+    }
 
     /// <summary>
     /// Gets or sets the default <see cref="Thickness"/> used as the margin
@@ -122,7 +153,7 @@ public class Separator : System.Windows.Controls.Separator
     /// Identifies the <see cref="DefaultMarginVertical"/> dependency property.
     /// </summary>
     public static readonly DependencyProperty DefaultMarginVerticalProperty =
-        DependencyProperty.Register(
+        DependencyProperty.RegisterAttached(
             nameof(DefaultMarginVertical),
             typeof(Thickness),
             typeof(Separator),
@@ -137,6 +168,23 @@ public class Separator : System.Windows.Controls.Separator
                 }
             )
         );
+
+    /// <summary>Helper for getting <see cref="DefaultMarginVerticalProperty"/> from <paramref name="obj"/>.</summary>
+    /// <param name="obj"><see cref="DependencyObject"/> to read <see cref="DefaultMarginVerticalProperty"/> from.</param>
+    /// <returns>DefaultMarginVertical property value.</returns>
+    [AttachedPropertyBrowsableForType(typeof(DependencyObject))]
+    public static Thickness GetDefaultMarginVertical(DependencyObject obj)
+    {
+        return (Thickness)obj.GetValue(DefaultMarginVerticalProperty);
+    }
+
+    /// <summary>Helper for setting <see cref="DefaultMarginVerticalProperty"/> on <paramref name="obj"/>.</summary>
+    /// <param name="obj"><see cref="DependencyObject"/> to set <see cref="DefaultMarginVerticalProperty"/> on.</param>
+    /// <param name="value">DefaultMarginVertical property value.</param>
+    public static void SetDefaultMarginVertical(DependencyObject obj, Thickness value)
+    {
+        obj.SetValue(DefaultMarginVerticalProperty, value);
+    }
 
     /// <summary>
     /// Gets or sets the default <see cref="Thickness"/> used as the margin

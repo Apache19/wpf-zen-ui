@@ -18,12 +18,16 @@
     xmlns:markup="clr-namespace:Wpf.Ui.Markup">
 
     <Style x:Key="DefaultComboBoxTextBoxStyle" TargetType="{x:Type TextBox}">
-        <!--  Focus by parent element  -->
         <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-        <!--  Focus by parent element  -->
-        <!--  Universal WPF UI ContextMenu  -->
-        <Setter Property="ContextMenu" Value="{DynamicResource {x:Static theming:StyleKeys.DefaultControlContextMenu}}" />
-        <!--  Universal WPF UI ContextMenu  -->
+        <Setter Property="ContextMenu">
+            <Setter.Value>
+                <controls:ContextMenu>
+                    <controls:MenuItem Command="ApplicationCommands.Copy" />
+                    <controls:MenuItem Command="ApplicationCommands.Cut" />
+                    <controls:MenuItem Command="ApplicationCommands.Paste" />
+                </controls:ContextMenu>
+            </Setter.Value>
+        </Setter>
         <Setter Property="Foreground" Value="{markup:BrushResource TextFillColorPrimaryBrush}" />
         <Setter Property="CaretBrush" Value="{markup:BrushResource TextFillColorPrimaryBrush}" />
         <Setter Property="Visibility" Value="Hidden" />

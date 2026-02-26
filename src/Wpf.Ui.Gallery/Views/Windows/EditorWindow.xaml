@@ -5,16 +5,15 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:local="clr-namespace:Wpf.Ui.Gallery.Views.Windows"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
     xmlns:theming="clr-namespace:Wpf.Ui.Theming;assembly=Wpf.Ui"
+    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
     Title="WPF UI - Editor"
     Width="1250"
     Height="652"
-    d:DataContext="{d:DesignInstance local:EditorWindow,
-                                     IsDesignTimeCreatable=False}"
+    d:Background="{ui:BrushResource WindowBackgroundBrush}"
+    d:DataContext="{d:DesignInstance local:EditorWindow, IsDesignTimeCreatable=False}"
     d:DesignHeight="650"
     d:DesignWidth="900"
-    d:Background="{ui:BrushResource WindowBackgroundBrush}"
     d:Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
     WindowStartupLocation="CenterOwner"
     mc:Ignorable="d">
@@ -41,7 +40,7 @@
                         Command="{Binding ViewModel.StatusBarActionCommand, Mode=OneWay}"
                         CommandParameter="newFile"
                         Header="New" />
-                    <ui:MenuItem
+                    <MenuItem
                         Command="{Binding ViewModel.StatusBarActionCommand, Mode=OneWay}"
                         CommandParameter="newWindow"
                         Header="New window" />
@@ -57,7 +56,7 @@
                         Command="{Binding ViewModel.StatusBarActionCommand, Mode=OneWay}"
                         CommandParameter="saveFileAs"
                         Header="Save As..." />
-                    <ui:Separator />
+                    <Separator />
                     <ui:MenuItem
                         Command="{Binding ViewModel.StatusBarActionCommand, Mode=OneWay}"
                         CommandParameter="exit"

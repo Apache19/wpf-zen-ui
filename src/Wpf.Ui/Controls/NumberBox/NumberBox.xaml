@@ -27,9 +27,15 @@
 
     <Style x:Key="DefaultUiNumberBoxStyle" TargetType="{x:Type controls:NumberBox}">
         <Setter Property="FocusVisualStyle" Value="{m:StyleResource DefaultControlFocusVisualStyle}" />
-        <!--
-        <Setter Property="ContextMenu" Value="{m:StyleResource DefaultControlContextMenu}" />
-        -->
+        <Setter Property="ContextMenu">
+            <Setter.Value>
+                <controls:ContextMenu>
+                    <controls:MenuItem Command="ApplicationCommands.Copy" />
+                    <controls:MenuItem Command="ApplicationCommands.Cut" />
+                    <controls:MenuItem Command="ApplicationCommands.Paste" />
+                </controls:ContextMenu>
+            </Setter.Value>
+        </Setter>
         <Setter Property="Foreground" Value="{m:BrushResource TextFillColorPrimaryBrush}" />
         <Setter Property="CaretBrush" Value="{m:BrushResource TextFillColorPrimaryBrush}" />
         <Setter Property="Cursor" Value="Arrow" />

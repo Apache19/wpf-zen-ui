@@ -19,8 +19,8 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Ui.Controls"
-    xmlns:theming="clr-namespace:Wpf.Ui.Theming"
-    xmlns:markup="clr-namespace:Wpf.Ui.Markup">
+    xmlns:markup="clr-namespace:Wpf.Ui.Markup"
+    xmlns:theming="clr-namespace:Wpf.Ui.Theming">
 
     <ResourceDictionary.MergedDictionaries>
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/CheckBox/CheckBox.xaml" />
@@ -979,7 +979,15 @@
 
     <Style x:Key="DefaultDataGridTextElementStyle" TargetType="{x:Type TextBlock}">
         <Setter Property="FocusVisualStyle" Value="{DynamicResource {x:Static theming:StyleKeys.DefaultControlFocusVisualStyle}}" />
-        <Setter Property="ContextMenu" Value="{DynamicResource {x:Static theming:StyleKeys.DefaultControlContextMenu}}" />
+        <Setter Property="ContextMenu">
+            <Setter.Value>
+                <controls:ContextMenu>
+                    <controls:MenuItem Command="ApplicationCommands.Copy" />
+                    <controls:MenuItem Command="ApplicationCommands.Cut" />
+                    <controls:MenuItem Command="ApplicationCommands.Paste" />
+                </controls:ContextMenu>
+            </Setter.Value>
+        </Setter>        
         <Setter Property="Foreground" Value="{markup:BrushResource TextFillColorPrimaryBrush}" />
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="HorizontalAlignment" Value="Stretch" />

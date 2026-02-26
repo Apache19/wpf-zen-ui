@@ -40,9 +40,15 @@
     </Style>
 
     <Style x:Key="DefaultDatePickerStyle" TargetType="{x:Type DatePicker}">
-        <!--  Universal WPF UI ContextMenu  -->
-        <Setter Property="ContextMenu" Value="{DynamicResource {x:Static theming:StyleKeys.DefaultControlContextMenu}}" />
-        <!--  Universal WPF UI ContextMenu  -->
+        <Setter Property="ContextMenu">
+            <Setter.Value>
+                <controls:ContextMenu>
+                    <controls:MenuItem Command="ApplicationCommands.Copy" />
+                    <controls:MenuItem Command="ApplicationCommands.Cut" />
+                    <controls:MenuItem Command="ApplicationCommands.Paste" />
+                </controls:ContextMenu>
+            </Setter.Value>
+        </Setter>
         <!--  todo Default WPF UI Calendar style 调查这个样式在哪儿  -->
         <Setter Property="CalendarStyle" Value="{DynamicResource DefaultCalendarDropShadowStyle}" />
         <!--  Default WPF UI Calendar style  -->

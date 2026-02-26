@@ -16,8 +16,33 @@
         DEFAULT WPF MENU ITEM
     -->
 
-    <Style x:Key="{x:Static t:StyleKeys.UiMenuItemSeparatorStyle}" BasedOn="{StaticResource {x:Type Separator}}" TargetType="{x:Type Separator}">
+    <Style
+        x:Key="{x:Static t:StyleKeys.MenuItemSeparatorStyle}"
+        BasedOn="{StaticResource {x:Type Separator}}"
+        TargetType="{x:Type Separator}">
         <Setter Property="Background" Value="{m:BrushResource ControlAltFillColorTertiaryBrush}" />
+        <Setter Property="controls:Separator.DefaultMarginHorizontal" Value="0,2,0,2" />
+        <Setter Property="controls:Separator.DefaultMarginVertical" Value="2,0,2,0" />
+    </Style>
+
+    <Style x:Key="TopLevelMenuItemFocusVisualStyle">
+        <Setter Property="Control.Margin" Value="4,4" />
+        <Setter Property="Control.Template">
+            <Setter.Value>
+                <ControlTemplate>
+                    <Rectangle
+                        RadiusX="4"
+                        RadiusY="4"
+                        SnapsToDevicePixels="True"
+                        Stroke="{m:BrushResource KeyboardFocusBorderColorBrush}"
+                        StrokeThickness="1" />
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="MenuItemFocusVisualStyle" BasedOn="{StaticResource TopLevelMenuItemFocusVisualStyle}">
+        <Setter Property="Control.Margin" Value="4,1" />
     </Style>
 
     <!--  TopLevelHeader  -->
@@ -211,67 +236,68 @@
 
     <!--  SubmenuItem  -->
     <ControlTemplate x:Key="{x:Static MenuItem.SubmenuItemTemplateKey}" TargetType="{x:Type MenuItem}">
-        <Border
-            x:Name="Border"
-            Margin="4,1,4,1"
-            Background="Transparent"
-            CornerRadius="4">
-            <Grid Margin="8,6,8,6">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" SharedSizeGroup="Shortcut" />
-                </Grid.ColumnDefinitions>
-                <Border
-                    x:Name="CheckBoxIconBorder"
-                    Grid.Column="0"
-                    Width="20"
-                    Height="20"
-                    Margin="0,0,6,0"
-                    VerticalAlignment="Center"
-                    Background="{m:BrushResource ControlAltFillColorSecondaryBrush}"
-                    BorderBrush="{m:BrushResource ControlStrongStrokeColorDefaultBrush}"
-                    BorderThickness="1"
-                    CornerRadius="4"
-                    Visibility="Collapsed">
-                    <!--  todo 尝试改成静态资源  -->
-                    <TextBlock
-                        x:Name="CheckBoxIcon"
-                        HorizontalAlignment="Center"
+        <Grid Background="Transparent">
+            <Border
+                x:Name="Border"
+                Margin="4,1,4,1"
+                Background="Transparent"
+                CornerRadius="4">
+                <Grid Margin="8,6,8,6">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" SharedSizeGroup="Shortcut" />
+                    </Grid.ColumnDefinitions>
+                    <Border
+                        x:Name="CheckBoxIconBorder"
+                        Grid.Column="0"
+                        Width="20"
+                        Height="20"
+                        Margin="0,0,6,0"
                         VerticalAlignment="Center"
-                        FontFamily="{DynamicResource {x:Static t:FontFamilyKeys.FluentSystemIcons}}"
-                        FontSize="16"
-                        Text=""
-                        TextAlignment="Center" />
-                </Border>
+                        Background="{m:BrushResource ControlAltFillColorSecondaryBrush}"
+                        BorderBrush="{m:BrushResource ControlStrongStrokeColorDefaultBrush}"
+                        BorderThickness="1"
+                        CornerRadius="4"
+                        Visibility="Collapsed">
+                        <!--  todo 尝试改成静态资源  -->
+                        <TextBlock
+                            x:Name="CheckBoxIcon"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            FontFamily="{DynamicResource {x:Static t:FontFamilyKeys.FluentSystemIcons}}"
+                            FontSize="16"
+                            Text=""
+                            TextAlignment="Center" />
+                    </Border>
 
-                <ContentPresenter
-                    x:Name="Icon"
-                    Grid.Column="1"
-                    Margin="0,0,6,0"
-                    VerticalAlignment="Center"
-                    Content="{TemplateBinding Icon}"
-                    KeyboardNavigation.IsTabStop="False" />
+                    <ContentPresenter
+                        x:Name="Icon"
+                        Grid.Column="1"
+                        Margin="0,0,6,0"
+                        VerticalAlignment="Center"
+                        Content="{TemplateBinding Icon}"
+                        KeyboardNavigation.IsTabStop="False" />
 
-                <ContentPresenter
-                    x:Name="Header"
-                    Grid.Column="2"
-                    ContentSource="Header"
-                    RecognizesAccessKey="True"
-                    TextElement.Foreground="{TemplateBinding Foreground}" />
+                    <ContentPresenter
+                        x:Name="Header"
+                        Grid.Column="2"
+                        ContentSource="Header"
+                        RecognizesAccessKey="True"
+                        TextElement.Foreground="{TemplateBinding Foreground}" />
 
-                <TextBlock
-                    x:Name="InputGesture"
-                    Grid.Column="3"
-                    Margin="25,0,0,0"
-                    VerticalAlignment="Bottom"
-                    DockPanel.Dock="Right"
-                    FontSize="11"
-                    Foreground="{m:BrushResource TextFillColorDisabledBrush}"
-                    Text="{TemplateBinding InputGestureText}" />
-            </Grid>
-        </Border>
+                    <TextBlock
+                        x:Name="InputGesture"
+                        Grid.Column="3"
+                        Margin="25,0,0,0"
+                        VerticalAlignment="Bottom"
+                        DockPanel.Dock="Right"
+                        FontSize="11"
+                        Foreground="{m:BrushResource TextFillColorDisabledBrush}"
+                        Text="{TemplateBinding InputGestureText}" />
+                </Grid>
+            </Border></Grid>
         <ControlTemplate.Triggers>
             <MultiTrigger>
                 <MultiTrigger.Conditions>
@@ -313,7 +339,7 @@
 
     <!--  SubItem with Subitems  -->
     <ControlTemplate x:Key="{x:Static MenuItem.SubmenuHeaderTemplateKey}" TargetType="{x:Type MenuItem}">
-        <Grid>
+        <Grid Background="Transparent">
             <Grid.RowDefinitions>
                 <RowDefinition Height="*" />
                 <RowDefinition Height="Auto" />
@@ -450,23 +476,22 @@
         </ControlTemplate.Triggers>
     </ControlTemplate>
 
-    <Style x:Key="UiMenuItem" TargetType="{x:Type MenuItem}">
-        <Setter Property="FocusVisualStyle">
-            <Setter.Value>
-                <Style BasedOn="{StaticResource {x:Static t:StyleKeys.DefaultControlFocusVisualStyle}}">
-                    <Setter Property="Control.Margin" Value="4,1" />
-                </Style>
-            </Setter.Value>
-        </Setter>
+    <Style x:Key="{x:Static t:StyleKeys.MenuItemStyle}" TargetType="{x:Type MenuItem}">
+        <Setter Property="FocusVisualStyle" Value="{StaticResource MenuItemFocusVisualStyle}" />
         <Setter Property="KeyboardNavigation.IsTabStop" Value="True" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="UseLayoutRounding" Value="True" />
         <Setter Property="Focusable" Value="True" />
+        <Setter Property="Background" Value="Transparent" />
         <Style.Triggers>
             <Trigger Property="Role" Value="TopLevelHeader">
                 <Setter Property="Template" Value="{StaticResource {x:Static MenuItem.TopLevelHeaderTemplateKey}}" />
                 <Setter Property="Grid.IsSharedSizeScope" Value="True" />
+                <Setter Property="FocusVisualStyle" Value="{StaticResource TopLevelMenuItemFocusVisualStyle}" />
             </Trigger>
             <Trigger Property="Role" Value="TopLevelItem">
                 <Setter Property="Template" Value="{StaticResource {x:Static MenuItem.TopLevelItemTemplateKey}}" />
+                <Setter Property="FocusVisualStyle" Value="{StaticResource TopLevelMenuItemFocusVisualStyle}" />
             </Trigger>
             <Trigger Property="Role" Value="SubmenuHeader">
                 <Setter Property="Template" Value="{StaticResource {x:Static MenuItem.SubmenuHeaderTemplateKey}}" />
@@ -476,11 +501,6 @@
             </Trigger>
         </Style.Triggers>
     </Style>
-
-    <Style
-        x:Key="{x:Type MenuItem}"
-        BasedOn="{StaticResource UiMenuItem}"
-        TargetType="{x:Type MenuItem}" />
 
     <!--
         WPF UI MENU ITEM
@@ -687,69 +707,71 @@
 
     <!--  SubmenuItem  -->
     <ControlTemplate x:Key="WpfUiMenuItemSubmenuItemTemplateKey" TargetType="{x:Type controls:MenuItem}">
-        <Border
-            x:Name="Border"
-            Margin="4,1,4,1"
-            Background="{TemplateBinding Background}"
-            CornerRadius="4">
-            <Grid Margin="8,6,8,6">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" SharedSizeGroup="Shortcut" />
-                </Grid.ColumnDefinitions>
+        <Grid Background="Transparent">
+            <Border
+                x:Name="Border"
+                Margin="4,1,4,1"
+                Background="{TemplateBinding Background}"
+                CornerRadius="4">
+                <Grid Margin="8,6,8,6">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" SharedSizeGroup="Shortcut" />
+                    </Grid.ColumnDefinitions>
 
-                <Border
-                    x:Name="CheckBoxIconBorder"
-                    Grid.Column="0"
-                    Width="20"
-                    Height="20"
-                    Margin="0"
-                    VerticalAlignment="Center"
-                    Background="{m:BrushResource ControlAltFillColorSecondaryBrush}"
-                    BorderBrush="{m:BrushResource ControlStrongStrokeColorDefaultBrush}"
-                    BorderThickness="1"
-                    CornerRadius="4"
-                    Visibility="Collapsed">
-                    <controls:TextBlock
-                        x:Name="CheckBoxIcon"
-                        HorizontalAlignment="Center"
+                    <Border
+                        x:Name="CheckBoxIconBorder"
+                        Grid.Column="0"
+                        Width="20"
+                        Height="20"
+                        Margin="0"
                         VerticalAlignment="Center"
-                        FontFamily="{DynamicResource {x:Static t:FontFamilyKeys.FluentSystemIcons}}"
+                        Background="{m:BrushResource ControlAltFillColorSecondaryBrush}"
+                        BorderBrush="{m:BrushResource ControlStrongStrokeColorDefaultBrush}"
+                        BorderThickness="1"
+                        CornerRadius="4"
+                        Visibility="Collapsed">
+                        <controls:TextBlock
+                            x:Name="CheckBoxIcon"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            FontFamily="{DynamicResource {x:Static t:FontFamilyKeys.FluentSystemIcons}}"
+                            FontSize="16"
+                            Text=""
+                            TextAlignment="Center" />
+                    </Border>
+
+                    <ContentControl
+                        x:Name="Icon"
+                        Grid.Column="1"
+                        Margin="0,0,6,0"
+                        VerticalAlignment="Center"
+                        Content="{TemplateBinding Icon}"
                         FontSize="16"
-                        Text=""
-                        TextAlignment="Center" />
-                </Border>
+                        KeyboardNavigation.IsTabStop="False" />
 
-                <ContentControl
-                    x:Name="Icon"
-                    Grid.Column="1"
-                    Margin="0,0,6,0"
-                    VerticalAlignment="Center"
-                    Content="{TemplateBinding Icon}"
-                    FontSize="16"
-                    KeyboardNavigation.IsTabStop="False" />
+                    <ContentPresenter
+                        x:Name="Header"
+                        Grid.Column="3"
+                        ContentSource="Header"
+                        RecognizesAccessKey="True"
+                        TextElement.Foreground="{TemplateBinding Foreground}" />
 
-                <ContentPresenter
-                    x:Name="Header"
-                    Grid.Column="3"
-                    ContentSource="Header"
-                    RecognizesAccessKey="True"
-                    TextElement.Foreground="{TemplateBinding Foreground}" />
+                    <TextBlock
+                        x:Name="InputGesture"
+                        Grid.Column="4"
+                        Margin="25,0,0,0"
+                        VerticalAlignment="Bottom"
+                        DockPanel.Dock="Right"
+                        FontSize="11"
+                        Foreground="{m:BrushResource TextFillColorDisabledBrush}"
+                        Text="{TemplateBinding InputGestureText}" />
+                </Grid>
+            </Border></Grid>
 
-                <TextBlock
-                    x:Name="InputGesture"
-                    Grid.Column="4"
-                    Margin="25,0,0,0"
-                    VerticalAlignment="Bottom"
-                    DockPanel.Dock="Right"
-                    FontSize="11"
-                    Foreground="{m:BrushResource TextFillColorDisabledBrush}"
-                    Text="{TemplateBinding InputGestureText}" />
-            </Grid>
-        </Border>
         <ControlTemplate.Triggers>
             <Trigger Property="IsHighlighted" Value="True">
                 <Setter TargetName="Border" Property="Background" Value="{m:BrushResource SubtleFillColorSecondaryBrush}" />
@@ -793,7 +815,7 @@
 
     <!--  SubItem with Subitems  -->
     <ControlTemplate x:Key="WpfUiMenuItemSubmenuHeaderTemplateKey" TargetType="{x:Type controls:MenuItem}">
-        <Grid>
+        <Grid Background="Transparent">
             <Grid.RowDefinitions>
                 <RowDefinition Height="*" />
                 <RowDefinition Height="Auto" />
@@ -934,23 +956,22 @@
     </ControlTemplate>
 
     <!--  MenuItem Style  -->
-    <Style x:Key="WpfUiMenuItem" TargetType="{x:Type controls:MenuItem}">
-        <Setter Property="FocusVisualStyle">
-            <Setter.Value>
-                <Style BasedOn="{StaticResource {x:Static t:StyleKeys.DefaultControlFocusVisualStyle}}">
-                    <Setter Property="Control.Margin" Value="4,1" />
-                </Style>
-            </Setter.Value>
-        </Setter>
+    <Style x:Key="{x:Static t:StyleKeys.UiMenuItemStyle}" TargetType="{x:Type controls:MenuItem}">
+        <Setter Property="FocusVisualStyle" Value="{StaticResource MenuItemFocusVisualStyle}" />
         <Setter Property="KeyboardNavigation.IsTabStop" Value="True" />
         <Setter Property="Focusable" Value="True" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="UseLayoutRounding" Value="True" />
+        <Setter Property="Background" Value="Transparent" />
         <Style.Triggers>
             <Trigger Property="Role" Value="TopLevelHeader">
                 <Setter Property="Template" Value="{StaticResource WpfUiMenuItemTopLevelHeaderTemplateKey}" />
                 <Setter Property="Grid.IsSharedSizeScope" Value="True" />
+                <Setter Property="FocusVisualStyle" Value="{StaticResource TopLevelMenuItemFocusVisualStyle}" />
             </Trigger>
             <Trigger Property="Role" Value="TopLevelItem">
                 <Setter Property="Template" Value="{StaticResource WpfUiMenuItemTopLevelItemTemplateKey}" />
+                <Setter Property="FocusVisualStyle" Value="{StaticResource TopLevelMenuItemFocusVisualStyle}" />
             </Trigger>
             <Trigger Property="Role" Value="SubmenuHeader">
                 <Setter Property="Template" Value="{StaticResource WpfUiMenuItemSubmenuHeaderTemplateKey}" />
@@ -961,6 +982,6 @@
         </Style.Triggers>
     </Style>
 
-    <Style BasedOn="{StaticResource WpfUiMenuItem}" TargetType="{x:Type controls:MenuItem}" />
+    <Style BasedOn="{StaticResource {x:Static t:StyleKeys.UiMenuItemStyle}}" TargetType="{x:Type controls:MenuItem}" />
 
 </ResourceDictionary>

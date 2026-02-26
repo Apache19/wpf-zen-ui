@@ -38,7 +38,9 @@ public class StyleResourceExtension : DynamicResourceExtension
 
             StyleId.MenuStyle                => StyleKeys.MenuStyle,
             StyleId.UiMenuStyle              => StyleKeys.UiMenuStyle,
-            StyleId.UiMenuItemSeparatorStyle => StyleKeys.UiMenuItemSeparatorStyle,
+            StyleId.MenuItemStyle            => StyleKeys.MenuItemStyle,
+            StyleId.UiMenuItemStyle          => StyleKeys.UiMenuItemStyle,
+            StyleId.MenuItemSeparatorStyle   => StyleKeys.MenuItemSeparatorStyle,
 
             StyleId.DefaultCheckBoxStyle            => StyleKeys.DefaultCheckBoxStyle,
             StyleId.DefaultUiCheckBoxStyle          => StyleKeys.DefaultUiCheckBoxStyle,
@@ -47,7 +49,6 @@ public class StyleResourceExtension : DynamicResourceExtension
             StyleId.DefaultTextBoxStyle             => StyleKeys.DefaultTextBoxStyle,
             StyleId.DefaultUiTextBoxStyle           => StyleKeys.DefaultUiTextBoxStyle,
             StyleId.DefaultTextBoxScrollViewerStyle => StyleKeys.DefaultTextBoxScrollViewerStyle,
-            StyleId.DefaultControlContextMenu       => StyleKeys.DefaultControlContextMenu,
             StyleId.DefaultControlFocusVisualStyle  => StyleKeys.DefaultControlFocusVisualStyle,
             StyleId.DefaultScrollBarStyle           => StyleKeys.DefaultScrollBarStyle,
             StyleId.NavigationViewItemDataTemplate  => StyleKeys.NavigationViewItemDataTemplate,
@@ -55,8 +56,8 @@ public class StyleResourceExtension : DynamicResourceExtension
             StyleId.ValueInfoBadgeStyle             => StyleKeys.ValueInfoBadgeStyle,
             StyleId.DotInfoBadgeStyle               => StyleKeys.DotInfoBadgeStyle,
 
-            StyleId.Unknown => throw new NotSupportedException(),
-            _               => throw new IndexOutOfRangeException(),
+            StyleId.Unknown                => throw new NotSupportedException(),
+            _                              => throw new IndexOutOfRangeException(),
         };
     }
 }

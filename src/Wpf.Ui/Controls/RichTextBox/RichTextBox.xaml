@@ -18,6 +18,15 @@
         <Setter Property="Background" Value="{markup:BrushResource ControlFillColorDefaultBrush}" />
         <Setter Property="BorderBrush" Value="{markup:BrushResource ControlElevationBorderBrush}" />
         <Setter Property="FocusVisualStyle" Value="{DynamicResource {x:Static theming:StyleKeys.DefaultControlFocusVisualStyle}}" />
+        <Setter Property="ContextMenu">
+            <Setter.Value>
+                <controls:ContextMenu>
+                    <controls:MenuItem Command="ApplicationCommands.Copy" />
+                    <controls:MenuItem Command="ApplicationCommands.Cut" />
+                    <controls:MenuItem Command="ApplicationCommands.Paste" />
+                </controls:ContextMenu>
+            </Setter.Value>
+        </Setter>
         <Setter Property="VerticalScrollBarVisibility" Value="Auto" />
         <Setter Property="HorizontalScrollBarVisibility" Value="Disabled" />
         <Setter Property="MinHeight" Value="34" />
@@ -67,7 +76,6 @@
     <Style BasedOn="{StaticResource DefaultRichTextBoxStyle}" TargetType="{x:Type RichTextBox}" />
 
     <Style x:Key="DefaultUiRichTextBoxStyle" BasedOn="{StaticResource DefaultRichTextBoxStyle}" TargetType="{x:Type controls:RichTextBox}">
-
         <Style.Triggers>
             <Trigger Property="IsTextSelectionEnabled" Value="True">
                 <Setter Property="IsReadOnly" Value="True" />

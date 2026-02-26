@@ -16,10 +16,6 @@
         另，
     -->
 
-    <ContextMenu x:Key="{x:Static theming:StyleKeys.DefaultControlContextMenu}">
-        <MenuItem Command="ApplicationCommands.Copy" />
-        <MenuItem Command="ApplicationCommands.Cut" />
-        <MenuItem Command="ApplicationCommands.Paste" />
-    </ContextMenu>
+
 
 </ResourceDictionary>

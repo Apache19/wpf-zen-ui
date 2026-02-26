@@ -60,35 +60,50 @@ public class MenuItem : System.Windows.Controls.MenuItem
 
     protected override void PrepareContainerForItemOverride(DependencyObject element, object item)
     {
-        // If the item is a MenuItem, delegate to the base implementation.
-        // We only intercept Separator instances to adjust their styling behavior.
+        // Each MenuItem is responsible for ensuring that its immediate child
+        // containers receive the correct default styling within this theme system.
+        //
+        // We only intervene for two specific cases:
+        // 1) Native WPF MenuItem instances, which do not automatically resolve
+        //    styles from this library's Generic.xaml in certain hosting scenarios.
+        // 2) Separator instances, whose default style is internally redirected
+        //    to a system resource key by the base implementation.
+
         if (item is System.Windows.Controls.MenuItem menuItem)
         {
+            // Apply the library's default style only to standard (unmodified)
+            // WPF MenuItem instances.
+            //
+            // Custom subclasses or explicitly styled MenuItems are intentionally
+            // left untouched to avoid overriding user-defined behavior.
+            //
+            // Note: The library's own MenuItem type resolves its style automatically,
+            // so no additional action is required in that case.
             if (IsStandardMenuItem(menuItem))
             {
-                // todo ApplyThemeStyling(menuItem, StyleKeys.Menu)
+                ApplyThemeStyling(menuItem, StyleKeys.MenuItemStyle);
             }
 
+            // Allow the base class to perform its normal container preparation logic.
             base.PrepareContainerForItemOverride(element, item);
             return;
         }
 
+        // Handle Separator instances separately.
+        // The base WPF implementation assigns a system-level style key to
+        // menu Separators, which bypasses this library's theme resources.
+        // We redirect their style resolution so that the library's theme
+        // (ComponentResourceKey-based) styling can take effect.
         PrepareSeparator(element, item);
     }
 
     internal static bool IsStandardMenuItem(System.Windows.Controls.MenuItem item)
     {
-        if (item.GetType().FullName == typeof(System.Windows.Controls.MenuItem).FullName)
-        {
-            return true;
-        }
-
-        return false;
+        return item.GetType() == typeof(System.Windows.Controls.MenuItem);
     }
 
     internal static void PrepareSeparator(DependencyObject element, object item)
     {
-        // todo 区分原生 Separator 和库 Separator，以应用不同的样式
         if (item is System.Windows.Controls.Separator separator)
         {
             // The base Menu implementation assigns a default Style to menu Separators
@@ -99,7 +114,7 @@ public class MenuItem : System.Windows.Controls.MenuItem
             // without an Application object), we replace the default style reference
             // with a ComponentResourceKey defined by this library.
 
-            ApplyThemeStyling(separator, StyleKeys.UiMenuItemSeparatorStyle);
+            ApplyThemeStyling(separator, StyleKeys.MenuItemSeparatorStyle);
         }
     }
 

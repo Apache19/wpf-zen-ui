@@ -65,7 +65,7 @@
                     <ui:MenuItem Header="Cut" InputGestureText="CTRL+X" />
                     <ui:MenuItem Header="Copy" InputGestureText="CTRL+C" />
                     <ui:MenuItem Header="Paste" InputGestureText="CTRL+V" />
-                    <ui:MenuItem IsEnabled="False" />
+                    <ui:MenuItem Header="Delete" IsEnabled="False" />
                     <ui:Separator />
                     <ui:MenuItem
                         Header="Word wrap"
