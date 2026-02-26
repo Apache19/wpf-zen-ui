@@ -14,4 +14,22 @@ public class Menu : System.Windows.Controls.Menu
             new FrameworkPropertyMetadata(typeof(Menu))
         );
     }
+
+    protected override void PrepareContainerForItemOverride(DependencyObject element, object item)
+    {
+        if (item is System.Windows.Controls.MenuItem menuItem)
+        {
+            if (MenuItem.IsStandardMenuItem(menuItem))
+            {
+                // 原生菜单项在库里（Generic.xaml）无法获得样式，
+                // 我们需要为其应用库默认样式
+                // todo MenuItem.ApplyThemeStyling(menuItem, StyleKeys.Menu)
+            }
+
+            base.PrepareContainerForItemOverride(element, item);
+            return;
+        }
+
+        MenuItem.PrepareSeparator(element, item);
+    }
 }

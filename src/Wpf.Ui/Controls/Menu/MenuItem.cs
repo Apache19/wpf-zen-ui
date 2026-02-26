@@ -4,6 +4,7 @@
 // All Rights Reserved.
 
 using System.Reflection;
+using System.Windows.Controls;
 using Wpf.Ui.Theming;
 
 // ReSharper disable once CheckNamespace
@@ -61,8 +62,13 @@ public class MenuItem : System.Windows.Controls.MenuItem
     {
         // If the item is a MenuItem, delegate to the base implementation.
         // We only intercept Separator instances to adjust their styling behavior.
-        if (item is MenuItem)
+        if (item is System.Windows.Controls.MenuItem menuItem)
         {
+            if (IsStandardMenuItem(menuItem))
+            {
+                // todo ApplyThemeStyling(menuItem, StyleKeys.Menu)
+            }
+
             base.PrepareContainerForItemOverride(element, item);
             return;
         }
@@ -70,9 +76,20 @@ public class MenuItem : System.Windows.Controls.MenuItem
         PrepareSeparator(element, item);
     }
 
-    private static void PrepareSeparator(DependencyObject element, object item)
+    internal static bool IsStandardMenuItem(System.Windows.Controls.MenuItem item)
     {
-        if (item is Separator separator)
+        if (item.GetType().FullName == typeof(System.Windows.Controls.MenuItem).FullName)
+        {
+            return true;
+        }
+
+        return false;
+    }
+
+    internal static void PrepareSeparator(DependencyObject element, object item)
+    {
+        // todo 区分原生 Separator 和库 Separator，以应用不同的样式
+        if (item is System.Windows.Controls.Separator separator)
         {
             // The base Menu implementation assigns a default Style to menu Separators
             // using a SystemResourceKey. This bypasses the library's Generic.xaml,
@@ -82,28 +99,27 @@ public class MenuItem : System.Windows.Controls.MenuItem
             // without an Application object), we replace the default style reference
             // with a ComponentResourceKey defined by this library.
 
-            var source = DependencyPropertyHelper.GetValueSource(
-                separator,
-                StyleProperty
-            );
-
-            // Mirror the base class logic: only override the Style if it has not been
-            // explicitly set by the user. This preserves user-defined styles.
-            var vs = source.BaseValueSource;
-            if (vs <= BaseValueSource.ImplicitStyleReference)
-            {
-                separator.SetResourceReference(
-                    StyleProperty,
-                    StyleKeys.UiMenuItemSeparatorStyle
-                );
-            }
-
-            // Update DefaultStyleKey to ensure the control template is resolved
-            // against this library's theme resources instead of the system key.
-            DefaultStyleKeyPropertyInfo?.SetValue(
-                separator,
-                StyleKeys.UiMenuItemSeparatorStyle
-            );
+            ApplyThemeStyling(separator, StyleKeys.UiMenuItemSeparatorStyle);
         }
+    }
+
+    internal static void ApplyThemeStyling(FrameworkElement element, ComponentResourceKey styleResourceKey)
+    {
+        var source = DependencyPropertyHelper.GetValueSource(
+            element,
+            StyleProperty
+        );
+
+        // Mirror the base class logic: only override the Style if it has not been
+        // explicitly set by the user. This preserves user-defined styles.
+        var vs = source.BaseValueSource;
+        if (vs <= BaseValueSource.ImplicitStyleReference)
+        {
+            element.SetResourceReference(StyleProperty, styleResourceKey);
+        }
+
+        // Update DefaultStyleKey to ensure the control template is resolved
+        // against this library's theme resources instead of the system key.
+        DefaultStyleKeyPropertyInfo?.SetValue(element, styleResourceKey);
     }
 }
