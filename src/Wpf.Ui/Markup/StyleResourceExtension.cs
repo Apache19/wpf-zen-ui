@@ -36,8 +36,9 @@ public class StyleResourceExtension : DynamicResourceExtension
             StyleId.UiButtonStyle     => StyleKeys.UiButtonStyle,
             StyleId.RepeatButtonStyle => StyleKeys.RepeatButtonStyle,
 
-            StyleId.MenuStyle         => StyleKeys.MenuStyle,
-            StyleId.UiMenuStyle       => StyleKeys.UiMenuStyle,
+            StyleId.MenuStyle                => StyleKeys.MenuStyle,
+            StyleId.UiMenuStyle              => StyleKeys.UiMenuStyle,
+            StyleId.UiMenuItemSeparatorStyle => StyleKeys.UiMenuItemSeparatorStyle,
 
             StyleId.DefaultCheckBoxStyle            => StyleKeys.DefaultCheckBoxStyle,
             StyleId.DefaultUiCheckBoxStyle          => StyleKeys.DefaultUiCheckBoxStyle,
@@ -54,8 +55,8 @@ public class StyleResourceExtension : DynamicResourceExtension
             StyleId.ValueInfoBadgeStyle             => StyleKeys.ValueInfoBadgeStyle,
             StyleId.DotInfoBadgeStyle               => StyleKeys.DotInfoBadgeStyle,
 
-            StyleId.Unknown                         => throw new NotSupportedException(),
-            _                                       => throw new IndexOutOfRangeException(),
+            StyleId.Unknown => throw new NotSupportedException(),
+            _               => throw new IndexOutOfRangeException(),
         };
     }
 }

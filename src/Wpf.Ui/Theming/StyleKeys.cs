@@ -16,8 +16,9 @@ public static class StyleKeys
 
     public static ComponentResourceKey RepeatButtonStyle               { get; private set; }
 
-    public static ComponentResourceKey MenuStyle                      { get; private set; }
-    public static ComponentResourceKey UiMenuStyle                    { get; private set; }
+    public static ComponentResourceKey MenuStyle                { get; private set; }
+    public static ComponentResourceKey UiMenuStyle              { get; private set; }
+    public static ComponentResourceKey UiMenuItemSeparatorStyle { get; private set; }
 
     public static ComponentResourceKey DefaultCheckBoxStyle            { get; private set; }
     public static ComponentResourceKey DefaultUiCheckBoxStyle          { get; private set; }

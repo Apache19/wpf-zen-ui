@@ -16,6 +16,7 @@ public enum StyleId
 
     MenuStyle,
     UiMenuStyle,
+    UiMenuItemSeparatorStyle,
 
     DefaultCheckBoxStyle,
     DefaultUiCheckBoxStyle,
