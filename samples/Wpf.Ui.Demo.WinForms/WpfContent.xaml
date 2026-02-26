@@ -1,5 +1,5 @@
 <UserControl
-    x:Class="Wpf.Ui.Demo.WinForms.UserControl1"
+    x:Class="Wpf.Ui.Demo.WinForms.WpfContent"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -16,7 +16,7 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
-        <ui:NavigationView x:Name="RootNavigation" Grid.Row="1">
+        <ui:NavigationView x:Name="RootNavigation" Grid.Row="1" OpenPaneLength="200">
             <ui:NavigationView.AutoSuggestBox>
                 <ui:AutoSuggestBox x:Name="AutoSuggestBox" PlaceholderText="Search">
                     <ui:AutoSuggestBox.Icon>

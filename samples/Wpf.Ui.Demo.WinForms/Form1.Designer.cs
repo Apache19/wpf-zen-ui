@@ -51,7 +51,7 @@ namespace Wpf.Ui.Demo.WinForms
             this.Controls.Add(this.elementHost1);
             this.Name = "Form1";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
-            this.Text = "Form1";
+            this.Text = "Wpf Content in WinForms";
             this.ResumeLayout(false);
 
         }

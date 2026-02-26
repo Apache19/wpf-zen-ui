@@ -11,11 +11,11 @@ using Wpf.Ui.Demo.Simple.Views.Pages;
 namespace Wpf.Ui.Demo.WinForms;
 
 /// <summary>
-/// UserControl1.xaml
+/// WpfContent.xaml
 /// </summary>
-public partial class UserControl1 : UserControl
+public partial class WpfContent : UserControl
 {
-    public UserControl1()
+    public WpfContent()
     {
         InitializeComponent();
 

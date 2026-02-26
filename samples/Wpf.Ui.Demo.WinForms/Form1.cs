@@ -17,6 +17,6 @@ public partial class Form1 : Form
     {
         InitializeComponent();
 
-        elementHost1.Child = new UserControl1();
+        elementHost1.Child = new WpfContent();
     }
 }
