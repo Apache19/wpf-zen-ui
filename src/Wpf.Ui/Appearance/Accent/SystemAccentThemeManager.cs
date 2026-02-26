@@ -12,7 +12,7 @@ internal static class SystemAccentThemeManager
     private static ResourceDictionary? _accentDictionary;
     private static bool                _isEnabled;
 
-    public static void Apply(UIThemeMode mode)
+    private static void Apply(Application app, UIThemeMode mode)
     {
         var palette = SystemAccentPaletteReader.Read();
         if (palette == null)
@@ -21,19 +21,17 @@ internal static class SystemAccentThemeManager
         }
 
         var dict = BuildDictionary(palette, mode);
-        ReplaceAccentDictionary(dict);
+        ReplaceAccentDictionary(app, dict);
 
         _isEnabled = true;
     }
 
-    public static void Disable()
+    internal static void Disable(Application app)
     {
         if (!_isEnabled)
         {
             return;
         }
-
-        var app = EnsureApplication();
 
         if (_accentDictionary != null)
         {
@@ -44,10 +42,8 @@ internal static class SystemAccentThemeManager
         _isEnabled = false;
     }
 
-    public static void Update(bool useSystemAccent, UIThemeMode mode)
+    internal static void Update(Application app, bool useSystemAccent, UIThemeMode mode)
     {
-        var app = EnsureApplication();
-
         if (_accentDictionary != null)
         {
             app.Resources.MergedDictionaries.Remove(_accentDictionary);
@@ -56,21 +52,18 @@ internal static class SystemAccentThemeManager
 
         if (useSystemAccent)
         {
-            Apply(mode);
+            Apply(app, mode);
         }
         else
         {
-            Disable();
+            Disable(app);
         }
     }
 
     private static ResourceDictionary BuildDictionary(SystemAccentPalette p, UIThemeMode mode)
     {
         // todo 此处定义的顺序应该与主题里定义的资源顺序匹配
-        var dic = new ResourceDictionary
-        {
-            [ColorKeys.SystemAccentColor] = p.Accent
-        };
+        var dic = new ResourceDictionary { [ColorKeys.SystemAccentColor] = p.Accent };
 
         if (mode == UIThemeMode.Light)
         {
@@ -88,10 +81,8 @@ internal static class SystemAccentThemeManager
         return dic;
     }
 
-    private static void ReplaceAccentDictionary(ResourceDictionary newDict)
+    private static void ReplaceAccentDictionary(Application app, ResourceDictionary newDict)
     {
-        var app = EnsureApplication();
-
         if (_accentDictionary != null)
         {
             app.Resources.MergedDictionaries.Remove(_accentDictionary);
@@ -99,10 +90,5 @@ internal static class SystemAccentThemeManager
 
         _accentDictionary = newDict;
         app.Resources.MergedDictionaries.Add(_accentDictionary);
-    }
-
-    private static Application EnsureApplication()
-    {
-        return Application.Current ?? new Application();
     }
 }

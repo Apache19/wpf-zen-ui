@@ -4,8 +4,6 @@
 // All Rights Reserved.
 
 using System.Diagnostics;
-using System.Windows.Controls;
-using System.Windows.Media;
 using Microsoft.Win32;
 using Wpf.Ui.Appearance.Accent;
 using Wpf.Ui.Theming;
@@ -23,6 +21,7 @@ namespace Wpf.Ui.Appearance;
 public sealed class ThemeManager
 {
     // todo 实现一个Update方法，传入FollowSystemTheme、UseSystemAccentColor、ThemeMode三个参数，能同时设置三个属性，并只执行一次更新
+    // todo 高对比度也有明暗模式。。。
 
     internal const string ThemeBaseUri = "pack://application:,,,/Wpf.Ui;component/Resources/Theme/";
 
@@ -94,7 +93,13 @@ public sealed class ThemeManager
 
         element.Dispatcher.Invoke(() =>
         {
-            Uri themeUri = themeMode == UIThemeMode.Dark ? DarkThemeUri : LightThemeUri;
+            var isHighContrast = SystemParameters.HighContrast;
+            var isDarkMode     = themeMode == UIThemeMode.Dark;
+
+            Uri themeUri =
+                isHighContrast ? HighContrastThemeUri :
+                isDarkMode     ? DarkThemeUri :
+                                 LightThemeUri;
 
             ResourceDictionary? existingThemeDict = null;
             foreach (var dict in element.Resources.MergedDictionaries)
@@ -117,7 +122,7 @@ public sealed class ThemeManager
             var themeDict = new ResourceDictionary { Source = themeUri };
             element.Resources.MergedDictionaries.Insert(0, themeDict);
 
-            if (useSystemAccentColor)
+            if (useSystemAccentColor && !isHighContrast)
             {
                 var palette = SystemAccentPaletteReader.Read();
                 if (palette != null)
@@ -189,51 +194,59 @@ public sealed class ThemeManager
 
     private static void UpdateTheme(ThemeChangeSource source)
     {
-        VerifyAccess();
+        // 没有 Application 或者已经Shutdown，则不做更新，只通知
+        var app = Application.Current;
+
+        if (app?.Dispatcher == null || app.Dispatcher.HasShutdownStarted)
+        {
+            app = null;
+        }
+
+        if (app != null && !app.Dispatcher.CheckAccess())
+        {
+            app.Dispatcher.BeginInvoke(new Action(() => UpdateTheme(source)));
+            return;
+        }
 
         // 系统高对比度主题是系统易用性机制的一部分，它的优先级高于主题系统，
-        // 当系统被设置为“高对比度”模式时，我们必须遵循这一模式，
-        // 而不是自己搞一套“高对比度主题”出来，这样不仅增加了实现复杂度，
-        // 还会造成可访问性的不一致。
+        // 当系统被设置为“高对比度”模式时，不管是否跟随系统主题，我们都必须遵循高对比度模式。
         // 另外，高对比度环境下没有单独的“强调色”，所以也要用高对比度颜色覆盖强调色。
+        // 另，高对比度环境实际上仍然有明暗模式。。。
 
-        var app = EnsureApplication();
+        if (source == ThemeChangeSource.System && FollowSystemTheme)
+        {
+            _themeMode = GetSystemThemeMode();
+        }
 
         // 合并期间不立即刷新，否则可能导致强调色应用不完全
-        app.Resources.BeginInit();
+        app?.Resources.BeginInit();
 
         if (SystemParameters.HighContrast)
         {
-            // 高对比度没有强调色，所以要清理之前可能应用的强调色
-            SystemAccentThemeManager.Disable();
-            ApplySystemHighContrastColors();
+            if (app != null)
+            {
+                // 高对比度没有强调色，所以要清理之前可能应用的强调色
+                SystemAccentThemeManager.Disable(app);
+                ApplyTheme(app, _themeMode, true, true);
+            }
         }
         else
         {
-            if (source == ThemeChangeSource.System && FollowSystemTheme)
+            if (app != null)
             {
-                _themeMode = GetSystemThemeMode();
+                ApplyTheme(app, _themeMode, false, true);
+                SystemAccentThemeManager.Update(app, UseSystemAccentColor, _themeMode);
             }
-
-            ApplyTheme(_themeMode, false, true);
-
-            SystemAccentThemeManager.Update(UseSystemAccentColor, _themeMode);
         }
 
         // 结束合并，统一生效
-        app.Resources.EndInit();
+        app?.Resources.EndInit();
 
         Instance.Changed?.Invoke(Instance, new ThemeChangedEventArgs(_themeMode, source));
     }
 
-    private static void ApplySystemHighContrastColors()
+    private static void ApplyTheme(Application app, UIThemeMode mode, bool highContrast = false, bool forceReload = false)
     {
-        ApplyTheme(_themeMode, true, true);
-    }
-
-    private static void ApplyTheme(UIThemeMode mode, bool highContrast = false, bool forceReload = false)
-    {
-        var app    = EnsureApplication();
         var merged = app.Resources.MergedDictionaries;
 
         // 1️ 找到当前已加载的库主题字典（如果存在）
@@ -295,7 +308,9 @@ public sealed class ThemeManager
         };
     }
 
-    private static Application EnsureApplication()
+    /* 实测手动创建的Application在非WPF项目时没有什么用处，切换主题合并字典不会生效
+       有可能的话找出原因再启用。
+    internal static Application EnsureApplication()
     {
         // When WPFUI is used from non-WPF hosts (such as WinForms apps or plugins),
         // a WPF Application instance may not exist.
@@ -315,8 +330,9 @@ public sealed class ThemeManager
             );
         }
 
-        return new Application();
+        return new Application { ShutdownMode = ShutdownMode.OnExplicitShutdown };
     }
+    */
 
     private static void VerifyAccess()
     {

@@ -19,11 +19,11 @@ public partial class WpfContent : UserControl
     {
         InitializeComponent();
 
-        Loaded += OnLoaded;
+        //Loaded += OnLoaded;
     }
 
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
-        RootNavigation.Navigate(typeof(DashboardPage));
+        //RootNavigation.Navigate(typeof(DashboardPage));
     }
 }

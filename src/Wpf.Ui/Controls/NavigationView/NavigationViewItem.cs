@@ -16,6 +16,8 @@ using System.Windows.Input;
 // ReSharper disable once CheckNamespace
 namespace Wpf.Ui.Controls;
 
+// todo 在 WinForms 项目中使用时，系统切换高对比度模式会导致 Freezable 无法冻结异常。
+
 /// <summary>
 /// Represents the container for an item in a NavigationView control.
 /// When needed, it can be used as a normal button with a <see cref="ButtonBase.Click"/> action.

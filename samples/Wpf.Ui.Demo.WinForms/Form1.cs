@@ -7,7 +7,6 @@ using System;
 using System.Windows;
 using System.Windows.Forms;
 using Wpf.Ui.Appearance;
-using Wpf.Ui.Demo.Simple.Views.Pages;
 
 namespace Wpf.Ui.Demo.WinForms;
 
@@ -28,20 +27,20 @@ public partial class Form1 : Form
     {
         base.OnShown(e);
 
-        WeakEventManager<ThemeManager, ThemeChangedEventArgs>.AddHandler(
-            ThemeManager.Instance,
-            nameof(ThemeManager.Changed),
-            ThemeChanged
-        );
+        // WeakEventManager<ThemeManager, ThemeChangedEventArgs>.AddHandler(
+        //     ThemeManager.Instance,
+        //     nameof(ThemeManager.Changed),
+        //     ThemeChanged
+        // );
     }
 
     protected override void OnFormClosed(FormClosedEventArgs e)
     {
-        WeakEventManager<ThemeManager, ThemeChangedEventArgs>.RemoveHandler(
-            ThemeManager.Instance,
-            nameof(ThemeManager.Changed),
-            ThemeChanged
-        );
+        // WeakEventManager<ThemeManager, ThemeChangedEventArgs>.RemoveHandler(
+        //     ThemeManager.Instance,
+        //     nameof(ThemeManager.Changed),
+        //     ThemeChanged
+        // );
 
         base.OnFormClosed(e);
     }
