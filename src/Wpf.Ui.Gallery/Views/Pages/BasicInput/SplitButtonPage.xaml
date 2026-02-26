@@ -30,35 +30,35 @@
                     Background="Green"
                     CornerRadius="4" />
                 <ui:SplitButton.Flyout>
-                    <ContextMenu>
-                        <MenuItem>
-                            <MenuItem.Header>
+                    <ui:ContextMenu>
+                        <ui:MenuItem>
+                            <ui:MenuItem.Header>
                                 <Border
                                     Width="35"
                                     Height="20"
                                     Background="Red"
                                     CornerRadius="4" />
-                            </MenuItem.Header>
-                        </MenuItem>
-                        <MenuItem>
-                            <MenuItem.Header>
+                            </ui:MenuItem.Header>
+                        </ui:MenuItem>
+                        <ui:MenuItem>
+                            <ui:MenuItem.Header>
                                 <Border
                                     Width="35"
                                     Height="20"
                                     Background="Blue"
                                     CornerRadius="4" />
-                            </MenuItem.Header>
-                        </MenuItem>
-                        <MenuItem>
-                            <MenuItem.Header>
+                            </ui:MenuItem.Header>
+                        </ui:MenuItem>
+                        <ui:MenuItem>
+                            <ui:MenuItem.Header>
                                 <Border
                                     Width="35"
                                     Height="20"
                                     Background="White"
                                     CornerRadius="4" />
-                            </MenuItem.Header>
-                        </MenuItem>
-                    </ContextMenu>
+                            </ui:MenuItem.Header>
+                        </ui:MenuItem>
+                    </ui:ContextMenu>
                 </ui:SplitButton.Flyout>
             </ui:SplitButton>
         </controls:ControlExample>
@@ -74,35 +74,35 @@
                     Background="Green"
                     CornerRadius="4,0,0,4" />
                 <ui:SplitButton.Flyout>
-                    <ContextMenu>
-                        <MenuItem>
-                            <MenuItem.Header>
+                    <ui:ContextMenu>
+                        <ui:MenuItem>
+                            <ui:MenuItem.Header>
                                 <Border
                                     Width="35"
                                     Height="20"
                                     Background="Red"
                                     CornerRadius="4" />
-                            </MenuItem.Header>
-                        </MenuItem>
-                        <MenuItem>
-                            <MenuItem.Header>
+                            </ui:MenuItem.Header>
+                        </ui:MenuItem>
+                        <ui:MenuItem>
+                            <ui:MenuItem.Header>
                                 <Border
                                     Width="35"
                                     Height="20"
                                     Background="Blue"
                                     CornerRadius="4" />
-                            </MenuItem.Header>
-                        </MenuItem>
-                        <MenuItem>
-                            <MenuItem.Header>
+                            </ui:MenuItem.Header>
+                        </ui:MenuItem>
+                        <ui:MenuItem>
+                            <ui:MenuItem.Header>
                                 <Border
                                     Width="35"
                                     Height="20"
                                     Background="White"
                                     CornerRadius="4" />
-                            </MenuItem.Header>
-                        </MenuItem>
-                    </ContextMenu>
+                            </ui:MenuItem.Header>
+                        </ui:MenuItem>
+                    </ui:ContextMenu>
                 </ui:SplitButton.Flyout>
             </ui:SplitButton>
         </controls:ControlExample>

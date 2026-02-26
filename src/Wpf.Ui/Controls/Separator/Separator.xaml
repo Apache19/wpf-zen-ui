@@ -15,7 +15,7 @@
         Extends the built-in WPF Separator style while preserving its default
         behavior, and applies a theme-defined background brush.
     -->
-    <Style BasedOn="{StaticResource {x:Type Separator}}" TargetType="{x:Type Separator}">
+    <Style x:Key="SeparatorStyle" BasedOn="{StaticResource {x:Type Separator}}" TargetType="{x:Type Separator}">
         <Setter Property="Background" Value="{markup:BrushResource DividerStrokeColorDefaultBrush}" />
     </Style>
 

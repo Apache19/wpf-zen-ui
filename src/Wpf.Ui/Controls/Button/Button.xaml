@@ -20,9 +20,7 @@
     <Thickness x:Key="ButtonIconMargin">0,0,8,0</Thickness>
 
     <Style x:Key="{x:Static t:StyleKeys.ButtonStyle}" TargetType="{x:Type Button}">
-        <!--  Universal WPF UI focus  -->
         <Setter Property="FocusVisualStyle" Value="{DynamicResource {x:Static t:StyleKeys.DefaultControlFocusVisualStyle}}" />
-        <!--  Universal WPF UI focus  -->
         <Setter Property="Background" Value="{m:BrushResource ControlFillColorDefaultBrush}" />
         <Setter Property="Foreground" Value="{m:BrushResource TextFillColorPrimaryBrush}" />
         <Setter Property="BorderBrush" Value="{m:BrushResource ControlElevationBorderBrush}" />
@@ -90,8 +88,7 @@
         </Setter>
     </Style>
 
-
-    <Style x:Key="DefaultRepeatButtonStyle" TargetType="{x:Type RepeatButton}">
+    <Style x:Key="{x:Static t:StyleKeys.RepeatButtonStyle}" TargetType="{x:Type RepeatButton}">
         <!--  Universal WPF UI focus  -->
         <Setter Property="FocusVisualStyle" Value="{DynamicResource {x:Static t:StyleKeys.DefaultControlFocusVisualStyle}}" />
         <!--  Universal WPF UI focus  -->
@@ -395,7 +392,6 @@
         </Style.Triggers>
     </Style>
 
-    <Style BasedOn="{StaticResource DefaultRepeatButtonStyle}" TargetType="{x:Type RepeatButton}" />
     <Style BasedOn="{StaticResource {x:Static t:StyleKeys.UiButtonStyle}}" TargetType="{x:Type controls:Button}" />
 
 </ResourceDictionary>

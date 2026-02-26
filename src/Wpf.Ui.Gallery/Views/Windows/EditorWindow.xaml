@@ -32,80 +32,80 @@
                 Grid.Row="0"
                 Icon="pack://application:,,,/Assets/wpfui.png" />
 
-            <Menu
+            <ui:Menu
                 Grid.Row="1"
                 Background="Transparent"
                 FontSize="14">
                 <ui:MenuItem Header="File" Icon="{ui:SymbolIcon DocumentSplitHint20}">
-                    <MenuItem
+                    <ui:MenuItem
                         Command="{Binding ViewModel.StatusBarActionCommand, Mode=OneWay}"
                         CommandParameter="newFile"
                         Header="New" />
-                    <MenuItem
+                    <ui:MenuItem
                         Command="{Binding ViewModel.StatusBarActionCommand, Mode=OneWay}"
                         CommandParameter="newWindow"
                         Header="New window" />
-                    <MenuItem
+                    <ui:MenuItem
                         Command="{Binding ViewModel.StatusBarActionCommand, Mode=OneWay}"
                         CommandParameter="openFile"
                         Header="Open..." />
-                    <MenuItem
+                    <ui:MenuItem
                         Command="{Binding ViewModel.StatusBarActionCommand, Mode=OneWay}"
                         CommandParameter="saveFile"
                         Header="Save" />
-                    <MenuItem
+                    <ui:MenuItem
                         Command="{Binding ViewModel.StatusBarActionCommand, Mode=OneWay}"
                         CommandParameter="saveFileAs"
                         Header="Save As..." />
-                    <Separator />
-                    <MenuItem
+                    <ui:Separator />
+                    <ui:MenuItem
                         Command="{Binding ViewModel.StatusBarActionCommand, Mode=OneWay}"
                         CommandParameter="exit"
                         Header="Exit" />
                 </ui:MenuItem>
                 <ui:MenuItem Header="Edit" Icon="{ui:SymbolIcon DocumentEdit20}">
-                    <MenuItem
+                    <ui:MenuItem
                         Command="{Binding ViewModel.StatusBarActionCommand, Mode=OneWay}"
                         CommandParameter="editUndo"
                         Header="Undo" />
-                    <Separator />
-                    <MenuItem
+                    <ui:Separator />
+                    <ui:MenuItem
                         Command="{Binding ViewModel.StatusBarActionCommand, Mode=OneWay}"
                         CommandParameter="editCut"
                         Header="Cut" />
-                    <MenuItem
+                    <ui:MenuItem
                         Command="{Binding ViewModel.StatusBarActionCommand, Mode=OneWay}"
                         CommandParameter="editCopy"
                         Header="Copy" />
-                    <MenuItem
+                    <ui:MenuItem
                         Command="{Binding ViewModel.StatusBarActionCommand, Mode=OneWay}"
                         CommandParameter="editPaste"
                         Header="Paste" />
-                    <MenuItem
+                    <ui:MenuItem
                         Command="{Binding ViewModel.StatusBarActionCommand, Mode=OneWay}"
                         CommandParameter="editDelete"
                         Header="Delete"
                         IsEnabled="False" />
-                    <Separator />
-                    <MenuItem
+                    <ui:Separator />
+                    <ui:MenuItem
                         Command="{Binding ViewModel.StatusBarActionCommand, Mode=OneWay}"
                         CommandParameter="browserSearch"
                         Header="Search with browser" />
-                    <MenuItem
+                    <ui:MenuItem
                         Command="{Binding ViewModel.StatusBarActionCommand, Mode=OneWay}"
                         CommandParameter="find"
                         Header="Find..." />
-                    <MenuItem
+                    <ui:MenuItem
                         Command="{Binding ViewModel.StatusBarActionCommand, Mode=OneWay}"
                         CommandParameter="findNext"
                         Header="Find next" />
-                    <Separator />
-                    <MenuItem
+                    <ui:Separator />
+                    <ui:MenuItem
                         Command="{Binding ViewModel.StatusBarActionCommand, Mode=OneWay}"
                         CommandParameter="selectAll"
                         Header="Select All" />
                 </ui:MenuItem>
-                <Separator />
+                <ui:Separator />
                 <ui:MenuItem
                     Command="{Binding ViewModel.StatusBarActionCommand, Mode=OneWay}"
                     CommandParameter="textBold"
@@ -118,14 +118,14 @@
                     Command="{Binding ViewModel.StatusBarActionCommand, Mode=OneWay}"
                     CommandParameter="textUnderline"
                     Icon="{ui:SymbolIcon TextUnderline20}" />
-                <Separator />
+                <ui:Separator />
                 <ui:MenuItem
                     Command="{Binding ViewModel.StatusBarActionCommand, Mode=OneWay}"
                     CommandParameter="textFont"
                     Icon="{ui:SymbolIcon TextFont20}" />
-                <Separator />
+                <ui:Separator />
                 <ui:MenuItem Header="Format" Icon="{ui:SymbolIcon ScanText24}">
-                    <MenuItem
+                    <ui:MenuItem
                         Command="{Binding ViewModel.StatusBarActionCommand, Mode=OneWay}"
                         CommandParameter="wordWrap"
                         Header="Word wrap"
@@ -133,44 +133,44 @@
                         IsChecked="False" />
                 </ui:MenuItem>
                 <ui:MenuItem Header="View" Icon="{ui:SymbolIcon CalendarWeekStart24}">
-                    <MenuItem Header="Zoom">
-                        <MenuItem
+                    <ui:MenuItem Header="Zoom">
+                        <ui:MenuItem
                             Command="{Binding ViewModel.StatusBarActionCommand, Mode=OneWay}"
                             CommandParameter="zoomIn"
                             Header="Zoom in" />
-                        <MenuItem
+                        <ui:MenuItem
                             Command="{Binding ViewModel.StatusBarActionCommand, Mode=OneWay}"
                             CommandParameter="zoomOut"
                             Header="Zoom out" />
-                        <MenuItem
+                        <ui:MenuItem
                             Command="{Binding ViewModel.StatusBarActionCommand, Mode=OneWay}"
                             CommandParameter="zoomRestore"
                             Header="Restore default zoom" />
-                    </MenuItem>
-                    <MenuItem
+                    </ui:MenuItem>
+                    <ui:MenuItem
                         Command="{Binding ViewModel.StatusBarActionCommand, Mode=OneWay}"
                         CommandParameter="statusBar"
                         Header="Status bar"
                         IsCheckable="True"
                         IsChecked="{Binding ViewModel.IsWordWrapEnbaled, Mode=TwoWay}" />
                 </ui:MenuItem>
-                <Separator />
+                <ui:Separator />
                 <ui:MenuItem Header="Help" Icon="{ui:SymbolIcon ChatHelp20}">
-                    <MenuItem
+                    <ui:MenuItem
                         Command="{Binding ViewModel.StatusBarActionCommand, Mode=OneWay}"
                         CommandParameter="viewHelp"
                         Header="View help" />
-                    <MenuItem
+                    <ui:MenuItem
                         Command="{Binding ViewModel.StatusBarActionCommand, Mode=OneWay}"
                         CommandParameter="viewFeedback"
                         Header="Send feedback" />
-                    <Separator />
-                    <MenuItem
+                    <ui:Separator />
+                    <ui:MenuItem
                         Command="{Binding ViewModel.StatusBarActionCommand, Mode=OneWay}"
                         CommandParameter="viewAbout"
                         Header="About WPF UI" />
                 </ui:MenuItem>
-            </Menu>
+            </ui:Menu>
 
             <RichTextBox
                 x:Name="RootTextBox"
@@ -206,20 +206,20 @@
                     </ItemsPanelTemplate>
                 </StatusBar.ItemsPanel>
                 <StatusBarItem>
-                    <TextBlock>
-                        <TextBlock.Text>
+                    <ui:TextBlock>
+                        <ui:TextBlock.Text>
                             <MultiBinding Mode="OneWay" StringFormat="{}Line: {0}, Char: {1}">
                                 <Binding Path="Line" />
                                 <Binding Path="Character" />
                             </MultiBinding>
-                        </TextBlock.Text>
-                    </TextBlock>
+                        </ui:TextBlock.Text>
+                    </ui:TextBlock>
                 </StatusBarItem>
-                <Separator Grid.Column="1" />
+                <ui:Separator Grid.Column="1" />
                 <StatusBarItem Grid.Column="2">
                     <TextBlock Text="{Binding ViewModel.CurrentlyOpenedFile, Mode=OneWay}" />
                 </StatusBarItem>
-                <Separator Grid.Column="3" />
+                <ui:Separator Grid.Column="3" />
                 <StatusBarItem Grid.Column="4">
                     <ProgressBar Width="90" Value="{Binding ViewModel.Progress, Mode=OneWay}" />
                 </StatusBarItem>

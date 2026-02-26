@@ -202,9 +202,9 @@ public class SplitButton : Button
             return;
         }
 
-        _contextMenu.SetCurrentValue(MinWidthProperty,                    ActualWidth);
-        _contextMenu.SetCurrentValue(ContextMenu.PlacementTargetProperty, this);
-        _contextMenu.SetCurrentValue(ContextMenu.PlacementProperty,       PlacementMode.Bottom);
-        _contextMenu.SetCurrentValue(ContextMenu.IsOpenProperty,          true);
+        _contextMenu.SetCurrentValue(MinWidthProperty,                                            ActualWidth);
+        _contextMenu.SetCurrentValue(System.Windows.Controls.ContextMenu.PlacementTargetProperty, this);
+        _contextMenu.SetCurrentValue(System.Windows.Controls.ContextMenu.PlacementProperty,       PlacementMode.Bottom);
+        _contextMenu.SetCurrentValue(System.Windows.Controls.ContextMenu.IsOpenProperty,          true);
     }
 }

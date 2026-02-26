@@ -1,14 +1,61 @@
-﻿// This Source Code Form is subject to the terms of the MIT License.
+// This Source Code Form is subject to the terms of the MIT License.
 // If a copy of the MIT was not distributed with this file, You can obtain one at https://opensource.org/licenses/MIT.
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-using System;
-using System.Collections.Generic;
-using System.Text;
+using System.Windows.Markup;
+using Wpf.Ui.Theming;
 
 namespace Wpf.Ui.Markup;
 
-internal class StyleResourceExtension
+[ContentProperty(nameof(Id))]
+[MarkupExtensionReturnType(typeof(Style))]
+public class StyleResourceExtension : DynamicResourceExtension
 {
+    [ConstructorArgument("id")]
+    public StyleId Id
+    {
+        get;
+        set
+        {
+            field       = value;
+            ResourceKey = KeyMapping(value);
+        }
+    }
+
+    public StyleResourceExtension(StyleId id)
+    {
+        Id = id;
+    }
+
+    internal static ComponentResourceKey KeyMapping(StyleId id)
+    {
+        return id switch
+        {
+            StyleId.ButtonStyle       => StyleKeys.ButtonStyle,
+            StyleId.UiButtonStyle     => StyleKeys.UiButtonStyle,
+            StyleId.RepeatButtonStyle => StyleKeys.RepeatButtonStyle,
+
+            StyleId.MenuStyle         => StyleKeys.MenuStyle,
+            StyleId.UiMenuStyle       => StyleKeys.UiMenuStyle,
+
+            StyleId.DefaultCheckBoxStyle            => StyleKeys.DefaultCheckBoxStyle,
+            StyleId.DefaultUiCheckBoxStyle          => StyleKeys.DefaultUiCheckBoxStyle,
+            StyleId.DefaultComboBoxStyle            => StyleKeys.DefaultComboBoxStyle,
+            StyleId.DefaultUiComboBoxStyle          => StyleKeys.DefaultUiComboBoxStyle,
+            StyleId.DefaultTextBoxStyle             => StyleKeys.DefaultTextBoxStyle,
+            StyleId.DefaultUiTextBoxStyle           => StyleKeys.DefaultUiTextBoxStyle,
+            StyleId.DefaultTextBoxScrollViewerStyle => StyleKeys.DefaultTextBoxScrollViewerStyle,
+            StyleId.DefaultControlContextMenu       => StyleKeys.DefaultControlContextMenu,
+            StyleId.DefaultControlFocusVisualStyle  => StyleKeys.DefaultControlFocusVisualStyle,
+            StyleId.DefaultScrollBarStyle           => StyleKeys.DefaultScrollBarStyle,
+            StyleId.NavigationViewItemDataTemplate  => StyleKeys.NavigationViewItemDataTemplate,
+            StyleId.IconInfoBadgeStyle              => StyleKeys.IconInfoBadgeStyle,
+            StyleId.ValueInfoBadgeStyle             => StyleKeys.ValueInfoBadgeStyle,
+            StyleId.DotInfoBadgeStyle               => StyleKeys.DotInfoBadgeStyle,
+
+            StyleId.Unknown                         => throw new NotSupportedException(),
+            _                                       => throw new IndexOutOfRangeException(),
+        };
+    }
 }

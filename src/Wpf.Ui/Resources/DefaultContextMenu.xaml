@@ -10,6 +10,12 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:theming="clr-namespace:Wpf.Ui.Theming">
 
+    <!--
+        todo 这是一个菜单实例，如果被多个控件使用，则可能造成混乱。
+        请删除此实例，并给需要自定右键菜单的控件单独定义。
+        另，
+    -->
+
     <ContextMenu x:Key="{x:Static theming:StyleKeys.DefaultControlContextMenu}">
         <MenuItem Command="ApplicationCommands.Copy" />
         <MenuItem Command="ApplicationCommands.Cut" />

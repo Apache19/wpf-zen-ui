@@ -4,6 +4,7 @@
 // All Rights Reserved.
 
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 
 // ReSharper disable once CheckNamespace
@@ -108,12 +109,9 @@ public class DropDownButton : Button
             return;
         }
 
-        _contextMenu.SetCurrentValue(MinWidthProperty,                    ActualWidth);
-        _contextMenu.SetCurrentValue(ContextMenu.PlacementTargetProperty, this);
-        _contextMenu.SetCurrentValue(
-            ContextMenu.PlacementProperty,
-            System.Windows.Controls.Primitives.PlacementMode.Bottom
-        );
-        _contextMenu.SetCurrentValue(ContextMenu.IsOpenProperty, true);
+        _contextMenu.SetCurrentValue(System.Windows.Controls.ContextMenu.MinWidthProperty,        ActualWidth);
+        _contextMenu.SetCurrentValue(System.Windows.Controls.ContextMenu.PlacementTargetProperty, this);
+        _contextMenu.SetCurrentValue(System.Windows.Controls.ContextMenu.PlacementProperty,       PlacementMode.Bottom);
+        _contextMenu.SetCurrentValue(System.Windows.Controls.ContextMenu.IsOpenProperty,          true);
     }
 }

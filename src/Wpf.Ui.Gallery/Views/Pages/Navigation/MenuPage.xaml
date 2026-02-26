@@ -50,7 +50,7 @@
                 \t\t\t&lt;ui:MenuItem Icon="{ui:SymbolIcon TextUnderline20}" /&gt;\n
                 &lt;/Menu&gt;
             </controls:ControlExample.XamlCode>
-            <Menu FontSize="14">
+            <ui:Menu FontSize="14">
                 <ui:MenuItem Header="File" Icon="{ui:SymbolIcon Symbol=Document24}">
                     <ui:MenuItem Header="New" InputGestureText="CTRL+N" />
                     <ui:MenuItem Header="Open..." InputGestureText="CTRL+O" />
@@ -81,7 +81,7 @@
                 <ui:MenuItem Icon="{ui:SymbolIcon TextBold20}" />
                 <ui:MenuItem Icon="{ui:SymbolIcon TextItalic20}" />
                 <ui:MenuItem Icon="{ui:SymbolIcon TextUnderline20}" />
-            </Menu>
+            </ui:Menu>
         </controls:ControlExample>
     </Grid>
 </Page>
