@@ -4,8 +4,11 @@
 // All Rights Reserved.
 
 using System.Diagnostics;
+using System.Windows.Controls;
+using System.Windows.Media;
 using Microsoft.Win32;
 using Wpf.Ui.Appearance.Accent;
+using Wpf.Ui.Theming;
 using Wpf.Ui.Threading;
 
 namespace Wpf.Ui.Appearance;
@@ -20,7 +23,7 @@ namespace Wpf.Ui.Appearance;
 public sealed class ThemeManager
 {
     // todo 实现一个Update方法，传入FollowSystemTheme、UseSystemAccentColor、ThemeMode三个参数，能同时设置三个属性，并只执行一次更新
-    
+
     internal const string ThemeBaseUri = "pack://application:,,,/Wpf.Ui;component/Resources/Theme/";
 
     private static readonly Uri LightThemeUri        = new(ThemeBaseUri + "Light.xaml", UriKind.Absolute);
@@ -74,6 +77,65 @@ public sealed class ThemeManager
                 UpdateTheme(ThemeChangeSource.Manual);
             }
         }
+    }
+
+    /// <summary>
+    /// Applies theme to a specific element and its visual tree (useful for WinForms ElementHost scenarios).
+    /// </summary>
+    /// <param name="element">The root element to apply theme to.</param>
+    /// <param name="themeMode">Theme mode to apply.</param>
+    /// <param name="useSystemAccentColor">Whether to use system accent color.</param>
+    public static void ApplyThemeToElement(FrameworkElement element, UIThemeMode themeMode, bool useSystemAccentColor = false)
+    {
+        if (element == null)
+        {
+            throw new ArgumentNullException(nameof(element));
+        }
+
+        element.Dispatcher.Invoke(() =>
+        {
+            Uri themeUri = themeMode == UIThemeMode.Dark ? DarkThemeUri : LightThemeUri;
+
+            ResourceDictionary? existingThemeDict = null;
+            foreach (var dict in element.Resources.MergedDictionaries)
+            {
+                if (dict.Source != null &&
+                    dict.Source.ToString().StartsWith(ThemeBaseUri, StringComparison.OrdinalIgnoreCase))
+                {
+                    existingThemeDict = dict;
+                    break;
+                }
+            }
+
+            element.Resources.BeginInit();
+
+            if (existingThemeDict != null)
+            {
+                element.Resources.MergedDictionaries.Remove(existingThemeDict);
+            }
+
+            var themeDict = new ResourceDictionary { Source = themeUri };
+            element.Resources.MergedDictionaries.Insert(0, themeDict);
+
+            if (useSystemAccentColor)
+            {
+                var palette = SystemAccentPaletteReader.Read();
+                if (palette != null)
+                {
+                    var accentDict = new ResourceDictionary
+                    {
+                        [ColorKeys.SystemAccentColor]          = palette.Accent,
+                        [ColorKeys.SystemAccentColorPrimary]   = themeMode == UIThemeMode.Light ? palette.Dark1 : palette.Light1,
+                        [ColorKeys.SystemAccentColorSecondary] = themeMode == UIThemeMode.Light ? palette.Dark2 : palette.Light2,
+                        [ColorKeys.SystemAccentColorTertiary]  = themeMode == UIThemeMode.Light ? palette.Dark3 : palette.Light3
+                    };
+
+                    element.Resources.MergedDictionaries.Add(accentDict);
+                }
+            }
+
+            element.Resources.EndInit();
+        });
     }
 
     static ThemeManager()
@@ -136,6 +198,8 @@ public sealed class ThemeManager
         // 另外，高对比度环境下没有单独的“强调色”，所以也要用高对比度颜色覆盖强调色。
 
         var app = EnsureApplication();
+
+        // 合并期间不立即刷新，否则可能导致强调色应用不完全
         app.Resources.BeginInit();
 
         if (SystemParameters.HighContrast)
@@ -156,6 +220,7 @@ public sealed class ThemeManager
             SystemAccentThemeManager.Update(UseSystemAccentColor, _themeMode);
         }
 
+        // 结束合并，统一生效
         app.Resources.EndInit();
 
         Instance.Changed?.Invoke(Instance, new ThemeChangedEventArgs(_themeMode, source));

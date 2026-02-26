@@ -38,25 +38,25 @@ namespace Wpf.Ui.Demo.WinForms
             | System.Windows.Forms.AnchorStyles.Right)));
             this.elementHost1.Location = new System.Drawing.Point(12, 12);
             this.elementHost1.Name = "elementHost1";
-            this.elementHost1.Size = new System.Drawing.Size(954, 574);
-            this.elementHost1.TabIndex = 0;
+            this.elementHost1.Size = new System.Drawing.Size(1575, 965);
+            this.elementHost1.TabIndex = 1;
             this.elementHost1.Text = "elementHost1";
             this.elementHost1.Child = null;
             // 
             // Form1
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(12F, 24F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(978, 598);
+            this.ClientSize = new System.Drawing.Size(1599, 989);
             this.Controls.Add(this.elementHost1);
             this.Name = "Form1";
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "Form1";
             this.ResumeLayout(false);
 
         }
 
         #endregion
-
         private System.Windows.Forms.Integration.ElementHost elementHost1;
     }
 }
