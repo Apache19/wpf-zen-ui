@@ -20,31 +20,10 @@ public partial class WpfContent : UserControl
         InitializeComponent();
 
         Loaded += OnLoaded;
-        Unloaded += OnUnloaded;
     }
 
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
         RootNavigation.Navigate(typeof(DashboardPage));
-
-        WeakEventManager<ThemeManager, ThemeChangedEventArgs>.AddHandler(
-            ThemeManager.Instance,
-            nameof(ThemeManager.Changed),
-            ThemeChanged
-        );
-    }
-
-    private void OnUnloaded(object sender, RoutedEventArgs e)
-    {
-        WeakEventManager<ThemeManager, ThemeChangedEventArgs>.RemoveHandler(
-            ThemeManager.Instance,
-            nameof(ThemeManager.Changed),
-            ThemeChanged
-        );
-    }
-
-    private void ThemeChanged(object? sender, ThemeChangedEventArgs e)
-    {
-        ThemeManager.ApplyThemeToElement(this, e.AppliedTheme, ThemeManager.UseSystemAccentColor);
     }
 }

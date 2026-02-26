@@ -22,8 +22,9 @@
             Click="OnBaseButtonClick"
             Content="Click me!"
             Icon="{ui:SymbolIcon Fluent24}" />
-        <TextBlock
+        <ui:TextBox
             x:Name="CounterTextBlock"
+            IsTextSelectionEnabled="True"
             Grid.Column="1"
             Margin="12,0,0,0"
             VerticalAlignment="Center" />
