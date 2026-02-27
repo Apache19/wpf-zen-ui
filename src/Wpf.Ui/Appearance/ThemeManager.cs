@@ -5,11 +5,13 @@
 
 using System.Diagnostics;
 using Microsoft.Win32;
+using Wpf.Ui.Appearance;
 using Wpf.Ui.Appearance.Accent;
 using Wpf.Ui.Theming;
 using Wpf.Ui.Threading;
 
-namespace Wpf.Ui.Appearance;
+// 特意使主题管理器可以使用ui:前缀
+namespace Wpf.Ui;
 
 /*
 
@@ -101,7 +103,22 @@ namespace Wpf.Ui.Appearance;
 
    这套架构的精髓在于把“主题”从 Application 级别剥离出来，变成一个依附于视觉根节点的可传播状态场，有点像把重力从地球中心挪到了每个 PresentationSource 上🌌。它既不污染宿主，又能保证穿透力。
 
-   如果你想继续推进，我可以帮你把第一阶段的自刷新字典逻辑做成一个干净、可扩展的基类框架版本，包含路径覆盖策略和线程安全边界设计。
+   ==================================
+
+   好，那我根据你的提示，重新整理了一下思路
+   主题管理器仍然提供全局配置功能。
+   主题管理器同时持有两套主题资源字典，一套深色系，一套浅色系。
+   主题管理器支持配置两个色系的附加字典Uir（不是替换，是附加）。
+   全局主题切换走Application，无Application时则全局切换不生效。
+
+   附加属性仍然提供，但只提供明暗类型或跟随全局的参数。
+   附加属性被挂在谁身上，则把主题管理器里持有的响应主题字典合并进去。判断是否是非Application环境，如果没有Application，则尝试往上找一级，看看上一级是不是根容器，是根容器则在其没有主题字典的情况下塞入主题。
+   附加属性挂载的时候订阅主题管理器的通知，以便跟随变化。
+
+   这样设计就解决了全局配置问题，也能使用附加属性强制给某个节点设定单独的主题，或者是顶层仿冒“全局”，而且也不会有很多重复字典出现，节省内存资源。
+   但是有一个问题就是：Resource在合并字典前必须先BeginInit，合并完后EndInit，这样才能保证多次合并结果（合并主字典、附加字典、强调色字典等）正确，所以附加属性挂载订阅通知是必须的。
+
+   实际上主题管理器只需要持有2个全局字典即可(App在xaml里合并，附加属性挂载时合并到目标)，因为合并到目标的始终只有1个，而合并过程是：各目标Resource.BeginInit()->清空全局资源字典->合并基础字典到全局字典->合并附加字典到全局字典->合并强调色字典到全局字典->
 
  */
 
@@ -114,14 +131,80 @@ namespace Wpf.Ui.Appearance;
     Justification = "ThemeManager has application lifetime; disposal is unnecessary.")]
 public sealed class ThemeManager
 {
-    // todo 实现一个Update方法，传入FollowSystemTheme、UseSystemAccentColor、ThemeMode三个参数，能同时设置三个属性，并只执行一次更新
-    // todo 高对比度也有明暗模式。。。
-
     internal const string ThemeBaseUri = "pack://application:,,,/Wpf.Ui;component/Resources/Theme/";
 
     private static readonly Uri LightThemeUri        = new(ThemeBaseUri + "Light.xaml", UriKind.Absolute);
     private static readonly Uri DarkThemeUri         = new(ThemeBaseUri + "Dark.xaml", UriKind.Absolute);
     private static readonly Uri HighContrastThemeUri = new(ThemeBaseUri + "HighContrast.xaml", UriKind.Absolute);
+
+    #region AttachedDependencyProperty RequestedTheme
+
+    /// <summary>
+    /// Identifies the RequestedTheme attached property.
+    /// </summary>
+    public static readonly DependencyProperty RequestedThemeProperty =
+        DependencyProperty.RegisterAttached(
+            "RequestedTheme",
+            typeof(UIThemeMode),
+            typeof(ThemeManager),
+            new FrameworkPropertyMetadata(
+                UIThemeMode.Auto,
+                OnRequestedThemeChanged
+            )
+        );
+
+    /// <summary>
+    /// Helper for getting <see cref="RequestedThemeProperty"/> from <paramref name="element"/>.
+    /// </summary>
+    /// <param name="element">
+    /// <see cref="DependencyObject"/> to read <see cref="RequestedThemeProperty"/> from.
+    /// </param>
+    /// <returns>
+    /// RequestedTheme property value.
+    /// </returns>
+    [AttachedPropertyBrowsableForType(typeof(DependencyObject))]
+    public static UIThemeMode GetRequestedTheme(DependencyObject element)
+    {
+        if (element == null)
+        {
+            throw new ArgumentNullException(nameof(element));
+        }
+
+        return (UIThemeMode)element.GetValue(RequestedThemeProperty);
+    }
+
+    /// <summary>
+    /// Helper for setting <see cref="RequestedThemeProperty"/> on <paramref name="element"/>.
+    /// </summary>
+    /// <param name="element">
+    /// <see cref="DependencyObject"/> to set <see cref="RequestedThemeProperty"/> on.
+    /// </param>
+    /// <param name="value">
+    /// RequestedTheme property value.
+    /// </param>
+    public static void SetRequestedTheme(DependencyObject element, UIThemeMode value)
+    {
+        if (element == null)
+        {
+            throw new ArgumentNullException(nameof(element));
+        }
+
+        element.SetValue(RequestedThemeProperty, value);
+    }
+
+    #endregion
+
+    private static void OnRequestedThemeChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        // 属性设置时把目标注册到弱引用列表里
+        // 立即为目标挂载资源
+        // 检查目标是否为
+        throw new NotImplementedException();
+    }
+
+    // 三个全局字典 Auto, Light, Dark
+
+    // todo 用空白项目测试ElementHost那个下级容器到底是什么
 
     public static ThemeManager Instance { get; } = new();
 
@@ -486,8 +569,6 @@ public sealed class ThemeManager
     private static void UpdateTheme(ThemeChangeSource source)
     {
         // todo 换逻辑：先构建字典，然后把字典合并进Application和已注册的元素中
-        ResourceDictionary rd;
-
         // 没有 Application 或者已经Shutdown，则不做更新，只通知
         var app = Application.Current;
 
@@ -520,7 +601,7 @@ public sealed class ThemeManager
             if (app != null)
             {
                 // 高对比度没有强调色，所以要清理之前可能应用的强调色
-                SystemAccentThemeManager.Disable(app);
+                //SystemAccentThemeManager.Disable(app);
                 ApplyTheme(app, _themeMode, true, true);
             }
         }
@@ -529,7 +610,7 @@ public sealed class ThemeManager
             if (app != null)
             {
                 ApplyTheme(app, _themeMode, false, true);
-                SystemAccentThemeManager.Update(app, UseSystemAccentColor, _themeMode);
+                //SystemAccentThemeManager.Update(app, UseSystemAccentColor, _themeMode);
             }
         }
 
