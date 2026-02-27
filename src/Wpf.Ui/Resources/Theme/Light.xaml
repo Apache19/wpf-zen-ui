@@ -370,10 +370,10 @@
     <SolidColorBrush x:Key="{x:Static t:BrushKeys.SystemFillColorInformationalBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemFillColorInformational}}" />
 
     <!--  LeftNavigationViewTemplate  -->
-    <LinearGradientBrush x:Key="{x:Static t:BrushKeys.LeftNavigationViewSeparatorBrush}" StartPoint="0,0" EndPoint="1,0">
-        <GradientStop Offset="0" Color="#00000000" />
-        <GradientStop Offset="0.3" Color="#E0E0E0" />
-        <GradientStop Offset="0.7" Color="#E0E0E0" />
-        <GradientStop Offset="1" Color="#00000000" />
+    <LinearGradientBrush x:Key="{x:Static t:BrushKeys.LeftNavigationViewSeparatorBrush}" StartPoint="0,0" EndPoint="1,0" ColorInterpolationMode="SRgbLinearInterpolation">
+        <GradientStop Offset="0" Color="#00E0E0E0" />
+        <GradientStop Offset="0.3" Color="#FFE0E0E0" />
+        <GradientStop Offset="0.7" Color="#FFE0E0E0" />
+        <GradientStop Offset="1" Color="#00E0E0E0" />
     </LinearGradientBrush>
 </ResourceDictionary>

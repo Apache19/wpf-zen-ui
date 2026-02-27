@@ -12,22 +12,14 @@
     Background="{ui:BrushResource WindowBackgroundBrush}"
     mc:Ignorable="d">
     <Grid>
-        <ui:NavigationViewItem
-            Width="200"
-            Height="40"
-            Background="Chocolate"
-            Content="Dashboard">
-            <ui:NavigationViewItem.Icon>
-                <ui:SymbolIcon Symbol="Home24" />
-            </ui:NavigationViewItem.Icon>
-        </ui:NavigationViewItem>
-    </Grid>
-    <!--<Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
-        <ui:NavigationView x:Name="RootNavigation" Grid.Row="1" OpenPaneLength="200">
+        <ui:NavigationView
+            x:Name="RootNavigation"
+            Grid.Row="1"
+            OpenPaneLength="200">
             <ui:NavigationView.AutoSuggestBox>
                 <ui:AutoSuggestBox x:Name="AutoSuggestBox" PlaceholderText="Search">
                     <ui:AutoSuggestBox.Icon>
@@ -72,8 +64,6 @@
                 </ui:NavigationViewItem>
             </ui:NavigationView.FooterMenuItems>
         </ui:NavigationView>
-        <ui:TitleBar
-            Title="WPF UI - Simple Demo"
-            Grid.Row="0" />
-    </Grid>-->
+        <ui:TitleBar Title="WPF UI - Simple Demo" Grid.Row="0" />
+    </Grid>
 </UserControl>

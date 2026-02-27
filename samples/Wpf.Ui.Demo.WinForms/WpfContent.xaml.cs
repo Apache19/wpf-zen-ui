@@ -5,7 +5,6 @@
 
 using System.Windows;
 using System.Windows.Controls;
-using Wpf.Ui.Appearance;
 using Wpf.Ui.Demo.Simple.Views.Pages;
 
 namespace Wpf.Ui.Demo.WinForms;
@@ -19,11 +18,11 @@ public partial class WpfContent : UserControl
     {
         InitializeComponent();
 
-        //Loaded += OnLoaded;
+        Loaded += OnLoaded;
     }
 
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
-        //RootNavigation.Navigate(typeof(DashboardPage));
+        RootNavigation.Navigate(typeof(DashboardPage));
     }
 }
