@@ -7,56 +7,60 @@ using Wpf.Ui.Theming;
 
 namespace Wpf.Ui.Appearance.Accent;
 
-internal static class SystemAccentThemeManager
+// todo 考虑高对比度
+//       当系统处于高对比度模式时，
+
+internal static class SystemAccentResourceManager
 {
     private static ResourceDictionary? _accentDictionary;
-    private static bool                _isEnabled;
 
-    private static void Apply(Application app, UIThemeMode mode)
+    internal static void Apply(ResourceDictionary resource, UIThemeMode mode)
     {
+        if (resource == null)
+        {
+            throw new ArgumentNullException(nameof(resource));
+        }
+
         var palette = SystemAccentPaletteReader.Read();
         if (palette == null)
         {
             return;
         }
 
+        Remove(resource);
+
         var dict = BuildDictionary(palette, mode);
-        ReplaceAccentDictionary(app, dict);
+        _accentDictionary = dict;
 
-        _isEnabled = true;
+        resource.MergedDictionaries.Add(dict);
     }
 
-    internal static void Disable(Application app)
+    internal static void Remove(ResourceDictionary resource)
     {
-        if (!_isEnabled)
+        if (resource == null)
         {
-            return;
+            throw new ArgumentNullException(nameof(resource));
         }
 
         if (_accentDictionary != null)
         {
-            app.Resources.MergedDictionaries.Remove(_accentDictionary);
+            resource.MergedDictionaries.Remove(_accentDictionary);
             _accentDictionary = null;
         }
-
-        _isEnabled = false;
     }
 
-    internal static void Update(Application app, bool useSystemAccent, UIThemeMode mode)
+    internal static void SetSystemAccentEnabled(ResourceDictionary resource, bool enabled, UIThemeMode mode)
     {
-        if (_accentDictionary != null)
+        if (resource == null)
         {
-            app.Resources.MergedDictionaries.Remove(_accentDictionary);
-            _accentDictionary = null;
+            throw new ArgumentNullException(nameof(resource));
         }
 
-        if (useSystemAccent)
+        Remove(resource);
+
+        if (enabled)
         {
-            Apply(app, mode);
-        }
-        else
-        {
-            Disable(app);
+            Apply(resource, mode);
         }
     }
 
@@ -64,7 +68,11 @@ internal static class SystemAccentThemeManager
     {
         var dic = new ResourceDictionary { [ColorKeys.SystemAccentColor] = p.Accent };
 
-        if (mode == UIThemeMode.Light)
+        if (SystemParameters.HighContrast)
+        {
+            
+        }
+        else if (mode == UIThemeMode.Light)
         {
             dic[ColorKeys.SystemAccentColorPrimary]   = p.Dark1;
             dic[ColorKeys.SystemAccentColorSecondary] = p.Dark2;
@@ -104,16 +112,5 @@ internal static class SystemAccentThemeManager
         }
 
         return dic;
-    }
-
-    private static void ReplaceAccentDictionary(Application app, ResourceDictionary newDict)
-    {
-        if (_accentDictionary != null)
-        {
-            app.Resources.MergedDictionaries.Remove(_accentDictionary);
-        }
-
-        _accentDictionary = newDict;
-        app.Resources.MergedDictionaries.Add(_accentDictionary);
     }
 }

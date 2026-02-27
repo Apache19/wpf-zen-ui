@@ -33,6 +33,9 @@ public sealed class ThemeManager
 
     private static readonly DebounceDispatcher _themeChangedDebouncer = new();
 
+    private static readonly List<WeakReference> _registeredElements     = [];
+    private static readonly object              _registeredElementsLock = new();
+
     private static bool        _followSystemTheme;
     private static UIThemeMode _themeMode = UIThemeMode.Light;
 
@@ -79,12 +82,120 @@ public sealed class ThemeManager
     }
 
     /// <summary>
+    /// Registers a FrameworkElement to receive automatic theme updates.
+    /// </summary>
+    /// <param name="element">The element to register.</param>
+    public static void Register(FrameworkElement element)
+    {
+        if (element == null)
+        {
+            throw new ArgumentNullException(nameof(element));
+        }
+
+        lock (_registeredElementsLock)
+        {
+            CleanupDeadReferences();
+
+            if (!IsElementRegistered(element))
+            {
+                _registeredElements.Add(new WeakReference(element));
+                element.Unloaded += OnElementUnloaded;
+
+                ApplyThemeToElement(element, _themeMode, UseSystemAccentColor);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Registers a FrameworkContentElement to receive automatic theme updates.
+    /// </summary>
+    /// <param name="element">The element to register.</param>
+    public static void Register(FrameworkContentElement element)
+    {
+        if (element == null)
+        {
+            throw new ArgumentNullException(nameof(element));
+        }
+
+        lock (_registeredElementsLock)
+        {
+            CleanupDeadReferences();
+
+            if (!IsElementRegistered(element))
+            {
+                _registeredElements.Add(new WeakReference(element));
+                element.Unloaded += OnElementUnloaded;
+
+                ApplyThemeToContentElement(element, _themeMode, UseSystemAccentColor);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Unregisters a FrameworkElement from receiving automatic theme updates.
+    /// </summary>
+    /// <param name="element">The element to unregister.</param>
+    public static void Unregister(FrameworkElement element)
+    {
+        if (element == null)
+        {
+            throw new ArgumentNullException(nameof(element));
+        }
+
+        lock (_registeredElementsLock)
+        {
+            _registeredElements.RemoveAll(wr => !wr.IsAlive || ReferenceEquals(wr.Target, element));
+            element.Unloaded -= OnElementUnloaded;
+        }
+    }
+
+    /// <summary>
+    /// Unregisters a FrameworkContentElement from receiving automatic theme updates.
+    /// </summary>
+    /// <param name="element">The element to unregister.</param>
+    public static void Unregister(FrameworkContentElement element)
+    {
+        if (element == null)
+        {
+            return;
+        }
+
+        lock (_registeredElementsLock)
+        {
+            _registeredElements.RemoveAll(wr => !wr.IsAlive || ReferenceEquals(wr.Target, element));
+            element.Unloaded -= OnElementUnloaded;
+        }
+    }
+
+    private static void OnElementUnloaded(object sender, RoutedEventArgs e)
+    {
+        if (sender is FrameworkElement fe)
+        {
+            Unregister(fe);
+        }
+        else if (sender is FrameworkContentElement fce)
+        {
+            Unregister(fce);
+        }
+    }
+
+    private static bool IsElementRegistered(object element)
+    {
+        return _registeredElements.Any(wr => wr.IsAlive && ReferenceEquals(wr.Target, element));
+    }
+
+    private static void CleanupDeadReferences()
+    {
+        _registeredElements.RemoveAll(wr => !wr.IsAlive);
+    }
+
+    /// <summary>
     /// Applies theme to a specific element and its visual tree (useful for WinForms ElementHost scenarios).
     /// </summary>
     /// <param name="element">The root element to apply theme to.</param>
     /// <param name="themeMode">Theme mode to apply.</param>
     /// <param name="useSystemAccentColor">Whether to use system accent color.</param>
-    public static void ApplyThemeToElement(FrameworkElement element, UIThemeMode themeMode, bool useSystemAccentColor = false)
+    private static void ApplyThemeToElement(FrameworkElement element, UIThemeMode themeMode, bool useSystemAccentColor = false)
     {
         if (element == null)
         {
@@ -143,6 +254,92 @@ public sealed class ThemeManager
         });
     }
 
+    private static void ApplyThemeToContentElement(FrameworkContentElement element, UIThemeMode themeMode, bool useSystemAccentColor)
+    {
+        var dispatcher = element.Dispatcher;
+        if (dispatcher == null)
+        {
+            return;
+        }
+
+        dispatcher.Invoke(() =>
+        {
+            var isHighContrast = SystemParameters.HighContrast;
+            var isDarkMode     = themeMode == UIThemeMode.Dark;
+
+            Uri themeUri =
+                isHighContrast ? HighContrastThemeUri :
+                isDarkMode     ? DarkThemeUri :
+                                 LightThemeUri;
+
+            ResourceDictionary? existingThemeDict = null;
+            foreach (var dict in element.Resources.MergedDictionaries)
+            {
+                if (dict.Source != null &&
+                    dict.Source.ToString().StartsWith(ThemeBaseUri, StringComparison.OrdinalIgnoreCase))
+                {
+                    existingThemeDict = dict;
+                    break;
+                }
+            }
+
+            element.Resources.BeginInit();
+
+            if (existingThemeDict != null)
+            {
+                element.Resources.MergedDictionaries.Remove(existingThemeDict);
+            }
+
+            var themeDict = new ResourceDictionary { Source = themeUri };
+            element.Resources.MergedDictionaries.Insert(0, themeDict);
+
+            if (useSystemAccentColor && !isHighContrast)
+            {
+                var palette = SystemAccentPaletteReader.Read();
+                if (palette != null)
+                {
+                    var accentDict = new ResourceDictionary
+                    {
+                        [ColorKeys.SystemAccentColor]          = palette.Accent,
+                        [ColorKeys.SystemAccentColorPrimary]   = themeMode == UIThemeMode.Light ? palette.Dark1 : palette.Light1,
+                        [ColorKeys.SystemAccentColorSecondary] = themeMode == UIThemeMode.Light ? palette.Dark2 : palette.Light2,
+                        [ColorKeys.SystemAccentColorTertiary]  = themeMode == UIThemeMode.Light ? palette.Dark3 : palette.Light3
+                    };
+
+                    element.Resources.MergedDictionaries.Add(accentDict);
+                }
+            }
+
+            element.Resources.EndInit();
+        });
+    }
+
+    private static void UpdateRegisteredElements()
+    {
+        lock (_registeredElementsLock)
+        {
+            CleanupDeadReferences();
+
+            foreach (var weakRef in _registeredElements.ToList())
+            {
+                if (!weakRef.IsAlive)
+                {
+                    continue;
+                }
+
+                var target = weakRef.Target;
+                if (target is FrameworkElement fe)
+                {
+                    ApplyThemeToElement(fe, _themeMode, UseSystemAccentColor);
+                }
+                else if (target is FrameworkContentElement fce)
+                {
+                    ApplyThemeToContentElement(fce, _themeMode, UseSystemAccentColor);
+                }
+            }
+        }
+    }
+
     static ThemeManager()
     {
         if (DesignerProperties.GetIsInDesignMode(new DependencyObject()))
@@ -194,6 +391,8 @@ public sealed class ThemeManager
 
     private static void UpdateTheme(ThemeChangeSource source)
     {
+        // todo 换逻辑：先构建字典，然后把字典合并进Application和已注册的元素中
+
         // 没有 Application 或者已经Shutdown，则不做更新，只通知
         var app = Application.Current;
 
@@ -241,6 +440,8 @@ public sealed class ThemeManager
 
         // 结束合并，统一生效
         app?.Resources.EndInit();
+
+        UpdateRegisteredElements();
 
         Instance.Changed?.Invoke(Instance, new ThemeChangedEventArgs(_themeMode, source));
     }
