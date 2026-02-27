@@ -62,7 +62,6 @@ internal static class SystemAccentThemeManager
 
     private static ResourceDictionary BuildDictionary(SystemAccentPalette p, UIThemeMode mode)
     {
-        // todo 此处定义的顺序应该与主题里定义的资源顺序匹配
         var dic = new ResourceDictionary { [ColorKeys.SystemAccentColor] = p.Accent };
 
         if (mode == UIThemeMode.Light)
@@ -70,12 +69,38 @@ internal static class SystemAccentThemeManager
             dic[ColorKeys.SystemAccentColorPrimary]   = p.Dark1;
             dic[ColorKeys.SystemAccentColorSecondary] = p.Dark2;
             dic[ColorKeys.SystemAccentColorTertiary]  = p.Dark3;
+
+            dic[BrushKeys.SystemAccentColorBrush]                     = new SolidColorBrush(p.Accent);
+            dic[BrushKeys.SystemAccentColorPrimaryBrush]              = new SolidColorBrush(p.Dark1);
+            dic[BrushKeys.SystemAccentColorSecondaryBrush]            = new SolidColorBrush(p.Dark2);
+            dic[BrushKeys.SystemAccentColorTertiaryBrush]             = new SolidColorBrush(p.Dark3);
+            dic[BrushKeys.AccentTextFillColorPrimaryBrush]            = new SolidColorBrush(p.Dark1);
+            dic[BrushKeys.AccentTextFillColorSecondaryBrush]          = new SolidColorBrush(p.Dark2);
+            dic[BrushKeys.AccentTextFillColorTertiaryBrush]           = new SolidColorBrush(p.Dark3);
+            dic[BrushKeys.AccentFillColorSelectedTextBackgroundBrush] = new SolidColorBrush(p.Accent);
+            dic[BrushKeys.AccentFillColorDefaultBrush]                = new SolidColorBrush(p.Dark1);
+            dic[BrushKeys.AccentFillColorSecondaryBrush]              = new SolidColorBrush(p.Dark1) { Opacity = 0.9 };
+            dic[BrushKeys.AccentFillColorTertiaryBrush]               = new SolidColorBrush(p.Dark1) { Opacity = 0.8 };
+            dic[BrushKeys.SystemFillColorAttentionBrush]              = new SolidColorBrush(p.Accent);
         }
         else
         {
             dic[ColorKeys.SystemAccentColorPrimary]   = p.Light1;
             dic[ColorKeys.SystemAccentColorSecondary] = p.Light2;
             dic[ColorKeys.SystemAccentColorTertiary]  = p.Light3;
+
+            dic[BrushKeys.SystemAccentColorBrush]                     = new SolidColorBrush(p.Accent);
+            dic[BrushKeys.SystemAccentColorPrimaryBrush]              = new SolidColorBrush(p.Light1);
+            dic[BrushKeys.SystemAccentColorSecondaryBrush]            = new SolidColorBrush(p.Light2);
+            dic[BrushKeys.SystemAccentColorTertiaryBrush]             = new SolidColorBrush(p.Light3);
+            dic[BrushKeys.AccentTextFillColorPrimaryBrush]            = new SolidColorBrush(p.Light1);
+            dic[BrushKeys.AccentTextFillColorSecondaryBrush]          = new SolidColorBrush(p.Light2);
+            dic[BrushKeys.AccentTextFillColorTertiaryBrush]           = new SolidColorBrush(p.Light3);
+            dic[BrushKeys.AccentFillColorSelectedTextBackgroundBrush] = new SolidColorBrush(p.Accent);
+            dic[BrushKeys.AccentFillColorDefaultBrush]                = new SolidColorBrush(p.Light2);
+            dic[BrushKeys.AccentFillColorSecondaryBrush]              = new SolidColorBrush(p.Light2) { Opacity = 0.9 };
+            dic[BrushKeys.AccentFillColorTertiaryBrush]               = new SolidColorBrush(p.Light2) { Opacity = 0.8 };
+            dic[BrushKeys.SystemFillColorAttentionBrush]              = new SolidColorBrush(p.Accent);
         }
 
         return dic;

@@ -13,28 +13,28 @@
 <ResourceDictionary
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:t="clr-namespace:Wpf.Ui.Theming"
-    xmlns:m="clr-namespace:Wpf.Ui.Markup">
+    xmlns:t="clr-namespace:Wpf.Ui.Theming">
 
     <Color x:Key="{x:Static t:ColorKeys.SystemAccentColor}">#0078d4</Color>
     <Color x:Key="{x:Static t:ColorKeys.SystemAccentColorPrimary}">#FF0091F8</Color>
     <Color x:Key="{x:Static t:ColorKeys.SystemAccentColorSecondary}">#FF4CC2FF</Color>
     <Color x:Key="{x:Static t:ColorKeys.SystemAccentColorTertiary}">#FF99EBFF</Color>
 
-    <SolidColorBrush x:Key="{x:Static t:BrushKeys.SystemAccentColorBrush}" Color="{m:ColorResource SystemAccentColor}" />
-    <SolidColorBrush x:Key="{x:Static t:BrushKeys.SystemAccentColorPrimaryBrush}" Color="{m:ColorResource SystemAccentColorPrimary}" />
-    <SolidColorBrush x:Key="{x:Static t:BrushKeys.SystemAccentColorSecondaryBrush}" Color="{m:ColorResource SystemAccentColorSecondary}" />
-    <SolidColorBrush x:Key="{x:Static t:BrushKeys.SystemAccentColorTertiaryBrush}" Color="{m:ColorResource SystemAccentColorTertiary}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.SystemAccentColorBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemAccentColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.SystemAccentColorPrimaryBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemAccentColorPrimary}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.SystemAccentColorSecondaryBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemAccentColorSecondary}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.SystemAccentColorTertiaryBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemAccentColorTertiary}}" />
 
-    <SolidColorBrush x:Key="{x:Static t:BrushKeys.AccentTextFillColorPrimaryBrush}" Color="{m:ColorResource SystemAccentColorPrimary}" />
-    <SolidColorBrush x:Key="{x:Static t:BrushKeys.AccentTextFillColorSecondaryBrush}" Color="{m:ColorResource SystemAccentColorSecondary}" />
-    <SolidColorBrush x:Key="{x:Static t:BrushKeys.AccentTextFillColorTertiaryBrush}" Color="{m:ColorResource SystemAccentColorTertiary}" />
-    <SolidColorBrush x:Key="{x:Static t:BrushKeys.AccentFillColorSelectedTextBackgroundBrush}" Color="{m:ColorResource SystemAccentColor}" />
-    <SolidColorBrush x:Key="{x:Static t:BrushKeys.AccentFillColorDefaultBrush}" Color="{m:ColorResource SystemAccentColorSecondary}" />
-    <SolidColorBrush x:Key="{x:Static t:BrushKeys.AccentFillColorSecondaryBrush}" Opacity="0.9" Color="{m:ColorResource SystemAccentColorSecondary}" />
-    <SolidColorBrush x:Key="{x:Static t:BrushKeys.AccentFillColorTertiaryBrush}" Opacity="0.8" Color="{m:ColorResource SystemAccentColorSecondary}" />
-    <SolidColorBrush x:Key="{x:Static t:BrushKeys.AccentFillColorDisabledBrush}" Color="{m:ColorResource AccentFillColorDisabled}" />
-    <SolidColorBrush x:Key="{x:Static t:BrushKeys.SystemFillColorAttentionBrush}" Color="{m:ColorResource SystemAccentColor}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.AccentTextFillColorPrimaryBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemAccentColorPrimary}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.AccentTextFillColorSecondaryBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemAccentColorSecondary}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.AccentTextFillColorTertiaryBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemAccentColorTertiary}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.AccentFillColorSelectedTextBackgroundBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemAccentColor}}" />
+
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.AccentFillColorDefaultBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemAccentColorSecondary}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.AccentFillColorSecondaryBrush}" Opacity="0.9" Color="{StaticResource {x:Static t:ColorKeys.SystemAccentColorSecondary}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.AccentFillColorTertiaryBrush}" Opacity="0.8" Color="{StaticResource {x:Static t:ColorKeys.SystemAccentColorSecondary}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.AccentFillColorDisabledBrush}" Color="{StaticResource {x:Static t:ColorKeys.AccentFillColorDisabled}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.SystemFillColorAttentionBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemAccentColor}}" />
 
     <!--  Windows theme 主要在高对比度模式下生效，普通主题则不使用，但仍然需要定义，以便覆盖残留的颜色值  -->
     <DynamicResource x:Key="{x:Static t:ColorKeys.SystemColorWindowTextColor}"    ResourceKey="{x:Static SystemColors.WindowTextColorKey}" />
