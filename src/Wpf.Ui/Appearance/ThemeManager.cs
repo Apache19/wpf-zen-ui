@@ -11,6 +11,100 @@ using Wpf.Ui.Threading;
 
 namespace Wpf.Ui.Appearance;
 
+/*
+
+   方案名称：基于附加属性继承与自刷新字典的主题引擎
+
+   一、核心组件设计
+
+   A. 主题管理器（单例与枚举）
+
+   用于提供全局状态存储，但不强制用户直接与其交互。
+
+   ThemeType（枚举）：Light、Dark、Auto、Custom。
+
+   ThemeManager（单例）：
+   负责监听系统注册表（当为 Auto 模式时）。
+   提供 CurrentTheme 属性与 ThemeChanged 事件。
+
+   B. 主题附加属性（ThemeAttacher / ThemeManager）
+
+   这是整个引擎的“传感器”和“执行者”。
+
+   ThemeProperty（附加属性）：
+   设置为 Inherits（属性继承），确保子元素能够自动感知主题。
+
+   核心逻辑（PropertyChangedCallback）：
+   当附加属性发生变化，或元素 Loaded 时，通过 PresentationSource.FromVisual 向上查找视觉树的根节点（例如 HostContainer 或 Window）。
+   将 ThemeResourceDictionary 自动注入到根节点的 Resources.MergedDictionaries 中。
+
+   配置型附加属性：
+   LightSource、DarkSource、CustomSource（类型为 Uri），允许用户指定自定义主题资源路径。
+
+   C. 自刷新资源字典（ThemeResourceDictionary）
+
+   继承自 ResourceDictionary，负责“按需加载”主题资源。
+
+   内部机制：
+   订阅全局 ThemeChanged 事件。
+   内部维护一个私有的 MergedDictionaries，根据当前主题类型加载对应的 XAML 文件。
+   支持优先级查找机制：用户自定义路径 > 库内置默认路径。
+
+   二、关键工作流程
+
+   1. 初始化与注入
+
+   当用户在 WPF 的 UserControl 顶层设置 ui:Theme.Type="Dark"。
+   ThemeAttacher 监测到元素加载后，定位到 WinForms 的 HostContainer。
+   将 ThemeResourceDictionary 实例（单例方式）注入到 HostContainer.Resources 中。
+
+   2. 动态切换
+
+   当用户更改 Theme.Type，或全局单例触发主题变更。
+   所有已注入的 ThemeResourceDictionary 实例收到通知，清理旧的 Source 并加载新的 Source。
+   由于 HostContainer 层级的资源已更新，所有下级控件（包括 ContextMenu）通过 DynamicResource 自动刷新。
+
+   三、设计优势总结
+
+   环境兼容性：
+   完全脱离 Application.Current，完美兼容 WinForms 和 Office 插件环境。
+
+   穿透能力：
+   通过 PresentationSource 注入根节点，解决弹出菜单、工具提示等视觉树断裂导致的主题丢失问题。
+
+   可定制性：
+   支持通过附加属性传入自定义 .xaml 路径，允许用户覆盖默认主题资源。
+
+   代码侵入性：
+   极低。用户只需在 XAML 根节点添加一行附加属性，无需编写 C# 初始化代码。
+
+   性能与内存：
+   资源字典在根节点级别共享，避免每个控件重复加载。
+   支持弱引用机制，防止内存泄漏。
+
+   四、实施路线图（Next Steps）
+
+   第一阶段：
+   实现 ThemeResourceDictionary。
+   验证当其手动合并到 UserControl 时，能够根据单例自动切换 Source。
+
+   第二阶段：
+   编写 ThemeAttacher 附加属性。
+   实现 Inherits 元数据，以及通过 PresentationSource 定位 Root 的逻辑。
+
+   第三阶段：
+   实现“路径覆盖”机制。
+   让字典能够从附加属性中读取 CustomSource 并优先加载。
+
+   第四阶段：
+   处理多线程兼容性问题（针对不同 UI 线程的 Dispatcher 隔离）。
+
+   这套架构的精髓在于把“主题”从 Application 级别剥离出来，变成一个依附于视觉根节点的可传播状态场，有点像把重力从地球中心挪到了每个 PresentationSource 上🌌。它既不污染宿主，又能保证穿透力。
+
+   如果你想继续推进，我可以帮你把第一阶段的自刷新字典逻辑做成一个干净、可扩展的基类框架版本，包含路径覆盖策略和线程安全边界设计。
+
+ */
+
 /// <summary>
 /// 负责管理应用程序主题状态，监听系统主题事件，同步系统主题，协调主题资源加载
 /// </summary>
@@ -392,6 +486,7 @@ public sealed class ThemeManager
     private static void UpdateTheme(ThemeChangeSource source)
     {
         // todo 换逻辑：先构建字典，然后把字典合并进Application和已注册的元素中
+        ResourceDictionary rd;
 
         // 没有 Application 或者已经Shutdown，则不做更新，只通知
         var app = Application.Current;
