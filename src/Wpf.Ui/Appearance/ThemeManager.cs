@@ -137,7 +137,92 @@ public sealed class ThemeManager
     private static readonly Uri DarkThemeUri         = new(ThemeBaseUri + "Dark.xaml", UriKind.Absolute);
     private static readonly Uri HighContrastThemeUri = new(ThemeBaseUri + "HighContrast.xaml", UriKind.Absolute);
 
-    #region AttachedDependencyProperty RequestedTheme
+    #region Attached Dependency Property BaseTheme
+
+    /// <summary>
+    /// Identifies the BaseTheme attached property.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// This property is used to set the theme for the RootVisual element.
+    /// It functions as a "pseudo-global" theme but is scoped strictly to the current visual tree.
+    /// It is specifically designed to resolve theme desynchronization issues for isolated components
+    /// such as ContextMenus and Popups when WPF content is hosted in non-WPF environments (e.g., WinForms ElementHost).
+    /// </para>
+    /// <para>
+    /// In non-native WPF hosting environments (e.g., WinForms ElementHost), 
+    /// this property should be declared on the root node of the top-level UserControl.
+    /// This ensures that theme resources are injected into the hidden root container, 
+    /// allowing ContextMenus and Popups to synchronize correctly without a global Application object.
+    /// </para>
+    /// </remarks>
+    public static readonly DependencyProperty BaseThemeProperty =
+        DependencyProperty.RegisterAttached(
+            "BaseTheme",
+            typeof(UIThemeMode),
+            typeof(ThemeManager),
+            new PropertyMetadata(
+                UIThemeMode.Auto,
+                static (d, e) => OnElementThemePropertyChanged(d, e)
+            )
+        );
+
+    /// <summary>
+    /// Helper for getting <see cref="BaseThemeProperty"/> from <paramref name="element"/>.
+    /// </summary>
+    /// <param name="element">
+    /// <see cref="DependencyObject"/> to read <see cref="BaseThemeProperty"/> from.
+    /// </param>
+    /// <returns>
+    /// BaseTheme property value.
+    /// </returns>
+    [AttachedPropertyBrowsableForType(typeof(DependencyObject))]
+    public static UIThemeMode GetBaseTheme(DependencyObject element)
+    {
+        if (element == null)
+        {
+            throw new ArgumentNullException(nameof(element));
+        }
+
+        return (UIThemeMode)element.GetValue(BaseThemeProperty);
+    }
+
+    /// <summary>
+    /// Helper for setting <see cref="BaseThemeProperty"/> on <paramref name="element"/>.
+    /// </summary>
+    /// <param name="element">
+    /// <see cref="DependencyObject"/> to set <see cref="BaseThemeProperty"/> on.
+    /// </param>
+    /// <param name="value">
+    /// BaseTheme property value.
+    /// </param>
+    /// <remarks>
+    /// <para>
+    /// This property is used to set the theme for the RootVisual element.
+    /// It functions as a "pseudo-global" theme but is scoped strictly to the current visual tree.
+    /// It is specifically designed to resolve theme desynchronization issues for isolated components
+    /// such as ContextMenus and Popups when WPF content is hosted in non-WPF environments (e.g., WinForms ElementHost).
+    /// </para>
+    /// <para>
+    /// In non-native WPF hosting environments (e.g., WinForms ElementHost), 
+    /// this property should be declared on the root node of the top-level UserControl.
+    /// This ensures that theme resources are injected into the hidden root container, 
+    /// allowing ContextMenus and Popups to synchronize correctly without a global Application object.
+    /// </para>
+    /// </remarks>
+    public static void SetBaseTheme(DependencyObject element, UIThemeMode value)
+    {
+        if (element == null)
+        {
+            throw new ArgumentNullException(nameof(element));
+        }
+
+        element.SetValue(BaseThemeProperty, value);
+    }
+
+    #endregion
+
+    #region Attached Dependency Property RequestedTheme
 
     /// <summary>
     /// Identifies the RequestedTheme attached property.
@@ -149,7 +234,14 @@ public sealed class ThemeManager
             typeof(ThemeManager),
             new FrameworkPropertyMetadata(
                 UIThemeMode.Auto,
-                OnRequestedThemeChanged
+                static (d, e) =>
+                {
+                    var ps = PresentationSource.FromDependencyObject(d);
+                    if (ps != null)
+                    {
+                        OnElementThemePropertyChanged(d, e);
+                    }
+                }
             )
         );
 
@@ -194,15 +286,16 @@ public sealed class ThemeManager
 
     #endregion
 
-    private static void OnRequestedThemeChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    private static void OnElementThemePropertyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
         // 属性设置时把目标注册到弱引用列表里
+        // 订阅其卸载事件，在事件中移除引用
         // 立即为目标挂载资源
-        // 检查目标是否为
         throw new NotImplementedException();
     }
 
     // 三个全局字典 Auto, Light, Dark
+    // 当
 
     // todo 用空白项目测试ElementHost那个下级容器到底是什么
 
