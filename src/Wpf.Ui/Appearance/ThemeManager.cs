@@ -18,17 +18,19 @@ namespace Wpf.Ui;
 /// </summary>
 public sealed class ThemeManager
 {
+    #region Constants, Properties, Fields
+
     internal const string ThemeBaseUri = "pack://application:,,,/Wpf.Ui;component/Resources/Theme/";
 
     private static readonly Uri LightThemeUri        = new(ThemeBaseUri + "Light.xaml", UriKind.Absolute);
     private static readonly Uri DarkThemeUri         = new(ThemeBaseUri + "Dark.xaml", UriKind.Absolute);
     private static readonly Uri HighContrastThemeUri = new(ThemeBaseUri + "HighContrast.xaml", UriKind.Absolute);
 
-#if NET9_0_OR_GREATER
+    #if NET9_0_OR_GREATER
     private static readonly Lock _lock = new();
-#else
+    #else
     private static readonly object _lock = new();
-#endif
+    #endif
 
     private static readonly ResourceDictionary _lightDictionary = [];
     private static readonly ResourceDictionary _darkDictionary  = [];
@@ -42,15 +44,38 @@ public sealed class ThemeManager
     private static Uri? _additionalDarkThemeUri;
 
     private static UiThemeMode _themeMode = UiThemeMode.Light; // Default Light theme merged with Generic.xaml
-    private static bool        _useSystemAccentColor = true;
+
+    private static bool _useSystemAccentColor = true;
 
     private static ThemeManager Instance { get; } = new();
+
+    #endregion
+
+    #region Initialize
+
+    public static void Initialize() { }
 
     static ThemeManager()
     {
         if (!DesignerProperties.GetIsInDesignMode(new DependencyObject()))
         {
+            // In non-native WPF hosting environments (such as WinForms with ElementHost),
+            // an Application instance is not created automatically.
+            //
+            // WPF resource lookup walks up the logical tree and, when reaching its boundary,
+            // falls back to Application-level resources. If no Application exists,
+            // resource resolution may fail when crossing logical tree or hosting boundaries
+            // (e.g., ContextMenu, Popup, or Frame boundaries).
+            //
+            // A typical example of this is when a UI element is inside a Frame,
+            // as Frame has its own separate logical tree that cannot access
+            // the resources of its parent or Application by default.
+            //
+            // EnsureApplication() guarantees that an Application object is available
+            // to host global theme resources and provide a stable fallback scope
+            // for resource lookup.
             EnsureApplication();
+
             SystemEvents.UserPreferenceChanged     += SystemEvents_UserPreferenceChanged;
             SystemParameters.StaticPropertyChanged += SystemParameters_StaticPropertyChanged;
         }
@@ -62,14 +87,131 @@ public sealed class ThemeManager
     {
         if (Application.Current == null)
         {
-            _ = new Application { ShutdownMode = ShutdownMode.OnExplicitShutdown };
+            // In non-WPF hosting environments (e.g., WinForms),
+            // an Application instance is not created automatically.
+            //
+            // This Application instance is created solely as a resource container
+            // to provide an Application-level resource scope for WPF resource lookup.
+            // It fills the gap when resource resolution reaches the boundary
+            // of a logical tree and falls back to Application resources.
+            //
+            // IMPORTANT:
+            // Do NOT call Run() on this instance.
+            // Calling Run() would start a WPF message loop (Dispatcher loop)
+            // and take ownership of the thread's lifetime, which is not desired
+            // when hosted inside another UI framework.
+            _ = new Application
+            {
+                // Since Run() is not invoked, no Dispatcher message loop is started
+                // by this Application instance. Therefore, setting ShutdownMode to
+                // OnExplicitShutdown will not prevent the process from exiting,
+                // because this Application does not control the application's lifetime.
+                ShutdownMode = ShutdownMode.OnExplicitShutdown
+            };
         }
     }
 
-    private ThemeManager() { }
+    #endregion
+
+    #region Configure
+
+    /// <summary>
+    /// Sets both additional light and dark theme URIs in a single operation,
+    /// triggering only one theme refresh.
+    /// </summary>
+    /// <param name="lightThemeUri">The URI of the additional light theme resource dictionary, or <c>null</c> to clear.</param>
+    /// <param name="darkThemeUri">The URI of the additional dark theme resource dictionary, or <c>null</c> to clear.</param>
+    public static void SetAdditionalThemeUris(Uri? lightThemeUri, Uri? darkThemeUri)
+    {
+        bool changed = false;
+
+        if (_additionalLightThemeUri != lightThemeUri)
+        {
+            _additionalLightThemeUri = lightThemeUri;
+            changed                  = true;
+        }
+
+        if (_additionalDarkThemeUri != darkThemeUri)
+        {
+            _additionalDarkThemeUri = darkThemeUri;
+            changed                 = true;
+        }
+
+        if (changed)
+        {
+            RefreshTheme(ThemeChangeSource.Manual);
+        }
+    }
+
+    /// <summary>
+    /// Configures multiple theme settings in a single operation, triggering only one theme refresh.
+    /// </summary>
+    /// <param name="themeMode">The theme mode to apply.</param>
+    /// <param name="useSystemAccentColor">Whether to use the system accent color.</param>
+    /// <param name="additionalLightThemeUri">The URI of the additional light theme resource dictionary, or <c>null</c> to clear.</param>
+    /// <param name="additionalDarkThemeUri">The URI of the additional dark theme resource dictionary, or <c>null</c> to clear.</param>
+    /// <example>
+    /// <code lang="csharp">
+    /// ThemeManager.Configure(
+    ///     themeMode: UiThemeMode.Dark,
+    ///     useSystemAccentColor: true,
+    ///     additionalLightThemeUri: new Uri("pack://application:,,,/MyApp;component/Themes/Light.xaml"),
+    ///     additionalDarkThemeUri: new Uri("pack://application:,,,/MyApp;component/Themes/Dark.xaml")
+    /// );
+    /// </code>
+    /// </example>
+    public static void Configure(
+        UiThemeMode themeMode,
+        bool useSystemAccentColor,
+        Uri? additionalLightThemeUri = null,
+        Uri? additionalDarkThemeUri = null)
+    {
+        bool changed = false;
+
+        if (_themeMode != themeMode)
+        {
+            _themeMode = themeMode;
+            changed    = true;
+        }
+
+        if (_useSystemAccentColor != useSystemAccentColor)
+        {
+            _useSystemAccentColor = useSystemAccentColor;
+            changed               = true;
+        }
+
+        if (_additionalLightThemeUri != additionalLightThemeUri)
+        {
+            _additionalLightThemeUri = additionalLightThemeUri;
+            changed                  = true;
+        }
+
+        if (_additionalDarkThemeUri != additionalDarkThemeUri)
+        {
+            _additionalDarkThemeUri = additionalDarkThemeUri;
+            changed                 = true;
+        }
+
+        if (changed)
+        {
+            RefreshTheme(ThemeChangeSource.Manual);
+        }
+    }
+
+    #endregion
 
     #region Public Properties
 
+    /// <summary>
+    /// Gets the currently active theme applied to the application.
+    /// </summary>
+    /// <remarks>
+    /// This property represents the theme that is currently in effect.
+    /// It can only be one of the two predefined values: <see cref="ApplicationTheme.Light"/> or
+    /// <see cref="ApplicationTheme.Dark"/>. It is updated whenever the theme mode is changed manually
+    /// or based on system settings (if applicable). Any custom theme settings or "Auto" modes
+    /// are not reflected in this property—only the two active themes are returned.
+    /// </remarks>
     public static ApplicationTheme CurrentTheme { get; private set; } = ResolveEffectiveTheme(_themeMode);
 
     /// <summary>
@@ -129,36 +271,23 @@ public sealed class ThemeManager
     }
 
     /// <summary>
-    /// Sets both additional light and dark theme URIs in a single operation,
-    /// triggering only one theme refresh.
+    /// Gets or sets the global theme mode for the application.
     /// </summary>
-    /// <param name="lightThemeUri">The URI of the additional light theme resource dictionary, or <c>null</c> to clear.</param>
-    /// <param name="darkThemeUri">The URI of the additional dark theme resource dictionary, or <c>null</c> to clear.</param>
-    public static void SetAdditionalThemeUris(Uri? lightThemeUri, Uri? darkThemeUri)
-    {
-        bool changed = false;
-
-        if (_additionalLightThemeUri != lightThemeUri)
-        {
-            _additionalLightThemeUri = lightThemeUri;
-            changed = true;
-        }
-
-        if (_additionalDarkThemeUri != darkThemeUri)
-        {
-            _additionalDarkThemeUri = darkThemeUri;
-            changed = true;
-        }
-
-        if (changed)
-        {
-            RefreshTheme(ThemeChangeSource.Manual);
-        }
-    }
-
-    /// <summary>
-    /// Gets or sets the global theme mode for the Application.
-    /// </summary>
+    /// <remarks>
+    /// This property controls the overall theme mode of the application. The available values are:
+    /// <list>
+    ///     <item><see cref="UiThemeMode.Light"/> - The application will use the Light theme.</item>
+    ///     <item><see cref="UiThemeMode.Dark"/> - The application will use the Dark theme.</item>
+    ///     <item><see cref="UiThemeMode.Auto"/> - The application will automatically follow the system theme settings.</item>
+    /// </list>
+    ///
+    /// When set to <see cref="UiThemeMode.Auto"/>, the application will respect the system's theme settings.
+    /// The <see cref="CurrentTheme"/> property will reflect the system's current theme (either Light or Dark),
+    /// and changes to the system theme will automatically trigger updates to the application's theme.
+    ///
+    /// Changing the value of this property will trigger a theme refresh, and if the theme mode is set to <see cref="UiThemeMode.Auto"/>,
+    /// it will sync with the system's theme immediately.
+    /// </remarks>
     public static UiThemeMode ThemeMode
     {
         get => _themeMode;
@@ -173,8 +302,20 @@ public sealed class ThemeManager
     }
 
     /// <summary>
-    /// Gets or sets a value indicating whether gets or sets whether to use the system accent color.
+    /// Gets or sets a value indicating whether the application should use the system accent color.
     /// </summary>
+    /// <remarks>
+    /// When set to <c>true</c>, the application will use the current system accent color
+    /// as part of its theme resources. Changes to the system accent color will be
+    /// reflected in the application after a theme refresh.
+    ///
+    /// When set to <c>false</c>, the application will ignore the system accent color
+    /// and fall back to the built-in default accent color (blue).
+    ///
+    /// The default value is <c>true</c>.
+    /// Changing this property triggers a theme refresh to ensure that
+    /// the updated accent color is applied immediately.
+    /// </remarks>
     public static bool UseSystemAccentColor
     {
         get => _useSystemAccentColor;
@@ -189,8 +330,6 @@ public sealed class ThemeManager
     }
 
     #endregion
-
-    public static void Initialize() { }
 
     #region Attached Property: ApplyToRootVisual (Internal)
 
@@ -415,24 +554,42 @@ public sealed class ThemeManager
         if (isHighContrast)
         {
             // High contrast mode: both dictionaries load high contrast theme
-            _lightDictionary.MergedDictionaries.Add(new ResourceDictionary { Source = HighContrastThemeUri });
-            _darkDictionary.MergedDictionaries.Add(new ResourceDictionary { Source  = HighContrastThemeUri });
+            _lightDictionary.MergedDictionaries.Add(new ResourceDictionary
+            {
+                Source = HighContrastThemeUri
+            });
+            _darkDictionary.MergedDictionaries.Add(new ResourceDictionary
+            {
+                Source = HighContrastThemeUri
+            });
         }
         else
         {
             // Load library themes
-            _lightDictionary.MergedDictionaries.Add(new ResourceDictionary { Source = LightThemeUri });
-            _darkDictionary.MergedDictionaries.Add(new ResourceDictionary { Source  = DarkThemeUri });
+            _lightDictionary.MergedDictionaries.Add(new ResourceDictionary
+            {
+                Source = LightThemeUri
+            });
+            _darkDictionary.MergedDictionaries.Add(new ResourceDictionary
+            {
+                Source = DarkThemeUri
+            });
 
             // Load additional theme resources
             if (_additionalLightThemeUri != null)
             {
-                _lightDictionary.MergedDictionaries.Add(new ResourceDictionary { Source = _additionalLightThemeUri });
+                _lightDictionary.MergedDictionaries.Add(new ResourceDictionary
+                {
+                    Source = _additionalLightThemeUri
+                });
             }
 
             if (_additionalDarkThemeUri != null)
             {
-                _darkDictionary.MergedDictionaries.Add(new ResourceDictionary { Source = _additionalDarkThemeUri });
+                _darkDictionary.MergedDictionaries.Add(new ResourceDictionary
+                {
+                    Source = _additionalDarkThemeUri
+                });
             }
 
             // Apply system accent colors
@@ -450,7 +607,10 @@ public sealed class ThemeManager
 
     private static ResourceDictionary BuildAccentDictionary(SystemAccentPalette p, UiThemeMode mode)
     {
-        var dic = new ResourceDictionary { [ColorKeys.SystemAccentColor] = p.Accent };
+        var dic = new ResourceDictionary
+        {
+            [ColorKeys.SystemAccentColor] = p.Accent
+        };
 
         if (mode == UiThemeMode.Light)
         {
@@ -467,9 +627,15 @@ public sealed class ThemeManager
             dic[BrushKeys.AccentTextFillColorTertiaryBrush]           = new SolidColorBrush(p.Dark3);
             dic[BrushKeys.AccentFillColorSelectedTextBackgroundBrush] = new SolidColorBrush(p.Accent);
             dic[BrushKeys.AccentFillColorDefaultBrush]                = new SolidColorBrush(p.Dark1);
-            dic[BrushKeys.AccentFillColorSecondaryBrush]              = new SolidColorBrush(p.Dark1) { Opacity = 0.9 };
-            dic[BrushKeys.AccentFillColorTertiaryBrush]               = new SolidColorBrush(p.Dark1) { Opacity = 0.8 };
-            dic[BrushKeys.SystemFillColorAttentionBrush]              = new SolidColorBrush(p.Accent);
+            dic[BrushKeys.AccentFillColorSecondaryBrush] = new SolidColorBrush(p.Dark1)
+            {
+                Opacity = 0.9
+            };
+            dic[BrushKeys.AccentFillColorTertiaryBrush] = new SolidColorBrush(p.Dark1)
+            {
+                Opacity = 0.8
+            };
+            dic[BrushKeys.SystemFillColorAttentionBrush] = new SolidColorBrush(p.Accent);
         }
         else
         {
@@ -486,9 +652,15 @@ public sealed class ThemeManager
             dic[BrushKeys.AccentTextFillColorTertiaryBrush]           = new SolidColorBrush(p.Light3);
             dic[BrushKeys.AccentFillColorSelectedTextBackgroundBrush] = new SolidColorBrush(p.Accent);
             dic[BrushKeys.AccentFillColorDefaultBrush]                = new SolidColorBrush(p.Light2);
-            dic[BrushKeys.AccentFillColorSecondaryBrush]              = new SolidColorBrush(p.Light2) { Opacity = 0.9 };
-            dic[BrushKeys.AccentFillColorTertiaryBrush]               = new SolidColorBrush(p.Light2) { Opacity = 0.8 };
-            dic[BrushKeys.SystemFillColorAttentionBrush]              = new SolidColorBrush(p.Accent);
+            dic[BrushKeys.AccentFillColorSecondaryBrush] = new SolidColorBrush(p.Light2)
+            {
+                Opacity = 0.9
+            };
+            dic[BrushKeys.AccentFillColorTertiaryBrush] = new SolidColorBrush(p.Light2)
+            {
+                Opacity = 0.8
+            };
+            dic[BrushKeys.SystemFillColorAttentionBrush] = new SolidColorBrush(p.Accent);
         }
 
         return dic;
@@ -684,4 +856,6 @@ public sealed class ThemeManager
     public event EventHandler<ThemeChangedEventArgs>? ChangedInternal;
 
     #endregion
+
+    private ThemeManager() { }
 }

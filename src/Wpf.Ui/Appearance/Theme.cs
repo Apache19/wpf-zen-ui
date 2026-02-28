@@ -82,6 +82,22 @@ public static class Theme
     /// <summary>
     /// Identifies the Requested attached property.
     /// </summary>
+    /// <remarks>
+    /// Specifies the requested theme mode for the element on which it is set.
+    ///
+    /// When applied, the theme resources corresponding to the specified
+    /// mode are injected into the resource scope of that element.
+    /// Descendant elements resolve theme resources through the normal
+    /// WPF resource lookup mechanism.
+    ///
+    /// This setting is local in scope and does not modify the global
+    /// <see cref="ThemeManager.ThemeMode"/>.
+    ///
+    /// The final applied theme may still be affected by system policies
+    /// such as high contrast mode. When set to <see cref="UiThemeMode.Auto"/>,
+    /// the requested mode is resolved to either Light or Dark
+    /// based on the current system setting.
+    /// </remarks>
     /// <example>
     /// <code lang="xml">
     /// &lt;Border ui:Theme.Requested="Dark" /&gt;
