@@ -24,10 +24,14 @@ public sealed class ThemeManager
     private static readonly Uri DarkThemeUri         = new(ThemeBaseUri + "Dark.xaml", UriKind.Absolute);
     private static readonly Uri HighContrastThemeUri = new(ThemeBaseUri + "HighContrast.xaml", UriKind.Absolute);
 
+#if NET9_0_OR_GREATER
+    private static readonly Lock _lock = new();
+#else
     private static readonly object _lock = new();
+#endif
 
-    private static readonly ResourceDictionary _lightDictionary = new();
-    private static readonly ResourceDictionary _darkDictionary  = new();
+    private static readonly ResourceDictionary _lightDictionary = [];
+    private static readonly ResourceDictionary _darkDictionary  = [];
 
     private static readonly List<WeakReference<FrameworkElement>>        _registeredElements        = [];
     private static readonly List<WeakReference<FrameworkContentElement>> _registeredContentElements = [];
@@ -37,8 +41,8 @@ public sealed class ThemeManager
     private static Uri? _additionalLightThemeUri;
     private static Uri? _additionalDarkThemeUri;
 
-    private static UiThemeMode _themeMode = UiThemeMode.Light; // Default theme merged with Generic.xaml
-    private static bool        _useSystemAccentColor;
+    private static UiThemeMode _themeMode = UiThemeMode.Light; // Default Light theme merged with Generic.xaml
+    private static bool        _useSystemAccentColor = true;
 
     private static ThemeManager Instance { get; } = new();
 
@@ -46,11 +50,20 @@ public sealed class ThemeManager
     {
         if (!DesignerProperties.GetIsInDesignMode(new DependencyObject()))
         {
+            EnsureApplication();
             SystemEvents.UserPreferenceChanged     += SystemEvents_UserPreferenceChanged;
             SystemParameters.StaticPropertyChanged += SystemParameters_StaticPropertyChanged;
         }
 
         RebuildThemeDictionaries();
+    }
+
+    private static void EnsureApplication()
+    {
+        if (Application.Current == null)
+        {
+            _ = new Application { ShutdownMode = ShutdownMode.OnExplicitShutdown };
+        }
     }
 
     private ThemeManager() { }
@@ -112,6 +125,34 @@ public sealed class ThemeManager
                 _additionalDarkThemeUri = value;
                 RefreshTheme(ThemeChangeSource.Manual);
             }
+        }
+    }
+
+    /// <summary>
+    /// Sets both additional light and dark theme URIs in a single operation,
+    /// triggering only one theme refresh.
+    /// </summary>
+    /// <param name="lightThemeUri">The URI of the additional light theme resource dictionary, or <c>null</c> to clear.</param>
+    /// <param name="darkThemeUri">The URI of the additional dark theme resource dictionary, or <c>null</c> to clear.</param>
+    public static void SetAdditionalThemeUris(Uri? lightThemeUri, Uri? darkThemeUri)
+    {
+        bool changed = false;
+
+        if (_additionalLightThemeUri != lightThemeUri)
+        {
+            _additionalLightThemeUri = lightThemeUri;
+            changed = true;
+        }
+
+        if (_additionalDarkThemeUri != darkThemeUri)
+        {
+            _additionalDarkThemeUri = darkThemeUri;
+            changed = true;
+        }
+
+        if (changed)
+        {
+            RefreshTheme(ThemeChangeSource.Manual);
         }
     }
 

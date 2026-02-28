@@ -29,12 +29,12 @@ public partial class SettingsPage
     {
         _suppressThemeComboBoxChangedEvent = true;
 
-        ThemeComboBox.SelectedItem = ThemeManager.ThemeMode switch
+        ThemeComboBox.SelectedIndex = ThemeManager.ThemeMode switch
         {
-            UiThemeMode.Auto  => "System",
-            UiThemeMode.Light => "Light",
-            UiThemeMode.Dark  => "Dark",
-            _                 => throw new ArgumentOutOfRangeException()
+            UiThemeMode.Light => 0,
+            UiThemeMode.Dark  => 1,
+            UiThemeMode.Auto  => 2,
+            _                 => 2
         };
 
         _suppressThemeComboBoxChangedEvent = false;
@@ -53,7 +53,12 @@ public partial class SettingsPage
             return;
         }
 
-        ThemeManager.ThemeMode = ThemeComboBox.SelectedItem switch
+        if (ThemeComboBox.SelectedItem is not ComboBoxItem selectedItem)
+        {
+            return;
+        }
+
+        ThemeManager.ThemeMode = (selectedItem.Content as string) switch
         {
             "Light" => UiThemeMode.Light,
             "Dark"  => UiThemeMode.Dark,
