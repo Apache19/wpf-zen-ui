@@ -13,7 +13,8 @@ using Wpf.Ui.Threading;
 namespace Wpf.Ui;
 
 /// <summary>
-/// Manages application theme state, listens to system theme events, synchronizes system theme, and coordinates theme resource loading.
+/// Manages application theme state, listens to system theme events,
+/// synchronizes system theme, and coordinates theme resource loading.
 /// </summary>
 public sealed class ThemeManager
 {
@@ -28,13 +29,13 @@ public sealed class ThemeManager
     private static readonly ResourceDictionary _lightDictionary = new();
     private static readonly ResourceDictionary _darkDictionary  = new();
 
-    private static Uri? _additionalLightThemeUri;
-    private static Uri? _additionalDarkThemeUri;
-
     private static readonly List<WeakReference<FrameworkElement>>        _registeredElements        = [];
     private static readonly List<WeakReference<FrameworkContentElement>> _registeredContentElements = [];
 
     private static readonly DebounceDispatcher _themeChangedDebouncer = new();
+
+    private static Uri? _additionalLightThemeUri;
+    private static Uri? _additionalDarkThemeUri;
 
     private static UiThemeMode _themeMode = UiThemeMode.Auto;
     private static bool        _useSystemAccentColor;
@@ -146,8 +147,14 @@ public sealed class ThemeManager
         {
             if (d is FrameworkElement fe)
             {
-                // todo 不要直接订阅，应先检查是否已Loaded，未Loaded再订阅
-                fe.Loaded += OnElementLoadedForBaseTheme;
+                if (fe.IsLoaded)
+                {
+                    ApplyBaseTheme(fe);
+                }
+                else
+                {
+                    fe.Loaded += OnElementLoadedForBaseTheme;
+                }
             }
 
             return;
@@ -168,6 +175,11 @@ public sealed class ThemeManager
     private static void ApplyBaseTheme(DependencyObject d)
     {
         var ps = PresentationSource.FromDependencyObject(d);
+
+        // RootVisual must be a Visual.
+        // FrameworkElement derives from Visual, but FrameworkContentElement does not.
+        // Therefore RootVisual can only be a FrameworkElement.
+        // It is safe to cast without checking for FrameworkContentElement.
         if (ps?.RootVisual is FrameworkElement rootVisual)
         {
             EnsureInitialized();
@@ -366,25 +378,30 @@ public sealed class ThemeManager
             targets.Add((app, app.Resources, _themeMode));
         }
 
-        // Registered FrameworkElements
-        CleanupDeadReferences();
-
-        foreach (var wr in _registeredElements)
+        lock (_lock)
         {
-            if (wr.TryGetTarget(out var fe))
+            // Cleanup and collect registered FrameworkElements
+            _registeredElements.RemoveAll(wr => !wr.TryGetTarget(out _));
+
+            foreach (var wr in _registeredElements)
             {
-                var mode = GetEffectiveThemeForElement(fe);
-                targets.Add((fe, fe.Resources, mode));
+                if (wr.TryGetTarget(out var fe))
+                {
+                    var mode = GetEffectiveThemeForElement(fe);
+                    targets.Add((fe, fe.Resources, mode));
+                }
             }
-        }
 
-        // Registered FrameworkContentElements
-        foreach (var wr in _registeredContentElements)
-        {
-            if (wr.TryGetTarget(out var fce))
+            // Cleanup and collect registered FrameworkContentElements
+            _registeredContentElements.RemoveAll(wr => !wr.TryGetTarget(out _));
+
+            foreach (var wr in _registeredContentElements)
             {
-                var mode = GetRequestedTheme(fce);
-                targets.Add((fce, fce.Resources, mode));
+                if (wr.TryGetTarget(out var fce))
+                {
+                    var mode = GetRequestedTheme(fce);
+                    targets.Add((fce, fce.Resources, mode));
+                }
             }
         }
 
@@ -492,7 +509,7 @@ public sealed class ThemeManager
             }
         }
 
-        // Add new theme dictionary
+        // Insert at beginning so user-defined resources can override theme resources
         target.MergedDictionaries.Insert(0, themeDict);
     }
 
@@ -559,15 +576,6 @@ public sealed class ThemeManager
                 _registeredContentElements.RemoveAll(wr => !wr.TryGetTarget(out var target) || ReferenceEquals(target, fce));
                 fce.Unloaded -= OnContentElementUnloaded;
             }
-        }
-    }
-
-    private static void CleanupDeadReferences()
-    {
-        lock (_lock)
-        {
-            _registeredElements.RemoveAll(wr => !wr.TryGetTarget(out _));
-            _registeredContentElements.RemoveAll(wr => !wr.TryGetTarget(out _));
         }
     }
 
@@ -674,7 +682,7 @@ public sealed class ThemeManager
         }
     }
 
-    private event EventHandler<ThemeChangedEventArgs>? ChangedInternal;
+    public event EventHandler<ThemeChangedEventArgs>? ChangedInternal;
 
     #endregion
 }

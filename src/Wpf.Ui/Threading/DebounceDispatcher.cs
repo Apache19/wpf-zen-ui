@@ -5,6 +5,8 @@
 
 namespace Wpf.Ui.Threading;
 
+// todo 核查 DebounceDispatcher 实现是否有问题（有关于此的编译警告）
+
 /// <summary>
 /// Executes an action only after a period of inactivity.
 /// Multiple calls within the delay window will result in a single execution.

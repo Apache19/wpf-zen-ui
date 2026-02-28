@@ -11,14 +11,7 @@ namespace Wpf.Ui.Gallery.ViewModels.Pages;
 
 public sealed partial class SettingsViewModel(INavigationService navigationService) : ViewModel
 {
-    public enum AppThemeMode
-    {
-        Light,
-        Dark,
-        FollowSystem,
-    }
-
-    public record ThemeItem(string Display, AppThemeMode AppTheme);
+    public record ThemeItem(string Display, UiThemeMode ThemeMode);
 
     private bool _isInitialized = false;
 
@@ -26,7 +19,7 @@ public sealed partial class SettingsViewModel(INavigationService navigationServi
     private string _appVersion = string.Empty;
 
     [ObservableProperty]
-    private AppThemeMode _currentApplicationTheme = AppThemeMode.Light;
+    private UiThemeMode _currentTheme = UiThemeMode.Light;
 
     [ObservableProperty]
     private NavigationViewPaneDisplayMode _currentApplicationNavigationStyle =
@@ -35,9 +28,9 @@ public sealed partial class SettingsViewModel(INavigationService navigationServi
     [ObservableProperty]
     private ObservableCollection<ThemeItem> _themeList =
     [
-        new("Light", AppThemeMode.Light),
-        new("Dark", AppThemeMode.Dark),
-        new("FollowSystem", AppThemeMode.FollowSystem)
+        new("Light", UiThemeMode.Light),
+        new("Dark", UiThemeMode.Dark),
+        new("FollowSystem", UiThemeMode.Auto)
     ];
 
     public override void OnNavigatedTo()
@@ -48,22 +41,9 @@ public sealed partial class SettingsViewModel(INavigationService navigationServi
         }
     }
 
-    partial void OnCurrentApplicationThemeChanged(AppThemeMode oldValue, AppThemeMode newValue)
+    partial void OnCurrentThemeChanged(UiThemeMode oldValue, UiThemeMode newValue)
     {
-        switch (newValue)
-        {
-            case AppThemeMode.Light:
-                ThemeManager.ThemeMode = UiThemeMode.Light;
-                break;
-            case AppThemeMode.Dark:
-                ThemeManager.ThemeMode = UiThemeMode.Dark;
-                break;
-            case AppThemeMode.FollowSystem:
-                ThemeManager.FollowSystemTheme = true;
-                break;
-            default:
-                throw new ArgumentOutOfRangeException(nameof(newValue), newValue, null);
-        }
+        ThemeManager.ThemeMode = newValue;
     }
 
     partial void OnCurrentApplicationNavigationStyleChanged(
@@ -76,21 +56,8 @@ public sealed partial class SettingsViewModel(INavigationService navigationServi
 
     private void InitializeViewModel()
     {
-        if (ThemeManager.FollowSystemTheme)
-        {
-            CurrentApplicationTheme = AppThemeMode.FollowSystem;
-        }
-        else if (ThemeManager.ThemeMode == UiThemeMode.Dark)
-        {
-            CurrentApplicationTheme = AppThemeMode.Dark;
-        }
-        else
-        {
-            CurrentApplicationTheme = AppThemeMode.Light;
-        }
-
+        CurrentTheme = ThemeManager.ThemeMode;
         AppVersion = $"{GetAssemblyVersion()}";
-
         _isInitialized = true;
     }
 

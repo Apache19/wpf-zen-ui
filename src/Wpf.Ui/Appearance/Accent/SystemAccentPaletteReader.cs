@@ -9,7 +9,7 @@ namespace Wpf.Ui.Appearance;
 
 internal static class SystemAccentPaletteReader
 {
-    private const string AccentKey = @"Software\Microsoft\Windows\CurrentVersion\Explorer\Accent";
+    private const string AccentKey = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Accent";
     private const string DwmKey    = @"SOFTWARE\Microsoft\Windows\DWM";
 
     public static SystemAccentPalette? Read(Color? fallbackAccent = null)
