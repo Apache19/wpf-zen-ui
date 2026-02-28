@@ -37,14 +37,83 @@ public sealed class ThemeManager
     private static Uri? _additionalLightThemeUri;
     private static Uri? _additionalDarkThemeUri;
 
-    private static UiThemeMode _themeMode = UiThemeMode.Auto;
+    private static UiThemeMode _themeMode = UiThemeMode.Light; // Default theme merged with Generic.xaml
     private static bool        _useSystemAccentColor;
 
     private static ThemeManager Instance { get; } = new();
 
+    static ThemeManager()
+    {
+        if (!DesignerProperties.GetIsInDesignMode(new DependencyObject()))
+        {
+            SystemEvents.UserPreferenceChanged     += SystemEvents_UserPreferenceChanged;
+            SystemParameters.StaticPropertyChanged += SystemParameters_StaticPropertyChanged;
+        }
+
+        RebuildThemeDictionaries();
+    }
+
     private ThemeManager() { }
 
     #region Public Properties
+
+    public static ApplicationTheme CurrentTheme { get; private set; } = ResolveEffectiveTheme(_themeMode);
+
+    /// <summary>
+    /// Gets or sets an additional resource dictionary URI to be merged
+    /// when the Light theme is active.
+    /// </summary>
+    /// <remarks>
+    /// This property allows consumers to provide extra theme resources
+    /// that extend or override the built-in Light theme dictionary.
+    ///
+    /// When set, the specified resource dictionary will be merged
+    /// after the default Light theme resources, giving it higher
+    /// lookup priority in the resource resolution chain.
+    ///
+    /// Changing this property triggers an immediate theme refresh,
+    /// causing the new dictionary to be loaded and applied dynamically.
+    /// </remarks>
+    public static Uri? AdditionalLightThemeUri
+    {
+        get => _additionalLightThemeUri;
+        set
+        {
+            if (_additionalLightThemeUri != value)
+            {
+                _additionalLightThemeUri = value;
+                RefreshTheme(ThemeChangeSource.Manual);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Gets or sets an additional resource dictionary URI to be merged
+    /// when the Dark theme is active.
+    /// </summary>
+    /// <remarks>
+    /// This property allows consumers to provide extra theme resources
+    /// that extend or override the built-in Dark theme dictionary.
+    ///
+    /// When set, the specified resource dictionary will be merged
+    /// after the default Dark theme resources, giving it higher
+    /// lookup priority in the resource resolution chain.
+    ///
+    /// Changing this property triggers an immediate theme refresh,
+    /// causing the new dictionary to be loaded and applied dynamically.
+    /// </remarks>
+    public static Uri? AdditionalDarkThemeUri
+    {
+        get => _additionalDarkThemeUri;
+        set
+        {
+            if (_additionalDarkThemeUri != value)
+            {
+                _additionalDarkThemeUri = value;
+                RefreshTheme(ThemeChangeSource.Manual);
+            }
+        }
+    }
 
     /// <summary>
     /// Gets or sets the global theme mode for the Application.
@@ -54,7 +123,6 @@ public sealed class ThemeManager
         get => _themeMode;
         set
         {
-            EnsureInitialized();
             if (_themeMode != value)
             {
                 _themeMode = value;
@@ -71,7 +139,6 @@ public sealed class ThemeManager
         get => _useSystemAccentColor;
         set
         {
-            EnsureInitialized();
             if (_useSystemAccentColor != value)
             {
                 _useSystemAccentColor = value;
@@ -80,99 +147,66 @@ public sealed class ThemeManager
         }
     }
 
-    /// <summary>
-    /// Gets a value indicating whether the theme manager is initialized.
-    /// </summary>
-    public static bool IsInitialized { get; private set; }
-
     #endregion
 
-    #region Attached Property: BaseTheme
+    public static void Initialize() { }
 
-    /// <summary>
-    /// Identifies the BaseTheme attached property.
-    /// </summary>
-    /// <remarks>
-    /// <para>
-    /// This property is used to set the theme for the RootVisual element.
-    /// It functions as a "pseudo-global" theme but is scoped strictly to the current visual tree.
-    /// It is specifically designed to resolve theme desynchronization issues for isolated components
-    /// such as ContextMenus and Popups when WPF content is hosted in non-WPF environments (e.g., WinForms ElementHost).
-    /// </para>
-    /// <para>
-    /// In non-native WPF hosting environments (e.g., WinForms ElementHost), 
-    /// this property should be declared on the root node of the top-level UserControl.
-    /// This ensures that theme resources are injected into the hidden root container, 
-    /// allowing ContextMenus and Popups to synchronize correctly without a global Application object.
-    /// </para>
-    /// </remarks>
-    public static readonly DependencyProperty BaseThemeProperty =
+    #region Attached Property: ApplyToRootVisual (Internal)
+
+    private static readonly DependencyProperty IsRootVisualProperty =
         DependencyProperty.RegisterAttached(
-            "BaseTheme",
-            typeof(UiThemeMode),
+            "IsRootVisual",
+            typeof(bool),
             typeof(ThemeManager),
-            new PropertyMetadata(UiThemeMode.Auto, OnBaseThemeChanged)
+            new PropertyMetadata(false)
         );
 
-    /// <summary>Helper for getting <see cref="BaseThemeProperty"/> from <paramref name="element"/>.</summary>
-    /// <param name="element"><see cref="DependencyObject"/> to read <see cref="BaseThemeProperty"/> from.</param>
-    /// <returns>BaseTheme property value.</returns>
+    private static void SetIsRootVisual(DependencyObject element, bool value)
+    {
+        element.SetValue(IsRootVisualProperty, value);
+    }
+
     [AttachedPropertyBrowsableForType(typeof(DependencyObject))]
-    public static UiThemeMode GetBaseTheme(DependencyObject element)
+    private static bool GetIsRootVisual(DependencyObject element)
     {
-        if (element == null)
-        {
-            throw new ArgumentNullException(nameof(element));
-        }
-
-        return (UiThemeMode)element.GetValue(BaseThemeProperty);
+        return (bool)element.GetValue(IsRootVisualProperty);
     }
 
-    /// <summary>Helper for setting <see cref="BaseThemeProperty"/> on <paramref name="element"/>.</summary>
-    /// <param name="element"><see cref="DependencyObject"/> to set <see cref="BaseThemeProperty"/> on.</param>
-    /// <param name="value">BaseTheme property value.</param>
-    public static void SetBaseTheme(DependencyObject element, UiThemeMode value)
+    internal static void OnApplyToRootVisualChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
-        if (element == null)
+        if ((bool)e.NewValue)
         {
-            throw new ArgumentNullException(nameof(element));
-        }
-
-        element.SetValue(BaseThemeProperty, value);
-    }
-
-    private static void OnBaseThemeChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
-    {
-        if (PresentationSource.FromDependencyObject(d) == null)
-        {
-            if (d is FrameworkElement fe)
+            if (PresentationSource.FromDependencyObject(d) == null)
             {
-                if (fe.IsLoaded)
+                if (d is FrameworkElement fe)
                 {
-                    ApplyBaseTheme(fe);
+                    if (fe.IsLoaded)
+                    {
+                        RegisterRootVisual(fe);
+                    }
+                    else
+                    {
+                        fe.Loaded += OnElementLoadedForRootVisual;
+                    }
                 }
-                else
-                {
-                    fe.Loaded += OnElementLoadedForBaseTheme;
-                }
+
+                return;
             }
 
-            return;
+            RegisterRootVisual(d);
         }
-
-        ApplyBaseTheme(d);
     }
 
-    private static void OnElementLoadedForBaseTheme(object sender, RoutedEventArgs e)
+    private static void OnElementLoadedForRootVisual(object sender, RoutedEventArgs e)
     {
         if (sender is FrameworkElement fe)
         {
-            fe.Loaded -= OnElementLoadedForBaseTheme;
-            ApplyBaseTheme(fe);
+            fe.Loaded -= OnElementLoadedForRootVisual;
+            RegisterRootVisual(fe);
         }
     }
 
-    private static void ApplyBaseTheme(DependencyObject d)
+    private static void RegisterRootVisual(DependencyObject d)
     {
         var ps = PresentationSource.FromDependencyObject(d);
 
@@ -182,108 +216,27 @@ public sealed class ThemeManager
         // It is safe to cast without checking for FrameworkContentElement.
         if (ps?.RootVisual is FrameworkElement rootVisual)
         {
-            EnsureInitialized();
-            RegisterElement(rootVisual, isBaseTheme: true);
-            ApplyThemeToElement(rootVisual, GetBaseTheme(d));
+            SetIsRootVisual(rootVisual, true);
+            RegisterElement(rootVisual, isRootVisual: true);
+            ApplyThemeToElement(rootVisual, _themeMode);
         }
     }
 
     #endregion
 
-    #region Attached Property: RequestedTheme
+    #region Attached Property: RequestedTheme (Internal)
 
-    /// <summary>
-    /// Identifies the RequestedTheme attached property.
-    /// </summary>
-    public static readonly DependencyProperty RequestedThemeProperty =
-        DependencyProperty.RegisterAttached(
-            "RequestedTheme",
-            typeof(UiThemeMode),
-            typeof(ThemeManager),
-            new FrameworkPropertyMetadata(UiThemeMode.Auto, OnRequestedThemeChanged)
-        );
-
-    /// <summary>Helper for getting <see cref="RequestedThemeProperty"/> from <paramref name="element"/>.</summary>
-    /// <param name="element"><see cref="DependencyObject"/> to read <see cref="RequestedThemeProperty"/> from.</param>
-    /// <returns>RequestedTheme property value.</returns>
-    [AttachedPropertyBrowsableForType(typeof(DependencyObject))]
-    public static UiThemeMode GetRequestedTheme(DependencyObject element)
+    internal static void OnRequestedThemeChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
-        if (element == null)
-        {
-            throw new ArgumentNullException(nameof(element));
-        }
-
-        return (UiThemeMode)element.GetValue(RequestedThemeProperty);
-    }
-
-    /// <summary>Helper for setting <see cref="RequestedThemeProperty"/> on <paramref name="element"/>.</summary>
-    /// <param name="element"><see cref="DependencyObject"/> to set <see cref="RequestedThemeProperty"/> on.</param>
-    /// <param name="value">RequestedTheme property value.</param>
-    public static void SetRequestedTheme(DependencyObject element, UiThemeMode value)
-    {
-        if (element == null)
-        {
-            throw new ArgumentNullException(nameof(element));
-        }
-
-        element.SetValue(RequestedThemeProperty, value);
-    }
-
-    private static void OnRequestedThemeChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
-    {
-        EnsureInitialized();
-
         if (d is FrameworkElement fe)
         {
-            RegisterElement(fe, isBaseTheme: false);
+            RegisterElement(fe, isRootVisual: false);
             ApplyThemeToElement(fe, (UiThemeMode)e.NewValue);
         }
         else if (d is FrameworkContentElement fce)
         {
             RegisterContentElement(fce);
             ApplyThemeToContentElement(fce, (UiThemeMode)e.NewValue);
-        }
-    }
-
-    #endregion
-
-    #region Initialization
-
-    /// <summary>
-    /// Initializes the theme manager with optional additional theme resource URIs.
-    /// </summary>
-    /// <param name="additionalLightThemeUri">Additional Light mode resource URI.</param>
-    /// <param name="additionalDarkThemeUri">Additional Dark mode resource URI.</param>
-    public static void Initialize(Uri? additionalLightThemeUri = null, Uri? additionalDarkThemeUri = null)
-    {
-        lock (_lock)
-        {
-            if (IsInitialized)
-            {
-                return;
-            }
-
-            _additionalLightThemeUri = additionalLightThemeUri;
-            _additionalDarkThemeUri  = additionalDarkThemeUri;
-
-            if (!DesignerProperties.GetIsInDesignMode(new DependencyObject()))
-            {
-                SystemEvents.UserPreferenceChanged     += SystemEvents_UserPreferenceChanged;
-                SystemParameters.StaticPropertyChanged += SystemParameters_StaticPropertyChanged;
-            }
-
-            RebuildThemeDictionaries();
-
-            IsInitialized = true;
-        }
-    }
-
-    private static void EnsureInitialized()
-    {
-        if (!IsInitialized)
-        {
-            Initialize();
         }
     }
 
@@ -335,8 +288,6 @@ public sealed class ThemeManager
 
     private static void RefreshTheme(ThemeChangeSource source)
     {
-        EnsureInitialized();
-
         var targets = CollectTargets();
 
         // 1. BeginInit
@@ -351,8 +302,12 @@ public sealed class ThemeManager
         // 3. Merge dictionaries to each target
         foreach (var (_, resources, mode) in targets)
         {
-            var effectiveMode = ResolveEffectiveMode(mode);
-            var themeDict     = effectiveMode == UiThemeMode.Dark ? _darkDictionary : _lightDictionary;
+            var effectiveTheme = ResolveEffectiveTheme(mode);
+
+            var themeDict = effectiveTheme == ApplicationTheme.Dark
+                ? _darkDictionary
+                : _lightDictionary;
+
             MergeThemeDictionary(resources, themeDict);
         }
 
@@ -363,8 +318,9 @@ public sealed class ThemeManager
         }
 
         // 5. Raise Changed event
-        var finalMode = ResolveEffectiveMode(_themeMode);
-        Instance.ChangedInternal?.Invoke(Instance, new ThemeChangedEventArgs(finalMode, source));
+        var finalTheme = ResolveEffectiveTheme(_themeMode);
+        CurrentTheme = finalTheme;
+        Instance.ChangedInternal?.Invoke(Instance, new ThemeChangedEventArgs(finalTheme, source));
     }
 
     private static List<(object Target, ResourceDictionary Resources, UiThemeMode Mode)> CollectTargets()
@@ -399,7 +355,7 @@ public sealed class ThemeManager
             {
                 if (wr.TryGetTarget(out var fce))
                 {
-                    var mode = GetRequestedTheme(fce);
+                    var mode = Theme.GetRequested(fce);
                     targets.Add((fce, fce.Resources, mode));
                 }
             }
@@ -517,7 +473,7 @@ public sealed class ThemeManager
 
     #region Registration
 
-    private static void RegisterElement(FrameworkElement element, bool isBaseTheme)
+    private static void RegisterElement(FrameworkElement element, bool isRootVisual)
     {
         lock (_lock)
         {
@@ -585,42 +541,42 @@ public sealed class ThemeManager
 
     private static UiThemeMode GetEffectiveThemeForElement(FrameworkElement element)
     {
-        var requested = GetRequestedTheme(element);
+        // RootVisual always follows global theme mode
+        if (GetIsRootVisual(element))
+        {
+            return _themeMode;
+        }
+
+        var requested = Theme.GetRequested(element);
         if (requested != UiThemeMode.Auto)
         {
             return requested;
         }
 
-        var baseTheme = GetBaseTheme(element);
-        if (baseTheme != UiThemeMode.Auto)
-        {
-            return baseTheme;
-        }
-
         return _themeMode;
     }
 
-    private static UiThemeMode ResolveEffectiveMode(UiThemeMode mode)
+    private static ApplicationTheme ResolveEffectiveTheme(UiThemeMode mode)
     {
         if (mode == UiThemeMode.Auto)
         {
             return GetSystemThemeMode();
         }
 
-        return mode;
+        return mode == UiThemeMode.Dark ? ApplicationTheme.Dark : ApplicationTheme.Light;
     }
 
     private static void ApplyThemeToElement(FrameworkElement element, UiThemeMode mode)
     {
-        var effectiveMode = ResolveEffectiveMode(
+        var effectiveTheme = ResolveEffectiveTheme(
             mode == UiThemeMode.Auto
                 ? GetEffectiveThemeForElement(element)
                 : mode
         );
 
-        var themeDict = effectiveMode == UiThemeMode.Dark
-                ? _darkDictionary
-                : _lightDictionary;
+        var themeDict = effectiveTheme == ApplicationTheme.Dark
+            ? _darkDictionary
+            : _lightDictionary;
 
         element.Resources.BeginInit();
         MergeThemeDictionary(element.Resources, themeDict);
@@ -629,15 +585,17 @@ public sealed class ThemeManager
 
     private static void ApplyThemeToContentElement(FrameworkContentElement element, UiThemeMode mode)
     {
-        var effectiveMode = ResolveEffectiveMode(mode);
-        var themeDict     = effectiveMode == UiThemeMode.Dark ? _darkDictionary : _lightDictionary;
+        var effectiveTheme = ResolveEffectiveTheme(mode);
+        var themeDict = effectiveTheme == ApplicationTheme.Dark
+            ? _darkDictionary
+            : _lightDictionary;
 
         element.Resources.BeginInit();
         MergeThemeDictionary(element.Resources, themeDict);
         element.Resources.EndInit();
     }
 
-    private static UiThemeMode GetSystemThemeMode()
+    private static ApplicationTheme GetSystemThemeMode()
     {
         var value = Registry.GetValue(
             @"HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize",
@@ -647,9 +605,9 @@ public sealed class ThemeManager
 
         return value switch
         {
-            1 => UiThemeMode.Light,
-            0 => UiThemeMode.Dark,
-            _ => UiThemeMode.Light
+            1 => ApplicationTheme.Light,
+            0 => ApplicationTheme.Dark,
+            _ => ApplicationTheme.Light
         };
     }
 

@@ -5,6 +5,7 @@
 
 using System;
 using System.Windows;
+using System.Windows.Controls;
 using Wpf.Ui.Appearance;
 
 namespace Wpf.Ui.Demo.Simple.Views.Pages;
@@ -14,6 +15,8 @@ namespace Wpf.Ui.Demo.Simple.Views.Pages;
 /// </summary>
 public partial class SettingsPage
 {
+    private bool _suppressThemeComboBoxChangedEvent = false;
+
     public SettingsPage()
     {
         InitializeComponent();
@@ -24,29 +27,37 @@ public partial class SettingsPage
 
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
-        if (ThemeManager.ThemeMode == UiThemeMode.Dark)
-        {
-            DarkThemeRadioButton.IsChecked = true;
-        }
-        else
-        {
-            LightThemeRadioButton.IsChecked = true;
-        }
-    }
+        _suppressThemeComboBoxChangedEvent = true;
 
-    private void OnLightThemeRadioButtonChecked(object sender, RoutedEventArgs e)
-    {
-        ThemeManager.ThemeMode = UiThemeMode.Light;
-    }
+        ThemeComboBox.SelectedItem = ThemeManager.ThemeMode switch
+        {
+            UiThemeMode.Auto  => "System",
+            UiThemeMode.Light => "Light",
+            UiThemeMode.Dark  => "Dark",
+            _                 => throw new ArgumentOutOfRangeException()
+        };
 
-    private void OnDarkThemeRadioButtonChecked(object sender, RoutedEventArgs e)
-    {
-        ThemeManager.ThemeMode = UiThemeMode.Dark;
+        _suppressThemeComboBoxChangedEvent = false;
     }
 
     private static string GetAssemblyVersion()
     {
         return System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString()
             ?? string.Empty;
+    }
+
+    private void ThemeComboBox_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_suppressThemeComboBoxChangedEvent)
+        {
+            return;
+        }
+
+        ThemeManager.ThemeMode = ThemeComboBox.SelectedItem switch
+        {
+            "Light" => UiThemeMode.Light,
+            "Dark"  => UiThemeMode.Dark,
+            _       => UiThemeMode.Auto,
+        };
     }
 }

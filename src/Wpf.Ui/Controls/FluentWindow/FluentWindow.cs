@@ -249,9 +249,9 @@ public partial class FluentWindow : Window
 
     #pragma warning disable SA1306 // Field names should begin with lower-case letter
 
-    private readonly MessageHandler?             _MSG_NCCALCSIZE = null;
-    private readonly Action<HwndSource>          _OnSourceInitialized;
-    private readonly Action?                     _UpdateBackdrop;
+    private readonly MessageHandler?    _MSG_NCCALCSIZE = null;
+    private readonly Action<HwndSource> _OnSourceInitialized;
+    private readonly Action?            _UpdateBackdrop;
 
     private bool _firstShownFired;
 

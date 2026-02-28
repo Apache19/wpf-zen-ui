@@ -19,18 +19,15 @@
             FontWeight="Medium"
             Text="Personalization" />
         <ui:TextBlock Margin="0,12,0,0" Text="Theme" />
-        <ui:RadioButton
-            x:Name="LightThemeRadioButton"
-            Margin="0,12,0,0"
-            Checked="OnLightThemeRadioButtonChecked"
-            Content="Light"
-            GroupName="themeSelect" />
-        <ui:RadioButton
-            x:Name="DarkThemeRadioButton"
-            Margin="0,8,0,0"
-            Checked="OnDarkThemeRadioButtonChecked"
-            Content="Dark"
-            GroupName="themeSelect" />
+        <ui:ComboBox
+            x:Name="ThemeComboBox"
+            Width="150"
+            SelectionChanged="ThemeComboBox_OnSelectionChanged"
+            HorizontalAlignment="Left">
+            <ComboBoxItem Content="Light" />
+            <ComboBoxItem Content="Dark" />
+            <ComboBoxItem Content="System" />
+        </ui:ComboBox>
         <ui:TextBlock
             Margin="0,24,0,0"
             FontSize="20"
