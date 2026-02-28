@@ -10,26 +10,32 @@ namespace Wpf.Ui.Appearance;
 internal static class SystemAccentPaletteReader
 {
     private const string AccentKey = @"Software\Microsoft\Windows\CurrentVersion\Explorer\Accent";
+    private const string DwmKey    = @"SOFTWARE\Microsoft\Windows\DWM";
 
-    public static SystemAccentPalette? Read()
+    public static SystemAccentPalette? Read(Color? fallbackAccent = null)
     {
-        using var key = Registry.CurrentUser.OpenSubKey(AccentKey);
-        if (key == null)
+        // todo 根据系统版本选择不同方案
+
+        if (fallbackAccent.HasValue)
         {
-            return null;
+            return SystemAccentPalette.CreateFromAccentOnly(fallbackAccent.Value);
         }
 
-        // Win10+ AccentPalette
-        if (key.GetValue("AccentPalette") is byte[] { Length: >= 32 } bytes)
+        using (var key = Registry.CurrentUser.OpenSubKey(AccentKey))
         {
-            return ParsePalette(bytes);
+            if (key?.GetValue("AccentPalette") is byte[] { Length: >= 32 } bytes)
+            {
+                return ParsePalette(bytes);
+            }
         }
 
-        // todo Win8 fallback 注册表不会更新，要换成必须监听消息的方式
-        if (key.GetValue("AccentColor") is int raw)
+        using (var key = Registry.CurrentUser.OpenSubKey(DwmKey))
         {
-            var color = FromRawABGR(raw);
-            return SystemAccentPalette.CreateFromAccentOnly(color);
+            if (key?.GetValue("AccentColor") is int raw)
+            {
+                var color = FromRawABGR(raw);
+                return SystemAccentPalette.CreateFromAccentOnly(color);
+            }
         }
 
         return null;

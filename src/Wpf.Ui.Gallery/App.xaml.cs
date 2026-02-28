@@ -84,9 +84,6 @@ public partial class App
     /// </summary>
     private void OnStartup(object sender, StartupEventArgs e)
     {
-        ThemeManager.FollowSystemTheme    = true;
-        ThemeManager.ThemeMode            = UIThemeMode.Dark;
-        ThemeManager.UseSystemAccentColor = true;
         _host.Start();
     }
 

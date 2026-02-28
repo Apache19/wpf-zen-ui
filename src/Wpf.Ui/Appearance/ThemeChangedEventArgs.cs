@@ -16,11 +16,11 @@ public enum ThemeChangeSource
 /// </summary>
 public class ThemeChangedEventArgs : EventArgs
 {
-    public UIThemeMode AppliedTheme { get; }
+    public UiThemeMode AppliedTheme { get; }
 
     public ThemeChangeSource ChangeSource { get; }
 
-    public ThemeChangedEventArgs(UIThemeMode appliedTheme, ThemeChangeSource changeSource)
+    public ThemeChangedEventArgs(UiThemeMode appliedTheme, ThemeChangeSource changeSource)
     {
         AppliedTheme = appliedTheme;
         ChangeSource = changeSource;

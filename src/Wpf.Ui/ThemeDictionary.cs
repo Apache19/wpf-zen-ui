@@ -33,20 +33,20 @@ public class ThemeDictionary : ResourceDictionary
     /// <summary>
     /// Sets the default application theme.
     /// </summary>
-    public UIThemeMode Theme
+    public UiThemeMode Theme
     {
         set => SetSourceBasedOnSelectedTheme(value);
     }
 
     public ThemeDictionary()
     {
-        SetSourceBasedOnSelectedTheme(UIThemeMode.Light);
+        SetSourceBasedOnSelectedTheme(UiThemeMode.Light);
     }
 
-    private void SetSourceBasedOnSelectedTheme(UIThemeMode? themeMode)
+    private void SetSourceBasedOnSelectedTheme(UiThemeMode? themeMode)
     {
         Source = new Uri(
-            $"{ThemeManager.ThemeBaseUri}{(themeMode == UIThemeMode.Dark ? "Dark" : "Light")}.xaml",
+            $"{ThemeManager.ThemeBaseUri}{(themeMode == UiThemeMode.Dark ? "Dark" : "Light")}.xaml",
             UriKind.Absolute
         );
     }

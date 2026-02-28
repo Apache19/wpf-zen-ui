@@ -194,8 +194,8 @@ public partial class MainWindow : IWindow
     private void ThemeButton_OnClick(object sender, RoutedEventArgs e)
     {
         ThemeManager.ThemeMode =
-            ThemeManager.ThemeMode == UIThemeMode.Dark
-                ? UIThemeMode.Light
-                : UIThemeMode.Dark;
+            ThemeManager.ThemeMode == UiThemeMode.Dark
+                ? UiThemeMode.Light
+                : UiThemeMode.Dark;
     }
 }

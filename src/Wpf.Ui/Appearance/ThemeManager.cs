@@ -6,129 +6,15 @@
 using System.Diagnostics;
 using Microsoft.Win32;
 using Wpf.Ui.Appearance;
-using Wpf.Ui.Appearance.Accent;
 using Wpf.Ui.Theming;
 using Wpf.Ui.Threading;
 
-// 特意使主题管理器可以使用ui:前缀
+// ReSharper disable once CheckNamespace
 namespace Wpf.Ui;
 
-/*
-
-   方案名称：基于附加属性继承与自刷新字典的主题引擎
-
-   一、核心组件设计
-
-   A. 主题管理器（单例与枚举）
-
-   用于提供全局状态存储，但不强制用户直接与其交互。
-
-   ThemeType（枚举）：Light、Dark、Auto、Custom。
-
-   ThemeManager（单例）：
-   负责监听系统注册表（当为 Auto 模式时）。
-   提供 CurrentTheme 属性与 ThemeChanged 事件。
-
-   B. 主题附加属性（ThemeAttacher / ThemeManager）
-
-   这是整个引擎的“传感器”和“执行者”。
-
-   ThemeProperty（附加属性）：
-   设置为 Inherits（属性继承），确保子元素能够自动感知主题。
-
-   核心逻辑（PropertyChangedCallback）：
-   当附加属性发生变化，或元素 Loaded 时，通过 PresentationSource.FromVisual 向上查找视觉树的根节点（例如 HostContainer 或 Window）。
-   将 ThemeResourceDictionary 自动注入到根节点的 Resources.MergedDictionaries 中。
-
-   配置型附加属性：
-   LightSource、DarkSource、CustomSource（类型为 Uri），允许用户指定自定义主题资源路径。
-
-   C. 自刷新资源字典（ThemeResourceDictionary）
-
-   继承自 ResourceDictionary，负责“按需加载”主题资源。
-
-   内部机制：
-   订阅全局 ThemeChanged 事件。
-   内部维护一个私有的 MergedDictionaries，根据当前主题类型加载对应的 XAML 文件。
-   支持优先级查找机制：用户自定义路径 > 库内置默认路径。
-
-   二、关键工作流程
-
-   1. 初始化与注入
-
-   当用户在 WPF 的 UserControl 顶层设置 ui:Theme.Type="Dark"。
-   ThemeAttacher 监测到元素加载后，定位到 WinForms 的 HostContainer。
-   将 ThemeResourceDictionary 实例（单例方式）注入到 HostContainer.Resources 中。
-
-   2. 动态切换
-
-   当用户更改 Theme.Type，或全局单例触发主题变更。
-   所有已注入的 ThemeResourceDictionary 实例收到通知，清理旧的 Source 并加载新的 Source。
-   由于 HostContainer 层级的资源已更新，所有下级控件（包括 ContextMenu）通过 DynamicResource 自动刷新。
-
-   三、设计优势总结
-
-   环境兼容性：
-   完全脱离 Application.Current，完美兼容 WinForms 和 Office 插件环境。
-
-   穿透能力：
-   通过 PresentationSource 注入根节点，解决弹出菜单、工具提示等视觉树断裂导致的主题丢失问题。
-
-   可定制性：
-   支持通过附加属性传入自定义 .xaml 路径，允许用户覆盖默认主题资源。
-
-   代码侵入性：
-   极低。用户只需在 XAML 根节点添加一行附加属性，无需编写 C# 初始化代码。
-
-   性能与内存：
-   资源字典在根节点级别共享，避免每个控件重复加载。
-   支持弱引用机制，防止内存泄漏。
-
-   四、实施路线图（Next Steps）
-
-   第一阶段：
-   实现 ThemeResourceDictionary。
-   验证当其手动合并到 UserControl 时，能够根据单例自动切换 Source。
-
-   第二阶段：
-   编写 ThemeAttacher 附加属性。
-   实现 Inherits 元数据，以及通过 PresentationSource 定位 Root 的逻辑。
-
-   第三阶段：
-   实现“路径覆盖”机制。
-   让字典能够从附加属性中读取 CustomSource 并优先加载。
-
-   第四阶段：
-   处理多线程兼容性问题（针对不同 UI 线程的 Dispatcher 隔离）。
-
-   这套架构的精髓在于把“主题”从 Application 级别剥离出来，变成一个依附于视觉根节点的可传播状态场，有点像把重力从地球中心挪到了每个 PresentationSource 上🌌。它既不污染宿主，又能保证穿透力。
-
-   ==================================
-
-   好，那我根据你的提示，重新整理了一下思路
-   主题管理器仍然提供全局配置功能。
-   主题管理器同时持有两套主题资源字典，一套深色系，一套浅色系。
-   主题管理器支持配置两个色系的附加字典Uir（不是替换，是附加）。
-   全局主题切换走Application，无Application时则全局切换不生效。
-
-   附加属性仍然提供，但只提供明暗类型或跟随全局的参数。
-   附加属性被挂在谁身上，则把主题管理器里持有的响应主题字典合并进去。判断是否是非Application环境，如果没有Application，则尝试往上找一级，看看上一级是不是根容器，是根容器则在其没有主题字典的情况下塞入主题。
-   附加属性挂载的时候订阅主题管理器的通知，以便跟随变化。
-
-   这样设计就解决了全局配置问题，也能使用附加属性强制给某个节点设定单独的主题，或者是顶层仿冒“全局”，而且也不会有很多重复字典出现，节省内存资源。
-   但是有一个问题就是：Resource在合并字典前必须先BeginInit，合并完后EndInit，这样才能保证多次合并结果（合并主字典、附加字典、强调色字典等）正确，所以附加属性挂载订阅通知是必须的。
-
-   实际上主题管理器只需要持有2个全局字典即可(App在xaml里合并，附加属性挂载时合并到目标)，因为合并到目标的始终只有1个，而合并过程是：各目标Resource.BeginInit()->清空全局资源字典->合并基础字典到全局字典->合并附加字典到全局字典->合并强调色字典到全局字典->
-
- */
-
 /// <summary>
-/// 负责管理应用程序主题状态，监听系统主题事件，同步系统主题，协调主题资源加载
+/// Manages application theme state, listens to system theme events, synchronizes system theme, and coordinates theme resource loading.
 /// </summary>
-[System.Diagnostics.CodeAnalysis.SuppressMessage(
-    "Design",
-    "CA1001:Types that own disposable fields should be disposable",
-    Justification = "ThemeManager has application lifetime; disposal is unnecessary.")]
 public sealed class ThemeManager
 {
     internal const string ThemeBaseUri = "pack://application:,,,/Wpf.Ui;component/Resources/Theme/";
@@ -137,7 +23,70 @@ public sealed class ThemeManager
     private static readonly Uri DarkThemeUri         = new(ThemeBaseUri + "Dark.xaml", UriKind.Absolute);
     private static readonly Uri HighContrastThemeUri = new(ThemeBaseUri + "HighContrast.xaml", UriKind.Absolute);
 
-    #region Attached Dependency Property BaseTheme
+    private static readonly object _lock = new();
+
+    private static readonly ResourceDictionary _lightDictionary = new();
+    private static readonly ResourceDictionary _darkDictionary  = new();
+
+    private static Uri? _additionalLightThemeUri;
+    private static Uri? _additionalDarkThemeUri;
+
+    private static readonly List<WeakReference<FrameworkElement>>        _registeredElements        = [];
+    private static readonly List<WeakReference<FrameworkContentElement>> _registeredContentElements = [];
+
+    private static readonly DebounceDispatcher _themeChangedDebouncer = new();
+
+    private static UiThemeMode _themeMode = UiThemeMode.Auto;
+    private static bool        _useSystemAccentColor;
+
+    private static ThemeManager Instance { get; } = new();
+
+    private ThemeManager() { }
+
+    #region Public Properties
+
+    /// <summary>
+    /// Gets or sets the global theme mode for the Application.
+    /// </summary>
+    public static UiThemeMode ThemeMode
+    {
+        get => _themeMode;
+        set
+        {
+            EnsureInitialized();
+            if (_themeMode != value)
+            {
+                _themeMode = value;
+                RefreshTheme(ThemeChangeSource.Manual);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether gets or sets whether to use the system accent color.
+    /// </summary>
+    public static bool UseSystemAccentColor
+    {
+        get => _useSystemAccentColor;
+        set
+        {
+            EnsureInitialized();
+            if (_useSystemAccentColor != value)
+            {
+                _useSystemAccentColor = value;
+                RefreshTheme(ThemeChangeSource.Manual);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Gets a value indicating whether the theme manager is initialized.
+    /// </summary>
+    public static bool IsInitialized { get; private set; }
+
+    #endregion
+
+    #region Attached Property: BaseTheme
 
     /// <summary>
     /// Identifies the BaseTheme attached property.
@@ -159,58 +108,29 @@ public sealed class ThemeManager
     public static readonly DependencyProperty BaseThemeProperty =
         DependencyProperty.RegisterAttached(
             "BaseTheme",
-            typeof(UIThemeMode),
+            typeof(UiThemeMode),
             typeof(ThemeManager),
-            new PropertyMetadata(
-                UIThemeMode.Auto,
-                static (d, e) => OnElementThemePropertyChanged(d, e)
-            )
+            new PropertyMetadata(UiThemeMode.Auto, OnBaseThemeChanged)
         );
 
-    /// <summary>
-    /// Helper for getting <see cref="BaseThemeProperty"/> from <paramref name="element"/>.
-    /// </summary>
-    /// <param name="element">
-    /// <see cref="DependencyObject"/> to read <see cref="BaseThemeProperty"/> from.
-    /// </param>
-    /// <returns>
-    /// BaseTheme property value.
-    /// </returns>
+    /// <summary>Helper for getting <see cref="BaseThemeProperty"/> from <paramref name="element"/>.</summary>
+    /// <param name="element"><see cref="DependencyObject"/> to read <see cref="BaseThemeProperty"/> from.</param>
+    /// <returns>BaseTheme property value.</returns>
     [AttachedPropertyBrowsableForType(typeof(DependencyObject))]
-    public static UIThemeMode GetBaseTheme(DependencyObject element)
+    public static UiThemeMode GetBaseTheme(DependencyObject element)
     {
         if (element == null)
         {
             throw new ArgumentNullException(nameof(element));
         }
 
-        return (UIThemeMode)element.GetValue(BaseThemeProperty);
+        return (UiThemeMode)element.GetValue(BaseThemeProperty);
     }
 
-    /// <summary>
-    /// Helper for setting <see cref="BaseThemeProperty"/> on <paramref name="element"/>.
-    /// </summary>
-    /// <param name="element">
-    /// <see cref="DependencyObject"/> to set <see cref="BaseThemeProperty"/> on.
-    /// </param>
-    /// <param name="value">
-    /// BaseTheme property value.
-    /// </param>
-    /// <remarks>
-    /// <para>
-    /// This property is used to set the theme for the RootVisual element.
-    /// It functions as a "pseudo-global" theme but is scoped strictly to the current visual tree.
-    /// It is specifically designed to resolve theme desynchronization issues for isolated components
-    /// such as ContextMenus and Popups when WPF content is hosted in non-WPF environments (e.g., WinForms ElementHost).
-    /// </para>
-    /// <para>
-    /// In non-native WPF hosting environments (e.g., WinForms ElementHost), 
-    /// this property should be declared on the root node of the top-level UserControl.
-    /// This ensures that theme resources are injected into the hidden root container, 
-    /// allowing ContextMenus and Popups to synchronize correctly without a global Application object.
-    /// </para>
-    /// </remarks>
-    public static void SetBaseTheme(DependencyObject element, UIThemeMode value)
+    /// <summary>Helper for setting <see cref="BaseThemeProperty"/> on <paramref name="element"/>.</summary>
+    /// <param name="element"><see cref="DependencyObject"/> to set <see cref="BaseThemeProperty"/> on.</param>
+    /// <param name="value">BaseTheme property value.</param>
+    public static void SetBaseTheme(DependencyObject element, UiThemeMode value)
     {
         if (element == null)
         {
@@ -220,9 +140,45 @@ public sealed class ThemeManager
         element.SetValue(BaseThemeProperty, value);
     }
 
+    private static void OnBaseThemeChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        if (PresentationSource.FromDependencyObject(d) == null)
+        {
+            if (d is FrameworkElement fe)
+            {
+                // todo 不要直接订阅，应先检查是否已Loaded，未Loaded再订阅
+                fe.Loaded += OnElementLoadedForBaseTheme;
+            }
+
+            return;
+        }
+
+        ApplyBaseTheme(d);
+    }
+
+    private static void OnElementLoadedForBaseTheme(object sender, RoutedEventArgs e)
+    {
+        if (sender is FrameworkElement fe)
+        {
+            fe.Loaded -= OnElementLoadedForBaseTheme;
+            ApplyBaseTheme(fe);
+        }
+    }
+
+    private static void ApplyBaseTheme(DependencyObject d)
+    {
+        var ps = PresentationSource.FromDependencyObject(d);
+        if (ps?.RootVisual is FrameworkElement rootVisual)
+        {
+            EnsureInitialized();
+            RegisterElement(rootVisual, isBaseTheme: true);
+            ApplyThemeToElement(rootVisual, GetBaseTheme(d));
+        }
+    }
+
     #endregion
 
-    #region Attached Dependency Property RequestedTheme
+    #region Attached Property: RequestedTheme
 
     /// <summary>
     /// Identifies the RequestedTheme attached property.
@@ -230,51 +186,29 @@ public sealed class ThemeManager
     public static readonly DependencyProperty RequestedThemeProperty =
         DependencyProperty.RegisterAttached(
             "RequestedTheme",
-            typeof(UIThemeMode),
+            typeof(UiThemeMode),
             typeof(ThemeManager),
-            new FrameworkPropertyMetadata(
-                UIThemeMode.Auto,
-                static (d, e) =>
-                {
-                    var ps = PresentationSource.FromDependencyObject(d);
-                    if (ps != null)
-                    {
-                        OnElementThemePropertyChanged(d, e);
-                    }
-                }
-            )
+            new FrameworkPropertyMetadata(UiThemeMode.Auto, OnRequestedThemeChanged)
         );
 
-    /// <summary>
-    /// Helper for getting <see cref="RequestedThemeProperty"/> from <paramref name="element"/>.
-    /// </summary>
-    /// <param name="element">
-    /// <see cref="DependencyObject"/> to read <see cref="RequestedThemeProperty"/> from.
-    /// </param>
-    /// <returns>
-    /// RequestedTheme property value.
-    /// </returns>
+    /// <summary>Helper for getting <see cref="RequestedThemeProperty"/> from <paramref name="element"/>.</summary>
+    /// <param name="element"><see cref="DependencyObject"/> to read <see cref="RequestedThemeProperty"/> from.</param>
+    /// <returns>RequestedTheme property value.</returns>
     [AttachedPropertyBrowsableForType(typeof(DependencyObject))]
-    public static UIThemeMode GetRequestedTheme(DependencyObject element)
+    public static UiThemeMode GetRequestedTheme(DependencyObject element)
     {
         if (element == null)
         {
             throw new ArgumentNullException(nameof(element));
         }
 
-        return (UIThemeMode)element.GetValue(RequestedThemeProperty);
+        return (UiThemeMode)element.GetValue(RequestedThemeProperty);
     }
 
-    /// <summary>
-    /// Helper for setting <see cref="RequestedThemeProperty"/> on <paramref name="element"/>.
-    /// </summary>
-    /// <param name="element">
-    /// <see cref="DependencyObject"/> to set <see cref="RequestedThemeProperty"/> on.
-    /// </param>
-    /// <param name="value">
-    /// RequestedTheme property value.
-    /// </param>
-    public static void SetRequestedTheme(DependencyObject element, UIThemeMode value)
+    /// <summary>Helper for setting <see cref="RequestedThemeProperty"/> on <paramref name="element"/>.</summary>
+    /// <param name="element"><see cref="DependencyObject"/> to set <see cref="RequestedThemeProperty"/> on.</param>
+    /// <param name="value">RequestedTheme property value.</param>
+    public static void SetRequestedTheme(DependencyObject element, UiThemeMode value)
     {
         if (element == null)
         {
@@ -284,342 +218,66 @@ public sealed class ThemeManager
         element.SetValue(RequestedThemeProperty, value);
     }
 
+    private static void OnRequestedThemeChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        EnsureInitialized();
+
+        if (d is FrameworkElement fe)
+        {
+            RegisterElement(fe, isBaseTheme: false);
+            ApplyThemeToElement(fe, (UiThemeMode)e.NewValue);
+        }
+        else if (d is FrameworkContentElement fce)
+        {
+            RegisterContentElement(fce);
+            ApplyThemeToContentElement(fce, (UiThemeMode)e.NewValue);
+        }
+    }
+
     #endregion
 
-    private static void OnElementThemePropertyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
-    {
-        // 属性设置时把目标注册到弱引用列表里
-        // 订阅其卸载事件，在事件中移除引用
-        // 立即为目标挂载资源
-        throw new NotImplementedException();
-    }
-
-    // 三个全局字典 Auto, Light, Dark
-    // 当
-
-    // todo 用空白项目测试ElementHost那个下级容器到底是什么
-
-    public static ThemeManager Instance { get; } = new();
-
-    private static readonly DebounceDispatcher _themeChangedDebouncer = new();
-
-    private static readonly List<WeakReference> _registeredElements     = [];
-    private static readonly object              _registeredElementsLock = new();
-
-    private static bool        _followSystemTheme;
-    private static UIThemeMode _themeMode = UIThemeMode.Light;
-
-    public static bool FollowSystemTheme
-    {
-        get => _followSystemTheme;
-        set
-        {
-            if (_followSystemTheme != value)
-            {
-                _followSystemTheme = value;
-                UpdateTheme(value ? ThemeChangeSource.System : ThemeChangeSource.Manual);
-            }
-        }
-    }
-
-    public static bool UseSystemAccentColor
-    {
-        get;
-        set
-        {
-            if (field != value)
-            {
-                field = value;
-                UpdateTheme(ThemeChangeSource.Manual);
-            }
-        }
-    }
-
-    public static UIThemeMode ThemeMode
-    {
-        get => _themeMode;
-        set
-        {
-            // 有手动设置的意图，则将跟随系统置为否
-            _followSystemTheme = false;
-
-            if (_themeMode != value)
-            {
-                _themeMode = value;
-                UpdateTheme(ThemeChangeSource.Manual);
-            }
-        }
-    }
+    #region Initialization
 
     /// <summary>
-    /// Registers a FrameworkElement to receive automatic theme updates.
+    /// Initializes the theme manager with optional additional theme resource URIs.
     /// </summary>
-    /// <param name="element">The element to register.</param>
-    public static void Register(FrameworkElement element)
+    /// <param name="additionalLightThemeUri">Additional Light mode resource URI.</param>
+    /// <param name="additionalDarkThemeUri">Additional Dark mode resource URI.</param>
+    public static void Initialize(Uri? additionalLightThemeUri = null, Uri? additionalDarkThemeUri = null)
     {
-        if (element == null)
+        lock (_lock)
         {
-            throw new ArgumentNullException(nameof(element));
-        }
-
-        lock (_registeredElementsLock)
-        {
-            CleanupDeadReferences();
-
-            if (!IsElementRegistered(element))
+            if (IsInitialized)
             {
-                _registeredElements.Add(new WeakReference(element));
-                element.Unloaded += OnElementUnloaded;
-
-                ApplyThemeToElement(element, _themeMode, UseSystemAccentColor);
-            }
-        }
-    }
-
-    /// <summary>
-    /// Registers a FrameworkContentElement to receive automatic theme updates.
-    /// </summary>
-    /// <param name="element">The element to register.</param>
-    public static void Register(FrameworkContentElement element)
-    {
-        if (element == null)
-        {
-            throw new ArgumentNullException(nameof(element));
-        }
-
-        lock (_registeredElementsLock)
-        {
-            CleanupDeadReferences();
-
-            if (!IsElementRegistered(element))
-            {
-                _registeredElements.Add(new WeakReference(element));
-                element.Unloaded += OnElementUnloaded;
-
-                ApplyThemeToContentElement(element, _themeMode, UseSystemAccentColor);
-            }
-        }
-    }
-
-    /// <summary>
-    /// Unregisters a FrameworkElement from receiving automatic theme updates.
-    /// </summary>
-    /// <param name="element">The element to unregister.</param>
-    public static void Unregister(FrameworkElement element)
-    {
-        if (element == null)
-        {
-            throw new ArgumentNullException(nameof(element));
-        }
-
-        lock (_registeredElementsLock)
-        {
-            _registeredElements.RemoveAll(wr => !wr.IsAlive || ReferenceEquals(wr.Target, element));
-            element.Unloaded -= OnElementUnloaded;
-        }
-    }
-
-    /// <summary>
-    /// Unregisters a FrameworkContentElement from receiving automatic theme updates.
-    /// </summary>
-    /// <param name="element">The element to unregister.</param>
-    public static void Unregister(FrameworkContentElement element)
-    {
-        if (element == null)
-        {
-            return;
-        }
-
-        lock (_registeredElementsLock)
-        {
-            _registeredElements.RemoveAll(wr => !wr.IsAlive || ReferenceEquals(wr.Target, element));
-            element.Unloaded -= OnElementUnloaded;
-        }
-    }
-
-    private static void OnElementUnloaded(object sender, RoutedEventArgs e)
-    {
-        if (sender is FrameworkElement fe)
-        {
-            Unregister(fe);
-        }
-        else if (sender is FrameworkContentElement fce)
-        {
-            Unregister(fce);
-        }
-    }
-
-    private static bool IsElementRegistered(object element)
-    {
-        return _registeredElements.Any(wr => wr.IsAlive && ReferenceEquals(wr.Target, element));
-    }
-
-    private static void CleanupDeadReferences()
-    {
-        _registeredElements.RemoveAll(wr => !wr.IsAlive);
-    }
-
-    /// <summary>
-    /// Applies theme to a specific element and its visual tree (useful for WinForms ElementHost scenarios).
-    /// </summary>
-    /// <param name="element">The root element to apply theme to.</param>
-    /// <param name="themeMode">Theme mode to apply.</param>
-    /// <param name="useSystemAccentColor">Whether to use system accent color.</param>
-    private static void ApplyThemeToElement(FrameworkElement element, UIThemeMode themeMode, bool useSystemAccentColor = false)
-    {
-        if (element == null)
-        {
-            throw new ArgumentNullException(nameof(element));
-        }
-
-        element.Dispatcher.Invoke(() =>
-        {
-            var isHighContrast = SystemParameters.HighContrast;
-            var isDarkMode     = themeMode == UIThemeMode.Dark;
-
-            Uri themeUri =
-                isHighContrast ? HighContrastThemeUri :
-                isDarkMode     ? DarkThemeUri :
-                                 LightThemeUri;
-
-            ResourceDictionary? existingThemeDict = null;
-            foreach (var dict in element.Resources.MergedDictionaries)
-            {
-                if (dict.Source != null &&
-                    dict.Source.ToString().StartsWith(ThemeBaseUri, StringComparison.OrdinalIgnoreCase))
-                {
-                    existingThemeDict = dict;
-                    break;
-                }
+                return;
             }
 
-            element.Resources.BeginInit();
+            _additionalLightThemeUri = additionalLightThemeUri;
+            _additionalDarkThemeUri  = additionalDarkThemeUri;
 
-            if (existingThemeDict != null)
+            if (!DesignerProperties.GetIsInDesignMode(new DependencyObject()))
             {
-                element.Resources.MergedDictionaries.Remove(existingThemeDict);
+                SystemEvents.UserPreferenceChanged     += SystemEvents_UserPreferenceChanged;
+                SystemParameters.StaticPropertyChanged += SystemParameters_StaticPropertyChanged;
             }
 
-            var themeDict = new ResourceDictionary { Source = themeUri };
-            element.Resources.MergedDictionaries.Insert(0, themeDict);
+            RebuildThemeDictionaries();
 
-            if (useSystemAccentColor && !isHighContrast)
-            {
-                var palette = SystemAccentPaletteReader.Read();
-                if (palette != null)
-                {
-                    var accentDict = new ResourceDictionary
-                    {
-                        [ColorKeys.SystemAccentColor]          = palette.Accent,
-                        [ColorKeys.SystemAccentColorPrimary]   = themeMode == UIThemeMode.Light ? palette.Dark1 : palette.Light1,
-                        [ColorKeys.SystemAccentColorSecondary] = themeMode == UIThemeMode.Light ? palette.Dark2 : palette.Light2,
-                        [ColorKeys.SystemAccentColorTertiary]  = themeMode == UIThemeMode.Light ? palette.Dark3 : palette.Light3
-                    };
-
-                    element.Resources.MergedDictionaries.Add(accentDict);
-                }
-            }
-
-            element.Resources.EndInit();
-        });
-    }
-
-    private static void ApplyThemeToContentElement(FrameworkContentElement element, UIThemeMode themeMode, bool useSystemAccentColor)
-    {
-        var dispatcher = element.Dispatcher;
-        if (dispatcher == null)
-        {
-            return;
-        }
-
-        dispatcher.Invoke(() =>
-        {
-            var isHighContrast = SystemParameters.HighContrast;
-            var isDarkMode     = themeMode == UIThemeMode.Dark;
-
-            Uri themeUri =
-                isHighContrast ? HighContrastThemeUri :
-                isDarkMode     ? DarkThemeUri :
-                                 LightThemeUri;
-
-            ResourceDictionary? existingThemeDict = null;
-            foreach (var dict in element.Resources.MergedDictionaries)
-            {
-                if (dict.Source != null &&
-                    dict.Source.ToString().StartsWith(ThemeBaseUri, StringComparison.OrdinalIgnoreCase))
-                {
-                    existingThemeDict = dict;
-                    break;
-                }
-            }
-
-            element.Resources.BeginInit();
-
-            if (existingThemeDict != null)
-            {
-                element.Resources.MergedDictionaries.Remove(existingThemeDict);
-            }
-
-            var themeDict = new ResourceDictionary { Source = themeUri };
-            element.Resources.MergedDictionaries.Insert(0, themeDict);
-
-            if (useSystemAccentColor && !isHighContrast)
-            {
-                var palette = SystemAccentPaletteReader.Read();
-                if (palette != null)
-                {
-                    var accentDict = new ResourceDictionary
-                    {
-                        [ColorKeys.SystemAccentColor]          = palette.Accent,
-                        [ColorKeys.SystemAccentColorPrimary]   = themeMode == UIThemeMode.Light ? palette.Dark1 : palette.Light1,
-                        [ColorKeys.SystemAccentColorSecondary] = themeMode == UIThemeMode.Light ? palette.Dark2 : palette.Light2,
-                        [ColorKeys.SystemAccentColorTertiary]  = themeMode == UIThemeMode.Light ? palette.Dark3 : palette.Light3
-                    };
-
-                    element.Resources.MergedDictionaries.Add(accentDict);
-                }
-            }
-
-            element.Resources.EndInit();
-        });
-    }
-
-    private static void UpdateRegisteredElements()
-    {
-        lock (_registeredElementsLock)
-        {
-            CleanupDeadReferences();
-
-            foreach (var weakRef in _registeredElements.ToList())
-            {
-                if (!weakRef.IsAlive)
-                {
-                    continue;
-                }
-
-                var target = weakRef.Target;
-                if (target is FrameworkElement fe)
-                {
-                    ApplyThemeToElement(fe, _themeMode, UseSystemAccentColor);
-                }
-                else if (target is FrameworkContentElement fce)
-                {
-                    ApplyThemeToContentElement(fce, _themeMode, UseSystemAccentColor);
-                }
-            }
+            IsInitialized = true;
         }
     }
 
-    static ThemeManager()
+    private static void EnsureInitialized()
     {
-        if (DesignerProperties.GetIsInDesignMode(new DependencyObject()))
+        if (!IsInitialized)
         {
-            return;
+            Initialize();
         }
-
-        SystemEvents.UserPreferenceChanged     += SystemEvents_UserPreferenceChanged;
-        SystemParameters.StaticPropertyChanged += SystemParameters_StaticPropertyChanged;
     }
+
+    #endregion
+
+    #region System Events
 
     private static void SystemParameters_StaticPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
@@ -631,12 +289,8 @@ public sealed class ThemeManager
     {
         Debug.WriteLine($"ThemeManager: SystemEvents_UserPreferenceChanged: {e.Category}");
 
-        // SystemEvents 和 SystemParameters 的事件过时了，且触发过于粗糙，
-        // 可能需要寻找更精确的监听方式。
-        // 考虑使用隐身窗口接收正确的消息并过滤，来实现更精细的监听器。
-
         if (e.Category is
-            UserPreferenceCategory.General or // 明暗模式变化会触发此类别多次
+            UserPreferenceCategory.General or
             UserPreferenceCategory.VisualStyle or
             UserPreferenceCategory.Color)
         {
@@ -648,121 +302,334 @@ public sealed class ThemeManager
     {
         _ = _themeChangedDebouncer.DebounceAsync(
             TimeSpan.FromMilliseconds(250),
-            OnSystemThemeChanged
-        );
-    }
-
-    private static void OnSystemThemeChanged()
-    {
-        Application.Current?.Dispatcher.BeginInvoke(
-            () => UpdateTheme(ThemeChangeSource.System)
-        );
-    }
-
-    private static void UpdateTheme(ThemeChangeSource source)
-    {
-        // todo 换逻辑：先构建字典，然后把字典合并进Application和已注册的元素中
-        // 没有 Application 或者已经Shutdown，则不做更新，只通知
-        var app = Application.Current;
-
-        if (app?.Dispatcher == null || app.Dispatcher.HasShutdownStarted)
-        {
-            app = null;
-        }
-
-        if (app != null && !app.Dispatcher.CheckAccess())
-        {
-            app.Dispatcher.BeginInvoke(new Action(() => UpdateTheme(source)));
-            return;
-        }
-
-        // 系统高对比度主题是系统易用性机制的一部分，它的优先级高于主题系统，
-        // 当系统被设置为“高对比度”模式时，不管是否跟随系统主题，我们都必须遵循高对比度模式。
-        // 另外，高对比度环境下没有单独的“强调色”，所以也要用高对比度颜色覆盖强调色。
-        // 另，高对比度环境实际上仍然有明暗模式。。。
-
-        if (source == ThemeChangeSource.System && FollowSystemTheme)
-        {
-            _themeMode = GetSystemThemeMode();
-        }
-
-        // 合并期间不立即刷新，否则可能导致强调色应用不完全
-        app?.Resources.BeginInit();
-
-        if (SystemParameters.HighContrast)
-        {
-            if (app != null)
+            () =>
             {
-                // 高对比度没有强调色，所以要清理之前可能应用的强调色
-                //SystemAccentThemeManager.Disable(app);
-                ApplyTheme(app, _themeMode, true, true);
+                var dispatcher = Application.Current?.Dispatcher;
+                if (dispatcher != null)
+                {
+                    dispatcher.BeginInvoke(() => RefreshTheme(ThemeChangeSource.System));
+                }
+                else
+                {
+                    RefreshTheme(ThemeChangeSource.System);
+                }
             }
+        );
+    }
+
+    #endregion
+
+    #region Theme Refresh
+
+    private static void RefreshTheme(ThemeChangeSource source)
+    {
+        EnsureInitialized();
+
+        var targets = CollectTargets();
+
+        // 1. BeginInit
+        foreach (var (_, resources, _) in targets)
+        {
+            resources.BeginInit();
+        }
+
+        // 2. Rebuild theme dictionaries
+        RebuildThemeDictionaries();
+
+        // 3. Merge dictionaries to each target
+        foreach (var (_, resources, mode) in targets)
+        {
+            var effectiveMode = ResolveEffectiveMode(mode);
+            var themeDict     = effectiveMode == UiThemeMode.Dark ? _darkDictionary : _lightDictionary;
+            MergeThemeDictionary(resources, themeDict);
+        }
+
+        // 4. EndInit
+        foreach (var (_, resources, _) in targets)
+        {
+            resources.EndInit();
+        }
+
+        // 5. Raise Changed event
+        var finalMode = ResolveEffectiveMode(_themeMode);
+        Instance.ChangedInternal?.Invoke(Instance, new ThemeChangedEventArgs(finalMode, source));
+    }
+
+    private static List<(object Target, ResourceDictionary Resources, UiThemeMode Mode)> CollectTargets()
+    {
+        var targets = new List<(object, ResourceDictionary, UiThemeMode)>();
+
+        // Application
+        var app = Application.Current;
+        if (app?.Dispatcher != null && !app.Dispatcher.HasShutdownStarted)
+        {
+            targets.Add((app, app.Resources, _themeMode));
+        }
+
+        // Registered FrameworkElements
+        CleanupDeadReferences();
+
+        foreach (var wr in _registeredElements)
+        {
+            if (wr.TryGetTarget(out var fe))
+            {
+                var mode = GetEffectiveThemeForElement(fe);
+                targets.Add((fe, fe.Resources, mode));
+            }
+        }
+
+        // Registered FrameworkContentElements
+        foreach (var wr in _registeredContentElements)
+        {
+            if (wr.TryGetTarget(out var fce))
+            {
+                var mode = GetRequestedTheme(fce);
+                targets.Add((fce, fce.Resources, mode));
+            }
+        }
+
+        return targets;
+    }
+
+    private static void RebuildThemeDictionaries()
+    {
+        var isHighContrast = SystemParameters.HighContrast;
+
+        _lightDictionary.MergedDictionaries.Clear();
+        _darkDictionary.MergedDictionaries.Clear();
+
+        if (isHighContrast)
+        {
+            // High contrast mode: both dictionaries load high contrast theme
+            _lightDictionary.MergedDictionaries.Add(new ResourceDictionary { Source = HighContrastThemeUri });
+            _darkDictionary.MergedDictionaries.Add(new ResourceDictionary { Source  = HighContrastThemeUri });
         }
         else
         {
-            if (app != null)
+            // Load library themes
+            _lightDictionary.MergedDictionaries.Add(new ResourceDictionary { Source = LightThemeUri });
+            _darkDictionary.MergedDictionaries.Add(new ResourceDictionary { Source  = DarkThemeUri });
+
+            // Load additional theme resources
+            if (_additionalLightThemeUri != null)
             {
-                ApplyTheme(app, _themeMode, false, true);
-                //SystemAccentThemeManager.Update(app, UseSystemAccentColor, _themeMode);
+                _lightDictionary.MergedDictionaries.Add(new ResourceDictionary { Source = _additionalLightThemeUri });
+            }
+
+            if (_additionalDarkThemeUri != null)
+            {
+                _darkDictionary.MergedDictionaries.Add(new ResourceDictionary { Source = _additionalDarkThemeUri });
+            }
+
+            // Apply system accent colors
+            if (_useSystemAccentColor)
+            {
+                var palette = SystemAccentPaletteReader.Read();
+                if (palette != null)
+                {
+                    _lightDictionary.MergedDictionaries.Add(BuildAccentDictionary(palette, UiThemeMode.Light));
+                    _darkDictionary.MergedDictionaries.Add(BuildAccentDictionary(palette,  UiThemeMode.Dark));
+                }
             }
         }
-
-        // 结束合并，统一生效
-        app?.Resources.EndInit();
-
-        UpdateRegisteredElements();
-
-        Instance.Changed?.Invoke(Instance, new ThemeChangedEventArgs(_themeMode, source));
     }
 
-    private static void ApplyTheme(Application app, UIThemeMode mode, bool highContrast = false, bool forceReload = false)
+    private static ResourceDictionary BuildAccentDictionary(SystemAccentPalette p, UiThemeMode mode)
     {
-        var merged = app.Resources.MergedDictionaries;
+        var dic = new ResourceDictionary { [ColorKeys.SystemAccentColor] = p.Accent };
 
-        // 1️ 找到当前已加载的库主题字典（如果存在）
-        ResourceDictionary? existingThemeDict = null;
-
-        foreach (var dict in merged)
+        if (mode == UiThemeMode.Light)
         {
-            if (dict.Source == null)
-            {
-                continue;
-            }
+            dic[ColorKeys.SystemAccentColorPrimary]   = p.Dark1;
+            dic[ColorKeys.SystemAccentColorSecondary] = p.Dark2;
+            dic[ColorKeys.SystemAccentColorTertiary]  = p.Dark3;
 
-            var src = dict.Source.ToString();
+            dic[BrushKeys.SystemAccentColorBrush]                     = new SolidColorBrush(p.Accent);
+            dic[BrushKeys.SystemAccentColorPrimaryBrush]              = new SolidColorBrush(p.Dark1);
+            dic[BrushKeys.SystemAccentColorSecondaryBrush]            = new SolidColorBrush(p.Dark2);
+            dic[BrushKeys.SystemAccentColorTertiaryBrush]             = new SolidColorBrush(p.Dark3);
+            dic[BrushKeys.AccentTextFillColorPrimaryBrush]            = new SolidColorBrush(p.Dark1);
+            dic[BrushKeys.AccentTextFillColorSecondaryBrush]          = new SolidColorBrush(p.Dark2);
+            dic[BrushKeys.AccentTextFillColorTertiaryBrush]           = new SolidColorBrush(p.Dark3);
+            dic[BrushKeys.AccentFillColorSelectedTextBackgroundBrush] = new SolidColorBrush(p.Accent);
+            dic[BrushKeys.AccentFillColorDefaultBrush]                = new SolidColorBrush(p.Dark1);
+            dic[BrushKeys.AccentFillColorSecondaryBrush]              = new SolidColorBrush(p.Dark1) { Opacity = 0.9 };
+            dic[BrushKeys.AccentFillColorTertiaryBrush]               = new SolidColorBrush(p.Dark1) { Opacity = 0.8 };
+            dic[BrushKeys.SystemFillColorAttentionBrush]              = new SolidColorBrush(p.Accent);
+        }
+        else
+        {
+            dic[ColorKeys.SystemAccentColorPrimary]   = p.Light1;
+            dic[ColorKeys.SystemAccentColorSecondary] = p.Light2;
+            dic[ColorKeys.SystemAccentColorTertiary]  = p.Light3;
 
-            if (src.StartsWith(ThemeBaseUri, StringComparison.OrdinalIgnoreCase))
-            {
-                existingThemeDict = dict;
-                break;
-            }
+            dic[BrushKeys.SystemAccentColorBrush]                     = new SolidColorBrush(p.Accent);
+            dic[BrushKeys.SystemAccentColorPrimaryBrush]              = new SolidColorBrush(p.Light1);
+            dic[BrushKeys.SystemAccentColorSecondaryBrush]            = new SolidColorBrush(p.Light2);
+            dic[BrushKeys.SystemAccentColorTertiaryBrush]             = new SolidColorBrush(p.Light3);
+            dic[BrushKeys.AccentTextFillColorPrimaryBrush]            = new SolidColorBrush(p.Light1);
+            dic[BrushKeys.AccentTextFillColorSecondaryBrush]          = new SolidColorBrush(p.Light2);
+            dic[BrushKeys.AccentTextFillColorTertiaryBrush]           = new SolidColorBrush(p.Light3);
+            dic[BrushKeys.AccentFillColorSelectedTextBackgroundBrush] = new SolidColorBrush(p.Accent);
+            dic[BrushKeys.AccentFillColorDefaultBrush]                = new SolidColorBrush(p.Light2);
+            dic[BrushKeys.AccentFillColorSecondaryBrush]              = new SolidColorBrush(p.Light2) { Opacity = 0.9 };
+            dic[BrushKeys.AccentFillColorTertiaryBrush]               = new SolidColorBrush(p.Light2) { Opacity = 0.8 };
+            dic[BrushKeys.SystemFillColorAttentionBrush]              = new SolidColorBrush(p.Accent);
         }
 
-        // 2️ 根据 ThemeMode 决定目标主题 URI
-        Uri targetUri =
-            highContrast             ? HighContrastThemeUri :
-            mode == UIThemeMode.Dark ? DarkThemeUri :
-                                       LightThemeUri;
-
-        // 如果非强制且当前已经是目标主题，就不重复加载（幂等）
-        if (!forceReload && existingThemeDict?.Source == targetUri)
-        {
-            return;
-        }
-
-        // 3️ 移除旧主题
-        if (existingThemeDict != null)
-        {
-            merged.Remove(existingThemeDict);
-        }
-
-        // 4️ 加载新主题
-        var newThemeDict = new ResourceDictionary { Source = targetUri };
-
-        merged.Add(newThemeDict);
+        return dic;
     }
 
-    private static UIThemeMode GetSystemThemeMode()
+    private static void MergeThemeDictionary(ResourceDictionary target, ResourceDictionary themeDict)
+    {
+        // Remove old theme dictionary
+        for (int i = target.MergedDictionaries.Count - 1; i >= 0; i--)
+        {
+            var dict = target.MergedDictionaries[i];
+            if (ReferenceEquals(dict, _lightDictionary) || ReferenceEquals(dict, _darkDictionary))
+            {
+                target.MergedDictionaries.RemoveAt(i);
+            }
+        }
+
+        // Add new theme dictionary
+        target.MergedDictionaries.Insert(0, themeDict);
+    }
+
+    #endregion
+
+    #region Registration
+
+    private static void RegisterElement(FrameworkElement element, bool isBaseTheme)
+    {
+        lock (_lock)
+        {
+            if (IsElementRegistered(element))
+            {
+                return;
+            }
+
+            _registeredElements.Add(new WeakReference<FrameworkElement>(element));
+            element.Unloaded += OnElementUnloaded;
+        }
+    }
+
+    private static void RegisterContentElement(FrameworkContentElement element)
+    {
+        lock (_lock)
+        {
+            if (IsContentElementRegistered(element))
+            {
+                return;
+            }
+
+            _registeredContentElements.Add(new WeakReference<FrameworkContentElement>(element));
+            element.Unloaded += OnContentElementUnloaded;
+        }
+    }
+
+    private static bool IsElementRegistered(FrameworkElement element)
+    {
+        return _registeredElements.Any(wr => wr.TryGetTarget(out var target) && ReferenceEquals(target, element));
+    }
+
+    private static bool IsContentElementRegistered(FrameworkContentElement element)
+    {
+        return _registeredContentElements.Any(wr => wr.TryGetTarget(out var target) && ReferenceEquals(target, element));
+    }
+
+    private static void OnElementUnloaded(object sender, RoutedEventArgs e)
+    {
+        if (sender is FrameworkElement fe)
+        {
+            lock (_lock)
+            {
+                _registeredElements.RemoveAll(wr => !wr.TryGetTarget(out var target) || ReferenceEquals(target, fe));
+                fe.Unloaded -= OnElementUnloaded;
+            }
+        }
+    }
+
+    private static void OnContentElementUnloaded(object sender, RoutedEventArgs e)
+    {
+        if (sender is FrameworkContentElement fce)
+        {
+            lock (_lock)
+            {
+                _registeredContentElements.RemoveAll(wr => !wr.TryGetTarget(out var target) || ReferenceEquals(target, fce));
+                fce.Unloaded -= OnContentElementUnloaded;
+            }
+        }
+    }
+
+    private static void CleanupDeadReferences()
+    {
+        lock (_lock)
+        {
+            _registeredElements.RemoveAll(wr => !wr.TryGetTarget(out _));
+            _registeredContentElements.RemoveAll(wr => !wr.TryGetTarget(out _));
+        }
+    }
+
+    #endregion
+
+    #region Helpers
+
+    private static UiThemeMode GetEffectiveThemeForElement(FrameworkElement element)
+    {
+        var requested = GetRequestedTheme(element);
+        if (requested != UiThemeMode.Auto)
+        {
+            return requested;
+        }
+
+        var baseTheme = GetBaseTheme(element);
+        if (baseTheme != UiThemeMode.Auto)
+        {
+            return baseTheme;
+        }
+
+        return _themeMode;
+    }
+
+    private static UiThemeMode ResolveEffectiveMode(UiThemeMode mode)
+    {
+        if (mode == UiThemeMode.Auto)
+        {
+            return GetSystemThemeMode();
+        }
+
+        return mode;
+    }
+
+    private static void ApplyThemeToElement(FrameworkElement element, UiThemeMode mode)
+    {
+        var effectiveMode = ResolveEffectiveMode(
+            mode == UiThemeMode.Auto
+                ? GetEffectiveThemeForElement(element)
+                : mode
+        );
+
+        var themeDict = effectiveMode == UiThemeMode.Dark
+                ? _darkDictionary
+                : _lightDictionary;
+
+        element.Resources.BeginInit();
+        MergeThemeDictionary(element.Resources, themeDict);
+        element.Resources.EndInit();
+    }
+
+    private static void ApplyThemeToContentElement(FrameworkContentElement element, UiThemeMode mode)
+    {
+        var effectiveMode = ResolveEffectiveMode(mode);
+        var themeDict     = effectiveMode == UiThemeMode.Dark ? _darkDictionary : _lightDictionary;
+
+        element.Resources.BeginInit();
+        MergeThemeDictionary(element.Resources, themeDict);
+        element.Resources.EndInit();
+    }
+
+    private static UiThemeMode GetSystemThemeMode()
     {
         var value = Registry.GetValue(
             @"HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize",
@@ -772,44 +639,42 @@ public sealed class ThemeManager
 
         return value switch
         {
-            1 => UIThemeMode.Light,
-            0 => UIThemeMode.Dark,
-            _ => UIThemeMode.Light // 没有注册表键值对或者是错误值
+            1 => UiThemeMode.Light,
+            0 => UiThemeMode.Dark,
+            _ => UiThemeMode.Light
         };
     }
 
-    /* 实测手动创建的Application在非WPF项目时没有什么用处，切换主题合并字典不会生效
-       有可能的话找出原因再启用。
-    internal static Application EnsureApplication()
+    #endregion
+
+    #region Events
+
+    /// <summary>
+    /// Occurs when the theme has changed.
+    /// </summary>
+    public static event EventHandler<ThemeChangedEventArgs> Changed
     {
-        // When WPFUI is used from non-WPF hosts (such as WinForms apps or plugins),
-        // a WPF Application instance may not exist.
-        // Theme switching requires a WPF Application to host resource dictionaries,
-        // so we create one if necessary.
-
-        if (Application.Current != null)
+        add
         {
-            return Application.Current;
+            WeakEventManager<ThemeManager, ThemeChangedEventArgs>
+               .AddHandler(
+                    Instance,
+                    nameof(ChangedInternal),
+                    value
+                );
         }
-
-        // Ensure we are on an STA thread before creating Application
-        if (Thread.CurrentThread.GetApartmentState() != ApartmentState.STA)
+        remove
         {
-            throw new InvalidOperationException(
-                "A WPF Application must be created on an STA thread."
-            );
+            WeakEventManager<ThemeManager, ThemeChangedEventArgs>
+               .RemoveHandler(
+                    Instance,
+                    nameof(ChangedInternal),
+                    value
+                );
         }
-
-        return new Application { ShutdownMode = ShutdownMode.OnExplicitShutdown };
-    }
-    */
-
-    private static void VerifyAccess()
-    {
-        Application.Current?.Dispatcher.VerifyAccess();
     }
 
-    public event EventHandler<ThemeChangedEventArgs>? Changed;
+    private event EventHandler<ThemeChangedEventArgs>? ChangedInternal;
 
-    private ThemeManager() { }
+    #endregion
 }

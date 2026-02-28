@@ -53,10 +53,10 @@ public sealed partial class SettingsViewModel(INavigationService navigationServi
         switch (newValue)
         {
             case AppThemeMode.Light:
-                ThemeManager.ThemeMode = UIThemeMode.Light;
+                ThemeManager.ThemeMode = UiThemeMode.Light;
                 break;
             case AppThemeMode.Dark:
-                ThemeManager.ThemeMode = UIThemeMode.Dark;
+                ThemeManager.ThemeMode = UiThemeMode.Dark;
                 break;
             case AppThemeMode.FollowSystem:
                 ThemeManager.FollowSystemTheme = true;
@@ -80,7 +80,7 @@ public sealed partial class SettingsViewModel(INavigationService navigationServi
         {
             CurrentApplicationTheme = AppThemeMode.FollowSystem;
         }
-        else if (ThemeManager.ThemeMode == UIThemeMode.Dark)
+        else if (ThemeManager.ThemeMode == UiThemeMode.Dark)
         {
             CurrentApplicationTheme = AppThemeMode.Dark;
         }

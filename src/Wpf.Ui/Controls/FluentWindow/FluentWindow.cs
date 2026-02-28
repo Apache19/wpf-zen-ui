@@ -310,25 +310,13 @@ public partial class FluentWindow : Window
     /// </summary>
     protected virtual void OnFirstShown(EventArgs e)
     {
-        WeakEventManager<ThemeManager, ThemeChangedEventArgs>
-           .AddHandler(
-                ThemeManager.Instance,
-                nameof(ThemeManager.Changed),
-                OnAppThemeChanged
-            );
-
+        ThemeManager.Changed += OnAppThemeChanged;
         FirstShown?.Invoke(this, e);
     }
 
     protected override void OnClosed(EventArgs e)
     {
-        WeakEventManager<ThemeManager, ThemeChangedEventArgs>
-           .RemoveHandler(
-                ThemeManager.Instance,
-                nameof(ThemeManager.Changed),
-                OnAppThemeChanged
-            );
-
+        ThemeManager.Changed -= OnAppThemeChanged;
         base.OnClosed(e);
     }
 

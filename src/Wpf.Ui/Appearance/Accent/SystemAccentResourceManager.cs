@@ -14,7 +14,7 @@ internal static class SystemAccentResourceManager
 {
     private static ResourceDictionary? _accentDictionary;
 
-    internal static void Apply(ResourceDictionary resource, UIThemeMode mode)
+    internal static void Apply(ResourceDictionary resource, UiThemeMode mode)
     {
         if (resource == null)
         {
@@ -49,7 +49,7 @@ internal static class SystemAccentResourceManager
         }
     }
 
-    internal static void SetSystemAccentEnabled(ResourceDictionary resource, bool enabled, UIThemeMode mode)
+    internal static void SetSystemAccentEnabled(ResourceDictionary resource, bool enabled, UiThemeMode mode)
     {
         if (resource == null)
         {
@@ -64,7 +64,7 @@ internal static class SystemAccentResourceManager
         }
     }
 
-    private static ResourceDictionary BuildDictionary(SystemAccentPalette p, UIThemeMode mode)
+    private static ResourceDictionary BuildDictionary(SystemAccentPalette p, UiThemeMode mode)
     {
         var dic = new ResourceDictionary { [ColorKeys.SystemAccentColor] = p.Accent };
 
@@ -72,7 +72,7 @@ internal static class SystemAccentResourceManager
         {
             
         }
-        else if (mode == UIThemeMode.Light)
+        else if (mode == UiThemeMode.Light)
         {
             dic[ColorKeys.SystemAccentColorPrimary]   = p.Dark1;
             dic[ColorKeys.SystemAccentColorSecondary] = p.Dark2;

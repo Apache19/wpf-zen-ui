@@ -24,7 +24,7 @@ public partial class SettingsPage
 
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
-        if (ThemeManager.ThemeMode == UIThemeMode.Dark)
+        if (ThemeManager.ThemeMode == UiThemeMode.Dark)
         {
             DarkThemeRadioButton.IsChecked = true;
         }
@@ -36,12 +36,12 @@ public partial class SettingsPage
 
     private void OnLightThemeRadioButtonChecked(object sender, RoutedEventArgs e)
     {
-        ThemeManager.ThemeMode = UIThemeMode.Light;
+        ThemeManager.ThemeMode = UiThemeMode.Light;
     }
 
     private void OnDarkThemeRadioButtonChecked(object sender, RoutedEventArgs e)
     {
-        ThemeManager.ThemeMode = UIThemeMode.Dark;
+        ThemeManager.ThemeMode = UiThemeMode.Dark;
     }
 
     private static string GetAssemblyVersion()

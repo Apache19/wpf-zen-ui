@@ -19,38 +19,6 @@ public partial class Form1 : Form
     public Form1()
     {
         InitializeComponent();
-
         elementHost1.Child = new WpfContent();
-    }
-
-    protected override void OnShown(EventArgs e)
-    {
-        base.OnShown(e);
-
-        WeakEventManager<ThemeManager, ThemeChangedEventArgs>.AddHandler(
-            ThemeManager.Instance,
-            nameof(ThemeManager.Changed),
-            ThemeChanged
-        );
-    }
-
-    protected override void OnFormClosed(FormClosedEventArgs e)
-    {
-        WeakEventManager<ThemeManager, ThemeChangedEventArgs>.RemoveHandler(
-            ThemeManager.Instance,
-            nameof(ThemeManager.Changed),
-            ThemeChanged
-        );
-
-        base.OnFormClosed(e);
-    }
-
-    private void ThemeChanged(object? sender, ThemeChangedEventArgs e)
-    {
-        ThemeManager.ApplyThemeToElement(
-            elementHost1.HostContainer,
-            e.AppliedTheme,
-            ThemeManager.UseSystemAccentColor
-        );
     }
 }

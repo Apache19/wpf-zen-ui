@@ -65,22 +65,12 @@ public class CodeBlock : System.Windows.Controls.ContentControl
 
     private void CodeBlock_Loaded(object sender, RoutedEventArgs e)
     {
-        WeakEventManager<ThemeManager, ThemeChangedEventArgs>
-           .AddHandler(
-                ThemeManager.Instance,
-                nameof(ThemeManager.Changed),
-                ThemeOnChanged
-            );
+        ThemeManager.Changed += ThemeOnChanged;
     }
 
     private void CodeBlock_Unloaded(object sender, RoutedEventArgs e)
     {
-        WeakEventManager<ThemeManager, ThemeChangedEventArgs>
-           .RemoveHandler(
-                ThemeManager.Instance,
-                nameof(ThemeManager.Changed),
-                ThemeOnChanged
-            );
+        ThemeManager.Changed -= ThemeOnChanged;
     }
 
     private void ThemeOnChanged(object? sender, ThemeChangedEventArgs e)

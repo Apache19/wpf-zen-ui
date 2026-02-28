@@ -33,11 +33,11 @@ public class MonacoController
         );
     }
 
-    public async Task SetThemeAsync(UIThemeMode appApplicationTheme)
+    public async Task SetThemeAsync(UiThemeMode appApplicationTheme)
     {
         // TODO: Parse theme from object
         const string uiThemeName = "wpf-ui-app-theme";
-        var baseMonacoTheme = appApplicationTheme == UIThemeMode.Light ? "vs" : "vs-dark";
+        var baseMonacoTheme = appApplicationTheme == UiThemeMode.Light ? "vs" : "vs-dark";
 
         _ = await _webView.ExecuteScriptAsync(
             $$$"""

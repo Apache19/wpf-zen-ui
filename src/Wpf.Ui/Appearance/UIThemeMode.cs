@@ -5,7 +5,7 @@
 
 namespace Wpf.Ui.Appearance;
 
-public enum UIThemeMode
+public enum UiThemeMode
 {
     /// <summary>
     /// Follow system theme mode.
