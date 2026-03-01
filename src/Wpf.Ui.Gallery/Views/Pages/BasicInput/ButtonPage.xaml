@@ -7,10 +7,11 @@
     xmlns:local="clr-namespace:Wpf.Ui.Gallery.Views.Pages.BasicInput"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    xmlns:basicInput="clr-namespace:Wpf.Ui.Gallery.ViewModels.Pages.BasicInput"
     Title="ButtonPage"
     controls:PageControlDocumentation.DocumentationType="{x:Type ui:Button}"
     d:Background="{ui:BrushResource WindowBackgroundBrush}"
-    d:DataContext="{d:DesignInstance local:ButtonPage, IsDesignTimeCreatable=False}"
+    d:DataContext="{d:DesignInstance basicInput:ButtonViewModel, IsDesignTimeCreatable=True}"
     d:DesignHeight="1250"
     d:DesignWidth="800"
     d:Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
@@ -51,11 +52,10 @@
                 <Button
                     Grid.Column="0"
                     Content="Standard WPF button"
-                    IsEnabled="{Binding ViewModel.IsSimpleButtonEnabled, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:ButtonPage}, Mode=OneWay}" />
+                    IsEnabled="{Binding IsSimpleButtonEnabled, Mode=OneWay}" />
                 <ui:CheckBox
                     Grid.Column="1"
-                    Command="{Binding ViewModel.SimpleButtonCheckboxCheckedCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:ButtonPage}, Mode=OneWay}"
-                    CommandParameter="{Binding RelativeSource={RelativeSource Self}, Mode=OneWay}"
+                    IsChecked="{Binding IsSimpleButtonEnabled}"
                     Content="Disable button" />
             </Grid>
         </controls:ControlExample>
@@ -83,10 +83,10 @@
                 </Grid.ColumnDefinitions>
                 <ui:Button
                     Grid.Column="0"
-                    Appearance="{Binding ViewModel.ButtonAppearance}"
+                    Appearance="{Binding ButtonAppearance}"
                     Content="WPF UI button"
                     Icon="{ui:SymbolIcon Fluent24}"
-                    IsEnabled="{Binding ViewModel.IsUiButtonEnabled, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:ButtonPage}, Mode=OneWay}" />
+                    IsEnabled="{Binding IsUiButtonEnabled, Mode=OneWay}" />
                 <StackPanel Grid.Column="1" Orientation="Horizontal">
                     <ui:TextBlock
                         Margin="0,0,8,0"
@@ -95,13 +95,12 @@
                     <ui:ComboBox
                         MinWidth="130"
                         ItemsSource="{Binding Source={StaticResource AppearanceList}}"
-                        SelectedItem="{Binding ViewModel.ButtonAppearance}" />
+                        SelectedItem="{Binding ButtonAppearance}" />
                 </StackPanel>
                 <ui:Separator Grid.Column="2" Orientation="Vertical" Margin="8 2" />
                 <ui:CheckBox
                     Grid.Column="3"
-                    Command="{Binding ViewModel.UiButtonCheckboxCheckedCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:ButtonPage}, Mode=OneWay}"
-                    CommandParameter="{Binding RelativeSource={RelativeSource Self}, Mode=OneWay}"
+                    IsChecked="{Binding IsUiButtonEnabled}"
                     Content="Disable button" />
             </Grid>
         </controls:ControlExample>
