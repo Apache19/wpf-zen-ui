@@ -5,20 +5,37 @@
 
 namespace Wpf.Ui.Appearance;
 
+/// <summary>
+/// Specifies the theme mode for the application or an individual element.
+/// </summary>
 public enum UiThemeMode
 {
     /// <summary>
-    /// Light application theme mode.
+    /// Indicates that no explicit theme mode is specified.
+    ///
+    /// When used as <see cref="Wpf.Ui.ThemeManager.ThemeMode"/>,
+    /// the application will not explicitly apply a Light or Dark theme
+    /// and will fall back to the library's default theme defined in Generic.xaml.
+    ///
+    /// When used as the per-element <c>Theme.Requested</c> attached property,
+    /// any previously applied theme resources on the target element are removed,
+    /// allowing the element to return to the normal resource resolution behavior
+    /// (for example, inheriting from a parent or the global theme).
+    /// </summary>
+    Default,
+
+    /// <summary>
+    /// Forces the Light theme mode.
     /// </summary>
     Light,
 
     /// <summary>
-    /// Dark application theme mode.
+    /// Forces the Dark theme mode.
     /// </summary>
     Dark,
 
     /// <summary>
-    /// Follow system theme mode.
+    /// Automatically resolves to Light or Dark based on the current system setting.
     /// </summary>
-    Auto,
+    System,
 }

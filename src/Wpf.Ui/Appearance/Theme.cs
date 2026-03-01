@@ -94,7 +94,7 @@ public static class Theme
     /// <see cref="ThemeManager.ThemeMode"/>.
     ///
     /// The final applied theme may still be affected by system policies
-    /// such as high contrast mode. When set to <see cref="UiThemeMode.Auto"/>,
+    /// such as high contrast mode. When set to <see cref="UiThemeMode.System"/>,
     /// the requested mode is resolved to either Light or Dark
     /// based on the current system setting.
     /// </remarks>
@@ -109,7 +109,7 @@ public static class Theme
             typeof(UiThemeMode),
             typeof(Theme),
             new FrameworkPropertyMetadata(
-                UiThemeMode.Light, // Should be the same as the default theme merged with Generic.xaml
+                UiThemeMode.Default,
                 static (d, e) => ThemeManager.OnRequestedThemeChanged(d, e)
             )
         );

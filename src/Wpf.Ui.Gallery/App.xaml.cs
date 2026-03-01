@@ -7,6 +7,7 @@ using Lepo.i18n.DependencyInjection;
 using Wpf.Ui.Appearance;
 using Wpf.Ui.DependencyInjection;
 using Wpf.Ui.Gallery.DependencyModel;
+using Wpf.Ui.Gallery.Models;
 using Wpf.Ui.Gallery.Resources;
 using Wpf.Ui.Gallery.Services;
 using Wpf.Ui.Gallery.Services.Contracts;
@@ -84,6 +85,10 @@ public partial class App
     /// </summary>
     private void OnStartup(object sender, StartupEventArgs e)
     {
+        var theme = LoadAppTheme();
+
+        ThemeManager.Configure(theme.ThemeMode, theme.UseSystemAccent);
+
         _host.Start();
     }
 
@@ -105,5 +110,14 @@ public partial class App
     private void OnDispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
     {
         // For more info see https://docs.microsoft.com/en-us/dotnet/api/system.windows.application.dispatcherunhandledexception?view=windowsdesktop-6.0
+    }
+
+    private static AppTheme LoadAppTheme()
+    {
+        return new AppTheme()
+        {
+            ThemeMode       = UiThemeMode.System,
+            UseSystemAccent = true
+        };
     }
 }

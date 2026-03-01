@@ -3,7 +3,6 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-using Wpf.Ui.Controls;
 using Wpf.Ui.Gallery.ViewModels.Pages;
 
 namespace Wpf.Ui.Gallery.Views.Pages;
@@ -14,9 +13,27 @@ public partial class SettingsPage : INavigableView<SettingsViewModel>
 
     public SettingsPage(SettingsViewModel viewModel)
     {
-        ViewModel = viewModel;
-        DataContext = this;
+        ViewModel   = viewModel;
+        DataContext = viewModel;
+
+        Loaded   += OnLoaded;
+        Unloaded += OnUnloaded;
 
         InitializeComponent();
+    }
+
+    private void OnLoaded(object sender, RoutedEventArgs e)
+    {
+        ThemeManager.Changed += OnThemeChanged;
+    }
+
+    private void OnUnloaded(object sender, RoutedEventArgs e)
+    {
+        ThemeManager.Changed -= OnThemeChanged;
+    }
+
+    private void OnThemeChanged(object? sender, Appearance.ThemeChangedEventArgs e)
+    {
+        ViewModel.UpdateCurrentTheme();
     }
 }

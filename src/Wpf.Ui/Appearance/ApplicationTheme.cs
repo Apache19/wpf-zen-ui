@@ -5,8 +5,24 @@
 
 namespace Wpf.Ui.Appearance;
 
+/// <summary>
+/// Represents the resolved application theme.
+/// </summary>
 public enum ApplicationTheme
 {
+    /// <summary>
+    /// No theme dictionary is merged. The application uses the library default theme
+    /// provided by <c>ThemeInfo</c> and <c>Generic.xaml</c>.
+    /// </summary>
+    Default,
+
+    /// <summary>
+    /// Light application theme.
+    /// </summary>
     Light,
-    Dark
+
+    /// <summary>
+    /// Dark application theme.
+    /// </summary>
+    Dark,
 }

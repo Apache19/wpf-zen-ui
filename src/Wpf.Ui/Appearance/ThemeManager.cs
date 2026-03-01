@@ -18,7 +18,7 @@ namespace Wpf.Ui;
 /// </summary>
 public sealed class ThemeManager
 {
-    #region Constants, Properties, Fields
+    #region Private Constants, Fields
 
     internal const string ThemeBaseUri = "pack://application:,,,/Wpf.Ui;component/Resources/Theme/";
 
@@ -43,7 +43,7 @@ public sealed class ThemeManager
     private static Uri? _additionalLightThemeUri;
     private static Uri? _additionalDarkThemeUri;
 
-    private static UiThemeMode _themeMode = UiThemeMode.Light; // Default Light theme merged with Generic.xaml
+    private static UiThemeMode _themeMode = UiThemeMode.Default;
 
     private static bool _useSystemAccentColor = true;
 
@@ -280,17 +280,25 @@ public sealed class ThemeManager
     /// <remarks>
     /// This property controls the overall theme mode of the application. The available values are:
     /// <list>
+    ///     <item><see cref="UiThemeMode.Default"/> - No explicit Light or Dark theme is applied.
+    ///     The application falls back to the library's default theme defined in Generic.xaml.</item>
     ///     <item><see cref="UiThemeMode.Light"/> - The application will use the Light theme.</item>
     ///     <item><see cref="UiThemeMode.Dark"/> - The application will use the Dark theme.</item>
-    ///     <item><see cref="UiThemeMode.Auto"/> - The application will automatically follow the system theme settings.</item>
+    ///     <item><see cref="UiThemeMode.System"/> - The application will automatically follow the system theme settings.</item>
     /// </list>
     ///
-    /// When set to <see cref="UiThemeMode.Auto"/>, the application will respect the system's theme settings.
-    /// The <see cref="CurrentTheme"/> property will reflect the system's current theme (either Light or Dark),
-    /// and changes to the system theme will automatically trigger updates to the application's theme.
+    /// When set to <see cref="UiThemeMode.System"/>, the application resolves the effective theme
+    /// based on the current system setting. The <see cref="CurrentTheme"/> property will reflect
+    /// the resolved theme (either Light or Dark), and changes to the system theme will
+    /// automatically trigger updates.
     ///
-    /// Changing the value of this property will trigger a theme refresh, and if the theme mode is set to <see cref="UiThemeMode.Auto"/>,
-    /// it will sync with the system's theme immediately.
+    /// When set to <see cref="UiThemeMode.Default"/>, no explicit theme mode is enforced by
+    /// <see cref="Wpf.Ui.ThemeManager"/>. In this case, theme resource resolution falls back
+    /// to the default styles provided by the library, without applying Light or Dark overrides.
+    ///
+    /// Changing the value of this property triggers a theme refresh. If the mode is set to
+    /// <see cref="UiThemeMode.System"/>, the effective theme will be synchronized immediately
+    /// with the system setting.
     /// </remarks>
     public static UiThemeMode ThemeMode
     {
@@ -421,15 +429,33 @@ public sealed class ThemeManager
 
     internal static void OnRequestedThemeChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
+        var newMode = (UiThemeMode)e.NewValue;
+
         if (d is FrameworkElement fe)
         {
-            RegisterElement(fe);
-            ApplyThemeToElement(fe, (UiThemeMode)e.NewValue);
+            if (newMode == UiThemeMode.Default)
+            {
+                RemoveThemeDictionary(fe.Resources);
+                UnregisterElement(fe);
+            }
+            else
+            {
+                RegisterElement(fe);
+                ApplyThemeToElement(fe, newMode);
+            }
         }
         else if (d is FrameworkContentElement fce)
         {
-            RegisterContentElement(fce);
-            ApplyThemeToContentElement(fce, (UiThemeMode)e.NewValue);
+            if (newMode == UiThemeMode.Default)
+            {
+                RemoveThemeDictionary(fce.Resources);
+                UnregisterContentElement(fce);
+            }
+            else
+            {
+                RegisterContentElement(fce);
+                ApplyThemeToContentElement(fce, newMode);
+            }
         }
     }
 
@@ -485,9 +511,15 @@ public sealed class ThemeManager
         // 2. Rebuild theme dictionaries
         RebuildThemeDictionaries();
 
-        // 3. Merge dictionaries to each target
+        // 3. Merge or remove dictionaries for each target
         foreach (var (_, resources, mode) in targets)
         {
+            if (mode == UiThemeMode.Default)
+            {
+                RemoveThemeDictionary(resources);
+                continue;
+            }
+
             var effectiveTheme = ResolveEffectiveTheme(mode);
 
             var themeDict = effectiveTheme == ApplicationTheme.Dark
@@ -503,9 +535,14 @@ public sealed class ThemeManager
             resources.EndInit();
         }
 
-        // 5. Raise Changed event
-        var finalTheme = ResolveEffectiveTheme(_themeMode);
+        // 5. Update CurrentTheme
+        var finalTheme = _themeMode == UiThemeMode.Default
+            ? ApplicationTheme.Default
+            : ResolveEffectiveTheme(_themeMode);
+
         CurrentTheme = finalTheme;
+
+        // 6. Raise Changed event
         Instance.ChangedInternal?.Invoke(Instance, new ThemeChangedEventArgs(finalTheme, source));
     }
 
@@ -552,50 +589,62 @@ public sealed class ThemeManager
 
     private static void RebuildThemeDictionaries()
     {
-        var isHighContrast = SystemParameters.HighContrast;
-
         _lightDictionary.MergedDictionaries.Clear();
         _darkDictionary.MergedDictionaries.Clear();
 
-        if (isHighContrast)
+        if (SystemParameters.HighContrast)
         {
             // High contrast mode: both dictionaries load high contrast theme
-            _lightDictionary.MergedDictionaries.Add(new ResourceDictionary
-            {
-                Source = HighContrastThemeUri
-            });
-            _darkDictionary.MergedDictionaries.Add(new ResourceDictionary
-            {
-                Source = HighContrastThemeUri
-            });
+            _lightDictionary.MergedDictionaries.Add(
+                new ResourceDictionary
+                {
+                    Source = HighContrastThemeUri
+                }
+            );
+
+            _darkDictionary.MergedDictionaries.Add(
+                new ResourceDictionary
+                {
+                    Source = HighContrastThemeUri
+                }
+            );
         }
         else
         {
             // Load library themes
-            _lightDictionary.MergedDictionaries.Add(new ResourceDictionary
-            {
-                Source = LightThemeUri
-            });
-            _darkDictionary.MergedDictionaries.Add(new ResourceDictionary
-            {
-                Source = DarkThemeUri
-            });
+            _lightDictionary.MergedDictionaries.Add(
+                new ResourceDictionary
+                {
+                    Source = LightThemeUri
+                }
+            );
+
+            _darkDictionary.MergedDictionaries.Add(
+                new ResourceDictionary
+                {
+                    Source = DarkThemeUri
+                }
+            );
 
             // Load additional theme resources
             if (_additionalLightThemeUri != null)
             {
-                _lightDictionary.MergedDictionaries.Add(new ResourceDictionary
-                {
-                    Source = _additionalLightThemeUri
-                });
+                _lightDictionary.MergedDictionaries.Add(
+                    new ResourceDictionary
+                    {
+                        Source = _additionalLightThemeUri
+                    }
+                );
             }
 
             if (_additionalDarkThemeUri != null)
             {
-                _darkDictionary.MergedDictionaries.Add(new ResourceDictionary
-                {
-                    Source = _additionalDarkThemeUri
-                });
+                _darkDictionary.MergedDictionaries.Add(
+                    new ResourceDictionary
+                    {
+                        Source = _additionalDarkThemeUri
+                    }
+                );
             }
 
             // Apply system accent colors
@@ -604,8 +653,13 @@ public sealed class ThemeManager
                 var palette = SystemAccentPaletteReader.Read();
                 if (palette != null)
                 {
-                    _lightDictionary.MergedDictionaries.Add(BuildAccentDictionary(palette, UiThemeMode.Light));
-                    _darkDictionary.MergedDictionaries.Add(BuildAccentDictionary(palette,  UiThemeMode.Dark));
+                    _lightDictionary.MergedDictionaries.Add(
+                        BuildAccentDictionary(palette, UiThemeMode.Light)
+                    );
+
+                    _darkDictionary.MergedDictionaries.Add(
+                        BuildAccentDictionary(palette, UiThemeMode.Dark)
+                    );
                 }
             }
         }
@@ -615,7 +669,8 @@ public sealed class ThemeManager
     {
         var dic = new ResourceDictionary
         {
-            [ColorKeys.SystemAccentColor] = p.Accent
+            [ColorKeys.SystemAccentColor]      = p.Accent,
+            [BrushKeys.SystemAccentColorBrush] = FreezeBrush(p.Accent),
         };
 
         if (mode == UiThemeMode.Light)
@@ -624,7 +679,6 @@ public sealed class ThemeManager
             dic[ColorKeys.SystemAccentColorSecondary] = p.Dark2;
             dic[ColorKeys.SystemAccentColorTertiary]  = p.Dark3;
 
-            dic[BrushKeys.SystemAccentColorBrush]                     = FreezeBrush(p.Accent);
             dic[BrushKeys.SystemAccentColorPrimaryBrush]              = FreezeBrush(p.Dark1);
             dic[BrushKeys.SystemAccentColorSecondaryBrush]            = FreezeBrush(p.Dark2);
             dic[BrushKeys.SystemAccentColorTertiaryBrush]             = FreezeBrush(p.Dark3);
@@ -643,7 +697,6 @@ public sealed class ThemeManager
             dic[ColorKeys.SystemAccentColorSecondary] = p.Light2;
             dic[ColorKeys.SystemAccentColorTertiary]  = p.Light3;
 
-            dic[BrushKeys.SystemAccentColorBrush]                     = FreezeBrush(p.Accent);
             dic[BrushKeys.SystemAccentColorPrimaryBrush]              = FreezeBrush(p.Light1);
             dic[BrushKeys.SystemAccentColorSecondaryBrush]            = FreezeBrush(p.Light2);
             dic[BrushKeys.SystemAccentColorTertiaryBrush]             = FreezeBrush(p.Light3);
@@ -662,18 +715,23 @@ public sealed class ThemeManager
 
     private static void MergeThemeDictionary(ResourceDictionary target, ResourceDictionary themeDict)
     {
-        // Remove old theme dictionary
+        RemoveThemeDictionary(target);
+
+        // Insert at beginning so user-defined resources can override theme resources
+        target.MergedDictionaries.Insert(0, themeDict);
+    }
+
+    private static void RemoveThemeDictionary(ResourceDictionary target)
+    {
         for (int i = target.MergedDictionaries.Count - 1; i >= 0; i--)
         {
             var dict = target.MergedDictionaries[i];
+
             if (ReferenceEquals(dict, _lightDictionary) || ReferenceEquals(dict, _darkDictionary))
             {
                 target.MergedDictionaries.RemoveAt(i);
             }
         }
-
-        // Insert at beginning so user-defined resources can override theme resources
-        target.MergedDictionaries.Insert(0, themeDict);
     }
 
     #endregion
@@ -689,7 +747,10 @@ public sealed class ThemeManager
                 return;
             }
 
-            _registeredElements.Add(new WeakReference<FrameworkElement>(element));
+            _registeredElements.Add(
+                new WeakReference<FrameworkElement>(element)
+            );
+
             element.Unloaded += OnElementUnloaded;
         }
     }
@@ -715,8 +776,23 @@ public sealed class ThemeManager
                 return;
             }
 
-            _registeredContentElements.Add(new WeakReference<FrameworkContentElement>(element));
+            _registeredContentElements.Add(
+                new WeakReference<FrameworkContentElement>(element)
+            );
+
             element.Unloaded += OnContentElementUnloaded;
+        }
+    }
+
+    private static void UnregisterContentElement(FrameworkContentElement element)
+    {
+        lock (_lock)
+        {
+            _registeredContentElements.RemoveAll(
+                wr => !wr.TryGetTarget(out var target) || ReferenceEquals(target, element)
+            );
+
+            element.Unloaded -= OnContentElementUnloaded;
         }
     }
 
@@ -770,24 +846,17 @@ public sealed class ThemeManager
 
     private static UiThemeMode GetEffectiveThemeForElement(FrameworkElement element)
     {
-        // RootVisual always follows global theme mode
         if (GetIsRootVisual(element))
         {
             return _themeMode;
         }
 
-        var requested = Theme.GetRequested(element);
-        if (requested != UiThemeMode.Auto)
-        {
-            return requested;
-        }
-
-        return _themeMode;
+        return Theme.GetRequested(element);
     }
 
     private static ApplicationTheme ResolveEffectiveTheme(UiThemeMode mode)
     {
-        if (mode == UiThemeMode.Auto)
+        if (mode == UiThemeMode.System)
         {
             return GetSystemThemeMode();
         }
@@ -797,30 +866,31 @@ public sealed class ThemeManager
 
     private static void ApplyThemeToElement(FrameworkElement element, UiThemeMode mode)
     {
-        var effectiveTheme = ResolveEffectiveTheme(
-            mode == UiThemeMode.Auto
-                ? GetEffectiveThemeForElement(element)
-                : mode
-        );
+        var effectiveTheme = ResolveEffectiveTheme(mode);
 
         var themeDict = effectiveTheme == ApplicationTheme.Dark
             ? _darkDictionary
             : _lightDictionary;
 
         element.Resources.BeginInit();
+
         MergeThemeDictionary(element.Resources, themeDict);
+
         element.Resources.EndInit();
     }
 
     private static void ApplyThemeToContentElement(FrameworkContentElement element, UiThemeMode mode)
     {
         var effectiveTheme = ResolveEffectiveTheme(mode);
+
         var themeDict = effectiveTheme == ApplicationTheme.Dark
             ? _darkDictionary
             : _lightDictionary;
 
         element.Resources.BeginInit();
+
         MergeThemeDictionary(element.Resources, themeDict);
+
         element.Resources.EndInit();
     }
 
@@ -830,7 +900,9 @@ public sealed class ThemeManager
         {
             Opacity = opacity
         };
+
         brush.Freeze();
+
         return brush;
     }
 

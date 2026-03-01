@@ -3,15 +3,18 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
+using System.ComponentModel;
 using Wpf.Ui.Appearance;
 using Wpf.Ui.Controls;
 using Wpf.Ui.Extensions;
 
 namespace Wpf.Ui.Gallery.ViewModels.Pages;
 
-public sealed partial class SettingsViewModel(INavigationService navigationService) : ViewModel
+public sealed partial class SettingsViewModel : ViewModel
 {
     public record ThemeItem(string Display, UiThemeMode ThemeMode);
+
+    private readonly INavigationService? _navigationService;
 
     private bool _isInitialized = false;
 
@@ -22,6 +25,9 @@ public sealed partial class SettingsViewModel(INavigationService navigationServi
     private UiThemeMode _currentTheme = UiThemeMode.Light;
 
     [ObservableProperty]
+    private bool _useSystemAccent = true;
+
+    [ObservableProperty]
     private NavigationViewPaneDisplayMode _currentApplicationNavigationStyle =
         NavigationViewPaneDisplayMode.Left;
 
@@ -30,8 +36,17 @@ public sealed partial class SettingsViewModel(INavigationService navigationServi
     [
         new("Light", UiThemeMode.Light),
         new("Dark", UiThemeMode.Dark),
-        new("FollowSystem", UiThemeMode.Auto)
+        new("System", UiThemeMode.System)
     ];
+
+    public SettingsViewModel()
+    {
+    }
+
+    public SettingsViewModel(INavigationService navigationService)
+    {
+        _navigationService = navigationService;
+    }
 
     public override void OnNavigatedTo()
     {
@@ -46,23 +61,36 @@ public sealed partial class SettingsViewModel(INavigationService navigationServi
         ThemeManager.ThemeMode = newValue;
     }
 
+    partial void OnUseSystemAccentChanged(bool value)
+    {
+        ThemeManager.UseSystemAccentColor = value;
+    }
+
     partial void OnCurrentApplicationNavigationStyleChanged(
         NavigationViewPaneDisplayMode oldValue,
-        NavigationViewPaneDisplayMode newValue
-    )
+        NavigationViewPaneDisplayMode newValue)
     {
-        _ = navigationService.SetPaneDisplayMode(newValue);
+        _ = _navigationService?.SetPaneDisplayMode(newValue);
     }
 
     private void InitializeViewModel()
     {
-        CurrentTheme = ThemeManager.ThemeMode;
         AppVersion = $"{GetAssemblyVersion()}";
+        UpdateCurrentTheme();
+
         _isInitialized = true;
     }
 
     private static string GetAssemblyVersion()
     {
         return Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? string.Empty;
+    }
+
+    public void UpdateCurrentTheme()
+    {
+        var mode = ThemeManager.ThemeMode;
+
+        // The default theme of the library is Light.
+        CurrentTheme = mode == UiThemeMode.Default ? UiThemeMode.Light : mode;
     }
 }

@@ -4,6 +4,7 @@
 // All Rights Reserved.
 
 using System;
+using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
 using Wpf.Ui.Appearance;
@@ -31,10 +32,11 @@ public partial class SettingsPage
 
         ThemeComboBox.SelectedIndex = ThemeManager.ThemeMode switch
         {
-            UiThemeMode.Light => 0,
-            UiThemeMode.Dark  => 1,
-            UiThemeMode.Auto  => 2,
-            _                 => 2
+            UiThemeMode.Light   => 0,
+            UiThemeMode.Dark    => 1,
+            UiThemeMode.Default => 0, // Default is Light,
+            UiThemeMode.System  => 2,
+            _                   => 0
         };
 
         _suppressThemeComboBoxChangedEvent = false;
@@ -62,7 +64,7 @@ public partial class SettingsPage
         {
             "Light" => UiThemeMode.Light,
             "Dark"  => UiThemeMode.Dark,
-            _       => UiThemeMode.Auto,
+            _       => UiThemeMode.System,
         };
     }
 }

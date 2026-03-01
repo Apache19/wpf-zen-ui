@@ -16,7 +16,6 @@
     d:DesignHeight="450"
     d:DesignWidth="850"
     d:Background="{ui:BrushResource WindowBackgroundBrush}"
-    d:Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
     Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
     WindowWidth="850"
     mc:Ignorable="d">
