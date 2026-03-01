@@ -5,14 +5,12 @@
 
 namespace Wpf.Ui.Threading;
 
-// todo 核查 DebounceDispatcher 实现是否有问题（有关于此的编译警告）
-
 /// <summary>
 /// Executes an action only after a period of inactivity.
 /// Multiple calls within the delay window will result in a single execution.
 /// Thread-safe.
 /// </summary>
-public sealed class DebounceDispatcher : IDisposable
+internal sealed class DebounceDispatcher : IDisposable
 {
 #if NET9_0_OR_GREATER
     private readonly Lock _lock = new();
@@ -21,6 +19,7 @@ public sealed class DebounceDispatcher : IDisposable
 #endif
 
     private CancellationTokenSource? _cts;
+    private bool _disposed;
 
     /// <summary>
     /// Schedules an asynchronous action using debounce semantics.
@@ -40,14 +39,14 @@ public sealed class DebounceDispatcher : IDisposable
     /// delay and prevent the action from running if a newer invocation occurs.
     ///
     /// Important implementation detail:
-    /// The cancellation token is intentionally NOT passed to <see cref="Task.Run"/>.
+    /// The cancellation token is intentionally NOT passed to <see cref="Task.Run(Action)"/>.
     /// Passing a token to Task.Run only cancels task scheduling, not the internal
     /// delay or the action itself. Debounce requires the task to start reliably
     /// and cancel cooperatively during the delay phase instead. This guarantees
     /// stable and predictable task completion behavior for callers.
     ///
     /// Exception behavior:
-    /// - <see cref="TaskCanceledException"/> from the internal delay is expected
+    /// - <see cref="OperationCanceledException"/> from the internal delay is expected
     ///   and swallowed.
     /// - Exceptions thrown by <paramref name="action"/> will propagate to the
     ///   returned task.
@@ -66,12 +65,22 @@ public sealed class DebounceDispatcher : IDisposable
     /// <returns>
     /// A task representing the scheduled debounce operation.
     /// </returns>
+    /// <exception cref="ObjectDisposedException">The instance has been disposed.</exception>
     public Task DebounceAsync(TimeSpan delay, Func<CancellationToken, Task> action)
     {
         CancellationTokenSource currentCts;
 
         lock (_lock)
         {
+#if NET8_0_OR_GREATER
+            ObjectDisposedException.ThrowIf(_disposed, this);
+#else
+            if (_disposed)
+            {
+                throw new ObjectDisposedException(nameof(DebounceDispatcher));
+            }
+#endif
+
             _cts?.Cancel();
             _cts?.Dispose();
 
@@ -79,20 +88,22 @@ public sealed class DebounceDispatcher : IDisposable
             currentCts = _cts;
         }
 
+        var token = currentCts.Token;
+
         // ReSharper disable once MethodSupportsCancellation
         return Task.Run(
             async () =>
             {
                 try
                 {
-                    await Task.Delay(delay, currentCts.Token).ConfigureAwait(false);
+                    await Task.Delay(delay, token).ConfigureAwait(false);
 
-                    if (!currentCts.IsCancellationRequested)
+                    if (!token.IsCancellationRequested)
                     {
-                        await action(currentCts.Token).ConfigureAwait(false);
+                        await action(token).ConfigureAwait(false);
                     }
                 }
-                catch (TaskCanceledException)
+                catch (OperationCanceledException)
                 {
                     // expected, swallow
                 }
@@ -110,6 +121,7 @@ public sealed class DebounceDispatcher : IDisposable
     /// <param name="delay">The inactivity period before execution.</param>
     /// <param name="action">The action to execute.</param>
     /// <returns>A task representing the scheduled debounce operation.</returns>
+    /// <exception cref="ObjectDisposedException">The instance has been disposed.</exception>
     public Task DebounceAsync(TimeSpan delay, Action action)
     {
         return DebounceAsync(delay, _ =>
@@ -120,7 +132,39 @@ public sealed class DebounceDispatcher : IDisposable
     }
 
     /// <summary>
-    /// Cancel any pending execution.
+    /// Schedules an asynchronous action using debounce semantics (fire-and-forget).
+    /// </summary>
+    /// <remarks>
+    /// Unlike <see cref="DebounceAsync(TimeSpan, Func{CancellationToken, Task})"/>,
+    /// this method does not return a <see cref="Task"/>. Unhandled exceptions from
+    /// the action will surface as unobserved task exceptions.
+    /// </remarks>
+    /// <param name="delay">The inactivity period before execution.</param>
+    /// <param name="action">The asynchronous action to execute.</param>
+    /// <exception cref="ObjectDisposedException">The instance has been disposed.</exception>
+    public void Debounce(TimeSpan delay, Func<CancellationToken, Task> action)
+    {
+        _ = DebounceAsync(delay, action);
+    }
+
+    /// <summary>
+    /// Schedules a synchronous action using debounce semantics (fire-and-forget).
+    /// </summary>
+    /// <remarks>
+    /// Unlike <see cref="DebounceAsync(TimeSpan, Action)"/>,
+    /// this method does not return a <see cref="Task"/>. Unhandled exceptions from
+    /// the action will surface as unobserved task exceptions.
+    /// </remarks>
+    /// <param name="delay">The inactivity period before execution.</param>
+    /// <param name="action">The action to execute.</param>
+    /// <exception cref="ObjectDisposedException">The instance has been disposed.</exception>
+    public void Debounce(TimeSpan delay, Action action)
+    {
+        _ = DebounceAsync(delay, action);
+    }
+
+    /// <summary>
+    /// Cancels any pending execution.
     /// </summary>
     public void Cancel()
     {
@@ -132,8 +176,20 @@ public sealed class DebounceDispatcher : IDisposable
         }
     }
 
+    /// <inheritdoc />
     public void Dispose()
     {
-        Cancel();
+        lock (_lock)
+        {
+            if (_disposed)
+            {
+                return;
+            }
+
+            _disposed = true;
+            _cts?.Cancel();
+            _cts?.Dispose();
+            _cts = null;
+        }
     }
 }

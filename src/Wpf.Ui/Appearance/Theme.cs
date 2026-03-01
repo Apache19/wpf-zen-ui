@@ -109,7 +109,7 @@ public static class Theme
             typeof(UiThemeMode),
             typeof(Theme),
             new FrameworkPropertyMetadata(
-                UiThemeMode.Auto,
+                UiThemeMode.Light, // Should be the same as the default theme merged with Generic.xaml
                 static (d, e) => ThemeManager.OnRequestedThemeChanged(d, e)
             )
         );

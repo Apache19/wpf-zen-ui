@@ -53,6 +53,10 @@ public sealed class ThemeManager
 
     #region Initialize
 
+    /// <summary>
+    /// Forces the static constructor to run, ensuring that theme resources
+    /// are loaded and system event listeners are registered.
+    /// </summary>
     public static void Initialize() { }
 
     static ThemeManager()
@@ -375,6 +379,15 @@ public sealed class ThemeManager
 
             RegisterRootVisual(d);
         }
+        else
+        {
+            if (d is FrameworkElement fe)
+            {
+                fe.Loaded -= OnElementLoadedForRootVisual;
+                SetIsRootVisual(fe, false);
+                UnregisterElement(fe);
+            }
+        }
     }
 
     private static void OnElementLoadedForRootVisual(object sender, RoutedEventArgs e)
@@ -397,7 +410,7 @@ public sealed class ThemeManager
         if (ps?.RootVisual is FrameworkElement rootVisual)
         {
             SetIsRootVisual(rootVisual, true);
-            RegisterElement(rootVisual, isRootVisual: true);
+            RegisterElement(rootVisual);
             ApplyThemeToElement(rootVisual, _themeMode);
         }
     }
@@ -410,7 +423,7 @@ public sealed class ThemeManager
     {
         if (d is FrameworkElement fe)
         {
-            RegisterElement(fe, isRootVisual: false);
+            RegisterElement(fe);
             ApplyThemeToElement(fe, (UiThemeMode)e.NewValue);
         }
         else if (d is FrameworkContentElement fce)
@@ -445,19 +458,12 @@ public sealed class ThemeManager
 
     private static void ScheduleThemeChangedDebounced()
     {
-        _ = _themeChangedDebouncer.DebounceAsync(
+        _themeChangedDebouncer.Debounce(
             TimeSpan.FromMilliseconds(250),
             () =>
             {
                 var dispatcher = Application.Current?.Dispatcher;
-                if (dispatcher != null)
-                {
-                    dispatcher.BeginInvoke(() => RefreshTheme(ThemeChangeSource.System));
-                }
-                else
-                {
-                    RefreshTheme(ThemeChangeSource.System);
-                }
+                dispatcher?.BeginInvoke(() => RefreshTheme(ThemeChangeSource.System));
             }
         );
     }
@@ -509,7 +515,7 @@ public sealed class ThemeManager
 
         // Application
         var app = Application.Current;
-        if (app?.Dispatcher != null && !app.Dispatcher.HasShutdownStarted)
+        if (app?.Dispatcher is { HasShutdownStarted: false })
         {
             targets.Add((app, app.Resources, _themeMode));
         }
@@ -618,24 +624,18 @@ public sealed class ThemeManager
             dic[ColorKeys.SystemAccentColorSecondary] = p.Dark2;
             dic[ColorKeys.SystemAccentColorTertiary]  = p.Dark3;
 
-            dic[BrushKeys.SystemAccentColorBrush]                     = new SolidColorBrush(p.Accent);
-            dic[BrushKeys.SystemAccentColorPrimaryBrush]              = new SolidColorBrush(p.Dark1);
-            dic[BrushKeys.SystemAccentColorSecondaryBrush]            = new SolidColorBrush(p.Dark2);
-            dic[BrushKeys.SystemAccentColorTertiaryBrush]             = new SolidColorBrush(p.Dark3);
-            dic[BrushKeys.AccentTextFillColorPrimaryBrush]            = new SolidColorBrush(p.Dark1);
-            dic[BrushKeys.AccentTextFillColorSecondaryBrush]          = new SolidColorBrush(p.Dark2);
-            dic[BrushKeys.AccentTextFillColorTertiaryBrush]           = new SolidColorBrush(p.Dark3);
-            dic[BrushKeys.AccentFillColorSelectedTextBackgroundBrush] = new SolidColorBrush(p.Accent);
-            dic[BrushKeys.AccentFillColorDefaultBrush]                = new SolidColorBrush(p.Dark1);
-            dic[BrushKeys.AccentFillColorSecondaryBrush] = new SolidColorBrush(p.Dark1)
-            {
-                Opacity = 0.9
-            };
-            dic[BrushKeys.AccentFillColorTertiaryBrush] = new SolidColorBrush(p.Dark1)
-            {
-                Opacity = 0.8
-            };
-            dic[BrushKeys.SystemFillColorAttentionBrush] = new SolidColorBrush(p.Accent);
+            dic[BrushKeys.SystemAccentColorBrush]                     = FreezeBrush(p.Accent);
+            dic[BrushKeys.SystemAccentColorPrimaryBrush]              = FreezeBrush(p.Dark1);
+            dic[BrushKeys.SystemAccentColorSecondaryBrush]            = FreezeBrush(p.Dark2);
+            dic[BrushKeys.SystemAccentColorTertiaryBrush]             = FreezeBrush(p.Dark3);
+            dic[BrushKeys.AccentTextFillColorPrimaryBrush]            = FreezeBrush(p.Dark1);
+            dic[BrushKeys.AccentTextFillColorSecondaryBrush]          = FreezeBrush(p.Dark2);
+            dic[BrushKeys.AccentTextFillColorTertiaryBrush]           = FreezeBrush(p.Dark3);
+            dic[BrushKeys.AccentFillColorSelectedTextBackgroundBrush] = FreezeBrush(p.Accent);
+            dic[BrushKeys.AccentFillColorDefaultBrush]                = FreezeBrush(p.Dark1);
+            dic[BrushKeys.AccentFillColorSecondaryBrush]              = FreezeBrush(p.Dark1, 0.9);
+            dic[BrushKeys.AccentFillColorTertiaryBrush]               = FreezeBrush(p.Dark1, 0.8);
+            dic[BrushKeys.SystemFillColorAttentionBrush]              = FreezeBrush(p.Accent);
         }
         else
         {
@@ -643,24 +643,18 @@ public sealed class ThemeManager
             dic[ColorKeys.SystemAccentColorSecondary] = p.Light2;
             dic[ColorKeys.SystemAccentColorTertiary]  = p.Light3;
 
-            dic[BrushKeys.SystemAccentColorBrush]                     = new SolidColorBrush(p.Accent);
-            dic[BrushKeys.SystemAccentColorPrimaryBrush]              = new SolidColorBrush(p.Light1);
-            dic[BrushKeys.SystemAccentColorSecondaryBrush]            = new SolidColorBrush(p.Light2);
-            dic[BrushKeys.SystemAccentColorTertiaryBrush]             = new SolidColorBrush(p.Light3);
-            dic[BrushKeys.AccentTextFillColorPrimaryBrush]            = new SolidColorBrush(p.Light1);
-            dic[BrushKeys.AccentTextFillColorSecondaryBrush]          = new SolidColorBrush(p.Light2);
-            dic[BrushKeys.AccentTextFillColorTertiaryBrush]           = new SolidColorBrush(p.Light3);
-            dic[BrushKeys.AccentFillColorSelectedTextBackgroundBrush] = new SolidColorBrush(p.Accent);
-            dic[BrushKeys.AccentFillColorDefaultBrush]                = new SolidColorBrush(p.Light2);
-            dic[BrushKeys.AccentFillColorSecondaryBrush] = new SolidColorBrush(p.Light2)
-            {
-                Opacity = 0.9
-            };
-            dic[BrushKeys.AccentFillColorTertiaryBrush] = new SolidColorBrush(p.Light2)
-            {
-                Opacity = 0.8
-            };
-            dic[BrushKeys.SystemFillColorAttentionBrush] = new SolidColorBrush(p.Accent);
+            dic[BrushKeys.SystemAccentColorBrush]                     = FreezeBrush(p.Accent);
+            dic[BrushKeys.SystemAccentColorPrimaryBrush]              = FreezeBrush(p.Light1);
+            dic[BrushKeys.SystemAccentColorSecondaryBrush]            = FreezeBrush(p.Light2);
+            dic[BrushKeys.SystemAccentColorTertiaryBrush]             = FreezeBrush(p.Light3);
+            dic[BrushKeys.AccentTextFillColorPrimaryBrush]            = FreezeBrush(p.Light1);
+            dic[BrushKeys.AccentTextFillColorSecondaryBrush]          = FreezeBrush(p.Light2);
+            dic[BrushKeys.AccentTextFillColorTertiaryBrush]           = FreezeBrush(p.Light3);
+            dic[BrushKeys.AccentFillColorSelectedTextBackgroundBrush] = FreezeBrush(p.Accent);
+            dic[BrushKeys.AccentFillColorDefaultBrush]                = FreezeBrush(p.Light2);
+            dic[BrushKeys.AccentFillColorSecondaryBrush]              = FreezeBrush(p.Light2, 0.9);
+            dic[BrushKeys.AccentFillColorTertiaryBrush]               = FreezeBrush(p.Light2, 0.8);
+            dic[BrushKeys.SystemFillColorAttentionBrush]              = FreezeBrush(p.Accent);
         }
 
         return dic;
@@ -686,7 +680,7 @@ public sealed class ThemeManager
 
     #region Registration
 
-    private static void RegisterElement(FrameworkElement element, bool isRootVisual)
+    private static void RegisterElement(FrameworkElement element)
     {
         lock (_lock)
         {
@@ -697,6 +691,18 @@ public sealed class ThemeManager
 
             _registeredElements.Add(new WeakReference<FrameworkElement>(element));
             element.Unloaded += OnElementUnloaded;
+        }
+    }
+
+    private static void UnregisterElement(FrameworkElement element)
+    {
+        lock (_lock)
+        {
+            _registeredElements.RemoveAll(
+                wr => !wr.TryGetTarget(out var target) || ReferenceEquals(target, element)
+            );
+
+            element.Unloaded -= OnElementUnloaded;
         }
     }
 
@@ -716,12 +722,16 @@ public sealed class ThemeManager
 
     private static bool IsElementRegistered(FrameworkElement element)
     {
-        return _registeredElements.Any(wr => wr.TryGetTarget(out var target) && ReferenceEquals(target, element));
+        return _registeredElements.Any(
+            wr => wr.TryGetTarget(out var target) && ReferenceEquals(target, element)
+        );
     }
 
     private static bool IsContentElementRegistered(FrameworkContentElement element)
     {
-        return _registeredContentElements.Any(wr => wr.TryGetTarget(out var target) && ReferenceEquals(target, element));
+        return _registeredContentElements.Any(
+            wr => wr.TryGetTarget(out var target) && ReferenceEquals(target, element)
+        );
     }
 
     private static void OnElementUnloaded(object sender, RoutedEventArgs e)
@@ -730,7 +740,10 @@ public sealed class ThemeManager
         {
             lock (_lock)
             {
-                _registeredElements.RemoveAll(wr => !wr.TryGetTarget(out var target) || ReferenceEquals(target, fe));
+                _registeredElements.RemoveAll(
+                    wr => !wr.TryGetTarget(out var target) || ReferenceEquals(target, fe)
+                );
+
                 fe.Unloaded -= OnElementUnloaded;
             }
         }
@@ -742,7 +755,10 @@ public sealed class ThemeManager
         {
             lock (_lock)
             {
-                _registeredContentElements.RemoveAll(wr => !wr.TryGetTarget(out var target) || ReferenceEquals(target, fce));
+                _registeredContentElements.RemoveAll(
+                    wr => !wr.TryGetTarget(out var target) || ReferenceEquals(target, fce)
+                );
+
                 fce.Unloaded -= OnContentElementUnloaded;
             }
         }
@@ -806,6 +822,16 @@ public sealed class ThemeManager
         element.Resources.BeginInit();
         MergeThemeDictionary(element.Resources, themeDict);
         element.Resources.EndInit();
+    }
+
+    private static SolidColorBrush FreezeBrush(Color color, double opacity = 1.0)
+    {
+        var brush = new SolidColorBrush(color)
+        {
+            Opacity = opacity
+        };
+        brush.Freeze();
+        return brush;
     }
 
     private static ApplicationTheme GetSystemThemeMode()

@@ -8,11 +8,6 @@ namespace Wpf.Ui.Appearance;
 public enum UiThemeMode
 {
     /// <summary>
-    /// Follow system theme mode.
-    /// </summary>
-    Auto,
-
-    /// <summary>
     /// Light application theme mode.
     /// </summary>
     Light,
@@ -21,4 +16,9 @@ public enum UiThemeMode
     /// Dark application theme mode.
     /// </summary>
     Dark,
+
+    /// <summary>
+    /// Follow system theme mode.
+    /// </summary>
+    Auto,
 }
