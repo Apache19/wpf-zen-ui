@@ -19,7 +19,7 @@ namespace Wpf.Ui.Controls;
 /// &lt;ui:Arc
 ///     EndAngle="359"
 ///     StartAngle="0"
-///     Stroke="{ui:ThemeResource SystemAccentColorSecondaryBrush}"
+///     Stroke="{ui:BrushResource SystemAccentColorSecondaryBrush}"
 ///     StrokeThickness="2"
 ///     Visibility="Visible" /&gt;
 /// </code>
