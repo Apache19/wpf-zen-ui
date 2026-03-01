@@ -1,6 +1,6 @@
 namespace Wpf.Ui.Demo.WinForms
 {
-    partial class Form1
+    sealed partial class Form1
     {
         /// <summary>
         /// 必需的设计器变量。

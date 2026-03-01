@@ -3,10 +3,8 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-using System;
-using System.Windows;
+using System.Drawing;
 using System.Windows.Forms;
-using Wpf.Ui.Appearance;
 
 namespace Wpf.Ui.Demo.WinForms;
 
@@ -14,11 +12,14 @@ namespace Wpf.Ui.Demo.WinForms;
 /// Initializes a new instance of the <see cref="Form1"/> class.
 /// Sets up the form and hosts a WPF user control within the Windows Forms environment.
 /// </summary>
-public partial class Form1 : Form
+public sealed partial class Form1 : Form
 {
     public Form1()
     {
         InitializeComponent();
+
+        Font = SystemFonts.MenuFont;
+
         elementHost1.Child = new WpfContent();
     }
 }
