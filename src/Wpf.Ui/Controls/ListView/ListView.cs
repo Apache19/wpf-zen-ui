@@ -26,7 +26,7 @@ namespace Wpf.Ui.Controls;
 /// </example>
 public class ListView : System.Windows.Controls.ListView
 {
-    private DependencyPropertyDescriptor? _descriptor;
+    // todo 移除 ViewStateProperty，只提供GridView的默认样式，并把ListView的默认样式应用上去即可，不要做过多的改变。
 
     /// <summary>Identifies the <see cref="ViewState"/> dependency property.</summary>
     public static readonly DependencyProperty ViewStateProperty = DependencyProperty.Register(
@@ -41,6 +41,16 @@ public class ListView : System.Windows.Controls.ListView
         DefaultStyleKeyProperty.OverrideMetadata(
             typeof(ListView),
             new FrameworkPropertyMetadata(typeof(ListView))
+        );
+
+        ViewProperty.OverrideMetadata(
+            typeof(ListView),
+            new PropertyMetadata(
+                static (d, e) =>
+                {
+                    ((ListView)d).UpdateViewState();
+                }
+            )
         );
     }
 
@@ -72,32 +82,11 @@ public class ListView : System.Windows.Controls.ListView
     public ListView()
     {
         Loaded += OnLoaded;
-        Unloaded += OnUnloaded;
     }
 
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
-        Loaded -= OnLoaded; // prevent memory leaks
-
-        // Setup initial ViewState and hook into View property changes
-        _descriptor = DependencyPropertyDescriptor.FromProperty(
-            System.Windows.Controls.ListView.ViewProperty,
-            typeof(System.Windows.Controls.ListView)
-        );
-        _descriptor?.AddValueChanged(this, OnViewPropertyChanged);
         UpdateViewState(); // set the initial state
-    }
-
-    private void OnUnloaded(object sender, RoutedEventArgs e)
-    {
-        Unloaded -= OnUnloaded;
-
-        _descriptor?.RemoveValueChanged(this, OnViewPropertyChanged);
-    }
-
-    private void OnViewPropertyChanged(object? sender, EventArgs e)
-    {
-        UpdateViewState();
     }
 
     private void UpdateViewState()
@@ -105,8 +94,8 @@ public class ListView : System.Windows.Controls.ListView
         ListViewViewState viewState = View switch
         {
             System.Windows.Controls.GridView => ListViewViewState.GridView,
-            null => ListViewViewState.Default,
-            _ => ListViewViewState.Default,
+            null                             => ListViewViewState.Default,
+            _                                => ListViewViewState.Default,
         };
 
         SetCurrentValue(ViewStateProperty, viewState);

@@ -3,6 +3,7 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
+// ReSharper disable once CheckNamespace
 namespace Wpf.Ui.Controls;
 
 public class ListViewItem : System.Windows.Controls.ListViewItem
