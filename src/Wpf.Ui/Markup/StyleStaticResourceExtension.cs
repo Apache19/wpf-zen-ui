@@ -8,6 +8,21 @@ using Wpf.Ui.Theming;
 
 namespace Wpf.Ui.Markup;
 
+/// <summary>
+/// Provides a strongly-typed wrapper over <see cref="StaticResourceExtension"/>
+/// for resolving style resources by <see cref="StyleId"/>.
+/// </summary>
+/// <remarks>
+/// ReSharper may not recognize this custom extension correctly and can
+/// misinterpret it as a <c>DynamicResourceExtension</c> during static analysis.
+///
+/// This does not affect runtime behavior.
+///
+/// If necessary, you may suppress the related inspection in ReSharper.
+/// Alternatively, reference the resource key directly using a static expression,
+/// for example:
+/// <c>"{StaticResource {x:Static th:StyleKeys.ButtonStyle}}"</c>
+/// </remarks>
 [ContentProperty(nameof(Id))]
 [MarkupExtensionReturnType(typeof(Style))]
 public class StyleStaticResourceExtension : StaticResourceExtension

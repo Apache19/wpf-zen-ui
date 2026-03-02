@@ -32,6 +32,7 @@
     </ui:FluentWindow.InputBindings>
 
     <Grid>
+        <TextBlock Text="{ui:TestAKey}"/>
         <ui:NavigationView
             x:Name="NavigationView"
             Padding="42,0,42,0"
