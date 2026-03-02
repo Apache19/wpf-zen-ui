@@ -211,9 +211,13 @@ public class PageControlDocumentation : Control
 
     private static void SwitchThemes()
     {
+        var theme = ThemeManager.CurrentTheme == ApplicationTheme.Default
+            ? ApplicationTheme.Light
+            : ThemeManager.CurrentTheme;
+
         ThemeManager.ThemeMode =
-            ThemeManager.ThemeMode == UiThemeMode.Dark
-                ? UiThemeMode.Light
-                : UiThemeMode.Dark;
+            theme == ApplicationTheme.Light
+                ? UiThemeMode.Dark
+                : UiThemeMode.Light;
     }
 }

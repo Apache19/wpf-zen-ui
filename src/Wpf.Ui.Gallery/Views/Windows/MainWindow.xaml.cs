@@ -23,7 +23,7 @@ public partial class MainWindow : IWindow
         IContentDialogService contentDialogService
     )
     {
-        ViewModel = viewModel;
+        ViewModel   = viewModel;
         DataContext = this;
 
         InitializeComponent();
@@ -193,9 +193,13 @@ public partial class MainWindow : IWindow
 
     private void ThemeButton_OnClick(object sender, RoutedEventArgs e)
     {
+        var theme = ThemeManager.CurrentTheme == ApplicationTheme.Default
+            ? ApplicationTheme.Light
+            : ThemeManager.CurrentTheme;
+
         ThemeManager.ThemeMode =
-            ThemeManager.ThemeMode == UiThemeMode.Dark
-                ? UiThemeMode.Light
-                : UiThemeMode.Dark;
+            theme == ApplicationTheme.Light
+                ? UiThemeMode.Dark
+                : UiThemeMode.Light;
     }
 }
