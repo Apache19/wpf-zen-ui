@@ -75,11 +75,9 @@ public partial class FluentWindow
         // 否则移除 WS_SYSMENU 风格后无法再获得窗口菜单句柄、无法弹出窗口菜单
         PInvoke.GetSystemMenu(hwnd, false);
 
-        // 移除 WS_SYSMENU 风格，否则启用 Backdrop 会出现原生系统按钮，即使顶部标题栏已被去除。
-        // 带来的后果就是无法用 Alt + Space 弹出窗口菜单了
         var style = PInvoke.GetWindowLong(hwnd, WINDOW_LONG_PTR_INDEX.GWL_STYLE);
         style &= ~(int)WINDOW_STYLE.WS_SYSMENU;
-        PInvoke.SetWindowLong(hwnd, WINDOW_LONG_PTR_INDEX.GWL_STYLE, style);
+        _ = PInvoke.SetWindowLong(hwnd, WINDOW_LONG_PTR_INDEX.GWL_STYLE, style);
     }
 
     // 窗口创建Hwnd时、属性变更时、主题变更时，需要调用此方法
@@ -123,10 +121,12 @@ public partial class FluentWindow
                     theme == ApplicationTheme.Dark
                 );
 
-                // 让 DWM 不绘制标题栏背景色（系统开启了将主题色应用到窗口边框或标题栏时）
+                // 系统开启了将主题色应用到窗口边框或标题栏且激活窗口时DWM会在窗口顶部用强调色绘制标题栏背景，
+                // 为了解决此问题，可以将标题栏颜色设置为DWMWA_COLOR_NONE。
                 DwmAttributes.SetCaptionColor(hwnd, PInvoke.DWMWA_COLOR_NONE);
 
-                // 删除 WS_SYSMENU 风格，避免 DWM 绘制窗口按钮
+                // 移除 WS_SYSMENU 风格，否则启用 Backdrop 会出现原生系统按钮，即使顶部标题栏已被去除。
+                // 带来的后果就是无法用 Alt + Space 弹出窗口菜单了
                 RemoveSystemMenu(hwnd);
 
                 var dwmResult = false;
@@ -148,6 +148,13 @@ public partial class FluentWindow
                 }
 
                 var applied = wbt != WindowBackdropType.None && dwmResult;
+
+                // 如果窗口没有 Owner、BackdropType 为 Auto 时，系统不会为其应用 Backdrop，
+                // 此时不要移除窗口背景色，否则看起来会很怪异。
+                if (applied && wbt == WindowBackdropType.Auto && Owner == null)
+                {
+                    applied = false;
+                }
 
                 if (applied)
                 {
@@ -191,18 +198,4 @@ public partial class FluentWindow
             DwmAttributes.SetWindowCornerPreference(hwnd, dwmcp);
         }
     }
-
-    /* todo 把主题管理器改成单例模式
-    监听方式：
-    WeakEventManager<ApplicationThemeManager, EventArgs>
-        .AddHandler(ApplicationThemeManager.Current,
-                    nameof(ApplicationThemeManager.ThemeChanged),
-    OnThemeChanged);
-    移除：
-    WeakEventManager<ApplicationThemeManager, EventArgs>
-        .RemoveHandler(ApplicationThemeManager.Current,
-                      nameof(ApplicationThemeManager.ThemeChanged),
-                      OnThemeChanged);
-    如此以来即可不用担心内存泄露问题
-    */
 }
