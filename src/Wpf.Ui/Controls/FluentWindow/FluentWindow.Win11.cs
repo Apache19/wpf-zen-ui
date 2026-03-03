@@ -127,6 +127,7 @@ public partial class FluentWindow
 
                 // 移除 WS_SYSMENU 风格，否则启用 Backdrop 会出现原生系统按钮，即使顶部标题栏已被去除。
                 // 带来的后果就是无法用 Alt + Space 弹出窗口菜单了
+                // todo 确认：已经使用主题Api去掉了系统菜单，看看不调用这个会如何
                 RemoveSystemMenu(hwnd);
 
                 var dwmResult = false;
