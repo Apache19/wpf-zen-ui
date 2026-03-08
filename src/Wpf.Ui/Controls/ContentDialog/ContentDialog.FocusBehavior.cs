@@ -7,6 +7,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media.Media3D;
 using System.Windows.Threading;
+using Wpf.Ui.Extensions.Wpf;
 using UiButton = Wpf.Ui.Controls.Button;
 using WinButton = System.Windows.Controls.Button;
 
@@ -100,7 +101,6 @@ public partial class ContentDialog
 
     private bool IsFocusInsideDialogCore(IInputElement? element)
     {
-        // ReSharper disable once SuspiciousTypeConversion.Global
         if (element is not DependencyObject focused)
         {
             return false;
@@ -115,7 +115,7 @@ public partial class ContentDialog
                 return true;
             }
 
-            current = GetParent(current);
+            current = current.GetParent();
         }
 
         return false;
@@ -143,7 +143,7 @@ public partial class ContentDialog
 
         // Prefer `Control` (elements deriving from System.Windows.Controls.Control) because
         // they reliably provide UI Automation peers and are recognized by screen readers.
-        var firstFocusable = FindDescendant<Control>(content, IsSafelyFocusable);
+        var firstFocusable = content.FindDescendant<Control>(IsSafelyFocusable);
         if (firstFocusable is not null)
         {
             firstFocusable.Focus();
@@ -157,8 +157,7 @@ public partial class ContentDialog
         }
 
         // 3) Template fallback: try to find any custom button marked as default (IsDefault == true)
-        var templateDefault = FindDescendant<WinButton>(
-            this,
+        var templateDefault = this.FindDescendant<WinButton>(
             b => b is { IsDefault: true } && IsSafelyFocusable(b)
         );
 
@@ -184,6 +183,7 @@ public partial class ContentDialog
     {
         var safelyButtons = new List<WinButton>();
 
+        // Collect built-in safely buttons
         if (GetTemplateChild("PrimaryButton") is WinButton primaryBtn && IsSafelyFocusable(primaryBtn))
         {
             safelyButtons.Add(primaryBtn);
@@ -199,86 +199,11 @@ public partial class ContentDialog
             safelyButtons.Add(secondaryBtn);
         }
 
-        // Priority: find the first IsDefault button and select it, then return.
-        foreach (var btn in safelyButtons)
-        {
-            if (btn.IsDefault)
-            {
-                btn.Focus();
-                return true;
-            }
-        }
+        // Select the default button if present; otherwise fall back to the first available button.
+        var btn = safelyButtons.First(b => b.IsDefault) ?? safelyButtons.First();
+        btn?.Focus();
 
-        // Fallback: Find the first button and focus it, then return.
-        if (safelyButtons.Count > 0)
-        {
-            safelyButtons[0].Focus();
-            return true;
-        }
-
-        return false;
-    }
-
-    private static T? FindDescendant<T>(DependencyObject? root, Predicate<T> predicate)
-        where T : DependencyObject
-    {
-        if (root == null)
-        {
-            return null;
-        }
-
-        try
-        {
-            // If the root is a Visual or Visual3D, traverse the visual tree
-            if (root is Visual or Visual3D)
-            {
-                var childrenCount = VisualTreeHelper.GetChildrenCount(root);
-
-                for (var i = 0; i < childrenCount; i++)
-                {
-                    var child = VisualTreeHelper.GetChild(root, i);
-
-                    if (child is T t && predicate(t))
-                    {
-                        return t;
-                    }
-
-                    T? found = FindDescendant(child, predicate);
-                    if (found is not null)
-                    {
-                        return found;
-                    }
-                }
-
-                return null;
-            }
-
-            // For non-visual elements, fall back to logical tree traversal
-            foreach (var logicalChild in LogicalTreeHelper.GetChildren(root))
-            {
-                if (logicalChild is not DependencyObject child)
-                {
-                    continue;
-                }
-
-                if (child is T t && predicate(t))
-                {
-                    return t;
-                }
-
-                T? found = FindDescendant(child, predicate);
-                if (found is not null)
-                {
-                    return found;
-                }
-            }
-        }
-        catch
-        {
-            // defensive: ignore traversal errors and return null
-        }
-
-        return null;
+        return btn != null;
     }
 
     private static bool IsSafelyFocusable(DependencyObject? dp)
@@ -295,35 +220,6 @@ public partial class ContentDialog
         }
 
         return true;
-    }
-
-    private static DependencyObject? GetParent(DependencyObject d)
-    {
-        try
-        {
-            var p = VisualTreeHelper.GetParent(d);
-            if (p != null)
-            {
-                return p;
-            }
-
-            var lp = LogicalTreeHelper.GetParent(d);
-            if (lp != null)
-            {
-                return lp;
-            }
-        }
-        catch
-        {
-            // ignored
-        }
-
-        if (d is FrameworkElement fe)
-        {
-            return fe.Parent ?? fe.TemplatedParent;
-        }
-
-        return null;
     }
 }
 

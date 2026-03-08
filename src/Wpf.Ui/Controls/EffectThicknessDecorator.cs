@@ -101,6 +101,7 @@ public class EffectThicknessDecorator : Decorator
                 popupContainer = new PopupContainer(toolTip);
                 break;
             default:
+                // todo 可优化
                 if (GetParentPopup(this) is { } parentPopup)
                 {
                     popupContainer = new PopupContainer(parentPopup);
@@ -129,6 +130,7 @@ public class EffectThicknessDecorator : Decorator
         ApplyMargin();
     }
 
+    // todo 可以优化，使用VisualTreeHelperExtensions
     private static Popup? GetParentPopup(FrameworkElement element)
     {
         while (true)

@@ -8,6 +8,7 @@ using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Media.Media3D;
 using System.Windows.Threading;
+using Wpf.Ui.Extensions.Wpf;
 
 // ReSharper disable once CheckNamespace
 namespace Wpf.Ui.Controls;
@@ -177,7 +178,7 @@ internal sealed class ContentDialogHostController
     {
         _disabledElements.Clear();
 
-        var parent = GetParent(_host);
+        var parent = _host.GetParent();
         if (parent == null)
         {
             return;
@@ -448,7 +449,7 @@ internal sealed class ContentDialogHostController
                 return true;
             }
 
-            current = GetParent(current);
+            current = current.GetParent();
         }
 
         return false;
@@ -485,35 +486,6 @@ internal sealed class ContentDialogHostController
             e.CanExecute = false;
             e.Handled = true;
         }
-    }
-
-    private static DependencyObject? GetParent(DependencyObject d)
-    {
-        try
-        {
-            var p = VisualTreeHelper.GetParent(d);
-            if (p != null)
-            {
-                return p;
-            }
-
-            var lp = LogicalTreeHelper.GetParent(d);
-            if (lp != null)
-            {
-                return lp;
-            }
-        }
-        catch
-        {
-            // ignored
-        }
-
-        if (d is FrameworkElement fe)
-        {
-            return fe.Parent ?? fe.TemplatedParent;
-        }
-
-        return null;
     }
 
     private readonly record struct InputBindingCommandState(

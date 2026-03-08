@@ -335,13 +335,6 @@ public partial class ContentDialog : ContentControl
             throw new InvalidOperationException("DialogHost was not set");
         }
 
-        // Uses `RunContinuationsAsynchronously` to execute continuations asynchronously
-        // rather than synchronously on the caller's stack when TCS completes.
-        //
-        // Benefits:
-        // - Prevents UI-thread reentrancy
-        // - Eliminates deadlock risks
-        // - Ensures predictable continuation scheduling
         Tcs = new TaskCompletionSource<ContentDialogResult>(
             TaskCreationOptions.RunContinuationsAsynchronously
         );

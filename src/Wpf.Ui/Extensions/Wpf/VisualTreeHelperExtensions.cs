@@ -24,9 +24,7 @@ public static class VisualTreeHelperExtensions
 
             while (current is not null && depth < maxDepth)
             {
-                var parent = current is Visual or Visual3D
-                    ? VisualTreeHelper.GetParent(current)
-                    : LogicalTreeHelper.GetParent(current);
+                var parent = current.GetParent();
 
                 if (parent is T t)
                 {
@@ -44,6 +42,45 @@ public static class VisualTreeHelperExtensions
             where T : DependencyObject
         {
             return FindDescendantCore(child, predicate, maxDepth, 0);
+        }
+
+        public DependencyObject? GetParent()
+        {
+            try
+            {
+                // VisualTreeHelper.GetParent() only works with Visual or Visual3D types
+                if (child is Visual or Visual3D)
+                {
+                    var p = VisualTreeHelper.GetParent(child);
+                    if (p != null)
+                    {
+                        return p;
+                    }
+                }
+
+                // LogicalTreeHelper works with all DependencyObject types
+                if (child is not (Visual or Visual3D or null))
+                {
+                    var lp = LogicalTreeHelper.GetParent(child);
+                    if (lp != null)
+                    {
+                        return lp;
+                    }
+                }
+            }
+            catch
+            {
+                // defensive: ignore traversal errors
+            }
+
+            return child switch
+            {
+                // Last resort:
+                // check FrameworkElement and FrameworkContentElement (including TemplatedParent)
+                FrameworkElement fe         => fe.Parent ?? fe.TemplatedParent,
+                FrameworkContentElement fce => fce.Parent ?? fce.TemplatedParent,
+                _                           => null
+            };
         }
     }
 
