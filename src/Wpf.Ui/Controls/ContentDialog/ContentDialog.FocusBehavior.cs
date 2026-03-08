@@ -180,26 +180,19 @@ public partial class ContentDialog
 
     private bool FocusBuiltInButton()
     {
-        var safelyButtons = new List<WinButton>();
+        var btns = new List<WinButton>();
 
         // Collect built-in safely buttons
-        if (GetTemplateChild("PrimaryButton") is WinButton primaryBtn && IsSafelyFocusable(primaryBtn))
+        foreach (var n in (string[])["PrimaryButton", "CloseButton", "SecondaryButton"])
         {
-            safelyButtons.Add(primaryBtn);
-        }
-
-        if (GetTemplateChild("CloseButton") is WinButton closeBtn && IsSafelyFocusable(closeBtn))
-        {
-            safelyButtons.Add(closeBtn);
-        }
-
-        if (GetTemplateChild("SecondaryButton") is WinButton secondaryBtn && IsSafelyFocusable(secondaryBtn))
-        {
-            safelyButtons.Add(secondaryBtn);
+            if (GetTemplateChild(n) is WinButton b && IsSafelyFocusable(b))
+            {
+                btns.Add(b);
+            }
         }
 
         // Select the default button if present; otherwise fall back to the first available button.
-        var btn = safelyButtons.FirstOrDefault(b => b.IsDefault) ?? safelyButtons.FirstOrDefault();
+        var btn = btns.FirstOrDefault(b => b.IsDefault) ?? btns.FirstOrDefault();
         btn?.Focus();
 
         return btn != null;
