@@ -5,7 +5,6 @@
 
 using System.Windows.Controls;
 using System.Windows.Input;
-using System.Windows.Media.Media3D;
 using System.Windows.Threading;
 using Wpf.Ui.Extensions.Wpf;
 using UiButton = Wpf.Ui.Controls.Button;
@@ -200,7 +199,7 @@ public partial class ContentDialog
         }
 
         // Select the default button if present; otherwise fall back to the first available button.
-        var btn = safelyButtons.First(b => b.IsDefault) ?? safelyButtons.First();
+        var btn = safelyButtons.FirstOrDefault(b => b.IsDefault) ?? safelyButtons.FirstOrDefault();
         btn?.Focus();
 
         return btn != null;
@@ -208,9 +207,13 @@ public partial class ContentDialog
 
     private static bool IsSafelyFocusable(DependencyObject? dp)
     {
+        if (dp is not IInputElement)
+        {
+            return false;
+        }
+
         switch (dp)
         {
-            case not (UIElement or ContentElement or UIElement3D):
             case UIElement ue when !ue.Focusable || !ue.IsVisible || !ue.IsEnabled:
             case Control { IsTabStop: false }:
             case ContentElement { Focusable: false }:
