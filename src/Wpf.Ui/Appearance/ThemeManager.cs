@@ -66,18 +66,13 @@ public sealed class ThemeManager
             // In non-native WPF hosting environments (such as WinForms with ElementHost),
             // an Application instance is not created automatically.
             //
-            // WPF resource lookup walks up the logical tree and, when reaching its boundary,
-            // falls back to Application-level resources. If no Application exists,
-            // resource resolution may fail when crossing logical tree or hosting boundaries
-            // (e.g., ContextMenu, Popup, or Frame boundaries).
+            // WPF resource lookup walks up the logical tree and eventually falls back
+            // to Application-level resources. If no Application exists, resource
+            // resolution may fail when crossing logical tree boundaries
+            // (e.g., ContextMenu, Popup, or Frame).
             //
-            // A typical example of this is when a UI element is inside a Frame,
-            // as Frame has its own separate logical tree that cannot access
-            // the resources of its parent or Application by default.
-            //
-            // EnsureApplication() guarantees that an Application object is available
-            // to host global theme resources and provide a stable fallback scope
-            // for resource lookup.
+            // Ensure an Application instance exists so global theme resources
+            // have a stable fallback scope.
             EnsureApplication();
 
             SystemEvents.UserPreferenceChanged     += SystemEvents_UserPreferenceChanged;
@@ -91,25 +86,17 @@ public sealed class ThemeManager
     {
         if (Application.Current == null)
         {
-            // In non-WPF hosting environments (e.g., WinForms),
-            // an Application instance is not created automatically.
-            //
-            // This Application instance is created solely as a resource container
-            // to provide an Application-level resource scope for WPF resource lookup.
-            // It fills the gap when resource resolution reaches the boundary
-            // of a logical tree and falls back to Application resources.
+            // Create a lightweight Application instance to act purely as
+            // a resource container. This provides an Application-level
+            // resource scope for WPF resource lookup when hosted in
+            // non-WPF environments.
             //
             // IMPORTANT:
-            // Do NOT call Run() on this instance.
-            // Calling Run() would start a WPF message loop (Dispatcher loop)
-            // and take ownership of the thread's lifetime, which is not desired
-            // when hosted inside another UI framework.
+            // Run() must NOT be called. Starting the Dispatcher loop would
+            // take control of the thread lifetime, which is incorrect when
+            // WPF is hosted inside another UI framework.
             _ = new Application
             {
-                // Since Run() is not invoked, no Dispatcher message loop is started
-                // by this Application instance. Therefore, setting ShutdownMode to
-                // OnExplicitShutdown will not prevent the process from exiting,
-                // because this Application does not control the application's lifetime.
                 ShutdownMode = ShutdownMode.OnExplicitShutdown
             };
         }
@@ -345,6 +332,21 @@ public sealed class ThemeManager
 
     #region Attached Property: ApplyToRootVisual (Internal)
 
+    /// <summary>
+    /// Represents an internal attached property used to mark and track root visual elements.
+    /// </summary>
+    /// <remarks>
+    /// This property is an internal implementation detail of <see cref="ThemeManager"/>.
+    /// It is used to identify and manage the application's root visual elements.
+    ///
+    /// When an element is marked as a root visual, the theme manager registers it in a
+    /// global theme tracking list and automatically applies the appropriate theme
+    /// resources when the system theme or application theme changes.
+    ///
+    /// A value of <c>true</c> indicates that the element is a root visual and should
+    /// receive theme updates. A value of <c>false</c> indicates that the element is
+    /// not considered a root visual.
+    /// </remarks>
     private static readonly DependencyProperty IsRootVisualProperty =
         DependencyProperty.RegisterAttached(
             "IsRootVisual",
@@ -934,20 +936,12 @@ public sealed class ThemeManager
         add
         {
             WeakEventManager<ThemeManager, ThemeChangedEventArgs>
-               .AddHandler(
-                    Instance,
-                    nameof(ChangedInternal),
-                    value
-                );
+               .AddHandler(Instance, nameof(ChangedInternal), value);
         }
         remove
         {
             WeakEventManager<ThemeManager, ThemeChangedEventArgs>
-               .RemoveHandler(
-                    Instance,
-                    nameof(ChangedInternal),
-                    value
-                );
+               .RemoveHandler(Instance, nameof(ChangedInternal), value);
         }
     }
 
