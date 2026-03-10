@@ -3,8 +3,9 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-// ReSharper disable once CheckNamespace
+using System.Windows.Documents;
 
+// ReSharper disable once CheckNamespace
 namespace Wpf.Ui.Controls;
 
 /// <summary>
@@ -44,8 +45,8 @@ public class TextBlock : System.Windows.Controls.TextBlock
         //
         // Additionally, this approach helps to avoid the issue described here:
         // See https://developercommunity.visualstudio.com/t/WPF-Custom-Control-Exhibits-Property-Def/11022950
-        System.Windows.Documents.TextElement.FontSizeProperty.OverrideMetadata(
-            typeof(System.Windows.Documents.TextElement),
+        TextElement.FontSizeProperty.OverrideMetadata(
+            typeof(TextElement),
             new FrameworkPropertyMetadata(14d)
         );
 
@@ -351,15 +352,15 @@ public class TextBlock : System.Windows.Controls.TextBlock
             "DefaultForeground",
             typeof(Brush),
             typeof(TextBlock),
-            new PropertyMetadata(
+            new FrameworkPropertyMetadata(
                 null,
+                FrameworkPropertyMetadataOptions.AffectsRender |
+                FrameworkPropertyMetadataOptions.SubPropertiesDoNotAffectRender |
+                FrameworkPropertyMetadataOptions.Inherits,
                 static (d, _) =>
                 {
                     // When the attached resource ref resolves/changes, coerce Foreground so the new value is used.
-                    if (d is System.Windows.Controls.TextBlock tb)
-                    {
-                        tb.CoerceValue(ForegroundProperty);
-                    }
+                    d.CoerceValue(TextElement.ForegroundProperty);
                 }
             )
         );
@@ -402,14 +403,14 @@ public class TextBlock : System.Windows.Controls.TextBlock
             "AppearanceForegroundProxy",
             typeof(Brush),
             typeof(TextBlock),
-            new PropertyMetadata(
+            new FrameworkPropertyMetadata(
                 null,
+                FrameworkPropertyMetadataOptions.AffectsRender |
+                FrameworkPropertyMetadataOptions.SubPropertiesDoNotAffectRender |
+                FrameworkPropertyMetadataOptions.Inherits,
                 static (d, _) =>
                 {
-                    if (d is System.Windows.Controls.TextBlock tb)
-                    {
-                        tb.CoerceValue(ForegroundProperty);
-                    }
+                    d.CoerceValue(TextElement.ForegroundProperty);
                 }
             )
         );
@@ -513,22 +514,27 @@ public class TextBlock : System.Windows.Controls.TextBlock
 
     private static void OnAppearanceChanged(DependencyObject o, DependencyPropertyChangedEventArgs args)
     {
-        if (o is System.Windows.Controls.TextBlock tb)
+        if (args.NewValue is TextColor textColor)
         {
-            if (args.NewValue is TextColor textColor)
-            {
-                var resourceKey = textColor.ToResourceKey();
+            var resourceKey = textColor.ToResourceKey();
 
+            switch (o)
+            {
                 // Similar to OnFontTypographyChanged, attach themed color resource reference to a proxy property,
                 // allowing the WPF resource system to handle updates automatically.
-                tb.SetResourceReference(AppearanceForegroundProxyProperty, resourceKey);
+                case FrameworkElement fe:
+                    fe.SetResourceReference(AppearanceForegroundProxyProperty, resourceKey);
+                    break;
+                case FrameworkContentElement fc:
+                    fc.SetResourceReference(AppearanceForegroundProxyProperty, resourceKey);
+                    break;
             }
-            else
-            {
-                tb.ClearValue(AppearanceForegroundProxyProperty);
-            }
-
-            tb.CoerceValue(ForegroundProperty);
         }
+        else
+        {
+            o.ClearValue(AppearanceForegroundProxyProperty);
+        }
+
+        o.CoerceValue(TextElement.ForegroundProperty);
     }
 }

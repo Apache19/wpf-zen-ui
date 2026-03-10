@@ -4,6 +4,7 @@
 // All Rights Reserved.
 
 using Wpf.Ui.Controls;
+using Wpf.Ui.Theming;
 
 namespace Wpf.Ui.Extensions;
 
@@ -16,14 +17,14 @@ public static class TextColorExtensions
     /// Converts the text color type enumeration to the name of the resource that represents it.
     /// </summary>
     /// <returns>Name of the resource matching the <see cref="TextColor"/>. <see cref="ArgumentOutOfRangeException"/> otherwise.</returns>
-    public static string ToResourceKey(this TextColor textColor)
+    public static ComponentResourceKey ToResourceKey(this TextColor textColor)
     {
         return textColor switch
         {
-            TextColor.Primary => "TextFillColorPrimaryBrush",
-            TextColor.Secondary => "TextFillColorSecondaryBrush",
-            TextColor.Tertiary => "TextFillColorTertiaryBrush",
-            TextColor.Disabled => "TextFillColorDisabledBrush",
+            TextColor.Primary   => BrushKeys.TextFillColorPrimaryBrush,
+            TextColor.Secondary => BrushKeys.TextFillColorSecondaryBrush,
+            TextColor.Tertiary  => BrushKeys.TextFillColorTertiaryBrush,
+            TextColor.Disabled  => BrushKeys.TextFillColorDisabledBrush,
             _ => throw new ArgumentOutOfRangeException(nameof(textColor), textColor, null),
         };
     }
