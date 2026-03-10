@@ -600,6 +600,8 @@ public sealed class ThemeManager
         {
             // todo 高对比度模式可先加载附加资源，再加载内置高对比度主题资源，以防止用户加入的图片资源，在高对比度模式显示不出来。
             //   高对比度模式似乎也有深色/浅色模式
+            //   考虑给高对比度模式也增加两套附加资源
+            //   又或者不使用
 
             // High contrast mode: both dictionaries load high contrast theme
             _lightDictionary.MergedDictionaries.Add(
