@@ -516,6 +516,8 @@ public sealed class ThemeManager
         // 3. Merge or remove dictionaries for each target
         foreach (var (_, resources, mode) in targets)
         {
+            // todo 默认模式没有加载附加资源，可能需要考虑按照Light模式加载附加资源，例如图片
+            //      否则用户定义了某些资源，但如果选择了默认模式，则不会加载。。。。。。
             if (mode == UiThemeMode.Default)
             {
                 RemoveThemeDictionary(resources);
@@ -537,7 +539,7 @@ public sealed class ThemeManager
             resources.EndInit();
         }
 
-        // 5. Update CurrentTheme
+        // 5. Update CurrentTheme property
         var finalTheme = _themeMode == UiThemeMode.Default
             ? ApplicationTheme.Default
             : ResolveEffectiveTheme(_themeMode);
@@ -596,6 +598,9 @@ public sealed class ThemeManager
 
         if (SystemParameters.HighContrast)
         {
+            // todo 高对比度模式可先加载附加资源，再加载内置高对比度主题资源，以防止用户加入的图片资源，在高对比度模式显示不出来。
+            //   高对比度模式似乎也有深色/浅色模式
+
             // High contrast mode: both dictionaries load high contrast theme
             _lightDictionary.MergedDictionaries.Add(
                 new ResourceDictionary
