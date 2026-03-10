@@ -3,8 +3,8 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Ui.Controls"
     xmlns:converters="clr-namespace:Wpf.Ui.Converters"
-    xmlns:theming="clr-namespace:Wpf.Ui.Theming"
-    xmlns:markup="clr-namespace:Wpf.Ui.Markup">
+    xmlns:markup="clr-namespace:Wpf.Ui.Markup"
+    xmlns:theming="clr-namespace:Wpf.Ui.Theming">
 
     <converters:ContentDialogButtonEnumToBoolConverter x:Key="EnumToBoolConverter" />
     <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" />
@@ -171,7 +171,9 @@
                                             Content="{TemplateBinding CloseButtonText}"
                                             Icon="{TemplateBinding CloseButtonIcon}"
                                             IsCancel="True"
-                                            IsDefault="{TemplateBinding DefaultButton, Converter={StaticResource EnumToBoolConverter}, ConverterParameter={x:Static controls:ContentDialogButton.Close}}" />
+                                            IsDefault="{TemplateBinding DefaultButton, Converter={StaticResource EnumToBoolConverter}, ConverterParameter={x:Static controls:ContentDialogButton.Close}}"
+                                            IsEnabled="{TemplateBinding IsCloseButtonEnabled}"
+                                            Visibility="{TemplateBinding CloseButtonVisibility}" />
                                     </Grid>
                                 </Border>
                             </Grid>

@@ -133,6 +133,22 @@ public partial class ContentDialog
         new PropertyMetadata(true)
     );
 
+    /// <summary>Identifies the <see cref="IsCloseButtonEnabled"/> dependency property.</summary>
+    public static readonly DependencyProperty IsCloseButtonEnabledProperty = DependencyProperty.Register(
+        nameof(IsCloseButtonEnabled),
+        typeof(bool),
+        typeof(ContentDialog),
+        new PropertyMetadata(true)
+    );
+
+    /// <summary>Identifies the <see cref="CloseButtonVisibility"/> dependency property.</summary>
+    public static readonly DependencyProperty CloseButtonVisibilityProperty = DependencyProperty.Register(
+        nameof(CloseButtonVisibility),
+        typeof(Visibility),
+        typeof(ContentDialog),
+        new PropertyMetadata(Visibility.Visible)
+    );
+
     /// <summary>Identifies the <see cref="PrimaryButtonAppearance"/> dependency property.</summary>
     public static readonly DependencyProperty PrimaryButtonAppearanceProperty = DependencyProperty.Register(
         nameof(PrimaryButtonAppearance),
@@ -358,6 +374,24 @@ public partial class ContentDialog
     {
         get => (bool)GetValue(IsSecondaryButtonEnabledProperty);
         set => SetValue(IsSecondaryButtonEnabledProperty, value);
+    }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether the close button is enabled.
+    /// </summary>
+    public bool IsCloseButtonEnabled
+    {
+        get => (bool)GetValue(IsCloseButtonEnabledProperty);
+        set => SetValue(IsCloseButtonEnabledProperty, value);
+    }
+
+    /// <summary>
+    /// Gets or sets the visibility of the close button.
+    /// </summary>
+    public Visibility CloseButtonVisibility
+    {
+        get => (Visibility)GetValue(CloseButtonVisibilityProperty);
+        set => SetValue(CloseButtonVisibilityProperty, value);
     }
 
     /// <summary>
