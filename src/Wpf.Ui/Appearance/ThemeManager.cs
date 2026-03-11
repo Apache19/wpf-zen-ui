@@ -4,6 +4,7 @@
 // All Rights Reserved.
 
 using System.Diagnostics;
+using System.Reflection;
 using Microsoft.Win32;
 using Wpf.Ui.Appearance;
 using Wpf.Ui.Theming;
@@ -20,7 +21,7 @@ public sealed class ThemeManager
 {
     #region Private Constants, Fields
 
-    internal const string ThemeBaseUri = "pack://application:,,,/Wpf.Ui;component/Resources/Theme/";
+    private const string ThemeBaseUri = "pack://application:,,,/Wpf.Ui;component/Resources/Theme/";
 
     private static readonly Uri LightThemeUri        = new(ThemeBaseUri + "Light.xaml", UriKind.Absolute);
     private static readonly Uri DarkThemeUri         = new(ThemeBaseUri + "Dark.xaml", UriKind.Absolute);
@@ -39,6 +40,12 @@ public sealed class ThemeManager
     private static readonly List<WeakReference<FrameworkContentElement>> _registeredContentElements = [];
 
     private static readonly DebounceDispatcher _themeChangedDebouncer = new();
+
+    private static readonly PropertyInfo? _isInitializePendingProperty =
+        typeof(ResourceDictionary).GetProperty(
+            "IsInitializePending",
+            BindingFlags.Instance | BindingFlags.NonPublic
+        );
 
     private static Uri? _additionalLightThemeUri;
     private static Uri? _additionalDarkThemeUri;
@@ -582,9 +589,19 @@ public sealed class ThemeManager
         var targets = CollectTargets();
 
         // 1. BeginInit
+        // Track which dictionaries we initiated so we only EndInit those.
+        // A ResourceDictionary already in initialization (e.g. during XAML
+        // parsing of Application.Resources) must not receive a nested call.
+        var initiated = new List<ResourceDictionary>(targets.Count);
         foreach (var (_, resources, _) in targets)
         {
+            if (IsInitializePending(resources))
+            {
+                continue;
+            }
+
             resources.BeginInit();
+            initiated.Add(resources);
         }
 
         // 2. Rebuild theme dictionaries
@@ -607,7 +624,7 @@ public sealed class ThemeManager
         }
 
         // 4. EndInit
-        foreach (var (_, resources, _) in targets)
+        foreach (var resources in initiated)
         {
             resources.EndInit();
         }
@@ -912,6 +929,11 @@ public sealed class ThemeManager
     #endregion
 
     #region Helpers
+
+    private static bool IsInitializePending(ResourceDictionary dictionary)
+    {
+        return _isInitializePendingProperty?.GetValue(dictionary) is true;
+    }
 
     private static UiThemeMode GetEffectiveThemeForElement(FrameworkElement element)
     {
