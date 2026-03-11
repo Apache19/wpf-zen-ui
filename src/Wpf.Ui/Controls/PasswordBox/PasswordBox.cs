@@ -33,7 +33,7 @@ public partial class PasswordBox : TextBox
         nameof(PasswordChar),
         typeof(char),
         typeof(PasswordBox),
-        new PropertyMetadata('*', OnPasswordCharChanged)
+        new PropertyMetadata('\u25cf', OnPasswordCharChanged)
     );
 
     /// <summary>
