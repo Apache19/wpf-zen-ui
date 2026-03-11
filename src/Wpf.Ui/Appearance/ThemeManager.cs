@@ -42,6 +42,8 @@ public sealed class ThemeManager
 
     private static Uri? _additionalLightThemeUri;
     private static Uri? _additionalDarkThemeUri;
+    private static Uri? _additionalHighContrastLightThemeUri;
+    private static Uri? _additionalHighContrastDarkThemeUri;
 
     private static UiThemeMode _themeMode = UiThemeMode.Default;
 
@@ -95,10 +97,7 @@ public sealed class ThemeManager
             // Run() must NOT be called. Starting the Dispatcher loop would
             // take control of the thread lifetime, which is incorrect when
             // WPF is hosted inside another UI framework.
-            _ = new Application
-            {
-                ShutdownMode = ShutdownMode.OnExplicitShutdown
-            };
+            _ = new Application { ShutdownMode = ShutdownMode.OnExplicitShutdown };
         }
     }
 
@@ -107,12 +106,18 @@ public sealed class ThemeManager
     #region Configure
 
     /// <summary>
-    /// Sets both additional light and dark theme URIs in a single operation,
+    /// Sets additional theme URIs in a single operation,
     /// triggering only one theme refresh.
     /// </summary>
     /// <param name="lightThemeUri">The URI of the additional light theme resource dictionary, or <c>null</c> to clear.</param>
     /// <param name="darkThemeUri">The URI of the additional dark theme resource dictionary, or <c>null</c> to clear.</param>
-    public static void SetAdditionalThemeUris(Uri? lightThemeUri, Uri? darkThemeUri)
+    /// <param name="highContrastLightThemeUri">The URI of the additional high contrast light theme resource dictionary, or <c>null</c> to clear.</param>
+    /// <param name="highContrastDarkThemeUri">The URI of the additional high contrast dark theme resource dictionary, or <c>null</c> to clear.</param>
+    public static void SetAdditionalThemeUris(
+        Uri? lightThemeUri,
+        Uri? darkThemeUri,
+        Uri? highContrastLightThemeUri = null,
+        Uri? highContrastDarkThemeUri = null)
     {
         bool changed = false;
 
@@ -128,6 +133,18 @@ public sealed class ThemeManager
             changed                 = true;
         }
 
+        if (_additionalHighContrastLightThemeUri != highContrastLightThemeUri)
+        {
+            _additionalHighContrastLightThemeUri = highContrastLightThemeUri;
+            changed                              = true;
+        }
+
+        if (_additionalHighContrastDarkThemeUri != highContrastDarkThemeUri)
+        {
+            _additionalHighContrastDarkThemeUri = highContrastDarkThemeUri;
+            changed                             = true;
+        }
+
         if (changed)
         {
             RefreshTheme(ThemeChangeSource.Manual);
@@ -141,6 +158,8 @@ public sealed class ThemeManager
     /// <param name="useSystemAccentColor">Whether to use the system accent color.</param>
     /// <param name="additionalLightThemeUri">The URI of the additional light theme resource dictionary, or <c>null</c> to clear.</param>
     /// <param name="additionalDarkThemeUri">The URI of the additional dark theme resource dictionary, or <c>null</c> to clear.</param>
+    /// <param name="additionalHighContrastLightThemeUri">The URI of the additional high contrast light theme resource dictionary, or <c>null</c> to clear.</param>
+    /// <param name="additionalHighContrastDarkThemeUri">The URI of the additional high contrast dark theme resource dictionary, or <c>null</c> to clear.</param>
     /// <example>
     /// <code lang="csharp">
     /// ThemeManager.Configure(
@@ -155,7 +174,9 @@ public sealed class ThemeManager
         UiThemeMode themeMode,
         bool useSystemAccentColor,
         Uri? additionalLightThemeUri = null,
-        Uri? additionalDarkThemeUri = null)
+        Uri? additionalDarkThemeUri = null,
+        Uri? additionalHighContrastLightThemeUri = null,
+        Uri? additionalHighContrastDarkThemeUri = null)
     {
         bool changed = false;
 
@@ -181,6 +202,18 @@ public sealed class ThemeManager
         {
             _additionalDarkThemeUri = additionalDarkThemeUri;
             changed                 = true;
+        }
+
+        if (_additionalHighContrastLightThemeUri != additionalHighContrastLightThemeUri)
+        {
+            _additionalHighContrastLightThemeUri = additionalHighContrastLightThemeUri;
+            changed                              = true;
+        }
+
+        if (_additionalHighContrastDarkThemeUri != additionalHighContrastDarkThemeUri)
+        {
+            _additionalHighContrastDarkThemeUri = additionalHighContrastDarkThemeUri;
+            changed                             = true;
         }
 
         if (changed)
@@ -256,6 +289,50 @@ public sealed class ThemeManager
             if (_additionalDarkThemeUri != value)
             {
                 _additionalDarkThemeUri = value;
+                RefreshTheme(ThemeChangeSource.Manual);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Gets or sets an additional resource dictionary URI to be merged
+    /// when a light high contrast theme is active.
+    /// </summary>
+    /// <remarks>
+    /// High contrast light vs. dark is determined by comparing the relative
+    /// luminance of <see cref="SystemColors.WindowColor"/> and
+    /// <see cref="SystemColors.WindowTextColor"/>.
+    /// </remarks>
+    public static Uri? AdditionalHighContrastLightThemeUri
+    {
+        get => _additionalHighContrastLightThemeUri;
+        set
+        {
+            if (_additionalHighContrastLightThemeUri != value)
+            {
+                _additionalHighContrastLightThemeUri = value;
+                RefreshTheme(ThemeChangeSource.Manual);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Gets or sets an additional resource dictionary URI to be merged
+    /// when a dark high contrast theme is active.
+    /// </summary>
+    /// <remarks>
+    /// High contrast light vs. dark is determined by comparing the relative
+    /// luminance of <see cref="SystemColors.WindowColor"/> and
+    /// <see cref="SystemColors.WindowTextColor"/>.
+    /// </remarks>
+    public static Uri? AdditionalHighContrastDarkThemeUri
+    {
+        get => _additionalHighContrastDarkThemeUri;
+        set
+        {
+            if (_additionalHighContrastDarkThemeUri != value)
+            {
+                _additionalHighContrastDarkThemeUri = value;
                 RefreshTheme(ThemeChangeSource.Manual);
             }
         }
@@ -513,17 +590,13 @@ public sealed class ThemeManager
         // 2. Rebuild theme dictionaries
         RebuildThemeDictionaries();
 
-        // 3. Merge or remove dictionaries for each target
+        // 3. Merge dictionaries for each target
+        // Per-element Default targets are already unregistered in OnRequestedThemeChanged,
+        // so the only Default targets here are Application and root visuals.
+        // For those, Default resolves to Light (matching Generic.xaml) to ensure
+        // additional theme resources and accent colors are available.
         foreach (var (_, resources, mode) in targets)
         {
-            // todo 默认模式没有加载附加资源，可能需要考虑按照Light模式加载附加资源，例如图片
-            //      否则用户定义了某些资源，但如果选择了默认模式，则不会加载。。。。。。
-            if (mode == UiThemeMode.Default)
-            {
-                RemoveThemeDictionary(resources);
-                continue;
-            }
-
             var effectiveTheme = ResolveEffectiveTheme(mode);
 
             var themeDict = effectiveTheme == ApplicationTheme.Dark
@@ -598,65 +671,52 @@ public sealed class ThemeManager
 
         if (SystemParameters.HighContrast)
         {
-            // todo 高对比度模式可先加载附加资源，再加载内置高对比度主题资源，以防止用户加入的图片资源，在高对比度模式显示不出来。
-            //   高对比度模式似乎也有深色/浅色模式
-            //   考虑给高对比度模式也增加两套附加资源
-            //   又或者不使用
-
-            // High contrast mode: both dictionaries load high contrast theme
             _lightDictionary.MergedDictionaries.Add(
-                new ResourceDictionary
-                {
-                    Source = HighContrastThemeUri
-                }
+                new ResourceDictionary { Source = HighContrastThemeUri }
             );
 
             _darkDictionary.MergedDictionaries.Add(
-                new ResourceDictionary
-                {
-                    Source = HighContrastThemeUri
-                }
+                new ResourceDictionary { Source = HighContrastThemeUri }
             );
+
+            if (_additionalHighContrastLightThemeUri != null)
+            {
+                _lightDictionary.MergedDictionaries.Add(
+                    LoadAdditionalResourceDictionary(_additionalHighContrastLightThemeUri)
+                );
+            }
+
+            if (_additionalHighContrastDarkThemeUri != null)
+            {
+                _darkDictionary.MergedDictionaries.Add(
+                    LoadAdditionalResourceDictionary(_additionalHighContrastDarkThemeUri)
+                );
+            }
         }
         else
         {
-            // Load library themes
             _lightDictionary.MergedDictionaries.Add(
-                new ResourceDictionary
-                {
-                    Source = LightThemeUri
-                }
+                new ResourceDictionary { Source = LightThemeUri }
             );
 
             _darkDictionary.MergedDictionaries.Add(
-                new ResourceDictionary
-                {
-                    Source = DarkThemeUri
-                }
+                new ResourceDictionary { Source = DarkThemeUri }
             );
 
-            // Load additional theme resources
             if (_additionalLightThemeUri != null)
             {
                 _lightDictionary.MergedDictionaries.Add(
-                    new ResourceDictionary
-                    {
-                        Source = _additionalLightThemeUri
-                    }
+                    LoadAdditionalResourceDictionary(_additionalLightThemeUri)
                 );
             }
 
             if (_additionalDarkThemeUri != null)
             {
                 _darkDictionary.MergedDictionaries.Add(
-                    new ResourceDictionary
-                    {
-                        Source = _additionalDarkThemeUri
-                    }
+                    LoadAdditionalResourceDictionary(_additionalDarkThemeUri)
                 );
             }
 
-            // Apply system accent colors
             if (_useSystemAccentColor)
             {
                 var palette = SystemAccentPaletteReader.Read();
@@ -865,12 +925,15 @@ public sealed class ThemeManager
 
     private static ApplicationTheme ResolveEffectiveTheme(UiThemeMode mode)
     {
-        if (mode == UiThemeMode.System)
+        if (mode == UiThemeMode.Light) return ApplicationTheme.Light;
+        if (mode == UiThemeMode.Dark) return ApplicationTheme.Dark;
+
+        if (SystemParameters.HighContrast)
         {
-            return GetSystemThemeMode();
+            return IsHighContrastDark() ? ApplicationTheme.Dark : ApplicationTheme.Light;
         }
 
-        return mode == UiThemeMode.Dark ? ApplicationTheme.Dark : ApplicationTheme.Light;
+        return mode == UiThemeMode.System ? GetSystemThemeMode() : ApplicationTheme.Light;
     }
 
     private static void ApplyThemeToElement(FrameworkElement element, UiThemeMode mode)
@@ -905,10 +968,7 @@ public sealed class ThemeManager
 
     private static SolidColorBrush FreezeBrush(Color color, double opacity = 1.0)
     {
-        var brush = new SolidColorBrush(color)
-        {
-            Opacity = opacity
-        };
+        var brush = new SolidColorBrush(color) { Opacity = opacity };
 
         brush.Freeze();
 
@@ -929,6 +989,58 @@ public sealed class ThemeManager
             0 => ApplicationTheme.Dark,
             _ => ApplicationTheme.Light
         };
+    }
+
+    /// <summary>
+    /// Determines whether the current high contrast theme is a dark variant
+    /// by comparing the relative luminance of <see cref="SystemColors.WindowColor"/>
+    /// and <see cref="SystemColors.WindowTextColor"/>.
+    /// </summary>
+    internal static bool IsHighContrastDark()
+    {
+        var bg = SystemColors.WindowColor;
+        var fg = SystemColors.WindowTextColor;
+
+        var bgLuma = (0.299 * bg.R) + (0.587 * bg.G) + (0.114 * bg.B);
+        var fgLuma = (0.299 * fg.R) + (0.587 * fg.G) + (0.114 * fg.B);
+
+        return bgLuma < fgLuma;
+    }
+
+    private static ResourceDictionary LoadAdditionalResourceDictionary(Uri uri)
+    {
+        if (string.Equals(uri.Scheme, "pack", StringComparison.OrdinalIgnoreCase))
+        {
+            try
+            {
+                var info = Application.GetResourceStream(uri);
+                if (info != null)
+                {
+                    info.Stream.Dispose();
+                }
+                else
+                {
+                    throw new InvalidOperationException(
+                        $"Additional theme resource not found: '{uri}'. "
+                      + "Ensure the URI points to an existing XAML resource dictionary."
+                    );
+                }
+            }
+            catch (InvalidOperationException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException(
+                    $"Additional theme resource not found: '{uri}'. "
+                  + "Ensure the URI points to an existing XAML resource dictionary.",
+                    ex
+                );
+            }
+        }
+
+        return new ResourceDictionary { Source = uri };
     }
 
     #endregion
