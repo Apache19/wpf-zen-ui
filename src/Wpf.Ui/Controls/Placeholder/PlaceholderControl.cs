@@ -8,6 +8,7 @@ using System.Windows.Controls;
 // ReSharper disable once CheckNamespace
 namespace Wpf.Ui.Controls;
 
+[DefaultProperty("Content")]
 public class PlaceholderControl : ContentControl
 {
     static PlaceholderControl()

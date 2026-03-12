@@ -4,10 +4,19 @@
 // All Rights Reserved.
 
 using System.Windows.Controls;
-using System.Windows.Documents;
+using System.Windows.Controls.Primitives;
+using System.Windows.Data;
+using WinComboBox = System.Windows.Controls.ComboBox;
+using WinTextBox = System.Windows.Controls.TextBox;
 
 // ReSharper disable once CheckNamespace
 namespace Wpf.Ui.Controls;
+
+// TODO:
+// PlaceholderService could potentially be extended to support more control types.
+// For example, it may check whether a ContentControl's Content is empty
+// and display placeholder content accordingly.
+// This enhancement can be evaluated and implemented if there is a concrete need.
 
 public static class PlaceholderService
 {
@@ -73,19 +82,23 @@ public static class PlaceholderService
 
         switch (control)
         {
-            case TextBox textBox:
-                textBox.TextChanged -= TextChanged;
-                textBox.TextChanged += TextChanged;
+            case WinTextBox textBox:
+            {
+                textBox.TextChanged -= OnTextChanged;
+                textBox.TextChanged += OnTextChanged;
                 break;
+            }
 
-            case ComboBox comboBox:
-                comboBox.SelectionChanged -= ComboSelectionChanged;
-                comboBox.SelectionChanged += ComboSelectionChanged;
+            case WinComboBox comboBox:
+                comboBox.SelectionChanged -= OnComboSelectionChanged;
+                comboBox.SelectionChanged += OnComboSelectionChanged;
+                comboBox.RemoveHandler(TextBoxBase.TextChangedEvent, new TextChangedEventHandler(OnTextChanged));
+                comboBox.AddHandler(TextBoxBase.TextChangedEvent, new TextChangedEventHandler(OnTextChanged));
                 break;
         }
     }
 
-    private static void TextChanged(object sender, TextChangedEventArgs e)
+    private static void OnTextChanged(object sender, TextChangedEventArgs e)
     {
         if (sender is Control control)
         {
@@ -93,7 +106,7 @@ public static class PlaceholderService
         }
     }
 
-    private static void ComboSelectionChanged(object sender, SelectionChangedEventArgs e)
+    private static void OnComboSelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (sender is Control control)
         {
@@ -109,15 +122,34 @@ public static class PlaceholderService
             return;
         }
 
-        // todo Forcibly setting the content seems inappropriate, as it doesn't consider Binding."
-        placeholder.Content = GetContent(control);
-
-        bool isEmpty = control switch
+        // Check binding first to avoid overwriting it
+        if (BindingOperations.GetBinding(placeholder, ContentControl.ContentProperty) == null)
         {
-            TextBox tb  => string.IsNullOrEmpty(tb.Text),
-            ComboBox cb => cb.SelectedItem == null && string.IsNullOrEmpty(cb.Text),
-            _           => true
-        };
+            placeholder.SetCurrentValue(ContentControl.ContentProperty, GetContent(control));
+        }
+
+        bool isEmpty;
+        switch (control)
+        {
+            case WinTextBox tb:
+            {
+                isEmpty = string.IsNullOrEmpty(tb.Text);
+                break;
+            }
+
+            case WinComboBox cb:
+            {
+                var editableTextBox = cb.Template?.FindName("PART_EditableTextBox", cb) as WinTextBox;
+                isEmpty = cb.SelectedItem == null && string.IsNullOrEmpty(editableTextBox?.Text ?? cb.Text);
+                break;
+            }
+
+            default:
+            {
+                isEmpty = true;
+                break;
+            }
+        }
 
         placeholder.Visibility = isEmpty ? Visibility.Visible : Visibility.Collapsed;
     }

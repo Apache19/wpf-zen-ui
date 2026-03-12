@@ -9,10 +9,9 @@
     xmlns:system="clr-namespace:System;assembly=System.Runtime"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
     Title="ComboBoxPage"
-    d:DataContext="{d:DesignInstance local:ComboBoxPage, IsDesignTimeCreatable=False}"
-    d:DesignHeight="450"
-    d:DesignWidth="800"
     d:Background="{ui:BrushResource WindowBackgroundBrush}"
+    d:DataContext="{d:DesignInstance local:ComboBoxPage, IsDesignTimeCreatable=False}"
+    d:DesignWidth="800"
     Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
     mc:Ignorable="d">
 
@@ -39,8 +38,8 @@
             <ui:ComboBox
                 MinWidth="200"
                 HorizontalAlignment="Left"
-                ItemsSource="{Binding ViewModel.ComboBoxFontFamilies, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:ComboBoxPage}, Mode=OneWay}"
-                SelectedIndex="0">
+                ui:PlaceholderService.Content="Placeholder"
+                ItemsSource="{Binding ViewModel.ComboBoxFontFamilies, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:ComboBoxPage}, Mode=OneWay}">
                 <ui:ComboBox.ItemTemplate>
                     <DataTemplate>
                         <TextBlock FontFamily="{Binding}" Text="{Binding}" />
@@ -56,6 +55,7 @@
             <ui:ComboBox
                 MinWidth="200"
                 HorizontalAlignment="Left"
+                ui:PlaceholderService.Content="Placeholder"
                 IsEditable="True"
                 ItemsSource="{Binding ViewModel.ComboBoxFontSizes, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:ComboBoxPage}, Mode=OneWay}"
                 SelectedIndex="0" />
