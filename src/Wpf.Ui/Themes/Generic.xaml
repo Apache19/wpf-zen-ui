@@ -97,6 +97,7 @@
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/ProgressRing/ProgressRing.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/RadioButton/RadioButton.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/RatingControl/RatingControl.xaml" />
+        <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/Placeholder/PlaceholderControl.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/RichTextBox/RichTextBox.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/ScrollBar/ScrollBar.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/ScrollViewer/ScrollViewer.xaml" />
