@@ -26,8 +26,7 @@
 
     <Style x:Key="{x:Static theming:StyleKeys.DefaultTextBoxStyle}" TargetType="{x:Type TextBox}">
         <!--  Universal WPF UI focus  -->
-        <Setter Property="FocusVisualStyle" Value="{DynamicResource {x:Static theming:StyleKeys.DefaultControlFocusVisualStyle}}" />
-        <!--  Universal WPF UI focus  -->
+        <Setter Property="FocusVisualStyle" Value="{markup:StyleResource DefaultControlFocusVisualStyle}" />
         <Setter Property="ContextMenu">
             <Setter.Value>
                 <controls:ContextMenu>
@@ -322,6 +321,8 @@
     </ControlTemplate>
 
     <Style x:Key="{x:Static theming:StyleKeys.DefaultUiTextBoxStyle}" TargetType="{x:Type controls:TextBox}">
+        <!--  Universal WPF UI focus  -->
+        <Setter Property="FocusVisualStyle" Value="{markup:StyleResource DefaultControlFocusVisualStyle}" />
         <Setter Property="ContextMenu">
             <Setter.Value>
                 <controls:ContextMenu>

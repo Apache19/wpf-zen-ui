@@ -4,7 +4,7 @@
     xmlns:controls="clr-namespace:Wpf.Ui.Controls"
     xmlns:markup="clr-namespace:Wpf.Ui.Markup">
 
-    <Style TargetType="{x:Type controls:PlaceholderControl}">
+    <Style TargetType="{x:Type controls:PlaceholderControl}" BasedOn="{StaticResource {x:Type ContentControl}}">
         <Setter Property="IsHitTestVisible" Value="False" />
     </Style>
 </ResourceDictionary>

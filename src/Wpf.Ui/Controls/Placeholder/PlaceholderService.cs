@@ -42,8 +42,17 @@ public static class PlaceholderService
     {
         if (d is Control control)
         {
-            control.Loaded -= Control_Loaded;
-            control.Loaded += Control_Loaded;
+            if (control.IsLoaded)
+            {
+                // Try to unsubscribe as much as possible.
+                control.Loaded -= Control_Loaded;
+                InitializeControl(control);
+            }
+            else
+            {
+                control.Loaded -= Control_Loaded;
+                control.Loaded += Control_Loaded;
+            }
         }
     }
 
@@ -54,6 +63,12 @@ public static class PlaceholderService
             return;
         }
 
+        control.Loaded -= Control_Loaded;
+        InitializeControl(control);
+    }
+
+    private static void InitializeControl(Control control)
+    {
         UpdateVisibility(control);
 
         switch (control)
@@ -93,6 +108,9 @@ public static class PlaceholderService
         {
             return;
         }
+
+        // todo Forcibly setting the content seems inappropriate, as it doesn't consider Binding."
+        placeholder.Content = GetContent(control);
 
         bool isEmpty = control switch
         {
