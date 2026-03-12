@@ -12,6 +12,11 @@
     ui:Theme.ApplyToRootVisual="True"
     Background="{ui:BrushResource WindowBackgroundBrush}"
     mc:Ignorable="d">
+
+    <UserControl.Resources>
+        <ui:ThemeManagerOptions ThemeMode="Dark" UseSystemAccentColor="True" />
+    </UserControl.Resources>
+
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />

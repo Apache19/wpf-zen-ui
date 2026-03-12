@@ -62,9 +62,6 @@
     <Compile Include="Models\DataColor.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="StandardWpfContent.xaml.cs">
-      <DependentUpon>StandardWpfContent.xaml</DependentUpon>
-    </Compile>
     <Compile Include="WpfContent.xaml.cs">
       <DependentUpon>WpfContent.xaml</DependentUpon>
     </Compile>
@@ -103,10 +100,6 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <Page Include="StandardWpfContent.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
     <Page Include="WpfContent.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
