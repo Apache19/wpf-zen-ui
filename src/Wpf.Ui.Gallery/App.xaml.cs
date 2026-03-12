@@ -93,11 +93,49 @@ public partial class App
     /// </summary>
     private void OnExit(object sender, ExitEventArgs e)
     {
-        _host.StopAsync().Wait();
+        var host = _host;
 
-#pragma warning disable IDISP007 // Don't dispose injected
-        _host.Dispose();
-#pragma warning restore IDISP007 // Don't dispose injected
+        if (host is null)
+        {
+            return;
+        }
+
+        try
+        {
+            // Use a DispatcherFrame to continue processing UI messages while waiting for StopAsync
+            // to complete. This prevents deadlocks that can occur when synchronously blocking the UI thread.
+            var stopTask = host.StopAsync();
+
+            var frame = new DispatcherFrame();
+
+            stopTask.ContinueWith(
+                _ => frame.Continue = false,
+                TaskScheduler.FromCurrentSynchronizationContext()
+            );
+
+            // Enter a message loop until stopTask completes
+            Dispatcher.PushFrame(frame);
+
+            stopTask.GetAwaiter().GetResult();
+        }
+        catch
+        {
+            // Ignore exceptions from StopAsync during shutdown to avoid interfering with further cleanup
+        }
+        finally
+        {
+            // Ensure the Host is disposed regardless of whether StopAsync succeeded
+            try
+            {
+                #pragma warning disable IDISP007 // Don't dispose injected
+                host.Dispose();
+                #pragma warning restore IDISP007 // Don't dispose injected
+            }
+            catch
+            {
+                // Ignore Dispose exceptions during shutdown
+            }
+        }
     }
 
     /// <summary>

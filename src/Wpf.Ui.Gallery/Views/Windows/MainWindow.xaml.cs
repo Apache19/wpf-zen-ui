@@ -76,7 +76,7 @@ public partial class MainWindow : IWindow
             default:
                 if (!string.IsNullOrEmpty(tag))
                 {
-                    System.Diagnostics.Debug.WriteLine($"unknown Tag: {tag}");
+                    Debug.WriteLine($"unknown Tag: {tag}");
                 }
 
                 break;
@@ -85,7 +85,7 @@ public partial class MainWindow : IWindow
 
     private void HandleTrayHomeClick()
     {
-        System.Diagnostics.Debug.WriteLine("Tray menu - Home Click");
+        Debug.WriteLine("Tray menu - Home Click");
 
         ShowAndActivateWindow();
 
@@ -94,7 +94,7 @@ public partial class MainWindow : IWindow
 
     private void HandleTraySettingsClick()
     {
-        System.Diagnostics.Debug.WriteLine("Tray menu - Settings Click");
+        Debug.WriteLine("Tray menu - Settings Click");
 
         ShowAndActivateWindow();
 
@@ -103,9 +103,9 @@ public partial class MainWindow : IWindow
 
     private static void HandleTrayCloseClick()
     {
-        System.Diagnostics.Debug.WriteLine("Tray menu - Close Click");
+        Debug.WriteLine("Tray menu - Close Click");
 
-        Application.Current.Shutdown();
+        Application.Current.MainWindow?.Close();
     }
 
     private void ShowAndActivateWindow()
@@ -128,13 +128,13 @@ public partial class MainWindow : IWindow
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"NavigateToPage {pageType.Name} Error: {ex.Message}");
+            Debug.WriteLine($"NavigateToPage {pageType.Name} Error: {ex.Message}");
         }
     }
 
     private void OnNavigationSelectionChanged(object sender, RoutedEventArgs e)
     {
-        if (sender is not Wpf.Ui.Controls.NavigationView navigationView)
+        if (sender is not NavigationView navigationView)
         {
             return;
         }
