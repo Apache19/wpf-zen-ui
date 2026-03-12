@@ -116,10 +116,18 @@ public sealed class ThemeManager
     /// Sets additional theme URIs in a single operation,
     /// triggering only one theme refresh.
     /// </summary>
-    /// <param name="lightThemeUri">The URI of the additional light theme resource dictionary, or <c>null</c> to clear.</param>
-    /// <param name="darkThemeUri">The URI of the additional dark theme resource dictionary, or <c>null</c> to clear.</param>
-    /// <param name="highContrastLightThemeUri">The URI of the additional high contrast light theme resource dictionary, or <c>null</c> to clear.</param>
-    /// <param name="highContrastDarkThemeUri">The URI of the additional high contrast dark theme resource dictionary, or <c>null</c> to clear.</param>
+    /// <param name="lightThemeUri">
+    /// The URI of the additional light theme resource dictionary, or <c>null</c> to clear.
+    /// </param>
+    /// <param name="darkThemeUri">
+    /// The URI of the additional dark theme resource dictionary, or <c>null</c> to clear.
+    /// </param>
+    /// <param name="highContrastLightThemeUri">
+    /// The URI of the additional high contrast light theme resource dictionary, or <c>null</c> to clear.
+    /// </param>
+    /// <param name="highContrastDarkThemeUri">
+    /// The URI of the additional high contrast dark theme resource dictionary, or <c>null</c> to clear.
+    /// </param>
     public static void SetAdditionalThemeUris(
         Uri? lightThemeUri,
         Uri? darkThemeUri,
@@ -159,6 +167,34 @@ public sealed class ThemeManager
     }
 
     /// <summary>
+    /// Configures the theme mode and the system accent color setting without modifying
+    /// any existing additional theme resource URIs.
+    /// </summary>
+    /// <param name="themeMode">The theme mode to apply.</param>
+    /// <param name="useSystemAccentColor">A value indicating whether the system accent color should be used.</param>
+    public static void Configure(UiThemeMode themeMode, bool useSystemAccentColor)
+    {
+        var changed = false;
+
+        if (_themeMode != themeMode)
+        {
+            _themeMode = themeMode;
+            changed = true;
+        }
+
+        if (_useSystemAccentColor != useSystemAccentColor)
+        {
+            _useSystemAccentColor = useSystemAccentColor;
+            changed = true;
+        }
+
+        if (changed)
+        {
+            RefreshTheme(ThemeChangeSource.Manual);
+        }
+    }
+
+    /// <summary>
     /// Configures multiple theme settings in a single operation, triggering only one theme refresh.
     /// </summary>
     /// <param name="themeMode">The theme mode to apply.</param>
@@ -180,10 +216,10 @@ public sealed class ThemeManager
     public static void Configure(
         UiThemeMode themeMode,
         bool useSystemAccentColor,
-        Uri? additionalLightThemeUri = null,
-        Uri? additionalDarkThemeUri = null,
-        Uri? additionalHighContrastLightThemeUri = null,
-        Uri? additionalHighContrastDarkThemeUri = null)
+        Uri? additionalLightThemeUri,
+        Uri? additionalDarkThemeUri,
+        Uri? additionalHighContrastLightThemeUri,
+        Uri? additionalHighContrastDarkThemeUri)
     {
         var changed = false;
 
