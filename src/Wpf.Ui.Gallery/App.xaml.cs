@@ -56,10 +56,7 @@ public partial class App
 
                 // All other pages and view models
                 _ = services.AddTransientFromNamespace("Wpf.Ui.Gallery.Views", GalleryAssembly.Asssembly);
-                _ = services.AddTransientFromNamespace(
-                    "Wpf.Ui.Gallery.ViewModels",
-                    GalleryAssembly.Asssembly
-                );
+                _ = services.AddTransientFromNamespace("Wpf.Ui.Gallery.ViewModels", GalleryAssembly.Asssembly);
 
                 _ = services.AddStringLocalizer(b =>
                 {
@@ -86,7 +83,6 @@ public partial class App
     private void OnStartup(object sender, StartupEventArgs e)
     {
         var theme = LoadAppTheme();
-
         ThemeManager.Configure(theme.ThemeMode, theme.UseSystemAccent);
 
         _host.Start();
@@ -116,7 +112,7 @@ public partial class App
     {
         return new AppTheme()
         {
-            ThemeMode       = UiThemeMode.System,
+            ThemeMode       = UiThemeMode.Dark,
             UseSystemAccent = true
         };
     }

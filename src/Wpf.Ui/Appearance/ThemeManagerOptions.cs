@@ -54,9 +54,11 @@ namespace Wpf.Ui;
 /// &lt;/UserControl.Resources&gt;
 /// </code>
 /// </example>
-public class FluentTheme : ResourceDictionary, ISupportInitialize
+public class ThemeManagerOptions : ResourceDictionary, ISupportInitialize
 {
-    private int  _deferLevel;
+    // todo 此可以作为库初始化入口，ThemeManager也可以
+
+    private bool _isInitializing;
     private bool _pendingApply;
 
     private UiThemeMode _themeMode = UiThemeMode.Default;
@@ -166,7 +168,7 @@ public class FluentTheme : ResourceDictionary, ISupportInitialize
     /// <inheritdoc cref="ISupportInitialize.BeginInit"/>
     void ISupportInitialize.BeginInit()
     {
-        _deferLevel++;
+        _isInitializing = true;
         BeginInit();
     }
 
@@ -174,8 +176,9 @@ public class FluentTheme : ResourceDictionary, ISupportInitialize
     void ISupportInitialize.EndInit()
     {
         EndInit();
+        _isInitializing = false;
 
-        if (--_deferLevel == 0 && _pendingApply)
+        if (_pendingApply)
         {
             _pendingApply = false;
             ApplyConfiguration();
@@ -184,7 +187,7 @@ public class FluentTheme : ResourceDictionary, ISupportInitialize
 
     private void RequestApply()
     {
-        if (_deferLevel > 0)
+        if (_isInitializing)
         {
             _pendingApply = true;
         }

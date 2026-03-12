@@ -126,30 +126,30 @@ public sealed class ThemeManager
         Uri? highContrastLightThemeUri = null,
         Uri? highContrastDarkThemeUri = null)
     {
-        bool changed = false;
+        var changed = false;
 
         if (_additionalLightThemeUri != lightThemeUri)
         {
             _additionalLightThemeUri = lightThemeUri;
-            changed                  = true;
+            changed = true;
         }
 
         if (_additionalDarkThemeUri != darkThemeUri)
         {
             _additionalDarkThemeUri = darkThemeUri;
-            changed                 = true;
+            changed = true;
         }
 
         if (_additionalHighContrastLightThemeUri != highContrastLightThemeUri)
         {
             _additionalHighContrastLightThemeUri = highContrastLightThemeUri;
-            changed                              = true;
+            changed = true;
         }
 
         if (_additionalHighContrastDarkThemeUri != highContrastDarkThemeUri)
         {
             _additionalHighContrastDarkThemeUri = highContrastDarkThemeUri;
-            changed                             = true;
+            changed = true;
         }
 
         if (changed)
@@ -185,42 +185,42 @@ public sealed class ThemeManager
         Uri? additionalHighContrastLightThemeUri = null,
         Uri? additionalHighContrastDarkThemeUri = null)
     {
-        bool changed = false;
+        var changed = false;
 
         if (_themeMode != themeMode)
         {
             _themeMode = themeMode;
-            changed    = true;
+            changed = true;
         }
 
         if (_useSystemAccentColor != useSystemAccentColor)
         {
             _useSystemAccentColor = useSystemAccentColor;
-            changed               = true;
+            changed = true;
         }
 
         if (_additionalLightThemeUri != additionalLightThemeUri)
         {
             _additionalLightThemeUri = additionalLightThemeUri;
-            changed                  = true;
+            changed = true;
         }
 
         if (_additionalDarkThemeUri != additionalDarkThemeUri)
         {
             _additionalDarkThemeUri = additionalDarkThemeUri;
-            changed                 = true;
+            changed = true;
         }
 
         if (_additionalHighContrastLightThemeUri != additionalHighContrastLightThemeUri)
         {
             _additionalHighContrastLightThemeUri = additionalHighContrastLightThemeUri;
-            changed                              = true;
+            changed = true;
         }
 
         if (_additionalHighContrastDarkThemeUri != additionalHighContrastDarkThemeUri)
         {
             _additionalHighContrastDarkThemeUri = additionalHighContrastDarkThemeUri;
-            changed                             = true;
+            changed = true;
         }
 
         if (changed)
@@ -551,14 +551,11 @@ public sealed class ThemeManager
 
     private static void SystemParameters_StaticPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        Debug.WriteLine($"ThemeManager: SystemParameters_StaticPropertyChanged - {e.PropertyName}");
         ScheduleThemeChangedDebounced();
     }
 
     private static void SystemEvents_UserPreferenceChanged(object sender, UserPreferenceChangedEventArgs e)
     {
-        Debug.WriteLine($"ThemeManager: SystemEvents_UserPreferenceChanged: {e.Category}");
-
         if (e.Category is
             UserPreferenceCategory.General or
             UserPreferenceCategory.VisualStyle or
