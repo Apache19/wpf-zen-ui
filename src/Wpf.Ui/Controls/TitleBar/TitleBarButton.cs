@@ -5,6 +5,7 @@
 
 using System.Runtime.InteropServices;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Threading;
 using Windows.Win32;
@@ -28,7 +29,7 @@ namespace Wpf.Ui.Controls;
 /// When used outside a TitleBar, its behavior is undefined and may not meet
 /// typical button interaction expectations.
 /// </remarks>
-public class TitleBarButton : Button // Wpf.Ui.Controls.Button
+public class TitleBarButton : ButtonBase
 {
     #region Static constructor
 
