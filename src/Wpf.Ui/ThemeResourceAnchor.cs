@@ -16,5 +16,6 @@ public static class ThemeResourceAnchor
     /// </summary>
     static ThemeResourceAnchor()
     {
+        LibraryInitializer.EnsureInitialized();
     }
 }

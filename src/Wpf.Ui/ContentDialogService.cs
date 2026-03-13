@@ -32,6 +32,11 @@ namespace Wpf.Ui;
 /// </example>
 public class ContentDialogService : IContentDialogService
 {
+    static ContentDialogService()
+    {
+        LibraryInitializer.EnsureInitialized();
+    }
+
     private ContentPresenter? _dialogHost;
     private ContentDialogHost? _dialogHostEx;
 

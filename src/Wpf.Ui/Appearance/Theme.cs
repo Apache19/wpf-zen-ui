@@ -13,6 +13,11 @@ namespace Wpf.Ui;
 /// </summary>
 public static class Theme
 {
+    static Theme()
+    {
+        LibraryInitializer.EnsureInitialized();
+    }
+
     /// <summary>
     /// Identifies the ApplyToRootVisual attached property.
     /// </summary>

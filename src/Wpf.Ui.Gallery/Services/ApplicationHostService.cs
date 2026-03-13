@@ -51,8 +51,11 @@ public class ApplicationHostService : IHostedService
         }
 
         IWindow mainWindow = _serviceProvider.GetRequiredService<IWindow>();
-        mainWindow.Loaded += OnMainWindowLoaded;
-        mainWindow?.Show();
+        if (mainWindow is not null)
+        {
+            mainWindow.Loaded += OnMainWindowLoaded;
+            mainWindow.Show();
+        }
 
         return Task.CompletedTask;
     }
@@ -64,6 +67,6 @@ public class ApplicationHostService : IHostedService
             return;
         }
 
-       // _ = mainWindow.NavigationView.Navigate(typeof(DashboardPage));
+        _ = mainWindow.NavigationView.Navigate(typeof(DashboardPage));
     }
 }

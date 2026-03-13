@@ -3,31 +3,31 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Windows.Markup;
-using Wpf.Ui.Appearance;
 
 namespace Wpf.Ui;
 
-// todo 修改文档
-
 /// <summary>
-/// Provides a dictionary implementation that contains <c>WPF UI</c> theme resources used by components and other elements of a WPF application.
-/// </summary>
+/// Provides a that contains implicit styles
+/// for standard WPF controls, allowing them to adopt the WPF UI
+/// Fluent appearance./// </summary>
+/// <remarks>
+/// This dictionary only includes style wrappers for standard WPF controls
+/// (styles without x). When merged into an application's resources,
+/// the default appearance of built-in WPF controls will be replaced with
+/// the WPF UI Fluent styles.
+/// </remarks>
 /// <example>
 /// <code lang="xml">
-/// &lt;Application
-///     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"&gt;
-///     &lt;Application.Resources&gt;
-///         &lt;ResourceDictionary&gt;
-///             &lt;ResourceDictionary.MergedDictionaries&gt;
-///                 &lt;ui:ThemesDictionary Theme = "Dark" /&gt;
-///             &lt;/ResourceDictionary.MergedDictionaries&gt;
-///         &lt;/ResourceDictionary&gt;
-///     &lt;/Application.Resources&gt;
-/// &lt;/Application&gt;
+/// <Application xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml">
+///     <Application.Resources>
+///         <ResourceDictionary>
+///             <ResourceDictionary.MergedDictionaries>
+///                 <ui:StandardControlDictionary />
+///             </ResourceDictionary.MergedDictionaries>
+///         </ResourceDictionary>
+///     </Application.Resources>
+/// </Application>
 /// </code>
 /// </example>
 [Localizability(LocalizationCategory.Ignore)]
@@ -35,6 +35,11 @@ namespace Wpf.Ui;
 [UsableDuringInitialization(true)]
 public class StandardControlDictionary : ResourceDictionary
 {
+    static StandardControlDictionary()
+    {
+        LibraryInitializer.EnsureInitialized();
+    }
+
     public StandardControlDictionary()
     {
         Source = new Uri(

@@ -1,4 +1,9 @@
-﻿using System.Reflection;
+// This Source Code Form is subject to the terms of the MIT License.
+// If a copy of the MIT was not distributed with this file, You can obtain one at https://opensource.org/licenses/MIT.
+// Copyright (C) Leszek Pomianowski and WPF UI Contributors.
+// All Rights Reserved.
+
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -15,14 +20,14 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyCulture("")]
 
 // 将 ComVisible 设置为 false 会使此程序集中的类型
-//对 COM 组件不可见。如果需要从 COM 访问此程序集中的类型
-//请将此类型的 ComVisible 特性设置为 true。
+// 对 COM 组件不可见。如果需要从 COM 访问此程序集中的类型
+// 请将此类型的 ComVisible 特性设置为 true。
 [assembly: ComVisible(false)]
 
 // 如果此项目向 COM 公开，则下列 GUID 用于类型库的 ID
 [assembly: Guid("687d0807-0bca-41d0-b04d-8c13ada399fd")]
 
-// 程序集的版本信息由下列四个值组成: 
+// 程序集的版本信息由下列四个值组成:
 //
 //      主版本
 //      次版本

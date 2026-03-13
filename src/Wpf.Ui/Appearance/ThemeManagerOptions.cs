@@ -17,10 +17,6 @@ namespace Wpf.Ui;
 /// </summary>
 /// <remarks>
 /// <para>
-/// During XAML parsing, all property changes are batched via <see cref="ISupportInitialize"/>
-/// so that <see cref="ThemeManager.Configure"/> is called only once after all properties are set.
-/// </para>
-/// <para>
 /// At runtime, changing any property after initialization triggers an immediate theme refresh.
 /// </para>
 /// </remarks>
@@ -54,10 +50,28 @@ namespace Wpf.Ui;
 /// &lt;/UserControl.Resources&gt;
 /// </code>
 /// </example>
+/// <example>
+/// <code lang="csharp">
+///
+/// // Programmatic usage from C# - configure ThemeManager via ThemeManagerOptions
+/// var options = new ThemeManagerOptions();
+///
+/// options.BeginInit(); // Request deferred configuration
+///
+/// options.ThemeMode = UiThemeMode.Dark;
+/// options.UseSystemAccentColor = true;
+/// options.AdditionalLightThemeSource = new Uri("pack://application:,,,/MyApp;component/Themes/Light.xaml");
+/// options.AdditionalDarkThemeSource = new Uri("pack://application:,,,/MyApp;component/Themes/Dark.xaml");
+///
+/// // To explicitly clear a previously set URI, set the property to null:
+/// // options.AdditionalLightThemeSource = null;
+///
+/// options.EndInit(); // Apply theme configuration
+///
+/// </code>
+/// </example>
 public class ThemeManagerOptions : ResourceDictionary, ISupportInitialize
 {
-    // todo 此可以作为库初始化入口，ThemeManager也可以
-
     private bool _isInitializing;
     private bool _pendingApply;
 
@@ -67,6 +81,12 @@ public class ThemeManagerOptions : ResourceDictionary, ISupportInitialize
     private Uri? _additionalDarkThemeSource;
     private Uri? _additionalHighContrastLightThemeSource;
     private Uri? _additionalHighContrastDarkThemeSource;
+
+    // Flags to track whether a URI property was explicitly set (even to null) from XAML
+    private bool _aLightChanged;
+    private bool _aDarkChanged;
+    private bool _aHcLightChanged;
+    private bool _aHcDarkChanged;
 
     /// <summary>
     /// Gets or sets the global theme mode for the application.
@@ -109,11 +129,11 @@ public class ThemeManagerOptions : ResourceDictionary, ISupportInitialize
         get => _additionalLightThemeSource;
         set
         {
-            if (_additionalLightThemeSource != value)
-            {
-                _additionalLightThemeSource = value;
-                RequestApply();
-            }
+            // Mark that the property was explicitly set (including explicit x:Null in XAML)
+            _aLightChanged = true;
+            _additionalLightThemeSource = value;
+
+            RequestApply();
         }
     }
 
@@ -125,11 +145,11 @@ public class ThemeManagerOptions : ResourceDictionary, ISupportInitialize
         get => _additionalDarkThemeSource;
         set
         {
-            if (_additionalDarkThemeSource != value)
-            {
-                _additionalDarkThemeSource = value;
-                RequestApply();
-            }
+            // Mark that the property was explicitly set (including explicit x:Null in XAML)
+            _aDarkChanged = true;
+            _additionalDarkThemeSource = value;
+
+            RequestApply();
         }
     }
 
@@ -141,11 +161,11 @@ public class ThemeManagerOptions : ResourceDictionary, ISupportInitialize
         get => _additionalHighContrastLightThemeSource;
         set
         {
-            if (_additionalHighContrastLightThemeSource != value)
-            {
-                _additionalHighContrastLightThemeSource = value;
-                RequestApply();
-            }
+            // Mark that the property was explicitly set (including explicit x:Null in XAML)
+            _aHcLightChanged = true;
+            _additionalHighContrastLightThemeSource = value;
+
+            RequestApply();
         }
     }
 
@@ -157,11 +177,11 @@ public class ThemeManagerOptions : ResourceDictionary, ISupportInitialize
         get => _additionalHighContrastDarkThemeSource;
         set
         {
-            if (_additionalHighContrastDarkThemeSource != value)
-            {
-                _additionalHighContrastDarkThemeSource = value;
-                RequestApply();
-            }
+            // Mark that the property was explicitly set (including explicit x:Null in XAML)
+            _aHcDarkChanged = true;
+            _additionalHighContrastDarkThemeSource = value;
+
+            RequestApply();
         }
     }
 
@@ -202,10 +222,19 @@ public class ThemeManagerOptions : ResourceDictionary, ISupportInitialize
         ThemeManager.Configure(
             _themeMode,
             _useSystemAccentColor,
-            _additionalLightThemeSource,
-            _additionalDarkThemeSource,
-            _additionalHighContrastLightThemeSource,
-            _additionalHighContrastDarkThemeSource
+            _aLightChanged ? _additionalLightThemeSource : ThemeManager.AdditionalLightThemeUri,
+            _aDarkChanged ? _additionalDarkThemeSource : ThemeManager.AdditionalDarkThemeUri,
+            _aHcLightChanged ? _additionalHighContrastLightThemeSource : ThemeManager.AdditionalHighContrastLightThemeUri,
+            _aHcDarkChanged ? _additionalHighContrastDarkThemeSource : ThemeManager.AdditionalHighContrastDarkThemeUri
         );
+
+        // Reset explicit-set flags after applying so subsequent merges without that attribute
+        // don't unintentionally clear values.
+        _aLightChanged = _aDarkChanged = _aHcLightChanged = _aHcDarkChanged = false;
+    }
+
+    static ThemeManagerOptions()
+    {
+        LibraryInitializer.EnsureInitialized();
     }
 }

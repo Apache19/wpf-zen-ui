@@ -70,6 +70,9 @@ public sealed class ThemeManager
 
     static ThemeManager()
     {
+        // Static constructor is a suitable place for library initialization
+        LibraryInitializer.EnsureInitialized();
+
         if (!DesignerProperties.GetIsInDesignMode(new DependencyObject()))
         {
             // In non-native WPF hosting environments (such as WinForms with ElementHost),
@@ -268,6 +271,9 @@ public sealed class ThemeManager
     #endregion
 
     #region Public Properties
+
+    // todo: 考虑如何将WPF标准控件的隐式样式以选项属性的方式加载进来(StandardControlDictionary)
+    // todo: consider how to load implicit styles for WPF standard controls as option properties
 
     /// <summary>
     /// Gets the currently active theme applied to the application.

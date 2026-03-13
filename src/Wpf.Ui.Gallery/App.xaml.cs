@@ -82,8 +82,23 @@ public partial class App
     /// </summary>
     private void OnStartup(object sender, StartupEventArgs e)
     {
+        /*
         var theme = LoadAppTheme();
-        ThemeManager.Configure(theme.ThemeMode, theme.UseSystemAccent);
+
+        var options = new ThemeManagerOptions();
+
+        // Request deferred configuration
+        options.BeginInit();
+
+        options.ThemeMode = theme.ThemeMode;
+        options.UseSystemAccentColor = theme.UseSystemAccent;
+
+        // To explicitly clear a previously set URI, set the property to null:
+        // options.AdditionalLightThemeSource = null;
+
+        // Apply theme configuration
+        options.EndInit();
+        */
 
         _host.Start();
     }

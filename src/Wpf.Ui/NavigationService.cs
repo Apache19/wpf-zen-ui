@@ -13,6 +13,11 @@ namespace Wpf.Ui;
 /// </summary>
 public partial class NavigationService(INavigationViewPageProvider pageProvider) : INavigationService
 {
+    static NavigationService()
+    {
+        LibraryInitializer.EnsureInitialized();
+    }
+
     /// <summary>
     /// Gets or sets the control representing navigation.
     /// </summary>
