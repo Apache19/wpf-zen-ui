@@ -93,18 +93,11 @@ public partial class App
     /// </summary>
     private void OnExit(object sender, ExitEventArgs e)
     {
-        var host = _host;
-
-        if (host is null)
-        {
-            return;
-        }
-
         try
         {
             // Use a DispatcherFrame to continue processing UI messages while waiting for StopAsync
             // to complete. This prevents deadlocks that can occur when synchronously blocking the UI thread.
-            var stopTask = host.StopAsync();
+            var stopTask = _host.StopAsync();
 
             var frame = new DispatcherFrame();
 
@@ -128,7 +121,7 @@ public partial class App
             try
             {
                 #pragma warning disable IDISP007 // Don't dispose injected
-                host.Dispose();
+                _host.Dispose();
                 #pragma warning restore IDISP007 // Don't dispose injected
             }
             catch
