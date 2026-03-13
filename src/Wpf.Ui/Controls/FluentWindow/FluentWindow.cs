@@ -17,13 +17,11 @@ using Wpf.Ui.Win32;
 // ReSharper disable once CheckNamespace
 namespace Wpf.Ui.Controls;
 
-// todo WM_NCMOUSELEAVE 如果要使用Dwm绘制系统按钮，则需要调用DwmDefWindowProc，否则按钮高亮不会去除
-
 /// <summary>
 /// FluentWindow
 /// </summary>
 /// <remarks>
-/// 注意不要在此窗口上使用WindowChrome
+/// Important: Do not use WindowChrome on this window.
 /// </remarks>
 public partial class FluentWindow : Window
 {
@@ -390,13 +388,15 @@ public partial class FluentWindow : Window
                 if (lParam != IntPtr.Zero)
                 {
                     var spiStr = Marshal.PtrToStringAuto(lParam);
-                    if (spiStr == "ImmersiveColorSet")
+                    switch (spiStr)
                     {
-                        IsAccentOnTitleBarAndBorder = UnsafeNativeMethods.IsAccentColorOnTitleBarsEnabled();
-                    }
-                    else if (spiStr == "ThemeElement")
-                    {
-                        InvalidateBorderMetricsCache();
+                        case "ImmersiveColorSet":
+                            IsAccentOnTitleBarAndBorder = UnsafeNativeMethods.IsAccentColorOnTitleBarsEnabled();
+                            break;
+
+                        case "ThemeElement":
+                            InvalidateBorderMetricsCache();
+                            break;
                     }
                 }
 
@@ -468,6 +468,7 @@ public partial class FluentWindow : Window
             {
                 var isMaximized = Utilities.GetHwndState(hwnd) == WindowState.Maximized;
 
+                // 优先处理调整尺寸边框的命中测试
                 if ((ResizeMode is ResizeMode.CanResize or ResizeMode.CanResizeWithGrip) && !isMaximized)
                 {
                     var point = LParamToPoint(lParam);
