@@ -4,11 +4,9 @@
 // All Rights Reserved.
 
 using System.Runtime.InteropServices;
-using System.Windows.Data;
 using Windows.Win32;
 using Windows.Win32.Foundation;
 using Windows.Win32.UI.WindowsAndMessaging;
-using static Wpf.Ui.Appearance.UISettingsRCW;
 
 namespace Wpf.Ui.Win32;
 

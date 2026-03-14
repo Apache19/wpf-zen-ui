@@ -5,8 +5,6 @@
 
 namespace Wpf.Ui.Theming;
 
-// todo 参考系统ThemeMode，主题资源key似乎可以摆脱枚举类。
-
 public enum StyleId
 {
     Unknown,
