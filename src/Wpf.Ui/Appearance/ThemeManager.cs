@@ -777,6 +777,13 @@ public sealed class ThemeManager
                 new ResourceDictionary { Source = HighContrastThemeUri }
             );
 
+            if (_useStandardControlStyles)
+            {
+                var standardDict = new ResourceDictionary { Source = StandardThemeUri };
+                _lightDictionary.MergedDictionaries.Add(standardDict);
+                _darkDictionary.MergedDictionaries.Add(standardDict);
+            }
+
             if (_additionalHighContrastLightThemeUri != null)
             {
                 _lightDictionary.MergedDictionaries.Add(
@@ -790,13 +797,6 @@ public sealed class ThemeManager
                     LoadAdditionalResourceDictionary(_additionalHighContrastDarkThemeUri)
                 );
             }
-
-            if (_useStandardControlStyles)
-            {
-                var standardDict = new ResourceDictionary { Source = StandardThemeUri };
-                _lightDictionary.MergedDictionaries.Add(standardDict);
-                _darkDictionary.MergedDictionaries.Add(standardDict);
-            }
         }
         else
         {
@@ -807,6 +807,13 @@ public sealed class ThemeManager
             _darkDictionary.MergedDictionaries.Add(
                 new ResourceDictionary { Source = DarkThemeUri }
             );
+
+            if (_useStandardControlStyles)
+            {
+                var standardDict = new ResourceDictionary { Source = StandardThemeUri };
+                _lightDictionary.MergedDictionaries.Add(standardDict);
+                _darkDictionary.MergedDictionaries.Add(standardDict);
+            }
 
             if (_additionalLightThemeUri != null)
             {
@@ -820,13 +827,6 @@ public sealed class ThemeManager
                 _darkDictionary.MergedDictionaries.Add(
                     LoadAdditionalResourceDictionary(_additionalDarkThemeUri)
                 );
-            }
-
-            if (_useStandardControlStyles)
-            {
-                var standardDict = new ResourceDictionary { Source = StandardThemeUri };
-                _lightDictionary.MergedDictionaries.Add(standardDict);
-                _darkDictionary.MergedDictionaries.Add(standardDict);
             }
 
             if (_useSystemAccentColor)
