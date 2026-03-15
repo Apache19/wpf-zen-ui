@@ -4,7 +4,16 @@
 // All Rights Reserved.
 
 // ReSharper disable once CheckNamespace
+
+using System.Windows.Threading;
+
 namespace Wpf.Ui.Controls;
+
+// todo： 下一步重构
+//   Snackbar 自己管理自己的显示时间，时间到则自动退出。
+//   容器可容纳多个 Snackbar，设置上限数量，从下到上以列表的方式排列。
+//   新 Snackbar 进入的同时强制达到上限的最旧 Snackbar 退出。
+//   容器则可使用堆叠的方式，新的出现则会将堆叠往上挤。
 
 /// <summary>
 /// Presents <see cref="Snackbar"/> notifications by managing a display queue.
@@ -32,36 +41,70 @@ public sealed class SnackbarPresenter : System.Windows.Controls.ContentPresenter
 
     public SnackbarPresenter()
     {
-        Unloaded += static (sender, _) =>
-        {
-            var self = (SnackbarPresenter)sender;
-            self.OnUnloaded();
-        };
+        Unloaded += static (sender, _) => ((SnackbarPresenter)sender).OnUnloaded();
     }
 
     private Queue<Snackbar> Queue { get; } = new();
-    private CancellationTokenSource CancellationTokenSource { get; set; } = new();
+    private DispatcherTimer? _timer;
+    private int _hideGeneration;
 
     private void OnUnloaded()
     {
-        if (CancellationTokenSource.IsCancellationRequested)
+        StopTimer();
+
+        _hideGeneration++;
+
+        if (Content is { } snackbar)
         {
-            return;
+            ImmediatelyHideSnackbar(snackbar);
         }
 
-        ImmediatelyHideCurrent();
-        ResetCancellationTokenSource();
+        Queue.Clear();
     }
 
-    private void ImmediatelyHideCurrent()
+    private void StopTimer()
     {
-        if (Content is null)
+        if (_timer is null)
         {
             return;
         }
 
-        CancellationTokenSource.Cancel();
-        ImmediatelyHideSnackbar(Content);
+        _timer.Stop();
+        _timer.Tick -= OnTimerTick;
+        _timer = null;
+    }
+
+    private void StartTimer(TimeSpan interval)
+    {
+        StopTimer();
+        _timer = new DispatcherTimer { Interval = interval };
+        _timer.Tick += OnTimerTick;
+        _timer.Start();
+    }
+
+    private async void OnTimerTick(object? sender, EventArgs e)
+    {
+        StopTimer();
+
+        var gen = ++_hideGeneration;
+
+        if (Content is { } snackbar)
+        {
+            await HideSnackbar(snackbar);
+        }
+
+        if (_hideGeneration == gen)
+        {
+            ShowNext();
+        }
+    }
+
+    private void ShowNext()
+    {
+        if (Queue.Count > 0)
+        {
+            ShowSnackbar(Queue.Dequeue());
+        }
     }
 
     [System.Diagnostics.CodeAnalysis.SuppressMessage(
@@ -75,12 +118,6 @@ public sealed class SnackbarPresenter : System.Windows.Controls.ContentPresenter
         Content = null;
     }
 
-    private void ResetCancellationTokenSource()
-    {
-        CancellationTokenSource.Dispose();
-        CancellationTokenSource = new CancellationTokenSource();
-    }
-
     /// <summary>
     /// Adds a <see cref="Snackbar"/> to the display queue. If no snackbar is currently shown, begins processing the queue.
     /// </summary>
@@ -88,10 +125,9 @@ public sealed class SnackbarPresenter : System.Windows.Controls.ContentPresenter
     public void AddToQueue(Snackbar snackbar)
     {
         Queue.Enqueue(snackbar);
-
-        if (Content is null)
+        if (Content is null && _timer is null)
         {
-            _ = ShowQueuedSnackbarsAsync(); // TODO: Fix detached process
+            ShowNext();
         }
     }
 
@@ -102,9 +138,7 @@ public sealed class SnackbarPresenter : System.Windows.Controls.ContentPresenter
     public async Task ImmediatelyDisplay(Snackbar snackbar)
     {
         await HideCurrent();
-        await ShowSnackbar(snackbar);
-
-        await ShowQueuedSnackbarsAsync();
+        ShowSnackbar(snackbar);
     }
 
     /// <summary>
@@ -112,23 +146,11 @@ public sealed class SnackbarPresenter : System.Windows.Controls.ContentPresenter
     /// </summary>
     public async Task HideCurrent()
     {
-        if (Content is null)
+        StopTimer();
+        _hideGeneration++;
+        if (Content is { } snackbar)
         {
-            return;
-        }
-
-        CancellationTokenSource.Cancel();
-        await HideSnackbar(Content);
-        ResetCancellationTokenSource();
-    }
-
-    private async Task ShowQueuedSnackbarsAsync()
-    {
-        while (Queue.Count > 0 && !CancellationTokenSource.IsCancellationRequested)
-        {
-            Snackbar snackbar = Queue.Dequeue();
-
-            await ShowSnackbar(snackbar);
+            await HideSnackbar(snackbar);
         }
     }
 
@@ -137,22 +159,11 @@ public sealed class SnackbarPresenter : System.Windows.Controls.ContentPresenter
         "WPF0041:Set mutable dependency properties using SetCurrentValue",
         Justification = "SetCurrentValue(ContentProperty, ...) will not work"
     )]
-    private async Task ShowSnackbar(Snackbar snackbar)
+    private void ShowSnackbar(Snackbar snackbar)
     {
         Content = snackbar;
-
         snackbar.SetCurrentValue(Snackbar.IsShownProperty, true);
-
-        try
-        {
-            await Task.Delay(snackbar.Timeout, CancellationTokenSource.Token);
-        }
-        catch
-        {
-            return;
-        }
-
-        await HideSnackbar(snackbar);
+        StartTimer(snackbar.Timeout);
     }
 
     [System.Diagnostics.CodeAnalysis.SuppressMessage(
@@ -163,19 +174,10 @@ public sealed class SnackbarPresenter : System.Windows.Controls.ContentPresenter
     private async Task HideSnackbar(Snackbar snackbar)
     {
         snackbar.SetCurrentValue(Snackbar.IsShownProperty, false);
-
         await Task.Delay(300);
-
-        Content = null;
-    }
-
-    ~SnackbarPresenter()
-    {
-        if (!CancellationTokenSource.IsCancellationRequested)
+        if (Content == snackbar)
         {
-            CancellationTokenSource.Cancel();
+            Content = null;
         }
-
-        CancellationTokenSource.Dispose();
     }
 }
