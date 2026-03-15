@@ -86,7 +86,13 @@ public sealed class DynamicScrollViewer : PassiveScrollViewer, IDisposable
 
     public DynamicScrollViewer()
     {
-        Unloaded += (_, _) => Dispose();
+        Unloaded += (_, _) =>
+        {
+            SetCurrentValue(IsScrollingVerticallyProperty,   false);
+            SetCurrentValue(IsScrollingHorizontallyProperty, false);
+
+            Dispose();
+        };
     }
 
     /// <summary>
