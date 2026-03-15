@@ -15,31 +15,27 @@ using Wpf.Ui.Win32;
 // ReSharper disable once CheckNamespace
 namespace Wpf.Ui.Controls;
 
-// todo 文档需要更新，因为已不再处理窗口尺寸调整
-// todo 开启在标题栏和边框上显示主题色时，让窗口按钮悬浮色用强调色
-
-
 /// <summary>
-/// Represents a customizable window title bar that bridges non-client
-/// area behavior with WPF rendering and interaction.
+/// Represents a customizable window title bar that integrates native
+/// non-client title bar behavior with WPF rendering and layout.
 /// </summary>
 /// <remarks>
-/// <see cref="TitleBar"/> participates directly in non-client area processing
-/// to provide native window behaviors such as caption buttons, window dragging,
-/// resizing, and system interactions, while allowing full control over layout
-/// and visual presentation using WPF.
+/// <see cref="TitleBar"/> enables a WPF control to function as the visual
+/// and interactive representation of a window's title bar while preserving
+/// native window behaviors such as caption buttons, window dragging,
+/// and system commands.
 /// <para/>
-/// The control is responsible for resolving non-client hit testing results
-/// and synchronizing window state, activation state, and mouse interaction
-/// information with its child elements.
+/// The control participates in non-client hit testing and propagates
+/// relevant window state information (such as activation and window state)
+/// to its visual elements, allowing caption buttons and other title bar
+/// components to behave consistently with the operating system.
 /// <para/>
-/// <see cref="TitleBar"/> is intended to be used as part of a window's title
-/// bar infrastructure. Using it outside a window context or without the
-/// associated non-client handling may result in undefined behavior.
+/// <see cref="TitleBar"/> is designed to be used as part of a window's
+/// title bar infrastructure. Using it outside a window context or without
+/// the associated window message handling may result in undefined behavior.
 /// <para/>
-/// This control complements, rather than replaces, the window's native
-/// non-client processing. It coordinates with the underlying window and
-/// message loop instead of attempting to reimplement system behavior.
+/// This control coordinates with the underlying window and message loop
+/// rather than attempting to reimplement the system title bar logic.
 /// </remarks>
 public class TitleBar : ContentControl
 {

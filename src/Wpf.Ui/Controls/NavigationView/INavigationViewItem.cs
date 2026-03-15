@@ -25,7 +25,7 @@ public interface INavigationViewItem
     /// <summary>
     /// Gets or sets the content
     /// </summary>
-    object Content { get; set; }
+    object? Content { get; set; }
 
     /// <summary>
     /// Gets or sets the icon displayed in the MenuItem object.

@@ -10,7 +10,7 @@ GetWindowRect
 GetWindowPlacement
 GetCursorPos
 HWND_MESSAGE
-DWM_COLORIZATION_PARAMS
+
 GetSystemMenu
 EnableMenuItem
 TrackPopupMenuEx

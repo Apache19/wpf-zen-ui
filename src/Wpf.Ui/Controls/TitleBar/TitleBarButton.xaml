@@ -14,6 +14,12 @@
     <SolidColorBrush x:Key="TitleBarButtonCloseBackgroundPressed" Color="#A80014" />
     <SolidColorBrush x:Key="TitleBarButtonCloseForegroundHot" Color="#FFFFFF" />
 
+    <!--
+        todo:
+        If the system has theme colors enabled for displaying on the title bar and borders,
+        then the MouseHover colors of window buttons should use accent colors.
+    -->
+
     <ControlTemplate x:Key="MinimizeButtonTemplate" TargetType="{x:Type controls:TitleBarButton}">
         <Border x:Name="RootBorder" Background="{TemplateBinding Background}">
             <Path

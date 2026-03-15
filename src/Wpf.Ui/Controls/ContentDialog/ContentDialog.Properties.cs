@@ -3,17 +3,17 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-using System;
-using System.Collections.Generic;
-using System.Text;
 using Wpf.Ui.Input;
 
 // ReSharper disable once CheckNamespace
 namespace Wpf.Ui.Controls;
 
+/// <summary>
+/// Partial class <c>ContentDialog.Properties</c>
+/// A partial class of <see cref="ContentDialog"/> specifically for defining its dependency properties.
+/// </summary>
 public partial class ContentDialog
 {
-
     /// <summary>Identifies the <see cref="Title"/> dependency property.</summary>
     public static readonly DependencyProperty TitleProperty = DependencyProperty.Register(
         nameof(Title),

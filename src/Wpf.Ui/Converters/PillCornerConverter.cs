@@ -9,20 +9,22 @@ using System.Windows.Markup;
 namespace Wpf.Ui.Converters;
 
 /// <summary>
-/// 根据控件实际宽高计算“胶囊/圆形”圆角的转换器：radius = min(width, height) * Factor。
-/// - 目标属性若是 <see cref="CornerRadius"/>，则返回统一圆角；
-/// - 目标属性若是 <see cref="double"/>，则返回半径值（适用于 NineSliceShadow.CornerRadius）。
+/// A converter that calculates a "pill / circular" corner radius based on the
+/// actual width and height of a control: radius = min(width, height) * Factor.
+/// - If the target property is <see cref="CornerRadius"/>, a uniform corner radius is returned.
+/// - If the target property is <see cref="double"/>, the radius value is returned
+///   (for example, for NineSliceShadow.CornerRadius).
 /// </summary>
 /// <remarks>
-/// 用法示例（XAML）：
+/// Usage example (XAML):
 /// <code>
 /// &lt;Grid xmlns:conv="clr-namespace:VideoLibrary.Converters"&gt;
 ///   &lt;Grid.Resources&gt;
 ///     &lt;conv:PillCornerConverter x:Key="PillCorner" Factor="0.5" /&gt;
 ///   &lt;/Grid.Resources&gt;
 ///
-///   <!-- 1) 目标为 CornerRadius（例如 Wpf.Ui 的 Button） -->
-///   &lt;ui:Button Content="胶囊按钮"&gt;
+///   <!-- 1) Target is CornerRadius (for example, Wpf.Ui Button) -->
+///   &lt;ui:Button Content="Pill Button"&gt;
 ///     &lt;ui:Button.CornerRadius&gt;
 ///       &lt;MultiBinding Converter="{StaticResource PillCorner}"&gt;
 ///         &lt;Binding RelativeSource="{RelativeSource Self}" Path="ActualWidth" /&gt;
@@ -31,7 +33,7 @@ namespace Wpf.Ui.Converters;
 ///     &lt;/ui:Button.CornerRadius&gt;
 ///   &lt;/ui:Button&gt;
 ///
-///   <!-- 2) 目标为 double（例如 NineSliceShadow 的 CornerRadius） -->
+///   <!-- 2) Target is double (for example, NineSliceShadow.CornerRadius) -->
 ///   &lt;ctrls:NineSliceShadow Slice="6" ShadowOpacity="0.35"&gt;
 ///     &lt;ctrls:NineSliceShadow.CornerRadius&gt;
 ///       &lt;MultiBinding Converter="{StaticResource PillCorner}"&gt;
@@ -42,20 +44,26 @@ namespace Wpf.Ui.Converters;
 ///   &lt;/ctrls:NineSliceShadow&gt;
 /// &lt;/Grid&gt;
 /// </code>
-/// 说明：
-/// - Factor 默认 0.5，表示半个短边，宽&gt;高 时为左右半圆， 高&gt;宽 时为上下半圆，宽=高 时为正圆。
-/// - 可通过 MinRadius/MaxRadius 约束半径的下/上限；设置 Factor&lt;0.5 可减小圆角，&gt;0.5 可更圆。
+/// Notes:
+/// - The default <see cref="Factor"/> is 0.5, which represents half of the shorter side.
+///   If width &gt; height, the shape becomes a horizontal pill (left and right semicircles).
+///   If height &gt; width, the shape becomes a vertical pill (top and bottom semicircles).
+///   If width = height, the result is a perfect circle.
+/// - <see cref="MinRadius"/> and <see cref="MaxRadius"/> can be used to constrain the
+///   minimum and maximum radius values. Setting <see cref="Factor"/> &lt; 0.5 reduces
+///   the corner roundness, while values &gt; 0.5 make the corners more rounded.
 /// </remarks>
 [ValueConversion(typeof(object[]), typeof(object))]
+[MarkupExtensionReturnType(typeof(PillCornerConverter))]
 public sealed class PillCornerConverter : MarkupExtension, IMultiValueConverter
 {
-    /// <summary>半径系数，默认 0.5（即半个短边）。</summary>
+    /// <summary>Gets or sets the radius factor, default is 0.5 (i.e., half of the shorter side).</summary>
     public double Factor { get; set; } = 0.5;
 
-    /// <summary>最小半径（可选）。</summary>
+    /// <summary>Gets or sets the minimum radius (optional).</summary>
     public double MinRadius { get; set; } = 0;
 
-    /// <summary>最大半径（可选，0 表示不限制）。</summary>
+    /// <summary>Gets or sets the maximum radius (optional, 0 means no limit).</summary>
     public double MaxRadius { get; set; } = 0;
 
     public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
@@ -83,13 +91,13 @@ public sealed class PillCornerConverter : MarkupExtension, IMultiValueConverter
             return new CornerRadius(r);
         }
 
-        // NineSliceShadow.CornerRadius 是 double
+        // NineSliceShadow.CornerRadius is double
         return r;
     }
 
     public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
     {
-        return []; // 不支持反向转换
+        return []; // Conversion back is not supported
     }
 
     public override object ProvideValue(IServiceProvider serviceProvider)

@@ -230,8 +230,11 @@ public partial class FluentWindow : Window
         );
 
     /// <summary>
-    /// 获取或设置窗口圆角，此选项只在 Windows 11 以上操作系统起作用
+    /// Gets or sets the window corner preference.
     /// </summary>
+    /// <remarks>
+    /// This option only takes effect on Windows 11 or later.
+    /// </remarks>
     public WindowCornerPreference WindowCornerPreference
     {
         get => (WindowCornerPreference)GetValue(WindowCornerPreferenceProperty);

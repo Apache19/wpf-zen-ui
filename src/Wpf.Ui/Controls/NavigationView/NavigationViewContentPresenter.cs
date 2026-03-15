@@ -91,7 +91,7 @@ public class NavigationViewContentPresenter : Frame
 
         if (
             ScrollViewer.CanContentScrollProperty.GetMetadata(typeof(Page))
-            == ScrollViewer.CanContentScrollProperty.DefaultMetadata
+         == ScrollViewer.CanContentScrollProperty.DefaultMetadata
         )
         {
             ScrollViewer.CanContentScrollProperty.OverrideMetadata(
@@ -103,7 +103,7 @@ public class NavigationViewContentPresenter : Frame
 
     public NavigationViewContentPresenter()
     {
-        Navigating += static (sender, eventArgs) =>
+        Navigating += static async (sender, eventArgs) =>
         {
             if (eventArgs.Content is null)
             {
@@ -111,7 +111,7 @@ public class NavigationViewContentPresenter : Frame
             }
 
             var self = (NavigationViewContentPresenter)sender;
-            self.OnNavigating(eventArgs);
+            await self.OnNavigatingCoreAsync(eventArgs);
         };
 
         Navigated += static (sender, eventArgs) =>
@@ -132,11 +132,11 @@ public class NavigationViewContentPresenter : Frame
         base.OnInitialized(e);
 
         // REVIEW: I didn't understand something, but why is it necessary?
-        Unloaded += static (sender, _) =>
+        Unloaded += static async (sender, _) =>
         {
             if (sender is NavigationViewContentPresenter navigator)
             {
-                NotifyContentAboutNavigatingFrom(navigator.Content);
+                await NotifyContentAboutNavigatingFromAsync(navigator.Content);
             }
         };
     }
@@ -163,16 +163,22 @@ public class NavigationViewContentPresenter : Frame
         base.OnPreviewKeyDown(e);
     }
 
-    protected virtual void OnNavigating(System.Windows.Navigation.NavigatingCancelEventArgs eventArgs)
+    private async Task OnNavigatingCoreAsync(System.Windows.Navigation.NavigatingCancelEventArgs eventArgs)
     {
-        NotifyContentAboutNavigatingTo(eventArgs.Content);
+        OnNavigating(eventArgs);
+
+        await NotifyContentAboutNavigatingToAsync(eventArgs.Content);
 
         if (eventArgs.Navigator is not NavigationViewContentPresenter navigator)
         {
             return;
         }
 
-        NotifyContentAboutNavigatingFrom(navigator.Content);
+        await NotifyContentAboutNavigatingFromAsync(navigator.Content);
+    }
+
+    protected virtual void OnNavigating(System.Windows.Navigation.NavigatingCancelEventArgs eventArgs)
+    {
     }
 
     protected virtual void OnNavigated(NavigationEventArgs eventArgs)
@@ -200,50 +206,52 @@ public class NavigationViewContentPresenter : Frame
         _ = TransitionAnimationProvider.ApplyTransition(content, Transition, TransitionDuration);
     }
 
-    private static void NotifyContentAboutNavigatingTo(object content)
+    private static async Task NotifyContentAboutNavigatingToAsync(object content)
     {
-        NotifyContentAboutNavigating(content, navigationAware => navigationAware.OnNavigatedToAsync());
+        await NotifyContentAboutNavigatingAsync(
+            content,
+            navigationAware => navigationAware.OnNavigatedToAsync()
+        );
     }
 
-    private static void NotifyContentAboutNavigatingFrom(object content)
+    private static async Task NotifyContentAboutNavigatingFromAsync(object content)
     {
-        NotifyContentAboutNavigating(content, navigationAware => navigationAware.OnNavigatedFromAsync());
+        await NotifyContentAboutNavigatingAsync(
+            content,
+            navigationAware => navigationAware.OnNavigatedFromAsync()
+        );
     }
 
-    [System.Diagnostics.CodeAnalysis.SuppressMessage(
-        "ReSharper",
-        "SuspiciousTypeConversion.Global",
-        Justification = "The library user might make a class inherit from both FrameworkElement and INavigationAware at the same time."
-    )]
-    private static void NotifyContentAboutNavigating(object content, Func<INavigationAware, Task> function)
+    private static async Task NotifyContentAboutNavigatingAsync(object content, Func<INavigationAware, Task> function)
     {
-        async void PerformNotify(INavigationAware navigationAware)
-        {
-            await function(navigationAware).ConfigureAwait(false);
-        }
-
         switch (content)
         {
-            // The order in which the OnNavigatedToAsync/OnNavigatedFromAsync methods of View and ViewModel are called
-            // is not guaranteed
-            case INavigationAware navigationAwareNavigationContent:
-                PerformNotify(navigationAwareNavigationContent);
-                if (
-                    navigationAwareNavigationContent
-                        is FrameworkElement { DataContext: INavigationAware viewModel }
-                    && !ReferenceEquals(viewModel, navigationAwareNavigationContent)
-                )
+            // The order in which the OnNavigatedToAsync/OnNavigatedFromAsync
+            // methods of View and ViewModel are called is not guaranteed
+            case INavigationAware aware:
+            {
+                await function(aware);
+
+                if (aware is FrameworkElement { DataContext: INavigationAware vm }
+                 && !ReferenceEquals(vm, aware))
                 {
-                    PerformNotify(viewModel);
+                    await function(vm);
                 }
 
                 break;
-            case INavigableView<object> { ViewModel: INavigationAware navigationAwareNavigableViewViewModel }:
-                PerformNotify(navigationAwareNavigableViewViewModel);
+            }
+
+            case INavigableView<object> { ViewModel: INavigationAware vm }:
+            {
+                await function(vm);
                 break;
-            case FrameworkElement { DataContext: INavigationAware navigationAwareCurrentContent }:
-                PerformNotify(navigationAwareCurrentContent);
+            }
+
+            case FrameworkElement { DataContext: INavigationAware dc }:
+            {
+                await function(dc);
                 break;
+            }
         }
     }
 }
