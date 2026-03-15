@@ -277,7 +277,7 @@ public class Snackbar : ContentControl, IAppearanceControl, IIconControl
         }
         else
         {
-            Presenter.AddToQue(this);
+            Presenter.AddToQueue(this);
         }
     }
 
@@ -300,7 +300,7 @@ public class Snackbar : ContentControl, IAppearanceControl, IIconControl
         }
         else
         {
-            Presenter.AddToQue(this);
+            Presenter.AddToQueue(this);
         }
     }
 
