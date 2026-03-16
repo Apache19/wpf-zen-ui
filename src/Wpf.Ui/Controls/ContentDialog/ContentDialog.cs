@@ -305,14 +305,8 @@ public partial class ContentDialog : ContentControl
             SetInitialFocus();
         }
 
-        OnLoaded();
         RaiseEvent(new RoutedEventArgs(OpenedEvent));
     }
-
-    /// <summary>
-    /// Occurs after Loaded event
-    /// </summary>
-    protected virtual void OnLoaded() { }
 
     private void OnUnloadedInternal()
     {
@@ -323,32 +317,27 @@ public partial class ContentDialog : ContentControl
                 _ = Tcs.TrySetResult(ContentDialogResult.None);
             }
         }
-
-        OnUnloaded();
     }
-
-    /// <summary>
-    /// Occurs after Unloaded event
-    /// </summary>
-    protected virtual void OnUnloaded() { }
-
 
     protected override Size MeasureOverride(Size availableSize)
     {
-        if (GetVisualChild(0) is UIElement rootElement)
+        if (!DesignerProperties.GetIsInDesignMode(this))
         {
-            rootElement.Measure(availableSize);
-            Size desiredSize = rootElement.DesiredSize;
+            if (GetVisualChild(0) is UIElement rootElement)
+            {
+                rootElement.Measure(availableSize);
+                Size desiredSize = rootElement.DesiredSize;
 
-            Size newSize = GetNewDialogSize(desiredSize);
+                Size newSize = GetNewDialogSize(desiredSize);
 
-            SetCurrentValue(DialogHeightProperty, newSize.Height);
-            SetCurrentValue(DialogWidthProperty,  newSize.Width);
+                SetCurrentValue(DialogHeightProperty, newSize.Height);
+                SetCurrentValue(DialogWidthProperty,  newSize.Width);
 
-            ResizeWidth(rootElement);
-            ResizeHeight(rootElement);
+                ResizeWidth(rootElement);
+                ResizeHeight(rootElement);
 
-            return desiredSize;
+                return desiredSize;
+            }
         }
 
         return base.MeasureOverride(availableSize);
