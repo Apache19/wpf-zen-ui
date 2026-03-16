@@ -221,16 +221,6 @@
                             </MultiTrigger.Conditions>
                             <Setter TargetName="CloseButton" Property="IsDefault" Value="True" />
                         </MultiTrigger>
-                        <!--
-                            When displayed on legacy host, sets the root Grid to legacy style
-                            (Stretch alignment, Background: SmokeFillColorDefaultBrush) to restore
-                            the legacy appearance and behavior.
-                        -->
-                        <Trigger Property="IsLegacyHost" Value="True">
-                            <Setter TargetName="DialogRootGrid" Property="Background" Value="{markup:BrushResource SmokeFillColorDefaultBrush}" />
-                            <Setter TargetName="DialogRootGrid" Property="HorizontalAlignment" Value="Stretch" />
-                            <Setter TargetName="DialogRootGrid" Property="VerticalAlignment" Value="Stretch" />
-                        </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>

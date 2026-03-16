@@ -197,18 +197,6 @@ public partial class ContentDialog
         new PropertyMetadata(null)
     );
 
-    private static readonly DependencyPropertyKey IsLegacyHostPropertyKey =
-        DependencyProperty.RegisterReadOnly(
-            nameof(IsLegacyHost),
-            typeof(bool),
-            typeof(ContentDialog),
-            new PropertyMetadata(true)
-        );
-
-    /// <summary>Identifies the <see cref="IsLegacyHost"/> dependency property.</summary>
-    public static readonly DependencyProperty IsLegacyHostProperty =
-        IsLegacyHostPropertyKey.DependencyProperty;
-
     /// <summary>Identifies the <see cref="Opened"/> routed event.</summary>
     public static readonly RoutedEvent OpenedEvent = EventManager.RegisterRoutedEvent(
         nameof(Opened),
