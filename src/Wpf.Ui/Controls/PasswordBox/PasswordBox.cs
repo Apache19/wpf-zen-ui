@@ -4,6 +4,7 @@
 // All Rights Reserved.
 
 using System.Windows.Controls;
+using System.Windows.Data;
 
 // ReSharper disable once CheckNamespace
 namespace Wpf.Ui.Controls;
@@ -14,7 +15,7 @@ namespace Wpf.Ui.Controls;
 public partial class PasswordBox : TextBox
 {
     private readonly PasswordHelper _passwordHelper;
-    private          bool           _isUpdating;
+    private bool _isUpdating;
 
     /// <summary>
     /// Identifies the <see cref="Password"/> dependency property.
@@ -23,7 +24,14 @@ public partial class PasswordBox : TextBox
         nameof(Password),
         typeof(string),
         typeof(PasswordBox),
-        new PropertyMetadata(string.Empty, OnPasswordChanged)
+        new FrameworkPropertyMetadata(
+            string.Empty,
+            FrameworkPropertyMetadataOptions.BindsTwoWayByDefault,
+            OnPasswordChanged,
+            static (o, value) => value as string ?? string.Empty,
+            false,
+            UpdateSourceTrigger.PropertyChanged
+        )
     );
 
     /// <summary>
@@ -130,20 +138,54 @@ public partial class PasswordBox : TextBox
     /// <inheritdoc/>
     protected override void OnTextChanged(TextChangedEventArgs e)
     {
-        UpdateTextContents(e.Changes);
-        SetPlaceholderTextVisibility();
-        RevealClearButton();
+        bool isInternalUpdate = _isUpdating;
 
-        if (!_isUpdating)
+        UpdateTextContents(e.Changes);
+
+        if (isInternalUpdate || _isUpdating)
         {
-            base.OnTextChanged(e);
+            SetPlaceholderTextVisibility();
+            RevealClearButton();
+
+            return;
         }
+
+        base.OnTextChanged(e);
+    }
+
+    /// <inheritdoc/>
+    protected override void OnClearButtonClick()
+    {
+        if (Password.Length < 1)
+        {
+            return;
+        }
+
+        SetCurrentValue(PasswordProperty, string.Empty);
     }
 
     /// <summary>
     /// Called when the <see cref="Password"/> property changes.
     /// </summary>
-    protected virtual void OnPasswordChanged() => UpdateTextContents([]);
+    protected virtual void OnPasswordChanged()
+    {
+        if (_isUpdating)
+        {
+            return;
+        }
+
+        string password = Password ?? string.Empty;
+        string displayText = IsPasswordRevealed ? password : new string(PasswordChar, password.Length);
+        int caretIndex = Math.Min(CaretIndex, displayText.Length);
+
+        UpdateWithLock(() =>
+        {
+            SetCurrentValue(TextProperty, displayText);
+            CaretIndex = caretIndex;
+        });
+
+        RaisePasswordChangedEvent();
+    }
 
     /// <summary>
     /// Called when the <see cref="PasswordChar"/> property changes.
@@ -155,7 +197,9 @@ public partial class PasswordBox : TextBox
             return;
         }
 
-        UpdateWithLock(() => SetCurrentValue(TextProperty, new string(PasswordChar, Password.Length)));
+        UpdateWithLock(() =>
+            SetCurrentValue(TextProperty, new string(PasswordChar, Password?.Length ?? 0))
+        );
     }
 
     /// <summary>
@@ -163,10 +207,12 @@ public partial class PasswordBox : TextBox
     /// </summary>
     protected virtual void OnIsPasswordRevealedChanged()
     {
+        string password = Password ?? string.Empty;
+
         UpdateWithLock(() =>
             SetCurrentValue(
                 TextProperty,
-                IsPasswordRevealed ? Password : new string(PasswordChar, Password?.Length ?? 0)
+                IsPasswordRevealed ? password : new string(PasswordChar, password.Length)
             )
         );
     }
@@ -177,7 +223,7 @@ public partial class PasswordBox : TextBox
         if (parameter == "reveal")
         {
             SetCurrentValue(IsPasswordRevealedProperty, !IsPasswordRevealed);
-            _          = Focus();
+            _ = Focus();
             CaretIndex = Text.Length;
         }
         else
@@ -229,14 +275,15 @@ public partial class PasswordBox : TextBox
     /// <param name="textChanges">The text changes.</param>
     private void HandleHiddenModeUpdate(ICollection<TextChange> textChanges)
     {
-        var caretIndex  = CaretIndex;
-        var newPassword = textChanges.Count > 0 ? _passwordHelper.GetNewPassword(textChanges) : Password;
+        var caretIndex = CaretIndex;
+        string newPassword = textChanges.Count > 0 ? _passwordHelper.GetNewPassword(textChanges) : Password;
+        var passwordLength = newPassword.Length;
 
         UpdateWithLock(() =>
         {
-            SetCurrentValue(TextProperty,     new string(PasswordChar, newPassword?.Length ?? 0));
+            SetCurrentValue(TextProperty, new string(PasswordChar, passwordLength));
             SetCurrentValue(PasswordProperty, newPassword);
-            CaretIndex = caretIndex;
+            CaretIndex = Math.Min(caretIndex, passwordLength);
             RaisePasswordChangedEvent();
         });
     }
@@ -248,8 +295,15 @@ public partial class PasswordBox : TextBox
     private void UpdateWithLock(Action updateAction)
     {
         _isUpdating = true;
-        updateAction();
-        _isUpdating = false;
+
+        try
+        {
+            updateAction();
+        }
+        finally
+        {
+            _isUpdating = false;
+        }
     }
 
     /// <summary>
