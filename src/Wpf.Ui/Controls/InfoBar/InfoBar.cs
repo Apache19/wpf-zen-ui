@@ -15,7 +15,7 @@ namespace Wpf.Ui.Controls;
 /// (including titles, messages, and icons) and can be configured to be
 /// user-dismissable or persistent.
 /// </summary>
-public class InfoBar : System.Windows.Controls.ContentControl
+public class InfoBar : System.Windows.Controls.Control
 {
     /// <summary>Identifies the <see cref="IsClosable"/> dependency property.</summary>
     public static readonly DependencyProperty IsClosableProperty = DependencyProperty.Register(
