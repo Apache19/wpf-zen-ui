@@ -31,6 +31,7 @@
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Resources/Typography.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Resources/StaticColors.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Resources/Palette.xaml" />
+        <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Resources/DefaultValidationTemplate.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Resources/DefaultContextMenu.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Resources/DefaultFocusVisualStyle.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Resources/DefaultTextBoxScrollViewerStyle.xaml" />

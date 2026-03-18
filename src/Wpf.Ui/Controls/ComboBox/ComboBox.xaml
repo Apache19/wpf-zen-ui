@@ -161,6 +161,7 @@
         <!--  WPF doesn't like centering, the animation is ugly and the mouse button sometimes clicks right away.  -->
         <Setter Property="Popup.Placement" Value="Bottom" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="Validation.ErrorTemplate" Value="{m:StyleResource DefaultValidationTemplate}" />
         <Setter Property="ItemsPanel">
             <Setter.Value>
                 <ItemsPanelTemplate>

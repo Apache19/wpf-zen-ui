@@ -42,6 +42,8 @@ public static class StyleKeys
     public static ComponentResourceKey ValueInfoBadgeStyle { get; private set; }
     public static ComponentResourceKey DotInfoBadgeStyle   { get; private set; }
 
+    public static ComponentResourceKey DefaultValidationTemplate { get; private set; }
+
     static StyleKeys()
     {
         // 使用反射统一设置每个属性值

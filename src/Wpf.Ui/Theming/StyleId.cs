@@ -39,4 +39,6 @@ public enum StyleId
     IconInfoBadgeStyle,
     ValueInfoBadgeStyle,
     DotInfoBadgeStyle,
+
+    DefaultValidationTemplate,
 }

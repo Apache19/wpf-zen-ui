@@ -56,6 +56,8 @@ public class StyleResourceExtension : DynamicResourceExtension
             StyleId.ValueInfoBadgeStyle             => StyleKeys.ValueInfoBadgeStyle,
             StyleId.DotInfoBadgeStyle               => StyleKeys.DotInfoBadgeStyle,
 
+            StyleId.DefaultValidationTemplate => StyleKeys.DefaultValidationTemplate,
+
             StyleId.Unknown                => throw new NotSupportedException(),
             _                              => throw new IndexOutOfRangeException(),
         };
