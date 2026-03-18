@@ -41,9 +41,6 @@ public partial class App
                 // App Host
                 _ = services.AddHostedService<ApplicationHostService>();
 
-                // Theme manipulation
-                _ = services.AddSingleton<IThemeService, ThemeService>();
-
                 // TaskBar manipulation
                 _ = services.AddSingleton<ITaskBarService, TaskBarService>();
 

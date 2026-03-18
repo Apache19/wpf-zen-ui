@@ -16,9 +16,28 @@ public partial class SettingsPage : INavigableView<ViewModels.SettingsViewModel>
 
     public SettingsPage(ViewModels.SettingsViewModel viewModel)
     {
-        ViewModel = viewModel;
-        DataContext = this;
+        ViewModel   = viewModel;
+        DataContext = viewModel;
 
         InitializeComponent();
+
+        Loaded   += OnLoaded;
+        Unloaded += OnUnloaded;
+    }
+
+    private void OnLoaded(object sender, RoutedEventArgs e)
+    {
+        ThemeManager.Changed += OnThemeChanged;
+        ViewModel.UpdateCurrentTheme();
+    }
+
+    private void OnUnloaded(object sender, RoutedEventArgs e)
+    {
+        ThemeManager.Changed -= OnThemeChanged;
+    }
+
+    private void OnThemeChanged(object? sender, Appearance.ThemeChangedEventArgs e)
+    {
+        ViewModel.UpdateCurrentTheme();
     }
 }

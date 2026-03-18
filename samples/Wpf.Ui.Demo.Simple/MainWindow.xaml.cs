@@ -17,8 +17,6 @@ public partial class MainWindow
     {
         DataContext = this;
 
-        Appearance.SystemThemeWatcher.Watch();
-
         InitializeComponent();
 
         Loaded += (_, _) => RootNavigation.Navigate(typeof(DashboardPage));
@@ -26,7 +24,6 @@ public partial class MainWindow
 
     protected override void OnClosed(EventArgs e)
     {
-        Appearance.SystemThemeWatcher.UnWatch();
         base.OnClosed(e);
     }
 }

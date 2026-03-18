@@ -5,6 +5,8 @@
 
 using System.Diagnostics;
 
+namespace Wpf.Ui.Demo.Console;
+
 public static class Program
 {
     [STAThread]
@@ -14,17 +16,19 @@ public static class Program
 
         if (Application.Current is null)
         {
-            Console.WriteLine("Application.Current is null.");
+            System.Console.WriteLine("Application.Current is null.");
         }
+
+        ThemeManager.Initialize();
 
         try
         {
-            _ = new Wpf.Ui.Demo.Console.Views.SimpleView().ShowDialog();
-            _ = new Wpf.Ui.Demo.Console.Views.MainView().ShowDialog();
+            _ = new Views.SimpleView().ShowDialog();
+            _ = new Views.MainView().ShowDialog();
         }
         catch (Exception ex)
         {
-            Console.WriteLine(ex);
+            System.Console.WriteLine(ex);
             Thread.Sleep(10000);
 
             throw;

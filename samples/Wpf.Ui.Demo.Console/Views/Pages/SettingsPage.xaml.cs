@@ -19,26 +19,39 @@ public partial class SettingsPage
 
         AppVersionTextBlock.Text = $"WPF UI - Simple Demo - {GetAssemblyVersion()}";
 
-        if (Appearance.ApplicationThemeManager.GetAppTheme() == ApplicationTheme.Dark)
+        switch (ThemeManager.ThemeMode)
         {
-            DarkThemeRadioButton.IsChecked = true;
-        }
-        else
-        {
-            LightThemeRadioButton.IsChecked = true;
-        }
+            case UiThemeMode.Light:
+            case UiThemeMode.Default:
+                DarkThemeRadioButton.IsChecked = true;
+                break;
 
-        this.ApplyTheme();
+            case UiThemeMode.Dark:
+                LightThemeRadioButton.IsChecked = true;
+                break;
+
+            case UiThemeMode.System:
+                SysThemeRadioButton.IsChecked = true;
+                break;
+
+            default:
+                throw new ArgumentOutOfRangeException();
+        }
     }
 
     private void OnLightThemeRadioButtonChecked(object sender, RoutedEventArgs e)
     {
-        Appearance.ApplicationThemeManager.Apply(ApplicationTheme.Light);
+        ThemeManager.ThemeMode = UiThemeMode.Light;
     }
 
     private void OnDarkThemeRadioButtonChecked(object sender, RoutedEventArgs e)
     {
-        Appearance.ApplicationThemeManager.Apply(ApplicationTheme.Dark);
+        ThemeManager.ThemeMode = UiThemeMode.Dark;
+    }
+
+    private void OnSysThemeRadioButtonChecked(object sender, RoutedEventArgs e)
+    {
+        ThemeManager.ThemeMode = UiThemeMode.System;
     }
 
     private string GetAssemblyVersion()

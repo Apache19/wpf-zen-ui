@@ -3,6 +3,8 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
+using Wpf.Ui.Appearance;
+
 namespace Wpf.Ui.Demo.Mvvm.ViewModels;
 
 public partial class SettingsViewModel : ViewModel
@@ -24,6 +26,14 @@ public partial class SettingsViewModel : ViewModel
         {
             InitializeViewModel();
         }
+    }
+
+    public void UpdateCurrentTheme()
+    {
+        var mode = ThemeManager.ThemeMode;
+
+        // The default theme of the library is Light.
+        CurrentTheme = mode == UiThemeMode.Default ? UiThemeMode.Light : mode;
     }
 
     private void InitializeViewModel()

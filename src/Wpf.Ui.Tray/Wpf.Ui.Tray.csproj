@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <PackageId>WPF-UI.Tray</PackageId>
-    <TargetFrameworks>net10.0-windows</TargetFrameworks>
+    <TargetFrameworks>net8.0-windows;net462</TargetFrameworks>
     <Description>Native tray menu icon support for WPF using the WPF UI library.</Description>
     <CommonTags>$(CommonTags);tray;notifyicon;notify</CommonTags>
     <UseWPF>true</UseWPF>

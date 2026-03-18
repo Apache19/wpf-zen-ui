@@ -21,8 +21,6 @@ public partial class DataPage
         InitializeComponent();
 
         ColorsItemsControl.ItemsSource = _colorsCollection;
-
-        this.ApplyTheme();
     }
 
     private void InitializeData()

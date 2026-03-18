@@ -42,7 +42,7 @@ public partial class MainWindow
             PrimaryButtonText   = "Primary button",
             SecondaryButtonText = "Secondary button",
             // Setting the dialog container
-            DialogHostEx        = ContentDialogHost
+            DialogHost          = ContentDialogHost
         };
 
         // Showing the dialog

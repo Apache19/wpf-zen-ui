@@ -12,7 +12,6 @@ public partial class SimpleView
     public SimpleView()
     {
         InitializeComponent();
-        this.ApplyTheme();
     }
 
     private void CardAction_Click(object sender, RoutedEventArgs e)

@@ -16,8 +16,8 @@ public partial class DataPage : INavigableView<ViewModels.DataViewModel>
 
     public DataPage(ViewModels.DataViewModel viewModel)
     {
-        ViewModel = viewModel;
-        DataContext = this;
+        ViewModel   = viewModel;
+        DataContext = viewModel;
 
         InitializeComponent();
     }

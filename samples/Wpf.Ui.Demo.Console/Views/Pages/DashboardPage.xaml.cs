@@ -20,8 +20,6 @@ public partial class DashboardPage
         InitializeComponent();
 
         CounterTextBlock.SetCurrentValue(System.Windows.Controls.TextBlock.TextProperty, _counter.ToString());
-
-        this.ApplyTheme();
     }
 
     private void OnBaseButtonClick(object sender, RoutedEventArgs e)

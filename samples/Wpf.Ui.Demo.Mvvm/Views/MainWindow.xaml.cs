@@ -18,10 +18,8 @@ public partial class MainWindow : INavigationWindow
 
     public MainWindow(ViewModels.MainWindowViewModel viewModel, INavigationService navigationService)
     {
-        ViewModel = viewModel;
-        DataContext = this;
-
-        SystemThemeWatcher.Watch();
+        ViewModel   = viewModel;
+        DataContext = viewModel;
 
         InitializeComponent();
 

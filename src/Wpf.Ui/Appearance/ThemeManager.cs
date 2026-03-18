@@ -12,6 +12,8 @@ using Wpf.Ui.Threading;
 // ReSharper disable once CheckNamespace
 namespace Wpf.Ui;
 
+// todo 实现自定义强调色功能
+
 /// <summary>
 /// Manages application theme state, listens to system theme events,
 /// synchronizes system theme, and coordinates theme resource loading.
@@ -28,11 +30,7 @@ public sealed class ThemeManager
     private static readonly Uri HighContrastThemeUri = new(ThemeBaseUri + "HighContrast.xaml", UriKind.Absolute);
     private static readonly Uri StandardThemeUri     = new(ResourceBaseUri + "Standard.xaml", UriKind.Absolute);
 
-    #if NET9_0_OR_GREATER
-    private static readonly Lock _lock = new();
-    #else
     private static readonly object _lock = new();
-    #endif
 
     private static readonly ResourceDictionary _lightDictionary = [];
     private static readonly ResourceDictionary _darkDictionary  = [];
@@ -55,7 +53,7 @@ public sealed class ThemeManager
 
     private static UiThemeMode _themeMode = UiThemeMode.Default;
 
-    private static bool _useSystemAccentColor    = true;
+    private static bool _useSystemAccentColor = true;
     private static bool _useStandardControlStyles;
 
     private static ThemeManager Instance { get; } = new();
