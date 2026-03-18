@@ -3,79 +3,85 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
+using System.ComponentModel;
 using Wpf.Ui.Appearance;
 
 namespace Wpf.Ui.Demo.Mvvm.ViewModels;
 
 public partial class SettingsViewModel : ViewModel
 {
-    private bool _isInitialized = false;
-
     [ObservableProperty]
     private string _appVersion = string.Empty;
 
     [ObservableProperty]
-    private Wpf.Ui.Appearance.ApplicationTheme _currentApplicationTheme = Wpf.Ui
-        .Appearance
-        .ApplicationTheme
-        .Unknown;
+    private bool _isLightTheme;
+
+    partial void OnIsLightThemeChanged(bool value)
+    {
+        if (value)
+        {
+            ThemeManager.ThemeMode = UiThemeMode.Light;
+        }
+    }
+
+    [ObservableProperty]
+    private bool _isDarkTheme;
+
+    partial void OnIsDarkThemeChanged(bool value)
+    {
+        if (value)
+        {
+            ThemeManager.ThemeMode = UiThemeMode.Dark;
+        }
+    }
+
+    [ObservableProperty]
+    private bool _isSystemTheme;
+
+    partial void OnIsSystemThemeChanged(bool value)
+    {
+        if (value)
+        {
+            ThemeManager.ThemeMode = UiThemeMode.System;
+        }
+    }
 
     public override void OnNavigatedTo()
     {
-        if (!_isInitialized)
-        {
-            InitializeViewModel();
-        }
+        InitializeViewModel();
     }
 
     public void UpdateCurrentTheme()
     {
-        var mode = ThemeManager.ThemeMode;
+        switch (ThemeManager.ThemeMode)
+        {
+            case UiThemeMode.Default:
+            case UiThemeMode.Light:
+                IsLightTheme = true;
+                break;
 
-        // The default theme of the library is Light.
-        CurrentTheme = mode == UiThemeMode.Default ? UiThemeMode.Light : mode;
+            case UiThemeMode.Dark:
+                IsDarkTheme = true;
+                break;
+
+            case UiThemeMode.System:
+                IsSystemTheme = true;
+                break;
+
+            default:
+                throw new ArgumentOutOfRangeException();
+        }
     }
 
     private void InitializeViewModel()
     {
-        CurrentApplicationTheme = Wpf.Ui.Appearance.ApplicationThemeManager.GetAppTheme();
         AppVersion = $"Wpf.Ui.Demo.Mvvm - {GetAssemblyVersion()}";
-
-        _isInitialized = true;
+        UpdateCurrentTheme();
     }
 
     private static string GetAssemblyVersion()
     {
         return System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString()
             ?? string.Empty;
-    }
-
-    [RelayCommand]
-    private void OnChangeTheme(string parameter)
-    {
-        switch (parameter)
-        {
-            case "theme_light":
-                if (CurrentApplicationTheme == Wpf.Ui.Appearance.ApplicationTheme.Light)
-                {
-                    break;
-                }
-
-                Wpf.Ui.Appearance.ApplicationThemeManager.Apply(Wpf.Ui.Appearance.ApplicationTheme.Light);
-                CurrentApplicationTheme = Wpf.Ui.Appearance.ApplicationTheme.Light;
-
-                break;
-
-            default:
-                if (CurrentApplicationTheme == Wpf.Ui.Appearance.ApplicationTheme.Dark)
-                {
-                    break;
-                }
-
-                Wpf.Ui.Appearance.ApplicationThemeManager.Apply(Wpf.Ui.Appearance.ApplicationTheme.Dark);
-                CurrentApplicationTheme = Wpf.Ui.Appearance.ApplicationTheme.Dark;
-
-                break;
-        }
     }
 }
