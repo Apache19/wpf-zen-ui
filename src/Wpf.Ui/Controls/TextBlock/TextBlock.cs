@@ -3,8 +3,10 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
+using System.Windows.Controls;
 using System.Windows.Documents;
 
+#pragma warning disable WPF0011 // Containing type should be used as registered owner
 // ReSharper disable once CheckNamespace
 namespace Wpf.Ui.Controls;
 
@@ -39,145 +41,114 @@ public class TextBlock : System.Windows.Controls.TextBlock
 {
     static TextBlock()
     {
-        // WPFUI implements its own Fluent typography scale independently of WPF's experimental Fluent styles.
-        // To ensure visual consistency, the default font size of native text elements must be aligned
-        // with the design-system baseline.
-        //
-        // Additionally, this approach helps to avoid the issue described here:
-        // See https://developercommunity.visualstudio.com/t/WPF-Custom-Control-Exhibits-Property-Def/11022950
         TextElement.FontSizeProperty.OverrideMetadata(
             typeof(TextElement),
-            new FrameworkPropertyMetadata(14d)
+            new FrameworkPropertyMetadata(
+                14d,
+                null,
+                CoerceFontSize
+            )
         );
 
-        /* ---------------- Override the framework TextBlock metadatas ---------------- */
-        #pragma warning disable WPF0011 // Containing type should be used as registered owner
-
-        // Override the default FontSize metadata for framework TextBlock.
-        //
-        // Rationale:
-        // WPFUI enforces a Fluent-based typography system whose baseline font sizes
-        // differ from WPF defaults. TextBlock is a fundamental text primitive, and
-        // leaving its default FontSize unchanged would lead to inconsistent typography
-        // when native WPF TextBlock instances appear alongside WPFUI controls.
-        //
-        // Design considerations:
-        // - The default value is aligned with the Fluent "Body" typography size.
-        // - An explicitly specified typography preset (via FontTypography) takes precedence
-        //   and is resolved through a proxy dependency property to avoid manual resource lookup.
-        // - Explicit local values, styles, and inherited values continue to participate
-        //   in standard WPF precedence; this logic only participates during value coercion.
-        //
-        // Note:
-        // The default FontSize value is intentionally set to match TextElement defaults
-        // to avoid design-time inconsistencies caused by TextBlock switching to complex
-        // content (Run/Inline) paths during property inspection.
         FontSizeProperty.OverrideMetadata(
             typeof(System.Windows.Controls.TextBlock),
             new FrameworkPropertyMetadata(
                 14d,
                 null,
-                static (d, baseValue) =>
-                {
-                    // Typography property takes precedence:
-                    var preset = d.GetValue(FontTypographyPresetProxyProperty) as FontTypographyPreset;
-                    if (preset?.FontSize is { } size)
-                    {
-                        return size;
-                    }
-
-                    return baseValue;
-                }
+                CoerceFontSize
             )
         );
 
-        // Override the default FontWeight metadata for framework TextBlock.
-        //
-        // Rationale:
-        // Fluent typography defines a consistent default font weight for body text.
-        // Aligning the framework TextBlock default ensures visual consistency across
-        // mixed control trees containing both native WPF and WPFUI elements.
-        //
-        // Design considerations:
-        // - The default value matches the Fluent typography baseline.
-        // - When a FontTypography preset is specified, its FontWeight takes precedence
-        //   and is resolved via a proxy dependency property.
-        // - No dependency property precedence rules are altered; explicit values
-        //   provided by consumers remain authoritative.
+        TextElement.FontWeightProperty.OverrideMetadata(
+            typeof(TextElement),
+            new FrameworkPropertyMetadata(
+                FontWeights.Regular,
+                null,
+                CoerceFontWeight
+            )
+        );
+
         FontWeightProperty.OverrideMetadata(
             typeof(System.Windows.Controls.TextBlock),
             new FrameworkPropertyMetadata(
                 FontWeights.Regular,
                 null,
-                static (d, baseValue) =>
-                {
-                    // Typography property takes precedence:
-                    var preset = d.GetValue(FontTypographyPresetProxyProperty) as FontTypographyPreset;
-                    if (preset?.FontWeight is { } weight)
-                    {
-                        return weight;
-                    }
-
-                    return baseValue;
-                }
+                CoerceFontWeight
             )
         );
 
-        // Ensure that when Foreground is not explicitly set, native TextBlock instances
-        // fall back to the library's themed text brush (e.g., TextFillColorPrimaryBrush),
-        // and optionally resolve a higher-priority appearance-defined foreground when present.
-        //
-        // Rationale:
-        // TextBlock is a fundamental text-rendering primitive and participates in Foreground
-        // property inheritance. In mixed visual trees (native WPF controls combined with WPFUI
-        // controls), leaving native TextBlock unthemed can lead to visible color discontinuities,
-        // especially across inheritance boundaries.
-        //
-        // Design considerations:
-        // - An explicitly specified Appearance (when present and resolvable) has the highest precedence.
-        // - Explicit Foreground values (local values, style setters, and inherited values) remain authoritative.
-        // - The themed fallback brush is applied only when no explicit Foreground is available.
-        // - Dependency property precedence rules are not modified.
-        //
-        // This behavior participates only in foreground value resolution and does not prevent
-        // consumers from fully controlling Foreground via standard WPF mechanisms.
+        TextElement.ForegroundProperty.OverrideMetadata(
+            typeof(TextElement),
+            new FrameworkPropertyMetadata(
+                null,
+                null,
+                CoerceForeground
+            )
+        );
+
         ForegroundProperty.OverrideMetadata(
             typeof(System.Windows.Controls.TextBlock),
             new FrameworkPropertyMetadata(
                 null,
                 null,
-                static (d, baseValue) =>
-                {
-                    // Appearance property takes precedence:
-                    // If the Appearance property is set and resolves to a Brush, use it.
-                    if (d.GetValue(AppearanceForegroundProxyProperty) is Brush appearance)
-                    {
-                        return appearance;
-                    }
-
-                    // Otherwise, if Foreground already has a valid value
-                    // (set via styles, inheritance, or other mechanisms), keep it.
-                    if (baseValue is Brush)
-                    {
-                        return baseValue;
-                    }
-
-                    // Otherwise, try to resolve the dynamic theme resource referenced by
-                    // the implicit default foreground resource property.
-                    if (d.GetValue(DefaultForegroundProperty) is Brush defaultForeground)
-                    {
-                        return defaultForeground;
-                    }
-
-                    // Finally, fall back to WPF's default primary text foreground brush.
-                    return Brushes.Black;
-                }
+                CoerceForeground
             )
         );
-
-        #pragma warning restore WPF0011 // Containing type should be used as registered owner
-        /* ---------------------------------------------------------------------------- */
     }
+
+    #region Coercion Callbacks
+
+    private static object CoerceFontSize(DependencyObject d, object baseValue)
+    {
+        // Typography property takes precedence:
+        var preset = d.GetValue(FontTypographyPresetProxyProperty) as FontTypographyPreset;
+        if (preset?.FontSize is { } size)
+        {
+            return size;
+        }
+
+        return baseValue;
+    }
+
+    private static object CoerceFontWeight(DependencyObject d, object baseValue)
+    {
+        var preset = d.GetValue(FontTypographyPresetProxyProperty) as FontTypographyPreset;
+        if (preset?.FontWeight is { } weight)
+        {
+            return weight;
+        }
+
+        return baseValue;
+    }
+
+    private static object CoerceForeground(DependencyObject d, object baseValue)
+    {
+        // Appearance property takes precedence:
+        // If the Appearance property is set and resolves to a Brush, use it.
+        if (d.GetValue(AppearanceForegroundProxyProperty) is Brush appearance)
+        {
+            return appearance;
+        }
+
+        // Otherwise, if Foreground already has a valid value
+        // (set via styles, inheritance, or other mechanisms), keep it.
+        if (baseValue is Brush)
+        {
+            return baseValue;
+        }
+
+        // Otherwise, try to resolve the dynamic theme resource referenced by
+        // the implicit default foreground resource property.
+        if (d.GetValue(DefaultForegroundProperty) is Brush defaultForeground)
+        {
+            return defaultForeground;
+        }
+
+        // Finally, fall back to WPF's default primary text foreground brush.
+        return Brushes.Black;
+    }
+
+    #endregion
 
     public static void InitializeMetadata()
     {
@@ -230,6 +201,41 @@ public class TextBlock : System.Windows.Controls.TextBlock
                 OnFontTypographyChanged
             )
         );
+
+    private static void OnFontTypographyChanged(DependencyObject o, DependencyPropertyChangedEventArgs args)
+    {
+        if (args.NewValue is FontTypography newTypography)
+        {
+            var resourceKey = newTypography.ToResourceKey();
+
+            // Use WPF resource reference mechanism to resolve and cache the preset.
+            // This leverages the dependency property resource resolution pipeline,
+            // including global indexing and caching optimizations, instead of
+            // performing per-instance TryFindResource lookups that would traverse
+            // the resource tree and introduce unnecessary overhead.
+            switch (o)
+            {
+                case FrameworkElement fe:
+                    fe.SetResourceReference(FontTypographyPresetProxyProperty, resourceKey);
+                    break;
+
+                case FrameworkContentElement fce:
+                    fce.SetResourceReference(FontTypographyPresetProxyProperty, resourceKey);
+                    break;
+            }
+        }
+        else
+        {
+            // Clear any puppet resource reference
+            o.ClearValue(FontTypographyPresetProxyProperty);
+        }
+
+        // Re-evaluate coerced values so when FontTypography is set, the
+        // CoerceValueCallbacks installed on FontSize/FontWeight will take effect
+        // and prevent local changes from overriding typography-defined values.
+        o.CoerceValue(TextElement.FontSizeProperty);
+        o.CoerceValue(TextElement.FontWeightProperty);
+    }
 
     /// <summary>
     /// Helper for getting <see cref="FontTypographyProperty"/> from <paramref name="obj"/>.
@@ -329,6 +335,33 @@ public class TextBlock : System.Windows.Controls.TextBlock
                 OnAppearanceChanged
             )
         );
+
+    private static void OnAppearanceChanged(DependencyObject o, DependencyPropertyChangedEventArgs args)
+    {
+        if (args.NewValue is TextColor textColor)
+        {
+            var resourceKey = textColor.ToResourceKey();
+
+            switch (o)
+            {
+                // Similar to OnFontTypographyChanged, attach themed color resource reference to a proxy property,
+                // allowing the WPF resource system to handle updates automatically.
+                case FrameworkElement fe:
+                    fe.SetResourceReference(AppearanceForegroundProxyProperty, resourceKey);
+                    break;
+
+                case FrameworkContentElement fc:
+                    fc.SetResourceReference(AppearanceForegroundProxyProperty, resourceKey);
+                    break;
+            }
+        }
+        else
+        {
+            o.ClearValue(AppearanceForegroundProxyProperty);
+        }
+
+        o.CoerceValue(TextElement.ForegroundProperty);
+    }
 
     /// <summary>
     /// Gets or sets the color of the text.
@@ -478,67 +511,5 @@ public class TextBlock : System.Windows.Controls.TextBlock
     public TextBlock()
     {
         SetResourceReference(DefaultForegroundProperty, TextColor.Primary.ToResourceKey());
-    }
-
-    private static void OnFontTypographyChanged(DependencyObject o, DependencyPropertyChangedEventArgs args)
-    {
-        if (args.NewValue is FontTypography newTypography)
-        {
-            var resourceKey = newTypography.ToResourceKey();
-
-            // Use WPF resource reference mechanism to resolve and cache the preset.
-            // This leverages the dependency property resource resolution pipeline,
-            // including global indexing and caching optimizations, instead of
-            // performing per-instance TryFindResource lookups that would traverse
-            // the resource tree and introduce unnecessary overhead.
-            switch (o)
-            {
-                case FrameworkElement fe:
-                    fe.SetResourceReference(FontTypographyPresetProxyProperty, resourceKey);
-                    break;
-
-                case FrameworkContentElement fce:
-                    fce.SetResourceReference(FontTypographyPresetProxyProperty, resourceKey);
-                    break;
-            }
-        }
-        else
-        {
-            // Clear any puppet resource reference
-            o.ClearValue(FontTypographyPresetProxyProperty);
-        }
-
-        // Re-evaluate coerced values so when FontTypography is set, the
-        // CoerceValueCallbacks installed on FontSize/FontWeight will take effect
-        // and prevent local changes from overriding typography-defined values.
-        o.CoerceValue(TextElement.FontSizeProperty);
-        o.CoerceValue(TextElement.FontWeightProperty);
-    }
-
-    private static void OnAppearanceChanged(DependencyObject o, DependencyPropertyChangedEventArgs args)
-    {
-        if (args.NewValue is TextColor textColor)
-        {
-            var resourceKey = textColor.ToResourceKey();
-
-            switch (o)
-            {
-                // Similar to OnFontTypographyChanged, attach themed color resource reference to a proxy property,
-                // allowing the WPF resource system to handle updates automatically.
-                case FrameworkElement fe:
-                    fe.SetResourceReference(AppearanceForegroundProxyProperty, resourceKey);
-                    break;
-
-                case FrameworkContentElement fc:
-                    fc.SetResourceReference(AppearanceForegroundProxyProperty, resourceKey);
-                    break;
-            }
-        }
-        else
-        {
-            o.ClearValue(AppearanceForegroundProxyProperty);
-        }
-
-        o.CoerceValue(TextElement.ForegroundProperty);
     }
 }
