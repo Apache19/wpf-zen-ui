@@ -9,13 +9,14 @@ namespace Wpf.Ui.Theming;
 
 public static class TypographyKeys
 {
-    public static ComponentResourceKey CaptionFontTypography    { get; } = Create(nameof(CaptionFontTypography));
-    public static ComponentResourceKey BodyFontTypography       { get; } = Create(nameof(BodyFontTypography));
-    public static ComponentResourceKey BodyStrongFontTypography { get; } = Create(nameof(BodyStrongFontTypography));
-    public static ComponentResourceKey SubtitleFontTypography   { get; } = Create(nameof(SubtitleFontTypography));
-    public static ComponentResourceKey TitleFontTypography      { get; } = Create(nameof(TitleFontTypography));
-    public static ComponentResourceKey TitleLargeFontTypography { get; } = Create(nameof(TitleLargeFontTypography));
-    public static ComponentResourceKey DisplayFontTypography    { get; } = Create(nameof(DisplayFontTypography));
+    public static ComponentResourceKey CaptionFontTypography       { get; } = Create(nameof(CaptionFontTypography));
+    public static ComponentResourceKey CaptionStrongFontTypography { get; } = Create(nameof(CaptionStrongFontTypography));
+    public static ComponentResourceKey BodyFontTypography          { get; } = Create(nameof(BodyFontTypography));
+    public static ComponentResourceKey BodyStrongFontTypography    { get; } = Create(nameof(BodyStrongFontTypography));
+    public static ComponentResourceKey SubtitleFontTypography      { get; } = Create(nameof(SubtitleFontTypography));
+    public static ComponentResourceKey TitleFontTypography         { get; } = Create(nameof(TitleFontTypography));
+    public static ComponentResourceKey TitleLargeFontTypography    { get; } = Create(nameof(TitleLargeFontTypography));
+    public static ComponentResourceKey DisplayFontTypography       { get; } = Create(nameof(DisplayFontTypography));
 
     private static ComponentResourceKey Create(object resourceId)
     {

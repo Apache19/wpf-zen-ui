@@ -10,6 +10,11 @@
         FontWeight="Regular" />
 
     <controls:FontTypographyPreset
+        x:Key="{x:Static theming:TypographyKeys.CaptionStrongFontTypography}"
+        FontSize="12"
+        FontWeight="SemiBold" />
+
+    <controls:FontTypographyPreset
         x:Key="{x:Static theming:TypographyKeys.BodyFontTypography}"
         FontSize="14"
         FontWeight="Regular" />

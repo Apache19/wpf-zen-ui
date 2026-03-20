@@ -43,12 +43,6 @@ public class FontTypographyPreset : MarkupExtension
     /// </summary>
     public FontWeight? FontWeight { get; set; }
 
-    /*
-       Note: Excluding LineHeight intentionally. WPF and WinUI have fundamentally
-       different text rendering engines - identical FontSize/LineHeight pairs would
-       break vertical text alignment and create maintenance nightmares.
-    */
-
     /// <summary>
     /// Returns this instance when used in XAML so the preset can be declared as a resource.
     /// </summary>

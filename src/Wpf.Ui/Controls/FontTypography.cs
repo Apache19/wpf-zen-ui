@@ -12,6 +12,7 @@ namespace Wpf.Ui.Controls;
 public enum FontTypography
 {
     Caption,
+    CaptionStrong,
     Body,
     BodyStrong,
     Subtitle,
