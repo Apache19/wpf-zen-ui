@@ -486,8 +486,11 @@ public class TextBlock : System.Windows.Controls.TextBlock
         {
             var resourceKey = newTypography.ToResourceKey();
 
-            // 使用 WPF 资源引用机制来解析和缓存预设。
-            // 这样可以利用依赖属性资源解析过程中的全局索引、缓存等性能优化机制，避免每实例手动调用 TryFindResource 遍历资源树而带来不必要的性能开销。
+            // Use WPF resource reference mechanism to resolve and cache the preset.
+            // This leverages the dependency property resource resolution pipeline,
+            // including global indexing and caching optimizations, instead of
+            // performing per-instance TryFindResource lookups that would traverse
+            // the resource tree and introduce unnecessary overhead.
             switch (o)
             {
                 case FrameworkElement fe:
@@ -525,6 +528,7 @@ public class TextBlock : System.Windows.Controls.TextBlock
                 case FrameworkElement fe:
                     fe.SetResourceReference(AppearanceForegroundProxyProperty, resourceKey);
                     break;
+
                 case FrameworkContentElement fc:
                     fc.SetResourceReference(AppearanceForegroundProxyProperty, resourceKey);
                     break;
