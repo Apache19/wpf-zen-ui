@@ -20,7 +20,6 @@
         <Setter Property="Focusable" Value="False" />
         <Setter Property="Foreground" Value="{markup:BrushResource SystemAccentColorPrimaryBrush}" />
         <Setter Property="CoverRingStroke" Value="{markup:BrushResource ControlFillColorTransparentBrush}" />
-        <Setter Property="SnapsToDevicePixels" Value="True" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type controls:ProgressRing}">
@@ -53,7 +52,6 @@
                                     StrokeThickness="{Binding Path=Height, RelativeSource={RelativeSource TemplatedParent}, Mode=OneWay, Converter={StaticResource ProgressThicknessConverter}}"
                                     Visibility="{TemplateBinding CoverRingVisibility}" />
                                 <controls:Arc
-                                    x:Name="Arc"
                                     EndAngle="{TemplateBinding IndeterminateAngle}"
                                     RenderTransformOrigin="0.5, 0.5"
                                     StartAngle="0"
@@ -62,43 +60,32 @@
                                     <controls:Arc.RenderTransform>
                                         <RotateTransform />
                                     </controls:Arc.RenderTransform>
+                                    <controls:Arc.Triggers>
+                                        <EventTrigger RoutedEvent="Loaded">
+                                            <BeginStoryboard>
+                                                <Storyboard>
+                                                    <DoubleAnimation
+                                                        RepeatBehavior="Forever"
+                                                        Storyboard.TargetProperty="(Canvas.RenderTransform).(RotateTransform.Angle)"
+                                                        To="360"
+                                                        Duration="0:0:2" />
+                                                    <DoubleAnimation
+                                                        AutoReverse="True"
+                                                        RepeatBehavior="Forever"
+                                                        Storyboard.TargetProperty="EndAngle"
+                                                        From="100"
+                                                        To="320"
+                                                        Duration="0:0:5" />
+                                                </Storyboard>
+                                            </BeginStoryboard>
+                                        </EventTrigger>
+                                    </controls:Arc.Triggers>
                                 </controls:Arc>
                             </Grid>
-                            <ControlTemplate.Triggers>
-                                <Trigger Property="IsEnabled" Value="True">
-                                    <Trigger.EnterActions>
-                                        <BeginStoryboard>
-                                            <Storyboard>
-                                                <DoubleAnimation
-                                                    RepeatBehavior="Forever"
-                                                    Storyboard.TargetName="Arc"
-                                                    Storyboard.TargetProperty="(Canvas.RenderTransform).(RotateTransform.Angle)"
-                                                    To="360"
-                                                    Duration="0:0:2" />
-
-                                                <DoubleAnimation
-                                                    AutoReverse="True"
-                                                    RepeatBehavior="Forever"
-                                                    Storyboard.TargetName="Arc"
-                                                    Storyboard.TargetProperty="EndAngle"
-                                                    From="100"
-                                                    To="320"
-                                                    Duration="0:0:5" />
-                                            </Storyboard>
-                                        </BeginStoryboard>
-                                    </Trigger.EnterActions>
-                                    <Trigger.ExitActions>
-                                        <BeginStoryboard>
-                                            <Storyboard />
-                                        </BeginStoryboard>
-                                    </Trigger.ExitActions>
-                                </Trigger>
-                            </ControlTemplate.Triggers>
                         </ControlTemplate>
                     </Setter.Value>
                 </Setter>
             </Trigger>
         </Style.Triggers>
     </Style>
-
 </ResourceDictionary>
