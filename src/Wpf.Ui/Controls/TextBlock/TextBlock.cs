@@ -354,8 +354,6 @@ public class TextBlock : System.Windows.Controls.TextBlock
             typeof(TextBlock),
             new FrameworkPropertyMetadata(
                 null,
-                FrameworkPropertyMetadataOptions.AffectsRender |
-                FrameworkPropertyMetadataOptions.SubPropertiesDoNotAffectRender |
                 FrameworkPropertyMetadataOptions.Inherits,
                 static (d, _) =>
                 {
@@ -405,8 +403,6 @@ public class TextBlock : System.Windows.Controls.TextBlock
             typeof(TextBlock),
             new FrameworkPropertyMetadata(
                 null,
-                FrameworkPropertyMetadataOptions.AffectsRender |
-                FrameworkPropertyMetadataOptions.SubPropertiesDoNotAffectRender |
                 FrameworkPropertyMetadataOptions.Inherits,
                 static (d, _) =>
                 {
@@ -466,15 +462,13 @@ public class TextBlock : System.Windows.Controls.TextBlock
             "FontTypographyPresetProxy",
             typeof(FontTypographyPreset),
             typeof(TextBlock),
-            new PropertyMetadata(
+            new FrameworkPropertyMetadata(
                 null,
+                FrameworkPropertyMetadataOptions.Inherits,
                 static (d, _) =>
                 {
-                    if (d is System.Windows.Controls.TextBlock tb)
-                    {
-                        tb.CoerceValue(FontSizeProperty);
-                        tb.CoerceValue(FontWeightProperty);
-                    }
+                    d.CoerceValue(TextElement.FontSizeProperty);
+                    d.CoerceValue(TextElement.FontWeightProperty);
                 }
             )
         );
@@ -488,28 +482,34 @@ public class TextBlock : System.Windows.Controls.TextBlock
 
     private static void OnFontTypographyChanged(DependencyObject o, DependencyPropertyChangedEventArgs args)
     {
-        if (o is System.Windows.Controls.TextBlock tb)
+        if (args.NewValue is FontTypography newTypography)
         {
-            if (args.NewValue is FontTypography newTypography)
-            {
-                var resourceKey = newTypography.ToResourceKey();
+            var resourceKey = newTypography.ToResourceKey();
 
-                // Use WPF resource reference mechanism to resolve and cache the preset.
-                // This avoids manual TryFindResource tree traversal.
-                tb.SetResourceReference(FontTypographyPresetProxyProperty, resourceKey);
-            }
-            else
+            // 使用 WPF 资源引用机制来解析和缓存预设。
+            // 这样可以利用依赖属性资源解析过程中的全局索引、缓存等性能优化机制，避免每实例手动调用 TryFindResource 遍历资源树而带来不必要的性能开销。
+            switch (o)
             {
-                // Clear any puppet resource reference
-                tb.ClearValue(FontTypographyPresetProxyProperty);
-            }
+                case FrameworkElement fe:
+                    fe.SetResourceReference(FontTypographyPresetProxyProperty, resourceKey);
+                    break;
 
-            // Re-evaluate coerced values so when FontTypography is set, the
-            // CoerceValueCallbacks installed on FontSize/FontWeight will take effect
-            // and prevent local changes from overriding typography-defined values.
-            tb.CoerceValue(FontSizeProperty);
-            tb.CoerceValue(FontWeightProperty);
+                case FrameworkContentElement fce:
+                    fce.SetResourceReference(FontTypographyPresetProxyProperty, resourceKey);
+                    break;
+            }
         }
+        else
+        {
+            // Clear any puppet resource reference
+            o.ClearValue(FontTypographyPresetProxyProperty);
+        }
+
+        // Re-evaluate coerced values so when FontTypography is set, the
+        // CoerceValueCallbacks installed on FontSize/FontWeight will take effect
+        // and prevent local changes from overriding typography-defined values.
+        o.CoerceValue(TextElement.FontSizeProperty);
+        o.CoerceValue(TextElement.FontWeightProperty);
     }
 
     private static void OnAppearanceChanged(DependencyObject o, DependencyPropertyChangedEventArgs args)
