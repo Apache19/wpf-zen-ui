@@ -232,8 +232,8 @@ public class NavigationViewContentPresenter : Frame
             {
                 await function(aware);
 
-                if (aware is FrameworkElement { DataContext: INavigationAware vm }
-                 && !ReferenceEquals(vm, aware))
+                if (aware is FrameworkElement { DataContext: INavigationAware vm } &&
+                    !ReferenceEquals(vm, aware))
                 {
                     await function(vm);
                 }
