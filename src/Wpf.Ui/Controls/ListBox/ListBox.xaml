@@ -35,7 +35,7 @@
             </Setter.Value>
         </Setter>
 
-        <!--  todo 如有必要，将此样式抽离成 DefaultListBoxItemStyle  -->
+        <!--  todo ListBoox 会使设计时无响应，待修复，暂不要使用  -->
         <Setter Property="ItemContainerStyle">
             <Setter.Value>
                 <Style TargetType="{x:Type ListBoxItem}">

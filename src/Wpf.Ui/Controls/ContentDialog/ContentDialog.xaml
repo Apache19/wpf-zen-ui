@@ -79,10 +79,9 @@
                                     <ContentPresenter
                                         Grid.Row="0"
                                         Margin="0,12,0,0"
+                                        controls:TextBlock.FontTypography="Subtitle"
                                         Content="{TemplateBinding Title}"
-                                        ContentTemplate="{TemplateBinding TitleTemplate}"
-                                        TextBlock.FontSize="20"
-                                        TextBlock.FontWeight="SemiBold">
+                                        ContentTemplate="{TemplateBinding TitleTemplate}">
                                         <ContentPresenter.Resources>
                                             <Style BasedOn="{StaticResource {x:Type TextBlock}}" TargetType="{x:Type TextBlock}">
                                                 <Setter Property="TextWrapping" Value="WrapWithOverflow" />
@@ -102,6 +101,7 @@
                                         <ContentPresenter
                                             HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
                                             VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                            controls:TextBlock.FontTypography="Body"
                                             Content="{TemplateBinding Content}"
                                             ContentTemplate="{TemplateBinding ContentTemplate}"
                                             ContentTemplateSelector="{TemplateBinding ContentTemplateSelector}">
@@ -126,7 +126,7 @@
                                     Focusable="False"
                                     Visibility="{TemplateBinding IsFooterVisible, Converter={StaticResource BoolToVisibilityConverter}}">
 
-                                    <Grid>
+                                    <Grid controls:TextBlock.FontTypography="Body">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition x:Name="PrimaryColumn" Width="*" />
                                             <ColumnDefinition x:Name="FirstSpacer" Width="8" />
