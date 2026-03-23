@@ -3,6 +3,7 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
+using System.Windows.Controls;
 using System.Windows.Documents;
 using Wpf.Ui.Theming;
 
@@ -59,6 +60,15 @@ public class TextBlock : System.Windows.Controls.TextBlock
             )
         );
 
+        Control.FontSizeProperty.OverrideMetadata(
+            typeof(Control),
+            new FrameworkPropertyMetadata(
+                14d,
+                null,
+                CoerceFontSize
+            )
+        );
+
         TextElement.FontWeightProperty.OverrideMetadata(
             typeof(TextElement),
             new FrameworkPropertyMetadata(
@@ -77,6 +87,15 @@ public class TextBlock : System.Windows.Controls.TextBlock
             )
         );
 
+        Control.FontWeightProperty.OverrideMetadata(
+            typeof(Control),
+            new FrameworkPropertyMetadata(
+                FontWeights.Regular,
+                null,
+                CoerceFontWeight
+            )
+        );
+
         TextElement.ForegroundProperty.OverrideMetadata(
             typeof(TextElement),
             new FrameworkPropertyMetadata(
@@ -88,6 +107,15 @@ public class TextBlock : System.Windows.Controls.TextBlock
 
         ForegroundProperty.OverrideMetadata(
             typeof(System.Windows.Controls.TextBlock),
+            new FrameworkPropertyMetadata(
+                null,
+                null,
+                CoerceForeground
+            )
+        );
+
+        Control.ForegroundProperty.OverrideMetadata(
+            typeof(Control),
             new FrameworkPropertyMetadata(
                 null,
                 null,
