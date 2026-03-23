@@ -3,7 +3,7 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-namespace Wpf.Ui.Controls;
+namespace Wpf.Ui.Theming;
 
 /// <summary>
 /// Defines several predefined text styles that you can apply to some elements responsible for displaying it.
@@ -15,6 +15,9 @@ public enum FontTypography
     CaptionStrong,
     Body,
     BodyStrong,
+    BodyLarge,
+    BodyLargeStrong,
+    SubtitleSmall,
     Subtitle,
     Title,
     TitleLarge,

@@ -3,7 +3,6 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-using Wpf.Ui.Controls;
 using Wpf.Ui.Theming;
 
 namespace Wpf.Ui.Extensions;
@@ -21,15 +20,19 @@ public static class TextBlockFontTypographyExtensions
     {
         return typography switch
         {
-            FontTypography.Caption       => TypographyKeys.CaptionFontTypography,
-            FontTypography.CaptionStrong => TypographyKeys.CaptionStrongFontTypography,
-            FontTypography.Body          => TypographyKeys.BodyFontTypography,
-            FontTypography.BodyStrong    => TypographyKeys.BodyStrongFontTypography,
-            FontTypography.Subtitle      => TypographyKeys.SubtitleFontTypography,
-            FontTypography.Title         => TypographyKeys.TitleFontTypography,
-            FontTypography.TitleLarge    => TypographyKeys.TitleLargeFontTypography,
-            FontTypography.Display       => TypographyKeys.DisplayFontTypography,
-            _                            => throw new ArgumentOutOfRangeException(nameof(typography), typography, null),
+            FontTypography.Caption         => FontTypographyKeys.CaptionFontTypography,
+            FontTypography.CaptionStrong   => FontTypographyKeys.CaptionStrongFontTypography,
+            FontTypography.Body            => FontTypographyKeys.BodyFontTypography,
+            FontTypography.BodyStrong      => FontTypographyKeys.BodyStrongFontTypography,
+            FontTypography.BodyLarge       => FontTypographyKeys.BodyLargeFontTypography,
+            FontTypography.BodyLargeStrong => FontTypographyKeys.BodyLargeStrongFontTypography,
+            FontTypography.SubtitleSmall   => FontTypographyKeys.SubtitleSmallFontTypography,
+            FontTypography.Subtitle        => FontTypographyKeys.SubtitleFontTypography,
+            FontTypography.Title           => FontTypographyKeys.TitleFontTypography,
+            FontTypography.TitleLarge      => FontTypographyKeys.TitleLargeFontTypography,
+            FontTypography.Display         => FontTypographyKeys.DisplayFontTypography,
+
+            _ => throw new ArgumentOutOfRangeException(nameof(typography), typography, null),
         };
     }
 }

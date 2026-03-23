@@ -4,7 +4,7 @@
 // All Rights Reserved.
 
 using System.Windows.Controls;
-using Wpf.Ui.Controls;
+using Wpf.Ui.Theming;
 
 namespace Wpf.Ui.Gallery.Controls;
 

@@ -3,8 +3,8 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-using System.Windows.Controls;
 using System.Windows.Documents;
+using Wpf.Ui.Theming;
 
 #pragma warning disable WPF0011 // Containing type should be used as registered owner
 // ReSharper disable once CheckNamespace
@@ -98,7 +98,7 @@ public class TextBlock : System.Windows.Controls.TextBlock
 
     #region Coercion Callbacks
 
-    private static object CoerceFontSize(DependencyObject d, object baseValue)
+    private static object? CoerceFontSize(DependencyObject d, object? baseValue)
     {
         // Typography property takes precedence:
         var preset = d.GetValue(FontTypographyPresetProxyProperty) as FontTypographyPreset;
@@ -110,7 +110,7 @@ public class TextBlock : System.Windows.Controls.TextBlock
         return baseValue;
     }
 
-    private static object CoerceFontWeight(DependencyObject d, object baseValue)
+    private static object? CoerceFontWeight(DependencyObject d, object? baseValue)
     {
         var preset = d.GetValue(FontTypographyPresetProxyProperty) as FontTypographyPreset;
         if (preset?.FontWeight is { } weight)
@@ -121,7 +121,7 @@ public class TextBlock : System.Windows.Controls.TextBlock
         return baseValue;
     }
 
-    private static object CoerceForeground(DependencyObject d, object baseValue)
+    private static object CoerceForeground(DependencyObject d, object? baseValue)
     {
         // Appearance property takes precedence:
         // If the Appearance property is set and resolves to a Brush, use it.
