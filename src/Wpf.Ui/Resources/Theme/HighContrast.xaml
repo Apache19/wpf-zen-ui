@@ -43,21 +43,7 @@
     <Color x:Key="{x:Static t:ColorKeys.SystemAccentColorSecondary}">#FF0000</Color>
     <Color x:Key="{x:Static t:ColorKeys.SystemAccentColorTertiary}">#FF0000</Color>
 
-    <!--  高对比度模式下，所有强调色画刷应按语义直接引用核心颜色，待修改  -->
-    <SolidColorBrush x:Key="{x:Static t:BrushKeys.SystemAccentColorBrush}"          Color="{StaticResource {x:Static t:ColorKeys.SystemColorHighlightColor}}" />
-    <SolidColorBrush x:Key="{x:Static t:BrushKeys.SystemAccentColorPrimaryBrush}"   Color="{StaticResource {x:Static t:ColorKeys.SystemColorHighlightColor}}" />
-    <SolidColorBrush x:Key="{x:Static t:BrushKeys.SystemAccentColorSecondaryBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorHighlightColor}}" />
-    <SolidColorBrush x:Key="{x:Static t:BrushKeys.SystemAccentColorTertiaryBrush}"  Color="{StaticResource {x:Static t:ColorKeys.SystemColorHighlightColor}}" />
-
-    <SolidColorBrush x:Key="{x:Static t:BrushKeys.AccentTextFillColorPrimaryBrush}"            Color="{StaticResource {x:Static t:ColorKeys.SystemColorHighlightTextColor}}" />
-    <SolidColorBrush x:Key="{x:Static t:BrushKeys.AccentTextFillColorSecondaryBrush}"          Color="{StaticResource {x:Static t:ColorKeys.SystemColorHighlightTextColor}}" />
-    <SolidColorBrush x:Key="{x:Static t:BrushKeys.AccentTextFillColorTertiaryBrush}"           Color="{StaticResource {x:Static t:ColorKeys.SystemColorHighlightTextColor}}" />
-    <SolidColorBrush x:Key="{x:Static t:BrushKeys.AccentFillColorSelectedTextBackgroundBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorHighlightColor}}" />
-    <SolidColorBrush x:Key="{x:Static t:BrushKeys.AccentFillColorDefaultBrush}"                Color="{StaticResource {x:Static t:ColorKeys.SystemColorHighlightColor}}" />
-    <SolidColorBrush x:Key="{x:Static t:BrushKeys.AccentFillColorSecondaryBrush}"              Color="{StaticResource {x:Static t:ColorKeys.SystemColorHighlightColor}}" />
-    <SolidColorBrush x:Key="{x:Static t:BrushKeys.AccentFillColorTertiaryBrush}"               Color="{StaticResource {x:Static t:ColorKeys.SystemColorHighlightColor}}" />
-    <SolidColorBrush x:Key="{x:Static t:BrushKeys.AccentFillColorDisabledBrush}"               Color="{StaticResource {x:Static t:ColorKeys.SystemColorControlColor}}" />
-    <SolidColorBrush x:Key="{x:Static t:BrushKeys.SystemFillColorAttentionBrush}"              Color="{StaticResource {x:Static t:ColorKeys.SystemColorHighlightColor}}" />
+    <Color x:Key="{x:Static t:ColorKeys.AccentFillColorDisabled}">#FF0000</Color>
 
     <!--  高对比度模式下窗口颜色使用系统颜色，此处颜色定义不应使用  -->
     <Color x:Key="{x:Static t:ColorKeys.WindowBackgroundColor}">#FF0000</Color>
@@ -109,8 +95,6 @@
     <Color x:Key="{x:Static t:ColorKeys.ControlOnImageFillColorSecondary}">#FF0000</Color>
     <Color x:Key="{x:Static t:ColorKeys.ControlOnImageFillColorTertiary}">#FF0000</Color>
     <Color x:Key="{x:Static t:ColorKeys.ControlOnImageFillColorDisabled}">#FF0000</Color>
-
-    <Color x:Key="{x:Static t:ColorKeys.AccentFillColorDisabled}">#FF0000</Color>
 
     <Color x:Key="{x:Static t:ColorKeys.ControlStrokeColorDefault}">#FF0000</Color>
     <Color x:Key="{x:Static t:ColorKeys.ControlStrokeColorSecondary}">#FF0000</Color>
@@ -180,6 +164,22 @@
     <SolidColorBrush x:Key="{x:Static t:BrushKeys.KeyboardFocusBorderColorBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorWindowTextColor}}" />
 
     <!--  Brushes  -->
+    <!--  高对比度模式下，所有强调色画刷应按语义直接引用核心颜色，待修改  -->
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.SystemAccentColorBrush}"          Color="{StaticResource {x:Static t:ColorKeys.SystemColorHighlightColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.SystemAccentColorPrimaryBrush}"   Color="{StaticResource {x:Static t:ColorKeys.SystemColorHighlightColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.SystemAccentColorSecondaryBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorHighlightColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.SystemAccentColorTertiaryBrush}"  Color="{StaticResource {x:Static t:ColorKeys.SystemColorHighlightColor}}" />
+
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.AccentTextFillColorPrimaryBrush}"            Color="{StaticResource {x:Static t:ColorKeys.SystemColorHighlightTextColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.AccentTextFillColorSecondaryBrush}"          Color="{StaticResource {x:Static t:ColorKeys.SystemColorHighlightTextColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.AccentTextFillColorTertiaryBrush}"           Color="{StaticResource {x:Static t:ColorKeys.SystemColorHighlightTextColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.AccentFillColorSelectedTextBackgroundBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorHighlightColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.AccentFillColorDefaultBrush}"                Color="{StaticResource {x:Static t:ColorKeys.SystemColorHighlightColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.AccentFillColorSecondaryBrush}"              Color="{StaticResource {x:Static t:ColorKeys.SystemColorHighlightColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.AccentFillColorTertiaryBrush}"               Color="{StaticResource {x:Static t:ColorKeys.SystemColorHighlightColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.AccentFillColorDisabledBrush}"               Color="{StaticResource {x:Static t:ColorKeys.SystemColorControlColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.SystemFillColorAttentionBrush}"              Color="{StaticResource {x:Static t:ColorKeys.SystemColorHighlightColor}}" />
+
     <SolidColorBrush x:Key="{x:Static t:BrushKeys.TextFillColorPrimaryBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorWindowTextColor}}" />
     <SolidColorBrush x:Key="{x:Static t:BrushKeys.TextFillColorSecondaryBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorWindowTextColor}}" />
     <SolidColorBrush x:Key="{x:Static t:BrushKeys.TextFillColorTertiaryBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorWindowTextColor}}" />
