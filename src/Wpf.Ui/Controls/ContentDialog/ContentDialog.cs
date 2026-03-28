@@ -225,6 +225,10 @@ public partial class ContentDialog : ContentControl
 
             return result;
         }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            return result;
+        }
         finally
         {
             #if NET6_0_OR_GREATER
