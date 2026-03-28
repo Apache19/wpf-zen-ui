@@ -206,6 +206,11 @@ public partial class ContentDialog : ContentControl
             throw new InvalidOperationException("DialogHost was not set");
         }
 
+        if (cancellationToken.IsCancellationRequested)
+        {
+            return ContentDialogResult.None;
+        }
+
         Tcs = new TaskCompletionSource<ContentDialogResult>(
             TaskCreationOptions.RunContinuationsAsynchronously
         );

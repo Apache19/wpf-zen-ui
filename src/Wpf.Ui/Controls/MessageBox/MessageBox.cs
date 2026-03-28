@@ -305,19 +305,35 @@ public class MessageBox : FluentWindow
     }
 
     /// <summary>
+    /// Closes the message box with the specified result.
+    /// </summary>
+    /// <param name="result">The result returned by the message box.</param>
+    public void Close(MessageBoxResult result)
+    {
+        _ = Tcs?.TrySetResult(result);
+        CloseCore();
+    }
+
+    /// <summary>
     /// Displays a message box
     /// </summary>
     /// <returns><see cref="MessageBoxResult"/></returns>
-    /// <exception cref="TaskCanceledException">Thrown if the operation is canceled.</exception>
+    /// <exception cref="OperationCanceledException">Thrown if the operation is canceled.</exception>
     public async Task<MessageBoxResult> ShowDialogAsync(
         bool showAsDialog = true,
         CancellationToken cancellationToken = default
     )
     {
-        Tcs = new TaskCompletionSource<MessageBoxResult>();
+        cancellationToken.ThrowIfCancellationRequested();
+
+        var tcs = new TaskCompletionSource<MessageBoxResult>(TaskCreationOptions.RunContinuationsAsynchronously);
+        Tcs = tcs;
         CancellationTokenRegistration tokenRegistration = cancellationToken.Register(
-            o => Tcs.TrySetCanceled((CancellationToken)o!),
-            cancellationToken
+            () =>
+            {
+                _ = tcs.TrySetCanceled(cancellationToken);
+                RequestClose();
+            }
         );
 
         #if NET6_0_OR_GREATER
@@ -332,7 +348,7 @@ public class MessageBox : FluentWindow
                 base.Show();
             }
 
-            return await Tcs.Task;
+            return await tcs.Task;
         }
         #else
         using (tokenRegistration)
@@ -346,7 +362,7 @@ public class MessageBox : FluentWindow
                 base.Show();
             }
 
-            return await Tcs.Task;
+            return await tcs.Task;
         }
         #endif
     }
@@ -367,13 +383,13 @@ public class MessageBox : FluentWindow
                 CenterWindowOnScreen();
                 break;
             case WindowStartupLocation.CenterOwner:
-                if (!CanCenterOverWPFOwner() || Owner.WindowState is WindowState.Minimized)
+                if (Owner is not { WindowState: not WindowState.Minimized } owner || !CanCenterOverWPFOwner())
                 {
                     CenterWindowOnScreen();
                 }
                 else
                 {
-                    CenterWindowOnOwner();
+                    CenterWindowOnOwner(owner);
                 }
 
                 break;
@@ -436,10 +452,10 @@ public class MessageBox : FluentWindow
         SetCurrentValue(TopProperty,  (screenHeight / 2) - (Height / 2));
     }
 
-    private void CenterWindowOnOwner()
+    private void CenterWindowOnOwner(Window owner)
     {
-        double left = Owner.Left + ((Owner.Width - Width) / 2);
-        double top  = Owner.Top + ((Owner.Height - Height) / 2);
+        double left = owner.Left + ((owner.Width - Width) / 2);
+        double top  = owner.Top + ((owner.Height - Height) / 2);
 
         SetCurrentValue(LeftProperty, left);
         SetCurrentValue(TopProperty,  top);
@@ -458,8 +474,40 @@ public class MessageBox : FluentWindow
             _                          => MessageBoxResult.None,
         };
 
-        _ = Tcs?.TrySetResult(result);
+        Close(result);
+    }
+
+    private void CloseCore()
+    {
         base.Close();
+    }
+
+    private void RequestClose()
+    {
+        if (Dispatcher.CheckAccess())
+        {
+            RequestCloseCore();
+            return;
+        }
+
+        _ = Dispatcher.BeginInvoke(new Action(RequestCloseCore));
+    }
+
+    private void RequestCloseCore()
+    {
+        if (IsLoaded)
+        {
+            CloseCore();
+            return;
+        }
+
+        Loaded += OnRequestCloseAfterLoaded;
+    }
+
+    private void OnRequestCloseAfterLoaded(object sender, RoutedEventArgs e)
+    {
+        Loaded -= OnRequestCloseAfterLoaded;
+        CloseCore();
     }
 
     private void ResizeWidth(UIElement element)
