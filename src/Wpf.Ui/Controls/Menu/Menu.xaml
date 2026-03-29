@@ -22,7 +22,9 @@
                     <Border
                         Background="{TemplateBinding Background}"
                         BorderBrush="{TemplateBinding BorderBrush}"
-                        BorderThickness="{TemplateBinding BorderThickness}">
+                        BorderThickness="{TemplateBinding BorderThickness}"
+                        SnapsToDevicePixels="{TemplateBinding UseLayoutRounding}"
+                        UseLayoutRounding="True">
                         <StackPanel
                             ClipToBounds="True"
                             IsItemsHost="True"
@@ -33,10 +35,7 @@
         </Setter>
     </Style>
 
-    <Style
-        x:Key="{x:Static t:StyleKeys.UiMenuStyle}"
-        BasedOn="{StaticResource {x:Static t:StyleKeys.MenuStyle}}"
-        TargetType="{x:Type controls:Menu}" />
+    <Style x:Key="{x:Static t:StyleKeys.UiMenuStyle}" BasedOn="{StaticResource {x:Static t:StyleKeys.MenuStyle}}" TargetType="{x:Type controls:Menu}" />
 
     <Style BasedOn="{StaticResource {x:Static t:StyleKeys.UiMenuStyle}}" TargetType="{x:Type controls:Menu}" />
 
