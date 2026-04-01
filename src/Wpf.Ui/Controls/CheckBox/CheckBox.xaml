@@ -20,6 +20,7 @@
     <!--
         todo 暗黑模式下，默认背景和掠过时背景色搞反了。如有必要，纠正它
         目前采用ThemeInfo，样式文件里定义的各种常量只能使用StaticResource引用
+        尤其要注意动画的实现方式
     -->
 
     <converters:FallbackBrushConverter x:Key="FallbackBrushConverter" />

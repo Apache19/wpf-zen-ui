@@ -28,6 +28,7 @@ public class ClipConverter : IMultiValueConverter
 
         double clippedWidth = width * percentage;
 
+#warning 转换器不应转换出UI对象
         return new RectangleGeometry(new Rect(0, 0, clippedWidth, height));
     }
 
