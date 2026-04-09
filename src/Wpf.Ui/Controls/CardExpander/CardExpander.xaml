@@ -124,7 +124,7 @@
                             Grid.Row="0"
                             Background="{TemplateBinding Background}"
                             BorderBrush="{TemplateBinding BorderBrush}"
-                            BorderThickness="1">
+                            BorderThickness="{TemplateBinding BorderThickness}">
                             <Border.CornerRadius>
                                 <MultiBinding Converter="{StaticResource CornerRadiusSplitConverter}" ConverterParameter="Top">
                                     <Binding Path="CornerRadius" RelativeSource="{RelativeSource TemplatedParent}" />
