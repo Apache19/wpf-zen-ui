@@ -25,11 +25,6 @@ public class DropDownButton : Button
 
     private ContextMenu? _contextMenu;
 
-    public DropDownButton()
-    {
-        PreviewMouseLeftButtonUp += OnPreviewMouseLeftButtonUp;
-    }
-
     /// <summary>Identifies the <see cref="Flyout"/> dependency property.</summary>
     public static readonly DependencyProperty FlyoutProperty = DependencyProperty.Register(
         nameof(Flyout),
@@ -43,7 +38,15 @@ public class DropDownButton : Button
         nameof(IsDropDownOpen),
         typeof(bool),
         typeof(DropDownButton),
-        new PropertyMetadata(false)
+        new PropertyMetadata(false, OnIsDropDownOpenChanged)
+    );
+
+    /// <summary>Identifies the <see cref="IsDropDownArrowVisible"/> dependency property.</summary>
+    public static readonly DependencyProperty IsDropDownArrowVisibleProperty = DependencyProperty.Register(
+        nameof(IsDropDownArrowVisible),
+        typeof(bool),
+        typeof(DropDownButton),
+        new PropertyMetadata(true)
     );
 
     /// <summary>
@@ -70,11 +73,30 @@ public class DropDownButton : Button
         set => SetValue(IsDropDownOpenProperty, value);
     }
 
+    /// <summary>
+    /// Gets or sets a value indicating whether the control displays the drop-down arrow.
+    /// </summary>
+    [Bindable(true)]
+    [Category("Appearance")]
+    public bool IsDropDownArrowVisible
+    {
+        get => (bool)GetValue(IsDropDownArrowVisibleProperty);
+        set => SetValue(IsDropDownArrowVisibleProperty, value);
+    }
+
     private static void OnFlyoutChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
         if (d is DropDownButton dropDownButton)
         {
             dropDownButton.OnFlyoutChanged(e.NewValue);
+        }
+    }
+
+    private static void OnIsDropDownOpenChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        if (d is DropDownButton dropDownButton)
+        {
+            dropDownButton.OnIsDropDownOpenChanged((bool)e.NewValue);
         }
     }
 
@@ -100,18 +122,48 @@ public class DropDownButton : Button
         SetCurrentValue(IsDropDownOpenProperty, true);
     }
 
+    /// <summary>This method is invoked when the <see cref="IsDropDownOpenProperty"/> changes.</summary>
+    /// <param name="currentValue">The new value of <see cref="IsDropDownOpenProperty"/>.</param>
     protected virtual void OnIsDropDownOpenChanged(bool currentValue) { }
 
-    private void OnPreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+    protected override void OnClick()
     {
+        base.OnClick();
+
+        // Displays the menu within the click event handler
+        // to allow the ClickMode property to control the timing of the menu popup.
         if (_contextMenu is null)
         {
             return;
         }
 
-        _contextMenu.SetCurrentValue(System.Windows.Controls.ContextMenu.MinWidthProperty,        ActualWidth);
-        _contextMenu.SetCurrentValue(System.Windows.Controls.ContextMenu.PlacementTargetProperty, this);
-        _contextMenu.SetCurrentValue(System.Windows.Controls.ContextMenu.PlacementProperty,       PlacementMode.Bottom);
-        _contextMenu.SetCurrentValue(System.Windows.Controls.ContextMenu.IsOpenProperty,          true);
+        // Sets MinWidth only when it has not been explicitly set by the user
+        // (via local value, style, or other sources).
+        if (DependencyPropertyHelper
+               .GetValueSource(_contextMenu, System.Windows.Controls.ContextMenu.MinWidthProperty)
+               .BaseValueSource == BaseValueSource.Default)
+        {
+            _contextMenu.SetCurrentValue(System.Windows.Controls.ContextMenu.MinWidthProperty, ActualWidth);
+        }
+
+        // Sets PlacementTarget only when it has not been explicitly set by the user
+        // (via local value, style, or other sources).
+        if (DependencyPropertyHelper
+               .GetValueSource(_contextMenu, System.Windows.Controls.ContextMenu.PlacementTargetProperty)
+               .BaseValueSource == BaseValueSource.Default)
+        {
+            _contextMenu.SetCurrentValue(System.Windows.Controls.ContextMenu.PlacementTargetProperty, this);
+        }
+
+        // Sets Placement only when it has not been explicitly set by the user.
+        // When no explicit value is provided, the menu is displayed below the button by default.
+        if (DependencyPropertyHelper
+               .GetValueSource(_contextMenu, System.Windows.Controls.ContextMenu.PlacementProperty)
+               .BaseValueSource == BaseValueSource.Default)
+        {
+            _contextMenu.SetCurrentValue(System.Windows.Controls.ContextMenu.PlacementProperty, PlacementMode.Bottom);
+        }
+
+        _contextMenu.SetCurrentValue(System.Windows.Controls.ContextMenu.IsOpenProperty, true);
     }
 }
