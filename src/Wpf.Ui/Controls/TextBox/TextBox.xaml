@@ -77,6 +77,12 @@
                                 Margin="{TemplateBinding Padding}"
                                 HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
                                 VerticalAlignment="{TemplateBinding VerticalContentAlignment}">
+                                <controls:PlaceholderControl
+                                    x:Name="PART_Placeholder"
+                                    Margin="{TemplateBinding Padding}"
+                                    VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                    FontSize="{TemplateBinding FontSize}"
+                                    Foreground="{markup:BrushResource TextPlaceholderColorBrush}" />
                                 <controls:PassiveScrollViewer
                                     x:Name="PART_ContentHost"
                                     CanContentScroll="{TemplateBinding ScrollViewer.CanContentScroll}"
@@ -161,6 +167,14 @@
                         Visibility="Visible" />
 
                     <Grid Grid.Column="1" Margin="{TemplateBinding Padding}">
+                        <TextBlock
+                            x:Name="PlaceholderTextBox"
+                            Margin="0"
+                            Padding="1,0"
+                            VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                            FontSize="{TemplateBinding FontSize}"
+                            Foreground="{markup:BrushResource TextPlaceholderColorBrush}"
+                            Text="{TemplateBinding PlaceholderText}" />
                         <controls:PassiveScrollViewer
                             x:Name="PART_ContentHost"
                             CanContentScroll="{TemplateBinding ScrollViewer.CanContentScroll}"
@@ -170,14 +184,6 @@
                             Style="{DynamicResource {x:Static theming:StyleKeys.DefaultTextBoxScrollViewerStyle}}"
                             TextElement.Foreground="{TemplateBinding Foreground}"
                             VerticalScrollBarVisibility="{TemplateBinding ScrollViewer.VerticalScrollBarVisibility}" />
-                        <TextBlock
-                            x:Name="PlaceholderTextBox"
-                            Margin="0"
-                            Padding="1,0"
-                            VerticalAlignment="Center"
-                            FontSize="{TemplateBinding FontSize}"
-                            Foreground="{markup:BrushResource TextPlaceholderColorBrush}"
-                            Text="{TemplateBinding PlaceholderText}" />
                     </Grid>
 
                     <!--  Buttons and Icons have no padding from the main element to allow absolute positions if height is larger than the text entry zone  -->

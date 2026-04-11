@@ -237,6 +237,14 @@
                                         Foreground="{TemplateBinding Foreground}"
                                         IsChecked="{Binding Path=IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
                                         Style="{StaticResource DefaultComboBoxToggleButtonStyle}" />
+                                    
+                                    <controls:PlaceholderControl
+                                        x:Name="PART_Placeholder"
+                                        Grid.Column="0"
+                                        Margin="{TemplateBinding Padding}"
+                                        VerticalAlignment="Center"
+                                        FontSize="{TemplateBinding FontSize}"
+                                        Foreground="{m:BrushResource TextPlaceholderColorBrush}" />
 
                                     <TextBox
                                         x:Name="PART_EditableTextBox"
@@ -248,14 +256,6 @@
                                         Foreground="{TemplateBinding Foreground}"
                                         IsReadOnly="{TemplateBinding IsReadOnly}"
                                         Style="{StaticResource DefaultComboBoxTextBoxStyle}" />
-
-                                    <controls:PlaceholderControl
-                                        x:Name="PART_Placeholder"
-                                        Grid.Column="0"
-                                        Margin="{TemplateBinding Padding}"
-                                        VerticalAlignment="Center"
-                                        FontSize="{TemplateBinding FontSize}"
-                                        Foreground="{m:BrushResource TextPlaceholderColorBrush}" />
 
                                 </Grid>
                                 <Popup
