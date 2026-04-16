@@ -21,6 +21,7 @@ public partial class PasswordBox
         private string _currentText;
         private string _newPassword;
         private string _currentPassword;
+        private string _pendingInputText;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="PasswordHelper"/> class.
@@ -32,6 +33,16 @@ public partial class PasswordBox
             _currentText = string.Empty;
             _newPassword = string.Empty;
             _currentPassword = string.Empty;
+            _pendingInputText = string.Empty;
+        }
+
+        /// <summary>
+        /// 记录最近一次预输入文本。
+        /// </summary>
+        /// <param name="inputText">预输入文本。</param>
+        public void RememberInputText(string inputText)
+        {
+            _pendingInputText = inputText ?? string.Empty;
         }
 
         /// <summary>
@@ -69,6 +80,82 @@ public partial class PasswordBox
         {
             string password = _currentPassword ?? string.Empty;
 
+            if (textChanges.Count == 0)
+            {
+                return password;
+            }
+
+            if (!string.IsNullOrEmpty(_pendingInputText))
+            {
+                password = ApplyPendingInput(password, textChanges);
+                _pendingInputText = string.Empty;
+                return password;
+            }
+
+            if (string.Equals(_currentText, password, StringComparison.Ordinal))
+            {
+                return HandlePlainTextChanges(password, textChanges);
+            }
+
+            if (_currentText.Length != password.Length)
+            {
+                return password;
+            }
+
+            foreach (TextChange textChange in textChanges)
+            {
+                if (textChange.RemovedLength > 0)
+                {
+                    password = password.Remove(textChange.Offset, textChange.RemovedLength);
+                }
+
+                if (textChange.AddedLength > 0)
+                {
+                    string insertedText = _currentText.Substring(textChange.Offset, textChange.AddedLength);
+                    password = password.Insert(textChange.Offset, insertedText);
+                }
+            }
+
+            return password;
+        }
+
+        /// <summary>
+        /// 使用暂存的真实输入文本更新密码。
+        /// </summary>
+        /// <param name="password">当前密码。</param>
+        /// <param name="textChanges">文本变化集合。</param>
+        /// <returns>更新后的密码。</returns>
+        private string ApplyPendingInput(string password, ICollection<TextChange> textChanges)
+        {
+            bool hasInsertedText = false;
+            bool hasAddedText = false;
+
+            foreach (TextChange textChange in textChanges)
+            {
+                if (textChange.RemovedLength > 0)
+                {
+                    password = password.Remove(textChange.Offset, textChange.RemovedLength);
+                }
+
+                if (textChange.AddedLength > 0 && !hasInsertedText)
+                {
+                    password = password.Insert(textChange.Offset, _pendingInputText);
+                    hasInsertedText = true;
+                    hasAddedText = true;
+                }
+            }
+
+            return hasAddedText ? password : _currentPassword;
+        }
+
+        /// <summary>
+        /// Handles hidden-mode changes when the text is not masked yet.
+        /// </summary>
+        /// <param name="password">The current password value.</param>
+        /// <param name="textChanges">The text changes.</param>
+        /// <returns>The updated password string.</returns>
+        private string HandlePlainTextChanges(string password, ICollection<TextChange> textChanges)
+        {
             foreach (TextChange textChange in textChanges)
             {
                 if (textChange.RemovedLength > 0)

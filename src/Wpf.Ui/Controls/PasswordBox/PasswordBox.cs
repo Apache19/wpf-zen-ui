@@ -5,6 +5,7 @@
 
 using System.Windows.Controls;
 using System.Windows.Data;
+using System.Windows.Input;
 
 // ReSharper disable once CheckNamespace
 namespace Wpf.Ui.Controls;
@@ -151,6 +152,17 @@ public partial class PasswordBox : TextBox
         }
 
         base.OnTextChanged(e);
+    }
+
+    /// <inheritdoc/>
+    protected override void OnPreviewTextInput(TextCompositionEventArgs e)
+    {
+        if (!IsPasswordRevealed)
+        {
+            _passwordHelper.RememberInputText(e.Text);
+        }
+
+        base.OnPreviewTextInput(e);
     }
 
     /// <inheritdoc/>
