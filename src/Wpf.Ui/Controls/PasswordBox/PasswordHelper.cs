@@ -37,9 +37,9 @@ public partial class PasswordBox
         }
 
         /// <summary>
-        /// 记录最近一次预输入文本。
+        /// Records the most recent pending input text.
         /// </summary>
-        /// <param name="inputText">预输入文本。</param>
+        /// <param name="inputText">The pending input text.</param>
         public void RememberInputText(string inputText)
         {
             _pendingInputText = inputText ?? string.Empty;
@@ -120,11 +120,11 @@ public partial class PasswordBox
         }
 
         /// <summary>
-        /// 使用暂存的真实输入文本更新密码。
+        /// Applies the stored real input text to update the password.
         /// </summary>
-        /// <param name="password">当前密码。</param>
-        /// <param name="textChanges">文本变化集合。</param>
-        /// <returns>更新后的密码。</returns>
+        /// <param name="password">The current password.</param>
+        /// <param name="textChanges">Collection of text changes.</param>
+        /// <returns>The updated password.</returns>
         private string ApplyPendingInput(string password, ICollection<TextChange> textChanges)
         {
             bool hasInsertedText = false;

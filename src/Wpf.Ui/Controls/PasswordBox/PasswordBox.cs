@@ -176,9 +176,7 @@ public partial class PasswordBox : TextBox
         SetCurrentValue(PasswordProperty, string.Empty);
     }
 
-    /// <summary>
-    /// Called when the <see cref="Password"/> property changes.
-    /// </summary>
+    /// <summary>This method is invoked when the <see cref="PasswordProperty"/> changes.</summary>
     protected virtual void OnPasswordChanged()
     {
         if (_isUpdating)
@@ -199,9 +197,7 @@ public partial class PasswordBox : TextBox
         RaisePasswordChangedEvent();
     }
 
-    /// <summary>
-    /// Called when the <see cref="PasswordChar"/> property changes.
-    /// </summary>
+    /// <summary>This method is invoked when the <see cref="PasswordCharProperty"/> changes.</summary>
     protected virtual void OnPasswordCharChanged()
     {
         if (IsPasswordRevealed)
@@ -214,9 +210,7 @@ public partial class PasswordBox : TextBox
         );
     }
 
-    /// <summary>
-    /// Called when the <see cref="IsPasswordRevealed"/> property changes.
-    /// </summary>
+    /// <summary>This method is invoked when the <see cref="IsPasswordRevealedProperty"/> changes.</summary>
     protected virtual void OnIsPasswordRevealedChanged()
     {
         string password = Password ?? string.Empty;
