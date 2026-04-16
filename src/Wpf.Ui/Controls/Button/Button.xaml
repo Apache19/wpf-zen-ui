@@ -212,7 +212,7 @@
                                     <ColumnDefinition Width="Auto" />
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
-
+                                <!--  Icon  -->
                                 <ContentPresenter
                                     x:Name="ControlIcon"
                                     Grid.Column="0"
@@ -222,7 +222,7 @@
                                     Focusable="False"
                                     TextElement.FontSize="{TemplateBinding FontSize}"
                                     TextElement.Foreground="{TemplateBinding Foreground}" />
-
+                                <!--  Content  -->
                                 <ContentPresenter
                                     x:Name="ContentPresenter"
                                     Grid.Column="1"
@@ -235,31 +235,15 @@
                         </Border>
                     </Border>
                     <ControlTemplate.Triggers>
-                        <MultiTrigger>
-                            <MultiTrigger.Conditions>
-                                <Condition Property="IsMouseOver" Value="True" />
-                                <Condition Property="IsPressed" Value="False" />
-                            </MultiTrigger.Conditions>
-                            <!--<Setter TargetName="ContentPresenter" Property="TextElement.Foreground" Value="{Binding MouseOverForeground, RelativeSource={RelativeSource TemplatedParent}}" />
-                            <Setter TargetName="ControlIcon" Property="TextElement.Foreground" Value="{Binding MouseOverForeground, RelativeSource={RelativeSource TemplatedParent}}" />-->
+                        <Trigger Property="IsMouseOver" Value="True">
                             <Setter TargetName="ContentBorder" Property="Background" Value="{Binding MouseOverBackground, RelativeSource={RelativeSource TemplatedParent}}" />
                             <Setter TargetName="ContentBorder" Property="BorderBrush" Value="{Binding MouseOverBorderBrush, RelativeSource={RelativeSource TemplatedParent}}" />
-                        </MultiTrigger>
-                        <MultiTrigger>
-                            <MultiTrigger.Conditions>
-                                <Condition Property="IsMouseOver" Value="True" />
-                                <Condition Property="IsPressed" Value="True" />
-                            </MultiTrigger.Conditions>
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
                             <Setter TargetName="ContentBorder" Property="Background" Value="{Binding PressedBackground, RelativeSource={RelativeSource TemplatedParent}}" />
                             <Setter TargetName="ContentBorder" Property="BorderBrush" Value="{Binding PressedBorderBrush, RelativeSource={RelativeSource TemplatedParent}}" />
                             <Setter TargetName="ContentPresenter" Property="TextElement.Foreground" Value="{Binding PressedForeground, RelativeSource={RelativeSource TemplatedParent}}" />
                             <Setter TargetName="ControlIcon" Property="TextElement.Foreground" Value="{Binding PressedForeground, RelativeSource={RelativeSource TemplatedParent}}" />
-                        </MultiTrigger>
-                        <Trigger Property="IsEnabled" Value="False">
-                            <Setter TargetName="ContentBorder" Property="Background" Value="{m:BrushResource SubtleFillColorDisabledBrush}" />
-                            <Setter TargetName="ContentBorder" Property="BorderBrush" Value="{m:BrushResource ControlStrokeColorDefaultBrush}" />
-                            <Setter TargetName="ControlIcon" Property="TextElement.Foreground" Value="{m:BrushResource TextFillColorDisabledBrush}" />
-                            <Setter TargetName="ContentPresenter" Property="TextElement.Foreground" Value="{m:BrushResource TextFillColorDisabledBrush}" />
                         </Trigger>
                         <Trigger Property="Content" Value="{x:Null}">
                             <Setter TargetName="ControlIcon" Property="Margin" Value="0" />
@@ -388,6 +372,13 @@
                 <Setter Property="PressedBorderBrush" Value="Transparent" />
                 <Setter Property="BorderBrush" Value="{m:BrushResource AccentControlElevationBorderBrush}" />
                 <Setter Property="MouseOverBorderBrush" Value="{m:BrushResource AccentControlElevationBorderBrush}" />
+            </Trigger>
+
+            <!--  Disabled  -->
+            <Trigger Property="IsEnabled" Value="False">
+                <Setter  Property="Background" Value="{m:BrushResource ControlFillColorDisabledBrush}" />
+                <Setter  Property="BorderBrush" Value="{m:BrushResource ControlStrokeColorDefaultBrush}" />
+                <Setter  Property="Foreground" Value="{m:BrushResource TextFillColorDisabledBrush}" />
             </Trigger>
         </Style.Triggers>
     </Style>
