@@ -5,39 +5,64 @@
 
 // This Source Code is partially based on the source code provided by the .NET Foundation.
 
-// TODO: Mask (with placeholder);
-// TODO: Constant decimals when formatting. Although this can actually be done with NumberFormatter.
-// TODO: Disable expression by default
-// TODO: Lock to digit characters only by property
-//
-
 using System.Windows.Controls.Primitives;
 using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Threading;
-using WinButton = System.Windows.Controls.Button;
-using WinRepeatButton = System.Windows.Controls.Primitives.RepeatButton;
 
 // ReSharper disable once CheckNamespace
 namespace Wpf.Ui.Controls;
 
-/// <summary>
-/// Represents a control that can be used to display and edit numbers.
-/// </summary>
-[TemplatePart(Name = PART_ClearButton,           Type = typeof(WinButton))]
-[TemplatePart(Name = PART_InlineIncrementButton, Type = typeof(WinRepeatButton))]
-[TemplatePart(Name = PART_InlineDecrementButton, Type = typeof(WinRepeatButton))]
+[TemplatePart(Name = "PART_CompactPopup", Type = typeof(Popup))]
 public class NumberBox : TextBox
 {
-    // todo: 这些按钮并非刚需控件，没有相关依赖，没必要作为PART出现
-    // Template part names
-    private const string PART_ClearButton           = nameof(PART_ClearButton);
-    private const string PART_InlineIncrementButton = nameof(PART_InlineIncrementButton);
-    private const string PART_InlineDecrementButton = nameof(PART_InlineDecrementButton);
-
-    private bool _valueUpdating;
+    private bool    _valueUpdating;
+    private Popup?  _compactPopup;
+    private Window? _parentWindow;
 
     #region Dependency properties
+
+    #region ButtonKindProperty
+
+    // Attached property to mark template buttons with their function.
+    public static readonly DependencyProperty ButtonKindProperty =
+        DependencyProperty.RegisterAttached(
+            "ButtonKind",
+            typeof(NumberBoxButtonKind),
+            typeof(NumberBox),
+            new PropertyMetadata(NumberBoxButtonKind.None)
+        );
+
+    /// <summary>
+    /// Helper for setting <see cref="ButtonKindProperty"/> on <paramref name="element"/>.
+    /// </summary>
+    /// <param name="element">
+    /// <see cref="DependencyObject"/> to set <see cref="ButtonKindProperty"/> on.
+    /// </param>
+    /// <param name="value">
+    /// ButtonKind property value.
+    /// </param>
+    public static void SetButtonKind(DependencyObject element, NumberBoxButtonKind value)
+    {
+        element.SetValue(ButtonKindProperty, value);
+    }
+
+    /// <summary>
+    /// Helper for getting <see cref="ButtonKindProperty"/> from <paramref name="element"/>.
+    /// </summary>
+    /// <param name="element">
+    /// <see cref="DependencyObject"/> to read <see cref="ButtonKindProperty"/> from.
+    /// </param>
+    /// <returns>
+    /// ButtonKind property value.
+    /// </returns>
+    [AttachedPropertyBrowsableForType(typeof(DependencyObject))]
+    public static NumberBoxButtonKind GetButtonKind(DependencyObject element)
+    {
+        return (NumberBoxButtonKind)element.GetValue(ButtonKindProperty);
+    }
+
+    #endregion
 
     #region ValueProperty
 
@@ -96,6 +121,35 @@ public class NumberBox : TextBox
     {
         get => (double?)GetValue(ValueProperty);
         set => SetValue(ValueProperty, value);
+    }
+
+    #endregion
+
+    #region DecimalPlacesProperty
+
+    /// <summary>Identifies the <see cref="DecimalPlaces"/> dependency property.</summary>
+    public static readonly DependencyProperty DecimalPlacesProperty = DependencyProperty.Register(
+        nameof(DecimalPlaces),
+        typeof(int?),
+        typeof(NumberBox),
+        new PropertyMetadata(null),
+        static value => value is null or (>= 0 and <= 15)
+    );
+
+    /// <summary>
+    /// Gets or sets the number of decimal places to always display when formatting the value.
+    /// When set, the value is always shown with exactly this many decimal places (e.g., <c>1</c> displays as <c>1.00</c> when <see cref="DecimalPlaces"/> is <c>2</c>).
+    /// When <see langword="null"/>, the default formatter behavior is used.
+    /// </summary>
+    /// <example>
+    /// <code lang="xml">
+    /// &lt;ui:NumberBox DecimalPlaces="2" /&gt;
+    /// </code>
+    /// </example>
+    public int? DecimalPlaces
+    {
+        get => (int?)GetValue(DecimalPlacesProperty);
+        set => SetValue(DecimalPlacesProperty, value);
     }
 
     #endregion
@@ -315,7 +369,16 @@ public class NumberBox : TextBox
         nameof(AcceptsExpression),
         typeof(bool),
         typeof(NumberBox),
-        new PropertyMetadata(true)
+        new PropertyMetadata(
+            false,
+            static (d, e) =>
+            {
+                if (d is NumberBox nb && e.NewValue is false)
+                {
+                    nb.ValidateInput();
+                }
+            }
+        )
     );
 
     /// <summary>
@@ -393,6 +456,34 @@ public class NumberBox : TextBox
 
     #endregion
 
+    #region RestrictInputToNumbersProperty
+
+    /// <summary>Identifies the <see cref="RestrictInputToNumbers"/> dependency property.</summary>
+    public static readonly DependencyProperty RestrictInputToNumbersProperty = DependencyProperty.Register(
+        nameof(RestrictInputToNumbers),
+        typeof(bool),
+        typeof(NumberBox),
+        new PropertyMetadata(false)
+    );
+
+    /// <summary>
+    /// Gets or sets a value indicating whether keyboard input is restricted to numeric characters only.
+    /// When <see langword="true"/>, non-numeric characters (except decimal separators and sign characters) are blocked at input time.
+    /// When <see langword="false"/>, input is unrestricted and validation occurs on commit.
+    /// </summary>
+    /// <example>
+    /// <code lang="xml">
+    /// &lt;ui:NumberBox RestrictInputToNumbers="True" /&gt;
+    /// </code>
+    /// </example>
+    public bool RestrictInputToNumbers
+    {
+        get => (bool)GetValue(RestrictInputToNumbersProperty);
+        set => SetValue(RestrictInputToNumbersProperty, value);
+    }
+
+    #endregion
+
     #endregion
 
     #region Events
@@ -418,17 +509,42 @@ public class NumberBox : TextBox
 
     static NumberBox()
     {
-        DefaultStyleKeyProperty.OverrideMetadata(typeof(NumberBox), new FrameworkPropertyMetadata(typeof(NumberBox)));
-        // todo: 已经强制最大最小行为1了，是否接受回车键是否还有必要强制？
-        AcceptsReturnProperty.OverrideMetadata(typeof(NumberBox), new FrameworkPropertyMetadata(false));
-        // todo: 强制最大最小行数为1
-        MaxLinesProperty.OverrideMetadata(typeof(NumberBox), new FrameworkPropertyMetadata(1));
-        MinLinesProperty.OverrideMetadata(typeof(NumberBox), new FrameworkPropertyMetadata(1));
+        DefaultStyleKeyProperty.OverrideMetadata(
+            typeof(NumberBox),
+            new FrameworkPropertyMetadata(typeof(NumberBox))
+        );
+
+        AcceptsReturnProperty.OverrideMetadata(
+            typeof(NumberBox),
+            new FrameworkPropertyMetadata(
+                false,
+                null,
+                (d, baseValue) => false
+            )
+        );
+
+        MaxLinesProperty.OverrideMetadata(
+            typeof(NumberBox),
+            new FrameworkPropertyMetadata(
+                1,
+                null,
+                (d, baseValue) => 1
+            )
+        );
+
+        MinLinesProperty.OverrideMetadata(
+            typeof(NumberBox),
+            new FrameworkPropertyMetadata(
+                1,
+                null,
+                (d, baseValue) => 1
+            )
+        );
     }
 
     public NumberBox()
     {
-        NumberFormatter ??= NumberBox.GetRegionalSettingsAwareDecimalFormatter();
+        NumberFormatter ??= GetRegionalSettingsAwareDecimalFormatter();
 
         DataObject.AddPastingHandler(this, OnClipboardPaste);
     }
@@ -489,6 +605,60 @@ public class NumberBox : TextBox
     }
 
     /// <inheritdoc />
+    protected override void OnPreviewTextInput(TextCompositionEventArgs e)
+    {
+        if (RestrictInputToNumbers && !IsReadOnly)
+        {
+            var text             = e.Text;
+            var decimalSeparator = CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator;
+            var groupSeparator   = CultureInfo.CurrentCulture.NumberFormat.NumberGroupSeparator;
+
+            foreach (var ch in text)
+            {
+                var s = ch.ToString();
+                if (!char.IsDigit(ch)
+                 && s != decimalSeparator
+                 && s != groupSeparator
+                 && ch != '-'
+                 && ch != '+')
+                {
+                    // Allow expression operators only when AcceptsExpression is enabled
+                    if (!AcceptsExpression || (ch != '*' && ch != '/' && ch != '(' && ch != ')'))
+                    {
+                        e.Handled = true;
+                        break;
+                    }
+                }
+            }
+        }
+
+        base.OnPreviewTextInput(e);
+    }
+
+    /// <inheritdoc />
+    protected override void OnPreviewMouseWheel(MouseWheelEventArgs e)
+    {
+        // Only respond to mouse wheel when control is not read-only and has keyboard focus.
+        if (IsReadOnly)
+        {
+            base.OnPreviewMouseWheel(e);
+            return;
+        }
+
+        if (!IsKeyboardFocusWithin)
+        {
+            // Let parent controls (e.g., ScrollViewer) handle the wheel when this control isn't focused.
+            base.OnPreviewMouseWheel(e);
+            return;
+        }
+
+        StepValue(e.Delta > 0 ? SmallChange : -SmallChange);
+        e.Handled = true;
+
+        base.OnPreviewMouseWheel(e);
+    }
+
+    /// <inheritdoc />
     protected override void OnLostFocus(RoutedEventArgs e)
     {
         base.OnLostFocus(e);
@@ -503,25 +673,23 @@ public class NumberBox : TextBox
         }
     }
 
-    /*/// <inheritdoc />
-    protected override void OnTextChanged(System.Windows.Controls.TextChangedEventArgs e)
-    {
-        base.OnTextChanged(e);
-
-        //if (new string[] { ",", ".", " " }.Any(s => Text.EndsWith(s)))
-        //    return;
-
-        //if (!_textUpdating)
-        //    UpdateValueToText();
-    }*/
-
     /// <inheritdoc />
     public override void OnApplyTemplate()
     {
-        // todo: 对于事件，订阅路由事件，并区分按钮参数（TAG或其他东西用于区分）来执行相应逻辑
-        SubscribeToButtonClickEvent<WinButton>(PART_ClearButton, OnClearButtonClick);
-        SubscribeToButtonClickEvent<WinRepeatButton>(PART_InlineIncrementButton, () => StepValue(SmallChange));
-        SubscribeToButtonClickEvent<WinRepeatButton>(PART_InlineDecrementButton, () => StepValue(-SmallChange));
+        #pragma warning disable WPF0091 // Name the invoked method OnEventName
+        #pragma warning disable WPF0041 // Set mutable dependency properties using SetCurrentValue
+
+        AddHandler(ButtonBase.ClickEvent, new RoutedEventHandler(OnButtonClick));
+
+        _compactPopup?.RemoveHandler(ButtonBase.ClickEvent, new RoutedEventHandler(OnButtonClick));
+
+        _compactPopup = GetTemplateChild("PART_CompactPopup") as Popup;
+
+        if (_compactPopup is not null)
+        {
+            _compactPopup.CustomPopupPlacementCallback = CompactPopupPlacementCallback;
+            _compactPopup.AddHandler(ButtonBase.ClickEvent, new RoutedEventHandler(OnButtonClick));
+        }
 
         // If Text has been set, but Value hasn't, update Value based on Text.
         if (string.IsNullOrEmpty(Text) && Value != null)
@@ -534,17 +702,116 @@ public class NumberBox : TextBox
         }
 
         base.OnApplyTemplate();
+
+        #pragma warning restore WPF0041 // Set mutable dependency properties using SetCurrentValue
+        #pragma warning restore WPF0091 // Name the invoked method OnEventName
     }
 
-    private void SubscribeToButtonClickEvent<TButton>(string elementName, Action action)
-        where TButton : ButtonBase
+    /// <inheritdoc />
+    protected override void OnInitialized(EventArgs e)
     {
-        if (GetTemplateChild(elementName) is TButton button)
+        base.OnInitialized(e);
+        Loaded   += OnNumberBoxLoaded;
+        Unloaded += OnNumberBoxUnloaded;
+    }
+
+    private void OnNumberBoxLoaded(object sender, RoutedEventArgs e)
+    {
+        SizeChanged   += OnNumberBoxSizeChanged;
+        LayoutUpdated += OnNumberBoxLayoutUpdated;
+
+        var window = Window.GetWindow(this);
+        if (window == _parentWindow)
         {
-            button.Click += (s, e) =>
+            return;
+        }
+
+        if (_parentWindow is not null)
+        {
+            _parentWindow.LocationChanged -= OnParentWindowLocationChanged;
+            _parentWindow.SizeChanged     -= OnParentWindowSizeChanged;
+        }
+
+        _parentWindow = window;
+
+        if (_parentWindow is not null)
+        {
+            _parentWindow.LocationChanged += OnParentWindowLocationChanged;
+            _parentWindow.SizeChanged     += OnParentWindowSizeChanged;
+        }
+    }
+
+    private void OnNumberBoxUnloaded(object sender, RoutedEventArgs e)
+    {
+        SizeChanged   -= OnNumberBoxSizeChanged;
+        LayoutUpdated -= OnNumberBoxLayoutUpdated;
+
+        if (_parentWindow is not null)
+        {
+            _parentWindow.LocationChanged -= OnParentWindowLocationChanged;
+            _parentWindow.SizeChanged     -= OnParentWindowSizeChanged;
+            _parentWindow                 =  null;
+        }
+    }
+
+    private void OnParentWindowLocationChanged(object? sender, EventArgs e) => RefreshCompactPopupPosition();
+
+    private void OnParentWindowSizeChanged(object sender, SizeChangedEventArgs e) => RefreshCompactPopupPosition();
+
+    private void OnNumberBoxSizeChanged(object sender, SizeChangedEventArgs e) => RefreshCompactPopupPosition();
+
+    private void OnNumberBoxLayoutUpdated(object? sender, EventArgs e) => RefreshCompactPopupPosition();
+
+    private void RefreshCompactPopupPosition()
+    {
+        if (_compactPopup is not { IsOpen: true })
+        {
+            return;
+        }
+
+        // Nudge HorizontalOffset to force WPF to re-invoke the placement callback.
+        _compactPopup.HorizontalOffset += 0.01;
+        _compactPopup.HorizontalOffset -= 0.01;
+    }
+
+    private CustomPopupPlacement[] CompactPopupPlacementCallback(Size popupSize, Size targetSize, Point offset)
+    {
+        // Place popup so its left edge aligns with the control's right edge,
+        // then shift it left by 27px so it visually overlays the classic buttons area.
+        //
+        // Note: The 27px offset represents the total horizontal footprint of the small
+        // classic buttons, including both their width and surrounding margin. This ensures
+        // consistent visual alignment across different DPI settings.
+        var dpi = VisualTreeHelper.GetDpi(this);
+        var x   = targetSize.Width - (27.0 * dpi.DpiScaleX);
+        var y   = (targetSize.Height - popupSize.Height) / 2.0;
+        return [new CustomPopupPlacement(new Point(x, y), PopupPrimaryAxis.None)];
+    }
+
+    private void OnButtonClick(object sender, RoutedEventArgs e)
+    {
+        if (e.OriginalSource is ButtonBase btn)
+        {
+            var buttonKind = GetButtonKind(btn);
+
+            switch (buttonKind)
             {
-                action();
-            };
+                case NumberBoxButtonKind.Clear:
+                    OnClearButtonClick();
+                    break;
+
+                case NumberBoxButtonKind.Increment:
+                    StepValue(SmallChange);
+                    break;
+
+                case NumberBoxButtonKind.Decrement:
+                    StepValue(-SmallChange);
+                    break;
+
+                case NumberBoxButtonKind.None:
+                default:
+                    break;
+            }
         }
     }
 
@@ -646,7 +913,10 @@ public class NumberBox : TextBox
 
         if (Value is not null && NumberFormatter is not null)
         {
-            newText = NumberFormatter.FormatDouble(Math.Round((double)Value, MaxDecimalPlaces));
+            var d = Math.Round((double)Value, MaxDecimalPlaces);
+            newText = DecimalPlaces is int dp
+                ? d.ToString("F" + dp, CultureInfo.CurrentCulture)
+                : NumberFormatter.FormatDouble(d);
         }
 
         SetCurrentValue(TextProperty, newText);
@@ -670,6 +940,15 @@ public class NumberBox : TextBox
 
         var numberParser = NumberFormatter as INumberParser;
         var value        = numberParser!.ParseDouble(text);
+
+        // If direct parsing failed, try expression evaluation
+        if (value is null && AcceptsExpression)
+        {
+            if (NumberBoxExpressionParser.TryEvaluate(text, out var exprResult))
+            {
+                value = exprResult;
+            }
+        }
 
         // If parsing failed
         if (value is null)

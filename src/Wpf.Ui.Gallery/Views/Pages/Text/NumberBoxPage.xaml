@@ -10,11 +10,9 @@
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
     Title="NumberBoxPage"
     controls:PageControlDocumentation.DocumentationType="{x:Type ui:NumberBox}"
-    d:DataContext="{d:DesignInstance local:NumberBoxPage,
-                                     IsDesignTimeCreatable=False}"
-    d:DesignHeight="450"
-    d:DesignWidth="800"
     d:Background="{ui:BrushResource WindowBackgroundBrush}"
+    d:DataContext="{d:DesignInstance local:NumberBoxPage, IsDesignTimeCreatable=False}"
+    d:DesignWidth="800"
     Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
     mc:Ignorable="d">
 
@@ -23,7 +21,72 @@
             Margin="0"
             HeaderText="WPF UI NumberBox."
             XamlCode="&lt;ui:NumberBox PlaceholderText=&quot;Enter your age&quot; /&gt;">
-            <ui:NumberBox PlaceholderText="Enter your age" />
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition />
+                    <RowDefinition Height="8" />
+                    <RowDefinition />
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <ui:NumberBox
+                    Grid.RowSpan="3"
+                    MinWidth="260"
+                    HorizontalAlignment="Left"
+                    VerticalAlignment="Center"
+                    AcceptsExpression="{Binding ElementName=AcceptsExpBox, Path=SelectedValue}"
+                    PlaceholderText="Enter your age"
+                    SpinButtonPlacementMode="{Binding ElementName=SpinButtonPlacementBox, Path=SelectedValue}" />
+                <ui:TextBlock
+                    Grid.Row="0"
+                    Grid.Column="1"
+                    Margin="0,0,8,0"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Center"
+                    Text="SpinButton placement" />
+                <ui:ComboBox
+                    x:Name="SpinButtonPlacementBox"
+                    Grid.Row="0"
+                    Grid.Column="2"
+                    MinWidth="120"
+                    SelectedIndex="0"
+                    SelectedValuePath="Content">
+                    <ComboBoxItem Content="{x:Static ui:NumberBoxSpinButtonPlacementMode.Inline}" />
+                    <ComboBoxItem Content="{x:Static ui:NumberBoxSpinButtonPlacementMode.Classic}" />
+                    <ComboBoxItem Content="{x:Static ui:NumberBoxSpinButtonPlacementMode.Compact}" />
+                    <ComboBoxItem Content="{x:Static ui:NumberBoxSpinButtonPlacementMode.Hidden}" />
+                </ui:ComboBox>
+
+                <ui:TextBlock
+                    Grid.Row="2"
+                    Grid.Column="1"
+                    Margin="0,0,8,0"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Center"
+                    Text="Accepts expression" />
+                <ui:ComboBox
+                    x:Name="AcceptsExpBox"
+                    Grid.Row="2"
+                    Grid.Column="2"
+                    MinWidth="120"
+                    SelectedIndex="0"
+                    SelectedValuePath="Content">
+                    <ComboBoxItem>
+                        <ComboBoxItem.Content>
+                            <system:Boolean>True</system:Boolean>
+                        </ComboBoxItem.Content>
+                    </ComboBoxItem>
+                    <ComboBoxItem>
+                        <ComboBoxItem.Content>
+                            <system:Boolean>False</system:Boolean>
+                        </ComboBoxItem.Content>
+                    </ComboBoxItem>
+                </ui:ComboBox>
+
+            </Grid>
         </controls:ControlExample>
 
         <controls:ControlExample
@@ -31,6 +94,9 @@
             HeaderText="WPF UI NumberBox with icon."
             XamlCode="&lt;ui:NumberBox Icon=&quot;NumberSymbolSquare24&quot; PlaceholderText=&quot;Enter your age&quot; /&gt;">
             <ui:NumberBox
+                MinWidth="260"
+                HorizontalAlignment="Left"
+                DecimalPlaces="2"
                 Icon="{ui:SymbolIcon NumberSymbolSquare24}"
                 LargeChange="2.25"
                 Maximum="10"
@@ -46,6 +112,8 @@
             HeaderText="WPF UI NumberBox without decimal places."
             XamlCode="&lt;ui:NumberBox DecimalPlaces=&quot;0&quot; /&gt;">
             <ui:NumberBox
+                MinWidth="260"
+                HorizontalAlignment="Left"
                 Icon="{ui:SymbolIcon NumberSymbolSquare24}"
                 MaxDecimalPlaces="0"
                 Maximum="100"

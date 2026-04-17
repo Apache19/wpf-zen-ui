@@ -19,6 +19,11 @@ public enum NumberBoxSpinButtonPlacementMode
     Hidden,
 
     /// <summary>
+    /// The spin buttons are displayed in a compact, vertical orientation, similar to classic or traditional number input controls.
+    /// </summary>
+    Classic,
+
+    /// <summary>
     /// The spin buttons have two visual states, depending on focus. By default, the spin buttons are displayed in a compact, vertical orientation. When the Numberbox gets focus, the spin buttons expand.
     /// </summary>
     Compact,

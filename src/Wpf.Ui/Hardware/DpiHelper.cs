@@ -60,6 +60,7 @@ internal static class DpiHelper
     /// Gets DPI of the selected <see cref="Window"/>.
     /// </summary>
     /// <param name="window">The window that you want to get information about.</param>
+    [Obsolete("This method is unreliable in non-WPF hosting environments. Use VisualTreeHelper.GetDpi(Visual) instead.")]
     public static DisplayDpi GetWindowDpi(Window? window)
     {
         if (window is null)

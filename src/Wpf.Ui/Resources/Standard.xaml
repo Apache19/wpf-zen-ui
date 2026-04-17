@@ -4,6 +4,7 @@
     xmlns:m="clr-namespace:Wpf.Ui.Markup"
     xmlns:t="clr-namespace:Wpf.Ui.Theming">
 
+    <!--  todo: 补充所有WPF标准样式  -->
     <Style BasedOn="{StaticResource {x:Static t:StyleKeys.RepeatButtonStyle}}" TargetType="{x:Type RepeatButton}" />
 
 </ResourceDictionary>
