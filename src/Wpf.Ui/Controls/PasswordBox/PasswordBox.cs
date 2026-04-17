@@ -14,7 +14,7 @@ namespace Wpf.Ui.Controls;
 /// <summary>
 /// The modified password control.
 /// </summary>
-public partial class PasswordBox : TextBox
+public sealed partial class PasswordBox : TextBox
 {
     private readonly PasswordHelper _passwordHelper;
 
@@ -38,7 +38,7 @@ public partial class PasswordBox : TextBox
                 {
                     if (d is PasswordBox passwordBox)
                     {
-                        passwordBox.OnPasswordChanged();
+                        passwordBox.OnPasswordChanged((string)e.NewValue ?? string.Empty);
                     }
                 },
                 static (_, value) => value as string ?? string.Empty,
@@ -99,7 +99,7 @@ public partial class PasswordBox : TextBox
                 {
                     if (d is PasswordBox passwordBox)
                     {
-                        passwordBox.OnIsPasswordRevealedChanged();
+                        passwordBox.OnIsPasswordRevealedChanged((bool)e.NewValue);
                     }
                 }
             )
@@ -156,6 +156,26 @@ public partial class PasswordBox : TextBox
         remove => RemoveHandler(PasswordChangedEvent, value);
     }
 
+    /// <summary>
+    /// Identifies the <see cref="IsPasswordRevealedChanged"/> routed event.
+    /// </summary>
+    private static readonly RoutedEvent IsPasswordRevealedChangedEvent =
+        EventManager.RegisterRoutedEvent(
+            nameof(IsPasswordRevealedChanged),
+            RoutingStrategy.Bubble,
+            typeof(RoutedEventHandler),
+            typeof(PasswordBox)
+        );
+
+    /// <summary>
+    /// Occurs when the IsPasswordRevealed property changes.
+    /// </summary>
+    public event RoutedEventHandler IsPasswordRevealedChanged
+    {
+        add => AddHandler(IsPasswordRevealedChangedEvent, value);
+        remove => RemoveHandler(IsPasswordRevealedChangedEvent, value);
+    }
+
     static PasswordBox()
     {
         DefaultStyleKeyProperty.OverrideMetadata(
@@ -203,10 +223,7 @@ public partial class PasswordBox : TextBox
             DataObject.AddCopyingHandler(this, HandleDataObjectCopying);
         };
 
-        Unloaded += (s, e) =>
-        {
-            DataObject.RemoveCopyingHandler(this, HandleDataObjectCopying);
-        };
+        Unloaded += (s, e) => { DataObject.RemoveCopyingHandler(this, HandleDataObjectCopying); };
     }
 
     /// <inheritdoc />
@@ -222,10 +239,10 @@ public partial class PasswordBox : TextBox
         // Prevent TextBox from entering drag mode when clicking on selected text,
         // which would keep the old selection anchor and cause unexpected selection behavior.
         if (SelectionLength > 0
-         && !Keyboard.Modifiers.HasFlag(ModifierKeys.Shift)
-         && IsDescendantOfContentHost(e.OriginalSource as DependencyObject))
+            && !Keyboard.Modifiers.HasFlag(ModifierKeys.Shift)
+            && IsDescendantOfContentHost(e.OriginalSource as DependencyObject))
         {
-            int index = GetCharacterIndexFromPoint(e.GetPosition(this), true);
+            var index = GetCharacterIndexFromPoint(e.GetPosition(this), true);
 
             if (index >= SelectionStart && index < SelectionStart + SelectionLength)
             {
@@ -267,17 +284,16 @@ public partial class PasswordBox : TextBox
     }
 
     /// <summary>
-    /// Called when the <see cref="Password"/> property changes.
+    /// Called when the <see cref="Password"/> property changes with the new value provided by the property system.
     /// </summary>
-    protected virtual void OnPasswordChanged()
+    private void OnPasswordChanged(string newPassword)
     {
         if (_isUpdating)
         {
             return;
         }
 
-        var password    = Password ?? string.Empty;
-        var displayText = IsPasswordRevealed ? password : new string(PasswordChar, password.Length);
+        var displayText = IsPasswordRevealed ? newPassword : new string(PasswordChar, newPassword.Length);
         var caretIndex  = Math.Min(CaretIndex, displayText.Length);
 
         UpdateWithLock(() =>
@@ -292,35 +308,43 @@ public partial class PasswordBox : TextBox
     /// <summary>
     /// Called when the <see cref="PasswordChar"/> property changes.
     /// </summary>
-    protected virtual void OnPasswordCharChanged()
+    private void OnPasswordCharChanged()
     {
         if (IsPasswordRevealed)
         {
             return;
         }
 
+        var password     = Password;
+        var passwordChar = PasswordChar;
+        var length       = password.Length;
+
         UpdateWithLock(() =>
-            SetCurrentValue(TextProperty, new string(PasswordChar, Password?.Length ?? 0))
+            SetCurrentValue(TextProperty, new string(passwordChar, length))
         );
     }
 
     /// <summary>This method is invoked when the <see cref="IsPasswordRevealedProperty"/> changes.</summary>
-    protected virtual void OnIsPasswordRevealedChanged()
+    private void OnIsPasswordRevealedChanged(bool isRevealed)
     {
-        var password        = Password ?? string.Empty;
+        var password        = Password;
+        var passwordChar    = PasswordChar;
         var selectionStart  = SelectionStart;
         var selectionLength = SelectionLength;
+        var passwordLength  = password.Length;
 
         UpdateWithLock(() =>
         {
             SetCurrentValue(
                 TextProperty,
-                IsPasswordRevealed ? password : new string(PasswordChar, password.Length)
+                isRevealed ? password : new string(passwordChar, passwordLength)
             );
 
-            SelectionStart  = Math.Min(selectionStart,  password.Length);
-            SelectionLength = Math.Min(selectionLength, password.Length - SelectionStart);
+            selectionStart  = SelectionStart = Math.Min(selectionStart, passwordLength);
+            SelectionLength = Math.Min(selectionLength, passwordLength - selectionStart);
         });
+
+        RaiseEvent(new RoutedEventArgs(IsPasswordRevealedChangedEvent));
     }
 
     /// <inheritdoc/>
@@ -382,10 +406,11 @@ public partial class PasswordBox : TextBox
         var caretIndex     = CaretIndex;
         var newPassword    = textChanges.Count > 0 ? _passwordHelper.GetNewPassword(textChanges) : Password;
         var passwordLength = newPassword.Length;
+        var passwordChar   = PasswordChar;
 
         UpdateWithLock(() =>
         {
-            SetCurrentValue(TextProperty,     new string(PasswordChar, passwordLength));
+            SetCurrentValue(TextProperty,     new string(passwordChar, passwordLength));
             SetCurrentValue(PasswordProperty, newPassword);
             CaretIndex = Math.Min(caretIndex, passwordLength);
             RaisePasswordChangedEvent();
