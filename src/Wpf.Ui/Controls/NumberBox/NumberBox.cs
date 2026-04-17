@@ -29,6 +29,7 @@ namespace Wpf.Ui.Controls;
 [TemplatePart(Name = PART_InlineDecrementButton, Type = typeof(WinRepeatButton))]
 public class NumberBox : TextBox
 {
+    // todo: 这些按钮并非刚需控件，没有相关依赖，没必要作为PART出现
     // Template part names
     private const string PART_ClearButton           = nameof(PART_ClearButton);
     private const string PART_InlineIncrementButton = nameof(PART_InlineIncrementButton);
@@ -517,6 +518,7 @@ public class NumberBox : TextBox
     /// <inheritdoc />
     public override void OnApplyTemplate()
     {
+        // todo: 对于事件，订阅路由事件，并区分按钮参数（TAG或其他东西用于区分）来执行相应逻辑
         SubscribeToButtonClickEvent<WinButton>(PART_ClearButton, OnClearButtonClick);
         SubscribeToButtonClickEvent<WinRepeatButton>(PART_InlineIncrementButton, () => StepValue(SmallChange));
         SubscribeToButtonClickEvent<WinRepeatButton>(PART_InlineDecrementButton, () => StepValue(-SmallChange));
