@@ -105,6 +105,23 @@ public sealed partial class PasswordBox : TextBox
             )
         );
 
+    // TODO:
+    // 增加 EnableScreenCaptureProtection 属性。
+    // 在明文显示模式下，应尽可能降低密码被桌面捕获的风险。
+    // 可考虑调用 SetWindowDisplayAffinity(hwnd, WDA_MONITOR) 来限制窗口内容被系统级捕获。
+    // 需要注意，该方法对低级驱动、内核级截屏或外部采集设备（如采集卡）无效，但仍属于“尽力防护”的合理措施。
+    // 此外，桌面窗口管理器（DWM）可能提供了用于防止窗口被录制的相关 API，后续可进一步调研与集成。
+    // 注意：该措施仅属于界面层面的缓解手段，不应视为安全边界。
+    //
+    // todo:
+    // Add EnableScreenCaptureProtection property。
+    // In revealed (plain text) mode, efforts should be made to minimize the risk of the password being captured.
+    // Consider using SetWindowDisplayAffinity(hwnd, WDA_MONITOR) to restrict system-level screen capture of the window.
+    // Note that this approach does not protect against low-level drivers, kernel-level capture, or external capture devices (e.g., capture cards),
+    // but it is still a reasonable best-effort mitigation.
+    // Additionally, the Desktop Window Manager (DWM) may provide APIs to prevent screen recording, which should be further investigated.
+    // Note: This is a UI-level mitigation and should not be considered a security boundary.
+
     /// <summary>
     /// Gets a value indicating whether the password is currently revealed.
     /// </summary>
