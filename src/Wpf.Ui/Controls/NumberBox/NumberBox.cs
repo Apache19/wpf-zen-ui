@@ -853,6 +853,8 @@ public class NumberBox : TextBox
             return;
         }
 
+        // todo: 尚未处理表达式允许的字符
+
         if (e.DataObject.GetDataPresent(DataFormats.UnicodeText))
         {
             var pasteText = e.DataObject.GetData(DataFormats.UnicodeText) as string ?? string.Empty;
