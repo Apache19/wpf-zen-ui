@@ -240,7 +240,9 @@
                                         Grid.Column="0"
                                         Margin="{TemplateBinding Padding}"
                                         VerticalAlignment="Center"
+                                        FontFamily="{TemplateBinding FontFamily}"
                                         FontSize="{TemplateBinding FontSize}"
+                                        FontWeight="{TemplateBinding FontWeight}"
                                         Foreground="{m:BrushResource TextPlaceholderColorBrush}" />
 
                                     <TextBox

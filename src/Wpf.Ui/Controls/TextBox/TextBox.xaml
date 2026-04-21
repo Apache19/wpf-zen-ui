@@ -82,6 +82,8 @@
                                     Margin="{TemplateBinding Padding}"
                                     VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
                                     FontSize="{TemplateBinding FontSize}"
+                                    FontFamily="{TemplateBinding FontFamily}"
+                                    FontWeight="{TemplateBinding FontWeight}"
                                     Foreground="{markup:BrushResource TextPlaceholderColorBrush}" />
                                 <controls:PassiveScrollViewer
                                     x:Name="PART_ContentHost"
