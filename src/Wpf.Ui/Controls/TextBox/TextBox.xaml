@@ -81,9 +81,6 @@
                                     x:Name="PART_Placeholder"
                                     Margin="{TemplateBinding Padding}"
                                     VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
-                                    FontSize="{TemplateBinding FontSize}"
-                                    FontFamily="{TemplateBinding FontFamily}"
-                                    FontWeight="{TemplateBinding FontWeight}"
                                     Foreground="{markup:BrushResource TextPlaceholderColorBrush}" />
                                 <controls:PassiveScrollViewer
                                     x:Name="PART_ContentHost"
@@ -127,6 +124,7 @@
                             <Setter TargetName="ContentBorder" Property="BorderBrush" Value="{markup:BrushResource ControlStrokeColorDefaultBrush}" />
                             <Setter TargetName="AccentBorder" Property="BorderBrush" Value="{markup:BrushResource ControlStrokeColorDefaultBrush}" />
                             <Setter Property="Foreground" Value="{markup:BrushResource TextFillColorDisabledBrush}" />
+                            <Setter TargetName="PART_Placeholder" Property="Opacity" Value="0.5" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -174,7 +172,6 @@
                             Margin="0"
                             Padding="1,0"
                             VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
-                            FontSize="{TemplateBinding FontSize}"
                             Foreground="{markup:BrushResource TextPlaceholderColorBrush}"
                             Text="{TemplateBinding PlaceholderText}" />
                         <controls:PassiveScrollViewer
@@ -289,7 +286,7 @@
                 <Setter TargetName="AccentBorder" Property="BorderBrush" Value="{markup:BrushResource ControlStrokeColorDefaultBrush}" />
                 <Setter TargetName="ControlIconLeft" Property="TextElement.Foreground" Value="{markup:BrushResource TextFillColorDisabledBrush}" />
                 <Setter TargetName="ControlIconRight" Property="TextElement.Foreground" Value="{markup:BrushResource TextFillColorDisabledBrush}" />
-                <Setter TargetName="PlaceholderTextBox" Property="Foreground" Value="{markup:BrushResource TextFillColorDisabledBrush}" />
+                <Setter TargetName="PlaceholderTextBox" Property="Opacity" Value="0.5" />
                 <Setter Property="Foreground" Value="{markup:BrushResource TextFillColorDisabledBrush}" />
                 <Setter Property="ClearButtonEnabled" Value="False" />
             </Trigger>

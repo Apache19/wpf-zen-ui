@@ -240,9 +240,6 @@
                                         Grid.Column="0"
                                         Margin="{TemplateBinding Padding}"
                                         VerticalAlignment="Center"
-                                        FontFamily="{TemplateBinding FontFamily}"
-                                        FontSize="{TemplateBinding FontSize}"
-                                        FontWeight="{TemplateBinding FontWeight}"
                                         Foreground="{m:BrushResource TextPlaceholderColorBrush}" />
 
                                     <TextBox
@@ -392,6 +389,7 @@
                             <Setter TargetName="ContentBorder" Property="Background" Value="{m:BrushResource ControlFillColorDisabledBrush}" />
                             <Setter TargetName="ContentBorder" Property="BorderBrush" Value="{m:BrushResource ControlStrokeColorDefaultBrush}" />
                             <Setter Property="Foreground" Value="{m:BrushResource TextFillColorDisabledBrush}" />
+                            <Setter TargetName="PART_Placeholder" Property="Opacity" Value="0.5" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
