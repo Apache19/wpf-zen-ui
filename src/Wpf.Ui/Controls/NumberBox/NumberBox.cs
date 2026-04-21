@@ -5,6 +5,7 @@
 
 // This Source Code is partially based on the source code provided by the .NET Foundation.
 
+using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Data;
 using System.Windows.Input;
@@ -16,7 +17,6 @@ namespace Wpf.Ui.Controls;
 [TemplatePart(Name = "PART_CompactPopup", Type = typeof(Popup))]
 public class NumberBox : TextBox
 {
-    private bool    _valueUpdating;
     private Popup?  _compactPopup;
     private Window? _parentWindow;
 
@@ -74,14 +74,14 @@ public class NumberBox : TextBox
         new FrameworkPropertyMetadata(
             null,
             FrameworkPropertyMetadataOptions.BindsTwoWayByDefault,
-            static (d, e) =>
+            propertyChangedCallback: static (d, e) =>
             {
                 if (d is NumberBox numberBox)
                 {
-                    numberBox.OnValueChanged(d, (double?)e.OldValue);
+                    numberBox.OnValueChangedCore((double?)e.OldValue, (double?)e.NewValue);
                 }
             },
-            static (d, baseValue) =>
+            coerceValueCallback: static (d, baseValue) =>
             {
                 if (d is not NumberBox numberBox)
                 {
@@ -91,17 +91,15 @@ public class NumberBox : TextBox
                 if (baseValue is double dv)
                 {
                     var clamped = dv;
-                    var maximum = numberBox.Maximum;
-                    var minimum = numberBox.Minimum;
 
-                    if (clamped > maximum)
+                    if (clamped > numberBox.Maximum)
                     {
-                        clamped = maximum;
+                        clamped = numberBox.Maximum;
                     }
 
-                    if (clamped < minimum)
+                    if (clamped < numberBox.Minimum)
                     {
-                        clamped = minimum;
+                        clamped = numberBox.Minimum;
                     }
 
                     return clamped;
@@ -132,7 +130,16 @@ public class NumberBox : TextBox
         nameof(DecimalPlaces),
         typeof(int?),
         typeof(NumberBox),
-        new PropertyMetadata(null),
+        new PropertyMetadata(
+            null,
+            static (d, e) =>
+            {
+                if (d is NumberBox numberBox)
+                {
+                    numberBox.UpdateTextToValue();
+                }
+            }
+        ),
         static value => value is null or (>= 0 and <= 15)
     );
 
@@ -161,8 +168,17 @@ public class NumberBox : TextBox
         nameof(MaxDecimalPlaces),
         typeof(int),
         typeof(NumberBox),
-        new PropertyMetadata(6),
-        static value => value is >= 0 and <= 15
+        new PropertyMetadata(
+            6,
+            propertyChangedCallback: static (d, e) =>
+            {
+                if (d is NumberBox numberBox)
+                {
+                    numberBox.UpdateTextToValue();
+                }
+            }
+        ),
+        validateValueCallback: static value => value is >= 0 and <= 15
     );
 
     /// <summary>
@@ -186,7 +202,7 @@ public class NumberBox : TextBox
         new PropertyMetadata(
             1.0d,
             null,
-            static (d, baseValue) =>
+            coerceValueCallback: static (d, baseValue) =>
             {
                 if (baseValue is double dv)
                 {
@@ -207,7 +223,7 @@ public class NumberBox : TextBox
                 return 1.0d;
             }
         ),
-        static v => v is double dv && !double.IsNaN(dv) && !double.IsInfinity(dv) && dv > 0
+        validateValueCallback: static v => v is double dv && !double.IsNaN(dv) && !double.IsInfinity(dv) && dv > 0
     );
 
     /// <summary>
@@ -231,7 +247,7 @@ public class NumberBox : TextBox
         new PropertyMetadata(
             10.0d,
             null,
-            static (d, baseValue) =>
+            coerceValueCallback: static (d, baseValue) =>
             {
                 if (baseValue is double dv)
                 {
@@ -252,7 +268,7 @@ public class NumberBox : TextBox
                 return 10.0d;
             }
         ),
-        static v => v is double dv && !double.IsNaN(dv) && !double.IsInfinity(dv) && dv > 0
+        validateValueCallback: static v => v is double dv && !double.IsNaN(dv) && !double.IsInfinity(dv) && dv > 0
     );
 
     /// <summary>
@@ -276,14 +292,14 @@ public class NumberBox : TextBox
         new FrameworkPropertyMetadata(
             double.MaxValue,
             FrameworkPropertyMetadataOptions.None,
-            static (d, e) =>
+            propertyChangedCallback: static (d, e) =>
             {
                 if (d is NumberBox numberBox)
                 {
                     numberBox.CoerceValue(ValueProperty);
                 }
             },
-            static (d, baseValue) =>
+            coerceValueCallback: static (d, baseValue) =>
             {
                 if (d is not NumberBox numberBox)
                 {
@@ -300,7 +316,7 @@ public class NumberBox : TextBox
                 return baseValue;
             }
         ),
-        static v => v is double dv && !double.IsNaN(dv) && !double.IsInfinity(dv)
+        validateValueCallback: static v => v is double dv && !double.IsNaN(dv) && !double.IsInfinity(dv)
     );
 
     /// <summary>
@@ -324,14 +340,14 @@ public class NumberBox : TextBox
         new FrameworkPropertyMetadata(
             double.MinValue,
             FrameworkPropertyMetadataOptions.None,
-            static (d, e) =>
+            propertyChangedCallback: static (d, e) =>
             {
                 if (d is NumberBox numberBox)
                 {
                     numberBox.CoerceValue(ValueProperty);
                 }
             },
-            static (d, baseValue) =>
+            coerceValueCallback: static (d, baseValue) =>
             {
                 if (d is not NumberBox numberBox)
                 {
@@ -348,7 +364,7 @@ public class NumberBox : TextBox
                 return baseValue;
             }
         ),
-        static v => v is double dv && !double.IsNaN(dv) && !double.IsInfinity(dv)
+        validateValueCallback: static v => v is double dv && !double.IsNaN(dv) && !double.IsInfinity(dv)
     );
 
     /// <summary>
@@ -815,30 +831,47 @@ public class NumberBox : TextBox
         }
     }
 
+    private bool _valueUpdating;
+
     /// <summary>
     /// Is called when <see cref="Value"/> in this <see cref="NumberBox"/> changes.
     /// </summary>
-    protected virtual void OnValueChanged(DependencyObject d, double? oldValue)
+    private void OnValueChangedCore(double? oldValue, double? newValue)
     {
-        if (_valueUpdating)
+        if (_valueUpdating || Equals(newValue, oldValue))
         {
             return;
         }
 
         _valueUpdating = true;
 
-        var newValue = Value;
-
-        // Coercion is handled by CoerceValueCallback at the property system level.
-
-        if (!Equals(newValue, oldValue))
-        {
-            RaiseEvent(new NumberBoxValueChangedEventArgs(oldValue, newValue, this));
-        }
-
-        UpdateTextToValue();
+        OnValueChanged(oldValue, newValue);
 
         _valueUpdating = false;
+    }
+
+    /// <summary>
+    /// Raises the NumberBox value change event and updates the control's display text if the event is not handled.
+    /// </summary>
+    /// <remarks>
+    /// Raises a NumberBoxValueChangedEventArgs object and calls RaiseEvent.
+    /// If the event is not marked as Handled, calls UpdateTextToValue to update the Text property.
+    /// Derived classes can override this method to add custom behavior, but should call base.OnValueChanged(oldValue, newValue)
+    /// when the default behavior needs to be preserved, or manage text updates themselves by marking the event as Handled.
+    /// </remarks>
+    /// <param name="oldValue">The numeric value before the change; null if no value.</param>
+    /// <param name="newValue">The numeric value after the change; null if no value.</param>
+    protected virtual void OnValueChanged(double? oldValue, double? newValue)
+    {
+        var args = new NumberBoxValueChangedEventArgs(oldValue, newValue, this);
+
+        RaiseEvent(args);
+
+        // If the event is handled, do not update the Text property.
+        if (!args.Handled)
+        {
+            UpdateTextToValue();
+        }
     }
 
     /// <summary>
@@ -846,14 +879,13 @@ public class NumberBox : TextBox
     /// </summary>
     protected virtual void OnClipboardPaste(object sender, DataObjectPastingEventArgs e)
     {
-        // Handle pasted text: try to parse the resulting text and accept/format it immediately.
-        // If parsing fails and validation mode is set to overwrite invalid input, cancel paste and restore.
         if (sender is not NumberBox nb)
         {
             return;
         }
 
-        // todo: 尚未处理表达式允许的字符
+        // Handle pasted text: try to parse the resulting text and accept/format it immediately.
+        // If parsing fails and validation mode is set to overwrite invalid input, cancel paste and restore.
 
         if (e.DataObject.GetDataPresent(DataFormats.UnicodeText))
         {
@@ -872,6 +904,16 @@ public class NumberBox : TextBox
 
             var parser = nb.NumberFormatter as INumberParser;
             var parsed = parser?.ParseDouble(trimmed);
+
+            // When direct number parsing fails and expression is enabled,
+            // try to evaluate the expression instead.
+            if (parsed is null && nb.AcceptsExpression)
+            {
+                if (NumberBoxExpressionParser.TryEvaluate(trimmed, out var exprResult))
+                {
+                    parsed = exprResult;
+                }
+            }
 
             if (parsed is not null)
             {
