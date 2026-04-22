@@ -39,7 +39,7 @@
         <Setter Property="Foreground" Value="{markup:BrushResource TextFillColorPrimaryBrush}" />
         <Setter Property="CaretBrush" Value="{markup:BrushResource TextFillColorPrimaryBrush}" />
         <Setter Property="Background" Value="{markup:BrushResource ControlFillColorDefaultBrush}" />
-        <Setter Property="BorderBrush" Value="{markup:BrushResource TextControlElevationBorderBrush}" />
+        <Setter Property="BorderBrush" Value="{markup:BrushResource ControlElevationBorderBrush}" />
         <Setter Property="BorderThickness" Value="{StaticResource TextBoxBorderThemeThickness}" />
         <Setter Property="ScrollViewer.CanContentScroll" Value="False" />
         <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Hidden" />
@@ -341,7 +341,7 @@
         <Setter Property="Foreground" Value="{markup:BrushResource TextFillColorPrimaryBrush}" />
         <Setter Property="CaretBrush" Value="{markup:BrushResource TextFillColorPrimaryBrush}" />
         <Setter Property="Background" Value="{markup:BrushResource ControlFillColorDefaultBrush}" />
-        <Setter Property="BorderBrush" Value="{markup:BrushResource TextControlElevationBorderBrush}" />
+        <Setter Property="BorderBrush" Value="{markup:BrushResource ControlElevationBorderBrush}" />
         <Setter Property="BorderThickness" Value="{StaticResource TextBoxBorderThemeThickness}" />
         <Setter Property="ScrollViewer.CanContentScroll" Value="False" />
         <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Hidden" />

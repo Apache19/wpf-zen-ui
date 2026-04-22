@@ -140,7 +140,7 @@ public class BrushResourceExtension : DynamicResourceExtension
             BrushId.ControlElevationBorderBrush                     => BrushKeys.ControlElevationBorderBrush,
             BrushId.CircleElevationBorderBrush                      => BrushKeys.CircleElevationBorderBrush,
             BrushId.AccentControlElevationBorderBrush               => BrushKeys.AccentControlElevationBorderBrush,
-            BrushId.TextControlElevationBorderBrush                 => BrushKeys.TextControlElevationBorderBrush,
+            // BrushId.TextControlElevationBorderBrush                 => BrushKeys.TextControlElevationBorderBrush,
             BrushId.StripedBackgroundBrush                          => BrushKeys.StripedBackgroundBrush,
             BrushId.AcrylicBackgroundFillColorDefaultBrush          => BrushKeys.AcrylicBackgroundFillColorDefaultBrush,
             BrushId.WindowBackgroundBrush                           => BrushKeys.WindowBackgroundBrush,

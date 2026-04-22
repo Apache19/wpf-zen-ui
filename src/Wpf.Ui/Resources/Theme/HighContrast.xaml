@@ -286,7 +286,6 @@
     <SolidColorBrush x:Key="{x:Static t:BrushKeys.ControlElevationBorderBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorWindowTextColor}}" />
     <SolidColorBrush x:Key="{x:Static t:BrushKeys.CircleElevationBorderBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorWindowTextColor}}" />
     <SolidColorBrush x:Key="{x:Static t:BrushKeys.AccentControlElevationBorderBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorWindowTextColor}}" />
-    <SolidColorBrush x:Key="{x:Static t:BrushKeys.TextControlElevationBorderBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorWindowTextColor}}" />
 
     <DrawingBrush
         x:Key="{x:Static t:BrushKeys.StripedBackgroundBrush}"

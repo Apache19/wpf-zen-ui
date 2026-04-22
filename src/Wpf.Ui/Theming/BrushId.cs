@@ -146,7 +146,7 @@ public enum BrushId
     ControlElevationBorderBrush,
     CircleElevationBorderBrush,
     AccentControlElevationBorderBrush,
-    TextControlElevationBorderBrush,
+    // TextControlElevationBorderBrush, deleted
 
     StripedBackgroundBrush,
 

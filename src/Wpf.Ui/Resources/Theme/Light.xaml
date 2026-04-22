@@ -311,16 +311,6 @@
         </LinearGradientBrush.GradientStops>
     </LinearGradientBrush>
 
-    <LinearGradientBrush x:Key="{x:Static t:BrushKeys.TextControlElevationBorderBrush}" x:Shared="false" MappingMode="Absolute" StartPoint="0,0" EndPoint="0,3">
-        <LinearGradientBrush.RelativeTransform>
-            <ScaleTransform CenterY="0.5" ScaleY="-1" />
-        </LinearGradientBrush.RelativeTransform>
-        <LinearGradientBrush.GradientStops>
-            <GradientStop Offset="0.33" Color="{StaticResource {x:Static t:ColorKeys.ControlStrokeColorSecondary}}" />
-            <GradientStop Offset="1.0" Color="{StaticResource {x:Static t:ColorKeys.ControlStrokeColorDefault}}" />
-        </LinearGradientBrush.GradientStops>
-    </LinearGradientBrush>
-
     <DrawingBrush
         x:Key="{x:Static t:BrushKeys.StripedBackgroundBrush}"
         Stretch="UniformToFill"

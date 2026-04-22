@@ -139,7 +139,6 @@ public static class BrushKeys
     public static ComponentResourceKey ControlElevationBorderBrush { get; private set; }
     public static ComponentResourceKey CircleElevationBorderBrush { get; private set; }
     public static ComponentResourceKey AccentControlElevationBorderBrush { get; private set; }
-    public static ComponentResourceKey TextControlElevationBorderBrush { get; private set; }
 
     public static ComponentResourceKey StripedBackgroundBrush { get; private set; }
 

@@ -152,7 +152,7 @@
         <Setter Property="CaretBrush" Value="{m:BrushResource TextFillColorPrimaryBrush}" />
         <Setter Property="Cursor" Value="Arrow" />
         <Setter Property="Background" Value="{m:BrushResource ControlFillColorDefaultBrush}" />
-        <Setter Property="BorderBrush" Value="{m:BrushResource TextControlElevationBorderBrush}" />
+        <Setter Property="BorderBrush" Value="{m:BrushResource ControlElevationBorderBrush}" />
         <Setter Property="BorderThickness" Value="{StaticResource NumberBoxBorderThemeThickness}" />
         <Setter Property="FontSize" Value="{m:VariableResource ControlContentThemeFontSize}" />
         <Setter Property="HorizontalAlignment" Value="Stretch" />
