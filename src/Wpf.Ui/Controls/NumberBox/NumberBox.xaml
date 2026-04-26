@@ -11,9 +11,9 @@
 <ResourceDictionary
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:system="clr-namespace:System;assembly=mscorlib"
     xmlns:controls="clr-namespace:Wpf.Ui.Controls"
-    xmlns:m="clr-namespace:Wpf.Ui.Markup"
-    xmlns:system="clr-namespace:System;assembly=mscorlib">
+    xmlns:m="clr-namespace:Wpf.Ui.Markup">
 
     <Thickness x:Key="NumberBoxBorderThemeThickness">1,1,1,1</Thickness>
     <Thickness x:Key="NumberBoxAccentBorderThemeThickness">0,0,0,1</Thickness>
@@ -25,17 +25,17 @@
     <system:Double x:Key="NumberBoxButtonIconSize">14</system:Double>
 
     <Style x:Key="NumberBoxClassicRepeatButtonStyle" TargetType="{x:Type RepeatButton}">
-        <Setter Property="OverridesDefaultStyle" Value="True" />
-        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
         <Setter Property="Background" Value="Transparent" />
-        <Setter Property="Foreground" Value="{m:BrushResource TextFillColorPrimaryBrush}" />
-        <Setter Property="BorderBrush" Value="{m:BrushResource ControlElevationBorderBrush}" />
-        <Setter Property="HorizontalContentAlignment" Value="Center" />
-        <Setter Property="VerticalContentAlignment" Value="Center" />
-        <Setter Property="IsTabStop" Value="False" />
-        <Setter Property="Focusable" Value="False" />
         <Setter Property="Border.CornerRadius" Value="3" />
+        <Setter Property="BorderBrush" Value="{m:BrushResource ControlElevationBorderBrush}" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="Focusable" Value="False" />
+        <Setter Property="Foreground" Value="{m:BrushResource TextFillColorPrimaryBrush}" />
+        <Setter Property="HorizontalContentAlignment" Value="Center" />
+        <Setter Property="IsTabStop" Value="False" />
+        <Setter Property="OverridesDefaultStyle" Value="True" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
+
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type RepeatButton}">
@@ -75,6 +75,8 @@
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
+
+        <Setter Property="VerticalContentAlignment" Value="Center" />
     </Style>
 
     <DataTemplate x:Key="NumberBoxClassicCompactSpinButtonsTemplate">
@@ -138,7 +140,13 @@
     </DataTemplate>
 
     <Style x:Key="DefaultUiNumberBoxStyle" TargetType="{x:Type controls:NumberBox}">
-        <Setter Property="FocusVisualStyle" Value="{m:StyleResource DefaultControlFocusVisualStyle}" />
+        <Setter Property="Background" Value="{m:BrushResource ControlFillColorDefaultBrush}" />
+        <Setter Property="Border.CornerRadius" Value="{m:VariableResource ControlCornerRadius}" />
+        <Setter Property="BorderBrush" Value="{m:BrushResource ControlElevationBorderBrush}" />
+        <Setter Property="BorderThickness" Value="{StaticResource NumberBoxBorderThemeThickness}" />
+        <Setter Property="CaretBrush" Value="{m:BrushResource TextFillColorPrimaryBrush}" />
+        <Setter Property="ClearButtonEnabled" Value="True" />
+
         <Setter Property="ContextMenu">
             <Setter.Value>
                 <controls:ContextMenu>
@@ -148,24 +156,19 @@
                 </controls:ContextMenu>
             </Setter.Value>
         </Setter>
-        <Setter Property="Foreground" Value="{m:BrushResource TextFillColorPrimaryBrush}" />
-        <Setter Property="CaretBrush" Value="{m:BrushResource TextFillColorPrimaryBrush}" />
+
         <Setter Property="Cursor" Value="Arrow" />
-        <Setter Property="Background" Value="{m:BrushResource ControlFillColorDefaultBrush}" />
-        <Setter Property="BorderBrush" Value="{m:BrushResource ControlElevationBorderBrush}" />
-        <Setter Property="BorderThickness" Value="{StaticResource NumberBoxBorderThemeThickness}" />
+        <Setter Property="FocusVisualStyle" Value="{m:StyleResource DefaultControlFocusVisualStyle}" />
         <Setter Property="FontSize" Value="{m:VariableResource ControlContentThemeFontSize}" />
+        <Setter Property="Foreground" Value="{m:BrushResource TextFillColorPrimaryBrush}" />
         <Setter Property="HorizontalAlignment" Value="Stretch" />
-        <Setter Property="VerticalAlignment" Value="Center" />
         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="IconPlacement" Value="Left" />
         <Setter Property="MinHeight" Value="{m:VariableResource TextControlThemeMinHeight}" />
         <Setter Property="MinWidth" Value="{m:VariableResource TextControlThemeMinWidth}" />
         <Setter Property="Padding" Value="{m:VariableResource TextControlThemePadding}" />
-        <Setter Property="Border.CornerRadius" Value="{m:VariableResource ControlCornerRadius}" />
-        <Setter Property="ClearButtonEnabled" Value="True" />
-        <Setter Property="IconPlacement" Value="Left" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
+
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type controls:NumberBox}">
@@ -332,31 +335,31 @@
                             <Setter TargetName="PlaceholderTextBox" Property="Visibility" Value="Collapsed" />
                         </Trigger>
                         <Trigger Property="ShowClearButton" Value="False">
-                            <Setter TargetName="PART_ClearButton" Property="Visibility" Value="Collapsed" />
                             <Setter TargetName="PART_ClearButton" Property="Margin" Value="0" />
+                            <Setter TargetName="PART_ClearButton" Property="Visibility" Value="Collapsed" />
                         </Trigger>
                         <Trigger Property="ClearButtonEnabled" Value="False">
-                            <Setter TargetName="PART_ClearButton" Property="Visibility" Value="Collapsed" />
                             <Setter TargetName="PART_ClearButton" Property="Margin" Value="0" />
+                            <Setter TargetName="PART_ClearButton" Property="Visibility" Value="Collapsed" />
                         </Trigger>
                         <Trigger Property="IconPlacement" Value="Left">
-                            <Setter TargetName="ControlIconRight" Property="Visibility" Value="Collapsed" />
                             <Setter TargetName="ControlIconRight" Property="Margin" Value="0" />
+                            <Setter TargetName="ControlIconRight" Property="Visibility" Value="Collapsed" />
                         </Trigger>
                         <Trigger Property="IconPlacement" Value="Right">
-                            <Setter TargetName="ControlIconLeft" Property="Visibility" Value="Collapsed" />
                             <Setter TargetName="ControlIconLeft" Property="Margin" Value="0" />
+                            <Setter TargetName="ControlIconLeft" Property="Visibility" Value="Collapsed" />
                         </Trigger>
                         <Trigger Property="Icon" Value="{x:Null}">
-                            <Setter TargetName="ControlIconRight" Property="Visibility" Value="Collapsed" />
                             <Setter TargetName="ControlIconRight" Property="Margin" Value="0" />
-                            <Setter TargetName="ControlIconLeft" Property="Visibility" Value="Collapsed" />
                             <Setter TargetName="ControlIconLeft" Property="Margin" Value="0" />
+                            <Setter TargetName="ControlIconRight" Property="Visibility" Value="Collapsed" />
+                            <Setter TargetName="ControlIconLeft" Property="Visibility" Value="Collapsed" />
                         </Trigger>
                         <Trigger Property="IsFocused" Value="True">
-                            <Setter TargetName="AccentBorder" Property="BorderThickness" Value="0,0,0,2" />
-                            <Setter TargetName="AccentBorder" Property="BorderBrush" Value="{m:BrushResource SystemAccentColorPrimaryBrush}" />
                             <Setter TargetName="ContentBorder" Property="Background" Value="{m:BrushResource ControlFillColorInputActiveBrush}" />
+                            <Setter TargetName="AccentBorder" Property="BorderBrush" Value="{m:BrushResource SystemAccentColorPrimaryBrush}" />
+                            <Setter TargetName="AccentBorder" Property="BorderThickness" Value="0,0,0,2" />
                         </Trigger>
                         <MultiTrigger>
                             <MultiTrigger.Conditions>
@@ -367,9 +370,9 @@
                             <Setter TargetName="ContentBorder" Property="Background" Value="{m:BrushResource ControlFillColorSecondaryBrush}" />
                         </MultiTrigger>
                         <Trigger Property="IsReadOnly" Value="True">
+                            <Setter TargetName="PART_ClearButton" Property="Margin" Value="0" />
                             <Setter Property="SpinButtonPlacementMode" Value="Hidden" />
                             <Setter TargetName="PART_ClearButton" Property="Visibility" Value="Collapsed" />
-                            <Setter TargetName="PART_ClearButton" Property="Margin" Value="0" />
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="True">
                             <Setter TargetName="TextContentArea" Property="Cursor" Value="IBeam" />
@@ -382,21 +385,25 @@
                             <Setter TargetName="PART_CompactPopup" Property="IsOpen" Value="True" />
                         </MultiTrigger>
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter TargetName="TextContentArea" Property="Cursor" Value="Arrow" />
                             <Setter TargetName="ContentBorder" Property="Background" Value="{m:BrushResource ControlFillColorDisabledBrush}" />
                             <Setter TargetName="ContentBorder" Property="BorderBrush" Value="{m:BrushResource ControlStrokeColorDefaultBrush}" />
                             <Setter TargetName="AccentBorder" Property="BorderBrush" Value="{m:BrushResource ControlStrokeColorDefaultBrush}" />
+                            <Setter Property="ClearButtonEnabled" Value="False" />
+                            <Setter TargetName="TextContentArea" Property="Cursor" Value="Arrow" />
                             <Setter TargetName="ControlIconLeft" Property="Foreground" Value="{m:BrushResource TextFillColorDisabledBrush}" />
                             <Setter TargetName="ControlIconRight" Property="Foreground" Value="{m:BrushResource TextFillColorDisabledBrush}" />
                             <Setter TargetName="PlaceholderTextBox" Property="Foreground" Value="{m:BrushResource TextFillColorDisabledBrush}" />
                             <Setter Property="Foreground" Value="{m:BrushResource TextFillColorDisabledBrush}" />
-                            <Setter Property="ClearButtonEnabled" Value="False" />
                             <Setter Property="SpinButtonPlacementMode" Value="Hidden" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
+
+        <Setter Property="Validation.ErrorTemplate" Value="{m:StyleResource DefaultValidationTemplate}" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
     </Style>
 
     <Style BasedOn="{StaticResource DefaultUiNumberBoxStyle}" TargetType="{x:Type controls:NumberBox}" />
