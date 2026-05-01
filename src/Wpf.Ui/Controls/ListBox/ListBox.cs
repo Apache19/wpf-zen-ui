@@ -3,7 +3,11 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
+// ReSharper disable once CheckNamespace
 namespace Wpf.Ui.Controls;
+
+// todo: 修复无响应问题
+// todo: 增加双击命令，让视图模型容易绑定
 
 public class ListBox : System.Windows.Controls.ListBox
 {
