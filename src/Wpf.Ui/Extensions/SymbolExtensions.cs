@@ -36,7 +36,7 @@ public static class SymbolExtensions
     /// </summary>
     public static string GetString(this SymbolRegular icon)
     {
-        return Encoding.Unicode.GetString(BitConverter.GetBytes((int)icon)).TrimEnd('\0');
+        return char.ConvertFromUtf32((int)icon);
     }
 
     /// <summary>
@@ -44,6 +44,6 @@ public static class SymbolExtensions
     /// </summary>
     public static string GetString(this SymbolFilled icon)
     {
-        return Encoding.Unicode.GetString(BitConverter.GetBytes((int)icon)).TrimEnd('\0');
+        return char.ConvertFromUtf32((int)icon);
     }
 }
