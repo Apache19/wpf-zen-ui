@@ -12,7 +12,7 @@
     <Window.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
-                <ui:ThemeManagerOptions ThemeMode="Light" UseSystemAccentColor="True" UseStandardControlStyles="True" />
+                <ui:ThemeManagerOptions ThemeMode="Light" UseStandardControlStyles="True" UseSystemAccentColor="True" />
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Window.Resources>
@@ -21,7 +21,11 @@
             HorizontalAlignment="Center"
             VerticalAlignment="Center"
             Click="OnShowDialogClick"
-            Content="Show dialog" />
+            Content="Show dialog">
+            <ui:Button.Icon>
+                <ui:SymbolIcon Glyph="&#xF07F2;" />
+            </ui:Button.Icon>
+        </ui:Button>
         <ui:ContentDialogHost x:Name="ContentDialogHost" Grid.Row="0" />
     </Grid>
 </Window>
