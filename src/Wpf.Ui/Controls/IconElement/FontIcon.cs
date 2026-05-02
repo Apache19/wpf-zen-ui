@@ -5,6 +5,8 @@
 
 using System.Windows.Controls;
 using System.Windows.Documents;
+using FontFamily = System.Windows.Media.FontFamily;
+using FontStyle = System.Windows.FontStyle;
 using SystemFonts = System.Windows.SystemFonts;
 
 // ReSharper disable once CheckNamespace
@@ -108,71 +110,98 @@ public class FontIcon : IconElement
 
     protected TextBlock? TextBlock { get; set; }
 
-    private FontIconChild? _fontIconChild;
-
-    public FontIcon() { }
+    public FontIcon()
+    {
+        // todo 什么玩意儿，可能要删除，如果有用的话就为它提供默认样式
+        // SetCurrentValue(FontSizeProperty, UiApplication.Current.Resources["DefaultIconFontSize"]);
+    }
 
     protected override UIElement InitializeChildren()
     {
-        var child = new FontIconChild
+        TextBlock = new TextBlock
         {
+            Style = null,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            VerticalAlignment = VerticalAlignment.Center,
+            TextAlignment = TextAlignment.Center,
             FontFamily = FontFamily,
             FontSize = FontSize,
             FontStyle = FontStyle,
             FontWeight = FontWeight,
-            Glyph = Glyph,
+            Text = Glyph,
             Visibility = Visibility.Visible,
             Focusable = false,
         };
 
-        _fontIconChild = child;
         SetCurrentValue(FocusableProperty, false);
 
-        return child;
+        return TextBlock;
     }
 
     private static void OnFontFamilyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
         var self = (FontIcon)d;
-        if (self._fontIconChild is { } child)
+        if (self.TextBlock is null)
         {
-            child.FontFamily = (FontFamily)e.NewValue;
+            return;
         }
+
+        self.TextBlock.SetCurrentValue(
+            System.Windows.Controls.TextBlock.FontFamilyProperty,
+            (FontFamily)e.NewValue
+        );
     }
 
     private static void OnFontSizeChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
         var self = (FontIcon)d;
-        if (self._fontIconChild is { } child)
+        if (self.TextBlock is null)
         {
-            child.FontSize = (double)e.NewValue;
+            return;
         }
+
+        self.TextBlock.SetCurrentValue(
+            System.Windows.Controls.TextBlock.FontSizeProperty,
+            (double)e.NewValue
+        );
     }
 
     private static void OnFontStyleChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
         var self = (FontIcon)d;
-        if (self._fontIconChild is { } child)
+        if (self.TextBlock is null)
         {
-            child.FontStyle = (FontStyle)e.NewValue;
+            return;
         }
+
+        self.TextBlock.SetCurrentValue(
+            System.Windows.Controls.TextBlock.FontStyleProperty,
+            (FontStyle)e.NewValue
+        );
     }
 
     private static void OnFontWeightChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
         var self = (FontIcon)d;
-        if (self._fontIconChild is { } child)
+        if (self.TextBlock is null)
         {
-            child.FontWeight = (FontWeight)e.NewValue;
+            return;
         }
+
+        self.TextBlock.SetCurrentValue(
+            System.Windows.Controls.TextBlock.FontWeightProperty,
+            (FontWeight)e.NewValue
+        );
     }
 
     private static void OnGlyphChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
         var self = (FontIcon)d;
-        if (self._fontIconChild is { } child)
+        if (self.TextBlock is null)
         {
-            child.Glyph = (string)e.NewValue;
+            return;
         }
+
+        self.TextBlock.SetCurrentValue(System.Windows.Controls.TextBlock.TextProperty, (string)e.NewValue);
     }
 }
