@@ -168,5 +168,25 @@ async Task WriteToFile(FontSource singleFont, string fileRootDirectory)
 await WriteToFile(regularIcons, workingDirectory);
 await WriteToFile(filledIcons, workingDirectory);
 
+async Task DownloadTtfFontAsync(string url, string localFileName)
+{
+    using var httpClient = new HttpClient();
+    httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (compatible; AcmeInc/1.0)");
+
+    var response = await httpClient.GetAsync(url);
+    response.EnsureSuccessStatusCode();
+
+    var filePath = Path.Combine(workingDirectory, localFileName);
+    await using var fileStream = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.None);
+    await response.Content.CopyToAsync(fileStream);
+}
+
+await DownloadTtfFontAsync(
+    "https://raw.githubusercontent.com/microsoft/fluentui-system-icons/main/fonts/FluentSystemIcons-Filled.ttf",
+    "generated\\FluentSystemIcons-Filled.ttf");
+await DownloadTtfFontAsync(
+    "https://raw.githubusercontent.com/microsoft/fluentui-system-icons/main/fonts/FluentSystemIcons-Regular.ttf",
+    "generated\\FluentSystemIcons-Regular.ttf");
+
 Console.WriteLine("Done.");
 System.Diagnostics.Debug.WriteLine("INFO | Done.", "Wpf.Ui.FontMapper");
