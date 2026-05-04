@@ -66,8 +66,8 @@
     <!--  TextOnAccentFillColorSecondary #80000000  -->
     <Color x:Key="{x:Static t:ColorKeys.TextOnAccentFillColorDisabled}">#77000000</Color>
 
-    <Color x:Key="{x:Static t:ColorKeys.ControlFillColorDefault}">#0FFFFFFF</Color>
-    <Color x:Key="{x:Static t:ColorKeys.ControlFillColorSecondary}">#15FFFFFF</Color>
+    <Color x:Key="{x:Static t:ColorKeys.ControlFillColorDefault}">#15FFFFFF</Color>
+    <Color x:Key="{x:Static t:ColorKeys.ControlFillColorSecondary}">#0FFFFFFF</Color>
     <Color x:Key="{x:Static t:ColorKeys.ControlFillColorTertiary}">#08FFFFFF</Color>
     <Color x:Key="{x:Static t:ColorKeys.ControlFillColorDisabled}">#0BFFFFFF</Color>
     <Color x:Key="{x:Static t:ColorKeys.ControlFillColorTransparent}">#00FFFFFF</Color>
