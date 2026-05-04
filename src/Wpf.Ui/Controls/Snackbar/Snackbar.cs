@@ -77,7 +77,7 @@ public class Snackbar : ContentControl, IAppearanceControl, IIconControl
         nameof(Appearance),
         typeof(ControlAppearance),
         typeof(Snackbar),
-        new PropertyMetadata(ControlAppearance.Secondary)
+        new PropertyMetadata(ControlAppearance.Normal)
     );
 
     /// <summary>Identifies the <see cref="TemplateButtonCommand"/> dependency property.</summary>

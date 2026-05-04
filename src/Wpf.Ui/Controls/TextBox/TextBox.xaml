@@ -197,7 +197,6 @@
                         VerticalAlignment="Center"
                         HorizontalContentAlignment="Center"
                         VerticalContentAlignment="Center"
-                        Appearance="Secondary"
                         Background="Transparent"
                         BorderBrush="Transparent"
                         BorderThickness="0"

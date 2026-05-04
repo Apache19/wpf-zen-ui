@@ -16,5 +16,5 @@ public partial class ButtonViewModel : ViewModel
     private bool _isUiButtonEnabled = true;
 
     [ObservableProperty]
-    private ControlAppearance _buttonAppearance = ControlAppearance.Secondary;
+    private ControlAppearance _buttonAppearance = ControlAppearance.Normal;
 }

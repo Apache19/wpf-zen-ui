@@ -154,7 +154,7 @@ public partial class ContentDialog
         nameof(PrimaryButtonAppearance),
         typeof(ControlAppearance),
         typeof(ContentDialog),
-        new PropertyMetadata(ControlAppearance.Primary)
+        new PropertyMetadata(ControlAppearance.Normal)
     );
 
     /// <summary>Identifies the <see cref="SecondaryButtonAppearance"/> dependency property.</summary>
@@ -162,7 +162,7 @@ public partial class ContentDialog
         nameof(SecondaryButtonAppearance),
         typeof(ControlAppearance),
         typeof(ContentDialog),
-        new PropertyMetadata(ControlAppearance.Secondary)
+        new PropertyMetadata(ControlAppearance.Normal)
     );
 
     /// <summary>Identifies the <see cref="CloseButtonAppearance"/> dependency property.</summary>
@@ -170,7 +170,7 @@ public partial class ContentDialog
         nameof(CloseButtonAppearance),
         typeof(ControlAppearance),
         typeof(ContentDialog),
-        new PropertyMetadata(ControlAppearance.Secondary)
+        new PropertyMetadata(ControlAppearance.Normal)
     );
 
     /// <summary>Identifies the <see cref="DefaultButton"/> dependency property.</summary>

@@ -32,16 +32,13 @@
                         <ContentPresenter />
                     </Border>
                     <ControlTemplate.Triggers>
-                        <Trigger Property="Appearance" Value="Primary">
-                            <Setter Property="Foreground" Value="{markup:BrushResource TextOnAccentFillColorPrimaryBrush}" />
-                        </Trigger>
                         <Trigger Property="Appearance" Value="Transparent">
                             <Setter Property="BorderBrush" Value="{markup:BrushResource ControlElevationBorderBrush}" />
                             <Setter TargetName="Border" Property="Background" Value="Transparent" />
                         </Trigger>
-                        <Trigger Property="Appearance" Value="Secondary">
+                        <Trigger Property="Appearance" Value="Normal">
                             <Setter Property="BorderBrush" Value="{markup:BrushResource ControlElevationBorderBrush}" />
-                            <Setter TargetName="Border" Property="Background" Value="{markup:BrushResource ControlFillColorDefaultBrush}" />
+                            <Setter TargetName="Border" Property="Background" Value="{markup:BrushResource ControlFillColorSecondaryBrush}" />
                         </Trigger>
                         <Trigger Property="Appearance" Value="Info">
                             <Setter TargetName="Border" Property="Background" Value="{markup:BrushResource PaletteLightBlueBrush}" />

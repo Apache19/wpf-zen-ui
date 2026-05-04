@@ -9,7 +9,7 @@ namespace Wpf.Ui.Gallery.ViewModels.Pages.DialogsAndFlyouts;
 
 public partial class SnackbarViewModel(ISnackbarService snackbarService) : ViewModel
 {
-    private ControlAppearance _snackbarAppearance = ControlAppearance.Secondary;
+    private ControlAppearance _snackbarAppearance = ControlAppearance.Normal;
 
     [ObservableProperty]
     private int _snackbarTimeout = 2;
@@ -42,7 +42,7 @@ public partial class SnackbarViewModel(ISnackbarService snackbarService) : ViewM
     {
         _snackbarAppearance = appearanceIndex switch
         {
-            1 => ControlAppearance.Secondary,
+            1 => ControlAppearance.Normal,
             2 => ControlAppearance.Info,
             3 => ControlAppearance.Success,
             4 => ControlAppearance.Caution,
@@ -50,7 +50,7 @@ public partial class SnackbarViewModel(ISnackbarService snackbarService) : ViewM
             6 => ControlAppearance.Light,
             7 => ControlAppearance.Dark,
             8 => ControlAppearance.Transparent,
-            _ => ControlAppearance.Primary,
+            _ => ControlAppearance.Normal,
         };
     }
 }

@@ -79,7 +79,7 @@ public class MessageBox : FluentWindow
         nameof(PrimaryButtonAppearance),
         typeof(ControlAppearance),
         typeof(MessageBox),
-        new PropertyMetadata(ControlAppearance.Primary)
+        new PropertyMetadata(ControlAppearance.Normal)
     );
 
     /// <summary>Identifies the <see cref="SecondaryButtonAppearance"/> dependency property.</summary>
@@ -87,7 +87,7 @@ public class MessageBox : FluentWindow
         nameof(SecondaryButtonAppearance),
         typeof(ControlAppearance),
         typeof(MessageBox),
-        new PropertyMetadata(ControlAppearance.Secondary)
+        new PropertyMetadata(ControlAppearance.Normal)
     );
 
     /// <summary>Identifies the <see cref="CloseButtonAppearance"/> dependency property.</summary>
@@ -95,7 +95,7 @@ public class MessageBox : FluentWindow
         nameof(CloseButtonAppearance),
         typeof(ControlAppearance),
         typeof(MessageBox),
-        new PropertyMetadata(ControlAppearance.Secondary)
+        new PropertyMetadata(ControlAppearance.Normal)
     );
 
     /// <summary>Identifies the <see cref="IsPrimaryButtonEnabled"/> dependency property.</summary>

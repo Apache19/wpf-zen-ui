@@ -46,8 +46,7 @@
                         Margin="0,8,0,0"
                         VerticalAlignment="Center"
                         SelectedIndex="{Binding ViewModel.SnackbarAppearanceComboBoxSelectedIndex, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:SnackbarPage}, Mode=TwoWay}">
-                        <ComboBoxItem Content="Primary" />
-                        <ComboBoxItem Content="Secondary" />
+                        <ComboBoxItem Content="Normal" />
                         <ComboBoxItem Content="Info" />
                         <ComboBoxItem Content="Success" />
                         <ComboBoxItem Content="Caution" />

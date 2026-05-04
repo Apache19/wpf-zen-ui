@@ -23,7 +23,7 @@ public static class SnackbarServiceExtensions
         snackbarService.Show(
             title,
             message,
-            ControlAppearance.Secondary,
+            ControlAppearance.Normal,
             null,
             snackbarService.DefaultTimeOut
         );
@@ -63,7 +63,7 @@ public static class SnackbarServiceExtensions
         snackbarService.Show(
             title,
             message,
-            ControlAppearance.Secondary,
+            ControlAppearance.Normal,
             icon,
             snackbarService.DefaultTimeOut
         );
@@ -83,7 +83,7 @@ public static class SnackbarServiceExtensions
         TimeSpan timeout
     )
     {
-        snackbarService.Show(title, message, ControlAppearance.Secondary, null, timeout);
+        snackbarService.Show(title, message, ControlAppearance.Normal, null, timeout);
     }
 
     /// <summary>
@@ -121,6 +121,6 @@ public static class SnackbarServiceExtensions
         TimeSpan timeout
     )
     {
-        snackbarService.Show(title, message, ControlAppearance.Secondary, icon, timeout);
+        snackbarService.Show(title, message, ControlAppearance.Normal, icon, timeout);
     }
 }

@@ -9,25 +9,23 @@ using System.Windows.Controls;
 namespace Wpf.Ui.Controls;
 
 /// <summary>
-/// Inherited from the <see cref="System.Windows.Controls.Button"/>, adding <see cref="SymbolRegular"/>.
+/// Extends <see cref="System.Windows.Controls.Button"/> by adding support for
+/// an <see cref="Icon"/> and <see cref="Appearance"/>.
 /// </summary>
 /// <example>
 /// <code lang="xml">
 /// &lt;ui:Button
-///     Appearance="Primary"
+///     Appearance="Success"
 ///     Content="WPF UI button with font icon"
 ///     Icon="{ui:SymbolIcon Symbol=Fluent24}" /&gt;
 /// </code>
 /// <code lang="xml">
 /// &lt;ui:Button
-///     Appearance="Primary"
+///     Appearance="Info"
 ///     Content="WPF UI button with font icon"
-///     Icon="{ui:FontIcon '&#x1F308;'}" /&gt;
+///     Icon="{ui:FontIcon '&#xF0858;'}" /&gt;
 /// </code>
 /// </example>
-/// <remarks>
-/// The <see cref="Button"/> class inherits from the base <see cref="System.Windows.Controls.Button"/> class.
-/// </remarks>
 public class Button : System.Windows.Controls.Button, IAppearanceControl, IIconControl
 {
     /// <summary>Identifies the <see cref="Icon"/> dependency property.</summary>
@@ -45,7 +43,7 @@ public class Button : System.Windows.Controls.Button, IAppearanceControl, IIconC
             nameof(Appearance),
             typeof(ControlAppearance),
             typeof(Button),
-            new PropertyMetadata(ControlAppearance.Primary)
+            new PropertyMetadata(ControlAppearance.Normal)
         );
 
     /// <summary>Identifies the <see cref="MouseOverBackground"/> dependency property.</summary>
@@ -203,6 +201,7 @@ public class Button : System.Windows.Controls.Button, IAppearanceControl, IIconC
     /// <summary>
     /// Gets or sets a value that represents the degree to which the corners of a <see cref="T:System.Windows.Controls.Border" /> are rounded.
     /// </summary>
+    [Category("Appearance")]
     public CornerRadius CornerRadius
     {
         get => (CornerRadius)GetValue(CornerRadiusProperty);

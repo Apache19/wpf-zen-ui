@@ -4,14 +4,13 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Ui.Gallery.Controls"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:local="clr-namespace:Wpf.Ui.Gallery.Views.Pages.BasicInput"
+    xmlns:local="clr-namespace:Wpf.Ui.Gallery.ViewModels.Pages.BasicInput"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
-    xmlns:basicInput="clr-namespace:Wpf.Ui.Gallery.ViewModels.Pages.BasicInput"
     Title="ButtonPage"
     controls:PageControlDocumentation.DocumentationType="{x:Type ui:Button}"
     d:Background="{ui:BrushResource WindowBackgroundBrush}"
-    d:DataContext="{d:DesignInstance basicInput:ButtonViewModel, IsDesignTimeCreatable=True}"
+    d:DataContext="{d:DesignInstance local:ButtonViewModel, IsDesignTimeCreatable=True}"
     d:DesignHeight="1250"
     d:DesignWidth="800"
     Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
@@ -50,12 +49,20 @@
                 </Grid.ColumnDefinitions>
                 <Button
                     Grid.Column="0"
+                    MinWidth="200"
+                    Padding="{ui:VariableResource TextControlThemePadding}"
+                    HorizontalAlignment="Left"
+                    VerticalAlignment="Center"
                     Content="Standard WPF button"
-                    IsEnabled="{Binding IsSimpleButtonEnabled, Mode=OneWay}" />
-                <ui:CheckBox
-                    Grid.Column="1"
-                    IsChecked="{Binding IsSimpleButtonEnabled}"
-                    Content="Disable button" />
+                    IsDefault="{Binding ElementName=WpfButtonIsDefaultBox, Path=IsChecked}"
+                    IsEnabled="{Binding IsSimpleButtonEnabled, Mode=OneWay}"
+                    Style="{ui:StyleResource ButtonStyle}" />
+                <StackPanel Grid.Column="1">
+                    <ui:CheckBox Content="Enable button" IsChecked="{Binding IsSimpleButtonEnabled}" />
+                    <ui:Separator Margin="0,4" Orientation="Horizontal" />
+                    <ui:CheckBox x:Name="WpfButtonIsDefaultBox" Content="IsDefault" />
+                </StackPanel>
+
             </Grid>
         </controls:ControlExample>
 
@@ -77,41 +84,49 @@
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
                 <ui:Button
                     Grid.Column="0"
+                    MinWidth="200"
+                    Padding="{ui:VariableResource TextControlThemePadding}"
+                    HorizontalAlignment="Left"
+                    VerticalAlignment="Center"
                     Appearance="{Binding ButtonAppearance}"
                     Content="WPF UI button"
                     Icon="{ui:SymbolIcon Fluent24}"
+                    IsDefault="{Binding ElementName=ButtonIsDefaultBox, Path=IsChecked}"
                     IsEnabled="{Binding IsUiButtonEnabled, Mode=OneWay}" />
-                <StackPanel Grid.Column="1" Orientation="Horizontal">
-                    <ui:TextBlock
-                        Margin="0,0,8,0"
-                        VerticalAlignment="Center"
-                        Text="Appearance" />
-                    <ui:ComboBox
-                        MinWidth="130"
-                        ItemsSource="{Binding Source={StaticResource AppearanceList}}"
-                        SelectedItem="{Binding ButtonAppearance}" />
+                <StackPanel Grid.Column="1" Orientation="Vertical">
+                    <StackPanel Orientation="Horizontal">
+                        <ui:TextBlock
+                            Margin="0,0,8,0"
+                            VerticalAlignment="Center"
+                            Text="Appearance" />
+                        <ui:ComboBox
+                            MinWidth="130"
+                            ItemsSource="{Binding Source={StaticResource AppearanceList}}"
+                            SelectedItem="{Binding ButtonAppearance}" />
+                    </StackPanel>
+                    <ui:Separator Margin="0,4" Orientation="Horizontal" />
+                    <ui:CheckBox Content="Enable button" IsChecked="{Binding IsUiButtonEnabled}" />
+                    <ui:Separator Margin="0,4" Orientation="Horizontal" />
+                    <ui:CheckBox x:Name="ButtonIsDefaultBox" Content="IsDefault" />
                 </StackPanel>
-                <ui:Separator Grid.Column="2" Orientation="Vertical" Margin="8 2" />
-                <ui:CheckBox
-                    Grid.Column="3"
-                    IsChecked="{Binding IsUiButtonEnabled}"
-                    Content="Disable button" />
             </Grid>
         </controls:ControlExample>
 
         <controls:ControlExample
             Margin="0,32,0,0"
-            HeaderText="WPF UI Accent button."
+            HeaderText="WPF UI Default button."
             XamlCode="&lt;ui:Button Appearance=&quot;Primary&quot; /&gt;">
             <ui:Button
-                Appearance="Primary"
+                MinWidth="200"
+                Padding="{ui:VariableResource TextControlThemePadding}"
+                HorizontalAlignment="Left"
+                Appearance="Normal"
                 Content="WPF UI button"
-                Icon="{ui:SymbolIcon Fluent24}" />
+                Icon="{ui:SymbolIcon Fluent24}"
+                IsDefault="True" />
         </controls:ControlExample>
 
         <controls:ControlExample
@@ -119,7 +134,10 @@
             HeaderText="WPF UI button with FontIcon."
             XamlCode="&lt;ui:Button Appearance=&quot;Primary&quot; /&gt;">
             <ui:Button
-                Appearance="Primary"
+                MinWidth="200"
+                Padding="{ui:VariableResource TextControlThemePadding}"
+                HorizontalAlignment="Left"
+                Appearance="Normal"
                 Content="WPF UI button with font icon"
                 Icon="{ui:FontIcon '&#x1F308;'}" />
         </controls:ControlExample>
@@ -129,7 +147,10 @@
             HeaderText="WPF UI button with ImageIcon."
             XamlCode="&lt;ui:Button Appearance=&quot;Primary&quot; /&gt;">
             <ui:Button
-                Appearance="Primary"
+                MinWidth="200"
+                Padding="{ui:VariableResource TextControlThemePadding}"
+                HorizontalAlignment="Left"
+                Appearance="Normal"
                 Content="WPF UI button with image icon"
                 Icon="{ui:ImageIcon 'pack://application:,,,/Assets/wpfui.png'}" />
         </controls:ControlExample>
@@ -138,7 +159,11 @@
             Margin="0,32,0,0"
             HeaderText="WPF UI button with modified content template."
             XamlCode="&lt;ui:Button Appearance=&quot;Primary&quot; /&gt;">
-            <ui:Button Width="40" ContentTemplate="{StaticResource ViewBoxCustomButtonContentTemplate}">
+            <ui:Button
+                Width="40"
+                Padding="{ui:VariableResource TextControlThemePadding}"
+                HorizontalAlignment="Left"
+                ContentTemplate="{StaticResource ViewBoxCustomButtonContentTemplate}">
                 <Canvas Width="47" Height="99">
                     <Path Data="M0,19H18V84h29v15H0V19Z" Fill="{ui:BrushResource TextFillColorSecondaryBrush}" />
                     <Path Data="M46,80H29V15H0V0H46V80Z" Fill="{ui:BrushResource TextFillColorSecondaryBrush}" />

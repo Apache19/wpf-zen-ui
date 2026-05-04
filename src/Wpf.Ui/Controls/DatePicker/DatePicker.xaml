@@ -114,7 +114,7 @@
                                 VerticalAlignment="Stretch"
                                 HorizontalContentAlignment="Center"
                                 VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
-                                Appearance="Secondary"
+                                Appearance="Normal"
                                 Background="Transparent"
                                 BorderBrush="Transparent"
                                 Cursor="Arrow"

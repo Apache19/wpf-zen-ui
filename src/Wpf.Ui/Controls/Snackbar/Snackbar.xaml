@@ -177,11 +177,6 @@
             <Trigger Property="Appearance" Value="Transparent">
                 <Setter Property="Background" Value="Transparent" />
             </Trigger>
-            <Trigger Property="Appearance" Value="Primary">
-                <Setter Property="Foreground" Value="{markup:BrushResource TextOnAccentFillColorPrimaryBrush}" />
-                <Setter Property="ContentForeground" Value="{markup:BrushResource TextOnAccentFillColorSecondaryBrush}" />
-                <Setter Property="Background" Value="{markup:BrushResource SystemAccentColorSecondaryBrush}" />
-            </Trigger>
             <Trigger Property="Appearance" Value="Dark">
                 <Setter Property="Foreground">
                     <Setter.Value>

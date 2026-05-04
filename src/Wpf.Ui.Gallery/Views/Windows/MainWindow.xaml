@@ -106,6 +106,7 @@
                 <ui:Button
                     Grid.Column="1"
                     Padding="9"
+                    VerticalAlignment="Center"
                     Click="ThemeButton_OnClick"
                     Icon="{ui:SymbolIcon WeatherSunny24}" />
             </Grid>
