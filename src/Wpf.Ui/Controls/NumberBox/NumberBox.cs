@@ -808,6 +808,8 @@ public class NumberBox : TextBox
     {
         if (e.OriginalSource is ButtonBase btn)
         {
+            Focus();
+
             var buttonKind = GetButtonKind(btn);
 
             switch (buttonKind)

@@ -22,6 +22,7 @@
     <!--  明暗主题下的主次颜色逻辑不太一样，让人困惑  -->
 
     <Style x:Key="{x:Static t:StyleKeys.ButtonStyle}" TargetType="{x:Type Button}">
+        <Setter Property="OverridesDefaultStyle" Value="True" />
         <Setter Property="Background" Value="{m:BrushResource ControlFillColorSecondaryBrush}" />
         <Setter Property="Border.CornerRadius" Value="{m:VariableResource ControlCornerRadius}" />
         <Setter Property="BorderBrush" Value="{m:BrushResource ControlElevationBorderBrush}" />
@@ -30,7 +31,6 @@
         <Setter Property="Foreground" Value="{m:BrushResource TextFillColorPrimaryBrush}" />
         <Setter Property="HorizontalContentAlignment" Value="Center" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
-        <Setter Property="OverridesDefaultStyle" Value="True" />
         <Setter Property="Padding" Value="{StaticResource ButtonPadding}" />
         <Setter Property="Template">
             <Setter.Value>
@@ -51,7 +51,6 @@
                                 x:Name="ContentPresenter"
                                 HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
                                 VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
-                                ContentTemplate="{TemplateBinding ContentTemplate}"
                                 RecognizesAccessKey="True" />
                         </Border>
                     </Border>
@@ -62,7 +61,7 @@
                                 <Condition Property="IsDefault" Value="False" />
                                 <Condition Property="IsMouseOver" Value="True" />
                             </MultiTrigger.Conditions>
-                            <Setter Property="Background" Value="{m:BrushResource ControlFillColorDefaultBrush}" />
+                            <Setter TargetName="ContentBorder" Property="Background" Value="{m:BrushResource ControlFillColorDefaultBrush}" />
                         </MultiTrigger>
 
                         <MultiTrigger>
@@ -70,17 +69,17 @@
                                 <Condition Property="IsDefault" Value="False" />
                                 <Condition Property="IsPressed" Value="True" />
                             </MultiTrigger.Conditions>
-                            <Setter Property="Background" Value="{m:BrushResource ControlFillColorTertiaryBrush}" />
-                            <Setter Property="BorderBrush" Value="{m:BrushResource ControlStrokeColorDefaultBrush}" />
-                            <Setter Property="Foreground" Value="{m:BrushResource TextFillColorTertiaryBrush}" />
+                            <Setter TargetName="ContentBorder" Property="Background" Value="{m:BrushResource ControlFillColorTertiaryBrush}" />
+                            <Setter TargetName="ContentBorder" Property="BorderBrush" Value="{m:BrushResource ControlStrokeColorDefaultBrush}" />
+                            <Setter TargetName="ContentPresenter" Property="Control.Foreground" Value="{m:BrushResource TextFillColorTertiaryBrush}" />
                         </MultiTrigger>
 
                         <Trigger Property="IsDefault" Value="True">
                             <Setter TargetName="InsetBorder" Property="BorderThickness" Value="{Binding BorderThickness, RelativeSource={RelativeSource TemplatedParent}}" />
                             <Setter TargetName="ContentBorder" Property="BorderThickness" Value="0" />
-                            <Setter Property="Background" Value="{m:BrushResource AccentFillColorDefaultBrush}" />
-                            <Setter Property="BorderBrush" Value="{m:BrushResource AccentControlElevationBorderBrush}" />
-                            <Setter Property="Foreground" Value="{m:BrushResource TextOnAccentFillColorPrimaryBrush}" />
+                            <Setter TargetName="ContentBorder" Property="Background" Value="{m:BrushResource AccentFillColorDefaultBrush}" />
+                            <Setter TargetName="ContentBorder" Property="BorderBrush" Value="{m:BrushResource AccentControlElevationBorderBrush}" />
+                            <Setter TargetName="ContentPresenter" Property="Control.Foreground" Value="{m:BrushResource TextOnAccentFillColorPrimaryBrush}" />
                         </Trigger>
 
                         <MultiTrigger>
@@ -88,7 +87,7 @@
                                 <Condition Property="IsDefault" Value="True" />
                                 <Condition Property="IsMouseOver" Value="True" />
                             </MultiTrigger.Conditions>
-                            <Setter Property="Background" Value="{m:BrushResource AccentFillColorSecondaryBrush}" />
+                            <Setter TargetName="ContentBorder" Property="Background" Value="{m:BrushResource AccentFillColorSecondaryBrush}" />
                         </MultiTrigger>
 
                         <MultiTrigger>
@@ -96,15 +95,15 @@
                                 <Condition Property="IsDefault" Value="True" />
                                 <Condition Property="IsPressed" Value="True" />
                             </MultiTrigger.Conditions>
-                            <Setter Property="Background" Value="{m:BrushResource AccentFillColorTertiaryBrush}" />
-                            <Setter Property="BorderBrush" Value="{m:BrushResource ControlFillColorTransparentBrush}" />
-                            <Setter Property="Foreground" Value="{m:BrushResource TextOnAccentFillColorSecondaryBrush}" />
+                            <Setter TargetName="ContentBorder" Property="Background" Value="{m:BrushResource AccentFillColorTertiaryBrush}" />
+                            <Setter TargetName="ContentBorder" Property="BorderBrush" Value="{m:BrushResource ControlFillColorTransparentBrush}" />
+                            <Setter TargetName="ContentPresenter" Property="Control.Foreground" Value="{m:BrushResource TextOnAccentFillColorSecondaryBrush}" />
                         </MultiTrigger>
 
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter Property="Background" Value="{m:BrushResource ControlFillColorDisabledBrush}" />
-                            <Setter Property="BorderBrush" Value="{m:BrushResource ControlStrokeColorDefaultBrush}" />
-                            <Setter Property="Foreground" Value="{m:BrushResource TextFillColorDisabledBrush}" />
+                            <Setter TargetName="ContentBorder" Property="Background" Value="{m:BrushResource ControlFillColorDisabledBrush}" />
+                            <Setter TargetName="ContentBorder" Property="BorderBrush" Value="{m:BrushResource ControlStrokeColorDefaultBrush}" />
+                            <Setter TargetName="ContentPresenter" Property="Control.Foreground" Value="{m:BrushResource TextFillColorDisabledBrush}" />
                         </Trigger>
 
                     </ControlTemplate.Triggers>
@@ -115,29 +114,22 @@
     </Style>
 
     <Style x:Key="{x:Static t:StyleKeys.RepeatButtonStyle}" TargetType="{x:Type RepeatButton}">
+        <Setter Property="OverridesDefaultStyle" Value="True" />
+        <Setter Property="Foreground" Value="{m:BrushResource TextFillColorPrimaryBrush}" />
         <Setter Property="Background" Value="{m:BrushResource ControlFillColorSecondaryBrush}" />
         <Setter Property="Border.CornerRadius" Value="{DynamicResource {x:Static t:VariableKeys.ControlCornerRadius}}" />
         <Setter Property="BorderBrush" Value="{m:BrushResource ControlElevationBorderBrush}" />
         <Setter Property="BorderThickness" Value="{StaticResource ButtonBorderThemeThickness}" />
         <Setter Property="FocusVisualStyle" Value="{m:StyleResource DefaultControlFocusVisualStyle}" />
         <Setter Property="Focusable" Value="False" />
-        <Setter Property="Foreground" Value="{m:BrushResource TextFillColorPrimaryBrush}" />
-        <Setter Property="HorizontalAlignment" Value="Left" />
         <Setter Property="HorizontalContentAlignment" Value="Center" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
         <Setter Property="Padding" Value="{StaticResource ButtonPadding}" />
-        <Setter Property="SnapsToDevicePixels" Value="True" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type RepeatButton}">
                     <Border
                         x:Name="ContentBorder"
-                        Width="{TemplateBinding Width}"
-                        Height="{TemplateBinding Height}"
-                        MinWidth="{TemplateBinding MinWidth}"
-                        MinHeight="{TemplateBinding MinHeight}"
-                        Padding="{TemplateBinding Padding}"
-                        HorizontalAlignment="{TemplateBinding HorizontalAlignment}"
-                        VerticalAlignment="{TemplateBinding VerticalAlignment}"
                         Background="{TemplateBinding Background}"
                         BorderBrush="{TemplateBinding BorderBrush}"
                         BorderThickness="{TemplateBinding BorderThickness}"
@@ -146,32 +138,27 @@
                             x:Name="ContentPresenter"
                             HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
                             VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
-                            Content="{TemplateBinding Content}"
-                            ContentTemplate="{TemplateBinding ContentTemplate}"
-                            RecognizesAccessKey="True"
-                            TextElement.Foreground="{TemplateBinding Foreground}" />
+                            RecognizesAccessKey="True" />
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter Property="Background" Value="{m:BrushResource ControlFillColorDefaultBrush}" />
-                            <Setter Property="BorderBrush" Value="{m:BrushResource ControlElevationBorderBrush}" />
+                            <Setter TargetName="ContentBorder" Property="Background" Value="{m:BrushResource ControlFillColorDefaultBrush}" />
+                            <Setter TargetName="ContentBorder" Property="BorderBrush" Value="{m:BrushResource ControlElevationBorderBrush}" />
                         </Trigger>
                         <Trigger Property="IsPressed" Value="True">
-                            <Setter Property="Background" Value="{m:BrushResource ControlFillColorTertiaryBrush}" />
-                            <Setter Property="BorderBrush" Value="{m:BrushResource ControlStrokeColorDefaultBrush}" />
-                            <Setter Property="Foreground" Value="{m:BrushResource TextFillColorSecondaryBrush}" />
+                            <Setter TargetName="ContentBorder" Property="Background" Value="{m:BrushResource ControlFillColorTertiaryBrush}" />
+                            <Setter TargetName="ContentBorder" Property="BorderBrush" Value="{m:BrushResource ControlStrokeColorDefaultBrush}" />
+                            <Setter TargetName="ContentPresenter" Property="Control.Foreground" Value="{m:BrushResource TextFillColorSecondaryBrush}" />
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter Property="Background" Value="{m:BrushResource SubtleFillColorDisabledBrush}" />
-                            <Setter Property="BorderBrush" Value="{m:BrushResource ControlStrokeColorDefaultBrush}" />
-                            <Setter Property="Foreground" Value="{m:BrushResource TextFillColorDisabledBrush}" />
+                            <Setter TargetName="ContentBorder" Property="Background" Value="{m:BrushResource SubtleFillColorDisabledBrush}" />
+                            <Setter TargetName="ContentBorder" Property="BorderBrush" Value="{m:BrushResource ControlStrokeColorDefaultBrush}" />
+                            <Setter TargetName="ContentPresenter" Property="Control.Foreground" Value="{m:BrushResource TextFillColorDisabledBrush}" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
-        <Setter Property="VerticalAlignment" Value="Center" />
-        <Setter Property="VerticalContentAlignment" Value="Center" />
     </Style>
 
     <Style x:Key="{x:Static t:StyleKeys.UiButtonStyle}" TargetType="{x:Type controls:Button}">
@@ -212,18 +199,16 @@
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
                                 <!--  Icon  -->
-                                <ContentPresenter
+                                <ContentPresenter Grid.Column="0"
                                     x:Name="ControlIcon"
-                                    Grid.Column="0"
                                     Margin="{StaticResource ButtonIconMargin}"
                                     VerticalAlignment="Center"
                                     Content="{TemplateBinding Icon}"
                                     Focusable="False"
                                     SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
                                 <!--  Content  -->
-                                <ContentPresenter
+                                <ContentPresenter Grid.Column="1"
                                     x:Name="ContentPresenter"
-                                    Grid.Column="1"
                                     Content="{TemplateBinding Content}"
                                     ContentTemplate="{TemplateBinding ContentTemplate}"
                                     Focusable="False"
@@ -318,7 +303,7 @@
 
             <MultiDataTrigger>
                 <MultiDataTrigger.Conditions>
-                    <Condition Binding="{Binding Appearance, RelativeSource={RelativeSource Self}}" Value="Primary" />
+                    <Condition Binding="{Binding IsDefault, RelativeSource={RelativeSource Self}}" Value="True" />
                     <Condition Binding="{Binding Source={x:Static SystemParameters.HighContrast}}" Value="True" />
                 </MultiDataTrigger.Conditions>
                 <Setter Property="PressedBorderBrush" Value="{m:BrushResource AccentControlElevationBorderBrush}" />
@@ -387,7 +372,7 @@
         </Style.Triggers>
     </Style>
 
-    <!--  放进Standard  -->
+    <!-- todo: 放进 Standard  -->
     <Style BasedOn="{StaticResource {x:Static t:StyleKeys.UiButtonStyle}}" TargetType="{x:Type controls:Button}" />
 
 </ResourceDictionary>
