@@ -204,6 +204,7 @@
                         Cursor="Arrow"
                         Foreground="{markup:BrushResource TextFillColorSecondaryBrush}"
                         IsTabStop="False"
+                        Focusable="False"
                         MouseOverBackground="{markup:BrushResource SubtleFillColorSecondaryBrush}"
                         MouseOverBorderBrush="Transparent"
                         PressedBackground="{markup:BrushResource SubtleFillColorTertiaryBrush}"
