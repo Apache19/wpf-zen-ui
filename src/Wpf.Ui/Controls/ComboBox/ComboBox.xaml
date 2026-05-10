@@ -265,6 +265,7 @@
                                             x:Name="DropDownBorder"
                                             MinWidth="{TemplateBinding ActualWidth}"
                                             Margin="0"
+                                            MaxHeight="{TemplateBinding MaxDropDownHeight}"
                                             Padding="0,4,0,6"
                                             Background="{m:BrushResource AcrylicBackgroundFillColorDefaultBrush}"
                                             BorderBrush="{m:BrushResource SurfaceStrokeColorDefaultBrush}"
@@ -346,7 +347,6 @@
                                 </BeginStoryboard>
                             </Trigger.ExitActions>
                         </Trigger>
-                        <!--  todo 只有无项目时1项目高度，没有限制最高高度  -->
                         <Trigger Property="HasItems" Value="False">
                             <Setter TargetName="DropDownBorder" Property="MinHeight" Value="32.0" />
                         </Trigger>
