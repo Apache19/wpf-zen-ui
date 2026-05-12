@@ -15,7 +15,8 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Ui.Controls"
     xmlns:m="clr-namespace:Wpf.Ui.Markup"
-    xmlns:t="clr-namespace:Wpf.Ui.Theming">
+    xmlns:t="clr-namespace:Wpf.Ui.Theming"
+    xmlns:ani="clr-namespace:Wpf.Ui.Animations">
 
     <Style x:Key="DefaultComboBoxTextBoxStyle" TargetType="{x:Type TextBox}">
         <Setter Property="CaretBrush" Value="{m:BrushResource TextFillColorPrimaryBrush}" />
@@ -315,7 +316,7 @@
                             <Trigger.EnterActions>
                                 <BeginStoryboard>
                                     <Storyboard>
-                                        <DoubleAnimation
+                                        <ani:InterruptibleDoubleAnimation
                                             Storyboard.TargetName="ChevronIcon"
                                             Storyboard.TargetProperty="(controls:SymbolIcon.RenderTransform).(RotateTransform.Angle)"
                                             From="0"
@@ -337,7 +338,7 @@
                             <Trigger.ExitActions>
                                 <BeginStoryboard>
                                     <Storyboard>
-                                        <DoubleAnimation
+                                        <ani:InterruptibleDoubleAnimation
                                             Storyboard.TargetName="ChevronIcon"
                                             Storyboard.TargetProperty="(controls:SymbolIcon.RenderTransform).(RotateTransform.Angle)"
                                             From="180"
