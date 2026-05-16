@@ -6,7 +6,6 @@
 
     <Style BasedOn="{StaticResource {x:Type ContentControl}}" TargetType="{x:Type controls:PlaceholderControl}">
         <Setter Property="Foreground" Value="{markup:BrushResource TextPlaceholderColorBrush}" />
-        <Setter Property="IsHitTestVisible" Value="False" />
     </Style>
 
 </ResourceDictionary>

@@ -17,5 +17,20 @@ public class PlaceholderControl : ContentControl
             typeof(PlaceholderControl),
             new FrameworkPropertyMetadata(typeof(PlaceholderControl))
         );
+
+        IsHitTestVisibleProperty.OverrideMetadata(
+            typeof(PlaceholderControl),
+            new UIPropertyMetadata(false)
+        );
+
+        IsTabStopProperty.OverrideMetadata(
+            typeof(PlaceholderControl),
+            new FrameworkPropertyMetadata(false)
+        );
+
+        FocusableProperty.OverrideMetadata(
+            typeof(PlaceholderControl),
+            new FrameworkPropertyMetadata(false)
+        );
     }
 }
