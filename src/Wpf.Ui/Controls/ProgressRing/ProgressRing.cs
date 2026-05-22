@@ -15,6 +15,22 @@ namespace Wpf.Ui.Controls;
 /// </summary>
 public class ProgressRing : Control
 {
+    /// <summary>Identifies the <see cref="Minimum"/> dependency property.</summary>
+    public static readonly DependencyProperty MinimumProperty = DependencyProperty.Register(
+        nameof(Minimum),
+        typeof(double),
+        typeof(ProgressRing),
+        new PropertyMetadata(0.0d, OnProgressChanged)
+    );
+
+    /// <summary>Identifies the <see cref="Maximum"/> dependency property.</summary>
+    public static readonly DependencyProperty MaximumProperty = DependencyProperty.Register(
+        nameof(Maximum),
+        typeof(double),
+        typeof(ProgressRing),
+        new PropertyMetadata(100.0d, OnProgressChanged)
+    );
+
     /// <summary>Identifies the <see cref="Progress"/> dependency property.</summary>
     public static readonly DependencyProperty ProgressProperty = DependencyProperty.Register(
         nameof(Progress),
@@ -31,9 +47,9 @@ public class ProgressRing : Control
         new PropertyMetadata(false)
     );
 
-    /// <summary>Identifies the <see cref="EngAngle"/> dependency property.</summary>
-    public static readonly DependencyProperty EngAngleProperty = DependencyProperty.Register(
-        nameof(EngAngle),
+    /// <summary>Identifies the <see cref="EndAngle"/> dependency property.</summary>
+    public static readonly DependencyProperty EndAngleProperty = DependencyProperty.Register(
+        nameof(EndAngle),
         typeof(double),
         typeof(ProgressRing),
         new PropertyMetadata(180.0d)
@@ -68,12 +84,38 @@ public class ProgressRing : Control
         new PropertyMetadata(Visibility.Visible)
     );
 
+    /// <summary>Identifies the <see cref="StrokeThickness"/> dependency property.</summary>
+    public static readonly DependencyProperty StrokeThicknessProperty = DependencyProperty.Register(
+        nameof(StrokeThickness),
+        typeof(double),
+        typeof(ProgressRing),
+        new PropertyMetadata(double.NaN)
+    );
+
     static ProgressRing()
     {
         DefaultStyleKeyProperty.OverrideMetadata(
             typeof(ProgressRing),
             new FrameworkPropertyMetadata(typeof(ProgressRing))
         );
+    }
+
+    /// <summary>
+    /// Gets or sets the minimum allowed value.
+    /// </summary>
+    public double Minimum
+    {
+        get => (double)GetValue(MinimumProperty);
+        set => SetValue(MinimumProperty, value);
+    }
+
+    /// <summary>
+    /// Gets or sets the maximum allowed value.
+    /// </summary>
+    public double Maximum
+    {
+        get => (double)GetValue(MaximumProperty);
+        set => SetValue(MaximumProperty, value);
     }
 
     /// <summary>
@@ -98,10 +140,20 @@ public class ProgressRing : Control
     /// <summary>
     /// Gets or sets the <see cref="Arc.EndAngle"/>.
     /// </summary>
+    public double EndAngle
+    {
+        get => (double)GetValue(EndAngleProperty);
+        set => SetValue(EndAngleProperty, value);
+    }
+
+    /// <summary>
+    /// Gets or sets the <see cref="Arc.EndAngle"/>.
+    /// </summary>
+    [Obsolete("Use EndAngle instead.")]
     public double EngAngle
     {
-        get => (double)GetValue(EngAngleProperty);
-        set => SetValue(EngAngleProperty, value);
+        get => EndAngle;
+        set => EndAngle = value;
     }
 
     /// <summary>
@@ -132,15 +184,39 @@ public class ProgressRing : Control
     }
 
     /// <summary>
-    /// Re-draws <see cref="Arc.EndAngle"/> depending on <see cref="Progress"/>.
+    /// Gets or sets the stroke thickness of the ring.
+    /// When set to <see cref="double.NaN"/>, the thickness is automatically calculated as <c>Height / 8</c>.
+    /// </summary>
+    public double StrokeThickness
+    {
+        get => (double)GetValue(StrokeThicknessProperty);
+        set => SetValue(StrokeThicknessProperty, value);
+    }
+
+    /// <summary>
+    /// Re-draws <see cref="Arc.EndAngle"/> depending on <see cref="Progress"/>,
+    /// <see cref="Minimum"/>, and <see cref="Maximum"/>.
     /// </summary>
     protected void UpdateProgressAngle()
     {
-        var percentage = Progress;
+        var minimum = Minimum;
+        var maximum = Maximum;
+        var progress = Progress;
 
-        if (percentage > 100)
+        var range = maximum - minimum;
+
+        if (range <= 0)
         {
-            percentage = 100;
+            SetCurrentValue(EndAngleProperty, 0.0d);
+
+            return;
+        }
+
+        var percentage = (progress - minimum) / range;
+
+        if (percentage > 1)
+        {
+            percentage = 1;
         }
 
         if (percentage < 0)
@@ -149,14 +225,14 @@ public class ProgressRing : Control
         }
 
         // (360 / 100) * percentage
-        var endAngle = 3.6d * percentage;
+        var endAngle = 360d * percentage;
 
         if (endAngle >= 360)
         {
             endAngle = 359;
         }
 
-        SetCurrentValue(EngAngleProperty, endAngle);
+        SetCurrentValue(EndAngleProperty, endAngle);
     }
 
     /// <summary>

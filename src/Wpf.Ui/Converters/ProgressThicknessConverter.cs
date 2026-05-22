@@ -3,25 +3,36 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-/* TODO: It's too hardcoded, we should define better formula. */
-
 using System.Windows.Data;
 
 namespace Wpf.Ui.Converters;
 
-internal class ProgressThicknessConverter : IValueConverter
+internal class ProgressThicknessConverter : IMultiValueConverter
 {
-    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+    public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
     {
-        if (value is double height)
+        double height = 0;
+        double? strokeThickness = null;
+
+        if (values is { Length: >= 1 } && values[0] is double h)
         {
-            return height / 8;
+            height = h;
         }
 
-        return 12.0d;
+        if (values is { Length: >= 2 } && values[1] is double st)
+        {
+            strokeThickness = st;
+        }
+
+        if (strokeThickness.HasValue && !double.IsNaN(strokeThickness.Value))
+        {
+            return strokeThickness.Value;
+        }
+
+        return height / 8;
     }
 
-    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+    public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
     {
         throw new NotImplementedException();
     }
