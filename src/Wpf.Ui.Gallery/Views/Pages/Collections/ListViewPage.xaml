@@ -134,7 +134,7 @@
                 BorderThickness="0"
                 ItemsSource="{Binding ViewModel.BasicListViewItems, Mode=TwoWay}">
                 <ui:ListView.View>
-                    <ui:GridView>
+                    <GridView>
                         <ui:GridViewColumn
                             MinWidth="100"
                             DisplayMemberBinding="{Binding FirstName}"
@@ -147,7 +147,7 @@
                             MinWidth="100"
                             DisplayMemberBinding="{Binding Company}"
                             Header="Company" />
-                    </ui:GridView>
+                    </GridView>
                 </ui:ListView.View>
             </ui:ListView>
         </controls:ControlExample>

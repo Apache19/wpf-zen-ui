@@ -5,6 +5,7 @@
 
 namespace Wpf.Ui.Controls;
 
+/*
 /// <summary>
 /// Extends <see cref="System.Windows.Controls.GridView"/> to use Wpf.Ui custom styles
 /// </summary>
@@ -23,9 +24,8 @@ namespace Wpf.Ui.Controls;
 /// </example>
 public class GridView : System.Windows.Controls.GridView
 {
-    // todo 这是tmd什么神仙做法
-    //   修正：给GridView创建默认样式，在默认样式里更改 ColumnHeaderContainerStyle
-    //   否则会影响全局 ColumnHeaderContainer
+    // todo 这是tmd什么神仙做法，会影响全局 ColumnHeaderContainer
+
     static GridView()
     {
         ResourceDictionary resourceDict = new()
@@ -43,3 +43,4 @@ public class GridView : System.Windows.Controls.GridView
         );
     }
 }
+*/
