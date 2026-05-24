@@ -5,6 +5,7 @@
 
 /* Based on Windows UI Library */
 
+using System.Runtime.ExceptionServices;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Navigation;
@@ -131,7 +132,9 @@ public class NavigationViewContentPresenter : Frame
     {
         base.OnInitialized(e);
 
-        // REVIEW: I didn't understand something, but why is it necessary?
+        // Unloaded handles cleanup when Frame is removed from visual tree
+        // (window close, tab switch, app exit), since Navigating won't fire.
+        // Normal navigation already triggers FROM via OnNavigatingCoreAsync.
         Unloaded += static async (sender, _) =>
         {
             if (sender is NavigationViewContentPresenter navigator)
@@ -167,14 +170,18 @@ public class NavigationViewContentPresenter : Frame
     {
         OnNavigating(eventArgs);
 
-        await NotifyContentAboutNavigatingToAsync(eventArgs.Content);
-
-        if (eventArgs.Navigator is not NavigationViewContentPresenter navigator)
+        // First notify current page to leave (OnNavigatedFromAsync),
+        // then notify new page to enter (OnNavigatedToAsync).
+        // Reversed order (TO first, then FROM) causes issues when old and new
+        // pages share the same INavigationAware instance (e.g., ViewModel as singleton),
+        // because OnNavigatedFromAsync would cancel the async operation
+        // just started by OnNavigatedToAsync.
+        if (eventArgs.Navigator is NavigationViewContentPresenter navigator)
         {
-            return;
+            await NotifyContentAboutNavigatingFromAsync(navigator.Content);
         }
 
-        await NotifyContentAboutNavigatingFromAsync(navigator.Content);
+        await NotifyContentAboutNavigatingToAsync(eventArgs.Content);
     }
 
     protected virtual void OnNavigating(System.Windows.Navigation.NavigatingCancelEventArgs eventArgs)
@@ -226,17 +233,28 @@ public class NavigationViewContentPresenter : Frame
     {
         switch (content)
         {
-            // The order in which the OnNavigatedToAsync/OnNavigatedFromAsync
-            // methods of View and ViewModel are called is not guaranteed
             case INavigationAware aware:
             {
-                await function(aware);
+                // The notifications between View and ViewModel are isolated:
+                // an exception thrown by the View should not prevent the ViewModel from receiving the notification.
+                ExceptionDispatchInfo? viewException = null;
+
+                try
+                {
+                    await function(aware);
+                }
+                catch (Exception ex)
+                {
+                    viewException = ExceptionDispatchInfo.Capture(ex);
+                }
 
                 if (aware is FrameworkElement { DataContext: INavigationAware vm } &&
                     !ReferenceEquals(vm, aware))
                 {
                     await function(vm);
                 }
+
+                viewException?.Throw();
 
                 break;
             }
