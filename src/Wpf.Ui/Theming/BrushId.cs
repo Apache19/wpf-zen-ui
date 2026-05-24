@@ -112,6 +112,10 @@ public enum BrushId
     CardBackgroundFillColorDefaultBrush,
     CardBackgroundFillColorSecondaryBrush,
 
+    EmbeddedFillColorDefaultBrush,
+    EmbeddedFillColorStrongBrush,
+    EmbeddedFillColorDeepBrush,
+
     SmokeFillColorDefaultBrush,
 
     LayerFillColorDefaultBrush,

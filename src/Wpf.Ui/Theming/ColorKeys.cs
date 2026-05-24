@@ -4,6 +4,8 @@
 // All Rights Reserved.
 
 using System.Reflection;
+
+// ReSharper disable UnusedAutoPropertyAccessor.Local
 #pragma warning disable CS8618
 
 namespace Wpf.Ui.Theming;
@@ -83,6 +85,9 @@ public static class ColorKeys
     public static ComponentResourceKey FocusStrokeColorInner { get; private set; }
     public static ComponentResourceKey CardBackgroundFillColorDefault { get; private set; }
     public static ComponentResourceKey CardBackgroundFillColorSecondary { get; private set; }
+    public static ComponentResourceKey EmbeddedFillColorDefault { get; private set; }
+    public static ComponentResourceKey EmbeddedFillColorStrong { get; private set; }
+    public static ComponentResourceKey EmbeddedFillColorDeep { get; private set; }
     public static ComponentResourceKey SmokeFillColorDefault { get; private set; }
     public static ComponentResourceKey LayerFillColorDefault { get; private set; }
     public static ComponentResourceKey LayerFillColorAlt { get; private set; }

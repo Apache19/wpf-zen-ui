@@ -122,6 +122,10 @@
     <Color x:Key="{x:Static t:ColorKeys.CardBackgroundFillColorDefault}">#0DFFFFFF</Color>
     <Color x:Key="{x:Static t:ColorKeys.CardBackgroundFillColorSecondary}">#08FFFFFF</Color>
 
+    <Color x:Key="{x:Static t:ColorKeys.EmbeddedFillColorDefault}">#1A000000</Color>
+    <Color x:Key="{x:Static t:ColorKeys.EmbeddedFillColorStrong}">#33000000</Color>
+    <Color x:Key="{x:Static t:ColorKeys.EmbeddedFillColorDeep}">#4C000000</Color>
+
     <Color x:Key="{x:Static t:ColorKeys.SmokeFillColorDefault}">#4D000000</Color>
 
     <Color x:Key="{x:Static t:ColorKeys.LayerFillColorDefault}">#4C3A3A3A</Color>
@@ -250,6 +254,10 @@
 
     <SolidColorBrush x:Key="{x:Static t:BrushKeys.CardBackgroundFillColorDefaultBrush}" Color="{StaticResource {x:Static t:ColorKeys.CardBackgroundFillColorDefault}}" />
     <SolidColorBrush x:Key="{x:Static t:BrushKeys.CardBackgroundFillColorSecondaryBrush}" Color="{StaticResource {x:Static t:ColorKeys.CardBackgroundFillColorSecondary}}" />
+
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.EmbeddedFillColorDefaultBrush}" Color="{StaticResource {x:Static t:ColorKeys.EmbeddedFillColorDefault}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.EmbeddedFillColorStrongBrush}" Color="{StaticResource {x:Static t:ColorKeys.EmbeddedFillColorStrong}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.EmbeddedFillColorDeepBrush}" Color="{StaticResource {x:Static t:ColorKeys.EmbeddedFillColorDeep}}" />
 
     <SolidColorBrush x:Key="{x:Static t:BrushKeys.SmokeFillColorDefaultBrush}" Color="{StaticResource {x:Static t:ColorKeys.SmokeFillColorDefault}}" />
 

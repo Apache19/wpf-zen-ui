@@ -4,6 +4,8 @@
 // All Rights Reserved.
 
 using System.Reflection;
+
+// ReSharper disable UnusedAutoPropertyAccessor.Local
 #pragma warning disable CS8618
 
 namespace Wpf.Ui.Theming;
@@ -104,6 +106,10 @@ public static class BrushKeys
 
     public static ComponentResourceKey CardBackgroundFillColorDefaultBrush { get; private set; }
     public static ComponentResourceKey CardBackgroundFillColorSecondaryBrush { get; private set; }
+
+    public static ComponentResourceKey EmbeddedFillColorDefaultBrush { get; private set; }
+    public static ComponentResourceKey EmbeddedFillColorStrongBrush { get; private set; }
+    public static ComponentResourceKey EmbeddedFillColorDeepBrush { get; private set; }
 
     public static ComponentResourceKey SmokeFillColorDefaultBrush { get; private set; }
 
