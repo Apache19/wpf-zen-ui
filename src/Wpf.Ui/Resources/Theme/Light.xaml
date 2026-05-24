@@ -65,9 +65,13 @@
     <Color x:Key="{x:Static t:ColorKeys.TextOnAccentFillColorSecondary}">#B3FFFFFF</Color>
     <Color x:Key="{x:Static t:ColorKeys.TextOnAccentFillColorDisabled}">#A3FFFFFF</Color>
 
+    <!--  建议值：#0F000000（白色alpha在白色背景上无意义，改用黑色alpha）  -->
     <Color x:Key="{x:Static t:ColorKeys.ControlFillColorDefault}">#B3FFFFFF</Color>
+    <!--  建议值：#1A000000（改用黑色alpha，与其他Fill系列保持一致）  -->
     <Color x:Key="{x:Static t:ColorKeys.ControlFillColorSecondary}">#80F0F0F0</Color>
+    <!--  建议值：#08000000（改用黑色alpha，且须与Disabled区分）  -->
     <Color x:Key="{x:Static t:ColorKeys.ControlFillColorTertiary}">#4DF9F9F9</Color>
+    <!--  建议值：#05000000（当前与Tertiary相同值，无法区分）  -->
     <Color x:Key="{x:Static t:ColorKeys.ControlFillColorDisabled}">#4DF9F9F9</Color>
     <Color x:Key="{x:Static t:ColorKeys.ControlFillColorTransparent}">#00FFFFFF</Color>
     <Color x:Key="{x:Static t:ColorKeys.ControlFillColorInputActive}">#FFFFFF</Color>
@@ -79,10 +83,12 @@
 
     <Color x:Key="{x:Static t:ColorKeys.SubtleFillColorTransparent}">#00FFFFFF</Color>
     <Color x:Key="{x:Static t:ColorKeys.SubtleFillColorSecondary}">#09000000</Color>
+    <!--  建议值：#05000000（当前与ControlAltFillColorSecondary、SystemFillColorNeutralBackground 共享 #06000000）  -->
     <Color x:Key="{x:Static t:ColorKeys.SubtleFillColorTertiary}">#06000000</Color>
     <Color x:Key="{x:Static t:ColorKeys.SubtleFillColorDisabled}">#00FFFFFF</Color>
 
     <Color x:Key="{x:Static t:ColorKeys.ControlAltFillColorTransparent}">#00FFFFFF</Color>
+    <!--  建议值：#0D000000（当前与SubtleFillColorTertiary、SystemFillColorNeutralBackground 共享 #06000000）  -->
     <Color x:Key="{x:Static t:ColorKeys.ControlAltFillColorSecondary}">#06000000</Color>
     <Color x:Key="{x:Static t:ColorKeys.ControlAltFillColorTertiary}">#0F000000</Color>
     <Color x:Key="{x:Static t:ColorKeys.ControlAltFillColorQuarternary}">#18000000</Color>
@@ -93,16 +99,19 @@
     <Color x:Key="{x:Static t:ColorKeys.ControlOnImageFillColorTertiary}">#EBEBEB</Color>
     <Color x:Key="{x:Static t:ColorKeys.ControlOnImageFillColorDisabled}">#00FFFFFF</Color>
 
+    <!--  建议值：保持 #0F000000（当前与 CardStrokeColorDefault、DividerStrokeColorDefault、SurfaceStrokeColorFlyout、ControlStrokeColorOnAccentDisabled 共享此值）  -->
     <Color x:Key="{x:Static t:ColorKeys.ControlStrokeColorDefault}">#0F000000</Color>
     <Color x:Key="{x:Static t:ColorKeys.ControlStrokeColorSecondary}">#29000000</Color>
     <Color x:Key="{x:Static t:ColorKeys.ControlStrokeColorTertiary}">#9E000000</Color>
     <Color x:Key="{x:Static t:ColorKeys.ControlStrokeColorOnAccentDefault}">#14FFFFFF</Color>
     <Color x:Key="{x:Static t:ColorKeys.ControlStrokeColorOnAccentSecondary}">#66000000</Color>
     <Color x:Key="{x:Static t:ColorKeys.ControlStrokeColorOnAccentTertiary}">#37000000</Color>
+    <!--  建议值：#08000000（当前与 ControlStrokeColorDefault 等共享 #0F000000，Disabled 应更淡）  -->
     <Color x:Key="{x:Static t:ColorKeys.ControlStrokeColorOnAccentDisabled}">#0F000000</Color>
 
     <Color x:Key="{x:Static t:ColorKeys.ControlStrokeColorForStrongFillWhenOnImage}">#59FFFFFF</Color>
 
+    <!--  建议值：#19000000（当前与 ControlStrokeColorDefault 等共享 #0F000000，卡片描边应更明显）  -->
     <Color x:Key="{x:Static t:ColorKeys.CardStrokeColorDefault}">#0F000000</Color>
     <Color x:Key="{x:Static t:ColorKeys.CardStrokeColorDefaultSolid}">#EBEBEB</Color>
 
@@ -110,16 +119,18 @@
     <Color x:Key="{x:Static t:ColorKeys.ControlStrongStrokeColorDisabled}">#37000000</Color>
 
     <Color x:Key="{x:Static t:ColorKeys.SurfaceStrokeColorDefault}">#66757575</Color>
+    <!--  建议值：#1A000000（当前与 ControlStrokeColorDefault 等共享 #0F000000，浮层描边应更明显）  -->
     <Color x:Key="{x:Static t:ColorKeys.SurfaceStrokeColorFlyout}">#0F000000</Color>
     <Color x:Key="{x:Static t:ColorKeys.SurfaceStrokeColorInverse}">#15FFFFFF</Color>
 
+    <!--  建议值：#08000000（当前与 ControlStrokeColorDefault 等共享 #0F000000，分割线应更淡）  -->
     <Color x:Key="{x:Static t:ColorKeys.DividerStrokeColorDefault}">#0F000000</Color>
 
     <Color x:Key="{x:Static t:ColorKeys.FocusStrokeColorOuter}">#E4000000</Color>
     <Color x:Key="{x:Static t:ColorKeys.FocusStrokeColorInner}">#B3FFFFFF</Color>
 
     <Color x:Key="{x:Static t:ColorKeys.CardBackgroundFillColorDefault}">#08000000</Color>
-    <!--  原始：#B3FFFFFF  -->
+    <!--  原始：#B3FFFFFF  建议值：#0A000000（改用黑色alpha）  -->
     <Color x:Key="{x:Static t:ColorKeys.CardBackgroundFillColorSecondary}">#80F6F6F6</Color>
 
     <!--  建议值：#06000000  -->
@@ -161,10 +172,12 @@
     <Color x:Key="{x:Static t:ColorKeys.SystemFillColorCritical}">#C42B1C</Color>
     <Color x:Key="{x:Static t:ColorKeys.SystemFillColorNeutral}">#72000000</Color>
     <Color x:Key="{x:Static t:ColorKeys.SystemFillColorSolidNeutral}">#8A8A8A</Color>
+    <!--  建议值：#0A000000（改用黑色alpha，或考虑带 Accent 色调的浅色）  -->
     <Color x:Key="{x:Static t:ColorKeys.SystemFillColorAttentionBackground}">#80F6F6F6</Color>
     <Color x:Key="{x:Static t:ColorKeys.SystemFillColorSuccessBackground}">#DFF6DD</Color>
     <Color x:Key="{x:Static t:ColorKeys.SystemFillColorCautionBackground}">#FFF4CE</Color>
     <Color x:Key="{x:Static t:ColorKeys.SystemFillColorCriticalBackground}">#FDE7E9</Color>
+    <!--  建议值：#08000000（当前与 SubtleFillColorTertiary、ControlAltFillColorSecondary 共享 #06000000）  -->
     <Color x:Key="{x:Static t:ColorKeys.SystemFillColorNeutralBackground}">#06000000</Color>
     <Color x:Key="{x:Static t:ColorKeys.SystemFillColorSolidAttentionBackground}">#F7F7F7</Color>
     <Color x:Key="{x:Static t:ColorKeys.SystemFillColorSolidNeutralBackground}">#F3F3F3</Color>
