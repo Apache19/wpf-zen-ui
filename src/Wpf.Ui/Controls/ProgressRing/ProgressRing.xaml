@@ -25,7 +25,7 @@
                 <ControlTemplate TargetType="{x:Type controls:ProgressRing}">
                     <Grid Width="{TemplateBinding Width}" Height="{TemplateBinding Height}">
                         <controls:Arc
-                            EndAngle="359"
+                            EndAngle="360"
                             StartAngle="0"
                             Stroke="{TemplateBinding CoverRingStroke}"
                             StrokeStartLineCap="{TemplateBinding StrokeLineCap}"
@@ -62,7 +62,7 @@
                         <ControlTemplate TargetType="{x:Type controls:ProgressRing}">
                             <Grid Width="{TemplateBinding Width}" Height="{TemplateBinding Height}">
                                 <controls:Arc
-                                    EndAngle="359"
+                                    EndAngle="360"
                                     StartAngle="0"
                                     Stroke="{TemplateBinding CoverRingStroke}"
                                     StrokeStartLineCap="{TemplateBinding StrokeLineCap}"

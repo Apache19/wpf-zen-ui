@@ -243,14 +243,7 @@ public class ProgressRing : Control
         }
 
         // (360 / 100) * percentage
-        var endAngle = 360d * percentage;
-
-        if (endAngle >= 360)
-        {
-            endAngle = 359;
-        }
-
-        SetCurrentValue(EndAngleProperty, endAngle);
+        SetCurrentValue(EndAngleProperty, 360d * percentage);
     }
 
     /// <summary>

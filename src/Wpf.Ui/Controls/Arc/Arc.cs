@@ -91,6 +91,23 @@ public class Arc : Shape
     /// </summary>
     protected Geometry DefinedGeometry()
     {
+        // Draw a full ellipse when the sweep angle covers a complete circle,
+        // avoiding the degenerate arc that occurs when start and end angles coincide.
+        if (Math.Abs(EndAngle - StartAngle) >= 360)
+        {
+            var radiusX = Math.Max(0, (RenderSize.Width - StrokeThickness) / 2);
+            var radiusY = Math.Max(0, (RenderSize.Height - StrokeThickness) / 2);
+
+            return new EllipseGeometry(
+                new Rect(
+                    StrokeThickness / 2,
+                    StrokeThickness / 2,
+                    radiusX * 2,
+                    radiusY * 2
+                )
+            );
+        }
+
         var geometryStream = new StreamGeometry();
         var arcSize = new Size(
             Math.Max(0, (RenderSize.Width - StrokeThickness) / 2),
