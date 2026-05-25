@@ -28,6 +28,8 @@
                             EndAngle="359"
                             StartAngle="0"
                             Stroke="{TemplateBinding CoverRingStroke}"
+                            StrokeStartLineCap="{TemplateBinding StrokeLineCap}"
+                            StrokeEndLineCap="{TemplateBinding StrokeLineCap}"
                             Visibility="{TemplateBinding CoverRingVisibility}">
                             <controls:Arc.StrokeThickness>
                                 <MultiBinding Converter="{StaticResource ProgressThicknessConverter}">
@@ -39,7 +41,9 @@
                         <controls:Arc
                             EndAngle="{TemplateBinding EndAngle}"
                             StartAngle="0"
-                            Stroke="{TemplateBinding Foreground}">
+                            Stroke="{TemplateBinding Foreground}"
+                            StrokeStartLineCap="{TemplateBinding StrokeLineCap}"
+                            StrokeEndLineCap="{TemplateBinding StrokeLineCap}">
                             <controls:Arc.StrokeThickness>
                                 <MultiBinding Converter="{StaticResource ProgressThicknessConverter}">
                                     <Binding Path="Height" RelativeSource="{RelativeSource TemplatedParent}" Mode="OneWay" />
@@ -61,6 +65,8 @@
                                     EndAngle="359"
                                     StartAngle="0"
                                     Stroke="{TemplateBinding CoverRingStroke}"
+                                    StrokeStartLineCap="{TemplateBinding StrokeLineCap}"
+                                    StrokeEndLineCap="{TemplateBinding StrokeLineCap}"
                                     Visibility="{TemplateBinding CoverRingVisibility}">
                                     <controls:Arc.StrokeThickness>
                                         <MultiBinding Converter="{StaticResource ProgressThicknessConverter}">
@@ -73,7 +79,9 @@
                                     EndAngle="{TemplateBinding IndeterminateAngle}"
                                     RenderTransformOrigin="0.5, 0.5"
                                     StartAngle="0"
-                                    Stroke="{TemplateBinding Foreground}">
+                                    Stroke="{TemplateBinding Foreground}"
+                                    StrokeStartLineCap="{TemplateBinding StrokeLineCap}"
+                                    StrokeEndLineCap="{TemplateBinding StrokeLineCap}">
                                     <controls:Arc.StrokeThickness>
                                         <MultiBinding Converter="{StaticResource ProgressThicknessConverter}">
                                             <Binding Path="Height" RelativeSource="{RelativeSource TemplatedParent}" Mode="OneWay" />

@@ -6,6 +6,7 @@
 /* https://docs.microsoft.com/en-us/fluent-ui/web-components/components/progress-ring */
 
 using System.Windows.Controls;
+using System.Windows.Media;
 
 // ReSharper disable once CheckNamespace
 namespace Wpf.Ui.Controls;
@@ -90,6 +91,14 @@ public class ProgressRing : Control
         typeof(double),
         typeof(ProgressRing),
         new PropertyMetadata(double.NaN)
+    );
+
+    /// <summary>Identifies the <see cref="StrokeLineCap"/> dependency property.</summary>
+    public static readonly DependencyProperty StrokeLineCapProperty = DependencyProperty.Register(
+        nameof(StrokeLineCap),
+        typeof(PenLineCap),
+        typeof(ProgressRing),
+        new PropertyMetadata(PenLineCap.Round)
     );
 
     static ProgressRing()
@@ -191,6 +200,15 @@ public class ProgressRing : Control
     {
         get => (double)GetValue(StrokeThicknessProperty);
         set => SetValue(StrokeThicknessProperty, value);
+    }
+
+    /// <summary>
+    /// Gets or sets the <see cref="PenLineCap"/> for the start and end of the ring arc.
+    /// </summary>
+    public PenLineCap StrokeLineCap
+    {
+        get => (PenLineCap)GetValue(StrokeLineCapProperty);
+        set => SetValue(StrokeLineCapProperty, value);
     }
 
     /// <summary>

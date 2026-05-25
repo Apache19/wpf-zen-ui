@@ -50,21 +50,6 @@ public class Arc : Shape
         new PropertyMetadata(SweepDirection.Clockwise, PropertyChangedCallback)
     );
 
-    static Arc()
-    {
-        // Modify the metadata of the StrokeStartLineCap dependency property.
-        StrokeStartLineCapProperty.OverrideMetadata(
-            typeof(Arc),
-            new FrameworkPropertyMetadata(PenLineCap.Round, PropertyChangedCallback)
-        );
-
-        // Modify the metadata of the StrokeEndLineCap dependency property.
-        StrokeEndLineCapProperty.OverrideMetadata(
-            typeof(Arc),
-            new FrameworkPropertyMetadata(PenLineCap.Round, PropertyChangedCallback)
-        );
-    }
-
     /// <summary>
     /// Gets or sets the initial angle from which the arc will be drawn.
     /// </summary>
