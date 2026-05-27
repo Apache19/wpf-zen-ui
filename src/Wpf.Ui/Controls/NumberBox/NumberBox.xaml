@@ -140,7 +140,7 @@
     </DataTemplate>
 
     <Style x:Key="DefaultUiNumberBoxStyle" TargetType="{x:Type controls:NumberBox}">
-        <Setter Property="Background" Value="{m:BrushResource ControlFillColorDefaultBrush}" />
+        <Setter Property="Background" Value="{m:BrushResource ControlFillColorTertiaryBrush}" />
         <Setter Property="Border.CornerRadius" Value="{m:VariableResource ControlCornerRadius}" />
         <Setter Property="BorderBrush" Value="{m:BrushResource ControlElevationBorderBrush}" />
         <Setter Property="BorderThickness" Value="{StaticResource NumberBoxBorderThemeThickness}" />
