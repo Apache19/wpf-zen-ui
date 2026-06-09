@@ -193,22 +193,25 @@
                             BorderBrush="{Binding ElementName=ContentBorder, Mode=OneWay, Path=BorderBrush}"
                             BorderThickness="{TemplateBinding BorderThickness}"
                             CornerRadius="{TemplateBinding CornerRadius}">
-                            <Grid HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}">
+                            <Grid HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto" />
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
                                 <!--  Icon  -->
-                                <ContentPresenter Grid.Column="0"
+                                <ContentPresenter
                                     x:Name="ControlIcon"
+                                    Grid.Column="0"
                                     Margin="{StaticResource ButtonIconMargin}"
-                                    VerticalAlignment="Center"
+                                    VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
                                     Content="{TemplateBinding Icon}"
                                     Focusable="False"
                                     SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
                                 <!--  Content  -->
-                                <ContentPresenter Grid.Column="1"
+                                <ContentPresenter
                                     x:Name="ContentPresenter"
+                                    Grid.Column="1"
+                                    VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
                                     Content="{TemplateBinding Content}"
                                     ContentTemplate="{TemplateBinding ContentTemplate}"
                                     Focusable="False"
@@ -372,7 +375,7 @@
         </Style.Triggers>
     </Style>
 
-    <!-- todo: 放进 Standard  -->
+    <!--  todo: 放进 Standard  -->
     <Style BasedOn="{StaticResource {x:Static t:StyleKeys.UiButtonStyle}}" TargetType="{x:Type controls:Button}" />
 
 </ResourceDictionary>
