@@ -260,6 +260,18 @@
                 <Setter Property="Background" Value="Transparent" />
             </Trigger>
 
+            <!--  ACCENT  -->
+            <Trigger Property="Appearance" Value="Accent">
+                <Setter Property="Background" Value="{m:BrushResource AccentFillColorDefaultBrush}" />
+                <Setter Property="BorderBrush" Value="{m:BrushResource AccentControlElevationBorderBrush}" />
+                <Setter Property="Foreground" Value="{m:BrushResource TextOnAccentFillColorPrimaryBrush}" />
+                <Setter Property="MouseOverBackground" Value="{m:BrushResource AccentFillColorSecondaryBrush}" />
+                <Setter Property="MouseOverBorderBrush" Value="{m:BrushResource AccentControlElevationBorderBrush}" />
+                <Setter Property="PressedBackground" Value="{m:BrushResource AccentFillColorTertiaryBrush}" />
+                <Setter Property="PressedBorderBrush" Value="{m:BrushResource ControlFillColorTransparentBrush}" />
+                <Setter Property="PressedForeground" Value="{m:BrushResource TextOnAccentFillColorSecondaryBrush}" />
+            </Trigger>
+
             <!--  DARK  -->
             <Trigger Property="Appearance" Value="Dark">
                 <Setter Property="Background" Value="{m:BrushResource ControlStrongFillColorDarkBrush}" />
@@ -290,18 +302,6 @@
                 <Setter Property="MouseOverBorderBrush" Value="{m:BrushResource AccentControlElevationBorderBrush}" />
                 <Setter Property="PressedBackground" Value="{m:BrushResource PaletteCyanBrush}" />
                 <Setter Property="PressedBorderBrush" Value="Transparent" />
-            </Trigger>
-
-            <!--  IsDefault, Override the weak semantic appearance  -->
-            <Trigger Property="IsDefault" Value="True">
-                <Setter Property="Background" Value="{m:BrushResource AccentFillColorDefaultBrush}" />
-                <Setter Property="BorderBrush" Value="{m:BrushResource AccentControlElevationBorderBrush}" />
-                <Setter Property="Foreground" Value="{m:BrushResource TextOnAccentFillColorPrimaryBrush}" />
-                <Setter Property="MouseOverBackground" Value="{m:BrushResource AccentFillColorSecondaryBrush}" />
-                <Setter Property="MouseOverBorderBrush" Value="{m:BrushResource AccentControlElevationBorderBrush}" />
-                <Setter Property="PressedBackground" Value="{m:BrushResource AccentFillColorTertiaryBrush}" />
-                <Setter Property="PressedBorderBrush" Value="{m:BrushResource ControlFillColorTransparentBrush}" />
-                <Setter Property="PressedForeground" Value="{m:BrushResource TextOnAccentFillColorSecondaryBrush}" />
             </Trigger>
 
             <MultiDataTrigger>

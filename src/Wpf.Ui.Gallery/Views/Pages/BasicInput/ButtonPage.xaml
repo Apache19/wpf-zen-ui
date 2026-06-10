@@ -94,7 +94,6 @@
                     Appearance="{Binding ButtonAppearance}"
                     Content="WPF UI button"
                     Icon="{ui:SymbolIcon Fluent24}"
-                    IsDefault="{Binding ElementName=ButtonIsDefaultBox, Path=IsChecked}"
                     IsEnabled="{Binding IsUiButtonEnabled, Mode=OneWay}" />
                 <StackPanel Grid.Column="1" Orientation="Vertical">
                     <StackPanel Orientation="Horizontal">
@@ -107,26 +106,10 @@
                             ItemsSource="{Binding Source={StaticResource AppearanceList}}"
                             SelectedItem="{Binding ButtonAppearance}" />
                     </StackPanel>
-                    <ui:Separator Margin="0,4" Orientation="Horizontal" />
+                    <ui:Separator Margin="0,12" Orientation="Horizontal" />
                     <ui:CheckBox Content="Enable button" IsChecked="{Binding IsUiButtonEnabled}" />
-                    <ui:Separator Margin="0,4" Orientation="Horizontal" />
-                    <ui:CheckBox x:Name="ButtonIsDefaultBox" Content="IsDefault" />
                 </StackPanel>
             </Grid>
-        </controls:ControlExample>
-
-        <controls:ControlExample
-            Margin="0,32,0,0"
-            HeaderText="WPF UI Default button."
-            XamlCode="&lt;ui:Button Appearance=&quot;Primary&quot; /&gt;">
-            <ui:Button
-                MinWidth="200"
-                Padding="{ui:VariableResource TextControlThemePadding}"
-                HorizontalAlignment="Left"
-                Appearance="Normal"
-                Content="WPF UI button"
-                Icon="{ui:SymbolIcon Fluent24}"
-                IsDefault="True" />
         </controls:ControlExample>
 
         <controls:ControlExample

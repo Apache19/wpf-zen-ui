@@ -63,6 +63,12 @@ public enum ControlAppearance
     Normal,
 
     /// <summary>
+    /// An accent-colored appearance using the application's theme accent color.
+    /// Provides visual emphasis without implying semantic meaning.
+    /// </summary>
+    Accent,
+
+    /// <summary>
     /// Transparent appearance with minimal visual background.
     /// Useful for lightweight or inline actions.
     /// </summary>

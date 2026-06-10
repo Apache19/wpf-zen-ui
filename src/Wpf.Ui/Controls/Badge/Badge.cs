@@ -28,7 +28,7 @@ public class Badge : ContentControl, IAppearanceControl
         nameof(Appearance),
         typeof(ControlAppearance),
         typeof(Badge),
-        new PropertyMetadata(ControlAppearance.Info)
+        new PropertyMetadata(ControlAppearance.Accent)
     );
 
     /// <inheritdoc />

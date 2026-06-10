@@ -154,7 +154,7 @@ public partial class ContentDialog
         nameof(PrimaryButtonAppearance),
         typeof(ControlAppearance),
         typeof(ContentDialog),
-        new PropertyMetadata(ControlAppearance.Normal)
+        new PropertyMetadata(ControlAppearance.Accent)
     );
 
     /// <summary>Identifies the <see cref="SecondaryButtonAppearance"/> dependency property.</summary>
