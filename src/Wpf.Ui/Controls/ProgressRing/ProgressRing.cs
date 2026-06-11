@@ -6,7 +6,6 @@
 /* https://docs.microsoft.com/en-us/fluent-ui/web-components/components/progress-ring */
 
 using System.Windows.Controls;
-using System.Windows.Media;
 
 // ReSharper disable once CheckNamespace
 namespace Wpf.Ui.Controls;
@@ -21,7 +20,7 @@ public class ProgressRing : Control
         nameof(Minimum),
         typeof(double),
         typeof(ProgressRing),
-        new PropertyMetadata(0.0d, OnProgressChanged)
+        new PropertyMetadata(0.0d, OnMinimumChanged)
     );
 
     /// <summary>Identifies the <see cref="Maximum"/> dependency property.</summary>
@@ -29,7 +28,7 @@ public class ProgressRing : Control
         nameof(Maximum),
         typeof(double),
         typeof(ProgressRing),
-        new PropertyMetadata(100.0d, OnProgressChanged)
+        new PropertyMetadata(100.0d, OnMaximumChanged)
     );
 
     /// <summary>Identifies the <see cref="Progress"/> dependency property.</summary>
@@ -156,16 +155,6 @@ public class ProgressRing : Control
     }
 
     /// <summary>
-    /// Gets or sets the <see cref="Arc.EndAngle"/>.
-    /// </summary>
-    [Obsolete("Use EndAngle instead.")]
-    public double EngAngle
-    {
-        get => EndAngle;
-        set => EndAngle = value;
-    }
-
-    /// <summary>
     /// Gets or sets the <see cref="Arc.EndAngle"/> when <see cref="IsIndeterminate"/> is <see langword="true"/>.
     /// </summary>
     public double IndeterminateAngle
@@ -215,7 +204,7 @@ public class ProgressRing : Control
     /// Re-draws <see cref="Arc.EndAngle"/> depending on <see cref="Progress"/>,
     /// <see cref="Minimum"/>, and <see cref="Maximum"/>.
     /// </summary>
-    protected void UpdateProgressAngle()
+    private void UpdateProgressAngle()
     {
         var minimum = Minimum;
         var maximum = Maximum;
@@ -246,10 +235,27 @@ public class ProgressRing : Control
         SetCurrentValue(EndAngleProperty, 360d * percentage);
     }
 
-    /// <summary>
-    /// Validates the entered <see cref="Progress"/> and redraws the <see cref="Arc"/>.
-    /// </summary>
-    protected static void OnProgressChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    private static void OnMinimumChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        if (d is not ProgressRing control)
+        {
+            return;
+        }
+
+        control.UpdateProgressAngle();
+    }
+
+    private static void OnMaximumChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        if (d is not ProgressRing control)
+        {
+            return;
+        }
+
+        control.UpdateProgressAngle();
+    }
+
+    private static void OnProgressChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
         if (d is not ProgressRing control)
         {
