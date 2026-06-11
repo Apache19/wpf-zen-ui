@@ -7,6 +7,14 @@ using System.Windows.Data;
 
 namespace Wpf.Ui.Converters;
 
+/// <summary>
+/// Multi-value converter that creates a clipped <see cref="RectangleGeometry"/> for scroll-reveal animations.
+/// </summary>
+/// <remarks>
+/// Replaced by <see cref="Wpf.Ui.Controls.ClipExtensions"/> which uses attached properties,
+/// properly freezes the generated geometry, and removes the need for a multi-binding converter.
+/// </remarks>
+[Obsolete("Use Wpf.Ui.Controls.ClipExtensions.ClipPercentage attached property instead.", error: false)]
 public class ClipConverter : IMultiValueConverter
 {
     /// <inheritdoc />
@@ -28,8 +36,9 @@ public class ClipConverter : IMultiValueConverter
 
         double clippedWidth = width * percentage;
 
-#warning 转换器不应转换出UI对象
-        return new RectangleGeometry(new Rect(0, 0, clippedWidth, height));
+        var geometry = new RectangleGeometry(new Rect(0, 0, clippedWidth, height));
+        geometry.Freeze();
+        return geometry;
     }
 
     /// <inheritdoc />
