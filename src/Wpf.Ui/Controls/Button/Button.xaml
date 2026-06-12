@@ -372,10 +372,18 @@
                 <Setter Property="BorderBrush" Value="{m:BrushResource ControlStrokeColorDefaultBrush}" />
                 <Setter Property="Foreground" Value="{m:BrushResource TextFillColorDisabledBrush}" />
             </Trigger>
+
+            <!--  Transparent appearance should stay transparent when disabled  -->
+            <MultiTrigger>
+                <MultiTrigger.Conditions>
+                    <Condition Property="Appearance" Value="Transparent" />
+                    <Condition Property="IsEnabled" Value="False" />
+                </MultiTrigger.Conditions>
+                <Setter Property="Background" Value="Transparent" />
+            </MultiTrigger>
         </Style.Triggers>
     </Style>
 
-    <!--  todo: 放进 Standard  -->
     <Style BasedOn="{StaticResource {x:Static t:StyleKeys.UiButtonStyle}}" TargetType="{x:Type controls:Button}" />
 
 </ResourceDictionary>
