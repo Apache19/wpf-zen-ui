@@ -113,7 +113,7 @@
 
     <!--  建议值：#19000000（当前与 ControlStrokeColorDefault 等共享 #0F000000，卡片描边应更明显）  -->
     <Color x:Key="{x:Static t:ColorKeys.CardStrokeColorDefault}">#0F000000</Color>
-    <Color x:Key="{x:Static t:ColorKeys.CardStrokeColorDefaultSolid}">#EBEBEB</Color>
+    <Color x:Key="{x:Static t:ColorKeys.CardStrokeColorDefaultSolid}">#D4D4D4</Color>
 
     <Color x:Key="{x:Static t:ColorKeys.ControlStrongStrokeColorDefault}">#72000000</Color>
     <Color x:Key="{x:Static t:ColorKeys.ControlStrongStrokeColorDisabled}">#37000000</Color>
