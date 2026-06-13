@@ -50,7 +50,7 @@
                     IsChecked="{Binding UseSystemAccent}"
                     HorizontalAlignment="Right"
                     Content="System accent color"
-                    LabelPosition="Left" />
+                    ContentPlacement="Left" />
             </StackPanel>
 
         </ui:CardControl>

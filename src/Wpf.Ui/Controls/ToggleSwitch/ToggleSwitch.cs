@@ -5,6 +5,7 @@
 
 using System.Windows;
 
+// ReSharper disable once CheckNamespace
 namespace Wpf.Ui.Controls;
 
 /// <summary>
@@ -28,9 +29,9 @@ public class ToggleSwitch : System.Windows.Controls.Primitives.ToggleButton
         new PropertyMetadata(null)
     );
 
-    /// <summary>Identifies the <see cref="LabelPosition"/> dependency property.</summary>
-    public static readonly DependencyProperty LabelPositionProperty = DependencyProperty.Register(
-        nameof(LabelPosition),
+    /// <summary>Identifies the <see cref="ContentPlacement"/> dependency property.</summary>
+    public static readonly DependencyProperty ContentPlacementProperty = DependencyProperty.Register(
+        nameof(ContentPlacement),
         typeof(ElementPlacement),
         typeof(ToggleSwitch),
         new FrameworkPropertyMetadata(
@@ -68,13 +69,13 @@ public class ToggleSwitch : System.Windows.Controls.Primitives.ToggleButton
     }
 
     /// <summary>
-    /// Gets or sets the position of the label content relative to the toggle switch.
+    /// Gets or sets the placement of the content relative to the toggle switch.
     /// </summary>
     [System.ComponentModel.Bindable(true)]
     [System.ComponentModel.Category("Layout")]
-    public ElementPlacement LabelPosition
+    public ElementPlacement ContentPlacement
     {
-        get => (ElementPlacement)GetValue(LabelPositionProperty);
-        set => SetValue(LabelPositionProperty, value);
+        get => (ElementPlacement)GetValue(ContentPlacementProperty);
+        set => SetValue(ContentPlacementProperty, value);
     }
 }
