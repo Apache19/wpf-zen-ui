@@ -25,11 +25,30 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem, IIconControl
 {
     protected const string TemplateElementChevronGrid = "PART_ChevronGrid";
 
+    private static readonly DependencyPropertyKey IndentationPropertyKey = DependencyProperty.RegisterReadOnly(
+        nameof(Indentation),
+        typeof(Thickness),
+        typeof(NavigationViewItem),
+        new PropertyMetadata(default(Thickness))
+    );
+
     private static readonly DependencyPropertyKey MenuItemsPropertyKey = DependencyProperty.RegisterReadOnly(
         nameof(MenuItems),
         typeof(ObservableCollection<object>),
         typeof(NavigationViewItem),
         new PropertyMetadata(null)
+    );
+
+    /// <summary>Identifies the <see cref="Indentation"/> dependency property.</summary>
+    public static readonly DependencyProperty IndentationProperty = IndentationPropertyKey.DependencyProperty;
+
+    /// <summary>Identifies the <see cref="IndentationSize"/> dependency property.</summary>
+    public static readonly DependencyProperty IndentationSizeProperty = DependencyProperty.Register(
+        nameof(IndentationSize),
+        typeof(double),
+        typeof(NavigationViewItem),
+        new FrameworkPropertyMetadata(30d, OnIndentationSizeChanged),
+        static value => value is double size && size >= 0 && !double.IsInfinity(size)
     );
 
     /// <summary>Identifies the <see cref="MenuItems"/> dependency property.</summary>
@@ -119,6 +138,23 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem, IIconControl
         typeof(NavigationViewItem),
         new FrameworkPropertyMetadata(NavigationCacheMode.Disabled)
     );
+
+    /// <summary>
+    /// Gets the indentation applied to the item content based on its depth in the navigation tree.
+    /// </summary>
+    [Browsable(false)]
+    [ReadOnly(true)]
+    public Thickness Indentation => (Thickness)GetValue(IndentationProperty);
+
+    /// <summary>
+    /// Gets or sets the indentation added for each level in the navigation tree.
+    /// </summary>
+    [Category("Layout")]
+    public double IndentationSize
+    {
+        get => (double)GetValue(IndentationSizeProperty);
+        set => SetValue(IndentationSizeProperty, value);
+    }
 
     /// <inheritdoc/>
     public IList MenuItems => (ObservableCollection<object>)GetValue(MenuItemsProperty);
@@ -214,7 +250,15 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem, IIconControl
     }
 
     /// <inheritdoc />
-    public INavigationViewItem? NavigationViewItemParent { get; set; }
+    public INavigationViewItem? NavigationViewItemParent
+    {
+        get => _navigationViewItemParent;
+        set
+        {
+            _navigationViewItemParent = value;
+            UpdateIndentation();
+        }
+    }
 
     /// <inheritdoc />
     public bool IsMenuElement { get; set; }
@@ -223,6 +267,8 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem, IIconControl
     public string Id { get; }
 
     protected Grid? ChevronGrid { get; set; }
+
+    private INavigationViewItem? _navigationViewItemParent;
 
     static NavigationViewItem()
     {
@@ -450,6 +496,30 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem, IIconControl
         {
             item.NavigationViewItemParent = this;
         }
+    }
+
+    private void UpdateIndentation()
+    {
+        var depth = 0;
+        var parent = NavigationViewItemParent;
+
+        while (parent is not null)
+        {
+            depth++;
+            parent = parent.NavigationViewItemParent;
+        }
+
+        SetValue(IndentationPropertyKey, new Thickness(depth * IndentationSize, 0, 0, 0));
+
+        foreach (NavigationViewItem item in MenuItems.OfType<NavigationViewItem>())
+        {
+            item.UpdateIndentation();
+        }
+    }
+
+    private static void OnIndentationSizeChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        ((NavigationViewItem)d).UpdateIndentation();
     }
 
     private static void OnMenuItemsSourceChanged(DependencyObject? d, DependencyPropertyChangedEventArgs e)
