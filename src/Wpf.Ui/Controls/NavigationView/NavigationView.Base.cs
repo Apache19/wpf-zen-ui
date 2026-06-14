@@ -224,14 +224,6 @@ public partial class NavigationView : System.Windows.Controls.Control, INavigati
         }
     }
 
-    /// <summary>
-    /// This virtual method is called when <see cref="ItemTemplate"/> is changed.
-    /// </summary>
-    protected virtual void OnItemTemplateChanged()
-    {
-        UpdateMenuItemsTemplate();
-    }
-
     internal void ToggleAllExpands()
     {
         // TODO: When shift clicked on navigationviewitem
@@ -444,28 +436,6 @@ public partial class NavigationView : System.Windows.Controls.Control, INavigati
         }
 
         return false;
-    }
-
-    protected virtual void UpdateMenuItemsTemplate(IEnumerable list)
-    {
-        if (ItemTemplate == null)
-        {
-            return;
-        }
-
-        foreach (var item in list)
-        {
-            if (item is NavigationViewItem singleNavigationViewItem)
-            {
-                singleNavigationViewItem.Template = ItemTemplate;
-            }
-        }
-    }
-
-    protected virtual void UpdateMenuItemsTemplate()
-    {
-        UpdateMenuItemsTemplate(MenuItems);
-        UpdateMenuItemsTemplate(FooterMenuItems);
     }
 
     protected virtual void CloseNavigationViewItemMenus()

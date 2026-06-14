@@ -32,29 +32,33 @@
         <Style.Triggers>
             <Trigger Property="PaneDisplayMode" Value="Left">
                 <Setter Property="Template" Value="{StaticResource LeftNavigationViewTemplate}" />
-                <Setter Property="ItemTemplate" Value="{StaticResource LeftCompactNavigationViewItemTemplate}" />
+                <Setter Property="ItemContainerTemplate" Value="{StaticResource LeftCompactNavigationViewItemTemplate}" />
             </Trigger>
             <Trigger Property="PaneDisplayMode" Value="LeftMinimal">
                 <Setter Property="Template" Value="{StaticResource LeftNavigationViewTemplate}" />
-                <Setter Property="ItemTemplate" Value="{StaticResource LeftMinimalCompactNavigationViewItemTemplate}" />
+                <Setter Property="ItemContainerTemplate" Value="{StaticResource LeftMinimalCompactNavigationViewItemTemplate}" />
             </Trigger>
             <Trigger Property="PaneDisplayMode" Value="LeftFluent">
                 <Setter Property="Template" Value="{StaticResource LeftNavigationViewTemplate}" />
-                <Setter Property="ItemTemplate" Value="{StaticResource LeftFluentNavigationViewItemTemplate}" />
+                <Setter Property="ItemContainerTemplate" Value="{StaticResource LeftFluentNavigationViewItemTemplate}" />
                 <Setter Property="OpenPaneLength" Value="NaN" />
             </Trigger>
             <Trigger Property="PaneDisplayMode" Value="Top">
                 <Setter Property="Template" Value="{StaticResource TopNavigationViewTemplate}" />
-                <Setter Property="ItemTemplate" Value="{StaticResource TopCompactNavigationViewItemTemplate}" />
+                <Setter Property="ItemContainerTemplate" Value="{StaticResource TopCompactNavigationViewItemTemplate}" />
             </Trigger>
             <Trigger Property="PaneDisplayMode" Value="Bottom">
                 <Setter Property="Template" Value="{StaticResource BottomNavigationViewTemplate}" />
-                <Setter Property="ItemTemplate" Value="{StaticResource BottomCompactNavigationViewItemTemplate}" />
+                <Setter Property="ItemContainerTemplate" Value="{StaticResource BottomCompactNavigationViewItemTemplate}" />
             </Trigger>
         </Style.Triggers>
     </Style>
 
-    <Style BasedOn="{StaticResource NavigationViewItemDefaultStyle}" TargetType="{x:Type controls:NavigationViewItem}" />
+    <Style BasedOn="{StaticResource NavigationViewItemDefaultStyle}" TargetType="{x:Type controls:NavigationViewItem}">
+        <Setter Property="Template" Value="{Binding RelativeSource={RelativeSource Self}, Path=(controls:NavigationView.ItemContainerTemplate)}" />
+        <Setter Property="ContentTemplate" Value="{Binding RelativeSource={RelativeSource Self}, Path=(controls:NavigationView.ItemTemplate)}" />
+        <Setter Property="ContentTemplateSelector" Value="{Binding RelativeSource={RelativeSource Self}, Path=(controls:NavigationView.ItemTemplateSelector)}" />
+    </Style>
     <Style BasedOn="{StaticResource DefaultNavigationViewStyle}" TargetType="{x:Type controls:NavigationView}" />
 
 </ResourceDictionary>

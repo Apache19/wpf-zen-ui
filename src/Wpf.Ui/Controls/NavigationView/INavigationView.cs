@@ -147,9 +147,29 @@ public interface INavigationView
     BreadcrumbBar? BreadcrumbBar { get; set; }
 
     /// <summary>
-    /// Gets or sets the template property for <see cref="MenuItems"/> and <see cref="FooterMenuItems"/>.
+    /// Gets or sets the default control template for navigation item containers.
     /// </summary>
-    ControlTemplate? ItemTemplate { get; set; }
+    ControlTemplate? ItemContainerTemplate { get; set; }
+
+    /// <summary>
+    /// Gets or sets the style applied to navigation item containers.
+    /// </summary>
+    Style? ItemContainerStyle { get; set; }
+
+    /// <summary>
+    /// Gets or sets custom style-selection logic for navigation item containers.
+    /// </summary>
+    StyleSelector? ItemContainerStyleSelector { get; set; }
+
+    /// <summary>
+    /// Gets or sets the data template used to display navigation items.
+    /// </summary>
+    DataTemplate? ItemTemplate { get; set; }
+
+    /// <summary>
+    /// Gets or sets custom template-selection logic for navigation items.
+    /// </summary>
+    DataTemplateSelector? ItemTemplateSelector { get; set; }
 
     /// <summary>
     /// Gets or sets a value deciding how long the effect of the transition between the pages should take.

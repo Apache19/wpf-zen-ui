@@ -50,6 +50,10 @@
                     x:Name="PART_MenuItemsItemsControl"
                     Grid.Column="2"
                     Focusable="False"
+                    ItemContainerStyle="{Binding RelativeSource={RelativeSource Self}, Path=(controls:NavigationView.ItemContainerStyle)}"
+                    ItemContainerStyleSelector="{Binding RelativeSource={RelativeSource Self}, Path=(controls:NavigationView.ItemContainerStyleSelector)}"
+                    ItemTemplate="{Binding RelativeSource={RelativeSource Self}, Path=(controls:NavigationView.ItemTemplate)}"
+                    ItemTemplateSelector="{Binding RelativeSource={RelativeSource Self}, Path=(controls:NavigationView.ItemTemplateSelector)}"
                     KeyboardNavigation.DirectionalNavigation="Contained"
                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                     ScrollViewer.VerticalScrollBarVisibility="Disabled">
@@ -76,6 +80,10 @@
                     x:Name="PART_FooterMenuItemsItemsControl"
                     Grid.Column="5"
                     Focusable="False"
+                    ItemContainerStyle="{Binding RelativeSource={RelativeSource Self}, Path=(controls:NavigationView.ItemContainerStyle)}"
+                    ItemContainerStyleSelector="{Binding RelativeSource={RelativeSource Self}, Path=(controls:NavigationView.ItemContainerStyleSelector)}"
+                    ItemTemplate="{Binding RelativeSource={RelativeSource Self}, Path=(controls:NavigationView.ItemTemplate)}"
+                    ItemTemplateSelector="{Binding RelativeSource={RelativeSource Self}, Path=(controls:NavigationView.ItemTemplateSelector)}"
                     KeyboardNavigation.DirectionalNavigation="Contained"
                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                     ScrollViewer.VerticalScrollBarVisibility="Disabled">
@@ -119,6 +127,70 @@
                     Content="{TemplateBinding ContentOverlay}" />
             </Grid>
         </Grid>
+    </ControlTemplate>
+
+    <ControlTemplate x:Key="TopNavigationViewSubItemTemplate" TargetType="{x:Type controls:NavigationViewItem}">
+        <Border
+            x:Name="MainBorder"
+            Height="25"
+            Margin="0"
+            Padding="0"
+            HorizontalAlignment="Stretch"
+            BorderThickness="1"
+            CornerRadius="4">
+            <Grid Margin="0" HorizontalAlignment="Stretch">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="3" />
+                    <ColumnDefinition Width="15" />
+                    <ColumnDefinition Width="*" MinWidth="120" />
+                </Grid.ColumnDefinitions>
+                <Rectangle
+                    x:Name="ActiveRectangle"
+                    Grid.Column="0"
+                    Width="3"
+                    Height="16"
+                    Margin="0"
+                    HorizontalAlignment="Left"
+                    VerticalAlignment="Center"
+                    Fill="{markup:BrushResource SystemAccentColorPrimaryBrush}"
+                    Opacity="0.0"
+                    RadiusX="2"
+                    RadiusY="2" />
+
+                <ContentPresenter
+                    x:Name="IconContentPresenter"
+                    Grid.Column="1"
+                    Margin="0,0,0,0"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Content="{TemplateBinding Icon}"
+                    Focusable="False"
+                    TextElement.FontSize="16"
+                    TextElement.Foreground="{markup:BrushResource TextFillColorPrimaryBrush}" />
+                <ContentPresenter
+                    x:Name="ElementContentPresenter"
+                    Grid.Column="2"
+                    Margin="5,0,0,0"
+                    HorizontalAlignment="Stretch"
+                    VerticalAlignment="Center"
+                    Content="{TemplateBinding Content}"
+                    ContentTemplate="{TemplateBinding ContentTemplate}"
+                    RecognizesAccessKey="True"
+                    TextElement.Foreground="{markup:BrushResource TextFillColorPrimaryBrush}" />
+            </Grid>
+        </Border>
+        <ControlTemplate.Triggers>
+            <Trigger Property="IsActive" Value="True">
+                <Setter TargetName="ActiveRectangle" Property="Opacity" Value="1.0" />
+                <Setter TargetName="MainBorder" Property="Background" Value="{markup:BrushResource SubtleFillColorSecondaryBrush}" />
+            </Trigger>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter TargetName="MainBorder" Property="Background" Value="{markup:BrushResource SubtleFillColorSecondaryBrush}" />
+            </Trigger>
+            <Trigger Property="IsPressed" Value="True">
+                <Setter TargetName="MainBorder" Property="Background" Value="{markup:BrushResource SubtleFillColorTertiaryBrush}" />
+            </Trigger>
+        </ControlTemplate.Triggers>
     </ControlTemplate>
 
     <ControlTemplate x:Key="TopCompactNavigationViewItemTemplate" TargetType="{x:Type controls:NavigationViewItem}">
@@ -221,7 +293,12 @@
 
                     <ItemsControl
                         x:Name="SubMenuItemsPresenter"
+                        controls:NavigationView.ItemContainerTemplate="{StaticResource TopNavigationViewSubItemTemplate}"
                         Focusable="False"
+                        ItemContainerStyle="{Binding RelativeSource={RelativeSource Self}, Path=(controls:NavigationView.ItemContainerStyle)}"
+                        ItemContainerStyleSelector="{Binding RelativeSource={RelativeSource Self}, Path=(controls:NavigationView.ItemContainerStyleSelector)}"
+                        ItemTemplate="{Binding RelativeSource={RelativeSource Self}, Path=(controls:NavigationView.ItemTemplate)}"
+                        ItemTemplateSelector="{Binding RelativeSource={RelativeSource Self}, Path=(controls:NavigationView.ItemTemplateSelector)}"
                         ItemsSource="{TemplateBinding MenuItems}"
                         KeyboardNavigation.DirectionalNavigation="Contained"
                         Opacity="0.0"
@@ -232,77 +309,6 @@
                                 <StackPanel Margin="0" IsItemsHost="True" />
                             </ItemsPanelTemplate>
                         </ItemsControl.ItemsPanel>
-                        <ItemsControl.Resources>
-                            <Style BasedOn="{StaticResource NavigationViewItemDefaultStyle}" TargetType="{x:Type controls:NavigationViewItem}">
-                                <Setter Property="Template">
-                                    <Setter.Value>
-                                        <ControlTemplate TargetType="{x:Type controls:NavigationViewItem}">
-                                            <Border
-                                                x:Name="MainBorder"
-                                                Height="25"
-                                                Margin="0"
-                                                Padding="0"
-                                                HorizontalAlignment="Stretch"
-                                                BorderThickness="1"
-                                                CornerRadius="4">
-                                                <Grid Margin="0" HorizontalAlignment="Stretch">
-                                                    <Grid.ColumnDefinitions>
-                                                        <ColumnDefinition Width="3" />
-                                                        <ColumnDefinition Width="15" />
-                                                        <ColumnDefinition Width="*" MinWidth="120" />
-                                                    </Grid.ColumnDefinitions>
-                                                    <Rectangle
-                                                        x:Name="ActiveRectangle"
-                                                        Grid.Column="0"
-                                                        Width="3"
-                                                        Height="16"
-                                                        Margin="0"
-                                                        HorizontalAlignment="Left"
-                                                        VerticalAlignment="Center"
-                                                        Fill="{markup:BrushResource SystemAccentColorPrimaryBrush}"
-                                                        Opacity="0.0"
-                                                        RadiusX="2"
-                                                        RadiusY="2" />
-
-                                                    <ContentPresenter
-                                                        x:Name="IconContentPresenter"
-                                                        Grid.Column="1"
-                                                        Margin="0,0,0,0"
-                                                        HorizontalAlignment="Center"
-                                                        VerticalAlignment="Center"
-                                                        Content="{TemplateBinding Icon}"
-                                                        Focusable="False"
-                                                        TextElement.FontSize="16"
-                                                        TextElement.Foreground="{markup:BrushResource TextFillColorPrimaryBrush}" />
-                                                    <ContentPresenter
-                                                        x:Name="ElementContentPresenter"
-                                                        Grid.Column="2"
-                                                        Margin="5,0,0,0"
-                                                        HorizontalAlignment="Stretch"
-                                                        VerticalAlignment="Center"
-                                                        Content="{TemplateBinding Content}"
-                                                        ContentTemplate="{TemplateBinding ContentTemplate}"
-                                                        RecognizesAccessKey="True"
-                                                        TextElement.Foreground="{markup:BrushResource TextFillColorPrimaryBrush}" />
-                                                </Grid>
-                                            </Border>
-                                            <ControlTemplate.Triggers>
-                                                <Trigger Property="IsActive" Value="True">
-                                                    <Setter TargetName="ActiveRectangle" Property="Opacity" Value="1.0" />
-                                                    <Setter TargetName="MainBorder" Property="Background" Value="{markup:BrushResource SubtleFillColorSecondaryBrush}" />
-                                                </Trigger>
-                                                <Trigger Property="IsMouseOver" Value="True">
-                                                    <Setter TargetName="MainBorder" Property="Background" Value="{markup:BrushResource SubtleFillColorSecondaryBrush}" />
-                                                </Trigger>
-                                                <Trigger Property="IsPressed" Value="True">
-                                                    <Setter TargetName="MainBorder" Property="Background" Value="{markup:BrushResource SubtleFillColorTertiaryBrush}" />
-                                                </Trigger>
-                                            </ControlTemplate.Triggers>
-                                        </ControlTemplate>
-                                    </Setter.Value>
-                                </Setter>
-                            </Style>
-                        </ItemsControl.Resources>
                     </ItemsControl>
                 </Border>
             </Popup>

@@ -16,6 +16,7 @@ namespace Wpf.Ui.Controls;
 /// <content>
 /// Defines the dependency properties and dp callbacks for <see cref="NavigationView"/> control
 /// </content>
+[StyleTypedProperty(Property = nameof(ItemContainerStyle), StyleTargetType = typeof(NavigationViewItem))]
 public partial class NavigationView
 {
     /// <summary>Identifies the <see cref="EnableDebugMessages"/> dependency property.</summary>
@@ -224,16 +225,51 @@ public partial class NavigationView
         new FrameworkPropertyMetadata(null, OnBreadcrumbBarChanged)
     );
 
-    /// <summary>Identifies the <see cref="ItemTemplate"/> dependency property.</summary>
-    public static readonly DependencyProperty ItemTemplateProperty = DependencyProperty.Register(
-        nameof(ItemTemplate),
+    /// <summary>Identifies the <see cref="ItemContainerTemplate"/> dependency property.</summary>
+    public static readonly DependencyProperty ItemContainerTemplateProperty = DependencyProperty.RegisterAttached(
+        nameof(ItemContainerTemplate),
         typeof(ControlTemplate),
         typeof(NavigationView),
         new FrameworkPropertyMetadata(
             null,
-            FrameworkPropertyMetadataOptions.AffectsMeasure,
-            OnItemTemplateChanged
+            FrameworkPropertyMetadataOptions.AffectsMeasure | FrameworkPropertyMetadataOptions.Inherits
         )
+    );
+
+    /// <summary>Identifies the <see cref="ItemContainerStyle"/> dependency property.</summary>
+    public static readonly DependencyProperty ItemContainerStyleProperty = DependencyProperty.RegisterAttached(
+        nameof(ItemContainerStyle),
+        typeof(Style),
+        typeof(NavigationView),
+        new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.Inherits)
+    );
+
+    /// <summary>Identifies the <see cref="ItemContainerStyleSelector"/> dependency property.</summary>
+    public static readonly DependencyProperty ItemContainerStyleSelectorProperty =
+        DependencyProperty.RegisterAttached(
+            nameof(ItemContainerStyleSelector),
+            typeof(StyleSelector),
+            typeof(NavigationView),
+            new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.Inherits)
+        );
+
+    /// <summary>Identifies the <see cref="ItemTemplate"/> dependency property.</summary>
+    public static readonly DependencyProperty ItemTemplateProperty = DependencyProperty.RegisterAttached(
+        nameof(ItemTemplate),
+        typeof(DataTemplate),
+        typeof(NavigationView),
+        new FrameworkPropertyMetadata(
+            null,
+            FrameworkPropertyMetadataOptions.AffectsMeasure | FrameworkPropertyMetadataOptions.Inherits
+        )
+    );
+
+    /// <summary>Identifies the <see cref="ItemTemplateSelector"/> dependency property.</summary>
+    public static readonly DependencyProperty ItemTemplateSelectorProperty = DependencyProperty.RegisterAttached(
+        nameof(ItemTemplateSelector),
+        typeof(DataTemplateSelector),
+        typeof(NavigationView),
+        new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.Inherits)
     );
 
     /// <summary>Identifies the <see cref="TransitionDuration"/> dependency property.</summary>
@@ -452,10 +488,163 @@ public partial class NavigationView
     }
 
     /// <inheritdoc/>
-    public ControlTemplate? ItemTemplate
+    public ControlTemplate? ItemContainerTemplate
     {
-        get => (ControlTemplate?)GetValue(ItemTemplateProperty);
+        get => (ControlTemplate?)GetValue(ItemContainerTemplateProperty);
+        set => SetValue(ItemContainerTemplateProperty, value);
+    }
+
+    /// <inheritdoc/>
+    public Style? ItemContainerStyle
+    {
+        get => (Style?)GetValue(ItemContainerStyleProperty);
+        set => SetValue(ItemContainerStyleProperty, value);
+    }
+
+    /// <inheritdoc/>
+    public StyleSelector? ItemContainerStyleSelector
+    {
+        get => (StyleSelector?)GetValue(ItemContainerStyleSelectorProperty);
+        set => SetValue(ItemContainerStyleSelectorProperty, value);
+    }
+
+    /// <inheritdoc/>
+    public DataTemplate? ItemTemplate
+    {
+        get => (DataTemplate?)GetValue(ItemTemplateProperty);
         set => SetValue(ItemTemplateProperty, value);
+    }
+
+    /// <inheritdoc/>
+    public DataTemplateSelector? ItemTemplateSelector
+    {
+        get => (DataTemplateSelector?)GetValue(ItemTemplateSelectorProperty);
+        set => SetValue(ItemTemplateSelectorProperty, value);
+    }
+
+    /// <summary>
+    /// Helper for getting <see cref="ItemContainerTemplateProperty"/> from <paramref name="element"/>.
+    /// </summary>
+    /// <param name="element">
+    /// <see cref="DependencyObject"/> to read <see cref="ItemContainerTemplateProperty"/> from.
+    /// </param>
+    /// <returns>ItemContainerTemplate property value.</returns>
+    [AttachedPropertyBrowsableForType(typeof(DependencyObject))]
+    public static ControlTemplate? GetItemContainerTemplate(DependencyObject element)
+    {
+        return (ControlTemplate?)element.GetValue(ItemContainerTemplateProperty);
+    }
+
+    /// <summary>
+    /// Helper for setting <see cref="ItemContainerTemplateProperty"/> on <paramref name="element"/>.
+    /// </summary>
+    /// <param name="element">
+    /// <see cref="DependencyObject"/> to set <see cref="ItemContainerTemplateProperty"/> on.
+    /// </param>
+    /// <param name="value">ItemContainerTemplate property value.</param>
+    public static void SetItemContainerTemplate(DependencyObject element, ControlTemplate? value)
+    {
+        element.SetValue(ItemContainerTemplateProperty, value);
+    }
+
+    /// <summary>
+    /// Helper for getting <see cref="ItemContainerStyleProperty"/> from <paramref name="element"/>.
+    /// </summary>
+    /// <param name="element">
+    /// <see cref="DependencyObject"/> to read <see cref="ItemContainerStyleProperty"/> from.
+    /// </param>
+    /// <returns>ItemContainerStyle property value.</returns>
+    [AttachedPropertyBrowsableForType(typeof(DependencyObject))]
+    public static Style? GetItemContainerStyle(DependencyObject element)
+    {
+        return (Style?)element.GetValue(ItemContainerStyleProperty);
+    }
+
+    /// <summary>
+    /// Helper for setting <see cref="ItemContainerStyleProperty"/> on <paramref name="element"/>.
+    /// </summary>
+    /// <param name="element">
+    /// <see cref="DependencyObject"/> to set <see cref="ItemContainerStyleProperty"/> on.
+    /// </param>
+    /// <param name="value">ItemContainerStyle property value.</param>
+    public static void SetItemContainerStyle(DependencyObject element, Style? value)
+    {
+        element.SetValue(ItemContainerStyleProperty, value);
+    }
+
+    /// <summary>
+    /// Helper for getting <see cref="ItemContainerStyleSelectorProperty"/> from <paramref name="element"/>.
+    /// </summary>
+    /// <param name="element">
+    /// <see cref="DependencyObject"/> to read <see cref="ItemContainerStyleSelectorProperty"/> from.
+    /// </param>
+    /// <returns>ItemContainerStyleSelector property value.</returns>
+    [AttachedPropertyBrowsableForType(typeof(DependencyObject))]
+    public static StyleSelector? GetItemContainerStyleSelector(DependencyObject element)
+    {
+        return (StyleSelector?)element.GetValue(ItemContainerStyleSelectorProperty);
+    }
+
+    /// <summary>
+    /// Helper for setting <see cref="ItemContainerStyleSelectorProperty"/> on <paramref name="element"/>.
+    /// </summary>
+    /// <param name="element">
+    /// <see cref="DependencyObject"/> to set <see cref="ItemContainerStyleSelectorProperty"/> on.
+    /// </param>
+    /// <param name="value">ItemContainerStyleSelector property value.</param>
+    public static void SetItemContainerStyleSelector(DependencyObject element, StyleSelector? value)
+    {
+        element.SetValue(ItemContainerStyleSelectorProperty, value);
+    }
+
+    /// <summary>
+    /// Helper for getting <see cref="ItemTemplateProperty"/> from <paramref name="element"/>.
+    /// </summary>
+    /// <param name="element">
+    /// <see cref="DependencyObject"/> to read <see cref="ItemTemplateProperty"/> from.
+    /// </param>
+    /// <returns>ItemTemplate property value.</returns>
+    [AttachedPropertyBrowsableForType(typeof(DependencyObject))]
+    public static DataTemplate? GetItemTemplate(DependencyObject element)
+    {
+        return (DataTemplate?)element.GetValue(ItemTemplateProperty);
+    }
+
+    /// <summary>
+    /// Helper for setting <see cref="ItemTemplateProperty"/> on <paramref name="element"/>.
+    /// </summary>
+    /// <param name="element">
+    /// <see cref="DependencyObject"/> to set <see cref="ItemTemplateProperty"/> on.
+    /// </param>
+    /// <param name="value">ItemTemplate property value.</param>
+    public static void SetItemTemplate(DependencyObject element, DataTemplate? value)
+    {
+        element.SetValue(ItemTemplateProperty, value);
+    }
+
+    /// <summary>
+    /// Helper for getting <see cref="ItemTemplateSelectorProperty"/> from <paramref name="element"/>.
+    /// </summary>
+    /// <param name="element">
+    /// <see cref="DependencyObject"/> to read <see cref="ItemTemplateSelectorProperty"/> from.
+    /// </param>
+    /// <returns>ItemTemplateSelector property value.</returns>
+    [AttachedPropertyBrowsableForType(typeof(DependencyObject))]
+    public static DataTemplateSelector? GetItemTemplateSelector(DependencyObject element)
+    {
+        return (DataTemplateSelector?)element.GetValue(ItemTemplateSelectorProperty);
+    }
+
+    /// <summary>
+    /// Helper for setting <see cref="ItemTemplateSelectorProperty"/> on <paramref name="element"/>.
+    /// </summary>
+    /// <param name="element">
+    /// <see cref="DependencyObject"/> to set <see cref="ItemTemplateSelectorProperty"/> on.
+    /// </param>
+    /// <param name="value">ItemTemplateSelector property value.</param>
+    public static void SetItemTemplateSelector(DependencyObject element, DataTemplateSelector? value)
+    {
+        element.SetValue(ItemTemplateSelectorProperty, value);
     }
 
     /// <inheritdoc/>
@@ -482,10 +671,9 @@ public partial class NavigationView
     }
 
     private void OnMenuItemsSource_CollectionChanged(
-        object? sender,
-        IList collection,
-        NotifyCollectionChangedEventArgs e
-    )
+        object?                          sender,
+        IList                            collection,
+        NotifyCollectionChangedEventArgs e)
     {
         if (ReferenceEquals(sender, collection))
         {
@@ -545,7 +733,6 @@ public partial class NavigationView
             return;
         }
 
-        UpdateMenuItemsTemplate(e.NewItems);
         AddItemsToDictionaries(e.NewItems);
     }
 
@@ -585,14 +772,12 @@ public partial class NavigationView
             return;
         }
 
-        UpdateMenuItemsTemplate(e.NewItems);
         AddItemsToDictionaries(e.NewItems);
     }
 
     private static void OnFooterMenuItemsSourceChanged(
-        DependencyObject? d,
-        DependencyPropertyChangedEventArgs e
-    )
+        DependencyObject?                  d,
+        DependencyPropertyChangedEventArgs e)
     {
         if (d is not NavigationView navigationView)
         {
@@ -629,16 +814,6 @@ public partial class NavigationView
         }
 
         navigationView.OnPaneDisplayModeChanged();
-    }
-
-    private static void OnItemTemplateChanged(DependencyObject? d, DependencyPropertyChangedEventArgs e)
-    {
-        if (d is not NavigationView navigationView)
-        {
-            return;
-        }
-
-        navigationView.OnItemTemplateChanged();
     }
 
     private static void OnIsPaneOpenChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
@@ -761,6 +936,6 @@ public partial class NavigationView
         breadcrumbBar.ItemTemplate ??= navigationView.TryFindResource(StyleKeys.NavigationViewItemDataTemplate) as DataTemplate;
 
         // todo 考察一下使用路由事件是否比强绑定要好一点
-        breadcrumbBar.ItemClicked  +=  navigationView.BreadcrumbBarOnItemClicked;
+        breadcrumbBar.ItemClicked += navigationView.BreadcrumbBarOnItemClicked;
     }
 }

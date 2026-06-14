@@ -99,6 +99,10 @@
                 Grid.Row="1"
                 AutomationProperties.AutomationId="NavigationItemItems"
                 Focusable="False"
+                ItemContainerStyle="{Binding RelativeSource={RelativeSource Self}, Path=(controls:NavigationView.ItemContainerStyle)}"
+                ItemContainerStyleSelector="{Binding RelativeSource={RelativeSource Self}, Path=(controls:NavigationView.ItemContainerStyleSelector)}"
+                ItemTemplate="{Binding RelativeSource={RelativeSource Self}, Path=(controls:NavigationView.ItemTemplate)}"
+                ItemTemplateSelector="{Binding RelativeSource={RelativeSource Self}, Path=(controls:NavigationView.ItemTemplateSelector)}"
                 ItemsSource="{TemplateBinding MenuItems}"
                 KeyboardNavigation.DirectionalNavigation="Contained"
                 Opacity="0.0"
@@ -110,11 +114,6 @@
                         <StackPanel Margin="0" IsItemsHost="True" />
                     </ItemsPanelTemplate>
                 </ItemsControl.ItemsPanel>
-                <ItemsControl.Resources>
-                    <Style BasedOn="{StaticResource NavigationViewItemDefaultStyle}" TargetType="{x:Type controls:NavigationViewItem}">
-                        <Setter Property="Template" Value="{Binding RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}, Path=Template}" />
-                    </Style>
-                </ItemsControl.Resources>
             </ItemsControl>
         </Grid>
         <ControlTemplate.Triggers>
@@ -303,6 +302,10 @@
                                 x:Name="PART_MenuItemsItemsControl"
                                 AutomationProperties.AutomationId="NavigationItems"
                                 Focusable="False"
+                                ItemContainerStyle="{Binding RelativeSource={RelativeSource Self}, Path=(controls:NavigationView.ItemContainerStyle)}"
+                                ItemContainerStyleSelector="{Binding RelativeSource={RelativeSource Self}, Path=(controls:NavigationView.ItemContainerStyleSelector)}"
+                                ItemTemplate="{Binding RelativeSource={RelativeSource Self}, Path=(controls:NavigationView.ItemTemplate)}"
+                                ItemTemplateSelector="{Binding RelativeSource={RelativeSource Self}, Path=(controls:NavigationView.ItemTemplateSelector)}"
                                 KeyboardNavigation.DirectionalNavigation="Contained"
                                 ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                                 ScrollViewer.VerticalScrollBarVisibility="Disabled">
@@ -335,6 +338,10 @@
                                 Margin="0,0,0,4"
                                 AutomationProperties.AutomationId="NavigationFooterItems"
                                 Focusable="False"
+                                ItemContainerStyle="{Binding RelativeSource={RelativeSource Self}, Path=(controls:NavigationView.ItemContainerStyle)}"
+                                ItemContainerStyleSelector="{Binding RelativeSource={RelativeSource Self}, Path=(controls:NavigationView.ItemContainerStyleSelector)}"
+                                ItemTemplate="{Binding RelativeSource={RelativeSource Self}, Path=(controls:NavigationView.ItemTemplate)}"
+                                ItemTemplateSelector="{Binding RelativeSource={RelativeSource Self}, Path=(controls:NavigationView.ItemTemplateSelector)}"
                                 KeyboardNavigation.DirectionalNavigation="Contained"
                                 ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                                 ScrollViewer.VerticalScrollBarVisibility="Disabled">
