@@ -47,6 +47,7 @@
                     <Rectangle
                         x:Name="ActiveRectangle"
                         Grid.Column="0"
+                        Grid.ColumnSpan="4"
                         Width="3"
                         Height="16"
                         Margin="0"
