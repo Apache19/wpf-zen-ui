@@ -112,7 +112,7 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
         nameof(TargetPageTag),
         typeof(string),
         typeof(NavigationViewItem),
-        new PropertyMetadata(string.Empty)
+        new PropertyMetadata(string.Empty, OnNavigationTargetChanged)
     );
 
     /// <summary>Identifies the <see cref="TargetPageType"/> dependency property.</summary>
@@ -120,7 +120,7 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
         nameof(TargetPageType),
         typeof(Type),
         typeof(NavigationViewItem),
-        new PropertyMetadata(null)
+        new PropertyMetadata(null, OnNavigationTargetChanged)
     );
 
     /// <summary>Identifies the <see cref="InfoBadge"/> dependency property.</summary>
@@ -166,6 +166,7 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
         get => GetValue(MenuItemsSourceProperty);
         set
         {
+#warning 评估，可能不需要判空和 ClearValue 调用
             if (value is null)
             {
                 ClearValue(MenuItemsSourceProperty);
@@ -273,6 +274,7 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
     private NavigationView?                                     _attachedNavigationView;
     private TypedEventHandler<NavigationView, RoutedEventArgs>? _paneOpenedHandler;
     private TypedEventHandler<NavigationView, RoutedEventArgs>? _paneClosedHandler;
+    private INotifyCollectionChanged?                            _menuItemsSourceCollection;
 
     static NavigationViewItem()
     {
@@ -533,19 +535,58 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
             return;
         }
 
-        navigationViewItem.MenuItems.Clear();
+        navigationViewItem.DetachMenuItemsSourceCollection();
+        navigationViewItem.SynchronizeMenuItemsSource(e.NewValue);
 
-        if (e.NewValue is IEnumerable newItemsSource and not string)
+        if (e.NewValue is INotifyCollectionChanged collection)
         {
-            foreach (var item in newItemsSource)
+            navigationViewItem._menuItemsSourceCollection = collection;
+            collection.CollectionChanged += navigationViewItem.OnMenuItemsSourceCollectionChanged;
+        }
+    }
+
+    private static void OnNavigationTargetChanged(
+        DependencyObject d,
+        DependencyPropertyChangedEventArgs e
+    )
+    {
+        if (d is NavigationViewItem navigationViewItem)
+        {
+            NavigationView.GetNavigationParent(navigationViewItem)?.RefreshMenuItemDictionaries();
+        }
+    }
+
+    private void OnMenuItemsSourceCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        SynchronizeMenuItemsSource(MenuItemsSource);
+    }
+
+    private void SynchronizeMenuItemsSource(object? source)
+    {
+        MenuItems.Clear();
+
+        if (source is IEnumerable itemsSource and not string)
+        {
+            foreach (var item in itemsSource)
             {
-                _ = navigationViewItem.MenuItems.Add(item);
+                _ = MenuItems.Add(item);
             }
         }
-        else if (e.NewValue != null)
+        else if (source is not null)
         {
-            _ = navigationViewItem.MenuItems.Add(e.NewValue);
+            _ = MenuItems.Add(source);
         }
+    }
+
+    private void DetachMenuItemsSourceCollection()
+    {
+        if (_menuItemsSourceCollection is null)
+        {
+            return;
+        }
+
+        _menuItemsSourceCollection.CollectionChanged -= OnMenuItemsSourceCollectionChanged;
+        _menuItemsSourceCollection = null;
     }
 
     private void InitializeNavigationViewEvents()
