@@ -144,20 +144,22 @@ public partial class NavigationView : System.Windows.Controls.Control, INavigati
             breadcrumbBar.ItemClicked -= BreadcrumbBarOnItemClicked;
         }
 
-        if (ToggleButton is not null)
+        // Clean up ItemsSource CollectionChanged subscriptions to prevent memory leaks
+        if (MenuItemsSource is INotifyCollectionChanged menuItemsSource)
         {
-            ToggleButton.Click -= OnToggleButtonClick;
+            menuItemsSource.CollectionChanged -= OnMenuItemsSource_CollectionChanged;
         }
 
-        if (BackButton is not null)
+        if (FooterMenuItemsSource is INotifyCollectionChanged footerMenuItemsSource)
         {
-            BackButton.Click -= OnToggleButtonClick;
+            footerMenuItemsSource.CollectionChanged -= OnFooterMenuItemsSource_CollectionChanged;
         }
 
-        if (AutoSuggestBoxSymbolButton is not null)
-        {
-            AutoSuggestBoxSymbolButton.Click -= AutoSuggestBoxSymbolButtonOnClick;
-        }
+        ToggleButton?.Click -= OnToggleButtonClick;
+
+        BackButton?.Click -= OnToggleButtonClick;
+
+        AutoSuggestBoxSymbolButton?.Click -= AutoSuggestBoxSymbolButtonOnClick;
     }
 
     protected override void OnMouseDown(MouseButtonEventArgs e)
@@ -381,6 +383,33 @@ public partial class NavigationView : System.Windows.Controls.Control, INavigati
     {
         AddItemsToDictionaries(MenuItems);
         AddItemsToDictionaries(FooterMenuItems);
+    }
+
+    protected virtual void RemoveItemsFromDictionaries(IEnumerable list)
+    {
+        foreach (NavigationViewItem item in list.OfType<NavigationViewItem>())
+        {
+            PageIdOrTargetTagNavigationViewsDictionary.Remove(item.Id);
+            PageIdOrTargetTagNavigationViewsDictionary.Remove(item.TargetPageTag);
+
+            if (item.TargetPageType is not null)
+            {
+                PageTypeNavigationViewsDictionary.Remove(item.TargetPageType);
+            }
+
+            if (item.HasMenuItems)
+            {
+                RemoveItemsFromDictionaries(item.MenuItems);
+            }
+        }
+    }
+
+    private void RebuildDictionaries()
+    {
+        PageIdOrTargetTagNavigationViewsDictionary.Clear();
+        PageTypeNavigationViewsDictionary.Clear();
+
+        AddItemsToDictionaries();
     }
 
     protected virtual void AddItemsToAutoSuggestBoxItems(IEnumerable list)

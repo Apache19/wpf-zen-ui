@@ -117,6 +117,12 @@ public partial class NavigationView
             return;
         }
 
+        // Unsubscribe from the old source to prevent memory leaks when the source is replaced
+        if (e.OldValue is INotifyCollectionChanged oldOc)
+        {
+            oldOc.CollectionChanged -= navigationView.OnMenuItemsSource_CollectionChanged;
+        }
+
         navigationView.MenuItems.Clear();
 
         if (e.NewValue is IEnumerable newItemsSource and not string)
@@ -133,22 +139,22 @@ public partial class NavigationView
 
         if (e.NewValue is INotifyCollectionChanged oc)
         {
-            // todo 由于未取消订阅，如有导航项集合变动，则可能引起内存泄露
-            oc.CollectionChanged += (s, args) =>
-                navigationView.OnMenuItemsSource_CollectionChanged(oc, navigationView.MenuItems, args);
+            oc.CollectionChanged += navigationView.OnMenuItemsSource_CollectionChanged;
         }
     }
 
-    private void OnMenuItemsSource_CollectionChanged(
-        object?                          sender,
-        IList                            collection,
-        NotifyCollectionChangedEventArgs e)
+    private void OnMenuItemsSource_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
-        if (ReferenceEquals(sender, collection))
-        {
-            return;
-        }
+        SyncCollectionFromSource(MenuItems, e);
+    }
 
+    private void OnFooterMenuItemsSource_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        SyncCollectionFromSource(FooterMenuItems, e);
+    }
+
+    private static void SyncCollectionFromSource(IList collection, NotifyCollectionChangedEventArgs e)
+    {
         switch (e.Action)
         {
             case NotifyCollectionChangedAction.Add:
@@ -175,7 +181,7 @@ public partial class NavigationView
                 break;
 
             case NotifyCollectionChangedAction.Move:
-                var moveItem = MenuItems[e.OldStartingIndex];
+                var moveItem = collection[e.OldStartingIndex];
                 collection.RemoveAt(e.OldStartingIndex);
                 collection.Insert(e.NewStartingIndex, moveItem);
                 break;
@@ -197,12 +203,44 @@ public partial class NavigationView
 
     private void OnMenuItems_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
-        if (e.NewItems is null)
+        switch (e.Action)
         {
-            return;
-        }
+            case NotifyCollectionChangedAction.Add:
+                if (e.NewItems is not null)
+                {
+                    AddItemsToDictionaries(e.NewItems);
+                }
 
-        AddItemsToDictionaries(e.NewItems);
+                break;
+
+            case NotifyCollectionChangedAction.Remove:
+                if (e.OldItems is not null)
+                {
+                    RemoveItemsFromDictionaries(e.OldItems);
+                }
+
+                break;
+
+            case NotifyCollectionChangedAction.Replace:
+                if (e.OldItems is not null)
+                {
+                    RemoveItemsFromDictionaries(e.OldItems);
+                }
+
+                if (e.NewItems is not null)
+                {
+                    AddItemsToDictionaries(e.NewItems);
+                }
+
+                break;
+
+            case NotifyCollectionChangedAction.Reset:
+                RebuildDictionaries();
+                break;
+
+            case NotifyCollectionChangedAction.Move:
+                break;
+        }
     }
 
     private static readonly DependencyPropertyKey FooterMenuItemsPropertyKey =
@@ -245,6 +283,12 @@ public partial class NavigationView
             return;
         }
 
+        // Unsubscribe from the old source to prevent memory leaks when the source is replaced
+        if (e.OldValue is INotifyCollectionChanged oldOc)
+        {
+            oldOc.CollectionChanged -= navigationView.OnFooterMenuItemsSource_CollectionChanged;
+        }
+
         navigationView.FooterMenuItems.Clear();
 
         if (e.NewValue is IEnumerable newItemsSource and not string)
@@ -261,9 +305,7 @@ public partial class NavigationView
 
         if (e.NewValue is INotifyCollectionChanged oc)
         {
-            // todo 同样，未取消订阅，如导航项变动，则会引起内存泄露
-            oc.CollectionChanged += (s, args) =>
-                navigationView.OnMenuItemsSource_CollectionChanged(oc, navigationView.FooterMenuItems, args);
+            oc.CollectionChanged += navigationView.OnFooterMenuItemsSource_CollectionChanged;
         }
     }
 
@@ -578,6 +620,7 @@ public partial class NavigationView
         set => SetValue(TitleBarProperty, value);
     }
 
+    // todo: 工具栏和自动建议框的边距调整逻辑似乎不应该硬编码，可以考虑使用Style触发器或者VisualState来实现
     private static void OnTitleBarChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
         if (d is not NavigationView navigationView)
@@ -676,6 +719,10 @@ public partial class NavigationView
     /// <summary>
     /// Helper for getting <see cref="ItemContainerTemplateProperty"/> from <paramref name="element"/>.
     /// </summary>
+    /// <param name="element">
+    /// <see cref="DependencyObject"/> to read <see cref="ItemContainerTemplateProperty"/> from.
+    /// </param>
+    /// <returns>ItemContainerTemplate property value.</returns>
     [AttachedPropertyBrowsableForType(typeof(DependencyObject))]
     public static ControlTemplate? GetItemContainerTemplate(DependencyObject element)
     {
@@ -685,6 +732,10 @@ public partial class NavigationView
     /// <summary>
     /// Helper for setting <see cref="ItemContainerTemplateProperty"/> on <paramref name="element"/>.
     /// </summary>
+    /// <param name="element">
+    /// <see cref="DependencyObject"/> to set <see cref="ItemContainerTemplateProperty"/> on.
+    /// </param>
+    /// <param name="value">ItemContainerTemplate property value.</param>
     public static void SetItemContainerTemplate(DependencyObject element, ControlTemplate? value)
     {
         element.SetValue(ItemContainerTemplateProperty, value);
@@ -705,9 +756,15 @@ public partial class NavigationView
         set => SetValue(ItemContainerStyleProperty, value);
     }
 
+    // ReSharper disable UnusedMember.Global
+
     /// <summary>
     /// Helper for getting <see cref="ItemContainerStyleProperty"/> from <paramref name="element"/>.
     /// </summary>
+    /// <param name="element">
+    /// <see cref="DependencyObject"/> to read <see cref="ItemContainerStyleProperty"/> from.
+    /// </param>
+    /// <returns>ItemContainerStyle property value.</returns>
     [AttachedPropertyBrowsableForType(typeof(DependencyObject))]
     public static Style? GetItemContainerStyle(DependencyObject element)
     {
@@ -717,10 +774,16 @@ public partial class NavigationView
     /// <summary>
     /// Helper for setting <see cref="ItemContainerStyleProperty"/> on <paramref name="element"/>.
     /// </summary>
+    /// <param name="element">
+    /// <see cref="DependencyObject"/> to set <see cref="ItemContainerStyleProperty"/> on.
+    /// </param>
+    /// <param name="value">ItemContainerStyle property value.</param>
     public static void SetItemContainerStyle(DependencyObject element, Style? value)
     {
         element.SetValue(ItemContainerStyleProperty, value);
     }
+
+    // ReSharper restore UnusedMember.Global
 
     /// <summary>Identifies the <see cref="ItemContainerStyleSelector"/> dependency property.</summary>
     public static readonly DependencyProperty ItemContainerStyleSelectorProperty =
@@ -738,9 +801,15 @@ public partial class NavigationView
         set => SetValue(ItemContainerStyleSelectorProperty, value);
     }
 
+    // ReSharper disable UnusedMember.Global
+
     /// <summary>
     /// Helper for getting <see cref="ItemContainerStyleSelectorProperty"/> from <paramref name="element"/>.
     /// </summary>
+    /// <param name="element">
+    /// <see cref="DependencyObject"/> to read <see cref="ItemContainerStyleSelectorProperty"/> from.
+    /// </param>
+    /// <returns>ItemContainerStyleSelector property value.</returns>
     [AttachedPropertyBrowsableForType(typeof(DependencyObject))]
     public static StyleSelector? GetItemContainerStyleSelector(DependencyObject element)
     {
@@ -750,10 +819,16 @@ public partial class NavigationView
     /// <summary>
     /// Helper for setting <see cref="ItemContainerStyleSelectorProperty"/> on <paramref name="element"/>.
     /// </summary>
+    /// <param name="element">
+    /// <see cref="DependencyObject"/> to set <see cref="ItemContainerStyleSelectorProperty"/> on.
+    /// </param>
+    /// <param name="value">ItemContainerStyleSelector property value.</param>
     public static void SetItemContainerStyleSelector(DependencyObject element, StyleSelector? value)
     {
         element.SetValue(ItemContainerStyleSelectorProperty, value);
     }
+
+    // ReSharper restore UnusedMember.Global
 
     /// <summary>Identifies the <see cref="ItemTemplate"/> dependency property.</summary>
     public static readonly DependencyProperty ItemTemplateProperty = DependencyProperty.RegisterAttached(
@@ -773,9 +848,15 @@ public partial class NavigationView
         set => SetValue(ItemTemplateProperty, value);
     }
 
+    // ReSharper disable UnusedMember.Global
+
     /// <summary>
     /// Helper for getting <see cref="ItemTemplateProperty"/> from <paramref name="element"/>.
     /// </summary>
+    /// <param name="element">
+    /// <see cref="DependencyObject"/> to read <see cref="ItemTemplateProperty"/> from.
+    /// </param>
+    /// <returns>ItemTemplate property value.</returns>
     [AttachedPropertyBrowsableForType(typeof(DependencyObject))]
     public static DataTemplate? GetItemTemplate(DependencyObject element)
     {
@@ -785,10 +866,16 @@ public partial class NavigationView
     /// <summary>
     /// Helper for setting <see cref="ItemTemplateProperty"/> on <paramref name="element"/>.
     /// </summary>
+    /// <param name="element">
+    /// <see cref="DependencyObject"/> to set <see cref="ItemTemplateProperty"/> on.
+    /// </param>
+    /// <param name="value">ItemTemplate property value.</param>
     public static void SetItemTemplate(DependencyObject element, DataTemplate? value)
     {
         element.SetValue(ItemTemplateProperty, value);
     }
+
+    // ReSharper restore UnusedMember.Global
 
     /// <summary>Identifies the <see cref="ItemTemplateSelector"/> dependency property.</summary>
     public static readonly DependencyProperty ItemTemplateSelectorProperty = DependencyProperty.RegisterAttached(
@@ -805,9 +892,15 @@ public partial class NavigationView
         set => SetValue(ItemTemplateSelectorProperty, value);
     }
 
+    // ReSharper disable UnusedMember.Global
+
     /// <summary>
     /// Helper for getting <see cref="ItemTemplateSelectorProperty"/> from <paramref name="element"/>.
     /// </summary>
+    /// <param name="element">
+    /// <see cref="DependencyObject"/> to read <see cref="ItemTemplateSelectorProperty"/> from.
+    /// </param>
+    /// <returns>ItemTemplateSelector property value.</returns>
     [AttachedPropertyBrowsableForType(typeof(DependencyObject))]
     public static DataTemplateSelector? GetItemTemplateSelector(DependencyObject element)
     {
@@ -817,10 +910,16 @@ public partial class NavigationView
     /// <summary>
     /// Helper for setting <see cref="ItemTemplateSelectorProperty"/> on <paramref name="element"/>.
     /// </summary>
+    /// <param name="element">
+    /// <see cref="DependencyObject"/> to set <see cref="ItemTemplateSelectorProperty"/> on.
+    /// </param>
+    /// <param name="value">ItemTemplateSelector property value.</param>
     public static void SetItemTemplateSelector(DependencyObject element, DataTemplateSelector? value)
     {
         element.SetValue(ItemTemplateSelectorProperty, value);
     }
+
+    // ReSharper restore UnusedMember.Global
 
     /// <summary>Identifies the <see cref="TransitionDuration"/> dependency property.</summary>
     public static readonly DependencyProperty TransitionDurationProperty = DependencyProperty.Register(

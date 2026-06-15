@@ -21,7 +21,7 @@ namespace Wpf.Ui.Controls;
 /// When needed, it can be used as a normal button with a <see cref="ButtonBase.Click"/> action.
 /// </summary>
 [TemplatePart(Name = TemplateElementChevronGrid, Type = typeof(Grid))]
-public class NavigationViewItem : ButtonBase, INavigationViewItem, IIconControl
+public class NavigationViewItem : ButtonBase, INavigationViewItem
 {
     protected const string TemplateElementChevronGrid = "PART_ChevronGrid";
 
@@ -270,6 +270,10 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem, IIconControl
 
     private INavigationViewItem? _navigationViewItemParent;
 
+    private NavigationView?                                     _attachedNavigationView;
+    private TypedEventHandler<NavigationView, RoutedEventArgs>? _paneOpenedHandler;
+    private TypedEventHandler<NavigationView, RoutedEventArgs>? _paneClosedHandler;
+
     static NavigationViewItem()
     {
         DefaultStyleKeyProperty.OverrideMetadata(
@@ -284,7 +288,9 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem, IIconControl
 
         Unloaded += static (sender, _) =>
         {
-            ((NavigationViewItem)sender).NavigationViewItemParent = null;
+            var item = (NavigationViewItem)sender;
+            item.NavigationViewItemParent = null;
+            item.DetachNavigationViewEvents();
         };
 
         Loaded += (_, _) => InitializeNavigationViewEvents();
@@ -311,7 +317,10 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem, IIconControl
         : this(targetPageType)
     {
         SetValue(ContentProperty, name);
-        SetValue(IconProperty, new SymbolIcon { Symbol = icon });
+        SetValue(IconProperty, new SymbolIcon
+        {
+            Symbol = icon
+        });
     }
 
     public NavigationViewItem(string name, SymbolRegular icon, Type targetPageType, IList menuItems)
@@ -336,7 +345,7 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem, IIconControl
         {
             if (
                 navigationView.IsPaneOpen
-                && navigationView.PaneDisplayMode != NavigationViewPaneDisplayMode.Top
+             && navigationView.PaneDisplayMode != NavigationViewPaneDisplayMode.Top
             )
             {
                 NavigationViewItemParent.IsExpanded = true;
@@ -349,7 +358,7 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem, IIconControl
 
         if (
             Icon is SymbolIcon symbolIcon
-            && navigationView.PaneDisplayMode == NavigationViewPaneDisplayMode.LeftFluent
+         && navigationView.PaneDisplayMode == NavigationViewPaneDisplayMode.LeftFluent
         )
         {
             symbolIcon.Filled = true;
@@ -371,7 +380,7 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem, IIconControl
 
         if (
             Icon is SymbolIcon symbolIcon
-            && navigationView.PaneDisplayMode == NavigationViewPaneDisplayMode.LeftFluent
+         && navigationView.PaneDisplayMode == NavigationViewPaneDisplayMode.LeftFluent
         )
         {
             symbolIcon.Filled = false;
@@ -440,11 +449,8 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem, IIconControl
             return;
         }
 
-        if (
-            !navigationView.IsPaneOpen
-            || navigationView.PaneDisplayMode != NavigationViewPaneDisplayMode.Left
-            || ChevronGrid is null
-        )
+        if (!navigationView.IsPaneOpen || ChevronGrid is null ||
+            navigationView.PaneDisplayMode != NavigationViewPaneDisplayMode.Left)
         {
             base.OnMouseDown(e);
             return;
@@ -459,10 +465,8 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem, IIconControl
 
         SetCurrentValue(IsExpandedProperty, !IsExpanded);
 
-        for (int i = 0; i < MenuItems.Count; i++)
+        foreach (var menuItem in MenuItems)
         {
-            object? menuItem = MenuItems[i];
-
             if (menuItem is not INavigationViewItem { IsActive: true })
             {
                 continue;
@@ -500,7 +504,7 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem, IIconControl
 
     private void UpdateIndentation()
     {
-        var depth = 0;
+        var depth  = 0;
         var parent = NavigationViewItemParent;
 
         while (parent is not null)
@@ -546,12 +550,43 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem, IIconControl
 
     private void InitializeNavigationViewEvents()
     {
-        if (NavigationView.GetNavigationParent(this) is { } navigationView)
+        if (NavigationView.GetNavigationParent(this) is not { } navigationView)
         {
-            SetCurrentValue(IsPaneOpenProperty, navigationView.IsPaneOpen);
-
-            navigationView.PaneOpened += (_, _) => SetCurrentValue(IsPaneOpenProperty, true);
-            navigationView.PaneClosed += (_, _) => SetCurrentValue(IsPaneOpenProperty, false);
+            return;
         }
+
+        // Unsubscribe from previous NavigationView if already attached (e.g., if Loaded fires again)
+        DetachNavigationViewEvents();
+
+        _attachedNavigationView = navigationView;
+        SetCurrentValue(IsPaneOpenProperty, navigationView.IsPaneOpen);
+
+        _paneOpenedHandler = (_, _) => SetCurrentValue(IsPaneOpenProperty, true);
+        _paneClosedHandler = (_, _) => SetCurrentValue(IsPaneOpenProperty, false);
+
+        navigationView.PaneOpened += _paneOpenedHandler;
+        navigationView.PaneClosed += _paneClosedHandler;
+    }
+
+    private void DetachNavigationViewEvents()
+    {
+        if (_attachedNavigationView is null)
+        {
+            return;
+        }
+
+        if (_paneOpenedHandler is not null)
+        {
+            _attachedNavigationView.PaneOpened -= _paneOpenedHandler;
+            _paneOpenedHandler                 =  null;
+        }
+
+        if (_paneClosedHandler is not null)
+        {
+            _attachedNavigationView.PaneClosed -= _paneClosedHandler;
+            _paneClosedHandler                 =  null;
+        }
+
+        _attachedNavigationView = null;
     }
 }
