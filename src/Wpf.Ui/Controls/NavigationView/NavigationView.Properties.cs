@@ -36,6 +36,27 @@ public partial class NavigationView
         set => SetValue(EnableDebugMessagesProperty, value);
     }
 
+    /// <summary>Identifies the <see cref="CacheSize"/> dependency property.</summary>
+    public static readonly DependencyProperty CacheSizeProperty = DependencyProperty.Register(
+        nameof(CacheSize),
+        typeof(int),
+        typeof(NavigationView),
+        new FrameworkPropertyMetadata(10, OnCacheSizeChanged),
+        static value => value is int size && size >= 0
+    );
+
+    /// <inheritdoc/>
+    public int CacheSize
+    {
+        get => (int)GetValue(CacheSizeProperty);
+        set => SetValue(CacheSizeProperty, value);
+    }
+
+    private static void OnCacheSizeChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        ((NavigationView)d)._cache.Capacity = (int)e.NewValue;
+    }
+
     /// <summary>Identifies the <see cref="Header"/> dependency property.</summary>
     public static readonly DependencyProperty HeaderProperty = DependencyProperty.Register(
         nameof(Header),
@@ -207,7 +228,7 @@ public partial class NavigationView
     private void OnMenuItems_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
         // todo: 直接重建还是根据 e.Action 进行增量更新？需要评估一下性能和复杂度的权衡
-        AddItemsToDictionaries();
+        RebuildNavigationItems();
         UpdateAutoSuggestBoxSuggestions();
     }
 

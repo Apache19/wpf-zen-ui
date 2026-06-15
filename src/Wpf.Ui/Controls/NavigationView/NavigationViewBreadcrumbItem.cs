@@ -21,7 +21,11 @@ internal class NavigationViewBreadcrumbItem : DependencyObject
 
     public NavigationViewBreadcrumbItem(INavigationViewItem item)
     {
-        PageId = item.Id;
+        NavigationKey = new NavigationKey(
+            item.TargetPageType
+                ?? throw new InvalidOperationException("Breadcrumb items must define a target page type."),
+            item.TargetPageVariant
+        );
         SourceItem = item;
         Content = item.Content;
     }
@@ -32,7 +36,7 @@ internal class NavigationViewBreadcrumbItem : DependencyObject
         set => SetValue(ContentProperty, value);
     }
 
-    public string PageId { get; }
+    public NavigationKey NavigationKey { get; }
 
     public INavigationViewItem SourceItem { get; }
 

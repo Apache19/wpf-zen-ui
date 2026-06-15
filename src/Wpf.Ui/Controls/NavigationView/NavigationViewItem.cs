@@ -107,12 +107,12 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
         new PropertyMetadata(null, null, IconElement.Coerce)
     );
 
-    /// <summary>Identifies the <see cref="TargetPageTag"/> dependency property.</summary>
-    public static readonly DependencyProperty TargetPageTagProperty = DependencyProperty.Register(
-        nameof(TargetPageTag),
+    /// <summary>Identifies the <see cref="TargetPageVariant"/> dependency property.</summary>
+    public static readonly DependencyProperty TargetPageVariantProperty = DependencyProperty.Register(
+        nameof(TargetPageVariant),
         typeof(string),
         typeof(NavigationViewItem),
-        new PropertyMetadata(string.Empty, OnNavigationTargetChanged)
+        new PropertyMetadata(null, OnNavigationTargetChanged)
     );
 
     /// <summary>Identifies the <see cref="TargetPageType"/> dependency property.</summary>
@@ -136,7 +136,7 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
         nameof(NavigationCacheMode),
         typeof(NavigationCacheMode),
         typeof(NavigationViewItem),
-        new FrameworkPropertyMetadata(NavigationCacheMode.Disabled)
+        new FrameworkPropertyMetadata(NavigationCacheMode.Disabled, OnNavigationCacheModeChanged)
     );
 
     /// <summary>
@@ -224,10 +224,10 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
     }
 
     /// <inheritdoc />
-    public string TargetPageTag
+    public string? TargetPageVariant
     {
-        get => (string)GetValue(TargetPageTagProperty);
-        set => SetValue(TargetPageTagProperty, value);
+        get => (string?)GetValue(TargetPageVariantProperty);
+        set => SetValue(TargetPageVariantProperty, value);
     }
 
     /// <inheritdoc />
@@ -264,9 +264,6 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
     /// <inheritdoc />
     public bool IsMenuElement { get; set; }
 
-    /// <inheritdoc />
-    public string Id { get; }
-
     protected Grid? ChevronGrid { get; set; }
 
     private INavigationViewItem? _navigationViewItemParent;
@@ -286,8 +283,6 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
 
     public NavigationViewItem()
     {
-        Id = Guid.NewGuid().ToString("n");
-
         Unloaded += static (sender, _) =>
         {
             var item = (NavigationViewItem)sender;
@@ -397,20 +392,6 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
         if (GetTemplateChild(TemplateElementChevronGrid) is Grid chevronGrid)
         {
             ChevronGrid = chevronGrid;
-        }
-    }
-
-    /// <inheritdoc />
-    protected override void OnInitialized(EventArgs e)
-    {
-        base.OnInitialized(e);
-
-        if (string.IsNullOrWhiteSpace(TargetPageTag) && Content is not null)
-        {
-            SetCurrentValue(
-                TargetPageTagProperty,
-                Content as string ?? Content.ToString()?.ToLower().Trim() ?? string.Empty
-            );
         }
     }
 
@@ -552,7 +533,19 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
     {
         if (d is NavigationViewItem navigationViewItem)
         {
-            NavigationView.GetNavigationParent(navigationViewItem)?.RefreshMenuItemDictionaries();
+            NavigationView.GetNavigationParent(navigationViewItem)?.RefreshNavigationItems();
+        }
+    }
+
+    private static void OnNavigationCacheModeChanged(
+        DependencyObject d,
+        DependencyPropertyChangedEventArgs e
+    )
+    {
+        if (d is NavigationViewItem navigationViewItem)
+        {
+            NavigationView.GetNavigationParent(navigationViewItem)
+                ?.SetCacheEntryMode(navigationViewItem, (NavigationCacheMode)e.NewValue);
         }
     }
 

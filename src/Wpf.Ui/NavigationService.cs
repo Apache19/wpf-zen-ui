@@ -37,59 +37,53 @@ public partial class NavigationService(INavigationViewPageProvider pageProvider)
     }
 
     /// <inheritdoc />
-    public bool Navigate(Type pageType)
+    public bool Navigate(Type pageType) => Navigate(new NavigationKey(pageType));
+
+    /// <inheritdoc />
+    public bool Navigate(Type pageType, object? dataContext) => Navigate(new NavigationKey(pageType), dataContext);
+
+    /// <inheritdoc />
+    public bool Navigate(NavigationKey navigationKey)
     {
         ThrowIfNavigationControlIsNull();
-
-        return NavigationControl!.Navigate(pageType);
+        return NavigationControl!.Navigate(navigationKey);
     }
 
     /// <inheritdoc />
-    public bool Navigate(Type pageType, object? dataContext)
+    public bool Navigate(NavigationKey navigationKey, object? dataContext)
     {
         ThrowIfNavigationControlIsNull();
-
-        return NavigationControl!.Navigate(pageType, dataContext);
-    }
-
-    /// <inheritdoc />
-    public bool Navigate(string pageTag)
-    {
-        ThrowIfNavigationControlIsNull();
-
-        return NavigationControl!.Navigate(pageTag);
-    }
-
-    /// <inheritdoc />
-    public bool Navigate(string pageTag, object? dataContext)
-    {
-        ThrowIfNavigationControlIsNull();
-
-        return NavigationControl!.Navigate(pageTag, dataContext);
+        return NavigationControl!.Navigate(navigationKey, dataContext);
     }
 
     /// <inheritdoc />
     public bool GoBack()
     {
         ThrowIfNavigationControlIsNull();
-
         return NavigationControl!.GoBack();
     }
 
     /// <inheritdoc />
-    public bool NavigateWithHierarchy(Type pageType)
-    {
-        ThrowIfNavigationControlIsNull();
-
-        return NavigationControl!.NavigateWithHierarchy(pageType);
-    }
+    public bool NavigateWithHierarchy(Type pageType) => NavigateWithHierarchy(new NavigationKey(pageType));
 
     /// <inheritdoc />
     public bool NavigateWithHierarchy(Type pageType, object? dataContext)
     {
-        ThrowIfNavigationControlIsNull();
+        return NavigateWithHierarchy(new NavigationKey(pageType), dataContext);
+    }
 
-        return NavigationControl!.NavigateWithHierarchy(pageType, dataContext);
+    /// <inheritdoc />
+    public bool NavigateWithHierarchy(NavigationKey navigationKey)
+    {
+        ThrowIfNavigationControlIsNull();
+        return NavigationControl!.NavigateWithHierarchy(navigationKey);
+    }
+
+    /// <inheritdoc />
+    public bool NavigateWithHierarchy(NavigationKey navigationKey, object? dataContext)
+    {
+        ThrowIfNavigationControlIsNull();
+        return NavigationControl!.NavigateWithHierarchy(navigationKey, dataContext);
     }
 
     protected void ThrowIfNavigationControlIsNull()

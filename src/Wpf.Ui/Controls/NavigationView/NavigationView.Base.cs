@@ -60,23 +60,17 @@ public partial class NavigationView : System.Windows.Controls.Control, INavigati
     public INavigationViewItem? SelectedItem { get; protected set; }
 
     /// <summary>
-    /// Gets a dictionary that maps a string identifier (either <see cref="NavigationViewItem.Id"/> or <see cref="NavigationViewItem.TargetPageTag"/>)
-    /// to the corresponding menu item currently present in the navigation tree.
+    /// Gets the menu item registered for each navigation destination.
     /// </summary>
     /// <remarks>This dictionary is rebuilt whenever a menu collection changes.</remarks>
-    protected Dictionary<string, INavigationViewItem> PageIdOrTargetTagNavigationViewsDictionary { get; } = [];
-
-    /// <summary>
-    /// Gets a dictionary that maps a <see cref="Type"/> to the corresponding menu item currently present in the navigation tree.
-    /// </summary>
-    /// <remarks>This dictionary is rebuilt whenever a menu collection changes.</remarks>
-    protected Dictionary<Type, INavigationViewItem> PageTypeNavigationViewsDictionary { get; } = [];
+    protected Dictionary<NavigationKey, INavigationViewItem> NavigationItems { get; } = [];
 
     /// <summary>
     /// Gets a dictionary that maps a rendered page <see cref="FrameworkElement"/> instance back to its originating
     /// <see cref="INavigationViewItem"/>. Used to propagate <c>HeaderContent</c> changes from
     /// the page to the navigation item for breadcrumb updates.
     /// </summary>
+    #warning 这个字典强引用页面，造成内存泄露。面包屑功能需要重新设计。
     protected Dictionary<FrameworkElement, INavigationViewItem> PageToNavigationItemDictionary { get; } = [];
 
     private readonly HashSet<INotifyCollectionChanged> _nestedMenuItemCollections = [];
@@ -120,7 +114,7 @@ public partial class NavigationView : System.Windows.Controls.Control, INavigati
 
         UpdateAutoSuggestBoxSuggestions();
 
-        AddItemsToDictionaries();
+        RebuildNavigationItems();
     }
 
     private void OnLoaded(object sender, RoutedEventArgs e)
@@ -141,11 +135,9 @@ public partial class NavigationView : System.Windows.Controls.Control, INavigati
         NavigationStack.CollectionChanged -= NavigationStackOnCollectionChanged;
 
         // Final cleanup — the control is being detached, release all dictionary references.
-        PageIdOrTargetTagNavigationViewsDictionary.Clear();
-        PageTypeNavigationViewsDictionary.Clear();
+        NavigationItems.Clear();
         PageToNavigationItemDictionary.Clear();
         ClearNestedMenuItemCollectionSubscriptions();
-        ClearNavigationTargets();
 
         ClearJournal();
 
@@ -260,8 +252,13 @@ public partial class NavigationView : System.Windows.Controls.Control, INavigati
     {
         OnItemInvoked();
 
+        if (GetNavigationKey(navigationViewItem) is not { } navigationKey)
+        {
+            return;
+        }
+
         _ = NavigateInternal(
-            CreateNavigationTarget(navigationViewItem.TargetPageType!, navigationViewItem),
+            CreateNavigationTarget(navigationKey, navigationViewItem),
             navigationViewItem
         );
     }
@@ -269,7 +266,7 @@ public partial class NavigationView : System.Windows.Controls.Control, INavigati
     protected virtual void BreadcrumbBarOnItemClicked(BreadcrumbBar sender, BreadcrumbBarItemClickedEventArgs e)
     {
         var item = (NavigationViewBreadcrumbItem)e.Item;
-        _ = Navigate(item.PageId);
+        _ = Navigate(item.NavigationKey);
     }
 
     private void UpdateAutoSuggestBoxSuggestions()
@@ -346,44 +343,25 @@ public partial class NavigationView : System.Windows.Controls.Control, INavigati
     }
 
     /// <summary>
-    /// Registers navigation items from the given collection into the current UI lookup dictionaries.
+    /// Registers navigation items from the given collection in the destination lookup.
     /// </summary>
     /// <param name="list">A collection potentially containing <see cref="NavigationViewItem"/> instances.</param>
-    protected virtual void AddItemsToDictionaries(IEnumerable list)
+    protected virtual void RegisterNavigationItems(IEnumerable list)
     {
         foreach (NavigationViewItem nvItem in list.OfType<NavigationViewItem>())
         {
             nvItem.SetValue(NavigationParentProperty, this);
 
-            if (!PageIdOrTargetTagNavigationViewsDictionary.ContainsKey(nvItem.Id))
+            if (nvItem.TargetPageType is not null)
             {
-                PageIdOrTargetTagNavigationViewsDictionary.Add(
-                    nvItem.Id,
-                    nvItem
-                );
-            }
-
-            if (!string.IsNullOrWhiteSpace(nvItem.TargetPageTag) &&
-                !PageIdOrTargetTagNavigationViewsDictionary.ContainsKey(nvItem.TargetPageTag))
-            {
-                PageIdOrTargetTagNavigationViewsDictionary.Add(
-                    nvItem.TargetPageTag,
-                    nvItem
-                );
-            }
-
-            if (nvItem.TargetPageType != null &&
-                !PageTypeNavigationViewsDictionary.ContainsKey(nvItem.TargetPageType))
-            {
-                PageTypeNavigationViewsDictionary.Add(
-                    nvItem.TargetPageType,
-                    nvItem
-                );
+                var navigationKey = GetNavigationKey(nvItem);
+                if (navigationKey is not null && !NavigationItems.ContainsKey(navigationKey))
+                {
+                    NavigationItems.Add(navigationKey, nvItem);
+                }
             }
 
             nvItem.IsMenuElement = true;
-
-            RegisterNavigationTarget(nvItem);
 
             if (nvItem.MenuItems is INotifyCollectionChanged nestedCollection &&
                 _nestedMenuItemCollections.Add(nestedCollection))
@@ -398,21 +376,22 @@ public partial class NavigationView : System.Windows.Controls.Control, INavigati
                     childItem.NavigationViewItemParent = nvItem;
                 }
 
-                AddItemsToDictionaries(nvItem.MenuItems);
+                RegisterNavigationItems(nvItem.MenuItems);
             }
         }
     }
 
     /// <summary>
-    /// Rebuilds the menu item lookup dictionaries from <see cref="MenuItems"/> and
+    /// Rebuilds the navigation destination lookup from <see cref="MenuItems"/> and
     /// <see cref="FooterMenuItems"/>.
     /// </summary>
-    // todo: 此方法需要重命名以反映其功能
-    protected virtual void AddItemsToDictionaries()
+    protected virtual void RebuildNavigationItems()
     {
         ClearNestedMenuItemCollectionSubscriptions();
 
-        foreach (var nvItem in PageIdOrTargetTagNavigationViewsDictionary.Values.Distinct())
+        var previousNavigationKeys = NavigationItems.Keys.ToList();
+
+        foreach (var nvItem in NavigationItems.Values)
         {
             nvItem.IsMenuElement            = false;
             nvItem.NavigationViewItemParent = null;
@@ -423,8 +402,7 @@ public partial class NavigationView : System.Windows.Controls.Control, INavigati
             }
         }
 
-        PageIdOrTargetTagNavigationViewsDictionary.Clear();
-        PageTypeNavigationViewsDictionary.Clear();
+        NavigationItems.Clear();
 
         foreach (var nvItem in MenuItems.OfType<INavigationViewItem>())
         {
@@ -436,12 +414,18 @@ public partial class NavigationView : System.Windows.Controls.Control, INavigati
             nvItem.NavigationViewItemParent = null;
         }
 
-        AddItemsToDictionaries(MenuItems);
-        AddItemsToDictionaries(FooterMenuItems);
+        RegisterNavigationItems(MenuItems);
+        RegisterNavigationItems(FooterMenuItems);
 
-        var currentNavigationItems = new HashSet<INavigationViewItem>(
-            PageTypeNavigationViewsDictionary.Values
-        );
+        foreach (var previousNavigationKey in previousNavigationKeys)
+        {
+            if (!NavigationItems.ContainsKey(previousNavigationKey))
+            {
+                _cache.Remove(previousNavigationKey);
+            }
+        }
+
+        var currentNavigationItems = new HashSet<INavigationViewItem>(NavigationItems.Values);
 
         var pagesToRemove = PageToNavigationItemDictionary
            .Where(entry => !currentNavigationItems.Contains(entry.Value))
@@ -456,7 +440,10 @@ public partial class NavigationView : System.Windows.Controls.Control, INavigati
         SynchronizeCurrentNavigationViewItem();
     }
 
-    internal void RefreshMenuItemDictionaries() => AddItemsToDictionaries();
+    internal void RefreshNavigationItems()
+    {
+        RebuildNavigationItems();
+    }
 
     private void ClearNestedMenuItemCollectionSubscriptions()
     {
@@ -500,14 +487,16 @@ public partial class NavigationView : System.Windows.Controls.Control, INavigati
 
         foreach (NavigationViewItem nvItem in list.OfType<NavigationViewItem>())
         {
-            if (nvItem.Content is string content && content == selectedSuggestBoxItem)
+            if (nvItem.Content is string content && content == selectedSuggestBoxItem &&
+                GetNavigationKey(nvItem) is { } navigationKey)
             {
                 _ = NavigateInternal(
-                    CreateNavigationTarget(nvItem.TargetPageType!, nvItem),
+                    CreateNavigationTarget(navigationKey, nvItem),
                     nvItem
                 );
+
                 nvItem.BringIntoView();
-                _ = nvItem.Focus(); // TODO: Element or content?
+                _ = nvItem.Focus();
 
                 return true;
             }
