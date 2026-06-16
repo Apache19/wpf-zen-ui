@@ -1,9 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "PowerShell(dotnet build *)",
-      "Bash(dotnet build *)",
-      "PowerShell(Get-ChildItem *)"
-    ]
-  }
-}
