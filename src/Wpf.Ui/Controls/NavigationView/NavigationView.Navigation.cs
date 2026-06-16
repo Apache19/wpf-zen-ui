@@ -293,6 +293,7 @@ public partial class NavigationView
         return _cache.Remember(
                    viewItem.TargetPageType,
                    viewItem.NavigationCacheMode,
+                   NavigationCacheSize,
                    ComputeCachedNavigationInstance
                )
             ?? throw new InvalidOperationException(
@@ -300,6 +301,20 @@ public partial class NavigationView
                );
 
         object? ComputeCachedNavigationInstance() => GetPageInstanceFromCache(viewItem.TargetPageType);
+    }
+
+    internal void NotifyNavigationCacheModeChanged(
+        INavigationViewItem navigationViewItem,
+        NavigationCacheMode oldCacheMode,
+        NavigationCacheMode newCacheMode
+    )
+    {
+        _cache.UpdateCacheMode(
+            navigationViewItem.TargetPageType,
+            oldCacheMode,
+            newCacheMode,
+            NavigationCacheSize
+        );
     }
 
     private object? GetPageInstanceFromCache(Type? targetPageType)

@@ -136,7 +136,7 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
         nameof(NavigationCacheMode),
         typeof(NavigationCacheMode),
         typeof(NavigationViewItem),
-        new FrameworkPropertyMetadata(NavigationCacheMode.Disabled)
+        new FrameworkPropertyMetadata(NavigationCacheMode.Disabled, OnNavigationCacheModeChanged)
     );
 
     /// <summary>
@@ -270,7 +270,7 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
 
     private INavigationViewItem? _navigationViewItemParent;
 
-    private NavigationView?                                     _attachedNavigationView;
+    private NavigationView? _attachedNavigationView;
     private TypedEventHandler<NavigationView, RoutedEventArgs>? _paneOpenedHandler;
     private TypedEventHandler<NavigationView, RoutedEventArgs>? _paneClosedHandler;
 
@@ -504,7 +504,7 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
 
     private void UpdateIndentation()
     {
-        var depth  = 0;
+        var depth = 0;
         var parent = NavigationViewItemParent;
 
         while (parent is not null)
@@ -524,6 +524,20 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
     private static void OnIndentationSizeChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
         ((NavigationViewItem)d).UpdateIndentation();
+    }
+
+    private static void OnNavigationCacheModeChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        if (d is not NavigationViewItem navigationViewItem)
+        {
+            return;
+        }
+
+        NavigationView.GetNavigationParent(navigationViewItem)?.NotifyNavigationCacheModeChanged(
+            navigationViewItem,
+            (NavigationCacheMode)e.OldValue,
+            (NavigationCacheMode)e.NewValue
+        );
     }
 
     private static void OnMenuItemsSourceChanged(DependencyObject? d, DependencyPropertyChangedEventArgs e)
@@ -578,13 +592,13 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
         if (_paneOpenedHandler is not null)
         {
             _attachedNavigationView.PaneOpened -= _paneOpenedHandler;
-            _paneOpenedHandler                 =  null;
+            _paneOpenedHandler = null;
         }
 
         if (_paneClosedHandler is not null)
         {
             _attachedNavigationView.PaneClosed -= _paneClosedHandler;
-            _paneClosedHandler                 =  null;
+            _paneClosedHandler = null;
         }
 
         _attachedNavigationView = null;
