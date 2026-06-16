@@ -11,7 +11,6 @@ namespace Wpf.Ui.Controls;
 /// </content>
 public partial class NavigationView
 {
-    // todo 似乎没有必要使用附加属性
     // ============================================================
     // HeaderContent Attached Property
     // ============================================================
@@ -74,4 +73,22 @@ public partial class NavigationView
     [AttachedPropertyBrowsableForType(typeof(DependencyObject))]
     internal static NavigationView? GetNavigationParent(DependencyObject navigationItem) =>
         navigationItem.GetValue(NavigationParentProperty) as NavigationView;
+
+    // ============================================================
+    // PageNavigationItem Internal Attached Property
+    // ============================================================
+
+    /// <summary>
+    /// Internal attached property that stores the owning <see cref="INavigationViewItem"/>
+    /// directly on the page's <see cref="FrameworkElement"/>, avoiding a separate
+    /// dictionary lookup when <see cref="HeaderContentProperty"/> changes.
+    /// The value lives and dies with the page — no leak.
+    /// </summary>
+    internal static readonly DependencyProperty PageNavigationItemProperty =
+        DependencyProperty.RegisterAttached(
+            "PageNavigationItem",
+            typeof(INavigationViewItem),
+            typeof(NavigationView),
+            new PropertyMetadata(null)
+        );
 }

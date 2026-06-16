@@ -64,8 +64,6 @@ public partial class NavigationView : System.Windows.Controls.Control, INavigati
 
     protected Dictionary<Type, INavigationViewItem> PageTypeNavigationViewsDictionary { get; } = [];
 
-    protected Dictionary<FrameworkElement, INavigationViewItem> PageToNavigationItemDictionary { get; } = [];
-
     private readonly ObservableCollection<string> _autoSuggestBoxItems = [];
     private readonly ObservableCollection<NavigationViewBreadcrumbItem> _breadcrumbBarItems = [];
 
@@ -129,7 +127,6 @@ public partial class NavigationView : System.Windows.Controls.Control, INavigati
 
         PageIdOrTargetTagNavigationViewsDictionary.Clear();
         PageTypeNavigationViewsDictionary.Clear();
-        PageToNavigationItemDictionary.Clear();
 
         ClearJournal();
 

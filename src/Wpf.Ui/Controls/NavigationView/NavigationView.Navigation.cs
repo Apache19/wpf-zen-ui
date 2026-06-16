@@ -346,8 +346,8 @@ public partial class NavigationView
     {
         if (pageInstance is FrameworkElement frameworkElement)
         {
-            // Store the association between page and navigation item
-            PageToNavigationItemDictionary[frameworkElement] = viewItem;
+            // Store the owning navigation item on the page itself — it lives and dies with the page.
+            frameworkElement.SetValue(PageNavigationItemProperty, viewItem);
 
             // Apply HeaderContent if already available
             if (GetHeaderContent(frameworkElement) is { } headerContent)
@@ -360,7 +360,7 @@ public partial class NavigationView
 
     internal void NotifyHeaderContentChanged(FrameworkElement page, object? headerContent)
     {
-        if (PageToNavigationItemDictionary.TryGetValue(page, out INavigationViewItem? navItem))
+        if (page.GetValue(PageNavigationItemProperty) is INavigationViewItem navItem)
         {
             navItem.Content = headerContent;
             UpdateBreadcrumbContents();
