@@ -201,14 +201,46 @@ public partial class NavigationView
         }
     }
 
-    /// <summary>
-    /// Handles changes to the <see cref="MenuItems"/> or <see cref="FooterMenuItems"/> collections.
-    /// </summary>
     private void OnMenuItems_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
-        // todo: 直接重建还是根据 e.Action 进行增量更新？需要评估一下性能和复杂度的权衡
-        AddItemsToDictionaries();
-        UpdateAutoSuggestBoxSuggestions();
+        switch (e.Action)
+        {
+            case NotifyCollectionChangedAction.Add:
+                if (e.NewItems is not null)
+                {
+                    AddItemsToDictionaries(e.NewItems);
+                }
+
+                break;
+
+            case NotifyCollectionChangedAction.Remove:
+                if (e.OldItems is not null)
+                {
+                    RemoveItemsFromDictionaries(e.OldItems);
+                }
+
+                break;
+
+            case NotifyCollectionChangedAction.Replace:
+                if (e.OldItems is not null)
+                {
+                    RemoveItemsFromDictionaries(e.OldItems);
+                }
+
+                if (e.NewItems is not null)
+                {
+                    AddItemsToDictionaries(e.NewItems);
+                }
+
+                break;
+
+            case NotifyCollectionChangedAction.Reset:
+                RebuildDictionaries();
+                break;
+
+            case NotifyCollectionChangedAction.Move:
+                break;
+        }
     }
 
     private static readonly DependencyPropertyKey FooterMenuItemsPropertyKey =
@@ -588,9 +620,7 @@ public partial class NavigationView
         set => SetValue(TitleBarProperty, value);
     }
 
-    // todo: 工具栏和自动建议框的边距调整逻辑似乎不应该硬编码
-    //       控件只应提供状态，而不是直接修改子控件的属性，这样更符合 WPF 的设计原则，也更灵活
-    //       说白了现在的设计过于紧耦合了，应该改成当状态改变时触发事件或更新绑定的属性，让子控件自己决定如何调整布局
+    // todo: 工具栏和自动建议框的边距调整逻辑似乎不应该硬编码，可以考虑使用Style触发器或者VisualState来实现
     private static void OnTitleBarChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
         if (d is not NavigationView navigationView)
