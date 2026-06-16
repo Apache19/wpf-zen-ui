@@ -369,6 +369,36 @@ public partial class NavigationView
         protected set => SetValue(IsBackEnabledProperty, value);
     }
 
+    /// <summary>Identifies the <see cref="NavigationCacheSize"/> dependency property.</summary>
+    public static readonly DependencyProperty NavigationCacheSizeProperty = DependencyProperty.Register(
+        nameof(NavigationCacheSize),
+        typeof(int),
+        typeof(NavigationView),
+        new FrameworkPropertyMetadata(10, OnNavigationCacheSizeChanged),
+        static value => value is int cacheSize && cacheSize >= 0
+    );
+
+    /// <summary>
+    /// Gets or sets the number of pages with <see cref="NavigationCacheMode.Enabled"/> kept in cache.
+    /// Pages with <see cref="NavigationCacheMode.Required"/> do not count toward this size.
+    /// <para>The default value is <c>10</c>.</para>
+    /// </summary>
+    [Bindable(true)]
+    [Category("Behavior")]
+    public int NavigationCacheSize
+    {
+        get => (int)GetValue(NavigationCacheSizeProperty);
+        set => SetValue(NavigationCacheSizeProperty, value);
+    }
+
+    private static void OnNavigationCacheSizeChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        if (d is NavigationView navigationView)
+        {
+            navigationView._cache.Trim((int)e.NewValue);
+        }
+    }
+
     /// <summary>Identifies the <see cref="IsBackButtonVisible"/> dependency property.</summary>
     public static readonly DependencyProperty IsBackButtonVisibleProperty = DependencyProperty.Register(
         nameof(IsBackButtonVisible),
