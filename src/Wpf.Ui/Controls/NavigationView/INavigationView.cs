@@ -187,11 +187,6 @@ public interface INavigationView
     Thickness FrameMargin { get; set; }
 
     /// <summary>
-    /// Gets or sets the number of <see cref="NavigationCacheMode.Enabled"/> page instances that can be cached.
-    /// </summary>
-    int CacheSize { get; set; }
-
-    /// <summary>
     /// Occurs when the NavigationView pane is opened.
     /// </summary>
     event TypedEventHandler<NavigationView, RoutedEventArgs> PaneOpened;
@@ -232,24 +227,21 @@ public interface INavigationView
     bool CanGoBack { get; }
 
     /// <summary>
-    /// Navigates to the default destination for the specified page type.
+    /// Synchronously navigates current navigation Frame to the
+    /// given Element.
     /// </summary>
     bool Navigate(Type pageType, object? dataContext = null);
 
     /// <summary>
-    /// Navigates to the destination identified by <paramref name="navigationKey"/>.
+    /// Synchronously navigates current navigation Frame to the
+    /// given Element.
     /// </summary>
-    bool Navigate(NavigationKey navigationKey, object? dataContext = null);
+    bool Navigate(string pageIdOrTargetTag, object? dataContext = null);
 
     /// <summary>
-    /// Adds the default destination for the specified page type to the navigation hierarchy and navigates to it.
+    /// Synchronously adds an element to the navigation stack and navigates current navigation Frame to the
     /// </summary>
     bool NavigateWithHierarchy(Type pageType, object? dataContext = null);
-
-    /// <summary>
-    /// Adds the destination identified by <paramref name="navigationKey"/> to the navigation hierarchy and navigates to it.
-    /// </summary>
-    bool NavigateWithHierarchy(NavigationKey navigationKey, object? dataContext = null);
 
     /// <summary>
     /// Replaces the contents of the navigation frame, without changing the currently selected item or triggering an <see cref="SelectionChanged"/>.

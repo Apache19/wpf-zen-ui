@@ -9,62 +9,71 @@ using Wpf.Ui.Controls;
 namespace Wpf.Ui;
 
 /// <summary>
-/// Provides application-level access to a navigation control.
+/// Represents a contract with a <see cref="System.Windows.FrameworkElement"/> that contains <see cref="INavigationView"/>.
+/// Through defined <see cref="INavigationViewPageProvider"/> service allows you to use the Dependency Injection pattern in <c>WPF UI</c> navigation.
 /// </summary>
 public interface INavigationService
 {
     /// <summary>
-    /// Navigates to the default destination for the specified page type.
+    /// Lets you navigate to the selected page based on it's type. Should be used with <see cref="INavigationViewPageProvider"/>.
     /// </summary>
+    /// <param name="pageType"><see langword="Type"/> of the page.</param>
+    /// <returns><see langword="true"/> if the operation succeeds. <see langword="false"/> otherwise.</returns>
     bool Navigate(Type pageType);
 
     /// <summary>
-    /// Navigates to the default destination for the specified page type.
+    /// Lets you navigate to the selected page based on it's type, Should be used with <see cref="INavigationViewPageProvider"/>.
     /// </summary>
+    /// <param name="pageType"><see langword="Type"/> of the page.</param>
+    /// <param name="dataContext">DataContext <see cref="object"/></param>
+    /// <returns><see langword="true"/> if the operation succeeds. <see langword="false"/> otherwise.</returns>
     bool Navigate(Type pageType, object? dataContext);
 
     /// <summary>
-    /// Navigates to the destination identified by <paramref name="navigationKey"/>.
+    /// Lets you navigate to the selected page based on it's tag. Should be used with <see cref="INavigationViewPageProvider"/>.
     /// </summary>
-    bool Navigate(NavigationKey navigationKey);
+    /// <param name="pageIdOrTargetTag">Id or tag of the page.</param>
+    /// <returns><see langword="true"/> if the operation succeeds. <see langword="false"/> otherwise.</returns>
+    bool Navigate(string pageIdOrTargetTag);
 
     /// <summary>
-    /// Navigates to the destination identified by <paramref name="navigationKey"/>.
+    /// Lets you navigate to the selected page based on it's tag. Should be used with <see cref="INavigationViewPageProvider"/>.
     /// </summary>
-    bool Navigate(NavigationKey navigationKey, object? dataContext);
+    /// <param name="pageIdOrTargetTag">Id or tag of the page.</param>
+    /// <param name="dataContext">DataContext <see cref="object"/></param>
+    /// <returns><see langword="true"/> if the operation succeeds. <see langword="false"/> otherwise.</returns>
+    bool Navigate(string pageIdOrTargetTag, object? dataContext);
 
     /// <summary>
-    /// Adds the default destination for the specified page type to the navigation hierarchy and navigates to it.
+    /// Synchronously adds an element to the navigation stack and navigates current navigation Frame to the
     /// </summary>
+    /// <param name="pageType">Type of control to be synchronously added to the navigation stack</param>
+    /// <returns><see langword="true"/> if the operation succeeds. <see langword="false"/> otherwise.</returns>
     bool NavigateWithHierarchy(Type pageType);
 
     /// <summary>
-    /// Adds the default destination for the specified page type to the navigation hierarchy and navigates to it.
+    /// Synchronously adds an element to the navigation stack and navigates current navigation Frame to the
     /// </summary>
+    /// <param name="pageType">Type of control to be synchronously added to the navigation stack</param>
+    /// <param name="dataContext">DataContext <see cref="object"/></param>
+    /// <returns><see langword="true"/> if the operation succeeds. <see langword="false"/> otherwise.</returns>
     bool NavigateWithHierarchy(Type pageType, object? dataContext);
-
-    /// <summary>
-    /// Adds the destination identified by <paramref name="navigationKey"/> to the navigation hierarchy and navigates to it.
-    /// </summary>
-    bool NavigateWithHierarchy(NavigationKey navigationKey);
-
-    /// <summary>
-    /// Adds the destination identified by <paramref name="navigationKey"/> to the navigation hierarchy and navigates to it.
-    /// </summary>
-    bool NavigateWithHierarchy(NavigationKey navigationKey, object? dataContext);
 
     /// <summary>
     /// Provides direct access to the control responsible for navigation.
     /// </summary>
+    /// <returns>Instance of the <see cref="INavigationView"/> control.</returns>
     INavigationView GetNavigationControl();
 
     /// <summary>
-    /// Attaches the control responsible for navigation.
+    /// Lets you attach the control that represents the <see cref="INavigationView"/>.
     /// </summary>
+    /// <param name="navigation">Instance of the <see cref="INavigationView"/>.</param>
     void SetNavigationControl(INavigationView navigation);
 
     /// <summary>
-    /// Navigates to the previous journal entry.
+    /// Navigates the NavigationView to the previous journal entry.
     /// </summary>
+    /// <returns><see langword="true"/> if the operation succeeds. <see langword="false"/> otherwise.</returns>
     bool GoBack();
 }

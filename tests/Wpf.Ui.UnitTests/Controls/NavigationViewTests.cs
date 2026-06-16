@@ -21,230 +21,83 @@ public class NavigationViewTests
 
             Assert.True(navigationView.Navigate(typeof(FirstPage)));
             Assert.IsType<FirstPage>(navigationView.LastNavigatedPage);
-            Assert.Equal(0, navigationView.NavigationItemCount);
+            Assert.Equal(0, navigationView.PageTypeDictionaryCount);
+            Assert.Equal(0, navigationView.PageKeyDictionaryCount);
             Assert.Equal(0, navigationView.NavigationStackCount);
             Assert.Null(navigationView.SelectedItem);
         });
     }
 
     [Fact]
-    public void NavigateByKey_SelectsTheMatchingVariant()
-    {
-        RunInSta(() =>
-        {
-            var firstItem = new NavigationViewItem("First", typeof(FirstPage)) { TargetPageVariant = "first" };
-            var secondItem = new NavigationViewItem("Second", typeof(FirstPage)) { TargetPageVariant = "second" };
-            var navigationView = new TestNavigationView();
-            navigationView.MenuItems.Add(firstItem);
-            navigationView.MenuItems.Add(secondItem);
-
-            Assert.True(navigationView.Navigate(new NavigationKey(typeof(FirstPage), "second")));
-            Assert.Same(secondItem, navigationView.SelectedItem);
-            Assert.Same(secondItem, navigationView.GetNavigationItem(new NavigationKey(typeof(FirstPage), "second")));
-        });
-    }
-
-    [Fact]
-    public void CachedVariants_UseDifferentPageInstances()
-    {
-        RunInSta(() =>
-        {
-            var firstItem = new NavigationViewItem("First", typeof(FirstPage))
-            {
-                TargetPageVariant = "first",
-                NavigationCacheMode = NavigationCacheMode.Enabled,
-            };
-            var secondItem = new NavigationViewItem("Second", typeof(FirstPage))
-            {
-                TargetPageVariant = "second",
-                NavigationCacheMode = NavigationCacheMode.Enabled,
-            };
-            var navigationView = new TestNavigationView();
-            navigationView.MenuItems.Add(firstItem);
-            navigationView.MenuItems.Add(secondItem);
-
-            Assert.True(navigationView.Navigate(new NavigationKey(typeof(FirstPage), "first")));
-            var firstInstance = navigationView.LastNavigatedPage;
-            Assert.True(navigationView.Navigate(new NavigationKey(typeof(FirstPage), "second")));
-            var secondInstance = navigationView.LastNavigatedPage;
-
-            Assert.NotSame(firstInstance, secondInstance);
-        });
-    }
-
-    [Fact]
-    public void GoBack_UsesTheFullNavigationKey()
+    public void GoBack_NavigatesWithoutMenuItemMappings()
     {
         RunInSta(() =>
         {
             var navigationView = new TestNavigationView();
 
-            Assert.True(navigationView.Navigate(new NavigationKey(typeof(FirstPage), "first")));
-            Assert.True(navigationView.Navigate(new NavigationKey(typeof(FirstPage), "second")));
+            Assert.True(navigationView.Navigate(typeof(FirstPage)));
+            Assert.True(navigationView.Navigate(typeof(SecondPage)));
             Assert.True(navigationView.CanGoBack);
 
             Assert.True(navigationView.GoBack());
-            Assert.Equal(new NavigationKey(typeof(FirstPage), "first"), navigationView.CurrentJournalEntry);
+            Assert.IsType<FirstPage>(navigationView.LastNavigatedPage);
             Assert.False(navigationView.CanGoBack);
         });
     }
 
     [Fact]
-    public void NavigateToSameKey_WithDataContext_UpdatesTheCachedPage()
+    public void RemovedMenuItem_IsRemovedFromUiDictionaries_ButItsRouteRemainsUsable()
     {
         RunInSta(() =>
         {
-            var key = new NavigationKey(typeof(FirstPage), "first");
+            var navigationView = new TestNavigationView();
             var navigationItem = new NavigationViewItem("First", typeof(FirstPage))
             {
-                TargetPageVariant = "first",
-                NavigationCacheMode = NavigationCacheMode.Enabled,
+                TargetPageTag = "first",
             };
-            var navigationView = new TestNavigationView();
-            navigationView.MenuItems.Add(navigationItem);
-            var firstDataContext = new object();
-            var secondDataContext = new object();
 
-            Assert.True(navigationView.Navigate(key, firstDataContext));
-            var page = Assert.IsType<FirstPage>(navigationView.LastNavigatedPage);
-            Assert.Same(firstDataContext, page.DataContext);
-
-            Assert.True(navigationView.Navigate(key, secondDataContext));
-            Assert.Same(page, navigationView.LastNavigatedPage);
-            Assert.Same(secondDataContext, page.DataContext);
-        });
-    }
-
-    [Fact]
-    public void GoForward_RestoresTheEntryRemovedByGoBack()
-    {
-        RunInSta(() =>
-        {
-            var firstKey = new NavigationKey(typeof(FirstPage), "first");
-            var secondKey = new NavigationKey(typeof(FirstPage), "second");
-            var navigationView = new TestNavigationView();
-
-            Assert.True(navigationView.Navigate(firstKey));
-            Assert.True(navigationView.Navigate(secondKey));
-            Assert.True(navigationView.GoBack());
-
-            Assert.True(navigationView.GoForward());
-            Assert.Equal(secondKey, navigationView.CurrentJournalEntry);
-            Assert.True(navigationView.CanGoBack);
-            Assert.False(navigationView.GoForward());
-        });
-    }
-
-    [Fact]
-    public void NavigateAfterGoBack_ClearsForwardHistory()
-    {
-        RunInSta(() =>
-        {
-            var navigationView = new TestNavigationView();
-
-            Assert.True(navigationView.Navigate(new NavigationKey(typeof(FirstPage), "first")));
-            Assert.True(navigationView.Navigate(new NavigationKey(typeof(FirstPage), "second")));
-            Assert.True(navigationView.GoBack());
-            Assert.True(navigationView.Navigate(typeof(SecondPage)));
-
-            Assert.False(navigationView.GoForward());
-        });
-    }
-
-    [Fact]
-    public void ClearCache_RemovesCachedPageInstances()
-    {
-        RunInSta(() =>
-        {
-            var firstKey = new NavigationKey(typeof(FirstPage), "first");
-            var secondKey = new NavigationKey(typeof(SecondPage), "second");
-            var navigationView = new TestNavigationView();
-            navigationView.MenuItems.Add(
-                new NavigationViewItem("First", typeof(FirstPage))
-                {
-                    TargetPageVariant = "first",
-                    NavigationCacheMode = NavigationCacheMode.Enabled,
-                }
-            );
-            navigationView.MenuItems.Add(
-                new NavigationViewItem("Second", typeof(SecondPage))
-                {
-                    TargetPageVariant = "second",
-                    NavigationCacheMode = NavigationCacheMode.Enabled,
-                }
-            );
-
-            Assert.True(navigationView.Navigate(firstKey));
-            var firstInstance = navigationView.LastNavigatedPage;
-            Assert.True(navigationView.Navigate(secondKey));
-
-            navigationView.ClearCache();
-
-            Assert.True(navigationView.Navigate(firstKey));
-            Assert.NotSame(firstInstance, navigationView.LastNavigatedPage);
-        });
-    }
-
-    [Fact]
-    public void DisablingCache_RemovesTheExistingCachedPageInstance()
-    {
-        RunInSta(() =>
-        {
-            var firstKey = new NavigationKey(typeof(FirstPage), "first");
-            var firstItem = new NavigationViewItem("First", typeof(FirstPage))
-            {
-                TargetPageVariant = "first",
-                NavigationCacheMode = NavigationCacheMode.Enabled,
-            };
-            var navigationView = new TestNavigationView();
-            navigationView.MenuItems.Add(firstItem);
-
-            Assert.True(navigationView.Navigate(firstKey));
-            var cachedInstance = navigationView.LastNavigatedPage;
-
-            firstItem.NavigationCacheMode = NavigationCacheMode.Disabled;
-
-            Assert.True(navigationView.Navigate(firstKey));
-            Assert.NotSame(cachedInstance, navigationView.LastNavigatedPage);
-        });
-    }
-
-    [Fact]
-    public void RemovedMenuItem_IsRemovedFromLookup_ButItsKeyRemainsNavigable()
-    {
-        RunInSta(() =>
-        {
-            var key = new NavigationKey(typeof(FirstPage), "first");
-            var navigationItem = new NavigationViewItem("First", typeof(FirstPage)) { TargetPageVariant = "first" };
-            var navigationView = new TestNavigationView();
             navigationView.MenuItems.Add(navigationItem);
 
-            Assert.Equal(1, navigationView.NavigationItemCount);
+            Assert.Equal(1, navigationView.PageTypeDictionaryCount);
+            Assert.Equal(2, navigationView.PageKeyDictionaryCount);
+
             navigationView.MenuItems.Remove(navigationItem);
 
-            Assert.Equal(0, navigationView.NavigationItemCount);
-            Assert.True(navigationView.Navigate(key));
+            Assert.Equal(0, navigationView.PageTypeDictionaryCount);
+            Assert.Equal(0, navigationView.PageKeyDictionaryCount);
+            Assert.True(navigationView.Navigate("first"));
             Assert.IsType<FirstPage>(navigationView.LastNavigatedPage);
             Assert.Null(navigationView.SelectedItem);
         });
     }
 
     [Fact]
-    public void NestedMenuChanges_RebuildNavigationItems()
+    public void NestedMenuChanges_RebuildUiDictionaries()
     {
         RunInSta(() =>
         {
-            var parentItem = new NavigationViewItem("Parent", typeof(FirstPage)) { TargetPageVariant = "parent" };
-            var childItem = new NavigationViewItem("Child", typeof(SecondPage)) { TargetPageVariant = "child" };
             var navigationView = new TestNavigationView();
+            var parentItem = new NavigationViewItem("Parent", typeof(FirstPage))
+            {
+                TargetPageTag = "parent",
+            };
+            var childItem = new NavigationViewItem("Child", typeof(SecondPage))
+            {
+                TargetPageTag = "child",
+            };
 
             parentItem.MenuItems.Add(childItem);
             navigationView.MenuItems.Add(parentItem);
-            Assert.Equal(2, navigationView.NavigationItemCount);
+
+            Assert.Equal(2, navigationView.PageTypeDictionaryCount);
+            Assert.Equal(4, navigationView.PageKeyDictionaryCount);
 
             parentItem.MenuItems.Remove(childItem);
-            Assert.Equal(1, navigationView.NavigationItemCount);
-            Assert.False(navigationView.ContainsNavigationKey(new NavigationKey(typeof(SecondPage), "child")));
+
+            Assert.Equal(1, navigationView.PageTypeDictionaryCount);
+            Assert.Equal(2, navigationView.PageKeyDictionaryCount);
+            Assert.True(navigationView.Navigate("child"));
+            Assert.IsType<SecondPage>(navigationView.LastNavigatedPage);
         });
     }
 
@@ -253,12 +106,14 @@ public class NavigationViewTests
     {
         RunInSta(() =>
         {
-            var key = new NavigationKey(typeof(FirstPage), "first");
-            var navigationItem = new NavigationViewItem("First", typeof(FirstPage)) { TargetPageVariant = "first" };
             var navigationView = new TestNavigationView();
-            navigationView.MenuItems.Add(navigationItem);
+            var navigationItem = new NavigationViewItem("First", typeof(FirstPage))
+            {
+                TargetPageTag = "first",
+            };
 
-            Assert.True(navigationView.Navigate(key));
+            navigationView.MenuItems.Add(navigationItem);
+            Assert.True(navigationView.Navigate("first"));
             Assert.Same(navigationItem, navigationView.SelectedItem);
             Assert.Equal(1, navigationView.NavigationStackCount);
             Assert.Equal(1, navigationView.PageToNavigationItemDictionaryCount);
@@ -268,106 +123,139 @@ public class NavigationViewTests
             Assert.Null(navigationView.SelectedItem);
             Assert.Equal(0, navigationView.NavigationStackCount);
             Assert.Equal(0, navigationView.PageToNavigationItemDictionaryCount);
+            Assert.True(navigationView.Navigate(typeof(SecondPage)));
+            Assert.True(navigationView.GoBack());
+            Assert.IsType<FirstPage>(navigationView.LastNavigatedPage);
         });
     }
 
     [Fact]
-    public void ChangingNavigationItemTarget_RebuildsNavigationItems()
+    public void ChangingNavigationItemTarget_RebuildsUiDictionaries()
     {
         RunInSta(() =>
         {
-            var navigationItem = new NavigationViewItem("First", typeof(FirstPage)) { TargetPageVariant = "old" };
             var navigationView = new TestNavigationView();
+            var navigationItem = new NavigationViewItem("First", typeof(FirstPage))
+            {
+                TargetPageTag = "old-tag",
+            };
+
             navigationView.MenuItems.Add(navigationItem);
 
-            navigationItem.TargetPageVariant = "new";
+            navigationItem.TargetPageTag = "new-tag";
             navigationItem.TargetPageType = typeof(SecondPage);
 
-            Assert.False(navigationView.ContainsNavigationKey(new NavigationKey(typeof(FirstPage), "old")));
-            Assert.True(navigationView.ContainsNavigationKey(new NavigationKey(typeof(SecondPage), "new")));
+            Assert.False(navigationView.ContainsPageKey("old-tag"));
+            Assert.True(navigationView.ContainsPageKey("new-tag"));
+            Assert.False(navigationView.ContainsPageType(typeof(FirstPage)));
+            Assert.True(navigationView.ContainsPageType(typeof(SecondPage)));
         });
     }
 
     [Fact]
-    public void MenuItemsSourceReplaceAndReset_RebuildNavigationItems()
+    public void MenuItemsSourceReplaceAndReset_RebuildUiDictionaries()
     {
         RunInSta(() =>
         {
-            var firstItem = new NavigationViewItem("First", typeof(FirstPage)) { TargetPageVariant = "first" };
-            var secondItem = new NavigationViewItem("Second", typeof(SecondPage)) { TargetPageVariant = "second" };
+            var firstItem = new NavigationViewItem("First", typeof(FirstPage))
+            {
+                TargetPageTag = "first",
+            };
+            var secondItem = new NavigationViewItem("Second", typeof(SecondPage))
+            {
+                TargetPageTag = "second",
+            };
             var source = new ObservableCollection<object> { firstItem };
             var navigationView = new TestNavigationView { MenuItemsSource = source };
 
             source[0] = secondItem;
 
-            Assert.False(navigationView.ContainsNavigationKey(new NavigationKey(typeof(FirstPage), "first")));
-            Assert.True(navigationView.ContainsNavigationKey(new NavigationKey(typeof(SecondPage), "second")));
+            Assert.False(navigationView.ContainsPageKey("first"));
+            Assert.True(navigationView.ContainsPageKey("second"));
+            Assert.False(navigationView.ContainsPageType(typeof(FirstPage)));
+            Assert.True(navigationView.ContainsPageType(typeof(SecondPage)));
 
             source.Clear();
-            Assert.Equal(0, navigationView.NavigationItemCount);
+
+            Assert.Equal(0, navigationView.PageKeyDictionaryCount);
+            Assert.Equal(0, navigationView.PageTypeDictionaryCount);
         });
     }
 
     [Fact]
-    public void FooterMenuItemsSourceChanges_RebuildNavigationItems()
+    public void FooterMenuItemsSourceChanges_RebuildUiDictionaries()
     {
         RunInSta(() =>
         {
             var source = new ObservableCollection<object>();
             var navigationView = new TestNavigationView { FooterMenuItemsSource = source };
-            var key = new NavigationKey(typeof(FirstPage), "footer");
-            var navigationItem = new NavigationViewItem("First", typeof(FirstPage)) { TargetPageVariant = "footer" };
+            var navigationItem = new NavigationViewItem("First", typeof(FirstPage))
+            {
+                TargetPageTag = "footer",
+            };
 
             source.Add(navigationItem);
-            Assert.True(navigationView.ContainsNavigationKey(key));
+            Assert.True(navigationView.ContainsPageKey("footer"));
+            Assert.True(navigationView.ContainsPageType(typeof(FirstPage)));
 
             source.Remove(navigationItem);
-            Assert.False(navigationView.ContainsNavigationKey(key));
+            Assert.False(navigationView.ContainsPageKey("footer"));
+            Assert.False(navigationView.ContainsPageType(typeof(FirstPage)));
         });
     }
 
     [Fact]
-    public void NestedMenuItemsSourceChanges_RebuildNavigationItems()
+    public void NestedMenuItemsSourceChanges_RebuildUiDictionaries()
     {
         RunInSta(() =>
         {
             var childItems = new ObservableCollection<object>();
             var parentItem = new NavigationViewItem("Parent", typeof(FirstPage))
             {
-                TargetPageVariant = "parent",
+                TargetPageTag = "parent",
                 MenuItemsSource = childItems,
             };
-            var childItem = new NavigationViewItem("Child", typeof(SecondPage)) { TargetPageVariant = "child" };
-            var childKey = new NavigationKey(typeof(SecondPage), "child");
+            var childItem = new NavigationViewItem("Child", typeof(SecondPage))
+            {
+                TargetPageTag = "child",
+            };
             var navigationView = new TestNavigationView();
             navigationView.MenuItems.Add(parentItem);
 
             childItems.Add(childItem);
-            Assert.True(navigationView.ContainsNavigationKey(childKey));
+            Assert.True(navigationView.ContainsPageKey("child"));
+            Assert.True(navigationView.ContainsPageType(typeof(SecondPage)));
 
             childItems.Remove(childItem);
-            Assert.False(navigationView.ContainsNavigationKey(childKey));
+            Assert.False(navigationView.ContainsPageKey("child"));
+            Assert.False(navigationView.ContainsPageType(typeof(SecondPage)));
         });
     }
 
     [Fact]
-    public void DuplicateNavigationKeys_UseTheFirstRegisteredItem()
+    public void MovingDuplicateTargets_UpdatesTheDictionaryToTheFirstMenuItem()
     {
         RunInSta(() =>
         {
-            var key = new NavigationKey(typeof(FirstPage), "shared");
-            var firstItem = new NavigationViewItem("First", typeof(FirstPage)) { TargetPageVariant = "shared" };
-            var secondItem = new NavigationViewItem("Second", typeof(FirstPage)) { TargetPageVariant = "shared" };
+            var firstItem = new NavigationViewItem("First", typeof(FirstPage))
+            {
+                TargetPageTag = "shared",
+            };
+            var secondItem = new NavigationViewItem("Second", typeof(FirstPage))
+            {
+                TargetPageTag = "shared",
+            };
             var navigationView = new TestNavigationView();
             navigationView.MenuItems.Add(firstItem);
             navigationView.MenuItems.Add(secondItem);
 
-            Assert.Equal(2, navigationView.MenuItems.Count);
-            Assert.Same(firstItem, navigationView.GetNavigationItem(key));
+            Assert.Same(firstItem, navigationView.GetPageItem("shared"));
+            Assert.Same(firstItem, navigationView.GetPageItem(typeof(FirstPage)));
 
             ((ObservableCollection<object>)navigationView.MenuItems).Move(1, 0);
 
-            Assert.Same(secondItem, navigationView.GetNavigationItem(key));
+            Assert.Same(secondItem, navigationView.GetPageItem("shared"));
+            Assert.Same(secondItem, navigationView.GetPageItem(typeof(FirstPage)));
         });
     }
 
@@ -405,17 +293,25 @@ public class NavigationViewTests
 
         public object? LastNavigatedPage { get; private set; }
 
-        public int NavigationItemCount => NavigationItems.Count;
+        public int PageKeyDictionaryCount => PageIdOrTargetTagNavigationViewsDictionary.Count;
+
+        public int PageTypeDictionaryCount => PageTypeNavigationViewsDictionary.Count;
 
         public int PageToNavigationItemDictionaryCount => PageToNavigationItemDictionary.Count;
 
         public int NavigationStackCount => NavigationStack.Count;
 
-        public NavigationKey CurrentJournalEntry => Journal[^1];
+        public bool ContainsPageKey(string key) =>
+            PageIdOrTargetTagNavigationViewsDictionary.ContainsKey(key);
 
-        public bool ContainsNavigationKey(NavigationKey key) => NavigationItems.ContainsKey(key);
+        public bool ContainsPageType(Type pageType) =>
+            PageTypeNavigationViewsDictionary.ContainsKey(pageType);
 
-        public INavigationViewItem GetNavigationItem(NavigationKey key) => NavigationItems[key];
+        public INavigationViewItem GetPageItem(string key) =>
+            PageIdOrTargetTagNavigationViewsDictionary[key];
+
+        public INavigationViewItem GetPageItem(Type pageType) =>
+            PageTypeNavigationViewsDictionary[pageType];
 
         protected override void OnNavigated(object page)
         {
