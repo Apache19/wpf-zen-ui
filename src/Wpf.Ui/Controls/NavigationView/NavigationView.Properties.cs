@@ -145,60 +145,12 @@ public partial class NavigationView
 
     private void OnMenuItemsSource_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
-        SyncCollectionFromSource(MenuItems, e);
+        NavigationViewItemsSourceSynchronizer.SyncCollectionFromSource(MenuItems, sender, e);
     }
 
     private void OnFooterMenuItemsSource_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
-        SyncCollectionFromSource(FooterMenuItems, e);
-    }
-
-    private static void SyncCollectionFromSource(IList collection, NotifyCollectionChangedEventArgs e)
-    {
-        switch (e.Action)
-        {
-            case NotifyCollectionChangedAction.Add:
-                if (e.NewItems is not null)
-                {
-                    foreach (var item in e.NewItems)
-                    {
-                        _ = collection.Add(item);
-                    }
-                }
-
-                break;
-
-            // #1661
-            case NotifyCollectionChangedAction.Remove:
-                if (e.OldItems is not null)
-                {
-                    foreach (var item in e.OldItems)
-                    {
-                        collection.Remove(item);
-                    }
-                }
-
-                break;
-
-            case NotifyCollectionChangedAction.Move:
-                var moveItem = collection[e.OldStartingIndex];
-                collection.RemoveAt(e.OldStartingIndex);
-                collection.Insert(e.NewStartingIndex, moveItem);
-                break;
-
-            case NotifyCollectionChangedAction.Replace:
-                collection.RemoveAt(e.OldStartingIndex);
-                if (e.NewItems is not null)
-                {
-                    collection.Insert(e.OldStartingIndex, e.NewItems[0]);
-                }
-
-                break;
-
-            case NotifyCollectionChangedAction.Reset:
-                collection.Clear();
-                break;
-        }
+        NavigationViewItemsSourceSynchronizer.SyncCollectionFromSource(FooterMenuItems, sender, e);
     }
 
     private void OnMenuItems_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
@@ -206,22 +158,27 @@ public partial class NavigationView
         switch (e.Action)
         {
             case NotifyCollectionChangedAction.Add:
+            {
                 if (e.NewItems is not null)
                 {
                     AddItemsToDictionaries(e.NewItems);
                 }
 
                 break;
+            }
 
             case NotifyCollectionChangedAction.Remove:
+            {
                 if (e.OldItems is not null)
                 {
                     RemoveItemsFromDictionaries(e.OldItems);
                 }
 
                 break;
+            }
 
             case NotifyCollectionChangedAction.Replace:
+            {
                 if (e.OldItems is not null)
                 {
                     RemoveItemsFromDictionaries(e.OldItems);
@@ -233,14 +190,19 @@ public partial class NavigationView
                 }
 
                 break;
+            }
 
             case NotifyCollectionChangedAction.Reset:
+            {
                 RebuildDictionaries();
                 break;
+            }
 
             case NotifyCollectionChangedAction.Move:
                 break;
         }
+
+        UpdateAutoSuggestBoxSuggestions();
     }
 
     private static readonly DependencyPropertyKey FooterMenuItemsPropertyKey =
@@ -624,7 +586,9 @@ public partial class NavigationView
             return;
         }
 
-        autoSuggestBox.OriginalItemsSource =  navigationView._autoSuggestBoxItems;
+        autoSuggestBox.OriginalItemsSource =  navigationView._autoSuggestItems;
+        navigationView.UpdateAutoSuggestBoxSuggestions();
+
         autoSuggestBox.SuggestionChosen    += navigationView.AutoSuggestBoxOnSuggestionChosen;
         autoSuggestBox.QuerySubmitted      += navigationView.AutoSuggestBoxOnQuerySubmitted;
 
@@ -720,7 +684,7 @@ public partial class NavigationView
             return;
         }
 
-        breadcrumbBar.ItemsSource = navigationView._breadcrumbBarItems;
+        breadcrumbBar.ItemsSource = navigationView._breadcrumbItems;
 
         breadcrumbBar.ItemTemplate ??= navigationView.TryFindResource(StyleKeys.NavigationViewItemDataTemplate) as DataTemplate;
 

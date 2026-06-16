@@ -112,7 +112,7 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
         nameof(TargetPageTag),
         typeof(string),
         typeof(NavigationViewItem),
-        new PropertyMetadata(string.Empty)
+        new PropertyMetadata(string.Empty, OnNavigationLookupPropertyChanged)
     );
 
     /// <summary>Identifies the <see cref="TargetPageType"/> dependency property.</summary>
@@ -120,7 +120,7 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
         nameof(TargetPageType),
         typeof(Type),
         typeof(NavigationViewItem),
-        new PropertyMetadata(null)
+        new PropertyMetadata(null, OnNavigationLookupPropertyChanged)
     );
 
     /// <summary>Identifies the <see cref="InfoBadge"/> dependency property.</summary>
@@ -164,17 +164,7 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
     public object? MenuItemsSource
     {
         get => GetValue(MenuItemsSourceProperty);
-        set
-        {
-            if (value is null)
-            {
-                ClearValue(MenuItemsSourceProperty);
-            }
-            else
-            {
-                SetValue(MenuItemsSourceProperty, value);
-            }
-        }
+        set => SetValue(MenuItemsSourceProperty, value);
     }
 
     /// <summary>
@@ -540,11 +530,30 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
         );
     }
 
+    private static void OnNavigationLookupPropertyChanged(
+        DependencyObject d,
+        DependencyPropertyChangedEventArgs e)
+    {
+        if (d is not NavigationViewItem navigationViewItem)
+        {
+            return;
+        }
+
+        NavigationView.GetNavigationParent(navigationViewItem)?.NotifyNavigationViewItemLookupChanged(
+            navigationViewItem
+        );
+    }
+
     private static void OnMenuItemsSourceChanged(DependencyObject? d, DependencyPropertyChangedEventArgs e)
     {
         if (d is not NavigationViewItem navigationViewItem)
         {
             return;
+        }
+
+        if (e.OldValue is INotifyCollectionChanged oldCollection)
+        {
+            oldCollection.CollectionChanged -= navigationViewItem.OnMenuItemsSource_CollectionChanged;
         }
 
         navigationViewItem.MenuItems.Clear();
@@ -560,6 +569,16 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
         {
             _ = navigationViewItem.MenuItems.Add(e.NewValue);
         }
+
+        if (e.NewValue is INotifyCollectionChanged newCollection)
+        {
+            newCollection.CollectionChanged += navigationViewItem.OnMenuItemsSource_CollectionChanged;
+        }
+    }
+
+    private void OnMenuItemsSource_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        NavigationViewItemsSourceSynchronizer.SyncCollectionFromSource(MenuItems, sender, e);
     }
 
     private void InitializeNavigationViewEvents()
