@@ -380,6 +380,16 @@ public partial class NavigationView : System.Windows.Controls.Control, INavigati
         UpdateAutoSuggestBoxSuggestions();
     }
 
+    internal void NotifyNavigationViewItemContentChanged(NavigationViewItem item)
+    {
+        if (!_registeredItems.Contains(item))
+        {
+            return;
+        }
+
+        UpdateAutoSuggestBoxSuggestions();
+    }
+
     private void RegisterNavigationViewItem(NavigationViewItem item)
     {
         if (_registeredItems.Add(item) &&
@@ -444,10 +454,10 @@ public partial class NavigationView : System.Windows.Controls.Control, INavigati
     {
         foreach (NavigationViewItem nvItem in list.OfType<NavigationViewItem>())
         {
-            if (nvItem is { Content: string content, TargetPageType: not null } &&
-                !string.IsNullOrWhiteSpace(content))
+            if (nvItem.TargetPageType is not null &&
+                !string.IsNullOrWhiteSpace(nvItem.SearchableContent))
             {
-                _autoSuggestItems.Add(content);
+                _autoSuggestItems.Add(nvItem.SearchableContent);
             }
 
             if (nvItem.HasMenuItems)
@@ -469,7 +479,7 @@ public partial class NavigationView : System.Windows.Controls.Control, INavigati
     {
         foreach (NavigationViewItem nvItem in list.OfType<NavigationViewItem>())
         {
-            if (nvItem.Content is string content && content == selectedSuggestItem)
+            if (nvItem.SearchableContent == selectedSuggestItem)
             {
                 NavigateInternal(nvItem);
 

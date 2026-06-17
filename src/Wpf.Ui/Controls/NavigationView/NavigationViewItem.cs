@@ -8,6 +8,7 @@
 using System.Collections;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
+using System.Text;
 using System.Windows.Automation.Peers;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -256,6 +257,8 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
     /// <inheritdoc />
     public string Id { get; }
 
+    internal string SearchableContent { get; private set; } = string.Empty;
+
     protected Grid? ChevronGrid { get; set; }
 
     private INavigationViewItem? _navigationViewItemParent;
@@ -403,6 +406,15 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
     }
 
     /// <inheritdoc />
+    protected override void OnContentChanged(object oldContent, object newContent)
+    {
+        base.OnContentChanged(oldContent, newContent);
+
+        SearchableContent = CreateSearchableContent(newContent);
+        NavigationView.GetNavigationParent(this)?.NotifyNavigationViewItemContentChanged(this);
+    }
+
+    /// <inheritdoc />
     protected override void OnClick()
     {
         if (NavigationView.GetNavigationParent(this) is not { } navigationView)
@@ -515,6 +527,62 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
     {
         ((NavigationViewItem)d).UpdateIndentation();
     }
+
+    private static string CreateSearchableContent(object? content)
+    {
+        if (content is null)
+        {
+            return string.Empty;
+        }
+
+        return RemoveAccessKeyMarkers(content as string ?? content.ToString() ?? string.Empty);
+    }
+
+    private static string RemoveAccessKeyMarkers(string value)
+    {
+        if (string.IsNullOrEmpty(value))
+        {
+            return value;
+        }
+
+        StringBuilder? builder = null;
+
+        for (int i = 0; i < value.Length; i++)
+        {
+            char current = value[i];
+
+            if (current == '(' &&
+                i + 3 < value.Length &&
+                IsAccessKeyMarker(value[i + 1]) &&
+                value[i + 3] == ')')
+            {
+                builder ??= new StringBuilder(value.Length).Append(value, 0, i);
+                builder.Append(value[i + 2]);
+                i += 3;
+
+                continue;
+            }
+
+            if (IsAccessKeyMarker(current))
+            {
+                builder ??= new StringBuilder(value.Length).Append(value, 0, i);
+
+                if (i + 1 < value.Length && value[i + 1] == current)
+                {
+                    builder.Append(current);
+                    i++;
+                }
+
+                continue;
+            }
+
+            builder?.Append(current);
+        }
+
+        return builder?.ToString() ?? value;
+    }
+
+    private static bool IsAccessKeyMarker(char value) => value is '_' or '&';
 
     private static void OnNavigationCacheModeChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
