@@ -29,7 +29,6 @@
                         Padding="0"
                         HorizontalAlignment="Stretch"
                         VerticalAlignment="Stretch"
-                        Appearance="Secondary"
                         Background="{Binding Color, Mode=OneWay}"
                         FontSize="25"
                         Icon="Fluent24" />

@@ -1,11 +1,11 @@
 <Page
     x:Class="Wpf.Ui.Demo.Console.Views.Pages.DataPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
-    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:models="clr-namespace:Wpf.Ui.Demo.Console.Models"
+    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
     Title="DataPage"
     d:Background="{ui:BrushResource WindowBackgroundBrush}"
     d:DesignHeight="450"
@@ -27,7 +27,6 @@
                         Padding="0"
                         HorizontalAlignment="Stretch"
                         VerticalAlignment="Stretch"
-                        Appearance="Secondary"
                         Background="{Binding Color, Mode=OneWay}"
                         FontSize="25"
                         Icon="Fluent24" />
