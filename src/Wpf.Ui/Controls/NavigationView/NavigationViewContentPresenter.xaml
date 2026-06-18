@@ -14,14 +14,30 @@
     xmlns:controls="clr-namespace:Wpf.Ui.Controls">
 
     <ControlTemplate x:Key="DefaultNavigationViewContentPresenterControlTemplate" TargetType="{x:Type controls:NavigationViewContentPresenter}">
-        <ContentPresenter x:Name="PART_FrameCP" Margin="{TemplateBinding Padding}" />
+        <ContentPresenter
+            x:Name="PART_FrameCP"
+            Margin="{TemplateBinding Padding}"
+            FlowDirection="{TemplateBinding FlowDirection}"
+            TextElement.FontFamily="{TemplateBinding FontFamily}"
+            TextElement.FontSize="{TemplateBinding FontSize}"
+            TextElement.FontStretch="{TemplateBinding FontStretch}"
+            TextElement.FontStyle="{TemplateBinding FontStyle}"
+            TextElement.FontWeight="{TemplateBinding FontWeight}"
+            TextElement.Foreground="{TemplateBinding Foreground}" />
     </ControlTemplate>
 
     <ControlTemplate x:Key="DefaultNavigationViewContentPresenterWithDynamicScrollViewerControlTemplate" TargetType="{x:Type controls:NavigationViewContentPresenter}">
         <controls:DynamicScrollViewer
             HorizontalAlignment="Stretch"
             VerticalAlignment="Stretch"
-            Focusable="False">
+            FlowDirection="{TemplateBinding FlowDirection}"
+            Focusable="False"
+            FontFamily="{TemplateBinding FontFamily}"
+            FontSize="{TemplateBinding FontSize}"
+            FontStretch="{TemplateBinding FontStretch}"
+            FontStyle="{TemplateBinding FontStyle}"
+            FontWeight="{TemplateBinding FontWeight}"
+            Foreground="{TemplateBinding Foreground}">
             <ContentPresenter x:Name="PART_FrameCP" Margin="{TemplateBinding Padding}" />
         </controls:DynamicScrollViewer>
     </ControlTemplate>
