@@ -3,11 +3,12 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
+using System.Reflection;
 using System.Windows.Documents;
 using Wpf.Ui.Theming;
 
-#pragma warning disable WPF0011 // Containing type should be used as registered owner
 // ReSharper disable once CheckNamespace
+
 namespace Wpf.Ui.Controls;
 
 /// <summary>
@@ -39,59 +40,98 @@ namespace Wpf.Ui.Controls;
 /// </example>
 public class TextBlock : System.Windows.Controls.TextBlock
 {
+    // Typography supplies font properties only when the consumer has not set a local value.
+    // This preserves local values, bindings, and dynamic-resource references without writing to them.
+
+    private static readonly FieldInfo? DefaultValueField = typeof(PropertyMetadata).GetField(
+        "_defaultValue",
+        BindingFlags.Instance | BindingFlags.NonPublic
+    );
+
+    private static readonly FieldInfo? CoerceValueCallbackField = typeof(PropertyMetadata).GetField(
+        "_coerceValueCallback",
+        BindingFlags.Instance | BindingFlags.NonPublic
+    );
+
     static TextBlock()
     {
-        TextElement.FontSizeProperty.OverrideMetadata(
+        // Modify the effective metadata used by each WPF FontSize owner. This establishes
+        // Fluent's 14px default without consuming OverrideMetadata for application types.
+
+        SetMetadataDefaultValue(
+            TextElement.FontSizeProperty,
             typeof(TextElement),
-            new FrameworkPropertyMetadata(
-                14d,
-                null,
-                CoerceFontSize
-            )
+            14d
         );
-
-        FontSizeProperty.OverrideMetadata(
+        SetMetadataDefaultValue(
+            System.Windows.Controls.Control.FontSizeProperty,
+            typeof(System.Windows.Controls.Control),
+            14d
+        );
+        SetMetadataDefaultValue(
+            System.Windows.Controls.TextBlock.FontSizeProperty,
             typeof(System.Windows.Controls.TextBlock),
-            new FrameworkPropertyMetadata(
-                14d,
-                null,
-                CoerceFontSize
-            )
+            14d
+        );
+        SetMetadataDefaultValue(
+            System.Windows.Controls.AccessText.FontSizeProperty,
+            typeof(System.Windows.Controls.AccessText),
+            14d
+        );
+        SetMetadataDefaultValue(
+            System.Windows.Controls.Page.FontSizeProperty,
+            typeof(System.Windows.Controls.Page),
+            14d
         );
 
-        TextElement.FontWeightProperty.OverrideMetadata(
-            typeof(TextElement),
-            new FrameworkPropertyMetadata(
-                FontWeights.Regular,
-                null,
-                CoerceFontWeight
-            )
-        );
-
-        FontWeightProperty.OverrideMetadata(
+        // Append WPFUI coercion to the native TextBlock metadata.
+        // The original callback runs first.
+        AppendCoerceValueCallback(
+            System.Windows.Controls.TextBlock.FontSizeProperty,
             typeof(System.Windows.Controls.TextBlock),
-            new FrameworkPropertyMetadata(
-                FontWeights.Regular,
-                null,
-                CoerceFontWeight
-            )
+            CoerceFontSize
         );
-
-        TextElement.ForegroundProperty.OverrideMetadata(
-            typeof(TextElement),
-            new FrameworkPropertyMetadata(
-                null,
-                null,
-                CoerceForeground
-            )
-        );
-
-        ForegroundProperty.OverrideMetadata(
+        AppendCoerceValueCallback(
+            System.Windows.Controls.TextBlock.FontWeightProperty,
             typeof(System.Windows.Controls.TextBlock),
-            new FrameworkPropertyMetadata(
-                null,
-                null,
-                CoerceForeground
+            CoerceFontWeight
+        );
+        AppendCoerceValueCallback(
+            TextElement.ForegroundProperty,
+            typeof(System.Windows.Controls.TextBlock),
+            CoerceForeground
+        );
+    }
+
+    private static void SetMetadataDefaultValue(
+        DependencyProperty property,
+        Type ownerType,
+        object defaultValue)
+    {
+        DefaultValueField?.SetValue(property.GetMetadata(ownerType), defaultValue);
+    }
+
+    private static void AppendCoerceValueCallback(
+        DependencyProperty property,
+        Type ownerType,
+        CoerceValueCallback callback)
+    {
+        if (CoerceValueCallbackField is null)
+        {
+            return;
+        }
+
+        var metadata = property.GetMetadata(ownerType);
+        var originalCallback = (CoerceValueCallback?)CoerceValueCallbackField.GetValue(metadata);
+
+        CoerceValueCallbackField.SetValue(
+            metadata,
+            new CoerceValueCallback(
+                (d, baseValue) =>
+                {
+                    var value = originalCallback?.Invoke(d, baseValue) ?? baseValue;
+                    return callback(d, value);
+                }
             )
         );
     }
@@ -100,52 +140,65 @@ public class TextBlock : System.Windows.Controls.TextBlock
 
     private static object? CoerceFontSize(DependencyObject d, object? baseValue)
     {
-        // Typography property takes precedence:
-        var preset = d.GetValue(FontTypographyPresetProxyProperty) as FontTypographyPreset;
-        if (preset?.FontSize is { } size)
+        var localValue = d.ReadLocalValue(FontSizeProperty);
+        if (localValue != DependencyProperty.UnsetValue)
         {
-            return size;
+            return baseValue;
         }
 
-        return baseValue;
+        return d.GetValue(FontTypographyPresetProxyProperty)
+            is FontTypographyPreset { FontSize: { } size }
+            ? size
+            : baseValue;
     }
 
     private static object? CoerceFontWeight(DependencyObject d, object? baseValue)
     {
-        var preset = d.GetValue(FontTypographyPresetProxyProperty) as FontTypographyPreset;
-        if (preset?.FontWeight is { } weight)
+        var localValue = d.ReadLocalValue(FontWeightProperty);
+        if (localValue != DependencyProperty.UnsetValue)
         {
-            return weight;
+            return baseValue;
         }
 
-        return baseValue;
+        return d.GetValue(FontTypographyPresetProxyProperty)
+            is FontTypographyPreset { FontWeight: { } weight }
+            ? weight
+            : baseValue;
     }
 
-    private static object CoerceForeground(DependencyObject d, object? baseValue)
+    private static object? CoerceForeground(DependencyObject d, object? baseValue)
     {
-        // Appearance property takes precedence:
-        // If the Appearance property is set and resolves to a Brush, use it.
+        var localValue = d.ReadLocalValue(TextElement.ForegroundProperty);
+        if (localValue != DependencyProperty.UnsetValue)
+        {
+            return baseValue;
+        }
+
+        var valueSource = DependencyPropertyHelper.GetValueSource(
+            d,
+            TextElement.ForegroundProperty
+        );
+
+        // Appearance and the themed default are convenience values; neither should
+        // suppress an active animation.
+        if (valueSource.IsAnimated)
+        {
+            return baseValue;
+        }
+
         if (d.GetValue(AppearanceForegroundProxyProperty) is Brush appearance)
         {
             return appearance;
         }
 
-        // Otherwise, if Foreground already has a valid value
-        // (set via styles, inheritance, or other mechanisms), keep it.
-        if (baseValue is Brush)
+        // Styles, templates, and inherited values all take precedence over the
+        // themed default. Only replace WPF's metadata default (normally black).
+        if (valueSource.BaseValueSource != BaseValueSource.Default)
         {
             return baseValue;
         }
 
-        // Otherwise, try to resolve the dynamic theme resource referenced by
-        // the implicit default foreground resource property.
-        if (d.GetValue(DefaultForegroundProperty) is Brush defaultForeground)
-        {
-            return defaultForeground;
-        }
-
-        // Finally, fall back to WPF's default primary text foreground brush.
-        return Brushes.Black;
+        return d.GetValue(DefaultForegroundProperty) as Brush ?? baseValue;
     }
 
     #endregion
@@ -169,17 +222,16 @@ public class TextBlock : System.Windows.Controls.TextBlock
     ///
     /// <para>
     /// Although declared on <see cref="TextBlock"/>, this property is an
-    /// <b>attached property</b> and can also be applied to the native WPF
-    /// <see cref="System.Windows.Controls.TextBlock"/>, allowing standard
-    /// TextBlock controls to participate in WPFUI typography.
+    /// attached property and can also be applied to the native WPF
+    /// <see cref="System.Windows.Controls.TextBlock"/>.
     /// </para>
     ///
     /// <para>
     /// When <see cref="FontTypography"/> is set, a resource reference to the
     /// corresponding preset is attached to an internal proxy property so that
     /// the WPF resource system performs resolution and updates automatically.
-    /// The resolved preset is used to coerce font-size and font-weight values
-    /// so that typography-defined values take precedence over local changes.
+    /// The resolved preset supplies font-size and font-weight values unless those
+    /// properties have local values, bindings, or dynamic-resource references.
     /// </para>
     ///
     /// Example:
@@ -208,72 +260,64 @@ public class TextBlock : System.Windows.Controls.TextBlock
         {
             var resourceKey = newTypography.ToResourceKey();
 
-            // Use WPF resource reference mechanism to resolve and cache the preset.
-            // This leverages the dependency property resource resolution pipeline,
-            // including global indexing and caching optimizations, instead of
-            // performing per-instance TryFindResource lookups that would traverse
-            // the resource tree and introduce unnecessary overhead.
+            // Let WPF resolve and update the preset when theme resources change.
             switch (o)
             {
-                case FrameworkElement fe:
-                    fe.SetResourceReference(FontTypographyPresetProxyProperty, resourceKey);
+                case FrameworkElement frameworkElement:
+                    frameworkElement.SetResourceReference(
+                        FontTypographyPresetProxyProperty,
+                        resourceKey
+                    );
                     break;
 
-                case FrameworkContentElement fce:
-                    fce.SetResourceReference(FontTypographyPresetProxyProperty, resourceKey);
+                case FrameworkContentElement frameworkContentElement:
+                    frameworkContentElement.SetResourceReference(
+                        FontTypographyPresetProxyProperty,
+                        resourceKey
+                    );
                     break;
             }
         }
         else
         {
-            // Clear any puppet resource reference
             o.ClearValue(FontTypographyPresetProxyProperty);
         }
 
-        // Re-evaluate coerced values so when FontTypography is set, the
-        // CoerceValueCallbacks installed on FontSize/FontWeight will take effect
-        // and prevent local changes from overriding typography-defined values.
         o.CoerceValue(TextElement.FontSizeProperty);
         o.CoerceValue(TextElement.FontWeightProperty);
     }
 
     /// <summary>
-    /// Helper for getting <see cref="FontTypographyProperty"/> from <paramref name="obj"/>.
+    /// Helper for getting <see cref="FontTypographyProperty"/> from <paramref name="element"/>.
     /// </summary>
-    /// <param name="obj">
-    /// <see cref="DependencyObject"/> to read <see cref="FontTypographyProperty"/> from.
-    /// </param>
-    /// <returns>
-    /// FontTypography property value.
-    /// </returns>
+    /// <param name="element"><see cref="DependencyObject"/> to read <see cref="FontTypographyProperty"/> from.</param>
+    /// <returns>FontTypography property value.</returns>
     [AttachedPropertyBrowsableForType(typeof(DependencyObject))]
-    public static FontTypography? GetFontTypography(DependencyObject obj)
+    public static FontTypography? GetFontTypography(DependencyObject element)
     {
-        if (obj == null)
+        if (element is null)
         {
-            throw new ArgumentNullException(nameof(obj));
+            throw new ArgumentNullException(nameof(element));
         }
 
-        return (FontTypography?)obj.GetValue(FontTypographyProperty);
+        return (FontTypography?)element.GetValue(FontTypographyProperty);
     }
 
     /// <summary>
-    /// Helper for setting <see cref="FontTypographyProperty"/> on <paramref name="obj"/>.
+    /// Helper for setting <see cref="FontTypographyProperty"/> on <paramref name="element"/>.
     /// </summary>
-    /// <param name="obj">
+    /// <param name="element">
     /// <see cref="DependencyObject"/> to set <see cref="FontTypographyProperty"/> on.
     /// </param>
-    /// <param name="value">
-    /// FontTypography property value.
-    /// </param>
-    public static void SetFontTypography(DependencyObject obj, FontTypography? value)
+    /// <param name="value">FontTypography property value.</param>
+    public static void SetFontTypography(DependencyObject element, FontTypography? value)
     {
-        if (obj == null)
+        if (element is null)
         {
-            throw new ArgumentNullException(nameof(obj));
+            throw new ArgumentNullException(nameof(element));
         }
 
-        obj.SetValue(FontTypographyProperty, value);
+        element.SetValue(FontTypographyProperty, value);
     }
 
     /// <summary>
@@ -306,14 +350,15 @@ public class TextBlock : System.Windows.Controls.TextBlock
     ///
     /// <para>
     /// When <see cref="Appearance"/> is explicitly set (non-null) and resolves
-    /// to a valid brush, it takes <b>highest precedence</b> during foreground
-    /// resolution and overrides values provided by styles, inheritance, or
-    /// local <see cref="System.Windows.Controls.TextBlock.Foreground"/>.
+    /// to a valid brush, it overrides values provided by styles and inheritance.
+    /// A local <see cref="System.Windows.Controls.TextBlock.Foreground"/> value,
+    /// binding, or dynamic-resource reference takes precedence over Appearance.
     /// </para>
     ///
     /// <para>
-    /// When <see cref="Appearance"/> is <c>null</c>, it does not participate in
-    /// foreground selection and the normal WPF precedence rules apply.
+    /// When <see cref="Appearance"/> is <c>null</c>, normal WPF precedence applies.
+    /// If the resulting value is only the WPF metadata default, the themed
+    /// <see cref="DefaultForegroundProperty"/> value is used instead.
     /// </para>
     ///
     /// Example:
@@ -377,8 +422,8 @@ public class TextBlock : System.Windows.Controls.TextBlock
     #region Attached DefaultForeground
 
     /// <summary>
-    /// Attached property to hold a resource reference to a Brush that should be
-    /// used as the default Foreground when the control's Foreground is not set.
+    /// Holds a dynamic theme brush that replaces only the WPF metadata default for
+    /// Foreground. Local, styled, templated, inherited, and animated values take precedence.
     /// </summary>
     public static readonly DependencyProperty DefaultForegroundProperty =
         DependencyProperty.RegisterAttached(
@@ -426,8 +471,8 @@ public class TextBlock : System.Windows.Controls.TextBlock
     #region Attached AppearanceForegroundProxy
 
     /// <summary>
-    /// A Puppet dependency property that is used to hold the foreground resource resolved from the Appearance property.
-    /// Used only as a resolution proxy, so no accessors are provided."
+    /// Private dependency property used to resolve and retain the dynamic brush resource
+    /// selected by Appearance. Used only as a resolution proxy, so no accessors are provided.
     /// </summary>
     private static readonly DependencyProperty AppearanceForegroundProxyProperty =
         DependencyProperty.RegisterAttached(
@@ -436,7 +481,6 @@ public class TextBlock : System.Windows.Controls.TextBlock
             typeof(TextBlock),
             new FrameworkPropertyMetadata(
                 null,
-                FrameworkPropertyMetadataOptions.Inherits,
                 static (d, _) =>
                 {
                     d.CoerceValue(TextElement.ForegroundProperty);
@@ -497,7 +541,6 @@ public class TextBlock : System.Windows.Controls.TextBlock
             typeof(TextBlock),
             new FrameworkPropertyMetadata(
                 null,
-                FrameworkPropertyMetadataOptions.Inherits,
                 static (d, _) =>
                 {
                     d.CoerceValue(TextElement.FontSizeProperty);
