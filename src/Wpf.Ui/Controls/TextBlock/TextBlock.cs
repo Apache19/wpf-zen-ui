@@ -40,8 +40,8 @@ namespace Wpf.Ui.Controls;
 /// </example>
 public class TextBlock : System.Windows.Controls.TextBlock
 {
-    // Typography supplies font properties only when the consumer has not set a local value.
-    // This preserves local values, bindings, and dynamic-resource references without writing to them.
+    // Non-null design-system properties intentionally take precedence over their
+    // low-level WPF counterparts, regardless of those values' sources.
 
     private static readonly FieldInfo? DefaultValueField = typeof(PropertyMetadata).GetField(
         "_defaultValue",
@@ -55,6 +55,8 @@ public class TextBlock : System.Windows.Controls.TextBlock
 
     static TextBlock()
     {
+        #pragma warning disable IDE0002
+
         // Modify the effective metadata used by each WPF FontSize owner. This establishes
         // Fluent's 14px default without consuming OverrideMetadata for application types.
 
@@ -84,8 +86,18 @@ public class TextBlock : System.Windows.Controls.TextBlock
             14d
         );
 
+        // Replace WPF's black Foreground metadata default with null as a sentinel.
+        // CoerceForeground interprets null—including an explicitly supplied null—as a request
+        // for DefaultForeground, while every non-null WPF value keeps its normal precedence.
+        SetMetadataDefaultValue(
+            TextElement.ForegroundProperty,
+            typeof(TextElement),
+            null
+        );
+
         // Append WPFUI coercion to the native TextBlock metadata.
         // The original callback runs first.
+
         AppendCoerceValueCallback(
             System.Windows.Controls.TextBlock.FontSizeProperty,
             typeof(System.Windows.Controls.TextBlock),
@@ -101,13 +113,18 @@ public class TextBlock : System.Windows.Controls.TextBlock
             typeof(System.Windows.Controls.TextBlock),
             CoerceForeground
         );
+
+        #pragma warning restore IDE0002
     }
 
     private static void SetMetadataDefaultValue(
         DependencyProperty property,
         Type ownerType,
-        object defaultValue)
+        object? defaultValue)
     {
+        // Reuse WPF's existing metadata instance instead of overriding it. This keeps
+        // the metadata slot available to application-derived controls while changing
+        // only the default value used by the specified framework owner.
         DefaultValueField?.SetValue(property.GetMetadata(ownerType), defaultValue);
     }
 
@@ -118,9 +135,12 @@ public class TextBlock : System.Windows.Controls.TextBlock
     {
         if (CoerceValueCallbackField is null)
         {
+            // If the WPF implementation changes and the private field is unavailable,
+            // leave the framework metadata untouched rather than replacing it unsafely.
             return;
         }
 
+        // Preserve WPF's callback because it may enforce framework invariants.
         var metadata = property.GetMetadata(ownerType);
         var originalCallback = (CoerceValueCallback?)CoerceValueCallbackField.GetValue(metadata);
 
@@ -129,7 +149,10 @@ public class TextBlock : System.Windows.Controls.TextBlock
             new CoerceValueCallback(
                 (d, baseValue) =>
                 {
+                    // Step 1: let WPF normalize/coerce its own value.
                     var value = originalCallback?.Invoke(d, baseValue) ?? baseValue;
+
+                    // Step 2: apply the WPF UI semantic-property policy to that result.
                     return callback(d, value);
                 }
             )
@@ -140,12 +163,9 @@ public class TextBlock : System.Windows.Controls.TextBlock
 
     private static object? CoerceFontSize(DependencyObject d, object? baseValue)
     {
-        var localValue = d.ReadLocalValue(FontSizeProperty);
-        if (localValue != DependencyProperty.UnsetValue)
-        {
-            return baseValue;
-        }
-
+        // A resolved non-null typography value is authoritative, even when FontSize
+        // has a local value, style, inherited value, binding, or active animation.
+        // A null/missing preset component opts out and preserves WPF's base value.
         return d.GetValue(FontTypographyPresetProxyProperty)
             is FontTypographyPreset { FontSize: { } size }
             ? size
@@ -154,12 +174,8 @@ public class TextBlock : System.Windows.Controls.TextBlock
 
     private static object? CoerceFontWeight(DependencyObject d, object? baseValue)
     {
-        var localValue = d.ReadLocalValue(FontWeightProperty);
-        if (localValue != DependencyProperty.UnsetValue)
-        {
-            return baseValue;
-        }
-
+        // FontWeight follows the same contract as FontSize so a typography token is
+        // applied consistently instead of producing a partially overridden preset.
         return d.GetValue(FontTypographyPresetProxyProperty)
             is FontTypographyPreset { FontWeight: { } weight }
             ? weight
@@ -168,45 +184,20 @@ public class TextBlock : System.Windows.Controls.TextBlock
 
     private static object? CoerceForeground(DependencyObject d, object? baseValue)
     {
-        var localValue = d.ReadLocalValue(TextElement.ForegroundProperty);
-        if (localValue != DependencyProperty.UnsetValue)
-        {
-            return baseValue;
-        }
-
-        var valueSource = DependencyPropertyHelper.GetValueSource(
-            d,
-            TextElement.ForegroundProperty
-        );
-
-        // Appearance and the themed default are convenience values; neither should
-        // suppress an active animation.
-        if (valueSource.IsAnimated)
-        {
-            return baseValue;
-        }
-
+        // Step 1: a non-null Appearance is an explicit design-system choice and takes
+        // precedence over local, styled, inherited, and animated Foreground values.
         if (d.GetValue(AppearanceForegroundProxyProperty) is Brush appearance)
         {
             return appearance;
         }
 
-        // Styles, templates, and inherited values all take precedence over the
-        // themed default. Only replace WPF's metadata default (normally black).
-        if (valueSource.BaseValueSource != BaseValueSource.Default)
-        {
-            return baseValue;
-        }
-
-        return d.GetValue(DefaultForegroundProperty) as Brush ?? baseValue;
+        // Step 2: preserve every non-null WPF value. Null—either the metadata sentinel
+        // or an explicitly supplied value—requests DefaultForeground, whose black metadata
+        // default preserves WPF's fallback when the theme resource is unavailable.
+        return baseValue ?? d.GetValue(DefaultForegroundProperty);
     }
 
     #endregion
-
-    public static void InitializeMetadata()
-    {
-        // Forces execution of TextBlock's type initializer.
-    }
 
     #region Attached FontTypography
 
@@ -230,8 +221,9 @@ public class TextBlock : System.Windows.Controls.TextBlock
     /// When <see cref="FontTypography"/> is set, a resource reference to the
     /// corresponding preset is attached to an internal proxy property so that
     /// the WPF resource system performs resolution and updates automatically.
-    /// The resolved preset supplies font-size and font-weight values unless those
-    /// properties have local values, bindings, or dynamic-resource references.
+    /// When non-null, the resolved preset takes precedence over font-size and
+    /// font-weight values from local values, styles, inheritance, and animations.
+    /// Set <see cref="FontTypography"/> to <c>null</c> to restore normal WPF precedence.
     /// </para>
     ///
     /// Example:
@@ -258,9 +250,11 @@ public class TextBlock : System.Windows.Controls.TextBlock
     {
         if (args.NewValue is FontTypography newTypography)
         {
+            // Step 1: map the semantic token to a stable component-resource key.
             var resourceKey = newTypography.ToResourceKey();
 
-            // Let WPF resolve and update the preset when theme resources change.
+            // Step 2: store a DynamicResource on the proxy. WPF then handles lookup,
+            // inheritance scopes, and re-resolution when theme dictionaries change.
             switch (o)
             {
                 case FrameworkElement frameworkElement:
@@ -280,9 +274,13 @@ public class TextBlock : System.Windows.Controls.TextBlock
         }
         else
         {
+            // A local null intentionally blocks an inherited token and removes the
+            // semantic override, restoring native FontSize/FontWeight precedence.
             o.ClearValue(FontTypographyPresetProxyProperty);
         }
 
+        // Step 3: immediately recompute both low-level properties. The proxy callback
+        // repeats this when the resource later resolves or changes.
         o.CoerceValue(TextElement.FontSizeProperty);
         o.CoerceValue(TextElement.FontWeightProperty);
     }
@@ -350,15 +348,15 @@ public class TextBlock : System.Windows.Controls.TextBlock
     ///
     /// <para>
     /// When <see cref="Appearance"/> is explicitly set (non-null) and resolves
-    /// to a valid brush, it overrides values provided by styles and inheritance.
-    /// A local <see cref="System.Windows.Controls.TextBlock.Foreground"/> value,
-    /// binding, or dynamic-resource reference takes precedence over Appearance.
+    /// to a valid brush, it takes precedence over local, styled, inherited, and
+    /// animated <see cref="System.Windows.Controls.TextBlock.Foreground"/> values.
     /// </para>
     ///
     /// <para>
-    /// When <see cref="Appearance"/> is <c>null</c>, normal WPF precedence applies.
-    /// If the resulting value is only the WPF metadata default, the themed
-    /// <see cref="DefaultForegroundProperty"/> value is used instead.
+    /// When <see cref="Appearance"/> is <c>null</c>, every non-null WPF
+    /// <see cref="System.Windows.Controls.TextBlock.Foreground"/> value keeps its normal
+    /// precedence. A null value, whether implicit or explicit, requests the themed
+    /// <see cref="DefaultForegroundProperty"/> value.
     /// </para>
     ///
     /// Example:
@@ -385,12 +383,13 @@ public class TextBlock : System.Windows.Controls.TextBlock
     {
         if (args.NewValue is TextColor textColor)
         {
+            // Step 1: convert the semantic appearance to its theme brush key.
             var resourceKey = textColor.ToResourceKey();
 
+            // Step 2: attach the DynamicResource to a private proxy so theme changes
+            // update the resolved brush without manual resource-tree traversal.
             switch (o)
             {
-                // Similar to OnFontTypographyChanged, attach themed color resource reference to a proxy property,
-                // allowing the WPF resource system to handle updates automatically.
                 case FrameworkElement fe:
                     fe.SetResourceReference(AppearanceForegroundProxyProperty, resourceKey);
                     break;
@@ -402,9 +401,12 @@ public class TextBlock : System.Windows.Controls.TextBlock
         }
         else
         {
+            // A local null is the escape hatch from an inherited Appearance.
             o.ClearValue(AppearanceForegroundProxyProperty);
         }
 
+        // Step 3: switch immediately between semantic Appearance and native WPF
+        // Foreground precedence. The proxy callback handles later resource updates.
         o.CoerceValue(TextElement.ForegroundProperty);
     }
 
@@ -422,8 +424,8 @@ public class TextBlock : System.Windows.Controls.TextBlock
     #region Attached DefaultForeground
 
     /// <summary>
-    /// Holds a dynamic theme brush that replaces only the WPF metadata default for
-    /// Foreground. Local, styled, templated, inherited, and animated values take precedence.
+    /// Holds the themed fallback brush used when Foreground is null. Every non-null local,
+    /// styled, templated, inherited, or animated Foreground value takes precedence.
     /// </summary>
     public static readonly DependencyProperty DefaultForegroundProperty =
         DependencyProperty.RegisterAttached(
@@ -431,11 +433,12 @@ public class TextBlock : System.Windows.Controls.TextBlock
             typeof(Brush),
             typeof(TextBlock),
             new FrameworkPropertyMetadata(
-                null,
+                Brushes.Black,
                 FrameworkPropertyMetadataOptions.Inherits,
                 static (d, _) =>
                 {
-                    // When the attached resource ref resolves/changes, coerce Foreground so the new value is used.
+                    // Re-run fallback selection whenever the dynamic theme brush resolves
+                    // or changes; higher-priority native values remain protected.
                     d.CoerceValue(TextElement.ForegroundProperty);
                 }
             )
@@ -483,6 +486,8 @@ public class TextBlock : System.Windows.Controls.TextBlock
                 null,
                 static (d, _) =>
                 {
+                    // The resolved Appearance brush changed, so reapply the explicit
+                    // semantic override to Foreground.
                     d.CoerceValue(TextElement.ForegroundProperty);
                 }
             )
@@ -543,6 +548,8 @@ public class TextBlock : System.Windows.Controls.TextBlock
                 null,
                 static (d, _) =>
                 {
+                    // A typography resource may resolve asynchronously or change with
+                    // theme dictionaries; refresh both properties as one semantic unit.
                     d.CoerceValue(TextElement.FontSizeProperty);
                     d.CoerceValue(TextElement.FontWeightProperty);
                 }
@@ -553,6 +560,14 @@ public class TextBlock : System.Windows.Controls.TextBlock
 
     public TextBlock()
     {
+        // Store the primary theme brush separately. CoerceForeground uses it when the
+        // native Foreground pipeline produces null and preserves every non-null value.
         SetResourceReference(DefaultForegroundProperty, TextColor.Primary.ToResourceKey());
+    }
+
+    public static void InitializeMetadata()
+    {
+        // Accessing this method forces execution of TextBlock's type initializer so
+        // callers can install the shared native TextBlock metadata before creating UI.
     }
 }
