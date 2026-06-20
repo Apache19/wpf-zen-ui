@@ -10,11 +10,9 @@
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
     Title="TextBlockPage"
     controls:PageControlDocumentation.DocumentationType="{x:Type ui:TextBlock}"
-    d:DataContext="{d:DesignInstance local:TextBlockPage,
-                                     IsDesignTimeCreatable=False}"
-    d:DesignHeight="450"
-    d:DesignWidth="800"
     d:Background="{ui:BrushResource WindowBackgroundBrush}"
+    d:DataContext="{d:DesignInstance local:TextBlockPage, IsDesignTimeCreatable=False}"
+    d:DesignWidth="800"
     Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
     mc:Ignorable="d">
 
@@ -55,6 +53,24 @@
                     ,<Italic>italic</Italic>
                     , or<Underline>underlined</Underline>
                     .</Span>
+            </TextBlock>
+        </controls:ControlExample>
+
+        <controls:ControlExample Margin="0,36,0,0" HeaderText="A TextBlock with an inline Fluent Symbol.">
+            <controls:ControlExample.XamlCode>
+                &lt;TextBlock&gt;\n
+                \t&lt;ui:FluentSymbol Symbol=&quot;Document24&quot; Filled=&quot;True&quot; FontSize=&quot;16&quot; /&gt;\n
+                \t&lt;Run Text=&quot; Document.txt&quot; /&gt;\n
+                &lt;/TextBlock&gt;
+            </controls:ControlExample.XamlCode>
+            <TextBlock>
+                <Run Foreground="{ui:BrushResource TextFillColorTertiaryBrush}" Text="file:" />
+                <ui:FluentSymbol
+                    Filled="True"
+                    FontSize="16"
+                    Foreground="{ui:BrushResource PaletteBlueGreyBrush}"
+                    Symbol="Document24" />
+                <Run Text="Document.txt" />
             </TextBlock>
         </controls:ControlExample>
     </StackPanel>
