@@ -451,7 +451,7 @@ public class TextBlock : System.Windows.Controls.TextBlock
     /// <see cref="DependencyObject"/> to set <see cref="DefaultForegroundProperty"/> on.
     /// </param>
     /// <param name="value">DefaultForeground property value.</param>
-    public static void SetDefaultForeground(DependencyObject element, Brush? value)
+    public static void SetDefaultForeground(DependencyObject element, Brush value)
     {
         element.SetValue(DefaultForegroundProperty, value);
     }
@@ -464,9 +464,9 @@ public class TextBlock : System.Windows.Controls.TextBlock
     /// </param>
     /// <returns>DefaultForeground property value.</returns>
     [AttachedPropertyBrowsableForType(typeof(System.Windows.Controls.TextBlock))]
-    public static Brush? GetDefaultForeground(DependencyObject element)
+    public static Brush GetDefaultForeground(DependencyObject element)
     {
-        return (Brush?)element.GetValue(DefaultForegroundProperty);
+        return (Brush)element.GetValue(DefaultForegroundProperty);
     }
 
     #endregion
