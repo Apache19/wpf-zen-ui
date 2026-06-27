@@ -362,6 +362,8 @@
                             <Setter Property="IsTabStop" Value="False" />
                             <Setter TargetName="PART_EditableTextBox" Property="Visibility" Value="Visible" />
                             <Setter TargetName="PART_ContentPresenter" Property="Visibility" Value="Hidden" />
+                            <Setter TargetName="ToggleButton" Property="Grid.Column" Value="1" />
+                            <Setter TargetName="ToggleButton" Property="Grid.ColumnSpan" Value="1" />
                         </Trigger>
 
                         <Trigger Property="IsMouseOver" Value="True">
