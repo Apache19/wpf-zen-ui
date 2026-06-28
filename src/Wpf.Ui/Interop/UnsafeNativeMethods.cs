@@ -12,6 +12,7 @@ using Microsoft.Win32;
 using Windows.Win32;
 using Windows.Win32.Foundation;
 using Windows.Win32.Graphics.Dwm;
+using Windows.Win32.Graphics.Gdi;
 using Windows.Win32.UI.Controls;
 using Windows.Win32.UI.Shell;
 using Windows.Win32.UI.WindowsAndMessaging;
@@ -365,6 +366,36 @@ internal static class UnsafeNativeMethods
         }
 
         return true;
+    }
+
+    internal static Rect GetMonitorBounds(Rect bounds)
+    {
+        var nativeBounds = new RECT
+        {
+            left   = (int)Math.Floor(bounds.Left),
+            top    = (int)Math.Floor(bounds.Top),
+            right  = (int)Math.Ceiling(bounds.Right),
+            bottom = (int)Math.Ceiling(bounds.Bottom),
+        };
+
+        var monitor = PInvoke.MonitorFromRect(in nativeBounds, MONITOR_FROM_FLAGS.MONITOR_DEFAULTTONEAREST);
+        var monitorInfo = new MONITORINFO
+        {
+            cbSize = (uint)Marshal.SizeOf<MONITORINFO>(),
+        };
+
+        if (PInvoke.GetMonitorInfo(monitor, ref monitorInfo))
+        {
+            var monitorBounds = monitorInfo.rcMonitor;
+            return new Rect(monitorBounds.left, monitorBounds.top, monitorBounds.Width, monitorBounds.Height);
+        }
+
+        return new Rect(
+            SystemParameters.VirtualScreenLeft,
+            SystemParameters.VirtualScreenTop,
+            SystemParameters.VirtualScreenWidth,
+            SystemParameters.VirtualScreenHeight
+        );
     }
 
     public static unsafe bool RemoveWindowCaption(IntPtr hWnd)
