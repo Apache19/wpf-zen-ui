@@ -32,3 +32,5 @@ Creators of **WPF UI** have prepared a special plugin that will automatically cr
 ## Getting started
 
 Once you have chosen how to install **WPF UI**, you can move on to creating your first app, more on this in [Getting Started](/documentation/getting-started.html).
+
+Advanced popup shadows can be rendered either with `OverflowTolerantPopup` or a detached shadow HWND. See [Popup shadow](/documentation/popup-shadow.html) for the trade-offs.
