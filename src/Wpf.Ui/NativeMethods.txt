@@ -95,3 +95,6 @@ HTBOTTOMRIGHT
 HTBORDER
 HTCLOSE
 HTHELP
+
+MonitorFromRect
+GetMonitorInfo

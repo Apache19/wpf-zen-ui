@@ -246,13 +246,14 @@
                                         Style="{StaticResource DefaultComboBoxTextBoxStyle}" />
 
                                 </Grid>
-                                <Popup
+                                <controls:OverflowTolerantPopup
                                     x:Name="Popup"
                                     VerticalAlignment="Center"
                                     AllowsTransparency="True"
                                     Focusable="False"
                                     IsOpen="{TemplateBinding IsDropDownOpen}"
                                     Placement="{TemplateBinding Popup.Placement}"
+                                    PlacementOverflowTolerance="30,0,30,30"
                                     PlacementTarget="{Binding ElementName=ContentBorder}"
                                     PopupAnimation="{TemplateBinding Popup.PopupAnimation}"
                                     VerticalOffset="1">
@@ -300,7 +301,7 @@
                                             </Grid>
                                         </Border>
                                     </controls:EffectThicknessDecorator>
-                                </Popup>
+                                </controls:OverflowTolerantPopup>
                             </Grid>
                         </Border>
                         <Border
