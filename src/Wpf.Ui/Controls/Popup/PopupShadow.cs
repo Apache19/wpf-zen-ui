@@ -150,6 +150,10 @@ public static class PopupShadow
         private Border?            _shadowBorder;
         private Grid?              _shadowRoot;
         private DispatcherTimer?   _deferredFadeInTimer;
+        private Duration           _contentBoundsAnimationDuration = PopupAnimationDuration;
+        private IEasingFunction?   _contentBoundsAnimationEasingFunction;
+        private double             _contentBoundsAnimationStartOffset;
+        private bool               _isParallelContentBoundsAnimation;
         private DateTime           _shadowAnimationStartedAt;
         private bool               _isAttached;
         private bool               _isChromeChangedSubscribed;
@@ -166,7 +170,6 @@ public static class PopupShadow
         public void Attach(PopupShadowChrome chrome)
         {
             #if NET5_0_OR_GREATER
-
             ObjectDisposedException.ThrowIf(_isDisposed, this);
 
             #else
@@ -603,7 +606,28 @@ public static class PopupShadow
 
                 case PopupAnimation.None:
                 default:
-                    BeginDeferredFadeIn(TimeSpan.Zero, ShadowFadeInDuration);
+                    if (_owner is Popup popup && PopupAnimationBehavior.IsCustomAnimationActive(popup))
+                    {
+                        var duration = PopupAnimationBehavior.GetAnimationDuration(popup);
+                        if (_chrome.AnimationMode == PopupShadowAnimationMode.DynamicContentBounds)
+                        {
+                            if (TryBeginParallelDynamicContentBoundsAnimation(popup, duration))
+                            {
+                                break;
+                            }
+
+                            BeginDynamicContentBoundsAnimation(duration);
+                        }
+                        else
+                        {
+                            BeginDeferredFadeIn(duration.TimeSpan);
+                        }
+                    }
+                    else
+                    {
+                        BeginDeferredFadeIn(TimeSpan.Zero, ShadowFadeInDuration);
+                    }
+
                     break;
             }
         }
@@ -617,6 +641,11 @@ public static class PopupShadow
 
             StopRendering();
             StopDeferredFadeIn();
+
+            _contentBoundsAnimationDuration       = PopupAnimationDuration;
+            _contentBoundsAnimationEasingFunction = null;
+            _contentBoundsAnimationStartOffset    = 0D;
+            _isParallelContentBoundsAnimation     = false;
 
             _shadowRoot.BeginAnimation(UIElement.OpacityProperty, null);
             _shadowRoot.Opacity = 0D;
@@ -644,16 +673,45 @@ public static class PopupShadow
 
         private void BeginDynamicContentBoundsAnimation()
         {
+            BeginDynamicContentBoundsAnimation(PopupAnimationDuration);
+        }
+
+        private void BeginDynamicContentBoundsAnimation(Duration duration)
+        {
             if (_shadowRoot == null)
             {
                 return;
             }
 
-            _shadowAnimationStartedAt = DateTime.UtcNow;
+            _contentBoundsAnimationDuration = duration;
+            _shadowAnimationStartedAt       = DateTime.UtcNow;
 
             SubscribeRendering();
 
-            BeginRootFadeIn(PopupAnimationDuration);
+            BeginRootFadeIn(duration);
+        }
+
+        private bool TryBeginParallelDynamicContentBoundsAnimation(Popup popup, Duration duration)
+        {
+            if (_shadowRoot == null ||
+                _popupSource?.RootVisual is not UIElement popupRoot ||
+                !PopupAnimationBehavior.TryGetAnimationStartOffset(popup, popupRoot, out var startOffset))
+            {
+                return false;
+            }
+
+            _contentBoundsAnimationDuration       = duration;
+            _contentBoundsAnimationEasingFunction = PopupAnimationBehavior.GetAnimationEasingFunction(popup);
+            _contentBoundsAnimationStartOffset    = startOffset;
+            _isParallelContentBoundsAnimation     = true;
+            _shadowAnimationStartedAt             = DateTime.UtcNow;
+
+            UpdateShadowContentBounds(new Vector(0D, startOffset));
+            SubscribeRendering();
+
+            BeginRootFadeIn(duration);
+
+            return true;
         }
 
         private void BeginDeferredFadeIn(TimeSpan delay)
@@ -771,15 +829,32 @@ public static class PopupShadow
         private void OnRendering(object? sender, EventArgs e)
         {
             var elapsed = DateTime.UtcNow - _shadowAnimationStartedAt;
-            if (elapsed >= PopupAnimationDuration.TimeSpan)
+            if (elapsed >= _contentBoundsAnimationDuration.TimeSpan)
             {
                 StopRendering();
                 UpdateShadowContentBounds(default);
                 return;
             }
 
-            // WPF popup slide/scroll animations move an internal root transform; mirror that visible content offset.
-            UpdateShadowContentBounds(GetPopupRootAnimationOffset());
+            UpdateShadowContentBounds(
+                _isParallelContentBoundsAnimation
+                    ? GetParallelContentBoundsAnimationOffset(elapsed)
+                    : GetPopupRootAnimationOffset()
+            );
+        }
+
+        private Vector GetParallelContentBoundsAnimationOffset(TimeSpan elapsed)
+        {
+            var duration = _contentBoundsAnimationDuration.TimeSpan;
+            if (duration <= TimeSpan.Zero)
+            {
+                return default;
+            }
+
+            var progress      = Math.Max(0D, Math.Min(1D, elapsed.TotalMilliseconds / duration.TotalMilliseconds));
+            var easedProgress = _contentBoundsAnimationEasingFunction?.Ease(progress) ?? progress;
+
+            return new Vector(0D, _contentBoundsAnimationStartOffset * (1D - easedProgress));
         }
 
         private Vector GetPopupRootAnimationOffset()
@@ -851,8 +926,6 @@ public static class PopupShadow
                 Math.Max(0D, visibleBounds.Height - (ChromeInset * 2D))
             );
 
-            var visibleCornerRadius = GetVisibleCornerRadius(visibleBounds, contentBounds, _shadowBorder.CornerRadius);
-
             _shadowBorder.Margin = new Thickness(chromeBounds.Left, chromeBounds.Top, 0D, 0D);
             _shadowBorder.Width  = chromeBounds.Width;
             _shadowBorder.Height = chromeBounds.Height;
@@ -861,28 +934,7 @@ public static class PopupShadow
             _shadowRoot.Clip = CreateShadowOnlyClip(
                 new Size(_shadowRoot.Width, _shadowRoot.Height),
                 chromeBounds,
-                visibleCornerRadius
-            );
-        }
-
-        private static CornerRadius GetVisibleCornerRadius(
-            Rect visibleBounds,
-            Rect contentBounds,
-            CornerRadius sourceCornerRadius)
-        {
-            const double Tolerance = 0.1D;
-
-            var leftVisible   = Math.Abs(visibleBounds.Left - contentBounds.Left) < Tolerance;
-            var topVisible    = Math.Abs(visibleBounds.Top - contentBounds.Top) < Tolerance;
-            var rightVisible  = Math.Abs(visibleBounds.Right - contentBounds.Right) < Tolerance;
-            var bottomVisible = Math.Abs(visibleBounds.Bottom - contentBounds.Bottom) < Tolerance;
-
-            // Hidden edges must not keep rounded corners, otherwise the clipped shadow shows curved cuts mid-animation.
-            return new CornerRadius(
-                leftVisible && topVisible ? sourceCornerRadius.TopLeft : 0D,
-                topVisible && rightVisible ? sourceCornerRadius.TopRight : 0D,
-                rightVisible && bottomVisible ? sourceCornerRadius.BottomRight : 0D,
-                bottomVisible && leftVisible ? sourceCornerRadius.BottomLeft : 0D
+                _shadowBorder.CornerRadius
             );
         }
 

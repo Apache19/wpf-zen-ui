@@ -20,12 +20,15 @@
 
     <controls:PopupShadowChrome
         x:Key="FlyoutShadowChrome"
+        AnimationMode="DynamicContentBounds"
         BlurRadius="30"
         Direction="0"
         Opacity="0.255"
         ShadowDepth="0"
         ShadowThickness="30"
         Color="#202020" />
+
+    <controls:PopupAnimationSettings x:Key="FlyoutPopupAnimationSettings" />
 
     <Style x:Key="DefaultComboBoxTextBoxStyle" TargetType="{x:Type TextBox}">
         <Setter Property="CaretBrush" Value="{m:BrushResource TextFillColorPrimaryBrush}" />
@@ -161,7 +164,7 @@
         <Setter Property="Padding" Value="{m:VariableResource TextControlThemePadding}" />
         <!--  TODO: Support centered popup placement with expanding animation without breaking item interaction.  -->
         <Setter Property="Popup.Placement" Value="Bottom" />
-        <Setter Property="Popup.PopupAnimation" Value="Slide" />
+        <Setter Property="Popup.PopupAnimation" Value="None" />
         <Setter Property="ScrollViewer.CanContentScroll" Value="True" />
         <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Hidden" />
         <Setter Property="ScrollViewer.IsDeferredScrollingEnabled" Value="False" />
@@ -171,7 +174,7 @@
         <Setter Property="VerticalAlignment" Value="Center" />
         <Setter Property="VerticalContentAlignment" Value="Top" />
 
-        <!--  todo: 布局不太合理，尤其是可编辑状态下的文本框，需要重构-->
+        <!--  todo: 布局不太合理，尤其是可编辑状态下的文本框，需要重构  -->
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type ComboBox}">
@@ -264,6 +267,7 @@
                                     x:Name="Popup"
                                     Grid.Column="0"
                                     Grid.ColumnSpan="2"
+                                    controls:PopupAnimationBehavior.AnimationSettings="{StaticResource FlyoutPopupAnimationSettings}"
                                     controls:PopupShadow.PopupShadowChrome="{StaticResource FlyoutShadowChrome}"
                                     AllowsTransparency="True"
                                     Focusable="False"
