@@ -11,13 +11,25 @@ using System.Windows.Threading;
 namespace Wpf.Ui.Controls;
 
 /// <summary>
-/// Provides Wpf.Ui popup opening animation behavior.
+/// Provides Wpf.Ui popup opening animation behavior based on the realized popup window root.
 /// </summary>
+/// <remarks>
+/// WPF's built-in <see cref="Popup.PopupAnimation"/> can only use a small set of system animations and
+/// does not expose easing or distance control. This behavior keeps <see cref="Popup.PopupAnimation"/> set to
+/// <see cref="PopupAnimation.None"/> and animates the popup's HWND root visual directly after the popup opens.
+/// The animation is therefore independent from the placement engine: WPF still chooses the final screen
+/// position, while this behavior only fades and translates the already-positioned popup content into place.
+/// </remarks>
 public static class PopupAnimationBehavior
 {
     /// <summary>
-    /// Identifies the attached property that configures Wpf.Ui popup opening animation.
+    /// Identifies the attached property that configures the custom Wpf.Ui popup opening animation.
     /// </summary>
+    /// <remarks>
+    /// Set this property on a <see cref="Popup"/> and keep <see cref="Popup.PopupAnimation"/> as
+    /// <see cref="PopupAnimation.None"/> to enable the custom animation path. Clearing this property detaches
+    /// the behavior and restores any animated values that were touched by the controller.
+    /// </remarks>
     public static readonly DependencyProperty AnimationSettingsProperty =
         DependencyProperty.RegisterAttached(
             "AnimationSettings",
@@ -40,7 +52,7 @@ public static class PopupAnimationBehavior
     /// <param name="element">
     /// <see cref="DependencyObject"/> to read <see cref="AnimationSettingsProperty"/> from.
     /// </param>
-    /// <returns>Popup animation settings property value.</returns>
+    /// <returns>AnimationSettings property value.</returns>
     [AttachedPropertyBrowsableForType(typeof(Popup))]
     public static PopupAnimationSettings? GetAnimationSettings(DependencyObject element)
     {
@@ -53,7 +65,7 @@ public static class PopupAnimationBehavior
     /// <param name="element">
     /// <see cref="DependencyObject"/> to set <see cref="AnimationSettingsProperty"/> on.
     /// </param>
-    /// <param name="value">Popup animation settings property value.</param>
+    /// <param name="value">AnimationSettings property value.</param>
     public static void SetAnimationSettings(DependencyObject element, PopupAnimationSettings? value)
     {
         element.SetValue(AnimationSettingsProperty, value);
@@ -102,6 +114,10 @@ public static class PopupAnimationBehavior
         UIElement popupRoot,
         PopupVerticalPlacement popupPlacement)
     {
+        // The requested offset is capped by the popup height so a compact flyout never starts completely
+        // outside its own bounds. Positive and negative offsets are preserved, then flipped when WPF actually
+        // placed the popup above the target. This makes "slide from target" feel consistent when Popup flips
+        // because of screen edges.
         var height = popupRoot.RenderSize.Height;
         if (height <= 0D && popupRoot is FrameworkElement frameworkElement)
         {
@@ -128,8 +144,11 @@ public static class PopupAnimationBehavior
 
     private static PopupVerticalPlacement ResolveActualVerticalPlacement(Popup popup, UIElement popupRoot)
     {
+        // Requested Placement is only a hint: Popup may flip to the opposite side to stay inside the screen.
+        // Compare realized screen bounds first, and use the requested placement only when the visual has not
+        // been measured or transformed into a reliable screen rectangle yet.
         if (popup.PlacementTarget is UIElement target &&
-            TryGetScreenBounds(target,    out var targetBounds) &&
+            TryGetScreenBounds(target, out var targetBounds) &&
             TryGetScreenBounds(popupRoot, out var popupBounds))
         {
             const double Tolerance = 1D;
@@ -174,8 +193,10 @@ public static class PopupAnimationBehavior
 
         try
         {
+            // PointToScreen returns physical pixels; scale the WPF size by the visual DPI so both values use
+            // the same coordinate space before comparing popup and placement target rectangles.
             var dpi     = VisualTreeHelper.GetDpi(element);
-            var topLeft = element.PointToScreen(new Point());
+            var topLeft = element.PointToScreen(default);
 
             bounds = new Rect(
                 topLeft,
@@ -216,6 +237,11 @@ public static class PopupAnimationBehavior
         return rect.Top + (rect.Height / 2D);
     }
 
+    [System.Diagnostics.CodeAnalysis.SuppressMessage(
+        "IDisposableAnalyzers.Correctness",
+        "IDISP001:Dispose created",
+        Justification = "The controller is stored in an attached property "
+                      + "and disposed when AnimationSettings is cleared.")]
     private static void OnAnimationSettingsChanged(
         DependencyObject d,
         DependencyPropertyChangedEventArgs e)
@@ -228,6 +254,8 @@ public static class PopupAnimationBehavior
         var controller = GetAnimationController(popup);
         if (e.NewValue is not PopupAnimationSettings settings)
         {
+            // The controller owns event subscriptions and transient animation state, but its lifetime is tied
+            // to the attached property rather than to a public disposable object.
             controller?.Dispose();
             SetAnimationController(popup, null);
             return;
@@ -248,6 +276,21 @@ public static class PopupAnimationBehavior
         AboveTarget,
     }
 
+    /// <summary>
+    /// Coordinates the custom opening animation for one <see cref="Popup"/>.
+    /// </summary>
+    /// <remarks>
+    /// A popup creates its actual window content lazily, so the behavior cannot prepare the target visual when
+    /// the attached property is set. The controller stays attached to the popup, waits for <see cref="Popup.Opened"/>,
+    /// locates the HWND root visual, applies initial opacity and translate values, then starts the real animations
+    /// on the next render pass.
+    /// </remarks>
+    [System.Diagnostics.CodeAnalysis.SuppressMessage(
+        "WpfAnalyzers.DependencyProperty",
+        "WPF0041:Set mutable dependency properties using SetCurrentValue",
+        Justification = "The target dependency properties belong to the popup root animation state. "
+                      + "They are assigned and restored by this controller while opening the popup, "
+                      + "and do not represent externally supplied bindings or local values.")]
     private sealed class PopupAnimationController : IDisposable
     {
         private readonly Popup                   _popup;
@@ -281,6 +324,9 @@ public static class PopupAnimationBehavior
 
             if (_settings != settings)
             {
+                // Settings is a Freezable so theme/style changes can update its values without replacing the
+                // instance. Frozen settings cannot change, but mutable settings are observed with a weak event
+                // to avoid making the behavior itself a source of leaks.
                 UnsubscribeSettingsChanged();
 
                 _settings = settings;
@@ -295,6 +341,9 @@ public static class PopupAnimationBehavior
 
             if (_popup.IsOpen)
             {
+                // The property can be attached after the popup is already open, especially when styles or
+                // templates are applied late. Play the entrance immediately instead of waiting for the next
+                // Opened event so the attached behavior is deterministic from the moment settings exist.
                 BeginOpenAnimation();
             }
         }
@@ -330,6 +379,9 @@ public static class PopupAnimationBehavior
 
         private void AttachPopupEvents()
         {
+            // Placement and PopupAnimation are watched in addition to Opened/Closed because both can change
+            // while the popup is alive. A placement change may require a new slide direction, and a switch back
+            // to a native PopupAnimation must cancel this custom animation path immediately.
             _popup.Opened += OnPopupOpened;
             _popup.Closed += OnPopupClosed;
 
@@ -388,12 +440,16 @@ public static class PopupAnimationBehavior
 
         private void OnPopupOpened(object? sender, EventArgs e)
         {
+            // Every open/close cycle owns its own asynchronous callbacks. Incrementing the version lets delayed
+            // Loaded/Render operations and animation completions detect that they belong to an older popup life.
             _openVersion++;
             BeginOpenAnimation();
         }
 
         private void OnPopupClosed(object? sender, EventArgs e)
         {
+            // Closing invalidates any queued start operation or completion handler from the previous open. This
+            // is especially important for popups that are rapidly reopened by pointer or keyboard interaction.
             _openVersion++;
             StopOpenAnimation();
         }
@@ -402,6 +458,8 @@ public static class PopupAnimationBehavior
         {
             if (_popup.IsOpen)
             {
+                // Popup can move while it remains open, for example after layout changes or screen-edge
+                // collision handling. Restart so the offset is recalculated against the new realized position.
                 BeginOpenAnimation();
             }
         }
@@ -416,6 +474,8 @@ public static class PopupAnimationBehavior
 
             if (_popup.IsOpen)
             {
+                // Re-entering the custom path while already open should still show the configured entrance
+                // state instead of leaving the popup wherever a native or previous animation path stopped.
                 BeginOpenAnimation();
             }
         }
@@ -424,6 +484,8 @@ public static class PopupAnimationBehavior
         {
             if (_popup.IsOpen && _popup.PopupAnimation == PopupAnimation.None)
             {
+                // Treat mutable setting changes as a new entrance rather than trying to retarget running
+                // animations in place. Restarting keeps duration, easing, and start offset consistent.
                 BeginOpenAnimation();
             }
         }
@@ -453,25 +515,36 @@ public static class PopupAnimationBehavior
 
             if (GetPopupRoot() is not UIElement popupRoot)
             {
+                // Popup.Opened can fire before PresentationSource exposes the root visual. Retry at Loaded
+                // priority with the same version token so a quick close/reopen cannot animate a stale popup.
                 _ = _popup.Dispatcher.BeginInvoke(
                     new Action(() => BeginOpenAnimation(openVersion)),
                     DispatcherPriority.Loaded
                 );
+
                 return;
             }
 
             var duration = _settings.GetDuration();
+
             var startOffset = GetEffectiveStartOffset(
                 _settings,
                 popupRoot,
                 ResolveActualVerticalPlacement(_popup, popupRoot)
             );
+
             var translateTransform = EnsureTranslateTransform(popupRoot);
 
             _popupRoot = popupRoot;
 
+            // A previous opening attempt may have already scheduled the Render-priority start. Cancel it before
+            // writing the new initial frame so only the latest settings, placement, and version can start.
             CancelPendingOpenAnimation();
 
+            // Establish the first visible frame synchronously. Popup has already chosen its final screen
+            // placement, but before WPF gets a chance to paint that natural state we immediately pull the root
+            // back to the configured offset and make it transparent. Without this write-before-render step the
+            // user can see one frame of fully visible content at the final position before the slide begins.
             translateTransform.BeginAnimation(TranslateTransform.YProperty, null);
             translateTransform.Y = startOffset;
             popupRoot.BeginAnimation(UIElement.OpacityProperty, null);
@@ -479,11 +552,18 @@ public static class PopupAnimationBehavior
 
             if (duration <= TimeSpan.Zero || Math.Abs(startOffset) < 0.1D)
             {
+                // The initial hidden/offset frame was already applied to avoid flicker. If there is no useful
+                // motion to play, restore the natural values immediately so callers can use zero-duration
+                // settings as an explicit "no animation" state without leaving the popup transparent.
                 translateTransform.Y = 0D;
                 popupRoot.Opacity    = 1D;
                 return;
             }
 
+            // Start the actual animations at Render priority, after the initial offset/opacity values have had
+            // a layout/render boundary to become the presented starting frame. Starting immediately in the same
+            // dispatcher turn can spend part of the animation timeline while the popup content is not yet drawn,
+            // which makes the first visible frame appear already in progress or skip the opening motion entirely.
             _pendingOpenAnimationOperation = _popup.Dispatcher.BeginInvoke(
                 new Action(() => StartOpenAnimation(openVersion, popupRoot, translateTransform, duration)),
                 DispatcherPriority.Render
@@ -500,6 +580,8 @@ public static class PopupAnimationBehavior
 
             if (_isDisposed || !_popup.IsOpen || openVersion != _openVersion)
             {
+                // Render-priority work is allowed to become stale. Returning without cleanup is intentional
+                // here: close/dispose/new-open paths already reset state through StopOpenAnimation.
                 return;
             }
 
@@ -511,18 +593,27 @@ public static class PopupAnimationBehavior
 
             var durationValue  = new Duration(duration);
             var easingFunction = _settings.GetEasingFunction();
+
+            // Only the translate animation uses the configured easing. Opacity stays linear so every popup has
+            // a predictable fade while the movement curve provides the visual character.
             var translateAnimation = new DoubleAnimation(0D, durationValue, FillBehavior.HoldEnd)
             {
                 EasingFunction = easingFunction,
             };
             translateAnimation.Completed += (_, _) => OnOpenAnimationCompleted(openVersion);
 
-            // 透明度动画采用线性，不与动画设置靠齐。
+            // Keep the fade linear instead of forcing it to follow the movement easing. Opacity is perceived very
+            // differently from displacement: an ease-out fade can look like a sudden appearance because the fast
+            // early alpha change is hard to track, while linear opacity gives the softest and most legible fade.
+            // It also avoids each movement easing accidentally giving the popup a different fade personality.
             var opacityAnimation = new DoubleAnimation(1D, durationValue, FillBehavior.HoldEnd)
             {
                 // EasingFunction = _settings.GetEasingFunction(),
             };
 
+            // SnapshotAndReplace deliberately cuts off any previous generated animation. Popup entrance is a
+            // state correction to a known final position, not a composable effect where multiple animations
+            // should accumulate.
             translateTransform.BeginAnimation(
                 TranslateTransform.YProperty,
                 translateAnimation,
@@ -539,9 +630,13 @@ public static class PopupAnimationBehavior
         {
             if (openVersion != _openVersion)
             {
+                // A completion from an older animation must not reset a newer opening sequence.
                 return;
             }
 
+            // The animations use FillBehavior.HoldEnd so the final frame stays stable until completion is
+            // observed. StopOpenAnimation then clears the animation clocks and writes the same natural values as
+            // local state, preventing a held animation from masking future property changes.
             StopOpenAnimation();
         }
 
@@ -549,6 +644,9 @@ public static class PopupAnimationBehavior
         {
             CancelPendingOpenAnimation();
 
+            // Always leave the popup root in its natural state. This method is used for normal completion,
+            // cancellation, setting changes, native animation handoff, and disposal. After the reset, drop the
+            // transient visual references so a future popup HWND/root rebuild starts from freshly resolved state.
             if (_translateTransform != null)
             {
                 _translateTransform.BeginAnimation(TranslateTransform.YProperty, null);
@@ -560,6 +658,9 @@ public static class PopupAnimationBehavior
                 _popupRoot.BeginAnimation(UIElement.OpacityProperty, null);
                 _popupRoot.Opacity = 1D;
             }
+
+            _translateTransform = null;
+            _popupRoot          = null;
         }
 
         private void CancelPendingOpenAnimation()
@@ -571,6 +672,8 @@ public static class PopupAnimationBehavior
 
             if (_pendingOpenAnimationOperation.Status is DispatcherOperationStatus.Pending)
             {
+                // Abort only while the dispatcher operation has not run yet. Once it is executing or completed,
+                // the version checks and StopOpenAnimation path own the cleanup.
                 _pendingOpenAnimationOperation.Abort();
             }
 
@@ -579,13 +682,19 @@ public static class PopupAnimationBehavior
 
         private Visual? GetPopupRoot()
         {
+            // Popup.Child belongs to the logical popup content, but the visible window is hosted under the
+            // HwndSource root visual. Animating the root keeps shadows, chrome, and transformed content moving
+            // as one unit without changing the placement target or child layout.
             return _popup.Child is Visual child
-                ? (PresentationSource.FromVisual(child) as HwndSource)?.RootVisual as Visual
+                ? (PresentationSource.FromVisual(child) as HwndSource)?.RootVisual
                 : null;
         }
 
         private TranslateTransform EnsureTranslateTransform(UIElement popupRoot)
         {
+            // Preserve any transform that the popup root already has. When there is a TransformGroup we reuse
+            // an existing TranslateTransform if possible; otherwise we append one so the animation composes with
+            // scale/rotate/skew transforms that may already be applied by WPF or another internal behavior.
             if (popupRoot.RenderTransform is TranslateTransform translateTransform)
             {
                 _translateTransform = translateTransform;
@@ -594,15 +703,15 @@ public static class PopupAnimationBehavior
 
             if (popupRoot.RenderTransform is TransformGroup transformGroup)
             {
-                translateTransform = transformGroup.Children.OfType<TranslateTransform>().FirstOrDefault();
-                if (translateTransform == null)
+                var childTranslateTransform = transformGroup.Children.OfType<TranslateTransform>().FirstOrDefault();
+                if (childTranslateTransform == null)
                 {
-                    translateTransform = new TranslateTransform();
-                    transformGroup.Children.Add(translateTransform);
+                    childTranslateTransform = new TranslateTransform();
+                    transformGroup.Children.Add(childTranslateTransform);
                 }
 
-                _translateTransform = translateTransform;
-                return translateTransform;
+                _translateTransform = childTranslateTransform;
+                return childTranslateTransform;
             }
 
             translateTransform = new TranslateTransform();
