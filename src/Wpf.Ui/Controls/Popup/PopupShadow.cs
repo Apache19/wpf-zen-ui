@@ -11,6 +11,7 @@ using System.Windows.Threading;
 using Windows.Win32;
 using Windows.Win32.Foundation;
 using Windows.Win32.UI.WindowsAndMessaging;
+using Wpf.Ui.Extensions.Wpf;
 using WinContextMenu = System.Windows.Controls.ContextMenu;
 
 // ReSharper disable once CheckNamespace
@@ -487,7 +488,7 @@ public static class PopupShadow
                 return;
             }
 
-            var sourceBorder = FindFirstVisualChild<Border>(GetOwnerRootVisual());
+            var sourceBorder = GetOwnerRootVisual().FindDescendant<Border>(includeSelf: true);
             if (sourceBorder != null)
             {
                 // Mirror the popup chrome so the shadow matches rounded corners and border thickness.
@@ -1005,31 +1006,6 @@ public static class PopupShadow
             }
 
             return IntPtr.Zero;
-        }
-
-        private static T? FindFirstVisualChild<T>(DependencyObject? parent)
-            where T : DependencyObject
-        {
-            if (parent == null)
-            {
-                return null;
-            }
-
-            if (parent is T target)
-            {
-                return target;
-            }
-
-            var childrenCount = VisualTreeHelper.GetChildrenCount(parent);
-            for (var i = 0; i < childrenCount; i++)
-            {
-                if (FindFirstVisualChild<T>(VisualTreeHelper.GetChild(parent, i)) is { } child)
-                {
-                    return child;
-                }
-            }
-
-            return null;
         }
     }
 }

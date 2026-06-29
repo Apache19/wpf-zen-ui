@@ -5,86 +5,100 @@
 
 using System.Windows.Media.Media3D;
 
+// ReSharper disable ConvertToExtensionBlock
+
 namespace Wpf.Ui.Extensions.Wpf;
 
 public static class VisualTreeHelperExtensions
 {
-    extension(DependencyObject? child)
+    public static T? FindAncestor<T>(this DependencyObject? child, int maxDepth = int.MaxValue)
+        where T : DependencyObject
     {
-        public T? FindAncestor<T>(int maxDepth = int.MaxValue)
-            where T : DependencyObject
+        if (child is null || maxDepth <= 0)
         {
-            if (child is null || maxDepth <= 0)
-            {
-                return null;
-            }
-
-            var depth   = 0;
-            var current = child;
-
-            while (current is not null && depth < maxDepth)
-            {
-                var parent = current.GetParent();
-
-                if (parent is T t)
-                {
-                    return t;
-                }
-
-                current = parent;
-                depth++;
-            }
-
             return null;
         }
 
-        public T? FindDescendant<T>(Predicate<T>? predicate = null, int maxDepth = int.MaxValue)
-            where T : DependencyObject
-        {
-            return FindDescendantCore(child, predicate, maxDepth, 0);
-        }
+        var depth   = 0;
+        var current = child;
 
-        public DependencyObject? GetParent()
+        while (current is not null && depth < maxDepth)
         {
-            try
-            {
-                // VisualTreeHelper.GetParent() only works with Visual or Visual3D types
-                if (child is Visual or Visual3D)
-                {
-                    var p = VisualTreeHelper.GetParent(child);
-                    if (p != null)
-                    {
-                        return p;
-                    }
-                }
+            var parent = current.GetParent();
 
-                // LogicalTreeHelper works with all DependencyObject types
-                if (child is not (Visual or Visual3D or null))
-                {
-                    var lp = LogicalTreeHelper.GetParent(child);
-                    if (lp != null)
-                    {
-                        return lp;
-                    }
-                }
-            }
-            catch
+            if (parent is T t)
             {
-                // defensive: ignore traversal errors
+                return t;
             }
 
-            return child switch
-            {
-                // Last resort:
-                // check FrameworkElement and FrameworkContentElement (including TemplatedParent)
-                FrameworkElement fe         => fe.Parent ?? fe.TemplatedParent,
-                FrameworkContentElement fce => fce.Parent ?? fce.TemplatedParent,
-                _                           => null
-            };
+            current = parent;
+            depth++;
         }
+
+        return null;
     }
 
-    private static T? FindDescendantCore<T>(DependencyObject? root, Predicate<T>? predicate, int maxDepth, int currentDepth)
+    public static T? FindDescendant<T>(
+        this DependencyObject? child,
+        Predicate<T>?          predicate = null,
+        int                    maxDepth = int.MaxValue,
+        bool                   includeSelf = false
+    )
+        where T : DependencyObject
+    {
+        if (includeSelf && child is T t && (predicate is null || predicate(t)))
+        {
+            return t;
+        }
+
+        return FindDescendantCore(child, predicate, maxDepth, 0);
+    }
+
+    public static DependencyObject? GetParent(this DependencyObject? child)
+    {
+        try
+        {
+            // VisualTreeHelper.GetParent() only works with Visual or Visual3D types
+            if (child is Visual or Visual3D)
+            {
+                var p = VisualTreeHelper.GetParent(child);
+                if (p != null)
+                {
+                    return p;
+                }
+            }
+
+            // LogicalTreeHelper works with all DependencyObject types
+            if (child is not (Visual or Visual3D or null))
+            {
+                var lp = LogicalTreeHelper.GetParent(child);
+                if (lp != null)
+                {
+                    return lp;
+                }
+            }
+        }
+        catch
+        {
+            // defensive: ignore traversal errors
+        }
+
+        return child switch
+        {
+            // Last resort:
+            // check FrameworkElement and FrameworkContentElement (including TemplatedParent)
+            FrameworkElement fe         => fe.Parent ?? fe.TemplatedParent,
+            FrameworkContentElement fce => fce.Parent ?? fce.TemplatedParent,
+            _                           => null
+        };
+    }
+
+    private static T? FindDescendantCore<T>(
+        DependencyObject? root,
+        Predicate<T>?     predicate,
+        int               maxDepth,
+        int               currentDepth
+    )
         where T : DependencyObject
     {
         if (root is null || currentDepth >= maxDepth)
