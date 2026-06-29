@@ -3,6 +3,7 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
+using System.Diagnostics.CodeAnalysis;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Media.Animation;
@@ -28,20 +29,22 @@ public static class PopupShadow
     /// Identifies the attached property that enables detached shadow rendering for a <see cref="Popup"/> or
     /// <see cref="WinContextMenu"/>.
     /// </summary>
-    public static readonly DependencyProperty PopupShadowChromeProperty = DependencyProperty.RegisterAttached(
-        "PopupShadowChrome",
-        typeof(PopupShadowChrome),
-        typeof(PopupShadow),
-        new PropertyMetadata(null, OnPopupShadowChromeChanged)
-    );
+    public static readonly DependencyProperty PopupShadowChromeProperty =
+        DependencyProperty.RegisterAttached(
+            "PopupShadowChrome",
+            typeof(PopupShadowChrome),
+            typeof(PopupShadow),
+            new PropertyMetadata(null, OnPopupShadowChromeChanged)
+        );
 
     // Keeps the per-owner controller alive for as long as the attached chrome is set.
-    private static readonly DependencyProperty ShadowControllerProperty = DependencyProperty.RegisterAttached(
-        "ShadowController",
-        typeof(PopupShadowController),
-        typeof(PopupShadow),
-        new PropertyMetadata(default(PopupShadowController))
-    );
+    private static readonly DependencyProperty ShadowControllerProperty =
+        DependencyProperty.RegisterAttached(
+            "ShadowController",
+            typeof(PopupShadowController),
+            typeof(PopupShadow),
+            new PropertyMetadata(default(PopupShadowController))
+        );
 
     /// <summary>
     /// Helper for getting <see cref="PopupShadowChromeProperty"/> from <paramref name="element"/>.
@@ -79,15 +82,14 @@ public static class PopupShadow
         element.SetValue(ShadowControllerProperty, value);
     }
 
-    [System.Diagnostics.CodeAnalysis.SuppressMessage(
+    [SuppressMessage(
         "IDisposableAnalyzers.Correctness",
         "IDISP001:Dispose created",
-        Justification = "The controller is stored in an attached property and disposed when PopupShadowChrome is cleared."
-    )]
+        Justification = "The controller is stored in an attached property "
+                      + "and disposed when PopupShadowChrome is cleared.")]
     private static void OnPopupShadowChromeChanged(
-        DependencyObject                   d,
-        DependencyPropertyChangedEventArgs e
-    )
+        DependencyObject d,
+        DependencyPropertyChangedEventArgs e)
     {
         if (d is not Popup and not WinContextMenu)
         {
@@ -113,14 +115,21 @@ public static class PopupShadow
         controller.Attach(chrome);
     }
 
+    [SuppressMessage(
+        "WpfAnalyzers.DependencyProperty",
+        "WPF0041:Set mutable dependency properties using SetCurrentValue",
+        Justification = "The target dependency properties are defined on internal types "
+                      + "and are not accessible for external binding or animation. "
+                      + "Direct assignment is performed within internal control logic "
+                      + "and does not affect external consumers.")]
     private sealed class PopupShadowController : IDisposable
     {
-        private const int WS_POPUP = unchecked((int)0x80000000);
+        private const int WS_POPUP          = unchecked((int)0x80000000);
+        private const int WS_EX_TRANSPARENT = 0x00000020;
+        private const int WS_EX_TOOLWINDOW  = 0x00000080;
+        private const int WS_EX_NOACTIVATE  = 0x08000000;
 
-        private const int    WS_EX_TRANSPARENT = 0x00000020;
-        private const int    WS_EX_TOOLWINDOW  = 0x00000080;
-        private const int    WS_EX_NOACTIVATE  = 0x08000000;
-        private const double ChromeInset       = 0.5D;
+        private const double ChromeInset = 0.5D;
 
         private static readonly Duration PopupAnimationDuration = new(TimeSpan.FromMilliseconds(150D));
         private static readonly Duration ShadowFadeInDuration   = new(TimeSpan.FromMilliseconds(80D));
@@ -128,11 +137,11 @@ public static class PopupShadow
         private readonly DependencyObject _owner;
         private readonly Dispatcher       _dispatcher;
 
-        [System.Diagnostics.CodeAnalysis.SuppressMessage(
+        [SuppressMessage(
             "Usage",
             "CA2213:Disposable fields should be disposed",
-            Justification = "This references the owner popup HWND source. PopupShadowController removes its hook but does not own the source."
-        )]
+            Justification = "This references the owner popup HWND source. "
+                          + "PopupShadowController removes its hook but does not own the source.")]
         private HwndSource? _popupSource;
 
         private HwndSource?        _shadowSource;
@@ -160,6 +169,7 @@ public static class PopupShadow
             ObjectDisposedException.ThrowIf(_isDisposed, this);
 
             #else
+
             if (_isDisposed)
             {
                 throw new ObjectDisposedException(nameof(PopupShadowController));
@@ -257,9 +267,11 @@ public static class PopupShadow
                 {
                     popup.Opened += OnOwnerOpened;
                     popup.Closed += OnOwnerClosed;
+
                     DependencyPropertyDescriptor
                        .FromProperty(Popup.IsOpenProperty, typeof(Popup))
                       ?.AddValueChanged(popup, OnOwnerIsOpenChanged);
+
                     break;
                 }
 
@@ -267,9 +279,11 @@ public static class PopupShadow
                 {
                     contextMenu.Opened += OnOwnerOpened;
                     contextMenu.Closed += OnOwnerClosed;
+
                     DependencyPropertyDescriptor
                        .FromProperty(WinContextMenu.IsOpenProperty, typeof(WinContextMenu))
                       ?.AddValueChanged(contextMenu, OnOwnerIsOpenChanged);
+
                     break;
                 }
             }
@@ -308,6 +322,7 @@ public static class PopupShadow
         private void OnOwnerOpened(object? sender, EventArgs e)
         {
             Open();
+
             // The popup HWND can be recreated or resized by template/layout work after Opened fires.
             _ = _dispatcher.BeginInvoke(Open, DispatcherPriority.Loaded);
         }
@@ -360,6 +375,7 @@ public static class PopupShadow
 
             _popupSource = popupSource;
             _popupSource.AddHook(PopupWndProc);
+
             EnsureShadowSource();
             ApplyChrome();
             UpdateShadowBounds();
@@ -375,6 +391,7 @@ public static class PopupShadow
             if (_shadowSource != null)
             {
                 StopOpenAnimation();
+
                 _shadowSource.RemoveHook(ShadowWndProc);
                 _shadowSource.Dispose();
                 _shadowSource = null;
@@ -418,13 +435,15 @@ public static class PopupShadow
                 return;
             }
 
+            // Keep the companion HWND non-activating, hidden from Alt+Tab, and transparent to hit testing.
+            const int exStyle = WS_EX_TOOLWINDOW | WS_EX_TRANSPARENT | WS_EX_NOACTIVATE;
+
             var parameters = new HwndSourceParameters("Wpf.Ui.PopupShadow")
             {
-                Width       = 1,
-                Height      = 1,
-                WindowStyle = WS_POPUP,
-                // Keep the companion HWND non-activating, hidden from Alt+Tab, and transparent to hit testing.
-                ExtendedWindowStyle        = WS_EX_TOOLWINDOW | WS_EX_TRANSPARENT | WS_EX_NOACTIVATE,
+                Width                      = 1,
+                Height                     = 1,
+                WindowStyle                = WS_POPUP,
+                ExtendedWindowStyle        = exStyle,
                 UsesPerPixelOpacity        = true,
                 AcquireHwndFocusInMenuMode = false,
                 TreatAsInputRoot           = false,
@@ -433,6 +452,7 @@ public static class PopupShadow
             #pragma warning disable IDISP003 // The null guard above prevents replacing an undisposed shadow source.
             _shadowSource = new HwndSource(parameters);
             #pragma warning restore IDISP003
+
             _shadowSource.AddHook(ShadowWndProc);
 
             _shadowSource.CompositionTarget?.BackgroundColor = Colors.Transparent;
@@ -471,20 +491,20 @@ public static class PopupShadow
             if (sourceBorder != null)
             {
                 // Mirror the popup chrome so the shadow matches rounded corners and border thickness.
-                _shadowBorder.SetCurrentValue(Border.CornerRadiusProperty,    sourceBorder.CornerRadius);
-                _shadowBorder.SetCurrentValue(Border.BorderThicknessProperty, sourceBorder.BorderThickness);
-                _shadowBorder.SetCurrentValue(Border.PaddingProperty,         sourceBorder.Padding);
+                _shadowBorder.CornerRadius    = sourceBorder.CornerRadius;
+                _shadowBorder.BorderThickness = sourceBorder.BorderThickness;
+                _shadowBorder.Padding         = sourceBorder.Padding;
             }
             else
             {
-                _shadowBorder.SetCurrentValue(Border.CornerRadiusProperty,    default(CornerRadius));
-                _shadowBorder.SetCurrentValue(Border.BorderThicknessProperty, default(Thickness));
-                _shadowBorder.SetCurrentValue(Border.PaddingProperty,         default(Thickness));
+                _shadowBorder.CornerRadius    = default;
+                _shadowBorder.BorderThickness = default;
+                _shadowBorder.Padding         = default;
             }
 
-            _shadowBorder.SetCurrentValue(Border.BackgroundProperty,  _chrome.ChromeBrush);
-            _shadowBorder.SetCurrentValue(Border.BorderBrushProperty, _chrome.ChromeBrush);
-            _shadowBorder.SetCurrentValue(UIElement.EffectProperty,   _chrome.CreateEffect());
+            _shadowBorder.Background  = _chrome.ChromeBrush;
+            _shadowBorder.BorderBrush = _chrome.ChromeBrush;
+            _shadowBorder.Effect      = _chrome.CreateEffect();
         }
 
         private void UpdateShadowBounds()
@@ -508,6 +528,7 @@ public static class PopupShadow
 
             var dpi             = GetDpi();
             var shadowThickness = _chrome.ShadowThickness;
+
             // Win32 coordinates are device pixels; the public chrome uses WPF logical units.
             var deviceThickness = LogicalToDevice(shadowThickness, dpi);
             var shadowLeft      = popupRect.left - (int)Math.Ceiling(deviceThickness.Left);
@@ -515,8 +536,8 @@ public static class PopupShadow
             var shadowWidth     = popupRect.Width + (int)Math.Ceiling(deviceThickness.Left + deviceThickness.Right);
             var shadowHeight    = popupRect.Height + (int)Math.Ceiling(deviceThickness.Top + deviceThickness.Bottom);
 
-            _shadowRoot.SetCurrentValue(FrameworkElement.WidthProperty,  Math.Max(0D, shadowWidth / dpi.DpiScaleX));
-            _shadowRoot.SetCurrentValue(FrameworkElement.HeightProperty, Math.Max(0D, shadowHeight / dpi.DpiScaleY));
+            _shadowRoot.Width  = Math.Max(0D, shadowWidth / dpi.DpiScaleX);
+            _shadowRoot.Height = Math.Max(0D, shadowHeight / dpi.DpiScaleY);
 
             UpdateShadowContentBounds(default);
 
@@ -554,7 +575,7 @@ public static class PopupShadow
             }
 
             StopOpenAnimation();
-            _shadowRoot.SetCurrentValue(UIElement.OpacityProperty, 0D);
+            _shadowRoot.Opacity = 0D;
             UpdateShadowContentBounds(default);
 
             var animation = GetPopupAnimation();
@@ -597,15 +618,16 @@ public static class PopupShadow
             StopDeferredFadeIn();
 
             _shadowRoot.BeginAnimation(UIElement.OpacityProperty, null);
-            _shadowRoot.SetCurrentValue(UIElement.OpacityProperty, 0D);
+            _shadowRoot.Opacity = 0D;
+
             UpdateShadowContentBounds(default);
 
             if (_shadowRoot.RenderTransform is TranslateTransform translateTransform)
             {
                 translateTransform.BeginAnimation(TranslateTransform.XProperty, null);
                 translateTransform.BeginAnimation(TranslateTransform.YProperty, null);
-                translateTransform.SetCurrentValue(TranslateTransform.XProperty, 0D);
-                translateTransform.SetCurrentValue(TranslateTransform.YProperty, 0D);
+                translateTransform.X = 0D;
+                translateTransform.Y = 0D;
             }
         }
 
@@ -627,7 +649,9 @@ public static class PopupShadow
             }
 
             _shadowAnimationStartedAt = DateTime.UtcNow;
+
             SubscribeRendering();
+
             BeginRootFadeIn(PopupAnimationDuration);
         }
 
@@ -689,6 +713,7 @@ public static class PopupShadow
 
             StopRendering();
             StopDeferredFadeIn();
+
             _shadowRoot.BeginAnimation(
                 UIElement.OpacityProperty,
                 new DoubleAnimation(_shadowRoot.Opacity, 0D, duration, FillBehavior.HoldEnd)
@@ -705,7 +730,7 @@ public static class PopupShadow
             StopRendering();
             StopDeferredFadeIn();
             _shadowRoot.BeginAnimation(UIElement.OpacityProperty, null);
-            _shadowRoot.SetCurrentValue(UIElement.OpacityProperty, 0D);
+            _shadowRoot.Opacity = 0D;
         }
 
         private void SubscribeRendering()
@@ -768,8 +793,8 @@ public static class PopupShadow
 
         private static Vector FindPopupRootTranslateOffset(DependencyObject parent)
         {
-            if (parent is UIElement { RenderTransform: TranslateTransform translateTransform }
-             && (Math.Abs(translateTransform.X) > 0.1D || Math.Abs(translateTransform.Y) > 0.1D))
+            if (parent is UIElement { RenderTransform: TranslateTransform translateTransform } &&
+                (Math.Abs(translateTransform.X) > 0.1D || Math.Abs(translateTransform.Y) > 0.1D))
             {
                 return new Vector(translateTransform.X, translateTransform.Y);
             }
@@ -807,15 +832,16 @@ public static class PopupShadow
             var visibleBounds = Rect.Intersect(popupBounds, contentBounds);
             if (visibleBounds == Rect.Empty || visibleBounds.Width <= 0D || visibleBounds.Height <= 0D)
             {
-                _shadowBorder.SetCurrentValue(FrameworkElement.WidthProperty,  0D);
-                _shadowBorder.SetCurrentValue(FrameworkElement.HeightProperty, 0D);
+                _shadowBorder.Width  = 0D;
+                _shadowBorder.Height = 0D;
 
-                _shadowRoot.SetCurrentValue(UIElement.ClipProperty, Geometry.Empty);
+                _shadowRoot.Clip = Geometry.Empty;
                 return;
             }
 
-            _shadowBorder.SetCurrentValue(FrameworkElement.HorizontalAlignmentProperty, HorizontalAlignment.Left);
-            _shadowBorder.SetCurrentValue(FrameworkElement.VerticalAlignmentProperty,   VerticalAlignment.Top);
+            _shadowBorder.HorizontalAlignment = HorizontalAlignment.Left;
+            _shadowBorder.VerticalAlignment   = VerticalAlignment.Top;
+
             // Nudge inward slightly so anti-aliased chrome pixels do not leak through the shadow-only clip.
             var chromeBounds = new Rect(
                 visibleBounds.Left + ChromeInset,
@@ -823,31 +849,25 @@ public static class PopupShadow
                 Math.Max(0D, visibleBounds.Width - (ChromeInset * 2D)),
                 Math.Max(0D, visibleBounds.Height - (ChromeInset * 2D))
             );
+
             var visibleCornerRadius = GetVisibleCornerRadius(visibleBounds, contentBounds, _shadowBorder.CornerRadius);
 
-            _shadowBorder.SetCurrentValue(
-                FrameworkElement.MarginProperty,
-                new Thickness(chromeBounds.Left, chromeBounds.Top, 0D, 0D)
-            );
-            _shadowBorder.SetCurrentValue(FrameworkElement.WidthProperty,  chromeBounds.Width);
-            _shadowBorder.SetCurrentValue(FrameworkElement.HeightProperty, chromeBounds.Height);
+            _shadowBorder.Margin = new Thickness(chromeBounds.Left, chromeBounds.Top, 0D, 0D);
+            _shadowBorder.Width  = chromeBounds.Width;
+            _shadowBorder.Height = chromeBounds.Height;
 
             // Clip out the visible popup area, leaving only the outside shadow rendered by DropShadowEffect.
-            _shadowRoot.SetCurrentValue(
-                UIElement.ClipProperty,
-                CreateShadowOnlyClip(
-                    new Size(_shadowRoot.Width, _shadowRoot.Height),
-                    chromeBounds,
-                    visibleCornerRadius
-                )
+            _shadowRoot.Clip = CreateShadowOnlyClip(
+                new Size(_shadowRoot.Width, _shadowRoot.Height),
+                chromeBounds,
+                visibleCornerRadius
             );
         }
 
         private static CornerRadius GetVisibleCornerRadius(
-            Rect         visibleBounds,
-            Rect         contentBounds,
-            CornerRadius sourceCornerRadius
-        )
+            Rect visibleBounds,
+            Rect contentBounds,
+            CornerRadius sourceCornerRadius)
         {
             const double Tolerance = 0.1D;
 
@@ -866,10 +886,9 @@ public static class PopupShadow
         }
 
         private static GeometryGroup CreateShadowOnlyClip(
-            Size         shadowSize,
-            Rect         contentBounds,
-            CornerRadius cornerRadius
-        )
+            Size shadowSize,
+            Rect contentBounds,
+            CornerRadius cornerRadius)
         {
             var clip = new GeometryGroup
             {
@@ -982,7 +1001,7 @@ public static class PopupShadow
             {
                 // HTTRANSPARENT lets mouse input continue to the popup or underlying window.
                 handled = true;
-                return new IntPtr(-1);
+                return new IntPtr(PInvoke.HTTRANSPARENT);
             }
 
             return IntPtr.Zero;
