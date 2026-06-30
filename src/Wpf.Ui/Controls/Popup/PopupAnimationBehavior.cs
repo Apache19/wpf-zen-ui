@@ -3,9 +3,11 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
+using System.Diagnostics;
 using System.Windows.Controls.Primitives;
 using System.Windows.Media.Animation;
 using System.Windows.Threading;
+using WinContextMenu = System.Windows.Controls.ContextMenu;
 
 // ReSharper disable once CheckNamespace
 namespace Wpf.Ui.Controls;
@@ -26,7 +28,8 @@ public static class PopupAnimationBehavior
     /// Identifies the attached property that configures the custom Wpf.Ui popup opening animation.
     /// </summary>
     /// <remarks>
-    /// Set this property on a <see cref="Popup"/> and keep <see cref="Popup.PopupAnimation"/> as
+    /// Set this property on a <see cref="Popup"/> or <see cref="WinContextMenu"/> and keep
+    /// <see cref="Popup.PopupAnimation"/> as
     /// <see cref="PopupAnimation.None"/> to enable the custom animation path. Clearing this property detaches
     /// the behavior and restores any animated values that were touched by the controller.
     /// </remarks>
@@ -54,6 +57,7 @@ public static class PopupAnimationBehavior
     /// </param>
     /// <returns>AnimationSettings property value.</returns>
     [AttachedPropertyBrowsableForType(typeof(Popup))]
+    [AttachedPropertyBrowsableForType(typeof(WinContextMenu))]
     public static PopupAnimationSettings? GetAnimationSettings(DependencyObject element)
     {
         return (PopupAnimationSettings?)element.GetValue(AnimationSettingsProperty);
@@ -72,6 +76,7 @@ public static class PopupAnimationBehavior
     }
 
     [AttachedPropertyBrowsableForType(typeof(Popup))]
+    [AttachedPropertyBrowsableForType(typeof(WinContextMenu))]
     private static PopupAnimationController? GetAnimationController(DependencyObject element)
     {
         return (PopupAnimationController?)element.GetValue(AnimationControllerProperty);
@@ -82,36 +87,46 @@ public static class PopupAnimationBehavior
         element.SetValue(AnimationControllerProperty, value);
     }
 
-    internal static bool IsCustomAnimationActive(Popup popup)
+    internal static bool IsCustomAnimationActive(DependencyObject owner)
     {
-        return popup.PopupAnimation == PopupAnimation.None && GetAnimationSettings(popup) != null;
+        return GetPopupAnimation(owner) == PopupAnimation.None && GetAnimationSettings(owner) != null;
     }
 
-    internal static Duration GetAnimationDuration(Popup popup)
+    internal static Duration GetAnimationDuration(DependencyObject owner)
     {
-        return new Duration(GetAnimationSettings(popup)?.GetDuration() ?? TimeSpan.Zero);
+        return new Duration(GetAnimationSettings(owner)?.GetDuration() ?? TimeSpan.Zero);
     }
 
-    internal static IEasingFunction? GetAnimationEasingFunction(Popup popup)
+    internal static IEasingFunction? GetAnimationEasingFunction(DependencyObject owner)
     {
-        return GetAnimationSettings(popup)?.GetEasingFunction();
+        return GetAnimationSettings(owner)?.GetEasingFunction();
     }
 
-    internal static bool TryGetAnimationStartOffset(Popup popup, UIElement popupRoot, out double startOffset)
+    internal static bool TryGetAnimationStartOffset(
+        DependencyObject owner,
+        UIElement popupRoot,
+        out double startOffset)
     {
-        if (GetAnimationController(popup)?.TryGetCurrentAnimationStartOffset(popupRoot, out startOffset) == true)
+        if (GetAnimationController(owner)?.TryGetCurrentAnimationStartOffset(popupRoot, out startOffset) == true)
         {
             return true;
         }
 
-        if (GetAnimationSettings(popup) is not { } settings)
+        if (GetAnimationSettings(owner) is not { } settings)
         {
             startOffset = 0D;
             return false;
         }
 
-        startOffset = GetEffectiveStartOffset(settings, popupRoot, ResolveActualVerticalPlacement(popup, popupRoot));
+        startOffset = GetEffectiveStartOffset(settings, popupRoot, ResolveActualVerticalPlacement(owner, popupRoot));
         return true;
+    }
+
+    private static PopupAnimation GetPopupAnimation(DependencyObject owner)
+    {
+        return owner.GetValue(Popup.PopupAnimationProperty) is PopupAnimation animation
+            ? animation
+            : PopupAnimation.None;
     }
 
     private static double GetEffectiveStartOffset(
@@ -147,12 +162,14 @@ public static class PopupAnimationBehavior
             : startOffset;
     }
 
-    private static PopupVerticalPlacement ResolveActualVerticalPlacement(Popup popup, UIElement popupRoot)
+    private static PopupVerticalPlacement ResolveActualVerticalPlacement(
+        DependencyObject owner,
+        UIElement popupRoot)
     {
         // Requested Placement is only a hint: Popup may flip to the opposite side to stay inside the screen.
         // Compare realized screen bounds first, and use the requested placement only when the visual has not
         // been measured or transformed into a reliable screen rectangle yet.
-        if (popup.PlacementTarget is UIElement target &&
+        if (GetPlacementTarget(owner) is UIElement target &&
             TryGetScreenBounds(target, out var targetBounds) &&
             TryGetScreenBounds(popupRoot, out var popupBounds))
         {
@@ -176,7 +193,27 @@ public static class PopupAnimationBehavior
             }
         }
 
-        return ResolveRequestedVerticalPlacement(popup.Placement);
+        return ResolveRequestedVerticalPlacement(GetPlacement(owner));
+    }
+
+    private static UIElement? GetPlacementTarget(DependencyObject owner)
+    {
+        return owner switch
+        {
+            Popup popup                => popup.PlacementTarget,
+            WinContextMenu contextMenu => contextMenu.PlacementTarget,
+            _                          => null,
+        };
+    }
+
+    private static PlacementMode GetPlacement(DependencyObject owner)
+    {
+        return owner switch
+        {
+            Popup popup                => popup.Placement,
+            WinContextMenu contextMenu => contextMenu.Placement,
+            _                          => PlacementMode.Bottom,
+        };
     }
 
     private static PopupVerticalPlacement ResolveRequestedVerticalPlacement(PlacementMode placement)
@@ -251,25 +288,25 @@ public static class PopupAnimationBehavior
         DependencyObject d,
         DependencyPropertyChangedEventArgs e)
     {
-        if (d is not Popup popup)
+        if (d is not Popup and not WinContextMenu)
         {
             return;
         }
 
-        var controller = GetAnimationController(popup);
+        var controller = GetAnimationController(d);
         if (e.NewValue is not PopupAnimationSettings settings)
         {
             // The controller owns event subscriptions and transient animation state, but its lifetime is tied
             // to the attached property rather than to a public disposable object.
             controller?.Dispose();
-            SetAnimationController(popup, null);
+            SetAnimationController(d, null);
             return;
         }
 
         if (controller == null)
         {
-            controller = new PopupAnimationController(popup);
-            SetAnimationController(popup, controller);
+            controller = new PopupAnimationController(d);
+            SetAnimationController(d, controller);
         }
 
         controller.Attach(settings);
@@ -282,7 +319,7 @@ public static class PopupAnimationBehavior
     }
 
     /// <summary>
-    /// Coordinates the custom opening animation for one <see cref="Popup"/>.
+    /// Coordinates the custom opening animation for one popup-style owner.
     /// </summary>
     /// <remarks>
     /// A popup creates its actual window content lazily, so the behavior cannot prepare the target visual when
@@ -298,7 +335,7 @@ public static class PopupAnimationBehavior
                       + "and do not represent externally supplied bindings or local values.")]
     private sealed class PopupAnimationController : IDisposable
     {
-        private readonly Popup                   _popup;
+        private readonly DependencyObject        _owner;
         private          PopupAnimationSettings? _settings;
         private          UIElement?              _popupRoot;
         private          TranslateTransform?     _translateTransform;
@@ -309,9 +346,9 @@ public static class PopupAnimationBehavior
         private          bool                    _isSettingsChangedSubscribed;
         private          bool                    _isDisposed;
 
-        public PopupAnimationController(Popup popup)
+        public PopupAnimationController(DependencyObject owner)
         {
-            _popup = popup;
+            _owner = owner;
         }
 
         public void Attach(PopupAnimationSettings settings)
@@ -345,7 +382,7 @@ public static class PopupAnimationBehavior
                 _isAttached = true;
             }
 
-            if (_popup.IsOpen)
+            if (IsOwnerOpen)
             {
                 // The property can be attached after the popup is already open, especially when styles or
                 // templates are applied late. Play the entrance immediately instead of waiting for the next
@@ -385,33 +422,83 @@ public static class PopupAnimationBehavior
 
         private void AttachPopupEvents()
         {
+            Debug.WriteLine("[PopupAnimation] AttachPopupEvents");
+
             // Placement and PopupAnimation are watched in addition to Opened/Closed because both can change
             // while the popup is alive. A placement change may require a new slide direction, and a switch back
             // to a native PopupAnimation must cancel this custom animation path immediately.
-            _popup.Opened += OnPopupOpened;
-            _popup.Closed += OnPopupClosed;
+            switch (_owner)
+            {
+                case Popup popup:
+                {
+                    popup.Opened += OnPopupOpened;
+                    popup.Closed += OnPopupClosed;
 
-            DependencyPropertyDescriptor
-               .FromProperty(Popup.PlacementProperty, typeof(Popup))
-              ?.AddValueChanged(_popup, OnPlacementChanged);
+                    DependencyPropertyDescriptor
+                       .FromProperty(Popup.PlacementProperty, typeof(Popup))
+                      ?.AddValueChanged(popup, OnPlacementChanged);
 
-            DependencyPropertyDescriptor
-               .FromProperty(Popup.PopupAnimationProperty, typeof(Popup))
-              ?.AddValueChanged(_popup, OnPopupAnimationChanged);
+                    DependencyPropertyDescriptor
+                       .FromProperty(Popup.PopupAnimationProperty, typeof(Popup))
+                      ?.AddValueChanged(popup, OnPopupAnimationChanged);
+
+                    break;
+                }
+
+                case WinContextMenu contextMenu:
+                {
+                    contextMenu.Opened += OnPopupOpened;
+                    contextMenu.Closed += OnPopupClosed;
+
+                    DependencyPropertyDescriptor
+                       .FromProperty(WinContextMenu.PlacementProperty, typeof(WinContextMenu))
+                      ?.AddValueChanged(contextMenu, OnPlacementChanged);
+
+                    DependencyPropertyDescriptor
+                       .FromProperty(Popup.PopupAnimationProperty, typeof(WinContextMenu))
+                      ?.AddValueChanged(contextMenu, OnPopupAnimationChanged);
+
+                    break;
+                }
+            }
         }
 
         private void DetachPopupEvents()
         {
-            _popup.Opened -= OnPopupOpened;
-            _popup.Closed -= OnPopupClosed;
+            switch (_owner)
+            {
+                case Popup popup:
+                {
+                    popup.Opened -= OnPopupOpened;
+                    popup.Closed -= OnPopupClosed;
 
-            DependencyPropertyDescriptor
-               .FromProperty(Popup.PlacementProperty, typeof(Popup))
-              ?.RemoveValueChanged(_popup, OnPlacementChanged);
+                    DependencyPropertyDescriptor
+                       .FromProperty(Popup.PlacementProperty, typeof(Popup))
+                      ?.RemoveValueChanged(popup, OnPlacementChanged);
 
-            DependencyPropertyDescriptor
-               .FromProperty(Popup.PopupAnimationProperty, typeof(Popup))
-              ?.RemoveValueChanged(_popup, OnPopupAnimationChanged);
+                    DependencyPropertyDescriptor
+                       .FromProperty(Popup.PopupAnimationProperty, typeof(Popup))
+                      ?.RemoveValueChanged(popup, OnPopupAnimationChanged);
+
+                    break;
+                }
+
+                case WinContextMenu contextMenu:
+                {
+                    contextMenu.Opened -= OnPopupOpened;
+                    contextMenu.Closed -= OnPopupClosed;
+
+                    DependencyPropertyDescriptor
+                       .FromProperty(WinContextMenu.PlacementProperty, typeof(WinContextMenu))
+                      ?.RemoveValueChanged(contextMenu, OnPlacementChanged);
+
+                    DependencyPropertyDescriptor
+                       .FromProperty(Popup.PopupAnimationProperty, typeof(WinContextMenu))
+                      ?.RemoveValueChanged(contextMenu, OnPopupAnimationChanged);
+
+                    break;
+                }
+            }
         }
 
         private void SubscribeSettingsChanged()
@@ -462,7 +549,7 @@ public static class PopupAnimationBehavior
 
         private void OnPlacementChanged(object? sender, EventArgs e)
         {
-            if (_popup.IsOpen)
+            if (IsOwnerOpen)
             {
                 // Popup can move while it remains open, for example after layout changes or screen-edge
                 // collision handling. Restart so the offset is recalculated against the new realized position.
@@ -472,13 +559,13 @@ public static class PopupAnimationBehavior
 
         private void OnPopupAnimationChanged(object? sender, EventArgs e)
         {
-            if (_popup.PopupAnimation != PopupAnimation.None)
+            if (GetPopupAnimation(_owner) != PopupAnimation.None)
             {
                 StopOpenAnimation();
                 return;
             }
 
-            if (_popup.IsOpen)
+            if (IsOwnerOpen)
             {
                 // Re-entering the custom path while already open should still show the configured entrance
                 // state instead of leaving the popup wherever a native or previous animation path stopped.
@@ -488,7 +575,7 @@ public static class PopupAnimationBehavior
 
         private void OnSettingsChanged(object? sender, EventArgs e)
         {
-            if (_popup.IsOpen && _popup.PopupAnimation == PopupAnimation.None)
+            if (IsOwnerOpen && GetPopupAnimation(_owner) == PopupAnimation.None)
             {
                 // Treat mutable setting changes as a new entrance rather than trying to retarget running
                 // animations in place. Restarting keeps duration, easing, and start offset consistent.
@@ -503,7 +590,7 @@ public static class PopupAnimationBehavior
 
         private void BeginOpenAnimation(int openVersion)
         {
-            if (_isDisposed || !_popup.IsOpen)
+            if (_isDisposed || !IsOwnerOpen)
             {
                 return;
             }
@@ -513,7 +600,7 @@ public static class PopupAnimationBehavior
                 return;
             }
 
-            if (_settings == null || _popup.PopupAnimation != PopupAnimation.None)
+            if (_settings == null || GetPopupAnimation(_owner) != PopupAnimation.None)
             {
                 StopOpenAnimation();
                 return;
@@ -523,7 +610,7 @@ public static class PopupAnimationBehavior
             {
                 // Popup.Opened can fire before PresentationSource exposes the root visual. Retry at Loaded
                 // priority with the same version token so a quick close/reopen cannot animate a stale popup.
-                _ = _popup.Dispatcher.BeginInvoke(
+                _ = _owner.Dispatcher.BeginInvoke(
                     new Action(() => BeginOpenAnimation(openVersion)),
                     DispatcherPriority.Loaded
                 );
@@ -536,7 +623,7 @@ public static class PopupAnimationBehavior
             var startOffset = GetEffectiveStartOffset(
                 _settings,
                 popupRoot,
-                ResolveActualVerticalPlacement(_popup, popupRoot)
+                ResolveActualVerticalPlacement(_owner, popupRoot)
             );
 
             var translateTransform = EnsureTranslateTransform(popupRoot);
@@ -572,7 +659,7 @@ public static class PopupAnimationBehavior
             // a layout/render boundary to become the presented starting frame. Starting immediately in the same
             // dispatcher turn can spend part of the animation timeline while the popup content is not yet drawn,
             // which makes the first visible frame appear already in progress or skip the opening motion entirely.
-            _pendingOpenAnimationOperation = _popup.Dispatcher.BeginInvoke(
+            _pendingOpenAnimationOperation = _owner.Dispatcher.BeginInvoke(
                 new Action(() => StartOpenAnimation(openVersion, popupRoot, translateTransform, duration)),
                 DispatcherPriority.Render
             );
@@ -586,14 +673,14 @@ public static class PopupAnimationBehavior
         {
             _pendingOpenAnimationOperation = null;
 
-            if (_isDisposed || !_popup.IsOpen || openVersion != _openVersion)
+            if (_isDisposed || !IsOwnerOpen || openVersion != _openVersion)
             {
                 // Render-priority work is allowed to become stale. Returning without cleanup is intentional
                 // here: close/dispose/new-open paths already reset state through StopOpenAnimation.
                 return;
             }
 
-            if (_settings == null || _popup.PopupAnimation != PopupAnimation.None)
+            if (_settings == null || GetPopupAnimation(_owner) != PopupAnimation.None)
             {
                 StopOpenAnimation();
                 return;
@@ -616,7 +703,8 @@ public static class PopupAnimationBehavior
             // It also avoids each movement easing accidentally giving the popup a different fade personality.
             var opacityAnimation = new DoubleAnimation(1D, durationValue, FillBehavior.HoldEnd)
             {
-                // EasingFunction = _settings.GetEasingFunction(),
+                // 测试，看看慢动作下是什么表现
+                EasingFunction = _settings.GetEasingFunction(),
             };
 
             // SnapshotAndReplace deliberately cuts off any previous generated animation. Popup entrance is a
@@ -706,10 +794,21 @@ public static class PopupAnimationBehavior
             // Popup.Child belongs to the logical popup content, but the visible window is hosted under the
             // HwndSource root visual. Animating the root keeps shadows, chrome, and transformed content moving
             // as one unit without changing the placement target or child layout.
-            return _popup.Child is Visual child
-                ? (PresentationSource.FromVisual(child) as HwndSource)?.RootVisual
-                : null;
+            return _owner switch
+            {
+                Popup { Child: Visual child } => (PresentationSource.FromVisual(child) as HwndSource)?.RootVisual,
+                WinContextMenu contextMenu    => (PresentationSource.FromVisual(contextMenu) as HwndSource)?.RootVisual,
+                _                             => null,
+            };
         }
+
+        private bool IsOwnerOpen =>
+            _owner switch
+            {
+                Popup popup                => popup.IsOpen,
+                WinContextMenu contextMenu => contextMenu.IsOpen,
+                _                          => false,
+            };
 
         private TranslateTransform EnsureTranslateTransform(UIElement popupRoot)
         {

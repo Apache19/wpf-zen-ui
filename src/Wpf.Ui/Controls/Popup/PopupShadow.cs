@@ -693,14 +693,14 @@ public static class PopupShadow
 
                 case PopupAnimation.None:
                 default:
-                    if (_owner is Popup popup && PopupAnimationBehavior.IsCustomAnimationActive(popup))
+                    if (PopupAnimationBehavior.IsCustomAnimationActive(_owner))
                     {
                         // PopupAnimationBehavior animates the popup HWND root while Popup.PopupAnimation remains None.
                         // The shadow still needs to follow that synthetic movement so both features compose.
-                        var duration = PopupAnimationBehavior.GetAnimationDuration(popup);
+                        var duration = PopupAnimationBehavior.GetAnimationDuration(_owner);
                         if (_chrome.AnimationMode == PopupShadowAnimationMode.DynamicContentBounds)
                         {
-                            if (TryBeginParallelDynamicContentBoundsAnimation(popup, duration))
+                            if (TryBeginParallelDynamicContentBoundsAnimation(_owner, duration))
                             {
                                 break;
                             }
@@ -792,17 +792,17 @@ public static class PopupShadow
             BeginRootFadeIn(duration);
         }
 
-        private bool TryBeginParallelDynamicContentBoundsAnimation(Popup popup, Duration duration)
+        private bool TryBeginParallelDynamicContentBoundsAnimation(DependencyObject owner, Duration duration)
         {
             if (_shadowRoot == null ||
                 _popupSource?.RootVisual is not UIElement popupRoot ||
-                !PopupAnimationBehavior.TryGetAnimationStartOffset(popup, popupRoot, out var startOffset))
+                !PopupAnimationBehavior.TryGetAnimationStartOffset(owner, popupRoot, out var startOffset))
             {
                 return false;
             }
 
             _contentBoundsAnimationDuration       = duration;
-            _contentBoundsAnimationEasingFunction = PopupAnimationBehavior.GetAnimationEasingFunction(popup);
+            _contentBoundsAnimationEasingFunction = PopupAnimationBehavior.GetAnimationEasingFunction(owner);
             _contentBoundsAnimationStartOffset    = startOffset;
             _isParallelContentBoundsAnimation     = true;
             _shadowAnimationStartedAt             = DateTime.UtcNow;
