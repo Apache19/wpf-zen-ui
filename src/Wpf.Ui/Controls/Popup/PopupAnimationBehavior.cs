@@ -89,7 +89,9 @@ public static class PopupAnimationBehavior
 
     internal static bool IsCustomAnimationActive(DependencyObject owner)
     {
-        return GetPopupAnimation(owner) == PopupAnimation.None && GetAnimationSettings(owner) != null;
+        return GetAnimationSettings(owner) != null &&
+               (GetPopupAnimation(owner) == PopupAnimation.None ||
+                GetAnimationController(owner)?.IsOpenBootstrapAnimationApplied == true);
     }
 
     internal static Duration GetAnimationDuration(DependencyObject owner)
@@ -342,6 +344,8 @@ public static class PopupAnimationBehavior
         private          DispatcherOperation?    _pendingOpenAnimationOperation;
         private          double?                 _currentAnimationStartOffset;
         private          int                     _openVersion;
+        private          bool                    _isOpenBootstrapAnimationApplied;
+        private          bool                    _isUpdatingPopupAnimation;
         private          bool                    _isAttached;
         private          bool                    _isSettingsChangedSubscribed;
         private          bool                    _isDisposed;
@@ -390,6 +394,10 @@ public static class PopupAnimationBehavior
                 _openVersion++;
                 BeginOpenAnimation();
             }
+            else
+            {
+                PrepareOpenBootstrapAnimation();
+            }
         }
 
         public void Dispose()
@@ -424,13 +432,18 @@ public static class PopupAnimationBehavior
         private void AttachPopupEvents()
         {
             // Opened is the first public point where WPF has created the popup root and attached it to the HWND.
-            // Closing is intentionally not intercepted: PopupRoot.StopAnimations owns that path.
+            // IsOpen=false is observed only as an early signal to invalidate pending open callbacks and prepare
+            // WPF's native first-frame hiding path for the next open.
             switch (_owner)
             {
                 case Popup popup:
                 {
                     popup.Opened += OnPopupOpened;
                     popup.Closed += OnPopupClosed;
+
+                    DependencyPropertyDescriptor
+                       .FromProperty(Popup.IsOpenProperty, typeof(Popup))
+                      ?.AddValueChanged(popup, OnPopupIsOpenChanged);
 
                     DependencyPropertyDescriptor
                        .FromProperty(Popup.PopupAnimationProperty, typeof(Popup))
@@ -461,6 +474,10 @@ public static class PopupAnimationBehavior
                 {
                     popup.Opened -= OnPopupOpened;
                     popup.Closed -= OnPopupClosed;
+
+                    DependencyPropertyDescriptor
+                       .FromProperty(Popup.IsOpenProperty, typeof(Popup))
+                      ?.RemoveValueChanged(popup, OnPopupIsOpenChanged);
 
                     DependencyPropertyDescriptor
                        .FromProperty(Popup.PopupAnimationProperty, typeof(Popup))
@@ -518,8 +535,24 @@ public static class PopupAnimationBehavior
             // Every open/close cycle owns its own asynchronous callbacks. Incrementing the version lets delayed
             // Loaded/Render operations and animation completions detect that they belong to an older popup life.
             _openVersion++;
+            RestoreOpenBootstrapAnimation();
             ApplyRootPopupAnimationMode();
             BeginOpenAnimation();
+        }
+
+        private void OnPopupIsOpenChanged(object? sender, EventArgs e)
+        {
+            if (IsOwnerOpen)
+            {
+                return;
+            }
+
+            // IsOpen=false is the earliest public close signal for a normal Popup. Do not touch visible close
+            // state here; only invalidate the current open.
+            _openVersion++;
+            CancelPendingOpenAnimation();
+            ReleaseAnimationReferences();
+            PrepareOpenBootstrapAnimation();
         }
 
         private void OnPopupClosed(object? sender, EventArgs e)
@@ -534,11 +567,22 @@ public static class PopupAnimationBehavior
             _openVersion++;
             CancelPendingOpenAnimation();
             ReleaseAnimationReferences();
+            PrepareOpenBootstrapAnimation();
         }
 
         private void OnPopupAnimationChanged(object? sender, EventArgs e)
         {
-            if (GetPopupAnimation(_owner) != PopupAnimation.None)
+            if (_isUpdatingPopupAnimation)
+            {
+                return;
+            }
+
+            if (_isOpenBootstrapAnimationApplied && GetPopupAnimation(_owner) != PopupAnimation.Fade)
+            {
+                _isOpenBootstrapAnimationApplied = false;
+            }
+
+            if (!IsCustomAnimationRequested)
             {
                 RestoreNaturalState();
                 return;
@@ -549,6 +593,10 @@ public static class PopupAnimationBehavior
                 // Re-entering the custom path while already open should still show the configured entrance
                 // state instead of leaving the popup wherever a native or previous animation path stopped.
                 BeginOpenAnimation();
+            }
+            else
+            {
+                PrepareOpenBootstrapAnimation();
             }
         }
 
@@ -579,12 +627,13 @@ public static class PopupAnimationBehavior
                 return;
             }
 
-            if (_settings == null || GetPopupAnimation(_owner) != PopupAnimation.None)
+            if (!IsCustomAnimationRequested || _settings is not { } settings)
             {
                 RestoreNaturalState();
                 return;
             }
 
+            RestoreOpenBootstrapAnimation();
             ApplyRootPopupAnimationMode();
 
             if (GetPopupRoot() is not UIElement popupRoot)
@@ -611,10 +660,10 @@ public static class PopupAnimationBehavior
                 animationLayer = null;
             }
 
-            var duration = _settings.GetDuration();
+            var duration = settings.GetDuration();
 
             var startOffset = GetEffectiveStartOffset(
-                _settings,
+                settings,
                 popupRoot,
                 ResolveActualVerticalPlacement(_owner, popupRoot)
             );
@@ -629,7 +678,7 @@ public static class PopupAnimationBehavior
                 : 0D;
 
             CancelPendingOpenAnimation();
-            ResetBaseValues(popupRoot, translateTransform);
+            InitializeOpenAnimationBaseValues(popupRoot, translateTransform, startOffset);
 
             if (duration <= TimeSpan.Zero || translateTransform == null || Math.Abs(startOffset) < 0.1D)
             {
@@ -665,7 +714,7 @@ public static class PopupAnimationBehavior
             var durationValue  = new Duration(duration);
             var easingFunction = _settings.GetEasingFunction();
 
-            var translateAnimation = new DoubleAnimation(startOffset, 0D, durationValue, FillBehavior.Stop)
+            var translateAnimation = new DoubleAnimation(startOffset, 0D, durationValue, FillBehavior.HoldEnd)
             {
                 EasingFunction = easingFunction,
             };
@@ -675,7 +724,7 @@ public static class PopupAnimationBehavior
             // differently from displacement: an ease-out fade can look like a sudden appearance because the fast
             // early alpha change is hard to track, while linear opacity gives the softest and most legible fade.
             // It also avoids each movement easing accidentally giving the popup a different fade personality.
-            var opacityAnimation = new DoubleAnimation(0D, 1D, durationValue, FillBehavior.Stop)
+            var opacityAnimation = new DoubleAnimation(0D, 1D, durationValue, FillBehavior.HoldEnd)
             {
                 EasingFunction = null,
             };
@@ -702,25 +751,29 @@ public static class PopupAnimationBehavior
                 return;
             }
 
-            // The animations use FillBehavior.Stop with natural base values already set to the final state.
+            // The animations hold their final value until we can commit final base values and remove the clocks.
             CompleteOpenAnimation();
         }
 
-        private static void ResetBaseValues(UIElement popupRoot, TranslateTransform? translateTransform)
+        private static void InitializeOpenAnimationBaseValues(
+            UIElement popupRoot,
+            TranslateTransform? translateTransform,
+            double startOffset)
         {
             popupRoot.BeginAnimation(UIElement.OpacityProperty, null);
-            popupRoot.Opacity = 1D;
+            popupRoot.Opacity = 0D;
 
             if (translateTransform != null)
             {
                 translateTransform.BeginAnimation(TranslateTransform.YProperty, null);
-                translateTransform.Y = 0D;
+                translateTransform.Y = startOffset;
             }
         }
 
         private void CompleteOpenAnimation()
         {
             CancelPendingOpenAnimation();
+            CommitFinalOpenState();
 
             ReleaseAnimationReferences();
         }
@@ -728,7 +781,14 @@ public static class PopupAnimationBehavior
         private void RestoreNaturalState()
         {
             CancelPendingOpenAnimation();
+            RestoreOpenBootstrapAnimation();
+            CommitFinalOpenState();
 
+            ReleaseAnimationReferences();
+        }
+
+        private void CommitFinalOpenState()
+        {
             if (_popupRoot != null)
             {
                 _popupRoot.BeginAnimation(UIElement.OpacityProperty, null);
@@ -740,8 +800,6 @@ public static class PopupAnimationBehavior
                 _translateTransform.BeginAnimation(TranslateTransform.YProperty, null);
                 _translateTransform.Y = 0D;
             }
-
-            ReleaseAnimationReferences();
         }
 
         private void ReleaseAnimationReferences()
@@ -749,6 +807,65 @@ public static class PopupAnimationBehavior
             _translateTransform = null;
             _popupRoot          = null;
             _currentAnimationStartOffset = null;
+        }
+
+        private bool IsCustomAnimationRequested =>
+            _settings != null &&
+            (GetPopupAnimation(_owner) == PopupAnimation.None || _isOpenBootstrapAnimationApplied);
+
+        internal bool IsOpenBootstrapAnimationApplied => _isOpenBootstrapAnimationApplied;
+
+        private void PrepareOpenBootstrapAnimation()
+        {
+            if (_owner is not Popup popup ||
+                _settings == null ||
+                _isOpenBootstrapAnimationApplied ||
+                popup.IsOpen ||
+                !popup.AllowsTransparency ||
+                GetPopupAnimation(popup) != PopupAnimation.None)
+            {
+                return;
+            }
+
+            // Popup.SetRootVisualToPopupRoot hides the root before the HWND is shown only when PopupAnimation is
+            // non-None. For templated popups, such as ComboBox, the actual Popup value often comes from a
+            // TemplateBinding, so change the templated parent value that feeds the Popup instead of only changing
+            // the already-bound target.
+            SetPopupAnimation(GetPopupAnimationBootstrapTarget(popup), PopupAnimation.Fade);
+            _isOpenBootstrapAnimationApplied = true;
+        }
+
+        private void RestoreOpenBootstrapAnimation()
+        {
+            if (!_isOpenBootstrapAnimationApplied || _owner is not Popup popup)
+            {
+                return;
+            }
+
+            SetPopupAnimation(GetPopupAnimationBootstrapTarget(popup), PopupAnimation.None);
+            popup.SetCurrentValue(Popup.PopupAnimationProperty, PopupAnimation.None);
+            _isOpenBootstrapAnimationApplied = false;
+        }
+
+        private static DependencyObject GetPopupAnimationBootstrapTarget(Popup popup)
+        {
+            return popup.TemplatedParent is DependencyObject templatedParent
+                ? templatedParent
+                : popup;
+        }
+
+        private void SetPopupAnimation(DependencyObject owner, PopupAnimation animation)
+        {
+            _isUpdatingPopupAnimation = true;
+
+            try
+            {
+                owner.SetCurrentValue(Popup.PopupAnimationProperty, animation);
+            }
+            finally
+            {
+                _isUpdatingPopupAnimation = false;
+            }
         }
 
         internal bool TryGetCurrentAnimationStartOffset(UIElement popupRoot, out double startOffset)
