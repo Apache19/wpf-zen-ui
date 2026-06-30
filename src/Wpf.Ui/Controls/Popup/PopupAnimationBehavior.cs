@@ -99,6 +99,11 @@ public static class PopupAnimationBehavior
 
     internal static bool TryGetAnimationStartOffset(Popup popup, UIElement popupRoot, out double startOffset)
     {
+        if (GetAnimationController(popup)?.TryGetCurrentAnimationStartOffset(popupRoot, out startOffset) == true)
+        {
+            return true;
+        }
+
         if (GetAnimationSettings(popup) is not { } settings)
         {
             startOffset = 0D;
@@ -298,6 +303,7 @@ public static class PopupAnimationBehavior
         private          UIElement?              _popupRoot;
         private          TranslateTransform?     _translateTransform;
         private          DispatcherOperation?    _pendingOpenAnimationOperation;
+        private          double?                 _currentAnimationStartOffset;
         private          int                     _openVersion;
         private          bool                    _isAttached;
         private          bool                    _isSettingsChangedSubscribed;
@@ -535,7 +541,8 @@ public static class PopupAnimationBehavior
 
             var translateTransform = EnsureTranslateTransform(popupRoot);
 
-            _popupRoot = popupRoot;
+            _popupRoot                   = popupRoot;
+            _currentAnimationStartOffset = startOffset;
 
             // A previous opening attempt may have already scheduled the Render-priority start. Cancel it before
             // writing the new initial frame so only the latest settings, placement, and version can start.
@@ -557,6 +564,7 @@ public static class PopupAnimationBehavior
                 // settings as an explicit "no animation" state without leaving the popup transparent.
                 translateTransform.Y = 0D;
                 popupRoot.Opacity    = 1D;
+                _currentAnimationStartOffset = null;
                 return;
             }
 
@@ -661,6 +669,19 @@ public static class PopupAnimationBehavior
 
             _translateTransform = null;
             _popupRoot          = null;
+            _currentAnimationStartOffset = null;
+        }
+
+        internal bool TryGetCurrentAnimationStartOffset(UIElement popupRoot, out double startOffset)
+        {
+            if (_popupRoot == popupRoot && _currentAnimationStartOffset.HasValue)
+            {
+                startOffset = _currentAnimationStartOffset.Value;
+                return true;
+            }
+
+            startOffset = 0D;
+            return false;
         }
 
         private void CancelPendingOpenAnimation()

@@ -186,6 +186,7 @@ public static class PopupShadow
         private IEasingFunction?   _contentBoundsAnimationEasingFunction;
         private double             _contentBoundsAnimationStartOffset;
         private bool               _isParallelContentBoundsAnimation;
+        private bool               _isOpenAnimationPending;
         private DateTime           _shadowAnimationStartedAt;
         private bool               _isAttached;
         private bool               _isChromeChangedSubscribed;
@@ -234,6 +235,7 @@ public static class PopupShadow
             {
                 // The attached property can appear after the popup is already open, for example through a late style
                 // application. Resolve the HWND immediately so the visual state matches the property state.
+                _isOpenAnimationPending = true;
                 Open();
             }
         }
@@ -364,6 +366,7 @@ public static class PopupShadow
 
         private void OnOwnerOpened(object? sender, EventArgs e)
         {
+            _isOpenAnimationPending = true;
             Open();
 
             // The popup HWND can be recreated or resized by template/layout work after Opened fires.
@@ -374,13 +377,18 @@ public static class PopupShadow
 
         private void OnOwnerClosed(object? sender, EventArgs e)
         {
-            Close();
+            if (!IsOwnerOpen)
+            {
+                _isOpenAnimationPending = false;
+                Close();
+            }
         }
 
         private void OnOwnerIsOpenChanged(object? sender, EventArgs e)
         {
             if (!IsOwnerOpen)
             {
+                _isOpenAnimationPending = false;
                 BeginCloseAnimation();
             }
         }
@@ -398,7 +406,7 @@ public static class PopupShadow
 
         private void Open()
         {
-            if (_chrome == null)
+            if (_chrome == null || !IsOwnerOpen)
             {
                 return;
             }
@@ -413,6 +421,7 @@ public static class PopupShadow
             {
                 // The owner HWND is already hooked; only its bounds may have changed.
                 UpdateShadowBounds();
+                BeginPendingOpenAnimation();
                 return;
             }
 
@@ -424,7 +433,7 @@ public static class PopupShadow
             EnsureShadowSource();
             ApplyChrome();
             UpdateShadowBounds();
-            BeginOpenAnimation();
+            BeginPendingOpenAnimation(force: true);
         }
 
         private void Close()
@@ -633,6 +642,17 @@ public static class PopupShadow
             {
                 _isUpdatingShadow = false;
             }
+        }
+
+        private void BeginPendingOpenAnimation(bool force = false)
+        {
+            if (!force && !_isOpenAnimationPending)
+            {
+                return;
+            }
+
+            _isOpenAnimationPending = false;
+            BeginOpenAnimation();
         }
 
         private void BeginOpenAnimation()
