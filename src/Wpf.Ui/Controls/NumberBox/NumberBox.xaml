@@ -15,6 +15,10 @@
     xmlns:m="clr-namespace:Wpf.Ui.Markup"
     xmlns:system="clr-namespace:System;assembly=mscorlib">
 
+    <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Resources/Popup.xaml" />
+    </ResourceDictionary.MergedDictionaries>
+
     <Thickness x:Key="NumberBoxBorderThemeThickness">1,1,1,1</Thickness>
     <Thickness x:Key="NumberBoxAccentBorderThemeThickness">0,0,0,1</Thickness>
     <Thickness x:Key="NumberBoxLeftIconMargin">10,8,0,0</Thickness>
@@ -289,11 +293,13 @@
                         <!--  Compact mode popup with large spin buttons  -->
                         <Popup
                             x:Name="PART_CompactPopup"
+                            controls:PopupAnimationBehavior.AnimationSettings="{StaticResource DefaultPopupAnimationSettings}"
+                            controls:PopupShadow.PopupShadowChrome="{StaticResource DefaultPopupShadowChrome}"
                             AllowsTransparency="True"
                             IsOpen="False"
                             Placement="Custom"
                             PlacementTarget="{Binding RelativeSource={RelativeSource TemplatedParent}}"
-                            PopupAnimation="Fade"
+                            PopupAnimation="None"
                             StaysOpen="True">
                             <Border
                                 Padding="4"

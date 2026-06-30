@@ -18,6 +18,7 @@
     xmlns:theming="clr-namespace:Wpf.Ui.Theming">
 
     <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Resources/Popup.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/TextBox/TextBox.xaml" />
     </ResourceDictionary.MergedDictionaries>
 
@@ -49,9 +50,7 @@
                 </controls:ContextMenu>
             </Setter.Value>
         </Setter>
-        <!--  todo Default WPF UI Calendar style 调查这个样式在哪儿  -->
-        <Setter Property="CalendarStyle" Value="{DynamicResource DefaultCalendarDropShadowStyle}" />
-        <!--  Default WPF UI Calendar style  -->
+        <Setter Property="CalendarStyle" Value="{DynamicResource DefaultCalendarStyle}" />
         <Setter Property="Foreground" Value="{markup:BrushResource TextFillColorPrimaryBrush}" />
         <Setter Property="Background" Value="{markup:BrushResource ControlFillColorDefaultBrush}" />
         <Setter Property="BorderBrush" Value="{markup:BrushResource ControlElevationBorderBrush}" />
@@ -146,9 +145,12 @@
                             Grid.Row="1"
                             HorizontalAlignment="Stretch"
                             VerticalAlignment="Top"
+                            controls:PopupAnimationBehavior.AnimationSettings="{StaticResource DefaultPopupAnimationSettings}"
+                            controls:PopupShadow.PopupShadowChrome="{StaticResource DefaultPopupShadowChrome}"
                             AllowsTransparency="True"
                             Placement="Bottom"
                             PlacementTarget="{Binding ElementName=PART_TextBox}"
+                            PopupAnimation="None"
                             StaysOpen="False" />
                     </Grid>
                     <ControlTemplate.Triggers>

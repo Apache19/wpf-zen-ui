@@ -12,6 +12,10 @@
     xmlns:m="clr-namespace:Wpf.Ui.Markup"
     xmlns:t="clr-namespace:Wpf.Ui.Theming">
 
+    <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Resources/Popup.xaml" />
+    </ResourceDictionary.MergedDictionaries>
+
     <!--
         DEFAULT WPF MENU ITEM
     -->
@@ -81,6 +85,8 @@
                     x:Name="Popup"
                     Grid.Row="1"
                     Grid.Column="0"
+                    controls:PopupAnimationBehavior.AnimationSettings="{StaticResource DefaultPopupAnimationSettings}"
+                    controls:PopupShadow.PopupShadowChrome="{StaticResource DefaultPopupShadowChrome}"
                     AllowsTransparency="True"
                     Focusable="False"
                     HorizontalOffset="-12"
@@ -91,7 +97,7 @@
                     VerticalOffset="1">
                     <Border
                         x:Name="SubmenuBorder"
-                        Margin="12,0,12,18"
+                        Margin="0"
                         Padding="0,3,0,3"
                         Background="{m:BrushResource AcrylicBackgroundFillColorDefaultBrush}"
                         BorderBrush="{m:BrushResource SurfaceStrokeColorFlyoutBrush}"
@@ -99,23 +105,12 @@
                         CornerRadius="8"
                         SnapsToDevicePixels="True"
                         UseLayoutRounding="True">
-                        <Border.RenderTransform>
-                            <TranslateTransform />
-                        </Border.RenderTransform>
                         <controls:PassiveScrollViewer
                             CanContentScroll="True"
                             HorizontalScrollBarVisibility="Disabled"
                             VerticalScrollBarVisibility="Auto">
                             <StackPanel IsItemsHost="True" KeyboardNavigation.DirectionalNavigation="Cycle" />
                         </controls:PassiveScrollViewer>
-                        <Border.Effect>
-                            <DropShadowEffect
-                                BlurRadius="20"
-                                Direction="270"
-                                Opacity="0.135"
-                                ShadowDepth="10"
-                                Color="#202020" />
-                        </Border.Effect>
                     </Border>
                 </Popup>
             </Grid>
@@ -149,24 +144,6 @@
             </Trigger>
             <Trigger Property="IsEnabled" Value="False">
                 <Setter Property="Foreground" Value="{m:BrushResource TextFillColorDisabledBrush}" />
-            </Trigger>
-            <Trigger Property="IsSubmenuOpen" Value="True">
-                <Trigger.EnterActions>
-                    <BeginStoryboard>
-                        <Storyboard>
-                            <DoubleAnimation
-                                Storyboard.TargetName="SubmenuBorder"
-                                Storyboard.TargetProperty="(Border.RenderTransform).(TranslateTransform.Y)"
-                                From="-90"
-                                To="0"
-                                Duration="00:00:00.167">
-                                <DoubleAnimation.EasingFunction>
-                                    <CircleEase EasingMode="EaseOut" />
-                                </DoubleAnimation.EasingFunction>
-                            </DoubleAnimation>
-                        </Storyboard>
-                    </BeginStoryboard>
-                </Trigger.EnterActions>
             </Trigger>
         </ControlTemplate.Triggers>
     </ControlTemplate>
@@ -391,6 +368,8 @@
             <Popup
                 x:Name="Popup"
                 Grid.Row="1"
+                controls:PopupAnimationBehavior.AnimationSettings="{StaticResource DefaultPopupAnimationSettings}"
+                controls:PopupShadow.PopupShadowChrome="{StaticResource DefaultPopupShadowChrome}"
                 AllowsTransparency="True"
                 Focusable="False"
                 IsOpen="{TemplateBinding IsSubmenuOpen}"
@@ -400,7 +379,7 @@
                 VerticalOffset="-20">
                 <Border
                     x:Name="SubmenuBorder"
-                    Margin="12,10,12,30"
+                    Margin="0"
                     Padding="0,3,0,3"
                     Background="{m:BrushResource AcrylicBackgroundFillColorDefaultBrush}"
                     BorderBrush="{m:BrushResource SurfaceStrokeColorFlyoutBrush}"
@@ -408,23 +387,12 @@
                     CornerRadius="8"
                     SnapsToDevicePixels="True"
                     UseLayoutRounding="True">
-                    <Border.RenderTransform>
-                        <TranslateTransform />
-                    </Border.RenderTransform>
                     <controls:PassiveScrollViewer
                         CanContentScroll="True"
                         HorizontalScrollBarVisibility="Disabled"
                         VerticalScrollBarVisibility="Auto">
                         <StackPanel IsItemsHost="True" KeyboardNavigation.DirectionalNavigation="Cycle" />
                     </controls:PassiveScrollViewer>
-                    <Border.Effect>
-                        <DropShadowEffect
-                            BlurRadius="20"
-                            Direction="270"
-                            Opacity="0.135"
-                            ShadowDepth="10"
-                            Color="#202020" />
-                    </Border.Effect>
                 </Border>
             </Popup>
         </Grid>
@@ -459,24 +427,6 @@
             <Trigger Property="IsEnabled" Value="false">
                 <Setter Property="Foreground" Value="{m:BrushResource TextFillColorDisabledBrush}" />
                 <Setter TargetName="Chevron" Property="Foreground" Value="{m:BrushResource TextFillColorDisabledBrush}" />
-            </Trigger>
-            <Trigger Property="IsSubmenuOpen" Value="True">
-                <Trigger.EnterActions>
-                    <BeginStoryboard>
-                        <Storyboard>
-                            <DoubleAnimation
-                                Storyboard.TargetName="SubmenuBorder"
-                                Storyboard.TargetProperty="(Border.RenderTransform).(TranslateTransform.Y)"
-                                From="-90"
-                                To="0"
-                                Duration="00:00:00.167">
-                                <DoubleAnimation.EasingFunction>
-                                    <CircleEase EasingMode="EaseOut" />
-                                </DoubleAnimation.EasingFunction>
-                            </DoubleAnimation>
-                        </Storyboard>
-                    </BeginStoryboard>
-                </Trigger.EnterActions>
             </Trigger>
         </ControlTemplate.Triggers>
     </ControlTemplate>
@@ -553,6 +503,8 @@
                     x:Name="Popup"
                     Grid.Row="1"
                     Grid.Column="0"
+                    controls:PopupAnimationBehavior.AnimationSettings="{StaticResource DefaultPopupAnimationSettings}"
+                    controls:PopupShadow.PopupShadowChrome="{StaticResource DefaultPopupShadowChrome}"
                     AllowsTransparency="True"
                     Focusable="False"
                     HorizontalOffset="-12"
@@ -564,7 +516,7 @@
                     <Grid>
                         <Border
                             x:Name="SubmenuBorder"
-                            Margin="12,0,12,18"
+                            Margin="0"
                             Padding="0,3,0,3"
                             Background="{m:BrushResource AcrylicBackgroundFillColorDefaultBrush}"
                             BorderBrush="{m:BrushResource SurfaceStrokeColorFlyoutBrush}"
@@ -572,23 +524,12 @@
                             CornerRadius="8"
                             SnapsToDevicePixels="True"
                             UseLayoutRounding="True">
-                            <Border.RenderTransform>
-                                <TranslateTransform />
-                            </Border.RenderTransform>
                             <controls:PassiveScrollViewer
                                 CanContentScroll="True"
                                 HorizontalScrollBarVisibility="Disabled"
                                 VerticalScrollBarVisibility="Auto">
                                 <StackPanel IsItemsHost="True" KeyboardNavigation.DirectionalNavigation="Cycle" />
                             </controls:PassiveScrollViewer>
-                            <Border.Effect>
-                                <DropShadowEffect
-                                    BlurRadius="20"
-                                    Direction="270"
-                                    Opacity="0.135"
-                                    ShadowDepth="10"
-                                    Color="#202020" />
-                            </Border.Effect>
                         </Border>
                     </Grid>
                 </Popup>
@@ -624,24 +565,6 @@
             </MultiTrigger>
             <Trigger Property="IsEnabled" Value="False">
                 <Setter Property="Foreground" Value="{m:BrushResource TextFillColorDisabledBrush}" />
-            </Trigger>
-            <Trigger Property="IsSubmenuOpen" Value="True">
-                <Trigger.EnterActions>
-                    <BeginStoryboard>
-                        <Storyboard>
-                            <DoubleAnimation
-                                Storyboard.TargetName="SubmenuBorder"
-                                Storyboard.TargetProperty="(Border.RenderTransform).(TranslateTransform.Y)"
-                                From="-90"
-                                To="0"
-                                Duration="00:00:00.167">
-                                <DoubleAnimation.EasingFunction>
-                                    <CircleEase EasingMode="EaseOut" />
-                                </DoubleAnimation.EasingFunction>
-                            </DoubleAnimation>
-                        </Storyboard>
-                    </BeginStoryboard>
-                </Trigger.EnterActions>
             </Trigger>
         </ControlTemplate.Triggers>
     </ControlTemplate>
@@ -878,6 +801,8 @@
             <Popup
                 x:Name="Popup"
                 Grid.Row="1"
+                controls:PopupAnimationBehavior.AnimationSettings="{StaticResource DefaultPopupAnimationSettings}"
+                controls:PopupShadow.PopupShadowChrome="{StaticResource DefaultPopupShadowChrome}"
                 AllowsTransparency="True"
                 Focusable="False"
                 IsOpen="{TemplateBinding IsSubmenuOpen}"
@@ -887,7 +812,7 @@
                 VerticalOffset="-20">
                 <Border
                     x:Name="SubmenuBorder"
-                    Margin="12,10,12,18"
+                    Margin="0"
                     Padding="0,3,0,3"
                     Background="{m:BrushResource AcrylicBackgroundFillColorDefaultBrush}"
                     BorderBrush="{m:BrushResource SurfaceStrokeColorFlyoutBrush}"
@@ -895,23 +820,12 @@
                     CornerRadius="8"
                     SnapsToDevicePixels="True"
                     UseLayoutRounding="True">
-                    <Border.RenderTransform>
-                        <TranslateTransform />
-                    </Border.RenderTransform>
                     <controls:PassiveScrollViewer
                         CanContentScroll="True"
                         HorizontalScrollBarVisibility="Disabled"
                         VerticalScrollBarVisibility="Auto">
                         <StackPanel IsItemsHost="True" KeyboardNavigation.DirectionalNavigation="Cycle" />
                     </controls:PassiveScrollViewer>
-                    <Border.Effect>
-                        <DropShadowEffect
-                            BlurRadius="20"
-                            Direction="270"
-                            Opacity="0.135"
-                            ShadowDepth="10"
-                            Color="#202020" />
-                    </Border.Effect>
                 </Border>
             </Popup>
         </Grid>
@@ -946,24 +860,6 @@
             <Trigger Property="IsEnabled" Value="false">
                 <Setter Property="Foreground" Value="{m:BrushResource TextFillColorDisabledBrush}" />
                 <Setter TargetName="Chevron" Property="Foreground" Value="{m:BrushResource TextFillColorDisabledBrush}" />
-            </Trigger>
-            <Trigger Property="IsSubmenuOpen" Value="True">
-                <Trigger.EnterActions>
-                    <BeginStoryboard>
-                        <Storyboard>
-                            <DoubleAnimation
-                                Storyboard.TargetName="SubmenuBorder"
-                                Storyboard.TargetProperty="(Border.RenderTransform).(TranslateTransform.Y)"
-                                From="-90"
-                                To="0"
-                                Duration="00:00:00.167">
-                                <DoubleAnimation.EasingFunction>
-                                    <CircleEase EasingMode="EaseOut" />
-                                </DoubleAnimation.EasingFunction>
-                            </DoubleAnimation>
-                        </Storyboard>
-                    </BeginStoryboard>
-                </Trigger.EnterActions>
             </Trigger>
         </ControlTemplate.Triggers>
     </ControlTemplate>

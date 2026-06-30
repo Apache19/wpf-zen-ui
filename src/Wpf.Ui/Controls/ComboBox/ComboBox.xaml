@@ -18,17 +18,9 @@
     xmlns:m="clr-namespace:Wpf.Ui.Markup"
     xmlns:t="clr-namespace:Wpf.Ui.Theming">
 
-    <controls:PopupShadowChrome
-        x:Key="FlyoutShadowChrome"
-        AnimationMode="DynamicContentBounds"
-        BlurRadius="30"
-        Direction="0"
-        Opacity="0.255"
-        ShadowDepth="0"
-        ShadowThickness="30"
-        Color="#202020" />
-
-    <controls:PopupAnimationSettings x:Key="FlyoutPopupAnimationSettings" />
+    <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Resources/Popup.xaml" />
+    </ResourceDictionary.MergedDictionaries>
 
     <Style x:Key="DefaultComboBoxTextBoxStyle" TargetType="{x:Type TextBox}">
         <Setter Property="CaretBrush" Value="{m:BrushResource TextFillColorPrimaryBrush}" />
@@ -267,8 +259,8 @@
                                     x:Name="Popup"
                                     Grid.Column="0"
                                     Grid.ColumnSpan="2"
-                                    controls:PopupAnimationBehavior.AnimationSettings="{StaticResource FlyoutPopupAnimationSettings}"
-                                    controls:PopupShadow.PopupShadowChrome="{StaticResource FlyoutShadowChrome}"
+                                    controls:PopupAnimationBehavior.AnimationSettings="{StaticResource DefaultPopupAnimationSettings}"
+                                    controls:PopupShadow.PopupShadowChrome="{StaticResource DefaultPopupShadowChrome}"
                                     AllowsTransparency="True"
                                     Focusable="False"
                                     IsOpen="{TemplateBinding IsDropDownOpen}"

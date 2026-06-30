@@ -5,6 +5,7 @@
     xmlns:converters="clr-namespace:Wpf.Ui.Converters"
     xmlns:markup="clr-namespace:Wpf.Ui.Markup">
     <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Resources/Popup.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/NavigationView/NavigationViewBasePaneButtonStyle.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/NavigationView/NavigationViewItemDefaultStyle.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/NavigationView/NavigationViewConstants.xaml" />
@@ -261,6 +262,8 @@
             <Popup
                 x:Name="SubMenuPopup"
                 Grid.Row="1"
+                controls:PopupAnimationBehavior.AnimationSettings="{StaticResource DefaultPopupAnimationSettings}"
+                controls:PopupShadow.PopupShadowChrome="{StaticResource DefaultPopupShadowChrome}"
                 AllowsTransparency="True"
                 Focusable="False"
                 HorizontalOffset="-12"
@@ -273,24 +276,13 @@
 
                 <Border
                     x:Name="SubMenuBorder"
-                    Margin="12,0,12,18"
+                    Margin="0"
                     Padding="0,3,0,3"
                     Background="{markup:BrushResource AcrylicBackgroundFillColorDefaultBrush}"
                     BorderBrush="{markup:BrushResource SurfaceStrokeColorFlyoutBrush}"
                     BorderThickness="1"
                     CornerRadius="8"
                     SnapsToDevicePixels="True">
-                    <Border.RenderTransform>
-                        <TranslateTransform />
-                    </Border.RenderTransform>
-                    <Border.Effect>
-                        <DropShadowEffect
-                            BlurRadius="20"
-                            Direction="270"
-                            Opacity="0.25"
-                            ShadowDepth="6" />
-                    </Border.Effect>
-
                     <ItemsControl
                         x:Name="SubMenuItemsPresenter"
                         controls:NavigationView.ItemContainerTemplate="{StaticResource TopNavigationViewSubItemTemplate}"
