@@ -317,6 +317,10 @@ public static class PopupShadow
                        .FromProperty(Popup.IsOpenProperty, typeof(Popup))
                       ?.AddValueChanged(popup, OnOwnerIsOpenChanged);
 
+                    DependencyPropertyDescriptor
+                       .FromProperty(Popup.HasDropShadowProperty, typeof(Popup))
+                      ?.AddValueChanged(popup, OnOwnerHasDropShadowChanged);
+
                     break;
                 }
 
@@ -328,6 +332,10 @@ public static class PopupShadow
                     DependencyPropertyDescriptor
                        .FromProperty(WinContextMenu.IsOpenProperty, typeof(WinContextMenu))
                       ?.AddValueChanged(contextMenu, OnOwnerIsOpenChanged);
+
+                    DependencyPropertyDescriptor
+                       .FromProperty(WinContextMenu.HasDropShadowProperty, typeof(WinContextMenu))
+                      ?.AddValueChanged(contextMenu, OnOwnerHasDropShadowChanged);
 
                     break;
                 }
@@ -347,6 +355,10 @@ public static class PopupShadow
                        .FromProperty(Popup.IsOpenProperty, typeof(Popup))
                       ?.RemoveValueChanged(popup, OnOwnerIsOpenChanged);
 
+                    DependencyPropertyDescriptor
+                       .FromProperty(Popup.HasDropShadowProperty, typeof(Popup))
+                      ?.RemoveValueChanged(popup, OnOwnerHasDropShadowChanged);
+
                     break;
                 }
 
@@ -358,6 +370,10 @@ public static class PopupShadow
                     DependencyPropertyDescriptor
                        .FromProperty(WinContextMenu.IsOpenProperty, typeof(WinContextMenu))
                       ?.RemoveValueChanged(contextMenu, OnOwnerIsOpenChanged);
+
+                    DependencyPropertyDescriptor
+                       .FromProperty(WinContextMenu.HasDropShadowProperty, typeof(WinContextMenu))
+                      ?.RemoveValueChanged(contextMenu, OnOwnerHasDropShadowChanged);
 
                     break;
                 }
@@ -404,10 +420,31 @@ public static class PopupShadow
             UpdateShadowBounds();
         }
 
+        private void OnOwnerHasDropShadowChanged(object? sender, EventArgs e)
+        {
+            if (!IsDropShadowAllowed())
+            {
+                Close();
+                return;
+            }
+
+            if (IsOwnerOpen)
+            {
+                _isOpenAnimationPending = true;
+                Open();
+            }
+        }
+
         private void Open()
         {
             if (_chrome == null || !IsOwnerOpen)
             {
+                return;
+            }
+
+            if (!IsDropShadowAllowed())
+            {
+                Close();
                 return;
             }
 
@@ -462,6 +499,32 @@ public static class PopupShadow
             return _owner.GetValue(Popup.PopupAnimationProperty) is PopupAnimation animation
                 ? animation
                 : PopupAnimation.None;
+        }
+
+        private bool IsDropShadowAllowed()
+        {
+            return _owner switch
+            {
+                // ContextMenu exposes HasDropShadow as part of its public visual contract. Honor the actual value,
+                // including values transferred to the popup that WPF creates internally for the menu.
+                WinContextMenu contextMenu => contextMenu.HasDropShadow,
+
+                // Wpf.Ui templates opt into the detached shadow by setting PopupShadowChrome, while most Popup
+                // instances leave HasDropShadow at WPF's default false. Treat the default as "not specified" for
+                // compatibility, but honor explicit false values from local values, styles, templates, or bindings.
+                Popup popup => popup.HasDropShadow || IsDefaultHasDropShadowValue(popup),
+                _           => true,
+            };
+        }
+
+        private static bool IsDefaultHasDropShadowValue(Popup popup)
+        {
+            var valueSource = DependencyPropertyHelper.GetValueSource(popup, Popup.HasDropShadowProperty);
+
+            return valueSource.BaseValueSource == BaseValueSource.Default
+                && !valueSource.IsAnimated
+                && !valueSource.IsCoerced
+                && !valueSource.IsExpression;
         }
 
         private HwndSource? GetOwnerHwndSource()

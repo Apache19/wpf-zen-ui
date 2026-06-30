@@ -23,13 +23,11 @@
         <Setter Property="MinWidth" Value="140" />
         <Setter Property="Padding" Value="0" />
         <Setter Property="Margin" Value="0" />
-        <Setter Property="HasDropShadow" Value="False" />
+        <Setter Property="HasDropShadow" Value="True" />
         <Setter Property="Grid.IsSharedSizeScope" Value="True" />
         <Setter Property="Popup.PopupAnimation" Value="None" />
-
         <Setter Property="controls:PopupAnimationBehavior.AnimationSettings" Value="{StaticResource DefaultPopupAnimationSettings}" />
         <Setter Property="controls:PopupShadow.PopupShadowChrome" Value="{StaticResource DefaultPopupShadowChrome}" />
-
         <Setter Property="SnapsToDevicePixels" Value="True" />
         <Setter Property="Template">
             <Setter.Value>
