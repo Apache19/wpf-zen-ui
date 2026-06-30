@@ -731,6 +731,30 @@ public static class PopupShadow
             _shadowRoot.Opacity = 0D;
             UpdateShadowContentBounds(default);
 
+            if (PopupAnimationBehavior.IsCustomAnimationActive(_owner))
+            {
+                // PopupAnimationBehavior may temporarily report PopupAnimation.Fade while it lets WPF hide the
+                // first frame. Treat that as the custom path so the shadow follows the real content animation.
+                var duration = PopupAnimationBehavior.GetAnimationDuration(_owner);
+                if (_chrome.AnimationMode == PopupShadowAnimationMode.DynamicContentBounds)
+                {
+                    if (TryBeginParallelDynamicContentBoundsAnimation(_owner, duration))
+                    {
+                        return;
+                    }
+
+                    BeginDynamicContentBoundsAnimation(duration);
+                }
+                else
+                {
+                    // In fixed-bounds mode the full shadow would look detached during a slide, so reveal it
+                    // after the content animation duration instead.
+                    BeginDeferredFadeIn(duration.TimeSpan);
+                }
+
+                return;
+            }
+
             var animation = GetPopupAnimation();
             switch (animation)
             {
@@ -756,33 +780,9 @@ public static class PopupShadow
 
                 case PopupAnimation.None:
                 default:
-                    if (PopupAnimationBehavior.IsCustomAnimationActive(_owner))
-                    {
-                        // PopupAnimationBehavior animates the popup HWND root while Popup.PopupAnimation remains None.
-                        // The shadow still needs to follow that synthetic movement so both features compose.
-                        var duration = PopupAnimationBehavior.GetAnimationDuration(_owner);
-                        if (_chrome.AnimationMode == PopupShadowAnimationMode.DynamicContentBounds)
-                        {
-                            if (TryBeginParallelDynamicContentBoundsAnimation(_owner, duration))
-                            {
-                                break;
-                            }
-
-                            BeginDynamicContentBoundsAnimation(duration);
-                        }
-                        else
-                        {
-                            // In fixed-bounds mode the full shadow would look detached during a slide, so reveal it
-                            // after the content animation duration instead.
-                            BeginDeferredFadeIn(duration.TimeSpan);
-                        }
-                    }
-                    else
-                    {
-                        // No native or custom content animation exists. Use a small fade so creating the companion
-                        // HWND does not produce a one-frame shadow flash.
-                        BeginDeferredFadeIn(TimeSpan.Zero, ShadowFadeInDuration);
-                    }
+                    // No native or custom content animation exists. Use a small fade so creating the companion
+                    // HWND does not produce a one-frame shadow flash.
+                    BeginDeferredFadeIn(TimeSpan.Zero, ShadowFadeInDuration);
 
                     break;
             }
