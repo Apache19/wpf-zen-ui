@@ -53,8 +53,8 @@ public sealed class ThemeManager
 
     private static UiThemeMode _themeMode = UiThemeMode.Default;
 
-    private static bool _useSystemAccentColor = true;
-    private static bool _useStandardControlStyles;
+    private static bool _useSystemAccentColor       = true;
+    private static bool _enableNativeControlStyling = true;
 
     private static ThemeManager Instance { get; } = new();
 
@@ -192,9 +192,9 @@ public sealed class ThemeManager
             changed = true;
         }
 
-        if (_useStandardControlStyles != useStandardControlStyles)
+        if (_enableNativeControlStyling != useStandardControlStyles)
         {
-            _useStandardControlStyles = useStandardControlStyles;
+            _enableNativeControlStyling = useStandardControlStyles;
             changed = true;
         }
 
@@ -248,9 +248,9 @@ public sealed class ThemeManager
             changed = true;
         }
 
-        if (_useStandardControlStyles != useStandardControlStyles)
+        if (_enableNativeControlStyling != useStandardControlStyles)
         {
-            _useStandardControlStyles = useStandardControlStyles;
+            _enableNativeControlStyling = useStandardControlStyles;
             changed = true;
         }
 
@@ -480,14 +480,14 @@ public sealed class ThemeManager
     /// The default value is <c>false</c>.
     /// Changing this property triggers an immediate theme refresh.
     /// </remarks>
-    public static bool UseStandardControlStyles
+    public static bool EnableNativeControlStyling
     {
-        get => _useStandardControlStyles;
+        get => _enableNativeControlStyling;
         set
         {
-            if (_useStandardControlStyles != value)
+            if (_enableNativeControlStyling != value)
             {
-                _useStandardControlStyles = value;
+                _enableNativeControlStyling = value;
                 RefreshTheme(ThemeChangeSource.Manual);
             }
         }
@@ -774,7 +774,7 @@ public sealed class ThemeManager
                 new ResourceDictionary { Source = HighContrastThemeUri }
             );
 
-            if (_useStandardControlStyles)
+            if (_enableNativeControlStyling)
             {
                 var standardDict = new ResourceDictionary { Source = StandardThemeUri };
                 _lightDictionary.MergedDictionaries.Add(standardDict);
@@ -805,7 +805,7 @@ public sealed class ThemeManager
                 new ResourceDictionary { Source = DarkThemeUri }
             );
 
-            if (_useStandardControlStyles)
+            if (_enableNativeControlStyling)
             {
                 var standardDict = new ResourceDictionary { Source = StandardThemeUri };
                 _lightDictionary.MergedDictionaries.Add(standardDict);

@@ -77,7 +77,7 @@ public class ThemeManagerOptions : ResourceDictionary, ISupportInitialize
 
     private UiThemeMode _themeMode = UiThemeMode.Default;
     private bool _useSystemAccentColor = true;
-    private bool _useStandardControlStyles;
+    private bool _enableNativeControlStyling = true;
     private Uri? _additionalLightThemeSource;
     private Uri? _additionalDarkThemeSource;
     private Uri? _additionalHighContrastLightThemeSource;
@@ -127,14 +127,14 @@ public class ThemeManagerOptions : ResourceDictionary, ISupportInitialize
     /// for standard WPF controls so they adopt the Fluent UI theme.
     /// The default value is <c>false</c>.
     /// </summary>
-    public bool UseStandardControlStyles
+    public bool EnableNativeControlStyling
     {
-        get => _useStandardControlStyles;
+        get => _enableNativeControlStyling;
         set
         {
-            if (_useStandardControlStyles != value)
+            if (_enableNativeControlStyling != value)
             {
-                _useStandardControlStyles = value;
+                _enableNativeControlStyling = value;
                 RequestApply();
             }
         }
@@ -241,7 +241,7 @@ public class ThemeManagerOptions : ResourceDictionary, ISupportInitialize
         ThemeManager.Configure(
             _themeMode,
             _useSystemAccentColor,
-            _useStandardControlStyles,
+            _enableNativeControlStyling,
             _aLightChanged ? _additionalLightThemeSource : ThemeManager.AdditionalLightThemeUri,
             _aDarkChanged ? _additionalDarkThemeSource : ThemeManager.AdditionalDarkThemeUri,
             _aHcLightChanged ? _additionalHighContrastLightThemeSource : ThemeManager.AdditionalHighContrastLightThemeUri,
