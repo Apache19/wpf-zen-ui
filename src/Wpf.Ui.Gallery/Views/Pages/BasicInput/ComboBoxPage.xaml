@@ -6,7 +6,6 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:local="clr-namespace:Wpf.Ui.Gallery.Views.Pages.BasicInput"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:system="clr-namespace:System;assembly=System.Runtime"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
     Title="ComboBoxPage"
     d:Background="{ui:BrushResource WindowBackgroundBrush}"
@@ -20,7 +19,7 @@
             Margin="0"
             HeaderText="A ComboBox with items defined inline."
             XamlCode="&lt;ComboBox /&gt;">
-            <ui:ComboBox
+            <ComboBox
                 MinWidth="200"
                 HorizontalAlignment="Left"
                 SelectedIndex="0">
@@ -28,31 +27,31 @@
                 <ComboBoxItem Content="Green" />
                 <ComboBoxItem Content="Red" />
                 <ComboBoxItem Content="Yellow" />
-            </ui:ComboBox>
+            </ComboBox>
         </controls:ControlExample>
 
         <controls:ControlExample
             Margin="0,32,0,0"
             HeaderText="A ComboBox with ItemsSource set."
             XamlCode="&lt;ComboBox ItemsSource=&quot;{Binding FontFamilies}&quot; /&gt;">
-            <ui:ComboBox
+            <ComboBox
                 MinWidth="200"
                 HorizontalAlignment="Left"
                 ui:PlaceholderService.Content="Placeholder"
                 ItemsSource="{Binding ViewModel.ComboBoxFontFamilies, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:ComboBoxPage}, Mode=OneWay}">
-                <ui:ComboBox.ItemTemplate>
+                <ComboBox.ItemTemplate>
                     <DataTemplate>
                         <TextBlock FontFamily="{Binding}" Text="{Binding}" />
                     </DataTemplate>
-                </ui:ComboBox.ItemTemplate>
-            </ui:ComboBox>
+                </ComboBox.ItemTemplate>
+            </ComboBox>
         </controls:ControlExample>
 
         <controls:ControlExample
             Margin="0,32,0,0"
             HeaderText="An editable ComboBox."
             XamlCode="&lt;ComboBox IsEditable=&quot;True&quot; /&gt;">
-            <ui:ComboBox
+            <ComboBox
                 MinWidth="200"
                 HorizontalAlignment="Left"
                 ui:PlaceholderService.Content="Placeholder"
@@ -72,14 +71,14 @@
                     </CollectionViewSource.GroupDescriptions>
                 </CollectionViewSource>
             </controls:ControlExample.Resources>
-            <ui:ComboBox
+            <ComboBox
                 MinWidth="200"
                 HorizontalAlignment="Left"
                 DisplayMemberPath="Name"
                 ItemsSource="{Binding Source={StaticResource GroupedItemsSource}}"
                 ScrollViewer.VerticalScrollBarVisibility="Auto"
                 SelectedIndex="0">
-                <ui:ComboBox.GroupStyle>
+                <ComboBox.GroupStyle>
                     <GroupStyle>
                         <GroupStyle.HeaderTemplate>
                             <DataTemplate>
@@ -91,8 +90,8 @@
                             </DataTemplate>
                         </GroupStyle.HeaderTemplate>
                     </GroupStyle>
-                </ui:ComboBox.GroupStyle>
-            </ui:ComboBox>
+                </ComboBox.GroupStyle>
+            </ComboBox>
         </controls:ControlExample>
     </StackPanel>
 </Page>

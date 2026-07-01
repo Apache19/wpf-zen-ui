@@ -88,7 +88,7 @@
                     <ColumnDefinition />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
-                <ui:ComboBox
+                <ComboBox
                     MinWidth="200"
                     Margin="0,0,8,0"
                     Padding="9,7"
@@ -103,7 +103,7 @@
                     <ComboBoxItem Content="Acrylic" Tag="{x:Static ui:WindowBackdropType.Acrylic}" />
                     <ComboBoxItem Content="Mica" Tag="{x:Static ui:WindowBackdropType.Mica}" />
                     <ComboBoxItem Content="Mica_Alt" Tag="{x:Static ui:WindowBackdropType.Mica_Alt}" />
-                </ui:ComboBox>
+                </ComboBox>
                 <ui:Button
                     Grid.Column="1"
                     Padding="9"

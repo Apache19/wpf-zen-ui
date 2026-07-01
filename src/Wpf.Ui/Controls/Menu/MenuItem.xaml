@@ -16,14 +16,8 @@
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Resources/Popup.xaml" />
     </ResourceDictionary.MergedDictionaries>
 
-    <!--
-        DEFAULT WPF MENU ITEM
-    -->
-
-    <Style x:Key="{x:Static t:StyleKeys.MenuItemSeparatorStyle}" BasedOn="{StaticResource {x:Type Separator}}" TargetType="{x:Type Separator}">
+    <Style x:Key="{x:Static MenuItem.SeparatorStyleKey}" BasedOn="{StaticResource {x:Type Separator}}" TargetType="{x:Type Separator}">
         <Setter Property="Background" Value="{m:BrushResource ControlAltFillColorTertiaryBrush}" />
-        <Setter Property="controls:Separator.DefaultMarginHorizontal" Value="0,2,0,2" />
-        <Setter Property="controls:Separator.DefaultMarginVertical" Value="2,0,2,0" />
     </Style>
 
     <Style x:Key="TopLevelMenuItemFocusVisualStyle">
@@ -51,7 +45,7 @@
         <Border
             x:Name="Border"
             Margin="4"
-            Background="Transparent"
+            Background="{TemplateBinding Background}"
             CornerRadius="6"
             SnapsToDevicePixels="True"
             UseLayoutRounding="True">
@@ -66,12 +60,14 @@
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <ContentPresenter
+                    <ContentControl
                         x:Name="Icon"
                         Grid.Column="0"
                         Margin="0,0,6,0"
                         VerticalAlignment="Center"
-                        Content="{TemplateBinding Icon}" />
+                        Content="{Binding Path=(controls:IconAssist.Icon), RelativeSource={RelativeSource TemplatedParent}}"
+                        FontSize="{TemplateBinding FontSize}"
+                        KeyboardNavigation.IsTabStop="False" />
                     <ContentPresenter
                         x:Name="Header"
                         Grid.Column="1"
@@ -132,7 +128,7 @@
                 <Setter TargetName="Icon" Property="TextElement.Foreground" Value="{m:BrushResource TextFillColorSecondaryBrush}" />
                 <Setter TargetName="Header" Property="TextElement.Foreground" Value="{m:BrushResource TextFillColorSecondaryBrush}" />
             </MultiTrigger>
-            <Trigger Property="Icon" Value="{x:Null}">
+            <Trigger Property="controls:IconAssist.Icon" Value="{x:Null}">
                 <Setter TargetName="Icon" Property="Visibility" Value="Collapsed" />
             </Trigger>
             <Trigger Property="Header" Value="{x:Null}">
@@ -153,7 +149,7 @@
         <Border
             x:Name="Border"
             Margin="4"
-            Background="Transparent"
+            Background="{TemplateBinding Background}"
             CornerRadius="6"
             SnapsToDevicePixels="True"
             UseLayoutRounding="True">
@@ -162,12 +158,13 @@
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
-                <ContentPresenter
+                <ContentControl
                     x:Name="Icon"
                     Grid.Column="0"
                     Margin="0,0,6,0"
                     VerticalAlignment="Center"
-                    Content="{TemplateBinding Icon}"
+                    Content="{Binding Path=(controls:IconAssist.Icon), RelativeSource={RelativeSource TemplatedParent}}"
+                    FontSize="{TemplateBinding FontSize}"
                     KeyboardNavigation.IsTabStop="False" />
                 <ContentPresenter
                     x:Name="Header"
@@ -198,7 +195,7 @@
                 <Setter TargetName="Icon" Property="TextElement.Foreground" Value="{m:BrushResource TextFillColorSecondaryBrush}" />
                 <Setter TargetName="Header" Property="TextElement.Foreground" Value="{m:BrushResource TextFillColorSecondaryBrush}" />
             </MultiTrigger>
-            <Trigger Property="Icon" Value="{x:Null}">
+            <Trigger Property="controls:IconAssist.Icon" Value="{x:Null}">
                 <Setter TargetName="Icon" Property="Visibility" Value="Collapsed" />
             </Trigger>
             <Trigger Property="Header" Value="{x:Null}">
@@ -217,7 +214,7 @@
             <Border
                 x:Name="Border"
                 Margin="4,1,4,1"
-                Background="Transparent"
+                Background="{TemplateBinding Background}"
                 CornerRadius="4"
                 SnapsToDevicePixels="True"
                 UseLayoutRounding="True">
@@ -240,7 +237,6 @@
                         BorderThickness="1"
                         CornerRadius="4"
                         Visibility="Collapsed">
-                        <!--  todo 尝试改成静态资源  -->
                         <TextBlock
                             x:Name="CheckBoxIcon"
                             HorizontalAlignment="Center"
@@ -251,12 +247,13 @@
                             TextAlignment="Center" />
                     </Border>
 
-                    <ContentPresenter
+                    <ContentControl
                         x:Name="Icon"
                         Grid.Column="1"
                         Margin="0,0,6,0"
                         VerticalAlignment="Center"
-                        Content="{TemplateBinding Icon}"
+                        Content="{Binding Path=(controls:IconAssist.Icon), RelativeSource={RelativeSource TemplatedParent}}"
+                        FontSize="16"
                         KeyboardNavigation.IsTabStop="False" />
 
                     <ContentPresenter
@@ -299,7 +296,7 @@
             <Trigger Property="IsHighlighted" Value="True">
                 <Setter TargetName="Border" Property="Background" Value="{m:BrushResource SubtleFillColorSecondaryBrush}" />
             </Trigger>
-            <Trigger Property="Icon" Value="{x:Null}">
+            <Trigger Property="controls:IconAssist.Icon" Value="{x:Null}">
                 <Setter TargetName="Icon" Property="Visibility" Value="Collapsed" />
             </Trigger>
             <Trigger Property="IsCheckable" Value="True">
@@ -340,12 +337,13 @@
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
-                    <ContentPresenter
+                    <ContentControl
                         x:Name="Icon"
                         Grid.Column="0"
                         Margin="0,0,6,0"
                         VerticalAlignment="Center"
-                        Content="{TemplateBinding Icon}"
+                        Content="{Binding Path=(controls:IconAssist.Icon), RelativeSource={RelativeSource TemplatedParent}}"
+                        FontSize="16"
                         KeyboardNavigation.IsTabStop="False" />
 
                     <ContentPresenter
@@ -397,7 +395,7 @@
             </Popup>
         </Grid>
         <ControlTemplate.Triggers>
-            <Trigger Property="Icon" Value="{x:Null}">
+            <Trigger Property="controls:IconAssist.Icon" Value="{x:Null}">
                 <Setter TargetName="Icon" Property="Margin" Value="0" />
                 <Setter TargetName="Icon" Property="Visibility" Value="Collapsed" />
             </Trigger>
@@ -431,10 +429,12 @@
         </ControlTemplate.Triggers>
     </ControlTemplate>
 
-    <Style x:Key="{x:Static t:StyleKeys.MenuItemStyle}" TargetType="{x:Type MenuItem}">
+    <Style x:Key="UiMenuItemStyle" TargetType="{x:Type MenuItem}">
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="FocusVisualStyle" Value="{StaticResource MenuItemFocusVisualStyle}" />
         <Setter Property="Focusable" Value="True" />
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
         <Setter Property="KeyboardNavigation.IsTabStop" Value="True" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
         <Setter Property="UseLayoutRounding" Value="True" />
@@ -457,440 +457,6 @@
         </Style.Triggers>
     </Style>
 
-    <!--
-        WPF UI MENU ITEM
-    -->
-
-    <!--  TopLevelHeader  -->
-    <ControlTemplate x:Key="WpfUiMenuItemTopLevelHeaderTemplateKey" TargetType="{x:Type controls:MenuItem}">
-        <Border
-            x:Name="Border"
-            Margin="4"
-            Background="Transparent"
-            CornerRadius="6"
-            SnapsToDevicePixels="True"
-            UseLayoutRounding="True">
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="*" />
-                    <RowDefinition Height="Auto" />
-                </Grid.RowDefinitions>
-
-                <Grid Margin="10">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="*" />
-                    </Grid.ColumnDefinitions>
-                    <ContentControl
-                        x:Name="Icon"
-                        Grid.Column="0"
-                        Margin="0,0,6,0"
-                        VerticalAlignment="Center"
-                        Content="{TemplateBinding Icon}"
-                        FontSize="{TemplateBinding FontSize}"
-                        KeyboardNavigation.IsTabStop="False" />
-                    <ContentPresenter
-                        x:Name="Header"
-                        Grid.Column="2"
-                        VerticalAlignment="Center"
-                        ContentSource="Header"
-                        RecognizesAccessKey="True"
-                        TextElement.Foreground="{TemplateBinding Foreground}" />
-                </Grid>
-
-                <Popup
-                    x:Name="Popup"
-                    Grid.Row="1"
-                    Grid.Column="0"
-                    controls:PopupAnimationBehavior.AnimationSettings="{StaticResource DefaultPopupAnimationSettings}"
-                    controls:PopupShadow.PopupShadowChrome="{StaticResource DefaultPopupShadowChrome}"
-                    AllowsTransparency="True"
-                    Focusable="False"
-                    HorizontalOffset="-12"
-                    IsOpen="{TemplateBinding IsSubmenuOpen}"
-                    Placement="Bottom"
-                    PlacementTarget="{Binding ElementName=Border}"
-                    PopupAnimation="None"
-                    VerticalOffset="1">
-                    <Grid>
-                        <Border
-                            x:Name="SubmenuBorder"
-                            Margin="0"
-                            Padding="0,3,0,3"
-                            Background="{m:BrushResource AcrylicBackgroundFillColorDefaultBrush}"
-                            BorderBrush="{m:BrushResource SurfaceStrokeColorFlyoutBrush}"
-                            BorderThickness="1"
-                            CornerRadius="8"
-                            SnapsToDevicePixels="True"
-                            UseLayoutRounding="True">
-                            <controls:PassiveScrollViewer
-                                CanContentScroll="True"
-                                HorizontalScrollBarVisibility="Disabled"
-                                VerticalScrollBarVisibility="Auto">
-                                <StackPanel IsItemsHost="True" KeyboardNavigation.DirectionalNavigation="Cycle" />
-                            </controls:PassiveScrollViewer>
-                        </Border>
-                    </Grid>
-                </Popup>
-            </Grid>
-        </Border>
-        <ControlTemplate.Triggers>
-            <Trigger Property="Icon" Value="{x:Null}">
-                <Setter TargetName="Icon" Property="Margin" Value="0" />
-                <Setter TargetName="Icon" Property="Visibility" Value="Collapsed" />
-            </Trigger>
-            <Trigger Property="Header" Value="{x:Null}">
-                <Setter TargetName="Icon" Property="Margin" Value="0" />
-                <Setter TargetName="Header" Property="Visibility" Value="Collapsed" />
-            </Trigger>
-            <Trigger Property="IsHighlighted" Value="True">
-                <Setter TargetName="Border" Property="Background" Value="{m:BrushResource SubtleFillColorSecondaryBrush}" />
-            </Trigger>
-            <MultiTrigger>
-                <MultiTrigger.Conditions>
-                    <Condition Property="IsMouseOver" Value="True" />
-                    <Condition Property="IsPressed" Value="False" />
-                </MultiTrigger.Conditions>
-                <Setter TargetName="Border" Property="Background" Value="{m:BrushResource SubtleFillColorSecondaryBrush}" />
-            </MultiTrigger>
-            <MultiTrigger>
-                <MultiTrigger.Conditions>
-                    <Condition Property="IsMouseOver" Value="True" />
-                    <Condition Property="IsPressed" Value="True" />
-                </MultiTrigger.Conditions>
-                <Setter TargetName="Border" Property="Background" Value="{m:BrushResource SubtleFillColorTertiaryBrush}" />
-                <Setter TargetName="Icon" Property="TextElement.Foreground" Value="{m:BrushResource TextFillColorSecondaryBrush}" />
-                <Setter TargetName="Header" Property="TextElement.Foreground" Value="{m:BrushResource TextFillColorSecondaryBrush}" />
-            </MultiTrigger>
-            <Trigger Property="IsEnabled" Value="False">
-                <Setter Property="Foreground" Value="{m:BrushResource TextFillColorDisabledBrush}" />
-            </Trigger>
-        </ControlTemplate.Triggers>
-    </ControlTemplate>
-
-    <!--  TopLevelItem  -->
-    <ControlTemplate x:Key="WpfUiMenuItemTopLevelItemTemplateKey" TargetType="{x:Type controls:MenuItem}">
-        <Border
-            x:Name="Border"
-            Margin="4"
-            Background="Transparent"
-            CornerRadius="6"
-            SnapsToDevicePixels="True"
-            UseLayoutRounding="True">
-            <Grid Margin="10">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="*" />
-                </Grid.ColumnDefinitions>
-
-                <ContentControl
-                    x:Name="Icon"
-                    Grid.Column="0"
-                    Margin="0,0,6,0"
-                    VerticalAlignment="Center"
-                    Content="{TemplateBinding Icon}"
-                    FontSize="{TemplateBinding FontSize}"
-                    KeyboardNavigation.IsTabStop="False" />
-
-                <ContentPresenter
-                    x:Name="Header"
-                    Grid.Column="2"
-                    VerticalAlignment="Center"
-                    ContentSource="Header"
-                    RecognizesAccessKey="True"
-                    TextElement.Foreground="{TemplateBinding Foreground}" />
-            </Grid>
-        </Border>
-        <ControlTemplate.Triggers>
-            <Trigger Property="IsHighlighted" Value="True">
-                <Setter TargetName="Border" Property="Background" Value="{m:BrushResource SubtleFillColorSecondaryBrush}" />
-            </Trigger>
-            <MultiTrigger>
-                <MultiTrigger.Conditions>
-                    <Condition Property="IsMouseOver" Value="True" />
-                    <Condition Property="IsPressed" Value="False" />
-                </MultiTrigger.Conditions>
-                <Setter TargetName="Border" Property="Background" Value="{m:BrushResource SubtleFillColorSecondaryBrush}" />
-            </MultiTrigger>
-            <MultiTrigger>
-                <MultiTrigger.Conditions>
-                    <Condition Property="IsMouseOver" Value="True" />
-                    <Condition Property="IsPressed" Value="True" />
-                </MultiTrigger.Conditions>
-                <Setter TargetName="Border" Property="Background" Value="{m:BrushResource SubtleFillColorTertiaryBrush}" />
-                <Setter TargetName="Icon" Property="TextElement.Foreground" Value="{m:BrushResource TextFillColorSecondaryBrush}" />
-                <Setter TargetName="Header" Property="TextElement.Foreground" Value="{m:BrushResource TextFillColorSecondaryBrush}" />
-            </MultiTrigger>
-            <Trigger Property="Icon" Value="{x:Null}">
-                <Setter TargetName="Icon" Property="Margin" Value="0" />
-                <Setter TargetName="Icon" Property="Visibility" Value="Collapsed" />
-            </Trigger>
-            <Trigger Property="Header" Value="{x:Null}">
-                <Setter TargetName="Icon" Property="Margin" Value="0" />
-                <Setter TargetName="Header" Property="Visibility" Value="Collapsed" />
-            </Trigger>
-            <Trigger Property="IsEnabled" Value="False">
-                <Setter Property="Foreground" Value="{m:BrushResource TextFillColorDisabledBrush}" />
-            </Trigger>
-        </ControlTemplate.Triggers>
-    </ControlTemplate>
-
-    <!--  SubmenuItem  -->
-    <ControlTemplate x:Key="WpfUiMenuItemSubmenuItemTemplateKey" TargetType="{x:Type controls:MenuItem}">
-        <Grid Background="Transparent">
-            <Border
-                x:Name="Border"
-                Margin="4,1,4,1"
-                Background="{TemplateBinding Background}"
-                CornerRadius="4"
-                SnapsToDevicePixels="True"
-                UseLayoutRounding="True">
-                <Grid Margin="8,6,8,6">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" SharedSizeGroup="Shortcut" />
-                    </Grid.ColumnDefinitions>
-
-                    <Border
-                        x:Name="CheckBoxIconBorder"
-                        Grid.Column="0"
-                        Width="20"
-                        Height="20"
-                        Margin="0"
-                        VerticalAlignment="Center"
-                        Background="{m:BrushResource ControlAltFillColorSecondaryBrush}"
-                        BorderBrush="{m:BrushResource ControlStrongStrokeColorDefaultBrush}"
-                        BorderThickness="1"
-                        CornerRadius="4"
-                        Visibility="Collapsed">
-                        <controls:TextBlock
-                            x:Name="CheckBoxIcon"
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            FontFamily="{DynamicResource {x:Static t:FontFamilyKeys.FluentSystemIcons}}"
-                            FontSize="16"
-                            Text=""
-                            TextAlignment="Center" />
-                    </Border>
-
-                    <ContentControl
-                        x:Name="Icon"
-                        Grid.Column="1"
-                        Margin="0,0,6,0"
-                        VerticalAlignment="Center"
-                        Content="{TemplateBinding Icon}"
-                        FontSize="16"
-                        KeyboardNavigation.IsTabStop="False" />
-
-                    <ContentPresenter
-                        x:Name="Header"
-                        Grid.Column="3"
-                        ContentSource="Header"
-                        RecognizesAccessKey="True"
-                        TextElement.Foreground="{TemplateBinding Foreground}" />
-
-                    <TextBlock
-                        x:Name="InputGesture"
-                        Grid.Column="4"
-                        Margin="25,0,0,0"
-                        VerticalAlignment="Bottom"
-                        DockPanel.Dock="Right"
-                        FontSize="11"
-                        Foreground="{m:BrushResource TextFillColorDisabledBrush}"
-                        Text="{TemplateBinding InputGestureText}" />
-                </Grid>
-            </Border>
-        </Grid>
-
-        <ControlTemplate.Triggers>
-            <Trigger Property="IsHighlighted" Value="True">
-                <Setter TargetName="Border" Property="Background" Value="{m:BrushResource SubtleFillColorSecondaryBrush}" />
-            </Trigger>
-            <MultiTrigger>
-                <MultiTrigger.Conditions>
-                    <Condition Property="IsMouseOver" Value="True" />
-                    <Condition Property="IsPressed" Value="False" />
-                </MultiTrigger.Conditions>
-                <Setter TargetName="Border" Property="Background" Value="{m:BrushResource SubtleFillColorSecondaryBrush}" />
-            </MultiTrigger>
-            <MultiTrigger>
-                <MultiTrigger.Conditions>
-                    <Condition Property="IsMouseOver" Value="True" />
-                    <Condition Property="IsPressed" Value="True" />
-                </MultiTrigger.Conditions>
-                <Setter TargetName="Border" Property="Background" Value="{m:BrushResource SubtleFillColorTertiaryBrush}" />
-                <Setter TargetName="Icon" Property="TextElement.Foreground" Value="{m:BrushResource TextFillColorSecondaryBrush}" />
-                <Setter TargetName="Header" Property="TextElement.Foreground" Value="{m:BrushResource TextFillColorSecondaryBrush}" />
-                <Setter TargetName="InputGesture" Property="TextElement.Foreground" Value="{m:BrushResource TextFillColorSecondaryBrush}" />
-            </MultiTrigger>
-            <Trigger Property="Icon" Value="{x:Null}">
-                <Setter TargetName="Icon" Property="Margin" Value="0" />
-                <Setter TargetName="Icon" Property="Visibility" Value="Collapsed" />
-            </Trigger>
-            <Trigger Property="IsCheckable" Value="True">
-                <Setter TargetName="CheckBoxIconBorder" Property="Margin" Value="0,0,6,0" />
-                <Setter TargetName="CheckBoxIconBorder" Property="Visibility" Value="Visible" />
-            </Trigger>
-            <Trigger Property="IsChecked" Value="True">
-                <Setter TargetName="CheckBoxIcon" Property="Text" Value="&#xF294;" />
-            </Trigger>
-            <Trigger Property="IsEnabled" Value="False">
-                <Setter Property="Foreground" Value="{m:BrushResource TextFillColorDisabledBrush}" />
-            </Trigger>
-            <Trigger Property="InputGestureText" Value="">
-                <Setter TargetName="InputGesture" Property="Visibility" Value="Collapsed" />
-            </Trigger>
-        </ControlTemplate.Triggers>
-    </ControlTemplate>
-
-    <!--  SubItem with Subitems  -->
-    <ControlTemplate x:Key="WpfUiMenuItemSubmenuHeaderTemplateKey" TargetType="{x:Type controls:MenuItem}">
-        <Grid Background="Transparent">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="*" />
-                <RowDefinition Height="Auto" />
-            </Grid.RowDefinitions>
-
-            <Border
-                x:Name="Border"
-                Grid.Row="1"
-                Margin="4,1,4,1"
-                BorderThickness="1"
-                CornerRadius="4"
-                SnapsToDevicePixels="True"
-                UseLayoutRounding="True">
-                <Grid x:Name="MenuItemContent" Margin="8,6,8,6">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
-
-                    <ContentControl
-                        x:Name="Icon"
-                        Grid.Column="0"
-                        Margin="0,0,6,0"
-                        VerticalAlignment="Center"
-                        Content="{TemplateBinding Icon}"
-                        FontSize="16"
-                        KeyboardNavigation.IsTabStop="False" />
-
-                    <ContentPresenter
-                        x:Name="Header"
-                        Grid.Column="2"
-                        ContentSource="Header"
-                        RecognizesAccessKey="True" />
-
-                    <Grid Grid.Column="3">
-                        <controls:SymbolIcon
-                            x:Name="Chevron"
-                            Margin="0,3,0,0"
-                            VerticalAlignment="Center"
-                            FontSize="14"
-                            Symbol="ChevronRight20" />
-                    </Grid>
-                </Grid>
-            </Border>
-
-            <Popup
-                x:Name="Popup"
-                Grid.Row="1"
-                controls:PopupAnimationBehavior.AnimationSettings="{StaticResource DefaultPopupAnimationSettings}"
-                controls:PopupShadow.PopupShadowChrome="{StaticResource DefaultPopupShadowChrome}"
-                AllowsTransparency="True"
-                Focusable="False"
-                IsOpen="{TemplateBinding IsSubmenuOpen}"
-                Placement="Right"
-                PlacementTarget="{Binding ElementName=MenuItemContent}"
-                PopupAnimation="None"
-                VerticalOffset="-20">
-                <Border
-                    x:Name="SubmenuBorder"
-                    Margin="0"
-                    Padding="0,3,0,3"
-                    Background="{m:BrushResource AcrylicBackgroundFillColorDefaultBrush}"
-                    BorderBrush="{m:BrushResource SurfaceStrokeColorFlyoutBrush}"
-                    BorderThickness="1"
-                    CornerRadius="8"
-                    SnapsToDevicePixels="True"
-                    UseLayoutRounding="True">
-                    <controls:PassiveScrollViewer
-                        CanContentScroll="True"
-                        HorizontalScrollBarVisibility="Disabled"
-                        VerticalScrollBarVisibility="Auto">
-                        <StackPanel IsItemsHost="True" KeyboardNavigation.DirectionalNavigation="Cycle" />
-                    </controls:PassiveScrollViewer>
-                </Border>
-            </Popup>
-        </Grid>
-        <ControlTemplate.Triggers>
-            <Trigger Property="Icon" Value="{x:Null}">
-                <Setter TargetName="Icon" Property="Margin" Value="0" />
-                <Setter TargetName="Icon" Property="Visibility" Value="Collapsed" />
-            </Trigger>
-            <Trigger Property="IsHighlighted" Value="true">
-                <Setter TargetName="Border" Property="Background" Value="{m:BrushResource SubtleFillColorSecondaryBrush}" />
-            </Trigger>
-            <MultiTrigger>
-                <MultiTrigger.Conditions>
-                    <Condition Property="IsMouseOver" Value="True" />
-                    <Condition Property="IsPressed" Value="True" />
-                </MultiTrigger.Conditions>
-                <Setter TargetName="Border" Property="Background" Value="{m:BrushResource SubtleFillColorTertiaryBrush}" />
-                <Setter TargetName="Icon" Property="TextElement.Foreground" Value="{m:BrushResource TextFillColorSecondaryBrush}" />
-                <Setter TargetName="Header" Property="TextElement.Foreground" Value="{m:BrushResource TextFillColorSecondaryBrush}" />
-            </MultiTrigger>
-            <MultiTrigger>
-                <MultiTrigger.Conditions>
-                    <Condition Property="IsMouseOver" Value="True" />
-                    <Condition Property="IsPressed" Value="True" />
-                </MultiTrigger.Conditions>
-                <Setter TargetName="Border" Property="Background" Value="{m:BrushResource SubtleFillColorTertiaryBrush}" />
-            </MultiTrigger>
-            <!--<Trigger SourceName="Popup" Property="AllowsTransparency" Value="True">
-                <Setter TargetName="SubmenuBorder" Property="CornerRadius" Value="4" />
-                <Setter TargetName="SubmenuBorder" Property="Padding" Value="0,3,0,3" />
-            </Trigger>-->
-            <Trigger Property="IsEnabled" Value="false">
-                <Setter Property="Foreground" Value="{m:BrushResource TextFillColorDisabledBrush}" />
-                <Setter TargetName="Chevron" Property="Foreground" Value="{m:BrushResource TextFillColorDisabledBrush}" />
-            </Trigger>
-        </ControlTemplate.Triggers>
-    </ControlTemplate>
-
-    <!--  MenuItem Style  -->
-    <Style x:Key="{x:Static t:StyleKeys.UiMenuItemStyle}" TargetType="{x:Type controls:MenuItem}">
-        <Setter Property="Background" Value="Transparent" />
-        <Setter Property="FocusVisualStyle" Value="{StaticResource MenuItemFocusVisualStyle}" />
-        <Setter Property="Focusable" Value="True" />
-        <Setter Property="KeyboardNavigation.IsTabStop" Value="True" />
-        <Setter Property="SnapsToDevicePixels" Value="True" />
-        <Setter Property="UseLayoutRounding" Value="True" />
-        <Style.Triggers>
-            <Trigger Property="Role" Value="TopLevelHeader">
-                <Setter Property="FocusVisualStyle" Value="{StaticResource TopLevelMenuItemFocusVisualStyle}" />
-                <Setter Property="Grid.IsSharedSizeScope" Value="True" />
-                <Setter Property="Template" Value="{StaticResource WpfUiMenuItemTopLevelHeaderTemplateKey}" />
-            </Trigger>
-            <Trigger Property="Role" Value="TopLevelItem">
-                <Setter Property="FocusVisualStyle" Value="{StaticResource TopLevelMenuItemFocusVisualStyle}" />
-                <Setter Property="Template" Value="{StaticResource WpfUiMenuItemTopLevelItemTemplateKey}" />
-            </Trigger>
-            <Trigger Property="Role" Value="SubmenuHeader">
-                <Setter Property="Template" Value="{StaticResource WpfUiMenuItemSubmenuHeaderTemplateKey}" />
-            </Trigger>
-            <Trigger Property="Role" Value="SubmenuItem">
-                <Setter Property="Template" Value="{StaticResource WpfUiMenuItemSubmenuItemTemplateKey}" />
-            </Trigger>
-        </Style.Triggers>
-    </Style>
-
-    <Style BasedOn="{StaticResource {x:Static t:StyleKeys.UiMenuItemStyle}}" TargetType="{x:Type controls:MenuItem}" />
+    <Style BasedOn="{StaticResource UiMenuItemStyle}" TargetType="{x:Type MenuItem}" />
 
 </ResourceDictionary>

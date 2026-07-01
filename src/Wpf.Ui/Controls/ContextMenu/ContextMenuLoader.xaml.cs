@@ -47,7 +47,7 @@ public partial class ContextMenuLoader : ResourceDictionary
             Source = new Uri("pack://application:,,,/Wpf.Ui;component/Controls/ContextMenu/ContextMenu.xaml"),
         };
 
-        Style contextMenuStyle = (Style)resourceDict["UiContextMenu"];
+        Style? contextMenuStyle = (Style?)resourceDict["UiContextMenuStyle"];
 
         if (editorContextMenuType is null || contextMenuStyle is null)
         {

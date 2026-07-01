@@ -150,17 +150,6 @@
         <Setter Property="BorderThickness" Value="{StaticResource NumberBoxBorderThemeThickness}" />
         <Setter Property="CaretBrush" Value="{m:BrushResource TextFillColorPrimaryBrush}" />
         <Setter Property="ClearButtonEnabled" Value="True" />
-
-        <Setter Property="ContextMenu">
-            <Setter.Value>
-                <controls:ContextMenu>
-                    <controls:MenuItem Command="ApplicationCommands.Copy" />
-                    <controls:MenuItem Command="ApplicationCommands.Cut" />
-                    <controls:MenuItem Command="ApplicationCommands.Paste" />
-                </controls:ContextMenu>
-            </Setter.Value>
-        </Setter>
-
         <Setter Property="FocusVisualStyle" Value="{m:StyleResource DefaultControlFocusVisualStyle}" />
         <Setter Property="FontSize" Value="{m:VariableResource ControlContentThemeFontSize}" />
         <Setter Property="Foreground" Value="{m:BrushResource TextFillColorPrimaryBrush}" />
@@ -293,13 +282,12 @@
                         <!--  Compact mode popup with large spin buttons  -->
                         <Popup
                             x:Name="PART_CompactPopup"
-                            controls:PopupAnimationBehavior.AnimationSettings="{StaticResource DefaultPopupAnimationSettings}"
                             controls:PopupShadow.PopupShadowChrome="{StaticResource DefaultPopupShadowChrome}"
                             AllowsTransparency="True"
                             IsOpen="False"
                             Placement="Custom"
                             PlacementTarget="{Binding RelativeSource={RelativeSource TemplatedParent}}"
-                            PopupAnimation="None"
+                            PopupAnimation="Fade"
                             StaysOpen="True">
                             <Border
                                 Padding="4"

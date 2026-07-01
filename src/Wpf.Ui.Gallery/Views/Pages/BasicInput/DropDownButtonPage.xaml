@@ -27,12 +27,12 @@
                 Content="Hello"
                 Icon="{ui:SymbolIcon Fluent24}">
                 <ui:DropDownButton.Flyout>
-                    <ui:ContextMenu>
-                        <ui:MenuItem Header="Add" />
-                        <ui:MenuItem Header="Remove" />
-                        <ui:MenuItem Header="Send" />
-                        <ui:MenuItem Header="Hello" />
-                    </ui:ContextMenu>
+                    <ContextMenu>
+                        <MenuItem Header="Add" />
+                        <MenuItem Header="Remove" />
+                        <MenuItem Header="Send" />
+                        <MenuItem Header="Hello" />
+                    </ContextMenu>
                 </ui:DropDownButton.Flyout>
             </ui:DropDownButton>
         </controls:ControlExample>

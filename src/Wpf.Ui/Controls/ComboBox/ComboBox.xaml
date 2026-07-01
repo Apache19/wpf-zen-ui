@@ -15,8 +15,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:ani="clr-namespace:Wpf.Ui.Animations"
     xmlns:controls="clr-namespace:Wpf.Ui.Controls"
-    xmlns:m="clr-namespace:Wpf.Ui.Markup"
-    xmlns:t="clr-namespace:Wpf.Ui.Theming">
+    xmlns:m="clr-namespace:Wpf.Ui.Markup">
 
     <ResourceDictionary.MergedDictionaries>
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Resources/Popup.xaml" />
@@ -24,15 +23,6 @@
 
     <Style x:Key="DefaultComboBoxTextBoxStyle" TargetType="{x:Type TextBox}">
         <Setter Property="CaretBrush" Value="{m:BrushResource TextFillColorPrimaryBrush}" />
-        <Setter Property="ContextMenu">
-            <Setter.Value>
-                <controls:ContextMenu>
-                    <controls:MenuItem Command="ApplicationCommands.Copy" />
-                    <controls:MenuItem Command="ApplicationCommands.Cut" />
-                    <controls:MenuItem Command="ApplicationCommands.Paste" />
-                </controls:ContextMenu>
-            </Setter.Value>
-        </Setter>
         <Setter Property="Cursor" Value="IBeam" />
         <Setter Property="FocusVisualStyle" Value="{x:Null}" />
         <Setter Property="Foreground" Value="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ComboBox}}" />
@@ -138,7 +128,7 @@
         </Setter>
     </Style>
 
-    <Style x:Key="{x:Static t:StyleKeys.DefaultComboBoxStyle}" TargetType="{x:Type ComboBox}">
+    <Style x:Key="DefaultComboBoxStyle" TargetType="{x:Type ComboBox}">
         <Setter Property="Background" Value="{m:BrushResource ControlFillColorTertiaryBrush}" />
         <Setter Property="Border.CornerRadius" Value="{m:VariableResource ControlCornerRadius}" />
         <!-- 不再使用这种丑陋的边框
@@ -373,8 +363,6 @@
         </Setter>
     </Style>
 
-    <Style x:Key="{x:Static t:StyleKeys.DefaultUiComboBoxStyle}" BasedOn="{StaticResource {x:Static t:StyleKeys.DefaultComboBoxStyle}}" TargetType="{x:Type controls:ComboBox}" />
-
-    <Style BasedOn="{StaticResource {x:Static t:StyleKeys.DefaultUiComboBoxStyle}}" TargetType="{x:Type controls:ComboBox}" />
+    <Style BasedOn="{StaticResource DefaultComboBoxStyle}" TargetType="{x:Type ComboBox}" />
 
 </ResourceDictionary>

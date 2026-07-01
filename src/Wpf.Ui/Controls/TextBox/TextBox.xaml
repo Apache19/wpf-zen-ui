@@ -45,15 +45,6 @@
         <Setter Property="SnapsToDevicePixels" Value="True" />
         <Setter Property="OverridesDefaultStyle" Value="True" />
         <Setter Property="Validation.ErrorTemplate" Value="{m:StyleResource DefaultValidationTemplate}" />
-        <Setter Property="ContextMenu">
-            <Setter.Value>
-                <controls:ContextMenu>
-                    <controls:MenuItem Command="ApplicationCommands.Copy" />
-                    <controls:MenuItem Command="ApplicationCommands.Cut" />
-                    <controls:MenuItem Command="ApplicationCommands.Paste" />
-                </controls:ContextMenu>
-            </Setter.Value>
-        </Setter>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type TextBox}">
@@ -310,15 +301,6 @@
 
     <Style x:Key="{x:Static t:StyleKeys.DefaultUiTextBoxStyle}" TargetType="{x:Type controls:TextBox}">
         <Setter Property="FocusVisualStyle" Value="{m:StyleResource DefaultControlFocusVisualStyle}" />
-        <Setter Property="ContextMenu">
-            <Setter.Value>
-                <controls:ContextMenu>
-                    <controls:MenuItem Command="ApplicationCommands.Copy" />
-                    <controls:MenuItem Command="ApplicationCommands.Cut" />
-                    <controls:MenuItem Command="ApplicationCommands.Paste" />
-                </controls:ContextMenu>
-            </Setter.Value>
-        </Setter>
         <Setter Property="Foreground" Value="{m:BrushResource TextFillColorPrimaryBrush}" />
         <Setter Property="CaretBrush" Value="{m:BrushResource TextFillColorPrimaryBrush}" />
         <Setter Property="Background" Value="{m:BrushResource ControlFillColorTertiaryBrush}" />

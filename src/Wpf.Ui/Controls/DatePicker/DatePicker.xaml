@@ -43,11 +43,11 @@
     <Style x:Key="DefaultDatePickerStyle" TargetType="{x:Type DatePicker}">
         <Setter Property="ContextMenu">
             <Setter.Value>
-                <controls:ContextMenu>
-                    <controls:MenuItem Command="ApplicationCommands.Copy" />
-                    <controls:MenuItem Command="ApplicationCommands.Cut" />
-                    <controls:MenuItem Command="ApplicationCommands.Paste" />
-                </controls:ContextMenu>
+                <ContextMenu>
+                    <MenuItem Command="ApplicationCommands.Copy" />
+                    <MenuItem Command="ApplicationCommands.Cut" />
+                    <MenuItem Command="ApplicationCommands.Paste" />
+                </ContextMenu>
             </Setter.Value>
         </Setter>
         <Setter Property="CalendarStyle" Value="{DynamicResource DefaultCalendarStyle}" />

@@ -6,15 +6,13 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:local="clr-namespace:Wpf.Ui.Gallery.Views.Pages.DialogsAndFlyouts"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:system="clr-namespace:System;assembly=System.Runtime"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
     Title="SnackbarPage"
     controls:PageControlDocumentation.DocumentationType="{x:Type ui:Snackbar}"
-    d:DataContext="{d:DesignInstance local:SnackbarPage,
-                                     IsDesignTimeCreatable=False}"
+    d:Background="{ui:BrushResource WindowBackgroundBrush}"
+    d:DataContext="{d:DesignInstance local:SnackbarPage, IsDesignTimeCreatable=False}"
     d:DesignHeight="450"
     d:DesignWidth="800"
-    d:Background="{ui:BrushResource WindowBackgroundBrush}"
     Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
     mc:Ignorable="d">
 
@@ -40,7 +38,7 @@
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
-                    <ui:ComboBox
+                    <ComboBox
                         Grid.Row="0"
                         MinWidth="140"
                         Margin="0,8,0,0"
@@ -54,7 +52,7 @@
                         <ComboBoxItem Content="Light" />
                         <ComboBoxItem Content="Dark" />
                         <ComboBoxItem Content="Transparent" />
-                    </ui:ComboBox>
+                    </ComboBox>
                     <Label
                         Grid.Row="1"
                         Margin="0,6,0,0"

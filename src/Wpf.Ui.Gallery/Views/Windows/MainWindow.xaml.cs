@@ -9,7 +9,6 @@ using Wpf.Ui.Controls;
 using Wpf.Ui.Gallery.Services.Contracts;
 using Wpf.Ui.Gallery.ViewModels.Windows;
 using Wpf.Ui.Gallery.Views.Pages;
-using ComboBox = Wpf.Ui.Controls.ComboBox;
 
 namespace Wpf.Ui.Gallery.Views.Windows;
 
@@ -44,7 +43,7 @@ public partial class MainWindow : IWindow
     {
         foreach (var menuItem in ViewModel.TrayMenuItems)
         {
-            if (menuItem is Ui.Controls.MenuItem item)
+            if (menuItem is MenuItem item)
             {
                 item.Click += OnTrayMenuItemClick;
             }
@@ -53,7 +52,7 @@ public partial class MainWindow : IWindow
 
     private void OnTrayMenuItemClick(object sender, RoutedEventArgs e)
     {
-        if (sender is not Wpf.Ui.Controls.MenuItem menuItem)
+        if (sender is not MenuItem menuItem)
         {
             return;
         }

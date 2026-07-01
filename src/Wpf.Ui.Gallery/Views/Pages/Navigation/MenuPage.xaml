@@ -8,12 +8,11 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
     Title="MenuPage"
-    controls:PageControlDocumentation.DocumentationType="{x:Type ui:MenuItem}"
-    d:DataContext="{d:DesignInstance local:MenuPage,
-                                     IsDesignTimeCreatable=False}"
+    controls:PageControlDocumentation.DocumentationType="{x:Type MenuItem}"
+    d:Background="{ui:BrushResource WindowBackgroundBrush}"
+    d:DataContext="{d:DesignInstance local:MenuPage, IsDesignTimeCreatable=False}"
     d:DesignHeight="450"
     d:DesignWidth="800"
-    d:Background="{ui:BrushResource WindowBackgroundBrush}"
     Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
     mc:Ignorable="d">
 
@@ -49,38 +48,38 @@
                 \t\t\t&lt;ui:MenuItem Icon="{ui:SymbolIcon TextUnderline20}" /&gt;\n
                 &lt;/Menu&gt;
             </controls:ControlExample.XamlCode>
-            <ui:Menu FontSize="14">
-                <ui:MenuItem Header="File" Icon="{ui:SymbolIcon Symbol=Document24}">
-                    <ui:MenuItem Header="New" InputGestureText="CTRL+N" />
-                    <ui:MenuItem Header="Open..." InputGestureText="CTRL+O" />
-                    <ui:MenuItem Header="Save" InputGestureText="CTRL+S" />
-                    <ui:MenuItem Header="Save As..." InputGestureText="CTRL+SHIFT+S" />
-                    <ui:Separator />
-                    <ui:MenuItem Header="Exit" />
-                </ui:MenuItem>
-                <ui:MenuItem Header="Edit" Icon="{ui:SymbolIcon DocumentEdit20}">
-                    <ui:MenuItem Header="Undo" InputGestureText="CTRL+Z" />
-                    <ui:Separator />
-                    <ui:MenuItem Header="Cut" InputGestureText="CTRL+X" />
-                    <ui:MenuItem Header="Copy" InputGestureText="CTRL+C" />
-                    <ui:MenuItem Header="Paste" InputGestureText="CTRL+V" />
-                    <ui:MenuItem Header="Delete" IsEnabled="False" />
-                    <ui:Separator />
-                    <ui:MenuItem
+            <Menu FontSize="14">
+                <MenuItem Header="File" Icon="{ui:SymbolIcon Symbol=Document24}">
+                    <MenuItem Header="New" InputGestureText="CTRL+N" />
+                    <MenuItem Header="Open..." InputGestureText="CTRL+O" />
+                    <MenuItem Header="Save" InputGestureText="CTRL+S" />
+                    <MenuItem Header="Save As..." InputGestureText="CTRL+SHIFT+S" />
+                    <Separator />
+                    <MenuItem Header="Exit" />
+                </MenuItem>
+                <MenuItem Header="Edit" Icon="{ui:SymbolIcon DocumentEdit20}">
+                    <MenuItem Header="Undo" InputGestureText="CTRL+Z" />
+                    <Separator />
+                    <MenuItem Header="Cut" InputGestureText="CTRL+X" />
+                    <MenuItem Header="Copy" InputGestureText="CTRL+C" />
+                    <MenuItem Header="Paste" InputGestureText="CTRL+V" />
+                    <MenuItem Header="Delete" IsEnabled="False" />
+                    <Separator />
+                    <MenuItem
                         Header="Word wrap"
                         InputGestureText="CTRL+SHIFT+W"
                         IsCheckable="True"
                         IsChecked="True" />
-                    <ui:MenuItem Header="Find..." InputGestureText="CTRL+F" />
-                    <ui:MenuItem Header="Find next" InputGestureText="F3" />
-                    <ui:Separator />
-                    <ui:MenuItem Header="Select All" InputGestureText="CTRL+A" />
-                </ui:MenuItem>
-                <ui:Separator />
-                <ui:MenuItem Icon="{ui:SymbolIcon TextBold20}" />
-                <ui:MenuItem Icon="{ui:SymbolIcon TextItalic20}" />
-                <ui:MenuItem Icon="{ui:SymbolIcon TextUnderline20}" />
-            </ui:Menu>
+                    <MenuItem Header="Find..." InputGestureText="CTRL+F" />
+                    <MenuItem Header="Find next" InputGestureText="F3" />
+                    <Separator />
+                    <MenuItem Header="Select All" InputGestureText="CTRL+A" />
+                </MenuItem>
+                <Separator />
+                <MenuItem Icon="{ui:SymbolIcon TextBold20}" />
+                <MenuItem Icon="{ui:SymbolIcon TextItalic20}" />
+                <MenuItem Icon="{ui:SymbolIcon TextUnderline20}" />
+            </Menu>
         </controls:ControlExample>
     </Grid>
 </Page>

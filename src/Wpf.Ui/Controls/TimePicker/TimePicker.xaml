@@ -11,15 +11,6 @@
         <!--  Universal WPF UI focus  -->
         <Setter Property="FocusVisualStyle" Value="{DynamicResource {x:Static theming:StyleKeys.DefaultControlFocusVisualStyle}}" />
         <!--  Universal WPF UI focus  -->
-        <Setter Property="ContextMenu">
-            <Setter.Value>
-                <controls:ContextMenu>
-                    <controls:MenuItem Command="ApplicationCommands.Copy" />
-                    <controls:MenuItem Command="ApplicationCommands.Cut" />
-                    <controls:MenuItem Command="ApplicationCommands.Paste" />
-                </controls:ContextMenu>
-            </Setter.Value>
-        </Setter>
         <Setter Property="Foreground" Value="{markup:BrushResource TextFillColorSecondaryBrush}" />
         <Setter Property="Background" Value="{markup:BrushResource ControlFillColorTertiaryBrush}" />
         <Setter Property="BorderBrush" Value="{markup:BrushResource ControlElevationBorderBrush}" />

@@ -979,15 +979,6 @@
 
     <Style x:Key="DefaultDataGridTextElementStyle" TargetType="{x:Type TextBlock}">
         <Setter Property="FocusVisualStyle" Value="{DynamicResource {x:Static theming:StyleKeys.DefaultControlFocusVisualStyle}}" />
-        <Setter Property="ContextMenu">
-            <Setter.Value>
-                <controls:ContextMenu>
-                    <controls:MenuItem Command="ApplicationCommands.Copy" />
-                    <controls:MenuItem Command="ApplicationCommands.Cut" />
-                    <controls:MenuItem Command="ApplicationCommands.Paste" />
-                </controls:ContextMenu>
-            </Setter.Value>
-        </Setter>        
         <Setter Property="Foreground" Value="{markup:BrushResource TextFillColorPrimaryBrush}" />
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="HorizontalAlignment" Value="Stretch" />

@@ -63,7 +63,7 @@ public partial class MainWindowViewModel(IStringLocalizer<Translations> localize
                 new NavigationViewItem(nameof(ToggleButton), typeof(ToggleButtonPage)),
                 new NavigationViewItem(nameof(ToggleSwitch), typeof(ToggleSwitchPage)),
                 new NavigationViewItem(nameof(CheckBox), typeof(CheckBoxPage)),
-                new NavigationViewItem(nameof(Ui.Controls.ComboBox), typeof(ComboBoxPage)),
+                new NavigationViewItem(nameof(ComboBox), typeof(ComboBoxPage)),
                 new NavigationViewItem(nameof(RadioButton), typeof(RadioButtonPage)),
                 new NavigationViewItem(nameof(RatingControl), typeof(RatingPage)),
                 new NavigationViewItem(nameof(ThumbRate), typeof(ThumbRatePage)),
@@ -190,20 +190,20 @@ public partial class MainWindowViewModel(IStringLocalizer<Translations> localize
     [ObservableProperty]
     private ObservableCollection<Control> _trayMenuItems =
     [
-        new Wpf.Ui.Controls.MenuItem()
+        new MenuItem()
         {
             Header = "Home",
             Tag = "tray_home",
             Icon = new SymbolIcon { Symbol = SymbolRegular.Home24 },
         },
-        new Wpf.Ui.Controls.MenuItem()
+        new MenuItem()
         {
             Header = "Settings",
             Tag = "tray_settings",
             Icon = new SymbolIcon { Symbol = SymbolRegular.Settings24 },
         },
         new Separator(),
-        new Wpf.Ui.Controls.MenuItem()
+        new MenuItem()
         {
             Header = "Close",
             Tag = "tray_close",

@@ -10,11 +10,10 @@
     Width="1450"
     Height="802"
     MinWidth="900"
-    d:DataContext="{d:DesignInstance local:SandboxWindow,
-                                     IsDesignTimeCreatable=False}"
+    d:Background="{ui:BrushResource WindowBackgroundBrush}"
+    d:DataContext="{d:DesignInstance local:SandboxWindow, IsDesignTimeCreatable=False}"
     d:DesignHeight="650"
     d:DesignWidth="1000"
-    d:Background="{ui:BrushResource WindowBackgroundBrush}"
     d:Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
     WindowStartupLocation="CenterScreen"
     mc:Ignorable="d">
@@ -32,37 +31,37 @@
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
-                <ui:Menu HorizontalAlignment="Left">
-                    <ui:MenuItem Header="File">
-                        <ui:MenuItem Header="New" />
-                        <ui:MenuItem Header="New window" />
-                        <ui:MenuItem Header="Open..." />
-                        <ui:MenuItem Header="Save" />
-                        <ui:MenuItem Header="Save As..." />
-                        <ui:Separator />
-                        <ui:MenuItem Header="Exit" />
-                    </ui:MenuItem>
-                    <ui:MenuItem Header="Debug">
-                        <ui:MenuItem Header="Undo" />
-                        <ui:Separator />
-                        <ui:MenuItem Header="Cut" />
-                        <ui:MenuItem Header="Copy" />
-                        <ui:MenuItem Header="Paste" />
-                        <ui:MenuItem Header="Delete" IsEnabled="False" />
-                        <ui:Separator />
-                        <ui:MenuItem Header="Search with browser" />
-                        <ui:MenuItem Header="Find..." />
-                        <ui:MenuItem Header="Find next" />
-                        <ui:Separator />
-                        <ui:MenuItem Header="Select All" />
-                    </ui:MenuItem>
-                </ui:Menu>
-                <ui:Menu Grid.Column="1" HorizontalAlignment="Right">
-                    <ui:MenuItem Foreground="{ui:BrushResource PaletteDeepOrangeBrush}" Icon="{ui:SymbolIcon Fire24, True}" />
-                    <ui:MenuItem Foreground="{ui:BrushResource PaletteGreenBrush}" Icon="{ui:SymbolIcon Play24}" />
-                    <ui:MenuItem Foreground="{ui:BrushResource PaletteRedBrush}" Icon="{ui:SymbolIcon Stop24}" />
-                    <ui:MenuItem Foreground="{ui:BrushResource PaletteLightBlueBrush}" Icon="{ui:SymbolIcon ArrowClockwise24}" />
-                </ui:Menu>
+                <Menu HorizontalAlignment="Left">
+                    <MenuItem Header="File">
+                        <MenuItem Header="New" />
+                        <MenuItem Header="New window" />
+                        <MenuItem Header="Open..." />
+                        <MenuItem Header="Save" />
+                        <MenuItem Header="Save As..." />
+                        <Separator />
+                        <MenuItem Header="Exit" />
+                    </MenuItem>
+                    <MenuItem Header="Debug">
+                        <MenuItem Header="Undo" />
+                        <Separator />
+                        <MenuItem Header="Cut" />
+                        <MenuItem Header="Copy" />
+                        <MenuItem Header="Paste" />
+                        <MenuItem Header="Delete" IsEnabled="False" />
+                        <Separator />
+                        <MenuItem Header="Search with browser" />
+                        <MenuItem Header="Find..." />
+                        <MenuItem Header="Find next" />
+                        <Separator />
+                        <MenuItem Header="Select All" />
+                    </MenuItem>
+                </Menu>
+                <Menu Grid.Column="1" HorizontalAlignment="Right">
+                    <MenuItem Foreground="{ui:BrushResource PaletteDeepOrangeBrush}" Icon="{ui:SymbolIcon Fire24, True}" />
+                    <MenuItem Foreground="{ui:BrushResource PaletteGreenBrush}" Icon="{ui:SymbolIcon Play24}" />
+                    <MenuItem Foreground="{ui:BrushResource PaletteRedBrush}" Icon="{ui:SymbolIcon Stop24}" />
+                    <MenuItem Foreground="{ui:BrushResource PaletteLightBlueBrush}" Icon="{ui:SymbolIcon ArrowClockwise24}" />
+                </Menu>
             </Grid>
         </ui:TitleBar>
 
@@ -76,22 +75,22 @@
 
             <ui:DropDownButton Content="Hello" Icon="{ui:SymbolIcon Fluent24}">
                 <ui:DropDownButton.Flyout>
-                    <ui:ContextMenu>
-                        <ui:MenuItem Command="ApplicationCommands.Undo" />
-                        <ui:MenuItem Command="ApplicationCommands.Redo" />
-                        <ui:Separator />
-                        <ui:MenuItem Command="ApplicationCommands.Cut" />
-                        <ui:MenuItem Command="ApplicationCommands.Copy" />
-                        <ui:MenuItem Command="ApplicationCommands.Paste" />
-                        <ui:MenuItem Header="OCR Paste" InputGestureText="Ctrl + Shift + V" />
-                        <ui:Separator />
-                        <ui:MenuItem Header="Isolate Selected Text" InputGestureText="Ctrl + I" />
-                        <ui:MenuItem Header="Select Line" InputGestureText="Ctrl + L" />
-                        <ui:MenuItem Header="Toggle Case" InputGestureText="Shift + F3" />
-                        <ui:Separator />
-                        <ui:MenuItem Header="Move Selection _Up" InputGestureText="Alt + Up" />
-                        <ui:MenuItem Header="Move Selection _Down" InputGestureText="Alt + Down" />
-                    </ui:ContextMenu>
+                    <ContextMenu>
+                        <MenuItem Command="ApplicationCommands.Undo" />
+                        <MenuItem Command="ApplicationCommands.Redo" />
+                        <Separator />
+                        <MenuItem Command="ApplicationCommands.Cut" />
+                        <MenuItem Command="ApplicationCommands.Copy" />
+                        <MenuItem Command="ApplicationCommands.Paste" />
+                        <MenuItem Header="OCR Paste" InputGestureText="Ctrl + Shift + V" />
+                        <Separator />
+                        <MenuItem Header="Isolate Selected Text" InputGestureText="Ctrl + I" />
+                        <MenuItem Header="Select Line" InputGestureText="Ctrl + L" />
+                        <MenuItem Header="Toggle Case" InputGestureText="Shift + F3" />
+                        <Separator />
+                        <MenuItem Header="Move Selection _Up" InputGestureText="Alt + Up" />
+                        <MenuItem Header="Move Selection _Down" InputGestureText="Alt + Down" />
+                    </ContextMenu>
                 </ui:DropDownButton.Flyout>
             </ui:DropDownButton>
         </StackPanel>

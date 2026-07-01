@@ -9,11 +9,10 @@
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
     Title="SplitButtonPage"
     controls:PageControlDocumentation.DocumentationType="{x:Type ui:SplitButton}"
-    d:DataContext="{d:DesignInstance local:SplitButtonPage,
-                                     IsDesignTimeCreatable=False}"
+    d:Background="{ui:BrushResource WindowBackgroundBrush}"
+    d:DataContext="{d:DesignInstance local:SplitButtonPage, IsDesignTimeCreatable=False}"
     d:DesignHeight="450"
     d:DesignWidth="800"
-    d:Background="{ui:BrushResource WindowBackgroundBrush}"
     Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
     mc:Ignorable="d">
 
@@ -29,35 +28,35 @@
                     Background="Green"
                     CornerRadius="4" />
                 <ui:SplitButton.Flyout>
-                    <ui:ContextMenu>
-                        <ui:MenuItem>
-                            <ui:MenuItem.Header>
+                    <ContextMenu>
+                        <MenuItem>
+                            <MenuItem.Header>
                                 <Border
                                     Width="35"
                                     Height="20"
                                     Background="Red"
                                     CornerRadius="4" />
-                            </ui:MenuItem.Header>
-                        </ui:MenuItem>
-                        <ui:MenuItem>
-                            <ui:MenuItem.Header>
+                            </MenuItem.Header>
+                        </MenuItem>
+                        <MenuItem>
+                            <MenuItem.Header>
                                 <Border
                                     Width="35"
                                     Height="20"
                                     Background="Blue"
                                     CornerRadius="4" />
-                            </ui:MenuItem.Header>
-                        </ui:MenuItem>
-                        <ui:MenuItem>
-                            <ui:MenuItem.Header>
+                            </MenuItem.Header>
+                        </MenuItem>
+                        <MenuItem>
+                            <MenuItem.Header>
                                 <Border
                                     Width="35"
                                     Height="20"
                                     Background="White"
                                     CornerRadius="4" />
-                            </ui:MenuItem.Header>
-                        </ui:MenuItem>
-                    </ui:ContextMenu>
+                            </MenuItem.Header>
+                        </MenuItem>
+                    </ContextMenu>
                 </ui:SplitButton.Flyout>
             </ui:SplitButton>
         </controls:ControlExample>
@@ -73,35 +72,35 @@
                     Background="Green"
                     CornerRadius="4,0,0,4" />
                 <ui:SplitButton.Flyout>
-                    <ui:ContextMenu>
-                        <ui:MenuItem>
-                            <ui:MenuItem.Header>
+                    <ContextMenu>
+                        <MenuItem>
+                            <MenuItem.Header>
                                 <Border
                                     Width="35"
                                     Height="20"
                                     Background="Red"
                                     CornerRadius="4" />
-                            </ui:MenuItem.Header>
-                        </ui:MenuItem>
-                        <ui:MenuItem>
-                            <ui:MenuItem.Header>
+                            </MenuItem.Header>
+                        </MenuItem>
+                        <MenuItem>
+                            <MenuItem.Header>
                                 <Border
                                     Width="35"
                                     Height="20"
                                     Background="Blue"
                                     CornerRadius="4" />
-                            </ui:MenuItem.Header>
-                        </ui:MenuItem>
-                        <ui:MenuItem>
-                            <ui:MenuItem.Header>
+                            </MenuItem.Header>
+                        </MenuItem>
+                        <MenuItem>
+                            <MenuItem.Header>
                                 <Border
                                     Width="35"
                                     Height="20"
                                     Background="White"
                                     CornerRadius="4" />
-                            </ui:MenuItem.Header>
-                        </ui:MenuItem>
-                    </ui:ContextMenu>
+                            </MenuItem.Header>
+                        </MenuItem>
+                    </ContextMenu>
                 </ui:SplitButton.Flyout>
             </ui:SplitButton>
         </controls:ControlExample>

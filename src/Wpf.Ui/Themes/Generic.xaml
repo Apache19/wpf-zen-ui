@@ -53,11 +53,14 @@
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/CardExpander/CardExpander.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/CheckBox/CheckBox.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/ColorPicker/ColorPicker.xaml" />
+        <!--
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/ComboBox/ComboBox.xaml" />
+        -->
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/ContentDialog/ContentDialog.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/ContentDialog/ContentDialogHost.xaml" />
+        <!--
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/ContextMenu/ContextMenu.xaml" />
-        <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/ContextMenu/ContextMenuLoader.xaml" />
+        -->
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/DataGrid/DataGrid.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/DatePicker/DatePicker.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/DropDownButton/DropDownButton.xaml" />

@@ -4,14 +4,12 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Ui.Gallery.Controls"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:local="clr-namespace:Wpf.Ui.Gallery.Views.Pages.Layout"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:system="clr-namespace:System;assembly=System.Runtime"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
     Title="CardControlPage"
+    d:Background="{ui:BrushResource WindowBackgroundBrush}"
     d:DesignHeight="750"
     d:DesignWidth="800"
-    d:Background="{ui:BrushResource WindowBackgroundBrush}"
     Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
     mc:Ignorable="d">
     <StackPanel Margin="0,0,0,24">
@@ -101,12 +99,12 @@
                     </ui:CardControl.Header>
                     <ui:DropDownButton Content="Hello" Icon="{ui:SymbolIcon Fluent24}">
                         <ui:DropDownButton.Flyout>
-                            <ui:ContextMenu>
-                                <ui:MenuItem Header="Add" />
-                                <ui:MenuItem Header="Remove" />
-                                <ui:MenuItem Header="Send" />
-                                <ui:MenuItem Header="Hello" />
-                            </ui:ContextMenu>
+                            <ContextMenu>
+                                <MenuItem Header="Add" />
+                                <MenuItem Header="Remove" />
+                                <MenuItem Header="Send" />
+                                <MenuItem Header="Hello" />
+                            </ContextMenu>
                         </ui:DropDownButton.Flyout>
                     </ui:DropDownButton>
                 </ui:CardControl>
