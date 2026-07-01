@@ -124,7 +124,7 @@ public class ThemeManagerOptions : ResourceDictionary, ISupportInitialize
 
     /// <summary>
     /// Gets or sets a value indicating whether to merge implicit styles
-    /// for standard WPF controls so they adopt the Fluent UI theme.
+    /// for native WPF controls so they adopt the Fluent UI theme.
     /// The default value is <c>false</c>.
     /// </summary>
     public bool EnableNativeControlStyling

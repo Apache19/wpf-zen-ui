@@ -25,10 +25,10 @@ public sealed class ThemeManager
     private const string ResourceBaseUri = "pack://application:,,,/Wpf.Ui;component/Resources/";
     private const string ThemeBaseUri    = ResourceBaseUri + "Theme/";
 
-    private static readonly Uri LightThemeUri        = new(ThemeBaseUri + "Light.xaml", UriKind.Absolute);
-    private static readonly Uri DarkThemeUri         = new(ThemeBaseUri + "Dark.xaml", UriKind.Absolute);
-    private static readonly Uri HighContrastThemeUri = new(ThemeBaseUri + "HighContrast.xaml", UriKind.Absolute);
-    private static readonly Uri StandardThemeUri     = new(ResourceBaseUri + "Standard.xaml", UriKind.Absolute);
+    private static readonly Uri LightThemeUri          = new(ThemeBaseUri + "Light.xaml", UriKind.Absolute);
+    private static readonly Uri DarkThemeUri           = new(ThemeBaseUri + "Dark.xaml", UriKind.Absolute);
+    private static readonly Uri HighContrastThemeUri   = new(ThemeBaseUri + "HighContrast.xaml", UriKind.Absolute);
+    private static readonly Uri NativeControlStylesUri = new(ResourceBaseUri + "NativeControlStyles.xaml", UriKind.Absolute);
 
     private static readonly object _lock = new();
 
@@ -175,8 +175,8 @@ public sealed class ThemeManager
     /// </summary>
     /// <param name="themeMode">The theme mode to apply.</param>
     /// <param name="useSystemAccentColor">A value indicating whether the system accent color should be used.</param>
-    /// <param name="useStandardControlStyles">A value indicating whether to merge standard WPF control styles.</param>
-    public static void Configure(UiThemeMode themeMode, bool useSystemAccentColor, bool useStandardControlStyles)
+    /// <param name="enableNativeControlStyling">A value indicating whether to merge native WPF control styles.</param>
+    public static void Configure(UiThemeMode themeMode, bool useSystemAccentColor, bool enableNativeControlStyling)
     {
         var changed = false;
 
@@ -192,9 +192,9 @@ public sealed class ThemeManager
             changed = true;
         }
 
-        if (_enableNativeControlStyling != useStandardControlStyles)
+        if (_enableNativeControlStyling != enableNativeControlStyling)
         {
-            _enableNativeControlStyling = useStandardControlStyles;
+            _enableNativeControlStyling = enableNativeControlStyling;
             changed = true;
         }
 
@@ -209,7 +209,7 @@ public sealed class ThemeManager
     /// </summary>
     /// <param name="themeMode">The theme mode to apply.</param>
     /// <param name="useSystemAccentColor">Whether to use the system accent color.</param>
-    /// <param name="useStandardControlStyles">Whether to merge standard WPF control styles.</param>
+    /// <param name="enableNativeControlStyling">Whether to merge native WPF control styles.</param>
     /// <param name="additionalLightThemeUri">The URI of the additional light theme resource dictionary, or <c>null</c> to clear.</param>
     /// <param name="additionalDarkThemeUri">The URI of the additional dark theme resource dictionary, or <c>null</c> to clear.</param>
     /// <param name="additionalHighContrastLightThemeUri">The URI of the additional high contrast light theme resource dictionary, or <c>null</c> to clear.</param>
@@ -219,7 +219,7 @@ public sealed class ThemeManager
     /// ThemeManager.Configure(
     ///     themeMode: UiThemeMode.Dark,
     ///     useSystemAccentColor: true,
-    ///     useStandardControlStyles: true,
+    ///     enableNativeControlStyling: true,
     ///     additionalLightThemeUri: new Uri("pack://application:,,,/MyApp;component/Themes/Light.xaml"),
     ///     additionalDarkThemeUri: new Uri("pack://application:,,,/MyApp;component/Themes/Dark.xaml")
     /// );
@@ -228,7 +228,7 @@ public sealed class ThemeManager
     public static void Configure(
         UiThemeMode themeMode,
         bool useSystemAccentColor,
-        bool useStandardControlStyles,
+        bool enableNativeControlStyling,
         Uri? additionalLightThemeUri,
         Uri? additionalDarkThemeUri,
         Uri? additionalHighContrastLightThemeUri,
@@ -248,9 +248,9 @@ public sealed class ThemeManager
             changed = true;
         }
 
-        if (_enableNativeControlStyling != useStandardControlStyles)
+        if (_enableNativeControlStyling != enableNativeControlStyling)
         {
-            _enableNativeControlStyling = useStandardControlStyles;
+            _enableNativeControlStyling = enableNativeControlStyling;
             changed = true;
         }
 
@@ -469,11 +469,11 @@ public sealed class ThemeManager
 
     /// <summary>
     /// Gets or sets a value indicating whether the library should merge implicit styles
-    /// for standard WPF controls (e.g., <c>Button</c>) so that they also adopt
+    /// for native WPF controls (e.g., <c>Button</c>) so that they also adopt
     /// the current Fluent UI theme.
     /// </summary>
     /// <remarks>
-    /// When set to <c>true</c>, the resource dictionary defined in <c>Standard.xaml</c>
+    /// When set to <c>true</c>, the resource dictionary defined in <c>NativeControlStyles.xaml</c>
     /// is merged into each theme dictionary, providing implicit styles that re-template
     /// or re-style built-in WPF controls to match the Fluent UI appearance.
     ///
@@ -776,9 +776,9 @@ public sealed class ThemeManager
 
             if (_enableNativeControlStyling)
             {
-                var standardDict = new ResourceDictionary { Source = StandardThemeUri };
-                _lightDictionary.MergedDictionaries.Add(standardDict);
-                _darkDictionary.MergedDictionaries.Add(standardDict);
+                var nativeControlDict = new ResourceDictionary { Source = NativeControlStylesUri };
+                _lightDictionary.MergedDictionaries.Add(nativeControlDict);
+                _darkDictionary.MergedDictionaries.Add(nativeControlDict);
             }
 
             if (_additionalHighContrastLightThemeUri != null)
@@ -807,9 +807,9 @@ public sealed class ThemeManager
 
             if (_enableNativeControlStyling)
             {
-                var standardDict = new ResourceDictionary { Source = StandardThemeUri };
-                _lightDictionary.MergedDictionaries.Add(standardDict);
-                _darkDictionary.MergedDictionaries.Add(standardDict);
+                var nativeControlDict = new ResourceDictionary { Source = NativeControlStylesUri };
+                _lightDictionary.MergedDictionaries.Add(nativeControlDict);
+                _darkDictionary.MergedDictionaries.Add(nativeControlDict);
             }
 
             if (_additionalLightThemeUri != null)

@@ -21,7 +21,7 @@
 
 - [ ] 将 Wpf.Ui 自定义控件样式与原生 WPF 控件样式分离。
 - [ ] 除非只服务于 Wpf.Ui 控件模板，否则不要把原生 WPF 隐式样式放进 `Generic.xaml`。
-- [ ] 将面向应用全局使用的原生 WPF 隐式样式移动到 `Standard.xaml` 这条显式启用路径。
+- [ ] 将面向应用全局使用的原生 WPF 隐式样式移动到 `NativeControlStyles.xaml` 这条显式启用路径。
 - [ ] 让 `EnableNativeControlStyling` 只负责合并原生控件标准样式包。
 - [ ] 确保标准样式资源词典可以安全地合并到应用级资源。
 - [ ] 避免使用通过反射或其他隐藏全局副作用来套用样式的 loader 资源词典。
