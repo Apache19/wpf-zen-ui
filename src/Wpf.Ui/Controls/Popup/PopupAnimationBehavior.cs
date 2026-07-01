@@ -3,6 +3,7 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
+using System.Collections.Generic;
 using System.Reflection;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -18,19 +19,37 @@ namespace Wpf.Ui.Controls;
 /// <remarks>
 /// WPF's built-in <see cref="Popup.PopupAnimation"/> can only use a small set of system animations and
 /// does not expose easing or distance control. This behavior runs ahead of WPF's internal
-/// <see cref="Popup.IsOpen"/> changed callback, lets WPF hide the first visible frame with its own popup-animation
-/// plumbing, then replaces that transient native animation with a custom timeline on the same internal popup root
-/// surface. WPF still chooses the final screen position and owns the close-time cleanup path.
+/// <see cref="Popup.IsOpen"/> changed callback, suppresses WPF's forced first-frame popup-root opacity, and then
+/// starts a custom timeline on the same internal popup root surface. WPF still chooses the final screen position,
+/// while quick close/reopen cycles force WPF's pending window destroy to complete so an old popup HWND surface is
+/// not reused for the next opening frame.
 /// </remarks>
 public static class PopupAnimationBehavior
 {
+    private const string PopupRootTypeName = "System.Windows.Controls.Primitives.PopupRoot";
+
     private static readonly FieldInfo? PropertyChangedCallbackField = typeof(PropertyMetadata).GetField(
         "_propertyChangedCallback",
         BindingFlags.Instance | BindingFlags.NonPublic
     );
 
+    private static readonly FieldInfo? CoerceValueCallbackField = typeof(PropertyMetadata).GetField(
+        "_coerceValueCallback",
+        BindingFlags.Instance | BindingFlags.NonPublic
+    );
+
+    private static readonly Type? PopupRootType = typeof(Popup).Assembly.GetType(PopupRootTypeName);
+    private static readonly MethodInfo? PopupForceCloseMethod = typeof(Popup).GetMethod(
+        "ForceClose",
+        BindingFlags.Instance | BindingFlags.NonPublic
+    );
+
+    [ThreadStatic]
+    private static Stack<PopupAnimationController>? openingControllers;
+
     static PopupAnimationBehavior()
     {
+        OverridePopupRootOpacityMetadata();
         PrependIsOpenChangedCallback(Popup.IsOpenProperty, typeof(Popup));
         PrependIsOpenChangedCallback(WinContextMenu.IsOpenProperty, typeof(WinContextMenu));
     }
@@ -119,6 +138,9 @@ public static class PopupAnimationBehavior
             new PropertyChangedCallback(
                 (d, e) =>
                 {
+                    // DependencyPropertyDescriptor and Popup.Opened are both too late: WPF has already called
+                    // Popup.ShowWindow by then. Replace the metadata callback in place so the controller can mark
+                    // the opening transition before WPF's own OnIsOpenChanged creates and shows the popup HWND.
                     var controller = GetAnimationController(d);
                     var completeCustomOpen = controller?.OnIsOpenChanging(e) == true;
 
@@ -128,6 +150,15 @@ public static class PopupAnimationBehavior
                     }
                     finally
                     {
+                        if (controller != null && e.NewValue is not true)
+                        {
+                            // Popup.HideWindow normally leaves a zero-delay DispatcherTimer that destroys the HWND
+                            // later. A close followed immediately by open cancels that timer and reuses the old HWND
+                            // surface, which was the source of the full-opacity flash. ForceClose is only safe for
+                            // real Popup owners; ContextMenu keeps its private root Popup for its whole lifetime.
+                            controller.ForceClosePendingPopupWindow();
+                        }
+
                         if (completeCustomOpen)
                         {
                             GetAnimationController(d)?.OnIsOpenChanged(e);
@@ -138,11 +169,123 @@ public static class PopupAnimationBehavior
         );
     }
 
+    private static void OverridePopupRootOpacityMetadata()
+    {
+        if (PopupRootType is null)
+        {
+            return;
+        }
+
+        var baseMetadata  = UIElement.OpacityProperty.GetMetadata(typeof(UIElement));
+        var originalCoerce = (CoerceValueCallback?)CoerceValueCallbackField?.GetValue(baseMetadata);
+
+        try
+        {
+            // Popup.ShowWindow always sets _popupRoot.Value.Opacity = 1.0 immediately before it calls the native
+            // ShowWindow wrapper. Override metadata only for WPF's internal PopupRoot so that write can be coerced
+            // to 0 during our armed open window without changing Opacity semantics for normal UIElements.
+            UIElement.OpacityProperty.OverrideMetadata(
+                PopupRootType,
+                new UIPropertyMetadata(
+                    baseMetadata.DefaultValue,
+                    null,
+                    (d, baseValue) =>
+                    {
+                        var value = originalCoerce?.Invoke(d, baseValue) ?? baseValue;
+                        return CoercePopupRootOpacity(d, value);
+                    }
+                )
+            );
+        }
+        catch (InvalidOperationException)
+        {
+            // PopupRoot metadata may already be sealed if an application created a Popup before Wpf.Ui initialized
+            // this behavior. In that case, leave WPF's metadata untouched instead of broadening the hook to UIElement.
+        }
+    }
+
+    private static object? CoercePopupRootOpacity(DependencyObject d, object? baseValue)
+    {
+        if (baseValue is double opacity &&
+            opacity > 0D &&
+            TryGetOpeningController(d, out var controller) &&
+            controller.ShouldSuppressPopupRootOpacity(d))
+        {
+            // This is intentionally a short-lived suppression, not the animation itself. As soon as WPF finishes
+            // its internal IsOpen callback, the controller removes this coerce window and starts the real 0 -> 1
+            // custom opacity animation.
+            return 0D;
+        }
+
+        return baseValue;
+    }
+
+    private static bool TryGetOpeningController(
+        DependencyObject popupRoot,
+        [System.Diagnostics.CodeAnalysis.NotNullWhen(true)] out PopupAnimationController? controller)
+    {
+        // Usually PopupRoot.Parent points back to the Popup that owns the controller. During creation or internal
+        // ContextMenu plumbing that relationship can be temporarily incomplete, so keep a thread-local stack of
+        // controllers that are currently inside the WPF IsOpen callback.
+        if (popupRoot is FrameworkElement { Parent: DependencyObject owner } &&
+            GetAnimationController(owner) is { } ownerController &&
+            ownerController.ShouldSuppressPopupRootOpacity(popupRoot))
+        {
+            controller = ownerController;
+            return true;
+        }
+
+        if (openingControllers != null)
+        {
+            foreach (var openingController in openingControllers)
+            {
+                if (openingController.ShouldSuppressPopupRootOpacity(popupRoot))
+                {
+                    controller = openingController;
+                    return true;
+                }
+            }
+        }
+
+        controller = null;
+        return false;
+    }
+
+    private static void PushOpeningController(PopupAnimationController controller)
+    {
+        openingControllers ??= new Stack<PopupAnimationController>();
+        openingControllers.Push(controller);
+    }
+
+    private static void RemoveOpeningController(PopupAnimationController controller)
+    {
+        if (openingControllers is not { Count: > 0 })
+        {
+            return;
+        }
+
+        if (ReferenceEquals(openingControllers.Peek(), controller))
+        {
+            openingControllers.Pop();
+            return;
+        }
+
+        var controllers = openingControllers.ToArray();
+        openingControllers.Clear();
+
+        for (var i = controllers.Length - 1; i >= 0; i--)
+        {
+            if (!ReferenceEquals(controllers[i], controller))
+            {
+                openingControllers.Push(controllers[i]);
+            }
+        }
+    }
+
     internal static bool IsCustomAnimationActive(DependencyObject owner)
     {
         return GetAnimationSettings(owner) != null &&
-               (GetPopupAnimation(owner) == PopupAnimation.None ||
-                GetAnimationController(owner)?.IsOpeningWithCustomAnimation == true);
+               GetPopupAnimation(owner) == PopupAnimation.None;
     }
 
     internal static Duration GetAnimationDuration(DependencyObject owner)
@@ -398,6 +541,8 @@ public static class PopupAnimationBehavior
         // Each open/close transition advances the version, so stale opening work cannot run against a newer popup life.
         private          int                     _openVersion;
         private          bool                    _isOpeningWithCustomAnimation;
+        private          bool                    _isSuppressingPopupRootOpacity;
+        private          Popup?                  _pendingContextMenuRootPopup;
         private          bool                    _isSettingsChangedSubscribed;
         private          bool                    _isDisposed;
 
@@ -454,7 +599,7 @@ public static class PopupAnimationBehavior
 
         private void Detach()
         {
-            RestorePopupAnimationMode();
+            EndPopupRootOpacitySuppression();
             RestoreNaturalState();
             _isOpeningWithCustomAnimation = false;
 
@@ -506,7 +651,12 @@ public static class PopupAnimationBehavior
 
             if (e.NewValue is not true)
             {
+                // Close invalidates any pending/opening work. Do not commit the final visual state here: WPF's
+                // PopupRoot.StopAnimations will clear animated values as part of its close path, and real Popup
+                // owners are force-closed after WPF has queued its normal async destroy.
                 _isOpeningWithCustomAnimation = false;
+                EndPopupRootOpacitySuppression();
+                DetachPendingContextMenuRootPopup();
                 ReleaseAnimationReferences();
                 return false;
             }
@@ -517,11 +667,44 @@ public static class PopupAnimationBehavior
                 return false;
             }
 
-            // WPF's ShowWindow sets PopupRoot.Opacity back to 1 before SetupAnimations. A transient native Fade lets
-            // WPF run its own first-frame hiding path before the popup HWND is shown; the post callback immediately
-            // replaces that native timeline with the custom one.
-            SetPopupAnimation(PopupAnimation.Fade);
+            // WPF's ShowWindow forces PopupRoot.Opacity to 1 immediately before showing the HWND. Keep that write
+            // coerced to 0 only for the duration of WPF's internal IsOpen callback; the custom timeline starts
+            // synchronously as soon as WPF returns, before the dispatcher can render a fully opaque frame.
+            BeginPopupRootOpacitySuppression();
             return true;
+        }
+
+        internal void ForceClosePendingPopupWindow()
+        {
+            if (_isDisposed || _settings == null || _owner is not Popup popup)
+            {
+                return;
+            }
+
+            if (GetPopupAnimation(_owner) != PopupAnimation.None)
+            {
+                return;
+            }
+
+            try
+            {
+                // This mirrors Popup.ForceClose's intended internal purpose: if HideWindow queued an async destroy,
+                // complete it now. It prevents a fast reopen from CancelAsyncDestroy-ing the old HWND and showing a
+                // stale compositor surface before the new opening animation reaches the render thread.
+                PopupForceCloseMethod?.Invoke(popup, null);
+            }
+            catch (TargetInvocationException)
+            {
+                // If WPF changes this internal method, fall back to the normal async destroy path.
+            }
+            catch (MethodAccessException)
+            {
+                // If WPF changes this internal method, fall back to the normal async destroy path.
+            }
+            catch (ArgumentException)
+            {
+                // If WPF changes this internal method, fall back to the normal async destroy path.
+            }
         }
 
         internal void OnIsOpenChanged(DependencyPropertyChangedEventArgs e)
@@ -539,18 +722,70 @@ public static class PopupAnimationBehavior
 
             try
             {
-                RestorePopupAnimationMode();
+                EndPopupRootOpacitySuppression();
                 ApplyRootPopupAnimationMode();
 
                 if (_settings != null)
                 {
-                    _ = BeginOpenAnimation(_openVersion);
+                    if (_owner is WinContextMenu)
+                    {
+                        BeginContextMenuOpenAnimation(_openVersion);
+                    }
+                    else
+                    {
+                        _ = BeginOpenAnimation(_openVersion);
+                    }
                 }
             }
             finally
             {
+                EndPopupRootOpacitySuppression();
                 _isOpeningWithCustomAnimation = false;
             }
+        }
+
+        private void BeginContextMenuOpenAnimation(int openVersion)
+        {
+            if (_owner is not WinContextMenu contextMenu ||
+                TryGetContextMenuRootPopup(contextMenu) is not { } rootPopup)
+            {
+                return;
+            }
+
+            if (rootPopup.IsOpen && GetPopupRoot() is UIElement)
+            {
+                // If the private Popup is already open, its SetupAnimations(true) has already called
+                // PopupRoot.StopAnimations. Starting now is safe and will not be cleared by WPF immediately after.
+                _ = BeginOpenAnimation(openVersion);
+                return;
+            }
+
+            // ContextMenu.IsOpen opens a long-lived private Popup via binding. The ContextMenu IsOpen callback can
+            // finish before that private Popup reaches ShowWindow/SetupAnimations(true). Starting our timeline too
+            // early lets PopupRoot.StopAnimations wipe the clocks, leaving the menu stuck at the first frame while
+            // the detached shadow continues. Wait for the private Popup.Opened event instead.
+            DetachPendingContextMenuRootPopup();
+            _pendingContextMenuRootPopup = rootPopup;
+            rootPopup.Opened += OnContextMenuRootPopupOpened;
+        }
+
+        private void OnContextMenuRootPopupOpened(object? sender, EventArgs e)
+        {
+            // Opened is raised after the private Popup's ShowWindow path, so WPF's own StopAnimations call is behind
+            // us and the custom timeline can own the PopupRoot until the menu closes.
+            DetachPendingContextMenuRootPopup();
+            _ = BeginOpenAnimation(_openVersion);
+        }
+
+        private void DetachPendingContextMenuRootPopup()
+        {
+            if (_pendingContextMenuRootPopup == null)
+            {
+                return;
+            }
+
+            _pendingContextMenuRootPopup.Opened -= OnContextMenuRootPopupOpened;
+            _pendingContextMenuRootPopup = null;
         }
 
         private void OnSettingsChanged(object? sender, EventArgs e)
@@ -619,6 +854,8 @@ public static class PopupAnimationBehavior
                 ? startOffset
                 : 0D;
 
+            // Establish the hidden first frame synchronously. PopupRoot.Opacity may have just been forced to 1 by
+            // WPF ShowWindow, so the base value must be reset before any Dispatcher/render work can observe it.
             InitializeOpenAnimationBaseValues(popupRoot, translateTransform, startOffset);
 
             if (duration <= TimeSpan.Zero || translateTransform == null || Math.Abs(startOffset) < 0.1D)
@@ -670,6 +907,8 @@ public static class PopupAnimationBehavior
 
             // The translation is placed on PopupRoot's internal adorner decorator, the same layer that WPF's native
             // Slide/Scroll animation uses. PopupRoot.StopAnimations will clear it synchronously when the popup closes.
+            // Do not attach Completed handlers that commit final values; HoldEnd already presents the natural final
+            // frame, and close/reopen can otherwise race with a stale completion callback from the previous open.
             translateTransform.BeginAnimation(
                 TranslateTransform.YProperty,
                 translateAnimation,
@@ -687,6 +926,9 @@ public static class PopupAnimationBehavior
             TranslateTransform? translateTransform,
             double startOffset)
         {
+            // Clear any previous open clock before assigning base values. ContextMenu keeps its private PopupRoot
+            // alive between openings, and ComboBox can also reuse transforms unless ForceClose has already destroyed
+            // the HWND. Fresh base values keep each open independent of the previous animation.
             popupRoot.BeginAnimation(UIElement.OpacityProperty, null);
             popupRoot.Opacity = 0D;
 
@@ -737,19 +979,34 @@ public static class PopupAnimationBehavior
             _settings != null &&
             GetPopupAnimation(_owner) == PopupAnimation.None;
 
-        internal bool IsOpeningWithCustomAnimation => _isOpeningWithCustomAnimation;
-
-        private void SetPopupAnimation(PopupAnimation animation)
+        internal bool ShouldSuppressPopupRootOpacity(DependencyObject popupRoot)
         {
-            _owner.SetCurrentValue(Popup.PopupAnimationProperty, animation);
+            return !_isDisposed &&
+                   _settings != null &&
+                   _isOpeningWithCustomAnimation &&
+                   _isSuppressingPopupRootOpacity;
         }
 
-        private void RestorePopupAnimationMode()
+        private void BeginPopupRootOpacitySuppression()
         {
-            if (_isOpeningWithCustomAnimation && GetPopupAnimation(_owner) == PopupAnimation.Fade)
+            if (_isSuppressingPopupRootOpacity)
             {
-                SetPopupAnimation(PopupAnimation.None);
+                return;
             }
+
+            _isSuppressingPopupRootOpacity = true;
+            PushOpeningController(this);
+        }
+
+        private void EndPopupRootOpacitySuppression()
+        {
+            if (!_isSuppressingPopupRootOpacity)
+            {
+                return;
+            }
+
+            _isSuppressingPopupRootOpacity = false;
+            RemoveOpeningController(this);
         }
 
         internal bool TryGetCurrentAnimationStartOffset(UIElement popupRoot, out double startOffset)
@@ -796,6 +1053,8 @@ public static class PopupAnimationBehavior
             // ContextMenu hosts itself in a private Popup created by WPF. Popup.CreateRootPopup binds IsOpen and
             // placement properties, but not PopupAnimation; without this, the private Popup keeps the system menu
             // animation and remains visible briefly after PopupRoot.StopAnimations clears our opening transform.
+            // Only change the private Popup's animation mode. Do not force-close it on menu close: ContextMenu owns
+            // and reuses this instance, and destroying its HWND out of band leaves later opens in a half-reset state.
             // ComboBox does not need this path because its template owns the real Popup and binds PopupAnimation
             // directly, so the behavior can observe and update the same instance that WPF opens.
             rootPopup.SetCurrentValue(Popup.PopupAnimationProperty, PopupAnimation.None);

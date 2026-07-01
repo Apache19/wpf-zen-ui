@@ -733,8 +733,8 @@ public static class PopupShadow
 
             if (PopupAnimationBehavior.IsCustomAnimationActive(_owner))
             {
-                // PopupAnimationBehavior may temporarily report PopupAnimation.Fade while it lets WPF hide the
-                // first frame. Treat that as the custom path so the shadow follows the real content animation.
+                // The content is driven by Wpf.Ui's custom opening timeline, so the detached shadow follows the
+                // same duration and reveal offset instead of treating the popup as a native WPF animation.
                 var duration = PopupAnimationBehavior.GetAnimationDuration(_owner);
                 if (_chrome.AnimationMode == PopupShadowAnimationMode.DynamicContentBounds)
                 {
