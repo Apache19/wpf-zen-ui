@@ -459,7 +459,6 @@
     </ControlTemplate>
 
     <Style x:Key="UiMenuItemStyle" TargetType="{x:Type MenuItem}">
-        <Setter Property="OverridesDefaultStyle" Value="True" />
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="FocusVisualStyle" Value="{StaticResource MenuItemFocusVisualStyle}" />
         <Setter Property="Focusable" Value="True" />
@@ -469,6 +468,9 @@
         <Setter Property="SnapsToDevicePixels" Value="True" />
         <Setter Property="ScrollViewer.PanningMode" Value="Both" />
         <Setter Property="Stylus.IsFlicksEnabled" Value="False" />
+        <!--
+        <Setter Property="controls:MenuItemCommandIcon.AutoSetIcon" Value="True" />
+        -->
         <Style.Triggers>
             <Trigger Property="Role" Value="TopLevelHeader">
                 <Setter Property="FocusVisualStyle" Value="{StaticResource TopLevelMenuItemFocusVisualStyle}" />
