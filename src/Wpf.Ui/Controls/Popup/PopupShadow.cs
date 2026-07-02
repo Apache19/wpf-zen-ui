@@ -635,8 +635,15 @@ public static class PopupShadow
                 _shadowBorder.Padding         = default;
             }
 
-            _shadowBorder.Background  = _chrome.ChromeBrush;
-            _shadowBorder.BorderBrush = _chrome.ChromeBrush;
+            var chromeColorBrush = new SolidColorBrush(_chrome.Color);
+            chromeColorBrush.Freeze();
+
+            // Fill the mirrored Border with the chrome shadow color so that, after the Border is clipped out
+            // of the shadow surface, anti-aliased corner pixels blend with the shadow hue instead of the
+            // default transparent background. Without this fill, rounded corners appear to have jagged
+            // colored artifacts.
+            _shadowBorder.Background  = chromeColorBrush;
+            _shadowBorder.BorderBrush = chromeColorBrush;
             _shadowBorder.Effect      = _chrome.CreateEffect();
         }
 

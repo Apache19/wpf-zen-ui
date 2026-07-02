@@ -3,6 +3,7 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
+using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Media.Effects;
 
@@ -86,16 +87,6 @@ public sealed class PopupShadowChrome : Freezable
     );
 
     /// <summary>
-    /// Identifies the <see cref="ChromeBrush"/> dependency property.
-    /// </summary>
-    public static readonly DependencyProperty ChromeBrushProperty = DependencyProperty.Register(
-        nameof(ChromeBrush),
-        typeof(Brush),
-        typeof(PopupShadowChrome),
-        new PropertyMetadata(Brushes.Gray)
-    );
-
-    /// <summary>
     /// Identifies the <see cref="AnimationMode"/> dependency property.
     /// </summary>
     public static readonly DependencyProperty AnimationModeProperty = DependencyProperty.Register(
@@ -175,19 +166,6 @@ public sealed class PopupShadowChrome : Freezable
     {
         get { return (Color)GetValue(ColorProperty); }
         set { SetValue(ColorProperty, value); }
-    }
-
-    /// <summary>
-    /// Gets or sets the neutral brush used for the hidden border that casts the shadow.
-    /// </summary>
-    /// <remarks>
-    /// The brush should normally match the popup surface enough for <see cref="DropShadowEffect"/> to render a stable
-    /// shadow. The visible popup area is clipped out by <see cref="PopupShadow"/>.
-    /// </remarks>
-    public Brush ChromeBrush
-    {
-        get { return (Brush)GetValue(ChromeBrushProperty); }
-        set { SetValue(ChromeBrushProperty, value); }
     }
 
     /// <summary>
