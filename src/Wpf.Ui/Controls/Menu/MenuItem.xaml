@@ -87,7 +87,6 @@
                 VerticalOffset="1">
                 <Border
                     x:Name="SubmenuBorder"
-                    Margin="0"
                     Padding="0,3,0,3"
                     Background="{m:BrushResource AcrylicBackgroundFillColorDefaultBrush}"
                     BorderBrush="{m:BrushResource SurfaceStrokeColorFlyoutBrush}"

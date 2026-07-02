@@ -15,17 +15,12 @@
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Resources/Popup.xaml" />
     </ResourceDictionary.MergedDictionaries>
 
-    <Style x:Key="UiContextMenuStyle" TargetType="{x:Type ContextMenu}">
-        <Setter Property="TextElement.Foreground" Value="{markup:BrushResource TextFillColorPrimaryBrush}" />
+    <Style TargetType="{x:Type ContextMenu}">
         <Setter Property="Foreground" Value="{markup:BrushResource TextFillColorPrimaryBrush}" />
         <Setter Property="Background" Value="{markup:BrushResource AcrylicBackgroundFillColorDefaultBrush}" />
         <Setter Property="BorderBrush" Value="{markup:BrushResource SurfaceStrokeColorFlyoutBrush}" />
         <Setter Property="MinWidth" Value="140" />
-        <Setter Property="Padding" Value="0" />
-        <Setter Property="Margin" Value="0" />
         <Setter Property="HasDropShadow" Value="True" />
-        <Setter Property="Grid.IsSharedSizeScope" Value="True" />
-        <Setter Property="Popup.PopupAnimation" Value="None" />
         <Setter Property="controls:PopupAnimationBehavior.AnimationSettings" Value="{StaticResource DefaultPopupAnimationSettings}" />
         <Setter Property="controls:PopupShadow.PopupShadowChrome" Value="{StaticResource DefaultPopupShadowChrome}" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
@@ -41,6 +36,7 @@
                         CornerRadius="8">
                         <StackPanel
                             ClipToBounds="True"
+                            Grid.IsSharedSizeScope="True"
                             IsItemsHost="True"
                             KeyboardNavigation.DirectionalNavigation="Cycle"
                             Orientation="Vertical" />
@@ -49,7 +45,5 @@
             </Setter.Value>
         </Setter>
     </Style>
-
-    <Style BasedOn="{StaticResource UiContextMenuStyle}" TargetType="{x:Type ContextMenu}" />
 
 </ResourceDictionary>
