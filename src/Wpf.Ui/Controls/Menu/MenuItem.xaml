@@ -42,19 +42,14 @@
 
     <!--  TopLevelHeader  -->
     <ControlTemplate x:Key="{x:Static MenuItem.TopLevelHeaderTemplateKey}" TargetType="{x:Type MenuItem}">
-        <Border
-            x:Name="Border"
-            Margin="4"
-            Background="{TemplateBinding Background}"
-            CornerRadius="6"
-            SnapsToDevicePixels="True"
-            UseLayoutRounding="True">
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="*" />
-                    <RowDefinition Height="Auto" />
-                </Grid.RowDefinitions>
-
+        <Grid Background="Transparent" IsHitTestVisible="True">
+            <Border
+                x:Name="ContentBorder"
+                Margin="4"
+                Background="{TemplateBinding Background}"
+                BorderBrush="{TemplateBinding BorderBrush}"
+                BorderThickness="{TemplateBinding BorderThickness}"
+                CornerRadius="6">
                 <Grid Margin="10">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" />
@@ -65,7 +60,7 @@
                         Grid.Column="0"
                         Margin="0,0,6,0"
                         VerticalAlignment="Center"
-                        Content="{Binding Path=(controls:IconAssist.Icon), RelativeSource={RelativeSource TemplatedParent}}"
+                        Content="{TemplateBinding Icon}"
                         FontSize="{TemplateBinding FontSize}"
                         KeyboardNavigation.IsTabStop="False" />
                     <ContentPresenter
@@ -74,61 +69,61 @@
                         VerticalAlignment="Center"
                         ContentSource="Header"
                         RecognizesAccessKey="True"
-                        TextElement.Foreground="{TemplateBinding Foreground}" />
+                        SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"
+                        TextElement.Foreground="{TemplateBinding Foreground}"
+                        UseLayoutRounding="True" />
                 </Grid>
-
-                <Popup
-                    x:Name="Popup"
-                    Grid.Row="1"
-                    Grid.Column="0"
-                    controls:PopupAnimationBehavior.AnimationSettings="{StaticResource DefaultPopupAnimationSettings}"
-                    controls:PopupShadow.PopupShadowChrome="{StaticResource DefaultPopupShadowChrome}"
-                    AllowsTransparency="True"
-                    Focusable="False"
-                    HorizontalOffset="-12"
-                    IsOpen="{TemplateBinding IsSubmenuOpen}"
-                    Placement="Bottom"
-                    PlacementTarget="{Binding ElementName=Border}"
-                    PopupAnimation="None"
-                    VerticalOffset="1">
-                    <Border
-                        x:Name="SubmenuBorder"
-                        Margin="0"
-                        Padding="0,3,0,3"
-                        Background="{m:BrushResource AcrylicBackgroundFillColorDefaultBrush}"
-                        BorderBrush="{m:BrushResource SurfaceStrokeColorFlyoutBrush}"
-                        BorderThickness="1"
-                        CornerRadius="8"
-                        SnapsToDevicePixels="True"
-                        UseLayoutRounding="True">
-                        <controls:PassiveScrollViewer
-                            CanContentScroll="True"
-                            HorizontalScrollBarVisibility="Disabled"
-                            VerticalScrollBarVisibility="Auto">
-                            <StackPanel IsItemsHost="True" KeyboardNavigation.DirectionalNavigation="Cycle" />
-                        </controls:PassiveScrollViewer>
-                    </Border>
-                </Popup>
-            </Grid>
-        </Border>
+            </Border>
+            <Popup
+                x:Name="Popup"
+                controls:PopupAnimationBehavior.AnimationSettings="{StaticResource DefaultPopupAnimationSettings}"
+                controls:PopupShadow.PopupShadowChrome="{StaticResource DefaultPopupShadowChrome}"
+                AllowsTransparency="True"
+                Focusable="False"
+                IsOpen="{TemplateBinding IsSubmenuOpen}"
+                Placement="Bottom"
+                PlacementTarget="{Binding ElementName=ContentBorder}"
+                PopupAnimation="None"
+                VerticalOffset="1">
+                <Border
+                    x:Name="SubmenuBorder"
+                    Margin="0"
+                    Padding="0,3,0,3"
+                    Background="{m:BrushResource AcrylicBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{m:BrushResource SurfaceStrokeColorFlyoutBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    SnapsToDevicePixels="True">
+                    <controls:PassiveScrollViewer
+                        CanContentScroll="True"
+                        HorizontalScrollBarVisibility="Disabled"
+                        VerticalScrollBarVisibility="Auto">
+                        <StackPanel
+                            IsItemsHost="True"
+                            KeyboardNavigation.DirectionalNavigation="Cycle"
+                            SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
+                    </controls:PassiveScrollViewer>
+                </Border>
+            </Popup>
+        </Grid>
         <ControlTemplate.Triggers>
             <MultiTrigger>
                 <MultiTrigger.Conditions>
                     <Condition Property="IsMouseOver" Value="True" />
                     <Condition Property="IsPressed" Value="False" />
                 </MultiTrigger.Conditions>
-                <Setter TargetName="Border" Property="Background" Value="{m:BrushResource SubtleFillColorSecondaryBrush}" />
+                <Setter TargetName="ContentBorder" Property="Background" Value="{m:BrushResource SubtleFillColorSecondaryBrush}" />
             </MultiTrigger>
             <MultiTrigger>
                 <MultiTrigger.Conditions>
                     <Condition Property="IsMouseOver" Value="True" />
                     <Condition Property="IsPressed" Value="True" />
                 </MultiTrigger.Conditions>
-                <Setter TargetName="Border" Property="Background" Value="{m:BrushResource SubtleFillColorTertiaryBrush}" />
+                <Setter TargetName="ContentBorder" Property="Background" Value="{m:BrushResource SubtleFillColorTertiaryBrush}" />
                 <Setter TargetName="Icon" Property="TextElement.Foreground" Value="{m:BrushResource TextFillColorSecondaryBrush}" />
                 <Setter TargetName="Header" Property="TextElement.Foreground" Value="{m:BrushResource TextFillColorSecondaryBrush}" />
             </MultiTrigger>
-            <Trigger Property="controls:IconAssist.Icon" Value="{x:Null}">
+            <Trigger Property="Icon" Value="{x:Null}">
                 <Setter TargetName="Icon" Property="Visibility" Value="Collapsed" />
             </Trigger>
             <Trigger Property="Header" Value="{x:Null}">
@@ -136,7 +131,7 @@
                 <Setter TargetName="Header" Property="Visibility" Value="Collapsed" />
             </Trigger>
             <Trigger Property="IsHighlighted" Value="True">
-                <Setter TargetName="Border" Property="Background" Value="{m:BrushResource SubtleFillColorSecondaryBrush}" />
+                <Setter TargetName="ContentBorder" Property="Background" Value="{m:BrushResource SubtleFillColorSecondaryBrush}" />
             </Trigger>
             <Trigger Property="IsEnabled" Value="False">
                 <Setter Property="Foreground" Value="{m:BrushResource TextFillColorDisabledBrush}" />
@@ -163,7 +158,7 @@
                     Grid.Column="0"
                     Margin="0,0,6,0"
                     VerticalAlignment="Center"
-                    Content="{Binding Path=(controls:IconAssist.Icon), RelativeSource={RelativeSource TemplatedParent}}"
+                    Content="{TemplateBinding Icon}"
                     FontSize="{TemplateBinding FontSize}"
                     KeyboardNavigation.IsTabStop="False" />
                 <ContentPresenter
@@ -195,7 +190,7 @@
                 <Setter TargetName="Icon" Property="TextElement.Foreground" Value="{m:BrushResource TextFillColorSecondaryBrush}" />
                 <Setter TargetName="Header" Property="TextElement.Foreground" Value="{m:BrushResource TextFillColorSecondaryBrush}" />
             </MultiTrigger>
-            <Trigger Property="controls:IconAssist.Icon" Value="{x:Null}">
+            <Trigger Property="Icon" Value="{x:Null}">
                 <Setter TargetName="Icon" Property="Visibility" Value="Collapsed" />
             </Trigger>
             <Trigger Property="Header" Value="{x:Null}">
@@ -252,7 +247,7 @@
                         Grid.Column="1"
                         Margin="0,0,6,0"
                         VerticalAlignment="Center"
-                        Content="{Binding Path=(controls:IconAssist.Icon), RelativeSource={RelativeSource TemplatedParent}}"
+                        Content="{TemplateBinding Icon}"
                         FontSize="16"
                         KeyboardNavigation.IsTabStop="False" />
 
@@ -296,7 +291,7 @@
             <Trigger Property="IsHighlighted" Value="True">
                 <Setter TargetName="Border" Property="Background" Value="{m:BrushResource SubtleFillColorSecondaryBrush}" />
             </Trigger>
-            <Trigger Property="controls:IconAssist.Icon" Value="{x:Null}">
+            <Trigger Property="Icon" Value="{x:Null}">
                 <Setter TargetName="Icon" Property="Visibility" Value="Collapsed" />
             </Trigger>
             <Trigger Property="IsCheckable" Value="True">
@@ -342,7 +337,7 @@
                         Grid.Column="0"
                         Margin="0,0,6,0"
                         VerticalAlignment="Center"
-                        Content="{Binding Path=(controls:IconAssist.Icon), RelativeSource={RelativeSource TemplatedParent}}"
+                        Content="{TemplateBinding Icon}"
                         FontSize="16"
                         KeyboardNavigation.IsTabStop="False" />
 
@@ -395,7 +390,7 @@
             </Popup>
         </Grid>
         <ControlTemplate.Triggers>
-            <Trigger Property="controls:IconAssist.Icon" Value="{x:Null}">
+            <Trigger Property="Icon" Value="{x:Null}">
                 <Setter TargetName="Icon" Property="Margin" Value="0" />
                 <Setter TargetName="Icon" Property="Visibility" Value="Collapsed" />
             </Trigger>
@@ -437,7 +432,6 @@
         <Setter Property="VerticalContentAlignment" Value="Center" />
         <Setter Property="KeyboardNavigation.IsTabStop" Value="True" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
-        <Setter Property="UseLayoutRounding" Value="True" />
         <Style.Triggers>
             <Trigger Property="Role" Value="TopLevelHeader">
                 <Setter Property="FocusVisualStyle" Value="{StaticResource TopLevelMenuItemFocusVisualStyle}" />
