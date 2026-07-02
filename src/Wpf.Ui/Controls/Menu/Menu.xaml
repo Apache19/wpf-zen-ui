@@ -10,29 +10,10 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:m="clr-namespace:Wpf.Ui.Markup">
 
-    <Style x:Key="UiMenuStyle" TargetType="{x:Type Menu}">
-        <Setter Property="Background" Value="{m:BrushResource SubtleFillColorTransparentBrush}" />
-        <Setter Property="Focusable" Value="False" />
-        <Setter Property="SnapsToDevicePixels" Value="True" />
-        <Setter Property="Template">
-            <Setter.Value>
-                <ControlTemplate TargetType="{x:Type Menu}">
-                    <Border
-                        Background="{TemplateBinding Background}"
-                        BorderBrush="{TemplateBinding BorderBrush}"
-                        BorderThickness="{TemplateBinding BorderThickness}"
-                        SnapsToDevicePixels="{TemplateBinding UseLayoutRounding}"
-                        UseLayoutRounding="True">
-                        <StackPanel
-                            ClipToBounds="True"
-                            IsItemsHost="True"
-                            Orientation="Horizontal" />
-                    </Border>
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
+    <Style TargetType="{x:Type Menu}">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="FontSize" Value="{m:VariableResource ControlContentThemeFontSize}" />
+        <Setter Property="Foreground" Value="{m:BrushResource TextFillColorPrimaryBrush}" />
     </Style>
-
-    <Style BasedOn="{StaticResource UiMenuStyle}" TargetType="{x:Type Menu}" />
 
 </ResourceDictionary>
