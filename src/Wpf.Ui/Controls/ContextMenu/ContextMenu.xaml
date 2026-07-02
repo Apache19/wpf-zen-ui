@@ -16,14 +16,13 @@
     </ResourceDictionary.MergedDictionaries>
 
     <Style TargetType="{x:Type ContextMenu}">
+        <Setter Property="FontSize" Value="{markup:VariableResource ControlContentThemeFontSize}" />
         <Setter Property="Foreground" Value="{markup:BrushResource TextFillColorPrimaryBrush}" />
         <Setter Property="Background" Value="{markup:BrushResource AcrylicBackgroundFillColorDefaultBrush}" />
         <Setter Property="BorderBrush" Value="{markup:BrushResource SurfaceStrokeColorFlyoutBrush}" />
-        <Setter Property="MinWidth" Value="140" />
         <Setter Property="HasDropShadow" Value="True" />
         <Setter Property="controls:PopupAnimationBehavior.AnimationSettings" Value="{StaticResource DefaultPopupAnimationSettings}" />
         <Setter Property="controls:PopupShadow.PopupShadowChrome" Value="{StaticResource DefaultPopupShadowChrome}" />
-        <Setter Property="SnapsToDevicePixels" Value="True" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type ContextMenu}">
@@ -32,18 +31,25 @@
                         Padding="0,3,0,3"
                         Background="{TemplateBinding Background}"
                         BorderBrush="{TemplateBinding BorderBrush}"
-                        BorderThickness="1"
-                        CornerRadius="8">
-                        <StackPanel
-                            ClipToBounds="True"
-                            Grid.IsSharedSizeScope="True"
-                            IsItemsHost="True"
-                            KeyboardNavigation.DirectionalNavigation="Cycle"
-                            Orientation="Vertical" />
+                        BorderThickness="{TemplateBinding BorderThickness}"
+                        ClipToBounds="True"
+                        CornerRadius="8"
+                        SnapsToDevicePixels="True">
+                        <controls:PassiveScrollViewer
+                            CanContentScroll="False"
+                            Focusable="False"
+                            HorizontalScrollBarVisibility="Disabled"
+                            IsScrollSpillEnabled="False"
+                            VerticalScrollBarVisibility="Auto">
+                            <StackPanel
+                                Grid.IsSharedSizeScope="True"
+                                IsItemsHost="True"
+                                KeyboardNavigation.DirectionalNavigation="Cycle"
+                                Orientation="Vertical" />
+                        </controls:PassiveScrollViewer>
                     </Border>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
     </Style>
-
 </ResourceDictionary>
