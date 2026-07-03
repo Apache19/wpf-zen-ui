@@ -24,6 +24,16 @@
     <system:Double x:Key="TextBoxClearButtonHeight">24</system:Double>
 
     <Style x:Key="{x:Static t:StyleKeys.DefaultTextBoxStyle}" TargetType="{x:Type TextBox}">
+        <!--  todo: 临时缓解右键菜单弹出延迟问题，将来重新实现内置 TextBox 时，提供更现代化的菜单 UI  -->
+        <Setter Property="ContextMenu">
+            <Setter.Value>
+                <ContextMenu>
+                    <MenuItem Command="ApplicationCommands.Cut" />
+                    <MenuItem Command="ApplicationCommands.Copy" />
+                    <MenuItem Command="ApplicationCommands.Paste" />
+                </ContextMenu>
+            </Setter.Value>
+        </Setter>
         <Setter Property="FocusVisualStyle" Value="{m:StyleResource DefaultControlFocusVisualStyle}" />
         <Setter Property="Foreground" Value="{m:BrushResource TextFillColorPrimaryBrush}" />
         <Setter Property="CaretBrush" Value="{m:BrushResource TextFillColorPrimaryBrush}" />
@@ -45,16 +55,6 @@
         <Setter Property="SnapsToDevicePixels" Value="True" />
         <Setter Property="OverridesDefaultStyle" Value="True" />
         <Setter Property="Validation.ErrorTemplate" Value="{m:StyleResource DefaultValidationTemplate}" />
-        <!--  todo: 临时缓解右键菜单弹出延迟问题  -->
-        <Setter Property="ContextMenu">
-            <Setter.Value>
-                <ContextMenu>
-                    <MenuItem Command="ApplicationCommands.Copy" />
-                    <MenuItem Command="ApplicationCommands.Cut" />
-                    <MenuItem Command="ApplicationCommands.Paste" />
-                </ContextMenu>
-            </Setter.Value>
-        </Setter>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type TextBox}">
