@@ -4,13 +4,13 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Ui.Gallery.Controls"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:local="clr-namespace:Wpf.Ui.Gallery.Views.Pages.BasicInput"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    xmlns:vm="clr-namespace:Wpf.Ui.Gallery.ViewModels.Pages.BasicInput"
     Title="DropDownButtonPage"
     controls:PageControlDocumentation.DocumentationType="{x:Type ui:DropDownButton}"
     d:Background="{ui:BrushResource WindowBackgroundBrush}"
-    d:DataContext="{d:DesignInstance local:DropDownButtonPage, IsDesignTimeCreatable=False}"
+    d:DataContext="{d:DesignInstance vm:DropDownButtonViewModel, IsDesignTimeCreatable=False}"
     d:DesignHeight="1200"
     d:DesignWidth="800"
     Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
@@ -169,10 +169,11 @@
                 BorderThickness="1"
                 CornerRadius="8"
                 Cursor="Hand"
+                Focusable="True"
                 Padding="24"
-                ToolTip="Right-click to open context menu">
+                ToolTip="Right-click or press Shift+F10 to open context menu">
                 <Border.ContextMenu>
-                    <ContextMenu DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
+                    <ContextMenu>
                         <MenuItem
                             Command="{Binding CutCommand}"
                             Header="Cut"
@@ -356,10 +357,11 @@
                 BorderThickness="1"
                 CornerRadius="8"
                 Cursor="Hand"
+                Focusable="True"
                 Padding="24"
-                ToolTip="Right-click to open a very long scrolling context menu">
+                ToolTip="Right-click or press Shift+F10 to open a very long scrolling context menu">
                 <Border.ContextMenu>
-                    <ContextMenu DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
+                    <ContextMenu>
                         <MenuItem
                             Command="{Binding NewCommand}"
                             Header="New File"
