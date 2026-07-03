@@ -3,14 +3,18 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Ui.Controls">
 
+    <!--
+        由于在 WPF 在 LayeredWindow 上绘制阴影不会走硬件渲染，
+        所以阴影面积应尽量小，避免大型菜单下的大面积阴影带来性能问题
+    -->
     <controls:PopupShadowChrome
         x:Key="DefaultPopupShadowChrome"
         AnimationMode="DynamicContentBounds"
-        BlurRadius="30"
+        BlurRadius="15"
         Direction="0"
-        Opacity="0.255"
+        Opacity="0.175"
         ShadowDepth="0"
-        ShadowThickness="30"
+        ShadowThickness="20"
         Color="#202020" />
 
     <controls:PopupAnimationSettings x:Key="DefaultPopupAnimationSettings" />
