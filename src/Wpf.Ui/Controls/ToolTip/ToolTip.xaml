@@ -11,59 +11,61 @@
     xmlns:controls="clr-namespace:Wpf.Ui.Controls"
     xmlns:markup="clr-namespace:Wpf.Ui.Markup">
 
-    <Style x:Key="DefaultToolTipStyle" TargetType="{x:Type ToolTip}">
+    <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Resources/Popup.xaml" />
+    </ResourceDictionary.MergedDictionaries>
+
+    <controls:PopupShadowChrome
+        x:Key="ToolTipShadowChrome"
+        AnimationMode="DynamicContentBounds"
+        BlurRadius="10"
+        Direction="270"
+        Opacity="0.175"
+        ShadowDepth="3"
+        ShadowThickness="12"
+        Color="#202020" />
+
+    <Style x:Key="UiToolTipStyle" TargetType="{x:Type ToolTip}">
         <Setter Property="MaxWidth" Value="260" />
-        <Setter Property="Height" Value="Auto" />
-        <Setter Property="Width" Value="Auto" />
-        <Setter Property="TextElement.FontSize" Value="12" />
-        <Setter Property="TextElement.FontWeight" Value="Normal" />
-        <Setter Property="TextBlock.LineHeight" Value="16" />
-        <Setter Property="TextBlock.TextAlignment" Value="Justify" />
-        <Setter Property="TextElement.Foreground" Value="{markup:BrushResource TextFillColorPrimaryBrush}" />
         <Setter Property="Foreground" Value="{markup:BrushResource TextFillColorPrimaryBrush}" />
         <Setter Property="Background" Value="{markup:BrushResource AcrylicBackgroundFillColorDefaultBrush}" />
         <Setter Property="BorderBrush" Value="{markup:BrushResource SurfaceStrokeColorFlyoutBrush}" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="HasDropShadow" Value="True" />
+        <Setter Property="controls:PopupAnimationBehavior.AnimationSettings" Value="{StaticResource DefaultPopupAnimationSettings}" />
+        <Setter Property="controls:PopupShadow.PopupShadowChrome" Value="{StaticResource ToolTipShadowChrome}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Padding" Value="16,12" />
+        <Setter Property="HorizontalContentAlignment" Value="Left" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="RenderOptions.ClearTypeHint" Value="Enabled" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ToolTip">
-                    <controls:EffectThicknessDecorator Thickness="15">
-                        <Border
-                            Name="Border"
-                            Width="{TemplateBinding Width}"
-                            Height="{TemplateBinding Height}"
-                            MaxWidth="{TemplateBinding MaxWidth}"
-                            Padding="8"
-                            Background="{TemplateBinding Background}"
-                            BorderBrush="{TemplateBinding BorderBrush}"
-                            BorderThickness="1"
-                            CornerRadius="4"
-                            SnapsToDevicePixels="True">
-                            <Border.Effect>
-                                <DropShadowEffect
-                                    BlurRadius="10"
-                                    Direction="270"
-                                    Opacity="0.135"
-                                    ShadowDepth="5"
-                                    Color="#202020" />
-                            </Border.Effect>
-                            <ContentPresenter
-                                Margin="4"
-                                HorizontalAlignment="Left"
-                                VerticalAlignment="Top">
-                                <ContentPresenter.Resources>
-                                    <Style TargetType="{x:Type TextBlock}">
-                                        <Setter Property="TextWrapping" Value="WrapWithOverflow" />
-                                    </Style>
-                                </ContentPresenter.Resources>
-                            </ContentPresenter>
-                        </Border>
-                    </controls:EffectThicknessDecorator>
+                    <Border
+                        Name="Border"
+                        Padding="{TemplateBinding Padding}"
+                        Background="{TemplateBinding Background}"
+                        BorderBrush="{TemplateBinding BorderBrush}"
+                        BorderThickness="{TemplateBinding BorderThickness}"
+                        CornerRadius="6"
+                        SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}">
+                        <ContentPresenter
+                            HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                            VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                            SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}">
+                            <ContentPresenter.Resources>
+                                <Style TargetType="{x:Type TextBlock}">
+                                    <Setter Property="TextWrapping" Value="WrapWithOverflow" />
+                                </Style>
+                            </ContentPresenter.Resources>
+                        </ContentPresenter>
+                    </Border>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
     </Style>
 
-    <Style BasedOn="{StaticResource DefaultToolTipStyle}" TargetType="{x:Type ToolTip}" />
+    <Style BasedOn="{StaticResource UiToolTipStyle}" TargetType="{x:Type ToolTip}" />
 
 </ResourceDictionary>

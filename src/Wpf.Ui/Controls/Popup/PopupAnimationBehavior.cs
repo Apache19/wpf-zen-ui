@@ -9,6 +9,7 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Media.Animation;
 using WinContextMenu = System.Windows.Controls.ContextMenu;
+using WinToolTip = System.Windows.Controls.ToolTip;
 
 // ReSharper disable once CheckNamespace
 namespace Wpf.Ui.Controls;
@@ -60,6 +61,13 @@ public static class PopupAnimationBehavior
         BindingFlags.Instance | BindingFlags.NonPublic
     );
 
+    // ToolTip follows the same private-root-popup pattern as ContextMenu, with WPF creating the Popup lazily when
+    // IsOpen first changes to true.
+    private static readonly FieldInfo? ToolTipParentPopupField = typeof(WinToolTip).GetField(
+        "_parentPopup",
+        BindingFlags.Instance | BindingFlags.NonPublic
+    );
+
     // PopupRoot currently exposes the same adorner decorator that WPF uses for native Slide/Scroll animations.
     // Cache the lookup for each open attempt; if it disappears, the visual-tree fallback below keeps behavior safe.
     private static readonly FieldInfo? PopupRootAdornerDecoratorField = PopupRootType?.GetField(
@@ -78,13 +86,14 @@ public static class PopupAnimationBehavior
         OverridePopupRootOpacityMetadata();
         PrependIsOpenChangedCallback(Popup.IsOpenProperty, typeof(Popup));
         PrependIsOpenChangedCallback(WinContextMenu.IsOpenProperty, typeof(WinContextMenu));
+        PrependIsOpenChangedCallback(WinToolTip.IsOpenProperty, typeof(WinToolTip));
     }
 
     /// <summary>
     /// Identifies the attached property that configures the custom Wpf.Ui popup opening animation.
     /// </summary>
     /// <remarks>
-    /// Set this property on a <see cref="Popup"/> or <see cref="WinContextMenu"/> and keep
+    /// Set this property on a <see cref="Popup"/>, <see cref="WinContextMenu"/>, or <see cref="WinToolTip"/> and keep
     /// <see cref="Popup.PopupAnimation"/> as
     /// <see cref="PopupAnimation.None"/> to enable the custom animation path. Clearing this property detaches the
     /// behavior and restores any animated values that were touched by the controller.
@@ -114,6 +123,7 @@ public static class PopupAnimationBehavior
     /// <returns>AnimationSettings property value.</returns>
     [AttachedPropertyBrowsableForType(typeof(Popup))]
     [AttachedPropertyBrowsableForType(typeof(WinContextMenu))]
+    [AttachedPropertyBrowsableForType(typeof(WinToolTip))]
     public static PopupAnimationSettings? GetAnimationSettings(DependencyObject element)
     {
         return (PopupAnimationSettings?)element.GetValue(AnimationSettingsProperty);
@@ -133,6 +143,7 @@ public static class PopupAnimationBehavior
 
     [AttachedPropertyBrowsableForType(typeof(Popup))]
     [AttachedPropertyBrowsableForType(typeof(WinContextMenu))]
+    [AttachedPropertyBrowsableForType(typeof(WinToolTip))]
     private static PopupAnimationController? GetAnimationController(DependencyObject element)
     {
         return (PopupAnimationController?)element.GetValue(AnimationControllerProperty);
@@ -461,6 +472,7 @@ public static class PopupAnimationBehavior
         {
             Popup popup                => popup.PlacementTarget,
             WinContextMenu contextMenu => contextMenu.PlacementTarget,
+            WinToolTip toolTip         => toolTip.PlacementTarget,
             _                          => null,
         };
     }
@@ -471,6 +483,7 @@ public static class PopupAnimationBehavior
         {
             Popup popup                => popup.Placement,
             WinContextMenu contextMenu => contextMenu.Placement,
+            WinToolTip toolTip         => toolTip.Placement,
             _                          => PlacementMode.Bottom,
         };
     }
@@ -547,7 +560,7 @@ public static class PopupAnimationBehavior
         DependencyObject d,
         DependencyPropertyChangedEventArgs e)
     {
-        if (d is not Popup and not WinContextMenu)
+        if (d is not Popup and not WinContextMenu and not WinToolTip)
         {
             return;
         }
@@ -603,7 +616,7 @@ public static class PopupAnimationBehavior
         private          int                     _openVersion;
         private          bool                    _isOpeningWithCustomAnimation;
         private          bool                    _isSuppressingPopupRootOpacity;
-        private          Popup?                  _pendingContextMenuRootPopup;
+        private          Popup?                  _pendingPrivateRootPopup;
         private          bool                    _isSettingsChangedSubscribed;
         private          bool                    _isDisposed;
 
@@ -661,7 +674,7 @@ public static class PopupAnimationBehavior
         private void Detach()
         {
             EndPopupRootOpacitySuppression();
-            DetachPendingContextMenuRootPopup();
+            DetachPendingPrivateRootPopup();
             ResetOpenAnimationState();
             _isOpeningWithCustomAnimation = false;
 
@@ -720,7 +733,7 @@ public static class PopupAnimationBehavior
                 // owners are force-closed after WPF has queued its normal async destroy.
                 _isOpeningWithCustomAnimation = false;
                 EndPopupRootOpacitySuppression();
-                DetachPendingContextMenuRootPopup();
+                DetachPendingPrivateRootPopup();
                 ReleaseAnimationReferences();
 
                 return false;
@@ -805,11 +818,11 @@ public static class PopupAnimationBehavior
 
                 if (_settings != null)
                 {
-                    if (_owner is WinContextMenu)
+                    if (IsPrivateRootPopupOwner)
                     {
-                        // ContextMenu opens through a private root Popup whose ShowWindow timing can lag behind
-                        // ContextMenu.IsOpen, so it needs the guarded path that waits until WPF stops clearing clocks.
-                        keepPopupRootOpacitySuppression = BeginContextMenuOpenAnimation(_openVersion);
+                        // ContextMenu and ToolTip open through a private root Popup whose ShowWindow timing can lag behind
+                        // the public IsOpen property, so they need the guarded path that waits until WPF stops clearing clocks.
+                        keepPopupRootOpacitySuppression = BeginPrivateRootPopupOpenAnimation(_openVersion);
                     }
                     else
                     {
@@ -831,13 +844,12 @@ public static class PopupAnimationBehavior
             }
         }
 
-        private bool BeginContextMenuOpenAnimation(int openVersion)
+        private bool BeginPrivateRootPopupOpenAnimation(int openVersion)
         {
-            if (_owner is not WinContextMenu contextMenu ||
-                TryGetContextMenuRootPopup(contextMenu) is not { } rootPopup)
+            if (TryGetPrivateRootPopup(_owner) is not { } rootPopup)
             {
                 // Without WPF's private root Popup there is nothing asynchronous to guard. The caller will fall back to
-                // the normal cleanup path and the menu simply opens without the extra ContextMenu-specific protection.
+                // the normal cleanup path and the owner simply opens without the extra private-Popup protection.
                 return false;
             }
 
@@ -852,26 +864,26 @@ public static class PopupAnimationBehavior
                 return false;
             }
 
-            // ContextMenu.IsOpen opens a long-lived private Popup via binding. The ContextMenu IsOpen callback can
+            // ContextMenu/ToolTip IsOpen opens a private Popup via binding. The public IsOpen callback can
             // finish before that private Popup reaches ShowWindow/SetupAnimations(true). Starting our timeline too
             // early lets PopupRoot.StopAnimations wipe the clocks, and ending the popup-root opacity suppression here
             // lets Popup.ShowWindow force a full-opacity frame before Opened fires. Wait for the private Popup.Opened
-            // event while keeping suppression armed only for this menu's root visual.
-            DetachPendingContextMenuRootPopup();
-            _pendingContextMenuRootPopup = rootPopup;
-            rootPopup.Opened += OnContextMenuRootPopupOpened;
-            rootPopup.Closed += OnPendingContextMenuRootPopupClosed;
+            // event while keeping suppression armed only for this owner's root visual.
+            DetachPendingPrivateRootPopup();
+            _pendingPrivateRootPopup = rootPopup;
+            rootPopup.Opened += OnPrivateRootPopupOpened;
+            rootPopup.Closed += OnPendingPrivateRootPopupClosed;
 
-            // Returning true intentionally transfers the suppression lifetime from ContextMenu.IsOpen to the private
+            // Returning true intentionally transfers the suppression lifetime from the owner IsOpen callback to the private
             // Popup.Opened event. That event is the first point where WPF has finished ShowWindow and StopAnimations.
             return true;
         }
 
-        private void OnContextMenuRootPopupOpened(object? sender, EventArgs e)
+        private void OnPrivateRootPopupOpened(object? sender, EventArgs e)
         {
             // Opened is raised after the private Popup's ShowWindow path, so WPF's own StopAnimations call is behind
-            // us and the custom timeline can own the PopupRoot until the menu closes.
-            DetachPendingContextMenuRootPopup();
+            // us and the custom timeline can own the PopupRoot until the owner closes.
+            DetachPendingPrivateRootPopup();
 
             try
             {
@@ -886,27 +898,27 @@ public static class PopupAnimationBehavior
             }
         }
 
-        private void OnPendingContextMenuRootPopupClosed(object? sender, EventArgs e)
+        private void OnPendingPrivateRootPopupClosed(object? sender, EventArgs e)
         {
-            // Defensive cleanup for interrupted opens: if menu mode closes before the private Popup.Opened event fires,
+            // Defensive cleanup for interrupted opens: if the owner closes before the private Popup.Opened event fires,
             // release the thread-local suppression stack and remove both event handlers in one place.
-            DetachPendingContextMenuRootPopup();
+            DetachPendingPrivateRootPopup();
             EndPopupRootOpacitySuppression();
             _isOpeningWithCustomAnimation = false;
         }
 
-        private void DetachPendingContextMenuRootPopup()
+        private void DetachPendingPrivateRootPopup()
         {
-            if (_pendingContextMenuRootPopup == null)
+            if (_pendingPrivateRootPopup == null)
             {
                 return;
             }
 
-            // The private root Popup is long-lived and reused by ContextMenu, so every temporary handler must be
-            // removed explicitly. Otherwise later menu opens would run stale animation callbacks for old versions.
-            _pendingContextMenuRootPopup.Opened -= OnContextMenuRootPopupOpened;
-            _pendingContextMenuRootPopup.Closed -= OnPendingContextMenuRootPopupClosed;
-            _pendingContextMenuRootPopup = null;
+            // The private root Popup can be long-lived and reused, so every temporary handler must be
+            // removed explicitly. Otherwise later opens would run stale animation callbacks for old versions.
+            _pendingPrivateRootPopup.Opened -= OnPrivateRootPopupOpened;
+            _pendingPrivateRootPopup.Closed -= OnPendingPrivateRootPopupClosed;
+            _pendingPrivateRootPopup = null;
         }
 
         private void OnSettingsChanged(object? sender, EventArgs e)
@@ -1119,15 +1131,15 @@ public static class PopupAnimationBehavior
 
         private bool IsPopupRootSuppressionTarget(DependencyObject popupRoot)
         {
-            if (_pendingContextMenuRootPopup == null)
+            if (_pendingPrivateRootPopup == null)
             {
                 return true;
             }
 
-            // While a ContextMenu is waiting for its private Popup.Opened event, the controller remains on the
+            // While a private-root owner is waiting for its Popup.Opened event, the controller remains on the
             // thread-local opening stack longer than a normal Popup. Limit suppression to that private PopupRoot so a
             // nested or unrelated Popup opened on the same dispatcher turn cannot have its first frame hidden by us.
-            return _pendingContextMenuRootPopup.Child is Visual child &&
+            return _pendingPrivateRootPopup.Child is Visual child &&
                    ReferenceEquals((PresentationSource.FromVisual(child) as HwndSource)?.RootVisual, popupRoot);
         }
 
@@ -1173,6 +1185,7 @@ public static class PopupAnimationBehavior
             {
                 Popup { Child: Visual child } => (PresentationSource.FromVisual(child) as HwndSource)?.RootVisual,
                 WinContextMenu contextMenu    => (PresentationSource.FromVisual(contextMenu) as HwndSource)?.RootVisual,
+                WinToolTip toolTip            => (PresentationSource.FromVisual(toolTip) as HwndSource)?.RootVisual,
                 _                             => null,
             };
         }
@@ -1182,31 +1195,37 @@ public static class PopupAnimationBehavior
             {
                 Popup popup                => popup.IsOpen,
                 WinContextMenu contextMenu => contextMenu.IsOpen,
+                WinToolTip toolTip         => toolTip.IsOpen,
                 _                          => false,
             };
 
         private void ApplyRootPopupAnimationMode()
         {
-            if (_owner is not WinContextMenu contextMenu ||
+            if (!IsPrivateRootPopupOwner ||
                 GetPopupAnimation(_owner) != PopupAnimation.None ||
-                TryGetContextMenuRootPopup(contextMenu) is not { } rootPopup)
+                TryGetPrivateRootPopup(_owner) is not { } rootPopup)
             {
                 return;
             }
 
-            // ContextMenu hosts itself in a private Popup created by WPF. Popup.CreateRootPopup binds IsOpen and
-            // placement properties, but not PopupAnimation; without this, the private Popup keeps the system menu
+            // ContextMenu and ToolTip host themselves in a private Popup created by WPF. Popup.CreateRootPopup binds
+            // IsOpen and placement properties, but not PopupAnimation; without this, the private Popup keeps the system
             // animation and remains visible briefly after PopupRoot.StopAnimations clears our opening transform.
-            // Only change the private Popup's animation mode. Its managed instance still belongs to ContextMenu; the
+            // Only change the private Popup's animation mode. Its managed instance still belongs to the owner; the
             // close path only completes WPF's pending HWND destroy timer when one is queued, mirroring Popup.ForceClose.
             // ComboBox does not need this path because its template owns the real Popup and binds PopupAnimation
             // directly, so the behavior can observe and update the same instance that WPF opens.
             rootPopup.SetCurrentValue(Popup.PopupAnimationProperty, PopupAnimation.None);
         }
 
-        private static Popup? TryGetContextMenuRootPopup(WinContextMenu contextMenu)
+        private static Popup? TryGetPrivateRootPopup(DependencyObject owner)
         {
-            return ContextMenuParentPopupField?.GetValue(contextMenu) as Popup;
+            return owner switch
+            {
+                WinContextMenu contextMenu => ContextMenuParentPopupField?.GetValue(contextMenu) as Popup,
+                WinToolTip toolTip         => ToolTipParentPopupField?.GetValue(toolTip) as Popup,
+                _                          => null,
+            };
         }
 
         private Popup? GetForceCloseTargetPopup()
@@ -1216,10 +1235,13 @@ public static class PopupAnimationBehavior
             return _owner switch
             {
                 Popup popup                => popup,
-                WinContextMenu contextMenu => TryGetContextMenuRootPopup(contextMenu),
+                WinContextMenu contextMenu => TryGetPrivateRootPopup(contextMenu),
+                WinToolTip toolTip         => TryGetPrivateRootPopup(toolTip),
                 _                          => null,
             };
         }
+
+        private bool IsPrivateRootPopupOwner => _owner is WinContextMenu or WinToolTip;
 
         private static bool TryGetAnimationLayer(UIElement popupRoot, out UIElement animationLayer)
         {

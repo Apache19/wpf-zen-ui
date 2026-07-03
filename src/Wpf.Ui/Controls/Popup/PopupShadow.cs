@@ -13,6 +13,7 @@ using Windows.Win32.Foundation;
 using Windows.Win32.UI.WindowsAndMessaging;
 using Wpf.Ui.Extensions.Wpf;
 using WinContextMenu = System.Windows.Controls.ContextMenu;
+using WinToolTip = System.Windows.Controls.ToolTip;
 
 // ReSharper disable once CheckNamespace
 namespace Wpf.Ui.Controls;
@@ -32,7 +33,7 @@ public static class PopupShadow
 {
     /// <summary>
     /// Identifies the attached property that enables detached shadow rendering for a <see cref="Popup"/> or
-    /// <see cref="WinContextMenu"/>.
+    /// <see cref="WinContextMenu"/> or <see cref="WinToolTip"/>.
     /// </summary>
     /// <remarks>
     /// The value is intentionally a <see cref="Freezable"/> chrome object rather than a set of primitive attached
@@ -105,9 +106,9 @@ public static class PopupShadow
         DependencyObject d,
         DependencyPropertyChangedEventArgs e)
     {
-        if (d is not Popup and not WinContextMenu)
+        if (d is not Popup and not WinContextMenu and not WinToolTip)
         {
-            // The implementation depends on Popup/ContextMenu HWND behavior; other elements intentionally opt out.
+            // The implementation depends on popup-style HWND behavior; other elements intentionally opt out.
             return;
         }
 
@@ -135,7 +136,7 @@ public static class PopupShadow
     /// Owns the detached shadow window and synchronizes it with one popup-style owner.
     /// </summary>
     /// <remarks>
-    /// The owner is either a <see cref="Popup"/> or a <see cref="WinContextMenu"/>. The controller borrows the owner's
+    /// The owner is a <see cref="Popup"/>, <see cref="WinContextMenu"/>, or <see cref="WinToolTip"/>. The controller borrows the owner's
     /// <see cref="HwndSource"/> only long enough to observe HWND movement, size, visibility, DPI, and destruction
     /// messages. It owns a second per-pixel-alpha <see cref="HwndSource"/> for the shadow surface. A common mistake is
     /// to think this shadow is part of the popup visual tree; it is not. It must be positioned with Win32 device-pixel
@@ -298,6 +299,7 @@ public static class PopupShadow
             {
                 Popup popup                => popup.IsOpen,
                 WinContextMenu contextMenu => contextMenu.IsOpen,
+                WinToolTip toolTip         => toolTip.IsOpen,
                 _                          => false,
             };
 
@@ -339,6 +341,22 @@ public static class PopupShadow
 
                     break;
                 }
+
+                case WinToolTip toolTip:
+                {
+                    toolTip.Opened += OnOwnerOpened;
+                    toolTip.Closed += OnOwnerClosed;
+
+                    DependencyPropertyDescriptor
+                       .FromProperty(WinToolTip.IsOpenProperty, typeof(WinToolTip))
+                      ?.AddValueChanged(toolTip, OnOwnerIsOpenChanged);
+
+                    DependencyPropertyDescriptor
+                       .FromProperty(WinToolTip.HasDropShadowProperty, typeof(WinToolTip))
+                      ?.AddValueChanged(toolTip, OnOwnerHasDropShadowChanged);
+
+                    break;
+                }
             }
         }
 
@@ -374,6 +392,22 @@ public static class PopupShadow
                     DependencyPropertyDescriptor
                        .FromProperty(WinContextMenu.HasDropShadowProperty, typeof(WinContextMenu))
                       ?.RemoveValueChanged(contextMenu, OnOwnerHasDropShadowChanged);
+
+                    break;
+                }
+
+                case WinToolTip toolTip:
+                {
+                    toolTip.Opened -= OnOwnerOpened;
+                    toolTip.Closed -= OnOwnerClosed;
+
+                    DependencyPropertyDescriptor
+                       .FromProperty(WinToolTip.IsOpenProperty, typeof(WinToolTip))
+                      ?.RemoveValueChanged(toolTip, OnOwnerIsOpenChanged);
+
+                    DependencyPropertyDescriptor
+                       .FromProperty(WinToolTip.HasDropShadowProperty, typeof(WinToolTip))
+                      ?.RemoveValueChanged(toolTip, OnOwnerHasDropShadowChanged);
 
                     break;
                 }
@@ -508,6 +542,7 @@ public static class PopupShadow
                 // ContextMenu exposes HasDropShadow as part of its public visual contract. Honor the actual value,
                 // including values transferred to the popup that WPF creates internally for the menu.
                 WinContextMenu contextMenu => contextMenu.HasDropShadow,
+                WinToolTip toolTip         => toolTip.HasDropShadow,
 
                 // Wpf.Ui templates opt into the detached shadow by setting PopupShadowChrome, while most Popup
                 // instances leave HasDropShadow at WPF's default false. Treat the default as "not specified" for
@@ -535,6 +570,7 @@ public static class PopupShadow
             {
                 Popup { Child: Visual child } => PresentationSource.FromVisual(child) as HwndSource,
                 WinContextMenu contextMenu    => PresentationSource.FromVisual(contextMenu) as HwndSource,
+                WinToolTip toolTip            => PresentationSource.FromVisual(toolTip) as HwndSource,
                 _                             => null,
             };
         }
@@ -547,6 +583,7 @@ public static class PopupShadow
             {
                 Popup { Child: Visual child } => child,
                 WinContextMenu contextMenu    => contextMenu,
+                WinToolTip toolTip            => toolTip,
                 _                             => null,
             };
         }
