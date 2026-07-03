@@ -251,7 +251,7 @@
                 <Grid MinHeight="20" Margin="8,6,8,6">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" SharedSizeGroup="Icon" />
-                        <ColumnDefinition Width="*" SharedSizeGroup="Header" />
+                        <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" SharedSizeGroup="Shortcut" />
                     </Grid.ColumnDefinitions>
 
@@ -349,7 +349,7 @@
                     Margin="8,6,8,6">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" SharedSizeGroup="Icon" />
-                        <ColumnDefinition Width="*" SharedSizeGroup="Header" />
+                        <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" SharedSizeGroup="Shortcut" />
                     </Grid.ColumnDefinitions>
                     <controls:SymbolIcon
@@ -468,9 +468,7 @@
         <Setter Property="SnapsToDevicePixels" Value="True" />
         <Setter Property="ScrollViewer.PanningMode" Value="Both" />
         <Setter Property="Stylus.IsFlicksEnabled" Value="False" />
-        <!--
         <Setter Property="controls:MenuItemCommandIcon.AutoSetIcon" Value="True" />
-        -->
         <Style.Triggers>
             <Trigger Property="Role" Value="TopLevelHeader">
                 <Setter Property="FocusVisualStyle" Value="{StaticResource TopLevelMenuItemFocusVisualStyle}" />
