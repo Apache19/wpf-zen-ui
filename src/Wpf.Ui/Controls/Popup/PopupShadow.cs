@@ -12,8 +12,6 @@ using Windows.Win32;
 using Windows.Win32.Foundation;
 using Windows.Win32.UI.WindowsAndMessaging;
 using Wpf.Ui.Extensions.Wpf;
-using WinContextMenu = System.Windows.Controls.ContextMenu;
-using WinToolTip = System.Windows.Controls.ToolTip;
 
 // ReSharper disable once CheckNamespace
 namespace Wpf.Ui.Controls;
@@ -33,7 +31,7 @@ public static class PopupShadow
 {
     /// <summary>
     /// Identifies the attached property that enables detached shadow rendering for a <see cref="Popup"/> or
-    /// <see cref="WinContextMenu"/> or <see cref="WinToolTip"/>.
+    /// <see cref="ContextMenu"/> or <see cref="ToolTip"/>.
     /// </summary>
     /// <remarks>
     /// The value is intentionally a <see cref="Freezable"/> chrome object rather than a set of primitive attached
@@ -106,7 +104,7 @@ public static class PopupShadow
         DependencyObject d,
         DependencyPropertyChangedEventArgs e)
     {
-        if (d is not Popup and not WinContextMenu and not WinToolTip)
+        if (d is not Popup and not ContextMenu and not ToolTip)
         {
             // The implementation depends on popup-style HWND behavior; other elements intentionally opt out.
             return;
@@ -136,7 +134,7 @@ public static class PopupShadow
     /// Owns the detached shadow window and synchronizes it with one popup-style owner.
     /// </summary>
     /// <remarks>
-    /// The owner is a <see cref="Popup"/>, <see cref="WinContextMenu"/>, or <see cref="WinToolTip"/>. The controller borrows the owner's
+    /// The owner is a <see cref="Popup"/>, <see cref="ContextMenu"/>, or <see cref="ToolTip"/>. The controller borrows the owner's
     /// <see cref="HwndSource"/> only long enough to observe HWND movement, size, visibility, DPI, and destruction
     /// messages. It owns a second per-pixel-alpha <see cref="HwndSource"/> for the shadow surface. A common mistake is
     /// to think this shadow is part of the popup visual tree; it is not. It must be positioned with Win32 device-pixel
@@ -153,6 +151,7 @@ public static class PopupShadow
     {
         private const int WS_POPUP          = unchecked((int)0x80000000);
         private const int WS_EX_TRANSPARENT = 0x00000020;
+        private const int WS_EX_TOPMOST     = 0x00000008;
         private const int WS_EX_TOOLWINDOW  = 0x00000080;
         private const int WS_EX_NOACTIVATE  = 0x08000000;
 
@@ -297,10 +296,10 @@ public static class PopupShadow
         private bool IsOwnerOpen =>
             _owner switch
             {
-                Popup popup                => popup.IsOpen,
-                WinContextMenu contextMenu => contextMenu.IsOpen,
-                WinToolTip toolTip         => toolTip.IsOpen,
-                _                          => false,
+                Popup popup             => popup.IsOpen,
+                ContextMenu contextMenu => contextMenu.IsOpen,
+                ToolTip toolTip         => toolTip.IsOpen,
+                _                       => false,
             };
 
         private void AttachOwnerEvents()
@@ -326,33 +325,33 @@ public static class PopupShadow
                     break;
                 }
 
-                case WinContextMenu contextMenu:
+                case ContextMenu contextMenu:
                 {
                     contextMenu.Opened += OnOwnerOpened;
                     contextMenu.Closed += OnOwnerClosed;
 
                     DependencyPropertyDescriptor
-                       .FromProperty(WinContextMenu.IsOpenProperty, typeof(WinContextMenu))
+                       .FromProperty(ContextMenu.IsOpenProperty, typeof(ContextMenu))
                       ?.AddValueChanged(contextMenu, OnOwnerIsOpenChanged);
 
                     DependencyPropertyDescriptor
-                       .FromProperty(WinContextMenu.HasDropShadowProperty, typeof(WinContextMenu))
+                       .FromProperty(ContextMenu.HasDropShadowProperty, typeof(ContextMenu))
                       ?.AddValueChanged(contextMenu, OnOwnerHasDropShadowChanged);
 
                     break;
                 }
 
-                case WinToolTip toolTip:
+                case ToolTip toolTip:
                 {
                     toolTip.Opened += OnOwnerOpened;
                     toolTip.Closed += OnOwnerClosed;
 
                     DependencyPropertyDescriptor
-                       .FromProperty(WinToolTip.IsOpenProperty, typeof(WinToolTip))
+                       .FromProperty(ToolTip.IsOpenProperty, typeof(ToolTip))
                       ?.AddValueChanged(toolTip, OnOwnerIsOpenChanged);
 
                     DependencyPropertyDescriptor
-                       .FromProperty(WinToolTip.HasDropShadowProperty, typeof(WinToolTip))
+                       .FromProperty(ToolTip.HasDropShadowProperty, typeof(ToolTip))
                       ?.AddValueChanged(toolTip, OnOwnerHasDropShadowChanged);
 
                     break;
@@ -380,33 +379,33 @@ public static class PopupShadow
                     break;
                 }
 
-                case WinContextMenu contextMenu:
+                case ContextMenu contextMenu:
                 {
                     contextMenu.Opened -= OnOwnerOpened;
                     contextMenu.Closed -= OnOwnerClosed;
 
                     DependencyPropertyDescriptor
-                       .FromProperty(WinContextMenu.IsOpenProperty, typeof(WinContextMenu))
+                       .FromProperty(ContextMenu.IsOpenProperty, typeof(ContextMenu))
                       ?.RemoveValueChanged(contextMenu, OnOwnerIsOpenChanged);
 
                     DependencyPropertyDescriptor
-                       .FromProperty(WinContextMenu.HasDropShadowProperty, typeof(WinContextMenu))
+                       .FromProperty(ContextMenu.HasDropShadowProperty, typeof(ContextMenu))
                       ?.RemoveValueChanged(contextMenu, OnOwnerHasDropShadowChanged);
 
                     break;
                 }
 
-                case WinToolTip toolTip:
+                case ToolTip toolTip:
                 {
                     toolTip.Opened -= OnOwnerOpened;
                     toolTip.Closed -= OnOwnerClosed;
 
                     DependencyPropertyDescriptor
-                       .FromProperty(WinToolTip.IsOpenProperty, typeof(WinToolTip))
+                       .FromProperty(ToolTip.IsOpenProperty, typeof(ToolTip))
                       ?.RemoveValueChanged(toolTip, OnOwnerIsOpenChanged);
 
                     DependencyPropertyDescriptor
-                       .FromProperty(WinToolTip.HasDropShadowProperty, typeof(WinToolTip))
+                       .FromProperty(ToolTip.HasDropShadowProperty, typeof(ToolTip))
                       ?.RemoveValueChanged(toolTip, OnOwnerHasDropShadowChanged);
 
                     break;
@@ -503,7 +502,7 @@ public static class PopupShadow
 
             EnsureShadowSource();
             ApplyChrome();
-            UpdateShadowBounds();
+            UpdateShadowBounds(updateZOrder: true);
             BeginPendingOpenAnimation(force: true);
         }
 
@@ -541,8 +540,8 @@ public static class PopupShadow
             {
                 // ContextMenu exposes HasDropShadow as part of its public visual contract. Honor the actual value,
                 // including values transferred to the popup that WPF creates internally for the menu.
-                WinContextMenu contextMenu => contextMenu.HasDropShadow,
-                WinToolTip toolTip         => toolTip.HasDropShadow,
+                ContextMenu contextMenu => contextMenu.HasDropShadow,
+                ToolTip toolTip         => toolTip.HasDropShadow,
 
                 // Wpf.Ui templates opt into the detached shadow by setting PopupShadowChrome, while most Popup
                 // instances leave HasDropShadow at WPF's default false. Treat the default as "not specified" for
@@ -556,10 +555,13 @@ public static class PopupShadow
         {
             var valueSource = DependencyPropertyHelper.GetValueSource(popup, Popup.HasDropShadowProperty);
 
-            return valueSource.BaseValueSource == BaseValueSource.Default
-                && !valueSource.IsAnimated
-                && !valueSource.IsCoerced
-                && !valueSource.IsExpression;
+            return valueSource is
+            {
+                BaseValueSource: BaseValueSource.Default,
+                IsAnimated: false,
+                IsCoerced: false,
+                IsExpression: false
+            };
         }
 
         private HwndSource? GetOwnerHwndSource()
@@ -569,8 +571,8 @@ public static class PopupShadow
             return _owner switch
             {
                 Popup { Child: Visual child } => PresentationSource.FromVisual(child) as HwndSource,
-                WinContextMenu contextMenu    => PresentationSource.FromVisual(contextMenu) as HwndSource,
-                WinToolTip toolTip            => PresentationSource.FromVisual(toolTip) as HwndSource,
+                ContextMenu contextMenu       => PresentationSource.FromVisual(contextMenu) as HwndSource,
+                ToolTip toolTip               => PresentationSource.FromVisual(toolTip) as HwndSource,
                 _                             => null,
             };
         }
@@ -582,8 +584,8 @@ public static class PopupShadow
             return _owner switch
             {
                 Popup { Child: Visual child } => child,
-                WinContextMenu contextMenu    => contextMenu,
-                WinToolTip toolTip            => toolTip,
+                ContextMenu contextMenu       => contextMenu,
+                ToolTip toolTip               => toolTip,
                 _                             => null,
             };
         }
@@ -595,8 +597,9 @@ public static class PopupShadow
                 return;
             }
 
-            // Keep the companion HWND non-activating, hidden from Alt+Tab, and transparent to hit testing.
-            const int exStyle = WS_EX_TOOLWINDOW | WS_EX_TRANSPARENT | WS_EX_NOACTIVATE;
+            // Keep the companion HWND in the same z-order band as WPF popup HWNDs. WPF creates normal popups with
+            // WS_EX_TOPMOST; without that style, Windows keeps the shadow behind every topmost popup in a cascade.
+            const int exStyle = WS_EX_TOPMOST | WS_EX_TOOLWINDOW | WS_EX_TRANSPARENT | WS_EX_NOACTIVATE;
 
             var parameters = new HwndSourceParameters("Wpf.Ui.PopupShadow")
             {
@@ -604,6 +607,11 @@ public static class PopupShadow
                 Height                     = 1,
                 WindowStyle                = WS_POPUP,
                 ExtendedWindowStyle        = exStyle,
+
+                // WPF popup HWNDs are owned by their placement root or by the previous popup in a cascade. The shadow must
+                // share that owner instead of being owned by the popup itself; otherwise Win32's owned-window z-order rules
+                // force the shadow above its popup. Sharing the owner lets SetWindowPos place it as the popup's sibling.
+                ParentWindow               = GetShadowOwnerWindow(),
 
                 // Required for a transparent WPF HWND. Without per-pixel opacity the companion window would paint an
                 // opaque rectangle around the popup instead of only the shadow pixels.
@@ -646,6 +654,17 @@ public static class PopupShadow
             _shadowSource.RootVisual = _shadowRoot;
         }
 
+        private IntPtr GetShadowOwnerWindow()
+        {
+            var popupHwnd = _popupSource?.Handle ?? IntPtr.Zero;
+            if (popupHwnd == IntPtr.Zero)
+            {
+                return IntPtr.Zero;
+            }
+
+            return PInvoke.GetWindow(new HWND(popupHwnd), GET_WINDOW_CMD.GW_OWNER);
+        }
+
         private void ApplyChrome()
         {
             if (_chrome == null || _shadowBorder == null)
@@ -686,6 +705,11 @@ public static class PopupShadow
 
         private void UpdateShadowBounds()
         {
+            UpdateShadowBounds(updateZOrder: false);
+        }
+
+        private void UpdateShadowBounds(bool updateZOrder)
+        {
             if (_isUpdatingShadow || _chrome == null || _popupSource == null || _shadowSource == null || _shadowRoot == null)
             {
                 return;
@@ -722,22 +746,34 @@ public static class PopupShadow
 
             UpdateShadowContentBounds(default);
 
-            var flags = SET_WINDOW_POS_FLAGS.SWP_NOACTIVATE;
-            flags |= PInvoke.IsWindowVisible(popupHwnd)
-                ? SET_WINDOW_POS_FLAGS.SWP_SHOWWINDOW
-                : SET_WINDOW_POS_FLAGS.SWP_HIDEWINDOW;
+            var flags = SET_WINDOW_POS_FLAGS.SWP_NOACTIVATE | SET_WINDOW_POS_FLAGS.SWP_NOOWNERZORDER;
+
+            if (PInvoke.IsWindowVisible(popupHwnd))
+            {
+                flags |= SET_WINDOW_POS_FLAGS.SWP_SHOWWINDOW;
+            }
+            else
+            {
+                flags |= SET_WINDOW_POS_FLAGS.SWP_HIDEWINDOW;
+            }
+
+            if (!updateZOrder)
+            {
+                // Only the initial open declares the companion's z-order. Popup movement, resizing, visibility, and
+                // DPI changes must refresh bounds without re-inserting the shadow into the cascade, otherwise Windows
+                // may normalize the popup owner tree and separate earlier shadows from their popups.
+                flags |= SET_WINDOW_POS_FLAGS.SWP_NOZORDER;
+            }
 
             _isUpdatingShadow = true;
 
             try
             {
-                // Use the popup HWND as insert-after so the shadow stays directly beneath the popup.
-                // SetWindowPos inserts the shadow after popupHwnd in z-order; because top-to-bottom z-order is
-                // "previous before next", the companion becomes the next window behind the owner rather than a top
-                // window covering it.
+                // Initial creation uses the popup HWND as insert-after so the shadow starts directly beneath the popup.
+                // Later bounds refreshes keep the existing z-order untouched to avoid disturbing a popup cascade.
                 _ = PInvoke.SetWindowPos(
                     (HWND)_shadowSource.Handle,
-                    popupHwnd,
+                    updateZOrder ? popupHwnd : HWND.Null,
                     shadowLeft,
                     shadowTop,
                     shadowWidth,
@@ -1262,16 +1298,16 @@ public static class PopupShadow
 
         private IntPtr PopupWndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
         {
-            var message = (uint)msg;
-            switch (message)
+            switch ((uint)msg)
             {
                 case PInvoke.WM_SHOWWINDOW:
                 case PInvoke.WM_WINDOWPOSCHANGED:
                 case PInvoke.WM_MOVE:
                 case PInvoke.WM_SIZE:
                 case PInvoke.WM_DPICHANGED:
-                    // Defer back to WPF's dispatcher to avoid re-entering layout while processing HWND messages.
-                    _ = _dispatcher.BeginInvoke(UpdateShadowBounds, DispatcherPriority.Send);
+                    // These messages can change the popup's visibility, location, size, or DPI. Defer to the
+                    // dispatcher so the shadow follows the settled HWND state without re-entering WPF layout.
+                    _ = _dispatcher.BeginInvoke((Action)UpdateShadowBounds, DispatcherPriority.Send);
                     break;
 
                 case PInvoke.WM_NCDESTROY:

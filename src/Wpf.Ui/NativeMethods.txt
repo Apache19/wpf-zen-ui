@@ -3,6 +3,7 @@ SetWindowThemeAttribute
 GetDpiForWindow
 GetForegroundWindow
 IsWindowVisible
+GetWindow
 SetWindowLong
 GetWindowLong
 SetWindowRgn
