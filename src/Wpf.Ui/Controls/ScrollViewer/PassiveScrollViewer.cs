@@ -6,6 +6,7 @@
 using System.Windows.Controls;
 using System.Windows.Input;
 
+// ReSharper disable once CheckNamespace
 namespace Wpf.Ui.Controls;
 
 /// <summary>
@@ -40,19 +41,22 @@ public class PassiveScrollViewer : ScrollViewer
 
     protected override void OnMouseWheel(MouseWheelEventArgs e)
     {
-        if (IsVerticalScrollingDisabled
-         || IsContentSmallerThanViewport
-         || (IsScrollSpillEnabled && HasReachedEndOfScrolling(e)))
+        // When spill is disabled, stay out of the way — let the native ScrollViewer do its thing.
+        if (!IsScrollSpillEnabled)
+        {
+            base.OnMouseWheel(e);
+            return;
+        }
+
+        // We only care about one question: can the content actually scroll?
+        // Either it's too small to overflow, or we've already hit the end.
+        // ScrollBar visibility is the native control's own business — not ours.
+        if (IsContentSmallerThanViewport || HasReachedEndOfScrolling(e))
         {
             return;
         }
 
         base.OnMouseWheel(e);
-    }
-
-    private bool IsVerticalScrollingDisabled
-    {
-        get => VerticalScrollBarVisibility == ScrollBarVisibility.Disabled;
     }
 
     private bool IsContentSmallerThanViewport
