@@ -293,7 +293,6 @@
                         FontSize="11"
                         Foreground="{m:BrushResource TextFillColorDisabledBrush}"
                         Text="{TemplateBinding InputGestureText}"
-                        TextAlignment="Right"
                         UseLayoutRounding="True" />
                 </Grid>
             </Border>
@@ -341,12 +340,10 @@
             <Border
                 x:Name="SubmenuHeaderBorder"
                 Margin="4,1,4,1"
-                BorderThickness="1"
-                CornerRadius="4">
-                <Grid
-                    x:Name="MenuItemContent"
-                    MinHeight="20"
-                    Margin="8,6,8,6">
+                Background="{TemplateBinding Background}"
+                CornerRadius="4"
+                SnapsToDevicePixels="True">
+                <Grid MinHeight="20" Margin="8,6,8,6">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" SharedSizeGroup="Icon" />
                         <ColumnDefinition Width="*" />
@@ -356,7 +353,6 @@
                         x:Name="Checkmark"
                         Grid.Column="0"
                         MinWidth="20"
-                        MinHeight="20"
                         Margin="0,0,6,0"
                         HorizontalAlignment="Center"
                         VerticalAlignment="Center"
@@ -367,7 +363,6 @@
                         x:Name="IconPresenter"
                         Grid.Column="0"
                         MinWidth="20"
-                        MinHeight="20"
                         Margin="0,0,6,0"
                         HorizontalAlignment="Center"
                         VerticalAlignment="Center"
@@ -385,6 +380,7 @@
                     <controls:SymbolIcon
                         x:Name="Chevron"
                         Grid.Column="2"
+                        Margin="25,0,0,0"
                         HorizontalAlignment="Right"
                         VerticalAlignment="Center"
                         Symbol="ChevronRight20" />
