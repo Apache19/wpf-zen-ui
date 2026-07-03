@@ -23,31 +23,7 @@
         <controls:ControlExample
             Margin="0"
             HeaderText="A DropDownButton with file and edit operations."
-            XamlCode="&lt;ui:DropDownButton Content=&quot;Menu&quot; Icon=&quot;{ui:SymbolIcon Fluent24}&quot;&gt;
-    &lt;ui:DropDownButton.Flyout&gt;
-        &lt;ContextMenu&gt;
-            &lt;!-- File --&gt;
-            &lt;MenuItem Header=&quot;New&quot; Icon=&quot;{ui:SymbolIcon Add24}&quot; /&gt;
-            &lt;MenuItem Header=&quot;Open...&quot; Icon=&quot;{ui:SymbolIcon Open24}&quot; /&gt;
-            &lt;MenuItem Header=&quot;Save&quot; Icon=&quot;{ui:SymbolIcon Save24}&quot; /&gt;
-            &lt;MenuItem Header=&quot;Save As...&quot; Icon=&quot;{ui:SymbolIcon SaveCopy24}&quot; /&gt;
-            &lt;Separator /&gt;
-            &lt;MenuItem Header=&quot;Print...&quot; Icon=&quot;{ui:SymbolIcon Print24}&quot; /&gt;
-            &lt;MenuItem Header=&quot;Exit&quot; Icon=&quot;{ui:SymbolIcon DoorArrowRight24}&quot; /&gt;
-            &lt;Separator /&gt;
-            &lt;!-- Edit --&gt;
-            &lt;MenuItem Header=&quot;Undo&quot; Icon=&quot;{ui:SymbolIcon ArrowUndo24}&quot; /&gt;
-            &lt;MenuItem Header=&quot;Redo&quot; Icon=&quot;{ui:SymbolIcon ArrowRedo24}&quot; /&gt;
-            &lt;Separator /&gt;
-            &lt;MenuItem Header=&quot;Cut&quot; Icon=&quot;{ui:SymbolIcon Cut24}&quot; /&gt;
-            &lt;MenuItem Header=&quot;Copy&quot; Icon=&quot;{ui:SymbolIcon Copy24}&quot; /&gt;
-            &lt;MenuItem Header=&quot;Paste&quot; Icon=&quot;{ui:SymbolIcon ClipboardPaste24}&quot; /&gt;
-            &lt;MenuItem Header=&quot;Delete&quot; Icon=&quot;{ui:SymbolIcon Delete24}&quot; /&gt;
-            &lt;Separator /&gt;
-            &lt;MenuItem Header=&quot;Select All&quot; Icon=&quot;{ui:SymbolIcon SelectAllOn24}&quot; /&gt;
-        &lt;/ContextMenu&gt;
-    &lt;/ui:DropDownButton.Flyout&gt;
-&lt;/ui:DropDownButton&gt;">
+            XamlCodeSource="/CodeSamples/BasicInput/DropDownButton_xaml.txt">
             <StackPanel>
                 <ui:DropDownButton
                     MinWidth="250"
@@ -56,7 +32,6 @@
                     Icon="{ui:SymbolIcon Fluent24}">
                     <ui:DropDownButton.Flyout>
                         <ContextMenu>
-                            <!-- File operations -->
                             <MenuItem
                                 Command="{Binding NewCommand}"
                                 Header="New"
@@ -72,33 +47,6 @@
                                 Header="Save"
                                 Icon="{ui:SymbolIcon Save24}"
                                 InputGestureText="Ctrl+S" />
-                            <MenuItem
-                                Command="{Binding SaveAsCommand}"
-                                Header="Save As..."
-                                Icon="{ui:SymbolIcon SaveCopy24}"
-                                InputGestureText="Ctrl+Shift+S" />
-                            <Separator />
-                            <MenuItem
-                                Command="{Binding PrintCommand}"
-                                Header="Print..."
-                                Icon="{ui:SymbolIcon Print24}"
-                                InputGestureText="Ctrl+P" />
-                            <MenuItem
-                                Command="{Binding ExitCommand}"
-                                Header="Exit"
-                                Icon="{ui:SymbolIcon DoorArrowRight20}" />
-                            <Separator />
-                            <!-- Edit operations -->
-                            <MenuItem
-                                Command="{Binding UndoCommand}"
-                                Header="Undo"
-                                Icon="{ui:SymbolIcon ArrowUndo24}"
-                                InputGestureText="Ctrl+Z" />
-                            <MenuItem
-                                Command="{Binding RedoCommand}"
-                                Header="Redo"
-                                Icon="{ui:SymbolIcon ArrowRedo24}"
-                                InputGestureText="Ctrl+Y" />
                             <Separator />
                             <MenuItem
                                 Command="{Binding CutCommand}"
@@ -115,17 +63,6 @@
                                 Header="Paste"
                                 Icon="{ui:SymbolIcon ClipboardPaste24}"
                                 InputGestureText="Ctrl+V" />
-                            <MenuItem
-                                Command="{Binding DeleteCommand}"
-                                Header="Delete"
-                                Icon="{ui:SymbolIcon Delete24}"
-                                InputGestureText="Del" />
-                            <Separator />
-                            <MenuItem
-                                Command="{Binding SelectAllCommand}"
-                                Header="Select All"
-                                Icon="{ui:SymbolIcon SelectAllOn24}"
-                                InputGestureText="Ctrl+A" />
                         </ContextMenu>
                     </ui:DropDownButton.Flyout>
                 </ui:DropDownButton>
@@ -145,22 +82,7 @@
         <controls:ControlExample
             Margin="0,24,0,0"
             HeaderText="A control with right-click context menu."
-            XamlCode="&lt;Border Background=&quot;{ui:BrushResource CardBackgroundFillColorDefaultBrush}&quot;
-        BorderBrush=&quot;{ui:BrushResource CardStrokeColorDefaultBrush}&quot;
-        BorderThickness=&quot;1&quot;
-        CornerRadius=&quot;8&quot;
-        Padding=&quot;24&quot;&gt;
-    &lt;Border.ContextMenu&gt;
-        &lt;ContextMenu&gt;
-            &lt;MenuItem Header=&quot;Cut&quot; Icon=&quot;{ui:SymbolIcon Cut24}&quot; /&gt;
-            &lt;MenuItem Header=&quot;Copy&quot; Icon=&quot;{ui:SymbolIcon Copy24}&quot; /&gt;
-            &lt;MenuItem Header=&quot;Paste&quot; Icon=&quot;{ui:SymbolIcon ClipboardPaste24}&quot; /&gt;
-            &lt;Separator /&gt;
-            &lt;MenuItem Header=&quot;Select All&quot; Icon=&quot;{ui:SymbolIcon SelectAllOn24}&quot; /&gt;
-        &lt;/ContextMenu&gt;
-    &lt;/Border.ContextMenu&gt;
-    &lt;TextBlock Text=&quot;Right-click here to show context menu.&quot; /&gt;
-&lt;/Border&gt;">
+            XamlCodeSource="/CodeSamples/BasicInput/ContextMenu_xaml.txt">
             <!-- A card-like control with right-click ContextMenu -->
             <Border
                 MinWidth="320"
@@ -171,6 +93,7 @@
                 Cursor="Hand"
                 Focusable="True"
                 Padding="24"
+                PreviewMouseDown="OnContextMenuCardPreviewMouseDown"
                 ToolTip="Right-click or press Shift+F10 to open context menu">
                 <Border.ContextMenu>
                     <ContextMenu>
@@ -244,40 +167,7 @@
         <controls:ControlExample
             Margin="0,24,0,0"
             HeaderText="A DropDownButton with a very long menu to demonstrate scrolling."
-            XamlCode="&lt;ui:DropDownButton Content=&quot;Languages&quot; Icon=&quot;{ui:SymbolIcon Code24}&quot;&gt;
-    &lt;ui:DropDownButton.Flyout&gt;
-        &lt;ContextMenu&gt;
-            &lt;MenuItem Header=&quot;C# / .NET&quot; Icon=&quot;{ui:SymbolIcon Code24}&quot; /&gt;
-            &lt;MenuItem Header=&quot;F#&quot; /&gt;
-            &lt;MenuItem Header=&quot;Visual Basic&quot; /&gt;
-            &lt;Separator /&gt;
-            &lt;MenuItem Header=&quot;Rust&quot; /&gt;
-            &lt;MenuItem Header=&quot;Go&quot; /&gt;
-            &lt;MenuItem Header=&quot;Zig&quot; /&gt;
-            &lt;Separator /&gt;
-            &lt;MenuItem Header=&quot;Java&quot; /&gt;
-            &lt;MenuItem Header=&quot;Kotlin&quot; /&gt;
-            &lt;MenuItem Header=&quot;Scala&quot; /&gt;
-            &lt;Separator /&gt;
-            &lt;MenuItem Header=&quot;Python&quot; Icon=&quot;{ui:SymbolIcon Code24}&quot; /&gt;
-            &lt;MenuItem Header=&quot;Ruby&quot; /&gt;
-            &lt;Separator /&gt;
-            &lt;MenuItem Header=&quot;JavaScript&quot; Icon=&quot;{ui:SymbolIcon Code24}&quot; /&gt;
-            &lt;MenuItem Header=&quot;TypeScript&quot; /&gt;
-            &lt;Separator /&gt;
-            &lt;MenuItem Header=&quot;HTML / XML&quot; /&gt;
-            &lt;MenuItem Header=&quot;CSS / SCSS&quot; /&gt;
-            &lt;Separator /&gt;
-            &lt;MenuItem Header=&quot;SQL / T-SQL&quot; /&gt;
-            &lt;MenuItem Header=&quot;PowerShell&quot; /&gt;
-            &lt;MenuItem Header=&quot;Bash / Shell&quot; /&gt;
-            &lt;Separator /&gt;
-            &lt;MenuItem Header=&quot;Dart&quot; /&gt;
-            &lt;MenuItem Header=&quot;Swift&quot; /&gt;
-            &lt;MenuItem Header=&quot;C / C++&quot; /&gt;
-        &lt;/ContextMenu&gt;
-    &lt;/ui:DropDownButton.Flyout&gt;
-&lt;/ui:DropDownButton&gt;">
+            XamlCodeSource="/CodeSamples/BasicInput/DropDownButtonScrolling_xaml.txt">
             <StackPanel>
                 <ui:DropDownButton
                     MinWidth="250"
@@ -335,21 +225,7 @@
         <controls:ControlExample
             Margin="0,24,0,0"
             HeaderText="A control with a very long right-click context menu."
-            XamlCode="&lt;Border Background=&quot;{ui:BrushResource CardBackgroundFillColorDefaultBrush}&quot;
-        BorderBrush=&quot;{ui:BrushResource CardStrokeColorDefaultBrush}&quot;
-        BorderThickness=&quot;1&quot;
-        CornerRadius=&quot;8&quot;
-        Padding=&quot;24&quot;&gt;
-    &lt;Border.ContextMenu&gt;
-        &lt;ContextMenu&gt;
-            &lt;MenuItem Header=&quot;New File&quot; Icon=&quot;{ui:SymbolIcon Add24}&quot; /&gt;
-            &lt;MenuItem Header=&quot;Open File...&quot; Icon=&quot;{ui:SymbolIcon Open24}&quot; /&gt;
-            &lt;!-- ... many more items ... --&gt;
-            &lt;MenuItem Header=&quot;Exit&quot; Icon=&quot;{ui:SymbolIcon DoorArrowRight24}&quot; /&gt;
-        &lt;/ContextMenu&gt;
-    &lt;/Border.ContextMenu&gt;
-    &lt;TextBlock Text=&quot;Right-click here for a tall scrolling menu.&quot; /&gt;
-&lt;/Border&gt;">
+            XamlCodeSource="/CodeSamples/BasicInput/ContextMenuScrolling_xaml.txt">
             <Border
                 MinWidth="320"
                 Background="{ui:BrushResource CardBackgroundFillColorDefaultBrush}"
@@ -358,6 +234,7 @@
                 CornerRadius="8"
                 Cursor="Hand"
                 Focusable="True"
+                PreviewMouseDown="OnContextMenuCardPreviewMouseDown"
                 Padding="24"
                 ToolTip="Right-click or press Shift+F10 to open a very long scrolling context menu">
                 <Border.ContextMenu>

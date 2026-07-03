@@ -3,6 +3,7 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
+using System.Windows.Input;
 using Wpf.Ui.Controls;
 using Wpf.Ui.Gallery.ControlsLookup;
 using Wpf.Ui.Gallery.ViewModels.Pages.BasicInput;
@@ -20,5 +21,13 @@ public partial class DropDownButtonPage : INavigableView<DropDownButtonViewModel
         DataContext = viewModel;
 
         InitializeComponent();
+    }
+
+    private void OnContextMenuCardPreviewMouseDown(object sender, MouseButtonEventArgs e)
+    {
+        if (sender is System.Windows.UIElement element)
+        {
+            element.Focus();
+        }
     }
 }

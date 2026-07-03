@@ -1,0 +1,42 @@
+<Border Background="{ui:BrushResource CardBackgroundFillColorDefaultBrush}"
+       BorderBrush="{ui:BrushResource CardStrokeColorDefaultBrush}"
+       BorderThickness="1"
+       CornerRadius="8"
+       Padding="24">
+    <Border.ContextMenu>
+        <ContextMenu>
+            <MenuItem Header="New File" Icon="{ui:SymbolIcon Add24}" />
+            <MenuItem Header="Open File..." Icon="{ui:SymbolIcon Open24}" />
+            <MenuItem Header="Open Folder..." Icon="{ui:SymbolIcon FolderOpen24}" />
+            <Separator />
+            <MenuItem Header="Save" Icon="{ui:SymbolIcon Save24}" />
+            <MenuItem Header="Save As..." Icon="{ui:SymbolIcon SaveCopy24}" />
+            <MenuItem Header="Save All" Icon="{ui:SymbolIcon SaveMultiple24}" />
+            <Separator />
+            <MenuItem Header="Undo" Icon="{ui:SymbolIcon ArrowUndo24}" />
+            <MenuItem Header="Redo" Icon="{ui:SymbolIcon ArrowRedo24}" />
+            <Separator />
+            <MenuItem Header="Cut" Icon="{ui:SymbolIcon Cut24}" />
+            <MenuItem Header="Copy" Icon="{ui:SymbolIcon Copy24}" />
+            <MenuItem Header="Paste" Icon="{ui:SymbolIcon ClipboardPaste24}" />
+            <MenuItem Header="Delete" Icon="{ui:SymbolIcon Delete24}" />
+            <Separator />
+            <MenuItem Header="Select All" Icon="{ui:SymbolIcon SelectAllOn24}" />
+            <Separator />
+            <MenuItem Header="Find..." Icon="{ui:SymbolIcon Search24}" />
+            <MenuItem Header="Find in Files..." Icon="{ui:SymbolIcon SearchSettings20}" />
+            <MenuItem Header="Replace..." Icon="{ui:SymbolIcon ArrowSwap24}" />
+            <Separator />
+            <MenuItem Header="Go to Line..." Icon="{ui:SymbolIcon NumberSymbol24}" />
+            <Separator />
+            <MenuItem Header="Toggle Breakpoint" Icon="{ui:SymbolIcon Circle24}" />
+            <MenuItem Header="Start Debugging" Icon="{ui:SymbolIcon Play24}" />
+            <Separator />
+            <MenuItem Header="Refresh" Icon="{ui:SymbolIcon ArrowClockwise24}" />
+            <MenuItem Header="Settings" Icon="{ui:SymbolIcon Settings24}" />
+            <Separator />
+            <MenuItem Header="Exit" Icon="{ui:SymbolIcon DoorArrowRight20}" />
+        </ContextMenu>
+    </Border.ContextMenu>
+    <TextBlock Text="Right-click here for a tall scrolling menu." />
+</Border>

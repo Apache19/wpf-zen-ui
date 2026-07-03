@@ -1,0 +1,16 @@
+<Border Background="{ui:BrushResource CardBackgroundFillColorDefaultBrush}"
+       BorderBrush="{ui:BrushResource CardStrokeColorDefaultBrush}"
+       BorderThickness="1"
+       CornerRadius="8"
+       Padding="24">
+    <Border.ContextMenu>
+        <ContextMenu>
+            <MenuItem Header="Cut" Icon="{ui:SymbolIcon Cut24}" />
+            <MenuItem Header="Copy" Icon="{ui:SymbolIcon Copy24}" />
+            <MenuItem Header="Paste" Icon="{ui:SymbolIcon ClipboardPaste24}" />
+            <Separator />
+            <MenuItem Header="Select All" Icon="{ui:SymbolIcon SelectAllOn24}" />
+        </ContextMenu>
+    </Border.ContextMenu>
+    <TextBlock Text="Right-click here to show context menu." />
+</Border>
