@@ -17,7 +17,7 @@ public partial class DropDownButtonPage : INavigableView<DropDownButtonViewModel
     public DropDownButtonPage(DropDownButtonViewModel viewModel)
     {
         ViewModel = viewModel;
-        DataContext = this;
+        DataContext = viewModel;
 
         InitializeComponent();
     }
