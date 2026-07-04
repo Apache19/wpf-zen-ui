@@ -20,6 +20,14 @@
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Resources/DefaultEditorContextMenu.xaml" />
     </ResourceDictionary.MergedDictionaries>
 
+    <!--
+        todo: 增加单行文本框模板， MaxLines == 1 时使用
+              此时应把实际非文本编辑区的鼠标事件传递进去，以便能够在非文本行选择
+        todo: 滚动条在多行模式不会显示，找出原因，解决它。
+              库内有一个 DefaultTextBoxScrollViewerStyle，调查评估为什么会存在一个这样的样式，它与常用滚动视图有什么区别。
+              如果这个样式是专为文本编辑器创建的，则不应该放进 Generic.xaml，而是哪儿需要就自己合并引用。
+    -->
+
     <Thickness x:Key="TextBoxBorderThemeThickness">1,1,1,1</Thickness>
     <Thickness x:Key="TextBoxLeftIconMargin">10,0,0,0</Thickness>
     <Thickness x:Key="TextBoxRightIconMargin">0,0,10,0</Thickness>
