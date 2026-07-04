@@ -229,6 +229,18 @@ public class TextBox : System.Windows.Controls.TextBox
         HideClearButton();
     }
 
+    /// <inheritdoc />
+    protected override void OnContextMenuOpening(ContextMenuEventArgs e)
+    {
+        base.OnContextMenuOpening(e);
+
+        _ = TextEditorContextMenuPlacementHelper.TryOpenKeyboardInvokedMenu(
+            this,
+            e,
+            GetSelectionStartCharacterRect
+        );
+    }
+
     /// <summary>
     /// Reveals the clear button by <see cref="ShowClearButton"/> property.
     /// </summary>
@@ -285,5 +297,19 @@ public class TextBox : System.Windows.Controls.TextBox
     protected virtual void OnPlaceholderEnabledChanged()
     {
         SetPlaceholderTextVisibility();
+    }
+
+    private Rect GetSelectionStartCharacterRect()
+    {
+        int characterIndex = Math.Max(0, Math.Min(SelectionStart, Text.Length));
+
+        try
+        {
+            return GetRectFromCharacterIndex(characterIndex, trailingEdge: false);
+        }
+        catch (ArgumentOutOfRangeException)
+        {
+            return Rect.Empty;
+        }
     }
 }
