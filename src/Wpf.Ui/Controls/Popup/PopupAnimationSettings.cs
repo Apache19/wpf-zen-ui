@@ -9,7 +9,7 @@ using System.Windows.Media.Animation;
 namespace Wpf.Ui.Controls;
 
 /// <summary>
-/// Describes the opening animation applied by <see cref="PopupAnimationBehavior"/>.
+/// Describes the opening animation applied by <see cref="PopupAnimator"/>.
 /// </summary>
 public sealed class PopupAnimationSettings : Freezable
 {
@@ -48,6 +48,20 @@ public sealed class PopupAnimationSettings : Freezable
         value => value is IEasingFunction
     );
 
+    private static readonly PopupAnimationSettings DefaultInstance = CreateFrozenDefault();
+
+    /// <summary>
+    /// Gets the frozen Wpf.Ui default popup opening animation settings.
+    /// </summary>
+    /// <remarks>
+    /// Use this shared instance when the settings do not need to be modified. Use <see cref="CreateDefault"/> when
+    /// per-popup values need to be changed.
+    /// </remarks>
+    public static PopupAnimationSettings Default
+    {
+        get { return DefaultInstance; }
+    }
+
     /// <summary>
     /// Gets or sets the starting vertical offset, in logical pixels, for downward popup placement.
     /// </summary>
@@ -75,6 +89,15 @@ public sealed class PopupAnimationSettings : Freezable
         set { SetValue(EasingFunctionProperty, value); }
     }
 
+    /// <summary>
+    /// Creates a mutable copy of the Wpf.Ui default popup opening animation settings.
+    /// </summary>
+    /// <returns>A new <see cref="PopupAnimationSettings"/> instance configured with Wpf.Ui default values.</returns>
+    public static PopupAnimationSettings CreateDefault()
+    {
+        return new PopupAnimationSettings();
+    }
+
     /// <inheritdoc />
     protected override Freezable CreateInstanceCore()
     {
@@ -94,6 +117,14 @@ public sealed class PopupAnimationSettings : Freezable
         }
 
         return EasingFunction;
+    }
+
+    private static PopupAnimationSettings CreateFrozenDefault()
+    {
+        var settings = CreateDefault();
+        settings.Freeze();
+
+        return settings;
     }
 
     private static IEasingFunction CreateDefaultEasingFunction()

@@ -11,10 +11,6 @@
     xmlns:controls="clr-namespace:Wpf.Ui.Controls"
     xmlns:markup="clr-namespace:Wpf.Ui.Markup">
 
-    <ResourceDictionary.MergedDictionaries>
-        <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Resources/Popup.xaml" />
-    </ResourceDictionary.MergedDictionaries>
-
     <Style x:Key="UiContextMenuStyle" TargetType="{x:Type ContextMenu}">
         <Setter Property="FontSize" Value="{markup:VariableResource ControlContentThemeFontSize}" />
         <Setter Property="Foreground" Value="{markup:BrushResource TextFillColorPrimaryBrush}" />
@@ -22,8 +18,8 @@
         <Setter Property="BorderBrush" Value="{markup:BrushResource SurfaceStrokeColorFlyoutBrush}" />
         <Setter Property="HasDropShadow" Value="True" />
         <Setter Property="MinWidth" Value="140" />
-        <Setter Property="controls:PopupAnimationBehavior.AnimationSettings" Value="{StaticResource DefaultPopupAnimationSettings}" />
-        <Setter Property="controls:PopupShadow.PopupShadowChrome" Value="{StaticResource DefaultPopupShadowChrome}" />
+        <Setter Property="controls:PopupAnimator.IsEnabled" Value="True" />
+        <Setter Property="controls:PopupShadow.IsEnabled" Value="True" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type ContextMenu}">

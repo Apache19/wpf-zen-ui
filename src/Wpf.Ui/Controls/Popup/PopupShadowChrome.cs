@@ -26,7 +26,7 @@ public sealed class PopupShadowChrome : Freezable
         nameof(ShadowThickness),
         typeof(Thickness),
         typeof(PopupShadowChrome),
-        new PropertyMetadata(new Thickness(30D)),
+        new PropertyMetadata(new Thickness(20D)),
         ValidateShadowThickness
     );
 
@@ -37,7 +37,7 @@ public sealed class PopupShadowChrome : Freezable
         nameof(BlurRadius),
         typeof(double),
         typeof(PopupShadowChrome),
-        new PropertyMetadata(20D),
+        new PropertyMetadata(15D),
         value => value is double doubleValue && IsValidDouble(doubleValue)
     );
 
@@ -48,7 +48,7 @@ public sealed class PopupShadowChrome : Freezable
         nameof(Direction),
         typeof(double),
         typeof(PopupShadowChrome),
-        new PropertyMetadata(270D),
+        new PropertyMetadata(0D),
         value => value is double doubleValue && IsValidDouble(doubleValue)
     );
 
@@ -59,7 +59,7 @@ public sealed class PopupShadowChrome : Freezable
         nameof(ShadowDepth),
         typeof(double),
         typeof(PopupShadowChrome),
-        new PropertyMetadata(10D),
+        new PropertyMetadata(0D),
         value => value is double doubleValue && IsValidDouble(doubleValue)
     );
 
@@ -70,7 +70,7 @@ public sealed class PopupShadowChrome : Freezable
         nameof(Opacity),
         typeof(double),
         typeof(PopupShadowChrome),
-        new PropertyMetadata(0.135D),
+        new PropertyMetadata(0.175D),
         value => value is double doubleValue
               && IsValidDouble(doubleValue)
               && doubleValue is >= 0D and <= 1D
@@ -98,6 +98,20 @@ public sealed class PopupShadowChrome : Freezable
             PopupShadowAnimationMode.DynamicContentBounds
          or PopupShadowAnimationMode.DeferredFadeIn
     );
+
+    private static readonly PopupShadowChrome DefaultInstance = CreateFrozenDefault();
+
+    /// <summary>
+    /// Gets the frozen Wpf.Ui default detached popup shadow chrome.
+    /// </summary>
+    /// <remarks>
+    /// Use this shared instance when the chrome does not need to be modified. Use <see cref="CreateDefault"/> when
+    /// per-popup values need to be changed.
+    /// </remarks>
+    public static PopupShadowChrome Default
+    {
+        get { return DefaultInstance; }
+    }
 
     /// <summary>
     /// Gets or sets the logical thickness reserved around the popup HWND for the detached shadow.
@@ -181,6 +195,24 @@ public sealed class PopupShadowChrome : Freezable
         set { SetValue(AnimationModeProperty, value); }
     }
 
+    /// <summary>
+    /// Creates a mutable copy of the Wpf.Ui default detached popup shadow chrome.
+    /// </summary>
+    /// <returns>A new <see cref="PopupShadowChrome"/> instance configured with Wpf.Ui default values.</returns>
+    public static PopupShadowChrome CreateDefault()
+    {
+        return new PopupShadowChrome
+        {
+            AnimationMode   = PopupShadowAnimationMode.DynamicContentBounds,
+            BlurRadius      = 15D,
+            Direction       = 0D,
+            Opacity         = 0.175D,
+            ShadowDepth     = 0D,
+            ShadowThickness = new Thickness(20D),
+            Color           = Color.FromRgb(0x20, 0x20, 0x20),
+        };
+    }
+
     /// <inheritdoc />
     protected override Freezable CreateInstanceCore()
     {
@@ -201,6 +233,14 @@ public sealed class PopupShadowChrome : Freezable
             ShadowDepth = ShadowDepth,
             Color       = Color,
         };
+    }
+
+    private static PopupShadowChrome CreateFrozenDefault()
+    {
+        var chrome = CreateDefault();
+        chrome.Freeze();
+
+        return chrome;
     }
 
     private static bool ValidateShadowThickness(object? value)

@@ -11,10 +11,6 @@
     xmlns:controls="clr-namespace:Wpf.Ui.Controls"
     xmlns:m="clr-namespace:Wpf.Ui.Markup">
 
-    <ResourceDictionary.MergedDictionaries>
-        <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Resources/Popup.xaml" />
-    </ResourceDictionary.MergedDictionaries>
-
     <Style x:Key="{x:Static MenuItem.SeparatorStyleKey}" BasedOn="{StaticResource {x:Type Separator}}" TargetType="{x:Type Separator}">
         <Setter Property="Background" Value="{m:BrushResource ControlAltFillColorTertiaryBrush}" />
     </Style>
@@ -86,8 +82,8 @@
             </Border>
             <Popup
                 x:Name="Popup"
-                controls:PopupAnimationBehavior.AnimationSettings="{StaticResource DefaultPopupAnimationSettings}"
-                controls:PopupShadow.PopupShadowChrome="{StaticResource DefaultPopupShadowChrome}"
+                controls:PopupAnimator.IsEnabled="True"
+                controls:PopupShadow.IsEnabled="True"
                 AllowsTransparency="True"
                 Focusable="False"
                 IsOpen="{TemplateBinding IsSubmenuOpen}"
@@ -388,8 +384,8 @@
             </Border>
             <Popup
                 x:Name="Popup"
-                controls:PopupAnimationBehavior.AnimationSettings="{StaticResource DefaultPopupAnimationSettings}"
-                controls:PopupShadow.PopupShadowChrome="{StaticResource DefaultPopupShadowChrome}"
+                controls:PopupAnimator.IsEnabled="True"
+                controls:PopupShadow.IsEnabled="True"
                 AllowsTransparency="True"
                 Focusable="False"
                 IsOpen="{TemplateBinding IsSubmenuOpen}"

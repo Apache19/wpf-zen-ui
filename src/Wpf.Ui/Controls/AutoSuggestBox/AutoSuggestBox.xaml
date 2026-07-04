@@ -6,10 +6,6 @@
     xmlns:system="clr-namespace:System;assembly=mscorlib"
     xmlns:t="clr-namespace:Wpf.Ui.Theming">
 
-    <ResourceDictionary.MergedDictionaries>
-        <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Resources/Popup.xaml" />
-    </ResourceDictionary.MergedDictionaries>
-
     <Thickness x:Key="AutoSuggestBoxBorderThemeThickness">1,1,1,0</Thickness>
     <Thickness x:Key="AutoSuggestBoxAccentBorderThemeThickness">0,0,0,1</Thickness>
     <Thickness x:Key="AutoSuggestBoxLeftIconMargin">10,8,0,0</Thickness>
@@ -139,8 +135,8 @@
                             MinWidth="{TemplateBinding ActualWidth}"
                             Margin="0"
                             HorizontalAlignment="Stretch"
-                            controls:PopupAnimationBehavior.AnimationSettings="{StaticResource DefaultPopupAnimationSettings}"
-                            controls:PopupShadow.PopupShadowChrome="{StaticResource DefaultPopupShadowChrome}"
+                            controls:PopupAnimator.IsEnabled="True"
+                            controls:PopupShadow.IsEnabled="True"
                             AllowsTransparency="True"
                             Focusable="False"
                             IsOpen="{TemplateBinding IsSuggestionListOpen}"

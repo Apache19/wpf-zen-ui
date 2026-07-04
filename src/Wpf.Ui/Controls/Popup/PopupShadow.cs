@@ -45,7 +45,22 @@ public static class PopupShadow
             "PopupShadowChrome",
             typeof(PopupShadowChrome),
             typeof(PopupShadow),
-            new PropertyMetadata(null, OnPopupShadowChromeChanged)
+            new PropertyMetadata(null, OnPopupShadowChanged)
+        );
+
+    /// <summary>
+    /// Identifies the attached property that enables detached popup shadow rendering with the Wpf.Ui default chrome.
+    /// </summary>
+    /// <remarks>
+    /// If <see cref="PopupShadowChromeProperty"/> is set, that explicit chrome is used. Otherwise setting this
+    /// property to <see langword="true"/> uses <see cref="PopupShadowChrome.Default"/>.
+    /// </remarks>
+    public static readonly DependencyProperty IsEnabledProperty =
+        DependencyProperty.RegisterAttached(
+            "IsEnabled",
+            typeof(bool),
+            typeof(PopupShadow),
+            new PropertyMetadata(false, OnPopupShadowChanged)
         );
 
     // Keeps the per-owner controller alive for as long as the attached chrome is set. The controller owns the
@@ -84,6 +99,33 @@ public static class PopupShadow
         element.SetValue(PopupShadowChromeProperty, value);
     }
 
+    /// <summary>
+    /// Helper for getting <see cref="IsEnabledProperty"/> from <paramref name="element"/>.
+    /// </summary>
+    /// <param name="element">
+    /// <see cref="DependencyObject"/> to read <see cref="IsEnabledProperty"/> from.
+    /// </param>
+    /// <returns><see langword="true"/> if the Wpf.Ui default detached popup shadow is enabled.</returns>
+    [AttachedPropertyBrowsableForType(typeof(Popup))]
+    [AttachedPropertyBrowsableForType(typeof(ContextMenu))]
+    [AttachedPropertyBrowsableForType(typeof(ToolTip))]
+    public static bool GetIsEnabled(DependencyObject element)
+    {
+        return (bool)element.GetValue(IsEnabledProperty);
+    }
+
+    /// <summary>
+    /// Helper for setting <see cref="IsEnabledProperty"/> on <paramref name="element"/>.
+    /// </summary>
+    /// <param name="element">
+    /// <see cref="DependencyObject"/> to set <see cref="IsEnabledProperty"/> on.
+    /// </param>
+    /// <param name="value">Whether the Wpf.Ui default detached popup shadow is enabled.</param>
+    public static void SetIsEnabled(DependencyObject element, bool value)
+    {
+        element.SetValue(IsEnabledProperty, value);
+    }
+
     [AttachedPropertyBrowsableForType(typeof(DependencyObject))]
     private static PopupShadowController? GetShadowController(DependencyObject element)
     {
@@ -99,8 +141,8 @@ public static class PopupShadow
         "IDisposableAnalyzers.Correctness",
         "IDISP001:Dispose created",
         Justification = "The controller is stored in an attached property "
-                      + "and disposed when PopupShadowChrome is cleared.")]
-    private static void OnPopupShadowChromeChanged(
+                      + "and disposed when the effective PopupShadowChrome is cleared.")]
+    private static void OnPopupShadowChanged(
         DependencyObject d,
         DependencyPropertyChangedEventArgs e)
     {
@@ -111,7 +153,8 @@ public static class PopupShadow
         }
 
         var controller = GetShadowController(d);
-        if (e.NewValue is not PopupShadowChrome chrome)
+        var chrome = GetEffectivePopupShadowChrome(d);
+        if (chrome == null)
         {
             // Clearing the chrome means the owner should behave like a normal WPF popup again. Disposing here removes
             // borrowed HWND hooks before the controller reference is dropped, which is the important leak boundary.
@@ -128,6 +171,11 @@ public static class PopupShadow
         }
 
         controller.Attach(chrome);
+    }
+
+    private static PopupShadowChrome? GetEffectivePopupShadowChrome(DependencyObject element)
+    {
+        return GetPopupShadowChrome(element) ?? (GetIsEnabled(element) ? PopupShadowChrome.Default : null);
     }
 
     /// <summary>
@@ -831,11 +879,11 @@ public static class PopupShadow
             _shadowRoot.Opacity = 0D;
             UpdateShadowContentBounds(default);
 
-            if (PopupAnimationBehavior.IsCustomAnimationActive(_owner))
+            if (PopupAnimator.IsCustomAnimationActive(_owner))
             {
                 // The content is driven by Wpf.Ui's custom opening timeline, so the detached shadow follows the
                 // same duration and reveal offset instead of treating the popup as a native WPF animation.
-                var duration = PopupAnimationBehavior.GetAnimationDuration(_owner);
+                var duration = PopupAnimator.GetAnimationDuration(_owner);
                 if (_chrome.AnimationMode == PopupShadowAnimationMode.DynamicContentBounds)
                 {
                     if (TryBeginParallelDynamicContentBoundsAnimation(_owner, duration))
@@ -959,13 +1007,13 @@ public static class PopupShadow
         {
             if (_shadowRoot == null ||
                 _popupSource?.RootVisual is not UIElement popupRoot ||
-                !PopupAnimationBehavior.TryGetAnimationStartOffset(owner, popupRoot, out var startOffset))
+                !PopupAnimator.TryGetAnimationStartOffset(owner, popupRoot, out var startOffset))
             {
                 return false;
             }
 
             _contentBoundsAnimationDuration       = duration;
-            _contentBoundsAnimationEasingFunction = PopupAnimationBehavior.GetAnimationEasingFunction(owner);
+            _contentBoundsAnimationEasingFunction = PopupAnimator.GetAnimationEasingFunction(owner);
             _contentBoundsAnimationStartOffset    = startOffset;
             _isParallelContentBoundsAnimation     = true;
             _shadowAnimationStartedAt             = DateTime.UtcNow;
@@ -1128,7 +1176,7 @@ public static class PopupShadow
             var progress      = Math.Max(0D, Math.Min(1D, elapsed.TotalMilliseconds / duration.TotalMilliseconds));
             var easedProgress = _contentBoundsAnimationEasingFunction?.Ease(progress) ?? progress;
 
-            // This recreates the same "start offset to zero" timeline used by PopupAnimationBehavior instead of
+            // This recreates the same "start offset to zero" timeline used by PopupAnimator instead of
             // reading the popup transform. It is used only when the custom behavior can provide a reliable start
             // offset; otherwise the controller falls back to sampling the visual tree.
             return new Vector(0D, _contentBoundsAnimationStartOffset * (1D - easedProgress));

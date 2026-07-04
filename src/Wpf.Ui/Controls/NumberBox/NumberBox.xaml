@@ -16,7 +16,6 @@
     xmlns:system="clr-namespace:System;assembly=mscorlib">
 
     <ResourceDictionary.MergedDictionaries>
-        <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Resources/Popup.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Resources/DefaultEditorContextMenu.xaml" />
     </ResourceDictionary.MergedDictionaries>
 
@@ -283,7 +282,7 @@
                         <!--  Compact mode popup with large spin buttons  -->
                         <Popup
                             x:Name="PART_CompactPopup"
-                            controls:PopupShadow.PopupShadowChrome="{StaticResource DefaultPopupShadowChrome}"
+                            controls:PopupShadow.IsEnabled="True"
                             AllowsTransparency="True"
                             IsOpen="False"
                             Placement="Custom"

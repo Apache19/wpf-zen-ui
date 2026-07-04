@@ -18,7 +18,6 @@
     xmlns:theming="clr-namespace:Wpf.Ui.Theming">
 
     <ResourceDictionary.MergedDictionaries>
-        <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Resources/Popup.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/TextBox/TextBox.xaml" />
     </ResourceDictionary.MergedDictionaries>
 
@@ -151,8 +150,8 @@
                             Grid.Row="1"
                             HorizontalAlignment="Stretch"
                             VerticalAlignment="Top"
-                            controls:PopupAnimationBehavior.AnimationSettings="{StaticResource DefaultPopupAnimationSettings}"
-                            controls:PopupShadow.PopupShadowChrome="{StaticResource DefaultPopupShadowChrome}"
+                            controls:PopupAnimator.IsEnabled="True"
+                            controls:PopupShadow.IsEnabled="True"
                             AllowsTransparency="True"
                             Placement="Bottom"
                             PlacementTarget="{Binding ElementName=PART_TextBox}"

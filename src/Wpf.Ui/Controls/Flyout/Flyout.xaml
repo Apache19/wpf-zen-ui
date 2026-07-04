@@ -15,10 +15,6 @@
     xmlns:theming="clr-namespace:Wpf.Ui.Theming"
     xmlns:markup="clr-namespace:Wpf.Ui.Markup">
 
-    <ResourceDictionary.MergedDictionaries>
-        <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Resources/Popup.xaml" />
-    </ResourceDictionary.MergedDictionaries>
-
     <Style x:Key="DefaultFlyoutStyle" TargetType="{x:Type controls:Flyout}">
         <Setter Property="Background" Value="{markup:BrushResource AcrylicBackgroundFillColorDefaultBrush}" />
         <Setter Property="BorderBrush" Value="{markup:BrushResource SurfaceStrokeColorFlyoutBrush}" />
@@ -48,8 +44,8 @@
                             MinHeight="{TemplateBinding MinHeight}"
                             HorizontalAlignment="{TemplateBinding HorizontalAlignment}"
                             VerticalAlignment="{TemplateBinding VerticalAlignment}"
-                            controls:PopupAnimationBehavior.AnimationSettings="{StaticResource DefaultPopupAnimationSettings}"
-                            controls:PopupShadow.PopupShadowChrome="{StaticResource DefaultPopupShadowChrome}"
+                            controls:PopupAnimator.IsEnabled="True"
+                            controls:PopupShadow.IsEnabled="True"
                             AllowsTransparency="{TemplateBinding Popup.AllowsTransparency}"
                             Focusable="False"
                             IsOpen="{TemplateBinding IsOpen}"

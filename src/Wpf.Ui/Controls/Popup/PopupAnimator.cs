@@ -26,7 +26,7 @@ namespace Wpf.Ui.Controls;
 /// while quick close/reopen cycles force WPF's pending window destroy to complete so an old popup HWND surface is
 /// not reused for the next opening frame.
 /// </remarks>
-public static class PopupAnimationBehavior
+public static class PopupAnimator
 {
     private const string PopupRootTypeName = "System.Windows.Controls.Primitives.PopupRoot";
 
@@ -89,7 +89,7 @@ public static class PopupAnimationBehavior
     [ThreadStatic]
     private static Stack<PopupAnimationController>? openingControllers;
 
-    static PopupAnimationBehavior()
+    static PopupAnimator()
     {
         OverridePopupRootOpacityMetadata();
         PrependIsOpenChangedCallback(Popup.IsOpenProperty, typeof(Popup));
@@ -110,15 +110,30 @@ public static class PopupAnimationBehavior
         DependencyProperty.RegisterAttached(
             "AnimationSettings",
             typeof(PopupAnimationSettings),
-            typeof(PopupAnimationBehavior),
-            new PropertyMetadata(null, OnAnimationSettingsChanged)
+            typeof(PopupAnimator),
+            new PropertyMetadata(null, OnAnimationBehaviorChanged)
+        );
+
+    /// <summary>
+    /// Identifies the attached property that enables Wpf.Ui popup opening animation with the default settings.
+    /// </summary>
+    /// <remarks>
+    /// If <see cref="AnimationSettingsProperty"/> is set, those explicit settings are used. Otherwise setting this
+    /// property to <see langword="true"/> uses <see cref="PopupAnimationSettings.Default"/>.
+    /// </remarks>
+    public static readonly DependencyProperty IsEnabledProperty =
+        DependencyProperty.RegisterAttached(
+            "IsEnabled",
+            typeof(bool),
+            typeof(PopupAnimator),
+            new PropertyMetadata(false, OnAnimationBehaviorChanged)
         );
 
     private static readonly DependencyProperty AnimationControllerProperty =
         DependencyProperty.RegisterAttached(
             "AnimationController",
             typeof(PopupAnimationController),
-            typeof(PopupAnimationBehavior),
+            typeof(PopupAnimator),
             new PropertyMetadata(default(PopupAnimationController))
         );
 
@@ -147,6 +162,33 @@ public static class PopupAnimationBehavior
     public static void SetAnimationSettings(DependencyObject element, PopupAnimationSettings? value)
     {
         element.SetValue(AnimationSettingsProperty, value);
+    }
+
+    /// <summary>
+    /// Helper for getting <see cref="IsEnabledProperty"/> from <paramref name="element"/>.
+    /// </summary>
+    /// <param name="element">
+    /// <see cref="DependencyObject"/> to read <see cref="IsEnabledProperty"/> from.
+    /// </param>
+    /// <returns><see langword="true"/> if the Wpf.Ui default popup opening animation is enabled.</returns>
+    [AttachedPropertyBrowsableForType(typeof(Popup))]
+    [AttachedPropertyBrowsableForType(typeof(WinContextMenu))]
+    [AttachedPropertyBrowsableForType(typeof(WinToolTip))]
+    public static bool GetIsEnabled(DependencyObject element)
+    {
+        return (bool)element.GetValue(IsEnabledProperty);
+    }
+
+    /// <summary>
+    /// Helper for setting <see cref="IsEnabledProperty"/> on <paramref name="element"/>.
+    /// </summary>
+    /// <param name="element">
+    /// <see cref="DependencyObject"/> to set <see cref="IsEnabledProperty"/> on.
+    /// </param>
+    /// <param name="value">Whether the Wpf.Ui default popup opening animation is enabled.</param>
+    public static void SetIsEnabled(DependencyObject element, bool value)
+    {
+        element.SetValue(IsEnabledProperty, value);
     }
 
     [AttachedPropertyBrowsableForType(typeof(Popup))]
@@ -344,7 +386,7 @@ public static class PopupAnimationBehavior
     /// </remarks>
     internal static bool IsCustomAnimationActive(DependencyObject owner)
     {
-        return GetAnimationSettings(owner) != null &&
+        return GetEffectiveAnimationSettings(owner) != null &&
                GetPopupAnimation(owner) == PopupAnimation.None;
     }
 
@@ -357,7 +399,7 @@ public static class PopupAnimationBehavior
     /// </remarks>
     internal static Duration GetAnimationDuration(DependencyObject owner)
     {
-        return new Duration(GetAnimationSettings(owner)?.GetDuration() ?? TimeSpan.Zero);
+        return new Duration(GetEffectiveAnimationSettings(owner)?.GetDuration() ?? TimeSpan.Zero);
     }
 
     /// <summary>
@@ -369,7 +411,7 @@ public static class PopupAnimationBehavior
     /// </remarks>
     internal static IEasingFunction? GetAnimationEasingFunction(DependencyObject owner)
     {
-        return GetAnimationSettings(owner)?.GetEasingFunction();
+        return GetEffectiveAnimationSettings(owner)?.GetEasingFunction();
     }
 
     /// <summary>
@@ -390,7 +432,7 @@ public static class PopupAnimationBehavior
             return true;
         }
 
-        if (GetAnimationSettings(owner) is not { } settings)
+        if (GetEffectiveAnimationSettings(owner) is not { } settings)
         {
             startOffset = 0D;
             return false;
@@ -405,6 +447,11 @@ public static class PopupAnimationBehavior
         return owner.GetValue(Popup.PopupAnimationProperty) is PopupAnimation animation
             ? animation
             : PopupAnimation.None;
+    }
+
+    private static PopupAnimationSettings? GetEffectiveAnimationSettings(DependencyObject element)
+    {
+        return GetAnimationSettings(element) ?? (GetIsEnabled(element) ? PopupAnimationSettings.Default : null);
     }
 
     private static double GetEffectiveStartOffset(
@@ -742,8 +789,8 @@ public static class PopupAnimationBehavior
         "IDisposableAnalyzers.Correctness",
         "IDISP001:Dispose created",
         Justification = "The controller is stored in an attached property "
-                      + "and disposed when AnimationSettings is cleared.")]
-    private static void OnAnimationSettingsChanged(
+                      + "and disposed when the effective AnimationSettings are cleared.")]
+    private static void OnAnimationBehaviorChanged(
         DependencyObject d,
         DependencyPropertyChangedEventArgs e)
     {
@@ -753,7 +800,8 @@ public static class PopupAnimationBehavior
         }
 
         var controller = GetAnimationController(d);
-        if (e.NewValue is not PopupAnimationSettings settings)
+        var settings = GetEffectiveAnimationSettings(d);
+        if (settings == null)
         {
             // The controller owns event subscriptions and transient animation state, but its lifetime is tied
             // to the attached property rather than to a public disposable object.

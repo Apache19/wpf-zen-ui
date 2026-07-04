@@ -11,10 +11,6 @@
     xmlns:controls="clr-namespace:Wpf.Ui.Controls"
     xmlns:markup="clr-namespace:Wpf.Ui.Markup">
 
-    <ResourceDictionary.MergedDictionaries>
-        <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Resources/Popup.xaml" />
-    </ResourceDictionary.MergedDictionaries>
-
     <Style x:Key="ToolBarButtonBaseStyle" TargetType="{x:Type ButtonBase}">
         <Setter Property="Background" Value="{markup:BrushResource ControlFillColorDefaultBrush}" />
         <Setter Property="BorderBrush" Value="Transparent" />
@@ -221,8 +217,8 @@
                                 Style="{StaticResource ToolBarOverflowButtonStyle}">
                                 <Popup
                                     x:Name="OverflowPopup"
-                                    controls:PopupAnimationBehavior.AnimationSettings="{StaticResource DefaultPopupAnimationSettings}"
-                                    controls:PopupShadow.PopupShadowChrome="{StaticResource DefaultPopupShadowChrome}"
+                                    controls:PopupAnimator.IsEnabled="True"
+                                    controls:PopupShadow.IsEnabled="True"
                                     AllowsTransparency="True"
                                     Focusable="False"
                                     IsOpen="{Binding IsOverflowOpen, RelativeSource={RelativeSource TemplatedParent}}"

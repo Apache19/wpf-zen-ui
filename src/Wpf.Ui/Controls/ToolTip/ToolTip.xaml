@@ -9,31 +9,29 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Ui.Controls"
-    xmlns:markup="clr-namespace:Wpf.Ui.Markup">
-
-    <ResourceDictionary.MergedDictionaries>
-        <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Resources/Popup.xaml" />
-    </ResourceDictionary.MergedDictionaries>
-
-    <controls:PopupShadowChrome
-        x:Key="ToolTipShadowChrome"
-        AnimationMode="DynamicContentBounds"
-        BlurRadius="10"
-        Direction="270"
-        Opacity="0.175"
-        ShadowDepth="3"
-        ShadowThickness="12"
-        Color="#202020" />
+    xmlns:m="clr-namespace:Wpf.Ui.Markup">
 
     <Style x:Key="UiToolTipStyle" TargetType="{x:Type ToolTip}">
         <Setter Property="MaxWidth" Value="260" />
-        <Setter Property="Foreground" Value="{markup:BrushResource TextFillColorPrimaryBrush}" />
-        <Setter Property="Background" Value="{markup:BrushResource AcrylicBackgroundFillColorDefaultBrush}" />
-        <Setter Property="BorderBrush" Value="{markup:BrushResource SurfaceStrokeColorFlyoutBrush}" />
+        <Setter Property="FontSize" Value="{m:VariableResource ControlContentThemeFontSize}" />
+        <Setter Property="Foreground" Value="{m:BrushResource TextFillColorPrimaryBrush}" />
+        <Setter Property="Background" Value="{m:BrushResource AcrylicBackgroundFillColorDefaultBrush}" />
+        <Setter Property="BorderBrush" Value="{m:BrushResource SurfaceStrokeColorFlyoutBrush}" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
         <Setter Property="HasDropShadow" Value="True" />
-        <Setter Property="controls:PopupAnimationBehavior.AnimationSettings" Value="{StaticResource DefaultPopupAnimationSettings}" />
-        <Setter Property="controls:PopupShadow.PopupShadowChrome" Value="{StaticResource ToolTipShadowChrome}" />
+        <Setter Property="controls:PopupAnimator.IsEnabled" Value="True" />
+        <Setter Property="controls:PopupShadow.PopupShadowChrome">
+            <Setter.Value>
+                <controls:PopupShadowChrome
+                    AnimationMode="DynamicContentBounds"
+                    BlurRadius="10"
+                    Direction="270"
+                    Opacity="0.175"
+                    ShadowDepth="3"
+                    ShadowThickness="15"
+                    Color="#202020" />
+            </Setter.Value>
+        </Setter>
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="Padding" Value="16,12" />
         <Setter Property="HorizontalContentAlignment" Value="Left" />

@@ -18,7 +18,6 @@
     xmlns:m="clr-namespace:Wpf.Ui.Markup">
 
     <ResourceDictionary.MergedDictionaries>
-        <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Resources/Popup.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Resources/DefaultEditorContextMenu.xaml" />
     </ResourceDictionary.MergedDictionaries>
 
@@ -251,8 +250,8 @@
                                     x:Name="Popup"
                                     Grid.Column="0"
                                     Grid.ColumnSpan="2"
-                                    controls:PopupAnimationBehavior.AnimationSettings="{StaticResource DefaultPopupAnimationSettings}"
-                                    controls:PopupShadow.PopupShadowChrome="{StaticResource DefaultPopupShadowChrome}"
+                                    controls:PopupAnimator.IsEnabled="True"
+                                    controls:PopupShadow.IsEnabled="True"
                                     AllowsTransparency="True"
                                     Focusable="False"
                                     IsOpen="{TemplateBinding IsDropDownOpen}"
