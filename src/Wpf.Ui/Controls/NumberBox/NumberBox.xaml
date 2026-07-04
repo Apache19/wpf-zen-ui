@@ -17,6 +17,7 @@
 
     <ResourceDictionary.MergedDictionaries>
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Resources/Popup.xaml" />
+        <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Resources/DefaultEditorContextMenu.xaml" />
     </ResourceDictionary.MergedDictionaries>
 
     <Thickness x:Key="NumberBoxBorderThemeThickness">1,1,1,1</Thickness>
@@ -160,16 +161,7 @@
         <Setter Property="MinWidth" Value="{m:VariableResource TextControlThemeMinWidth}" />
         <Setter Property="Padding" Value="{m:VariableResource TextControlThemePadding}" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
-        <!--  todo: 临时缓解右键菜单弹出延迟问题  -->
-        <Setter Property="ContextMenu">
-            <Setter.Value>
-                <ContextMenu>
-                    <MenuItem Command="ApplicationCommands.Copy" />
-                    <MenuItem Command="ApplicationCommands.Cut" />
-                    <MenuItem Command="ApplicationCommands.Paste" />
-                </ContextMenu>
-            </Setter.Value>
-        </Setter>
+        <Setter Property="ContextMenu" Value="{StaticResource DefaultEditorContextMenu}" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type controls:NumberBox}">

@@ -16,6 +16,10 @@
     xmlns:system="clr-namespace:System;assembly=System.Runtime"
     xmlns:t="clr-namespace:Wpf.Ui.Theming">
 
+    <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Resources/DefaultEditorContextMenu.xaml" />
+    </ResourceDictionary.MergedDictionaries>
+
     <Thickness x:Key="TextBoxBorderThemeThickness">1,1,1,1</Thickness>
     <Thickness x:Key="TextBoxLeftIconMargin">10,0,0,0</Thickness>
     <Thickness x:Key="TextBoxRightIconMargin">0,0,10,0</Thickness>
@@ -24,16 +28,7 @@
     <system:Double x:Key="TextBoxClearButtonHeight">24</system:Double>
 
     <Style x:Key="{x:Static t:StyleKeys.DefaultTextBoxStyle}" TargetType="{x:Type TextBox}">
-        <!--  todo: 临时缓解右键菜单弹出延迟问题，将来重新实现内置 TextBox 时，提供更现代化的菜单 UI  -->
-        <Setter Property="ContextMenu">
-            <Setter.Value>
-                <ContextMenu>
-                    <MenuItem Command="ApplicationCommands.Cut" />
-                    <MenuItem Command="ApplicationCommands.Copy" />
-                    <MenuItem Command="ApplicationCommands.Paste" />
-                </ContextMenu>
-            </Setter.Value>
-        </Setter>
+        <Setter Property="ContextMenu" Value="{StaticResource DefaultEditorContextMenu}" />
         <Setter Property="FocusVisualStyle" Value="{m:StyleResource DefaultControlFocusVisualStyle}" />
         <Setter Property="Foreground" Value="{m:BrushResource TextFillColorPrimaryBrush}" />
         <Setter Property="CaretBrush" Value="{m:BrushResource TextFillColorPrimaryBrush}" />
@@ -332,16 +327,7 @@
         <Setter Property="IconPlacement" Value="Left" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
         <Setter Property="Validation.ErrorTemplate" Value="{m:StyleResource DefaultValidationTemplate}" />
-        <!--  todo: 临时缓解右键菜单弹出延迟问题  -->
-        <Setter Property="ContextMenu">
-            <Setter.Value>
-                <ContextMenu>
-                    <MenuItem Command="ApplicationCommands.Copy" />
-                    <MenuItem Command="ApplicationCommands.Cut" />
-                    <MenuItem Command="ApplicationCommands.Paste" />
-                </ContextMenu>
-            </Setter.Value>
-        </Setter>
+        <Setter Property="ContextMenu" Value="{StaticResource DefaultEditorContextMenu}" />
         <Style.Triggers>
             <Trigger Property="IsTextSelectionEnabled" Value="False">
                 <Setter Property="Template" Value="{StaticResource DefaultUiTextBoxControlTemplate}" />

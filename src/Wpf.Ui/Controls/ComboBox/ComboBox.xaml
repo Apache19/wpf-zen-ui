@@ -19,20 +19,11 @@
 
     <ResourceDictionary.MergedDictionaries>
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Resources/Popup.xaml" />
+        <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Resources/DefaultEditorContextMenu.xaml" />
     </ResourceDictionary.MergedDictionaries>
 
     <Style x:Key="DefaultComboBoxTextBoxStyle" TargetType="{x:Type TextBox}">
-        <!--  todo: 临时缓解右键菜单弹出延迟问题  -->
-        <Setter Property="ContextMenu">
-            <Setter.Value>
-                <ContextMenu>
-                    <MenuItem Command="ApplicationCommands.Cut" />
-                    <MenuItem Command="ApplicationCommands.Copy" />
-                    <MenuItem Command="ApplicationCommands.Paste" />
-                </ContextMenu>
-            </Setter.Value>
-        </Setter>
-
+        <Setter Property="ContextMenu" Value="{StaticResource DefaultEditorContextMenu}" />
         <Setter Property="CaretBrush" Value="{m:BrushResource TextFillColorPrimaryBrush}" />
         <Setter Property="Cursor" Value="IBeam" />
         <Setter Property="FocusVisualStyle" Value="{x:Null}" />
