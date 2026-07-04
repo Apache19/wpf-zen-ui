@@ -656,6 +656,17 @@ public static class PopupShadow
 
         private IntPtr GetShadowOwnerWindow()
         {
+            // WPF popups form an owner chain: each new popup is owned by the previous popup's HWND (or by the
+            // placement root for the first popup). If the shadow window has no owner, Windows treats it as an
+            // independent topmost window — when a new popup level opens and refreshes the cascade, the window
+            // manager can reorder all topmost windows by owner chain and push earlier shadows behind unrelated
+            // popups, visibly detaching them from their menus.
+            //
+            // By setting the shadow's owner to the same HWND that owns the popup (GW_OWNER), the shadow becomes a
+            // sibling of its popup under their shared owner. On the initial open, SetWindowPos places the shadow
+            // directly after the popup in z-order. Subsequent bounds updates use SWP_NOZORDER to keep that relative
+            // position, so a later cascade normalization can never peel the shadow away from its popup.
+
             var popupHwnd = _popupSource?.Handle ?? IntPtr.Zero;
             if (popupHwnd == IntPtr.Zero)
             {
@@ -705,11 +716,17 @@ public static class PopupShadow
 
         private void UpdateShadowBounds()
         {
+            // All updates after Open() are bounds-only. Re-inserting the shadow into the z-order on every
+            // move, resize, or DPI change would trigger cascade normalization and can separate earlier shadows
+            // from their popups in a multi-level menu.
             UpdateShadowBounds(updateZOrder: false);
         }
 
         private void UpdateShadowBounds(bool updateZOrder)
         {
+            // SetWindowPos triggers WM_WINDOWPOSCHANGED, which PopupWndProc picks up and re-dispatches
+            // right back to UpdateShadowBounds. The _isUpdatingShadow guard breaks that feedback loop so a
+            // single bounds refresh does not chain into itself.
             if (_isUpdatingShadow || _chrome == null || _popupSource == null || _shadowSource == null || _shadowRoot == null)
             {
                 return;
@@ -746,6 +763,9 @@ public static class PopupShadow
 
             UpdateShadowContentBounds(default);
 
+            // SWP_NOOWNERZORDER prevents Windows from adjusting z-order based on the owner chain. Without it,
+            // even a bounds-only SetWindowPos call can cause the window manager to re-sort owned windows and
+            // push an earlier shadow behind a later popup in a cascade.
             var flags = SET_WINDOW_POS_FLAGS.SWP_NOACTIVATE | SET_WINDOW_POS_FLAGS.SWP_NOOWNERZORDER;
 
             if (PInvoke.IsWindowVisible(popupHwnd))
@@ -1002,6 +1022,10 @@ public static class PopupShadow
 
         private void BeginCloseAnimation()
         {
+            // Only Fade gets an animated close — both the popup and the shadow fade together and WPF keeps the
+            // HWND alive for the duration. Slide and Scroll tear down the popup immediately after the close
+            // begins, so the shadow must also disappear at once to avoid an orphaned halo.
+
             if (GetPopupAnimation() == PopupAnimation.Fade)
             {
                 BeginRootFadeOut(PopupAnimationDuration);
