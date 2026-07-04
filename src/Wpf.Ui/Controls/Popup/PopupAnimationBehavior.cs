@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
+using System.Windows.Input;
 using System.Windows.Media.Animation;
 using WinContextMenu = System.Windows.Controls.ContextMenu;
 using WinToolTip = System.Windows.Controls.ToolTip;
@@ -51,6 +52,13 @@ public static class PopupAnimationBehavior
     // a stale popup surface before the next custom opening animation reaches the render thread.
     private static readonly MethodInfo? PopupForceCloseMethod = typeof(Popup).GetMethod(
         "ForceClose",
+        BindingFlags.Instance | BindingFlags.NonPublic
+    );
+
+    // Popup.UpdatePosition stores the direction WPF later passes to PopupRoot.SetupTranslateAnimations. Prefer this
+    // over approximating placement from public bounds, because it is the actual result of WPF's screen-fit scoring.
+    private static readonly PropertyInfo? PopupAnimateFromBottomProperty = typeof(Popup).GetProperty(
+        "AnimateFromBottom",
         BindingFlags.Instance | BindingFlags.NonPublic
     );
 
@@ -436,25 +444,33 @@ public static class PopupAnimationBehavior
         DependencyObject owner,
         UIElement popupRoot)
     {
+        // First try to read the actual placement from Popup's internal AnimateFromBottom flag.
+        // If that fails, fall back to comparing the realized popup screen bounds against the
+        // placement target bounds to infer the real vertical direction.
+        if (TryResolveNativeVerticalPlacement(owner, out var nativePlacement))
+        {
+            return nativePlacement;
+        }
+
         // Requested Placement is only a hint: Popup may flip to the opposite side to stay inside the screen.
-        // Compare realized screen bounds first, and use the requested placement only when the visual has not
-        // been measured or transformed into a reliable screen rectangle yet.
-        if (GetPlacementTarget(owner) is UIElement target &&
-            TryGetScreenBounds(target, out var targetBounds) &&
+        // If WPF's internal direction bit is unavailable, compare the realized popup with the same anchor rectangle
+        // that WPF uses for placement. For point-based context menus this is the cursor/offset point, not the full
+        // placement target control.
+        if (TryGetPlacementAnchorBounds(owner, out var anchorBounds) &&
             TryGetScreenBounds(popupRoot, out var popupBounds))
         {
             const double Tolerance = 1D;
-            if (popupBounds.Bottom <= targetBounds.Top + Tolerance)
+            if (popupBounds.Bottom <= anchorBounds.Top + Tolerance)
             {
                 return PopupVerticalPlacement.AboveTarget;
             }
 
-            if (popupBounds.Top >= targetBounds.Bottom - Tolerance)
+            if (popupBounds.Top >= anchorBounds.Bottom - Tolerance)
             {
                 return PopupVerticalPlacement.BelowTarget;
             }
 
-            var verticalOffset = GetCenterY(popupBounds) - GetCenterY(targetBounds);
+            var verticalOffset = GetCenterY(popupBounds) - GetCenterY(anchorBounds);
             if (Math.Abs(verticalOffset) > Tolerance)
             {
                 return verticalOffset < 0D
@@ -463,7 +479,107 @@ public static class PopupAnimationBehavior
             }
         }
 
+        // All resolution steps failed. Fall back to the requested Placement as a best guess —
+        // it will be wrong when WPF flips the popup due to screen edges, but it is the only
+        // remaining signal.
         return ResolveRequestedVerticalPlacement(GetPlacement(owner));
+    }
+
+    private static bool TryResolveNativeVerticalPlacement(
+        DependencyObject owner,
+        out PopupVerticalPlacement placement)
+    {
+        placement = default;
+
+        if (PopupAnimateFromBottomProperty == null ||
+            TryGetRootPopup(owner) is not { } popup)
+        {
+            return false;
+        }
+
+        try
+        {
+            if (PopupAnimateFromBottomProperty.GetValue(popup) is not bool animateFromBottom)
+            {
+                return false;
+            }
+
+            placement = animateFromBottom
+                ? PopupVerticalPlacement.AboveTarget
+                : PopupVerticalPlacement.BelowTarget;
+
+            return true;
+        }
+        catch (TargetInvocationException)
+        {
+            return false;
+        }
+        catch (MethodAccessException)
+        {
+            return false;
+        }
+        catch (ArgumentException)
+        {
+            return false;
+        }
+    }
+
+    private static Popup? TryGetRootPopup(DependencyObject owner)
+    {
+        return owner switch
+        {
+            Popup popup                => popup,
+            WinContextMenu contextMenu => TryGetPrivateRootPopup(contextMenu),
+            WinToolTip toolTip         => TryGetPrivateRootPopup(toolTip),
+            _                          => null,
+        };
+    }
+
+    private static Popup? TryGetPrivateRootPopup(DependencyObject owner)
+    {
+        return owner switch
+        {
+            WinContextMenu contextMenu => ContextMenuParentPopupField?.GetValue(contextMenu) as Popup,
+            WinToolTip toolTip         => ToolTipParentPopupField?.GetValue(toolTip) as Popup,
+            _                          => null,
+        };
+    }
+
+    private static bool TryGetPlacementAnchorBounds(DependencyObject owner, out Rect bounds)
+    {
+        bounds = Rect.Empty;
+
+        var placement = GetPlacement(owner);
+        var target = GetPlacementTarget(owner);
+        if (target == null)
+        {
+            return false;
+        }
+
+        if (placement is PlacementMode.Mouse or PlacementMode.MousePoint)
+        {
+            var mousePosition = Mouse.GetPosition(target);
+            return TryTransformTargetRectToScreen(target, new Rect(mousePosition, new Size(0D, 0D)), out bounds);
+        }
+
+        if (IsAbsolutePlacementMode(placement))
+        {
+            return false;
+        }
+
+        var placementRect = GetPlacementRectangle(owner);
+        if (placementRect == Rect.Empty)
+        {
+            placementRect = placement is PlacementMode.Relative or PlacementMode.RelativePoint
+                ? new Rect(new Point(GetHorizontalOffset(owner), GetVerticalOffset(owner)), new Size(0D, 0D))
+                : new Rect(default, GetRenderSize(target));
+        }
+        else
+        {
+            placementRect.Offset(GetHorizontalOffset(owner), GetVerticalOffset(owner));
+        }
+
+        return TryTransformTargetRectToScreen(target, placementRect, out bounds);
     }
 
     private static UIElement? GetPlacementTarget(DependencyObject owner)
@@ -488,11 +604,52 @@ public static class PopupAnimationBehavior
         };
     }
 
+    private static Rect GetPlacementRectangle(DependencyObject owner)
+    {
+        return owner switch
+        {
+            Popup popup                => popup.PlacementRectangle,
+            WinContextMenu contextMenu => contextMenu.PlacementRectangle,
+            WinToolTip toolTip         => toolTip.PlacementRectangle,
+            _                          => Rect.Empty,
+        };
+    }
+
+    private static double GetHorizontalOffset(DependencyObject owner)
+    {
+        return owner switch
+        {
+            Popup popup                => popup.HorizontalOffset,
+            WinContextMenu contextMenu => contextMenu.HorizontalOffset,
+            WinToolTip toolTip         => toolTip.HorizontalOffset,
+            _                          => 0D,
+        };
+    }
+
+    private static double GetVerticalOffset(DependencyObject owner)
+    {
+        return owner switch
+        {
+            Popup popup                => popup.VerticalOffset,
+            WinContextMenu contextMenu => contextMenu.VerticalOffset,
+            WinToolTip toolTip         => toolTip.VerticalOffset,
+            _                          => 0D,
+        };
+    }
+
     private static PopupVerticalPlacement ResolveRequestedVerticalPlacement(PlacementMode placement)
     {
         return placement == PlacementMode.Top
             ? PopupVerticalPlacement.AboveTarget
             : PopupVerticalPlacement.BelowTarget;
+    }
+
+    private static bool IsAbsolutePlacementMode(PlacementMode placement)
+    {
+        return placement is PlacementMode.Absolute
+            or PlacementMode.AbsolutePoint
+            or PlacementMode.Mouse
+            or PlacementMode.MousePoint;
     }
 
     private static bool TryGetScreenBounds(UIElement element, out Rect bounds)
@@ -515,6 +672,36 @@ public static class PopupAnimationBehavior
             bounds = new Rect(
                 topLeft,
                 new Size(size.Width * dpi.DpiScaleX, size.Height * dpi.DpiScaleY)
+            );
+
+            return true;
+        }
+        catch (InvalidOperationException)
+        {
+            return false;
+        }
+    }
+
+    private static bool TryTransformTargetRectToScreen(
+        UIElement target,
+        Rect targetRect,
+        out Rect bounds)
+    {
+        bounds = Rect.Empty;
+
+        if (targetRect.Width < 0D || targetRect.Height < 0D)
+        {
+            return false;
+        }
+
+        try
+        {
+            var dpi     = VisualTreeHelper.GetDpi(target);
+            var topLeft = target.PointToScreen(targetRect.TopLeft);
+
+            bounds = new Rect(
+                topLeft,
+                new Size(targetRect.Width * dpi.DpiScaleX, targetRect.Height * dpi.DpiScaleY)
             );
 
             return true;
@@ -1216,16 +1403,6 @@ public static class PopupAnimationBehavior
             // ComboBox does not need this path because its template owns the real Popup and binds PopupAnimation
             // directly, so the behavior can observe and update the same instance that WPF opens.
             rootPopup.SetCurrentValue(Popup.PopupAnimationProperty, PopupAnimation.None);
-        }
-
-        private static Popup? TryGetPrivateRootPopup(DependencyObject owner)
-        {
-            return owner switch
-            {
-                WinContextMenu contextMenu => ContextMenuParentPopupField?.GetValue(contextMenu) as Popup,
-                WinToolTip toolTip         => ToolTipParentPopupField?.GetValue(toolTip) as Popup,
-                _                          => null,
-            };
         }
 
         private Popup? GetForceCloseTargetPopup()
