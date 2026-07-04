@@ -176,7 +176,7 @@ public sealed class ThemeManager
     /// <param name="themeMode">The theme mode to apply.</param>
     /// <param name="useSystemAccentColor">A value indicating whether the system accent color should be used.</param>
     /// <param name="enableNativeControlStyling">A value indicating whether to merge native WPF control styles.</param>
-    public static void Configure(UiThemeMode themeMode, bool useSystemAccentColor, bool enableNativeControlStyling)
+    public static void Configure(UiThemeMode themeMode, bool useSystemAccentColor = true, bool enableNativeControlStyling = true)
     {
         var changed = false;
 
