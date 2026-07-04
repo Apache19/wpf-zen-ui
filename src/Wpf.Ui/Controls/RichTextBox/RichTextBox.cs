@@ -3,6 +3,9 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
+using System.Windows.Controls;
+using System.Windows.Documents;
+
 // ReSharper disable once CheckNamespace
 
 namespace Wpf.Ui.Controls;
@@ -35,5 +38,36 @@ public class RichTextBox : System.Windows.Controls.RichTextBox
     {
         get => (bool)GetValue(IsTextSelectionEnabledProperty);
         set => SetValue(IsTextSelectionEnabledProperty, value);
+    }
+
+    /// <inheritdoc />
+    protected override void OnContextMenuOpening(ContextMenuEventArgs e)
+    {
+        base.OnContextMenuOpening(e);
+
+        _ = TextEditorContextMenuPlacementHelper.TryOpenKeyboardInvokedMenu(
+            this,
+            e,
+            GetSelectionStartCharacterRect
+        );
+    }
+
+    private Rect GetSelectionStartCharacterRect()
+    {
+        TextPointer position = Selection.Start;
+
+        if (!position.HasValidLayout)
+        {
+            return Rect.Empty;
+        }
+
+        try
+        {
+            return position.GetCharacterRect(LogicalDirection.Forward);
+        }
+        catch (InvalidOperationException)
+        {
+            return Rect.Empty;
+        }
     }
 }

@@ -33,6 +33,12 @@
 
     <converters:DatePickerButtonPaddingConverter x:Key="DatePickerButtonPaddingConverter" />
 
+    <!--
+        todo: 内部 DatePickerTextBox 继承自原生 TextBox，同样有菜单延迟问题。
+              这里接入外部 ContextMenu 可以解决延迟问题，但会带来定位问题。
+              计划实现内部 DatePickerTextBox 类，修复菜单定位问题，替换此处的 DatePickerTextBox。
+    -->
+
     <Style
         x:Key="DefaultDatePickerTextBoxStyle"
         BasedOn="{StaticResource DefaultTextBoxStyle}"
