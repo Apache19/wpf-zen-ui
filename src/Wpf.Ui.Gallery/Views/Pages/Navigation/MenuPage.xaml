@@ -54,10 +54,12 @@
                 \t\t&lt;ui:MenuItem Header="Sidebar" IsCheckable="True" IsChecked="False" /&gt;\n
                 \t\t&lt;Separator /&gt;\n
                 \t\t&lt;ui:MenuItem Header="Layout" Icon="{ui:SymbolIcon PanelLeft20}"&gt;\n
-                \t\t\t&lt;ui:MenuItem Header="Single Pane" IsCheckable="True" IsChecked="True" /&gt;\n
-                \t\t\t&lt;ui:MenuItem Header="Two Panes" IsCheckable="True" /&gt;\n
-                \t\t\t&lt;ui:MenuItem Header="Three Panes" IsCheckable="True" /&gt;\n
-                \t\t\t&lt;ui:MenuItem Header="Grid" IsCheckable="True" /&gt;\n
+                \t\t\t&lt;ui:RadioMenuItem Header="Single Pane" IsChecked="True" GroupName="LayoutMode" /&gt;\n
+                \t\t\t&lt;ui:RadioMenuItem Header="Two Panes" GroupName="LayoutMode" /&gt;\n
+                \t\t\t&lt;ui:RadioMenuItem Header="Three Panes" GroupName="LayoutMode" IsEnabled="False" /&gt;\n
+                \t\t\t&lt;ui:RadioMenuItem Header="Grid" GroupName="LayoutMode" /&gt;\n
+                \t\t\t&lt;Separator /&gt;\n
+                \t\t\t&lt;ui:MenuItem Header="Reset Layout" Icon="{ui:SymbolIcon ArrowSync20}" /&gt;\n
                 \t\t&lt;/ui:MenuItem&gt;\n
                 \t\t&lt;Separator /&gt;\n
                 \t\t&lt;ui:MenuItem Header="Zoom" Icon="{ui:SymbolIcon ZoomIn20}"&gt;\n
@@ -149,10 +151,12 @@
                     <MenuItem Header="Sidebar" IsCheckable="True" IsChecked="False" />
                     <Separator />
                     <MenuItem Header="Layout" Icon="{ui:SymbolIcon PanelLeft20}">
-                        <MenuItem Header="Single Pane" IsCheckable="True" IsChecked="True" />
-                        <MenuItem Header="Two Panes" IsCheckable="True" />
-                        <MenuItem Header="Three Panes" IsCheckable="True" />
-                        <MenuItem Header="Grid" IsCheckable="True" />
+                        <ui:RadioMenuItem Header="Single Pane" IsChecked="True" GroupName="LayoutMode" />
+                        <ui:RadioMenuItem Header="Two Panes" GroupName="LayoutMode" />
+                        <ui:RadioMenuItem Header="Three Panes" GroupName="LayoutMode" IsEnabled="False" />
+                        <ui:RadioMenuItem Header="Grid" GroupName="LayoutMode" />
+                        <Separator />
+                        <MenuItem Header="Reset Layout" Icon="{ui:SymbolIcon ArrowSync20}" />
                     </MenuItem>
                     <Separator />
                     <MenuItem Header="Zoom" Icon="{ui:SymbolIcon ZoomIn20}">
@@ -321,17 +325,17 @@
         </controls:ControlExample>
 
         <!-- ============================================================ -->
-        <!--  4. Checkable Top-Level Items — No Submenus, All Toggleable   -->
+        <!--  4. Top-Level Radio & Checkable — Mixed Radio Group & Toggles   -->
         <!-- ============================================================ -->
         <controls:ControlExample
             Margin="0,32,0,0"
-            HeaderText="All top-level items are checkable toggles with no submenus.">
+            HeaderText="Top-level radio items (single-select within a group) mixed with checkable toggles with no submenus.">
             <controls:ControlExample.XamlCode>
                 &lt;Menu FontSize="14"&gt;\n
-                \t&lt;ui:MenuItem Header="Bold" IsCheckable="True" IsChecked="True" /&gt;\n
-                \t&lt;ui:MenuItem Header="Italic" IsCheckable="True" /&gt;\n
-                \t&lt;ui:MenuItem Header="Underline" IsCheckable="True" /&gt;\n
-                \t&lt;ui:MenuItem Header="Strikethrough" IsCheckable="True" /&gt;\n
+                \t&lt;ui:RadioMenuItem Header="Bold" IsChecked="True" GroupName="TextStyle" /&gt;\n
+                \t&lt;ui:RadioMenuItem Header="Italic" GroupName="TextStyle" /&gt;\n
+                \t&lt;ui:RadioMenuItem Header="Underline" GroupName="TextStyle" /&gt;\n
+                \t&lt;ui:RadioMenuItem Header="Strikethrough" GroupName="TextStyle" /&gt;\n
                 \t&lt;Separator /&gt;\n
                 \t&lt;ui:MenuItem Header="Show Hidden" IsCheckable="True" IsChecked="True" /&gt;\n
                 \t&lt;ui:MenuItem Header="Word Wrap" IsCheckable="True" /&gt;\n
@@ -339,11 +343,11 @@
                 &lt;/Menu&gt;
             </controls:ControlExample.XamlCode>
             <Menu FontSize="14">
-                <MenuItem Header="Bold" IsCheckable="True" IsChecked="True" />
-                <MenuItem Header="Italic" IsCheckable="True" />
-                <MenuItem Header="Underline" IsCheckable="True" />
-                <MenuItem Header="Strikethrough" IsCheckable="True" />
-                <Separator />
+                <ui:RadioMenuItem Header="Bold" IsChecked="True" GroupName="TextStyle" />
+                <ui:RadioMenuItem Header="Italic" GroupName="TextStyle" />
+                <ui:RadioMenuItem Header="Underline" GroupName="TextStyle" />
+                <ui:RadioMenuItem Header="Strikethrough" GroupName="TextStyle" />
+                <ui:Separator Orientation="Vertical" />
                 <MenuItem Header="Show Hidden" IsCheckable="True" IsChecked="True" />
                 <MenuItem Header="Word Wrap" IsCheckable="True" />
                 <MenuItem Header="Read Only" IsCheckable="True" />

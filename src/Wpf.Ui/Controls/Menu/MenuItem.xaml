@@ -59,7 +59,8 @@
                         HorizontalAlignment="Center"
                         VerticalAlignment="Center"
                         ContentSource="Icon"
-                        SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
+                        SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"
+                        TextElement.FontSize="16" />
                     <controls:SymbolIcon
                         x:Name="Checkmark"
                         Grid.Column="0"
@@ -173,11 +174,11 @@
                         HorizontalAlignment="Center"
                         VerticalAlignment="Center"
                         ContentSource="Icon"
-                        SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
+                        SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"
+                        TextElement.FontSize="16" />
                     <controls:SymbolIcon
                         x:Name="Checkmark"
                         Grid.Column="0"
-                        MinWidth="16"
                         Margin="0,0,6,0"
                         HorizontalAlignment="Center"
                         VerticalAlignment="Center"
@@ -268,7 +269,8 @@
                         HorizontalAlignment="Center"
                         VerticalAlignment="Center"
                         ContentSource="Icon"
-                        SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
+                        SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"
+                        TextElement.FontSize="16" />
 
                     <ContentPresenter
                         x:Name="Header"
@@ -358,12 +360,12 @@
                     <ContentPresenter
                         x:Name="IconPresenter"
                         Grid.Column="0"
-                        MinWidth="16"
                         Margin="0,0,6,0"
                         HorizontalAlignment="Center"
                         VerticalAlignment="Center"
                         ContentSource="Icon"
-                        SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
+                        SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"
+                        TextElement.FontSize="16" />
 
                     <ContentPresenter
                         x:Name="Header"
