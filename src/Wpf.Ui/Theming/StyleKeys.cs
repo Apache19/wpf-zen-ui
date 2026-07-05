@@ -5,44 +5,35 @@
 
 using System.Reflection;
 
+// ReSharper disable UnusedAutoPropertyAccessor.Local
 #pragma warning disable CS8618 // 在退出构造函数时，不可为 null 的字段必须包含非 null 值。请考虑添加 'required' 修饰符或声明为可以为 null。
 
 namespace Wpf.Ui.Theming;
 
 public static class StyleKeys
 {
-    public static ComponentResourceKey ButtonStyle   { get; private set; }
-    public static ComponentResourceKey UiButtonStyle { get; private set; }
-
-    public static ComponentResourceKey RepeatButtonStyle { get; private set; }
-
-    public static ComponentResourceKey MenuStyle                { get; private set; }
-    public static ComponentResourceKey UiMenuStyle              { get; private set; }
-    public static ComponentResourceKey MenuItemStyle            { get; private set; }
-    public static ComponentResourceKey UiMenuItemStyle          { get; private set; }
-    public static ComponentResourceKey MenuItemSeparatorStyle   { get; private set; }
-
-    public static ComponentResourceKey DefaultCheckBoxStyle   { get; private set; }
-    public static ComponentResourceKey DefaultUiCheckBoxStyle { get; private set; }
-
-    public static ComponentResourceKey DefaultComboBoxStyle   { get; private set; }
-    public static ComponentResourceKey DefaultUiComboBoxStyle { get; private set; }
-
-    public static ComponentResourceKey DefaultTextBoxStyle   { get; private set; }
-    public static ComponentResourceKey DefaultUiTextBoxStyle { get; private set; }
-
+    public static ComponentResourceKey ButtonStyle                     { get; private set; }
+    public static ComponentResourceKey UiButtonStyle                   { get; private set; }
+    public static ComponentResourceKey RepeatButtonStyle               { get; private set; }
+    public static ComponentResourceKey MenuStyle                       { get; private set; }
+    public static ComponentResourceKey UiMenuStyle                     { get; private set; }
+    public static ComponentResourceKey MenuItemStyle                   { get; private set; }
+    public static ComponentResourceKey UiMenuItemStyle                 { get; private set; }
+    public static ComponentResourceKey DefaultCheckBoxStyle            { get; private set; }
+    public static ComponentResourceKey DefaultUiCheckBoxStyle          { get; private set; }
+    public static ComponentResourceKey DefaultComboBoxStyle            { get; private set; }
+    public static ComponentResourceKey DefaultUiComboBoxStyle          { get; private set; }
+    public static ComponentResourceKey DefaultTextBoxStyle             { get; private set; }
+    public static ComponentResourceKey DefaultUiTextBoxStyle           { get; private set; }
     public static ComponentResourceKey DefaultTextBoxScrollViewerStyle { get; private set; }
     public static ComponentResourceKey DefaultControlFocusVisualStyle  { get; private set; }
-
-    public static ComponentResourceKey DefaultScrollBarStyle { get; private set; }
-
-    public static ComponentResourceKey NavigationViewItemDataTemplate { get; private set; }
-
-    public static ComponentResourceKey IconInfoBadgeStyle  { get; private set; }
-    public static ComponentResourceKey ValueInfoBadgeStyle { get; private set; }
-    public static ComponentResourceKey DotInfoBadgeStyle   { get; private set; }
-
-    public static ComponentResourceKey DefaultValidationTemplate { get; private set; }
+    public static ComponentResourceKey DefaultScrollBarStyle           { get; private set; }
+    public static ComponentResourceKey DefaultSeparatorStyle           { get; private set; }
+    public static ComponentResourceKey NavigationViewItemDataTemplate  { get; private set; }
+    public static ComponentResourceKey IconInfoBadgeStyle              { get; private set; }
+    public static ComponentResourceKey ValueInfoBadgeStyle             { get; private set; }
+    public static ComponentResourceKey DotInfoBadgeStyle               { get; private set; }
+    public static ComponentResourceKey DefaultValidationTemplate       { get; private set; }
 
     static StyleKeys()
     {
