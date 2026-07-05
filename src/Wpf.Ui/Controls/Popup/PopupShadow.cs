@@ -791,13 +791,23 @@ public static class PopupShadow
             var chromeColorBrush = new SolidColorBrush(_chrome.Color);
             chromeColorBrush.Freeze();
 
+            // Tint the mirrored border with the chrome color at the configured opacity so the
+            // border and background share the same hue. This prevents a faint background-color
+            // leak through the anti-aliased edges of the rounded shadow clip.
+            var opacityBorderBrush = new SolidColorBrush(_chrome.Color)
+            {
+                Opacity = _chrome.Opacity
+            };
+            opacityBorderBrush.Freeze();
+
             // Fill the mirrored Border with the chrome shadow color so that, after the Border is clipped out
             // of the shadow surface, anti-aliased corner pixels blend with the shadow hue instead of the
             // default transparent background. Without this fill, rounded corners appear to have jagged
             // colored artifacts.
-            _shadowBorder.Background  = chromeColorBrush;
-            _shadowBorder.BorderBrush = chromeColorBrush;
-            _shadowBorder.Effect      = _chrome.CreateEffect();
+            _shadowBorder.Background      = chromeColorBrush;
+            _shadowBorder.BorderBrush     = opacityBorderBrush;
+            _shadowBorder.BorderThickness = _sourceBorder?.BorderThickness ?? default;
+            _shadowBorder.Effect          = _chrome.CreateEffect();
         }
 
         private void ApplySourceBorderCornerRadius()
