@@ -228,6 +228,7 @@ public static class PopupShadow
         private HwndSource?        _shadowSource;
         private PopupShadowChrome? _chrome;
         private Border?            _shadowBorder;
+        private Border?            _sourceBorder;
         private Grid?              _shadowRoot;
         private DispatcherTimer?   _deferredFadeInTimer;
         private Duration           _contentBoundsAnimationDuration = PopupAnimationDuration;
@@ -238,6 +239,7 @@ public static class PopupShadow
         private DateTime           _shadowAnimationStartedAt;
         private bool               _isAttached;
         private bool               _isChromeChangedSubscribed;
+        private bool               _isSourceBorderCornerRadiusChangedSubscribed;
         private bool               _isRenderingSubscribed;
         private bool               _isUpdatingShadow;
         private bool               _isDisposed;
@@ -339,6 +341,46 @@ public static class PopupShadow
 
             WeakEventManager<Freezable, EventArgs>.RemoveHandler(_chrome, nameof(Freezable.Changed), OnChromeChanged);
             _isChromeChangedSubscribed = false;
+        }
+
+        private void SetSourceBorder(Border? sourceBorder)
+        {
+            if (_sourceBorder == sourceBorder)
+            {
+                return;
+            }
+
+            UnsubscribeSourceBorderCornerRadiusChanged();
+            _sourceBorder = sourceBorder;
+            SubscribeSourceBorderCornerRadiusChanged();
+        }
+
+        private void SubscribeSourceBorderCornerRadiusChanged()
+        {
+            if (_sourceBorder == null)
+            {
+                return;
+            }
+
+            DependencyPropertyDescriptor
+               .FromProperty(Border.CornerRadiusProperty, typeof(Border))
+              ?.AddValueChanged(_sourceBorder, OnSourceBorderCornerRadiusChanged);
+
+            _isSourceBorderCornerRadiusChangedSubscribed = true;
+        }
+
+        private void UnsubscribeSourceBorderCornerRadiusChanged()
+        {
+            if (!_isSourceBorderCornerRadiusChangedSubscribed || _sourceBorder == null)
+            {
+                return;
+            }
+
+            DependencyPropertyDescriptor
+               .FromProperty(Border.CornerRadiusProperty, typeof(Border))
+              ?.RemoveValueChanged(_sourceBorder, OnSourceBorderCornerRadiusChanged);
+
+            _isSourceBorderCornerRadiusChangedSubscribed = false;
         }
 
         private bool IsOwnerOpen =>
@@ -501,6 +543,17 @@ public static class PopupShadow
             UpdateShadowBounds();
         }
 
+        private void OnSourceBorderCornerRadiusChanged(object? sender, EventArgs e)
+        {
+            if (_shadowSource == null)
+            {
+                return;
+            }
+
+            ApplySourceBorderCornerRadius();
+            UpdateShadowContentBounds(default);
+        }
+
         private void OnOwnerHasDropShadowChanged(object? sender, EventArgs e)
         {
             if (!IsDropShadowAllowed())
@@ -570,6 +623,7 @@ public static class PopupShadow
             }
 
             _shadowBorder = null;
+            SetSourceBorder(null);
             _shadowRoot   = null;
         }
 
@@ -731,24 +785,8 @@ public static class PopupShadow
                 return;
             }
 
-            var sourceBorder = GetOwnerRootVisual().FindDescendant<Border>(includeSelf: true);
-            if (sourceBorder != null)
-            {
-                // Mirror the popup chrome so the shadow matches rounded corners and border thickness.
-                // Only the nearest Border is copied; the actual content stays in the owner HWND, and the mirrored
-                // Border is later clipped away so only its DropShadowEffect remains visible.
-                _shadowBorder.CornerRadius    = sourceBorder.CornerRadius;
-                _shadowBorder.BorderThickness = sourceBorder.BorderThickness;
-                _shadowBorder.Padding         = sourceBorder.Padding;
-            }
-            else
-            {
-                // Some popups do not use a Border as their template root. Fall back to square chrome rather than
-                // carrying stale radius/thickness from a previous owner/template.
-                _shadowBorder.CornerRadius    = default;
-                _shadowBorder.BorderThickness = default;
-                _shadowBorder.Padding         = default;
-            }
+            SetSourceBorder(GetOwnerRootVisual().FindDescendant<Border>(includeSelf: true));
+            ApplySourceBorderCornerRadius();
 
             var chromeColorBrush = new SolidColorBrush(_chrome.Color);
             chromeColorBrush.Freeze();
@@ -760,6 +798,25 @@ public static class PopupShadow
             _shadowBorder.Background  = chromeColorBrush;
             _shadowBorder.BorderBrush = chromeColorBrush;
             _shadowBorder.Effect      = _chrome.CreateEffect();
+        }
+
+        private void ApplySourceBorderCornerRadius()
+        {
+            if (_shadowBorder == null)
+            {
+                return;
+            }
+
+            if (_sourceBorder != null)
+            {
+                // Mirror the popup corner radius so the shadow clip matches the visible chrome.
+                _shadowBorder.CornerRadius = _sourceBorder.CornerRadius;
+                return;
+            }
+
+            // Some popups do not use a Border as their template root. Fall back to square chrome rather than
+            // carrying stale radius from a previous owner/template.
+            _shadowBorder.CornerRadius = default;
         }
 
         private void UpdateShadowBounds()
