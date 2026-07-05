@@ -1322,11 +1322,14 @@ public static class PopupShadow
             _shadowBorder.Width  = chromeBounds.Width;
             _shadowBorder.Height = chromeBounds.Height;
 
+            var chromeCornerRadius = DeflateCornerRadius(_sourceBorder?.CornerRadius ?? default, ChromeInset);
+            _shadowBorder.CornerRadius = chromeCornerRadius;
+
             // Clip out the visible popup area, leaving only the outside shadow rendered by DropShadowEffect.
             // This is the key trick: the companion window is larger than the popup, but anything where the real popup
             // would draw content is punched out so the two HWNDs do not double-paint chrome or intercept visuals.
             var clipSize = new Size(_shadowRoot.Width, _shadowRoot.Height);
-            _shadowRoot.Clip = CreateShadowOnlyClip(clipSize, chromeBounds, _shadowBorder.CornerRadius);
+            _shadowRoot.Clip = CreateShadowOnlyClip(clipSize, chromeBounds, chromeCornerRadius);
         }
 
         private static GeometryGroup CreateShadowOnlyClip(
@@ -1383,6 +1386,21 @@ public static class PopupShadow
             // Border-like corner radii cannot exceed half of the available side, otherwise adjacent arcs overlap and
             // the EvenOdd punch-out can produce self-intersecting geometry.
             return Math.Max(0D, Math.Min(radius, Math.Min(width, height) / 2D));
+        }
+
+        private static CornerRadius DeflateCornerRadius(CornerRadius cornerRadius, double inset)
+        {
+            if (inset <= 0D)
+            {
+                return cornerRadius;
+            }
+
+            return new CornerRadius(
+                Math.Max(0D, cornerRadius.TopLeft     - inset),
+                Math.Max(0D, cornerRadius.TopRight    - inset),
+                Math.Max(0D, cornerRadius.BottomRight - inset),
+                Math.Max(0D, cornerRadius.BottomLeft  - inset)
+            );
         }
 
         private static void AddCorner(StreamGeometryContext context, Point point, double radius)
