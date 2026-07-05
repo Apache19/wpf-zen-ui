@@ -19,6 +19,14 @@ namespace Wpf.Ui.Controls;
 /// </remarks>
 public sealed class PopupShadowChrome : Freezable
 {
+    private const           double                   DefaultBlurRadius      = 15D;
+    private const           double                   DefaultDirection       = 0D;
+    private const           double                   DefaultShadowDepth     = 0D;
+    private const           double                   DefaultOpacity         = 0.250D;
+    private const           PopupShadowAnimationMode DefaultAnimationMode   = PopupShadowAnimationMode.DynamicContentBounds;
+    private static readonly Thickness                DefaultShadowThickness = new(20D);
+    private static readonly Color                    DefaultColor           = Color.FromRgb(0x20, 0x20, 0x20);
+
     /// <summary>
     /// Identifies the <see cref="ShadowThickness"/> dependency property.
     /// </summary>
@@ -26,7 +34,7 @@ public sealed class PopupShadowChrome : Freezable
         nameof(ShadowThickness),
         typeof(Thickness),
         typeof(PopupShadowChrome),
-        new PropertyMetadata(new Thickness(20D)),
+        new PropertyMetadata(DefaultShadowThickness),
         ValidateShadowThickness
     );
 
@@ -37,7 +45,7 @@ public sealed class PopupShadowChrome : Freezable
         nameof(BlurRadius),
         typeof(double),
         typeof(PopupShadowChrome),
-        new PropertyMetadata(15D),
+        new PropertyMetadata(DefaultBlurRadius),
         value => value is double doubleValue && IsValidDouble(doubleValue)
     );
 
@@ -48,7 +56,7 @@ public sealed class PopupShadowChrome : Freezable
         nameof(Direction),
         typeof(double),
         typeof(PopupShadowChrome),
-        new PropertyMetadata(0D),
+        new PropertyMetadata(DefaultDirection),
         value => value is double doubleValue && IsValidDouble(doubleValue)
     );
 
@@ -59,7 +67,7 @@ public sealed class PopupShadowChrome : Freezable
         nameof(ShadowDepth),
         typeof(double),
         typeof(PopupShadowChrome),
-        new PropertyMetadata(0D),
+        new PropertyMetadata(DefaultShadowDepth),
         value => value is double doubleValue && IsValidDouble(doubleValue)
     );
 
@@ -70,7 +78,7 @@ public sealed class PopupShadowChrome : Freezable
         nameof(Opacity),
         typeof(double),
         typeof(PopupShadowChrome),
-        new PropertyMetadata(0.175D),
+        new PropertyMetadata(DefaultOpacity),
         value => value is double doubleValue
               && IsValidDouble(doubleValue)
               && doubleValue is >= 0D and <= 1D
@@ -83,7 +91,7 @@ public sealed class PopupShadowChrome : Freezable
         nameof(Color),
         typeof(Color),
         typeof(PopupShadowChrome),
-        new PropertyMetadata(Color.FromRgb(0x20, 0x20, 0x20))
+        new PropertyMetadata(DefaultColor)
     );
 
     /// <summary>
@@ -93,7 +101,7 @@ public sealed class PopupShadowChrome : Freezable
         nameof(AnimationMode),
         typeof(PopupShadowAnimationMode),
         typeof(PopupShadowChrome),
-        new PropertyMetadata(PopupShadowAnimationMode.DynamicContentBounds),
+        new PropertyMetadata(DefaultAnimationMode),
         value => value is
             PopupShadowAnimationMode.DynamicContentBounds
          or PopupShadowAnimationMode.DeferredFadeIn
@@ -203,13 +211,13 @@ public sealed class PopupShadowChrome : Freezable
     {
         return new PopupShadowChrome
         {
-            AnimationMode   = PopupShadowAnimationMode.DynamicContentBounds,
-            BlurRadius      = 15D,
-            Direction       = 0D,
-            Opacity         = 0.175D,
-            ShadowDepth     = 0D,
-            ShadowThickness = new Thickness(20D),
-            Color           = Color.FromRgb(0x20, 0x20, 0x20),
+            AnimationMode   = DefaultAnimationMode,
+            BlurRadius      = DefaultBlurRadius,
+            Direction       = DefaultDirection,
+            Opacity         = DefaultOpacity,
+            ShadowDepth     = DefaultShadowDepth,
+            ShadowThickness = DefaultShadowThickness,
+            Color           = DefaultColor,
         };
     }
 
