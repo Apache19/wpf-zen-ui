@@ -40,14 +40,14 @@
         <Grid Background="Transparent">
             <Border
                 x:Name="TopLevelHeaderBorder"
-                MinHeight="20"
-                Margin="4"
+                Margin="2"
                 Padding="{TemplateBinding Padding}"
                 Background="{TemplateBinding Background}"
                 BorderBrush="{TemplateBinding BorderBrush}"
                 BorderThickness="{TemplateBinding BorderThickness}"
-                CornerRadius="6">
-                <Grid Margin="10">
+                CornerRadius="6"
+                SnapsToDevicePixels="True">
+                <Grid Margin="10,9">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="*" />
@@ -55,7 +55,6 @@
                     <ContentPresenter
                         x:Name="IconPresenter"
                         Grid.Column="0"
-                        MinWidth="20"
                         Margin="0,0,6,0"
                         HorizontalAlignment="Center"
                         VerticalAlignment="Center"
@@ -64,8 +63,7 @@
                     <controls:SymbolIcon
                         x:Name="Checkmark"
                         Grid.Column="0"
-                        MinWidth="20"
-                        Margin="0,0,6,2"
+                        Margin="0,0,6,0"
                         HorizontalAlignment="Center"
                         VerticalAlignment="Center"
                         Symbol="Checkmark24"
@@ -156,12 +154,14 @@
         <Grid Background="Transparent">
             <Border
                 x:Name="TopLevelItemBorder"
-                MinHeight="20"
-                Margin="4"
+                Margin="2"
+                Padding="{TemplateBinding Padding}"
                 Background="{TemplateBinding Background}"
+                BorderBrush="{TemplateBinding BorderBrush}"
+                BorderThickness="{TemplateBinding BorderThickness}"
                 CornerRadius="6"
                 SnapsToDevicePixels="True">
-                <Grid Margin="10">
+                <Grid Margin="10,9">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="*" />
@@ -169,8 +169,6 @@
                     <ContentPresenter
                         x:Name="IconPresenter"
                         Grid.Column="0"
-                        MinWidth="20"
-                        MinHeight="20"
                         Margin="0,0,6,0"
                         HorizontalAlignment="Center"
                         VerticalAlignment="Center"
@@ -179,9 +177,8 @@
                     <controls:SymbolIcon
                         x:Name="Checkmark"
                         Grid.Column="0"
-                        MinWidth="20"
-                        MinHeight="20"
-                        Margin="0,0,6,2"
+                        MinWidth="16"
+                        Margin="0,0,6,0"
                         HorizontalAlignment="Center"
                         VerticalAlignment="Center"
                         Symbol="Checkmark24"
@@ -241,10 +238,13 @@
             <Border
                 x:Name="SubmenuItemBorder"
                 Margin="4,1,4,1"
+                Padding="{TemplateBinding Padding}"
                 Background="{TemplateBinding Background}"
+                BorderBrush="{TemplateBinding BorderBrush}"
+                BorderThickness="{TemplateBinding BorderThickness}"
                 CornerRadius="4"
                 SnapsToDevicePixels="True">
-                <Grid MinHeight="20" Margin="8,6,8,6">
+                <Grid Margin="8,7,8,7">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" SharedSizeGroup="Icon" />
                         <ColumnDefinition Width="*" />
@@ -255,7 +255,6 @@
                     <controls:SymbolIcon
                         x:Name="Checkmark"
                         Grid.Column="0"
-                        MinWidth="20"
                         Margin="0,0,6,0"
                         HorizontalAlignment="Center"
                         VerticalAlignment="Center"
@@ -265,7 +264,6 @@
                     <ContentPresenter
                         x:Name="IconPresenter"
                         Grid.Column="0"
-                        MinWidth="20"
                         Margin="0,0,6,0"
                         HorizontalAlignment="Center"
                         VerticalAlignment="Center"
@@ -336,10 +334,13 @@
             <Border
                 x:Name="SubmenuHeaderBorder"
                 Margin="4,1,4,1"
+                Padding="{TemplateBinding Padding}"
                 Background="{TemplateBinding Background}"
+                BorderBrush="{TemplateBinding BorderBrush}"
+                BorderThickness="{TemplateBinding BorderThickness}"
                 CornerRadius="4"
                 SnapsToDevicePixels="True">
-                <Grid MinHeight="20" Margin="8,6,8,6">
+                <Grid Margin="8,7,8,7">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" SharedSizeGroup="Icon" />
                         <ColumnDefinition Width="*" />
@@ -348,7 +349,6 @@
                     <controls:SymbolIcon
                         x:Name="Checkmark"
                         Grid.Column="0"
-                        MinWidth="20"
                         Margin="0,0,6,0"
                         HorizontalAlignment="Center"
                         VerticalAlignment="Center"
@@ -358,7 +358,7 @@
                     <ContentPresenter
                         x:Name="IconPresenter"
                         Grid.Column="0"
-                        MinWidth="20"
+                        MinWidth="16"
                         Margin="0,0,6,0"
                         HorizontalAlignment="Center"
                         VerticalAlignment="Center"
@@ -457,6 +457,7 @@
         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
         <Setter Property="KeyboardNavigation.IsTabStop" Value="True" />
+        <Setter Property="Padding" Value="0" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
         <Setter Property="ScrollViewer.PanningMode" Value="Both" />
         <Setter Property="Stylus.IsFlicksEnabled" Value="False" />
