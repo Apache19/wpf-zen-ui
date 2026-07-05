@@ -242,6 +242,9 @@ public static class PopupShadow
         private bool               _isSourceBorderCornerRadiusChangedSubscribed;
         private bool               _isRenderingSubscribed;
         private bool               _isUpdatingShadow;
+        // Popup HWND movement can generate several window messages for a single open/close transition. Keep only one
+        // deferred bounds refresh so shadow positioning cannot monopolize the dispatcher ahead of input processing.
+        private bool               _isShadowBoundsUpdatePending;
         private bool               _isDisposed;
 
         public PopupShadowController(DependencyObject owner)
@@ -835,6 +838,31 @@ public static class PopupShadow
             // move, resize, or DPI change would trigger cascade normalization and can separate earlier shadows
             // from their popups in a multi-level menu.
             UpdateShadowBounds(updateZOrder: false);
+        }
+
+        private void QueueShadowBoundsUpdate()
+        {
+            if (_isShadowBoundsUpdatePending || _isDisposed)
+            {
+                return;
+            }
+
+            _isShadowBoundsUpdatePending = true;
+
+            // Do not use Send here. Fast ComboBox/menu churn can produce a burst of WM_WINDOWPOSCHANGED messages, and
+            // Send-priority shadow work can make the UI feel frozen while WPF is still closing/reopening popup HWNDs.
+            _ = _dispatcher.BeginInvoke(
+                (Action)(() =>
+                {
+                    _isShadowBoundsUpdatePending = false;
+
+                    if (!_isDisposed)
+                    {
+                        UpdateShadowBounds();
+                    }
+                }),
+                DispatcherPriority.Background
+            );
         }
 
         private void UpdateShadowBounds(bool updateZOrder)
@@ -1462,9 +1490,9 @@ public static class PopupShadow
                 case PInvoke.WM_MOVE:
                 case PInvoke.WM_SIZE:
                 case PInvoke.WM_DPICHANGED:
-                    // These messages can change the popup's visibility, location, size, or DPI. Defer to the
-                    // dispatcher so the shadow follows the settled HWND state without re-entering WPF layout.
-                    _ = _dispatcher.BeginInvoke((Action)UpdateShadowBounds, DispatcherPriority.Send);
+                    // These messages can arrive in bursts during fast popup open/close cycles. Coalesce them at a
+                    // lower priority so shadow repositioning does not starve input while the HWND state settles.
+                    QueueShadowBoundsUpdate();
                     break;
 
                 case PInvoke.WM_NCDESTROY:

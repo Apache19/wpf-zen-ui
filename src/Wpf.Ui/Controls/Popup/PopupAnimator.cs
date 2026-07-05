@@ -852,6 +852,10 @@ public static class PopupAnimator
         private          bool                    _isOpeningWithCustomAnimation;
         private          bool                    _isSuppressingPopupRootOpacity;
         private          Popup?                  _pendingPrivateRootPopup;
+        // Remembers the PopupRoot whose first-frame opacity was actually coerced. If the custom open path aborts
+        // before it installs real clocks, this lets us re-coerce or restore that specific root instead of leaving
+        // a reused popup HWND visually stuck at opacity 0.
+        private          UIElement?              _suppressedPopupRoot;
         private          bool                    _isSettingsChangedSubscribed;
         private          bool                    _isDisposed;
 
@@ -1062,7 +1066,12 @@ public static class PopupAnimator
                     else
                     {
                         EndPopupRootOpacitySuppression();
-                        _ = BeginOpenAnimation(_openVersion);
+                        if (!BeginOpenAnimation(_openVersion))
+                        {
+                            // If WPF created the popup HWND but we could not locate the animation surface, prefer a
+                            // non-animated visible popup over preserving the suppressed first frame indefinitely.
+                            RestoreOpenPopupRootOpacity();
+                        }
                     }
                 }
             }
@@ -1092,7 +1101,12 @@ public static class PopupAnimator
             {
                 // If the private Popup is already open, its SetupAnimations(true) has already called
                 // PopupRoot.StopAnimations. Starting now is safe and will not be cleared by WPF immediately after.
-                _ = BeginOpenAnimation(openVersion);
+                if (!BeginOpenAnimation(openVersion))
+                {
+                    // ContextMenu/ToolTip can reuse their private root Popup. If the reused root was hidden by the
+                    // suppression hook but cannot be animated this cycle, explicitly return it to visible state.
+                    RestoreOpenPopupRootOpacity();
+                }
 
                 // Returning false tells OnIsOpenChanged that the suppression window was fully consumed here; no
                 // pending private Popup.Opened event needs to own it.
@@ -1119,17 +1133,25 @@ public static class PopupAnimator
             // Opened is raised after the private Popup's ShowWindow path, so WPF's own StopAnimations call is behind
             // us and the custom timeline can own the PopupRoot until the owner closes.
             DetachPendingPrivateRootPopup();
+            var didBeginOpenAnimation = false;
 
             try
             {
                 // BeginOpenAnimation establishes the real 0 -> 1 opacity clock synchronously. The suppression can be
                 // released immediately afterwards because the popup root now has explicit hidden base values/clocks.
-                _ = BeginOpenAnimation(_openVersion);
+                didBeginOpenAnimation = BeginOpenAnimation(_openVersion);
             }
             finally
             {
                 EndPopupRootOpacitySuppression();
                 _isOpeningWithCustomAnimation = false;
+
+                if (!didBeginOpenAnimation)
+                {
+                    // The private Popup has now opened, so there is no more WPF ShowWindow work to guard. Falling
+                    // back to opacity 1 avoids the "shadow only" failure mode when root discovery races with close.
+                    RestoreOpenPopupRootOpacity();
+                }
             }
         }
 
@@ -1357,11 +1379,23 @@ public static class PopupAnimator
 
         internal bool ShouldSuppressPopupRootOpacity(DependencyObject popupRoot)
         {
-            return !_isDisposed &&
-                   _settings != null &&
-                   _isOpeningWithCustomAnimation &&
-                   _isSuppressingPopupRootOpacity &&
-                   IsPopupRootSuppressionTarget(popupRoot);
+            if (_isDisposed ||
+                _settings == null ||
+                !_isOpeningWithCustomAnimation ||
+                !_isSuppressingPopupRootOpacity ||
+                !IsPopupRootSuppressionTarget(popupRoot))
+            {
+                return false;
+            }
+
+            if (popupRoot is UIElement popupRootElement)
+            {
+                // Track only roots that passed the suppression-target check. This avoids later recovery touching an
+                // unrelated nested popup that happened to open during the same dispatcher turn.
+                _suppressedPopupRoot = popupRootElement;
+            }
+
+            return true;
         }
 
         private bool IsPopupRootSuppressionTarget(DependencyObject popupRoot)
@@ -1398,6 +1432,35 @@ public static class PopupAnimator
 
             _isSuppressingPopupRootOpacity = false;
             RemoveOpeningController(this);
+            RestoreSuppressedPopupRootOpacity();
+        }
+
+        private void RestoreSuppressedPopupRootOpacity()
+        {
+            var popupRoot = _suppressedPopupRoot;
+            _suppressedPopupRoot = null;
+
+            if (popupRoot == null || ReferenceEquals(_popupRoot, popupRoot))
+            {
+                return;
+            }
+
+            // Ending suppression should make WPF's last written base value observable again. When no custom clock was
+            // installed, this is the narrow recovery path that prevents a suppressed PopupRoot from staying invisible.
+            popupRoot.CoerceValue(UIElement.OpacityProperty);
+        }
+
+        private void RestoreOpenPopupRootOpacity()
+        {
+            if (!IsOwnerOpen || GetPopupRoot() is not UIElement popupRoot)
+            {
+                return;
+            }
+
+            // This is a deliberate fallback for failed setup only. The normal path still starts the real 0 -> 1
+            // animation synchronously, preserving the old fast-close ForceClose protection against one-frame flashes.
+            popupRoot.BeginAnimation(UIElement.OpacityProperty, null);
+            popupRoot.Opacity = 1D;
         }
 
         internal bool TryGetCurrentAnimationStartOffset(UIElement popupRoot, out double startOffset)
