@@ -162,6 +162,7 @@
                             x:Name="PART_ContentHost"
                             Focusable="false"
                             HorizontalScrollBarVisibility="Hidden"
+                            IsScrollSpillEnabled="False"
                             VerticalScrollBarVisibility="Hidden" />
                     </Grid>
 
