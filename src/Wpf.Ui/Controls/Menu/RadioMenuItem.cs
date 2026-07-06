@@ -3,11 +3,7 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-using System.Collections;
-using System.ComponentModel;
 using System.Windows.Controls;
-using System.Windows.Markup;
-using System.Windows.Media;
 
 // ReSharper disable once CheckNamespace
 namespace Wpf.Ui.Controls;
@@ -22,7 +18,7 @@ public class RadioMenuItem : MenuItem
 
     private static readonly object RegisteredGroupsLock = new();
 
-    private bool _isInvokingClick;
+    private bool    _isInvokingClick;
     private string? _currentlyRegisteredGroupName;
 
     static RadioMenuItem()
@@ -37,7 +33,7 @@ public class RadioMenuItem : MenuItem
             new FrameworkPropertyMetadata(
                 true,
                 null,
-                static (d, _) => ((RadioMenuItem)d)._isInvokingClick ? false : true
+                static (d, _) => !((RadioMenuItem)d)._isInvokingClick
             )
         );
     }
@@ -96,7 +92,7 @@ public class RadioMenuItem : MenuItem
     private static void OnGroupNameChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
         var radioMenuItem = (RadioMenuItem)d;
-        var groupName = e.NewValue as string ?? string.Empty;
+        var groupName     = e.NewValue as string ?? string.Empty;
 
         radioMenuItem.UpdateRegisteredGroup(groupName);
 
@@ -125,7 +121,7 @@ public class RadioMenuItem : MenuItem
 
         if (!string.IsNullOrEmpty(_currentlyRegisteredGroupName))
         {
-            Unregister(_currentlyRegisteredGroupName, this);
+            Unregister(_currentlyRegisteredGroupName!, this);
         }
 
         if (!string.IsNullOrEmpty(groupName))
@@ -142,7 +138,7 @@ public class RadioMenuItem : MenuItem
         {
             if (!RegisteredGroups.TryGetValue(groupName, out var elements))
             {
-                elements = [];
+                elements                    = [];
                 RegisteredGroups[groupName] = elements;
             }
 
@@ -171,14 +167,14 @@ public class RadioMenuItem : MenuItem
 
     private static void PurgeDead(
         List<WeakReference<RadioMenuItem>> elements,
-        RadioMenuItem? elementToRemove
+        RadioMenuItem?                     elementToRemove
     )
     {
         for (int i = elements.Count - 1; i >= 0; i--)
         {
             if (
                 !elements[i].TryGetTarget(out var target)
-                || ReferenceEquals(target, elementToRemove)
+             || ReferenceEquals(target, elementToRemove)
             )
             {
                 elements.RemoveAt(i);
@@ -218,8 +214,8 @@ public class RadioMenuItem : MenuItem
 
                 if (
                     !ReferenceEquals(menuItem, this)
-                    && menuItem.IsChecked
-                    && ReferenceEquals(GetRootScope(menuItem), currentRoot)
+                 && menuItem.IsChecked
+                 && ReferenceEquals(GetRootScope(menuItem), currentRoot)
                 )
                 {
                     menuItem.UncheckRadioMenuItem();
@@ -239,9 +235,9 @@ public class RadioMenuItem : MenuItem
         {
             if (
                 child is RadioMenuItem menuItem
-                && !ReferenceEquals(menuItem, this)
-                && string.IsNullOrEmpty(menuItem.GroupName)
-                && menuItem.IsChecked
+             && !ReferenceEquals(menuItem, this)
+             && string.IsNullOrEmpty(menuItem.GroupName)
+             && menuItem.IsChecked
             )
             {
                 menuItem.UncheckRadioMenuItem();
@@ -254,14 +250,14 @@ public class RadioMenuItem : MenuItem
         SetCurrentValue(IsCheckedProperty, false);
     }
 
-    private static DependencyObject? GetRootScope(RadioMenuItem radioMenuItem)
+    private static DependencyObject GetRootScope(RadioMenuItem radioMenuItem)
     {
         if (PresentationSource.FromDependencyObject(radioMenuItem)?.RootVisual is DependencyObject rootVisual)
         {
             return rootVisual;
         }
 
-        DependencyObject? root = radioMenuItem;
+        DependencyObject  root    = radioMenuItem;
         DependencyObject? current = radioMenuItem;
 
         while ((current = LogicalTreeHelper.GetParent(current)) is not null)
