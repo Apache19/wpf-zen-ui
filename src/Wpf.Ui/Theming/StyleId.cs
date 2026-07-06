@@ -18,6 +18,7 @@ public enum StyleId
     UiMenuStyle,
     MenuItemStyle,
     UiMenuItemStyle,
+    MenuItemSeparatorStyle,
 
     DefaultCheckBoxStyle,
     DefaultUiCheckBoxStyle,
@@ -32,8 +33,6 @@ public enum StyleId
     DefaultControlFocusVisualStyle,
 
     DefaultScrollBarStyle,
-
-    DefaultSeparatorStyle,
 
     NavigationViewItemDataTemplate,
 
