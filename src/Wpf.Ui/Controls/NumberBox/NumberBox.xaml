@@ -327,7 +327,7 @@
                         <Trigger Property="CurrentPlaceholderEnabled" Value="False">
                             <Setter TargetName="PlaceholderTextBox" Property="Visibility" Value="Collapsed" />
                         </Trigger>
-                        <Trigger Property="ShowClearButton" Value="False">
+                        <Trigger Property="IsClearButtonVisible" Value="False">
                             <Setter TargetName="PART_ClearButton" Property="Margin" Value="0" />
                             <Setter TargetName="PART_ClearButton" Property="Visibility" Value="Collapsed" />
                         </Trigger>
