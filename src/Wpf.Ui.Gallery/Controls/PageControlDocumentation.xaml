@@ -45,7 +45,8 @@
                         <ui:Separator
                             Grid.Column="2"
                             Height="16"
-                            Margin="4,0,4,0" />
+                            Margin="4,0,4,0"
+                            Orientation="Vertical" />
                         <ui:Button
                             Grid.Column="3"
                             Command="{Binding Path=TemplateButtonCommand, RelativeSource={RelativeSource TemplatedParent}}"
