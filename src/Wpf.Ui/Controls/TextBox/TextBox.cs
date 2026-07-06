@@ -151,6 +151,24 @@ public class TextBox : System.Windows.Controls.TextBox
         protected set => SetValue(IsClearButtonVisiblePropertyKey, value);
     }
 
+    /// <summary>Identifies the <see cref="IsFocusIndicatorVisible"/> dependency property.</summary>
+    public static readonly DependencyProperty IsFocusIndicatorVisibleProperty =
+        DependencyProperty.Register(
+            nameof(IsFocusIndicatorVisible),
+            typeof(bool),
+            typeof(TextBox),
+            new PropertyMetadata(true)
+        );
+
+    /// <summary>
+    /// Gets or sets a value indicating whether the focus indicator is visible.
+    /// </summary>
+    public bool IsFocusIndicatorVisible
+    {
+        get => (bool)GetValue(IsFocusIndicatorVisibleProperty);
+        set => SetValue(IsFocusIndicatorVisibleProperty, value);
+    }
+
     /// <summary>Identifies the <see cref="IsTextSelectionEnabled"/> dependency property.</summary>
     public static readonly DependencyProperty IsTextSelectionEnabledProperty =
         DependencyProperty.Register(

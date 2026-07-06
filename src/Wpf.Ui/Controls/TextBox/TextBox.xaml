@@ -13,19 +13,11 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Ui.Controls"
     xmlns:m="clr-namespace:Wpf.Ui.Markup"
-    xmlns:system="clr-namespace:System;assembly=System.Runtime"
     xmlns:t="clr-namespace:Wpf.Ui.Theming">
 
     <ResourceDictionary.MergedDictionaries>
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Resources/DefaultEditorContextMenu.xaml" />
     </ResourceDictionary.MergedDictionaries>
-
-    <Thickness x:Key="TextBoxBorderThemeThickness">1,1,1,1</Thickness>
-    <Thickness x:Key="TextBoxLeftIconMargin">10,0,0,0</Thickness>
-    <Thickness x:Key="TextBoxRightIconMargin">0,0,10,0</Thickness>
-    <Thickness x:Key="TextBoxClearButtonMargin">0,0,4,0</Thickness>
-    <Thickness x:Key="TextBoxClearButtonPadding">0,0,0,0</Thickness>
-    <system:Double x:Key="TextBoxClearButtonHeight">24</system:Double>
 
     <Style x:Key="{x:Static t:StyleKeys.DefaultTextBoxStyle}" TargetType="{x:Type TextBox}">
         <Setter Property="ContextMenu" Value="{StaticResource DefaultEditorContextMenu}" />
@@ -34,7 +26,7 @@
         <Setter Property="CaretBrush" Value="{m:BrushResource TextFillColorPrimaryBrush}" />
         <Setter Property="Background" Value="{m:BrushResource ControlFillColorTertiaryBrush}" />
         <Setter Property="BorderBrush" Value="{m:BrushResource ControlStrokeColorSecondaryBrush}" />
-        <Setter Property="BorderThickness" Value="{StaticResource TextBoxBorderThemeThickness}" />
+        <Setter Property="BorderThickness" Value="1" />
         <Setter Property="ScrollViewer.CanContentScroll" Value="False" />
         <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Hidden" />
         <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Hidden" />
@@ -170,10 +162,10 @@
                     <controls:Button
                         x:Name="ClearButton"
                         Grid.Column="2"
-                        MinWidth="{StaticResource TextBoxClearButtonHeight}"
-                        MinHeight="{StaticResource TextBoxClearButtonHeight}"
-                        Margin="{StaticResource TextBoxClearButtonMargin}"
-                        Padding="{StaticResource TextBoxClearButtonPadding}"
+                        MinWidth="24"
+                        MinHeight="24"
+                        Margin="0,0,4,0"
+                        Padding="0"
                         HorizontalAlignment="Center"
                         VerticalAlignment="Center"
                         HorizontalContentAlignment="Center"
@@ -240,9 +232,22 @@
                 <!--  todo: 修改主题样式，ControlStrokeColorDefault 改为 Primary 在此应用到边框上  -->
             </Trigger>
             <Trigger Property="IsKeyboardFocused" Value="True">
-                <Setter TargetName="AccentBorder" Property="Visibility" Value="Visible" />
                 <Setter TargetName="ContentBorder" Property="Background" Value="{m:BrushResource ControlFillColorInputActiveBrush}" />
             </Trigger>
+            <MultiTrigger>
+                <MultiTrigger.Conditions>
+                    <Condition Property="IsKeyboardFocused" Value="True" />
+                    <Condition Property="IsFocusIndicatorVisible" Value="True" />
+                </MultiTrigger.Conditions>
+                <Setter TargetName="AccentBorder" Property="Visibility" Value="Visible" />
+            </MultiTrigger>
+            <MultiTrigger>
+                <MultiTrigger.Conditions>
+                    <Condition Property="IsReadOnly" Value="True" />
+                    <Condition Property="IsKeyboardFocused" Value="True" />
+                </MultiTrigger.Conditions>
+                <Setter TargetName="ContentBorder" Property="Background" Value="{m:BrushResource ControlFillColorTertiaryBrush}" />
+            </MultiTrigger>
             <Trigger Property="IsEnabled" Value="False">
                 <Setter TargetName="ContentBorder" Property="Background" Value="{m:BrushResource ControlFillColorDisabledBrush}" />
                 <Setter TargetName="ContentBorder" Property="BorderBrush" Value="{m:BrushResource ControlStrokeColorDefaultBrush}" />

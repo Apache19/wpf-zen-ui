@@ -25,12 +25,17 @@
             HeaderText="A WPF UI TextBox."
             XamlCode="&lt;ui:TextBox PlaceholderText=&quot;Type something...&quot; /&gt;">
             <StackPanel Orientation="Horizontal">
-                <ui:TextBox Width="250" PlaceholderText="Type something..." />
+                <ui:TextBox Width="200" PlaceholderText="Type something..." />
                 <ui:TextBox
-                    Width="250"
+                    Width="200"
                     Margin="8,0,0,0"
                     Icon="{ui:SymbolIcon Edit24}"
                     PlaceholderText="Iconic Text Editor" />
+                <ui:TextBox
+                    Width="200"
+                    Margin="8,0,0,0"
+                    IsReadOnly="True"
+                    Text="Readonly Text Editor" />
             </StackPanel>
 
         </controls:ControlExample>
@@ -43,9 +48,9 @@
                 MinHeight="100"
                 MaxHeight="150"
                 AcceptsReturn="True"
+                ClearButtonEnabled="False"
                 HorizontalScrollBarVisibility="Disabled"
                 PlaceholderText="Type something..."
-                ClearButtonEnabled="False"
                 TextWrapping="Wrap"
                 VerticalScrollBarVisibility="Auto" />
         </controls:ControlExample>
