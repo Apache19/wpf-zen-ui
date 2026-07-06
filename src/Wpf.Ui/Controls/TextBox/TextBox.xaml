@@ -20,14 +20,6 @@
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Resources/DefaultEditorContextMenu.xaml" />
     </ResourceDictionary.MergedDictionaries>
 
-    <!--
-        todo: 增加单行文本框模板， MaxLines == 1 时使用
-              此时应把实际非文本编辑区的鼠标事件传递进去，以便能够在非文本行选择
-        todo: 滚动条在多行模式不会显示，找出原因，解决它。
-              库内有一个 DefaultTextBoxScrollViewerStyle，调查评估为什么会存在一个这样的样式，它与常用滚动视图有什么区别。
-              如果这个样式是专为文本编辑器创建的，则不应该放进 Generic.xaml，而是哪儿需要就自己合并引用。
-    -->
-
     <Thickness x:Key="TextBoxBorderThemeThickness">1,1,1,1</Thickness>
     <Thickness x:Key="TextBoxLeftIconMargin">10,0,0,0</Thickness>
     <Thickness x:Key="TextBoxRightIconMargin">0,0,10,0</Thickness>
@@ -123,16 +115,9 @@
     </Style>
 
     <ControlTemplate x:Key="DefaultUiTextBoxControlTemplate" TargetType="{x:Type controls:TextBox}">
-        <Grid HorizontalAlignment="{TemplateBinding HorizontalAlignment}" VerticalAlignment="{TemplateBinding VerticalAlignment}">
+        <Grid>
             <Border
                 x:Name="ContentBorder"
-                Width="{TemplateBinding Width}"
-                Height="{TemplateBinding Height}"
-                MinWidth="{TemplateBinding MinWidth}"
-                MinHeight="{TemplateBinding MinHeight}"
-                Padding="0"
-                HorizontalAlignment="Stretch"
-                VerticalAlignment="Stretch"
                 Background="{TemplateBinding Background}"
                 BorderBrush="{TemplateBinding BorderBrush}"
                 BorderThickness="{TemplateBinding BorderThickness}"
@@ -145,34 +130,39 @@
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
 
+                    <!--  图标只能垂直居中，如果为多行文本（Accepts == true）时，建议禁用图标  -->
                     <ContentPresenter
-                        x:Name="ControlIconLeft"
+                        x:Name="iconPresenter"
                         Grid.Column="0"
-                        Margin="{StaticResource TextBoxLeftIconMargin}"
+                        Margin="10,0,0,0"
                         VerticalAlignment="Center"
-                        Content="{TemplateBinding Icon}"
-                        Focusable="False"
-                        TextElement.FontSize="{TemplateBinding FontSize}"
-                        TextElement.Foreground="{TemplateBinding Foreground}"
-                        Visibility="Visible" />
+                        ContentSource="Icon"
+                        Focusable="False" />
 
-                    <Grid Grid.Column="1" Margin="{TemplateBinding Padding}">
+                    <Grid Grid.Column="1">
+                        <!--
+                            占位符文本模拟内部布局：
+                            Margin = TextBoxViewer.Margin，TextBoxViewer 会自己设置为 2 0 2 0，不知道更改系统参数会不会影响，待调查。
+                            Padding = TextBox.Padding，TextBox 内部会自动应用到 PART_ContentHost 上，无需显式挂接。
+                            VerticalAlignment = TextBox.VerticalContentAlignment，也是内部自动应用，无需模板显式绑定
+                            HorizontalAlignment 同上
+                        -->
                         <TextBlock
                             x:Name="PlaceholderTextBox"
-                            Margin="0"
-                            Padding="1,0"
+                            Margin="2,0"
+                            Padding="{TemplateBinding Padding}"
+                            HorizontalAlignment="{TemplateBinding VerticalContentAlignment}"
                             VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
                             Foreground="{m:BrushResource TextPlaceholderColorBrush}"
                             Text="{TemplateBinding PlaceholderText}" />
+                        <!--
+                            不要设置过多噪音属性，TextBox 内部会自动应用布局属性
+                        -->
                         <controls:PassiveScrollViewer
                             x:Name="PART_ContentHost"
-                            CanContentScroll="{TemplateBinding ScrollViewer.CanContentScroll}"
-                            HorizontalScrollBarVisibility="{TemplateBinding ScrollViewer.HorizontalScrollBarVisibility}"
-                            IsDeferredScrollingEnabled="{TemplateBinding ScrollViewer.IsDeferredScrollingEnabled}"
-                            IsTabStop="{TemplateBinding ScrollViewer.IsTabStop}"
-                            Style="{m:StyleResource DefaultTextBoxScrollViewerStyle}"
-                            TextElement.Foreground="{TemplateBinding Foreground}"
-                            VerticalScrollBarVisibility="{TemplateBinding ScrollViewer.VerticalScrollBarVisibility}" />
+                            Focusable="false"
+                            HorizontalScrollBarVisibility="Hidden"
+                            VerticalScrollBarVisibility="Hidden" />
                     </Grid>
 
                     <!--  Buttons and Icons have no padding from the main element to allow absolute positions if height is larger than the text entry zone  -->
@@ -191,9 +181,9 @@
                         BorderBrush="Transparent"
                         BorderThickness="0"
                         Command="{Binding Path=TemplateButtonCommand, RelativeSource={RelativeSource TemplatedParent}}"
-                        Cursor="Arrow"
                         Focusable="False"
                         Foreground="{m:BrushResource TextFillColorSecondaryBrush}"
+                        IsEnabled="{TemplateBinding ClearButtonEnabled}"
                         IsTabStop="False"
                         MouseOverBackground="{m:BrushResource SubtleFillColorSecondaryBrush}"
                         MouseOverBorderBrush="Transparent"
@@ -203,15 +193,6 @@
                             <controls:SymbolIcon FontSize="{TemplateBinding FontSize}" Symbol="Dismiss24" />
                         </controls:Button.Icon>
                     </controls:Button>
-
-                    <ContentPresenter
-                        x:Name="ControlIconRight"
-                        Grid.Column="3"
-                        Margin="{StaticResource TextBoxRightIconMargin}"
-                        VerticalAlignment="Center"
-                        Content="{TemplateBinding Icon}"
-                        TextElement.FontSize="{TemplateBinding FontSize}"
-                        TextElement.Foreground="{TemplateBinding Foreground}" />
                 </Grid>
             </Border>
             <Border
@@ -238,29 +219,24 @@
                 <Setter TargetName="ClearButton" Property="Visibility" Value="Collapsed" />
                 <Setter TargetName="ClearButton" Property="Margin" Value="0" />
             </Trigger>
-            <Trigger Property="IconPlacement" Value="Left">
-                <Setter TargetName="ControlIconRight" Property="Visibility" Value="Collapsed" />
-                <Setter TargetName="ControlIconRight" Property="Margin" Value="0" />
-            </Trigger>
-            <Trigger Property="IconPlacement" Value="Right">
-                <Setter TargetName="ControlIconLeft" Property="Visibility" Value="Collapsed" />
-                <Setter TargetName="ControlIconLeft" Property="Margin" Value="0" />
-            </Trigger>
-            <Trigger Property="Icon" Value="{x:Null}">
-                <Setter TargetName="ControlIconRight" Property="Visibility" Value="Collapsed" />
-                <Setter TargetName="ControlIconRight" Property="Margin" Value="0" />
-                <Setter TargetName="ControlIconLeft" Property="Visibility" Value="Collapsed" />
-                <Setter TargetName="ControlIconLeft" Property="Margin" Value="0" />
-            </Trigger>
             <Trigger Property="IsReadOnly" Value="True">
                 <Setter TargetName="ClearButton" Property="Visibility" Value="Collapsed" />
                 <Setter TargetName="ClearButton" Property="Margin" Value="0" />
+            </Trigger>
+            <Trigger Property="IconPlacement" Value="Right">
+                <Setter TargetName="iconPresenter" Property="Grid.Column" Value="3" />
+                <Setter TargetName="iconPresenter" Property="Margin" Value="0,0,10,0" />
+            </Trigger>
+            <Trigger Property="Icon" Value="{x:Null}">
+                <Setter TargetName="iconPresenter" Property="Visibility" Value="Collapsed" />
+                <Setter TargetName="iconPresenter" Property="Margin" Value="0" />
             </Trigger>
 
             <!--  视觉触发器  -->
 
             <Trigger Property="IsMouseOver" Value="True">
-                <Setter TargetName="ContentBorder" Property="Background" Value="{m:BrushResource ControlFillColorSecondaryBrush}" />
+                <Setter TargetName="ContentBorder" Property="Background" Value="{m:BrushResource ControlFillColorPrimaryBrush}" />
+                <!--  todo: 修改主题样式，ControlStrokeColorDefault 改为 Primary 在此应用到边框上  -->
             </Trigger>
             <Trigger Property="IsKeyboardFocused" Value="True">
                 <Setter TargetName="AccentBorder" Property="Visibility" Value="Visible" />
@@ -270,8 +246,6 @@
                 <Setter TargetName="ContentBorder" Property="Background" Value="{m:BrushResource ControlFillColorDisabledBrush}" />
                 <Setter TargetName="ContentBorder" Property="BorderBrush" Value="{m:BrushResource ControlStrokeColorDefaultBrush}" />
                 <Setter TargetName="AccentBorder" Property="BorderBrush" Value="{m:BrushResource ControlStrokeColorDefaultBrush}" />
-                <Setter TargetName="ControlIconLeft" Property="TextElement.Foreground" Value="{m:BrushResource TextFillColorDisabledBrush}" />
-                <Setter TargetName="ControlIconRight" Property="TextElement.Foreground" Value="{m:BrushResource TextFillColorDisabledBrush}" />
                 <Setter TargetName="PlaceholderTextBox" Property="Opacity" Value="0.5" />
                 <Setter Property="Foreground" Value="{m:BrushResource TextFillColorDisabledBrush}" />
                 <Setter Property="ClearButtonEnabled" Value="False" />
@@ -313,26 +287,20 @@
     </ControlTemplate>
 
     <Style x:Key="{x:Static t:StyleKeys.DefaultUiTextBoxStyle}" TargetType="{x:Type controls:TextBox}">
-        <Setter Property="FocusVisualStyle" Value="{m:StyleResource DefaultControlFocusVisualStyle}" />
-        <Setter Property="Foreground" Value="{m:BrushResource TextFillColorPrimaryBrush}" />
-        <Setter Property="CaretBrush" Value="{m:BrushResource TextFillColorPrimaryBrush}" />
-        <Setter Property="Background" Value="{m:BrushResource ControlFillColorTertiaryBrush}" />
+        <Setter Property="KeyboardNavigation.TabNavigation" Value="None" />
+        <Setter Property="AllowDrop" Value="true" />
+        <Setter Property="ScrollViewer.PanningMode" Value="VerticalFirst" />
+        <Setter Property="Stylus.IsFlicksEnabled" Value="False" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="CaretBrush" Value="{Binding Foreground, RelativeSource={RelativeSource Self}}" />
+        <Setter Property="Background" Value="{m:BrushResource ControlFillColorSecondaryBrush}" />
         <Setter Property="BorderBrush" Value="{m:BrushResource ControlStrokeColorSecondaryBrush}" />
-        <Setter Property="BorderThickness" Value="{StaticResource TextBoxBorderThemeThickness}" />
-        <Setter Property="ScrollViewer.CanContentScroll" Value="False" />
-        <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Hidden" />
-        <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Hidden" />
-        <Setter Property="ScrollViewer.IsDeferredScrollingEnabled" Value="False" />
-        <Setter Property="HorizontalAlignment" Value="Stretch" />
-        <Setter Property="VerticalAlignment" Value="Stretch" />
+        <Setter Property="BorderThickness" Value="1" />
         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-        <Setter Property="VerticalContentAlignment" Value="Top" />
         <Setter Property="MinHeight" Value="{m:VariableResource TextControlThemeMinHeight}" />
         <Setter Property="MinWidth" Value="{m:VariableResource TextControlThemeMinWidth}" />
         <Setter Property="Padding" Value="{m:VariableResource TextControlThemePadding}" />
         <Setter Property="Border.CornerRadius" Value="{m:VariableResource ControlCornerRadius}" />
-        <Setter Property="ClearButtonEnabled" Value="True" />
-        <Setter Property="IconPlacement" Value="Left" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
         <Setter Property="Validation.ErrorTemplate" Value="{m:StyleResource DefaultValidationTemplate}" />
         <Setter Property="ContextMenu" Value="{StaticResource DefaultEditorContextMenu}" />

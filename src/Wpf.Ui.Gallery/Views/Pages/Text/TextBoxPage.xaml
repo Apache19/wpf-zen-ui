@@ -9,24 +9,30 @@
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
     Title="TextBoxPage"
     controls:PageControlDocumentation.DocumentationType="{x:Type ui:TextBox}"
-    d:DataContext="{d:DesignInstance local:TextBoxPage,
-                                     IsDesignTimeCreatable=False}"
-    d:DesignHeight="750"
-    d:DesignWidth="800"
     d:Background="{ui:BrushResource WindowBackgroundBrush}"
+    d:DataContext="{d:DesignInstance local:TextBoxPage, IsDesignTimeCreatable=False}"
+    d:DesignWidth="800"
     Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
     mc:Ignorable="d">
 
     <StackPanel Margin="0,0,0,24">
         <controls:ControlExample HeaderText="A simple TextBox." XamlCode="&lt;TextBox /&gt;">
-            <TextBox />
+            <TextBox Width="250" HorizontalAlignment="Left" />
         </controls:ControlExample>
 
         <controls:ControlExample
             Margin="0,36,0,0"
             HeaderText="A WPF UI TextBox."
             XamlCode="&lt;ui:TextBox PlaceholderText=&quot;Type something...&quot; /&gt;">
-            <ui:TextBox PlaceholderText="Type something..." />
+            <StackPanel Orientation="Horizontal">
+                <ui:TextBox Width="250" PlaceholderText="Type something..." />
+                <ui:TextBox
+                    Width="250"
+                    Margin="8,0,0,0"
+                    Icon="{ui:SymbolIcon Edit24}"
+                    PlaceholderText="Iconic Text Editor" />
+            </StackPanel>
+
         </controls:ControlExample>
 
         <controls:ControlExample
@@ -35,8 +41,13 @@
             XamlCode="&lt;ui:TextBox PlaceholderText=&quot;Type something...&quot;TextWrapping=&quot;Wrap&quot; /&gt;">
             <ui:TextBox
                 MinHeight="100"
+                MaxHeight="150"
+                AcceptsReturn="True"
+                HorizontalScrollBarVisibility="Disabled"
                 PlaceholderText="Type something..."
-                TextWrapping="Wrap" />
+                ClearButtonEnabled="False"
+                TextWrapping="Wrap"
+                VerticalScrollBarVisibility="Auto" />
         </controls:ControlExample>
     </StackPanel>
 </Page>
