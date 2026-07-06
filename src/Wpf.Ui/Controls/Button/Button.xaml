@@ -61,7 +61,7 @@
                                 <Condition Property="IsDefault" Value="False" />
                                 <Condition Property="IsMouseOver" Value="True" />
                             </MultiTrigger.Conditions>
-                            <Setter TargetName="ContentBorder" Property="Background" Value="{m:BrushResource ControlFillColorDefaultBrush}" />
+                            <Setter TargetName="ContentBorder" Property="Background" Value="{m:BrushResource ControlFillColorPrimaryBrush}" />
                         </MultiTrigger>
 
                         <MultiTrigger>
@@ -142,7 +142,7 @@
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="ContentBorder" Property="Background" Value="{m:BrushResource ControlFillColorDefaultBrush}" />
+                            <Setter TargetName="ContentBorder" Property="Background" Value="{m:BrushResource ControlFillColorPrimaryBrush}" />
                             <Setter TargetName="ContentBorder" Property="BorderBrush" Value="{m:BrushResource ControlElevationBorderBrush}" />
                         </Trigger>
                         <Trigger Property="IsPressed" Value="True">
@@ -171,7 +171,7 @@
         <Setter Property="BorderBrush" Value="{m:BrushResource ControlElevationBorderBrush}" />
         <Setter Property="BorderThickness" Value="{StaticResource ButtonBorderThemeThickness}" />
         <Setter Property="Foreground" Value="{m:BrushResource TextFillColorPrimaryBrush}" />
-        <Setter Property="MouseOverBackground" Value="{m:BrushResource ControlFillColorDefaultBrush}" />
+        <Setter Property="MouseOverBackground" Value="{m:BrushResource ControlFillColorPrimaryBrush}" />
         <Setter Property="MouseOverBorderBrush" Value="{m:BrushResource ControlElevationBorderBrush}" />
         <Setter Property="PressedBackground" Value="{m:BrushResource ControlFillColorTertiaryBrush}" />
         <Setter Property="PressedBorderBrush" Value="{m:BrushResource ControlStrokeColorDefaultBrush}" />

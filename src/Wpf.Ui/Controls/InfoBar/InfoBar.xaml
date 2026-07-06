@@ -16,7 +16,7 @@
     <Thickness x:Key="InfoBarBorderThemeThickness">1</Thickness>
 
     <Style TargetType="{x:Type controls:InfoBar}">
-        <Setter Property="Background" Value="{markup:BrushResource ControlFillColorDefaultBrush}" />
+        <Setter Property="Background" Value="{markup:BrushResource ControlFillColorPrimaryBrush}" />
         <Setter Property="Foreground" Value="{markup:BrushResource TextFillColorPrimaryBrush}" />
         <Setter Property="Padding" Value="{StaticResource InfoBarPadding}" />
         <Setter Property="HorizontalAlignment" Value="Stretch" />

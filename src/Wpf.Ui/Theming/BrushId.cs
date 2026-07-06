@@ -59,7 +59,7 @@ public enum BrushId
     TextOnAccentFillColorSecondaryBrush,
     TextOnAccentFillColorDisabledBrush,
 
-    ControlFillColorDefaultBrush,
+    ControlFillColorPrimaryBrush,
     ControlFillColorSecondaryBrush,
     ControlFillColorTertiaryBrush,
     ControlFillColorDisabledBrush,

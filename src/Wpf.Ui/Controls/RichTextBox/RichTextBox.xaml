@@ -19,7 +19,7 @@
     <Style x:Key="DefaultRichTextBoxStyle" TargetType="{x:Type RichTextBox}">
         <Setter Property="Foreground" Value="{markup:BrushResource TextFillColorPrimaryBrush}" />
         <Setter Property="CaretBrush" Value="{markup:BrushResource TextFillColorPrimaryBrush}" />
-        <Setter Property="Background" Value="{markup:BrushResource ControlFillColorDefaultBrush}" />
+        <Setter Property="Background" Value="{markup:BrushResource ControlFillColorPrimaryBrush}" />
         <Setter Property="BorderBrush" Value="{markup:BrushResource ControlElevationBorderBrush}" />
         <Setter Property="FocusVisualStyle" Value="{DynamicResource {x:Static theming:StyleKeys.DefaultControlFocusVisualStyle}}" />
         <Setter Property="VerticalScrollBarVisibility" Value="Auto" />

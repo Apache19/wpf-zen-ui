@@ -66,7 +66,7 @@
     <!--  TextOnAccentFillColorSecondary #80000000  -->
     <Color x:Key="{x:Static t:ColorKeys.TextOnAccentFillColorDisabled}">#77000000</Color>
 
-    <Color x:Key="{x:Static t:ColorKeys.ControlFillColorDefault}">#15FFFFFF</Color>
+    <Color x:Key="{x:Static t:ColorKeys.ControlFillColorPrimary}">#15FFFFFF</Color>
     <Color x:Key="{x:Static t:ColorKeys.ControlFillColorSecondary}">#0FFFFFFF</Color>
     <Color x:Key="{x:Static t:ColorKeys.ControlFillColorTertiary}">#08FFFFFF</Color>
     <Color x:Key="{x:Static t:ColorKeys.ControlFillColorDisabled}">#0BFFFFFF</Color>
@@ -199,7 +199,7 @@
     <SolidColorBrush x:Key="{x:Static t:BrushKeys.TextOnAccentFillColorSecondaryBrush}" Color="{StaticResource {x:Static t:ColorKeys.TextOnAccentFillColorSecondary}}" />
     <SolidColorBrush x:Key="{x:Static t:BrushKeys.TextOnAccentFillColorDisabledBrush}" Color="{StaticResource {x:Static t:ColorKeys.TextOnAccentFillColorDisabled}}" />
 
-    <SolidColorBrush x:Key="{x:Static t:BrushKeys.ControlFillColorDefaultBrush}" Color="{StaticResource {x:Static t:ColorKeys.ControlFillColorDefault}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.ControlFillColorPrimaryBrush}" Color="{StaticResource {x:Static t:ColorKeys.ControlFillColorPrimary}}" />
     <SolidColorBrush x:Key="{x:Static t:BrushKeys.ControlFillColorSecondaryBrush}" Color="{StaticResource {x:Static t:ColorKeys.ControlFillColorSecondary}}" />
     <SolidColorBrush x:Key="{x:Static t:BrushKeys.ControlFillColorTertiaryBrush}" Color="{StaticResource {x:Static t:ColorKeys.ControlFillColorTertiary}}" />
     <SolidColorBrush x:Key="{x:Static t:BrushKeys.ControlFillColorDisabledBrush}" Color="{StaticResource {x:Static t:ColorKeys.ControlFillColorDisabled}}" />

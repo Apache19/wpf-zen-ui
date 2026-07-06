@@ -69,7 +69,7 @@ public class BrushResourceExtension : DynamicResourceExtension
             BrushId.TextOnAccentFillColorPrimaryBrush               => BrushKeys.TextOnAccentFillColorPrimaryBrush,
             BrushId.TextOnAccentFillColorSecondaryBrush             => BrushKeys.TextOnAccentFillColorSecondaryBrush,
             BrushId.TextOnAccentFillColorDisabledBrush              => BrushKeys.TextOnAccentFillColorDisabledBrush,
-            BrushId.ControlFillColorDefaultBrush                    => BrushKeys.ControlFillColorDefaultBrush,
+            BrushId.ControlFillColorPrimaryBrush                    => BrushKeys.ControlFillColorPrimaryBrush,
             BrushId.ControlFillColorSecondaryBrush                  => BrushKeys.ControlFillColorSecondaryBrush,
             BrushId.ControlFillColorTertiaryBrush                   => BrushKeys.ControlFillColorTertiaryBrush,
             BrushId.ControlFillColorDisabledBrush                   => BrushKeys.ControlFillColorDisabledBrush,

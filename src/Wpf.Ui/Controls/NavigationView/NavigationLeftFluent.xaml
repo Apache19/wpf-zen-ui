@@ -73,7 +73,7 @@
         <ControlTemplate.Triggers>
             <Trigger Property="IsActive" Value="True">
                 <Setter TargetName="ActiveRectangle" Property="Opacity" Value="1.0" />
-                <Setter TargetName="MainBorder" Property="Background" Value="{markup:BrushResource ControlFillColorDefaultBrush}" />
+                <Setter TargetName="MainBorder" Property="Background" Value="{markup:BrushResource ControlFillColorPrimaryBrush}" />
                 <Setter TargetName="IconContentPresenter" Property="TextElement.Foreground" Value="{markup:BrushResource SystemAccentColorPrimaryBrush}" />
                 <Setter TargetName="ElementContentPresenter" Property="Margin" Value="0" />
                 <Trigger.EnterActions>
@@ -133,7 +133,7 @@
                 <Setter TargetName="PART_InfoBadge" Property="Visibility" Value="Collapsed" />
             </Trigger>
             <Trigger Property="IsMouseOver" Value="True">
-                <Setter TargetName="MainBorder" Property="Background" Value="{markup:BrushResource ControlFillColorDefaultBrush}" />
+                <Setter TargetName="MainBorder" Property="Background" Value="{markup:BrushResource ControlFillColorPrimaryBrush}" />
             </Trigger>
             <MultiTrigger>
                 <MultiTrigger.Conditions>
@@ -152,7 +152,7 @@
                             <Condition Property="IsMouseOver" Value="True" />
                         </MultiTrigger.Conditions>
                         <MultiTrigger.Setters>
-                            <Setter TargetName="MainBorder" Property="Background" Value="{markup:BrushResource ControlFillColorDefaultBrush}" />
+                            <Setter TargetName="MainBorder" Property="Background" Value="{markup:BrushResource ControlFillColorPrimaryBrush}" />
                         </MultiTrigger.Setters>
                     </MultiTrigger>
                     <MultiTrigger>
@@ -161,7 +161,7 @@
                             <Condition Property="IsMouseOver" Value="True" />
                         </MultiTrigger.Conditions>
                         <MultiTrigger.Setters>
-                            <Setter TargetName="MainBorder" Property="Background" Value="{markup:BrushResource ControlFillColorDefaultBrush}" />
+                            <Setter TargetName="MainBorder" Property="Background" Value="{markup:BrushResource ControlFillColorPrimaryBrush}" />
                         </MultiTrigger.Setters>
                     </MultiTrigger>
             -->

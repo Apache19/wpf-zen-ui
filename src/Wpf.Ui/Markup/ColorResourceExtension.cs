@@ -62,7 +62,7 @@ public sealed class ColorResourceExtension : DynamicResourceExtension
             ColorId.TextOnAccentFillColorPrimary               => ColorKeys.TextOnAccentFillColorPrimary,
             ColorId.TextOnAccentFillColorSecondary             => ColorKeys.TextOnAccentFillColorSecondary,
             ColorId.TextOnAccentFillColorDisabled              => ColorKeys.TextOnAccentFillColorDisabled,
-            ColorId.ControlFillColorDefault                    => ColorKeys.ControlFillColorDefault,
+            ColorId.ControlFillColorPrimary                    => ColorKeys.ControlFillColorPrimary,
             ColorId.ControlFillColorSecondary                  => ColorKeys.ControlFillColorSecondary,
             ColorId.ControlFillColorTertiary                   => ColorKeys.ControlFillColorTertiary,
             ColorId.ControlFillColorDisabled                   => ColorKeys.ControlFillColorDisabled,

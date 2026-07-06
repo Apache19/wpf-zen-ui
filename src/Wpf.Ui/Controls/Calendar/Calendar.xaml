@@ -501,7 +501,7 @@
                                 x:Name="PART_DisabledVisual"
                                 Grid.Row="0"
                                 Grid.RowSpan="2"
-                                Fill="{markup:BrushResource ControlFillColorDefaultBrush}"
+                                Fill="{markup:BrushResource ControlFillColorPrimaryBrush}"
                                 KeyboardNavigation.TabIndex="1"
                                 KeyboardNavigation.TabNavigation="Once"
                                 Opacity="0"

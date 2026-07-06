@@ -31,7 +31,7 @@
         <Border
             Margin="0,12,0,0"
             Padding="12"
-            Background="{ui:BrushResource ControlFillColorDefaultBrush}"
+            Background="{ui:BrushResource ControlFillColorPrimaryBrush}"
             CornerRadius="8">
             <StackPanel>
                 <ui:TextBlock Text="For UI labels and static text" />
@@ -137,7 +137,7 @@
         <Border
             Margin="0,12,0,0"
             Padding="12"
-            Background="{ui:BrushResource ControlFillColorDefaultBrush}"
+            Background="{ui:BrushResource ControlFillColorPrimaryBrush}"
             CornerRadius="8">
             <StackPanel>
                 <ui:TextBlock Text="Recommended for links" />

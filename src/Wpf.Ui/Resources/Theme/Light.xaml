@@ -66,7 +66,7 @@
     <Color x:Key="{x:Static t:ColorKeys.TextOnAccentFillColorDisabled}">#A3FFFFFF</Color>
 
     <!--  建议值：#0F000000（白色alpha在白色背景上无意义，改用黑色alpha）  -->
-    <Color x:Key="{x:Static t:ColorKeys.ControlFillColorDefault}">#B3FFFFFF</Color>
+    <Color x:Key="{x:Static t:ColorKeys.ControlFillColorPrimary}">#B3FFFFFF</Color>
     <!--  建议值：#1A000000（改用黑色alpha，与其他Fill系列保持一致）  -->
     <Color x:Key="{x:Static t:ColorKeys.ControlFillColorSecondary}">#80F0F0F0</Color>
     <!--  建议值：#08000000（改用黑色alpha，且须与Disabled区分）  -->
@@ -215,7 +215,7 @@
     <SolidColorBrush x:Key="{x:Static t:BrushKeys.TextOnAccentFillColorSecondaryBrush}" Color="{StaticResource {x:Static t:ColorKeys.TextOnAccentFillColorSecondary}}" />
     <SolidColorBrush x:Key="{x:Static t:BrushKeys.TextOnAccentFillColorDisabledBrush}" Color="{StaticResource {x:Static t:ColorKeys.TextOnAccentFillColorDisabled}}" />
 
-    <SolidColorBrush x:Key="{x:Static t:BrushKeys.ControlFillColorDefaultBrush}" Color="{StaticResource {x:Static t:ColorKeys.ControlFillColorDefault}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.ControlFillColorPrimaryBrush}" Color="{StaticResource {x:Static t:ColorKeys.ControlFillColorPrimary}}" />
     <SolidColorBrush x:Key="{x:Static t:BrushKeys.ControlFillColorSecondaryBrush}" Color="{StaticResource {x:Static t:ColorKeys.ControlFillColorSecondary}}" />
     <SolidColorBrush x:Key="{x:Static t:BrushKeys.ControlFillColorTertiaryBrush}" Color="{StaticResource {x:Static t:ColorKeys.ControlFillColorTertiary}}" />
     <SolidColorBrush x:Key="{x:Static t:BrushKeys.ControlFillColorDisabledBrush}" Color="{StaticResource {x:Static t:ColorKeys.ControlFillColorDisabled}}" />

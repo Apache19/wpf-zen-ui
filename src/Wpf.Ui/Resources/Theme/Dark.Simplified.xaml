@@ -27,12 +27,12 @@
     <!--  CONTROL BACKGROUND                                         -->
     <!--  =========================================================  -->
 
-    <Color x:Key="ControlFillColorDefault">#2B2B2B</Color>
+    <Color x:Key="ControlFillColorPrimary">#2B2B2B</Color>
     <Color x:Key="ControlFillColorSecondary">#323232</Color>
     <Color x:Key="ControlFillColorTertiary">#3A3A3A</Color>
     <Color x:Key="ControlFillColorDisabled">#252525</Color>
 
-    <SolidColorBrush x:Key="ControlFillBrushDefault" Color="{StaticResource ControlFillColorDefault}" />
+    <SolidColorBrush x:Key="ControlFillBrushDefault" Color="{StaticResource ControlFillColorPrimary}" />
     <SolidColorBrush x:Key="ControlFillBrushSecondary" Color="{StaticResource ControlFillColorSecondary}" />
     <SolidColorBrush x:Key="ControlFillBrushTertiary" Color="{StaticResource ControlFillColorTertiary}" />
     <SolidColorBrush x:Key="ControlFillBrushDisabled" Color="{StaticResource ControlFillColorDisabled}" />

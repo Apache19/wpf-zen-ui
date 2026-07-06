@@ -38,7 +38,7 @@ public enum ColorId
     TextOnAccentFillColorPrimary,
     TextOnAccentFillColorSecondary,
     TextOnAccentFillColorDisabled,
-    ControlFillColorDefault,
+    ControlFillColorPrimary,
     ControlFillColorSecondary,
     ControlFillColorTertiary,
     ControlFillColorDisabled,
