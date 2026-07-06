@@ -12,7 +12,7 @@
     xmlns:m="clr-namespace:Wpf.Ui.Markup">
 
     <Style x:Key="{x:Static MenuItem.SeparatorStyleKey}" TargetType="{x:Type Separator}">
-        <Setter Property="Background" Value="{m:BrushResource DividerStrokeColorDefaultBrush}" />
+        <Setter Property="Background" Value="{m:BrushResource ControlAltFillColorTertiaryBrush}" />
         <Setter Property="Margin" Value="0,2,0,2" />
         <Setter Property="Focusable" Value="false" />
         <Setter Property="Template">
