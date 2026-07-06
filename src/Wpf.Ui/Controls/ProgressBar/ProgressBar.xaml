@@ -84,8 +84,8 @@
                                 </Grid.Style>
                                 <Border
                                     Margin="1,1,1,1"
-                                    Background="{markup:BrushResource ControlFillColorTransparentBrush}"
-                                    BorderBrush="{markup:BrushResource ControlFillColorTransparentBrush}"
+                                    Background="Transparent"
+                                    BorderBrush="Transparent"
                                     BorderThickness="{TemplateBinding BorderThickness}"
                                     CornerRadius="4" />
                                 <Rectangle Name="PART_Track" Margin="1,1,1,1" />

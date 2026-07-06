@@ -19,7 +19,7 @@
         <Setter Property="Width" Value="60" />
         <Setter Property="Focusable" Value="False" />
         <Setter Property="Foreground" Value="{markup:BrushResource SystemAccentColorPrimaryBrush}" />
-        <Setter Property="CoverRingStroke" Value="{markup:BrushResource ControlFillColorTransparentBrush}" />
+        <Setter Property="CoverRingStroke" Value="Transparent" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type controls:ProgressRing}">

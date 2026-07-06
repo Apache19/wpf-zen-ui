@@ -63,7 +63,6 @@ public enum BrushId
     ControlFillColorSecondaryBrush,
     ControlFillColorTertiaryBrush,
     ControlFillColorDisabledBrush,
-    ControlFillColorTransparentBrush,
     ControlFillColorInputActiveBrush,
 
     ControlStrongFillColorDefaultBrush,

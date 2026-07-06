@@ -80,7 +80,7 @@
                                 <Condition Property="IsChecked" Value="True" />
                             </MultiTrigger.Conditions>
                             <Setter Property="Background" Value="{markup:BrushResource AccentFillColorDisabledBrush}" />
-                            <Setter Property="BorderBrush" Value="{markup:BrushResource ControlFillColorTransparentBrush}" />
+                            <Setter Property="BorderBrush" Value="Transparent" />
                             <Setter TargetName="ContentPresenter" Property="TextElement.Foreground" Value="{markup:BrushResource TextOnAccentFillColorDisabledBrush}" />
                         </MultiTrigger>
                         <MultiTrigger>
@@ -121,7 +121,7 @@
                                 <Condition Property="IsChecked" Value="True" />
                             </MultiTrigger.Conditions>
                             <Setter Property="Background" Value="{markup:BrushResource SystemAccentColorTertiaryBrush}" />
-                            <Setter Property="BorderBrush" Value="{markup:BrushResource ControlFillColorTransparentBrush}" />
+                            <Setter Property="BorderBrush" Value="Transparent" />
                             <Setter TargetName="ContentPresenter" Property="TextElement.Foreground" Value="{markup:BrushResource TextOnAccentFillColorSecondaryBrush}" />
                         </MultiTrigger>
                     </ControlTemplate.Triggers>

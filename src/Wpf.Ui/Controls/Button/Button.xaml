@@ -96,7 +96,7 @@
                                 <Condition Property="IsPressed" Value="True" />
                             </MultiTrigger.Conditions>
                             <Setter TargetName="ContentBorder" Property="Background" Value="{m:BrushResource AccentFillColorTertiaryBrush}" />
-                            <Setter TargetName="ContentBorder" Property="BorderBrush" Value="{m:BrushResource ControlFillColorTransparentBrush}" />
+                            <Setter TargetName="ContentBorder" Property="BorderBrush" Value="Transparent" />
                             <Setter TargetName="ContentPresenter" Property="Control.Foreground" Value="{m:BrushResource TextOnAccentFillColorSecondaryBrush}" />
                         </MultiTrigger>
 
@@ -268,7 +268,7 @@
                 <Setter Property="MouseOverBackground" Value="{m:BrushResource AccentFillColorSecondaryBrush}" />
                 <Setter Property="MouseOverBorderBrush" Value="{m:BrushResource AccentControlElevationBorderBrush}" />
                 <Setter Property="PressedBackground" Value="{m:BrushResource AccentFillColorTertiaryBrush}" />
-                <Setter Property="PressedBorderBrush" Value="{m:BrushResource ControlFillColorTransparentBrush}" />
+                <Setter Property="PressedBorderBrush" Value="Transparent" />
                 <Setter Property="PressedForeground" Value="{m:BrushResource TextOnAccentFillColorSecondaryBrush}" />
             </Trigger>
 

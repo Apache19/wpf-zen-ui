@@ -42,7 +42,6 @@ public enum ColorId
     ControlFillColorSecondary,
     ControlFillColorTertiary,
     ControlFillColorDisabled,
-    ControlFillColorTransparent,
     ControlFillColorInputActive,
     ControlStrongFillColorDefault,
     ControlStrongFillColorDisabled,

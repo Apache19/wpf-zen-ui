@@ -46,7 +46,6 @@ public static class ColorKeys
     public static ComponentResourceKey ControlFillColorSecondary                  { get; private set; }
     public static ComponentResourceKey ControlFillColorTertiary                   { get; private set; }
     public static ComponentResourceKey ControlFillColorDisabled                   { get; private set; }
-    public static ComponentResourceKey ControlFillColorTransparent                { get; private set; }
     public static ComponentResourceKey ControlFillColorInputActive                { get; private set; }
     public static ComponentResourceKey ControlStrongFillColorDefault              { get; private set; }
     public static ComponentResourceKey ControlStrongFillColorDisabled             { get; private set; }

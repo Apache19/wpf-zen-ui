@@ -70,7 +70,6 @@
     <Color x:Key="{x:Static t:ColorKeys.ControlFillColorSecondary}">#0FFFFFFF</Color>
     <Color x:Key="{x:Static t:ColorKeys.ControlFillColorTertiary}">#08FFFFFF</Color>
     <Color x:Key="{x:Static t:ColorKeys.ControlFillColorDisabled}">#0BFFFFFF</Color>
-    <Color x:Key="{x:Static t:ColorKeys.ControlFillColorTransparent}">#00FFFFFF</Color>
     <Color x:Key="{x:Static t:ColorKeys.ControlFillColorInputActive}">#B31E1E1E</Color>
 
     <Color x:Key="{x:Static t:ColorKeys.ControlStrongFillColorDefault}">#8BFFFFFF</Color>
@@ -203,7 +202,6 @@
     <SolidColorBrush x:Key="{x:Static t:BrushKeys.ControlFillColorSecondaryBrush}" Color="{StaticResource {x:Static t:ColorKeys.ControlFillColorSecondary}}" />
     <SolidColorBrush x:Key="{x:Static t:BrushKeys.ControlFillColorTertiaryBrush}" Color="{StaticResource {x:Static t:ColorKeys.ControlFillColorTertiary}}" />
     <SolidColorBrush x:Key="{x:Static t:BrushKeys.ControlFillColorDisabledBrush}" Color="{StaticResource {x:Static t:ColorKeys.ControlFillColorDisabled}}" />
-    <SolidColorBrush x:Key="{x:Static t:BrushKeys.ControlFillColorTransparentBrush}" Color="{StaticResource {x:Static t:ColorKeys.ControlFillColorTransparent}}" />
     <SolidColorBrush x:Key="{x:Static t:BrushKeys.ControlFillColorInputActiveBrush}" Color="{StaticResource {x:Static t:ColorKeys.ControlFillColorInputActive}}" />
 
     <SolidColorBrush x:Key="{x:Static t:BrushKeys.ControlStrongFillColorDefaultBrush}" Color="{StaticResource {x:Static t:ColorKeys.ControlStrongFillColorDefault}}" />

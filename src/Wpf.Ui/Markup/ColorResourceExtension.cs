@@ -66,7 +66,6 @@ public sealed class ColorResourceExtension : DynamicResourceExtension
             ColorId.ControlFillColorSecondary                  => ColorKeys.ControlFillColorSecondary,
             ColorId.ControlFillColorTertiary                   => ColorKeys.ControlFillColorTertiary,
             ColorId.ControlFillColorDisabled                   => ColorKeys.ControlFillColorDisabled,
-            ColorId.ControlFillColorTransparent                => ColorKeys.ControlFillColorTransparent,
             ColorId.ControlFillColorInputActive                => ColorKeys.ControlFillColorInputActive,
             ColorId.ControlStrongFillColorDefault              => ColorKeys.ControlStrongFillColorDefault,
             ColorId.ControlStrongFillColorDisabled             => ColorKeys.ControlStrongFillColorDisabled,

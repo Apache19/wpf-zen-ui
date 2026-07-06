@@ -52,7 +52,6 @@ public static class BrushKeys
     public static ComponentResourceKey ControlFillColorSecondaryBrush                  { get; private set; }
     public static ComponentResourceKey ControlFillColorTertiaryBrush                   { get; private set; }
     public static ComponentResourceKey ControlFillColorDisabledBrush                   { get; private set; }
-    public static ComponentResourceKey ControlFillColorTransparentBrush                { get; private set; }
     public static ComponentResourceKey ControlFillColorInputActiveBrush                { get; private set; }
     public static ComponentResourceKey ControlStrongFillColorDefaultBrush              { get; private set; }
     public static ComponentResourceKey ControlStrongFillColorDisabledBrush             { get; private set; }
