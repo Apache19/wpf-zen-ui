@@ -30,6 +30,14 @@ internal static class TextEditorContextMenuPlacementHelper
     // mirrors WPF's first clipping pass against TextView.RenderScope.
     private const string ContentHostTemplatePartName = "PART_ContentHost";
 
+    private static readonly DependencyProperty KeyboardInvokedPlacementStateProperty =
+        DependencyProperty.RegisterAttached(
+            "KeyboardInvokedPlacementState",
+            typeof(ContextMenuPlacementState),
+            typeof(TextEditorContextMenuPlacementHelper),
+            new PropertyMetadata(null)
+        );
+
     /// <summary>
     /// Opens a custom editor context menu at the caret/selection position when the opening event
     /// was invoked from the keyboard.
@@ -62,6 +70,9 @@ internal static class TextEditorContextMenuPlacementHelper
 
         var contextMenu = owner.ContextMenu;
 
+        RestoreKeyboardInvokedPlacement(contextMenu);
+        StoreKeyboardInvokedPlacement(contextMenu);
+
         // -----------------------------------------------------------------------------------------
         // Open the menu ourselves so ContextMenuService cannot replace our placement with Center.
         // Offsets are calculated relative to the editor control, just like WPF's EditorContextMenu.
@@ -84,6 +95,35 @@ internal static class TextEditorContextMenuPlacementHelper
         e.Handled = true;
 
         return true;
+    }
+
+    private static void StoreKeyboardInvokedPlacement(ContextMenu contextMenu)
+    {
+        var state = ContextMenuPlacementState.Create(contextMenu);
+        RoutedEventHandler closedHandler = (_, _) => RestoreKeyboardInvokedPlacement(contextMenu);
+
+        state.ClosedHandler = closedHandler;
+        contextMenu.SetCurrentValue(KeyboardInvokedPlacementStateProperty, state);
+        contextMenu.Closed += closedHandler;
+    }
+
+    private static void RestoreKeyboardInvokedPlacement(ContextMenu contextMenu)
+    {
+        if (contextMenu.GetValue(KeyboardInvokedPlacementStateProperty) is not ContextMenuPlacementState state)
+        {
+            return;
+        }
+
+        if (state.ClosedHandler is not null)
+        {
+            contextMenu.Closed -= state.ClosedHandler;
+        }
+
+        contextMenu.ClearValue(KeyboardInvokedPlacementStateProperty);
+        contextMenu.SetCurrentValue(ContextMenu.PlacementProperty,       state.Placement);
+        contextMenu.SetCurrentValue(ContextMenu.PlacementTargetProperty, state.PlacementTarget);
+        contextMenu.SetCurrentValue(ContextMenu.HorizontalOffsetProperty, state.HorizontalOffset);
+        contextMenu.SetCurrentValue(ContextMenu.VerticalOffsetProperty,   state.VerticalOffset);
     }
 
     /// <summary>
@@ -276,5 +316,40 @@ internal static class TextEditorContextMenuPlacementHelper
         }
 
         return value;
+    }
+
+    private sealed class ContextMenuPlacementState
+    {
+        private ContextMenuPlacementState(
+            PlacementMode placement,
+            UIElement? placementTarget,
+            double horizontalOffset,
+            double verticalOffset)
+        {
+            Placement = placement;
+            PlacementTarget = placementTarget;
+            HorizontalOffset = horizontalOffset;
+            VerticalOffset = verticalOffset;
+        }
+
+        public PlacementMode Placement { get; }
+
+        public UIElement? PlacementTarget { get; }
+
+        public double HorizontalOffset { get; }
+
+        public double VerticalOffset { get; }
+
+        public RoutedEventHandler? ClosedHandler { get; set; }
+
+        public static ContextMenuPlacementState Create(ContextMenu contextMenu)
+        {
+            return new ContextMenuPlacementState(
+                contextMenu.Placement,
+                contextMenu.PlacementTarget,
+                contextMenu.HorizontalOffset,
+                contextMenu.VerticalOffset
+            );
+        }
     }
 }
