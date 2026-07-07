@@ -20,7 +20,6 @@
                 <Grid>
                     <controls:PlaceholderControl
                         x:Name="PART_Placeholder"
-                        Grid.Column="0"
                         Margin="2,0"
                         Padding="{TemplateBinding Padding}"
                         HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
@@ -29,7 +28,6 @@
 
                     <controls:PassiveScrollViewer
                         x:Name="PART_ContentHost"
-                        Grid.Column="0"
                         Focusable="false"
                         HorizontalScrollBarVisibility="Hidden"
                         ScrollSpillMode="Disabled"
