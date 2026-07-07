@@ -6,6 +6,17 @@
 
     <Style BasedOn="{StaticResource {x:Type ContentControl}}" TargetType="{x:Type controls:PlaceholderControl}">
         <Setter Property="Foreground" Value="{markup:BrushResource TextPlaceholderColorBrush}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type controls:PlaceholderControl}">
+                    <ContentPresenter
+                        Margin="{TemplateBinding Padding}"
+                        HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                        VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                        SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
     </Style>
 
 </ResourceDictionary>
