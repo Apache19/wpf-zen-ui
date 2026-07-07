@@ -10,6 +10,7 @@
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/Menu/Menu.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/Menu/MenuItem.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/TextBox/NativeTextBox.xaml" />
+        <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/PasswordBox/NativePasswordBox.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/ToolTip/ToolTip.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/ScrollBar/ScrollBar.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/ScrollViewer/ScrollViewer.xaml" />
