@@ -14,13 +14,22 @@ namespace Wpf.Ui.Controls;
 /// </summary>
 public class PassiveScrollViewer : ScrollViewer
 {
-    /// <summary>Identifies the <see cref="IsScrollSpillEnabled"/> dependency property.</summary>
-    public static readonly DependencyProperty IsScrollSpillEnabledProperty = DependencyProperty.Register(
-        nameof(IsScrollSpillEnabled),
-        typeof(bool),
+    /// <summary>Identifies the <see cref="ScrollSpillMode"/> dependency property.</summary>
+    public static readonly DependencyProperty ScrollSpillModeProperty = DependencyProperty.Register(
+        nameof(ScrollSpillMode),
+        typeof(ScrollSpillMode),
         typeof(PassiveScrollViewer),
-        new PropertyMetadata(true)
+        new PropertyMetadata(ScrollSpillMode.Enabled)
     );
+
+    /// <summary>
+    /// Gets or sets how mouse wheel events are handled when the content cannot scroll further.
+    /// </summary>
+    public ScrollSpillMode ScrollSpillMode
+    {
+        get { return (ScrollSpillMode)GetValue(ScrollSpillModeProperty); }
+        set { SetValue(ScrollSpillModeProperty, value); }
+    }
 
     static PassiveScrollViewer()
     {
@@ -30,19 +39,9 @@ public class PassiveScrollViewer : ScrollViewer
         );
     }
 
-    /// <summary>
-    /// Gets or sets a value indicating whether blocked inner scrolling should be propagated forward.
-    /// </summary>
-    public bool IsScrollSpillEnabled
-    {
-        get { return (bool)GetValue(IsScrollSpillEnabledProperty); }
-        set { SetValue(IsScrollSpillEnabledProperty, value); }
-    }
-
     protected override void OnMouseWheel(MouseWheelEventArgs e)
     {
-        // When spill is disabled, stay out of the way — let the native ScrollViewer do its thing.
-        if (!IsScrollSpillEnabled)
+        if (ScrollSpillMode == ScrollSpillMode.Native)
         {
             base.OnMouseWheel(e);
             return;
@@ -53,6 +52,7 @@ public class PassiveScrollViewer : ScrollViewer
         // ScrollBar visibility is the native control's own business — not ours.
         if (IsContentSmallerThanViewport || HasReachedEndOfScrolling(e))
         {
+            e.Handled = ScrollSpillMode == ScrollSpillMode.Disabled;
             return;
         }
 

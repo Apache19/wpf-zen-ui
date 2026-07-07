@@ -36,7 +36,7 @@
                             CanContentScroll="False"
                             Focusable="False"
                             HorizontalScrollBarVisibility="Disabled"
-                            IsScrollSpillEnabled="False"
+                            ScrollSpillMode="Disabled"
                             VerticalScrollBarVisibility="Auto">
                             <StackPanel
                                 Grid.IsSharedSizeScope="True"

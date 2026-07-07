@@ -52,7 +52,7 @@
                             CanContentScroll="False"
                             Focusable="False"
                             HorizontalScrollBarVisibility="Disabled"
-                            IsScrollSpillEnabled="False"
+                            ScrollSpillMode="Disabled"
                             VerticalScrollBarVisibility="Auto">
                             <ItemsPresenter KeyboardNavigation.DirectionalNavigation="Cycle" />
                         </controls:PassiveScrollViewer>

@@ -80,7 +80,7 @@
                         Grid.Column="1"
                         Focusable="false"
                         HorizontalScrollBarVisibility="Hidden"
-                        IsScrollSpillEnabled="False"
+                        ScrollSpillMode="Disabled"
                         VerticalScrollBarVisibility="Hidden" />
 
                     <!--  Buttons and Icons have no padding from the main element to allow absolute positions if height is larger than the text entry zone  -->

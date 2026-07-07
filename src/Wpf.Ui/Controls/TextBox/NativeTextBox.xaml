@@ -39,7 +39,7 @@
                         Grid.Column="0"
                         Focusable="false"
                         HorizontalScrollBarVisibility="Hidden"
-                        IsScrollSpillEnabled="False"
+                        ScrollSpillMode="Disabled"
                         VerticalScrollBarVisibility="Hidden" />
                 </Grid>
             </Border>
