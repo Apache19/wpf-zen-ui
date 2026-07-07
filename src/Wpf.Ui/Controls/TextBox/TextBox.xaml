@@ -27,7 +27,7 @@
                 BorderBrush="{TemplateBinding BorderBrush}"
                 BorderThickness="{TemplateBinding BorderThickness}"
                 CornerRadius="{TemplateBinding Border.CornerRadius}">
-                <Grid HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}">
+                <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="*" />
@@ -66,7 +66,7 @@
                         Grid.Column="1"
                         Margin="2,0"
                         Padding="{TemplateBinding Padding}"
-                        HorizontalAlignment="{TemplateBinding VerticalContentAlignment}"
+                        HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
                         VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
                         Foreground="{m:BrushResource TextPlaceholderColorBrush}"
                         Text="{TemplateBinding PlaceholderText}" />
@@ -101,22 +101,17 @@
                         Command="{Binding Path=TemplateButtonCommand, RelativeSource={RelativeSource TemplatedParent}}"
                         Focusable="False"
                         Foreground="{m:BrushResource TextFillColorSecondaryBrush}"
+                        Icon="{m:SymbolIcon Dismiss24}"
                         IsEnabled="{TemplateBinding ClearButtonEnabled}"
                         IsTabStop="False"
                         MouseOverBackground="{m:BrushResource SubtleFillColorSecondaryBrush}"
                         MouseOverBorderBrush="Transparent"
                         PressedBackground="{m:BrushResource SubtleFillColorTertiaryBrush}"
-                        PressedBorderBrush="Transparent">
-                        <controls:Button.Icon>
-                            <controls:SymbolIcon FontSize="{TemplateBinding FontSize}" Symbol="Dismiss24" />
-                        </controls:Button.Icon>
-                    </controls:Button>
+                        PressedBorderBrush="Transparent" />
                 </Grid>
             </Border>
             <Border
                 x:Name="FocusIndicator"
-                HorizontalAlignment="Stretch"
-                VerticalAlignment="Stretch"
                 BorderBrush="{m:BrushResource SystemAccentColorPrimaryBrush}"
                 BorderThickness="0,0,0,2"
                 CornerRadius="{TemplateBinding Border.CornerRadius}"
@@ -176,7 +171,6 @@
             <Trigger Property="IsEnabled" Value="False">
                 <Setter TargetName="ContentBorder" Property="Background" Value="{m:BrushResource ControlFillColorDisabledBrush}" />
                 <Setter TargetName="ContentBorder" Property="BorderBrush" Value="{m:BrushResource ControlStrokeColorDefaultBrush}" />
-                <Setter TargetName="FocusIndicator" Property="BorderBrush" Value="{m:BrushResource ControlStrokeColorDefaultBrush}" />
                 <Setter TargetName="PlaceholderTextBox" Property="Opacity" Value="0.5" />
                 <Setter Property="Foreground" Value="{m:BrushResource TextFillColorDisabledBrush}" />
                 <Setter Property="ClearButtonEnabled" Value="False" />
@@ -224,6 +218,19 @@
                 <Setter Property="Padding" Value="0" />
                 <Setter Property="Template" Value="{StaticResource DefaultUiTextBoxTextSelectionEnabledControlTemplate}" />
             </Trigger>
+
+            <MultiTrigger>
+                <MultiTrigger.Conditions>
+                    <Condition Property="IsInactiveSelectionHighlightEnabled" Value="true" />
+                    <Condition Property="IsSelectionActive" Value="false" />
+                </MultiTrigger.Conditions>
+                <!--
+                    todo: 主题资源中尚未有文本选择色，增加后把这里替换掉
+                    <Setter Property="SelectionBrush" Value="{DynamicResource {x:Static SystemColors.InactiveSelectionHighlightBrushKey}}" />
+                    todo: 旧版.NET Framework 中的 TextBox 没有这个属性，可在控件中引入桥接属性，以便新版 .NET 的 ui:TextBox 能正常工作。
+                    <Setter Property="SelectionTextBrush" Value="{m:BrushResource TextFillColorPrimaryBrush}" />
+                -->
+            </MultiTrigger>
         </Style.Triggers>
     </Style>
 
