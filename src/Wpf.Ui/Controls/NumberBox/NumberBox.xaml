@@ -143,250 +143,223 @@
         </StackPanel>
     </DataTemplate>
 
+    <ControlTemplate x:Key="NumberBoxControlTemplate" TargetType="{x:Type controls:NumberBox}">
+        <Grid>
+            <Border
+                x:Name="ContentBorder"
+                Background="{TemplateBinding Background}"
+                BorderBrush="{TemplateBinding BorderBrush}"
+                BorderThickness="{TemplateBinding BorderThickness}"
+                CornerRadius="{TemplateBinding Border.CornerRadius}"
+                SnapsToDevicePixels="True">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <ContentPresenter
+                        x:Name="iconPresenter"
+                        Grid.Column="0"
+                        Margin="10,0,0,0"
+                        VerticalAlignment="Center"
+                        ContentSource="Icon"
+                        Focusable="False"
+                        IsHitTestVisible="False"
+                        TextElement.FontSize="16" />
+
+                    <TextBlock
+                        x:Name="PlaceholderTextBox"
+                        Grid.Column="1"
+                        Margin="2,0"
+                        Padding="{TemplateBinding Padding}"
+                        HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                        VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                        Foreground="{m:BrushResource TextPlaceholderColorBrush}"
+                        IsHitTestVisible="False"
+                        Text="{TemplateBinding PlaceholderText}" />
+
+                    <!--  todo: 测试禁止穿透会不会影响数值滚动  -->
+                    <controls:PassiveScrollViewer
+                        x:Name="PART_ContentHost"
+                        Grid.Column="1"
+                        Focusable="false"
+                        HorizontalScrollBarVisibility="Hidden"
+                        ScrollSpillMode="Disabled"
+                        VerticalScrollBarVisibility="Hidden" />
+
+                    <!--  Buttons and Icons have no padding from the main element to allow absolute positions if height is larger than the text entry zone  -->
+                    <StackPanel Grid.Column="2" Orientation="Horizontal">
+
+                        <controls:Button
+                            x:Name="PART_ClearButton"
+                            MinWidth="24"
+                            MinHeight="24"
+                            Margin="0,0,4,0"
+                            Padding="0"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Appearance="Transparent"
+                            BorderThickness="0"
+                            Command="{Binding Path=TemplateButtonCommand, RelativeSource={RelativeSource TemplatedParent}}"
+                            Focusable="False"
+                            Icon="{m:SymbolIcon Dismiss24}"
+                            IsEnabled="{TemplateBinding ClearButtonEnabled}"
+                            IsTabStop="False" />
+
+                        <!--  todo: Pop偏移根据此元素计算，达到刚好遮住的效果就好  -->
+                        <ContentControl
+                            x:Name="PART_SpinButtons"
+                            VerticalAlignment="Stretch"
+                            IsTabStop="False">
+                            <ContentControl.Style>
+                                <Style TargetType="ContentControl">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding SpinButtonPlacementMode, RelativeSource={RelativeSource AncestorType={x:Type controls:NumberBox}}}" Value="Inline">
+                                            <Setter Property="ContentTemplate" Value="{StaticResource NumberBoxInlineSpinButtonsTemplate}" />
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding SpinButtonPlacementMode, RelativeSource={RelativeSource AncestorType={x:Type controls:NumberBox}}}" Value="Classic">
+                                            <Setter Property="ContentTemplate" Value="{StaticResource NumberBoxClassicCompactSpinButtonsTemplate}" />
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding SpinButtonPlacementMode, RelativeSource={RelativeSource AncestorType={x:Type controls:NumberBox}}}" Value="Compact">
+                                            <Setter Property="ContentTemplate" Value="{StaticResource NumberBoxClassicCompactSpinButtonsTemplate}" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </ContentControl.Style>
+                        </ContentControl>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <Border
+                x:Name="FocusIndicator"
+                BorderBrush="{m:BrushResource SystemAccentColorPrimaryBrush}"
+                BorderThickness="0,0,0,2"
+                CornerRadius="{TemplateBinding Border.CornerRadius}"
+                IsHitTestVisible="False"
+                Visibility="Collapsed" />
+
+            <!--  Compact mode popup with large spin buttons  -->
+            <Popup
+                x:Name="PART_CompactPopup"
+                controls:PopupShadow.IsEnabled="True"
+                AllowsTransparency="True"
+                IsOpen="False"
+                Placement="Custom"
+                PlacementTarget="{Binding RelativeSource={RelativeSource TemplatedParent}}"
+                PopupAnimation="Fade"
+                StaysOpen="True">
+                <Border
+                    Padding="4"
+                    Background="{m:BrushResource SolidBackgroundFillColorTertiaryBrush}"
+                    BorderBrush="{m:BrushResource ControlStrokeColorDefaultBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    SnapsToDevicePixels="True">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+                        <!--
+                            todo: 分离原生按钮样式，以 ButtonBase 为类型，这样 RepeatButton 就可以兼容样式了
+                        -->
+                        <RepeatButton
+                            Grid.Row="0"
+                            Width="40"
+                            Height="36"
+                            Margin="2,2,2,1"
+                            controls:NumberBox.ButtonKind="Increment"
+                            Style="{StaticResource NumberBoxClassicRepeatButtonStyle}">
+                            <controls:SymbolIcon FontSize="14" Symbol="ChevronUp24" />
+                        </RepeatButton>
+                        <RepeatButton
+                            Grid.Row="1"
+                            Width="40"
+                            Height="36"
+                            Margin="2,1,2,2"
+                            controls:NumberBox.ButtonKind="Decrement"
+                            Style="{StaticResource NumberBoxClassicRepeatButtonStyle}">
+                            <controls:SymbolIcon FontSize="14" Symbol="ChevronDown24" />
+                        </RepeatButton>
+                    </Grid>
+                </Border>
+            </Popup>
+        </Grid>
+        <ControlTemplate.Triggers>
+            <Trigger Property="CurrentPlaceholderEnabled" Value="False">
+                <Setter TargetName="PlaceholderTextBox" Property="Visibility" Value="Collapsed" />
+            </Trigger>
+            <Trigger Property="IsClearButtonVisible" Value="False">
+                <Setter TargetName="PART_ClearButton" Property="Margin" Value="0" />
+                <Setter TargetName="PART_ClearButton" Property="Visibility" Value="Collapsed" />
+            </Trigger>
+            <Trigger Property="ClearButtonEnabled" Value="False">
+                <Setter TargetName="PART_ClearButton" Property="Margin" Value="0" />
+                <Setter TargetName="PART_ClearButton" Property="Visibility" Value="Collapsed" />
+            </Trigger>
+            <Trigger Property="IconPlacement" Value="Right">
+                <Setter TargetName="iconPresenter" Property="Grid.Column" Value="3" />
+                <Setter TargetName="iconPresenter" Property="Margin" Value="0,0,10,0" />
+            </Trigger>
+            <Trigger Property="Icon" Value="{x:Null}">
+                <Setter TargetName="iconPresenter" Property="Visibility" Value="Collapsed" />
+                <Setter TargetName="iconPresenter" Property="Margin" Value="0" />
+            </Trigger>
+
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter TargetName="ContentBorder" Property="Background" Value="{m:BrushResource ControlFillColorSecondaryBrush}" />
+            </Trigger>
+            <Trigger Property="IsFocused" Value="True">
+                <Setter TargetName="ContentBorder" Property="Background" Value="{m:BrushResource ControlFillColorInputActiveBrush}" />
+                <Setter TargetName="FocusIndicator" Property="Visibility" Value="Visible" />
+            </Trigger>
+            <Trigger Property="IsReadOnly" Value="True">
+                <Setter TargetName="PART_ClearButton" Property="Margin" Value="0" />
+                <Setter Property="SpinButtonPlacementMode" Value="Hidden" />
+                <Setter TargetName="PART_ClearButton" Property="Visibility" Value="Collapsed" />
+            </Trigger>
+            <MultiTrigger>
+                <MultiTrigger.Conditions>
+                    <Condition Property="SpinButtonPlacementMode" Value="Compact" />
+                    <Condition Property="IsKeyboardFocusWithin" Value="True" />
+                </MultiTrigger.Conditions>
+                <Setter TargetName="PART_CompactPopup" Property="IsOpen" Value="True" />
+            </MultiTrigger>
+            <Trigger Property="IsEnabled" Value="False">
+                <Setter TargetName="ContentBorder" Property="Background" Value="{m:BrushResource ControlFillColorDisabledBrush}" />
+                <Setter TargetName="ContentBorder" Property="BorderBrush" Value="{m:BrushResource ControlStrokeColorDefaultBrush}" />
+                <Setter TargetName="FocusIndicator" Property="BorderBrush" Value="{m:BrushResource ControlStrokeColorDefaultBrush}" />
+                <Setter Property="ClearButtonEnabled" Value="False" />
+                <Setter TargetName="PlaceholderTextBox" Property="Foreground" Value="{m:BrushResource TextFillColorDisabledBrush}" />
+                <Setter Property="Foreground" Value="{m:BrushResource TextFillColorDisabledBrush}" />
+                <Setter Property="SpinButtonPlacementMode" Value="Hidden" />
+            </Trigger>
+        </ControlTemplate.Triggers>
+    </ControlTemplate>
+
     <Style x:Key="DefaultUiNumberBoxStyle" TargetType="{x:Type controls:NumberBox}">
-        <Setter Property="Background" Value="{m:BrushResource ControlFillColorTertiaryBrush}" />
-        <Setter Property="Border.CornerRadius" Value="{m:VariableResource ControlCornerRadius}" />
+        <Setter Property="KeyboardNavigation.TabNavigation" Value="None" />
+        <Setter Property="AllowDrop" Value="true" />
+        <Setter Property="ScrollViewer.PanningMode" Value="VerticalFirst" />
+        <Setter Property="Stylus.IsFlicksEnabled" Value="False" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="CaretBrush" Value="{Binding Foreground, RelativeSource={RelativeSource Self}}" />
+        <Setter Property="Background" Value="{m:BrushResource ControlFillColorSecondaryBrush}" />
         <Setter Property="BorderBrush" Value="{m:BrushResource ControlStrokeColorSecondaryBrush}" />
-        <Setter Property="BorderThickness" Value="{StaticResource NumberBoxBorderThemeThickness}" />
-        <Setter Property="CaretBrush" Value="{m:BrushResource TextFillColorPrimaryBrush}" />
-        <Setter Property="ClearButtonEnabled" Value="True" />
-        <Setter Property="FocusVisualStyle" Value="{m:StyleResource DefaultControlFocusVisualStyle}" />
-        <Setter Property="FontSize" Value="{m:VariableResource ControlContentThemeFontSize}" />
-        <Setter Property="Foreground" Value="{m:BrushResource TextFillColorPrimaryBrush}" />
-        <Setter Property="HorizontalAlignment" Value="Stretch" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Border.CornerRadius" Value="{m:VariableResource ControlCornerRadius}" />
         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-        <Setter Property="IconPlacement" Value="Left" />
         <Setter Property="MinHeight" Value="{m:VariableResource TextControlThemeMinHeight}" />
         <Setter Property="MinWidth" Value="{m:VariableResource TextControlThemeMinWidth}" />
         <Setter Property="Padding" Value="{m:VariableResource TextControlThemePadding}" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
         <Setter Property="ContextMenu" Value="{StaticResource DefaultEditorContextMenu}" />
-        <Setter Property="Template">
-            <Setter.Value>
-                <ControlTemplate TargetType="{x:Type controls:NumberBox}">
-                    <Grid HorizontalAlignment="{TemplateBinding HorizontalAlignment}" VerticalAlignment="{TemplateBinding VerticalAlignment}">
-                        <Border
-                            x:Name="ContentBorder"
-                            Width="{TemplateBinding Width}"
-                            Height="{TemplateBinding Height}"
-                            MinWidth="{TemplateBinding MinWidth}"
-                            MinHeight="{TemplateBinding MinHeight}"
-                            Padding="0"
-                            HorizontalAlignment="Stretch"
-                            VerticalAlignment="Stretch"
-                            Background="{TemplateBinding Background}"
-                            BorderBrush="{TemplateBinding BorderBrush}"
-                            BorderThickness="{TemplateBinding BorderThickness}"
-                            CornerRadius="{TemplateBinding Border.CornerRadius}">
-                            <Grid HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                <Grid Grid.Column="0" Background="Transparent">
-                                    <ContentControl
-                                        x:Name="ControlIconLeft"
-                                        Margin="{StaticResource NumberBoxLeftIconMargin}"
-                                        Padding="0"
-                                        VerticalAlignment="Top"
-                                        Content="{TemplateBinding Icon}"
-                                        FontSize="16"
-                                        Foreground="{TemplateBinding Foreground}"
-                                        IsTabStop="False" />
-                                </Grid>
-                                <Grid
-                                    x:Name="TextContentArea"
-                                    Grid.Column="1"
-                                    Background="Transparent">
-                                    <Grid Margin="{TemplateBinding Padding}">
-                                        <controls:PassiveScrollViewer
-                                            x:Name="PART_ContentHost"
-                                            Style="{m:StyleResource DefaultTextBoxScrollViewerStyle}"
-                                            TextElement.Foreground="{TemplateBinding Foreground}" />
-                                        <TextBlock
-                                            x:Name="PlaceholderTextBox"
-                                            Margin="0"
-                                            Padding="1,0"
-                                            VerticalAlignment="Top"
-                                            Foreground="{m:BrushResource TextPlaceholderColorBrush}"
-                                            Text="{TemplateBinding PlaceholderText}" />
-                                    </Grid>
-                                </Grid>
-                                <!--  Buttons and Icons have no padding from the main element to allow absolute positions if height is larger than the text entry zone  -->
-                                <StackPanel
-                                    Grid.Column="2"
-                                    Background="Transparent"
-                                    Orientation="Horizontal">
-                                    <Button
-                                        x:Name="PART_ClearButton"
-                                        Width="{StaticResource NumberBoxButtonHeight}"
-                                        Height="{StaticResource NumberBoxButtonHeight}"
-                                        Margin="{StaticResource NumberBoxButtonMargin}"
-                                        Padding="{StaticResource NumberBoxButtonPadding}"
-                                        HorizontalAlignment="Center"
-                                        VerticalAlignment="Center"
-                                        HorizontalContentAlignment="Center"
-                                        VerticalContentAlignment="Center"
-                                        controls:NumberBox.ButtonKind="Clear"
-                                        Background="Transparent"
-                                        BorderBrush="Transparent"
-                                        Focusable="False"
-                                        Foreground="{m:BrushResource TextFillColorSecondaryBrush}"
-                                        IsTabStop="False"
-                                        Style="{m:StyleResource ButtonStyle}">
-                                        <controls:SymbolIcon FontSize="{StaticResource NumberBoxButtonIconSize}" Symbol="Dismiss24" />
-                                    </Button>
-                                    <ContentControl
-                                        x:Name="PART_SpinButtons"
-                                        VerticalAlignment="Stretch"
-                                        IsTabStop="False">
-                                        <ContentControl.Style>
-                                            <Style TargetType="ContentControl">
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding SpinButtonPlacementMode, RelativeSource={RelativeSource AncestorType={x:Type controls:NumberBox}}}" Value="Inline">
-                                                        <Setter Property="ContentTemplate" Value="{StaticResource NumberBoxInlineSpinButtonsTemplate}" />
-                                                    </DataTrigger>
-                                                    <DataTrigger Binding="{Binding SpinButtonPlacementMode, RelativeSource={RelativeSource AncestorType={x:Type controls:NumberBox}}}" Value="Classic">
-                                                        <Setter Property="ContentTemplate" Value="{StaticResource NumberBoxClassicCompactSpinButtonsTemplate}" />
-                                                    </DataTrigger>
-                                                    <DataTrigger Binding="{Binding SpinButtonPlacementMode, RelativeSource={RelativeSource AncestorType={x:Type controls:NumberBox}}}" Value="Compact">
-                                                        <Setter Property="ContentTemplate" Value="{StaticResource NumberBoxClassicCompactSpinButtonsTemplate}" />
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </ContentControl.Style>
-                                    </ContentControl>
-                                </StackPanel>
-                                <ContentControl
-                                    x:Name="ControlIconRight"
-                                    Grid.Column="3"
-                                    Margin="{StaticResource NumberBoxRightIconMargin}"
-                                    Padding="0"
-                                    VerticalAlignment="Top"
-                                    Content="{TemplateBinding Icon}"
-                                    FontSize="16"
-                                    Foreground="{TemplateBinding Foreground}"
-                                    IsTabStop="False" />
-                            </Grid>
-                        </Border>
-                        <!--  The Accent Border is a separate element so that changes to the border thickness do not affect the position of the element  -->
-                        <Border
-                            x:Name="AccentBorder"
-                            BorderBrush="{m:BrushResource SystemAccentColorPrimaryBrush}"
-                            BorderThickness="0,0,0,2"
-                            CornerRadius="{TemplateBinding Border.CornerRadius}"
-                            Visibility="Collapsed" />
-                        <!--  Compact mode popup with large spin buttons  -->
-                        <Popup
-                            x:Name="PART_CompactPopup"
-                            controls:PopupShadow.IsEnabled="True"
-                            AllowsTransparency="True"
-                            IsOpen="False"
-                            Placement="Custom"
-                            PlacementTarget="{Binding RelativeSource={RelativeSource TemplatedParent}}"
-                            PopupAnimation="Fade"
-                            StaysOpen="True">
-                            <Border
-                                Padding="4"
-                                Background="{m:BrushResource SolidBackgroundFillColorTertiaryBrush}"
-                                BorderBrush="{m:BrushResource ControlStrokeColorDefaultBrush}"
-                                BorderThickness="1"
-                                CornerRadius="8"
-                                SnapsToDevicePixels="True">
-                                <Grid>
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition Height="*" />
-                                        <RowDefinition Height="*" />
-                                    </Grid.RowDefinitions>
-                                    <RepeatButton
-                                        Grid.Row="0"
-                                        Width="40"
-                                        Height="36"
-                                        Margin="2,2,2,1"
-                                        controls:NumberBox.ButtonKind="Increment"
-                                        Style="{StaticResource NumberBoxClassicRepeatButtonStyle}">
-                                        <controls:SymbolIcon FontSize="14" Symbol="ChevronUp24" />
-                                    </RepeatButton>
-                                    <RepeatButton
-                                        Grid.Row="1"
-                                        Width="40"
-                                        Height="36"
-                                        Margin="2,1,2,2"
-                                        controls:NumberBox.ButtonKind="Decrement"
-                                        Style="{StaticResource NumberBoxClassicRepeatButtonStyle}">
-                                        <controls:SymbolIcon FontSize="14" Symbol="ChevronDown24" />
-                                    </RepeatButton>
-                                </Grid>
-                            </Border>
-                        </Popup>
-                    </Grid>
-                    <ControlTemplate.Triggers>
-                        <Trigger Property="CurrentPlaceholderEnabled" Value="False">
-                            <Setter TargetName="PlaceholderTextBox" Property="Visibility" Value="Collapsed" />
-                        </Trigger>
-                        <Trigger Property="IsClearButtonVisible" Value="False">
-                            <Setter TargetName="PART_ClearButton" Property="Margin" Value="0" />
-                            <Setter TargetName="PART_ClearButton" Property="Visibility" Value="Collapsed" />
-                        </Trigger>
-                        <Trigger Property="ClearButtonEnabled" Value="False">
-                            <Setter TargetName="PART_ClearButton" Property="Margin" Value="0" />
-                            <Setter TargetName="PART_ClearButton" Property="Visibility" Value="Collapsed" />
-                        </Trigger>
-                        <Trigger Property="IconPlacement" Value="Left">
-                            <Setter TargetName="ControlIconRight" Property="Margin" Value="0" />
-                            <Setter TargetName="ControlIconRight" Property="Visibility" Value="Collapsed" />
-                        </Trigger>
-                        <Trigger Property="IconPlacement" Value="Right">
-                            <Setter TargetName="ControlIconLeft" Property="Margin" Value="0" />
-                            <Setter TargetName="ControlIconLeft" Property="Visibility" Value="Collapsed" />
-                        </Trigger>
-                        <Trigger Property="Icon" Value="{x:Null}">
-                            <Setter TargetName="ControlIconRight" Property="Margin" Value="0" />
-                            <Setter TargetName="ControlIconLeft" Property="Margin" Value="0" />
-                            <Setter TargetName="ControlIconRight" Property="Visibility" Value="Collapsed" />
-                            <Setter TargetName="ControlIconLeft" Property="Visibility" Value="Collapsed" />
-                        </Trigger>
-
-                        <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="ContentBorder" Property="Background" Value="{m:BrushResource ControlFillColorSecondaryBrush}" />
-                        </Trigger>
-                        <Trigger Property="IsFocused" Value="True">
-                            <Setter TargetName="ContentBorder" Property="Background" Value="{m:BrushResource ControlFillColorInputActiveBrush}" />
-                            <Setter TargetName="AccentBorder" Property="Visibility" Value="Visible" />
-                        </Trigger>
-                        <Trigger Property="IsReadOnly" Value="True">
-                            <Setter TargetName="PART_ClearButton" Property="Margin" Value="0" />
-                            <Setter Property="SpinButtonPlacementMode" Value="Hidden" />
-                            <Setter TargetName="PART_ClearButton" Property="Visibility" Value="Collapsed" />
-                        </Trigger>
-                        <MultiTrigger>
-                            <MultiTrigger.Conditions>
-                                <Condition Property="SpinButtonPlacementMode" Value="Compact" />
-                                <Condition Property="IsKeyboardFocusWithin" Value="True" />
-                            </MultiTrigger.Conditions>
-                            <Setter TargetName="PART_CompactPopup" Property="IsOpen" Value="True" />
-                        </MultiTrigger>
-                        <Trigger Property="IsEnabled" Value="False">
-                            <Setter TargetName="ContentBorder" Property="Background" Value="{m:BrushResource ControlFillColorDisabledBrush}" />
-                            <Setter TargetName="ContentBorder" Property="BorderBrush" Value="{m:BrushResource ControlStrokeColorDefaultBrush}" />
-                            <Setter TargetName="AccentBorder" Property="BorderBrush" Value="{m:BrushResource ControlStrokeColorDefaultBrush}" />
-                            <Setter Property="ClearButtonEnabled" Value="False" />
-                            <Setter TargetName="ControlIconLeft" Property="Foreground" Value="{m:BrushResource TextFillColorDisabledBrush}" />
-                            <Setter TargetName="ControlIconRight" Property="Foreground" Value="{m:BrushResource TextFillColorDisabledBrush}" />
-                            <Setter TargetName="PlaceholderTextBox" Property="Foreground" Value="{m:BrushResource TextFillColorDisabledBrush}" />
-                            <Setter Property="Foreground" Value="{m:BrushResource TextFillColorDisabledBrush}" />
-                            <Setter Property="SpinButtonPlacementMode" Value="Hidden" />
-                        </Trigger>
-                    </ControlTemplate.Triggers>
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
-
+        <Setter Property="Template" Value="{StaticResource NumberBoxControlTemplate}" />
         <Setter Property="Validation.ErrorTemplate" Value="{m:StyleResource DefaultValidationTemplate}" />
-        <Setter Property="VerticalAlignment" Value="Center" />
-        <Setter Property="VerticalContentAlignment" Value="Center" />
     </Style>
 
     <Style BasedOn="{StaticResource DefaultUiNumberBoxStyle}" TargetType="{x:Type controls:NumberBox}" />

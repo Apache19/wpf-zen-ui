@@ -26,7 +26,8 @@
                 Background="{TemplateBinding Background}"
                 BorderBrush="{TemplateBinding BorderBrush}"
                 BorderThickness="{TemplateBinding BorderThickness}"
-                CornerRadius="{TemplateBinding Border.CornerRadius}">
+                CornerRadius="{TemplateBinding Border.CornerRadius}"
+                SnapsToDevicePixels="True">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" />
@@ -96,21 +97,13 @@
                         Padding="0"
                         HorizontalAlignment="Center"
                         VerticalAlignment="Center"
-                        HorizontalContentAlignment="Center"
-                        VerticalContentAlignment="Center"
-                        Background="Transparent"
-                        BorderBrush="Transparent"
+                        Appearance="Transparent"
                         BorderThickness="0"
                         Command="{Binding Path=TemplateButtonCommand, RelativeSource={RelativeSource TemplatedParent}}"
                         Focusable="False"
-                        Foreground="{m:BrushResource TextFillColorSecondaryBrush}"
                         Icon="{m:SymbolIcon Dismiss24}"
                         IsEnabled="{TemplateBinding ClearButtonEnabled}"
-                        IsTabStop="False"
-                        MouseOverBackground="{m:BrushResource SubtleFillColorSecondaryBrush}"
-                        MouseOverBorderBrush="Transparent"
-                        PressedBackground="{m:BrushResource SubtleFillColorTertiaryBrush}"
-                        PressedBorderBrush="Transparent" />
+                        IsTabStop="False" />
                 </Grid>
             </Border>
             <Border
