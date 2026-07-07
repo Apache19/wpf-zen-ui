@@ -13,8 +13,8 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Ui.Controls"
     xmlns:converters="clr-namespace:Wpf.Ui.Converters"
-    xmlns:theming="clr-namespace:Wpf.Ui.Theming"
-    xmlns:markup="clr-namespace:Wpf.Ui.Markup">
+    xmlns:markup="clr-namespace:Wpf.Ui.Markup"
+    xmlns:theming="clr-namespace:Wpf.Ui.Theming">
 
     <ResourceDictionary.MergedDictionaries>
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/Button/Button.xaml" />
@@ -22,11 +22,10 @@
 
     <Thickness x:Key="ButtonChevronIconMargin">8,0,0,0</Thickness>
 
-    <converters:LeftSplitThicknessConverter x:Key="LeftSplitThicknessConverter" />
-    <converters:RightSplitThicknessConverter x:Key="RightSplitThicknessConverter" />
-    <converters:LeftSplitCornerRadiusConverter x:Key="LeftSplitCornerRadiusConverter" />
-    <converters:RightSplitCornerRadiusConverter x:Key="RightSplitCornerRadiusConverter" />
-
+    <converters:ThicknessTransformConverter x:Key="LeftSplitThicknessConverter" CopySides="Top,Bottom,Left" />
+    <converters:ThicknessTransformConverter x:Key="RightSplitThicknessConverter" CopySides="Top,Bottom,Right" />
+    <converters:CornerRadiusTransformConverter x:Key="LeftSplitCornerRadiusConverter" CopyCorners="TopLeft,BottomLeft" />
+    <converters:CornerRadiusTransformConverter x:Key="RightSplitCornerRadiusConverter" CopyCorners="TopRight,BottomRight" />
 
     <Style x:Key="DefaultSplitButtonToggleButtonStyle" TargetType="{x:Type ToggleButton}">
         <!--  Focus by parent element  -->

@@ -111,7 +111,7 @@ public class ThicknessTransformConverterTests
         var converter = new ThicknessTransformConverter();
 
         Assert.Throws<NotSupportedException>(
-            () => converter.ConvertBack(new Thickness(), typeof(Thickness), null, CultureInfo.InvariantCulture)
+            () => converter.ConvertBack(new Thickness(0), typeof(Thickness), null, CultureInfo.InvariantCulture)
         );
     }
 
