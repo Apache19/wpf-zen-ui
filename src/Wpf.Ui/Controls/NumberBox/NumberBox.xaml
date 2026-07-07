@@ -200,7 +200,7 @@
                                     x:Name="TextContentArea"
                                     Grid.Column="1"
                                     Background="Transparent">
-                                    <Grid Margin="{TemplateBinding Padding}" Cursor="IBeam">
+                                    <Grid Margin="{TemplateBinding Padding}">
                                         <controls:PassiveScrollViewer
                                             x:Name="PART_ContentHost"
                                             Style="{m:StyleResource DefaultTextBoxScrollViewerStyle}"
@@ -218,7 +218,6 @@
                                 <StackPanel
                                     Grid.Column="2"
                                     Background="Transparent"
-                                    Cursor="Arrow"
                                     Orientation="Horizontal">
                                     <Button
                                         x:Name="PART_ClearButton"

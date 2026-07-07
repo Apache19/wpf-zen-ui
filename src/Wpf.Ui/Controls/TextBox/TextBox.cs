@@ -5,6 +5,7 @@
 
 using System.Diagnostics;
 using System.Windows.Controls;
+using System.Windows.Input;
 using Wpf.Ui.Input;
 
 // ReSharper disable once CheckNamespace
@@ -15,6 +16,8 @@ namespace Wpf.Ui.Controls;
 /// </summary>
 public class TextBox : System.Windows.Controls.TextBox
 {
+    private readonly TextEditorMouseInputHelper _mouseInputHelper;
+
     /// <summary>Identifies the <see cref="Icon"/> dependency property.</summary>
     public static readonly DependencyProperty IconProperty =
         DependencyProperty.Register(
@@ -214,8 +217,40 @@ public class TextBox : System.Windows.Controls.TextBox
     /// </summary>
     public TextBox()
     {
+        _mouseInputHelper = new TextEditorMouseInputHelper(this);
+
         SetValue(TemplateButtonCommandProperty, new RelayCommand<string>(OnTemplateButtonClick));
         CurrentPlaceholderEnabled = PlaceholderEnabled;
+
+        // Cursor is normally resolved through a bubbling QueryCursor event. Using
+        // handledEventsToo lets us correct the cursor even if PART_ContentHost.Cursor has
+        // already handled the event, while still forwarding real TextBoxView hits back to
+        // WPF's internal cursor logic.
+        AddHandler(Mouse.QueryCursorEvent, new QueryCursorEventHandler(OnTextBoxQueryCursor), handledEventsToo: true);
+    }
+
+    /// <inheritdoc />
+    public override void OnApplyTemplate()
+    {
+        base.OnApplyTemplate();
+
+        _mouseInputHelper.OnApplyTemplate(GetTemplateChild("PART_ContentHost") as ScrollViewer);
+    }
+
+    /// <inheritdoc />
+    protected override void OnPreviewMouseLeftButtonDown(MouseButtonEventArgs e)
+    {
+        // WPF's own TextEditorMouse.OnMouseDown ignores clicks that hit TextBox padding or
+        // template chrome, even when they are inside PART_ContentHost. Intercept that narrow
+        // case before the regular bubble handler runs and initialize the native selection
+        // state as if the click landed on the nearest edge of TextBoxView.
+        if (_mouseInputHelper.TryForwardMouseDownFromContentHostPadding(e))
+        {
+            e.Handled = true;
+            return;
+        }
+
+        base.OnPreviewMouseLeftButtonDown(e);
     }
 
     /// <inheritdoc />
@@ -336,6 +371,11 @@ public class TextBox : System.Windows.Controls.TextBox
     protected virtual void OnPlaceholderEnabledChanged()
     {
         SetPlaceholderTextVisibility();
+    }
+
+    private void OnTextBoxQueryCursor(object sender, QueryCursorEventArgs e)
+    {
+        _mouseInputHelper.OnQueryCursor(e);
     }
 
     private Rect GetSelectionStartCharacterRect()

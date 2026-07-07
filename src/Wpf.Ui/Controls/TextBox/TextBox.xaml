@@ -45,7 +45,9 @@
                         Margin="10,0,0,0"
                         VerticalAlignment="Center"
                         ContentSource="Icon"
-                        Focusable="False" />
+                        Focusable="False"
+                        IsHitTestVisible="False"
+                        TextElement.FontSize="16" />
 
                     <!--
                         Placeholder text simulates the internal layout:
@@ -69,6 +71,7 @@
                         HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
                         VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
                         Foreground="{m:BrushResource TextPlaceholderColorBrush}"
+                        IsHitTestVisible="False"
                         Text="{TemplateBinding PlaceholderText}" />
 
                     <!--
@@ -115,6 +118,7 @@
                 BorderBrush="{m:BrushResource SystemAccentColorPrimaryBrush}"
                 BorderThickness="0,0,0,2"
                 CornerRadius="{TemplateBinding Border.CornerRadius}"
+                IsHitTestVisible="False"
                 Visibility="Collapsed" />
         </Grid>
         <ControlTemplate.Triggers>

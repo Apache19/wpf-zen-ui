@@ -173,6 +173,7 @@
                 BorderBrush="{m:BrushResource SystemAccentColorPrimaryBrush}"
                 BorderThickness="0,0,0,2"
                 CornerRadius="{TemplateBinding Border.CornerRadius}"
+                IsHitTestVisible="False"
                 Visibility="Collapsed" />
             <!--  弹出框，采用 PopupShadowChrome 用 PopupShadow 呈现阴影  -->
             <Popup
