@@ -122,7 +122,9 @@
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
 
-                    <!--  图标只能垂直居中，如果为多行文本（Accepts == true）时，建议禁用图标  -->
+                    <!--
+                        图标只能垂直居中，如果为多行文本（AcceptsReturn == true）时，建议禁用图标
+                    -->
                     <ContentPresenter
                         x:Name="iconPresenter"
                         Grid.Column="0"
@@ -131,32 +133,33 @@
                         ContentSource="Icon"
                         Focusable="False" />
 
-                    <Grid Grid.Column="1">
-                        <!--
-                            占位符文本模拟内部布局：
-                            Margin = TextBoxViewer.Margin，TextBoxViewer 会自己设置为 2 0 2 0，不知道更改系统参数会不会影响，待调查。
-                            Padding = TextBox.Padding，TextBox 内部会自动应用到 PART_ContentHost 上，无需显式挂接。
-                            VerticalAlignment = TextBox.VerticalContentAlignment，也是内部自动应用，无需模板显式绑定
-                            HorizontalAlignment 同上
-                        -->
-                        <TextBlock
-                            x:Name="PlaceholderTextBox"
-                            Margin="2,0"
-                            Padding="{TemplateBinding Padding}"
-                            HorizontalAlignment="{TemplateBinding VerticalContentAlignment}"
-                            VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
-                            Foreground="{m:BrushResource TextPlaceholderColorBrush}"
-                            Text="{TemplateBinding PlaceholderText}" />
-                        <!--
-                            不要设置过多噪音属性，TextBox 内部会自动应用布局属性
-                        -->
-                        <controls:PassiveScrollViewer
-                            x:Name="PART_ContentHost"
-                            Focusable="false"
-                            HorizontalScrollBarVisibility="Hidden"
-                            IsScrollSpillEnabled="False"
-                            VerticalScrollBarVisibility="Hidden" />
-                    </Grid>
+                    <!--
+                        占位符文本模拟内部布局：
+                        Margin = TextBoxViewer.Margin，TextBoxViewer 有 2 0 2 0 的 CaretElement.BidiCaretIndicatorWidth 边距。
+                        Padding = TextBox.Padding，TextBox 内部会自动应用到 PART_ContentHost 上，无需显式挂接。
+                        VerticalAlignment = TextBox.VerticalContentAlignment，也是内部自动应用，无需模板显式绑定
+                        HorizontalAlignment 同上
+                    -->
+                    <TextBlock
+                        x:Name="PlaceholderTextBox"
+                        Grid.Column="1"
+                        Margin="2,0"
+                        Padding="{TemplateBinding Padding}"
+                        HorizontalAlignment="{TemplateBinding VerticalContentAlignment}"
+                        VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                        Foreground="{m:BrushResource TextPlaceholderColorBrush}"
+                        Text="{TemplateBinding PlaceholderText}" />
+
+                    <!--
+                        不要在 PART_ContentHost 上设置过多噪音属性，TextBox 内部会自动应用布局
+                    -->
+                    <controls:PassiveScrollViewer
+                        x:Name="PART_ContentHost"
+                        Grid.Column="1"
+                        Focusable="false"
+                        HorizontalScrollBarVisibility="Hidden"
+                        IsScrollSpillEnabled="False"
+                        VerticalScrollBarVisibility="Hidden" />
 
                     <!--  Buttons and Icons have no padding from the main element to allow absolute positions if height is larger than the text entry zone  -->
                     <controls:Button
@@ -260,36 +263,13 @@
     </ControlTemplate>
 
     <ControlTemplate x:Key="DefaultUiTextBoxTextSelectionEnabledControlTemplate" TargetType="{x:Type controls:TextBox}">
-        <Grid HorizontalAlignment="{TemplateBinding HorizontalAlignment}" VerticalAlignment="{TemplateBinding VerticalAlignment}">
-            <Border
-                x:Name="ContentBorder"
-                Width="{TemplateBinding Width}"
-                Height="{TemplateBinding Height}"
-                MinWidth="{TemplateBinding MinWidth}"
-                MinHeight="{TemplateBinding MinHeight}"
-                Padding="0"
-                HorizontalAlignment="Stretch"
-                VerticalAlignment="Stretch"
-                Background="{TemplateBinding Background}"
-                BorderBrush="{TemplateBinding BorderBrush}"
-                BorderThickness="{TemplateBinding BorderThickness}"
-                CornerRadius="{TemplateBinding Border.CornerRadius}"
-                Focusable="False">
-                <Grid HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}">
-                    <Grid Margin="{TemplateBinding Padding}">
-                        <controls:PassiveScrollViewer
-                            x:Name="PART_ContentHost"
-                            CanContentScroll="{TemplateBinding ScrollViewer.CanContentScroll}"
-                            HorizontalScrollBarVisibility="{TemplateBinding ScrollViewer.HorizontalScrollBarVisibility}"
-                            IsDeferredScrollingEnabled="{TemplateBinding ScrollViewer.IsDeferredScrollingEnabled}"
-                            IsTabStop="{TemplateBinding ScrollViewer.IsTabStop}"
-                            Style="{m:StyleResource DefaultTextBoxScrollViewerStyle}"
-                            TextElement.Foreground="{TemplateBinding Foreground}"
-                            VerticalScrollBarVisibility="{TemplateBinding ScrollViewer.VerticalScrollBarVisibility}" />
-                    </Grid>
-                </Grid>
-            </Border>
-        </Grid>
+        <!--  只用于选择文本的 TextBox 应扣除 BidiCaretIndicatorWidth 边距，因为没有光标不用担心光标被裁切  -->
+        <controls:PassiveScrollViewer
+            x:Name="PART_ContentHost"
+            Margin="-2,0"
+            Focusable="false"
+            HorizontalScrollBarVisibility="Hidden"
+            VerticalScrollBarVisibility="Hidden" />
     </ControlTemplate>
 
     <Style x:Key="{x:Static t:StyleKeys.DefaultUiTextBoxStyle}" TargetType="{x:Type controls:TextBox}">
@@ -316,10 +296,7 @@
             </Trigger>
             <Trigger Property="IsTextSelectionEnabled" Value="True">
                 <Setter Property="IsReadOnly" Value="True" />
-                <Setter Property="Background" Value="Transparent" />
                 <Setter Property="Padding" Value="0" />
-                <Setter Property="BorderBrush" Value="Transparent" />
-                <Setter Property="BorderThickness" Value="0" />
                 <Setter Property="Template" Value="{StaticResource DefaultUiTextBoxTextSelectionEnabledControlTemplate}" />
             </Trigger>
         </Style.Triggers>
