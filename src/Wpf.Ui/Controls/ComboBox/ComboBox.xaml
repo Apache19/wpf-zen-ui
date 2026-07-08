@@ -100,14 +100,20 @@
                         Foreground="{m:BrushResource TextPlaceholderColorBrush}" />
 
                     <!--  这个 Grid 用于模仿 TextBoxView.Margin  -->
-                    <Grid Grid.Column="0" Margin="2,0">
+                    <Grid
+                        Grid.Column="0"
+                        Margin="2,0"
+                        IsHitTestVisible="False">
                         <ContentPresenter
                             Name="PART_ContentPresenter"
                             Margin="{TemplateBinding Padding}"
+                            HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                            VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
                             Content="{TemplateBinding SelectionBoxItem}"
+                            ContentStringFormat="{TemplateBinding SelectionBoxItemStringFormat}"
                             ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
                             ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}"
-                            IsHitTestVisible="False" />
+                            SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
                     </Grid>
 
                     <!--  下拉按钮小箭头图标，切换时用动画翻转  -->
@@ -130,6 +136,8 @@
                         x:Name="PART_EditableTextBox"
                         Grid.Column="0"
                         Padding="{TemplateBinding Padding}"
+                        HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                        VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
                         CaretBrush="{Binding Foreground, RelativeSource={RelativeSource Self}}"
                         ContextMenu="{StaticResource DefaultEditorContextMenu}"
                         IsReadOnly="{TemplateBinding IsReadOnly}"
@@ -203,9 +211,6 @@
                         Margin="0"
                         HorizontalScrollBarVisibility="{TemplateBinding ScrollViewer.HorizontalScrollBarVisibility}"
                         SnapsToDevicePixels="True"
-                        TextElement.FontSize="{TemplateBinding FontSize}"
-                        TextElement.FontWeight="{TemplateBinding FontWeight}"
-                        TextElement.Foreground="{TemplateBinding Foreground}"
                         VerticalScrollBarVisibility="{TemplateBinding ScrollViewer.VerticalScrollBarVisibility}">
                         <ItemsPresenter
                             x:Name="ItemsPresenter"
@@ -263,6 +268,13 @@
             <Trigger Property="IsMouseOver" Value="True">
                 <Setter TargetName="ContentBorder" Property="Background" Value="{m:BrushResource ControlFillColorPrimaryBrush}" />
             </Trigger>
+            <MultiTrigger>
+                <MultiTrigger.Conditions>
+                    <Condition Property="IsEditable" Value="False" />
+                    <Condition Property="IsDropDownOpen" Value="True" />
+                </MultiTrigger.Conditions>
+                <Setter TargetName="ContentBorder" Property="Background" Value="{m:BrushResource ControlFillColorTertiaryBrush}" />
+            </MultiTrigger>
             <MultiTrigger>
                 <MultiTrigger.Conditions>
                     <Condition Property="IsKeyboardFocusWithin" Value="True" />
