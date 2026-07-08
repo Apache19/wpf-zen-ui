@@ -7,7 +7,6 @@ using System.Reflection;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
-using System.Windows.Media;
 
 namespace Wpf.Ui.Controls;
 
@@ -165,7 +164,7 @@ internal sealed class TextEditorMouseInputHelper
         {
             SetCaretPositionOnMouseEventMethod.Invoke(
                 null,
-                new object[] { textEditor, mouseDownPoint, e.ChangedButton, e.ClickCount }
+                [textEditor, mouseDownPoint, e.ChangedButton, e.ClickCount]
             );
 
             // Capture the mouse on the TextBoxBase itself, just like native TextEditorMouse does.
@@ -215,7 +214,7 @@ internal sealed class TextEditorMouseInputHelper
         GeneralTransform transform = _owner.TransformToDescendant(renderScope);
         if (transform is null || !transform.TryTransform(ownerPoint, out Point renderScopePoint))
         {
-            return new Point();
+            return default;
         }
 
         // Padding clicks are outside the render scope by definition. Clamp them to the nearest
@@ -244,7 +243,7 @@ internal sealed class TextEditorMouseInputHelper
     {
         // Do not cache TextEditor separately: it is cheap to resolve and belongs to the current
         // TextBoxBase instance managed by WPF.
-        return GetTextEditorMethod?.Invoke(null, new object[] { _owner });
+        return GetTextEditorMethod?.Invoke(null, [_owner]);
     }
 
     private void ForwardQueryCursorToTextEditor(QueryCursorEventArgs e)
@@ -258,7 +257,7 @@ internal sealed class TextEditorMouseInputHelper
             return;
         }
 
-        TextEditorMouseOnQueryCursorMethod.Invoke(null, new object[] { _owner, e });
+        TextEditorMouseOnQueryCursorMethod.Invoke(null, [_owner, e]);
     }
 
     private static void SetMouseCapturingInProgress(object textEditor, bool value)
