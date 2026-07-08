@@ -21,6 +21,9 @@ public sealed partial class PasswordBox : TextBox
     private bool          _isUpdating;
     private ScrollViewer? _contentHost;
 
+    private bool CanClearPassword  => IsEnabled && !IsReadOnly && ClearButtonEnabled;
+    private bool CanRevealPassword => IsEnabled && RevealButtonEnabled;
+
     #region DP PasswordProperty,PasswordCharProperty,IsPasswordRevealedProperty,RevealButtonEnabledProperty
 
     /// <summary>
@@ -281,18 +284,37 @@ public sealed partial class PasswordBox : TextBox
         if (isInternalUpdate || _isUpdating)
         {
             SetPlaceholderTextVisibility();
-            RevealClearButton();
+            UpdateClearButtonVisibility();
 
             return;
         }
 
         base.OnTextChanged(e);
+        UpdateClearButtonVisibility();
+    }
+
+    /// <inheritdoc />
+    protected override void OnPropertyChanged(DependencyPropertyChangedEventArgs e)
+    {
+        base.OnPropertyChanged(e);
+
+        if (e.Property == IsEnabledProperty || e.Property == RevealButtonEnabledProperty)
+        {
+            CoercePasswordRevealState();
+        }
+
+        if (e.Property == IsEnabledProperty
+            || e.Property == IsReadOnlyProperty
+            || e.Property == ClearButtonEnabledProperty)
+        {
+            UpdateClearButtonVisibility();
+        }
     }
 
     /// <inheritdoc/>
     protected override void OnClearButtonClick()
     {
-        if (Password.Length < 1)
+        if (!CanClearPassword || Password.Length < 1)
         {
             return;
         }
@@ -310,7 +332,9 @@ public sealed partial class PasswordBox : TextBox
             return;
         }
 
-        var displayText = IsPasswordRevealed ? newPassword : new string(PasswordChar, newPassword.Length);
+        var displayText = IsPasswordRevealed && CanRevealPassword
+            ? newPassword
+            : new string(PasswordChar, newPassword.Length);
         var caretIndex  = Math.Min(CaretIndex, displayText.Length);
 
         UpdateWithLock(() =>
@@ -332,18 +356,28 @@ public sealed partial class PasswordBox : TextBox
             return;
         }
 
-        var password     = Password;
-        var passwordChar = PasswordChar;
-        var length       = password.Length;
+        var password        = Password;
+        var passwordChar    = PasswordChar;
+        var length          = password.Length;
+        var selectionStart  = SelectionStart;
+        var selectionLength = SelectionLength;
 
         UpdateWithLock(() =>
-            SetCurrentValue(TextProperty, new string(passwordChar, length))
-        );
+        {
+            SetCurrentValue(TextProperty, new string(passwordChar, length));
+            RestoreSelection(selectionStart, selectionLength, length);
+        });
     }
 
     /// <summary>This method is invoked when the <see cref="IsPasswordRevealedProperty"/> changes.</summary>
     private void OnIsPasswordRevealedChanged(bool isRevealed)
     {
+        if (isRevealed && !CanRevealPassword)
+        {
+            SetCurrentValue(IsPasswordRevealedProperty, false);
+            return;
+        }
+
         var password        = Password;
         var passwordChar    = PasswordChar;
         var selectionStart  = SelectionStart;
@@ -357,8 +391,7 @@ public sealed partial class PasswordBox : TextBox
                 isRevealed ? password : new string(passwordChar, passwordLength)
             );
 
-            selectionStart  = SelectionStart = Math.Min(selectionStart, passwordLength);
-            SelectionLength = Math.Min(selectionLength, passwordLength - selectionStart);
+            RestoreSelection(selectionStart, selectionLength, passwordLength);
         });
 
         RaiseEvent(new RoutedEventArgs(IsPasswordRevealedChangedEvent));
@@ -369,12 +402,17 @@ public sealed partial class PasswordBox : TextBox
     {
         if (parameter == "reveal")
         {
+            if (!CanRevealPassword)
+            {
+                CoercePasswordRevealState();
+                return;
+            }
+
             SetCurrentValue(IsPasswordRevealedProperty, !IsPasswordRevealed);
+            return;
         }
-        else
-        {
-            base.OnTemplateButtonClick(parameter);
-        }
+
+        base.OnTemplateButtonClick(parameter);
     }
 
     /// <summary>
@@ -420,18 +458,72 @@ public sealed partial class PasswordBox : TextBox
     /// <param name="textChanges">The text changes.</param>
     private void HandleHiddenModeUpdate(ICollection<TextChange> textChanges)
     {
-        var caretIndex     = CaretIndex;
-        var newPassword    = textChanges.Count > 0 ? _passwordHelper.GetNewPassword(textChanges) : Password;
-        var passwordLength = newPassword.Length;
-        var passwordChar   = PasswordChar;
+        var oldPassword     = Password;
+        var newPassword     = textChanges.Count > 0 ? _passwordHelper.GetNewPassword(textChanges) : oldPassword;
+        var passwordChanged = !string.Equals(oldPassword, newPassword, StringComparison.Ordinal);
+        var passwordLength  = newPassword.Length;
+        var passwordChar    = PasswordChar;
+        var caretIndex      = textChanges.Count > 0 ? GetCaretIndexAfterTextChanges(textChanges) : CaretIndex;
 
         UpdateWithLock(() =>
         {
-            SetCurrentValue(TextProperty,     new string(passwordChar, passwordLength));
-            SetCurrentValue(PasswordProperty, newPassword);
+            SetCurrentValue(TextProperty, new string(passwordChar, passwordLength));
+
+            if (passwordChanged)
+            {
+                SetCurrentValue(PasswordProperty, newPassword);
+            }
+
             CaretIndex = Math.Min(caretIndex, passwordLength);
-            RaisePasswordChangedEvent();
+
+            if (passwordChanged)
+            {
+                RaisePasswordChangedEvent();
+            }
         });
+    }
+
+    private static int GetCaretIndexAfterTextChanges(ICollection<TextChange> textChanges)
+    {
+        var caretIndex = 0;
+
+        foreach (TextChange textChange in textChanges)
+        {
+            caretIndex = textChange.Offset + textChange.AddedLength;
+        }
+
+        return caretIndex;
+    }
+
+    private void CoercePasswordRevealState()
+    {
+        if (IsPasswordRevealed && !CanRevealPassword)
+        {
+            SetCurrentValue(IsPasswordRevealedProperty, false);
+        }
+    }
+
+    private void RestoreSelection(int selectionStart, int selectionLength, int textLength)
+    {
+        selectionStart = Clamp(selectionStart, 0, textLength);
+
+        SelectionStart  = selectionStart;
+        SelectionLength = Clamp(selectionLength, 0, textLength - selectionStart);
+    }
+
+    private void UpdateClearButtonVisibility()
+    {
+        if (!CanClearPassword)
+        {
+            if (IsClearButtonVisible)
+            {
+                IsClearButtonVisible = false;
+            }
+
+            return;
+        }
+
+        RevealClearButton();
     }
 
     /// <summary>
@@ -480,5 +572,10 @@ public sealed partial class PasswordBox : TextBox
     {
         return _contentHost is not null &&
                element.FindAncestor<ScrollViewer>() == _contentHost;
+    }
+
+    private static int Clamp(int value, int minValue, int maxValue)
+    {
+        return Math.Min(Math.Max(value, minValue), maxValue);
     }
 }

@@ -18,6 +18,7 @@ public partial class PasswordBox
     private class PasswordHelper
     {
         private readonly PasswordBox _passwordBox;
+
         private string _currentText;
         private string _newPassword;
         private string _currentPassword;
@@ -71,19 +72,49 @@ public partial class PasswordBox
 
             foreach (TextChange textChange in textChanges)
             {
-                if (textChange.RemovedLength > 0)
+                int offset = Clamp(textChange.Offset, 0, password.Length);
+                int removedLength = Clamp(textChange.RemovedLength, 0, password.Length - offset);
+
+                if (removedLength > 0)
                 {
-                    password = password.Remove(textChange.Offset, textChange.RemovedLength);
+                    password = password.Remove(offset, removedLength);
                 }
 
                 if (textChange.AddedLength > 0)
                 {
-                    string insertedText = _currentText.Substring(textChange.Offset, textChange.AddedLength);
-                    password = password.Insert(textChange.Offset, insertedText);
+                    string insertedText = GetInsertedText(textChange.Offset, textChange.AddedLength);
+
+                    if (insertedText.Length > 0)
+                    {
+                        int insertOffset = Clamp(textChange.Offset, 0, password.Length);
+
+                        password = password.Insert(insertOffset, insertedText);
+                    }
                 }
             }
 
             return password;
+        }
+
+        private string GetInsertedText(int offset, int length)
+        {
+            if (length <= 0 || string.IsNullOrEmpty(_currentText))
+            {
+                return string.Empty;
+            }
+
+            if (offset < 0)
+            {
+                length += offset;
+                offset = 0;
+            }
+
+            if (length <= 0 || offset >= _currentText.Length)
+            {
+                return string.Empty;
+            }
+
+            return _currentText.Substring(offset, Math.Min(length, _currentText.Length - offset));
         }
     }
 }
