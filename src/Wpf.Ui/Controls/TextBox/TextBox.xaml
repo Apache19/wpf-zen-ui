@@ -157,7 +157,7 @@
                 <Setter TargetName="ClearButton" Property="Margin" Value="{Binding Padding, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource ButtonBottomPaddingConverter}}" />
             </Trigger>
 
-            <Trigger Property="CurrentPlaceholderEnabled" Value="False">
+            <Trigger Property="IsPlaceholderVisible" Value="False">
                 <Setter TargetName="PlaceholderTextBox" Property="Visibility" Value="Collapsed" />
             </Trigger>
 
@@ -212,7 +212,7 @@
         </ControlTemplate.Triggers>
     </ControlTemplate>
 
-    <ControlTemplate x:Key="DefaultUiTextBoxTextSelectionEnabledControlTemplate" TargetType="{x:Type controls:TextBox}">
+    <ControlTemplate x:Key="DefaultUiTextBoxTextBlockAppearanceControlTemplate" TargetType="{x:Type controls:TextBox}">
         <!--
             A text-selection-only TextBox should subtract the CaretElement.BidiCaretIndicatorWidth margin,
             since there is no caret to worry about being clipped.
@@ -245,13 +245,13 @@
         <Setter Property="Validation.ErrorTemplate" Value="{m:StyleResource DefaultValidationTemplate}" />
         <Setter Property="ContextMenu" Value="{StaticResource DefaultEditorContextMenu}" />
         <Style.Triggers>
-            <Trigger Property="IsTextSelectionEnabled" Value="False">
+            <Trigger Property="UseTextBlockAppearance" Value="False">
                 <Setter Property="Template" Value="{StaticResource DefaultUiTextBoxControlTemplate}" />
             </Trigger>
-            <Trigger Property="IsTextSelectionEnabled" Value="True">
+            <Trigger Property="UseTextBlockAppearance" Value="True">
                 <Setter Property="IsReadOnly" Value="True" />
                 <Setter Property="Padding" Value="0" />
-                <Setter Property="Template" Value="{StaticResource DefaultUiTextBoxTextSelectionEnabledControlTemplate}" />
+                <Setter Property="Template" Value="{StaticResource DefaultUiTextBoxTextBlockAppearanceControlTemplate}" />
             </Trigger>
 
             <MultiTrigger>

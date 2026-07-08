@@ -141,7 +141,7 @@
                         Grid.Row="3"
                         Margin="0,4,0,0"
                         Foreground="{ui:BrushResource TextFillColorSecondaryBrush}"
-                        IsTextSelectionEnabled="True"
+                        UseTextBlockAppearance="True"
                         Text="{Binding ViewModel.SelectedSymbolName, Mode=OneWay}" />
                     <ui:TextBlock
                         Grid.Row="4"
@@ -152,7 +152,7 @@
                         Grid.Row="5"
                         Margin="0,4,0,0"
                         Foreground="{ui:BrushResource TextFillColorSecondaryBrush}"
-                        IsTextSelectionEnabled="True"
+                        UseTextBlockAppearance="True"
                         Text="{Binding ViewModel.SelectedSymbolUnicodePoint, Mode=OneWay}" />
                     <ui:TextBlock
                         Grid.Row="6"
@@ -163,7 +163,7 @@
                         Grid.Row="7"
                         Margin="0,4,0,0"
                         Foreground="{ui:BrushResource TextFillColorSecondaryBrush}"
-                        IsTextSelectionEnabled="True"
+                        UseTextBlockAppearance="True"
                         Text="{Binding ViewModel.SelectedSymbolTextGlyph, Mode=OneWay}" />
                     <ui:TextBlock
                         Grid.Row="8"
@@ -175,7 +175,7 @@
                         MaxWidth="250"
                         Margin="0,4,0,0"
                         Foreground="{ui:BrushResource TextFillColorSecondaryBrush}"
-                        IsTextSelectionEnabled="True"
+                        UseTextBlockAppearance="True"
                         Text="{Binding ViewModel.SelectedSymbolXaml, Mode=OneWay}"
                         TextWrapping="WrapWithOverflow" />
                 </Grid>

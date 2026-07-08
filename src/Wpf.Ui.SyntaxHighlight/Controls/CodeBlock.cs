@@ -94,7 +94,7 @@ public class CodeBlock : System.Windows.Controls.ContentControl
 
         var richTextBox = new RichTextBox()
         {
-            IsTextSelectionEnabled     = true,
+            UseTextBlockAppearance     = true,
             VerticalContentAlignment   = VerticalAlignment.Center,
             VerticalAlignment          = VerticalAlignment.Center,
             HorizontalAlignment        = HorizontalAlignment.Left,

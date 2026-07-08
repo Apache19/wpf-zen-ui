@@ -290,7 +290,7 @@
             </Popup>
         </Grid>
         <ControlTemplate.Triggers>
-            <Trigger Property="CurrentPlaceholderEnabled" Value="False">
+            <Trigger Property="IsPlaceholderVisible" Value="False">
                 <Setter TargetName="PlaceholderTextBox" Property="Visibility" Value="Collapsed" />
             </Trigger>
             <Trigger Property="IsClearButtonVisible" Value="False">
@@ -353,6 +353,7 @@
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="Border.CornerRadius" Value="{m:VariableResource ControlCornerRadius}" />
         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
         <Setter Property="MinHeight" Value="{m:VariableResource TextControlThemeMinHeight}" />
         <Setter Property="MinWidth" Value="{m:VariableResource TextControlThemeMinWidth}" />
         <Setter Property="Padding" Value="{m:VariableResource TextControlThemePadding}" />

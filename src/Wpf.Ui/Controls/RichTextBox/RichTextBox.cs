@@ -4,8 +4,8 @@
 // All Rights Reserved.
 
 using System.Windows.Controls;
-using System.Windows.Input;
 using System.Windows.Documents;
+using System.Windows.Input;
 
 // ReSharper disable once CheckNamespace
 
@@ -18,9 +18,9 @@ public class RichTextBox : System.Windows.Controls.RichTextBox
 {
     private readonly TextEditorMouseInputHelper _mouseInputHelper;
 
-    /// <summary>Identifies the <see cref="IsTextSelectionEnabled"/> dependency property.</summary>
-    public static readonly DependencyProperty IsTextSelectionEnabledProperty = DependencyProperty.Register(
-        nameof(IsTextSelectionEnabled),
+    /// <summary>Identifies the <see cref="UseTextBlockAppearance"/> dependency property.</summary>
+    public static readonly DependencyProperty UseTextBlockAppearanceProperty = DependencyProperty.Register(
+        nameof(UseTextBlockAppearance),
         typeof(bool),
         typeof(RichTextBox),
         new PropertyMetadata(false)
@@ -45,12 +45,12 @@ public class RichTextBox : System.Windows.Controls.RichTextBox
     }
 
     /// <summary>
-    /// Gets or sets a value indicating whether the user can select text in the control.
+    /// Gets or sets a value indicating whether the control should use a plain selectable text appearance.
     /// </summary>
-    public bool IsTextSelectionEnabled
+    public bool UseTextBlockAppearance
     {
-        get => (bool)GetValue(IsTextSelectionEnabledProperty);
-        set => SetValue(IsTextSelectionEnabledProperty, value);
+        get => (bool)GetValue(UseTextBlockAppearanceProperty);
+        set => SetValue(UseTextBlockAppearanceProperty, value);
     }
 
     /// <inheritdoc />

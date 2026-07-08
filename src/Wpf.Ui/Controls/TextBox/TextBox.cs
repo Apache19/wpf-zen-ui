@@ -90,22 +90,30 @@ public class TextBox : System.Windows.Controls.TextBox
         set => SetValue(PlaceholderEnabledProperty, value);
     }
 
-    /// <summary>Identifies the <see cref="CurrentPlaceholderEnabled"/> dependency property.</summary>
-    public static readonly DependencyProperty CurrentPlaceholderEnabledProperty =
-        DependencyProperty.Register(
-            nameof(CurrentPlaceholderEnabled),
+    // ReSharper disable once MemberCanBePrivate.Global for IsPlaceholderVisiblePropertyKey
+
+    /// <summary>
+    /// Identifies the <see cref="IsPlaceholderVisible"/> dependency property.
+    /// </summary>
+    protected static readonly DependencyPropertyKey IsPlaceholderVisiblePropertyKey =
+        DependencyProperty.RegisterReadOnly(
+            nameof(IsPlaceholderVisible),
             typeof(bool),
             typeof(TextBox),
             new PropertyMetadata(true)
         );
 
+    /// <summary>Identifies the <see cref="IsPlaceholderVisible"/> dependency property.</summary>
+    public static readonly DependencyProperty IsPlaceholderVisibleProperty =
+        IsPlaceholderVisiblePropertyKey.DependencyProperty;
+
     /// <summary>
-    /// Gets or sets a value indicating whether to display the placeholder text.
+    /// Gets or sets a value indicating whether the placeholder text is currently visible.
     /// </summary>
-    public bool CurrentPlaceholderEnabled
+    public bool IsPlaceholderVisible
     {
-        get => (bool)GetValue(CurrentPlaceholderEnabledProperty);
-        protected set => SetValue(CurrentPlaceholderEnabledProperty, value);
+        get => (bool)GetValue(IsPlaceholderVisibleProperty);
+        protected set => SetValue(IsPlaceholderVisiblePropertyKey, value);
     }
 
     /// <summary>Identifies the <see cref="ClearButtonEnabled"/> dependency property.</summary>
@@ -139,14 +147,12 @@ public class TextBox : System.Windows.Controls.TextBox
             new PropertyMetadata(false)
         );
 
-    /// <summary>
-    /// Exposes the read-only <see cref="IsClearButtonVisible"/> dependency property key.
-    /// </summary>
+    /// <summary>Identifies the <see cref="IsClearButtonVisible"/> dependency property.</summary>
     public static readonly DependencyProperty IsClearButtonVisibleProperty =
         IsClearButtonVisiblePropertyKey.DependencyProperty;
 
     /// <summary>
-    /// Gets a value indicating whether the clear button is currently visible.
+    /// Gets or sets a value indicating whether the clear button is currently visible.
     /// </summary>
     public bool IsClearButtonVisible
     {
@@ -172,22 +178,22 @@ public class TextBox : System.Windows.Controls.TextBox
         set => SetValue(IsFocusIndicatorVisibleProperty, value);
     }
 
-    /// <summary>Identifies the <see cref="IsTextSelectionEnabled"/> dependency property.</summary>
-    public static readonly DependencyProperty IsTextSelectionEnabledProperty =
+    /// <summary>Identifies the <see cref="UseTextBlockAppearance"/> dependency property.</summary>
+    public static readonly DependencyProperty UseTextBlockAppearanceProperty =
         DependencyProperty.Register(
-            nameof(IsTextSelectionEnabled),
+            nameof(UseTextBlockAppearance),
             typeof(bool),
             typeof(TextBox),
             new PropertyMetadata(false)
         );
 
     /// <summary>
-    /// Gets or sets a value indicating whether text selection is enabled.
+    /// Gets or sets a value indicating whether the control should use a plain selectable text appearance.
     /// </summary>
-    public bool IsTextSelectionEnabled
+    public bool UseTextBlockAppearance
     {
-        get => (bool)GetValue(IsTextSelectionEnabledProperty);
-        set => SetValue(IsTextSelectionEnabledProperty, value);
+        get => (bool)GetValue(UseTextBlockAppearanceProperty);
+        set => SetValue(UseTextBlockAppearanceProperty, value);
     }
 
     /// <summary>Identifies the <see cref="TemplateButtonCommand"/> dependency property.</summary>
@@ -220,7 +226,7 @@ public class TextBox : System.Windows.Controls.TextBox
         _mouseInputHelper = new TextEditorMouseInputHelper(this);
 
         SetValue(TemplateButtonCommandProperty, new RelayCommand<string>(OnTemplateButtonClick));
-        CurrentPlaceholderEnabled = PlaceholderEnabled;
+        IsPlaceholderVisible = PlaceholderEnabled;
 
         // Cursor is normally resolved through a bubbling QueryCursor event. Using
         // handledEventsToo lets us correct the cursor even if PART_ContentHost.Cursor has
@@ -267,19 +273,19 @@ public class TextBox : System.Windows.Controls.TextBox
     {
         if (PlaceholderEnabled)
         {
-            if (CurrentPlaceholderEnabled && Text.Length > 0)
+            if (IsPlaceholderVisible && Text.Length > 0)
             {
-                SetCurrentValue(CurrentPlaceholderEnabledProperty, false);
+                IsPlaceholderVisible = false;
             }
 
-            if (!CurrentPlaceholderEnabled && Text.Length < 1)
+            if (!IsPlaceholderVisible && Text.Length < 1)
             {
-                SetCurrentValue(CurrentPlaceholderEnabledProperty, true);
+                IsPlaceholderVisible = true;
             }
         }
-        else if (CurrentPlaceholderEnabled)
+        else if (IsPlaceholderVisible)
         {
-            SetCurrentValue(CurrentPlaceholderEnabledProperty, false);
+            IsPlaceholderVisible = false;
         }
     }
 
@@ -320,7 +326,12 @@ public class TextBox : System.Windows.Controls.TextBox
     {
         if (ClearButtonEnabled && IsKeyboardFocusWithin)
         {
-            SetValue(IsClearButtonVisiblePropertyKey, Text.Length > 0);
+            bool shouldShowClearButton = Text.Length > 0;
+
+            if (IsClearButtonVisible != shouldShowClearButton)
+            {
+                IsClearButtonVisible = shouldShowClearButton;
+            }
         }
     }
 
@@ -333,7 +344,7 @@ public class TextBox : System.Windows.Controls.TextBox
     {
         if (ClearButtonEnabled && !IsKeyboardFocusWithin && IsClearButtonVisible)
         {
-            SetValue(IsClearButtonVisiblePropertyKey, false);
+            IsClearButtonVisible = false;
         }
     }
 

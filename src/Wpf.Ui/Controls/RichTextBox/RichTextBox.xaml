@@ -73,7 +73,7 @@
 
     <Style x:Key="DefaultUiRichTextBoxStyle" BasedOn="{StaticResource DefaultRichTextBoxStyle}" TargetType="{x:Type controls:RichTextBox}">
         <Style.Triggers>
-            <Trigger Property="IsTextSelectionEnabled" Value="True">
+            <Trigger Property="UseTextBlockAppearance" Value="True">
                 <Setter Property="IsReadOnly" Value="True" />
                 <Setter Property="Background" Value="Transparent" />
                 <Setter Property="Padding" Value="0" />
