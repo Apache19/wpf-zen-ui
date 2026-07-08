@@ -50,7 +50,6 @@
                 <Button
                     Grid.Column="0"
                     MinWidth="200"
-                    Padding="{ui:VariableResource TextControlThemePadding}"
                     HorizontalAlignment="Left"
                     VerticalAlignment="Center"
                     Content="Standard WPF button"
@@ -88,7 +87,6 @@
                 <ui:Button
                     Grid.Column="0"
                     MinWidth="200"
-                    Padding="{ui:VariableResource TextControlThemePadding}"
                     HorizontalAlignment="Left"
                     VerticalAlignment="Center"
                     Appearance="{Binding ButtonAppearance}"
@@ -118,7 +116,6 @@
             XamlCode="&lt;ui:Button Appearance=&quot;Primary&quot; /&gt;">
             <ui:Button
                 MinWidth="200"
-                Padding="{ui:VariableResource TextControlThemePadding}"
                 HorizontalAlignment="Left"
                 Appearance="Normal"
                 Content="WPF UI button with font icon"
@@ -131,7 +128,6 @@
             XamlCode="&lt;ui:Button Appearance=&quot;Primary&quot; /&gt;">
             <ui:Button
                 MinWidth="200"
-                Padding="{ui:VariableResource TextControlThemePadding}"
                 HorizontalAlignment="Left"
                 Appearance="Normal"
                 Content="WPF UI button with image icon"
@@ -144,7 +140,6 @@
             XamlCode="&lt;ui:Button Appearance=&quot;Primary&quot; /&gt;">
             <ui:Button
                 Width="40"
-                Padding="{ui:VariableResource TextControlThemePadding}"
                 HorizontalAlignment="Left"
                 ContentTemplate="{StaticResource ViewBoxCustomButtonContentTemplate}">
                 <Canvas Width="47" Height="99">

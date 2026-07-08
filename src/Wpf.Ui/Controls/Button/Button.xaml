@@ -35,25 +35,19 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type Button}">
-                    <Border
-                        x:Name="ContentBorder"
+                    <controls:UiBorder
+                        x:Name="PART_RootBorder"
+                        Padding="{TemplateBinding Padding}"
                         Background="{TemplateBinding Background}"
                         BorderBrush="{TemplateBinding BorderBrush}"
                         BorderThickness="{TemplateBinding BorderThickness}"
                         CornerRadius="{TemplateBinding Border.CornerRadius}">
-                        <Border
-                            x:Name="InsetBorder"
-                            Padding="{TemplateBinding Padding}"
-                            BorderBrush="{Binding ElementName=ContentBorder, Mode=OneWay, Path=BorderBrush}"
-                            BorderThickness="0"
-                            CornerRadius="{TemplateBinding Border.CornerRadius}">
-                            <ContentPresenter
-                                x:Name="ContentPresenter"
-                                HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
-                                VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
-                                RecognizesAccessKey="True" />
-                        </Border>
-                    </Border>
+                        <ContentPresenter
+                            x:Name="ContentPresenter"
+                            HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                            VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                            RecognizesAccessKey="True" />
+                    </controls:UiBorder>
                     <ControlTemplate.Triggers>
 
                         <MultiTrigger>
@@ -61,7 +55,7 @@
                                 <Condition Property="IsDefault" Value="False" />
                                 <Condition Property="IsMouseOver" Value="True" />
                             </MultiTrigger.Conditions>
-                            <Setter TargetName="ContentBorder" Property="Background" Value="{m:BrushResource ControlFillColorPrimaryBrush}" />
+                            <Setter TargetName="PART_RootBorder" Property="Background" Value="{m:BrushResource ControlFillColorPrimaryBrush}" />
                         </MultiTrigger>
 
                         <MultiTrigger>
@@ -69,16 +63,14 @@
                                 <Condition Property="IsDefault" Value="False" />
                                 <Condition Property="IsPressed" Value="True" />
                             </MultiTrigger.Conditions>
-                            <Setter TargetName="ContentBorder" Property="Background" Value="{m:BrushResource ControlFillColorTertiaryBrush}" />
-                            <Setter TargetName="ContentBorder" Property="BorderBrush" Value="{m:BrushResource ControlStrokeColorDefaultBrush}" />
+                            <Setter TargetName="PART_RootBorder" Property="Background" Value="{m:BrushResource ControlFillColorTertiaryBrush}" />
+                            <Setter TargetName="PART_RootBorder" Property="BorderBrush" Value="{m:BrushResource ControlStrokeColorDefaultBrush}" />
                             <Setter TargetName="ContentPresenter" Property="Control.Foreground" Value="{m:BrushResource TextFillColorTertiaryBrush}" />
                         </MultiTrigger>
 
                         <Trigger Property="IsDefault" Value="True">
-                            <Setter TargetName="InsetBorder" Property="BorderThickness" Value="{Binding BorderThickness, RelativeSource={RelativeSource TemplatedParent}}" />
-                            <Setter TargetName="ContentBorder" Property="BorderThickness" Value="0" />
-                            <Setter TargetName="ContentBorder" Property="Background" Value="{m:BrushResource AccentFillColorDefaultBrush}" />
-                            <Setter TargetName="ContentBorder" Property="BorderBrush" Value="{m:BrushResource AccentControlElevationBorderBrush}" />
+                            <Setter TargetName="PART_RootBorder" Property="Background" Value="{m:BrushResource AccentFillColorDefaultBrush}" />
+                            <Setter TargetName="PART_RootBorder" Property="BorderBrush" Value="{m:BrushResource AccentControlElevationBorderBrush}" />
                             <Setter TargetName="ContentPresenter" Property="Control.Foreground" Value="{m:BrushResource TextOnAccentFillColorPrimaryBrush}" />
                         </Trigger>
 
@@ -87,7 +79,7 @@
                                 <Condition Property="IsDefault" Value="True" />
                                 <Condition Property="IsMouseOver" Value="True" />
                             </MultiTrigger.Conditions>
-                            <Setter TargetName="ContentBorder" Property="Background" Value="{m:BrushResource AccentFillColorSecondaryBrush}" />
+                            <Setter TargetName="PART_RootBorder" Property="Background" Value="{m:BrushResource AccentFillColorSecondaryBrush}" />
                         </MultiTrigger>
 
                         <MultiTrigger>
@@ -95,14 +87,14 @@
                                 <Condition Property="IsDefault" Value="True" />
                                 <Condition Property="IsPressed" Value="True" />
                             </MultiTrigger.Conditions>
-                            <Setter TargetName="ContentBorder" Property="Background" Value="{m:BrushResource AccentFillColorTertiaryBrush}" />
-                            <Setter TargetName="ContentBorder" Property="BorderBrush" Value="Transparent" />
+                            <Setter TargetName="PART_RootBorder" Property="Background" Value="{m:BrushResource AccentFillColorTertiaryBrush}" />
+                            <Setter TargetName="PART_RootBorder" Property="BorderBrush" Value="Transparent" />
                             <Setter TargetName="ContentPresenter" Property="Control.Foreground" Value="{m:BrushResource TextOnAccentFillColorSecondaryBrush}" />
                         </MultiTrigger>
 
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter TargetName="ContentBorder" Property="Background" Value="{m:BrushResource ControlFillColorDisabledBrush}" />
-                            <Setter TargetName="ContentBorder" Property="BorderBrush" Value="{m:BrushResource ControlStrokeColorDefaultBrush}" />
+                            <Setter TargetName="PART_RootBorder" Property="Background" Value="{m:BrushResource ControlFillColorDisabledBrush}" />
+                            <Setter TargetName="PART_RootBorder" Property="BorderBrush" Value="{m:BrushResource ControlStrokeColorDefaultBrush}" />
                             <Setter TargetName="ContentPresenter" Property="Control.Foreground" Value="{m:BrushResource TextFillColorDisabledBrush}" />
                         </Trigger>
 
@@ -129,7 +121,7 @@
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type RepeatButton}">
                     <Border
-                        x:Name="ContentBorder"
+                        x:Name="PART_RootBorder"
                         Background="{TemplateBinding Background}"
                         BorderBrush="{TemplateBinding BorderBrush}"
                         BorderThickness="{TemplateBinding BorderThickness}"
@@ -142,17 +134,17 @@
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="ContentBorder" Property="Background" Value="{m:BrushResource ControlFillColorPrimaryBrush}" />
-                            <Setter TargetName="ContentBorder" Property="BorderBrush" Value="{m:BrushResource ControlElevationBorderBrush}" />
+                            <Setter TargetName="PART_RootBorder" Property="Background" Value="{m:BrushResource ControlFillColorPrimaryBrush}" />
+                            <Setter TargetName="PART_RootBorder" Property="BorderBrush" Value="{m:BrushResource ControlElevationBorderBrush}" />
                         </Trigger>
                         <Trigger Property="IsPressed" Value="True">
-                            <Setter TargetName="ContentBorder" Property="Background" Value="{m:BrushResource ControlFillColorTertiaryBrush}" />
-                            <Setter TargetName="ContentBorder" Property="BorderBrush" Value="{m:BrushResource ControlStrokeColorDefaultBrush}" />
+                            <Setter TargetName="PART_RootBorder" Property="Background" Value="{m:BrushResource ControlFillColorTertiaryBrush}" />
+                            <Setter TargetName="PART_RootBorder" Property="BorderBrush" Value="{m:BrushResource ControlStrokeColorDefaultBrush}" />
                             <Setter TargetName="ContentPresenter" Property="Control.Foreground" Value="{m:BrushResource TextFillColorSecondaryBrush}" />
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter TargetName="ContentBorder" Property="Background" Value="{m:BrushResource SubtleFillColorDisabledBrush}" />
-                            <Setter TargetName="ContentBorder" Property="BorderBrush" Value="{m:BrushResource ControlStrokeColorDefaultBrush}" />
+                            <Setter TargetName="PART_RootBorder" Property="Background" Value="{m:BrushResource SubtleFillColorDisabledBrush}" />
+                            <Setter TargetName="PART_RootBorder" Property="BorderBrush" Value="{m:BrushResource ControlStrokeColorDefaultBrush}" />
                             <Setter TargetName="ContentPresenter" Property="Control.Foreground" Value="{m:BrushResource TextFillColorDisabledBrush}" />
                         </Trigger>
                     </ControlTemplate.Triggers>
@@ -161,96 +153,100 @@
         </Setter>
     </Style>
 
+    <ControlTemplate x:Key="UiButtonControlTemplate" TargetType="{x:Type controls:Button}">
+        <Border
+            x:Name="PART_RootBorder"
+            Padding="{TemplateBinding Padding}"
+            Background="{TemplateBinding Background}"
+            BorderBrush="{TemplateBinding BorderBrush}"
+            BorderThickness="{TemplateBinding BorderThickness}"
+            CornerRadius="{TemplateBinding CornerRadius}"
+            SnapsToDevicePixels="True">
+            <Grid HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <ContentPresenter
+                    x:Name="ControlIcon"
+                    Grid.Column="0"
+                    Margin="{StaticResource ButtonIconMargin}"
+                    VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                    ContentSource="Icon"
+                    Focusable="False"
+                    SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
+
+                <ContentPresenter
+                    x:Name="ContentPresenter"
+                    Grid.Column="1"
+                    VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                    Focusable="False"
+                    RecognizesAccessKey="True"
+                    SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
+            </Grid>
+        </Border>
+        <ControlTemplate.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter TargetName="PART_RootBorder" Property="Background" Value="{Binding MouseOverBackground, RelativeSource={RelativeSource TemplatedParent}}" />
+                <Setter TargetName="PART_RootBorder" Property="BorderBrush" Value="{Binding MouseOverBorderBrush, RelativeSource={RelativeSource TemplatedParent}}" />
+            </Trigger>
+            <Trigger Property="IsPressed" Value="True">
+                <Setter TargetName="PART_RootBorder" Property="Background" Value="{Binding PressedBackground, RelativeSource={RelativeSource TemplatedParent}}" />
+                <Setter TargetName="PART_RootBorder" Property="BorderBrush" Value="{Binding PressedBorderBrush, RelativeSource={RelativeSource TemplatedParent}}" />
+                <Setter TargetName="ContentPresenter" Property="Control.Foreground" Value="{Binding PressedForeground, RelativeSource={RelativeSource TemplatedParent}}" />
+                <Setter TargetName="ControlIcon" Property="Control.Foreground" Value="{Binding PressedForeground, RelativeSource={RelativeSource TemplatedParent}}" />
+            </Trigger>
+            <Trigger Property="Content" Value="{x:Null}">
+                <Setter TargetName="ControlIcon" Property="Margin" Value="0" />
+            </Trigger>
+            <Trigger Property="Content" Value="">
+                <Setter TargetName="ControlIcon" Property="Margin" Value="0" />
+            </Trigger>
+            <Trigger Property="Icon" Value="{x:Null}">
+                <Setter TargetName="ControlIcon" Property="Margin" Value="0" />
+                <Setter TargetName="ControlIcon" Property="Visibility" Value="Collapsed" />
+            </Trigger>
+        </ControlTemplate.Triggers>
+    </ControlTemplate>
+
+    <!--  todo: 测试不设置交互色，使用背景色默认元数据的默认值时，是不是会丢失  -->
     <Style x:Key="{x:Static t:StyleKeys.UiButtonStyle}" TargetType="{x:Type controls:Button}">
         <Setter Property="Padding" Value="{StaticResource ButtonPadding}" />
         <Setter Property="CornerRadius" Value="{m:VariableResource ControlCornerRadius}" />
-        <Setter Property="FocusVisualStyle" Value="{m:StyleResource DefaultControlFocusVisualStyle}" />
         <Setter Property="HorizontalContentAlignment" Value="Center" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
-        <Setter Property="Background" Value="{m:BrushResource ControlFillColorSecondaryBrush}" />
-        <Setter Property="BorderBrush" Value="{m:BrushResource ControlElevationBorderBrush}" />
-        <Setter Property="BorderThickness" Value="{StaticResource ButtonBorderThemeThickness}" />
-        <Setter Property="Foreground" Value="{m:BrushResource TextFillColorPrimaryBrush}" />
-        <Setter Property="MouseOverBackground" Value="{m:BrushResource ControlFillColorPrimaryBrush}" />
-        <Setter Property="MouseOverBorderBrush" Value="{m:BrushResource ControlElevationBorderBrush}" />
-        <Setter Property="PressedBackground" Value="{m:BrushResource ControlFillColorTertiaryBrush}" />
-        <Setter Property="PressedBorderBrush" Value="{m:BrushResource ControlStrokeColorDefaultBrush}" />
         <Setter Property="PressedForeground" Value="{m:BrushResource TextFillColorTertiaryBrush}" />
+        <Setter Property="BorderThickness" Value="{StaticResource ButtonBorderThemeThickness}" />
 
-        <Setter Property="Template">
+        <!--  #warni  -->
+        <Setter Property="Background" Value="{m:BrushResource ControlFillColorSecondaryBrush}" />
+        <Setter Property="MouseOverBackground" Value="{m:BrushResource ControlFillColorPrimaryBrush}" />
+        <Setter Property="PressedBackground" Value="{m:BrushResource ControlFillColorTertiaryBrush}" />
+
+        <Setter Property="BorderBrush" Value="{m:BrushResource ControlStrokeColorDefaultBrush}" />
+        <Setter Property="MouseOverBorderBrush" Value="{m:BrushResource ControlElevationBorderBrush}" />
+        <Setter Property="PressedBorderBrush" Value="{m:BrushResource ControlStrokeColorDefaultBrush}" />
+
+        <Setter Property="Template" Value="{StaticResource UiButtonControlTemplate}" />
+
+        <Setter Property="FocusVisualStyle">
             <Setter.Value>
-                <ControlTemplate TargetType="{x:Type controls:Button}">
-                    <Border
-                        x:Name="ContentBorder"
-                        Background="{TemplateBinding Background}"
-                        BorderBrush="{TemplateBinding BorderBrush}"
-                        BorderThickness="0"
-                        CornerRadius="{TemplateBinding CornerRadius}">
-                        <!--  The inset border is only used for appearances other than Normal  -->
-                        <Border
-                            x:Name="InsetBorder"
-                            Padding="{TemplateBinding Padding}"
-                            BorderBrush="{Binding ElementName=ContentBorder, Mode=OneWay, Path=BorderBrush}"
-                            BorderThickness="{TemplateBinding BorderThickness}"
-                            CornerRadius="{TemplateBinding CornerRadius}">
-                            <Grid HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
-                                <!--  Icon  -->
-                                <ContentPresenter
-                                    x:Name="ControlIcon"
-                                    Grid.Column="0"
-                                    Margin="{StaticResource ButtonIconMargin}"
-                                    VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
-                                    Content="{TemplateBinding Icon}"
-                                    Focusable="False"
-                                    SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
-                                <!--  Content  -->
-                                <ContentPresenter
-                                    x:Name="ContentPresenter"
-                                    Grid.Column="1"
-                                    VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
-                                    Content="{TemplateBinding Content}"
-                                    ContentTemplate="{TemplateBinding ContentTemplate}"
-                                    Focusable="False"
-                                    RecognizesAccessKey="True"
-                                    SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
-                            </Grid>
-                        </Border>
-                    </Border>
-                    <ControlTemplate.Triggers>
-                        <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="ContentBorder" Property="Background" Value="{Binding MouseOverBackground, RelativeSource={RelativeSource TemplatedParent}}" />
-                            <Setter TargetName="ContentBorder" Property="BorderBrush" Value="{Binding MouseOverBorderBrush, RelativeSource={RelativeSource TemplatedParent}}" />
-                        </Trigger>
-                        <Trigger Property="IsPressed" Value="True">
-                            <Setter TargetName="ContentBorder" Property="Background" Value="{Binding PressedBackground, RelativeSource={RelativeSource TemplatedParent}}" />
-                            <Setter TargetName="ContentBorder" Property="BorderBrush" Value="{Binding PressedBorderBrush, RelativeSource={RelativeSource TemplatedParent}}" />
-                            <Setter TargetName="ContentPresenter" Property="Control.Foreground" Value="{Binding PressedForeground, RelativeSource={RelativeSource TemplatedParent}}" />
-                            <Setter TargetName="ControlIcon" Property="Control.Foreground" Value="{Binding PressedForeground, RelativeSource={RelativeSource TemplatedParent}}" />
-                        </Trigger>
-                        <Trigger Property="Content" Value="{x:Null}">
-                            <Setter TargetName="ControlIcon" Property="Margin" Value="0" />
-                        </Trigger>
-                        <Trigger Property="Content" Value="">
-                            <Setter TargetName="ControlIcon" Property="Margin" Value="0" />
-                        </Trigger>
-                        <Trigger Property="Icon" Value="{x:Null}">
-                            <Setter TargetName="ControlIcon" Property="Margin" Value="0" />
-                            <Setter TargetName="ControlIcon" Property="Visibility" Value="Collapsed" />
-                        </Trigger>
-                        <MultiTrigger>
-                            <MultiTrigger.Conditions>
-                                <Condition Property="Appearance" Value="Normal" />
-                                <Condition Property="IsDefault" Value="False" />
-                            </MultiTrigger.Conditions>
-                            <Setter TargetName="InsetBorder" Property="BorderThickness" Value="0" />
-                            <Setter TargetName="ContentBorder" Property="BorderThickness" Value="{Binding BorderThickness, RelativeSource={RelativeSource TemplatedParent}}" />
-                        </MultiTrigger>
-                    </ControlTemplate.Triggers>
-                </ControlTemplate>
+                <Style>
+                    <Setter Property="Control.Template">
+                        <Setter.Value>
+                            <ControlTemplate>
+                                <!--  改成 Border，圆角与按钮圆角属性同步  -->
+                                <Rectangle
+                                    RadiusX="4"
+                                    RadiusY="4"
+                                    SnapsToDevicePixels="True"
+                                    Stroke="{m:BrushResource KeyboardFocusBorderColorBrush}"
+                                    StrokeThickness="1" />
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
             </Setter.Value>
         </Setter>
 
