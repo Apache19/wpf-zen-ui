@@ -17,7 +17,10 @@
 
     <StackPanel Margin="0,0,0,24">
         <controls:ControlExample HeaderText="A simple TextBox." XamlCode="&lt;TextBox /&gt;">
-            <TextBox Width="250" HorizontalAlignment="Left" ui:PlaceholderService.Content="A WPF Native TextBox"/>
+            <TextBox
+                Width="250"
+                HorizontalAlignment="Left"
+                ui:PlaceholderService.Content="A WPF Native TextBox" />
         </controls:ControlExample>
 
         <controls:ControlExample
@@ -48,9 +51,10 @@
             <ui:TextBox
                 MinHeight="100"
                 MaxHeight="150"
+                VerticalContentAlignment="Top"
                 AcceptsReturn="True"
-                ClearButtonEnabled="False"
                 HorizontalScrollBarVisibility="Disabled"
+                Icon="{ui:SymbolIcon DocumentBulletList24}"
                 PlaceholderText="Type something..."
                 TextWrapping="Wrap"
                 VerticalScrollBarVisibility="Auto" />

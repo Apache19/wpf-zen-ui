@@ -20,8 +20,10 @@
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Resources/DefaultEditorContextMenu.xaml" />
     </ResourceDictionary.MergedDictionaries>
 
-
-    <converters:ThicknessTransformConverter x:Key="IconPaddingConverter" />
+    <converters:ThicknessTransformConverter x:Key="IconTopPaddingConverter" CopySides="Top" Offset="0 1 0 0" />
+    <converters:ThicknessTransformConverter x:Key="IconBottomPaddingConverter" CopySides="Bottom" Offset="0 0 0 -1" />
+    <converters:ThicknessTransformConverter x:Key="ButtonTopPaddingConverter" CopySides="Top" Offset="0 -3 0 0" />
+    <converters:ThicknessTransformConverter x:Key="ButtonBottomPaddingConverter" CopySides="Bottom" Offset="0 0 0 -3" />
 
     <ControlTemplate x:Key="DefaultUiTextBoxControlTemplate" TargetType="{x:Type controls:TextBox}">
         <Grid>
@@ -41,18 +43,34 @@
                     </Grid.ColumnDefinitions>
 
                     <!--
-                        The icon can only be vertically centered. For multi-line text (AcceptsReturn == true),
-                        it is recommended to disable the icon.
+                        Uses a Border to sense VerticalContentAlignment while keeping the icon's own vertical
+                        alignment fixed at the top, in order to match TextBoxViewer's intrinsic layout behavior:
+                        
+                        - When VerticalContentAlignment is Stretch, TextBoxViewer positions its text at the top.
+                        The Border stretches vertically to fill the full height, while the icon stays top-anchored.
+                        A converter clones the top and bottom values of Padding onto the icon, giving it exactly
+                        the same vertical offsets as the text, so that it aligns with the text at the top under
+                        any Padding setting.
+                        
+                        - For Top, Center, or Bottom, the Border collapses to fit its content and moves as a unit
+                        with the icon. The icon carries the full top and bottom Padding offsets as well, so it
+                        aligns precisely according to the specified VerticalContentAlignment, staying in sync with
+                        the text position.
                     -->
-                    <ContentPresenter
-                        x:Name="iconPresenter"
+                    <Border
+                        x:Name="IconContainer"
                         Grid.Column="0"
                         Margin="10,0,0,0"
-                        VerticalAlignment="Center"
-                        ContentSource="Icon"
-                        Focusable="False"
-                        IsHitTestVisible="False"
-                        TextElement.FontSize="16" />
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                        IsHitTestVisible="False">
+                        <ContentPresenter
+                            x:Name="IconPresenter"
+                            VerticalAlignment="Top"
+                            ContentSource="Icon"
+                            Focusable="False"
+                            TextElement.FontSize="16" />
+                    </Border>
 
                     <!--
                         Placeholder text simulates the internal layout:
@@ -79,10 +97,6 @@
                         IsHitTestVisible="False"
                         Text="{TemplateBinding PlaceholderText}" />
 
-                    <!--
-                        Do not set excessive noise properties on PART_ContentHost; the TextBox internally
-                        applies layout automatically.
-                    -->
                     <controls:PassiveScrollViewer
                         x:Name="PART_ContentHost"
                         Grid.Column="1"
@@ -91,16 +105,21 @@
                         ScrollSpillMode="Disabled"
                         VerticalScrollBarVisibility="Hidden" />
 
+                    <!--
+                        Applies the same vertical alignment mechanism as the icon container above to keep
+                        the clear button's layout behavior consistent with TextBoxViewer.
+                        See the IconContainer comments for detailed explanation.
+                    -->
                     <Border
+                        x:Name="ClearButtonContainer"
                         Grid.Column="2"
-                        Padding="{TemplateBinding Padding, Converter={converters:ThicknessTransformConverter CopySides=Vertical, Offset=0 -3 0 -3}}"
+                        Margin="0,0,4,0"
                         HorizontalAlignment="Center"
                         VerticalAlignment="{TemplateBinding VerticalContentAlignment}">
                         <controls:Button
                             x:Name="ClearButton"
                             MinWidth="24"
                             MinHeight="24"
-                            Margin="0,0,4,0"
                             Padding="0"
                             VerticalAlignment="Top"
                             Appearance="Transparent"
@@ -125,25 +144,39 @@
 
             <!--  Layout triggers  -->
 
+            <Trigger Property="VerticalContentAlignment" Value="Stretch">
+                <Setter TargetName="IconPresenter" Property="Margin" Value="{Binding Padding, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource IconTopPaddingConverter}}" />
+                <Setter TargetName="ClearButton" Property="Margin" Value="{Binding Padding, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource ButtonTopPaddingConverter}}" />
+            </Trigger>
+            <Trigger Property="VerticalContentAlignment" Value="Top">
+                <Setter TargetName="IconPresenter" Property="Margin" Value="{Binding Padding, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource IconTopPaddingConverter}}" />
+                <Setter TargetName="ClearButton" Property="Margin" Value="{Binding Padding, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource ButtonTopPaddingConverter}}" />
+            </Trigger>
+            <Trigger Property="VerticalContentAlignment" Value="Bottom">
+                <Setter TargetName="IconPresenter" Property="Margin" Value="{Binding Padding, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource IconBottomPaddingConverter}}" />
+                <Setter TargetName="ClearButton" Property="Margin" Value="{Binding Padding, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource ButtonBottomPaddingConverter}}" />
+            </Trigger>
+
             <Trigger Property="CurrentPlaceholderEnabled" Value="False">
                 <Setter TargetName="PlaceholderTextBox" Property="Visibility" Value="Collapsed" />
             </Trigger>
+
             <Trigger Property="IsClearButtonVisible" Value="False">
-                <Setter TargetName="ClearButton" Property="Visibility" Value="Collapsed" />
+                <Setter TargetName="ClearButtonContainer" Property="Visibility" Value="Collapsed" />
             </Trigger>
             <Trigger Property="ClearButtonEnabled" Value="False">
-                <Setter TargetName="ClearButton" Property="Visibility" Value="Collapsed" />
+                <Setter TargetName="ClearButtonContainer" Property="Visibility" Value="Collapsed" />
             </Trigger>
             <Trigger Property="IsReadOnly" Value="True">
-                <Setter TargetName="ClearButton" Property="Visibility" Value="Collapsed" />
+                <Setter TargetName="ClearButtonContainer" Property="Visibility" Value="Collapsed" />
             </Trigger>
             <Trigger Property="IconPlacement" Value="Right">
-                <Setter TargetName="iconPresenter" Property="Grid.Column" Value="3" />
-                <Setter TargetName="iconPresenter" Property="Margin" Value="0,0,10,0" />
+                <Setter TargetName="IconContainer" Property="Grid.Column" Value="3" />
+                <Setter TargetName="IconContainer" Property="Margin" Value="0,0,10,0" />
             </Trigger>
             <Trigger Property="Icon" Value="{x:Null}">
-                <Setter TargetName="iconPresenter" Property="Visibility" Value="Collapsed" />
-                <Setter TargetName="iconPresenter" Property="Margin" Value="0" />
+                <Setter TargetName="IconContainer" Property="Visibility" Value="Collapsed" />
+                <Setter TargetName="IconContainer" Property="Margin" Value="0" />
             </Trigger>
 
             <!--  Visual triggers  -->
@@ -203,6 +236,7 @@
         <Setter Property="BorderBrush" Value="{m:BrushResource ControlStrokeColorSecondaryBrush}" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
         <Setter Property="MinHeight" Value="{m:VariableResource TextControlThemeMinHeight}" />
         <Setter Property="MinWidth" Value="{m:VariableResource TextControlThemeMinWidth}" />
         <Setter Property="Padding" Value="{m:VariableResource TextControlThemePadding}" />
