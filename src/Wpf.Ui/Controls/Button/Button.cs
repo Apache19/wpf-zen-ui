@@ -4,6 +4,7 @@
 // All Rights Reserved.
 
 using System.Windows.Controls;
+using System.Windows.Input;
 
 // ReSharper disable once CheckNamespace
 namespace Wpf.Ui.Controls;
@@ -48,7 +49,7 @@ public class Button : System.Windows.Controls.Button, IAppearanceControl, IIconC
     {
         get => (IconElement?)GetValue(IconProperty);
         set => SetValue(IconProperty, value);
-    }    
+    }
 
     #endregion
 
@@ -82,20 +83,18 @@ public class Button : System.Windows.Controls.Button, IAppearanceControl, IIconC
             nameof(MouseOverBackground),
             typeof(Brush),
             typeof(Button),
-            new PropertyMetadata(
-                #warning 从默认元数据中取默认值是不靠谱的
-                Border.BackgroundProperty.DefaultMetadata.DefaultValue
-            )
+            new PropertyMetadata(null, OnStateBrushChanged)
         );
 
     /// <summary>
-    /// Gets or sets background <see cref="Brush"/>.
+    /// Gets or sets the background brush used while the pointer is over the button.
+    /// A value of <see langword="null"/> makes the button fall back to <see cref="Control.Background"/>.
     /// </summary>
     [Bindable(true)]
     [Category("Appearance")]
-    public Brush MouseOverBackground
+    public Brush? MouseOverBackground
     {
-        get => (Brush)GetValue(MouseOverBackgroundProperty);
+        get => (Brush?)GetValue(MouseOverBackgroundProperty);
         set => SetValue(MouseOverBackgroundProperty, value);
     }
 
@@ -109,19 +108,18 @@ public class Button : System.Windows.Controls.Button, IAppearanceControl, IIconC
             nameof(MouseOverBorderBrush),
             typeof(Brush),
             typeof(Button),
-            new PropertyMetadata(
-                Border.BorderBrushProperty.DefaultMetadata.DefaultValue
-            )
+            new PropertyMetadata(null, OnStateBrushChanged)
         );
 
     /// <summary>
-    /// Gets or sets border <see cref="Brush"/> when the user mouses over the button.
+    /// Gets or sets the border brush used while the pointer is over the button.
+    /// A value of <see langword="null"/> makes the button fall back to <see cref="Control.BorderBrush"/>.
     /// </summary>
     [Bindable(true)]
     [Category("Appearance")]
-    public Brush MouseOverBorderBrush
+    public Brush? MouseOverBorderBrush
     {
-        get => (Brush)GetValue(MouseOverBorderBrushProperty);
+        get => (Brush?)GetValue(MouseOverBorderBrushProperty);
         set => SetValue(MouseOverBorderBrushProperty, value);
     }
 
@@ -135,20 +133,18 @@ public class Button : System.Windows.Controls.Button, IAppearanceControl, IIconC
             nameof(PressedForeground),
             typeof(Brush),
             typeof(Button),
-            new FrameworkPropertyMetadata(
-                SystemColors.ControlTextBrush,
-                FrameworkPropertyMetadataOptions.Inherits
-            )
+            new PropertyMetadata(null, OnStateBrushChanged)
         );
 
     /// <summary>
-    /// Gets or sets the foreground <see cref="Brush"/> when the user clicks the button.
+    /// Gets or sets the foreground brush used while the button is pressed.
+    /// A value of <see langword="null"/> makes the button fall back to <see cref="Control.Foreground"/>.
     /// </summary>
     [Bindable(true)]
     [Category("Appearance")]
-    public Brush PressedForeground
+    public Brush? PressedForeground
     {
-        get => (Brush)GetValue(PressedForegroundProperty);
+        get => (Brush?)GetValue(PressedForegroundProperty);
         set => SetValue(PressedForegroundProperty, value);
     }
 
@@ -162,19 +158,18 @@ public class Button : System.Windows.Controls.Button, IAppearanceControl, IIconC
             nameof(PressedBackground),
             typeof(Brush),
             typeof(Button),
-            new PropertyMetadata(
-                Border.BackgroundProperty.DefaultMetadata.DefaultValue
-            )
+            new PropertyMetadata(null, OnStateBrushChanged)
         );
 
     /// <summary>
-    /// Gets or sets background <see cref="Brush"/> when the user clicks the button.
+    /// Gets or sets the background brush used while the button is pressed.
+    /// A value of <see langword="null"/> makes the button fall back to <see cref="Control.Background"/>.
     /// </summary>
     [Bindable(true)]
     [Category("Appearance")]
-    public Brush PressedBackground
+    public Brush? PressedBackground
     {
-        get => (Brush)GetValue(PressedBackgroundProperty);
+        get => (Brush?)GetValue(PressedBackgroundProperty);
         set => SetValue(PressedBackgroundProperty, value);
     }
 
@@ -188,21 +183,101 @@ public class Button : System.Windows.Controls.Button, IAppearanceControl, IIconC
             nameof(PressedBorderBrush),
             typeof(Brush),
             typeof(Button),
-            new PropertyMetadata(
-                Border.BorderBrushProperty.DefaultMetadata.DefaultValue
-            )
+            new PropertyMetadata(null, OnStateBrushChanged)
         );
 
     /// <summary>
-    /// Gets or sets border <see cref="Brush"/> when the user clicks the button.
+    /// Gets or sets the border brush used while the button is pressed.
+    /// A value of <see langword="null"/> makes the button fall back to <see cref="Control.BorderBrush"/>.
     /// </summary>
     [Bindable(true)]
     [Category("Appearance")]
-    public Brush PressedBorderBrush
+    public Brush? PressedBorderBrush
     {
-        get => (Brush)GetValue(PressedBorderBrushProperty);
+        get => (Brush?)GetValue(PressedBorderBrushProperty);
         set => SetValue(PressedBorderBrushProperty, value);
     }
+
+    #endregion
+
+    #region Read-only DP: VisualBackground
+
+    private static readonly DependencyPropertyKey VisualBackgroundPropertyKey =
+        DependencyProperty.RegisterReadOnly(
+            nameof(VisualBackground),
+            typeof(Brush),
+            typeof(Button),
+            new PropertyMetadata(null)
+        );
+
+    /// <summary>
+    /// Identifies the read-only <see cref="VisualBackground"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty VisualBackgroundProperty =
+        VisualBackgroundPropertyKey.DependencyProperty;
+
+    /// <summary>
+    /// Gets the background brush selected for the button's current interaction state.
+    /// Templates should consume this property instead of reproducing the state-selection
+    /// rules with triggers.
+    /// </summary>
+    [Bindable(true)]
+    [Category("Appearance")]
+    public Brush? VisualBackground => (Brush?)GetValue(VisualBackgroundProperty);
+
+    #endregion
+
+    #region Read-only DP: VisualBorderBrush
+
+    private static readonly DependencyPropertyKey VisualBorderBrushPropertyKey =
+        DependencyProperty.RegisterReadOnly(
+            nameof(VisualBorderBrush),
+            typeof(Brush),
+            typeof(Button),
+            new PropertyMetadata(null)
+        );
+
+    /// <summary>
+    /// Identifies the read-only <see cref="VisualBorderBrush"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty VisualBorderBrushProperty =
+        VisualBorderBrushPropertyKey.DependencyProperty;
+
+    /// <summary>
+    /// Gets the border brush selected for the button's current interaction state.
+    /// Templates should consume this property instead of reproducing the state-selection
+    /// rules with triggers.
+    /// </summary>
+    [Bindable(true)]
+    [Category("Appearance")]
+    public Brush? VisualBorderBrush => (Brush?)GetValue(VisualBorderBrushProperty);
+
+    #endregion
+
+    #region Read-only DP: VisualForeground
+
+    private static readonly DependencyPropertyKey VisualForegroundPropertyKey =
+        DependencyProperty.RegisterReadOnly(
+            nameof(VisualForeground),
+            typeof(Brush),
+            typeof(Button),
+            new PropertyMetadata(null)
+        );
+
+    /// <summary>
+    /// Identifies the read-only <see cref="VisualForeground"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty VisualForegroundProperty =
+        VisualForegroundPropertyKey.DependencyProperty;
+
+    /// <summary>
+    /// Gets the foreground brush selected for the button's current interaction state.
+    /// Templates should consume this property instead of reproducing the state-selection
+    /// rules with triggers.
+    /// </summary>
+    [Bindable(true)]
+    [Category("Appearance")]
+    public Brush? VisualForeground => (Brush?)GetValue(VisualForegroundProperty);
 
     #endregion
 
@@ -239,5 +314,115 @@ public class Button : System.Windows.Controls.Button, IAppearanceControl, IIconC
             typeof(Button),
             new FrameworkPropertyMetadata(typeof(Button))
         );
+
+        // ------------------------------------------------------------------------------
+        // The standard brush properties remain the normal-state inputs. Observing them
+        // lets bindings, style triggers, and dynamic resources update the visual outputs
+        // without changing the standard properties' effective values or public meaning.
+        // ------------------------------------------------------------------------------
+
+        BackgroundProperty.OverrideMetadata(
+            typeof(Button),
+            new FrameworkPropertyMetadata(
+                BackgroundProperty.GetMetadata(typeof(System.Windows.Controls.Button)).DefaultValue,
+                OnStandardBrushChanged
+            )
+        );
+        BorderBrushProperty.OverrideMetadata(
+            typeof(Button),
+            new FrameworkPropertyMetadata(
+                BorderBrushProperty.GetMetadata(typeof(System.Windows.Controls.Button)).DefaultValue,
+                OnStandardBrushChanged
+            )
+        );
+        ForegroundProperty.OverrideMetadata(
+            typeof(Button),
+            new FrameworkPropertyMetadata(
+                ForegroundProperty.GetMetadata(typeof(System.Windows.Controls.Button)).DefaultValue,
+                OnStandardBrushChanged
+            )
+        );
+    }
+
+    private static void OnStandardBrushChanged(
+        DependencyObject d,
+        DependencyPropertyChangedEventArgs e
+    )
+    {
+        ((Button)d).UpdateVisualBrushes();
+    }
+
+    private static void OnStateBrushChanged(
+        DependencyObject d,
+        DependencyPropertyChangedEventArgs e
+    )
+    {
+        ((Button)d).UpdateVisualBrushes();
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="Button"/> class.
+    /// </summary>
+    public Button()
+    {
+        UpdateVisualBrushes();
+    }
+
+    /// <inheritdoc />
+    protected override void OnIsPressedChanged(DependencyPropertyChangedEventArgs e)
+    {
+        base.OnIsPressedChanged(e);
+        UpdateVisualBrushes();
+    }
+
+    /// <inheritdoc />
+    protected override void OnMouseEnter(MouseEventArgs e)
+    {
+        base.OnMouseEnter(e);
+
+        // IsMouseOver is a read-only dependency property whose key is private to WPF,
+        // so derived controls cannot attach a metadata callback to it. MouseEnter and
+        // MouseLeave follow the same IsMouseOver transitions, including movement into
+        // or out of template descendants, and are therefore the supported invalidation
+        // points available to this control.
+        UpdateVisualBrushes();
+    }
+
+    /// <inheritdoc />
+    protected override void OnMouseLeave(MouseEventArgs e)
+    {
+        base.OnMouseLeave(e);
+        UpdateVisualBrushes();
+    }
+
+    /// <summary>
+    /// Resolves all template-facing brushes in one pass so every template observes the
+    /// same state precedence. Pressed wins over pointer-over because a pressed button
+    /// normally remains under the pointer and must not retain its hover appearance.
+    /// A null state brush deliberately falls back to the corresponding standard brush;
+    /// this makes state brushes optional but means null cannot request a state-specific
+    /// absence of painting.
+    /// </summary>
+    private void UpdateVisualBrushes()
+    {
+        Brush? visualBackground  = Background;
+        Brush? visualBorderBrush = BorderBrush;
+        Brush? visualForeground  = Foreground;
+
+        if (IsPressed)
+        {
+            visualBackground  = PressedBackground ?? visualBackground;
+            visualBorderBrush = PressedBorderBrush ?? visualBorderBrush;
+            visualForeground  = PressedForeground ?? visualForeground;
+        }
+        else if (IsMouseOver)
+        {
+            visualBackground  = MouseOverBackground ?? visualBackground;
+            visualBorderBrush = MouseOverBorderBrush ?? visualBorderBrush;
+        }
+
+        SetValue(VisualBackgroundPropertyKey,  visualBackground);
+        SetValue(VisualBorderBrushPropertyKey, visualBorderBrush);
+        SetValue(VisualForegroundPropertyKey,  visualForeground);
     }
 }

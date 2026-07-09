@@ -31,7 +31,7 @@
 
     <Thickness x:Key="{x:Static theming:VariableKeys.TextControlBorderThemeThickness}">1</Thickness>
     <Thickness x:Key="{x:Static theming:VariableKeys.TextControlBorderThemeThicknessFocused}">2</Thickness>
-    <Thickness x:Key="{x:Static theming:VariableKeys.TextControlThemePadding}">10,8,10,7</Thickness>
+    <Thickness x:Key="{x:Static theming:VariableKeys.TextControlThemePadding}">10,7,10,7</Thickness>
 
     <system:Double x:Key="{x:Static theming:VariableKeys.ContentControlFontSize}">14</system:Double>
     <system:Double x:Key="{x:Static theming:VariableKeys.TextControlThemeMinHeight}">24</system:Double>

@@ -100,7 +100,7 @@
                             VerticalAlignment="Center"
                             Text="Appearance" />
                         <ComboBox
-                            MinWidth="130"
+                            MinWidth="180"
                             ItemsSource="{Binding Source={StaticResource AppearanceList}}"
                             SelectedItem="{Binding ButtonAppearance}" />
                     </StackPanel>

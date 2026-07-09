@@ -15,7 +15,7 @@
     xmlns:m="clr-namespace:Wpf.Ui.Markup"
     xmlns:t="clr-namespace:Wpf.Ui.Theming">
 
-    <Thickness x:Key="ButtonPadding">11,5,11,6</Thickness>
+    <Thickness x:Key="ButtonPadding">11,6,11,6</Thickness>
     <Thickness x:Key="ButtonBorderThemeThickness">1</Thickness>
     <Thickness x:Key="ButtonIconMargin">0,0,8,0</Thickness>
 
@@ -157,8 +157,8 @@
         <Border
             x:Name="PART_RootBorder"
             Padding="{TemplateBinding Padding}"
-            Background="{TemplateBinding Background}"
-            BorderBrush="{TemplateBinding BorderBrush}"
+            Background="{TemplateBinding VisualBackground}"
+            BorderBrush="{TemplateBinding VisualBorderBrush}"
             BorderThickness="{TemplateBinding BorderThickness}"
             CornerRadius="{TemplateBinding CornerRadius}"
             SnapsToDevicePixels="True">
@@ -175,7 +175,8 @@
                     VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
                     ContentSource="Icon"
                     Focusable="False"
-                    SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
+                    SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"
+                    TextElement.Foreground="{TemplateBinding VisualForeground}" />
 
                 <ContentPresenter
                     x:Name="ContentPresenter"
@@ -183,20 +184,11 @@
                     VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
                     Focusable="False"
                     RecognizesAccessKey="True"
-                    SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
+                    SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"
+                    TextElement.Foreground="{TemplateBinding VisualForeground}" />
             </Grid>
         </Border>
         <ControlTemplate.Triggers>
-            <Trigger Property="IsMouseOver" Value="True">
-                <Setter TargetName="PART_RootBorder" Property="Background" Value="{Binding MouseOverBackground, RelativeSource={RelativeSource TemplatedParent}}" />
-                <Setter TargetName="PART_RootBorder" Property="BorderBrush" Value="{Binding MouseOverBorderBrush, RelativeSource={RelativeSource TemplatedParent}}" />
-            </Trigger>
-            <Trigger Property="IsPressed" Value="True">
-                <Setter TargetName="PART_RootBorder" Property="Background" Value="{Binding PressedBackground, RelativeSource={RelativeSource TemplatedParent}}" />
-                <Setter TargetName="PART_RootBorder" Property="BorderBrush" Value="{Binding PressedBorderBrush, RelativeSource={RelativeSource TemplatedParent}}" />
-                <Setter TargetName="ContentPresenter" Property="Control.Foreground" Value="{Binding PressedForeground, RelativeSource={RelativeSource TemplatedParent}}" />
-                <Setter TargetName="ControlIcon" Property="Control.Foreground" Value="{Binding PressedForeground, RelativeSource={RelativeSource TemplatedParent}}" />
-            </Trigger>
             <Trigger Property="Content" Value="{x:Null}">
                 <Setter TargetName="ControlIcon" Property="Margin" Value="0" />
             </Trigger>
@@ -210,7 +202,6 @@
         </ControlTemplate.Triggers>
     </ControlTemplate>
 
-    <!--  todo: 测试不设置交互色，使用背景色默认元数据的默认值时，是不是会丢失  -->
     <Style x:Key="{x:Static t:StyleKeys.UiButtonStyle}" TargetType="{x:Type controls:Button}">
         <Setter Property="Padding" Value="{StaticResource ButtonPadding}" />
         <Setter Property="CornerRadius" Value="{m:VariableResource ControlCornerRadius}" />
@@ -218,16 +209,11 @@
         <Setter Property="VerticalContentAlignment" Value="Center" />
         <Setter Property="PressedForeground" Value="{m:BrushResource TextFillColorTertiaryBrush}" />
         <Setter Property="BorderThickness" Value="{StaticResource ButtonBorderThemeThickness}" />
-
-        <!--  #warni  -->
         <Setter Property="Background" Value="{m:BrushResource ControlFillColorSecondaryBrush}" />
         <Setter Property="MouseOverBackground" Value="{m:BrushResource ControlFillColorPrimaryBrush}" />
         <Setter Property="PressedBackground" Value="{m:BrushResource ControlFillColorTertiaryBrush}" />
-
-        <Setter Property="BorderBrush" Value="{m:BrushResource ControlStrokeColorDefaultBrush}" />
-        <Setter Property="MouseOverBorderBrush" Value="{m:BrushResource ControlElevationBorderBrush}" />
+        <Setter Property="BorderBrush" Value="{m:BrushResource ControlStrokeColorSecondaryBrush}" />
         <Setter Property="PressedBorderBrush" Value="{m:BrushResource ControlStrokeColorDefaultBrush}" />
-
         <Setter Property="Template" Value="{StaticResource UiButtonControlTemplate}" />
 
         <Setter Property="FocusVisualStyle">
@@ -236,13 +222,19 @@
                     <Setter Property="Control.Template">
                         <Setter.Value>
                             <ControlTemplate>
-                                <!--  改成 Border，圆角与按钮圆角属性同步  -->
-                                <Rectangle
-                                    RadiusX="4"
-                                    RadiusY="4"
-                                    SnapsToDevicePixels="True"
-                                    Stroke="{m:BrushResource KeyboardFocusBorderColorBrush}"
-                                    StrokeThickness="1" />
+                                <!--
+                                    WPF renders FocusVisualStyle with a separate Control hosted by a
+                                    FocusVisualAdorner, so the templated parent here is not the Button.
+                                    Bind through Adorner.AdornedElement to keep all four corner radii in
+                                    sync with the button, including non-uniform CornerRadius values.
+                                -->
+                                <!--  ReSharper disable once Xaml.BindingWithContextNotResolved  -->
+                                <Border
+                                    BorderBrush="{m:BrushResource KeyboardFocusBorderColorBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="{Binding AdornedElement.CornerRadius, RelativeSource={RelativeSource AncestorType={x:Type Adorner}}}"
+                                    IsHitTestVisible="False"
+                                    SnapsToDevicePixels="True" />
                             </ControlTemplate>
                         </Setter.Value>
                     </Setter>
@@ -258,13 +250,11 @@
 
             <!--  ACCENT  -->
             <Trigger Property="Appearance" Value="Accent">
+                <Setter Property="BorderThickness" Value="0"></Setter>
                 <Setter Property="Background" Value="{m:BrushResource AccentFillColorDefaultBrush}" />
-                <Setter Property="BorderBrush" Value="{m:BrushResource AccentControlElevationBorderBrush}" />
                 <Setter Property="Foreground" Value="{m:BrushResource TextOnAccentFillColorPrimaryBrush}" />
                 <Setter Property="MouseOverBackground" Value="{m:BrushResource AccentFillColorSecondaryBrush}" />
-                <Setter Property="MouseOverBorderBrush" Value="{m:BrushResource AccentControlElevationBorderBrush}" />
                 <Setter Property="PressedBackground" Value="{m:BrushResource AccentFillColorTertiaryBrush}" />
-                <Setter Property="PressedBorderBrush" Value="Transparent" />
                 <Setter Property="PressedForeground" Value="{m:BrushResource TextOnAccentFillColorSecondaryBrush}" />
             </Trigger>
 
