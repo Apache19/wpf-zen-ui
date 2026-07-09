@@ -69,7 +69,7 @@
                             VerticalAlignment="Top"
                             ContentSource="Icon"
                             Focusable="False"
-                            TextElement.FontSize="16" />
+                            TextElement.FontSize="{TemplateBinding FontSize, Converter={converters:DoubleToDoubleConverter Add=1}}" />
                     </Border>
 
                     <!--

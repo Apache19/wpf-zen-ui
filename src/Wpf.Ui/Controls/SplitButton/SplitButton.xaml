@@ -37,9 +37,11 @@
     </Style>
 
     <Style x:Key="DefaultSplitButtonToggleButtonStyle" TargetType="{x:Type ToggleButton}">
+
         <!--  Focus by parent element  -->
         <Setter Property="FocusVisualStyle" Value="{x:Null}" />
         <!--  Focus by parent element  -->
+
         <Setter Property="Foreground" Value="{markup:BrushResource TextFillColorPrimaryBrush}" />
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="BorderBrush" Value="Transparent" />
