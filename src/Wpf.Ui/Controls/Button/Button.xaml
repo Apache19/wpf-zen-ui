@@ -43,7 +43,6 @@
 
     <ControlTemplate x:Key="UiButtonControlTemplate" TargetType="{x:Type controls:Button}">
         <Border
-            x:Name="PART_RootBorder"
             Padding="{TemplateBinding Padding}"
             Background="{TemplateBinding VisualBackground}"
             BorderBrush="{TemplateBinding VisualBorderBrush}"
