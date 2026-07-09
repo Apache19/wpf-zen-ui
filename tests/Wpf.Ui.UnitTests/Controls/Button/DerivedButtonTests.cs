@@ -3,9 +3,12 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
+using System.Reflection;
 using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Windows;
+using System.Windows.Controls.Primitives;
+using System.Windows.Data;
 using Wpf.Ui.Controls;
 
 namespace Wpf.Ui.UnitTests.Controls.ButtonControl;
@@ -23,7 +26,7 @@ public class DerivedButtonTests
                     new AnchorProbe().ExposedDefaultStyleKey
                 );
                 Assert.Equal(
-                    typeof(Wpf.Ui.Controls.Button),
+                    typeof(Wpf.Ui.Controls.ToggleButton),
                     new CalendarDatePickerProbe().ExposedDefaultStyleKey
                 );
                 Assert.Equal(
@@ -83,6 +86,75 @@ public class DerivedButtonTests
         );
     }
 
+    [Fact]
+    public void CalendarDatePicker_InitializesPopupBeforeFirstClick()
+    {
+        RunOnStaThread(
+            () =>
+            {
+                // Theme styles are cached process-wide by WPF and cannot safely be reused by the separate STA
+                // threads employed by this test fixture. The popup lifecycle does not depend on the default style.
+                var calendarDatePicker = new CalendarDatePicker { OverridesDefaultStyle = true };
+
+                calendarDatePicker.BeginInit();
+                calendarDatePicker.EndInit();
+
+                var popupField = typeof(CalendarDatePicker).GetField(
+                    "_popup",
+                    BindingFlags.Instance | BindingFlags.NonPublic
+                );
+                var popup = Assert.IsType<Popup>(popupField?.GetValue(calendarDatePicker));
+
+                Assert.False(popup.IsOpen);
+                Assert.IsType<System.Windows.Controls.Calendar>(popup.Child);
+                Assert.Same(calendarDatePicker, popup.PlacementTarget);
+            }
+        );
+    }
+
+    [Fact]
+    public void CalendarDatePicker_SynchronizesToggleAndPopupStates()
+    {
+        RunOnStaThread(
+            () =>
+            {
+                var externalState = new System.Windows.Controls.Primitives.ToggleButton();
+                var calendarDatePicker = new CalendarDatePickerProbe();
+                _ = calendarDatePicker.SetBinding(
+                    CalendarDatePicker.IsCalendarOpenProperty,
+                    new Binding(nameof(System.Windows.Controls.Primitives.ToggleButton.IsChecked))
+                    {
+                        Source = externalState,
+                        Mode   = BindingMode.TwoWay,
+                    }
+                );
+
+                Assert.False(calendarDatePicker.IsCalendarOpen);
+                Assert.False(calendarDatePicker.IsChecked);
+
+                calendarDatePicker.IsThreeState = true;
+                calendarDatePicker.IsChecked = null;
+                Assert.False(calendarDatePicker.IsThreeState);
+                Assert.False(calendarDatePicker.IsChecked);
+
+                calendarDatePicker.InvokeClick();
+                Assert.True(calendarDatePicker.IsCalendarOpen);
+                Assert.True(externalState.IsChecked);
+                Assert.True(
+                    BindingOperations.IsDataBound(
+                        calendarDatePicker,
+                        CalendarDatePicker.IsCalendarOpenProperty
+                    )
+                );
+
+                calendarDatePicker.InvokeClick();
+                Assert.False(calendarDatePicker.IsCalendarOpen);
+                Assert.False(calendarDatePicker.IsChecked);
+                Assert.False(externalState.IsChecked);
+            }
+        );
+    }
+
     [Theory]
     [InlineData("SplitButton/SplitButton.xaml", "DefaultUiSplitButtonStyle", typeof(SplitButton))]
     public void DerivedButtonStyles_LoadWithoutButtonDictionary(
@@ -126,6 +198,10 @@ public class DerivedButtonTests
                 var splitButton = new SplitButton();
                 var anchor = new Anchor();
                 var calendarDatePicker = new CalendarDatePicker();
+                var toggleButton = new Wpf.Ui.Controls.ToggleButton
+                {
+                    Icon = new SymbolIcon(SymbolRegular.Calendar24),
+                };
                 var button = new Wpf.Ui.Controls.Button();
                 var textBox = new Wpf.Ui.Controls.TextBox();
                 var root = new System.Windows.Controls.StackPanel();
@@ -142,6 +218,7 @@ public class DerivedButtonTests
                 root.Children.Add(splitButton);
                 root.Children.Add(anchor);
                 root.Children.Add(calendarDatePicker);
+                root.Children.Add(toggleButton);
                 root.Children.Add(button);
                 root.Children.Add(textBox);
 
@@ -149,6 +226,7 @@ public class DerivedButtonTests
                 Assert.True(splitButton.ApplyTemplate());
                 Assert.True(anchor.ApplyTemplate());
                 Assert.True(calendarDatePicker.ApplyTemplate());
+                Assert.True(toggleButton.ApplyTemplate());
                 Assert.True(button.ApplyTemplate());
                 Assert.True(textBox.ApplyTemplate());
 
@@ -163,6 +241,24 @@ public class DerivedButtonTests
                 Assert.Equal(Visibility.Collapsed, buttonRightIconPresenter.Visibility);
                 Assert.Equal(Visibility.Visible, dropDownButtonRightIconPresenter.Visibility);
                 Assert.Same(dropDownButton.RightIcon, dropDownButtonRightIconPresenter.Content);
+
+                var toggleButtonIconPresenter =
+                    Assert.IsType<System.Windows.Controls.ContentPresenter>(
+                        toggleButton.Template.FindName("IconPresenter", toggleButton)
+                    );
+
+                Assert.Equal(Visibility.Visible, toggleButtonIconPresenter.Visibility);
+                Assert.Same(toggleButton.Icon, toggleButtonIconPresenter.Content);
+
+                var calendarDatePickerIconPresenter =
+                    Assert.IsType<System.Windows.Controls.ContentPresenter>(
+                        calendarDatePicker.Template.FindName(
+                            "IconPresenter",
+                            calendarDatePicker
+                        )
+                    );
+
+                Assert.Same(calendarDatePicker.Icon, calendarDatePickerIconPresenter.Content);
 
                 var clearButton = Assert.IsType<Wpf.Ui.Controls.Button>(
                     textBox.Template.FindName("ClearButton", textBox)
@@ -209,6 +305,11 @@ public class DerivedButtonTests
     private sealed class CalendarDatePickerProbe : CalendarDatePicker
     {
         public object ExposedDefaultStyleKey => DefaultStyleKey;
+
+        public void InvokeClick()
+        {
+            OnClick();
+        }
     }
 
     private sealed class DropDownButtonProbe : DropDownButton

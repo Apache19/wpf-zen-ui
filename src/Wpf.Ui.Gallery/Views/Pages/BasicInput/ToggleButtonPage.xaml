@@ -8,10 +8,10 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:system="clr-namespace:System;assembly=System.Runtime"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    d:Background="{ui:BrushResource WindowBackgroundBrush}"
     d:DataContext="{d:DesignInstance local:ToggleButtonPage, IsDesignTimeCreatable=False}"
     d:DesignHeight="450"
     d:DesignWidth="800"
-    d:Background="{ui:BrushResource WindowBackgroundBrush}"
     d:Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
     mc:Ignorable="d">
 
@@ -27,8 +27,29 @@
                 </Grid.ColumnDefinitions>
                 <ui:ToggleButton
                     Grid.Column="0"
+                    MinWidth="200"
+                    HorizontalAlignment="Left"
                     Content="ToggleButton"
-                    IsEnabled="{Binding ViewModel.IsToggleButtonEnabled, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:ToggleButtonPage}, Mode=OneWay}" />
+                    IsEnabled="{Binding ViewModel.IsToggleButtonEnabled, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:ToggleButtonPage}, Mode=OneWay}">
+                    <ui:ToggleButton.Style>
+                        <Style BasedOn="{StaticResource {x:Type ui:ToggleButton}}" TargetType="ui:ToggleButton">
+                            <Setter Property="Icon">
+                                <Setter.Value>
+                                    <ui:SymbolIcon Filled="False" Symbol="LockOpen24" />
+                                </Setter.Value>
+                            </Setter>
+                            <Style.Triggers>
+                                <Trigger Property="IsChecked" Value="True">
+                                    <Setter Property="Icon">
+                                        <Setter.Value>
+                                            <ui:SymbolIcon Filled="True" Symbol="LockClosed24" />
+                                        </Setter.Value>
+                                    </Setter>
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </ui:ToggleButton.Style>
+                </ui:ToggleButton>
                 <ui:CheckBox
                     Grid.Column="1"
                     Command="{Binding ViewModel.ToggleButtonCheckboxCheckedCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:ToggleButtonPage}, Mode=OneWay}"
