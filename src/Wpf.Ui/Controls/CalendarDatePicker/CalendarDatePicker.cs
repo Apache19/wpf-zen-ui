@@ -19,17 +19,22 @@ namespace Wpf.Ui.Controls;
 /// &lt;ui:CalendarDatePicker /&gt;
 /// </code>
 /// </example>
-public class CalendarDatePicker : Button
+public class CalendarDatePicker : ToggleButton
 {
     private Popup? _popup;
     private SymbolIcon? _defaultIcon;
 
-    /// <summary>Identifies the <see cref="IsCalendarOpen"/> dependency property.</summary>
+    /// <summary>
+    /// Identifies the <see cref="IsCalendarOpen"/> dependency property.
+    /// </summary>
     public static readonly DependencyProperty IsCalendarOpenProperty = DependencyProperty.Register(
         nameof(IsCalendarOpen),
         typeof(bool),
         typeof(CalendarDatePicker),
-        new PropertyMetadata(false)
+        new FrameworkPropertyMetadata(
+            false,
+            FrameworkPropertyMetadataOptions.BindsTwoWayByDefault
+        )
     );
 
     /// <summary>Identifies the <see cref="IsTodayHighlighted"/> dependency property.</summary>
@@ -62,6 +67,28 @@ public class CalendarDatePicker : Button
             typeof(CalendarDatePicker),
             new FrameworkPropertyMetadata(null, null, CoerceIcon)
         );
+        IsCheckedProperty.OverrideMetadata(
+            typeof(CalendarDatePicker),
+            new FrameworkPropertyMetadata(false, null, CoerceIsChecked)
+        );
+        IsThreeStateProperty.OverrideMetadata(
+            typeof(CalendarDatePicker),
+            new FrameworkPropertyMetadata(false, null, CoerceIsThreeState)
+        );
+    }
+
+    private static object CoerceIsChecked(DependencyObject dependencyObject, object? baseValue)
+    {
+        // A calendar popup has only open and closed states. Normalize an externally supplied null instead of
+        // allowing ToggleButton's indeterminate state to diverge from the non-nullable IsCalendarOpen property.
+        return baseValue is true;
+    }
+
+    private static object CoerceIsThreeState(DependencyObject dependencyObject, object? baseValue)
+    {
+        // IsChecked is the interaction surface for IsCalendarOpen, whose bool contract cannot represent a third
+        // state. Keeping IsThreeState false also preserves the ordinary click cycle: closed -> open -> closed.
+        return false;
     }
 
     private static object? CoerceIcon(DependencyObject dependencyObject, object? baseValue)
@@ -78,6 +105,20 @@ public class CalendarDatePicker : Button
     public CalendarDatePicker()
     {
         CoerceValue(IconProperty);
+
+        // IsCalendarOpen is the public, non-nullable state exposed by the date picker. Keep WPF's nullable
+        // ToggleButton state as the binding target so an application remains free to bind IsCalendarOpen without
+        // replacing this internal synchronization binding. Metadata coercion keeps the inherited toggle state
+        // strictly two-state so it cannot diverge from the bool property.
+        _ = SetBinding(
+            IsCheckedProperty,
+            new Binding(nameof(IsCalendarOpen))
+            {
+                Source              = this,
+                Mode                = BindingMode.TwoWay,
+                UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged,
+            }
+        );
     }
 
     /// <summary>
@@ -90,7 +131,9 @@ public class CalendarDatePicker : Button
     }
 
     /// <summary>
-    /// Gets or sets a value indicating whether the calendar view of the <see cref="CalendarDatePicker"/> is currently shown.
+    /// Gets or sets a value indicating whether the calendar popup is open.
+    /// This property is synchronized bidirectionally with <see cref="System.Windows.Controls.Primitives.ToggleButton.IsChecked"/>
+    /// and binds two-way by default.
     /// </summary>
     [Bindable(true)]
     public bool IsCalendarOpen
@@ -119,13 +162,14 @@ public class CalendarDatePicker : Button
     }
 
     /// <inheritdoc />
-    protected override void OnClick()
+    protected override void OnInitialized(EventArgs e)
     {
-        base.OnClick();
+        base.OnInitialized(e);
 
+        // Creating a Popup does not create its native window; WPF defers that work until IsOpen becomes true.
+        // Initialize the managed Calendar, bindings, and popup behaviors here so the first pointer interaction
+        // only has to open the window instead of also constructing and wiring the complete popup content tree.
         InitializePopup();
-
-        SetCurrentValue(IsCalendarOpenProperty, !IsCalendarOpen);
     }
 
     private void InitializePopup()
@@ -188,8 +232,18 @@ public class CalendarDatePicker : Button
                 UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged,
             }
         );
+
+        _popup.Opened += OnPopupOpened;
+
+        PopupShadow.SetIsEnabled(_popup, true);
+        PopupAnimator.SetIsEnabled(_popup, true);
     }
 
+    /// <summary>
+    /// Moves keyboard focus into the calendar after WPF has created and shown the popup window.
+    /// </summary>
+    /// <param name="sender">The popup that has finished opening.</param>
+    /// <param name="e">The event data.</param>
     protected virtual void OnPopupOpened(object? sender, EventArgs e)
     {
         if (sender is not Popup popup)
@@ -206,6 +260,11 @@ public class CalendarDatePicker : Button
         _ = Keyboard.Focus(popup.Child);
     }
 
+    /// <summary>
+    /// Closes the calendar after its selection changes.
+    /// </summary>
+    /// <param name="sender">The calendar whose selection changed.</param>
+    /// <param name="e">The selection change data.</param>
     protected virtual void OnSelectedDatesChanged(object? sender, SelectionChangedEventArgs e)
     {
         if (IsCalendarOpen)
