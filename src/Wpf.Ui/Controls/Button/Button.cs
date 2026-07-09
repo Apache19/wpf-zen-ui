@@ -314,11 +314,7 @@ public class Button : System.Windows.Controls.Button, IAppearanceControl, IIconC
             nameof(CornerRadius),
             typeof(CornerRadius),
             typeof(Button),
-            new FrameworkPropertyMetadata(
-                default(CornerRadius),
-                FrameworkPropertyMetadataOptions.AffectsMeasure |
-                FrameworkPropertyMetadataOptions.AffectsRender
-            )
+            new FrameworkPropertyMetadata(default(CornerRadius))
         );
 
     /// <summary>
