@@ -49,6 +49,7 @@
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
                 <ContentPresenter
@@ -69,6 +70,17 @@
                     RecognizesAccessKey="True"
                     SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"
                     TextElement.Foreground="{TemplateBinding VisualForeground}" />
+
+                <ContentPresenter
+                    x:Name="rightIconPresenter"
+                    Grid.Column="2"
+                    Margin="8,0,0,0"
+                    VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                    ContentSource="RightIcon"
+                    Focusable="False"
+                    SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"
+                    TextElement.FontSize="{TemplateBinding FontSize, Converter={converters:DoubleToDoubleConverter Add=1}}"
+                    TextElement.Foreground="{TemplateBinding VisualForeground}" />
             </Grid>
         </Border>
         <ControlTemplate.Triggers>
@@ -82,6 +94,29 @@
                 <Setter TargetName="iconPresenter" Property="Margin" Value="0" />
                 <Setter TargetName="iconPresenter" Property="Visibility" Value="Collapsed" />
             </Trigger>
+            <Trigger Property="RightIcon" Value="{x:Null}">
+                <Setter TargetName="rightIconPresenter" Property="Margin" Value="0" />
+                <Setter TargetName="rightIconPresenter" Property="Visibility" Value="Collapsed" />
+            </Trigger>
+            <!--
+                With neither content nor a leading icon, the trailing icon becomes the
+                only visual child. Remove its leading gap just as the leading icon does
+                when it is the button's only content.
+            -->
+            <MultiTrigger>
+                <MultiTrigger.Conditions>
+                    <Condition Property="Content" Value="{x:Null}" />
+                    <Condition Property="Icon" Value="{x:Null}" />
+                </MultiTrigger.Conditions>
+                <Setter TargetName="rightIconPresenter" Property="Margin" Value="0" />
+            </MultiTrigger>
+            <MultiTrigger>
+                <MultiTrigger.Conditions>
+                    <Condition Property="Content" Value="" />
+                    <Condition Property="Icon" Value="{x:Null}" />
+                </MultiTrigger.Conditions>
+                <Setter TargetName="rightIconPresenter" Property="Margin" Value="0" />
+            </MultiTrigger>
         </ControlTemplate.Triggers>
     </ControlTemplate>
 

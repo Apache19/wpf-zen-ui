@@ -53,6 +53,31 @@ public class Button : System.Windows.Controls.Button, IAppearanceControl, IIconC
 
     #endregion
 
+    #region DP: RightIcon
+
+    /// <summary>Identifies the <see cref="RightIcon"/> dependency property.</summary>
+    public static readonly DependencyProperty RightIconProperty =
+        DependencyProperty.Register(
+            nameof(RightIcon),
+            typeof(IconElement),
+            typeof(Button),
+            new PropertyMetadata(null, null, IconElement.Coerce)
+        );
+
+    /// <summary>
+    /// Gets or sets the <see cref="IconElement"/> displayed after the button content.
+    /// When no right icon is supplied, the template removes its presenter from layout.
+    /// </summary>
+    [Bindable(true)]
+    [Category("Appearance")]
+    public IconElement? RightIcon
+    {
+        get => (IconElement?)GetValue(RightIconProperty);
+        set => SetValue(RightIconProperty, value);
+    }
+
+    #endregion
+
     #region DP: Appearance
 
     /// <summary>Identifies the <see cref="Appearance"/> dependency property.</summary>

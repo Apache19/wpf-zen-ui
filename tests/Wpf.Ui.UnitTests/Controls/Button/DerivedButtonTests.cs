@@ -26,6 +26,38 @@ public class DerivedButtonTests
                     typeof(Wpf.Ui.Controls.Button),
                     new CalendarDatePickerProbe().ExposedDefaultStyleKey
                 );
+                Assert.Equal(
+                    typeof(Wpf.Ui.Controls.Button),
+                    new DropDownButtonProbe().ExposedDefaultStyleKey
+                );
+            }
+        );
+    }
+
+    [Fact]
+    public void DropDownButton_DefaultRightIconsAreNotShared()
+    {
+        RunOnStaThread(
+            () =>
+            {
+                var first = new DropDownButton();
+                var second = new DropDownButton();
+                var firstIcon = Assert.IsType<SymbolIcon>(first.RightIcon);
+                var secondIcon = Assert.IsType<SymbolIcon>(second.RightIcon);
+
+                Assert.Equal(SymbolRegular.ChevronDown24, firstIcon.Symbol);
+                Assert.Equal(SymbolRegular.ChevronDown24, secondIcon.Symbol);
+                Assert.NotSame(firstIcon, secondIcon);
+
+                var customIcon = new SymbolIcon(SymbolRegular.Clock24);
+                first.RightIcon = customIcon;
+                Assert.Same(customIcon, first.RightIcon);
+
+                first.IsDropDownArrowVisible = false;
+                Assert.Null(first.RightIcon);
+
+                first.IsDropDownArrowVisible = true;
+                Assert.Same(customIcon, first.RightIcon);
             }
         );
     }
@@ -52,7 +84,6 @@ public class DerivedButtonTests
     }
 
     [Theory]
-    [InlineData("DropDownButton/DropDownButton.xaml", "DefaultUiDropDownButtonStyle", typeof(DropDownButton))]
     [InlineData("SplitButton/SplitButton.xaml", "DefaultUiSplitButtonStyle", typeof(SplitButton))]
     public void DerivedButtonStyles_LoadWithoutButtonDictionary(
         string relativePath,
@@ -95,6 +126,7 @@ public class DerivedButtonTests
                 var splitButton = new SplitButton();
                 var anchor = new Anchor();
                 var calendarDatePicker = new CalendarDatePicker();
+                var button = new Wpf.Ui.Controls.Button();
                 var textBox = new Wpf.Ui.Controls.TextBox();
                 var root = new System.Windows.Controls.StackPanel();
                 root.Resources.MergedDictionaries.Add(
@@ -110,13 +142,27 @@ public class DerivedButtonTests
                 root.Children.Add(splitButton);
                 root.Children.Add(anchor);
                 root.Children.Add(calendarDatePicker);
+                root.Children.Add(button);
                 root.Children.Add(textBox);
 
                 Assert.True(dropDownButton.ApplyTemplate());
                 Assert.True(splitButton.ApplyTemplate());
                 Assert.True(anchor.ApplyTemplate());
                 Assert.True(calendarDatePicker.ApplyTemplate());
+                Assert.True(button.ApplyTemplate());
                 Assert.True(textBox.ApplyTemplate());
+
+                var buttonRightIconPresenter = Assert.IsType<System.Windows.Controls.ContentPresenter>(
+                    button.Template.FindName("rightIconPresenter", button)
+                );
+                var dropDownButtonRightIconPresenter =
+                    Assert.IsType<System.Windows.Controls.ContentPresenter>(
+                        dropDownButton.Template.FindName("rightIconPresenter", dropDownButton)
+                    );
+
+                Assert.Equal(Visibility.Collapsed, buttonRightIconPresenter.Visibility);
+                Assert.Equal(Visibility.Visible, dropDownButtonRightIconPresenter.Visibility);
+                Assert.Same(dropDownButton.RightIcon, dropDownButtonRightIconPresenter.Content);
 
                 var clearButton = Assert.IsType<Wpf.Ui.Controls.Button>(
                     textBox.Template.FindName("ClearButton", textBox)
@@ -161,6 +207,11 @@ public class DerivedButtonTests
     }
 
     private sealed class CalendarDatePickerProbe : CalendarDatePicker
+    {
+        public object ExposedDefaultStyleKey => DefaultStyleKey;
+    }
+
+    private sealed class DropDownButtonProbe : DropDownButton
     {
         public object ExposedDefaultStyleKey => DefaultStyleKey;
     }
