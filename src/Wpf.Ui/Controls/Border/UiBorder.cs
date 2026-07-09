@@ -16,15 +16,15 @@ namespace Wpf.Ui.Controls;
 /// </summary>
 /// <remarks>
 /// Native <see cref="Border"/> always treats <see cref="Border.BorderThickness"/> as both layout chrome and
-/// render chrome. <see cref="UiBorder"/> keeps that behavior available through
-/// <see cref="BorderPlacement.Native"/>, while <see cref="BorderPlacement.Outside"/> and
-/// <see cref="BorderPlacement.Inside"/> are render-only placement modes for strokes whose thickness may change
-/// at run time without invalidating surrounding layout.
+/// render chrome. <see cref="UiBorder"/> uses that behavior by default through
+/// <see cref="BorderPlacement.Native"/>. <see cref="BorderPlacement.Outside"/> and
+/// <see cref="BorderPlacement.Inside"/> are opt-in render-only placement modes for strokes whose thickness may
+/// change at run time without invalidating surrounding layout.
 /// </remarks>
 public enum BorderPlacement
 {
     /// <summary>
-    /// Uses the native <see cref="Border"/> layout and rendering behavior.
+    /// Uses the native <see cref="Border"/> layout and rendering behavior. This is the default.
     /// </summary>
     /// <remarks>
     /// In this mode <see cref="Border.BorderThickness"/> participates in measure and arrange, and the control
@@ -104,10 +104,10 @@ public class UiBorder : Border
             nameof(BorderPlacement),
             typeof(BorderPlacement),
             typeof(UiBorder),
-            // Outside is the default because it mirrors native Border's separated border/background drawing while
-            // keeping BorderThickness out of layout, which is safer for run-time stroke thickness changes.
+            // Native is the default so UiBorder preserves Border's layout and rendering behavior unless one of the
+            // render-only placement modes is explicitly selected.
             new FrameworkPropertyMetadata(
-                BorderPlacement.Outside,
+                BorderPlacement.Native,
                 FrameworkPropertyMetadataOptions.AffectsMeasure | FrameworkPropertyMetadataOptions.AffectsRender
             ),
             ValidateBorderPlacement
@@ -116,6 +116,11 @@ public class UiBorder : Border
     /// <summary>
     /// Gets or sets how the border thickness participates in layout and how the border is drawn relative to the background.
     /// </summary>
+    /// <remarks>
+    /// The default value is <see cref="BorderPlacement.Native"/>, which preserves the behavior of <see cref="Border"/>.
+    /// Set this property to <see cref="BorderPlacement.Outside"/> or <see cref="BorderPlacement.Inside"/> to opt in
+    /// to render-only border behavior that does not reserve layout space for <see cref="Border.BorderThickness"/>.
+    /// </remarks>
     public BorderPlacement BorderPlacement
     {
         get => (BorderPlacement)GetValue(BorderPlacementProperty);

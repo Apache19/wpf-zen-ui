@@ -16,14 +16,14 @@ namespace Wpf.Ui.UnitTests.Controls.UiBorder;
 public class UiBorderTests
 {
     [Fact]
-    public void BorderPlacement_DefaultsToOutside()
+    public void BorderPlacement_DefaultsToNative()
     {
         RunOnStaThread(
             () =>
             {
                 var border = new WpfUiBorder();
 
-                Assert.Equal(WpfUiBorderPlacement.Outside, border.BorderPlacement);
+                Assert.Equal(WpfUiBorderPlacement.Native, border.BorderPlacement);
             }
         );
     }
