@@ -9,11 +9,6 @@ public enum StyleId
 {
     Unknown,
 
-    ButtonStyle,
-    UiButtonStyle,
-
-    RepeatButtonStyle,
-
     MenuStyle,
     UiMenuStyle,
     MenuItemStyle,

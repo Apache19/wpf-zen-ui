@@ -54,8 +54,7 @@
                     VerticalAlignment="Center"
                     Content="Standard WPF button"
                     IsDefault="{Binding ElementName=WpfButtonIsDefaultBox, Path=IsChecked}"
-                    IsEnabled="{Binding IsSimpleButtonEnabled, Mode=OneWay}"
-                    Style="{ui:StyleResource ButtonStyle}" />
+                    IsEnabled="{Binding IsSimpleButtonEnabled, Mode=OneWay}" />
                 <StackPanel Grid.Column="1">
                     <ui:CheckBox Content="Enable button" IsChecked="{Binding IsSimpleButtonEnabled}" />
                     <ui:Separator Margin="0,4" Orientation="Horizontal" />

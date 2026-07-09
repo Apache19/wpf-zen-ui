@@ -13,14 +13,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Ui.Controls"
     xmlns:converters="clr-namespace:Wpf.Ui.Converters"
-    xmlns:markup="clr-namespace:Wpf.Ui.Markup"
-    xmlns:theming="clr-namespace:Wpf.Ui.Theming">
-
-    <ResourceDictionary.MergedDictionaries>
-        <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/Button/Button.xaml" />
-    </ResourceDictionary.MergedDictionaries>
-
-    <Thickness x:Key="ButtonChevronIconMargin">8,0,0,0</Thickness>
+    xmlns:markup="clr-namespace:Wpf.Ui.Markup">
 
     <converters:ThicknessTransformConverter x:Key="LeftSplitThicknessConverter" CopySides="Top,Bottom,Left" />
     <converters:ThicknessTransformConverter x:Key="RightSplitThicknessConverter" CopySides="Top,Bottom,Right" />
@@ -58,7 +51,7 @@
         </Setter>
     </Style>
 
-    <Style x:Key="DefaultUiSplitButtonStyle" BasedOn="{StaticResource {x:Static theming:StyleKeys.UiButtonStyle}}" TargetType="{x:Type controls:SplitButton}">
+    <Style x:Key="DefaultUiSplitButtonStyle" BasedOn="{StaticResource {x:Type controls:Button}}" TargetType="{x:Type controls:SplitButton}">
         <Setter Property="Popup.PopupAnimation" Value="None" />
         <!--  WPF doesn't like centering, the animation is ugly and the mouse button sometimes clicks right away.  -->
         <Setter Property="Popup.Placement" Value="Bottom" />
@@ -97,7 +90,7 @@
                                     <ContentPresenter
                                         x:Name="ControlIcon"
                                         Grid.Column="0"
-                                        Margin="{StaticResource ButtonIconMargin}"
+                                        Margin="0,0,8,0"
                                         VerticalAlignment="Center"
                                         Content="{TemplateBinding Icon}"
                                         ContentTemplate="{TemplateBinding ContentTemplate}"
@@ -122,7 +115,7 @@
                                 BorderThickness="{TemplateBinding BorderThickness, Converter={StaticResource RightSplitThicknessConverter}}"
                                 CornerRadius="{TemplateBinding CornerRadius, Converter={StaticResource RightSplitCornerRadiusConverter}}">
                                 <controls:ToggleButton
-                                    Name="PART_ToggleButton"
+                                    x:Name="PART_ToggleButton"
                                     HorizontalAlignment="Stretch"
                                     VerticalAlignment="Stretch"
                                     ClickMode="Press"

@@ -32,10 +32,6 @@ public class StyleResourceExtension : DynamicResourceExtension
     {
         return id switch
         {
-            StyleId.ButtonStyle       => StyleKeys.ButtonStyle,
-            StyleId.UiButtonStyle     => StyleKeys.UiButtonStyle,
-            StyleId.RepeatButtonStyle => StyleKeys.RepeatButtonStyle,
-
             StyleId.MenuStyle                => StyleKeys.MenuStyle,
             StyleId.UiMenuStyle              => StyleKeys.UiMenuStyle,
             StyleId.MenuItemStyle            => StyleKeys.MenuItemStyle,

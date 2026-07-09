@@ -24,63 +24,56 @@
     <Thickness x:Key="NumberBoxLeftIconMargin">10,8,0,0</Thickness>
     <Thickness x:Key="NumberBoxRightIconMargin">0,8,10,0</Thickness>
     <Thickness x:Key="NumberBoxButtonMargin">0,0,4,0</Thickness>
-    <Thickness x:Key="NumberBoxButtonPadding">0,0,0,0</Thickness>
     <system:Double x:Key="NumberBoxButtonHeight">24</system:Double>
     <system:Double x:Key="NumberBoxButtonIconSize">14</system:Double>
 
-    <Style x:Key="NumberBoxClassicRepeatButtonStyle" TargetType="{x:Type RepeatButton}">
-        <Setter Property="Background" Value="Transparent" />
-        <Setter Property="Border.CornerRadius" Value="3" />
-        <Setter Property="BorderBrush" Value="{m:BrushResource ControlElevationBorderBrush}" />
+    <Style x:Key="NumberBoxRepeatButtonStyle" TargetType="{x:Type RepeatButton}">
+        <Setter Property="OverridesDefaultStyle" Value="True" />
         <Setter Property="FocusVisualStyle" Value="{x:Null}" />
         <Setter Property="Focusable" Value="False" />
+        <Setter Property="IsTabStop" Value="False" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Border.CornerRadius" Value="3" />
+        <Setter Property="BorderBrush" Value="{m:BrushResource ControlStrokeColorDefaultBrush}" />
         <Setter Property="Foreground" Value="{m:BrushResource TextFillColorPrimaryBrush}" />
         <Setter Property="HorizontalContentAlignment" Value="Center" />
-        <Setter Property="IsTabStop" Value="False" />
-        <Setter Property="OverridesDefaultStyle" Value="True" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
-
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type RepeatButton}">
                     <Border
                         x:Name="ContentBorder"
-                        MinWidth="{TemplateBinding MinWidth}"
-                        MinHeight="{TemplateBinding MinHeight}"
                         Padding="{TemplateBinding Padding}"
                         Background="{TemplateBinding Background}"
                         BorderBrush="{TemplateBinding BorderBrush}"
                         BorderThickness="{TemplateBinding BorderThickness}"
-                        CornerRadius="{TemplateBinding Border.CornerRadius}">
+                        CornerRadius="{TemplateBinding Border.CornerRadius}"
+                        SnapsToDevicePixels="True">
                         <ContentPresenter
                             x:Name="ContentPresenter"
                             HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
                             VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
-                            ContentTemplate="{TemplateBinding ContentTemplate}"
-                            RecognizesAccessKey="True"
-                            TextElement.Foreground="{TemplateBinding Foreground}" />
+                            RecognizesAccessKey="True" />
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="ContentBorder" Property="Background" Value="{m:BrushResource ControlFillColorSecondaryBrush}" />
-                            <Setter TargetName="ContentBorder" Property="BorderBrush" Value="{m:BrushResource ControlElevationBorderBrush}" />
+                            <Setter TargetName="ContentBorder" Property="Background" Value="{m:BrushResource ControlFillColorPrimaryBrush}" />
+                            <Setter TargetName="ContentBorder" Property="BorderBrush" Value="{m:BrushResource ControlStrokeColorSecondaryBrush}" />
                         </Trigger>
                         <Trigger Property="IsPressed" Value="True">
-                            <Setter TargetName="ContentBorder" Property="Background" Value="{m:BrushResource ControlFillColorTertiaryBrush}" />
-                            <Setter TargetName="ContentBorder" Property="BorderBrush" Value="{m:BrushResource ControlStrokeColorDefaultBrush}" />
-                            <Setter TargetName="ContentPresenter" Property="TextElement.Foreground" Value="{m:BrushResource TextFillColorSecondaryBrush}" />
+                            <Setter TargetName="ContentBorder" Property="Background" Value="{m:BrushResource ControlFillColorSecondaryBrush}" />
+                            <Setter Property="Foreground" Value="{m:BrushResource TextFillColorTertiaryBrush}" />
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="ContentBorder" Property="Background" Value="{m:BrushResource SubtleFillColorDisabledBrush}" />
                             <Setter TargetName="ContentBorder" Property="BorderBrush" Value="{m:BrushResource ControlStrokeColorDefaultBrush}" />
-                            <Setter TargetName="ContentPresenter" Property="TextElement.Foreground" Value="{m:BrushResource TextFillColorDisabledBrush}" />
+                            <Setter Property="Foreground" Value="{m:BrushResource TextFillColorDisabledBrush}" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
-
-        <Setter Property="VerticalContentAlignment" Value="Center" />
     </Style>
 
     <DataTemplate x:Key="NumberBoxClassicCompactSpinButtonsTemplate">
@@ -93,16 +86,24 @@
                 Grid.Row="0"
                 Width="25"
                 Margin="1,1,1,0"
-                controls:NumberBox.ButtonKind="Increment"
-                Style="{StaticResource NumberBoxClassicRepeatButtonStyle}">
+                controls:NumberBox.ButtonKind="Increment">
                 <controls:SymbolIcon FontSize="10" Symbol="ChevronUp24" />
+                <RepeatButton.Style>
+                    <Style BasedOn="{StaticResource NumberBoxRepeatButtonStyle}" TargetType="{x:Type RepeatButton}">
+                        <Setter Property="Border.CornerRadius" Value="2,2,0,0" />
+                    </Style>
+                </RepeatButton.Style>
             </RepeatButton>
             <RepeatButton
                 Grid.Row="1"
                 Width="25"
                 Margin="1,0,1,1"
-                controls:NumberBox.ButtonKind="Decrement"
-                Style="{StaticResource NumberBoxClassicRepeatButtonStyle}">
+                controls:NumberBox.ButtonKind="Decrement">
+                <RepeatButton.Style>
+                    <Style BasedOn="{StaticResource NumberBoxRepeatButtonStyle}" TargetType="{x:Type RepeatButton}">
+                        <Setter Property="Border.CornerRadius" Value="0,0,2,2" />
+                    </Style>
+                </RepeatButton.Style>
                 <controls:SymbolIcon FontSize="10" Symbol="ChevronDown24" />
             </RepeatButton>
         </Grid>
@@ -114,30 +115,22 @@
                 Width="{StaticResource NumberBoxButtonHeight}"
                 Height="{StaticResource NumberBoxButtonHeight}"
                 Margin="{StaticResource NumberBoxButtonMargin}"
-                Padding="{StaticResource NumberBoxButtonPadding}"
-                HorizontalContentAlignment="Center"
-                VerticalContentAlignment="Center"
+                Padding="0"
                 controls:NumberBox.ButtonKind="Increment"
-                Background="Transparent"
                 BorderBrush="Transparent"
                 Foreground="{m:BrushResource TextFillColorSecondaryBrush}"
-                IsTabStop="False"
-                Style="{m:StyleResource RepeatButtonStyle}">
+                Style="{StaticResource NumberBoxRepeatButtonStyle}">
                 <controls:SymbolIcon FontSize="{StaticResource NumberBoxButtonIconSize}" Symbol="ChevronUp24" />
             </RepeatButton>
             <RepeatButton
                 Width="{StaticResource NumberBoxButtonHeight}"
                 Height="{StaticResource NumberBoxButtonHeight}"
                 Margin="{StaticResource NumberBoxButtonMargin}"
-                Padding="{StaticResource NumberBoxButtonPadding}"
-                HorizontalContentAlignment="Center"
-                VerticalContentAlignment="Center"
+                Padding="0"
                 controls:NumberBox.ButtonKind="Decrement"
-                Background="Transparent"
                 BorderBrush="Transparent"
                 Foreground="{m:BrushResource TextFillColorSecondaryBrush}"
-                IsTabStop="False"
-                Style="{m:StyleResource RepeatButtonStyle}">
+                Style="{StaticResource NumberBoxRepeatButtonStyle}">
                 <controls:SymbolIcon FontSize="{StaticResource NumberBoxButtonIconSize}" Symbol="ChevronDown24" />
             </RepeatButton>
         </StackPanel>
@@ -273,7 +266,7 @@
                             Height="36"
                             Margin="2,2,2,1"
                             controls:NumberBox.ButtonKind="Increment"
-                            Style="{StaticResource NumberBoxClassicRepeatButtonStyle}">
+                            Style="{StaticResource NumberBoxRepeatButtonStyle}">
                             <controls:SymbolIcon FontSize="14" Symbol="ChevronUp24" />
                         </RepeatButton>
                         <RepeatButton
@@ -282,7 +275,7 @@
                             Height="36"
                             Margin="2,1,2,2"
                             controls:NumberBox.ButtonKind="Decrement"
-                            Style="{StaticResource NumberBoxClassicRepeatButtonStyle}">
+                            Style="{StaticResource NumberBoxRepeatButtonStyle}">
                             <controls:SymbolIcon FontSize="14" Symbol="ChevronDown24" />
                         </RepeatButton>
                     </Grid>

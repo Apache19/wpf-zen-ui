@@ -11,11 +11,6 @@ namespace Wpf.Ui.Theming;
 
 public static class StyleKeys
 {
-    public static ComponentResourceKey ButtonStyle   { get; private set; }
-    public static ComponentResourceKey UiButtonStyle { get; private set; }
-
-    public static ComponentResourceKey RepeatButtonStyle { get; private set; }
-
     public static ComponentResourceKey MenuStyle                { get; private set; }
     public static ComponentResourceKey UiMenuStyle              { get; private set; }
     public static ComponentResourceKey MenuItemStyle            { get; private set; }
