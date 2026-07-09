@@ -3,6 +3,7 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
+using System.Reflection;
 using System.Windows.Controls;
 using System.Windows.Media;
 
@@ -15,14 +16,31 @@ namespace Wpf.Ui.Controls;
 /// </summary>
 /// <remarks>
 /// Native <see cref="Border"/> always treats <see cref="Border.BorderThickness"/> as both layout chrome and
-/// render chrome. <see cref="UiBorder"/> keeps that behavior available, while also supporting an overlay mode
-/// for Fluent-style controls whose stroke should not push content inward.
+/// render chrome. <see cref="UiBorder"/> keeps that behavior available through
+/// <see cref="BorderPlacement.Native"/>, while <see cref="BorderPlacement.Outside"/> and
+/// <see cref="BorderPlacement.Inside"/> are render-only placement modes for strokes whose thickness may change
+/// at run time without invalidating surrounding layout.
 /// </remarks>
 public enum BorderPlacement
 {
     /// <summary>
-    /// Places the border outside the background and child content, matching the native <see cref="Border"/>.
+    /// Uses the native <see cref="Border"/> layout and rendering behavior.
     /// </summary>
+    /// <remarks>
+    /// In this mode <see cref="Border.BorderThickness"/> participates in measure and arrange, and the control
+    /// delegates rendering to <see cref="Border"/>. This is the correct choice when WPF's default chrome sizing
+    /// and drawing behavior is desired exactly.
+    /// </remarks>
+    Native,
+
+    /// <summary>
+    /// Draws the border outside the background without reserving layout space for the border thickness.
+    /// </summary>
+    /// <remarks>
+    /// The child is arranged as if the border thickness were zero. During rendering, the background is deflated
+    /// by <see cref="Border.BorderThickness"/> before it is drawn, so translucent border and background brushes
+    /// do not blend over the same pixels.
+    /// </remarks>
     Outside,
 
     /// <summary>
@@ -32,16 +50,53 @@ public enum BorderPlacement
 }
 
 /// <summary>
-/// Represents a border that can either draw like the native <see cref="Border"/>, or draw its border over
-/// the background without reserving layout space for <see cref="Border.BorderThickness"/>.
+/// Represents a border that can either draw like the native <see cref="Border"/>, or draw a render-only border
+/// without reserving layout space for <see cref="Border.BorderThickness"/>.
 /// </summary>
 /// <remarks>
-/// The control intentionally keeps <see cref="Border.Padding"/> semantics aligned with <see cref="Border"/> in both
-/// placement modes. Only <see cref="Border.BorderThickness"/> changes behavior in <see cref="BorderPlacement.Inside"/>.
+/// The control intentionally keeps <see cref="Border.Padding"/> semantics aligned with <see cref="Border"/> in all
+/// placement modes. Only <see cref="Border.BorderThickness"/> changes behavior in <see cref="BorderPlacement.Outside"/>
+/// and <see cref="BorderPlacement.Inside"/>: it is ignored by layout, then interpreted only by the render path.
 /// </remarks>
 public class UiBorder : Border
 {
     private const double DoubleEpsilon = 2.2204460492503131e-016;
+    private const string DoNotApplyLayoutRoundingToBorderThicknessSwitchName =
+        "Switch.MS.Internal.DoNotApplyLayoutRoundingToMarginsAndBorderThickness";
+    private const uint AffectsMeasureMetadataFlag = 0x00000040;
+
+    private static readonly FieldInfo? PropertyMetadataFlagsField = typeof(PropertyMetadata).GetField(
+        "_flags",
+        BindingFlags.Instance | BindingFlags.NonPublic
+    );
+    private static readonly bool DoNotApplyLayoutRoundingToBorderThickness =
+        IsAppContextSwitchEnabled(DoNotApplyLayoutRoundingToBorderThicknessSwitchName);
+
+    private StreamGeometry? _backgroundGeometryCache;
+    private StreamGeometry? _borderGeometryCache;
+    private Size            _cachedRenderSize;
+    private CornerRadius    _cachedCornerRadius;
+    private Thickness       _cachedBorderThickness;
+    private BorderPlacement _cachedBorderPlacement;
+    private bool            _isGeometryCacheValid;
+
+    static UiBorder()
+    {
+        var borderThicknessMetadata = new FrameworkPropertyMetadata(
+            default(Thickness),
+            FrameworkPropertyMetadataOptions.AffectsRender,
+            OnBorderThicknessChanged
+        );
+
+        BorderThicknessProperty.OverrideMetadata(typeof(UiBorder), borderThicknessMetadata);
+
+        // FrameworkPropertyMetadata.Merge deliberately preserves AffectsMeasure from every base owner, so the public
+        // metadata API cannot express UiBorder's render-only modes. Remove that one inherited flag from UiBorder's own
+        // sealed metadata; the property callback below restores native invalidation only when Native mode needs it.
+        // If WPF changes its internal metadata representation, this helper leaves the flag untouched and UiBorder
+        // safely falls back to the extra layout pass rather than risking invalid dependency-property metadata.
+        TryRemoveInheritedAffectsMeasure(borderThicknessMetadata);
+    }
 
     /// <summary>Identifies the <see cref="BorderPlacement"/> dependency property.</summary>
     public static readonly DependencyProperty BorderPlacementProperty =
@@ -49,17 +104,17 @@ public class UiBorder : Border
             nameof(BorderPlacement),
             typeof(BorderPlacement),
             typeof(UiBorder),
+            // Outside is the default because it mirrors native Border's separated border/background drawing while
+            // keeping BorderThickness out of layout, which is safer for run-time stroke thickness changes.
             new FrameworkPropertyMetadata(
-                // Inside is the default because UiBorder exists primarily for strokes that should overlay the surface.
-                // Consumers can opt back into native Border layout/rendering with BorderPlacement.Outside.
-                BorderPlacement.Inside,
+                BorderPlacement.Outside,
                 FrameworkPropertyMetadataOptions.AffectsMeasure | FrameworkPropertyMetadataOptions.AffectsRender
             ),
             ValidateBorderPlacement
         );
 
     /// <summary>
-    /// Gets or sets whether the border should behave like the native <see cref="Border"/> or overlap the background.
+    /// Gets or sets how the border thickness participates in layout and how the border is drawn relative to the background.
     /// </summary>
     public BorderPlacement BorderPlacement
     {
@@ -70,15 +125,16 @@ public class UiBorder : Border
     /// <inheritdoc />
     protected override Size MeasureOverride(Size constraint)
     {
-        // Outside mode is deliberately delegated to Border instead of reimplementing it. Native Border has several
+        // Native mode is deliberately delegated to Border instead of reimplementing it. Native Border has several
         // framework-specific details here, including layout rounding of BorderThickness.
-        if (BorderPlacement == BorderPlacement.Outside)
+        if (BorderPlacement == BorderPlacement.Native)
         {
             return base.MeasureOverride(constraint);
         }
 
-        // Inside mode removes only BorderThickness from layout. Padding still participates in measure exactly as
-        // it does on Border, so existing content spacing behavior remains predictable.
+        // Render-only placement modes remove only BorderThickness from layout. Padding still participates in measure
+        // exactly as it does on Border, so existing content spacing behavior remains predictable when stroke thickness
+        // is animated or otherwise changed at run time.
         Size padding = CollapseThickness(Padding);
 
         if (Child is not UIElement child)
@@ -102,8 +158,8 @@ public class UiBorder : Border
     /// <inheritdoc />
     protected override Size ArrangeOverride(Size finalSize)
     {
-        // Keep native behavior intact for Outside mode. This also preserves any future framework fixes in Border.
-        if (BorderPlacement == BorderPlacement.Outside)
+        // Keep native behavior intact for Native mode. This also preserves any future framework fixes in Border.
+        if (BorderPlacement == BorderPlacement.Native)
         {
             return base.ArrangeOverride(finalSize);
         }
@@ -118,42 +174,79 @@ public class UiBorder : Border
     /// <inheritdoc />
     protected override void OnRender(DrawingContext drawingContext)
     {
-        // Outside mode intentionally uses Border.OnRender so its background shrink, half-thickness corner radii,
+        // Native mode intentionally uses Border.OnRender so its background shrink, half-thickness corner radii,
         // pen caches, and simple/complex render path selection stay identical to WPF.
-        if (BorderPlacement == BorderPlacement.Outside)
+        if (BorderPlacement == BorderPlacement.Native)
         {
             base.OnRender(drawingContext);
             return;
         }
 
-        Rect bounds = new(RenderSize);
-        if (!IsRenderable(bounds))
-        {
-            return;
-        }
+        EnsureGeometryCache();
 
-        CornerRadius cornerRadius = CornerRadius;
-        if (Background is { } background)
+        if (Background is { } background && _backgroundGeometryCache is { } backgroundGeometry)
         {
-            // In Inside mode the background owns the full rounded rectangle. It is not deflated by
-            // BorderThickness, because the border is an overlay rather than layout chrome.
-            StreamGeometry backgroundGeometry = CreateRoundedRectangleGeometry(bounds, new CornerRadii(cornerRadius));
             drawingContext.DrawGeometry(background, null, backgroundGeometry);
         }
 
-        Thickness borderThickness = GetRoundedBorderThickness();
-        if (IsZero(borderThickness) || BorderBrush is not { } borderBrush)
+        if (BorderBrush is not { } borderBrush || _borderGeometryCache is not { } borderGeometry)
         {
             return;
         }
 
-        StreamGeometry borderGeometry = CreateBorderGeometry(bounds, cornerRadius, borderThickness);
         drawingContext.DrawGeometry(borderBrush, null, borderGeometry);
+    }
+
+    private static void OnBorderThicknessChanged(DependencyObject dependencyObject, DependencyPropertyChangedEventArgs args)
+    {
+        var border = (UiBorder)dependencyObject;
+
+        // The custom modes consume BorderThickness only while drawing. Native mode delegates measure and arrange to
+        // Border, so it must restore the invalidation that was intentionally removed from UiBorder's metadata.
+        if (border.BorderPlacement == BorderPlacement.Native)
+        {
+            border.InvalidateMeasure();
+        }
+    }
+
+    private static void TryRemoveInheritedAffectsMeasure(FrameworkPropertyMetadata metadata)
+    {
+        try
+        {
+            if (
+                PropertyMetadataFlagsField?.FieldType is not { IsEnum: true } flagsType
+                || PropertyMetadataFlagsField.GetValue(metadata) is not { } flags
+            )
+            {
+                return;
+            }
+
+            uint value = Convert.ToUInt32(flags);
+            PropertyMetadataFlagsField.SetValue(metadata, Enum.ToObject(flagsType, value & ~AffectsMeasureMetadataFlag));
+
+            // Treat a changed internal bit layout as a failed reflection attempt. The fallback remains WPF's original,
+            // conservative AffectsMeasure behavior and therefore cannot leave layout in an invalid state.
+            if (metadata.AffectsMeasure)
+            {
+                PropertyMetadataFlagsField.SetValue(metadata, flags);
+            }
+        }
+        catch (Exception exception) when (
+            exception is ArgumentException
+                or FieldAccessException
+                or InvalidOperationException
+                or NotSupportedException
+                or OverflowException
+        )
+        {
+            // WPF metadata internals are version-specific. Failure only costs an unnecessary measure pass, which is a
+            // safer degradation than failing type initialization or suppressing required native layout invalidation.
+        }
     }
 
     private static bool ValidateBorderPlacement(object? value)
     {
-        return value is BorderPlacement.Outside or BorderPlacement.Inside;
+        return value is BorderPlacement.Native or BorderPlacement.Outside or BorderPlacement.Inside;
     }
 
     private static Size CollapseThickness(Thickness thickness)
@@ -177,21 +270,63 @@ public class UiBorder : Border
     private Thickness GetRoundedBorderThickness()
     {
         Thickness borderThickness = BorderThickness;
-        if (!UseLayoutRounding)
+        if (!UseLayoutRounding || DoNotApplyLayoutRoundingToBorderThickness)
         {
             return borderThickness;
         }
 
         DpiScale dpi = VisualTreeHelper.GetDpi(this);
 
-        // UIElement.RoundLayoutValue is internal. This mirrors the public behavior used by Border closely enough
-        // for the custom Inside render path without reflecting into WPF internals for a small arithmetic helper.
+        // UIElement.RoundLayoutValue is internal. The arithmetic below mirrors it without reflection, while the
+        // AppContext switch above preserves Border's compatibility behavior for applications that explicitly opt out
+        // of rounding margins and border thicknesses.
         return new Thickness(
             RoundLayoutValue(borderThickness.Left,   dpi.DpiScaleX),
             RoundLayoutValue(borderThickness.Top,    dpi.DpiScaleY),
             RoundLayoutValue(borderThickness.Right,  dpi.DpiScaleX),
             RoundLayoutValue(borderThickness.Bottom, dpi.DpiScaleY)
         );
+    }
+
+    private void EnsureGeometryCache()
+    {
+        Size renderSize = RenderSize;
+        CornerRadius cornerRadius = CornerRadius;
+        Thickness borderThickness = GetRoundedBorderThickness();
+        BorderPlacement borderPlacement = BorderPlacement;
+
+        if (
+            _isGeometryCacheValid
+            && _cachedRenderSize == renderSize
+            && _cachedCornerRadius == cornerRadius
+            && _cachedBorderThickness == borderThickness
+            && _cachedBorderPlacement == borderPlacement
+        )
+        {
+            return;
+        }
+
+        _cachedRenderSize = renderSize;
+        _cachedCornerRadius = cornerRadius;
+        _cachedBorderThickness = borderThickness;
+        _cachedBorderPlacement = borderPlacement;
+        _isGeometryCacheValid = true;
+
+        Rect bounds = new(renderSize);
+        if (!IsRenderable(bounds))
+        {
+            _backgroundGeometryCache = null;
+            _borderGeometryCache = null;
+            return;
+        }
+
+        // Geometry depends only on the values captured above, not on the brushes. Keeping the frozen instances across
+        // brush-only render invalidations avoids rebuilding paths while still allowing Freezable brushes to update the
+        // retained drawing commands independently.
+        _backgroundGeometryCache = CreateBackgroundGeometry(bounds, cornerRadius, borderThickness);
+        _borderGeometryCache = IsZero(borderThickness)
+            ? null
+            : CreateBorderGeometry(bounds, cornerRadius, borderThickness);
     }
 
     private static StreamGeometry CreateBorderGeometry(Rect bounds, CornerRadius cornerRadius, Thickness borderThickness)
@@ -203,10 +338,10 @@ public class UiBorder : Border
 
         using (StreamGeometryContext context = geometry.Open())
         {
-            // Native Border treats CornerRadius as the centerline radius and shrinks the background
-            // by half of BorderThickness. Inside placement instead treats CornerRadius as the shared
-            // outer edge, then cuts a full-thickness inner edge from it so the border overlays the
-            // background without changing layout.
+            // Native Border treats CornerRadius as the centerline radius and shrinks its background by half of
+            // BorderThickness. The render-only modes treat CornerRadius as the outer edge, then cut a full-thickness
+            // inner edge from it. Inside draws the background below this ring; Outside draws the background only inside
+            // the same inner edge.
             GenerateGeometry(context, bounds, new CornerRadii(cornerRadius));
 
             Rect innerBounds = DeflateRect(bounds, borderThickness);
@@ -219,6 +354,27 @@ public class UiBorder : Border
         geometry.Freeze();
 
         return geometry;
+    }
+
+    private StreamGeometry? CreateBackgroundGeometry(Rect bounds, CornerRadius cornerRadius, Thickness borderThickness)
+    {
+        if (BorderPlacement == BorderPlacement.Outside)
+        {
+            Rect backgroundBounds = DeflateRect(bounds, borderThickness);
+            if (!IsRenderable(backgroundBounds))
+            {
+                return null;
+            }
+
+            // Outside placement uses the same inner edge for both the border geometry and the background geometry.
+            // This keeps semi-transparent brushes from being painted over each other while still allowing the stroke
+            // thickness to change without affecting the control's measured or arranged size.
+            return CreateRoundedRectangleGeometry(backgroundBounds, new CornerRadii(cornerRadius, borderThickness));
+        }
+
+        // Inside placement intentionally lets the background own the full rounded rectangle, then draws the border
+        // over that same surface. Some Fluent states rely on this overlay behavior for subtle highlight strokes.
+        return CreateRoundedRectangleGeometry(bounds, new CornerRadii(cornerRadius));
     }
 
     private static StreamGeometry CreateRoundedRectangleGeometry(Rect bounds, CornerRadii radii)
@@ -353,7 +509,9 @@ public class UiBorder : Border
 
     private static bool AreClose(double value1, double value2)
     {
-        if (Math.Abs(value1 - value2) < 0.00001)
+        // WPF performs this equality check first so equal infinities are handled before epsilon arithmetic.
+        // ReSharper disable once CompareOfFloatsByEqualityOperator
+        if (value1 == value2)
         {
             return true;
         }
@@ -362,6 +520,11 @@ public class UiBorder : Border
         double delta   = value1 - value2;
 
         return -epsilon < delta && epsilon > delta;
+    }
+
+    private static bool IsAppContextSwitchEnabled(string switchName)
+    {
+        return AppContext.TryGetSwitch(switchName, out bool isEnabled) && isEnabled;
     }
 
     private static double RoundLayoutValue(double value, double dpiScale)
@@ -391,12 +554,13 @@ public class UiBorder : Border
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="CornerRadii"/> struct for the inner edge of an inside stroke.
+        /// Initializes a new instance of the <see cref="CornerRadii"/> struct for the inner edge of a render-only stroke.
         /// </summary>
         /// <remarks>
         /// Native Border subtracts half the border thickness because its CornerRadius is interpreted as the stroke
-        /// centerline. Inside placement subtracts the whole thickness because the outer edge and background already
-        /// share the requested CornerRadius.
+        /// centerline. Render-only placement subtracts the whole thickness because the requested CornerRadius belongs
+        /// to the outer edge, and the background may either overlap that edge (<see cref="BorderPlacement.Inside"/>)
+        /// or start at the resulting inner edge (<see cref="BorderPlacement.Outside"/>).
         /// </remarks>
         public CornerRadii(CornerRadius radii, Thickness borders)
         {
