@@ -551,7 +551,7 @@
         <Setter Property="CalendarDayButtonStyle" Value="{StaticResource DefaultCalendarDayButtonStyle}" />
         <Setter Property="CalendarItemStyle" Value="{StaticResource DefaultCalendarItemStyle}" />
         <Setter Property="Foreground" Value="{markup:BrushResource TextFillColorPrimaryBrush}" />
-        <Setter Property="Background" Value="{markup:BrushResource ControlFillColorInputActiveBrush}" />
+        <Setter Property="Background" Value="{markup:BrushResource AcrylicBackgroundFillColorDefaultBrush}" />
         <Setter Property="BorderBrush" Value="{markup:BrushResource ControlStrokeColorDefaultBrush}" />
         <Setter Property="HorizontalAlignment" Value="Center" />
         <Setter Property="VerticalAlignment" Value="Center" />
