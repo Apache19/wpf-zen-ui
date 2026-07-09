@@ -8,18 +8,19 @@
     Copyright (c) Microsoft Corporation. All Rights Reserved.
 -->
 
-<!--  TODO: Refactor editable and fix borders  -->
-
 <ResourceDictionary
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:ani="clr-namespace:Wpf.Ui.Animations"
     xmlns:controls="clr-namespace:Wpf.Ui.Controls"
+    xmlns:converters="clr-namespace:Wpf.Ui.Converters"
     xmlns:m="clr-namespace:Wpf.Ui.Markup">
 
     <ResourceDictionary.MergedDictionaries>
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Resources/DefaultEditorContextMenu.xaml" />
     </ResourceDictionary.MergedDictionaries>
+
+    <converters:DoubleToDoubleConverter x:Key="ActiveRectHeightConverter" Multiply="0.5" />
 
     <Style x:Key="DefaultComboBoxItemStyle" TargetType="{x:Type ComboBoxItem}">
         <Setter Property="Background" Value="Transparent" />
@@ -48,7 +49,7 @@
                                 <Rectangle
                                     x:Name="ActiveRectangle"
                                     Width="3"
-                                    Height="16"
+                                    Height="{Binding ActualHeight, ElementName=ContentBorder, Converter={StaticResource ActiveRectHeightConverter}}"
                                     Margin="0"
                                     HorizontalAlignment="Left"
                                     VerticalAlignment="Center"
