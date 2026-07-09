@@ -20,6 +20,22 @@
     <converters:CornerRadiusTransformConverter x:Key="LeftSplitCornerRadiusConverter" CopyCorners="TopLeft,BottomLeft" />
     <converters:CornerRadiusTransformConverter x:Key="RightSplitCornerRadiusConverter" CopyCorners="TopRight,BottomRight" />
 
+    <Style x:Key="SplitButtonFocusVisualStyle">
+        <Setter Property="Control.Template">
+            <Setter.Value>
+                <ControlTemplate>
+                    <!-- ReSharper disable once Xaml.BindingWithContextNotResolved -->
+                    <Border
+                        BorderBrush="{markup:BrushResource KeyboardFocusBorderColorBrush}"
+                        BorderThickness="1"
+                        CornerRadius="{Binding AdornedElement.CornerRadius, RelativeSource={RelativeSource AncestorType={x:Type Adorner}}}"
+                        IsHitTestVisible="False"
+                        SnapsToDevicePixels="True" />
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <Style x:Key="DefaultSplitButtonToggleButtonStyle" TargetType="{x:Type ToggleButton}">
         <!--  Focus by parent element  -->
         <Setter Property="FocusVisualStyle" Value="{x:Null}" />
@@ -51,7 +67,19 @@
         </Setter>
     </Style>
 
-    <Style x:Key="DefaultUiSplitButtonStyle" BasedOn="{StaticResource {x:Type controls:Button}}" TargetType="{x:Type controls:SplitButton}">
+    <Style x:Key="DefaultUiSplitButtonStyle" TargetType="{x:Type controls:SplitButton}">
+        <Setter Property="FocusVisualStyle" Value="{StaticResource SplitButtonFocusVisualStyle}" />
+        <Setter Property="Padding" Value="11,6" />
+        <Setter Property="CornerRadius" Value="{markup:VariableResource ControlCornerRadius}" />
+        <Setter Property="HorizontalContentAlignment" Value="Center" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="PressedForeground" Value="{markup:BrushResource TextFillColorTertiaryBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Background" Value="{markup:BrushResource ControlFillColorSecondaryBrush}" />
+        <Setter Property="MouseOverBackground" Value="{markup:BrushResource ControlFillColorPrimaryBrush}" />
+        <Setter Property="PressedBackground" Value="{markup:BrushResource ControlFillColorTertiaryBrush}" />
+        <Setter Property="BorderBrush" Value="{markup:BrushResource ControlStrokeColorSecondaryBrush}" />
+        <Setter Property="PressedBorderBrush" Value="{markup:BrushResource ControlStrokeColorDefaultBrush}" />
         <Setter Property="Popup.PopupAnimation" Value="None" />
         <!--  WPF doesn't like centering, the animation is ugly and the mouse button sometimes clicks right away.  -->
         <Setter Property="Popup.Placement" Value="Bottom" />
@@ -182,6 +210,100 @@
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
+        <Style.Triggers>
+            <Trigger Property="Appearance" Value="Transparent">
+                <Setter Property="Background" Value="Transparent" />
+            </Trigger>
+            <Trigger Property="Appearance" Value="Accent">
+                <Setter Property="BorderThickness" Value="0" />
+                <Setter Property="BorderBrush" Value="{x:Null}" />
+                <Setter Property="Background" Value="{markup:BrushResource AccentFillColorDefaultBrush}" />
+                <Setter Property="Foreground" Value="{markup:BrushResource TextOnAccentFillColorPrimaryBrush}" />
+                <Setter Property="MouseOverBackground" Value="{markup:BrushResource AccentFillColorSecondaryBrush}" />
+                <Setter Property="PressedBackground" Value="{markup:BrushResource AccentFillColorTertiaryBrush}" />
+                <Setter Property="PressedForeground" Value="{markup:BrushResource TextOnAccentFillColorSecondaryBrush}" />
+            </Trigger>
+            <Trigger Property="Appearance" Value="Dark">
+                <Setter Property="Background" Value="{markup:BrushResource ControlStrongFillColorDarkBrush}" />
+                <Setter Property="Foreground" Value="{markup:BrushResource TextFillColorLightPrimaryBrush}" />
+                <Setter Property="MouseOverBackground" Value="#62000000" />
+                <Setter Property="PressedBackground" Value="#52000000" />
+                <Setter Property="PressedForeground" Value="{markup:BrushResource TextFillColorLightSecondaryBrush}" />
+            </Trigger>
+            <Trigger Property="Appearance" Value="Light">
+                <Setter Property="Background" Value="{markup:BrushResource ControlStrongFillColorLightBrush}" />
+                <Setter Property="Foreground" Value="{markup:BrushResource TextFillColorDarkPrimaryBrush}" />
+                <Setter Property="MouseOverBackground" Value="#D3FFFFFF" />
+                <Setter Property="PressedBackground" Value="#F3FFFFFF" />
+                <Setter Property="PressedForeground" Value="{markup:BrushResource TextFillColorDarkSecondaryBrush}" />
+            </Trigger>
+            <Trigger Property="Appearance" Value="Info">
+                <Setter Property="BorderThickness" Value="0" />
+                <Setter Property="BorderBrush" Value="{x:Null}" />
+                <Setter Property="Background" Value="{markup:BrushResource PaletteBlueBrush}" />
+                <Setter Property="Foreground" Value="{markup:BrushResource TextFillColorLightPrimaryBrush}" />
+                <Setter Property="MouseOverBackground" Value="{markup:BrushResource PaletteLightBlueBrush}" />
+                <Setter Property="PressedBackground" Value="{markup:BrushResource PaletteCyanBrush}" />
+                <Setter Property="PressedForeground" Value="{markup:BrushResource TextOnAccentFillColorSecondaryBrush}" />
+            </Trigger>
+            <Trigger Property="Appearance" Value="Danger">
+                <Setter Property="BorderThickness" Value="0" />
+                <Setter Property="BorderBrush" Value="{x:Null}" />
+                <Setter Property="Background" Value="{markup:BrushResource PaletteRedBrush}" />
+                <Setter Property="MouseOverBackground">
+                    <Setter.Value>
+                        <SolidColorBrush Opacity="0.8" Color="{markup:ColorResource PaletteRedColor}" />
+                    </Setter.Value>
+                </Setter>
+                <Setter Property="PressedBackground">
+                    <Setter.Value>
+                        <SolidColorBrush Opacity="0.6" Color="{markup:ColorResource PaletteRedColor}" />
+                    </Setter.Value>
+                </Setter>
+            </Trigger>
+            <Trigger Property="Appearance" Value="Success">
+                <Setter Property="BorderThickness" Value="0" />
+                <Setter Property="BorderBrush" Value="{x:Null}" />
+                <Setter Property="Background" Value="{markup:BrushResource PaletteGreenBrush}" />
+                <Setter Property="MouseOverBackground">
+                    <Setter.Value>
+                        <SolidColorBrush Opacity="0.8" Color="{markup:ColorResource PaletteGreenColor}" />
+                    </Setter.Value>
+                </Setter>
+                <Setter Property="PressedBackground">
+                    <Setter.Value>
+                        <SolidColorBrush Opacity="0.6" Color="{markup:ColorResource PaletteGreenColor}" />
+                    </Setter.Value>
+                </Setter>
+            </Trigger>
+            <Trigger Property="Appearance" Value="Caution">
+                <Setter Property="BorderThickness" Value="0" />
+                <Setter Property="BorderBrush" Value="{x:Null}" />
+                <Setter Property="Background" Value="{markup:BrushResource PaletteOrangeBrush}" />
+                <Setter Property="MouseOverBackground">
+                    <Setter.Value>
+                        <SolidColorBrush Opacity="0.8" Color="{markup:ColorResource PaletteOrangeColor}" />
+                    </Setter.Value>
+                </Setter>
+                <Setter Property="PressedBackground">
+                    <Setter.Value>
+                        <SolidColorBrush Opacity="0.6" Color="{markup:ColorResource PaletteOrangeColor}" />
+                    </Setter.Value>
+                </Setter>
+            </Trigger>
+            <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Background" Value="{markup:BrushResource ControlFillColorDisabledBrush}" />
+                <Setter Property="BorderBrush" Value="{markup:BrushResource ControlStrokeColorDefaultBrush}" />
+                <Setter Property="Foreground" Value="{markup:BrushResource TextFillColorDisabledBrush}" />
+            </Trigger>
+            <MultiTrigger>
+                <MultiTrigger.Conditions>
+                    <Condition Property="Appearance" Value="Transparent" />
+                    <Condition Property="IsEnabled" Value="False" />
+                </MultiTrigger.Conditions>
+                <Setter Property="Background" Value="Transparent" />
+            </MultiTrigger>
+        </Style.Triggers>
     </Style>
 
     <Style BasedOn="{StaticResource DefaultUiSplitButtonStyle}" TargetType="{x:Type controls:SplitButton}" />

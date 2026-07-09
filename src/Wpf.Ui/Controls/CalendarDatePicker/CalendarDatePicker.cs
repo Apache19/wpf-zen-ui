@@ -22,6 +22,7 @@ namespace Wpf.Ui.Controls;
 public class CalendarDatePicker : Button
 {
     private Popup? _popup;
+    private SymbolIcon? _defaultIcon;
 
     /// <summary>Identifies the <see cref="IsCalendarOpen"/> dependency property.</summary>
     public static readonly DependencyProperty IsCalendarOpenProperty = DependencyProperty.Register(
@@ -57,10 +58,26 @@ public class CalendarDatePicker : Button
 
     static CalendarDatePicker()
     {
-        DefaultStyleKeyProperty.OverrideMetadata(
+        IconProperty.OverrideMetadata(
             typeof(CalendarDatePicker),
-            new FrameworkPropertyMetadata(typeof(CalendarDatePicker))
+            new FrameworkPropertyMetadata(null, null, CoerceIcon)
         );
+    }
+
+    private static object? CoerceIcon(DependencyObject dependencyObject, object? baseValue)
+    {
+        return baseValue is null
+            ? ((CalendarDatePicker)dependencyObject)._defaultIcon ??=
+                new SymbolIcon(SymbolRegular.CalendarRtl24)
+            : IconElement.Coerce(dependencyObject, baseValue);
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CalendarDatePicker"/> class.
+    /// </summary>
+    public CalendarDatePicker()
+    {
+        CoerceValue(IconProperty);
     }
 
     /// <summary>

@@ -18,13 +18,4 @@ namespace Wpf.Ui.Controls;
 ///     NavigateUri="https://lepo.co/" /&gt;
 /// </code>
 /// </example>
-public class Anchor : HyperlinkButton
-{
-    static Anchor()
-    {
-        DefaultStyleKeyProperty.OverrideMetadata(
-            typeof(Anchor),
-            new FrameworkPropertyMetadata(typeof(Anchor))
-        );
-    }
-}
+public class Anchor : HyperlinkButton { }
