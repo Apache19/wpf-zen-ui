@@ -40,6 +40,7 @@ public class VariableResourceExtension : DynamicResourceExtension
             VariableId.TextControlBorderThemeThickness          => VariableKeys.TextControlBorderThemeThickness,
             VariableId.TextControlBorderThemeThicknessFocused   => VariableKeys.TextControlBorderThemeThicknessFocused,
             VariableId.TextControlThemePadding                  => VariableKeys.TextControlThemePadding,
+            VariableId.ThemeControlPadding                      => VariableKeys.ThemeControlPadding,
             VariableId.ContentControlFontSize                   => VariableKeys.ContentControlFontSize,
             VariableId.TextControlThemeMinHeight                => VariableKeys.TextControlThemeMinHeight,
             VariableId.TextControlThemeMinWidth                 => VariableKeys.TextControlThemeMinWidth,
