@@ -13,8 +13,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Ui.Controls"
     xmlns:converters="clr-namespace:Wpf.Ui.Converters"
-    xmlns:m="clr-namespace:Wpf.Ui.Markup"
-    xmlns:t="clr-namespace:Wpf.Ui.Theming">
+    xmlns:m="clr-namespace:Wpf.Ui.Markup">
 
     <Thickness x:Key="ToggleButtonPadding">11,5,11,5</Thickness>
     <Thickness x:Key="ToggleButtonBorderThemeThickness">1</Thickness>
@@ -24,12 +23,6 @@
         <Setter Property="Control.Template">
             <Setter.Value>
                 <ControlTemplate>
-                    <!--
-                        WPF renders FocusVisualStyle with a separate Control hosted by a
-                        FocusVisualAdorner, so the templated parent here is not the Button.
-                        Bind through Adorner.AdornedElement to keep all four corner radii in
-                        sync with the button, including non-uniform CornerRadius values.
-                    -->
                     <!--  ReSharper disable once Xaml.BindingWithContextNotResolved  -->
                     <Border
                         BorderBrush="{m:BrushResource KeyboardFocusBorderColorBrush}"
@@ -45,9 +38,9 @@
     <Style x:Key="DefaultToggleButtonStyle" TargetType="{x:Type controls:ToggleButton}">
         <Setter Property="FocusVisualStyle" Value="{StaticResource ToggleButtonFocusVisualStyle}" />
         <Setter Property="Background" Value="{m:BrushResource ControlFillColorSecondaryBrush}" />
-        <Setter Property="BorderBrush" Value="{m:BrushResource ControlStrokeColorSecondaryBrush}" />
+        <Setter Property="BorderBrush" Value="{m:BrushResource ControlElevationBorderBrush}" />
         <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="Padding" Value="{m:VariableResource ThemeControlPadding}" />
+        <Setter Property="Padding" Value="{m:VariableResource ButtonThemePadding}" />
         <Setter Property="HorizontalContentAlignment" Value="Center" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
         <Setter Property="CornerRadius" Value="{m:VariableResource ControlCornerRadius}" />
@@ -55,10 +48,12 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type controls:ToggleButton}">
-                    <Border
+                    <controls:UiBorder
+                        x:Name="border"
                         Padding="{TemplateBinding Padding}"
                         Background="{TemplateBinding Background}"
                         BorderBrush="{TemplateBinding BorderBrush}"
+                        BorderPlacement="Outside"
                         BorderThickness="{TemplateBinding BorderThickness}"
                         CornerRadius="{TemplateBinding CornerRadius}"
                         SnapsToDevicePixels="True">
@@ -70,7 +65,7 @@
 
                             <ContentPresenter
                                 x:Name="iconPresenter"
-                                Margin="0 0 8 0"
+                                Margin="0,0,8,0"
                                 VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
                                 ContentSource="Icon"
                                 Focusable="False"
@@ -85,7 +80,7 @@
                                 RecognizesAccessKey="True"
                                 SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
                         </Grid>
-                    </Border>
+                    </controls:UiBorder>
                     <ControlTemplate.Triggers>
                         <Trigger Property="Icon" Value="{x:Null}">
                             <Setter TargetName="iconPresenter" Property="Margin" Value="0" />
@@ -97,66 +92,82 @@
                         <Trigger Property="Content" Value="">
                             <Setter TargetName="iconPresenter" Property="Margin" Value="0" />
                         </Trigger>
+
+                        <!--  Not Checked  -->
+
                         <MultiTrigger>
                             <MultiTrigger.Conditions>
-                                <Condition Property="IsEnabled" Value="False" />
                                 <Condition Property="IsChecked" Value="False" />
+                                <Condition Property="IsMouseOver" Value="True" />
+                            </MultiTrigger.Conditions>
+                            <Setter Property="Background" Value="{m:BrushResource ControlFillColorPrimaryBrush}" />
+                        </MultiTrigger>
+
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="IsChecked" Value="False" />
+                                <Condition Property="IsPressed" Value="True" />
+                            </MultiTrigger.Conditions>
+                            <Setter Property="Background" Value="{m:BrushResource ControlFillColorTertiaryBrush}" />
+                            <Setter Property="BorderBrush" Value="{m:BrushResource ControlStrokeColorDefaultBrush}" />
+                            <Setter Property="Foreground" Value="{m:BrushResource TextFillColorTertiaryBrush}" />
+                        </MultiTrigger>
+
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="IsChecked" Value="False" />
+                                <Condition Property="IsEnabled" Value="False" />
                             </MultiTrigger.Conditions>
                             <Setter Property="Background" Value="{m:BrushResource ControlFillColorDisabledBrush}" />
                             <Setter Property="BorderBrush" Value="{m:BrushResource ControlStrokeColorDefaultBrush}" />
                             <Setter Property="Foreground" Value="{m:BrushResource TextFillColorDisabledBrush}" />
                         </MultiTrigger>
+
+                        <!--  Checked  -->
+
                         <MultiTrigger>
                             <MultiTrigger.Conditions>
-                                <Condition Property="IsEnabled" Value="False" />
                                 <Condition Property="IsChecked" Value="True" />
-                            </MultiTrigger.Conditions>
-                            <Setter Property="Background" Value="{m:BrushResource AccentFillColorDisabledBrush}" />
-                            <Setter Property="BorderThickness" Value="0" />
-                            <Setter Property="Foreground" Value="{m:BrushResource TextOnAccentFillColorDisabledBrush}" />
-                        </MultiTrigger>
-                        <MultiTrigger>
-                            <MultiTrigger.Conditions>
                                 <Condition Property="IsEnabled" Value="True" />
-                                <Condition Property="IsChecked" Value="True" />
                             </MultiTrigger.Conditions>
-                            <Setter Property="Background" Value="{m:BrushResource SystemAccentColorPrimaryBrush}" />
-                            <Setter Property="BorderThickness" Value="0" />
+                            <Setter Property="Background" Value="{m:BrushResource AccentFillColorDefaultBrush}" />
                             <Setter Property="Foreground" Value="{m:BrushResource TextOnAccentFillColorPrimaryBrush}" />
+                            <Setter TargetName="border" Property="BorderPlacement" Value="Inside" />
+                            <Setter Property="BorderBrush" Value="{m:BrushResource AccentControlElevationBorderBrush}" />
                         </MultiTrigger>
+
                         <MultiTrigger>
                             <MultiTrigger.Conditions>
-                                <Condition Property="IsMouseOver" Value="True" />
-                                <Condition Property="IsChecked" Value="False" />
-                            </MultiTrigger.Conditions>
-                            <Setter Property="Background" Value="{m:BrushResource ControlFillColorSecondaryBrush}" />
-                        </MultiTrigger>
-                        <MultiTrigger>
-                            <MultiTrigger.Conditions>
-                                <Condition Property="IsMouseOver" Value="True" />
                                 <Condition Property="IsChecked" Value="True" />
+                                <Condition Property="IsMouseOver" Value="True" />
                             </MultiTrigger.Conditions>
-                            <Setter Property="Background" Value="{m:BrushResource SystemAccentColorSecondaryBrush}" />
+                            <Setter Property="Background" Value="{m:BrushResource AccentFillColorSecondaryBrush}" />
+                            <Setter Property="Foreground" Value="{m:BrushResource TextOnAccentFillColorPrimaryBrush}" />
+                            <Setter TargetName="border" Property="BorderPlacement" Value="Inside" />
+                            <Setter Property="BorderBrush" Value="{m:BrushResource AccentControlElevationBorderBrush}" />
+                        </MultiTrigger>
+
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="IsChecked" Value="True" />
+                                <Condition Property="IsPressed" Value="True" />
+                            </MultiTrigger.Conditions>
+                            <Setter Property="Background" Value="{m:BrushResource AccentFillColorTertiaryBrush}" />
                             <Setter Property="BorderThickness" Value="0" />
-                        </MultiTrigger>
-                        <MultiTrigger>
-                            <MultiTrigger.Conditions>
-                                <Condition Property="IsPressed" Value="True" />
-                                <Condition Property="IsChecked" Value="False" />
-                            </MultiTrigger.Conditions>
-                            <Setter Property="Background" Value="{m:BrushResource ControlFillColorTertiaryBrush}" />
-                            <Setter Property="BorderBrush" Value="{m:BrushResource ControlStrokeColorDefaultBrush}" />
-                            <Setter Property="Foreground" Value="{m:BrushResource TextFillColorSecondaryBrush}" />
-                        </MultiTrigger>
-                        <MultiTrigger>
-                            <MultiTrigger.Conditions>
-                                <Condition Property="IsPressed" Value="True" />
-                                <Condition Property="IsChecked" Value="True" />
-                            </MultiTrigger.Conditions>
-                            <Setter Property="Background" Value="{m:BrushResource SystemAccentColorTertiaryBrush}" />
-                            <Setter Property="BorderBrush" Value="Transparent" />
                             <Setter Property="Foreground" Value="{m:BrushResource TextOnAccentFillColorSecondaryBrush}" />
                         </MultiTrigger>
+
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="IsChecked" Value="True" />
+                                <Condition Property="IsEnabled" Value="False" />
+                            </MultiTrigger.Conditions>
+                            <Setter Property="Background" Value="{m:BrushResource AccentFillColorDisabledBrush}" />
+                            <Setter TargetName="border" Property="BorderPlacement" Value="Inside" />
+                            <Setter Property="BorderBrush" Value="{m:BrushResource ControlStrokeColorDefaultBrush}" />
+                            <Setter Property="Foreground" Value="{m:BrushResource TextOnAccentFillColorDisabledBrush}" />
+                        </MultiTrigger>
+
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>

@@ -25,7 +25,7 @@ public static class VariableKeys
     public static ComponentResourceKey TextControlBorderThemeThickness          { get; private set; }
     public static ComponentResourceKey TextControlBorderThemeThicknessFocused   { get; private set; }
     public static ComponentResourceKey TextControlThemePadding                  { get; private set; }
-    public static ComponentResourceKey ThemeControlPadding                      { get; private set; }
+    public static ComponentResourceKey ButtonThemePadding                       { get; private set; }
     public static ComponentResourceKey ContentControlFontSize                   { get; private set; }
     public static ComponentResourceKey TextControlThemeMinHeight                { get; private set; }
     public static ComponentResourceKey TextControlThemeMinWidth                 { get; private set; }

@@ -17,7 +17,7 @@ public enum VariableId
     TextControlBorderThemeThickness,
     TextControlBorderThemeThicknessFocused,
     TextControlThemePadding,
-    ThemeControlPadding,
+    ButtonThemePadding,
     ContentControlFontSize,
     TextControlThemeMinHeight,
     TextControlThemeMinWidth,

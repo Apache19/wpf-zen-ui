@@ -12,6 +12,8 @@ namespace Wpf.Ui.Theming;
 
 public static class BrushKeys
 {
+    public static ComponentResourceKey Unknown { get; private set; }
+
     // Light.xaml / Dark.xaml / HighContrast.xaml
 
     public static ComponentResourceKey SystemAccentColorBrush                          { get; private set; }
@@ -132,26 +134,44 @@ public static class BrushKeys
 
     // Palette.xaml:
 
-    public static ComponentResourceKey PalettePrimaryBrush    { get; private set; }
-    public static ComponentResourceKey PaletteRedBrush        { get; private set; }
-    public static ComponentResourceKey PalettePinkBrush       { get; private set; }
-    public static ComponentResourceKey PalettePurpleBrush     { get; private set; }
-    public static ComponentResourceKey PaletteDeepPurpleBrush { get; private set; }
-    public static ComponentResourceKey PaletteIndigoBrush     { get; private set; }
-    public static ComponentResourceKey PaletteBlueBrush       { get; private set; }
-    public static ComponentResourceKey PaletteLightBlueBrush  { get; private set; }
-    public static ComponentResourceKey PaletteCyanBrush       { get; private set; }
-    public static ComponentResourceKey PaletteTealBrush       { get; private set; }
-    public static ComponentResourceKey PaletteGreenBrush      { get; private set; }
-    public static ComponentResourceKey PaletteLightGreenBrush { get; private set; }
-    public static ComponentResourceKey PaletteLimeBrush       { get; private set; }
-    public static ComponentResourceKey PaletteYellowBrush     { get; private set; }
-    public static ComponentResourceKey PaletteAmberBrush      { get; private set; }
-    public static ComponentResourceKey PaletteOrangeBrush     { get; private set; }
-    public static ComponentResourceKey PaletteDeepOrangeBrush { get; private set; }
-    public static ComponentResourceKey PaletteBrownBrush      { get; private set; }
-    public static ComponentResourceKey PaletteGreyBrush       { get; private set; }
-    public static ComponentResourceKey PaletteBlueGreyBrush   { get; private set; }
+    public static ComponentResourceKey PalettePrimaryBrush          { get; private set; }
+    public static ComponentResourceKey PaletteRedBrush              { get; private set; }
+    public static ComponentResourceKey PaletteRedBrushBright        { get; private set; }
+    public static ComponentResourceKey PaletteRedBrushDim           { get; private set; }
+    public static ComponentResourceKey PalettePinkBrush             { get; private set; }
+    public static ComponentResourceKey PalettePinkBrushBright       { get; private set; }
+    public static ComponentResourceKey PalettePinkBrushDim          { get; private set; }
+    public static ComponentResourceKey PalettePurpleBrush           { get; private set; }
+    public static ComponentResourceKey PaletteDeepPurpleBrush       { get; private set; }
+    public static ComponentResourceKey PaletteIndigoBrush           { get; private set; }
+    public static ComponentResourceKey PaletteBlueBrush             { get; private set; }
+    public static ComponentResourceKey PaletteBlueBrushBright       { get; private set; }
+    public static ComponentResourceKey PaletteBlueBrushDim          { get; private set; }
+    public static ComponentResourceKey PaletteLightBlueBrush        { get; private set; }
+    public static ComponentResourceKey PaletteLightBlueBrushBright  { get; private set; }
+    public static ComponentResourceKey PaletteLightBlueBrushDim     { get; private set; }
+    public static ComponentResourceKey PaletteCyanBrush             { get; private set; }
+    public static ComponentResourceKey PaletteCyanBrushBright       { get; private set; }
+    public static ComponentResourceKey PaletteCyanBrushDim          { get; private set; }
+    public static ComponentResourceKey PaletteTealBrush             { get; private set; }
+    public static ComponentResourceKey PaletteGreenBrush            { get; private set; }
+    public static ComponentResourceKey PaletteGreenBrushBright      { get; private set; }
+    public static ComponentResourceKey PaletteGreenBrushDim         { get; private set; }
+    public static ComponentResourceKey PaletteLightGreenBrush       { get; private set; }
+    public static ComponentResourceKey PaletteLimeBrush             { get; private set; }
+    public static ComponentResourceKey PaletteYellowBrush           { get; private set; }
+    public static ComponentResourceKey PaletteYellowBrushBright     { get; private set; }
+    public static ComponentResourceKey PaletteYellowBrushDim        { get; private set; }
+    public static ComponentResourceKey PaletteAmberBrush            { get; private set; }
+    public static ComponentResourceKey PaletteOrangeBrush           { get; private set; }
+    public static ComponentResourceKey PaletteOrangeBrushBright     { get; private set; }
+    public static ComponentResourceKey PaletteOrangeBrushDim        { get; private set; }
+    public static ComponentResourceKey PaletteDeepOrangeBrush       { get; private set; }
+    public static ComponentResourceKey PaletteDeepOrangeBrushBright { get; private set; }
+    public static ComponentResourceKey PaletteDeepOrangeBrushDim    { get; private set; }
+    public static ComponentResourceKey PaletteBrownBrush            { get; private set; }
+    public static ComponentResourceKey PaletteGreyBrush             { get; private set; }
+    public static ComponentResourceKey PaletteBlueGreyBrush         { get; private set; }
 
     // StaticColors.xaml
 
