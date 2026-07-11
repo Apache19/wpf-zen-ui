@@ -121,7 +121,26 @@ public class ComboBoxTests
     }
 
     [Fact]
-    public void GenericTheme_NativeComboBoxFallsBackToStandardAppearanceProperties()
+    public void GenericTheme_DoesNotProvideNativeComboBoxStyle()
+    {
+        RunOnStaThread(
+            () =>
+            {
+                var resources = new ResourceDictionary
+                {
+                    Source = new Uri(
+                        "pack://application:,,,/Wpf.Ui;component/Themes/Generic.xaml",
+                        UriKind.Absolute
+                    ),
+                };
+
+                Assert.Null(resources[typeof(System.Windows.Controls.ComboBox)]);
+            }
+        );
+    }
+
+    [Fact]
+    public void NativeControlStyles_AppliesNativeComboBoxAppearanceProperties()
     {
         RunOnStaThread(
             () =>
@@ -141,6 +160,15 @@ public class ComboBoxTests
                     {
                         Source = new Uri(
                             "pack://application:,,,/Wpf.Ui;component/Themes/Generic.xaml",
+                            UriKind.Absolute
+                        ),
+                    }
+                );
+                root.Resources.MergedDictionaries.Add(
+                    new ResourceDictionary
+                    {
+                        Source = new Uri(
+                            "pack://application:,,,/Wpf.Ui;component/Resources/NativeControlStyles.xaml",
                             UriKind.Absolute
                         ),
                     }

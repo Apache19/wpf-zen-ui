@@ -21,9 +21,9 @@
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Resources/DefaultEditorContextMenu.xaml" />
     </ResourceDictionary.MergedDictionaries>
 
-    <converters:DoubleToDoubleConverter x:Key="ActiveRectHeightConverter" Multiply="0.5" />
+    <converters:DoubleToDoubleConverter x:Key="UiComboBoxActiveRectHeightConverter" Multiply="0.5" />
 
-    <Style x:Key="DefaultComboBoxItemStyle" TargetType="{x:Type ComboBoxItem}">
+    <Style x:Key="DefaultUiComboBoxItemStyle" TargetType="{x:Type ComboBoxItem}">
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="Border.CornerRadius" Value="{m:VariableResource ControlCornerRadius}" />
         <Setter Property="Cursor" Value="Hand" />
@@ -50,7 +50,7 @@
                                 <Rectangle
                                     x:Name="ActiveRectangle"
                                     Width="3"
-                                    Height="{Binding ActualHeight, ElementName=ContentBorder, Converter={StaticResource ActiveRectHeightConverter}}"
+                                    Height="{Binding ActualHeight, ElementName=ContentBorder, Converter={StaticResource UiComboBoxActiveRectHeightConverter}}"
                                     Margin="0"
                                     HorizontalAlignment="Left"
                                     VerticalAlignment="Center"
@@ -78,42 +78,16 @@
         </Setter>
     </Style>
 
-    <ControlTemplate x:Key="DefaultComboBoxTemplate" TargetType="{x:Type ComboBox}">
+    <ControlTemplate x:Key="DefaultUiComboBoxTemplate" TargetType="{x:Type controls:ComboBox}">
         <Grid>
-            <!-- ReSharper disable Xaml.BindingWithContextNotResolved -->
             <Border
                 x:Name="ContentBorder"
+                Background="{TemplateBinding VisualBackground}"
+                BorderBrush="{TemplateBinding VisualBorderBrush}"
                 BorderThickness="{TemplateBinding BorderThickness}"
+                CornerRadius="{TemplateBinding CornerRadius}"
+                TextElement.Foreground="{TemplateBinding VisualForeground}"
                 SnapsToDevicePixels="True">
-                <Border.Background>
-                    <!--
-                        The template is intentionally shared by native ComboBox and ui:ComboBox.
-                        PriorityBinding lets the derived control provide its resolved state brush,
-                        while native controls fall back to their standard brush property.
-                    -->
-                    <PriorityBinding>
-                        <Binding Path="VisualBackground" RelativeSource="{RelativeSource TemplatedParent}" />
-                        <Binding Path="Background" RelativeSource="{RelativeSource TemplatedParent}" />
-                    </PriorityBinding>
-                </Border.Background>
-                <Border.BorderBrush>
-                    <PriorityBinding>
-                        <Binding Path="VisualBorderBrush" RelativeSource="{RelativeSource TemplatedParent}" />
-                        <Binding Path="BorderBrush" RelativeSource="{RelativeSource TemplatedParent}" />
-                    </PriorityBinding>
-                </Border.BorderBrush>
-                <Border.CornerRadius>
-                    <PriorityBinding>
-                        <Binding Path="CornerRadius" RelativeSource="{RelativeSource TemplatedParent}" />
-                        <Binding Path="(Border.CornerRadius)" RelativeSource="{RelativeSource TemplatedParent}" />
-                    </PriorityBinding>
-                </Border.CornerRadius>
-                <TextElement.Foreground>
-                    <PriorityBinding>
-                        <Binding Path="VisualForeground" RelativeSource="{RelativeSource TemplatedParent}" />
-                        <Binding Path="Foreground" RelativeSource="{RelativeSource TemplatedParent}" />
-                    </PriorityBinding>
-                </TextElement.Foreground>
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
@@ -169,20 +143,10 @@
                         VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
                         CaretBrush="{Binding Foreground, RelativeSource={RelativeSource Self}}"
                         ContextMenu="{StaticResource DefaultEditorContextMenu}"
+                        Foreground="{TemplateBinding VisualForeground}"
                         IsReadOnly="{TemplateBinding IsReadOnly}"
                         OverridesDefaultStyle="True"
                         VerticalScrollBarVisibility="{TemplateBinding ScrollViewer.VerticalScrollBarVisibility}">
-                        <controls:TextBox.Foreground>
-                            <!--
-                                TextBoxView reads Foreground from its owning editor instead of from
-                                inherited TextElement values, so the editable path needs an explicit
-                                binding to the same resolved foreground as the selection presenter.
-                            -->
-                            <PriorityBinding>
-                                <Binding Path="VisualForeground" RelativeSource="{RelativeSource TemplatedParent}" />
-                                <Binding Path="Foreground" RelativeSource="{RelativeSource TemplatedParent}" />
-                            </PriorityBinding>
-                        </controls:TextBox.Foreground>
                         <controls:TextBox.Template>
                             <ControlTemplate TargetType="{x:Type TextBox}">
                                 <controls:PassiveScrollViewer
@@ -220,16 +184,9 @@
                 x:Name="AccentBorder"
                 BorderBrush="{m:BrushResource SystemAccentColorPrimaryBrush}"
                 BorderThickness="0,0,0,2"
+                CornerRadius="{TemplateBinding CornerRadius}"
                 IsHitTestVisible="False"
-                Visibility="Collapsed">
-                <Border.CornerRadius>
-                    <PriorityBinding>
-                        <Binding Path="CornerRadius" RelativeSource="{RelativeSource TemplatedParent}" />
-                        <Binding Path="(Border.CornerRadius)" RelativeSource="{RelativeSource TemplatedParent}" />
-                    </PriorityBinding>
-                </Border.CornerRadius>
-            </Border>
-            <!-- ReSharper restore Xaml.BindingWithContextNotResolved -->
+                Visibility="Collapsed" />
 
             <!--  弹出框，采用 PopupShadowChrome 用 PopupShadow 呈现阴影  -->
             <Popup
@@ -326,17 +283,17 @@
         </ControlTemplate.Triggers>
     </ControlTemplate>
 
-    <Style x:Key="ComboBoxBaseStyle" TargetType="{x:Type ComboBox}">
+    <Style x:Key="UiComboBoxBaseStyle" TargetType="{x:Type controls:ComboBox}">
         <Setter Property="OverridesDefaultStyle" Value="True" />
         <Setter Property="Background" Value="{m:BrushResource ControlFillColorSecondaryBrush}" />
-        <Setter Property="Border.CornerRadius" Value="{m:VariableResource ControlCornerRadius}" />
+        <Setter Property="CornerRadius" Value="{m:VariableResource ControlCornerRadius}" />
         <Setter Property="BorderBrush" Value="{m:BrushResource ControlStrokeColorSecondaryBrush}" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="FocusVisualStyle" Value="{m:StyleResource DefaultControlFocusVisualStyle}" />
         <Setter Property="Foreground" Value="{m:BrushResource TextFillColorPrimaryBrush}" />
         <Setter Property="HorizontalAlignment" Value="Stretch" />
         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-        <Setter Property="ItemContainerStyle" Value="{StaticResource DefaultComboBoxItemStyle}" />
+        <Setter Property="ItemContainerStyle" Value="{StaticResource DefaultUiComboBoxItemStyle}" />
         <Setter Property="MinHeight" Value="{m:VariableResource TextControlThemeMinHeight}" />
         <Setter Property="MinWidth" Value="{m:VariableResource TextControlThemeMinWidth}" />
         <Setter Property="Padding" Value="{m:VariableResource TextControlThemePadding}" />
@@ -350,43 +307,10 @@
         <Setter Property="Validation.ErrorTemplate" Value="{m:StyleResource DefaultValidationTemplate}" />
         <Setter Property="VerticalAlignment" Value="Center" />
         <Setter Property="VerticalContentAlignment" Value="Top" />
-        <Setter Property="Template" Value="{StaticResource DefaultComboBoxTemplate}" />
+        <Setter Property="Template" Value="{StaticResource DefaultUiComboBoxTemplate}" />
     </Style>
 
-    <!--
-        Native ComboBox remains supported because DataGridComboBoxColumn creates that exact type.
-        Its style retains the old trigger-driven behavior; ui:ComboBox resolves the equivalent
-        states in code so consumers can replace each brush with a local value or style setter.
-    -->
-    <Style x:Key="{x:Static t:StyleKeys.DefaultComboBoxStyle}" BasedOn="{StaticResource ComboBoxBaseStyle}" TargetType="{x:Type ComboBox}">
-        <Style.Triggers>
-            <Trigger Property="IsMouseOver" Value="True">
-                <Setter Property="Background" Value="{m:BrushResource ControlFillColorPrimaryBrush}" />
-            </Trigger>
-            <MultiTrigger>
-                <MultiTrigger.Conditions>
-                    <Condition Property="IsEditable" Value="False" />
-                    <Condition Property="IsDropDownOpen" Value="True" />
-                </MultiTrigger.Conditions>
-                <Setter Property="Background" Value="{m:BrushResource ControlFillColorTertiaryBrush}" />
-            </MultiTrigger>
-            <MultiTrigger>
-                <MultiTrigger.Conditions>
-                    <Condition Property="IsKeyboardFocusWithin" Value="True" />
-                    <Condition Property="IsEditable" Value="True" />
-                </MultiTrigger.Conditions>
-                <Setter Property="Background" Value="{m:BrushResource ControlFillColorInputActiveBrush}" />
-            </MultiTrigger>
-            <Trigger Property="IsEnabled" Value="False">
-                <Setter Property="Background" Value="{m:BrushResource ControlFillColorDisabledBrush}" />
-                <Setter Property="BorderBrush" Value="{m:BrushResource ControlStrokeColorDefaultBrush}" />
-                <Setter Property="Foreground" Value="{m:BrushResource TextFillColorDisabledBrush}" />
-            </Trigger>
-        </Style.Triggers>
-    </Style>
-
-    <Style x:Key="{x:Static t:StyleKeys.DefaultUiComboBoxStyle}" BasedOn="{StaticResource ComboBoxBaseStyle}" TargetType="{x:Type controls:ComboBox}">
-        <Setter Property="CornerRadius" Value="{m:VariableResource ControlCornerRadius}" />
+    <Style x:Key="{x:Static t:StyleKeys.DefaultUiComboBoxStyle}" BasedOn="{StaticResource UiComboBoxBaseStyle}" TargetType="{x:Type controls:ComboBox}">
         <Setter Property="MouseOverBackground" Value="{m:BrushResource ControlFillColorPrimaryBrush}" />
         <Setter Property="FocusedBackground" Value="{m:BrushResource ControlFillColorInputActiveBrush}" />
         <Setter Property="DropDownOpenBackground" Value="{m:BrushResource ControlFillColorTertiaryBrush}" />
@@ -408,8 +332,6 @@
             </MultiTrigger>
         </Style.Triggers>
     </Style>
-
-    <Style BasedOn="{StaticResource {x:Static t:StyleKeys.DefaultComboBoxStyle}}" TargetType="{x:Type ComboBox}" />
 
     <Style BasedOn="{StaticResource {x:Static t:StyleKeys.DefaultUiComboBoxStyle}}" TargetType="{x:Type controls:ComboBox}" />
 
