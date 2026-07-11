@@ -526,9 +526,7 @@ public class TextBox : System.Windows.Controls.TextBox
         BackgroundProperty.OverrideMetadata(
             typeof(TextBox),
             new FrameworkPropertyMetadata(
-                BackgroundProperty.GetMetadata(
-                    typeof(System.Windows.Controls.TextBox)
-                ).DefaultValue,
+                BackgroundProperty.GetMetadata(typeof(System.Windows.Controls.TextBox)).DefaultValue,
                 OnStandardBrushChanged
             )
         );
@@ -536,9 +534,7 @@ public class TextBox : System.Windows.Controls.TextBox
         BorderBrushProperty.OverrideMetadata(
             typeof(TextBox),
             new FrameworkPropertyMetadata(
-                BorderBrushProperty.GetMetadata(
-                    typeof(System.Windows.Controls.TextBox)
-                ).DefaultValue,
+                BorderBrushProperty.GetMetadata(typeof(System.Windows.Controls.TextBox)).DefaultValue,
                 OnStandardBrushChanged
             )
         );
@@ -546,9 +542,7 @@ public class TextBox : System.Windows.Controls.TextBox
         ForegroundProperty.OverrideMetadata(
             typeof(TextBox),
             new FrameworkPropertyMetadata(
-                ForegroundProperty.GetMetadata(
-                    typeof(System.Windows.Controls.TextBox)
-                ).DefaultValue,
+                ForegroundProperty.GetMetadata(typeof(System.Windows.Controls.TextBox)).DefaultValue,
                 OnStandardBrushChanged,
                 CoerceForeground
             )
