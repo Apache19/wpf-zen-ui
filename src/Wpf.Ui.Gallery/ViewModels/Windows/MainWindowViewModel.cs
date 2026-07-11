@@ -21,6 +21,7 @@ using Wpf.Ui.Gallery.Views.Pages.StatusAndInfo;
 using Wpf.Ui.Gallery.Views.Pages.Text;
 using Wpf.Ui.Gallery.Views.Pages.Windows;
 using CheckBox = Wpf.Ui.Controls.CheckBox;
+using ComboBox = Wpf.Ui.Controls.ComboBox;
 using ListBox = Wpf.Ui.Controls.ListBox;
 using RadioButton = Wpf.Ui.Controls.RadioButton;
 using Separator = Wpf.Ui.Controls.Separator;
