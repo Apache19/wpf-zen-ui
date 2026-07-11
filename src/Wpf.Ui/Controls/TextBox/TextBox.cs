@@ -18,6 +18,306 @@ public class TextBox : System.Windows.Controls.TextBox
 {
     private readonly TextEditorMouseInputHelper _mouseInputHelper;
 
+    #region Interaction appearance
+
+    /// <summary>
+    /// Identifies the <see cref="MouseOverForeground"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty MouseOverForegroundProperty =
+        DependencyProperty.Register(
+            nameof(MouseOverForeground),
+            typeof(Brush),
+            typeof(TextBox),
+            new PropertyMetadata(null, OnStateBrushChanged)
+        );
+
+    /// <summary>
+    /// Gets or sets the foreground used while the pointer is over the text box.
+    /// A <see langword="null"/> value falls back to <see cref="Control.Foreground"/>.
+    /// </summary>
+    [Bindable(true)]
+    [Category("Appearance")]
+    public Brush? MouseOverForeground
+    {
+        get => (Brush?)GetValue(MouseOverForegroundProperty);
+        set => SetValue(MouseOverForegroundProperty, value);
+    }
+
+    /// <summary>
+    /// Identifies the <see cref="MouseOverBackground"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty MouseOverBackgroundProperty =
+        DependencyProperty.Register(
+            nameof(MouseOverBackground),
+            typeof(Brush),
+            typeof(TextBox),
+            new PropertyMetadata(null, OnStateBrushChanged)
+        );
+
+    /// <summary>
+    /// Gets or sets the background used while the pointer is over the text box.
+    /// A <see langword="null"/> value falls back to <see cref="Control.Background"/>.
+    /// </summary>
+    [Bindable(true)]
+    [Category("Appearance")]
+    public Brush? MouseOverBackground
+    {
+        get => (Brush?)GetValue(MouseOverBackgroundProperty);
+        set => SetValue(MouseOverBackgroundProperty, value);
+    }
+
+    /// <summary>
+    /// Identifies the <see cref="MouseOverBorderBrush"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty MouseOverBorderBrushProperty =
+        DependencyProperty.Register(
+            nameof(MouseOverBorderBrush),
+            typeof(Brush),
+            typeof(TextBox),
+            new PropertyMetadata(null, OnStateBrushChanged)
+        );
+
+    /// <summary>
+    /// Gets or sets the border brush used while the pointer is over the text box.
+    /// A <see langword="null"/> value falls back to <see cref="Control.BorderBrush"/>.
+    /// </summary>
+    [Bindable(true)]
+    [Category("Appearance")]
+    public Brush? MouseOverBorderBrush
+    {
+        get => (Brush?)GetValue(MouseOverBorderBrushProperty);
+        set => SetValue(MouseOverBorderBrushProperty, value);
+    }
+
+    /// <summary>
+    /// Identifies the <see cref="FocusedForeground"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty FocusedForegroundProperty =
+        DependencyProperty.Register(
+            nameof(FocusedForeground),
+            typeof(Brush),
+            typeof(TextBox),
+            new PropertyMetadata(null, OnStateBrushChanged)
+        );
+
+    /// <summary>
+    /// Gets or sets the foreground used while the text box has keyboard focus.
+    /// A <see langword="null"/> value falls back to <see cref="Control.Foreground"/>.
+    /// </summary>
+    [Bindable(true)]
+    [Category("Appearance")]
+    public Brush? FocusedForeground
+    {
+        get => (Brush?)GetValue(FocusedForegroundProperty);
+        set => SetValue(FocusedForegroundProperty, value);
+    }
+
+    /// <summary>
+    /// Identifies the <see cref="FocusedBackground"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty FocusedBackgroundProperty =
+        DependencyProperty.Register(
+            nameof(FocusedBackground),
+            typeof(Brush),
+            typeof(TextBox),
+            new PropertyMetadata(null, OnStateBrushChanged)
+        );
+
+    /// <summary>
+    /// Gets or sets the background used while the text box has keyboard focus.
+    /// A <see langword="null"/> value falls back to <see cref="Control.Background"/>.
+    /// </summary>
+    [Bindable(true)]
+    [Category("Appearance")]
+    public Brush? FocusedBackground
+    {
+        get => (Brush?)GetValue(FocusedBackgroundProperty);
+        set => SetValue(FocusedBackgroundProperty, value);
+    }
+
+    /// <summary>
+    /// Identifies the <see cref="FocusedBorderBrush"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty FocusedBorderBrushProperty =
+        DependencyProperty.Register(
+            nameof(FocusedBorderBrush),
+            typeof(Brush),
+            typeof(TextBox),
+            new PropertyMetadata(null, OnStateBrushChanged)
+        );
+
+    /// <summary>
+    /// Gets or sets the border brush used while the text box has keyboard focus.
+    /// A <see langword="null"/> value falls back to <see cref="Control.BorderBrush"/>.
+    /// </summary>
+    [Bindable(true)]
+    [Category("Appearance")]
+    public Brush? FocusedBorderBrush
+    {
+        get => (Brush?)GetValue(FocusedBorderBrushProperty);
+        set => SetValue(FocusedBorderBrushProperty, value);
+    }
+
+    /// <summary>
+    /// Identifies the <see cref="DisabledForeground"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty DisabledForegroundProperty =
+        DependencyProperty.Register(
+            nameof(DisabledForeground),
+            typeof(Brush),
+            typeof(TextBox),
+            new PropertyMetadata(null, OnStateBrushChanged)
+        );
+
+    /// <summary>
+    /// Gets or sets the foreground used while the text box is disabled.
+    /// A <see langword="null"/> value falls back to <see cref="Control.Foreground"/>.
+    /// </summary>
+    [Bindable(true)]
+    [Category("Appearance")]
+    public Brush? DisabledForeground
+    {
+        get => (Brush?)GetValue(DisabledForegroundProperty);
+        set => SetValue(DisabledForegroundProperty, value);
+    }
+
+    /// <summary>
+    /// Identifies the <see cref="DisabledBackground"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty DisabledBackgroundProperty =
+        DependencyProperty.Register(
+            nameof(DisabledBackground),
+            typeof(Brush),
+            typeof(TextBox),
+            new PropertyMetadata(null, OnStateBrushChanged)
+        );
+
+    /// <summary>
+    /// Gets or sets the background used while the text box is disabled.
+    /// A <see langword="null"/> value falls back to <see cref="Control.Background"/>.
+    /// </summary>
+    [Bindable(true)]
+    [Category("Appearance")]
+    public Brush? DisabledBackground
+    {
+        get => (Brush?)GetValue(DisabledBackgroundProperty);
+        set => SetValue(DisabledBackgroundProperty, value);
+    }
+
+    /// <summary>
+    /// Identifies the <see cref="DisabledBorderBrush"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty DisabledBorderBrushProperty =
+        DependencyProperty.Register(
+            nameof(DisabledBorderBrush),
+            typeof(Brush),
+            typeof(TextBox),
+            new PropertyMetadata(null, OnStateBrushChanged)
+        );
+
+    /// <summary>
+    /// Gets or sets the border brush used while the text box is disabled.
+    /// A <see langword="null"/> value falls back to <see cref="Control.BorderBrush"/>.
+    /// </summary>
+    [Bindable(true)]
+    [Category("Appearance")]
+    public Brush? DisabledBorderBrush
+    {
+        get => (Brush?)GetValue(DisabledBorderBrushProperty);
+        set => SetValue(DisabledBorderBrushProperty, value);
+    }
+
+    private static readonly DependencyPropertyKey VisualForegroundPropertyKey =
+        DependencyProperty.RegisterReadOnly(
+            nameof(VisualForeground),
+            typeof(Brush),
+            typeof(TextBox),
+            new PropertyMetadata(null)
+        );
+
+    /// <summary>
+    /// Identifies the read-only <see cref="VisualForeground"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty VisualForegroundProperty =
+        VisualForegroundPropertyKey.DependencyProperty;
+
+    /// <summary>
+    /// Gets the foreground selected for the current interaction state.
+    /// This property is intended for control templates.
+    /// </summary>
+    [Bindable(true)]
+    [Category("Appearance")]
+    public Brush? VisualForeground => (Brush?)GetValue(VisualForegroundProperty);
+
+    private static readonly DependencyPropertyKey VisualBackgroundPropertyKey =
+        DependencyProperty.RegisterReadOnly(
+            nameof(VisualBackground),
+            typeof(Brush),
+            typeof(TextBox),
+            new PropertyMetadata(null)
+        );
+
+    /// <summary>
+    /// Identifies the read-only <see cref="VisualBackground"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty VisualBackgroundProperty =
+        VisualBackgroundPropertyKey.DependencyProperty;
+
+    /// <summary>
+    /// Gets the background selected for the current interaction state.
+    /// This property is intended for control templates.
+    /// </summary>
+    [Bindable(true)]
+    [Category("Appearance")]
+    public Brush? VisualBackground => (Brush?)GetValue(VisualBackgroundProperty);
+
+    private static readonly DependencyPropertyKey VisualBorderBrushPropertyKey =
+        DependencyProperty.RegisterReadOnly(
+            nameof(VisualBorderBrush),
+            typeof(Brush),
+            typeof(TextBox),
+            new PropertyMetadata(null)
+        );
+
+    /// <summary>
+    /// Identifies the read-only <see cref="VisualBorderBrush"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty VisualBorderBrushProperty =
+        VisualBorderBrushPropertyKey.DependencyProperty;
+
+    /// <summary>
+    /// Gets the border brush selected for the current interaction state.
+    /// This property is intended for control templates.
+    /// </summary>
+    [Bindable(true)]
+    [Category("Appearance")]
+    public Brush? VisualBorderBrush => (Brush?)GetValue(VisualBorderBrushProperty);
+
+    /// <summary>
+    /// Identifies the <see cref="CornerRadius"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty CornerRadiusProperty =
+        DependencyProperty.Register(
+            nameof(CornerRadius),
+            typeof(CornerRadius),
+            typeof(TextBox),
+            new FrameworkPropertyMetadata(default(CornerRadius))
+        );
+
+    /// <summary>
+    /// Gets or sets the radius applied to the text box chrome and its focus indicator.
+    /// The property affects template rendering but does not change layout measurement.
+    /// </summary>
+    [Bindable(true)]
+    [Category("Appearance")]
+    public CornerRadius CornerRadius
+    {
+        get => (CornerRadius)GetValue(CornerRadiusProperty);
+        set => SetValue(CornerRadiusProperty, value);
+    }
+
+    #endregion
+
     /// <summary>Identifies the <see cref="Icon"/> dependency property.</summary>
     public static readonly DependencyProperty IconProperty =
         DependencyProperty.Register(
@@ -216,6 +516,43 @@ public class TextBox : System.Windows.Controls.TextBox
             typeof(TextBox),
             new FrameworkPropertyMetadata(typeof(TextBox))
         );
+
+        // ---------------------------------------------------------------------------
+        // Standard Control brushes remain the normal-state inputs. Metadata callbacks
+        // keep template-facing outputs synchronized when bindings, styles, or dynamic
+        // resources change without replacing the public properties' effective values.
+        // ---------------------------------------------------------------------------
+
+        BackgroundProperty.OverrideMetadata(
+            typeof(TextBox),
+            new FrameworkPropertyMetadata(
+                BackgroundProperty.GetMetadata(
+                    typeof(System.Windows.Controls.TextBox)
+                ).DefaultValue,
+                OnStandardBrushChanged
+            )
+        );
+
+        BorderBrushProperty.OverrideMetadata(
+            typeof(TextBox),
+            new FrameworkPropertyMetadata(
+                BorderBrushProperty.GetMetadata(
+                    typeof(System.Windows.Controls.TextBox)
+                ).DefaultValue,
+                OnStandardBrushChanged
+            )
+        );
+
+        ForegroundProperty.OverrideMetadata(
+            typeof(TextBox),
+            new FrameworkPropertyMetadata(
+                ForegroundProperty.GetMetadata(
+                    typeof(System.Windows.Controls.TextBox)
+                ).DefaultValue,
+                OnStandardBrushChanged,
+                CoerceForeground
+            )
+        );
     }
 
     /// <summary>
@@ -227,12 +564,110 @@ public class TextBox : System.Windows.Controls.TextBox
 
         SetValue(TemplateButtonCommandProperty, new RelayCommand<string>(OnTemplateButtonClick));
         IsPlaceholderVisible = PlaceholderEnabled;
+        UpdateVisualBrushes();
 
         // Cursor is normally resolved through a bubbling QueryCursor event. Using
         // handledEventsToo lets us correct the cursor even if PART_ContentHost.Cursor has
         // already handled the event, while still forwarding real TextBoxView hits back to
         // WPF's internal cursor logic.
         AddHandler(Mouse.QueryCursorEvent, new QueryCursorEventHandler(OnTextBoxQueryCursor), handledEventsToo: true);
+        IsEnabledChanged += OnTextBoxIsEnabledChanged;
+    }
+
+    private static void OnStandardBrushChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        ((TextBox)d).UpdateVisualBrushes();
+    }
+
+    private static void OnStateBrushChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        var textBox = (TextBox)d;
+
+        // TextBoxView constructs its text properties from the owning TextBox rather
+        // than from template-child inheritance. Coercing Foreground is consequently
+        // the only public WPF mechanism that changes editable text without replacing
+        // the caller's binding, dynamic resource, or other base value.
+        textBox.CoerceValue(ForegroundProperty);
+        textBox.UpdateVisualBrushes();
+    }
+
+    private static object CoerceForeground(DependencyObject d, object? baseValue)
+    {
+        var textBox = (TextBox)d;
+
+        if (!textBox.IsEnabled)
+        {
+            return textBox.DisabledForeground ?? baseValue!;
+        }
+
+        if (textBox.IsKeyboardFocused)
+        {
+            return textBox.FocusedForeground ?? baseValue!;
+        }
+
+        if (textBox.IsMouseOver && textBox.MouseOverForeground is not null)
+        {
+            return textBox.MouseOverForeground;
+        }
+
+        return baseValue!;
+    }
+
+    /// <inheritdoc />
+    protected override void OnMouseEnter(MouseEventArgs e)
+    {
+        base.OnMouseEnter(e);
+        CoerceValue(ForegroundProperty);
+        UpdateVisualBrushes();
+    }
+
+    /// <inheritdoc />
+    protected override void OnMouseLeave(MouseEventArgs e)
+    {
+        base.OnMouseLeave(e);
+        CoerceValue(ForegroundProperty);
+        UpdateVisualBrushes();
+    }
+
+    private void OnTextBoxIsEnabledChanged(object sender, DependencyPropertyChangedEventArgs e)
+    {
+        // IsEnabled is a read-only dependency property and UIElement does not expose an
+        // overridable state-change method. Its public changed event is therefore the stable
+        // invalidation point for refreshing the template-facing state brushes.
+        CoerceValue(ForegroundProperty);
+        UpdateVisualBrushes();
+    }
+
+    /// <summary>
+    /// Resolves the brushes exposed to the template. Keyboard focus takes precedence
+    /// over hover because both states normally overlap while the user edits text.
+    /// Null state brushes intentionally inherit the corresponding normal-state brush.
+    /// </summary>
+    private void UpdateVisualBrushes()
+    {
+        Brush? foreground  = Foreground;
+        Brush? background  = Background;
+        Brush? borderBrush = BorderBrush;
+
+        if (!IsEnabled)
+        {
+            background = DisabledBackground ?? background;
+            borderBrush = DisabledBorderBrush ?? borderBrush;
+        }
+        else if (IsKeyboardFocused)
+        {
+            background  = FocusedBackground ?? background;
+            borderBrush = FocusedBorderBrush ?? borderBrush;
+        }
+        else if (IsMouseOver)
+        {
+            background  = MouseOverBackground ?? background;
+            borderBrush = MouseOverBorderBrush ?? borderBrush;
+        }
+
+        SetValue(VisualForegroundPropertyKey,  foreground);
+        SetValue(VisualBackgroundPropertyKey,  background);
+        SetValue(VisualBorderBrushPropertyKey, borderBrush);
     }
 
     /// <inheritdoc />
@@ -294,6 +729,9 @@ public class TextBox : System.Windows.Controls.TextBox
     {
         base.OnGotFocus(e);
 
+        CoerceValue(ForegroundProperty);
+        UpdateVisualBrushes();
+
         CaretIndex = Text.Length;
 
         RevealClearButton();
@@ -303,6 +741,9 @@ public class TextBox : System.Windows.Controls.TextBox
     protected override void OnLostFocus(RoutedEventArgs e)
     {
         base.OnLostFocus(e);
+
+        CoerceValue(ForegroundProperty);
+        UpdateVisualBrushes();
 
         HideClearButton();
     }

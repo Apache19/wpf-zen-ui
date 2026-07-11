@@ -29,10 +29,11 @@
         <Grid>
             <Border
                 x:Name="ContentBorder"
-                Background="{TemplateBinding Background}"
-                BorderBrush="{TemplateBinding BorderBrush}"
+                Background="{TemplateBinding VisualBackground}"
+                BorderBrush="{TemplateBinding VisualBorderBrush}"
                 BorderThickness="{TemplateBinding BorderThickness}"
-                CornerRadius="{TemplateBinding Border.CornerRadius}"
+                CornerRadius="{TemplateBinding CornerRadius}"
+                TextElement.Foreground="{TemplateBinding VisualForeground}"
                 SnapsToDevicePixels="True">
                 <Grid>
                     <Grid.ColumnDefinitions>
@@ -136,7 +137,7 @@
                 x:Name="FocusIndicator"
                 BorderBrush="{m:BrushResource SystemAccentColorPrimaryBrush}"
                 BorderThickness="0,0,0,2"
-                CornerRadius="{TemplateBinding Border.CornerRadius}"
+                CornerRadius="{TemplateBinding CornerRadius}"
                 IsHitTestVisible="False"
                 Visibility="Collapsed" />
         </Grid>
@@ -181,13 +182,6 @@
 
             <!--  Visual triggers  -->
 
-            <Trigger Property="IsMouseOver" Value="True">
-                <Setter TargetName="ContentBorder" Property="Background" Value="{m:BrushResource ControlFillColorPrimaryBrush}" />
-                <!--  TODO: Update theme style — change ControlStrokeColorDefault to Primary and apply it to the border here  -->
-            </Trigger>
-            <Trigger Property="IsKeyboardFocused" Value="True">
-                <Setter TargetName="ContentBorder" Property="Background" Value="{m:BrushResource ControlFillColorInputActiveBrush}" />
-            </Trigger>
             <MultiTrigger>
                 <MultiTrigger.Conditions>
                     <Condition Property="IsKeyboardFocused" Value="True" />
@@ -195,18 +189,8 @@
                 </MultiTrigger.Conditions>
                 <Setter TargetName="FocusIndicator" Property="Visibility" Value="Visible" />
             </MultiTrigger>
-            <MultiTrigger>
-                <MultiTrigger.Conditions>
-                    <Condition Property="IsReadOnly" Value="True" />
-                    <Condition Property="IsKeyboardFocused" Value="True" />
-                </MultiTrigger.Conditions>
-                <Setter TargetName="ContentBorder" Property="Background" Value="{m:BrushResource ControlFillColorTertiaryBrush}" />
-            </MultiTrigger>
             <Trigger Property="IsEnabled" Value="False">
-                <Setter TargetName="ContentBorder" Property="Background" Value="{m:BrushResource ControlFillColorDisabledBrush}" />
-                <Setter TargetName="ContentBorder" Property="BorderBrush" Value="{m:BrushResource ControlStrokeColorDefaultBrush}" />
                 <Setter TargetName="PlaceholderTextBox" Property="Opacity" Value="0.5" />
-                <Setter Property="Foreground" Value="{m:BrushResource TextFillColorDisabledBrush}" />
                 <Setter Property="ClearButtonEnabled" Value="False" />
             </Trigger>
         </ControlTemplate.Triggers>
@@ -234,13 +218,18 @@
         <Setter Property="CaretBrush" Value="{Binding Foreground, RelativeSource={RelativeSource Self}}" />
         <Setter Property="Background" Value="{m:BrushResource ControlFillColorSecondaryBrush}" />
         <Setter Property="BorderBrush" Value="{m:BrushResource ControlStrokeColorSecondaryBrush}" />
+        <Setter Property="MouseOverBackground" Value="{m:BrushResource ControlFillColorPrimaryBrush}" />
+        <Setter Property="FocusedBackground" Value="{m:BrushResource ControlFillColorInputActiveBrush}" />
+        <Setter Property="DisabledForeground" Value="{m:BrushResource TextFillColorDisabledBrush}" />
+        <Setter Property="DisabledBackground" Value="{m:BrushResource ControlFillColorDisabledBrush}" />
+        <Setter Property="DisabledBorderBrush" Value="{m:BrushResource ControlStrokeColorDefaultBrush}" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
         <Setter Property="MinHeight" Value="{m:VariableResource TextControlThemeMinHeight}" />
         <Setter Property="MinWidth" Value="{m:VariableResource TextControlThemeMinWidth}" />
         <Setter Property="Padding" Value="{m:VariableResource TextControlThemePadding}" />
-        <Setter Property="Border.CornerRadius" Value="{m:VariableResource ControlCornerRadius}" />
+        <Setter Property="CornerRadius" Value="{m:VariableResource ControlCornerRadius}" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
         <Setter Property="Validation.ErrorTemplate" Value="{m:StyleResource DefaultValidationTemplate}" />
         <Setter Property="ContextMenu" Value="{StaticResource DefaultEditorContextMenu}" />
@@ -252,6 +241,14 @@
                 <Setter Property="IsReadOnly" Value="True" />
                 <Setter Property="Padding" Value="0" />
                 <Setter Property="Template" Value="{StaticResource DefaultUiTextBoxTextBlockAppearanceControlTemplate}" />
+            </Trigger>
+            <Trigger Property="IsReadOnly" Value="True">
+                <!--
+                    Read-only is a semantic mode rather than a separate rendering path.
+                    Supplying its focused color through the public state property keeps a
+                    local FocusedBackground value free to override this theme default.
+                -->
+                <Setter Property="FocusedBackground" Value="{m:BrushResource ControlFillColorTertiaryBrush}" />
             </Trigger>
 
             <MultiTrigger>
