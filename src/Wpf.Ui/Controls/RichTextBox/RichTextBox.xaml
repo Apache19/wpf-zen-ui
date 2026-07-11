@@ -24,7 +24,6 @@
         <Setter Property="FocusVisualStyle" Value="{DynamicResource {x:Static theming:StyleKeys.DefaultControlFocusVisualStyle}}" />
         <Setter Property="VerticalScrollBarVisibility" Value="Auto" />
         <Setter Property="HorizontalScrollBarVisibility" Value="Disabled" />
-        <Setter Property="MinHeight" Value="{m:VariableResource TextControlThemeMinHeight}" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="Padding" Value="{m:VariableResource TextControlThemePadding}" />
         <Setter Property="SnapsToDevicePixels" Value="True" />

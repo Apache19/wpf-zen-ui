@@ -19,8 +19,6 @@ public enum VariableId
     TextControlThemePadding,
     ButtonThemePadding,
     ContentControlFontSize,
-    TextControlThemeMinHeight,
-    TextControlThemeMinWidth,
     ListViewItemMinHeight,
     TreeViewItemMinHeight,
     TreeViewItemMultiSelectCheckBoxMinHeight,

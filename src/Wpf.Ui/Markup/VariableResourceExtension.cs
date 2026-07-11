@@ -42,8 +42,6 @@ public class VariableResourceExtension : DynamicResourceExtension
             VariableId.TextControlThemePadding                  => VariableKeys.TextControlThemePadding,
             VariableId.ButtonThemePadding                       => VariableKeys.ButtonThemePadding,
             VariableId.ContentControlFontSize                   => VariableKeys.ContentControlFontSize,
-            VariableId.TextControlThemeMinHeight                => VariableKeys.TextControlThemeMinHeight,
-            VariableId.TextControlThemeMinWidth                 => VariableKeys.TextControlThemeMinWidth,
             VariableId.ListViewItemMinHeight                    => VariableKeys.ListViewItemMinHeight,
             VariableId.TreeViewItemMinHeight                    => VariableKeys.TreeViewItemMinHeight,
             VariableId.TreeViewItemMultiSelectCheckBoxMinHeight => VariableKeys.TreeViewItemMultiSelectCheckBoxMinHeight,

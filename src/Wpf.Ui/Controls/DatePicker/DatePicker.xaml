@@ -64,8 +64,6 @@
         <Setter Property="VerticalAlignment" Value="Center" />
         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
         <Setter Property="VerticalContentAlignment" Value="Stretch" />
-        <Setter Property="MinHeight" Value="{DynamicResource {x:Static theming:VariableKeys.TextControlThemeMinHeight}}" />
-        <Setter Property="MinWidth" Value="{DynamicResource {x:Static theming:VariableKeys.TextControlThemeMinWidth}}" />
         <Setter Property="Padding" Value="{DynamicResource {x:Static theming:VariableKeys.TextControlThemePadding}}" />
         <Setter Property="Border.CornerRadius" Value="{DynamicResource {x:Static theming:VariableKeys.ControlCornerRadius}}" />
         <Setter Property="SnapsToDevicePixels" Value="True" />

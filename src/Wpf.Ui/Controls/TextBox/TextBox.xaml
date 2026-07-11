@@ -226,8 +226,6 @@
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
-        <Setter Property="MinHeight" Value="{m:VariableResource TextControlThemeMinHeight}" />
-        <Setter Property="MinWidth" Value="{m:VariableResource TextControlThemeMinWidth}" />
         <Setter Property="Padding" Value="{m:VariableResource TextControlThemePadding}" />
         <Setter Property="CornerRadius" Value="{m:VariableResource ControlCornerRadius}" />
         <Setter Property="SnapsToDevicePixels" Value="True" />

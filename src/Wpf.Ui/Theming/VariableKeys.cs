@@ -27,8 +27,6 @@ public static class VariableKeys
     public static ComponentResourceKey TextControlThemePadding                  { get; private set; }
     public static ComponentResourceKey ButtonThemePadding                       { get; private set; }
     public static ComponentResourceKey ContentControlFontSize                   { get; private set; }
-    public static ComponentResourceKey TextControlThemeMinHeight                { get; private set; }
-    public static ComponentResourceKey TextControlThemeMinWidth                 { get; private set; }
     public static ComponentResourceKey ListViewItemMinHeight                    { get; private set; }
     public static ComponentResourceKey TreeViewItemMinHeight                    { get; private set; }
     public static ComponentResourceKey TreeViewItemMultiSelectCheckBoxMinHeight { get; private set; }

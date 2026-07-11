@@ -77,8 +77,6 @@
         <Setter Property="BorderBrush" Value="{m:BrushResource ControlStrokeColorSecondaryBrush}" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-        <Setter Property="MinHeight" Value="{m:VariableResource TextControlThemeMinHeight}" />
-        <Setter Property="MinWidth" Value="{m:VariableResource TextControlThemeMinWidth}" />
         <Setter Property="Padding" Value="{m:VariableResource TextControlThemePadding}" />
         <Setter Property="Border.CornerRadius" Value="{m:VariableResource ControlCornerRadius}" />
         <Setter Property="SnapsToDevicePixels" Value="True" />

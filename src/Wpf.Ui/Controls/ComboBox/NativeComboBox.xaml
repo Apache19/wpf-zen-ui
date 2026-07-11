@@ -24,11 +24,11 @@
     <converters:DoubleToDoubleConverter x:Key="ActiveRectHeightConverter" Multiply="0.5" />
 
     <Style x:Key="DefaultComboBoxItemStyle" TargetType="{x:Type ComboBoxItem}">
+        <Setter Property="OverridesDefaultStyle" Value="True" />
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="Border.CornerRadius" Value="{m:VariableResource ControlCornerRadius}" />
         <Setter Property="Cursor" Value="Hand" />
         <Setter Property="FocusVisualStyle" Value="{m:StyleResource DefaultControlFocusVisualStyle}" />
-        <Setter Property="Foreground" Value="{m:BrushResource TextFillColorPrimaryBrush}" />
         <Setter Property="Padding" Value="10,8,8,8" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
         <Setter Property="Template">
@@ -209,7 +209,6 @@
                     CornerRadius="{m:VariableResource PopupCornerRadius}"
                     SnapsToDevicePixels="True">
                     <controls:PassiveScrollViewer
-                        MaxHeight="{TemplateBinding MaxDropDownHeight}"
                         Margin="0"
                         HorizontalScrollBarVisibility="{TemplateBinding ScrollViewer.HorizontalScrollBarVisibility}"
                         SnapsToDevicePixels="True"
@@ -305,8 +304,6 @@
         <Setter Property="HorizontalAlignment" Value="Stretch" />
         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
         <Setter Property="ItemContainerStyle" Value="{StaticResource DefaultComboBoxItemStyle}" />
-        <Setter Property="MinHeight" Value="{m:VariableResource TextControlThemeMinHeight}" />
-        <Setter Property="MinWidth" Value="{m:VariableResource TextControlThemeMinWidth}" />
         <Setter Property="Padding" Value="{m:VariableResource TextControlThemePadding}" />
         <Setter Property="Popup.Placement" Value="Bottom" />
         <Setter Property="Popup.PopupAnimation" Value="None" />

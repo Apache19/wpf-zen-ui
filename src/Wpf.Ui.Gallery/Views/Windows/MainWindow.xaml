@@ -88,14 +88,12 @@
                     <ColumnDefinition />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
-                <ComboBox
-                    MinWidth="200"
+                <ui:ComboBox
+                    MinWidth="220"
                     Margin="0,0,8,0"
-                    Padding="9,7"
                     HorizontalAlignment="Right"
                     VerticalAlignment="Center"
                     ui:PlaceholderService.Content="WindowBackdropType"
-                    FontSize="{DynamicResource {x:Static theming:VariableKeys.ControlContentThemeFontSize}}"
                     IsEditable="True"
                     SelectionChanged="BackdropComboBox_OnSelected">
                     <ComboBoxItem Content="None" Tag="{x:Static ui:WindowBackdropType.None}" />
@@ -103,7 +101,7 @@
                     <ComboBoxItem Content="Acrylic" Tag="{x:Static ui:WindowBackdropType.Acrylic}" />
                     <ComboBoxItem Content="Mica" Tag="{x:Static ui:WindowBackdropType.Mica}" />
                     <ComboBoxItem Content="Mica_Alt" Tag="{x:Static ui:WindowBackdropType.Mica_Alt}" />
-                </ComboBox>
+                </ui:ComboBox>
                 <ui:Button
                     Grid.Column="1"
                     Padding="9"

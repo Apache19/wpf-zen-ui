@@ -24,11 +24,11 @@
     <converters:DoubleToDoubleConverter x:Key="UiComboBoxActiveRectHeightConverter" Multiply="0.5" />
 
     <Style x:Key="DefaultUiComboBoxItemStyle" TargetType="{x:Type ComboBoxItem}">
+        <Setter Property="OverridesDefaultStyle" Value="True" />
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="Border.CornerRadius" Value="{m:VariableResource ControlCornerRadius}" />
         <Setter Property="Cursor" Value="Hand" />
         <Setter Property="FocusVisualStyle" Value="{m:StyleResource DefaultControlFocusVisualStyle}" />
-        <Setter Property="Foreground" Value="{m:BrushResource TextFillColorPrimaryBrush}" />
         <Setter Property="Padding" Value="10,8,8,8" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
         <Setter Property="Template">
@@ -86,7 +86,6 @@
                 BorderBrush="{TemplateBinding VisualBorderBrush}"
                 BorderThickness="{TemplateBinding BorderThickness}"
                 CornerRadius="{TemplateBinding CornerRadius}"
-                TextElement.Foreground="{TemplateBinding VisualForeground}"
                 SnapsToDevicePixels="True">
                 <Grid>
                     <Grid.ColumnDefinitions>
@@ -116,7 +115,8 @@
                             ContentStringFormat="{TemplateBinding SelectionBoxItemStringFormat}"
                             ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
                             ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}"
-                            SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
+                            SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"
+                            TextElement.Foreground="{TemplateBinding VisualForeground}" />
                     </Grid>
 
                     <!--  下拉按钮小箭头图标，切换时用动画翻转  -->
@@ -212,7 +212,6 @@
                     CornerRadius="{m:VariableResource PopupCornerRadius}"
                     SnapsToDevicePixels="True">
                     <controls:PassiveScrollViewer
-                        MaxHeight="{TemplateBinding MaxDropDownHeight}"
                         Margin="0"
                         HorizontalScrollBarVisibility="{TemplateBinding ScrollViewer.HorizontalScrollBarVisibility}"
                         SnapsToDevicePixels="True"
@@ -284,7 +283,6 @@
     </ControlTemplate>
 
     <Style x:Key="UiComboBoxBaseStyle" TargetType="{x:Type controls:ComboBox}">
-        <Setter Property="OverridesDefaultStyle" Value="True" />
         <Setter Property="Background" Value="{m:BrushResource ControlFillColorSecondaryBrush}" />
         <Setter Property="CornerRadius" Value="{m:VariableResource ControlCornerRadius}" />
         <Setter Property="BorderBrush" Value="{m:BrushResource ControlStrokeColorSecondaryBrush}" />
@@ -294,8 +292,6 @@
         <Setter Property="HorizontalAlignment" Value="Stretch" />
         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
         <Setter Property="ItemContainerStyle" Value="{StaticResource DefaultUiComboBoxItemStyle}" />
-        <Setter Property="MinHeight" Value="{m:VariableResource TextControlThemeMinHeight}" />
-        <Setter Property="MinWidth" Value="{m:VariableResource TextControlThemeMinWidth}" />
         <Setter Property="Padding" Value="{m:VariableResource TextControlThemePadding}" />
         <Setter Property="Popup.Placement" Value="Bottom" />
         <Setter Property="Popup.PopupAnimation" Value="None" />

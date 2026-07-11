@@ -35,8 +35,6 @@
     <Thickness x:Key="{x:Static theming:VariableKeys.ButtonThemePadding}">11,8,11,7</Thickness>
 
     <system:Double x:Key="{x:Static theming:VariableKeys.ContentControlFontSize}">14</system:Double>
-    <system:Double x:Key="{x:Static theming:VariableKeys.TextControlThemeMinHeight}">24</system:Double>
-    <system:Double x:Key="{x:Static theming:VariableKeys.TextControlThemeMinWidth}">0</system:Double>
     <system:Double x:Key="{x:Static theming:VariableKeys.ListViewItemMinHeight}">32</system:Double>
     <system:Double x:Key="{x:Static theming:VariableKeys.TreeViewItemMinHeight}">24</system:Double>
     <system:Double x:Key="{x:Static theming:VariableKeys.TreeViewItemMultiSelectCheckBoxMinHeight}">24</system:Double>

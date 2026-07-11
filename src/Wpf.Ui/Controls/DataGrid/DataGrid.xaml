@@ -983,8 +983,6 @@
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="HorizontalAlignment" Value="Stretch" />
         <Setter Property="VerticalAlignment" Value="Center" />
-        <Setter Property="MinHeight" Value="{DynamicResource {x:Static theming:VariableKeys.TextControlThemeMinHeight}}" />
-        <Setter Property="MinWidth" Value="{DynamicResource {x:Static theming:VariableKeys.TextControlThemeMinWidth}}" />
         <Setter Property="Margin" Value="0,0,11,0" />
         <Setter Property="Padding" Value="13,10,2,8" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
