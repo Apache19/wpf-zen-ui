@@ -12,6 +12,15 @@
     xmlns:markup="clr-namespace:Wpf.Ui.Markup">
 
     <Style x:Key="ToolBarButtonBaseStyle" TargetType="{x:Type ButtonBase}">
+        <!--
+            WARNING: Do NOT set Background to {x:Null} or remove this Setter.
+            The ControlTemplate below contains an IsMouseOver trigger whose
+            EnterActions/ExitActions storyboard animates
+            (Border.Background).(SolidColorBrush.Opacity).  WPF's
+            VerifyPathIsAnimatable requires the intermediate object (Background)
+            to be a non-null DependencyObject.  A null Background will crash at
+            runtime.
+        -->
         <Setter Property="Background" Value="{markup:BrushResource ControlFillColorPrimaryBrush}" />
         <Setter Property="BorderBrush" Value="Transparent" />
         <Setter Property="BorderThickness" Value="0" />
@@ -65,22 +74,10 @@
         </Setter>
     </Style>
 
-    <Style
-        x:Key="{x:Static ToolBar.ButtonStyleKey}"
-        BasedOn="{StaticResource ToolBarButtonBaseStyle}"
-        TargetType="{x:Type Button}" />
-    <Style
-        x:Key="{x:Static ToolBar.ToggleButtonStyleKey}"
-        BasedOn="{StaticResource ToolBarButtonBaseStyle}"
-        TargetType="{x:Type ToggleButton}" />
-    <Style
-        x:Key="{x:Static ToolBar.CheckBoxStyleKey}"
-        BasedOn="{StaticResource ToolBarButtonBaseStyle}"
-        TargetType="{x:Type CheckBox}" />
-    <Style
-        x:Key="{x:Static ToolBar.RadioButtonStyleKey}"
-        BasedOn="{StaticResource ToolBarButtonBaseStyle}"
-        TargetType="{x:Type RadioButton}" />
+    <Style x:Key="{x:Static ToolBar.ButtonStyleKey}" BasedOn="{StaticResource ToolBarButtonBaseStyle}" TargetType="{x:Type Button}" />
+    <Style x:Key="{x:Static ToolBar.ToggleButtonStyleKey}" BasedOn="{StaticResource ToolBarButtonBaseStyle}" TargetType="{x:Type ToggleButton}" />
+    <Style x:Key="{x:Static ToolBar.CheckBoxStyleKey}" BasedOn="{StaticResource ToolBarButtonBaseStyle}" TargetType="{x:Type CheckBox}" />
+    <Style x:Key="{x:Static ToolBar.RadioButtonStyleKey}" BasedOn="{StaticResource ToolBarButtonBaseStyle}" TargetType="{x:Type RadioButton}" />
 
     <Style x:Key="{x:Static ToolBar.TextBoxStyleKey}" TargetType="{x:Type TextBox}">
         <Setter Property="KeyboardNavigation.TabNavigation" Value="None" />
@@ -230,9 +227,9 @@
                                         x:Name="DropDownBorder"
                                         Margin="0"
                                         Padding="0,3,0,3"
+                                        Background="{markup:BrushResource SystemFillColorSolidNeutralBackgroundBrush}"
                                         BorderThickness="1"
                                         CornerRadius="8"
-                                        Background="{markup:BrushResource SystemFillColorSolidNeutralBackgroundBrush}"
                                         SnapsToDevicePixels="True">
 
                                         <ToolBarOverflowPanel
