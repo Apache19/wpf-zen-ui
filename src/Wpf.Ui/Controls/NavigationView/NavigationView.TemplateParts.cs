@@ -12,24 +12,11 @@ namespace Wpf.Ui.Controls;
 /// <content>
 /// Defines the template parts for the <see cref="NavigationView"/> control
 /// </content>
-[TemplatePart(
-    Name = TemplateElementNavigationViewContentPresenter,
-    Type = typeof(NavigationViewContentPresenter)
-)]
-[TemplatePart(
-    Name = TemplateElementMenuItemsItemsControl,
-    Type = typeof(System.Windows.Controls.ItemsControl)
-)]
-[TemplatePart(
-    Name = TemplateElementFooterMenuItemsItemsControl,
-    Type = typeof(System.Windows.Controls.ItemsControl)
-)]
-[TemplatePart(Name = TemplateElementBackButton, Type = typeof(System.Windows.Controls.Button))]
-[TemplatePart(Name = TemplateElementToggleButton, Type = typeof(System.Windows.Controls.Button))]
-[TemplatePart(
-    Name = TemplateElementAutoSuggestBoxSymbolButton,
-    Type = typeof(System.Windows.Controls.Button)
-)]
+[TemplatePart(Name = TemplateElementNavigationViewContentPresenter, Type = typeof(NavigationViewContentPresenter))]
+[TemplatePart(Name = TemplateElementMenuItemsItemsControl,          Type = typeof(System.Windows.Controls.ItemsControl))]
+[TemplatePart(Name = TemplateElementFooterMenuItemsItemsControl,    Type = typeof(System.Windows.Controls.ItemsControl))]
+[TemplatePart(Name = TemplateElementPaneButtonsPresenter,           Type = typeof(System.Windows.Controls.ContentPresenter))]
+[TemplatePart(Name = TemplateElementAutoSuggestBoxSymbolButton,     Type = typeof(System.Windows.Controls.Button))]
 public partial class NavigationView
 {
     /// <summary>
@@ -49,14 +36,10 @@ public partial class NavigationView
     private const string TemplateElementFooterMenuItemsItemsControl = "PART_FooterMenuItemsItemsControl";
 
     /// <summary>
-    /// Template element represented by the <c>PART_BackButton</c> name.
+    /// Template element that receives navigation-owned pane buttons which are not
+    /// currently contributed to a title bar.
     /// </summary>
-    private const string TemplateElementBackButton = "PART_BackButton";
-
-    /// <summary>
-    /// Template element represented by the <c>PART_ToggleButton</c> name.
-    /// </summary>
-    private const string TemplateElementToggleButton = "PART_ToggleButton";
+    private const string TemplateElementPaneButtonsPresenter = "PART_PaneButtonsPresenter";
 
     /// <summary>
     /// Template element represented by the <c>PART_AutoSuggestBoxSymbolButton</c> name.
@@ -89,6 +72,12 @@ public partial class NavigationView
     protected System.Windows.Controls.Button? ToggleButton { get; set; }
 
     /// <summary>
+    /// Gets or sets the template slot used for navigation-owned buttons that remain in the pane.
+    /// The presenter is optional so custom templates can deliberately omit the pane command area.
+    /// </summary>
+    protected System.Windows.Controls.ContentPresenter? PaneButtonsPresenter { get; set; }
+
+    /// <summary>
     /// Gets or sets the control that is visitable if PaneDisplayMode="Left" and in compact state
     /// </summary>
     protected System.Windows.Controls.Button? AutoSuggestBoxSymbolButton { get; set; }
@@ -96,6 +85,11 @@ public partial class NavigationView
     /// <inheritdoc />
     public override void OnApplyTemplate()
     {
+        if (PaneButtonsPresenter is not null)
+        {
+            PaneButtonsPresenter.SetCurrentValue(System.Windows.Controls.ContentPresenter.ContentProperty, null);
+        }
+
         base.OnApplyTemplate();
 
         NavigationViewContentPresenter = GetTemplateChild<NavigationViewContentPresenter>(
@@ -107,6 +101,8 @@ public partial class NavigationView
         FooterMenuItemsItemsControl = GetTemplateChild<System.Windows.Controls.ItemsControl>(
             TemplateElementFooterMenuItemsItemsControl
         );
+        PaneButtonsPresenter = GetTemplateChild(TemplateElementPaneButtonsPresenter)
+            as System.Windows.Controls.ContentPresenter;
 
         MenuItemsItemsControl.SetCurrentValue(
             System.Windows.Controls.ItemsControl.ItemsSourceProperty,
@@ -134,21 +130,10 @@ public partial class NavigationView
             AutoSuggestBoxSymbolButton.Click += AutoSuggestBoxSymbolButtonOnClick;
         }
 
-        if (GetTemplateChild(TemplateElementBackButton) is System.Windows.Controls.Button backButton)
-        {
-            BackButton = backButton;
-
-            BackButton.Click -= OnBackButtonClick;
-            BackButton.Click += OnBackButtonClick;
-        }
-
-        if (GetTemplateChild(TemplateElementToggleButton) is System.Windows.Controls.Button toggleButton)
-        {
-            ToggleButton = toggleButton;
-
-            ToggleButton.Click -= OnToggleButtonClick;
-            ToggleButton.Click += OnToggleButtonClick;
-        }
+        // Buttons are owned by NavigationView rather than the template because placement is
+        // chosen at runtime and can target TitleBar.LeftContent. Populate the newly applied
+        // slot only after the old template presenter has released its visual child.
+        UpdatePaneButtonPlacement();
     }
 
     protected T GetTemplateChild<T>(string name)

@@ -9,6 +9,9 @@ using System.Collections;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.Diagnostics;
+using System.Windows.Automation;
+using System.Windows.Controls;
+using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Threading;
 
@@ -18,7 +21,7 @@ namespace Wpf.Ui.Controls;
 /// <summary>
 /// Represents a container that enables navigation of app content. It has a header, a view for the main content, and a menu pane for navigation commands.
 /// </summary>
-public partial class NavigationView : System.Windows.Controls.Control, INavigationView
+public partial class NavigationView : Control, INavigationView
 {
     /// <summary>
     /// Initializes static members of the <see cref="NavigationView"/> class and overrides default property metadata.
@@ -43,8 +46,78 @@ public partial class NavigationView : System.Windows.Controls.Control, INavigati
     {
         NavigationParent = this;
 
-        Loaded += OnLoaded;
-        Unloaded += OnUnloaded;
+        _paneBackButton = CreateNavigationButton(
+            "NavigationBackButton",
+            new SymbolIcon(SymbolRegular.ArrowLeft48),
+            nameof(PaneButtonStyle)
+        );
+
+        _paneBackButton.Click += OnBackButtonClick;
+
+        BindingOperations.SetBinding(
+            _paneBackButton,
+            IsEnabledProperty,
+            new Binding(nameof(IsBackEnabled))
+            {
+                Source = this
+            }
+        );
+
+        _paneToggleButton = CreateNavigationButton(
+            "NavigationToggleButton",
+            new SymbolIcon(SymbolRegular.LineHorizontal320),
+            nameof(PaneButtonStyle)
+        );
+
+        _paneToggleButton.Click += OnToggleButtonClick;
+
+        // Title-bar commands use separate control instances. WPF elements can have only one
+        // visual parent, and ContentPresenter may defer removing its old child until layout;
+        // separate instances therefore make visibility changes safe while the window is live.
+        _titleBarBackButton = CreateNavigationButton(
+            "NavigationBackButton",
+            new SymbolIcon(SymbolRegular.ArrowLeft48),
+            nameof(TitleBarButtonStyle)
+        );
+
+        _titleBarBackButton.Click += OnBackButtonClick;
+
+        BindingOperations.SetBinding(
+            _titleBarBackButton,
+            IsEnabledProperty,
+            new Binding(nameof(IsBackEnabled))
+            {
+                Source = this
+            }
+        );
+
+        _titleBarToggleButton = CreateNavigationButton(
+            "NavigationToggleButton",
+            new SymbolIcon(SymbolRegular.LineHorizontal320),
+            nameof(TitleBarButtonStyle)
+        );
+
+        _titleBarToggleButton.Click += OnToggleButtonClick;
+
+        _paneTitle = new TextBlock
+        {
+            FontWeight = FontWeights.Medium
+        };
+
+        BindingOperations.SetBinding(
+            _paneTitle,
+            System.Windows.Controls.TextBlock.TextProperty,
+            new Binding(nameof(PaneTitle))
+            {
+                Source = this
+            }
+        );
+
+        BackButton   = _paneBackButton;
+        ToggleButton = _paneToggleButton;
+
+        Loaded      += OnLoaded;
+        Unloaded    += OnUnloaded;
         SizeChanged += OnSizeChanged;
 
         // Initialize MenuItems collection
@@ -60,17 +133,20 @@ public partial class NavigationView : System.Windows.Controls.Control, INavigati
     /// <inheritdoc/>
     public INavigationViewItem? SelectedItem { get; protected set; }
 
-    protected Dictionary<string, INavigationViewItem> PageKeyIndex { get; } = [];
-    protected Dictionary<Type, INavigationViewItem> PageTypeIndex { get; } = [];
+    protected Dictionary<string, INavigationViewItem> PageKeyIndex  { get; } = [];
+    protected Dictionary<Type, INavigationViewItem>   PageTypeIndex { get; } = [];
 
-    private readonly HashSet<NavigationViewItem> _registeredItems = [];
-    private readonly ObservableCollection<string> _autoSuggestItems = [];
-    private readonly ObservableCollection<NavigationViewBreadcrumbItem> _breadcrumbItems = [];
-
-    private static readonly Thickness TitleBarPaneOpenMarginDefault = new(35, 0, 0, 0);
-    private static readonly Thickness TitleBarPaneCompactMarginDefault = new(35, 0, 0, 0);
-    private static readonly Thickness AutoSuggestBoxMarginDefault = new(8, 0, 8, 0);
-    private static readonly Thickness FrameMarginDefault = new(0, 50, 0, 0);
+    private readonly HashSet<NavigationViewItem>                        _registeredItems  = [];
+    private readonly ObservableCollection<string>                       _autoSuggestItems = [];
+    private readonly ObservableCollection<NavigationViewBreadcrumbItem> _breadcrumbItems  = [];
+    private readonly Button                                             _paneBackButton;
+    private readonly Button                                             _paneToggleButton;
+    private readonly Button                                             _titleBarBackButton;
+    private readonly Button                                             _titleBarToggleButton;
+    private readonly TextBlock                                          _paneTitle;
+    private readonly StackPanel                                         _paneButtonsHost = new();
+    private          TitleBar?                                          _titleBarContentOwner;
+    private          object?                                            _displacedTitleBarLeftContent;
 
     protected static void UpdateVisualState(NavigationView navigationView)
     {
@@ -108,8 +184,12 @@ public partial class NavigationView : System.Windows.Controls.Control, INavigati
 
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
+        NavigationStack.CollectionChanged -= NavigationStackOnCollectionChanged;
+        NavigationStack.CollectionChanged += NavigationStackOnCollectionChanged;
+
         // TODO: Refresh
         UpdateVisualState((NavigationView)sender);
+        UpdatePaneButtonPlacement();
     }
 
     /// <summary>
@@ -117,11 +197,11 @@ public partial class NavigationView : System.Windows.Controls.Control, INavigati
     /// </summary>
     protected virtual void OnUnloaded(object sender, RoutedEventArgs e)
     {
-        Loaded -= OnLoaded;
-        Unloaded -= OnUnloaded;
-        SizeChanged -= OnSizeChanged;
-
         NavigationStack.CollectionChanged -= NavigationStackOnCollectionChanged;
+
+        // A TitleBar can outlive a NavigationView in the same window. Release the contributed
+        // content on detach so the title bar does not retain this control through button handlers.
+        ReleaseTitleBarContent();
 
         UnregisterNavigationViewItems();
 
@@ -130,7 +210,7 @@ public partial class NavigationView : System.Windows.Controls.Control, INavigati
         if (AutoSuggestBox is not null)
         {
             AutoSuggestBox.SuggestionChosen -= AutoSuggestBoxOnSuggestionChosen;
-            AutoSuggestBox.QuerySubmitted -= AutoSuggestBoxOnQuerySubmitted;
+            AutoSuggestBox.QuerySubmitted   -= AutoSuggestBoxOnQuerySubmitted;
         }
 
         if (Header is BreadcrumbBar breadcrumbBar)
@@ -148,9 +228,6 @@ public partial class NavigationView : System.Windows.Controls.Control, INavigati
         {
             footerMenuItemsSource.CollectionChanged -= OnFooterMenuItemsSource_CollectionChanged;
         }
-
-        ToggleButton?.Click -= OnToggleButtonClick;
-        BackButton?.Click -= OnToggleButtonClick;
 
         AutoSuggestBoxSymbolButton?.Click -= AutoSuggestBoxSymbolButtonOnClick;
     }
@@ -216,6 +293,144 @@ public partial class NavigationView : System.Windows.Controls.Control, INavigati
             SetCurrentValue(IsBackButtonVisibleProperty, NavigationViewBackButtonVisible.Collapsed);
             SetCurrentValue(IsPaneToggleVisibleProperty, false);
         }
+
+        UpdatePaneButtonPlacement();
+    }
+
+    /// <summary>
+    /// Creates a navigation-owned command. Commands are intentionally created by
+    /// <see cref="NavigationView"/> rather than by a control template because their placement
+    /// is selected at runtime and may target <see cref="TitleBar.LeftContent"/>.
+    /// </summary>
+    /// <param name="automationId">The stable automation identifier shared by both host-specific instances.</param>
+    /// <param name="icon">The icon that identifies the navigation command.</param>
+    /// <param name="stylePropertyName">
+    /// The NavigationView style property to bind. Binding instead of copying the current style
+    /// keeps dynamically created buttons synchronized with runtime style and theme changes.
+    /// </param>
+    private Button CreateNavigationButton(string automationId, IconElement icon, string stylePropertyName)
+    {
+        var button = new Button
+        {
+            Icon = icon
+        };
+
+        BindingOperations.SetBinding(
+            button,
+            StyleProperty,
+            new Binding(stylePropertyName)
+            {
+                Source = this
+            }
+        );
+
+        AutomationProperties.SetAutomationId(button, automationId);
+
+        // A contributed title-bar button must remain client content. Otherwise the inherited
+        // Caption identity would turn a click into a native window drag operation.
+        TitleBar.SetElementIdentity(button, TitleBarElementIdentity.UserContent);
+        return button;
+    }
+
+    /// <summary>
+    /// Recomputes the host of the back and pane-toggle commands. At most one command is
+    /// contributed to the title bar; the back command wins when both are requested.
+    /// </summary>
+    private void UpdatePaneButtonPlacement()
+    {
+        var titleBar = TitleBar;
+        if (!ReferenceEquals(_titleBarContentOwner, titleBar))
+        {
+            ReleaseTitleBarContent();
+
+            if (titleBar is not null)
+            {
+                _titleBarContentOwner         = titleBar;
+                _displacedTitleBarLeftContent = titleBar.LeftContent;
+            }
+        }
+
+        if (
+            _titleBarContentOwner is not null &&
+            (
+                ReferenceEquals(_titleBarContentOwner.LeftContent, _titleBarBackButton) ||
+                ReferenceEquals(_titleBarContentOwner.LeftContent, _titleBarToggleButton)
+            )
+        )
+        {
+            _titleBarContentOwner.SetCurrentValue(TitleBar.LeftContentProperty, null);
+        }
+
+        _paneButtonsHost.Children.Clear();
+
+        var showBack   = IsBackButtonVisible != NavigationViewBackButtonVisible.Collapsed;
+        var showToggle = IsPaneToggleVisible;
+        var titleButton = titleBar is null
+            ? null
+            : showBack
+                ? _titleBarBackButton
+                : showToggle
+                    ? _titleBarToggleButton
+                    : null;
+
+        AddPaneButton(showBack && titleButton is null,                 _paneBackButton);
+        AddPaneButton(showToggle && (titleButton is null || showBack), _paneToggleButton);
+
+        _paneButtonsHost.SetCurrentValue(
+            StackPanel.OrientationProperty,
+            PaneDisplayMode is NavigationViewPaneDisplayMode.Top or NavigationViewPaneDisplayMode.Bottom
+                ? Orientation.Horizontal
+                : Orientation.Vertical
+        );
+
+        _paneToggleButton.SetCurrentValue(
+            ContentControl.ContentProperty,
+            IsPaneOpen && PaneTitle is not null ? _paneTitle : null
+        );
+
+        // Keep a stable presenter child. Replacing a live ContentPresenter child with the
+        // same UIElement during one dispatcher turn can race its deferred template cleanup.
+        PaneButtonsPresenter?.SetCurrentValue(ContentPresenter.ContentProperty, _paneButtonsHost);
+
+        if (titleBar is not null)
+        {
+            // SetCurrentValue preserves a binding placed on LeftContent. NavigationView owns the
+            // effective value only while it is associated with this TitleBar.
+            titleBar.SetCurrentValue(TitleBar.LeftContentProperty, titleButton);
+        }
+    }
+
+    private void AddPaneButton(bool shouldAdd, Button button)
+    {
+        if (shouldAdd)
+        {
+            _paneButtonsHost.Children.Add(button);
+        }
+    }
+
+    /// <summary>
+    /// Releases only content still owned by this navigation view. If an application replaced
+    /// <see cref="TitleBar.LeftContent"/> while attached, that newer value is left untouched.
+    /// </summary>
+    private void ReleaseTitleBarContent()
+    {
+        if (_titleBarContentOwner is null)
+        {
+            return;
+        }
+
+        if (ReferenceEquals(_titleBarContentOwner.LeftContent, _titleBarBackButton) ||
+            ReferenceEquals(_titleBarContentOwner.LeftContent, _titleBarToggleButton) ||
+            _titleBarContentOwner.LeftContent is null)
+        {
+            _titleBarContentOwner.SetCurrentValue(
+                TitleBar.LeftContentProperty,
+                _displacedTitleBarLeftContent
+            );
+        }
+
+        _titleBarContentOwner         = null;
+        _displacedTitleBarLeftContent = null;
     }
 
     internal void ToggleAllExpands()
@@ -289,7 +504,7 @@ public partial class NavigationView : System.Windows.Controls.Control, INavigati
         AutoSuggestBoxQuerySubmittedEventArgs args)
     {
         var suggestions = new List<string>();
-        var querySplit = args.QueryText.Split(' ');
+        var querySplit  = args.QueryText.Split(' ');
 
         foreach (var item in _autoSuggestItems)
         {

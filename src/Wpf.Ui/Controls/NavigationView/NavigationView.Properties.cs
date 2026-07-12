@@ -17,6 +17,8 @@ namespace Wpf.Ui.Controls;
 /// Defines the dependency properties and dp callbacks for <see cref="NavigationView"/> control
 /// </content>
 [StyleTypedProperty(Property = nameof(ItemContainerStyle), StyleTargetType = typeof(NavigationViewItem))]
+[StyleTypedProperty(Property = nameof(PaneButtonStyle), StyleTargetType = typeof(Button))]
+[StyleTypedProperty(Property = nameof(TitleBarButtonStyle), StyleTargetType = typeof(Button))]
 public partial class NavigationView
 {
     /// <summary>Identifies the <see cref="EnableDebugMessages"/> dependency property.</summary>
@@ -366,7 +368,7 @@ public partial class NavigationView
         nameof(IsBackButtonVisible),
         typeof(NavigationViewBackButtonVisible),
         typeof(NavigationView),
-        new FrameworkPropertyMetadata(NavigationViewBackButtonVisible.Auto)
+        new FrameworkPropertyMetadata(NavigationViewBackButtonVisible.Auto, OnPaneButtonVisibilityChanged)
     );
 
     /// <inheritdoc/>
@@ -376,12 +378,63 @@ public partial class NavigationView
         set => SetValue(IsBackButtonVisibleProperty, value);
     }
 
+    /// <summary>
+    /// Identifies the <see cref="PaneButtonStyle"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty PaneButtonStyleProperty = DependencyProperty.Register(
+        nameof(PaneButtonStyle),
+        typeof(Style),
+        typeof(NavigationView),
+        new FrameworkPropertyMetadata(null)
+    );
+
+    /// <summary>
+    /// Gets or sets the style applied to the navigation-owned back and pane-toggle buttons.
+    /// </summary>
+    /// <remarks>
+    /// The style targets <see cref="Button"/> and applies only while commands are displayed
+    /// in the navigation pane. It therefore owns Pane-specific layout values such as
+    /// <see cref="FrameworkElement.Margin"/> and alignment. The default NavigationView style
+    /// supplies <c>DefaultPaneButtonStyle</c>.
+    /// </remarks>
+    public Style? PaneButtonStyle
+    {
+        get => (Style?)GetValue(PaneButtonStyleProperty);
+        set => SetValue(PaneButtonStyleProperty, value);
+    }
+
+    /// <summary>
+    /// Identifies the <see cref="TitleBarButtonStyle"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty TitleBarButtonStyleProperty = DependencyProperty.Register(
+        nameof(TitleBarButtonStyle),
+        typeof(Style),
+        typeof(NavigationView),
+        new FrameworkPropertyMetadata(null)
+    );
+
+    /// <summary>
+    /// Gets or sets the style applied to navigation commands contributed to
+    /// <see cref="Wpf.Ui.Controls.TitleBar.LeftContent"/>.
+    /// </summary>
+    /// <remarks>
+    /// This property is separate from <see cref="PaneButtonStyle"/> because title-bar commands
+    /// commonly require different margins, dimensions, and alignment. Those values belong to
+    /// the contributed button; the general-purpose LeftContent presenter remains unaware of
+    /// NavigationView and does not impose NavigationView-specific layout.
+    /// </remarks>
+    public Style? TitleBarButtonStyle
+    {
+        get => (Style?)GetValue(TitleBarButtonStyleProperty);
+        set => SetValue(TitleBarButtonStyleProperty, value);
+    }
+
     /// <summary>Identifies the <see cref="IsPaneToggleVisible"/> dependency property.</summary>
     public static readonly DependencyProperty IsPaneToggleVisibleProperty = DependencyProperty.Register(
         nameof(IsPaneToggleVisible),
         typeof(bool),
         typeof(NavigationView),
-        new FrameworkPropertyMetadata(true)
+        new FrameworkPropertyMetadata(true, OnPaneButtonVisibilityChanged)
     );
 
     /// <inheritdoc/>
@@ -389,6 +442,14 @@ public partial class NavigationView
     {
         get => (bool)GetValue(IsPaneToggleVisibleProperty);
         set => SetValue(IsPaneToggleVisibleProperty, value);
+    }
+
+    private static void OnPaneButtonVisibilityChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        if (d is NavigationView navigationView)
+        {
+            navigationView.UpdatePaneButtonPlacement();
+        }
     }
 
     /// <summary>Identifies the <see cref="IsPaneOpen"/> dependency property.</summary>
@@ -429,11 +490,7 @@ public partial class NavigationView
 
         navigationView.CloseNavigationViewItemMenus();
 
-        navigationView.TitleBar?.SetCurrentValue(
-            MarginProperty,
-            navigationView.IsPaneOpen ? TitleBarPaneOpenMarginDefault : TitleBarPaneCompactMarginDefault
-        );
-
+        navigationView.UpdatePaneButtonPlacement();
         UpdateVisualState(navigationView);
     }
 
@@ -502,7 +559,7 @@ public partial class NavigationView
         nameof(PaneTitle),
         typeof(string),
         typeof(NavigationView),
-        new FrameworkPropertyMetadata(null)
+        new FrameworkPropertyMetadata(null, OnPaneTitleChanged)
     );
 
     /// <inheritdoc/>
@@ -510,6 +567,14 @@ public partial class NavigationView
     {
         get => (string?)GetValue(PaneTitleProperty);
         set => SetValue(PaneTitleProperty, value);
+    }
+
+    private static void OnPaneTitleChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        if (d is NavigationView navigationView)
+        {
+            navigationView.UpdatePaneButtonPlacement();
+        }
     }
 
     /// <summary>Identifies the <see cref="PaneFooter"/> dependency property.</summary>
@@ -591,15 +656,11 @@ public partial class NavigationView
 
         autoSuggestBox.SuggestionChosen    += navigationView.AutoSuggestBoxOnSuggestionChosen;
         autoSuggestBox.QuerySubmitted      += navigationView.AutoSuggestBoxOnQuerySubmitted;
-
-        if (navigationView.TitleBar?.Margin == TitleBarPaneOpenMarginDefault
-         && autoSuggestBox.Margin == default)
-        {
-            autoSuggestBox.Margin = AutoSuggestBoxMarginDefault;
-        }
     }
 
-    /// <summary>Identifies the <see cref="TitleBar"/> dependency property.</summary>
+    /// <summary>
+    /// Identifies the <see cref="TitleBar"/> dependency property.
+    /// </summary>
     public static readonly DependencyProperty TitleBarProperty = DependencyProperty.Register(
         nameof(TitleBar),
         typeof(TitleBar),
@@ -607,14 +668,22 @@ public partial class NavigationView
         new FrameworkPropertyMetadata(null, OnTitleBarChanged)
     );
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Gets or sets the title bar whose <see cref="Wpf.Ui.Controls.TitleBar.LeftContent"/> slot hosts
+    /// the highest-priority visible navigation command.
+    /// </summary>
+    /// <remarks>
+    /// Assigning a title bar grants this navigation view temporary ownership of that slot.
+    /// The prior value is restored when the association is removed, provided the application
+    /// has not replaced the contributed content in the meantime. No margins or other layout
+    /// properties on either control are modified.
+    /// </remarks>
     public TitleBar? TitleBar
     {
         get => (TitleBar?)GetValue(TitleBarProperty);
         set => SetValue(TitleBarProperty, value);
     }
 
-    // todo: 工具栏和自动建议框的边距调整逻辑似乎不应该硬编码，可以考虑使用Style触发器或者VisualState来实现
     private static void OnTitleBarChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
         if (d is not NavigationView navigationView)
@@ -622,31 +691,9 @@ public partial class NavigationView
             return;
         }
 
-        if (e.NewValue is null && e.OldValue is TitleBar oldValue)
-        {
-            navigationView.FrameMargin = new Thickness(0);
-            oldValue.Margin            = new Thickness(0);
-
-            if (navigationView.AutoSuggestBox?.Margin == AutoSuggestBoxMarginDefault)
-            {
-                navigationView.AutoSuggestBox.SetCurrentValue(MarginProperty, new Thickness(0));
-            }
-
-            return;
-        }
-
-        if (e.NewValue is not TitleBar titleBar)
-        {
-            return;
-        }
-
-        navigationView.FrameMargin = FrameMarginDefault;
-        titleBar.Margin            = TitleBarPaneOpenMarginDefault;
-
-        if (navigationView.AutoSuggestBox?.Margin is { Bottom: 0, Left: 0, Right: 0, Top: 0 })
-        {
-            navigationView.AutoSuggestBox.SetCurrentValue(MarginProperty, AutoSuggestBoxMarginDefault);
-        }
+        // TitleBar exposes a content contract, so coordination no longer requires either
+        // control to know or mutate the other's margins or template geometry.
+        navigationView.UpdatePaneButtonPlacement();
     }
 
     /// <summary>Identifies the <see cref="BreadcrumbBar"/> dependency property.</summary>

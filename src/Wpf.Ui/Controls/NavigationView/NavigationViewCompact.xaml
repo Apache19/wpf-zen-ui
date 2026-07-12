@@ -4,7 +4,7 @@
     xmlns:controls="clr-namespace:Wpf.Ui.Controls"
     xmlns:markup="clr-namespace:Wpf.Ui.Markup">
     <ResourceDictionary.MergedDictionaries>
-        <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/NavigationView/NavigationViewBasePaneButtonStyle.xaml" />
+        <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/NavigationView/NavigationViewButtonStyles.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/NavigationView/NavigationViewItemDefaultStyle.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/NavigationView/NavigationViewConstants.xaml" />
     </ResourceDictionary.MergedDictionaries>
@@ -22,7 +22,7 @@
                 MinHeight="40"
                 Background="{markup:BrushResource SubtleFillColorTransparentBrush}"
                 BorderBrush="{TemplateBinding BorderBrush}"
-                BorderThickness="{DynamicResource NavigationViewItemThickness}"
+                BorderThickness="{StaticResource NavigationViewItemThickness}"
                 CornerRadius="{TemplateBinding Border.CornerRadius}">
                 <Grid Margin="{TemplateBinding Indentation}" Background="Transparent">
                     <Grid.ColumnDefinitions>
@@ -227,59 +227,43 @@
                                 <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
 
-                            <controls:Button
-                                x:Name="PART_BackButton"
+                            <!--
+                                NavigationView owns and routes its command buttons because a command
+                                can move to TitleBar.LeftContent. The template only supplies a pane slot.
+                            -->
+                            <ContentPresenter
+                                x:Name="PART_PaneButtonsPresenter"
                                 Grid.Row="0"
-                                Margin="0,5,0,5"
-                                HorizontalAlignment="Left"
-                                controls:TitleBar.ElementIdentity="UserContent"
-                                AutomationProperties.AutomationId="NavigationBackButton"
-                                IsEnabled="{TemplateBinding IsBackEnabled}"
-                                Style="{StaticResource BasePaneButtonStyle}"
-                                Visibility="{TemplateBinding IsBackButtonVisible,
-                                                             Converter={StaticResource BackButtonVisibilityToVisibilityConverter}}">
-                                <controls:Button.Icon>
-                                    <controls:SymbolIcon Symbol="ArrowLeft48" />
-                                </controls:Button.Icon>
-                            </controls:Button>
+                                Grid.RowSpan="2"
+                                Margin="0,0,0,5" />
 
-                            <controls:Button
-                                x:Name="PART_ToggleButton"
-                                Grid.Row="1"
-                                Margin="0,0,0,5"
-                                AutomationProperties.AutomationId="NavigationToggleButton"
-                                Style="{StaticResource BasePaneButtonStyle}"
-                                Visibility="{TemplateBinding IsPaneToggleVisible,
-                                                             Converter={StaticResource BoolToVisibilityConverter}}">
-                                <controls:Button.Icon>
-                                    <controls:SymbolIcon Symbol="LineHorizontal320" />
-                                </controls:Button.Icon>
-                                <controls:Button.Content>
-                                    <TextBlock FontWeight="Medium" Text="{TemplateBinding PaneTitle}" />
-                                </controls:Button.Content>
-                            </controls:Button>
+                            <!--
+                                Pane Header
+                                内容自己负责布局，布局时注意搜索框已经有了 6 的上边距
+                            -->
+                            <ContentPresenter Grid.Row="2" Content="{TemplateBinding PaneHeader}" />
 
-                            <!--  Pane Header  -->
-                            <ContentPresenter
-                                Grid.Row="2"
-                                Margin="0"
-                                Content="{TemplateBinding PaneHeader}" />
-
-                            <!--  Auto Suggest Box  -->
-                            <ContentPresenter
-                                x:Name="AutoSuggestBoxContentPresenter"
+                            <!--
+                                搜索框和按钮包装器，以便让两个控件垂直对齐，保证搜索图标在一条水平线上
+                                没有搜索框时，隐藏该包装器，释放其空间
+                            -->
+                            <Grid
+                                x:Name="SearchGrid"
                                 Grid.Row="3"
-                                Margin="0,0,0,6"
-                                Content="{TemplateBinding AutoSuggestBox}" />
-
-                            <controls:Button
-                                x:Name="PART_AutoSuggestBoxSymbolButton"
-                                Grid.Row="3"
-                                Margin="0,0,0,6"
-                                AutomationProperties.AutomationId="NavigationAutoSuggestBoxButton"
-                                Icon="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=AutoSuggestBox.Icon}"
-                                Style="{StaticResource BasePaneButtonStyle}"
-                                Visibility="Hidden" />
+                                Margin="0,0,0,6">
+                                <ContentPresenter
+                                    x:Name="AutoSuggestBoxContentPresenter"
+                                    Margin="13,0"
+                                    VerticalAlignment="Center"
+                                    Content="{TemplateBinding AutoSuggestBox}" />
+                                <controls:Button
+                                    x:Name="PART_AutoSuggestBoxSymbolButton"
+                                    VerticalAlignment="Center"
+                                    AutomationProperties.AutomationId="NavigationAutoSuggestBoxButton"
+                                    Icon="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=AutoSuggestBox.Icon}"
+                                    Style="{StaticResource DefaultPaneButtonStyle}"
+                                    Visibility="Hidden" />
+                            </Grid>
                         </Grid>
 
                         <!--  Separator/Shadow for Top  -->
@@ -461,14 +445,10 @@
             <!--  Pane layout states  -->
             <Trigger Property="IsPaneOpen" Value="False">
                 <Setter TargetName="PART_AutoSuggestBoxSymbolButton" Property="Visibility" Value="Visible" />
-                <Setter TargetName="PART_ToggleButton" Property="Content" Value="{x:Null}" />
-            </Trigger>
-            <Trigger Property="PaneTitle" Value="{x:Null}">
-                <Setter TargetName="PART_ToggleButton" Property="Content" Value="{x:Null}" />
-                <Setter TargetName="PART_ToggleButton" Property="HorizontalAlignment" Value="Left" />
             </Trigger>
 
             <!--  Optional content visibility  -->
+
             <MultiTrigger>
                 <MultiTrigger.Conditions>
                     <Condition Property="IsBackButtonVisible" Value="Collapsed" />
@@ -478,10 +458,18 @@
                 </MultiTrigger.Conditions>
                 <Setter TargetName="PART_TopSeparator" Property="Visibility" Value="Collapsed" />
             </MultiTrigger>
+
+            <MultiTrigger>
+                <MultiTrigger.Conditions>
+                    <Condition Property="IsBackButtonVisible" Value="Collapsed" />
+                    <Condition Property="IsPaneToggleVisible" Value="False" />
+                </MultiTrigger.Conditions>
+                <Setter TargetName="PART_PaneButtonsPresenter" Property="Visibility" Value="Collapsed" />
+                <Setter TargetName="PART_PaneButtonsPresenter" Property="Margin" Value="0" />
+            </MultiTrigger>
+
             <Trigger Property="AutoSuggestBox" Value="{x:Null}">
-                <Setter TargetName="PART_AutoSuggestBoxSymbolButton" Property="Visibility" Value="Collapsed" />
-                <Setter TargetName="AutoSuggestBoxContentPresenter" Property="Visibility" Value="Collapsed" />
-                <Setter TargetName="AutoSuggestBoxContentPresenter" Property="Margin" Value="0" />
+                <Setter TargetName="SearchGrid" Property="Visibility" Value="Collapsed" />
             </Trigger>
             <Trigger Property="IsTopSeparatorVisible" Value="False">
                 <Setter TargetName="PART_TopSeparator" Property="Visibility" Value="Collapsed" />

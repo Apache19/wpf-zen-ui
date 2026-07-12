@@ -67,7 +67,38 @@ public class TitleBar : ContentControl
         );
     }
 
-    #region DP: Icon, Title, IsIconInteractionEnabled, IsUserContentEnabled, ElementIdentity
+    #region DP: LeftContent, Icon, Title, IsIconInteractionEnabled, IsUserContentEnabled, ElementIdentity
+
+    #region LeftContent
+
+    /// <summary>
+    /// Identifies the <see cref="LeftContent"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty LeftContentProperty = DependencyProperty.Register(
+        nameof(LeftContent),
+        typeof(object),
+        typeof(TitleBar),
+        new FrameworkPropertyMetadata(null)
+    );
+
+    /// <summary>
+    /// Gets or sets optional content displayed at the leading edge of the title bar,
+    /// before the application icon and title.
+    /// </summary>
+    /// <remarks>
+    /// This slot allows another control to contribute interactive title-bar content
+    /// without depending on the title bar's template structure or modifying its layout
+    /// properties. The slot measures to zero when the value is <see langword="null"/>.
+    /// Interactive content is treated as user content during non-client hit testing so
+    /// that it receives normal WPF input instead of initiating a window drag.
+    /// </remarks>
+    public object? LeftContent
+    {
+        get => GetValue(LeftContentProperty);
+        set => SetValue(LeftContentProperty, value);
+    }
+
+    #endregion
 
     #region Icon
 

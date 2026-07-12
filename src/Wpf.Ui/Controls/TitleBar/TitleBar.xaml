@@ -9,6 +9,7 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Ui.Controls"
+    xmlns:converters="clr-namespace:Wpf.Ui.Converters"
     xmlns:markup="clr-namespace:Wpf.Ui.Markup">
 
     <!--  ToolWindow TitleBar  -->
@@ -16,27 +17,38 @@
         <Grid controls:TitleBar.ElementIdentity="Caption" Background="{TemplateBinding Background}">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
-            <!--  Title  -->
+
+            <!--  Optional content contributed by controls that cooperate with the title bar.  -->
             <ContentPresenter
                 Grid.Column="0"
+                controls:TitleBar.ElementIdentity="UserContent"
+                Content="{TemplateBinding LeftContent}"
+                IsEnabled="{TemplateBinding IsUserContentEnabled}" />
+
+            <!--  Title  -->
+            <ContentPresenter
+                Grid.Column="1"
                 Margin="8,0,0,0"
                 HorizontalAlignment="Left"
                 VerticalAlignment="Center"
                 controls:TextBlock.FontTypography="Caption"
                 Content="{TemplateBinding Title}"
                 TextBlock.FontSize="12" />
+
             <!--  User content  -->
             <ContentPresenter
-                Grid.Column="1"
+                Grid.Column="2"
                 VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
                 controls:TitleBar.ElementIdentity="UserContent"
                 IsEnabled="{TemplateBinding IsUserContentEnabled}" />
+
             <!--  Close Button  -->
             <controls:TitleBarButton
-                Grid.Column="2"
+                Grid.Column="3"
                 Width="22"
                 Height="22"
                 Margin="0,0,8,0"
@@ -44,8 +56,11 @@
                 VerticalAlignment="Center"
                 controls:TitleBar.ElementIdentity="CloseButton"
                 Style="{DynamicResource SmallCloseTitleBarButtonStyle}" />
+
         </Grid>
     </ControlTemplate>
+
+    <converters:ThicknessTransformConverter x:Key="IconGridMarginConverter" BaseThickness="2 0 0 0" CopySides="Vertical,Right" />
 
     <Style x:Key="DefaultTitleBarStyle" TargetType="{x:Type controls:TitleBar}">
         <Setter Property="Foreground" Value="{markup:BrushResource TextFillColorPrimaryBrush}" />
@@ -63,18 +78,31 @@
                         Background="{TemplateBinding Background}">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
                             <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
 
-                        <Grid
-                            x:Name="TitleGrid"
+                        <!--
+                            LeftContent is a public cooperation point, not a NavigationView-specific
+                            template part. Marking the presenter as UserContent keeps interactive
+                            children in WPF's client-input path during title-bar hit testing.
+                        -->
+                        <ContentPresenter
                             Grid.Column="0"
-                            Margin="{TemplateBinding Padding}"
+                            controls:TitleBar.ElementIdentity="UserContent"
+                            ContentSource="LeftContent"
+                            IsEnabled="{TemplateBinding IsUserContentEnabled}" />
+
+                        <!--
+                            Title bar icon — uses a converter to adjust its left margin
+                            based on whether LeftContent has content, ensuring optimal layout.
+                        -->
+                        <Grid
+                            x:Name="IconGrid"
+                            Grid.Column="1"
+                            Margin="{TemplateBinding Padding, Converter={StaticResource IconGridMarginConverter}}"
                             HorizontalAlignment="Left"
                             VerticalAlignment="Center">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
 
                             <!--  Custom application icon  -->
                             <ContentPresenter
@@ -89,7 +117,7 @@
                                 RenderOptions.BitmapScalingMode="HighQuality" />
                         </Grid>
 
-                        <Grid Grid.Column="1">
+                        <Grid Grid.Column="2">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="*" />
@@ -149,12 +177,20 @@
                         </Grid>
                     </Grid>
                     <ControlTemplate.Triggers>
+                        <!--
+                            When LeftContent is present, the icon/title left margin is fixed;
+                            when empty, the Padding value is used instead.
+                        -->
+                        <Trigger Property="LeftContent" Value="{x:Null}">
+                            <Setter TargetName="IconGrid" Property="Margin" Value="{Binding Padding, RelativeSource={RelativeSource TemplatedParent}}" />
+                        </Trigger>
+
                         <MultiTrigger>
                             <MultiTrigger.Conditions>
                                 <Condition Property="Icon" Value="{x:Null}" />
                                 <Condition Property="Title" Value="{x:Null}" />
                             </MultiTrigger.Conditions>
-                            <Setter TargetName="TitleGrid" Property="Visibility" Value="Collapsed" />
+                            <Setter TargetName="IconGrid" Property="Visibility" Value="Collapsed" />
                         </MultiTrigger>
                         <Trigger Property="Icon" Value="{x:Null}">
                             <Setter TargetName="Icon" Property="Visibility" Value="Collapsed" />

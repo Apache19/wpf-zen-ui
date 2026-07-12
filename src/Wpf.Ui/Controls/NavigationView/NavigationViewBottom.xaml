@@ -4,7 +4,7 @@
     xmlns:controls="clr-namespace:Wpf.Ui.Controls"
     xmlns:markup="clr-namespace:Wpf.Ui.Markup">
     <ResourceDictionary.MergedDictionaries>
-        <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/NavigationView/NavigationViewBasePaneButtonStyle.xaml" />
+        <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/NavigationView/NavigationViewButtonStyles.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/NavigationView/NavigationViewItemDefaultStyle.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/NavigationView/NavigationViewConstants.xaml" />
     </ResourceDictionary.MergedDictionaries>
@@ -54,19 +54,11 @@
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
-                <controls:Button
-                    x:Name="PART_BackButton"
+                <!--  NavigationView dynamically supplies the commands that remain in the pane.  -->
+                <ContentPresenter
+                    x:Name="PART_PaneButtonsPresenter"
                     Grid.Column="0"
-                    controls:TitleBar.ElementIdentity="UserContent"
-                    AutomationProperties.AutomationId="NavigationBackButton"
-                    IsEnabled="{TemplateBinding IsBackEnabled}"
-                    Style="{StaticResource BasePaneButtonStyle}"
-                    Visibility="{TemplateBinding IsBackButtonVisible,
-                                                 Converter={StaticResource BackButtonVisibilityToVisibilityConverter}}">
-                    <controls:Button.Icon>
-                        <controls:SymbolIcon Symbol="ArrowLeft48" />
-                    </controls:Button.Icon>
-                </controls:Button>
+                    VerticalAlignment="Center" />
 
                 <!--  Pane header  -->
                 <ContentPresenter
