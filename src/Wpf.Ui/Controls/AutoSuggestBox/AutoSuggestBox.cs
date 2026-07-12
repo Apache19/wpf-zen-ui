@@ -475,8 +475,15 @@ public class AutoSuggestBox : ItemsControl, IIconControl
 
         SuggestionsList!.SetCurrentValue(Selector.SelectedItemProperty, null);
 
-        if (changeReason is not AutoSuggestionBoxTextChangeReason.UserInput)
+        if (changeReason is not AutoSuggestionBoxTextChangeReason.UserInput || !IsLoaded)
         {
+            // The TextBox binding can raise TextChanged while the control template is still being initialized.
+            // WPF coerces Popup.IsOpen to false until a Popup in the visual tree is loaded, while the source
+            // IsSuggestionListOpen value would remain true. The first real keystroke would then write true again
+            // without changing the source property, so the template binding would not retry opening the Popup.
+            // A user cannot interact with this TextBox before it is loaded; ignoring only that initialization-time
+            // request keeps the source and Popup states aligned and lets the first user input open the list even
+            // when filtering produces no suggestions.
             return;
         }
 
