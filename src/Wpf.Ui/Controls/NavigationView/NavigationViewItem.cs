@@ -554,6 +554,7 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
             if (current == '(' &&
                 i + 3 < value.Length &&
                 IsAccessKeyMarker(value[i + 1]) &&
+                IsAccessKeyCharacter(value[i + 2]) &&
                 value[i + 3] == ')')
             {
                 builder ??= new StringBuilder(value.Length).Append(value, 0, i);
@@ -563,15 +564,21 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
                 continue;
             }
 
-            if (IsAccessKeyMarker(current))
+            if (IsAccessKeyMarker(current) &&
+                i + 1 < value.Length &&
+                IsAccessKeyCharacter(value[i + 1]))
             {
                 builder ??= new StringBuilder(value.Length).Append(value, 0, i);
+                continue;
+            }
 
-                if (i + 1 < value.Length && value[i + 1] == current)
-                {
-                    builder.Append(current);
-                    i++;
-                }
+            if (IsAccessKeyMarker(current) &&
+                i + 1 < value.Length &&
+                value[i + 1] == current)
+            {
+                builder ??= new StringBuilder(value.Length).Append(value, 0, i);
+                builder.Append(current);
+                i++;
 
                 continue;
             }
@@ -583,6 +590,11 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
     }
 
     private static bool IsAccessKeyMarker(char value) => value is '_' or '&';
+
+    // AutoSuggestBox displays plain text rather than an AccessText visual. Only remove a marker
+    // when its following character can be used as a practical keyboard mnemonic. In particular,
+    // punctuation followed by whitespace (for example, "Date & Time") is content, not a marker.
+    private static bool IsAccessKeyCharacter(char value) => char.IsLetterOrDigit(value);
 
     private static void OnNavigationCacheModeChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
