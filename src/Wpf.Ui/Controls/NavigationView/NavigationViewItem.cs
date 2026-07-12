@@ -273,7 +273,37 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
             typeof(NavigationViewItem),
             new FrameworkPropertyMetadata(typeof(NavigationViewItem))
         );
+
+        // ═══════════════════════════════════════════════════════════════════
+        // WARNING: Do NOT remove this coercion. The LeftFluentNavigationViewItemTemplate
+        // (NavigationLeftFluent.xaml) contains an IsActive trigger whose EnterActions/
+        // ExitActions storyboard animates (Border.BorderBrush).(SolidColorBrush.Opacity).
+        // WPF's Storyboard.VerifyPathIsAnimatable requires EVERY intermediate object in a
+        // compound property path to be a DependencyObject. If BorderBrush is ever null —
+        // because a style setter was commented out, removed, or overridden — the storyboard
+        // will throw InvalidOperationException with the message "'BorderBrush' property
+        // does not point to a DependencyObject in path '(0).(1)'".
+        //
+        // This coercion is the LAST LINE OF DEFENSE. It guarantees BorderBrush is never
+        // null, no matter what happens to styles, templates, or bindings upstream.
+        // ═══════════════════════════════════════════════════════════════════
+        Border.BorderBrushProperty.OverrideMetadata(
+            typeof(NavigationViewItem),
+            new FrameworkPropertyMetadata(
+                Brushes.Transparent,
+                null,
+                CoerceBorderBrush
+            )
+        );
     }
+
+    /// <summary>
+    /// Ensures <see cref="System.Windows.Controls.Border.BorderBrush"/> is never null,
+    /// so the <c>LeftFluentNavigationViewItemTemplate</c> storyboard always has a valid
+    /// DependencyObject to animate. See the static constructor for the full backstory.
+    /// </summary>
+    private static object CoerceBorderBrush(DependencyObject d, object baseValue) =>
+        baseValue ?? Brushes.Transparent;
 
     public NavigationViewItem()
     {
