@@ -244,7 +244,7 @@ public class DerivedButtonTests
 
                 var toggleButtonIconPresenter =
                     Assert.IsType<System.Windows.Controls.ContentPresenter>(
-                        toggleButton.Template.FindName("IconPresenter", toggleButton)
+                        toggleButton.Template.FindName("iconPresenter", toggleButton)
                     );
 
                 Assert.Equal(Visibility.Visible, toggleButtonIconPresenter.Visibility);
@@ -253,7 +253,7 @@ public class DerivedButtonTests
                 var calendarDatePickerIconPresenter =
                     Assert.IsType<System.Windows.Controls.ContentPresenter>(
                         calendarDatePicker.Template.FindName(
-                            "IconPresenter",
+                            "iconPresenter",
                             calendarDatePicker
                         )
                     );
