@@ -50,7 +50,31 @@ public class SymbolIcon : FontIcon
 
     public SymbolIcon() { }
 
-    public SymbolIcon(SymbolRegular symbol, double fontSize = 14, bool filled = false)
+    public SymbolIcon(SymbolRegular symbol)
+    {
+        Symbol = symbol;
+    }
+
+    public SymbolIcon(SymbolRegular symbol, bool filled)
+    {
+        Symbol = symbol;
+        Filled = filled;
+    }
+
+    public SymbolIcon(SymbolRegular symbol, double fontSize)
+    {
+        Symbol   = symbol;
+        FontSize = fontSize;
+    }
+
+    public SymbolIcon(SymbolRegular symbol, double fontSize, bool filled)
+    {
+        Symbol   = symbol;
+        Filled   = filled;
+        FontSize = fontSize;
+    }
+
+    public SymbolIcon(SymbolRegular symbol, bool filled, double fontSize)
     {
         Symbol   = symbol;
         Filled   = filled;
