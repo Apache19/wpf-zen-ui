@@ -45,7 +45,6 @@
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/Image/Image.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/InfoBar/InfoBar.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/InfoBadge/InfoBadge.xaml" />
-        <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/ItemsControl/ItemsControl.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/ListBox/ListBox.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/ListView/ListView.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/ListView/ListViewItem.xaml" />
