@@ -1,0 +1,64 @@
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="clr-namespace:Wpf.Ui.Controls"
+    xmlns:m="clr-namespace:Wpf.Ui.Markup">
+
+    <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/NavigationView/NavigationViewItemLeftCompact.xaml" />
+        <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/NavigationView/NavigationViewItemLeftMinimal.xaml" />
+        <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/NavigationView/NavigationViewItemLeftFluent.xaml" />
+        <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/NavigationView/NavigationViewItemTop.xaml" />
+        <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/NavigationView/NavigationViewItemBottom.xaml" />
+    </ResourceDictionary.MergedDictionaries>
+
+    <Style x:Key="NavigationViewItemDefaultStyle" TargetType="{x:Type controls:NavigationViewItem}">
+        <Setter Property="FocusVisualStyle" Value="{m:StyleResource DefaultControlFocusVisualStyle}" />
+        <Setter Property="Margin" Value="0" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="Border.CornerRadius" Value="{m:VariableResource ControlCornerRadius}" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderBrush" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="KeyboardNavigation.IsTabStop" Value="True" />
+        <Setter Property="Focusable" Value="True" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="Template" Value="{StaticResource NavigationViewItemLeftCompactTemplate}" />
+        <Setter Property="ContentTemplate" Value="{Binding RelativeSource={RelativeSource Self}, Path=(controls:NavigationView.ItemTemplate)}" />
+        <Setter Property="ContentTemplateSelector" Value="{Binding RelativeSource={RelativeSource Self}, Path=(controls:NavigationView.ItemTemplateSelector)}" />
+        <Style.Triggers>
+            <Trigger Property="PaneDisplayMode" Value="LeftMinimal">
+                <Setter Property="Template" Value="{StaticResource NavigationViewItemLeftMinimalCompactTemplate}" />
+            </Trigger>
+            <Trigger Property="PaneDisplayMode" Value="LeftFluent">
+                <Setter Property="Template" Value="{StaticResource NavigationViewItemLeftFluentTemplate}" />
+            </Trigger>
+            <Trigger Property="PaneDisplayMode" Value="Top">
+                <Setter Property="Template" Value="{StaticResource NavigationViewItemTopCompactTemplate}" />
+            </Trigger>
+            <Trigger Property="PaneDisplayMode" Value="Bottom">
+                <Setter Property="Template" Value="{StaticResource NavigationViewItemBottomCompactTemplate}" />
+            </Trigger>
+            <MultiTrigger>
+                <MultiTrigger.Conditions>
+                    <Condition Property="PaneDisplayMode" Value="LeftMinimal" />
+                    <Condition Property="IsSubItem" Value="True" />
+                </MultiTrigger.Conditions>
+                <Setter Property="Template" Value="{StaticResource NavigationViewItemLeftMinimalSubTemplate}" />
+            </MultiTrigger>
+            <MultiTrigger>
+                <MultiTrigger.Conditions>
+                    <Condition Property="PaneDisplayMode" Value="Top" />
+                    <Condition Property="IsSubItem" Value="True" />
+                </MultiTrigger.Conditions>
+                <Setter Property="Template" Value="{StaticResource NavigationViewItemTopSubTemplate}" />
+            </MultiTrigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style BasedOn="{StaticResource NavigationViewItemDefaultStyle}" TargetType="{x:Type controls:NavigationViewItem}" />
+
+</ResourceDictionary>

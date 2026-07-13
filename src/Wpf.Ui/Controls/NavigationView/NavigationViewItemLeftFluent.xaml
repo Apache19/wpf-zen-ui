@@ -3,15 +3,12 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Ui.Controls"
     xmlns:markup="clr-namespace:Wpf.Ui.Markup">
-    <ResourceDictionary.MergedDictionaries>
-        <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/NavigationView/NavigationViewConstants.xaml" />
-    </ResourceDictionary.MergedDictionaries>
 
-    <ControlTemplate x:Key="LeftFluentNavigationViewItemTemplate" TargetType="{x:Type controls:NavigationViewItem}">
+    <ControlTemplate x:Key="NavigationViewItemLeftFluentTemplate" TargetType="{x:Type controls:NavigationViewItem}">
         <Border
             x:Name="MainBorder"
-            Height="{StaticResource PaneFluentButtonHeight}"
-            MinWidth="{StaticResource PaneFluentButtonWidth}"
+            Height="60"
+            MinWidth="60"
             Padding="4"
             HorizontalAlignment="Stretch"
             Background="Transparent"
@@ -42,13 +39,13 @@
                         Grid.Row="0"
                         Margin="0"
                         Content="{TemplateBinding Icon}"
-                        TextElement.FontSize="{StaticResource NavigationViewFluentIconSize}"
+                        TextElement.FontSize="24"
                         TextElement.Foreground="{markup:BrushResource TextFillColorPrimaryBrush}" />
 
                     <Grid
                         x:Name="ContentGrid"
                         Grid.Row="1"
-                        Height="{StaticResource NavigationViewFluentIconSize}"
+                        Height="24"
                         Margin="0,2,0,0">
                         <ContentPresenter
                             x:Name="ElementContentPresenter"
@@ -72,6 +69,7 @@
         </Border>
         <ControlTemplate.Triggers>
             <Trigger Property="IsActive" Value="True">
+                <Setter Property="controls:NavigationViewItemTemplateBehavior.IsIconFilled" Value="True" />
                 <Setter TargetName="ActiveRectangle" Property="Opacity" Value="1.0" />
                 <Setter TargetName="MainBorder" Property="Background" Value="{markup:BrushResource ControlFillColorPrimaryBrush}" />
                 <Setter TargetName="IconContentPresenter" Property="TextElement.Foreground" Value="{markup:BrushResource SystemAccentColorPrimaryBrush}" />
@@ -82,7 +80,7 @@
                             <DoubleAnimation
                                 Storyboard.TargetName="ContentGrid"
                                 Storyboard.TargetProperty="Height"
-                                From="{StaticResource NavigationViewFluentIconSize}"
+                                From="24"
                                 To="0"
                                 Duration="0:0:.16" />
                             <DoubleAnimation
@@ -107,7 +105,7 @@
                                 Storyboard.TargetName="ContentGrid"
                                 Storyboard.TargetProperty="Height"
                                 From="0"
-                                To="{StaticResource NavigationViewFluentIconSize}"
+                                To="24"
                                 Duration="0:0:.16" />
                             <DoubleAnimation
                                 Storyboard.TargetName="ContentGrid"

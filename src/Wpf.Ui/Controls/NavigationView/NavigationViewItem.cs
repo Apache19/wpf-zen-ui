@@ -12,7 +12,6 @@ using System.Text;
 using System.Windows.Automation.Peers;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
-using System.Windows.Input;
 
 // ReSharper disable once CheckNamespace
 namespace Wpf.Ui.Controls;
@@ -21,21 +20,19 @@ namespace Wpf.Ui.Controls;
 /// Represents the container for an item in a NavigationView control.
 /// When needed, it can be used as a normal button with a <see cref="ButtonBase.Click"/> action.
 /// </summary>
-[TemplatePart(Name = TemplateElementChevronGrid, Type = typeof(Grid))]
 public class NavigationViewItem : ButtonBase, INavigationViewItem
 {
-    protected const string TemplateElementChevronGrid = "PART_ChevronGrid";
-
     // ═══════════════════════════════════════════════════════════════════════
     // Indentation
     // ═══════════════════════════════════════════════════════════════════════
 
-    private static readonly DependencyPropertyKey IndentationPropertyKey = DependencyProperty.RegisterReadOnly(
-        nameof(Indentation),
-        typeof(Thickness),
-        typeof(NavigationViewItem),
-        new PropertyMetadata(default(Thickness))
-    );
+    private static readonly DependencyPropertyKey IndentationPropertyKey =
+        DependencyProperty.RegisterReadOnly(
+            nameof(Indentation),
+            typeof(Thickness),
+            typeof(NavigationViewItem),
+            new PropertyMetadata(default(Thickness))
+        );
 
     /// <summary>Identifies the <see cref="Indentation"/> dependency property.</summary>
     public static readonly DependencyProperty IndentationProperty = IndentationPropertyKey.DependencyProperty;
@@ -56,8 +53,11 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
         nameof(IndentationSize),
         typeof(double),
         typeof(NavigationViewItem),
-        new FrameworkPropertyMetadata(30d, OnIndentationSizeChanged),
-        static value => value is double size && size >= 0 && !double.IsInfinity(size)
+        new FrameworkPropertyMetadata(
+            30d,
+            static (d, e) => ((NavigationViewItem)d).UpdateIndentation()
+        ),
+        static value => value is double size and >= 0 && !double.IsInfinity(size)
     );
 
     /// <summary>
@@ -112,7 +112,7 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
     // ═══════════════════════════════════════════════════════════════════════
 
     /// <summary>Identifies the <see cref="HasMenuItems"/> dependency property.</summary>
-    internal static readonly DependencyPropertyKey HasMenuItemsPropertyKey =
+    private static readonly DependencyPropertyKey HasMenuItemsPropertyKey =
         DependencyProperty.RegisterReadOnly(
             nameof(HasMenuItems),
             typeof(bool),
@@ -173,6 +173,51 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
     }
 
     // ═══════════════════════════════════════════════════════════════════════
+    // PaneDisplayMode
+    // ═══════════════════════════════════════════════════════════════════════
+
+    private static readonly DependencyPropertyKey PaneDisplayModePropertyKey =
+        DependencyProperty.RegisterReadOnly(
+            nameof(PaneDisplayMode),
+            typeof(NavigationViewPaneDisplayMode),
+            typeof(NavigationViewItem),
+            new FrameworkPropertyMetadata(NavigationViewPaneDisplayMode.Left)
+        );
+
+    /// <summary>Identifies the <see cref="PaneDisplayMode"/> dependency property.</summary>
+    public static readonly DependencyProperty PaneDisplayModeProperty =
+        PaneDisplayModePropertyKey.DependencyProperty;
+
+    /// <summary>
+    /// Gets the pane display mode synchronized from the owning <see cref="NavigationView"/>.
+    /// </summary>
+    [Browsable(false)]
+    [ReadOnly(true)]
+    public NavigationViewPaneDisplayMode PaneDisplayMode =>
+        (NavigationViewPaneDisplayMode)GetValue(PaneDisplayModeProperty);
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // IsSubItem
+    // ═══════════════════════════════════════════════════════════════════════
+
+    private static readonly DependencyPropertyKey IsSubItemPropertyKey = DependencyProperty.RegisterReadOnly(
+        nameof(IsSubItem),
+        typeof(bool),
+        typeof(NavigationViewItem),
+        new FrameworkPropertyMetadata(false)
+    );
+
+    /// <summary>Identifies the <see cref="IsSubItem"/> dependency property.</summary>
+    public static readonly DependencyProperty IsSubItemProperty = IsSubItemPropertyKey.DependencyProperty;
+
+    /// <summary>
+    /// Gets a value indicating whether this item belongs to another navigation item.
+    /// </summary>
+    [Browsable(false)]
+    [ReadOnly(true)]
+    public bool IsSubItem => (bool)GetValue(IsSubItemProperty);
+
+    // ═══════════════════════════════════════════════════════════════════════
     // IsExpanded
     // ═══════════════════════════════════════════════════════════════════════
 
@@ -202,7 +247,7 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
         nameof(Icon),
         typeof(IconElement),
         typeof(NavigationViewItem),
-        new PropertyMetadata(null, null, IconElement.Coerce)
+        new PropertyMetadata(null, OnIconChanged, IconElement.Coerce)
     );
 
     /// <inheritdoc />
@@ -292,10 +337,17 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
     /// <inheritdoc />
     public INavigationViewItem? NavigationViewItemParent
     {
-        get => _navigationViewItemParent;
+        get;
         set
         {
-            _navigationViewItemParent = value;
+            field = value;
+            SetValue(IsSubItemPropertyKey, value is not null);
+
+            if (value is NavigationViewItem parentItem)
+            {
+                SynchronizePaneState(parentItem.PaneDisplayMode, parentItem.IsPaneOpen);
+            }
+
             UpdateIndentation();
         }
     }
@@ -308,13 +360,23 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
 
     internal string SearchableContent { get; private set; } = string.Empty;
 
-    protected Grid? ChevronGrid { get; set; }
+    private static readonly DependencyPropertyDescriptor PaneDisplayModeDescriptor =
+        DependencyPropertyDescriptor.FromProperty(
+            NavigationView.PaneDisplayModeProperty,
+            typeof(NavigationView)
+        );
 
-    private INavigationViewItem? _navigationViewItemParent;
+    private readonly List<INavigationViewItem> _attachedMenuItems = [];
 
-    private NavigationView? _attachedNavigationView;
+    private NavigationView?                                     _attachedNavigationView;
     private TypedEventHandler<NavigationView, RoutedEventArgs>? _paneOpenedHandler;
     private TypedEventHandler<NavigationView, RoutedEventArgs>? _paneClosedHandler;
+    private EventHandler?                                       _paneDisplayModeChangedHandler;
+
+    internal NavigationView? NavigationViewHost =>
+        _attachedNavigationView
+     ?? NavigationView.GetNavigationParent(this)
+     ?? (NavigationViewItemParent as NavigationViewItem)?.NavigationViewHost;
 
     static NavigationViewItem()
     {
@@ -353,7 +415,6 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
         Unloaded += static (sender, _) =>
         {
             var item = (NavigationViewItem)sender;
-            item.NavigationViewItemParent = null;
             item.DetachNavigationViewEvents();
         };
 
@@ -387,6 +448,7 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
         });
     }
 
+    // ReSharper disable once UnusedMember.Global
     public NavigationViewItem(string name, SymbolRegular icon, Type targetPageType, IList menuItems)
         : this(name, icon, targetPageType)
     {
@@ -398,35 +460,7 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
     /// </summary>
     public virtual void Activate(INavigationView navigationView)
     {
-        SetCurrentValue(IsActiveProperty, true);
-
-        if (!navigationView.IsPaneOpen && NavigationViewItemParent is not null)
-        {
-            NavigationViewItemParent.Activate(navigationView);
-        }
-
-        if (NavigationViewItemParent is not null)
-        {
-            if (
-                navigationView.IsPaneOpen
-             && navigationView.PaneDisplayMode != NavigationViewPaneDisplayMode.Top
-            )
-            {
-                NavigationViewItemParent.IsExpanded = true;
-            }
-            else
-            {
-                NavigationViewItemParent.IsExpanded = false;
-            }
-        }
-
-        if (
-            Icon is SymbolIcon symbolIcon
-         && navigationView.PaneDisplayMode == NavigationViewPaneDisplayMode.LeftFluent
-        )
-        {
-            symbolIcon.Filled = true;
-        }
+        NavigationViewItemTemplateBehavior.SetIsActive(this, navigationView, true);
     }
 
     /// <summary>
@@ -434,32 +468,7 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
     /// </summary>
     public virtual void Deactivate(INavigationView navigationView)
     {
-        SetCurrentValue(IsActiveProperty, false);
-        NavigationViewItemParent?.Deactivate(navigationView);
-
-        if (!navigationView.IsPaneOpen && HasMenuItems)
-        {
-            SetCurrentValue(IsExpandedProperty, false);
-        }
-
-        if (
-            Icon is SymbolIcon symbolIcon
-         && navigationView.PaneDisplayMode == NavigationViewPaneDisplayMode.LeftFluent
-        )
-        {
-            symbolIcon.Filled = false;
-        }
-    }
-
-    /// <inheritdoc />
-    public override void OnApplyTemplate()
-    {
-        base.OnApplyTemplate();
-
-        if (GetTemplateChild(TemplateElementChevronGrid) is Grid chevronGrid)
-        {
-            ChevronGrid = chevronGrid;
-        }
+        NavigationViewItemTemplateBehavior.SetIsActive(this, navigationView, false);
     }
 
     /// <inheritdoc />
@@ -493,7 +502,7 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
             return;
         }
 
-        if (HasMenuItems && navigationView.IsPaneOpen)
+        if (HasMenuItems && IsPaneOpen)
         {
             SetCurrentValue(IsExpandedProperty, !IsExpanded);
         }
@@ -506,60 +515,6 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
         base.OnClick();
     }
 
-    /// <summary>
-    /// Is called when mouse is clicked down.
-    /// </summary>
-    protected override void OnMouseDown(MouseButtonEventArgs e)
-    {
-        if (!HasMenuItems || e.LeftButton != MouseButtonState.Pressed)
-        {
-            base.OnMouseDown(e);
-            return;
-        }
-
-        if (NavigationView.GetNavigationParent(this) is not { } navigationView)
-        {
-            return;
-        }
-
-        if (!navigationView.IsPaneOpen || ChevronGrid is null ||
-            navigationView.PaneDisplayMode != NavigationViewPaneDisplayMode.Left)
-        {
-            base.OnMouseDown(e);
-            return;
-        }
-
-        var mouseOverChevron = ActualWidth < e.GetPosition(this).X + ChevronGrid.ActualWidth;
-        if (!mouseOverChevron)
-        {
-            base.OnMouseDown(e);
-            return;
-        }
-
-        SetCurrentValue(IsExpandedProperty, !IsExpanded);
-
-        foreach (var menuItem in MenuItems)
-        {
-            if (menuItem is not INavigationViewItem { IsActive: true })
-            {
-                continue;
-            }
-
-            if (IsExpanded)
-            {
-                Deactivate(navigationView);
-            }
-            else
-            {
-                Activate(navigationView);
-            }
-
-            break;
-        }
-
-        e.Handled = true;
-    }
-
     protected override AutomationPeer OnCreateAutomationPeer()
     {
         return new NavigationViewItemAutomationPeer(this);
@@ -569,15 +524,31 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
     {
         SetValue(HasMenuItemsPropertyKey, MenuItems.Count > 0);
 
-        foreach (INavigationViewItem item in MenuItems.OfType<INavigationViewItem>())
+        var currentItems = MenuItems.OfType<INavigationViewItem>().ToList();
+
+        foreach (var oldItem in _attachedMenuItems)
+        {
+            if (
+                !currentItems.Any(item => ReferenceEquals(item, oldItem))
+             && ReferenceEquals(oldItem.NavigationViewItemParent, this)
+            )
+            {
+                oldItem.NavigationViewItemParent = null;
+            }
+        }
+
+        _attachedMenuItems.Clear();
+
+        foreach (var item in currentItems)
         {
             item.NavigationViewItemParent = this;
+            _attachedMenuItems.Add(item);
         }
     }
 
     private void UpdateIndentation()
     {
-        var depth = 0;
+        var depth  = 0;
         var parent = NavigationViewItemParent;
 
         while (parent is not null)
@@ -592,11 +563,6 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
         {
             item.UpdateIndentation();
         }
-    }
-
-    private static void OnIndentationSizeChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
-    {
-        ((NavigationViewItem)d).UpdateIndentation();
     }
 
     private static string CreateSearchableContent(object? content)
@@ -622,11 +588,13 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
         {
             char current = value[i];
 
-            if (current == '(' &&
-                i + 3 < value.Length &&
-                IsAccessKeyMarker(value[i + 1]) &&
-                IsAccessKeyCharacter(value[i + 2]) &&
-                value[i + 3] == ')')
+            if (
+                current == '('
+             && i + 3 < value.Length
+             && IsAccessKeyMarker(value[i + 1])
+             && IsAccessKeyCharacter(value[i + 2])
+             && value[i + 3] == ')'
+            )
             {
                 builder ??= new StringBuilder(value.Length).Append(value, 0, i);
                 builder.Append(value[i + 2]);
@@ -635,17 +603,13 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
                 continue;
             }
 
-            if (IsAccessKeyMarker(current) &&
-                i + 1 < value.Length &&
-                IsAccessKeyCharacter(value[i + 1]))
+            if (IsAccessKeyMarker(current) && i + 1 < value.Length && IsAccessKeyCharacter(value[i + 1]))
             {
                 builder ??= new StringBuilder(value.Length).Append(value, 0, i);
                 continue;
             }
 
-            if (IsAccessKeyMarker(current) &&
-                i + 1 < value.Length &&
-                value[i + 1] == current)
+            if (IsAccessKeyMarker(current) && i + 1 < value.Length && value[i + 1] == current)
             {
                 builder ??= new StringBuilder(value.Length).Append(value, 0, i);
                 builder.Append(current);
@@ -674,25 +638,36 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
             return;
         }
 
-        NavigationView.GetNavigationParent(navigationViewItem)?.NotifyNavigationCacheModeChanged(
-            navigationViewItem,
-            (NavigationCacheMode)e.OldValue,
-            (NavigationCacheMode)e.NewValue
-        );
+        NavigationView
+           .GetNavigationParent(navigationViewItem)
+          ?.NotifyNavigationCacheModeChanged(
+                navigationViewItem,
+                (NavigationCacheMode)e.OldValue,
+                (NavigationCacheMode)e.NewValue
+            );
+    }
+
+    private static void OnIconChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        if (d is NavigationViewItem navigationViewItem)
+        {
+            NavigationViewItemTemplateBehavior.UpdateIcon(navigationViewItem, e.OldValue as SymbolIcon);
+        }
     }
 
     private static void OnNavigationLookupPropertyChanged(
-        DependencyObject d,
-        DependencyPropertyChangedEventArgs e)
+        DependencyObject                   d,
+        DependencyPropertyChangedEventArgs e
+    )
     {
         if (d is not NavigationViewItem navigationViewItem)
         {
             return;
         }
 
-        NavigationView.GetNavigationParent(navigationViewItem)?.NotifyNavigationViewItemLookupChanged(
-            navigationViewItem
-        );
+        NavigationView
+           .GetNavigationParent(navigationViewItem)
+          ?.NotifyNavigationViewItemLookupChanged(navigationViewItem);
     }
 
     private static void OnMenuItemsSourceChanged(DependencyObject? d, DependencyPropertyChangedEventArgs e)
@@ -743,13 +718,16 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
         DetachNavigationViewEvents();
 
         _attachedNavigationView = navigationView;
-        SetCurrentValue(IsPaneOpenProperty, navigationView.IsPaneOpen);
+        SynchronizePaneState(navigationView.PaneDisplayMode, navigationView.IsPaneOpen);
 
-        _paneOpenedHandler = (_, _) => SetCurrentValue(IsPaneOpenProperty, true);
-        _paneClosedHandler = (_, _) => SetCurrentValue(IsPaneOpenProperty, false);
+        _paneOpenedHandler = (_, _) => SynchronizePaneState(navigationView.PaneDisplayMode, true);
+        _paneClosedHandler = (_, _) => SynchronizePaneState(navigationView.PaneDisplayMode, false);
+        _paneDisplayModeChangedHandler = (_, _) =>
+            SynchronizePaneState(navigationView.PaneDisplayMode, navigationView.IsPaneOpen);
 
         navigationView.PaneOpened += _paneOpenedHandler;
         navigationView.PaneClosed += _paneClosedHandler;
+        PaneDisplayModeDescriptor.AddValueChanged(navigationView, _paneDisplayModeChangedHandler);
     }
 
     private void DetachNavigationViewEvents()
@@ -762,15 +740,35 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
         if (_paneOpenedHandler is not null)
         {
             _attachedNavigationView.PaneOpened -= _paneOpenedHandler;
-            _paneOpenedHandler = null;
+            _paneOpenedHandler                 =  null;
         }
 
         if (_paneClosedHandler is not null)
         {
             _attachedNavigationView.PaneClosed -= _paneClosedHandler;
-            _paneClosedHandler = null;
+            _paneClosedHandler                 =  null;
+        }
+
+        if (_paneDisplayModeChangedHandler is not null)
+        {
+            PaneDisplayModeDescriptor.RemoveValueChanged(
+                _attachedNavigationView,
+                _paneDisplayModeChangedHandler
+            );
+            _paneDisplayModeChangedHandler = null;
         }
 
         _attachedNavigationView = null;
+    }
+
+    internal void SynchronizePaneState(NavigationViewPaneDisplayMode paneDisplayMode, bool isPaneOpen)
+    {
+        SetValue(PaneDisplayModePropertyKey, paneDisplayMode);
+        SetCurrentValue(IsPaneOpenProperty, isPaneOpen);
+
+        foreach (var item in MenuItems.OfType<NavigationViewItem>())
+        {
+            item.SynchronizePaneState(paneDisplayMode, isPaneOpen);
+        }
     }
 }

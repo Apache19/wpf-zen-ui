@@ -1,0 +1,78 @@
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="clr-namespace:Wpf.Ui.Controls"
+    xmlns:m="clr-namespace:Wpf.Ui.Markup">
+
+    <ControlTemplate x:Key="NavigationViewItemBottomCompactTemplate" TargetType="{x:Type controls:NavigationViewItem}">
+        <Border x:Name="MainBorder" Background="Transparent">
+            <Grid>
+                <Grid
+                    Margin="12,8,12,8"
+                    HorizontalAlignment="Stretch"
+                    VerticalAlignment="Stretch">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <ContentPresenter
+                        x:Name="IconContentPresenter"
+                        Grid.Column="0"
+                        Margin="0,0,6,0"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Content="{TemplateBinding Icon}"
+                        TextElement.FontSize="16"
+                        TextElement.Foreground="{m:BrushResource TextFillColorPrimaryBrush}" />
+
+                    <ContentPresenter
+                        x:Name="ElementContentPresenter"
+                        Grid.Column="1"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Center"
+                        Content="{TemplateBinding Content}"
+                        ContentTemplate="{TemplateBinding ContentTemplate}"
+                        RecognizesAccessKey="True"
+                        TextElement.Foreground="{TemplateBinding Foreground}" />
+
+                    <ContentPresenter
+                        x:Name="PART_InfoBadge"
+                        Grid.Column="2"
+                        Margin="2"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Center"
+                        Content="{TemplateBinding InfoBadge}" />
+                </Grid>
+                <Rectangle
+                    x:Name="ActiveRectangle"
+                    Grid.Column="0"
+                    Width="16"
+                    Height="3"
+                    Margin="0,0,0,-4"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Bottom"
+                    Fill="{m:BrushResource SystemAccentColorPrimaryBrush}"
+                    Opacity="0.0"
+                    RadiusX="2"
+                    RadiusY="2" />
+            </Grid>
+        </Border>
+        <ControlTemplate.Triggers>
+            <Trigger Property="IsActive" Value="True">
+                <Setter TargetName="ActiveRectangle" Property="Opacity" Value="1.0" />
+            </Trigger>
+            <Trigger Property="Icon" Value="{x:Null}">
+                <Setter TargetName="IconContentPresenter" Property="Visibility" Value="Collapsed" />
+            </Trigger>
+            <Trigger Property="Content" Value="{x:Null}">
+                <Setter TargetName="IconContentPresenter" Property="Margin" Value="0" />
+                <Setter TargetName="ElementContentPresenter" Property="Visibility" Value="Collapsed" />
+            </Trigger>
+            <Trigger Property="Content" Value="">
+                <Setter TargetName="IconContentPresenter" Property="Margin" Value="0" />
+                <Setter TargetName="ElementContentPresenter" Property="Visibility" Value="Collapsed" />
+            </Trigger>
+        </ControlTemplate.Triggers>
+    </ControlTemplate>
+</ResourceDictionary>

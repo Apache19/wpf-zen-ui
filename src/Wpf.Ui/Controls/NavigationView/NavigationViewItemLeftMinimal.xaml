@@ -3,11 +3,8 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Ui.Controls"
     xmlns:markup="clr-namespace:Wpf.Ui.Markup">
-    <ResourceDictionary.MergedDictionaries>
-        <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/NavigationView/NavigationViewItemDefaultStyle.xaml" />
-    </ResourceDictionary.MergedDictionaries>
 
-    <ControlTemplate x:Key="LeftMinimalNavigationViewSubItemTemplate" TargetType="{x:Type controls:NavigationViewItem}">
+    <ControlTemplate x:Key="NavigationViewItemLeftMinimalSubTemplate" TargetType="{x:Type controls:NavigationViewItem}">
         <Border
             x:Name="MainBorder"
             Grid.Row="0"
@@ -74,7 +71,7 @@
         </Border>
     </ControlTemplate>
 
-    <ControlTemplate x:Key="LeftMinimalCompactNavigationViewItemTemplate" TargetType="{x:Type controls:NavigationViewItem}">
+    <ControlTemplate x:Key="NavigationViewItemLeftMinimalCompactTemplate" TargetType="{x:Type controls:NavigationViewItem}">
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
@@ -147,13 +144,12 @@
             </Border>
             <ItemsControl
                 Grid.Row="1"
-                controls:NavigationView.ItemContainerTemplate="{StaticResource LeftMinimalNavigationViewSubItemTemplate}"
                 Focusable="False"
                 ItemContainerStyle="{Binding RelativeSource={RelativeSource Self}, Path=(controls:NavigationView.ItemContainerStyle)}"
                 ItemContainerStyleSelector="{Binding RelativeSource={RelativeSource Self}, Path=(controls:NavigationView.ItemContainerStyleSelector)}"
                 ItemTemplate="{Binding RelativeSource={RelativeSource Self}, Path=(controls:NavigationView.ItemTemplate)}"
                 ItemTemplateSelector="{Binding RelativeSource={RelativeSource Self}, Path=(controls:NavigationView.ItemTemplateSelector)}"
-                ItemsSource="{TemplateBinding MenuItemsSource}"
+                ItemsSource="{TemplateBinding MenuItems}"
                 KeyboardNavigation.DirectionalNavigation="Contained"
                 ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                 ScrollViewer.VerticalScrollBarVisibility="Disabled">

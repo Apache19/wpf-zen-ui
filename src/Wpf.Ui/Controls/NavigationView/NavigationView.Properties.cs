@@ -855,53 +855,6 @@ public partial class NavigationView
 
     #endregion
 
-    #region DP: ItemContainerTemplate
-
-    /// <summary>Identifies the <see cref="ItemContainerTemplate"/> dependency property.</summary>
-    public static readonly DependencyProperty ItemContainerTemplateProperty = DependencyProperty.RegisterAttached(
-        nameof(ItemContainerTemplate),
-        typeof(ControlTemplate),
-        typeof(NavigationView),
-        new FrameworkPropertyMetadata(
-            null,
-            FrameworkPropertyMetadataOptions.AffectsMeasure | FrameworkPropertyMetadataOptions.Inherits
-        )
-    );
-
-    /// <inheritdoc/>
-    public ControlTemplate? ItemContainerTemplate
-    {
-        get => (ControlTemplate?)GetValue(ItemContainerTemplateProperty);
-        set => SetValue(ItemContainerTemplateProperty, value);
-    }
-
-    /// <summary>
-    /// Helper for getting <see cref="ItemContainerTemplateProperty"/> from <paramref name="element"/>.
-    /// </summary>
-    /// <param name="element">
-    /// <see cref="DependencyObject"/> to read <see cref="ItemContainerTemplateProperty"/> from.
-    /// </param>
-    /// <returns>ItemContainerTemplate property value.</returns>
-    [AttachedPropertyBrowsableForType(typeof(DependencyObject))]
-    public static ControlTemplate? GetItemContainerTemplate(DependencyObject element)
-    {
-        return (ControlTemplate?)element.GetValue(ItemContainerTemplateProperty);
-    }
-
-    /// <summary>
-    /// Helper for setting <see cref="ItemContainerTemplateProperty"/> on <paramref name="element"/>.
-    /// </summary>
-    /// <param name="element">
-    /// <see cref="DependencyObject"/> to set <see cref="ItemContainerTemplateProperty"/> on.
-    /// </param>
-    /// <param name="value">ItemContainerTemplate property value.</param>
-    public static void SetItemContainerTemplate(DependencyObject element, ControlTemplate? value)
-    {
-        element.SetValue(ItemContainerTemplateProperty, value);
-    }
-
-    #endregion
-
     #region DP: ItemContainerStyle
 
     /// <summary>Identifies the <see cref="ItemContainerStyle"/> dependency property.</summary>

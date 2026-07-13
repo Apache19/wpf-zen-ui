@@ -158,11 +158,6 @@ public interface INavigationView
     BreadcrumbBar? BreadcrumbBar { get; set; }
 
     /// <summary>
-    /// Gets or sets the default control template for navigation item containers.
-    /// </summary>
-    ControlTemplate? ItemContainerTemplate { get; set; }
-
-    /// <summary>
     /// Gets or sets the style applied to navigation item containers.
     /// </summary>
     Style? ItemContainerStyle { get; set; }
