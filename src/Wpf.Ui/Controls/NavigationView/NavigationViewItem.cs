@@ -26,6 +26,10 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
 {
     protected const string TemplateElementChevronGrid = "PART_ChevronGrid";
 
+    // ═══════════════════════════════════════════════════════════════════════
+    // Indentation
+    // ═══════════════════════════════════════════════════════════════════════
+
     private static readonly DependencyPropertyKey IndentationPropertyKey = DependencyProperty.RegisterReadOnly(
         nameof(Indentation),
         typeof(Thickness),
@@ -33,15 +37,19 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
         new PropertyMetadata(default(Thickness))
     );
 
-    private static readonly DependencyPropertyKey MenuItemsPropertyKey = DependencyProperty.RegisterReadOnly(
-        nameof(MenuItems),
-        typeof(ObservableCollection<object>),
-        typeof(NavigationViewItem),
-        new PropertyMetadata(null)
-    );
-
     /// <summary>Identifies the <see cref="Indentation"/> dependency property.</summary>
     public static readonly DependencyProperty IndentationProperty = IndentationPropertyKey.DependencyProperty;
+
+    /// <summary>
+    /// Gets the indentation applied to the item content based on its depth in the navigation tree.
+    /// </summary>
+    [Browsable(false)]
+    [ReadOnly(true)]
+    public Thickness Indentation => (Thickness)GetValue(IndentationProperty);
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // IndentationSize
+    // ═══════════════════════════════════════════════════════════════════════
 
     /// <summary>Identifies the <see cref="IndentationSize"/> dependency property.</summary>
     public static readonly DependencyProperty IndentationSizeProperty = DependencyProperty.Register(
@@ -52,8 +60,36 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
         static value => value is double size && size >= 0 && !double.IsInfinity(size)
     );
 
+    /// <summary>
+    /// Gets or sets the indentation added for each level in the navigation tree.
+    /// </summary>
+    [Category("Layout")]
+    public double IndentationSize
+    {
+        get => (double)GetValue(IndentationSizeProperty);
+        set => SetValue(IndentationSizeProperty, value);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // MenuItems
+    // ═══════════════════════════════════════════════════════════════════════
+
+    private static readonly DependencyPropertyKey MenuItemsPropertyKey = DependencyProperty.RegisterReadOnly(
+        nameof(MenuItems),
+        typeof(ObservableCollection<object>),
+        typeof(NavigationViewItem),
+        new PropertyMetadata(null)
+    );
+
     /// <summary>Identifies the <see cref="MenuItems"/> dependency property.</summary>
     public static readonly DependencyProperty MenuItemsProperty = MenuItemsPropertyKey.DependencyProperty;
+
+    /// <inheritdoc/>
+    public IList MenuItems => (ObservableCollection<object>)GetValue(MenuItemsProperty);
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // MenuItemsSource
+    // ═══════════════════════════════════════════════════════════════════════
 
     /// <summary>Identifies the <see cref="MenuItemsSource"/> dependency property.</summary>
     public static readonly DependencyProperty MenuItemsSourceProperty = DependencyProperty.Register(
@@ -62,6 +98,18 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
         typeof(NavigationViewItem),
         new PropertyMetadata(null, OnMenuItemsSourceChanged)
     );
+
+    /// <inheritdoc/>
+    [Bindable(true)]
+    public object? MenuItemsSource
+    {
+        get => GetValue(MenuItemsSourceProperty);
+        set => SetValue(MenuItemsSourceProperty, value);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // HasMenuItems
+    // ═══════════════════════════════════════════════════════════════════════
 
     /// <summary>Identifies the <see cref="HasMenuItems"/> dependency property.</summary>
     internal static readonly DependencyPropertyKey HasMenuItemsPropertyKey =
@@ -76,6 +124,17 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
     public static readonly DependencyProperty HasMenuItemsProperty =
         HasMenuItemsPropertyKey.DependencyProperty;
 
+    /// <summary>
+    /// Gets a value indicating whether MenuItems.Count > 0
+    /// </summary>
+    [Browsable(false)]
+    [ReadOnly(true)]
+    public bool HasMenuItems => (bool)GetValue(HasMenuItemsProperty);
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // IsActive
+    // ═══════════════════════════════════════════════════════════════════════
+
     /// <summary>Identifies the <see cref="IsActive"/> dependency property.</summary>
     public static readonly DependencyProperty IsActiveProperty = DependencyProperty.Register(
         nameof(IsActive),
@@ -83,100 +142,6 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
         typeof(NavigationViewItem),
         new PropertyMetadata(false)
     );
-
-    /// <summary>Identifies the <see cref="IsPaneOpen"/> dependency property.</summary>
-    public static readonly DependencyProperty IsPaneOpenProperty = DependencyProperty.Register(
-        nameof(IsPaneOpen),
-        typeof(bool),
-        typeof(NavigationViewItem),
-        new PropertyMetadata(false)
-    );
-
-    /// <summary>Identifies the <see cref="IsExpanded"/> dependency property.</summary>
-    public static readonly DependencyProperty IsExpandedProperty = DependencyProperty.Register(
-        nameof(IsExpanded),
-        typeof(bool),
-        typeof(NavigationViewItem),
-        new PropertyMetadata(false)
-    );
-
-    /// <summary>Identifies the <see cref="Icon"/> dependency property.</summary>
-    public static readonly DependencyProperty IconProperty = DependencyProperty.Register(
-        nameof(Icon),
-        typeof(IconElement),
-        typeof(NavigationViewItem),
-        new PropertyMetadata(null, null, IconElement.Coerce)
-    );
-
-    /// <summary>Identifies the <see cref="TargetPageTag"/> dependency property.</summary>
-    public static readonly DependencyProperty TargetPageTagProperty = DependencyProperty.Register(
-        nameof(TargetPageTag),
-        typeof(string),
-        typeof(NavigationViewItem),
-        new PropertyMetadata(string.Empty, OnNavigationLookupPropertyChanged)
-    );
-
-    /// <summary>Identifies the <see cref="TargetPageType"/> dependency property.</summary>
-    public static readonly DependencyProperty TargetPageTypeProperty = DependencyProperty.Register(
-        nameof(TargetPageType),
-        typeof(Type),
-        typeof(NavigationViewItem),
-        new PropertyMetadata(null, OnNavigationLookupPropertyChanged)
-    );
-
-    /// <summary>Identifies the <see cref="InfoBadge"/> dependency property.</summary>
-    public static readonly DependencyProperty InfoBadgeProperty = DependencyProperty.Register(
-        nameof(InfoBadge),
-        typeof(InfoBadge),
-        typeof(NavigationViewItem),
-        new PropertyMetadata(null)
-    );
-
-    /// <summary>Identifies the <see cref="NavigationCacheMode"/> dependency property.</summary>
-    public static readonly DependencyProperty NavigationCacheModeProperty = DependencyProperty.Register(
-        nameof(NavigationCacheMode),
-        typeof(NavigationCacheMode),
-        typeof(NavigationViewItem),
-        new FrameworkPropertyMetadata(NavigationCacheMode.Disabled, OnNavigationCacheModeChanged)
-    );
-
-    /// <summary>
-    /// Gets the indentation applied to the item content based on its depth in the navigation tree.
-    /// </summary>
-    [Browsable(false)]
-    [ReadOnly(true)]
-    public Thickness Indentation => (Thickness)GetValue(IndentationProperty);
-
-    /// <summary>
-    /// Gets or sets the indentation added for each level in the navigation tree.
-    /// </summary>
-    [Category("Layout")]
-    public double IndentationSize
-    {
-        get => (double)GetValue(IndentationSizeProperty);
-        set => SetValue(IndentationSizeProperty, value);
-    }
-
-    /// <inheritdoc/>
-    public IList MenuItems => (ObservableCollection<object>)GetValue(MenuItemsProperty);
-
-    /// <inheritdoc/>
-    [Bindable(true)]
-    public object? MenuItemsSource
-    {
-        get => GetValue(MenuItemsSourceProperty);
-        set => SetValue(MenuItemsSourceProperty, value);
-    }
-
-    /// <summary>
-    /// Gets a value indicating whether MenuItems.Count > 0
-    /// </summary>
-    [Browsable(false)]
-    [ReadOnly(true)]
-    public bool HasMenuItems
-    {
-        get => (bool)GetValue(HasMenuItemsProperty);
-    }
 
     /// <inheritdoc />
     [Browsable(false)]
@@ -187,6 +152,38 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
         set => SetValue(IsActiveProperty, value);
     }
 
+    // ═══════════════════════════════════════════════════════════════════════
+    // IsPaneOpen
+    // ═══════════════════════════════════════════════════════════════════════
+
+    /// <summary>Identifies the <see cref="IsPaneOpen"/> dependency property.</summary>
+    public static readonly DependencyProperty IsPaneOpenProperty = DependencyProperty.Register(
+        nameof(IsPaneOpen),
+        typeof(bool),
+        typeof(NavigationViewItem),
+        new PropertyMetadata(false)
+    );
+
+    [Browsable(false)]
+    [ReadOnly(true)]
+    public bool IsPaneOpen
+    {
+        get => (bool)GetValue(IsPaneOpenProperty);
+        set => SetValue(IsPaneOpenProperty, value);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // IsExpanded
+    // ═══════════════════════════════════════════════════════════════════════
+
+    /// <summary>Identifies the <see cref="IsExpanded"/> dependency property.</summary>
+    public static readonly DependencyProperty IsExpandedProperty = DependencyProperty.Register(
+        nameof(IsExpanded),
+        typeof(bool),
+        typeof(NavigationViewItem),
+        new PropertyMetadata(false)
+    );
+
     /// <inheritdoc />
     [Browsable(false)]
     [ReadOnly(true)]
@@ -196,13 +193,17 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
         set => SetValue(IsExpandedProperty, value);
     }
 
-    [Browsable(false)]
-    [ReadOnly(true)]
-    public bool IsPaneOpen
-    {
-        get => (bool)GetValue(IsPaneOpenProperty);
-        set => SetValue(IsPaneOpenProperty, value);
-    }
+    // ═══════════════════════════════════════════════════════════════════════
+    // Icon
+    // ═══════════════════════════════════════════════════════════════════════
+
+    /// <summary>Identifies the <see cref="Icon"/> dependency property.</summary>
+    public static readonly DependencyProperty IconProperty = DependencyProperty.Register(
+        nameof(Icon),
+        typeof(IconElement),
+        typeof(NavigationViewItem),
+        new PropertyMetadata(null, null, IconElement.Coerce)
+    );
 
     /// <inheritdoc />
     [Bindable(true)]
@@ -213,12 +214,36 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
         set => SetValue(IconProperty, value);
     }
 
+    // ═══════════════════════════════════════════════════════════════════════
+    // TargetPageTag
+    // ═══════════════════════════════════════════════════════════════════════
+
+    /// <summary>Identifies the <see cref="TargetPageTag"/> dependency property.</summary>
+    public static readonly DependencyProperty TargetPageTagProperty = DependencyProperty.Register(
+        nameof(TargetPageTag),
+        typeof(string),
+        typeof(NavigationViewItem),
+        new PropertyMetadata(string.Empty, OnNavigationLookupPropertyChanged)
+    );
+
     /// <inheritdoc />
     public string TargetPageTag
     {
         get => (string)GetValue(TargetPageTagProperty);
         set => SetValue(TargetPageTagProperty, value);
     }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // TargetPageType
+    // ═══════════════════════════════════════════════════════════════════════
+
+    /// <summary>Identifies the <see cref="TargetPageType"/> dependency property.</summary>
+    public static readonly DependencyProperty TargetPageTypeProperty = DependencyProperty.Register(
+        nameof(TargetPageType),
+        typeof(Type),
+        typeof(NavigationViewItem),
+        new PropertyMetadata(null, OnNavigationLookupPropertyChanged)
+    );
 
     /// <inheritdoc />
     public Type? TargetPageType
@@ -227,11 +252,35 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
         set => SetValue(TargetPageTypeProperty, value);
     }
 
+    // ═══════════════════════════════════════════════════════════════════════
+    // InfoBadge
+    // ═══════════════════════════════════════════════════════════════════════
+
+    /// <summary>Identifies the <see cref="InfoBadge"/> dependency property.</summary>
+    public static readonly DependencyProperty InfoBadgeProperty = DependencyProperty.Register(
+        nameof(InfoBadge),
+        typeof(InfoBadge),
+        typeof(NavigationViewItem),
+        new PropertyMetadata(null)
+    );
+
     public InfoBadge? InfoBadge
     {
         get => (InfoBadge?)GetValue(InfoBadgeProperty);
         set => SetValue(InfoBadgeProperty, value);
     }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // NavigationCacheMode
+    // ═══════════════════════════════════════════════════════════════════════
+
+    /// <summary>Identifies the <see cref="NavigationCacheMode"/> dependency property.</summary>
+    public static readonly DependencyProperty NavigationCacheModeProperty = DependencyProperty.Register(
+        nameof(NavigationCacheMode),
+        typeof(NavigationCacheMode),
+        typeof(NavigationViewItem),
+        new FrameworkPropertyMetadata(NavigationCacheMode.Disabled, OnNavigationCacheModeChanged)
+    );
 
     /// <inheritdoc/>
     public NavigationCacheMode NavigationCacheMode
@@ -292,18 +341,10 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
             new FrameworkPropertyMetadata(
                 Brushes.Transparent,
                 null,
-                CoerceBorderBrush
+                (d, baseValue) => baseValue ?? Brushes.Transparent
             )
         );
     }
-
-    /// <summary>
-    /// Ensures <see cref="System.Windows.Controls.Border.BorderBrush"/> is never null,
-    /// so the <c>LeftFluentNavigationViewItemTemplate</c> storyboard always has a valid
-    /// DependencyObject to animate. See the static constructor for the full backstory.
-    /// </summary>
-    private static object CoerceBorderBrush(DependencyObject d, object baseValue) =>
-        baseValue ?? Brushes.Transparent;
 
     public NavigationViewItem()
     {
