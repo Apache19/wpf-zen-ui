@@ -46,6 +46,41 @@ public partial class NavigationView : Control, INavigationView
     {
         NavigationParent = this;
 
+        // The navigation frame belongs to the control rather than to a particular template.
+        // WPF destroys a control template's generated subtree whenever Template changes; keeping
+        // the frame in that subtree would therefore discard the current page while merely changing
+        // PaneDisplayMode. The templates expose only a host slot, and OnApplyTemplate moves this
+        // stable frame between those slots.
+
+        BindingOperations.SetBinding(
+            NavigationViewContentPresenter,
+            PaddingProperty,
+            new Binding(nameof(Padding))
+            {
+                Source = this
+            }
+        );
+
+        BindingOperations.SetBinding(
+            NavigationViewContentPresenter,
+            NavigationViewContentPresenter.TransitionProperty,
+            new Binding(nameof(Transition))
+            {
+                Source = this
+            }
+        );
+
+        BindingOperations.SetBinding(
+            NavigationViewContentPresenter,
+            NavigationViewContentPresenter.TransitionDurationProperty,
+            new Binding(nameof(TransitionDuration))
+            {
+                Source = this
+            }
+        );
+
+        NavigationViewContentPresenter.Navigated += OnNavigationViewContentPresenterNavigated;
+
         _paneBackButton = CreateNavigationButton(
             "NavigationBackButton",
             new SymbolIcon(SymbolRegular.ArrowLeft48),
@@ -276,10 +311,7 @@ public partial class NavigationView : Control, INavigationView
         SetCurrentValue(IsPaneOpenProperty, !IsPaneOpen);
 
         // Should not call .Focus() immediately.
-        Dispatcher.BeginInvoke(
-            () => AutoSuggestBox?.Focus(),
-            DispatcherPriority.Input
-        );
+        Dispatcher.BeginInvoke(() => AutoSuggestBox?.Focus(), DispatcherPriority.Input);
     }
 
     /// <summary>
@@ -287,18 +319,49 @@ public partial class NavigationView : Control, INavigationView
     /// </summary>
     protected virtual void OnPaneDisplayModeChanged()
     {
-        // todo: 不要在控件里硬编码视觉状态
-        // todo: 虚拟方法不要有过多的逻辑，避免子类无法改写逻辑，通常仅用于子类扩展，内部触发事件即可。
-        //       这样就给了子类极大的扩展空间。
-        if (PaneDisplayMode == NavigationViewPaneDisplayMode.LeftFluent)
-        {
-            SetCurrentValue(IsBackButtonVisibleProperty, NavigationViewBackButtonVisible.Collapsed);
-            SetCurrentValue(IsPaneToggleVisibleProperty, false);
-        }
-
+        // PaneDisplayMode selects a template; it must not overwrite independent public settings.
+        // The LeftFluent template intentionally omits the pane command host, so its visual contract
+        // is achieved without permanently changing button visibility when the caller returns to Left.
         UpdatePaneButtonPlacement();
         RaiseEvent(new RoutedEventArgs(PaneDisplayModeChangedEvent, this));
     }
+
+    /// <summary>
+    /// Stops storyboards owned by the current pane template before a display-mode trigger replaces
+    /// that template. This must run from the dependency-property callback: WPF evaluates style
+    /// triggers immediately after the callback and may clear the old generated subtree before any
+    /// later layout or <see cref="OnApplyTemplate"/> notification.
+    /// </summary>
+    private void PrepareForPaneDisplayModeChange(
+        NavigationViewPaneDisplayMode oldMode,
+        NavigationViewPaneDisplayMode newMode
+    )
+    {
+        // Left and LeftMinimal deliberately share the compact template and its PaneStates group.
+        // Keeping the active state avoids interrupting pane animations when only item layout changes.
+        if (UsesCompactPaneTemplate(oldMode) && UsesCompactPaneTemplate(newMode))
+        {
+            return;
+        }
+
+        // PaneReset has no storyboard. Entering it makes VisualStateManager remove the clocks from
+        // PaneOpen/PaneCompact before StyleHelper.ClearGeneratedSubTree detaches TemplateBindings.
+        // Without this step, Width temporarily falls back to Double.NaN while a DoubleAnimation is
+        // still evaluating, which causes WPF to throw during the first cross-template mode switch.
+        _ = VisualStateManager.GoToState(this, "PaneReset", false);
+
+        // VisualStateManager stops its storyboard, but WPF can retain the animation storage until
+        // the next property evaluation. Remove the Width clock synchronously while its template
+        // binding still supplies a finite base value; StyleHelper clears that binding immediately
+        // after this property callback returns.
+        if (Template?.FindName("PaneGrid", this) is FrameworkElement paneGrid)
+        {
+            paneGrid.BeginAnimation(FrameworkElement.WidthProperty, null);
+        }
+    }
+
+    private static bool UsesCompactPaneTemplate(NavigationViewPaneDisplayMode mode) =>
+        mode is NavigationViewPaneDisplayMode.Left or NavigationViewPaneDisplayMode.LeftMinimal;
 
     /// <summary>
     /// Creates a navigation-owned command. Commands are intentionally created by
@@ -311,8 +374,7 @@ public partial class NavigationView : Control, INavigationView
     private NavigationViewButton CreateNavigationButton(
         string                        automationId,
         IconElement                   icon,
-        NavigationViewButtonPlacement placement
-    )
+        NavigationViewButtonPlacement placement)
     {
         var button = new NavigationViewButton
         {
@@ -348,7 +410,7 @@ public partial class NavigationView : Control, INavigationView
         }
 
         if (
-            _titleBarContentOwner is not null &&
+            _titleBarContentOwner is not null && 
             (
                 ReferenceEquals(_titleBarContentOwner.LeftContent, _titleBarBackButton) ||
                 ReferenceEquals(_titleBarContentOwner.LeftContent, _titleBarToggleButton)

@@ -175,12 +175,11 @@
                         Visibility="{TemplateBinding HeaderVisibility}" />
 
                     <!--  Page content  -->
-                    <controls:NavigationViewContentPresenter
-                        x:Name="PART_NavigationViewContentPresenter"
-                        Grid.Row="1"
-                        Padding="{TemplateBinding Padding}"
-                        Transition="{TemplateBinding Transition}"
-                        TransitionDuration="{TemplateBinding TransitionDuration}" />
+                    <!--
+                        NavigationView owns the frame so changing PaneDisplayMode does not destroy
+                        the current page together with this template's generated visual tree.
+                    -->
+                    <ContentPresenter x:Name="PART_NavigationViewContentPresenterHost" Grid.Row="1" />
 
                     <!--  Overlay (e.g., SnackbarPresenter)  -->
                     <ContentPresenter
@@ -193,6 +192,13 @@
 
             <VisualStateManager.VisualStateGroups>
                 <VisualStateGroup Name="PaneStates">
+                    <!--
+                        NavigationView enters this empty state before a PaneDisplayMode trigger
+                        replaces the template. It removes active width clocks while TemplateBinding
+                        values are still valid, preventing WPF from evaluating an animation against
+                        Width=NaN as the old generated subtree is detached.
+                    -->
+                    <VisualState Name="PaneReset" />
                     <VisualState Name="PaneOpen">
                         <Storyboard>
                             <ObjectAnimationUsingKeyFrames Storyboard.TargetName="AutoSuggestBoxContentPresenter" Storyboard.TargetProperty="Visibility">

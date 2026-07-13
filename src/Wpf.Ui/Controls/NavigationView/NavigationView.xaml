@@ -12,6 +12,7 @@
     xmlns:markup="clr-namespace:Wpf.Ui.Markup">
     <ResourceDictionary.MergedDictionaries>
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/NavigationView/NavigationViewCompact.xaml" />
+        <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/NavigationView/NavigationViewFluent.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/NavigationView/NavigationViewTop.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/NavigationView/NavigationViewBottom.xaml" />
     </ResourceDictionary.MergedDictionaries>
@@ -35,8 +36,9 @@
                 <Setter Property="Template" Value="{StaticResource LeftNavigationViewTemplate}" />
             </Trigger>
             <Trigger Property="PaneDisplayMode" Value="LeftFluent">
-                <Setter Property="Template" Value="{StaticResource LeftNavigationViewTemplate}" />
-                <Setter Property="OpenPaneLength" Value="NaN" />
+                <Setter Property="Template" Value="{StaticResource FluentNavigationViewTemplate}" />
+                <Setter Property="IsBackButtonVisible" Value="Collapsed" />
+                <Setter Property="IsPaneToggleVisible" Value="False" />
             </Trigger>
             <Trigger Property="PaneDisplayMode" Value="Top">
                 <Setter Property="Template" Value="{StaticResource TopNavigationViewTemplate}" />

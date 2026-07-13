@@ -92,7 +92,7 @@ public class NavigationViewContentPresenter : Frame
 
         if (
             ScrollViewer.CanContentScrollProperty.GetMetadata(typeof(Page))
-         == ScrollViewer.CanContentScrollProperty.DefaultMetadata
+            == ScrollViewer.CanContentScrollProperty.DefaultMetadata
         )
         {
             ScrollViewer.CanContentScrollProperty.OverrideMetadata(
@@ -132,13 +132,25 @@ public class NavigationViewContentPresenter : Frame
     {
         base.OnInitialized(e);
 
-        // Unloaded handles cleanup when Frame is removed from visual tree
-        // (window close, tab switch, app exit), since Navigating won't fire.
-        // Normal navigation already triggers FROM via OnNavigatingCoreAsync.
+        // Unloaded handles cleanup when the frame is genuinely removed from the visual tree
+        // (window close, tab switch, app exit), since Navigating does not fire in those cases.
+        // NavigationView also moves this same frame between template hosts when PaneDisplayMode
+        // changes. WPF raises Unloaded for that transient disconnect, so defer the notification
+        // until layout has had a chance to attach the new template and suppress a false
+        // OnNavigatedFromAsync callback when the page never actually changed.
         Unloaded += static async (sender, _) =>
         {
             if (sender is NavigationViewContentPresenter navigator)
             {
+                await System.Windows.Threading.Dispatcher.Yield(
+                    System.Windows.Threading.DispatcherPriority.ContextIdle
+                );
+
+                if (navigator.IsLoaded)
+                {
+                    return;
+                }
+
                 await NotifyContentAboutNavigatingFromAsync(navigator.Content);
             }
         };

@@ -655,6 +655,10 @@ public partial class NavigationView
             return;
         }
 
+        navigationView.PrepareForPaneDisplayModeChange(
+            (NavigationViewPaneDisplayMode)e.OldValue,
+            (NavigationViewPaneDisplayMode)e.NewValue
+        );
         navigationView.OnPaneDisplayModeChanged();
     }
 
@@ -797,12 +801,13 @@ public partial class NavigationView
     #region DP: ItemContainerStyle
 
     /// <summary>Identifies the <see cref="ItemContainerStyle"/> dependency property.</summary>
-    public static readonly DependencyProperty ItemContainerStyleProperty = DependencyProperty.RegisterAttached(
-        nameof(ItemContainerStyle),
-        typeof(Style),
-        typeof(NavigationView),
-        new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.Inherits)
-    );
+    public static readonly DependencyProperty ItemContainerStyleProperty =
+        DependencyProperty.RegisterAttached(
+            nameof(ItemContainerStyle),
+            typeof(Style),
+            typeof(NavigationView),
+            new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.Inherits)
+        );
 
     /// <inheritdoc/>
     public Style? ItemContainerStyle
@@ -945,12 +950,13 @@ public partial class NavigationView
     #region DP: ItemTemplateSelector
 
     /// <summary>Identifies the <see cref="ItemTemplateSelector"/> dependency property.</summary>
-    public static readonly DependencyProperty ItemTemplateSelectorProperty = DependencyProperty.RegisterAttached(
-        nameof(ItemTemplateSelector),
-        typeof(DataTemplateSelector),
-        typeof(NavigationView),
-        new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.Inherits)
-    );
+    public static readonly DependencyProperty ItemTemplateSelectorProperty =
+        DependencyProperty.RegisterAttached(
+            nameof(ItemTemplateSelector),
+            typeof(DataTemplateSelector),
+            typeof(NavigationView),
+            new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.Inherits)
+        );
 
     /// <inheritdoc/>
     public DataTemplateSelector? ItemTemplateSelector
