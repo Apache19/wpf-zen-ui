@@ -49,7 +49,7 @@ public partial class NavigationView : Control, INavigationView
         _paneBackButton = CreateNavigationButton(
             "NavigationBackButton",
             new SymbolIcon(SymbolRegular.ArrowLeft48),
-            nameof(PaneButtonStyle)
+            NavigationViewButtonPlacement.Pane
         );
 
         _paneBackButton.Click += OnBackButtonClick;
@@ -66,7 +66,7 @@ public partial class NavigationView : Control, INavigationView
         _paneToggleButton = CreateNavigationButton(
             "NavigationToggleButton",
             new SymbolIcon(SymbolRegular.LineHorizontal320),
-            nameof(PaneButtonStyle)
+            NavigationViewButtonPlacement.Pane
         );
 
         _paneToggleButton.Click += OnToggleButtonClick;
@@ -77,7 +77,7 @@ public partial class NavigationView : Control, INavigationView
         _titleBarBackButton = CreateNavigationButton(
             "NavigationBackButton",
             new SymbolIcon(SymbolRegular.ArrowLeft48),
-            nameof(TitleBarButtonStyle)
+            NavigationViewButtonPlacement.TitleBar
         );
 
         _titleBarBackButton.Click += OnBackButtonClick;
@@ -94,7 +94,7 @@ public partial class NavigationView : Control, INavigationView
         _titleBarToggleButton = CreateNavigationButton(
             "NavigationToggleButton",
             new SymbolIcon(SymbolRegular.LineHorizontal320),
-            nameof(TitleBarButtonStyle)
+            NavigationViewButtonPlacement.TitleBar
         );
 
         _titleBarToggleButton.Click += OnToggleButtonClick;
@@ -139,10 +139,10 @@ public partial class NavigationView : Control, INavigationView
     private readonly HashSet<NavigationViewItem>                        _registeredItems  = [];
     private readonly ObservableCollection<string>                       _autoSuggestItems = [];
     private readonly ObservableCollection<NavigationViewBreadcrumbItem> _breadcrumbItems  = [];
-    private readonly Button                                             _paneBackButton;
-    private readonly Button                                             _paneToggleButton;
-    private readonly Button                                             _titleBarBackButton;
-    private readonly Button                                             _titleBarToggleButton;
+    private readonly NavigationViewButton                               _paneBackButton;
+    private readonly NavigationViewButton                               _paneToggleButton;
+    private readonly NavigationViewButton                               _titleBarBackButton;
+    private readonly NavigationViewButton                               _titleBarToggleButton;
     private readonly TextBlock                                          _paneTitle;
     private readonly StackPanel                                         _paneButtonsHost = new();
     private          TitleBar?                                          _titleBarContentOwner;
@@ -304,25 +304,19 @@ public partial class NavigationView : Control, INavigationView
     /// </summary>
     /// <param name="automationId">The stable automation identifier shared by both host-specific instances.</param>
     /// <param name="icon">The icon that identifies the navigation command.</param>
-    /// <param name="stylePropertyName">
-    /// The NavigationView style property to bind. Binding instead of copying the current style
-    /// keeps dynamically created buttons synchronized with runtime style and theme changes.
-    /// </param>
-    private Button CreateNavigationButton(string automationId, IconElement icon, string stylePropertyName)
+    /// <param name="placement">The host in which the button is placed.</param>
+    private NavigationViewButton CreateNavigationButton(
+        string                        automationId,
+        IconElement                   icon,
+        NavigationViewButtonPlacement placement
+    )
     {
-        var button = new Button
+        var button = new NavigationViewButton
         {
             Icon = icon
         };
 
-        BindingOperations.SetBinding(
-            button,
-            StyleProperty,
-            new Binding(stylePropertyName)
-            {
-                Source = this
-            }
-        );
+        button.InitializeOwner(this, placement);
 
         AutomationProperties.SetAutomationId(button, automationId);
 
@@ -392,15 +386,12 @@ public partial class NavigationView : Control, INavigationView
         // same UIElement during one dispatcher turn can race its deferred template cleanup.
         PaneButtonsPresenter?.SetCurrentValue(ContentPresenter.ContentProperty, _paneButtonsHost);
 
-        if (titleBar is not null)
-        {
-            // SetCurrentValue preserves a binding placed on LeftContent. NavigationView owns the
-            // effective value only while it is associated with this TitleBar.
-            titleBar.SetCurrentValue(TitleBar.LeftContentProperty, titleButton);
-        }
+        // SetCurrentValue preserves a binding placed on LeftContent. NavigationView owns the
+        // effective value only while it is associated with this TitleBar.
+        titleBar?.SetCurrentValue(TitleBar.LeftContentProperty, titleButton);
     }
 
-    private void AddPaneButton(bool shouldAdd, Button button)
+    private void AddPaneButton(bool shouldAdd, NavigationViewButton button)
     {
         if (shouldAdd)
         {

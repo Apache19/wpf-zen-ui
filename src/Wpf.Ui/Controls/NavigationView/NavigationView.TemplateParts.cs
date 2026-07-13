@@ -7,6 +7,9 @@
 // Copyright(c) Microsoft Corporation.All rights reserved.
 
 // ReSharper disable once CheckNamespace
+
+using System.Windows.Controls.Primitives;
+
 namespace Wpf.Ui.Controls;
 
 /// <content>
@@ -64,12 +67,12 @@ public partial class NavigationView
     /// <summary>
     /// Gets or sets the control located at the top of the pane with left arrow icon.
     /// </summary>
-    protected System.Windows.Controls.Button? BackButton { get; set; }
+    protected NavigationViewButton? BackButton { get; set; }
 
     /// <summary>
     /// Gets or sets the control located at the top of the pane with hamburger icon.
     /// </summary>
-    protected System.Windows.Controls.Button? ToggleButton { get; set; }
+    protected NavigationViewButton? ToggleButton { get; set; }
 
     /// <summary>
     /// Gets or sets the template slot used for navigation-owned buttons that remain in the pane.
@@ -80,7 +83,7 @@ public partial class NavigationView
     /// <summary>
     /// Gets or sets the control that is visitable if PaneDisplayMode="Left" and in compact state
     /// </summary>
-    protected System.Windows.Controls.Button? AutoSuggestBoxSymbolButton { get; set; }
+    protected ButtonBase? AutoSuggestBoxSymbolButton { get; set; }
 
     /// <inheritdoc />
     public override void OnApplyTemplate()
@@ -121,7 +124,7 @@ public partial class NavigationView
 
         if (
             GetTemplateChild(TemplateElementAutoSuggestBoxSymbolButton)
-            is System.Windows.Controls.Button autoSuggestBoxSymbolButton
+            is ButtonBase autoSuggestBoxSymbolButton
         )
         {
             AutoSuggestBoxSymbolButton = autoSuggestBoxSymbolButton;

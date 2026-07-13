@@ -12,8 +12,7 @@
         belongs to the derived Pane and TitleBar styles below, so neither host needs to
         impose NavigationView-specific values on contributed content.
     -->
-    <Style x:Key="BaseNavigationViewButtonStyle" TargetType="{x:Type controls:Button}">
-        <Setter Property="OverridesDefaultStyle" Value="True" />
+    <Style x:Key="BaseNavigationViewButtonStyle" TargetType="{x:Type controls:NavigationViewButton}">
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="BorderBrush" Value="Transparent" />
         <Setter Property="BorderThickness" Value="1" />
@@ -25,7 +24,7 @@
         <Setter Property="SnapsToDevicePixels" Value="True" />
         <Setter Property="Template">
             <Setter.Value>
-                <ControlTemplate TargetType="{x:Type controls:Button}">
+                <ControlTemplate TargetType="{x:Type controls:NavigationViewButton}">
                     <Border
                         x:Name="LayoutRoot"
                         Background="{TemplateBinding Background}"
@@ -84,7 +83,7 @@
                         <Trigger Property="Content" Value="{x:Null}">
                             <Setter TargetName="contentPresenter" Property="Margin" Value="0" />
                         </Trigger>
-                        <EventTrigger RoutedEvent="Button.PreviewMouseLeftButtonDown">
+                        <EventTrigger RoutedEvent="ButtonBase.PreviewMouseLeftButtonDown">
                             <BeginStoryboard>
                                 <Storyboard>
                                     <DoubleAnimation
@@ -96,7 +95,7 @@
                                 </Storyboard>
                             </BeginStoryboard>
                         </EventTrigger>
-                        <EventTrigger RoutedEvent="Button.PreviewMouseLeftButtonUp">
+                        <EventTrigger RoutedEvent="ButtonBase.PreviewMouseLeftButtonUp">
                             <BeginStoryboard>
                                 <Storyboard>
                                     <DoubleAnimation
@@ -114,25 +113,25 @@
         </Setter>
     </Style>
 
-    <!--  Pane commands own the whitespace needed to separate them from nearby pane content.  -->
-    <Style x:Key="DefaultPaneButtonStyle" BasedOn="{StaticResource BaseNavigationViewButtonStyle}" TargetType="{x:Type controls:Button}">
-        <Setter Property="HorizontalAlignment" Value="Stretch" />
-        <Setter Property="VerticalAlignment" Value="Top" />
+    <Style BasedOn="{StaticResource BaseNavigationViewButtonStyle}" TargetType="{x:Type controls:NavigationViewButton}">
         <Style.Triggers>
-            <DataTrigger Binding="{Binding PaneTitle, RelativeSource={RelativeSource AncestorType=controls:NavigationView}}" Value="{x:Null}">
+            <Trigger Property="Placement" Value="Pane">
+                <Setter Property="HorizontalAlignment" Value="Stretch" />
+                <Setter Property="VerticalAlignment" Value="Top" />
+            </Trigger>
+            <MultiDataTrigger>
+                <MultiDataTrigger.Conditions>
+                    <Condition Binding="{Binding Placement, RelativeSource={RelativeSource Self}}" Value="Pane" />
+                    <Condition Binding="{Binding PaneTitle, RelativeSource={RelativeSource AncestorType=controls:NavigationView}}" Value="{x:Null}" />
+                </MultiDataTrigger.Conditions>
                 <Setter Property="HorizontalAlignment" Value="Left" />
-            </DataTrigger>
+            </MultiDataTrigger>
+            <Trigger Property="Placement" Value="TitleBar">
+                <Setter Property="Margin" Value="4,0" />
+                <Setter Property="HorizontalAlignment" Value="Left" />
+                <Setter Property="VerticalAlignment" Value="Center" />
+            </Trigger>
         </Style.Triggers>
-    </Style>
-
-    <!--
-        TitleBar commands deliberately carry no outer margin. LeftContent is a general-purpose
-        slot, so its presenter must not acquire NavigationView-specific layout behavior.
-    -->
-    <Style x:Key="DefaultTitleBarNavigationButtonStyle" BasedOn="{StaticResource BaseNavigationViewButtonStyle}" TargetType="{x:Type controls:Button}">
-        <Setter Property="Margin" Value="4,0" />
-        <Setter Property="HorizontalAlignment" Value="Left" />
-        <Setter Property="VerticalAlignment" Value="Center" />
     </Style>
 
 </ResourceDictionary>

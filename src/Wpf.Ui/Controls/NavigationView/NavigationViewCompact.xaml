@@ -3,9 +3,6 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Ui.Controls"
     xmlns:markup="clr-namespace:Wpf.Ui.Markup">
-    <ResourceDictionary.MergedDictionaries>
-        <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/NavigationView/NavigationViewButtonStyles.xaml" />
-    </ResourceDictionary.MergedDictionaries>
 
     <ControlTemplate x:Key="LeftNavigationViewTemplate" TargetType="{x:Type controls:NavigationView}">
         <Grid>
@@ -67,12 +64,12 @@
                                     Margin="13,0"
                                     VerticalAlignment="Center"
                                     Content="{TemplateBinding AutoSuggestBox}" />
-                                <controls:Button
+                                <controls:NavigationViewButton
                                     x:Name="PART_AutoSuggestBoxSymbolButton"
+                                    HorizontalAlignment="Left"
                                     VerticalAlignment="Center"
                                     AutomationProperties.AutomationId="NavigationAutoSuggestBoxButton"
                                     Icon="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=AutoSuggestBox.Icon}"
-                                    Style="{StaticResource DefaultPaneButtonStyle}"
                                     Visibility="Hidden" />
                             </Grid>
                         </Grid>

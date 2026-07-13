@@ -86,17 +86,6 @@ public interface INavigationView
     NavigationViewBackButtonVisible IsBackButtonVisible { get; set; }
 
     /// <summary>
-    /// Gets or sets the style applied to back and pane-toggle buttons displayed in the pane.
-    /// </summary>
-    Style? PaneButtonStyle { get; set; }
-
-    /// <summary>
-    /// Gets or sets the style applied to the navigation command hosted by the associated
-    /// <see cref="TitleBar"/>.
-    /// </summary>
-    Style? TitleBarButtonStyle { get; set; }
-
-    /// <summary>
     /// Gets or sets a value indicating whether the toggle button is visible.
     /// </summary>
     bool IsPaneToggleVisible { get; set; }

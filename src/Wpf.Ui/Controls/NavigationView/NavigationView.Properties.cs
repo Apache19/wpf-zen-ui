@@ -17,8 +17,6 @@ namespace Wpf.Ui.Controls;
 /// Defines the dependency properties and dp callbacks for <see cref="NavigationView"/> control
 /// </content>
 [StyleTypedProperty(Property = nameof(ItemContainerStyle), StyleTargetType = typeof(NavigationViewItem))]
-[StyleTypedProperty(Property = nameof(PaneButtonStyle), StyleTargetType = typeof(Button))]
-[StyleTypedProperty(Property = nameof(TitleBarButtonStyle), StyleTargetType = typeof(Button))]
 public partial class NavigationView
 {
     #region DP: EnableDebugMessages
@@ -430,65 +428,6 @@ public partial class NavigationView
     {
         get => (NavigationViewBackButtonVisible)GetValue(IsBackButtonVisibleProperty);
         set => SetValue(IsBackButtonVisibleProperty, value);
-    }
-
-    #endregion
-
-    #region DP: PaneButtonStyle
-
-    /// <summary>
-    /// Identifies the <see cref="PaneButtonStyle"/> dependency property.
-    /// </summary>
-    public static readonly DependencyProperty PaneButtonStyleProperty = DependencyProperty.Register(
-        nameof(PaneButtonStyle),
-        typeof(Style),
-        typeof(NavigationView),
-        new FrameworkPropertyMetadata(null)
-    );
-
-    /// <summary>
-    /// Gets or sets the style applied to the navigation-owned back and pane-toggle buttons.
-    /// </summary>
-    /// <remarks>
-    /// The style targets <see cref="Button"/> and applies only while commands are displayed
-    /// in the navigation pane. It therefore owns Pane-specific layout values such as
-    /// <see cref="FrameworkElement.Margin"/> and alignment. The default NavigationView style
-    /// supplies <c>DefaultPaneButtonStyle</c>.
-    /// </remarks>
-    public Style? PaneButtonStyle
-    {
-        get => (Style?)GetValue(PaneButtonStyleProperty);
-        set => SetValue(PaneButtonStyleProperty, value);
-    }
-
-    #endregion
-
-    #region DP: TitleBarButtonStyle
-
-    /// <summary>
-    /// Identifies the <see cref="TitleBarButtonStyle"/> dependency property.
-    /// </summary>
-    public static readonly DependencyProperty TitleBarButtonStyleProperty = DependencyProperty.Register(
-        nameof(TitleBarButtonStyle),
-        typeof(Style),
-        typeof(NavigationView),
-        new FrameworkPropertyMetadata(null)
-    );
-
-    /// <summary>
-    /// Gets or sets the style applied to navigation commands contributed to
-    /// <see cref="Wpf.Ui.Controls.TitleBar.LeftContent"/>.
-    /// </summary>
-    /// <remarks>
-    /// This property is separate from <see cref="PaneButtonStyle"/> because title-bar commands
-    /// commonly require different margins, dimensions, and alignment. Those values belong to
-    /// the contributed button; the general-purpose LeftContent presenter remains unaware of
-    /// NavigationView and does not impose NavigationView-specific layout.
-    /// </remarks>
-    public Style? TitleBarButtonStyle
-    {
-        get => (Style?)GetValue(TitleBarButtonStyleProperty);
-        set => SetValue(TitleBarButtonStyleProperty, value);
     }
 
     #endregion
