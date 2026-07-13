@@ -21,6 +21,8 @@ namespace Wpf.Ui.Controls;
 [StyleTypedProperty(Property = nameof(TitleBarButtonStyle), StyleTargetType = typeof(Button))]
 public partial class NavigationView
 {
+    #region DP: EnableDebugMessages
+
     /// <summary>Identifies the <see cref="EnableDebugMessages"/> dependency property.</summary>
     public static readonly DependencyProperty EnableDebugMessagesProperty = DependencyProperty.Register(
         nameof(EnableDebugMessages),
@@ -38,6 +40,10 @@ public partial class NavigationView
         set => SetValue(EnableDebugMessagesProperty, value);
     }
 
+    #endregion
+
+    #region DP: Header
+
     /// <summary>Identifies the <see cref="Header"/> dependency property.</summary>
     public static readonly DependencyProperty HeaderProperty = DependencyProperty.Register(
         nameof(Header),
@@ -52,6 +58,10 @@ public partial class NavigationView
         get => GetValue(HeaderProperty);
         set => SetValue(HeaderProperty, value);
     }
+
+    #endregion
+
+    #region DP: HeaderVisibility
 
     /// <summary>Identifies the <see cref="HeaderVisibility"/> dependency property.</summary>
     public static readonly DependencyProperty HeaderVisibilityProperty = DependencyProperty.Register(
@@ -68,6 +78,10 @@ public partial class NavigationView
         set => SetValue(HeaderVisibilityProperty, value);
     }
 
+    #endregion
+
+    #region DP: AlwaysShowHeader
+
     /// <summary>Identifies the <see cref="AlwaysShowHeader"/> dependency property.</summary>
     public static readonly DependencyProperty AlwaysShowHeaderProperty = DependencyProperty.Register(
         nameof(AlwaysShowHeader),
@@ -83,6 +97,10 @@ public partial class NavigationView
         set => SetValue(AlwaysShowHeaderProperty, value);
     }
 
+    #endregion
+
+    #region DP: MenuItems
+
     private static readonly DependencyPropertyKey MenuItemsPropertyKey = DependencyProperty.RegisterReadOnly(
         nameof(MenuItems),
         typeof(ObservableCollection<object>),
@@ -95,6 +113,62 @@ public partial class NavigationView
 
     /// <inheritdoc/>
     public IList MenuItems => (ObservableCollection<object>)GetValue(MenuItemsProperty);
+
+    private void OnMenuItems_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        switch (e.Action)
+        {
+            case NotifyCollectionChangedAction.Add:
+            {
+                if (e.NewItems is not null)
+                {
+                    AddItemsToDictionaries(e.NewItems);
+                }
+
+                break;
+            }
+
+            case NotifyCollectionChangedAction.Remove:
+            {
+                if (e.OldItems is not null)
+                {
+                    RemoveItemsFromDictionaries(e.OldItems);
+                }
+
+                break;
+            }
+
+            case NotifyCollectionChangedAction.Replace:
+            {
+                if (e.OldItems is not null)
+                {
+                    RemoveItemsFromDictionaries(e.OldItems);
+                }
+
+                if (e.NewItems is not null)
+                {
+                    AddItemsToDictionaries(e.NewItems);
+                }
+
+                break;
+            }
+
+            case NotifyCollectionChangedAction.Reset:
+            {
+                RebuildDictionaries();
+                break;
+            }
+
+            case NotifyCollectionChangedAction.Move:
+                break;
+        }
+
+        UpdateAutoSuggestBoxSuggestions();
+    }
+
+    #endregion
+
+    #region DP: MenuItemsSource
 
     /// <summary>Identifies the <see cref="MenuItemsSource"/> dependency property.</summary>
     public static readonly DependencyProperty MenuItemsSourceProperty = DependencyProperty.Register(
@@ -150,62 +224,9 @@ public partial class NavigationView
         NavigationViewItemsSourceSynchronizer.SyncCollectionFromSource(MenuItems, sender, e);
     }
 
-    private void OnFooterMenuItemsSource_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
-    {
-        NavigationViewItemsSourceSynchronizer.SyncCollectionFromSource(FooterMenuItems, sender, e);
-    }
+    #endregion
 
-    private void OnMenuItems_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
-    {
-        switch (e.Action)
-        {
-            case NotifyCollectionChangedAction.Add:
-            {
-                if (e.NewItems is not null)
-                {
-                    AddItemsToDictionaries(e.NewItems);
-                }
-
-                break;
-            }
-
-            case NotifyCollectionChangedAction.Remove:
-            {
-                if (e.OldItems is not null)
-                {
-                    RemoveItemsFromDictionaries(e.OldItems);
-                }
-
-                break;
-            }
-
-            case NotifyCollectionChangedAction.Replace:
-            {
-                if (e.OldItems is not null)
-                {
-                    RemoveItemsFromDictionaries(e.OldItems);
-                }
-
-                if (e.NewItems is not null)
-                {
-                    AddItemsToDictionaries(e.NewItems);
-                }
-
-                break;
-            }
-
-            case NotifyCollectionChangedAction.Reset:
-            {
-                RebuildDictionaries();
-                break;
-            }
-
-            case NotifyCollectionChangedAction.Move:
-                break;
-        }
-
-        UpdateAutoSuggestBoxSuggestions();
-    }
+    #region DP: FooterMenuItems
 
     private static readonly DependencyPropertyKey FooterMenuItemsPropertyKey =
         DependencyProperty.RegisterReadOnly(
@@ -221,6 +242,10 @@ public partial class NavigationView
 
     /// <inheritdoc/>
     public IList FooterMenuItems => (ObservableCollection<object>)GetValue(FooterMenuItemsProperty);
+
+    #endregion
+
+    #region DP: FooterMenuItemsSource
 
     /// <summary>Identifies the <see cref="FooterMenuItemsSource"/> dependency property.</summary>
     public static readonly DependencyProperty FooterMenuItemsSourceProperty = DependencyProperty.Register(
@@ -273,6 +298,15 @@ public partial class NavigationView
         }
     }
 
+    private void OnFooterMenuItemsSource_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        NavigationViewItemsSourceSynchronizer.SyncCollectionFromSource(FooterMenuItems, sender, e);
+    }
+
+    #endregion
+
+    #region DP: IsTopSeparatorVisible
+
     /// <summary>Identifies the <see cref="IsTopSeparatorVisible"/> dependency property.</summary>
     public static readonly DependencyProperty IsTopSeparatorVisibleProperty = DependencyProperty.Register(
         nameof(IsTopSeparatorVisible),
@@ -287,6 +321,10 @@ public partial class NavigationView
         get => (bool)GetValue(IsTopSeparatorVisibleProperty);
         set => SetValue(IsTopSeparatorVisibleProperty, value);
     }
+
+    #endregion
+
+    #region DP: IsFooterSeparatorVisible
 
     /// <summary>Identifies the <see cref="IsFooterSeparatorVisible"/> dependency property.</summary>
     public static readonly DependencyProperty IsFooterSeparatorVisibleProperty = DependencyProperty.Register(
@@ -303,6 +341,10 @@ public partial class NavigationView
         set => SetValue(IsFooterSeparatorVisibleProperty, value);
     }
 
+    #endregion
+
+    #region DP: ContentOverlay
+
     /// <summary>Identifies the <see cref="ContentOverlay"/> dependency property.</summary>
     public static readonly DependencyProperty ContentOverlayProperty = DependencyProperty.Register(
         nameof(ContentOverlay),
@@ -317,6 +359,10 @@ public partial class NavigationView
         get => GetValue(ContentOverlayProperty);
         set => SetValue(ContentOverlayProperty, value);
     }
+
+    #endregion
+
+    #region DP: IsBackEnabled
 
     /// <summary>Identifies the <see cref="IsBackEnabled"/> dependency property.</summary>
     public static readonly DependencyProperty IsBackEnabledProperty = DependencyProperty.Register(
@@ -333,13 +379,17 @@ public partial class NavigationView
         protected set => SetValue(IsBackEnabledProperty, value);
     }
 
+    #endregion
+
+    #region DP: NavigationCacheSize
+
     /// <summary>Identifies the <see cref="NavigationCacheSize"/> dependency property.</summary>
     public static readonly DependencyProperty NavigationCacheSizeProperty = DependencyProperty.Register(
         nameof(NavigationCacheSize),
         typeof(int),
         typeof(NavigationView),
         new FrameworkPropertyMetadata(10, OnNavigationCacheSizeChanged),
-        static value => value is int cacheSize && cacheSize >= 0
+        static value => value is >= 0
     );
 
     /// <summary>
@@ -363,6 +413,10 @@ public partial class NavigationView
         }
     }
 
+    #endregion
+
+    #region DP: IsBackButtonVisible
+
     /// <summary>Identifies the <see cref="IsBackButtonVisible"/> dependency property.</summary>
     public static readonly DependencyProperty IsBackButtonVisibleProperty = DependencyProperty.Register(
         nameof(IsBackButtonVisible),
@@ -377,6 +431,10 @@ public partial class NavigationView
         get => (NavigationViewBackButtonVisible)GetValue(IsBackButtonVisibleProperty);
         set => SetValue(IsBackButtonVisibleProperty, value);
     }
+
+    #endregion
+
+    #region DP: PaneButtonStyle
 
     /// <summary>
     /// Identifies the <see cref="PaneButtonStyle"/> dependency property.
@@ -402,6 +460,10 @@ public partial class NavigationView
         get => (Style?)GetValue(PaneButtonStyleProperty);
         set => SetValue(PaneButtonStyleProperty, value);
     }
+
+    #endregion
+
+    #region DP: TitleBarButtonStyle
 
     /// <summary>
     /// Identifies the <see cref="TitleBarButtonStyle"/> dependency property.
@@ -429,6 +491,10 @@ public partial class NavigationView
         set => SetValue(TitleBarButtonStyleProperty, value);
     }
 
+    #endregion
+
+    #region DP: IsPaneToggleVisible
+
     /// <summary>Identifies the <see cref="IsPaneToggleVisible"/> dependency property.</summary>
     public static readonly DependencyProperty IsPaneToggleVisibleProperty = DependencyProperty.Register(
         nameof(IsPaneToggleVisible),
@@ -444,6 +510,10 @@ public partial class NavigationView
         set => SetValue(IsPaneToggleVisibleProperty, value);
     }
 
+    /// <summary>
+    /// Shared callback for <see cref="IsBackButtonVisibleProperty"/> and
+    /// <see cref="IsPaneToggleVisibleProperty"/>.
+    /// </summary>
     private static void OnPaneButtonVisibilityChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
         if (d is NavigationView navigationView)
@@ -451,6 +521,10 @@ public partial class NavigationView
             navigationView.UpdatePaneButtonPlacement();
         }
     }
+
+    #endregion
+
+    #region DP: IsPaneOpen
 
     /// <summary>Identifies the <see cref="IsPaneOpen"/> dependency property.</summary>
     public static readonly DependencyProperty IsPaneOpenProperty = DependencyProperty.Register(
@@ -494,6 +568,10 @@ public partial class NavigationView
         UpdateVisualState(navigationView);
     }
 
+    #endregion
+
+    #region DP: IsPaneVisible
+
     /// <summary>Identifies the <see cref="IsPaneVisible"/> dependency property.</summary>
     public static readonly DependencyProperty IsPaneVisibleProperty = DependencyProperty.Register(
         nameof(IsPaneVisible),
@@ -508,6 +586,10 @@ public partial class NavigationView
         get => (bool)GetValue(IsPaneVisibleProperty);
         set => SetValue(IsPaneVisibleProperty, value);
     }
+
+    #endregion
+
+    #region DP: OpenPaneLength
 
     /// <summary>Identifies the <see cref="OpenPaneLength"/> dependency property.</summary>
     public static readonly DependencyProperty OpenPaneLengthProperty = DependencyProperty.Register(
@@ -524,6 +606,10 @@ public partial class NavigationView
         set => SetValue(OpenPaneLengthProperty, value);
     }
 
+    #endregion
+
+    #region DP: CompactPaneLength
+
     /// <summary>Identifies the <see cref="CompactPaneLength"/> dependency property.</summary>
     public static readonly DependencyProperty CompactPaneLengthProperty = DependencyProperty.Register(
         nameof(CompactPaneLength),
@@ -539,6 +625,10 @@ public partial class NavigationView
         set => SetValue(CompactPaneLengthProperty, value);
     }
 
+    #endregion
+
+    #region DP: PaneHeader
+
     /// <summary>Identifies the <see cref="PaneHeader"/> dependency property.</summary>
     public static readonly DependencyProperty PaneHeaderProperty = DependencyProperty.Register(
         nameof(PaneHeader),
@@ -553,6 +643,10 @@ public partial class NavigationView
         get => GetValue(PaneHeaderProperty);
         set => SetValue(PaneHeaderProperty, value);
     }
+
+    #endregion
+
+    #region DP: PaneTitle
 
     /// <summary>Identifies the <see cref="PaneTitle"/> dependency property.</summary>
     public static readonly DependencyProperty PaneTitleProperty = DependencyProperty.Register(
@@ -577,6 +671,10 @@ public partial class NavigationView
         }
     }
 
+    #endregion
+
+    #region DP: PaneFooter
+
     /// <summary>Identifies the <see cref="PaneFooter"/> dependency property.</summary>
     public static readonly DependencyProperty PaneFooterProperty = DependencyProperty.Register(
         nameof(PaneFooter),
@@ -591,6 +689,10 @@ public partial class NavigationView
         get => GetValue(PaneFooterProperty);
         set => SetValue(PaneFooterProperty, value);
     }
+
+    #endregion
+
+    #region DP: PaneDisplayMode
 
     /// <summary>Identifies the <see cref="PaneDisplayMode"/> dependency property.</summary>
     public static readonly DependencyProperty PaneDisplayModeProperty = DependencyProperty.Register(
@@ -616,6 +718,10 @@ public partial class NavigationView
 
         navigationView.OnPaneDisplayModeChanged();
     }
+
+    #endregion
+
+    #region DP: AutoSuggestBox
 
     /// <summary>Identifies the <see cref="AutoSuggestBox"/> dependency property.</summary>
     public static readonly DependencyProperty AutoSuggestBoxProperty = DependencyProperty.Register(
@@ -658,6 +764,10 @@ public partial class NavigationView
         autoSuggestBox.QuerySubmitted      += navigationView.AutoSuggestBoxOnQuerySubmitted;
     }
 
+    #endregion
+
+    #region DP: TitleBar
+
     /// <summary>
     /// Identifies the <see cref="TitleBar"/> dependency property.
     /// </summary>
@@ -695,6 +805,10 @@ public partial class NavigationView
         // control to know or mutate the other's margins or template geometry.
         navigationView.UpdatePaneButtonPlacement();
     }
+
+    #endregion
+
+    #region DP: BreadcrumbBar
 
     /// <summary>Identifies the <see cref="BreadcrumbBar"/> dependency property.</summary>
     public static readonly DependencyProperty BreadcrumbBarProperty = DependencyProperty.Register(
@@ -739,6 +853,10 @@ public partial class NavigationView
         breadcrumbBar.ItemClicked += navigationView.BreadcrumbBarOnItemClicked;
     }
 
+    #endregion
+
+    #region DP: ItemContainerTemplate
+
     /// <summary>Identifies the <see cref="ItemContainerTemplate"/> dependency property.</summary>
     public static readonly DependencyProperty ItemContainerTemplateProperty = DependencyProperty.RegisterAttached(
         nameof(ItemContainerTemplate),
@@ -781,6 +899,10 @@ public partial class NavigationView
     {
         element.SetValue(ItemContainerTemplateProperty, value);
     }
+
+    #endregion
+
+    #region DP: ItemContainerStyle
 
     /// <summary>Identifies the <see cref="ItemContainerStyle"/> dependency property.</summary>
     public static readonly DependencyProperty ItemContainerStyleProperty = DependencyProperty.RegisterAttached(
@@ -826,6 +948,10 @@ public partial class NavigationView
 
     // ReSharper restore UnusedMember.Global
 
+    #endregion
+
+    #region DP: ItemContainerStyleSelector
+
     /// <summary>Identifies the <see cref="ItemContainerStyleSelector"/> dependency property.</summary>
     public static readonly DependencyProperty ItemContainerStyleSelectorProperty =
         DependencyProperty.RegisterAttached(
@@ -870,6 +996,10 @@ public partial class NavigationView
     }
 
     // ReSharper restore UnusedMember.Global
+
+    #endregion
+
+    #region DP: ItemTemplate
 
     /// <summary>Identifies the <see cref="ItemTemplate"/> dependency property.</summary>
     public static readonly DependencyProperty ItemTemplateProperty = DependencyProperty.RegisterAttached(
@@ -918,6 +1048,10 @@ public partial class NavigationView
 
     // ReSharper restore UnusedMember.Global
 
+    #endregion
+
+    #region DP: ItemTemplateSelector
+
     /// <summary>Identifies the <see cref="ItemTemplateSelector"/> dependency property.</summary>
     public static readonly DependencyProperty ItemTemplateSelectorProperty = DependencyProperty.RegisterAttached(
         nameof(ItemTemplateSelector),
@@ -962,6 +1096,10 @@ public partial class NavigationView
 
     // ReSharper restore UnusedMember.Global
 
+    #endregion
+
+    #region DP: TransitionDuration
+
     /// <summary>Identifies the <see cref="TransitionDuration"/> dependency property.</summary>
     public static readonly DependencyProperty TransitionDurationProperty = DependencyProperty.Register(
         nameof(TransitionDuration),
@@ -979,6 +1117,10 @@ public partial class NavigationView
         set => SetValue(TransitionDurationProperty, value);
     }
 
+    #endregion
+
+    #region DP: Transition
+
     /// <summary>Identifies the <see cref="Transition"/> dependency property.</summary>
     public static readonly DependencyProperty TransitionProperty = DependencyProperty.Register(
         nameof(Transition),
@@ -994,6 +1136,10 @@ public partial class NavigationView
         set => SetValue(TransitionProperty, value);
     }
 
+    #endregion
+
+    #region DP: FrameMargin
+
     /// <summary>Identifies the <see cref="FrameMargin"/> dependency property.</summary>
     public static readonly DependencyProperty FrameMarginProperty = DependencyProperty.Register(
         nameof(FrameMargin),
@@ -1008,4 +1154,6 @@ public partial class NavigationView
         get => (Thickness)GetValue(FrameMarginProperty);
         set => SetValue(FrameMarginProperty, value);
     }
+
+    #endregion
 }
