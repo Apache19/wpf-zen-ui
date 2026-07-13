@@ -360,18 +360,13 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
 
     internal string SearchableContent { get; private set; } = string.Empty;
 
-    private static readonly DependencyPropertyDescriptor PaneDisplayModeDescriptor =
-        DependencyPropertyDescriptor.FromProperty(
-            NavigationView.PaneDisplayModeProperty,
-            typeof(NavigationView)
-        );
-
     private readonly List<INavigationViewItem> _attachedMenuItems = [];
 
-    private NavigationView?                                     _attachedNavigationView;
+    private NavigationView? _attachedNavigationView;
+
     private TypedEventHandler<NavigationView, RoutedEventArgs>? _paneOpenedHandler;
     private TypedEventHandler<NavigationView, RoutedEventArgs>? _paneClosedHandler;
-    private EventHandler?                                       _paneDisplayModeChangedHandler;
+    private TypedEventHandler<NavigationView, RoutedEventArgs>? _paneDisplayModeChangedHandler;
 
     internal NavigationView? NavigationViewHost =>
         _attachedNavigationView
@@ -727,7 +722,7 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
 
         navigationView.PaneOpened += _paneOpenedHandler;
         navigationView.PaneClosed += _paneClosedHandler;
-        PaneDisplayModeDescriptor.AddValueChanged(navigationView, _paneDisplayModeChangedHandler);
+        navigationView.PaneDisplayModeChanged += _paneDisplayModeChangedHandler;
     }
 
     private void DetachNavigationViewEvents()
@@ -751,10 +746,7 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
 
         if (_paneDisplayModeChangedHandler is not null)
         {
-            PaneDisplayModeDescriptor.RemoveValueChanged(
-                _attachedNavigationView,
-                _paneDisplayModeChangedHandler
-            );
+            _attachedNavigationView.PaneDisplayModeChanged -= _paneDisplayModeChangedHandler;
             _paneDisplayModeChangedHandler = null;
         }
 

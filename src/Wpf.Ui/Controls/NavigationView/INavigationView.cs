@@ -192,6 +192,11 @@ public interface INavigationView
     event TypedEventHandler<NavigationView, RoutedEventArgs> PaneClosed;
 
     /// <summary>
+    /// Occurs when the pane display mode changes.
+    /// </summary>
+    event TypedEventHandler<NavigationView, RoutedEventArgs> PaneDisplayModeChanged;
+
+    /// <summary>
     /// Occurs when the currently selected item changes.
     /// </summary>
     event TypedEventHandler<NavigationView, RoutedEventArgs> SelectionChanged;

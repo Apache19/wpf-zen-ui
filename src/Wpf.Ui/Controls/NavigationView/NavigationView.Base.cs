@@ -288,6 +288,8 @@ public partial class NavigationView : Control, INavigationView
     protected virtual void OnPaneDisplayModeChanged()
     {
         // todo: 不要在控件里硬编码视觉状态
+        // todo: 虚拟方法不要有过多的逻辑，避免子类无法改写逻辑，通常仅用于子类扩展，内部触发事件即可。
+        //       这样就给了子类极大的扩展空间。
         if (PaneDisplayMode == NavigationViewPaneDisplayMode.LeftFluent)
         {
             SetCurrentValue(IsBackButtonVisibleProperty, NavigationViewBackButtonVisible.Collapsed);
@@ -295,6 +297,7 @@ public partial class NavigationView : Control, INavigationView
         }
 
         UpdatePaneButtonPlacement();
+        RaiseEvent(new RoutedEventArgs(PaneDisplayModeChangedEvent, this));
     }
 
     /// <summary>

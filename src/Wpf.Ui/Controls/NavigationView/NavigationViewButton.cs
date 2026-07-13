@@ -13,13 +13,16 @@ namespace Wpf.Ui.Controls;
 /// </summary>
 public class NavigationViewButton : ButtonBase, IIconControl
 {
+    #region DP: Icon
+
     /// <summary>Identifies the <see cref="Icon"/> dependency property.</summary>
-    public static readonly DependencyProperty IconProperty = DependencyProperty.Register(
-        nameof(Icon),
-        typeof(IconElement),
-        typeof(NavigationViewButton),
-        new PropertyMetadata(null, null, IconElement.Coerce)
-    );
+    public static readonly DependencyProperty IconProperty =
+        DependencyProperty.Register(
+            nameof(Icon),
+            typeof(IconElement),
+            typeof(NavigationViewButton),
+            new PropertyMetadata(null, null, IconElement.Coerce)
+        );
 
     /// <summary>
     /// Gets or sets the icon displayed by the button.
@@ -32,24 +35,32 @@ public class NavigationViewButton : ButtonBase, IIconControl
         set => SetValue(IconProperty, value);
     }
 
+    #endregion
+
+    #region DP: IsPaneOpen
+
+    private static readonly DependencyPropertyKey IsPaneOpenPropertyKey =
+        DependencyProperty.RegisterReadOnly(
+            nameof(IsPaneOpen),
+            typeof(bool),
+            typeof(NavigationViewButton),
+            new FrameworkPropertyMetadata(false)
+        );
+
     /// <summary>Identifies the <see cref="IsPaneOpen"/> dependency property.</summary>
-    public static readonly DependencyProperty IsPaneOpenProperty = DependencyProperty.Register(
-        nameof(IsPaneOpen),
-        typeof(bool),
-        typeof(NavigationViewButton),
-        new PropertyMetadata(false)
-    );
+    public static readonly DependencyProperty IsPaneOpenProperty =
+        IsPaneOpenPropertyKey.DependencyProperty;
 
     /// <summary>
-    /// Gets or sets a value indicating whether the owning navigation pane is open.
+    /// Gets a value indicating whether the owning navigation pane is open.
     /// </summary>
     [Browsable(false)]
     [ReadOnly(true)]
-    public bool IsPaneOpen
-    {
-        get => (bool)GetValue(IsPaneOpenProperty);
-        set => SetValue(IsPaneOpenProperty, value);
-    }
+    public bool IsPaneOpen => (bool)GetValue(IsPaneOpenProperty);
+
+    #endregion
+
+    #region DP: PaneDisplayMode
 
     private static readonly DependencyPropertyKey PaneDisplayModePropertyKey =
         DependencyProperty.RegisterReadOnly(
@@ -71,7 +82,12 @@ public class NavigationViewButton : ButtonBase, IIconControl
     public NavigationViewPaneDisplayMode PaneDisplayMode =>
         (NavigationViewPaneDisplayMode)GetValue(PaneDisplayModeProperty);
 
-    private static readonly DependencyPropertyKey PlacementPropertyKey = DependencyProperty.RegisterReadOnly(
+    #endregion
+
+    #region DP: Placement
+
+    private static readonly DependencyPropertyKey PlacementPropertyKey =
+        DependencyProperty.RegisterReadOnly(
             nameof(Placement),
             typeof(NavigationViewButtonPlacement),
             typeof(NavigationViewButton),
@@ -89,17 +105,14 @@ public class NavigationViewButton : ButtonBase, IIconControl
     public NavigationViewButtonPlacement Placement =>
         (NavigationViewButtonPlacement)GetValue(PlacementProperty);
 
-    private static readonly DependencyPropertyDescriptor PaneDisplayModeDescriptor =
-        DependencyPropertyDescriptor.FromProperty(
-            NavigationView.PaneDisplayModeProperty,
-            typeof(NavigationView)
-        );
+    #endregion
 
     private NavigationView? _ownerNavigationView;
     private NavigationView? _attachedNavigationView;
+
     private TypedEventHandler<NavigationView, RoutedEventArgs>? _paneOpenedHandler;
     private TypedEventHandler<NavigationView, RoutedEventArgs>? _paneClosedHandler;
-    private EventHandler?   _paneDisplayModeChangedHandler;
+    private TypedEventHandler<NavigationView, RoutedEventArgs>? _paneDisplayModeChangedHandler;
 
     static NavigationViewButton()
     {
@@ -155,9 +168,9 @@ public class NavigationViewButton : ButtonBase, IIconControl
         _paneClosedHandler             = (_, _) => SynchronizePaneState(navigationView);
         _paneDisplayModeChangedHandler = (_, _) => SynchronizePaneState(navigationView);
 
-        navigationView.PaneOpened += _paneOpenedHandler;
-        navigationView.PaneClosed += _paneClosedHandler;
-        PaneDisplayModeDescriptor.AddValueChanged(navigationView, _paneDisplayModeChangedHandler);
+        navigationView.PaneOpened             += _paneOpenedHandler;
+        navigationView.PaneClosed             += _paneClosedHandler;
+        navigationView.PaneDisplayModeChanged += _paneDisplayModeChangedHandler;
     }
 
     private void DetachNavigationViewEvents()
@@ -181,11 +194,8 @@ public class NavigationViewButton : ButtonBase, IIconControl
 
         if (_paneDisplayModeChangedHandler is not null)
         {
-            PaneDisplayModeDescriptor.RemoveValueChanged(
-                _attachedNavigationView,
-                _paneDisplayModeChangedHandler
-            );
-            _paneDisplayModeChangedHandler = null;
+            _attachedNavigationView.PaneDisplayModeChanged -= _paneDisplayModeChangedHandler;
+            _paneDisplayModeChangedHandler                 =  null;
         }
 
         _attachedNavigationView = null;
@@ -194,6 +204,6 @@ public class NavigationViewButton : ButtonBase, IIconControl
     private void SynchronizePaneState(NavigationView navigationView)
     {
         SetValue(PaneDisplayModePropertyKey, navigationView.PaneDisplayMode);
-        SetCurrentValue(IsPaneOpenProperty, navigationView.IsPaneOpen);
+        SetValue(IsPaneOpenPropertyKey, navigationView.IsPaneOpen);
     }
 }

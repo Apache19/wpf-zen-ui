@@ -15,6 +15,33 @@ namespace Wpf.Ui.UnitTests.Controls.NavigationView;
 public class NavigationViewButtonTests
 {
     [Fact]
+    public void PaneDisplayModeChanged_IsRaisedWhenPaneDisplayModeChanges()
+    {
+        RunOnStaThread(() =>
+        {
+            var navigationView = new Wpf.Ui.Controls.NavigationView();
+            var raisedCount = 0;
+
+            navigationView.PaneDisplayModeChanged += (sender, args) =>
+            {
+                Assert.Same(navigationView, sender);
+                Assert.Same(navigationView, args.Source);
+                raisedCount++;
+            };
+
+            navigationView.PaneDisplayMode = NavigationViewPaneDisplayMode.Top;
+            navigationView.PaneDisplayMode = NavigationViewPaneDisplayMode.Top;
+
+            Assert.Equal(1, raisedCount);
+            Assert.Equal(
+                RoutingStrategy.Bubble,
+                Wpf.Ui.Controls.NavigationView.PaneDisplayModeChangedEvent.RoutingStrategy
+            );
+            Assert.NotNull(typeof(INavigationView).GetEvent(nameof(INavigationView.PaneDisplayModeChanged)));
+        });
+    }
+
+    [Fact]
     public void NavigationView_DoesNotExposeButtonStyleOverrides()
     {
         Assert.Null(typeof(Wpf.Ui.Controls.NavigationView).GetProperty("PaneButtonStyle"));

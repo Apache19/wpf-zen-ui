@@ -30,6 +30,14 @@ public partial class NavigationView
         typeof(NavigationView)
     );
 
+    /// <summary>Identifies the <see cref="PaneDisplayModeChanged"/> routed event.</summary>
+    public static readonly RoutedEvent PaneDisplayModeChangedEvent = EventManager.RegisterRoutedEvent(
+        nameof(PaneDisplayModeChanged),
+        RoutingStrategy.Bubble,
+        typeof(TypedEventHandler<NavigationView, RoutedEventArgs>),
+        typeof(NavigationView)
+    );
+
     /// <summary>Identifies the <see cref="SelectionChanged"/> routed event.</summary>
     public static readonly RoutedEvent SelectionChangedEvent = EventManager.RegisterRoutedEvent(
         nameof(SelectionChanged),
@@ -82,6 +90,13 @@ public partial class NavigationView
     {
         add => AddHandler(PaneClosedEvent, value);
         remove => RemoveHandler(PaneClosedEvent, value);
+    }
+
+    /// <inheritdoc/>
+    public event TypedEventHandler<NavigationView, RoutedEventArgs> PaneDisplayModeChanged
+    {
+        add => AddHandler(PaneDisplayModeChangedEvent, value);
+        remove => RemoveHandler(PaneDisplayModeChangedEvent, value);
     }
 
     /// <inheritdoc/>
