@@ -75,23 +75,23 @@ public class NavigationViewItemTests
             parent.MenuItems.Add(child);
             AttachToNavigationView(parent, navigationView);
 
-            Assert.Same(resources["LeftCompactNavigationViewItemTemplate"], parent.Template);
-            Assert.Same(resources["LeftCompactNavigationViewItemTemplate"], child.Template);
+            Assert.Same(resources["NavigationViewItemLeftCompactTemplate"], parent.Template);
+            Assert.Same(resources["NavigationViewItemLeftCompactTemplate"], child.Template);
 
             navigationView.PaneDisplayMode = NavigationViewPaneDisplayMode.LeftMinimal;
 
-            Assert.Same(resources["LeftMinimalCompactNavigationViewItemTemplate"], parent.Template);
-            Assert.Same(resources["LeftMinimalNavigationViewSubItemTemplate"], child.Template);
+            Assert.Same(resources["NavigationViewItemLeftMinimalCompactTemplate"], parent.Template);
+            Assert.Same(resources["NavigationViewItemLeftMinimalSubTemplate"], child.Template);
 
             navigationView.PaneDisplayMode = NavigationViewPaneDisplayMode.Top;
 
-            Assert.Same(resources["TopCompactNavigationViewItemTemplate"], parent.Template);
-            Assert.Same(resources["TopNavigationViewSubItemTemplate"], child.Template);
+            Assert.Same(resources["NavigationViewItemTopCompactTemplate"], parent.Template);
+            Assert.Same(resources["NavigationViewItemTopSubTemplate"], child.Template);
 
             navigationView.PaneDisplayMode = NavigationViewPaneDisplayMode.Bottom;
 
-            Assert.Same(resources["BottomCompactNavigationViewItemTemplate"], parent.Template);
-            Assert.Same(resources["BottomCompactNavigationViewItemTemplate"], child.Template);
+            Assert.Same(resources["NavigationViewItemBottomCompactTemplate"], parent.Template);
+            Assert.Same(resources["NavigationViewItemBottomCompactTemplate"], child.Template);
 
             parent.RaiseEvent(new RoutedEventArgs(FrameworkElement.UnloadedEvent));
         });

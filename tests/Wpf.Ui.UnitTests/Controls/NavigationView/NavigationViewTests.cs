@@ -52,7 +52,7 @@ public class NavigationViewTests
             Assert.Same(navigationPresenter, GetNavigationPresenter(navigationView));
             Assert.Same(page, navigationPresenter.Content);
             Assert.Null(fluentTemplate.FindName("SearchGrid", navigationView));
-            Assert.Null(fluentTemplate.FindName("PART_TopSeparator", navigationView));
+            Assert.NotNull(fluentTemplate.FindName("PART_TopSeparator", navigationView));
             Assert.True(double.IsNaN(GetPaneGrid(navigationView).Width));
             Assert.Equal(NavigationViewBackButtonVisible.Visible, navigationView.IsBackButtonVisible);
             Assert.True(navigationView.IsPaneToggleVisible);

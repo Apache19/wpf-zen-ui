@@ -13,10 +13,11 @@
 
     <!--
         LeftFluent intentionally uses a separate template rather than changing OpenPaneLength on
-        LeftNavigationViewTemplate. Its pane contains only menu and footer content, sizes to that
-        content through an Auto column, and deliberately has no command, header, search, or top
-        separator parts. Keeping these contracts in separate visual trees lets PaneDisplayMode
-        replace the complete layout instead of leaving irrelevant Left elements alive.
+        LeftNavigationViewTemplate. Its pane sizes to content through an Auto column and omits
+        the command buttons, search box, and pane open/compact animations — those elements live
+        in the TitleBar instead. Keeping these contracts in separate visual trees lets
+        PaneDisplayMode replace the complete layout instead of leaving irrelevant Left elements
+        alive.
     -->
     <ControlTemplate x:Key="FluentNavigationViewTemplate" TargetType="{x:Type controls:NavigationView}">
         <Grid>

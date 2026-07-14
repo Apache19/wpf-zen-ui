@@ -3,8 +3,10 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
+using System.Runtime.CompilerServices;
 using System.Runtime.ExceptionServices;
 using System.Threading;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Media;
@@ -96,13 +98,7 @@ public class ComboBoxTests
                 };
                 var root = new Grid();
                 root.Resources.MergedDictionaries.Add(
-                    new ResourceDictionary
-                    {
-                        Source = new Uri(
-                            "pack://application:,,,/Wpf.Ui;component/Themes/Generic.xaml",
-                            UriKind.Absolute
-                        ),
-                    }
+                    new ResourceDictionary { Source = CreateThemeUri() }
                 );
                 root.Children.Add(comboBox);
 
@@ -126,13 +122,7 @@ public class ComboBoxTests
         RunOnStaThread(
             () =>
             {
-                var resources = new ResourceDictionary
-                {
-                    Source = new Uri(
-                        "pack://application:,,,/Wpf.Ui;component/Themes/Generic.xaml",
-                        UriKind.Absolute
-                    ),
-                };
+                var resources = new ResourceDictionary { Source = CreateThemeUri() };
 
                 Assert.Null(resources[typeof(System.Windows.Controls.ComboBox)]);
             }
@@ -156,13 +146,7 @@ public class ComboBoxTests
                 comboBox.SetValue(Border.CornerRadiusProperty, cornerRadius);
                 var root = new Grid();
                 root.Resources.MergedDictionaries.Add(
-                    new ResourceDictionary
-                    {
-                        Source = new Uri(
-                            "pack://application:,,,/Wpf.Ui;component/Themes/Generic.xaml",
-                            UriKind.Absolute
-                        ),
-                    }
+                    new ResourceDictionary { Source = CreateThemeUri() }
                 );
                 root.Resources.MergedDictionaries.Add(
                     new ResourceDictionary
@@ -185,6 +169,16 @@ public class ComboBoxTests
                 Assert.Same(borderBrush, contentBorder.BorderBrush);
                 Assert.Equal(cornerRadius, contentBorder.CornerRadius);
             }
+        );
+    }
+
+    private static Uri CreateThemeUri()
+    {
+        RuntimeHelpers.RunClassConstructor(typeof(Application).TypeHandle);
+
+        return System.IO.Packaging.PackUriHelper.Create(
+            new Uri("application:///", UriKind.Absolute),
+            new Uri("/Wpf.Ui;component/Themes/Generic.xaml", UriKind.Relative)
         );
     }
 
