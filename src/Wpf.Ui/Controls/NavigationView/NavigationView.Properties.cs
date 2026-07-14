@@ -235,33 +235,15 @@ public partial class NavigationView
             return;
         }
 
-        // Unsubscribe from the old source to prevent memory leaks when the source is replaced
-        if (e.OldValue is INotifyCollectionChanged oldOc)
-        {
-            oldOc.CollectionChanged -= navigationView.OnFooterMenuItemsSource_CollectionChanged;
-        }
-
-        navigationView.FooterMenuItems.Clear();
-
-        if (e.NewValue is IEnumerable newItemsSource and not string)
-        {
-            foreach (var item in newItemsSource)
-            {
-                _ = navigationView.FooterMenuItems.Add(item);
-            }
-        }
-        else if (e.NewValue != null)
-        {
-            _ = navigationView.FooterMenuItems.Add(e.NewValue);
-        }
-
-        if (e.NewValue is INotifyCollectionChanged oc)
-        {
-            oc.CollectionChanged += navigationView.OnFooterMenuItemsSource_CollectionChanged;
-        }
+        navigationView.ReplaceMenuItemsSource(
+            navigationView.FooterMenuItems,
+            e.OldValue,
+            e.NewValue,
+            navigationView.OnFooterMenuItemsSourceCollectionChanged
+        );
     }
 
-    private void OnFooterMenuItemsSource_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    private void OnFooterMenuItemsSourceCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
         NavigationViewItemsSourceSynchronizer.SyncCollectionFromSource(FooterMenuItems, sender, e);
     }
@@ -768,67 +750,27 @@ public partial class NavigationView
     /// <inheritdoc/>
     public IList MenuItems => (ObservableCollection<object>)GetValue(MenuItemsProperty);
 
-    private void OnFooterMenuItems_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    private void OnFooterMenuItemsCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
-        SetValue(HasFooterMenuItemsPropertyKey, FooterMenuItems.Count > 0);
-        OnMenuItems_CollectionChanged(sender, e);
+        ProcessRootMenuItemsCollectionChange(FooterMenuItems, HasFooterMenuItemsPropertyKey, e);
     }
 
-    private void OnMenuItems_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    private void OnMenuItemsCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
-        // This handler is also used for descendant collections so the navigation indexes remain current.
-        // Re-evaluating the root state is inexpensive and avoids coupling that shared indexing path to the
-        // identity of the collection that raised the event.
-        SetValue(HasMenuItemsPropertyKey, MenuItems.Count > 0);
+        ProcessRootMenuItemsCollectionChange(MenuItems, HasMenuItemsPropertyKey, e);
+    }
 
-        switch (e.Action)
-        {
-            case NotifyCollectionChangedAction.Add:
-            {
-                if (e.NewItems is not null)
-                {
-                    AddItemsToDictionaries(e.NewItems);
-                }
-
-                break;
-            }
-
-            case NotifyCollectionChangedAction.Remove:
-            {
-                if (e.OldItems is not null)
-                {
-                    RemoveItemsFromDictionaries(e.OldItems);
-                }
-
-                break;
-            }
-
-            case NotifyCollectionChangedAction.Replace:
-            {
-                if (e.OldItems is not null)
-                {
-                    RemoveItemsFromDictionaries(e.OldItems);
-                }
-
-                if (e.NewItems is not null)
-                {
-                    AddItemsToDictionaries(e.NewItems);
-                }
-
-                break;
-            }
-
-            case NotifyCollectionChangedAction.Reset:
-            {
-                RebuildDictionaries();
-                break;
-            }
-
-            case NotifyCollectionChangedAction.Move:
-                break;
-        }
-
-        UpdateAutoSuggestBoxSuggestions();
+    /// <summary>
+    /// Maintains state owned by a root collection, then forwards the change to the shared navigation-data
+    /// pipeline used by both roots and all descendant menu collections.
+    /// </summary>
+    private void ProcessRootMenuItemsCollectionChange(
+        IList rootItems,
+        DependencyPropertyKey hasItemsPropertyKey,
+        NotifyCollectionChangedEventArgs e)
+    {
+        SetValue(hasItemsPropertyKey, rootItems.Count > 0);
+        ProcessNavigationItemsCollectionChange(e);
     }
 
     #endregion
@@ -858,35 +800,56 @@ public partial class NavigationView
             return;
         }
 
-        // Unsubscribe from the old source to prevent memory leaks when the source is replaced
-        if (e.OldValue is INotifyCollectionChanged oldOc)
+        navigationView.ReplaceMenuItemsSource(
+            navigationView.MenuItems,
+            e.OldValue,
+            e.NewValue,
+            navigationView.OnMenuItemsSourceCollectionChanged
+        );
+    }
+
+    private void OnMenuItemsSourceCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        NavigationViewItemsSourceSynchronizer.SyncCollectionFromSource(MenuItems, sender, e);
+    }
+
+    /// <summary>
+    /// Replaces the external source mirrored by one of the control's stable root menu collections.
+    /// </summary>
+    /// <remarks>
+    /// Both roots deliberately use the same replacement order. Detaching first prevents stale sources from
+    /// mutating the control during replacement; populating the stable collection then sends every item through
+    /// the normal root collection pipeline before live change tracking is attached to the new source.
+    /// </remarks>
+    private void ReplaceMenuItemsSource(
+        IList targetCollection,
+        object? oldSource,
+        object? newSource,
+        NotifyCollectionChangedEventHandler sourceCollectionChangedHandler)
+    {
+        if (oldSource is INotifyCollectionChanged oldCollection)
         {
-            oldOc.CollectionChanged -= navigationView.OnMenuItemsSource_CollectionChanged;
+            oldCollection.CollectionChanged -= sourceCollectionChangedHandler;
         }
 
-        navigationView.MenuItems.Clear();
+        targetCollection.Clear();
 
-        if (e.NewValue is IEnumerable newItemsSource and not string)
+        if (newSource is IEnumerable newItemsSource and not string)
         {
             foreach (var item in newItemsSource)
             {
-                _ = navigationView.MenuItems.Add(item);
+                _ = targetCollection.Add(item);
             }
         }
-        else if (e.NewValue != null)
+        else if (newSource is not null)
         {
-            _ = navigationView.MenuItems.Add(e.NewValue);
+            _ = targetCollection.Add(newSource);
         }
 
-        if (e.NewValue is INotifyCollectionChanged oc)
+        if (newSource is INotifyCollectionChanged newCollection)
         {
-            oc.CollectionChanged += navigationView.OnMenuItemsSource_CollectionChanged;
+            newCollection.CollectionChanged += sourceCollectionChangedHandler;
         }
-    }
-
-    private void OnMenuItemsSource_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
-    {
-        NavigationViewItemsSourceSynchronizer.SyncCollectionFromSource(MenuItems, sender, e);
     }
 
     #endregion

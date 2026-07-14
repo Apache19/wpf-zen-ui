@@ -155,13 +155,14 @@ public partial class NavigationView : Control, INavigationView
         Unloaded    += OnUnloaded;
         SizeChanged += OnSizeChanged;
 
-        // Initialize MenuItems collection
+        // These collections are stable for the lifetime of the control. ItemsSource values are mirrored
+        // into them so templates, derived state, navigation indexes, and search all observe one pipeline.
         var menuItems = new ObservableCollection<object>();
-        menuItems.CollectionChanged += OnMenuItems_CollectionChanged;
+        menuItems.CollectionChanged += OnMenuItemsCollectionChanged;
         SetValue(MenuItemsPropertyKey, menuItems);
 
         var footerMenuItems = new ObservableCollection<object>();
-        footerMenuItems.CollectionChanged += OnFooterMenuItems_CollectionChanged;
+        footerMenuItems.CollectionChanged += OnFooterMenuItemsCollectionChanged;
         SetValue(FooterMenuItemsPropertyKey, footerMenuItems);
     }
 
@@ -214,7 +215,7 @@ public partial class NavigationView : Control, INavigationView
 
         UpdateAutoSuggestBoxSuggestions();
 
-        AddItemsToDictionaries();
+        AddItemsToNavigationIndexes();
     }
 
     private void OnLoaded(object sender, RoutedEventArgs e)
@@ -238,7 +239,7 @@ public partial class NavigationView : Control, INavigationView
         // content on detach so the title bar does not retain this control through button handlers.
         ReleaseTitleBarContent();
 
-        UnregisterNavigationViewItems();
+        ClearRegisteredNavigationItems();
 
         ClearJournal();
 
@@ -256,12 +257,12 @@ public partial class NavigationView : Control, INavigationView
         // Clean up ItemsSource CollectionChanged subscriptions to prevent memory leaks
         if (MenuItemsSource is INotifyCollectionChanged menuItemsSource)
         {
-            menuItemsSource.CollectionChanged -= OnMenuItemsSource_CollectionChanged;
+            menuItemsSource.CollectionChanged -= OnMenuItemsSourceCollectionChanged;
         }
 
         if (FooterMenuItemsSource is INotifyCollectionChanged footerMenuItemsSource)
         {
-            footerMenuItemsSource.CollectionChanged -= OnFooterMenuItemsSource_CollectionChanged;
+            footerMenuItemsSource.CollectionChanged -= OnFooterMenuItemsSourceCollectionChanged;
         }
 
         AutoSuggestBoxSymbolButton?.Click -= AutoSuggestBoxSymbolButtonOnClick;
@@ -595,9 +596,17 @@ public partial class NavigationView : Control, INavigationView
         NavigateToMenuItemFromAutoSuggestBox(FooterMenuItems, element);
     }
 
-    protected virtual void AddItemsToDictionaries(IEnumerable list)
+    /// <summary>
+    /// Registers navigation items from <paramref name="items"/> and their descendants in the page lookup indexes.
+    /// </summary>
+    /// <param name="items">The navigation items to register.</param>
+    /// <remarks>
+    /// Registration also attaches descendant collection listeners so later hierarchy changes flow through the
+    /// same index and suggestion update pipeline as changes to the two root collections.
+    /// </remarks>
+    protected virtual void AddItemsToNavigationIndexes(IEnumerable items)
     {
-        foreach (NavigationViewItem nvItem in list.OfType<NavigationViewItem>())
+        foreach (NavigationViewItem nvItem in items.OfType<NavigationViewItem>())
         {
             RegisterNavigationViewItem(nvItem);
 
@@ -621,20 +630,27 @@ public partial class NavigationView : Control, INavigationView
 
             if (nvItem.HasMenuItems)
             {
-                AddItemsToDictionaries(nvItem.MenuItems);
+                AddItemsToNavigationIndexes(nvItem.MenuItems);
             }
         }
     }
 
-    protected virtual void AddItemsToDictionaries()
+    /// <summary>
+    /// Registers the current main and footer navigation hierarchies in the page lookup indexes.
+    /// </summary>
+    protected virtual void AddItemsToNavigationIndexes()
     {
-        AddItemsToDictionaries(MenuItems);
-        AddItemsToDictionaries(FooterMenuItems);
+        AddItemsToNavigationIndexes(MenuItems);
+        AddItemsToNavigationIndexes(FooterMenuItems);
     }
 
-    protected virtual void RemoveItemsFromDictionaries(IEnumerable list)
+    /// <summary>
+    /// Removes navigation items from <paramref name="items"/> and their descendants from the page lookup indexes.
+    /// </summary>
+    /// <param name="items">The navigation items to unregister.</param>
+    protected virtual void RemoveItemsFromNavigationIndexes(IEnumerable items)
     {
-        foreach (NavigationViewItem item in list.OfType<NavigationViewItem>())
+        foreach (NavigationViewItem item in items.OfType<NavigationViewItem>())
         {
             UnregisterNavigationViewItem(item);
         }
@@ -647,7 +663,7 @@ public partial class NavigationView : Control, INavigationView
             return;
         }
 
-        RebuildDictionaries();
+        RebuildNavigationIndexes();
         UpdateAutoSuggestBoxSuggestions();
     }
 
@@ -666,7 +682,7 @@ public partial class NavigationView : Control, INavigationView
         if (_registeredItems.Add(item) &&
             item.MenuItems is INotifyCollectionChanged menuItems)
         {
-            menuItems.CollectionChanged += OnNavigationViewItemMenuItems_CollectionChanged;
+            menuItems.CollectionChanged += OnNavigationViewItemMenuItemsCollectionChanged;
         }
     }
 
@@ -675,7 +691,7 @@ public partial class NavigationView : Control, INavigationView
         if (_registeredItems.Remove(item) &&
             item.MenuItems is INotifyCollectionChanged menuItems)
         {
-            menuItems.CollectionChanged -= OnNavigationViewItemMenuItems_CollectionChanged;
+            menuItems.CollectionChanged -= OnNavigationViewItemMenuItemsCollectionChanged;
         }
 
         PageKeyIndex.Remove(item.Id);
@@ -688,17 +704,17 @@ public partial class NavigationView : Control, INavigationView
 
         if (item.HasMenuItems)
         {
-            RemoveItemsFromDictionaries(item.MenuItems);
+            RemoveItemsFromNavigationIndexes(item.MenuItems);
         }
     }
 
-    private void UnregisterNavigationViewItems()
+    private void ClearRegisteredNavigationItems()
     {
         foreach (var item in _registeredItems)
         {
             if (item.MenuItems is INotifyCollectionChanged menuItems)
             {
-                menuItems.CollectionChanged -= OnNavigationViewItemMenuItems_CollectionChanged;
+                menuItems.CollectionChanged -= OnNavigationViewItemMenuItemsCollectionChanged;
             }
         }
 
@@ -708,17 +724,90 @@ public partial class NavigationView : Control, INavigationView
         PageTypeIndex.Clear();
     }
 
-    private void OnNavigationViewItemMenuItems_CollectionChanged(
+    private void OnNavigationViewItemMenuItemsCollectionChanged(
         object? sender,
         NotifyCollectionChangedEventArgs e)
     {
-        OnMenuItems_CollectionChanged(sender, e);
+        ProcessNavigationItemsCollectionChange(e);
     }
 
-    private void RebuildDictionaries()
+    /// <summary>
+    /// Applies the navigation-wide consequences of a change in either root collection or any registered
+    /// descendant collection. Root-only state such as <see cref="HasMenuItems"/> is intentionally maintained
+    /// by the corresponding root handler before this method is called.
+    /// </summary>
+    /// <remarks>
+    /// Keeping this method independent of the event sender is important: descendant collections participate
+    /// in the same page lookup and suggestion model, but must never update either root collection's derived
+    /// <c>Has*</c> property.
+    /// </remarks>
+    private void ProcessNavigationItemsCollectionChange(NotifyCollectionChangedEventArgs e)
     {
-        UnregisterNavigationViewItems();
-        AddItemsToDictionaries();
+        UpdateNavigationIndexes(e);
+        UpdateAutoSuggestBoxSuggestions();
+    }
+
+    /// <summary>
+    /// Applies the portion of a collection notification that affects page lookup and descendant subscriptions.
+    /// </summary>
+    private void UpdateNavigationIndexes(NotifyCollectionChangedEventArgs e)
+    {
+        switch (e.Action)
+        {
+            case NotifyCollectionChangedAction.Add:
+            {
+                if (e.NewItems is not null)
+                {
+                    AddItemsToNavigationIndexes(e.NewItems);
+                }
+
+                break;
+            }
+
+            case NotifyCollectionChangedAction.Remove:
+            {
+                if (e.OldItems is not null)
+                {
+                    RemoveItemsFromNavigationIndexes(e.OldItems);
+                }
+
+                break;
+            }
+
+            case NotifyCollectionChangedAction.Replace:
+            {
+                if (e.OldItems is not null)
+                {
+                    RemoveItemsFromNavigationIndexes(e.OldItems);
+                }
+
+                if (e.NewItems is not null)
+                {
+                    AddItemsToNavigationIndexes(e.NewItems);
+                }
+
+                break;
+            }
+
+            case NotifyCollectionChangedAction.Reset:
+            {
+                // Reset does not describe the removed items, so incremental unregistering is impossible.
+                // Rebuilding also restores descendant subscriptions from the two authoritative roots.
+                RebuildNavigationIndexes();
+                break;
+            }
+
+            case NotifyCollectionChangedAction.Move:
+                // Page lookup membership is order-independent. Suggestions are refreshed by the caller
+                // because their displayed sequence follows the navigation tree order.
+                break;
+        }
+    }
+
+    private void RebuildNavigationIndexes()
+    {
+        ClearRegisteredNavigationItems();
+        AddItemsToNavigationIndexes();
     }
 
     protected virtual void AddItemsToAutoSuggestBoxItems(IEnumerable list)
