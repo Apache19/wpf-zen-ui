@@ -22,9 +22,7 @@ namespace Wpf.Ui.Controls;
 /// </summary>
 public class NavigationViewItem : ButtonBase, INavigationViewItem
 {
-    // ═══════════════════════════════════════════════════════════════════════
-    // Indentation
-    // ═══════════════════════════════════════════════════════════════════════
+    #region DP: Indentation
 
     private static readonly DependencyPropertyKey IndentationPropertyKey =
         DependencyProperty.RegisterReadOnly(
@@ -44,9 +42,9 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
     [ReadOnly(true)]
     public Thickness Indentation => (Thickness)GetValue(IndentationProperty);
 
-    // ═══════════════════════════════════════════════════════════════════════
-    // IndentationSize
-    // ═══════════════════════════════════════════════════════════════════════
+    #endregion
+
+    #region DP: IndentationSize
 
     /// <summary>Identifies the <see cref="IndentationSize"/> dependency property.</summary>
     public static readonly DependencyProperty IndentationSizeProperty = DependencyProperty.Register(
@@ -70,9 +68,9 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
         set => SetValue(IndentationSizeProperty, value);
     }
 
-    // ═══════════════════════════════════════════════════════════════════════
-    // MenuItems
-    // ═══════════════════════════════════════════════════════════════════════
+    #endregion
+
+    #region DP: MenuItems
 
     private static readonly DependencyPropertyKey MenuItemsPropertyKey = DependencyProperty.RegisterReadOnly(
         nameof(MenuItems),
@@ -87,9 +85,9 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
     /// <inheritdoc/>
     public IList MenuItems => (ObservableCollection<object>)GetValue(MenuItemsProperty);
 
-    // ═══════════════════════════════════════════════════════════════════════
-    // MenuItemsSource
-    // ═══════════════════════════════════════════════════════════════════════
+    #endregion
+    
+    #region DP: MenuItemsSource
 
     /// <summary>Identifies the <see cref="MenuItemsSource"/> dependency property.</summary>
     public static readonly DependencyProperty MenuItemsSourceProperty = DependencyProperty.Register(
@@ -107,9 +105,9 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
         set => SetValue(MenuItemsSourceProperty, value);
     }
 
-    // ═══════════════════════════════════════════════════════════════════════
-    // HasMenuItems
-    // ═══════════════════════════════════════════════════════════════════════
+    #endregion
+
+    #region DP: HasMenuItems
 
     /// <summary>Identifies the <see cref="HasMenuItems"/> dependency property.</summary>
     private static readonly DependencyPropertyKey HasMenuItemsPropertyKey =
@@ -131,9 +129,9 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
     [ReadOnly(true)]
     public bool HasMenuItems => (bool)GetValue(HasMenuItemsProperty);
 
-    // ═══════════════════════════════════════════════════════════════════════
-    // IsActive
-    // ═══════════════════════════════════════════════════════════════════════
+    #endregion
+
+    #region DP: IsActive
 
     /// <summary>Identifies the <see cref="IsActive"/> dependency property.</summary>
     public static readonly DependencyProperty IsActiveProperty = DependencyProperty.Register(
@@ -152,9 +150,9 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
         set => SetValue(IsActiveProperty, value);
     }
 
-    // ═══════════════════════════════════════════════════════════════════════
-    // IsPaneOpen
-    // ═══════════════════════════════════════════════════════════════════════
+    #endregion
+
+    #region DP: IsPaneOpen
 
     /// <summary>Identifies the <see cref="IsPaneOpen"/> dependency property.</summary>
     public static readonly DependencyProperty IsPaneOpenProperty = DependencyProperty.Register(
@@ -172,9 +170,9 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
         set => SetValue(IsPaneOpenProperty, value);
     }
 
-    // ═══════════════════════════════════════════════════════════════════════
-    // PaneDisplayMode
-    // ═══════════════════════════════════════════════════════════════════════
+    #endregion
+
+    #region DP: PaneDisplayMode
 
     private static readonly DependencyPropertyKey PaneDisplayModePropertyKey =
         DependencyProperty.RegisterReadOnly(
@@ -196,9 +194,9 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
     public NavigationViewPaneDisplayMode PaneDisplayMode =>
         (NavigationViewPaneDisplayMode)GetValue(PaneDisplayModeProperty);
 
-    // ═══════════════════════════════════════════════════════════════════════
-    // IsSubItem
-    // ═══════════════════════════════════════════════════════════════════════
+    #endregion
+
+    #region DP: IsSubItem
 
     private static readonly DependencyPropertyKey IsSubItemPropertyKey = DependencyProperty.RegisterReadOnly(
         nameof(IsSubItem),
@@ -217,9 +215,9 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
     [ReadOnly(true)]
     public bool IsSubItem => (bool)GetValue(IsSubItemProperty);
 
-    // ═══════════════════════════════════════════════════════════════════════
-    // IsExpanded
-    // ═══════════════════════════════════════════════════════════════════════
+    #endregion
+
+    #region DP: IsExpanded
 
     /// <summary>Identifies the <see cref="IsExpanded"/> dependency property.</summary>
     public static readonly DependencyProperty IsExpandedProperty = DependencyProperty.Register(
@@ -238,9 +236,9 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
         set => SetValue(IsExpandedProperty, value);
     }
 
-    // ═══════════════════════════════════════════════════════════════════════
-    // Icon
-    // ═══════════════════════════════════════════════════════════════════════
+    #endregion
+
+    #region DP: Icon
 
     /// <summary>Identifies the <see cref="Icon"/> dependency property.</summary>
     public static readonly DependencyProperty IconProperty = DependencyProperty.Register(
@@ -259,9 +257,9 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
         set => SetValue(IconProperty, value);
     }
 
-    // ═══════════════════════════════════════════════════════════════════════
-    // TargetPageTag
-    // ═══════════════════════════════════════════════════════════════════════
+    #endregion
+
+    #region DP: TargetPageTag
 
     /// <summary>Identifies the <see cref="TargetPageTag"/> dependency property.</summary>
     public static readonly DependencyProperty TargetPageTagProperty = DependencyProperty.Register(
@@ -278,9 +276,9 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
         set => SetValue(TargetPageTagProperty, value);
     }
 
-    // ═══════════════════════════════════════════════════════════════════════
-    // TargetPageType
-    // ═══════════════════════════════════════════════════════════════════════
+    #endregion
+
+    #region DP: TargetPageType
 
     /// <summary>Identifies the <see cref="TargetPageType"/> dependency property.</summary>
     public static readonly DependencyProperty TargetPageTypeProperty = DependencyProperty.Register(
@@ -297,9 +295,9 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
         set => SetValue(TargetPageTypeProperty, value);
     }
 
-    // ═══════════════════════════════════════════════════════════════════════
-    // InfoBadge
-    // ═══════════════════════════════════════════════════════════════════════
+    #endregion
+
+    #region DP: InfoBadge
 
     /// <summary>Identifies the <see cref="InfoBadge"/> dependency property.</summary>
     public static readonly DependencyProperty InfoBadgeProperty = DependencyProperty.Register(
@@ -315,9 +313,9 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
         set => SetValue(InfoBadgeProperty, value);
     }
 
-    // ═══════════════════════════════════════════════════════════════════════
-    // NavigationCacheMode
-    // ═══════════════════════════════════════════════════════════════════════
+    #endregion
+
+    #region DP: NavigationCacheMode
 
     /// <summary>Identifies the <see cref="NavigationCacheMode"/> dependency property.</summary>
     public static readonly DependencyProperty NavigationCacheModeProperty = DependencyProperty.Register(
@@ -333,6 +331,8 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
         get => (NavigationCacheMode)GetValue(NavigationCacheModeProperty);
         set => SetValue(NavigationCacheModeProperty, value);
     }
+
+    #endregion
 
     /// <inheritdoc />
     public INavigationViewItem? NavigationViewItemParent
