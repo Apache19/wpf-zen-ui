@@ -691,11 +691,10 @@ public class TextBox : System.Windows.Controls.TextBox
     /// <inheritdoc />
     protected override void OnTextChanged(TextChangedEventArgs e)
     {
-        base.OnTextChanged(e);
-
         SetPlaceholderTextVisibility();
-
         RevealClearButton();
+
+        base.OnTextChanged(e);
     }
 
     protected void SetPlaceholderTextVisibility()
