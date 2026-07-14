@@ -129,6 +129,7 @@
                                     Padding="4"
                                     DisplayMemberPath="{TemplateBinding DisplayMemberPath}"
                                     ItemContainerStyle="{TemplateBinding ItemContainerStyle}"
+                                    ItemStringFormat="{TemplateBinding ItemStringFormat}"
                                     ItemTemplate="{TemplateBinding ItemTemplate}"
                                     ItemTemplateSelector="{TemplateBinding ItemTemplateSelector}"
                                     ItemsSource="{TemplateBinding ItemsSource}"

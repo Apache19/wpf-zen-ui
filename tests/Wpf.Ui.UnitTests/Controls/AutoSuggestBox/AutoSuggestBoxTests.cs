@@ -3,6 +3,7 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.ExceptionServices;
@@ -168,6 +169,39 @@ public class AutoSuggestBoxTests
     }
 
     [Fact]
+    public void DisplayMemberPath_UsesWpfPropertyPathForFilteringAndSelection()
+    {
+        RunOnStaThread(() =>
+        {
+            var alpha = new Suggestion(new SuggestionDetails("Alpha"));
+            var beta  = new Suggestion(new SuggestionDetails("Beta"));
+            var (window, autoSuggestBox, textBox, _) = CreateLoadedControl(
+                new[] { alpha, beta },
+                "Details.Name"
+            );
+
+            try
+            {
+                Assert.True(textBox.Focus());
+                textBox.Text = "alp";
+
+                Assert.Equal(new[] { alpha }, autoSuggestBox.Items.Cast<Suggestion>());
+
+                var suggestionsList = Assert.IsAssignableFrom<WpfListView>(
+                    autoSuggestBox.Template.FindName("PART_SuggestionsList", autoSuggestBox)
+                );
+                suggestionsList.SelectedItem = alpha;
+
+                Assert.Equal("Alpha", textBox.Text);
+            }
+            finally
+            {
+                window.Close();
+            }
+        });
+    }
+
+    [Fact]
     public void DownArrow_PreviewsFirstSuggestionWithoutCommittingIt()
     {
         RunOnStaThread(() =>
@@ -298,12 +332,13 @@ public class AutoSuggestBoxTests
         TestAutoSuggestBox AutoSuggestBox,
         WpfTextBox TextBox,
         Button OutsideButton
-    ) CreateLoadedControl()
+    ) CreateLoadedControl(IList? originalItemsSource = null, string displayMemberPath = "")
     {
         var autoSuggestBox = new TestAutoSuggestBox
         {
-            OriginalItemsSource = new[] { "Alpha", "Beta" },
-            Template = CreateControlTemplate(),
+            DisplayMemberPath   = displayMemberPath,
+            OriginalItemsSource = originalItemsSource ?? new[] { "Alpha", "Beta" },
+            Template            = CreateControlTemplate(),
         };
         var outsideButton = new Button { Content = "Outside" };
         var root = new StackPanel();
@@ -448,6 +483,10 @@ public class AutoSuggestBoxTests
             OnSuggestionsListPreviewKeyDown(e);
         }
     }
+
+    private sealed record Suggestion(SuggestionDetails Details);
+
+    private sealed record SuggestionDetails(string Name);
 
     private static void RunOnStaThread(Action action)
     {

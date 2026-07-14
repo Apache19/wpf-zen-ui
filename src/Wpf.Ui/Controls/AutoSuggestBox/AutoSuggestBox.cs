@@ -6,7 +6,9 @@
 using System.Collections;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
+using System.Windows.Data;
 using System.Windows.Input;
+using System.Xml;
 using Windows.Win32;
 using Windows.Win32.Foundation;
 using Wpf.Ui.Input;
@@ -36,6 +38,14 @@ public class AutoSuggestBox : ItemsControl, IIconControl
 {
     private const string ElementTextBox         = "PART_TextBox";
     private const string ElementSuggestionsList = "PART_SuggestionsList";
+
+    private static readonly DependencyProperty ItemTextValueProperty =
+        DependencyProperty.Register(
+            "ItemTextValue",
+            typeof(object),
+            typeof(AutoSuggestBox),
+            new PropertyMetadata(null)
+        );
 
     #region DP: OriginalItemsSource
 
@@ -851,16 +861,44 @@ public class AutoSuggestBox : ItemsControl, IIconControl
         SetCurrentValue(ItemsSourceProperty, suitableItems);
     }
 
-    private string? GetStringFromObj(object obj)
+    private string GetStringFromObj(object? obj)
     {
-        // uses reflection. maybe it needs some optimization?
-        var displayMemberPathText =
-            !string.IsNullOrEmpty(DisplayMemberPath)
-         && obj.GetType().GetProperty(DisplayMemberPath)?.GetValue(obj) is string value
-                ? value
-                : null;
+        if (obj is null)
+        {
+            return string.Empty;
+        }
 
-        return displayMemberPathText ?? obj as string ?? obj.ToString();
+        if (string.IsNullOrEmpty(DisplayMemberPath))
+        {
+            return obj.ToString() ?? string.Empty;
+        }
+
+        var binding = new Binding { Mode = BindingMode.OneWay, Source = obj };
+
+        // WPF treats DisplayMemberPath as an XPath for XML items and as a PropertyPath
+        // for CLR items. This mirrors TextSearch.CreateBindingExpression, so filtering
+        // and selection use the same member resolution rules as the suggestions list.
+        if (obj is XmlNode)
+        {
+            binding.XPath = DisplayMemberPath;
+            binding.Path  = new PropertyPath("/InnerText");
+        }
+        else
+        {
+            binding.Path = new PropertyPath(DisplayMemberPath);
+        }
+
+        try
+        {
+            _ = BindingOperations.SetBinding(this, ItemTextValueProperty, binding);
+
+            var value = GetValue(ItemTextValueProperty);
+            return value == DependencyProperty.UnsetValue ? string.Empty : value?.ToString() ?? string.Empty;
+        }
+        finally
+        {
+            BindingOperations.ClearBinding(this, ItemTextValueProperty);
+        }
     }
 
     private static void OnTextChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
