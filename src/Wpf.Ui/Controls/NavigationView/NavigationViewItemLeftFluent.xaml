@@ -89,12 +89,14 @@
                                 From="1"
                                 To="0"
                                 Duration="0:0:.16" />
+                            <!-- 边框色默认透明，此动画无意义
                             <DoubleAnimation
                                 Storyboard.TargetName="MainBorder"
                                 Storyboard.TargetProperty="(Border.BorderBrush).(SolidColorBrush.Opacity)"
                                 From="0"
                                 To="1"
                                 Duration="0:0:.16" />
+                            -->
                         </Storyboard>
                     </BeginStoryboard>
                 </Trigger.EnterActions>
@@ -113,12 +115,13 @@
                                 From="0"
                                 To="1"
                                 Duration="0:0:.16" />
+                            <!-- 边框色默认透明，此动画无意义
                             <DoubleAnimation
                                 Storyboard.TargetName="MainBorder"
                                 Storyboard.TargetProperty="(Border.BorderBrush).(SolidColorBrush.Opacity)"
                                 From="1"
                                 To="0"
-                                Duration="0:0:.16" />
+                                Duration="0:0:.16" />-->
                         </Storyboard>
                     </BeginStoryboard>
                 </Trigger.ExitActions>
