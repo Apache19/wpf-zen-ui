@@ -3,16 +3,20 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
+using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Data;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
 using WpfAutoSuggestBox = Wpf.Ui.Controls.AutoSuggestBox;
 using WpfListView = Wpf.Ui.Controls.ListView;
 using WpfTextBox = Wpf.Ui.Controls.TextBox;
+using WpfTextChangeReason = Wpf.Ui.Controls.AutoSuggestionBoxTextChangeReason;
 
 // ReSharper disable once CheckNamespace
 namespace Wpf.Ui.UnitTests.Controls.AutoSuggestBoxControl;
@@ -127,14 +131,176 @@ public class AutoSuggestBoxTests
         });
     }
 
+    [Fact]
+    public void SelectingSuggestion_PreviewsTextWithoutFilteringOrRaisingSuggestionChosen()
+    {
+        RunOnStaThread(() =>
+        {
+            var (window, autoSuggestBox, textBox, _) = CreateLoadedControl();
+
+            try
+            {
+                var chosenItems = new List<object>();
+                var changeReasons = new List<WpfTextChangeReason>();
+                autoSuggestBox.SuggestionChosen += (_, args) => chosenItems.Add(args.SelectedItem);
+                autoSuggestBox.TextChanged += (_, args) => changeReasons.Add(args.Reason);
+
+                Assert.True(textBox.Focus());
+                textBox.Text = "a";
+                Assert.Equal(new[] { "Alpha", "Beta" }, autoSuggestBox.Items.Cast<string>());
+
+                var suggestionsList = Assert.IsAssignableFrom<WpfListView>(
+                    autoSuggestBox.Template.FindName("PART_SuggestionsList", autoSuggestBox)
+                );
+                suggestionsList.SelectedItem = "Alpha";
+
+                Assert.Equal("Alpha", textBox.Text);
+                Assert.Equal(new[] { "Alpha", "Beta" }, autoSuggestBox.Items.Cast<string>());
+                Assert.True(autoSuggestBox.IsSuggestionListOpen);
+                Assert.Empty(chosenItems);
+                Assert.Equal(WpfTextChangeReason.SuggestionChosen, changeReasons[^1]);
+            }
+            finally
+            {
+                window.Close();
+            }
+        });
+    }
+
+    [Fact]
+    public void DownArrow_PreviewsFirstSuggestionWithoutCommittingIt()
+    {
+        RunOnStaThread(() =>
+        {
+            var (window, autoSuggestBox, textBox, _) = CreateLoadedControl();
+
+            try
+            {
+                var chosenItems = new List<object>();
+                autoSuggestBox.SuggestionChosen += (_, args) => chosenItems.Add(args.SelectedItem);
+
+                Assert.True(textBox.Focus());
+                textBox.Text = "a";
+
+                var suggestionsList = Assert.IsAssignableFrom<WpfListView>(
+                    autoSuggestBox.Template.FindName("PART_SuggestionsList", autoSuggestBox)
+                );
+                Assert.True(autoSuggestBox.IsSuggestionListOpen);
+                Assert.True(suggestionsList.HasItems);
+
+                var keyEvent = CreateKeyEvent(textBox, Key.Down);
+                Assert.Equal(Key.Down, keyEvent.Key);
+                autoSuggestBox.ProcessTextBoxPreviewKeyDown(keyEvent);
+
+                Assert.Equal("Alpha", suggestionsList.SelectedItem);
+                Assert.Equal("Alpha", textBox.Text);
+                Assert.Equal(new[] { "Alpha", "Beta" }, autoSuggestBox.Items.Cast<string>());
+                Assert.Empty(chosenItems);
+            }
+            finally
+            {
+                window.Close();
+            }
+        });
+    }
+
+    [Fact]
+    public void Enter_CommitsSelectedSuggestionExactlyOnce()
+    {
+        RunOnStaThread(() =>
+        {
+            var (window, autoSuggestBox, textBox, _) = CreateLoadedControl();
+
+            try
+            {
+                var chosenItems = new List<object>();
+                autoSuggestBox.SuggestionChosen += (_, args) => chosenItems.Add(args.SelectedItem);
+
+                Assert.True(textBox.Focus());
+                textBox.Text = "a";
+
+                var suggestionsList = Assert.IsAssignableFrom<WpfListView>(
+                    autoSuggestBox.Template.FindName("PART_SuggestionsList", autoSuggestBox)
+                );
+                suggestionsList.SelectedItem = "Beta";
+                Assert.True(suggestionsList.Focus());
+
+                Assert.Empty(chosenItems);
+                Assert.True(autoSuggestBox.IsSuggestionListOpen);
+                Assert.Equal("Beta", suggestionsList.SelectedItem);
+
+                var keyEvent = CreateKeyEvent(suggestionsList, Key.Enter);
+                Assert.Equal(Key.Enter, keyEvent.Key);
+                autoSuggestBox.ProcessSuggestionsListPreviewKeyDown(keyEvent);
+
+                Assert.Equal(new object[] { "Beta" }, chosenItems);
+                Assert.Equal("Beta", textBox.Text);
+                Assert.True(textBox.IsKeyboardFocused);
+                Assert.False(autoSuggestBox.IsSuggestionListOpen);
+            }
+            finally
+            {
+                window.Close();
+            }
+        });
+    }
+
+    [Fact]
+    public void MouseClick_CommitsClickedSuggestionExactlyOnce()
+    {
+        RunOnStaThread(() =>
+        {
+            var (window, autoSuggestBox, textBox, _) = CreateLoadedControl();
+
+            try
+            {
+                var chosenItems = new List<object>();
+                autoSuggestBox.SuggestionChosen += (_, args) => chosenItems.Add(args.SelectedItem);
+
+                Assert.True(textBox.Focus());
+                textBox.Text = "a";
+                window.UpdateLayout();
+
+                var suggestionsList = Assert.IsAssignableFrom<WpfListView>(
+                    autoSuggestBox.Template.FindName("PART_SuggestionsList", autoSuggestBox)
+                );
+                var itemContainer = Assert.IsAssignableFrom<ListViewItem>(
+                    suggestionsList.ItemContainerGenerator.ContainerFromItem("Beta")
+                );
+                Assert.True(itemContainer.Focus());
+                Assert.True(autoSuggestBox.IsSuggestionListOpen);
+                var mouseEvent = new MouseButtonEventArgs(
+                    Mouse.PrimaryDevice,
+                    Environment.TickCount,
+                    MouseButton.Left
+                )
+                {
+                    RoutedEvent = UIElement.PreviewMouseLeftButtonUpEvent,
+                    Source = itemContainer,
+                };
+
+                suggestionsList.RaiseEvent(mouseEvent);
+
+                Assert.Equal(new object[] { "Beta" }, chosenItems);
+                Assert.Equal("Beta", textBox.Text);
+                Assert.True(textBox.IsKeyboardFocused);
+                Assert.False(autoSuggestBox.IsSuggestionListOpen);
+            }
+            finally
+            {
+                window.Close();
+            }
+        });
+    }
+
     private static (
         Window Window,
-        WpfAutoSuggestBox AutoSuggestBox,
+        TestAutoSuggestBox AutoSuggestBox,
         WpfTextBox TextBox,
         Button OutsideButton
     ) CreateLoadedControl()
     {
-        var autoSuggestBox = new WpfAutoSuggestBox
+        var autoSuggestBox = new TestAutoSuggestBox
         {
             OriginalItemsSource = new[] { "Alpha", "Beta" },
             Template = CreateControlTemplate(),
@@ -239,6 +405,13 @@ public class AutoSuggestBoxTests
 
         var suggestionsList = new FrameworkElementFactory(typeof(WpfListView), "PART_SuggestionsList");
         suggestionsList.SetValue(Grid.RowProperty, 1);
+        suggestionsList.SetBinding(
+            ItemsControl.ItemsSourceProperty,
+            new Binding(nameof(WpfAutoSuggestBox.ItemsSource))
+            {
+                RelativeSource = RelativeSource.TemplatedParent,
+            }
+        );
         root.AppendChild(suggestionsList);
 
         return new ControlTemplate(typeof(WpfAutoSuggestBox)) { VisualTree = root };
@@ -252,6 +425,28 @@ public class AutoSuggestBoxTests
             new Action(() => frame.Continue = false)
         );
         Dispatcher.PushFrame(frame);
+    }
+
+    private static KeyEventArgs CreateKeyEvent(UIElement element, Key key)
+    {
+        var source = Assert.IsAssignableFrom<PresentationSource>(PresentationSource.FromVisual(element));
+        return new KeyEventArgs(Keyboard.PrimaryDevice, source, Environment.TickCount, key)
+        {
+            RoutedEvent = UIElement.PreviewKeyDownEvent,
+        };
+    }
+
+    private sealed class TestAutoSuggestBox : WpfAutoSuggestBox
+    {
+        public void ProcessTextBoxPreviewKeyDown(KeyEventArgs e)
+        {
+            OnTextBoxPreviewKeyDown(e);
+        }
+
+        public void ProcessSuggestionsListPreviewKeyDown(KeyEventArgs e)
+        {
+            OnSuggestionsListPreviewKeyDown(e);
+        }
     }
 
     private static void RunOnStaThread(Action action)
