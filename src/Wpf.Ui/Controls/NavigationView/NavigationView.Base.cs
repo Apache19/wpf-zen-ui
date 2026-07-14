@@ -24,6 +24,15 @@ namespace Wpf.Ui.Controls;
 public partial class NavigationView : Control, INavigationView
 {
     /// <summary>
+    /// Notifies navigation-owned template helpers that <see cref="PaneTitle"/> changed. This is an
+    /// internal state channel rather than a public control event: consumers observe the dependency
+    /// property, while <see cref="NavigationViewButton"/> uses the notification to maintain its
+    /// presentation-neutral snapshot without binding or taking ownership of
+    /// <see cref="ContentControl.Content"/>.
+    /// </summary>
+    internal event EventHandler? PaneTitleChangedInternal;
+
+    /// <summary>
     /// Initializes static members of the <see cref="NavigationView"/> class and overrides default property metadata.
     /// </summary>
     static NavigationView()
@@ -83,8 +92,8 @@ public partial class NavigationView : Control, INavigationView
 
         _paneBackButton = CreateNavigationButton(
             "NavigationBackButton",
-            new SymbolIcon(SymbolRegular.ArrowLeft48),
-            NavigationViewButtonPlacement.Pane
+            NavigationViewButtonPlacement.Pane,
+            NavigationViewButtonRole.Back
         );
 
         _paneBackButton.Click += OnBackButtonClick;
@@ -100,8 +109,8 @@ public partial class NavigationView : Control, INavigationView
 
         _paneToggleButton = CreateNavigationButton(
             "NavigationToggleButton",
-            new SymbolIcon(SymbolRegular.LineHorizontal320),
-            NavigationViewButtonPlacement.Pane
+            NavigationViewButtonPlacement.Pane,
+            NavigationViewButtonRole.PaneToggle
         );
 
         _paneToggleButton.Click += OnToggleButtonClick;
@@ -111,8 +120,8 @@ public partial class NavigationView : Control, INavigationView
         // separate instances therefore make visibility changes safe while the window is live.
         _titleBarBackButton = CreateNavigationButton(
             "NavigationBackButton",
-            new SymbolIcon(SymbolRegular.ArrowLeft48),
-            NavigationViewButtonPlacement.TitleBar
+            NavigationViewButtonPlacement.TitleBar,
+            NavigationViewButtonRole.Back
         );
 
         _titleBarBackButton.Click += OnBackButtonClick;
@@ -128,25 +137,11 @@ public partial class NavigationView : Control, INavigationView
 
         _titleBarToggleButton = CreateNavigationButton(
             "NavigationToggleButton",
-            new SymbolIcon(SymbolRegular.LineHorizontal320),
-            NavigationViewButtonPlacement.TitleBar
+            NavigationViewButtonPlacement.TitleBar,
+            NavigationViewButtonRole.PaneToggle
         );
 
         _titleBarToggleButton.Click += OnToggleButtonClick;
-
-        _paneTitle = new TextBlock
-        {
-            FontWeight = FontWeights.Medium
-        };
-
-        BindingOperations.SetBinding(
-            _paneTitle,
-            System.Windows.Controls.TextBlock.TextProperty,
-            new Binding(nameof(PaneTitle))
-            {
-                Source = this
-            }
-        );
 
         BackButton   = _paneBackButton;
         ToggleButton = _paneToggleButton;
@@ -179,7 +174,6 @@ public partial class NavigationView : Control, INavigationView
     private readonly NavigationViewButton                               _paneToggleButton;
     private readonly NavigationViewButton                               _titleBarBackButton;
     private readonly NavigationViewButton                               _titleBarToggleButton;
-    private readonly TextBlock                                          _paneTitle;
     private readonly StackPanel                                         _paneButtonsHost = new();
     private          TitleBar?                                          _titleBarContentOwner;
     private          object?                                            _displacedTitleBarLeftContent;
@@ -370,19 +364,16 @@ public partial class NavigationView : Control, INavigationView
     /// is selected at runtime and may target <see cref="TitleBar.LeftContent"/>.
     /// </summary>
     /// <param name="automationId">The stable automation identifier shared by both host-specific instances.</param>
-    /// <param name="icon">The icon that identifies the navigation command.</param>
     /// <param name="placement">The host in which the button is placed.</param>
+    /// <param name="role">The navigation command represented by the button.</param>
     private NavigationViewButton CreateNavigationButton(
         string                        automationId,
-        IconElement                   icon,
-        NavigationViewButtonPlacement placement)
+        NavigationViewButtonPlacement placement,
+        NavigationViewButtonRole      role)
     {
-        var button = new NavigationViewButton
-        {
-            Icon = icon
-        };
+        var button = new NavigationViewButton();
 
-        button.InitializeOwner(this, placement);
+        button.InitializeOwner(this, placement, role);
 
         AutomationProperties.SetAutomationId(button, automationId);
 
@@ -411,7 +402,7 @@ public partial class NavigationView : Control, INavigationView
         }
 
         if (
-            _titleBarContentOwner is not null && 
+            _titleBarContentOwner is not null &&
             (
                 ReferenceEquals(_titleBarContentOwner.LeftContent, _titleBarBackButton) ||
                 ReferenceEquals(_titleBarContentOwner.LeftContent, _titleBarToggleButton)
@@ -441,11 +432,6 @@ public partial class NavigationView : Control, INavigationView
             PaneDisplayMode is NavigationViewPaneDisplayMode.Top or NavigationViewPaneDisplayMode.Bottom
                 ? Orientation.Horizontal
                 : Orientation.Vertical
-        );
-
-        _paneToggleButton.SetCurrentValue(
-            ContentControl.ContentProperty,
-            IsPaneOpen && PaneTitle is not null ? _paneTitle : null
         );
 
         // Keep a stable presenter child. Replacing a live ContentPresenter child with the

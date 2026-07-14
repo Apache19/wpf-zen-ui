@@ -7,7 +7,9 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.ExceptionServices;
 using System.Threading;
+using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
+using System.Windows.Media;
 using Wpf.Ui.Controls;
 
 namespace Wpf.Ui.UnitTests.Controls.NavigationView;
@@ -62,9 +64,14 @@ public class NavigationViewButtonTests
 
             Assert.Equal(typeof(ButtonBase), typeof(NavigationViewButton).BaseType);
             Assert.Equal(typeof(NavigationViewButton), style.TargetType);
+            Assert.False(typeof(IIconControl).IsAssignableFrom(typeof(NavigationViewButton)));
+            Assert.Equal(typeof(object), NavigationViewButton.IconProperty.PropertyType);
 
             var button = new NavigationViewButton { Style = style };
             Assert.Equal(NavigationViewButtonPlacement.None, button.Placement);
+            var arbitraryIcon = new Border();
+            button.Icon = arbitraryIcon;
+            Assert.Same(arbitraryIcon, button.Icon);
             Assert.True(button.ApplyTemplate());
             Assert.NotNull(button.Template);
         });
@@ -86,8 +93,12 @@ public class NavigationViewButtonTests
 
             Assert.True(NavigationViewButton.PaneDisplayModeProperty.ReadOnly);
             Assert.True(NavigationViewButton.PlacementProperty.ReadOnly);
+            Assert.True(NavigationViewButton.PaneTitleProperty.ReadOnly);
+            Assert.True(NavigationViewButton.RoleProperty.ReadOnly);
             Assert.Equal(NavigationViewButtonPlacement.Pane, paneButton.Placement);
             Assert.Equal(NavigationViewButtonPlacement.TitleBar, titleBarButton.Placement);
+            Assert.Equal(NavigationViewButtonRole.Back, paneButton.Role);
+            Assert.Equal(NavigationViewButtonRole.Back, titleBarButton.Role);
             Assert.Equal(NavigationViewPaneDisplayMode.Top, paneButton.PaneDisplayMode);
             Assert.Equal(NavigationViewPaneDisplayMode.Top, titleBarButton.PaneDisplayMode);
             Assert.True(paneButton.IsPaneOpen);
@@ -100,6 +111,97 @@ public class NavigationViewButtonTests
             Assert.Equal(NavigationViewPaneDisplayMode.Bottom, titleBarButton.PaneDisplayMode);
             Assert.False(paneButton.IsPaneOpen);
             Assert.False(titleBarButton.IsPaneOpen);
+        });
+    }
+
+    [Fact]
+    public void PaneTitle_IsSynchronizedWithoutTakingOwnershipOfButtonContent()
+    {
+        RunOnStaThread(() =>
+        {
+            var navigationView = new Wpf.Ui.Controls.NavigationView
+            {
+                PaneTitle = "_Navigation",
+                IsPaneOpen = true,
+            };
+
+            var toggleButton = GetButton(navigationView, "_paneToggleButton");
+            var backButton = GetButton(navigationView, "_paneBackButton");
+
+            Assert.Equal(NavigationViewButtonRole.PaneToggle, toggleButton.Role);
+            Assert.Equal("_Navigation", toggleButton.PaneTitle);
+            Assert.Equal("_Navigation", backButton.PaneTitle);
+            Assert.Null(toggleButton.Content);
+            Assert.Null(
+                typeof(Wpf.Ui.Controls.NavigationView).GetField(
+                    "_paneTitle",
+                    BindingFlags.Instance | BindingFlags.NonPublic
+                )
+            );
+
+            toggleButton.Content = "Application content";
+            navigationView.PaneTitle = "_Updated";
+            navigationView.IsPaneOpen = false;
+            navigationView.IsPaneOpen = true;
+
+            Assert.Equal("_Updated", toggleButton.PaneTitle);
+            Assert.Equal("_Updated", backButton.PaneTitle);
+            Assert.Equal("Application content", toggleButton.Content);
+        });
+    }
+
+    [Fact]
+    public void DefaultTemplate_PresentsPaneTitleAsAccessTextOnlyWhenContentIsNull()
+    {
+        RunOnStaThread(() =>
+        {
+            var resources = new ResourceDictionary { Source = CreateResourceUri() };
+            var navigationView = new Wpf.Ui.Controls.NavigationView
+            {
+                PaneTitle = "_Navigation",
+                IsPaneOpen = true,
+            };
+            var toggleButton = GetButton(navigationView, "_paneToggleButton");
+            var backButton = GetButton(navigationView, "_paneBackButton");
+            var style = Assert.IsType<Style>(resources[typeof(NavigationViewButton)]);
+            toggleButton.Style = style;
+            backButton.Style = style;
+
+            Assert.True(toggleButton.ApplyTemplate());
+
+            var contentPresenter = Assert.IsType<ContentPresenter>(
+                toggleButton.Template.FindName("contentPresenter", toggleButton)
+            );
+            var paneTitlePresenter = Assert.IsType<ContentPresenter>(
+                toggleButton.Template.FindName("paneTitlePresenter", toggleButton)
+            );
+            var iconPresenter = Assert.IsType<ContentPresenter>(
+                toggleButton.Template.FindName("iconPresenter", toggleButton)
+            );
+
+            Assert.Equal("_Navigation", paneTitlePresenter.Content);
+            Assert.True(paneTitlePresenter.RecognizesAccessKey);
+            Assert.Equal(Visibility.Collapsed, contentPresenter.Visibility);
+            Assert.Equal(Visibility.Visible, paneTitlePresenter.Visibility);
+            Assert.Equal(SymbolRegular.LineHorizontal320, toggleButton.Icon);
+            Assert.Equal(SymbolRegular.LineHorizontal320, iconPresenter.Content);
+            Assert.Equal(SymbolRegular.ArrowLeft48, backButton.Icon);
+
+            Assert.True(iconPresenter.ApplyTemplate());
+            Assert.IsType<SymbolIcon>(VisualTreeHelper.GetChild(iconPresenter, 0));
+
+            navigationView.PaneTitle = null;
+            Assert.Equal(Visibility.Collapsed, paneTitlePresenter.Visibility);
+
+            navigationView.PaneTitle = "_Navigation";
+            toggleButton.Content = "Application content";
+            var arbitraryIcon = new Border();
+            toggleButton.Icon = arbitraryIcon;
+
+            Assert.Equal(Visibility.Visible, contentPresenter.Visibility);
+            Assert.Equal(Visibility.Collapsed, paneTitlePresenter.Visibility);
+            Assert.Equal("Application content", contentPresenter.Content);
+            Assert.Same(arbitraryIcon, iconPresenter.Content);
         });
     }
 

@@ -999,7 +999,7 @@ public partial class NavigationView
     {
         if (d is NavigationView navigationView)
         {
-            navigationView.UpdatePaneButtonPlacement();
+            navigationView.PaneTitleChangedInternal?.Invoke(navigationView, EventArgs.Empty);
         }
     }
 
