@@ -8,6 +8,7 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using Windows.Win32;
+using Windows.Win32.Foundation;
 using Wpf.Ui.Input;
 
 // ReSharper disable once CheckNamespace
@@ -256,6 +257,7 @@ public class AutoSuggestBox : ItemsControl, IIconControl
     private bool    _isChangedTextOutSideOfTextBox;
     private object? _selectedItem;
     private bool?   _isHwndHookSubscribed;
+    private RECT?   _hostWindowBounds;
 
     public AutoSuggestBox()
     {
@@ -319,6 +321,8 @@ public class AutoSuggestBox : ItemsControl, IIconControl
             TextBox.PreviewKeyDown    += TextBoxOnPreviewKeyDown;
             TextBox.TextChanged       -= TextBoxOnTextChanged;
             TextBox.TextChanged       += TextBoxOnTextChanged;
+            TextBox.GotKeyboardFocus  -= TextBoxOnGotKeyboardFocus;
+            TextBox.GotKeyboardFocus  += TextBoxOnGotKeyboardFocus;
             TextBox.LostKeyboardFocus -= TextBoxOnLostKeyboardFocus;
             TextBox.LostKeyboardFocus += TextBoxOnLostKeyboardFocus;
         }
@@ -337,9 +341,14 @@ public class AutoSuggestBox : ItemsControl, IIconControl
 
         if (_isHwndHookSubscribed.HasValue && !_isHwndHookSubscribed.Value)
         {
-            var hwnd = (HwndSource)PresentationSource.FromVisual(this)!;
-            hwnd.AddHook(Hook);
-            _isHwndHookSubscribed = true;
+            if (PresentationSource.FromVisual(this) is HwndSource source)
+            {
+                source.AddHook(Hook);
+                _isHwndHookSubscribed = true;
+                _hostWindowBounds     = TryGetWindowBounds(source.Handle, out var bounds)
+                    ? bounds
+                    : null;
+            }
         }
     }
 
@@ -349,6 +358,7 @@ public class AutoSuggestBox : ItemsControl, IIconControl
         {
             TextBox.PreviewKeyDown    -= TextBoxOnPreviewKeyDown;
             TextBox.TextChanged       -= TextBoxOnTextChanged;
+            TextBox.GotKeyboardFocus  -= TextBoxOnGotKeyboardFocus;
             TextBox.LostKeyboardFocus -= TextBoxOnLostKeyboardFocus;
         }
 
@@ -367,6 +377,7 @@ public class AutoSuggestBox : ItemsControl, IIconControl
         {
             source.RemoveHook(Hook);
             _isHwndHookSubscribed = false;
+            _hostWindowBounds     = null;
         }
     }
 
@@ -445,6 +456,25 @@ public class AutoSuggestBox : ItemsControl, IIconControl
         }
 
         _ = SuggestionsList?.Focus();
+    }
+
+    private void TextBoxOnGotKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
+    {
+        // Losing keyboard focus closes the non-sticky Popup, but that close does not invalidate
+        // the filtered Items view. Reopen it when the editor is focused again so the user can
+        // continue with the same query without first changing the text.
+        //
+        // HasItems is intentionally checked in addition to the query. It reflects both the built-in
+        // filtering path and an ItemsSource supplied by a TextChanged handler, and prevents an empty
+        // result Popup from being restored. An empty query is excluded even though DefaultFiltering
+        // exposes OriginalItemsSource for it: showing that full, unfiltered list merely because focus
+        // returned is not a suggestion-restoration scenario.
+        var shouldOpen = !string.IsNullOrEmpty(TextBox?.Text) && HasItems;
+
+        if (shouldOpen)
+        {
+            SetCurrentValue(IsSuggestionListOpenProperty, true);
+        }
     }
 
     private void TextBoxOnLostKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
@@ -539,20 +569,64 @@ public class AutoSuggestBox : ItemsControl, IIconControl
 
     private IntPtr Hook(IntPtr hwnd, int msg, IntPtr wparam, IntPtr lparam, ref bool handled)
     {
-        if (!IsSuggestionListOpen)
+        var message = (uint)msg;
+
+        if (message == PInvoke.WM_NCACTIVATE)
         {
+            // WM_NCACTIVATE is sent for both activation and deactivation. The previous implementation
+            // closed on both values, so a delayed activation notification during cold startup could
+            // immediately undo the first IsSuggestionListOpen=true transition.
+            var isDeactivating = wparam == IntPtr.Zero;
+
+            if (isDeactivating && IsSuggestionListOpen)
+            {
+                SetCurrentValue(IsSuggestionListOpenProperty, false);
+            }
+
             return IntPtr.Zero;
         }
 
-        var message = (uint)msg;
-
-        if (message is PInvoke.WM_NCACTIVATE or PInvoke.WM_WINDOWPOSCHANGED)
+        if (message == PInvoke.WM_WINDOWPOSCHANGED)
         {
-            SetCurrentValue(IsSuggestionListOpenProperty, false);
+            var previousBounds = _hostWindowBounds;
+            var hasBounds      = TryGetWindowBounds(hwnd, out var currentBounds);
+            var boundsChanged  = hasBounds
+                              && previousBounds.HasValue
+                              && !AreSameBounds(previousBounds.Value, currentBounds);
+
+            if (hasBounds)
+            {
+                _hostWindowBounds = currentBounds;
+            }
+
+            // Popup does not automatically follow its owner while the HWND is moving. Preserve the
+            // original close-on-move behavior, but ignore z-order/activation notifications whose
+            // WM_WINDOWPOSCHANGED payload leaves the owner's actual bounds unchanged.
+            if (boundsChanged && IsSuggestionListOpen)
+            {
+                SetCurrentValue(IsSuggestionListOpenProperty, false);
+            }
         }
 
         return IntPtr.Zero;
     }
+
+    private static bool TryGetWindowBounds(IntPtr hwnd, out RECT bounds)
+    {
+        if (hwnd == IntPtr.Zero)
+        {
+            bounds = default;
+            return false;
+        }
+
+        return PInvoke.GetWindowRect((HWND)hwnd, out bounds);
+    }
+
+    private static bool AreSameBounds(RECT left, RECT right) =>
+        left.left == right.left
+     && left.top == right.top
+     && left.right == right.right
+     && left.bottom == right.bottom;
 
     private void OnSelectedChanged(object selectedObj)
     {
