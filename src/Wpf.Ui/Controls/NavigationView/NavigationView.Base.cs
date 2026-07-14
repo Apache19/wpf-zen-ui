@@ -161,7 +161,7 @@ public partial class NavigationView : Control, INavigationView
         SetValue(MenuItemsPropertyKey, menuItems);
 
         var footerMenuItems = new ObservableCollection<object>();
-        footerMenuItems.CollectionChanged += OnMenuItems_CollectionChanged;
+        footerMenuItems.CollectionChanged += OnFooterMenuItems_CollectionChanged;
         SetValue(FooterMenuItemsPropertyKey, footerMenuItems);
     }
 

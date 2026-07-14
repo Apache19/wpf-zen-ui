@@ -3,6 +3,7 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
+using System.Collections.ObjectModel;
 using System.Runtime.CompilerServices;
 using System.Runtime.ExceptionServices;
 using System.Threading;
@@ -15,6 +16,48 @@ namespace Wpf.Ui.UnitTests.Controls.NavigationView;
 
 public class NavigationViewTests
 {
+    [Fact]
+    public void HasItemsProperties_AreReadOnlyAndTrackCollectionsAndSources()
+    {
+        RunOnStaThread(() =>
+        {
+            var navigationView = new Wpf.Ui.Controls.NavigationView();
+
+            Assert.True(Wpf.Ui.Controls.NavigationView.HasMenuItemsProperty.ReadOnly);
+            Assert.True(Wpf.Ui.Controls.NavigationView.HasFooterMenuItemsProperty.ReadOnly);
+            Assert.False(navigationView.HasMenuItems);
+            Assert.False(navigationView.HasFooterMenuItems);
+
+            navigationView.MenuItems.Add(new object());
+            Assert.True(navigationView.HasMenuItems);
+            Assert.False(navigationView.HasFooterMenuItems);
+
+            navigationView.FooterMenuItems.Add(new object());
+            Assert.True(navigationView.HasMenuItems);
+            Assert.True(navigationView.HasFooterMenuItems);
+
+            navigationView.MenuItems.Clear();
+            navigationView.FooterMenuItems.Clear();
+            Assert.False(navigationView.HasMenuItems);
+            Assert.False(navigationView.HasFooterMenuItems);
+
+            var menuItemsSource = new ObservableCollection<object>();
+            var footerMenuItemsSource = new ObservableCollection<object>();
+            navigationView.MenuItemsSource = menuItemsSource;
+            navigationView.FooterMenuItemsSource = footerMenuItemsSource;
+
+            menuItemsSource.Add(new object());
+            footerMenuItemsSource.Add(new object());
+            Assert.True(navigationView.HasMenuItems);
+            Assert.True(navigationView.HasFooterMenuItems);
+
+            menuItemsSource.Clear();
+            footerMenuItemsSource.Clear();
+            Assert.False(navigationView.HasMenuItems);
+            Assert.False(navigationView.HasFooterMenuItems);
+        });
+    }
+
     [Fact]
     public void PaneDisplayMode_ReplacesVisualTemplateAndPreservesNavigationContent()
     {

@@ -40,6 +40,11 @@ public interface INavigationView
     IList MenuItems { get; }
 
     /// <summary>
+    /// Gets a value indicating whether <see cref="MenuItems"/> contains at least one item.
+    /// </summary>
+    bool HasMenuItems { get; }
+
+    /// <summary>
     /// Gets or sets an object source used to generate the content of the NavigationView menu.
     /// </summary>
     object? MenuItemsSource { get; set; }
@@ -48,6 +53,11 @@ public interface INavigationView
     /// Gets the list of objects to be used as navigation items in the footer menu.
     /// </summary>
     IList FooterMenuItems { get; }
+
+    /// <summary>
+    /// Gets a value indicating whether <see cref="FooterMenuItems"/> contains at least one item.
+    /// </summary>
+    bool HasFooterMenuItems { get; }
 
     /// <summary>
     /// Gets or sets the object that represents the navigation items to be used in the footer menu.

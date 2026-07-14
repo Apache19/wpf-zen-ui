@@ -287,6 +287,64 @@ public partial class NavigationView
 
     #endregion
 
+    #region DP: HasFooterMenuItems
+
+    private static readonly DependencyPropertyKey HasFooterMenuItemsPropertyKey =
+        DependencyProperty.RegisterReadOnly(
+            nameof(HasFooterMenuItems),
+            typeof(bool),
+            typeof(NavigationView),
+            new PropertyMetadata(false)
+        );
+
+    /// <summary>Identifies the read-only <see cref="HasFooterMenuItems"/> dependency property.</summary>
+    public static readonly DependencyProperty HasFooterMenuItemsProperty =
+        HasFooterMenuItemsPropertyKey.DependencyProperty;
+
+    /// <summary>
+    /// Gets a value indicating whether <see cref="FooterMenuItems"/> contains at least one item.
+    /// </summary>
+    /// <remarks>
+    /// The value is maintained by the control whenever the internal footer collection changes, including
+    /// changes synchronized from <see cref="FooterMenuItemsSource"/>. As a read-only dependency property,
+    /// it can be consumed by bindings and template triggers without allowing callers to create a state that
+    /// disagrees with the collection.
+    /// </remarks>
+    [Browsable(false)]
+    [ReadOnly(true)]
+    public bool HasFooterMenuItems => (bool)GetValue(HasFooterMenuItemsProperty);
+
+    #endregion
+
+    #region DP: HasMenuItems
+
+    private static readonly DependencyPropertyKey HasMenuItemsPropertyKey =
+        DependencyProperty.RegisterReadOnly(
+            nameof(HasMenuItems),
+            typeof(bool),
+            typeof(NavigationView),
+            new PropertyMetadata(false)
+        );
+
+    /// <summary>Identifies the read-only <see cref="HasMenuItems"/> dependency property.</summary>
+    public static readonly DependencyProperty HasMenuItemsProperty =
+        HasMenuItemsPropertyKey.DependencyProperty;
+
+    /// <summary>
+    /// Gets a value indicating whether <see cref="MenuItems"/> contains at least one item.
+    /// </summary>
+    /// <remarks>
+    /// The value is maintained by the control whenever the internal menu collection changes, including
+    /// changes synchronized from <see cref="MenuItemsSource"/>. As a read-only dependency property, it can
+    /// be consumed by bindings and template triggers without allowing callers to create a state that
+    /// disagrees with the collection.
+    /// </remarks>
+    [Browsable(false)]
+    [ReadOnly(true)]
+    public bool HasMenuItems => (bool)GetValue(HasMenuItemsProperty);
+
+    #endregion
+
     #region DP: Header
 
     /// <summary>Identifies the <see cref="Header"/> dependency property.</summary>
@@ -710,8 +768,19 @@ public partial class NavigationView
     /// <inheritdoc/>
     public IList MenuItems => (ObservableCollection<object>)GetValue(MenuItemsProperty);
 
+    private void OnFooterMenuItems_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        SetValue(HasFooterMenuItemsPropertyKey, FooterMenuItems.Count > 0);
+        OnMenuItems_CollectionChanged(sender, e);
+    }
+
     private void OnMenuItems_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
+        // This handler is also used for descendant collections so the navigation indexes remain current.
+        // Re-evaluating the root state is inexpensive and avoids coupling that shared indexing path to the
+        // identity of the collection that raised the event.
+        SetValue(HasMenuItemsPropertyKey, MenuItems.Count > 0);
+
         switch (e.Action)
         {
             case NotifyCollectionChangedAction.Add:
