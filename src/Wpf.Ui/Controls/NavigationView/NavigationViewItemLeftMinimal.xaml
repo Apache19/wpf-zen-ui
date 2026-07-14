@@ -142,7 +142,7 @@
                         Visibility="Collapsed" />
                 </Grid>
             </Border>
-            <ItemsControl
+            <controls:NavigationViewList
                 Grid.Row="1"
                 Focusable="False"
                 ItemContainerStyle="{Binding RelativeSource={RelativeSource Self}, Path=(controls:NavigationView.ItemContainerStyle)}"
@@ -153,12 +153,12 @@
                 KeyboardNavigation.DirectionalNavigation="Contained"
                 ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                 ScrollViewer.VerticalScrollBarVisibility="Disabled">
-                <ItemsControl.ItemsPanel>
+                <controls:NavigationViewList.ItemsPanel>
                     <ItemsPanelTemplate>
                         <StackPanel Margin="0" IsItemsHost="True" />
                     </ItemsPanelTemplate>
-                </ItemsControl.ItemsPanel>
-            </ItemsControl>
+                </controls:NavigationViewList.ItemsPanel>
+            </controls:NavigationViewList>
         </Grid>
         <ControlTemplate.Triggers>
             <Trigger Property="IsPaneOpen" Value="True">

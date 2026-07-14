@@ -91,8 +91,8 @@
                             CanContentScroll="True"
                             HorizontalScrollBarVisibility="Disabled"
                             VerticalScrollBarVisibility="Auto">
-                            <ItemsControl
-                                x:Name="PART_MenuItemsItemsControl"
+                            <controls:NavigationViewList
+                                x:Name="PART_MenuItemsList"
                                 AutomationProperties.AutomationId="NavigationItems"
                                 Focusable="False"
                                 ItemContainerStyle="{Binding RelativeSource={RelativeSource Self}, Path=(controls:NavigationView.ItemContainerStyle)}"
@@ -102,12 +102,12 @@
                                 KeyboardNavigation.DirectionalNavigation="Contained"
                                 ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                                 ScrollViewer.VerticalScrollBarVisibility="Disabled">
-                                <ItemsControl.ItemsPanel>
+                                <controls:NavigationViewList.ItemsPanel>
                                     <ItemsPanelTemplate>
                                         <StackPanel Margin="0" IsItemsHost="True" />
                                     </ItemsPanelTemplate>
-                                </ItemsControl.ItemsPanel>
-                            </ItemsControl>
+                                </controls:NavigationViewList.ItemsPanel>
+                            </controls:NavigationViewList>
                         </controls:DynamicScrollViewer>
 
                         <!--  Separator/Shadow for Footer  -->
@@ -125,8 +125,8 @@
                                 <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
 
-                            <ItemsControl
-                                x:Name="PART_FooterMenuItemsItemsControl"
+                            <controls:NavigationViewList
+                                x:Name="PART_FooterMenuItemsList"
                                 Grid.Row="0"
                                 Margin="0,0,0,4"
                                 AutomationProperties.AutomationId="NavigationFooterItems"
@@ -138,12 +138,12 @@
                                 KeyboardNavigation.DirectionalNavigation="Contained"
                                 ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                                 ScrollViewer.VerticalScrollBarVisibility="Disabled">
-                                <ItemsControl.ItemsPanel>
+                                <controls:NavigationViewList.ItemsPanel>
                                     <ItemsPanelTemplate>
                                         <StackPanel Margin="0" IsItemsHost="True" />
                                     </ItemsPanelTemplate>
-                                </ItemsControl.ItemsPanel>
-                            </ItemsControl>
+                                </controls:NavigationViewList.ItemsPanel>
+                            </controls:NavigationViewList>
 
                             <ContentPresenter
                                 Grid.Row="1"

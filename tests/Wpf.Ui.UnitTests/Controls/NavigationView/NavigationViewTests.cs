@@ -17,6 +17,92 @@ namespace Wpf.Ui.UnitTests.Controls.NavigationView;
 public class NavigationViewTests
 {
     [Fact]
+    public void NavigationViewList_ItemContainerStyle_IsAppliedOnlyToNavigationViewItem()
+    {
+        RunOnStaThread(() =>
+        {
+            var itemContainerStyle = new Style(typeof(NavigationViewItem));
+            var navigationItem = new NavigationViewItem();
+            var separator = new Wpf.Ui.Controls.Separator();
+            var header = new NavigationViewItemHeader();
+            var navigationViewList = new NavigationViewList
+            {
+                ItemContainerStyle = itemContainerStyle,
+            };
+            navigationViewList.Items.Add(navigationItem);
+            navigationViewList.Items.Add(separator);
+            navigationViewList.Items.Add(header);
+
+            var window = new Window
+            {
+                Content = navigationViewList,
+                Width = 1,
+                Height = 1,
+                Left = -10_000,
+                Top = -10_000,
+                ShowActivated = false,
+                ShowInTaskbar = false,
+                WindowStyle = WindowStyle.None,
+            };
+
+            try
+            {
+                window.Show();
+                DrainDispatcher();
+
+                Assert.Same(itemContainerStyle, navigationItem.ReadLocalValue(FrameworkElement.StyleProperty));
+                Assert.Equal(
+                    DependencyProperty.UnsetValue,
+                    separator.ReadLocalValue(FrameworkElement.StyleProperty)
+                );
+                Assert.Equal(
+                    DependencyProperty.UnsetValue,
+                    header.ReadLocalValue(FrameworkElement.StyleProperty)
+                );
+            }
+            finally
+            {
+                window.Close();
+                DrainDispatcher();
+            }
+        });
+    }
+
+    [Fact]
+    public void BuiltInTemplates_UseNavigationViewListForMenuHosts()
+    {
+        RunOnStaThread(() =>
+        {
+            var resources = new ResourceDictionary { Source = CreateResourceUri() };
+            var navigationView = new Wpf.Ui.Controls.NavigationView
+            {
+                Style = Assert.IsType<Style>(resources[typeof(Wpf.Ui.Controls.NavigationView)]),
+            };
+
+            NavigationViewPaneDisplayMode[] displayModes =
+            [
+                NavigationViewPaneDisplayMode.Left,
+                NavigationViewPaneDisplayMode.LeftFluent,
+                NavigationViewPaneDisplayMode.Top,
+                NavigationViewPaneDisplayMode.Bottom,
+            ];
+
+            foreach (NavigationViewPaneDisplayMode displayMode in displayModes)
+            {
+                navigationView.PaneDisplayMode = displayMode;
+
+                Assert.True(navigationView.ApplyTemplate());
+                Assert.IsType<NavigationViewList>(
+                    navigationView.Template.FindName("PART_MenuItemsList", navigationView)
+                );
+                Assert.IsType<NavigationViewList>(
+                    navigationView.Template.FindName("PART_FooterMenuItemsList", navigationView)
+                );
+            }
+        });
+    }
+
+    [Fact]
     public void HasItemsProperties_AreReadOnlyAndTrackCollectionsAndSources()
     {
         RunOnStaThread(() =>

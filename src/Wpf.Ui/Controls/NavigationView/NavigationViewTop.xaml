@@ -32,8 +32,8 @@
                     Margin="0"
                     Content="{TemplateBinding PaneHeader}" />
 
-                <ItemsControl
-                    x:Name="PART_MenuItemsItemsControl"
+                <controls:NavigationViewList
+                    x:Name="PART_MenuItemsList"
                     Grid.Column="2"
                     Focusable="False"
                     ItemContainerStyle="{Binding RelativeSource={RelativeSource Self}, Path=(controls:NavigationView.ItemContainerStyle)}"
@@ -43,15 +43,15 @@
                     KeyboardNavigation.DirectionalNavigation="Contained"
                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                     ScrollViewer.VerticalScrollBarVisibility="Disabled">
-                    <ItemsControl.ItemsPanel>
+                    <controls:NavigationViewList.ItemsPanel>
                         <ItemsPanelTemplate>
                             <StackPanel
                                 Margin="0"
                                 IsItemsHost="True"
                                 Orientation="Horizontal" />
                         </ItemsPanelTemplate>
-                    </ItemsControl.ItemsPanel>
-                </ItemsControl>
+                    </controls:NavigationViewList.ItemsPanel>
+                </controls:NavigationViewList>
 
                 <!--  Auto Suggest Box  -->
                 <ContentPresenter Grid.Column="3" Content="{TemplateBinding AutoSuggestBox}" />
@@ -62,8 +62,8 @@
                     Margin="0"
                     Content="{TemplateBinding PaneFooter}" />
 
-                <ItemsControl
-                    x:Name="PART_FooterMenuItemsItemsControl"
+                <controls:NavigationViewList
+                    x:Name="PART_FooterMenuItemsList"
                     Grid.Column="5"
                     Focusable="False"
                     ItemContainerStyle="{Binding RelativeSource={RelativeSource Self}, Path=(controls:NavigationView.ItemContainerStyle)}"
@@ -73,15 +73,15 @@
                     KeyboardNavigation.DirectionalNavigation="Contained"
                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                     ScrollViewer.VerticalScrollBarVisibility="Disabled">
-                    <ItemsControl.ItemsPanel>
+                    <controls:NavigationViewList.ItemsPanel>
                         <ItemsPanelTemplate>
                             <StackPanel
                                 Margin="0"
                                 IsItemsHost="True"
                                 Orientation="Horizontal" />
                         </ItemsPanelTemplate>
-                    </ItemsControl.ItemsPanel>
-                </ItemsControl>
+                    </controls:NavigationViewList.ItemsPanel>
+                </controls:NavigationViewList>
             </Grid>
 
             <Grid Grid.Row="1">

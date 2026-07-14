@@ -157,7 +157,7 @@
                     BorderThickness="1"
                     CornerRadius="8"
                     SnapsToDevicePixels="True">
-                    <ItemsControl
+                    <controls:NavigationViewList
                         x:Name="SubMenuItemsPresenter"
                         Focusable="False"
                         ItemContainerStyle="{Binding RelativeSource={RelativeSource Self}, Path=(controls:NavigationView.ItemContainerStyle)}"
@@ -169,12 +169,12 @@
                         Opacity="0.0"
                         ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                         ScrollViewer.VerticalScrollBarVisibility="Disabled">
-                        <ItemsControl.ItemsPanel>
+                        <controls:NavigationViewList.ItemsPanel>
                             <ItemsPanelTemplate>
                                 <StackPanel Margin="0" IsItemsHost="True" />
                             </ItemsPanelTemplate>
-                        </ItemsControl.ItemsPanel>
-                    </ItemsControl>
+                        </controls:NavigationViewList.ItemsPanel>
+                    </controls:NavigationViewList>
                 </Border>
             </Popup>
         </Grid>

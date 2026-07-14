@@ -101,7 +101,7 @@
                     </controls:NavigationViewItemExpander>
                 </Grid>
             </Border>
-            <ItemsControl
+            <controls:NavigationViewList
                 x:Name="MenuItemsPresenter"
                 Grid.Row="1"
                 AutomationProperties.AutomationId="NavigationItemItems"
@@ -116,12 +116,12 @@
                 ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                 ScrollViewer.VerticalScrollBarVisibility="Disabled"
                 Visibility="Collapsed">
-                <ItemsControl.ItemsPanel>
+                <controls:NavigationViewList.ItemsPanel>
                     <ItemsPanelTemplate>
                         <StackPanel Margin="0" IsItemsHost="True" />
                     </ItemsPanelTemplate>
-                </ItemsControl.ItemsPanel>
-            </ItemsControl>
+                </controls:NavigationViewList.ItemsPanel>
+            </controls:NavigationViewList>
         </Grid>
         <ControlTemplate.Triggers>
             <!--  Pane layout states  -->
