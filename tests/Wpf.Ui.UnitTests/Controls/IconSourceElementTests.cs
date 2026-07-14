@@ -14,6 +14,23 @@ namespace Wpf.Ui.UnitTests.Controls;
 public class IconSourceElementTests
 {
     [Fact]
+    public void ConcreteIcons_HostTheirRenderingElementDirectly()
+    {
+        RunOnStaThread(() =>
+        {
+            var fontIcon = new FontIcon { Glyph = "A" };
+            fontIcon.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+
+            Assert.IsType<Wpf.Ui.Controls.TextBlock>(VisualTreeHelper.GetChild(fontIcon, 0));
+
+            var imageIcon = new ImageIcon();
+            imageIcon.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+
+            Assert.IsType<System.Windows.Controls.Image>(VisualTreeHelper.GetChild(imageIcon, 0));
+        });
+    }
+
+    [Fact]
     public void Element_RemainsRenderableWhileIconSourceChangesBetweenNullAndNonNull()
     {
         RunOnStaThread(() =>
@@ -35,8 +52,8 @@ public class IconSourceElementTests
             element.IconSource = null;
             Assert.Null(presenter.Content);
 
-            // The stable presenter remains the sole visual child throughout source replacement.
-            Assert.Same(presenter.Parent, VisualTreeHelper.GetChild(element, 0));
+            // The stable presenter remains the sole direct visual child throughout source replacement.
+            Assert.Same(presenter, VisualTreeHelper.GetChild(element, 0));
         });
     }
 
@@ -62,8 +79,7 @@ public class IconSourceElementTests
     {
         element.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
 
-        var layoutRoot = Assert.IsType<Grid>(VisualTreeHelper.GetChild(element, 0));
-        return Assert.IsType<ContentPresenter>(Assert.Single(layoutRoot.Children));
+        return Assert.IsType<ContentPresenter>(VisualTreeHelper.GetChild(element, 0));
     }
 
     private static void RunOnStaThread(Action action)

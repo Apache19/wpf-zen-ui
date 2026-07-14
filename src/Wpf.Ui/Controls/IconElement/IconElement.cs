@@ -3,7 +3,6 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Input;
 
@@ -18,10 +17,14 @@ public abstract class IconElement : FrameworkElement
 {
     static IconElement()
     {
-        FocusableProperty.OverrideMetadata(typeof(IconElement), new FrameworkPropertyMetadata(false));
         KeyboardNavigation.IsTabStopProperty.OverrideMetadata(
             typeof(IconElement),
             new FrameworkPropertyMetadata(false)
+        );
+
+        SnapsToDevicePixelsProperty.OverrideMetadata(
+            typeof(IconElement),
+            new FrameworkPropertyMetadata(true)
         );
     }
 
@@ -35,7 +38,7 @@ public abstract class IconElement : FrameworkElement
         )
     );
 
-    /// <inheritdoc cref="Control.Foreground"/>
+    /// <inheritdoc cref="TextElement.Foreground"/>
     [Bindable(true)]
     [Category("Appearance")]
     public Brush Foreground
@@ -46,24 +49,30 @@ public abstract class IconElement : FrameworkElement
 
     protected override int VisualChildrenCount => 1;
 
-    private Grid? _layoutRoot;
+    private UIElement? _child;
 
     protected abstract UIElement InitializeChildren();
 
     protected virtual void OnForegroundChanged(DependencyPropertyChangedEventArgs args) { }
 
-    private void EnsureLayoutRoot()
+    /// <summary>
+    /// Creates and attaches the icon's single visual child on first use.
+    /// </summary>
+    /// <remarks>
+    /// <see cref="FrameworkElement"/> already provides the layout boundary that an icon needs.
+    /// Hosting the child directly avoids allocating an otherwise redundant panel for every icon.
+    /// The child remains stable after creation because WPF may enumerate the visual tree at any
+    /// point after measurement begins.
+    /// </remarks>
+    private void EnsureChild()
     {
-        if (_layoutRoot != null)
+        if (_child != null)
         {
             return;
         }
 
-        _layoutRoot = new Grid { Background = Brushes.Transparent, SnapsToDevicePixels = true };
-
-        _ = _layoutRoot.Children.Add(InitializeChildren());
-
-        AddVisualChild(_layoutRoot);
+        _child = InitializeChildren();
+        AddVisualChild(_child);
     }
 
     protected override Visual GetVisualChild(int index)
@@ -73,23 +82,23 @@ public abstract class IconElement : FrameworkElement
             throw new ArgumentOutOfRangeException(nameof(index), "IconElement should have only 1 child");
         }
 
-        EnsureLayoutRoot();
-        return _layoutRoot!;
+        EnsureChild();
+        return _child!;
     }
 
     protected override Size MeasureOverride(Size availableSize)
     {
-        EnsureLayoutRoot();
+        EnsureChild();
 
-        _layoutRoot!.Measure(availableSize);
-        return _layoutRoot.DesiredSize;
+        _child!.Measure(availableSize);
+        return _child.DesiredSize;
     }
 
     protected override Size ArrangeOverride(Size finalSize)
     {
-        EnsureLayoutRoot();
+        EnsureChild();
 
-        _layoutRoot!.Arrange(new Rect(default, finalSize));
+        _child!.Arrange(new Rect(default, finalSize));
         return finalSize;
     }
 
