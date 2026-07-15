@@ -25,7 +25,7 @@
         <ui:NavigationView
             x:Name="RootNavigation"
             Grid.Row="1"
-            OpenPaneLength="200">
+            LeftPaneOpenWidth="200">
             <ui:NavigationView.AutoSuggestBox>
                 <ui:AutoSuggestBox x:Name="AutoSuggestBox" PlaceholderText="Search">
                     <ui:AutoSuggestBox.Icon>

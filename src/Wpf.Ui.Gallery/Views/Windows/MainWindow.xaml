@@ -46,7 +46,7 @@
             FooterMenuItemsSource="{Binding ViewModel.FooterMenuItems, Mode=OneWay}"
             FrameMargin="0"
             MenuItemsSource="{Binding ViewModel.MenuItems, Mode=OneWay}"
-            OpenPaneLength="300"
+            LeftPaneOpenWidth="300"
             PaneClosed="NavigationView_OnPaneClosed"
             PaneDisplayMode="Left"
             PaneOpened="NavigationView_OnPaneOpened"

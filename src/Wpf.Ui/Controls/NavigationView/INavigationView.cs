@@ -111,14 +111,22 @@ public interface INavigationView
     bool IsPaneVisible { get; set; }
 
     /// <summary>
-    /// Gets or sets the width of the NavigationView pane when it's fully expanded.
+    /// Gets or sets the width of the pane when <see cref="PaneDisplayMode"/> is
+    /// <see cref="NavigationViewPaneDisplayMode.Left"/> and the pane is open.
     /// </summary>
-    double OpenPaneLength { get; set; }
+    double LeftPaneOpenWidth { get; set; }
 
     /// <summary>
-    /// Gets or sets the width of the NavigationView pane in its compact display mode.
+    /// Gets or sets the width of the pane when <see cref="PaneDisplayMode"/> is
+    /// <see cref="NavigationViewPaneDisplayMode.Left"/> and the pane is compact.
     /// </summary>
-    double CompactPaneLength { get; set; }
+    double LeftPaneCompactWidth { get; set; }
+
+    /// <summary>
+    /// Gets the width retained for the Left pane when another
+    /// <see cref="NavigationViewPaneDisplayMode"/> is active.
+    /// </summary>
+    double LeftPaneWidth { get; }
 
     /// <summary>
     /// Gets or sets the content for the pane header.

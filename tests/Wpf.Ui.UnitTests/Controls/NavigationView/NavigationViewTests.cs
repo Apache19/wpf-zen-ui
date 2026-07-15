@@ -152,7 +152,7 @@ public class NavigationViewTests
             var resources = new ResourceDictionary { Source = CreateResourceUri() };
             var style = Assert.IsType<Style>(resources[typeof(Wpf.Ui.Controls.NavigationView)]);
             var leftTemplate = Assert.IsType<ControlTemplate>(resources["LeftNavigationViewTemplate"]);
-            var fluentTemplate = Assert.IsType<ControlTemplate>(resources["FluentNavigationViewTemplate"]);
+            var fluentTemplate = Assert.IsType<ControlTemplate>(resources["LeftFluentNavigationViewTemplate"]);
             var navigationView = new Wpf.Ui.Controls.NavigationView
             {
                 Style = style,
@@ -194,7 +194,7 @@ public class NavigationViewTests
             Assert.Same(page, navigationPresenter.Content);
             Assert.NotNull(leftTemplate.FindName("SearchGrid", navigationView));
             Assert.NotNull(leftTemplate.FindName("PART_TopSeparator", navigationView));
-            Assert.Equal(navigationView.OpenPaneLength, GetPaneGrid(navigationView).Width);
+            Assert.Equal(navigationView.LeftPaneOpenWidth, GetPaneGrid(navigationView).Width);
 
             navigationView.PaneDisplayMode = NavigationViewPaneDisplayMode.LeftFluent;
 
@@ -202,6 +202,164 @@ public class NavigationViewTests
             Assert.Same(navigationPresenter, GetNavigationPresenter(navigationView));
             Assert.Same(page, navigationPresenter.Content);
             Assert.True(double.IsNaN(GetPaneGrid(navigationView).Width));
+        });
+    }
+
+    [Theory]
+    [InlineData(true, 300D)]
+    [InlineData(false, 48D)]
+    public void LeftPane_ColdStartAndModeRoundTrip_RetainTheResolvedWidth(
+        bool isPaneOpen,
+        double expectedWidth)
+    {
+        RunOnStaThread(() =>
+        {
+            var resources = new ResourceDictionary { Source = CreateResourceUri() };
+            var navigationView = new Wpf.Ui.Controls.NavigationView
+            {
+                Style = Assert.IsType<Style>(resources[typeof(Wpf.Ui.Controls.NavigationView)]),
+                IsPaneOpen = isPaneOpen,
+                LeftPaneOpenWidth = 300D,
+                LeftPaneCompactWidth = 48D,
+            };
+
+            Assert.True(navigationView.ApplyTemplate());
+            Grid paneGrid = GetPaneGrid(navigationView);
+
+            Assert.Equal(expectedWidth, navigationView.LeftPaneWidth);
+            Assert.Equal(expectedWidth, paneGrid.Width);
+            Assert.False(
+                DependencyPropertyHelper
+                    .GetValueSource(paneGrid, FrameworkElement.WidthProperty)
+                    .IsAnimated
+            );
+
+            navigationView.PaneDisplayMode = NavigationViewPaneDisplayMode.LeftFluent;
+            Assert.True(navigationView.ApplyTemplate());
+            navigationView.PaneDisplayMode = NavigationViewPaneDisplayMode.Left;
+            Assert.True(navigationView.ApplyTemplate());
+
+            paneGrid = GetPaneGrid(navigationView);
+            Assert.Equal(expectedWidth, navigationView.LeftPaneWidth);
+            Assert.Equal(expectedWidth, paneGrid.Width);
+            Assert.False(
+                DependencyPropertyHelper
+                    .GetValueSource(paneGrid, FrameworkElement.WidthProperty)
+                    .IsAnimated
+            );
+        });
+    }
+
+    [Fact]
+    public void LeftPane_ModeRoundTrip_CapturesRenderedWidthWithoutReplayingAnimation()
+    {
+        RunOnStaThread(() =>
+        {
+            const double renderedWidth = 137D;
+            var resources = new ResourceDictionary { Source = CreateResourceUri() };
+            var navigationView = new Wpf.Ui.Controls.NavigationView
+            {
+                Style = Assert.IsType<Style>(resources[typeof(Wpf.Ui.Controls.NavigationView)]),
+                LeftPaneOpenWidth = 300D,
+                LeftPaneCompactWidth = 40D,
+            };
+
+            Assert.True(navigationView.ApplyTemplate());
+            Grid paneGrid = GetPaneGrid(navigationView);
+            paneGrid.Width = renderedWidth;
+            navigationView.Measure(new Size(800D, 600D));
+            navigationView.Arrange(new Rect(0D, 0D, 800D, 600D));
+            navigationView.UpdateLayout();
+            Assert.Equal(renderedWidth, paneGrid.Width);
+            Assert.Equal(renderedWidth, paneGrid.ActualWidth);
+
+            navigationView.PaneDisplayMode = NavigationViewPaneDisplayMode.LeftFluent;
+            Assert.True(navigationView.ApplyTemplate());
+            navigationView.PaneDisplayMode = NavigationViewPaneDisplayMode.Left;
+            Assert.True(navigationView.ApplyTemplate());
+
+            paneGrid = GetPaneGrid(navigationView);
+            Assert.Equal(renderedWidth, navigationView.LeftPaneWidth);
+            Assert.Equal(renderedWidth, paneGrid.Width);
+            Assert.False(
+                DependencyPropertyHelper
+                    .GetValueSource(paneGrid, FrameworkElement.WidthProperty)
+                    .IsAnimated
+            );
+        });
+    }
+
+    [Fact]
+    public void LeftPane_ToggleAnimatesToConfiguredWidth_AndModeRoundTripDoesNotReplayIt()
+    {
+        RunOnStaThread(() =>
+        {
+            const double compactWidth = 72D;
+            var resources = new ResourceDictionary { Source = CreateResourceUri() };
+            var navigationView = new Wpf.Ui.Controls.NavigationView
+            {
+                Style = Assert.IsType<Style>(resources[typeof(Wpf.Ui.Controls.NavigationView)]),
+                LeftPaneOpenWidth = 300D,
+                LeftPaneCompactWidth = compactWidth,
+            };
+            var window = new Window
+            {
+                Content = navigationView,
+                Width = 800D,
+                Height = 600D,
+                Left = -10_000D,
+                Top = -10_000D,
+                ShowActivated = false,
+                ShowInTaskbar = false,
+                WindowStyle = WindowStyle.None,
+            };
+
+            try
+            {
+                window.Show();
+                DrainDispatcher();
+
+                Grid paneGrid = GetPaneGrid(navigationView);
+                Assert.Equal(300D, paneGrid.Width);
+                Assert.False(
+                    DependencyPropertyHelper
+                        .GetValueSource(paneGrid, FrameworkElement.WidthProperty)
+                        .IsAnimated
+                );
+
+                navigationView.IsPaneOpen = false;
+                DrainDispatcher(TimeSpan.FromMilliseconds(50D));
+                Assert.True(paneGrid.Width > compactWidth);
+                Assert.True(paneGrid.Width < navigationView.LeftPaneOpenWidth);
+                DrainDispatcher(TimeSpan.FromMilliseconds(200D));
+                Assert.Equal(compactWidth, paneGrid.Width);
+
+                navigationView.PaneDisplayMode = NavigationViewPaneDisplayMode.LeftFluent;
+                Assert.True(navigationView.ApplyTemplate());
+                navigationView.PaneDisplayMode = NavigationViewPaneDisplayMode.Left;
+                Assert.True(navigationView.ApplyTemplate());
+
+                paneGrid = GetPaneGrid(navigationView);
+                Assert.Equal(compactWidth, navigationView.LeftPaneWidth);
+                Assert.Equal(compactWidth, paneGrid.Width);
+                Assert.False(
+                    DependencyPropertyHelper
+                        .GetValueSource(paneGrid, FrameworkElement.WidthProperty)
+                        .IsAnimated
+                );
+
+                navigationView.IsPaneOpen = true;
+                DrainDispatcher(TimeSpan.FromMilliseconds(50D));
+                Assert.True(paneGrid.Width < navigationView.LeftPaneOpenWidth);
+                Assert.True(paneGrid.Width > compactWidth);
+                DrainDispatcher(TimeSpan.FromMilliseconds(200D));
+                Assert.Equal(navigationView.LeftPaneOpenWidth, paneGrid.Width);
+            }
+            finally
+            {
+                window.Close();
+                DrainDispatcher();
+            }
         });
     }
 
@@ -292,6 +450,24 @@ public class NavigationViewTests
             System.Windows.Threading.DispatcherPriority.ApplicationIdle,
             new Action(() => frame.Continue = false)
         );
+        System.Windows.Threading.Dispatcher.PushFrame(frame);
+    }
+
+    private static void DrainDispatcher(TimeSpan delay)
+    {
+        var frame = new System.Windows.Threading.DispatcherFrame();
+        var timer = new System.Windows.Threading.DispatcherTimer(
+            System.Windows.Threading.DispatcherPriority.ApplicationIdle
+        )
+        {
+            Interval = delay,
+        };
+        timer.Tick += (_, _) =>
+        {
+            timer.Stop();
+            frame.Continue = false;
+        };
+        timer.Start();
         System.Windows.Threading.Dispatcher.PushFrame(frame);
     }
 

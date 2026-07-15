@@ -99,6 +99,10 @@ public partial class NavigationView
     /// <inheritdoc />
     public override void OnApplyTemplate()
     {
+        // PaneGrid binds to the retained width, so initialize that value before WPF creates the
+        // first Left subtree. A later Left application deliberately keeps the captured value.
+        EnsureLeftPaneWidthInitialized();
+
         // Template invalidation removes the old generated subtree before WPF calls this method,
         // but a ContentPresenter can still retain its Content reference. Release both control-owned
         // children explicitly before assigning them to slots in the newly generated subtree.
@@ -166,7 +170,6 @@ public partial class NavigationView
         // chosen at runtime and can target TitleBar.LeftContent. Populate the newly applied
         // slot only after the old template presenter has released its visual child.
         UpdatePaneButtonPlacement();
-        UpdateVisualState(this);
     }
 
     private T RequireTemplateChild<T>(string name)

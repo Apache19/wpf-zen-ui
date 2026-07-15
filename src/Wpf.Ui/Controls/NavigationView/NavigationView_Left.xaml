@@ -8,7 +8,8 @@
         导航视图 Left 模式布局：
         顶部有 按钮区、PaneHeader、自动建议矿和配套的搜索按钮（图标与自动建议框一样）、分割线、顶部菜单列表；
         底部有 分割线、底部菜单列表、PaneFooter。
-        Pane 有开/闭两种模式，宽度分别对应 OpenPaneLength/CompactPaneLength，有开闭动画。
+        Pane 有开/闭两种模式，目标宽度分别对应 LeftPaneOpenWidth/LeftPaneCompactWidth，有开闭动画。
+        PaneGrid 的基础宽度绑定 LeftPaneWidth；该只读值由控件在离开 Left 模式前保存，切回模板时直接恢复。
         此模式的导航菜单项一般使用小图标，文本置于图标右边，Pane 闭合时刚好能把文本遮住，剩下小图标可见。
     -->
 
@@ -19,10 +20,18 @@
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
 
+            <!--
+                VisualState objects are not nodes in the template's logical or visual tree, and the
+                CLR-only VisualStateGroup.States collection breaks their inheritance-context chain.
+                A Timeline therefore cannot climb from itself to the templated NavigationView.
+                PaneGrid is already a named template element and gives the Timeline an explicit
+                source. Its public TemplatedParent property leads to NavigationView, allowing the
+                retained origin and both endpoints to stay on the control itself.
+            -->
             <Grid
                 x:Name="PaneGrid"
                 Grid.Column="0"
-                Width="{TemplateBinding OpenPaneLength}"
+                Width="{TemplateBinding LeftPaneWidth}"
                 Margin="4,0">
                 <Border x:Name="PaneBorder">
                     <Grid>
@@ -202,9 +211,8 @@
                 <VisualStateGroup Name="PaneStates">
                     <!--
                         NavigationView enters this empty state before a PaneDisplayMode trigger
-                        replaces the template. It removes active width clocks while TemplateBinding
-                        values are still valid, preventing WPF from evaluating an animation against
-                        Width=NaN as the old generated subtree is detached.
+                        replaces the template. It removes template-owned width and opacity clocks
+                        before their targets and TemplateBinding values are detached.
                     -->
                     <VisualState Name="PaneReset" />
                     <VisualState Name="PaneOpen">
@@ -216,8 +224,8 @@
                                 AccelerationRatio="0.4"
                                 Storyboard.TargetName="PaneGrid"
                                 Storyboard.TargetProperty="Width"
-                                From="40"
-                                To="{TemplateBinding OpenPaneLength}"
+                                From="{Binding TemplatedParent.LeftPaneWidth, Source={x:Reference PaneGrid}}"
+                                To="{Binding TemplatedParent.LeftPaneOpenWidth, Source={x:Reference PaneGrid}}"
                                 Duration="0:0:.16" />
                             <DoubleAnimation
                                 AccelerationRatio="0.4"
@@ -248,8 +256,8 @@
                                 AccelerationRatio="0.4"
                                 Storyboard.TargetName="PaneGrid"
                                 Storyboard.TargetProperty="Width"
-                                From="{TemplateBinding OpenPaneLength}"
-                                To="40"
+                                From="{Binding TemplatedParent.LeftPaneWidth, Source={x:Reference PaneGrid}}"
+                                To="{Binding TemplatedParent.LeftPaneCompactWidth, Source={x:Reference PaneGrid}}"
                                 Duration="0:0:.16" />
                             <ObjectAnimationUsingKeyFrames
                                 BeginTime="0:0:0.16"
@@ -267,6 +275,9 @@
             <!--  Pane layout states  -->
             <Trigger Property="IsPaneOpen" Value="False">
                 <Setter TargetName="PART_AutoSuggestBoxSymbolButton" Property="Visibility" Value="Visible" />
+                <Setter TargetName="PART_AutoSuggestBoxSymbolButton" Property="Opacity" Value="1" />
+                <Setter TargetName="AutoSuggestBoxContentPresenter" Property="IsEnabled" Value="False" />
+                <Setter TargetName="AutoSuggestBoxContentPresenter" Property="Opacity" Value="0" />
             </Trigger>
 
             <!--  Optional content visibility  -->

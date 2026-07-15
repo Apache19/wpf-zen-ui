@@ -130,21 +130,28 @@ public partial class NavigationView
 
     #endregion
 
-    #region DP: CompactPaneLength
+    #region DP: LeftPaneCompactWidth
 
-    /// <summary>Identifies the <see cref="CompactPaneLength"/> dependency property.</summary>
-    public static readonly DependencyProperty CompactPaneLengthProperty = DependencyProperty.Register(
-        nameof(CompactPaneLength),
+    /// <summary>
+    /// Identifies the <see cref="LeftPaneCompactWidth"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty LeftPaneCompactWidthProperty = DependencyProperty.Register(
+        nameof(LeftPaneCompactWidth),
         typeof(double),
         typeof(NavigationView),
-        new FrameworkPropertyMetadata(0D)
+        new FrameworkPropertyMetadata(0D, OnLeftPaneTargetWidthChanged)
     );
 
-    /// <inheritdoc/>
-    public double CompactPaneLength
+    /// <summary>
+    /// Gets or sets the width used by the built-in Left pane while <see cref="IsPaneOpen"/> is
+    /// <see langword="false"/>. The value is also used as the fixed width of the current
+    /// LeftMinimal template. Changing it while the compact Left pane is visible updates the pane
+    /// immediately rather than replaying an open/close animation.
+    /// </summary>
+    public double LeftPaneCompactWidth
     {
-        get => (double)GetValue(CompactPaneLengthProperty);
-        set => SetValue(CompactPaneLengthProperty, value);
+        get => (double)GetValue(LeftPaneCompactWidthProperty);
+        set => SetValue(LeftPaneCompactWidthProperty, value);
     }
 
     #endregion
@@ -888,21 +895,67 @@ public partial class NavigationView
 
     #endregion
 
-    #region DP: OpenPaneLength
+    #region DP: LeftPaneOpenWidth
 
-    /// <summary>Identifies the <see cref="OpenPaneLength"/> dependency property.</summary>
-    public static readonly DependencyProperty OpenPaneLengthProperty = DependencyProperty.Register(
-        nameof(OpenPaneLength),
+    /// <summary>
+    /// Identifies the <see cref="LeftPaneOpenWidth"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty LeftPaneOpenWidthProperty = DependencyProperty.Register(
+        nameof(LeftPaneOpenWidth),
         typeof(double),
         typeof(NavigationView),
-        new FrameworkPropertyMetadata(0D)
+        new FrameworkPropertyMetadata(0D, OnLeftPaneTargetWidthChanged)
     );
 
-    /// <inheritdoc/>
-    public double OpenPaneLength
+    /// <summary>
+    /// Gets or sets the width used by the built-in Left pane while <see cref="IsPaneOpen"/> is
+    /// <see langword="true"/>. This property is intentionally scoped to the Left template; the
+    /// other display modes size their panes from their own content and layout contracts.
+    /// </summary>
+    public double LeftPaneOpenWidth
     {
-        get => (double)GetValue(OpenPaneLengthProperty);
-        set => SetValue(OpenPaneLengthProperty, value);
+        get => (double)GetValue(LeftPaneOpenWidthProperty);
+        set => SetValue(LeftPaneOpenWidthProperty, value);
+    }
+
+    #endregion
+
+    #region Read-only DP: LeftPaneWidth
+
+    private static readonly DependencyPropertyKey LeftPaneWidthPropertyKey =
+        DependencyProperty.RegisterReadOnly(
+            nameof(LeftPaneWidth),
+            typeof(double),
+            typeof(NavigationView),
+            new FrameworkPropertyMetadata(0D)
+        );
+
+    /// <summary>
+    /// Identifies the read-only <see cref="LeftPaneWidth"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty LeftPaneWidthProperty =
+        LeftPaneWidthPropertyKey.DependencyProperty;
+
+    /// <summary>
+    /// Gets the width retained for the built-in Left pane.
+    /// </summary>
+    /// <remarks>
+    /// The value is initialized from <see cref="LeftPaneOpenWidth"/> or
+    /// <see cref="LeftPaneCompactWidth"/> on the first Left template application and captures the
+    /// pane's effective width before that template is replaced. Binding the Left template back to
+    /// this retained value lets a later mode switch restore the pane without replaying its
+    /// open/close animation.
+    /// </remarks>
+    public double LeftPaneWidth => (double)GetValue(LeftPaneWidthProperty);
+
+    private static void OnLeftPaneTargetWidthChanged(
+        DependencyObject d,
+        DependencyPropertyChangedEventArgs e)
+    {
+        if (d is NavigationView navigationView)
+        {
+            navigationView.UpdateVisibleLeftPaneTargetWidth(e.Property);
+        }
     }
 
     #endregion
@@ -932,8 +985,7 @@ public partial class NavigationView
         }
 
         navigationView.PrepareForPaneDisplayModeChange(
-            (NavigationViewPaneDisplayMode)e.OldValue,
-            (NavigationViewPaneDisplayMode)e.NewValue
+            (NavigationViewPaneDisplayMode)e.OldValue
         );
         navigationView.OnPaneDisplayModeChanged();
     }

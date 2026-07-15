@@ -8,7 +8,7 @@
         导航视图 LeftMinimal 模式布局：
         顶部有 PaneHeader、分割线、顶部菜单列表；
         底部有 分割线、底部菜单列表、PaneFooter。
-        Pane 宽度始终保持固定 CompactPaneLength、没有开闭动画。
+        Pane 宽度始终保持固定 LeftPaneCompactWidth、没有开闭动画。
         
         此模式尚未完成，行为尚不确定。
     -->
@@ -23,7 +23,7 @@
             <Grid
                 x:Name="PaneGrid"
                 Grid.Column="0"
-                Width="{TemplateBinding CompactPaneLength}"
+                Width="{TemplateBinding LeftPaneCompactWidth}"
                 Margin="4,0">
                 <Border x:Name="PaneBorder">
                     <Grid>

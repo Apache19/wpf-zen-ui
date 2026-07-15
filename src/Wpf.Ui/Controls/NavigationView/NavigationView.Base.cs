@@ -177,17 +177,34 @@ public partial class NavigationView : Control, INavigationView
     private readonly StackPanel                                         _paneButtonsHost = new();
     private          TitleBar?                                          _titleBarContentOwner;
     private          object?                                            _displacedTitleBarLeftContent;
+    private          bool                                               _isLeftPaneWidthInitialized;
 
     protected static void UpdateVisualState(NavigationView navigationView)
     {
-        // Skip display modes that don't have multiple states
-        if (navigationView.PaneDisplayMode is
-            NavigationViewPaneDisplayMode.LeftFluent or
-            NavigationViewPaneDisplayMode.Top or
-            NavigationViewPaneDisplayMode.Bottom)
+        // Only the Left template owns PaneStates. In particular, changing IsPaneOpen while another
+        // template is active must not prime a state that will later animate when Left is restored.
+        if (navigationView.PaneDisplayMode != NavigationViewPaneDisplayMode.Left)
         {
             return;
         }
+
+        // IsPaneOpen changes before Loaded are initialization. Update the retained base width
+        // directly so the first rendered frame is already final and no storyboard is started.
+        if (!navigationView.IsLoaded)
+        {
+            navigationView.SetValue(
+                LeftPaneWidthPropertyKey,
+                navigationView.IsPaneOpen
+                    ? navigationView.LeftPaneOpenWidth
+                    : navigationView.LeftPaneCompactWidth
+            );
+            navigationView._isLeftPaneWidthInitialized = true;
+            return;
+        }
+
+        // Capture before replacing the current state storyboard. Width returns the active clock's
+        // effective value, so reversing an in-flight animation starts from the pixels now on screen.
+        navigationView.CaptureLeftPaneWidth();
 
         _ = VisualStateManager.GoToState(
             navigationView,
@@ -217,8 +234,6 @@ public partial class NavigationView : Control, INavigationView
         NavigationStack.CollectionChanged -= NavigationStackOnCollectionChanged;
         NavigationStack.CollectionChanged += NavigationStackOnCollectionChanged;
 
-        // TODO: Refresh
-        UpdateVisualState((NavigationView)sender);
         UpdatePaneButtonPlacement();
     }
 
@@ -327,36 +342,110 @@ public partial class NavigationView : Control, INavigationView
     /// triggers immediately after the callback and may clear the old generated subtree before any
     /// later layout or <see cref="OnApplyTemplate"/> notification.
     /// </summary>
-    private void PrepareForPaneDisplayModeChange(
-        NavigationViewPaneDisplayMode oldMode,
-        NavigationViewPaneDisplayMode newMode
-    )
+    private void PrepareForPaneDisplayModeChange(NavigationViewPaneDisplayMode oldMode)
     {
-        // Left and LeftMinimal deliberately share the compact template and its PaneStates group.
-        // Keeping the active state avoids interrupting pane animations when only item layout changes.
-        if (UsesCompactPaneTemplate(oldMode) && UsesCompactPaneTemplate(newMode))
+        if (oldMode != NavigationViewPaneDisplayMode.Left)
         {
             return;
         }
 
-        // PaneReset has no storyboard. Entering it makes VisualStateManager remove the clocks from
-        // PaneOpen/PaneCompact before StyleHelper.ClearGeneratedSubTree detaches TemplateBindings.
-        // Without this step, Width temporarily falls back to Double.NaN while a DoubleAnimation is
-        // still evaluating, which causes WPF to throw during the first cross-template mode switch.
+        CaptureLeftPaneWidth();
+
+        // PaneReset has no storyboard. Entering it makes VisualStateManager remove the template-owned
+        // width and opacity clocks before StyleHelper.ClearGeneratedSubTree detaches their targets.
         _ = VisualStateManager.GoToState(this, "PaneReset", false);
 
-        // VisualStateManager stops its storyboard, but WPF can retain the animation storage until
-        // the next property evaluation. Remove the Width clock synchronously while its template
-        // binding still supplies a finite base value; StyleHelper clears that binding immediately
-        // after this property callback returns.
+        // VisualStateManager stops its storyboard, but WPF can retain animation storage until the
+        // next property evaluation. Remove the Width clock synchronously while the retained-width
+        // TemplateBinding still supplies a finite base value; StyleHelper clears the generated
+        // binding immediately after this property callback returns.
         if (Template?.FindName("PaneGrid", this) is FrameworkElement paneGrid)
         {
             paneGrid.BeginAnimation(FrameworkElement.WidthProperty, null);
         }
     }
 
-    private static bool UsesCompactPaneTemplate(NavigationViewPaneDisplayMode mode) =>
-        mode is NavigationViewPaneDisplayMode.Left or NavigationViewPaneDisplayMode.LeftMinimal;
+    /// <summary>
+    /// Initializes the retained Left width before WPF generates the first Left template subtree.
+    /// Doing this before <see cref="OnApplyTemplate"/> reaches its base implementation means the
+    /// PaneGrid TemplateBinding receives its final cold-start value immediately and no storyboard
+    /// is needed merely to establish the initial open or compact presentation.
+    /// </summary>
+    private void EnsureLeftPaneWidthInitialized()
+    {
+        if (_isLeftPaneWidthInitialized || PaneDisplayMode != NavigationViewPaneDisplayMode.Left)
+        {
+            return;
+        }
+
+        SetValue(
+            LeftPaneWidthPropertyKey,
+            IsPaneOpen ? LeftPaneOpenWidth : LeftPaneCompactWidth
+        );
+        _isLeftPaneWidthInitialized = true;
+    }
+
+    /// <summary>
+    /// Captures the outgoing Left template's effective Width before a PaneDisplayMode style trigger
+    /// destroys its generated subtree. Width is the animated dependency property and therefore
+    /// exposes the current clock value even between layout passes; ActualWidth is only a fallback for
+    /// a custom template that leaves Width on Auto.
+    /// </summary>
+    private void CaptureLeftPaneWidth()
+    {
+        if (Template?.FindName("PaneGrid", this) is not FrameworkElement paneGrid)
+        {
+            return;
+        }
+
+        double width = paneGrid.Width;
+        if (double.IsNaN(width))
+        {
+            width = paneGrid.ActualWidth;
+        }
+
+        if (double.IsNaN(width) || double.IsInfinity(width) || width < 0D)
+        {
+            return;
+        }
+
+        SetValue(LeftPaneWidthPropertyKey, width);
+        _isLeftPaneWidthInitialized = true;
+    }
+
+    /// <summary>
+    /// Applies a changed open/compact target to a currently matching Left presentation. The active
+    /// state is reset first because a completed WPF state storyboard continues to hold its animated
+    /// Width value above the TemplateBinding. Configuration changes are therefore immediate and do
+    /// not masquerade as pane-toggle animations.
+    /// </summary>
+    private void UpdateVisibleLeftPaneTargetWidth(DependencyProperty changedProperty)
+    {
+        if (!_isLeftPaneWidthInitialized || PaneDisplayMode != NavigationViewPaneDisplayMode.Left)
+        {
+            return;
+        }
+
+        bool changesCurrentWidth = IsPaneOpen
+            ? changedProperty == LeftPaneOpenWidthProperty
+            : changedProperty == LeftPaneCompactWidthProperty;
+
+        if (!changesCurrentWidth)
+        {
+            return;
+        }
+
+        _ = VisualStateManager.GoToState(this, "PaneReset", false);
+        if (Template?.FindName("PaneGrid", this) is FrameworkElement paneGrid)
+        {
+            paneGrid.BeginAnimation(FrameworkElement.WidthProperty, null);
+        }
+
+        SetValue(
+            LeftPaneWidthPropertyKey,
+            IsPaneOpen ? LeftPaneOpenWidth : LeftPaneCompactWidth
+        );
+    }
 
     /// <summary>
     /// Creates a navigation-owned command. Commands are intentionally created by
