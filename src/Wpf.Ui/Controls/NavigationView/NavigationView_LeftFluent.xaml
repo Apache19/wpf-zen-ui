@@ -12,14 +12,14 @@
     xmlns:m="clr-namespace:Wpf.Ui.Markup">
 
     <!--
-        LeftFluent intentionally uses a separate template rather than changing OpenPaneLength on
-        LeftNavigationViewTemplate. Its pane sizes to content through an Auto column and omits
-        the command buttons, search box, and pane open/compact animations — those elements live
-        in the TitleBar instead. Keeping these contracts in separate visual trees lets
-        PaneDisplayMode replace the complete layout instead of leaving irrelevant Left elements
-        alive.
+        导航视图 LeftFluent 模式布局：
+        顶部有 PaneHeader、分割线、顶部菜单列表；
+        底部有 分割线、底部菜单列表、PaneFooter。
+        Pane 宽度自动，随导航菜单项宽度、没有开闭动画。
+        此模式的导航菜单项一般使用大图标，文本置于图标下方。
     -->
-    <ControlTemplate x:Key="FluentNavigationViewTemplate" TargetType="{x:Type controls:NavigationView}">
+
+    <ControlTemplate x:Key="LeftFluentNavigationViewTemplate" TargetType="{x:Type controls:NavigationView}">
         <Grid>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" />

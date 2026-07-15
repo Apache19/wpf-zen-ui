@@ -10,11 +10,13 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Ui.Controls"
     xmlns:markup="clr-namespace:Wpf.Ui.Markup">
+
     <ResourceDictionary.MergedDictionaries>
-        <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/NavigationView/NavigationViewCompact.xaml" />
-        <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/NavigationView/NavigationViewFluent.xaml" />
-        <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/NavigationView/NavigationViewTop.xaml" />
-        <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/NavigationView/NavigationViewBottom.xaml" />
+        <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/NavigationView/NavigationView_Left.xaml" />
+        <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/NavigationView/NavigationView_LeftFluent.xaml" />
+        <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/NavigationView/NavigationView_LeftMinimal.xaml" />
+        <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/NavigationView/NavigationView_Top.xaml" />
+        <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/NavigationView/NavigationView_Bottom.xaml" />
     </ResourceDictionary.MergedDictionaries>
 
     <Style x:Key="DefaultNavigationViewStyle" TargetType="{x:Type controls:NavigationView}">
@@ -33,18 +35,24 @@
                 <Setter Property="Template" Value="{StaticResource LeftNavigationViewTemplate}" />
             </Trigger>
             <Trigger Property="PaneDisplayMode" Value="LeftMinimal">
-                <Setter Property="Template" Value="{StaticResource LeftNavigationViewTemplate}" />
+                <Setter Property="Template" Value="{StaticResource LeftMinimalNavigationViewTemplate}" />
+                <Setter Property="IsBackButtonVisible" Value="Collapsed" />
+                <Setter Property="IsPaneToggleVisible" Value="False" />
             </Trigger>
             <Trigger Property="PaneDisplayMode" Value="LeftFluent">
-                <Setter Property="Template" Value="{StaticResource FluentNavigationViewTemplate}" />
+                <Setter Property="Template" Value="{StaticResource LeftFluentNavigationViewTemplate}" />
                 <Setter Property="IsBackButtonVisible" Value="Collapsed" />
                 <Setter Property="IsPaneToggleVisible" Value="False" />
             </Trigger>
             <Trigger Property="PaneDisplayMode" Value="Top">
                 <Setter Property="Template" Value="{StaticResource TopNavigationViewTemplate}" />
+                <Setter Property="IsBackButtonVisible" Value="Collapsed" />
+                <Setter Property="IsPaneToggleVisible" Value="False" />
             </Trigger>
             <Trigger Property="PaneDisplayMode" Value="Bottom">
                 <Setter Property="Template" Value="{StaticResource BottomNavigationViewTemplate}" />
+                <Setter Property="IsBackButtonVisible" Value="Collapsed" />
+                <Setter Property="IsPaneToggleVisible" Value="False" />
             </Trigger>
         </Style.Triggers>
     </Style>

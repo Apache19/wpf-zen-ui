@@ -4,6 +4,14 @@
     xmlns:controls="clr-namespace:Wpf.Ui.Controls"
     xmlns:markup="clr-namespace:Wpf.Ui.Markup">
 
+    <!--
+        导航视图 Left 模式布局：
+        顶部有 按钮区、PaneHeader、自动建议矿和配套的搜索按钮（图标与自动建议框一样）、分割线、顶部菜单列表；
+        底部有 分割线、底部菜单列表、PaneFooter。
+        Pane 有开/闭两种模式，宽度分别对应 OpenPaneLength/CompactPaneLength，有开闭动画。
+        此模式的导航菜单项一般使用小图标，文本置于图标右边，Pane 闭合时刚好能把文本遮住，剩下小图标可见。
+    -->
+
     <ControlTemplate x:Key="LeftNavigationViewTemplate" TargetType="{x:Type controls:NavigationView}">
         <Grid>
             <Grid.ColumnDefinitions>

@@ -3,43 +3,22 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Ui.Controls">
 
-    <ControlTemplate x:Key="BottomNavigationViewTemplate" TargetType="{x:Type controls:NavigationView}">
+    <!--
+        导航视图 Top 模式布局：
+        Pane 横向置于视图顶部，外观和交互模式类似菜单栏。
+        没有后退/Pane开闭切换按钮，横向容纳不下时会显示省略号按钮/菜单项。
+        
+        此模式尚未完成，行为尚不确定。
+    -->
+
+    <ControlTemplate x:Key="TopNavigationViewTemplate" TargetType="{x:Type controls:NavigationView}">
         <Grid>
             <Grid.RowDefinitions>
-                <RowDefinition Height="*" />
                 <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
             </Grid.RowDefinitions>
 
-            <Grid Grid.Row="0">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="*" />
-                </Grid.RowDefinitions>
-
-                <!--  Header  -->
-                <ContentPresenter
-                    Grid.Row="0"
-                    Margin="0"
-                    Content="{TemplateBinding Header}"
-                    Visibility="{TemplateBinding HeaderVisibility}" />
-
-                <!--  Page content  -->
-                <!--
-                    NavigationView owns the frame so changing PaneDisplayMode does not destroy
-                    the current page together with this template's generated visual tree.
-                -->
-                <ContentPresenter
-                    x:Name="PART_NavigationViewContentPresenterHost"
-                    Grid.Row="1" />
-
-                <!--  Overlay  -->
-                <ContentPresenter
-                    Grid.Row="0"
-                    Grid.RowSpan="2"
-                    Margin="0"
-                    Content="{TemplateBinding ContentOverlay}" />
-            </Grid>
-            <Grid x:Name="PaneGrid" Grid.Row="1">
+            <Grid x:Name="PaneGrid" Grid.Row="0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="Auto" />
@@ -64,7 +43,6 @@
                 <controls:NavigationViewList
                     x:Name="PART_MenuItemsList"
                     Grid.Column="2"
-                    AutomationProperties.AutomationId="NavigationItems"
                     Focusable="False"
                     ItemContainerStyle="{Binding RelativeSource={RelativeSource Self}, Path=(controls:NavigationView.ItemContainerStyle)}"
                     ItemContainerStyleSelector="{Binding RelativeSource={RelativeSource Self}, Path=(controls:NavigationView.ItemContainerStyleSelector)}"
@@ -95,7 +73,6 @@
                 <controls:NavigationViewList
                     x:Name="PART_FooterMenuItemsList"
                     Grid.Column="5"
-                    AutomationProperties.AutomationId="NavigationFooterItems"
                     Focusable="False"
                     ItemContainerStyle="{Binding RelativeSource={RelativeSource Self}, Path=(controls:NavigationView.ItemContainerStyle)}"
                     ItemContainerStyleSelector="{Binding RelativeSource={RelativeSource Self}, Path=(controls:NavigationView.ItemContainerStyleSelector)}"
@@ -113,6 +90,34 @@
                         </ItemsPanelTemplate>
                     </controls:NavigationViewList.ItemsPanel>
                 </controls:NavigationViewList>
+            </Grid>
+
+            <Grid Grid.Row="1">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <!--  Header  -->
+                <ContentPresenter
+                    Grid.Row="0"
+                    Margin="0"
+                    Content="{TemplateBinding Header}"
+                    Visibility="{TemplateBinding HeaderVisibility}" />
+
+                <!--  Page content  -->
+                <!--
+                    NavigationView owns the frame so changing PaneDisplayMode does not destroy
+                    the current page together with this template's generated visual tree.
+                -->
+                <ContentPresenter x:Name="PART_NavigationViewContentPresenterHost" Grid.Row="1" />
+
+                <!--  Overlay  -->
+                <ContentPresenter
+                    Grid.Row="0"
+                    Grid.RowSpan="2"
+                    Margin="0"
+                    Content="{TemplateBinding ContentOverlay}" />
             </Grid>
         </Grid>
     </ControlTemplate>
