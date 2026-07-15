@@ -66,6 +66,9 @@ public class NavigationViewButtonTests
             Assert.Equal(typeof(NavigationViewButton), style.TargetType);
             Assert.False(typeof(IIconControl).IsAssignableFrom(typeof(NavigationViewButton)));
             Assert.Equal(typeof(object), NavigationViewButton.IconProperty.PropertyType);
+            Assert.Null(typeof(NavigationViewButton).GetProperty("IconTemplate"));
+            Assert.Null(typeof(NavigationViewButton).GetField("IconTemplateProperty"));
+            Assert.False(resources.Contains(new DataTemplateKey(typeof(SymbolRegular))));
 
             var button = new NavigationViewButton { Style = style };
             Assert.Equal(NavigationViewButtonPlacement.None, button.Placement);
@@ -202,6 +205,13 @@ public class NavigationViewButtonTests
             Assert.Equal(Visibility.Collapsed, paneTitlePresenter.Visibility);
             Assert.Equal("Application content", contentPresenter.Content);
             Assert.Same(arbitraryIcon, iconPresenter.Content);
+
+            // Changing Icon must make ContentPresenter reselect its native UIElement template. If
+            // the role-specific SymbolRegular template escapes its local resource scope or is set
+            // explicitly, the Border is instead wrapped in a SymbolIcon and disappears visually.
+            toggleButton.Measure(new Size(100, 40));
+            toggleButton.Arrange(new Rect(0, 0, 100, 40));
+            Assert.Same(arbitraryIcon, VisualTreeHelper.GetChild(iconPresenter, 0));
         });
     }
 

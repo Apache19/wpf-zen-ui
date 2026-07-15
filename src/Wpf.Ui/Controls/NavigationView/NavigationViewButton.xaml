@@ -5,15 +5,6 @@
     xmlns:m="clr-namespace:Wpf.Ui.Markup">
 
     <!--
-        Role-based defaults use a value object rather than a shared UIElement. A Style setter is
-        shared by every control using that Style, while a UIElement can have only one visual parent.
-        ContentPresenter applies this template per button and therefore creates an independent icon.
-    -->
-    <DataTemplate DataType="{x:Type controls:SymbolRegular}">
-        <controls:SymbolIcon Symbol="{Binding}" />
-    </DataTemplate>
-
-    <!--
         Shared visual contract for NavigationView-owned commands. Host-specific layout
         belongs to the derived Pane and TitleBar styles below, so neither host needs to
         impose NavigationView-specific values on contributed content.
@@ -55,6 +46,12 @@
                                 role-based defaults, while this template only presents the resulting
                                 object. An explicit or derived-style Icon value can therefore replace
                                 the default and can use implicit data templates.
+
+                                The SymbolRegular template deliberately lives on this presenter rather
+                                than in the containing theme dictionary. Its implicit lookup is therefore
+                                confined to this icon slot and cannot change how an application presents
+                                SymbolRegular values elsewhere. Keeping the template implicit locally also
+                                lets UIElement values use ContentPresenter's native direct-visual path.
                             -->
                             <Grid
                                 x:Name="IconRoot"
@@ -75,7 +72,18 @@
                                     VerticalAlignment="Center"
                                     Content="{TemplateBinding Icon}"
                                     Focusable="False"
-                                    SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
+                                    SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}">
+                                    <ContentPresenter.Resources>
+                                        <!--
+                                            Role defaults are value objects because a Style setter is shared
+                                            by all controls, whereas a UIElement can have only one visual parent.
+                                            The template creates an independent SymbolIcon for each presenter.
+                                        -->
+                                        <DataTemplate DataType="{x:Type controls:SymbolRegular}">
+                                            <controls:SymbolIcon Symbol="{Binding}" />
+                                        </DataTemplate>
+                                    </ContentPresenter.Resources>
+                                </ContentPresenter>
                             </Grid>
 
                             <ContentPresenter
@@ -130,7 +138,7 @@
                             <Setter TargetName="contentPresenter" Property="Visibility" Value="Collapsed" />
                             <Setter TargetName="paneTitlePresenter" Property="Visibility" Value="Visible" />
                         </MultiTrigger>
-                        <!-- A null title must not contribute Padding to an otherwise icon-only button. -->
+                        <!--  A null title must not contribute Padding to an otherwise icon-only button.  -->
                         <Trigger Property="PaneTitle" Value="{x:Null}">
                             <Setter TargetName="paneTitlePresenter" Property="Visibility" Value="Collapsed" />
                         </Trigger>
