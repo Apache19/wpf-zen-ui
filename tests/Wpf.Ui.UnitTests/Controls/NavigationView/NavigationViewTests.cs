@@ -205,6 +205,351 @@ public class NavigationViewTests
         });
     }
 
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void PaneActualWidth_IsReadOnlyAndTracksRenderedPane(bool isPaneOpen)
+    {
+        RunOnStaThread(() =>
+        {
+            var resources = new ResourceDictionary { Source = CreateResourceUri() };
+            var navigationView = new Wpf.Ui.Controls.NavigationView
+            {
+                Style = Assert.IsType<Style>(resources[typeof(Wpf.Ui.Controls.NavigationView)]),
+                PaneDisplayMode = NavigationViewPaneDisplayMode.LeftFluent,
+                IsPaneOpen = isPaneOpen,
+            };
+            navigationView.MenuItems.Add(new NavigationViewItem { Content = "Home" });
+
+            var window = new Window
+            {
+                Content = navigationView,
+                Width = 800,
+                Height = 600,
+                Left = -10_000,
+                Top = -10_000,
+                ShowActivated = false,
+                ShowInTaskbar = false,
+                WindowStyle = WindowStyle.None,
+            };
+
+            try
+            {
+                window.Show();
+                DrainDispatcher();
+
+                var fluentPane = GetPaneGrid(navigationView);
+                Assert.True(Wpf.Ui.Controls.NavigationView.PaneActualWidthProperty.ReadOnly);
+                Assert.True(fluentPane.ActualWidth > 0);
+                Assert.Equal(fluentPane.ActualWidth, navigationView.PaneActualWidth);
+
+                var animationOrigin = navigationView.PaneActualWidth;
+                navigationView.PaneDisplayMode = NavigationViewPaneDisplayMode.Left;
+                Assert.True(navigationView.ApplyTemplate());
+
+                Assert.Equal(animationOrigin, navigationView.PaneActualWidth);
+            }
+            finally
+            {
+                window.Close();
+                DrainDispatcher();
+            }
+        });
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void PaneActualWidth_UsesCurrentPaneStateBeforeFirstLayout(bool isPaneOpen)
+    {
+        RunOnStaThread(() =>
+        {
+            var resources = new ResourceDictionary { Source = CreateResourceUri() };
+            var navigationView = new Wpf.Ui.Controls.NavigationView
+            {
+                Style = Assert.IsType<Style>(resources[typeof(Wpf.Ui.Controls.NavigationView)]),
+                IsPaneOpen = isPaneOpen,
+            };
+            var window = new Window
+            {
+                Content = navigationView,
+                Width = 800,
+                Height = 600,
+                Left = -10_000,
+                Top = -10_000,
+                ShowActivated = false,
+                ShowInTaskbar = false,
+                WindowStyle = WindowStyle.None,
+            };
+
+            try
+            {
+                window.Show();
+                DrainDispatcher();
+
+                var expectedWidth = isPaneOpen
+                    ? navigationView.OpenPaneLength
+                    : navigationView.CompactPaneLength;
+                Assert.Equal(expectedWidth, navigationView.PaneActualWidth);
+                Assert.Equal(expectedWidth, GetPaneGrid(navigationView).ActualWidth);
+            }
+            finally
+            {
+                window.Close();
+                DrainDispatcher();
+            }
+        });
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void PaneDisplayMode_AnimatesFromFluentWidthAndPaneToggleRemainsResponsive(
+        bool initialIsPaneOpen
+    )
+    {
+        RunOnStaThread(() =>
+        {
+            var resources = new ResourceDictionary { Source = CreateResourceUri() };
+            var navigationView = new Wpf.Ui.Controls.NavigationView
+            {
+                Style = Assert.IsType<Style>(resources[typeof(Wpf.Ui.Controls.NavigationView)]),
+                PaneDisplayMode = NavigationViewPaneDisplayMode.LeftFluent,
+                IsPaneOpen = initialIsPaneOpen,
+            };
+            navigationView.MenuItems.Add(new NavigationViewItem { Content = "Home" });
+
+            var window = new Window
+            {
+                Content = navigationView,
+                Width = 800,
+                Height = 600,
+                Left = -10_000,
+                Top = -10_000,
+                ShowActivated = false,
+                ShowInTaskbar = false,
+                WindowStyle = WindowStyle.None,
+            };
+
+            try
+            {
+                window.Show();
+                DrainDispatcher();
+
+                var fluentWidth = GetPaneGrid(navigationView).ActualWidth;
+                navigationView.PaneDisplayMode = NavigationViewPaneDisplayMode.Left;
+                Assert.True(navigationView.ApplyTemplate());
+                Assert.Equal(fluentWidth, navigationView.PaneActualWidth);
+
+                PumpDispatcher(TimeSpan.FromMilliseconds(250));
+                Assert.Equal(
+                    initialIsPaneOpen ? "PaneOpen" : "PaneCompact",
+                    GetPaneStateGroup(navigationView).CurrentState.Name
+                );
+                Assert.Equal(
+                    initialIsPaneOpen
+                        ? navigationView.OpenPaneLength
+                        : navigationView.CompactPaneLength,
+                    GetPaneGrid(navigationView).ActualWidth
+                );
+                Assert.Equal(GetPaneGrid(navigationView).ActualWidth, navigationView.PaneActualWidth);
+
+                navigationView.IsPaneOpen = !initialIsPaneOpen;
+                PumpDispatcher(TimeSpan.FromMilliseconds(250));
+                Assert.Equal(
+                    initialIsPaneOpen ? "PaneCompact" : "PaneOpen",
+                    GetPaneStateGroup(navigationView).CurrentState.Name
+                );
+                Assert.Equal(
+                    initialIsPaneOpen
+                        ? navigationView.CompactPaneLength
+                        : navigationView.OpenPaneLength,
+                    GetPaneGrid(navigationView).ActualWidth
+                );
+                Assert.Equal(GetPaneGrid(navigationView).ActualWidth, navigationView.PaneActualWidth);
+
+                navigationView.IsPaneOpen = initialIsPaneOpen;
+                PumpDispatcher(TimeSpan.FromMilliseconds(250));
+                Assert.Equal(
+                    initialIsPaneOpen
+                        ? navigationView.OpenPaneLength
+                        : navigationView.CompactPaneLength,
+                    GetPaneGrid(navigationView).ActualWidth
+                );
+                Assert.Equal(GetPaneGrid(navigationView).ActualWidth, navigationView.PaneActualWidth);
+            }
+            finally
+            {
+                window.Close();
+                DrainDispatcher();
+            }
+        });
+    }
+
+    [Fact]
+    public void PaneAnimationSettings_AreConfigurableAndCanDisableAnimations()
+    {
+        RunOnStaThread(() =>
+        {
+            var resources = new ResourceDictionary { Source = CreateResourceUri() };
+            var configuredDuration = new System.Windows.Duration(TimeSpan.FromSeconds(1D));
+            var navigationView = new Wpf.Ui.Controls.NavigationView
+            {
+                Style = Assert.IsType<Style>(resources[typeof(Wpf.Ui.Controls.NavigationView)]),
+                PaneDisplayMode = NavigationViewPaneDisplayMode.LeftFluent,
+                PaneAnimationDuration = configuredDuration,
+                PaneAnimationAccelerationRatio = 0.75D,
+                IsPaneAnimationEnabled = false,
+            };
+            navigationView.MenuItems.Add(new NavigationViewItem { Content = "Home" });
+
+            Assert.Equal(TimeSpan.Zero, navigationView.PaneAnimationDuration.TimeSpan);
+            Assert.Equal(0.75D, navigationView.PaneAnimationAccelerationRatio);
+
+            navigationView.IsPaneAnimationEnabled = true;
+            Assert.Equal(configuredDuration, navigationView.PaneAnimationDuration);
+            navigationView.IsPaneAnimationEnabled = false;
+
+            var window = CreateTestWindow(navigationView);
+
+            try
+            {
+                window.Show();
+                DrainDispatcher();
+
+                navigationView.PaneDisplayMode = NavigationViewPaneDisplayMode.Left;
+                Assert.True(navigationView.ApplyTemplate());
+                DrainDispatcher();
+                Assert.Equal(navigationView.OpenPaneLength, GetPaneGrid(navigationView).ActualWidth);
+
+                navigationView.IsPaneOpen = false;
+                DrainDispatcher();
+                Assert.Equal(navigationView.CompactPaneLength, GetPaneGrid(navigationView).ActualWidth);
+                Assert.Equal(
+                    Visibility.Hidden,
+                    GetAutoSuggestBoxPresenter(navigationView).Visibility
+                );
+            }
+            finally
+            {
+                window.Close();
+                DrainDispatcher();
+            }
+        });
+    }
+
+    [Theory]
+    [InlineData(NavigationViewPaneDisplayMode.Top, true)]
+    [InlineData(NavigationViewPaneDisplayMode.Top, false)]
+    [InlineData(NavigationViewPaneDisplayMode.Bottom, true)]
+    [InlineData(NavigationViewPaneDisplayMode.Bottom, false)]
+    public void PaneDisplayMode_FromHorizontalMode_AppliesCompactWidthWithoutAnimation(
+        NavigationViewPaneDisplayMode initialMode,
+        bool isPaneOpen
+    )
+    {
+        RunOnStaThread(() =>
+        {
+            var resources = new ResourceDictionary { Source = CreateResourceUri() };
+            var navigationView = new Wpf.Ui.Controls.NavigationView
+            {
+                Style = Assert.IsType<Style>(resources[typeof(Wpf.Ui.Controls.NavigationView)]),
+                PaneDisplayMode = initialMode,
+                IsPaneOpen = isPaneOpen,
+                PaneAnimationDuration = new System.Windows.Duration(TimeSpan.FromSeconds(5D)),
+            };
+            navigationView.MenuItems.Add(new NavigationViewItem { Content = "Home" });
+            var window = CreateTestWindow(navigationView);
+
+            try
+            {
+                window.Show();
+                DrainDispatcher();
+
+                navigationView.PaneDisplayMode = NavigationViewPaneDisplayMode.Left;
+                Assert.True(navigationView.ApplyTemplate());
+                DrainDispatcher();
+
+                Assert.Equal(
+                    isPaneOpen
+                        ? navigationView.OpenPaneLength
+                        : navigationView.CompactPaneLength,
+                    GetPaneGrid(navigationView).ActualWidth
+                );
+            }
+            finally
+            {
+                window.Close();
+                DrainDispatcher();
+            }
+        });
+    }
+
+    [Fact]
+    public void PaneAnimationDuration_SynchronizesWidthAndPaneContentAnimations()
+    {
+        RunOnStaThread(() =>
+        {
+            var resources = new ResourceDictionary { Source = CreateResourceUri() };
+            var navigationView = new Wpf.Ui.Controls.NavigationView
+            {
+                Style = Assert.IsType<Style>(resources[typeof(Wpf.Ui.Controls.NavigationView)]),
+                PaneDisplayMode = NavigationViewPaneDisplayMode.LeftFluent,
+                PaneAnimationDuration = new System.Windows.Duration(
+                    TimeSpan.FromMilliseconds(600D)
+                ),
+                PaneAnimationAccelerationRatio = 0D,
+            };
+            navigationView.MenuItems.Add(new NavigationViewItem { Content = "Home" });
+            var window = CreateTestWindow(navigationView);
+
+            try
+            {
+                window.Show();
+                DrainDispatcher();
+
+                var fluentWidth = GetPaneGrid(navigationView).ActualWidth;
+                navigationView.PaneDisplayMode = NavigationViewPaneDisplayMode.Left;
+                Assert.True(navigationView.ApplyTemplate());
+
+                PumpDispatcher(TimeSpan.FromMilliseconds(200D));
+                Assert.InRange(
+                    GetPaneGrid(navigationView).ActualWidth,
+                    fluentWidth + 1D,
+                    navigationView.OpenPaneLength - 1D
+                );
+                Assert.InRange(GetAutoSuggestBoxPresenter(navigationView).Opacity, 0.01D, 0.99D);
+
+                PumpDispatcher(TimeSpan.FromMilliseconds(800D));
+                Assert.Equal(navigationView.OpenPaneLength, GetPaneGrid(navigationView).ActualWidth);
+                Assert.Equal(1D, GetAutoSuggestBoxPresenter(navigationView).Opacity);
+
+                navigationView.IsPaneOpen = false;
+                PumpDispatcher(TimeSpan.FromMilliseconds(200D));
+                Assert.InRange(
+                    GetPaneGrid(navigationView).ActualWidth,
+                    navigationView.CompactPaneLength + 1D,
+                    navigationView.OpenPaneLength - 1D
+                );
+                Assert.InRange(GetAutoSuggestBoxPresenter(navigationView).Opacity, 0.01D, 0.99D);
+                Assert.InRange(GetAutoSuggestBoxButton(navigationView).Opacity, 0.01D, 0.99D);
+
+                PumpDispatcher(TimeSpan.FromMilliseconds(800D));
+                Assert.Equal(navigationView.CompactPaneLength, GetPaneGrid(navigationView).ActualWidth);
+                Assert.Equal(
+                    Visibility.Hidden,
+                    GetAutoSuggestBoxPresenter(navigationView).Visibility
+                );
+                Assert.Equal(1D, GetAutoSuggestBoxButton(navigationView).Opacity);
+            }
+            finally
+            {
+                window.Close();
+                DrainDispatcher();
+            }
+        });
+    }
+
     [Fact]
     public void PaneDisplayMode_WhenLoaded_DoesNotNavigateAwayFromPreservedPage()
     {
@@ -273,7 +618,55 @@ public class NavigationViewTests
     }
 
     private static Grid GetPaneGrid(Wpf.Ui.Controls.NavigationView navigationView) =>
-        Assert.IsType<Grid>(navigationView.Template.FindName("PaneGrid", navigationView));
+        Assert.IsAssignableFrom<Grid>(
+            navigationView.Template.FindName("PaneGrid", navigationView)
+        );
+
+    private static ContentPresenter GetAutoSuggestBoxPresenter(
+        Wpf.Ui.Controls.NavigationView navigationView
+    ) =>
+        Assert.IsType<ContentPresenter>(
+            navigationView.Template.FindName("AutoSuggestBoxContentPresenter", navigationView)
+        );
+
+    private static UIElement GetAutoSuggestBoxButton(
+        Wpf.Ui.Controls.NavigationView navigationView
+    ) =>
+        Assert.IsAssignableFrom<UIElement>(
+            navigationView.Template.FindName("PART_AutoSuggestBoxSymbolButton", navigationView)
+        );
+
+    private static Window CreateTestWindow(object content) =>
+        new()
+        {
+            Content = content,
+            Width = 800,
+            Height = 600,
+            Left = -10_000,
+            Top = -10_000,
+            ShowActivated = false,
+            ShowInTaskbar = false,
+            WindowStyle = WindowStyle.None,
+        };
+
+    private static VisualStateGroup GetPaneStateGroup(
+        Wpf.Ui.Controls.NavigationView navigationView
+    )
+    {
+        var root = Assert.IsAssignableFrom<FrameworkElement>(
+            System.Windows.Media.VisualTreeHelper.GetParent(GetPaneGrid(navigationView))
+        );
+
+        foreach (var group in VisualStateManager.GetVisualStateGroups(root))
+        {
+            if (group is VisualStateGroup { Name: "PaneStates" } paneStates)
+            {
+                return paneStates;
+            }
+        }
+
+        throw new Xunit.Sdk.XunitException("PaneStates visual state group was not found.");
+    }
 
     private static Uri CreateResourceUri()
     {
@@ -293,6 +686,25 @@ public class NavigationViewTests
             new Action(() => frame.Continue = false)
         );
         System.Windows.Threading.Dispatcher.PushFrame(frame);
+    }
+
+    private static void PumpDispatcher(TimeSpan duration)
+    {
+        var frame = new System.Windows.Threading.DispatcherFrame();
+        var timer = new System.Windows.Threading.DispatcherTimer(
+            System.Windows.Threading.DispatcherPriority.Background
+        )
+        {
+            Interval = duration,
+        };
+        timer.Tick += (_, _) =>
+        {
+            timer.Stop();
+            frame.Continue = false;
+        };
+        timer.Start();
+        System.Windows.Threading.Dispatcher.PushFrame(frame);
+        DrainDispatcher();
     }
 
     private static void RunOnStaThread(Action action)
