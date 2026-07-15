@@ -21,13 +21,30 @@ public static class NavigationViewItemTemplateBehavior
         new PropertyMetadata(false, OnIsIconFilledChanged)
     );
 
-    /// <summary>Gets whether the navigation item icon should use its filled variant.</summary>
-    public static bool GetIsIconFilled(DependencyObject element) =>
-        (bool)element.GetValue(IsIconFilledProperty);
+    /// <summary>
+    /// Helper for getting <see cref="IsIconFilledProperty"/> from <paramref name="element"/>.
+    /// </summary>
+    /// <param name="element">
+    /// <see cref="DependencyObject"/> to read <see cref="IsIconFilledProperty"/> from.
+    /// </param>
+    /// <returns>IsIconFilled property value.</returns>
+    [AttachedPropertyBrowsableForType(typeof(DependencyObject))]
+    public static bool GetIsIconFilled(DependencyObject element)
+    {
+        return (bool)element.GetValue(IsIconFilledProperty);
+    }
 
-    /// <summary>Sets whether the navigation item icon should use its filled variant.</summary>
-    public static void SetIsIconFilled(DependencyObject element, bool value) =>
+    /// <summary>
+    /// Helper for setting <see cref="IsIconFilledProperty"/> on <paramref name="element"/>.
+    /// </summary>
+    /// <param name="element">
+    /// <see cref="DependencyObject"/> to set <see cref="IsIconFilledProperty"/> on.
+    /// </param>
+    /// <param name="value">IsIconFilled property value.</param>
+    public static void SetIsIconFilled(DependencyObject element, bool value)
+    {
         element.SetValue(IsIconFilledProperty, value);
+    }
 
     internal static void SetIsActive(NavigationViewItem item, INavigationView navigationView, bool isActive)
     {
@@ -36,23 +53,21 @@ public static class NavigationViewItemTemplateBehavior
 
         if (isActive)
         {
-            if (!item.IsPaneOpen && item.NavigationViewItemParent is not null)
+            if (item is { IsPaneOpen: false, NavigationViewItemParent: not null })
             {
                 item.NavigationViewItemParent.Activate(navigationView);
             }
 
-            if (item.NavigationViewItemParent is not null)
-            {
-                item.NavigationViewItemParent.IsExpanded =
-                    item.IsPaneOpen && item.PaneDisplayMode != NavigationViewPaneDisplayMode.Top;
-            }
+            item.NavigationViewItemParent?.IsExpanded =
+                item.IsPaneOpen
+             && item.PaneDisplayMode != NavigationViewPaneDisplayMode.Top;
 
             return;
         }
 
         item.NavigationViewItemParent?.Deactivate(navigationView);
 
-        if (!item.IsPaneOpen && item.HasMenuItems)
+        if (item is { IsPaneOpen: false, HasMenuItems: true })
         {
             item.SetCurrentValue(NavigationViewItem.IsExpandedProperty, false);
         }
@@ -82,20 +97,15 @@ public static class NavigationViewItemTemplateBehavior
     internal static void OnItemExpanderClick(NavigationViewItemExpander toggleButton)
     {
         if (
-            toggleButton.TemplatedParent is not NavigationViewItem item
-            || item.NavigationViewHost is not { } navigationView
+            toggleButton.TemplatedParent is
+            not NavigationViewItem { NavigationViewHost: { } navigationView } item
         )
         {
             return;
         }
 
-        foreach (var menuItem in item.MenuItems.OfType<INavigationViewItem>())
+        if (item.MenuItems.OfType<INavigationViewItem>().Any(menuItem => menuItem.IsActive))
         {
-            if (!menuItem.IsActive)
-            {
-                continue;
-            }
-
             if (toggleButton.IsChecked == true)
             {
                 item.Deactivate(navigationView);
@@ -104,8 +114,6 @@ public static class NavigationViewItemTemplateBehavior
             {
                 item.Activate(navigationView);
             }
-
-            break;
         }
     }
 }
