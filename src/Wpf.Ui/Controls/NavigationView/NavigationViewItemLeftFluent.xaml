@@ -39,22 +39,17 @@
                         Grid.Row="0"
                         Margin="0"
                         Content="{TemplateBinding Icon}"
-                        TextElement.FontSize="24"
-                        TextElement.Foreground="{markup:BrushResource TextFillColorPrimaryBrush}" />
+                        TextElement.FontSize="24" />
 
                     <Grid
                         x:Name="ContentGrid"
                         Grid.Row="1"
-                        Height="24"
+                        Height="18"
                         Margin="0,2,0,0">
                         <ContentPresenter
                             x:Name="ElementContentPresenter"
                             HorizontalAlignment="Center"
-                            Content="{TemplateBinding Content}"
-                            ContentTemplate="{TemplateBinding ContentTemplate}"
-                            RecognizesAccessKey="True"
-                            TextElement.FontSize="{TemplateBinding FontSize}"
-                            TextElement.Foreground="{markup:BrushResource TextFillColorPrimaryBrush}" />
+                            RecognizesAccessKey="True" />
                     </Grid>
 
                     <ContentPresenter
@@ -80,7 +75,7 @@
                             <DoubleAnimation
                                 Storyboard.TargetName="ContentGrid"
                                 Storyboard.TargetProperty="Height"
-                                From="24"
+                                From="18"
                                 To="0"
                                 Duration="0:0:.16" />
                             <DoubleAnimation
@@ -89,14 +84,6 @@
                                 From="1"
                                 To="0"
                                 Duration="0:0:.16" />
-                            <!-- 边框色默认透明，此动画无意义
-                            <DoubleAnimation
-                                Storyboard.TargetName="MainBorder"
-                                Storyboard.TargetProperty="(Border.BorderBrush).(SolidColorBrush.Opacity)"
-                                From="0"
-                                To="1"
-                                Duration="0:0:.16" />
-                            -->
                         </Storyboard>
                     </BeginStoryboard>
                 </Trigger.EnterActions>
@@ -107,7 +94,7 @@
                                 Storyboard.TargetName="ContentGrid"
                                 Storyboard.TargetProperty="Height"
                                 From="0"
-                                To="24"
+                                To="18"
                                 Duration="0:0:.16" />
                             <DoubleAnimation
                                 Storyboard.TargetName="ContentGrid"
@@ -115,13 +102,6 @@
                                 From="0"
                                 To="1"
                                 Duration="0:0:.16" />
-                            <!-- 边框色默认透明，此动画无意义
-                            <DoubleAnimation
-                                Storyboard.TargetName="MainBorder"
-                                Storyboard.TargetProperty="(Border.BorderBrush).(SolidColorBrush.Opacity)"
-                                From="1"
-                                To="0"
-                                Duration="0:0:.16" />-->
                         </Storyboard>
                     </BeginStoryboard>
                 </Trigger.ExitActions>
@@ -146,26 +126,6 @@
                     <Setter TargetName="ContentGrid" Property="TextElement.Foreground" Value="{markup:BrushResource TextFillColorPrimaryBrush}" />
                 </MultiTrigger.Setters>
             </MultiTrigger>
-            <!--
-                    <MultiTrigger>
-                        <MultiTrigger.Conditions>
-                            <Condition Property="IsActive" Value="False" />
-                            <Condition Property="IsMouseOver" Value="True" />
-                        </MultiTrigger.Conditions>
-                        <MultiTrigger.Setters>
-                            <Setter TargetName="MainBorder" Property="Background" Value="{markup:BrushResource ControlFillColorPrimaryBrush}" />
-                        </MultiTrigger.Setters>
-                    </MultiTrigger>
-                    <MultiTrigger>
-                        <MultiTrigger.Conditions>
-                            <Condition Property="IsActive" Value="True" />
-                            <Condition Property="IsMouseOver" Value="True" />
-                        </MultiTrigger.Conditions>
-                        <MultiTrigger.Setters>
-                            <Setter TargetName="MainBorder" Property="Background" Value="{markup:BrushResource ControlFillColorPrimaryBrush}" />
-                        </MultiTrigger.Setters>
-                    </MultiTrigger>
-            -->
         </ControlTemplate.Triggers>
     </ControlTemplate>
 
