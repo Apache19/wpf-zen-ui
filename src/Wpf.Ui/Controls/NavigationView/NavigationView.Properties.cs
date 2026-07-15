@@ -74,11 +74,11 @@ public partial class NavigationView
             return;
         }
 
-        autoSuggestBox.OriginalItemsSource = navigationView._autoSuggestItems;
+        autoSuggestBox.OriginalItemsSource =  navigationView._autoSuggestItems;
         navigationView.UpdateAutoSuggestBoxSuggestions();
 
-        autoSuggestBox.SuggestionChosen += navigationView.AutoSuggestBoxOnSuggestionChosen;
-        autoSuggestBox.QuerySubmitted   += navigationView.AutoSuggestBoxOnQuerySubmitted;
+        autoSuggestBox.SuggestionChosen    += navigationView.AutoSuggestBoxOnSuggestionChosen;
+        autoSuggestBox.QuerySubmitted      += navigationView.AutoSuggestBoxOnQuerySubmitted;
     }
 
     #endregion
@@ -122,10 +122,7 @@ public partial class NavigationView
 
         breadcrumbBar.ItemsSource = navigationView._breadcrumbItems;
 
-        // todo: 强行绑定 BreadcrumbBar.ItemTemplate 可能会导致 BreadcrumbBar 的 ItemTemplateSelector 无法生效
-        breadcrumbBar.ItemTemplate ??= navigationView.TryFindResource(
-            StyleKeys.NavigationViewItemDataTemplate
-        ) as DataTemplate;
+        breadcrumbBar.ItemTemplate ??= navigationView.TryFindResource(StyleKeys.NavigationViewItemDataTemplate) as DataTemplate;
 
         // todo 考察一下使用路由事件是否比强绑定要好一点
         breadcrumbBar.ItemClicked += navigationView.BreadcrumbBarOnItemClicked;
@@ -282,7 +279,7 @@ public partial class NavigationView
             new PropertyMetadata(false)
         );
 
-    /// <summary>Identifies the <see cref="HasFooterMenuItems"/> dependency property.</summary>
+    /// <summary>Identifies the read-only <see cref="HasFooterMenuItems"/> dependency property.</summary>
     public static readonly DependencyProperty HasFooterMenuItemsProperty =
         HasFooterMenuItemsPropertyKey.DependencyProperty;
 
@@ -311,7 +308,7 @@ public partial class NavigationView
             new PropertyMetadata(false)
         );
 
-    /// <summary>Identifies the <see cref="HasMenuItems"/> dependency property.</summary>
+    /// <summary>Identifies the read-only <see cref="HasMenuItems"/> dependency property.</summary>
     public static readonly DependencyProperty HasMenuItemsProperty =
         HasMenuItemsPropertyKey.DependencyProperty;
 
@@ -768,8 +765,8 @@ public partial class NavigationView
     /// pipeline used by both roots and all descendant menu collections.
     /// </summary>
     private void ProcessRootMenuItemsCollectionChange(
-        IList                            rootItems,
-        DependencyPropertyKey            hasItemsPropertyKey,
+        IList rootItems,
+        DependencyPropertyKey hasItemsPropertyKey,
         NotifyCollectionChangedEventArgs e)
     {
         SetValue(hasItemsPropertyKey, rootItems.Count > 0);
@@ -825,9 +822,9 @@ public partial class NavigationView
     /// the normal root collection pipeline before live change tracking is attached to the new source.
     /// </remarks>
     private void ReplaceMenuItemsSource(
-        IList                               targetCollection,
-        object?                             oldSource,
-        object?                             newSource,
+        IList targetCollection,
+        object? oldSource,
+        object? newSource,
         NotifyCollectionChangedEventHandler sourceCollectionChangedHandler)
     {
         if (oldSource is INotifyCollectionChanged oldCollection)
@@ -906,115 +903,6 @@ public partial class NavigationView
     {
         get => (double)GetValue(OpenPaneLengthProperty);
         set => SetValue(OpenPaneLengthProperty, value);
-    }
-
-    #endregion
-
-    #region DP: PaneActualWidth
-
-    private static readonly DependencyPropertyKey PaneActualWidthPropertyKey =
-        DependencyProperty.RegisterReadOnly(
-            nameof(PaneActualWidth),
-            typeof(double),
-            typeof(NavigationView),
-            new FrameworkPropertyMetadata(0D)
-        );
-
-    /// <summary>Identifies the <see cref="PaneActualWidth"/> dependency property.</summary>
-    public static readonly DependencyProperty PaneActualWidthProperty =
-        PaneActualWidthPropertyKey.DependencyProperty;
-
-    /// <summary>Gets the current rendered width of the NavigationView pane.</summary>
-    public double PaneActualWidth => (double)GetValue(PaneActualWidthProperty);
-
-    #endregion
-
-    #region DP: IsPaneAnimationEnabled
-
-    /// <summary>Identifies the <see cref="IsPaneAnimationEnabled"/> dependency property.</summary>
-    public static readonly DependencyProperty IsPaneAnimationEnabledProperty =
-        DependencyProperty.Register(
-            nameof(IsPaneAnimationEnabled),
-            typeof(bool),
-            typeof(NavigationView),
-            new FrameworkPropertyMetadata(true, OnIsPaneAnimationEnabledChanged)
-        );
-
-    /// <summary>Gets or sets a value indicating whether pane state changes are animated.</summary>
-    public bool IsPaneAnimationEnabled
-    {
-        get => (bool)GetValue(IsPaneAnimationEnabledProperty);
-        set => SetValue(IsPaneAnimationEnabledProperty, value);
-    }
-
-    private static void OnIsPaneAnimationEnabledChanged(
-        DependencyObject                   d,
-        DependencyPropertyChangedEventArgs e
-    )
-    {
-        if (d is not NavigationView navigationView)
-        {
-            return;
-        }
-
-        navigationView.CoerceValue(PaneAnimationDurationProperty);
-
-        if (!(bool)e.NewValue && UsesCompactPaneTemplate(navigationView.PaneDisplayMode))
-        {
-            _ = VisualStateManager.GoToState(navigationView, "PaneReset", false);
-            UpdateVisualState(navigationView);
-        }
-    }
-
-    #endregion
-
-    #region DP: PaneAnimationDuration
-
-    /// <summary>Identifies the <see cref="PaneAnimationDuration"/> dependency property.</summary>
-    public static readonly DependencyProperty PaneAnimationDurationProperty =
-        DependencyProperty.Register(
-            nameof(PaneAnimationDuration),
-            typeof(Duration),
-            typeof(NavigationView),
-            new FrameworkPropertyMetadata(
-                new Duration(TimeSpan.FromSeconds(0.16D)),
-                null,
-                (d, baseValue) => d is NavigationView { IsPaneAnimationEnabled: false }
-                    ? new Duration(TimeSpan.Zero)
-                    : baseValue
-            ),
-            value => value is Duration { HasTimeSpan: true } duration
-                  && duration.TimeSpan >= TimeSpan.Zero
-        );
-
-    /// <summary>Gets or sets the duration used by pane width and content animations.</summary>
-    public Duration PaneAnimationDuration
-    {
-        get => (Duration)GetValue(PaneAnimationDurationProperty);
-        set => SetValue(PaneAnimationDurationProperty, value);
-    }
-
-    #endregion
-
-    #region DP: PaneAnimationAccelerationRatio
-
-    /// <summary>
-    /// Identifies the <see cref="PaneAnimationAccelerationRatio"/> dependency property.
-    /// </summary>
-    public static readonly DependencyProperty PaneAnimationAccelerationRatioProperty =
-        DependencyProperty.Register(
-            nameof(PaneAnimationAccelerationRatio),
-            typeof(double),
-            typeof(NavigationView),
-            new FrameworkPropertyMetadata(0.4D),
-            static value => value is >= 0D and <= 1D
-        );
-
-    /// <summary>Gets or sets the acceleration ratio used by pane animations.</summary>
-    public double PaneAnimationAccelerationRatio
-    {
-        get => (double)GetValue(PaneAnimationAccelerationRatioProperty);
-        set => SetValue(PaneAnimationAccelerationRatioProperty, value);
     }
 
     #endregion

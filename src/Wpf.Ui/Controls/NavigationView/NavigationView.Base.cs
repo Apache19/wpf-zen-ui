@@ -13,7 +13,6 @@ using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Input;
-using System.Windows.Media.Animation;
 using System.Windows.Threading;
 
 // ReSharper disable once CheckNamespace
@@ -144,6 +143,9 @@ public partial class NavigationView : Control, INavigationView
 
         _titleBarToggleButton.Click += OnToggleButtonClick;
 
+        BackButton   = _paneBackButton;
+        ToggleButton = _paneToggleButton;
+
         Loaded      += OnLoaded;
         Unloaded    += OnUnloaded;
         SizeChanged += OnSizeChanged;
@@ -175,33 +177,6 @@ public partial class NavigationView : Control, INavigationView
     private readonly StackPanel                                         _paneButtonsHost = new();
     private          TitleBar?                                          _titleBarContentOwner;
     private          object?                                            _displacedTitleBarLeftContent;
-    private          bool                                               _hasReportedPaneActualWidth;
-    private          double?                                            _pendingPaneAnimationFromWidth;
-
-    /// <summary>
-    /// Updates the rendered pane width reported by the active navigation pane template.
-    /// </summary>
-    internal void UpdatePaneActualWidth(double actualWidth)
-    {
-        SetValue(PaneActualWidthPropertyKey, actualWidth);
-        _hasReportedPaneActualWidth = true;
-    }
-
-    /// <summary>
-    /// Supplies the current pane-state width until a pane has completed its first layout pass.
-    /// </summary>
-    private void EnsurePaneActualWidth()
-    {
-        if (_hasReportedPaneActualWidth)
-        {
-            return;
-        }
-
-        SetValue(
-            PaneActualWidthPropertyKey,
-            IsPaneOpen ? OpenPaneLength : CompactPaneLength
-        );
-    }
 
     protected static void UpdateVisualState(NavigationView navigationView)
     {
@@ -214,222 +189,10 @@ public partial class NavigationView : Control, INavigationView
             return;
         }
 
-        navigationView.EnsurePaneActualWidth();
-
-        if (
-            navigationView.Template?.FindName("PaneGrid", navigationView)
-            is FrameworkElement paneGrid
-        )
-        {
-            navigationView.AnimatePane(paneGrid);
-        }
-
         _ = VisualStateManager.GoToState(
             navigationView,
             navigationView.IsPaneOpen ? "PaneOpen" : "PaneCompact",
             true
-        );
-    }
-
-    /// <summary>
-    /// Animates the compact pane and its state-dependent content using one captured timing
-    /// configuration. Numeric values are fixed before clocks are created so live width reporting
-    /// cannot feed back into the animation.
-    /// </summary>
-    private void AnimatePane(FrameworkElement paneGrid)
-    {
-        var hasPendingAnimationOrigin = _pendingPaneAnimationFromWidth.HasValue;
-
-        var animationFromWidth =
-            _pendingPaneAnimationFromWidth ??
-            (
-                paneGrid.ActualWidth > 0D ? paneGrid.ActualWidth : PaneActualWidth
-            );
-
-        var animationToWidth = IsPaneOpen ? OpenPaneLength : CompactPaneLength;
-
-        var shouldAnimate =
-            PaneAnimationDuration.HasTimeSpan &&
-            PaneAnimationDuration.TimeSpan > TimeSpan.Zero &&
-            (
-                hasPendingAnimationOrigin ||
-                (
-                    IsLoaded && Math.Abs(animationFromWidth - animationToWidth) >= 0.0003D
-                )
-            );
-
-        _pendingPaneAnimationFromWidth = null;
-
-        AnimatePaneWidth(paneGrid, animationFromWidth, animationToWidth, shouldAnimate);
-        AnimatePaneContent(shouldAnimate);
-    }
-
-    /// <summary>
-    /// Animates the pane width using explicit values captured by <see cref="AnimatePane"/>.
-    /// </summary>
-    private void AnimatePaneWidth(
-        FrameworkElement paneGrid,
-        double           animationFromWidth,
-        double           animationToWidth,
-        bool             shouldAnimate
-    )
-    {
-        paneGrid.BeginAnimation(FrameworkElement.WidthProperty, null);
-
-        if (!shouldAnimate)
-        {
-            if (IsPaneOpen)
-            {
-                return;
-            }
-
-            paneGrid.BeginAnimation(
-                FrameworkElement.WidthProperty,
-                new DoubleAnimation
-                {
-                    From         = animationToWidth,
-                    To           = animationToWidth,
-                    Duration     = TimeSpan.Zero,
-                    FillBehavior = FillBehavior.HoldEnd,
-                },
-                HandoffBehavior.SnapshotAndReplace
-            );
-            return;
-        }
-
-        paneGrid.BeginAnimation(
-            FrameworkElement.WidthProperty,
-            new DoubleAnimation
-            {
-                From              = animationFromWidth,
-                To                = animationToWidth,
-                Duration          = PaneAnimationDuration,
-                AccelerationRatio = PaneAnimationAccelerationRatio,
-                // The open state can return to the OpenPaneLength template binding. The compact
-                // state must keep its animated width because the template's base width is open.
-                FillBehavior = IsPaneOpen ? FillBehavior.Stop : FillBehavior.HoldEnd,
-            },
-            HandoffBehavior.SnapshotAndReplace
-        );
-    }
-
-    /// <summary>
-    /// Keeps the AutoSuggestBox presenter and compact button synchronized with the width clock.
-    /// </summary>
-    private void AnimatePaneContent(bool shouldAnimate)
-    {
-        var autoSuggestBoxPresenter =
-            Template?.FindName("AutoSuggestBoxContentPresenter", this) as ContentPresenter;
-        var autoSuggestBoxButton =
-            Template?.FindName(PartAutoSuggestBoxButton, this) as UIElement;
-
-        if (autoSuggestBoxPresenter is not null)
-        {
-            autoSuggestBoxPresenter.BeginAnimation(UIElement.OpacityProperty,    null);
-            autoSuggestBoxPresenter.BeginAnimation(UIElement.VisibilityProperty, null);
-        }
-
-        autoSuggestBoxButton?.BeginAnimation(UIElement.OpacityProperty, null);
-
-        if (!shouldAnimate)
-        {
-            ApplyPaneContentState(autoSuggestBoxPresenter, autoSuggestBoxButton);
-            return;
-        }
-
-        if (autoSuggestBoxPresenter is not null)
-        {
-            if (IsPaneOpen)
-            {
-                autoSuggestBoxPresenter.SetCurrentValue(
-                    UIElement.VisibilityProperty,
-                    Visibility.Visible
-                );
-                BeginOpacityAnimation(autoSuggestBoxPresenter, 0D, 1D);
-            }
-            else
-            {
-                BeginOpacityAnimation(autoSuggestBoxPresenter, 1D, 0D);
-                BeginHideAnimation(autoSuggestBoxPresenter);
-            }
-        }
-
-        if (autoSuggestBoxButton is not null)
-        {
-            if (IsPaneOpen)
-            {
-                autoSuggestBoxButton.SetCurrentValue(UIElement.OpacityProperty, 0D);
-            }
-            else
-            {
-                BeginOpacityAnimation(autoSuggestBoxButton, 0D, 1D);
-            }
-        }
-    }
-
-    private void BeginOpacityAnimation(UIElement target, double from, double to)
-    {
-        target.SetCurrentValue(UIElement.OpacityProperty, to);
-        target.BeginAnimation(
-            UIElement.OpacityProperty,
-            new DoubleAnimation
-            {
-                From              = from,
-                To                = to,
-                Duration          = PaneAnimationDuration,
-                AccelerationRatio = PaneAnimationAccelerationRatio,
-                FillBehavior      = FillBehavior.Stop,
-            },
-            HandoffBehavior.SnapshotAndReplace
-        );
-    }
-
-    private void BeginHideAnimation(UIElement target)
-    {
-        target.SetCurrentValue(UIElement.VisibilityProperty, Visibility.Hidden);
-
-        var visibilityAnimation = new ObjectAnimationUsingKeyFrames
-        {
-            Duration     = PaneAnimationDuration,
-            FillBehavior = FillBehavior.HoldEnd,
-        };
-
-        visibilityAnimation.KeyFrames.Add(
-            new DiscreteObjectKeyFrame(Visibility.Visible, KeyTime.FromTimeSpan(TimeSpan.Zero))
-        );
-
-        visibilityAnimation.KeyFrames.Add(
-            new DiscreteObjectKeyFrame(
-                Visibility.Hidden,
-                KeyTime.FromTimeSpan(PaneAnimationDuration.TimeSpan)
-            )
-        );
-
-        target.BeginAnimation(
-            UIElement.VisibilityProperty,
-            visibilityAnimation,
-            HandoffBehavior.SnapshotAndReplace
-        );
-    }
-
-    private void ApplyPaneContentState(UIElement? autoSuggestBoxPresenter, UIElement? autoSuggestBoxButton)
-    {
-        if (autoSuggestBoxPresenter is not null)
-        {
-            autoSuggestBoxPresenter.SetCurrentValue(
-                UIElement.OpacityProperty,
-                IsPaneOpen ? 1D : 0D
-            );
-
-            autoSuggestBoxPresenter.SetCurrentValue(
-                UIElement.VisibilityProperty,
-                IsPaneOpen ? Visibility.Visible : Visibility.Hidden
-            );
-        }
-
-        autoSuggestBoxButton?.SetCurrentValue(
-            UIElement.OpacityProperty,
-            IsPaneOpen ? 0D : 1D
         );
     }
 
@@ -520,7 +283,7 @@ public partial class NavigationView : Control, INavigationView
     }
 
     /// <summary>
-    /// This virtual method is called when BackButton is clicked.
+    /// This virtual method is called when <see cref="BackButton"/> is clicked.
     /// </summary>
     protected virtual void OnBackButtonClick(object sender, RoutedEventArgs e)
     {
@@ -559,48 +322,37 @@ public partial class NavigationView : Control, INavigationView
     }
 
     /// <summary>
-    /// Captures the rendered pane width and stops storyboards owned by the current pane template
-    /// before a display-mode trigger replaces that template. This must run from the
-    /// dependency-property callback: WPF evaluates style triggers immediately after the callback
-    /// and may clear the old generated subtree before any later layout or
-    /// <see cref="OnApplyTemplate"/> notification.
+    /// Stops storyboards owned by the current pane template before a display-mode trigger replaces
+    /// that template. This must run from the dependency-property callback: WPF evaluates style
+    /// triggers immediately after the callback and may clear the old generated subtree before any
+    /// later layout or <see cref="OnApplyTemplate"/> notification.
     /// </summary>
     private void PrepareForPaneDisplayModeChange(
         NavigationViewPaneDisplayMode oldMode,
         NavigationViewPaneDisplayMode newMode
     )
     {
-        // Left deliberately share the compact template and its PaneStates group.
+        // Left and LeftMinimal deliberately share the compact template and its PaneStates group.
         // Keeping the active state avoids interrupting pane animations when only item layout changes.
         if (UsesCompactPaneTemplate(oldMode) && UsesCompactPaneTemplate(newMode))
         {
             return;
         }
 
-        _pendingPaneAnimationFromWidth = null;
-
-        // Only another left-placed pane supplies a meaningful horizontal animation origin. Top
-        // and Bottom span the content width, so carrying their width into Compact creates an
-        // excessive transition across almost the entire view.
-        if (
-            newMode is NavigationViewPaneDisplayMode.Left
-         && oldMode is NavigationViewPaneDisplayMode.LeftFluent
-         && Template?.FindName("PaneGrid", this) is
-                NavigationViewPane { IsLoaded: true, ActualWidth: > 0D } currentPane
-        )
-        {
-            UpdatePaneActualWidth(currentPane.ActualWidth);
-            _pendingPaneAnimationFromWidth = currentPane.ActualWidth;
-        }
-        else if (UsesCompactPaneTemplate(newMode))
-        {
-            _hasReportedPaneActualWidth = false;
-            EnsurePaneActualWidth();
-        }
-
-        // Enter the neutral state before the old compact template is detached, then let the newly
-        // attached template enter its current state through a fresh transition.
+        // PaneReset has no storyboard. Entering it makes VisualStateManager remove the clocks from
+        // PaneOpen/PaneCompact before StyleHelper.ClearGeneratedSubTree detaches TemplateBindings.
+        // Without this step, Width temporarily falls back to Double.NaN while a DoubleAnimation is
+        // still evaluating, which causes WPF to throw during the first cross-template mode switch.
         _ = VisualStateManager.GoToState(this, "PaneReset", false);
+
+        // VisualStateManager stops its storyboard, but WPF can retain the animation storage until
+        // the next property evaluation. Remove the Width clock synchronously while its template
+        // binding still supplies a finite base value; StyleHelper clears that binding immediately
+        // after this property callback returns.
+        if (Template?.FindName("PaneGrid", this) is FrameworkElement paneGrid)
+        {
+            paneGrid.BeginAnimation(FrameworkElement.WidthProperty, null);
+        }
     }
 
     private static bool UsesCompactPaneTemplate(NavigationViewPaneDisplayMode mode) =>
@@ -744,7 +496,10 @@ public partial class NavigationView : Control, INavigationView
         NavigateInternal(navigationViewItem);
     }
 
-    protected virtual void BreadcrumbBarOnItemClicked(BreadcrumbBar sender, BreadcrumbBarItemClickedEventArgs e)
+    protected virtual void BreadcrumbBarOnItemClicked(
+        BreadcrumbBar sender,
+        BreadcrumbBarItemClickedEventArgs e
+    )
     {
         var item = (NavigationViewBreadcrumbItem)e.Item;
         Navigate(item.PageId);
@@ -765,7 +520,9 @@ public partial class NavigationView : Control, INavigationView
     /// <summary>
     /// Navigate to the page after its name is selected in <see cref="AutoSuggestBox"/>.
     /// </summary>
-    private void AutoSuggestBoxOnSuggestionChosen(AutoSuggestBox sender, AutoSuggestBoxSuggestionChosenEventArgs args)
+    private void AutoSuggestBoxOnSuggestionChosen(
+        AutoSuggestBox sender,
+        AutoSuggestBoxSuggestionChosenEventArgs args)
     {
         if (sender.IsSuggestionListOpen)
         {
@@ -785,7 +542,9 @@ public partial class NavigationView : Control, INavigationView
         NavigateToMenuItemFromAutoSuggestBox(FooterMenuItems, selectedSuggestBoxItem);
     }
 
-    private void AutoSuggestBoxOnQuerySubmitted(AutoSuggestBox sender, AutoSuggestBoxQuerySubmittedEventArgs args)
+    private void AutoSuggestBoxOnQuerySubmitted(
+        AutoSuggestBox sender,
+        AutoSuggestBoxQuerySubmittedEventArgs args)
     {
         var suggestions = new List<string>();
         var querySplit  = args.QueryText.Split(' ');
@@ -951,7 +710,9 @@ public partial class NavigationView : Control, INavigationView
         PageTypeIndex.Clear();
     }
 
-    private void OnNavigationViewItemMenuItemsCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    private void OnNavigationViewItemMenuItemsCollectionChanged(
+        object? sender,
+        NotifyCollectionChangedEventArgs e)
     {
         ProcessNavigationItemsCollectionChange(e);
     }
@@ -1058,7 +819,9 @@ public partial class NavigationView : Control, INavigationView
         AddItemsToAutoSuggestBoxItems(FooterMenuItems);
     }
 
-    protected virtual bool NavigateToMenuItemFromAutoSuggestBox(IEnumerable list, string selectedSuggestItem)
+    protected virtual bool NavigateToMenuItemFromAutoSuggestBox(
+        IEnumerable list,
+        string selectedSuggestItem)
     {
         foreach (NavigationViewItem nvItem in list.OfType<NavigationViewItem>())
         {
