@@ -47,16 +47,17 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
     #region DP: IndentationSize
 
     /// <summary>Identifies the <see cref="IndentationSize"/> dependency property.</summary>
-    public static readonly DependencyProperty IndentationSizeProperty = DependencyProperty.Register(
-        nameof(IndentationSize),
-        typeof(double),
-        typeof(NavigationViewItem),
-        new FrameworkPropertyMetadata(
-            30d,
-            static (d, e) => ((NavigationViewItem)d).UpdateIndentation()
-        ),
-        static value => value is double size and >= 0 && !double.IsInfinity(size)
-    );
+    public static readonly DependencyProperty IndentationSizeProperty =
+        DependencyProperty.Register(
+            nameof(IndentationSize),
+            typeof(double),
+            typeof(NavigationViewItem),
+            new FrameworkPropertyMetadata(
+                30d,
+                static (d, e) => ((NavigationViewItem)d).UpdateIndentation()
+            ),
+            static value => value is double size and >= 0 && !double.IsInfinity(size)
+        );
 
     /// <summary>
     /// Gets or sets the indentation added for each level in the navigation tree.
@@ -72,12 +73,13 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
 
     #region DP: MenuItems
 
-    private static readonly DependencyPropertyKey MenuItemsPropertyKey = DependencyProperty.RegisterReadOnly(
-        nameof(MenuItems),
-        typeof(ObservableCollection<object>),
-        typeof(NavigationViewItem),
-        new PropertyMetadata(null)
-    );
+    private static readonly DependencyPropertyKey MenuItemsPropertyKey =
+        DependencyProperty.RegisterReadOnly(
+            nameof(MenuItems),
+            typeof(ObservableCollection<object>),
+            typeof(NavigationViewItem),
+            new PropertyMetadata(null)
+        );
 
     /// <summary>Identifies the <see cref="MenuItems"/> dependency property.</summary>
     public static readonly DependencyProperty MenuItemsProperty = MenuItemsPropertyKey.DependencyProperty;
@@ -86,16 +88,17 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
     public IList MenuItems => (ObservableCollection<object>)GetValue(MenuItemsProperty);
 
     #endregion
-    
+
     #region DP: MenuItemsSource
 
     /// <summary>Identifies the <see cref="MenuItemsSource"/> dependency property.</summary>
-    public static readonly DependencyProperty MenuItemsSourceProperty = DependencyProperty.Register(
-        nameof(MenuItemsSource),
-        typeof(object),
-        typeof(NavigationViewItem),
-        new PropertyMetadata(null, OnMenuItemsSourceChanged)
-    );
+    public static readonly DependencyProperty MenuItemsSourceProperty =
+        DependencyProperty.Register(
+            nameof(MenuItemsSource),
+            typeof(object),
+            typeof(NavigationViewItem),
+            new PropertyMetadata(null, OnMenuItemsSourceChanged)
+        );
 
     /// <inheritdoc/>
     [Bindable(true)]
@@ -134,12 +137,13 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
     #region DP: IsActive
 
     /// <summary>Identifies the <see cref="IsActive"/> dependency property.</summary>
-    public static readonly DependencyProperty IsActiveProperty = DependencyProperty.Register(
-        nameof(IsActive),
-        typeof(bool),
-        typeof(NavigationViewItem),
-        new PropertyMetadata(false)
-    );
+    public static readonly DependencyProperty IsActiveProperty =
+        DependencyProperty.Register(
+            nameof(IsActive),
+            typeof(bool),
+            typeof(NavigationViewItem),
+            new PropertyMetadata(false)
+        );
 
     /// <inheritdoc />
     [Browsable(false)]
@@ -155,12 +159,13 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
     #region DP: IsPaneOpen
 
     /// <summary>Identifies the <see cref="IsPaneOpen"/> dependency property.</summary>
-    public static readonly DependencyProperty IsPaneOpenProperty = DependencyProperty.Register(
-        nameof(IsPaneOpen),
-        typeof(bool),
-        typeof(NavigationViewItem),
-        new PropertyMetadata(false)
-    );
+    public static readonly DependencyProperty IsPaneOpenProperty =
+        DependencyProperty.Register(
+            nameof(IsPaneOpen),
+            typeof(bool),
+            typeof(NavigationViewItem),
+            new PropertyMetadata(false)
+        );
 
     [Browsable(false)]
     [ReadOnly(true)]
@@ -198,12 +203,13 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
 
     #region DP: IsSubItem
 
-    private static readonly DependencyPropertyKey IsSubItemPropertyKey = DependencyProperty.RegisterReadOnly(
-        nameof(IsSubItem),
-        typeof(bool),
-        typeof(NavigationViewItem),
-        new FrameworkPropertyMetadata(false)
-    );
+    private static readonly DependencyPropertyKey IsSubItemPropertyKey =
+        DependencyProperty.RegisterReadOnly(
+            nameof(IsSubItem),
+            typeof(bool),
+            typeof(NavigationViewItem),
+            new FrameworkPropertyMetadata(false)
+        );
 
     /// <summary>Identifies the <see cref="IsSubItem"/> dependency property.</summary>
     public static readonly DependencyProperty IsSubItemProperty = IsSubItemPropertyKey.DependencyProperty;
@@ -220,12 +226,13 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
     #region DP: IsExpanded
 
     /// <summary>Identifies the <see cref="IsExpanded"/> dependency property.</summary>
-    public static readonly DependencyProperty IsExpandedProperty = DependencyProperty.Register(
-        nameof(IsExpanded),
-        typeof(bool),
-        typeof(NavigationViewItem),
-        new PropertyMetadata(false)
-    );
+    public static readonly DependencyProperty IsExpandedProperty =
+        DependencyProperty.Register(
+            nameof(IsExpanded),
+            typeof(bool),
+            typeof(NavigationViewItem),
+            new PropertyMetadata(false)
+        );
 
     /// <inheritdoc />
     [Browsable(false)]
@@ -241,12 +248,13 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
     #region DP: Icon
 
     /// <summary>Identifies the <see cref="Icon"/> dependency property.</summary>
-    public static readonly DependencyProperty IconProperty = DependencyProperty.Register(
-        nameof(Icon),
-        typeof(IconElement),
-        typeof(NavigationViewItem),
-        new PropertyMetadata(null, OnIconChanged, IconElement.Coerce)
-    );
+    public static readonly DependencyProperty IconProperty =
+        DependencyProperty.Register(
+            nameof(Icon),
+            typeof(IconElement),
+            typeof(NavigationViewItem),
+            new PropertyMetadata(null, OnIconChanged, IconElement.Coerce)
+        );
 
     /// <inheritdoc />
     [Bindable(true)]
@@ -262,12 +270,13 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
     #region DP: TargetPageTag
 
     /// <summary>Identifies the <see cref="TargetPageTag"/> dependency property.</summary>
-    public static readonly DependencyProperty TargetPageTagProperty = DependencyProperty.Register(
-        nameof(TargetPageTag),
-        typeof(string),
-        typeof(NavigationViewItem),
-        new PropertyMetadata(string.Empty, OnNavigationLookupPropertyChanged)
-    );
+    public static readonly DependencyProperty TargetPageTagProperty =
+        DependencyProperty.Register(
+            nameof(TargetPageTag),
+            typeof(string),
+            typeof(NavigationViewItem),
+            new PropertyMetadata(string.Empty, OnNavigationLookupPropertyChanged)
+        );
 
     /// <inheritdoc />
     public string TargetPageTag
@@ -281,12 +290,13 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
     #region DP: TargetPageType
 
     /// <summary>Identifies the <see cref="TargetPageType"/> dependency property.</summary>
-    public static readonly DependencyProperty TargetPageTypeProperty = DependencyProperty.Register(
-        nameof(TargetPageType),
-        typeof(Type),
-        typeof(NavigationViewItem),
-        new PropertyMetadata(null, OnNavigationLookupPropertyChanged)
-    );
+    public static readonly DependencyProperty TargetPageTypeProperty =
+        DependencyProperty.Register(
+            nameof(TargetPageType),
+            typeof(Type),
+            typeof(NavigationViewItem),
+            new PropertyMetadata(null, OnNavigationLookupPropertyChanged)
+        );
 
     /// <inheritdoc />
     public Type? TargetPageType
@@ -300,12 +310,13 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
     #region DP: InfoBadge
 
     /// <summary>Identifies the <see cref="InfoBadge"/> dependency property.</summary>
-    public static readonly DependencyProperty InfoBadgeProperty = DependencyProperty.Register(
-        nameof(InfoBadge),
-        typeof(InfoBadge),
-        typeof(NavigationViewItem),
-        new PropertyMetadata(null)
-    );
+    public static readonly DependencyProperty InfoBadgeProperty =
+        DependencyProperty.Register(
+            nameof(InfoBadge),
+            typeof(InfoBadge),
+            typeof(NavigationViewItem),
+            new PropertyMetadata(null)
+        );
 
     public InfoBadge? InfoBadge
     {
@@ -318,12 +329,16 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
     #region DP: NavigationCacheMode
 
     /// <summary>Identifies the <see cref="NavigationCacheMode"/> dependency property.</summary>
-    public static readonly DependencyProperty NavigationCacheModeProperty = DependencyProperty.Register(
-        nameof(NavigationCacheMode),
-        typeof(NavigationCacheMode),
-        typeof(NavigationViewItem),
-        new FrameworkPropertyMetadata(NavigationCacheMode.Disabled, OnNavigationCacheModeChanged)
-    );
+    public static readonly DependencyProperty NavigationCacheModeProperty =
+        DependencyProperty.Register(
+            nameof(NavigationCacheMode),
+            typeof(NavigationCacheMode),
+            typeof(NavigationViewItem),
+            new FrameworkPropertyMetadata(
+                NavigationCacheMode.Disabled,
+                OnNavigationCacheModeChanged
+                )
+        );
 
     /// <inheritdoc/>
     public NavigationCacheMode NavigationCacheMode
@@ -366,12 +381,17 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
 
     private TypedEventHandler<NavigationView, RoutedEventArgs>? _paneOpenedHandler;
     private TypedEventHandler<NavigationView, RoutedEventArgs>? _paneClosedHandler;
-    private TypedEventHandler<NavigationView, RoutedEventArgs>? _paneDisplayModeChangedHandler;
+    private TypedEventHandler<NavigationView, RoutedEventArgs>? _paneModeChangedHandler;
 
-    internal NavigationView? NavigationViewHost =>
-        _attachedNavigationView
-     ?? NavigationView.GetNavigationParent(this)
-     ?? (NavigationViewItemParent as NavigationViewItem)?.NavigationViewHost;
+    internal NavigationView? NavigationViewHost
+    {
+        get
+        {
+            return _attachedNavigationView
+                ?? NavigationView.GetNavigationParent(this)
+                ?? (NavigationViewItemParent as NavigationViewItem)?.NavigationViewHost;
+        }
+    }
 
     static NavigationViewItem()
     {
@@ -715,14 +735,13 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
         _attachedNavigationView = navigationView;
         SynchronizePaneState(navigationView.PaneDisplayMode, navigationView.IsPaneOpen);
 
-        _paneOpenedHandler = (_, _) => SynchronizePaneState(navigationView.PaneDisplayMode, true);
-        _paneClosedHandler = (_, _) => SynchronizePaneState(navigationView.PaneDisplayMode, false);
-        _paneDisplayModeChangedHandler = (_, _) =>
-            SynchronizePaneState(navigationView.PaneDisplayMode, navigationView.IsPaneOpen);
+        _paneOpenedHandler      = (_, _) => SynchronizePaneState(navigationView.PaneDisplayMode, true);
+        _paneClosedHandler      = (_, _) => SynchronizePaneState(navigationView.PaneDisplayMode, false);
+        _paneModeChangedHandler = (_, _) => SynchronizePaneState(navigationView.PaneDisplayMode, navigationView.IsPaneOpen);
 
-        navigationView.PaneOpened += _paneOpenedHandler;
-        navigationView.PaneClosed += _paneClosedHandler;
-        navigationView.PaneDisplayModeChanged += _paneDisplayModeChangedHandler;
+        navigationView.PaneOpened             += _paneOpenedHandler;
+        navigationView.PaneClosed             += _paneClosedHandler;
+        navigationView.PaneDisplayModeChanged += _paneModeChangedHandler;
     }
 
     private void DetachNavigationViewEvents()
@@ -744,10 +763,10 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
             _paneClosedHandler                 =  null;
         }
 
-        if (_paneDisplayModeChangedHandler is not null)
+        if (_paneModeChangedHandler is not null)
         {
-            _attachedNavigationView.PaneDisplayModeChanged -= _paneDisplayModeChangedHandler;
-            _paneDisplayModeChangedHandler = null;
+            _attachedNavigationView.PaneDisplayModeChanged -= _paneModeChangedHandler;
+            _paneModeChangedHandler                        =  null;
         }
 
         _attachedNavigationView = null;
