@@ -314,11 +314,19 @@ public static class PopupAnimator
         // ContextMenu plumbing that relationship can be temporarily incomplete, so keep a thread-local stack of
         // controllers that are currently inside the WPF IsOpen callback.
         if (popupRoot is FrameworkElement { Parent: DependencyObject owner } &&
-            GetAnimationController(owner) is { } ownerController &&
-            ownerController.ShouldSuppressPopupRootOpacity(popupRoot))
+            GetAnimationController(owner) is { } ownerController)
         {
-            controller = ownerController;
-            return true;
+            if (ownerController.ShouldSuppressPopupRootOpacity(popupRoot))
+            {
+                controller = ownerController;
+                return true;
+            }
+
+            // PopupRoot.Parent identifies a public Popup unambiguously. If that Popup has its own controller but is
+            // not inside its opening suppression window, do not let another controller on the thread-local stack
+            // claim the root while its opacity animation is being evaluated.
+            controller = null;
+            return false;
         }
 
         if (openingControllers != null)
@@ -1400,16 +1408,29 @@ public static class PopupAnimator
 
         private bool IsPopupRootSuppressionTarget(DependencyObject popupRoot)
         {
-            if (_pendingPrivateRootPopup == null)
+            var rootPopup = _pendingPrivateRootPopup ?? TryGetRootPopup(_owner);
+            if (rootPopup == null)
             {
-                return true;
+                return false;
             }
 
-            // While a private-root owner is waiting for its Popup.Opened event, the controller remains on the
-            // thread-local opening stack longer than a normal Popup. Limit suppression to that private PopupRoot so a
-            // nested or unrelated Popup opened on the same dispatcher turn cannot have its first frame hidden by us.
-            return _pendingPrivateRootPopup.Child is Visual child &&
-                   ReferenceEquals((PresentationSource.FromVisual(child) as HwndSource)?.RootVisual, popupRoot);
+            // PopupRoot is a logical child of its owning Popup before ShowWindow writes Opacity = 1. Prefer that
+            // direct relationship, then fall back to the HwndSource root for framework versions where Parent is not
+            // exposed at this point in the opening lifecycle. Every controller must prove ownership here: opacity
+            // animations on already-open PopupRoots can be re-evaluated while a later Popup is inside ShowWindow.
+            // Accepting an arbitrary root in that window would make the later controller force the earlier one to 0.
+            return (
+                       popupRoot is FrameworkElement { Parent: Popup parentPopup } &&
+                       ReferenceEquals(parentPopup, rootPopup)
+                   )
+                 ||
+                   (
+                       rootPopup.Child is Visual child &&
+                       ReferenceEquals(
+                           (PresentationSource.FromVisual(child) as HwndSource)?.RootVisual,
+                           popupRoot
+                       )
+                   );
         }
 
         private void BeginPopupRootOpacitySuppression()
