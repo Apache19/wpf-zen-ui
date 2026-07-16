@@ -107,10 +107,11 @@ public class NavigationViewItemTests
             var navigationView = new Wpf.Ui.Controls.NavigationView();
             var icon = new SymbolIcon(SymbolRegular.Home24);
             var parent = new NavigationViewItem { Icon = icon, Style = itemStyle };
-            var child = new NavigationViewItem { IsActive = true, Style = itemStyle };
+            var child = new NavigationViewItem { Style = itemStyle };
 
             parent.MenuItems.Add(child);
             AttachToNavigationView(parent, navigationView);
+            child.Activate(navigationView);
             Assert.True(parent.ApplyTemplate());
 
             var expander = Assert.IsType<NavigationViewItemExpander>(
@@ -125,7 +126,7 @@ public class NavigationViewItemTests
                     .GetValue(parent)
             );
 
-            parent.IsActive = true;
+            parent.Activate(navigationView);
             parent.IsExpanded = false;
             InvokeClick(expander);
             Assert.True(parent.IsExpanded);

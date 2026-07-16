@@ -137,43 +137,48 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
     #region DP: IsActive
 
     /// <summary>Identifies the <see cref="IsActive"/> dependency property.</summary>
-    public static readonly DependencyProperty IsActiveProperty =
-        DependencyProperty.Register(
+    internal static readonly DependencyPropertyKey IsActivePropertyKey =
+        DependencyProperty.RegisterReadOnly(
             nameof(IsActive),
             typeof(bool),
             typeof(NavigationViewItem),
             new PropertyMetadata(false)
         );
 
-    /// <inheritdoc />
+    /// <summary>Identifies the <see cref="IsActive"/> dependency property.</summary>
+    public static readonly DependencyProperty IsActiveProperty =
+        IsActivePropertyKey.DependencyProperty;
+
+    /// <summary>
+    /// Gets a value indicating whether this item is currently selected in the owning
+    /// <see cref="NavigationView"/>.
+    /// </summary>
     [Browsable(false)]
     [ReadOnly(true)]
-    public bool IsActive
-    {
-        get => (bool)GetValue(IsActiveProperty);
-        set => SetValue(IsActiveProperty, value);
-    }
+    public bool IsActive => (bool)GetValue(IsActiveProperty);
 
     #endregion
 
     #region DP: IsPaneOpen
 
-    /// <summary>Identifies the <see cref="IsPaneOpen"/> dependency property.</summary>
-    public static readonly DependencyProperty IsPaneOpenProperty =
-        DependencyProperty.Register(
+    private static readonly DependencyPropertyKey IsPaneOpenPropertyKey =
+        DependencyProperty.RegisterReadOnly(
             nameof(IsPaneOpen),
             typeof(bool),
             typeof(NavigationViewItem),
             new PropertyMetadata(false)
         );
 
+    /// <summary>Identifies the <see cref="IsPaneOpen"/> dependency property.</summary>
+    public static readonly DependencyProperty IsPaneOpenProperty =
+        IsPaneOpenPropertyKey.DependencyProperty;
+
+    /// <summary>
+    /// Gets a value indicating whether the owning <see cref="NavigationView"/> pane is open.
+    /// </summary>
     [Browsable(false)]
     [ReadOnly(true)]
-    public bool IsPaneOpen
-    {
-        get => (bool)GetValue(IsPaneOpenProperty);
-        set => SetValue(IsPaneOpenProperty, value);
-    }
+    public bool IsPaneOpen => (bool)GetValue(IsPaneOpenProperty);
 
     #endregion
 
@@ -236,7 +241,6 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
 
     /// <inheritdoc />
     [Browsable(false)]
-    [ReadOnly(true)]
     public bool IsExpanded
     {
         get => (bool)GetValue(IsExpandedProperty);
@@ -337,7 +341,7 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
             new FrameworkPropertyMetadata(
                 NavigationCacheMode.Disabled,
                 OnNavigationCacheModeChanged
-                )
+            )
         );
 
     /// <inheritdoc/>
@@ -775,7 +779,7 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
     internal void SynchronizePaneState(NavigationViewPaneDisplayMode paneDisplayMode, bool isPaneOpen)
     {
         SetValue(PaneDisplayModePropertyKey, paneDisplayMode);
-        SetCurrentValue(IsPaneOpenProperty, isPaneOpen);
+        SetValue(IsPaneOpenPropertyKey, isPaneOpen);
 
         foreach (var item in MenuItems.OfType<NavigationViewItem>())
         {
