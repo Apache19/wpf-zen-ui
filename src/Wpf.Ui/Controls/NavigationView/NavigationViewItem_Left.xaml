@@ -4,7 +4,7 @@
     xmlns:controls="clr-namespace:Wpf.Ui.Controls"
     xmlns:m="clr-namespace:Wpf.Ui.Markup">
 
-    <ControlTemplate x:Key="NavigationViewItemLeftCompactTemplate" TargetType="{x:Type controls:NavigationViewItem}">
+    <ControlTemplate x:Key="NavigationViewItemLeftTemplate" TargetType="{x:Type controls:NavigationViewItem}">
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />

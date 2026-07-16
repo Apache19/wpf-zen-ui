@@ -4,7 +4,7 @@
     xmlns:controls="clr-namespace:Wpf.Ui.Controls"
     xmlns:m="clr-namespace:Wpf.Ui.Markup">
 
-    <ControlTemplate x:Key="NavigationViewItemBottomCompactTemplate" TargetType="{x:Type controls:NavigationViewItem}">
+    <ControlTemplate x:Key="NavigationViewItemBottomTemplate" TargetType="{x:Type controls:NavigationViewItem}">
         <Border x:Name="MainBorder" Background="Transparent">
             <Grid>
                 <Grid

@@ -71,7 +71,7 @@
         </Border>
     </ControlTemplate>
 
-    <ControlTemplate x:Key="NavigationViewItemLeftMinimalCompactTemplate" TargetType="{x:Type controls:NavigationViewItem}">
+    <ControlTemplate x:Key="NavigationViewItemLeftMinimalTemplate" TargetType="{x:Type controls:NavigationViewItem}">
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />

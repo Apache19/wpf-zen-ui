@@ -68,7 +68,7 @@
         </ControlTemplate.Triggers>
     </ControlTemplate>
 
-    <ControlTemplate x:Key="NavigationViewItemTopCompactTemplate" TargetType="{x:Type controls:NavigationViewItem}">
+    <ControlTemplate x:Key="NavigationViewItemTopTemplate" TargetType="{x:Type controls:NavigationViewItem}">
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />

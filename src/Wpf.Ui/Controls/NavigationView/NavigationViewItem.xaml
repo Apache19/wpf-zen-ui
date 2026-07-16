@@ -5,11 +5,11 @@
     xmlns:m="clr-namespace:Wpf.Ui.Markup">
 
     <ResourceDictionary.MergedDictionaries>
-        <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/NavigationView/NavigationViewItemLeftCompact.xaml" />
-        <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/NavigationView/NavigationViewItemLeftMinimal.xaml" />
-        <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/NavigationView/NavigationViewItemLeftFluent.xaml" />
-        <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/NavigationView/NavigationViewItemTop.xaml" />
-        <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/NavigationView/NavigationViewItemBottom.xaml" />
+        <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/NavigationView/NavigationViewItem_Left.xaml" />
+        <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/NavigationView/NavigationViewItem_LeftMinimal.xaml" />
+        <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/NavigationView/NavigationViewItem_LeftFluent.xaml" />
+        <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/NavigationView/NavigationViewItem_Top.xaml" />
+        <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/NavigationView/NavigationViewItem_Bottom.xaml" />
     </ResourceDictionary.MergedDictionaries>
 
     <Style x:Key="NavigationViewItemDefaultStyle" TargetType="{x:Type controls:NavigationViewItem}">
@@ -26,22 +26,22 @@
         <Setter Property="KeyboardNavigation.IsTabStop" Value="True" />
         <Setter Property="Focusable" Value="True" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
-        <Setter Property="Template" Value="{StaticResource NavigationViewItemLeftCompactTemplate}" />
+        <Setter Property="Template" Value="{StaticResource NavigationViewItemLeftTemplate}" />
         <Setter Property="ContentTemplate" Value="{Binding RelativeSource={RelativeSource Self}, Path=(controls:NavigationView.ItemTemplate)}" />
         <Setter Property="ContentTemplateSelector" Value="{Binding RelativeSource={RelativeSource Self}, Path=(controls:NavigationView.ItemTemplateSelector)}" />
         <Style.Triggers>
             <Trigger Property="PaneDisplayMode" Value="LeftMinimal">
-                <Setter Property="Template" Value="{StaticResource NavigationViewItemLeftMinimalCompactTemplate}" />
+                <Setter Property="Template" Value="{StaticResource NavigationViewItemLeftMinimalTemplate}" />
             </Trigger>
             <Trigger Property="PaneDisplayMode" Value="LeftFluent">
                 <Setter Property="Template" Value="{StaticResource NavigationViewItemLeftFluentTemplate}" />
                 <Setter Property="FontSize" Value="12" />
             </Trigger>
             <Trigger Property="PaneDisplayMode" Value="Top">
-                <Setter Property="Template" Value="{StaticResource NavigationViewItemTopCompactTemplate}" />
+                <Setter Property="Template" Value="{StaticResource NavigationViewItemTopTemplate}" />
             </Trigger>
             <Trigger Property="PaneDisplayMode" Value="Bottom">
-                <Setter Property="Template" Value="{StaticResource NavigationViewItemBottomCompactTemplate}" />
+                <Setter Property="Template" Value="{StaticResource NavigationViewItemBottomTemplate}" />
             </Trigger>
             <MultiTrigger>
                 <MultiTrigger.Conditions>
