@@ -4,6 +4,88 @@
     xmlns:controls="clr-namespace:Wpf.Ui.Controls"
     xmlns:m="clr-namespace:Wpf.Ui.Markup">
 
+    <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/NavigationView/NavigationViewItem_Submenu.xaml" />
+    </ResourceDictionary.MergedDictionaries>
+
+    <!--
+        Left deliberately keeps one NavigationViewItem ControlTemplate while the pane animates.
+        Only this child presenter changes its DataTemplate. ContentPresenter removes the old
+        DataTemplate visual tree before creating the new one (the same ordering used by WPF's
+        ContentPresenter.EnsureTemplate), so NavigationViewItem children never acquire two visual
+        parents while the presentation changes between an inline list and a Popup.
+    -->
+    <DataTemplate x:Key="NavigationViewItemLeftInlineMenuTemplate">
+        <controls:NavigationViewList
+            x:Name="MenuItemsList"
+            AutomationProperties.AutomationId="NavigationItemItems"
+            Focusable="False"
+            ItemContainerStyle="{Binding RelativeSource={RelativeSource Self}, Path=(controls:NavigationView.ItemContainerStyle)}"
+            ItemContainerStyleSelector="{Binding RelativeSource={RelativeSource Self}, Path=(controls:NavigationView.ItemContainerStyleSelector)}"
+            ItemTemplate="{Binding RelativeSource={RelativeSource Self}, Path=(controls:NavigationView.ItemTemplate)}"
+            ItemTemplateSelector="{Binding RelativeSource={RelativeSource Self}, Path=(controls:NavigationView.ItemTemplateSelector)}"
+            ItemsSource="{Binding MenuItems}"
+            KeyboardNavigation.DirectionalNavigation="Contained"
+            Opacity="0"
+            ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+            ScrollViewer.VerticalScrollBarVisibility="Disabled"
+            Visibility="Collapsed">
+            <controls:NavigationViewList.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <StackPanel Margin="0" IsItemsHost="True" />
+                </ItemsPanelTemplate>
+            </controls:NavigationViewList.ItemsPanel>
+        </controls:NavigationViewList>
+        <DataTemplate.Triggers>
+            <DataTrigger Binding="{Binding IsExpanded}" Value="True">
+                <Setter TargetName="MenuItemsList" Property="Visibility" Value="Visible" />
+                <DataTrigger.EnterActions>
+                    <BeginStoryboard>
+                        <Storyboard>
+                            <DoubleAnimation
+                                Storyboard.TargetName="MenuItemsList"
+                                Storyboard.TargetProperty="Opacity"
+                                From="0"
+                                To="1"
+                                Duration="00:00:00.167" />
+                        </Storyboard>
+                    </BeginStoryboard>
+                </DataTrigger.EnterActions>
+                <DataTrigger.ExitActions>
+                    <BeginStoryboard>
+                        <Storyboard>
+                            <DoubleAnimation
+                                Storyboard.TargetName="MenuItemsList"
+                                Storyboard.TargetProperty="Opacity"
+                                From="1"
+                                To="0"
+                                Duration="00:00:00.167" />
+                        </Storyboard>
+                    </BeginStoryboard>
+                </DataTrigger.ExitActions>
+            </DataTrigger>
+        </DataTemplate.Triggers>
+    </DataTemplate>
+
+    <DataTemplate x:Key="NavigationViewItemLeftPopupMenuTemplate">
+        <Popup
+            x:Name="PART_SubMenuPopup"
+            controls:PopupAnimator.IsEnabled="True"
+            controls:PopupShadow.IsEnabled="True"
+            AllowsTransparency="True"
+            Focusable="False"
+            HorizontalOffset="1"
+            IsOpen="{Binding IsSubmenuOpen, Mode=TwoWay}"
+            Placement="Right"
+            PlacementTarget="{Binding}"
+            PopupAnimation="None"
+            StaysOpen="False">
+            <ContentPresenter
+                Content="{Binding MenuItems}"
+                ContentTemplate="{StaticResource NavigationViewItemSubmenuContentTemplate}" />
+        </Popup>
+    </DataTemplate>
+
     <ControlTemplate x:Key="NavigationViewItemLeftTemplate" TargetType="{x:Type controls:NavigationViewItem}">
         <Grid>
             <Grid.RowDefinitions>
@@ -68,60 +150,30 @@
                         Margin="0"
                         Content="{TemplateBinding InfoBadge}" />
 
-                    <controls:NavigationViewItemExpander
-                        x:Name="PART_ChevronButton"
+                    <!-- The Chevron is an indicator, not a second input surface. -->
+                    <controls:SymbolIcon
+                        x:Name="ChevronIcon"
                         Grid.Column="3"
-                        Width="0"
-                        Background="Transparent"
-                        BorderThickness="0"
-                        Focusable="False"
-                        IsChecked="{Binding IsExpanded, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
-                        IsTabStop="False"
+                        Width="40"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        FontSize="12"
+                        Foreground="{m:BrushResource TextFillColorPrimaryBrush}"
+                        IsHitTestVisible="False"
+                        RenderTransformOrigin="0.5, 0.5"
+                        Symbol="ChevronDown24"
                         Visibility="Collapsed">
-                        <controls:NavigationViewItemExpander.Template>
-                            <ControlTemplate TargetType="{x:Type controls:NavigationViewItemExpander}">
-                                <Grid Background="{TemplateBinding Background}">
-                                    <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
-                                </Grid>
-                            </ControlTemplate>
-                        </controls:NavigationViewItemExpander.Template>
-                        <controls:SymbolIcon
-                            x:Name="ChevronIcon"
-                            Margin="0"
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            FontSize="12"
-                            Foreground="{m:BrushResource TextFillColorPrimaryBrush}"
-                            RenderTransformOrigin="0.5, 0.5"
-                            Symbol="ChevronDown24">
-                            <controls:SymbolIcon.RenderTransform>
-                                <RotateTransform Angle="0" />
-                            </controls:SymbolIcon.RenderTransform>
-                        </controls:SymbolIcon>
-                    </controls:NavigationViewItemExpander>
+                        <controls:SymbolIcon.RenderTransform>
+                            <RotateTransform Angle="0" />
+                        </controls:SymbolIcon.RenderTransform>
+                    </controls:SymbolIcon>
                 </Grid>
             </Border>
-            <controls:NavigationViewList
-                x:Name="MenuItemsPresenter"
+            <ContentPresenter
+                x:Name="ChildMenuPresenter"
                 Grid.Row="1"
-                AutomationProperties.AutomationId="NavigationItemItems"
-                Focusable="False"
-                ItemContainerStyle="{Binding RelativeSource={RelativeSource Self}, Path=(controls:NavigationView.ItemContainerStyle)}"
-                ItemContainerStyleSelector="{Binding RelativeSource={RelativeSource Self}, Path=(controls:NavigationView.ItemContainerStyleSelector)}"
-                ItemTemplate="{Binding RelativeSource={RelativeSource Self}, Path=(controls:NavigationView.ItemTemplate)}"
-                ItemTemplateSelector="{Binding RelativeSource={RelativeSource Self}, Path=(controls:NavigationView.ItemTemplateSelector)}"
-                ItemsSource="{TemplateBinding MenuItems}"
-                KeyboardNavigation.DirectionalNavigation="Contained"
-                Opacity="0.0"
-                ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                ScrollViewer.VerticalScrollBarVisibility="Disabled"
-                Visibility="Collapsed">
-                <controls:NavigationViewList.ItemsPanel>
-                    <ItemsPanelTemplate>
-                        <StackPanel Margin="0" IsItemsHost="True" />
-                    </ItemsPanelTemplate>
-                </controls:NavigationViewList.ItemsPanel>
-            </controls:NavigationViewList>
+                Content="{Binding RelativeSource={RelativeSource TemplatedParent}}"
+                ContentTemplate="{StaticResource NavigationViewItemLeftInlineMenuTemplate}" />
         </Grid>
         <ControlTemplate.Triggers>
             <!--  Pane layout states  -->
@@ -132,6 +184,7 @@
                 <Setter TargetName="PART_InfoBadge" Property="Grid.Column" Value="0" />
                 <Setter TargetName="PART_InfoBadge" Property="VerticalAlignment" Value="Top" />
                 <Setter TargetName="PART_InfoBadge" Property="HorizontalAlignment" Value="Right" />
+                <Setter TargetName="ChildMenuPresenter" Property="ContentTemplate" Value="{StaticResource NavigationViewItemLeftPopupMenuTemplate}" />
             </Trigger>
 
             <!--  Optional content visibility  -->
@@ -139,28 +192,24 @@
                 <Setter TargetName="PART_InfoBadge" Property="Margin" Value="0" />
                 <Setter TargetName="PART_InfoBadge" Property="Visibility" Value="Collapsed" />
             </Trigger>
-            <Trigger Property="HasMenuItems" Value="True">
-                <Setter TargetName="PART_ChevronButton" Property="Visibility" Value="Visible" />
-                <Setter TargetName="PART_ChevronButton" Property="Width" Value="40" />
-            </Trigger>
+            <!--<MultiTrigger>
+                <MultiTrigger.Conditions>
+                    <Condition Property="HasMenuItems" Value="True" />
+                    <Condition Property="IsPaneOpen" Value="True" />
+                </MultiTrigger.Conditions>
+                <Setter TargetName="ChevronIcon" Property="Visibility" Value="Visible" />
+            </MultiTrigger>-->
             <Trigger Property="Icon" Value="{x:Null}">
                 <Setter TargetName="IconColumn" Property="Width" Value="0" />
                 <Setter TargetName="IconContentPresenter" Property="Visibility" Value="Collapsed" />
                 <Setter TargetName="ElementContentPresenter" Property="Margin" Value="10,0,0,0" />
             </Trigger>
 
-            <!--  Expansion state and animation  -->
+            <!-- The list animation lives in the inline DataTemplate; only the indicator belongs here. -->
             <Trigger Property="IsExpanded" Value="True">
-                <Setter TargetName="MenuItemsPresenter" Property="Visibility" Value="Visible" />
                 <Trigger.EnterActions>
                     <BeginStoryboard>
                         <Storyboard>
-                            <DoubleAnimation
-                                Storyboard.TargetName="MenuItemsPresenter"
-                                Storyboard.TargetProperty="(ItemsControl.Opacity)"
-                                From="0.0"
-                                To="1.0"
-                                Duration="00:00:00.167" />
                             <DoubleAnimation
                                 Storyboard.TargetName="ChevronIcon"
                                 Storyboard.TargetProperty="(Control.RenderTransform).(RotateTransform.Angle)"
@@ -172,12 +221,6 @@
                 <Trigger.ExitActions>
                     <BeginStoryboard>
                         <Storyboard>
-                            <DoubleAnimation
-                                Storyboard.TargetName="MenuItemsPresenter"
-                                Storyboard.TargetProperty="(ItemsControl.Opacity)"
-                                From="1.0"
-                                To="0.0"
-                                Duration="00:00:00.167" />
                             <DoubleAnimation
                                 Storyboard.TargetName="ChevronIcon"
                                 Storyboard.TargetProperty="(Control.RenderTransform).(RotateTransform.Angle)"

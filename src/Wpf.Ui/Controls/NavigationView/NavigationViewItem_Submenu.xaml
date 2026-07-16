@@ -1,0 +1,152 @@
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="clr-namespace:Wpf.Ui.Controls"
+    xmlns:m="clr-namespace:Wpf.Ui.Markup">
+
+    <!--
+        Popup presentations share one child-list template. NavigationViewItem instances are UIElement
+        items and WPF permits each of them to have only one visual parent, so a mode template must
+        instantiate this presenter only inside its active Popup rather than keeping parallel inline
+        and popup lists alive.
+        
+        Each mode resource dictionary merges this dictionary directly. A StaticResource inside a
+        sourced dictionary cannot resolve a resource that exists only in its containing dictionary,
+        while a DynamicResource on Popup content cannot rely on the disconnected Popup visual tree.
+        The direct merge makes template resolution deterministic in application and test resources.
+    -->
+    <DataTemplate x:Key="NavigationViewItemSubmenuContentTemplate">
+        <Border
+            MinWidth="180"
+            MaxHeight="480"
+            Padding="0,3"
+            Background="{m:BrushResource AcrylicBackgroundFillColorDefaultBrush}"
+            BorderBrush="{m:BrushResource SurfaceStrokeColorFlyoutBrush}"
+            BorderThickness="1"
+            CornerRadius="8"
+            SnapsToDevicePixels="True">
+            <ScrollViewer
+                CanContentScroll="True"
+                HorizontalScrollBarVisibility="Disabled"
+                VerticalScrollBarVisibility="Auto">
+                <controls:NavigationViewList
+                    AutomationProperties.AutomationId="NavigationItemItems"
+                    Focusable="False"
+                    ItemContainerStyle="{Binding RelativeSource={RelativeSource Self}, Path=(controls:NavigationView.ItemContainerStyle)}"
+                    ItemContainerStyleSelector="{Binding RelativeSource={RelativeSource Self}, Path=(controls:NavigationView.ItemContainerStyleSelector)}"
+                    ItemTemplate="{Binding RelativeSource={RelativeSource Self}, Path=(controls:NavigationView.ItemTemplate)}"
+                    ItemTemplateSelector="{Binding RelativeSource={RelativeSource Self}, Path=(controls:NavigationView.ItemTemplateSelector)}"
+                    ItemsSource="{Binding}"
+                    KeyboardNavigation.DirectionalNavigation="Cycle"
+                    ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                    ScrollViewer.VerticalScrollBarVisibility="Disabled">
+                    <controls:NavigationViewList.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <StackPanel IsItemsHost="True" />
+                        </ItemsPanelTemplate>
+                    </controls:NavigationViewList.ItemsPanel>
+                </controls:NavigationViewList>
+            </ScrollViewer>
+        </Border>
+    </DataTemplate>
+
+    <!--
+        Every item rendered inside a Popup uses this vertical row. Descendants open another Popup
+        to the right, matching WPF MenuItem's submenu-header role while keeping the navigation item
+        itself as the stable selection and journal object.
+    -->
+    <ControlTemplate x:Key="NavigationViewItemSubmenuTemplate" TargetType="{x:Type controls:NavigationViewItem}">
+        <Grid>
+            <Border
+                x:Name="MainBorder"
+                MinHeight="36"
+                Background="Transparent"
+                BorderBrush="{TemplateBinding BorderBrush}"
+                BorderThickness="{TemplateBinding BorderThickness}"
+                CornerRadius="{TemplateBinding Border.CornerRadius}">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="3" />
+                        <ColumnDefinition x:Name="IconColumn" Width="32" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <Rectangle
+                        x:Name="ActiveRectangle"
+                        Grid.Column="0"
+                        Width="3"
+                        Height="16"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Center"
+                        Fill="{m:BrushResource SystemAccentColorPrimaryBrush}"
+                        Opacity="0"
+                        RadiusX="2"
+                        RadiusY="2" />
+
+                    <ContentPresenter
+                        x:Name="IconContentPresenter"
+                        Grid.Column="1"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Content="{TemplateBinding Icon}"
+                        TextElement.FontSize="16"
+                        TextElement.Foreground="{m:BrushResource TextFillColorPrimaryBrush}" />
+
+                    <ContentPresenter
+                        x:Name="ElementContentPresenter"
+                        Grid.Column="2"
+                        Margin="4,0,12,0"
+                        HorizontalAlignment="Stretch"
+                        VerticalAlignment="Center"
+                        Content="{TemplateBinding Content}"
+                        ContentTemplate="{TemplateBinding ContentTemplate}"
+                        RecognizesAccessKey="True"
+                        TextElement.Foreground="{m:BrushResource TextFillColorPrimaryBrush}" />
+
+                    <ContentPresenter
+                        x:Name="PART_InfoBadge"
+                        Grid.Column="3"
+                        Margin="4,0"
+                        VerticalAlignment="Center"
+                        Content="{TemplateBinding InfoBadge}" />
+                </Grid>
+            </Border>
+
+            <Popup
+                x:Name="PART_SubMenuPopup"
+                controls:PopupAnimator.IsEnabled="True"
+                controls:PopupShadow.IsEnabled="True"
+                AllowsTransparency="True"
+                Focusable="False"
+                HorizontalOffset="1"
+                IsOpen="{Binding IsSubmenuOpen, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
+                Placement="Right"
+                PlacementTarget="{Binding ElementName=MainBorder}"
+                PopupAnimation="None"
+                StaysOpen="False">
+                <ContentPresenter Content="{Binding MenuItems, RelativeSource={RelativeSource TemplatedParent}}" ContentTemplate="{StaticResource NavigationViewItemSubmenuContentTemplate}" />
+            </Popup>
+        </Grid>
+        <ControlTemplate.Triggers>
+            <Trigger Property="IsActive" Value="True">
+                <Setter TargetName="ActiveRectangle" Property="Opacity" Value="1" />
+                <Setter TargetName="MainBorder" Property="Background" Value="{m:BrushResource SubtleFillColorSecondaryBrush}" />
+            </Trigger>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter TargetName="MainBorder" Property="Background" Value="{m:BrushResource SubtleFillColorSecondaryBrush}" />
+            </Trigger>
+            <Trigger Property="IsPressed" Value="True">
+                <Setter TargetName="MainBorder" Property="Background" Value="{m:BrushResource SubtleFillColorTertiaryBrush}" />
+            </Trigger>
+            <Trigger Property="Icon" Value="{x:Null}">
+                <Setter TargetName="IconColumn" Property="Width" Value="8" />
+                <Setter TargetName="IconContentPresenter" Property="Visibility" Value="Collapsed" />
+            </Trigger>
+            <Trigger Property="InfoBadge" Value="{x:Null}">
+                <Setter TargetName="PART_InfoBadge" Property="Visibility" Value="Collapsed" />
+            </Trigger>
+        </ControlTemplate.Triggers>
+    </ControlTemplate>
+
+</ResourceDictionary>

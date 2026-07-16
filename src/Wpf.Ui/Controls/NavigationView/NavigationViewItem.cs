@@ -9,9 +9,12 @@ using System.Collections;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.Text;
+using System.Windows.Automation;
 using System.Windows.Automation.Peers;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
+using System.Windows.Input;
+using System.Windows.Threading;
 
 // ReSharper disable once CheckNamespace
 namespace Wpf.Ui.Controls;
@@ -20,6 +23,12 @@ namespace Wpf.Ui.Controls;
 /// Represents the container for an item in a NavigationView control.
 /// When needed, it can be used as a normal button with a <see cref="ButtonBase.Click"/> action.
 /// </summary>
+/// <remarks>
+/// <c>PART_SubMenuPopup</c> is used by popup presentations and is intentionally absent from the
+/// expanded Left presentation, which owns one inline child list instead. Missing optional parts
+/// degrade to property-driven behavior without preventing navigation or expansion.
+/// </remarks>
+[TemplatePart(Name = "PART_SubMenuPopup", Type = typeof(Popup))]
 public class NavigationViewItem : ButtonBase, INavigationViewItem
 {
     #region DP: Indentation
@@ -118,7 +127,7 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
             nameof(HasMenuItems),
             typeof(bool),
             typeof(NavigationViewItem),
-            new PropertyMetadata(false)
+            new PropertyMetadata(false, OnHasMenuItemsChanged)
         );
 
     /// <summary>Identifies the <see cref="HasMenuItems"/> dependency property.</summary>
@@ -236,15 +245,61 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
             nameof(IsExpanded),
             typeof(bool),
             typeof(NavigationViewItem),
-            new PropertyMetadata(false)
+            new FrameworkPropertyMetadata(false, OnIsExpandedChanged)
         );
 
-    /// <inheritdoc />
+    /// <summary>
+    /// Gets or sets a value indicating whether children are expanded inline in the open Left pane.
+    /// The default value is <see langword="false"/>.
+    /// </summary>
+    /// <remarks>
+    /// This property does not carry layout metadata itself; the Left item template observes it to
+    /// create or remove the inline child presenter. Popup presentations preserve but otherwise
+    /// ignore this value and use <see cref="IsSubmenuOpen"/> instead.
+    /// </remarks>
     [Browsable(false)]
     public bool IsExpanded
     {
         get => (bool)GetValue(IsExpandedProperty);
         set => SetValue(IsExpandedProperty, value);
+    }
+
+    #endregion
+
+    #region DP: IsSubmenuOpen
+
+    /// <summary>
+    /// Identifies the <see cref="IsSubmenuOpen"/> dependency property. The property defaults to
+    /// <see langword="false"/> and binds two-way by default so a Popup dismissal updates its owner.
+    /// </summary>
+    public static readonly DependencyProperty IsSubmenuOpenProperty =
+        DependencyProperty.Register(
+            nameof(IsSubmenuOpen),
+            typeof(bool),
+            typeof(NavigationViewItem),
+            new FrameworkPropertyMetadata(
+                false,
+                FrameworkPropertyMetadataOptions.BindsTwoWayByDefault,
+                OnIsSubmenuOpenChanged
+            )
+        );
+
+    /// <summary>
+    /// Gets or sets a value indicating whether this item's popup submenu is open. The default value
+    /// is <see langword="false"/>.
+    /// </summary>
+    /// <remarks>
+    /// This property represents only transient popup state. The expanded Left pane uses
+    /// <see cref="IsExpanded"/> for its inline hierarchy instead. Separating the two states keeps
+    /// an inline branch from opening a popup merely because <see cref="NavigationView.PaneDisplayMode"/>
+    /// selected another control template.
+    /// </remarks>
+    [Bindable(true)]
+    [Browsable(false)]
+    public bool IsSubmenuOpen
+    {
+        get => (bool)GetValue(IsSubmenuOpenProperty);
+        set => SetValue(IsSubmenuOpenProperty, value);
     }
 
     #endregion
@@ -397,6 +452,17 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
         }
     }
 
+    /// <summary>
+    /// Gets a value indicating whether the current presentation owns an inline child list rather than a popup.
+    /// Left is the only mode with an expandable pane, and it uses inline children only while that
+    /// pane is open. Every other presentation uses <see cref="IsSubmenuOpen"/>.
+    /// </summary>
+    internal bool UsesInlineExpansion =>
+        PaneDisplayMode == NavigationViewPaneDisplayMode.Left && IsPaneOpen;
+
+    /// <summary>Gets a value indicating whether the effective child menu is open.</summary>
+    internal bool IsChildMenuOpen => UsesInlineExpansion ? IsExpanded : IsSubmenuOpen;
+
     static NavigationViewItem()
     {
         DefaultStyleKeyProperty.OverrideMetadata(
@@ -434,6 +500,7 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
         Unloaded += static (sender, _) =>
         {
             var item = (NavigationViewItem)sender;
+            item.CloseSubmenuBranch();
             item.DetachNavigationViewEvents();
         };
 
@@ -514,24 +581,35 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
     }
 
     /// <inheritdoc />
+    /// <remarks>
+    /// A Popup is a separate presentation source and can survive removal of the template visual
+    /// tree. Closing the transient branch before WPF disconnects that tree prevents an orphaned
+    /// popup when callers replace <see cref="Control.Template"/> directly.
+    /// </remarks>
+    protected override void OnTemplateChanged(ControlTemplate oldTemplate, ControlTemplate newTemplate)
+    {
+        CloseSubmenuBranch();
+        base.OnTemplateChanged(oldTemplate, newTemplate);
+    }
+
+    /// <inheritdoc />
     protected override void OnClick()
     {
-        if (NavigationView.GetNavigationParent(this) is not { } navigationView)
+        _ = InvokePrimaryAction();
+
+        base.OnClick();
+    }
+
+    /// <inheritdoc />
+    protected override void OnKeyDown(KeyEventArgs e)
+    {
+        if (HandleChildMenuKey(e.Key))
         {
+            e.Handled = true;
             return;
         }
 
-        if (HasMenuItems && IsPaneOpen)
-        {
-            SetCurrentValue(IsExpandedProperty, !IsExpanded);
-        }
-
-        if (TargetPageType is not null)
-        {
-            navigationView.OnNavigationViewItemClick(this);
-        }
-
-        base.OnClick();
+        base.OnKeyDown(e);
     }
 
     protected override AutomationPeer OnCreateAutomationPeer()
@@ -552,6 +630,11 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
              && ReferenceEquals(oldItem.NavigationViewItemParent, this)
             )
             {
+                if (oldItem is NavigationViewItem oldNavigationItem)
+                {
+                    oldNavigationItem.CloseSubmenuBranch();
+                }
+
                 oldItem.NavigationViewItemParent = null;
             }
         }
@@ -563,6 +646,204 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
             item.NavigationViewItemParent = this;
             _attachedMenuItems.Add(item);
         }
+
+        if (!HasMenuItems)
+        {
+            SetCurrentValue(IsExpandedProperty, false);
+            SetCurrentValue(IsSubmenuOpenProperty, false);
+        }
+    }
+
+    /// <summary>
+    /// Executes every action represented by the item surface. Navigation and child presentation are
+    /// intentionally independent: an item that has both a target and children navigates and toggles
+    /// its children from the same click, matching the fact that the template exposes one button.
+    /// </summary>
+    /// <returns><see langword="true"/> when an action was performed.</returns>
+    internal bool InvokePrimaryAction()
+    {
+        // Capture the desired child state before navigation. Successful navigation closes all
+        // transient Popup branches, so deriving the toggle state afterwards would always reopen an
+        // already-open menu instead of honoring the user's request to close it.
+        bool hasMenuItems = HasMenuItems;
+        bool shouldOpenChildMenu = hasMenuItems && !IsChildMenuOpen;
+        bool actionPerformed = false;
+
+        if (TargetPageType is not null && NavigationViewHost is { } navigationView)
+        {
+            actionPerformed = navigationView.OnNavigationViewItemClick(this);
+        }
+
+        if (hasMenuItems)
+        {
+            SetChildMenuOpen(shouldOpenChildMenu, focusFirstItem: false);
+            actionPerformed = true;
+        }
+
+        return actionPerformed;
+    }
+
+    /// <summary>Sets the effective child-menu state for the active presentation.</summary>
+    internal void SetChildMenuOpen(bool isOpen, bool focusFirstItem)
+    {
+        if (isOpen && !HasMenuItems)
+        {
+            return;
+        }
+
+        if (UsesInlineExpansion)
+        {
+            SetCurrentValue(IsExpandedProperty, isOpen);
+        }
+        else
+        {
+            SetCurrentValue(IsSubmenuOpenProperty, isOpen);
+        }
+
+        if (isOpen && focusFirstItem)
+        {
+            FocusFirstSubmenuItem();
+        }
+    }
+
+    /// <summary>Closes this popup submenu and every popup below it.</summary>
+    internal void CloseSubmenuBranch()
+    {
+        SetCurrentValue(IsSubmenuOpenProperty, false);
+
+        foreach (NavigationViewItem child in MenuItems.OfType<NavigationViewItem>())
+        {
+            child.CloseSubmenuBranch();
+        }
+    }
+
+    private bool HandleChildMenuKey(Key key)
+    {
+        if (key == Key.Escape && (IsSubmenuOpen || HasOpenSubmenuAncestor()))
+        {
+            NavigationViewItem root = GetRootNavigationItem();
+            NavigationViewHost?.CloseAllNavigationViewItemSubmenus();
+            _ = root.Focus();
+            return true;
+        }
+
+        if (UsesInlineExpansion)
+        {
+            if (key == Key.Right && HasMenuItems)
+            {
+                SetChildMenuOpen(true, focusFirstItem: false);
+                return true;
+            }
+
+            if (key == Key.Left)
+            {
+                if (IsExpanded)
+                {
+                    SetChildMenuOpen(false, focusFirstItem: false);
+                }
+                else if (NavigationViewItemParent is NavigationViewItem parentItem)
+                {
+                    _ = parentItem.Focus();
+                }
+
+                return true;
+            }
+
+            return false;
+        }
+
+        if (IsSubItem)
+        {
+            if (key == Key.Right && HasMenuItems)
+            {
+                SetChildMenuOpen(true, focusFirstItem: true);
+                return true;
+            }
+
+            if (key == Key.Left && NavigationViewItemParent is NavigationViewItem parentItem)
+            {
+                parentItem.SetChildMenuOpen(false, focusFirstItem: false);
+                _ = parentItem.Focus();
+                return true;
+            }
+
+            return false;
+        }
+
+        Key openKey = PaneDisplayMode switch
+        {
+            NavigationViewPaneDisplayMode.Top => Key.Down,
+            NavigationViewPaneDisplayMode.Bottom => Key.Up,
+            _ => Key.Right,
+        };
+        Key closeKey = PaneDisplayMode switch
+        {
+            NavigationViewPaneDisplayMode.Top => Key.Up,
+            NavigationViewPaneDisplayMode.Bottom => Key.Down,
+            _ => Key.Left,
+        };
+
+        if (key == openKey && HasMenuItems)
+        {
+            SetChildMenuOpen(true, focusFirstItem: true);
+            return true;
+        }
+
+        if (key == closeKey && IsSubmenuOpen)
+        {
+            SetChildMenuOpen(false, focusFirstItem: false);
+            return true;
+        }
+
+        return false;
+    }
+
+    private bool HasOpenSubmenuAncestor()
+    {
+        for (INavigationViewItem? parent = NavigationViewItemParent; parent is not null; parent = parent.NavigationViewItemParent)
+        {
+            if (parent is NavigationViewItem { IsSubmenuOpen: true })
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private NavigationViewItem GetRootNavigationItem()
+    {
+        var root = this;
+        while (root.NavigationViewItemParent is NavigationViewItem parentItem)
+        {
+            root = parentItem;
+        }
+
+        return root;
+    }
+
+    private void FocusFirstSubmenuItem()
+    {
+        // Popup content is created after IsOpen changes. Deferring to input priority lets WPF
+        // generate and connect the child containers before focus crosses the HWND boundary.
+        _ = Dispatcher.BeginInvoke(
+            DispatcherPriority.Input,
+            new Action(() =>
+            {
+                if (!IsChildMenuOpen)
+                {
+                    return;
+                }
+
+                foreach (UIElement child in MenuItems.OfType<UIElement>())
+                {
+                    if (child is { Focusable: true, IsEnabled: true } && child.Focus())
+                    {
+                        return;
+                    }
+                }
+            })
+        );
     }
 
     private void UpdateIndentation()
@@ -674,6 +955,91 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
         }
     }
 
+    /// <summary>
+    /// Coordinates popup branch ownership at the dependency-property boundary. Popup dismissal and
+    /// external bindings therefore receive the same descendant cleanup and UIA notification as
+    /// mouse and keyboard input.
+    /// </summary>
+    private static void OnIsSubmenuOpenChanged(
+        DependencyObject d,
+        DependencyPropertyChangedEventArgs e)
+    {
+        var item = (NavigationViewItem)d;
+        bool oldValue = (bool)e.OldValue;
+        bool newValue = (bool)e.NewValue;
+
+        if (newValue && !item.HasMenuItems)
+        {
+            item.SetCurrentValue(IsSubmenuOpenProperty, false);
+            return;
+        }
+
+        if (newValue)
+        {
+            item.NavigationViewHost?.OnNavigationViewItemSubmenuOpened(item);
+        }
+        else
+        {
+            foreach (NavigationViewItem child in item.MenuItems.OfType<NavigationViewItem>())
+            {
+                child.CloseSubmenuBranch();
+            }
+        }
+
+        if (!item.UsesInlineExpansion && item.HasMenuItems)
+        {
+            NavigationViewItemAutomationPeer.RaiseExpandCollapseAutomationEvent(
+                item,
+                oldValue ? ExpandCollapseState.Expanded : ExpandCollapseState.Collapsed,
+                newValue ? ExpandCollapseState.Expanded : ExpandCollapseState.Collapsed
+            );
+        }
+    }
+
+    /// <summary>Reports inline state changes only while inline expansion is the active presentation.</summary>
+    private static void OnIsExpandedChanged(
+        DependencyObject d,
+        DependencyPropertyChangedEventArgs e)
+    {
+        var item = (NavigationViewItem)d;
+
+        if (item.UsesInlineExpansion && item.HasMenuItems)
+        {
+            NavigationViewItemAutomationPeer.RaiseExpandCollapseAutomationEvent(
+                item,
+                (bool)e.OldValue ? ExpandCollapseState.Expanded : ExpandCollapseState.Collapsed,
+                (bool)e.NewValue ? ExpandCollapseState.Expanded : ExpandCollapseState.Collapsed
+            );
+        }
+    }
+
+    /// <summary>
+    /// Reports transitions to and from UI Automation's LeafNode state. This callback runs before
+    /// collection cleanup resets an open-state property, preventing a misleading Expanded-to-
+    /// Collapsed notification when the item actually became a leaf.
+    /// </summary>
+    private static void OnHasMenuItemsChanged(
+        DependencyObject d,
+        DependencyPropertyChangedEventArgs e)
+    {
+        var item = (NavigationViewItem)d;
+        bool oldValue = (bool)e.OldValue;
+        bool newValue = (bool)e.NewValue;
+
+        ExpandCollapseState oldState = oldValue
+            ? item.IsChildMenuOpen ? ExpandCollapseState.Expanded : ExpandCollapseState.Collapsed
+            : ExpandCollapseState.LeafNode;
+        ExpandCollapseState newState = newValue
+            ? item.IsChildMenuOpen ? ExpandCollapseState.Expanded : ExpandCollapseState.Collapsed
+            : ExpandCollapseState.LeafNode;
+
+        NavigationViewItemAutomationPeer.RaiseExpandCollapseAutomationEvent(
+            item,
+            oldState,
+            newState
+        );
+    }
+
     private static void OnNavigationLookupPropertyChanged(
         DependencyObject                   d,
         DependencyPropertyChangedEventArgs e
@@ -778,8 +1144,16 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
 
     internal void SynchronizePaneState(NavigationViewPaneDisplayMode paneDisplayMode, bool isPaneOpen)
     {
+        bool presentationChanged =
+            PaneDisplayMode != paneDisplayMode || IsPaneOpen != isPaneOpen;
+
         SetValue(PaneDisplayModePropertyKey, paneDisplayMode);
         SetValue(IsPaneOpenPropertyKey, isPaneOpen);
+
+        if (presentationChanged)
+        {
+            SetCurrentValue(IsSubmenuOpenProperty, false);
+        }
 
         foreach (var item in MenuItems.OfType<NavigationViewItem>())
         {

@@ -42,7 +42,16 @@
                     <ui:NavigationViewItem
                         Content="Items"
                         Icon="{ui:SymbolIcon Library24}"
-                        TargetPageType="{x:Type samples:SamplePage2}" />
+                        TargetPageType="{x:Type samples:SamplePage2}">
+                        <ui:NavigationViewItem.MenuItems>
+                            <ui:NavigationViewItem Content="Recent" TargetPageType="{x:Type samples:SamplePage2}" />
+                            <ui:NavigationViewItem Content="Categories">
+                                <ui:NavigationViewItem.MenuItems>
+                                    <ui:NavigationViewItem Content="Pinned" TargetPageType="{x:Type samples:SamplePage3}" />
+                                </ui:NavigationViewItem.MenuItems>
+                            </ui:NavigationViewItem>
+                        </ui:NavigationViewItem.MenuItems>
+                    </ui:NavigationViewItem>
                 </ui:NavigationView.MenuItems>
                 <ui:NavigationView.FooterMenuItems>
                     <ui:NavigationViewItem
@@ -102,6 +111,49 @@
         <controls:ControlExample
             Margin="0,0,0,42"
             Padding="0"
+            HeaderText="WPF UI Minimal NavigationView.">
+            <ui:NavigationView
+                MinHeight="300"
+                Margin="0"
+                IsPaneOpen="False"
+                PaneDisplayMode="LeftMinimal">
+                <ui:NavigationView.MenuItems>
+                    <ui:NavigationViewItem
+                        Content="Dashboard"
+                        Icon="{ui:SymbolIcon Home24}"
+                        TargetPageType="{x:Type samples:SamplePage1}" />
+                    <ui:NavigationViewItem
+                        Content="Library"
+                        Icon="{ui:SymbolIcon Library24}">
+                        <ui:NavigationViewItem.MenuItems>
+                            <ui:NavigationViewItem Content="Recent" TargetPageType="{x:Type samples:SamplePage2}" />
+                            <ui:NavigationViewItem Content="Folders">
+                                <ui:NavigationViewItem.MenuItems>
+                                    <ui:NavigationViewItem Content="Archive" TargetPageType="{x:Type samples:SamplePage3}" />
+                                </ui:NavigationViewItem.MenuItems>
+                            </ui:NavigationViewItem>
+                        </ui:NavigationViewItem.MenuItems>
+                    </ui:NavigationViewItem>
+                </ui:NavigationView.MenuItems>
+                <ui:NavigationView.FooterMenuItems>
+                    <ui:NavigationViewItem
+                        Content="Settings"
+                        Icon="{ui:SymbolIcon Settings24}"
+                        TargetPageType="{x:Type samples:SamplePage3}" />
+                </ui:NavigationView.FooterMenuItems>
+            </ui:NavigationView>
+            <controls:ControlExample.XamlCode>
+                &lt;ui:NavigationView PaneDisplayMode=&quot;LeftMinimal&quot; &gt;\n
+                \t&lt;ui:NavigationView.MenuItems&gt;\n
+                \t\t&lt;ui:NavigationViewItem Content=&quot;Library&quot; Icon=&quot;Library24&quot; /&gt;\n
+                \t&lt;/ui:NavigationView.MenuItems&gt;\n
+                &lt;/ui:NavigationView&gt;
+            </controls:ControlExample.XamlCode>
+        </controls:ControlExample>
+
+        <controls:ControlExample
+            Margin="0,0,0,42"
+            Padding="0"
             HeaderText="WPF UI Fluent NavigationView.">
             <ui:NavigationView
                 MinHeight="300"
@@ -117,7 +169,16 @@
                     <ui:NavigationViewItem
                         Content="Items"
                         Icon="{ui:SymbolIcon Library24}"
-                        TargetPageType="{x:Type samples:SamplePage2}" />
+                        TargetPageType="{x:Type samples:SamplePage2}">
+                        <ui:NavigationViewItem.MenuItems>
+                            <ui:NavigationViewItem Content="Recent" TargetPageType="{x:Type samples:SamplePage2}" />
+                            <ui:NavigationViewItem Content="More">
+                                <ui:NavigationViewItem.MenuItems>
+                                    <ui:NavigationViewItem Content="Archive" TargetPageType="{x:Type samples:SamplePage3}" />
+                                </ui:NavigationViewItem.MenuItems>
+                            </ui:NavigationViewItem>
+                        </ui:NavigationViewItem.MenuItems>
+                    </ui:NavigationViewItem>
                 </ui:NavigationView.MenuItems>
                 <ui:NavigationView.FooterMenuItems>
                     <ui:NavigationViewItem
@@ -199,7 +260,11 @@
                         TargetPageType="{x:Type samples:SamplePage1}">
                         <ui:NavigationViewItem.MenuItems>
                             <ui:NavigationViewItem Content="Menu SubItem 1" TargetPageType="{x:Type samples:SamplePage3}" />
-                            <ui:NavigationViewItem Content="Menu SubItem 2" TargetPageType="{x:Type samples:SamplePage3}" />
+                            <ui:NavigationViewItem Content="Menu SubItem 2">
+                                <ui:NavigationViewItem.MenuItems>
+                                    <ui:NavigationViewItem Content="Nested Item" TargetPageType="{x:Type samples:SamplePage3}" />
+                                </ui:NavigationViewItem.MenuItems>
+                            </ui:NavigationViewItem>
                         </ui:NavigationViewItem.MenuItems>
                     </ui:NavigationViewItem>
                     <ui:NavigationViewItem
@@ -289,7 +354,16 @@
                     <ui:NavigationViewItem
                         Content="Menu Item 1"
                         Icon="{ui:SymbolIcon Home24}"
-                        TargetPageType="{x:Type samples:SamplePage1}" />
+                        TargetPageType="{x:Type samples:SamplePage1}">
+                        <ui:NavigationViewItem.MenuItems>
+                            <ui:NavigationViewItem Content="Menu SubItem 1" TargetPageType="{x:Type samples:SamplePage2}" />
+                            <ui:NavigationViewItem Content="Menu SubItem 2">
+                                <ui:NavigationViewItem.MenuItems>
+                                    <ui:NavigationViewItem Content="Nested Item" TargetPageType="{x:Type samples:SamplePage3}" />
+                                </ui:NavigationViewItem.MenuItems>
+                            </ui:NavigationViewItem>
+                        </ui:NavigationViewItem.MenuItems>
+                    </ui:NavigationViewItem>
                     <ui:NavigationViewItem
                         Content="Menu Item 2"
                         Icon="{ui:SymbolIcon AppFolder24}"

@@ -24,7 +24,7 @@ internal class CardControlAutomationPeer(CardControl owner) : FrameworkElementAu
         return AutomationControlType.Pane;
     }
 
-    public override object GetPattern(PatternInterface patternInterface)
+    public override object? GetPattern(PatternInterface patternInterface)
     {
         if (patternInterface == PatternInterface.ItemContainer)
         {
@@ -34,7 +34,7 @@ internal class CardControlAutomationPeer(CardControl owner) : FrameworkElementAu
         return base.GetPattern(patternInterface);
     }
 
-    protected override AutomationPeer GetLabeledByCore()
+    protected override AutomationPeer? GetLabeledByCore()
     {
         if (owner.Header is UIElement element)
         {

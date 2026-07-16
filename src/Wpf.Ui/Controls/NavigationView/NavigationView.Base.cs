@@ -178,6 +178,7 @@ public partial class NavigationView : Control, INavigationView
     private          TitleBar?                                          _titleBarContentOwner;
     private          object?                                            _displacedTitleBarLeftContent;
     private          bool                                               _isLeftPaneWidthInitialized;
+    private          bool                                               _isUpdatingNavigationItemSubmenus;
 
     protected static void UpdateVisualState(NavigationView navigationView)
     {
@@ -334,6 +335,7 @@ public partial class NavigationView : Control, INavigationView
         // is achieved without permanently changing button visibility when the caller returns to Left.
         UpdatePaneButtonPlacement();
         RaiseEvent(new RoutedEventArgs(PaneDisplayModeChangedEvent, this));
+        RefreshNavigationItemActiveState();
     }
 
     /// <summary>
@@ -579,10 +581,118 @@ public partial class NavigationView : Control, INavigationView
         OnSelectionChanged();
     }
 
-    internal void OnNavigationViewItemClick(NavigationViewItem navigationViewItem)
+    /// <summary>
+    /// Invokes a navigation item and closes transient menus only after navigation succeeds. A
+    /// canceled navigation intentionally leaves the current branch available to the user.
+    /// </summary>
+    internal bool OnNavigationViewItemClick(NavigationViewItem navigationViewItem)
     {
         OnItemInvoked();
-        NavigateInternal(navigationViewItem);
+        bool navigated = NavigateInternal(navigationViewItem);
+
+        if (navigated)
+        {
+            CloseAllNavigationViewItemSubmenus();
+        }
+
+        return navigated;
+    }
+
+    /// <summary>
+    /// Enforces the menu invariant used by WPF's native menu controls: at most one popup branch is
+    /// open, while every ancestor needed to keep that branch visible remains open.
+    /// </summary>
+    internal void OnNavigationViewItemSubmenuOpened(NavigationViewItem openedItem)
+    {
+        if (_isUpdatingNavigationItemSubmenus)
+        {
+            return;
+        }
+
+        var preservedPath = new HashSet<NavigationViewItem>();
+        for (
+            NavigationViewItem? item = openedItem;
+            item is not null;
+            item = item.NavigationViewItemParent as NavigationViewItem
+        )
+        {
+            _ = preservedPath.Add(item);
+        }
+
+        _isUpdatingNavigationItemSubmenus = true;
+        try
+        {
+            CloseNavigationViewItemSubmenusExcept(MenuItems, preservedPath);
+            CloseNavigationViewItemSubmenusExcept(FooterMenuItems, preservedPath);
+        }
+        finally
+        {
+            _isUpdatingNavigationItemSubmenus = false;
+        }
+    }
+
+    /// <summary>Closes every transient navigation-item popup without altering inline expansion.</summary>
+    internal void CloseAllNavigationViewItemSubmenus()
+    {
+        if (_isUpdatingNavigationItemSubmenus)
+        {
+            return;
+        }
+
+        _isUpdatingNavigationItemSubmenus = true;
+        try
+        {
+            CloseNavigationViewItemSubmenus(MenuItems);
+            CloseNavigationViewItemSubmenus(FooterMenuItems);
+        }
+        finally
+        {
+            _isUpdatingNavigationItemSubmenus = false;
+        }
+    }
+
+    private static void CloseNavigationViewItemSubmenus(IEnumerable items)
+    {
+        foreach (NavigationViewItem item in items.OfType<NavigationViewItem>())
+        {
+            item.CloseSubmenuBranch();
+        }
+    }
+
+    private static void CloseNavigationViewItemSubmenusExcept(
+        IEnumerable items,
+        HashSet<NavigationViewItem> preservedPath)
+    {
+        foreach (NavigationViewItem item in items.OfType<NavigationViewItem>())
+        {
+            if (!preservedPath.Contains(item))
+            {
+                item.CloseSubmenuBranch();
+                continue;
+            }
+
+            CloseNavigationViewItemSubmenusExcept(item.MenuItems, preservedPath);
+        }
+    }
+
+    /// <summary>
+    /// Rebuilds presentation-dependent active ancestors after a pane-mode change. The selected
+    /// navigation object remains unchanged; only read-only visual state is recomputed.
+    /// </summary>
+    private void RefreshNavigationItemActiveState()
+    {
+        ClearNavigationViewItemActiveState(MenuItems);
+        ClearNavigationViewItemActiveState(FooterMenuItems);
+        SelectedItem?.Activate(this);
+    }
+
+    private static void ClearNavigationViewItemActiveState(IEnumerable items)
+    {
+        foreach (NavigationViewItem item in items.OfType<NavigationViewItem>())
+        {
+            item.SetValue(NavigationViewItem.IsActivePropertyKey, false);
+            ClearNavigationViewItemActiveState(item.MenuItems);
+        }
     }
 
     protected virtual void BreadcrumbBarOnItemClicked(
@@ -727,6 +837,7 @@ public partial class NavigationView : Control, INavigationView
     {
         foreach (NavigationViewItem item in items.OfType<NavigationViewItem>())
         {
+            item.CloseSubmenuBranch();
             UnregisterNavigationViewItem(item);
         }
     }
@@ -787,6 +898,17 @@ public partial class NavigationView : Control, INavigationView
     {
         foreach (var item in _registeredItems)
         {
+            // Reset notifications do not expose removed items. Close the previously indexed
+            // roots before discarding the index so a detached Popup cannot remain open. Limiting
+            // recursion to roots avoids walking every descendant subtree repeatedly.
+            if (
+                item.NavigationViewItemParent is not NavigationViewItem parentItem ||
+                !_registeredItems.Contains(parentItem)
+            )
+            {
+                item.CloseSubmenuBranch();
+            }
+
             if (item.MenuItems is INotifyCollectionChanged menuItems)
             {
                 menuItems.CollectionChanged -= OnNavigationViewItemMenuItemsCollectionChanged;

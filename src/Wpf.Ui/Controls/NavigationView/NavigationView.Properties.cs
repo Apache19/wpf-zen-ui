@@ -458,6 +458,8 @@ public partial class NavigationView
             return;
         }
 
+        navigationView.CloseAllNavigationViewItemSubmenus();
+
         if (navigationView.IsPaneOpen)
         {
             navigationView.OnPaneOpened();
@@ -468,6 +470,7 @@ public partial class NavigationView
         }
 
         navigationView.CloseNavigationViewItemMenus();
+        navigationView.RefreshNavigationItemActiveState();
 
         navigationView.UpdatePaneButtonPlacement();
         UpdateVisualState(navigationView);
@@ -984,6 +987,10 @@ public partial class NavigationView
             return;
         }
 
+        // Close Popup-owned state before the style trigger clears the outgoing template subtree.
+        // IsExpanded is intentionally left untouched so an inline Left hierarchy survives a
+        // presentation round trip.
+        navigationView.CloseAllNavigationViewItemSubmenus();
         navigationView.PrepareForPaneDisplayModeChange(
             (NavigationViewPaneDisplayMode)e.OldValue
         );

@@ -4,69 +4,9 @@
     xmlns:controls="clr-namespace:Wpf.Ui.Controls"
     xmlns:m="clr-namespace:Wpf.Ui.Markup">
 
-    <ControlTemplate x:Key="NavigationViewItemTopSubTemplate" TargetType="{x:Type controls:NavigationViewItem}">
-        <Border
-            x:Name="MainBorder"
-            Height="25"
-            Margin="0"
-            Padding="0"
-            HorizontalAlignment="Stretch"
-            BorderThickness="1"
-            CornerRadius="4">
-            <Grid Margin="0" HorizontalAlignment="Stretch">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="3" />
-                    <ColumnDefinition Width="15" />
-                    <ColumnDefinition Width="*" MinWidth="120" />
-                </Grid.ColumnDefinitions>
-                <Rectangle
-                    x:Name="ActiveRectangle"
-                    Grid.Column="0"
-                    Width="3"
-                    Height="16"
-                    Margin="0"
-                    HorizontalAlignment="Left"
-                    VerticalAlignment="Center"
-                    Fill="{m:BrushResource SystemAccentColorPrimaryBrush}"
-                    Opacity="0.0"
-                    RadiusX="2"
-                    RadiusY="2" />
-
-                <ContentPresenter
-                    x:Name="IconContentPresenter"
-                    Grid.Column="1"
-                    Margin="0,0,0,0"
-                    HorizontalAlignment="Center"
-                    VerticalAlignment="Center"
-                    Content="{TemplateBinding Icon}"
-                    Focusable="False"
-                    TextElement.FontSize="16"
-                    TextElement.Foreground="{m:BrushResource TextFillColorPrimaryBrush}" />
-                <ContentPresenter
-                    x:Name="ElementContentPresenter"
-                    Grid.Column="2"
-                    Margin="5,0,0,0"
-                    HorizontalAlignment="Stretch"
-                    VerticalAlignment="Center"
-                    Content="{TemplateBinding Content}"
-                    ContentTemplate="{TemplateBinding ContentTemplate}"
-                    RecognizesAccessKey="True"
-                    TextElement.Foreground="{m:BrushResource TextFillColorPrimaryBrush}" />
-            </Grid>
-        </Border>
-        <ControlTemplate.Triggers>
-            <Trigger Property="IsActive" Value="True">
-                <Setter TargetName="ActiveRectangle" Property="Opacity" Value="1.0" />
-                <Setter TargetName="MainBorder" Property="Background" Value="{m:BrushResource SubtleFillColorSecondaryBrush}" />
-            </Trigger>
-            <Trigger Property="IsMouseOver" Value="True">
-                <Setter TargetName="MainBorder" Property="Background" Value="{m:BrushResource SubtleFillColorSecondaryBrush}" />
-            </Trigger>
-            <Trigger Property="IsPressed" Value="True">
-                <Setter TargetName="MainBorder" Property="Background" Value="{m:BrushResource SubtleFillColorTertiaryBrush}" />
-            </Trigger>
-        </ControlTemplate.Triggers>
-    </ControlTemplate>
+    <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/NavigationView/NavigationViewItem_Submenu.xaml" />
+    </ResourceDictionary.MergedDictionaries>
 
     <ControlTemplate x:Key="NavigationViewItemTopTemplate" TargetType="{x:Type controls:NavigationViewItem}">
         <Grid>
@@ -104,12 +44,6 @@
                             ContentTemplate="{TemplateBinding ContentTemplate}"
                             RecognizesAccessKey="True"
                             TextElement.Foreground="{TemplateBinding Foreground}" />
-                        <Grid
-                            x:Name="PART_ChevronGrid"
-                            Grid.Column="2"
-                            Width="0"
-                            Visibility="Collapsed" />
-
                         <ContentPresenter
                             x:Name="PART_InfoBadge"
                             Grid.Column="2"
@@ -134,94 +68,26 @@
                 </Grid>
             </Border>
             <Popup
-                x:Name="SubMenuPopup"
+                x:Name="PART_SubMenuPopup"
                 Grid.Row="1"
                 controls:PopupAnimator.IsEnabled="True"
                 controls:PopupShadow.IsEnabled="True"
                 AllowsTransparency="True"
                 Focusable="False"
                 HorizontalOffset="-12"
-                IsOpen="{Binding IsExpanded, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
+                IsOpen="{Binding IsSubmenuOpen, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
                 Placement="Bottom"
                 PlacementTarget="{Binding ElementName=MainBorder}"
                 PopupAnimation="None"
                 StaysOpen="False"
                 VerticalOffset="1">
-
-                <Border
-                    x:Name="SubMenuBorder"
-                    Margin="0"
-                    Padding="0,3,0,3"
-                    Background="{m:BrushResource AcrylicBackgroundFillColorDefaultBrush}"
-                    BorderBrush="{m:BrushResource SurfaceStrokeColorFlyoutBrush}"
-                    BorderThickness="1"
-                    CornerRadius="8"
-                    SnapsToDevicePixels="True">
-                    <controls:NavigationViewList
-                        x:Name="SubMenuItemsPresenter"
-                        Focusable="False"
-                        ItemContainerStyle="{Binding RelativeSource={RelativeSource Self}, Path=(controls:NavigationView.ItemContainerStyle)}"
-                        ItemContainerStyleSelector="{Binding RelativeSource={RelativeSource Self}, Path=(controls:NavigationView.ItemContainerStyleSelector)}"
-                        ItemTemplate="{Binding RelativeSource={RelativeSource Self}, Path=(controls:NavigationView.ItemTemplate)}"
-                        ItemTemplateSelector="{Binding RelativeSource={RelativeSource Self}, Path=(controls:NavigationView.ItemTemplateSelector)}"
-                        ItemsSource="{TemplateBinding MenuItems}"
-                        KeyboardNavigation.DirectionalNavigation="Contained"
-                        Opacity="0.0"
-                        ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                        ScrollViewer.VerticalScrollBarVisibility="Disabled">
-                        <controls:NavigationViewList.ItemsPanel>
-                            <ItemsPanelTemplate>
-                                <StackPanel Margin="0" IsItemsHost="True" />
-                            </ItemsPanelTemplate>
-                        </controls:NavigationViewList.ItemsPanel>
-                    </controls:NavigationViewList>
-                </Border>
+                <ContentPresenter
+                    Content="{Binding MenuItems, RelativeSource={RelativeSource TemplatedParent}}"
+                    ContentTemplate="{StaticResource NavigationViewItemSubmenuContentTemplate}" />
             </Popup>
         </Grid>
         <ControlTemplate.Triggers>
 
-            <Trigger Property="HasMenuItems" Value="True">
-                <Setter TargetName="PART_ChevronGrid" Property="Visibility" Value="Visible" />
-                <Setter TargetName="PART_ChevronGrid" Property="Width" Value="20" />
-            </Trigger>
-            <Trigger Property="IsExpanded" Value="True">
-
-                <Trigger.EnterActions>
-                    <BeginStoryboard>
-                        <Storyboard>
-                            <DoubleAnimation
-                                Storyboard.TargetName="SubMenuItemsPresenter"
-                                Storyboard.TargetProperty="(UIElement.Opacity)"
-                                From="0.0"
-                                To="1.0"
-                                Duration="0:0:0.167" />
-                            <!--<DoubleAnimation
-                                Storyboard.TargetName="ChevronIcon"
-                                Storyboard.TargetProperty="(Control.RenderTransform).(RotateTransform.Angle)"
-                                To="-180"
-                                Duration="00:00:00.167" />-->
-                        </Storyboard>
-                    </BeginStoryboard>
-                </Trigger.EnterActions>
-                <Trigger.ExitActions>
-                    <BeginStoryboard>
-                        <Storyboard>
-                            <DoubleAnimation
-                                Storyboard.TargetName="SubMenuItemsPresenter"
-                                Storyboard.TargetProperty="(UIElement.Opacity)"
-                                From="1.0"
-                                To="0.0"
-                                Duration="0:0:0.167" />
-
-                            <!--<DoubleAnimation
-                                Storyboard.TargetName="ChevronIcon"
-                                Storyboard.TargetProperty="(Control.RenderTransform).(RotateTransform.Angle)"
-                                To="0"
-                                Duration="00:00:00.167" />-->
-                        </Storyboard>
-                    </BeginStoryboard>
-                </Trigger.ExitActions>
-            </Trigger>
             <Trigger Property="IsActive" Value="True">
                 <Setter TargetName="ActiveRectangle" Property="Opacity" Value="1.0" />
             </Trigger>

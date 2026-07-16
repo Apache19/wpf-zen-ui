@@ -4,72 +4,9 @@
     xmlns:controls="clr-namespace:Wpf.Ui.Controls"
     xmlns:markup="clr-namespace:Wpf.Ui.Markup">
 
-    <ControlTemplate x:Key="NavigationViewItemLeftMinimalSubTemplate" TargetType="{x:Type controls:NavigationViewItem}">
-        <Border
-            x:Name="MainBorder"
-            Grid.Row="0"
-            MinHeight="40"
-            Margin="0"
-            Padding="0"
-            Background="Transparent"
-            BorderBrush="{TemplateBinding BorderBrush}"
-            BorderThickness="1"
-            CornerRadius="{TemplateBinding Border.CornerRadius}">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="40" />
-                    <ColumnDefinition Width="*" MinWidth="180" />
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
-
-                <Grid Grid.Column="0">
-                    <ContentPresenter
-                        x:Name="IconContentPresenter"
-                        Margin="-1,0,0,0"
-                        HorizontalAlignment="Center"
-                        VerticalAlignment="Center"
-                        Content="{TemplateBinding Icon}"
-                        TextElement.Foreground="{markup:BrushResource TextFillColorPrimaryBrush}" />
-                </Grid>
-
-                <Rectangle
-                    x:Name="ActiveRectangle"
-                    Grid.Column="0"
-                    Width="3"
-                    Height="16"
-                    Margin="0"
-                    HorizontalAlignment="Left"
-                    VerticalAlignment="Center"
-                    Fill="{markup:BrushResource SystemAccentColorPrimaryBrush}"
-                    Opacity="0.0"
-                    RadiusX="2"
-                    RadiusY="2" />
-
-                <ContentPresenter
-                    x:Name="ElementContentPresenter"
-                    Grid.Column="1"
-                    HorizontalAlignment="Left"
-                    VerticalAlignment="Center"
-                    Content="{TemplateBinding Content}"
-                    ContentTemplate="{TemplateBinding ContentTemplate}"
-                    RecognizesAccessKey="True"
-                    TextElement.Foreground="{TemplateBinding Foreground}" />
-
-                <ContentPresenter
-                    x:Name="PART_InfoBadge"
-                    Grid.Column="2"
-                    Margin="0"
-                    Content="{TemplateBinding InfoBadge}" />
-
-                <controls:SymbolIcon
-                    x:Name="ChevronIcon"
-                    Grid.Column="3"
-                    Symbol="ChevronDown24"
-                    Visibility="Collapsed" />
-            </Grid>
-        </Border>
-    </ControlTemplate>
+    <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/NavigationView/NavigationViewItem_Submenu.xaml" />
+    </ResourceDictionary.MergedDictionaries>
 
     <ControlTemplate x:Key="NavigationViewItemLeftMinimalTemplate" TargetType="{x:Type controls:NavigationViewItem}">
         <Grid>
@@ -92,7 +29,6 @@
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="40" />
                         <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
 
@@ -135,30 +71,26 @@
                         Margin="0"
                         Content="{TemplateBinding InfoBadge}" />
 
-                    <controls:SymbolIcon
-                        x:Name="ChevronIcon"
-                        Grid.Column="3"
-                        Symbol="ChevronDown24"
-                        Visibility="Collapsed" />
                 </Grid>
             </Border>
-            <controls:NavigationViewList
+
+            <Popup
+                x:Name="PART_SubMenuPopup"
                 Grid.Row="1"
+                controls:PopupAnimator.IsEnabled="True"
+                controls:PopupShadow.IsEnabled="True"
+                AllowsTransparency="True"
                 Focusable="False"
-                ItemContainerStyle="{Binding RelativeSource={RelativeSource Self}, Path=(controls:NavigationView.ItemContainerStyle)}"
-                ItemContainerStyleSelector="{Binding RelativeSource={RelativeSource Self}, Path=(controls:NavigationView.ItemContainerStyleSelector)}"
-                ItemTemplate="{Binding RelativeSource={RelativeSource Self}, Path=(controls:NavigationView.ItemTemplate)}"
-                ItemTemplateSelector="{Binding RelativeSource={RelativeSource Self}, Path=(controls:NavigationView.ItemTemplateSelector)}"
-                ItemsSource="{TemplateBinding MenuItems}"
-                KeyboardNavigation.DirectionalNavigation="Contained"
-                ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                ScrollViewer.VerticalScrollBarVisibility="Disabled">
-                <controls:NavigationViewList.ItemsPanel>
-                    <ItemsPanelTemplate>
-                        <StackPanel Margin="0" IsItemsHost="True" />
-                    </ItemsPanelTemplate>
-                </controls:NavigationViewList.ItemsPanel>
-            </controls:NavigationViewList>
+                HorizontalOffset="1"
+                IsOpen="{Binding IsSubmenuOpen, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
+                Placement="Right"
+                PlacementTarget="{Binding ElementName=MainBorder}"
+                PopupAnimation="None"
+                StaysOpen="False">
+                <ContentPresenter
+                    Content="{Binding MenuItems, RelativeSource={RelativeSource TemplatedParent}}"
+                    ContentTemplate="{StaticResource NavigationViewItemSubmenuContentTemplate}" />
+            </Popup>
         </Grid>
         <ControlTemplate.Triggers>
             <Trigger Property="IsPaneOpen" Value="True">
@@ -170,10 +102,6 @@
                 <Setter TargetName="PART_InfoBadge" Property="HorizontalAlignment" Value="Right" />
             </Trigger>
 
-            <Trigger Property="HasMenuItems" Value="True">
-                <Setter TargetName="ChevronIcon" Property="Visibility" Value="Visible" />
-                <Setter TargetName="ChevronIcon" Property="Margin" Value="8,0,8,0" />
-            </Trigger>
             <Trigger Property="IsActive" Value="True">
                 <Setter TargetName="ActiveRectangle" Property="Opacity" Value="1.0" />
                 <Setter TargetName="MainBorder" Property="Background" Value="{markup:BrushResource SubtleFillColorSecondaryBrush}" />

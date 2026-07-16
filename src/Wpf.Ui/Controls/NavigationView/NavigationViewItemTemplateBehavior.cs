@@ -53,23 +53,22 @@ public static class NavigationViewItemTemplateBehavior
 
         if (isActive)
         {
-            if (item is { IsPaneOpen: false, NavigationViewItemParent: not null })
+            if (item is { UsesInlineExpansion: false, NavigationViewItemParent: not null })
             {
                 item.NavigationViewItemParent.Activate(navigationView);
             }
 
-            item.NavigationViewItemParent?.IsExpanded =
-                item.IsPaneOpen
-             && item.PaneDisplayMode != NavigationViewPaneDisplayMode.Top;
+            if (item is { UsesInlineExpansion: true, NavigationViewItemParent: NavigationViewItem parentItem })
+            {
+                parentItem.SetCurrentValue(NavigationViewItem.IsExpandedProperty, true);
+            }
 
             return;
         }
 
-        item.NavigationViewItemParent?.Deactivate(navigationView);
-
-        if (item is { IsPaneOpen: false, HasMenuItems: true })
+        if (!item.UsesInlineExpansion)
         {
-            item.SetCurrentValue(NavigationViewItem.IsExpandedProperty, false);
+            item.NavigationViewItemParent?.Deactivate(navigationView);
         }
     }
 
@@ -91,29 +90,6 @@ public static class NavigationViewItemTemplateBehavior
         if (d is NavigationViewItem item)
         {
             UpdateIcon(item);
-        }
-    }
-
-    internal static void OnItemExpanderClick(NavigationViewItemExpander toggleButton)
-    {
-        if (
-            toggleButton.TemplatedParent is
-            not NavigationViewItem { NavigationViewHost: { } navigationView } item
-        )
-        {
-            return;
-        }
-
-        if (item.MenuItems.OfType<INavigationViewItem>().Any(menuItem => menuItem.IsActive))
-        {
-            if (toggleButton.IsChecked == true)
-            {
-                item.Deactivate(navigationView);
-            }
-            else
-            {
-                item.Activate(navigationView);
-            }
         }
     }
 }

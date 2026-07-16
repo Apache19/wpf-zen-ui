@@ -48,11 +48,6 @@ public interface INavigationViewItem
     bool IsActive { get; }
 
     /// <summary>
-    /// Gets or sets a value indicating whether the sub-<see cref="MenuItems"/> are expanded.
-    /// </summary>
-    bool IsExpanded { get; internal set; }
-
-    /// <summary>
     /// Gets or sets the unique tag used by the parent navigation system for the purpose of searching and navigating.
     /// </summary>
     string TargetPageTag { get; set; }
