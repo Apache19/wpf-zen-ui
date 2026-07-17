@@ -7,15 +7,12 @@
     xmlns:local="clr-namespace:Wpf.Ui.Gallery.Views.Pages.Navigation"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:samples="clr-namespace:Wpf.Ui.Gallery.Views.Pages.Samples"
-    xmlns:system="clr-namespace:System;assembly=System.Runtime"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
     Title="NavigationViewPage"
     controls:PageControlDocumentation.DocumentationType="{x:Type ui:NavigationView}"
-    d:DataContext="{d:DesignInstance local:NavigationViewPage,
-                                     IsDesignTimeCreatable=False}"
-    d:DesignHeight="1650"
-    d:DesignWidth="1000"
     d:Background="{ui:BrushResource WindowBackgroundBrush}"
+    d:DataContext="{d:DesignInstance local:NavigationViewPage, IsDesignTimeCreatable=False}"
+    d:DesignWidth="1000"
     Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
     mc:Ignorable="d">
 
@@ -26,13 +23,12 @@
             HeaderText="WPF UI NavigationView.">
             <ui:NavigationView
                 MinHeight="300"
-                Margin="0"
                 IsBackButtonVisible="Auto"
                 IsPaneToggleVisible="True"
                 PaneDisplayMode="Left"
                 PaneTitle="Pane Title">
                 <ui:NavigationView.AutoSuggestBox>
-                    <ui:AutoSuggestBox Margin="8,0,8,8" PlaceholderText="Search" />
+                    <ui:AutoSuggestBox Icon="{ui:SymbolIcon Search24}" PlaceholderText="Search" />
                 </ui:NavigationView.AutoSuggestBox>
                 <ui:NavigationView.MenuItems>
                     <ui:NavigationViewItem
@@ -74,7 +70,7 @@
                 </ui:NavigationView.Header>
                 <ui:NavigationView.PaneHeader>
                     <Border
-                        Margin="0,0,0,8"
+                        Margin="1,0,1,8"
                         Background="{ui:BrushResource StripedBackgroundBrush}"
                         CornerRadius="4">
                         <ui:TextBlock
@@ -87,7 +83,7 @@
                 </ui:NavigationView.PaneHeader>
                 <ui:NavigationView.PaneFooter>
                     <Border
-                        Margin="0,8,0,0"
+                        Margin="1,0,1,0"
                         Background="{ui:BrushResource StripedBackgroundBrush}"
                         CornerRadius="4">
                         <ui:TextBlock
@@ -122,9 +118,7 @@
                         Content="Dashboard"
                         Icon="{ui:SymbolIcon Home24}"
                         TargetPageType="{x:Type samples:SamplePage1}" />
-                    <ui:NavigationViewItem
-                        Content="Library"
-                        Icon="{ui:SymbolIcon Library24}">
+                    <ui:NavigationViewItem Content="Library" Icon="{ui:SymbolIcon Library24}">
                         <ui:NavigationViewItem.MenuItems>
                             <ui:NavigationViewItem Content="Recent" TargetPageType="{x:Type samples:SamplePage2}" />
                             <ui:NavigationViewItem Content="Folders">
@@ -201,9 +195,8 @@
                 </ui:NavigationView.Header>
                 <ui:NavigationView.PaneHeader>
                     <Border
-                        Width="60"
                         Height="60"
-                        Margin="0,0,0,8"
+                        Margin="1,0,1,1"
                         Background="{ui:BrushResource StripedBackgroundBrush}"
                         CornerRadius="4">
                         <ui:TextBlock
@@ -211,16 +204,15 @@
                             VerticalAlignment="Center"
                             FontWeight="Medium"
                             Foreground="{ui:BrushResource TextFillColorSecondaryBrush}"
-                            Text="Pane Header"
+                            Text="Pane&#xD;&#xA;Header"
                             TextAlignment="Center"
                             TextWrapping="WrapWithOverflow" />
                     </Border>
                 </ui:NavigationView.PaneHeader>
                 <ui:NavigationView.PaneFooter>
                     <Border
-                        Width="60"
                         Height="60"
-                        Margin="0,8,0,0"
+                        Margin="1,1,1,0"
                         Background="{ui:BrushResource StripedBackgroundBrush}"
                         CornerRadius="4">
                         <ui:TextBlock
@@ -228,7 +220,7 @@
                             VerticalAlignment="Center"
                             FontWeight="Medium"
                             Foreground="{ui:BrushResource TextFillColorSecondaryBrush}"
-                            Text="Pane Footer"
+                            Text="Pane&#xD;&#xA;Footer"
                             TextAlignment="Center"
                             TextWrapping="WrapWithOverflow" />
                     </Border>
@@ -285,18 +277,18 @@
                 </ui:NavigationView.FooterMenuItems>
                 <ui:NavigationView.AutoSuggestBox>
                     <ui:AutoSuggestBox
-                        MinWidth="140"
-                        Margin="0"
+                        MinWidth="140" VerticalAlignment="Center"
+                        Margin="8,0,0,0"
                         PlaceholderText="Search" />
                 </ui:NavigationView.AutoSuggestBox>
                 <ui:NavigationView.PaneHeader>
                     <Border
-                        Margin="8,0"
+                        Margin="8,1"
                         VerticalAlignment="Stretch"
                         Background="{ui:BrushResource StripedBackgroundBrush}"
                         CornerRadius="4">
                         <ui:TextBlock
-                            Margin="24,0"
+                            Margin="16,0"
                             VerticalAlignment="Center"
                             FontWeight="Medium"
                             Foreground="{ui:BrushResource TextFillColorSecondaryBrush}"
@@ -305,12 +297,12 @@
                 </ui:NavigationView.PaneHeader>
                 <ui:NavigationView.PaneFooter>
                     <Border
-                        Margin="8,0"
+                        Margin="8,1,0,1"
                         VerticalAlignment="Stretch"
                         Background="{ui:BrushResource StripedBackgroundBrush}"
                         CornerRadius="4">
                         <ui:TextBlock
-                            Margin="24,0"
+                            Margin="16,0"
                             VerticalAlignment="Center"
                             FontWeight="Medium"
                             Foreground="{ui:BrushResource TextFillColorSecondaryBrush}"
@@ -319,7 +311,7 @@
                 </ui:NavigationView.PaneFooter>
                 <ui:NavigationView.Header>
                     <Border
-                        Margin="8"
+                        Margin="0 8"
                         Background="{ui:BrushResource StripedBackgroundBrush}"
                         CornerRadius="4">
                         <ui:TextBlock
