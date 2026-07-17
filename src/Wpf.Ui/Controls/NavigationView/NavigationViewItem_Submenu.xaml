@@ -25,29 +25,25 @@
             BorderThickness="1"
             CornerRadius="8"
             SnapsToDevicePixels="True">
-            <controls:PassiveScrollViewer
-                CanContentScroll="True"
-                HorizontalScrollBarVisibility="Disabled"
+            <controls:NavigationViewList
+                AutomationProperties.AutomationId="NavigationItemItems"
+                Focusable="False"
+                ItemContainerStyle="{Binding RelativeSource={RelativeSource Self}, Path=(controls:NavigationView.ItemContainerStyle)}"
+                ItemContainerStyleSelector="{Binding RelativeSource={RelativeSource Self}, Path=(controls:NavigationView.ItemContainerStyleSelector)}"
+                ItemTemplate="{Binding RelativeSource={RelativeSource Self}, Path=(controls:NavigationView.ItemTemplate)}"
+                ItemTemplateSelector="{Binding RelativeSource={RelativeSource Self}, Path=(controls:NavigationView.ItemTemplateSelector)}"
+                ItemsSource="{Binding}"
+                KeyboardNavigation.DirectionalNavigation="Cycle"
                 ScrollSpillMode="Disabled"
-                VerticalScrollBarVisibility="Auto">
-                <controls:NavigationViewList
-                    AutomationProperties.AutomationId="NavigationItemItems"
-                    Focusable="False"
-                    ItemContainerStyle="{Binding RelativeSource={RelativeSource Self}, Path=(controls:NavigationView.ItemContainerStyle)}"
-                    ItemContainerStyleSelector="{Binding RelativeSource={RelativeSource Self}, Path=(controls:NavigationView.ItemContainerStyleSelector)}"
-                    ItemTemplate="{Binding RelativeSource={RelativeSource Self}, Path=(controls:NavigationView.ItemTemplate)}"
-                    ItemTemplateSelector="{Binding RelativeSource={RelativeSource Self}, Path=(controls:NavigationView.ItemTemplateSelector)}"
-                    ItemsSource="{Binding}"
-                    KeyboardNavigation.DirectionalNavigation="Cycle"
-                    ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                    ScrollViewer.VerticalScrollBarVisibility="Disabled">
-                    <controls:NavigationViewList.ItemsPanel>
-                        <ItemsPanelTemplate>
-                            <StackPanel IsItemsHost="True" />
-                        </ItemsPanelTemplate>
-                    </controls:NavigationViewList.ItemsPanel>
-                </controls:NavigationViewList>
-            </controls:PassiveScrollViewer>
+                ScrollViewer.CanContentScroll="True"
+                ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                ScrollViewer.VerticalScrollBarVisibility="Auto">
+                <controls:NavigationViewList.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <StackPanel IsItemsHost="True" />
+                    </ItemsPanelTemplate>
+                </controls:NavigationViewList.ItemsPanel>
+            </controls:NavigationViewList>
         </Border>
     </DataTemplate>
 

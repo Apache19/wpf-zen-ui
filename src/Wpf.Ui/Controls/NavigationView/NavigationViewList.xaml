@@ -1,0 +1,66 @@
+<!--
+    This Source Code Form is subject to the terms of the MIT License.
+    If a copy of the MIT was not distributed with this file, You can obtain one at https://opensource.org/licenses/MIT.
+    Copyright (C) Leszek Pomianowski and WPF UI Contributors.
+    All Rights Reserved.
+-->
+
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="clr-namespace:Wpf.Ui.Controls">
+
+    <!--
+        Keep the ItemsPresenter inside the ScrollViewer, matching WPF's ListBox template. When
+        CanContentScroll is true, ScrollViewer can then discover the items panel's IScrollInfo
+        implementation and use item-based offsets. Wrapping NavigationViewList from the outside
+        instead makes the list itself the scroll content and necessarily falls back to pixel offsets.
+
+        Scroll bars remain disabled by default because several NavigationViewList instances are
+        fixed menu or footer regions. Individual hosts opt in by setting the standard ScrollViewer
+        attached properties on the list.
+    -->
+    <ControlTemplate x:Key="DefaultNavigationViewListControlTemplate" TargetType="{x:Type controls:NavigationViewList}">
+        <controls:PassiveScrollViewer
+            x:Name="ScrollViewer"
+            CanContentScroll="{TemplateBinding ScrollViewer.CanContentScroll}"
+            Focusable="False"
+            HorizontalScrollBarVisibility="{TemplateBinding ScrollViewer.HorizontalScrollBarVisibility}"
+            Padding="{TemplateBinding Padding}"
+            ScrollSpillMode="{TemplateBinding ScrollSpillMode}"
+            VerticalScrollBarVisibility="{TemplateBinding ScrollViewer.VerticalScrollBarVisibility}">
+            <ItemsPresenter SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
+        </controls:PassiveScrollViewer>
+    </ControlTemplate>
+
+    <!--
+        DynamicScrollViewer must occupy the same template position as PassiveScrollViewer. Placing
+        it around NavigationViewList would make the entire control its content, preventing the
+        ItemsPanel from becoming ScrollViewer's IScrollInfo implementation when logical scrolling
+        is enabled.
+    -->
+    <ControlTemplate x:Key="DefaultNavigationViewListWithDynamicScrollViewerControlTemplate" TargetType="{x:Type controls:NavigationViewList}">
+        <controls:DynamicScrollViewer
+            x:Name="ScrollViewer"
+            CanContentScroll="{TemplateBinding ScrollViewer.CanContentScroll}"
+            Focusable="False"
+            HorizontalScrollBarVisibility="{TemplateBinding ScrollViewer.HorizontalScrollBarVisibility}"
+            Padding="{TemplateBinding Padding}"
+            ScrollSpillMode="{TemplateBinding ScrollSpillMode}"
+            VerticalScrollBarVisibility="{TemplateBinding ScrollViewer.VerticalScrollBarVisibility}">
+            <ItemsPresenter SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
+        </controls:DynamicScrollViewer>
+    </ControlTemplate>
+
+    <Style TargetType="{x:Type controls:NavigationViewList}">
+        <Setter Property="ScrollViewer.CanContentScroll" Value="True" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="Template" Value="{StaticResource DefaultNavigationViewListControlTemplate}" />
+        <Style.Triggers>
+            <Trigger Property="IsDynamicScrollViewerEnabled" Value="True">
+                <Setter Property="Template" Value="{StaticResource DefaultNavigationViewListWithDynamicScrollViewerControlTemplate}" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+</ResourceDictionary>

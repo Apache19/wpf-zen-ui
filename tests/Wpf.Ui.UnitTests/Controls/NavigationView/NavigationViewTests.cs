@@ -17,6 +17,136 @@ namespace Wpf.Ui.UnitTests.Controls.NavigationView;
 public class NavigationViewTests
 {
     [Fact]
+    public void NavigationViewList_DefaultTemplate_HostsItemsPresenterInPassiveScrollViewer()
+    {
+        RunOnStaThread(() =>
+        {
+            var resources = new ResourceDictionary { Source = CreateResourceUri() };
+            var navigationViewList = new NavigationViewList
+            {
+                Style = Assert.IsType<Style>(resources[typeof(NavigationViewList)]),
+                ScrollSpillMode = ScrollSpillMode.Disabled,
+            };
+            System.Windows.Controls.ScrollViewer.SetCanContentScroll(navigationViewList, true);
+            System.Windows.Controls.ScrollViewer.SetHorizontalScrollBarVisibility(
+                navigationViewList,
+                ScrollBarVisibility.Disabled
+            );
+            System.Windows.Controls.ScrollViewer.SetVerticalScrollBarVisibility(
+                navigationViewList,
+                ScrollBarVisibility.Auto
+            );
+
+            Assert.True(navigationViewList.ApplyTemplate());
+
+            var scrollViewer = Assert.IsType<PassiveScrollViewer>(
+                navigationViewList.Template.FindName("ScrollViewer", navigationViewList)
+            );
+            Assert.IsType<ItemsPresenter>(scrollViewer.Content);
+            Assert.True(scrollViewer.CanContentScroll);
+            Assert.Equal(ScrollBarVisibility.Disabled, scrollViewer.HorizontalScrollBarVisibility);
+            Assert.Equal(ScrollBarVisibility.Auto, scrollViewer.VerticalScrollBarVisibility);
+            Assert.Equal(ScrollSpillMode.Disabled, scrollViewer.ScrollSpillMode);
+        });
+    }
+
+    [Fact]
+    public void NavigationViewList_DynamicTemplate_HostsItemsPresenterInDynamicScrollViewer()
+    {
+        RunOnStaThread(() =>
+        {
+            var resources = new ResourceDictionary { Source = CreateResourceUri() };
+            var navigationViewList = new NavigationViewList
+            {
+                IsDynamicScrollViewerEnabled = true,
+                Style = Assert.IsType<Style>(resources[typeof(NavigationViewList)]),
+            };
+            System.Windows.Controls.ScrollViewer.SetCanContentScroll(navigationViewList, true);
+            System.Windows.Controls.ScrollViewer.SetVerticalScrollBarVisibility(
+                navigationViewList,
+                ScrollBarVisibility.Auto
+            );
+
+            Assert.True(navigationViewList.ApplyTemplate());
+
+            var scrollViewer = Assert.IsType<DynamicScrollViewer>(
+                navigationViewList.Template.FindName("ScrollViewer", navigationViewList)
+            );
+            Assert.IsType<ItemsPresenter>(scrollViewer.Content);
+            Assert.True(scrollViewer.CanContentScroll);
+            Assert.Equal(ScrollBarVisibility.Auto, scrollViewer.VerticalScrollBarVisibility);
+        });
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void NavigationViewList_CanContentScroll_UsesItemBasedExtent(
+        bool isDynamicScrollViewerEnabled)
+    {
+        RunOnStaThread(() =>
+        {
+            const int itemCount = 10;
+            var resources = new ResourceDictionary { Source = CreateResourceUri() };
+            var navigationViewList = new NavigationViewList
+            {
+                Width = 100D,
+                Height = 60D,
+                IsDynamicScrollViewerEnabled = isDynamicScrollViewerEnabled,
+                Style = Assert.IsType<Style>(resources[typeof(NavigationViewList)]),
+            };
+            System.Windows.Controls.ScrollViewer.SetCanContentScroll(navigationViewList, true);
+            System.Windows.Controls.ScrollViewer.SetVerticalScrollBarVisibility(
+                navigationViewList,
+                ScrollBarVisibility.Auto
+            );
+
+            for (var index = 0; index < itemCount; index++)
+            {
+                navigationViewList.Items.Add(new Border { Height = 20D });
+            }
+
+            var window = new Window
+            {
+                Content = navigationViewList,
+                Width = 100D,
+                Height = 60D,
+                Left = -10_000D,
+                Top = -10_000D,
+                ShowActivated = false,
+                ShowInTaskbar = false,
+                SizeToContent = SizeToContent.Manual,
+                WindowStyle = WindowStyle.None,
+            };
+
+            try
+            {
+                window.Show();
+                DrainDispatcher();
+
+                var scrollViewer = Assert.IsAssignableFrom<PassiveScrollViewer>(
+                    navigationViewList.Template.FindName("ScrollViewer", navigationViewList)
+                );
+
+                // StackPanel reports one logical unit per item through IScrollInfo. A pixel-scrolling
+                // outer viewer would report the combined 200-DIP item height instead.
+                Assert.Equal(itemCount, scrollViewer.ExtentHeight);
+                Assert.True(scrollViewer.ViewportHeight < scrollViewer.ExtentHeight);
+
+                scrollViewer.LineDown();
+                navigationViewList.UpdateLayout();
+
+                Assert.Equal(1D, scrollViewer.VerticalOffset);
+            }
+            finally
+            {
+                window.Close();
+                DrainDispatcher();
+            }
+        });
+    }
+
+    [Fact]
     public void NavigationViewList_ItemContainerStyle_IsAppliedOnlyToNavigationViewItem()
     {
         RunOnStaThread(() =>
@@ -99,6 +229,44 @@ public class NavigationViewTests
                     navigationView.Template.FindName("PART_FooterMenuItemsList", navigationView)
                 );
             }
+        });
+    }
+
+    [Theory]
+    [InlineData(NavigationViewPaneDisplayMode.Left)]
+    [InlineData(NavigationViewPaneDisplayMode.LeftFluent)]
+    [InlineData(NavigationViewPaneDisplayMode.LeftMinimal)]
+    public void BuiltInVerticalTemplates_UseDynamicViewerInsideNavigationViewList(
+        NavigationViewPaneDisplayMode displayMode)
+    {
+        RunOnStaThread(() =>
+        {
+            var resources = new ResourceDictionary { Source = CreateResourceUri() };
+            var navigationView = new Wpf.Ui.Controls.NavigationView
+            {
+                PaneDisplayMode = displayMode,
+                Style = Assert.IsType<Style>(resources[typeof(Wpf.Ui.Controls.NavigationView)]),
+            };
+
+            Assert.True(navigationView.ApplyTemplate());
+            Assert.Null(navigationView.Template.FindName("PART_ScrollViewer", navigationView));
+
+            var navigationViewList = Assert.IsType<NavigationViewList>(
+                navigationView.Template.FindName("PART_MenuItemsList", navigationView)
+            );
+            Assert.True(navigationViewList.IsDynamicScrollViewerEnabled);
+            Assert.False(
+                System.Windows.Media.VisualTreeHelper.GetParent(navigationViewList)
+                    is System.Windows.Controls.ScrollViewer
+            );
+            Assert.True(navigationViewList.ApplyTemplate());
+
+            var scrollViewer = Assert.IsType<DynamicScrollViewer>(
+                navigationViewList.Template.FindName("ScrollViewer", navigationViewList)
+            );
+            Assert.IsType<ItemsPresenter>(scrollViewer.Content);
+            Assert.True(scrollViewer.CanContentScroll);
+            Assert.Equal(ScrollBarVisibility.Auto, scrollViewer.VerticalScrollBarVisibility);
         });
     }
 
