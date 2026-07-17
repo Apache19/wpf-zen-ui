@@ -114,8 +114,13 @@ public sealed class DynamicScrollViewer : PassiveScrollViewer, IDisposable
     }
 
     /// <summary>
-    /// Gets or sets the value required for the scroll to show automatically.
+    /// Gets or sets the minimum physical offset change required for a scroll bar to show automatically.
     /// </summary>
+    /// <remarks>
+    /// This threshold applies to pixel-based scrolling. When <see cref="ScrollViewer.CanContentScroll"/>
+    /// is enabled, offsets can be expressed in logical item units, so any non-zero change is treated as
+    /// scrolling activity.
+    /// </remarks>
     public double MinimalChange
     {
         get => (double)GetValue(MinimalChangeProperty);
@@ -143,7 +148,7 @@ public sealed class DynamicScrollViewer : PassiveScrollViewer, IDisposable
     {
         base.OnScrollChanged(e);
 
-        if (e.HorizontalChange > _minimalChange || e.HorizontalChange < -_minimalChange)
+        if (IsScrollActivity(e.HorizontalChange))
         {
             _horScrollCts?.Cancel();
             _horScrollCts?.Dispose();
@@ -153,7 +158,7 @@ public sealed class DynamicScrollViewer : PassiveScrollViewer, IDisposable
             _ = UpdateHorizontalScrollingStateAsync(_horScrollCts.Token);
         }
 
-        if (e.VerticalChange > _minimalChange || e.VerticalChange < -_minimalChange)
+        if (IsScrollActivity(e.VerticalChange))
         {
             _verScrollCts?.Cancel();
             _verScrollCts?.Dispose();
@@ -162,6 +167,16 @@ public sealed class DynamicScrollViewer : PassiveScrollViewer, IDisposable
 
             _ = UpdateVerticalScrollingStateAsync(_verScrollCts.Token);
         }
+    }
+
+    private bool IsScrollActivity(double offsetChange)
+    {
+        // ScrollChangedEventArgs reports changes in the coordinate system of the active IScrollInfo.
+        // With physical scrolling this is a pixel value, and MinimalChange filters small layout-driven
+        // adjustments. With logical scrolling it is commonly an item count (often only 1-3 per wheel
+        // detent), so comparing it with the pixel-oriented default threshold would suppress every wheel
+        // interaction. A non-zero logical offset already proves that scrolling actually occurred.
+        return CanContentScroll ? offsetChange != 0d : Math.Abs(offsetChange) > _minimalChange;
     }
 
     private async Task UpdateVerticalScrollingStateAsync(CancellationToken ct)
