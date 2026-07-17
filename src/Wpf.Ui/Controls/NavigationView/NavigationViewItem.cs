@@ -1105,9 +1105,14 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
         _attachedNavigationView = navigationView;
         SynchronizePaneState(navigationView.PaneDisplayMode, navigationView.IsPaneOpen);
 
-        _paneOpenedHandler      = (_, _) => SynchronizePaneState(navigationView.PaneDisplayMode, true);
-        _paneClosedHandler      = (_, _) => SynchronizePaneState(navigationView.PaneDisplayMode, false);
-        _paneModeChangedHandler = (_, _) => SynchronizePaneState(navigationView.PaneDisplayMode, navigationView.IsPaneOpen);
+        // Pane notifications are bubbling routed events so application code can observe them from
+        // an ancestor. A NavigationView may itself be page content inside another NavigationView;
+        // without checking OriginalSource, the inner view's event reaches the outer view's handlers
+        // and overwrites every outer item's presentation snapshot. Keep routed-event bubbling for
+        // consumers, but accept only notifications raised by the NavigationView that owns this item.
+        _paneOpenedHandler      = (_, args) => SynchronizePaneStateFromOwnerEvent(navigationView, args, true);
+        _paneClosedHandler      = (_, args) => SynchronizePaneStateFromOwnerEvent(navigationView, args, false);
+        _paneModeChangedHandler = (_, args) => SynchronizePaneStateFromOwnerEvent(navigationView, args, navigationView.IsPaneOpen);
 
         navigationView.PaneOpened             += _paneOpenedHandler;
         navigationView.PaneClosed             += _paneClosedHandler;
@@ -1140,6 +1145,24 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
         }
 
         _attachedNavigationView = null;
+    }
+
+    /// <summary>
+    /// Synchronizes a pane notification only when it originated from the view that owns this item.
+    /// Nested <see cref="NavigationView"/> instances deliberately share a routed-event path, but
+    /// they must not share the read-only presentation state used to choose inline or Popup children.
+    /// </summary>
+    private void SynchronizePaneStateFromOwnerEvent(
+        NavigationView  navigationView,
+        RoutedEventArgs args,
+        bool            isPaneOpen)
+    {
+        if (!ReferenceEquals(args.OriginalSource, navigationView))
+        {
+            return;
+        }
+
+        SynchronizePaneState(navigationView.PaneDisplayMode, isPaneOpen);
     }
 
     internal void SynchronizePaneState(NavigationViewPaneDisplayMode paneDisplayMode, bool isPaneOpen)

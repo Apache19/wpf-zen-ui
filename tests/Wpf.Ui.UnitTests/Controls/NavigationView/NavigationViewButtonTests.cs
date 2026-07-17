@@ -118,6 +118,76 @@ public class NavigationViewButtonTests
     }
 
     [Fact]
+    public void NestedNavigationView_PaneEventsRemainRoutedButButtonStateStaysWithItsOwner()
+    {
+        RunOnStaThread(() =>
+        {
+            var resources = new ResourceDictionary { Source = CreateResourceUri() };
+            var navigationViewStyle = Assert.IsType<Style>(
+                resources[typeof(Wpf.Ui.Controls.NavigationView)]
+            );
+            var innerNavigationView = new Wpf.Ui.Controls.NavigationView
+            {
+                Style = navigationViewStyle,
+                PaneDisplayMode = NavigationViewPaneDisplayMode.Left,
+                IsPaneOpen = true,
+            };
+            var outerNavigationView = new Wpf.Ui.Controls.NavigationView
+            {
+                Style = navigationViewStyle,
+                PaneDisplayMode = NavigationViewPaneDisplayMode.Top,
+                IsPaneOpen = true,
+                PaneHeader = innerNavigationView,
+            };
+            var outerButton = GetButton(outerNavigationView, "_paneToggleButton");
+            var innerButton = GetButton(innerNavigationView, "_paneToggleButton");
+            var bubbledEventCount = 0;
+
+            outerNavigationView.PaneClosed += (sender, args) =>
+            {
+                if (!ReferenceEquals(args.OriginalSource, innerNavigationView))
+                {
+                    return;
+                }
+
+                Assert.Same(outerNavigationView, sender);
+                bubbledEventCount++;
+            };
+
+            var window = new Window
+            {
+                Content = outerNavigationView,
+                Width = 800,
+                Height = 600,
+                Left = -10_000,
+                Top = -10_000,
+                ShowActivated = false,
+                ShowInTaskbar = false,
+                WindowStyle = WindowStyle.None,
+            };
+
+            try
+            {
+                window.Show();
+                DrainDispatcher();
+
+                innerNavigationView.IsPaneOpen = false;
+
+                Assert.Equal(1, bubbledEventCount);
+                Assert.Equal(NavigationViewPaneDisplayMode.Top, outerButton.PaneDisplayMode);
+                Assert.True(outerButton.IsPaneOpen);
+                Assert.Equal(NavigationViewPaneDisplayMode.Left, innerButton.PaneDisplayMode);
+                Assert.False(innerButton.IsPaneOpen);
+            }
+            finally
+            {
+                window.Close();
+                DrainDispatcher();
+            }
+        });
+    }
+
+    [Fact]
     public void PaneTitle_IsSynchronizedWithoutTakingOwnershipOfButtonContent()
     {
         RunOnStaThread(() =>
@@ -361,6 +431,12 @@ public class NavigationViewButtonTests
             new Uri("/Wpf.Ui;component/Themes/Generic.xaml", UriKind.Relative)
         );
     }
+
+    private static void DrainDispatcher() =>
+        System.Windows.Threading.Dispatcher.CurrentDispatcher.Invoke(
+            static () => { },
+            System.Windows.Threading.DispatcherPriority.ApplicationIdle
+        );
 
     private static void RunOnStaThread(Action action)
     {

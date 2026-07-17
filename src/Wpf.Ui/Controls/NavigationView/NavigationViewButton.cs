@@ -257,10 +257,15 @@ public class NavigationViewButton : ButtonBase
         _attachedNavigationView = navigationView;
         SynchronizePaneState(navigationView);
 
-        _paneOpenedHandler             = (_, _) => SynchronizePaneState(navigationView);
-        _paneClosedHandler             = (_, _) => SynchronizePaneState(navigationView);
-        _paneDisplayModeChangedHandler = (_, _) => SynchronizePaneState(navigationView);
-        _paneTitleChangedHandler       = (_, _) => SynchronizePaneTitle(navigationView);
+        // Pane notifications bubble through nested NavigationView instances. The button currently
+        // reads state back from its owner, so handling a descendant notification cannot normally
+        // copy the descendant's values; nevertheless, accepting it performs an unrelated state
+        // write and leaves this synchronization path vulnerable if event-specific state is added
+        // later. Treat the owning view as the instance boundary, consistently with NavigationViewItem.
+        _paneOpenedHandler             = (_, args) => SynchronizePaneStateFromOwnerEvent(navigationView, args);
+        _paneClosedHandler             = (_, args) => SynchronizePaneStateFromOwnerEvent(navigationView, args);
+        _paneDisplayModeChangedHandler = (_, args) => SynchronizePaneStateFromOwnerEvent(navigationView, args);
+        _paneTitleChangedHandler       = (_, _)    => SynchronizePaneTitle(navigationView);
 
         navigationView.PaneOpened               += _paneOpenedHandler;
         navigationView.PaneClosed               += _paneClosedHandler;
@@ -300,6 +305,23 @@ public class NavigationViewButton : ButtonBase
         }
 
         _attachedNavigationView = null;
+    }
+
+    /// <summary>
+    /// Refreshes button presentation only for a notification raised by the button's owning view.
+    /// Public pane events remain bubbling events, while internal owner synchronization stays local
+    /// when one <see cref="NavigationView"/> is hosted inside another.
+    /// </summary>
+    private void SynchronizePaneStateFromOwnerEvent(
+        NavigationView  navigationView,
+        RoutedEventArgs args)
+    {
+        if (!ReferenceEquals(args.OriginalSource, navigationView))
+        {
+            return;
+        }
+
+        SynchronizePaneState(navigationView);
     }
 
     private void SynchronizePaneState(NavigationView navigationView)

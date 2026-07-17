@@ -73,6 +73,91 @@ public class NavigationViewItemTests
     }
 
     [Fact]
+    public void NestedNavigationView_PaneEventsDoNotChangeOuterItemPresentation()
+    {
+        RunOnStaThread(() =>
+        {
+            var resources = new ResourceDictionary { Source = CreateResourceUri() };
+            var navigationViewStyle = Assert.IsType<Style>(
+                resources[typeof(Wpf.Ui.Controls.NavigationView)]
+            );
+            var outerItem = new NavigationViewItem();
+            outerItem.MenuItems.Add(new NavigationViewItem());
+            var innerItem = new NavigationViewItem();
+            innerItem.MenuItems.Add(new NavigationViewItem());
+
+            var innerNavigationView = new Wpf.Ui.Controls.NavigationView
+            {
+                Style = navigationViewStyle,
+                PaneDisplayMode = NavigationViewPaneDisplayMode.Left,
+                IsPaneOpen = true,
+            };
+            innerNavigationView.MenuItems.Add(innerItem);
+
+            var outerNavigationView = new Wpf.Ui.Controls.NavigationView
+            {
+                Style = navigationViewStyle,
+                PaneDisplayMode = NavigationViewPaneDisplayMode.Left,
+                IsPaneOpen = true,
+                PaneHeader = innerNavigationView,
+            };
+            outerNavigationView.MenuItems.Add(outerItem);
+
+            var window = new Window
+            {
+                Content = outerNavigationView,
+                Width = 800,
+                Height = 600,
+                Left = -10_000,
+                Top = -10_000,
+                ShowActivated = false,
+                ShowInTaskbar = false,
+                WindowStyle = WindowStyle.None,
+            };
+
+            try
+            {
+                window.Show();
+                DrainDispatcher();
+
+                Assert.True(outerItem.IsPaneOpen);
+                Assert.True(innerItem.IsPaneOpen);
+
+                innerNavigationView.IsPaneOpen = false;
+
+                Assert.True(outerNavigationView.IsPaneOpen);
+                Assert.True(outerItem.IsPaneOpen);
+                Assert.False(innerItem.IsPaneOpen);
+
+                // The outer item must still use inline expansion. A stale pane snapshot would open
+                // IsSubmenuOpen here and display the compact-pane Popup instead.
+                InvokeClick(outerItem);
+                Assert.True(outerItem.IsExpanded);
+                Assert.False(outerItem.IsSubmenuOpen);
+
+                outerNavigationView.IsPaneOpen = false;
+                Assert.False(outerItem.IsPaneOpen);
+
+                innerNavigationView.IsPaneOpen = true;
+
+                Assert.False(outerNavigationView.IsPaneOpen);
+                Assert.False(outerItem.IsPaneOpen);
+                Assert.True(innerItem.IsPaneOpen);
+
+                innerNavigationView.PaneDisplayMode = NavigationViewPaneDisplayMode.Top;
+
+                Assert.Equal(NavigationViewPaneDisplayMode.Left, outerItem.PaneDisplayMode);
+                Assert.Equal(NavigationViewPaneDisplayMode.Top, innerItem.PaneDisplayMode);
+            }
+            finally
+            {
+                window.Close();
+                DrainDispatcher();
+            }
+        });
+    }
+
+    [Fact]
     public void ItemStyle_SelectsTopLevelAndSubItemTemplatesFromPaneDisplayMode()
     {
         RunOnStaThread(() =>
