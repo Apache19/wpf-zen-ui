@@ -238,6 +238,110 @@ public class NavigationViewButtonTests
         });
     }
 
+    [Fact]
+    public void AutoSuggestBoxSymbolButton_Icon_CreatedFromIconSourceElement()
+    {
+        RunOnStaThread(() =>
+        {
+            var resources = new ResourceDictionary { Source = CreateResourceUri() };
+
+            var iconSource = new SymbolIconSource { Symbol = SymbolRegular.Search24 };
+            var iconSourceElement = new IconSourceElement { IconSource = iconSource };
+            var autoSuggestBox = new AutoSuggestBox { Icon = iconSourceElement };
+
+            var navigationView = new Wpf.Ui.Controls.NavigationView
+            {
+                Style = Assert.IsType<Style>(resources[typeof(Wpf.Ui.Controls.NavigationView)]),
+                AutoSuggestBox = autoSuggestBox,
+            };
+
+            Assert.True(navigationView.ApplyTemplate());
+
+            var button = Assert.IsType<NavigationViewButton>(
+                navigationView.Template.FindName(
+                    "PART_AutoSuggestBoxSymbolButton",
+                    navigationView
+                )
+            );
+
+            // The button icon should be a fresh IconElement, not the same FrameworkElement instance
+            Assert.NotNull(button.Icon);
+            Assert.IsType(iconSourceElement.CreateIconElement()!.GetType(), button.Icon);
+            Assert.NotSame(autoSuggestBox.Icon, button.Icon);
+        });
+    }
+
+    [Fact]
+    public void AutoSuggestBoxSymbolButton_Icon_UpdatesWhenAutoSuggestBoxIconChanges()
+    {
+        RunOnStaThread(() =>
+        {
+            var resources = new ResourceDictionary { Source = CreateResourceUri() };
+
+            var iconSource = new SymbolIconSource { Symbol = SymbolRegular.Search24 };
+            var autoSuggestBox = new AutoSuggestBox
+            {
+                Icon = new IconSourceElement { IconSource = iconSource }
+            };
+
+            var navigationView = new Wpf.Ui.Controls.NavigationView
+            {
+                Style = Assert.IsType<Style>(resources[typeof(Wpf.Ui.Controls.NavigationView)]),
+                AutoSuggestBox = autoSuggestBox,
+            };
+
+            Assert.True(navigationView.ApplyTemplate());
+
+            var button = Assert.IsType<NavigationViewButton>(
+                navigationView.Template.FindName(
+                    "PART_AutoSuggestBoxSymbolButton",
+                    navigationView
+                )
+            );
+
+            var firstIcon = button.Icon;
+            Assert.NotNull(firstIcon);
+
+            // Change the AutoSuggestBox icon
+            autoSuggestBox.Icon = new IconSourceElement
+            {
+                IconSource = new SymbolIconSource { Symbol = SymbolRegular.Home24 }
+            };
+
+            // The button icon should be a new instance matching the updated source
+            Assert.NotNull(button.Icon);
+            Assert.NotSame(firstIcon, button.Icon);
+        });
+    }
+
+    [Fact]
+    public void AutoSuggestBoxSymbolButton_Icon_HasDefaultSearchIconWhenNoAutoSuggestBox()
+    {
+        RunOnStaThread(() =>
+        {
+            var resources = new ResourceDictionary { Source = CreateResourceUri() };
+
+            var navigationView = new Wpf.Ui.Controls.NavigationView
+            {
+                Style = Assert.IsType<Style>(resources[typeof(Wpf.Ui.Controls.NavigationView)]),
+            };
+
+            Assert.True(navigationView.ApplyTemplate());
+
+            var button = Assert.IsType<NavigationViewButton>(
+                navigationView.Template.FindName(
+                    "PART_AutoSuggestBoxSymbolButton",
+                    navigationView
+                )
+            );
+
+            // When AutoSuggestBox is null, the binding's FallbackValue provides a
+            // default search icon so the compact-pane button is never icon-less.
+            var icon = Assert.IsType<SymbolIcon>(button.Icon);
+            Assert.Equal(SymbolRegular.Search24, icon.Symbol);
+        });
+    }
+
     private static NavigationViewButton GetButton(
         Wpf.Ui.Controls.NavigationView navigationView,
         string fieldName
