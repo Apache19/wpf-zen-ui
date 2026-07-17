@@ -18,16 +18,17 @@
     <DataTemplate x:Key="NavigationViewItemSubmenuContentTemplate">
         <Border
             MinWidth="180"
-            MaxHeight="480"
+            MaxHeight="368"
             Padding="0,3"
             Background="{m:BrushResource AcrylicBackgroundFillColorDefaultBrush}"
             BorderBrush="{m:BrushResource SurfaceStrokeColorFlyoutBrush}"
             BorderThickness="1"
             CornerRadius="8"
             SnapsToDevicePixels="True">
-            <ScrollViewer
+            <controls:PassiveScrollViewer
                 CanContentScroll="True"
                 HorizontalScrollBarVisibility="Disabled"
+                ScrollSpillMode="Disabled"
                 VerticalScrollBarVisibility="Auto">
                 <controls:NavigationViewList
                     AutomationProperties.AutomationId="NavigationItemItems"
@@ -46,7 +47,7 @@
                         </ItemsPanelTemplate>
                     </controls:NavigationViewList.ItemsPanel>
                 </controls:NavigationViewList>
-            </ScrollViewer>
+            </controls:PassiveScrollViewer>
         </Border>
     </DataTemplate>
 
@@ -60,7 +61,8 @@
             <Border
                 x:Name="MainBorder"
                 MinHeight="36"
-                Background="Transparent"
+                Margin="3,0"
+                Background="{TemplateBinding Background}"
                 BorderBrush="{TemplateBinding BorderBrush}"
                 BorderThickness="{TemplateBinding BorderThickness}"
                 CornerRadius="{TemplateBinding Border.CornerRadius}">
