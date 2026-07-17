@@ -75,15 +75,13 @@
                 controls:PopupShadow.IsEnabled="True"
                 AllowsTransparency="True"
                 Focusable="False"
-                HorizontalOffset="1"
+                HorizontalOffset="8"
                 IsOpen="{Binding IsSubmenuOpen, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
                 Placement="Right"
                 PlacementTarget="{Binding ElementName=MainBorder}"
                 PopupAnimation="None"
                 StaysOpen="False">
-                <ContentPresenter
-                    Content="{Binding MenuItems, RelativeSource={RelativeSource TemplatedParent}}"
-                    ContentTemplate="{StaticResource NavigationViewItemSubmenuContentTemplate}" />
+                <ContentPresenter Content="{Binding MenuItems, RelativeSource={RelativeSource TemplatedParent}}" ContentTemplate="{StaticResource NavigationViewItemSubmenuContentTemplate}" />
             </Popup>
         </Grid>
         <ControlTemplate.Triggers>
@@ -99,7 +97,6 @@
                             <DoubleAnimation
                                 Storyboard.TargetName="ContentGrid"
                                 Storyboard.TargetProperty="Height"
-                                From="18"
                                 To="0"
                                 Duration="0:0:.16" />
                             <DoubleAnimation

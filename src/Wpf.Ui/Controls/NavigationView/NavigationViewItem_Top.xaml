@@ -74,7 +74,7 @@
                 controls:PopupShadow.IsEnabled="True"
                 AllowsTransparency="True"
                 Focusable="False"
-                HorizontalOffset="-12"
+                HorizontalOffset="0"
                 IsOpen="{Binding IsSubmenuOpen, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
                 Placement="Bottom"
                 PlacementTarget="{Binding ElementName=MainBorder}"

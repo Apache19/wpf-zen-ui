@@ -53,7 +53,6 @@
     </ControlTemplate>
 
     <Style TargetType="{x:Type controls:NavigationViewList}">
-        <Setter Property="ScrollViewer.CanContentScroll" Value="True" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
         <Setter Property="Template" Value="{StaticResource DefaultNavigationViewListControlTemplate}" />
         <Style.Triggers>
