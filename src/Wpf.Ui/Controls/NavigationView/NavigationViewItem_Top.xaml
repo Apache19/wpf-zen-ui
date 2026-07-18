@@ -9,88 +9,80 @@
     </ResourceDictionary.MergedDictionaries>
 
     <ControlTemplate x:Key="NavigationViewItemTopTemplate" TargetType="{x:Type controls:NavigationViewItem}">
-        <Grid>
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-            </Grid.RowDefinitions>
-            <Border x:Name="MainBorder" Background="Transparent">
-                <Grid>
-                    <Grid
-                        Margin="8,8,8,8"
-                        HorizontalAlignment="Stretch"
-                        VerticalAlignment="Stretch">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <ContentPresenter
-                            x:Name="IconContentPresenter"
-                            Grid.Column="0"
-                            Margin="0,0,6,0"
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            Content="{TemplateBinding Icon}"
-                            TextElement.FontSize="16"
-                            TextElement.Foreground="{m:BrushResource TextFillColorPrimaryBrush}" />
-
-                        <ContentPresenter
-                            x:Name="ElementContentPresenter"
-                            Grid.Column="1"
-                            HorizontalAlignment="Left"
-                            VerticalAlignment="Center"
-                            Content="{TemplateBinding Content}"
-                            ContentTemplate="{TemplateBinding ContentTemplate}"
-                            RecognizesAccessKey="True"
-                            TextElement.Foreground="{TemplateBinding Foreground}" />
-                        <ContentPresenter
-                            x:Name="PART_InfoBadge"
-                            Grid.Column="2"
-                            Margin="2"
-                            HorizontalAlignment="Right"
-                            VerticalAlignment="Center"
-                            Content="{TemplateBinding InfoBadge}" />
-                    </Grid>
-                    <Rectangle
-                        x:Name="ActiveRectangle"
+        <Border
+            x:Name="MainBorder"
+            Background="{TemplateBinding Background}"
+            BorderBrush="{TemplateBinding BorderBrush}"
+            BorderThickness="{TemplateBinding BorderThickness}"
+            CornerRadius="{TemplateBinding Border.CornerRadius}"
+            SnapsToDevicePixels="True">
+            <Grid>
+                <Grid
+                    Margin="8,8,8,8"
+                    HorizontalAlignment="Stretch"
+                    VerticalAlignment="Stretch">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <ContentPresenter
+                        x:Name="IconContentPresenter"
                         Grid.Column="0"
-                        Width="16"
-                        Height="3"
-                        Margin="0,0,0,-4"
+                        Margin="0,0,6,0"
                         HorizontalAlignment="Center"
-                        VerticalAlignment="Bottom"
-                        Fill="{m:BrushResource SystemAccentColorPrimaryBrush}"
-                        Opacity="0.0"
-                        RadiusX="2"
-                        RadiusY="2" />
+                        VerticalAlignment="Center"
+                        Content="{TemplateBinding Icon}"
+                        TextElement.FontSize="16"
+                        TextElement.Foreground="{m:BrushResource TextFillColorPrimaryBrush}" />
 
+                    <ContentPresenter
+                        x:Name="ElementContentPresenter"
+                        Grid.Column="1"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Center"
+                        Content="{TemplateBinding Content}"
+                        ContentTemplate="{TemplateBinding ContentTemplate}"
+                        RecognizesAccessKey="True"
+                        TextElement.Foreground="{TemplateBinding Foreground}" />
+                    <ContentPresenter
+                        x:Name="PART_InfoBadge"
+                        Grid.Column="2"
+                        Margin="2"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Center"
+                        Content="{TemplateBinding InfoBadge}" />
                 </Grid>
-            </Border>
-            <Popup
-                x:Name="PART_SubMenuPopup"
-                Grid.Row="1"
-                controls:PopupAnimator.IsEnabled="True"
-                controls:PopupShadow.IsEnabled="True"
-                AllowsTransparency="True"
-                Focusable="False"
-                HorizontalOffset="0"
-                IsOpen="{Binding IsSubmenuOpen, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
-                Placement="Bottom"
-                PlacementTarget="{Binding ElementName=MainBorder}"
-                PopupAnimation="None"
-                StaysOpen="False"
-                VerticalOffset="1">
-                <ContentPresenter
-                    Content="{Binding MenuItems, RelativeSource={RelativeSource TemplatedParent}}"
-                    ContentTemplate="{StaticResource NavigationViewItemSubmenuContentTemplate}" />
-            </Popup>
-        </Grid>
+                <Rectangle
+                    x:Name="ActiveRectangle"
+                    Grid.Column="0"
+                    Width="16"
+                    Height="3"
+                    Margin="0,0,0,-4"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Bottom"
+                    Fill="{m:BrushResource SystemAccentColorPrimaryBrush}"
+                    Opacity="0.0"
+                    RadiusX="2"
+                    RadiusY="2" />
+                <!--  NavigationView owns one subtree capture for the complete popup cascade.  -->
+                <Popup
+                    x:Name="PART_SubMenuPopup"
+                    controls:PopupAnimator.IsEnabled="True"
+                    controls:PopupShadow.IsEnabled="True"
+                    AllowsTransparency="True"
+                    Focusable="False"
+                    HorizontalOffset="0"
+                    IsOpen="{Binding IsSubmenuOpen, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
+                    Placement="Bottom"
+                    PlacementTarget="{Binding ElementName=MainBorder}"
+                    PopupAnimation="None"
+                    VerticalOffset="1">
+                    <ContentPresenter Content="{Binding MenuItems, RelativeSource={RelativeSource TemplatedParent}}" ContentTemplate="{StaticResource NavigationViewItemSubmenuContentTemplate}" />
+                </Popup>
+            </Grid>
+        </Border>
         <ControlTemplate.Triggers>
-
-            <Trigger Property="IsActive" Value="True">
-                <Setter TargetName="ActiveRectangle" Property="Opacity" Value="1.0" />
-            </Trigger>
             <Trigger Property="Icon" Value="{x:Null}">
                 <Setter TargetName="IconContentPresenter" Property="Visibility" Value="Collapsed" />
             </Trigger>
@@ -101,6 +93,18 @@
             <Trigger Property="Content" Value="">
                 <Setter TargetName="IconContentPresenter" Property="Margin" Value="0" />
                 <Setter TargetName="ElementContentPresenter" Property="Visibility" Value="Collapsed" />
+            </Trigger>
+
+            <!--  Interaction visual states  -->
+            <Trigger Property="IsActive" Value="True">
+                <Setter TargetName="ActiveRectangle" Property="Opacity" Value="1.0" />
+                <Setter TargetName="MainBorder" Property="Background" Value="{m:BrushResource SubtleFillColorSecondaryBrush}" />
+            </Trigger>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter TargetName="MainBorder" Property="Background" Value="{m:BrushResource SubtleFillColorSecondaryBrush}" />
+            </Trigger>
+            <Trigger Property="IsPressed" Value="True">
+                <Setter TargetName="MainBorder" Property="Background" Value="{m:BrushResource SubtleFillColorTertiaryBrush}" />
             </Trigger>
         </ControlTemplate.Triggers>
     </ControlTemplate>

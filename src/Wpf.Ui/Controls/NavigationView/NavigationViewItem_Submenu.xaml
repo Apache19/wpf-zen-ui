@@ -53,7 +53,7 @@
         itself as the stable selection and journal object.
     -->
     <ControlTemplate x:Key="NavigationViewItemSubmenuTemplate" TargetType="{x:Type controls:NavigationViewItem}">
-        <Grid>
+        <Grid Background="Transparent">
             <Border
                 x:Name="MainBorder"
                 MinHeight="36"
@@ -123,6 +123,7 @@
                 </Grid>
             </Border>
 
+            <!--  NavigationView owns one subtree capture for the complete popup cascade.  -->
             <Popup
                 x:Name="PART_SubMenuPopup"
                 controls:PopupAnimator.IsEnabled="True"
@@ -134,7 +135,7 @@
                 Placement="Right"
                 PlacementTarget="{Binding ElementName=MainBorder}"
                 PopupAnimation="None"
-                StaysOpen="False">
+                VerticalOffset="-4">
                 <ContentPresenter Content="{Binding MenuItems, RelativeSource={RelativeSource TemplatedParent}}" ContentTemplate="{StaticResource NavigationViewItemSubmenuContentTemplate}" />
             </Popup>
         </Grid>

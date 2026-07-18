@@ -179,6 +179,15 @@ public partial class NavigationView : Control, INavigationView
     private          object?                                            _displacedTitleBarLeftContent;
     private          bool                                               _isLeftPaneWidthInitialized;
     private          bool                                               _isUpdatingNavigationItemSubmenus;
+    private          bool                                               _isSubmenuCaptureActive;
+    private          bool                                               _isPointerSubmenuDismissalActive;
+
+    /// <summary>
+    /// Gets a value indicating whether an outside press has dismissed the popup cascade and the
+    /// remaining release still belongs to that dismissal. While this is true, the press/release
+    /// pair must not be reinterpreted by an underlying navigation item.
+    /// </summary>
+    internal bool IsPointerSubmenuDismissalActive => _isPointerSubmenuDismissalActive;
 
     protected static void UpdateVisualState(NavigationView navigationView)
     {
@@ -236,6 +245,13 @@ public partial class NavigationView : Control, INavigationView
         NavigationStack.CollectionChanged += NavigationStackOnCollectionChanged;
 
         UpdatePaneButtonPlacement();
+
+        // A bound submenu may already be open before the control enters a presentation source.
+        // Capture cannot succeed while detached, so establish the shared session on load.
+        if (HasOpenNavigationViewItemSubmenu())
+        {
+            EnsureSubmenuCapture();
+        }
     }
 
     /// <summary>
@@ -244,6 +260,7 @@ public partial class NavigationView : Control, INavigationView
     protected virtual void OnUnloaded(object sender, RoutedEventArgs e)
     {
         NavigationStack.CollectionChanged -= NavigationStackOnCollectionChanged;
+        EndSubmenuCapture();
 
         // A TitleBar can outlive a NavigationView in the same window. Release the contributed
         // content on detach so the title bar does not retain this control through button handlers.
@@ -582,15 +599,18 @@ public partial class NavigationView : Control, INavigationView
     }
 
     /// <summary>
-    /// Invokes a navigation item and closes transient menus only after navigation succeeds. A
-    /// canceled navigation intentionally leaves the current branch available to the user.
+    /// Invokes a navigation item and closes transient menus only after leaf navigation succeeds. A
+    /// canceled navigation intentionally leaves the current branch available to the user. An item
+    /// with children also represents the placement target for its submenu, so its ancestor branch
+    /// must remain connected until <see cref="NavigationViewItem.InvokePrimaryAction"/> toggles that
+    /// submenu; closing it here would reopen the descendant as an orphaned Popup.
     /// </summary>
     internal bool OnNavigationViewItemClick(NavigationViewItem navigationViewItem)
     {
         OnItemInvoked();
         bool navigated = NavigateInternal(navigationViewItem);
 
-        if (navigated)
+        if (navigated && !navigationViewItem.HasMenuItems)
         {
             CloseAllNavigationViewItemSubmenus();
         }
@@ -629,6 +649,8 @@ public partial class NavigationView : Control, INavigationView
         {
             _isUpdatingNavigationItemSubmenus = false;
         }
+
+        EnsureSubmenuCapture();
     }
 
     /// <summary>Closes every transient navigation-item popup without altering inline expansion.</summary>
@@ -648,6 +670,259 @@ public partial class NavigationView : Control, INavigationView
         finally
         {
             _isUpdatingNavigationItemSubmenus = false;
+        }
+
+        if (!_isPointerSubmenuDismissalActive)
+        {
+            EndSubmenuCapture();
+        }
+    }
+
+    /// <summary>
+    /// Starts the single capture session shared by every Popup in the current submenu cascade.
+    /// </summary>
+    /// <remarks>
+    /// WPF's native <see cref="Menu"/> keeps child Popups open and captures once at the menu root.
+    /// Doing the same here avoids the private PopupRoot capture stack created by nested
+    /// <c>StaysOpen=False</c> Popups. That stack restores capture one level at a time and temporarily
+    /// ignores mouse messages after every restoration, which is the source of both cascading
+    /// one-click-at-a-time dismissal and intermittent "frozen" popup input.
+    /// </remarks>
+    private void EnsureSubmenuCapture()
+    {
+        if (!IsLoaded)
+        {
+            return;
+        }
+
+        if (!_isSubmenuCaptureActive)
+        {
+            _isSubmenuCaptureActive = true;
+            InputManager.Current.PreProcessInput  += ProcessSubmenuPointerInput;
+            InputManager.Current.PostProcessInput += CompleteSubmenuPointerInput;
+            LostMouseCapture += OnSubmenuMouseCaptureLost;
+        }
+
+        if (ReferenceEquals(Mouse.Captured, this) || IsInputWithinNavigationPopupSession(Mouse.Captured))
+        {
+            return;
+        }
+
+        if (!Mouse.Capture(this, CaptureMode.SubTree))
+        {
+            // A StaysOpen popup cannot dismiss itself. Mirror MenuBase and close the transient
+            // branch when root capture is unavailable rather than leaving an unclosable HWND.
+            EndSubmenuCapture();
+            CloseAllNavigationViewItemSubmenus();
+        }
+    }
+
+    private void EndSubmenuCapture()
+    {
+        if (!_isSubmenuCaptureActive)
+        {
+            _isPointerSubmenuDismissalActive = false;
+            return;
+        }
+
+        InputManager.Current.PreProcessInput  -= ProcessSubmenuPointerInput;
+        InputManager.Current.PostProcessInput -= CompleteSubmenuPointerInput;
+        LostMouseCapture -= OnSubmenuMouseCaptureLost;
+
+        _isSubmenuCaptureActive = false;
+        _isPointerSubmenuDismissalActive = false;
+
+        if (ReferenceEquals(Mouse.Captured, this))
+        {
+            _ = Mouse.Capture(null);
+        }
+    }
+
+    /// <summary>
+    /// Resolves the Popup surface from the already hit-tested input source before any Popup closes.
+    /// This deliberately avoids screen-coordinate queries after HWND teardown or repositioning.
+    /// </summary>
+    private void ProcessSubmenuPointerInput(object sender, PreProcessInputEventArgs e)
+    {
+        if (!_isSubmenuCaptureActive || e.StagingItem.Input is not MouseButtonEventArgs mouseEvent)
+        {
+            return;
+        }
+
+        if (_isPointerSubmenuDismissalActive)
+        {
+            // The outside mouse-down and its matching release form one menu-dismissal gesture.
+            // Keeping both handled prevents the control revealed below the closed Popup from
+            // observing half of that gesture.
+            mouseEvent.Handled = true;
+            return;
+        }
+
+        if (
+            mouseEvent.RoutedEvent != Mouse.PreviewMouseDownEvent ||
+            (
+                mouseEvent.ChangedButton != MouseButton.Left &&
+                mouseEvent.ChangedButton != MouseButton.Right
+            )
+        )
+        {
+            return;
+        }
+
+        // PreProcessInput runs before routed-event source promotion has necessarily populated
+        // OriginalSource. Mouse.DirectlyOver has already been updated by MouseDevice at this point
+        // and, under subtree capture, still represents the real element across Popup HWNDs.
+        var hitSource = Mouse.DirectlyOver ?? mouseEvent.OriginalSource;
+        var popupOwner =
+            FindDeepestOpenSubmenuContainingInput(MenuItems, hitSource) ??
+            FindDeepestOpenSubmenuContainingInput(FooterMenuItems, hitSource);
+
+        if (popupOwner is not null)
+        {
+            // Clicking an ancestor surface closes every deeper branch before the target processes
+            // the press. The retained Popup and the root capture remain untouched.
+            OnNavigationViewItemSubmenuOpened(popupOwner);
+            return;
+        }
+
+        _isPointerSubmenuDismissalActive = true;
+        mouseEvent.Handled = true;
+        CloseAllNavigationViewItemSubmenus();
+    }
+
+    private void CompleteSubmenuPointerInput(object sender, ProcessInputEventArgs e)
+    {
+        if (
+            _isPointerSubmenuDismissalActive &&
+            e.StagingItem.Input is MouseButtonEventArgs
+            {
+                LeftButton: MouseButtonState.Released,
+                RightButton: MouseButtonState.Released
+            }
+        )
+        {
+            EndSubmenuCapture();
+        }
+    }
+
+    private void OnSubmenuMouseCaptureLost(object sender, MouseEventArgs e)
+    {
+        if (!_isSubmenuCaptureActive || ReferenceEquals(Mouse.Captured, this))
+        {
+            return;
+        }
+
+        if (IsInputWithinNavigationPopupSession(Mouse.Captured))
+        {
+            // Buttons inside the captured subtree may temporarily take element capture. Their
+            // release bubbles LostMouseCapture back through Popup's model-parent route, at which
+            // point the root reclaims the session below.
+            return;
+        }
+
+        if (_isPointerSubmenuDismissalActive)
+        {
+            // Window deactivation or native capture loss may provide no matching MouseUp. Ending
+            // immediately prevents the next unrelated click from being swallowed.
+            EndSubmenuCapture();
+            return;
+        }
+
+        if (Mouse.Captured is not null)
+        {
+            // Another, unrelated control deliberately took capture. Do not steal it back: native
+            // MenuBase treats this as leaving menu mode, and closing here avoids interfering with
+            // drag operations, ComboBoxes, context menus, or another NavigationView.
+            CloseAllNavigationViewItemSubmenus();
+            return;
+        }
+
+        if (HasOpenNavigationViewItemSubmenu())
+        {
+            EnsureSubmenuCapture();
+        }
+        else
+        {
+            EndSubmenuCapture();
+        }
+    }
+
+    private bool IsInputWithinNavigationPopupSession(object? source)
+    {
+        if (source is not DependencyObject dependencyObject)
+        {
+            return false;
+        }
+
+        if (
+            dependencyObject is Visual visual &&
+            (
+                ReferenceEquals(this, visual) ||
+                IsAncestorOf(visual)
+            )
+        )
+        {
+            return true;
+        }
+
+        return FindDeepestOpenSubmenuContainingInput(MenuItems, source) is not null ||
+               FindDeepestOpenSubmenuContainingInput(FooterMenuItems, source) is not null;
+    }
+
+    private static NavigationViewItem? FindDeepestOpenSubmenuContainingInput(
+        IEnumerable items,
+        object? originalSource)
+    {
+        foreach (NavigationViewItem item in items.OfType<NavigationViewItem>())
+        {
+            NavigationViewItem? descendant = FindDeepestOpenSubmenuContainingInput(
+                item.MenuItems,
+                originalSource
+            );
+
+            if (descendant is not null)
+            {
+                return descendant;
+            }
+
+            if (item.IsInputWithinOpenSubmenu(originalSource))
+            {
+                return item;
+            }
+        }
+
+        return null;
+    }
+
+    private bool HasOpenNavigationViewItemSubmenu()
+    {
+        return HasOpenNavigationViewItemSubmenu(MenuItems) ||
+               HasOpenNavigationViewItemSubmenu(FooterMenuItems);
+    }
+
+    private static bool HasOpenNavigationViewItemSubmenu(IEnumerable items)
+    {
+        return items
+           .OfType<NavigationViewItem>()
+           .Any(
+                item => item.IsSubmenuOpen ||
+                        HasOpenNavigationViewItemSubmenu(item.MenuItems)
+            );
+    }
+
+    /// <summary>
+    /// Ends the shared capture session when an externally bound submenu state closes the last
+    /// Popup. Branch arbitration suppresses intermediate notifications and performs its own cleanup.
+    /// </summary>
+    internal void OnNavigationViewItemSubmenuClosed()
+    {
+        if (
+            !_isUpdatingNavigationItemSubmenus &&
+            !_isPointerSubmenuDismissalActive &&
+            !HasOpenNavigationViewItemSubmenu()
+        )
+        {
+            EndSubmenuCapture();
         }
     }
 

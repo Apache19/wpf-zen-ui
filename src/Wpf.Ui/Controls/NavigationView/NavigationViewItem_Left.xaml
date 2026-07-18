@@ -68,6 +68,7 @@
     </DataTemplate>
 
     <DataTemplate x:Key="NavigationViewItemLeftPopupMenuTemplate" DataType="{x:Type controls:NavigationViewItem}">
+        <!--  NavigationView owns one subtree capture for the complete popup cascade.  -->
         <Popup
             x:Name="PART_SubMenuPopup"
             controls:PopupAnimator.IsEnabled="True"
@@ -79,7 +80,7 @@
             Placement="Right"
             PlacementTarget="{Binding}"
             PopupAnimation="None"
-            StaysOpen="False">
+            VerticalOffset="-2">
             <ContentPresenter Content="{Binding MenuItems}" ContentTemplate="{StaticResource NavigationViewItemSubmenuContentTemplate}" />
         </Popup>
     </DataTemplate>
@@ -241,7 +242,7 @@
                 <Setter TargetName="ActiveRectangle" Property="Opacity" Value="1.0" />
                 <Setter TargetName="MainBorder" Property="Background" Value="{m:BrushResource SubtleFillColorSecondaryBrush}" />
             </Trigger>
-            <Trigger SourceName="MainBorder" Property="IsMouseOver" Value="True">
+            <Trigger Property="IsMouseOver" Value="True">
                 <Setter TargetName="MainBorder" Property="Background" Value="{m:BrushResource SubtleFillColorSecondaryBrush}" />
             </Trigger>
             <Trigger Property="IsPressed" Value="True">

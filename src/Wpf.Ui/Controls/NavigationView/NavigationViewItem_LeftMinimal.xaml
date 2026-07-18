@@ -74,6 +74,7 @@
                 </Grid>
             </Border>
 
+            <!--  NavigationView owns one subtree capture for the complete popup cascade.  -->
             <Popup
                 x:Name="PART_SubMenuPopup"
                 Grid.Row="1"
@@ -85,11 +86,8 @@
                 IsOpen="{Binding IsSubmenuOpen, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
                 Placement="Right"
                 PlacementTarget="{Binding ElementName=MainBorder}"
-                PopupAnimation="None"
-                StaysOpen="False">
-                <ContentPresenter
-                    Content="{Binding MenuItems, RelativeSource={RelativeSource TemplatedParent}}"
-                    ContentTemplate="{StaticResource NavigationViewItemSubmenuContentTemplate}" />
+                PopupAnimation="None">
+                <ContentPresenter Content="{Binding MenuItems, RelativeSource={RelativeSource TemplatedParent}}" ContentTemplate="{StaticResource NavigationViewItemSubmenuContentTemplate}" />
             </Popup>
         </Grid>
         <ControlTemplate.Triggers>

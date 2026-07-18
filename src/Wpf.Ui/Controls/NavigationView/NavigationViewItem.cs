@@ -442,6 +442,11 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
     private TypedEventHandler<NavigationView, RoutedEventArgs>? _paneClosedHandler;
     private TypedEventHandler<NavigationView, RoutedEventArgs>? _paneModeChangedHandler;
 
+    // Opening a descendant popup first materializes each required ancestor. Those intermediate
+    // IsSubmenuOpen changes must not run branch arbitration independently: an ancestor-only path
+    // would treat the descendant currently being opened as a competing branch and close it.
+    private bool _isOpeningAsPopupAncestor;
+
     internal NavigationView? NavigationViewHost
     {
         get
@@ -601,6 +606,51 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
     }
 
     /// <inheritdoc />
+    /// <remarks>
+    /// A WPF <see cref="Popup"/> connects the routed-event path of its separate HWND back to the
+    /// tree that owns the popup. Consequently, mouse input raised by a submenu popup can pass
+    /// through the owning <see cref="NavigationViewItem"/> even though the pointer is not over this
+    /// button's visual tree. <see cref="ButtonBase"/> does not distinguish that bridged route from
+    /// input on the button itself and would capture the mouse as if this item had been pressed.
+    /// Accepting only sources from the item's visual tree preserves normal button capture while
+    /// preventing an outside click on a nested popup from pressing its placement item.
+    /// </remarks>
+    protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
+    {
+        if (NavigationViewHost?.IsPointerSubmenuDismissalActive == true)
+        {
+            e.Handled = true;
+            return;
+        }
+
+        if (IsInputFromPrimaryVisualTree(e.OriginalSource))
+        {
+            base.OnMouseLeftButtonDown(e);
+        }
+    }
+
+    /// <inheritdoc />
+    /// <remarks>
+    /// This is the release-side counterpart of <see cref="OnMouseLeftButtonDown"/>. Filtering both
+    /// halves is important because controls inside a Popup can temporarily take element capture;
+    /// their later release must not complete a click on the Popup's placement item through WPF's
+    /// model-parent event bridge.
+    /// </remarks>
+    protected override void OnMouseLeftButtonUp(MouseButtonEventArgs e)
+    {
+        if (NavigationViewHost?.IsPointerSubmenuDismissalActive == true)
+        {
+            e.Handled = true;
+            return;
+        }
+
+        if (IsInputFromPrimaryVisualTree(e.OriginalSource))
+        {
+            base.OnMouseLeftButtonUp(e);
+        }
+    }
+
+    /// <inheritdoc />
     protected override void OnKeyDown(KeyEventArgs e)
     {
         if (HandleChildMenuKey(e.Key))
@@ -662,9 +712,9 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
     /// <returns><see langword="true"/> when an action was performed.</returns>
     internal bool InvokePrimaryAction()
     {
-        // Capture the desired child state before navigation. Successful navigation closes all
-        // transient Popup branches, so deriving the toggle state afterwards would always reopen an
-        // already-open menu instead of honoring the user's request to close it.
+        // Snapshot the requested toggle before invoking navigation. Navigation can synchronously
+        // update selection, content, or bindings; the physical click should still toggle the child
+        // presentation from the state the user actually pressed.
         bool hasMenuItems = HasMenuItems;
         bool shouldOpenChildMenu = hasMenuItems && !IsChildMenuOpen;
         bool actionPerformed = false;
@@ -681,6 +731,39 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
         }
 
         return actionPerformed;
+    }
+
+    /// <summary>
+    /// Determines whether a routed input source belongs to the item's real button surface rather
+    /// than to a detached Popup visual tree whose event route is bridged through this control.
+    /// </summary>
+    private bool IsInputFromPrimaryVisualTree(object? originalSource)
+    {
+        return
+            ResolveVisualInputSource(originalSource) is { } visual &&
+            (
+                ReferenceEquals(this, visual) ||
+                IsAncestorOf(visual)
+            );
+    }
+
+    private static Visual? ResolveVisualInputSource(object? originalSource)
+    {
+        DependencyObject? source = originalSource as DependencyObject;
+
+        // Text runs are ContentElements rather than Visuals. Resolve their content parent first,
+        // then deliberately stay on the visual axis: following logical/templated parents here would
+        // cross Popup's route bridge and incorrectly classify detached popup input as button input.
+        while (source is ContentElement contentElement)
+        {
+            source = ContentOperations.GetParent(contentElement);
+            if (source == null)
+            {
+                source = (contentElement as FrameworkContentElement)?.Parent;
+            }
+        }
+
+        return source as Visual;
     }
 
     /// <summary>Sets the effective child-menu state for the active presentation.</summary>
@@ -976,7 +1059,11 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
 
         if (newValue)
         {
-            item.NavigationViewHost?.OnNavigationViewItemSubmenuOpened(item);
+            item.OpenPopupAncestors();
+            if (!item._isOpeningAsPopupAncestor)
+            {
+                item.NavigationViewHost?.OnNavigationViewItemSubmenuOpened(item);
+            }
         }
         else
         {
@@ -984,6 +1071,8 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
             {
                 child.CloseSubmenuBranch();
             }
+
+            item.NavigationViewHost?.OnNavigationViewItemSubmenuClosed();
         }
 
         if (!item.UsesInlineExpansion && item.HasMenuItems)
@@ -994,6 +1083,102 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
                 newValue ? ExpandCollapseState.Expanded : ExpandCollapseState.Collapsed
             );
         }
+    }
+
+    /// <summary>
+    /// Opens every popup ancestor before this item's popup is presented. A descendant popup cannot
+    /// safely outlive the Popup that contains its placement target; doing so leaves a detached HWND
+    /// whose routed mouse events still lead back to the descendant item.
+    /// </summary>
+    private void OpenPopupAncestors()
+    {
+        var ancestors = new Stack<NavigationViewItem>();
+        for (
+            var parent = NavigationViewItemParent as NavigationViewItem;
+            parent is not null;
+            parent = parent.NavigationViewItemParent as NavigationViewItem
+        )
+        {
+            ancestors.Push(parent);
+        }
+
+        while (ancestors.Count > 0)
+        {
+            NavigationViewItem ancestor = ancestors.Pop();
+            if (!ancestor.UsesInlineExpansion && ancestor.HasMenuItems)
+            {
+                ancestor.OpenAsPopupAncestor();
+            }
+        }
+    }
+
+    /// <summary>
+    /// Materializes one ancestor without arbitrating branches until the descendant that requested
+    /// the operation reaches its own property callback.
+    /// </summary>
+    private void OpenAsPopupAncestor()
+    {
+        if (IsSubmenuOpen)
+        {
+            return;
+        }
+
+        _isOpeningAsPopupAncestor = true;
+
+        try
+        {
+            SetCurrentValue(IsSubmenuOpenProperty, true);
+        }
+        finally
+        {
+            _isOpeningAsPopupAncestor = false;
+        }
+    }
+
+    /// <summary>
+    /// Determines whether an already hit-tested input source belongs to this item's open Popup.
+    /// </summary>
+    /// <remarks>
+    /// Popup content lives in a separate HWND and visual tree, so ordinary ancestry from the
+    /// NavigationView cannot identify its owning level. Testing against the Popup child before any
+    /// branch closes gives a deterministic answer without depending on screen coordinates, layout,
+    /// or WPF's private PopupRoot capture-restoration timing.
+    /// </remarks>
+    internal bool IsInputWithinOpenSubmenu(object? originalSource)
+    {
+        if (!IsSubmenuOpen || FindSubmenuPopup() is not { IsOpen: true, Child: UIElement popupChild })
+        {
+            return false;
+        }
+
+        return
+            ResolveVisualInputSource(originalSource) is { } visual &&
+            (
+                ReferenceEquals(popupChild, visual) ||
+                popupChild.IsAncestorOf(visual)
+            );
+    }
+
+    /// <summary>Finds the popup part in either the direct template or Left's child DataTemplate.</summary>
+    private Popup? FindSubmenuPopup()
+    {
+        if (Template?.FindName("PART_SubMenuPopup", this) is Popup directPopup)
+        {
+            return directPopup;
+        }
+
+        if (
+            Template?.FindName("ChildMenuPresenter", this) is ContentPresenter childMenuPresenter &&
+            childMenuPresenter.ContentTemplate?.FindName(
+                "PART_SubMenuPopup",
+                childMenuPresenter
+            ) is Popup leftPopup
+        )
+        {
+            return leftPopup;
+        }
+
+        return null;
     }
 
     /// <summary>Reports inline state changes only while inline expansion is the active presentation.</summary>
