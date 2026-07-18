@@ -3,7 +3,7 @@
   <PropertyGroup>
     <PackageId>WPF-UI.SyntaxHighlight</PackageId>
     <TargetFrameworks>net8.0-windows;net462</TargetFrameworks>
-    <Description>Native tast notification support for WPF using the WPF UI library.</Description>
+    <Description>Syntax highlighting support for WPF using the WPF UI library.</Description>
     <CommonTags>$(CommonTags);syntax;highlight</CommonTags>
     <UseWPF>true</UseWPF>
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
@@ -16,7 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="Controls\CodeBlock.cs" />
+    <EmbeddedResource Include="Controls\CodeBlock.bmp" />
   </ItemGroup>
 
   <ItemGroup>
