@@ -59,6 +59,31 @@ public class PassiveScrollViewer : ScrollViewer
         base.OnMouseWheel(e);
     }
 
+    /// <summary>
+    /// Responds to changes in the scrollable extent, viewport, or offsets.
+    /// </summary>
+    /// <param name="e">Data describing the scrolling-state change.</param>
+    /// <remarks>
+    /// When a shrinking content area removes the vertical scroll range, the vertical offset is reset
+    /// permanently instead of merely being coerced to zero for the current layout pass. This prevents
+    /// a previously requested offset from returning if the content later becomes scrollable again.
+    /// </remarks>
+    protected override void OnScrollChanged(ScrollChangedEventArgs e)
+    {
+        // ScrollContentPresenter keeps the requested offset separately from the computed offset that
+        // ScrollViewer exposes. When the extent shrinks, WPF only coerces the computed value into the
+        // new range; it intentionally retains the requested value and restores it if the extent grows.
+        // A non-zero change to zero proves that this viewer was actually scrolled before its vertical
+        // range disappeared. Explicitly requesting zero updates WPF's retained value as well. The call
+        // uses the public command queue so it remains compatible with custom IScrollInfo implementations.
+        if (e.VerticalChange != 0d && ScrollableHeight <= 0d)
+        {
+            ScrollToVerticalOffset(0d);
+        }
+
+        base.OnScrollChanged(e);
+    }
+
     private bool IsContentSmallerThanViewport
     {
         get => ScrollableHeight <= 0;

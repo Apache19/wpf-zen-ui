@@ -89,6 +89,59 @@ public class PassiveScrollViewerTests
         );
     }
 
+    [Fact]
+    public void ContentStopsOverflowing_ClearsRetainedVerticalOffset()
+    {
+        RunOnStaThread(
+            () =>
+            {
+                var content = new Border { Width = 100d, Height = 400d };
+                var scrollViewer = new TestPassiveScrollViewer
+                {
+                    Width = 100d,
+                    Height = 100d,
+                    Content = content,
+                    VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+                };
+
+                var window = new Window
+                {
+                    Content = scrollViewer,
+                    ShowInTaskbar = false,
+                    WindowStyle = WindowStyle.None,
+                    Width = 120d,
+                    Height = 120d,
+                };
+
+                try
+                {
+                    window.Show();
+                    scrollViewer.UpdateLayout();
+                    scrollViewer.ScrollToVerticalOffset(120d);
+                    scrollViewer.UpdateLayout();
+
+                    Assert.Equal(120d, scrollViewer.VerticalOffset);
+
+                    content.Height = 50d;
+                    scrollViewer.UpdateLayout();
+
+                    Assert.Equal(0d, scrollViewer.ScrollableHeight);
+                    Assert.Equal(0d, scrollViewer.VerticalOffset);
+
+                    content.Height = 400d;
+                    scrollViewer.UpdateLayout();
+
+                    Assert.True(scrollViewer.ScrollableHeight > 0d);
+                    Assert.Equal(0d, scrollViewer.VerticalOffset);
+                }
+                finally
+                {
+                    window.Close();
+                }
+            }
+        );
+    }
+
     private static MouseWheelEventArgs CreateMouseWheelEvent(int delta)
     {
         return new MouseWheelEventArgs(Mouse.PrimaryDevice, Environment.TickCount, delta)
