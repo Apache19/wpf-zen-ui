@@ -35,7 +35,6 @@
             </Trigger>
             <Trigger Property="PaneDisplayMode" Value="LeftFluent">
                 <Setter Property="Template" Value="{StaticResource NavigationViewItemLeftFluentTemplate}" />
-                <Setter Property="FontSize" Value="12" />
             </Trigger>
             <Trigger Property="PaneDisplayMode" Value="Top">
                 <Setter Property="Template" Value="{StaticResource NavigationViewItemTopTemplate}" />

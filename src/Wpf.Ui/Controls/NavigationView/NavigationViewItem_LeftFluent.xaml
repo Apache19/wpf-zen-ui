@@ -46,6 +46,9 @@
                             Content="{TemplateBinding Icon}"
                             TextElement.FontSize="24" />
 
+                        <!--
+                            由于空间有限，字体太大会把按钮撑的太宽，所以固定为12
+                        -->
                         <Grid
                             x:Name="ContentGrid"
                             Grid.Row="1"
@@ -53,6 +56,7 @@
                             Margin="0,2,0,0">
                             <ContentPresenter
                                 x:Name="ElementContentPresenter"
+                                TextElement.FontSize="12"
                                 HorizontalAlignment="Center"
                                 RecognizesAccessKey="True" />
                         </Grid>

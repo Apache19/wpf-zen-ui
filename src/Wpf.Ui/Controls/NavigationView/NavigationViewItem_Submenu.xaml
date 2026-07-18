@@ -40,7 +40,7 @@
                 ScrollViewer.VerticalScrollBarVisibility="Auto">
                 <controls:NavigationViewList.ItemsPanel>
                     <ItemsPanelTemplate>
-                        <StackPanel IsItemsHost="True" />
+                        <StackPanel Grid.IsSharedSizeScope="True" IsItemsHost="True" />
                     </ItemsPanelTemplate>
                 </controls:NavigationViewList.ItemsPanel>
             </controls:NavigationViewList>
@@ -65,8 +65,9 @@
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="3" />
-                        <ColumnDefinition x:Name="IconColumn" Width="32" />
+                        <ColumnDefinition Width="Auto" SharedSizeGroup="Icon" />
                         <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
 
@@ -85,6 +86,7 @@
                     <ContentPresenter
                         x:Name="IconContentPresenter"
                         Grid.Column="1"
+                        Margin="4,0,4,0"
                         HorizontalAlignment="Center"
                         VerticalAlignment="Center"
                         Content="{TemplateBinding Icon}"
@@ -99,8 +101,7 @@
                         VerticalAlignment="Center"
                         Content="{TemplateBinding Content}"
                         ContentTemplate="{TemplateBinding ContentTemplate}"
-                        RecognizesAccessKey="True"
-                        TextElement.Foreground="{m:BrushResource TextFillColorPrimaryBrush}" />
+                        RecognizesAccessKey="True" />
 
                     <ContentPresenter
                         x:Name="PART_InfoBadge"
@@ -108,6 +109,17 @@
                         Margin="4,0"
                         VerticalAlignment="Center"
                         Content="{TemplateBinding InfoBadge}" />
+
+                    <controls:SymbolIcon
+                        x:Name="ChevronIcon"
+                        Grid.Column="4"
+                        Margin="8,0"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        FontSize="12"
+                        Foreground="{m:BrushResource TextFillColorPrimaryBrush}"
+                        IsHitTestVisible="False"
+                        Symbol="Chevronright24" />
                 </Grid>
             </Border>
 
@@ -138,11 +150,14 @@
                 <Setter TargetName="MainBorder" Property="Background" Value="{m:BrushResource SubtleFillColorTertiaryBrush}" />
             </Trigger>
             <Trigger Property="Icon" Value="{x:Null}">
-                <Setter TargetName="IconColumn" Property="Width" Value="8" />
+                <Setter TargetName="IconContentPresenter" Property="Margin" Value="0" />
                 <Setter TargetName="IconContentPresenter" Property="Visibility" Value="Collapsed" />
             </Trigger>
             <Trigger Property="InfoBadge" Value="{x:Null}">
                 <Setter TargetName="PART_InfoBadge" Property="Visibility" Value="Collapsed" />
+            </Trigger>
+            <Trigger Property="HasMenuItems" Value="False">
+                <Setter TargetName="ChevronIcon" Property="Visibility" Value="Collapsed" />
             </Trigger>
         </ControlTemplate.Triggers>
     </ControlTemplate>

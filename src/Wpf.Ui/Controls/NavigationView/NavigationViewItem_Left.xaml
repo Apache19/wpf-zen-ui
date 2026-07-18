@@ -15,7 +15,7 @@
         ContentPresenter.EnsureTemplate), so NavigationViewItem children never acquire two visual
         parents while the presentation changes between an inline list and a Popup.
     -->
-    <DataTemplate x:Key="NavigationViewItemLeftInlineMenuTemplate">
+    <DataTemplate x:Key="NavigationViewItemLeftInlineMenuTemplate" DataType="{x:Type controls:NavigationViewItem}">
         <controls:NavigationViewList
             x:Name="MenuItemsList"
             AutomationProperties.AutomationId="NavigationItemItems"
@@ -32,7 +32,7 @@
             Visibility="Collapsed">
             <controls:NavigationViewList.ItemsPanel>
                 <ItemsPanelTemplate>
-                    <StackPanel Margin="0" IsItemsHost="True" />
+                    <StackPanel Grid.IsSharedSizeScope="True" IsItemsHost="True" />
                 </ItemsPanelTemplate>
             </controls:NavigationViewList.ItemsPanel>
         </controls:NavigationViewList>
@@ -67,14 +67,14 @@
         </DataTemplate.Triggers>
     </DataTemplate>
 
-    <DataTemplate x:Key="NavigationViewItemLeftPopupMenuTemplate">
+    <DataTemplate x:Key="NavigationViewItemLeftPopupMenuTemplate" DataType="{x:Type controls:NavigationViewItem}">
         <Popup
             x:Name="PART_SubMenuPopup"
             controls:PopupAnimator.IsEnabled="True"
             controls:PopupShadow.IsEnabled="True"
             AllowsTransparency="True"
             Focusable="False"
-            HorizontalOffset="8" 
+            HorizontalOffset="8"
             IsOpen="{Binding IsSubmenuOpen, Mode=TwoWay}"
             Placement="Right"
             PlacementTarget="{Binding}"
@@ -159,8 +159,7 @@
                         Foreground="{m:BrushResource TextFillColorPrimaryBrush}"
                         IsHitTestVisible="False"
                         RenderTransformOrigin="0.5, 0.5"
-                        Symbol="ChevronDown24"
-                        Visibility="Collapsed">
+                        Symbol="ChevronDown24">
                         <controls:SymbolIcon.RenderTransform>
                             <RotateTransform Angle="0" />
                         </controls:SymbolIcon.RenderTransform>
@@ -190,17 +189,25 @@
                 <Setter TargetName="PART_InfoBadge" Property="Margin" Value="0" />
                 <Setter TargetName="PART_InfoBadge" Property="Visibility" Value="Collapsed" />
             </Trigger>
-            <!--<MultiTrigger>
+            <Trigger Property="HasMenuItems" Value="False">
+                <Setter TargetName="ChevronIcon" Property="Visibility" Value="Collapsed" />
+            </Trigger>
+
+            <MultiTrigger>
                 <MultiTrigger.Conditions>
-                    <Condition Property="HasMenuItems" Value="True" />
-                    <Condition Property="IsPaneOpen" Value="True" />
+                    <Condition Property="IsSubItem" Value="False" />
+                    <Condition Property="Icon" Value="{x:Null}" />
                 </MultiTrigger.Conditions>
-                <Setter TargetName="ChevronIcon" Property="Visibility" Value="Visible" />
-            </MultiTrigger>-->
-            <Trigger Property="Icon" Value="{x:Null}">
                 <Setter TargetName="IconColumn" Property="Width" Value="0" />
                 <Setter TargetName="IconContentPresenter" Property="Visibility" Value="Collapsed" />
                 <Setter TargetName="ElementContentPresenter" Property="Margin" Value="10,0,0,0" />
+            </MultiTrigger>
+
+            <Trigger Property="IsSubItem" Value="True">
+                <Setter TargetName="IconColumn" Property="Width" Value="Auto" />
+                <Setter TargetName="IconColumn" Property="SharedSizeGroup" Value="Icon" />
+                <Setter TargetName="IconContentPresenter" Property="Margin" Value="6,0,0,0" />
+                <Setter TargetName="ElementContentPresenter" Property="Margin" Value="4,0,0,0" />
             </Trigger>
 
             <!--  The list animation lives in the inline DataTemplate; only the indicator belongs here.  -->
