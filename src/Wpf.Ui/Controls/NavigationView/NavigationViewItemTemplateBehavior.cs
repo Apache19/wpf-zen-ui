@@ -46,28 +46,29 @@ public static class NavigationViewItemTemplateBehavior
         element.SetValue(IsIconFilledProperty, value);
     }
 
-    internal static void SetIsActive(NavigationViewItem item, INavigationView navigationView, bool isActive)
+    /// <summary>Updates only the selection state owned by <paramref name="item"/>.</summary>
+    /// <remarks>
+    /// Ancestors deliberately remain inactive. Their presentation-independent branch state is
+    /// exposed by <see cref="NavigationViewItem.IsDescendantActive"/> and interpreted by each
+    /// template. Conflating the two states used to make the meaning of IsActive depend on whether
+    /// descendants happened to be presented inline or through a detached menu.
+    /// </remarks>
+    internal static void SetIsActive(NavigationViewItem item, bool isActive)
     {
         item.SetValue(NavigationViewItem.IsActivePropertyKey, isActive);
 
-        if (isActive)
-        {
-            if (item is { UsesInlineExpansion: false, NavigationViewItemParent: not null })
+        if (
+            isActive
+         && item is
             {
-                item.NavigationViewItemParent.Activate(navigationView);
+                UsesInlineExpansion: true,
+                NavigationViewItemParent: NavigationViewItem parentItem,
             }
-
-            if (item is { UsesInlineExpansion: true, NavigationViewItemParent: NavigationViewItem parentItem })
-            {
-                parentItem.SetCurrentValue(NavigationViewItem.IsExpandedProperty, true);
-            }
-
-            return;
-        }
-
-        if (!item.UsesInlineExpansion)
+        )
         {
-            item.NavigationViewItemParent?.Deactivate(navigationView);
+            // Inline activation still reveals the selected row. This changes expansion state, not
+            // selection state, and therefore does not recreate the former ancestor activation.
+            parentItem.SetCurrentValue(NavigationViewItem.IsExpandedProperty, true);
         }
     }
 

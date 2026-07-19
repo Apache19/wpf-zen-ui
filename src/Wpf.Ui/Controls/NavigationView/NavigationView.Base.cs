@@ -336,7 +336,6 @@ public partial class NavigationView : Control, INavigationView
         // is achieved without permanently changing button visibility when the caller returns to Left.
         UpdatePaneButtonPlacement();
         RaiseEvent(new RoutedEventArgs(PaneDisplayModeChangedEvent, this));
-        RefreshNavigationItemActiveState();
     }
 
     /// <summary>
@@ -648,26 +647,6 @@ public partial class NavigationView : Control, INavigationView
         // only the caller's data object. The HashSet also makes direct roots encountered through
         // both paths close exactly once.
         return roots;
-    }
-
-    /// <summary>
-    /// Rebuilds presentation-dependent active ancestors after a pane-mode change. The selected
-    /// navigation object remains unchanged; only read-only visual state is recomputed.
-    /// </summary>
-    private void RefreshNavigationItemActiveState()
-    {
-        ClearNavigationViewItemActiveState(MenuItems);
-        ClearNavigationViewItemActiveState(FooterMenuItems);
-        SelectedItem?.Activate(this);
-    }
-
-    private static void ClearNavigationViewItemActiveState(IEnumerable items)
-    {
-        foreach (NavigationViewItem item in items.OfType<NavigationViewItem>())
-        {
-            item.SetValue(NavigationViewItem.IsActivePropertyKey, false);
-            ClearNavigationViewItemActiveState(item.GetNavigationChildren());
-        }
     }
 
     protected virtual void BreadcrumbBarOnItemClicked(
@@ -1078,39 +1057,6 @@ public partial class NavigationView : Control, INavigationView
         }
 
         return false;
-    }
-
-    protected virtual void CloseNavigationViewItemMenus()
-    {
-        if (Journal.Count <= 0 || IsPaneOpen)
-        {
-            return;
-        }
-
-        DeactivateMenuItems(MenuItems);
-        DeactivateMenuItems(FooterMenuItems);
-
-        INavigationViewItem currentItem = PageKeyIndex[Journal[^1]];
-
-        if (currentItem.NavigationViewItemParent is null)
-        {
-            currentItem.Activate(this);
-            return;
-        }
-
-        currentItem.Deactivate(this);
-        currentItem.NavigationViewItemParent?.Activate(this);
-    }
-
-    protected void DeactivateMenuItems(IEnumerable list)
-    {
-        foreach (var item in list)
-        {
-            if (item is NavigationViewItem nvItem)
-            {
-                nvItem.Deactivate(this);
-            }
-        }
     }
 
     [DebuggerStepThrough]

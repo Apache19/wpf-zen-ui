@@ -105,7 +105,7 @@ public partial class NavigationViewItem : HeaderedItemsControl, INavigationViewI
             nameof(IsActive),
             typeof(bool),
             typeof(NavigationViewItem),
-            new PropertyMetadata(false)
+            new PropertyMetadata(false, OnIsActiveChanged)
         );
 
     /// <summary>Identifies the <see cref="IsActive"/> dependency property.</summary>
@@ -119,6 +119,39 @@ public partial class NavigationViewItem : HeaderedItemsControl, INavigationViewI
     [Browsable(false)]
     [ReadOnly(true)]
     public bool IsActive => (bool)GetValue(IsActiveProperty);
+
+    #endregion
+
+    #region DP: IsDescendantActive
+
+    private static readonly DependencyPropertyKey IsDescendantActivePropertyKey =
+        DependencyProperty.RegisterReadOnly(
+            nameof(IsDescendantActive),
+            typeof(bool),
+            typeof(NavigationViewItem),
+            new PropertyMetadata(false)
+        );
+
+    /// <summary>Identifies the read-only <see cref="IsDescendantActive"/> dependency property.</summary>
+    public static readonly DependencyProperty IsDescendantActiveProperty =
+        IsDescendantActivePropertyKey.DependencyProperty;
+
+    /// <summary>
+    /// Gets a value indicating whether any descendant of this item is active. The default value is
+    /// <see langword="false"/>.
+    /// </summary>
+    /// <remarks>
+    /// This state is independent of <see cref="IsActive"/> and includes every realized level below
+    /// the current item, not only its direct children. Built-in Left templates use it to retain an
+    /// active indicator on a collapsed branch while avoiding a second indicator when the active
+    /// descendant is visible inside an expanded branch. The property is maintained by the semantic
+    /// navigation-item tree, so it also remains meaningful while descendants are presented through
+    /// a detached native menu rather than the WPF visual tree. Its metadata does not directly
+    /// invalidate measure, arrange, or rendering; templates opt into the state with triggers.
+    /// </remarks>
+    [Browsable(false)]
+    [ReadOnly(true)]
+    public bool IsDescendantActive => (bool)GetValue(IsDescendantActiveProperty);
 
     #endregion
 
@@ -535,19 +568,19 @@ public partial class NavigationViewItem : HeaderedItemsControl, INavigationViewI
     }
 
     /// <summary>
-    /// Correctly activates
+    /// Marks this item active without changing the active state of its ancestors.
     /// </summary>
     public virtual void Activate(INavigationView navigationView)
     {
-        NavigationViewItemTemplateBehavior.SetIsActive(this, navigationView, true);
+        NavigationViewItemTemplateBehavior.SetIsActive(this, true);
     }
 
     /// <summary>
-    /// Correctly deactivates
+    /// Marks this item inactive without changing the active state of its ancestors.
     /// </summary>
     public virtual void Deactivate(INavigationView navigationView)
     {
-        NavigationViewItemTemplateBehavior.SetIsActive(this, navigationView, false);
+        NavigationViewItemTemplateBehavior.SetIsActive(this, false);
     }
 
     /// <inheritdoc />
@@ -1042,6 +1075,20 @@ public partial class NavigationViewItem : HeaderedItemsControl, INavigationViewI
     }
 
     /// <summary>
+    /// Propagates active-state changes through semantic parents rather than the visual tree.
+    /// </summary>
+    /// <remarks>
+    /// Compact and horizontal modes project descendants into independent MenuItems hosted by
+    /// Popup presentation sources, so routed events, inherited properties, and visual ancestry
+    /// cannot reliably describe whether a branch contains the active item. Recomputing from child
+    /// containers keeps the read-only branch state presentation-independent.
+    /// </remarks>
+    private static void OnIsActiveChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        ((NavigationViewItem)d)._parentItem?.UpdateDescendantActiveState();
+    }
+
+    /// <summary>
     /// Coordinates the native menu projection at the dependency-property boundary. External
     /// bindings therefore use the same root ContextMenu and receive the same descendant cleanup and
     /// UIA notification as pointer and keyboard input.
@@ -1250,6 +1297,7 @@ public partial class NavigationViewItem : HeaderedItemsControl, INavigationViewI
         _parentItem = parent;
         SetValue(IsSubItemPropertyKey, true);
         UpdateIndentation();
+        parent.UpdateDescendantActiveState();
     }
 
     /// <summary>Releases parent-owned state when this container leaves an item generator.</summary>
@@ -1264,6 +1312,44 @@ public partial class NavigationViewItem : HeaderedItemsControl, INavigationViewI
         _parentItem = null;
         SetValue(IsSubItemPropertyKey, false);
         UpdateIndentation();
+        parent.UpdateDescendantActiveState();
+    }
+
+    /// <summary>
+    /// Recomputes this branch from direct child summaries and propagates an actual change upward.
+    /// </summary>
+    /// <remarks>
+    /// Each child already summarizes its own descendants, which makes an active-state transition
+    /// proportional to tree depth rather than repeatedly walking the complete subtree. Attachment
+    /// and detachment call the same method because active containers can move while unrealized
+    /// branches or an ItemsSource are being regenerated.
+    /// </remarks>
+    private void UpdateDescendantActiveState()
+    {
+        bool isDescendantActive = false;
+
+        foreach (NavigationViewItem child in GetNavigationChildren())
+        {
+            // Container generation can briefly expose a container while it is being cleared. The
+            // explicit semantic-parent check prevents that stale generator entry from keeping the
+            // former branch active after detachment.
+            if (
+                ReferenceEquals(child._parentItem, this)
+             && (child.IsActive || child.IsDescendantActive)
+            )
+            {
+                isDescendantActive = true;
+                break;
+            }
+        }
+
+        if (IsDescendantActive == isDescendantActive)
+        {
+            return;
+        }
+
+        SetValue(IsDescendantActivePropertyKey, isDescendantActive);
+        _parentItem?.UpdateDescendantActiveState();
     }
 
     /// <summary>

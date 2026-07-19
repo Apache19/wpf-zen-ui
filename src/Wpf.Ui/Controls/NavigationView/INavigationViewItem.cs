@@ -37,6 +37,12 @@ public interface INavigationViewItem
     bool IsActive { get; }
 
     /// <summary>
+    /// Gets a value indicating whether an active navigation item exists below this item in the
+    /// semantic navigation hierarchy.
+    /// </summary>
+    bool IsDescendantActive { get; }
+
+    /// <summary>
     /// Gets or sets the unique tag used by the parent navigation system for the purpose of searching and navigating.
     /// </summary>
     string TargetPageTag { get; set; }

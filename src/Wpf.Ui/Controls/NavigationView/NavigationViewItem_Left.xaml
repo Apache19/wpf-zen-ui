@@ -97,6 +97,41 @@
                 <Setter TargetName="ActiveIndicator" Property="Opacity" Value="1" />
                 <Setter TargetName="HeaderSurface" Property="Background" Value="{m:BrushResource SubtleFillColorSecondaryBrush}" />
             </DataTrigger>
+            <!--
+                Once an inline branch is collapsed, its active descendant no longer has a visible
+                row of its own. Surface that semantic branch state on the parent, but remove the
+                duplicate indicator as soon as expansion makes the active descendant visible again.
+            -->
+            <MultiDataTrigger>
+                <MultiDataTrigger.Conditions>
+                    <Condition Binding="{Binding IsDescendantActive, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}" Value="True" />
+                    <Condition Binding="{Binding IsExpanded, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}" Value="False" />
+                </MultiDataTrigger.Conditions>
+                <Setter TargetName="ActiveIndicator" Property="Opacity" Value="1" />
+                <Setter TargetName="HeaderSurface" Property="Background" Value="{m:BrushResource SubtleFillColorSecondaryBrush}" />
+            </MultiDataTrigger>
+            <!--
+                IsExpanded is intentionally preserved when the Left pane closes. In that detached
+                presentation the descendants are hidden regardless of the stale inline expansion,
+                so pane state takes precedence when deciding whether the branch indicator is needed.
+            -->
+            <MultiDataTrigger>
+                <MultiDataTrigger.Conditions>
+                    <Condition Binding="{Binding IsDescendantActive, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}" Value="True" />
+                    <Condition Binding="{Binding PaneDisplayMode, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}" Value="{x:Static controls:NavigationViewPaneDisplayMode.Left}" />
+                    <Condition Binding="{Binding IsPaneOpen, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}" Value="False" />
+                </MultiDataTrigger.Conditions>
+                <Setter TargetName="ActiveIndicator" Property="Opacity" Value="1" />
+                <Setter TargetName="HeaderSurface" Property="Background" Value="{m:BrushResource SubtleFillColorSecondaryBrush}" />
+            </MultiDataTrigger>
+            <MultiDataTrigger>
+                <MultiDataTrigger.Conditions>
+                    <Condition Binding="{Binding IsDescendantActive, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}" Value="True" />
+                    <Condition Binding="{Binding PaneDisplayMode, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}" Value="{x:Static controls:NavigationViewPaneDisplayMode.LeftMinimal}" />
+                </MultiDataTrigger.Conditions>
+                <Setter TargetName="ActiveIndicator" Property="Opacity" Value="1" />
+                <Setter TargetName="HeaderSurface" Property="Background" Value="{m:BrushResource SubtleFillColorSecondaryBrush}" />
+            </MultiDataTrigger>
             <DataTrigger Binding="{Binding IsSubmenuOpen, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}" Value="True">
                 <Setter TargetName="HeaderSurface" Property="Background" Value="{m:BrushResource SubtleFillColorSecondaryBrush}" />
             </DataTrigger>

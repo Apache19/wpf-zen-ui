@@ -253,6 +253,7 @@ public class NavigationViewItemTests
 
             Assert.True(NavigationViewItem.PaneDisplayModeProperty.ReadOnly);
             Assert.True(NavigationViewItem.IsSubItemProperty.ReadOnly);
+            Assert.True(NavigationViewItem.IsDescendantActiveProperty.ReadOnly);
             Assert.Equal(NavigationViewPaneDisplayMode.Top, parent.PaneDisplayMode);
             Assert.Equal(NavigationViewPaneDisplayMode.Top, child.PaneDisplayMode);
             Assert.True(child.IsSubItem);
@@ -269,6 +270,173 @@ public class NavigationViewItemTests
 
             Assert.False(child.IsSubItem);
             parent.RaiseEvent(new RoutedEventArgs(FrameworkElement.UnloadedEvent));
+        });
+    }
+
+    [Fact]
+    public void ActiveDescendantState_PropagatesThroughAncestorsAndTracksDetachment()
+    {
+        RunOnStaThread(() =>
+        {
+            var navigationView = new Wpf.Ui.Controls.NavigationView
+            {
+                PaneDisplayMode = NavigationViewPaneDisplayMode.Left,
+                IsPaneOpen = true,
+            };
+            var root = new NavigationViewItem();
+            var child = new NavigationViewItem();
+            var grandchild = new NavigationViewItem();
+
+            child.Items.Add(grandchild);
+            root.Items.Add(child);
+            AttachToNavigationView(root, navigationView);
+
+            grandchild.Activate(navigationView);
+
+            Assert.True(grandchild.IsActive);
+            Assert.False(grandchild.IsDescendantActive);
+            Assert.True(child.IsDescendantActive);
+            Assert.True(root.IsDescendantActive);
+
+            child.Items.Remove(grandchild);
+
+            Assert.False(child.IsDescendantActive);
+            Assert.False(root.IsDescendantActive);
+
+            child.Items.Add(grandchild);
+
+            Assert.True(child.IsDescendantActive);
+            Assert.True(root.IsDescendantActive);
+
+            grandchild.Deactivate(navigationView);
+
+            Assert.False(child.IsDescendantActive);
+            Assert.False(root.IsDescendantActive);
+            root.RaiseEvent(new RoutedEventArgs(FrameworkElement.UnloadedEvent));
+        });
+    }
+
+    [Theory]
+    [InlineData(NavigationViewPaneDisplayMode.Left, false)]
+    [InlineData(NavigationViewPaneDisplayMode.LeftMinimal, true)]
+    [InlineData(NavigationViewPaneDisplayMode.LeftFluent, true)]
+    [InlineData(NavigationViewPaneDisplayMode.Top, true)]
+    [InlineData(NavigationViewPaneDisplayMode.Bottom, true)]
+    public void DetachedPresentations_DoNotActivateAncestors(
+        NavigationViewPaneDisplayMode paneDisplayMode,
+        bool isPaneOpen
+    )
+    {
+        RunOnStaThread(() =>
+        {
+            var navigationView = new Wpf.Ui.Controls.NavigationView
+            {
+                PaneDisplayMode = paneDisplayMode,
+                IsPaneOpen = isPaneOpen,
+            };
+            var root = new NavigationViewItem();
+            var child = new NavigationViewItem();
+            var grandchild = new NavigationViewItem();
+            child.Items.Add(grandchild);
+            root.Items.Add(child);
+            AttachToNavigationView(root, navigationView);
+
+            grandchild.Activate(navigationView);
+
+            Assert.True(grandchild.IsActive);
+            Assert.False(child.IsActive);
+            Assert.False(root.IsActive);
+            Assert.True(child.IsDescendantActive);
+            Assert.True(root.IsDescendantActive);
+
+            grandchild.Deactivate(navigationView);
+
+            Assert.False(grandchild.IsActive);
+            Assert.False(child.IsDescendantActive);
+            Assert.False(root.IsDescendantActive);
+            root.RaiseEvent(new RoutedEventArgs(FrameworkElement.UnloadedEvent));
+        });
+    }
+
+    [Fact]
+    public void LeftTemplate_ShowsActiveIndicatorOnlyWhileActiveDescendantIsCollapsed()
+    {
+        RunOnStaThread(() =>
+        {
+            var resources = new ResourceDictionary { Source = CreateResourceUri() };
+            var navigationView = new Wpf.Ui.Controls.NavigationView
+            {
+                PaneDisplayMode = NavigationViewPaneDisplayMode.Left,
+                IsPaneOpen = true,
+            };
+            var parent = new NavigationViewItem
+            {
+                Style = Assert.IsType<Style>(resources[typeof(NavigationViewItem)]),
+            };
+            var child = new NavigationViewItem();
+            parent.Items.Add(child);
+            AttachToNavigationView(parent, navigationView);
+            var window = new Window
+            {
+                Content = parent,
+                Width = 240,
+                Height = 160,
+                Left = -10_000,
+                Top = -10_000,
+                ShowActivated = false,
+                ShowInTaskbar = false,
+                WindowStyle = WindowStyle.None,
+            };
+
+            try
+            {
+                window.Show();
+                DrainDispatcher();
+                child.Activate(navigationView);
+                parent.IsExpanded = false;
+                DrainDispatcher();
+                var headerButton = Assert.IsType<System.Windows.Controls.Button>(
+                    parent.Template.FindName("PART_HeaderButton", parent)
+                );
+                var activeIndicator = Assert.IsType<System.Windows.Shapes.Rectangle>(
+                    headerButton.Template.FindName("ActiveIndicator", headerButton)
+                );
+
+                Assert.Equal(1d, activeIndicator.Opacity);
+
+                parent.IsExpanded = true;
+
+                Assert.Equal(0d, activeIndicator.Opacity);
+
+                // Compact Left always hides descendants. Its indicator must not depend on the
+                // persistent inline expansion value retained for when the pane reopens.
+                navigationView.IsPaneOpen = false;
+                DrainDispatcher();
+                headerButton = Assert.IsType<System.Windows.Controls.Button>(
+                    parent.Template.FindName("PART_HeaderButton", parent)
+                );
+                activeIndicator = Assert.IsType<System.Windows.Shapes.Rectangle>(
+                    headerButton.Template.FindName("ActiveIndicator", headerButton)
+                );
+                Assert.False(parent.IsActive);
+                Assert.Equal(1d, activeIndicator.Opacity);
+
+                navigationView.PaneDisplayMode = NavigationViewPaneDisplayMode.LeftFluent;
+                DrainDispatcher();
+                headerButton = Assert.IsType<System.Windows.Controls.Button>(
+                    parent.Template.FindName("PART_HeaderButton", parent)
+                );
+                activeIndicator = Assert.IsType<System.Windows.Shapes.Rectangle>(
+                    headerButton.Template.FindName("ActiveIndicator", headerButton)
+                );
+                Assert.False(parent.IsActive);
+                Assert.Equal(1d, activeIndicator.Opacity);
+            }
+            finally
+            {
+                window.Close();
+                DrainDispatcher();
+            }
         });
     }
 
@@ -1796,6 +1964,9 @@ public class NavigationViewItemTests
             Assert.True(icon.Filled);
 
             parent.Deactivate(navigationView);
+            Assert.True(icon.Filled);
+
+            child.Deactivate(navigationView);
             Assert.False(icon.Filled);
 
             parent.RaiseEvent(new RoutedEventArgs(FrameworkElement.UnloadedEvent));

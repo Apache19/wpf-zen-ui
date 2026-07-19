@@ -59,6 +59,9 @@
                             <DataTrigger Binding="{Binding IsActive, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}" Value="True">
                                 <Setter TargetName="HeaderSurface" Property="Background" Value="{m:BrushResource SubtleFillColorSecondaryBrush}" />
                             </DataTrigger>
+                            <DataTrigger Binding="{Binding IsDescendantActive, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}" Value="True">
+                                <Setter TargetName="HeaderSurface" Property="Background" Value="{m:BrushResource SubtleFillColorSecondaryBrush}" />
+                            </DataTrigger>
                             <DataTrigger Binding="{Binding IsSubmenuOpen, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}" Value="True">
                                 <Setter TargetName="HeaderSurface" Property="Background" Value="{m:BrushResource SubtleFillColorSecondaryBrush}" />
                             </DataTrigger>

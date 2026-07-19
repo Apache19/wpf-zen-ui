@@ -81,6 +81,10 @@
                                 <Setter TargetName="ActiveIndicator" Property="Opacity" Value="1" />
                                 <Setter TargetName="HeaderSurface" Property="Background" Value="{m:BrushResource ControlFillColorPrimaryBrush}" />
                             </DataTrigger>
+                            <DataTrigger Binding="{Binding IsDescendantActive, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}" Value="True">
+                                <Setter TargetName="ActiveIndicator" Property="Opacity" Value="1" />
+                                <Setter TargetName="HeaderSurface" Property="Background" Value="{m:BrushResource ControlFillColorPrimaryBrush}" />
+                            </DataTrigger>
                             <DataTrigger Binding="{Binding IsSubmenuOpen, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}" Value="True">
                                 <Setter TargetName="HeaderSurface" Property="Background" Value="{m:BrushResource ControlFillColorPrimaryBrush}" />
                             </DataTrigger>
@@ -105,6 +109,9 @@
         </Grid>
         <ControlTemplate.Triggers>
             <Trigger Property="IsActive" Value="True">
+                <Setter Property="controls:NavigationViewItemTemplateBehavior.IsIconFilled" Value="True" />
+            </Trigger>
+            <Trigger Property="IsDescendantActive" Value="True">
                 <Setter Property="controls:NavigationViewItemTemplateBehavior.IsIconFilled" Value="True" />
             </Trigger>
         </ControlTemplate.Triggers>

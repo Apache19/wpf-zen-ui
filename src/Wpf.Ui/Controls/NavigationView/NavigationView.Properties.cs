@@ -470,9 +470,6 @@ public partial class NavigationView
             navigationView.OnPaneClosed();
         }
 
-        navigationView.CloseNavigationViewItemMenus();
-        navigationView.RefreshNavigationItemActiveState();
-
         navigationView.UpdatePaneButtonPlacement();
         UpdateVisualState(navigationView);
     }
