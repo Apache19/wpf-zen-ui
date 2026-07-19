@@ -103,6 +103,65 @@ public class NavigationViewItemTests
     }
 
     [Fact]
+    public void Constructors_CoverContentNavigationAndHierarchyCombinations()
+    {
+        RunOnStaThread(() =>
+        {
+            object[] children = ["First", "Second"];
+            var headerOnly = new NavigationViewItem("Header only");
+
+            Assert.Equal("Header only", headerOnly.Header);
+            Assert.Equal(DependencyProperty.UnsetValue, headerOnly.ReadLocalValue(NavigationViewItem.IconProperty));
+            Assert.Equal(
+                DependencyProperty.UnsetValue,
+                headerOnly.ReadLocalValue(NavigationViewItem.TargetPageTypeProperty)
+            );
+            Assert.Equal(
+                DependencyProperty.UnsetValue,
+                headerOnly.ReadLocalValue(ItemsControl.ItemsSourceProperty)
+            );
+
+            var symbolGroup = new NavigationViewItem(
+                "Symbol group",
+                SymbolRegular.Folder24,
+                itemsSource: children
+            );
+
+            Assert.Equal("Symbol group", symbolGroup.Header);
+            Assert.Equal(SymbolRegular.Folder24, Assert.IsType<SymbolIcon>(symbolGroup.Icon).Symbol);
+            Assert.Null(symbolGroup.TargetPageType);
+            Assert.Same(children, symbolGroup.ItemsSource);
+
+            var iconOnly = new NavigationViewItem(SymbolRegular.Heart24, typeof(Border));
+
+            Assert.Null(iconOnly.Header);
+            Assert.Equal(SymbolRegular.Heart24, Assert.IsType<SymbolIcon>(iconOnly.Icon).Symbol);
+            Assert.Equal(typeof(Border), iconOnly.TargetPageType);
+
+            var header = new System.Windows.Controls.TextBlock { Text = "Custom header" };
+            var icon = new FontIcon { Glyph = "A" };
+            var infoBadge = new InfoBadge();
+            var complete = new NavigationViewItem(
+                header: header,
+                icon: icon,
+                targetPageType: typeof(Border),
+                itemsSource: children,
+                targetPageTag: "custom-tag",
+                infoBadge: infoBadge,
+                navigationCacheMode: NavigationCacheMode.Required
+            );
+
+            Assert.Same(header, complete.Header);
+            Assert.Same(icon, complete.Icon);
+            Assert.Equal(typeof(Border), complete.TargetPageType);
+            Assert.Same(children, complete.ItemsSource);
+            Assert.Equal("custom-tag", complete.TargetPageTag);
+            Assert.Same(infoBadge, complete.InfoBadge);
+            Assert.Equal(NavigationCacheMode.Required, complete.NavigationCacheMode);
+        });
+    }
+
+    [Fact]
     public void FocusingVisibleHeaderDoesNotRevealTheExpandedContainerBounds()
     {
         RunOnStaThread(() =>

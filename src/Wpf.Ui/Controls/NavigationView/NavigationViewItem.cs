@@ -515,14 +515,144 @@ public partial class NavigationViewItem : HeaderedItemsControl, INavigationViewI
     }
 
     /// <summary>
+    /// Initializes a new instance of the <see cref="NavigationViewItem"/> class from the complete
+    /// set of commonly configured content, navigation, hierarchy, badge, and caching values.
+    /// </summary>
+    /// <param name="header">The content displayed in the item header.</param>
+    /// <param name="icon">The optional icon displayed beside the header.</param>
+    /// <param name="targetPageType">
+    /// The optional page type activated by the header action. A <see langword="null"/> value creates
+    /// a grouping item whose header only controls its child presentation.
+    /// </param>
+    /// <param name="itemsSource">
+    /// The optional source used by the standard WPF items pipeline to generate child items.
+    /// </param>
+    /// <param name="targetPageTag">
+    /// The optional explicit navigation tag. When omitted, initialization derives a tag from a
+    /// non-null header using the same rules as property-based construction.
+    /// </param>
+    /// <param name="infoBadge">The optional badge displayed in the item header.</param>
+    /// <param name="navigationCacheMode">
+    /// The caching behavior used for the target page. The default is
+    /// <see cref="NavigationCacheMode.Disabled"/>.
+    /// </param>
+    /// <remarks>
+    /// Only non-null optional values are assigned locally. This preserves style and binding
+    /// precedence for omitted properties while allowing named arguments to express combinations
+    /// such as a grouping item with children or an icon-only navigation target without an object
+    /// initializer.
+    /// </remarks>
+    public NavigationViewItem(
+        object? header,
+        IconElement? icon = null,
+        Type? targetPageType = null,
+        IEnumerable? itemsSource = null,
+        string? targetPageTag = null,
+        InfoBadge? infoBadge = null,
+        NavigationCacheMode navigationCacheMode = NavigationCacheMode.Disabled)
+        : this()
+    {
+        if (header is not null)
+        {
+            SetValue(HeaderProperty, header);
+        }
+
+        if (icon is not null)
+        {
+            SetValue(IconProperty, icon);
+        }
+
+        if (targetPageType is not null)
+        {
+            SetValue(TargetPageTypeProperty, targetPageType);
+        }
+
+        if (itemsSource is not null)
+        {
+            SetValue(ItemsSourceProperty, itemsSource);
+        }
+
+        if (targetPageTag is not null)
+        {
+            SetValue(TargetPageTagProperty, targetPageTag);
+        }
+
+        if (infoBadge is not null)
+        {
+            SetValue(InfoBadgeProperty, infoBadge);
+        }
+
+        if (navigationCacheMode != NavigationCacheMode.Disabled)
+        {
+            SetValue(NavigationCacheModeProperty, navigationCacheMode);
+        }
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="NavigationViewItem"/> class with a Fluent
+    /// symbol and optional header, target page, children, tag, badge, and caching behavior.
+    /// </summary>
+    /// <param name="header">The optional content displayed in the item header.</param>
+    /// <param name="icon">The Fluent symbol displayed beside the header.</param>
+    /// <param name="targetPageType">The optional page type activated by the header action.</param>
+    /// <param name="itemsSource">The optional source used to generate child items.</param>
+    /// <param name="targetPageTag">The optional explicit navigation tag.</param>
+    /// <param name="infoBadge">The optional badge displayed in the item header.</param>
+    /// <param name="navigationCacheMode">The caching behavior used for the target page.</param>
+    public NavigationViewItem(
+        object?             header,
+        SymbolRegular       icon,
+        Type?               targetPageType = null,
+        IEnumerable?        itemsSource = null,
+        string?             targetPageTag = null,
+        InfoBadge?          infoBadge = null,
+        NavigationCacheMode navigationCacheMode = NavigationCacheMode.Disabled)
+        : this(
+            header,
+            new SymbolIcon(icon),
+            targetPageType,
+            itemsSource,
+            targetPageTag,
+            infoBadge,
+            navigationCacheMode
+        )
+    { }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="NavigationViewItem"/> class without a header
+    /// and with an icon and optional target page and children.
+    /// </summary>
+    /// <param name="icon">The icon displayed by the item.</param>
+    /// <param name="targetPageType">The optional page type activated by the item.</param>
+    /// <param name="itemsSource">The optional source used to generate child items.</param>
+    public NavigationViewItem(
+        IconElement icon,
+        Type?        targetPageType = null,
+        IEnumerable? itemsSource = null)
+        : this(null, icon, targetPageType, itemsSource)
+    { }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="NavigationViewItem"/> class without a header
+    /// and with a Fluent symbol and optional target page and children.
+    /// </summary>
+    /// <param name="icon">The Fluent symbol displayed by the item.</param>
+    /// <param name="targetPageType">The optional page type activated by the item.</param>
+    /// <param name="itemsSource">The optional source used to generate child items.</param>
+    public NavigationViewItem(
+        SymbolRegular icon,
+        Type?         targetPageType = null,
+        IEnumerable?  itemsSource = null)
+        : this((object?)null, icon, targetPageType, itemsSource)
+    { }
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="NavigationViewItem"/> class for the specified page type.
     /// </summary>
     /// <param name="targetPageType">The page type activated by the header action.</param>
     public NavigationViewItem(Type targetPageType)
-        : this()
-    {
-        SetValue(TargetPageTypeProperty, targetPageType);
-    }
+        : this(null, icon: null, targetPageType)
+    { }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="NavigationViewItem"/> class with a text header and target page.
@@ -530,10 +660,8 @@ public partial class NavigationViewItem : HeaderedItemsControl, INavigationViewI
     /// <param name="name">The text displayed in the item header.</param>
     /// <param name="targetPageType">The page type activated by the header action.</param>
     public NavigationViewItem(string name, Type targetPageType)
-        : this(targetPageType)
-    {
-        SetValue(HeaderProperty, name);
-    }
+        : this(name, icon: null, targetPageType)
+    { }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="NavigationViewItem"/> class with a text header,
@@ -543,14 +671,8 @@ public partial class NavigationViewItem : HeaderedItemsControl, INavigationViewI
     /// <param name="icon">The Fluent symbol displayed beside the header.</param>
     /// <param name="targetPageType">The page type activated by the header action.</param>
     public NavigationViewItem(string name, SymbolRegular icon, Type targetPageType)
-        : this(targetPageType)
-    {
-        SetValue(HeaderProperty, name);
-        SetValue(IconProperty, new SymbolIcon
-        {
-            Symbol = icon
-        });
-    }
+        : this((object?)name, icon, targetPageType)
+    { }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="NavigationViewItem"/> class whose children are
@@ -562,10 +684,8 @@ public partial class NavigationViewItem : HeaderedItemsControl, INavigationViewI
     /// <param name="itemsSource">The source used by the standard WPF items pipeline to generate children.</param>
     // ReSharper disable once UnusedMember.Global
     public NavigationViewItem(string name, SymbolRegular icon, Type targetPageType, IEnumerable itemsSource)
-        : this(name, icon, targetPageType)
-    {
-        SetValue(ItemsSourceProperty, itemsSource);
-    }
+        : this((object?)name, icon, targetPageType, itemsSource)
+    { }
 
     /// <summary>
     /// Marks this item active without changing the active state of its ancestors.
