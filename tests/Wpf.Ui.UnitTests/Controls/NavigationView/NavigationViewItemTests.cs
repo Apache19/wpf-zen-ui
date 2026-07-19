@@ -49,6 +49,20 @@ public class NavigationViewItemTests
         BindingFlags.NonPublic | BindingFlags.Instance
     )!;
 
+    private static readonly MethodInfo OnHeaderContextMenuOpeningMethod =
+        typeof(NavigationViewItem).GetMethod(
+            "OnHeaderContextMenuOpening",
+            BindingFlags.NonPublic | BindingFlags.Instance
+        )!;
+
+    private static readonly ConstructorInfo ContextMenuEventArgsConstructor =
+        typeof(ContextMenuEventArgs).GetConstructor(
+            BindingFlags.NonPublic | BindingFlags.Instance,
+            binder: null,
+            [typeof(object), typeof(bool), typeof(double), typeof(double)],
+            modifiers: null
+        )!;
+
     [Fact]
     public void ContainerUsesOneBoundedHeaderInputSurface()
     {
@@ -909,6 +923,84 @@ public class NavigationViewItemTests
             Assert.True(PopupAnimator.GetIsEnabled(contextMenu));
             Assert.True(PopupShadow.GetIsEnabled(contextMenu));
             parent.RaiseEvent(new RoutedEventArgs(FrameworkElement.UnloadedEvent));
+        });
+    }
+
+    [Fact]
+    public void ContextMenuGesture_RestoresTemplatePlacementBeforeTheNextHeaderClick()
+    {
+        RunOnStaThread(() =>
+        {
+            var resources = new ResourceDictionary { Source = CreateResourceUri() };
+            var navigationView = new Wpf.Ui.Controls.NavigationView
+            {
+                PaneDisplayMode = NavigationViewPaneDisplayMode.LeftMinimal,
+                IsPaneOpen = true,
+                Style = Assert.IsType<Style>(resources[typeof(Wpf.Ui.Controls.NavigationView)]),
+            };
+            var parent = new NavigationViewItem { Header = "Parent" };
+            parent.Items.Add(new NavigationViewItem { Header = "Child" });
+            navigationView.MenuItems.Add(parent);
+            var window = new Window
+            {
+                Content = navigationView,
+                Width = 320,
+                Height = 200,
+                Left = -10_000,
+                Top = -10_000,
+                ShowActivated = false,
+                ShowInTaskbar = false,
+                WindowStyle = WindowStyle.None,
+            };
+
+            try
+            {
+                window.Show();
+                DrainDispatcher();
+
+                ContextMenu contextMenu = FindSubmenuContextMenu(parent);
+                var headerButton = Assert.IsAssignableFrom<ButtonBase>(
+                    parent.Template.FindName("PART_HeaderButton", parent)
+                );
+                parent.Tag = PlacementMode.Right;
+                BindingOperations.SetBinding(
+                    contextMenu,
+                    ContextMenu.PlacementProperty,
+                    new Binding(nameof(FrameworkElement.Tag)) { Source = parent }
+                );
+                var openingArgs = (ContextMenuEventArgs)ContextMenuEventArgsConstructor.Invoke(
+                    [headerButton, true, 10d, 10d]
+                );
+
+                OnHeaderContextMenuOpeningMethod.Invoke(parent, [headerButton, openingArgs]);
+                DrainDispatcher();
+
+                Assert.True(openingArgs.Handled);
+                Assert.True(contextMenu.IsOpen);
+                Assert.Equal(PlacementMode.MousePoint, contextMenu.Placement);
+                Assert.True(
+                    BindingOperations.IsDataBound(contextMenu, ContextMenu.PlacementProperty)
+                );
+
+                contextMenu.IsOpen = false;
+                DrainDispatcher();
+
+                Assert.Equal(PlacementMode.Right, contextMenu.Placement);
+                Assert.True(
+                    BindingOperations.IsDataBound(contextMenu, ContextMenu.PlacementProperty)
+                );
+
+                InvokeClick(parent);
+                DrainDispatcher();
+
+                Assert.True(contextMenu.IsOpen);
+                Assert.Equal(PlacementMode.Right, contextMenu.Placement);
+            }
+            finally
+            {
+                window.Close();
+                DrainDispatcher();
+            }
         });
     }
 

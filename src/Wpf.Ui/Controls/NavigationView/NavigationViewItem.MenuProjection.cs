@@ -29,8 +29,10 @@ public partial class NavigationViewItem
     private readonly Dictionary<NavigationViewItem, MenuItem> _projectedMenuItems = [];
     private ContextMenu?                                      _submenuContextMenu;
     private DispatcherOperation?                              _projectionRefreshOperation;
+    private PlacementMode                                     _placementBeforeContextGesture;
     private bool                                              _isBuildingSubmenuProjection;
     private bool                                              _isSubmenuProjectionDirty = true;
+    private bool                                              _shouldRestoreContextGesturePlacement;
 
     #region DP: SubmenuContextMenuStyle
 
@@ -182,6 +184,7 @@ public partial class NavigationViewItem
             _submenuContextMenu.Opened -= OnSubmenuContextMenuOpened;
             _submenuContextMenu.Closed -= OnSubmenuContextMenuClosed;
             _submenuContextMenu.SetCurrentValue(ContextMenu.IsOpenProperty, false);
+            RestoreContextGesturePlacement();
             BindingOperations.ClearBinding(_submenuContextMenu, ContextMenu.IsOpenProperty);
             _submenuContextMenu.SetCurrentValue(ContextMenu.PlacementTargetProperty, null);
         }
@@ -194,6 +197,7 @@ public partial class NavigationViewItem
         _projectionRefreshOperation = null;
         ClearSubmenuProjection();
         _submenuContextMenu = null;
+        _shouldRestoreContextGesturePlacement = false;
     }
 
     private void OnHeaderContextMenuOpening(object sender, ContextMenuEventArgs e)
@@ -208,6 +212,31 @@ public partial class NavigationViewItem
         }
 
         PrepareSubmenuProjectionForOpen();
+
+        // PopupControlService normally opens Button.ContextMenu after this routed event returns.
+        // Its mouse path assigns ContextMenu.Placement = MousePoint with SetValue and never restores
+        // the former value when the menu closes. Because this same menu is also opened from the
+        // header Click path, that framework assignment would permanently replace the template's
+        // Right/Top/Bottom placement (and can even remove a custom Placement binding). Handle the
+        // service event ourselves and use SetCurrentValue for the transient gesture placement so
+        // the original value source remains intact. Cursor coordinates of -1 are WPF's sentinel
+        // for the keyboard context-menu gesture; matching the framework's Center choice preserves
+        // native Shift+F10/Menu-key behavior.
+        if (!_shouldRestoreContextGesturePlacement)
+        {
+            _placementBeforeContextGesture = _submenuContextMenu.Placement;
+            _shouldRestoreContextGesturePlacement = true;
+        }
+
+        _submenuContextMenu.SetCurrentValue(
+            ContextMenu.PlacementProperty,
+            e.CursorLeft == -1d && e.CursorTop == -1d
+                ? PlacementMode.Center
+                : PlacementMode.MousePoint
+        );
+
+        e.Handled = true;
+        SetCurrentValue(IsSubmenuOpenProperty, true);
     }
 
     private void OnSubmenuContextMenuOpened(object sender, RoutedEventArgs e)
@@ -236,6 +265,30 @@ public partial class NavigationViewItem
         }
 
         ClearSubmenuProjection();
+        RestoreContextGesturePlacement();
+    }
+
+    /// <summary>
+    /// Restores the placement selected by the active template after a native context-menu gesture.
+    /// </summary>
+    /// <remarks>
+    /// <see cref="DependencyObject.SetCurrentValue(DependencyProperty, object)"/> is intentional:
+    /// custom templates may bind <see cref="ContextMenu.PlacementProperty"/>, and replacing that
+    /// binding merely because the same menu was opened once by right-click would reproduce the WPF
+    /// framework behavior this method isolates.
+    /// </remarks>
+    private void RestoreContextGesturePlacement()
+    {
+        if (!_shouldRestoreContextGesturePlacement || _submenuContextMenu is null)
+        {
+            return;
+        }
+
+        _submenuContextMenu.SetCurrentValue(
+            ContextMenu.PlacementProperty,
+            _placementBeforeContextGesture
+        );
+        _shouldRestoreContextGesturePlacement = false;
     }
 
     /// <summary>
