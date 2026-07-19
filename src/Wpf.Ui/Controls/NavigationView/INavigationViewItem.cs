@@ -6,7 +6,6 @@
 /* Based on Windows UI Library
    Copyright(c) Microsoft Corporation.All rights reserved. */
 
-using System.Collections;
 using System.Windows.Controls;
 
 // ReSharper disable once CheckNamespace
@@ -23,24 +22,14 @@ public interface INavigationViewItem
     string Id { get; }
 
     /// <summary>
-    /// Gets or sets the content
+    /// Gets or sets the header displayed by the navigation item.
     /// </summary>
-    object? Content { get; set; }
+    object? Header { get; set; }
 
     /// <summary>
-    /// Gets or sets the icon displayed in the MenuItem object.
+    /// Gets or sets the icon displayed beside the item header.
     /// </summary>
     IconElement? Icon { get; set; }
-
-    /// <summary>
-    /// Gets the collection of menu items displayed in the NavigationView.
-    /// </summary>
-    IList MenuItems { get; }
-
-    /// <summary>
-    /// Gets or sets an object source used to generate the content of the NavigationView menu.
-    /// </summary>
-    object? MenuItemsSource { get; set; }
 
     /// <summary>
     /// Gets a value indicating whether the current element is active.
@@ -57,6 +46,7 @@ public interface INavigationViewItem
     /// </summary>
     Type? TargetPageType { get; set; }
 
+    /// <summary>Gets or sets the optional badge displayed in the item header.</summary>
     InfoBadge? InfoBadge { get; set; }
 
     /// <summary>
@@ -65,30 +55,24 @@ public interface INavigationViewItem
     NavigationCacheMode NavigationCacheMode { get; set; }
 
     /// <summary>
-    /// Gets or sets the template property
+    /// Gets or sets the control template used to present the item header and its child items.
     /// </summary>
     ControlTemplate? Template { get; set; }
 
     /// <summary>
-    /// Gets or sets the parent if it's in <see cref="MenuItems"/> collection
+    /// Gets the semantic parent when this item is contained by another navigation item.
     /// </summary>
-    INavigationViewItem? NavigationViewItemParent { get; internal set; }
-
-    /// <summary>
-    /// Add / Remove ClickEvent handler.
-    /// </summary>
-    [Category("Behavior")]
-    event RoutedEventHandler Click;
+    INavigationViewItem? NavigationViewItemParent { get; }
 
     internal bool IsMenuElement { get; set; }
 
     /// <summary>
-    /// Correctly activates
+    /// Marks the item active in the specified navigation view and updates its visual state.
     /// </summary>
     void Activate(INavigationView navigationView);
 
     /// <summary>
-    /// Correctly deactivates
+    /// Marks the item inactive in the specified navigation view and updates its visual state.
     /// </summary>
     void Deactivate(INavigationView navigationView);
 }

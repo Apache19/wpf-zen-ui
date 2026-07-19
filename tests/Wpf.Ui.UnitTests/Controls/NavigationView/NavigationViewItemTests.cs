@@ -12,6 +12,7 @@ using System.Windows.Automation;
 using System.Windows.Automation.Provider;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
+using System.Windows.Data;
 using System.Windows.Input;
 using Wpf.Ui.Controls;
 
@@ -25,6 +26,18 @@ public class NavigationViewItemTests
             .GetValue(null) as DependencyProperty
         ?? throw new InvalidOperationException("NavigationParentProperty was not found.");
 
+    private static readonly DependencyProperty PaneDisplayModeContextProperty =
+        typeof(NavigationViewItem)
+            .GetField("PaneDisplayModeContextProperty", BindingFlags.NonPublic | BindingFlags.Static)!
+            .GetValue(null) as DependencyProperty
+        ?? throw new InvalidOperationException("PaneDisplayModeContextProperty was not found.");
+
+    private static readonly DependencyProperty IsPaneOpenContextProperty =
+        typeof(NavigationViewItem)
+            .GetField("IsPaneOpenContextProperty", BindingFlags.NonPublic | BindingFlags.Static)!
+            .GetValue(null) as DependencyProperty
+        ?? throw new InvalidOperationException("IsPaneOpenContextProperty was not found.");
+
     private static readonly MethodInfo RemoveAccessKeyMarkersMethod = typeof(NavigationViewItem).GetMethod(
         "RemoveAccessKeyMarkers",
         BindingFlags.NonPublic | BindingFlags.Static
@@ -35,8 +48,8 @@ public class NavigationViewItemTests
         BindingFlags.NonPublic | BindingFlags.Instance
     )!;
 
-    private static readonly MethodInfo IsInputFromPrimaryVisualTreeMethod = typeof(NavigationViewItem).GetMethod(
-        "IsInputFromPrimaryVisualTree",
+    private static readonly MethodInfo OnExpandButtonClickMethod = typeof(NavigationViewItem).GetMethod(
+        "OnExpandButtonClick",
         BindingFlags.NonPublic | BindingFlags.Instance
     )!;
 
@@ -59,6 +72,182 @@ public class NavigationViewItemTests
         )!;
 
     [Fact]
+    public void ContainerUsesBoundedHeaderAndExpansionInputSurfaces()
+    {
+        RunOnStaThread(() =>
+        {
+            var resources = new ResourceDictionary { Source = CreateResourceUri() };
+            var itemStyle = Assert.IsType<Style>(resources[typeof(NavigationViewItem)]);
+            var item = new NavigationViewItem { Style = itemStyle };
+            item.Items.Add(new NavigationViewItem());
+
+            Assert.True(item.ApplyTemplate());
+            var headerButton = Assert.IsAssignableFrom<ButtonBase>(
+                item.Template.FindName("PART_HeaderButton", item)
+            );
+            var expandButton = Assert.IsAssignableFrom<System.Windows.Controls.Primitives.ToggleButton>(
+                item.Template.FindName("PART_ExpandButton", item)
+            );
+
+            Assert.True(typeof(HeaderedItemsControl).IsAssignableFrom(typeof(NavigationViewItem)));
+            Assert.False(typeof(ButtonBase).IsAssignableFrom(typeof(NavigationViewItem)));
+            Assert.False(item.Focusable);
+            Assert.False(KeyboardNavigation.GetIsTabStop(item));
+            Assert.True(headerButton.Focusable);
+            Assert.False(expandButton.Focusable);
+            Assert.False(KeyboardNavigation.GetIsTabStop(expandButton));
+        });
+    }
+
+    [Fact]
+    public void ButtonSpecificAndMirroredChildApisAreNotPartOfTheNewContract()
+    {
+        Type itemType = typeof(NavigationViewItem);
+
+        Assert.Null(itemType.GetProperty("MenuItems"));
+        Assert.Null(itemType.GetProperty("MenuItemsSource"));
+        Assert.Null(itemType.GetProperty("ClickMode"));
+        Assert.Null(itemType.GetProperty("Command"));
+        Assert.Null(itemType.GetProperty("IsMenuElement"));
+        Assert.Null(itemType.GetEvent("Click"));
+        Assert.NotNull(itemType.GetProperty(nameof(HeaderedItemsControl.Header)));
+        Assert.NotNull(itemType.GetProperty(nameof(ItemsControl.ItemsSource)));
+    }
+
+    [Fact]
+    public void FocusingVisibleHeaderDoesNotRevealTheExpandedContainerBounds()
+    {
+        RunOnStaThread(() =>
+        {
+            var resources = new ResourceDictionary { Source = CreateResourceUri() };
+            var parent = new NavigationViewItem
+            {
+                Header = "Parent",
+                IsExpanded = true,
+                Style = Assert.IsType<Style>(resources[typeof(NavigationViewItem)]),
+            };
+            for (int index = 0; index < 8; index++)
+            {
+                parent.Items.Add(new NavigationViewItem { Header = $"Child {index}" });
+            }
+
+            var content = new StackPanel();
+            content.Children.Add(new Border { Height = 100 });
+            content.Children.Add(parent);
+            var scrollViewer = new PassiveScrollViewer
+            {
+                Width = 240,
+                Height = 120,
+                Content = content,
+                VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+            };
+            var window = new Window
+            {
+                Content = scrollViewer,
+                Width = 260,
+                Height = 140,
+                Left = -10_000,
+                Top = -10_000,
+                ShowActivated = false,
+                ShowInTaskbar = false,
+                WindowStyle = WindowStyle.None,
+            };
+
+            try
+            {
+                window.Show();
+                DrainDispatcher();
+                scrollViewer.ScrollToVerticalOffset(80);
+                scrollViewer.UpdateLayout();
+                double offsetBeforeFocus = scrollViewer.VerticalOffset;
+                var headerButton = Assert.IsAssignableFrom<ButtonBase>(
+                    parent.Template.FindName("PART_HeaderButton", parent)
+                );
+
+                headerButton.BringIntoView();
+                DrainDispatcher();
+
+                Assert.Equal(offsetBeforeFocus, scrollViewer.VerticalOffset);
+                Assert.True(parent.ActualHeight > scrollViewer.ViewportHeight);
+            }
+            finally
+            {
+                window.Close();
+                DrainDispatcher();
+            }
+        });
+    }
+
+    [Fact]
+    public void DataItemsReceiveNavigationContainersAtRootAndChildLevels()
+    {
+        RunOnStaThread(() =>
+        {
+            var resources = new ResourceDictionary { Source = CreateResourceUri() };
+            var itemTemplate = new DataTemplate();
+            var itemContainerStyle = new Style(
+                typeof(NavigationViewItem),
+                Assert.IsType<Style>(resources[typeof(NavigationViewItem)])
+            );
+            itemContainerStyle.Setters.Add(new Setter(FrameworkElement.TagProperty, "styled"));
+            var navigationView = new Wpf.Ui.Controls.NavigationView
+            {
+                Style = Assert.IsType<Style>(resources[typeof(Wpf.Ui.Controls.NavigationView)]),
+                ItemContainerStyle = itemContainerStyle,
+                ItemTemplate = itemTemplate,
+            };
+            navigationView.MenuItems.Add("Root data");
+            var window = new Window
+            {
+                Content = navigationView,
+                Width = 400,
+                Height = 300,
+                Left = -10_000,
+                Top = -10_000,
+                ShowActivated = false,
+                ShowInTaskbar = false,
+                WindowStyle = WindowStyle.None,
+            };
+
+            try
+            {
+                window.Show();
+                DrainDispatcher();
+
+                var rootList = Assert.IsType<NavigationViewList>(
+                    navigationView.Template.FindName("PART_MenuItemsList", navigationView)
+                );
+                var root = Assert.IsType<NavigationViewItem>(
+                    rootList.ItemContainerGenerator.ContainerFromIndex(0)
+                );
+                Assert.Equal("Root data", root.Header);
+                Assert.Equal("styled", root.Tag);
+                Assert.Same(itemTemplate, root.HeaderTemplate);
+                Assert.Equal(navigationView.PaneDisplayMode, root.PaneDisplayMode);
+
+                root.ItemsSource = new[] { "Child data" };
+                root.IsExpanded = true;
+                DrainDispatcher();
+
+                var child = Assert.IsType<NavigationViewItem>(
+                    root.ItemContainerGenerator.ContainerFromIndex(0)
+                );
+                Assert.Equal("Child data", child.Header);
+                Assert.Equal("styled", child.Tag);
+                Assert.Same(itemTemplate, child.HeaderTemplate);
+                Assert.Same(root, child.NavigationViewItemParent);
+                Assert.True(child.IsSubItem);
+                Assert.Equal(root.PaneDisplayMode, child.PaneDisplayMode);
+            }
+            finally
+            {
+                window.Close();
+                DrainDispatcher();
+            }
+        });
+    }
+
+    [Fact]
     public void PaneState_IsReadOnlyAndSynchronizesFromHostThroughTheItemTree()
     {
         RunOnStaThread(() =>
@@ -71,7 +260,7 @@ public class NavigationViewItemTests
             var parent = new NavigationViewItem();
             var child = new NavigationViewItem();
 
-            parent.MenuItems.Add(child);
+            parent.Items.Add(child);
             AttachToNavigationView(parent, navigationView);
 
             Assert.True(NavigationViewItem.PaneDisplayModeProperty.ReadOnly);
@@ -88,7 +277,7 @@ public class NavigationViewItemTests
             Assert.False(parent.IsPaneOpen);
             Assert.False(child.IsPaneOpen);
 
-            parent.MenuItems.Remove(child);
+            parent.Items.Clear();
 
             Assert.False(child.IsSubItem);
             parent.RaiseEvent(new RoutedEventArgs(FrameworkElement.UnloadedEvent));
@@ -105,9 +294,9 @@ public class NavigationViewItemTests
                 resources[typeof(Wpf.Ui.Controls.NavigationView)]
             );
             var outerItem = new NavigationViewItem();
-            outerItem.MenuItems.Add(new NavigationViewItem());
+            outerItem.Items.Add(new NavigationViewItem());
             var innerItem = new NavigationViewItem();
-            innerItem.MenuItems.Add(new NavigationViewItem());
+            innerItem.Items.Add(new NavigationViewItem());
 
             var innerNavigationView = new Wpf.Ui.Controls.NavigationView
             {
@@ -191,25 +380,20 @@ public class NavigationViewItemTests
             var parent = new NavigationViewItem { Style = itemStyle };
             var child = new NavigationViewItem { Style = itemStyle };
 
-            parent.MenuItems.Add(child);
+            parent.Items.Add(child);
             AttachToNavigationView(parent, navigationView);
 
             Assert.Same(resources["NavigationViewItemLeftTemplate"], parent.Template);
             Assert.Same(resources["NavigationViewItemLeftTemplate"], child.Template);
-            Assert.True(parent.ApplyTemplate());
-            object leftTemplateRoot = Assert.IsAssignableFrom<FrameworkElement>(
-                parent.Template.FindName("MainBorder", parent)
-            );
 
             navigationView.IsPaneOpen = false;
 
-            Assert.Same(resources["NavigationViewItemLeftTemplate"], parent.Template);
-            Assert.Same(leftTemplateRoot, parent.Template.FindName("MainBorder", parent));
+            Assert.Same(resources["NavigationViewItemLeftCompactTemplate"], parent.Template);
             Assert.Same(resources["NavigationViewItemSubmenuTemplate"], child.Template);
 
             navigationView.PaneDisplayMode = NavigationViewPaneDisplayMode.LeftMinimal;
 
-            Assert.Same(resources["NavigationViewItemLeftMinimalTemplate"], parent.Template);
+            Assert.Same(resources["NavigationViewItemLeftCompactTemplate"], parent.Template);
             Assert.Same(resources["NavigationViewItemSubmenuTemplate"], child.Template);
 
             navigationView.PaneDisplayMode = NavigationViewPaneDisplayMode.LeftFluent;
@@ -232,86 +416,35 @@ public class NavigationViewItemTests
     }
 
     [Fact]
-    public void Templates_SeparatePrimaryHoverFromOpenPopupHighlight()
+    public void TemplatesExposeOneHeaderSurfaceAndASeparateExpansionSurface()
     {
         RunOnStaThread(() =>
         {
             var resources = new ResourceDictionary { Source = CreateResourceUri() };
-            string[] templateKeys =
+            (string Key, bool HasPopup)[] templates =
             [
-                "NavigationViewItemLeftTemplate",
-                "NavigationViewItemLeftFluentTemplate",
-                "NavigationViewItemLeftMinimalTemplate",
-                "NavigationViewItemSubmenuTemplate",
-                "NavigationViewItemTopTemplate",
-                "NavigationViewItemBottomTemplate",
+                ("NavigationViewItemLeftTemplate", false),
+                ("NavigationViewItemLeftCompactTemplate", true),
+                ("NavigationViewItemLeftFluentTemplate", true),
+                ("NavigationViewItemSubmenuTemplate", true),
+                ("NavigationViewItemTopTemplate", true),
+                ("NavigationViewItemBottomTemplate", true),
             ];
 
-            foreach (string templateKey in templateKeys)
+            foreach ((string templateKey, bool hasPopup) in templates)
             {
                 var template = Assert.IsType<ControlTemplate>(resources[templateKey]);
-                int hoverConditionCount = 0;
-                int openPopupHighlightCount = 0;
-
-                foreach (TriggerBase triggerBase in template.Triggers)
-                {
-                    if (
-                        triggerBase is Trigger trigger &&
-                        trigger.Property == UIElement.IsMouseOverProperty
-                    )
-                    {
-                        Assert.Equal("MainBorder", trigger.SourceName);
-                        hoverConditionCount++;
-                    }
-
-                    if (
-                        triggerBase is Trigger openTrigger &&
-                        openTrigger.Property == NavigationViewItem.IsSubmenuOpenProperty
-                    )
-                    {
-                        foreach (Setter setter in openTrigger.Setters)
-                        {
-                            if (
-                                setter.TargetName == "MainBorder" &&
-                                setter.Property == Border.BackgroundProperty
-                            )
-                            {
-                                openPopupHighlightCount++;
-                            }
-                        }
-                    }
-
-                    if (triggerBase is MultiTrigger multiTrigger)
-                    {
-                        foreach (System.Windows.Condition condition in multiTrigger.Conditions)
-                        {
-                            if (condition.Property == UIElement.IsMouseOverProperty)
-                            {
-                                Assert.Equal("MainBorder", condition.SourceName);
-                                hoverConditionCount++;
-                            }
-                        }
-                    }
-                }
-
-                Assert.True(
-                    hoverConditionCount > 0,
-                    $"{templateKey} must define a primary-surface hover condition."
-                );
-                Assert.True(
-                    openPopupHighlightCount > 0,
-                    $"{templateKey} must keep the Popup owner highlighted while its submenu is open."
-                );
-
-                // A Popup declared inside MainBorder would make MainBorder itself participate in
-                // WPF's reverse IsMouseOver inheritance, defeating the SourceName restriction.
                 var item = new NavigationViewItem { Template = template };
+                item.Items.Add(new NavigationViewItem());
                 Assert.True(item.ApplyTemplate());
-                var mainBorder = Assert.IsType<Border>(template.FindName("MainBorder", item));
-                if (template.FindName("PART_SubMenuPopup", item) is Popup popup)
-                {
-                    Assert.False(mainBorder.IsAncestorOf(popup));
-                }
+                Assert.IsAssignableFrom<ButtonBase>(
+                    template.FindName("PART_HeaderButton", item)
+                );
+                Assert.IsAssignableFrom<System.Windows.Controls.Primitives.ToggleButton>(
+                    template.FindName("PART_ExpandButton", item)
+                );
+                Assert.Equal(hasPopup, template.FindName("PART_SubMenuPopup", item) is Popup);
+                Assert.Null(template.FindName("ChildMenuPresenter", item));
             }
         });
     }
@@ -323,7 +456,7 @@ public class NavigationViewItemTests
         {
             var navigationView = new Wpf.Ui.Controls.NavigationView();
             var parent = new NavigationViewItem();
-            parent.MenuItems.Add(new NavigationViewItem());
+            parent.Items.Add(new NavigationViewItem());
             navigationView.MenuItems.Add(parent);
             AttachToNavigationView(parent, navigationView);
 
@@ -358,7 +491,7 @@ public class NavigationViewItemTests
         RunOnStaThread(() =>
         {
             var parent = new NavigationViewItem();
-            parent.MenuItems.Add(new NavigationViewItem());
+            parent.Items.Add(new NavigationViewItem());
             parent.IsSubmenuOpen = true;
 
             parent.Template = new ControlTemplate(typeof(NavigationViewItem));
@@ -374,7 +507,7 @@ public class NavigationViewItemTests
         {
             var navigationView = new Wpf.Ui.Controls.NavigationView();
             var item = new NavigationViewItem(typeof(Border));
-            item.MenuItems.Add(new NavigationViewItem());
+            item.Items.Add(new NavigationViewItem());
             navigationView.MenuItems.Add(item);
             AttachToNavigationView(item, navigationView);
 
@@ -418,9 +551,9 @@ public class NavigationViewItemTests
             var firstChild = new NavigationViewItem();
             var firstGrandchild = new NavigationViewItem();
             var second = new NavigationViewItem();
-            firstChild.MenuItems.Add(firstGrandchild);
-            first.MenuItems.Add(firstChild);
-            second.MenuItems.Add(new NavigationViewItem());
+            firstChild.Items.Add(firstGrandchild);
+            first.Items.Add(firstChild);
+            second.Items.Add(new NavigationViewItem());
             navigationView.MenuItems.Add(first);
             navigationView.MenuItems.Add(second);
             AttachToNavigationView(first, navigationView);
@@ -454,8 +587,8 @@ public class NavigationViewItemTests
             };
             var parent = new NavigationViewItem();
             var child = new NavigationViewItem();
-            child.MenuItems.Add(new NavigationViewItem());
-            parent.MenuItems.Add(child);
+            child.Items.Add(new NavigationViewItem());
+            parent.Items.Add(child);
             navigationView.MenuItems.Add(parent);
             AttachToNavigationView(parent, navigationView);
 
@@ -474,7 +607,7 @@ public class NavigationViewItemTests
     }
 
     [Fact]
-    public void PrimarySurface_CombinesNavigationAndChildMenuActions()
+    public void HeaderNavigationAndExpansionAreSeparateActions()
     {
         RunOnStaThread(() =>
         {
@@ -483,9 +616,9 @@ public class NavigationViewItemTests
                 PaneDisplayMode = NavigationViewPaneDisplayMode.Top,
             };
             var navigableParent = new NavigationViewItem(typeof(System.Windows.Controls.Border));
-            navigableParent.MenuItems.Add(new NavigationViewItem());
+            navigableParent.Items.Add(new NavigationViewItem());
             var groupingParent = new NavigationViewItem();
-            groupingParent.MenuItems.Add(new NavigationViewItem());
+            groupingParent.Items.Add(new NavigationViewItem());
             navigationView.MenuItems.Add(navigableParent);
             navigationView.MenuItems.Add(groupingParent);
             AttachToNavigationView(navigableParent, navigationView);
@@ -494,6 +627,9 @@ public class NavigationViewItemTests
             InvokeClick(navigableParent);
 
             Assert.Same(navigableParent, navigationView.SelectedItem);
+            Assert.False(navigableParent.IsSubmenuOpen);
+
+            InvokeExpand(navigableParent);
             Assert.True(navigableParent.IsSubmenuOpen);
 
             InvokeClick(groupingParent);
@@ -506,7 +642,7 @@ public class NavigationViewItemTests
     }
 
     [Fact]
-    public void CancelledNavigation_DoesNotSuppressTheChildMenuAction()
+    public void CancelledNavigationDoesNotImplicitlyOpenChildren()
     {
         RunOnStaThread(() =>
         {
@@ -515,15 +651,18 @@ public class NavigationViewItemTests
                 PaneDisplayMode = NavigationViewPaneDisplayMode.Top,
             };
             var parent = new NavigationViewItem(typeof(System.Windows.Controls.Border));
-            parent.MenuItems.Add(new NavigationViewItem());
+            parent.Items.Add(new NavigationViewItem());
             navigationView.MenuItems.Add(parent);
             AttachToNavigationView(parent, navigationView);
             navigationView.Navigating += (_, args) => args.Cancel = true;
 
             InvokeClick(parent);
 
-            Assert.True(parent.IsSubmenuOpen);
+            Assert.False(parent.IsSubmenuOpen);
             Assert.Null(navigationView.SelectedItem);
+
+            InvokeExpand(parent);
+            Assert.True(parent.IsSubmenuOpen);
             parent.RaiseEvent(new RoutedEventArgs(FrameworkElement.UnloadedEvent));
         });
     }
@@ -539,13 +678,17 @@ public class NavigationViewItemTests
                 IsPaneOpen = true,
             };
             var parent = new NavigationViewItem(typeof(System.Windows.Controls.Border));
-            parent.MenuItems.Add(new NavigationViewItem());
+            parent.Items.Add(new NavigationViewItem());
             navigationView.MenuItems.Add(parent);
             AttachToNavigationView(parent, navigationView);
 
             InvokeClick(parent);
 
             Assert.Same(parent, navigationView.SelectedItem);
+            Assert.False(parent.IsExpanded);
+            Assert.False(parent.IsSubmenuOpen);
+
+            InvokeExpand(parent);
             Assert.True(parent.IsExpanded);
             Assert.False(parent.IsSubmenuOpen);
 
@@ -553,6 +696,9 @@ public class NavigationViewItemTests
             InvokeClick(parent);
 
             Assert.True(parent.IsExpanded);
+            Assert.False(parent.IsSubmenuOpen);
+
+            InvokeExpand(parent);
             Assert.True(parent.IsSubmenuOpen);
             parent.RaiseEvent(new RoutedEventArgs(FrameworkElement.UnloadedEvent));
         });
@@ -569,8 +715,8 @@ public class NavigationViewItemTests
             };
             var parent = new NavigationViewItem();
             var child = new NavigationViewItem();
-            child.MenuItems.Add(new NavigationViewItem());
-            parent.MenuItems.Add(child);
+            child.Items.Add(new NavigationViewItem());
+            parent.Items.Add(child);
             navigationView.MenuItems.Add(parent);
             AttachToNavigationView(parent, navigationView);
 
@@ -594,7 +740,7 @@ public class NavigationViewItemTests
                 PaneDisplayMode = NavigationViewPaneDisplayMode.Top,
             };
             var parent = new NavigationViewItem();
-            parent.MenuItems.Add(new NavigationViewItem());
+            parent.Items.Add(new NavigationViewItem());
             navigationView.MenuItems.Add(parent);
             AttachToNavigationView(parent, navigationView);
 
@@ -617,7 +763,7 @@ public class NavigationViewItemTests
             Assert.True(parent.IsExpanded);
             Assert.Equal(ExpandCollapseState.Expanded, provider.ExpandCollapseState);
 
-            parent.MenuItems.Clear();
+            parent.Items.Clear();
 
             Assert.False(parent.IsExpanded);
             Assert.Equal(ExpandCollapseState.LeafNode, provider.ExpandCollapseState);
@@ -642,16 +788,18 @@ public class NavigationViewItemTests
             ));
 
             var disabledParent = new NavigationViewItem { IsEnabled = false };
-            disabledParent.MenuItems.Add(new NavigationViewItem());
+            disabledParent.Items.Add(new NavigationViewItem());
             var disabledProvider = Assert.IsAssignableFrom<IExpandCollapseProvider>(
                 CreateAutomationPeer(disabledParent)
             );
             var disabledSelectionProvider = Assert.IsAssignableFrom<ISelectionItemProvider>(
                 CreateAutomationPeer(disabledParent)
             );
+            var disabledPeer = CreateAutomationPeer(disabledParent);
 
             Assert.Throws<ElementNotEnabledException>(disabledProvider.Expand);
             Assert.Throws<ElementNotEnabledException>(disabledProvider.Collapse);
+            Assert.Throws<ElementNotEnabledException>(disabledPeer.SetFocus);
             Assert.Throws<ElementNotEnabledException>(disabledSelectionProvider.Select);
             Assert.Throws<ElementNotEnabledException>(disabledSelectionProvider.AddToSelection);
             Assert.Throws<ElementNotEnabledException>(disabledSelectionProvider.RemoveFromSelection);
@@ -681,7 +829,7 @@ public class NavigationViewItemTests
             {
                 Style = Assert.IsType<Style>(resources[typeof(NavigationViewItem)]),
             };
-            parent.MenuItems.Add(new NavigationViewItem());
+            parent.Items.Add(new NavigationViewItem());
             AttachToNavigationView(parent, navigationView);
 
             Assert.True(parent.ApplyTemplate());
@@ -706,8 +854,8 @@ public class NavigationViewItemTests
             };
             var parent = new NavigationViewItem();
             var child = new NavigationViewItem();
-            child.MenuItems.Add(new NavigationViewItem());
-            parent.MenuItems.Add(child);
+            child.Items.Add(new NavigationViewItem());
+            parent.Items.Add(child);
             navigationView.MenuItems.Add(parent);
             var window = new Window
             {
@@ -779,8 +927,8 @@ public class NavigationViewItemTests
             };
             var parent = new NavigationViewItem();
             var child = new NavigationViewItem();
-            child.MenuItems.Add(new NavigationViewItem());
-            parent.MenuItems.Add(child);
+            child.Items.Add(new NavigationViewItem());
+            parent.Items.Add(child);
             navigationView.MenuItems.Add(parent);
             AttachToNavigationView(parent, navigationView);
 
@@ -806,8 +954,8 @@ public class NavigationViewItemTests
             };
             var parent = new NavigationViewItem();
             var child = new NavigationViewItem(typeof(Border));
-            child.MenuItems.Add(new NavigationViewItem());
-            parent.MenuItems.Add(child);
+            child.Items.Add(new NavigationViewItem());
+            parent.Items.Add(child);
             navigationView.MenuItems.Add(parent);
             var window = new Window
             {
@@ -833,19 +981,17 @@ public class NavigationViewItemTests
 
                 InvokeClick(child);
                 DrainDispatcher();
+                Assert.Same(child, navigationView.SelectedItem);
+                Assert.False(child.IsSubmenuOpen);
+
+                InvokeExpand(child);
+                DrainDispatcher();
                 Popup childPopup = FindSubmenuPopup(child);
 
-                Assert.Same(child, navigationView.SelectedItem);
                 Assert.True(parent.IsSubmenuOpen);
                 Assert.True(parentPopup.IsOpen);
                 Assert.True(child.IsSubmenuOpen);
                 Assert.True(childPopup.IsOpen);
-
-                var parentSurface = Assert.IsAssignableFrom<DependencyObject>(
-                    parent.Template.FindName("MainBorder", parent)
-                );
-                Assert.True(IsInputFromPrimaryVisualTree(parent, parentSurface));
-                Assert.False(IsInputFromPrimaryVisualTree(parent, childPopup.Child));
             }
             finally
             {
@@ -869,8 +1015,8 @@ public class NavigationViewItemTests
             };
             var parent = new NavigationViewItem();
             var child = new NavigationViewItem();
-            child.MenuItems.Add(new NavigationViewItem());
-            parent.MenuItems.Add(child);
+            child.Items.Add(new NavigationViewItem());
+            parent.Items.Add(child);
             navigationView.MenuItems.Add(parent);
             var window = new Window
             {
@@ -970,10 +1116,10 @@ public class NavigationViewItemTests
             var secondPopupOwner = new NavigationViewItem();
             var thirdPopupOwner = new NavigationViewItem();
             var fourthPopupOwner = new NavigationViewItem();
-            fourthPopupOwner.MenuItems.Add(new NavigationViewItem());
-            thirdPopupOwner.MenuItems.Add(fourthPopupOwner);
-            secondPopupOwner.MenuItems.Add(thirdPopupOwner);
-            firstPopupOwner.MenuItems.Add(secondPopupOwner);
+            fourthPopupOwner.Items.Add(new NavigationViewItem());
+            thirdPopupOwner.Items.Add(fourthPopupOwner);
+            secondPopupOwner.Items.Add(thirdPopupOwner);
+            firstPopupOwner.Items.Add(secondPopupOwner);
             navigationView.MenuItems.Add(firstPopupOwner);
             AttachToNavigationView(firstPopupOwner, navigationView);
 
@@ -997,7 +1143,7 @@ public class NavigationViewItemTests
     }
 
     [Fact]
-    public void LeftTemplate_RemainsConnectedWhilePaneClosesAndThenOpensItsPopup()
+    public void ClosingLeftPaneReplacesInlinePresenterAndRetainsTreeState()
     {
         RunOnStaThread(() =>
         {
@@ -1010,7 +1156,7 @@ public class NavigationViewItemTests
             };
             var parent = new NavigationViewItem();
             var child = new NavigationViewItem();
-            parent.MenuItems.Add(child);
+            parent.Items.Add(child);
             navigationView.MenuItems.Add(parent);
             var window = new Window
             {
@@ -1029,16 +1175,21 @@ public class NavigationViewItemTests
                 window.Show();
                 DrainDispatcher();
 
-                ControlTemplate template = parent.Template;
-                object mainBorder = Assert.IsAssignableFrom<FrameworkElement>(
-                    template.FindName("MainBorder", parent)
+                ControlTemplate inlineTemplate = parent.Template;
+                object inlineHeader = Assert.IsAssignableFrom<ButtonBase>(
+                    inlineTemplate.FindName("PART_HeaderButton", parent)
                 );
+                parent.IsExpanded = true;
 
                 navigationView.IsPaneOpen = false;
                 DrainDispatcher();
 
-                Assert.Same(template, parent.Template);
-                Assert.Same(mainBorder, parent.Template.FindName("MainBorder", parent));
+                Assert.NotSame(inlineTemplate, parent.Template);
+                Assert.NotSame(
+                    inlineHeader,
+                    parent.Template.FindName("PART_HeaderButton", parent)
+                );
+                Assert.True(parent.IsExpanded);
 
                 InvokeClick(parent);
                 DrainDispatcher();
@@ -1067,7 +1218,7 @@ public class NavigationViewItemTests
             var parent = new NavigationViewItem { Icon = icon, Style = itemStyle };
             var child = new NavigationViewItem { Style = itemStyle };
 
-            parent.MenuItems.Add(child);
+            parent.Items.Add(child);
             AttachToNavigationView(parent, navigationView);
             child.Activate(navigationView);
             Assert.True(parent.ApplyTemplate());
@@ -1140,9 +1291,6 @@ public class NavigationViewItemTests
     private static bool HandleChildMenuKey(NavigationViewItem item, Key key) =>
         (bool)HandleChildMenuKeyMethod.Invoke(item, [key])!;
 
-    private static bool IsInputFromPrimaryVisualTree(NavigationViewItem item, object source) =>
-        (bool)IsInputFromPrimaryVisualTreeMethod.Invoke(item, [source])!;
-
     private static bool IsInputWithinOpenSubmenu(NavigationViewItem item, object source) =>
         (bool)IsInputWithinOpenSubmenuMethod.Invoke(item, [source])!;
 
@@ -1161,9 +1309,33 @@ public class NavigationViewItemTests
 
     private static void InvokeClick(NavigationViewItem item)
     {
+        _ = item.ApplyTemplate();
+        var headerButton = Assert.IsAssignableFrom<ButtonBase>(
+            item.Template.FindName("PART_HeaderButton", item)
+        );
         typeof(ButtonBase)
             .GetMethod("OnClick", BindingFlags.Instance | BindingFlags.NonPublic)!
-            .Invoke(item, null);
+            .Invoke(headerButton, null);
+    }
+
+    private static void InvokeExpand(NavigationViewItem item)
+    {
+        _ = item.ApplyTemplate();
+        var expandButton = Assert.IsAssignableFrom<System.Windows.Controls.Primitives.ToggleButton>(
+            item.Template.FindName("PART_ExpandButton", item)
+        );
+        bool isOpen = item.PaneDisplayMode == NavigationViewPaneDisplayMode.Left && item.IsPaneOpen
+            ? item.IsExpanded
+            : item.IsSubmenuOpen;
+        expandButton.SetCurrentValue(
+            System.Windows.Controls.Primitives.ToggleButton.IsCheckedProperty,
+            !isOpen
+        );
+        Assert.Equal(!isOpen, expandButton.IsChecked == true);
+        OnExpandButtonClickMethod.Invoke(
+            item,
+            [expandButton, new RoutedEventArgs(ButtonBase.ClickEvent, expandButton)]
+        );
     }
 
     private static Popup FindSubmenuPopup(NavigationViewItem item)
@@ -1174,13 +1346,7 @@ public class NavigationViewItemTests
             return popup;
         }
 
-        var childMenuPresenter = Assert.IsType<ContentPresenter>(
-            item.Template.FindName("ChildMenuPresenter", item)
-        );
-        _ = childMenuPresenter.ApplyTemplate();
-        return Assert.IsType<Popup>(
-            childMenuPresenter.ContentTemplate.FindName("PART_SubMenuPopup", childMenuPresenter)
-        );
+        throw new Xunit.Sdk.XunitException("The active item template does not define PART_SubMenuPopup.");
     }
 
     private static System.Windows.Automation.Peers.AutomationPeer CreateAutomationPeer(
@@ -1205,6 +1371,24 @@ public class NavigationViewItemTests
     )
     {
         item.SetValue(NavigationParentProperty, navigationView);
+        BindingOperations.SetBinding(
+            item,
+            PaneDisplayModeContextProperty,
+            new Binding(nameof(Wpf.Ui.Controls.NavigationView.PaneDisplayMode))
+            {
+                Source = navigationView,
+                Mode = BindingMode.OneWay,
+            }
+        );
+        BindingOperations.SetBinding(
+            item,
+            IsPaneOpenContextProperty,
+            new Binding(nameof(Wpf.Ui.Controls.NavigationView.IsPaneOpen))
+            {
+                Source = navigationView,
+                Mode = BindingMode.OneWay,
+            }
+        );
         item.RaiseEvent(new RoutedEventArgs(FrameworkElement.LoadedEvent));
     }
 

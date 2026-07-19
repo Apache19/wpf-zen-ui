@@ -9,252 +9,196 @@
     </ResourceDictionary.MergedDictionaries>
 
     <!--
-        Left deliberately keeps one NavigationViewItem ControlTemplate while the pane animates.
-        Only this child presenter changes its DataTemplate. ContentPresenter removes the old
-        DataTemplate visual tree before creating the new one (the same ordering used by WPF's
-        ContentPresenter.EnsureTemplate), so NavigationViewItem children never acquire two visual
-        parents while the presentation changes between an inline list and a Popup.
+        Shared header rendering for both open and compact Left presentations. Input is owned by the
+        Button itself; the NavigationViewItem contains this bounded surface and its ItemsPresenter as
+        siblings, so focusing or pressing the row can never include descendants.
     -->
-    <DataTemplate x:Key="NavigationViewItemLeftInlineMenuTemplate" DataType="{x:Type controls:NavigationViewItem}">
-        <controls:NavigationViewList
-            x:Name="MenuItemsList"
-            AutomationProperties.AutomationId="NavigationItemItems"
-            Focusable="False"
-            ItemContainerStyle="{Binding RelativeSource={RelativeSource Self}, Path=(controls:NavigationView.ItemContainerStyle)}"
-            ItemContainerStyleSelector="{Binding RelativeSource={RelativeSource Self}, Path=(controls:NavigationView.ItemContainerStyleSelector)}"
-            ItemTemplate="{Binding RelativeSource={RelativeSource Self}, Path=(controls:NavigationView.ItemTemplate)}"
-            ItemTemplateSelector="{Binding RelativeSource={RelativeSource Self}, Path=(controls:NavigationView.ItemTemplateSelector)}"
-            ItemsSource="{Binding MenuItems}"
-            KeyboardNavigation.DirectionalNavigation="Contained"
-            Opacity="0"
-            ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-            ScrollViewer.VerticalScrollBarVisibility="Disabled"
-            Visibility="Collapsed">
-            <controls:NavigationViewList.ItemsPanel>
-                <ItemsPanelTemplate>
-                    <StackPanel Grid.IsSharedSizeScope="True" IsItemsHost="True" />
-                </ItemsPanelTemplate>
-            </controls:NavigationViewList.ItemsPanel>
-        </controls:NavigationViewList>
-        <DataTemplate.Triggers>
-            <DataTrigger Binding="{Binding IsExpanded}" Value="True">
-                <Setter TargetName="MenuItemsList" Property="Visibility" Value="Visible" />
-                <DataTrigger.EnterActions>
-                    <BeginStoryboard>
-                        <Storyboard>
-                            <DoubleAnimation
-                                Storyboard.TargetName="MenuItemsList"
-                                Storyboard.TargetProperty="Opacity"
-                                From="0"
-                                To="1"
-                                Duration="00:00:00.167" />
-                        </Storyboard>
-                    </BeginStoryboard>
-                </DataTrigger.EnterActions>
-                <DataTrigger.ExitActions>
-                    <BeginStoryboard>
-                        <Storyboard>
-                            <DoubleAnimation
-                                Storyboard.TargetName="MenuItemsList"
-                                Storyboard.TargetProperty="Opacity"
-                                From="1"
-                                To="0"
-                                Duration="00:00:00.167" />
-                        </Storyboard>
-                    </BeginStoryboard>
-                </DataTrigger.ExitActions>
+    <ControlTemplate x:Key="NavigationViewItemLeftHeaderButtonTemplate" TargetType="{x:Type Button}">
+        <Border
+            x:Name="HeaderSurface"
+            MinWidth="40"
+            MinHeight="40"
+            Background="{TemplateBinding Background}"
+            BorderBrush="{TemplateBinding BorderBrush}"
+            BorderThickness="{TemplateBinding BorderThickness}"
+            CornerRadius="{Binding (Border.CornerRadius), RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}">
+            <Grid
+                Margin="{Binding Indentation, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}"
+                Background="Transparent">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition x:Name="IconColumn" Width="40" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition x:Name="ExpandColumn" Width="36" />
+                </Grid.ColumnDefinitions>
+
+                <ContentPresenter
+                    x:Name="IconPresenter"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Content="{Binding Icon, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}"
+                    TextElement.FontSize="16"
+                    TextElement.Foreground="{m:BrushResource TextFillColorPrimaryBrush}" />
+                <Rectangle
+                    x:Name="ActiveIndicator"
+                    Width="3"
+                    Height="16"
+                    HorizontalAlignment="Left"
+                    VerticalAlignment="Center"
+                    Fill="{m:BrushResource SystemAccentColorPrimaryBrush}"
+                    Opacity="0"
+                    RadiusX="2"
+                    RadiusY="2" />
+                <ContentPresenter
+                    x:Name="HeaderPresenter"
+                    Grid.Column="1"
+                    Margin="4,0,0,0"
+                    HorizontalAlignment="Left"
+                    VerticalAlignment="Center"
+                    Content="{TemplateBinding Content}"
+                    ContentTemplate="{TemplateBinding ContentTemplate}"
+                    ContentTemplateSelector="{TemplateBinding ContentTemplateSelector}"
+                    RecognizesAccessKey="True" />
+                <ContentPresenter
+                    x:Name="InfoBadgePresenter"
+                    Grid.Column="2"
+                    Margin="8,0,4,0"
+                    VerticalAlignment="Center"
+                    Content="{Binding InfoBadge, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}" />
+            </Grid>
+        </Border>
+        <ControlTemplate.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter TargetName="HeaderSurface" Property="Background" Value="{m:BrushResource SubtleFillColorSecondaryBrush}" />
+            </Trigger>
+            <Trigger Property="IsPressed" Value="True">
+                <Setter TargetName="HeaderSurface" Property="Background" Value="{m:BrushResource SubtleFillColorTertiaryBrush}" />
+            </Trigger>
+            <DataTrigger Binding="{Binding IsActive, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}" Value="True">
+                <Setter TargetName="ActiveIndicator" Property="Opacity" Value="1" />
+                <Setter TargetName="HeaderSurface" Property="Background" Value="{m:BrushResource SubtleFillColorSecondaryBrush}" />
             </DataTrigger>
-        </DataTemplate.Triggers>
-    </DataTemplate>
+            <DataTrigger Binding="{Binding IsSubmenuOpen, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}" Value="True">
+                <Setter TargetName="HeaderSurface" Property="Background" Value="{m:BrushResource SubtleFillColorSecondaryBrush}" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding Icon, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}" Value="{x:Null}">
+                <Setter TargetName="IconColumn" Property="Width" Value="0" />
+                <Setter TargetName="IconPresenter" Property="Visibility" Value="Collapsed" />
+                <Setter TargetName="HeaderPresenter" Property="Margin" Value="10,0,0,0" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding InfoBadge, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}" Value="{x:Null}">
+                <Setter TargetName="InfoBadgePresenter" Property="Visibility" Value="Collapsed" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding HasItems, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}" Value="False">
+                <Setter TargetName="ExpandColumn" Property="Width" Value="0" />
+            </DataTrigger>
+        </ControlTemplate.Triggers>
+    </ControlTemplate>
 
-    <DataTemplate x:Key="NavigationViewItemLeftPopupMenuTemplate" DataType="{x:Type controls:NavigationViewItem}">
-        <!--  NavigationView owns one subtree capture for the complete popup cascade.  -->
-        <Popup
-            x:Name="PART_SubMenuPopup"
-            controls:PopupAnimator.IsEnabled="True"
-            controls:PopupShadow.IsEnabled="True"
-            AllowsTransparency="True"
-            Focusable="False"
-            HorizontalOffset="8"
-            IsOpen="{Binding IsSubmenuOpen, Mode=TwoWay}"
-            Placement="Right"
-            PlacementTarget="{Binding}"
-            PopupAnimation="None"
-            VerticalOffset="-2">
-            <ContentPresenter Content="{Binding MenuItems}" ContentTemplate="{StaticResource NavigationViewItemSubmenuContentTemplate}" />
-        </Popup>
-    </DataTemplate>
-
+    <!-- The only template that presents descendants inline. -->
     <ControlTemplate x:Key="NavigationViewItemLeftTemplate" TargetType="{x:Type controls:NavigationViewItem}">
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
-            <Border
-                x:Name="MainBorder"
-                Grid.Row="0"
-                MinWidth="40"
-                MinHeight="40"
+            <Grid Grid.Row="0">
+                <Button
+                    x:Name="PART_HeaderButton"
+                    Padding="0"
+                    HorizontalContentAlignment="Stretch"
+                    Background="{m:BrushResource SubtleFillColorTransparentBrush}"
+                    BorderBrush="{TemplateBinding BorderBrush}"
+                    BorderThickness="{TemplateBinding BorderThickness}"
+                    Content="{TemplateBinding Header}"
+                    ContentTemplate="{TemplateBinding HeaderTemplate}"
+                    ContentTemplateSelector="{TemplateBinding HeaderTemplateSelector}"
+                    Template="{StaticResource NavigationViewItemLeftHeaderButtonTemplate}" />
+                <ToggleButton
+                    x:Name="PART_ExpandButton"
+                    Margin="0,4,4,4"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Center"
+                    IsChecked="{Binding IsExpanded, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
+                    Style="{StaticResource NavigationViewItemExpandButtonStyle}" />
+            </Grid>
+            <ItemsPresenter
+                x:Name="PART_ItemsPresenter"
+                Grid.Row="1"
+                KeyboardNavigation.DirectionalNavigation="Contained"
+                SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"
+                Visibility="Collapsed" />
+        </Grid>
+        <ControlTemplate.Triggers>
+            <Trigger Property="HasItems" Value="False">
+                <Setter TargetName="PART_ExpandButton" Property="Visibility" Value="Collapsed" />
+            </Trigger>
+            <Trigger Property="IsExpanded" Value="True">
+                <Setter TargetName="PART_ItemsPresenter" Property="Visibility" Value="Visible" />
+            </Trigger>
+        </ControlTemplate.Triggers>
+    </ControlTemplate>
+
+    <!--
+        Compact Left uses another template so the owner still has exactly one ItemsPresenter. WPF
+        clears the outgoing generated panel before applying this Popup panel, preserving the normal
+        ItemContainerGenerator lifecycle instead of binding a second list to the same controls.
+    -->
+    <ControlTemplate x:Key="NavigationViewItemLeftCompactTemplate" TargetType="{x:Type controls:NavigationViewItem}">
+        <Grid>
+            <Button
+                x:Name="PART_HeaderButton"
+                Padding="0"
+                HorizontalContentAlignment="Stretch"
                 Background="{m:BrushResource SubtleFillColorTransparentBrush}"
                 BorderBrush="{TemplateBinding BorderBrush}"
                 BorderThickness="{TemplateBinding BorderThickness}"
-                CornerRadius="{TemplateBinding Border.CornerRadius}">
-                <Grid Margin="{TemplateBinding Indentation}" Background="Transparent">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition x:Name="IconColumn" Width="40" />
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
-
-                    <Grid Grid.Column="0">
-                        <ContentPresenter
-                            x:Name="IconContentPresenter"
-                            Margin="-1,0,0,0"
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            Content="{TemplateBinding Icon}"
-                            Focusable="False"
-                            TextElement.FontSize="16"
-                            TextElement.Foreground="{m:BrushResource TextFillColorPrimaryBrush}" />
-                    </Grid>
-
-                    <Rectangle
-                        x:Name="ActiveRectangle"
-                        Grid.Column="0"
-                        Grid.ColumnSpan="4"
-                        Width="3"
-                        Height="16"
-                        Margin="0"
-                        HorizontalAlignment="Left"
-                        VerticalAlignment="Center"
-                        Fill="{m:BrushResource SystemAccentColorPrimaryBrush}"
-                        Opacity="0.0"
-                        RadiusX="2"
-                        RadiusY="2" />
-
-                    <ContentPresenter
-                        x:Name="ElementContentPresenter"
-                        Grid.Column="1"
-                        HorizontalAlignment="Left"
-                        VerticalAlignment="Center"
-                        Content="{TemplateBinding Content}"
-                        ContentTemplate="{TemplateBinding ContentTemplate}"
-                        RecognizesAccessKey="True" />
-
-                    <ContentPresenter
-                        x:Name="PART_InfoBadge"
-                        Grid.Column="2"
-                        Margin="0"
-                        Content="{TemplateBinding InfoBadge}" />
-
-                    <!--  The Chevron is an indicator, not a second input surface.  -->
-                    <controls:SymbolIcon
-                        x:Name="ChevronIcon"
-                        Grid.Column="3"
-                        Width="40"
-                        HorizontalAlignment="Center"
-                        VerticalAlignment="Center"
-                        FontSize="12"
-                        Foreground="{m:BrushResource TextFillColorPrimaryBrush}"
-                        IsHitTestVisible="False"
-                        RenderTransformOrigin="0.5, 0.5"
-                        Symbol="ChevronDown24">
-                        <controls:SymbolIcon.RenderTransform>
-                            <RotateTransform Angle="0" />
-                        </controls:SymbolIcon.RenderTransform>
-                    </controls:SymbolIcon>
-                </Grid>
-            </Border>
-            <ContentPresenter
-                x:Name="ChildMenuPresenter"
-                Grid.Row="1"
-                Content="{Binding RelativeSource={RelativeSource TemplatedParent}}"
-                ContentTemplate="{StaticResource NavigationViewItemLeftInlineMenuTemplate}" />
+                Content="{TemplateBinding Header}"
+                ContentTemplate="{TemplateBinding HeaderTemplate}"
+                ContentTemplateSelector="{TemplateBinding HeaderTemplateSelector}"
+                Template="{StaticResource NavigationViewItemLeftHeaderButtonTemplate}" />
+            <ToggleButton
+                x:Name="PART_ExpandButton"
+                Margin="0,4,4,4"
+                HorizontalAlignment="Right"
+                VerticalAlignment="Center"
+                IsChecked="{Binding IsSubmenuOpen, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
+                Style="{StaticResource NavigationViewItemExpandButtonStyle}" />
+            <Popup
+                x:Name="PART_SubMenuPopup"
+                controls:PopupAnimator.IsEnabled="True"
+                controls:PopupShadow.IsEnabled="True"
+                AllowsTransparency="True"
+                Focusable="False"
+                HorizontalOffset="8"
+                IsOpen="{Binding IsSubmenuOpen, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
+                Placement="Right"
+                PlacementTarget="{Binding ElementName=PART_HeaderButton}"
+                PopupAnimation="None"
+                VerticalOffset="-2">
+                <Border
+                    MinWidth="180"
+                    MaxHeight="420"
+                    Padding="4"
+                    Background="{m:BrushResource AcrylicBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{m:BrushResource SurfaceStrokeColorFlyoutBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8">
+                    <ScrollViewer
+                        CanContentScroll="True"
+                        Focusable="False"
+                        HorizontalScrollBarVisibility="Disabled"
+                        VerticalScrollBarVisibility="Auto">
+                        <ItemsPresenter
+                            KeyboardNavigation.DirectionalNavigation="Contained"
+                            SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
+                    </ScrollViewer>
+                </Border>
+            </Popup>
         </Grid>
         <ControlTemplate.Triggers>
-            <!--  Pane layout states  -->
-            <Trigger Property="IsPaneOpen" Value="True">
-                <Setter TargetName="PART_InfoBadge" Property="Grid.Column" Value="2" />
-            </Trigger>
-            <Trigger Property="IsPaneOpen" Value="False">
-                <Setter TargetName="PART_InfoBadge" Property="Grid.Column" Value="0" />
-                <Setter TargetName="PART_InfoBadge" Property="VerticalAlignment" Value="Top" />
-                <Setter TargetName="PART_InfoBadge" Property="HorizontalAlignment" Value="Right" />
-                <Setter TargetName="ChildMenuPresenter" Property="ContentTemplate" Value="{StaticResource NavigationViewItemLeftPopupMenuTemplate}" />
-            </Trigger>
-
-            <!--  Optional content visibility  -->
-            <Trigger Property="InfoBadge" Value="{x:Null}">
-                <Setter TargetName="PART_InfoBadge" Property="Margin" Value="0" />
-                <Setter TargetName="PART_InfoBadge" Property="Visibility" Value="Collapsed" />
-            </Trigger>
-            <Trigger Property="HasMenuItems" Value="False">
-                <Setter TargetName="ChevronIcon" Property="Visibility" Value="Collapsed" />
-            </Trigger>
-
-            <MultiTrigger>
-                <MultiTrigger.Conditions>
-                    <Condition Property="IsSubItem" Value="False" />
-                    <Condition Property="Icon" Value="{x:Null}" />
-                </MultiTrigger.Conditions>
-                <Setter TargetName="IconColumn" Property="Width" Value="0" />
-                <Setter TargetName="IconContentPresenter" Property="Visibility" Value="Collapsed" />
-                <Setter TargetName="ElementContentPresenter" Property="Margin" Value="10,0,0,0" />
-            </MultiTrigger>
-
-            <Trigger Property="IsSubItem" Value="True">
-                <Setter TargetName="IconColumn" Property="Width" Value="Auto" />
-                <Setter TargetName="IconColumn" Property="SharedSizeGroup" Value="Icon" />
-                <Setter TargetName="IconContentPresenter" Property="Margin" Value="8,0,2,0" />
-                <Setter TargetName="ElementContentPresenter" Property="Margin" Value="4,0,0,0" />
-            </Trigger>
-
-            <!--  The list animation lives in the inline DataTemplate; only the indicator belongs here.  -->
-            <Trigger Property="IsExpanded" Value="True">
-                <Trigger.EnterActions>
-                    <BeginStoryboard>
-                        <Storyboard>
-                            <DoubleAnimation
-                                Storyboard.TargetName="ChevronIcon"
-                                Storyboard.TargetProperty="(Control.RenderTransform).(RotateTransform.Angle)"
-                                To="-180"
-                                Duration="00:00:00.167" />
-                        </Storyboard>
-                    </BeginStoryboard>
-                </Trigger.EnterActions>
-                <Trigger.ExitActions>
-                    <BeginStoryboard>
-                        <Storyboard>
-                            <DoubleAnimation
-                                Storyboard.TargetName="ChevronIcon"
-                                Storyboard.TargetProperty="(Control.RenderTransform).(RotateTransform.Angle)"
-                                To="0"
-                                Duration="00:00:00.167" />
-                        </Storyboard>
-                    </BeginStoryboard>
-                </Trigger.ExitActions>
-            </Trigger>
-
-            <!--  Interaction visual states  -->
-            <Trigger Property="IsActive" Value="True">
-                <Setter TargetName="ActiveRectangle" Property="Opacity" Value="1.0" />
-                <Setter TargetName="MainBorder" Property="Background" Value="{m:BrushResource SubtleFillColorSecondaryBrush}" />
-            </Trigger>
-            <!--
-                IsMouseOver reverse-inherits through a templated Popup. Listen to the primary
-                surface so hovering a descendant submenu does not highlight this ancestor row.
-            -->
-            <Trigger SourceName="MainBorder" Property="IsMouseOver" Value="True">
-                <Setter TargetName="MainBorder" Property="Background" Value="{m:BrushResource SubtleFillColorSecondaryBrush}" />
-            </Trigger>
-            <!--  An open Popup remains the active interaction surface after the pointer enters it.  -->
-            <Trigger Property="IsSubmenuOpen" Value="True">
-                <Setter TargetName="MainBorder" Property="Background" Value="{m:BrushResource SubtleFillColorSecondaryBrush}" />
-            </Trigger>
-            <Trigger Property="IsPressed" Value="True">
-                <Setter TargetName="MainBorder" Property="Background" Value="{m:BrushResource SubtleFillColorTertiaryBrush}" />
+            <Trigger Property="HasItems" Value="False">
+                <Setter TargetName="PART_ExpandButton" Property="Visibility" Value="Collapsed" />
             </Trigger>
         </ControlTemplate.Triggers>
     </ControlTemplate>

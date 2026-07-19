@@ -26,17 +26,17 @@ Define `NavigationView` in your XAML and add `NavigationViewItem` objects to the
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml">
     <ui:NavigationView.MenuItems>
         <ui:NavigationViewItem
-            Content="Home"
+            Header="Home"
             Icon="{ui:SymbolIcon Home24}"
             TargetPageType="{x:Type pages:DashboardPage}" />
         <ui:NavigationViewItem
-            Content="Data"
+            Header="Data"
             Icon="{ui:SymbolIcon DataHistogram24}"
             TargetPageType="{x:Type pages:DataPage}" />
     </ui:NavigationView.MenuItems>
     <ui:NavigationView.FooterMenuItems>
         <ui:NavigationViewItem
-            Content="Settings"
+            Header="Settings"
             Icon="{ui:SymbolIcon Settings24}"
             TargetPageType="{x:Type pages:SettingsPage}" />
     </ui:NavigationView.FooterMenuItems>
@@ -44,7 +44,28 @@ Define `NavigationView` in your XAML and add `NavigationViewItem` objects to the
 ```
 
 > [!NOTE]
-> `TargetPageType` is a required property on `NavigationViewItem` that specifies the page to navigate to when the item is selected. The value must be a `System.Type`.
+> `TargetPageType` specifies the page opened by a navigable item. It is optional for grouping items
+> that only organize child navigation entries.
+
+## Hierarchical items
+
+`NavigationViewItem` is a `HeaderedItemsControl`: use `Header` for its visible row and the standard
+`Items` or `ItemsSource` APIs for children. A parent with a `TargetPageType` navigates from its
+header and expands from its chevron; a grouping parent without a target also toggles when its
+header is invoked.
+
+```xml
+<ui:NavigationViewItem Header="Library" Icon="{ui:SymbolIcon Library24}">
+    <ui:NavigationViewItem.Items>
+        <ui:NavigationViewItem
+            Header="Recent"
+            TargetPageType="{x:Type pages:RecentPage}" />
+        <ui:NavigationViewItem
+            Header="Pinned"
+            TargetPageType="{x:Type pages:PinnedPage}" />
+    </ui:NavigationViewItem.Items>
+</ui:NavigationViewItem>
+```
 
 ## Programmatic Navigation
 
@@ -58,11 +79,11 @@ MyNavigationView.Navigate(typeof(SettingsPage));
 MyNavigationView.Navigate("settings");
 ```
 
-To use tags, you must define a `PageTag` on the `NavigationViewItem`. If not defined, a tag is automatically generated from the `Content` property (e.g., "Settings Page" becomes "settingspage").
+To use tags, you must define a `PageTag` on the `NavigationViewItem`. If not defined, a tag is automatically generated from the `Header` property (e.g., "Settings Page" becomes "settingspage").
 
 ```xml
 <ui:NavigationViewItem
-    Content="Settings"
+    Header="Settings"
     PageTag="settings"
     TargetPageType="{x:Type pages:SettingsPage}" />
 ```

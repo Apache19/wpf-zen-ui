@@ -41,7 +41,7 @@ public partial class MediaPage : INavigableView<MediaViewModel>
         INavigationViewItem? selectedItem = navigationControl?.SelectedItem;
         if (selectedItem != null)
         {
-            string? newTitle = selectedItem.Content?.ToString();
+            string? newTitle = selectedItem.Header?.ToString();
             if (MainTitle.Text != newTitle)
             {
                 MainTitle.SetCurrentValue(System.Windows.Controls.TextBlock.TextProperty, newTitle);

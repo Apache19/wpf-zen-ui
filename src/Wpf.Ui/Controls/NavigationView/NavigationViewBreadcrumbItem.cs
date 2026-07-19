@@ -23,7 +23,7 @@ internal class NavigationViewBreadcrumbItem : DependencyObject
     {
         PageId = item.Id;
         SourceItem = item;
-        Content = item.Content;
+        Content = item.Header;
     }
 
     public object? Content
@@ -38,6 +38,6 @@ internal class NavigationViewBreadcrumbItem : DependencyObject
 
     public void UpdateFromSource()
     {
-        SetCurrentValue(ContentProperty, SourceItem.Content);
+        SetCurrentValue(ContentProperty, SourceItem.Header);
     }
 }

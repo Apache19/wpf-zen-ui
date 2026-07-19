@@ -48,7 +48,6 @@ public static class NavigationViewItemTemplateBehavior
 
     internal static void SetIsActive(NavigationViewItem item, INavigationView navigationView, bool isActive)
     {
-        item.SynchronizePaneState(navigationView.PaneDisplayMode, navigationView.IsPaneOpen);
         item.SetValue(NavigationViewItem.IsActivePropertyKey, isActive);
 
         if (isActive)

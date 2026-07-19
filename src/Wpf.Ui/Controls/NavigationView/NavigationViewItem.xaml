@@ -6,14 +6,12 @@
 
     <ResourceDictionary.MergedDictionaries>
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/NavigationView/NavigationViewItem_Left.xaml" />
-        <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/NavigationView/NavigationViewItem_LeftMinimal.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/NavigationView/NavigationViewItem_LeftFluent.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/NavigationView/NavigationViewItem_Top.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/NavigationView/NavigationViewItem_Bottom.xaml" />
     </ResourceDictionary.MergedDictionaries>
 
     <Style x:Key="NavigationViewItemDefaultStyle" TargetType="{x:Type controls:NavigationViewItem}">
-        <Setter Property="FocusVisualStyle" Value="{m:StyleResource DefaultControlFocusVisualStyle}" />
         <Setter Property="Margin" Value="0" />
         <Setter Property="Padding" Value="0" />
         <Setter Property="Border.CornerRadius" Value="{m:VariableResource ControlCornerRadius}" />
@@ -23,15 +21,30 @@
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="BorderBrush" Value="Transparent" />
         <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="KeyboardNavigation.IsTabStop" Value="True" />
-        <Setter Property="Focusable" Value="True" />
+        <Setter Property="ItemsPanel">
+            <Setter.Value>
+                <ItemsPanelTemplate>
+                    <StackPanel IsItemsHost="True" />
+                </ItemsPanelTemplate>
+            </Setter.Value>
+        </Setter>
         <Setter Property="SnapsToDevicePixels" Value="True" />
         <Setter Property="Template" Value="{StaticResource NavigationViewItemLeftTemplate}" />
-        <Setter Property="ContentTemplate" Value="{Binding RelativeSource={RelativeSource Self}, Path=(controls:NavigationView.ItemTemplate)}" />
-        <Setter Property="ContentTemplateSelector" Value="{Binding RelativeSource={RelativeSource Self}, Path=(controls:NavigationView.ItemTemplateSelector)}" />
+        <!--
+            NavigationView's item customization properties are inheritable attached properties.
+            Project them onto this HeaderedItemsControl's native generator properties so data items
+            at every depth receive the same templates and container styles as root data. Local
+            values on an item still take precedence over these style setters.
+        -->
+        <Setter Property="ItemContainerStyle" Value="{Binding RelativeSource={RelativeSource Self}, Path=(controls:NavigationView.ItemContainerStyle)}" />
+        <Setter Property="ItemContainerStyleSelector" Value="{Binding RelativeSource={RelativeSource Self}, Path=(controls:NavigationView.ItemContainerStyleSelector)}" />
+        <Setter Property="ItemTemplate" Value="{Binding RelativeSource={RelativeSource Self}, Path=(controls:NavigationView.ItemTemplate)}" />
+        <Setter Property="ItemTemplateSelector" Value="{Binding RelativeSource={RelativeSource Self}, Path=(controls:NavigationView.ItemTemplateSelector)}" />
+        <Setter Property="HeaderTemplate" Value="{Binding RelativeSource={RelativeSource Self}, Path=(controls:NavigationView.ItemTemplate)}" />
+        <Setter Property="HeaderTemplateSelector" Value="{Binding RelativeSource={RelativeSource Self}, Path=(controls:NavigationView.ItemTemplateSelector)}" />
         <Style.Triggers>
             <Trigger Property="PaneDisplayMode" Value="LeftMinimal">
-                <Setter Property="Template" Value="{StaticResource NavigationViewItemLeftMinimalTemplate}" />
+                <Setter Property="Template" Value="{StaticResource NavigationViewItemLeftCompactTemplate}" />
             </Trigger>
             <Trigger Property="PaneDisplayMode" Value="LeftFluent">
                 <Setter Property="Template" Value="{StaticResource NavigationViewItemLeftFluentTemplate}" />
@@ -42,6 +55,13 @@
             <Trigger Property="PaneDisplayMode" Value="Bottom">
                 <Setter Property="Template" Value="{StaticResource NavigationViewItemBottomTemplate}" />
             </Trigger>
+            <MultiTrigger>
+                <MultiTrigger.Conditions>
+                    <Condition Property="PaneDisplayMode" Value="Left" />
+                    <Condition Property="IsPaneOpen" Value="False" />
+                </MultiTrigger.Conditions>
+                <Setter Property="Template" Value="{StaticResource NavigationViewItemLeftCompactTemplate}" />
+            </MultiTrigger>
             <MultiTrigger>
                 <MultiTrigger.Conditions>
                     <Condition Property="PaneDisplayMode" Value="LeftMinimal" />

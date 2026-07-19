@@ -64,21 +64,27 @@ public class PassiveScrollViewer : ScrollViewer
     /// </summary>
     /// <param name="e">Data describing the scrolling-state change.</param>
     /// <remarks>
-    /// When a shrinking content area removes the vertical scroll range, the vertical offset is reset
-    /// permanently instead of merely being coerced to zero for the current layout pass. This prevents
-    /// a previously requested offset from returning if the content later becomes scrollable again.
+    /// When a shrinking content area reduces the vertical scroll range, the coerced vertical offset
+    /// is committed permanently instead of being used only for the current layout pass. This prevents
+    /// a previously requested, now out-of-range offset from returning if the content grows again.
     /// </remarks>
     protected override void OnScrollChanged(ScrollChangedEventArgs e)
     {
         // ScrollContentPresenter keeps the requested offset separately from the computed offset that
-        // ScrollViewer exposes. When the extent shrinks, WPF only coerces the computed value into the
-        // new range; it intentionally retains the requested value and restores it if the extent grows.
-        // A non-zero change to zero proves that this viewer was actually scrolled before its vertical
-        // range disappeared. Explicitly requesting zero updates WPF's retained value as well. The call
-        // uses the public command queue so it remains compatible with custom IScrollInfo implementations.
-        if (e.VerticalChange != 0d && ScrollableHeight <= 0d)
+        // ScrollViewer exposes. When the extent shrinks, WPF coerces only the computed value into the
+        // new range and can restore the stale request when the extent grows again. A simultaneous
+        // extent/viewport change and vertical movement identifies a layout adjustment rather than an
+        // isolated user scroll. Recover the offset from before that adjustment and clamp it to the new
+        // range. This both rejects anchoring shifts from growing content and commits a valid replacement
+        // for an offset invalidated by shrinking content, including zero when content no longer overflows.
+        // Use the public command queue so custom IScrollInfo implementations retain their normal contract.
+        if (
+            e.VerticalChange != 0d
+         && (e.ExtentHeightChange != 0d || e.ViewportHeightChange != 0d)
+        )
         {
-            ScrollToVerticalOffset(0d);
+            double offsetBeforeLayoutChange = e.VerticalOffset - e.VerticalChange;
+            ScrollToVerticalOffset(Math.Min(Math.Max(offsetBeforeLayoutChange, 0d), ScrollableHeight));
         }
 
         base.OnScrollChanged(e);

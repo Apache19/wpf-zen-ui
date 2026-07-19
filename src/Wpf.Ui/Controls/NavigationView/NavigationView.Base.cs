@@ -54,6 +54,8 @@ public partial class NavigationView : Control, INavigationView
     public NavigationView()
     {
         NavigationParent = this;
+        SetValue(PaneDisplayModeContextProperty, PaneDisplayMode);
+        SetValue(IsPaneOpenContextProperty, IsPaneOpen);
 
         // The navigation frame belongs to the control rather than to a particular template.
         // WPF destroys a control template's generated subtree whenever Template changes; keeping
@@ -610,7 +612,7 @@ public partial class NavigationView : Control, INavigationView
         OnItemInvoked();
         bool navigated = NavigateInternal(navigationViewItem);
 
-        if (navigated && !navigationViewItem.HasMenuItems)
+        if (navigated && !navigationViewItem.HasItems)
         {
             CloseAllNavigationViewItemSubmenus();
         }
@@ -876,7 +878,7 @@ public partial class NavigationView : Control, INavigationView
         foreach (NavigationViewItem item in items.OfType<NavigationViewItem>())
         {
             NavigationViewItem? descendant = FindDeepestOpenSubmenuContainingInput(
-                item.MenuItems,
+                item.GetNavigationChildren(),
                 originalSource
             );
 
@@ -906,7 +908,7 @@ public partial class NavigationView : Control, INavigationView
            .OfType<NavigationViewItem>()
            .Any(
                 item => item.IsSubmenuOpen ||
-                        HasOpenNavigationViewItemSubmenu(item.MenuItems)
+                        HasOpenNavigationViewItemSubmenu(item.GetNavigationChildren())
             );
     }
 
@@ -946,7 +948,7 @@ public partial class NavigationView : Control, INavigationView
                 continue;
             }
 
-            CloseNavigationViewItemSubmenusExcept(item.MenuItems, preservedPath);
+            CloseNavigationViewItemSubmenusExcept(item.GetNavigationChildren(), preservedPath);
         }
     }
 
@@ -966,7 +968,7 @@ public partial class NavigationView : Control, INavigationView
         foreach (NavigationViewItem item in items.OfType<NavigationViewItem>())
         {
             item.SetValue(NavigationViewItem.IsActivePropertyKey, false);
-            ClearNavigationViewItemActiveState(item.MenuItems);
+            ClearNavigationViewItemActiveState(item.GetNavigationChildren());
         }
     }
 
@@ -1068,6 +1070,17 @@ public partial class NavigationView : Control, INavigationView
     {
         foreach (NavigationViewItem nvItem in items.OfType<NavigationViewItem>())
         {
+            // Direct root controls exist independently of any ItemsPresenter. Associate them at
+            // collection registration time so closing a pane or unloading a template cannot make
+            // their presentation context fall back to an ancestor NavigationView or to defaults.
+            if (
+                nvItem.NavigationViewItemParent is null &&
+                (MenuItems.Contains(nvItem) || FooterMenuItems.Contains(nvItem))
+            )
+            {
+                nvItem.AttachToNavigationViewHost(this);
+            }
+
             RegisterNavigationViewItem(nvItem);
 
             if (!PageKeyIndex.ContainsKey(nvItem.Id))
@@ -1086,11 +1099,11 @@ public partial class NavigationView : Control, INavigationView
                 PageTypeIndex.Add(nvItem.TargetPageType, nvItem);
             }
 
-            nvItem.IsMenuElement = true;
+            ((INavigationViewItem)nvItem).IsMenuElement = true;
 
-            if (nvItem.HasMenuItems)
+            if (nvItem.HasItems)
             {
-                AddItemsToNavigationIndexes(nvItem.MenuItems);
+                AddItemsToNavigationIndexes(nvItem.GetNavigationChildren());
             }
         }
     }
@@ -1114,6 +1127,15 @@ public partial class NavigationView : Control, INavigationView
         {
             item.CloseSubmenuBranch();
             UnregisterNavigationViewItem(item);
+
+            if (
+                item.NavigationViewItemParent is null &&
+                !MenuItems.Contains(item) &&
+                !FooterMenuItems.Contains(item)
+            )
+            {
+                item.DetachFromNavigationViewHost(this);
+            }
         }
     }
 
@@ -1141,16 +1163,38 @@ public partial class NavigationView : Control, INavigationView
     private void RegisterNavigationViewItem(NavigationViewItem item)
     {
         if (_registeredItems.Add(item) &&
-            item.MenuItems is INotifyCollectionChanged menuItems)
+            item.Items is INotifyCollectionChanged menuItems)
         {
             menuItems.CollectionChanged += OnNavigationViewItemMenuItemsCollectionChanged;
         }
     }
 
+    /// <summary>
+    /// Adds a data-generated item container to navigation-wide lookup and search state.
+    /// </summary>
+    /// <remarks>
+    /// Source objects are not navigation containers and may receive their navigation properties
+    /// from ItemContainerStyle bindings. Registration therefore occurs only after WPF has prepared
+    /// the concrete container. Direct NavigationViewItem objects continue to be registered from the
+    /// collection pipeline and are ignored by the HashSet if encountered again.
+    /// </remarks>
+    internal void RegisterGeneratedNavigationItem(NavigationViewItem item)
+    {
+        AddItemsToNavigationIndexes(new[] { item });
+        UpdateAutoSuggestBoxSuggestions();
+    }
+
+    /// <summary>Removes a data-generated container before its generator releases or recycles it.</summary>
+    internal void UnregisterGeneratedNavigationItem(NavigationViewItem item)
+    {
+        RemoveItemsFromNavigationIndexes(new[] { item });
+        UpdateAutoSuggestBoxSuggestions();
+    }
+
     private void UnregisterNavigationViewItem(NavigationViewItem item)
     {
         if (_registeredItems.Remove(item) &&
-            item.MenuItems is INotifyCollectionChanged menuItems)
+            item.Items is INotifyCollectionChanged menuItems)
         {
             menuItems.CollectionChanged -= OnNavigationViewItemMenuItemsCollectionChanged;
         }
@@ -1163,9 +1207,9 @@ public partial class NavigationView : Control, INavigationView
             PageTypeIndex.Remove(item.TargetPageType);
         }
 
-        if (item.HasMenuItems)
+        if (item.HasItems)
         {
-            RemoveItemsFromNavigationIndexes(item.MenuItems);
+            RemoveItemsFromNavigationIndexes(item.GetNavigationChildren());
         }
     }
 
@@ -1182,9 +1226,14 @@ public partial class NavigationView : Control, INavigationView
             )
             {
                 item.CloseSubmenuBranch();
+
+                if (!MenuItems.Contains(item) && !FooterMenuItems.Contains(item))
+                {
+                    item.DetachFromNavigationViewHost(this);
+                }
             }
 
-            if (item.MenuItems is INotifyCollectionChanged menuItems)
+            if (item.Items is INotifyCollectionChanged menuItems)
             {
                 menuItems.CollectionChanged -= OnNavigationViewItemMenuItemsCollectionChanged;
             }
@@ -1292,9 +1341,9 @@ public partial class NavigationView : Control, INavigationView
                 _autoSuggestItems.Add(nvItem.SearchableContent);
             }
 
-            if (nvItem.HasMenuItems)
+            if (nvItem.HasItems)
             {
-                AddItemsToAutoSuggestBoxItems(nvItem.MenuItems);
+                AddItemsToAutoSuggestBoxItems(nvItem.GetNavigationChildren());
             }
         }
     }
@@ -1315,13 +1364,16 @@ public partial class NavigationView : Control, INavigationView
             {
                 NavigateInternal(nvItem);
 
-                nvItem.BringIntoView();
-                nvItem.Focus();
+                // The container owns its complete descendant branch and is intentionally not a
+                // focus target. Focusing its bounded header lets WPF reveal only the selected row;
+                // asking the expanded HeaderedItemsControl itself to come into view would recreate
+                // the historical jump that tried to reveal every child at once.
+                _ = nvItem.FocusHeader();
 
                 return true;
             }
 
-            if (NavigateToMenuItemFromAutoSuggestBox(nvItem.MenuItems, selectedSuggestItem))
+            if (NavigateToMenuItemFromAutoSuggestBox(nvItem.GetNavigationChildren(), selectedSuggestItem))
             {
                 return true;
             }

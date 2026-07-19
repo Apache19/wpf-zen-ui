@@ -1,4 +1,4 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 using Wpf.Ui.Controls;
 
 namespace $safeprojectname$.ViewModels.Windows
@@ -13,13 +13,13 @@ namespace $safeprojectname$.ViewModels.Windows
         {
             new NavigationViewItem()
             {
-                Content = "Home",
+                Header = "Home",
                 Icon = new SymbolIcon { Symbol = SymbolRegular.Home24 },
                 TargetPageType = typeof(Views.Pages.DashboardPage)
             },
             new NavigationViewItem()
             {
-                Content = "Data",
+                Header = "Data",
                 Icon = new SymbolIcon { Symbol = SymbolRegular.DataHistogram24 },
                 TargetPageType = typeof(Views.Pages.DataPage)
             }
@@ -30,7 +30,7 @@ namespace $safeprojectname$.ViewModels.Windows
         {
             new NavigationViewItem()
             {
-                Content = "Settings",
+                Header = "Settings",
                 Icon = new SymbolIcon { Symbol = SymbolRegular.Settings24 },
                 TargetPageType = typeof(Views.Pages.SettingsPage)
             }

@@ -350,7 +350,7 @@ public partial class NavigationView
             // Apply HeaderContent if already available
             if (GetHeaderContent(frameworkElement) is { } headerContent)
             {
-                viewItem.Content = headerContent;
+                viewItem.Header = headerContent;
                 UpdateBreadcrumbContents();
             }
         }
@@ -360,7 +360,7 @@ public partial class NavigationView
     {
         if (page.GetValue(PageNavigationItemProperty) is INavigationViewItem navItem)
         {
-            navItem.Content = headerContent;
+            navItem.Header = headerContent;
             UpdateBreadcrumbContents();
         }
     }

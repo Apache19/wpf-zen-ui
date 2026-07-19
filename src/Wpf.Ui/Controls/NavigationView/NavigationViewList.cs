@@ -13,11 +13,10 @@ namespace Wpf.Ui.Controls;
 /// </summary>
 /// <remarks>
 /// Unlike a general-purpose <see cref="ItemsControl"/>, this control understands that a navigation
-/// menu can temporarily contain structural elements or other objects alongside <see cref="NavigationViewItem"/>
-/// containers. Until the list owns navigation-item generation, it therefore applies navigation-item
-/// container styles only to existing <see cref="NavigationViewItem"/> containers. Keeping this behavior
-/// in a dedicated list also provides a single container-generation boundary for future data-driven
-/// navigation improvements.
+/// menu can contain structural <see cref="UIElement"/> values alongside navigation data. Existing
+/// elements remain their own containers, while non-visual data receives a
+/// <see cref="NavigationViewItem"/> container. This makes the list the root container-generation
+/// boundary and matches the child generation performed by <see cref="NavigationViewItem"/>.
 /// </remarks>
 [StyleTypedProperty(Property = nameof(ItemContainerStyle), StyleTargetType = typeof(NavigationViewItem))]
 public class NavigationViewList : ItemsControl
@@ -102,16 +101,68 @@ public class NavigationViewList : ItemsControl
     /// <see cref="NavigationViewItem"/>; otherwise, <see langword="false"/>.
     /// </returns>
     /// <remarks>
-    /// WPF validates an item-container style's target type before assigning it. Because this list does not
-    /// yet generate <see cref="NavigationViewItem"/> containers for arbitrary data, structural elements and
-    /// other directly supplied objects can retain incompatible container types. Restricting style application
-    /// by the actual container type prevents those heterogeneous items from receiving a navigation-item style.
-    /// When navigation-item generation is introduced, generated <see cref="NavigationViewItem"/> containers
-    /// will naturally pass the same check without changing this contract.
+    /// WPF validates an item-container style's target type before assigning it. Structural elements
+    /// remain their own containers and can therefore be incompatible with a navigation-item style;
+    /// generated and directly supplied <see cref="NavigationViewItem"/> containers pass this check.
     /// </remarks>
     protected override bool ShouldApplyItemContainerStyle(DependencyObject container, object item)
     {
         return container is NavigationViewItem
             && base.ShouldApplyItemContainerStyle(container, item);
+    }
+
+    /// <inheritdoc />
+    protected override bool IsItemItsOwnContainerOverride(object item)
+    {
+        // Structural controls such as NavigationViewItemHeader must remain intact. Plain data is the
+        // only category for which this list owns navigation-container generation.
+        return item is UIElement;
+    }
+
+    /// <inheritdoc />
+    protected override DependencyObject GetContainerForItemOverride()
+    {
+        return new NavigationViewItem();
+    }
+
+    /// <inheritdoc />
+    /// <remarks>
+    /// Registration happens after the base call because HeaderedItemsControl preparation copies the
+    /// data item into Header and applies ItemContainerStyle bindings. Lookup keys and page types are
+    /// therefore observed in their prepared form rather than from an incomplete container.
+    /// </remarks>
+    protected override void PrepareContainerForItemOverride(DependencyObject element, object item)
+    {
+        base.PrepareContainerForItemOverride(element, item);
+
+        if (
+            element is NavigationViewItem navigationItem &&
+            NavigationView.GetNavigationParent(this) is { } navigationView
+        )
+        {
+            navigationItem.AttachToNavigationViewHost(navigationView);
+
+            if (!ReferenceEquals(element, item))
+            {
+                navigationView.RegisterGeneratedNavigationItem(navigationItem);
+            }
+        }
+    }
+
+    /// <inheritdoc />
+    protected override void ClearContainerForItemOverride(DependencyObject element, object item)
+    {
+        if (
+            element is NavigationViewItem navigationItem &&
+            NavigationView.GetNavigationParent(this) is { } navigationView
+        )
+        {
+            if (!ReferenceEquals(element, item))
+            {
+                navigationView.UnregisterGeneratedNavigationItem(navigationItem);
+            }
+        }
+
+        base.ClearContainerForItemOverride(element, item);
     }
 }

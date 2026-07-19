@@ -45,7 +45,7 @@
             </ui:NavigationView.Header>
             <ui:NavigationView.MenuItems>
                 <ui:NavigationViewItem
-                    Content="Dashboard"
+                    Header="Dashboard"
                     NavigationCacheMode="Enabled"
                     TargetPageType="{x:Type pages:DashboardPage}">
                     <ui:NavigationViewItem.Icon>
@@ -53,7 +53,7 @@
                     </ui:NavigationViewItem.Icon>
                 </ui:NavigationViewItem>
                 <ui:NavigationViewItem
-                    Content="Data"
+                    Header="Data"
                     NavigationCacheMode="Enabled"
                     TargetPageType="{x:Type pages:DataPage}">
                     <ui:NavigationViewItem.Icon>
@@ -63,7 +63,7 @@
             </ui:NavigationView.MenuItems>
             <ui:NavigationView.FooterMenuItems>
                 <ui:NavigationViewItem
-                    Content="Settings"
+                    Header="Settings"
                     NavigationCacheMode="Disabled"
                     TargetPageType="{x:Type pages:SettingsPage}">
                     <ui:NavigationViewItem.Icon>

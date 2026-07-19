@@ -42,9 +42,9 @@ public partial class MainWindowViewModel(IStringLocalizer<Translations> localize
         new NavigationViewItem("Home", SymbolRegular.Home24, typeof(DashboardPage)),
         new NavigationViewItem()
         {
-            Content = "Design guidance",
+            Header = "Design guidance",
             Icon = new SymbolIcon { Symbol = SymbolRegular.DesignIdeas24 },
-            MenuItemsSource = new object[]
+            ItemsSource = new object[]
             {
                 new NavigationViewItem("Typography", SymbolRegular.TextFont24, typeof(TypographyPage)),
                 new NavigationViewItem("Icons", SymbolRegular.Diversity24, typeof(IconsPage)),
@@ -55,7 +55,7 @@ public partial class MainWindowViewModel(IStringLocalizer<Translations> localize
         new Separator(),
         new NavigationViewItem("Basic Input", SymbolRegular.CheckboxChecked24, typeof(BasicInputPage))
         {
-            MenuItemsSource = new object[]
+            ItemsSource = new object[]
             {
                 new NavigationViewItem(nameof(Anchor), typeof(AnchorPage)),
                 new NavigationViewItem(nameof(Wpf.Ui.Controls.Button), typeof(ButtonPage)),
@@ -74,10 +74,10 @@ public partial class MainWindowViewModel(IStringLocalizer<Translations> localize
         },
         new NavigationViewItem
         {
-            Content = "Collections",
+            Header = "Collections",
             Icon = new SymbolIcon { Symbol = SymbolRegular.Table24 },
             TargetPageType = typeof(CollectionsPage),
-            MenuItemsSource = new object[]
+            ItemsSource = new object[]
             {
                 new NavigationViewItem(nameof(System.Windows.Controls.DataGrid), typeof(DataGridPage)),
                 new NavigationViewItem(nameof(ListBox), typeof(ListBoxPage)),
@@ -90,7 +90,7 @@ public partial class MainWindowViewModel(IStringLocalizer<Translations> localize
         },
         new NavigationViewItem("Date & time", SymbolRegular.CalendarClock24, typeof(DateAndTimePage))
         {
-            MenuItemsSource = new object[]
+            ItemsSource = new object[]
             {
                 new NavigationViewItem(nameof(CalendarDatePicker), typeof(CalendarDatePickerPage)),
                 new NavigationViewItem(nameof(System.Windows.Controls.Calendar), typeof(CalendarPage)),
@@ -100,7 +100,7 @@ public partial class MainWindowViewModel(IStringLocalizer<Translations> localize
         },
         new NavigationViewItem("Dialogs & flyouts", SymbolRegular.Chat24, typeof(DialogsAndFlyoutsPage))
         {
-            MenuItemsSource = new object[]
+            ItemsSource = new object[]
             {
                 new NavigationViewItem(nameof(Snackbar), typeof(SnackbarPage)),
                 new NavigationViewItem(nameof(ContentDialog), typeof(ContentDialogPage)),
@@ -111,7 +111,7 @@ public partial class MainWindowViewModel(IStringLocalizer<Translations> localize
 #if DEBUG
         new NavigationViewItem("Layout", SymbolRegular.News24, typeof(LayoutPage))
         {
-            MenuItemsSource = new object[]
+            ItemsSource = new object[]
             {
                 new NavigationViewItem("Expander", typeof(ExpanderPage)),
                 new NavigationViewItem("CardControl", typeof(CardControlPage)),
@@ -121,10 +121,10 @@ public partial class MainWindowViewModel(IStringLocalizer<Translations> localize
 #endif
         new NavigationViewItem
         {
-            Content = "Media",
+            Header = "Media",
             Icon = new SymbolIcon { Symbol = SymbolRegular.PlayCircle24 },
             TargetPageType = typeof(MediaPage),
-            MenuItemsSource = new object[]
+            ItemsSource = new object[]
             {
                 new NavigationViewItem("Image", typeof(ImagePage)),
                 new NavigationViewItem("Canvas", typeof(CanvasPage)),
@@ -134,7 +134,7 @@ public partial class MainWindowViewModel(IStringLocalizer<Translations> localize
         },
         new NavigationViewItem("Navigation", SymbolRegular.Navigation24, typeof(NavigationPage))
         {
-            MenuItemsSource = new object[]
+            ItemsSource = new object[]
             {
                 new NavigationViewItem("BreadcrumbBar", typeof(BreadcrumbBarPage)),
                 new NavigationViewItem("NavigationView", typeof(NavigationViewPage)),
@@ -149,7 +149,7 @@ public partial class MainWindowViewModel(IStringLocalizer<Translations> localize
             typeof(StatusAndInfoPage)
         )
         {
-            MenuItemsSource = new object[]
+            ItemsSource = new object[]
             {
                 new NavigationViewItem("InfoBadge", typeof(InfoBadgePage)),
                 new NavigationViewItem("InfoBar", typeof(InfoBarPage)),
@@ -160,7 +160,7 @@ public partial class MainWindowViewModel(IStringLocalizer<Translations> localize
         },
         new NavigationViewItem("Text", SymbolRegular.DrawText24, typeof(TextPage))
         {
-            MenuItemsSource = new object[]
+            ItemsSource = new object[]
             {
                 new NavigationViewItem(nameof(AutoSuggestBox), typeof(AutoSuggestBoxPage)),
                 new NavigationViewItem(nameof(NumberBox), typeof(NumberBoxPage)),
@@ -173,7 +173,7 @@ public partial class MainWindowViewModel(IStringLocalizer<Translations> localize
         },
         new NavigationViewItem("System", SymbolRegular.Desktop24, typeof(OpSystemPage))
         {
-            MenuItemsSource = new object[]
+            ItemsSource = new object[]
             {
                 new NavigationViewItem("Clipboard", typeof(ClipboardPage)),
                 new NavigationViewItem("FilePicker", typeof(FilePickerPage)),

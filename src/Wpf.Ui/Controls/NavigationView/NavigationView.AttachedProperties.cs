@@ -11,6 +11,38 @@ namespace Wpf.Ui.Controls;
 /// </content>
 public partial class NavigationView
 {
+    /// <summary>
+    /// Inheritable presentation context consumed by <see cref="NavigationViewItem"/> containers.
+    /// </summary>
+    /// <remarks>
+    /// This is intentionally separate from the public <see cref="PaneDisplayModeProperty"/>. Making
+    /// the public property inheritable would cause a nested NavigationView with no local assignment
+    /// to adopt its ancestor's mode. Every NavigationView writes a local context value instead, so
+    /// nested controls form explicit scope boundaries while item descendants inherit normally,
+    /// including through Popup inheritance contexts.
+    /// </remarks>
+    internal static readonly DependencyProperty PaneDisplayModeContextProperty =
+        DependencyProperty.RegisterAttached(
+            "PaneDisplayModeContext",
+            typeof(NavigationViewPaneDisplayMode),
+            typeof(NavigationView),
+            new FrameworkPropertyMetadata(
+                NavigationViewPaneDisplayMode.Left,
+                FrameworkPropertyMetadataOptions.Inherits
+            )
+        );
+
+    /// <summary>
+    /// Inheritable pane-open context paired with <see cref="PaneDisplayModeContextProperty"/>.
+    /// </summary>
+    internal static readonly DependencyProperty IsPaneOpenContextProperty =
+        DependencyProperty.RegisterAttached(
+            "IsPaneOpenContext",
+            typeof(bool),
+            typeof(NavigationView),
+            new FrameworkPropertyMetadata(true, FrameworkPropertyMetadataOptions.Inherits)
+        );
+
     // ============================================================
     // HeaderContent Attached Property
     // ============================================================

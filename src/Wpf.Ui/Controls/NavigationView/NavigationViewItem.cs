@@ -6,31 +6,49 @@
 /* Based on Windows UI Library https://docs.microsoft.com/en-us/uwp/api/windows.ui.xaml.controls.navigationviewitem?view=winrt-22621 */
 
 using System.Collections;
-using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.Text;
 using System.Windows.Automation;
 using System.Windows.Automation.Peers;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
+using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Threading;
+using WpfToggleButton = System.Windows.Controls.Primitives.ToggleButton;
 
 // ReSharper disable once CheckNamespace
 namespace Wpf.Ui.Controls;
 
 /// <summary>
-/// Represents the container for an item in a NavigationView control.
-/// When needed, it can be used as a normal button with a <see cref="ButtonBase.Click"/> action.
+/// Represents a hierarchical item container in a <see cref="NavigationView"/>.
 /// </summary>
 /// <remarks>
-/// <c>PART_SubMenuPopup</c> is used by popup presentations and is intentionally absent from the
-/// expanded Left presentation, which owns one inline child list instead. Missing optional parts
-/// degrade to property-driven behavior without preventing navigation or expansion.
+/// <para>
+/// The item is an <see cref="HeaderedItemsControl"/>, not a button. Its
+/// <see cref="HeaderedItemsControl.Header"/> is the
+/// navigation row, while <see cref="ItemsControl.Items"/> is the authoritative child collection.
+/// This distinction is important: focus, mouse capture and pressed state belong only to
+/// <c>PART_HeaderButton</c>; inline descendants and Popup content must never become part of a
+/// button's input or focus-scrolling bounds.
+/// </para>
+/// <para>
+/// Built-in templates contain exactly one <see cref="ItemsPresenter"/>. Left/open presentation
+/// places it inline; compact and horizontal presentations place it in <c>PART_SubMenuPopup</c>.
+/// Switching presentation may replace the template, but it never mirrors the child collection into
+/// a second <see cref="ItemsControl"/>. Container generation and logical parenting therefore follow
+/// the standard WPF items pipeline.
+/// </para>
 /// </remarks>
 [TemplatePart(Name = "PART_SubMenuPopup", Type = typeof(Popup))]
-public class NavigationViewItem : ButtonBase, INavigationViewItem
+[TemplatePart(Name = HeaderButtonPartName, Type = typeof(ButtonBase))]
+[TemplatePart(Name = ExpandButtonPartName, Type = typeof(ButtonBase))]
+[StyleTypedProperty(Property = nameof(ItemContainerStyle), StyleTargetType = typeof(NavigationViewItem))]
+public class NavigationViewItem : HeaderedItemsControl, INavigationViewItem
 {
+    private const string HeaderButtonPartName = "PART_HeaderButton";
+    private const string ExpandButtonPartName = "PART_ExpandButton";
+
     #region DP: Indentation
 
     private static readonly DependencyPropertyKey IndentationPropertyKey =
@@ -80,69 +98,6 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
 
     #endregion
 
-    #region DP: MenuItems
-
-    private static readonly DependencyPropertyKey MenuItemsPropertyKey =
-        DependencyProperty.RegisterReadOnly(
-            nameof(MenuItems),
-            typeof(ObservableCollection<object>),
-            typeof(NavigationViewItem),
-            new PropertyMetadata(null)
-        );
-
-    /// <summary>Identifies the <see cref="MenuItems"/> dependency property.</summary>
-    public static readonly DependencyProperty MenuItemsProperty = MenuItemsPropertyKey.DependencyProperty;
-
-    /// <inheritdoc/>
-    public IList MenuItems => (ObservableCollection<object>)GetValue(MenuItemsProperty);
-
-    #endregion
-
-    #region DP: MenuItemsSource
-
-    /// <summary>Identifies the <see cref="MenuItemsSource"/> dependency property.</summary>
-    public static readonly DependencyProperty MenuItemsSourceProperty =
-        DependencyProperty.Register(
-            nameof(MenuItemsSource),
-            typeof(object),
-            typeof(NavigationViewItem),
-            new PropertyMetadata(null, OnMenuItemsSourceChanged)
-        );
-
-    /// <inheritdoc/>
-    [Bindable(true)]
-    public object? MenuItemsSource
-    {
-        get => GetValue(MenuItemsSourceProperty);
-        set => SetValue(MenuItemsSourceProperty, value);
-    }
-
-    #endregion
-
-    #region DP: HasMenuItems
-
-    /// <summary>Identifies the <see cref="HasMenuItems"/> dependency property.</summary>
-    private static readonly DependencyPropertyKey HasMenuItemsPropertyKey =
-        DependencyProperty.RegisterReadOnly(
-            nameof(HasMenuItems),
-            typeof(bool),
-            typeof(NavigationViewItem),
-            new PropertyMetadata(false, OnHasMenuItemsChanged)
-        );
-
-    /// <summary>Identifies the <see cref="HasMenuItems"/> dependency property.</summary>
-    public static readonly DependencyProperty HasMenuItemsProperty =
-        HasMenuItemsPropertyKey.DependencyProperty;
-
-    /// <summary>
-    /// Gets a value indicating whether MenuItems.Count > 0
-    /// </summary>
-    [Browsable(false)]
-    [ReadOnly(true)]
-    public bool HasMenuItems => (bool)GetValue(HasMenuItemsProperty);
-
-    #endregion
-
     #region DP: IsActive
 
     /// <summary>Identifies the <see cref="IsActive"/> dependency property.</summary>
@@ -170,17 +125,35 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
 
     #region DP: IsPaneOpen
 
+    /// <summary>
+    /// Identifies the <see cref="IsPaneOpen"/> dependency property.
+    /// </summary>
     private static readonly DependencyPropertyKey IsPaneOpenPropertyKey =
         DependencyProperty.RegisterReadOnly(
             nameof(IsPaneOpen),
             typeof(bool),
             typeof(NavigationViewItem),
-            new PropertyMetadata(false)
+            new FrameworkPropertyMetadata(true)
         );
 
-    /// <summary>Identifies the <see cref="IsPaneOpen"/> dependency property.</summary>
+    /// <summary>Identifies the read-only <see cref="IsPaneOpen"/> dependency property.</summary>
+    /// <remarks>
+    /// The public property is read-only. An internal inheritable context receives the owning view's
+    /// value and copies it through the private key, so callers cannot override presentation state on
+    /// individual items and every item avoids per-instance event subscriptions.
+    /// </remarks>
     public static readonly DependencyProperty IsPaneOpenProperty =
         IsPaneOpenPropertyKey.DependencyProperty;
+
+    private static readonly DependencyProperty IsPaneOpenContextProperty =
+        NavigationView.IsPaneOpenContextProperty.AddOwner(
+            typeof(NavigationViewItem),
+            new FrameworkPropertyMetadata(
+                true,
+                FrameworkPropertyMetadataOptions.Inherits,
+                OnIsPaneOpenContextChanged
+            )
+        );
 
     /// <summary>
     /// Gets a value indicating whether the owning <see cref="NavigationView"/> pane is open.
@@ -193,6 +166,9 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
 
     #region DP: PaneDisplayMode
 
+    /// <summary>
+    /// Identifies the <see cref="PaneDisplayMode"/> dependency property.
+    /// </summary>
     private static readonly DependencyPropertyKey PaneDisplayModePropertyKey =
         DependencyProperty.RegisterReadOnly(
             nameof(PaneDisplayMode),
@@ -201,9 +177,20 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
             new FrameworkPropertyMetadata(NavigationViewPaneDisplayMode.Left)
         );
 
-    /// <summary>Identifies the <see cref="PaneDisplayMode"/> dependency property.</summary>
+    /// <summary>Identifies the read-only <see cref="PaneDisplayMode"/> dependency property.</summary>
+    /// <remarks>See <see cref="IsPaneOpenProperty"/> for the inherited context contract.</remarks>
     public static readonly DependencyProperty PaneDisplayModeProperty =
         PaneDisplayModePropertyKey.DependencyProperty;
+
+    private static readonly DependencyProperty PaneDisplayModeContextProperty =
+        NavigationView.PaneDisplayModeContextProperty.AddOwner(
+            typeof(NavigationViewItem),
+            new FrameworkPropertyMetadata(
+                NavigationViewPaneDisplayMode.Left,
+                FrameworkPropertyMetadataOptions.Inherits,
+                OnPaneDisplayModeContextChanged
+            )
+        );
 
     /// <summary>
     /// Gets the pane display mode synchronized from the owning <see cref="NavigationView"/>.
@@ -409,38 +396,21 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
     #endregion
 
     /// <inheritdoc />
-    public INavigationViewItem? NavigationViewItemParent
-    {
-        get;
-        set
-        {
-            field = value;
-            SetValue(IsSubItemPropertyKey, value is not null);
-
-            if (value is NavigationViewItem parentItem)
-            {
-                SynchronizePaneState(parentItem.PaneDisplayMode, parentItem.IsPaneOpen);
-            }
-
-            UpdateIndentation();
-        }
-    }
+    public INavigationViewItem? NavigationViewItemParent => _parentItem;
 
     /// <inheritdoc />
-    public bool IsMenuElement { get; set; }
+    bool INavigationViewItem.IsMenuElement { get; set; }
 
     /// <inheritdoc />
     public string Id { get; }
 
     internal string SearchableContent { get; private set; } = string.Empty;
 
-    private readonly List<INavigationViewItem> _attachedMenuItems = [];
-
-    private NavigationView? _attachedNavigationView;
-
-    private TypedEventHandler<NavigationView, RoutedEventArgs>? _paneOpenedHandler;
-    private TypedEventHandler<NavigationView, RoutedEventArgs>? _paneClosedHandler;
-    private TypedEventHandler<NavigationView, RoutedEventArgs>? _paneModeChangedHandler;
+    private readonly HashSet<NavigationViewItem> _directNavigationChildren = [];
+    private NavigationViewItem?                  _parentItem;
+    private ButtonBase?                          _headerButton;
+    private ButtonBase?                          _expandButton;
+    private bool                                 _hadItems;
 
     // Opening a descendant popup first materializes each required ancestor. Those intermediate
     // IsSubmenuOpen changes must not run branch arbitration independently: an ancestor-only path
@@ -451,9 +421,7 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
     {
         get
         {
-            return _attachedNavigationView
-                ?? NavigationView.GetNavigationParent(this)
-                ?? (NavigationViewItemParent as NavigationViewItem)?.NavigationViewHost;
+            return NavigationView.GetNavigationParent(this) ?? _parentItem?.NavigationViewHost;
         }
     }
 
@@ -475,75 +443,87 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
             new FrameworkPropertyMetadata(typeof(NavigationViewItem))
         );
 
-        // ═══════════════════════════════════════════════════════════════════
-        // WARNING: Do NOT remove this coercion. The LeftFluentNavigationViewItemTemplate
-        // (NavigationLeftFluent.xaml) contains an IsActive trigger whose EnterActions/
-        // ExitActions storyboard animates (Border.BorderBrush).(SolidColorBrush.Opacity).
-        // WPF's Storyboard.VerifyPathIsAnimatable requires EVERY intermediate object in a
-        // compound property path to be a DependencyObject. If BorderBrush is ever null —
-        // because a style setter was commented out, removed, or overridden — the storyboard
-        // will throw InvalidOperationException with the message "'BorderBrush' property
-        // does not point to a DependencyObject in path '(0).(1)'".
-        //
-        // This coercion is the LAST LINE OF DEFENSE. It guarantees BorderBrush is never
-        // null, no matter what happens to styles, templates, or bindings upstream.
-        // ═══════════════════════════════════════════════════════════════════
-        Border.BorderBrushProperty.OverrideMetadata(
+        // The container owns descendants and can be much taller than its row. Only the template's
+        // header button participates in focus navigation; focusing the container itself would make
+        // FrameworkElement request that the complete expanded branch be scrolled into view.
+        FocusableProperty.OverrideMetadata(
             typeof(NavigationViewItem),
-            new FrameworkPropertyMetadata(
-                Brushes.Transparent,
-                null,
-                (d, baseValue) => baseValue ?? Brushes.Transparent
-            )
+            new FrameworkPropertyMetadata(false)
+        );
+        KeyboardNavigation.IsTabStopProperty.OverrideMetadata(
+            typeof(NavigationViewItem),
+            new FrameworkPropertyMetadata(false)
         );
     }
 
+    /// <summary>Gets the realized header input surface for automation and focus coordination.</summary>
+    internal ButtonBase? HeaderButton => _headerButton;
+
+    /// <summary>Gets the realized expansion input surface for automation-tree filtering.</summary>
+    internal ButtonBase? ExpandButton => _expandButton;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="NavigationViewItem"/> class with an empty header
+    /// and child collection.
+    /// </summary>
     public NavigationViewItem()
     {
         Id = Guid.NewGuid().ToString("n");
 
-        Unloaded += static (sender, _) =>
-        {
-            var item = (NavigationViewItem)sender;
-            item.CloseSubmenuBranch();
-            item.DetachNavigationViewEvents();
-        };
-
-        Loaded += (_, _) => InitializeNavigationViewEvents();
-
-        // Initialize the `Items` collection
-        var menuItems = new ObservableCollection<object>();
-        menuItems.CollectionChanged += OnMenuItems_CollectionChanged;
-        SetValue(MenuItemsPropertyKey, menuItems);
+        Unloaded += static (sender, _) => ((NavigationViewItem)sender).CloseSubmenuBranch();
     }
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="NavigationViewItem"/> class for the specified page type.
+    /// </summary>
+    /// <param name="targetPageType">The page type activated by the header action.</param>
     public NavigationViewItem(Type targetPageType)
         : this()
     {
         SetValue(TargetPageTypeProperty, targetPageType);
     }
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="NavigationViewItem"/> class with a text header and target page.
+    /// </summary>
+    /// <param name="name">The text displayed in the item header.</param>
+    /// <param name="targetPageType">The page type activated by the header action.</param>
     public NavigationViewItem(string name, Type targetPageType)
         : this(targetPageType)
     {
-        SetValue(ContentProperty, name);
+        SetValue(HeaderProperty, name);
     }
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="NavigationViewItem"/> class with a text header,
+    /// symbol, and target page.
+    /// </summary>
+    /// <param name="name">The text displayed in the item header.</param>
+    /// <param name="icon">The Fluent symbol displayed beside the header.</param>
+    /// <param name="targetPageType">The page type activated by the header action.</param>
     public NavigationViewItem(string name, SymbolRegular icon, Type targetPageType)
         : this(targetPageType)
     {
-        SetValue(ContentProperty, name);
+        SetValue(HeaderProperty, name);
         SetValue(IconProperty, new SymbolIcon
         {
             Symbol = icon
         });
     }
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="NavigationViewItem"/> class whose children are
+    /// supplied by an enumerable source.
+    /// </summary>
+    /// <param name="name">The text displayed in the item header.</param>
+    /// <param name="icon">The Fluent symbol displayed beside the header.</param>
+    /// <param name="targetPageType">The page type activated by the header action.</param>
+    /// <param name="itemsSource">The source used by the standard WPF items pipeline to generate children.</param>
     // ReSharper disable once UnusedMember.Global
-    public NavigationViewItem(string name, SymbolRegular icon, Type targetPageType, IList menuItems)
+    public NavigationViewItem(string name, SymbolRegular icon, Type targetPageType, IEnumerable itemsSource)
         : this(name, icon, targetPageType)
     {
-        SetValue(MenuItemsSourceProperty, menuItems);
+        SetValue(ItemsSourceProperty, itemsSource);
     }
 
     /// <summary>
@@ -567,22 +547,48 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
     {
         base.OnInitialized(e);
 
-        if (string.IsNullOrWhiteSpace(TargetPageTag) && Content is not null)
+        if (string.IsNullOrWhiteSpace(TargetPageTag) && Header is not null)
         {
             SetCurrentValue(
                 TargetPageTagProperty,
-                Content as string ?? Content.ToString()?.ToLower().Trim() ?? string.Empty
+                Header as string ?? Header.ToString()?.ToLower().Trim() ?? string.Empty
             );
         }
     }
 
     /// <inheritdoc />
-    protected override void OnContentChanged(object oldContent, object newContent)
+    protected override void OnHeaderChanged(object oldHeader, object newHeader)
     {
-        base.OnContentChanged(oldContent, newContent);
+        base.OnHeaderChanged(oldHeader, newHeader);
 
-        SearchableContent = CreateSearchableContent(newContent);
+        SearchableContent = CreateSearchableContent(newHeader);
         NavigationView.GetNavigationParent(this)?.NotifyNavigationViewItemContentChanged(this);
+    }
+
+    /// <inheritdoc />
+    /// <remarks>
+    /// Template buttons are intentionally subscribed here instead of handling mouse input on the
+    /// container. Popup model-parent routing can pass input through an owning item, while a Click
+    /// raised by the concrete header button unambiguously identifies the intended input surface.
+    /// Missing parts leave a non-interactive custom template but do not compromise item generation.
+    /// </remarks>
+    public override void OnApplyTemplate()
+    {
+        DetachHeaderParts();
+        base.OnApplyTemplate();
+
+        _headerButton = GetTemplateChild(HeaderButtonPartName) as ButtonBase;
+        _expandButton = GetTemplateChild(ExpandButtonPartName) as ButtonBase;
+
+        if (_headerButton is not null)
+        {
+            _headerButton.Click += OnHeaderButtonClick;
+        }
+
+        if (_expandButton is not null)
+        {
+            _expandButton.Click += OnExpandButtonClick;
+        }
     }
 
     /// <inheritdoc />
@@ -594,59 +600,99 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
     protected override void OnTemplateChanged(ControlTemplate oldTemplate, ControlTemplate newTemplate)
     {
         CloseSubmenuBranch();
+        DetachHeaderParts();
         base.OnTemplateChanged(oldTemplate, newTemplate);
     }
 
     /// <inheritdoc />
-    protected override void OnClick()
+    protected override bool IsItemItsOwnContainerOverride(object item)
     {
-        _ = InvokePrimaryAction();
+        return item is NavigationViewItem;
+    }
 
-        base.OnClick();
+    /// <inheritdoc />
+    protected override DependencyObject GetContainerForItemOverride()
+    {
+        return new NavigationViewItem();
     }
 
     /// <inheritdoc />
     /// <remarks>
-    /// A WPF <see cref="Popup"/> connects the routed-event path of its separate HWND back to the
-    /// tree that owns the popup. Consequently, mouse input raised by a submenu popup can pass
-    /// through the owning <see cref="NavigationViewItem"/> even though the pointer is not over this
-    /// button's visual tree. <see cref="ButtonBase"/> does not distinguish that bridged route from
-    /// input on the button itself and would capture the mouse as if this item had been pressed.
-    /// Accepting only sources from the item's visual tree preserves normal button capture while
-    /// preventing an outside click on a nested popup from pressing its placement item.
+    /// WPF copies <see cref="ItemsControl.ItemTemplate"/>,
+    /// <see cref="ItemsControl.ItemContainerStyle"/> and hierarchical
+    /// bindings in the base implementation. Parent attachment is kept separate so both generated
+    /// containers and directly supplied <see cref="NavigationViewItem"/> instances share the same
+    /// depth, keyboard and Popup ownership model.
     /// </remarks>
-    protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
+    protected override void PrepareContainerForItemOverride(DependencyObject element, object item)
     {
-        if (NavigationViewHost?.IsPointerSubmenuDismissalActive == true)
-        {
-            e.Handled = true;
-            return;
-        }
+        base.PrepareContainerForItemOverride(element, item);
 
-        if (IsInputFromPrimaryVisualTree(e.OriginalSource))
+        if (element is NavigationViewItem child)
         {
-            base.OnMouseLeftButtonDown(e);
+            child.AttachToParent(this);
+
+            if (!ReferenceEquals(element, item))
+            {
+                NavigationViewHost?.RegisterGeneratedNavigationItem(child);
+            }
         }
     }
 
     /// <inheritdoc />
-    /// <remarks>
-    /// This is the release-side counterpart of <see cref="OnMouseLeftButtonDown"/>. Filtering both
-    /// halves is important because controls inside a Popup can temporarily take element capture;
-    /// their later release must not complete a click on the Popup's placement item through WPF's
-    /// model-parent event bridge.
-    /// </remarks>
-    protected override void OnMouseLeftButtonUp(MouseButtonEventArgs e)
+    protected override void ClearContainerForItemOverride(DependencyObject element, object item)
     {
-        if (NavigationViewHost?.IsPointerSubmenuDismissalActive == true)
+        if (element is NavigationViewItem child && !ReferenceEquals(element, item))
         {
-            e.Handled = true;
-            return;
+            NavigationViewHost?.UnregisterGeneratedNavigationItem(child);
+
+            if (ReferenceEquals(child._parentItem, this))
+            {
+                child.DetachFromParent(this);
+            }
         }
 
-        if (IsInputFromPrimaryVisualTree(e.OriginalSource))
+        base.ClearContainerForItemOverride(element, item);
+    }
+
+    /// <inheritdoc />
+    protected override void OnItemsChanged(NotifyCollectionChangedEventArgs e)
+    {
+        base.OnItemsChanged(e);
+
+        bool hasItems = HasItems;
+        if (_hadItems != hasItems)
         {
-            base.OnMouseLeftButtonUp(e);
+            OnHasItemsChanged(_hadItems, hasItems);
+            _hadItems = hasItems;
+        }
+
+        // Reset notifications do not include OldItems. Retain the previous direct-control set so a
+        // Clear or ItemsSource replacement can release semantic parents just as reliably as an
+        // individual Remove. Generated data containers use ClearContainerForItemOverride instead.
+        var currentDirectChildren = new HashSet<NavigationViewItem>(
+            Items.OfType<NavigationViewItem>()
+        );
+        foreach (NavigationViewItem child in _directNavigationChildren)
+        {
+            if (!currentDirectChildren.Contains(child))
+            {
+                child.DetachFromParent(this);
+            }
+        }
+
+        foreach (NavigationViewItem child in currentDirectChildren)
+        {
+            child.AttachToParent(this);
+        }
+
+        _directNavigationChildren.Clear();
+        _directNavigationChildren.UnionWith(currentDirectChildren);
+
+        if (!HasItems)
+        {
+            SetCurrentValue(IsExpandedProperty, false);
+            SetCurrentValue(IsSubmenuOpenProperty, false);
         }
     }
 
@@ -667,84 +713,65 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
         return new NavigationViewItemAutomationPeer(this);
     }
 
-    private void OnMenuItems_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    private void DetachHeaderParts()
     {
-        SetValue(HasMenuItemsPropertyKey, MenuItems.Count > 0);
-
-        var currentItems = MenuItems.OfType<INavigationViewItem>().ToList();
-
-        foreach (var oldItem in _attachedMenuItems)
+        if (_headerButton is not null)
         {
-            if (
-                !currentItems.Any(item => ReferenceEquals(item, oldItem))
-             && ReferenceEquals(oldItem.NavigationViewItemParent, this)
-            )
-            {
-                if (oldItem is NavigationViewItem oldNavigationItem)
-                {
-                    oldNavigationItem.CloseSubmenuBranch();
-                }
-
-                oldItem.NavigationViewItemParent = null;
-            }
+            _headerButton.Click -= OnHeaderButtonClick;
+            _headerButton = null;
         }
 
-        _attachedMenuItems.Clear();
-
-        foreach (var item in currentItems)
+        if (_expandButton is not null)
         {
-            item.NavigationViewItemParent = this;
-            _attachedMenuItems.Add(item);
-        }
-
-        if (!HasMenuItems)
-        {
-            SetCurrentValue(IsExpandedProperty, false);
-            SetCurrentValue(IsSubmenuOpenProperty, false);
+            _expandButton.Click -= OnExpandButtonClick;
+            _expandButton = null;
         }
     }
 
+    private void OnHeaderButtonClick(object sender, RoutedEventArgs e)
+    {
+        _ = InvokePrimaryAction();
+        e.Handled = true;
+    }
+
+    private void OnExpandButtonClick(object sender, RoutedEventArgs e)
+    {
+        // ToggleButton updates IsChecked before raising Click. Built-in templates bind that value to
+        // the active open-state property, so consume the resulting state instead of toggling twice.
+        // Qualify the WPF primitive explicitly. Wpf.Ui.Controls also contains a ToggleButton type;
+        // resolving that sibling type here would reject the template part after WPF has already
+        // toggled its binding and would immediately reverse every user click.
+        bool isOpen = sender is WpfToggleButton toggleButton
+            ? toggleButton.IsChecked == true
+            : !IsChildMenuOpen;
+        SetChildMenuOpen(isOpen, focusFirstItem: false);
+        e.Handled = true;
+    }
+
     /// <summary>
-    /// Executes every action represented by the item surface. Navigation and child presentation are
-    /// intentionally independent: an item that has both a target and children navigates and toggles
-    /// its children from the same click, matching the fact that the template exposes one button.
+    /// Invokes the semantic header action.
     /// </summary>
+    /// <remarks>
+    /// Navigable parents navigate from the header and expand only from <c>PART_ExpandButton</c>.
+    /// Grouping parents, which have no target page, toggle from the header as a convenient single
+    /// action. Keeping these actions distinct avoids the historical ambiguity where one click both
+    /// changed page and rearranged the hierarchy.
+    /// </remarks>
     /// <returns><see langword="true"/> when an action was performed.</returns>
     internal bool InvokePrimaryAction()
     {
-        // Snapshot the requested toggle before invoking navigation. Navigation can synchronously
-        // update selection, content, or bindings; the physical click should still toggle the child
-        // presentation from the state the user actually pressed.
-        bool hasMenuItems = HasMenuItems;
-        bool shouldOpenChildMenu = hasMenuItems && !IsChildMenuOpen;
-        bool actionPerformed = false;
-
         if (TargetPageType is not null && NavigationViewHost is { } navigationView)
         {
-            actionPerformed = navigationView.OnNavigationViewItemClick(this);
+            return navigationView.OnNavigationViewItemClick(this);
         }
 
-        if (hasMenuItems)
+        if (HasItems)
         {
-            SetChildMenuOpen(shouldOpenChildMenu, focusFirstItem: false);
-            actionPerformed = true;
+            SetChildMenuOpen(!IsChildMenuOpen, focusFirstItem: false);
+            return true;
         }
 
-        return actionPerformed;
-    }
-
-    /// <summary>
-    /// Determines whether a routed input source belongs to the item's real button surface rather
-    /// than to a detached Popup visual tree whose event route is bridged through this control.
-    /// </summary>
-    private bool IsInputFromPrimaryVisualTree(object? originalSource)
-    {
-        return
-            ResolveVisualInputSource(originalSource) is { } visual &&
-            (
-                ReferenceEquals(this, visual) ||
-                IsAncestorOf(visual)
-            );
+        return false;
     }
 
     private static Visual? ResolveVisualInputSource(object? originalSource)
@@ -769,7 +796,7 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
     /// <summary>Sets the effective child-menu state for the active presentation.</summary>
     internal void SetChildMenuOpen(bool isOpen, bool focusFirstItem)
     {
-        if (isOpen && !HasMenuItems)
+        if (isOpen && !HasItems)
         {
             return;
         }
@@ -794,7 +821,7 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
     {
         SetCurrentValue(IsSubmenuOpenProperty, false);
 
-        foreach (NavigationViewItem child in MenuItems.OfType<NavigationViewItem>())
+        foreach (NavigationViewItem child in GetNavigationChildren())
         {
             child.CloseSubmenuBranch();
         }
@@ -806,13 +833,13 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
         {
             NavigationViewItem root = GetRootNavigationItem();
             NavigationViewHost?.CloseAllNavigationViewItemSubmenus();
-            _ = root.Focus();
+            _ = root.FocusHeader();
             return true;
         }
 
         if (UsesInlineExpansion)
         {
-            if (key == Key.Right && HasMenuItems)
+            if (key == Key.Right && HasItems)
             {
                 SetChildMenuOpen(true, focusFirstItem: false);
                 return true;
@@ -826,7 +853,7 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
                 }
                 else if (NavigationViewItemParent is NavigationViewItem parentItem)
                 {
-                    _ = parentItem.Focus();
+                    _ = parentItem.FocusHeader();
                 }
 
                 return true;
@@ -837,7 +864,7 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
 
         if (IsSubItem)
         {
-            if (key == Key.Right && HasMenuItems)
+            if (key == Key.Right && HasItems)
             {
                 SetChildMenuOpen(true, focusFirstItem: true);
                 return true;
@@ -846,7 +873,7 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
             if (key == Key.Left && NavigationViewItemParent is NavigationViewItem parentItem)
             {
                 parentItem.SetChildMenuOpen(false, focusFirstItem: false);
-                _ = parentItem.Focus();
+                _ = parentItem.FocusHeader();
                 return true;
             }
 
@@ -866,7 +893,7 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
             _ => Key.Left,
         };
 
-        if (key == openKey && HasMenuItems)
+        if (key == openKey && HasItems)
         {
             SetChildMenuOpen(true, focusFirstItem: true);
             return true;
@@ -918,9 +945,12 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
                     return;
                 }
 
-                foreach (UIElement child in MenuItems.OfType<UIElement>())
+                for (int index = 0; index < Items.Count; index++)
                 {
-                    if (child is { Focusable: true, IsEnabled: true } && child.Focus())
+                    if (
+                        ItemContainerGenerator.ContainerFromIndex(index) is NavigationViewItem child &&
+                        child.FocusHeader()
+                    )
                     {
                         return;
                     }
@@ -942,7 +972,7 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
 
         SetValue(IndentationPropertyKey, new Thickness(depth * IndentationSize, 0, 0, 0));
 
-        foreach (NavigationViewItem item in MenuItems.OfType<NavigationViewItem>())
+        foreach (NavigationViewItem item in GetNavigationChildren())
         {
             item.UpdateIndentation();
         }
@@ -1051,8 +1081,11 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
         bool oldValue = (bool)e.OldValue;
         bool newValue = (bool)e.NewValue;
 
-        if (newValue && !item.HasMenuItems)
+        if (newValue && (!item.HasItems || item.UsesInlineExpansion))
         {
+            // Popup state is transient presentation state, not a second expansion flag. A leaf or
+            // the inline Left presentation has no Popup to own this value, so reject externally
+            // supplied values that would otherwise leave automation and template state divergent.
             item.SetCurrentValue(IsSubmenuOpenProperty, false);
             return;
         }
@@ -1067,7 +1100,7 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
         }
         else
         {
-            foreach (NavigationViewItem child in item.MenuItems.OfType<NavigationViewItem>())
+            foreach (NavigationViewItem child in item.GetNavigationChildren())
             {
                 child.CloseSubmenuBranch();
             }
@@ -1075,7 +1108,7 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
             item.NavigationViewHost?.OnNavigationViewItemSubmenuClosed();
         }
 
-        if (!item.UsesInlineExpansion && item.HasMenuItems)
+        if (!item.UsesInlineExpansion && item.HasItems)
         {
             NavigationViewItemAutomationPeer.RaiseExpandCollapseAutomationEvent(
                 item,
@@ -1105,7 +1138,7 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
         while (ancestors.Count > 0)
         {
             NavigationViewItem ancestor = ancestors.Pop();
-            if (!ancestor.UsesInlineExpansion && ancestor.HasMenuItems)
+            if (!ancestor.UsesInlineExpansion && ancestor.HasItems)
             {
                 ancestor.OpenAsPopupAncestor();
             }
@@ -1159,26 +1192,10 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
             );
     }
 
-    /// <summary>Finds the popup part in either the direct template or Left's child DataTemplate.</summary>
+    /// <summary>Finds the popup owned directly by the active item template.</summary>
     private Popup? FindSubmenuPopup()
     {
-        if (Template?.FindName("PART_SubMenuPopup", this) is Popup directPopup)
-        {
-            return directPopup;
-        }
-
-        if (
-            Template?.FindName("ChildMenuPresenter", this) is ContentPresenter childMenuPresenter &&
-            childMenuPresenter.ContentTemplate?.FindName(
-                "PART_SubMenuPopup",
-                childMenuPresenter
-            ) is Popup leftPopup
-        )
-        {
-            return leftPopup;
-        }
-
-        return null;
+        return Template?.FindName("PART_SubMenuPopup", this) as Popup;
     }
 
     /// <summary>Reports inline state changes only while inline expansion is the active presentation.</summary>
@@ -1188,7 +1205,7 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
     {
         var item = (NavigationViewItem)d;
 
-        if (item.UsesInlineExpansion && item.HasMenuItems)
+        if (item.UsesInlineExpansion && item.HasItems)
         {
             NavigationViewItemAutomationPeer.RaiseExpandCollapseAutomationEvent(
                 item,
@@ -1203,23 +1220,17 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
     /// collection cleanup resets an open-state property, preventing a misleading Expanded-to-
     /// Collapsed notification when the item actually became a leaf.
     /// </summary>
-    private static void OnHasMenuItemsChanged(
-        DependencyObject d,
-        DependencyPropertyChangedEventArgs e)
+    private void OnHasItemsChanged(bool oldValue, bool newValue)
     {
-        var item = (NavigationViewItem)d;
-        bool oldValue = (bool)e.OldValue;
-        bool newValue = (bool)e.NewValue;
-
         ExpandCollapseState oldState = oldValue
-            ? item.IsChildMenuOpen ? ExpandCollapseState.Expanded : ExpandCollapseState.Collapsed
+            ? IsChildMenuOpen ? ExpandCollapseState.Expanded : ExpandCollapseState.Collapsed
             : ExpandCollapseState.LeafNode;
         ExpandCollapseState newState = newValue
-            ? item.IsChildMenuOpen ? ExpandCollapseState.Expanded : ExpandCollapseState.Collapsed
+            ? IsChildMenuOpen ? ExpandCollapseState.Expanded : ExpandCollapseState.Collapsed
             : ExpandCollapseState.LeafNode;
 
         NavigationViewItemAutomationPeer.RaiseExpandCollapseAutomationEvent(
-            item,
+            this,
             oldState,
             newState
         );
@@ -1240,132 +1251,159 @@ public class NavigationViewItem : ButtonBase, INavigationViewItem
           ?.NotifyNavigationViewItemLookupChanged(navigationViewItem);
     }
 
-    private static void OnMenuItemsSourceChanged(DependencyObject? d, DependencyPropertyChangedEventArgs e)
+    /// <summary>
+    /// Projects the inherited pane-open context into the public read-only presentation property.
+    /// </summary>
+    /// <remarks>
+    /// The context property is deliberately distinct from <see cref="IsPaneOpenProperty"/>. Making
+    /// the public property inheritable would let an application override presentation state on an
+    /// individual item, while making it writable would create contradictory states inside one
+    /// navigation view. A private key keeps the public contract observational and still allows the
+    /// template to use an ordinary dependency-property trigger.
+    /// </remarks>
+    private static void OnIsPaneOpenContextChanged(
+        DependencyObject d,
+        DependencyPropertyChangedEventArgs e)
     {
-        if (d is not NavigationViewItem navigationViewItem)
-        {
-            return;
-        }
+        var item = (NavigationViewItem)d;
+        item.SetValue(IsPaneOpenPropertyKey, (bool)e.NewValue);
 
-        if (e.OldValue is INotifyCollectionChanged oldCollection)
-        {
-            oldCollection.CollectionChanged -= navigationViewItem.OnMenuItemsSource_CollectionChanged;
-        }
-
-        navigationViewItem.MenuItems.Clear();
-
-        if (e.NewValue is IEnumerable newItemsSource and not string)
-        {
-            foreach (var item in newItemsSource)
-            {
-                _ = navigationViewItem.MenuItems.Add(item);
-            }
-        }
-        else if (e.NewValue != null)
-        {
-            _ = navigationViewItem.MenuItems.Add(e.NewValue);
-        }
-
-        if (e.NewValue is INotifyCollectionChanged newCollection)
-        {
-            newCollection.CollectionChanged += navigationViewItem.OnMenuItemsSource_CollectionChanged;
-        }
-    }
-
-    private void OnMenuItemsSource_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
-    {
-        NavigationViewItemsSourceSynchronizer.SyncCollectionFromSource(MenuItems, sender, e);
-    }
-
-    private void InitializeNavigationViewEvents()
-    {
-        if (NavigationView.GetNavigationParent(this) is not { } navigationView)
-        {
-            return;
-        }
-
-        // Unsubscribe from previous NavigationView if already attached (e.g., if Loaded fires again)
-        DetachNavigationViewEvents();
-
-        _attachedNavigationView = navigationView;
-        SynchronizePaneState(navigationView.PaneDisplayMode, navigationView.IsPaneOpen);
-
-        // Pane notifications are bubbling routed events so application code can observe them from
-        // an ancestor. A NavigationView may itself be page content inside another NavigationView;
-        // without checking OriginalSource, the inner view's event reaches the outer view's handlers
-        // and overwrites every outer item's presentation snapshot. Keep routed-event bubbling for
-        // consumers, but accept only notifications raised by the NavigationView that owns this item.
-        _paneOpenedHandler      = (_, args) => SynchronizePaneStateFromOwnerEvent(navigationView, args, true);
-        _paneClosedHandler      = (_, args) => SynchronizePaneStateFromOwnerEvent(navigationView, args, false);
-        _paneModeChangedHandler = (_, args) => SynchronizePaneStateFromOwnerEvent(navigationView, args, navigationView.IsPaneOpen);
-
-        navigationView.PaneOpened             += _paneOpenedHandler;
-        navigationView.PaneClosed             += _paneClosedHandler;
-        navigationView.PaneDisplayModeChanged += _paneModeChangedHandler;
-    }
-
-    private void DetachNavigationViewEvents()
-    {
-        if (_attachedNavigationView is null)
-        {
-            return;
-        }
-
-        if (_paneOpenedHandler is not null)
-        {
-            _attachedNavigationView.PaneOpened -= _paneOpenedHandler;
-            _paneOpenedHandler                 =  null;
-        }
-
-        if (_paneClosedHandler is not null)
-        {
-            _attachedNavigationView.PaneClosed -= _paneClosedHandler;
-            _paneClosedHandler                 =  null;
-        }
-
-        if (_paneModeChangedHandler is not null)
-        {
-            _attachedNavigationView.PaneDisplayModeChanged -= _paneModeChangedHandler;
-            _paneModeChangedHandler                        =  null;
-        }
-
-        _attachedNavigationView = null;
+        // Popup state belongs to the presentation that created it. Inline expansion is retained so
+        // reopening the Left pane restores the user's hierarchy state without retaining a detached
+        // Popup from the compact presentation.
+        item.SetCurrentValue(IsSubmenuOpenProperty, false);
     }
 
     /// <summary>
-    /// Synchronizes a pane notification only when it originated from the view that owns this item.
-    /// Nested <see cref="NavigationView"/> instances deliberately share a routed-event path, but
-    /// they must not share the read-only presentation state used to choose inline or Popup children.
+    /// Projects the inherited pane mode into the public read-only presentation property.
     /// </summary>
-    private void SynchronizePaneStateFromOwnerEvent(
-        NavigationView  navigationView,
-        RoutedEventArgs args,
-        bool            isPaneOpen)
+    /// <remarks>
+    /// A mode switch replaces the active item template. Closing the transient Popup before that
+    /// replacement prevents its independent presentation source from outliving the old template;
+    /// <see cref="IsExpanded"/> remains untouched because it represents persistent tree state.
+    /// </remarks>
+    private static void OnPaneDisplayModeContextChanged(
+        DependencyObject d,
+        DependencyPropertyChangedEventArgs e)
     {
-        if (!ReferenceEquals(args.OriginalSource, navigationView))
+        var item = (NavigationViewItem)d;
+        item.SetValue(
+            PaneDisplayModePropertyKey,
+            (NavigationViewPaneDisplayMode)e.NewValue
+        );
+        item.SetCurrentValue(IsSubmenuOpenProperty, false);
+    }
+
+    /// <summary>Associates this container with its semantic parent item.</summary>
+    private void AttachToParent(NavigationViewItem parent)
+    {
+        if (ReferenceEquals(_parentItem, parent))
         {
             return;
         }
 
-        SynchronizePaneState(navigationView.PaneDisplayMode, isPaneOpen);
+        _parentItem = parent;
+        SetValue(IsSubItemPropertyKey, true);
+        UpdateIndentation();
     }
 
-    internal void SynchronizePaneState(NavigationViewPaneDisplayMode paneDisplayMode, bool isPaneOpen)
+    /// <summary>Releases parent-owned state when this container leaves an item generator.</summary>
+    private void DetachFromParent(NavigationViewItem parent)
     {
-        bool presentationChanged =
-            PaneDisplayMode != paneDisplayMode || IsPaneOpen != isPaneOpen;
-
-        SetValue(PaneDisplayModePropertyKey, paneDisplayMode);
-        SetValue(IsPaneOpenPropertyKey, isPaneOpen);
-
-        if (presentationChanged)
+        if (!ReferenceEquals(_parentItem, parent))
         {
-            SetCurrentValue(IsSubmenuOpenProperty, false);
+            return;
         }
 
-        foreach (var item in MenuItems.OfType<NavigationViewItem>())
+        CloseSubmenuBranch();
+        _parentItem = null;
+        SetValue(IsSubItemPropertyKey, false);
+        UpdateIndentation();
+    }
+
+    /// <summary>
+    /// Enumerates realized child containers without duplicating directly supplied controls.
+    /// </summary>
+    /// <remarks>
+    /// Direct control items are available before layout; data items acquire a container only when
+    /// WPF's generator realizes them. Popup arbitration and recursive cleanup operate on containers,
+    /// so this method deliberately combines both paths.
+    /// </remarks>
+    internal IEnumerable<NavigationViewItem> GetNavigationChildren()
+    {
+        var seen = new HashSet<NavigationViewItem>();
+
+        foreach (NavigationViewItem child in Items.OfType<NavigationViewItem>())
         {
-            item.SynchronizePaneState(paneDisplayMode, isPaneOpen);
+            if (seen.Add(child))
+            {
+                yield return child;
+            }
+        }
+
+        for (int index = 0; index < Items.Count; index++)
+        {
+            if (
+                ItemContainerGenerator.ContainerFromIndex(index) is NavigationViewItem child &&
+                seen.Add(child)
+            )
+            {
+                yield return child;
+            }
+        }
+    }
+
+    /// <summary>Moves keyboard focus to the bounded header input surface.</summary>
+    internal bool FocusHeader()
+    {
+        ApplyTemplate();
+        return _headerButton is { IsEnabled: true, Focusable: true } && _headerButton.Focus();
+    }
+
+    /// <summary>
+    /// Establishes the ownership and presentation context of a root item container.
+    /// </summary>
+    /// <remarks>
+    /// Ordinary dependency-property inheritance is sufficient below this item, but a root items
+    /// presenter can be disconnected when a pane closes or a template changes. Source bindings keep
+    /// that root associated with its owning NavigationView while it is unrealized; descendants then
+    /// inherit from the root without allocating one binding or event subscription per item. This
+    /// also forms an explicit scope boundary for NavigationViews nested inside another pane.
+    /// </remarks>
+    internal void AttachToNavigationViewHost(NavigationView navigationView)
+    {
+        SetCurrentValue(NavigationView.NavigationParentProperty, navigationView);
+        BindingOperations.SetBinding(
+            this,
+            PaneDisplayModeContextProperty,
+            new Binding(nameof(NavigationView.PaneDisplayMode))
+            {
+                Source = navigationView,
+                Mode = BindingMode.OneWay,
+            }
+        );
+        BindingOperations.SetBinding(
+            this,
+            IsPaneOpenContextProperty,
+            new Binding(nameof(NavigationView.IsPaneOpen))
+            {
+                Source = navigationView,
+                Mode = BindingMode.OneWay,
+            }
+        );
+    }
+
+    /// <summary>Releases context installed by <see cref="AttachToNavigationViewHost"/>.</summary>
+    internal void DetachFromNavigationViewHost(NavigationView navigationView)
+    {
+        CloseSubmenuBranch();
+
+        BindingOperations.ClearBinding(this, PaneDisplayModeContextProperty);
+        BindingOperations.ClearBinding(this, IsPaneOpenContextProperty);
+
+        if (ReferenceEquals(NavigationView.GetNavigationParent(this), navigationView))
+        {
+            ClearValue(NavigationView.NavigationParentProperty);
         }
     }
 }

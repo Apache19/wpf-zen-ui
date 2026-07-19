@@ -265,7 +265,10 @@ public class NavigationViewTests
                 navigationViewList.Template.FindName("ScrollViewer", navigationViewList)
             );
             Assert.IsType<ItemsPresenter>(scrollViewer.Content);
-            Assert.True(scrollViewer.CanContentScroll);
+            // Built-in navigation menus use pixel scrolling because an expanded hierarchical item
+            // can change height without changing the number of logical items. NavigationViewList
+            // still supports logical scrolling when a caller explicitly opts in.
+            Assert.False(scrollViewer.CanContentScroll);
             Assert.Equal(ScrollBarVisibility.Auto, scrollViewer.VerticalScrollBarVisibility);
         });
     }

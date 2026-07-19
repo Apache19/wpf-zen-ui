@@ -142,6 +142,57 @@ public class PassiveScrollViewerTests
         );
     }
 
+    [Fact]
+    public void ContentShrinksPastOffset_CommitsCoercedVerticalOffset()
+    {
+        RunOnStaThread(
+            () =>
+            {
+                var content = new Border { Width = 100d, Height = 500d };
+                var scrollViewer = new TestPassiveScrollViewer
+                {
+                    Width = 100d,
+                    Height = 100d,
+                    Content = content,
+                    VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+                };
+
+                var window = new Window
+                {
+                    Content = scrollViewer,
+                    ShowInTaskbar = false,
+                    WindowStyle = WindowStyle.None,
+                    Width = 120d,
+                    Height = 120d,
+                };
+
+                try
+                {
+                    window.Show();
+                    scrollViewer.UpdateLayout();
+                    scrollViewer.ScrollToVerticalOffset(350d);
+                    scrollViewer.UpdateLayout();
+
+                    content.Height = 250d;
+                    scrollViewer.UpdateLayout();
+
+                    double coercedOffset = scrollViewer.ScrollableHeight;
+                    Assert.True(coercedOffset > 0d);
+                    Assert.Equal(coercedOffset, scrollViewer.VerticalOffset);
+
+                    content.Height = 500d;
+                    scrollViewer.UpdateLayout();
+
+                    Assert.Equal(coercedOffset, scrollViewer.VerticalOffset);
+                }
+                finally
+                {
+                    window.Close();
+                }
+            }
+        );
+    }
+
     private static MouseWheelEventArgs CreateMouseWheelEvent(int delta)
     {
         return new MouseWheelEventArgs(Mouse.PrimaryDevice, Environment.TickCount, delta)

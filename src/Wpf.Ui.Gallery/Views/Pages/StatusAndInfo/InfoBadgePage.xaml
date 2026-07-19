@@ -33,21 +33,21 @@
                 IsPaneToggleVisible="True"
                 PaneDisplayMode="Left">
                 <ui:NavigationView.MenuItems>
-                    <ui:NavigationViewItem Content="Dashboard" Icon="{ui:SymbolIcon Home24}" />
-                    <ui:NavigationViewItem Content="Items" Icon="{ui:SymbolIcon Library24}">
+                    <ui:NavigationViewItem Header="Dashboard" Icon="{ui:SymbolIcon Home24}" />
+                    <ui:NavigationViewItem Header="Items" Icon="{ui:SymbolIcon Library24}">
                         <ui:NavigationViewItem.InfoBadge>
                             <ui:InfoBadge Severity="Attention" Value="3" />
                         </ui:NavigationViewItem.InfoBadge>
                     </ui:NavigationViewItem>
                 </ui:NavigationView.MenuItems>
                 <ui:NavigationView.FooterMenuItems>
-                    <ui:NavigationViewItem Content="Settings" Icon="{ui:SymbolIcon Settings24}" />
+                    <ui:NavigationViewItem Header="Settings" Icon="{ui:SymbolIcon Settings24}" />
                 </ui:NavigationView.FooterMenuItems>
             </ui:NavigationView>
             <controls:ControlExample.XamlCode>
                 &lt;ui:NavigationView IsBackButtonVisible=&quot;Auto&quot; &gt;\n
                 \t&lt;ui:NavigationView.MenuItems&gt;\n
-                \t\t&lt;ui:NavigationViewItem Content=&quot;Home&quot; Icon=&quot;Home24&quot; /&gt;\n
+                \t\t&lt;ui:NavigationViewItem Header=&quot;Home&quot; Icon=&quot;Home24&quot; /&gt;\n
                 \t&lt;/ui:NavigationView.MenuItems&gt;\n
                 &lt;/ui:NavigationView&gt;
             </controls:ControlExample.XamlCode>

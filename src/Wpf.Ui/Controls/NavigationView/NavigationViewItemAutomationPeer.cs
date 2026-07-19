@@ -6,6 +6,7 @@
 using System.Windows.Automation;
 using System.Windows.Automation.Peers;
 using System.Windows.Automation.Provider;
+using System.Windows.Controls.Primitives;
 
 namespace Wpf.Ui.Controls;
 
@@ -30,6 +31,52 @@ internal class NavigationViewItemAutomationPeer
         return AutomationControlType.TabItem;
     }
 
+    /// <inheritdoc />
+    protected override bool IsKeyboardFocusableCore()
+    {
+        return _owner.HeaderButton?.Focusable == true && _owner.HeaderButton.IsEnabled;
+    }
+
+    /// <inheritdoc />
+    protected override bool HasKeyboardFocusCore()
+    {
+        return _owner.HeaderButton?.IsKeyboardFocused == true;
+    }
+
+    /// <inheritdoc />
+    protected override void SetFocusCore()
+    {
+        if (!_owner.IsEnabled)
+        {
+            throw new ElementNotEnabledException();
+        }
+
+        if (!_owner.FocusHeader())
+        {
+            throw new InvalidOperationException("The navigation item's header cannot receive keyboard focus.");
+        }
+    }
+
+    /// <inheritdoc />
+    /// <remarks>
+    /// PART_HeaderButton and PART_ExpandButton are implementation surfaces for the selection and
+    /// expand/collapse patterns exposed by this peer. Returning their Button peers as additional
+    /// controls would announce one navigation item as two or three unrelated controls. Rich header
+    /// content and realized child-item peers remain available through the normal automation tree.
+    /// </remarks>
+    protected override List<AutomationPeer>? GetChildrenCore()
+    {
+        List<AutomationPeer>? children = base.GetChildrenCore();
+        children?.RemoveAll(
+            peer => peer is ButtonBaseAutomationPeer buttonPeer &&
+                    (
+                        ReferenceEquals(buttonPeer.Owner, _owner.HeaderButton) ||
+                        ReferenceEquals(buttonPeer.Owner, _owner.ExpandButton)
+                    )
+        );
+        return children;
+    }
+
     public override object? GetPattern(PatternInterface patternInterface)
     {
         // Only provide expand collapse pattern if we have children!
@@ -37,7 +84,7 @@ internal class NavigationViewItemAutomationPeer
         if (
             patternInterface == PatternInterface.SelectionItem ||
             (
-                patternInterface == PatternInterface.ExpandCollapse && _owner is { HasMenuItems: true }
+                patternInterface == PatternInterface.ExpandCollapse && _owner is { HasItems: true }
             )
         )
         {
@@ -51,7 +98,7 @@ internal class NavigationViewItemAutomationPeer
     {
         get
         {
-            if (!_owner.HasMenuItems)
+            if (!_owner.HasItems)
             {
                 return ExpandCollapseState.LeafNode;
             }
@@ -69,7 +116,7 @@ internal class NavigationViewItemAutomationPeer
             throw new ElementNotEnabledException();
         }
 
-        if (!_owner.HasMenuItems)
+        if (!_owner.HasItems)
         {
             throw new InvalidOperationException("A navigation item without children cannot be collapsed.");
         }
@@ -89,7 +136,7 @@ internal class NavigationViewItemAutomationPeer
             throw new ElementNotEnabledException();
         }
 
-        if (!_owner.HasMenuItems)
+        if (!_owner.HasItems)
         {
             throw new InvalidOperationException("A navigation item without children cannot be expanded.");
         }
@@ -129,7 +176,7 @@ internal class NavigationViewItemAutomationPeer
 
     protected override AutomationPeer? GetLabeledByCore()
     {
-        if (_owner.Content is UIElement element)
+        if (_owner.Header is UIElement element)
         {
             return CreatePeerForElement(element);
         }
@@ -146,12 +193,12 @@ internal class NavigationViewItemAutomationPeer
             result = AutomationProperties.GetName(_owner);
         }
 
-        if (result == string.Empty && _owner.Content is DependencyObject d)
+        if (result == string.Empty && _owner.Header is DependencyObject d)
         {
             result = AutomationProperties.GetName(d);
         }
 
-        if (result == string.Empty && _owner.Content is string s)
+        if (result == string.Empty && _owner.Header is string s)
         {
             result = s;
         }

@@ -458,6 +458,7 @@ public partial class NavigationView
             return;
         }
 
+        navigationView.SetValue(IsPaneOpenContextProperty, (bool)e.NewValue);
         navigationView.CloseAllNavigationViewItemSubmenus();
 
         if (navigationView.IsPaneOpen)
@@ -986,6 +987,11 @@ public partial class NavigationView
         {
             return;
         }
+
+        navigationView.SetValue(
+            PaneDisplayModeContextProperty,
+            (NavigationViewPaneDisplayMode)e.NewValue
+        );
 
         // Close Popup-owned state before the style trigger clears the outgoing template subtree.
         // IsExpanded is intentionally left untouched so an inline Left hierarchy survives a

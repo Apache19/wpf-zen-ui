@@ -32,26 +32,26 @@
                 </ui:NavigationView.AutoSuggestBox>
                 <ui:NavigationView.MenuItems>
                     <ui:NavigationViewItem
-                        Content="Dashboard"
+                        Header="Dashboard"
                         Icon="{ui:SymbolIcon Home24}"
                         TargetPageType="{x:Type samples:SamplePage1}" />
                     <ui:NavigationViewItem
-                        Content="Items"
+                        Header="Items"
                         Icon="{ui:SymbolIcon Library24}"
                         TargetPageType="{x:Type samples:SamplePage2}">
-                        <ui:NavigationViewItem.MenuItems>
-                            <ui:NavigationViewItem Content="Recent" TargetPageType="{x:Type samples:SamplePage2}" />
-                            <ui:NavigationViewItem Content="Categories">
-                                <ui:NavigationViewItem.MenuItems>
-                                    <ui:NavigationViewItem Content="Pinned" TargetPageType="{x:Type samples:SamplePage3}" />
-                                </ui:NavigationViewItem.MenuItems>
+                        <ui:NavigationViewItem.Items>
+                            <ui:NavigationViewItem Header="Recent" TargetPageType="{x:Type samples:SamplePage2}" />
+                            <ui:NavigationViewItem Header="Categories">
+                                <ui:NavigationViewItem.Items>
+                                    <ui:NavigationViewItem Header="Pinned" TargetPageType="{x:Type samples:SamplePage3}" />
+                                </ui:NavigationViewItem.Items>
                             </ui:NavigationViewItem>
-                        </ui:NavigationViewItem.MenuItems>
+                        </ui:NavigationViewItem.Items>
                     </ui:NavigationViewItem>
                 </ui:NavigationView.MenuItems>
                 <ui:NavigationView.FooterMenuItems>
                     <ui:NavigationViewItem
-                        Content="Settings"
+                        Header="Settings"
                         Icon="{ui:SymbolIcon Settings24}"
                         TargetPageType="{x:Type samples:SamplePage3}" />
                 </ui:NavigationView.FooterMenuItems>
@@ -98,7 +98,7 @@
             <controls:ControlExample.XamlCode>
                 &lt;ui:NavigationView IsBackButtonVisible=&quot;Auto&quot; &gt;\n
                 \t&lt;ui:NavigationView.MenuItems&gt;\n
-                \t\t&lt;ui:NavigationViewItem Content=&quot;Home&quot; Icon=&quot;Home24&quot; /&gt;\n
+                \t\t&lt;ui:NavigationViewItem Header=&quot;Home&quot; Icon=&quot;Home24&quot; /&gt;\n
                 \t&lt;/ui:NavigationView.MenuItems&gt;\n
                 &lt;/ui:NavigationView&gt;
             </controls:ControlExample.XamlCode>
@@ -115,23 +115,23 @@
                 PaneDisplayMode="LeftMinimal">
                 <ui:NavigationView.MenuItems>
                     <ui:NavigationViewItem
-                        Content="Dashboard"
+                        Header="Dashboard"
                         Icon="{ui:SymbolIcon Home24}"
                         TargetPageType="{x:Type samples:SamplePage1}" />
-                    <ui:NavigationViewItem Content="Library" Icon="{ui:SymbolIcon Library24}">
-                        <ui:NavigationViewItem.MenuItems>
-                            <ui:NavigationViewItem Content="Recent" TargetPageType="{x:Type samples:SamplePage2}" />
-                            <ui:NavigationViewItem Content="Folders">
-                                <ui:NavigationViewItem.MenuItems>
-                                    <ui:NavigationViewItem Content="Archive" TargetPageType="{x:Type samples:SamplePage3}" />
-                                </ui:NavigationViewItem.MenuItems>
+                    <ui:NavigationViewItem Header="Library" Icon="{ui:SymbolIcon Library24}">
+                        <ui:NavigationViewItem.Items>
+                            <ui:NavigationViewItem Header="Recent" TargetPageType="{x:Type samples:SamplePage2}" />
+                            <ui:NavigationViewItem Header="Folders">
+                                <ui:NavigationViewItem.Items>
+                                    <ui:NavigationViewItem Header="Archive" TargetPageType="{x:Type samples:SamplePage3}" />
+                                </ui:NavigationViewItem.Items>
                             </ui:NavigationViewItem>
-                        </ui:NavigationViewItem.MenuItems>
+                        </ui:NavigationViewItem.Items>
                     </ui:NavigationViewItem>
                 </ui:NavigationView.MenuItems>
                 <ui:NavigationView.FooterMenuItems>
                     <ui:NavigationViewItem
-                        Content="Settings"
+                        Header="Settings"
                         Icon="{ui:SymbolIcon Settings24}"
                         TargetPageType="{x:Type samples:SamplePage3}" />
                 </ui:NavigationView.FooterMenuItems>
@@ -139,7 +139,7 @@
             <controls:ControlExample.XamlCode>
                 &lt;ui:NavigationView PaneDisplayMode=&quot;LeftMinimal&quot; &gt;\n
                 \t&lt;ui:NavigationView.MenuItems&gt;\n
-                \t\t&lt;ui:NavigationViewItem Content=&quot;Library&quot; Icon=&quot;Library24&quot; /&gt;\n
+                \t\t&lt;ui:NavigationViewItem Header=&quot;Library&quot; Icon=&quot;Library24&quot; /&gt;\n
                 \t&lt;/ui:NavigationView.MenuItems&gt;\n
                 &lt;/ui:NavigationView&gt;
             </controls:ControlExample.XamlCode>
@@ -157,26 +157,26 @@
                 PaneDisplayMode="LeftFluent">
                 <ui:NavigationView.MenuItems>
                     <ui:NavigationViewItem
-                        Content="Dashboard"
+                        Header="Dashboard"
                         Icon="{ui:SymbolIcon Home24}"
                         TargetPageType="{x:Type samples:SamplePage1}" />
                     <ui:NavigationViewItem
-                        Content="Items"
+                        Header="Items"
                         Icon="{ui:SymbolIcon Library24}"
                         TargetPageType="{x:Type samples:SamplePage2}">
-                        <ui:NavigationViewItem.MenuItems>
-                            <ui:NavigationViewItem Content="Recent" TargetPageType="{x:Type samples:SamplePage2}" />
-                            <ui:NavigationViewItem Content="More">
-                                <ui:NavigationViewItem.MenuItems>
-                                    <ui:NavigationViewItem Content="Archive" TargetPageType="{x:Type samples:SamplePage3}" />
-                                </ui:NavigationViewItem.MenuItems>
+                        <ui:NavigationViewItem.Items>
+                            <ui:NavigationViewItem Header="Recent" TargetPageType="{x:Type samples:SamplePage2}" />
+                            <ui:NavigationViewItem Header="More">
+                                <ui:NavigationViewItem.Items>
+                                    <ui:NavigationViewItem Header="Archive" TargetPageType="{x:Type samples:SamplePage3}" />
+                                </ui:NavigationViewItem.Items>
                             </ui:NavigationViewItem>
-                        </ui:NavigationViewItem.MenuItems>
+                        </ui:NavigationViewItem.Items>
                     </ui:NavigationViewItem>
                 </ui:NavigationView.MenuItems>
                 <ui:NavigationView.FooterMenuItems>
                     <ui:NavigationViewItem
-                        Content="Settings"
+                        Header="Settings"
                         Icon="{ui:SymbolIcon Settings24}"
                         TargetPageType="{x:Type samples:SamplePage3}" />
                 </ui:NavigationView.FooterMenuItems>
@@ -229,7 +229,7 @@
             <controls:ControlExample.XamlCode>
                 &lt;ui:NavigationView PaneDisplayMode=&quot;LeftFluent&quot; &gt;\n
                 \t&lt;ui:NavigationView.MenuItems&gt;\n
-                \t\t&lt;ui:NavigationViewItem Content=&quot;Home&quot; Icon=&quot;Home24&quot; /&gt;\n
+                \t\t&lt;ui:NavigationViewItem Header=&quot;Home&quot; Icon=&quot;Home24&quot; /&gt;\n
                 \t&lt;/ui:NavigationView.MenuItems&gt;\n
                 &lt;/ui:NavigationView&gt;
             </controls:ControlExample.XamlCode>
@@ -247,28 +247,28 @@
                 PaneDisplayMode="Top">
                 <ui:NavigationView.MenuItems>
                     <ui:NavigationViewItem
-                        Content="Menu Item 1"
+                        Header="Menu Item 1"
                         Icon="{ui:SymbolIcon Home24}"
                         TargetPageType="{x:Type samples:SamplePage1}">
-                        <ui:NavigationViewItem.MenuItems>
-                            <ui:NavigationViewItem Content="Menu SubItem 1" TargetPageType="{x:Type samples:SamplePage3}" />
-                            <ui:NavigationViewItem Content="Menu SubItem 2">
-                                <ui:NavigationViewItem.MenuItems>
-                                    <ui:NavigationViewItem Content="Nested Item" TargetPageType="{x:Type samples:SamplePage3}" />
-                                </ui:NavigationViewItem.MenuItems>
+                        <ui:NavigationViewItem.Items>
+                            <ui:NavigationViewItem Header="Menu SubItem 1" TargetPageType="{x:Type samples:SamplePage3}" />
+                            <ui:NavigationViewItem Header="Menu SubItem 2">
+                                <ui:NavigationViewItem.Items>
+                                    <ui:NavigationViewItem Header="Nested Item" TargetPageType="{x:Type samples:SamplePage3}" />
+                                </ui:NavigationViewItem.Items>
                             </ui:NavigationViewItem>
-                        </ui:NavigationViewItem.MenuItems>
+                        </ui:NavigationViewItem.Items>
                     </ui:NavigationViewItem>
                     <ui:NavigationViewItem
-                        Content="Menu Item 2"
+                        Header="Menu Item 2"
                         Icon="{ui:SymbolIcon AppFolder24}"
                         TargetPageType="{x:Type samples:SamplePage2}" />
                     <ui:NavigationViewItem
-                        Content="Menu Item 3"
+                        Header="Menu Item 3"
                         Icon="{ui:SymbolIcon BezierCurveSquare20}"
                         TargetPageType="{x:Type samples:SamplePage3}" />
                     <ui:NavigationViewItem
-                        Content="Menu Item 4"
+                        Header="Menu Item 4"
                         Icon="{ui:SymbolIcon Library24}"
                         TargetPageType="{x:Type samples:SamplePage1}" />
                 </ui:NavigationView.MenuItems>
@@ -326,7 +326,7 @@
             <controls:ControlExample.XamlCode>
                 &lt;ui:NavigationView PaneDisplayMode=&quot;Top&quot; &gt;\n
                 \t&lt;ui:NavigationView.MenuItems&gt;\n
-                \t\t&lt;ui:NavigationViewItem Content=&quot;Home&quot; Icon=&quot;Home24&quot; /&gt;\n
+                \t\t&lt;ui:NavigationViewItem Header=&quot;Home&quot; Icon=&quot;Home24&quot; /&gt;\n
                 \t&lt;/ui:NavigationView.MenuItems&gt;\n
                 &lt;/ui:NavigationView&gt;
             </controls:ControlExample.XamlCode>
@@ -344,28 +344,28 @@
                 PaneDisplayMode="Bottom">
                 <ui:NavigationView.MenuItems>
                     <ui:NavigationViewItem
-                        Content="Menu Item 1"
+                        Header="Menu Item 1"
                         Icon="{ui:SymbolIcon Home24}"
                         TargetPageType="{x:Type samples:SamplePage1}">
-                        <ui:NavigationViewItem.MenuItems>
-                            <ui:NavigationViewItem Content="Menu SubItem 1" TargetPageType="{x:Type samples:SamplePage2}" />
-                            <ui:NavigationViewItem Content="Menu SubItem 2">
-                                <ui:NavigationViewItem.MenuItems>
-                                    <ui:NavigationViewItem Content="Nested Item" TargetPageType="{x:Type samples:SamplePage3}" />
-                                </ui:NavigationViewItem.MenuItems>
+                        <ui:NavigationViewItem.Items>
+                            <ui:NavigationViewItem Header="Menu SubItem 1" TargetPageType="{x:Type samples:SamplePage2}" />
+                            <ui:NavigationViewItem Header="Menu SubItem 2">
+                                <ui:NavigationViewItem.Items>
+                                    <ui:NavigationViewItem Header="Nested Item" TargetPageType="{x:Type samples:SamplePage3}" />
+                                </ui:NavigationViewItem.Items>
                             </ui:NavigationViewItem>
-                        </ui:NavigationViewItem.MenuItems>
+                        </ui:NavigationViewItem.Items>
                     </ui:NavigationViewItem>
                     <ui:NavigationViewItem
-                        Content="Menu Item 2"
+                        Header="Menu Item 2"
                         Icon="{ui:SymbolIcon AppFolder24}"
                         TargetPageType="{x:Type samples:SamplePage2}" />
                     <ui:NavigationViewItem
-                        Content="Menu Item 3"
+                        Header="Menu Item 3"
                         Icon="{ui:SymbolIcon BezierCurveSquare20}"
                         TargetPageType="{x:Type samples:SamplePage3}" />
                     <ui:NavigationViewItem
-                        Content="Menu Item 4"
+                        Header="Menu Item 4"
                         Icon="{ui:SymbolIcon Library24}"
                         TargetPageType="{x:Type samples:SamplePage1}" />
                 </ui:NavigationView.MenuItems>
@@ -423,7 +423,7 @@
             <controls:ControlExample.XamlCode>
                 &lt;ui:NavigationView PaneDisplayMode=&quot;Bottom&quot; &gt;\n
                 \t&lt;ui:NavigationView.MenuItems&gt;\n
-                \t\t&lt;ui:NavigationViewItem Content=&quot;Home&quot; Icon=&quot;Home24&quot; /&gt;\n
+                \t\t&lt;ui:NavigationViewItem Header=&quot;Home&quot; Icon=&quot;Home24&quot; /&gt;\n
                 \t&lt;/ui:NavigationView.MenuItems&gt;\n
                 &lt;/ui:NavigationView&gt;
             </controls:ControlExample.XamlCode>
