@@ -148,8 +148,8 @@ internal class NavigationViewItemAutomationPeer
 
     /// <summary>
     /// Raises an automation notification for state changes originating from mouse, keyboard,
-    /// bindings, or Popup dismissal. Keeping the notification at the dependency-property boundary
-    /// avoids reporting changes only when UI Automation initiated them.
+    /// bindings, or native menu dismissal. Keeping the notification at the dependency-property
+    /// boundary avoids reporting changes only when UI Automation initiated them.
     /// </summary>
     internal static void RaiseExpandCollapseAutomationEvent(
         NavigationViewItem owner,
@@ -265,7 +265,7 @@ internal class NavigationViewItemAutomationPeer
 
     /// <summary>
     /// Mirrors WPF's SelectorItemAutomationPeer contract: provider actions on a disabled control
-    /// fail explicitly instead of silently mutating selection or popup state.
+    /// fail explicitly instead of silently mutating selection or submenu state.
     /// </summary>
     private void EnsureOwnerEnabled()
     {

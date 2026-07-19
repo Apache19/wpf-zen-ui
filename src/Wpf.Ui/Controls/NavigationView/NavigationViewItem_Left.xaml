@@ -120,7 +120,7 @@
             </MultiDataTrigger>
             <!--
                 IsExpanded is persistent tree state and may remain true while the pane temporarily
-                uses a Popup template. Restrict the animation to the inline Left presentation so a
+                uses a ContextMenu projection. Restrict the animation to the inline Left presentation so a
                 stale inline state never rotates an icon in a compact mode.
             -->
             <MultiDataTrigger>
@@ -214,9 +214,9 @@
     </ControlTemplate>
 
     <!--
-        Compact Left uses another template so the owner still has exactly one ItemsPresenter. WPF
-        clears the outgoing generated panel before applying this Popup panel, preserving the normal
-        ItemContainerGenerator lifecycle instead of binding a second list to the same controls.
+        Compact Left replaces the inline ItemsPresenter with a template-owned ContextMenu. The
+        control prepares source containers through ItemContainerGenerator and projects them into
+        independent MenuItems, so the inline NavigationViewItem visuals are never reparented.
     -->
     <ControlTemplate x:Key="NavigationViewItemLeftCompactTemplate" TargetType="{x:Type controls:NavigationViewItem}">
         <Grid>
@@ -230,36 +230,17 @@
                 Content="{TemplateBinding Header}"
                 ContentTemplate="{TemplateBinding HeaderTemplate}"
                 ContentTemplateSelector="{TemplateBinding HeaderTemplateSelector}"
-                Template="{StaticResource NavigationViewItemLeftHeaderButtonTemplate}" />
-            <Popup
-                x:Name="PART_SubMenuPopup"
-                controls:PopupAnimator.IsEnabled="True"
-                controls:PopupShadow.IsEnabled="True"
-                AllowsTransparency="True"
-                Focusable="False"
-                HorizontalOffset="8"
-                IsOpen="{Binding IsSubmenuOpen, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
-                Placement="Right"
-                PlacementTarget="{Binding ElementName=PART_HeaderButton}"
-                PopupAnimation="None"
-                VerticalOffset="-2">
-                <Border
-                    MinWidth="180"
-                    MaxHeight="420"
-                    Padding="4"
-                    Background="{m:BrushResource AcrylicBackgroundFillColorDefaultBrush}"
-                    BorderBrush="{m:BrushResource SurfaceStrokeColorFlyoutBrush}"
-                    BorderThickness="1"
-                    CornerRadius="8">
-                    <ScrollViewer
-                        CanContentScroll="True"
-                        Focusable="False"
-                        HorizontalScrollBarVisibility="Disabled"
-                        VerticalScrollBarVisibility="Auto">
-                        <ItemsPresenter KeyboardNavigation.DirectionalNavigation="Contained" SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
-                    </ScrollViewer>
-                </Border>
-            </Popup>
+                Template="{StaticResource NavigationViewItemLeftHeaderButtonTemplate}">
+                <Button.ContextMenu>
+                    <!--  See NavigationViewItemTopTemplate for the native projection contract.  -->
+                    <ContextMenu
+                        x:Name="PART_SubMenuContextMenu"
+                        HorizontalOffset="8"
+                        Placement="Right"
+                        Style="{Binding SubmenuContextMenuStyle, RelativeSource={RelativeSource TemplatedParent}}"
+                        VerticalOffset="-2" />
+                </Button.ContextMenu>
+            </Button>
         </Grid>
     </ControlTemplate>
 

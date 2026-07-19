@@ -29,6 +29,8 @@
             </Setter.Value>
         </Setter>
         <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="SubmenuContextMenuStyle" Value="{StaticResource NavigationViewItemSubmenuContextMenuStyle}" />
+        <Setter Property="SubmenuMenuItemStyle" Value="{StaticResource NavigationViewItemSubmenuMenuItemStyle}" />
         <Setter Property="Template" Value="{StaticResource NavigationViewItemLeftTemplate}" />
         <!--
             NavigationView's item customization properties are inheritable attached properties.
@@ -61,42 +63,6 @@
                     <Condition Property="IsPaneOpen" Value="False" />
                 </MultiTrigger.Conditions>
                 <Setter Property="Template" Value="{StaticResource NavigationViewItemLeftCompactTemplate}" />
-            </MultiTrigger>
-            <MultiTrigger>
-                <MultiTrigger.Conditions>
-                    <Condition Property="PaneDisplayMode" Value="LeftMinimal" />
-                    <Condition Property="IsSubItem" Value="True" />
-                </MultiTrigger.Conditions>
-                <Setter Property="Template" Value="{StaticResource NavigationViewItemSubmenuTemplate}" />
-            </MultiTrigger>
-            <MultiTrigger>
-                <MultiTrigger.Conditions>
-                    <Condition Property="PaneDisplayMode" Value="Top" />
-                    <Condition Property="IsSubItem" Value="True" />
-                </MultiTrigger.Conditions>
-                <Setter Property="Template" Value="{StaticResource NavigationViewItemSubmenuTemplate}" />
-            </MultiTrigger>
-            <MultiTrigger>
-                <MultiTrigger.Conditions>
-                    <Condition Property="PaneDisplayMode" Value="Left" />
-                    <Condition Property="IsPaneOpen" Value="False" />
-                    <Condition Property="IsSubItem" Value="True" />
-                </MultiTrigger.Conditions>
-                <Setter Property="Template" Value="{StaticResource NavigationViewItemSubmenuTemplate}" />
-            </MultiTrigger>
-            <MultiTrigger>
-                <MultiTrigger.Conditions>
-                    <Condition Property="PaneDisplayMode" Value="LeftFluent" />
-                    <Condition Property="IsSubItem" Value="True" />
-                </MultiTrigger.Conditions>
-                <Setter Property="Template" Value="{StaticResource NavigationViewItemSubmenuTemplate}" />
-            </MultiTrigger>
-            <MultiTrigger>
-                <MultiTrigger.Conditions>
-                    <Condition Property="PaneDisplayMode" Value="Bottom" />
-                    <Condition Property="IsSubItem" Value="True" />
-                </MultiTrigger.Conditions>
-                <Setter Property="Template" Value="{StaticResource NavigationViewItemSubmenuTemplate}" />
             </MultiTrigger>
         </Style.Triggers>
     </Style>

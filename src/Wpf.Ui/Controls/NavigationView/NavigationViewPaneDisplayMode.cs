@@ -27,7 +27,7 @@ public enum NavigationViewPaneDisplayMode
     /// <summary>
     /// The pane is shown on the left side of the control.
     /// Large icons with titles underneath are the primary display option.
-    /// Items with children open a popup submenu.
+    /// Items with children open a native ContextMenu projection.
     /// <para>Similar to the Windows Store (2022) app.</para>
     /// </summary>
     LeftFluent,

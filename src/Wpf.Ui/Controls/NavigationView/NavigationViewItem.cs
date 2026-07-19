@@ -29,21 +29,22 @@ namespace Wpf.Ui.Controls;
 /// navigation row, while <see cref="ItemsControl.Items"/> is the authoritative child collection.
 /// This distinction is important: focus, mouse capture and pressed state belong only to the bounded
 /// <c>PART_HeaderButton</c>. The Chevron rendered by built-in templates is a non-interactive state
-/// indicator; inline descendants and Popup content must never become part of the button's input or
-/// focus-scrolling bounds.
+/// indicator; inline descendants and detached submenu content must never become part of the button's
+/// input or focus-scrolling bounds.
 /// </para>
 /// <para>
-/// Built-in templates contain exactly one <see cref="ItemsPresenter"/>. Left/open presentation
-/// places it inline; compact and horizontal presentations place it in <c>PART_SubMenuPopup</c>.
-/// Switching presentation may replace the template, but it never mirrors the child collection into
-/// a second <see cref="ItemsControl"/>. Container generation and logical parenting therefore follow
-/// the standard WPF items pipeline.
+/// The open Left pane contains the ordinary <see cref="ItemsPresenter"/> and therefore displays
+/// child <see cref="NavigationViewItem"/> containers inline. Compact and horizontal presentations
+/// deliberately use a different projection: <c>PART_SubMenuContextMenu</c> receives a recursively
+/// generated tree of native <see cref="MenuItem"/> controls. The projected controls bind back to
+/// the source navigation containers but never reuse them as visuals, allowing WPF's menu system to
+/// own cascading Popup windows, capture, focus, keyboard navigation and dismissal from root to leaf.
 /// </para>
 /// </remarks>
-[TemplatePart(Name = "PART_SubMenuPopup", Type = typeof(Popup))]
+[TemplatePart(Name = "PART_SubMenuContextMenu", Type = typeof(ContextMenu))]
 [TemplatePart(Name = HeaderButtonPartName, Type = typeof(ButtonBase))]
 [StyleTypedProperty(Property = nameof(ItemContainerStyle), StyleTargetType = typeof(NavigationViewItem))]
-public class NavigationViewItem : HeaderedItemsControl, INavigationViewItem
+public partial class NavigationViewItem : HeaderedItemsControl, INavigationViewItem
 {
     private const string HeaderButtonPartName = "PART_HeaderButton";
 
@@ -239,8 +240,8 @@ public class NavigationViewItem : HeaderedItemsControl, INavigationViewItem
     /// </summary>
     /// <remarks>
     /// This property does not carry layout metadata itself; the Left item template observes it to
-    /// create or remove the inline child presenter. Popup presentations preserve but otherwise
-    /// ignore this value and use <see cref="IsSubmenuOpen"/> instead.
+    /// create or remove the inline child presenter. Detached menu presentations preserve but
+    /// otherwise ignore this value and use <see cref="IsSubmenuOpen"/> instead.
     /// </remarks>
     [Browsable(false)]
     public bool IsExpanded
@@ -255,7 +256,11 @@ public class NavigationViewItem : HeaderedItemsControl, INavigationViewItem
 
     /// <summary>
     /// Identifies the <see cref="IsSubmenuOpen"/> dependency property. The property defaults to
-    /// <see langword="false"/> and binds two-way by default so a Popup dismissal updates its owner.
+    /// <see langword="false"/> and binds two-way by default so native menu state mirrored by the
+    /// control can flow back through an application binding. The semantic root synchronizes its
+    /// <see cref="ContextMenu"/> explicitly; projected descendant MenuItems synchronize through
+    /// native submenu events instead of binding their control-owned
+    /// <see cref="MenuItem.IsSubmenuOpen"/> property.
     /// </summary>
     public static readonly DependencyProperty IsSubmenuOpenProperty =
         DependencyProperty.Register(
@@ -270,13 +275,13 @@ public class NavigationViewItem : HeaderedItemsControl, INavigationViewItem
         );
 
     /// <summary>
-    /// Gets or sets a value indicating whether this item's popup submenu is open. The default value
-    /// is <see langword="false"/>.
+    /// Gets or sets a value indicating whether this item's detached submenu is open. The default
+    /// value is <see langword="false"/>.
     /// </summary>
     /// <remarks>
-    /// This property represents only transient popup state. The expanded Left pane uses
+    /// This property represents only transient detached-menu state. The expanded Left pane uses
     /// <see cref="IsExpanded"/> for its inline hierarchy instead. Separating the two states keeps
-    /// an inline branch from opening a popup merely because <see cref="NavigationView.PaneDisplayMode"/>
+    /// an inline branch from opening a ContextMenu merely because <see cref="NavigationView.PaneDisplayMode"/>
     /// selected another control template.
     /// </remarks>
     [Bindable(true)]
@@ -409,21 +414,33 @@ public class NavigationViewItem : HeaderedItemsControl, INavigationViewItem
     private ButtonBase?                          _headerButton;
     private bool                                 _hadItems;
 
-    // Opening a descendant popup first materializes each required ancestor. Those intermediate
-    // IsSubmenuOpen changes must not run branch arbitration independently: an ancestor-only path
-    // would treat the descendant currently being opened as a competing branch and close it.
-    private bool _isOpeningAsPopupAncestor;
-
     internal NavigationView? NavigationViewHost =>
         NavigationView.GetNavigationParent(this) ?? _parentItem?.NavigationViewHost;
 
     /// <summary>
-    /// Gets a value indicating whether the current presentation owns an inline child list rather than a popup.
+    /// Gets a value indicating whether the current navigation branch owns an inline child list
+    /// rather than a ContextMenu.
     /// Left is the only mode with an expandable pane, and it uses inline children only while that
-    /// pane is open. Every other presentation uses <see cref="IsSubmenuOpen"/>.
+    /// pane is open. Every detached presentation uses <see cref="IsSubmenuOpen"/>.
     /// </summary>
-    internal bool UsesInlineExpansion =>
-        PaneDisplayMode == NavigationViewPaneDisplayMode.Left && IsPaneOpen;
+    /// <remarks>
+    /// The semantic root is authoritative for the complete branch. Descendants supplied through
+    /// <see cref="ItemsControl.ItemsSource"/> may never enter the NavigationView visual tree before
+    /// they are projected into a native menu, so their inheritable presentation context can still
+    /// contain its default Left/open values. Likewise, a descendant removed from an inline
+    /// presenter can temporarily retain its former inherited values. Reading those values from the
+    /// descendant would reject a native <see cref="MenuItem"/> submenu transition even while the
+    /// root's detached <see cref="ContextMenu"/> is open. Resolving through the semantic root keeps
+    /// input, dependency-property validation, and UI Automation on one presentation model.
+    /// </remarks>
+    internal bool UsesInlineExpansion
+    {
+        get
+        {
+            NavigationViewItem root = GetRootNavigationItem();
+            return root.PaneDisplayMode == NavigationViewPaneDisplayMode.Left && root.IsPaneOpen;
+        }
+    }
 
     /// <summary>Gets a value indicating whether the effective child menu is open.</summary>
     internal bool IsChildMenuOpen => UsesInlineExpansion ? IsExpanded : IsSubmenuOpen;
@@ -559,12 +576,13 @@ public class NavigationViewItem : HeaderedItemsControl, INavigationViewItem
     /// <inheritdoc />
     /// <remarks>
     /// The template button is intentionally subscribed here instead of handling mouse input on the
-    /// container. Popup model-parent routing can pass input through an owning item, while a Click
+    /// container. A detached ContextMenu has its own presentation source, while a Click
     /// raised by the concrete header button unambiguously identifies the intended input surface.
     /// A missing part leaves a non-interactive custom template but does not compromise item generation.
     /// </remarks>
     public override void OnApplyTemplate()
     {
+        DetachSubmenuContextMenu();
         DetachHeaderParts();
         base.OnApplyTemplate();
 
@@ -574,17 +592,22 @@ public class NavigationViewItem : HeaderedItemsControl, INavigationViewItem
         {
             _headerButton.Click += OnHeaderButtonClick;
         }
+
+        AttachSubmenuContextMenu(
+            GetTemplateChild(SubmenuContextMenuPartName) as ContextMenu
+        );
     }
 
     /// <inheritdoc />
     /// <remarks>
-    /// A Popup is a separate presentation source and can survive removal of the template visual
-    /// tree. Closing the transient branch before WPF disconnects that tree prevents an orphaned
-    /// popup when callers replace <see cref="Control.Template"/> directly.
+    /// A ContextMenu creates a separate presentation source that can survive removal of the
+    /// template visual tree. Closing and detaching the native menu before WPF disconnects that tree
+    /// prevents an orphaned menu window and releases the projected MenuItem bindings promptly.
     /// </remarks>
     protected override void OnTemplateChanged(ControlTemplate oldTemplate, ControlTemplate newTemplate)
     {
         CloseSubmenuBranch();
+        DetachSubmenuContextMenu();
         DetachHeaderParts();
         base.OnTemplateChanged(oldTemplate, newTemplate);
     }
@@ -607,7 +630,7 @@ public class NavigationViewItem : HeaderedItemsControl, INavigationViewItem
     /// <see cref="ItemsControl.ItemContainerStyle"/> and hierarchical
     /// bindings in the base implementation. Parent attachment is kept separate so both generated
     /// containers and directly supplied <see cref="NavigationViewItem"/> instances share the same
-    /// depth, keyboard and Popup ownership model.
+    /// depth, keyboard and detached-menu ownership model.
     /// </remarks>
     protected override void PrepareContainerForItemOverride(DependencyObject element, object item)
     {
@@ -680,6 +703,11 @@ public class NavigationViewItem : HeaderedItemsControl, INavigationViewItem
             SetCurrentValue(IsExpandedProperty, false);
             SetCurrentValue(IsSubmenuOpenProperty, false);
         }
+
+        // Each source item owns collection change notification through ItemsControl. Rebuilding the
+        // currently open root projection here keeps dynamic menus exact without a parallel web of
+        // collection subscriptions between projected MenuItems and every descendant ItemCollection.
+        InvalidateOpenSubmenuProjection();
     }
 
     /// <inheritdoc />
@@ -727,8 +755,8 @@ public class NavigationViewItem : HeaderedItemsControl, INavigationViewItem
     internal bool InvokePrimaryAction()
     {
         // Snapshot the child action before navigation. Navigation can synchronously update
-        // selection, content, bindings, or Popup arbitration; the physical click must still apply
-        // the state that was requested when the operation began.
+        // selection, content, bindings, or menu state; the physical click must still apply the
+        // state that was requested when the operation began.
         bool hasItems = HasItems;
         bool shouldOpenChildMenu = hasItems && !IsChildMenuOpen;
         bool actionPerformed = false;
@@ -745,25 +773,6 @@ public class NavigationViewItem : HeaderedItemsControl, INavigationViewItem
         }
 
         return actionPerformed;
-    }
-
-    private static Visual? ResolveVisualInputSource(object? originalSource)
-    {
-        DependencyObject? source = originalSource as DependencyObject;
-
-        // Text runs are ContentElements rather than Visuals. Resolve their content parent first,
-        // then deliberately stay on the visual axis: following logical/templated parents here would
-        // cross Popup's route bridge and incorrectly classify detached popup input as button input.
-        while (source is ContentElement contentElement)
-        {
-            source = ContentOperations.GetParent(contentElement);
-            if (source == null)
-            {
-                source = (contentElement as FrameworkContentElement)?.Parent;
-            }
-        }
-
-        return source as Visual;
     }
 
     /// <summary>Sets the effective child-menu state for the active presentation.</summary>
@@ -789,7 +798,7 @@ public class NavigationViewItem : HeaderedItemsControl, INavigationViewItem
         }
     }
 
-    /// <summary>Closes this popup submenu and every popup below it.</summary>
+    /// <summary>Closes this detached submenu and every cascading submenu below it.</summary>
     internal void CloseSubmenuBranch()
     {
         SetCurrentValue(IsSubmenuOpenProperty, false);
@@ -835,21 +844,11 @@ public class NavigationViewItem : HeaderedItemsControl, INavigationViewItem
             return false;
         }
 
+        // Once focus enters the projected ContextMenu tree, WPF's MenuItem implementation owns all
+        // submenu arrows, Escape handling and sibling selection. Source NavigationViewItem
+        // descendants are not visual menu containers and must not run a second keyboard model.
         if (IsSubItem)
         {
-            if (key == Key.Right && HasItems)
-            {
-                SetChildMenuOpen(true, focusFirstItem: true);
-                return true;
-            }
-
-            if (key == Key.Left && NavigationViewItemParent is NavigationViewItem parentItem)
-            {
-                parentItem.SetChildMenuOpen(false, focusFirstItem: false);
-                _ = parentItem.FocusHeader();
-                return true;
-            }
-
             return false;
         }
 
@@ -908,29 +907,29 @@ public class NavigationViewItem : HeaderedItemsControl, INavigationViewItem
 
     private void FocusFirstSubmenuItem()
     {
-        // Popup content is created after IsOpen changes. Deferring to input priority lets WPF
-        // generate and connect the child containers before focus crosses the HWND boundary.
-        _ = Dispatcher.BeginInvoke(
-            DispatcherPriority.Input,
-            new Action(() =>
-            {
-                if (!IsChildMenuOpen)
+        if (UsesInlineExpansion)
+        {
+            // Inline children remain ordinary NavigationViewItem containers.
+            _ = Dispatcher.BeginInvoke(
+                DispatcherPriority.Input,
+                new Action(() =>
                 {
-                    return;
-                }
-
-                for (int index = 0; index < Items.Count; index++)
-                {
-                    if (
-                        ItemContainerGenerator.ContainerFromIndex(index) is NavigationViewItem child &&
-                        child.FocusHeader()
-                    )
+                    for (int index = 0; index < Items.Count; index++)
                     {
-                        return;
+                        if (
+                            ItemContainerGenerator.ContainerFromIndex(index) is NavigationViewItem child &&
+                            child.FocusHeader()
+                        )
+                        {
+                            return;
+                        }
                     }
-                }
-            })
-        );
+                })
+            );
+            return;
+        }
+
+        FocusFirstProjectedMenuItem();
     }
 
     private void UpdateIndentation()
@@ -1043,9 +1042,9 @@ public class NavigationViewItem : HeaderedItemsControl, INavigationViewItem
     }
 
     /// <summary>
-    /// Coordinates popup branch ownership at the dependency-property boundary. Popup dismissal and
-    /// external bindings therefore receive the same descendant cleanup and UIA notification as
-    /// mouse and keyboard input.
+    /// Coordinates the native menu projection at the dependency-property boundary. External
+    /// bindings therefore use the same root ContextMenu and receive the same descendant cleanup and
+    /// UIA notification as pointer and keyboard input.
     /// </summary>
     private static void OnIsSubmenuOpenChanged(
         DependencyObject d,
@@ -1057,20 +1056,28 @@ public class NavigationViewItem : HeaderedItemsControl, INavigationViewItem
 
         if (newValue && (!item.HasItems || item.UsesInlineExpansion))
         {
-            // Popup state is transient presentation state, not a second expansion flag. A leaf or
-            // the inline Left presentation has no Popup to own this value, so reject externally
-            // supplied values that would otherwise leave automation and template state divergent.
+            // Detached-menu state is transient presentation state, not a second expansion flag. A
+            // leaf or the inline Left presentation has no menu surface to own this value, so reject
+            // externally supplied values that would leave automation and template state divergent.
             item.SetCurrentValue(IsSubmenuOpenProperty, false);
             return;
         }
 
+        NavigationViewItem root = item.GetRootNavigationItem();
+
         if (newValue)
         {
-            item.OpenPopupAncestors();
-            if (!item._isOpeningAsPopupAncestor)
+            item.OpenSubmenuAncestors();
+
+            if (ReferenceEquals(item, root))
             {
-                item.NavigationViewHost?.OnNavigationViewItemSubmenuOpened(item);
+                // WPF's MenuBase capture closes other visible ContextMenus, but programmatic/UIA
+                // state can change before either template is connected to a presentation source.
+                // Preserve the same single-root invariant independently of realization timing.
+                item.NavigationViewHost?.CloseOtherNavigationViewItemSubmenus(root);
             }
+
+            root.PrepareSubmenuProjectionForOpen();
         }
         else
         {
@@ -1078,8 +1085,22 @@ public class NavigationViewItem : HeaderedItemsControl, INavigationViewItem
             {
                 child.CloseSubmenuBranch();
             }
+        }
 
-            item.NavigationViewHost?.OnNavigationViewItemSubmenuClosed();
+        // Only the semantic root may start the ContextMenu session. A descendant can retain an
+        // instantiated NavigationViewItem template after an earlier inline presentation; binding
+        // its IsSubmenuOpen value to that template's ContextMenu would create a competing root menu
+        // precisely when the projected native MenuItem tries to open its submenu.
+        if (ReferenceEquals(item, root))
+        {
+            root.SynchronizeRootContextMenuState(newValue);
+        }
+        else
+        {
+            // Descendants are independent native MenuItems. Explicit source/UIA requests flow into
+            // those controls here; native pointer and keyboard transitions flow back through
+            // SubmenuOpened/SubmenuClosed without participating in WPF's internal state transition.
+            root.SynchronizeProjectedSubmenuState(item, newValue);
         }
 
         if (item is { UsesInlineExpansion: false, HasItems: true })
@@ -1093,11 +1114,11 @@ public class NavigationViewItem : HeaderedItemsControl, INavigationViewItem
     }
 
     /// <summary>
-    /// Opens every popup ancestor before this item's popup is presented. A descendant popup cannot
-    /// safely outlive the Popup that contains its placement target; doing so leaves a detached HWND
-    /// whose routed mouse events still lead back to the descendant item.
+    /// Opens every semantic ancestor before a projected MenuItem is asked to expose its submenu.
+    /// WPF still owns the actual cascade; these values only make programmatic expansion and UIA
+    /// requests converge on the same source state mirrored by the projected MenuItems.
     /// </summary>
-    private void OpenPopupAncestors()
+    private void OpenSubmenuAncestors()
     {
         var ancestors = new Stack<NavigationViewItem>();
         for (
@@ -1114,62 +1135,9 @@ public class NavigationViewItem : HeaderedItemsControl, INavigationViewItem
             NavigationViewItem ancestor = ancestors.Pop();
             if (!ancestor.UsesInlineExpansion && ancestor.HasItems)
             {
-                ancestor.OpenAsPopupAncestor();
+                ancestor.SetCurrentValue(IsSubmenuOpenProperty, true);
             }
         }
-    }
-
-    /// <summary>
-    /// Materializes one ancestor without arbitrating branches until the descendant that requested
-    /// the operation reaches its own property callback.
-    /// </summary>
-    private void OpenAsPopupAncestor()
-    {
-        if (IsSubmenuOpen)
-        {
-            return;
-        }
-
-        _isOpeningAsPopupAncestor = true;
-
-        try
-        {
-            SetCurrentValue(IsSubmenuOpenProperty, true);
-        }
-        finally
-        {
-            _isOpeningAsPopupAncestor = false;
-        }
-    }
-
-    /// <summary>
-    /// Determines whether an already hit-tested input source belongs to this item's open Popup.
-    /// </summary>
-    /// <remarks>
-    /// Popup content lives in a separate HWND and visual tree, so ordinary ancestry from the
-    /// NavigationView cannot identify its owning level. Testing against the Popup child before any
-    /// branch closes gives a deterministic answer without depending on screen coordinates, layout,
-    /// or WPF's private PopupRoot capture-restoration timing.
-    /// </remarks>
-    internal bool IsInputWithinOpenSubmenu(object? originalSource)
-    {
-        if (!IsSubmenuOpen || FindSubmenuPopup() is not { IsOpen: true, Child: UIElement popupChild })
-        {
-            return false;
-        }
-
-        return
-            ResolveVisualInputSource(originalSource) is { } visual &&
-            (
-                ReferenceEquals(popupChild, visual) ||
-                popupChild.IsAncestorOf(visual)
-            );
-    }
-
-    /// <summary>Finds the popup owned directly by the active item template.</summary>
-    private Popup? FindSubmenuPopup()
-    {
-        return Template?.FindName("PART_SubMenuPopup", this) as Popup;
     }
 
     /// <summary>Reports inline state changes only while inline expansion is the active presentation.</summary>
@@ -1243,9 +1211,9 @@ public class NavigationViewItem : HeaderedItemsControl, INavigationViewItem
         var item = (NavigationViewItem)d;
         item.SetValue(IsPaneOpenPropertyKey, (bool)e.NewValue);
 
-        // Popup state belongs to the presentation that created it. Inline expansion is retained so
-        // reopening the Left pane restores the user's hierarchy state without retaining a detached
-        // Popup from the compact presentation.
+        // Detached-menu state belongs to the presentation that created it. Inline expansion is
+        // retained so reopening the Left pane restores the user's hierarchy state without retaining
+        // a ContextMenu from the compact presentation.
         item.SetCurrentValue(IsSubmenuOpenProperty, false);
     }
 
@@ -1253,7 +1221,7 @@ public class NavigationViewItem : HeaderedItemsControl, INavigationViewItem
     /// Projects the inherited pane mode into the public read-only presentation property.
     /// </summary>
     /// <remarks>
-    /// A mode switch replaces the active item template. Closing the transient Popup before that
+    /// A mode switch replaces the active item template. Closing the transient menu before that
     /// replacement prevents its independent presentation source from outliving the old template;
     /// <see cref="IsExpanded"/> remains untouched because it represents persistent tree state.
     /// </remarks>
@@ -1303,8 +1271,8 @@ public class NavigationViewItem : HeaderedItemsControl, INavigationViewItem
     /// </summary>
     /// <remarks>
     /// Direct control items are available before layout; data items acquire a container only when
-    /// WPF's generator realizes them. Popup arbitration and recursive cleanup operate on containers,
-    /// so this method deliberately combines both paths.
+    /// WPF's generator realizes them. Submenu arbitration and recursive cleanup operate on
+    /// containers, so this method deliberately combines both paths.
     /// </remarks>
     internal IEnumerable<NavigationViewItem> GetNavigationChildren()
     {

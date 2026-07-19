@@ -49,24 +49,6 @@ public class NavigationViewItemTests
         BindingFlags.NonPublic | BindingFlags.Instance
     )!;
 
-    private static readonly MethodInfo OnNavigationViewItemSubmenuOpenedMethod =
-        typeof(Wpf.Ui.Controls.NavigationView).GetMethod(
-            "OnNavigationViewItemSubmenuOpened",
-            BindingFlags.NonPublic | BindingFlags.Instance
-        )!;
-
-    private static readonly MethodInfo IsInputWithinOpenSubmenuMethod =
-        typeof(NavigationViewItem).GetMethod(
-            "IsInputWithinOpenSubmenu",
-            BindingFlags.NonPublic | BindingFlags.Instance
-        )!;
-
-    private static readonly PropertyInfo IsPointerSubmenuDismissalActiveProperty =
-        typeof(Wpf.Ui.Controls.NavigationView).GetProperty(
-            "IsPointerSubmenuDismissalActive",
-            BindingFlags.NonPublic | BindingFlags.Instance
-        )!;
-
     [Fact]
     public void ContainerUsesOneBoundedHeaderInputSurface()
     {
@@ -334,7 +316,7 @@ public class NavigationViewItemTests
                 Assert.False(innerItem.IsPaneOpen);
 
                 // The outer item must still use inline expansion. A stale pane snapshot would open
-                // IsSubmenuOpen here and display the compact-pane Popup instead.
+                // IsSubmenuOpen here and display the compact-pane ContextMenu instead.
                 InvokeClick(outerItem);
                 Assert.True(outerItem.IsExpanded);
                 Assert.False(outerItem.IsSubmenuOpen);
@@ -362,7 +344,7 @@ public class NavigationViewItemTests
     }
 
     [Fact]
-    public void ItemStyle_SelectsTopLevelAndSubItemTemplatesFromPaneDisplayMode()
+    public void ItemStyle_SelectsOneSourceTemplatePerPaneDisplayMode()
     {
         RunOnStaThread(() =>
         {
@@ -381,27 +363,27 @@ public class NavigationViewItemTests
             navigationView.IsPaneOpen = false;
 
             Assert.Same(resources["NavigationViewItemLeftCompactTemplate"], parent.Template);
-            Assert.Same(resources["NavigationViewItemSubmenuTemplate"], child.Template);
+            Assert.Same(resources["NavigationViewItemLeftCompactTemplate"], child.Template);
 
             navigationView.PaneDisplayMode = NavigationViewPaneDisplayMode.LeftMinimal;
 
             Assert.Same(resources["NavigationViewItemLeftCompactTemplate"], parent.Template);
-            Assert.Same(resources["NavigationViewItemSubmenuTemplate"], child.Template);
+            Assert.Same(resources["NavigationViewItemLeftCompactTemplate"], child.Template);
 
             navigationView.PaneDisplayMode = NavigationViewPaneDisplayMode.LeftFluent;
 
             Assert.Same(resources["NavigationViewItemLeftFluentTemplate"], parent.Template);
-            Assert.Same(resources["NavigationViewItemSubmenuTemplate"], child.Template);
+            Assert.Same(resources["NavigationViewItemLeftFluentTemplate"], child.Template);
 
             navigationView.PaneDisplayMode = NavigationViewPaneDisplayMode.Top;
 
             Assert.Same(resources["NavigationViewItemTopTemplate"], parent.Template);
-            Assert.Same(resources["NavigationViewItemSubmenuTemplate"], child.Template);
+            Assert.Same(resources["NavigationViewItemTopTemplate"], child.Template);
 
             navigationView.PaneDisplayMode = NavigationViewPaneDisplayMode.Bottom;
 
             Assert.Same(resources["NavigationViewItemBottomTemplate"], parent.Template);
-            Assert.Same(resources["NavigationViewItemSubmenuTemplate"], child.Template);
+            Assert.Same(resources["NavigationViewItemBottomTemplate"], child.Template);
 
             parent.RaiseEvent(new RoutedEventArgs(FrameworkElement.UnloadedEvent));
         });
@@ -413,17 +395,16 @@ public class NavigationViewItemTests
         RunOnStaThread(() =>
         {
             var resources = new ResourceDictionary { Source = CreateResourceUri() };
-            (string Key, bool HasPopup)[] templates =
+            (string Key, bool HasContextMenu)[] templates =
             [
                 ("NavigationViewItemLeftTemplate", false),
                 ("NavigationViewItemLeftCompactTemplate", true),
                 ("NavigationViewItemLeftFluentTemplate", true),
-                ("NavigationViewItemSubmenuTemplate", true),
                 ("NavigationViewItemTopTemplate", true),
                 ("NavigationViewItemBottomTemplate", true),
             ];
 
-            foreach ((string templateKey, bool hasPopup) in templates)
+            foreach ((string templateKey, bool hasContextMenu) in templates)
             {
                 var template = Assert.IsType<ControlTemplate>(resources[templateKey]);
                 var item = new NavigationViewItem { Template = template };
@@ -433,7 +414,11 @@ public class NavigationViewItemTests
                     template.FindName("PART_HeaderButton", item)
                 );
                 Assert.Null(template.FindName("PART_ExpandButton", item));
-                Assert.Equal(hasPopup, template.FindName("PART_SubMenuPopup", item) is Popup);
+                Assert.Equal(
+                    hasContextMenu,
+                    template.FindName("PART_SubMenuContextMenu", item) is ContextMenu
+                );
+                Assert.Null(template.FindName("PART_SubMenuPopup", item));
                 Assert.Null(template.FindName("ChildMenuPresenter", item));
             }
         });
@@ -502,7 +487,7 @@ public class NavigationViewItemTests
     }
 
     [Fact]
-    public void InlineExpansionAndPopupState_AreIndependentAcrossModeChanges()
+    public void InlineExpansionAndContextMenuState_AreIndependentAcrossModeChanges()
     {
         RunOnStaThread(() =>
         {
@@ -538,7 +523,7 @@ public class NavigationViewItemTests
     }
 
     [Fact]
-    public void ReplacingTheControlTemplate_ClosesTransientPopupState()
+    public void ReplacingTheControlTemplate_ClosesTransientContextMenuState()
     {
         RunOnStaThread(() =>
         {
@@ -591,7 +576,7 @@ public class NavigationViewItemTests
     }
 
     [Fact]
-    public void PopupSubmenus_KeepOneAncestorBranchOpen()
+    public void NativeContextMenus_KeepOneRootBranchOpen()
     {
         RunOnStaThread(() =>
         {
@@ -629,7 +614,7 @@ public class NavigationViewItemTests
     }
 
     [Fact]
-    public void KeyboardCommands_OpenACascadeAndEscapeClosesTheBranch()
+    public void SourceKeyboardModel_OpensOnlyTheNativeRootMenu()
     {
         RunOnStaThread(() =>
         {
@@ -647,11 +632,12 @@ public class NavigationViewItemTests
             Assert.True(HandleChildMenuKey(parent, Key.Down));
             Assert.True(parent.IsSubmenuOpen);
 
-            Assert.True(HandleChildMenuKey(child, Key.Right));
+            // Projected MenuItems, not the source child controls, own all cascading key handling.
+            Assert.False(HandleChildMenuKey(child, Key.Right));
             Assert.True(parent.IsSubmenuOpen);
-            Assert.True(child.IsSubmenuOpen);
+            Assert.False(child.IsSubmenuOpen);
 
-            Assert.True(HandleChildMenuKey(child, Key.Escape));
+            Assert.True(HandleChildMenuKey(parent, Key.Escape));
             Assert.False(parent.IsSubmenuOpen);
             Assert.False(child.IsSubmenuOpen);
             parent.RaiseEvent(new RoutedEventArgs(FrameworkElement.UnloadedEvent));
@@ -663,9 +649,11 @@ public class NavigationViewItemTests
     {
         RunOnStaThread(() =>
         {
+            var resources = new ResourceDictionary { Source = CreateResourceUri() };
             var navigationView = new Wpf.Ui.Controls.NavigationView
             {
                 PaneDisplayMode = NavigationViewPaneDisplayMode.Top,
+                Style = Assert.IsType<Style>(resources[typeof(Wpf.Ui.Controls.NavigationView)]),
             };
             var navigableParent = new NavigationViewItem(typeof(System.Windows.Controls.Border));
             navigableParent.Items.Add(new NavigationViewItem());
@@ -673,33 +661,53 @@ public class NavigationViewItemTests
             groupingParent.Items.Add(new NavigationViewItem());
             navigationView.MenuItems.Add(navigableParent);
             navigationView.MenuItems.Add(groupingParent);
-            AttachToNavigationView(navigableParent, navigationView);
-            AttachToNavigationView(groupingParent, navigationView);
             int invokedCount = 0;
             navigationView.ItemInvoked += (_, _) => invokedCount++;
+            var window = new Window
+            {
+                Content = navigationView,
+                Width = 320,
+                Height = 200,
+                Left = -10_000,
+                Top = -10_000,
+                ShowActivated = false,
+                ShowInTaskbar = false,
+                WindowStyle = WindowStyle.None,
+            };
 
-            InvokeClick(navigableParent);
+            try
+            {
+                // A ContextMenu with a real PlacementTarget requires both controls to share a
+                // PresentationSource. A manually raised Loaded event cannot model native Popup
+                // placement and causes WPF to close the otherwise correctly anchored menu.
+                window.Show();
+                DrainDispatcher();
 
-            Assert.Same(navigableParent, navigationView.SelectedItem);
-            Assert.True(navigableParent.IsSubmenuOpen);
-            Assert.Equal(1, invokedCount);
+                InvokeClick(navigableParent);
 
-            InvokeClick(groupingParent);
+                Assert.Same(navigableParent, navigationView.SelectedItem);
+                Assert.True(navigableParent.IsSubmenuOpen);
+                Assert.Equal(1, invokedCount);
 
-            Assert.True(groupingParent.IsSubmenuOpen);
-            Assert.Equal(1, invokedCount);
+                InvokeClick(groupingParent);
 
-            // Re-entering through the same header surface closes the competing branch, navigates,
-            // and opens this item's child presentation as one deterministic action.
-            InvokeClick(navigableParent);
+                Assert.True(groupingParent.IsSubmenuOpen);
+                Assert.Equal(1, invokedCount);
 
-            Assert.Same(navigableParent, navigationView.SelectedItem);
-            Assert.True(navigableParent.IsSubmenuOpen);
-            Assert.False(groupingParent.IsSubmenuOpen);
-            Assert.Equal(2, invokedCount);
+                // Re-entering through the same header surface closes the competing branch,
+                // navigates, and opens this item's child presentation as one deterministic action.
+                InvokeClick(navigableParent);
 
-            navigableParent.RaiseEvent(new RoutedEventArgs(FrameworkElement.UnloadedEvent));
-            groupingParent.RaiseEvent(new RoutedEventArgs(FrameworkElement.UnloadedEvent));
+                Assert.Same(navigableParent, navigationView.SelectedItem);
+                Assert.True(navigableParent.IsSubmenuOpen);
+                Assert.False(groupingParent.IsSubmenuOpen);
+                Assert.Equal(2, invokedCount);
+            }
+            finally
+            {
+                window.Close();
+                DrainDispatcher();
+            }
         });
     }
 
@@ -727,7 +735,7 @@ public class NavigationViewItemTests
     }
 
     [Fact]
-    public void LeftPrimarySurface_UsesInlineChildrenWhenOpenAndPopupChildrenWhenClosed()
+    public void LeftPrimarySurface_UsesInlineChildrenWhenOpenAndContextMenuWhenClosed()
     {
         RunOnStaThread(() =>
         {
@@ -757,7 +765,7 @@ public class NavigationViewItemTests
     }
 
     [Fact]
-    public void ClearingRootItems_ClosesTheEntireDetachedPopupBranch()
+    public void ClearingRootItems_ClosesTheEntireDetachedSubmenuBranch()
     {
         RunOnStaThread(() =>
         {
@@ -864,7 +872,7 @@ public class NavigationViewItemTests
     [InlineData(NavigationViewPaneDisplayMode.LeftFluent, true, PlacementMode.Right)]
     [InlineData(NavigationViewPaneDisplayMode.Top, true, PlacementMode.Bottom)]
     [InlineData(NavigationViewPaneDisplayMode.Bottom, true, PlacementMode.Top)]
-    public void PopupTemplates_UseModeAppropriatePlacement(
+    public void ContextMenuTemplates_UseModeAppropriatePlacementAndSharedFlyoutBehavior(
         NavigationViewPaneDisplayMode paneDisplayMode,
         bool isPaneOpen,
         PlacementMode expectedPlacement)
@@ -885,16 +893,27 @@ public class NavigationViewItemTests
             AttachToNavigationView(parent, navigationView);
 
             Assert.True(parent.ApplyTemplate());
-            var popup = FindSubmenuPopup(parent);
+            var contextMenu = FindSubmenuContextMenu(parent);
+            var headerButton = Assert.IsAssignableFrom<ButtonBase>(
+                parent.Template.FindName("PART_HeaderButton", parent)
+            );
 
-            Assert.Equal(expectedPlacement, popup.Placement);
-            Assert.True(popup.StaysOpen);
+            Assert.Equal(expectedPlacement, contextMenu.Placement);
+            Assert.Same(headerButton, contextMenu.PlacementTarget);
+            Assert.True(
+                BindingOperations.IsDataBound(contextMenu, ContextMenu.IsOpenProperty)
+            );
+            Assert.True(contextMenu.Focusable);
+            Assert.Same(parent.SubmenuContextMenuStyle, contextMenu.Style);
+            Assert.NotNull(parent.SubmenuMenuItemStyle);
+            Assert.True(PopupAnimator.GetIsEnabled(contextMenu));
+            Assert.True(PopupShadow.GetIsEnabled(contextMenu));
             parent.RaiseEvent(new RoutedEventArgs(FrameworkElement.UnloadedEvent));
         });
     }
 
     [Fact]
-    public void PopupTemplate_CanOpenARecursiveUiElementHierarchy()
+    public void LeafItem_RejectsAnEmptyContextMenuOpenRequest()
     {
         RunOnStaThread(() =>
         {
@@ -904,9 +923,59 @@ public class NavigationViewItemTests
                 PaneDisplayMode = NavigationViewPaneDisplayMode.Top,
                 Style = Assert.IsType<Style>(resources[typeof(Wpf.Ui.Controls.NavigationView)]),
             };
-            var parent = new NavigationViewItem();
-            var child = new NavigationViewItem();
-            child.Items.Add(new NavigationViewItem());
+            var leaf = new NavigationViewItem();
+            navigationView.MenuItems.Add(leaf);
+            var window = new Window
+            {
+                Content = navigationView,
+                Width = 320,
+                Height = 200,
+                Left = -10_000,
+                Top = -10_000,
+                ShowActivated = false,
+                ShowInTaskbar = false,
+                WindowStyle = WindowStyle.None,
+            };
+
+            try
+            {
+                window.Show();
+                DrainDispatcher();
+
+                ContextMenu contextMenu = FindSubmenuContextMenu(leaf);
+                contextMenu.IsOpen = true;
+                DrainDispatcher();
+
+                Assert.False(leaf.IsSubmenuOpen);
+                Assert.False(contextMenu.IsOpen);
+            }
+            finally
+            {
+                window.Close();
+                DrainDispatcher();
+            }
+        });
+    }
+
+    [Fact]
+    public void ContextMenuRoot_ProjectsACompleteNativeMenuItemHierarchy()
+    {
+        RunOnStaThread(() =>
+        {
+            var resources = new ResourceDictionary { Source = CreateResourceUri() };
+            var navigationView = new Wpf.Ui.Controls.NavigationView
+            {
+                PaneDisplayMode = NavigationViewPaneDisplayMode.Top,
+                Style = Assert.IsType<Style>(resources[typeof(Wpf.Ui.Controls.NavigationView)]),
+            };
+            var parent = new NavigationViewItem { Header = "Parent" };
+            var child = new NavigationViewItem
+            {
+                Header = "Child",
+                Icon = new SymbolIcon(SymbolRegular.Home24),
+            };
+            var grandchild = new NavigationViewItem { Header = "Grandchild" };
+            child.Items.Add(grandchild);
             parent.Items.Add(child);
             navigationView.MenuItems.Add(parent);
             var window = new Window
@@ -926,38 +995,87 @@ public class NavigationViewItemTests
                 window.Show();
                 DrainDispatcher();
 
+                // A descendant can already have a live control template after it was previously
+                // presented inline. Its template-owned ContextMenu must not compete with the
+                // projected MenuItem submenu when native state is mirrored back to the source.
+                _ = child.ApplyTemplate();
+                ContextMenu childSourceContextMenu = FindSubmenuContextMenu(child);
+                Assert.False(
+                    BindingOperations.IsDataBound(
+                        childSourceContextMenu,
+                        ContextMenu.IsOpenProperty
+                    )
+                );
+
                 parent.IsSubmenuOpen = true;
                 DrainDispatcher();
 
-                var parentPopup = Assert.IsType<Popup>(
-                    parent.Template.FindName("PART_SubMenuPopup", parent)
+                ContextMenu parentContextMenu = FindSubmenuContextMenu(parent);
+                Assert.True(parentContextMenu.IsOpen);
+                var childMenuItem = Assert.IsType<MenuItem>(Assert.Single(parentContextMenu.Items));
+                Assert.Same(child, childMenuItem.DataContext);
+                Assert.Equal("Child", childMenuItem.Header);
+                Assert.Same(child.SubmenuMenuItemStyle, childMenuItem.Style);
+                Assert.False(
+                    BindingOperations.IsDataBound(
+                        childMenuItem,
+                        MenuItem.IsSubmenuOpenProperty
+                    )
                 );
-                Assert.True(parentPopup.IsOpen);
-                Assert.True(child.IsLoaded);
-                Assert.NotNull(child.Template.FindName("PART_SubMenuPopup", child));
+                var projectedIcon = Assert.IsType<SymbolIcon>(childMenuItem.Icon);
+                Assert.NotSame(child.Icon, projectedIcon);
+                Assert.Equal(((SymbolIcon)child.Icon).Symbol, projectedIcon.Symbol);
 
-                child.IsSubmenuOpen = true;
+                var grandchildMenuItem = Assert.IsType<MenuItem>(Assert.Single(childMenuItem.Items));
+                Assert.Same(grandchild, grandchildMenuItem.DataContext);
+                Assert.Equal("Grandchild", grandchildMenuItem.Header);
+                Assert.Null(grandchildMenuItem.ItemsSource);
+                Assert.NotNull(grandchildMenuItem.Command);
+                Assert.False(ContainsNavigationViewItem(parentContextMenu));
+
+                var childMenuItemPeer = new System.Windows.Automation.Peers.MenuItemAutomationPeer(
+                    childMenuItem
+                );
+                Assert.IsAssignableFrom<IExpandCollapseProvider>(
+                    childMenuItemPeer.GetPattern(
+                        System.Windows.Automation.Peers.PatternInterface.ExpandCollapse
+                    )
+                ).Expand();
                 DrainDispatcher();
 
+                Assert.True(parentContextMenu.IsOpen);
+                Assert.True(childMenuItem.IsSubmenuOpen);
+                Assert.True(child.IsSubmenuOpen);
+                _ = childMenuItem.ApplyTemplate();
                 var childPopup = Assert.IsType<Popup>(
-                    child.Template.FindName("PART_SubMenuPopup", child)
+                    childMenuItem.Template.FindName("Popup", childMenuItem)
                 );
-                Assert.True(parentPopup.IsOpen);
                 Assert.True(childPopup.IsOpen);
+                Assert.NotNull(childPopup.PlacementTarget);
+                var childPopupSource = Assert.IsType<System.Windows.Interop.HwndSource>(
+                    PresentationSource.FromVisual(childPopup.Child)
+                );
+                var childPopupRoot = Assert.IsAssignableFrom<UIElement>(childPopupSource.RootVisual);
+                Assert.True(childPopupRoot.IsVisible);
+                Assert.True(childPopupRoot.Opacity > 0D);
+                Assert.True(childPopup.Child.RenderSize.Width > 0D);
+                Assert.True(childPopup.Child.RenderSize.Height > 0D);
+                Assert.False(childSourceContextMenu.IsOpen);
 
-                childPopup.IsOpen = false;
+                childMenuItem.IsSubmenuOpen = false;
                 DrainDispatcher();
 
                 Assert.True(parent.IsSubmenuOpen);
                 Assert.False(child.IsSubmenuOpen);
 
-                child.IsSubmenuOpen = true;
+                childMenuItem.IsSubmenuOpen = true;
                 DrainDispatcher();
-                parentPopup.IsOpen = false;
+                parentContextMenu.IsOpen = false;
                 DrainDispatcher();
 
                 Assert.False(parent.IsSubmenuOpen);
                 Assert.False(child.IsSubmenuOpen);
+                Assert.Empty(parentContextMenu.Items);
             }
             finally
             {
@@ -968,7 +1086,194 @@ public class NavigationViewItemTests
     }
 
     [Fact]
-    public void OpeningDescendantPopup_OpensItsRequiredAncestorBranch()
+    public void ContextMenuProjection_UsesPreparedNavigationContainersForDataItems()
+    {
+        RunOnStaThread(() =>
+        {
+            var resources = new ResourceDictionary { Source = CreateResourceUri() };
+            var generatedItemStyle = new Style(
+                typeof(NavigationViewItem),
+                Assert.IsType<Style>(resources[typeof(NavigationViewItem)])
+            );
+            generatedItemStyle.Setters.Add(
+                new Setter(NavigationViewItem.TargetPageTypeProperty, typeof(Border))
+            );
+            var navigationView = new Wpf.Ui.Controls.NavigationView
+            {
+                PaneDisplayMode = NavigationViewPaneDisplayMode.Top,
+                Style = Assert.IsType<Style>(resources[typeof(Wpf.Ui.Controls.NavigationView)]),
+            };
+            var parent = new NavigationViewItem
+            {
+                Header = "Parent",
+                ItemContainerStyle = generatedItemStyle,
+                ItemsSource = new[] { "Data leaf" },
+            };
+            navigationView.MenuItems.Add(parent);
+            var window = new Window
+            {
+                Content = navigationView,
+                Width = 320,
+                Height = 200,
+                Left = -10_000,
+                Top = -10_000,
+                ShowActivated = false,
+                ShowInTaskbar = false,
+                WindowStyle = WindowStyle.None,
+            };
+
+            try
+            {
+                window.Show();
+                DrainDispatcher();
+                parent.IsSubmenuOpen = true;
+                DrainDispatcher();
+
+                ContextMenu contextMenu = FindSubmenuContextMenu(parent);
+                var projectedItem = Assert.IsType<MenuItem>(Assert.Single(contextMenu.Items));
+                var generatedSource = Assert.IsType<NavigationViewItem>(projectedItem.DataContext);
+
+                Assert.Same(
+                    generatedSource,
+                    parent.ItemContainerGenerator.ContainerFromIndex(0)
+                );
+                Assert.Equal("Data leaf", generatedSource.Header);
+                Assert.Equal("Data leaf", projectedItem.Header);
+                Assert.Equal(typeof(Border), generatedSource.TargetPageType);
+
+                Assert.NotNull(projectedItem.Command);
+                projectedItem.Command.Execute(projectedItem.CommandParameter);
+                Assert.Same(generatedSource, navigationView.SelectedItem);
+            }
+            finally
+            {
+                window.Close();
+                DrainDispatcher();
+            }
+        });
+    }
+
+    [Fact]
+    public void ContextMenuProjection_DoesNotReparentAUiElementHeader()
+    {
+        RunOnStaThread(() =>
+        {
+            var resources = new ResourceDictionary { Source = CreateResourceUri() };
+            var navigationView = new Wpf.Ui.Controls.NavigationView
+            {
+                PaneDisplayMode = NavigationViewPaneDisplayMode.Top,
+            };
+            var visualHeader = new System.Windows.Controls.TextBlock { Text = "Visual header" };
+            var child = new NavigationViewItem { Header = visualHeader };
+            var parent = new NavigationViewItem
+            {
+                Style = Assert.IsType<Style>(resources[typeof(NavigationViewItem)]),
+            };
+            parent.Items.Add(child);
+            navigationView.MenuItems.Add(parent);
+            AttachToNavigationView(parent, navigationView);
+
+            parent.IsSubmenuOpen = true;
+
+            var projectedItem = Assert.IsType<MenuItem>(
+                Assert.Single(FindSubmenuContextMenu(parent).Items)
+            );
+            Assert.Equal("Visual header", projectedItem.Header);
+            Assert.NotSame(visualHeader, projectedItem.Header);
+            Assert.Same(visualHeader, child.Header);
+            parent.RaiseEvent(new RoutedEventArgs(FrameworkElement.UnloadedEvent));
+        });
+    }
+
+    [Fact]
+    public void OpenContextMenu_ReprojectsCollectionChangesAndKeepsPropertyBindingsLive()
+    {
+        RunOnStaThread(() =>
+        {
+            var resources = new ResourceDictionary { Source = CreateResourceUri() };
+            var navigationView = new Wpf.Ui.Controls.NavigationView
+            {
+                PaneDisplayMode = NavigationViewPaneDisplayMode.Top,
+                Style = Assert.IsType<Style>(resources[typeof(Wpf.Ui.Controls.NavigationView)]),
+            };
+            var first = new NavigationViewItem { Header = "First" };
+            var second = new NavigationViewItem { Header = "Second" };
+            var parent = new NavigationViewItem { Header = "Parent" };
+            var customContextMenuStyle = new Style(
+                typeof(ContextMenu),
+                Assert.IsType<Style>(resources["NavigationViewItemSubmenuContextMenuStyle"])
+            );
+            var customMenuItemStyle = new Style(
+                typeof(MenuItem),
+                Assert.IsType<Style>(resources["NavigationViewItemSubmenuMenuItemStyle"])
+            );
+            parent.SubmenuContextMenuStyle = customContextMenuStyle;
+            parent.SubmenuMenuItemStyle = customMenuItemStyle;
+            parent.Items.Add(first);
+            navigationView.MenuItems.Add(parent);
+            var window = new Window
+            {
+                Content = navigationView,
+                Width = 320,
+                Height = 200,
+                Left = -10_000,
+                Top = -10_000,
+                ShowActivated = false,
+                ShowInTaskbar = false,
+                WindowStyle = WindowStyle.None,
+            };
+
+            try
+            {
+                window.Show();
+                DrainDispatcher();
+                parent.IsSubmenuOpen = true;
+                DrainDispatcher();
+
+                ContextMenu contextMenu = FindSubmenuContextMenu(parent);
+                Assert.Same(customContextMenuStyle, contextMenu.Style);
+                var firstMenuItem = Assert.IsType<MenuItem>(Assert.Single(contextMenu.Items));
+                Assert.Same(customMenuItemStyle, firstMenuItem.Style);
+
+                first.Header = "Renamed";
+                Assert.Equal("Renamed", firstMenuItem.Header);
+
+                parent.Items.Add(second);
+                DrainDispatcher();
+                Assert.Equal(2, contextMenu.Items.Count);
+                Assert.Same(
+                    second,
+                    Assert.IsType<MenuItem>(contextMenu.Items[1]).DataContext
+                );
+
+                parent.Items.Remove(first);
+                DrainDispatcher();
+                Assert.Same(
+                    second,
+                    Assert.IsType<MenuItem>(Assert.Single(contextMenu.Items)).DataContext
+                );
+
+                contextMenu.IsOpen = false;
+                DrainDispatcher();
+                Assert.Empty(contextMenu.Items);
+
+                parent.IsSubmenuOpen = true;
+                DrainDispatcher();
+                Assert.Same(
+                    second,
+                    Assert.IsType<MenuItem>(Assert.Single(contextMenu.Items)).DataContext
+                );
+            }
+            finally
+            {
+                window.Close();
+                DrainDispatcher();
+            }
+        });
+    }
+
+    [Fact]
+    public void OpeningDescendantMenuState_OpensItsRequiredRootContextMenu()
     {
         RunOnStaThread(() =>
         {
@@ -993,7 +1298,7 @@ public class NavigationViewItemTests
     }
 
     [Fact]
-    public void LeftCollapsed_NavigableDescendantOpensSecondPopupWithoutOrphaningIt()
+    public void NativeSubmenuHeader_ExpandsWithoutInvokingItsNavigationTarget()
     {
         RunOnStaThread(() =>
         {
@@ -1006,7 +1311,8 @@ public class NavigationViewItemTests
             };
             var parent = new NavigationViewItem();
             var child = new NavigationViewItem(typeof(Border));
-            child.Items.Add(new NavigationViewItem());
+            var leaf = new NavigationViewItem("Leaf", typeof(Border));
+            child.Items.Add(leaf);
             parent.Items.Add(child);
             navigationView.MenuItems.Add(parent);
             var window = new Window
@@ -1028,19 +1334,26 @@ public class NavigationViewItemTests
 
                 InvokeClick(parent);
                 DrainDispatcher();
-                Popup parentPopup = FindSubmenuPopup(parent);
-                Assert.True(parentPopup.IsOpen);
+                ContextMenu parentContextMenu = FindSubmenuContextMenu(parent);
+                Assert.True(parentContextMenu.IsOpen);
 
-                InvokeClick(child);
+                var childMenuItem = Assert.IsType<MenuItem>(Assert.Single(parentContextMenu.Items));
+                var leafMenuItem = Assert.IsType<MenuItem>(Assert.Single(childMenuItem.Items));
+                Assert.Null(childMenuItem.Command);
+
+                childMenuItem.IsSubmenuOpen = true;
                 DrainDispatcher();
-                Assert.Same(child, navigationView.SelectedItem);
-                Assert.True(child.IsSubmenuOpen);
-                Popup childPopup = FindSubmenuPopup(child);
 
-                Assert.True(parent.IsSubmenuOpen);
-                Assert.True(parentPopup.IsOpen);
+                // A MenuItem with children is a native SubmenuHeader. WPF opens it but does not run
+                // a command, even when the source NavigationViewItem also has a navigation target.
+                Assert.NotSame(child, navigationView.SelectedItem);
                 Assert.True(child.IsSubmenuOpen);
-                Assert.True(childPopup.IsOpen);
+                Assert.True(parent.IsSubmenuOpen);
+                Assert.True(parentContextMenu.IsOpen);
+
+                Assert.NotNull(leafMenuItem.Command);
+                leafMenuItem.Command.Execute(leafMenuItem.CommandParameter);
+                Assert.Same(leaf, navigationView.SelectedItem);
             }
             finally
             {
@@ -1051,7 +1364,7 @@ public class NavigationViewItemTests
     }
 
     [Fact]
-    public void PopupCascade_UsesOneNavigationViewCaptureInsteadOfNestedPopupCaptures()
+    public void ContextMenuCascade_UsesNativeRootMenuCapture()
     {
         RunOnStaThread(() =>
         {
@@ -1091,40 +1404,24 @@ public class NavigationViewItemTests
 
                 Assert.True(parent.IsSubmenuOpen);
                 Assert.True(child.IsSubmenuOpen);
-                Popup parentPopup = FindSubmenuPopup(parent);
-                Popup childPopup = FindSubmenuPopup(child);
-                Assert.True(parentPopup.IsOpen);
-                Assert.True(childPopup.IsOpen);
-                Assert.True(parentPopup.StaysOpen);
-                Assert.True(childPopup.StaysOpen);
-                Assert.Same(navigationView, Mouse.Captured);
-
-                // Input ownership is resolved from the hit-tested Popup visual, not from pointer
-                // coordinates sampled after one of the independent HWNDs has closed.
-                Assert.True(IsInputWithinOpenSubmenu(parent, parentPopup.Child));
-                Assert.False(IsInputWithinOpenSubmenu(parent, childPopup.Child));
-                Assert.True(IsInputWithinOpenSubmenu(child, childPopup.Child));
-
-                // ButtonBase temporarily replaces root capture while an item is pressed. Releasing
-                // that child capture must restore the single cascade owner immediately.
-                Assert.True(child.CaptureMouse());
-                Assert.Same(child, Mouse.Captured);
-                child.ReleaseMouseCapture();
-                Assert.Same(navigationView, Mouse.Captured);
+                ContextMenu parentContextMenu = FindSubmenuContextMenu(parent);
+                Assert.True(parentContextMenu.IsOpen);
+                var childMenuItem = Assert.IsType<MenuItem>(Assert.Single(parentContextMenu.Items));
+                Assert.True(childMenuItem.IsSubmenuOpen);
+                Assert.Same(parentContextMenu, Mouse.Captured);
 
                 parent.IsSubmenuOpen = false;
                 DrainDispatcher();
 
                 Assert.False(parent.IsSubmenuOpen);
                 Assert.False(child.IsSubmenuOpen);
-                Assert.NotSame(navigationView, Mouse.Captured);
+                Assert.NotSame(parentContextMenu, Mouse.Captured);
 
                 parent.IsSubmenuOpen = true;
                 DrainDispatcher();
-                Assert.Same(navigationView, Mouse.Captured);
+                Assert.Same(parentContextMenu, Mouse.Captured);
 
-                // An unrelated control taking capture ends menu mode instead of NavigationView
-                // stealing capture back and interfering with the new interaction.
+                // WPF MenuBase ends menu mode when an unrelated control takes capture.
                 Assert.True(window.CaptureMouse());
                 Assert.False(parent.IsSubmenuOpen);
                 Assert.Same(window, Mouse.Captured);
@@ -1132,13 +1429,12 @@ public class NavigationViewItemTests
 
                 parent.IsSubmenuOpen = true;
                 DrainDispatcher();
-                Assert.Same(navigationView, Mouse.Captured);
+                Assert.Same(parentContextMenu, Mouse.Captured);
 
                 window.Close();
                 windowClosed = true;
                 DrainDispatcher();
-                Assert.NotSame(navigationView, Mouse.Captured);
-                Assert.False(IsPointerSubmenuDismissalActive(navigationView));
+                Assert.NotSame(parentContextMenu, Mouse.Captured);
             }
             finally
             {
@@ -1153,41 +1449,75 @@ public class NavigationViewItemTests
     }
 
     [Fact]
-    public void PopupBranchArbitration_RetainsClickedOwnerAndClosesEveryDeeperLevel()
+    public void NativeMenuItems_MirrorSubmenuStateBackToTheirSources()
     {
         RunOnStaThread(() =>
         {
+            var resources = new ResourceDictionary { Source = CreateResourceUri() };
             var navigationView = new Wpf.Ui.Controls.NavigationView
             {
                 PaneDisplayMode = NavigationViewPaneDisplayMode.Top,
+                Style = Assert.IsType<Style>(resources[typeof(Wpf.Ui.Controls.NavigationView)]),
             };
-            var firstPopupOwner = new NavigationViewItem();
-            var secondPopupOwner = new NavigationViewItem();
-            var thirdPopupOwner = new NavigationViewItem();
-            var fourthPopupOwner = new NavigationViewItem();
-            fourthPopupOwner.Items.Add(new NavigationViewItem());
-            thirdPopupOwner.Items.Add(fourthPopupOwner);
-            secondPopupOwner.Items.Add(thirdPopupOwner);
-            firstPopupOwner.Items.Add(secondPopupOwner);
-            navigationView.MenuItems.Add(firstPopupOwner);
-            AttachToNavigationView(firstPopupOwner, navigationView);
+            var root = new NavigationViewItem();
+            var child = new NavigationViewItem();
+            var grandchild = new NavigationViewItem();
+            grandchild.Items.Add(new NavigationViewItem());
+            child.Items.Add(grandchild);
+            root.Items.Add(child);
+            navigationView.MenuItems.Add(root);
+            var window = new Window
+            {
+                Content = navigationView,
+                Width = 320,
+                Height = 200,
+                Left = -10_000,
+                Top = -10_000,
+                ShowActivated = false,
+                ShowInTaskbar = false,
+                WindowStyle = WindowStyle.None,
+            };
 
-            firstPopupOwner.IsSubmenuOpen = true;
-            secondPopupOwner.IsSubmenuOpen = true;
-            thirdPopupOwner.IsSubmenuOpen = true;
-            fourthPopupOwner.IsSubmenuOpen = true;
+            try
+            {
+                window.Show();
+                DrainDispatcher();
 
-            OnNavigationViewItemSubmenuOpenedMethod.Invoke(
-                navigationView,
-                [firstPopupOwner]
-            );
+                root.IsSubmenuOpen = true;
+                DrainDispatcher();
+                ContextMenu contextMenu = FindSubmenuContextMenu(root);
+                var childMenuItem = Assert.IsType<MenuItem>(Assert.Single(contextMenu.Items));
+                var grandchildMenuItem = Assert.IsType<MenuItem>(Assert.Single(childMenuItem.Items));
+                var childProvider = Assert.IsAssignableFrom<IExpandCollapseProvider>(
+                    new System.Windows.Automation.Peers.MenuItemAutomationPeer(childMenuItem)
+                       .GetPattern(System.Windows.Automation.Peers.PatternInterface.ExpandCollapse)
+                );
+                var grandchildProvider = Assert.IsAssignableFrom<IExpandCollapseProvider>(
+                    new System.Windows.Automation.Peers.MenuItemAutomationPeer(grandchildMenuItem)
+                       .GetPattern(System.Windows.Automation.Peers.PatternInterface.ExpandCollapse)
+                );
 
-            Assert.True(firstPopupOwner.IsSubmenuOpen);
-            Assert.False(secondPopupOwner.IsSubmenuOpen);
-            Assert.False(thirdPopupOwner.IsSubmenuOpen);
-            Assert.False(fourthPopupOwner.IsSubmenuOpen);
-            Assert.False(IsPointerSubmenuDismissalActive(navigationView));
-            firstPopupOwner.RaiseEvent(new RoutedEventArgs(FrameworkElement.UnloadedEvent));
+                childProvider.Expand();
+                DrainDispatcher();
+                grandchildProvider.Expand();
+                DrainDispatcher();
+
+                Assert.True(root.IsSubmenuOpen);
+                Assert.True(child.IsSubmenuOpen);
+                Assert.True(grandchild.IsSubmenuOpen);
+
+                childProvider.Collapse();
+                DrainDispatcher();
+
+                Assert.True(root.IsSubmenuOpen);
+                Assert.False(child.IsSubmenuOpen);
+                Assert.False(grandchild.IsSubmenuOpen);
+            }
+            finally
+            {
+                window.Close();
+                DrainDispatcher();
+            }
         });
     }
 
@@ -1244,8 +1574,80 @@ public class NavigationViewItemTests
                 DrainDispatcher();
 
                 Assert.True(parent.IsSubmenuOpen);
-                Assert.True(FindSubmenuPopup(parent).IsOpen);
+                Assert.True(FindSubmenuContextMenu(parent).IsOpen);
                 Assert.True(child.IsLoaded);
+            }
+            finally
+            {
+                window.Close();
+                DrainDispatcher();
+            }
+        });
+    }
+
+    [Fact]
+    public void CollapsedLeftPane_ProjectedDescendantIgnoresStaleInlineState()
+    {
+        RunOnStaThread(() =>
+        {
+            var resources = new ResourceDictionary { Source = CreateResourceUri() };
+            var navigationView = new Wpf.Ui.Controls.NavigationView
+            {
+                PaneDisplayMode = NavigationViewPaneDisplayMode.Left,
+                IsPaneOpen = false,
+                Style = Assert.IsType<Style>(resources[typeof(Wpf.Ui.Controls.NavigationView)]),
+            };
+            var grandchild = new NavigationViewItem { Header = "Grandchild" };
+            var child = new NavigationViewItem
+            {
+                Header = "Child",
+                ItemsSource = new object[] { grandchild },
+            };
+            var parent = new NavigationViewItem
+            {
+                Header = "Parent",
+                ItemsSource = new object[] { child },
+            };
+            navigationView.MenuItems.Add(parent);
+            var window = new Window
+            {
+                Content = navigationView,
+                Width = 320,
+                Height = 200,
+                Left = -10_000,
+                Top = -10_000,
+                ShowActivated = false,
+                ShowInTaskbar = false,
+                WindowStyle = WindowStyle.None,
+            };
+
+            try
+            {
+                window.Show();
+                DrainDispatcher();
+
+                // ItemsSource may supply NavigationViewItem containers that have never entered the
+                // active visual tree. Such descendants retain the presentation-property defaults
+                // (Left/open) even though their semantic root is already Left/collapsed.
+                Assert.True(child.IsPaneOpen);
+                Assert.Equal(NavigationViewPaneDisplayMode.Left, child.PaneDisplayMode);
+                InvokeClick(parent);
+                DrainDispatcher();
+
+                ContextMenu contextMenu = FindSubmenuContextMenu(parent);
+                var projectedChild = Assert.IsType<MenuItem>(Assert.Single(contextMenu.Items));
+                Assert.True(contextMenu.IsOpen);
+
+                projectedChild.IsSubmenuOpen = true;
+                DrainDispatcher();
+
+                Assert.True(projectedChild.IsSubmenuOpen);
+                Assert.True(child.IsSubmenuOpen);
+                _ = projectedChild.ApplyTemplate();
+                var popup = Assert.IsType<Popup>(
+                    projectedChild.Template.FindName("Popup", projectedChild)
+                );
+                Assert.True(popup.IsOpen);
             }
             finally
             {
@@ -1340,12 +1742,6 @@ public class NavigationViewItemTests
     private static bool HandleChildMenuKey(NavigationViewItem item, Key key) =>
         (bool)HandleChildMenuKeyMethod.Invoke(item, [key])!;
 
-    private static bool IsInputWithinOpenSubmenu(NavigationViewItem item, object source) =>
-        (bool)IsInputWithinOpenSubmenuMethod.Invoke(item, [source])!;
-
-    private static bool IsPointerSubmenuDismissalActive(Wpf.Ui.Controls.NavigationView navigationView) =>
-        (bool)IsPointerSubmenuDismissalActiveProperty.GetValue(navigationView)!;
-
     private static Uri CreateResourceUri()
     {
         RuntimeHelpers.RunClassConstructor(typeof(Application).TypeHandle);
@@ -1367,15 +1763,35 @@ public class NavigationViewItemTests
             .Invoke(headerButton, null);
     }
 
-    private static Popup FindSubmenuPopup(NavigationViewItem item)
+    private static ContextMenu FindSubmenuContextMenu(NavigationViewItem item)
     {
         _ = item.ApplyTemplate();
-        if (item.Template.FindName("PART_SubMenuPopup", item) is Popup popup)
+        if (item.Template.FindName("PART_SubMenuContextMenu", item) is ContextMenu contextMenu)
         {
-            return popup;
+            return contextMenu;
         }
 
-        throw new Xunit.Sdk.XunitException("The active item template does not define PART_SubMenuPopup.");
+        throw new Xunit.Sdk.XunitException(
+            "The active item template does not define PART_SubMenuContextMenu."
+        );
+    }
+
+    private static bool ContainsNavigationViewItem(ItemsControl itemsControl)
+    {
+        foreach (object item in itemsControl.Items)
+        {
+            if (item is NavigationViewItem)
+            {
+                return true;
+            }
+
+            if (item is MenuItem menuItem && ContainsNavigationViewItem(menuItem))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static System.Windows.Automation.Peers.AutomationPeer CreateAutomationPeer(

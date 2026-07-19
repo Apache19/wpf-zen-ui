@@ -71,31 +71,15 @@
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Button.Template>
+                <Button.ContextMenu>
+                    <!--  See NavigationViewItemTopTemplate for the native projection contract.  -->
+                    <ContextMenu
+                        x:Name="PART_SubMenuContextMenu"
+                        Placement="Top"
+                        Style="{Binding SubmenuContextMenuStyle, RelativeSource={RelativeSource TemplatedParent}}"
+                        VerticalOffset="-8" />
+                </Button.ContextMenu>
             </Button>
-            <Popup
-                x:Name="PART_SubMenuPopup"
-                controls:PopupAnimator.IsEnabled="True"
-                controls:PopupShadow.IsEnabled="True"
-                AllowsTransparency="True"
-                Focusable="False"
-                IsOpen="{Binding IsSubmenuOpen, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
-                Placement="Top"
-                PlacementTarget="{Binding ElementName=PART_HeaderButton}"
-                PopupAnimation="None"
-                VerticalOffset="-8">
-                <Border
-                    MinWidth="180"
-                    MaxHeight="420"
-                    Padding="4"
-                    Background="{m:BrushResource AcrylicBackgroundFillColorDefaultBrush}"
-                    BorderBrush="{m:BrushResource SurfaceStrokeColorFlyoutBrush}"
-                    BorderThickness="1"
-                    CornerRadius="8">
-                    <ScrollViewer CanContentScroll="True" Focusable="False" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
-                        <ItemsPresenter KeyboardNavigation.DirectionalNavigation="Contained" SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
-                    </ScrollViewer>
-                </Border>
-            </Popup>
         </Grid>
     </ControlTemplate>
 

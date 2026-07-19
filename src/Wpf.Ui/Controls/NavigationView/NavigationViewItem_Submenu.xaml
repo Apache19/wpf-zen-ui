@@ -1,136 +1,38 @@
 <ResourceDictionary
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:controls="clr-namespace:Wpf.Ui.Controls"
-    xmlns:m="clr-namespace:Wpf.Ui.Markup">
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <ResourceDictionary.MergedDictionaries>
+        <!--
+            NavigationView flyouts are projections of the ordinary WPF menu controls. Merge their
+            concrete library styles locally so independently loaded NavigationView dictionaries do
+            not depend on Generic.xaml merge order.
+        -->
+        <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/Menu/MenuItem.xaml" />
+        <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/ContextMenu/ContextMenu.xaml" />
+    </ResourceDictionary.MergedDictionaries>
 
     <!--
-        Popup templates host the owning NavigationViewItem's ItemsPresenter directly. This is the
-        same structural contract used by WPF MenuItem: no secondary ItemsControl mirrors the source,
-        and the owner remains the sole item-container generator for the branch.
+        The root surface differs from an arbitrary application ContextMenu only in its navigation
+        sizing. Popup creation, scrolling, capture, focus and dismissal remain supplied by the
+        shared UiContextMenuStyle.
     -->
-    <ControlTemplate x:Key="NavigationViewItemSubmenuTemplate" TargetType="{x:Type controls:NavigationViewItem}">
-        <Grid>
-            <Button
-                x:Name="PART_HeaderButton"
-                MinWidth="160"
-                MinHeight="38"
-                Padding="12,0"
-                HorizontalContentAlignment="Stretch"
-                Background="Transparent"
-                BorderBrush="{TemplateBinding BorderBrush}"
-                BorderThickness="{TemplateBinding BorderThickness}"
-                Content="{TemplateBinding Header}"
-                ContentTemplate="{TemplateBinding HeaderTemplate}"
-                ContentTemplateSelector="{TemplateBinding HeaderTemplateSelector}">
-                <Button.Template>
-                    <ControlTemplate TargetType="{x:Type Button}">
-                        <Border
-                            x:Name="HeaderSurface"
-                            Padding="{TemplateBinding Padding}"
-                            Background="{TemplateBinding Background}"
-                            BorderBrush="{TemplateBinding BorderBrush}"
-                            BorderThickness="{TemplateBinding BorderThickness}"
-                            CornerRadius="4">
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                <ContentPresenter
-                                    x:Name="IconPresenter"
-                                    Margin="0,0,8,0"
-                                    VerticalAlignment="Center"
-                                    Content="{Binding Icon, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}" />
-                                <ContentPresenter
-                                    Grid.Column="1"
-                                    VerticalAlignment="Center"
-                                    Content="{TemplateBinding Content}"
-                                    ContentTemplate="{TemplateBinding ContentTemplate}"
-                                    ContentTemplateSelector="{TemplateBinding ContentTemplateSelector}"
-                                    RecognizesAccessKey="True" />
-                                <ContentPresenter
-                                    x:Name="InfoBadgePresenter"
-                                    Grid.Column="2"
-                                    Margin="8,0,0,0"
-                                    Content="{Binding InfoBadge, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}" />
-                                <!--
-                                    A submenu header owns one semantic input surface. The Chevron
-                                    only advertises that the row has a cascading child menu.
-                                -->
-                                <controls:SymbolIcon
-                                    x:Name="ChevronIcon"
-                                    Grid.Column="3"
-                                    Margin="8,0,0,0"
-                                    HorizontalAlignment="Center"
-                                    VerticalAlignment="Center"
-                                    FontSize="12"
-                                    Foreground="{m:BrushResource TextFillColorPrimaryBrush}"
-                                    IsHitTestVisible="False"
-                                    Symbol="ChevronRight24" />
-                            </Grid>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="HeaderSurface" Property="Background" Value="{m:BrushResource SubtleFillColorSecondaryBrush}" />
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="HeaderSurface" Property="Background" Value="{m:BrushResource SubtleFillColorTertiaryBrush}" />
-                            </Trigger>
-                            <DataTrigger Binding="{Binding IsActive, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}" Value="True">
-                                <Setter TargetName="HeaderSurface" Property="Background" Value="{m:BrushResource SubtleFillColorSecondaryBrush}" />
-                            </DataTrigger>
-                            <DataTrigger Binding="{Binding IsSubmenuOpen, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}" Value="True">
-                                <Setter TargetName="HeaderSurface" Property="Background" Value="{m:BrushResource SubtleFillColorSecondaryBrush}" />
-                            </DataTrigger>
-                            <DataTrigger Binding="{Binding Icon, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}" Value="{x:Null}">
-                                <Setter TargetName="IconPresenter" Property="Visibility" Value="Collapsed" />
-                            </DataTrigger>
-                            <DataTrigger Binding="{Binding InfoBadge, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}" Value="{x:Null}">
-                                <Setter TargetName="InfoBadgePresenter" Property="Visibility" Value="Collapsed" />
-                            </DataTrigger>
-                            <DataTrigger Binding="{Binding HasItems, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}" Value="False">
-                                <Setter TargetName="ChevronIcon" Property="Visibility" Value="Collapsed" />
-                            </DataTrigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Button.Template>
-            </Button>
+    <Style
+        x:Key="NavigationViewItemSubmenuContextMenuStyle"
+        BasedOn="{StaticResource UiContextMenuStyle}"
+        TargetType="{x:Type ContextMenu}">
+        <Setter Property="MinWidth" Value="180" />
+        <Setter Property="MaxHeight" Value="420" />
+    </Style>
 
-            <Popup
-                x:Name="PART_SubMenuPopup"
-                controls:PopupAnimator.IsEnabled="True"
-                controls:PopupShadow.IsEnabled="True"
-                AllowsTransparency="True"
-                Focusable="False"
-                HorizontalOffset="8"
-                IsOpen="{Binding IsSubmenuOpen, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
-                Placement="Right"
-                PlacementTarget="{Binding ElementName=PART_HeaderButton}"
-                PopupAnimation="None"
-                VerticalOffset="-2">
-                <Border
-                    MinWidth="180"
-                    MaxHeight="420"
-                    Padding="4"
-                    Background="{m:BrushResource AcrylicBackgroundFillColorDefaultBrush}"
-                    BorderBrush="{m:BrushResource SurfaceStrokeColorFlyoutBrush}"
-                    BorderThickness="1"
-                    CornerRadius="8">
-                    <ScrollViewer
-                        CanContentScroll="True"
-                        Focusable="False"
-                        HorizontalScrollBarVisibility="Disabled"
-                        VerticalScrollBarVisibility="Auto">
-                        <ItemsPresenter
-                            KeyboardNavigation.DirectionalNavigation="Contained"
-                            SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
-                    </ScrollViewer>
-                </Border>
-            </Popup>
-        </Grid>
-    </ControlTemplate>
+    <!--
+        Every projected row is a real MenuItem and consequently uses the same four native roles
+        (top-level item/header and submenu item/header) as other library menus. Navigation-specific
+        data is connected by bindings in NavigationViewItem; this style owns appearance only.
+    -->
+    <Style
+        x:Key="NavigationViewItemSubmenuMenuItemStyle"
+        BasedOn="{StaticResource UiMenuItemStyle}"
+        TargetType="{x:Type MenuItem}" />
 
 </ResourceDictionary>

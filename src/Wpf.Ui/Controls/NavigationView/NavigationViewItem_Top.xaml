@@ -71,31 +71,20 @@
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Button.Template>
+                <Button.ContextMenu>
+                    <!--
+                        The control populates this root with a complete native MenuItem projection
+                        before opening. ContextMenu/MenuItem therefore own the entire detached menu
+                        session, including every cascading Popup, focus transition, capture and
+                        keyboard gesture; no NavigationViewItem visual enters this presentation tree.
+                    -->
+                    <ContextMenu
+                        x:Name="PART_SubMenuContextMenu"
+                        Placement="Bottom"
+                        Style="{Binding SubmenuContextMenuStyle, RelativeSource={RelativeSource TemplatedParent}}"
+                        VerticalOffset="8" />
+                </Button.ContextMenu>
             </Button>
-            <Popup
-                x:Name="PART_SubMenuPopup"
-                controls:PopupAnimator.IsEnabled="True"
-                controls:PopupShadow.IsEnabled="True"
-                AllowsTransparency="True"
-                Focusable="False"
-                IsOpen="{Binding IsSubmenuOpen, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
-                Placement="Bottom"
-                PlacementTarget="{Binding ElementName=PART_HeaderButton}"
-                PopupAnimation="None"
-                VerticalOffset="8">
-                <Border
-                    MinWidth="180"
-                    MaxHeight="420"
-                    Padding="4"
-                    Background="{m:BrushResource AcrylicBackgroundFillColorDefaultBrush}"
-                    BorderBrush="{m:BrushResource SurfaceStrokeColorFlyoutBrush}"
-                    BorderThickness="1"
-                    CornerRadius="8">
-                    <ScrollViewer CanContentScroll="True" Focusable="False" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
-                        <ItemsPresenter KeyboardNavigation.DirectionalNavigation="Contained" SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
-                    </ScrollViewer>
-                </Border>
-            </Popup>
         </Grid>
     </ControlTemplate>
 

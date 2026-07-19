@@ -993,7 +993,7 @@ public partial class NavigationView
             (NavigationViewPaneDisplayMode)e.NewValue
         );
 
-        // Close Popup-owned state before the style trigger clears the outgoing template subtree.
+        // Close ContextMenu-owned state before the style trigger clears the outgoing template subtree.
         // IsExpanded is intentionally left untouched so an inline Left hierarchy survives a
         // presentation round trip.
         navigationView.CloseAllNavigationViewItemSubmenus();
