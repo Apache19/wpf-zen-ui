@@ -24,7 +24,7 @@
             CornerRadius="{Binding (Border.CornerRadius), RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}">
             <Grid Margin="{Binding Indentation, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}" Background="Transparent">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition x:Name="IconColumn" Width="40" />
+                    <ColumnDefinition x:Name="IconColumn" Width="40" SharedSizeGroup="Icon" />
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition x:Name="ExpandColumn" Width="0" />
@@ -52,7 +52,6 @@
                 <ContentPresenter
                     x:Name="HeaderPresenter"
                     Grid.Column="1"
-                    Margin="4,0,0,0"
                     HorizontalAlignment="Left"
                     VerticalAlignment="Center"
                     Content="{TemplateBinding Content}"
@@ -101,11 +100,28 @@
             <DataTrigger Binding="{Binding IsSubmenuOpen, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}" Value="True">
                 <Setter TargetName="HeaderSurface" Property="Background" Value="{m:BrushResource SubtleFillColorSecondaryBrush}" />
             </DataTrigger>
+
             <DataTrigger Binding="{Binding Icon, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}" Value="{x:Null}">
-                <Setter TargetName="IconColumn" Property="Width" Value="0" />
+                <Setter TargetName="IconColumn" Property="Width" Value="3" />
                 <Setter TargetName="IconPresenter" Property="Visibility" Value="Collapsed" />
                 <Setter TargetName="HeaderPresenter" Property="Margin" Value="10,0,0,0" />
             </DataTrigger>
+
+            <DataTrigger Binding="{Binding IsSubItem, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}" Value="True">
+                <Setter TargetName="IconColumn" Property="Width" Value="Auto" />
+                <Setter TargetName="IconPresenter" Property="Margin" Value="10,0,8,0" />
+                <Setter TargetName="IconPresenter" Property="Visibility" Value="Visible" />
+                <Setter TargetName="HeaderPresenter" Property="Margin" Value="0,0,0,0" />
+            </DataTrigger>
+
+            <MultiDataTrigger>
+                <MultiDataTrigger.Conditions>
+                    <Condition Binding="{Binding IsSubItem, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}" Value="True" />
+                    <Condition Binding="{Binding Icon, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}" Value="{x:Null}" />
+                </MultiDataTrigger.Conditions>
+                <Setter TargetName="IconPresenter" Property="Margin" Value="10,0,0,0" />
+            </MultiDataTrigger>
+
             <DataTrigger Binding="{Binding InfoBadge, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}" Value="{x:Null}">
                 <Setter TargetName="InfoBadgePresenter" Property="Visibility" Value="Collapsed" />
             </DataTrigger>
@@ -177,6 +193,7 @@
             <ItemsPresenter
                 x:Name="PART_ItemsPresenter"
                 Grid.Row="1"
+                Grid.IsSharedSizeScope="True"
                 KeyboardNavigation.DirectionalNavigation="Contained"
                 Opacity="0"
                 SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"
@@ -237,8 +254,7 @@
                         x:Name="PART_SubMenuContextMenu"
                         HorizontalOffset="8"
                         Placement="Right"
-                        Style="{Binding SubmenuContextMenuStyle, RelativeSource={RelativeSource TemplatedParent}}"
-                        VerticalOffset="-2" />
+                        Style="{Binding SubmenuContextMenuStyle, RelativeSource={RelativeSource TemplatedParent}}" />
                 </Button.ContextMenu>
             </Button>
         </Grid>
