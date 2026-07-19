@@ -144,7 +144,19 @@
                 <Setter TargetName="ActiveRectangle" Property="Opacity" Value="1" />
                 <Setter TargetName="MainBorder" Property="Background" Value="{m:BrushResource SubtleFillColorSecondaryBrush}" />
             </Trigger>
-            <Trigger Property="IsMouseOver" Value="True">
+            <!--
+                Popup descendants make the NavigationViewItem itself report IsMouseOver. The
+                border is deliberately a sibling of PART_SubMenuPopup, so it identifies only the
+                row under the pointer and prevents hover from leaking into popup ancestors.
+            -->
+            <Trigger SourceName="MainBorder" Property="IsMouseOver" Value="True">
+                <Setter TargetName="MainBorder" Property="Background" Value="{m:BrushResource SubtleFillColorSecondaryBrush}" />
+            </Trigger>
+            <!--
+                Keep the row that owns the next Popup highlighted while the pointer interacts with
+                that Popup. This state is explicit and therefore does not revive ancestor hover.
+            -->
+            <Trigger Property="IsSubmenuOpen" Value="True">
                 <Setter TargetName="MainBorder" Property="Background" Value="{m:BrushResource SubtleFillColorSecondaryBrush}" />
             </Trigger>
             <Trigger Property="IsPressed" Value="True">

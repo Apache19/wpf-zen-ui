@@ -232,6 +232,91 @@ public class NavigationViewItemTests
     }
 
     [Fact]
+    public void Templates_SeparatePrimaryHoverFromOpenPopupHighlight()
+    {
+        RunOnStaThread(() =>
+        {
+            var resources = new ResourceDictionary { Source = CreateResourceUri() };
+            string[] templateKeys =
+            [
+                "NavigationViewItemLeftTemplate",
+                "NavigationViewItemLeftFluentTemplate",
+                "NavigationViewItemLeftMinimalTemplate",
+                "NavigationViewItemSubmenuTemplate",
+                "NavigationViewItemTopTemplate",
+                "NavigationViewItemBottomTemplate",
+            ];
+
+            foreach (string templateKey in templateKeys)
+            {
+                var template = Assert.IsType<ControlTemplate>(resources[templateKey]);
+                int hoverConditionCount = 0;
+                int openPopupHighlightCount = 0;
+
+                foreach (TriggerBase triggerBase in template.Triggers)
+                {
+                    if (
+                        triggerBase is Trigger trigger &&
+                        trigger.Property == UIElement.IsMouseOverProperty
+                    )
+                    {
+                        Assert.Equal("MainBorder", trigger.SourceName);
+                        hoverConditionCount++;
+                    }
+
+                    if (
+                        triggerBase is Trigger openTrigger &&
+                        openTrigger.Property == NavigationViewItem.IsSubmenuOpenProperty
+                    )
+                    {
+                        foreach (Setter setter in openTrigger.Setters)
+                        {
+                            if (
+                                setter.TargetName == "MainBorder" &&
+                                setter.Property == Border.BackgroundProperty
+                            )
+                            {
+                                openPopupHighlightCount++;
+                            }
+                        }
+                    }
+
+                    if (triggerBase is MultiTrigger multiTrigger)
+                    {
+                        foreach (System.Windows.Condition condition in multiTrigger.Conditions)
+                        {
+                            if (condition.Property == UIElement.IsMouseOverProperty)
+                            {
+                                Assert.Equal("MainBorder", condition.SourceName);
+                                hoverConditionCount++;
+                            }
+                        }
+                    }
+                }
+
+                Assert.True(
+                    hoverConditionCount > 0,
+                    $"{templateKey} must define a primary-surface hover condition."
+                );
+                Assert.True(
+                    openPopupHighlightCount > 0,
+                    $"{templateKey} must keep the Popup owner highlighted while its submenu is open."
+                );
+
+                // A Popup declared inside MainBorder would make MainBorder itself participate in
+                // WPF's reverse IsMouseOver inheritance, defeating the SourceName restriction.
+                var item = new NavigationViewItem { Template = template };
+                Assert.True(item.ApplyTemplate());
+                var mainBorder = Assert.IsType<Border>(template.FindName("MainBorder", item));
+                if (template.FindName("PART_SubMenuPopup", item) is Popup popup)
+                {
+                    Assert.False(mainBorder.IsAncestorOf(popup));
+                }
+            }
+        });
+    }
+
+    [Fact]
     public void InlineExpansionAndPopupState_AreIndependentAcrossModeChanges()
     {
         RunOnStaThread(() =>

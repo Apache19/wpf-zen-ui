@@ -207,7 +207,7 @@
             <Trigger Property="IsSubItem" Value="True">
                 <Setter TargetName="IconColumn" Property="Width" Value="Auto" />
                 <Setter TargetName="IconColumn" Property="SharedSizeGroup" Value="Icon" />
-                <Setter TargetName="IconContentPresenter" Property="Margin" Value="6,0,0,0" />
+                <Setter TargetName="IconContentPresenter" Property="Margin" Value="8,0,2,0" />
                 <Setter TargetName="ElementContentPresenter" Property="Margin" Value="4,0,0,0" />
             </Trigger>
 
@@ -242,7 +242,15 @@
                 <Setter TargetName="ActiveRectangle" Property="Opacity" Value="1.0" />
                 <Setter TargetName="MainBorder" Property="Background" Value="{m:BrushResource SubtleFillColorSecondaryBrush}" />
             </Trigger>
-            <Trigger Property="IsMouseOver" Value="True">
+            <!--
+                IsMouseOver reverse-inherits through a templated Popup. Listen to the primary
+                surface so hovering a descendant submenu does not highlight this ancestor row.
+            -->
+            <Trigger SourceName="MainBorder" Property="IsMouseOver" Value="True">
+                <Setter TargetName="MainBorder" Property="Background" Value="{m:BrushResource SubtleFillColorSecondaryBrush}" />
+            </Trigger>
+            <!--  An open Popup remains the active interaction surface after the pointer enters it.  -->
+            <Trigger Property="IsSubmenuOpen" Value="True">
                 <Setter TargetName="MainBorder" Property="Background" Value="{m:BrushResource SubtleFillColorSecondaryBrush}" />
             </Trigger>
             <Trigger Property="IsPressed" Value="True">

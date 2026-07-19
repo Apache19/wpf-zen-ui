@@ -138,12 +138,15 @@
                 <Setter TargetName="PART_InfoBadge" Property="Margin" Value="0" />
                 <Setter TargetName="PART_InfoBadge" Property="Visibility" Value="Collapsed" />
             </Trigger>
-            <Trigger Property="IsMouseOver" Value="True">
+            <Trigger SourceName="MainBorder" Property="IsMouseOver" Value="True">
+                <Setter TargetName="MainBorder" Property="Background" Value="{markup:BrushResource ControlFillColorPrimaryBrush}" />
+            </Trigger>
+            <Trigger Property="IsSubmenuOpen" Value="True">
                 <Setter TargetName="MainBorder" Property="Background" Value="{markup:BrushResource ControlFillColorPrimaryBrush}" />
             </Trigger>
             <MultiTrigger>
                 <MultiTrigger.Conditions>
-                    <Condition Property="IsMouseOver" Value="True" />
+                    <Condition SourceName="MainBorder" Property="IsMouseOver" Value="True" />
                     <Condition Property="IsActive" Value="False" />
                 </MultiTrigger.Conditions>
                 <MultiTrigger.Setters>

@@ -9,14 +9,15 @@
     </ResourceDictionary.MergedDictionaries>
 
     <ControlTemplate x:Key="NavigationViewItemTopTemplate" TargetType="{x:Type controls:NavigationViewItem}">
-        <Border
-            x:Name="MainBorder"
-            Background="{TemplateBinding Background}"
-            BorderBrush="{TemplateBinding BorderBrush}"
-            BorderThickness="{TemplateBinding BorderThickness}"
-            CornerRadius="{TemplateBinding Border.CornerRadius}"
-            SnapsToDevicePixels="True">
-            <Grid>
+        <Grid>
+            <Border
+                x:Name="MainBorder"
+                Background="{TemplateBinding Background}"
+                BorderBrush="{TemplateBinding BorderBrush}"
+                BorderThickness="{TemplateBinding BorderThickness}"
+                CornerRadius="{TemplateBinding Border.CornerRadius}"
+                SnapsToDevicePixels="True">
+                <Grid>
                 <Grid
                     Margin="8,8,8,8"
                     HorizontalAlignment="Stretch"
@@ -65,23 +66,28 @@
                     Opacity="0.0"
                     RadiusX="2"
                     RadiusY="2" />
-                <!--  NavigationView owns one subtree capture for the complete popup cascade.  -->
-                <Popup
-                    x:Name="PART_SubMenuPopup"
-                    controls:PopupAnimator.IsEnabled="True"
-                    controls:PopupShadow.IsEnabled="True"
-                    AllowsTransparency="True"
-                    Focusable="False"
-                    HorizontalOffset="0"
-                    IsOpen="{Binding IsSubmenuOpen, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
-                    Placement="Bottom"
-                    PlacementTarget="{Binding ElementName=MainBorder}"
-                    PopupAnimation="None"
-                    VerticalOffset="1">
-                    <ContentPresenter Content="{Binding MenuItems, RelativeSource={RelativeSource TemplatedParent}}" ContentTemplate="{StaticResource NavigationViewItemSubmenuContentTemplate}" />
-                </Popup>
-            </Grid>
-        </Border>
+                </Grid>
+            </Border>
+            <!--
+                Keep the Popup outside MainBorder. WPF reverse-inherits IsMouseOver through a
+                templated Popup, so nesting it inside the hover surface would highlight the parent
+                whenever the pointer is over any descendant submenu.
+            -->
+            <Popup
+                x:Name="PART_SubMenuPopup"
+                controls:PopupAnimator.IsEnabled="True"
+                controls:PopupShadow.IsEnabled="True"
+                AllowsTransparency="True"
+                Focusable="False"
+                HorizontalOffset="0"
+                IsOpen="{Binding IsSubmenuOpen, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
+                Placement="Bottom"
+                PlacementTarget="{Binding ElementName=MainBorder}"
+                PopupAnimation="None"
+                VerticalOffset="1">
+                <ContentPresenter Content="{Binding MenuItems, RelativeSource={RelativeSource TemplatedParent}}" ContentTemplate="{StaticResource NavigationViewItemSubmenuContentTemplate}" />
+            </Popup>
+        </Grid>
         <ControlTemplate.Triggers>
             <Trigger Property="Icon" Value="{x:Null}">
                 <Setter TargetName="IconContentPresenter" Property="Visibility" Value="Collapsed" />
@@ -100,7 +106,10 @@
                 <Setter TargetName="ActiveRectangle" Property="Opacity" Value="1.0" />
                 <Setter TargetName="MainBorder" Property="Background" Value="{m:BrushResource SubtleFillColorSecondaryBrush}" />
             </Trigger>
-            <Trigger Property="IsMouseOver" Value="True">
+            <Trigger SourceName="MainBorder" Property="IsMouseOver" Value="True">
+                <Setter TargetName="MainBorder" Property="Background" Value="{m:BrushResource SubtleFillColorSecondaryBrush}" />
+            </Trigger>
+            <Trigger Property="IsSubmenuOpen" Value="True">
                 <Setter TargetName="MainBorder" Property="Background" Value="{m:BrushResource SubtleFillColorSecondaryBrush}" />
             </Trigger>
             <Trigger Property="IsPressed" Value="True">
