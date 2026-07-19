@@ -14,6 +14,7 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Data;
 using System.Windows.Input;
+using System.Windows.Media;
 using Wpf.Ui.Controls;
 
 namespace Wpf.Ui.UnitTests.Controls.NavigationView;
@@ -48,11 +49,6 @@ public class NavigationViewItemTests
         BindingFlags.NonPublic | BindingFlags.Instance
     )!;
 
-    private static readonly MethodInfo OnExpandButtonClickMethod = typeof(NavigationViewItem).GetMethod(
-        "OnExpandButtonClick",
-        BindingFlags.NonPublic | BindingFlags.Instance
-    )!;
-
     private static readonly MethodInfo OnNavigationViewItemSubmenuOpenedMethod =
         typeof(Wpf.Ui.Controls.NavigationView).GetMethod(
             "OnNavigationViewItemSubmenuOpened",
@@ -72,7 +68,7 @@ public class NavigationViewItemTests
         )!;
 
     [Fact]
-    public void ContainerUsesBoundedHeaderAndExpansionInputSurfaces()
+    public void ContainerUsesOneBoundedHeaderInputSurface()
     {
         RunOnStaThread(() =>
         {
@@ -85,17 +81,13 @@ public class NavigationViewItemTests
             var headerButton = Assert.IsAssignableFrom<ButtonBase>(
                 item.Template.FindName("PART_HeaderButton", item)
             );
-            var expandButton = Assert.IsAssignableFrom<System.Windows.Controls.Primitives.ToggleButton>(
-                item.Template.FindName("PART_ExpandButton", item)
-            );
 
             Assert.True(typeof(HeaderedItemsControl).IsAssignableFrom(typeof(NavigationViewItem)));
             Assert.False(typeof(ButtonBase).IsAssignableFrom(typeof(NavigationViewItem)));
             Assert.False(item.Focusable);
             Assert.False(KeyboardNavigation.GetIsTabStop(item));
             Assert.True(headerButton.Focusable);
-            Assert.False(expandButton.Focusable);
-            Assert.False(KeyboardNavigation.GetIsTabStop(expandButton));
+            Assert.Null(item.Template.FindName("PART_ExpandButton", item));
         });
     }
 
@@ -416,7 +408,7 @@ public class NavigationViewItemTests
     }
 
     [Fact]
-    public void TemplatesExposeOneHeaderSurfaceAndASeparateExpansionSurface()
+    public void TemplatesExposeOnlyOneHeaderInputSurface()
     {
         RunOnStaThread(() =>
         {
@@ -440,11 +432,71 @@ public class NavigationViewItemTests
                 Assert.IsAssignableFrom<ButtonBase>(
                     template.FindName("PART_HeaderButton", item)
                 );
-                Assert.IsAssignableFrom<System.Windows.Controls.Primitives.ToggleButton>(
-                    template.FindName("PART_ExpandButton", item)
-                );
+                Assert.Null(template.FindName("PART_ExpandButton", item));
                 Assert.Equal(hasPopup, template.FindName("PART_SubMenuPopup", item) is Popup);
                 Assert.Null(template.FindName("ChildMenuPresenter", item));
+            }
+        });
+    }
+
+    [Fact]
+    public void LeftInlineExpansion_AnimatesChildrenAndChevronFromTheSingleHeaderSurface()
+    {
+        RunOnStaThread(() =>
+        {
+            var resources = new ResourceDictionary { Source = CreateResourceUri() };
+            var navigationView = new Wpf.Ui.Controls.NavigationView
+            {
+                PaneDisplayMode = NavigationViewPaneDisplayMode.Left,
+                IsPaneOpen = true,
+            };
+            var parent = new NavigationViewItem
+            {
+                Style = Assert.IsType<Style>(resources[typeof(NavigationViewItem)]),
+            };
+            parent.Items.Add(new NavigationViewItem());
+            AttachToNavigationView(parent, navigationView);
+
+            var window = new Window
+            {
+                Width = 320,
+                Height = 240,
+                Content = parent,
+                ShowActivated = false,
+                ShowInTaskbar = false,
+                WindowStyle = WindowStyle.None,
+            };
+            try
+            {
+                window.Show();
+                DrainDispatcher();
+
+                _ = parent.ApplyTemplate();
+                var headerButton = Assert.IsAssignableFrom<ButtonBase>(
+                    parent.Template.FindName("PART_HeaderButton", parent)
+                );
+                _ = headerButton.ApplyTemplate();
+                var chevron = Assert.IsAssignableFrom<SymbolIcon>(
+                    headerButton.Template.FindName("ChevronIcon", headerButton)
+                );
+                var itemsPresenter = Assert.IsAssignableFrom<ItemsPresenter>(
+                    parent.Template.FindName("PART_ItemsPresenter", parent)
+                );
+
+                Assert.Equal(Visibility.Collapsed, itemsPresenter.Visibility);
+                Assert.Equal(Visibility.Visible, chevron.Visibility);
+
+                InvokeClick(parent);
+
+                Assert.True(parent.IsExpanded);
+                Assert.Equal(Visibility.Visible, itemsPresenter.Visibility);
+                Assert.True(itemsPresenter.HasAnimatedProperties);
+                Assert.True(Assert.IsType<RotateTransform>(chevron.RenderTransform).HasAnimatedProperties);
+                parent.RaiseEvent(new RoutedEventArgs(FrameworkElement.UnloadedEvent));
+            }
+            finally
+            {
+                window.Close();
             }
         });
     }
@@ -607,7 +659,7 @@ public class NavigationViewItemTests
     }
 
     [Fact]
-    public void HeaderNavigationAndExpansionAreSeparateActions()
+    public void NavigationItemSurfaceCombinesNavigationAndChildMenuActions()
     {
         RunOnStaThread(() =>
         {
@@ -623,18 +675,28 @@ public class NavigationViewItemTests
             navigationView.MenuItems.Add(groupingParent);
             AttachToNavigationView(navigableParent, navigationView);
             AttachToNavigationView(groupingParent, navigationView);
+            int invokedCount = 0;
+            navigationView.ItemInvoked += (_, _) => invokedCount++;
 
             InvokeClick(navigableParent);
 
             Assert.Same(navigableParent, navigationView.SelectedItem);
-            Assert.False(navigableParent.IsSubmenuOpen);
-
-            InvokeExpand(navigableParent);
             Assert.True(navigableParent.IsSubmenuOpen);
+            Assert.Equal(1, invokedCount);
 
             InvokeClick(groupingParent);
 
             Assert.True(groupingParent.IsSubmenuOpen);
+            Assert.Equal(1, invokedCount);
+
+            // Re-entering through the same header surface closes the competing branch, navigates,
+            // and opens this item's child presentation as one deterministic action.
+            InvokeClick(navigableParent);
+
+            Assert.Same(navigableParent, navigationView.SelectedItem);
+            Assert.True(navigableParent.IsSubmenuOpen);
+            Assert.False(groupingParent.IsSubmenuOpen);
+            Assert.Equal(2, invokedCount);
 
             navigableParent.RaiseEvent(new RoutedEventArgs(FrameworkElement.UnloadedEvent));
             groupingParent.RaiseEvent(new RoutedEventArgs(FrameworkElement.UnloadedEvent));
@@ -642,7 +704,7 @@ public class NavigationViewItemTests
     }
 
     [Fact]
-    public void CancelledNavigationDoesNotImplicitlyOpenChildren()
+    public void CancelledNavigationDoesNotSuppressTheChildMenuAction()
     {
         RunOnStaThread(() =>
         {
@@ -658,11 +720,8 @@ public class NavigationViewItemTests
 
             InvokeClick(parent);
 
-            Assert.False(parent.IsSubmenuOpen);
-            Assert.Null(navigationView.SelectedItem);
-
-            InvokeExpand(parent);
             Assert.True(parent.IsSubmenuOpen);
+            Assert.Null(navigationView.SelectedItem);
             parent.RaiseEvent(new RoutedEventArgs(FrameworkElement.UnloadedEvent));
         });
     }
@@ -685,10 +744,6 @@ public class NavigationViewItemTests
             InvokeClick(parent);
 
             Assert.Same(parent, navigationView.SelectedItem);
-            Assert.False(parent.IsExpanded);
-            Assert.False(parent.IsSubmenuOpen);
-
-            InvokeExpand(parent);
             Assert.True(parent.IsExpanded);
             Assert.False(parent.IsSubmenuOpen);
 
@@ -696,9 +751,6 @@ public class NavigationViewItemTests
             InvokeClick(parent);
 
             Assert.True(parent.IsExpanded);
-            Assert.False(parent.IsSubmenuOpen);
-
-            InvokeExpand(parent);
             Assert.True(parent.IsSubmenuOpen);
             parent.RaiseEvent(new RoutedEventArgs(FrameworkElement.UnloadedEvent));
         });
@@ -982,10 +1034,7 @@ public class NavigationViewItemTests
                 InvokeClick(child);
                 DrainDispatcher();
                 Assert.Same(child, navigationView.SelectedItem);
-                Assert.False(child.IsSubmenuOpen);
-
-                InvokeExpand(child);
-                DrainDispatcher();
+                Assert.True(child.IsSubmenuOpen);
                 Popup childPopup = FindSubmenuPopup(child);
 
                 Assert.True(parent.IsSubmenuOpen);
@@ -1316,26 +1365,6 @@ public class NavigationViewItemTests
         typeof(ButtonBase)
             .GetMethod("OnClick", BindingFlags.Instance | BindingFlags.NonPublic)!
             .Invoke(headerButton, null);
-    }
-
-    private static void InvokeExpand(NavigationViewItem item)
-    {
-        _ = item.ApplyTemplate();
-        var expandButton = Assert.IsAssignableFrom<System.Windows.Controls.Primitives.ToggleButton>(
-            item.Template.FindName("PART_ExpandButton", item)
-        );
-        bool isOpen = item.PaneDisplayMode == NavigationViewPaneDisplayMode.Left && item.IsPaneOpen
-            ? item.IsExpanded
-            : item.IsSubmenuOpen;
-        expandButton.SetCurrentValue(
-            System.Windows.Controls.Primitives.ToggleButton.IsCheckedProperty,
-            !isOpen
-        );
-        Assert.Equal(!isOpen, expandButton.IsChecked == true);
-        OnExpandButtonClickMethod.Invoke(
-            item,
-            [expandButton, new RoutedEventArgs(ButtonBase.ClickEvent, expandButton)]
-        );
     }
 
     private static Popup FindSubmenuPopup(NavigationViewItem item)

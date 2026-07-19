@@ -15,7 +15,6 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Threading;
-using WpfToggleButton = System.Windows.Controls.Primitives.ToggleButton;
 
 // ReSharper disable once CheckNamespace
 namespace Wpf.Ui.Controls;
@@ -28,9 +27,10 @@ namespace Wpf.Ui.Controls;
 /// The item is an <see cref="HeaderedItemsControl"/>, not a button. Its
 /// <see cref="HeaderedItemsControl.Header"/> is the
 /// navigation row, while <see cref="ItemsControl.Items"/> is the authoritative child collection.
-/// This distinction is important: focus, mouse capture and pressed state belong only to
-/// <c>PART_HeaderButton</c>; inline descendants and Popup content must never become part of a
-/// button's input or focus-scrolling bounds.
+/// This distinction is important: focus, mouse capture and pressed state belong only to the bounded
+/// <c>PART_HeaderButton</c>. The Chevron rendered by built-in templates is a non-interactive state
+/// indicator; inline descendants and Popup content must never become part of the button's input or
+/// focus-scrolling bounds.
 /// </para>
 /// <para>
 /// Built-in templates contain exactly one <see cref="ItemsPresenter"/>. Left/open presentation
@@ -42,12 +42,10 @@ namespace Wpf.Ui.Controls;
 /// </remarks>
 [TemplatePart(Name = "PART_SubMenuPopup", Type = typeof(Popup))]
 [TemplatePart(Name = HeaderButtonPartName, Type = typeof(ButtonBase))]
-[TemplatePart(Name = ExpandButtonPartName, Type = typeof(ButtonBase))]
 [StyleTypedProperty(Property = nameof(ItemContainerStyle), StyleTargetType = typeof(NavigationViewItem))]
 public class NavigationViewItem : HeaderedItemsControl, INavigationViewItem
 {
     private const string HeaderButtonPartName = "PART_HeaderButton";
-    private const string ExpandButtonPartName = "PART_ExpandButton";
 
     #region DP: Indentation
 
@@ -409,7 +407,6 @@ public class NavigationViewItem : HeaderedItemsControl, INavigationViewItem
     private readonly HashSet<NavigationViewItem> _directNavigationChildren = [];
     private NavigationViewItem?                  _parentItem;
     private ButtonBase?                          _headerButton;
-    private ButtonBase?                          _expandButton;
     private bool                                 _hadItems;
 
     // Opening a descendant popup first materializes each required ancestor. Those intermediate
@@ -417,13 +414,8 @@ public class NavigationViewItem : HeaderedItemsControl, INavigationViewItem
     // would treat the descendant currently being opened as a competing branch and close it.
     private bool _isOpeningAsPopupAncestor;
 
-    internal NavigationView? NavigationViewHost
-    {
-        get
-        {
-            return NavigationView.GetNavigationParent(this) ?? _parentItem?.NavigationViewHost;
-        }
-    }
+    internal NavigationView? NavigationViewHost =>
+        NavigationView.GetNavigationParent(this) ?? _parentItem?.NavigationViewHost;
 
     /// <summary>
     /// Gets a value indicating whether the current presentation owns an inline child list rather than a popup.
@@ -446,10 +438,12 @@ public class NavigationViewItem : HeaderedItemsControl, INavigationViewItem
         // The container owns descendants and can be much taller than its row. Only the template's
         // header button participates in focus navigation; focusing the container itself would make
         // FrameworkElement request that the complete expanded branch be scrolled into view.
+
         FocusableProperty.OverrideMetadata(
             typeof(NavigationViewItem),
             new FrameworkPropertyMetadata(false)
         );
+
         KeyboardNavigation.IsTabStopProperty.OverrideMetadata(
             typeof(NavigationViewItem),
             new FrameworkPropertyMetadata(false)
@@ -458,9 +452,6 @@ public class NavigationViewItem : HeaderedItemsControl, INavigationViewItem
 
     /// <summary>Gets the realized header input surface for automation and focus coordination.</summary>
     internal ButtonBase? HeaderButton => _headerButton;
-
-    /// <summary>Gets the realized expansion input surface for automation-tree filtering.</summary>
-    internal ButtonBase? ExpandButton => _expandButton;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="NavigationViewItem"/> class with an empty header
@@ -567,10 +558,10 @@ public class NavigationViewItem : HeaderedItemsControl, INavigationViewItem
 
     /// <inheritdoc />
     /// <remarks>
-    /// Template buttons are intentionally subscribed here instead of handling mouse input on the
+    /// The template button is intentionally subscribed here instead of handling mouse input on the
     /// container. Popup model-parent routing can pass input through an owning item, while a Click
     /// raised by the concrete header button unambiguously identifies the intended input surface.
-    /// Missing parts leave a non-interactive custom template but do not compromise item generation.
+    /// A missing part leaves a non-interactive custom template but does not compromise item generation.
     /// </remarks>
     public override void OnApplyTemplate()
     {
@@ -578,16 +569,10 @@ public class NavigationViewItem : HeaderedItemsControl, INavigationViewItem
         base.OnApplyTemplate();
 
         _headerButton = GetTemplateChild(HeaderButtonPartName) as ButtonBase;
-        _expandButton = GetTemplateChild(ExpandButtonPartName) as ButtonBase;
 
         if (_headerButton is not null)
         {
             _headerButton.Click += OnHeaderButtonClick;
-        }
-
-        if (_expandButton is not null)
-        {
-            _expandButton.Click += OnExpandButtonClick;
         }
     }
 
@@ -673,6 +658,7 @@ public class NavigationViewItem : HeaderedItemsControl, INavigationViewItem
         var currentDirectChildren = new HashSet<NavigationViewItem>(
             Items.OfType<NavigationViewItem>()
         );
+
         foreach (NavigationViewItem child in _directNavigationChildren)
         {
             if (!currentDirectChildren.Contains(child))
@@ -720,12 +706,6 @@ public class NavigationViewItem : HeaderedItemsControl, INavigationViewItem
             _headerButton.Click -= OnHeaderButtonClick;
             _headerButton = null;
         }
-
-        if (_expandButton is not null)
-        {
-            _expandButton.Click -= OnExpandButtonClick;
-            _expandButton = null;
-        }
     }
 
     private void OnHeaderButtonClick(object sender, RoutedEventArgs e)
@@ -734,44 +714,37 @@ public class NavigationViewItem : HeaderedItemsControl, INavigationViewItem
         e.Handled = true;
     }
 
-    private void OnExpandButtonClick(object sender, RoutedEventArgs e)
-    {
-        // ToggleButton updates IsChecked before raising Click. Built-in templates bind that value to
-        // the active open-state property, so consume the resulting state instead of toggling twice.
-        // Qualify the WPF primitive explicitly. Wpf.Ui.Controls also contains a ToggleButton type;
-        // resolving that sibling type here would reject the template part after WPF has already
-        // toggled its binding and would immediately reverse every user click.
-        bool isOpen = sender is WpfToggleButton toggleButton
-            ? toggleButton.IsChecked == true
-            : !IsChildMenuOpen;
-        SetChildMenuOpen(isOpen, focusFirstItem: false);
-        e.Handled = true;
-    }
-
     /// <summary>
-    /// Invokes the semantic header action.
+    /// Executes every action represented by the navigation-item surface.
     /// </summary>
     /// <remarks>
-    /// Navigable parents navigate from the header and expand only from <c>PART_ExpandButton</c>.
-    /// Grouping parents, which have no target page, toggle from the header as a convenient single
-    /// action. Keeping these actions distinct avoids the historical ambiguity where one click both
-    /// changed page and rearranged the hierarchy.
+    /// Navigation and child presentation are deliberately one semantic operation. An item that has
+    /// both a target and children navigates and toggles its children from the same bounded header
+    /// surface. The Chevron is only a visual projection of the resulting open state and therefore
+    /// never participates in input, focus, capture, or UI Automation as a second control.
     /// </remarks>
     /// <returns><see langword="true"/> when an action was performed.</returns>
     internal bool InvokePrimaryAction()
     {
+        // Snapshot the child action before navigation. Navigation can synchronously update
+        // selection, content, bindings, or Popup arbitration; the physical click must still apply
+        // the state that was requested when the operation began.
+        bool hasItems = HasItems;
+        bool shouldOpenChildMenu = hasItems && !IsChildMenuOpen;
+        bool actionPerformed = false;
+
         if (TargetPageType is not null && NavigationViewHost is { } navigationView)
         {
-            return navigationView.OnNavigationViewItemClick(this);
+            actionPerformed = navigationView.OnNavigationViewItemClick(this);
         }
 
-        if (HasItems)
+        if (hasItems)
         {
-            SetChildMenuOpen(!IsChildMenuOpen, focusFirstItem: false);
-            return true;
+            SetChildMenuOpen(shouldOpenChildMenu, focusFirstItem: false);
+            actionPerformed = true;
         }
 
-        return false;
+        return actionPerformed;
     }
 
     private static Visual? ResolveVisualInputSource(object? originalSource)
@@ -886,6 +859,7 @@ public class NavigationViewItem : HeaderedItemsControl, INavigationViewItem
             NavigationViewPaneDisplayMode.Bottom => Key.Up,
             _ => Key.Right,
         };
+
         Key closeKey = PaneDisplayMode switch
         {
             NavigationViewPaneDisplayMode.Top => Key.Up,
@@ -1108,7 +1082,7 @@ public class NavigationViewItem : HeaderedItemsControl, INavigationViewItem
             item.NavigationViewHost?.OnNavigationViewItemSubmenuClosed();
         }
 
-        if (!item.UsesInlineExpansion && item.HasItems)
+        if (item is { UsesInlineExpansion: false, HasItems: true })
         {
             NavigationViewItemAutomationPeer.RaiseExpandCollapseAutomationEvent(
                 item,
@@ -1225,6 +1199,7 @@ public class NavigationViewItem : HeaderedItemsControl, INavigationViewItem
         ExpandCollapseState oldState = oldValue
             ? IsChildMenuOpen ? ExpandCollapseState.Expanded : ExpandCollapseState.Collapsed
             : ExpandCollapseState.LeafNode;
+
         ExpandCollapseState newState = newValue
             ? IsChildMenuOpen ? ExpandCollapseState.Expanded : ExpandCollapseState.Collapsed
             : ExpandCollapseState.LeafNode;
@@ -1287,10 +1262,12 @@ public class NavigationViewItem : HeaderedItemsControl, INavigationViewItem
         DependencyPropertyChangedEventArgs e)
     {
         var item = (NavigationViewItem)d;
+
         item.SetValue(
             PaneDisplayModePropertyKey,
             (NavigationViewPaneDisplayMode)e.NewValue
         );
+
         item.SetCurrentValue(IsSubmenuOpenProperty, false);
     }
 
@@ -1373,6 +1350,7 @@ public class NavigationViewItem : HeaderedItemsControl, INavigationViewItem
     internal void AttachToNavigationViewHost(NavigationView navigationView)
     {
         SetCurrentValue(NavigationView.NavigationParentProperty, navigationView);
+
         BindingOperations.SetBinding(
             this,
             PaneDisplayModeContextProperty,
@@ -1382,6 +1360,7 @@ public class NavigationViewItem : HeaderedItemsControl, INavigationViewItem
                 Mode = BindingMode.OneWay,
             }
         );
+
         BindingOperations.SetBinding(
             this,
             IsPaneOpenContextProperty,

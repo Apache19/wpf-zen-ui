@@ -13,7 +13,7 @@
             <Button
                 x:Name="PART_HeaderButton"
                 MinHeight="40"
-                Padding="12,0,40,0"
+                Padding="12,0"
                 HorizontalContentAlignment="Stretch"
                 Background="{m:BrushResource SubtleFillColorTransparentBrush}"
                 BorderBrush="{TemplateBinding BorderBrush}"
@@ -72,13 +72,6 @@
                     </ControlTemplate>
                 </Button.Template>
             </Button>
-            <ToggleButton
-                x:Name="PART_ExpandButton"
-                Margin="0,4,4,4"
-                HorizontalAlignment="Right"
-                VerticalAlignment="Center"
-                IsChecked="{Binding IsSubmenuOpen, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
-                Style="{StaticResource NavigationViewItemExpandButtonStyle}" />
             <Popup
                 x:Name="PART_SubMenuPopup"
                 controls:PopupAnimator.IsEnabled="True"
@@ -104,12 +97,6 @@
                 </Border>
             </Popup>
         </Grid>
-        <ControlTemplate.Triggers>
-            <Trigger Property="HasItems" Value="False">
-                <Setter TargetName="PART_ExpandButton" Property="Visibility" Value="Collapsed" />
-                <Setter TargetName="PART_HeaderButton" Property="Padding" Value="12,0" />
-            </Trigger>
-        </ControlTemplate.Triggers>
     </ControlTemplate>
 
 </ResourceDictionary>

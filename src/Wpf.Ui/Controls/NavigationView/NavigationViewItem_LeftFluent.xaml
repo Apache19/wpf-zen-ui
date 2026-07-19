@@ -94,15 +94,6 @@
                     </ControlTemplate>
                 </Button.Template>
             </Button>
-            <ToggleButton
-                x:Name="PART_ExpandButton"
-                Width="24"
-                Height="24"
-                Margin="0,0,2,2"
-                HorizontalAlignment="Right"
-                VerticalAlignment="Bottom"
-                IsChecked="{Binding IsSubmenuOpen, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
-                Style="{StaticResource NavigationViewItemExpandButtonStyle}" />
             <Popup
                 x:Name="PART_SubMenuPopup"
                 controls:PopupAnimator.IsEnabled="True"
@@ -129,9 +120,6 @@
             </Popup>
         </Grid>
         <ControlTemplate.Triggers>
-            <Trigger Property="HasItems" Value="False">
-                <Setter TargetName="PART_ExpandButton" Property="Visibility" Value="Collapsed" />
-            </Trigger>
             <Trigger Property="IsActive" Value="True">
                 <Setter Property="controls:NavigationViewItemTemplateBehavior.IsIconFilled" Value="True" />
             </Trigger>

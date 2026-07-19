@@ -59,20 +59,17 @@ internal class NavigationViewItemAutomationPeer
 
     /// <inheritdoc />
     /// <remarks>
-    /// PART_HeaderButton and PART_ExpandButton are implementation surfaces for the selection and
-    /// expand/collapse patterns exposed by this peer. Returning their Button peers as additional
-    /// controls would announce one navigation item as two or three unrelated controls. Rich header
-    /// content and realized child-item peers remain available through the normal automation tree.
+    /// PART_HeaderButton is the implementation surface for the selection and expand/collapse
+    /// patterns exposed by this peer. Returning its Button peer as an additional control would
+    /// announce one navigation item twice. The Chevron is deliberately a non-interactive visual;
+    /// rich header content and realized child-item peers remain available through the normal tree.
     /// </remarks>
     protected override List<AutomationPeer>? GetChildrenCore()
     {
         List<AutomationPeer>? children = base.GetChildrenCore();
         children?.RemoveAll(
             peer => peer is ButtonBaseAutomationPeer buttonPeer &&
-                    (
-                        ReferenceEquals(buttonPeer.Owner, _owner.HeaderButton) ||
-                        ReferenceEquals(buttonPeer.Owner, _owner.ExpandButton)
-                    )
+                    ReferenceEquals(buttonPeer.Owner, _owner.HeaderButton)
         );
         return children;
     }
