@@ -4,6 +4,7 @@
 // All Rights Reserved.
 
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.ExceptionServices;
@@ -46,6 +47,16 @@ public class NavigationViewItemTests
 
     private static readonly MethodInfo HandleChildMenuKeyMethod = typeof(NavigationViewItem).GetMethod(
         "HandleChildMenuKey",
+        BindingFlags.NonPublic | BindingFlags.Instance
+    )!;
+
+    private static readonly MethodInfo InvokePrimaryActionMethod = typeof(NavigationViewItem).GetMethod(
+        "InvokePrimaryAction",
+        BindingFlags.NonPublic | BindingFlags.Instance
+    )!;
+
+    private static readonly PropertyInfo SearchableContentProperty = typeof(NavigationViewItem).GetProperty(
+        "SearchableContent",
         BindingFlags.NonPublic | BindingFlags.Instance
     )!;
 
@@ -100,6 +111,134 @@ public class NavigationViewItemTests
         Assert.Null(itemType.GetEvent("Click"));
         Assert.NotNull(itemType.GetProperty(nameof(HeaderedItemsControl.Header)));
         Assert.NotNull(itemType.GetProperty(nameof(ItemsControl.ItemsSource)));
+    }
+
+    [Fact]
+    public void ActivationContract_OwnsStateAndExposesPostTransitionHooks()
+    {
+        RunOnStaThread(() =>
+        {
+            MethodInfo activateMethod = typeof(NavigationViewItem).GetMethod(nameof(NavigationViewItem.Activate))!;
+            MethodInfo deactivateMethod = typeof(NavigationViewItem).GetMethod(nameof(NavigationViewItem.Deactivate))!;
+
+            // Interface implementations may be represented as virtual final methods in metadata;
+            // IsFinal is the relevant guarantee that a derived control cannot override them.
+            Assert.True(activateMethod.IsFinal);
+            Assert.True(deactivateMethod.IsFinal);
+            Assert.True(
+                typeof(NavigationViewItem)
+                   .GetMethod("OnActivated", BindingFlags.NonPublic | BindingFlags.Instance)!
+                   .IsVirtual
+            );
+            Assert.True(
+                typeof(NavigationViewItem)
+                   .GetMethod("OnDeactivated", BindingFlags.NonPublic | BindingFlags.Instance)!
+                   .IsVirtual
+            );
+
+            var navigationView = new Wpf.Ui.Controls.NavigationView();
+            var parent = new NavigationViewItem();
+            var item = new ExtensibleNavigationViewItem();
+            parent.Items.Add(item);
+            AttachToNavigationView(parent, navigationView);
+
+            item.Activate(navigationView);
+
+            Assert.True(item.IsActive);
+            Assert.True(parent.IsDescendantActive);
+            Assert.Equal((true, true), item.ActivatedState);
+
+            item.Deactivate(navigationView);
+
+            Assert.False(item.IsActive);
+            Assert.False(parent.IsDescendantActive);
+            Assert.Equal((false, false), item.DeactivatedState);
+        });
+    }
+
+    [Fact]
+    public void InvocationAndExpansionHooks_RunAfterOwnedStateChanges()
+    {
+        RunOnStaThread(() =>
+        {
+            var navigationView = new Wpf.Ui.Controls.NavigationView
+            {
+                PaneDisplayMode = NavigationViewPaneDisplayMode.Left,
+                IsPaneOpen = true,
+            };
+            var item = new ExtensibleNavigationViewItem();
+            item.Items.Add(new NavigationViewItem());
+            AttachToNavigationView(item, navigationView);
+
+            Assert.True((bool)InvokePrimaryActionMethod.Invoke(item, null)!);
+            Assert.Equal((false, true, true), item.ExpandedState);
+            Assert.True(item.WasExpandedWhenInvoked);
+
+            navigationView.PaneDisplayMode = NavigationViewPaneDisplayMode.LeftMinimal;
+            item.IsSubmenuOpen = true;
+
+            Assert.Equal((false, true, true), item.SubmenuState);
+        });
+    }
+
+    [Fact]
+    public void SearchText_OverridesHeaderDerivedSearchContent()
+    {
+        RunOnStaThread(() =>
+        {
+            var item = new NavigationViewItem { Header = "_Settings" };
+
+            Assert.Equal("Settings", SearchableContentProperty.GetValue(item));
+
+            item.SearchText = "Preferences";
+            item.Header = "Account";
+            Assert.Equal("Preferences", SearchableContentProperty.GetValue(item));
+
+            item.SearchText = string.Empty;
+            Assert.Equal(string.Empty, SearchableContentProperty.GetValue(item));
+
+            item.ClearValue(NavigationViewItem.SearchTextProperty);
+            Assert.Equal("Account", SearchableContentProperty.GetValue(item));
+        });
+    }
+
+    [Fact]
+    public void SemanticHost_ReceivesLookupAndSearchChangesWithoutInheritedHostContext()
+    {
+        RunOnStaThread(() =>
+        {
+            var autoSuggestBox = new AutoSuggestBox();
+            var navigationView = new InspectableNavigationView
+            {
+                AutoSuggestBox = autoSuggestBox,
+            };
+            var parent = new NavigationViewItem();
+            var child = new NavigationViewItem
+            {
+                Header = "Original",
+                TargetPageTag = "original-tag",
+                TargetPageType = typeof(Border),
+            };
+
+            parent.Items.Add(child);
+            navigationView.MenuItems.Add(parent);
+
+            Assert.True(navigationView.ContainsPageKey("original-tag"));
+            Assert.Contains("Original", autoSuggestBox.OriginalItemsSource.Cast<string>());
+
+            // Simulate a generated or detached descendant whose inherited NavigationParent value
+            // is unavailable while its semantic parent still belongs to the navigation view.
+            child.SetValue(NavigationParentProperty, null);
+            Assert.Null(child.GetValue(NavigationParentProperty));
+
+            child.SearchText = "Updated";
+            child.TargetPageTag = "updated-tag";
+
+            Assert.DoesNotContain("Original", autoSuggestBox.OriginalItemsSource.Cast<string>());
+            Assert.Contains("Updated", autoSuggestBox.OriginalItemsSource.Cast<string>());
+            Assert.False(navigationView.ContainsPageKey("original-tag"));
+            Assert.True(navigationView.ContainsPageKey("updated-tag"));
+        });
     }
 
     [Fact]
@@ -2192,6 +2331,55 @@ public class NavigationViewItemTests
             }
         );
         item.RaiseEvent(new RoutedEventArgs(FrameworkElement.LoadedEvent));
+    }
+
+    private sealed class ExtensibleNavigationViewItem : NavigationViewItem
+    {
+        public (bool IsActive, bool IsParentBranchActive)? ActivatedState { get; private set; }
+
+        public (bool IsActive, bool IsParentBranchActive)? DeactivatedState { get; private set; }
+
+        public (bool OldValue, bool NewValue, bool CurrentValue)? ExpandedState { get; private set; }
+
+        public (bool OldValue, bool NewValue, bool CurrentValue)? SubmenuState { get; private set; }
+
+        public bool WasExpandedWhenInvoked { get; private set; }
+
+        protected override void OnActivated(INavigationView navigationView)
+        {
+            ActivatedState = (
+                IsActive,
+                NavigationViewItemParent is NavigationViewItem parent && parent.IsDescendantActive
+            );
+        }
+
+        protected override void OnDeactivated(INavigationView navigationView)
+        {
+            DeactivatedState = (
+                IsActive,
+                NavigationViewItemParent is NavigationViewItem parent && parent.IsDescendantActive
+            );
+        }
+
+        protected override void OnInvoked()
+        {
+            WasExpandedWhenInvoked = IsExpanded;
+        }
+
+        protected override void OnIsExpandedChanged(bool oldValue, bool newValue)
+        {
+            ExpandedState = (oldValue, newValue, IsExpanded);
+        }
+
+        protected override void OnIsSubmenuOpenChanged(bool oldValue, bool newValue)
+        {
+            SubmenuState = (oldValue, newValue, IsSubmenuOpen);
+        }
+    }
+
+    private sealed class InspectableNavigationView : Wpf.Ui.Controls.NavigationView
+    {
+        public bool ContainsPageKey(string key) => PageKeyIndex.ContainsKey(key);
     }
 
     private static void RunOnStaThread(Action action)

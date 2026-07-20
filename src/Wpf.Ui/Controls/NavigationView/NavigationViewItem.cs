@@ -430,6 +430,39 @@ public partial class NavigationViewItem : HeaderedItemsControl, INavigationViewI
 
     #endregion
 
+    #region DP: SearchText
+
+    /// <summary>Identifies the <see cref="SearchText"/> dependency property.</summary>
+    public static readonly DependencyProperty SearchTextProperty =
+        DependencyProperty.Register(
+            nameof(SearchText),
+            typeof(string),
+            typeof(NavigationViewItem),
+            new PropertyMetadata(
+                null,
+                (d, e) => ((NavigationViewItem)d).UpdateSearchableContent()
+            )
+        );
+
+    /// <summary>
+    /// Gets or sets the text used to locate this item through the navigation search box.
+    /// </summary>
+    /// <remarks>
+    /// A <see langword="null"/> value derives the searchable text from
+    /// <see cref="HeaderedItemsControl.Header"/>. Set
+    /// an empty string to exclude the item from search, or bind an explicit value when the header
+    /// is a visual or a view-model whose textual representation is not suitable for search.
+    /// </remarks>
+    [Bindable(true)]
+    [Category("Behavior")]
+    public string? SearchText
+    {
+        get => (string?)GetValue(SearchTextProperty);
+        set => SetValue(SearchTextProperty, value);
+    }
+
+    #endregion
+
     #region DP: NavigationCacheMode
 
     /// <summary>Identifies the <see cref="NavigationCacheMode"/> dependency property.</summary>
@@ -469,7 +502,7 @@ public partial class NavigationViewItem : HeaderedItemsControl, INavigationViewI
     private ButtonBase?                          _headerButton;
     private bool                                 _hadItems;
 
-    internal NavigationView? NavigationViewHost =>
+    private NavigationView? NavigationViewHost =>
         NavigationView.GetNavigationParent(this) ?? _parentItem?.NavigationViewHost;
 
     /// <summary>
@@ -710,20 +743,36 @@ public partial class NavigationViewItem : HeaderedItemsControl, INavigationViewI
     { }
 
     /// <summary>
-    /// Marks this item active without changing the active state of its ancestors.
+    /// Marks this item active without changing the active state of its ancestors, then invokes
+    /// <see cref="OnActivated"/>.
     /// </summary>
-    public virtual void Activate(INavigationView navigationView)
+    public void Activate(INavigationView navigationView)
     {
         NavigationViewItemTemplateBehavior.SetIsActive(this, true);
+        OnActivated(navigationView);
     }
 
     /// <summary>
-    /// Marks this item inactive without changing the active state of its ancestors.
+    /// Marks this item inactive without changing the active state of its ancestors, then invokes
+    /// <see cref="OnDeactivated"/>.
     /// </summary>
-    public virtual void Deactivate(INavigationView navigationView)
+    public void Deactivate(INavigationView navigationView)
     {
         NavigationViewItemTemplateBehavior.SetIsActive(this, false);
+        OnDeactivated(navigationView);
     }
+
+    /// <summary>
+    /// Called after this item and its semantic ancestors have observed the active state.
+    /// </summary>
+    /// <param name="navigationView">The navigation view that activated the item.</param>
+    protected virtual void OnActivated(INavigationView navigationView) { }
+
+    /// <summary>
+    /// Called after this item and its semantic ancestors have observed the inactive state.
+    /// </summary>
+    /// <param name="navigationView">The navigation view that deactivated the item.</param>
+    protected virtual void OnDeactivated(INavigationView navigationView) { }
 
     /// <inheritdoc />
     protected override void OnInitialized(EventArgs e)
@@ -744,8 +793,7 @@ public partial class NavigationViewItem : HeaderedItemsControl, INavigationViewI
     {
         base.OnHeaderChanged(oldHeader, newHeader);
 
-        SearchableContent = CreateSearchableContent(newHeader);
-        NavigationView.GetNavigationParent(this)?.NotifyNavigationViewItemContentChanged(this);
+        UpdateSearchableContent();
     }
 
     /// <inheritdoc />
@@ -940,8 +988,18 @@ public partial class NavigationViewItem : HeaderedItemsControl, INavigationViewI
             actionPerformed = true;
         }
 
+        OnInvoked();
         return actionPerformed;
     }
+
+    /// <summary>
+    /// Called after the primary action has applied navigation and child-menu state.
+    /// </summary>
+    /// <remarks>
+    /// Override this method to append item-specific behavior without replacing the input,
+    /// navigation, expansion, or native-menu state machines owned by the control.
+    /// </remarks>
+    protected virtual void OnInvoked() { }
 
     /// <summary>Sets the effective child-menu state for the active presentation.</summary>
     internal void SetChildMenuOpen(bool isOpen, bool focusFirstItem)
@@ -1178,6 +1236,12 @@ public partial class NavigationViewItem : HeaderedItemsControl, INavigationViewI
     // punctuation followed by whitespace (for example, "Date & Time") is content, not a marker.
     private static bool IsAccessKeyCharacter(char value) => char.IsLetterOrDigit(value);
 
+    private void UpdateSearchableContent()
+    {
+        SearchableContent = SearchText ?? CreateSearchableContent(Header);
+        NavigationViewHost?.NotifyNavigationViewItemContentChanged(this);
+    }
+
     private static void OnNavigationCacheModeChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
         if (d is not NavigationViewItem navigationViewItem)
@@ -1185,13 +1249,11 @@ public partial class NavigationViewItem : HeaderedItemsControl, INavigationViewI
             return;
         }
 
-        NavigationView
-           .GetNavigationParent(navigationViewItem)
-          ?.NotifyNavigationCacheModeChanged(
-                navigationViewItem,
-                (NavigationCacheMode)e.OldValue,
-                (NavigationCacheMode)e.NewValue
-            );
+        navigationViewItem.NavigationViewHost?.NotifyNavigationCacheModeChanged(
+            navigationViewItem,
+            (NavigationCacheMode)e.OldValue,
+            (NavigationCacheMode)e.NewValue
+        );
     }
 
     private static void OnIconChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
@@ -1288,6 +1350,8 @@ public partial class NavigationViewItem : HeaderedItemsControl, INavigationViewI
                 newValue ? ExpandCollapseState.Expanded : ExpandCollapseState.Collapsed
             );
         }
+
+        item.OnIsSubmenuOpenChanged(oldValue, newValue);
     }
 
     /// <summary>
@@ -1332,7 +1396,23 @@ public partial class NavigationViewItem : HeaderedItemsControl, INavigationViewI
                 (bool)e.NewValue ? ExpandCollapseState.Expanded : ExpandCollapseState.Collapsed
             );
         }
+
+        item.OnIsExpandedChanged((bool)e.OldValue, (bool)e.NewValue);
     }
+
+    /// <summary>
+    /// This method is invoked when the <see cref="IsExpandedProperty"/> changes.
+    /// </summary>
+    /// <param name="oldValue">
+    /// The old value of <see cref="IsExpandedProperty"/>.
+    /// </param>
+    /// <param name="newValue">
+    /// The new value of <see cref="IsExpandedProperty"/>.
+    /// </param>
+    protected virtual void OnIsExpandedChanged(bool oldValue, bool newValue) { }
+
+    /// <summary>Called after detached submenu state, projection, and automation have been synchronized.</summary>
+    protected virtual void OnIsSubmenuOpenChanged(bool oldValue, bool newValue) { }
 
     /// <summary>
     /// Reports transitions to and from UI Automation's LeafNode state. This callback runs before
@@ -1357,7 +1437,7 @@ public partial class NavigationViewItem : HeaderedItemsControl, INavigationViewI
     }
 
     private static void OnNavigationLookupPropertyChanged(
-        DependencyObject                   d,
+        DependencyObject d,
         DependencyPropertyChangedEventArgs e
     )
     {
@@ -1366,9 +1446,9 @@ public partial class NavigationViewItem : HeaderedItemsControl, INavigationViewI
             return;
         }
 
-        NavigationView
-           .GetNavigationParent(navigationViewItem)
-          ?.NotifyNavigationViewItemLookupChanged(navigationViewItem);
+        navigationViewItem.NavigationViewHost?.NotifyNavigationViewItemLookupChanged(
+            navigationViewItem
+        );
     }
 
     /// <summary>
@@ -1464,8 +1544,8 @@ public partial class NavigationViewItem : HeaderedItemsControl, INavigationViewI
             // explicit semantic-parent check prevents that stale generator entry from keeping the
             // former branch active after detachment.
             if (
-                ReferenceEquals(child._parentItem, this)
-             && (child.IsActive || child.IsDescendantActive)
+                ReferenceEquals(child._parentItem, this) &&
+                (child.IsActive || child.IsDescendantActive)
             )
             {
                 isDescendantActive = true;
@@ -1576,7 +1656,12 @@ public partial class NavigationViewItem : HeaderedItemsControl, INavigationViewI
         BindingOperations.ClearBinding(this, PaneDisplayModeContextProperty);
         BindingOperations.ClearBinding(this, IsPaneOpenContextProperty);
 
-        if (ReferenceEquals(NavigationView.GetNavigationParent(this), navigationView))
+        if (
+            ReferenceEquals(
+                ReadLocalValue(NavigationView.NavigationParentProperty),
+                navigationView
+            )
+        )
         {
             ClearValue(NavigationView.NavigationParentProperty);
         }
