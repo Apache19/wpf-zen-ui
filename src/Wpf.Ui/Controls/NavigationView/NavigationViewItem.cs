@@ -923,10 +923,10 @@ public partial class NavigationViewItem : HeaderedItemsControl, INavigationViewI
             SetCurrentValue(IsSubmenuOpenProperty, false);
         }
 
-        // Each source item owns collection change notification through ItemsControl. Rebuilding the
-        // currently open root projection here keeps dynamic menus exact without a parallel web of
-        // collection subscriptions between projected MenuItems and every descendant ItemCollection.
-        InvalidateOpenSubmenuProjection();
+        // Each source item owns collection change notification through ItemsControl. Reconcile the
+        // root's retained projection cache here so the next open path does not need to clone the
+        // branch, without maintaining a parallel web of collection subscriptions.
+        InvalidateSubmenuProjectionCache();
     }
 
     /// <inheritdoc />
