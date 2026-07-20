@@ -90,8 +90,9 @@ public interface INavigationView
     bool IsBackEnabled { get; }
 
     /// <summary>
-    /// Gets or sets a value that indicates whether the back button is visible or not.
-    /// Default value is "Auto", which indicates that button visibility depends on the DisplayMode setting of the NavigationView.
+    /// Gets or sets the policy that controls whether the back button is visible.
+    /// The default value is <see cref="NavigationViewBackButtonVisible.Auto"/>, which displays the
+    /// button only while the navigation journal can go back.
     /// </summary>
     NavigationViewBackButtonVisible IsBackButtonVisible { get; set; }
 

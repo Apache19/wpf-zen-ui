@@ -374,15 +374,29 @@ public partial class NavigationView
 
     #region DP: IsBackButtonVisible
 
-    /// <summary>Identifies the <see cref="IsBackButtonVisible"/> dependency property.</summary>
+    /// <summary>
+    /// Identifies the <see cref="IsBackButtonVisible"/> dependency property.
+    /// </summary>
     public static readonly DependencyProperty IsBackButtonVisibleProperty = DependencyProperty.Register(
         nameof(IsBackButtonVisible),
         typeof(NavigationViewBackButtonVisible),
         typeof(NavigationView),
-        new FrameworkPropertyMetadata(NavigationViewBackButtonVisible.Auto, OnPaneButtonVisibilityChanged)
+        new FrameworkPropertyMetadata(
+            NavigationViewBackButtonVisible.Auto,
+            OnPaneButtonVisibilityChanged
+        )
     );
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Gets or sets the policy that controls whether the back button is shown.
+    /// </summary>
+    /// <remarks>
+    /// <see cref="NavigationViewBackButtonVisible.Visible"/> keeps the button visible and lets
+    /// <see cref="IsBackEnabled"/> communicate whether it can be invoked.
+    /// <see cref="NavigationViewBackButtonVisible.Collapsed"/> removes it from layout, while
+    /// <see cref="NavigationViewBackButtonVisible.Auto"/> shows it only when the navigation journal
+    /// can go back. The default value is <see cref="NavigationViewBackButtonVisible.Auto"/>.
+    /// </remarks>
     public NavigationViewBackButtonVisible IsBackButtonVisible
     {
         get => (NavigationViewBackButtonVisible)GetValue(IsBackButtonVisibleProperty);
@@ -391,21 +405,43 @@ public partial class NavigationView
 
     #endregion
 
-    #region DP: IsBackEnabled
+    #region Read-only DP: IsBackEnabled
 
-    /// <summary>Identifies the <see cref="IsBackEnabled"/> dependency property.</summary>
-    public static readonly DependencyProperty IsBackEnabledProperty = DependencyProperty.Register(
-        nameof(IsBackEnabled),
-        typeof(bool),
-        typeof(NavigationView),
-        new FrameworkPropertyMetadata(false)
-    );
+    private static readonly DependencyPropertyKey IsBackEnabledPropertyKey =
+        DependencyProperty.RegisterReadOnly(
+            nameof(IsBackEnabled),
+            typeof(bool),
+            typeof(NavigationView),
+            new FrameworkPropertyMetadata(false, OnIsBackEnabledChanged)
+        );
 
-    /// <inheritdoc/>
-    public bool IsBackEnabled
+    /// <summary>
+    /// Identifies the read-only <see cref="IsBackEnabled"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty IsBackEnabledProperty =
+        IsBackEnabledPropertyKey.DependencyProperty;
+
+    /// <summary>
+    /// Gets a value indicating whether the navigation journal currently permits a back operation.
+    /// </summary>
+    /// <remarks>
+    /// This is navigation capability rather than presentation policy. It remains independent of
+    /// <see cref="IsBackButtonVisible"/> so bindings and automation do not report that navigation is
+    /// unavailable merely because its built-in button was hidden. The value is maintained by the
+    /// control whenever its journal changes.
+    /// </remarks>
+    [Browsable(false)]
+    [ReadOnly(true)]
+    public bool IsBackEnabled => (bool)GetValue(IsBackEnabledProperty);
+
+    private static void OnIsBackEnabledChanged(
+        DependencyObject d,
+        DependencyPropertyChangedEventArgs e)
     {
-        get => (bool)GetValue(IsBackEnabledProperty);
-        protected set => SetValue(IsBackEnabledProperty, value);
+        if (d is NavigationView navigationView)
+        {
+            navigationView.UpdateBackButtonVisibility();
+        }
     }
 
     #endregion
@@ -501,6 +537,10 @@ public partial class NavigationView
     {
         if (d is NavigationView navigationView)
         {
+            // Back-button visibility is applied to two control-owned instances, one of which may
+            // live in TitleBar.LeftContent outside this control's visual tree. Update those elements
+            // directly before recomputing their hosts instead of relying on a template ancestor.
+            navigationView.UpdateBackButtonVisibility();
             navigationView.UpdatePaneButtonPlacement();
         }
     }

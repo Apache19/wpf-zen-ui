@@ -24,10 +24,12 @@
 
             <!--  Optional content contributed by controls that cooperate with the title bar.  -->
             <ContentPresenter
+                x:Name="LeftContentPresenter"
                 Grid.Column="0"
                 controls:TitleBar.ElementIdentity="UserContent"
                 Content="{TemplateBinding LeftContent}"
-                IsEnabled="{TemplateBinding IsUserContentEnabled}" />
+                IsEnabled="{TemplateBinding IsUserContentEnabled}"
+                Visibility="Collapsed" />
 
             <!--  Title  -->
             <ContentPresenter
@@ -58,6 +60,16 @@
                 Style="{DynamicResource SmallCloseTitleBarButtonStyle}" />
 
         </Grid>
+        <ControlTemplate.Triggers>
+            <!--
+                The title bar treats only actually visible content as occupying this cooperation
+                slot. In particular, a Hidden child would otherwise retain an unexplained blank
+                region before the tool-window title.
+            -->
+            <Trigger Property="LeftContentState" Value="Visible">
+                <Setter TargetName="LeftContentPresenter" Property="Visibility" Value="Visible" />
+            </Trigger>
+        </ControlTemplate.Triggers>
     </ControlTemplate>
 
     <converters:ThicknessTransformConverter x:Key="IconGridMarginConverter" BaseThickness="2 0 0 0" CopySides="Vertical,Right" />
@@ -88,19 +100,21 @@
                             children in WPF's client-input path during title-bar hit testing.
                         -->
                         <ContentPresenter
+                            x:Name="LeftContentPresenter"
                             Grid.Column="0"
                             controls:TitleBar.ElementIdentity="UserContent"
                             ContentSource="LeftContent"
-                            IsEnabled="{TemplateBinding IsUserContentEnabled}" />
+                            IsEnabled="{TemplateBinding IsUserContentEnabled}"
+                            Visibility="Collapsed" />
 
                         <!--
-                            Title bar icon — uses a converter to adjust its left margin
-                            based on whether LeftContent has content, ensuring optimal layout.
+                            Title bar icon. Its default margin represents an inactive LeftContent
+                            slot; the Visible state below applies the compact post-command margin.
                         -->
                         <Grid
                             x:Name="IconGrid"
                             Grid.Column="1"
-                            Margin="{TemplateBinding Padding, Converter={StaticResource IconGridMarginConverter}}"
+                            Margin="{TemplateBinding Padding}"
                             HorizontalAlignment="Left"
                             VerticalAlignment="Center">
 
@@ -178,11 +192,13 @@
                     </Grid>
                     <ControlTemplate.Triggers>
                         <!--
-                            When LeftContent is present, the icon/title left margin is fixed;
-                            when empty, the Padding value is used instead.
+                            Only visible content participates in the leading layout. Null, Hidden,
+                            and Collapsed values all use Padding and collapse the outer presenter so
+                            a Hidden element cannot leave an unexplained command-sized gap.
                         -->
-                        <Trigger Property="LeftContent" Value="{x:Null}">
-                            <Setter TargetName="IconGrid" Property="Margin" Value="{Binding Padding, RelativeSource={RelativeSource TemplatedParent}}" />
+                        <Trigger Property="LeftContentState" Value="Visible">
+                            <Setter TargetName="LeftContentPresenter" Property="Visibility" Value="Visible" />
+                            <Setter TargetName="IconGrid" Property="Margin" Value="{Binding Padding, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource IconGridMarginConverter}}" />
                         </Trigger>
 
                         <MultiTrigger>

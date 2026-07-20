@@ -5,6 +5,7 @@
 
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
+using System.Windows.Data;
 using Windows.Win32;
 using Windows.Win32.Foundation;
 using Windows.Win32.UI.WindowsAndMessaging;
@@ -67,7 +68,7 @@ public class TitleBar : ContentControl
         );
     }
 
-    #region DP: LeftContent, Icon, Title, IsIconInteractionEnabled, IsUserContentEnabled, ElementIdentity
+    #region DP: LeftContent, LeftContentState, Icon, Title, IsIconInteractionEnabled, IsUserContentEnabled, ElementIdentity
 
     #region LeftContent
 
@@ -78,7 +79,7 @@ public class TitleBar : ContentControl
         nameof(LeftContent),
         typeof(object),
         typeof(TitleBar),
-        new FrameworkPropertyMetadata(null)
+        new FrameworkPropertyMetadata(null, OnLeftContentChanged)
     );
 
     /// <summary>
@@ -91,11 +92,129 @@ public class TitleBar : ContentControl
     /// properties. The slot measures to zero when the value is <see langword="null"/>.
     /// Interactive content is treated as user content during non-client hit testing so
     /// that it receives normal WPF input instead of initiating a window drag.
+    /// <para/>
+    /// When the assigned value is a direct <see cref="UIElement"/>, changes to its
+    /// <see cref="UIElement.Visibility"/> are reflected by <see cref="LeftContentState"/>. Values
+    /// that are not UI elements are considered visible because their eventual data-template root
+    /// does not exist at the property boundary.
     /// </remarks>
     public object? LeftContent
     {
         get => GetValue(LeftContentProperty);
         set => SetValue(LeftContentProperty, value);
+    }
+
+    #endregion
+
+    #region LeftContentState
+
+    private static readonly DependencyPropertyKey LeftContentStatePropertyKey =
+        DependencyProperty.RegisterReadOnly(
+            nameof(LeftContentState),
+            typeof(TitleBarContentState),
+            typeof(TitleBar),
+            new FrameworkPropertyMetadata(TitleBarContentState.Empty)
+        );
+
+    /// <summary>
+    /// Identifies the read-only <see cref="LeftContentState"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty LeftContentStateProperty =
+        LeftContentStatePropertyKey.DependencyProperty;
+
+    /// <summary>
+    /// Gets the effective presentation state of <see cref="LeftContent"/>.
+    /// </summary>
+    /// <remarks>
+    /// The value is maintained by the title bar and is intended for templates and styles that need
+    /// to distinguish a missing value from visible, hidden, or collapsed UI content. It is a
+    /// read-only dependency property so external values cannot disagree with the assigned content.
+    /// </remarks>
+    [Browsable(false)]
+    [ReadOnly(true)]
+    public TitleBarContentState LeftContentState =>
+        (TitleBarContentState)GetValue(LeftContentStateProperty);
+
+    // LeftContent usually changes only once when a cooperating control claims the slot. Its
+    // Visibility can then change independently, so the title bar needs a second dependency-property
+    // notification path. A private binding is preferable to DependencyPropertyDescriptor here:
+    // WPF's descriptor keeps sources in a strong tracker table until explicitly detached, whereas
+    // the binding follows the normal target lifetime and is replaced atomically with LeftContent.
+    private static readonly DependencyProperty TrackedLeftContentVisibilityProperty =
+        DependencyProperty.Register(
+            "TrackedLeftContentVisibility",
+            typeof(Visibility),
+            typeof(TitleBar),
+            new FrameworkPropertyMetadata(
+                Visibility.Visible,
+                OnTrackedLeftContentVisibilityChanged
+            )
+        );
+
+    private static void OnLeftContentChanged(
+        DependencyObject d,
+        DependencyPropertyChangedEventArgs e)
+    {
+        if (d is not TitleBar titleBar)
+        {
+            return;
+        }
+
+        if (e.NewValue is UIElement element)
+        {
+            // Replacing the binding directly avoids publishing the default Visible value between
+            // two UIElement assignments. Consumers therefore observe only genuine slot states.
+            BindingOperations.SetBinding(
+                titleBar,
+                TrackedLeftContentVisibilityProperty,
+                new Binding(nameof(UIElement.Visibility))
+                {
+                    Mode   = BindingMode.OneWay,
+                    Source = element,
+                }
+            );
+        }
+        else
+        {
+            BindingOperations.ClearBinding(titleBar, TrackedLeftContentVisibilityProperty);
+        }
+
+        // SetBinding transfers the current source value synchronously in the common path, but the
+        // explicit refresh also covers null and data-object content and avoids depending on binding
+        // engine scheduling during template construction.
+        titleBar.UpdateLeftContentState();
+    }
+
+    private static void OnTrackedLeftContentVisibilityChanged(
+        DependencyObject d,
+        DependencyPropertyChangedEventArgs e)
+    {
+        if (d is TitleBar titleBar)
+        {
+            titleBar.UpdateLeftContentState();
+        }
+    }
+
+    /// <summary>
+    /// Projects the public content value and the tracked direct element visibility into the stable
+    /// state consumed by title-bar templates. Ancestor visibility is deliberately ignored: using
+    /// UIElement.IsVisible would report the slot as hidden merely because the window is not loaded.
+    /// </summary>
+    private void UpdateLeftContentState()
+    {
+        TitleBarContentState state = LeftContent switch
+        {
+            null        => TitleBarContentState.Empty,
+            UIElement _ => (Visibility)GetValue(TrackedLeftContentVisibilityProperty) switch
+            {
+                Visibility.Hidden    => TitleBarContentState.Hidden,
+                Visibility.Collapsed => TitleBarContentState.Collapsed,
+                _                    => TitleBarContentState.Visible,
+            },
+            _ => TitleBarContentState.Visible,
+        };
+
+        SetValue(LeftContentStatePropertyKey, state);
     }
 
     #endregion

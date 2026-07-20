@@ -20,12 +20,15 @@ public enum NavigationViewBackButtonVisible
     Collapsed,
 
     /// <summary>
-    /// Display the back button in NavigationView.
+    /// Display the back button in NavigationView. The button remains visible when no back operation
+    /// is available and uses <see cref="NavigationView.IsBackEnabled"/> to expose its disabled state.
     /// </summary>
     Visible,
 
     /// <summary>
-    /// The system chooses whether or not to display the back button, depending on the device/form factor. On phones, tablets, desktops, and hubs, the back button is visible. On Xbox/TV, the back button is collapsed.
+    /// Display the back button only when the navigation journal contains an entry to return to.
+    /// The button is collapsed when <see cref="NavigationView.IsBackEnabled"/> is
+    /// <see langword="false"/> and becomes visible when a back operation is available.
     /// </summary>
     Auto,
 }

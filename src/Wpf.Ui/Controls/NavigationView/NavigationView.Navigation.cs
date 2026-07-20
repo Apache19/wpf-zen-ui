@@ -150,6 +150,7 @@ public partial class NavigationView
 
         Journal.Clear();
         _complexNavigationStackHistory.Clear();
+        UpdateBackNavigationState();
     }
 
     private bool TryToNavigateWithoutINavigationViewItem(
@@ -238,7 +239,7 @@ public partial class NavigationView
         Journal.Add(viewItem.Id);
         _currentIndexInJournal++;
 
-        SetCurrentValue(IsBackEnabledProperty, CanGoBack);
+        UpdateBackNavigationState();
 
         Debug.WriteLineIf(EnableDebugMessages, $"JOURNAL INDEX {_currentIndexInJournal}");
 
@@ -247,6 +248,14 @@ public partial class NavigationView
             Debug.WriteLineIf(EnableDebugMessages, $"JOURNAL LAST ELEMENT {Journal[^1]}");
         }
     }
+
+    /// <summary>
+    /// Publishes the journal-derived back capability through the read-only dependency property.
+    /// Keeping this update behind one method prevents paths such as ClearJournal from leaving the
+    /// button enabled after the journal has already been emptied.
+    /// </summary>
+    private void UpdateBackNavigationState() =>
+        SetValue(IsBackEnabledPropertyKey, CanGoBack);
 
     private object GetNavigationItemInstance(INavigationViewItem viewItem)
     {

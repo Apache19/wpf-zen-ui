@@ -17,6 +17,103 @@ namespace Wpf.Ui.UnitTests.Controls.NavigationView;
 public class NavigationViewButtonTests
 {
     [Fact]
+    public void BackButtonPolicy_AutoTracksReadOnlyJournalStateAndTitleBarContent()
+    {
+        RunOnStaThread(() =>
+        {
+            var resources = new ResourceDictionary { Source = CreateResourceUri() };
+            var titleBar = new Wpf.Ui.Controls.TitleBar();
+            var navigationView = new Wpf.Ui.Controls.NavigationView
+            {
+                Style = Assert.IsType<Style>(resources[typeof(Wpf.Ui.Controls.NavigationView)]),
+                TitleBar = titleBar,
+                IsBackButtonVisible = NavigationViewBackButtonVisible.Auto,
+                IsPaneToggleVisible = false,
+            };
+            navigationView.MenuItems.Add(
+                new NavigationViewItem(
+                    "First",
+                    targetPageType: typeof(BackStackPageOne),
+                    targetPageTag: "first"
+                )
+            );
+            navigationView.MenuItems.Add(
+                new NavigationViewItem(
+                    "Second",
+                    targetPageType: typeof(BackStackPageTwo),
+                    targetPageTag: "second"
+                )
+            );
+
+            var paneBackButton = GetButton(navigationView, "_paneBackButton");
+            var titleBarBackButton = GetButton(navigationView, "_titleBarBackButton");
+
+            Assert.True(Wpf.Ui.Controls.NavigationView.IsBackEnabledProperty.ReadOnly);
+            Assert.Throws<InvalidOperationException>(
+                () => navigationView.SetValue(
+                    Wpf.Ui.Controls.NavigationView.IsBackEnabledProperty,
+                    true
+                )
+            );
+            Assert.False(navigationView.IsBackEnabled);
+            Assert.Equal(Visibility.Collapsed, paneBackButton.Visibility);
+            Assert.Equal(Visibility.Collapsed, titleBarBackButton.Visibility);
+            Assert.Equal(TitleBarContentState.Collapsed, titleBar.LeftContentState);
+
+            var window = new Window
+            {
+                Content = navigationView,
+                Width = 800,
+                Height = 600,
+                Left = -10_000,
+                Top = -10_000,
+                ShowActivated = false,
+                ShowInTaskbar = false,
+                WindowStyle = WindowStyle.None,
+            };
+
+            try
+            {
+                window.Show();
+                DrainDispatcher();
+
+                Assert.True(navigationView.Navigate(typeof(BackStackPageOne)));
+                Assert.False(navigationView.IsBackEnabled);
+                Assert.Equal(Visibility.Collapsed, titleBarBackButton.Visibility);
+                Assert.Equal(TitleBarContentState.Collapsed, titleBar.LeftContentState);
+
+                Assert.True(navigationView.Navigate(typeof(BackStackPageTwo)));
+                Assert.True(navigationView.IsBackEnabled);
+                Assert.True(titleBarBackButton.IsEnabled);
+                Assert.Equal(Visibility.Visible, paneBackButton.Visibility);
+                Assert.Equal(Visibility.Visible, titleBarBackButton.Visibility);
+                Assert.Equal(TitleBarContentState.Visible, titleBar.LeftContentState);
+
+                navigationView.ClearJournal();
+                Assert.False(navigationView.IsBackEnabled);
+                Assert.False(titleBarBackButton.IsEnabled);
+                Assert.Equal(Visibility.Collapsed, paneBackButton.Visibility);
+                Assert.Equal(Visibility.Collapsed, titleBarBackButton.Visibility);
+                Assert.Equal(TitleBarContentState.Collapsed, titleBar.LeftContentState);
+
+                navigationView.IsBackButtonVisible = NavigationViewBackButtonVisible.Visible;
+                Assert.Equal(Visibility.Visible, titleBarBackButton.Visibility);
+                Assert.Equal(TitleBarContentState.Visible, titleBar.LeftContentState);
+                Assert.False(titleBarBackButton.IsEnabled);
+
+                navigationView.IsBackButtonVisible = NavigationViewBackButtonVisible.Collapsed;
+                Assert.Equal(Visibility.Collapsed, titleBarBackButton.Visibility);
+                Assert.Equal(TitleBarContentState.Empty, titleBar.LeftContentState);
+            }
+            finally
+            {
+                window.Close();
+                DrainDispatcher();
+            }
+        });
+    }
+
+    [Fact]
     public void PaneDisplayModeChanged_IsRaisedWhenPaneDisplayModeChanges()
     {
         RunOnStaThread(() =>
@@ -421,6 +518,12 @@ public class NavigationViewButtonTests
                 .GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic)!
                 .GetValue(navigationView)
         );
+
+    public sealed class BackStackPageOne : Border
+    { }
+
+    public sealed class BackStackPageTwo : Border
+    { }
 
     private static Uri CreateResourceUri()
     {

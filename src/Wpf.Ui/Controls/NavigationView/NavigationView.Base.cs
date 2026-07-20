@@ -148,6 +148,10 @@ public partial class NavigationView : Control, INavigationView
         BackButton   = _paneBackButton;
         ToggleButton = _paneToggleButton;
 
+        // Auto is the default and the initial journal is empty. Apply the derived visibility before
+        // either button can be measured in a pane or contributed to a title bar.
+        UpdateBackButtonVisibility();
+
         Loaded      += OnLoaded;
         Unloaded    += OnUnloaded;
         SizeChanged += OnSizeChanged;
@@ -472,6 +476,26 @@ public partial class NavigationView : Control, INavigationView
         // Caption identity would turn a click into a native window drag operation.
         TitleBar.SetElementIdentity(button, TitleBarElementIdentity.UserContent);
         return button;
+    }
+
+    /// <summary>
+    /// Applies the public back-button policy to both host-specific button instances. The title-bar
+    /// instance cannot use a NavigationView ancestor binding because it is contributed to
+    /// TitleBar.LeftContent and therefore leaves this control's visual tree.
+    /// </summary>
+    private void UpdateBackButtonVisibility()
+    {
+        Visibility visibility = IsBackButtonVisible switch
+        {
+            NavigationViewBackButtonVisible.Visible   => Visibility.Visible,
+            NavigationViewBackButtonVisible.Collapsed => Visibility.Collapsed,
+            NavigationViewBackButtonVisible.Auto when IsBackEnabled => Visibility.Visible,
+            NavigationViewBackButtonVisible.Auto      => Visibility.Collapsed,
+            _                                         => Visibility.Collapsed,
+        };
+
+        _paneBackButton.SetCurrentValue(VisibilityProperty, visibility);
+        _titleBarBackButton.SetCurrentValue(VisibilityProperty, visibility);
     }
 
     /// <summary>
