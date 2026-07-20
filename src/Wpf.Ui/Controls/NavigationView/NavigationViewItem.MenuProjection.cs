@@ -109,9 +109,9 @@ public partial class NavigationViewItem
     #endregion
 
     /// <summary>
-    /// Attaches the template-owned native menu and schedules its MenuItem projection to be warmed
-    /// while the dispatcher is idle. The resulting tree remains attached while the menu is closed,
-    /// so opening it does not normally allocate controls, bindings, or icon clones.
+    /// Attaches the template-owned native menu. The ContextMenu remains structurally empty while
+    /// closed; its MenuItem tree is generated immediately before each opening and discarded after
+    /// closing so stale collection state and long-lived projection bindings cannot accumulate.
     /// </summary>
     private void AttachSubmenuContextMenu(ContextMenu? contextMenu)
     {
@@ -156,8 +156,6 @@ public partial class NavigationViewItem
                         Mode = BindingMode.TwoWay,
                     }
                 );
-
-                ScheduleSubmenuProjectionRefresh(DispatcherPriority.ContextIdle);
             }
         }
 
@@ -266,6 +264,7 @@ public partial class NavigationViewItem
             child.CloseSubmenuBranch();
         }
 
+        ClearSubmenuProjection();
         RestoreContextGesturePlacement();
     }
 
@@ -364,56 +363,40 @@ public partial class NavigationViewItem
     }
 
     /// <summary>
-    /// Marks the owning root projection stale after an ItemsControl collection change and updates
-    /// the cached tree after the current generator notification completes. This applies while the
-    /// menu is closed as well as while it is open, keeping the next opening allocation-free.
+    /// Marks the owning root projection stale after an ItemsControl collection change. An open menu
+    /// is rebuilt after the current generator notification completes; a closed menu simply rebuilds
+    /// on its next opening.
     /// </summary>
-    private void InvalidateSubmenuProjectionCache()
+    private void InvalidateOpenSubmenuProjection()
     {
         NavigationViewItem root = GetRootNavigationItem();
         root._isSubmenuProjectionDirty = true;
-        root.ScheduleSubmenuProjectionRefresh(DispatcherPriority.DataBind);
-    }
 
-    /// <summary>
-    /// Schedules a projection refresh. Template setup uses an idle priority so normal layout and
-    /// rendering can finish before cache warming; collection changes use DataBind priority so the
-    /// generator has completed its notification before the cached hierarchy is reconciled.
-    /// </summary>
-    private void ScheduleSubmenuProjectionRefresh(DispatcherPriority priority)
-    {
-        if (_projectionRefreshOperation is { Status: DispatcherOperationStatus.Pending } pendingOperation)
-        {
-            if (pendingOperation.Priority < priority)
-            {
-                pendingOperation.Priority = priority;
-            }
-
-            return;
-        }
-
-        if (_submenuContextMenu is null || UsesInlineExpansion)
+        if (
+            root._submenuContextMenu is not { IsOpen: true } ||
+            root._projectionRefreshOperation is { Status: DispatcherOperationStatus.Pending }
+        )
         {
             return;
         }
 
-        _projectionRefreshOperation = Dispatcher.BeginInvoke(
-            priority,
+        root._projectionRefreshOperation = root.Dispatcher.BeginInvoke(
+            DispatcherPriority.DataBind,
             new Action(() =>
             {
-                _projectionRefreshOperation = null;
-                if (_submenuContextMenu is not null && !UsesInlineExpansion)
+                root._projectionRefreshOperation = null;
+                if (root._submenuContextMenu is { IsOpen: true })
                 {
-                    RebuildSubmenuProjection();
+                    root.RebuildSubmenuProjection();
                 }
             })
         );
     }
 
     /// <summary>
-    /// Reconciles the cached native menu hierarchy with the source navigation containers. Existing
-    /// MenuItems are retained by source identity, so a collection mutation clones only newly added
-    /// branches and releases only removed branches. Property values remain current through Binding.
+    /// Recreates the complete native menu hierarchy from source navigation containers. Rebuilding
+    /// is intentionally bounded to menu opening and live collection mutations: property values use
+    /// Binding and therefore remain current without maintaining a duplicate view-model tree.
     /// </summary>
     private void RebuildSubmenuProjection()
     {
@@ -426,57 +409,18 @@ public partial class NavigationViewItem
 
         try
         {
-            ReconcileProjectedChildren(_submenuContextMenu, this);
+            ClearSubmenuProjection();
+
+            foreach (NavigationViewItem child in GetOrGenerateNavigationChildren())
+            {
+                _submenuContextMenu.Items.Add(CreateProjectedMenuItem(child));
+            }
 
             _isSubmenuProjectionDirty = false;
         }
         finally
         {
             _isBuildingSubmenuProjection = false;
-        }
-    }
-
-    private void ReconcileProjectedChildren(
-        ItemsControl projectedParent,
-        NavigationViewItem sourceParent)
-    {
-        IReadOnlyList<NavigationViewItem> sourceChildren =
-            sourceParent.GetOrGenerateNavigationChildren();
-        var retainedSources = new HashSet<NavigationViewItem>(sourceChildren);
-
-        foreach (MenuItem oldItem in projectedParent.Items.OfType<MenuItem>().ToArray())
-        {
-            if (
-                oldItem.DataContext is not NavigationViewItem oldSource ||
-                !retainedSources.Contains(oldSource)
-            )
-            {
-                projectedParent.Items.Remove(oldItem);
-                ReleaseProjectedMenuItem(oldItem);
-            }
-        }
-
-        for (int index = 0; index < sourceChildren.Count; index++)
-        {
-            NavigationViewItem source = sourceChildren[index];
-            if (!_projectedMenuItems.TryGetValue(source, out MenuItem? menuItem))
-            {
-                menuItem = CreateProjectedMenuItem(source);
-            }
-
-            int currentIndex = projectedParent.Items.IndexOf(menuItem);
-            if (currentIndex != index)
-            {
-                if (currentIndex >= 0)
-                {
-                    projectedParent.Items.RemoveAt(currentIndex);
-                }
-
-                projectedParent.Items.Insert(index, menuItem);
-            }
-
-            ReconcileProjectedChildren(menuItem, source);
-            UpdateProjectedMenuItemRole(menuItem, source);
         }
     }
 
@@ -531,13 +475,10 @@ public partial class NavigationViewItem
 
         _projectedMenuItems[source] = menuItem;
 
-        return menuItem;
-    }
-
-    private void UpdateProjectedMenuItemRole(MenuItem menuItem, NavigationViewItem source)
-    {
-        menuItem.SubmenuOpened -= OnProjectedMenuItemSubmenuOpened;
-        menuItem.SubmenuClosed -= OnProjectedMenuItemSubmenuClosed;
+        foreach (NavigationViewItem child in source.GetOrGenerateNavigationChildren())
+        {
+            menuItem.Items.Add(CreateProjectedMenuItem(child));
+        }
 
         if (menuItem.HasItems)
         {
@@ -549,7 +490,6 @@ public partial class NavigationViewItem
             // transition itself; programmatic source changes use SynchronizeProjectedSubmenuState.
             menuItem.SubmenuOpened += OnProjectedMenuItemSubmenuOpened;
             menuItem.SubmenuClosed += OnProjectedMenuItemSubmenuClosed;
-            menuItem.SetCurrentValue(MenuItem.CommandProperty, null);
 
             if (source.IsSubmenuOpen)
             {
@@ -561,33 +501,10 @@ public partial class NavigationViewItem
             // WPF invokes MenuItem.Command through its normal PreviewClick/Click pipeline after the
             // complete ContextMenu cascade has been dismissed. Routing activation through a command
             // preserves that native sequencing and avoids synthesizing input on the source control.
-            menuItem.SetCurrentValue(MenuItem.IsSubmenuOpenProperty, false);
-            if (menuItem.Command is null)
-            {
-                menuItem.SetCurrentValue(
-                    MenuItem.CommandProperty,
-                    new NavigationViewItemMenuCommand(source)
-                );
-            }
-        }
-    }
-
-    private void ReleaseProjectedMenuItem(MenuItem menuItem)
-    {
-        foreach (MenuItem child in menuItem.Items.OfType<MenuItem>().ToArray())
-        {
-            ReleaseProjectedMenuItem(child);
+            menuItem.Command = new NavigationViewItemMenuCommand(source);
         }
 
-        menuItem.SubmenuOpened -= OnProjectedMenuItemSubmenuOpened;
-        menuItem.SubmenuClosed -= OnProjectedMenuItemSubmenuClosed;
-
-        if (menuItem.DataContext is NavigationViewItem source)
-        {
-            _projectedMenuItems.Remove(source);
-        }
-
-        menuItem.Items.Clear();
+        return menuItem;
     }
 
     private void OnProjectedMenuItemSubmenuOpened(object sender, RoutedEventArgs e)

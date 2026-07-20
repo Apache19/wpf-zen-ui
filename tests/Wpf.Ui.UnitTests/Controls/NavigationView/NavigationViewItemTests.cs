@@ -1488,11 +1488,6 @@ public class NavigationViewItemTests
                 window.Show();
                 DrainDispatcher();
 
-                ContextMenu parentContextMenu = FindSubmenuContextMenu(parent);
-                var cachedChildMenuItem = Assert.IsType<MenuItem>(
-                    Assert.Single(parentContextMenu.Items)
-                );
-
                 // A descendant can already have a live control template after it was previously
                 // presented inline. Its template-owned ContextMenu must not compete with the
                 // projected MenuItem submenu when native state is mirrored back to the source.
@@ -1508,9 +1503,9 @@ public class NavigationViewItemTests
                 parent.IsSubmenuOpen = true;
                 DrainDispatcher();
 
+                ContextMenu parentContextMenu = FindSubmenuContextMenu(parent);
                 Assert.True(parentContextMenu.IsOpen);
                 var childMenuItem = Assert.IsType<MenuItem>(Assert.Single(parentContextMenu.Items));
-                Assert.Same(cachedChildMenuItem, childMenuItem);
                 Assert.Same(child, childMenuItem.DataContext);
                 Assert.Equal("Child", childMenuItem.Header);
                 Assert.Same(child.SubmenuMenuItemStyle, childMenuItem.Style);
@@ -1573,7 +1568,7 @@ public class NavigationViewItemTests
 
                 Assert.False(parent.IsSubmenuOpen);
                 Assert.False(child.IsSubmenuOpen);
-                Assert.Same(childMenuItem, Assert.Single(parentContextMenu.Items));
+                Assert.Empty(parentContextMenu.Items);
             }
             finally
             {
@@ -1684,7 +1679,7 @@ public class NavigationViewItemTests
     }
 
     [Fact]
-    public void ContextMenuCache_ReconcilesCollectionChangesAndKeepsPropertyBindingsLive()
+    public void OpenContextMenu_ReprojectsCollectionChangesAndKeepsPropertyBindingsLive()
     {
         RunOnStaThread(() =>
         {
@@ -1753,23 +1748,14 @@ public class NavigationViewItemTests
 
                 contextMenu.IsOpen = false;
                 DrainDispatcher();
-                var cachedSecondMenuItem = Assert.IsType<MenuItem>(Assert.Single(contextMenu.Items));
-                Assert.Same(second, cachedSecondMenuItem.DataContext);
-
-                parent.Items.Add(first);
-                DrainDispatcher();
-                Assert.Equal(2, contextMenu.Items.Count);
-                Assert.Same(cachedSecondMenuItem, contextMenu.Items[0]);
+                Assert.Empty(contextMenu.Items);
 
                 parent.IsSubmenuOpen = true;
                 DrainDispatcher();
-                Assert.Same(cachedSecondMenuItem, contextMenu.Items[0]);
-                Assert.Same(first, Assert.IsType<MenuItem>(contextMenu.Items[1]).DataContext);
-
-                contextMenu.IsOpen = false;
-                parent.Items.Clear();
-                DrainDispatcher();
-                Assert.Empty(contextMenu.Items);
+                Assert.Same(
+                    second,
+                    Assert.IsType<MenuItem>(Assert.Single(contextMenu.Items)).DataContext
+                );
             }
             finally
             {
