@@ -12,7 +12,6 @@
         <Grid>
             <Button
                 x:Name="PART_HeaderButton"
-                Width="60"
                 Height="60"
                 Padding="4"
                 Background="Transparent"
@@ -33,10 +32,12 @@
                             <Grid>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="*" />
-                                    <RowDefinition Height="18" />
+                                    <RowDefinition Height="Auto" />
                                 </Grid.RowDefinitions>
+
                                 <Rectangle
                                     x:Name="ActiveIndicator"
+                                    Grid.Row="0"
                                     Grid.RowSpan="2"
                                     Width="3"
                                     Height="24"
@@ -47,23 +48,32 @@
                                     Opacity="0"
                                     RadiusX="2"
                                     RadiusY="2" />
+
                                 <ContentPresenter
                                     x:Name="IconPresenter"
+                                    Grid.Row="0"
                                     HorizontalAlignment="Center"
                                     VerticalAlignment="Center"
                                     Content="{Binding Icon, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}"
                                     TextElement.FontSize="24" />
-                                <ContentPresenter
+
+                                <Grid
+                                    x:Name="ContentGrid"
                                     Grid.Row="1"
-                                    HorizontalAlignment="Center"
-                                    VerticalAlignment="Center"
-                                    Content="{TemplateBinding Content}"
-                                    ContentTemplate="{TemplateBinding ContentTemplate}"
-                                    ContentTemplateSelector="{TemplateBinding ContentTemplateSelector}"
-                                    RecognizesAccessKey="True"
-                                    TextElement.FontSize="12" />
+                                    Height="18">
+                                    <ContentPresenter
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        Content="{TemplateBinding Content}"
+                                        ContentTemplate="{TemplateBinding ContentTemplate}"
+                                        ContentTemplateSelector="{TemplateBinding ContentTemplateSelector}"
+                                        RecognizesAccessKey="True"
+                                        TextElement.FontSize="12" />
+                                </Grid>
+
                                 <ContentPresenter
                                     x:Name="InfoBadgePresenter"
+                                    Grid.Row="0"
                                     Grid.RowSpan="2"
                                     HorizontalAlignment="Right"
                                     VerticalAlignment="Top"
@@ -77,13 +87,45 @@
                             <Trigger Property="IsPressed" Value="True">
                                 <Setter TargetName="HeaderSurface" Property="Background" Value="{m:BrushResource SubtleFillColorTertiaryBrush}" />
                             </Trigger>
-                            <DataTrigger Binding="{Binding IsActive, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}" Value="True">
+                            <DataTrigger Binding="{Binding IsBranchActive, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}" Value="True">
                                 <Setter TargetName="ActiveIndicator" Property="Opacity" Value="1" />
                                 <Setter TargetName="HeaderSurface" Property="Background" Value="{m:BrushResource ControlFillColorPrimaryBrush}" />
-                            </DataTrigger>
-                            <DataTrigger Binding="{Binding IsDescendantActive, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}" Value="True">
-                                <Setter TargetName="ActiveIndicator" Property="Opacity" Value="1" />
-                                <Setter TargetName="HeaderSurface" Property="Background" Value="{m:BrushResource ControlFillColorPrimaryBrush}" />
+                                <Setter TargetName="IconPresenter" Property="TextElement.Foreground" Value="{m:BrushResource SystemAccentColorPrimaryBrush}" />
+                                <DataTrigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation
+                                                Storyboard.TargetName="ContentGrid"
+                                                Storyboard.TargetProperty="Height"
+                                                To="0"
+                                                Duration="0:0:.16" />
+                                            <DoubleAnimation
+                                                Storyboard.TargetName="ContentGrid"
+                                                Storyboard.TargetProperty="Opacity"
+                                                From="1"
+                                                To="0"
+                                                Duration="0:0:.16" />
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </DataTrigger.EnterActions>
+                                <DataTrigger.ExitActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation
+                                                Storyboard.TargetName="ContentGrid"
+                                                Storyboard.TargetProperty="Height"
+                                                From="0"
+                                                To="18"
+                                                Duration="0:0:.16" />
+                                            <DoubleAnimation
+                                                Storyboard.TargetName="ContentGrid"
+                                                Storyboard.TargetProperty="Opacity"
+                                                From="0"
+                                                To="1"
+                                                Duration="0:0:.16" />
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </DataTrigger.ExitActions>
                             </DataTrigger>
                             <DataTrigger Binding="{Binding IsSubmenuOpen, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}" Value="True">
                                 <Setter TargetName="HeaderSurface" Property="Background" Value="{m:BrushResource ControlFillColorPrimaryBrush}" />
@@ -108,10 +150,7 @@
             </Button>
         </Grid>
         <ControlTemplate.Triggers>
-            <Trigger Property="IsActive" Value="True">
-                <Setter Property="controls:NavigationViewItemTemplateBehavior.IsIconFilled" Value="True" />
-            </Trigger>
-            <Trigger Property="IsDescendantActive" Value="True">
+            <Trigger Property="IsBranchActive" Value="True">
                 <Setter Property="controls:NavigationViewItemTemplateBehavior.IsIconFilled" Value="True" />
             </Trigger>
         </ControlTemplate.Triggers>

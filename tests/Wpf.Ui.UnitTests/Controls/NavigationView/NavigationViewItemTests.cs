@@ -313,6 +313,7 @@ public class NavigationViewItemTests
             Assert.True(NavigationViewItem.PaneDisplayModeProperty.ReadOnly);
             Assert.True(NavigationViewItem.IsSubItemProperty.ReadOnly);
             Assert.True(NavigationViewItem.IsDescendantActiveProperty.ReadOnly);
+            Assert.True(NavigationViewItem.IsBranchActiveProperty.ReadOnly);
             Assert.Equal(NavigationViewPaneDisplayMode.Top, parent.PaneDisplayMode);
             Assert.Equal(NavigationViewPaneDisplayMode.Top, child.PaneDisplayMode);
             Assert.True(child.IsSubItem);
@@ -354,23 +355,42 @@ public class NavigationViewItemTests
 
             Assert.True(grandchild.IsActive);
             Assert.False(grandchild.IsDescendantActive);
+            Assert.True(grandchild.IsBranchActive);
             Assert.True(child.IsDescendantActive);
+            Assert.True(child.IsBranchActive);
             Assert.True(root.IsDescendantActive);
+            Assert.True(root.IsBranchActive);
+
+            // Branch state stays active when both source states are true and one is cleared.
+            child.Activate(navigationView);
+            Assert.True(child.IsActive);
+            Assert.True(child.IsDescendantActive);
+            Assert.True(child.IsBranchActive);
+            child.Deactivate(navigationView);
+            Assert.False(child.IsActive);
+            Assert.True(child.IsDescendantActive);
+            Assert.True(child.IsBranchActive);
 
             child.Items.Remove(grandchild);
 
             Assert.False(child.IsDescendantActive);
+            Assert.False(child.IsBranchActive);
             Assert.False(root.IsDescendantActive);
+            Assert.False(root.IsBranchActive);
 
             child.Items.Add(grandchild);
 
             Assert.True(child.IsDescendantActive);
+            Assert.True(child.IsBranchActive);
             Assert.True(root.IsDescendantActive);
+            Assert.True(root.IsBranchActive);
 
             grandchild.Deactivate(navigationView);
 
             Assert.False(child.IsDescendantActive);
+            Assert.False(child.IsBranchActive);
             Assert.False(root.IsDescendantActive);
+            Assert.False(root.IsBranchActive);
             root.RaiseEvent(new RoutedEventArgs(FrameworkElement.UnloadedEvent));
         });
     }
@@ -465,6 +485,21 @@ public class NavigationViewItemTests
 
                 parent.IsExpanded = true;
 
+                Assert.Equal(0d, activeIndicator.Opacity);
+
+                // An expanded branch still surfaces its own active state. IsBranchActive remains
+                // true throughout, while IsActive determines whether the parent row owns the
+                // indicator or merely contains the visible active descendant.
+                parent.Activate(navigationView);
+
+                Assert.True(parent.IsActive);
+                Assert.True(parent.IsBranchActive);
+                Assert.Equal(1d, activeIndicator.Opacity);
+
+                parent.Deactivate(navigationView);
+
+                Assert.False(parent.IsActive);
+                Assert.True(parent.IsBranchActive);
                 Assert.Equal(0d, activeIndicator.Opacity);
 
                 // Compact Left always hides descendants. Its indicator must not depend on the

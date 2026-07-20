@@ -3,8 +3,6 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-/* Based on Windows UI Library https://docs.microsoft.com/en-us/uwp/api/windows.ui.xaml.controls.navigationviewitem?view=winrt-22621 */
-
 using System.Collections;
 using System.Collections.Specialized;
 using System.Text;
@@ -132,7 +130,7 @@ public partial class NavigationViewItem : HeaderedItemsControl, INavigationViewI
             new PropertyMetadata(false)
         );
 
-    /// <summary>Identifies the read-only <see cref="IsDescendantActive"/> dependency property.</summary>
+    /// <summary>Identifies the <see cref="IsDescendantActive"/> dependency property.</summary>
     public static readonly DependencyProperty IsDescendantActiveProperty =
         IsDescendantActivePropertyKey.DependencyProperty;
 
@@ -155,6 +153,35 @@ public partial class NavigationViewItem : HeaderedItemsControl, INavigationViewI
 
     #endregion
 
+    #region DP: IsBranchActive
+
+    private static readonly DependencyPropertyKey IsBranchActivePropertyKey =
+        DependencyProperty.RegisterReadOnly(
+            nameof(IsBranchActive),
+            typeof(bool),
+            typeof(NavigationViewItem),
+            new PropertyMetadata(false)
+        );
+
+    /// <summary>Identifies the <see cref="IsBranchActive"/> dependency property.</summary>
+    public static readonly DependencyProperty IsBranchActiveProperty =
+        IsBranchActivePropertyKey.DependencyProperty;
+
+    /// <summary>
+    /// Gets a value indicating whether this item or any of its descendants is active. The default
+    /// value is <see langword="false"/>.
+    /// </summary>
+    /// <remarks>
+    /// This property is equivalent to <see cref="IsActive"/> or
+    /// <see cref="IsDescendantActive"/>. It provides templates with one stable branch-level state
+    /// while preserving the distinct meanings of the two source properties.
+    /// </remarks>
+    [Browsable(false)]
+    [ReadOnly(true)]
+    public bool IsBranchActive => (bool)GetValue(IsBranchActiveProperty);
+
+    #endregion
+
     #region DP: IsPaneOpen
 
     /// <summary>
@@ -168,7 +195,9 @@ public partial class NavigationViewItem : HeaderedItemsControl, INavigationViewI
             new FrameworkPropertyMetadata(true)
         );
 
-    /// <summary>Identifies the read-only <see cref="IsPaneOpen"/> dependency property.</summary>
+    /// <summary>
+    /// Identifies the <see cref="IsPaneOpen"/> dependency property.
+    /// </summary>
     /// <remarks>
     /// The public property is read-only. An internal inheritable context receives the owning view's
     /// value and copies it through the private key, so callers cannot override presentation state on
@@ -209,7 +238,7 @@ public partial class NavigationViewItem : HeaderedItemsControl, INavigationViewI
             new FrameworkPropertyMetadata(NavigationViewPaneDisplayMode.Left)
         );
 
-    /// <summary>Identifies the read-only <see cref="PaneDisplayMode"/> dependency property.</summary>
+    /// <summary>Identifies the <see cref="PaneDisplayMode"/> dependency property.</summary>
     /// <remarks>See <see cref="IsPaneOpenProperty"/> for the inherited context contract.</remarks>
     public static readonly DependencyProperty PaneDisplayModeProperty =
         PaneDisplayModePropertyKey.DependencyProperty;
@@ -287,14 +316,7 @@ public partial class NavigationViewItem : HeaderedItemsControl, INavigationViewI
 
     #region DP: IsSubmenuOpen
 
-    /// <summary>
-    /// Identifies the <see cref="IsSubmenuOpen"/> dependency property. The property defaults to
-    /// <see langword="false"/> and binds two-way by default so native menu state mirrored by the
-    /// control can flow back through an application binding. The semantic root synchronizes its
-    /// <see cref="ContextMenu"/> explicitly; projected descendant MenuItems synchronize through
-    /// native submenu events instead of binding their control-owned
-    /// <see cref="MenuItem.IsSubmenuOpen"/> property.
-    /// </summary>
+    /// <summary>Identifies the <see cref="IsSubmenuOpen"/> dependency property.</summary>
     public static readonly DependencyProperty IsSubmenuOpenProperty =
         DependencyProperty.Register(
             nameof(IsSubmenuOpen),
@@ -626,7 +648,7 @@ public partial class NavigationViewItem : HeaderedItemsControl, INavigationViewI
     /// <param name="targetPageType">The optional page type activated by the item.</param>
     /// <param name="itemsSource">The optional source used to generate child items.</param>
     public NavigationViewItem(
-        IconElement icon,
+        IconElement  icon,
         Type?        targetPageType = null,
         IEnumerable? itemsSource = null)
         : this(null, icon, targetPageType, itemsSource)
@@ -740,11 +762,7 @@ public partial class NavigationViewItem : HeaderedItemsControl, INavigationViewI
         base.OnApplyTemplate();
 
         _headerButton = GetTemplateChild(HeaderButtonPartName) as ButtonBase;
-
-        if (_headerButton is not null)
-        {
-            _headerButton.Click += OnHeaderButtonClick;
-        }
+        _headerButton?.Click += OnHeaderButtonClick;
 
         AttachSubmenuContextMenu(
             GetTemplateChild(SubmenuContextMenuPartName) as ContextMenu
@@ -882,11 +900,8 @@ public partial class NavigationViewItem : HeaderedItemsControl, INavigationViewI
 
     private void DetachHeaderParts()
     {
-        if (_headerButton is not null)
-        {
-            _headerButton.Click -= OnHeaderButtonClick;
-            _headerButton = null;
-        }
+        _headerButton?.Click -= OnHeaderButtonClick;
+        _headerButton = null;
     }
 
     private void OnHeaderButtonClick(object sender, RoutedEventArgs e)
@@ -936,14 +951,7 @@ public partial class NavigationViewItem : HeaderedItemsControl, INavigationViewI
             return;
         }
 
-        if (UsesInlineExpansion)
-        {
-            SetCurrentValue(IsExpandedProperty, isOpen);
-        }
-        else
-        {
-            SetCurrentValue(IsSubmenuOpenProperty, isOpen);
-        }
+        SetCurrentValue(UsesInlineExpansion ? IsExpandedProperty : IsSubmenuOpenProperty, isOpen);
 
         if (isOpen && focusFirstItem)
         {
@@ -1205,7 +1213,9 @@ public partial class NavigationViewItem : HeaderedItemsControl, INavigationViewI
     /// </remarks>
     private static void OnIsActiveChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
-        ((NavigationViewItem)d)._parentItem?.UpdateDescendantActiveState();
+        var item = (NavigationViewItem)d;
+        item.UpdateBranchActiveState();
+        item._parentItem?.UpdateDescendantActiveState();
     }
 
     /// <summary>
@@ -1469,7 +1479,19 @@ public partial class NavigationViewItem : HeaderedItemsControl, INavigationViewI
         }
 
         SetValue(IsDescendantActivePropertyKey, isDescendantActive);
+        UpdateBranchActiveState();
         _parentItem?.UpdateDescendantActiveState();
+    }
+
+    /// <summary>Keeps the template-facing branch state synchronized with its source states.</summary>
+    private void UpdateBranchActiveState()
+    {
+        bool isBranchActive = IsActive || IsDescendantActive;
+
+        if (IsBranchActive != isBranchActive)
+        {
+            SetValue(IsBranchActivePropertyKey, isBranchActive);
+        }
     }
 
     /// <summary>
