@@ -14,14 +14,26 @@ namespace Wpf.Ui.Controls;
 /// A DataGrid control that displays data in rows and columns and allows
 /// for the entering and editing of data.
 /// </summary>
-[StyleTypedProperty(Property = nameof(CheckBoxColumnElementStyle),        StyleTargetType = typeof(CheckBox))]
+[StyleTypedProperty(Property = nameof(CheckBoxColumnElementStyle), StyleTargetType = typeof(CheckBox))]
 [StyleTypedProperty(Property = nameof(CheckBoxColumnEditingElementStyle), StyleTargetType = typeof(CheckBox))]
-[StyleTypedProperty(Property = nameof(ComboBoxColumnElementStyle),        StyleTargetType = typeof(ComboBox))]
+[StyleTypedProperty(Property = nameof(ComboBoxColumnElementStyle), StyleTargetType = typeof(ComboBox))]
 [StyleTypedProperty(Property = nameof(ComboBoxColumnEditingElementStyle), StyleTargetType = typeof(ComboBox))]
-[StyleTypedProperty(Property = nameof(TextColumnElementStyle),            StyleTargetType = typeof(TextBlock))]
-[StyleTypedProperty(Property = nameof(TextColumnEditingElementStyle),     StyleTargetType = typeof(TextBox))]
+[StyleTypedProperty(Property = nameof(TextColumnElementStyle), StyleTargetType = typeof(TextBlock))]
+[StyleTypedProperty(Property = nameof(TextColumnEditingElementStyle), StyleTargetType = typeof(TextBox))]
 public class DataGrid : System.Windows.Controls.DataGrid
 {
+    /// <summary>
+    /// Identifies the <see cref="IsSelectionIndicatorVisible"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty IsSelectionIndicatorVisibleProperty =
+        SelectionIndicator.IsSelectionIndicatorVisibleProperty.AddOwner(
+            typeof(DataGrid),
+            new FrameworkPropertyMetadata(
+                true,
+                FrameworkPropertyMetadataOptions.Inherits | FrameworkPropertyMetadataOptions.AffectsRender
+            )
+        );
+
     /// <summary>Identifies the <see cref="CheckBoxColumnElementStyle"/> dependency property.</summary>
     public static readonly DependencyProperty CheckBoxColumnElementStyleProperty =
         DependencyProperty.Register(
@@ -84,6 +96,15 @@ public class DataGrid : System.Windows.Controls.DataGrid
             typeof(DataGrid),
             new FrameworkPropertyMetadata(typeof(DataGrid))
         );
+    }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether the selected row displays an accent-colored indicator at its leading edge.
+    /// </summary>
+    public bool IsSelectionIndicatorVisible
+    {
+        get => (bool)GetValue(IsSelectionIndicatorVisibleProperty);
+        set => SetValue(IsSelectionIndicatorVisibleProperty, value);
     }
 
     /// <summary>
@@ -167,29 +188,33 @@ public class DataGrid : System.Windows.Controls.DataGrid
         switch (dataGridColumn)
         {
             case DataGridCheckBoxColumn checkBoxColumn:
-                if (checkBoxColumn.ReadLocalValue(DataGridBoundColumn.ElementStyleProperty)
-                 == DependencyProperty.UnsetValue)
+                if (
+                    checkBoxColumn.ReadLocalValue(DataGridBoundColumn.ElementStyleProperty)
+                    == DependencyProperty.UnsetValue
+                )
                 {
                     _ = BindingOperations.SetBinding(
                         checkBoxColumn,
                         DataGridBoundColumn.ElementStyleProperty,
                         new Binding
                         {
-                            Path   = new PropertyPath(CheckBoxColumnElementStyleProperty),
+                            Path = new PropertyPath(CheckBoxColumnElementStyleProperty),
                             Source = this,
                         }
                     );
                 }
 
-                if (checkBoxColumn.ReadLocalValue(DataGridBoundColumn.EditingElementStyleProperty)
-                 == DependencyProperty.UnsetValue)
+                if (
+                    checkBoxColumn.ReadLocalValue(DataGridBoundColumn.EditingElementStyleProperty)
+                    == DependencyProperty.UnsetValue
+                )
                 {
                     _ = BindingOperations.SetBinding(
                         checkBoxColumn,
                         DataGridBoundColumn.EditingElementStyleProperty,
                         new Binding
                         {
-                            Path   = new PropertyPath(CheckBoxColumnEditingElementStyleProperty),
+                            Path = new PropertyPath(CheckBoxColumnEditingElementStyleProperty),
                             Source = this,
                         }
                     );
@@ -198,43 +223,49 @@ public class DataGrid : System.Windows.Controls.DataGrid
                 break;
 
             case DataGridComboBoxColumn comboBoxColumn:
-                if (comboBoxColumn.ReadLocalValue(DataGridBoundColumn.ElementStyleProperty)
-                 == DependencyProperty.UnsetValue)
+                if (
+                    comboBoxColumn.ReadLocalValue(DataGridBoundColumn.ElementStyleProperty)
+                    == DependencyProperty.UnsetValue
+                )
                 {
                     _ = BindingOperations.SetBinding(
                         comboBoxColumn,
                         DataGridBoundColumn.ElementStyleProperty,
                         new Binding
                         {
-                            Path   = new PropertyPath(ComboBoxColumnElementStyleProperty),
+                            Path = new PropertyPath(ComboBoxColumnElementStyleProperty),
                             Source = this,
                         }
                     );
                 }
 
-                if (comboBoxColumn.ReadLocalValue(DataGridBoundColumn.EditingElementStyleProperty)
-                 == DependencyProperty.UnsetValue)
+                if (
+                    comboBoxColumn.ReadLocalValue(DataGridBoundColumn.EditingElementStyleProperty)
+                    == DependencyProperty.UnsetValue
+                )
                 {
                     _ = BindingOperations.SetBinding(
                         comboBoxColumn,
                         DataGridBoundColumn.EditingElementStyleProperty,
                         new Binding
                         {
-                            Path   = new PropertyPath(ComboBoxColumnEditingElementStyleProperty),
+                            Path = new PropertyPath(ComboBoxColumnEditingElementStyleProperty),
                             Source = this,
                         }
                     );
                 }
 
-                if (comboBoxColumn.ReadLocalValue(DataGridBoundColumn.EditingElementStyleProperty)
-                 == DependencyProperty.UnsetValue)
+                if (
+                    comboBoxColumn.ReadLocalValue(DataGridBoundColumn.EditingElementStyleProperty)
+                    == DependencyProperty.UnsetValue
+                )
                 {
                     _ = BindingOperations.SetBinding(
                         comboBoxColumn,
                         DataGridBoundColumn.EditingElementStyleProperty,
                         new Binding
                         {
-                            Path   = new PropertyPath(ComboBoxColumnEditingElementStyleProperty),
+                            Path = new PropertyPath(ComboBoxColumnEditingElementStyleProperty),
                             Source = this,
                         }
                     );
@@ -243,29 +274,29 @@ public class DataGrid : System.Windows.Controls.DataGrid
                 break;
 
             case DataGridTextColumn textBoxColumn:
-                if (textBoxColumn.ReadLocalValue(DataGridBoundColumn.ElementStyleProperty)
-                 == DependencyProperty.UnsetValue)
+                if (
+                    textBoxColumn.ReadLocalValue(DataGridBoundColumn.ElementStyleProperty)
+                    == DependencyProperty.UnsetValue
+                )
                 {
                     _ = BindingOperations.SetBinding(
                         textBoxColumn,
                         DataGridBoundColumn.ElementStyleProperty,
-                        new Binding
-                        {
-                            Path   = new PropertyPath(TextColumnElementStyleProperty),
-                            Source = this
-                        }
+                        new Binding { Path = new PropertyPath(TextColumnElementStyleProperty), Source = this }
                     );
                 }
 
-                if (textBoxColumn.ReadLocalValue(DataGridBoundColumn.EditingElementStyleProperty)
-                 == DependencyProperty.UnsetValue)
+                if (
+                    textBoxColumn.ReadLocalValue(DataGridBoundColumn.EditingElementStyleProperty)
+                    == DependencyProperty.UnsetValue
+                )
                 {
                     _ = BindingOperations.SetBinding(
                         textBoxColumn,
                         DataGridBoundColumn.EditingElementStyleProperty,
                         new Binding
                         {
-                            Path   = new PropertyPath(TextColumnEditingElementStyleProperty),
+                            Path = new PropertyPath(TextColumnEditingElementStyleProperty),
                             Source = this,
                         }
                     );

@@ -5,9 +5,8 @@
 
 namespace Wpf.Ui.Controls;
 
-/*
 /// <summary>
-/// Extends <see cref="System.Windows.Controls.GridView"/> to use Wpf.Ui custom styles
+/// Displays <see cref="ListView"/> data in columns with Fluent styling and Grid-like column sizing.
 /// </summary>
 /// <example>
 /// To use this enhanced GridView in a ListView:
@@ -24,23 +23,21 @@ namespace Wpf.Ui.Controls;
 /// </example>
 public class GridView : System.Windows.Controls.GridView
 {
-    // todo 这是tmd什么神仙做法，会影响全局 ColumnHeaderContainer
+    /// <summary>
+    /// Gets the resource key for the default <see cref="ListView"/> style used by this view.
+    /// </summary>
+    public static new ResourceKey GridViewStyleKey { get; } =
+        new ComponentResourceKey(typeof(GridView), nameof(GridViewStyleKey));
 
-    static GridView()
-    {
-        ResourceDictionary resourceDict = new()
-        {
-            Source = new Uri(
-                "pack://application:,,,/Wpf.Ui;component/Controls/GridView/GridViewColumnHeader.xaml"
-            ),
-        };
+    /// <summary>
+    /// Gets the resource key for the default item container style used by this view.
+    /// </summary>
+    public static new ResourceKey GridViewItemContainerStyleKey { get; } =
+        new ComponentResourceKey(typeof(GridView), nameof(GridViewItemContainerStyleKey));
 
-        Style defaultStyle = (Style)resourceDict["UiGridViewColumnHeaderStyle"];
+    /// <inheritdoc />
+    protected override object DefaultStyleKey => GridViewStyleKey;
 
-        ColumnHeaderContainerStyleProperty.OverrideMetadata(
-            typeof(GridView),
-            new FrameworkPropertyMetadata(defaultStyle)
-        );
-    }
+    /// <inheritdoc />
+    protected override object ItemContainerDefaultStyleKey => GridViewItemContainerStyleKey;
 }
-*/

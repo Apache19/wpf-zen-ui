@@ -7,34 +7,29 @@
 namespace Wpf.Ui.Controls;
 
 /// <summary>
-/// Extends <see cref="System.Windows.Controls.GridViewRowPresenter"/>, and adds header row layout support for <see cref="GridViewColumn"/>, which can have <see cref="GridViewColumn.MinWidth"/> and <see cref="GridViewColumn.MaxWidth"/>.
+/// Presents a GridView row and coordinates Auto, pixel, and star-sized columns.
 /// </summary>
 public class GridViewRowPresenter : System.Windows.Controls.GridViewRowPresenter
 {
     protected override Size ArrangeOverride(Size arrangeSize)
     {
-        // update the desired width of each column (clamps desiredwidth to MinWidth and MaxWidth)
-        if (Columns != null)
-        {
-            foreach (GridViewColumn column in Columns.OfType<GridViewColumn>())
-            {
-                column.UpdateDesiredWidth();
-            }
-        }
+        _ = GridViewColumnLayout.ResolveStarColumns(Columns, arrangeSize.Width);
 
         return base.ArrangeOverride(arrangeSize);
     }
 
     protected override Size MeasureOverride(Size constraint)
     {
-        if (Columns != null)
+        GridViewColumnLayout.PrepareForMeasure(Columns, constraint.Width);
+        Size desiredSize = base.MeasureOverride(constraint);
+        GridViewColumnLayout.CoerceAutoColumns(Columns);
+
+        if (GridViewColumnLayout.ResolveStarColumns(Columns, constraint.Width))
         {
-            foreach (GridViewColumn column in Columns.OfType<GridViewColumn>())
-            {
-                column.UpdateDesiredWidth();
-            }
+            desiredSize = base.MeasureOverride(constraint);
+            GridViewColumnLayout.CoerceAutoColumns(Columns);
         }
 
-        return base.MeasureOverride(constraint);
+        return desiredSize;
     }
 }

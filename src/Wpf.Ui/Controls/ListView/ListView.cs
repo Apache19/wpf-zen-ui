@@ -3,10 +3,13 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
+using UiListViewItem = Wpf.Ui.Controls.ListViewItem;
+
+// ReSharper disable once CheckNamespace
 namespace Wpf.Ui.Controls;
 
 /// <summary>
-/// Extends <see cref="System.Windows.Controls.ListView"/>, and adds customized support <see cref="ListViewViewState.GridView"/> or <see cref="ListViewViewState.Default"/>.
+/// Extends <see cref="System.Windows.Controls.ListView"/> with Fluent item containers and selection visuals.
 /// </summary>
 /// <example>
 /// <code lang="xml">
@@ -26,15 +29,17 @@ namespace Wpf.Ui.Controls;
 /// </example>
 public class ListView : System.Windows.Controls.ListView
 {
-    // todo 移除 ViewStateProperty，只提供GridView的默认样式，并把ListView的默认样式应用上去即可，不要做过多的改变。
-
-    /// <summary>Identifies the <see cref="ViewState"/> dependency property.</summary>
-    public static readonly DependencyProperty ViewStateProperty = DependencyProperty.Register(
-        nameof(ViewState),
-        typeof(ListViewViewState),
-        typeof(ListView),
-        new FrameworkPropertyMetadata(ListViewViewState.Default, OnViewStateChanged)
-    );
+    /// <summary>
+    /// Identifies the <see cref="IsSelectionIndicatorVisible"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty IsSelectionIndicatorVisibleProperty =
+        SelectionIndicator.IsSelectionIndicatorVisibleProperty.AddOwner(
+            typeof(ListView),
+            new FrameworkPropertyMetadata(
+                true,
+                FrameworkPropertyMetadataOptions.Inherits | FrameworkPropertyMetadataOptions.AffectsRender
+            )
+        );
 
     static ListView()
     {
@@ -42,72 +47,24 @@ public class ListView : System.Windows.Controls.ListView
             typeof(ListView),
             new FrameworkPropertyMetadata(typeof(ListView))
         );
-
-        ViewProperty.OverrideMetadata(
-            typeof(ListView),
-            new PropertyMetadata(
-                static (d, e) =>
-                {
-                    ((ListView)d).UpdateViewState();
-                }
-            )
-        );
     }
 
     /// <summary>
-    /// Gets or sets the view state of the <see cref="ListView"/>, enabling custom logic based on the current view.
+    /// Gets or sets a value indicating whether the selected item displays an accent-colored indicator at its leading edge.
     /// </summary>
-    /// <value>The current view state of the <see cref="ListView"/>.</value>
-    public ListViewViewState ViewState
+    public bool IsSelectionIndicatorVisible
     {
-        get => (ListViewViewState)GetValue(ViewStateProperty);
-        set => SetValue(ViewStateProperty, value);
-    }
-
-    private static void OnViewStateChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
-    {
-        if (d is not ListView self)
-        {
-            return;
-        }
-
-        self.OnViewStateChanged(e);
-    }
-
-    protected virtual void OnViewStateChanged(DependencyPropertyChangedEventArgs e)
-    {
-        // Hook for derived classes to react to ViewState property changes
-    }
-
-    public ListView()
-    {
-        Loaded += OnLoaded;
-    }
-
-    private void OnLoaded(object sender, RoutedEventArgs e)
-    {
-        UpdateViewState(); // set the initial state
-    }
-
-    private void UpdateViewState()
-    {
-        ListViewViewState viewState = View switch
-        {
-            System.Windows.Controls.GridView => ListViewViewState.GridView,
-            null                             => ListViewViewState.Default,
-            _                                => ListViewViewState.Default,
-        };
-
-        SetCurrentValue(ViewStateProperty, viewState);
+        get => (bool)GetValue(IsSelectionIndicatorVisibleProperty);
+        set => SetValue(IsSelectionIndicatorVisibleProperty, value);
     }
 
     protected override DependencyObject GetContainerForItemOverride()
     {
-        return new ListViewItem();
+        return new UiListViewItem();
     }
 
     protected override bool IsItemItsOwnContainerOverride(object item)
     {
-        return item is ListViewItem;
+        return item is UiListViewItem;
     }
 }

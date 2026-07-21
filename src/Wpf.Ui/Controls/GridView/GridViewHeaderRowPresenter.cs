@@ -3,47 +3,77 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-using System.Diagnostics;
 using System.Reflection;
 using System.Windows.Controls;
+using NativeGridViewHeaderRowPresenter = System.Windows.Controls.GridViewHeaderRowPresenter;
 
 namespace Wpf.Ui.Controls;
 
 /// <summary>
-/// Extends <see cref="System.Windows.Controls.GridViewHeaderRowPresenter"/>, and adds layout support for <see cref="GridViewColumn"/>, which can have <see cref="GridViewColumn.MinWidth"/> and <see cref="GridViewColumn.MaxWidth"/>.
+/// Presents GridView headers and coordinates Auto, pixel, and star-sized columns.
 /// </summary>
-public class GridViewHeaderRowPresenter : System.Windows.Controls.GridViewHeaderRowPresenter
+public class GridViewHeaderRowPresenter : NativeGridViewHeaderRowPresenter
 {
+    private static readonly Lazy<FieldInfo?> _indicatorField = new(static () =>
+        typeof(NativeGridViewHeaderRowPresenter).GetField(
+            "_indicator",
+            BindingFlags.NonPublic | BindingFlags.Instance
+        )
+    );
+
+    /// <summary>
+    /// Identifies the <see cref="ColumnReorderIndicatorTemplate"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty ColumnReorderIndicatorTemplateProperty =
+        DependencyProperty.Register(
+            nameof(ColumnReorderIndicatorTemplate),
+            typeof(ControlTemplate),
+            typeof(GridViewHeaderRowPresenter),
+            new FrameworkPropertyMetadata(null, OnColumnReorderIndicatorTemplateChanged)
+        );
+
     public GridViewHeaderRowPresenter()
     {
         Loaded += OnLoaded;
     }
 
+    /// <summary>
+    /// Gets or sets the template used for the column reorder insertion indicator.
+    /// </summary>
+    public ControlTemplate? ColumnReorderIndicatorTemplate
+    {
+        get => (ControlTemplate?)GetValue(ColumnReorderIndicatorTemplateProperty);
+        set => SetValue(ColumnReorderIndicatorTemplateProperty, value);
+    }
+
     protected override Size ArrangeOverride(Size arrangeSize)
     {
-        // update the desired width of each column (clamps desiredwidth to MinWidth and MaxWidth)
-        if (Columns != null)
-        {
-            foreach (GridViewColumn column in Columns.OfType<GridViewColumn>())
-            {
-                column.UpdateDesiredWidth();
-            }
-        }
+        _ = GridViewColumnLayout.ResolveStarColumns(Columns, arrangeSize.Width);
 
         return base.ArrangeOverride(arrangeSize);
     }
 
     protected override Size MeasureOverride(Size constraint)
     {
-        if (Columns != null)
+        GridViewColumnLayout.PrepareForMeasure(Columns, constraint.Width);
+        Size desiredSize = base.MeasureOverride(constraint);
+        GridViewColumnLayout.CoerceAutoColumns(Columns);
+
+        if (GridViewColumnLayout.ResolveStarColumns(Columns, constraint.Width))
         {
-            foreach (GridViewColumn column in Columns.OfType<GridViewColumn>())
-            {
-                column.UpdateDesiredWidth();
-            }
+            desiredSize = base.MeasureOverride(constraint);
+            GridViewColumnLayout.CoerceAutoColumns(Columns);
         }
 
-        return base.MeasureOverride(constraint);
+        return desiredSize;
+    }
+
+    private static void OnColumnReorderIndicatorTemplateChanged(
+        DependencyObject d,
+        DependencyPropertyChangedEventArgs e
+    )
+    {
+        ((GridViewHeaderRowPresenter)d).UpdateIndicatorStyle();
     }
 
     private void OnLoaded(object sender, RoutedEventArgs e)
@@ -53,38 +83,16 @@ public class GridViewHeaderRowPresenter : System.Windows.Controls.GridViewHeader
 
     private void UpdateIndicatorStyle()
     {
-        FieldInfo? indicatorField = typeof(System.Windows.Controls.GridViewHeaderRowPresenter).GetField(
-            "_indicator",
-            BindingFlags.NonPublic | BindingFlags.Instance
-        );
-
-        if (indicatorField == null)
+        if (
+            ColumnReorderIndicatorTemplate is not { } template
+            || _indicatorField.Value?.GetValue(this) is not Separator indicator
+        )
         {
-            Debug.WriteLine("Failed to get the _indicator field");
             return;
         }
 
-        if (indicatorField.GetValue(this) is Separator indicator)
-        {
-            indicator.Margin = new Thickness(0);
-            indicator.Width = 3.0;
-
-            ResourceDictionary resourceDictionary = new()
-            {
-                Source = new Uri(
-                    "pack://application:,,,/Wpf.Ui;component/Controls/GridView/GridViewHeaderRowIndicator.xaml",
-                    UriKind.Absolute
-                ),
-            };
-
-            if (resourceDictionary["GridViewHeaderRowIndicatorTemplate"] is ControlTemplate template)
-            {
-                indicator.Template = template;
-            }
-            else
-            {
-                Debug.WriteLine("Failed to get the GridViewHeaderRowIndicatorTemplate");
-            }
-        }
+        indicator.Margin = new Thickness(0);
+        indicator.Width = 3.0;
+        indicator.Template = template;
     }
 }
