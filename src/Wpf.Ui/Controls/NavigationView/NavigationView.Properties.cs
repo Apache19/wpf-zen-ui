@@ -19,6 +19,146 @@ namespace Wpf.Ui.Controls;
 [StyleTypedProperty(Property = nameof(ItemContainerStyle), StyleTargetType = typeof(NavigationViewItem))]
 public partial class NavigationView
 {
+    #region Read-only attached DP: ContentPadding
+
+    private static readonly DependencyPropertyKey ContentPaddingPropertyKey =
+        DependencyProperty.RegisterAttachedReadOnly(
+            "ContentPadding",
+            typeof(Thickness),
+            typeof(NavigationView),
+            new FrameworkPropertyMetadata(default(Thickness), FrameworkPropertyMetadataOptions.Inherits)
+        );
+
+    /// <summary>
+    /// Identifies the read-only <c>NavigationView.ContentPadding</c> attached dependency property.
+    /// </summary>
+    /// <remarks>
+    /// <see cref="NavigationView"/> publishes its <see cref="Control.Padding"/> value on the root
+    /// object currently hosted by its private <see cref="Frame"/>. The value then inherits through
+    /// that root's page subtree, allowing a page-owned scroll viewer to use it as content padding
+    /// while its own viewport remains edge-to-edge. It is read-only because the value describes
+    /// navigation-host state and must not diverge from the owning control.
+    /// </remarks>
+    public static readonly DependencyProperty ContentPaddingProperty =
+        ContentPaddingPropertyKey.DependencyProperty;
+
+    /// <summary>
+    /// Gets the content inset published by the <see cref="NavigationView"/> currently hosting
+    /// <paramref name="element"/>.
+    /// </summary>
+    /// <param name="element">
+    /// The navigated root element, or one of its descendants, from which to read the
+    /// host-provided inset.
+    /// </param>
+    /// <returns>
+    /// The owning navigation view's <see cref="Control.Padding"/>, or an empty
+    /// <see cref="Thickness"/> when the element is not current navigation content.
+    /// </returns>
+    /// <remarks>
+    /// WPF's <see cref="Frame"/> uses <see cref="InheritanceBehavior.SkipToAppNow"/>, so a
+    /// navigated <see cref="Page"/> cannot reliably locate the frame with an ancestor binding or
+    /// inherit a property from it. This attached value is the explicit bridge for layout metadata;
+    /// it does not add scrolling and does not modify any page-owned layout property. The value
+    /// participates in property-value inheritance only after it has been published on the current
+    /// navigation root; it does not cross into a Page from the Frame.
+    /// </remarks>
+    public static Thickness GetContentPadding(DependencyObject element)
+    {
+        if (element is null)
+        {
+            throw new ArgumentNullException(nameof(element));
+        }
+
+        return (Thickness)element.GetValue(ContentPaddingProperty);
+    }
+
+    private static void OnPaddingChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        if (d is NavigationView navigationView)
+        {
+            navigationView.UpdateNavigatedContentPadding();
+        }
+    }
+
+    #endregion
+
+    #region Attached DP: IsContentPaddingHandled
+
+    /// <summary>
+    /// Identifies the <c>NavigationView.IsContentPaddingHandled</c> attached dependency property.
+    /// </summary>
+    /// <remarks>
+    /// The default value is <see langword="false"/>. In that mode the private navigation frame
+    /// applies <see cref="Control.Padding"/> outside the current content, which is appropriate for
+    /// ordinary pages. A page template that places a scroll viewer at its outer edge should set
+    /// this value to <see langword="true"/> and apply <see cref="ContentPaddingProperty"/> inside
+    /// that viewer instead. This explicit contract avoids inferring layout ownership from
+    /// <see cref="ScrollViewer.CanContentScrollProperty"/> or from an incompletely generated visual
+    /// tree.
+    /// </remarks>
+    public static readonly DependencyProperty IsContentPaddingHandledProperty =
+        DependencyProperty.RegisterAttached(
+            "IsContentPaddingHandled",
+            typeof(bool),
+            typeof(NavigationView),
+            new FrameworkPropertyMetadata(false, OnIsContentPaddingHandledChanged)
+        );
+
+    private static void OnIsContentPaddingHandledChanged(
+        DependencyObject d,
+        DependencyPropertyChangedEventArgs e
+    )
+    {
+        // A DynamicResource page style can resolve after Frame.Navigated has fired. The private
+        // host marker lets this late change refresh only the NavigationView that currently owns
+        // the content, without walking across Frame's inheritance boundary.
+        if (d.GetValue(ContentPaddingHostProperty) is NavigationView navigationView)
+        {
+            navigationView.UpdateNavigationFramePadding();
+        }
+    }
+
+    /// <summary>
+    /// Gets whether <paramref name="element"/> applies the owning navigation view's
+    /// <see cref="ContentPaddingProperty"/> within its own layout.
+    /// </summary>
+    /// <param name="element">The navigation content root to inspect.</param>
+    /// <returns>
+    /// <see langword="true"/> when the content handles the inset; otherwise,
+    /// <see langword="false"/>.
+    /// </returns>
+    public static bool GetIsContentPaddingHandled(DependencyObject element)
+    {
+        if (element is null)
+        {
+            throw new ArgumentNullException(nameof(element));
+        }
+
+        return (bool)element.GetValue(IsContentPaddingHandledProperty);
+    }
+
+    /// <summary>
+    /// Sets whether <paramref name="element"/> applies the owning navigation view's
+    /// <see cref="ContentPaddingProperty"/> within its own layout.
+    /// </summary>
+    /// <param name="element">The navigation content root on which to declare layout ownership.</param>
+    /// <param name="value">
+    /// <see langword="true"/> to keep the content edge-to-edge and consume
+    /// <see cref="ContentPaddingProperty"/> inside it; <see langword="false"/> to let the frame
+    /// apply the inset outside the content.
+    /// </param>
+    public static void SetIsContentPaddingHandled(DependencyObject element, bool value)
+    {
+        if (element is null)
+        {
+            throw new ArgumentNullException(nameof(element));
+        }
+
+        element.SetValue(IsContentPaddingHandledProperty, value);
+    }
+
+    #endregion
+
     #region DP: AlwaysShowHeader
 
     /// <summary>Identifies the <see cref="AlwaysShowHeader"/> dependency property.</summary>
@@ -65,7 +205,7 @@ public partial class NavigationView
         if (e.NewValue is null && e.OldValue is AutoSuggestBox oldValue)
         {
             oldValue.SuggestionChosen -= navigationView.AutoSuggestBoxOnSuggestionChosen;
-            oldValue.QuerySubmitted   -= navigationView.AutoSuggestBoxOnQuerySubmitted;
+            oldValue.QuerySubmitted -= navigationView.AutoSuggestBoxOnQuerySubmitted;
             return;
         }
 
@@ -74,11 +214,11 @@ public partial class NavigationView
             return;
         }
 
-        autoSuggestBox.OriginalItemsSource =  navigationView._autoSuggestItems;
+        autoSuggestBox.OriginalItemsSource = navigationView._autoSuggestItems;
         navigationView.UpdateAutoSuggestBoxSuggestions();
 
-        autoSuggestBox.SuggestionChosen    += navigationView.AutoSuggestBoxOnSuggestionChosen;
-        autoSuggestBox.QuerySubmitted      += navigationView.AutoSuggestBoxOnQuerySubmitted;
+        autoSuggestBox.SuggestionChosen += navigationView.AutoSuggestBoxOnSuggestionChosen;
+        autoSuggestBox.QuerySubmitted += navigationView.AutoSuggestBoxOnQuerySubmitted;
     }
 
     #endregion
@@ -122,7 +262,8 @@ public partial class NavigationView
 
         breadcrumbBar.ItemsSource = navigationView._breadcrumbItems;
 
-        breadcrumbBar.ItemTemplate ??= navigationView.TryFindResource(StyleKeys.NavigationViewItemDataTemplate) as DataTemplate;
+        breadcrumbBar.ItemTemplate ??=
+            navigationView.TryFindResource(StyleKeys.NavigationViewItemDataTemplate) as DataTemplate;
 
         // todo 考察一下使用路由事件是否比强绑定要好一点
         breadcrumbBar.ItemClicked += navigationView.BreadcrumbBarOnItemClicked;
@@ -234,8 +375,9 @@ public partial class NavigationView
     }
 
     private static void OnFooterMenuItemsSourceChanged(
-        DependencyObject?                  d,
-        DependencyPropertyChangedEventArgs e)
+        DependencyObject? d,
+        DependencyPropertyChangedEventArgs e
+    )
     {
         if (d is not NavigationView navigationView)
         {
@@ -372,6 +514,42 @@ public partial class NavigationView
 
     #endregion
 
+    #region DP: SuppressedNavigationInput
+
+    /// <summary>
+    /// Identifies the <see cref="SuppressedNavigationInput"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty SuppressedNavigationInputProperty = DependencyProperty.Register(
+        nameof(SuppressedNavigationInput),
+        typeof(NavigationViewInput),
+        typeof(NavigationView),
+        new FrameworkPropertyMetadata(NavigationViewInput.None),
+        ValidateSuppressedNavigationInput
+    );
+
+    /// <summary>
+    /// Gets or sets the legacy browser-navigation input that is stopped at this control boundary.
+    /// </summary>
+    /// <remarks>
+    /// The default value is <see cref="NavigationViewInput.None"/>: a page remains free to use F5
+    /// or mouse side buttons for application-specific commands. Set this property to
+    /// <see cref="NavigationViewInput.All"/> to suppress the old WPF browser refresh, back, and
+    /// forward input model. Suppression covers raw routed input, the standard
+    /// <see cref="System.Windows.Input.NavigationCommands"/>, and commands generated from
+    /// <c>WM_APPCOMMAND</c>; it does not affect explicit calls to <see cref="GoBack"/> or the
+    /// built-in back button.
+    /// </remarks>
+    public NavigationViewInput SuppressedNavigationInput
+    {
+        get => (NavigationViewInput)GetValue(SuppressedNavigationInputProperty);
+        set => SetValue(SuppressedNavigationInputProperty, value);
+    }
+
+    private static bool ValidateSuppressedNavigationInput(object? value) =>
+        value is NavigationViewInput input && (input & ~NavigationViewInput.All) == 0;
+
+    #endregion
+
     #region DP: IsBackButtonVisible
 
     /// <summary>
@@ -381,10 +559,7 @@ public partial class NavigationView
         nameof(IsBackButtonVisible),
         typeof(NavigationViewBackButtonVisible),
         typeof(NavigationView),
-        new FrameworkPropertyMetadata(
-            NavigationViewBackButtonVisible.Auto,
-            OnPaneButtonVisibilityChanged
-        )
+        new FrameworkPropertyMetadata(NavigationViewBackButtonVisible.Auto, OnPaneButtonVisibilityChanged)
     );
 
     /// <summary>
@@ -434,9 +609,7 @@ public partial class NavigationView
     [ReadOnly(true)]
     public bool IsBackEnabled => (bool)GetValue(IsBackEnabledProperty);
 
-    private static void OnIsBackEnabledChanged(
-        DependencyObject d,
-        DependencyPropertyChangedEventArgs e)
+    private static void OnIsBackEnabledChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
         if (d is NavigationView navigationView)
         {
@@ -533,7 +706,10 @@ public partial class NavigationView
     /// Shared callback for <see cref="IsBackButtonVisibleProperty"/> and
     /// <see cref="IsPaneToggleVisibleProperty"/>.
     /// </summary>
-    private static void OnPaneButtonVisibilityChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    private static void OnPaneButtonVisibilityChanged(
+        DependencyObject d,
+        DependencyPropertyChangedEventArgs e
+    )
     {
         if (d is NavigationView navigationView)
         {
@@ -815,7 +991,8 @@ public partial class NavigationView
     private void ProcessRootMenuItemsCollectionChange(
         IList rootItems,
         DependencyPropertyKey hasItemsPropertyKey,
-        NotifyCollectionChangedEventArgs e)
+        NotifyCollectionChangedEventArgs e
+    )
     {
         SetValue(hasItemsPropertyKey, rootItems.Count > 0);
         ProcessNavigationItemsCollectionChange(e);
@@ -873,7 +1050,8 @@ public partial class NavigationView
         IList targetCollection,
         object? oldSource,
         object? newSource,
-        NotifyCollectionChangedEventHandler sourceCollectionChangedHandler)
+        NotifyCollectionChangedEventHandler sourceCollectionChangedHandler
+    )
     {
         if (oldSource is INotifyCollectionChanged oldCollection)
         {
@@ -989,9 +1167,7 @@ public partial class NavigationView
     /// </remarks>
     public double LeftPaneWidth => (double)GetValue(LeftPaneWidthProperty);
 
-    private static void OnLeftPaneTargetWidthChanged(
-        DependencyObject d,
-        DependencyPropertyChangedEventArgs e)
+    private static void OnLeftPaneTargetWidthChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
         if (d is NavigationView navigationView)
         {
@@ -1025,18 +1201,13 @@ public partial class NavigationView
             return;
         }
 
-        navigationView.SetValue(
-            PaneDisplayModeContextProperty,
-            (NavigationViewPaneDisplayMode)e.NewValue
-        );
+        navigationView.SetValue(PaneDisplayModeContextProperty, (NavigationViewPaneDisplayMode)e.NewValue);
 
         // Close ContextMenu-owned state before the style trigger clears the outgoing template subtree.
         // IsExpanded is intentionally left untouched so an inline Left hierarchy survives a
         // presentation round trip.
         navigationView.CloseAllNavigationViewItemSubmenus();
-        navigationView.PrepareForPaneDisplayModeChange(
-            (NavigationViewPaneDisplayMode)e.OldValue
-        );
+        navigationView.PrepareForPaneDisplayModeChange((NavigationViewPaneDisplayMode)e.OldValue);
         navigationView.OnPaneDisplayModeChanged();
     }
 

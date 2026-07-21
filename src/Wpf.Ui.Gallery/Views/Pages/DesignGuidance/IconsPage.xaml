@@ -10,12 +10,11 @@
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
     Title="IconsPage"
     controls:PageControlDocumentation.DocumentationType="{x:Type ui:SymbolIcon}"
-    d:DataContext="{d:DesignInstance local:IconsPage, IsDesignTimeCreatable=False}"
-    d:DesignHeight="450"
-    d:DesignWidth="800"
     d:Background="{ui:BrushResource WindowBackgroundBrush}"
+    d:DataContext="{d:DesignInstance local:IconsPage, IsDesignTimeCreatable=False}"
+    d:DesignWidth="800"
+    Background="DarkSlateGray"
     Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
-    ScrollViewer.CanContentScroll="False"
     mc:Ignorable="d">
 
     <Grid>
@@ -141,8 +140,8 @@
                         Grid.Row="3"
                         Margin="0,4,0,0"
                         Foreground="{ui:BrushResource TextFillColorSecondaryBrush}"
-                        UseTextBlockAppearance="True"
-                        Text="{Binding ViewModel.SelectedSymbolName, Mode=OneWay}" />
+                        Text="{Binding ViewModel.SelectedSymbolName, Mode=OneWay}"
+                        UseTextBlockAppearance="True" />
                     <ui:TextBlock
                         Grid.Row="4"
                         Margin="0,8,0,0"
@@ -152,8 +151,8 @@
                         Grid.Row="5"
                         Margin="0,4,0,0"
                         Foreground="{ui:BrushResource TextFillColorSecondaryBrush}"
-                        UseTextBlockAppearance="True"
-                        Text="{Binding ViewModel.SelectedSymbolUnicodePoint, Mode=OneWay}" />
+                        Text="{Binding ViewModel.SelectedSymbolUnicodePoint, Mode=OneWay}"
+                        UseTextBlockAppearance="True" />
                     <ui:TextBlock
                         Grid.Row="6"
                         Margin="0,8,0,0"
@@ -163,8 +162,8 @@
                         Grid.Row="7"
                         Margin="0,4,0,0"
                         Foreground="{ui:BrushResource TextFillColorSecondaryBrush}"
-                        UseTextBlockAppearance="True"
-                        Text="{Binding ViewModel.SelectedSymbolTextGlyph, Mode=OneWay}" />
+                        Text="{Binding ViewModel.SelectedSymbolTextGlyph, Mode=OneWay}"
+                        UseTextBlockAppearance="True" />
                     <ui:TextBlock
                         Grid.Row="8"
                         Margin="0,8,0,0"
@@ -175,9 +174,9 @@
                         MaxWidth="250"
                         Margin="0,4,0,0"
                         Foreground="{ui:BrushResource TextFillColorSecondaryBrush}"
-                        UseTextBlockAppearance="True"
                         Text="{Binding ViewModel.SelectedSymbolXaml, Mode=OneWay}"
-                        TextWrapping="WrapWithOverflow" />
+                        TextWrapping="WrapWithOverflow"
+                        UseTextBlockAppearance="True" />
                 </Grid>
             </Border>
         </Grid>

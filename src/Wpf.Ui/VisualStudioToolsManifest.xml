@@ -32,7 +32,6 @@
       <Item Type="Wpf.Ui.Controls.MessageBox" />
       <Item Type="Wpf.Ui.Controls.NavigationView" />
       <Item Type="Wpf.Ui.Controls.NavigationViewBreadcrumb" />
-      <Item Type="Wpf.Ui.Controls.NavigationViewContentPresenter" />
       <Item Type="Wpf.Ui.Controls.NavigationViewItem" />
       <Item Type="Wpf.Ui.Controls.NavigationViewItemHeader" />
       <Item Type="Wpf.Ui.Controls.NavigationViewItemSeparator" />

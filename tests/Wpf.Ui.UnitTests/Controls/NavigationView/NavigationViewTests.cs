@@ -3,14 +3,19 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Controls;
+using System.Windows.Input;
 using Wpf.Ui.Abstractions.Controls;
 using Wpf.Ui.Controls;
+using Wpf.Ui.Markup;
+using Wpf.Ui.Theming;
 
 namespace Wpf.Ui.UnitTests.Controls.NavigationView;
 
@@ -81,8 +86,7 @@ public class NavigationViewTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public void NavigationViewList_CanContentScroll_UsesItemBasedExtent(
-        bool isDynamicScrollViewerEnabled)
+    public void NavigationViewList_CanContentScroll_UsesItemBasedExtent(bool isDynamicScrollViewerEnabled)
     {
         RunOnStaThread(() =>
         {
@@ -155,10 +159,7 @@ public class NavigationViewTests
             var navigationItem = new NavigationViewItem();
             var separator = new Wpf.Ui.Controls.Separator();
             var header = new NavigationViewItemHeader();
-            var navigationViewList = new NavigationViewList
-            {
-                ItemContainerStyle = itemContainerStyle,
-            };
+            var navigationViewList = new NavigationViewList { ItemContainerStyle = itemContainerStyle };
             navigationViewList.Items.Add(navigationItem);
             navigationViewList.Items.Add(separator);
             navigationViewList.Items.Add(header);
@@ -180,7 +181,10 @@ public class NavigationViewTests
                 window.Show();
                 DrainDispatcher();
 
-                Assert.Same(itemContainerStyle, navigationItem.ReadLocalValue(FrameworkElement.StyleProperty));
+                Assert.Same(
+                    itemContainerStyle,
+                    navigationItem.ReadLocalValue(FrameworkElement.StyleProperty)
+                );
                 Assert.Equal(
                     DependencyProperty.UnsetValue,
                     separator.ReadLocalValue(FrameworkElement.StyleProperty)
@@ -237,7 +241,8 @@ public class NavigationViewTests
     [InlineData(NavigationViewPaneDisplayMode.LeftFluent)]
     [InlineData(NavigationViewPaneDisplayMode.LeftMinimal)]
     public void BuiltInVerticalTemplates_UseDynamicViewerInsideNavigationViewList(
-        NavigationViewPaneDisplayMode displayMode)
+        NavigationViewPaneDisplayMode displayMode
+    )
     {
         RunOnStaThread(() =>
         {
@@ -270,6 +275,409 @@ public class NavigationViewTests
             // still supports logical scrolling when a caller explicitly opts in.
             Assert.False(scrollViewer.CanContentScroll);
             Assert.Equal(ScrollBarVisibility.Auto, scrollViewer.VerticalScrollBarVisibility);
+        });
+    }
+
+    [Fact]
+    public void NavigationFrame_DoesNotChangePageScrollingOrAddAnOuterScrollViewer()
+    {
+        RunOnStaThread(() =>
+        {
+            var resources = new ResourceDictionary { Source = CreateResourceUri() };
+            var navigationView = new Wpf.Ui.Controls.NavigationView
+            {
+                Style = Assert.IsType<Style>(resources[typeof(Wpf.Ui.Controls.NavigationView)]),
+            };
+            var page = new Page();
+            var window = new Window
+            {
+                Content = navigationView,
+                Width = 100D,
+                Height = 100D,
+                Left = -10_000D,
+                Top = -10_000D,
+                ShowActivated = false,
+                ShowInTaskbar = false,
+                WindowStyle = WindowStyle.None,
+            };
+
+            // NavigationView must not override Page metadata globally. CanContentScroll belongs to
+            // the page's own ScrollViewer and is unrelated to whether navigation adds one.
+            Assert.False(System.Windows.Controls.ScrollViewer.GetCanContentScroll(page));
+            System.Windows.Controls.ScrollViewer.SetCanContentScroll(page, true);
+
+            try
+            {
+                window.Show();
+                DrainDispatcher();
+                _ = navigationView.ApplyTemplate();
+                var navigationFrame = GetNavigationFrame(navigationView);
+
+                Assert.True(navigationView.ReplaceContent(page));
+                DrainDispatcher();
+                _ = navigationFrame.ApplyTemplate();
+
+                Assert.Same(page, navigationFrame.Content);
+                Assert.True(System.Windows.Controls.ScrollViewer.GetCanContentScroll(page));
+                Assert.IsType<ContentPresenter>(
+                    navigationFrame.Template.FindName("PART_FrameCP", navigationFrame)
+                );
+                Assert.False(HasVisualDescendant<System.Windows.Controls.ScrollViewer>(navigationFrame));
+            }
+            finally
+            {
+                window.Close();
+                DrainDispatcher();
+            }
+        });
+    }
+
+    [Fact]
+    public void DynamicScrollPageStyle_ResolvesWithoutApplicationAndDoesNotUseCanContentScroll()
+    {
+        RunOnStaThread(() =>
+        {
+            Assert.Null(Application.Current);
+            var page = new Page { Content = new Border { Height = 200D } };
+            // SetResourceReference is the programmatic equivalent of StyleResourceExtension's
+            // DynamicResource result. Do not merge Generic.xaml here: this verifies that WPF can
+            // locate the ComponentResourceKey in the library theme dictionary without relying on
+            // a string entry in Application.Resources.
+            page.SetResourceReference(FrameworkElement.StyleProperty, StyleKeys.DynamicScrollPageStyle);
+            var window = new Window
+            {
+                Content = page,
+                Width = 100D,
+                Height = 100D,
+                Left = -10_000D,
+                Top = -10_000D,
+                ShowActivated = false,
+                ShowInTaskbar = false,
+                WindowStyle = WindowStyle.None,
+            };
+            System.Windows.Controls.ScrollViewer.SetCanContentScroll(page, true);
+
+            try
+            {
+                window.Show();
+                DrainDispatcher();
+
+                Assert.NotNull(page.Style);
+                DynamicScrollViewer viewer = Assert.IsType<DynamicScrollViewer>(
+                    FindVisualDescendant<DynamicScrollViewer>(page)
+                );
+                Assert.False(viewer.CanContentScroll);
+                Assert.True(System.Windows.Controls.ScrollViewer.GetCanContentScroll(page));
+            }
+            finally
+            {
+                window.Close();
+                DrainDispatcher();
+            }
+        });
+    }
+
+    [Fact]
+    public void NavigationFrame_AppliesPaddingOutsideContentThatDoesNotHandleIt()
+    {
+        RunOnStaThread(() =>
+        {
+            var resources = new ResourceDictionary { Source = CreateResourceUri() };
+            var contentPadding = new Thickness(7D, 8D, 9D, 10D);
+            var content = new Border();
+            var navigationView = new Wpf.Ui.Controls.NavigationView
+            {
+                Padding = contentPadding,
+                Style = Assert.IsType<Style>(resources[typeof(Wpf.Ui.Controls.NavigationView)]),
+            };
+            var window = new Window
+            {
+                Content = navigationView,
+                Width = 240D,
+                Height = 180D,
+                Left = -10_000D,
+                Top = -10_000D,
+                ShowActivated = false,
+                ShowInTaskbar = false,
+                WindowStyle = WindowStyle.None,
+            };
+
+            try
+            {
+                window.Show();
+                DrainDispatcher();
+                _ = navigationView.ApplyTemplate();
+                Frame navigationFrame = GetNavigationFrame(navigationView);
+
+                Assert.True(navigationView.ReplaceContent(content));
+                DrainDispatcher();
+                _ = navigationFrame.ApplyTemplate();
+                DrainDispatcher();
+
+                Assert.False(Wpf.Ui.Controls.NavigationView.GetIsContentPaddingHandled(content));
+                Assert.Equal(contentPadding, navigationFrame.Padding);
+                Assert.Equal(
+                    new Point(contentPadding.Left, contentPadding.Top),
+                    content.TranslatePoint(default, navigationFrame)
+                );
+            }
+            finally
+            {
+                window.Close();
+                DrainDispatcher();
+            }
+        });
+    }
+
+    [Fact]
+    public void DynamicScrollPageStyle_KeepsViewerAtNavigationEdgeAndInsetsOnlyItsContent()
+    {
+        RunOnStaThread(() =>
+        {
+            var resources = new ResourceDictionary { Source = CreateResourceUri() };
+            var contentPadding = new Thickness(11D, 12D, 13D, 14D);
+            var page = new Page { Content = new Border { Height = 500D } };
+            page.SetResourceReference(FrameworkElement.StyleProperty, StyleKeys.DynamicScrollPageStyle);
+            var navigationView = new Wpf.Ui.Controls.NavigationView
+            {
+                Padding = contentPadding,
+                Style = Assert.IsType<Style>(resources[typeof(Wpf.Ui.Controls.NavigationView)]),
+            };
+            var window = new Window
+            {
+                Content = navigationView,
+                Width = 240D,
+                Height = 180D,
+                Left = -10_000D,
+                Top = -10_000D,
+                ShowActivated = false,
+                ShowInTaskbar = false,
+                WindowStyle = WindowStyle.None,
+            };
+
+            try
+            {
+                window.Show();
+                DrainDispatcher();
+                _ = navigationView.ApplyTemplate();
+                Frame navigationFrame = GetNavigationFrame(navigationView);
+
+                Assert.True(navigationView.ReplaceContent(page));
+                DrainDispatcher();
+                _ = navigationFrame.ApplyTemplate();
+                _ = page.ApplyTemplate();
+                DrainDispatcher();
+
+                DynamicScrollViewer viewer = Assert.IsType<DynamicScrollViewer>(
+                    FindVisualDescendant<DynamicScrollViewer>(page)
+                );
+                _ = viewer.ApplyTemplate();
+                DrainDispatcher();
+
+                // The page declares that it handles ContentPadding, so the native Frame receives
+                // no outer inset. The page-owned viewer fills the navigation viewport and applies
+                // that inset to its own content, leaving its scroll bars at the outer edge.
+                Assert.Equal(default(Thickness), navigationFrame.Padding);
+                Assert.True(Wpf.Ui.Controls.NavigationView.GetIsContentPaddingHandled(page));
+                Assert.Equal(contentPadding, Wpf.Ui.Controls.NavigationView.GetContentPadding(viewer));
+                Assert.Equal(contentPadding, viewer.Padding);
+                Assert.Equal(new Point(0D, 0D), viewer.TranslatePoint(default, navigationFrame));
+
+                var updatedPadding = new Thickness(21D, 22D, 23D, 24D);
+                navigationView.Padding = updatedPadding;
+                DrainDispatcher();
+
+                Assert.Equal(default(Thickness), navigationFrame.Padding);
+                Assert.Equal(updatedPadding, Wpf.Ui.Controls.NavigationView.GetContentPadding(viewer));
+                Assert.Equal(updatedPadding, viewer.Padding);
+
+                // The attached inset is host-owned state. Navigating away clears it from the old
+                // page while ordinary replacement content resumes native Frame padding.
+                var replacement = new Border();
+                Assert.True(navigationView.ReplaceContent(replacement));
+                DrainDispatcher();
+
+                Assert.Equal(default(Thickness), Wpf.Ui.Controls.NavigationView.GetContentPadding(page));
+                Assert.Equal(updatedPadding, navigationFrame.Padding);
+            }
+            finally
+            {
+                window.Close();
+                DrainDispatcher();
+            }
+        });
+    }
+
+    [Fact]
+    public void DynamicScrollPageStyle_IsAvailableThroughStronglyTypedResourceExtension()
+    {
+        var extension = new StyleResourceExtension(StyleId.DynamicScrollPageStyle);
+
+        Assert.Same(StyleKeys.DynamicScrollPageStyle, extension.ResourceKey);
+    }
+
+    [Fact]
+    public void NavigationFrame_IsolatesJournalWithoutCapturingNavigationCommands()
+    {
+        RunOnStaThread(() =>
+        {
+            var resources = new ResourceDictionary { Source = CreateResourceUri() };
+            var navigationView = new Wpf.Ui.Controls.NavigationView
+            {
+                Style = Assert.IsType<Style>(resources[typeof(Wpf.Ui.Controls.NavigationView)]),
+            };
+
+            Assert.True(navigationView.ApplyTemplate());
+            var navigationFrame = GetNavigationFrame(navigationView);
+
+            Assert.Equal(
+                System.Windows.Navigation.JournalOwnership.OwnsJournal,
+                navigationFrame.JournalOwnership
+            );
+            Assert.Equal(
+                System.Windows.Navigation.NavigationUIVisibility.Hidden,
+                navigationFrame.NavigationUIVisibility
+            );
+            Assert.False(navigationFrame.SandboxExternalContent);
+            Assert.DoesNotContain(
+                navigationFrame.CommandBindings.Cast<System.Windows.Input.CommandBinding>(),
+                binding =>
+                    binding.Command == System.Windows.Input.NavigationCommands.BrowseBack
+                    || binding.Command == System.Windows.Input.NavigationCommands.BrowseForward
+                    || binding.Command == System.Windows.Input.NavigationCommands.NavigateJournal
+                    || binding.Command == System.Windows.Input.NavigationCommands.Refresh
+                    || binding.Command == System.Windows.Input.NavigationCommands.BrowseStop
+            );
+        });
+    }
+
+    [Fact]
+    public void NavigationInputSuppression_IsExplicitAndGranular()
+    {
+        RunOnStaThread(() =>
+        {
+            var navigationView = new InputTestNavigationView();
+            var window = new Window
+            {
+                Content = navigationView,
+                Width = 100D,
+                Height = 100D,
+                Left = -10_000D,
+                Top = -10_000D,
+                ShowActivated = false,
+                ShowInTaskbar = false,
+                WindowStyle = WindowStyle.None,
+            };
+
+            try
+            {
+                window.Show();
+                DrainDispatcher();
+
+                Assert.Equal(NavigationViewInput.None, navigationView.SuppressedNavigationInput);
+                Assert.False(navigationView.InvokePreviewKey(Key.F5, isDown: true));
+                Assert.False(navigationView.InvokePreviewMouse(MouseButton.XButton1, isDown: true));
+                Assert.False(navigationView.InvokeMouseDown(MouseButton.XButton1));
+                Assert.Equal(0, navigationView.GoBackCallCount);
+
+                navigationView.SuppressedNavigationInput = NavigationViewInput.Refresh;
+
+                Assert.True(navigationView.InvokePreviewKey(Key.F5, isDown: true));
+                Assert.True(navigationView.InvokePreviewKey(Key.F5, isDown: false));
+                Assert.False(navigationView.InvokePreviewKey(Key.F6, isDown: true));
+                Assert.False(navigationView.InvokePreviewMouse(MouseButton.XButton1, isDown: true));
+
+                navigationView.SuppressedNavigationInput = NavigationViewInput.BrowserNavigation;
+
+                Assert.False(navigationView.InvokePreviewKey(Key.F5, isDown: true));
+                Assert.True(navigationView.InvokePreviewMouse(MouseButton.XButton1, isDown: true));
+                Assert.True(navigationView.InvokePreviewMouse(MouseButton.XButton1, isDown: false));
+                Assert.True(navigationView.InvokePreviewMouse(MouseButton.XButton2, isDown: true));
+                Assert.True(navigationView.InvokePreviewMouse(MouseButton.XButton2, isDown: false));
+                Assert.False(navigationView.InvokePreviewMouse(MouseButton.Middle, isDown: true));
+            }
+            finally
+            {
+                window.Close();
+                DrainDispatcher();
+            }
+        });
+    }
+
+    [Fact]
+    public void NavigationInputSuppression_StopsRoutedNavigationCommandsAtControlBoundary()
+    {
+        RunOnStaThread(() =>
+        {
+            var navigationView = new Wpf.Ui.Controls.NavigationView();
+            var window = new Window { Content = navigationView };
+            var executionCounts = new Dictionary<ICommand, int>();
+            RoutedCommand[] commands =
+            [
+                NavigationCommands.Refresh,
+                NavigationCommands.BrowseBack,
+                NavigationCommands.BrowseForward,
+            ];
+
+            foreach (RoutedCommand command in commands)
+            {
+                executionCounts.Add(command, 0);
+                window.CommandBindings.Add(
+                    new CommandBinding(
+                        command,
+                        (_, _) => executionCounts[command]++,
+                        (_, e) => e.CanExecute = true
+                    )
+                );
+                command.Execute(null, navigationView);
+            }
+
+            Assert.All(commands, command => Assert.Equal(1, executionCounts[command]));
+
+            navigationView.SuppressedNavigationInput = NavigationViewInput.All;
+            foreach (RoutedCommand command in commands)
+            {
+                command.Execute(null, navigationView);
+            }
+
+            Assert.All(commands, command => Assert.Equal(1, executionCounts[command]));
+        });
+    }
+
+    [Fact]
+    public void RapidNavigation_SerializesNavigationAwareNotifications()
+    {
+        RunOnStaThread(() =>
+        {
+            var resources = new ResourceDictionary { Source = CreateResourceUri() };
+            var navigationView = new Wpf.Ui.Controls.NavigationView
+            {
+                Style = Assert.IsType<Style>(resources[typeof(Wpf.Ui.Controls.NavigationView)]),
+            };
+            var firstPage = new DeferredNavigatingFromPage();
+            var secondPage = new NavigationAwarePage();
+            var thirdPage = new NavigationAwarePage();
+
+            Assert.True(navigationView.ApplyTemplate());
+            Assert.True(navigationView.ReplaceContent(firstPage));
+            DrainDispatcher();
+            Assert.Equal(1, firstPage.NavigatedToCount);
+
+            Assert.True(navigationView.ReplaceContent(secondPage));
+            Assert.True(navigationView.ReplaceContent(thirdPage));
+            DrainDispatcher();
+
+            Assert.Equal(1, firstPage.NavigatedFromCount);
+            Assert.Equal(0, secondPage.NavigatedToCount);
+            Assert.Equal(0, secondPage.NavigatedFromCount);
+            Assert.Equal(0, thirdPage.NavigatedToCount);
+
+            firstPage.CompleteNavigatingFrom();
+            DrainDispatcher();
+
+            Assert.Equal(1, secondPage.NavigatedToCount);
+            Assert.Equal(1, secondPage.NavigatedFromCount);
+            Assert.Equal(1, thirdPage.NavigatedToCount);
         });
     }
 
@@ -323,7 +731,9 @@ public class NavigationViewTests
             var resources = new ResourceDictionary { Source = CreateResourceUri() };
             var style = Assert.IsType<Style>(resources[typeof(Wpf.Ui.Controls.NavigationView)]);
             var leftTemplate = Assert.IsType<ControlTemplate>(resources["LeftNavigationViewTemplate"]);
-            var fluentTemplate = Assert.IsType<ControlTemplate>(resources["LeftFluentNavigationViewTemplate"]);
+            var fluentTemplate = Assert.IsType<ControlTemplate>(
+                resources["LeftFluentNavigationViewTemplate"]
+            );
             var navigationView = new Wpf.Ui.Controls.NavigationView
             {
                 Style = style,
@@ -337,20 +747,19 @@ public class NavigationViewTests
             Assert.Same(leftTemplate, navigationView.Template);
             Assert.True(navigationView.ApplyTemplate());
 
-            var navigationPresenter = GetNavigationPresenter(navigationView);
+            var navigationFrame = GetNavigationFrame(navigationView);
             var page = new Border();
-            navigationPresenter.JournalOwnership = System.Windows.Navigation.JournalOwnership.OwnsJournal;
             Assert.True(navigationView.ReplaceContent(page));
             DrainDispatcher();
-            Assert.Same(page, navigationPresenter.Content);
+            Assert.Same(page, navigationFrame.Content);
             Assert.NotNull(leftTemplate.FindName("SearchGrid", navigationView));
 
             navigationView.PaneDisplayMode = NavigationViewPaneDisplayMode.LeftFluent;
 
             Assert.Same(fluentTemplate, navigationView.Template);
             Assert.True(navigationView.ApplyTemplate());
-            Assert.Same(navigationPresenter, GetNavigationPresenter(navigationView));
-            Assert.Same(page, navigationPresenter.Content);
+            Assert.Same(navigationFrame, GetNavigationFrame(navigationView));
+            Assert.Same(page, navigationFrame.Content);
             Assert.Null(fluentTemplate.FindName("SearchGrid", navigationView));
             Assert.NotNull(fluentTemplate.FindName("PART_TopSeparator", navigationView));
             Assert.True(double.IsNaN(GetPaneGrid(navigationView).Width));
@@ -361,8 +770,8 @@ public class NavigationViewTests
 
             Assert.Same(leftTemplate, navigationView.Template);
             Assert.True(navigationView.ApplyTemplate());
-            Assert.Same(navigationPresenter, GetNavigationPresenter(navigationView));
-            Assert.Same(page, navigationPresenter.Content);
+            Assert.Same(navigationFrame, GetNavigationFrame(navigationView));
+            Assert.Same(page, navigationFrame.Content);
             Assert.NotNull(leftTemplate.FindName("SearchGrid", navigationView));
             Assert.NotNull(leftTemplate.FindName("PART_TopSeparator", navigationView));
             Assert.Equal(navigationView.LeftPaneOpenWidth, GetPaneGrid(navigationView).Width);
@@ -370,8 +779,8 @@ public class NavigationViewTests
             navigationView.PaneDisplayMode = NavigationViewPaneDisplayMode.LeftFluent;
 
             Assert.True(navigationView.ApplyTemplate());
-            Assert.Same(navigationPresenter, GetNavigationPresenter(navigationView));
-            Assert.Same(page, navigationPresenter.Content);
+            Assert.Same(navigationFrame, GetNavigationFrame(navigationView));
+            Assert.Same(page, navigationFrame.Content);
             Assert.True(double.IsNaN(GetPaneGrid(navigationView).Width));
         });
     }
@@ -381,7 +790,8 @@ public class NavigationViewTests
     [InlineData(false, 48D)]
     public void LeftPane_ColdStartAndModeRoundTrip_RetainTheResolvedWidth(
         bool isPaneOpen,
-        double expectedWidth)
+        double expectedWidth
+    )
     {
         RunOnStaThread(() =>
         {
@@ -400,9 +810,7 @@ public class NavigationViewTests
             Assert.Equal(expectedWidth, navigationView.LeftPaneWidth);
             Assert.Equal(expectedWidth, paneGrid.Width);
             Assert.False(
-                DependencyPropertyHelper
-                    .GetValueSource(paneGrid, FrameworkElement.WidthProperty)
-                    .IsAnimated
+                DependencyPropertyHelper.GetValueSource(paneGrid, FrameworkElement.WidthProperty).IsAnimated
             );
 
             navigationView.PaneDisplayMode = NavigationViewPaneDisplayMode.LeftFluent;
@@ -414,9 +822,7 @@ public class NavigationViewTests
             Assert.Equal(expectedWidth, navigationView.LeftPaneWidth);
             Assert.Equal(expectedWidth, paneGrid.Width);
             Assert.False(
-                DependencyPropertyHelper
-                    .GetValueSource(paneGrid, FrameworkElement.WidthProperty)
-                    .IsAnimated
+                DependencyPropertyHelper.GetValueSource(paneGrid, FrameworkElement.WidthProperty).IsAnimated
             );
         });
     }
@@ -453,9 +859,7 @@ public class NavigationViewTests
             Assert.Equal(renderedWidth, navigationView.LeftPaneWidth);
             Assert.Equal(renderedWidth, paneGrid.Width);
             Assert.False(
-                DependencyPropertyHelper
-                    .GetValueSource(paneGrid, FrameworkElement.WidthProperty)
-                    .IsAnimated
+                DependencyPropertyHelper.GetValueSource(paneGrid, FrameworkElement.WidthProperty).IsAnimated
             );
         });
     }
@@ -557,8 +961,7 @@ public class NavigationViewTests
             };
 
             Assert.True(navigationView.ApplyTemplate());
-            var navigationPresenter = GetNavigationPresenter(navigationView);
-            navigationPresenter.JournalOwnership = System.Windows.Navigation.JournalOwnership.OwnsJournal;
+            var navigationFrame = GetNavigationFrame(navigationView);
             var page = new NavigationAwarePage();
 
             try
@@ -575,8 +978,8 @@ public class NavigationViewTests
                 Assert.True(navigationView.ApplyTemplate());
                 DrainDispatcher();
 
-                Assert.Same(navigationPresenter, GetNavigationPresenter(navigationView));
-                Assert.Same(page, navigationPresenter.Content);
+                Assert.Same(navigationFrame, GetNavigationFrame(navigationView));
+                Assert.Same(page, navigationFrame.Content);
                 Assert.Equal(1, page.NavigatedToCount);
                 Assert.Equal(0, page.NavigatedFromCount);
             }
@@ -590,15 +993,40 @@ public class NavigationViewTests
         });
     }
 
-    private static NavigationViewContentPresenter GetNavigationPresenter(
-        Wpf.Ui.Controls.NavigationView navigationView
-    )
+    private static Frame GetNavigationFrame(Wpf.Ui.Controls.NavigationView navigationView)
     {
         var host = Assert.IsType<ContentPresenter>(
-            navigationView.Template.FindName("PART_NavigationViewContentPresenterHost", navigationView)
+            navigationView.Template.FindName("PART_NavigationFrameHost", navigationView)
         );
 
-        return Assert.IsType<NavigationViewContentPresenter>(host.Content);
+        return Assert.IsType<Frame>(host.Content);
+    }
+
+    private static bool HasVisualDescendant<T>(DependencyObject root)
+        where T : DependencyObject => FindVisualDescendant<T>(root) is not null;
+
+    private static T? FindVisualDescendant<T>(DependencyObject root)
+        where T : DependencyObject
+    {
+        for (
+            int childIndex = 0;
+            childIndex < System.Windows.Media.VisualTreeHelper.GetChildrenCount(root);
+            ++childIndex
+        )
+        {
+            DependencyObject child = System.Windows.Media.VisualTreeHelper.GetChild(root, childIndex);
+            if (child is T match)
+            {
+                return match;
+            }
+
+            if (FindVisualDescendant<T>(child) is { } descendant)
+            {
+                return descendant;
+            }
+        }
+
+        return null;
     }
 
     private static Grid GetPaneGrid(Wpf.Ui.Controls.NavigationView navigationView) =>
@@ -683,6 +1111,92 @@ public class NavigationViewTests
         {
             NavigatedFromCount++;
             return Task.CompletedTask;
+        }
+    }
+
+    private sealed class DeferredNavigatingFromPage : Border, INavigationAware
+    {
+        private readonly TaskCompletionSource<object?> _navigatedFromCompletion = new();
+
+        public int NavigatedToCount { get; private set; }
+
+        public int NavigatedFromCount { get; private set; }
+
+        public Task OnNavigatedToAsync()
+        {
+            NavigatedToCount++;
+            return Task.CompletedTask;
+        }
+
+        public Task OnNavigatedFromAsync()
+        {
+            NavigatedFromCount++;
+            return _navigatedFromCompletion.Task;
+        }
+
+        public void CompleteNavigatingFrom() => _navigatedFromCompletion.SetResult(null);
+    }
+
+    private sealed class InputTestNavigationView : Wpf.Ui.Controls.NavigationView
+    {
+        public int GoBackCallCount { get; private set; }
+
+        public override bool GoBack()
+        {
+            GoBackCallCount++;
+            return false;
+        }
+
+        public bool InvokePreviewKey(Key key, bool isDown)
+        {
+            PresentationSource source = Assert.IsAssignableFrom<PresentationSource>(
+                PresentationSource.FromVisual(this)
+            );
+            var eventArgs = new KeyEventArgs(Keyboard.PrimaryDevice, source, 0, key)
+            {
+                RoutedEvent = isDown ? Keyboard.PreviewKeyDownEvent : Keyboard.PreviewKeyUpEvent,
+            };
+
+            if (isDown)
+            {
+                OnPreviewKeyDown(eventArgs);
+            }
+            else
+            {
+                OnPreviewKeyUp(eventArgs);
+            }
+
+            return eventArgs.Handled;
+        }
+
+        public bool InvokePreviewMouse(MouseButton button, bool isDown)
+        {
+            var eventArgs = new MouseButtonEventArgs(Mouse.PrimaryDevice, 0, button)
+            {
+                RoutedEvent = isDown ? Mouse.PreviewMouseDownEvent : Mouse.PreviewMouseUpEvent,
+            };
+
+            if (isDown)
+            {
+                OnPreviewMouseDown(eventArgs);
+            }
+            else
+            {
+                OnPreviewMouseUp(eventArgs);
+            }
+
+            return eventArgs.Handled;
+        }
+
+        public bool InvokeMouseDown(MouseButton button)
+        {
+            var eventArgs = new MouseButtonEventArgs(Mouse.PrimaryDevice, 0, button)
+            {
+                RoutedEvent = Mouse.MouseDownEvent,
+            };
+
+            OnMouseDown(eventArgs);
+            return eventArgs.Handled;
         }
     }
 }

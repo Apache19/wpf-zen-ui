@@ -7,6 +7,7 @@
     xmlns:local="clr-namespace:Wpf.Ui.Gallery"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:syntax="http://schemas.lepo.co/wpfui/2022/xaml/syntax"
+    xmlns:theming="http://schemas.lepo.co/wpfui/2022/xaml/theming"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
     DispatcherUnhandledException="OnDispatcherUnhandledException"
     Exit="OnExit"
@@ -27,6 +28,16 @@
             </ResourceDictionary.MergedDictionaries>
             <helpers:EnumToBooleanConverter x:Key="EnumToBooleanConverter" />
             <helpers:PaneDisplayModeToIndexConverter x:Key="PaneDisplayModeToIndexConverter" />
+
+            <!--
+                Gallery pages explicitly opt into page-owned scrolling. NavigationView itself
+                remains layout-neutral and never wraps arbitrary application content.
+            -->
+            <!--
+                Style.BasedOn is not a dependency property, so it deliberately uses a static
+                ComponentResourceKey lookup instead of the dynamic StyleResource extension.
+            -->
+            <Style BasedOn="{StaticResource {x:Static theming:StyleKeys.DynamicScrollPageStyle}}" TargetType="{x:Type Page}" />
         </ResourceDictionary>
 
     </Application.Resources>

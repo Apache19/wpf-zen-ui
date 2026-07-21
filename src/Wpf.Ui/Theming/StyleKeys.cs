@@ -11,32 +11,37 @@ namespace Wpf.Ui.Theming;
 
 public static class StyleKeys
 {
-    public static ComponentResourceKey MenuStyle                { get; private set; }
-    public static ComponentResourceKey UiMenuStyle              { get; private set; }
-    public static ComponentResourceKey MenuItemStyle            { get; private set; }
-    public static ComponentResourceKey UiMenuItemStyle          { get; private set; }
-    public static ComponentResourceKey MenuItemSeparatorStyle   { get; private set; }
-
-    public static ComponentResourceKey DefaultCheckBoxStyle   { get; private set; }
-    public static ComponentResourceKey DefaultUiCheckBoxStyle { get; private set; }
-
-    public static ComponentResourceKey DefaultComboBoxStyle   { get; private set; }
-    public static ComponentResourceKey DefaultUiComboBoxStyle { get; private set; }
-
-    public static ComponentResourceKey DefaultTextBoxStyle   { get; private set; }
-    public static ComponentResourceKey DefaultUiTextBoxStyle { get; private set; }
-
+    public static ComponentResourceKey MenuStyle                       { get; private set; }
+    public static ComponentResourceKey UiMenuStyle                     { get; private set; }
+    public static ComponentResourceKey MenuItemStyle                   { get; private set; }
+    public static ComponentResourceKey UiMenuItemStyle                 { get; private set; }
+    public static ComponentResourceKey MenuItemSeparatorStyle          { get; private set; }
+    public static ComponentResourceKey DefaultCheckBoxStyle            { get; private set; }
+    public static ComponentResourceKey DefaultUiCheckBoxStyle          { get; private set; }
+    public static ComponentResourceKey DefaultComboBoxStyle            { get; private set; }
+    public static ComponentResourceKey DefaultUiComboBoxStyle          { get; private set; }
+    public static ComponentResourceKey DefaultTextBoxStyle             { get; private set; }
+    public static ComponentResourceKey DefaultUiTextBoxStyle           { get; private set; }
     public static ComponentResourceKey DefaultTextBoxScrollViewerStyle { get; private set; }
     public static ComponentResourceKey DefaultControlFocusVisualStyle  { get; private set; }
+    public static ComponentResourceKey DefaultScrollBarStyle           { get; private set; }
 
-    public static ComponentResourceKey DefaultScrollBarStyle { get; private set; }
+    /// <summary>
+    /// Gets the assembly-scoped key for the opt-in dynamic scrolling <see cref="System.Windows.Controls.Page"/> style.
+    /// </summary>
+    /// <remarks>
+    /// A <see cref="ComponentResourceKey"/> is required here because pages can be created without an
+    /// <see cref="Application"/> resource scope, for example when WPF content is hosted by WinForms.
+    /// WPF can resolve this key from this assembly's theme dictionary instead of relying on an
+    /// application-level string resource.
+    /// </remarks>
+    public static ComponentResourceKey DynamicScrollPageStyle { get; private set; }
 
     public static ComponentResourceKey NavigationViewItemDataTemplate { get; private set; }
 
-    public static ComponentResourceKey IconInfoBadgeStyle  { get; private set; }
-    public static ComponentResourceKey ValueInfoBadgeStyle { get; private set; }
-    public static ComponentResourceKey DotInfoBadgeStyle   { get; private set; }
-
+    public static ComponentResourceKey IconInfoBadgeStyle        { get; private set; }
+    public static ComponentResourceKey ValueInfoBadgeStyle       { get; private set; }
+    public static ComponentResourceKey DotInfoBadgeStyle         { get; private set; }
     public static ComponentResourceKey DefaultValidationTemplate { get; private set; }
 
     static StyleKeys()

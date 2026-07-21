@@ -176,7 +176,8 @@ public partial class NavigationView
         INavigationViewItem viewItem,
         object? dataContext = null,
         bool addToNavigationStack = false,
-        bool isBackwardsNavigated = false)
+        bool isBackwardsNavigated = false
+    )
     {
         if (NavigationStack.Count > 0 && NavigationStack[^1] == viewItem)
         {
@@ -254,8 +255,7 @@ public partial class NavigationView
     /// Keeping this update behind one method prevents paths such as ClearJournal from leaving the
     /// button enabled after the journal has already been emptied.
     /// </summary>
-    private void UpdateBackNavigationState() =>
-        SetValue(IsBackEnabledPropertyKey, CanGoBack);
+    private void UpdateBackNavigationState() => SetValue(IsBackEnabledPropertyKey, CanGoBack);
 
     private object GetNavigationItemInstance(INavigationViewItem viewItem)
     {
@@ -270,27 +270,27 @@ public partial class NavigationView
         {
             return _serviceProvider.GetService(viewItem.TargetPageType)
                 ?? throw new InvalidOperationException(
-                       $"{nameof(_serviceProvider)}.{nameof(_serviceProvider.GetService)} returned null for type {viewItem.TargetPageType}."
-                   );
+                    $"{nameof(_serviceProvider)}.{nameof(_serviceProvider.GetService)} returned null for type {viewItem.TargetPageType}."
+                );
         }
 
         if (_pageService is not null)
         {
             return _pageService.GetPage(viewItem.TargetPageType)
                 ?? throw new InvalidOperationException(
-                       $"{nameof(_pageService)}.{nameof(_pageService.GetPage)} returned null for type {viewItem.TargetPageType}."
-                   );
+                    $"{nameof(_pageService)}.{nameof(_pageService.GetPage)} returned null for type {viewItem.TargetPageType}."
+                );
         }
 
         return _cache.Remember(
-                   viewItem.TargetPageType,
-                   viewItem.NavigationCacheMode,
-                   NavigationCacheSize,
-                   ComputeCachedNavigationInstance
-               )
+                viewItem.TargetPageType,
+                viewItem.NavigationCacheMode,
+                NavigationCacheSize,
+                ComputeCachedNavigationInstance
+            )
             ?? throw new InvalidOperationException(
-                   $"Unable to get or create instance of {viewItem.TargetPageType} from cache."
-               );
+                $"Unable to get or create instance of {viewItem.TargetPageType} from cache."
+            );
 
         object? ComputeCachedNavigationInstance() => GetPageInstanceFromCache(viewItem.TargetPageType);
     }
@@ -301,12 +301,7 @@ public partial class NavigationView
         NavigationCacheMode newCacheMode
     )
     {
-        _cache.UpdateCacheMode(
-            nvItem.TargetPageType,
-            oldCacheMode,
-            newCacheMode,
-            NavigationCacheSize
-        );
+        _cache.UpdateCacheMode(nvItem.TargetPageType, oldCacheMode, newCacheMode, NavigationCacheSize);
     }
 
     private object? GetPageInstanceFromCache(Type? targetPageType)
@@ -325,8 +320,8 @@ public partial class NavigationView
 
             return _serviceProvider.GetService(targetPageType)
                 ?? throw new InvalidOperationException(
-                       $"{nameof(_serviceProvider.GetService)} returned null"
-                   );
+                    $"{nameof(_serviceProvider.GetService)} returned null"
+                );
         }
 
         if (_pageService is not null)
@@ -340,10 +335,7 @@ public partial class NavigationView
                 ?? throw new InvalidOperationException($"{nameof(_pageService.GetPage)} returned null");
         }
 
-        Debug.WriteLineIf(
-            EnableDebugMessages,
-            $"Getting {targetPageType} from cache using reflection."
-        );
+        Debug.WriteLineIf(EnableDebugMessages, $"Getting {targetPageType} from cache using reflection.");
 
         return NavigationViewActivator.CreateInstance(targetPageType)
             ?? throw new InvalidOperationException("Failed to create instance of the page");
@@ -381,23 +373,7 @@ public partial class NavigationView
             frameworkViewContent.DataContext = dataContext;
         }
 
-        _ = NavigationViewContentPresenter.Navigate(content);
-    }
-
-    private void OnNavigationViewContentPresenterNavigated(
-        object sender,
-        System.Windows.Navigation.NavigationEventArgs e
-    )
-    {
-        if (sender is not System.Windows.Controls.Frame frame)
-        {
-            return;
-        }
-
-        _ = frame.RemoveBackEntry();
-
-        /*var replaced = 1;
-        ((NavigationViewContentPresenter)sender).JournalOwnership =*/
+        _ = _navigationFrame.Navigate(content);
     }
 
     private void AddToNavigationStack(
@@ -459,7 +435,7 @@ public partial class NavigationView
         }
 
         INavigationViewItem?[] latestHistory = historyList[^1];
-        var                    startIndex    = 0;
+        var startIndex = 0;
 
         if (latestHistory[0]!.IsMenuElement)
         {
@@ -482,17 +458,17 @@ public partial class NavigationView
             _complexNavigationStackHistory.Remove(item);
         */
 
-        #if NET6_0_OR_GREATER
+#if NET6_0_OR_GREATER
         System.Buffers.ArrayPool<INavigationViewItem>.Shared.Return(latestHistory!, true);
-        #endif
+#endif
 
         AddToNavigationStack(item, true, false);
     }
 
     private void AddToNavigationStackHistory(INavigationViewItem viewItem)
     {
-        INavigationViewItem lastItem   = NavigationStack[^1];
-        var                 startIndex = NavigationStack.IndexOf(viewItem);
+        INavigationViewItem lastItem = NavigationStack[^1];
+        var startIndex = NavigationStack.IndexOf(viewItem);
 
         if (startIndex < 0)
         {
@@ -511,16 +487,16 @@ public partial class NavigationView
         INavigationViewItem[] array;
 
         // OPTIMIZATION: Initializing an array every time well... not an ideal
-        #if NET6_0_OR_GREATER
+#if NET6_0_OR_GREATER
         array = System.Buffers.ArrayPool<INavigationViewItem>.Shared.Rent(arrayLength);
-        #else
+#else
         array = new INavigationViewItem[arrayLength];
-        #endif
+#endif
 
         historyList.Add(array);
 
         INavigationViewItem?[] latestHistory = historyList[^1];
-        int                    i             = 0;
+        int i = 0;
 
         for (int j = startIndex; j < NavigationStack.Count - 1; j++)
         {
@@ -532,7 +508,7 @@ public partial class NavigationView
     private void ClearNavigationStack(int navigationStackItemIndex)
     {
         var navigationStackCount = NavigationStack.Count;
-        var length               = navigationStackCount - navigationStackItemIndex;
+        var length = navigationStackCount - navigationStackItemIndex;
 
         if (length == 0)
         {

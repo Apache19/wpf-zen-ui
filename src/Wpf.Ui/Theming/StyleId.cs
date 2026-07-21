@@ -29,6 +29,12 @@ public enum StyleId
 
     DefaultScrollBarStyle,
 
+    /// <summary>
+    /// Identifies the opt-in <see cref="System.Windows.Controls.Page"/> style that hosts page
+    /// content in a <see cref="Wpf.Ui.Controls.DynamicScrollViewer"/>.
+    /// </summary>
+    DynamicScrollPageStyle,
+
     NavigationViewItemDataTemplate,
 
     IconInfoBadgeStyle,

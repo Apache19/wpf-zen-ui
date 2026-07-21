@@ -8,6 +8,7 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
     Title="All Controls Page"
+    Style="{ui:StyleResource DynamicScrollPageStyle}"
     d:DataContext="{d:DesignInstance local:AllControlsPage,
                                      IsDesignTimeCreatable=False}"
     d:DesignHeight="450"

@@ -12,7 +12,6 @@
     d:DesignWidth="800"
     d:Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
     Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
-    ScrollViewer.CanContentScroll="False"
     mc:Ignorable="d">
     <Grid Margin="42">
         <ui:VirtualizingItemsControl

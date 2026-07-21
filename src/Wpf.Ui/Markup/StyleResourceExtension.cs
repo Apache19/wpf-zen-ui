@@ -32,12 +32,11 @@ public class StyleResourceExtension : DynamicResourceExtension
     {
         return id switch
         {
-            StyleId.MenuStyle                => StyleKeys.MenuStyle,
-            StyleId.UiMenuStyle              => StyleKeys.UiMenuStyle,
-            StyleId.MenuItemStyle            => StyleKeys.MenuItemStyle,
-            StyleId.UiMenuItemStyle          => StyleKeys.UiMenuItemStyle,
-            StyleId.MenuItemSeparatorStyle   => StyleKeys.MenuItemSeparatorStyle,
-
+            StyleId.MenuStyle                       => StyleKeys.MenuStyle,
+            StyleId.UiMenuStyle                     => StyleKeys.UiMenuStyle,
+            StyleId.MenuItemStyle                   => StyleKeys.MenuItemStyle,
+            StyleId.UiMenuItemStyle                 => StyleKeys.UiMenuItemStyle,
+            StyleId.MenuItemSeparatorStyle          => StyleKeys.MenuItemSeparatorStyle,
             StyleId.DefaultCheckBoxStyle            => StyleKeys.DefaultCheckBoxStyle,
             StyleId.DefaultUiCheckBoxStyle          => StyleKeys.DefaultUiCheckBoxStyle,
             StyleId.DefaultComboBoxStyle            => StyleKeys.DefaultComboBoxStyle,
@@ -47,6 +46,7 @@ public class StyleResourceExtension : DynamicResourceExtension
             StyleId.DefaultTextBoxScrollViewerStyle => StyleKeys.DefaultTextBoxScrollViewerStyle,
             StyleId.DefaultControlFocusVisualStyle  => StyleKeys.DefaultControlFocusVisualStyle,
             StyleId.DefaultScrollBarStyle           => StyleKeys.DefaultScrollBarStyle,
+            StyleId.DynamicScrollPageStyle          => StyleKeys.DynamicScrollPageStyle,
             StyleId.NavigationViewItemDataTemplate  => StyleKeys.NavigationViewItemDataTemplate,
             StyleId.IconInfoBadgeStyle              => StyleKeys.IconInfoBadgeStyle,
             StyleId.ValueInfoBadgeStyle             => StyleKeys.ValueInfoBadgeStyle,
@@ -54,8 +54,8 @@ public class StyleResourceExtension : DynamicResourceExtension
 
             StyleId.DefaultValidationTemplate => StyleKeys.DefaultValidationTemplate,
 
-            StyleId.Unknown                => throw new NotSupportedException(),
-            _                              => throw new IndexOutOfRangeException(),
+            StyleId.Unknown => throw new NotSupportedException(),
+            _               => throw new IndexOutOfRangeException(),
         };
     }
 }

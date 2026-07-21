@@ -90,6 +90,12 @@ public interface INavigationView
     bool IsBackEnabled { get; }
 
     /// <summary>
+    /// Gets or sets the legacy browser-navigation input that is stopped at this control boundary.
+    /// The default value is <see cref="NavigationViewInput.None"/>.
+    /// </summary>
+    NavigationViewInput SuppressedNavigationInput { get; set; }
+
+    /// <summary>
     /// Gets or sets the policy that controls whether the back button is visible.
     /// The default value is <see cref="NavigationViewBackButtonVisible.Auto"/>, which displays the
     /// button only while the navigation journal can go back.

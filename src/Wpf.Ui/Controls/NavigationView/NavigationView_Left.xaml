@@ -194,7 +194,7 @@
                         NavigationView owns the frame so changing PaneDisplayMode does not destroy
                         the current page together with this template's generated visual tree.
                     -->
-                    <ContentPresenter x:Name="PART_NavigationViewContentPresenterHost" Grid.Row="1" />
+                    <ContentPresenter x:Name="PART_NavigationFrameHost" Grid.Row="1" />
 
                     <!--  Overlay (e.g., SnackbarPresenter)  -->
                     <ContentPresenter

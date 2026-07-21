@@ -15,20 +15,19 @@ namespace Wpf.Ui.Controls;
 /// <content>
 /// Defines the template parts for the <see cref="NavigationView"/> control
 /// </content>
-[TemplatePart(Name = PartContentPresenterHost, Type = typeof(ContentPresenter))]
-[TemplatePart(Name = PartMenuItemsList,        Type = typeof(NavigationViewList))]
-[TemplatePart(Name = PartFooterMenuItemsList,  Type = typeof(NavigationViewList))]
+[TemplatePart(Name = PartNavigationFrameHost, Type = typeof(ContentPresenter))]
+[TemplatePart(Name = PartMenuItemsList, Type = typeof(NavigationViewList))]
+[TemplatePart(Name = PartFooterMenuItemsList, Type = typeof(NavigationViewList))]
 [TemplatePart(Name = PartPaneButtonsPresenter, Type = typeof(ContentPresenter))]
 [TemplatePart(Name = PartAutoSuggestBoxButton, Type = typeof(System.Windows.Controls.Button))]
 public partial class NavigationView
 {
     /// <summary>
-    /// Template slot that hosts the control-owned <see cref="NavigationViewContentPresenter"/>.
-    /// Keeping the navigation frame outside the generated template subtree preserves the current
-    /// page and its journal when <see cref="PaneDisplayMode"/> selects another template.
+    /// Template slot that hosts the control-owned WPF <see cref="Frame"/>.
+    /// Keeping the frame outside the generated template subtree preserves the current page and the
+    /// navigation service when <see cref="PaneDisplayMode"/> selects another template.
     /// </summary>
-    private const string PartContentPresenterHost =
-        "PART_NavigationViewContentPresenterHost";
+    private const string PartNavigationFrameHost = "PART_NavigationFrameHost";
 
     /// <summary>
     /// Template element represented by the <c>PART_MenuItemsList</c> name.
@@ -52,18 +51,21 @@ public partial class NavigationView
     private const string PartAutoSuggestBoxButton = "PART_AutoSuggestBoxSymbolButton";
 
     /// <summary>
-    /// Gets the stable frame responsible for navigation and rendering page content.
-    /// Unlike visual template parts, this instance has the same lifetime as the
-    /// <see cref="NavigationView"/> so changing display modes cannot discard navigation state.
+    /// The stable WPF navigation surface owned by this control.
     /// </summary>
-    protected NavigationViewContentPresenter NavigationViewContentPresenter { get; } = new();
+    /// <remarks>
+    /// This is intentionally an implementation field rather than a public presenter control. A
+    /// native <see cref="Frame"/> already supplies the required content and navigation behavior;
+    /// page scrolling remains part of each page's own visual tree.
+    /// </remarks>
+    private readonly Frame _navigationFrame = CreateNavigationFrame();
 
     /// <summary>
-    /// Gets or sets the template slot that displays <see cref="NavigationViewContentPresenter"/>.
-    /// Every built-in template provides this required part; it is cleared before a new template is
+    /// Gets or sets the template slot that displays the control-owned navigation frame. Every
+    /// built-in template provides this required part; it is cleared before a new template is
     /// attached because a WPF element cannot simultaneously have two visual parents.
     /// </summary>
-    protected ContentPresenter NavigationViewContentPresenterHost { get; set; } = null!;
+    protected ContentPresenter NavigationFrameHost { get; set; } = null!;
 
     /// <summary>
     /// Gets or sets the required list that hosts the primary navigation menu.
@@ -106,59 +108,35 @@ public partial class NavigationView
         // Template invalidation removes the old generated subtree before WPF calls this method,
         // but a ContentPresenter can still retain its Content reference. Release both control-owned
         // children explicitly before assigning them to slots in the newly generated subtree.
-        if (NavigationViewContentPresenterHost is not null)
+        if (NavigationFrameHost is not null)
         {
-            NavigationViewContentPresenterHost.SetCurrentValue(
-                ContentPresenter.ContentProperty,
-                null
-            );
+            NavigationFrameHost.SetCurrentValue(ContentPresenter.ContentProperty, null);
         }
 
         if (PaneButtonsPresenter is not null)
         {
-            PaneButtonsPresenter.SetCurrentValue(
-                ContentPresenter.ContentProperty,
-                null
-            );
+            PaneButtonsPresenter.SetCurrentValue(ContentPresenter.ContentProperty, null);
         }
 
         if (AutoSuggestBoxSymbolButton is not null)
         {
             AutoSuggestBoxSymbolButton.Click -= AutoSuggestBoxSymbolButtonOnClick;
-            AutoSuggestBoxSymbolButton       =  null;
+            AutoSuggestBoxSymbolButton = null;
         }
 
         base.OnApplyTemplate();
 
-        NavigationViewContentPresenterHost = RequireTemplateChild<ContentPresenter>(
-            PartContentPresenterHost
-        );
-        MenuItemsList = RequireTemplateChild<NavigationViewList>(
-            PartMenuItemsList
-        );
-        FooterMenuItemsList = RequireTemplateChild<NavigationViewList>(
-            PartFooterMenuItemsList
-        );
+        NavigationFrameHost = RequireTemplateChild<ContentPresenter>(PartNavigationFrameHost);
+        MenuItemsList = RequireTemplateChild<NavigationViewList>(PartMenuItemsList);
+        FooterMenuItemsList = RequireTemplateChild<NavigationViewList>(PartFooterMenuItemsList);
         PaneButtonsPresenter = GetTemplateChild(PartPaneButtonsPresenter) as ContentPresenter;
 
-        MenuItemsList.SetCurrentValue(
-            ItemsControl.ItemsSourceProperty,
-            MenuItems
-        );
-        FooterMenuItemsList.SetCurrentValue(
-            ItemsControl.ItemsSourceProperty,
-            FooterMenuItems
-        );
+        MenuItemsList.SetCurrentValue(ItemsControl.ItemsSourceProperty, MenuItems);
+        FooterMenuItemsList.SetCurrentValue(ItemsControl.ItemsSourceProperty, FooterMenuItems);
 
-        NavigationViewContentPresenterHost.SetCurrentValue(
-            ContentPresenter.ContentProperty,
-            NavigationViewContentPresenter
-        );
+        NavigationFrameHost.SetCurrentValue(ContentPresenter.ContentProperty, _navigationFrame);
 
-        if (
-            GetTemplateChild(PartAutoSuggestBoxButton)
-            is ButtonBase autoSuggestBoxSymbolButton
-        )
+        if (GetTemplateChild(PartAutoSuggestBoxButton) is ButtonBase autoSuggestBoxSymbolButton)
         {
             AutoSuggestBoxSymbolButton = autoSuggestBoxSymbolButton;
 
