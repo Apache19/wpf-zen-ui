@@ -22,6 +22,9 @@ namespace Wpf.Ui.Controls;
 [StyleTypedProperty(Property = nameof(TextColumnEditingElementStyle), StyleTargetType = typeof(TextBox))]
 public class DataGrid : System.Windows.Controls.DataGrid
 {
+    private readonly Dictionary<DataGridColumn, Dictionary<DependencyProperty, BindingBase>>
+        _columnStyleBindings = new();
+
     /// <summary>
     /// Identifies the <see cref="IsSelectionIndicatorVisible"/> dependency property.
     /// </summary>
@@ -163,20 +166,31 @@ public class DataGrid : System.Windows.Controls.DataGrid
 
     protected override void OnInitialized(EventArgs e)
     {
-        Columns.CollectionChanged += ColumnsOnCollectionChanged;
-
-        UpdateColumnElementStyles();
-
         base.OnInitialized(e);
+
+        Columns.CollectionChanged += ColumnsOnCollectionChanged;
+        ReconcileColumnElementStyles();
     }
 
     private void ColumnsOnCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
-        UpdateColumnElementStyles();
+        ReconcileColumnElementStyles();
     }
 
-    private void UpdateColumnElementStyles()
+    private void ReconcileColumnElementStyles()
     {
+        // A DataGridColumn is not in the visual tree and therefore cannot inherit styles from its
+        // owning grid. Bindings supply that missing inheritance. Remove only bindings installed by
+        // this grid before a column is moved elsewhere; otherwise the detached column keeps this
+        // DataGrid alive and continues to use its styles in the new owner.
+        foreach (DataGridColumn trackedColumn in _columnStyleBindings.Keys.ToArray())
+        {
+            if (!Columns.Contains(trackedColumn))
+            {
+                RemoveColumnElementStyleBindings(trackedColumn);
+            }
+        }
+
         foreach (DataGridColumn singleColumn in Columns)
         {
             UpdateSingleColumn(singleColumn);
@@ -188,121 +202,98 @@ public class DataGrid : System.Windows.Controls.DataGrid
         switch (dataGridColumn)
         {
             case DataGridCheckBoxColumn checkBoxColumn:
-                if (
-                    checkBoxColumn.ReadLocalValue(DataGridBoundColumn.ElementStyleProperty)
-                    == DependencyProperty.UnsetValue
-                )
-                {
-                    _ = BindingOperations.SetBinding(
-                        checkBoxColumn,
-                        DataGridBoundColumn.ElementStyleProperty,
-                        new Binding
-                        {
-                            Path = new PropertyPath(CheckBoxColumnElementStyleProperty),
-                            Source = this,
-                        }
-                    );
-                }
-
-                if (
-                    checkBoxColumn.ReadLocalValue(DataGridBoundColumn.EditingElementStyleProperty)
-                    == DependencyProperty.UnsetValue
-                )
-                {
-                    _ = BindingOperations.SetBinding(
-                        checkBoxColumn,
-                        DataGridBoundColumn.EditingElementStyleProperty,
-                        new Binding
-                        {
-                            Path = new PropertyPath(CheckBoxColumnEditingElementStyleProperty),
-                            Source = this,
-                        }
-                    );
-                }
+                EnsureColumnElementStyleBinding(
+                    checkBoxColumn,
+                    DataGridBoundColumn.ElementStyleProperty,
+                    CheckBoxColumnElementStyleProperty
+                );
+                EnsureColumnElementStyleBinding(
+                    checkBoxColumn,
+                    DataGridBoundColumn.EditingElementStyleProperty,
+                    CheckBoxColumnEditingElementStyleProperty
+                );
 
                 break;
 
             case DataGridComboBoxColumn comboBoxColumn:
-                if (
-                    comboBoxColumn.ReadLocalValue(DataGridBoundColumn.ElementStyleProperty)
-                    == DependencyProperty.UnsetValue
-                )
-                {
-                    _ = BindingOperations.SetBinding(
-                        comboBoxColumn,
-                        DataGridBoundColumn.ElementStyleProperty,
-                        new Binding
-                        {
-                            Path = new PropertyPath(ComboBoxColumnElementStyleProperty),
-                            Source = this,
-                        }
-                    );
-                }
-
-                if (
-                    comboBoxColumn.ReadLocalValue(DataGridBoundColumn.EditingElementStyleProperty)
-                    == DependencyProperty.UnsetValue
-                )
-                {
-                    _ = BindingOperations.SetBinding(
-                        comboBoxColumn,
-                        DataGridBoundColumn.EditingElementStyleProperty,
-                        new Binding
-                        {
-                            Path = new PropertyPath(ComboBoxColumnEditingElementStyleProperty),
-                            Source = this,
-                        }
-                    );
-                }
-
-                if (
-                    comboBoxColumn.ReadLocalValue(DataGridBoundColumn.EditingElementStyleProperty)
-                    == DependencyProperty.UnsetValue
-                )
-                {
-                    _ = BindingOperations.SetBinding(
-                        comboBoxColumn,
-                        DataGridBoundColumn.EditingElementStyleProperty,
-                        new Binding
-                        {
-                            Path = new PropertyPath(ComboBoxColumnEditingElementStyleProperty),
-                            Source = this,
-                        }
-                    );
-                }
+                EnsureColumnElementStyleBinding(
+                    comboBoxColumn,
+                    DataGridBoundColumn.ElementStyleProperty,
+                    ComboBoxColumnElementStyleProperty
+                );
+                EnsureColumnElementStyleBinding(
+                    comboBoxColumn,
+                    DataGridBoundColumn.EditingElementStyleProperty,
+                    ComboBoxColumnEditingElementStyleProperty
+                );
 
                 break;
 
             case DataGridTextColumn textBoxColumn:
-                if (
-                    textBoxColumn.ReadLocalValue(DataGridBoundColumn.ElementStyleProperty)
-                    == DependencyProperty.UnsetValue
-                )
-                {
-                    _ = BindingOperations.SetBinding(
-                        textBoxColumn,
-                        DataGridBoundColumn.ElementStyleProperty,
-                        new Binding { Path = new PropertyPath(TextColumnElementStyleProperty), Source = this }
-                    );
-                }
-
-                if (
-                    textBoxColumn.ReadLocalValue(DataGridBoundColumn.EditingElementStyleProperty)
-                    == DependencyProperty.UnsetValue
-                )
-                {
-                    _ = BindingOperations.SetBinding(
-                        textBoxColumn,
-                        DataGridBoundColumn.EditingElementStyleProperty,
-                        new Binding
-                        {
-                            Path = new PropertyPath(TextColumnEditingElementStyleProperty),
-                            Source = this,
-                        }
-                    );
-                }
+                EnsureColumnElementStyleBinding(
+                    textBoxColumn,
+                    DataGridBoundColumn.ElementStyleProperty,
+                    TextColumnElementStyleProperty
+                );
+                EnsureColumnElementStyleBinding(
+                    textBoxColumn,
+                    DataGridBoundColumn.EditingElementStyleProperty,
+                    TextColumnEditingElementStyleProperty
+                );
 
                 break;
+        }
+    }
+
+    private void EnsureColumnElementStyleBinding(
+        DataGridColumn column,
+        DependencyProperty targetProperty,
+        DependencyProperty sourceProperty
+    )
+    {
+        // A local style or user-authored binding always wins. SetBinding is only used for an empty
+        // slot so adding a column never overwrites an explicit per-column customization.
+        if (column.ReadLocalValue(targetProperty) != DependencyProperty.UnsetValue)
+        {
+            return;
+        }
+
+        var binding = new Binding { Path = new PropertyPath(sourceProperty), Source = this };
+        _ = BindingOperations.SetBinding(column, targetProperty, binding);
+
+        if (!_columnStyleBindings.TryGetValue(column, out var bindings))
+        {
+            bindings = new Dictionary<DependencyProperty, BindingBase>();
+            _columnStyleBindings.Add(column, bindings);
+        }
+
+        bindings[targetProperty] = binding;
+    }
+
+    private void RemoveColumnElementStyleBindings(DataGridColumn column)
+    {
+        // .NET Framework does not provide Dictionary.Remove(TKey, out TValue). Retrieve the
+        // bindings first so this cleanup path remains available to every target framework.
+        if (!_columnStyleBindings.TryGetValue(column, out var bindings))
+        {
+            return;
+        }
+
+        _columnStyleBindings.Remove(column);
+
+        foreach (KeyValuePair<DependencyProperty, BindingBase> bindingEntry in bindings)
+        {
+            // The application may have replaced our binding after the column was added. Compare the
+            // exact BindingBase instance so removal never clears that newer user-owned value.
+            if (
+                ReferenceEquals(
+                    BindingOperations.GetBindingBase(column, bindingEntry.Key),
+                    bindingEntry.Value
+                )
+            )
+            {
+                BindingOperations.ClearBinding(column, bindingEntry.Key);
+            }
         }
     }
 }

@@ -26,6 +26,8 @@
                     Content="{TemplateBinding Content}"
                     ContentStringFormat="{TemplateBinding ContentStringFormat}"
                     ContentTemplate="{TemplateBinding ContentTemplate}"
+                    ContentTemplateSelector="{TemplateBinding ContentTemplateSelector}"
+                    RecognizesAccessKey="True"
                     SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
                 <Rectangle
                     x:Name="SelectionIndicator"

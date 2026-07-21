@@ -3,6 +3,7 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
+using NativeListViewItem = System.Windows.Controls.ListViewItem;
 using UiListViewItem = Wpf.Ui.Controls.ListViewItem;
 
 // ReSharper disable once CheckNamespace
@@ -65,6 +66,9 @@ public class ListView : System.Windows.Controls.ListView
 
     protected override bool IsItemItsOwnContainerOverride(object item)
     {
-        return item is UiListViewItem;
+        // Match the native ListView contract: callers may supply either the Fluent container or a
+        // native ListViewItem explicitly. Rejecting the native base type makes WPF wrap that item in
+        // another container, which breaks routed input, selection ownership, and item styling.
+        return item is NativeListViewItem;
     }
 }

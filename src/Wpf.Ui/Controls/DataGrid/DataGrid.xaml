@@ -136,6 +136,7 @@
                         Padding="{TemplateBinding Padding}"
                         HorizontalAlignment="{TemplateBinding HorizontalAlignment}"
                         VerticalAlignment="{TemplateBinding VerticalAlignment}"
+                        Background="{TemplateBinding Background}"
                         BorderBrush="Transparent"
                         BorderThickness="0"
                         SnapsToDevicePixels="True">
@@ -235,6 +236,7 @@
                                 HorizontalAlignment="Left"
                                 VerticalAlignment="Center"
                                 Fill="{markup:BrushResource SystemAccentColorPrimaryBrush}"
+                                IsHitTestVisible="False"
                                 RadiusX="2"
                                 RadiusY="2"
                                 Visibility="Collapsed" />
@@ -445,7 +447,6 @@
                     <Grid>
                         <Border
                             x:Name="rowHeaderBorder"
-                            Width="10"
                             Background="{TemplateBinding Background}"
                             BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="{TemplateBinding BorderThickness}">
@@ -828,9 +829,14 @@
             </Setter.Value>
         </Setter>
         <Style.Triggers>
-            <Trigger Property="IsGrouping" Value="True">
+            <!-- Preserve WPF's grouped virtualization contract; see the matching ListView style. -->
+            <MultiTrigger>
+                <MultiTrigger.Conditions>
+                    <Condition Property="IsGrouping" Value="True" />
+                    <Condition Property="VirtualizingPanel.IsVirtualizingWhenGrouping" Value="False" />
+                </MultiTrigger.Conditions>
                 <Setter Property="ScrollViewer.CanContentScroll" Value="False" />
-            </Trigger>
+            </MultiTrigger>
         </Style.Triggers>
     </Style>
 

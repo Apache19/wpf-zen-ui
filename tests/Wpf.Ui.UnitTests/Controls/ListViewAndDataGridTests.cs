@@ -1,0 +1,425 @@
+// This Source Code Form is subject to the terms of the MIT License.
+// If a copy of the MIT was not distributed with this file, You can obtain one at https://opensource.org/licenses/MIT.
+// Copyright (C) Leszek Pomianowski and WPF UI Contributors.
+// All Rights Reserved.
+
+using System.Linq;
+using System.Runtime.ExceptionServices;
+using System.Threading;
+using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
+using System.Windows.Data;
+using System.Windows.Media;
+using NativeListViewItem = System.Windows.Controls.ListViewItem;
+using UiDataGrid = Wpf.Ui.Controls.DataGrid;
+using UiListView = Wpf.Ui.Controls.ListView;
+using UiListViewItem = Wpf.Ui.Controls.ListViewItem;
+using UiPassiveScrollViewer = Wpf.Ui.Controls.PassiveScrollViewer;
+using UiVirtualizingGridView = Wpf.Ui.Controls.VirtualizingGridView;
+
+namespace Wpf.Ui.UnitTests.Controls;
+
+public class ListViewAndDataGridTests
+{
+    [Fact]
+    public void ListView_AcceptsNativeAndFluentItemsAsContainers()
+    {
+        RunOnStaThread(static () =>
+        {
+            var listView = new TestListView();
+
+            Assert.True(listView.IsOwnContainer(new NativeListViewItem()));
+            Assert.True(listView.IsOwnContainer(new UiListViewItem()));
+            Assert.False(listView.IsOwnContainer("data item"));
+        });
+    }
+
+    [Fact]
+    public void ListViewItemTemplate_ForwardsContentTemplateSelector()
+    {
+        RunOnStaThread(static () =>
+        {
+            var selector = new TestTemplateSelector();
+            var listView = new UiListView
+            {
+                Height = 100,
+                ItemTemplateSelector = selector,
+                ItemsSource = new[] { "First" },
+                Width = 300,
+            };
+
+            Arrange(listView, 300, 100);
+
+            var item = Assert.IsType<UiListViewItem>(
+                listView.ItemContainerGenerator.ContainerFromIndex(0)
+            );
+            var presenter = Assert.IsType<ContentPresenter>(FindVisualChild<ContentPresenter>(item));
+
+            Assert.Same(selector, presenter.ContentTemplateSelector);
+        });
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void GroupedListView_UsesLogicalScrollingOnlyWhenGroupedVirtualizationIsEnabled(
+        bool isVirtualizingWhenGrouping
+    )
+    {
+        RunOnStaThread(() =>
+        {
+            var listView = new UiListView
+            {
+                Height = 160,
+                ItemsSource = new[] { "A", "A", "B" },
+                Width = 400,
+            };
+            listView.GroupStyle.Add(new GroupStyle());
+            listView.Items.GroupDescriptions.Add(new PropertyGroupDescription());
+            listView.Items.Refresh();
+            VirtualizingPanel.SetIsVirtualizingWhenGrouping(listView, isVirtualizingWhenGrouping);
+
+            Arrange(listView, 400, 160);
+
+            Assert.True(listView.IsGrouping);
+            var scrollViewer = Assert.IsType<UiPassiveScrollViewer>(
+                FindVisualChild<UiPassiveScrollViewer>(listView)
+            );
+            Assert.Equal(isVirtualizingWhenGrouping, scrollViewer.CanContentScroll);
+        });
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void GroupedDataGrid_UsesLogicalScrollingOnlyWhenGroupedVirtualizationIsEnabled(
+        bool isVirtualizingWhenGrouping
+    )
+    {
+        RunOnStaThread(() =>
+        {
+            var dataGrid = new UiDataGrid
+            {
+                Height = 160,
+                ItemsSource = new[] { "A", "A", "B" },
+                Width = 400,
+            };
+            dataGrid.GroupStyle.Add(new GroupStyle());
+            dataGrid.Items.GroupDescriptions.Add(new PropertyGroupDescription());
+            dataGrid.Items.Refresh();
+            VirtualizingPanel.SetIsVirtualizingWhenGrouping(dataGrid, isVirtualizingWhenGrouping);
+
+            Arrange(dataGrid, 400, 160);
+
+            Assert.True(dataGrid.IsGrouping);
+            var scrollViewer = Assert.IsType<UiPassiveScrollViewer>(
+                FindVisualChild<UiPassiveScrollViewer>(dataGrid)
+            );
+            Assert.Equal(isVirtualizingWhenGrouping, scrollViewer.CanContentScroll);
+        });
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void GroupedVirtualizingGridView_PreservesGroupedVirtualizationPolicy(
+        bool isVirtualizingWhenGrouping
+    )
+    {
+        RunOnStaThread(() =>
+        {
+            var gridView = new UiVirtualizingGridView
+            {
+                Height = 160,
+                ItemsSource = new[] { "A", "A", "B" },
+                Width = 400,
+            };
+            gridView.GroupStyle.Add(new GroupStyle());
+            gridView.Items.GroupDescriptions.Add(new PropertyGroupDescription());
+            gridView.Items.Refresh();
+            VirtualizingPanel.SetIsVirtualizingWhenGrouping(gridView, isVirtualizingWhenGrouping);
+
+            Arrange(gridView, 400, 160);
+
+            Assert.True(gridView.IsGrouping);
+            var scrollViewer = Assert.IsType<UiPassiveScrollViewer>(
+                FindVisualChild<UiPassiveScrollViewer>(gridView)
+            );
+            Assert.Equal(isVirtualizingWhenGrouping, scrollViewer.CanContentScroll);
+        });
+    }
+
+    [Fact]
+    public void DataGridTemplates_KeepCellsHitTestableAndIndicatorsInputTransparent()
+    {
+        RunOnStaThread(static () =>
+        {
+            var dataGrid = new UiDataGrid
+            {
+                Height = 160,
+                HeadersVisibility = DataGridHeadersVisibility.All,
+                ItemsSource = new[] { new GroupedRow("A", "First") },
+                RowHeaderWidth = 72,
+                SelectedIndex = 0,
+                Width = 400,
+            };
+
+            Arrange(dataGrid, 400, 160);
+
+            var row = Assert.IsType<DataGridRow>(dataGrid.ItemContainerGenerator.ContainerFromIndex(0));
+            var cell = Assert.IsType<DataGridCell>(FindVisualChild<DataGridCell>(row));
+            var cellBorder = Assert.IsType<Border>(cell.Template.FindName("Border", cell));
+            var indicator = Assert.IsType<System.Windows.Shapes.Rectangle>(
+                row.Template.FindName("ActiveRectangle", row)
+            );
+            var rowHeader = Assert.IsType<DataGridRowHeader>(FindVisualChild<DataGridRowHeader>(row));
+            var rowHeaderBorder = Assert.IsType<Border>(
+                rowHeader.Template.FindName("rowHeaderBorder", rowHeader)
+            );
+
+            Assert.NotNull(cell.Background);
+            Assert.Same(cell.Background, cellBorder.Background);
+            Assert.False(indicator.IsHitTestVisible);
+            Assert.True(double.IsNaN(rowHeaderBorder.Width));
+            Assert.Equal(72d, rowHeader.ActualWidth, 3);
+        });
+    }
+
+    [Fact]
+    public void DataGridColumnStyleBindings_FollowColumnToItsCurrentOwner()
+    {
+        RunOnStaThread(static () =>
+        {
+            var firstStyle = new Style(typeof(ComboBox));
+            var secondStyle = new Style(typeof(ComboBox));
+            var firstGrid = new UiDataGrid { ComboBoxColumnEditingElementStyle = firstStyle };
+            var secondGrid = new UiDataGrid { ComboBoxColumnEditingElementStyle = secondStyle };
+            Initialize(firstGrid);
+            Initialize(secondGrid);
+
+            var column = new DataGridComboBoxColumn();
+            firstGrid.Columns.Add(column);
+
+            Assert.Same(firstStyle, column.EditingElementStyle);
+            Assert.Same(
+                firstGrid,
+                BindingOperations
+                    .GetBinding(column, DataGridBoundColumn.EditingElementStyleProperty)
+                    ?.Source
+            );
+
+            firstGrid.Columns.Remove(column);
+            secondGrid.Columns.Add(column);
+
+            Assert.Same(secondStyle, column.EditingElementStyle);
+            Assert.Same(
+                secondGrid,
+                BindingOperations
+                    .GetBinding(column, DataGridBoundColumn.EditingElementStyleProperty)
+                    ?.Source
+            );
+        });
+    }
+
+    [Fact]
+    public void DataGridColumnStyleBindings_DoNotReplaceExplicitColumnStyles()
+    {
+        RunOnStaThread(static () =>
+        {
+            var explicitStyle = new Style(typeof(TextBlock));
+            var column = new DataGridTextColumn { ElementStyle = explicitStyle };
+            var dataGrid = new UiDataGrid();
+            Initialize(dataGrid);
+
+            dataGrid.Columns.Add(column);
+
+            Assert.Same(explicitStyle, column.ElementStyle);
+            Assert.Null(BindingOperations.GetBinding(column, DataGridBoundColumn.ElementStyleProperty));
+        });
+    }
+
+    [Fact]
+    public void DataGridColumnStyleBindings_ApplyEveryGridLevelColumnStyle()
+    {
+        RunOnStaThread(static () =>
+        {
+            var checkBoxElementStyle = new Style(typeof(CheckBox));
+            var checkBoxEditingStyle = new Style(typeof(CheckBox));
+            var comboBoxElementStyle = new Style(typeof(ComboBox));
+            var comboBoxEditingStyle = new Style(typeof(ComboBox));
+            var textElementStyle = new Style(typeof(TextBlock));
+            var textEditingStyle = new Style(typeof(TextBox));
+            var dataGrid = new UiDataGrid
+            {
+                CheckBoxColumnElementStyle = checkBoxElementStyle,
+                CheckBoxColumnEditingElementStyle = checkBoxEditingStyle,
+                ComboBoxColumnElementStyle = comboBoxElementStyle,
+                ComboBoxColumnEditingElementStyle = comboBoxEditingStyle,
+                TextColumnElementStyle = textElementStyle,
+                TextColumnEditingElementStyle = textEditingStyle,
+            };
+            Initialize(dataGrid);
+
+            var checkBoxColumn = new DataGridCheckBoxColumn();
+            var comboBoxColumn = new DataGridComboBoxColumn();
+            var textColumn = new DataGridTextColumn();
+            dataGrid.Columns.Add(checkBoxColumn);
+            dataGrid.Columns.Add(comboBoxColumn);
+            dataGrid.Columns.Add(textColumn);
+
+            Assert.Same(checkBoxElementStyle, checkBoxColumn.ElementStyle);
+            Assert.Same(checkBoxEditingStyle, checkBoxColumn.EditingElementStyle);
+            Assert.Same(comboBoxElementStyle, comboBoxColumn.ElementStyle);
+            Assert.Same(comboBoxEditingStyle, comboBoxColumn.EditingElementStyle);
+            Assert.Same(textElementStyle, textColumn.ElementStyle);
+            Assert.Same(textEditingStyle, textColumn.EditingElementStyle);
+        });
+    }
+
+    [Fact]
+    public void DataGridTemplate_ScrollsLogicallyAndKeepsScrollbarSynchronized()
+    {
+        RunOnStaThread(static () =>
+        {
+            var dataGrid = new UiDataGrid
+            {
+                Height = 200,
+                ItemsSource = Enumerable
+                    .Range(0, 100)
+                    .Select(static index => new GroupedRow(index % 2 == 0 ? "A" : "B", $"Item {index}"))
+                    .ToArray(),
+                Width = 500,
+            };
+            var window = new Window
+            {
+                Content = dataGrid,
+                Height = 240,
+                ShowInTaskbar = false,
+                Width = 540,
+                WindowStyle = WindowStyle.None,
+            };
+
+            try
+            {
+                window.Show();
+                dataGrid.UpdateLayout();
+
+                var scrollViewer = Assert.IsType<UiPassiveScrollViewer>(
+                    FindVisualChild<UiPassiveScrollViewer>(dataGrid)
+                );
+                var scrollBar = Assert.IsType<ScrollBar>(
+                    scrollViewer.Template.FindName("PART_VerticalScrollBar", scrollViewer)
+                );
+
+                Assert.True(scrollViewer.CanContentScroll);
+                Assert.True(scrollViewer.ScrollableHeight > 0d);
+                Assert.True(CountVisualChildren<DataGridRow>(dataGrid) < dataGrid.Items.Count);
+
+                scrollViewer.ScrollToVerticalOffset(10d);
+                dataGrid.UpdateLayout();
+
+                Assert.Equal(10d, scrollViewer.VerticalOffset, 3);
+                Assert.Equal(scrollViewer.VerticalOffset, scrollBar.Value, 3);
+            }
+            finally
+            {
+                window.Close();
+            }
+        });
+    }
+
+    private static void Initialize(FrameworkElement element)
+    {
+        element.BeginInit();
+        element.EndInit();
+    }
+
+    private static void Arrange(FrameworkElement element, double width, double height)
+    {
+        // A control receives its implicit theme style only after it participates in a logical tree.
+        // Host it exactly as an application would instead of testing an uninitialized bare element.
+        var host = new Grid();
+        host.Children.Add(element);
+        host.Measure(new Size(width, height));
+        host.Arrange(new Rect(0, 0, width, height));
+        host.UpdateLayout();
+    }
+
+    private static void RunOnStaThread(Action action)
+    {
+        Exception? exception = null;
+        var thread = new Thread(() =>
+        {
+            try
+            {
+                action();
+            }
+            catch (Exception caughtException)
+            {
+                exception = caughtException;
+            }
+        });
+
+        thread.SetApartmentState(ApartmentState.STA);
+        thread.Start();
+        thread.Join();
+
+        if (exception is not null)
+        {
+            ExceptionDispatchInfo.Capture(exception).Throw();
+        }
+    }
+
+    private static T? FindVisualChild<T>(DependencyObject parent)
+        where T : DependencyObject
+    {
+        for (int index = 0; index < VisualTreeHelper.GetChildrenCount(parent); index++)
+        {
+            DependencyObject child = VisualTreeHelper.GetChild(parent, index);
+            if (child is T result)
+            {
+                return result;
+            }
+
+            if (FindVisualChild<T>(child) is { } descendant)
+            {
+                return descendant;
+            }
+        }
+
+        return null;
+    }
+
+    private static int CountVisualChildren<T>(DependencyObject parent)
+        where T : DependencyObject
+    {
+        int count = 0;
+        for (int index = 0; index < VisualTreeHelper.GetChildrenCount(parent); index++)
+        {
+            DependencyObject child = VisualTreeHelper.GetChild(parent, index);
+            if (child is T)
+            {
+                count++;
+            }
+
+            count += CountVisualChildren<T>(child);
+        }
+
+        return count;
+    }
+
+    private sealed class TestListView : UiListView
+    {
+        public bool IsOwnContainer(object item) => IsItemItsOwnContainerOverride(item);
+    }
+
+    private sealed class TestTemplateSelector : DataTemplateSelector
+    {
+        public override DataTemplate SelectTemplate(object item, DependencyObject container)
+        {
+            return new DataTemplate();
+        }
+    }
+
+    private sealed record GroupedRow(string Group, string Name);
+}

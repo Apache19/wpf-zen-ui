@@ -27,20 +27,18 @@ namespace Wpf.Ui.Controls;
 /// </example>
 public class GridViewColumn : NativeGridViewColumn
 {
-    private static readonly Lazy<FieldInfo> _desiredWidthField = new(static () =>
+    private static readonly Lazy<FieldInfo?> _desiredWidthField = new(static () =>
         typeof(NativeGridViewColumn).GetField("_desiredWidth", BindingFlags.NonPublic | BindingFlags.Instance)
-        ?? throw new InvalidOperationException("The native GridViewColumn._desiredWidth field was not found.")
     );
 
-    private static readonly Lazy<MethodInfo> _updateActualWidthMethod = new(static () =>
+    private static readonly Lazy<MethodInfo?> _updateActualWidthMethod = new(static () =>
         typeof(NativeGridViewColumn).GetMethod(
             "UpdateActualWidth",
             BindingFlags.NonPublic | BindingFlags.Instance
         )
-        ?? throw new InvalidOperationException(
-            "The native GridViewColumn.UpdateActualWidth method was not found."
-        )
     );
+
+    private static bool _isNativeAutoWidthAccessAvailable = true;
 
     private bool _isSynchronizingNativeWidth;
 
@@ -134,10 +132,16 @@ public class GridViewColumn : NativeGridViewColumn
 
         if (!hasFiniteWidth)
         {
-            // Grid treats star definitions as Auto when measured with infinite space.
-            SetNativeWidth(double.NaN);
+            // WPF's GridView scrolling template can measure both the header and virtualized rows
+            // with infinity, then arrange them against a finite viewport. These presenters share
+            // one native column. Resetting an already resolved width here would make Measure set
+            // Auto and Arrange set Star on every layout pass, continuously invalidating the whole
+            // window. A new or explicitly changed Star definition already starts as native Auto;
+            // after a finite pass resolves it, unconstrained probes must preserve that resolution.
+            return;
         }
-        else if (double.IsNaN(NativeWidth))
+
+        if (double.IsNaN(NativeWidth))
         {
             SetNativeWidth(CoerceWidth(MinWidth));
         }
@@ -157,24 +161,47 @@ public class GridViewColumn : NativeGridViewColumn
 
     internal void CoerceAutoDesiredWidth()
     {
-        if (!Width.IsAuto && !(Width.IsStar && double.IsNaN(NativeWidth)))
+        if (
+            !_isNativeAutoWidthAccessAvailable
+            || (!Width.IsAuto && !(Width.IsStar && double.IsNaN(NativeWidth)))
+        )
         {
             return;
         }
 
-        double desiredWidth = (double)(
-            _desiredWidthField.Value.GetValue(this)
-            ?? throw new InvalidOperationException("Failed to read the native GridViewColumn desired width.")
-        );
-        double coercedWidth = CoerceWidth(desiredWidth);
-
-        if (AreClose(desiredWidth, coercedWidth))
+        FieldInfo? desiredWidthField = _desiredWidthField.Value;
+        MethodInfo? updateActualWidthMethod = _updateActualWidthMethod.Value;
+        if (desiredWidthField is null || updateActualWidthMethod is null)
         {
+            // These members are internal WPF implementation details. If a future runtime changes
+            // them, preserve native Auto sizing and skip only custom MinWidth/MaxWidth coercion.
+            _isNativeAutoWidthAccessAvailable = false;
             return;
         }
 
-        _desiredWidthField.Value.SetValue(this, coercedWidth);
-        _ = _updateActualWidthMethod.Value.Invoke(this, null);
+        try
+        {
+            if (desiredWidthField.GetValue(this) is not double desiredWidth)
+            {
+                _isNativeAutoWidthAccessAvailable = false;
+                return;
+            }
+
+            double coercedWidth = CoerceWidth(desiredWidth);
+            if (AreClose(desiredWidth, coercedWidth))
+            {
+                return;
+            }
+
+            desiredWidthField.SetValue(this, coercedWidth);
+            _ = updateActualWidthMethod.Invoke(this, null);
+        }
+        catch (Exception)
+        {
+            // Reflection is an enhancement rather than a startup requirement. Disable it after the
+            // first incompatible access so a layout hot path neither crashes nor repeatedly throws.
+            _isNativeAutoWidthAccessAvailable = false;
+        }
     }
 
     private static void OnWidthChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
@@ -233,10 +260,9 @@ public class GridViewColumn : NativeGridViewColumn
         {
             SetNativeWidth(CoerceWidth(Width.Value));
         }
-        else if (Width.IsStar)
-        {
-            SetNativeWidth(CoerceWidth(MinWidth));
-        }
+
+        // Keep a new Star column in the native Auto state until a finite presenter resolves it.
+        // This lets an empty GridView measured with infinite width size its header to content.
     }
 
     private void SetNativeWidth(double value)

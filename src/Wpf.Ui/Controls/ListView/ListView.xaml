@@ -27,6 +27,7 @@
             <controls:PassiveScrollViewer
                 x:Name="PART_ContentHost"
                 CanContentScroll="{TemplateBinding ScrollViewer.CanContentScroll}"
+                Focusable="False"
                 HorizontalScrollBarVisibility="{TemplateBinding ScrollViewer.HorizontalScrollBarVisibility}"
                 VerticalScrollBarVisibility="{TemplateBinding ScrollViewer.VerticalScrollBarVisibility}">
                 <ItemsPresenter SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
@@ -115,6 +116,7 @@
             <controls:PassiveScrollViewer
                 Padding="{TemplateBinding Padding}"
                 CanContentScroll="{TemplateBinding ScrollViewer.CanContentScroll}"
+                Focusable="False"
                 HorizontalScrollBarVisibility="{TemplateBinding ScrollViewer.HorizontalScrollBarVisibility}"
                 Template="{StaticResource GridViewScrollViewerTemplate}"
                 VerticalScrollBarVisibility="{TemplateBinding ScrollViewer.VerticalScrollBarVisibility}">
@@ -138,6 +140,8 @@
         <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Auto" />
         <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto" />
         <Setter Property="ScrollViewer.CanContentScroll" Value="True" />
+        <Setter Property="ScrollViewer.PanningMode" Value="Both" />
+        <Setter Property="Stylus.IsFlicksEnabled" Value="False" />
         <Setter Property="VirtualizingPanel.IsVirtualizing" Value="True" />
         <Setter Property="VirtualizingPanel.IsVirtualizingWhenGrouping" Value="True" />
         <Setter Property="VirtualizingPanel.VirtualizationMode" Value="Recycling" />
@@ -155,9 +159,18 @@
         </Setter>
         <Setter Property="Template" Value="{StaticResource DefaultListViewTemplate}" />
         <Style.Triggers>
-            <Trigger Property="IsGrouping" Value="True">
+            <!--
+                WPF can virtualize grouped items when IsVirtualizingWhenGrouping is enabled. Logical
+                scrolling must only be disabled for the legacy non-virtualizing grouping path; doing
+                it for every grouped view silently realizes the complete collection.
+            -->
+            <MultiTrigger>
+                <MultiTrigger.Conditions>
+                    <Condition Property="IsGrouping" Value="True" />
+                    <Condition Property="VirtualizingPanel.IsVirtualizingWhenGrouping" Value="False" />
+                </MultiTrigger.Conditions>
                 <Setter Property="ScrollViewer.CanContentScroll" Value="False" />
-            </Trigger>
+            </MultiTrigger>
         </Style.Triggers>
     </Style>
 
