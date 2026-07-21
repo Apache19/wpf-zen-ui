@@ -7,8 +7,8 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Threading;
 using Wpf.Ui.Extensions.Wpf;
+using NativeButton = System.Windows.Controls.Button;
 using UiButton = Wpf.Ui.Controls.Button;
-using WinButton = System.Windows.Controls.Button;
 
 // ReSharper disable once CheckNamespace
 namespace Wpf.Ui.Controls;
@@ -156,7 +156,7 @@ public partial class ContentDialog
         }
 
         // 3) Template fallback: try to find any custom button marked as default (IsDefault == true)
-        var templateDefault = this.FindDescendant<WinButton>(
+        var templateDefault = this.FindDescendant<NativeButton>(
             b => b is { IsDefault: true } && IsSafelyFocusable(b)
         );
 
@@ -180,12 +180,12 @@ public partial class ContentDialog
 
     private bool FocusBuiltInButton()
     {
-        var btns = new List<WinButton>();
+        var btns = new List<NativeButton>();
 
         // Collect built-in safely buttons
         foreach (var n in (string[])["PrimaryButton", "CloseButton", "SecondaryButton"])
         {
-            if (GetTemplateChild(n) is WinButton b && IsSafelyFocusable(b))
+            if (GetTemplateChild(n) is NativeButton b && IsSafelyFocusable(b))
             {
                 btns.Add(b);
             }

@@ -6,8 +6,8 @@
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Data;
-using WinComboBox = System.Windows.Controls.ComboBox;
-using WinTextBox = System.Windows.Controls.TextBox;
+using NativeComboBox = System.Windows.Controls.ComboBox;
+using NativeTextBox = System.Windows.Controls.TextBox;
 
 // ReSharper disable once CheckNamespace
 namespace Wpf.Ui.Controls;
@@ -82,14 +82,14 @@ public static class PlaceholderService
 
         switch (control)
         {
-            case WinTextBox textBox:
+            case NativeTextBox textBox:
             {
                 textBox.TextChanged -= OnTextChanged;
                 textBox.TextChanged += OnTextChanged;
                 break;
             }
 
-            case WinComboBox comboBox:
+            case NativeComboBox comboBox:
                 comboBox.SelectionChanged -= OnComboSelectionChanged;
                 comboBox.SelectionChanged += OnComboSelectionChanged;
                 comboBox.RemoveHandler(TextBoxBase.TextChangedEvent, new TextChangedEventHandler(OnTextChanged));
@@ -131,15 +131,15 @@ public static class PlaceholderService
         bool isEmpty;
         switch (control)
         {
-            case WinTextBox tb:
+            case NativeTextBox tb:
             {
                 isEmpty = string.IsNullOrEmpty(tb.Text);
                 break;
             }
 
-            case WinComboBox cb:
+            case NativeComboBox cb:
             {
-                var editableTextBox = cb.Template?.FindName("PART_EditableTextBox", cb) as WinTextBox;
+                var editableTextBox = cb.Template?.FindName("PART_EditableTextBox", cb) as NativeTextBox;
                 isEmpty = cb.SelectedItem == null && string.IsNullOrEmpty(editableTextBox?.Text ?? cb.Text);
                 break;
             }

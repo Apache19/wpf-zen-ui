@@ -20,195 +20,168 @@ using Wpf.Ui.Gallery.Views.Pages.OpSystem;
 using Wpf.Ui.Gallery.Views.Pages.StatusAndInfo;
 using Wpf.Ui.Gallery.Views.Pages.Text;
 using Wpf.Ui.Gallery.Views.Pages.Windows;
-using CheckBox = Wpf.Ui.Controls.CheckBox;
-using ComboBox = Wpf.Ui.Controls.ComboBox;
-using ListBox = Wpf.Ui.Controls.ListBox;
-using RadioButton = Wpf.Ui.Controls.RadioButton;
-using Separator = Wpf.Ui.Controls.Separator;
-using Slider = Wpf.Ui.Controls.Slider;
-using ToggleButton = Wpf.Ui.Controls.ToggleButton;
-using TreeView = Wpf.Ui.Controls.TreeView;
+using UiSeparator = Wpf.Ui.Controls.Separator;
+
+// ReSharper disable UnusedMember.Global
+// ReSharper disable PropertyCanBeMadeInitOnly.Global
 
 namespace Wpf.Ui.Gallery.ViewModels.Windows;
 
 public partial class MainWindowViewModel(IStringLocalizer<Translations> localizer) : ViewModel
 {
     [ObservableProperty]
-    private string _applicationTitle = localizer["WPF UI Gallery"];
+    public partial string ApplicationTitle { get; set; } = localizer["WPF UI Gallery"];
 
     [ObservableProperty]
-    private ObservableCollection<object> _menuItems =
+    public partial ObservableCollection<object> MenuItems { get; set; } =
     [
         new NavigationViewItem("Home", SymbolRegular.Home24, typeof(DashboardPage)),
-        new NavigationViewItem()
+        new NavigationViewItem("Design guidance", SymbolRegular.DesignIdeas24)
         {
-            Header = "Design guidance",
-            Icon = new SymbolIcon { Symbol = SymbolRegular.DesignIdeas24 },
             ItemsSource = new object[]
             {
-                new NavigationViewItem("Typography", SymbolRegular.TextFont24, typeof(TypographyPage)),
-                new NavigationViewItem("Icons", SymbolRegular.Diversity24, typeof(IconsPage)),
-                new NavigationViewItem("Colors", SymbolRegular.Color24, typeof(ColorsPage)),
+                new NavigationViewItem("Typography", SymbolRegular.TextFont24,  typeof(TypographyPage)),
+                new NavigationViewItem("Icons",      SymbolRegular.Diversity24, typeof(IconsPage)),
+                new NavigationViewItem("Colors",     SymbolRegular.Color24,     typeof(ColorsPage)),
             },
         },
         new NavigationViewItem("All samples", SymbolRegular.List24, typeof(AllControlsPage)),
-        new Separator(),
+        new UiSeparator(),
         new NavigationViewItem("Basic Input", SymbolRegular.CheckboxChecked24, typeof(BasicInputPage))
         {
             ItemsSource = new object[]
             {
-                new NavigationViewItem(nameof(Anchor), typeof(AnchorPage)),
-                new NavigationViewItem(nameof(Wpf.Ui.Controls.Button), typeof(ButtonPage)),
-                new NavigationViewItem(nameof(DropDownButton), typeof(DropDownButtonPage)),
-                new NavigationViewItem(nameof(HyperlinkButton), typeof(HyperlinkButtonPage)),
-                new NavigationViewItem(nameof(ToggleButton), typeof(ToggleButtonPage)),
-                new NavigationViewItem(nameof(ToggleSwitch), typeof(ToggleSwitchPage)),
-                new NavigationViewItem(nameof(CheckBox), typeof(CheckBoxPage)),
-                new NavigationViewItem(nameof(ComboBox), typeof(ComboBoxPage)),
-                new NavigationViewItem(nameof(RadioButton), typeof(RadioButtonPage)),
-                new NavigationViewItem(nameof(RatingControl), typeof(RatingPage)),
-                new NavigationViewItem(nameof(ThumbRate), typeof(ThumbRatePage)),
-                new NavigationViewItem(nameof(SplitButton), typeof(SplitButtonPage)),
-                new NavigationViewItem(nameof(Slider), typeof(SliderPage)),
+                new NavigationViewItem("Anchor",          typeof(AnchorPage)), new NavigationViewItem("Button", typeof(ButtonPage)),
+                new NavigationViewItem("DropDownButton",  typeof(DropDownButtonPage)),
+                new NavigationViewItem("HyperlinkButton", typeof(HyperlinkButtonPage)),
+                new NavigationViewItem("ToggleButton",    typeof(ToggleButtonPage)), new NavigationViewItem("ToggleSwitch", typeof(ToggleSwitchPage)),
+                new NavigationViewItem("CheckBox",        typeof(CheckBoxPage)), new NavigationViewItem("ComboBox",         typeof(ComboBoxPage)),
+                new NavigationViewItem("RadioButton",     typeof(RadioButtonPage)), new NavigationViewItem("RatingControl", typeof(RatingPage)),
+                new NavigationViewItem("ThumbRate",       typeof(ThumbRatePage)), new NavigationViewItem("SplitButton",     typeof(SplitButtonPage)),
+                new NavigationViewItem("Slider",          typeof(SliderPage))
             },
         },
-        new NavigationViewItem
+        new NavigationViewItem("Collections", SymbolRegular.Table24, typeof(CollectionsPage))
         {
-            Header = "Collections",
-            Icon = new SymbolIcon { Symbol = SymbolRegular.Table24 },
-            TargetPageType = typeof(CollectionsPage),
             ItemsSource = new object[]
             {
-                new NavigationViewItem(nameof(System.Windows.Controls.DataGrid), typeof(DataGridPage)),
-                new NavigationViewItem(nameof(ListBox), typeof(ListBoxPage)),
-                new NavigationViewItem(nameof(Ui.Controls.ListView), typeof(ListViewPage)),
-                new NavigationViewItem(nameof(TreeView), typeof(TreeViewPage)),
-#if DEBUG
+                new NavigationViewItem("DataGrid", typeof(DataGridPage)), new NavigationViewItem("ListBox",  typeof(ListBoxPage)),
+                new NavigationViewItem("ListView", typeof(ListViewPage)), new NavigationViewItem("TreeView", typeof(TreeViewPage)),
+                #if DEBUG
                 new NavigationViewItem("TreeList", typeof(TreeListPage)),
-#endif
+                #endif
             },
         },
         new NavigationViewItem("Date & time", SymbolRegular.CalendarClock24, typeof(DateAndTimePage))
         {
             ItemsSource = new object[]
             {
-                new NavigationViewItem(nameof(CalendarDatePicker), typeof(CalendarDatePickerPage)),
-                new NavigationViewItem(nameof(System.Windows.Controls.Calendar), typeof(CalendarPage)),
-                new NavigationViewItem(nameof(DatePicker), typeof(DatePickerPage)),
-                new NavigationViewItem(nameof(TimePicker), typeof(TimePickerPage)),
+                new NavigationViewItem("CalendarDatePicker", typeof(CalendarDatePickerPage)),
+                new NavigationViewItem("Calendar",           typeof(CalendarPage)), new NavigationViewItem("DatePicker", typeof(DatePickerPage)),
+                new NavigationViewItem("TimePicker",         typeof(TimePickerPage)),
             },
         },
         new NavigationViewItem("Dialogs & flyouts", SymbolRegular.Chat24, typeof(DialogsAndFlyoutsPage))
         {
             ItemsSource = new object[]
             {
-                new NavigationViewItem(nameof(Snackbar), typeof(SnackbarPage)),
-                new NavigationViewItem(nameof(ContentDialog), typeof(ContentDialogPage)),
-                new NavigationViewItem(nameof(Flyout), typeof(FlyoutPage)),
-                new NavigationViewItem(nameof(Wpf.Ui.Controls.MessageBox), typeof(MessageBoxPage)),
+                new NavigationViewItem("Snackbars", typeof(SnackbarPage)), new NavigationViewItem("ContentDialog", typeof(ContentDialogPage)),
+                new NavigationViewItem("Flyout",    typeof(FlyoutPage)), new NavigationViewItem("MessageBox",      typeof(MessageBoxPage)),
             },
         },
-#if DEBUG
+        #if DEBUG
         new NavigationViewItem("Layout", SymbolRegular.News24, typeof(LayoutPage))
         {
             ItemsSource = new object[]
             {
-                new NavigationViewItem("Expander", typeof(ExpanderPage)),
-                new NavigationViewItem("CardControl", typeof(CardControlPage)),
+                new NavigationViewItem("Expander",   typeof(ExpanderPage)), new NavigationViewItem("CardControl", typeof(CardControlPage)),
                 new NavigationViewItem("CardAction", typeof(CardActionPage)),
             },
         },
-#endif
-        new NavigationViewItem
+        #endif
+        new NavigationViewItem("Media", SymbolRegular.PlayCircle24, typeof(MediaPage))
         {
-            Header = "Media",
-            Icon = new SymbolIcon { Symbol = SymbolRegular.PlayCircle24 },
-            TargetPageType = typeof(MediaPage),
             ItemsSource = new object[]
             {
-                new NavigationViewItem("Image", typeof(ImagePage)),
-                new NavigationViewItem("Canvas", typeof(CanvasPage)),
-                new NavigationViewItem("WebView", typeof(WebViewPage)),
-                new NavigationViewItem("WebBrowser", typeof(WebBrowserPage)),
+                new NavigationViewItem("Image",   typeof(ImagePage)), new NavigationViewItem("Canvas",       typeof(CanvasPage)),
+                new NavigationViewItem("WebView", typeof(WebViewPage)), new NavigationViewItem("WebBrowser", typeof(WebBrowserPage)),
             },
         },
         new NavigationViewItem("Navigation", SymbolRegular.Navigation24, typeof(NavigationPage))
         {
             ItemsSource = new object[]
             {
-                new NavigationViewItem("BreadcrumbBar", typeof(BreadcrumbBarPage)),
-                new NavigationViewItem("NavigationView", typeof(NavigationViewPage)),
-                new NavigationViewItem("Menu", typeof(MenuPage)),
+                new NavigationViewItem("BreadcrumbBar",         typeof(BreadcrumbBarPage)),
+                new NavigationViewItem("NavigationView",        typeof(NavigationViewPage)), new NavigationViewItem("Menu", typeof(MenuPage)),
                 new NavigationViewItem("Multilevel navigation", typeof(MultilevelNavigationPage)),
-                new NavigationViewItem("TabControl", typeof(TabControlPage)),
+                new NavigationViewItem("TabControl",            typeof(TabControlPage)),
             },
         },
-        new NavigationViewItem(
-            "Status & info",
-            SymbolRegular.ChatBubblesQuestion24,
-            typeof(StatusAndInfoPage)
-        )
+        new NavigationViewItem("Status & info", SymbolRegular.ChatBubblesQuestion24, typeof(StatusAndInfoPage))
         {
             ItemsSource = new object[]
             {
-                new NavigationViewItem("InfoBadge", typeof(InfoBadgePage)),
-                new NavigationViewItem("InfoBar", typeof(InfoBarPage)),
-                new NavigationViewItem("ProgressBar", typeof(ProgressBarPage)),
-                new NavigationViewItem("ProgressRing", typeof(ProgressRingPage)),
-                new NavigationViewItem("ToolTip", typeof(ToolTipPage)),
+                new NavigationViewItem("InfoBadge",   typeof(InfoBadgePage)), new NavigationViewItem("InfoBar",        typeof(InfoBarPage)),
+                new NavigationViewItem("ProgressBar", typeof(ProgressBarPage)), new NavigationViewItem("ProgressRing", typeof(ProgressRingPage)),
+                new NavigationViewItem("ToolTip",     typeof(ToolTipPage)),
             },
         },
         new NavigationViewItem("Text", SymbolRegular.DrawText24, typeof(TextPage))
         {
             ItemsSource = new object[]
             {
-                new NavigationViewItem(nameof(AutoSuggestBox), typeof(AutoSuggestBoxPage)),
-                new NavigationViewItem(nameof(NumberBox), typeof(NumberBoxPage)),
-                new NavigationViewItem(nameof(Wpf.Ui.Controls.PasswordBox), typeof(PasswordBoxPage)),
-                new NavigationViewItem(nameof(Wpf.Ui.Controls.RichTextBox), typeof(RichTextBoxPage)),
-                new NavigationViewItem(nameof(Label), typeof(LabelPage)),
-                new NavigationViewItem(nameof(Wpf.Ui.Controls.TextBlock), typeof(TextBlockPage)),
-                new NavigationViewItem(nameof(Wpf.Ui.Controls.TextBox), typeof(TextBoxPage)),
+                new NavigationViewItem("AutoSuggestBox", typeof(AutoSuggestBoxPage)), new NavigationViewItem("NumberBox", typeof(NumberBoxPage)),
+                new NavigationViewItem("PasswordBox",    typeof(PasswordBoxPage)), new NavigationViewItem("RichTextBox",  typeof(RichTextBoxPage)),
+                new NavigationViewItem("Label",          typeof(LabelPage)), new NavigationViewItem("TextBlock",          typeof(TextBlockPage)),
+                new NavigationViewItem("TextBox",        typeof(TextBoxPage)),
             },
         },
         new NavigationViewItem("System", SymbolRegular.Desktop24, typeof(OpSystemPage))
         {
             ItemsSource = new object[]
             {
-                new NavigationViewItem("Clipboard", typeof(ClipboardPage)),
-                new NavigationViewItem("FilePicker", typeof(FilePickerPage)),
+                new NavigationViewItem("Clipboard", typeof(ClipboardPage)), new NavigationViewItem("FilePicker", typeof(FilePickerPage)),
             },
         },
         new NavigationViewItem("Windows", SymbolRegular.WindowApps24, typeof(WindowsPage)),
     ];
 
     [ObservableProperty]
-    private ObservableCollection<object> _footerMenuItems =
+    public partial ObservableCollection<object> FooterMenuItems { get; set; } =
     [
         new NavigationViewItem("Settings", SymbolRegular.Settings24, typeof(SettingsPage)),
     ];
 
     [ObservableProperty]
-    private ObservableCollection<Control> _trayMenuItems =
+    public partial ObservableCollection<Control> TrayMenuItems { get; set; } =
     [
         new MenuItem()
         {
             Header = "Home",
-            Tag = "tray_home",
-            Icon = new SymbolIcon { Symbol = SymbolRegular.Home24 },
+            Tag    = "tray_home",
+            Icon = new SymbolIcon
+            {
+                Symbol = SymbolRegular.Home24
+            },
         },
         new MenuItem()
         {
             Header = "Settings",
-            Tag = "tray_settings",
-            Icon = new SymbolIcon { Symbol = SymbolRegular.Settings24 },
+            Tag    = "tray_settings",
+            Icon = new SymbolIcon
+            {
+                Symbol = SymbolRegular.Settings24
+            },
         },
-        new Separator(),
+        new UiSeparator(),
         new MenuItem()
         {
             Header = "Close",
-            Tag = "tray_close",
-            Icon = new SymbolIcon { Symbol = SymbolRegular.Dismiss24 },
+            Tag    = "tray_close",
+            Icon = new SymbolIcon
+            {
+                Symbol = SymbolRegular.Dismiss24
+            },
         }
     ];
 }

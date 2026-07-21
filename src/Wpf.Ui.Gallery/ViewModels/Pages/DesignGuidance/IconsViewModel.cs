@@ -3,10 +3,9 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-using System.Windows.Controls;
 using Wpf.Ui.Controls;
 using Wpf.Ui.Gallery.Models;
-using CheckBox = Wpf.Ui.Controls.CheckBox;
+using UiCheckBox = Wpf.Ui.Controls.CheckBox;
 
 namespace Wpf.Ui.Gallery.ViewModels.Pages.DesignGuidance;
 
@@ -103,7 +102,7 @@ public partial class IconsViewModel : ViewModel
     [RelayCommand]
     public void OnCheckboxChecked(object sender)
     {
-        if (sender is not CheckBox checkbox)
+        if (sender is not UiCheckBox checkbox)
         {
             return;
         }

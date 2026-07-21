@@ -6,9 +6,9 @@
 using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Windows.Input;
-using WpfPasswordBox = Wpf.Ui.Controls.PasswordBox;
+using UiPasswordBox = Wpf.Ui.Controls.PasswordBox;
 
-namespace Wpf.Ui.UnitTests.Controls.PasswordBox;
+namespace Wpf.Ui.UnitTests.Controls;
 
 public class PasswordBoxTests
 {
@@ -18,7 +18,7 @@ public class PasswordBoxTests
         RunOnStaThread(
             () =>
             {
-                var passwordBox = new WpfPasswordBox();
+                var passwordBox = new UiPasswordBox();
 
                 passwordBox.Text = "secret";
 
@@ -34,7 +34,7 @@ public class PasswordBoxTests
         RunOnStaThread(
             () =>
             {
-                var passwordBox = new WpfPasswordBox
+                var passwordBox = new UiPasswordBox
                 {
                     Password = "abcd",
                 };
@@ -55,7 +55,7 @@ public class PasswordBoxTests
         RunOnStaThread(
             () =>
             {
-                var passwordBox = new WpfPasswordBox
+                var passwordBox = new UiPasswordBox
                 {
                     Password = "old",
                 };
@@ -77,7 +77,7 @@ public class PasswordBoxTests
         RunOnStaThread(
             () =>
             {
-                var passwordBox = new WpfPasswordBox
+                var passwordBox = new UiPasswordBox
                 {
                     Password = "secret",
                 };
@@ -101,7 +101,7 @@ public class PasswordBoxTests
         RunOnStaThread(
             () =>
             {
-                var passwordBox = new WpfPasswordBox
+                var passwordBox = new UiPasswordBox
                 {
                     Password = "secret",
                 };
@@ -126,13 +126,13 @@ public class PasswordBoxTests
         RunOnStaThread(
             () =>
             {
-                var passwordBox = new WpfPasswordBox
+                var passwordBox = new UiPasswordBox
                 {
                     Password = "secret",
                     RevealButtonEnabled = false,
                 };
 
-                passwordBox.SetCurrentValue(WpfPasswordBox.IsPasswordRevealedProperty, true);
+                passwordBox.SetCurrentValue(UiPasswordBox.IsPasswordRevealedProperty, true);
 
                 Assert.False(passwordBox.IsPasswordRevealed);
                 Assert.Equal(Mask(passwordBox), passwordBox.Text);
@@ -146,7 +146,7 @@ public class PasswordBoxTests
         RunOnStaThread(
             () =>
             {
-                var passwordBox = new WpfPasswordBox
+                var passwordBox = new UiPasswordBox
                 {
                     Password = "secret",
                 };
@@ -171,7 +171,7 @@ public class PasswordBoxTests
         RunOnStaThread(
             () =>
             {
-                var passwordBox = new WpfPasswordBox
+                var passwordBox = new UiPasswordBox
                 {
                     Password = "secret",
                 };
@@ -190,7 +190,7 @@ public class PasswordBoxTests
         RunOnStaThread(
             () =>
             {
-                var passwordBox = new WpfPasswordBox
+                var passwordBox = new UiPasswordBox
                 {
                     Password = "secret",
                     ClearButtonEnabled = false,
@@ -210,7 +210,7 @@ public class PasswordBoxTests
         RunOnStaThread(
             () =>
             {
-                var passwordBox = new WpfPasswordBox
+                var passwordBox = new UiPasswordBox
                 {
                     Password = "secret",
                     IsReadOnly = true,
@@ -230,7 +230,7 @@ public class PasswordBoxTests
         RunOnStaThread(
             () =>
             {
-                var passwordBox = new WpfPasswordBox
+                var passwordBox = new UiPasswordBox
                 {
                     Password = "secret",
                     IsEnabled = false,
@@ -250,7 +250,7 @@ public class PasswordBoxTests
         RunOnStaThread(
             () =>
             {
-                var passwordBox = new WpfPasswordBox
+                var passwordBox = new UiPasswordBox
                 {
                     Password = "secret",
                 };
@@ -271,7 +271,7 @@ public class PasswordBoxTests
         RunOnStaThread(
             () =>
             {
-                var passwordBox = new WpfPasswordBox
+                var passwordBox = new UiPasswordBox
                 {
                     Password = "secret",
                 };
@@ -290,7 +290,7 @@ public class PasswordBoxTests
         RunOnStaThread(
             () =>
             {
-                var passwordBox = new WpfPasswordBox();
+                var passwordBox = new UiPasswordBox();
                 var eventCount = 0;
                 passwordBox.PasswordChanged += (_, _) => eventCount++;
 
@@ -302,12 +302,12 @@ public class PasswordBoxTests
         );
     }
 
-    private static void ExecuteTemplateCommand(WpfPasswordBox passwordBox, string parameter)
+    private static void ExecuteTemplateCommand(UiPasswordBox passwordBox, string parameter)
     {
         passwordBox.TemplateButtonCommand.Execute(parameter);
     }
 
-    private static string Mask(WpfPasswordBox passwordBox)
+    private static string Mask(UiPasswordBox passwordBox)
     {
         return new string(passwordBox.PasswordChar, passwordBox.Password.Length);
     }

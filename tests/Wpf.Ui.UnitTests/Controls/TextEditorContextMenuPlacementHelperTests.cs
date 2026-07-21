@@ -9,7 +9,7 @@ using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
-using WpfTextBox = Wpf.Ui.Controls.TextBox;
+using UiTextBox = Wpf.Ui.Controls.TextBox;
 
 namespace Wpf.Ui.UnitTests.Controls;
 
@@ -78,7 +78,7 @@ public class TextEditorContextMenuPlacementHelperTests
         ContextMenuEventArgs eventArgs,
         Func<Rect> getPositionRect)
     {
-        var helperType = typeof(WpfTextBox).Assembly.GetType(
+        var helperType = typeof(UiTextBox).Assembly.GetType(
             "Wpf.Ui.Controls.TextEditorContextMenuPlacementHelper"
         );
 

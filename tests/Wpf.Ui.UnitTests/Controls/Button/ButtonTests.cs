@@ -6,9 +6,9 @@
 using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Windows.Media;
-using WpfButton = Wpf.Ui.Controls.Button;
+using UiButton = Wpf.Ui.Controls.Button;
 
-namespace Wpf.Ui.UnitTests.Controls.ButtonControl;
+namespace Wpf.Ui.UnitTests.Controls;
 
 public class ButtonTests
 {
@@ -146,7 +146,7 @@ public class ButtonTests
         }
     }
 
-    private sealed class TestButton : WpfButton
+    private sealed class TestButton : UiButton
     {
         public void SetPressed(bool value)
         {

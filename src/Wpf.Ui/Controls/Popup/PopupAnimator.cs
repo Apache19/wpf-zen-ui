@@ -3,14 +3,13 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-using System.Collections.Generic;
 using System.Reflection;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media.Animation;
-using WinContextMenu = System.Windows.Controls.ContextMenu;
-using WinToolTip = System.Windows.Controls.ToolTip;
+using NativeContextMenu = System.Windows.Controls.ContextMenu;
+using NativeToolTip = System.Windows.Controls.ToolTip;
 
 // ReSharper disable once CheckNamespace
 namespace Wpf.Ui.Controls;
@@ -64,14 +63,14 @@ public static class PopupAnimator
 
     // ContextMenu owns a private root Popup. Cache the field lookup because menus may open repeatedly, but keep
     // the value optional so newer WPF builds can fall back to the normal "no private popup found" path.
-    private static readonly FieldInfo? ContextMenuParentPopupField = typeof(WinContextMenu).GetField(
+    private static readonly FieldInfo? ContextMenuParentPopupField = typeof(NativeContextMenu).GetField(
         "_parentPopup",
         BindingFlags.Instance | BindingFlags.NonPublic
     );
 
     // ToolTip follows the same private-root-popup pattern as ContextMenu, with WPF creating the Popup lazily when
     // IsOpen first changes to true.
-    private static readonly FieldInfo? ToolTipParentPopupField = typeof(WinToolTip).GetField(
+    private static readonly FieldInfo? ToolTipParentPopupField = typeof(NativeToolTip).GetField(
         "_parentPopup",
         BindingFlags.Instance | BindingFlags.NonPublic
     );
@@ -93,15 +92,15 @@ public static class PopupAnimator
     {
         OverridePopupRootOpacityMetadata();
         PrependIsOpenChangedCallback(Popup.IsOpenProperty, typeof(Popup));
-        PrependIsOpenChangedCallback(WinContextMenu.IsOpenProperty, typeof(WinContextMenu));
-        PrependIsOpenChangedCallback(WinToolTip.IsOpenProperty, typeof(WinToolTip));
+        PrependIsOpenChangedCallback(NativeContextMenu.IsOpenProperty, typeof(NativeContextMenu));
+        PrependIsOpenChangedCallback(NativeToolTip.IsOpenProperty, typeof(NativeToolTip));
     }
 
     /// <summary>
     /// Identifies the attached property that configures the custom Wpf.Ui popup opening animation.
     /// </summary>
     /// <remarks>
-    /// Set this property on a <see cref="Popup"/>, <see cref="WinContextMenu"/>, or <see cref="WinToolTip"/> and keep
+    /// Set this property on a <see cref="Popup"/>, <see cref="NativeContextMenu"/>, or <see cref="NativeToolTip"/> and keep
     /// <see cref="Popup.PopupAnimation"/> as
     /// <see cref="PopupAnimation.None"/> to enable the custom animation path. Clearing this property detaches the
     /// behavior and restores any animated values that were touched by the controller.
@@ -145,8 +144,8 @@ public static class PopupAnimator
     /// </param>
     /// <returns>AnimationSettings property value.</returns>
     [AttachedPropertyBrowsableForType(typeof(Popup))]
-    [AttachedPropertyBrowsableForType(typeof(WinContextMenu))]
-    [AttachedPropertyBrowsableForType(typeof(WinToolTip))]
+    [AttachedPropertyBrowsableForType(typeof(NativeContextMenu))]
+    [AttachedPropertyBrowsableForType(typeof(NativeToolTip))]
     public static PopupAnimationSettings? GetAnimationSettings(DependencyObject element)
     {
         return (PopupAnimationSettings?)element.GetValue(AnimationSettingsProperty);
@@ -172,8 +171,8 @@ public static class PopupAnimator
     /// </param>
     /// <returns><see langword="true"/> if the Wpf.Ui default popup opening animation is enabled.</returns>
     [AttachedPropertyBrowsableForType(typeof(Popup))]
-    [AttachedPropertyBrowsableForType(typeof(WinContextMenu))]
-    [AttachedPropertyBrowsableForType(typeof(WinToolTip))]
+    [AttachedPropertyBrowsableForType(typeof(NativeContextMenu))]
+    [AttachedPropertyBrowsableForType(typeof(NativeToolTip))]
     public static bool GetIsEnabled(DependencyObject element)
     {
         return (bool)element.GetValue(IsEnabledProperty);
@@ -192,8 +191,8 @@ public static class PopupAnimator
     }
 
     [AttachedPropertyBrowsableForType(typeof(Popup))]
-    [AttachedPropertyBrowsableForType(typeof(WinContextMenu))]
-    [AttachedPropertyBrowsableForType(typeof(WinToolTip))]
+    [AttachedPropertyBrowsableForType(typeof(NativeContextMenu))]
+    [AttachedPropertyBrowsableForType(typeof(NativeToolTip))]
     private static PopupAnimationController? GetAnimationController(DependencyObject element)
     {
         return (PopupAnimationController?)element.GetValue(AnimationControllerProperty);
@@ -583,10 +582,10 @@ public static class PopupAnimator
     {
         return owner switch
         {
-            Popup popup                => popup,
-            WinContextMenu contextMenu => TryGetPrivateRootPopup(contextMenu),
-            WinToolTip toolTip         => TryGetPrivateRootPopup(toolTip),
-            _                          => null,
+            Popup popup                   => popup,
+            NativeContextMenu contextMenu => TryGetPrivateRootPopup(contextMenu),
+            NativeToolTip toolTip         => TryGetPrivateRootPopup(toolTip),
+            _                             => null,
         };
     }
 
@@ -594,9 +593,9 @@ public static class PopupAnimator
     {
         return owner switch
         {
-            WinContextMenu contextMenu => ContextMenuParentPopupField?.GetValue(contextMenu) as Popup,
-            WinToolTip toolTip         => ToolTipParentPopupField?.GetValue(toolTip) as Popup,
-            _                          => null,
+            NativeContextMenu contextMenu => ContextMenuParentPopupField?.GetValue(contextMenu) as Popup,
+            NativeToolTip toolTip         => ToolTipParentPopupField?.GetValue(toolTip) as Popup,
+            _                             => null,
         };
     }
 
@@ -641,10 +640,10 @@ public static class PopupAnimator
     {
         return owner switch
         {
-            Popup popup                => popup.PlacementTarget,
-            WinContextMenu contextMenu => contextMenu.PlacementTarget,
-            WinToolTip toolTip         => toolTip.PlacementTarget,
-            _                          => null,
+            Popup popup                   => popup.PlacementTarget,
+            NativeContextMenu contextMenu => contextMenu.PlacementTarget,
+            NativeToolTip toolTip         => toolTip.PlacementTarget,
+            _                             => null,
         };
     }
 
@@ -652,10 +651,10 @@ public static class PopupAnimator
     {
         return owner switch
         {
-            Popup popup                => popup.Placement,
-            WinContextMenu contextMenu => contextMenu.Placement,
-            WinToolTip toolTip         => toolTip.Placement,
-            _                          => PlacementMode.Bottom,
+            Popup popup                   => popup.Placement,
+            NativeContextMenu contextMenu => contextMenu.Placement,
+            NativeToolTip toolTip         => toolTip.Placement,
+            _                             => PlacementMode.Bottom,
         };
     }
 
@@ -663,10 +662,10 @@ public static class PopupAnimator
     {
         return owner switch
         {
-            Popup popup                => popup.PlacementRectangle,
-            WinContextMenu contextMenu => contextMenu.PlacementRectangle,
-            WinToolTip toolTip         => toolTip.PlacementRectangle,
-            _                          => Rect.Empty,
+            Popup popup                   => popup.PlacementRectangle,
+            NativeContextMenu contextMenu => contextMenu.PlacementRectangle,
+            NativeToolTip toolTip         => toolTip.PlacementRectangle,
+            _                             => Rect.Empty,
         };
     }
 
@@ -674,10 +673,10 @@ public static class PopupAnimator
     {
         return owner switch
         {
-            Popup popup                => popup.HorizontalOffset,
-            WinContextMenu contextMenu => contextMenu.HorizontalOffset,
-            WinToolTip toolTip         => toolTip.HorizontalOffset,
-            _                          => 0D,
+            Popup popup                   => popup.HorizontalOffset,
+            NativeContextMenu contextMenu => contextMenu.HorizontalOffset,
+            NativeToolTip toolTip         => toolTip.HorizontalOffset,
+            _                             => 0D,
         };
     }
 
@@ -685,10 +684,10 @@ public static class PopupAnimator
     {
         return owner switch
         {
-            Popup popup                => popup.VerticalOffset,
-            WinContextMenu contextMenu => contextMenu.VerticalOffset,
-            WinToolTip toolTip         => toolTip.VerticalOffset,
-            _                          => 0D,
+            Popup popup                   => popup.VerticalOffset,
+            NativeContextMenu contextMenu => contextMenu.VerticalOffset,
+            NativeToolTip toolTip         => toolTip.VerticalOffset,
+            _                             => 0D,
         };
     }
 
@@ -802,7 +801,7 @@ public static class PopupAnimator
         DependencyObject d,
         DependencyPropertyChangedEventArgs e)
     {
-        if (d is not Popup and not WinContextMenu and not WinToolTip)
+        if (d is not Popup and not NativeContextMenu and not NativeToolTip)
         {
             return;
         }
@@ -1503,8 +1502,8 @@ public static class PopupAnimator
             return _owner switch
             {
                 Popup { Child: Visual child } => (PresentationSource.FromVisual(child) as HwndSource)?.RootVisual,
-                WinContextMenu contextMenu    => (PresentationSource.FromVisual(contextMenu) as HwndSource)?.RootVisual,
-                WinToolTip toolTip            => (PresentationSource.FromVisual(toolTip) as HwndSource)?.RootVisual,
+                NativeContextMenu contextMenu => (PresentationSource.FromVisual(contextMenu) as HwndSource)?.RootVisual,
+                NativeToolTip toolTip         => (PresentationSource.FromVisual(toolTip) as HwndSource)?.RootVisual,
                 _                             => null,
             };
         }
@@ -1512,10 +1511,10 @@ public static class PopupAnimator
         private bool IsOwnerOpen =>
             _owner switch
             {
-                Popup popup                => popup.IsOpen,
-                WinContextMenu contextMenu => contextMenu.IsOpen,
-                WinToolTip toolTip         => toolTip.IsOpen,
-                _                          => false,
+                Popup popup                   => popup.IsOpen,
+                NativeContextMenu contextMenu => contextMenu.IsOpen,
+                NativeToolTip toolTip         => toolTip.IsOpen,
+                _                             => false,
             };
 
         private void ApplyRootPopupAnimationMode()
@@ -1544,13 +1543,13 @@ public static class PopupAnimator
             return _owner switch
             {
                 Popup popup                => popup,
-                WinContextMenu contextMenu => TryGetPrivateRootPopup(contextMenu),
-                WinToolTip toolTip         => TryGetPrivateRootPopup(toolTip),
+                NativeContextMenu contextMenu => TryGetPrivateRootPopup(contextMenu),
+                NativeToolTip toolTip         => TryGetPrivateRootPopup(toolTip),
                 _                          => null,
             };
         }
 
-        private bool IsPrivateRootPopupOwner => _owner is WinContextMenu or WinToolTip;
+        private bool IsPrivateRootPopupOwner => _owner is NativeContextMenu or NativeToolTip;
 
         private static bool TryGetAnimationLayer(UIElement popupRoot, out UIElement animationLayer)
         {

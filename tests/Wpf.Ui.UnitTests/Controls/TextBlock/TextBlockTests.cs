@@ -14,9 +14,9 @@ using System.Windows.Threading;
 using Wpf.Ui.Controls;
 using Wpf.Ui.Extensions;
 using Wpf.Ui.Theming;
-using WpfTextBlock = Wpf.Ui.Controls.TextBlock;
+using UiTextBlock = Wpf.Ui.Controls.TextBlock;
 
-namespace Wpf.Ui.UnitTests.Controls.TextBlock;
+namespace Wpf.Ui.UnitTests.Controls;
 
 public class TextBlockTests
 {
@@ -29,10 +29,10 @@ public class TextBlockTests
                 var inheritedForeground = new SolidColorBrush(Colors.Red);
                 var defaultForeground = new SolidColorBrush(Colors.Blue);
                 var parent = new Border();
-                var textBlock = new WpfTextBlock();
+                var textBlock = new UiTextBlock();
 
                 parent.SetValue(TextElement.ForegroundProperty, inheritedForeground);
-                WpfTextBlock.SetDefaultForeground(textBlock, defaultForeground);
+                UiTextBlock.SetDefaultForeground(textBlock, defaultForeground);
                 parent.Child = textBlock;
 
                 Assert.Same(inheritedForeground, textBlock.Foreground);
@@ -48,10 +48,10 @@ public class TextBlockTests
             {
                 var defaultForeground = new SolidColorBrush(Colors.Blue);
                 var parent = new Border();
-                var textBlock = new WpfTextBlock();
+                var textBlock = new UiTextBlock();
 
                 parent.SetValue(TextElement.ForegroundProperty, Brushes.Black);
-                WpfTextBlock.SetDefaultForeground(textBlock, defaultForeground);
+                UiTextBlock.SetDefaultForeground(textBlock, defaultForeground);
                 parent.Child = textBlock;
 
                 Assert.Same(Brushes.Black, textBlock.Foreground);
@@ -127,7 +127,7 @@ public class TextBlockTests
             () =>
             {
                 var parent = new Border();
-                var textBlock = new WpfTextBlock
+                var textBlock = new UiTextBlock
                 {
                     FontSize = 32d,
                     FontWeight = FontWeights.Black,
@@ -138,7 +138,7 @@ public class TextBlockTests
                     FontWeight = FontWeights.SemiBold,
                 };
 
-                WpfTextBlock.SetFontTypography(parent, FontTypography.Body);
+                UiTextBlock.SetFontTypography(parent, FontTypography.Body);
                 parent.Child = textBlock;
 
                 Assert.Equal(20d, textBlock.FontSize);
@@ -155,10 +155,10 @@ public class TextBlockTests
             {
                 var appearanceForeground = new SolidColorBrush(Colors.Blue);
                 var parent = new Border();
-                var textBlock = new WpfTextBlock { Foreground = Brushes.Red };
+                var textBlock = new UiTextBlock { Foreground = Brushes.Red };
                 parent.Resources[TextColor.Primary.ToResourceKey()] = appearanceForeground;
 
-                WpfTextBlock.SetAppearance(parent, TextColor.Primary);
+                UiTextBlock.SetAppearance(parent, TextColor.Primary);
                 parent.Child = textBlock;
 
                 Assert.Same(appearanceForeground, textBlock.Foreground);
@@ -173,7 +173,7 @@ public class TextBlockTests
             () =>
             {
                 var parent = new Border();
-                var textBlock = new WpfTextBlock
+                var textBlock = new UiTextBlock
                 {
                     FontSize = 32d,
                     FontWeight = FontWeights.Black,
@@ -184,8 +184,8 @@ public class TextBlockTests
                     FontWeight = FontWeights.SemiBold,
                 };
 
-                WpfTextBlock.SetFontTypography(parent, FontTypography.Body);
-                WpfTextBlock.SetFontTypography(textBlock, null);
+                UiTextBlock.SetFontTypography(parent, FontTypography.Body);
+                UiTextBlock.SetFontTypography(textBlock, null);
                 parent.Child = textBlock;
 
                 Assert.Equal(32d, textBlock.FontSize);
@@ -201,11 +201,11 @@ public class TextBlockTests
             () =>
             {
                 var parent = new Border();
-                var textBlock = new WpfTextBlock { Foreground = Brushes.Red };
+                var textBlock = new UiTextBlock { Foreground = Brushes.Red };
                 parent.Resources[TextColor.Primary.ToResourceKey()] = Brushes.Blue;
 
-                WpfTextBlock.SetAppearance(parent, TextColor.Primary);
-                WpfTextBlock.SetAppearance(textBlock, null);
+                UiTextBlock.SetAppearance(parent, TextColor.Primary);
+                UiTextBlock.SetAppearance(textBlock, null);
                 parent.Child = textBlock;
 
                 Assert.Same(Brushes.Red, textBlock.Foreground);
@@ -220,7 +220,7 @@ public class TextBlockTests
             () =>
             {
                 var appearanceForeground = new SolidColorBrush(Colors.Blue);
-                var textBlock = new WpfTextBlock();
+                var textBlock = new UiTextBlock();
                 textBlock.Resources[TextColor.Primary.ToResourceKey()] = appearanceForeground;
                 textBlock.Appearance = TextColor.Primary;
                 var window = ShowInTestWindow(textBlock);
@@ -247,9 +247,9 @@ public class TextBlockTests
         );
     }
 
-    private static WpfTextBlock CreateTextBlockWithTypographyPreset()
+    private static UiTextBlock CreateTextBlockWithTypographyPreset()
     {
-        var textBlock = new WpfTextBlock();
+        var textBlock = new UiTextBlock();
         textBlock.Resources[FontTypography.Body.ToResourceKey()] = new FontTypographyPreset
         {
             FontSize = 20d,
@@ -259,7 +259,7 @@ public class TextBlockTests
         return textBlock;
     }
 
-    private static Window ShowInTestWindow(WpfTextBlock textBlock)
+    private static Window ShowInTestWindow(UiTextBlock textBlock)
     {
         var window = new Window
         {

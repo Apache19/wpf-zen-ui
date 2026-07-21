@@ -14,13 +14,15 @@ using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
-using WpfAutoSuggestBox = Wpf.Ui.Controls.AutoSuggestBox;
-using WpfListView = Wpf.Ui.Controls.ListView;
-using WpfTextBox = Wpf.Ui.Controls.TextBox;
-using WpfTextChangeReason = Wpf.Ui.Controls.AutoSuggestionBoxTextChangeReason;
+using Wpf.Ui.Controls;
+using NativeButton = System.Windows.Controls.Button;
+using NativeListViewItem = System.Windows.Controls.ListViewItem;
+using UiListView = Wpf.Ui.Controls.ListView;
+using UiTextBox = Wpf.Ui.Controls.TextBox;
+using UiTextChangeReason = Wpf.Ui.Controls.AutoSuggestionBoxTextChangeReason;
 
 // ReSharper disable once CheckNamespace
-namespace Wpf.Ui.UnitTests.Controls.AutoSuggestBoxControl;
+namespace Wpf.Ui.UnitTests.Controls;
 
 public class AutoSuggestBoxTests
 {
@@ -142,7 +144,7 @@ public class AutoSuggestBoxTests
             try
             {
                 var chosenItems = new List<object>();
-                var changeReasons = new List<WpfTextChangeReason>();
+                var changeReasons = new List<UiTextChangeReason>();
                 autoSuggestBox.SuggestionChosen += (_, args) => chosenItems.Add(args.SelectedItem);
                 autoSuggestBox.TextChanged += (_, args) => changeReasons.Add(args.Reason);
 
@@ -150,7 +152,7 @@ public class AutoSuggestBoxTests
                 textBox.Text = "a";
                 Assert.Equal(new[] { "Alpha", "Beta" }, autoSuggestBox.Items.Cast<string>());
 
-                var suggestionsList = Assert.IsAssignableFrom<WpfListView>(
+                var suggestionsList = Assert.IsAssignableFrom<UiListView>(
                     autoSuggestBox.Template.FindName("PART_SuggestionsList", autoSuggestBox)
                 );
                 suggestionsList.SelectedItem = "Alpha";
@@ -159,7 +161,7 @@ public class AutoSuggestBoxTests
                 Assert.Equal(new[] { "Alpha", "Beta" }, autoSuggestBox.Items.Cast<string>());
                 Assert.True(autoSuggestBox.IsSuggestionListOpen);
                 Assert.Empty(chosenItems);
-                Assert.Equal(WpfTextChangeReason.SuggestionChosen, changeReasons[^1]);
+                Assert.Equal(UiTextChangeReason.SuggestionChosen, changeReasons[^1]);
             }
             finally
             {
@@ -187,7 +189,7 @@ public class AutoSuggestBoxTests
 
                 Assert.Equal(new[] { alpha }, autoSuggestBox.Items.Cast<Suggestion>());
 
-                var suggestionsList = Assert.IsAssignableFrom<WpfListView>(
+                var suggestionsList = Assert.IsAssignableFrom<UiListView>(
                     autoSuggestBox.Template.FindName("PART_SuggestionsList", autoSuggestBox)
                 );
                 suggestionsList.SelectedItem = alpha;
@@ -216,7 +218,7 @@ public class AutoSuggestBoxTests
                 Assert.True(textBox.Focus());
                 textBox.Text = "a";
 
-                var suggestionsList = Assert.IsAssignableFrom<WpfListView>(
+                var suggestionsList = Assert.IsAssignableFrom<UiListView>(
                     autoSuggestBox.Template.FindName("PART_SuggestionsList", autoSuggestBox)
                 );
                 Assert.True(autoSuggestBox.IsSuggestionListOpen);
@@ -253,7 +255,7 @@ public class AutoSuggestBoxTests
                 Assert.True(textBox.Focus());
                 textBox.Text = "a";
 
-                var suggestionsList = Assert.IsAssignableFrom<WpfListView>(
+                var suggestionsList = Assert.IsAssignableFrom<UiListView>(
                     autoSuggestBox.Template.FindName("PART_SuggestionsList", autoSuggestBox)
                 );
                 suggestionsList.SelectedItem = "Beta";
@@ -295,10 +297,10 @@ public class AutoSuggestBoxTests
                 textBox.Text = "a";
                 window.UpdateLayout();
 
-                var suggestionsList = Assert.IsAssignableFrom<WpfListView>(
+                var suggestionsList = Assert.IsAssignableFrom<UiListView>(
                     autoSuggestBox.Template.FindName("PART_SuggestionsList", autoSuggestBox)
                 );
-                var itemContainer = Assert.IsAssignableFrom<ListViewItem>(
+                var itemContainer = Assert.IsAssignableFrom<NativeListViewItem>(
                     suggestionsList.ItemContainerGenerator.ContainerFromItem("Beta")
                 );
                 Assert.True(itemContainer.Focus());
@@ -330,8 +332,8 @@ public class AutoSuggestBoxTests
     private static (
         Window Window,
         TestAutoSuggestBox AutoSuggestBox,
-        WpfTextBox TextBox,
-        Button OutsideButton
+        UiTextBox TextBox,
+        NativeButton OutsideButton
     ) CreateLoadedControl(IList? originalItemsSource = null, string displayMemberPath = "")
     {
         var autoSuggestBox = new TestAutoSuggestBox
@@ -340,7 +342,7 @@ public class AutoSuggestBoxTests
             OriginalItemsSource = originalItemsSource ?? new[] { "Alpha", "Beta" },
             Template            = CreateControlTemplate(),
         };
-        var outsideButton = new Button { Content = "Outside" };
+        var outsideButton = new NativeButton { Content = "Outside" };
         var root = new StackPanel();
         root.Children.Add(autoSuggestBox);
         root.Children.Add(outsideButton);
@@ -357,7 +359,7 @@ public class AutoSuggestBoxTests
         FlushDispatcher(window);
         Assert.True(autoSuggestBox.IsLoaded);
 
-        var textBox = Assert.IsAssignableFrom<WpfTextBox>(
+        var textBox = Assert.IsAssignableFrom<UiTextBox>(
             autoSuggestBox.Template.FindName("PART_TextBox", autoSuggestBox)
         );
 
@@ -366,12 +368,12 @@ public class AutoSuggestBoxTests
 
     private static (
         Window Window,
-        WpfAutoSuggestBox AutoSuggestBox,
-        WpfTextBox TextBox,
+        AutoSuggestBox AutoSuggestBox,
+        UiTextBox TextBox,
         Popup Popup
     ) CreateLoadedDefaultControl()
     {
-        var autoSuggestBox = new WpfAutoSuggestBox { OriginalItemsSource = new[] { "Alpha", "Beta" } };
+        var autoSuggestBox = new AutoSuggestBox { OriginalItemsSource = new[] { "Alpha", "Beta" } };
         var root = new Grid();
         root.Resources.MergedDictionaries.Add(
             new ResourceDictionary
@@ -395,7 +397,7 @@ public class AutoSuggestBoxTests
         window.Show();
         FlushDispatcher(window);
 
-        var textBox = Assert.IsAssignableFrom<WpfTextBox>(
+        var textBox = Assert.IsAssignableFrom<UiTextBox>(
             autoSuggestBox.Template.FindName("PART_TextBox", autoSuggestBox)
         );
         var popup = Assert.IsType<Popup>(FindVisualDescendant<Popup>(autoSuggestBox));
@@ -426,10 +428,10 @@ public class AutoSuggestBoxTests
     private static ControlTemplate CreateControlTemplate()
     {
         var root = new FrameworkElementFactory(typeof(Grid));
-        var textBox = new FrameworkElementFactory(typeof(WpfTextBox), "PART_TextBox");
+        var textBox = new FrameworkElementFactory(typeof(UiTextBox), "PART_TextBox");
         textBox.SetBinding(
             System.Windows.Controls.TextBox.TextProperty,
-            new Binding(nameof(WpfAutoSuggestBox.Text))
+            new Binding(nameof(AutoSuggestBox.Text))
             {
                 Mode = BindingMode.TwoWay,
                 RelativeSource = RelativeSource.TemplatedParent,
@@ -438,18 +440,18 @@ public class AutoSuggestBoxTests
         );
         root.AppendChild(textBox);
 
-        var suggestionsList = new FrameworkElementFactory(typeof(WpfListView), "PART_SuggestionsList");
+        var suggestionsList = new FrameworkElementFactory(typeof(UiListView), "PART_SuggestionsList");
         suggestionsList.SetValue(Grid.RowProperty, 1);
         suggestionsList.SetBinding(
             ItemsControl.ItemsSourceProperty,
-            new Binding(nameof(WpfAutoSuggestBox.ItemsSource))
+            new Binding(nameof(AutoSuggestBox.ItemsSource))
             {
                 RelativeSource = RelativeSource.TemplatedParent,
             }
         );
         root.AppendChild(suggestionsList);
 
-        return new ControlTemplate(typeof(WpfAutoSuggestBox)) { VisualTree = root };
+        return new ControlTemplate(typeof(AutoSuggestBox)) { VisualTree = root };
     }
 
     private static void FlushDispatcher(Window window)
@@ -471,7 +473,7 @@ public class AutoSuggestBoxTests
         };
     }
 
-    private sealed class TestAutoSuggestBox : WpfAutoSuggestBox
+    private sealed class TestAutoSuggestBox : AutoSuggestBox
     {
         public void ProcessTextBoxPreviewKeyDown(KeyEventArgs e)
         {

@@ -8,10 +8,10 @@ using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using WpfUiBorder = Wpf.Ui.Controls.UiBorder;
-using WpfUiBorderPlacement = Wpf.Ui.Controls.BorderPlacement;
+using UiBorder = Wpf.Ui.Controls.UiBorder;
+using UiBorderPlacement = Wpf.Ui.Controls.BorderPlacement;
 
-namespace Wpf.Ui.UnitTests.Controls.UiBorder;
+namespace Wpf.Ui.UnitTests.Controls;
 
 public class UiBorderTests
 {
@@ -21,9 +21,9 @@ public class UiBorderTests
         RunOnStaThread(
             () =>
             {
-                var border = new WpfUiBorder();
+                var border = new UiBorder();
 
-                Assert.Equal(WpfUiBorderPlacement.Native, border.BorderPlacement);
+                Assert.Equal(UiBorderPlacement.Native, border.BorderPlacement);
             }
         );
     }
@@ -34,9 +34,9 @@ public class UiBorderTests
         RunOnStaThread(
             () =>
             {
-                var border = new WpfUiBorder
+                var border = new UiBorder
                 {
-                    BorderPlacement = WpfUiBorderPlacement.Inside,
+                    BorderPlacement = UiBorderPlacement.Inside,
                     BorderThickness = new Thickness(10, 20, 30, 40),
                     Padding = new Thickness(3, 4, 5, 6),
                     Child = new FixedSizeElement(new Size(100, 40)),
@@ -56,9 +56,9 @@ public class UiBorderTests
             () =>
             {
                 var child = new FixedSizeElement(new Size(100, 40));
-                var border = new WpfUiBorder
+                var border = new UiBorder
                 {
-                    BorderPlacement = WpfUiBorderPlacement.Inside,
+                    BorderPlacement = UiBorderPlacement.Inside,
                     BorderThickness = new Thickness(10, 20, 30, 40),
                     Padding = new Thickness(3, 4, 5, 6),
                     Child = child,
@@ -78,9 +78,9 @@ public class UiBorderTests
         RunOnStaThread(
             () =>
             {
-                var border = new WpfUiBorder
+                var border = new UiBorder
                 {
-                    BorderPlacement = WpfUiBorderPlacement.Outside,
+                    BorderPlacement = UiBorderPlacement.Outside,
                     BorderThickness = new Thickness(10, 20, 30, 40),
                     Padding = new Thickness(3, 4, 5, 6),
                     Child = new FixedSizeElement(new Size(100, 40)),
@@ -100,9 +100,9 @@ public class UiBorderTests
             () =>
             {
                 var child = new FixedSizeElement(new Size(100, 40));
-                var border = new WpfUiBorder
+                var border = new UiBorder
                 {
-                    BorderPlacement = WpfUiBorderPlacement.Outside,
+                    BorderPlacement = UiBorderPlacement.Outside,
                     BorderThickness = new Thickness(10, 20, 30, 40),
                     Padding = new Thickness(3, 4, 5, 6),
                     Child = child,
@@ -122,9 +122,9 @@ public class UiBorderTests
         RunOnStaThread(
             () =>
             {
-                var border = new WpfUiBorder
+                var border = new UiBorder
                 {
-                    BorderPlacement = WpfUiBorderPlacement.Native,
+                    BorderPlacement = UiBorderPlacement.Native,
                     BorderThickness = new Thickness(10, 20, 30, 40),
                     Padding = new Thickness(3, 4, 5, 6),
                     Child = new FixedSizeElement(new Size(100, 40)),
@@ -144,9 +144,9 @@ public class UiBorderTests
             () =>
             {
                 var child = new FixedSizeElement(new Size(100, 40));
-                var border = new WpfUiBorder
+                var border = new UiBorder
                 {
-                    BorderPlacement = WpfUiBorderPlacement.Native,
+                    BorderPlacement = UiBorderPlacement.Native,
                     BorderThickness = new Thickness(10, 20, 30, 40),
                     Padding = new Thickness(3, 4, 5, 6),
                     Child = child,
@@ -161,16 +161,16 @@ public class UiBorderTests
     }
 
     [Theory]
-    [InlineData(WpfUiBorderPlacement.Inside)]
-    [InlineData(WpfUiBorderPlacement.Outside)]
+    [InlineData(UiBorderPlacement.Inside)]
+    [InlineData(UiBorderPlacement.Outside)]
     public void BorderThicknessChange_WhenPlacementIsRenderOnly_DoesNotInvalidateMeasure(
-        WpfUiBorderPlacement borderPlacement
+        UiBorderPlacement borderPlacement
     )
     {
         RunOnStaThread(
             () =>
             {
-                var border = new WpfUiBorder
+                var border = new UiBorder
                 {
                     BorderPlacement = borderPlacement,
                     BorderThickness = new Thickness(1),
@@ -193,9 +193,9 @@ public class UiBorderTests
         RunOnStaThread(
             () =>
             {
-                var border = new WpfUiBorder
+                var border = new UiBorder
                 {
-                    BorderPlacement = WpfUiBorderPlacement.Native,
+                    BorderPlacement = UiBorderPlacement.Native,
                     BorderThickness = new Thickness(1),
                 };
 
@@ -216,9 +216,9 @@ public class UiBorderTests
         RunOnStaThread(
             () =>
             {
-                var border = new WpfUiBorder
+                var border = new UiBorder
                 {
-                    BorderPlacement = WpfUiBorderPlacement.Inside,
+                    BorderPlacement = UiBorderPlacement.Inside,
                     BorderThickness = new Thickness(10),
                     Background = Brushes.Red,
                 };
@@ -236,9 +236,9 @@ public class UiBorderTests
         RunOnStaThread(
             () =>
             {
-                var border = new WpfUiBorder
+                var border = new UiBorder
                 {
-                    BorderPlacement = WpfUiBorderPlacement.Outside,
+                    BorderPlacement = UiBorderPlacement.Outside,
                     BorderThickness = new Thickness(10),
                     Background = Brushes.Red,
                 };
@@ -258,9 +258,9 @@ public class UiBorderTests
             {
                 var borderBrush = new SolidColorBrush(Color.FromArgb(128, 0, 0, 255));
                 var backgroundBrush = new SolidColorBrush(Color.FromArgb(128, 255, 0, 0));
-                var border = new WpfUiBorder
+                var border = new UiBorder
                 {
-                    BorderPlacement = WpfUiBorderPlacement.Outside,
+                    BorderPlacement = UiBorderPlacement.Outside,
                     BorderThickness = new Thickness(10),
                     BorderBrush = borderBrush,
                     Background = backgroundBrush,
@@ -279,9 +279,9 @@ public class UiBorderTests
         RunOnStaThread(
             () =>
             {
-                var border = new WpfUiBorder
+                var border = new UiBorder
                 {
-                    BorderPlacement = WpfUiBorderPlacement.Inside,
+                    BorderPlacement = UiBorderPlacement.Inside,
                     BorderThickness = new Thickness(10),
                     BorderBrush = Brushes.Blue,
                     Background = Brushes.Red,
@@ -302,9 +302,9 @@ public class UiBorderTests
         RunOnStaThread(
             () =>
             {
-                var border = new WpfUiBorder
+                var border = new UiBorder
                 {
-                    BorderPlacement = WpfUiBorderPlacement.Inside,
+                    BorderPlacement = UiBorderPlacement.Inside,
                     Background = Brushes.Red,
                     CornerRadius = new CornerRadius(0, 16, 0, 0),
                 };
@@ -324,9 +324,9 @@ public class UiBorderTests
         RunOnStaThread(
             () =>
             {
-                var border = new WpfUiBorder
+                var border = new UiBorder
                 {
-                    BorderPlacement = WpfUiBorderPlacement.Inside,
+                    BorderPlacement = UiBorderPlacement.Inside,
                     BorderThickness = new Thickness(2),
                     BorderBrush = Brushes.Blue,
                     Background = Brushes.Red,
@@ -344,9 +344,9 @@ public class UiBorderTests
         );
     }
 
-    private static StreamGeometry GetCachedBackgroundGeometry(WpfUiBorder border)
+    private static StreamGeometry GetCachedBackgroundGeometry(UiBorder border)
     {
-        FieldInfo? field = typeof(WpfUiBorder).GetField(
+        FieldInfo? field = typeof(UiBorder).GetField(
             "_backgroundGeometryCache",
             BindingFlags.Instance | BindingFlags.NonPublic
         );

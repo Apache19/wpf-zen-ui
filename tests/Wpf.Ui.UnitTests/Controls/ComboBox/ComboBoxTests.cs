@@ -10,10 +10,10 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Media;
-using WpfComboBox = Wpf.Ui.Controls.ComboBox;
+using UiComboBox = Wpf.Ui.Controls.ComboBox;
 
 // ReSharper disable once CheckNamespace
-namespace Wpf.Ui.UnitTests.Controls.ComboBoxControl;
+namespace Wpf.Ui.UnitTests.Controls;
 
 public class ComboBoxTests
 {
@@ -26,7 +26,7 @@ public class ComboBoxTests
                 var background = new SolidColorBrush(Colors.Red);
                 var borderBrush = new SolidColorBrush(Colors.Green);
                 var foreground = new SolidColorBrush(Colors.Blue);
-                var comboBox = new WpfComboBox
+                var comboBox = new UiComboBox
                 {
                     Background = background,
                     BorderBrush = borderBrush,
@@ -52,7 +52,7 @@ public class ComboBoxTests
                 var disabledBackground = new SolidColorBrush(Colors.Gray);
                 var disabledBorderBrush = new SolidColorBrush(Colors.DarkGray);
                 var disabledForeground = new SolidColorBrush(Colors.LightGray);
-                var comboBox = new WpfComboBox
+                var comboBox = new UiComboBox
                 {
                     Background = background,
                     BorderBrush = borderBrush,
@@ -89,7 +89,7 @@ public class ComboBoxTests
                 var borderBrush = new SolidColorBrush(Colors.Green);
                 var foreground = new SolidColorBrush(Colors.Blue);
                 var cornerRadius = new CornerRadius(2, 4, 6, 8);
-                var comboBox = new WpfComboBox
+                var comboBox = new UiComboBox
                 {
                     Background = background,
                     BorderBrush = borderBrush,
