@@ -16,8 +16,8 @@ using System.Windows.Media;
 using System.Windows.Threading;
 using Wpf.Ui.Controls;
 using NativeButton = System.Windows.Controls.Button;
-using NativeListViewItem = System.Windows.Controls.ListViewItem;
-using UiListView = Wpf.Ui.Controls.ListView;
+using NativeListBox = System.Windows.Controls.ListBox;
+using NativeListBoxItem = System.Windows.Controls.ListBoxItem;
 using UiTextBox = Wpf.Ui.Controls.TextBox;
 using UiTextChangeReason = Wpf.Ui.Controls.AutoSuggestionBoxTextChangeReason;
 
@@ -152,7 +152,7 @@ public class AutoSuggestBoxTests
                 textBox.Text = "a";
                 Assert.Equal(new[] { "Alpha", "Beta" }, autoSuggestBox.Items.Cast<string>());
 
-                var suggestionsList = Assert.IsAssignableFrom<UiListView>(
+                var suggestionsList = Assert.IsAssignableFrom<NativeListBox>(
                     autoSuggestBox.Template.FindName("PART_SuggestionsList", autoSuggestBox)
                 );
                 suggestionsList.SelectedItem = "Alpha";
@@ -189,7 +189,7 @@ public class AutoSuggestBoxTests
 
                 Assert.Equal(new[] { alpha }, autoSuggestBox.Items.Cast<Suggestion>());
 
-                var suggestionsList = Assert.IsAssignableFrom<UiListView>(
+                var suggestionsList = Assert.IsAssignableFrom<NativeListBox>(
                     autoSuggestBox.Template.FindName("PART_SuggestionsList", autoSuggestBox)
                 );
                 suggestionsList.SelectedItem = alpha;
@@ -218,7 +218,7 @@ public class AutoSuggestBoxTests
                 Assert.True(textBox.Focus());
                 textBox.Text = "a";
 
-                var suggestionsList = Assert.IsAssignableFrom<UiListView>(
+                var suggestionsList = Assert.IsAssignableFrom<NativeListBox>(
                     autoSuggestBox.Template.FindName("PART_SuggestionsList", autoSuggestBox)
                 );
                 Assert.True(autoSuggestBox.IsSuggestionListOpen);
@@ -255,7 +255,7 @@ public class AutoSuggestBoxTests
                 Assert.True(textBox.Focus());
                 textBox.Text = "a";
 
-                var suggestionsList = Assert.IsAssignableFrom<UiListView>(
+                var suggestionsList = Assert.IsAssignableFrom<NativeListBox>(
                     autoSuggestBox.Template.FindName("PART_SuggestionsList", autoSuggestBox)
                 );
                 suggestionsList.SelectedItem = "Beta";
@@ -297,10 +297,10 @@ public class AutoSuggestBoxTests
                 textBox.Text = "a";
                 window.UpdateLayout();
 
-                var suggestionsList = Assert.IsAssignableFrom<UiListView>(
+                var suggestionsList = Assert.IsAssignableFrom<NativeListBox>(
                     autoSuggestBox.Template.FindName("PART_SuggestionsList", autoSuggestBox)
                 );
-                var itemContainer = Assert.IsAssignableFrom<NativeListViewItem>(
+                var itemContainer = Assert.IsAssignableFrom<NativeListBoxItem>(
                     suggestionsList.ItemContainerGenerator.ContainerFromItem("Beta")
                 );
                 Assert.True(itemContainer.Focus());
@@ -440,7 +440,7 @@ public class AutoSuggestBoxTests
         );
         root.AppendChild(textBox);
 
-        var suggestionsList = new FrameworkElementFactory(typeof(UiListView), "PART_SuggestionsList");
+        var suggestionsList = new FrameworkElementFactory(typeof(NativeListBox), "PART_SuggestionsList");
         suggestionsList.SetValue(Grid.RowProperty, 1);
         suggestionsList.SetBinding(
             ItemsControl.ItemsSourceProperty,

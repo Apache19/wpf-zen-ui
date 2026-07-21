@@ -12,8 +12,8 @@ using System.Xml;
 using Windows.Win32;
 using Windows.Win32.Foundation;
 using Wpf.Ui.Input;
-using NativeListView = System.Windows.Controls.ListView;
-using NativeListViewItem = System.Windows.Controls.ListViewItem;
+using NativeListBox = System.Windows.Controls.ListBox;
+using NativeListBoxItem = System.Windows.Controls.ListBoxItem;
 
 // ReSharper disable once CheckNamespace
 namespace Wpf.Ui.Controls;
@@ -33,7 +33,7 @@ namespace Wpf.Ui.Controls;
 /// </code>
 /// </example>
 [TemplatePart(Name = ElementTextBox,         Type = typeof(TextBox))]
-[TemplatePart(Name = ElementSuggestionsList, Type = typeof(NativeListView))]
+[TemplatePart(Name = ElementSuggestionsList, Type = typeof(NativeListBox))]
 public class AutoSuggestBox : ItemsControl, IIconControl
 {
     private const string ElementTextBox         = "PART_TextBox";
@@ -341,8 +341,8 @@ public class AutoSuggestBox : ItemsControl, IIconControl
         );
     }
 
-    private TextBox?        TextBox         { get; set; }
-    private NativeListView? SuggestionsList { get; set; }
+    private TextBox?       TextBox         { get; set; }
+    private NativeListBox? SuggestionsList { get; set; }
 
     private AutoSuggestionBoxTextChangeReason? _pendingTextChangeReason;
     private HwndSource?                        _hookSource;
@@ -363,7 +363,7 @@ public class AutoSuggestBox : ItemsControl, IIconControl
         base.OnApplyTemplate();
 
         TextBox         = EnsureTemplateChild<TextBox>(ElementTextBox);
-        SuggestionsList = EnsureTemplateChild<NativeListView>(ElementSuggestionsList);
+        SuggestionsList = EnsureTemplateChild<NativeListBox>(ElementSuggestionsList);
 
         AcquireTemplateResources();
     }
@@ -671,7 +671,7 @@ public class AutoSuggestBox : ItemsControl, IIconControl
         if (
             SuggestionsList is null
          || e.OriginalSource is not DependencyObject source
-         || ItemsControl.ContainerFromElement(SuggestionsList, source) is not NativeListViewItem container
+         || ContainerFromElement(SuggestionsList, source) is not NativeListBoxItem container
         )
         {
             return;
