@@ -52,6 +52,34 @@ public class AutoSuggestBoxTests
     }
 
     [Fact]
+    public void DefaultPopup_IsNonStickyAndSynchronizesCloseState()
+    {
+        RunOnStaThread(() =>
+        {
+            var (window, autoSuggestBox, textBox, popup) = CreateLoadedDefaultControl();
+
+            try
+            {
+                Assert.False(popup.StaysOpen);
+
+                Assert.True(textBox.Focus());
+                textBox.Text = "a";
+                Assert.True(autoSuggestBox.IsSuggestionListOpen);
+                Assert.True(popup.IsOpen);
+
+                popup.SetCurrentValue(Popup.IsOpenProperty, false);
+
+                Assert.False(autoSuggestBox.IsSuggestionListOpen);
+                Assert.False(popup.IsOpen);
+            }
+            finally
+            {
+                window.Close();
+            }
+        });
+    }
+
+    [Fact]
     public void MovingHostWindow_ClosesOpenSuggestions()
     {
         RunOnStaThread(() =>

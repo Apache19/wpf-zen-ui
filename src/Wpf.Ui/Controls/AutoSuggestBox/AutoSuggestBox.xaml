@@ -116,7 +116,8 @@
                             controls:PopupShadow.IsEnabled="True"
                             AllowsTransparency="True"
                             Focusable="False"
-                            IsOpen="{TemplateBinding IsSuggestionListOpen}">
+                            IsOpen="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=IsSuggestionListOpen, Mode=TwoWay}"
+                            StaysOpen="False">
                             <Border
                                 Background="{m:BrushResource AcrylicBackgroundFillColorDefaultBrush}"
                                 BorderBrush="{m:BrushResource SurfaceStrokeColorFlyoutBrush}"
