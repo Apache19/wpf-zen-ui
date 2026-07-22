@@ -9,10 +9,10 @@
     xmlns:models="clr-namespace:Wpf.Ui.Gallery.Models"
     xmlns:system="clr-namespace:System;assembly=System.Runtime"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    xmlns:vm="clr-namespace:Wpf.Ui.Gallery.ViewModels.Pages.Collections"
     Title="ListViewPage"
     d:Background="{ui:BrushResource WindowBackgroundBrush}"
-    d:DataContext="{d:DesignInstance local:ListViewPage, IsDesignTimeCreatable=False}"
-    d:DesignHeight="750"
+    d:DataContext="{d:DesignInstance vm:ListViewViewModel, IsDesignTimeCreatable=False}"
     d:DesignWidth="800"
     Style="{ui:StyleResource DynamicScrollPageStyle}"
     Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
@@ -32,7 +32,7 @@
             <ui:ListView
                 MaxHeight="200"
                 d:ItemsSource="{d:SampleData ItemCount=2}"
-                ItemsSource="{Binding ViewModel.BasicListViewItems, Mode=TwoWay}"
+                ItemsSource="{Binding BasicListViewItems, Mode=TwoWay}"
                 SelectedIndex="2"
                 SelectionMode="Single">
                 <ui:ListView.ItemTemplate>
@@ -62,9 +62,9 @@
                     Grid.Column="0"
                     MaxHeight="200"
                     d:ItemsSource="{d:SampleData ItemCount=2}"
-                    ItemsSource="{Binding ViewModel.BasicListViewItems, Mode=TwoWay}"
+                    ItemsSource="{Binding BasicListViewItems, Mode=TwoWay}"
                     SelectedIndex="1"
-                    SelectionMode="{Binding ViewModel.ListViewSelectionMode, Mode=OneWay}">
+                    SelectionMode="{Binding ListViewSelectionMode, Mode=OneWay}">
                     <ui:ListView.ItemTemplate>
                         <DataTemplate DataType="{x:Type models:Person}">
                             <Grid Margin="8,0">
@@ -107,7 +107,7 @@
                     Margin="12,0,0,0"
                     VerticalAlignment="Top">
                     <Label Content="Selection mode" Target="{Binding ElementName=SelectionModeComboBox}" />
-                    <ComboBox x:Name="SelectionModeComboBox" SelectedIndex="{Binding ViewModel.ListViewSelectionModeComboBoxSelectedIndex, Mode=TwoWay}">
+                    <ComboBox x:Name="SelectionModeComboBox" SelectedIndex="{Binding ListViewSelectionModeComboBoxSelectedIndex, Mode=TwoWay}">
                         <ComboBoxItem Content="Single" />
                         <ComboBoxItem Content="Multiple" />
                         <ComboBoxItem Content="Extended" />
@@ -132,7 +132,7 @@
                 MaxHeight="200"
                 d:ItemsSource="{d:SampleData ItemCount=2}"
                 BorderThickness="0"
-                ItemsSource="{Binding ViewModel.BasicListViewItems, Mode=TwoWay}">
+                ItemsSource="{Binding BasicListViewItems, Mode=TwoWay}">
                 <ui:ListView.View>
                     <ui:GridView>
                         <ui:GridViewColumn

@@ -16,8 +16,8 @@ public partial class NavigationViewPage : INavigableView<NavigationViewViewModel
 
     public NavigationViewPage(NavigationViewViewModel viewModel)
     {
-        ViewModel = viewModel;
-        DataContext = this;
+        ViewModel   = viewModel;
+        DataContext = viewModel;
 
         InitializeComponent();
     }

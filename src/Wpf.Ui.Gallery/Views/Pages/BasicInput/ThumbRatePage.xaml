@@ -4,37 +4,35 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Ui.Gallery.Controls"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:local="clr-namespace:Wpf.Ui.Gallery.Views.Pages.BasicInput"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:system="clr-namespace:System;assembly=System.Runtime"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    xmlns:vm="clr-namespace:Wpf.Ui.Gallery.ViewModels.Pages.BasicInput"
     Title="ThumbRatePage"
     controls:PageControlDocumentation.DocumentationType="{x:Type ui:ThumbRate}"
-    d:DataContext="{d:DesignInstance local:ThumbRatePage,
-                                     IsDesignTimeCreatable=False}"
-    d:DesignHeight="450"
-    d:DesignWidth="800"
     d:Background="{ui:BrushResource WindowBackgroundBrush}"
+    d:DataContext="{d:DesignInstance vm:ThumbRateViewModel, IsDesignTimeCreatable=False}"
+    d:DesignWidth="800"
     Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
+    Style="{ui:StyleResource DynamicScrollPageStyle}"
     mc:Ignorable="d">
 
     <Grid Margin="0,0,0,24">
         <controls:ControlExample
             Margin="0"
             HeaderText="WPF UI thumb rate."
-            XamlCode="{Binding ViewModel.ThumRateStateCodeText, Mode=OneWay}">
+            XamlCode="{Binding ThumbRateStateCodeText}">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
-                <ui:ThumbRate HorizontalAlignment="Left" State="{Binding ViewModel.ThumbRateState, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:ThumbRatePage}, Mode=TwoWay}" />
+                <ui:ThumbRate HorizontalAlignment="Left" State="{Binding ThumbRateState, Mode=TwoWay}" />
                 <StackPanel
                     Grid.Column="1"
                     MinWidth="60"
                     VerticalAlignment="Center">
-                    <Label Content="State:" />
-                    <TextBlock Text="{Binding ViewModel.ThumRateStateText, Mode=OneWay}" />
+                    <Label Content="State:" Foreground="{ui:BrushResource TextFillColorTertiaryBrush}" />
+                    <TextBlock Margin="0,4,0,0" Text="{Binding ThumbRateStateText}" />
                 </StackPanel>
             </Grid>
         </controls:ControlExample>

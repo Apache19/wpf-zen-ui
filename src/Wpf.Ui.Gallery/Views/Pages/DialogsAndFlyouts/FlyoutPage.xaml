@@ -6,13 +6,14 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:local="clr-namespace:Wpf.Ui.Gallery.Views.Pages.DialogsAndFlyouts"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:vm="clr-namespace:Wpf.Ui.Gallery.ViewModels.Pages.DialogsAndFlyouts"
     xmlns:system="clr-namespace:System;assembly=System.Runtime"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
     Title="FlyoutPage"
+    Style="{ui:StyleResource DynamicScrollPageStyle}"
     controls:PageControlDocumentation.DocumentationType="{x:Type ui:Flyout}"
-    d:DataContext="{d:DesignInstance local:FlyoutPage,
+    d:DataContext="{d:DesignInstance vm:FlyoutViewModel,
                                      IsDesignTimeCreatable=False}"
-    d:DesignHeight="450"
     d:DesignWidth="800"
     d:Background="{ui:BrushResource WindowBackgroundBrush}"
     Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
@@ -30,7 +31,7 @@
                 </Grid.RowDefinitions>
                 <ui:Flyout
                     Grid.Row="0"
-                    IsOpen="{Binding ViewModel.IsFlyoutOpen, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:FlyoutPage}, Mode=TwoWay}"
+                    IsOpen="{Binding IsFlyoutOpen, Mode=TwoWay}"
                     Placement="Top">
                     <StackPanel>
                         <TextBlock
@@ -43,7 +44,7 @@
                 </ui:Flyout>
                 <ui:Button
                     Grid.Row="1"
-                    Command="{Binding ViewModel.ButtonClickCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:FlyoutPage}, Mode=OneWay}"
+                    Command="{Binding ButtonClickCommand, Mode=OneWay}"
                     CommandParameter="{Binding RelativeSource={RelativeSource Self}, Mode=OneWay}"
                     Content="Open flyout" />
             </Grid>

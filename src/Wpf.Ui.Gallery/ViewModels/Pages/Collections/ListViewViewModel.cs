@@ -10,23 +10,14 @@ namespace Wpf.Ui.Gallery.ViewModels.Pages.Collections;
 
 public partial class ListViewViewModel : ViewModel
 {
-    private int _listViewSelectionModeComboBoxSelectedIndex = 0;
-
-    public int ListViewSelectionModeComboBoxSelectedIndex
-    {
-        get => _listViewSelectionModeComboBoxSelectedIndex;
-        set
-        {
-            _ = SetProperty(ref _listViewSelectionModeComboBoxSelectedIndex, value);
-            UpdateListViewSelectionMode(value);
-        }
-    }
+    [ObservableProperty]
+    public partial int ListViewSelectionModeComboBoxSelectedIndex { get; set; } = 0;
 
     [ObservableProperty]
-    private SelectionMode _listViewSelectionMode = SelectionMode.Single;
+    public partial SelectionMode ListViewSelectionMode { get; set; } = SelectionMode.Single;
 
     [ObservableProperty]
-    private ObservableCollection<Person> _basicListViewItems = GeneratePersons();
+    public partial ObservableCollection<Person> BasicListViewItems { get; set; } = GeneratePersons();
 
     private static ObservableCollection<Person> GeneratePersons()
     {
@@ -91,9 +82,9 @@ public partial class ListViewViewModel : ViewModel
         return persons;
     }
 
-    private void UpdateListViewSelectionMode(int selectionModeIndex)
+    partial void OnListViewSelectionModeComboBoxSelectedIndexChanged(int value)
     {
-        ListViewSelectionMode = selectionModeIndex switch
+        ListViewSelectionMode = value switch
         {
             1 => SelectionMode.Multiple,
             2 => SelectionMode.Extended,

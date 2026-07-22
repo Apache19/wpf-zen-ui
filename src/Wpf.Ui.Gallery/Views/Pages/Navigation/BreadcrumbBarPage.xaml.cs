@@ -16,8 +16,8 @@ public partial class BreadcrumbBarPage : INavigableView<BreadcrumbBarViewModel>
 
     public BreadcrumbBarPage(BreadcrumbBarViewModel viewModel)
     {
-        ViewModel = viewModel;
-        DataContext = this;
+        ViewModel   = viewModel;
+        DataContext = viewModel;
 
         InitializeComponent();
     }

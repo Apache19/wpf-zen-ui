@@ -18,8 +18,8 @@ public partial class MediaPage : INavigableView<MediaViewModel>
 
     public MediaPage(MediaViewModel viewModel, INavigationService navigationService)
     {
-        ViewModel = viewModel;
-        DataContext = this;
+        ViewModel   = viewModel;
+        DataContext = viewModel;
         _navigationService = navigationService;
 
         InitializeComponent();

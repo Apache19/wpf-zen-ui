@@ -16,8 +16,8 @@ public partial class ToggleButtonPage : INavigableView<ToggleButtonViewModel>
 
     public ToggleButtonPage(ToggleButtonViewModel viewModel)
     {
-        ViewModel = viewModel;
-        DataContext = this;
+        ViewModel   = viewModel;
+        DataContext = viewModel;
 
         InitializeComponent();
     }

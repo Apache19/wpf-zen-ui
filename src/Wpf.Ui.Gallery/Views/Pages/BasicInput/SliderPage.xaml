@@ -8,13 +8,14 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:system="clr-namespace:System;assembly=System.Runtime"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    xmlns:vm="clr-namespace:Wpf.Ui.Gallery.ViewModels.Pages.BasicInput"
     Title="SliderPage"
-    d:DataContext="{d:DesignInstance local:SliderPage,
+    d:DataContext="{d:DesignInstance vm:SliderViewModel,
                                      IsDesignTimeCreatable=False}"
-    d:DesignHeight="450"
     d:DesignWidth="800"
     d:Background="{ui:BrushResource WindowBackgroundBrush}"
     Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
+    Style="{ui:StyleResource DynamicScrollPageStyle}"
     mc:Ignorable="d">
 
     <StackPanel Margin="0,0,0,24">
@@ -34,11 +35,11 @@
                     VerticalAlignment="Center"
                     Maximum="100"
                     Minimum="0"
-                    Value="{Binding ViewModel.SimpleSliderValue, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:SliderPage}, Mode=TwoWay}" />
+                    Value="{Binding SimpleSliderValue, Mode=TwoWay}" />
                 <Grid Grid.Column="1">
                     <StackPanel VerticalAlignment="Center">
                         <TextBlock Text="Output:" />
-                        <TextBlock Text="{Binding ViewModel.SimpleSliderValue, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:SliderPage}, Mode=OneWay}" />
+                        <TextBlock Text="{Binding SimpleSliderValue, Mode=OneWay}" />
                     </StackPanel>
                 </Grid>
             </Grid>
@@ -62,11 +63,11 @@
                     Maximum="1000"
                     Minimum="500"
                     TickFrequency="20"
-                    Value="{Binding ViewModel.RangeSliderValue, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:SliderPage}, Mode=TwoWay}" />
+                    Value="{Binding RangeSliderValue, Mode=TwoWay}" />
                 <Grid Grid.Column="1">
                     <StackPanel VerticalAlignment="Center">
                         <TextBlock Text="Output:" />
-                        <TextBlock Text="{Binding ViewModel.RangeSliderValue, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:SliderPage}, Mode=OneWay}" />
+                        <TextBlock Text="{Binding RangeSliderValue, Mode=OneWay}" />
                     </StackPanel>
                 </Grid>
             </Grid>
@@ -91,11 +92,11 @@
                     Minimum="0"
                     TickFrequency="20"
                     TickPlacement="Both"
-                    Value="{Binding ViewModel.MarksSliderValue, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:SliderPage}, Mode=TwoWay}" />
+                    Value="{Binding MarksSliderValue, Mode=TwoWay}" />
                 <Grid Grid.Column="1">
                     <StackPanel VerticalAlignment="Center">
                         <TextBlock Text="Output:" />
-                        <TextBlock Text="{Binding ViewModel.MarksSliderValue, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:SliderPage}, Mode=OneWay}" />
+                        <TextBlock Text="{Binding MarksSliderValue, Mode=OneWay}" />
                     </StackPanel>
                 </Grid>
             </Grid>
@@ -121,11 +122,11 @@
                     Orientation="Vertical"
                     TickFrequency="20"
                     TickPlacement="Both"
-                    Value="{Binding ViewModel.VerticalSliderValue, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:SliderPage}, Mode=TwoWay}" />
+                    Value="{Binding VerticalSliderValue, Mode=TwoWay}" />
                 <Grid Grid.Column="1">
                     <StackPanel VerticalAlignment="Center">
                         <TextBlock Text="Output:" />
-                        <TextBlock Text="{Binding ViewModel.VerticalSliderValue, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:SliderPage}, Mode=OneWay}" />
+                        <TextBlock Text="{Binding VerticalSliderValue, Mode=OneWay}" />
                     </StackPanel>
                 </Grid>
             </Grid>

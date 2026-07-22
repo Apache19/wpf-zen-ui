@@ -8,13 +8,13 @@ namespace Wpf.Ui.Gallery.ViewModels.Pages.OpSystem;
 public partial class ClipboardViewModel : ViewModel
 {
     [ObservableProperty]
-    private string _textToCopy = "This text will be copied to the clipboard.";
+    public partial string TextToCopy { get; set; } = "This text will be copied to the clipboard.";
 
     [ObservableProperty]
-    private string _clipboardContent = "Click the button!";
+    public partial string ClipboardContent { get; set; } = "Click the button!";
 
     [ObservableProperty]
-    private Visibility _textCopiedVisibility = Visibility.Collapsed;
+    public partial Visibility TextCopiedVisibility { get; set; } = Visibility.Collapsed;
 
     [RelayCommand]
     private async Task OnCopyTextToClipboard()

@@ -8,14 +8,15 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:system="clr-namespace:System;assembly=System.Runtime"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    xmlns:vm="clr-namespace:Wpf.Ui.Gallery.ViewModels.Pages.BasicInput"
     Title="ToggleSwitchPage"
     controls:PageControlDocumentation.DocumentationType="{x:Type ui:ToggleSwitch}"
-    d:DataContext="{d:DesignInstance local:ToggleSwitchPage,
+    d:DataContext="{d:DesignInstance vm:ToggleSwitchViewModel,
                                      IsDesignTimeCreatable=False}"
-    d:DesignHeight="450"
     d:DesignWidth="800"
     d:Background="{ui:BrushResource WindowBackgroundBrush}"
     Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
+    Style="{ui:StyleResource DynamicScrollPageStyle}"
     mc:Ignorable="d">
 
     <StackPanel Margin="0,0,0,24">
@@ -30,13 +31,12 @@
                 </Grid.ColumnDefinitions>
                 <ui:ToggleSwitch
                     Grid.Column="0"
-                    IsEnabled="{Binding ViewModel.IsToggleSwitchEnabled, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:ToggleSwitchPage}, Mode=OneWay}"
+                    IsEnabled="{Binding IsToggleSwitchDisabled, Converter={StaticResource BoolInvertConverter}}"
                     OffContent="Off"
                     OnContent="On" />
                 <ui:CheckBox
                     Grid.Column="1"
-                    Command="{Binding ViewModel.ToggleSwitchCheckboxCheckedCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:ToggleSwitchPage}, Mode=OneWay}"
-                    CommandParameter="{Binding RelativeSource={RelativeSource Self}, Mode=OneWay}"
+                    IsChecked="{Binding IsToggleSwitchDisabled}"
                     Content="Disable switch" />
             </Grid>
         </controls:ControlExample>

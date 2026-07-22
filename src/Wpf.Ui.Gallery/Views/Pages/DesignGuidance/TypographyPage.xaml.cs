@@ -14,8 +14,8 @@ public partial class TypographyPage : INavigableView<TypographyViewModel>
 
     public TypographyPage(TypographyViewModel viewModel)
     {
-        ViewModel = viewModel;
-        DataContext = this;
+        ViewModel   = viewModel;
+        DataContext = viewModel;
 
         InitializeComponent();
     }

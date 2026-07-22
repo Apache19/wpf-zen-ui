@@ -12,7 +12,7 @@ namespace Wpf.Ui.Gallery.ViewModels.Pages.DialogsAndFlyouts;
 public partial class ContentDialogViewModel(IContentDialogService contentDialogService) : ViewModel
 {
     [ObservableProperty]
-    private string _dialogResultText = string.Empty;
+    public partial string DialogResultText { get; set; } = string.Empty;
 
     [RelayCommand]
     private async Task OnShowDialog(object content)

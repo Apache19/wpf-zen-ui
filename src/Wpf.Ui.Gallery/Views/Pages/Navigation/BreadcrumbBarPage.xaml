@@ -6,17 +6,18 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:local="clr-namespace:Wpf.Ui.Gallery.Views.Pages.Navigation"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:vm="clr-namespace:Wpf.Ui.Gallery.ViewModels.Pages.Navigation"
     xmlns:models="clr-namespace:Wpf.Ui.Gallery.Models"
     xmlns:system="clr-namespace:System;assembly=System.Runtime"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
     Title="BreadcrumbBar"
     controls:PageControlDocumentation.DocumentationType="{x:Type ui:BreadcrumbBar}"
-    d:DataContext="{d:DesignInstance local:BreadcrumbBarPage,
+    d:DataContext="{d:DesignInstance vm:BreadcrumbBarViewModel,
                                      IsDesignTimeCreatable=False}"
-    d:DesignHeight="450"
     d:DesignWidth="850"
     d:Background="{ui:BrushResource WindowBackgroundBrush}"
     Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
+    Style="{ui:StyleResource DynamicScrollPageStyle}"
     WindowWidth="850"
     mc:Ignorable="d">
 
@@ -44,13 +45,13 @@
         <controls:ControlExample
             Margin="0"
             HeaderText="A BreadcrumbBar control."
-            XamlCode="&lt;ui:BreadcrumbBar ItemsSource=&quot;{Binding ViewModel.Strings, Mode=OneWay}&quot; /&gt;">
-            <ui:BreadcrumbBar Command="{Binding ViewModel.StringSelectedCommand, Mode=OneWay}" ItemsSource="{Binding ViewModel.Strings, Mode=OneWay}" />
+            XamlCode="&lt;ui:BreadcrumbBar ItemsSource=&quot;{Binding Strings, Mode=OneWay}&quot; /&gt;">
+            <ui:BreadcrumbBar Command="{Binding StringSelectedCommand, Mode=OneWay}" ItemsSource="{Binding Strings, Mode=OneWay}" />
         </controls:ControlExample>
 
         <controls:ControlExample Margin="0,32,0,0" HeaderText="BreadcrumbBar Control with Custom DataTemplate.">
             <controls:ControlExample.XamlCode>
-                &lt;ui:BreadcrumbBar ItemsSource=&quot;{Binding ViewModel.Folders, Mode=OneWay}&quot; &gt;\n
+                &lt;ui:BreadcrumbBar ItemsSource=&quot;{Binding Folders, Mode=OneWay}&quot; &gt;\n
                 \t&lt;ui:BreadcrumbBar.ItemTemplate&gt;\n
                 \t\t&lt;ui:DataTemplate DataType=&quot;{x:Type models:Folder}&quot; &gt;\n
                 \t\t\t&lt;TextBlock Text=&quot;{Binding Name, Mode=OneTime}&quot; /&gt;\n
@@ -66,8 +67,8 @@
                 <ui:BreadcrumbBar
                     x:Name="BreadcrumbBar2"
                     Grid.Column="0"
-                    Command="{Binding ViewModel.FolderSelectedCommand, Mode=OneWay}"
-                    ItemsSource="{Binding ViewModel.Folders, Mode=OneWay}">
+                    Command="{Binding FolderSelectedCommand, Mode=OneWay}"
+                    ItemsSource="{Binding Folders, Mode=OneWay}">
                     <ui:BreadcrumbBar.ItemTemplate>
                         <DataTemplate DataType="{x:Type models:Folder}">
                             <TextBlock Text="{Binding Name, Mode=OneTime}" />
@@ -76,7 +77,7 @@
                 </ui:BreadcrumbBar>
                 <ui:Button
                     Grid.Column="1"
-                    Command="{Binding ViewModel.ResetFoldersCommand, Mode=OneWay}"
+                    Command="{Binding ResetFoldersCommand, Mode=OneWay}"
                     Content="Reset" />
             </Grid>
         </controls:ControlExample>

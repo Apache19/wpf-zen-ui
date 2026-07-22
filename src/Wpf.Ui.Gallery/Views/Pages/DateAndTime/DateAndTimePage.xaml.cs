@@ -18,8 +18,8 @@ public partial class DateAndTimePage : INavigableView<DateAndTimeViewModel>
 
     public DateAndTimePage(DateAndTimeViewModel viewModel, INavigationService navigationService)
     {
-        ViewModel = viewModel;
-        DataContext = this;
+        ViewModel   = viewModel;
+        DataContext = viewModel;
         _navigationService = navigationService;
 
         InitializeComponent();

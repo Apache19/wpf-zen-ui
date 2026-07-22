@@ -8,11 +8,11 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:system="clr-namespace:System;assembly=System.Runtime"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    xmlns:vm="clr-namespace:Wpf.Ui.Gallery.ViewModels.Pages.Collections"
     Title="DataGridPage"
     controls:PageControlDocumentation.DocumentationType="{x:Type ui:DataGrid}"
     d:Background="{ui:BrushResource WindowBackgroundBrush}"
-    d:DataContext="{d:DesignInstance local:DataGridPage, IsDesignTimeCreatable=False}"
-    d:DesignHeight="450"
+    d:DataContext="{d:DesignInstance vm:DataGridViewModel, IsDesignTimeCreatable=False}"
     d:DesignWidth="800"
     Style="{ui:StyleResource DynamicScrollPageStyle}"
     Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
@@ -26,15 +26,15 @@
         <controls:ControlExample
             Margin="0"
             HeaderText="Standard DataGrid with ItemsSource."
-            XamlCode="&lt;DataGrid ItemsSource=&quot;{Binding ViewModel.ProductsCollection, Mode=TwoWay}&quot; /&gt;">
-            <DataGrid Height="400" ItemsSource="{Binding ViewModel.ProductsCollection, Mode=TwoWay}" />
+            XamlCode="&lt;DataGrid ItemsSource=&quot;{Binding ProductsCollection, Mode=TwoWay}&quot; /&gt;">
+            <DataGrid Height="400" ItemsSource="{Binding ProductsCollection, Mode=TwoWay}" />
         </controls:ControlExample>
 
         <controls:ControlExample
             Margin="0,36,0,0"
             HeaderText="WPF UI DataGrid with ItemsSource."
-            XamlCode="&lt;ui:DataGrid ItemsSource=&quot;{Binding ViewModel.ProductsCollection, Mode=TwoWay}&quot; /&gt;">
-            <ui:DataGrid Height="400" ItemsSource="{Binding ViewModel.ProductsCollection, Mode=TwoWay}" />
+            XamlCode="&lt;ui:DataGrid ItemsSource=&quot;{Binding ProductsCollection, Mode=TwoWay}&quot; /&gt;">
+            <ui:DataGrid Height="400" ItemsSource="{Binding ProductsCollection, Mode=TwoWay}" />
         </controls:ControlExample>
     </StackPanel>
 </Page>

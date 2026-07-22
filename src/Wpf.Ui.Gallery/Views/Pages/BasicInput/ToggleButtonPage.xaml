@@ -4,15 +4,15 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Ui.Gallery.Controls"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:local="clr-namespace:Wpf.Ui.Gallery.Views.Pages.BasicInput"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:system="clr-namespace:System;assembly=System.Runtime"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    xmlns:vm="clr-namespace:Wpf.Ui.Gallery.ViewModels.Pages.BasicInput"
+    Title="ToggleButtonPage"
     d:Background="{ui:BrushResource WindowBackgroundBrush}"
-    d:DataContext="{d:DesignInstance local:ToggleButtonPage, IsDesignTimeCreatable=False}"
-    d:DesignHeight="450"
+    d:DataContext="{d:DesignInstance vm:ToggleButtonViewModel, IsDesignTimeCreatable=False}"
     d:DesignWidth="800"
-    d:Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
+    Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
+    Style="{ui:StyleResource DynamicScrollPageStyle}"
     mc:Ignorable="d">
 
     <Grid Margin="0,0,0,24">
@@ -30,7 +30,7 @@
                     MinWidth="200"
                     HorizontalAlignment="Left"
                     Content="ToggleButton"
-                    IsEnabled="{Binding ViewModel.IsToggleButtonEnabled, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:ToggleButtonPage}, Mode=OneWay}">
+                    IsEnabled="{Binding IsToggleButtonDisabled, Converter={StaticResource BoolInvertConverter}}">
                     <ui:ToggleButton.Style>
                         <Style BasedOn="{StaticResource {x:Type ui:ToggleButton}}" TargetType="ui:ToggleButton">
                             <Setter Property="Icon">
@@ -52,9 +52,8 @@
                 </ui:ToggleButton>
                 <ui:CheckBox
                     Grid.Column="1"
-                    Command="{Binding ViewModel.ToggleButtonCheckboxCheckedCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:ToggleButtonPage}, Mode=OneWay}"
-                    CommandParameter="{Binding RelativeSource={RelativeSource Self}, Mode=OneWay}"
-                    Content="Disable toggle button" />
+                    Content="Disable toggle button"
+                    IsChecked="{Binding IsToggleButtonDisabled}" />
             </Grid>
         </controls:ControlExample>
     </Grid>

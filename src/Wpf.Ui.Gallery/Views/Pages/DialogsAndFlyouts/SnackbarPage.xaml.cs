@@ -14,8 +14,8 @@ public partial class SnackbarPage : INavigableView<SnackbarViewModel>
 
     public SnackbarPage(SnackbarViewModel viewModel)
     {
-        ViewModel = viewModel;
-        DataContext = this;
+        ViewModel   = viewModel;
+        DataContext = viewModel;
 
         InitializeComponent();
     }

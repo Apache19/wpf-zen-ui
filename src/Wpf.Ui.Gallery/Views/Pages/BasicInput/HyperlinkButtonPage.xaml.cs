@@ -16,8 +16,8 @@ public partial class HyperlinkButtonPage : INavigableView<HyperlinkButtonViewMod
 
     public HyperlinkButtonPage(HyperlinkButtonViewModel viewModel)
     {
-        ViewModel = viewModel;
-        DataContext = this;
+        ViewModel   = viewModel;
+        DataContext = viewModel;
 
         InitializeComponent();
     }

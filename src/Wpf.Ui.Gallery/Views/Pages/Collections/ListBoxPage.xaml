@@ -6,15 +6,16 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:local="clr-namespace:Wpf.Ui.Gallery.Views.Pages.Collections"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:vm="clr-namespace:Wpf.Ui.Gallery.ViewModels.Pages.Collections"
     xmlns:system="clr-namespace:System;assembly=System.Runtime"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
     Title="ListBoxPage"
-    d:DataContext="{d:DesignInstance local:ListBoxPage,
+    d:DataContext="{d:DesignInstance vm:ListBoxViewModel,
                                      IsDesignTimeCreatable=False}"
-    d:DesignHeight="450"
     d:DesignWidth="800"
     d:Background="{ui:BrushResource WindowBackgroundBrush}"
     Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
+    Style="{ui:StyleResource DynamicScrollPageStyle}"
     mc:Ignorable="d">
 
     <StackPanel Margin="0,0,0,24">
@@ -36,10 +37,10 @@
         <controls:ControlExample
             Margin="0,36,0,0"
             HeaderText="A ListBox with its ItemsSource and Height set."
-            XamlCode="&lt;ListBox Height=&quot;100&quot; ItemsSource=&quot;{Binding ViewModel.MyItems}&quot; /&gt;">
+            XamlCode="&lt;ListBox Height=&quot;100&quot; ItemsSource=&quot;{Binding ListBoxItems}&quot; /&gt;">
             <ui:ListBox
                 Height="164"
-                ItemsSource="{Binding ViewModel.ListBoxItems, Mode=TwoWay}"
+                ItemsSource="{Binding ListBoxItems, Mode=TwoWay}"
                 SelectedIndex="2" />
         </controls:ControlExample>
     </StackPanel>

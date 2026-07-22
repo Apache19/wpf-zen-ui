@@ -16,8 +16,8 @@ public partial class MenuPage : INavigableView<MenuViewModel>
 
     public MenuPage(MenuViewModel viewModel)
     {
-        ViewModel = viewModel;
-        DataContext = this;
+        ViewModel   = viewModel;
+        DataContext = viewModel;
 
         InitializeComponent();
     }

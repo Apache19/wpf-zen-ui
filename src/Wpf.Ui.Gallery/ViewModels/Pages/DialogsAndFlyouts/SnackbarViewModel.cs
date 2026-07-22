@@ -12,7 +12,7 @@ public partial class SnackbarViewModel(ISnackbarService snackbarService) : ViewM
     private ControlAppearance _snackbarAppearance = ControlAppearance.Normal;
 
     [ObservableProperty]
-    private int _snackbarTimeout = 2;
+    public partial int SnackbarTimeout { get; set; } = 2;
 
     private int _snackbarAppearanceComboBoxSelectedIndex = 1;
 

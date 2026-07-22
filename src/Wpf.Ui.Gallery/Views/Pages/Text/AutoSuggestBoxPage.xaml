@@ -7,20 +7,21 @@
     xmlns:local="clr-namespace:Wpf.Ui.Gallery.Views.Pages.Text"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    xmlns:vm="clr-namespace:Wpf.Ui.Gallery.ViewModels.Pages.Text"
     Title="AutoSuggestBoxPage"
     controls:PageControlDocumentation.DocumentationType="{x:Type ui:AutoSuggestBox}"
-    d:DataContext="{d:DesignInstance local:AutoSuggestBoxPage,
-                                     IsDesignTimeCreatable=False}"
-    d:DesignHeight="450"
-    d:DesignWidth="800"
     d:Background="{ui:BrushResource WindowBackgroundBrush}"
+    d:DataContext="{d:DesignInstance vm:AutoSuggestBoxViewModel,
+                                     IsDesignTimeCreatable=False}"
+    d:DesignWidth="800"
     Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
+    Style="{ui:StyleResource DynamicScrollPageStyle}"
     mc:Ignorable="d">
 
     <controls:ControlExample
         Margin="0"
         HeaderText="WPF UI AutoSuggestBox."
-        XamlCode="&lt;ui:AutoSuggestBox Icon=&quot;{ui:SymbolIcon Search24}&quot; OriginalItemsSource=&quot;{Binding ViewModel.AutoSuggestBoxSuggestions, Mode=OneWay}&quot; PlaceholderText=&quot;Search...&quot; ClearButtonEnabled=&quot;False&quot; /&gt;  ">
+        XamlCode="&lt;ui:AutoSuggestBox Icon=&quot;{ui:SymbolIcon Search24}&quot; OriginalItemsSource=&quot;{Binding AutoSuggestBoxSuggestions, Mode=OneWay}&quot; PlaceholderText=&quot;Search...&quot; ClearButtonEnabled=&quot;{Binding ShowClearButtonDisabled, Converter={StaticResource BoolInvertConverter}}&quot; /&gt;">
         <Grid>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
@@ -28,15 +29,14 @@
             </Grid.ColumnDefinitions>
             <ui:AutoSuggestBox
                 Grid.Column="0"
-                ClearButtonEnabled="{Binding ViewModel.ShowClearButton}"
+                ClearButtonEnabled="{Binding ShowClearButtonDisabled, Converter={StaticResource BoolInvertConverter}}"
                 Icon="{ui:SymbolIcon Search24}"
-                OriginalItemsSource="{Binding ViewModel.AutoSuggestBoxSuggestions, Mode=OneWay}"
+                OriginalItemsSource="{Binding AutoSuggestBoxSuggestions, Mode=OneWay}"
                 PlaceholderText="Search..." />
             <ui:CheckBox
                 Grid.Column="1"
-                Command="{Binding ViewModel.ShowClearButtonCheckedCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:AutoSuggestBoxPage}, Mode=OneWay}"
                 Content="Show clear button"
-                IsChecked="{Binding ViewModel.ShowClearButton}" />
+                IsChecked="{Binding ShowClearButtonDisabled}" />
         </Grid>
     </controls:ControlExample>
 </Page>

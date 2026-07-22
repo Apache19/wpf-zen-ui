@@ -17,8 +17,9 @@ public partial class CardActionPage : INavigableView<CardActionViewModel>
 {
     public CardActionPage(CardActionViewModel viewModel)
     {
+        DataContext = viewModel;
         InitializeComponent();
-        ViewModel = viewModel;
+        ViewModel   = viewModel;
     }
 
     public CardActionViewModel ViewModel { get; }

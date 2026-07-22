@@ -10,7 +10,7 @@ namespace Wpf.Ui.Gallery.ViewModels.Pages.StatusAndInfo;
 public partial class InfoBadgeViewModel : ViewModel
 {
     [ObservableProperty]
-    private InfoBadgeSeverity _infoBadgeSeverity = InfoBadgeSeverity.Attention;
+    public partial InfoBadgeSeverity InfoBadgeSeverity { get; set; } = InfoBadgeSeverity.Attention;
 
     private int _infoBadgeSeverityComboBoxSelectedIndex = 0;
 

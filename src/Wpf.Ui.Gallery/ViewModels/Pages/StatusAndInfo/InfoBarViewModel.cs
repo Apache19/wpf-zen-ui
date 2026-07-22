@@ -10,16 +10,16 @@ namespace Wpf.Ui.Gallery.ViewModels.Pages.StatusAndInfo;
 public partial class InfoBarViewModel : ViewModel
 {
     [ObservableProperty]
-    private bool _isShortInfoBarOpened = true;
+    public partial bool IsShortInfoBarOpened { get; set; } = true;
 
     [ObservableProperty]
-    private bool _isLongInfoBarOpened = true;
+    public partial bool IsLongInfoBarOpened { get; set; } = true;
 
     [ObservableProperty]
-    private InfoBarSeverity _shortInfoBarSeverity = InfoBarSeverity.Informational;
+    public partial InfoBarSeverity ShortInfoBarSeverity { get; set; } = InfoBarSeverity.Informational;
 
     [ObservableProperty]
-    private InfoBarSeverity _longInfoBarSeverity = InfoBarSeverity.Informational;
+    public partial InfoBarSeverity LongInfoBarSeverity { get; set; } = InfoBarSeverity.Informational;
 
     private int _shortInfoBarSeverityComboBoxSelectedIndex = 0;
 

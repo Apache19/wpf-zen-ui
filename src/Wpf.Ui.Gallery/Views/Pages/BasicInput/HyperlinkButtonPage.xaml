@@ -4,18 +4,16 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Ui.Gallery.Controls"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:local="clr-namespace:Wpf.Ui.Gallery.Views.Pages.BasicInput"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:system="clr-namespace:System;assembly=System.Runtime"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    xmlns:vm="clr-namespace:Wpf.Ui.Gallery.ViewModels.Pages.BasicInput"
     Title="HyperlinkButtonPage"
     controls:PageControlDocumentation.DocumentationType="{x:Type ui:HyperlinkButton}"
-    d:DataContext="{d:DesignInstance local:HyperlinkButtonPage,
-                                     IsDesignTimeCreatable=False}"
-    d:DesignHeight="450"
-    d:DesignWidth="800"
     d:Background="{ui:BrushResource WindowBackgroundBrush}"
+    d:DataContext="{d:DesignInstance vm:HyperlinkButtonViewModel, IsDesignTimeCreatable=False}"
+    d:DesignWidth="800"
     Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
+    Style="{ui:StyleResource DynamicScrollPageStyle}"
     mc:Ignorable="d">
 
     <StackPanel Margin="0,0,0,24">
@@ -32,13 +30,12 @@
                     Grid.Column="0"
                     Content="WPF UI hyperlink"
                     Icon="{ui:SymbolIcon Link24}"
-                    IsEnabled="{Binding ViewModel.IsHyperlinkEnabled, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:HyperlinkButtonPage}, Mode=OneWay}"
+                    IsEnabled="{Binding IsHyperlinkDisabled, Converter={StaticResource BoolInvertConverter}}"
                     NavigateUri="https://lepo.co/" />
                 <ui:CheckBox
                     Grid.Column="1"
-                    Command="{Binding ViewModel.HyperlinkCheckboxCheckedCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:HyperlinkButtonPage}, Mode=OneWay}"
-                    CommandParameter="{Binding RelativeSource={RelativeSource Self}, Mode=OneWay}"
-                    Content="Disable hyperlink" />
+                    Content="Disable hyperlink"
+                    IsChecked="{Binding IsHyperlinkDisabled, Mode=TwoWay}" />
             </Grid>
         </controls:ControlExample>
 
@@ -47,10 +44,9 @@
             HeaderText="WPF UI hyperlink with FontIcon."
             XamlCode="&lt;ui:HyperlinkButton NavigateUri=&quot;https://&quot; /&gt;">
             <ui:HyperlinkButton
-                Grid.Column="0"
                 Content="WPF UI hyperlink"
                 Icon="{ui:FontIcon '&#x1F308;'}"
-                IsEnabled="{Binding ViewModel.IsHyperlinkEnabled, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:HyperlinkButtonPage}, Mode=OneWay}"
+                IsEnabled="{Binding IsHyperlinkDisabled, Converter={StaticResource BoolInvertConverter}}"
                 NavigateUri="https://lepo.co/" />
         </controls:ControlExample>
 
@@ -59,10 +55,9 @@
             HeaderText="WPF UI hyperlink with ImageIcon."
             XamlCode="&lt;ui:HyperlinkButton NavigateUri=&quot;https://&quot; /&gt;">
             <ui:HyperlinkButton
-                Grid.Column="0"
                 Content="WPF UI hyperlink"
                 Icon="{ui:ImageIcon 'pack://application:,,,/Assets/wpfui.png'}"
-                IsEnabled="{Binding ViewModel.IsHyperlinkEnabled, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:HyperlinkButtonPage}, Mode=OneWay}"
+                IsEnabled="{Binding IsHyperlinkDisabled, Converter={StaticResource BoolInvertConverter}}"
                 NavigateUri="https://lepo.co/" />
         </controls:ControlExample>
     </StackPanel>

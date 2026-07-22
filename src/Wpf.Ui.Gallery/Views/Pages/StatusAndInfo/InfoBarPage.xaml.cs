@@ -16,8 +16,8 @@ public partial class InfoBarPage : INavigableView<InfoBarViewModel>
 
     public InfoBarPage(InfoBarViewModel viewModel)
     {
-        ViewModel = viewModel;
-        DataContext = this;
+        ViewModel   = viewModel;
+        DataContext = viewModel;
 
         InitializeComponent();
     }

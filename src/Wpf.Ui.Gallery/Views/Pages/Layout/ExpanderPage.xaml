@@ -6,11 +6,13 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    xmlns:vm="clr-namespace:Wpf.Ui.Gallery.ViewModels.Pages.Layout"
     Title="ExpanderPage"
+    Style="{ui:StyleResource DynamicScrollPageStyle}"
     d:Background="{ui:BrushResource WindowBackgroundBrush}"
-    d:DesignHeight="450"
     d:DesignWidth="800"
     Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
+    d:DataContext="{d:DesignInstance vm:ExpanderViewModel, IsDesignTimeCreatable=False}"
     mc:Ignorable="d">
 
     <StackPanel Margin="0,0,0,24">

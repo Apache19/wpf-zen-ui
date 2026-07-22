@@ -14,8 +14,8 @@ public partial class WindowsPage : INavigableView<WindowsViewModel>
 
     public WindowsPage(WindowsViewModel viewModel)
     {
-        ViewModel = viewModel;
-        DataContext = this;
+        ViewModel   = viewModel;
+        DataContext = viewModel;
 
         InitializeComponent();
     }

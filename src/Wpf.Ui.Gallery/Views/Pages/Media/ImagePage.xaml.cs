@@ -16,8 +16,8 @@ public partial class ImagePage : INavigableView<ImageViewModel>
 
     public ImagePage(ImageViewModel viewModel)
     {
-        ViewModel = viewModel;
-        DataContext = this;
+        ViewModel   = viewModel;
+        DataContext = viewModel;
 
         InitializeComponent();
     }

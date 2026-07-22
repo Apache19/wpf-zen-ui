@@ -16,8 +16,8 @@ public partial class TabControlPage : INavigableView<TabControlViewModel>
 
     public TabControlPage(TabControlViewModel viewModel)
     {
-        ViewModel = viewModel;
-        DataContext = this;
+        ViewModel   = viewModel;
+        DataContext = viewModel;
 
         InitializeComponent();
     }

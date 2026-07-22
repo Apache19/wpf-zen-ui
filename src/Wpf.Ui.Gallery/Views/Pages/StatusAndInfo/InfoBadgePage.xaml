@@ -6,17 +6,18 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:local="clr-namespace:Wpf.Ui.Gallery.Views.Pages.StatusAndInfo"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:vm="clr-namespace:Wpf.Ui.Gallery.ViewModels.Pages.StatusAndInfo"
     xmlns:system="clr-namespace:System;assembly=System.Runtime"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
     xmlns:theming="clr-namespace:Wpf.Ui.Theming;assembly=Wpf.Ui"
     Title="InfoBadgePage"
     controls:PageControlDocumentation.DocumentationType="{x:Type ui:InfoBadge}"
-    d:DataContext="{d:DesignInstance local:InfoBadgePage,
-                                     IsDesignTimeCreatable=False}"
-    d:DesignHeight="450"
-    d:DesignWidth="800"
     d:Background="{ui:BrushResource WindowBackgroundBrush}"
+    d:DataContext="{d:DesignInstance vm:InfoBadgeViewModel,
+                                     IsDesignTimeCreatable=False}"
+    d:DesignWidth="800"
     Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
+    Style="{ui:StyleResource DynamicScrollPageStyle}"
     mc:Ignorable="d">
 
     <StackPanel Margin="0,0,0,24">
@@ -66,18 +67,18 @@
                         Margin="10"
                         CornerRadius="30"
                         Icon="{ui:SymbolIcon Alert16}"
-                        Severity="{Binding ViewModel.InfoBadgeSeverity}"
+                        Severity="{Binding InfoBadgeSeverity}"
                         Style="{DynamicResource {x:Static theming:StyleKeys.IconInfoBadgeStyle}}" />
 
                     <ui:InfoBadge
                         Margin="10"
-                        Severity="{Binding ViewModel.InfoBadgeSeverity}"
+                        Severity="{Binding InfoBadgeSeverity}"
                         Style="{DynamicResource {x:Static theming:StyleKeys.ValueInfoBadgeStyle}}"
                         Value="1" />
 
                     <ui:InfoBadge
                         Margin="10"
-                        Severity="{Binding ViewModel.InfoBadgeSeverity}"
+                        Severity="{Binding InfoBadgeSeverity}"
                         Style="{DynamicResource {x:Static theming:StyleKeys.DotInfoBadgeStyle}}"
                         Value="2" />
                 </WrapPanel>
@@ -87,7 +88,7 @@
                     <ComboBox
                         MinWidth="140"
                         Margin="0,8,0,0"
-                        SelectedIndex="{Binding ViewModel.InfoBadgeSeverityComboBoxSelectedIndex, Mode=TwoWay}">
+                        SelectedIndex="{Binding InfoBadgeSeverityComboBoxSelectedIndex, Mode=TwoWay}">
                         <ComboBoxItem Content="Attention" />
                         <ComboBoxItem Content="Informational" />
                         <ComboBoxItem Content="Success" />
@@ -108,7 +109,7 @@
                 </Grid.ColumnDefinitions>
                 <ui:InfoBadge
                     Padding="6,0"
-                    Severity="{Binding ViewModel.InfoBadgeSeverity}"
+                    Severity="{Binding InfoBadgeSeverity}"
                     Value="{Binding Value, ElementName=ValueNumberBox}" />
                 <StackPanel Grid.Column="1" Margin="12,0,0,0">
                     <ui:TextBlock Text="InfoBadge Value" />
@@ -121,7 +122,7 @@
                     <ComboBox
                         MinWidth="140"
                         Margin="0,8,0,0"
-                        SelectedIndex="{Binding ViewModel.InfoBadgeSeverityComboBoxSelectedIndex, Mode=TwoWay}">
+                        SelectedIndex="{Binding InfoBadgeSeverityComboBoxSelectedIndex, Mode=TwoWay}">
                         <ComboBoxItem Content="Attention" />
                         <ComboBoxItem Content="Informational" />
                         <ComboBoxItem Content="Success" />

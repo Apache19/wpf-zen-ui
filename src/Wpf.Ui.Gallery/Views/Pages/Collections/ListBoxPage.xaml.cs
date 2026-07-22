@@ -16,8 +16,8 @@ public partial class ListBoxPage : INavigableView<ListBoxViewModel>
 
     public ListBoxPage(ListBoxViewModel viewModel)
     {
-        ViewModel = viewModel;
-        DataContext = this;
+        ViewModel   = viewModel;
+        DataContext = viewModel;
 
         InitializeComponent();
     }

@@ -7,11 +7,12 @@
     xmlns:local="clr-namespace:Wpf.Ui.Gallery.Views.Pages.DateAndTime"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    xmlns:vm="clr-namespace:Wpf.Ui.Gallery.ViewModels.Pages.DateAndTime"
     Title="DateAndTimePage"
     controls:PageControlDocumentation.Show="False"
-    d:DataContext="{d:DesignInstance local:DateAndTimePage,
+    d:DataContext="{d:DesignInstance vm:DateAndTimeViewModel,
                                      IsDesignTimeCreatable=False}"
-    d:DesignHeight="450"
+    Style="{ui:StyleResource DynamicScrollPageStyle}"
     d:DesignWidth="800"
     d:Background="{ui:BrushResource WindowBackgroundBrush}"
     Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
@@ -70,6 +71,6 @@
         <controls:GalleryNavigationPresenter
             Grid.Row="1"
             Margin="0, 10"
-            ItemsSource="{Binding ViewModel.NavigationCards, Mode=OneWay}" />
+            ItemsSource="{Binding NavigationCards, Mode=OneWay}" />
     </Grid>
 </Page>

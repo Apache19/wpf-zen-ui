@@ -18,7 +18,7 @@ public partial class CardControlPage : INavigableView<CardControlViewModel>
     public CardControlPage(CardControlViewModel viewModel)
     {
         InitializeComponent();
-        ViewModel = viewModel;
+        ViewModel   = viewModel;
     }
 
     public CardControlViewModel ViewModel { get; }

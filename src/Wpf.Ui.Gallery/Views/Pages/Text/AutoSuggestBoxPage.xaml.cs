@@ -16,8 +16,8 @@ public partial class AutoSuggestBoxPage : INavigableView<AutoSuggestBoxViewModel
 
     public AutoSuggestBoxPage(AutoSuggestBoxViewModel viewModel)
     {
-        ViewModel = viewModel;
-        DataContext = this;
+        ViewModel   = viewModel;
+        DataContext = viewModel;
 
         InitializeComponent();
     }

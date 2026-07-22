@@ -3,16 +3,12 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-using System.Diagnostics;
-using System.Windows;
-using System.Windows.Input;
-
 namespace Wpf.Ui.Gallery.ViewModels.Pages.BasicInput;
 
 public partial class DropDownButtonViewModel : ViewModel
 {
     [ObservableProperty]
-    private string _statusMessage = "Ready.";
+    public partial string StatusMessage { get; set; } = "Ready.";
 
     [RelayCommand]
     private void OnCut()

@@ -8,7 +8,7 @@ namespace Wpf.Ui.Gallery.ViewModels.Pages.Collections;
 public partial class ListBoxViewModel : ViewModel
 {
     [ObservableProperty]
-    private ObservableCollection<string> _listBoxItems =
+    public partial ObservableCollection<string> ListBoxItems { get; set; } =
     [
         "Arial",
         "Comic Sans MS",

@@ -8,14 +8,14 @@ namespace Wpf.Ui.Gallery.ViewModels.Pages.BasicInput;
 public partial class SliderViewModel : ViewModel
 {
     [ObservableProperty]
-    private int _simpleSliderValue = 0;
+    public partial int SimpleSliderValue { get; set; } = 0;
 
     [ObservableProperty]
-    private int _rangeSliderValue = 500;
+    public partial int RangeSliderValue { get; set; } = 500;
 
     [ObservableProperty]
-    private int _marksSliderValue = 0;
+    public partial int MarksSliderValue { get; set; } = 0;
 
     [ObservableProperty]
-    private int _verticalSliderValue = 0;
+    public partial int VerticalSliderValue { get; set; } = 0;
 }

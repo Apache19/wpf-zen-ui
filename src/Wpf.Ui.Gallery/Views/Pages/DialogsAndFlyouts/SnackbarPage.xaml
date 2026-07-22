@@ -7,14 +7,15 @@
     xmlns:local="clr-namespace:Wpf.Ui.Gallery.Views.Pages.DialogsAndFlyouts"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    xmlns:vm="clr-namespace:Wpf.Ui.Gallery.ViewModels.Pages.DialogsAndFlyouts"
     Title="SnackbarPage"
     controls:PageControlDocumentation.DocumentationType="{x:Type ui:Snackbar}"
     d:Background="{ui:BrushResource WindowBackgroundBrush}"
-    d:DataContext="{d:DesignInstance local:SnackbarPage, IsDesignTimeCreatable=False}"
-    d:DesignHeight="450"
+    d:DataContext="{d:DesignInstance vm:SnackbarViewModel, IsDesignTimeCreatable=False}"
     d:DesignWidth="800"
     Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
-    mc:Ignorable="d">
+    mc:Ignorable="d"
+    Style="{ui:StyleResource DynamicScrollPageStyle}">
 
     <Grid Margin="0,0,0,24">
         <controls:ControlExample Margin="0" HeaderText="Global WPF UI Snackbar inside NavigationView content.">
@@ -29,7 +30,7 @@
                 <ui:Button
                     Grid.Column="0"
                     VerticalAlignment="Center"
-                    Command="{Binding ViewModel.OpenSnackbarCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:SnackbarPage}, Mode=OneWay}"
+                    Command="{Binding OpenSnackbarCommand, Mode=OneWay}"
                     CommandParameter="{Binding RelativeSource={RelativeSource Self}, Mode=OneWay}"
                     Content="Show snackbar" />
                 <Grid Grid.Column="1" VerticalAlignment="Center">
@@ -43,7 +44,7 @@
                         MinWidth="140"
                         Margin="0,8,0,0"
                         VerticalAlignment="Center"
-                        SelectedIndex="{Binding ViewModel.SnackbarAppearanceComboBoxSelectedIndex, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:SnackbarPage}, Mode=TwoWay}">
+                        SelectedIndex="{Binding SnackbarAppearanceComboBoxSelectedIndex, Mode=TwoWay}">
                         <ComboBoxItem Content="Normal" />
                         <ComboBoxItem Content="Info" />
                         <ComboBoxItem Content="Success" />
@@ -66,7 +67,7 @@
                         Minimum="1"
                         TickFrequency="1"
                         TickPlacement="BottomRight"
-                        Value="{Binding ViewModel.SnackbarTimeout, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:SnackbarPage}, Mode=TwoWay}" />
+                        Value="{Binding SnackbarTimeout, Mode=TwoWay}" />
                 </Grid>
             </Grid>
         </controls:ControlExample>

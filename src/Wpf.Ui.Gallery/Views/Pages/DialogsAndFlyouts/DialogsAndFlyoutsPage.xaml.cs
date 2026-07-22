@@ -18,8 +18,8 @@ public partial class DialogsAndFlyoutsPage : INavigableView<DialogsAndFlyoutsVie
 
     public DialogsAndFlyoutsPage(DialogsAndFlyoutsViewModel viewModel, INavigationService navigationService)
     {
-        ViewModel = viewModel;
-        DataContext = this;
+        ViewModel   = viewModel;
+        DataContext = viewModel;
         _navigationService = navigationService;
 
         InitializeComponent();

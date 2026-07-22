@@ -11,7 +11,7 @@ namespace Wpf.Ui.Gallery.ViewModels.Pages;
 public partial class AllControlsViewModel : ViewModel
 {
     [ObservableProperty]
-    private ICollection<NavigationCard> _navigationCards = new ObservableCollection<NavigationCard>(
+    public partial ICollection<NavigationCard> NavigationCards { get; set; } = new ObservableCollection<NavigationCard>(
         ControlPages
             .All()
             .Select(x => new NavigationCard()

@@ -5,16 +5,18 @@
     xmlns:controls="clr-namespace:Wpf.Ui.Gallery.Controls"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:local="clr-namespace:Wpf.Ui.Gallery.Views.Pages.Text"
+    xmlns:vm="clr-namespace:Wpf.Ui.Gallery.ViewModels.Pages.Text"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:system="clr-namespace:System;assembly=System.Runtime"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
     Title="TextBlockPage"
     controls:PageControlDocumentation.DocumentationType="{x:Type ui:TextBlock}"
     d:Background="{ui:BrushResource WindowBackgroundBrush}"
-    d:DataContext="{d:DesignInstance local:TextBlockPage, IsDesignTimeCreatable=False}"
+    d:DataContext="{d:DesignInstance vm:TextBlockViewModel, IsDesignTimeCreatable=False}"
     d:DesignWidth="800"
     Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
-    mc:Ignorable="d">
+    mc:Ignorable="d"
+    Style="{ui:StyleResource DynamicScrollPageStyle}">
 
     <StackPanel Margin="0,0,0,24">
         <controls:ControlExample

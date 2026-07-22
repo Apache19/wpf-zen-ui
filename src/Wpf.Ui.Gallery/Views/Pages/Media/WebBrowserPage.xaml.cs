@@ -16,8 +16,8 @@ public partial class WebBrowserPage : INavigableView<WebBrowserViewModel>
 
     public WebBrowserPage(WebBrowserViewModel viewModel)
     {
-        ViewModel = viewModel;
-        DataContext = this;
+        ViewModel   = viewModel;
+        DataContext = viewModel;
 
         InitializeComponent();
     }

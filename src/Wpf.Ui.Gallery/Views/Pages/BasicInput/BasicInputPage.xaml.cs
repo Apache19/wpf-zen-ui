@@ -12,18 +12,20 @@ namespace Wpf.Ui.Gallery.Views.Pages.BasicInput;
 public partial class BasicInputPage : INavigableView<BasicInputViewModel>
 {
     private readonly INavigationService _navigationService;
-    private SnowflakeEffect? _snowflake;
+    private          SnowflakeEffect?   _snowflake;
 
     public BasicInputViewModel ViewModel { get; }
 
     public BasicInputPage(BasicInputViewModel viewModel, INavigationService navigationService)
     {
-        ViewModel = viewModel;
-        DataContext = this;
+        ViewModel   = viewModel;
+        DataContext = viewModel;
+
         _navigationService = navigationService;
 
         InitializeComponent();
-        Loaded += HandleLoaded;
+
+        Loaded   += HandleLoaded;
         Unloaded += HandleUnloaded;
     }
 
@@ -32,7 +34,7 @@ public partial class BasicInputPage : INavigableView<BasicInputViewModel>
         INavigationView? navigationControl = _navigationService.GetNavigationControl();
         if (
             navigationControl?.BreadcrumbBar != null
-            && navigationControl.BreadcrumbBar.Visibility != Visibility.Collapsed
+         && navigationControl.BreadcrumbBar.Visibility != Visibility.Collapsed
         )
         {
             navigationControl.BreadcrumbBar.SetCurrentValue(VisibilityProperty, Visibility.Collapsed);
@@ -62,15 +64,15 @@ public partial class BasicInputPage : INavigableView<BasicInputViewModel>
         INavigationView? navigationControl = _navigationService.GetNavigationControl();
         if (
             navigationControl?.BreadcrumbBar != null
-            && navigationControl.BreadcrumbBar.Visibility != Visibility.Visible
+         && navigationControl.BreadcrumbBar.Visibility != Visibility.Visible
         )
         {
             navigationControl.BreadcrumbBar.SetCurrentValue(VisibilityProperty, Visibility.Visible);
         }
 
         _snowflake?.Stop();
-        _snowflake = null;
-        Loaded -= HandleLoaded;
-        Unloaded -= HandleUnloaded;
+        _snowflake =  null;
+        Loaded     -= HandleLoaded;
+        Unloaded   -= HandleUnloaded;
     }
 }

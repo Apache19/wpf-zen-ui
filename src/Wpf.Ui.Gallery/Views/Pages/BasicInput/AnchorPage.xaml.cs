@@ -12,12 +12,12 @@ namespace Wpf.Ui.Gallery.Views.Pages.BasicInput;
 [GalleryPage("Button which opens a link.", SymbolRegular.CubeLink20)]
 public partial class AnchorPage : INavigableView<AnchorViewModel>
 {
-    public AnchorViewModel ViewModel { get; init; }
+    public AnchorViewModel ViewModel { get; }
 
     public AnchorPage(AnchorViewModel viewModel)
     {
-        ViewModel = viewModel;
-        DataContext = this;
+        ViewModel   = viewModel;
+        DataContext = viewModel;
 
         InitializeComponent();
     }

@@ -8,10 +8,12 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:samples="clr-namespace:Wpf.Ui.Gallery.Views.Pages.Samples"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    xmlns:vm="clr-namespace:Wpf.Ui.Gallery.ViewModels.Pages.Navigation"
     Title="NavigationViewPage"
+    Style="{ui:StyleResource DynamicScrollPageStyle}"
     controls:PageControlDocumentation.DocumentationType="{x:Type ui:NavigationView}"
     d:Background="{ui:BrushResource WindowBackgroundBrush}"
-    d:DataContext="{d:DesignInstance local:NavigationViewPage, IsDesignTimeCreatable=False}"
+    d:DataContext="{d:DesignInstance vm:NavigationViewViewModel, IsDesignTimeCreatable=False}"
     d:DesignWidth="1000"
     Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
     mc:Ignorable="d">

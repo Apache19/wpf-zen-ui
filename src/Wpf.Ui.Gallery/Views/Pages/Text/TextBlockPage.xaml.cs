@@ -16,8 +16,8 @@ public partial class TextBlockPage : INavigableView<TextBlockViewModel>
 
     public TextBlockPage(TextBlockViewModel viewModel)
     {
-        ViewModel = viewModel;
-        DataContext = this;
+        ViewModel   = viewModel;
+        DataContext = viewModel;
 
         InitializeComponent();
     }

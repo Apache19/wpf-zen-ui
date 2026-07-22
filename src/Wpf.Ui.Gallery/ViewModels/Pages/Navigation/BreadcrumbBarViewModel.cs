@@ -18,7 +18,7 @@ public partial class BreadcrumbBarViewModel : ViewModel
     ];
 
     [ObservableProperty]
-    private ObservableCollection<string> _strings =
+    public partial ObservableCollection<string> Strings { get; set; } =
     [
         "Home",
         "Document",
@@ -31,7 +31,7 @@ public partial class BreadcrumbBarViewModel : ViewModel
     ];
 
     [ObservableProperty]
-    private ObservableCollection<Folder> _folders = new();
+    public partial ObservableCollection<Folder> Folders { get; set; } = new();
 
     public BreadcrumbBarViewModel()
     {

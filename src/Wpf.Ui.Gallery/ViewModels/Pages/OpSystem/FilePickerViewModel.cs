@@ -10,40 +10,40 @@ namespace Wpf.Ui.Gallery.ViewModels.Pages.OpSystem;
 public partial class FilePickerViewModel : ViewModel
 {
     [ObservableProperty]
-    private Visibility _openedFilePathVisibility = Visibility.Collapsed;
+    public partial Visibility OpenedFilePathVisibility { get; set; } = Visibility.Collapsed;
 
     [ObservableProperty]
-    private string _openedFilePath = string.Empty;
+    public partial string OpenedFilePath { get; set; } = string.Empty;
 
     [ObservableProperty]
-    private Visibility _openedPicturePathVisibility = Visibility.Collapsed;
+    public partial Visibility OpenedPicturePathVisibility { get; set; } = Visibility.Collapsed;
 
     [ObservableProperty]
-    private string _openedPicturePath = string.Empty;
+    public partial string OpenedPicturePath { get; set; } = string.Empty;
 
     [ObservableProperty]
-    private Visibility _openedMultiplePathVisibility = Visibility.Collapsed;
+    public partial Visibility OpenedMultiplePathVisibility { get; set; } = Visibility.Collapsed;
 
     [ObservableProperty]
-    private string _openedMultiplePath = string.Empty;
+    public partial string OpenedMultiplePath { get; set; } = string.Empty;
 
     [ObservableProperty]
-    private Visibility _openedFolderPathVisibility = Visibility.Collapsed;
+    public partial Visibility OpenedFolderPathVisibility { get; set; } = Visibility.Collapsed;
 
     [ObservableProperty]
-    private string _openedFolderPath = string.Empty;
+    public partial string OpenedFolderPath { get; set; } = string.Empty;
 
     [ObservableProperty]
-    private string _fileToSaveName = string.Empty;
+    public partial string FileToSaveName { get; set; } = string.Empty;
 
     [ObservableProperty]
-    private string _fileToSaveContents = string.Empty;
+    public partial string FileToSaveContents { get; set; } = string.Empty;
 
     [ObservableProperty]
-    private Visibility _savedFileNoticeVisibility = Visibility.Collapsed;
+    public partial Visibility SavedFileNoticeVisibility { get; set; } = Visibility.Collapsed;
 
     [ObservableProperty]
-    private string _savedFileNotice = string.Empty;
+    public partial string SavedFileNotice { get; set; } = string.Empty;
 
     [RelayCommand]
     public void OnOpenFile()

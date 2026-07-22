@@ -4,16 +4,16 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Ui.Gallery.Controls"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:local="clr-namespace:Wpf.Ui.Gallery.ViewModels.Pages.BasicInput"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    xmlns:vm="clr-namespace:Wpf.Ui.Gallery.ViewModels.Pages.BasicInput"
     Title="ButtonPage"
     controls:PageControlDocumentation.DocumentationType="{x:Type ui:Button}"
     d:Background="{ui:BrushResource WindowBackgroundBrush}"
-    d:DataContext="{d:DesignInstance local:ButtonViewModel, IsDesignTimeCreatable=True}"
-    d:DesignHeight="1250"
+    d:DataContext="{d:DesignInstance vm:ButtonViewModel, IsDesignTimeCreatable=True}"
     d:DesignWidth="800"
     Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
+    Style="{ui:StyleResource DynamicScrollPageStyle}"
     mc:Ignorable="d">
 
     <Page.Resources>
@@ -53,14 +53,11 @@
                     HorizontalAlignment="Left"
                     VerticalAlignment="Center"
                     Content="Standard WPF button"
-                    IsDefault="{Binding ElementName=WpfButtonIsDefaultBox, Path=IsChecked}"
-                    IsEnabled="{Binding IsSimpleButtonEnabled, Mode=OneWay}" />
-                <StackPanel Grid.Column="1">
-                    <ui:CheckBox Content="Enable button" IsChecked="{Binding IsSimpleButtonEnabled}" />
-                    <ui:Separator Margin="0,4" Orientation="Horizontal" />
-                    <ui:CheckBox x:Name="WpfButtonIsDefaultBox" Content="IsDefault" />
-                </StackPanel>
-
+                    IsEnabled="{Binding IsSimpleButtonDisabled, Converter={StaticResource BoolInvertConverter}}" />
+                <ui:CheckBox
+                    Grid.Column="1"
+                    Content="Disable button"
+                    IsChecked="{Binding IsSimpleButtonDisabled}" />
             </Grid>
         </controls:ControlExample>
 
@@ -88,10 +85,10 @@
                     MinWidth="200"
                     HorizontalAlignment="Left"
                     VerticalAlignment="Center"
-                    Appearance="{Binding ButtonAppearance}"
+                    Appearance="{Binding UiButtonAppearance}"
                     Content="WPF UI button"
                     Icon="{ui:SymbolIcon Fluent24}"
-                    IsEnabled="{Binding IsUiButtonEnabled, Mode=OneWay}" />
+                    IsEnabled="{Binding IsUiButtonDisabled, Converter={StaticResource BoolInvertConverter}}" />
                 <StackPanel Grid.Column="1" Orientation="Vertical">
                     <StackPanel Orientation="Horizontal">
                         <ui:TextBlock
@@ -101,10 +98,13 @@
                         <ComboBox
                             MinWidth="180"
                             ItemsSource="{Binding Source={StaticResource AppearanceList}}"
-                            SelectedItem="{Binding ButtonAppearance}" />
+                            SelectedItem="{Binding UiButtonAppearance}" />
                     </StackPanel>
                     <ui:Separator Margin="0,12" Orientation="Horizontal" />
-                    <ui:CheckBox Content="Enable button" IsChecked="{Binding IsUiButtonEnabled}" />
+                    <ui:CheckBox
+                        HorizontalAlignment="Right"
+                        Content="Disable button"
+                        IsChecked="{Binding IsUiButtonDisabled}" />
                 </StackPanel>
             </Grid>
         </controls:ControlExample>

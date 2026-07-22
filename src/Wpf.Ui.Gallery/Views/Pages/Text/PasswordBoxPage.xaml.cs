@@ -16,8 +16,8 @@ public partial class PasswordBoxPage : INavigableView<PasswordBoxViewModel>
 
     public PasswordBoxPage(PasswordBoxViewModel viewModel)
     {
-        ViewModel = viewModel;
-        DataContext = this;
+        ViewModel   = viewModel;
+        DataContext = viewModel;
 
         InitializeComponent();
     }

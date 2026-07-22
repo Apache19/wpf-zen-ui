@@ -17,8 +17,8 @@ public partial class ColorsPage : INavigableView<ColorsViewModel>
 
     public ColorsPage(ColorsViewModel viewModel)
     {
-        ViewModel = viewModel;
-        DataContext = this;
+        ViewModel   = viewModel;
+        DataContext = viewModel;
 
         InitializeComponent();
     }

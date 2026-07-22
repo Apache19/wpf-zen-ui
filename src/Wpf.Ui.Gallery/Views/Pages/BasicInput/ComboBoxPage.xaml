@@ -4,14 +4,15 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Ui.Gallery.Controls"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:local="clr-namespace:Wpf.Ui.Gallery.Views.Pages.BasicInput"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    xmlns:vm="clr-namespace:Wpf.Ui.Gallery.ViewModels.Pages.BasicInput"
     Title="ComboBoxPage"
     d:Background="{ui:BrushResource WindowBackgroundBrush}"
-    d:DataContext="{d:DesignInstance local:ComboBoxPage, IsDesignTimeCreatable=False}"
+    d:DataContext="{d:DesignInstance vm:ComboBoxViewModel, IsDesignTimeCreatable=False}"
     d:DesignWidth="800"
     Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
+    Style="{ui:StyleResource DynamicScrollPageStyle}"
     mc:Ignorable="d">
 
     <StackPanel Margin="0,0,0,24">
@@ -38,7 +39,7 @@
                 MinWidth="200"
                 HorizontalAlignment="Left"
                 ui:PlaceholderService.Content="Placeholder"
-                ItemsSource="{Binding ViewModel.ComboBoxFontFamilies, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:ComboBoxPage}, Mode=OneWay}">
+                ItemsSource="{Binding ComboBoxFontFamilies}">
                 <ComboBox.ItemTemplate>
                     <DataTemplate>
                         <TextBlock FontFamily="{Binding}" Text="{Binding}" />
@@ -56,7 +57,7 @@
                 HorizontalAlignment="Left"
                 ui:PlaceholderService.Content="Placeholder"
                 IsEditable="True"
-                ItemsSource="{Binding ViewModel.ComboBoxFontSizes, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:ComboBoxPage}, Mode=OneWay}"
+                ItemsSource="{Binding ComboBoxFontSizes}"
                 SelectedIndex="0" />
         </controls:ControlExample>
 
@@ -65,7 +66,7 @@
             HeaderText="A ComboBox with grouped items using GroupStyle."
             XamlCode="&lt;ComboBox&gt;&#x0a;  &lt;ComboBox.GroupStyle&gt;&#x0a;    &lt;GroupStyle /&gt;&#x0a;  &lt;/ComboBox.GroupStyle&gt;&#x0a;&lt;/ComboBox&gt;">
             <controls:ControlExample.Resources>
-                <CollectionViewSource x:Key="GroupedItemsSource" Source="{Binding ViewModel.GroupedItems, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:ComboBoxPage}}">
+                <CollectionViewSource x:Key="GroupedItemsSource" Source="{Binding GroupedItems}">
                     <CollectionViewSource.GroupDescriptions>
                         <PropertyGroupDescription PropertyName="Category" />
                     </CollectionViewSource.GroupDescriptions>
@@ -81,7 +82,7 @@
                 <ComboBox.GroupStyle>
                     <GroupStyle>
                         <GroupStyle.HeaderTemplate>
-                            <DataTemplate>
+                            <DataTemplate DataType="{x:Type vm:GroupedComboBoxItem}">
                                 <TextBlock
                                     Margin="8,4,0,4"
                                     FontWeight="SemiBold"

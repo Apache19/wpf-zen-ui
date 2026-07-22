@@ -16,8 +16,8 @@ public partial class MessageBoxPage : INavigableView<MessageBoxViewModel>
 
     public MessageBoxPage(MessageBoxViewModel viewModel)
     {
-        ViewModel = viewModel;
-        DataContext = this;
+        ViewModel   = viewModel;
+        DataContext = viewModel;
 
         InitializeComponent();
     }

@@ -10,7 +10,7 @@ namespace Wpf.Ui.Gallery.ViewModels.Pages.Text;
 public partial class AutoSuggestBoxViewModel : ViewModel
 {
     [ObservableProperty]
-    private List<string> _autoSuggestBoxSuggestions = new()
+    public partial List<string> AutoSuggestBoxSuggestions { get; set; } = new()
     {
         "John",
         "Winston",
@@ -29,16 +29,5 @@ public partial class AutoSuggestBoxViewModel : ViewModel
     };
 
     [ObservableProperty]
-    private bool _showClearButton = true;
-
-    [RelayCommand]
-    private void OnShowClearButtonChecked(object sender)
-    {
-        if (sender is not CheckBox checkbox)
-        {
-            return;
-        }
-
-        ShowClearButton = !(checkbox.IsChecked ?? false);
-    }
+    public partial bool ShowClearButtonDisabled { get; set; } = false;
 }

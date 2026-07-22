@@ -5,14 +5,15 @@
     xmlns:controls="clr-namespace:Wpf.Ui.Gallery.Controls"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:dialogsAndFlyouts="clr-namespace:Wpf.Ui.Gallery.ViewModels.Pages.DialogsAndFlyouts"
+    xmlns:vm="clr-namespace:Wpf.Ui.Gallery.ViewModels.Pages.DialogsAndFlyouts"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:system="clr-namespace:System;assembly=System.Runtime"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
     Title="ContentDialog"
     controls:PageControlDocumentation.DocumentationType="{x:Type ui:ContentDialog}"
-    d:DataContext="{d:DesignInstance dialogsAndFlyouts:ContentDialogViewModel,
+    Style="{ui:StyleResource DynamicScrollPageStyle}"
+    d:DataContext="{d:DesignInstance vm:ContentDialogViewModel,
                                      IsDesignTimeCreatable=False}"
-    d:DesignHeight="450"
     d:DesignWidth="850"
     d:Background="{ui:BrushResource WindowBackgroundBrush}"
     Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"

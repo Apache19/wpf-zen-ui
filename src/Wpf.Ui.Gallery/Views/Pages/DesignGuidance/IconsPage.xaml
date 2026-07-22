@@ -8,12 +8,12 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:models="clr-namespace:Wpf.Ui.Gallery.Models"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    xmlns:vm="clr-namespace:Wpf.Ui.Gallery.ViewModels.Pages.DesignGuidance"
     Title="IconsPage"
     controls:PageControlDocumentation.DocumentationType="{x:Type ui:SymbolIcon}"
     d:Background="{ui:BrushResource WindowBackgroundBrush}"
-    d:DataContext="{d:DesignInstance local:IconsPage, IsDesignTimeCreatable=False}"
+    d:DataContext="{d:DesignInstance vm:IconsViewModel, IsDesignTimeCreatable=False}"
     d:DesignWidth="800"
-    Background="DarkSlateGray"
     Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
     mc:Ignorable="d">
 
@@ -52,14 +52,13 @@
                 Margin="0,4,0,0"
                 HorizontalAlignment="Left"
                 PlaceholderText="Search icons"
-                Text="{Binding ViewModel.AutoSuggestBoxText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                Text="{Binding AutoSuggestBoxText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
             <ui:CheckBox
                 Grid.Column="1"
                 MinWidth="0"
                 Margin="12,0,0,0"
-                Command="{Binding ViewModel.CheckboxCheckedCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:IconsPage}, Mode=OneWay}"
-                CommandParameter="{Binding RelativeSource={RelativeSource Self}, Mode=OneWay}"
-                Content="Is filled" />
+                Content="Is filled"
+                IsChecked="{Binding IsIconFilled}" />
         </Grid>
 
         <Grid Grid.Row="4" Margin="0,12,0,0">
@@ -76,7 +75,7 @@
                 <ui:VirtualizingItemsControl
                     Margin="0,24,4,0"
                     Padding="0"
-                    ItemsSource="{Binding ViewModel.FilteredIconsCollection, Mode=OneWay}"
+                    ItemsSource="{Binding FilteredIconsCollection, Mode=OneWay}"
                     VirtualizingPanel.CacheLengthUnit="Pixel">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate DataType="{x:Type models:DisplayableIcon}">
@@ -91,10 +90,7 @@
                                 CommandParameter="{Binding Path=Id, Mode=OneTime}"
                                 ToolTip="{Binding Name, Mode=OneTime}"
                                 ToolTipService.InitialShowDelay="240">
-                                <ui:SymbolIcon
-                                    Grid.Row="0"
-                                    FontSize="28"
-                                    Symbol="{Binding Icon, Mode=OneTime}" />
+                                <ui:SymbolIcon FontSize="28" Symbol="{Binding Icon, Mode=OneTime}" />
                             </ui:Button>
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
@@ -124,14 +120,14 @@
                     <ui:TextBlock
                         Grid.Row="0"
                         FontTypography="BodyStrong"
-                        Text="{Binding ViewModel.SelectedSymbolName, Mode=OneWay}" />
+                        Text="{Binding SelectedSymbolName, Mode=OneWay}" />
                     <ui:SymbolIcon
                         Grid.Row="1"
                         Margin="0,30,0,24"
                         HorizontalAlignment="Left"
-                        Filled="{Binding ViewModel.IsIconFilled, Mode=OneWay}"
+                        Filled="{Binding IsIconFilled, Mode=OneWay}"
                         FontSize="62"
-                        Symbol="{Binding ViewModel.SelectedSymbol, Mode=OneWay}" />
+                        Symbol="{Binding SelectedSymbol, Mode=OneWay}" />
                     <ui:TextBlock
                         Grid.Row="2"
                         FontTypography="BodyStrong"
@@ -140,7 +136,7 @@
                         Grid.Row="3"
                         Margin="0,4,0,0"
                         Foreground="{ui:BrushResource TextFillColorSecondaryBrush}"
-                        Text="{Binding ViewModel.SelectedSymbolName, Mode=OneWay}"
+                        Text="{Binding SelectedSymbolName, Mode=OneWay}"
                         UseTextBlockAppearance="True" />
                     <ui:TextBlock
                         Grid.Row="4"
@@ -151,7 +147,7 @@
                         Grid.Row="5"
                         Margin="0,4,0,0"
                         Foreground="{ui:BrushResource TextFillColorSecondaryBrush}"
-                        Text="{Binding ViewModel.SelectedSymbolUnicodePoint, Mode=OneWay}"
+                        Text="{Binding SelectedSymbolUnicodePoint, Mode=OneWay}"
                         UseTextBlockAppearance="True" />
                     <ui:TextBlock
                         Grid.Row="6"
@@ -162,7 +158,7 @@
                         Grid.Row="7"
                         Margin="0,4,0,0"
                         Foreground="{ui:BrushResource TextFillColorSecondaryBrush}"
-                        Text="{Binding ViewModel.SelectedSymbolTextGlyph, Mode=OneWay}"
+                        Text="{Binding SelectedSymbolTextGlyph, Mode=OneWay}"
                         UseTextBlockAppearance="True" />
                     <ui:TextBlock
                         Grid.Row="8"
@@ -174,7 +170,7 @@
                         MaxWidth="250"
                         Margin="0,4,0,0"
                         Foreground="{ui:BrushResource TextFillColorSecondaryBrush}"
-                        Text="{Binding ViewModel.SelectedSymbolXaml, Mode=OneWay}"
+                        Text="{Binding SelectedSymbolXaml, Mode=OneWay}"
                         TextWrapping="WrapWithOverflow"
                         UseTextBlockAppearance="True" />
                 </Grid>

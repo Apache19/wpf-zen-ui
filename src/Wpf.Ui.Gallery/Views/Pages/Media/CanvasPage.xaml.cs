@@ -16,8 +16,8 @@ public partial class CanvasPage : INavigableView<CanvasViewModel>
 
     public CanvasPage(CanvasViewModel viewModel)
     {
-        ViewModel = viewModel;
-        DataContext = this;
+        ViewModel   = viewModel;
+        DataContext = viewModel;
 
         InitializeComponent();
     }

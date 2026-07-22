@@ -16,8 +16,8 @@ public partial class ProgressRingPage : INavigableView<ProgressRingViewModel>
 
     public ProgressRingPage(ProgressRingViewModel viewModel)
     {
-        ViewModel = viewModel;
-        DataContext = this;
+        ViewModel   = viewModel;
+        DataContext = viewModel;
 
         InitializeComponent();
     }

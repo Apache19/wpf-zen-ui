@@ -18,8 +18,8 @@ public partial class StatusAndInfoPage : INavigableView<StatusAndInfoViewModel>
 
     public StatusAndInfoPage(StatusAndInfoViewModel viewModel, INavigationService navigationService)
     {
-        ViewModel = viewModel;
-        DataContext = this;
+        ViewModel   = viewModel;
+        DataContext = viewModel;
         _navigationService = navigationService;
 
         InitializeComponent();

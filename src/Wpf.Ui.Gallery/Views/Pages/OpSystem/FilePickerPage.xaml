@@ -7,10 +7,11 @@
     xmlns:local="clr-namespace:Wpf.Ui.Gallery.Views.Pages.OpSystem"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    xmlns:vm="clr-namespace:Wpf.Ui.Gallery.ViewModels.Pages.OpSystem"
     controls:PageControlDocumentation.Show="False"
-    d:DataContext="{d:DesignInstance local:FilePickerPage,
+    Style="{ui:StyleResource DynamicScrollPageStyle}"
+    d:DataContext="{d:DesignInstance vm:FilePickerViewModel,
                                      IsDesignTimeCreatable=False}"
-    d:DesignHeight="980"
     d:DesignWidth="800"
     d:Background="{ui:BrushResource WindowBackgroundBrush}"
     Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
@@ -28,19 +29,19 @@
                 </Grid.ColumnDefinitions>
                 <ui:Button
                     Grid.Column="0"
-                    Command="{Binding ViewModel.OpenFileCommand}"
+                    Command="{Binding OpenFileCommand}"
                     Content="Open a file" />
                 <StackPanel
                     Grid.Column="1"
                     Margin="16,0,0,0"
                     VerticalAlignment="Center"
                     Orientation="Horizontal"
-                    Visibility="{Binding ViewModel.OpenedFilePathVisibility}">
+                    Visibility="{Binding OpenedFilePathVisibility}">
                     <ui:TextBlock Text="Picked file:" />
                     <ui:TextBlock
                         Margin="4,0,0,0"
                         FontTypography="BodyStrong"
-                        Text="{Binding ViewModel.OpenedFilePath}" />
+                        Text="{Binding OpenedFilePath}" />
 
                 </StackPanel>
             </Grid>
@@ -57,19 +58,19 @@
                 </Grid.ColumnDefinitions>
                 <ui:Button
                     Grid.Column="0"
-                    Command="{Binding ViewModel.OpenPictureCommand}"
+                    Command="{Binding OpenPictureCommand}"
                     Content="Open a picture" />
                 <StackPanel
                     Grid.Column="1"
                     Margin="16,0,0,0"
                     VerticalAlignment="Center"
                     Orientation="Horizontal"
-                    Visibility="{Binding ViewModel.OpenedPicturePathVisibility}">
+                    Visibility="{Binding OpenedPicturePathVisibility}">
                     <ui:TextBlock Text="Picked photo:" />
                     <ui:TextBlock
                         Margin="4,0,0,0"
                         FontTypography="BodyStrong"
-                        Text="{Binding ViewModel.OpenedPicturePath}" />
+                        Text="{Binding OpenedPicturePath}" />
                 </StackPanel>
             </Grid>
         </controls:ControlExample>
@@ -85,15 +86,15 @@
                 </Grid.ColumnDefinitions>
                 <ui:Button
                     Grid.Column="0"
-                    Command="{Binding ViewModel.OpenMultipleCommand}"
+                    Command="{Binding OpenMultipleCommand}"
                     Content="Open multiple files" />
                 <StackPanel
                     Grid.Column="1"
                     Margin="16,0,0,0"
                     VerticalAlignment="Center"
-                    Visibility="{Binding ViewModel.OpenedMultiplePathVisibility}">
+                    Visibility="{Binding OpenedMultiplePathVisibility}">
                     <ui:TextBlock Text="Picked files:" />
-                    <ui:TextBlock FontTypography="BodyStrong" Text="{Binding ViewModel.OpenedMultiplePath}" />
+                    <ui:TextBlock FontTypography="BodyStrong" Text="{Binding OpenedMultiplePath}" />
                 </StackPanel>
             </Grid>
         </controls:ControlExample>
@@ -109,15 +110,15 @@
                 </Grid.ColumnDefinitions>
                 <ui:Button
                     Grid.Column="0"
-                    Command="{Binding ViewModel.OpenFolderCommand}"
+                    Command="{Binding OpenFolderCommand}"
                     Content="Open a folder" />
                 <StackPanel
                     Grid.Column="1"
                     Margin="16,0,0,0"
                     VerticalAlignment="Center"
-                    Visibility="{Binding ViewModel.OpenedFolderPathVisibility}">
+                    Visibility="{Binding OpenedFolderPathVisibility}">
                     <ui:TextBlock Text="Picked folder:" />
-                    <ui:TextBlock FontTypography="BodyStrong" Text="{Binding ViewModel.OpenedFolderPath}" />
+                    <ui:TextBlock FontTypography="BodyStrong" Text="{Binding OpenedFolderPath}" />
                 </StackPanel>
             </Grid>
         </controls:ControlExample>
@@ -149,7 +150,7 @@
                         Grid.Column="1"
                         MinWidth="180"
                         PlaceholderText="Type your file name here..."
-                        Text="{Binding ViewModel.FileToSaveName}" />
+                        Text="{Binding FileToSaveName}" />
                     <ui:TextBlock
                         Grid.Column="2"
                         Margin="4,0,0,0"
@@ -170,7 +171,7 @@
                         Grid.Column="1"
                         MinWidth="210"
                         PlaceholderText="Type your file contents here..."
-                        Text="{Binding ViewModel.FileToSaveContents}" />
+                        Text="{Binding FileToSaveContents}" />
                 </Grid>
                 <Grid Grid.Row="3" Margin="0,16,0,0">
                     <Grid.ColumnDefinitions>
@@ -179,14 +180,14 @@
                     </Grid.ColumnDefinitions>
                     <ui:Button
                         Grid.Column="0"
-                        Command="{Binding ViewModel.SaveFileCommand}"
+                        Command="{Binding SaveFileCommand}"
                         Content="Save a file" />
                     <ui:TextBlock
                         Grid.Column="1"
                         Margin="16,0,0,0"
                         VerticalAlignment="Center"
-                        Text="{Binding ViewModel.SavedFileNotice}"
-                        Visibility="{Binding ViewModel.SavedFileNoticeVisibility}" />
+                        Text="{Binding SavedFileNotice}"
+                        Visibility="{Binding SavedFileNoticeVisibility}" />
                 </Grid>
             </Grid>
         </controls:ControlExample>

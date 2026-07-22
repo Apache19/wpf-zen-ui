@@ -18,8 +18,8 @@ public partial class OpSystemPage : INavigableView<OpSystemViewModel>
 
     public OpSystemPage(OpSystemViewModel viewModel, INavigationService navigationService)
     {
-        ViewModel = viewModel;
-        DataContext = this;
+        ViewModel   = viewModel;
+        DataContext = viewModel;
         _navigationService = navigationService;
 
         InitializeComponent();

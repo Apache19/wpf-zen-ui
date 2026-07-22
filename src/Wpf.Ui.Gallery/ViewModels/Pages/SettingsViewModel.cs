@@ -19,20 +19,20 @@ public sealed partial class SettingsViewModel : ViewModel
     private bool _isInitialized = false;
 
     [ObservableProperty]
-    private string _appVersion = string.Empty;
+    public partial string AppVersion { get; set; } = string.Empty;
 
     [ObservableProperty]
-    private UiThemeMode _currentTheme = UiThemeMode.Light;
+    public partial UiThemeMode CurrentTheme { get; set; } = UiThemeMode.Light;
 
     [ObservableProperty]
-    private bool _useSystemAccent = true;
+    public partial bool UseSystemAccent { get; set; } = true;
 
     [ObservableProperty]
-    private NavigationViewPaneDisplayMode _currentApplicationNavigationStyle =
+    public partial NavigationViewPaneDisplayMode CurrentApplicationNavigationStyle { get; set; } =
         NavigationViewPaneDisplayMode.Left;
 
     [ObservableProperty]
-    private ObservableCollection<ThemeItem> _themeList =
+    public partial ObservableCollection<ThemeItem> ThemeList { get; set; } =
     [
         new("Light", UiThemeMode.Light),
         new("Dark", UiThemeMode.Dark),

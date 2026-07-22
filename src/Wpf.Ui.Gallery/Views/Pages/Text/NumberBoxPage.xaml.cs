@@ -16,8 +16,8 @@ public partial class NumberBoxPage : INavigableView<NumberBoxViewModel>
 
     public NumberBoxPage(NumberBoxViewModel viewModel)
     {
-        ViewModel = viewModel;
-        DataContext = this;
+        ViewModel   = viewModel;
+        DataContext = viewModel;
 
         InitializeComponent();
     }

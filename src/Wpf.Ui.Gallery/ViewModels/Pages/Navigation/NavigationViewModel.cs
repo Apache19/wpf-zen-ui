@@ -12,7 +12,7 @@ namespace Wpf.Ui.Gallery.ViewModels.Pages.Navigation;
 public partial class NavigationViewModel : ViewModel
 {
     [ObservableProperty]
-    private ICollection<NavigationCard> _navigationCards = new ObservableCollection<NavigationCard>(
+    public partial ICollection<NavigationCard> NavigationCards { get; set; } = new ObservableCollection<NavigationCard>(
         ControlPages
             .FromNamespace(typeof(NavigationPage).Namespace!)
             .Select(x => new NavigationCard()

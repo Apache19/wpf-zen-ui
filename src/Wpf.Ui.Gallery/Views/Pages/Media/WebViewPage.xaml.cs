@@ -17,7 +17,7 @@ public partial class WebViewPage : INavigableView<WebViewViewModel>
     public WebViewPage(WebViewViewModel viewModel)
     {
         ViewModel = viewModel;
-        DataContext = this;
+        DataContext = viewModel;
 
         InitializeComponent();
     }

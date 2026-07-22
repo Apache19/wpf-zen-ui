@@ -16,8 +16,8 @@ public partial class FlyoutPage : INavigableView<FlyoutViewModel>
 
     public FlyoutPage(FlyoutViewModel viewModel)
     {
-        ViewModel = viewModel;
-        DataContext = this;
+        ViewModel   = viewModel;
+        DataContext = viewModel;
 
         InitializeComponent();
     }

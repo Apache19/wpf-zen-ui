@@ -16,31 +16,31 @@ public partial class IconsViewModel : ViewModel
     private string _autoSuggestBoxText = string.Empty;
 
     [ObservableProperty]
-    private SymbolRegular _selectedSymbol = SymbolRegular.Empty;
+    public partial SymbolRegular SelectedSymbol { get; set; } = SymbolRegular.Empty;
 
     [ObservableProperty]
-    private string _selectedSymbolName = string.Empty;
+    public partial string SelectedSymbolName { get; set; } = string.Empty;
 
     [ObservableProperty]
-    private string _selectedSymbolUnicodePoint = string.Empty;
+    public partial string SelectedSymbolUnicodePoint { get; set; } = string.Empty;
 
     [ObservableProperty]
-    private string _selectedSymbolTextGlyph = string.Empty;
+    public partial string SelectedSymbolTextGlyph { get; set; } = string.Empty;
 
     [ObservableProperty]
-    private string _selectedSymbolXaml = string.Empty;
+    public partial string SelectedSymbolXaml { get; set; } = string.Empty;
 
     [ObservableProperty]
-    private bool _isIconFilled = false;
+    public partial bool IsIconFilled { get; set; } = false;
 
     [ObservableProperty]
-    private List<DisplayableIcon> _iconsCollection = [];
+    public partial List<DisplayableIcon> IconsCollection { get; set; } = [];
 
     [ObservableProperty]
-    private List<DisplayableIcon> _filteredIconsCollection = [];
+    public partial List<DisplayableIcon> FilteredIconsCollection { get; set; } = [];
 
     [ObservableProperty]
-    private List<string> _iconNames = [];
+    public partial List<string> IconNames { get; set; } = [];
 
     public string AutoSuggestBoxText
     {
@@ -95,19 +95,6 @@ public partial class IconsViewModel : ViewModel
     public void OnIconSelected(int parameter)
     {
         _selectedIconId = parameter;
-
-        UpdateSymbolData();
-    }
-
-    [RelayCommand]
-    public void OnCheckboxChecked(object sender)
-    {
-        if (sender is not UiCheckBox checkbox)
-        {
-            return;
-        }
-
-        IsIconFilled = checkbox?.IsChecked ?? false;
 
         UpdateSymbolData();
     }

@@ -18,8 +18,8 @@ public partial class TextPage : INavigableView<TextViewModel>
 
     public TextPage(TextViewModel viewModel, INavigationService navigationService)
     {
-        ViewModel = viewModel;
-        DataContext = this;
+        ViewModel   = viewModel;
+        DataContext = viewModel;
         _navigationService = navigationService;
 
         InitializeComponent();

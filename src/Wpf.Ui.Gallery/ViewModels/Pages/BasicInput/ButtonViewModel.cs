@@ -10,11 +10,11 @@ namespace Wpf.Ui.Gallery.ViewModels.Pages.BasicInput;
 public partial class ButtonViewModel : ViewModel
 {
     [ObservableProperty]
-    private bool _isSimpleButtonEnabled = true;
+    public partial bool IsSimpleButtonDisabled { get; set; }
 
     [ObservableProperty]
-    private bool _isUiButtonEnabled = true;
+    public partial bool IsUiButtonDisabled { get; set; }
 
     [ObservableProperty]
-    private ControlAppearance _buttonAppearance = ControlAppearance.Normal;
+    public partial ControlAppearance UiButtonAppearance { get; set; }
 }

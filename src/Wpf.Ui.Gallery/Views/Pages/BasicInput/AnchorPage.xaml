@@ -4,17 +4,16 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Ui.Gallery.Controls"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:local="clr-namespace:Wpf.Ui.Gallery.Views.Pages.BasicInput"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    xmlns:vm="clr-namespace:Wpf.Ui.Gallery.ViewModels.Pages.BasicInput"
     Title="AnchorPage"
     controls:PageControlDocumentation.DocumentationType="{x:Type ui:Anchor}"
-    d:DataContext="{d:DesignInstance local:AnchorPage,
-                                     IsDesignTimeCreatable=False}"
-    d:DesignHeight="450"
-    d:DesignWidth="800"
     d:Background="{ui:BrushResource WindowBackgroundBrush}"
+    d:DataContext="{d:DesignInstance vm:AnchorViewModel, IsDesignTimeCreatable=False}"
+    d:DesignWidth="800"
     Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
+    Style="{ui:StyleResource DynamicScrollPageStyle}"
     mc:Ignorable="d">
 
     <Grid Margin="0,0,0,24">
@@ -29,28 +28,17 @@
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
                 <StackPanel Grid.Column="0" Orientation="Horizontal">
-                    <StackPanel.Resources>
-                        <Style BasedOn="{StaticResource {x:Type ui:Separator}}" TargetType="{x:Type ui:Separator}">
-                            <Setter Property="Margin" Value="10" />
-                        </Style>
-                    </StackPanel.Resources>
                     <ui:Anchor
+                        HorizontalAlignment="Left"
                         Content="WPF UI anchor"
                         Icon="{ui:SymbolIcon Link24}"
-                        IsEnabled="{Binding ViewModel.IsAnchorEnabled, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:AnchorPage}, Mode=OneWay}"
-                        NavigateUri="https://lepo.co/" />
-                    <ui:Separator Orientation="Vertical" />
-                    <ui:Anchor
-                        Content="WPF UI anchor"
-                        Icon="{ui:SymbolIcon Link24}"
-                        IsEnabled="{Binding ViewModel.IsAnchorEnabled, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:AnchorPage}, Mode=OneWay}"
+                        IsEnabled="{Binding IsAnchorDisabled, Converter={StaticResource BoolInvertConverter}}"
                         NavigateUri="https://lepo.co/" />
                 </StackPanel>
                 <ui:CheckBox
                     Grid.Column="1"
-                    Command="{Binding ViewModel.AnchorCheckboxCheckedCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:AnchorPage}, Mode=OneWay}"
-                    CommandParameter="{Binding RelativeSource={RelativeSource Self}, Mode=OneWay}"
-                    Content="Disable anchor" />
+                    Content="Disable anchor"
+                    IsChecked="{Binding IsAnchorDisabled}" />
             </Grid>
         </controls:ControlExample>
     </Grid>

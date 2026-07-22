@@ -16,8 +16,8 @@ public partial class DatePickerPage : INavigableView<DatePickerViewModel>
 
     public DatePickerPage(DatePickerViewModel viewModel)
     {
-        ViewModel = viewModel;
-        DataContext = this;
+        ViewModel   = viewModel;
+        DataContext = viewModel;
 
         InitializeComponent();
     }

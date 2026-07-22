@@ -8,10 +8,10 @@
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
     xmlns:vm="clr-namespace:Wpf.Ui.Gallery.ViewModels.Pages"
     Title="Settings Page"
+    Style="{ui:StyleResource DynamicScrollPageStyle}"
     controls:PageControlDocumentation.Show="False"
     d:Background="{ui:BrushResource WindowBackgroundBrush}"
     d:DataContext="{d:DesignInstance vm:SettingsViewModel, IsDesignTimeCreatable=True}"
-    d:DesignHeight="450"
     d:DesignWidth="800"
     Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
     mc:Ignorable="d">

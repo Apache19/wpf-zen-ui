@@ -7,11 +7,12 @@
     xmlns:local="clr-namespace:Wpf.Ui.Gallery.Views.Pages.StatusAndInfo"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    xmlns:vm="clr-namespace:Wpf.Ui.Gallery.ViewModels.Pages.StatusAndInfo"
     Title="InfoBarPage"
+    Style="{ui:StyleResource DynamicScrollPageStyle}"
     controls:PageControlDocumentation.DocumentationType="{x:Type ui:InfoBar}"
     d:Background="{ui:BrushResource WindowBackgroundBrush}"
-    d:DataContext="{d:DesignInstance local:InfoBarPage, IsDesignTimeCreatable=False}"
-    d:DesignHeight="450"
+    d:DataContext="{d:DesignInstance vm:InfoBarViewModel, IsDesignTimeCreatable=False}"
     d:DesignWidth="800"
     Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
     mc:Ignorable="d">
@@ -29,9 +30,9 @@
                 <ui:InfoBar
                     Title="Title"
                     Grid.Column="0"
-                    IsOpen="{Binding ViewModel.IsShortInfoBarOpened, Mode=TwoWay}"
+                    IsOpen="{Binding IsShortInfoBarOpened, Mode=TwoWay}"
                     Message="Essential app message."
-                    Severity="{Binding ViewModel.ShortInfoBarSeverity, Mode=OneWay}" />
+                    Severity="{Binding ShortInfoBarSeverity, Mode=OneWay}" />
                 <Grid Grid.Column="1" Margin="12,0,0,0">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
@@ -41,12 +42,12 @@
                         Grid.Row="0"
                         MinWidth="0"
                         Content="Is open"
-                        IsChecked="{Binding ViewModel.IsShortInfoBarOpened, Mode=TwoWay}" />
+                        IsChecked="{Binding IsShortInfoBarOpened, Mode=TwoWay}" />
                     <ComboBox
                         Grid.Row="1"
                         MinWidth="140"
                         Margin="0,8,0,0"
-                        SelectedIndex="{Binding ViewModel.ShortInfoBarSeverityComboBoxSelectedIndex, Mode=TwoWay}">
+                        SelectedIndex="{Binding ShortInfoBarSeverityComboBoxSelectedIndex, Mode=TwoWay}">
                         <ComboBoxItem Content="Informational" />
                         <ComboBoxItem Content="Success" />
                         <ComboBoxItem Content="Warning" />
@@ -68,9 +69,9 @@
                 <ui:InfoBar
                     Title="Title"
                     Grid.Column="0"
-                    IsOpen="{Binding ViewModel.IsLongInfoBarOpened, Mode=TwoWay}"
+                    IsOpen="{Binding IsLongInfoBarOpened, Mode=TwoWay}"
                     Message="Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat."
-                    Severity="{Binding ViewModel.LongInfoBarSeverity, Mode=OneWay}" />
+                    Severity="{Binding LongInfoBarSeverity, Mode=OneWay}" />
                 <Grid Grid.Column="1" Margin="12,0,0,0">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
@@ -80,12 +81,12 @@
                         Grid.Row="0"
                         MinWidth="0"
                         Content="Is open"
-                        IsChecked="{Binding ViewModel.IsLongInfoBarOpened, Mode=TwoWay}" />
+                        IsChecked="{Binding IsLongInfoBarOpened, Mode=TwoWay}" />
                     <ComboBox
                         Grid.Row="1"
                         MinWidth="140"
                         Margin="0,8,0,0"
-                        SelectedIndex="{Binding ViewModel.LongInfoBarSeverityComboBoxSelectedIndex, Mode=TwoWay}">
+                        SelectedIndex="{Binding LongInfoBarSeverityComboBoxSelectedIndex, Mode=TwoWay}">
                         <ComboBoxItem Content="Informational" />
                         <ComboBoxItem Content="Success" />
                         <ComboBoxItem Content="Warning" />

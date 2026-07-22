@@ -12,7 +12,7 @@ namespace Wpf.Ui.Gallery.ViewModels.Pages.StatusAndInfo;
 public partial class StatusAndInfoViewModel : ViewModel
 {
     [ObservableProperty]
-    private ICollection<NavigationCard> _navigationCards = new ObservableCollection<NavigationCard>(
+    public partial ICollection<NavigationCard> NavigationCards { get; set; } = new ObservableCollection<NavigationCard>(
         ControlPages
             .FromNamespace(typeof(StatusAndInfoPage).Namespace!)
             .Select(x => new NavigationCard()

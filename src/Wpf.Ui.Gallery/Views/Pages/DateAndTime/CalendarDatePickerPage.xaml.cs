@@ -16,8 +16,8 @@ public partial class CalendarDatePickerPage : INavigableView<CalendarDatePickerV
 
     public CalendarDatePickerPage(CalendarDatePickerViewModel viewModel)
     {
-        ViewModel = viewModel;
-        DataContext = this;
+        ViewModel   = viewModel;
+        DataContext = viewModel;
 
         InitializeComponent();
     }

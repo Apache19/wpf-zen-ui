@@ -3,59 +3,45 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-using System.Windows.Controls;
-
 namespace Wpf.Ui.Gallery.ViewModels.Pages.BasicInput;
 
 public partial class CheckBoxViewModel : ViewModel
 {
     [ObservableProperty]
-    private bool? _selectAllCheckBoxChecked = null;
+    [NotifyPropertyChangedFor(nameof(SelectAllCheckBoxChecked))]
+    public partial bool OptionOneCheckBoxChecked { get; set; } = false;
 
     [ObservableProperty]
-    private bool _optionOneCheckBoxChecked = false;
+    [NotifyPropertyChangedFor(nameof(SelectAllCheckBoxChecked))]
+    public partial bool OptionTwoCheckBoxChecked { get; set; } = true;
 
     [ObservableProperty]
-    private bool _optionTwoCheckBoxChecked = true;
+    [NotifyPropertyChangedFor(nameof(SelectAllCheckBoxChecked))]
+    public partial bool OptionThreeCheckBoxChecked { get; set; } = false;
 
-    [ObservableProperty]
-    private bool _optionThreeCheckBoxChecked = false;
-
-    [RelayCommand]
-    private void OnSelectAllChecked(object sender)
+    public bool? SelectAllCheckBoxChecked
     {
-        if (sender is not CheckBox checkBox)
+        get
         {
-            return;
+            bool allChecked = OptionOneCheckBoxChecked && OptionTwoCheckBoxChecked && OptionThreeCheckBoxChecked;
+            bool allUnchecked = !OptionOneCheckBoxChecked && !OptionTwoCheckBoxChecked && !OptionThreeCheckBoxChecked;
+
+            return allChecked ? true : allUnchecked ? false : null;
         }
-
-        checkBox.IsChecked ??=
-            !OptionOneCheckBoxChecked || !OptionTwoCheckBoxChecked || !OptionThreeCheckBoxChecked;
-
-        if (checkBox.IsChecked == true)
+        set
         {
-            OptionOneCheckBoxChecked = true;
-            OptionTwoCheckBoxChecked = true;
-            OptionThreeCheckBoxChecked = true;
-        }
-        else if (checkBox.IsChecked == false)
-        {
-            OptionOneCheckBoxChecked = false;
-            OptionTwoCheckBoxChecked = false;
-            OptionThreeCheckBoxChecked = false;
-        }
-    }
+            // Indeterminate state: resolve direction — if any unchecked, check all; else uncheck all.
+            if (value is null)
+            {
+                bool allChecked = OptionOneCheckBoxChecked && OptionTwoCheckBoxChecked && OptionThreeCheckBoxChecked;
+                value = !allChecked;
+            }
 
-    [RelayCommand]
-    private void OnSingleChecked(string option)
-    {
-        bool allChecked = OptionOneCheckBoxChecked && OptionTwoCheckBoxChecked && OptionThreeCheckBoxChecked;
-        bool allUnchecked =
-            !OptionOneCheckBoxChecked && !OptionTwoCheckBoxChecked && !OptionThreeCheckBoxChecked;
+            OptionOneCheckBoxChecked = value.Value;
+            OptionTwoCheckBoxChecked = value.Value;
+            OptionThreeCheckBoxChecked = value.Value;
 
-        SelectAllCheckBoxChecked =
-            allChecked ? true
-            : allUnchecked ? false
-            : (bool?)null;
+            OnPropertyChanged();
+        }
     }
 }

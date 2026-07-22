@@ -18,8 +18,8 @@ public partial class CollectionsPage : INavigableView<CollectionsViewModel>
 
     public CollectionsPage(CollectionsViewModel viewModel, INavigationService navigationService)
     {
-        ViewModel = viewModel;
-        DataContext = this;
+        ViewModel   = viewModel;
+        DataContext = viewModel;
         _navigationService = navigationService;
 
         InitializeComponent();

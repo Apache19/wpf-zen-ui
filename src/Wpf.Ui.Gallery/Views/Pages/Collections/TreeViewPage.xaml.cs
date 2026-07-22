@@ -18,8 +18,8 @@ public partial class TreeViewPage : INavigableView<TreeViewViewModel>
 
     public TreeViewPage(TreeViewViewModel viewModel)
     {
-        ViewModel = viewModel;
-        DataContext = this;
+        ViewModel   = viewModel;
+        DataContext = viewModel;
 
         InitializeComponent();
     }
