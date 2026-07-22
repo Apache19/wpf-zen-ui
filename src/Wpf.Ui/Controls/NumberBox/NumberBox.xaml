@@ -306,7 +306,7 @@
             <Trigger Property="IsMouseOver" Value="True">
                 <Setter TargetName="ContentBorder" Property="Background" Value="{m:BrushResource ControlFillColorSecondaryBrush}" />
             </Trigger>
-            <Trigger Property="IsFocused" Value="True">
+            <Trigger Property="IsKeyboardFocused" Value="True">
                 <Setter TargetName="ContentBorder" Property="Background" Value="{m:BrushResource ControlFillColorInputActiveBrush}" />
                 <Setter TargetName="FocusIndicator" Property="Visibility" Value="Visible" />
             </Trigger>

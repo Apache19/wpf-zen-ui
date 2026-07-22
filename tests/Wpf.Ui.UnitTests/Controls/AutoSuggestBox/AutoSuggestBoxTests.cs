@@ -24,6 +24,7 @@ using UiTextChangeReason = Wpf.Ui.Controls.AutoSuggestionBoxTextChangeReason;
 // ReSharper disable once CheckNamespace
 namespace Wpf.Ui.UnitTests.Controls;
 
+[Collection(nameof(KeyboardFocusTestCollection))]
 public class AutoSuggestBoxTests
 {
     [Fact]
@@ -204,7 +205,7 @@ public class AutoSuggestBoxTests
         RunOnStaThread(() =>
         {
             var alpha = new Suggestion(new SuggestionDetails("Alpha"));
-            var beta  = new Suggestion(new SuggestionDetails("Beta"));
+            var beta = new Suggestion(new SuggestionDetails("Beta"));
             var (window, autoSuggestBox, textBox, _) = CreateLoadedControl(
                 new[] { alpha, beta },
                 "Details.Name"
@@ -366,9 +367,9 @@ public class AutoSuggestBoxTests
     {
         var autoSuggestBox = new TestAutoSuggestBox
         {
-            DisplayMemberPath   = displayMemberPath,
+            DisplayMemberPath = displayMemberPath,
             OriginalItemsSource = originalItemsSource ?? new[] { "Alpha", "Beta" },
-            Template            = CreateControlTemplate(),
+            Template = CreateControlTemplate(),
         };
         var outsideButton = new NativeButton { Content = "Outside" };
         var root = new StackPanel();

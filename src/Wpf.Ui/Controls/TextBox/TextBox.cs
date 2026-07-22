@@ -623,6 +623,27 @@ public class TextBox : System.Windows.Controls.TextBox
         UpdateVisualBrushes();
     }
 
+    /// <inheritdoc />
+    protected override void OnIsKeyboardFocusedChanged(DependencyPropertyChangedEventArgs e)
+    {
+        base.OnIsKeyboardFocusedChanged(e);
+
+        // Logical focus is retained when keyboard focus leaves the current focus scope, for
+        // example when the application is deactivated. GotFocus/LostFocus consequently do not
+        // cover every IsKeyboardFocused transition that affects the visual state.
+        CoerceValue(ForegroundProperty);
+        UpdateVisualBrushes();
+
+        if ((bool)e.NewValue)
+        {
+            RevealClearButton();
+        }
+        else
+        {
+            HideClearButton();
+        }
+    }
+
     private void OnTextBoxIsEnabledChanged(object sender, DependencyPropertyChangedEventArgs e)
     {
         // IsEnabled is a read-only dependency property and UIElement does not expose an
@@ -639,8 +660,8 @@ public class TextBox : System.Windows.Controls.TextBox
     /// </summary>
     private void UpdateVisualBrushes()
     {
-        Brush? foreground  = Foreground;
-        Brush? background  = Background;
+        Brush? foreground = Foreground;
+        Brush? background = Background;
         Brush? borderBrush = BorderBrush;
 
         if (!IsEnabled)
@@ -650,17 +671,17 @@ public class TextBox : System.Windows.Controls.TextBox
         }
         else if (IsKeyboardFocused)
         {
-            background  = FocusedBackground ?? background;
+            background = FocusedBackground ?? background;
             borderBrush = FocusedBorderBrush ?? borderBrush;
         }
         else if (IsMouseOver)
         {
-            background  = MouseOverBackground ?? background;
+            background = MouseOverBackground ?? background;
             borderBrush = MouseOverBorderBrush ?? borderBrush;
         }
 
-        SetValue(VisualForegroundPropertyKey,  foreground);
-        SetValue(VisualBackgroundPropertyKey,  background);
+        SetValue(VisualForegroundPropertyKey, foreground);
+        SetValue(VisualBackgroundPropertyKey, background);
         SetValue(VisualBorderBrushPropertyKey, borderBrush);
     }
 
