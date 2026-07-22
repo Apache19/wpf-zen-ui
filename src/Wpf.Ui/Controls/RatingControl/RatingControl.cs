@@ -42,7 +42,11 @@ public class RatingControl : ContentControl
         nameof(Value),
         typeof(double),
         typeof(RatingControl),
-        new PropertyMetadata(0.0D, OnValueChanged)
+        new FrameworkPropertyMetadata(
+            0.0D,
+            FrameworkPropertyMetadataOptions.BindsTwoWayByDefault,
+            OnValueChanged
+        )
     );
 
     /// <summary>Identifies the <see cref="MaxRating"/> dependency property.</summary>
@@ -116,7 +120,7 @@ public class RatingControl : ContentControl
     /// <summary>
     /// Is called when <see cref="Value"/> changes.
     /// </summary>
-    protected virtual void OnValueChanged(double oldValue)
+    private void OnValueChanged(double oldValue)
     {
         if (Value > MaxValue)
         {
@@ -134,10 +138,18 @@ public class RatingControl : ContentControl
 
         if (!Value.Equals(oldValue))
         {
-            RaiseEvent(new RoutedEventArgs(ValueChangedEvent));
+            OnValueChanged();
         }
 
         UpdateStarsFromValue();
+    }
+
+    /// <summary>
+    /// Raises the <see cref="ValueChanged"/> routed event when the rating value changes.
+    /// </summary>
+    protected virtual void OnValueChanged()
+    {
+        RaiseEvent(new RoutedEventArgs(ValueChangedEvent));
     }
 
     /// <summary>
