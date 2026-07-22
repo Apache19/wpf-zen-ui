@@ -42,6 +42,7 @@ public static class StyleKeys
     public static ComponentResourceKey IconInfoBadgeStyle        { get; private set; }
     public static ComponentResourceKey ValueInfoBadgeStyle       { get; private set; }
     public static ComponentResourceKey DotInfoBadgeStyle         { get; private set; }
+    public static ComponentResourceKey DefaultCalendarStyle      { get; private set; }
     public static ComponentResourceKey DefaultValidationTemplate { get; private set; }
 
     static StyleKeys()

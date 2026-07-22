@@ -9,7 +9,8 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Ui.Controls"
-    xmlns:markup="clr-namespace:Wpf.Ui.Markup">
+    xmlns:markup="clr-namespace:Wpf.Ui.Markup"
+    xmlns:t="clr-namespace:Wpf.Ui.Theming">
 
     <!--
         TODO:
@@ -546,7 +547,7 @@
 
     <!--  https://developer.microsoft.com/en-us/fluentui#/controls/web/datepicker  -->
 
-    <Style x:Key="DefaultCalendarStyle" TargetType="{x:Type Calendar}">
+    <Style x:Key="{x:Static t:StyleKeys.DefaultCalendarStyle}" TargetType="{x:Type Calendar}">
         <Setter Property="CalendarButtonStyle" Value="{StaticResource DefaultCalendarButtonStyle}" />
         <Setter Property="CalendarDayButtonStyle" Value="{StaticResource DefaultCalendarDayButtonStyle}" />
         <Setter Property="CalendarItemStyle" Value="{StaticResource DefaultCalendarItemStyle}" />
@@ -583,11 +584,6 @@
         </Setter>
     </Style>
 
-    <Style
-        x:Key="DefaultCalendarDropShadowStyle"
-        BasedOn="{StaticResource DefaultCalendarStyle}"
-        TargetType="{x:Type Calendar}" />
-
-    <Style BasedOn="{StaticResource DefaultCalendarStyle}" TargetType="{x:Type Calendar}" />
+    <Style BasedOn="{StaticResource {x:Static t:StyleKeys.DefaultCalendarStyle}}" TargetType="{x:Type Calendar}" />
 
 </ResourceDictionary>
