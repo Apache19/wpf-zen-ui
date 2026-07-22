@@ -28,6 +28,7 @@
             </ResourceDictionary.MergedDictionaries>
             <helpers:EnumToBooleanConverter x:Key="EnumToBooleanConverter" />
             <helpers:PaneDisplayModeToIndexConverter x:Key="PaneDisplayModeToIndexConverter" />
+            <helpers:BoolInvertConverter x:Key="BoolInvertConverter" />
 
             <!--
                 Gallery pages explicitly opt into page-owned scrolling. NavigationView itself
