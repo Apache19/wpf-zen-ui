@@ -42,6 +42,7 @@ public enum StyleId
     DotInfoBadgeStyle,
 
     DefaultCalendarStyle,
+    DefaultDatePickerStyle,
 
     DefaultValidationTemplate,
 }

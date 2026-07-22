@@ -13,163 +13,207 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Ui.Controls"
     xmlns:converters="clr-namespace:Wpf.Ui.Converters"
-    xmlns:markup="clr-namespace:Wpf.Ui.Markup"
-    xmlns:system="clr-namespace:System;assembly=mscorlib"
-    xmlns:theming="clr-namespace:Wpf.Ui.Theming">
-
-    <ResourceDictionary.MergedDictionaries>
-        <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/TextBox/TextBox.xaml" />
-    </ResourceDictionary.MergedDictionaries>
-
-    <Thickness x:Key="DatePickerBorderThemeThickness">1,1,1,0</Thickness>
-    <Thickness x:Key="DatePickerAccentBorderThemeThickness">0,0,0,1</Thickness>
-    <Thickness x:Key="DatePickerLeftIconMargin">10,8,0,0</Thickness>
-    <Thickness x:Key="DatePickerRightIconMargin">0,8,10,0</Thickness>
-    <Thickness x:Key="DatePickerCalendarButtonMargin">0,6,4,6</Thickness>
-    <Thickness x:Key="DatePickerCalendarButtonPadding">0,0,0,0</Thickness>
-    <system:Double x:Key="DatePickerCalendarButtonHeight">24</system:Double>
-    <system:Double x:Key="DatePickerCalendarButtonIconSize">14</system:Double>
-
-    <converters:DatePickerButtonPaddingConverter x:Key="DatePickerButtonPaddingConverter" />
+    xmlns:m="clr-namespace:Wpf.Ui.Markup"
+    xmlns:t="clr-namespace:Wpf.Ui.Theming">
 
     <!--
-        todo: 内部 DatePickerTextBox 继承自原生 TextBox，同样有菜单延迟问题。
-              这里接入外部 ContextMenu 可以解决延迟问题，但会带来定位问题。
-              计划实现内部 DatePickerTextBox 类，修复菜单定位问题，替换此处的 DatePickerTextBox。
+        TextViewer 有默认 2,0,2,0 的边距，为了使水印对齐文本，引入该转换器
     -->
+    <converters:ThicknessTransformConverter x:Key="DatePickerTextBoxWatermarkMarginConverter" Offset="2,0,2,0" />
 
-    <Style
-        x:Key="DefaultDatePickerTextBoxStyle"
-        BasedOn="{StaticResource DefaultTextBoxStyle}"
-        TargetType="{x:Type DatePickerTextBox}">
-        <Setter Property="Border.CornerRadius" Value="{Binding RelativeSource={RelativeSource Self}, Path=Tag}" />
-    </Style>
+    <ControlTemplate x:Key="DatePickerTextBoxTemplate" TargetType="{x:Type DatePickerTextBox}">
+        <Grid>
+            <ContentControl
+                x:Name="PART_Watermark"
+                Margin="{TemplateBinding Padding, Converter={StaticResource DatePickerTextBoxWatermarkMarginConverter}}"
+                HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                Focusable="False"
+                Foreground="{m:BrushResource TextPlaceholderColorBrush}"
+                IsHitTestVisible="False"
+                Opacity="0" />
+            <controls:PassiveScrollViewer
+                x:Name="PART_ContentHost"
+                Grid.Column="0"
+                Focusable="false"
+                HorizontalScrollBarVisibility="Hidden"
+                ScrollSpillMode="Disabled"
+                VerticalScrollBarVisibility="Hidden" />
+            <!--
+                DatePickerTextBox extends TextBox and is responsible for the pointer, focus, and
+                watermark states used by the native DatePicker implementation. CommonStates and
+                FocusStates are intentionally declared even though the shared DatePicker chrome is
+                rendered in the parent template: this preserves WPF's template-state contract, while
+                the parent bridges the corresponding child properties across the template namescope.
+            -->
+            <VisualStateManager.VisualStateGroups>
+                <VisualStateGroup x:Name="CommonStates">
+                    <VisualState x:Name="Normal" />
+                    <VisualState x:Name="MouseOver" />
+                    <VisualState x:Name="Disabled">
+                        <Storyboard>
+                            <ObjectAnimationUsingKeyFrames Storyboard.TargetName="PART_Watermark" Storyboard.TargetProperty="Foreground">
+                                <DiscreteObjectKeyFrame KeyTime="0" Value="{m:BrushResource TextFillColorDisabledBrush}" />
+                            </ObjectAnimationUsingKeyFrames>
+                        </Storyboard>
+                    </VisualState>
+                </VisualStateGroup>
+                <VisualStateGroup x:Name="FocusStates">
+                    <VisualState x:Name="Unfocused" />
+                    <VisualState x:Name="Focused" />
+                </VisualStateGroup>
+                <VisualStateGroup x:Name="WatermarkStates">
+                    <VisualState x:Name="Unwatermarked" />
+                    <VisualState x:Name="Watermarked">
+                        <Storyboard>
+                            <DoubleAnimation
+                                Storyboard.TargetName="PART_ContentHost"
+                                Storyboard.TargetProperty="Opacity"
+                                To="0"
+                                Duration="0" />
+                            <DoubleAnimation
+                                Storyboard.TargetName="PART_Watermark"
+                                Storyboard.TargetProperty="Opacity"
+                                To="1"
+                                Duration="0" />
+                        </Storyboard>
+                    </VisualState>
+                </VisualStateGroup>
+            </VisualStateManager.VisualStateGroups>
+        </Grid>
+    </ControlTemplate>
 
-    <Style x:Key="DefaultDatePickerStyle" TargetType="{x:Type DatePicker}">
-        <Setter Property="ContextMenu">
-            <Setter.Value>
-                <ContextMenu>
-                    <MenuItem Command="ApplicationCommands.Copy" />
-                    <MenuItem Command="ApplicationCommands.Cut" />
-                    <MenuItem Command="ApplicationCommands.Paste" />
-                </ContextMenu>
-            </Setter.Value>
-        </Setter>
-        <Setter Property="CalendarStyle" Value="{DynamicResource DefaultCalendarStyle}" />
-        <Setter Property="Foreground" Value="{markup:BrushResource TextFillColorPrimaryBrush}" />
-        <Setter Property="Background" Value="{markup:BrushResource ControlFillColorPrimaryBrush}" />
-        <Setter Property="BorderBrush" Value="{markup:BrushResource ControlElevationBorderBrush}" />
-        <Setter Property="BorderThickness" Value="{StaticResource DatePickerBorderThemeThickness}" />
-        <Setter Property="HorizontalAlignment" Value="Stretch" />
-        <Setter Property="VerticalAlignment" Value="Center" />
-        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-        <Setter Property="VerticalContentAlignment" Value="Stretch" />
-        <Setter Property="Padding" Value="{DynamicResource {x:Static theming:VariableKeys.TextControlThemePadding}}" />
-        <Setter Property="Border.CornerRadius" Value="{DynamicResource {x:Static theming:VariableKeys.ControlCornerRadius}}" />
-        <Setter Property="SnapsToDevicePixels" Value="True" />
-        <Setter Property="KeyboardNavigation.TabNavigation" Value="Local" />
-        <Setter Property="Template">
-            <Setter.Value>
-                <ControlTemplate TargetType="{x:Type DatePicker}">
-                    <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="*" />
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
-                        <Grid
-                            Grid.Row="0"
-                            HorizontalAlignment="{TemplateBinding HorizontalAlignment}"
-                            VerticalAlignment="{TemplateBinding VerticalAlignment}">
-                            <DatePickerTextBox
-                                x:Name="PART_TextBox"
-                                MinWidth="{TemplateBinding MinWidth}"
-                                MinHeight="{TemplateBinding MinHeight}"
-                                HorizontalAlignment="Stretch"
-                                VerticalAlignment="Stretch"
-                                HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
-                                VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                ContextMenu="{TemplateBinding ContextMenu}"
-                                Focusable="{TemplateBinding Focusable}"
-                                FontFamily="{TemplateBinding FontFamily}"
-                                FontSize="{TemplateBinding FontSize}"
-                                Foreground="{TemplateBinding Foreground}"
-                                KeyboardNavigation.TabIndex="0"
-                                Tag="{TemplateBinding Border.CornerRadius}">
-                                <DatePickerTextBox.Padding>
-                                    <MultiBinding Converter="{StaticResource DatePickerButtonPaddingConverter}">
-                                        <Binding Path="Padding" RelativeSource="{RelativeSource Mode=TemplatedParent}" />
-                                        <Binding Source="{StaticResource DatePickerCalendarButtonMargin}" />
-                                        <Binding Source="{StaticResource DatePickerCalendarButtonHeight}" />
-                                    </MultiBinding>
-                                </DatePickerTextBox.Padding>
-                            </DatePickerTextBox>
-                            <!--  Buttons and Icons have no padding from the main element to allow absolute positions if height is larger than the text entry zone  -->
-                            <controls:Button
-                                x:Name="PART_Button"
-                                Width="{StaticResource DatePickerCalendarButtonHeight}"
-                                Height="{StaticResource DatePickerCalendarButtonHeight}"
-                                Margin="{StaticResource DatePickerCalendarButtonMargin}"
-                                Padding="{StaticResource DatePickerCalendarButtonPadding}"
-                                HorizontalAlignment="Right"
-                                VerticalAlignment="Stretch"
-                                HorizontalContentAlignment="Center"
-                                VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
-                                Appearance="Normal"
-                                Background="Transparent"
-                                BorderBrush="Transparent"
-                                Cursor="Arrow"
-                                KeyboardNavigation.TabIndex="1"
-                                MouseOverBackground="{markup:BrushResource SubtleFillColorSecondaryBrush}"
-                                MouseOverBorderBrush="Transparent"
-                                PressedBackground="{markup:BrushResource SubtleFillColorTertiaryBrush}"
-                                PressedBorderBrush="Transparent">
-                                <!--  WPF overrides paddings for button  -->
-                                <controls:SymbolIcon
-                                    Margin="{StaticResource DatePickerCalendarButtonPadding}"
-                                    HorizontalAlignment="Center"
-                                    VerticalAlignment="Center"
-                                    FontSize="{StaticResource DatePickerCalendarButtonIconSize}"
-                                    Foreground="{TemplateBinding Foreground}"
-                                    Symbol="CalendarRtl24" />
-                            </controls:Button>
-                            <!--  The Accent Border is a separate element so that changes to the border thickness do not affect the position of the element  -->
-                            <Border
-                                x:Name="AccentBorder"
-                                HorizontalAlignment="Stretch"
-                                VerticalAlignment="Stretch"
-                                BorderBrush="{markup:BrushResource ControlStrokeColorDefaultBrush}"
-                                BorderThickness="{StaticResource DatePickerAccentBorderThemeThickness}"
-                                CornerRadius="{TemplateBinding Border.CornerRadius}" />
-                        </Grid>
-                        <Popup
-                            x:Name="PART_Popup"
-                            Grid.Row="1"
-                            HorizontalAlignment="Stretch"
+    <ControlTemplate x:Key="DefaultDatePickerTemplate" TargetType="{x:Type DatePicker}">
+        <Grid>
+            <Border
+                x:Name="RootBorder"
+                Background="{TemplateBinding Background}"
+                BorderBrush="{TemplateBinding BorderBrush}"
+                BorderThickness="{TemplateBinding BorderThickness}"
+                CornerRadius="{TemplateBinding Border.CornerRadius}"
+                SnapsToDevicePixels="True">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <!--  无外观 DatePickerTextBox，填满文本区，不渲染背景和边框，前景继承  -->
+                    <DatePickerTextBox
+                        x:Name="PART_TextBox"
+                        Padding="{TemplateBinding Padding}"
+                        HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                        VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+                        CaretBrush="{Binding Foreground, RelativeSource={RelativeSource Self}}"
+                        Focusable="{TemplateBinding Focusable}"
+                        OverridesDefaultStyle="True"
+                        Template="{StaticResource DatePickerTextBoxTemplate}" />
+
+                    <!--
+                        简单的处理方式：容器跟随 VerticalContentAlignment，内容靠上，
+                        VerticalContentAlignment 为 Stretch 时，按钮会像 TextViewer 文本一样靠上对齐。
+                    -->
+                    <Border
+                        Grid.Column="1"
+                        Margin="4,0"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="{TemplateBinding VerticalContentAlignment}">
+                        <controls:Button
+                            x:Name="PART_Button"
+                            MinWidth="24"
+                            MinHeight="24"
+                            Padding="0"
                             VerticalAlignment="Top"
-                            controls:PopupAnimator.IsEnabled="True"
-                            controls:PopupShadow.IsEnabled="True"
-                            AllowsTransparency="True"
-                            Placement="Bottom"
-                            PlacementTarget="{Binding ElementName=PART_TextBox}"
-                            PopupAnimation="None"
-                            StaysOpen="False" />
-                    </Grid>
-                    <ControlTemplate.Triggers>
-                        <Trigger Property="IsEnabled" Value="True">
-                            <Setter Property="Cursor" Value="IBeam" />
-                        </Trigger>
-                        <Trigger Property="IsEnabled" Value="False">
-                            <Setter Property="Foreground" Value="{markup:BrushResource TextFillColorDisabledBrush}" />
-                        </Trigger>
-                    </ControlTemplate.Triggers>
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
+                            Appearance="Transparent"
+                            BorderThickness="0"
+                            Content="{m:SymbolIcon CalendarRtl24, FontSize=16}"
+                            Focusable="False"
+                            IsTabStop="False" />
+                    </Border>
+
+                    <Popup
+                        x:Name="PART_Popup"
+                        Grid.Column="0"
+                        controls:PopupAnimator.IsEnabled="True"
+                        controls:PopupShadow.IsEnabled="True"
+                        AllowsTransparency="True"
+                        Placement="Bottom"
+                        PlacementTarget="{Binding ElementName=RootBorder}"
+                        StaysOpen="False" />
+                </Grid>
+            </Border>
+
+            <Border
+                x:Name="FocusIndicator"
+                BorderBrush="{m:BrushResource SystemAccentColorPrimaryBrush}"
+                BorderThickness="0,0,0,2"
+                CornerRadius="{TemplateBinding Border.CornerRadius}"
+                IsHitTestVisible="False"
+                Visibility="Collapsed" />
+            <!--
+                DatePicker.ChangeVisualState only enters Normal or Disabled; hover and focus are
+                owned by PART_TextBox in WPF's implementation. Keep the framework-driven disabled
+                state in VSM so programmatic IsEnabled changes follow the same lifecycle as the
+                platform template instead of relying on input events.
+            -->
+            <VisualStateManager.VisualStateGroups>
+                <VisualStateGroup x:Name="CommonStates">
+                    <VisualState x:Name="Normal" />
+                    <VisualState x:Name="Disabled">
+                        <Storyboard>
+                            <ObjectAnimationUsingKeyFrames Storyboard.TargetName="RootBorder" Storyboard.TargetProperty="Background">
+                                <DiscreteObjectKeyFrame KeyTime="0" Value="{m:BrushResource ControlFillColorDisabledBrush}" />
+                            </ObjectAnimationUsingKeyFrames>
+                            <ObjectAnimationUsingKeyFrames Storyboard.TargetName="RootBorder" Storyboard.TargetProperty="BorderBrush">
+                                <DiscreteObjectKeyFrame KeyTime="0" Value="{m:BrushResource ControlStrokeColorDefaultBrush}" />
+                            </ObjectAnimationUsingKeyFrames>
+                            <ObjectAnimationUsingKeyFrames Storyboard.TargetName="RootBorder" Storyboard.TargetProperty="(TextElement.Foreground)">
+                                <DiscreteObjectKeyFrame KeyTime="0" Value="{m:BrushResource TextFillColorDisabledBrush}" />
+                            </ObjectAnimationUsingKeyFrames>
+                            <ObjectAnimationUsingKeyFrames Storyboard.TargetName="FocusIndicator" Storyboard.TargetProperty="Visibility">
+                                <DiscreteObjectKeyFrame KeyTime="0" Value="{x:Static Visibility.Collapsed}" />
+                            </ObjectAnimationUsingKeyFrames>
+                        </Storyboard>
+                    </VisualState>
+                </VisualStateGroup>
+            </VisualStateManager.VisualStateGroups>
+        </Grid>
+        <ControlTemplate.Triggers>
+            <!--
+                PART_TextBox owns MouseOver and Focused in the native state machine. A trigger is
+                required here because a storyboard in the child template cannot target RootBorder
+                across WPF template namescopes. Restricting the source to PART_TextBox also leaves
+                the calendar button's own hover/pressed visuals independent, matching native input
+                routing while keeping one TextBox-like surface.
+            -->
+            <Trigger SourceName="PART_TextBox" Property="IsMouseOver" Value="True">
+                <Setter TargetName="RootBorder" Property="Background" Value="{m:BrushResource ControlFillColorPrimaryBrush}" />
+            </Trigger>
+            <Trigger SourceName="PART_TextBox" Property="IsKeyboardFocused" Value="True">
+                <Setter TargetName="RootBorder" Property="Background" Value="{m:BrushResource ControlFillColorInputActiveBrush}" />
+                <Setter TargetName="FocusIndicator" Property="Visibility" Value="Visible" />
+            </Trigger>
+        </ControlTemplate.Triggers>
+    </ControlTemplate>
+
+    <Style x:Key="{x:Static t:StyleKeys.DefaultDatePickerStyle}" TargetType="{x:Type DatePicker}">
+        <Setter Property="OverridesDefaultStyle" Value="True" />
+        <Setter Property="IsTodayHighlighted" Value="True" />
+        <Setter Property="SelectedDateFormat" Value="Short" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="Background" Value="{m:BrushResource ControlFillColorSecondaryBrush}" />
+        <Setter Property="Padding" Value="{m:VariableResource TextControlThemePadding}" />
+        <Setter Property="BorderBrush" Value="{m:BrushResource ControlStrokeColorSecondaryBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Border.CornerRadius" Value="{m:VariableResource ControlCornerRadius}" />
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="Validation.ErrorTemplate" Value="{m:StyleResource DefaultValidationTemplate}" />
+        <Setter Property="Template" Value="{StaticResource DefaultDatePickerTemplate}" />
+        <Setter Property="CalendarStyle" Value="{m:StyleResource DefaultCalendarStyle}" />
     </Style>
 
-    <Style BasedOn="{StaticResource DefaultDatePickerTextBoxStyle}" TargetType="{x:Type DatePickerTextBox}" />
-    <Style BasedOn="{StaticResource DefaultDatePickerStyle}" TargetType="{x:Type DatePicker}" />
+    <Style BasedOn="{StaticResource {x:Static t:StyleKeys.DefaultDatePickerStyle}}" TargetType="{x:Type DatePicker}" />
 
 </ResourceDictionary>

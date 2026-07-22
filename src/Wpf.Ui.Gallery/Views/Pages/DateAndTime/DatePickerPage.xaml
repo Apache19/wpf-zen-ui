@@ -4,15 +4,13 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Ui.Gallery.Controls"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:local="clr-namespace:Wpf.Ui.Gallery.Views.Pages.DateAndTime"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:system="clr-namespace:System;assembly=System.Runtime"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
     xmlns:vm="clr-namespace:Wpf.Ui.Gallery.ViewModels.Pages.DateAndTime"
     Title="DatePickerPage"
+    d:Background="{ui:BrushResource WindowBackgroundBrush}"
     d:DataContext="{d:DesignInstance vm:DatePickerViewModel, IsDesignTimeCreatable=False}"
     d:DesignWidth="800"
-    d:Background="{ui:BrushResource WindowBackgroundBrush}"
     Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
     Style="{ui:StyleResource DynamicScrollPageStyle}"
     mc:Ignorable="d">
@@ -22,7 +20,7 @@
             <controls:ControlExample.XamlCode>
                 &lt;DatePicker/&gt;
             </controls:ControlExample.XamlCode>
-            <DatePicker />
+            <DatePicker MinWidth="250" HorizontalAlignment="Left" />
         </controls:ControlExample>
     </Grid>
 </Page>

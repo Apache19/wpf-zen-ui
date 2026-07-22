@@ -52,6 +52,7 @@ public class StyleResourceExtension : DynamicResourceExtension
             StyleId.ValueInfoBadgeStyle             => StyleKeys.ValueInfoBadgeStyle,
             StyleId.DotInfoBadgeStyle               => StyleKeys.DotInfoBadgeStyle,
             StyleId.DefaultCalendarStyle            => StyleKeys.DefaultCalendarStyle,
+            StyleId.DefaultDatePickerStyle          => StyleKeys.DefaultDatePickerStyle,
 
             StyleId.DefaultValidationTemplate       => StyleKeys.DefaultValidationTemplate,
 
