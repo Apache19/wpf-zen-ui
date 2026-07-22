@@ -17,7 +17,8 @@
     xmlns:t="clr-namespace:Wpf.Ui.Theming">
 
     <!--
-        TextViewer 有默认 2,0,2,0 的边距，为了使水印对齐文本，引入该转换器
+        The TextViewer has a default padding of 2,0,2,0. To keep the watermark aligned
+        with the text, this converter offsets the margin accordingly.
     -->
     <converters:ThicknessTransformConverter x:Key="DatePickerTextBoxWatermarkMarginConverter" Offset="2,0,2,0" />
 
@@ -98,7 +99,10 @@
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
 
-                    <!--  无外观 DatePickerTextBox，填满文本区，不渲染背景和边框，前景继承  -->
+                    <!--
+                        Chromeless DatePickerTextBox — fills the text area without
+                        rendering a background or border; inherits foreground.
+                    -->
                     <DatePickerTextBox
                         x:Name="PART_TextBox"
                         Padding="{TemplateBinding Padding}"
@@ -110,8 +114,9 @@
                         Template="{StaticResource DatePickerTextBoxTemplate}" />
 
                     <!--
-                        简单的处理方式：容器跟随 VerticalContentAlignment，内容靠上，
-                        VerticalContentAlignment 为 Stretch 时，按钮会像 TextViewer 文本一样靠上对齐。
+                        The container tracks VerticalContentAlignment while its content is top-aligned.
+                        When VerticalContentAlignment is Stretch, the button aligns to the top just as
+                        the TextViewer text does, keeping the layout simple and predictable.
                     -->
                     <Border
                         Grid.Column="1"
