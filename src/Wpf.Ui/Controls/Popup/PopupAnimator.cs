@@ -4,6 +4,7 @@
 // All Rights Reserved.
 
 using System.Reflection;
+using System.Threading;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
@@ -22,8 +23,8 @@ namespace Wpf.Ui.Controls;
 /// does not expose easing or distance control. This behavior runs ahead of WPF's internal
 /// <see cref="Popup.IsOpen"/> changed callback, suppresses WPF's forced first-frame popup-root opacity, and then
 /// starts a custom timeline on the same internal popup root surface. WPF still chooses the final screen position,
-/// while quick close/reopen cycles force WPF's pending window destroy to complete so an old popup HWND surface is
-/// not reused for the next opening frame.
+/// while pending window destruction is completed immediately after the routed input item that dismissed it. This
+/// prevents reuse of an old popup HWND surface without destroying PopupRoot while controls still handle that input.
 /// </remarks>
 public static class PopupAnimator
 {
@@ -47,8 +48,8 @@ public static class PopupAnimator
     // UIElement globally would change opacity behavior for normal controls and templates.
     private static readonly Type? PopupRootType = typeof(Popup).Assembly.GetType(PopupRootTypeName);
 
-    // Completes Popup's queued asynchronous HWND destroy after close. This prevents a fast reopen from reusing
-    // a stale popup surface before the next custom opening animation reaches the render thread.
+    // Completes Popup's queued asynchronous HWND destroy immediately, except while WPF is routing an input item. An
+    // input-driven close waits only until PostProcessInput so PopupRoot survives every handler on the current route.
     private static readonly MethodInfo? PopupForceCloseMethod = typeof(Popup).GetMethod(
         "ForceClose",
         BindingFlags.Instance | BindingFlags.NonPublic
@@ -87,6 +88,22 @@ public static class PopupAnimator
     // resolve the innermost active controller first without crossing dispatcher threads.
     [ThreadStatic]
     private static Stack<PopupAnimationController>? openingControllers;
+
+    // PopupAnimator can be used by controls on independent STA dispatchers. Track InputManager scope per thread so a
+    // PopupRoot closed by one dispatcher is never retained by, or force-closed from, another dispatcher's input item.
+    [ThreadStatic]
+    private static bool isInputProcessingTrackingInitialized;
+
+    // PreNotifyInput is raised only for input items that will actually be routed, and PostProcessInput is raised after
+    // that route and WPF's post-notification stage. The depth is required because InputManager.ProcessInput supports
+    // nested input processing through dispatcher frames.
+    [ThreadStatic]
+    private static int inputProcessingDepth;
+
+    // Allocate controller sets only for input depths that actually close a popup. Once PopupAnimator is initialized,
+    // ordinary mouse movement and keyboard input therefore cost only one thread-local increment and decrement.
+    [ThreadStatic]
+    private static Dictionary<int, HashSet<PopupAnimationController>>? pendingInputCloseControllers;
 
     static PopupAnimator()
     {
@@ -238,11 +255,11 @@ public static class PopupAnimator
                     {
                         if (controller != null && e.NewValue is not true)
                         {
-                            // Popup.HideWindow normally leaves a zero-delay DispatcherTimer that destroys the HWND
-                            // later. A close followed immediately by open cancels that timer and reuses the old HWND
-                            // surface, which was the source of the full-opacity flash. ContextMenu is handled through
-                            // its private root Popup, matching the same queued-destroy boundary.
-                            controller.ForceClosePendingPopupWindow();
+                            // StaysOpen=false popups close from Popup.OnPreviewMouseButton. Controls such as DatePicker
+                            // still handle that same routed item to suppress the matching button-up reopen, so preserve
+                            // PopupRoot until PostProcessInput. Non-input closes keep the immediate ForceClose behavior
+                            // that prevents a synchronous close/reopen from reusing a stale compositor surface.
+                            controller.CompletePendingPopupWindowClose();
                         }
 
                         if (completeCustomOpen)
@@ -381,6 +398,76 @@ public static class PopupAnimator
                 openingControllers.Push(controllers[i]);
             }
         }
+    }
+
+    private static void EnsureInputProcessingTracking()
+    {
+        if (isInputProcessingTrackingInitialized ||
+            Thread.CurrentThread.GetApartmentState() != ApartmentState.STA)
+        {
+            return;
+        }
+
+        // InputManager is dispatcher-affine. Subscribe once on every STA that creates an animated popup instead of
+        // doing this in PopupAnimator's type initializer, which can legally run on a non-UI thread when an attached
+        // property identifier is first referenced. The static handlers retain no controls between input items.
+        var inputManager = InputManager.Current;
+        inputManager.PreNotifyInput += OnPreNotifyInput;
+        inputManager.PostProcessInput += OnPostProcessInput;
+        isInputProcessingTrackingInitialized = true;
+    }
+
+    private static void OnPreNotifyInput(object sender, NotifyInputEventArgs e)
+    {
+        inputProcessingDepth++;
+    }
+
+    private static void OnPostProcessInput(object sender, ProcessInputEventArgs e)
+    {
+        if (inputProcessingDepth <= 0)
+        {
+            return;
+        }
+
+        var completedInputDepth = inputProcessingDepth--;
+        if (pendingInputCloseControllers == null ||
+            !pendingInputCloseControllers.TryGetValue(completedInputDepth, out var controllers))
+        {
+            return;
+        }
+
+        _ = pendingInputCloseControllers.Remove(completedInputDepth);
+        if (pendingInputCloseControllers.Count == 0)
+        {
+            pendingInputCloseControllers = null;
+        }
+
+        // The complete routed input item, including DatePicker's Popup preview handler, is now behind us. Force-close
+        // before InputManager moves to another staging item or returns to the Dispatcher, so queued Loaded/Render/
+        // DataBind/Normal work cannot reopen and reuse the stale HWND first.
+        foreach (var controller in controllers)
+        {
+            controller.ForceClosePendingPopupWindow();
+        }
+    }
+
+    private static bool TryDeferForceCloseUntilPostProcessInput(PopupAnimationController controller)
+    {
+        if (inputProcessingDepth <= 0)
+        {
+            return false;
+        }
+
+        pendingInputCloseControllers ??= new Dictionary<int, HashSet<PopupAnimationController>>();
+        if (!pendingInputCloseControllers.TryGetValue(inputProcessingDepth, out var controllers))
+        {
+            controllers = new HashSet<PopupAnimationController>();
+            pendingInputCloseControllers.Add(inputProcessingDepth, controllers);
+        }
+
+        _ = controllers.Add(controller);
+
+        return true;
     }
 
     /// <summary>
@@ -817,6 +904,8 @@ public static class PopupAnimator
             return;
         }
 
+        EnsureInputProcessingTracking();
+
         if (controller == null)
         {
             controller = new PopupAnimationController(d);
@@ -997,6 +1086,22 @@ public static class PopupAnimator
             BeginPopupRootOpacitySuppression();
 
             return true;
+        }
+
+        internal void CompletePendingPopupWindowClose()
+        {
+            if (_isDisposed || _settings == null)
+            {
+                return;
+            }
+
+            // Only input-driven closes need deferral. Programmatic close/reopen pairs can happen synchronously or at
+            // a Dispatcher priority above Input, so preserving the old immediate ForceClose there is what prevents
+            // WPF's next open from CancelAsyncDestroy-ing and reusing the stale HWND surface.
+            if (!TryDeferForceCloseUntilPostProcessInput(this))
+            {
+                ForceClosePendingPopupWindow();
+            }
         }
 
         internal void ForceClosePendingPopupWindow()
