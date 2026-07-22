@@ -14,6 +14,7 @@ using Wpf.Ui.Controls;
 
 namespace Wpf.Ui.UnitTests.Controls;
 
+[Collection(nameof(KeyboardFocusTestCollection))]
 public class PopupAnimatorTests
 {
     [Fact]

@@ -974,6 +974,27 @@ public static class PopupShadow
             _shadowRoot.Opacity = 0D;
             UpdateShadowContentBounds(default);
 
+            if (PopupSlideAnimator.IsAnimationActive(_owner))
+            {
+                // Check the lightweight path first so explicitly opted-in popups do not initialize
+                // PopupAnimator's legacy static metadata hooks merely because a shadow is present.
+                //
+                // PopupSlideAnimator replaces WPF's native 150ms linear Y clock with the configured Wpf.Ui clock,
+                // but keeps it on PopupRoot's native animation layer. Sample that real transform just like ordinary
+                // Slide while using the replacement duration so the detached shadow does not finish 17ms early.
+                var duration = PopupSlideAnimator.GetAnimationDuration(_owner);
+                if (_chrome.AnimationMode == PopupShadowAnimationMode.DynamicContentBounds)
+                {
+                    BeginDynamicContentBoundsAnimation(duration);
+                }
+                else
+                {
+                    BeginDeferredFadeIn(duration.TimeSpan);
+                }
+
+                return;
+            }
+
             if (PopupAnimator.IsCustomAnimationActive(_owner))
             {
                 // The content is driven by Wpf.Ui's custom opening timeline, so the detached shadow follows the

@@ -9,7 +9,7 @@ using System.Windows.Media.Animation;
 namespace Wpf.Ui.Controls;
 
 /// <summary>
-/// Describes the opening animation applied by <see cref="PopupAnimator"/>.
+/// Describes the opening animation applied by <see cref="PopupAnimator"/> or <see cref="PopupSlideAnimator"/>.
 /// </summary>
 public sealed class PopupAnimationSettings : Freezable
 {

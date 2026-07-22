@@ -1321,7 +1321,7 @@ public class NavigationViewItemTests
             Assert.True(contextMenu.Focusable);
             Assert.Same(parent.SubmenuContextMenuStyle, contextMenu.Style);
             Assert.NotNull(parent.SubmenuMenuItemStyle);
-            Assert.True(PopupAnimator.GetIsEnabled(contextMenu));
+            Assert.True(PopupSlideAnimator.GetIsEnabled(contextMenu));
             Assert.True(PopupShadow.GetIsEnabled(contextMenu));
             parent.RaiseEvent(new RoutedEventArgs(FrameworkElement.UnloadedEvent));
         });
