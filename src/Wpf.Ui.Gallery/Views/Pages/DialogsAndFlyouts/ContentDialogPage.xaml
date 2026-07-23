@@ -4,19 +4,16 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Ui.Gallery.Controls"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:dialogsAndFlyouts="clr-namespace:Wpf.Ui.Gallery.ViewModels.Pages.DialogsAndFlyouts"
-    xmlns:vm="clr-namespace:Wpf.Ui.Gallery.ViewModels.Pages.DialogsAndFlyouts"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:system="clr-namespace:System;assembly=System.Runtime"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    xmlns:vm="clr-namespace:Wpf.Ui.Gallery.ViewModels.Pages.DialogsAndFlyouts"
     Title="ContentDialog"
     controls:PageControlDocumentation.DocumentationType="{x:Type ui:ContentDialog}"
-    Style="{ui:StyleResource DynamicScrollPageStyle}"
-    d:DataContext="{d:DesignInstance vm:ContentDialogViewModel,
-                                     IsDesignTimeCreatable=False}"
-    d:DesignWidth="850"
     d:Background="{ui:BrushResource WindowBackgroundBrush}"
+    d:DataContext="{d:DesignInstance vm:ContentDialogViewModel, IsDesignTimeCreatable=False}"
+    d:DesignWidth="850"
     Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
+    Style="{ui:StyleResource DynamicScrollPageStyle}"
     mc:Ignorable="d">
 
     <Page.Resources>
@@ -45,7 +42,10 @@
         </controls:ControlExample>
 
         <controls:ControlExample Margin="0,36,0,0" HeaderText="Terms of Use ContentDialog example">
-            <ui:Button Command="{Binding ShowSignInContentDialogCommand}" Content="Show" />
+            <ui:Button
+                HorizontalAlignment="Left"
+                Command="{Binding ShowSignInContentDialogCommand}"
+                Content="Show" />
         </controls:ControlExample>
     </StackPanel>
 </Page>

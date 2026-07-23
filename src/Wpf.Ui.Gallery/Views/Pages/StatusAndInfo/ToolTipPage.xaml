@@ -4,18 +4,15 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Ui.Gallery.Controls"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:local="clr-namespace:Wpf.Ui.Gallery.Views.Pages.StatusAndInfo"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:system="clr-namespace:System;assembly=System.Runtime"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
     xmlns:vm="clr-namespace:Wpf.Ui.Gallery.ViewModels.Pages.StatusAndInfo"
     Title="ToolTipPage"
-    Style="{ui:StyleResource DynamicScrollPageStyle}"
-    d:DataContext="{d:DesignInstance vm:ToolTipViewModel,
-                                     IsDesignTimeCreatable=False}"
-    d:DesignWidth="800"
     d:Background="{ui:BrushResource WindowBackgroundBrush}"
+    d:DataContext="{d:DesignInstance vm:ToolTipViewModel, IsDesignTimeCreatable=False}"
+    d:DesignWidth="800"
     Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
+    Style="{ui:StyleResource DynamicScrollPageStyle}"
     mc:Ignorable="d">
 
     <controls:ControlExample
@@ -23,6 +20,7 @@
         HeaderText="A button with a simple ToolTip."
         XamlCode="&lt;Button ToolTipService.ToolTip=&quot;Simple ToolTip&quot; /&gt;">
         <ui:Button
+            HorizontalAlignment="Left"
             Content="Button with a simple ToolTip."
             ToolTipService.InitialShowDelay="100"
             ToolTipService.Placement="MousePoint"

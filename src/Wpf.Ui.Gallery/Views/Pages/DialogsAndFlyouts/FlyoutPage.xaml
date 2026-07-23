@@ -4,19 +4,16 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Ui.Gallery.Controls"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:local="clr-namespace:Wpf.Ui.Gallery.Views.Pages.DialogsAndFlyouts"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:vm="clr-namespace:Wpf.Ui.Gallery.ViewModels.Pages.DialogsAndFlyouts"
-    xmlns:system="clr-namespace:System;assembly=System.Runtime"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    xmlns:vm="clr-namespace:Wpf.Ui.Gallery.ViewModels.Pages.DialogsAndFlyouts"
     Title="FlyoutPage"
-    Style="{ui:StyleResource DynamicScrollPageStyle}"
     controls:PageControlDocumentation.DocumentationType="{x:Type ui:Flyout}"
-    d:DataContext="{d:DesignInstance vm:FlyoutViewModel,
-                                     IsDesignTimeCreatable=False}"
-    d:DesignWidth="800"
     d:Background="{ui:BrushResource WindowBackgroundBrush}"
+    d:DataContext="{d:DesignInstance vm:FlyoutViewModel, IsDesignTimeCreatable=False}"
+    d:DesignWidth="800"
     Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
+    Style="{ui:StyleResource DynamicScrollPageStyle}"
     mc:Ignorable="d">
 
     <Grid Margin="0,0,0,24">
@@ -44,6 +41,7 @@
                 </ui:Flyout>
                 <ui:Button
                     Grid.Row="1"
+                    HorizontalAlignment="Left"
                     Command="{Binding ButtonClickCommand, Mode=OneWay}"
                     CommandParameter="{Binding RelativeSource={RelativeSource Self}, Mode=OneWay}"
                     Content="Open flyout" />
