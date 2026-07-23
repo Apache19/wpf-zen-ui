@@ -225,6 +225,86 @@ public class Button : System.Windows.Controls.Button, IAppearanceControl, IIconC
 
     #endregion
 
+    #region DP: DisabledBackground
+
+    /// <summary>Identifies the <see cref="DisabledBackground"/> dependency property.</summary>
+    public static readonly DependencyProperty DisabledBackgroundProperty =
+        DependencyProperty.Register(
+            nameof(DisabledBackground),
+            typeof(Brush),
+            typeof(Button),
+            new PropertyMetadata(null, OnStateBrushChanged)
+        );
+
+    /// <summary>
+    /// Gets or sets the background brush used while the button is disabled. A value of
+    /// <see langword="null"/> makes the button fall back to <see cref="Control.Background"/>.
+    /// </summary>
+    /// <remarks>
+    /// Disabled brushes are resolved by the control rather than by a template trigger. This keeps
+    /// command-driven disabled visuals working when a composite control supplies the normal brush
+    /// through a higher-precedence template value.
+    /// </remarks>
+    [Bindable(true)]
+    [Category("Appearance")]
+    public Brush? DisabledBackground
+    {
+        get => (Brush?)GetValue(DisabledBackgroundProperty);
+        set => SetValue(DisabledBackgroundProperty, value);
+    }
+
+    #endregion
+
+    #region DP: DisabledBorderBrush
+
+    /// <summary>Identifies the <see cref="DisabledBorderBrush"/> dependency property.</summary>
+    public static readonly DependencyProperty DisabledBorderBrushProperty =
+        DependencyProperty.Register(
+            nameof(DisabledBorderBrush),
+            typeof(Brush),
+            typeof(Button),
+            new PropertyMetadata(null, OnStateBrushChanged)
+        );
+
+    /// <summary>
+    /// Gets or sets the border brush used while the button is disabled. A value of
+    /// <see langword="null"/> makes the button fall back to <see cref="Control.BorderBrush"/>.
+    /// </summary>
+    [Bindable(true)]
+    [Category("Appearance")]
+    public Brush? DisabledBorderBrush
+    {
+        get => (Brush?)GetValue(DisabledBorderBrushProperty);
+        set => SetValue(DisabledBorderBrushProperty, value);
+    }
+
+    #endregion
+
+    #region DP: DisabledForeground
+
+    /// <summary>Identifies the <see cref="DisabledForeground"/> dependency property.</summary>
+    public static readonly DependencyProperty DisabledForegroundProperty =
+        DependencyProperty.Register(
+            nameof(DisabledForeground),
+            typeof(Brush),
+            typeof(Button),
+            new PropertyMetadata(null, OnStateBrushChanged)
+        );
+
+    /// <summary>
+    /// Gets or sets the foreground brush used while the button is disabled. A value of
+    /// <see langword="null"/> makes the button fall back to <see cref="Control.Foreground"/>.
+    /// </summary>
+    [Bindable(true)]
+    [Category("Appearance")]
+    public Brush? DisabledForeground
+    {
+        get => (Brush?)GetValue(DisabledForegroundProperty);
+        set => SetValue(DisabledForegroundProperty, value);
+    }
+
+    #endregion
+
     #region Read-only DP: VisualBackground
 
     private static readonly DependencyPropertyKey VisualBackgroundPropertyKey =
@@ -390,6 +470,20 @@ public class Button : System.Windows.Controls.Button, IAppearanceControl, IIconC
     }
 
     /// <inheritdoc />
+    protected override void OnPropertyChanged(DependencyPropertyChangedEventArgs e)
+    {
+        base.OnPropertyChanged(e);
+
+        if (e.Property == IsEnabledProperty)
+        {
+            // ICommand.CanExecute changes ButtonBase.IsEnabledCore through coercion rather than a
+            // local IsEnabled assignment. Observing the effective dependency-property change here
+            // covers both paths without overriding WPF's initialization-order-sensitive metadata.
+            UpdateVisualBrushes();
+        }
+    }
+
+    /// <inheritdoc />
     protected override void OnIsPressedChanged(DependencyPropertyChangedEventArgs e)
     {
         base.OnIsPressedChanged(e);
@@ -430,7 +524,17 @@ public class Button : System.Windows.Controls.Button, IAppearanceControl, IIconC
         Brush? visualBorderBrush = BorderBrush;
         Brush? visualForeground  = Foreground;
 
-        if (IsPressed)
+        // Disabled wins over pointer and pressed states. In particular, ButtonBase can change its
+        // effective IsEnabled value from ICommand.CanExecute without changing any brush input.
+        // Resolving the state here prevents template bindings in composite controls from masking
+        // the disabled palette through dependency-property precedence.
+        if (!IsEnabled)
+        {
+            visualBackground  = DisabledBackground ?? visualBackground;
+            visualBorderBrush = DisabledBorderBrush ?? visualBorderBrush;
+            visualForeground  = DisabledForeground ?? visualForeground;
+        }
+        else if (IsPressed)
         {
             visualBackground  = PressedBackground ?? visualBackground;
             visualBorderBrush = PressedBorderBrush ?? visualBorderBrush;

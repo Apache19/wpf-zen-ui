@@ -3,10 +3,14 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
+using System.Windows.Automation.Peers;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
+using Wpf.Ui.AutomationPeers;
 
+// ReSharper disable ClassWithVirtualMembersNeverInherited.Global
+// ReSharper disable MemberCanBePrivate.Global
 // ReSharper disable once CheckNamespace
 namespace Wpf.Ui.Controls;
 
@@ -46,6 +50,8 @@ public class SplitButton : ContentControl, ICommandSource, IAppearanceControl, I
     private bool _isSynchronizingDropDownState;
     private bool _isSpaceKeyDown;
 
+    #region Routed Event: Click
+
     /// <summary>Identifies the <see cref="Click"/> routed event.</summary>
     public static readonly RoutedEvent ClickEvent = EventManager.RegisterRoutedEvent(
         nameof(Click),
@@ -53,150 +59,6 @@ public class SplitButton : ContentControl, ICommandSource, IAppearanceControl, I
         typeof(RoutedEventHandler),
         typeof(SplitButton)
     );
-
-    /// <summary>Identifies the <see cref="DropDownOpened"/> routed event.</summary>
-    public static readonly RoutedEvent DropDownOpenedEvent = EventManager.RegisterRoutedEvent(
-        nameof(DropDownOpened),
-        RoutingStrategy.Bubble,
-        typeof(RoutedEventHandler),
-        typeof(SplitButton)
-    );
-
-    /// <summary>Identifies the <see cref="DropDownClosed"/> routed event.</summary>
-    public static readonly RoutedEvent DropDownClosedEvent = EventManager.RegisterRoutedEvent(
-        nameof(DropDownClosed),
-        RoutingStrategy.Bubble,
-        typeof(RoutedEventHandler),
-        typeof(SplitButton)
-    );
-
-    /// <summary>Identifies the <see cref="Appearance"/> dependency property.</summary>
-    public static readonly DependencyProperty AppearanceProperty = Button.AppearanceProperty.AddOwner(
-        typeof(SplitButton),
-        new FrameworkPropertyMetadata(ControlAppearance.Normal)
-    );
-
-    /// <summary>Identifies the <see cref="MouseOverBackground"/> dependency property.</summary>
-    public static readonly DependencyProperty MouseOverBackgroundProperty =
-        Button.MouseOverBackgroundProperty.AddOwner(
-            typeof(SplitButton),
-            new FrameworkPropertyMetadata(null)
-        );
-
-    /// <summary>Identifies the <see cref="MouseOverBorderBrush"/> dependency property.</summary>
-    public static readonly DependencyProperty MouseOverBorderBrushProperty =
-        Button.MouseOverBorderBrushProperty.AddOwner(
-            typeof(SplitButton),
-            new FrameworkPropertyMetadata(null)
-        );
-
-    /// <summary>Identifies the <see cref="PressedForeground"/> dependency property.</summary>
-    public static readonly DependencyProperty PressedForegroundProperty =
-        Button.PressedForegroundProperty.AddOwner(
-            typeof(SplitButton),
-            new FrameworkPropertyMetadata(null)
-        );
-
-    /// <summary>Identifies the <see cref="PressedBackground"/> dependency property.</summary>
-    public static readonly DependencyProperty PressedBackgroundProperty =
-        Button.PressedBackgroundProperty.AddOwner(
-            typeof(SplitButton),
-            new FrameworkPropertyMetadata(null)
-        );
-
-    /// <summary>Identifies the <see cref="PressedBorderBrush"/> dependency property.</summary>
-    public static readonly DependencyProperty PressedBorderBrushProperty =
-        Button.PressedBorderBrushProperty.AddOwner(
-            typeof(SplitButton),
-            new FrameworkPropertyMetadata(null)
-        );
-
-    /// <summary>Identifies the <see cref="Icon"/> dependency property.</summary>
-    public static readonly DependencyProperty IconProperty = Button.IconProperty.AddOwner(
-        typeof(SplitButton),
-        new FrameworkPropertyMetadata(null, null, IconElement.Coerce)
-    );
-
-    /// <summary>Identifies the <see cref="CornerRadius"/> dependency property.</summary>
-    public static readonly DependencyProperty CornerRadiusProperty = Button.CornerRadiusProperty.AddOwner(
-        typeof(SplitButton),
-        new FrameworkPropertyMetadata(default(CornerRadius))
-    );
-
-    /// <summary>Identifies the <see cref="ClickMode"/> dependency property.</summary>
-    public static readonly DependencyProperty ClickModeProperty = DependencyProperty.Register(
-        nameof(ClickMode),
-        typeof(ClickMode),
-        typeof(SplitButton),
-        new FrameworkPropertyMetadata(ClickMode.Release),
-        value => value is ClickMode.Release or ClickMode.Press or ClickMode.Hover
-    );
-
-    /// <summary>Identifies the <see cref="Command"/> dependency property.</summary>
-    public static readonly DependencyProperty CommandProperty = DependencyProperty.Register(
-        nameof(Command),
-        typeof(ICommand),
-        typeof(SplitButton),
-        new FrameworkPropertyMetadata(null)
-    );
-
-    /// <summary>Identifies the <see cref="CommandParameter"/> dependency property.</summary>
-    public static readonly DependencyProperty CommandParameterProperty = DependencyProperty.Register(
-        nameof(CommandParameter),
-        typeof(object),
-        typeof(SplitButton),
-        new FrameworkPropertyMetadata(null)
-    );
-
-    /// <summary>Identifies the <see cref="CommandTarget"/> dependency property.</summary>
-    public static readonly DependencyProperty CommandTargetProperty = DependencyProperty.Register(
-        nameof(CommandTarget),
-        typeof(IInputElement),
-        typeof(SplitButton),
-        new FrameworkPropertyMetadata(null)
-    );
-
-    /// <summary>Identifies the <see cref="Flyout"/> dependency property.</summary>
-    public static readonly DependencyProperty FlyoutProperty = DependencyProperty.Register(
-        nameof(Flyout),
-        typeof(ContextMenu),
-        typeof(SplitButton),
-        new FrameworkPropertyMetadata(
-            null,
-            static (d, e) => ((SplitButton)d).OnFlyoutChanged(
-                (ContextMenu?)e.OldValue,
-                (ContextMenu?)e.NewValue
-            )
-        )
-    );
-
-    /// <summary>Identifies the <see cref="IsDropDownOpen"/> dependency property.</summary>
-    public static readonly DependencyProperty IsDropDownOpenProperty = DependencyProperty.Register(
-        nameof(IsDropDownOpen),
-        typeof(bool),
-        typeof(SplitButton),
-        new FrameworkPropertyMetadata(
-            false,
-            FrameworkPropertyMetadataOptions.BindsTwoWayByDefault,
-            static (d, e) => ((SplitButton)d).OnIsDropDownOpenChanged((bool)e.NewValue)
-        )
-    );
-
-    static SplitButton()
-    {
-        DefaultStyleKeyProperty.OverrideMetadata(
-            typeof(SplitButton),
-            new FrameworkPropertyMetadata(typeof(SplitButton))
-        );
-
-        // SplitButton is one keyboard-focus unit even though its template contains two mouse
-        // buttons. This makes ContextMenu's focus restoration return to the public control rather
-        // than to a private template part.
-        FocusableProperty.OverrideMetadata(
-            typeof(SplitButton),
-            new FrameworkPropertyMetadata(true)
-        );
-    }
 
     /// <summary>
     /// Occurs when the primary segment is invoked. This event is distinct from
@@ -209,6 +71,18 @@ public class SplitButton : ContentControl, ICommandSource, IAppearanceControl, I
         remove => RemoveHandler(ClickEvent, value);
     }
 
+    #endregion
+
+    #region Routed Event: DropDownOpened
+
+    /// <summary>Identifies the <see cref="DropDownOpened"/> routed event.</summary>
+    public static readonly RoutedEvent DropDownOpenedEvent = EventManager.RegisterRoutedEvent(
+        nameof(DropDownOpened),
+        RoutingStrategy.Bubble,
+        typeof(RoutedEventHandler),
+        typeof(SplitButton)
+    );
+
     /// <summary>Occurs after the associated <see cref="ContextMenu"/> has opened.</summary>
     [Category("Behavior")]
     public event RoutedEventHandler DropDownOpened
@@ -216,6 +90,18 @@ public class SplitButton : ContentControl, ICommandSource, IAppearanceControl, I
         add => AddHandler(DropDownOpenedEvent, value);
         remove => RemoveHandler(DropDownOpenedEvent, value);
     }
+
+    #endregion
+
+    #region Routed Event: DropDownClosed
+
+    /// <summary>Identifies the <see cref="DropDownClosed"/> routed event.</summary>
+    public static readonly RoutedEvent DropDownClosedEvent = EventManager.RegisterRoutedEvent(
+        nameof(DropDownClosed),
+        RoutingStrategy.Bubble,
+        typeof(RoutedEventHandler),
+        typeof(SplitButton)
+    );
 
     /// <summary>Occurs after the associated <see cref="ContextMenu"/> has closed.</summary>
     [Category("Behavior")]
@@ -225,6 +111,16 @@ public class SplitButton : ContentControl, ICommandSource, IAppearanceControl, I
         remove => RemoveHandler(DropDownClosedEvent, value);
     }
 
+    #endregion
+
+    #region DP: Appearance
+
+    /// <summary>Identifies the <see cref="Appearance"/> dependency property.</summary>
+    public static readonly DependencyProperty AppearanceProperty = Button.AppearanceProperty.AddOwner(
+        typeof(SplitButton),
+        new FrameworkPropertyMetadata(ControlAppearance.Normal)
+    );
+
     /// <inheritdoc />
     [Bindable(true)]
     [Category("Appearance")]
@@ -233,6 +129,17 @@ public class SplitButton : ContentControl, ICommandSource, IAppearanceControl, I
         get => (ControlAppearance)GetValue(AppearanceProperty);
         set => SetValue(AppearanceProperty, value);
     }
+
+    #endregion
+
+    #region DP: MouseOverBackground
+
+    /// <summary>Identifies the <see cref="MouseOverBackground"/> dependency property.</summary>
+    public static readonly DependencyProperty MouseOverBackgroundProperty =
+        Button.MouseOverBackgroundProperty.AddOwner(
+            typeof(SplitButton),
+            new FrameworkPropertyMetadata(null)
+        );
 
     /// <summary>
     /// Gets or sets the background brush used by either segment while the pointer is over that
@@ -250,6 +157,17 @@ public class SplitButton : ContentControl, ICommandSource, IAppearanceControl, I
         set => SetValue(MouseOverBackgroundProperty, value);
     }
 
+    #endregion
+
+    #region DP: MouseOverBorderBrush
+
+    /// <summary>Identifies the <see cref="MouseOverBorderBrush"/> dependency property.</summary>
+    public static readonly DependencyProperty MouseOverBorderBrushProperty =
+        Button.MouseOverBorderBrushProperty.AddOwner(
+            typeof(SplitButton),
+            new FrameworkPropertyMetadata(null)
+        );
+
     /// <summary>
     /// Gets or sets the border brush used by either segment while the pointer is over that segment.
     /// A <see langword="null"/> value falls back to <see cref="Control.BorderBrush"/>.
@@ -261,6 +179,17 @@ public class SplitButton : ContentControl, ICommandSource, IAppearanceControl, I
         get => (Brush?)GetValue(MouseOverBorderBrushProperty);
         set => SetValue(MouseOverBorderBrushProperty, value);
     }
+
+    #endregion
+
+    #region DP: PressedForeground
+
+    /// <summary>Identifies the <see cref="PressedForeground"/> dependency property.</summary>
+    public static readonly DependencyProperty PressedForegroundProperty =
+        Button.PressedForegroundProperty.AddOwner(
+            typeof(SplitButton),
+            new FrameworkPropertyMetadata(null)
+        );
 
     /// <summary>
     /// Gets or sets the foreground brush used by either segment while that segment is pressed.
@@ -274,6 +203,17 @@ public class SplitButton : ContentControl, ICommandSource, IAppearanceControl, I
         set => SetValue(PressedForegroundProperty, value);
     }
 
+    #endregion
+
+    #region DP: PressedBackground
+
+    /// <summary>Identifies the <see cref="PressedBackground"/> dependency property.</summary>
+    public static readonly DependencyProperty PressedBackgroundProperty =
+        Button.PressedBackgroundProperty.AddOwner(
+            typeof(SplitButton),
+            new FrameworkPropertyMetadata(null)
+        );
+
     /// <summary>
     /// Gets or sets the background brush used by either segment while that segment is pressed.
     /// A <see langword="null"/> value falls back to <see cref="Control.Background"/>.
@@ -285,6 +225,17 @@ public class SplitButton : ContentControl, ICommandSource, IAppearanceControl, I
         get => (Brush?)GetValue(PressedBackgroundProperty);
         set => SetValue(PressedBackgroundProperty, value);
     }
+
+    #endregion
+
+    #region DP: PressedBorderBrush
+
+    /// <summary>Identifies the <see cref="PressedBorderBrush"/> dependency property.</summary>
+    public static readonly DependencyProperty PressedBorderBrushProperty =
+        Button.PressedBorderBrushProperty.AddOwner(
+            typeof(SplitButton),
+            new FrameworkPropertyMetadata(null)
+        );
 
     /// <summary>
     /// Gets or sets the border brush used by either segment while that segment is pressed.
@@ -298,6 +249,85 @@ public class SplitButton : ContentControl, ICommandSource, IAppearanceControl, I
         set => SetValue(PressedBorderBrushProperty, value);
     }
 
+    #endregion
+
+    #region DP: DisabledBackground
+
+    /// <summary>Identifies the <see cref="DisabledBackground"/> dependency property.</summary>
+    public static readonly DependencyProperty DisabledBackgroundProperty =
+        Button.DisabledBackgroundProperty.AddOwner(
+            typeof(SplitButton),
+            new FrameworkPropertyMetadata(null)
+        );
+
+    /// <summary>
+    /// Gets or sets the background brush used by a disabled segment. A segment can be disabled
+    /// independently when the primary <see cref="Command"/> cannot execute.
+    /// </summary>
+    [Bindable(true)]
+    [Category("Appearance")]
+    public Brush? DisabledBackground
+    {
+        get => (Brush?)GetValue(DisabledBackgroundProperty);
+        set => SetValue(DisabledBackgroundProperty, value);
+    }
+
+    #endregion
+
+    #region DP: DisabledBorderBrush
+
+    /// <summary>Identifies the <see cref="DisabledBorderBrush"/> dependency property.</summary>
+    public static readonly DependencyProperty DisabledBorderBrushProperty =
+        Button.DisabledBorderBrushProperty.AddOwner(
+            typeof(SplitButton),
+            new FrameworkPropertyMetadata(null)
+        );
+
+    /// <summary>
+    /// Gets or sets the border brush used by a disabled segment. A <see langword="null"/> value
+    /// falls back to that segment's normal border brush.
+    /// </summary>
+    [Bindable(true)]
+    [Category("Appearance")]
+    public Brush? DisabledBorderBrush
+    {
+        get => (Brush?)GetValue(DisabledBorderBrushProperty);
+        set => SetValue(DisabledBorderBrushProperty, value);
+    }
+
+    #endregion
+
+    #region DP: DisabledForeground
+
+    /// <summary>Identifies the <see cref="DisabledForeground"/> dependency property.</summary>
+    public static readonly DependencyProperty DisabledForegroundProperty =
+        Button.DisabledForegroundProperty.AddOwner(
+            typeof(SplitButton),
+            new FrameworkPropertyMetadata(null)
+        );
+
+    /// <summary>
+    /// Gets or sets the foreground brush used by a disabled segment. A <see langword="null"/>
+    /// value falls back to that segment's normal foreground brush.
+    /// </summary>
+    [Bindable(true)]
+    [Category("Appearance")]
+    public Brush? DisabledForeground
+    {
+        get => (Brush?)GetValue(DisabledForegroundProperty);
+        set => SetValue(DisabledForegroundProperty, value);
+    }
+
+    #endregion
+
+    #region DP: Icon
+
+    /// <summary>Identifies the <see cref="Icon"/> dependency property.</summary>
+    public static readonly DependencyProperty IconProperty = Button.IconProperty.AddOwner(
+        typeof(SplitButton),
+        new FrameworkPropertyMetadata(null, null, IconElement.Coerce)
+    );
+
     /// <inheritdoc />
     [Bindable(true)]
     [Category("Appearance")]
@@ -306,6 +336,16 @@ public class SplitButton : ContentControl, ICommandSource, IAppearanceControl, I
         get => (IconElement?)GetValue(IconProperty);
         set => SetValue(IconProperty, value);
     }
+
+    #endregion
+
+    #region DP: CornerRadius
+
+    /// <summary>Identifies the <see cref="CornerRadius"/> dependency property.</summary>
+    public static readonly DependencyProperty CornerRadiusProperty = Button.CornerRadiusProperty.AddOwner(
+        typeof(SplitButton),
+        new FrameworkPropertyMetadata(default(CornerRadius))
+    );
 
     /// <summary>
     /// Gets or sets the corner radius of the complete split-button outline. The default template
@@ -319,6 +359,19 @@ public class SplitButton : ContentControl, ICommandSource, IAppearanceControl, I
         set => SetValue(CornerRadiusProperty, value);
     }
 
+    #endregion
+
+    #region DP: ClickMode
+
+    /// <summary>Identifies the <see cref="ClickMode"/> dependency property.</summary>
+    public static readonly DependencyProperty ClickModeProperty = DependencyProperty.Register(
+        nameof(ClickMode),
+        typeof(ClickMode),
+        typeof(SplitButton),
+        new FrameworkPropertyMetadata(ClickMode.Release),
+        value => value is ClickMode.Release or ClickMode.Press or ClickMode.Hover
+    );
+
     /// <summary>
     /// Gets or sets when the primary segment raises <see cref="Click"/> and executes
     /// <see cref="Command"/>. The default is <see cref="System.Windows.Controls.ClickMode.Release"/>.
@@ -330,6 +383,18 @@ public class SplitButton : ContentControl, ICommandSource, IAppearanceControl, I
         get => (ClickMode)GetValue(ClickModeProperty);
         set => SetValue(ClickModeProperty, value);
     }
+
+    #endregion
+
+    #region DP: Command
+
+    /// <summary>Identifies the <see cref="Command"/> dependency property.</summary>
+    public static readonly DependencyProperty CommandProperty = DependencyProperty.Register(
+        nameof(Command),
+        typeof(ICommand),
+        typeof(SplitButton),
+        new FrameworkPropertyMetadata(null)
+    );
 
     /// <summary>
     /// Gets or sets the command executed by the primary segment. Command availability disables
@@ -343,6 +408,18 @@ public class SplitButton : ContentControl, ICommandSource, IAppearanceControl, I
         set => SetValue(CommandProperty, value);
     }
 
+    #endregion
+
+    #region DP: CommandParameter
+
+    /// <summary>Identifies the <see cref="CommandParameter"/> dependency property.</summary>
+    public static readonly DependencyProperty CommandParameterProperty = DependencyProperty.Register(
+        nameof(CommandParameter),
+        typeof(object),
+        typeof(SplitButton),
+        new FrameworkPropertyMetadata(null)
+    );
+
     /// <summary>Gets or sets the parameter passed to <see cref="Command"/>.</summary>
     [Bindable(true)]
     [Category("Action")]
@@ -352,6 +429,18 @@ public class SplitButton : ContentControl, ICommandSource, IAppearanceControl, I
         set => SetValue(CommandParameterProperty, value);
     }
 
+    #endregion
+
+    #region DP: CommandTarget
+
+    /// <summary>Identifies the <see cref="CommandTarget"/> dependency property.</summary>
+    public static readonly DependencyProperty CommandTargetProperty = DependencyProperty.Register(
+        nameof(CommandTarget),
+        typeof(IInputElement),
+        typeof(SplitButton),
+        new FrameworkPropertyMetadata(null)
+    );
+
     /// <summary>Gets or sets the element against which a routed <see cref="Command"/> is raised.</summary>
     [Bindable(true)]
     [Category("Action")]
@@ -360,6 +449,24 @@ public class SplitButton : ContentControl, ICommandSource, IAppearanceControl, I
         get => (IInputElement?)GetValue(CommandTargetProperty);
         set => SetValue(CommandTargetProperty, value);
     }
+
+    #endregion
+
+    #region DP: Flyout
+
+    /// <summary>Identifies the <see cref="Flyout"/> dependency property.</summary>
+    public static readonly DependencyProperty FlyoutProperty = DependencyProperty.Register(
+        nameof(Flyout),
+        typeof(ContextMenu),
+        typeof(SplitButton),
+        new FrameworkPropertyMetadata(
+            null,
+            static (d, e) => ((SplitButton)d).OnFlyoutChanged(
+                (ContextMenu?)e.OldValue,
+                (ContextMenu?)e.NewValue
+            )
+        )
+    );
 
     /// <summary>
     /// Gets or sets the context menu displayed by the drop-down segment. The control supplies a
@@ -374,6 +481,25 @@ public class SplitButton : ContentControl, ICommandSource, IAppearanceControl, I
         set => SetValue(FlyoutProperty, value);
     }
 
+    #endregion
+
+    #region DP: IsDropDownOpen
+
+    /// <summary>Identifies the <see cref="IsDropDownOpen"/> dependency property.</summary>
+    public static readonly DependencyProperty IsDropDownOpenProperty = DependencyProperty.Register(
+        nameof(IsDropDownOpen),
+        typeof(bool),
+        typeof(SplitButton),
+        new FrameworkPropertyMetadata(
+            false,
+            FrameworkPropertyMetadataOptions.BindsTwoWayByDefault,
+            static (d, e) => ((SplitButton)d).OnIsDropDownOpenChanged(
+                (bool)e.OldValue,
+                (bool)e.NewValue
+            )
+        )
+    );
+
     /// <summary>
     /// Gets or sets a value indicating whether <see cref="Flyout"/> is open. The property synchronizes in both
     /// directions with <see cref="ContextMenu.IsOpen"/> and binds two-way by default.
@@ -384,6 +510,24 @@ public class SplitButton : ContentControl, ICommandSource, IAppearanceControl, I
     {
         get => (bool)GetValue(IsDropDownOpenProperty);
         set => SetValue(IsDropDownOpenProperty, value);
+    }
+
+    #endregion
+
+    static SplitButton()
+    {
+        DefaultStyleKeyProperty.OverrideMetadata(
+            typeof(SplitButton),
+            new FrameworkPropertyMetadata(typeof(SplitButton))
+        );
+
+        // SplitButton is one keyboard-focus unit even though its template contains two mouse
+        // buttons. This makes ContextMenu's focus restoration return to the public control rather
+        // than to a private template part.
+        FocusableProperty.OverrideMetadata(
+            typeof(SplitButton),
+            new FrameworkPropertyMetadata(true)
+        );
     }
 
     /// <inheritdoc />
@@ -408,6 +552,12 @@ public class SplitButton : ContentControl, ICommandSource, IAppearanceControl, I
             _dropDownButton.Click                      += OnDropDownButtonClick;
             _dropDownButton.PreviewMouseLeftButtonDown += OnDropDownButtonPreviewMouseLeftButtonDown;
         }
+    }
+
+    /// <inheritdoc />
+    protected override AutomationPeer OnCreateAutomationPeer()
+    {
+        return new SplitButtonAutomationPeer(this);
     }
 
     /// <summary>Opens <see cref="Flyout"/> when one is assigned and the control is enabled.</summary>
@@ -444,6 +594,7 @@ public class SplitButton : ContentControl, ICommandSource, IAppearanceControl, I
     /// <summary>Raises the control-owned <see cref="Click"/> event.</summary>
     protected virtual void OnClick()
     {
+        SplitButtonAutomationPeer.RaiseInvokeAutomationEvent(this);
         RaiseEvent(new RoutedEventArgs(ClickEvent, this));
     }
 
@@ -469,28 +620,57 @@ public class SplitButton : ContentControl, ICommandSource, IAppearanceControl, I
             return;
         }
 
+        Key key = GetActualKey(e);
+        if (key != Key.Space)
+        {
+            // ButtonBase cancels a pending Space activation when any other key is pressed. Without
+            // this reset, Space followed by F4 or another shortcut would invoke the primary action
+            // when the original Space key is eventually released.
+            _isSpaceKeyDown = false;
+        }
+
         if (IsDropDownShortcut(e))
         {
-            ToggleDropDown();
-            e.Handled = true;
-        }
-        else if (e.Key == Key.Escape && IsDropDownOpen)
-        {
-            CloseDropDown();
-            e.Handled = true;
-        }
-        else if (e.Key == Key.Space && ClickMode != ClickMode.Hover)
-        {
-            _isSpaceKeyDown = true;
-
-            if (ClickMode == ClickMode.Press)
+            // F4 and Alt+Down are toggle gestures, so key auto-repeat must not repeatedly open and
+            // close the menu while the user is holding the shortcut.
+            if (!e.IsRepeat)
             {
-                InvokePrimaryAction();
+                ToggleDropDown();
             }
 
             e.Handled = true;
         }
-        else if (e.Key == Key.Enter && ClickMode != ClickMode.Hover)
+        else if (key == Key.Escape && IsDropDownOpen)
+        {
+            CloseDropDown();
+            e.Handled = true;
+        }
+        else if (
+            key == Key.Space
+            && ClickMode != ClickMode.Hover
+            && ReferenceEquals(e.OriginalSource, this)
+            && !IsAltSpaceGesture()
+        )
+        {
+            // Repeated KeyDown events represent the same physical press. ClickMode.Press invokes
+            // once at the transition, matching ButtonBase rather than executing a command at the
+            // keyboard repeat rate.
+            if (!_isSpaceKeyDown)
+            {
+                _isSpaceKeyDown = true;
+                if (ClickMode == ClickMode.Press)
+                {
+                    InvokePrimaryAction();
+                }
+            }
+
+            e.Handled = true;
+        }
+        else if (
+            key == Key.Enter
+            && ClickMode != ClickMode.Hover
+            && ReferenceEquals(e.OriginalSource, this)
+        )
         {
             InvokePrimaryAction();
             e.Handled = true;
@@ -502,7 +682,12 @@ public class SplitButton : ContentControl, ICommandSource, IAppearanceControl, I
     {
         base.OnKeyUp(e);
 
-        if (e.Handled || e.Key != Key.Space || !_isSpaceKeyDown)
+        if (
+            e.Handled
+            || GetActualKey(e) != Key.Space
+            || !_isSpaceKeyDown
+            || !ReferenceEquals(e.OriginalSource, this)
+        )
         {
             return;
         }
@@ -525,8 +710,20 @@ public class SplitButton : ContentControl, ICommandSource, IAppearanceControl, I
 
     private static bool IsDropDownShortcut(KeyEventArgs e)
     {
-        var key = e.Key == Key.System ? e.SystemKey : e.Key;
+        Key key = GetActualKey(e);
         return key == Key.F4 || (key == Key.Down && Keyboard.Modifiers.HasFlag(ModifierKeys.Alt));
+    }
+
+    private static Key GetActualKey(KeyEventArgs e)
+    {
+        return e.Key == Key.System ? e.SystemKey : e.Key;
+    }
+
+    private static bool IsAltSpaceGesture()
+    {
+        // Alt+Space belongs to the hosting Window's system menu. Ctrl+Space and Ctrl+Alt+Space
+        // retain normal button semantics, matching WPF ButtonBase's modifier check.
+        return (Keyboard.Modifiers & (ModifierKeys.Control | ModifierKeys.Alt)) == ModifierKeys.Alt;
     }
 
     private void OnFlyoutChanged(ContextMenu? oldValue, ContextMenu? newValue)
@@ -564,10 +761,15 @@ public class SplitButton : ContentControl, ICommandSource, IAppearanceControl, I
         SetCurrentValue(IsDropDownOpenProperty, newValue?.IsOpen == true);
     }
 
-    private void OnIsDropDownOpenChanged(bool shouldOpen)
+    private void OnIsDropDownOpenChanged(bool oldIsOpen, bool shouldOpen)
     {
         if (_isSynchronizingDropDownState)
         {
+            SplitButtonAutomationPeer.RaiseExpandCollapseAutomationEvent(
+                this,
+                oldIsOpen,
+                shouldOpen
+            );
             return;
         }
 
@@ -590,6 +792,12 @@ public class SplitButton : ContentControl, ICommandSource, IAppearanceControl, I
         {
             _contextMenu.SetCurrentValue(ContextMenu.IsOpenProperty, shouldOpen);
         }
+
+        SplitButtonAutomationPeer.RaiseExpandCollapseAutomationEvent(
+            this,
+            oldIsOpen,
+            shouldOpen
+        );
     }
 
     private void ConfigureContextMenu(ContextMenu contextMenu)
@@ -749,9 +957,28 @@ public class SplitButton : ContentControl, ICommandSource, IAppearanceControl, I
             && position.Y <= _dropDownButton.ActualHeight;
     }
 
-    private void InvokePrimaryAction()
+    /// <summary>
+    /// Gets a value indicating whether the primary template part exists and can currently invoke
+    /// its command.
+    /// </summary>
+    internal bool CanInvokePrimaryAction => IsEnabled && _primaryButton?.IsEnabled == true;
+
+    /// <summary>Returns whether an automation child belongs to the private button implementation.</summary>
+    internal bool IsTemplateButton(UIElement element)
     {
-        if (!IsEnabled || _primaryButton?.IsEnabled == false)
+        return ReferenceEquals(element, _primaryButton) || ReferenceEquals(element, _dropDownButton);
+    }
+
+    /// <summary>
+    /// Invokes the primary action for keyboard and UI Automation input while respecting the
+    /// command availability maintained by the primary button part.
+    /// </summary>
+    internal void InvokePrimaryAction()
+    {
+        // A missing template part means the corresponding interaction is unavailable. The explicit
+        // null check is important: a null-conditional comparison with false would otherwise let
+        // keyboard and automation input invoke an action that has no visual surface.
+        if (!CanInvokePrimaryAction)
         {
             return;
         }

@@ -3,13 +3,18 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
+using System.Reflection;
 using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Windows;
+using System.Windows.Automation;
+using System.Windows.Automation.Peers;
+using System.Windows.Automation.Provider;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Threading;
 using Wpf.Ui.Controls;
 using Wpf.Ui.Markup;
 using Wpf.Ui.Theming;
@@ -66,6 +71,9 @@ public class SplitButtonTests
                         PressedBackground    = Brushes.DarkGray,
                         PressedBorderBrush   = Brushes.DarkGreen,
                         PressedForeground    = Brushes.DarkGoldenrod,
+                        DisabledBackground   = Brushes.DimGray,
+                        DisabledBorderBrush  = Brushes.Gray,
+                        DisabledForeground   = Brushes.LightGray,
                     }
                 );
 
@@ -119,6 +127,56 @@ public class SplitButtonTests
         Assert.Same(
             Wpf.Ui.Controls.Button.PressedBorderBrushProperty,
             SplitButton.PressedBorderBrushProperty
+        );
+        Assert.Same(
+            Wpf.Ui.Controls.Button.DisabledBackgroundProperty,
+            SplitButton.DisabledBackgroundProperty
+        );
+        Assert.Same(
+            Wpf.Ui.Controls.Button.DisabledBorderBrushProperty,
+            SplitButton.DisabledBorderBrushProperty
+        );
+        Assert.Same(
+            Wpf.Ui.Controls.Button.DisabledForegroundProperty,
+            SplitButton.DisabledForegroundProperty
+        );
+    }
+
+    [Fact]
+    public void CommandDisabledPrimarySegment_UsesDisabledBrushesIndependently()
+    {
+        RunOnStaThread(
+            () =>
+            {
+                var splitButton = CreateTemplatedSplitButton(
+                    new SplitButton
+                    {
+                        Background = Brushes.AliceBlue,
+                        BorderBrush = Brushes.Bisque,
+                        Foreground = Brushes.Coral,
+                        DisabledBackground = Brushes.DimGray,
+                        DisabledBorderBrush = Brushes.Gray,
+                        DisabledForeground = Brushes.LightGray,
+                        Command = new DisabledCommand(),
+                    }
+                );
+                var primaryButton = Assert.IsType<Wpf.Ui.Controls.Button>(
+                    splitButton.Template.FindName("PART_PrimaryButton", splitButton)
+                );
+                var dropDownButton = Assert.IsType<Wpf.Ui.Controls.Button>(
+                    splitButton.Template.FindName("PART_DropDownButton", splitButton)
+                );
+
+                Assert.False(primaryButton.IsEnabled);
+                Assert.Same(Brushes.DimGray, primaryButton.VisualBackground);
+                Assert.Same(Brushes.Gray, primaryButton.VisualBorderBrush);
+                Assert.Same(Brushes.LightGray, primaryButton.VisualForeground);
+
+                Assert.True(dropDownButton.IsEnabled);
+                Assert.Same(Brushes.AliceBlue, dropDownButton.VisualBackground);
+                Assert.Same(Brushes.Bisque, dropDownButton.VisualBorderBrush);
+                Assert.Same(Brushes.Coral, dropDownButton.VisualForeground);
+            }
         );
     }
 
@@ -312,6 +370,151 @@ public class SplitButtonTests
     }
 
     [Fact]
+    public void SpacePress_InvokesOnceAndIgnoresBubbledContentInput()
+    {
+        RunOnStaThread(
+            () =>
+            {
+                var contentTextBox = new System.Windows.Controls.TextBox();
+                var root = new StackPanel();
+                var splitButton = CreateTemplatedSplitButton(
+                    new SplitButton
+                    {
+                        ClickMode = ClickMode.Press,
+                        Content = contentTextBox,
+                    },
+                    root
+                );
+                var window = new Window { Content = root };
+                var clickCount = 0;
+                splitButton.Click += (_, _) => clickCount++;
+
+                try
+                {
+                    window.Show();
+                    Assert.True(splitButton.Focus());
+                    PresentationSource source = Assert.IsAssignableFrom<PresentationSource>(
+                        PresentationSource.FromVisual(splitButton)
+                    );
+
+                    splitButton.RaiseEvent(CreateKeyEvent(source, Key.Space, Keyboard.KeyDownEvent));
+                    splitButton.RaiseEvent(CreateKeyEvent(source, Key.Space, Keyboard.KeyDownEvent));
+                    Assert.Equal(1, clickCount);
+
+                    splitButton.RaiseEvent(CreateKeyEvent(source, Key.Space, Keyboard.KeyUpEvent));
+                    Assert.True(contentTextBox.Focus());
+                    contentTextBox.RaiseEvent(
+                        CreateKeyEvent(source, Key.Space, Keyboard.KeyDownEvent)
+                    );
+
+                    Assert.Equal(1, clickCount);
+                }
+                finally
+                {
+                    window.Close();
+                }
+            }
+        );
+    }
+
+    [Fact]
+    public void MissingPrimaryTemplatePart_DisablesKeyboardInvocation()
+    {
+        RunOnStaThread(
+            () =>
+            {
+                var template = new ControlTemplate(typeof(SplitButton))
+                {
+                    VisualTree = new FrameworkElementFactory(typeof(Border)),
+                };
+                var root = new StackPanel();
+                var splitButton = CreateTemplatedSplitButton(
+                    new SplitButton { Template = template },
+                    root
+                );
+                var window = new Window { Content = root };
+                var clickCount = 0;
+                splitButton.Click += (_, _) => clickCount++;
+
+                try
+                {
+                    window.Show();
+                    Assert.True(splitButton.Focus());
+                    PresentationSource source = Assert.IsAssignableFrom<PresentationSource>(
+                        PresentationSource.FromVisual(splitButton)
+                    );
+
+                    splitButton.RaiseEvent(CreateKeyEvent(source, Key.Enter, Keyboard.KeyDownEvent));
+                    splitButton.RaiseEvent(CreateKeyEvent(source, Key.Space, Keyboard.KeyDownEvent));
+                    splitButton.RaiseEvent(CreateKeyEvent(source, Key.Space, Keyboard.KeyUpEvent));
+
+                    Assert.Equal(0, clickCount);
+                }
+                finally
+                {
+                    window.Close();
+                }
+            }
+        );
+    }
+
+    [Fact]
+    public void AutomationPeer_ExposesInvokeAndExpandCollapseForTheFocusableWrapper()
+    {
+        RunOnStaThread(
+            () =>
+            {
+                var contextMenu = new ContextMenu { Items = { new MenuItem { Header = "Item" } } };
+                var root = new StackPanel();
+                var splitButton = CreateTemplatedSplitButton(
+                    new SplitButton { Content = "Run", Flyout = contextMenu },
+                    root
+                );
+                var window = new Window { Content = root };
+                var clickCount = 0;
+                splitButton.Click += (_, _) => clickCount++;
+
+                try
+                {
+                    window.Show();
+                    AutomationPeer peer = CreateAutomationPeer(splitButton);
+                    var invokeProvider = Assert.IsAssignableFrom<IInvokeProvider>(
+                        peer.GetPattern(PatternInterface.Invoke)
+                    );
+                    var expandProvider = Assert.IsAssignableFrom<IExpandCollapseProvider>(
+                        peer.GetPattern(PatternInterface.ExpandCollapse)
+                    );
+
+                    Assert.Equal(AutomationControlType.Button, peer.GetAutomationControlType());
+                    Assert.Equal("SplitButton", peer.GetClassName());
+                    Assert.Equal("Run", peer.GetName());
+                    Assert.DoesNotContain(
+                        peer.GetChildren() ?? [],
+                        child => child is ButtonBaseAutomationPeer
+                    );
+                    Assert.Equal(ExpandCollapseState.Collapsed, expandProvider.ExpandCollapseState);
+
+                    invokeProvider.Invoke();
+                    DrainDispatcher();
+                    Assert.Equal(1, clickCount);
+
+                    expandProvider.Expand();
+                    Assert.True(splitButton.IsDropDownOpen);
+                    Assert.Equal(ExpandCollapseState.Expanded, expandProvider.ExpandCollapseState);
+
+                    expandProvider.Collapse();
+                    Assert.False(splitButton.IsDropDownOpen);
+                    Assert.Equal(ExpandCollapseState.Collapsed, expandProvider.ExpandCollapseState);
+                }
+                finally
+                {
+                    window.Close();
+                }
+            }
+        );
+    }
+
+    [Fact]
     public void StyleResourceExtension_MapsTheSplitButtonComponentKey()
     {
         var extension = new StyleResourceExtension(StyleId.UiSplitButtonStyle);
@@ -382,6 +585,23 @@ public class SplitButtonTests
         };
     }
 
+    private static AutomationPeer CreateAutomationPeer(SplitButton splitButton)
+    {
+        return (AutomationPeer)typeof(SplitButton)
+            .GetMethod("OnCreateAutomationPeer", BindingFlags.Instance | BindingFlags.NonPublic)!
+            .Invoke(splitButton, null)!;
+    }
+
+    private static void DrainDispatcher()
+    {
+        var frame = new DispatcherFrame();
+        _ = Dispatcher.CurrentDispatcher.BeginInvoke(
+            DispatcherPriority.ApplicationIdle,
+            new Action(() => frame.Continue = false)
+        );
+        Dispatcher.PushFrame(frame);
+    }
+
     private static void RaisePreviewMouseLeftButtonDown(UIElement element)
     {
         element.RaiseEvent(
@@ -406,5 +626,27 @@ public class SplitButtonTests
         Assert.Same(Brushes.DarkGray, button.PressedBackground);
         Assert.Same(Brushes.DarkGreen, button.PressedBorderBrush);
         Assert.Same(Brushes.DarkGoldenrod, button.PressedForeground);
+        Assert.Same(Brushes.DimGray, button.DisabledBackground);
+        Assert.Same(Brushes.Gray, button.DisabledBorderBrush);
+        Assert.Same(Brushes.LightGray, button.DisabledForeground);
+    }
+
+    private sealed class DisabledCommand : ICommand
+    {
+        public event EventHandler? CanExecuteChanged
+        {
+            add { }
+            remove { }
+        }
+
+        public bool CanExecute(object? parameter)
+        {
+            return false;
+        }
+
+        public void Execute(object? parameter)
+        {
+            throw new InvalidOperationException("A disabled command must not execute.");
+        }
     }
 }

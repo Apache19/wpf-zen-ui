@@ -119,6 +119,47 @@ public class ButtonTests
         );
     }
 
+    [Fact]
+    public void DisabledBrushes_WinWithoutReplacingStandardBrushValues()
+    {
+        RunOnStaThread(
+            () =>
+            {
+                var background = new SolidColorBrush(Colors.Red);
+                var borderBrush = new SolidColorBrush(Colors.Green);
+                var foreground = new SolidColorBrush(Colors.Blue);
+                var disabledBackground = new SolidColorBrush(Colors.Gray);
+                var disabledBorderBrush = new SolidColorBrush(Colors.DarkGray);
+                var disabledForeground = new SolidColorBrush(Colors.LightGray);
+                var replacementDisabledBackground = new SolidColorBrush(Colors.SlateGray);
+                var button = new TestButton
+                {
+                    Background = background,
+                    BorderBrush = borderBrush,
+                    Foreground = foreground,
+                    PressedBackground = new SolidColorBrush(Colors.Orange),
+                    DisabledBackground = disabledBackground,
+                    DisabledBorderBrush = disabledBorderBrush,
+                    DisabledForeground = disabledForeground,
+                };
+
+                button.SetPressed(true);
+                button.IsEnabled = false;
+
+                Assert.Same(disabledBackground, button.VisualBackground);
+                Assert.Same(disabledBorderBrush, button.VisualBorderBrush);
+                Assert.Same(disabledForeground, button.VisualForeground);
+                Assert.Same(background, button.Background);
+                Assert.Same(borderBrush, button.BorderBrush);
+                Assert.Same(foreground, button.Foreground);
+
+                button.DisabledBackground = replacementDisabledBackground;
+
+                Assert.Same(replacementDisabledBackground, button.VisualBackground);
+            }
+        );
+    }
+
     private static void RunOnStaThread(Action action)
     {
         Exception? exception = null;

@@ -25,11 +25,16 @@
         <Setter Property="Control.BorderBrush" Value="{m:BrushResource ControlElevationBorderBrush}" />
         <Setter Property="controls:Button.MouseOverBorderBrush" Value="{m:BrushResource ControlElevationBorderBrush}" />
         <Setter Property="controls:Button.PressedBorderBrush" Value="{m:BrushResource ControlStrokeColorDefaultBrush}" />
+        <Setter Property="controls:Button.DisabledBackground" Value="{m:BrushResource ControlFillColorDisabledBrush}" />
+        <Setter Property="controls:Button.DisabledBorderBrush" Value="{m:BrushResource ControlStrokeColorDefaultBrush}" />
+        <Setter Property="controls:Button.DisabledForeground" Value="{m:BrushResource TextFillColorDisabledBrush}" />
 
         <Style.Triggers>
             <!--  TRANSPARENT  -->
             <Trigger Property="controls:Button.Appearance" Value="Transparent">
                 <Setter Property="Control.Background" Value="Transparent" />
+                <!-- A transparent button must not acquire the default disabled fill. -->
+                <Setter Property="controls:Button.DisabledBackground" Value="Transparent" />
             </Trigger>
 
             <!--  ACCENT  -->
@@ -115,14 +120,18 @@
                 <Setter Property="controls:Button.PressedBorderBrush" Value="Transparent" />
             </Trigger>
 
-            <!--  Disabled  -->
+            <!--
+                Keep the standard properties synchronized for older custom templates that still
+                consume Background/BorderBrush/Foreground. New templates should consume the
+                Visual* outputs, whose disabled resolution also works when these setters lose to a
+                local or parent-template value.
+            -->
             <Trigger Property="UIElement.IsEnabled" Value="False">
                 <Setter Property="Control.Background" Value="{m:BrushResource ControlFillColorDisabledBrush}" />
                 <Setter Property="Control.BorderBrush" Value="{m:BrushResource ControlStrokeColorDefaultBrush}" />
                 <Setter Property="Control.Foreground" Value="{m:BrushResource TextFillColorDisabledBrush}" />
             </Trigger>
 
-            <!--  Transparent appearance should stay transparent when disabled  -->
             <MultiTrigger>
                 <MultiTrigger.Conditions>
                     <Condition Property="controls:Button.Appearance" Value="Transparent" />
