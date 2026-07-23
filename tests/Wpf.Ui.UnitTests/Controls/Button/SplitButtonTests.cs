@@ -166,16 +166,86 @@ public class SplitButtonTests
                 var dropDownButton = Assert.IsType<Wpf.Ui.Controls.Button>(
                     splitButton.Template.FindName("PART_DropDownButton", splitButton)
                 );
+                var separator = Assert.IsType<Border>(
+                    splitButton.Template.FindName("Separator", splitButton)
+                );
 
                 Assert.False(primaryButton.IsEnabled);
                 Assert.Same(Brushes.DimGray, primaryButton.VisualBackground);
                 Assert.Same(Brushes.Gray, primaryButton.VisualBorderBrush);
                 Assert.Same(Brushes.LightGray, primaryButton.VisualForeground);
+                Assert.Same(Brushes.Bisque, separator.Background);
 
                 Assert.True(dropDownButton.IsEnabled);
                 Assert.Same(Brushes.AliceBlue, dropDownButton.VisualBackground);
                 Assert.Same(Brushes.Bisque, dropDownButton.VisualBorderBrush);
                 Assert.Same(Brushes.Coral, dropDownButton.VisualForeground);
+            }
+        );
+    }
+
+    [Fact]
+    public void DisabledSplitButton_UsesDisabledSeparatorBorderBrush()
+    {
+        RunOnStaThread(
+            () =>
+            {
+                var splitButton = CreateTemplatedSplitButton(
+                    new SplitButton
+                    {
+                        BorderBrush = Brushes.Bisque,
+                        DisabledBorderBrush = Brushes.Gray,
+                        IsEnabled = false,
+                    }
+                );
+                var primaryButton = Assert.IsType<Wpf.Ui.Controls.Button>(
+                    splitButton.Template.FindName("PART_PrimaryButton", splitButton)
+                );
+                var dropDownButton = Assert.IsType<Wpf.Ui.Controls.Button>(
+                    splitButton.Template.FindName("PART_DropDownButton", splitButton)
+                );
+                var separator = Assert.IsType<Border>(
+                    splitButton.Template.FindName("Separator", splitButton)
+                );
+
+                Assert.False(primaryButton.IsEnabled);
+                Assert.False(dropDownButton.IsEnabled);
+                Assert.Same(Brushes.Gray, separator.Background);
+            }
+        );
+    }
+
+    [Fact]
+    public void PressedSegment_SuppliesTheSeparatorBorderBrush()
+    {
+        RunOnStaThread(
+            () =>
+            {
+                var splitButton = CreateTemplatedSplitButton(
+                    new SplitButton
+                    {
+                        BorderBrush = Brushes.Bisque,
+                        PressedBorderBrush = Brushes.DarkGreen,
+                    }
+                );
+                var primaryButton = Assert.IsType<Wpf.Ui.Controls.Button>(
+                    splitButton.Template.FindName("PART_PrimaryButton", splitButton)
+                );
+                var dropDownButton = Assert.IsType<Wpf.Ui.Controls.Button>(
+                    splitButton.Template.FindName("PART_DropDownButton", splitButton)
+                );
+                var separator = Assert.IsType<Border>(
+                    splitButton.Template.FindName("Separator", splitButton)
+                );
+
+                SetPressed(primaryButton, true);
+
+                Assert.Same(Brushes.DarkGreen, separator.Background);
+
+                SetPressed(primaryButton, false);
+                SetPressed(dropDownButton, true);
+
+                Assert.Same(Brushes.DarkGreen, separator.Background);
             }
         );
     }
@@ -614,6 +684,18 @@ public class SplitButtonTests
                 RoutedEvent = UIElement.PreviewMouseLeftButtonDownEvent,
             }
         );
+    }
+
+    private static void SetPressed(ButtonBase button, bool value)
+    {
+        // ButtonBase exposes IsPressed with a protected setter so derived controls can drive the
+        // same read-only dependency property used by WPF's mouse handling. The template creates
+        // concrete Button instances, therefore the test invokes that setter reflectively instead
+        // of replacing the production template with a test-only subclass.
+        typeof(ButtonBase)
+            .GetProperty(nameof(ButtonBase.IsPressed))!
+            .GetSetMethod(nonPublic: true)!
+            .Invoke(button, [value]);
     }
 
     private static void AssertSegmentBrushes(Wpf.Ui.Controls.Button button)

@@ -47,6 +47,7 @@
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
 
                         <controls:Button
@@ -82,9 +83,24 @@
                             PressedForeground="{TemplateBinding PressedForeground}"
                             TabIndex="{TemplateBinding TabIndex}" />
 
+                        <!--
+                            The separator is painted separately because neither segment owns the
+                            shared edge. Its normal brush comes from SplitButton, while the template
+                            triggers below redirect it to the hovered segment's resolved visual
+                            brush. Binding to VisualBorderBrush is intentional: Button has already
+                            applied disabled/pressed/hover precedence and state-brush fallbacks, so
+                            the composite template must not duplicate those rules.
+                        -->
+                        <Border
+                            x:Name="Separator"
+                            Grid.Column="1"
+                            Width="1"
+                            Background="{TemplateBinding BorderBrush}"
+                            IsHitTestVisible="False" />
+
                         <controls:Button
                             x:Name="PART_DropDownButton"
-                            Grid.Column="1"
+                            Grid.Column="2"
                             MinWidth="32"
                             Padding="11,0"
                             VerticalContentAlignment="Center"
@@ -110,6 +126,38 @@
                             </controls:Button.Icon>
                         </controls:Button>
                     </Grid>
+                    <ControlTemplate.Triggers>
+                        <!--
+                            A segment takes ownership of the shared edge whenever it has an
+                            interaction state that can change its resolved border brush. State
+                            selection remains inside Button.VisualBorderBrush; these triggers only
+                            choose which segment supplies the separator brush. Hover/pressed
+                            triggers follow the disabled trigger so an enabled sibling under the
+                            pointer can still present one continuous interactive outline. The
+                            shared edge uses the disabled palette only when both segments are
+                            disabled; disabling the primary segment through ICommand.CanExecute
+                            must not make the still-operable drop-down segment look disabled.
+                        -->
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition SourceName="PART_PrimaryButton" Property="IsEnabled" Value="False" />
+                                <Condition SourceName="PART_DropDownButton" Property="IsEnabled" Value="False" />
+                            </MultiTrigger.Conditions>
+                            <Setter TargetName="Separator" Property="Background" Value="{Binding VisualBorderBrush, ElementName=PART_PrimaryButton}" />
+                        </MultiTrigger>
+                        <Trigger SourceName="PART_PrimaryButton" Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Separator" Property="Background" Value="{Binding VisualBorderBrush, ElementName=PART_PrimaryButton}" />
+                        </Trigger>
+                        <Trigger SourceName="PART_DropDownButton" Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Separator" Property="Background" Value="{Binding VisualBorderBrush, ElementName=PART_DropDownButton}" />
+                        </Trigger>
+                        <Trigger SourceName="PART_PrimaryButton" Property="IsPressed" Value="True">
+                            <Setter TargetName="Separator" Property="Background" Value="{Binding VisualBorderBrush, ElementName=PART_PrimaryButton}" />
+                        </Trigger>
+                        <Trigger SourceName="PART_DropDownButton" Property="IsPressed" Value="True">
+                            <Setter TargetName="Separator" Property="Background" Value="{Binding VisualBorderBrush, ElementName=PART_DropDownButton}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
