@@ -10,6 +10,7 @@ using System.Windows;
 using System.Windows.Controls.Primitives;
 using System.Windows.Data;
 using Wpf.Ui.Controls;
+using Wpf.Ui.Theming;
 
 namespace Wpf.Ui.UnitTests.Controls.ButtonControl;
 
@@ -155,13 +156,8 @@ public class DerivedButtonTests
         );
     }
 
-    [Theory]
-    [InlineData("SplitButton/SplitButton.xaml", "DefaultUiSplitButtonStyle", typeof(SplitButton))]
-    public void DerivedButtonStyles_LoadWithoutButtonDictionary(
-        string relativePath,
-        string styleKey,
-        Type controlType
-    )
+    [Fact]
+    public void SplitButtonStyle_LoadsWithoutButtonDictionary()
     {
         RunOnStaThread(
             () =>
@@ -169,15 +165,23 @@ public class DerivedButtonTests
                 var resources = new ResourceDictionary
                 {
                     Source = new Uri(
-                        $"pack://application:,,,/Wpf.Ui;component/Controls/{relativePath}",
+                        "pack://application:,,,/Wpf.Ui;component/Controls/SplitButton/SplitButton.xaml",
                         UriKind.Absolute
                     ),
                 };
 
-                var style = Assert.IsType<Style>(resources[styleKey]);
+                var style = Assert.IsType<Style>(resources[StyleKeys.UiSplitButtonStyle]);
+                var appearanceStyle = Assert.IsType<Style>(style.BasedOn);
 
-                Assert.Equal(controlType, style.TargetType);
-                Assert.Null(style.BasedOn);
+                Assert.Equal(typeof(SplitButton), style.TargetType);
+                Assert.Equal(typeof(IFrameworkInputElement), appearanceStyle.TargetType);
+                Assert.Contains(
+                    appearanceStyle.Setters,
+                    setter =>
+                        setter is Setter { Property: not null } typedSetter
+                        && typedSetter.Property
+                            == Wpf.Ui.Controls.Button.MouseOverBackgroundProperty
+                );
                 Assert.Contains(
                     style.Setters,
                     setter =>

@@ -3,9 +3,6 @@
     If a copy of the MIT was not distributed with this file, You can obtain one at https://opensource.org/licenses/MIT.
     Copyright (C) Leszek Pomianowski and WPF UI Contributors.
     All Rights Reserved.
-    
-    Based on Microsoft XAML for Win UI
-    Copyright (c) Microsoft Corporation. All Rights Reserved.
 -->
 
 <ResourceDictionary
@@ -13,301 +10,105 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Ui.Controls"
     xmlns:converters="clr-namespace:Wpf.Ui.Converters"
-    xmlns:markup="clr-namespace:Wpf.Ui.Markup">
+    xmlns:m="clr-namespace:Wpf.Ui.Markup"
+    xmlns:t="clr-namespace:Wpf.Ui.Theming">
 
-    <converters:ThicknessTransformConverter x:Key="LeftSplitThicknessConverter" CopySides="Top,Bottom,Left" />
-    <converters:ThicknessTransformConverter x:Key="RightSplitThicknessConverter" CopySides="Top,Bottom,Right" />
-    <converters:CornerRadiusTransformConverter x:Key="LeftSplitCornerRadiusConverter" CopyCorners="TopLeft,BottomLeft" />
-    <converters:CornerRadiusTransformConverter x:Key="RightSplitCornerRadiusConverter" CopyCorners="TopRight,BottomRight" />
+    <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/Button/ButtonAppearance.xaml" />
+    </ResourceDictionary.MergedDictionaries>
 
-    <Style x:Key="SplitButtonFocusVisualStyle">
-        <Setter Property="Control.Template">
-            <Setter.Value>
-                <ControlTemplate>
-                    <!-- ReSharper disable once Xaml.BindingWithContextNotResolved -->
-                    <Border
-                        BorderBrush="{markup:BrushResource KeyboardFocusBorderColorBrush}"
-                        BorderThickness="1"
-                        CornerRadius="{Binding AdornedElement.CornerRadius, RelativeSource={RelativeSource AncestorType={x:Type Adorner}}}"
-                        IsHitTestVisible="False"
-                        SnapsToDevicePixels="True" />
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
-    </Style>
+    <!--
+        Each segment paints only the outside half of the composite outline. In particular, neither
+        button paints the shared edge; this avoids a double-width seam and lets the independently
+        animated button backgrounds meet cleanly.
+    -->
+    <converters:ThicknessTransformConverter x:Key="SplitButtonLeftBorderThicknessConverter" CopySides="Left,Top,Bottom" />
+    <converters:ThicknessTransformConverter x:Key="SplitButtonRightBorderThicknessConverter" CopySides="Top,Right,Bottom" />
+    <converters:CornerRadiusTransformConverter x:Key="SplitButtonLeftCornerRadiusConverter" CopyCorners="TopLeft,BottomLeft" />
+    <converters:CornerRadiusTransformConverter x:Key="SplitButtonRightCornerRadiusConverter" CopyCorners="TopRight,BottomRight" />
 
-    <Style x:Key="DefaultSplitButtonToggleButtonStyle" TargetType="{x:Type ToggleButton}">
-
-        <!--  Focus by parent element  -->
-        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-        <!--  Focus by parent element  -->
-
-        <Setter Property="Foreground" Value="{markup:BrushResource TextFillColorPrimaryBrush}" />
-        <Setter Property="Background" Value="Transparent" />
-        <Setter Property="BorderBrush" Value="Transparent" />
-        <Setter Property="BorderThickness" Value="0" />
-        <Setter Property="Border.CornerRadius" Value="0" />
-        <Setter Property="SnapsToDevicePixels" Value="True" />
-        <Setter Property="Template">
-            <Setter.Value>
-                <ControlTemplate TargetType="{x:Type ToggleButton}">
-                    <Border
-                        x:Name="ContentBorder"
-                        Padding="11,0"
-                        Background="{TemplateBinding Background}"
-                        BorderBrush="{TemplateBinding BorderBrush}"
-                        BorderThickness="{TemplateBinding BorderThickness}"
-                        CornerRadius="{TemplateBinding Border.CornerRadius}">
-                        <ContentPresenter
-                            x:Name="PART_ContentHost"
-                            Content="{TemplateBinding Content}"
-                            ContentTemplate="{TemplateBinding ContentTemplate}"
-                            ContentTemplateSelector="{TemplateBinding ContentTemplateSelector}" />
-                    </Border>
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
-    </Style>
-
-    <Style x:Key="DefaultUiSplitButtonStyle" TargetType="{x:Type controls:SplitButton}">
-        <Setter Property="FocusVisualStyle" Value="{StaticResource SplitButtonFocusVisualStyle}" />
-        <Setter Property="Padding" Value="11,6" />
-        <Setter Property="CornerRadius" Value="{markup:VariableResource ControlCornerRadius}" />
-        <Setter Property="HorizontalContentAlignment" Value="Center" />
-        <Setter Property="VerticalContentAlignment" Value="Center" />
-        <Setter Property="PressedForeground" Value="{markup:BrushResource TextFillColorTertiaryBrush}" />
+    <Style x:Key="{x:Static t:StyleKeys.UiSplitButtonStyle}" BasedOn="{StaticResource UiButtonAppearanceStyle}" TargetType="{x:Type controls:SplitButton}">
+        <Setter Property="Padding" Value="{m:VariableResource ButtonThemePadding}" />
+        <Setter Property="CornerRadius" Value="{m:VariableResource ControlCornerRadius}" />
         <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="Background" Value="{markup:BrushResource ControlFillColorSecondaryBrush}" />
-        <Setter Property="MouseOverBackground" Value="{markup:BrushResource ControlFillColorPrimaryBrush}" />
-        <Setter Property="PressedBackground" Value="{markup:BrushResource ControlFillColorTertiaryBrush}" />
-        <Setter Property="BorderBrush" Value="{markup:BrushResource ControlStrokeColorSecondaryBrush}" />
-        <Setter Property="PressedBorderBrush" Value="{markup:BrushResource ControlStrokeColorDefaultBrush}" />
-        <Setter Property="Popup.PopupAnimation" Value="None" />
-        <!--  WPF doesn't like centering, the animation is ugly and the mouse button sometimes clicks right away.  -->
-        <Setter Property="Popup.Placement" Value="Bottom" />
-        <Setter Property="IsDropDownOpen" Value="False" />
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="VerticalContentAlignment" Value="Stretch" />
+        <Setter Property="IsTabStop" Value="True" />
+        <Setter Property="FocusVisualStyle" Value="{m:StyleResource DefaultControlFocusVisualStyle}" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type controls:SplitButton}">
-                    <Border
-                        x:Name="ContentBorder"
-                        Width="{TemplateBinding Width}"
-                        Height="{TemplateBinding Height}"
-                        MinWidth="{TemplateBinding MinWidth}"
-                        MinHeight="{TemplateBinding MinHeight}"
-                        HorizontalAlignment="{TemplateBinding HorizontalAlignment}"
-                        VerticalAlignment="{TemplateBinding VerticalAlignment}"
-                        CornerRadius="{TemplateBinding CornerRadius}">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <Border
-                                Name="PART_Content"
-                                Grid.Column="0"
-                                Margin="0"
-                                Padding="{TemplateBinding Padding}"
-                                Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness, Converter={StaticResource LeftSplitThicknessConverter}}"
-                                CornerRadius="{TemplateBinding CornerRadius, Converter={StaticResource LeftSplitCornerRadiusConverter}}">
-                                <Grid HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="*" />
-                                    </Grid.ColumnDefinitions>
-                                    <ContentPresenter
-                                        x:Name="ControlIcon"
-                                        Grid.Column="0"
-                                        Margin="0,0,8,0"
-                                        VerticalAlignment="Center"
-                                        Content="{TemplateBinding Icon}"
-                                        ContentTemplate="{TemplateBinding ContentTemplate}"
-                                        Focusable="False"
-                                        TextElement.FontSize="{TemplateBinding FontSize}"
-                                        TextElement.Foreground="{TemplateBinding Foreground}" />
-                                    <ContentPresenter
-                                        x:Name="ContentPresenter"
-                                        Grid.Column="1"
-                                        VerticalAlignment="Center"
-                                        Content="{TemplateBinding Content}"
-                                        ContentTemplate="{TemplateBinding ContentTemplate}"
-                                        TextElement.Foreground="{TemplateBinding Foreground}" />
-                                </Grid>
-                            </Border>
-                            <Border
-                                Name="PART_Toggle"
-                                Grid.Column="1"
-                                Margin="0"
-                                Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness, Converter={StaticResource RightSplitThicknessConverter}}"
-                                CornerRadius="{TemplateBinding CornerRadius, Converter={StaticResource RightSplitCornerRadiusConverter}}">
-                                <controls:ToggleButton
-                                    x:Name="PART_ToggleButton"
-                                    HorizontalAlignment="Stretch"
-                                    VerticalAlignment="Stretch"
-                                    ClickMode="Press"
-                                    Focusable="False"
-                                    Foreground="{TemplateBinding Foreground}"
-                                    IsChecked="{TemplateBinding IsDropDownOpen}"
-                                    Style="{StaticResource DefaultSplitButtonToggleButtonStyle}">
-                                    <controls:SymbolIcon FontSize="10" Symbol="ChevronDown24" />
-                                </controls:ToggleButton>
-                            </Border>
-                        </Grid>
-                    </Border>
-                    <ControlTemplate.Triggers>
-                        <MultiTrigger>
-                            <MultiTrigger.Conditions>
-                                <Condition SourceName="PART_Toggle" Property="IsMouseOver" Value="True" />
-                                <Condition Property="IsPressed" Value="False" />
-                            </MultiTrigger.Conditions>
-                            <Setter TargetName="PART_Toggle" Property="Background" Value="{Binding MouseOverBackground, RelativeSource={RelativeSource TemplatedParent}}" />
-                            <Setter TargetName="PART_Toggle" Property="BorderBrush" Value="{Binding MouseOverBorderBrush, RelativeSource={RelativeSource TemplatedParent}}" />
-                        </MultiTrigger>
-                        <MultiTrigger>
-                            <MultiTrigger.Conditions>
-                                <Condition SourceName="PART_Content" Property="IsMouseOver" Value="True" />
-                                <Condition Property="IsPressed" Value="False" />
-                            </MultiTrigger.Conditions>
-                            <Setter TargetName="PART_Content" Property="Background" Value="{Binding MouseOverBackground, RelativeSource={RelativeSource TemplatedParent}}" />
-                            <Setter TargetName="PART_Content" Property="BorderBrush" Value="{Binding MouseOverBorderBrush, RelativeSource={RelativeSource TemplatedParent}}" />
-                        </MultiTrigger>
-                        <MultiTrigger>
-                            <MultiTrigger.Conditions>
-                                <Condition SourceName="PART_Toggle" Property="IsMouseOver" Value="True" />
-                                <Condition SourceName="PART_ToggleButton" Property="IsPressed" Value="True" />
-                            </MultiTrigger.Conditions>
-                            <Setter TargetName="PART_Toggle" Property="Background" Value="{Binding PressedBackground, RelativeSource={RelativeSource TemplatedParent}}" />
-                            <Setter TargetName="PART_Toggle" Property="BorderBrush" Value="{Binding PressedBorderBrush, RelativeSource={RelativeSource TemplatedParent}}" />
-                        </MultiTrigger>
-                        <MultiTrigger>
-                            <MultiTrigger.Conditions>
-                                <Condition SourceName="PART_Toggle" Property="IsMouseOver" Value="False" />
-                                <Condition Property="IsPressed" Value="True" />
-                            </MultiTrigger.Conditions>
-                            <Setter TargetName="PART_Content" Property="Background" Value="{Binding PressedBackground, RelativeSource={RelativeSource TemplatedParent}}" />
-                            <Setter TargetName="PART_Content" Property="BorderBrush" Value="{Binding PressedBorderBrush, RelativeSource={RelativeSource TemplatedParent}}" />
-                            <Setter TargetName="ContentPresenter" Property="TextElement.Foreground" Value="{Binding PressedForeground, RelativeSource={RelativeSource TemplatedParent}}" />
-                            <Setter TargetName="ControlIcon" Property="TextElement.Foreground" Value="{Binding PressedForeground, RelativeSource={RelativeSource TemplatedParent}}" />
-                        </MultiTrigger>
-                        <Trigger Property="IsEnabled" Value="False">
-                            <Setter TargetName="ContentBorder" Property="Background" Value="{markup:BrushResource SubtleFillColorDisabledBrush}" />
-                            <Setter TargetName="ContentBorder" Property="BorderBrush" Value="{markup:BrushResource ControlStrokeColorDefaultBrush}" />
-                            <Setter TargetName="ContentPresenter" Property="TextElement.Foreground" Value="{markup:BrushResource TextFillColorDisabledBrush}" />
-                        </Trigger>
-                        <Trigger Property="Content" Value="{x:Null}">
-                            <Setter TargetName="ControlIcon" Property="Margin" Value="0" />
-                        </Trigger>
-                        <Trigger Property="Content" Value="">
-                            <Setter TargetName="ControlIcon" Property="Margin" Value="0" />
-                        </Trigger>
-                        <Trigger Property="Icon" Value="{x:Null}">
-                            <Setter TargetName="ControlIcon" Property="Margin" Value="0" />
-                            <Setter TargetName="ControlIcon" Property="Visibility" Value="Collapsed" />
-                        </Trigger>
-                    </ControlTemplate.Triggers>
+                    <!--
+                        The wrapper has no input surface of its own. The two ui:Button instances are
+                        intentional: each segment owns its pressed/hover state, while code-behind
+                        translates their ButtonBase.Click events into the SplitButton contract.
+                    -->
+                    <Grid SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <controls:Button
+                            x:Name="PART_PrimaryButton"
+                            Grid.Column="0"
+                            Padding="{TemplateBinding Padding}"
+                            HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                            VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+                            Appearance="{TemplateBinding Appearance}"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness, Converter={StaticResource SplitButtonLeftBorderThicknessConverter}}"
+                            ClickMode="{TemplateBinding ClickMode}"
+                            Command="{TemplateBinding Command}"
+                            CommandParameter="{TemplateBinding CommandParameter}"
+                            CommandTarget="{TemplateBinding CommandTarget}"
+                            Content="{TemplateBinding Content}"
+                            ContentStringFormat="{TemplateBinding ContentStringFormat}"
+                            ContentTemplate="{TemplateBinding ContentTemplate}"
+                            ContentTemplateSelector="{TemplateBinding ContentTemplateSelector}"
+                            CornerRadius="{TemplateBinding CornerRadius, Converter={StaticResource SplitButtonLeftCornerRadiusConverter}}"
+                            Focusable="False"
+                            Foreground="{TemplateBinding Foreground}"
+                            Icon="{TemplateBinding Icon}"
+                            IsTabStop="False"
+                            MouseOverBackground="{TemplateBinding MouseOverBackground}"
+                            MouseOverBorderBrush="{TemplateBinding MouseOverBorderBrush}"
+                            PressedBackground="{TemplateBinding PressedBackground}"
+                            PressedBorderBrush="{TemplateBinding PressedBorderBrush}"
+                            PressedForeground="{TemplateBinding PressedForeground}"
+                            TabIndex="{TemplateBinding TabIndex}" />
+
+                        <controls:Button
+                            x:Name="PART_DropDownButton"
+                            Grid.Column="1"
+                            MinWidth="32"
+                            Padding="11,0"
+                            VerticalContentAlignment="Center"
+                            Appearance="{TemplateBinding Appearance}"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness, Converter={StaticResource SplitButtonRightBorderThicknessConverter}}"
+                            ClickMode="Press"
+                            CornerRadius="{TemplateBinding CornerRadius, Converter={StaticResource SplitButtonRightCornerRadiusConverter}}"
+                            Focusable="False"
+                            Foreground="{TemplateBinding Foreground}"
+                            IsTabStop="False"
+                            MouseOverBackground="{TemplateBinding MouseOverBackground}"
+                            MouseOverBorderBrush="{TemplateBinding MouseOverBorderBrush}"
+                            PressedBackground="{TemplateBinding PressedBackground}"
+                            PressedBorderBrush="{TemplateBinding PressedBorderBrush}"
+                            PressedForeground="{TemplateBinding PressedForeground}">
+                            <controls:Button.Icon>
+                                <controls:SymbolIcon FontSize="10" Symbol="ChevronDown24" />
+                            </controls:Button.Icon>
+                        </controls:Button>
+                    </Grid>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
-        <Style.Triggers>
-            <Trigger Property="Appearance" Value="Transparent">
-                <Setter Property="Background" Value="Transparent" />
-            </Trigger>
-            <Trigger Property="Appearance" Value="Accent">
-                <Setter Property="BorderThickness" Value="0" />
-                <Setter Property="BorderBrush" Value="{x:Null}" />
-                <Setter Property="Background" Value="{markup:BrushResource AccentFillColorDefaultBrush}" />
-                <Setter Property="Foreground" Value="{markup:BrushResource TextOnAccentFillColorPrimaryBrush}" />
-                <Setter Property="MouseOverBackground" Value="{markup:BrushResource AccentFillColorSecondaryBrush}" />
-                <Setter Property="PressedBackground" Value="{markup:BrushResource AccentFillColorTertiaryBrush}" />
-                <Setter Property="PressedForeground" Value="{markup:BrushResource TextOnAccentFillColorSecondaryBrush}" />
-            </Trigger>
-            <Trigger Property="Appearance" Value="Dark">
-                <Setter Property="Background" Value="{markup:BrushResource ControlStrongFillColorDarkBrush}" />
-                <Setter Property="Foreground" Value="{markup:BrushResource TextFillColorLightPrimaryBrush}" />
-                <Setter Property="MouseOverBackground" Value="#62000000" />
-                <Setter Property="PressedBackground" Value="#52000000" />
-                <Setter Property="PressedForeground" Value="{markup:BrushResource TextFillColorLightSecondaryBrush}" />
-            </Trigger>
-            <Trigger Property="Appearance" Value="Light">
-                <Setter Property="Background" Value="{markup:BrushResource ControlStrongFillColorLightBrush}" />
-                <Setter Property="Foreground" Value="{markup:BrushResource TextFillColorDarkPrimaryBrush}" />
-                <Setter Property="MouseOverBackground" Value="#D3FFFFFF" />
-                <Setter Property="PressedBackground" Value="#F3FFFFFF" />
-                <Setter Property="PressedForeground" Value="{markup:BrushResource TextFillColorDarkSecondaryBrush}" />
-            </Trigger>
-            <Trigger Property="Appearance" Value="Info">
-                <Setter Property="BorderThickness" Value="0" />
-                <Setter Property="BorderBrush" Value="{x:Null}" />
-                <Setter Property="Background" Value="{markup:BrushResource PaletteBlueBrush}" />
-                <Setter Property="Foreground" Value="{markup:BrushResource TextFillColorLightPrimaryBrush}" />
-                <Setter Property="MouseOverBackground" Value="{markup:BrushResource PaletteLightBlueBrush}" />
-                <Setter Property="PressedBackground" Value="{markup:BrushResource PaletteCyanBrush}" />
-                <Setter Property="PressedForeground" Value="{markup:BrushResource TextOnAccentFillColorSecondaryBrush}" />
-            </Trigger>
-            <Trigger Property="Appearance" Value="Danger">
-                <Setter Property="BorderThickness" Value="0" />
-                <Setter Property="BorderBrush" Value="{x:Null}" />
-                <Setter Property="Background" Value="{markup:BrushResource PaletteRedBrush}" />
-                <Setter Property="MouseOverBackground">
-                    <Setter.Value>
-                        <SolidColorBrush Opacity="0.8" Color="{markup:ColorResource PaletteRedColor}" />
-                    </Setter.Value>
-                </Setter>
-                <Setter Property="PressedBackground">
-                    <Setter.Value>
-                        <SolidColorBrush Opacity="0.6" Color="{markup:ColorResource PaletteRedColor}" />
-                    </Setter.Value>
-                </Setter>
-            </Trigger>
-            <Trigger Property="Appearance" Value="Success">
-                <Setter Property="BorderThickness" Value="0" />
-                <Setter Property="BorderBrush" Value="{x:Null}" />
-                <Setter Property="Background" Value="{markup:BrushResource PaletteGreenBrush}" />
-                <Setter Property="MouseOverBackground">
-                    <Setter.Value>
-                        <SolidColorBrush Opacity="0.8" Color="{markup:ColorResource PaletteGreenColor}" />
-                    </Setter.Value>
-                </Setter>
-                <Setter Property="PressedBackground">
-                    <Setter.Value>
-                        <SolidColorBrush Opacity="0.6" Color="{markup:ColorResource PaletteGreenColor}" />
-                    </Setter.Value>
-                </Setter>
-            </Trigger>
-            <Trigger Property="Appearance" Value="Caution">
-                <Setter Property="BorderThickness" Value="0" />
-                <Setter Property="BorderBrush" Value="{x:Null}" />
-                <Setter Property="Background" Value="{markup:BrushResource PaletteOrangeBrush}" />
-                <Setter Property="MouseOverBackground">
-                    <Setter.Value>
-                        <SolidColorBrush Opacity="0.8" Color="{markup:ColorResource PaletteOrangeColor}" />
-                    </Setter.Value>
-                </Setter>
-                <Setter Property="PressedBackground">
-                    <Setter.Value>
-                        <SolidColorBrush Opacity="0.6" Color="{markup:ColorResource PaletteOrangeColor}" />
-                    </Setter.Value>
-                </Setter>
-            </Trigger>
-            <Trigger Property="IsEnabled" Value="False">
-                <Setter Property="Background" Value="{markup:BrushResource ControlFillColorDisabledBrush}" />
-                <Setter Property="BorderBrush" Value="{markup:BrushResource ControlStrokeColorDefaultBrush}" />
-                <Setter Property="Foreground" Value="{markup:BrushResource TextFillColorDisabledBrush}" />
-            </Trigger>
-            <MultiTrigger>
-                <MultiTrigger.Conditions>
-                    <Condition Property="Appearance" Value="Transparent" />
-                    <Condition Property="IsEnabled" Value="False" />
-                </MultiTrigger.Conditions>
-                <Setter Property="Background" Value="Transparent" />
-            </MultiTrigger>
-        </Style.Triggers>
     </Style>
 
-    <Style BasedOn="{StaticResource DefaultUiSplitButtonStyle}" TargetType="{x:Type controls:SplitButton}" />
+    <Style BasedOn="{StaticResource {x:Static t:StyleKeys.UiSplitButtonStyle}}" TargetType="{x:Type controls:SplitButton}" />
 
 </ResourceDictionary>

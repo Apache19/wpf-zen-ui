@@ -1,0 +1,136 @@
+<!--
+    This Source Code Form is subject to the terms of the MIT License.
+    If a copy of the MIT was not distributed with this file, You can obtain one at https://opensource.org/licenses/MIT.
+    Copyright (C) Leszek Pomianowski and WPF UI Contributors.
+    All Rights Reserved.
+    
+    Button and SplitButton have different CLR inheritance hierarchies, but intentionally share the
+    same appearance dependency properties. Keeping their brush setters and triggers in an untyped
+    base style prevents the two controls from silently drifting apart as appearances evolve.
+    Owner-qualified property names are required because an untyped Style has no TargetType from
+    which the XAML loader could infer dependency-property ownership.
+-->
+
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="clr-namespace:Wpf.Ui.Controls"
+    xmlns:m="clr-namespace:Wpf.Ui.Markup">
+
+    <Style x:Key="UiButtonAppearanceStyle">
+        <Setter Property="controls:Button.PressedForeground" Value="{m:BrushResource TextFillColorTertiaryBrush}" />
+        <Setter Property="Control.Background" Value="{m:BrushResource ControlFillColorSecondaryBrush}" />
+        <Setter Property="controls:Button.MouseOverBackground" Value="{m:BrushResource ControlFillColorPrimaryBrush}" />
+        <Setter Property="controls:Button.PressedBackground" Value="{m:BrushResource ControlFillColorTertiaryBrush}" />
+        <Setter Property="Control.BorderBrush" Value="{m:BrushResource ControlElevationBorderBrush}" />
+        <Setter Property="controls:Button.MouseOverBorderBrush" Value="{m:BrushResource ControlElevationBorderBrush}" />
+        <Setter Property="controls:Button.PressedBorderBrush" Value="{m:BrushResource ControlStrokeColorDefaultBrush}" />
+
+        <Style.Triggers>
+            <!--  TRANSPARENT  -->
+            <Trigger Property="controls:Button.Appearance" Value="Transparent">
+                <Setter Property="Control.Background" Value="Transparent" />
+            </Trigger>
+
+            <!--  ACCENT  -->
+            <Trigger Property="controls:Button.Appearance" Value="Accent">
+                <Setter Property="Control.Background" Value="{m:BrushResource AccentFillColorDefaultBrush}" />
+                <Setter Property="controls:Button.MouseOverBackground" Value="{m:BrushResource AccentFillColorSecondaryBrush}" />
+                <Setter Property="controls:Button.PressedBackground" Value="{m:BrushResource AccentFillColorTertiaryBrush}" />
+                <Setter Property="Control.Foreground" Value="{m:BrushResource TextOnAccentFillColorPrimaryBrush}" />
+                <Setter Property="controls:Button.PressedForeground" Value="{m:BrushResource TextOnAccentFillColorSecondaryBrush}" />
+                <Setter Property="Control.BorderBrush" Value="{m:BrushResource AccentControlElevationBorderBrush}" />
+                <Setter Property="controls:Button.MouseOverBorderBrush" Value="{m:BrushResource AccentControlElevationBorderBrush}" />
+                <Setter Property="controls:Button.PressedBorderBrush" Value="Transparent" />
+            </Trigger>
+
+            <MultiDataTrigger>
+                <MultiDataTrigger.Conditions>
+                    <Condition Binding="{Binding (controls:Button.Appearance), RelativeSource={RelativeSource Self}}" Value="Accent" />
+                    <Condition Binding="{Binding Source={x:Static SystemParameters.HighContrast}}" Value="True" />
+                </MultiDataTrigger.Conditions>
+                <Setter Property="controls:Button.PressedBorderBrush" Value="{m:BrushResource AccentControlElevationBorderBrush}" />
+            </MultiDataTrigger>
+
+            <!--  DARK  -->
+            <Trigger Property="controls:Button.Appearance" Value="Dark">
+                <Setter Property="Control.Background" Value="{m:BrushResource ControlStrongFillColorDarkBrush}" />
+                <Setter Property="Control.Foreground" Value="{m:BrushResource TextFillColorLightPrimaryBrush}" />
+                <Setter Property="controls:Button.MouseOverBackground" Value="#62000000" />
+                <Setter Property="controls:Button.PressedBackground" Value="#52000000" />
+                <Setter Property="controls:Button.PressedForeground" Value="{m:BrushResource TextFillColorLightSecondaryBrush}" />
+                <Setter Property="controls:Button.PressedBorderBrush" Value="Transparent" />
+                <Setter Property="Control.BorderBrush" Value="{m:BrushResource AccentControlElevationBorderBrush}" />
+                <Setter Property="controls:Button.MouseOverBorderBrush" Value="{m:BrushResource AccentControlElevationBorderBrush}" />
+            </Trigger>
+
+            <!--  LIGHT  -->
+            <Trigger Property="controls:Button.Appearance" Value="Light">
+                <Setter Property="Control.Background" Value="{m:BrushResource ControlStrongFillColorLightBrush}" />
+                <Setter Property="Control.Foreground" Value="{m:BrushResource TextFillColorDarkPrimaryBrush}" />
+                <Setter Property="controls:Button.MouseOverBackground" Value="#D3FFFFFF" />
+                <Setter Property="controls:Button.PressedBackground" Value="#F3FFFFFF" />
+                <Setter Property="controls:Button.PressedForeground" Value="{m:BrushResource TextFillColorDarkSecondaryBrush}" />
+                <Setter Property="controls:Button.PressedBorderBrush" Value="Transparent" />
+                <Setter Property="Control.BorderBrush" Value="{m:BrushResource AccentControlElevationBorderBrush}" />
+                <Setter Property="controls:Button.MouseOverBorderBrush" Value="{m:BrushResource AccentControlElevationBorderBrush}" />
+            </Trigger>
+
+            <!--  INFO  -->
+            <Trigger Property="controls:Button.Appearance" Value="Info">
+                <Setter Property="Control.Background" Value="{m:BrushResource PaletteBlueBrush}" />
+                <Setter Property="controls:Button.MouseOverBackground" Value="{m:BrushResource PaletteBlueBrushBright}" />
+                <Setter Property="controls:Button.PressedBackground" Value="{m:BrushResource PaletteBlueBrushDim}" />
+                <Setter Property="Control.BorderBrush" Value="{m:BrushResource AccentControlElevationBorderBrush}" />
+                <Setter Property="controls:Button.MouseOverBorderBrush" Value="{m:BrushResource AccentControlElevationBorderBrush}" />
+            </Trigger>
+
+            <!--  DANGER  -->
+            <Trigger Property="controls:Button.Appearance" Value="Danger">
+                <Setter Property="Control.Background" Value="{m:BrushResource PaletteRedBrush}" />
+                <Setter Property="controls:Button.MouseOverBackground" Value="{m:BrushResource PaletteRedBrushBright}" />
+                <Setter Property="controls:Button.PressedBackground" Value="{m:BrushResource PaletteRedBrushDim}" />
+                <Setter Property="Control.BorderBrush" Value="{m:BrushResource AccentControlElevationBorderBrush}" />
+                <Setter Property="controls:Button.MouseOverBorderBrush" Value="{m:BrushResource AccentControlElevationBorderBrush}" />
+                <Setter Property="controls:Button.PressedBorderBrush" Value="Transparent" />
+            </Trigger>
+
+            <!--  SUCCESS  -->
+            <Trigger Property="controls:Button.Appearance" Value="Success">
+                <Setter Property="Control.Background" Value="{m:BrushResource PaletteGreenBrush}" />
+                <Setter Property="controls:Button.MouseOverBackground" Value="{m:BrushResource PaletteGreenBrushBright}" />
+                <Setter Property="controls:Button.PressedBackground" Value="{m:BrushResource PaletteGreenBrushDim}" />
+                <Setter Property="Control.BorderBrush" Value="{m:BrushResource AccentControlElevationBorderBrush}" />
+                <Setter Property="controls:Button.MouseOverBorderBrush" Value="{m:BrushResource AccentControlElevationBorderBrush}" />
+                <Setter Property="controls:Button.PressedBorderBrush" Value="Transparent" />
+            </Trigger>
+
+            <!--  CAUTION  -->
+            <Trigger Property="controls:Button.Appearance" Value="Caution">
+                <Setter Property="Control.Background" Value="{m:BrushResource PaletteOrangeBrush}" />
+                <Setter Property="controls:Button.MouseOverBackground" Value="{m:BrushResource PaletteOrangeBrushBright}" />
+                <Setter Property="controls:Button.PressedBackground" Value="{m:BrushResource PaletteOrangeBrushDim}" />
+                <Setter Property="Control.BorderBrush" Value="{m:BrushResource AccentControlElevationBorderBrush}" />
+                <Setter Property="controls:Button.MouseOverBorderBrush" Value="{m:BrushResource AccentControlElevationBorderBrush}" />
+                <Setter Property="controls:Button.PressedBorderBrush" Value="Transparent" />
+            </Trigger>
+
+            <!--  Disabled  -->
+            <Trigger Property="UIElement.IsEnabled" Value="False">
+                <Setter Property="Control.Background" Value="{m:BrushResource ControlFillColorDisabledBrush}" />
+                <Setter Property="Control.BorderBrush" Value="{m:BrushResource ControlStrokeColorDefaultBrush}" />
+                <Setter Property="Control.Foreground" Value="{m:BrushResource TextFillColorDisabledBrush}" />
+            </Trigger>
+
+            <!--  Transparent appearance should stay transparent when disabled  -->
+            <MultiTrigger>
+                <MultiTrigger.Conditions>
+                    <Condition Property="controls:Button.Appearance" Value="Transparent" />
+                    <Condition Property="UIElement.IsEnabled" Value="False" />
+                </MultiTrigger.Conditions>
+                <Setter Property="Control.Background" Value="Transparent" />
+            </MultiTrigger>
+        </Style.Triggers>
+    </Style>
+
+</ResourceDictionary>

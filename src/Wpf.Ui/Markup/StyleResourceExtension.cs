@@ -53,6 +53,7 @@ public class StyleResourceExtension : DynamicResourceExtension
             StyleId.DotInfoBadgeStyle               => StyleKeys.DotInfoBadgeStyle,
             StyleId.DefaultCalendarStyle            => StyleKeys.DefaultCalendarStyle,
             StyleId.DefaultDatePickerStyle          => StyleKeys.DefaultDatePickerStyle,
+            StyleId.UiSplitButtonStyle              => StyleKeys.UiSplitButtonStyle,
 
             StyleId.DefaultValidationTemplate       => StyleKeys.DefaultValidationTemplate,
 

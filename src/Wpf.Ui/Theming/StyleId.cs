@@ -44,5 +44,7 @@ public enum StyleId
     DefaultCalendarStyle,
     DefaultDatePickerStyle,
 
+    UiSplitButtonStyle,
+
     DefaultValidationTemplate,
 }

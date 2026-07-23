@@ -22,10 +22,12 @@
             Margin="0"
             HeaderText="A SplitButton"
             XamlCode="&lt;SplitButton /&gt;">
-            <ui:SplitButton Icon="{ui:SymbolIcon PaintBrush24}">
+            <ui:SplitButton
+                MinWidth="200"
+                HorizontalAlignment="Left"
+                Icon="{ui:SymbolIcon PaintBrush24}">
                 <Border
-                    Width="35"
-                    Height="20"
+                    Height="24"
                     Background="Green"
                     CornerRadius="4" />
                 <ui:SplitButton.Flyout>
@@ -66,12 +68,16 @@
             Margin="0,24,0,0"
             HeaderText="A SplitButton with modified paddings"
             XamlCode="&lt;SplitButton /&gt;">
-            <ui:SplitButton Padding="0" CornerRadius="4">
+            <ui:SplitButton
+                MinWidth="200"
+                Padding="0"
+                HorizontalAlignment="Left"
+                CornerRadius="4">
                 <Border
-                    Width="35"
-                    Height="25"
+                    Height="30"
+                    Margin="2,2,0,2"
                     Background="Green"
-                    CornerRadius="4,0,0,4" />
+                    CornerRadius="2,0,0,2" />
                 <ui:SplitButton.Flyout>
                     <ContextMenu>
                         <MenuItem>
@@ -104,6 +110,166 @@
                     </ContextMenu>
                 </ui:SplitButton.Flyout>
             </ui:SplitButton>
+        </controls:ControlExample>
+
+        <controls:ControlExample
+            Margin="0,24,0,0"
+            HeaderText="A SplitButton with customizable appearance brushes.">
+            <controls:ControlExample.Resources>
+                <ObjectDataProvider
+                    x:Key="SplitButtonAppearanceList"
+                    MethodName="GetValues"
+                    ObjectType="{x:Type ui:ControlAppearance}">
+                    <ObjectDataProvider.MethodParameters>
+                        <x:Type TypeName="ui:ControlAppearance" />
+                    </ObjectDataProvider.MethodParameters>
+                </ObjectDataProvider>
+            </controls:ControlExample.Resources>
+            <controls:ControlExample.XamlCode>
+                &lt;ui:SplitButton
+                \tAppearance=&quot;Accent&quot;
+                \tBackground=&quot;#FF2D6CDF&quot;
+                \tBorderBrush=&quot;#FF154A9C&quot;
+                \tForeground=&quot;White&quot;
+                \tMouseOverBackground=&quot;#FF3B82F6&quot;
+                \tMouseOverBorderBrush=&quot;#FF93C5FD&quot;
+                \tPressedBackground=&quot;#FF1D4ED8&quot;
+                \tPressedBorderBrush=&quot;#FFBFDBFE&quot;
+                \tPressedForeground=&quot;#FFDCEBFF&quot; /&gt;
+
+            </controls:ControlExample.XamlCode>
+
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="220" />
+                    <ColumnDefinition Width="24" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel
+                    Grid.Column="0"
+                    HorizontalAlignment="Left"
+                    VerticalAlignment="Top">
+                    <ui:SplitButton
+                        x:Name="AppearancePreviewSplitButton"
+                        MinWidth="200"
+                        Appearance="{Binding SelectedItem, ElementName=SplitButtonAppearanceComboBox}"
+                        Content="Run action"
+                        Icon="{ui:SymbolIcon Play24}">
+                        <ui:SplitButton.Style>
+                            <Style
+                                BasedOn="{StaticResource {x:Type ui:SplitButton}}"
+                                TargetType="{x:Type ui:SplitButton}">
+                                <!--
+                                    Keep the normal Appearance palette active until custom colors
+                                    are enabled. Style-trigger setters can then be removed cleanly,
+                                    unlike local brush values, which would permanently hide the
+                                    Appearance defaults even when set back to null.
+                                -->
+                                <Style.Triggers>
+                                    <DataTrigger
+                                        Binding="{Binding IsChecked, ElementName=UseCustomColorsCheckBox}"
+                                        Value="True">
+                                        <Setter Property="Background" Value="{Binding Text, ElementName=BackgroundBrushTextBox}" />
+                                        <Setter Property="BorderBrush" Value="{Binding Text, ElementName=BorderBrushTextBox}" />
+                                        <Setter Property="Foreground" Value="{Binding Text, ElementName=ForegroundBrushTextBox}" />
+                                        <Setter Property="MouseOverBackground" Value="{Binding Text, ElementName=MouseOverBackgroundBrushTextBox}" />
+                                        <Setter Property="MouseOverBorderBrush" Value="{Binding Text, ElementName=MouseOverBorderBrushTextBox}" />
+                                        <Setter Property="PressedBackground" Value="{Binding Text, ElementName=PressedBackgroundBrushTextBox}" />
+                                        <Setter Property="PressedBorderBrush" Value="{Binding Text, ElementName=PressedBorderBrushTextBox}" />
+                                        <Setter Property="PressedForeground" Value="{Binding Text, ElementName=PressedForegroundBrushTextBox}" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </ui:SplitButton.Style>
+                        <ui:SplitButton.Flyout>
+                            <ContextMenu>
+                                <MenuItem Header="Run fast" />
+                                <MenuItem Header="Run balanced" />
+                                <MenuItem Header="Run thoroughly" />
+                            </ContextMenu>
+                        </ui:SplitButton.Flyout>
+                    </ui:SplitButton>
+
+                    <ui:TextBlock
+                        Width="200"
+                        Margin="0,12,0,0"
+                        Foreground="{ui:BrushResource TextFillColorSecondaryBrush}"
+                        Text="Hover and press both segments to compare their independent interaction states."
+                        TextWrapping="Wrap" />
+                </StackPanel>
+
+                <StackPanel Grid.Column="2">
+                    <Grid Margin="0,0,0,12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <ui:TextBlock
+                            Margin="0,0,8,0"
+                            VerticalAlignment="Center"
+                            Text="Appearance" />
+                        <ComboBox
+                            x:Name="SplitButtonAppearanceComboBox"
+                            Grid.Column="1"
+                            MinWidth="140"
+                            HorizontalAlignment="Left"
+                            ItemsSource="{Binding Source={StaticResource SplitButtonAppearanceList}}"
+                            SelectedIndex="1" />
+                        <ui:CheckBox
+                            x:Name="UseCustomColorsCheckBox"
+                            Grid.Column="2"
+                            Margin="16,0,0,0"
+                            VerticalAlignment="Center"
+                            Content="Custom colors" />
+                    </Grid>
+
+                    <UniformGrid
+                        Columns="2"
+                        IsEnabled="{Binding IsChecked, ElementName=UseCustomColorsCheckBox}">
+                        <StackPanel Margin="0,0,12,12">
+                            <ui:TextBlock Margin="0,0,0,4" Text="Background" />
+                            <ui:TextBox x:Name="BackgroundBrushTextBox" Text="#FF2D6CDF" />
+                        </StackPanel>
+                        <StackPanel Margin="0,0,0,12">
+                            <ui:TextBlock Margin="0,0,0,4" Text="Foreground" />
+                            <ui:TextBox x:Name="ForegroundBrushTextBox" Text="White" />
+                        </StackPanel>
+                        <StackPanel Margin="0,0,12,12">
+                            <ui:TextBlock Margin="0,0,0,4" Text="BorderBrush" />
+                            <ui:TextBox x:Name="BorderBrushTextBox" Text="#FF154A9C" />
+                        </StackPanel>
+                        <StackPanel Margin="0,0,0,12">
+                            <ui:TextBlock Margin="0,0,0,4" Text="MouseOverBackground" />
+                            <ui:TextBox x:Name="MouseOverBackgroundBrushTextBox" Text="#FF3B82F6" />
+                        </StackPanel>
+                        <StackPanel Margin="0,0,12,12">
+                            <ui:TextBlock Margin="0,0,0,4" Text="MouseOverBorderBrush" />
+                            <ui:TextBox x:Name="MouseOverBorderBrushTextBox" Text="#FF93C5FD" />
+                        </StackPanel>
+                        <StackPanel Margin="0,0,0,12">
+                            <ui:TextBlock Margin="0,0,0,4" Text="PressedBackground" />
+                            <ui:TextBox x:Name="PressedBackgroundBrushTextBox" Text="#FF1D4ED8" />
+                        </StackPanel>
+                        <StackPanel Margin="0,0,12,0">
+                            <ui:TextBlock Margin="0,0,0,4" Text="PressedBorderBrush" />
+                            <ui:TextBox x:Name="PressedBorderBrushTextBox" Text="#FFBFDBFE" />
+                        </StackPanel>
+                        <StackPanel>
+                            <ui:TextBlock Margin="0,0,0,4" Text="PressedForeground" />
+                            <ui:TextBox x:Name="PressedForegroundBrushTextBox" Text="#FFDCEBFF" />
+                        </StackPanel>
+                    </UniformGrid>
+
+                    <ui:TextBlock
+                        Margin="0,12,0,0"
+                        Foreground="{ui:BrushResource TextFillColorSecondaryBrush}"
+                        Text="Brush values accept named colors and #AARRGGBB notation."
+                        TextWrapping="Wrap" />
+                </StackPanel>
+            </Grid>
         </controls:ControlExample>
     </StackPanel>
 </Page>
