@@ -7,6 +7,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.ExceptionServices;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -47,6 +48,10 @@ public class AutoSuggestBoxTests
             }
             finally
             {
+                // Popup tears down its HWND asynchronously at Input priority. Complete that teardown
+                // before closing the owner so the next STA test does not inherit a disposed input provider.
+                popup.SetCurrentValue(Popup.IsOpenProperty, false);
+                FlushDispatcher(window);
                 window.Close();
             }
         });
@@ -75,6 +80,217 @@ public class AutoSuggestBoxTests
             }
             finally
             {
+                window.Close();
+            }
+        });
+    }
+
+    [Fact]
+    public void RegainingKeyboardFocusByMouse_ReopensNonStickyPopupAfterMouseUp()
+    {
+        RunOnStaThread(() =>
+        {
+            var (window, autoSuggestBox, textBox, popup) = CreateLoadedDefaultControl();
+            var outsideButton = new NativeButton { Content = "Outside" };
+            Assert.IsType<Grid>(window.Content).Children.Add(outsideButton);
+
+            try
+            {
+                Assert.False(popup.StaysOpen);
+
+                Assert.True(textBox.Focus());
+                textBox.Text = "a";
+                Assert.True(popup.IsOpen);
+
+                Assert.True(outsideButton.Focus());
+                Assert.False(autoSuggestBox.IsSuggestionListOpen);
+                Assert.False(popup.IsOpen);
+
+                textBox.RaiseEvent(
+                    CreateMouseButtonEvent(textBox, UIElement.PreviewMouseLeftButtonDownEvent)
+                );
+                Assert.True(textBox.Focus());
+
+                // Opening while the initiating button is still down lets Popup capture the matching
+                // mouse-up and interpret it as an outside click. The control therefore waits for the
+                // release before restoring the previously filtered suggestions.
+                Assert.False(autoSuggestBox.IsSuggestionListOpen);
+                Assert.False(popup.IsOpen);
+
+                textBox.RaiseEvent(CreateMouseButtonEvent(textBox, Mouse.MouseUpEvent));
+
+                Assert.True(autoSuggestBox.IsSuggestionListOpen);
+                Assert.True(popup.IsOpen);
+            }
+            finally
+            {
+                popup.SetCurrentValue(Popup.IsOpenProperty, false);
+                FlushDispatcher(window);
+                window.Close();
+            }
+        });
+    }
+
+    [Fact]
+    public void WindowActivationFocus_DoesNotOpenNonStickyPopupBeforeActivatingClickCompletes()
+    {
+        RunOnStaThread(() =>
+        {
+            var (window, autoSuggestBox, textBox, popup) = CreateLoadedDefaultControl();
+
+            try
+            {
+                Assert.True(textBox.Focus());
+                textBox.Text = "a";
+                popup.SetCurrentValue(Popup.IsOpenProperty, false);
+                Keyboard.ClearFocus();
+
+                // Owner-window activation restores focus before it dispatches the mouse-down that
+                // caused activation. Reproduce that ordering and ensure the idle focus restoration
+                // cannot let Popup capture the still-pending click.
+                Assert.True(textBox.Focus());
+                textBox.RaiseEvent(
+                    CreateMouseButtonEvent(textBox, UIElement.PreviewMouseLeftButtonDownEvent)
+                );
+                FlushDispatcher(window);
+
+                Assert.False(autoSuggestBox.IsSuggestionListOpen);
+                Assert.False(popup.IsOpen);
+
+                textBox.RaiseEvent(CreateMouseButtonEvent(textBox, Mouse.MouseUpEvent));
+
+                Assert.True(autoSuggestBox.IsSuggestionListOpen);
+                Assert.True(popup.IsOpen);
+            }
+            finally
+            {
+                popup.SetCurrentValue(Popup.IsOpenProperty, false);
+                FlushDispatcher(window);
+                window.Close();
+            }
+        });
+    }
+
+    [Fact]
+    public void RegainingKeyboardFocusWithNoOldFocus_ReopensSuggestionsAfterInputQueueIsIdle()
+    {
+        RunOnStaThread(() =>
+        {
+            var (window, autoSuggestBox, textBox, popup) = CreateLoadedDefaultControl();
+
+            try
+            {
+                Assert.True(textBox.Focus());
+                textBox.Text = "a";
+                popup.SetCurrentValue(Popup.IsOpenProperty, false);
+                Keyboard.ClearFocus();
+
+                Assert.True(textBox.Focus());
+                Assert.False(autoSuggestBox.IsSuggestionListOpen);
+
+                FlushDispatcher(window);
+
+                Assert.True(autoSuggestBox.IsSuggestionListOpen);
+                Assert.True(popup.IsOpen);
+            }
+            finally
+            {
+                popup.SetCurrentValue(Popup.IsOpenProperty, false);
+                FlushDispatcher(window);
+                window.Close();
+            }
+        });
+    }
+
+    [Fact]
+    public void TextBoxClick_RestoresPopupIfNonStickyCaptureClosesItDuringMouseDown()
+    {
+        RunOnStaThread(() =>
+        {
+            var (window, autoSuggestBox, textBox, popup) = CreateLoadedDefaultControl();
+
+            try
+            {
+                Assert.True(textBox.Focus());
+                textBox.Text = "a";
+                Assert.True(popup.IsOpen);
+
+                textBox.RaiseEvent(
+                    CreateMouseButtonEvent(textBox, UIElement.PreviewMouseLeftButtonDownEvent)
+                );
+                popup.SetCurrentValue(Popup.IsOpenProperty, false);
+
+                Assert.False(autoSuggestBox.IsSuggestionListOpen);
+
+                textBox.RaiseEvent(CreateMouseButtonEvent(textBox, Mouse.MouseUpEvent));
+
+                Assert.True(autoSuggestBox.IsSuggestionListOpen);
+                Assert.True(popup.IsOpen);
+            }
+            finally
+            {
+                popup.SetCurrentValue(Popup.IsOpenProperty, false);
+                FlushDispatcher(window);
+                window.Close();
+            }
+        });
+    }
+
+    [Fact]
+    public void DefaultPopup_UsesDismissalExclusionForAutoSuggestBoxOwner()
+    {
+        RunOnStaThread(() =>
+        {
+            var (window, autoSuggestBox, textBox, popup) = CreateLoadedDefaultControl();
+
+            try
+            {
+                // PreviewMouseDownOutsideCapturedElement carries the physical pointer position from
+                // Popup's HWND. Move the test window under that pointer without moving the user's
+                // cursor so the production cross-presentation-source bounds check is exercised.
+                Assert.True(NativeMethods.GetCursorPos(out NativePoint cursorPosition));
+                Point topLeft = autoSuggestBox.PointToScreen(default);
+                DpiScale dpi = VisualTreeHelper.GetDpi(autoSuggestBox);
+                window.Left +=
+                    (cursorPosition.X - topLeft.X - (autoSuggestBox.ActualWidth * dpi.DpiScaleX / 2D))
+                    / dpi.DpiScaleX;
+                window.Top +=
+                    (cursorPosition.Y - topLeft.Y - (autoSuggestBox.ActualHeight * dpi.DpiScaleY / 2D))
+                    / dpi.DpiScaleY;
+                FlushDispatcher(window);
+
+                Assert.True(NativeMethods.GetCursorPos(out cursorPosition));
+                topLeft = autoSuggestBox.PointToScreen(default);
+                Point bottomRight = autoSuggestBox.PointToScreen(
+                    new Point(autoSuggestBox.ActualWidth, autoSuggestBox.ActualHeight)
+                );
+                Assert.InRange((double)cursorPosition.X, topLeft.X, bottomRight.X);
+                Assert.InRange((double)cursorPosition.Y, topLeft.Y, bottomRight.Y);
+
+                Assert.True(textBox.Focus());
+                textBox.Text = "a";
+                Assert.False(popup.StaysOpen);
+                Assert.True(popup.IsOpen);
+                Assert.Same(autoSuggestBox, PopupDismissal.GetExcludedElement(popup));
+
+                popup.RaiseEvent(
+                    CreateMouseButtonEvent(popup, Mouse.PreviewMouseDownOutsideCapturedElementEvent)
+                );
+
+                // The Popup remains open and releases PopupRoot capture for this owner click.
+                Assert.True(popup.StaysOpen);
+                Assert.True(popup.IsOpen);
+
+                textBox.RaiseEvent(CreateMouseButtonEvent(textBox, Mouse.MouseUpEvent));
+
+                Assert.False(popup.StaysOpen);
+                Assert.True(popup.IsOpen);
+                Assert.True(autoSuggestBox.IsSuggestionListOpen);
+            }
+            finally
+            {
+                popup.SetCurrentValue(Popup.IsOpenProperty, false);
+                FlushDispatcher(window);
                 window.Close();
             }
         });
@@ -500,6 +716,29 @@ public class AutoSuggestBoxTests
         {
             RoutedEvent = UIElement.PreviewKeyDownEvent,
         };
+    }
+
+    private static MouseButtonEventArgs CreateMouseButtonEvent(UIElement source, RoutedEvent routedEvent)
+    {
+        return new MouseButtonEventArgs(Mouse.PrimaryDevice, Environment.TickCount, MouseButton.Left)
+        {
+            RoutedEvent = routedEvent,
+            Source = source,
+        };
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct NativePoint
+    {
+        public int X;
+        public int Y;
+    }
+
+    private static class NativeMethods
+    {
+        [DllImport("user32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        internal static extern bool GetCursorPos(out NativePoint point);
     }
 
     private sealed class TestAutoSuggestBox : AutoSuggestBox

@@ -41,7 +41,11 @@ public class RichTextBox : System.Windows.Controls.RichTextBox
     {
         _mouseInputHelper = new TextEditorMouseInputHelper(this);
 
-        AddHandler(Mouse.QueryCursorEvent, new QueryCursorEventHandler(OnRichTextBoxQueryCursor), handledEventsToo: true);
+        AddHandler(
+            Mouse.QueryCursorEvent,
+            new QueryCursorEventHandler(OnRichTextBoxQueryCursor),
+            handledEventsToo: true
+        );
     }
 
     /// <summary>
@@ -62,15 +66,20 @@ public class RichTextBox : System.Windows.Controls.RichTextBox
     }
 
     /// <inheritdoc />
-    protected override void OnPreviewMouseLeftButtonDown(MouseButtonEventArgs e)
+    protected override void OnMouseDown(MouseButtonEventArgs e)
     {
-        if (_mouseInputHelper.TryForwardMouseDownFromContentHostPadding(e))
+        // TextBoxBase must establish focus and finish its native mouse-down work before the
+        // padding bridge starts selection. In particular, doing this from PreviewMouseDown would
+        // expose a non-native focus/event order to parent controls.
+        base.OnMouseDown(e);
+
+        if (
+            e.ChangedButton is MouseButton.Left
+            && _mouseInputHelper.TryForwardMouseDownFromContentHostPadding(e)
+        )
         {
             e.Handled = true;
-            return;
         }
-
-        base.OnPreviewMouseLeftButtonDown(e);
     }
 
     /// <inheritdoc />

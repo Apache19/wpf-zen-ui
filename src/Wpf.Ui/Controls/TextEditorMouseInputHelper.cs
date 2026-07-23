@@ -44,13 +44,6 @@ internal sealed class TextEditorMouseInputHelper
         BindingFlags.Static | BindingFlags.NonPublic
     );
 
-    // Matches TextEditorMouse.OnMouseDown: finish any active IME composition before moving the
-    // caret. Calling this keeps padding clicks aligned with native text-editor behavior.
-    private static readonly MethodInfo? CompleteCompositionMethod = TextEditorType?.GetMethod(
-        "CompleteComposition",
-        BindingFlags.Instance | BindingFlags.NonPublic
-    );
-
     // Native mouse-down caret placement. It accepts a point in render-scope coordinates, so we can
     // clamp a padding click to the nearest render-scope edge and let WPF choose the insertion
     // position exactly as it would for a real render-scope click.
@@ -137,18 +130,15 @@ internal sealed class TextEditorMouseInputHelper
             return false;
         }
 
-        // Match native mouse-down behavior: focus first, then abort if focus could not move to the
-        // editor because an app-level handler changed focus or disabled the control.
-        _owner.Focus();
-
+        // This bridge is called after TextBoxBase.OnMouseDown. The native editor has therefore
+        // already moved keyboard focus, completed any IME composition and rejected the padding hit
+        // as non-interactive. Doing those steps here from PreviewMouseDown used to raise focus
+        // events before the normal mouse route and could let controls such as AutoSuggestBox open a
+        // non-sticky Popup while this click was still being processed.
         if (!_owner.IsKeyboardFocused)
         {
             return false;
         }
-
-        // Native TextEditorMouse completes IME composition before moving the caret. Keep that
-        // ordering so padding clicks do not leave composition state inconsistent.
-        CompleteCompositionMethod?.Invoke(textEditor, null);
 
         // Ensure the render scope has valid layout before asking it to interpret a point.
         renderScope.UpdateLayout();

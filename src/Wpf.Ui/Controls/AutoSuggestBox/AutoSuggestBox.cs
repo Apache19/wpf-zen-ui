@@ -8,6 +8,7 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Data;
 using System.Windows.Input;
+using System.Windows.Threading;
 using System.Xml;
 using Windows.Win32;
 using Windows.Win32.Foundation;
@@ -32,33 +33,31 @@ namespace Wpf.Ui.Controls;
 /// &lt;/ui:AutoSuggestBox&gt;
 /// </code>
 /// </example>
-[TemplatePart(Name = ElementTextBox,         Type = typeof(TextBox))]
+[TemplatePart(Name = ElementTextBox, Type = typeof(TextBox))]
 [TemplatePart(Name = ElementSuggestionsList, Type = typeof(NativeListBox))]
 public class AutoSuggestBox : ItemsControl, IIconControl
 {
-    private const string ElementTextBox         = "PART_TextBox";
+    private const string ElementTextBox = "PART_TextBox";
     private const string ElementSuggestionsList = "PART_SuggestionsList";
 
-    private static readonly DependencyProperty ItemTextValueProperty =
-        DependencyProperty.Register(
-            "ItemTextValue",
-            typeof(object),
-            typeof(AutoSuggestBox),
-            new PropertyMetadata(null)
-        );
+    private static readonly DependencyProperty ItemTextValueProperty = DependencyProperty.Register(
+        "ItemTextValue",
+        typeof(object),
+        typeof(AutoSuggestBox),
+        new PropertyMetadata(null)
+    );
 
     #region DP: OriginalItemsSource
 
     /// <summary>
     /// Identifies the <see cref="OriginalItemsSource"/> dependency property.
     /// </summary>
-    public static readonly DependencyProperty OriginalItemsSourceProperty =
-        DependencyProperty.Register(
-            nameof(OriginalItemsSource),
-            typeof(IList),
-            typeof(AutoSuggestBox),
-            new PropertyMetadata(Array.Empty<object>())
-        );
+    public static readonly DependencyProperty OriginalItemsSourceProperty = DependencyProperty.Register(
+        nameof(OriginalItemsSource),
+        typeof(IList),
+        typeof(AutoSuggestBox),
+        new PropertyMetadata(Array.Empty<object>())
+    );
 
     /// <summary>
     /// Gets or sets your items here if you want to use the default filtering
@@ -76,13 +75,12 @@ public class AutoSuggestBox : ItemsControl, IIconControl
     /// <summary>
     /// Identifies the <see cref="IsSuggestionListOpen"/> dependency property.
     /// </summary>
-    public static readonly DependencyProperty IsSuggestionListOpenProperty =
-        DependencyProperty.Register(
-            nameof(IsSuggestionListOpen),
-            typeof(bool),
-            typeof(AutoSuggestBox),
-            new PropertyMetadata(false)
-        );
+    public static readonly DependencyProperty IsSuggestionListOpenProperty = DependencyProperty.Register(
+        nameof(IsSuggestionListOpen),
+        typeof(bool),
+        typeof(AutoSuggestBox),
+        new PropertyMetadata(false)
+    );
 
     /// <summary>
     /// Gets or sets a value indicating whether the drop-down portion of the <see cref="AutoSuggestBox"/> is open.
@@ -100,13 +98,12 @@ public class AutoSuggestBox : ItemsControl, IIconControl
     /// <summary>
     /// Identifies the <see cref="Text"/> dependency property.
     /// </summary>
-    public static readonly DependencyProperty TextProperty =
-        DependencyProperty.Register(
-            nameof(Text),
-            typeof(string),
-            typeof(AutoSuggestBox),
-            new PropertyMetadata(string.Empty, OnTextChanged)
-        );
+    public static readonly DependencyProperty TextProperty = DependencyProperty.Register(
+        nameof(Text),
+        typeof(string),
+        typeof(AutoSuggestBox),
+        new PropertyMetadata(string.Empty, OnTextChanged)
+    );
 
     /// <summary>
     /// Gets or sets the text that is shown in the control.
@@ -127,13 +124,12 @@ public class AutoSuggestBox : ItemsControl, IIconControl
     /// <summary>
     /// Identifies the <see cref="PlaceholderText"/> dependency property.
     /// </summary>
-    public static readonly DependencyProperty PlaceholderTextProperty =
-        DependencyProperty.Register(
-            nameof(PlaceholderText),
-            typeof(string),
-            typeof(AutoSuggestBox),
-            new PropertyMetadata(string.Empty)
-        );
+    public static readonly DependencyProperty PlaceholderTextProperty = DependencyProperty.Register(
+        nameof(PlaceholderText),
+        typeof(string),
+        typeof(AutoSuggestBox),
+        new PropertyMetadata(string.Empty)
+    );
 
     /// <summary>
     /// Gets or sets the placeholder text to be displayed in the control.
@@ -154,13 +150,12 @@ public class AutoSuggestBox : ItemsControl, IIconControl
     /// <summary>
     /// Identifies the <see cref="UpdateTextOnSelect"/> dependency property.
     /// </summary>
-    public static readonly DependencyProperty UpdateTextOnSelectProperty =
-        DependencyProperty.Register(
-            nameof(UpdateTextOnSelect),
-            typeof(bool),
-            typeof(AutoSuggestBox),
-            new PropertyMetadata(true)
-        );
+    public static readonly DependencyProperty UpdateTextOnSelectProperty = DependencyProperty.Register(
+        nameof(UpdateTextOnSelect),
+        typeof(bool),
+        typeof(AutoSuggestBox),
+        new PropertyMetadata(true)
+    );
 
     /// <summary>
     /// Gets or sets a value indicating whether highlighting a suggestion updates the editable text part of the <see cref="AutoSuggestBox"/>.
@@ -178,13 +173,12 @@ public class AutoSuggestBox : ItemsControl, IIconControl
     /// <summary>
     /// Identifies the <see cref="MaxSuggestionListHeight"/> dependency property.
     /// </summary>
-    public static readonly DependencyProperty MaxSuggestionListHeightProperty =
-        DependencyProperty.Register(
-            nameof(MaxSuggestionListHeight),
-            typeof(double),
-            typeof(AutoSuggestBox),
-            new PropertyMetadata(0d)
-        );
+    public static readonly DependencyProperty MaxSuggestionListHeightProperty = DependencyProperty.Register(
+        nameof(MaxSuggestionListHeight),
+        typeof(double),
+        typeof(AutoSuggestBox),
+        new PropertyMetadata(0d)
+    );
 
     /// <summary>
     /// Gets or sets the maximum height for the drop-down portion of the <see cref="AutoSuggestBox"/> control.
@@ -202,13 +196,12 @@ public class AutoSuggestBox : ItemsControl, IIconControl
     /// <summary>
     /// Identifies the <see cref="Icon"/> dependency property.
     /// </summary>
-    public static readonly DependencyProperty IconProperty =
-        DependencyProperty.Register(
-            nameof(Icon),
-            typeof(IconElement),
-            typeof(AutoSuggestBox),
-            new PropertyMetadata(null)
-        );
+    public static readonly DependencyProperty IconProperty = DependencyProperty.Register(
+        nameof(Icon),
+        typeof(IconElement),
+        typeof(AutoSuggestBox),
+        new PropertyMetadata(null)
+    );
 
     /// <summary>
     /// Gets or sets displayed <see cref="IconElement"/>.
@@ -226,13 +219,12 @@ public class AutoSuggestBox : ItemsControl, IIconControl
     /// <summary>
     /// Identifies the <see cref="FocusCommand"/> dependency property.
     /// </summary>
-    public static readonly DependencyProperty FocusCommandProperty =
-        DependencyProperty.Register(
-            nameof(FocusCommand),
-            typeof(ICommand),
-            typeof(AutoSuggestBox),
-            new PropertyMetadata(null)
-        );
+    public static readonly DependencyProperty FocusCommandProperty = DependencyProperty.Register(
+        nameof(FocusCommand),
+        typeof(ICommand),
+        typeof(AutoSuggestBox),
+        new PropertyMetadata(null)
+    );
 
     /// <summary>
     /// Gets command used for focusing control.
@@ -246,13 +238,12 @@ public class AutoSuggestBox : ItemsControl, IIconControl
     /// <summary>
     /// Identifies the <see cref="ClearButtonEnabled"/> dependency property.
     /// </summary>
-    public static readonly DependencyProperty ClearButtonEnabledProperty =
-        DependencyProperty.Register(
-            nameof(ClearButtonEnabled),
-            typeof(bool),
-            typeof(AutoSuggestBox),
-            new PropertyMetadata(false)
-        );
+    public static readonly DependencyProperty ClearButtonEnabledProperty = DependencyProperty.Register(
+        nameof(ClearButtonEnabled),
+        typeof(bool),
+        typeof(AutoSuggestBox),
+        new PropertyMetadata(false)
+    );
 
     /// <summary>
     /// Gets or sets a value indicating whether to show the clear button when <see cref="AutoSuggestBox"/> is focused.
@@ -270,13 +261,12 @@ public class AutoSuggestBox : ItemsControl, IIconControl
     /// <summary>
     /// Identifies the <see cref="QuerySubmitted"/> routed event.
     /// </summary>
-    public static readonly RoutedEvent QuerySubmittedEvent =
-        EventManager.RegisterRoutedEvent(
-            nameof(QuerySubmitted),
-            RoutingStrategy.Bubble,
-            typeof(TypedEventHandler<AutoSuggestBox, AutoSuggestBoxQuerySubmittedEventArgs>),
-            typeof(AutoSuggestBox)
-        );
+    public static readonly RoutedEvent QuerySubmittedEvent = EventManager.RegisterRoutedEvent(
+        nameof(QuerySubmitted),
+        RoutingStrategy.Bubble,
+        typeof(TypedEventHandler<AutoSuggestBox, AutoSuggestBoxQuerySubmittedEventArgs>),
+        typeof(AutoSuggestBox)
+    );
 
     /// <summary>
     /// Occurs when the user submits a search query.
@@ -292,13 +282,12 @@ public class AutoSuggestBox : ItemsControl, IIconControl
     #region EVENT: SuggestionChosen
 
     /// <summary>Identifies the <see cref="SuggestionChosen"/> routed event.</summary>
-    public static readonly RoutedEvent SuggestionChosenEvent =
-        EventManager.RegisterRoutedEvent(
-            nameof(SuggestionChosen),
-            RoutingStrategy.Bubble,
-            typeof(TypedEventHandler<AutoSuggestBox, AutoSuggestBoxSuggestionChosenEventArgs>),
-            typeof(AutoSuggestBox)
-        );
+    public static readonly RoutedEvent SuggestionChosenEvent = EventManager.RegisterRoutedEvent(
+        nameof(SuggestionChosen),
+        RoutingStrategy.Bubble,
+        typeof(TypedEventHandler<AutoSuggestBox, AutoSuggestBoxSuggestionChosenEventArgs>),
+        typeof(AutoSuggestBox)
+    );
 
     /// <summary>
     /// Occurs when the user commits a suggestion by pressing Enter or clicking it.
@@ -314,13 +303,12 @@ public class AutoSuggestBox : ItemsControl, IIconControl
     #region EVENT: TextChanged
 
     /// <summary>Identifies the <see cref="TextChanged"/> routed event.</summary>
-    public static readonly RoutedEvent TextChangedEvent =
-        EventManager.RegisterRoutedEvent(
-            nameof(TextChanged),
-            RoutingStrategy.Bubble,
-            typeof(TypedEventHandler<AutoSuggestBox, AutoSuggestBoxTextChangedEventArgs>),
-            typeof(AutoSuggestBox)
-        );
+    public static readonly RoutedEvent TextChangedEvent = EventManager.RegisterRoutedEvent(
+        nameof(TextChanged),
+        RoutingStrategy.Bubble,
+        typeof(TypedEventHandler<AutoSuggestBox, AutoSuggestBoxTextChangedEventArgs>),
+        typeof(AutoSuggestBox)
+    );
 
     /// <summary>
     /// Raised after the text content of the editable control component is updated.
@@ -341,16 +329,18 @@ public class AutoSuggestBox : ItemsControl, IIconControl
         );
     }
 
-    private TextBox?       TextBox         { get; set; }
+    private TextBox? TextBox { get; set; }
     private NativeListBox? SuggestionsList { get; set; }
 
     private AutoSuggestionBoxTextChangeReason? _pendingTextChangeReason;
-    private HwndSource?                        _hookSource;
-    private RECT?                              _hostWindowBounds;
+    private HwndSource? _hookSource;
+    private RECT? _hostWindowBounds;
+    private bool _openSuggestionsOnMouseLeftButtonUp;
+    private DispatcherOperation? _deferredSuggestionOpenOperation;
 
     public AutoSuggestBox()
     {
-        Loaded   += OnLoaded;
+        Loaded += OnLoaded;
         Unloaded += OnUnloaded;
 
         SetValue(FocusCommandProperty, new RelayCommand<object>(_ => Focus()));
@@ -362,7 +352,7 @@ public class AutoSuggestBox : ItemsControl, IIconControl
 
         base.OnApplyTemplate();
 
-        TextBox         = EnsureTemplateChild<TextBox>(ElementTextBox);
+        TextBox = EnsureTemplateChild<TextBox>(ElementTextBox);
         SuggestionsList = EnsureTemplateChild<NativeListBox>(ElementSuggestionsList);
 
         AcquireTemplateResources();
@@ -387,6 +377,7 @@ public class AutoSuggestBox : ItemsControl, IIconControl
 
     private void OnUnloaded(object sender, RoutedEventArgs e)
     {
+        CancelDeferredSuggestionOpen();
         RemoveWindowHook();
     }
 
@@ -410,17 +401,23 @@ public class AutoSuggestBox : ItemsControl, IIconControl
     {
         if (TextBox != null)
         {
-            TextBox.PreviewKeyDown    += TextBoxOnPreviewKeyDown;
-            TextBox.TextChanged       += TextBoxOnTextChanged;
-            TextBox.GotKeyboardFocus  += TextBoxOnGotKeyboardFocus;
+            TextBox.PreviewKeyDown += TextBoxOnPreviewKeyDown;
+            TextBox.PreviewMouseLeftButtonDown += TextBoxOnPreviewMouseLeftButtonDown;
+            TextBox.AddHandler(
+                Mouse.MouseUpEvent,
+                new MouseButtonEventHandler(TextBoxOnMouseUp),
+                handledEventsToo: true
+            );
+            TextBox.TextChanged += TextBoxOnTextChanged;
+            TextBox.GotKeyboardFocus += TextBoxOnGotKeyboardFocus;
             TextBox.LostKeyboardFocus += TextBoxOnLostKeyboardFocus;
         }
 
         if (SuggestionsList != null)
         {
-            SuggestionsList.SelectionChanged         += SuggestionsListOnSelectionChanged;
-            SuggestionsList.PreviewKeyDown           += SuggestionsListOnPreviewKeyDown;
-            SuggestionsList.LostKeyboardFocus        += SuggestionsListOnLostKeyboardFocus;
+            SuggestionsList.SelectionChanged += SuggestionsListOnSelectionChanged;
+            SuggestionsList.PreviewKeyDown += SuggestionsListOnPreviewKeyDown;
+            SuggestionsList.LostKeyboardFocus += SuggestionsListOnLostKeyboardFocus;
             SuggestionsList.PreviewMouseLeftButtonUp += SuggestionsListOnPreviewMouseLeftButtonUp;
         }
     }
@@ -432,17 +429,22 @@ public class AutoSuggestBox : ItemsControl, IIconControl
     {
         if (TextBox != null)
         {
-            TextBox.PreviewKeyDown    -= TextBoxOnPreviewKeyDown;
-            TextBox.TextChanged       -= TextBoxOnTextChanged;
-            TextBox.GotKeyboardFocus  -= TextBoxOnGotKeyboardFocus;
+            TextBox.PreviewKeyDown -= TextBoxOnPreviewKeyDown;
+            TextBox.PreviewMouseLeftButtonDown -= TextBoxOnPreviewMouseLeftButtonDown;
+            TextBox.RemoveHandler(Mouse.MouseUpEvent, new MouseButtonEventHandler(TextBoxOnMouseUp));
+            TextBox.TextChanged -= TextBoxOnTextChanged;
+            TextBox.GotKeyboardFocus -= TextBoxOnGotKeyboardFocus;
             TextBox.LostKeyboardFocus -= TextBoxOnLostKeyboardFocus;
         }
 
+        _openSuggestionsOnMouseLeftButtonUp = false;
+        CancelDeferredSuggestionOpen();
+
         if (SuggestionsList != null)
         {
-            SuggestionsList.SelectionChanged         -= SuggestionsListOnSelectionChanged;
-            SuggestionsList.PreviewKeyDown           -= SuggestionsListOnPreviewKeyDown;
-            SuggestionsList.LostKeyboardFocus        -= SuggestionsListOnLostKeyboardFocus;
+            SuggestionsList.SelectionChanged -= SuggestionsListOnSelectionChanged;
+            SuggestionsList.PreviewKeyDown -= SuggestionsListOnPreviewKeyDown;
+            SuggestionsList.LostKeyboardFocus -= SuggestionsListOnLostKeyboardFocus;
             SuggestionsList.PreviewMouseLeftButtonUp -= SuggestionsListOnPreviewMouseLeftButtonUp;
         }
     }
@@ -456,7 +458,7 @@ public class AutoSuggestBox : ItemsControl, IIconControl
         if (_hookSource is null && PresentationSource.FromVisual(this) is HwndSource source)
         {
             source.AddHook(Hook);
-            _hookSource       = source;
+            _hookSource = source;
             _hostWindowBounds = TryGetWindowBounds(source.Handle, out var bounds) ? bounds : null;
         }
     }
@@ -515,7 +517,7 @@ public class AutoSuggestBox : ItemsControl, IIconControl
         var args = new AutoSuggestBoxTextChangedEventArgs(TextChangedEvent, this)
         {
             Reason = reason,
-            Text   = text,
+            Text = text,
         };
 
         RaiseEvent(args);
@@ -586,12 +588,66 @@ public class AutoSuggestBox : ItemsControl, IIconControl
         // result Popup from being restored. An empty query is excluded even though DefaultFiltering
         // exposes OriginalItemsSource for it: showing that full, unfiltered list merely because focus
         // returned is not a suggestion-restoration scenario.
-        var shouldOpen = !string.IsNullOrEmpty(TextBox?.Text) && HasItems;
-
-        if (shouldOpen)
+        if (!HasSuggestionsToRestore())
         {
-            SetCurrentValue(IsSuggestionListOpenProperty, true);
+            return;
         }
+
+        if (_openSuggestionsOnMouseLeftButtonUp)
+        {
+            return;
+        }
+
+        // When an inactive owner window is clicked, WPF can restore keyboard focus while processing
+        // window activation, before the TextBox receives PreviewMouseDown. Opening a non-sticky Popup
+        // in that focus callback captures the activating click and prevents TextEditorMouse from
+        // receiving its normal down/up pair. A null old focus identifies this restoration path. Give
+        // the input queue one idle turn so the subsequent mouse event can claim the deferred open.
+        if (e.OldFocus is null)
+        {
+            ScheduleDeferredSuggestionOpen();
+            return;
+        }
+
+        // Keyboard navigation and ordinary programmatic focus have no unfinished pointer input, so
+        // they retain the immediate behavior expected by the control contract.
+        OpenSuggestionsIfAvailable();
+    }
+
+    private void TextBoxOnPreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (HasSuggestionsToRestore())
+        {
+            // This also covers the first click after owner-window activation: keyboard focus may
+            // already have been restored, but the low-priority focus operation has not opened the
+            // Popup yet. It is intentionally recorded even when the Popup is currently open because
+            // StaysOpen=false may close it for this placement-target click before MouseUp. The
+            // bubbling MouseUp handler will run after TextBoxBase releases capture and restore it.
+            CancelDeferredSuggestionOpen();
+            _openSuggestionsOnMouseLeftButtonUp = true;
+        }
+    }
+
+    private void TextBoxOnMouseUp(object sender, MouseButtonEventArgs e)
+    {
+        if (e.ChangedButton is not MouseButton.Left || !_openSuggestionsOnMouseLeftButtonUp)
+        {
+            return;
+        }
+
+        _openSuggestionsOnMouseLeftButtonUp = false;
+
+        // TextEditorMouse handles MouseUp and releases its selection capture before instance
+        // handlers registered with handledEventsToo run. Do not open until that native cleanup is
+        // observable; otherwise Popup.StaysOpen=false steals capture and leaves caret/selection input
+        // in a partially completed state.
+        if (TextBox?.IsMouseCaptured == true || Mouse.LeftButton is MouseButtonState.Pressed)
+        {
+            ScheduleDeferredSuggestionOpen();
+            return;
+        }
+
+        OpenSuggestionsIfAvailable();
     }
 
     private void TextBoxOnLostKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
@@ -601,6 +657,8 @@ public class AutoSuggestBox : ItemsControl, IIconControl
             return;
         }
 
+        _openSuggestionsOnMouseLeftButtonUp = false;
+        CancelDeferredSuggestionOpen();
         CloseSuggestions();
     }
 
@@ -670,8 +728,8 @@ public class AutoSuggestBox : ItemsControl, IIconControl
     {
         if (
             SuggestionsList is null
-         || e.OriginalSource is not DependencyObject source
-         || ContainerFromElement(SuggestionsList, source) is not NativeListBoxItem container
+            || e.OriginalSource is not DependencyObject source
+            || ContainerFromElement(SuggestionsList, source) is not NativeListBoxItem container
         )
         {
             return;
@@ -721,7 +779,7 @@ public class AutoSuggestBox : ItemsControl, IIconControl
         if (message == PInvoke.WM_WINDOWPOSCHANGED)
         {
             var previousBounds = _hostWindowBounds;
-            var hasBounds      = TryGetWindowBounds(hwnd, out var currentBounds);
+            var hasBounds = TryGetWindowBounds(hwnd, out var currentBounds);
             var boundsChanged =
                 hasBounds && previousBounds.HasValue && !AreSameBounds(previousBounds.Value, currentBounds);
 
@@ -755,9 +813,9 @@ public class AutoSuggestBox : ItemsControl, IIconControl
 
     private static bool AreSameBounds(RECT left, RECT right)
     {
-        return left.left   == right.left
-            && left.top    == right.top
-            && left.right  == right.right
+        return left.left == right.left
+            && left.top == right.top
+            && left.right == right.right
             && left.bottom == right.bottom;
     }
 
@@ -779,6 +837,64 @@ public class AutoSuggestBox : ItemsControl, IIconControl
     private void CloseSuggestions()
     {
         SetCurrentValue(IsSuggestionListOpenProperty, false);
+    }
+
+    private void OpenSuggestionsIfAvailable()
+    {
+        if (TextBox?.IsKeyboardFocusWithin == true && HasSuggestionsToRestore())
+        {
+            SetCurrentValue(IsSuggestionListOpenProperty, true);
+        }
+    }
+
+    private void ScheduleDeferredSuggestionOpen()
+    {
+        if (_deferredSuggestionOpenOperation?.Status is DispatcherOperationStatus.Pending)
+        {
+            return;
+        }
+
+        // ContextIdle runs after queued input without delaying keyboard/programmatic focus for a
+        // visible amount of time. If the mouse is still held at that point, MouseUp becomes the only
+        // safe completion signal because a non-sticky Popup must not compete with TextEditor capture.
+        _deferredSuggestionOpenOperation = Dispatcher.BeginInvoke(
+            DispatcherPriority.ContextIdle,
+            new Action(() =>
+            {
+                _deferredSuggestionOpenOperation = null;
+
+                if (TextBox?.IsKeyboardFocusWithin != true || !HasSuggestionsToRestore())
+                {
+                    return;
+                }
+
+                if (TextBox.IsMouseCaptured || Mouse.LeftButton is MouseButtonState.Pressed)
+                {
+                    _openSuggestionsOnMouseLeftButtonUp = true;
+                    return;
+                }
+
+                OpenSuggestionsIfAvailable();
+            })
+        );
+    }
+
+    private void CancelDeferredSuggestionOpen()
+    {
+        if (_deferredSuggestionOpenOperation?.Status is DispatcherOperationStatus.Pending)
+        {
+            _deferredSuggestionOpenOperation.Abort();
+        }
+
+        _deferredSuggestionOpenOperation = null;
+    }
+
+    private bool HasSuggestionsToRestore()
+    {
+        // HasItems covers both the built-in filter and ItemsSource values populated by a
+        // TextChanged handler. An empty query still represents the unfiltered source rather than a
+        // previously produced suggestion set, so focus alone must not expose the complete list.
+        return !string.IsNullOrEmpty(TextBox?.Text) && HasItems;
     }
 
     private void ClearSuggestionSelection()
@@ -848,15 +964,15 @@ public class AutoSuggestBox : ItemsControl, IIconControl
 
         var splitText = text.Split(' ');
         var suitableItems = OriginalItemsSource
-           .Cast<object>()
-           .Where(item =>
+            .Cast<object>()
+            .Where(item =>
             {
                 var itemText = GetStringFromObj(item);
                 return splitText.All(key =>
                     itemText?.Contains(key, StringComparison.OrdinalIgnoreCase) ?? false
                 );
             })
-           .ToList();
+            .ToList();
 
         SetCurrentValue(ItemsSourceProperty, suitableItems);
     }
@@ -881,7 +997,7 @@ public class AutoSuggestBox : ItemsControl, IIconControl
         if (obj is XmlNode)
         {
             binding.XPath = DisplayMemberPath;
-            binding.Path  = new PropertyPath("/InnerText");
+            binding.Path = new PropertyPath("/InnerText");
         }
         else
         {
@@ -903,7 +1019,7 @@ public class AutoSuggestBox : ItemsControl, IIconControl
 
     private static void OnTextChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
-        var self    = (AutoSuggestBox)d;
+        var self = (AutoSuggestBox)d;
         var newText = (string)e.NewValue;
 
         if (self.TextBox is null)

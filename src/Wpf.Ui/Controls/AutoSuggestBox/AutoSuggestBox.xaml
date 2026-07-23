@@ -113,6 +113,7 @@
                             MinWidth="{TemplateBinding ActualWidth}"
                             MinHeight="{TemplateBinding ActualHeight}"
                             controls:PopupAnimator.IsEnabled="True"
+                            controls:PopupDismissal.ExcludedElement="{Binding RelativeSource={RelativeSource TemplatedParent}}"
                             controls:PopupShadow.IsEnabled="True"
                             AllowsTransparency="True"
                             Focusable="False"

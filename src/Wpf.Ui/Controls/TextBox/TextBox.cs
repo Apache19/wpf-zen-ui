@@ -23,13 +23,12 @@ public class TextBox : System.Windows.Controls.TextBox
     /// <summary>
     /// Identifies the <see cref="MouseOverForeground"/> dependency property.
     /// </summary>
-    public static readonly DependencyProperty MouseOverForegroundProperty =
-        DependencyProperty.Register(
-            nameof(MouseOverForeground),
-            typeof(Brush),
-            typeof(TextBox),
-            new PropertyMetadata(null, OnStateBrushChanged)
-        );
+    public static readonly DependencyProperty MouseOverForegroundProperty = DependencyProperty.Register(
+        nameof(MouseOverForeground),
+        typeof(Brush),
+        typeof(TextBox),
+        new PropertyMetadata(null, OnStateBrushChanged)
+    );
 
     /// <summary>
     /// Gets or sets the foreground used while the pointer is over the text box.
@@ -46,13 +45,12 @@ public class TextBox : System.Windows.Controls.TextBox
     /// <summary>
     /// Identifies the <see cref="MouseOverBackground"/> dependency property.
     /// </summary>
-    public static readonly DependencyProperty MouseOverBackgroundProperty =
-        DependencyProperty.Register(
-            nameof(MouseOverBackground),
-            typeof(Brush),
-            typeof(TextBox),
-            new PropertyMetadata(null, OnStateBrushChanged)
-        );
+    public static readonly DependencyProperty MouseOverBackgroundProperty = DependencyProperty.Register(
+        nameof(MouseOverBackground),
+        typeof(Brush),
+        typeof(TextBox),
+        new PropertyMetadata(null, OnStateBrushChanged)
+    );
 
     /// <summary>
     /// Gets or sets the background used while the pointer is over the text box.
@@ -69,13 +67,12 @@ public class TextBox : System.Windows.Controls.TextBox
     /// <summary>
     /// Identifies the <see cref="MouseOverBorderBrush"/> dependency property.
     /// </summary>
-    public static readonly DependencyProperty MouseOverBorderBrushProperty =
-        DependencyProperty.Register(
-            nameof(MouseOverBorderBrush),
-            typeof(Brush),
-            typeof(TextBox),
-            new PropertyMetadata(null, OnStateBrushChanged)
-        );
+    public static readonly DependencyProperty MouseOverBorderBrushProperty = DependencyProperty.Register(
+        nameof(MouseOverBorderBrush),
+        typeof(Brush),
+        typeof(TextBox),
+        new PropertyMetadata(null, OnStateBrushChanged)
+    );
 
     /// <summary>
     /// Gets or sets the border brush used while the pointer is over the text box.
@@ -92,13 +89,12 @@ public class TextBox : System.Windows.Controls.TextBox
     /// <summary>
     /// Identifies the <see cref="FocusedForeground"/> dependency property.
     /// </summary>
-    public static readonly DependencyProperty FocusedForegroundProperty =
-        DependencyProperty.Register(
-            nameof(FocusedForeground),
-            typeof(Brush),
-            typeof(TextBox),
-            new PropertyMetadata(null, OnStateBrushChanged)
-        );
+    public static readonly DependencyProperty FocusedForegroundProperty = DependencyProperty.Register(
+        nameof(FocusedForeground),
+        typeof(Brush),
+        typeof(TextBox),
+        new PropertyMetadata(null, OnStateBrushChanged)
+    );
 
     /// <summary>
     /// Gets or sets the foreground used while the text box has keyboard focus.
@@ -115,13 +111,12 @@ public class TextBox : System.Windows.Controls.TextBox
     /// <summary>
     /// Identifies the <see cref="FocusedBackground"/> dependency property.
     /// </summary>
-    public static readonly DependencyProperty FocusedBackgroundProperty =
-        DependencyProperty.Register(
-            nameof(FocusedBackground),
-            typeof(Brush),
-            typeof(TextBox),
-            new PropertyMetadata(null, OnStateBrushChanged)
-        );
+    public static readonly DependencyProperty FocusedBackgroundProperty = DependencyProperty.Register(
+        nameof(FocusedBackground),
+        typeof(Brush),
+        typeof(TextBox),
+        new PropertyMetadata(null, OnStateBrushChanged)
+    );
 
     /// <summary>
     /// Gets or sets the background used while the text box has keyboard focus.
@@ -138,13 +133,12 @@ public class TextBox : System.Windows.Controls.TextBox
     /// <summary>
     /// Identifies the <see cref="FocusedBorderBrush"/> dependency property.
     /// </summary>
-    public static readonly DependencyProperty FocusedBorderBrushProperty =
-        DependencyProperty.Register(
-            nameof(FocusedBorderBrush),
-            typeof(Brush),
-            typeof(TextBox),
-            new PropertyMetadata(null, OnStateBrushChanged)
-        );
+    public static readonly DependencyProperty FocusedBorderBrushProperty = DependencyProperty.Register(
+        nameof(FocusedBorderBrush),
+        typeof(Brush),
+        typeof(TextBox),
+        new PropertyMetadata(null, OnStateBrushChanged)
+    );
 
     /// <summary>
     /// Gets or sets the border brush used while the text box has keyboard focus.
@@ -161,13 +155,12 @@ public class TextBox : System.Windows.Controls.TextBox
     /// <summary>
     /// Identifies the <see cref="DisabledForeground"/> dependency property.
     /// </summary>
-    public static readonly DependencyProperty DisabledForegroundProperty =
-        DependencyProperty.Register(
-            nameof(DisabledForeground),
-            typeof(Brush),
-            typeof(TextBox),
-            new PropertyMetadata(null, OnStateBrushChanged)
-        );
+    public static readonly DependencyProperty DisabledForegroundProperty = DependencyProperty.Register(
+        nameof(DisabledForeground),
+        typeof(Brush),
+        typeof(TextBox),
+        new PropertyMetadata(null, OnStateBrushChanged)
+    );
 
     /// <summary>
     /// Gets or sets the foreground used while the text box is disabled.
@@ -184,13 +177,12 @@ public class TextBox : System.Windows.Controls.TextBox
     /// <summary>
     /// Identifies the <see cref="DisabledBackground"/> dependency property.
     /// </summary>
-    public static readonly DependencyProperty DisabledBackgroundProperty =
-        DependencyProperty.Register(
-            nameof(DisabledBackground),
-            typeof(Brush),
-            typeof(TextBox),
-            new PropertyMetadata(null, OnStateBrushChanged)
-        );
+    public static readonly DependencyProperty DisabledBackgroundProperty = DependencyProperty.Register(
+        nameof(DisabledBackground),
+        typeof(Brush),
+        typeof(TextBox),
+        new PropertyMetadata(null, OnStateBrushChanged)
+    );
 
     /// <summary>
     /// Gets or sets the background used while the text box is disabled.
@@ -207,13 +199,12 @@ public class TextBox : System.Windows.Controls.TextBox
     /// <summary>
     /// Identifies the <see cref="DisabledBorderBrush"/> dependency property.
     /// </summary>
-    public static readonly DependencyProperty DisabledBorderBrushProperty =
-        DependencyProperty.Register(
-            nameof(DisabledBorderBrush),
-            typeof(Brush),
-            typeof(TextBox),
-            new PropertyMetadata(null, OnStateBrushChanged)
-        );
+    public static readonly DependencyProperty DisabledBorderBrushProperty = DependencyProperty.Register(
+        nameof(DisabledBorderBrush),
+        typeof(Brush),
+        typeof(TextBox),
+        new PropertyMetadata(null, OnStateBrushChanged)
+    );
 
     /// <summary>
     /// Gets or sets the border brush used while the text box is disabled.
@@ -296,13 +287,12 @@ public class TextBox : System.Windows.Controls.TextBox
     /// <summary>
     /// Identifies the <see cref="CornerRadius"/> dependency property.
     /// </summary>
-    public static readonly DependencyProperty CornerRadiusProperty =
-        DependencyProperty.Register(
-            nameof(CornerRadius),
-            typeof(CornerRadius),
-            typeof(TextBox),
-            new FrameworkPropertyMetadata(default(CornerRadius))
-        );
+    public static readonly DependencyProperty CornerRadiusProperty = DependencyProperty.Register(
+        nameof(CornerRadius),
+        typeof(CornerRadius),
+        typeof(TextBox),
+        new FrameworkPropertyMetadata(default(CornerRadius))
+    );
 
     /// <summary>
     /// Gets or sets the radius applied to the text box chrome and its focus indicator.
@@ -319,13 +309,12 @@ public class TextBox : System.Windows.Controls.TextBox
     #endregion
 
     /// <summary>Identifies the <see cref="Icon"/> dependency property.</summary>
-    public static readonly DependencyProperty IconProperty =
-        DependencyProperty.Register(
-            nameof(Icon),
-            typeof(IconElement),
-            typeof(TextBox),
-            new PropertyMetadata(null, null, IconElement.Coerce)
-        );
+    public static readonly DependencyProperty IconProperty = DependencyProperty.Register(
+        nameof(Icon),
+        typeof(IconElement),
+        typeof(TextBox),
+        new PropertyMetadata(null, null, IconElement.Coerce)
+    );
 
     /// <summary>
     /// Gets or sets displayed <see cref="IconElement"/>.
@@ -337,13 +326,12 @@ public class TextBox : System.Windows.Controls.TextBox
     }
 
     /// <summary>Identifies the <see cref="IconPlacement"/> dependency property.</summary>
-    public static readonly DependencyProperty IconPlacementProperty =
-        DependencyProperty.Register(
-            nameof(IconPlacement),
-            typeof(ElementPlacement),
-            typeof(TextBox),
-            new PropertyMetadata(ElementPlacement.Left)
-        );
+    public static readonly DependencyProperty IconPlacementProperty = DependencyProperty.Register(
+        nameof(IconPlacement),
+        typeof(ElementPlacement),
+        typeof(TextBox),
+        new PropertyMetadata(ElementPlacement.Left)
+    );
 
     /// <summary>
     /// Gets or sets which side the icon should be placed on.
@@ -355,13 +343,12 @@ public class TextBox : System.Windows.Controls.TextBox
     }
 
     /// <summary>Identifies the <see cref="PlaceholderText"/> dependency property.</summary>
-    public static readonly DependencyProperty PlaceholderTextProperty =
-        DependencyProperty.Register(
-            nameof(PlaceholderText),
-            typeof(string),
-            typeof(TextBox),
-            new PropertyMetadata(string.Empty)
-        );
+    public static readonly DependencyProperty PlaceholderTextProperty = DependencyProperty.Register(
+        nameof(PlaceholderText),
+        typeof(string),
+        typeof(TextBox),
+        new PropertyMetadata(string.Empty)
+    );
 
     /// <summary>
     /// Gets or sets placeholder text.
@@ -373,13 +360,12 @@ public class TextBox : System.Windows.Controls.TextBox
     }
 
     /// <summary>Identifies the <see cref="PlaceholderEnabled"/> dependency property.</summary>
-    public static readonly DependencyProperty PlaceholderEnabledProperty =
-        DependencyProperty.Register(
-            nameof(PlaceholderEnabled),
-            typeof(bool),
-            typeof(TextBox),
-            new PropertyMetadata(true, OnPlaceholderEnabledChanged)
-        );
+    public static readonly DependencyProperty PlaceholderEnabledProperty = DependencyProperty.Register(
+        nameof(PlaceholderEnabled),
+        typeof(bool),
+        typeof(TextBox),
+        new PropertyMetadata(true, OnPlaceholderEnabledChanged)
+    );
 
     /// <summary>
     /// Gets or sets a value indicating whether to enable the placeholder text.
@@ -417,13 +403,12 @@ public class TextBox : System.Windows.Controls.TextBox
     }
 
     /// <summary>Identifies the <see cref="ClearButtonEnabled"/> dependency property.</summary>
-    public static readonly DependencyProperty ClearButtonEnabledProperty =
-        DependencyProperty.Register(
-            nameof(ClearButtonEnabled),
-            typeof(bool),
-            typeof(TextBox),
-            new PropertyMetadata(true)
-        );
+    public static readonly DependencyProperty ClearButtonEnabledProperty = DependencyProperty.Register(
+        nameof(ClearButtonEnabled),
+        typeof(bool),
+        typeof(TextBox),
+        new PropertyMetadata(true)
+    );
 
     /// <summary>
     /// Gets or sets a value indicating whether to enable the clear button.
@@ -461,13 +446,12 @@ public class TextBox : System.Windows.Controls.TextBox
     }
 
     /// <summary>Identifies the <see cref="IsFocusIndicatorVisible"/> dependency property.</summary>
-    public static readonly DependencyProperty IsFocusIndicatorVisibleProperty =
-        DependencyProperty.Register(
-            nameof(IsFocusIndicatorVisible),
-            typeof(bool),
-            typeof(TextBox),
-            new PropertyMetadata(true)
-        );
+    public static readonly DependencyProperty IsFocusIndicatorVisibleProperty = DependencyProperty.Register(
+        nameof(IsFocusIndicatorVisible),
+        typeof(bool),
+        typeof(TextBox),
+        new PropertyMetadata(true)
+    );
 
     /// <summary>
     /// Gets or sets a value indicating whether the focus indicator is visible.
@@ -479,13 +463,12 @@ public class TextBox : System.Windows.Controls.TextBox
     }
 
     /// <summary>Identifies the <see cref="UseTextBlockAppearance"/> dependency property.</summary>
-    public static readonly DependencyProperty UseTextBlockAppearanceProperty =
-        DependencyProperty.Register(
-            nameof(UseTextBlockAppearance),
-            typeof(bool),
-            typeof(TextBox),
-            new PropertyMetadata(false)
-        );
+    public static readonly DependencyProperty UseTextBlockAppearanceProperty = DependencyProperty.Register(
+        nameof(UseTextBlockAppearance),
+        typeof(bool),
+        typeof(TextBox),
+        new PropertyMetadata(false)
+    );
 
     /// <summary>
     /// Gets or sets a value indicating whether the control should use a plain selectable text appearance.
@@ -497,13 +480,12 @@ public class TextBox : System.Windows.Controls.TextBox
     }
 
     /// <summary>Identifies the <see cref="TemplateButtonCommand"/> dependency property.</summary>
-    public static readonly DependencyProperty TemplateButtonCommandProperty =
-        DependencyProperty.Register(
-            nameof(TemplateButtonCommand),
-            typeof(IRelayCommand),
-            typeof(TextBox),
-            new PropertyMetadata(null)
-        );
+    public static readonly DependencyProperty TemplateButtonCommandProperty = DependencyProperty.Register(
+        nameof(TemplateButtonCommand),
+        typeof(IRelayCommand),
+        typeof(TextBox),
+        new PropertyMetadata(null)
+    );
 
     /// <summary>
     /// Gets the command triggered when clicking the button.
@@ -564,7 +546,11 @@ public class TextBox : System.Windows.Controls.TextBox
         // handledEventsToo lets us correct the cursor even if PART_ContentHost.Cursor has
         // already handled the event, while still forwarding real TextBoxView hits back to
         // WPF's internal cursor logic.
-        AddHandler(Mouse.QueryCursorEvent, new QueryCursorEventHandler(OnTextBoxQueryCursor), handledEventsToo: true);
+        AddHandler(
+            Mouse.QueryCursorEvent,
+            new QueryCursorEventHandler(OnTextBoxQueryCursor),
+            handledEventsToo: true
+        );
         IsEnabledChanged += OnTextBoxIsEnabledChanged;
     }
 
@@ -694,19 +680,25 @@ public class TextBox : System.Windows.Controls.TextBox
     }
 
     /// <inheritdoc />
-    protected override void OnPreviewMouseLeftButtonDown(MouseButtonEventArgs e)
+    protected override void OnMouseDown(MouseButtonEventArgs e)
     {
+        // Let TextBoxBase run the native TextEditorMouse focus, IME and hit-test path first. A
+        // padding hit is marked handled after focus but deliberately receives no caret or mouse
+        // capture. Bridging it here keeps every observable focus event in WPF's normal MouseDown
+        // order and prevents a focus handler from opening a Popup before the editor sees the click.
+        base.OnMouseDown(e);
+
         // WPF's own TextEditorMouse.OnMouseDown ignores clicks that hit TextBox padding or
         // template chrome, even when they are inside PART_ContentHost. Intercept that narrow
-        // case before the regular bubble handler runs and initialize the native selection
-        // state as if the click landed on the nearest edge of TextBoxView.
-        if (_mouseInputHelper.TryForwardMouseDownFromContentHostPadding(e))
+        // case after the regular bubble handler runs and initialize the native selection state as
+        // if the click landed on the nearest edge of TextBoxView.
+        if (
+            e.ChangedButton is MouseButton.Left
+            && _mouseInputHelper.TryForwardMouseDownFromContentHostPadding(e)
+        )
         {
             e.Handled = true;
-            return;
         }
-
-        base.OnPreviewMouseLeftButtonDown(e);
     }
 
     /// <inheritdoc />
