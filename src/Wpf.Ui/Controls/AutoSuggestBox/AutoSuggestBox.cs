@@ -329,8 +329,8 @@ public class AutoSuggestBox : ItemsControl, IIconControl
         );
     }
 
-    private TextBox? TextBox { get; set; }
-    private NativeListBox? SuggestionsList { get; set; }
+    private TextBox? _textBox;
+    private NativeListBox? _suggestionsList;
 
     private AutoSuggestionBoxTextChangeReason? _pendingTextChangeReason;
     private HwndSource? _hookSource;
@@ -352,8 +352,8 @@ public class AutoSuggestBox : ItemsControl, IIconControl
 
         base.OnApplyTemplate();
 
-        TextBox = EnsureTemplateChild<TextBox>(ElementTextBox);
-        SuggestionsList = EnsureTemplateChild<NativeListBox>(ElementSuggestionsList);
+        _textBox = EnsureTemplateChild<TextBox>(ElementTextBox);
+        _suggestionsList = EnsureTemplateChild<NativeListBox>(ElementSuggestionsList);
 
         AcquireTemplateResources();
     }
@@ -361,13 +361,13 @@ public class AutoSuggestBox : ItemsControl, IIconControl
     protected override void OnGotFocus(RoutedEventArgs e)
     {
         base.OnGotFocus(e);
-        TextBox?.Focus();
+        _textBox?.Focus();
     }
 
     protected override void OnMouseDown(MouseButtonEventArgs e)
     {
         base.OnMouseDown(e);
-        TextBox?.Focus();
+        _textBox?.Focus();
     }
 
     private void OnLoaded(object sender, RoutedEventArgs e)
@@ -384,7 +384,7 @@ public class AutoSuggestBox : ItemsControl, IIconControl
     /// <inheritdoc cref="UIElement.Focus" />
     public new bool Focus()
     {
-        return TextBox is not null && TextBox.Focus();
+        return _textBox is not null && _textBox.Focus();
     }
 
     private T EnsureTemplateChild<T>(string name)
@@ -394,31 +394,31 @@ public class AutoSuggestBox : ItemsControl, IIconControl
     }
 
     /// <summary>
-    /// Subscribes event handlers to the resolved template parts (<see cref="TextBox"/> and <see cref="SuggestionsList"/>).
+    /// Subscribes event handlers to the resolved template parts (<see cref="_textBox"/> and <see cref="_suggestionsList"/>).
     /// Each handler is unsubscribed first to prevent double subscription.
     /// </summary>
     private void AcquireTemplateResources()
     {
-        if (TextBox != null)
+        if (_textBox != null)
         {
-            TextBox.PreviewKeyDown += TextBoxOnPreviewKeyDown;
-            TextBox.PreviewMouseLeftButtonDown += TextBoxOnPreviewMouseLeftButtonDown;
-            TextBox.AddHandler(
+            _textBox.PreviewKeyDown += TextBoxOnPreviewKeyDown;
+            _textBox.PreviewMouseLeftButtonDown += TextBoxOnPreviewMouseLeftButtonDown;
+            _textBox.AddHandler(
                 Mouse.MouseUpEvent,
                 new MouseButtonEventHandler(TextBoxOnMouseUp),
                 handledEventsToo: true
             );
-            TextBox.TextChanged += TextBoxOnTextChanged;
-            TextBox.GotKeyboardFocus += TextBoxOnGotKeyboardFocus;
-            TextBox.LostKeyboardFocus += TextBoxOnLostKeyboardFocus;
+            _textBox.TextChanged += TextBoxOnTextChanged;
+            _textBox.GotKeyboardFocus += TextBoxOnGotKeyboardFocus;
+            _textBox.LostKeyboardFocus += TextBoxOnLostKeyboardFocus;
         }
 
-        if (SuggestionsList != null)
+        if (_suggestionsList != null)
         {
-            SuggestionsList.SelectionChanged += SuggestionsListOnSelectionChanged;
-            SuggestionsList.PreviewKeyDown += SuggestionsListOnPreviewKeyDown;
-            SuggestionsList.LostKeyboardFocus += SuggestionsListOnLostKeyboardFocus;
-            SuggestionsList.PreviewMouseLeftButtonUp += SuggestionsListOnPreviewMouseLeftButtonUp;
+            _suggestionsList.SelectionChanged += SuggestionsListOnSelectionChanged;
+            _suggestionsList.PreviewKeyDown += SuggestionsListOnPreviewKeyDown;
+            _suggestionsList.LostKeyboardFocus += SuggestionsListOnLostKeyboardFocus;
+            _suggestionsList.PreviewMouseLeftButtonUp += SuggestionsListOnPreviewMouseLeftButtonUp;
         }
     }
 
@@ -427,25 +427,25 @@ public class AutoSuggestBox : ItemsControl, IIconControl
     /// </summary>
     private void ReleaseTemplateResources()
     {
-        if (TextBox != null)
+        if (_textBox != null)
         {
-            TextBox.PreviewKeyDown -= TextBoxOnPreviewKeyDown;
-            TextBox.PreviewMouseLeftButtonDown -= TextBoxOnPreviewMouseLeftButtonDown;
-            TextBox.RemoveHandler(Mouse.MouseUpEvent, new MouseButtonEventHandler(TextBoxOnMouseUp));
-            TextBox.TextChanged -= TextBoxOnTextChanged;
-            TextBox.GotKeyboardFocus -= TextBoxOnGotKeyboardFocus;
-            TextBox.LostKeyboardFocus -= TextBoxOnLostKeyboardFocus;
+            _textBox.PreviewKeyDown -= TextBoxOnPreviewKeyDown;
+            _textBox.PreviewMouseLeftButtonDown -= TextBoxOnPreviewMouseLeftButtonDown;
+            _textBox.RemoveHandler(Mouse.MouseUpEvent, new MouseButtonEventHandler(TextBoxOnMouseUp));
+            _textBox.TextChanged -= TextBoxOnTextChanged;
+            _textBox.GotKeyboardFocus -= TextBoxOnGotKeyboardFocus;
+            _textBox.LostKeyboardFocus -= TextBoxOnLostKeyboardFocus;
         }
 
         _openSuggestionsOnMouseLeftButtonUp = false;
         CancelDeferredSuggestionOpen();
 
-        if (SuggestionsList != null)
+        if (_suggestionsList != null)
         {
-            SuggestionsList.SelectionChanged -= SuggestionsListOnSelectionChanged;
-            SuggestionsList.PreviewKeyDown -= SuggestionsListOnPreviewKeyDown;
-            SuggestionsList.LostKeyboardFocus -= SuggestionsListOnLostKeyboardFocus;
-            SuggestionsList.PreviewMouseLeftButtonUp -= SuggestionsListOnPreviewMouseLeftButtonUp;
+            _suggestionsList.SelectionChanged -= SuggestionsListOnSelectionChanged;
+            _suggestionsList.PreviewKeyDown -= SuggestionsListOnPreviewKeyDown;
+            _suggestionsList.LostKeyboardFocus -= SuggestionsListOnLostKeyboardFocus;
+            _suggestionsList.PreviewMouseLeftButtonUp -= SuggestionsListOnPreviewMouseLeftButtonUp;
         }
     }
 
@@ -548,9 +548,9 @@ public class AutoSuggestBox : ItemsControl, IIconControl
 
         if (e.Key is Key.Enter)
         {
-            var text = TextBox?.Text;
+            var text = _textBox?.Text;
 
-            if (IsSuggestionListOpen && SuggestionsList?.SelectedItem is { } selectedItem)
+            if (IsSuggestionListOpen && _suggestionsList?.SelectedItem is { } selectedItem)
             {
                 CommitSuggestion(selectedItem);
             }
@@ -564,13 +564,13 @@ public class AutoSuggestBox : ItemsControl, IIconControl
             return;
         }
 
-        if (e.Key is Key.Down && IsSuggestionListOpen && SuggestionsList is { HasItems: true })
+        if (e.Key is Key.Down && IsSuggestionListOpen && _suggestionsList is { HasItems: true })
         {
-            _ = SuggestionsList.Focus();
+            _ = _suggestionsList.Focus();
 
-            if (SuggestionsList.SelectedIndex < 0)
+            if (_suggestionsList.SelectedIndex < 0)
             {
-                SuggestionsList.SetCurrentValue(Selector.SelectedIndexProperty, 0);
+                _suggestionsList.SetCurrentValue(Selector.SelectedIndexProperty, 0);
             }
 
             e.Handled = true;
@@ -641,7 +641,7 @@ public class AutoSuggestBox : ItemsControl, IIconControl
         // handlers registered with handledEventsToo run. Do not open until that native cleanup is
         // observable; otherwise Popup.StaysOpen=false steals capture and leaves caret/selection input
         // in a partially completed state.
-        if (TextBox?.IsMouseCaptured == true || Mouse.LeftButton is MouseButtonState.Pressed)
+        if (_textBox?.IsMouseCaptured == true || Mouse.LeftButton is MouseButtonState.Pressed)
         {
             ScheduleDeferredSuggestionOpen();
             return;
@@ -671,7 +671,7 @@ public class AutoSuggestBox : ItemsControl, IIconControl
             ClearSuggestionSelection();
         }
 
-        OnTextChanged(changeReason, TextBox!.Text);
+        OnTextChanged(changeReason, _textBox!.Text);
 
         if (changeReason is not AutoSuggestionBoxTextChangeReason.UserInput || !IsLoaded)
         {
@@ -711,13 +711,13 @@ public class AutoSuggestBox : ItemsControl, IIconControl
     {
         if (e.Key is Key.Escape)
         {
-            _ = TextBox?.Focus();
+            _ = _textBox?.Focus();
             CloseSuggestions();
             e.Handled = true;
             return;
         }
 
-        if (e.Key is Key.Enter && SuggestionsList?.SelectedItem is { } selectedItem)
+        if (e.Key is Key.Enter && _suggestionsList?.SelectedItem is { } selectedItem)
         {
             CommitSuggestion(selectedItem);
             e.Handled = true;
@@ -727,34 +727,34 @@ public class AutoSuggestBox : ItemsControl, IIconControl
     private void SuggestionsListOnPreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
     {
         if (
-            SuggestionsList is null
+            _suggestionsList is null
             || e.OriginalSource is not DependencyObject source
-            || ContainerFromElement(SuggestionsList, source) is not NativeListBoxItem container
+            || ContainerFromElement(_suggestionsList, source) is not NativeListBoxItem container
         )
         {
             return;
         }
 
-        var selectedItem = SuggestionsList.ItemContainerGenerator.ItemFromContainer(container);
+        var selectedItem = _suggestionsList.ItemContainerGenerator.ItemFromContainer(container);
 
         if (ReferenceEquals(selectedItem, DependencyProperty.UnsetValue))
         {
             return;
         }
 
-        SuggestionsList.SetCurrentValue(Selector.SelectedItemProperty, selectedItem);
+        _suggestionsList.SetCurrentValue(Selector.SelectedItemProperty, selectedItem);
         CommitSuggestion(selectedItem);
         e.Handled = true;
     }
 
     private void SuggestionsListOnSelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (SuggestionsList!.SelectedItem is null)
+        if (_suggestionsList!.SelectedItem is null)
         {
             return;
         }
 
-        PreviewSuggestion(SuggestionsList.SelectedItem);
+        PreviewSuggestion(_suggestionsList.SelectedItem);
     }
 
     private IntPtr Hook(IntPtr hwnd, int msg, IntPtr wparam, IntPtr lparam, ref bool handled)
@@ -829,7 +829,7 @@ public class AutoSuggestBox : ItemsControl, IIconControl
 
     private void CommitSuggestion(object selectedItem)
     {
-        _ = TextBox?.Focus();
+        _ = _textBox?.Focus();
         CloseSuggestions();
         OnSuggestionChosen(selectedItem);
     }
@@ -841,7 +841,7 @@ public class AutoSuggestBox : ItemsControl, IIconControl
 
     private void OpenSuggestionsIfAvailable()
     {
-        if (TextBox?.IsKeyboardFocusWithin == true && HasSuggestionsToRestore())
+        if (_textBox?.IsKeyboardFocusWithin == true && HasSuggestionsToRestore())
         {
             SetCurrentValue(IsSuggestionListOpenProperty, true);
         }
@@ -863,12 +863,12 @@ public class AutoSuggestBox : ItemsControl, IIconControl
             {
                 _deferredSuggestionOpenOperation = null;
 
-                if (TextBox?.IsKeyboardFocusWithin != true || !HasSuggestionsToRestore())
+                if (_textBox?.IsKeyboardFocusWithin != true || !HasSuggestionsToRestore())
                 {
                     return;
                 }
 
-                if (TextBox.IsMouseCaptured || Mouse.LeftButton is MouseButtonState.Pressed)
+                if (_textBox.IsMouseCaptured || Mouse.LeftButton is MouseButtonState.Pressed)
                 {
                     _openSuggestionsOnMouseLeftButtonUp = true;
                     return;
@@ -894,12 +894,12 @@ public class AutoSuggestBox : ItemsControl, IIconControl
         // HasItems covers both the built-in filter and ItemsSource values populated by a
         // TextChanged handler. An empty query still represents the unfiltered source rather than a
         // previously produced suggestion set, so focus alone must not expose the complete list.
-        return !string.IsNullOrEmpty(TextBox?.Text) && HasItems;
+        return !string.IsNullOrEmpty(_textBox?.Text) && HasItems;
     }
 
     private void ClearSuggestionSelection()
     {
-        SuggestionsList?.SetCurrentValue(Selector.SelectedItemProperty, null);
+        _suggestionsList?.SetCurrentValue(Selector.SelectedItemProperty, null);
     }
 
     private void UpdateText(object selectedItem, AutoSuggestionBoxTextChangeReason changeReason)
@@ -919,7 +919,7 @@ public class AutoSuggestBox : ItemsControl, IIconControl
 
     private void SynchronizeTextBox(string text, AutoSuggestionBoxTextChangeReason changeReason)
     {
-        if (TextBox is null || TextBox.Text == text)
+        if (_textBox is null || _textBox.Text == text)
         {
             return;
         }
@@ -929,7 +929,7 @@ public class AutoSuggestBox : ItemsControl, IIconControl
 
         try
         {
-            TextBox.SetCurrentValue(System.Windows.Controls.TextBox.TextProperty, text);
+            _textBox.SetCurrentValue(System.Windows.Controls.TextBox.TextProperty, text);
         }
         finally
         {
@@ -939,12 +939,12 @@ public class AutoSuggestBox : ItemsControl, IIconControl
 
     private bool IsFocusWithinControl(IInputElement? element)
     {
-        return IsFocusWithin(TextBox, element) || IsFocusWithin(SuggestionsList, element);
+        return IsFocusWithin(_textBox, element) || IsFocusWithin(_suggestionsList, element);
     }
 
     private bool IsFocusWithinSuggestions(IInputElement? element)
     {
-        return IsFocusWithin(SuggestionsList, element);
+        return IsFocusWithin(_suggestionsList, element);
     }
 
     private static bool IsFocusWithin(DependencyObject? root, IInputElement? element)
@@ -1022,12 +1022,12 @@ public class AutoSuggestBox : ItemsControl, IIconControl
         var self = (AutoSuggestBox)d;
         var newText = (string)e.NewValue;
 
-        if (self.TextBox is null)
+        if (self._textBox is null)
         {
             return;
         }
 
-        if (self.TextBox.Text == newText)
+        if (self._textBox.Text == newText)
         {
             return;
         }
