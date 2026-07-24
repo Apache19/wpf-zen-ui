@@ -17,12 +17,6 @@
     xmlns:system="clr-namespace:System;assembly=mscorlib"
     xmlns:markup="clr-namespace:Wpf.Ui.Markup">
 
-    <!--
-        todo 暗黑模式下，默认背景和掠过时背景色搞反了。如有必要，纠正它
-        目前采用ThemeInfo，样式文件里定义的各种常量只能使用StaticResource引用
-        尤其要注意动画的实现方式
-    -->
-
     <converters:FallbackBrushConverter x:Key="FallbackBrushConverter" />
 
     <Color x:Key="FallbackColor">#FFFF0000</Color>
@@ -81,7 +75,7 @@
                                         VerticalAlignment="Center"
                                         FontSize="{StaticResource CheckBoxIconSize}"
                                         FontWeight="Bold"
-                                        Foreground="{markup:BrushResource TextOnAccentFillColorPrimaryBrush}"
+                                        Foreground="{markup:BrushResource TextOnAccentPrimaryBrush}"
                                         Symbol="Checkmark48"
                                         Visibility="Collapsed"
                                         controls:ClipExtensions.ClipPercentage="1"
@@ -108,12 +102,12 @@
                         <Trigger Property="IsChecked" Value="{x:Null}">
                             <Setter TargetName="ControlIcon" Property="Symbol" Value="Subtract16" />
                             <Setter TargetName="ControlIcon" Property="Visibility" Value="Visible" />
-                            <Setter TargetName="ControlBorderIconPresenter" Property="Background" Value="{markup:BrushResource SystemAccentColorPrimaryBrush}" />
+                            <Setter TargetName="ControlBorderIconPresenter" Property="Background" Value="{markup:BrushResource AccentFillSecondaryBrush}" />
                             <Setter TargetName="StrokeBorder" Property="BorderBrush" Value="{markup:BrushResource SubtleFillColorTransparentBrush}" />
                         </Trigger>
                         <Trigger Property="IsChecked" Value="True">
                             <Setter TargetName="ControlIcon" Property="Visibility" Value="Visible" />
-                            <Setter TargetName="ControlBorderIconPresenter" Property="Background" Value="{markup:BrushResource SystemAccentColorPrimaryBrush}" />
+                            <Setter TargetName="ControlBorderIconPresenter" Property="Background" Value="{markup:BrushResource AccentFillSecondaryBrush}" />
                             <Setter TargetName="StrokeBorder" Property="BorderBrush" Value="{markup:BrushResource SubtleFillColorTransparentBrush}" />
                             <Trigger.EnterActions>
                                 <BeginStoryboard Name="SlideIn">
@@ -164,7 +158,7 @@
                                 <Condition Property="IsPressed" Value="False" />
                                 <Condition Property="IsChecked" Value="{x:Null}" />
                             </MultiTrigger.Conditions>
-                            <Setter TargetName="ControlBorderIconPresenter" Property="Background" Value="{markup:BrushResource AccentFillColorSecondaryBrush}" />
+                            <Setter TargetName="ControlBorderIconPresenter" Property="Background" Value="{markup:BrushResource AccentFillPrimaryBrush}" />
                             <Setter TargetName="StrokeBorder" Property="BorderBrush" Value="{markup:BrushResource SubtleFillColorTransparentBrush}" />
                         </MultiTrigger>
                         <MultiTrigger>
@@ -173,7 +167,7 @@
                                 <Condition Property="IsPressed" Value="True" />
                                 <Condition Property="IsChecked" Value="{x:Null}" />
                             </MultiTrigger.Conditions>
-                            <Setter TargetName="ControlBorderIconPresenter" Property="Background" Value="{markup:BrushResource AccentFillColorTertiaryBrush}" />
+                            <Setter TargetName="ControlBorderIconPresenter" Property="Background" Value="{markup:BrushResource AccentFillTertiaryBrush}" />
                             <Setter TargetName="StrokeBorder" Property="BorderBrush" Value="{markup:BrushResource SubtleFillColorTransparentBrush}" />
                         </MultiTrigger>
                         <MultiTrigger>
@@ -182,7 +176,7 @@
                                 <Condition Property="IsPressed" Value="False" />
                                 <Condition Property="IsChecked" Value="True" />
                             </MultiTrigger.Conditions>
-                            <Setter TargetName="ControlBorderIconPresenter" Property="Background" Value="{markup:BrushResource AccentFillColorSecondaryBrush}" />
+                            <Setter TargetName="ControlBorderIconPresenter" Property="Background" Value="{markup:BrushResource AccentFillPrimaryBrush}" />
                             <Setter TargetName="StrokeBorder" Property="BorderBrush" Value="{markup:BrushResource SubtleFillColorTransparentBrush}" />
                         </MultiTrigger>
                         <MultiTrigger>
@@ -191,7 +185,7 @@
                                 <Condition Property="IsPressed" Value="True" />
                                 <Condition Property="IsChecked" Value="True" />
                             </MultiTrigger.Conditions>
-                            <Setter TargetName="ControlBorderIconPresenter" Property="Background" Value="{markup:BrushResource AccentFillColorTertiaryBrush}" />
+                            <Setter TargetName="ControlBorderIconPresenter" Property="Background" Value="{markup:BrushResource AccentFillTertiaryBrush}" />
                             <Setter TargetName="StrokeBorder" Property="BorderBrush" Value="{markup:BrushResource SubtleFillColorTransparentBrush}" />
                         </MultiTrigger>
                         <Trigger Property="IsEnabled" Value="False">

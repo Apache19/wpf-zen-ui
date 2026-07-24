@@ -30,7 +30,7 @@
         <Setter Property="Width" Value="20" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
         <Setter Property="BorderBrush" Value="{markup:BrushResource ControlElevationBorderBrush}" />
-        <Setter Property="Foreground" Value="{markup:BrushResource SystemAccentColorPrimaryBrush}" />
+        <Setter Property="Foreground" Value="{markup:BrushResource AccentFillSecondaryBrush}" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="Background" Value="{markup:BrushResource ControlSolidFillColorDefaultBrush}" />
         <Setter Property="Template">
@@ -111,7 +111,7 @@
             </Trigger>
             <Trigger Property="IsMouseOver" Value="True">
                 <Setter TargetName="TrackBackground" Property="Background" Value="{markup:BrushResource ControlStrongFillColorDefaultBrush}" />
-                <Setter TargetName="Thumb" Property="Foreground" Value="{markup:BrushResource AccentFillColorSecondaryBrush}" />
+                <Setter TargetName="Thumb" Property="Foreground" Value="{markup:BrushResource AccentFillPrimaryBrush}" />
             </Trigger>
         </ControlTemplate.Triggers>
     </ControlTemplate>
@@ -173,7 +173,7 @@
             </Trigger>
             <Trigger Property="IsMouseOver" Value="True">
                 <Setter TargetName="TrackBackground" Property="Background" Value="{markup:BrushResource ControlStrongFillColorDefaultBrush}" />
-                <Setter TargetName="Thumb" Property="Foreground" Value="{markup:BrushResource AccentFillColorSecondaryBrush}" />
+                <Setter TargetName="Thumb" Property="Foreground" Value="{markup:BrushResource AccentFillPrimaryBrush}" />
             </Trigger>
         </ControlTemplate.Triggers>
     </ControlTemplate>

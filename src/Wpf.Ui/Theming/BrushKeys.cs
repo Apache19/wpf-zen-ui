@@ -16,10 +16,29 @@ public static class BrushKeys
 
     // Light.xaml / Dark.xaml / HighContrast.xaml
 
-    public static ComponentResourceKey SystemAccentColorBrush                          { get; private set; }
-    public static ComponentResourceKey SystemAccentColorPrimaryBrush                   { get; private set; }
-    public static ComponentResourceKey SystemAccentColorSecondaryBrush                 { get; private set; }
-    public static ComponentResourceKey SystemAccentColorTertiaryBrush                  { get; private set; }
+    /// <summary>Gets the brightest member of the accent fill brush hierarchy.</summary>
+    public static ComponentResourceKey AccentFillPrimaryBrush                          { get; private set; }
+
+    /// <summary>Gets the normal accent fill brush key.</summary>
+    public static ComponentResourceKey AccentFillSecondaryBrush                        { get; private set; }
+
+    /// <summary>Gets the dimmest member of the accent fill brush hierarchy.</summary>
+    public static ComponentResourceKey AccentFillTertiaryBrush                         { get; private set; }
+
+    /// <summary>Gets the primary accent-colored text and glyph brush key.</summary>
+    public static ComponentResourceKey AccentTextPrimaryBrush                          { get; private set; }
+
+    /// <summary>Gets the lower-emphasis accent-colored text and glyph brush key.</summary>
+    public static ComponentResourceKey AccentTextSecondaryBrush                        { get; private set; }
+
+    /// <summary>Gets the high-contrast text and glyph brush key intended for use over accent fills.</summary>
+    public static ComponentResourceKey TextOnAccentPrimaryBrush                        { get; private set; }
+
+    /// <summary>Gets the accent-colored stroke and focus indicator brush key.</summary>
+    public static ComponentResourceKey AccentStrokeBrush                               { get; private set; }
+
+    /// <summary>Gets the accent selection background brush key.</summary>
+    public static ComponentResourceKey AccentSelectionBrush                            { get; private set; }
     public static ComponentResourceKey SystemColorWindowTextBrush                      { get; private set; }
     public static ComponentResourceKey SystemColorWindowBrush                          { get; private set; }
     public static ComponentResourceKey SystemColorHighlightTextBrush                   { get; private set; }
@@ -29,14 +48,6 @@ public static class BrushKeys
     public static ComponentResourceKey SystemColorHotTrackBrush                        { get; private set; }
     public static ComponentResourceKey SystemColorGrayTextBrush                        { get; private set; }
     public static ComponentResourceKey SystemColorWindowFrameBrush                     { get; private set; }
-    public static ComponentResourceKey AccentTextFillColorPrimaryBrush                 { get; private set; }
-    public static ComponentResourceKey AccentTextFillColorSecondaryBrush               { get; private set; }
-    public static ComponentResourceKey AccentTextFillColorTertiaryBrush                { get; private set; }
-    public static ComponentResourceKey AccentFillColorSelectedTextBackgroundBrush      { get; private set; }
-    public static ComponentResourceKey AccentFillColorDefaultBrush                     { get; private set; }
-    public static ComponentResourceKey AccentFillColorSecondaryBrush                   { get; private set; }
-    public static ComponentResourceKey AccentFillColorTertiaryBrush                    { get; private set; }
-    public static ComponentResourceKey AccentFillColorDisabledBrush                    { get; private set; }
     public static ComponentResourceKey SystemFillColorAttentionBrush                   { get; private set; }
     public static ComponentResourceKey KeyboardFocusBorderColorBrush                   { get; private set; }
     public static ComponentResourceKey TextFillColorPrimaryBrush                       { get; private set; }
@@ -45,11 +56,6 @@ public static class BrushKeys
     public static ComponentResourceKey TextFillColorDisabledBrush                      { get; private set; }
     public static ComponentResourceKey TextPlaceholderColorBrush                       { get; private set; }
     public static ComponentResourceKey TextFillColorInverseBrush                       { get; private set; }
-    public static ComponentResourceKey AccentTextFillColorDisabledBrush                { get; private set; }
-    public static ComponentResourceKey TextOnAccentFillColorSelectedTextBrush          { get; private set; }
-    public static ComponentResourceKey TextOnAccentFillColorPrimaryBrush               { get; private set; }
-    public static ComponentResourceKey TextOnAccentFillColorSecondaryBrush             { get; private set; }
-    public static ComponentResourceKey TextOnAccentFillColorDisabledBrush              { get; private set; }
     public static ComponentResourceKey ControlFillColorPrimaryBrush                    { get; private set; }
     public static ComponentResourceKey ControlFillColorSecondaryBrush                  { get; private set; }
     public static ComponentResourceKey ControlFillColorTertiaryBrush                   { get; private set; }

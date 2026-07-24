@@ -9,7 +9,7 @@
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
-                <ui:ThemeManagerOptions ThemeMode="System" UseSystemAccentColor="True" EnableNativeControlStyling="True" />
+                <ui:ThemeManagerOptions AccentSource="System" EnableNativeControlStyling="True" ThemeMode="System" />
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Application.Resources>

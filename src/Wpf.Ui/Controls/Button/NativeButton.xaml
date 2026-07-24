@@ -41,18 +41,18 @@
                     <Condition Property="IsEnabled" Value="False" />
                     <Condition Property="ToggleButton.IsChecked" Value="True" />
                 </MultiTrigger.Conditions>
-                <Setter Property="Background" Value="{m:BrushResource AccentFillColorDisabledBrush}" />
+                <Setter Property="Background" Value="{m:BrushResource ControlFillColorDisabledBrush}" />
                 <Setter Property="BorderThickness" Value="0" />
-                <Setter Property="Foreground" Value="{m:BrushResource TextOnAccentFillColorDisabledBrush}" />
+                <Setter Property="Foreground" Value="{m:BrushResource TextFillColorDisabledBrush}" />
             </MultiTrigger>
             <MultiTrigger>
                 <MultiTrigger.Conditions>
                     <Condition Property="IsEnabled" Value="True" />
                     <Condition Property="ToggleButton.IsChecked" Value="True" />
                 </MultiTrigger.Conditions>
-                <Setter Property="Background" Value="{m:BrushResource SystemAccentColorPrimaryBrush}" />
+                <Setter Property="Background" Value="{m:BrushResource AccentFillSecondaryBrush}" />
                 <Setter Property="BorderThickness" Value="0" />
-                <Setter Property="Foreground" Value="{m:BrushResource TextOnAccentFillColorPrimaryBrush}" />
+                <Setter Property="Foreground" Value="{m:BrushResource TextOnAccentPrimaryBrush}" />
             </MultiTrigger>
         </ControlTemplate.Triggers>
     </ControlTemplate>

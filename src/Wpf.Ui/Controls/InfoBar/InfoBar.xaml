@@ -116,7 +116,7 @@
                         </Trigger>
 
                         <Trigger Property="Severity" Value="Informational">
-                            <Setter TargetName="SymbolIcon" Property="Foreground" Value="{markup:BrushResource SystemAccentColorSecondaryBrush}" />
+                            <Setter TargetName="SymbolIcon" Property="Foreground" Value="{markup:BrushResource SystemFillColorInformationalBrush}" />
                             <Setter TargetName="SymbolIcon" Property="Symbol" Value="Info24" />
                             <Setter TargetName="ContentBorder" Property="Background" Value="{markup:BrushResource SystemFillColorAttentionBackgroundBrush}" />
                             <Setter TargetName="ContentBorder" Property="BorderBrush" Value="{markup:BrushResource CardStrokeColorDefaultBrush}" />

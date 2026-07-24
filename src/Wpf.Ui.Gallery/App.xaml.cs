@@ -91,7 +91,7 @@ public partial class App
         options.BeginInit();
 
         options.ThemeMode = theme.ThemeMode;
-        options.UseSystemAccentColor = theme.UseSystemAccent;
+        options.AccentSource = theme.AccentSource;
 
         // To explicitly clear a previously set URI, set the property to null:
         // options.AdditionalLightThemeSource = null;
@@ -158,8 +158,8 @@ public partial class App
     {
         return new AppTheme()
         {
-            ThemeMode       = UiThemeMode.Dark,
-            UseSystemAccent = true
+            ThemeMode    = UiThemeMode.Dark,
+            AccentSource = AccentColorSource.System
         };
     }
 }

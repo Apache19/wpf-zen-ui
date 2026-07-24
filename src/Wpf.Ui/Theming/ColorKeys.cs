@@ -16,10 +16,29 @@ public static class ColorKeys
 
     // Light.xaml / Dark.xaml / HighContrast.xaml
 
-    public static ComponentResourceKey SystemAccentColor                          { get; private set; }
-    public static ComponentResourceKey SystemAccentColorPrimary                   { get; private set; }
-    public static ComponentResourceKey SystemAccentColorSecondary                 { get; private set; }
-    public static ComponentResourceKey SystemAccentColorTertiary                  { get; private set; }
+    /// <summary>Gets the brightest member of the accent fill color hierarchy.</summary>
+    public static ComponentResourceKey AccentFillPrimary                          { get; private set; }
+
+    /// <summary>Gets the normal accent fill color key.</summary>
+    public static ComponentResourceKey AccentFillSecondary                        { get; private set; }
+
+    /// <summary>Gets the dimmest member of the accent fill color hierarchy.</summary>
+    public static ComponentResourceKey AccentFillTertiary                         { get; private set; }
+
+    /// <summary>Gets the primary accent-colored text and glyph color key.</summary>
+    public static ComponentResourceKey AccentTextPrimary                          { get; private set; }
+
+    /// <summary>Gets the lower-emphasis accent-colored text and glyph color key.</summary>
+    public static ComponentResourceKey AccentTextSecondary                        { get; private set; }
+
+    /// <summary>Gets the high-contrast text and glyph color key intended for use over accent fills.</summary>
+    public static ComponentResourceKey TextOnAccentPrimary                        { get; private set; }
+
+    /// <summary>Gets the accent-colored stroke and focus indicator color key.</summary>
+    public static ComponentResourceKey AccentStroke                               { get; private set; }
+
+    /// <summary>Gets the accent selection background color key.</summary>
+    public static ComponentResourceKey AccentSelection                            { get; private set; }
     public static ComponentResourceKey SystemColorWindowTextColor                 { get; private set; }
     public static ComponentResourceKey SystemColorWindowColor                     { get; private set; }
     public static ComponentResourceKey SystemColorHighlightTextColor              { get; private set; }
@@ -39,11 +58,6 @@ public static class ColorKeys
     public static ComponentResourceKey TextFillColorDisabled                      { get; private set; }
     public static ComponentResourceKey TextPlaceholderColor                       { get; private set; }
     public static ComponentResourceKey TextFillColorInverse                       { get; private set; }
-    public static ComponentResourceKey AccentTextFillColorDisabled                { get; private set; }
-    public static ComponentResourceKey TextOnAccentFillColorSelectedText          { get; private set; }
-    public static ComponentResourceKey TextOnAccentFillColorPrimary               { get; private set; }
-    public static ComponentResourceKey TextOnAccentFillColorSecondary             { get; private set; }
-    public static ComponentResourceKey TextOnAccentFillColorDisabled              { get; private set; }
     public static ComponentResourceKey ControlFillColorPrimary                    { get; private set; }
     public static ComponentResourceKey ControlFillColorSecondary                  { get; private set; }
     public static ComponentResourceKey ControlFillColorTertiary                   { get; private set; }
@@ -65,7 +79,6 @@ public static class ColorKeys
     public static ComponentResourceKey ControlOnImageFillColorSecondary           { get; private set; }
     public static ComponentResourceKey ControlOnImageFillColorTertiary            { get; private set; }
     public static ComponentResourceKey ControlOnImageFillColorDisabled            { get; private set; }
-    public static ComponentResourceKey AccentFillColorDisabled                    { get; private set; }
     public static ComponentResourceKey ControlStrokeColorDefault                  { get; private set; }
     public static ComponentResourceKey ControlStrokeColorSecondary                { get; private set; }
     public static ComponentResourceKey ControlStrokeColorTertiary                 { get; private set; }

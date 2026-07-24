@@ -54,7 +54,7 @@
                                     Margin="0"
                                     HorizontalAlignment="Left"
                                     VerticalAlignment="Center"
-                                    Fill="{m:BrushResource SystemAccentColorPrimaryBrush}"
+                                    Fill="{m:BrushResource AccentSelectionBrush}"
                                     RadiusX="2"
                                     RadiusY="2"
                                     Visibility="Collapsed" />
@@ -180,7 +180,7 @@
             </Border>
             <Border
                 x:Name="AccentBorder"
-                BorderBrush="{m:BrushResource SystemAccentColorPrimaryBrush}"
+                BorderBrush="{m:BrushResource AccentStrokeBrush}"
                 BorderThickness="0,0,0,2"
                 CornerRadius="{TemplateBinding Border.CornerRadius}"
                 IsHitTestVisible="False"

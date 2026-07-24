@@ -29,7 +29,7 @@
         <!--  Universal WPF UI focus  -->
         <Setter Property="FocusVisualStyle" Value="{DynamicResource {x:Static theming:StyleKeys.DefaultControlFocusVisualStyle}}" />
         <!--  Universal WPF UI focus  -->
-        <Setter Property="Background" Value="{markup:BrushResource SystemAccentColorPrimaryBrush}" />
+        <Setter Property="Background" Value="{markup:BrushResource AccentFillSecondaryBrush}" />
         <Setter Property="Foreground" Value="{markup:BrushResource TextFillColorPrimaryBrush}" />
         <Setter Property="BorderBrush" Value="Transparent" />
         <Setter Property="Margin" Value="0" />
@@ -83,7 +83,7 @@
                                 x:Name="CheckGlyph"
                                 Width="{StaticResource RadioButtonCheckGlyphSize}"
                                 Height="{StaticResource RadioButtonCheckGlyphSize}"
-                                Fill="{markup:BrushResource TextOnAccentFillColorPrimaryBrush}"
+                                Fill="{markup:BrushResource TextOnAccentPrimaryBrush}"
                                 Opacity="0"
                                 SnapsToDevicePixels="False"
                                 UseLayoutRounding="False">
@@ -247,7 +247,7 @@
                                 <Condition Property="IsEnabled" Value="True" />
                             </MultiTrigger.Conditions>
                             <Setter TargetName="OuterEllipse" Property="Fill" Value="{markup:BrushResource ControlAltFillColorTertiaryBrush}" />
-                            <Setter Property="Background" Value="{markup:BrushResource AccentFillColorTertiaryBrush}" />
+                            <Setter Property="Background" Value="{markup:BrushResource AccentFillPrimaryBrush}" />
                         </MultiTrigger>
                         <MultiTrigger>
                             <MultiTrigger.Conditions>

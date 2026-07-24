@@ -11,7 +11,7 @@ public class AppTheme
 {
     public UiThemeMode ThemeMode { get; set; }
 
-    public bool UseSystemAccent { get; set; }
+    public AccentColorSource AccentSource { get; set; } = AccentColorSource.System;
 
     public Uri? LitThemeResource { get; set; }
 

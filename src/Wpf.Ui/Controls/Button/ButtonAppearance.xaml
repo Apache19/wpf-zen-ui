@@ -39,11 +39,11 @@
 
             <!--  ACCENT  -->
             <Trigger Property="controls:Button.Appearance" Value="Accent">
-                <Setter Property="Control.Background" Value="{m:BrushResource AccentFillColorDefaultBrush}" />
-                <Setter Property="controls:Button.MouseOverBackground" Value="{m:BrushResource AccentFillColorSecondaryBrush}" />
-                <Setter Property="controls:Button.PressedBackground" Value="{m:BrushResource AccentFillColorTertiaryBrush}" />
-                <Setter Property="Control.Foreground" Value="{m:BrushResource TextOnAccentFillColorPrimaryBrush}" />
-                <Setter Property="controls:Button.PressedForeground" Value="{m:BrushResource TextOnAccentFillColorSecondaryBrush}" />
+                <Setter Property="Control.Background" Value="{m:BrushResource AccentFillSecondaryBrush}" />
+                <Setter Property="controls:Button.MouseOverBackground" Value="{m:BrushResource AccentFillPrimaryBrush}" />
+                <Setter Property="controls:Button.PressedBackground" Value="{m:BrushResource AccentFillTertiaryBrush}" />
+                <Setter Property="Control.Foreground" Value="{m:BrushResource TextOnAccentPrimaryBrush}" />
+                <Setter Property="controls:Button.PressedForeground" Value="{m:BrushResource TextOnAccentPrimaryBrush}" />
                 <Setter Property="Control.BorderBrush" Value="{m:BrushResource AccentControlElevationBorderBrush}" />
                 <Setter Property="controls:Button.MouseOverBorderBrush" Value="{m:BrushResource AccentControlElevationBorderBrush}" />
                 <Setter Property="controls:Button.PressedBorderBrush" Value="Transparent" />

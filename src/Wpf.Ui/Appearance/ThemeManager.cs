@@ -12,8 +12,6 @@ using Wpf.Ui.Threading;
 // ReSharper disable once CheckNamespace
 namespace Wpf.Ui;
 
-// todo 实现自定义强调色功能
-
 /// <summary>
 /// Manages application theme state, listens to system theme events,
 /// synchronizes system theme, and coordinates theme resource loading.
@@ -27,6 +25,10 @@ public sealed class ThemeManager
     // console, and test hosts that can access ThemeManager before constructing a WPF Application.
     private const string ResourceBaseUri = "/Wpf.Ui;component/Resources/";
     private const string ThemeBaseUri    = ResourceBaseUri + "Theme/";
+
+    // This is the documented Windows blue used by the built-in theme. It is also the honest
+    // fallback on Windows 7/8, where UISettings.GetColorValue(Accent) is unavailable.
+    private static readonly Color BuiltInAccentColor = Color.FromRgb(0x00, 0x78, 0xD4);
 
     private static readonly Uri LightThemeUri          = new(ThemeBaseUri + "Light.xaml", UriKind.Relative);
     private static readonly Uri DarkThemeUri           = new(ThemeBaseUri + "Dark.xaml", UriKind.Relative);
@@ -57,9 +59,10 @@ public sealed class ThemeManager
     private static Uri? _additionalHighContrastLightThemeUri;
     private static Uri? _additionalHighContrastDarkThemeUri;
 
-    private static UiThemeMode _themeMode = UiThemeMode.Default;
+    private static UiThemeMode       _themeMode         = UiThemeMode.Default;
+    private static AccentColorSource _accentSource      = AccentColorSource.System;
+    private static Color             _customAccentColor = BuiltInAccentColor;
 
-    private static bool _useSystemAccentColor       = true;
     private static bool _enableNativeControlStyling = true;
 
     private static ThemeManager Instance { get; } = new();
@@ -176,15 +179,24 @@ public sealed class ThemeManager
     }
 
     /// <summary>
-    /// Configures the theme mode and the system accent color setting without modifying
+    /// Configures the theme mode and accent color source without modifying
     /// any existing additional theme resource URIs.
     /// </summary>
     /// <param name="themeMode">The theme mode to apply.</param>
-    /// <param name="useSystemAccentColor">A value indicating whether the system accent color should be used.</param>
+    /// <param name="accentSource">The source from which the base accent color is obtained.</param>
+    /// <param name="customAccentColor">
+    /// The custom base color to remember. It is used only when <paramref name="accentSource"/>
+    /// is <see cref="AccentColorSource.Custom"/>. A <c>null</c> value preserves the current color.
+    /// </param>
     /// <param name="enableNativeControlStyling">A value indicating whether to merge native WPF control styles.</param>
-    public static void Configure(UiThemeMode themeMode, bool useSystemAccentColor = true, bool enableNativeControlStyling = true)
+    public static void Configure(
+        UiThemeMode themeMode,
+        AccentColorSource accentSource = AccentColorSource.System,
+        Color? customAccentColor = null,
+        bool enableNativeControlStyling = true)
     {
         ValidateThemeMode(themeMode);
+        ValidateAccentSource(accentSource);
 
         var changed = false;
 
@@ -194,10 +206,20 @@ public sealed class ThemeManager
             changed = true;
         }
 
-        if (_useSystemAccentColor != useSystemAccentColor)
+        if (_accentSource != accentSource)
         {
-            _useSystemAccentColor = useSystemAccentColor;
+            _accentSource = accentSource;
             changed = true;
+        }
+
+        if (customAccentColor.HasValue)
+        {
+            var opaqueCustomAccentColor = MakeOpaque(customAccentColor.Value);
+            if (_customAccentColor != opaqueCustomAccentColor)
+            {
+                _customAccentColor = opaqueCustomAccentColor;
+                changed = true;
+            }
         }
 
         if (_enableNativeControlStyling != enableNativeControlStyling)
@@ -216,7 +238,11 @@ public sealed class ThemeManager
     /// Configures multiple theme settings in a single operation, triggering only one theme refresh.
     /// </summary>
     /// <param name="themeMode">The theme mode to apply.</param>
-    /// <param name="useSystemAccentColor">Whether to use the system accent color.</param>
+    /// <param name="accentSource">The source from which the base accent color is obtained.</param>
+    /// <param name="customAccentColor">
+    /// The custom base color to remember. It is used only when <paramref name="accentSource"/>
+    /// is <see cref="AccentColorSource.Custom"/>.
+    /// </param>
     /// <param name="enableNativeControlStyling">Whether to merge native WPF control styles.</param>
     /// <param name="additionalLightThemeUri">The URI of the additional light theme resource dictionary, or <c>null</c> to clear.</param>
     /// <param name="additionalDarkThemeUri">The URI of the additional dark theme resource dictionary, or <c>null</c> to clear.</param>
@@ -226,7 +252,8 @@ public sealed class ThemeManager
     /// <code lang="csharp">
     /// ThemeManager.Configure(
     ///     themeMode: UiThemeMode.Dark,
-    ///     useSystemAccentColor: true,
+    ///     accentSource: AccentColorSource.Custom,
+    ///     customAccentColor: Color.FromRgb(0x7A, 0x3F, 0xD0),
     ///     enableNativeControlStyling: true,
     ///     additionalLightThemeUri: new Uri("pack://application:,,,/MyApp;component/Themes/Light.xaml"),
     ///     additionalDarkThemeUri: new Uri("pack://application:,,,/MyApp;component/Themes/Dark.xaml")
@@ -235,7 +262,8 @@ public sealed class ThemeManager
     /// </example>
     public static void Configure(
         UiThemeMode themeMode,
-        bool useSystemAccentColor,
+        AccentColorSource accentSource,
+        Color customAccentColor,
         bool enableNativeControlStyling,
         Uri? additionalLightThemeUri,
         Uri? additionalDarkThemeUri,
@@ -243,6 +271,7 @@ public sealed class ThemeManager
         Uri? additionalHighContrastDarkThemeUri)
     {
         ValidateThemeMode(themeMode);
+        ValidateAccentSource(accentSource);
 
         var changed = false;
 
@@ -252,9 +281,16 @@ public sealed class ThemeManager
             changed = true;
         }
 
-        if (_useSystemAccentColor != useSystemAccentColor)
+        if (_accentSource != accentSource)
         {
-            _useSystemAccentColor = useSystemAccentColor;
+            _accentSource = accentSource;
+            changed = true;
+        }
+
+        customAccentColor = MakeOpaque(customAccentColor);
+        if (_customAccentColor != customAccentColor)
+        {
+            _customAccentColor = customAccentColor;
             changed = true;
         }
 
@@ -452,28 +488,55 @@ public sealed class ThemeManager
     }
 
     /// <summary>
-    /// Gets or sets a value indicating whether the application should use the system accent color.
+    /// Gets or sets the source of the base accent color used to generate accent resources.
     /// </summary>
     /// <remarks>
-    /// When set to <c>true</c>, the application will use the current system accent color
-    /// as part of its theme resources. Changes to the system accent color will be
-    /// reflected in the application after a theme refresh.
-    ///
-    /// When set to <c>false</c>, the application will ignore the system accent color
-    /// and fall back to the built-in default accent color (blue).
-    ///
-    /// The default value is <c>true</c>.
-    /// Changing this property triggers a theme refresh to ensure that
-    /// the updated accent color is applied immediately.
+    /// <see cref="AccentColorSource.System"/> uses the documented Windows UISettings API and
+    /// falls back to <see cref="AccentColorSource.Default"/> behavior when that API is absent,
+    /// including on Windows 7. <see cref="AccentColorSource.Custom"/> uses
+    /// <see cref="CustomAccentColor"/>. Changing this property refreshes both light and dark
+    /// semantic accent palettes immediately.
     /// </remarks>
-    public static bool UseSystemAccentColor
+    public static AccentColorSource AccentSource
     {
-        get => _useSystemAccentColor;
+        get => _accentSource;
         set
         {
-            if (_useSystemAccentColor != value)
+            ValidateAccentSource(value);
+
+            if (_accentSource != value)
             {
-                _useSystemAccentColor = value;
+                _accentSource = value;
+                RefreshTheme(ThemeChangeSource.Manual);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Gets or sets the custom base accent color used when <see cref="AccentSource"/> is
+    /// <see cref="AccentColorSource.Custom"/>.
+    /// </summary>
+    /// <remarks>
+    /// The default value is <c>#0078D4</c>. The alpha channel is normalized to opaque because
+    /// transparency belongs to the consuming control, not to the shared accent palette. Changing
+    /// this value refreshes resources only while the custom source is active.
+    /// </remarks>
+    public static Color CustomAccentColor
+    {
+        get => _customAccentColor;
+        set
+        {
+            value = MakeOpaque(value);
+
+            if (_customAccentColor == value)
+            {
+                return;
+            }
+
+            _customAccentColor = value;
+
+            if (_accentSource == AccentColorSource.Custom)
+            {
                 RefreshTheme(ThemeChangeSource.Manual);
             }
         }
@@ -645,9 +708,9 @@ public sealed class ThemeManager
     private static void SystemParameters_StaticPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         // SystemParameters publishes changes for many unrelated settings, including input,
-        // fonts, and animation. Only high contrast and the Windows colorization palette can
-        // change resources owned by this manager; the remaining theme/accent notifications
-        // arrive through SystemEvents.UserPreferenceChanged.
+        // fonts, and animation. High contrast changes resource semantics, while WindowGlassColor
+        // is a useful WPF notification that Windows personalization changed. The actual accent is
+        // still re-read from UISettings; the glass color itself is never treated as the accent.
         if (e.PropertyName is nameof(SystemParameters.HighContrast) or nameof(SystemParameters.WindowGlassColor))
         {
             ScheduleThemeChangedDebounced();
@@ -805,6 +868,18 @@ public sealed class ThemeManager
                 darkDictionaries.Add(new ResourceDictionary { Source = NativeControlStylesUri });
             }
 
+            // UISettings exposes one personalization color, not a documented reusable ramp.
+            // Generate WPF UI's own light and dark role palettes from that single stable input.
+            // The generated dictionary precedes additional user dictionaries so applications can
+            // still override individual semantic roles without replacing the entire accent source.
+            var accentColor = ResolveAccentColor();
+            lightDictionaries.Add(
+                BuildAccentDictionary(AccentPalette.Create(accentColor, UiThemeMode.Light))
+            );
+            darkDictionaries.Add(
+                BuildAccentDictionary(AccentPalette.Create(accentColor, UiThemeMode.Dark))
+            );
+
             if (_additionalLightThemeUri != null)
             {
                 lightDictionaries.Add(
@@ -817,21 +892,6 @@ public sealed class ThemeManager
                 darkDictionaries.Add(
                     LoadAdditionalResourceDictionary(_additionalDarkThemeUri)
                 );
-            }
-
-            if (_useSystemAccentColor)
-            {
-                var palette = SystemAccentPaletteReader.Read();
-                if (palette != null)
-                {
-                    lightDictionaries.Add(
-                        BuildAccentDictionary(palette, UiThemeMode.Light)
-                    );
-
-                    darkDictionaries.Add(
-                        BuildAccentDictionary(palette, UiThemeMode.Dark)
-                    );
-                }
             }
         }
 
@@ -862,52 +922,32 @@ public sealed class ThemeManager
         }
     }
 
-    private static ResourceDictionary BuildAccentDictionary(SystemAccentPalette p, UiThemeMode mode)
+    private static ResourceDictionary BuildAccentDictionary(AccentPalette palette)
     {
-        var dic = new ResourceDictionary
+        return new ResourceDictionary
         {
-            [ColorKeys.SystemAccentColor]      = p.Accent,
-            [BrushKeys.SystemAccentColorBrush] = FreezeBrush(p.Accent),
+            [ColorKeys.AccentFillPrimary]        = palette.AccentFillPrimary,
+            [ColorKeys.AccentFillSecondary]      = palette.AccentFillSecondary,
+            [ColorKeys.AccentFillTertiary]       = palette.AccentFillTertiary,
+            [ColorKeys.AccentTextPrimary]        = palette.AccentTextPrimary,
+            [ColorKeys.AccentTextSecondary]      = palette.AccentTextSecondary,
+            [ColorKeys.TextOnAccentPrimary]      = palette.TextOnAccentPrimary,
+            [ColorKeys.AccentStroke]             = palette.AccentStroke,
+            [ColorKeys.AccentSelection]          = palette.AccentSelection,
+            [BrushKeys.AccentFillPrimaryBrush]   = FreezeBrush(palette.AccentFillPrimary),
+            [BrushKeys.AccentFillSecondaryBrush] = FreezeBrush(palette.AccentFillSecondary),
+            [BrushKeys.AccentFillTertiaryBrush]  = FreezeBrush(palette.AccentFillTertiary),
+            [BrushKeys.AccentTextPrimaryBrush]   = FreezeBrush(palette.AccentTextPrimary),
+            [BrushKeys.AccentTextSecondaryBrush] = FreezeBrush(palette.AccentTextSecondary),
+            [BrushKeys.TextOnAccentPrimaryBrush] = FreezeBrush(palette.TextOnAccentPrimary),
+            [BrushKeys.AccentStrokeBrush]        = FreezeBrush(palette.AccentStroke),
+            [BrushKeys.AccentSelectionBrush]     = FreezeBrush(palette.AccentSelection),
+
+            // Attention is an existing higher-level token whose default meaning is the current
+            // accent. Override both representations so ColorResource and BrushResource agree.
+            [ColorKeys.SystemFillColorAttention]      = palette.AccentTextPrimary,
+            [BrushKeys.SystemFillColorAttentionBrush] = FreezeBrush(palette.AccentTextPrimary),
         };
-
-        if (mode == UiThemeMode.Light)
-        {
-            dic[ColorKeys.SystemAccentColorPrimary]   = p.Dark1;
-            dic[ColorKeys.SystemAccentColorSecondary] = p.Dark2;
-            dic[ColorKeys.SystemAccentColorTertiary]  = p.Dark3;
-
-            dic[BrushKeys.SystemAccentColorPrimaryBrush]              = FreezeBrush(p.Dark1);
-            dic[BrushKeys.SystemAccentColorSecondaryBrush]            = FreezeBrush(p.Dark2);
-            dic[BrushKeys.SystemAccentColorTertiaryBrush]             = FreezeBrush(p.Dark3);
-            dic[BrushKeys.AccentTextFillColorPrimaryBrush]            = FreezeBrush(p.Dark1);
-            dic[BrushKeys.AccentTextFillColorSecondaryBrush]          = FreezeBrush(p.Dark2);
-            dic[BrushKeys.AccentTextFillColorTertiaryBrush]           = FreezeBrush(p.Dark3);
-            dic[BrushKeys.AccentFillColorSelectedTextBackgroundBrush] = FreezeBrush(p.Accent);
-            dic[BrushKeys.AccentFillColorDefaultBrush]                = FreezeBrush(p.Dark1);
-            dic[BrushKeys.AccentFillColorSecondaryBrush]              = FreezeBrush(p.Dark1, 0.9);
-            dic[BrushKeys.AccentFillColorTertiaryBrush]               = FreezeBrush(p.Dark1, 0.8);
-            dic[BrushKeys.SystemFillColorAttentionBrush]              = FreezeBrush(p.Accent);
-        }
-        else
-        {
-            dic[ColorKeys.SystemAccentColorPrimary]   = p.Light1;
-            dic[ColorKeys.SystemAccentColorSecondary] = p.Light2;
-            dic[ColorKeys.SystemAccentColorTertiary]  = p.Light3;
-
-            dic[BrushKeys.SystemAccentColorPrimaryBrush]              = FreezeBrush(p.Light1);
-            dic[BrushKeys.SystemAccentColorSecondaryBrush]            = FreezeBrush(p.Light2);
-            dic[BrushKeys.SystemAccentColorTertiaryBrush]             = FreezeBrush(p.Light3);
-            dic[BrushKeys.AccentTextFillColorPrimaryBrush]            = FreezeBrush(p.Light1);
-            dic[BrushKeys.AccentTextFillColorSecondaryBrush]          = FreezeBrush(p.Light2);
-            dic[BrushKeys.AccentTextFillColorTertiaryBrush]           = FreezeBrush(p.Light3);
-            dic[BrushKeys.AccentFillColorSelectedTextBackgroundBrush] = FreezeBrush(p.Accent);
-            dic[BrushKeys.AccentFillColorDefaultBrush]                = FreezeBrush(p.Light2);
-            dic[BrushKeys.AccentFillColorSecondaryBrush]              = FreezeBrush(p.Light2, 0.9);
-            dic[BrushKeys.AccentFillColorTertiaryBrush]               = FreezeBrush(p.Light2, 0.8);
-            dic[BrushKeys.SystemFillColorAttentionBrush]              = FreezeBrush(p.Accent);
-        }
-
-        return dic;
     }
 
     private static void MergeThemeDictionary(ResourceDictionary target, ResourceDictionary themeDict)
@@ -1073,6 +1113,35 @@ public sealed class ThemeManager
         }
     }
 
+    private static void ValidateAccentSource(AccentColorSource source)
+    {
+        if (source is < AccentColorSource.System or > AccentColorSource.Default)
+        {
+            throw new ArgumentOutOfRangeException(nameof(source), source, "The accent color source is not defined.");
+        }
+    }
+
+    private static Color ResolveAccentColor()
+    {
+        if (_accentSource == AccentColorSource.Custom)
+        {
+            return _customAccentColor;
+        }
+
+        if (_accentSource == AccentColorSource.System
+            && SystemAccentColorProvider.TryGetAccentColor(out var systemAccentColor))
+        {
+            return systemAccentColor;
+        }
+
+        return BuiltInAccentColor;
+    }
+
+    private static Color MakeOpaque(Color color)
+    {
+        return Color.FromRgb(color.R, color.G, color.B);
+    }
+
     private static UiThemeMode GetEffectiveThemeForElement(FrameworkElement element)
     {
         if (GetIsRootVisual(element))
@@ -1136,9 +1205,9 @@ public sealed class ThemeManager
         }
     }
 
-    private static SolidColorBrush FreezeBrush(Color color, double opacity = 1.0)
+    private static SolidColorBrush FreezeBrush(Color color)
     {
-        var brush = new SolidColorBrush(color) { Opacity = opacity };
+        var brush = new SolidColorBrush(color);
 
         brush.Freeze();
 

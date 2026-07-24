@@ -17,7 +17,7 @@
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
 
-                <ui:ThemeManagerOptions ThemeMode="Dark" UseSystemAccentColor="True" />
+                <ui:ThemeManagerOptions AccentSource="System" ThemeMode="Dark" />
 
                 <syntax:SyntaxHighlightDictionary />
 

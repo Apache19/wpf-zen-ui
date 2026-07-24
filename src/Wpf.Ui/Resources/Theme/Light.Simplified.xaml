@@ -69,15 +69,13 @@
     <!--  ACCENT                                                     -->
     <!--  =========================================================  -->
 
-    <Color x:Key="AccentFillColorDefault">#0078D4</Color>
-    <Color x:Key="AccentFillColorSecondary">#106EBE</Color>
-    <Color x:Key="AccentFillColorTertiary">#0F5EA6</Color>
-    <Color x:Key="AccentFillColorDisabled">#BFD6EA</Color>
+    <Color x:Key="AccentFillPrimary">#167DD8</Color>
+    <Color x:Key="AccentFillSecondary">#0078D4</Color>
+    <Color x:Key="AccentFillTertiary">#0066B5</Color>
 
-    <SolidColorBrush x:Key="AccentFillBrushDefault" Color="{StaticResource AccentFillColorDefault}" />
-    <SolidColorBrush x:Key="AccentFillBrushSecondary" Color="{StaticResource AccentFillColorSecondary}" />
-    <SolidColorBrush x:Key="AccentFillBrushTertiary" Color="{StaticResource AccentFillColorTertiary}" />
-    <SolidColorBrush x:Key="AccentFillBrushDisabled" Color="{StaticResource AccentFillColorDisabled}" />
+    <SolidColorBrush x:Key="AccentFillPrimaryBrush" Color="{StaticResource AccentFillPrimary}" />
+    <SolidColorBrush x:Key="AccentFillSecondaryBrush" Color="{StaticResource AccentFillSecondary}" />
+    <SolidColorBrush x:Key="AccentFillTertiaryBrush" Color="{StaticResource AccentFillTertiary}" />
 
     <!--  =========================================================  -->
     <!--  SELECTION                                                  -->

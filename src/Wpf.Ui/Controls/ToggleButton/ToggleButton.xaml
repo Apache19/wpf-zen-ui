@@ -130,8 +130,8 @@
                                 <Condition Property="IsChecked" Value="True" />
                                 <Condition Property="IsEnabled" Value="True" />
                             </MultiTrigger.Conditions>
-                            <Setter Property="Background" Value="{m:BrushResource AccentFillColorDefaultBrush}" />
-                            <Setter Property="Foreground" Value="{m:BrushResource TextOnAccentFillColorPrimaryBrush}" />
+                            <Setter Property="Background" Value="{m:BrushResource AccentFillSecondaryBrush}" />
+                            <Setter Property="Foreground" Value="{m:BrushResource TextOnAccentPrimaryBrush}" />
                             <Setter TargetName="border" Property="BorderPlacement" Value="Inside" />
                             <Setter Property="BorderBrush" Value="{m:BrushResource AccentControlElevationBorderBrush}" />
                         </MultiTrigger>
@@ -141,8 +141,8 @@
                                 <Condition Property="IsChecked" Value="True" />
                                 <Condition Property="IsMouseOver" Value="True" />
                             </MultiTrigger.Conditions>
-                            <Setter Property="Background" Value="{m:BrushResource AccentFillColorSecondaryBrush}" />
-                            <Setter Property="Foreground" Value="{m:BrushResource TextOnAccentFillColorPrimaryBrush}" />
+                            <Setter Property="Background" Value="{m:BrushResource AccentFillPrimaryBrush}" />
+                            <Setter Property="Foreground" Value="{m:BrushResource TextOnAccentPrimaryBrush}" />
                             <Setter TargetName="border" Property="BorderPlacement" Value="Inside" />
                             <Setter Property="BorderBrush" Value="{m:BrushResource AccentControlElevationBorderBrush}" />
                         </MultiTrigger>
@@ -152,9 +152,9 @@
                                 <Condition Property="IsChecked" Value="True" />
                                 <Condition Property="IsPressed" Value="True" />
                             </MultiTrigger.Conditions>
-                            <Setter Property="Background" Value="{m:BrushResource AccentFillColorTertiaryBrush}" />
+                            <Setter Property="Background" Value="{m:BrushResource AccentFillTertiaryBrush}" />
                             <Setter Property="BorderThickness" Value="0" />
-                            <Setter Property="Foreground" Value="{m:BrushResource TextOnAccentFillColorSecondaryBrush}" />
+                            <Setter Property="Foreground" Value="{m:BrushResource TextOnAccentPrimaryBrush}" />
                         </MultiTrigger>
 
                         <MultiTrigger>
@@ -162,10 +162,10 @@
                                 <Condition Property="IsChecked" Value="True" />
                                 <Condition Property="IsEnabled" Value="False" />
                             </MultiTrigger.Conditions>
-                            <Setter Property="Background" Value="{m:BrushResource AccentFillColorDisabledBrush}" />
+                            <Setter Property="Background" Value="{m:BrushResource ControlFillColorDisabledBrush}" />
                             <Setter TargetName="border" Property="BorderPlacement" Value="Inside" />
                             <Setter Property="BorderBrush" Value="{m:BrushResource ControlStrokeColorDefaultBrush}" />
-                            <Setter Property="Foreground" Value="{m:BrushResource TextOnAccentFillColorDisabledBrush}" />
+                            <Setter Property="Foreground" Value="{m:BrushResource TextFillColorDisabledBrush}" />
                         </MultiTrigger>
 
                     </ControlTemplate.Triggers>

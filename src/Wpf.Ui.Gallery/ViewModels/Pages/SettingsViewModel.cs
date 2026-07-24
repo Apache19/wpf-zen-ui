@@ -63,7 +63,9 @@ public sealed partial class SettingsViewModel : ViewModel
 
     partial void OnUseSystemAccentChanged(bool value)
     {
-        ThemeManager.UseSystemAccentColor = value;
+        ThemeManager.AccentSource = value
+            ? AccentColorSource.System
+            : AccentColorSource.Default;
     }
 
     partial void OnCurrentApplicationNavigationStyleChanged(
@@ -92,5 +94,6 @@ public sealed partial class SettingsViewModel : ViewModel
 
         // The default theme of the library is Light.
         CurrentTheme = mode == UiThemeMode.Default ? UiThemeMode.Light : mode;
+        UseSystemAccent = ThemeManager.AccentSource == AccentColorSource.System;
     }
 }

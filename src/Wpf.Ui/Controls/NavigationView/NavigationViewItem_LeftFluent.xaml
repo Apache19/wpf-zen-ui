@@ -44,7 +44,7 @@
                                     Margin="-4,0,0,0"
                                     HorizontalAlignment="Left"
                                     VerticalAlignment="Center"
-                                    Fill="{m:BrushResource SystemAccentColorPrimaryBrush}"
+                                    Fill="{m:BrushResource AccentSelectionBrush}"
                                     Opacity="0"
                                     RadiusX="2"
                                     RadiusY="2" />
@@ -90,7 +90,7 @@
                             <DataTrigger Binding="{Binding IsBranchActive, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}" Value="True">
                                 <Setter TargetName="ActiveIndicator" Property="Opacity" Value="1" />
                                 <Setter TargetName="HeaderSurface" Property="Background" Value="{m:BrushResource ControlFillColorPrimaryBrush}" />
-                                <Setter TargetName="IconPresenter" Property="TextElement.Foreground" Value="{m:BrushResource SystemAccentColorPrimaryBrush}" />
+                                <Setter TargetName="IconPresenter" Property="TextElement.Foreground" Value="{m:BrushResource AccentTextPrimaryBrush}" />
                                 <DataTrigger.EnterActions>
                                     <BeginStoryboard>
                                         <Storyboard>

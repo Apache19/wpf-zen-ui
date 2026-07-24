@@ -18,11 +18,30 @@ public enum BrushId
     Unknown,
 
     // Light.xaml / Dark.xaml / HighContrast.xaml
-    SystemAccentColorBrush,
 
-    SystemAccentColorPrimaryBrush,
-    SystemAccentColorSecondaryBrush,
-    SystemAccentColorTertiaryBrush,
+    /// <summary>The brighter accent fill brush role.</summary>
+    AccentFillPrimaryBrush,
+
+    /// <summary>The normal accent fill brush role.</summary>
+    AccentFillSecondaryBrush,
+
+    /// <summary>The dimmer accent fill brush role.</summary>
+    AccentFillTertiaryBrush,
+
+    /// <summary>The primary accent text and glyph brush role.</summary>
+    AccentTextPrimaryBrush,
+
+    /// <summary>The secondary accent text and glyph brush role.</summary>
+    AccentTextSecondaryBrush,
+
+    /// <summary>The primary text and glyph brush role displayed over an accent fill.</summary>
+    TextOnAccentPrimaryBrush,
+
+    /// <summary>The accent stroke and focus indicator brush role.</summary>
+    AccentStrokeBrush,
+
+    /// <summary>The accent selection background brush role.</summary>
+    AccentSelectionBrush,
 
     SystemColorWindowTextBrush,
     SystemColorWindowBrush,
@@ -34,14 +53,6 @@ public enum BrushId
     SystemColorGrayTextBrush,
     SystemColorWindowFrameBrush,
 
-    AccentTextFillColorPrimaryBrush,
-    AccentTextFillColorSecondaryBrush,
-    AccentTextFillColorTertiaryBrush,
-    AccentFillColorSelectedTextBackgroundBrush,
-    AccentFillColorDefaultBrush,
-    AccentFillColorSecondaryBrush,
-    AccentFillColorTertiaryBrush,
-    AccentFillColorDisabledBrush,
     SystemFillColorAttentionBrush,
 
     KeyboardFocusBorderColorBrush,
@@ -52,12 +63,6 @@ public enum BrushId
     TextFillColorDisabledBrush,
     TextPlaceholderColorBrush,
     TextFillColorInverseBrush,
-
-    AccentTextFillColorDisabledBrush,
-    TextOnAccentFillColorSelectedTextBrush,
-    TextOnAccentFillColorPrimaryBrush,
-    TextOnAccentFillColorSecondaryBrush,
-    TextOnAccentFillColorDisabledBrush,
 
     ControlFillColorPrimaryBrush,
     ControlFillColorSecondaryBrush,

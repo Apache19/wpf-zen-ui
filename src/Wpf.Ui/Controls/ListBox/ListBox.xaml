@@ -40,8 +40,8 @@
             <Setter.Value>
                 <Style TargetType="{x:Type ListBoxItem}">
                     <Setter Property="Foreground" Value="{markup:BrushResource TextFillColorPrimaryBrush}" />
-                    <Setter Property="Background" Value="{markup:BrushResource SystemAccentColorPrimaryBrush}" />
-                    <Setter Property="BorderBrush" Value="{markup:BrushResource SystemAccentColorPrimaryBrush}" />
+                    <Setter Property="Background" Value="{markup:BrushResource AccentFillSecondaryBrush}" />
+                    <Setter Property="BorderBrush" Value="{markup:BrushResource AccentStrokeBrush}" />
                     <Setter Property="Margin" Value="0" />
                     <Setter Property="Padding" Value="12" />
                     <Setter Property="Border.CornerRadius" Value="0" />
@@ -66,9 +66,9 @@
 
                                     <Trigger Property="IsSelected" Value="True">
                                         <Setter TargetName="Border" Property="Background"
-                                                Value="{markup:BrushResource SystemAccentColorPrimaryBrush}" />
+                                                Value="{markup:BrushResource AccentSelectionBrush}" />
                                         <Setter Property="Foreground"
-                                                Value="{markup:BrushResource TextOnAccentFillColorPrimaryBrush}" />
+                                                Value="{markup:BrushResource TextOnAccentPrimaryBrush}" />
                                     </Trigger>
                                 </ControlTemplate.Triggers>
                             </ControlTemplate>

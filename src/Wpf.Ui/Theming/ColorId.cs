@@ -10,10 +10,31 @@ public enum ColorId
     Unknown,
 
     // Light.xaml / Dark.xaml / HighContrast.xaml
-    SystemAccentColor,
-    SystemAccentColorPrimary,
-    SystemAccentColorSecondary,
-    SystemAccentColorTertiary,
+
+    /// <summary>The brighter accent fill role.</summary>
+    AccentFillPrimary,
+
+    /// <summary>The normal accent fill role.</summary>
+    AccentFillSecondary,
+
+    /// <summary>The dimmer accent fill role.</summary>
+    AccentFillTertiary,
+
+    /// <summary>The primary accent text and glyph role.</summary>
+    AccentTextPrimary,
+
+    /// <summary>The secondary accent text and glyph role.</summary>
+    AccentTextSecondary,
+
+    /// <summary>The primary text and glyph role displayed over an accent fill.</summary>
+    TextOnAccentPrimary,
+
+    /// <summary>The accent stroke and focus indicator role.</summary>
+    AccentStroke,
+
+    /// <summary>The accent selection background role.</summary>
+    AccentSelection,
+
     SystemColorWindowTextColor,
     SystemColorWindowColor,
     SystemColorHighlightTextColor,
@@ -33,11 +54,6 @@ public enum ColorId
     TextFillColorDisabled,
     TextPlaceholderColor,
     TextFillColorInverse,
-    AccentTextFillColorDisabled,
-    TextOnAccentFillColorSelectedText,
-    TextOnAccentFillColorPrimary,
-    TextOnAccentFillColorSecondary,
-    TextOnAccentFillColorDisabled,
     ControlFillColorPrimary,
     ControlFillColorSecondary,
     ControlFillColorTertiary,
@@ -59,7 +75,6 @@ public enum ColorId
     ControlOnImageFillColorSecondary,
     ControlOnImageFillColorTertiary,
     ControlOnImageFillColorDisabled,
-    AccentFillColorDisabled,
     ControlStrokeColorDefault,
     ControlStrokeColorSecondary,
     ControlStrokeColorTertiary,

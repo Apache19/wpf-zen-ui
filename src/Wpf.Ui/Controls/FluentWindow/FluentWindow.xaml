@@ -50,7 +50,7 @@
                     <Condition Property="IsAccentOnTitleBarAndBorder" Value="True" />
                     <Condition Property="IsNcActive" Value="True" />
                 </MultiTrigger.Conditions>
-                <Setter TargetName="WindowBorder" Property="BorderBrush" Value="{markup:BrushResource SystemAccentColorBrush}" />
+                <Setter TargetName="WindowBorder" Property="BorderBrush" Value="{markup:BrushResource AccentStrokeBrush}" />
             </MultiTrigger>
             <Trigger Property="ActualWindowState" Value="Maximized">
                 <Setter TargetName="WindowBorder" Property="BorderThickness" Value="0" />
@@ -79,7 +79,7 @@
                     <Condition Property="IsAccentOnTitleBarAndBorder" Value="True" />
                     <Condition Property="IsNcActive" Value="True" />
                 </MultiTrigger.Conditions>
-                <Setter TargetName="WindowBorder" Property="BorderBrush" Value="{markup:BrushResource SystemAccentColorBrush}" />
+                <Setter TargetName="WindowBorder" Property="BorderBrush" Value="{markup:BrushResource AccentStrokeBrush}" />
             </MultiTrigger>
             <Trigger Property="ActualWindowState" Value="Maximized">
                 <Setter TargetName="WindowBorder" Property="BorderThickness" Value="0" />

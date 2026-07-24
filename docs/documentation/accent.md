@@ -1,211 +1,102 @@
-# Accent Colors
+# Accent colors
 
-Accent colors provide visual emphasis and brand identity in WPF UI applications. The library manages accent color resources that automatically adapt to light and dark themes.
+WPF UI obtains one base accent color and generates separate light- and dark-theme palettes from it. Controls consume UI-facing role resources; the raw Windows color and Windows' undocumented registry palette are deliberately not exposed as UI resources.
 
-> [!TIP]
-> Use `SystemThemeWatcher.Watch(this)` in your main window constructor to automatically sync accent colors with Windows personalization settings.
+## Configure the accent source
 
-## Apply System Accent
+The default source is `System`:
 
-Use the system's personalization accent color:
-
-```csharp
-using Wpf.Ui.Appearance;
-
-ApplicationAccentColorManager.ApplySystemAccent();
+```xml
+<Application.Resources>
+    <ResourceDictionary>
+        <ResourceDictionary.MergedDictionaries>
+            <ui:ThemeManagerOptions
+                AccentSource="System"
+                ThemeMode="System" />
+        </ResourceDictionary.MergedDictionaries>
+    </ResourceDictionary>
+</Application.Resources>
 ```
 
-## Apply Theme with Accent
+The available values are:
 
-Apply theme and accent together:
+- `System` reads the personalization accent through the documented Windows `UISettings.GetColorValue(Accent)` API. On Windows 7 and other systems where that API is unavailable, WPF UI uses its default blue.
+- `Custom` uses `CustomAccentColor` as the base color.
+- `Default` always uses WPF UI's built-in `#0078D4` base color.
+
+Configure a custom color in XAML:
+
+```xml
+<ui:ThemeManagerOptions
+    AccentSource="Custom"
+    CustomAccentColor="#7A3FD0"
+    ThemeMode="Dark" />
+```
+
+Or configure it at runtime:
 
 ```csharp
-using Wpf.Ui.Appearance;
-using Wpf.Ui.Controls;
-
-ApplicationThemeManager.Apply(
-    ApplicationTheme.Dark,
-    WindowBackdropType.Mica,
-    updateAccent: true  // Automatically applies system accent
+ThemeManager.Configure(
+    themeMode: UiThemeMode.Dark,
+    accentSource: AccentColorSource.Custom,
+    customAccentColor: Color.FromRgb(0x7A, 0x3F, 0xD0)
 );
 ```
 
-Available backdrop types: `None`, `Auto`, `Mica`, `Acrylic`, `Tabbed`.
+The alpha channel of `CustomAccentColor` is ignored. Opacity is a property of the control or its state, not of the shared accent palette.
 
-> [!IMPORTANT]
-> Always use `DynamicResource` (not `StaticResource`) for accent color bindings to receive runtime updates when accent changes.
+## Accent resources
 
-## Apply Custom Accent
+Each role is available as a color (`ColorKeys` and `ColorId`) and as a brush (`BrushKeys` and `BrushId`):
 
-Set a custom accent color:
+- `AccentFillPrimary` is the brighter fill level.
+- `AccentFillSecondary` is the normal fill level.
+- `AccentFillTertiary` is the dimmer fill level.
+- `AccentTextPrimary` is the primary accent-colored text and glyph level.
+- `AccentTextSecondary` is the lower-emphasis accent-colored text and glyph level.
+- `TextOnAccentPrimary` is black or white, selected to remain readable over all three accent fills.
+- `AccentStroke` is intended for accent borders, focus indicators, and similar strokes.
+- `AccentSelection` is intended for selection backgrounds and selection indicators.
 
-```csharp
-ApplicationAccentColorManager.Apply(
-    Color.FromArgb(0xFF, 0xEE, 0x00, 0xBB),
-    ApplicationTheme.Dark
-);
-```
-
-Retrieve the Windows colorization color programmatically:
-
-```csharp
-Color colorizationColor = ApplicationAccentColorManager.GetColorizationColor();
-ApplicationAccentColorManager.Apply(colorizationColor, ApplicationTheme.Dark);
-```
-
-## Accent Color Resources
-
-WPF UI provides these accent color resources:
-
-### System Accent Colors
-
-Base accent colors that update when you call `ApplicationAccentColorManager.Apply()`:
-
-- `SystemAccentColor` - Primary system accent
-- `SystemAccentColorPrimary` - Lighter/darker variant for light/dark themes
-- `SystemAccentColorSecondary` - More prominent variant (most commonly used)
-- `SystemAccentColorTertiary` - Strongest variant
+The names express a reusable color hierarchy, not fixed control states. Each control decides how to use them. For example, an accent button may choose Secondary for its normal state, Primary while the pointer is over it, and Tertiary while pressed:
 
 ```xml
-<Border Background="{DynamicResource SystemAccentColorSecondaryBrush}" />
+<Style TargetType="ui:Button">
+    <Setter Property="Background" Value="{ui:BrushResource AccentFillSecondaryBrush}" />
+    <Setter Property="MouseOverBackground" Value="{ui:BrushResource AccentFillPrimaryBrush}" />
+    <Setter Property="PressedBackground" Value="{ui:BrushResource AccentFillTertiaryBrush}" />
+    <Setter Property="Foreground" Value="{ui:BrushResource TextOnAccentPrimaryBrush}" />
+</Style>
 ```
 
-> [!TIP]
-> `SystemAccentColorSecondary` is the most commonly used variant for interactive elements and provides optimal contrast in both light and dark themes.
+Use general theme resources for disabled states. For example, use `ControlFillColorDisabledBrush` and `TextFillColorDisabledBrush` rather than deriving another accent color.
 
-### Accent Text Colors
+## Palette generation
 
-For text and interactive elements like links:
+Windows exposes the base accent through a public API, but it does not document a stable algorithm for recreating the surrounding personalization ramp. WPF UI therefore generates its own deterministic palette in OKLCH:
 
-- `AccentTextFillColorPrimaryBrush` - Primary accent text (rest/hover state)
-- `AccentTextFillColorSecondaryBrush` - Secondary accent text
-- `AccentTextFillColorTertiaryBrush` - Tertiary accent text (pressed state)
-- `AccentTextFillColorDisabledBrush` - Disabled accent text
+- hue is preserved where the sRGB gamut permits;
+- chroma is reduced instead of clipping individual RGB channels;
+- light and dark themes receive different usable fill tones;
+- Primary is perceptually lighter than Secondary, and Secondary is lighter than Tertiary;
+- `AccentTextPrimary` is adjusted to at least 4.5:1 contrast against the theme surface;
+- one `TextOnAccentPrimary` color is selected to provide at least 4.5:1 contrast against every accent fill level.
 
-```xml
-<ui:Anchor
-    Content="WPF UI Documentation"
-    NavigateUri="https://wpfui.lepo.co/"
-    Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}" />
-```
+This means WPF UI's generated roles are internally consistent but are not promised to match Windows' private Light1/Dark1 palette values.
 
-### Accent Fill Colors
+## High contrast
 
-For button backgrounds and filled surfaces:
+High contrast mode bypasses both the generated palette and the configured accent source. Accent roles map directly to the corresponding WPF `SystemColors` resources, such as Highlight, HighlightText, and HotTrack, so user accessibility settings remain authoritative.
 
-- `AccentFillColorDefaultBrush` - Default accent fill
-- `AccentFillColorSecondaryBrush` - Secondary fill (90% opacity)
-- `AccentFillColorTertiaryBrush` - Tertiary fill (80% opacity)
-- `AccentFillColorDisabledBrush` - Disabled state fill
+## Runtime updates
 
-```xml
-<Button Background="{DynamicResource AccentFillColorDefaultBrush}" />
-```
+When `AccentSource` is `System`, Windows preference notifications cause `ThemeManager` to read the base color again and rebuild both palettes. Resource consumers should use `BrushResource`/`ColorResource` or an equivalent `DynamicResource` reference so existing controls update in place.
 
-### Text on Accent Colors
-
-For text displayed on accent-colored backgrounds. These resources automatically adjust to black or white based on accent brightness:
-
-- `TextOnAccentFillColorPrimary` - Primary text color on accent backgrounds
-- `TextOnAccentFillColorSecondary` - Secondary text on accent backgrounds
-- `TextOnAccentFillColorDisabled` - Disabled text on accent backgrounds
-
-> [!NOTE]
-> Text colors automatically switch between black and white when accent brightness exceeds 80% HSV to maintain readability.
-
-## Theme-Specific Behavior
-
-Accent variants adjust automatically based on the application theme:
-
-**Dark Theme:**
-
-- Primary: Base color + 17 brightness, -30% saturation
-- Secondary: Base color + 17 brightness, -45% saturation
-- Tertiary: Base color + 17 brightness, -65% saturation
-
-**Light Theme:**
-
-- Primary: Base color - 10 brightness
-- Secondary: Base color - 25 brightness
-- Tertiary: Base color - 40 brightness
-
-> [!NOTE]
-> Brightness adjustments are calculated in HSV color space. Negative values darken the color, positive values lighten it.
-
-## Advanced: Custom Accent Variants
-
-Specify all accent variants manually:
+Use `ThemeManager.Changed` when application code must react after the refreshed resources have been applied:
 
 ```csharp
-ApplicationAccentColorManager.Apply(
-    systemAccent: Color.FromArgb(0xFF, 0x00, 0x78, 0xD4),
-    primaryAccent: Color.FromArgb(0xFF, 0x00, 0x67, 0xC0),
-    secondaryAccent: Color.FromArgb(0xFF, 0x00, 0x3E, 0x92),
-    tertiaryAccent: Color.FromArgb(0xFF, 0x00, 0x1A, 0x68)
-);
-```
-
-> [!CAUTION]
-> Manually specified accent variants won't automatically adjust when theme changes. Consider using automatic variant generation unless you need precise color control.
-
-## Accessing Current Accent
-
-Read current accent colors from `ApplicationAccentColorManager`:
-
-```csharp
-Color currentSystemAccent = ApplicationAccentColorManager.SystemAccent;
-Color currentPrimaryAccent = ApplicationAccentColorManager.PrimaryAccent;
-Color currentSecondaryAccent = ApplicationAccentColorManager.SecondaryAccent;
-Color currentTertiaryAccent = ApplicationAccentColorManager.TertiaryAccent;
-
-Brush accentBrush = ApplicationAccentColorManager.SystemAccentBrush;
-```
-
-## Theme Changed Event
-
-Monitor accent changes when theme is applied:
-
-```csharp
-ApplicationThemeManager.Changed += (theme, accent) =>
+ThemeManager.Changed += (_, args) =>
 {
-    Debug.WriteLine($"Theme changed to {theme}, accent: {accent}");
+    Debug.WriteLine($"Theme changed to {args.AppliedTheme}.");
 };
 ```
-
-## Automatic System Theme Tracking
-
-Use `SystemThemeWatcher` to automatically update theme and accent when Windows settings change:
-
-```csharp
-using Wpf.Ui.Appearance;
-
-public partial class MainWindow : Window
-{
-    public MainWindow()
-    {
-        // Watch system theme changes with Mica backdrop and accent updates
-        SystemThemeWatcher.Watch(this);
-        
-        InitializeComponent();
-    }
-}
-```
-
-With custom backdrop and accent settings:
-
-```csharp
-SystemThemeWatcher.Watch(
-    this,
-    WindowBackdropType.Acrylic,
-    updateAccents: true
-);
-```
-
-Stop watching for theme changes:
-
-```csharp
-SystemThemeWatcher.UnWatch(this);
-```
-
-> [!NOTE]
-> `SystemThemeWatcher` monitors `WM_WININICHANGE` messages and automatically applies system theme and accent when Windows personalization settings change.

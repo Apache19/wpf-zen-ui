@@ -12,9 +12,9 @@
     xmlns:markup="clr-namespace:Wpf.Ui.Markup">
 
     <Style TargetType="{x:Type controls:Badge}">
-        <Setter Property="Foreground" Value="{markup:BrushResource TextOnAccentFillColorPrimaryBrush}" />
-        <Setter Property="Background" Value="{markup:BrushResource SystemAccentColorPrimaryBrush}" />
-        <!--<Setter Property="BorderBrush" Value="{markup:BrushResource SystemAccentColorBrush}" />-->
+        <Setter Property="Foreground" Value="{markup:BrushResource TextOnAccentPrimaryBrush}" />
+        <Setter Property="Background" Value="{markup:BrushResource AccentFillSecondaryBrush}" />
+        <!--<Setter Property="BorderBrush" Value="{markup:BrushResource AccentStrokeBrush}" />-->
         <Setter Property="BorderBrush" Value="Transparent" />
         <Setter Property="Padding" Value="4" />
         <Setter Property="Focusable" Value="False" />

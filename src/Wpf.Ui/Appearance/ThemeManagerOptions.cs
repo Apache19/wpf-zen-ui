@@ -31,7 +31,7 @@ namespace Wpf.Ui;
 ///         &lt;ResourceDictionary.MergedDictionaries&gt;
 ///             &lt;ui:ThemeManagerOptions
 ///                 ThemeMode="Dark"
-///                 UseSystemAccentColor="True"
+///                 AccentSource="System"
 ///                 AdditionalLightThemeSource="pack://application:,,,/MyApp;component/Themes/Light.xaml"
 ///                 AdditionalDarkThemeSource="pack://application:,,,/MyApp;component/Themes/Dark.xaml" /&gt;
 ///         &lt;/ResourceDictionary.MergedDictionaries&gt;
@@ -46,7 +46,8 @@ namespace Wpf.Ui;
 ///         &lt;ResourceDictionary.MergedDictionaries&gt;
 ///             &lt;ui:ThemeManagerOptions
 ///                 ThemeMode="Dark"
-///                 UseSystemAccentColor="True"
+///                 AccentSource="Custom"
+///                 CustomAccentColor="#7A3FD0"
 ///                 AdditionalLightThemeSource="pack://application:,,,/MyApp;component/Themes/Light.xaml"
 ///                 AdditionalDarkThemeSource="pack://application:,,,/MyApp;component/Themes/Dark.xaml" /&gt;
 ///         &lt;/ResourceDictionary.MergedDictionaries&gt;
@@ -63,7 +64,8 @@ namespace Wpf.Ui;
 /// options.BeginInit(); // Request deferred configuration
 ///
 /// options.ThemeMode = UiThemeMode.Dark;
-/// options.UseSystemAccentColor = true;
+/// options.AccentSource = AccentColorSource.Custom;
+/// options.CustomAccentColor = Color.FromRgb(0x7A, 0x3F, 0xD0);
 /// options.AdditionalLightThemeSource = new Uri("pack://application:,,,/MyApp;component/Themes/Light.xaml");
 /// options.AdditionalDarkThemeSource = new Uri("pack://application:,,,/MyApp;component/Themes/Dark.xaml");
 ///
@@ -80,7 +82,8 @@ public class ThemeManagerOptions : ResourceDictionary, ISupportInitialize
     private bool _pendingApply;
 
     private UiThemeMode _themeMode = UiThemeMode.Default;
-    private bool _useSystemAccentColor = true;
+    private AccentColorSource _accentSource = AccentColorSource.System;
+    private Color _customAccentColor = Color.FromRgb(0x00, 0x78, 0xD4);
     private bool _enableNativeControlStyling = true;
     private Uri? _additionalLightThemeSource;
     private Uri? _additionalDarkThemeSource;
@@ -110,17 +113,38 @@ public class ThemeManagerOptions : ResourceDictionary, ISupportInitialize
     }
 
     /// <summary>
-    /// Gets or sets a value indicating whether to use the system accent color.
-    /// The default value is <c>true</c>.
+    /// Gets or sets the source from which the base accent color is obtained.
+    /// The default value is <see cref="AccentColorSource.System"/>.
     /// </summary>
-    public bool UseSystemAccentColor
+    public AccentColorSource AccentSource
     {
-        get => _useSystemAccentColor;
+        get => _accentSource;
         set
         {
-            if (_useSystemAccentColor != value)
+            if (_accentSource != value)
             {
-                _useSystemAccentColor = value;
+                _accentSource = value;
+                RequestApply();
+            }
+        }
+    }
+
+    /// <summary>
+    /// Gets or sets the custom base accent color used when <see cref="AccentSource"/> is
+    /// <see cref="AccentColorSource.Custom"/>. The default value is <c>#0078D4</c>.
+    /// </summary>
+    /// <remarks>
+    /// The alpha channel is ignored when the configuration is applied. Interaction opacity
+    /// belongs to individual controls and is not encoded in the shared palette.
+    /// </remarks>
+    public Color CustomAccentColor
+    {
+        get => _customAccentColor;
+        set
+        {
+            if (_customAccentColor != value)
+            {
+                _customAccentColor = value;
                 RequestApply();
             }
         }
@@ -265,7 +289,8 @@ public class ThemeManagerOptions : ResourceDictionary, ISupportInitialize
     {
         ThemeManager.Configure(
             _themeMode,
-            _useSystemAccentColor,
+            _accentSource,
+            _customAccentColor,
             _enableNativeControlStyling,
             _aLightChanged ? _additionalLightThemeSource : ThemeManager.AdditionalLightThemeUri,
             _aDarkChanged ? _additionalDarkThemeSource : ThemeManager.AdditionalDarkThemeUri,
