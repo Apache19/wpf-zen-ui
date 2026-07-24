@@ -34,8 +34,8 @@ public class AutoSuggestBoxTests
         {
             var autoSuggestBox = new AutoSuggestBox();
 
-            Assert.False(autoSuggestBox.IsSuggestionListReopeningEnabled);
-            Assert.False(
+            Assert.True(autoSuggestBox.IsSuggestionListReopeningEnabled);
+            Assert.True(
                 (bool)AutoSuggestBox.IsSuggestionListReopeningEnabledProperty.DefaultMetadata.DefaultValue
             );
         });
