@@ -28,6 +28,20 @@ namespace Wpf.Ui.UnitTests.Controls;
 public class AutoSuggestBoxTests
 {
     [Fact]
+    public void SuggestionListReopening_IsDisabledByDefault()
+    {
+        RunOnStaThread(() =>
+        {
+            var autoSuggestBox = new AutoSuggestBox();
+
+            Assert.False(autoSuggestBox.IsSuggestionListReopeningEnabled);
+            Assert.False(
+                (bool)AutoSuggestBox.IsSuggestionListReopeningEnabledProperty.DefaultMetadata.DefaultValue
+            );
+        });
+    }
+
+    [Fact]
     public void FirstUserInput_OpensSuggestionPopup()
     {
         RunOnStaThread(() =>
@@ -425,6 +439,65 @@ public class AutoSuggestBoxTests
         });
     }
 
+    [Fact]
+    public void RegainingKeyboardFocus_DoesNotReopenSuggestionsWhenReopeningIsDisabled()
+    {
+        RunOnStaThread(() =>
+        {
+            var (window, autoSuggestBox, textBox, outsideButton) = CreateLoadedControl();
+
+            try
+            {
+                autoSuggestBox.IsSuggestionListReopeningEnabled = false;
+
+                Assert.True(textBox.Focus());
+                textBox.Text = "a";
+                Assert.True(autoSuggestBox.IsSuggestionListOpen);
+
+                Assert.True(outsideButton.Focus());
+                Assert.False(autoSuggestBox.IsSuggestionListOpen);
+
+                Assert.True(textBox.Focus());
+
+                Assert.False(autoSuggestBox.IsSuggestionListOpen);
+            }
+            finally
+            {
+                window.Close();
+            }
+        });
+    }
+
+    [Fact]
+    public void TextBoxClick_DoesNotRestoreSuggestionsWhenReopeningIsDisabled()
+    {
+        RunOnStaThread(() =>
+        {
+            var (window, autoSuggestBox, textBox, popup) = CreateLoadedDefaultControl();
+
+            try
+            {
+                autoSuggestBox.IsSuggestionListReopeningEnabled = false;
+
+                Assert.True(textBox.Focus());
+                textBox.Text = "a";
+                popup.SetCurrentValue(Popup.IsOpenProperty, false);
+
+                textBox.RaiseEvent(
+                    CreateMouseButtonEvent(textBox, UIElement.PreviewMouseLeftButtonDownEvent)
+                );
+                textBox.RaiseEvent(CreateMouseButtonEvent(textBox, Mouse.MouseUpEvent));
+
+                Assert.False(autoSuggestBox.IsSuggestionListOpen);
+                Assert.False(popup.IsOpen);
+            }
+            finally
+            {
+                window.Close();
+            }
+        });
+    }
+
     [Theory]
     [InlineData("")]
     [InlineData("no-match")]
@@ -784,6 +857,7 @@ public class AutoSuggestBoxTests
         var autoSuggestBox = new TestAutoSuggestBox
         {
             DisplayMemberPath = displayMemberPath,
+            IsSuggestionListReopeningEnabled = true,
             OriginalItemsSource = originalItemsSource ?? new[] { "Alpha", "Beta" },
             Template = CreateControlTemplate(),
         };
@@ -818,7 +892,11 @@ public class AutoSuggestBoxTests
         Popup Popup
     ) CreateLoadedDefaultControl()
     {
-        var autoSuggestBox = new AutoSuggestBox { OriginalItemsSource = new[] { "Alpha", "Beta" } };
+        var autoSuggestBox = new AutoSuggestBox
+        {
+            IsSuggestionListReopeningEnabled = true,
+            OriginalItemsSource = new[] { "Alpha", "Beta" },
+        };
         var root = new Grid();
         root.Resources.MergedDictionaries.Add(
             new ResourceDictionary

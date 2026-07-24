@@ -93,6 +93,36 @@ public class AutoSuggestBox : ItemsControl, IIconControl
 
     #endregion
 
+    #region DP: IsSuggestionListReopeningEnabled
+
+    /// <summary>
+    /// Identifies the <see cref="IsSuggestionListReopeningEnabled"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty IsSuggestionListReopeningEnabledProperty =
+        DependencyProperty.Register(
+            nameof(IsSuggestionListReopeningEnabled),
+            typeof(bool),
+            typeof(AutoSuggestBox),
+            new PropertyMetadata(true, OnIsSuggestionListReopeningEnabledChanged)
+        );
+
+    /// <summary>
+    /// Gets or sets a value indicating whether an existing filtered suggestion list is reopened when
+    /// the editable text box receives keyboard focus or is clicked.
+    /// </summary>
+    /// <remarks>
+    /// The default is <see langword="true"/>. This property affects only automatic restoration of a
+    /// previously produced, non-empty suggestion list. It does not prevent new text input or an explicit
+    /// assignment to <see cref="IsSuggestionListOpen"/> from opening the list.
+    /// </remarks>
+    public bool IsSuggestionListReopeningEnabled
+    {
+        get => (bool)GetValue(IsSuggestionListReopeningEnabledProperty);
+        set => SetValue(IsSuggestionListReopeningEnabledProperty, value);
+    }
+
+    #endregion
+
     #region DP: Text
 
     /// <summary>
@@ -691,7 +721,7 @@ public class AutoSuggestBox : ItemsControl, IIconControl
         // result Popup from being restored. An empty query is excluded even though DefaultFiltering
         // exposes OriginalItemsSource for it: showing that full, unfiltered list merely because focus
         // returned is not a suggestion-restoration scenario.
-        if (!HasSuggestionsToRestore())
+        if (!CanRestoreSuggestions())
         {
             return;
         }
@@ -719,7 +749,7 @@ public class AutoSuggestBox : ItemsControl, IIconControl
 
     private void TextBoxOnPreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
-        if (HasSuggestionsToRestore())
+        if (CanRestoreSuggestions())
         {
             // This also covers the first click after owner-window activation: keyboard focus may
             // already have been restored, but the low-priority focus operation has not opened the
@@ -945,7 +975,7 @@ public class AutoSuggestBox : ItemsControl, IIconControl
 
     private void OpenSuggestionsIfAvailable()
     {
-        if (_textBox?.IsKeyboardFocusWithin == true && HasSuggestionsToRestore())
+        if (_textBox?.IsKeyboardFocusWithin == true && CanRestoreSuggestions())
         {
             SetCurrentValue(IsSuggestionListOpenProperty, true);
         }
@@ -967,7 +997,7 @@ public class AutoSuggestBox : ItemsControl, IIconControl
             {
                 _deferredSuggestionOpenOperation = null;
 
-                if (_textBox?.IsKeyboardFocusWithin != true || !HasSuggestionsToRestore())
+                if (_textBox?.IsKeyboardFocusWithin != true || !CanRestoreSuggestions())
                 {
                     return;
                 }
@@ -993,12 +1023,31 @@ public class AutoSuggestBox : ItemsControl, IIconControl
         _deferredSuggestionOpenOperation = null;
     }
 
-    private bool HasSuggestionsToRestore()
+    private bool CanRestoreSuggestions()
     {
         // HasItems covers both the built-in filter and ItemsSource values populated by a
         // TextChanged handler. An empty query still represents the unfiltered source rather than a
         // previously produced suggestion set, so focus alone must not expose the complete list.
-        return !string.IsNullOrEmpty(_textBox?.Text) && HasItems;
+        return IsSuggestionListReopeningEnabled && !string.IsNullOrEmpty(_textBox?.Text) && HasItems;
+    }
+
+    private static void OnIsSuggestionListReopeningEnabledChanged(
+        DependencyObject dependencyObject,
+        DependencyPropertyChangedEventArgs eventArgs
+    )
+    {
+        if ((bool)eventArgs.NewValue)
+        {
+            return;
+        }
+
+        var autoSuggestBox = (AutoSuggestBox)dependencyObject;
+
+        // A focus or pointer event may already have queued restoration. Disabling the behavior must
+        // take effect immediately; otherwise that stale operation could reopen the Popup once even
+        // though the public switch is off.
+        autoSuggestBox._openSuggestionsOnMouseLeftButtonUp = false;
+        autoSuggestBox.CancelDeferredSuggestionOpen();
     }
 
     private void ClearSuggestionSelection()
