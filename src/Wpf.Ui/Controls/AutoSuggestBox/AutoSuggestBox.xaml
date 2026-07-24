@@ -110,16 +110,20 @@
                             TabIndex="{TemplateBinding TabIndex}"
                             Text="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=Text, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                         <Popup
+                            x:Name="SuggestionPopup"
                             MinWidth="{TemplateBinding ActualWidth}"
                             MinHeight="{TemplateBinding ActualHeight}"
                             controls:PopupAnimator.IsEnabled="True"
                             controls:PopupDismissal.ExcludedElement="{Binding RelativeSource={RelativeSource TemplatedParent}}"
+                            controls:PopupPlacement.IsEnabled="True"
                             controls:PopupShadow.IsEnabled="True"
                             AllowsTransparency="True"
                             Focusable="False"
                             IsOpen="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=IsSuggestionListOpen, Mode=TwoWay}"
+                            PlacementTarget="{Binding RelativeSource={RelativeSource TemplatedParent}}"
                             StaysOpen="False">
                             <Border
+                                x:Name="SuggestionsBorder"
                                 Background="{m:BrushResource AcrylicBackgroundFillColorDefaultBrush}"
                                 BorderBrush="{m:BrushResource SurfaceStrokeColorFlyoutBrush}"
                                 BorderThickness="1"
@@ -161,6 +165,23 @@
                             </Border>
                         </Popup>
                     </Grid>
+                    <ControlTemplate.Triggers>
+                        <!--
+                            Popup.Placement only describes the requested side; WPF can flip the HWND to the opposite
+                            side after measuring available monitor space. These triggers consume the resolved side so
+                            the editor and suggestions surface share one silhouette in either vertical direction.
+                        -->
+                        <Trigger SourceName="SuggestionPopup" Property="controls:PopupPlacement.ActualPlacement" Value="Bottom">
+                            <Setter TargetName="PART_TextBox" Property="CornerRadius" Value="4,4,0,0" />
+                            <Setter TargetName="SuggestionsBorder" Property="BorderThickness" Value="1,0,1,1" />
+                            <Setter TargetName="SuggestionsBorder" Property="CornerRadius" Value="0,0,8,8" />
+                        </Trigger>
+                        <Trigger SourceName="SuggestionPopup" Property="controls:PopupPlacement.ActualPlacement" Value="Top">
+                            <Setter TargetName="PART_TextBox" Property="CornerRadius" Value="0,0,4,4" />
+                            <Setter TargetName="SuggestionsBorder" Property="BorderThickness" Value="1,1,1,0" />
+                            <Setter TargetName="SuggestionsBorder" Property="CornerRadius" Value="8,8,0,0" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>

@@ -58,6 +58,83 @@ public class AutoSuggestBoxTests
     }
 
     [Fact]
+    public void DefaultPopup_WhenPlacedBelow_JoinsEditorAndSuggestionsBorders()
+    {
+        RunOnStaThread(() =>
+        {
+            var (window, autoSuggestBox, textBox, popup) = CreateLoadedDefaultControl();
+            var suggestionsBorder = Assert.IsType<Border>(popup.Child);
+
+            try
+            {
+                // Keep both vertical candidates away from a monitor edge so WPF selects the declared Bottom
+                // candidate deterministically instead of inheriting the test runner's last window position.
+                window.Left = SystemParameters.WorkArea.Left + 100D;
+                window.Top = SystemParameters.WorkArea.Top + 100D;
+                FlushDispatcher(window);
+
+                Assert.True(PopupPlacement.GetIsEnabled(popup));
+                Assert.True(textBox.Focus());
+                textBox.Text = "a";
+
+                Assert.Equal(PopupPlacementDirection.Bottom, PopupPlacement.GetActualPlacement(popup));
+                Assert.Equal(
+                    PopupPlacementDirection.Bottom,
+                    PopupPlacement.GetActualPlacement(suggestionsBorder)
+                );
+                Assert.Equal(new CornerRadius(4D, 4D, 0D, 0D), textBox.CornerRadius);
+                Assert.Equal(new CornerRadius(0D, 0D, 8D, 8D), suggestionsBorder.CornerRadius);
+                Assert.Equal(new Thickness(1D, 0D, 1D, 1D), suggestionsBorder.BorderThickness);
+                Assert.Equal(-1D, popup.VerticalOffset);
+
+                popup.SetCurrentValue(Popup.IsOpenProperty, false);
+
+                Assert.Equal(PopupPlacementDirection.None, PopupPlacement.GetActualPlacement(popup));
+            }
+            finally
+            {
+                popup.SetCurrentValue(Popup.IsOpenProperty, false);
+                FlushDispatcher(window);
+                window.Close();
+            }
+        });
+    }
+
+    [Fact]
+    public void DefaultPopup_WhenBottomCandidateDoesNotFit_JoinsAboveEditor()
+    {
+        RunOnStaThread(() =>
+        {
+            var (window, autoSuggestBox, textBox, popup) = CreateLoadedDefaultControl();
+            var suggestionsBorder = Assert.IsType<Border>(popup.Child);
+
+            try
+            {
+                // Put the placement target at the lower work-area edge. The suggestions surface cannot fit below,
+                // so this exercises WPF's real Bottom-to-Top fallback instead of changing Popup.Placement to Top.
+                window.Left = SystemParameters.WorkArea.Left + 100D;
+                window.Top = SystemParameters.WorkArea.Bottom - window.ActualHeight;
+                FlushDispatcher(window);
+
+                Assert.True(textBox.Focus());
+                textBox.Text = "a";
+
+                Assert.Equal(PopupPlacementDirection.Top, PopupPlacement.GetActualPlacement(popup));
+                Assert.Equal(new CornerRadius(0D, 0D, 4D, 4D), textBox.CornerRadius);
+                Assert.Equal(new CornerRadius(8D, 8D, 0D, 0D), suggestionsBorder.CornerRadius);
+                Assert.Equal(new Thickness(1D, 1D, 1D, 0D), suggestionsBorder.BorderThickness);
+                Assert.Equal(1D, popup.VerticalOffset);
+            }
+            finally
+            {
+                popup.SetCurrentValue(Popup.IsOpenProperty, false);
+                FlushDispatcher(window);
+                window.Close();
+            }
+        });
+    }
+
+    [Fact]
     public void DefaultPopup_IsNonStickyAndSynchronizesCloseState()
     {
         RunOnStaThread(() =>
