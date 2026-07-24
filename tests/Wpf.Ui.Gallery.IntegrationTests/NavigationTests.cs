@@ -19,7 +19,9 @@ public sealed class NavigationTests : UiTest
             .Should()
             .NotBeNull("because NavigationAutoSuggestBox should be present in the main window");
 
-        autoSuggestBox.As<AutoSuggestBox>().Enter("Settings");
+        autoSuggestBox.Click();
+
+        Enter("Settings");
 
         await Wait(1, TestContext.Current.CancellationToken);
 
