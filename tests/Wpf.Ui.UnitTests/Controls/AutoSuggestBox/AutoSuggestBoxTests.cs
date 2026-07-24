@@ -20,7 +20,6 @@ using NativeButton = System.Windows.Controls.Button;
 using NativeListBox = System.Windows.Controls.ListBox;
 using NativeListBoxItem = System.Windows.Controls.ListBoxItem;
 using UiTextBox = Wpf.Ui.Controls.TextBox;
-using UiTextChangeReason = Wpf.Ui.Controls.AutoSuggestionBoxTextChangeReason;
 
 // ReSharper disable once CheckNamespace
 namespace Wpf.Ui.UnitTests.Controls;
@@ -457,7 +456,7 @@ public class AutoSuggestBoxTests
     }
 
     [Fact]
-    public void SelectingSuggestion_PreviewsTextWithoutFilteringOrRaisingSuggestionChosen()
+    public void SelectingSuggestion_RaisesHighlightedAndPreviewsTextWithoutFilteringOrCommitting()
     {
         RunOnStaThread(() =>
         {
@@ -466,9 +465,12 @@ public class AutoSuggestBoxTests
             try
             {
                 var chosenItems = new List<object>();
-                var changeReasons = new List<UiTextChangeReason>();
+                var highlightedItems = new List<object>();
+                var changedTexts = new List<string>();
                 autoSuggestBox.SuggestionChosen += (_, args) => chosenItems.Add(args.SelectedItem);
-                autoSuggestBox.TextChanged += (_, args) => changeReasons.Add(args.Reason);
+                autoSuggestBox.SuggestionHighlighted += (_, args) =>
+                    highlightedItems.Add(args.HighlightedItem);
+                autoSuggestBox.TextChanged += (_, args) => changedTexts.Add(args.Text);
 
                 Assert.True(textBox.Focus());
                 textBox.Text = "a";
@@ -483,7 +485,129 @@ public class AutoSuggestBoxTests
                 Assert.Equal(new[] { "Alpha", "Beta" }, autoSuggestBox.Items.Cast<string>());
                 Assert.True(autoSuggestBox.IsSuggestionListOpen);
                 Assert.Empty(chosenItems);
-                Assert.Equal(UiTextChangeReason.SuggestionChosen, changeReasons[^1]);
+                Assert.Equal(new object[] { "Alpha" }, highlightedItems);
+                Assert.Equal("Alpha", changedTexts[^1]);
+            }
+            finally
+            {
+                window.Close();
+            }
+        });
+    }
+
+    [Fact]
+    public void SuggestionHighlighted_WhenHandled_DoesNotPreviewText()
+    {
+        RunOnStaThread(() =>
+        {
+            var (window, autoSuggestBox, textBox, _) = CreateLoadedControl();
+
+            try
+            {
+                var highlightedItems = new List<object>();
+                autoSuggestBox.SuggestionHighlighted += (_, args) =>
+                {
+                    highlightedItems.Add(args.HighlightedItem);
+                    args.Handled = true;
+                };
+
+                Assert.True(textBox.Focus());
+                textBox.Text = "a";
+
+                var suggestionsList = Assert.IsAssignableFrom<NativeListBox>(
+                    autoSuggestBox.Template.FindName("PART_SuggestionsList", autoSuggestBox)
+                );
+                suggestionsList.SelectedItem = "Alpha";
+
+                Assert.Equal(new object[] { "Alpha" }, highlightedItems);
+                Assert.Equal("a", autoSuggestBox.Text);
+                Assert.Equal(new[] { "Alpha", "Beta" }, autoSuggestBox.Items.Cast<string>());
+            }
+            finally
+            {
+                window.Close();
+            }
+        });
+    }
+
+    [Fact]
+    public void ProgrammaticTextChange_RaisesTextChangedAndFiltersWithoutOpeningSuggestions()
+    {
+        RunOnStaThread(() =>
+        {
+            var (window, autoSuggestBox, textBox, _) = CreateLoadedControl();
+
+            try
+            {
+                var changedTexts = new List<string>();
+                autoSuggestBox.TextChanged += (_, args) => changedTexts.Add(args.Text);
+
+                autoSuggestBox.Text = "Alpha";
+
+                Assert.Equal("Alpha", textBox.Text);
+                Assert.Equal(new[] { "Alpha" }, changedTexts);
+                Assert.Equal(new[] { "Alpha" }, autoSuggestBox.Items.Cast<string>());
+                Assert.False(autoSuggestBox.IsSuggestionListOpen);
+            }
+            finally
+            {
+                window.Close();
+            }
+        });
+    }
+
+    [Fact]
+    public void CommittingSuggestion_FiltersAfterChosenEventUpdatesText()
+    {
+        RunOnStaThread(() =>
+        {
+            var (window, autoSuggestBox, textBox, _) = CreateLoadedControl();
+
+            try
+            {
+                string? textObservedByChosenEvent = null;
+                string[]? itemsObservedByChosenEvent = null;
+                autoSuggestBox.SuggestionChosen += (_, _) =>
+                {
+                    textObservedByChosenEvent = autoSuggestBox.Text;
+                    itemsObservedByChosenEvent = autoSuggestBox.Items.Cast<string>().ToArray();
+                };
+
+                Assert.True(textBox.Focus());
+                textBox.Text = "a";
+                Assert.Equal(new[] { "Alpha", "Beta" }, autoSuggestBox.Items.Cast<string>());
+
+                autoSuggestBox.ChooseSuggestion("Alpha");
+
+                Assert.Equal("a", textObservedByChosenEvent);
+                Assert.Equal(new[] { "Alpha", "Beta" }, itemsObservedByChosenEvent);
+                Assert.Equal("Alpha", autoSuggestBox.Text);
+                Assert.Equal(new[] { "Alpha" }, autoSuggestBox.Items.Cast<string>());
+            }
+            finally
+            {
+                window.Close();
+            }
+        });
+    }
+
+    [Fact]
+    public void CommittingSuggestion_WithUnchangedText_DoesNotFilterAgain()
+    {
+        RunOnStaThread(() =>
+        {
+            var (window, autoSuggestBox, textBox, _) = CreateLoadedControl();
+
+            try
+            {
+                Assert.True(textBox.Focus());
+                textBox.Text = "Alpha";
+                autoSuggestBox.ItemsSource = new[] { "Alpha", "Beta" };
+
+                autoSuggestBox.ChooseSuggestion("Alpha");
+
+                Assert.Equal("Alpha", autoSuggestBox.Text);
+                Assert.Equal(new[] { "Alpha", "Beta" }, autoSuggestBox.Items.Cast<string>());
             }
             finally
             {
@@ -593,6 +717,7 @@ public class AutoSuggestBoxTests
 
                 Assert.Equal(new object[] { "Beta" }, chosenItems);
                 Assert.Equal("Beta", textBox.Text);
+                Assert.Equal(new[] { "Beta" }, autoSuggestBox.Items.Cast<string>());
                 Assert.True(textBox.IsKeyboardFocused);
                 Assert.False(autoSuggestBox.IsSuggestionListOpen);
             }
@@ -820,6 +945,11 @@ public class AutoSuggestBoxTests
 
     private sealed class TestAutoSuggestBox : AutoSuggestBox
     {
+        public void ChooseSuggestion(object selectedItem)
+        {
+            OnSuggestionChosen(selectedItem);
+        }
+
         public void ProcessTextBoxPreviewKeyDown(KeyEventArgs e)
         {
             OnTextBoxPreviewKeyDown(e);

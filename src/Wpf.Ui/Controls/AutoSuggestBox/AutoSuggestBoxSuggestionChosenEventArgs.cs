@@ -11,8 +11,16 @@ namespace Wpf.Ui.Controls;
 /// </summary>
 public sealed class AutoSuggestBoxSuggestionChosenEventArgs : RoutedEventArgs
 {
-    public AutoSuggestBoxSuggestionChosenEventArgs(RoutedEvent eventArgs, object sender)
-        : base(eventArgs, sender) { }
+    /// <summary>
+    /// Initializes a new instance of the <see cref="AutoSuggestBoxSuggestionChosenEventArgs"/> class.
+    /// </summary>
+    /// <param name="routedEvent">The routed event associated with this instance.</param>
+    /// <param name="source">The source that raised the event.</param>
+    public AutoSuggestBoxSuggestionChosenEventArgs(RoutedEvent routedEvent, object source)
+        : base(routedEvent, source) { }
 
+    /// <summary>
+    /// Gets the suggestion committed by the user.
+    /// </summary>
     public required object SelectedItem { get; init; }
 }

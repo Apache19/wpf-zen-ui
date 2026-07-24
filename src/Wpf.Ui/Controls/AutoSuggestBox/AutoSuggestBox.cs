@@ -292,10 +292,42 @@ public class AutoSuggestBox : ItemsControl, IIconControl
     /// <summary>
     /// Occurs when the user commits a suggestion by pressing Enter or clicking it.
     /// </summary>
+    /// <remarks>
+    /// The event is raised before the control copies the committed item to <see cref="Text"/>. Set
+    /// <see cref="RoutedEventArgs.Handled"/> to <see langword="true"/> to take responsibility for the
+    /// text and suggestion source and suppress the control's automatic update.
+    /// </remarks>
     public event TypedEventHandler<AutoSuggestBox, AutoSuggestBoxSuggestionChosenEventArgs> SuggestionChosen
     {
         add => AddHandler(SuggestionChosenEvent, value);
         remove => RemoveHandler(SuggestionChosenEvent, value);
+    }
+
+    #endregion
+
+    #region EVENT: SuggestionHighlighted
+
+    /// <summary>
+    /// Identifies the <see cref="SuggestionHighlighted"/> routed event.
+    /// </summary>
+    public static readonly RoutedEvent SuggestionHighlightedEvent = EventManager.RegisterRoutedEvent(
+        nameof(SuggestionHighlighted),
+        RoutingStrategy.Bubble,
+        typeof(TypedEventHandler<AutoSuggestBox, AutoSuggestBoxSuggestionHighlightedEventArgs>),
+        typeof(AutoSuggestBox)
+    );
+
+    /// <summary>
+    /// Occurs when keyboard or pointer navigation highlights a suggestion without committing it.
+    /// </summary>
+    /// <remarks>
+    /// Set <see cref="RoutedEventArgs.Handled"/> to <see langword="true"/> to prevent the highlighted
+    /// item from being copied to <see cref="Text"/> when <see cref="UpdateTextOnSelect"/> is enabled.
+    /// </remarks>
+    public event TypedEventHandler<AutoSuggestBox, AutoSuggestBoxSuggestionHighlightedEventArgs> SuggestionHighlighted
+    {
+        add => AddHandler(SuggestionHighlightedEvent, value);
+        remove => RemoveHandler(SuggestionHighlightedEvent, value);
     }
 
     #endregion
@@ -311,8 +343,14 @@ public class AutoSuggestBox : ItemsControl, IIconControl
     );
 
     /// <summary>
-    /// Raised after the text content of the editable control component is updated.
+    /// Occurs whenever the value of <see cref="Text"/> changes.
     /// </summary>
+    /// <remarks>
+    /// The event does not classify changes by their source. User input, a binding or another
+    /// programmatic assignment, and suggestion preview or commitment are all ordinary text changes.
+    /// Set <see cref="RoutedEventArgs.Handled"/> to <see langword="true"/> when supplying a custom
+    /// suggestion source to suppress the built-in filtering pass for that change.
+    /// </remarks>
     public event TypedEventHandler<AutoSuggestBox, AutoSuggestBoxTextChangedEventArgs> TextChanged
     {
         add => AddHandler(TextChangedEvent, value);
@@ -332,7 +370,11 @@ public class AutoSuggestBox : ItemsControl, IIconControl
     private TextBox? _textBox;
     private NativeListBox? _suggestionsList;
 
-    private AutoSuggestionBoxTextChangeReason? _pendingTextChangeReason;
+    private bool _isSynchronizingTextBox;
+    private bool _isPreviewingSuggestion;
+    private bool _hasSuggestionPreview;
+    private bool _wasPreviewTextChangeHandled;
+    private string _textBeforeSuggestionPreview = string.Empty;
     private HwndSource? _hookSource;
     private RECT? _hostWindowBounds;
     private bool _openSuggestionsOnMouseLeftButtonUp;
@@ -494,6 +536,8 @@ public class AutoSuggestBox : ItemsControl, IIconControl
     /// <param name="selectedItem">Currently selected item.</param>
     protected virtual void OnSuggestionChosen(object selectedItem)
     {
+        var hadSuggestionPreview = _hasSuggestionPreview;
+        var textBeforeSuggestionPreview = _textBeforeSuggestionPreview;
         var args = new AutoSuggestBoxSuggestionChosenEventArgs(SuggestionChosenEvent, this)
         {
             SelectedItem = selectedItem,
@@ -503,26 +547,85 @@ public class AutoSuggestBox : ItemsControl, IIconControl
 
         if (UpdateTextOnSelect && !args.Handled)
         {
-            UpdateText(selectedItem, AutoSuggestionBoxTextChangeReason.SuggestionChosen);
+            var textChanged = UpdateText(selectedItem);
+
+            // Highlighting may already have copied the selected item into Text while intentionally
+            // retaining the broader result set for continued keyboard navigation. Committing that
+            // same item therefore produces no second Text change, but it still has to finish the
+            // deferred filtering pass against the query that existed before preview began.
+            if (
+                !textChanged
+                && hadSuggestionPreview
+                && textBeforeSuggestionPreview != Text
+                && !_wasPreviewTextChangeHandled
+            )
+            {
+                DefaultFiltering(Text);
+            }
+        }
+
+        ResetSuggestionPreview();
+    }
+
+    /// <summary>
+    /// Raises <see cref="SuggestionHighlighted"/> for a suggestion that is being previewed.
+    /// </summary>
+    /// <param name="highlightedItem">The suggestion highlighted by keyboard or pointer navigation.</param>
+    protected virtual void OnSuggestionHighlighted(object highlightedItem)
+    {
+        var args = new AutoSuggestBoxSuggestionHighlightedEventArgs(SuggestionHighlightedEvent, this)
+        {
+            HighlightedItem = highlightedItem,
+        };
+
+        RaiseEvent(args);
+
+        if (!UpdateTextOnSelect || args.Handled)
+        {
+            return;
+        }
+
+        if (!_hasSuggestionPreview)
+        {
+            _hasSuggestionPreview = true;
+            _textBeforeSuggestionPreview = Text;
+        }
+
+        _isPreviewingSuggestion = true;
+
+        try
+        {
+            _ = UpdateText(highlightedItem);
+        }
+        finally
+        {
+            _isPreviewingSuggestion = false;
         }
     }
 
     /// <summary>
-    /// Method for <see cref="TextChanged"/>.
+    /// Raises <see cref="TextChanged"/> and applies the built-in filter when the event is not handled.
     /// </summary>
-    /// <param name="reason">Data for the text changed event.</param>
-    /// <param name="text">Changed text.</param>
-    protected virtual void OnTextChanged(AutoSuggestionBoxTextChangeReason reason, string text)
+    /// <param name="text">The new value of <see cref="Text"/>.</param>
+    protected virtual void OnTextChanged(string text)
     {
         var args = new AutoSuggestBoxTextChangedEventArgs(TextChangedEvent, this)
         {
-            Reason = reason,
             Text = text,
         };
 
         RaiseEvent(args);
 
-        if (args is { Handled: false, Reason: AutoSuggestionBoxTextChangeReason.UserInput })
+        if (_isPreviewingSuggestion)
+        {
+            // A preview must not collapse the list while the user is navigating it. Remember whether
+            // the application handled this change so committing an unchanged preview does not replace
+            // an application-provided ItemsSource with the built-in filter.
+            _wasPreviewTextChangeHandled = args.Handled;
+            return;
+        }
+
+        if (!args.Handled)
         {
             DefaultFiltering(text);
         }
@@ -664,16 +767,20 @@ public class AutoSuggestBox : ItemsControl, IIconControl
 
     private void TextBoxOnTextChanged(object sender, TextChangedEventArgs e)
     {
-        var changeReason = _pendingTextChangeReason ?? AutoSuggestionBoxTextChangeReason.UserInput;
-
-        if (changeReason is not AutoSuggestionBoxTextChangeReason.SuggestionChosen)
+        if (_isSynchronizingTextBox)
         {
-            ClearSuggestionSelection();
+            return;
         }
 
-        OnTextChanged(changeReason, _textBox!.Text);
+        // A change originating in the editor is the start of a new query, even when the template's
+        // TwoWay binding has already copied the value to Text before this handler runs. Explicitly
+        // assigning with SetCurrentValue also keeps custom templates functional without replacing a
+        // consumer's Text binding.
+        ResetSuggestionPreview();
+        ClearSuggestionSelection();
+        SetCurrentValue(TextProperty, _textBox!.Text);
 
-        if (changeReason is not AutoSuggestionBoxTextChangeReason.UserInput || !IsLoaded)
+        if (!IsLoaded)
         {
             // The TextBox binding can raise TextChanged while the control template is still being initialized.
             // WPF coerces Popup.IsOpen to false until a Popup in the visual tree is loaded, while the source
@@ -821,10 +928,7 @@ public class AutoSuggestBox : ItemsControl, IIconControl
 
     private void PreviewSuggestion(object selectedItem)
     {
-        if (UpdateTextOnSelect)
-        {
-            UpdateText(selectedItem, AutoSuggestionBoxTextChangeReason.SuggestionChosen);
-        }
+        OnSuggestionHighlighted(selectedItem);
     }
 
     private void CommitSuggestion(object selectedItem)
@@ -902,30 +1006,27 @@ public class AutoSuggestBox : ItemsControl, IIconControl
         _suggestionsList?.SetCurrentValue(Selector.SelectedItemProperty, null);
     }
 
-    private void UpdateText(object selectedItem, AutoSuggestionBoxTextChangeReason changeReason)
+    private bool UpdateText(object selectedItem)
     {
-        var previousReason = _pendingTextChangeReason;
-        _pendingTextChangeReason = changeReason;
+        var newText = GetStringFromObj(selectedItem) ?? string.Empty;
 
-        try
+        if (Text == newText)
         {
-            SetCurrentValue(TextProperty, GetStringFromObj(selectedItem) ?? string.Empty);
+            return false;
         }
-        finally
-        {
-            _pendingTextChangeReason = previousReason;
-        }
+
+        SetCurrentValue(TextProperty, newText);
+        return true;
     }
 
-    private void SynchronizeTextBox(string text, AutoSuggestionBoxTextChangeReason changeReason)
+    private void SynchronizeTextBox(string text)
     {
         if (_textBox is null || _textBox.Text == text)
         {
             return;
         }
 
-        var previousReason = _pendingTextChangeReason;
-        _pendingTextChangeReason = changeReason;
+        _isSynchronizingTextBox = true;
 
         try
         {
@@ -933,8 +1034,19 @@ public class AutoSuggestBox : ItemsControl, IIconControl
         }
         finally
         {
-            _pendingTextChangeReason = previousReason;
+            _isSynchronizingTextBox = false;
         }
+    }
+
+    /// <summary>
+    /// Ends suggestion preview without changing the displayed text. The committed text is retained;
+    /// only the query snapshot used to decide whether filtering was deferred is discarded.
+    /// </summary>
+    private void ResetSuggestionPreview()
+    {
+        _hasSuggestionPreview = false;
+        _wasPreviewTextChangeHandled = false;
+        _textBeforeSuggestionPreview = string.Empty;
     }
 
     private bool IsFocusWithinControl(IInputElement? element)
@@ -1022,19 +1134,12 @@ public class AutoSuggestBox : ItemsControl, IIconControl
         var self = (AutoSuggestBox)d;
         var newText = (string)e.NewValue;
 
-        if (self._textBox is null)
+        if (!self._isPreviewingSuggestion)
         {
-            return;
+            self.ResetSuggestionPreview();
         }
 
-        if (self._textBox.Text == newText)
-        {
-            return;
-        }
-
-        self.SynchronizeTextBox(
-            newText,
-            self._pendingTextChangeReason ?? AutoSuggestionBoxTextChangeReason.ProgrammaticChange
-        );
+        self.SynchronizeTextBox(newText);
+        self.OnTextChanged(newText);
     }
 }

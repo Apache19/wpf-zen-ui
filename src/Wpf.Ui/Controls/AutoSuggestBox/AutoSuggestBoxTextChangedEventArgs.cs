@@ -11,10 +11,16 @@ namespace Wpf.Ui.Controls;
 /// </summary>
 public sealed class AutoSuggestBoxTextChangedEventArgs : RoutedEventArgs
 {
-    public AutoSuggestBoxTextChangedEventArgs(RoutedEvent eventArgs, object sender)
-        : base(eventArgs, sender) { }
+    /// <summary>
+    /// Initializes a new instance of the <see cref="AutoSuggestBoxTextChangedEventArgs"/> class.
+    /// </summary>
+    /// <param name="routedEvent">The routed event associated with this instance.</param>
+    /// <param name="source">The source that raised the event.</param>
+    public AutoSuggestBoxTextChangedEventArgs(RoutedEvent routedEvent, object source)
+        : base(routedEvent, source) { }
 
+    /// <summary>
+    /// Gets the new text displayed by the <see cref="AutoSuggestBox"/>.
+    /// </summary>
     public required string Text { get; init; }
-
-    public required AutoSuggestionBoxTextChangeReason Reason { get; init; }
 }

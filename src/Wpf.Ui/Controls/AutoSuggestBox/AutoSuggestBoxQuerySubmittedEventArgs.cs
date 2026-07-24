@@ -11,8 +11,16 @@ namespace Wpf.Ui.Controls;
 /// </summary>
 public sealed class AutoSuggestBoxQuerySubmittedEventArgs : RoutedEventArgs
 {
-    public AutoSuggestBoxQuerySubmittedEventArgs(RoutedEvent eventArgs, object sender)
-        : base(eventArgs, sender) { }
+    /// <summary>
+    /// Initializes a new instance of the <see cref="AutoSuggestBoxQuerySubmittedEventArgs"/> class.
+    /// </summary>
+    /// <param name="routedEvent">The routed event associated with this instance.</param>
+    /// <param name="source">The source that raised the event.</param>
+    public AutoSuggestBoxQuerySubmittedEventArgs(RoutedEvent routedEvent, object source)
+        : base(routedEvent, source) { }
 
+    /// <summary>
+    /// Gets the query text submitted by the user.
+    /// </summary>
     public required string QueryText { get; init; }
 }
