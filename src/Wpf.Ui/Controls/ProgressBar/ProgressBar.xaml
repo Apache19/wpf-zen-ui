@@ -5,14 +5,18 @@
     All Rights Reserved.
 -->
 
-<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-                    xmlns:markup="clr-namespace:Wpf.Ui.Markup">
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:m="clr-namespace:Wpf.Ui.Markup"
+    xmlns:t="clr-namespace:Wpf.Ui.Theming">
 
-    <Style TargetType="{x:Type ProgressBar}">
-        <Setter Property="Foreground" Value="{markup:BrushResource SystemAccentColorPrimaryBrush}" />
-        <Setter Property="Background" Value="{markup:BrushResource ControlStrongStrokeColorDefaultBrush}" />
-        <Setter Property="BorderBrush" Value="{markup:BrushResource ControlStrokeColorDefaultBrush}" />
-        <Setter Property="Height" Value="4" />
+    <Style x:Key="{x:Static t:StyleKeys.DefaultProgressBarStyle}" TargetType="{x:Type ProgressBar}">
+        <Setter Property="OverridesDefaultStyle" Value="True" />
+        <Setter Property="Foreground" Value="{m:BrushResource SystemAccentColorPrimaryBrush}" />
+        <Setter Property="Background" Value="{m:BrushResource ControlStrongStrokeColorDefaultBrush}" />
+        <Setter Property="BorderBrush" Value="{m:BrushResource ControlStrokeColorDefaultBrush}" />
+        <Setter Property="Height" Value="6" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
         <Setter Property="Template">
@@ -110,4 +114,7 @@
             </Trigger>
         </Style.Triggers>
     </Style>
+
+    <Style BasedOn="{StaticResource {x:Static t:StyleKeys.DefaultProgressBarStyle}}" TargetType="{x:Type ProgressBar}" />
+
 </ResourceDictionary>

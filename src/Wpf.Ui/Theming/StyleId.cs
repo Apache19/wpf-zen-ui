@@ -46,5 +46,7 @@ public enum StyleId
 
     UiSplitButtonStyle,
 
+    DefaultProgressBarStyle,
+
     DefaultValidationTemplate,
 }
