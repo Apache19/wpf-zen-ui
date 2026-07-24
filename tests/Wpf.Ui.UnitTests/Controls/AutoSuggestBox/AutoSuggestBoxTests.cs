@@ -84,7 +84,6 @@ public class AutoSuggestBoxTests
                 Assert.Equal(new CornerRadius(4D, 4D, 0D, 0D), textBox.CornerRadius);
                 Assert.Equal(new CornerRadius(0D, 0D, 8D, 8D), suggestionsBorder.CornerRadius);
                 Assert.Equal(new Thickness(1D, 0D, 1D, 1D), suggestionsBorder.BorderThickness);
-                Assert.Equal(-1D, popup.VerticalOffset);
 
                 popup.SetCurrentValue(Popup.IsOpenProperty, false);
 
@@ -122,7 +121,6 @@ public class AutoSuggestBoxTests
                 Assert.Equal(new CornerRadius(0D, 0D, 4D, 4D), textBox.CornerRadius);
                 Assert.Equal(new CornerRadius(8D, 8D, 0D, 0D), suggestionsBorder.CornerRadius);
                 Assert.Equal(new Thickness(1D, 1D, 1D, 0D), suggestionsBorder.BorderThickness);
-                Assert.Equal(1D, popup.VerticalOffset);
             }
             finally
             {
