@@ -11,11 +11,12 @@ namespace Wpf.Ui.Appearance;
 public enum UiThemeMode
 {
     /// <summary>
-    /// Indicates that no explicit theme mode is specified.
+    /// Indicates that no explicit Light or Dark mode is selected.
     ///
     /// When used as <see cref="Wpf.Ui.ThemeManager.ThemeMode"/>,
-    /// the application will not explicitly apply a Light or Dark theme
-    /// and will fall back to the library's default theme defined in Generic.xaml.
+    /// the application uses the Light-compatible palette defined by Generic.xaml while retaining
+    /// <see cref="ApplicationTheme.Default"/> as its reported global theme. The manager may still
+    /// merge a Light-compatible global layer for accent, native-control, and additional resources.
     ///
     /// When used as the per-element <c>Theme.Requested</c> attached property,
     /// any previously applied theme resources on the target element are removed,

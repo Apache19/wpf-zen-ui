@@ -22,19 +22,25 @@ public sealed class ThemeManager
 {
     #region Private Constants, Fields
 
-    private const string ResourceBaseUri = "pack://application:,,,/Wpf.Ui;component/Resources/";
+    // Rooted component URIs do not depend on PackUriHelper's process-wide URI parser being
+    // registered before this type's static field initializers run. This matters in WinForms,
+    // console, and test hosts that can access ThemeManager before constructing a WPF Application.
+    private const string ResourceBaseUri = "/Wpf.Ui;component/Resources/";
     private const string ThemeBaseUri    = ResourceBaseUri + "Theme/";
 
-    private static readonly Uri LightThemeUri          = new(ThemeBaseUri + "Light.xaml", UriKind.Absolute);
-    private static readonly Uri DarkThemeUri           = new(ThemeBaseUri + "Dark.xaml", UriKind.Absolute);
-    private static readonly Uri HighContrastThemeUri   = new(ThemeBaseUri + "HighContrast.xaml", UriKind.Absolute);
-    private static readonly Uri NativeControlStylesUri = new(ResourceBaseUri + "NativeControlStyles.xaml", UriKind.Absolute);
+    private static readonly Uri LightThemeUri          = new(ThemeBaseUri + "Light.xaml", UriKind.Relative);
+    private static readonly Uri DarkThemeUri           = new(ThemeBaseUri + "Dark.xaml", UriKind.Relative);
+    private static readonly Uri HighContrastThemeUri   = new(ThemeBaseUri + "HighContrast.xaml", UriKind.Relative);
+    private static readonly Uri NativeControlStylesUri = new(ResourceBaseUri + "NativeControlStyles.xaml", UriKind.Relative);
 
     private static readonly object _lock = new();
 
     private static readonly ResourceDictionary _lightDictionary = [];
     private static readonly ResourceDictionary _darkDictionary  = [];
 
+    // Registration follows object lifetime rather than Loaded/Unloaded lifetime: WPF elements can
+    // be unloaded and later reattached without their attached-property callbacks running again.
+    // Weak references preserve that behavior without retaining abandoned visual trees.
     private static readonly List<WeakReference<FrameworkElement>>        _registeredElements        = [];
     private static readonly List<WeakReference<FrameworkContentElement>> _registeredContentElements = [];
 
@@ -178,6 +184,8 @@ public sealed class ThemeManager
     /// <param name="enableNativeControlStyling">A value indicating whether to merge native WPF control styles.</param>
     public static void Configure(UiThemeMode themeMode, bool useSystemAccentColor = true, bool enableNativeControlStyling = true)
     {
+        ValidateThemeMode(themeMode);
+
         var changed = false;
 
         if (_themeMode != themeMode)
@@ -234,6 +242,8 @@ public sealed class ThemeManager
         Uri? additionalHighContrastLightThemeUri,
         Uri? additionalHighContrastDarkThemeUri)
     {
+        ValidateThemeMode(themeMode);
+
         var changed = false;
 
         if (_themeMode != themeMode)
@@ -292,13 +302,12 @@ public sealed class ThemeManager
     /// Gets the currently active theme applied to the application.
     /// </summary>
     /// <remarks>
-    /// This property represents the theme that is currently in effect.
-    /// It can only be one of the two predefined values: <see cref="ApplicationTheme.Light"/> or
-    /// <see cref="ApplicationTheme.Dark"/>. It is updated whenever the theme mode is changed manually
-    /// or based on system settings (if applicable). Any custom theme settings or "Auto" modes
-    /// are not reflected in this property—only the two active themes are returned.
+    /// Returns <see cref="ApplicationTheme.Default"/> while <see cref="ThemeMode"/> is
+    /// <see cref="UiThemeMode.Default"/>; otherwise it returns the resolved Light or Dark theme.
+    /// Per-element requests made through <see cref="Theme.RequestedProperty"/> are intentionally
+    /// scoped to those elements and are not reflected by this global property.
     /// </remarks>
-    public static ApplicationTheme CurrentTheme { get; private set; } = ResolveEffectiveTheme(_themeMode);
+    public static ApplicationTheme CurrentTheme { get; private set; } = ApplicationTheme.Default;
 
     /// <summary>
     /// Gets or sets an additional resource dictionary URI to be merged
@@ -406,8 +415,8 @@ public sealed class ThemeManager
     /// <remarks>
     /// This property controls the overall theme mode of the application. The available values are:
     /// <list>
-    ///     <item><see cref="UiThemeMode.Default"/> - No explicit Light or Dark theme is applied.
-    ///     The application falls back to the library's default theme defined in Generic.xaml.</item>
+    ///     <item><see cref="UiThemeMode.Default"/> - Uses the Light-compatible palette provided
+    ///     by Generic.xaml while reporting <see cref="ApplicationTheme.Default"/>.</item>
     ///     <item><see cref="UiThemeMode.Light"/> - The application will use the Light theme.</item>
     ///     <item><see cref="UiThemeMode.Dark"/> - The application will use the Dark theme.</item>
     ///     <item><see cref="UiThemeMode.System"/> - The application will automatically follow the system theme settings.</item>
@@ -418,9 +427,10 @@ public sealed class ThemeManager
     /// the resolved theme (either Light or Dark), and changes to the system theme will
     /// automatically trigger updates.
     ///
-    /// When set to <see cref="UiThemeMode.Default"/>, no explicit theme mode is enforced by
-    /// <see cref="Wpf.Ui.ThemeManager"/>. In this case, theme resource resolution falls back
-    /// to the default styles provided by the library, without applying Light or Dark overrides.
+    /// When set to <see cref="UiThemeMode.Default"/>, the manager keeps a Light-compatible global
+    /// resource layer so system accent, native-control, and additional Light resources continue
+    /// to work. This matches the Light dictionary included by Generic.xaml but preserves Default
+    /// as the public mode rather than treating it as an explicit Light selection.
     ///
     /// Changing the value of this property triggers a theme refresh. If the mode is set to
     /// <see cref="UiThemeMode.System"/>, the effective theme will be synchronized immediately
@@ -431,6 +441,8 @@ public sealed class ThemeManager
         get => _themeMode;
         set
         {
+            ValidateThemeMode(value);
+
             if (_themeMode != value)
             {
                 _themeMode = value;
@@ -477,7 +489,7 @@ public sealed class ThemeManager
     /// is merged into each theme dictionary, providing implicit styles that re-template
     /// or re-style built-in WPF controls to match the Fluent UI appearance.
     ///
-    /// The default value is <c>false</c>.
+    /// The default value is <c>true</c>.
     /// Changing this property triggers an immediate theme refresh.
     /// </remarks>
     public static bool EnableNativeControlStyling
@@ -632,7 +644,14 @@ public sealed class ThemeManager
 
     private static void SystemParameters_StaticPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        ScheduleThemeChangedDebounced();
+        // SystemParameters publishes changes for many unrelated settings, including input,
+        // fonts, and animation. Only high contrast and the Windows colorization palette can
+        // change resources owned by this manager; the remaining theme/accent notifications
+        // arrive through SystemEvents.UserPreferenceChanged.
+        if (e.PropertyName is nameof(SystemParameters.HighContrast) or nameof(SystemParameters.WindowGlassColor))
+        {
+            ScheduleThemeChangedDebounced();
+        }
     }
 
     private static void SystemEvents_UserPreferenceChanged(object sender, UserPreferenceChangedEventArgs e)
@@ -653,7 +672,12 @@ public sealed class ThemeManager
             () =>
             {
                 var dispatcher = Application.Current?.Dispatcher;
-                dispatcher?.BeginInvoke(() => RefreshTheme(ThemeChangeSource.System));
+                if (dispatcher is null || dispatcher.HasShutdownStarted || dispatcher.HasShutdownFinished)
+                {
+                    return;
+                }
+
+                _ = dispatcher.BeginInvoke(() => RefreshTheme(ThemeChangeSource.System));
             }
         );
     }
@@ -664,58 +688,29 @@ public sealed class ThemeManager
 
     private static void RefreshTheme(ThemeChangeSource source)
     {
-        var targets = CollectTargets();
-
-        // 1. BeginInit
-        // Track which dictionaries we initiated so we only EndInit those.
-        // A ResourceDictionary already in initialization (e.g. during XAML
-        // parsing of Application.Resources) must not receive a nested call.
-        var initiated = new List<ResourceDictionary>(targets.Count);
-        foreach (var (_, resources, _) in targets)
-        {
-            if (IsInitializePending(resources))
-            {
-                continue;
-            }
-
-            resources.BeginInit();
-            initiated.Add(resources);
-        }
-
-        // 2. Rebuild theme dictionaries
+        // Build every Source-backed dictionary before beginning transactions on application or
+        // element resources. A malformed custom URI therefore leaves both the visible theme and
+        // the targets' WPF initialization state intact.
         RebuildThemeDictionaries();
 
-        // 3. Merge dictionaries for each target
-        // Per-element Default targets are already unregistered in OnRequestedThemeChanged,
-        // so the only Default targets here are Application and root visuals.
-        // For those, Default resolves to Light (matching Generic.xaml) to ensure
-        // additional theme resources and accent colors are available.
-        foreach (var (_, resources, mode) in targets)
+        // Per-element Default targets are already unregistered in OnRequestedThemeChanged, so
+        // the only Default targets here are Application and root visuals. For those, Default
+        // resolves to Light (matching Generic.xaml) so global accent, native-control, and
+        // additional resources remain available.
+        foreach (var (_, resources, mode) in CollectTargets())
         {
-            var effectiveTheme = ResolveEffectiveTheme(mode);
-
-            var themeDict = effectiveTheme == ApplicationTheme.Dark
-                ? _darkDictionary
-                : _lightDictionary;
-
-            MergeThemeDictionary(resources, themeDict);
+            ApplyThemeToResources(resources, mode);
         }
 
-        // 4. EndInit
-        foreach (var resources in initiated)
-        {
-            resources.EndInit();
-        }
-
-        // 5. Update CurrentTheme property
-        var finalTheme = _themeMode == UiThemeMode.Default
+        var appliedTheme = _themeMode == UiThemeMode.Default
             ? ApplicationTheme.Default
             : ResolveEffectiveTheme(_themeMode);
 
-        CurrentTheme = finalTheme;
+        CurrentTheme = appliedTheme;
 
-        // 6. Raise Changed event
-        Instance.ChangedInternal?.Invoke(Instance, new ThemeChangedEventArgs(finalTheme, source));
+        // Event handlers may immediately query DynamicResource values, so publish the change
+        // only after WPF has completed every resource transaction and invalidated its owners.
+        Instance.ChangedInternal?.Invoke(Instance, new ThemeChangedEventArgs(appliedTheme, source));
     }
 
     private static List<(object Target, ResourceDictionary Resources, UiThemeMode Mode)> CollectTargets()
@@ -761,67 +756,65 @@ public sealed class ThemeManager
 
     private static void RebuildThemeDictionaries()
     {
-        _lightDictionary.MergedDictionaries.Clear();
-        _darkDictionary.MergedDictionaries.Clear();
+        var lightDictionaries = new List<ResourceDictionary>();
+        var darkDictionaries  = new List<ResourceDictionary>();
 
         if (SystemParameters.HighContrast)
         {
-            _lightDictionary.MergedDictionaries.Add(
+            lightDictionaries.Add(
                 new ResourceDictionary { Source = HighContrastThemeUri }
             );
 
-            _darkDictionary.MergedDictionaries.Add(
+            darkDictionaries.Add(
                 new ResourceDictionary { Source = HighContrastThemeUri }
             );
 
             if (_enableNativeControlStyling)
             {
-                var nativeControlDict = new ResourceDictionary { Source = NativeControlStylesUri };
-                _lightDictionary.MergedDictionaries.Add(nativeControlDict);
-                _darkDictionary.MergedDictionaries.Add(nativeControlDict);
+                lightDictionaries.Add(new ResourceDictionary { Source = NativeControlStylesUri });
+                darkDictionaries.Add(new ResourceDictionary { Source = NativeControlStylesUri });
             }
 
             if (_additionalHighContrastLightThemeUri != null)
             {
-                _lightDictionary.MergedDictionaries.Add(
+                lightDictionaries.Add(
                     LoadAdditionalResourceDictionary(_additionalHighContrastLightThemeUri)
                 );
             }
 
             if (_additionalHighContrastDarkThemeUri != null)
             {
-                _darkDictionary.MergedDictionaries.Add(
+                darkDictionaries.Add(
                     LoadAdditionalResourceDictionary(_additionalHighContrastDarkThemeUri)
                 );
             }
         }
         else
         {
-            _lightDictionary.MergedDictionaries.Add(
+            lightDictionaries.Add(
                 new ResourceDictionary { Source = LightThemeUri }
             );
 
-            _darkDictionary.MergedDictionaries.Add(
+            darkDictionaries.Add(
                 new ResourceDictionary { Source = DarkThemeUri }
             );
 
             if (_enableNativeControlStyling)
             {
-                var nativeControlDict = new ResourceDictionary { Source = NativeControlStylesUri };
-                _lightDictionary.MergedDictionaries.Add(nativeControlDict);
-                _darkDictionary.MergedDictionaries.Add(nativeControlDict);
+                lightDictionaries.Add(new ResourceDictionary { Source = NativeControlStylesUri });
+                darkDictionaries.Add(new ResourceDictionary { Source = NativeControlStylesUri });
             }
 
             if (_additionalLightThemeUri != null)
             {
-                _lightDictionary.MergedDictionaries.Add(
+                lightDictionaries.Add(
                     LoadAdditionalResourceDictionary(_additionalLightThemeUri)
                 );
             }
 
             if (_additionalDarkThemeUri != null)
             {
-                _darkDictionary.MergedDictionaries.Add(
+                darkDictionaries.Add(
                     LoadAdditionalResourceDictionary(_additionalDarkThemeUri)
                 );
             }
@@ -831,15 +824,41 @@ public sealed class ThemeManager
                 var palette = SystemAccentPaletteReader.Read();
                 if (palette != null)
                 {
-                    _lightDictionary.MergedDictionaries.Add(
+                    lightDictionaries.Add(
                         BuildAccentDictionary(palette, UiThemeMode.Light)
                     );
 
-                    _darkDictionary.MergedDictionaries.Add(
+                    darkDictionaries.Add(
                         BuildAccentDictionary(palette, UiThemeMode.Dark)
                     );
                 }
             }
+        }
+
+        ReplaceMergedDictionaries(_lightDictionary, lightDictionaries);
+        ReplaceMergedDictionaries(_darkDictionary, darkDictionaries);
+    }
+
+    private static void ReplaceMergedDictionaries(
+        ResourceDictionary target,
+        IReadOnlyList<ResourceDictionary> replacements)
+    {
+        target.BeginInit();
+
+        try
+        {
+            target.MergedDictionaries.Clear();
+
+            foreach (var replacement in replacements)
+            {
+                target.MergedDictionaries.Add(replacement);
+            }
+        }
+        finally
+        {
+            // These dictionaries can own resources used by many visual roots. Ending their
+            // transaction once avoids a separate WPF invalidation for every merged child.
+            target.EndInit();
         }
     }
 
@@ -893,10 +912,36 @@ public sealed class ThemeManager
 
     private static void MergeThemeDictionary(ResourceDictionary target, ResourceDictionary themeDict)
     {
+        if (IsThemeDictionaryCurrent(target, themeDict))
+        {
+            return;
+        }
+
         RemoveThemeDictionary(target);
 
         // Insert at beginning so user-defined resources can override theme resources
         target.MergedDictionaries.Insert(0, themeDict);
+    }
+
+    private static bool IsThemeDictionaryCurrent(ResourceDictionary target, ResourceDictionary expected)
+    {
+        return target.MergedDictionaries.Count > 0
+            && ReferenceEquals(target.MergedDictionaries[0], expected)
+            && !ContainsAdditionalThemeDictionary(target);
+    }
+
+    private static bool ContainsAdditionalThemeDictionary(ResourceDictionary target)
+    {
+        for (int i = 1; i < target.MergedDictionaries.Count; i++)
+        {
+            var dictionary = target.MergedDictionaries[i];
+            if (ReferenceEquals(dictionary, _lightDictionary) || ReferenceEquals(dictionary, _darkDictionary))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static void RemoveThemeDictionary(ResourceDictionary target)
@@ -928,8 +973,6 @@ public sealed class ThemeManager
             _registeredElements.Add(
                 new WeakReference<FrameworkElement>(element)
             );
-
-            element.Unloaded += OnElementUnloaded;
         }
     }
 
@@ -940,8 +983,6 @@ public sealed class ThemeManager
             _registeredElements.RemoveAll(
                 wr => !wr.TryGetTarget(out var target) || ReferenceEquals(target, element)
             );
-
-            element.Unloaded -= OnElementUnloaded;
         }
     }
 
@@ -957,8 +998,6 @@ public sealed class ThemeManager
             _registeredContentElements.Add(
                 new WeakReference<FrameworkContentElement>(element)
             );
-
-            element.Unloaded += OnContentElementUnloaded;
         }
     }
 
@@ -969,8 +1008,6 @@ public sealed class ThemeManager
             _registeredContentElements.RemoveAll(
                 wr => !wr.TryGetTarget(out var target) || ReferenceEquals(target, element)
             );
-
-            element.Unloaded -= OnContentElementUnloaded;
         }
     }
 
@@ -988,43 +1025,52 @@ public sealed class ThemeManager
         );
     }
 
-    private static void OnElementUnloaded(object sender, RoutedEventArgs e)
-    {
-        if (sender is FrameworkElement fe)
-        {
-            lock (_lock)
-            {
-                _registeredElements.RemoveAll(
-                    wr => !wr.TryGetTarget(out var target) || ReferenceEquals(target, fe)
-                );
-
-                fe.Unloaded -= OnElementUnloaded;
-            }
-        }
-    }
-
-    private static void OnContentElementUnloaded(object sender, RoutedEventArgs e)
-    {
-        if (sender is FrameworkContentElement fce)
-        {
-            lock (_lock)
-            {
-                _registeredContentElements.RemoveAll(
-                    wr => !wr.TryGetTarget(out var target) || ReferenceEquals(target, fce)
-                );
-
-                fce.Unloaded -= OnContentElementUnloaded;
-            }
-        }
-    }
-
     #endregion
 
     #region Helpers
 
     private static bool IsInitializePending(ResourceDictionary dictionary)
     {
-        return _isInitializePendingProperty?.GetValue(dictionary) is true;
+        try
+        {
+            return _isInitializePendingProperty?.GetValue(dictionary) is true;
+        }
+        catch (Exception exception) when (exception is MethodAccessException or TargetInvocationException)
+        {
+            // Reflection is an optimization that avoids deliberately provoking WPF's nested
+            // BeginInit exception while XAML is loading. If internals change or reflection is
+            // restricted, TryBeginInit below provides the behavior-preserving fallback.
+            return false;
+        }
+    }
+
+    private static bool TryBeginInit(ResourceDictionary dictionary)
+    {
+        if (IsInitializePending(dictionary))
+        {
+            return false;
+        }
+
+        try
+        {
+            dictionary.BeginInit();
+            return true;
+        }
+        catch (InvalidOperationException)
+        {
+            // WPF's ResourceDictionary.BeginInit has a single failure path: it rejects a nested
+            // initialization transaction. This fallback keeps XAML loading functional if the
+            // private IsInitializePending property is renamed in a future framework version.
+            return false;
+        }
+    }
+
+    private static void ValidateThemeMode(UiThemeMode mode)
+    {
+        if (mode is < UiThemeMode.Default or > UiThemeMode.System)
+        {
+            throw new ArgumentOutOfRangeException(nameof(mode), mode, "The theme mode is not defined.");
+        }
     }
 
     private static UiThemeMode GetEffectiveThemeForElement(FrameworkElement element)
@@ -1052,20 +1098,15 @@ public sealed class ThemeManager
 
     private static void ApplyThemeToElement(FrameworkElement element, UiThemeMode mode)
     {
-        var effectiveTheme = ResolveEffectiveTheme(mode);
-
-        var themeDict = effectiveTheme == ApplicationTheme.Dark
-            ? _darkDictionary
-            : _lightDictionary;
-
-        element.Resources.BeginInit();
-
-        MergeThemeDictionary(element.Resources, themeDict);
-
-        element.Resources.EndInit();
+        ApplyThemeToResources(element.Resources, mode);
     }
 
     private static void ApplyThemeToContentElement(FrameworkContentElement element, UiThemeMode mode)
+    {
+        ApplyThemeToResources(element.Resources, mode);
+    }
+
+    private static void ApplyThemeToResources(ResourceDictionary resources, UiThemeMode mode)
     {
         var effectiveTheme = ResolveEffectiveTheme(mode);
 
@@ -1073,11 +1114,26 @@ public sealed class ThemeManager
             ? _darkDictionary
             : _lightDictionary;
 
-        element.Resources.BeginInit();
+        if (IsThemeDictionaryCurrent(resources, themeDict))
+        {
+            return;
+        }
 
-        MergeThemeDictionary(element.Resources, themeDict);
+        var initiated = TryBeginInit(resources);
 
-        element.Resources.EndInit();
+        try
+        {
+            MergeThemeDictionary(resources, themeDict);
+        }
+        finally
+        {
+            // End only transactions started here. During XAML parsing the owning dictionary is
+            // already inside BeginInit and its loader remains responsible for the matching EndInit.
+            if (initiated)
+            {
+                resources.EndInit();
+            }
+        }
     }
 
     private static SolidColorBrush FreezeBrush(Color color, double opacity = 1.0)
@@ -1123,38 +1179,20 @@ public sealed class ThemeManager
 
     private static ResourceDictionary LoadAdditionalResourceDictionary(Uri uri)
     {
-        if (string.Equals(uri.Scheme, "pack", StringComparison.OrdinalIgnoreCase))
+        try
         {
-            try
-            {
-                var info = Application.GetResourceStream(uri);
-                if (info != null)
-                {
-                    info.Stream.Dispose();
-                }
-                else
-                {
-                    throw new InvalidOperationException(
-                        $"Additional theme resource not found: '{uri}'. "
-                      + "Ensure the URI points to an existing XAML resource dictionary."
-                    );
-                }
-            }
-            catch (InvalidOperationException)
-            {
-                throw;
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException(
-                    $"Additional theme resource not found: '{uri}'. "
-                  + "Ensure the URI points to an existing XAML resource dictionary.",
-                    ex
-                );
-            }
+            // Let WPF resolve every supported ResourceDictionary URI form directly. The old
+            // GetResourceStream preflight both loaded pack resources twice and incorrectly
+            // rejected valid content/site-of-origin dictionaries.
+            return new ResourceDictionary { Source = uri };
         }
-
-        return new ResourceDictionary { Source = uri };
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException(
+                $"Unable to load the additional theme resource dictionary '{uri}'.",
+                ex
+            );
+        }
     }
 
     #endregion

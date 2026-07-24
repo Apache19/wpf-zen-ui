@@ -17,6 +17,10 @@ namespace Wpf.Ui;
 /// </summary>
 /// <remarks>
 /// <para>
+/// During XAML parsing, property changes are batched through <see cref="ISupportInitialize"/>
+/// and applied once after the dictionary is fully initialized.
+/// </para>
+/// <para>
 /// At runtime, changing any property after initialization triggers an immediate theme refresh.
 /// </para>
 /// </remarks>
@@ -25,7 +29,7 @@ namespace Wpf.Ui;
 /// &lt;Application.Resources&gt;
 ///     &lt;ResourceDictionary&gt;
 ///         &lt;ResourceDictionary.MergedDictionaries&gt;
-///             &lt;ui:FluentTheme
+///             &lt;ui:ThemeManagerOptions
 ///                 ThemeMode="Dark"
 ///                 UseSystemAccentColor="True"
 ///                 AdditionalLightThemeSource="pack://application:,,,/MyApp;component/Themes/Light.xaml"
@@ -40,7 +44,7 @@ namespace Wpf.Ui;
 /// &lt;UserControl.Resources&gt;
 ///     &lt;ResourceDictionary&gt;
 ///         &lt;ResourceDictionary.MergedDictionaries&gt;
-///             &lt;ui:FluentTheme
+///             &lt;ui:ThemeManagerOptions
 ///                 ThemeMode="Dark"
 ///                 UseSystemAccentColor="True"
 ///                 AdditionalLightThemeSource="pack://application:,,,/MyApp;component/Themes/Light.xaml"
@@ -125,7 +129,7 @@ public class ThemeManagerOptions : ResourceDictionary, ISupportInitialize
     /// <summary>
     /// Gets or sets a value indicating whether to merge implicit styles
     /// for native WPF controls so they adopt the Fluent UI theme.
-    /// The default value is <c>false</c>.
+    /// The default value is <c>true</c>.
     /// </summary>
     public bool EnableNativeControlStyling
     {
@@ -204,17 +208,26 @@ public class ThemeManagerOptions : ResourceDictionary, ISupportInitialize
         }
     }
 
-    /// <inheritdoc cref="ISupportInitialize.BeginInit"/>
-    void ISupportInitialize.BeginInit()
+    /// <summary>
+    /// Begins a configuration transaction so multiple property changes are applied in one refresh.
+    /// </summary>
+    /// <remarks>
+    /// This member intentionally hides <see cref="ResourceDictionary.BeginInit"/>. Calling the
+    /// inherited method directly would start WPF resource initialization without enabling the
+    /// configuration batching promised by this type.
+    /// </remarks>
+    public new void BeginInit()
     {
+        base.BeginInit();
         _isInitializing = true;
-        BeginInit();
     }
 
-    /// <inheritdoc cref="ISupportInitialize.EndInit"/>
-    void ISupportInitialize.EndInit()
+    /// <summary>
+    /// Ends the configuration transaction and applies all pending changes once.
+    /// </summary>
+    public new void EndInit()
     {
-        EndInit();
+        base.EndInit();
         _isInitializing = false;
 
         if (_pendingApply)
@@ -222,6 +235,18 @@ public class ThemeManagerOptions : ResourceDictionary, ISupportInitialize
             _pendingApply = false;
             ApplyConfiguration();
         }
+    }
+
+    /// <inheritdoc cref="ISupportInitialize.BeginInit"/>
+    void ISupportInitialize.BeginInit()
+    {
+        BeginInit();
+    }
+
+    /// <inheritdoc cref="ISupportInitialize.EndInit"/>
+    void ISupportInitialize.EndInit()
+    {
+        EndInit();
     }
 
     private void RequestApply()

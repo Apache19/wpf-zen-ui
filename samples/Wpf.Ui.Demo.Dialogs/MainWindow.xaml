@@ -12,7 +12,7 @@
     <Window.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
-                <ui:ThemeManagerOptions ThemeMode="Light" UseStandardControlStyles="True" UseSystemAccentColor="True" />
+                <ui:ThemeManagerOptions ThemeMode="Light" EnableNativeControlStyling="True" UseSystemAccentColor="True" />
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Window.Resources>
