@@ -7,6 +7,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Windows.Controls;
+using System.Windows.Media;
 using Wpf.Ui.Controls;
 using Wpf.Ui.Win32;
 
@@ -26,10 +27,105 @@ public class TitleBarTests
                 true,
                 Wpf.Ui.Controls.FluentWindow.UseNativeWindowBorderProperty.DefaultMetadata.DefaultValue
             );
+            Assert.True(window.IsTitleBarHitTestVisibleWhenCovered);
+            Assert.Equal(
+                true,
+                Wpf.Ui.Controls.FluentWindow.IsTitleBarHitTestVisibleWhenCoveredProperty
+                    .DefaultMetadata.DefaultValue
+            );
             Assert.Null(typeof(Wpf.Ui.Controls.FluentWindow).GetProperty("OsVersion"));
             Assert.Null(typeof(Wpf.Ui.Controls.FluentWindow).GetEvent("FirstShown"));
             Assert.Null(typeof(Wpf.Ui.Controls.TitleBar).GetMethod("GetElementIdentity"));
             Assert.Null(typeof(TitleBarButton).GetProperty("IsMouseActualOver"));
+        });
+    }
+
+    [Fact]
+    public void CoveredTitleBarHitTest_UsesFrontmostSemanticRole()
+    {
+        RunOnStaThread(() =>
+        {
+            var root = new Grid { Width = 300D, Height = 100D };
+            var caption = new Border { Background = Brushes.Transparent };
+            var mask = new Border { Background = Brushes.Transparent };
+
+            Wpf.Ui.Controls.TitleBar.SetHitTestRole(caption, TitleBarHitTestRole.Caption);
+            root.Children.Add(caption);
+            root.Children.Add(mask);
+            root.Measure(new Size(300D, 100D));
+            root.Arrange(new Rect(0D, 0D, 300D, 100D));
+
+            Assert.True(
+                Wpf.Ui.Controls.FluentWindow.ShouldContinueTitleBarHitTestThrough(mask)
+            );
+            Assert.Same(
+                caption,
+                Wpf.Ui.Controls.FluentWindow.FindTitleBarHitTestElement(root, new Point(20D, 20D))
+            );
+
+            // An explicit role on the covering visual is authoritative. In particular, Client lets templates block
+            // native caption handling for interactive content even while covered-title-bar lookup is enabled.
+            Wpf.Ui.Controls.TitleBar.SetHitTestRole(mask, TitleBarHitTestRole.Client);
+            Assert.False(
+                Wpf.Ui.Controls.FluentWindow.ShouldContinueTitleBarHitTestThrough(mask)
+            );
+            Assert.Same(
+                mask,
+                Wpf.Ui.Controls.FluentWindow.FindTitleBarHitTestElement(root, new Point(20D, 20D))
+            );
+
+            mask.IsEnabled = false;
+            Assert.Same(
+                caption,
+                Wpf.Ui.Controls.FluentWindow.FindTitleBarHitTestElement(root, new Point(20D, 20D))
+            );
+        });
+    }
+
+    [Fact]
+    public void CoveredTitleBarHitTest_DoesNotPassThroughRolelessTitleBarContent()
+    {
+        RunOnStaThread(() =>
+        {
+            var titleBar = new Wpf.Ui.Controls.TitleBar();
+            var interactiveContent = new Border();
+            titleBar.Content = interactiveContent;
+
+            // None on title-bar content means ordinary WPF client input. It must not be mistaken for a window-level
+            // overlay, because continuing past it could resolve the caption background underneath the control.
+            Wpf.Ui.Controls.TitleBar.SetHitTestRole(
+                interactiveContent,
+                TitleBarHitTestRole.None
+            );
+
+            Assert.False(
+                Wpf.Ui.Controls.FluentWindow.ShouldContinueTitleBarHitTestThrough(
+                    interactiveContent
+                )
+            );
+        });
+    }
+
+    [Fact]
+    public void CoveredTitleBarHitTest_DoesNotRestoreHitTestInvisibleSubtree()
+    {
+        RunOnStaThread(() =>
+        {
+            var root = new Grid { Width = 300D, Height = 100D };
+            var caption = new Border
+            {
+                Background = Brushes.Transparent,
+                IsHitTestVisible = false,
+            };
+
+            Wpf.Ui.Controls.TitleBar.SetHitTestRole(caption, TitleBarHitTestRole.Caption);
+            root.Children.Add(caption);
+            root.Measure(new Size(300D, 100D));
+            root.Arrange(new Rect(0D, 0D, 300D, 100D));
+
+            Assert.Null(
+                Wpf.Ui.Controls.FluentWindow.FindTitleBarHitTestElement(root, new Point(20D, 20D))
+            );
         });
     }
 

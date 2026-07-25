@@ -172,6 +172,43 @@ public partial class FluentWindow : Window
     }
 
     /// <summary>
+    /// Identifies the <see cref="IsTitleBarHitTestVisibleWhenCovered"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty IsTitleBarHitTestVisibleWhenCoveredProperty =
+        DependencyProperty.Register(
+            nameof(IsTitleBarHitTestVisibleWhenCovered),
+            typeof(bool),
+            typeof(FluentWindow),
+            new FrameworkPropertyMetadata(true)
+        );
+
+    /// <summary>
+    /// Gets or sets a value indicating whether title-bar drag regions and caption buttons remain available when
+    /// another visual covers them.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// The default value is <see langword="true"/>. In that mode, FluentWindow first honors the ordinary topmost
+    /// WPF input hit. If that visual is outside a <see cref="TitleBar"/> and does not declare a
+    /// <see cref="TitleBarHitTestRole"/>, non-client hit testing continues through the visual stacking order until it
+    /// finds the first title-bar role. This allows full-window overlays such as a <see cref="ContentDialog"/> mask to
+    /// retain window dragging and caption-button behavior. A role-less element inside a title bar remains ordinary
+    /// client content and is never treated as an overlay.
+    /// </para>
+    /// <para>
+    /// Setting the property to <see langword="false"/> makes the topmost WPF input hit authoritative. A visual with
+    /// no title-bar role then blocks the covered title bar. The property affects only native non-client hit testing;
+    /// it does not make covered client controls receive WPF mouse or touch input, and it does not change the higher
+    /// priority of the window resize border.
+    /// </para>
+    /// </remarks>
+    public bool IsTitleBarHitTestVisibleWhenCovered
+    {
+        get => (bool)GetValue(IsTitleBarHitTestVisibleWhenCoveredProperty);
+        set => SetValue(IsTitleBarHitTestVisibleWhenCoveredProperty, value);
+    }
+
+    /// <summary>
     /// Identifies the <see cref="WindowBackdropType"/> dependency property.
     /// </summary>
     public static readonly DependencyProperty WindowBackdropTypeProperty = DependencyProperty.Register(
@@ -510,7 +547,7 @@ public partial class FluentWindow : Window
                 return PInvoke.DefWindowProc(
                     hwnd,
                     message,
-                    new WPARAM(unchecked((nuint)wParam.ToInt64())),
+                    new WPARAM((nuint)wParam.ToInt64()),
                     new LPARAM(-1)
                 );
 
@@ -586,7 +623,7 @@ public partial class FluentWindow : Window
         _ = PInvoke.DefWindowProc(
             hwnd,
             message,
-            new WPARAM(unchecked((nuint)wParam.ToInt64())),
+            new WPARAM((nuint)wParam.ToInt64()),
             new LPARAM(lParam)
         );
         var native = Marshal.PtrToStructure<NCCALCSIZE_PARAMS>(lParam);
@@ -637,8 +674,29 @@ public partial class FluentWindow : Window
             || localPoint.Y < 0
             || localPoint.X >= ActualWidth
             || localPoint.Y >= ActualHeight
-            || InputHitTest(localPoint) is not DependencyObject hitElement
         )
+        {
+            _pendingCaptionButton = null;
+            handled = false;
+            return IntPtr.Zero;
+        }
+
+        var hitElement = InputHitTest(localPoint) as DependencyObject;
+        if (
+            IsTitleBarHitTestVisibleWhenCovered
+            && ShouldContinueTitleBarHitTestThrough(hitElement)
+        )
+        {
+            // UIElement.InputHitTest intentionally stops at the topmost input element. That is correct for ordinary
+            // routed input, but it differs from the pre-refactor title-bar implementation: each TitleBar used to hit
+            // test its own subtree and therefore remained reachable behind sibling overlays. Enumerating raw visual
+            // hits only after the ordinary result is a role-less element outside every TitleBar restores that
+            // behavior without making title-bar user content non-client or bypassing an explicit Client role on a
+            // higher visual.
+            hitElement = FindTitleBarHitTestElement(this, localPoint);
+        }
+
+        if (hitElement is null)
         {
             _pendingCaptionButton = null;
             handled = false;
@@ -664,6 +722,113 @@ public partial class FluentWindow : Window
 
         handled = true;
         return FluentWindowNonClientArea.MapTitleBarRole(role, titleBar?.IsIconInteractionEnabled == true);
+    }
+
+    /// <summary>
+    /// Determines whether non-client hit testing may continue behind the ordinary WPF input hit.
+    /// </summary>
+    /// <remarks>
+    /// <see cref="TitleBarHitTestRole.None"/> has two distinct meanings here. On a window-level sibling such as a
+    /// dialog mask it means that the visual has no title-bar semantics and may be skipped when covered hit testing is
+    /// enabled. Inside a <see cref="TitleBar"/>, however, it is also the natural value of arbitrary user controls and
+    /// must continue to mean <c>HTCLIENT</c>. Treating both cases as an overlay would expose the caption visual below
+    /// the control and prevent that control from receiving WPF input even when no mask is present.
+    /// </remarks>
+    /// <param name="hitElement">The element returned by the ordinary WPF input hit test.</param>
+    /// <returns><see langword="true"/> only when lookup may safely continue through the visual stacking order.</returns>
+    internal static bool ShouldContinueTitleBarHitTestThrough(DependencyObject? hitElement)
+    {
+        if (hitElement is null)
+        {
+            return true;
+        }
+
+        if (TitleBar.GetHitTestRole(hitElement) != TitleBarHitTestRole.None)
+        {
+            return false;
+        }
+
+        return hitElement is not TitleBar && hitElement.FindAncestor<TitleBar>() is null;
+    }
+
+    /// <summary>
+    /// Finds the frontmost visible, input-enabled visual carrying a semantic title-bar hit-test role.
+    /// </summary>
+    /// <remarks>
+    /// WPF's public <see cref="VisualTreeHelper.HitTest(Visual, HitTestFilterCallback, HitTestResultCallback, HitTestParameters)"/>
+    /// overload is used because <see cref="UIElement.InputHitTest(Point)"/> deliberately stops after its first result.
+    /// The filter mirrors the visibility and hit-test-visibility guards in WPF's internal
+    /// <c>UIElement.InputHitTestFilterCallback</c>. Keeping those guards is important: the opt-in continuation is
+    /// allowed to cross z-order siblings, but it must never resurrect a title bar disabled by its own visual tree.
+    /// </remarks>
+    /// <param name="root">The visual at which hit testing starts.</param>
+    /// <param name="point">The point expressed in <paramref name="root"/> coordinates.</param>
+    /// <returns>The first visual with a non-<see cref="TitleBarHitTestRole.None"/> role, or <see langword="null"/>.</returns>
+    internal static DependencyObject? FindTitleBarHitTestElement(Visual root, Point point)
+    {
+        DependencyObject? hitElement = null;
+
+        VisualTreeHelper.HitTest(
+            root,
+            static candidate =>
+            {
+                if (
+                    candidate is UIElement element
+                    && (element.Visibility != Visibility.Visible || !element.IsHitTestVisible)
+                )
+                {
+                    return HitTestFilterBehavior.ContinueSkipSelfAndChildren;
+                }
+
+                return HitTestFilterBehavior.Continue;
+            },
+            result =>
+            {
+                var candidate = GetEnabledInputElement(result.VisualHit, root);
+                if (
+                    candidate is null
+                    || TitleBar.GetHitTestRole(candidate) == TitleBarHitTestRole.None
+                )
+                {
+                    return HitTestResultBehavior.Continue;
+                }
+
+                hitElement = candidate;
+                return HitTestResultBehavior.Stop;
+            },
+            new PointHitTestParameters(point)
+        );
+
+        return hitElement;
+    }
+
+    /// <summary>
+    /// Resolves a raw visual hit to the enabled WPF input element that owns it.
+    /// </summary>
+    /// <remarks>
+    /// <see cref="VisualTreeHelper.HitTest(Visual, Point)"/> reports disabled visuals, whereas
+    /// <see cref="UIElement.InputHitTest(Point)"/> walks upward to the first enabled <see cref="UIElement"/>. Repeating
+    /// that step prevents a disabled caption button behind an overlay from regaining its native HT role.
+    /// </remarks>
+    private static DependencyObject? GetEnabledInputElement(DependencyObject visualHit, Visual root)
+    {
+        DependencyObject? candidate = visualHit;
+        while (candidate is not null)
+        {
+            if (candidate is UIElement { IsEnabled: true })
+            {
+                return candidate;
+            }
+
+            if (ReferenceEquals(candidate, root))
+            {
+                break;
+            }
+
+            candidate = candidate.GetParent();
+        }
+
+        return null;
     }
 
     private void UpdateActualWindowState(int sizeCode)
