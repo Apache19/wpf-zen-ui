@@ -482,7 +482,7 @@ public partial class FluentWindow : Window
                 {
                     // IsIconInteractionEnabled maps the icon to HTSYSMENU only when this opt-in behavior is wanted.
                     // No single-click menu is opened, so the double-click can reach this message normally.
-                    _ = PInvoke.PostMessage(hwnd, PInvoke.WM_SYSCOMMAND, PInvoke.SC_CLOSE, 0);
+                    _ = PInvoke.PostMessage(hwnd, PInvoke.WM_SYSCOMMAND, new WPARAM(PInvoke.SC_CLOSE), 0);
                     handled = true;
                     break;
                 }
