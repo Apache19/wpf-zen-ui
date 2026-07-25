@@ -54,7 +54,7 @@
                     VerticalAlignment="Center"
                     Content="Standard WPF button"
                     IsEnabled="{Binding IsSimpleButtonDisabled, Converter={StaticResource BoolInvertConverter}}" />
-                <ui:CheckBox
+                <CheckBox
                     Grid.Column="1"
                     Content="Disable button"
                     IsChecked="{Binding IsSimpleButtonDisabled}" />
@@ -101,7 +101,7 @@
                             SelectedItem="{Binding UiButtonAppearance}" />
                     </StackPanel>
                     <ui:Separator Margin="0,12" Orientation="Horizontal" />
-                    <ui:CheckBox
+                    <CheckBox
                         HorizontalAlignment="Right"
                         Content="Disable button"
                         IsChecked="{Binding IsUiButtonDisabled}" />

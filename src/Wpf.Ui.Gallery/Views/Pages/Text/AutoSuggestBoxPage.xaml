@@ -33,7 +33,7 @@
                 Icon="{ui:SymbolIcon Search24}"
                 OriginalItemsSource="{Binding AutoSuggestBoxSuggestions, Mode=OneWay}"
                 PlaceholderText="Search..." />
-            <ui:CheckBox
+            <CheckBox
                 Grid.Column="1"
                 Content="Show clear button"
                 IsChecked="{Binding ShowClearButtonDisabled}" />

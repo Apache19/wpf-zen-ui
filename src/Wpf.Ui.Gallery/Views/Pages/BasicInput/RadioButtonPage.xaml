@@ -40,7 +40,7 @@
                         GroupName="radio_group_one"
                         IsEnabled="{Binding IsRadioButtonDisabled, Converter={StaticResource BoolInvertConverter}}" />
                 </StackPanel>
-                <ui:CheckBox
+                <CheckBox
                     Grid.Column="1"
                     Content="Disable radio buttons"
                     IsChecked="{Binding IsRadioButtonDisabled}" />

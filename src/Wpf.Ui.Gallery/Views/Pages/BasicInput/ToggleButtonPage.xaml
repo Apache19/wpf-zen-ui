@@ -50,7 +50,7 @@
                         </Style>
                     </ui:ToggleButton.Style>
                 </ui:ToggleButton>
-                <ui:CheckBox
+                <CheckBox
                     Grid.Column="1"
                     Content="Disable toggle button"
                     IsChecked="{Binding IsToggleButtonDisabled}" />

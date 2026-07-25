@@ -218,7 +218,7 @@
                             HorizontalAlignment="Left"
                             ItemsSource="{Binding Source={StaticResource SplitButtonAppearanceList}}"
                             SelectedIndex="1" />
-                        <ui:CheckBox
+                        <CheckBox
                             x:Name="UseCustomColorsCheckBox"
                             Grid.Column="2"
                             Margin="16,0,0,0"

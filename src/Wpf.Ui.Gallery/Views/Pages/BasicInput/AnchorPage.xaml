@@ -35,7 +35,7 @@
                         IsEnabled="{Binding IsAnchorDisabled, Converter={StaticResource BoolInvertConverter}}"
                         NavigateUri="https://lepo.co/" />
                 </StackPanel>
-                <ui:CheckBox
+                <CheckBox
                     Grid.Column="1"
                     Content="Disable anchor"
                     IsChecked="{Binding IsAnchorDisabled}" />

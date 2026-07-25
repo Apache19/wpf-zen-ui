@@ -34,7 +34,7 @@
                     IsEnabled="{Binding IsToggleSwitchDisabled, Converter={StaticResource BoolInvertConverter}}"
                     OffContent="Off"
                     OnContent="On" />
-                <ui:CheckBox
+                <CheckBox
                     Grid.Column="1"
                     IsChecked="{Binding IsToggleSwitchDisabled}"
                     Content="Disable switch" />

@@ -13,32 +13,19 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Ui.Controls"
     xmlns:converters="clr-namespace:Wpf.Ui.Converters"
-    xmlns:theming="clr-namespace:Wpf.Ui.Theming"
-    xmlns:system="clr-namespace:System;assembly=mscorlib"
-    xmlns:markup="clr-namespace:Wpf.Ui.Markup">
+    xmlns:m="clr-namespace:Wpf.Ui.Markup"
+    xmlns:t="clr-namespace:Wpf.Ui.Theming">
 
     <converters:FallbackBrushConverter x:Key="FallbackBrushConverter" />
 
-    <Color x:Key="FallbackColor">#FFFF0000</Color>
-
-    <Thickness x:Key="CheckBoxPadding">11,5,11,6</Thickness>
-    <Thickness x:Key="CheckBoxBorderThemeThickness">1</Thickness>
-    <Thickness x:Key="CheckBoxContentMargin">8,0,0,0</Thickness>
-    <system:Double x:Key="CheckBoxIconSize">13</system:Double>
-    <system:Double x:Key="CheckBoxHeight">20</system:Double>
-    <system:Double x:Key="CheckBoxWidth">20</system:Double>
-    <system:TimeSpan x:Key="CheckBoxAnimationOffset">00:00:00.250</system:TimeSpan>
-    <Duration x:Key="CheckBoxAnimationDuration">00:00:00.250</Duration>
-    <Style x:Key="{x:Static theming:StyleKeys.DefaultCheckBoxStyle}" TargetType="{x:Type CheckBox}">
-        <!--  Universal WPF UI focus  -->
-        <Setter Property="FocusVisualStyle" Value="{DynamicResource {x:Static theming:StyleKeys.DefaultControlFocusVisualStyle}}" />
-        <!--  Universal WPF UI focus  -->
-        <Setter Property="Background" Value="{markup:BrushResource ControlAltFillColorSecondaryBrush}" />
-        <Setter Property="Foreground" Value="{markup:BrushResource TextFillColorPrimaryBrush}" />
-        <Setter Property="BorderBrush" Value="{markup:BrushResource ControlStrongStrokeColorDefaultBrush}" />
-        <Setter Property="BorderThickness" Value="{StaticResource CheckBoxBorderThemeThickness}" />
-        <Setter Property="Padding" Value="{StaticResource CheckBoxPadding}" />
-        <Setter Property="Border.CornerRadius" Value="{DynamicResource {x:Static theming:VariableKeys.ControlCornerRadius}}" />
+    <Style x:Key="{x:Static t:StyleKeys.DefaultCheckBoxStyle}" TargetType="{x:Type CheckBox}">
+        <Setter Property="OverridesDefaultStyle" Value="True" />
+        <Setter Property="FocusVisualStyle" Value="{DynamicResource {x:Static t:StyleKeys.DefaultControlFocusVisualStyle}}" />
+        <Setter Property="Background" Value="{m:BrushResource ControlAltFillColorSecondaryBrush}" />
+        <Setter Property="BorderBrush" Value="{m:BrushResource ControlStrongStrokeColorDefaultBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Padding" Value="11,5,11,6" />
+        <Setter Property="Border.CornerRadius" Value="{DynamicResource {x:Static t:VariableKeys.ControlCornerRadius}}" />
         <Setter Property="HorizontalAlignment" Value="Left" />
         <Setter Property="VerticalAlignment" Value="Center" />
         <Setter Property="HorizontalContentAlignment" Value="Left" />
@@ -58,8 +45,8 @@
                         <BulletDecorator.Bullet>
                             <Border
                                 x:Name="ControlBorderIconPresenter"
-                                Width="{StaticResource CheckBoxHeight}"
-                                Height="{StaticResource CheckBoxWidth}"
+                                Width="20"
+                                Height="20"
                                 HorizontalAlignment="Left"
                                 VerticalAlignment="Center"
                                 Background="{TemplateBinding Background}"
@@ -73,19 +60,19 @@
                                         x:Name="ControlIcon"
                                         HorizontalAlignment="Center"
                                         VerticalAlignment="Center"
-                                        FontSize="{StaticResource CheckBoxIconSize}"
-                                        FontWeight="Bold"
-                                        Foreground="{markup:BrushResource TextOnAccentPrimaryBrush}"
-                                        Symbol="Checkmark48"
-                                        Visibility="Collapsed"
                                         controls:ClipExtensions.ClipPercentage="1"
-                                        controls:ClipExtensions.ObserveSizeChanges="True" />
+                                        controls:ClipExtensions.ObserveSizeChanges="True"
+                                        FontSize="13"
+                                        FontWeight="Bold"
+                                        Foreground="{m:BrushResource TextOnAccentPrimaryBrush}"
+                                        Symbol="Checkmark48"
+                                        Visibility="Collapsed" />
                                 </Border>
                             </Border>
                         </BulletDecorator.Bullet>
                         <ContentPresenter
                             x:Name="ContentPresenter"
-                            Margin="{StaticResource CheckBoxContentMargin}"
+                            Margin="8,0,0,0"
                             HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
                             VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
                             RecognizesAccessKey="True" />
@@ -102,13 +89,13 @@
                         <Trigger Property="IsChecked" Value="{x:Null}">
                             <Setter TargetName="ControlIcon" Property="Symbol" Value="Subtract16" />
                             <Setter TargetName="ControlIcon" Property="Visibility" Value="Visible" />
-                            <Setter TargetName="ControlBorderIconPresenter" Property="Background" Value="{markup:BrushResource AccentFillSecondaryBrush}" />
-                            <Setter TargetName="StrokeBorder" Property="BorderBrush" Value="{markup:BrushResource SubtleFillColorTransparentBrush}" />
+                            <Setter TargetName="ControlBorderIconPresenter" Property="Background" Value="{m:BrushResource AccentFillSecondaryBrush}" />
+                            <Setter TargetName="StrokeBorder" Property="BorderBrush" Value="{m:BrushResource SubtleFillColorTransparentBrush}" />
                         </Trigger>
                         <Trigger Property="IsChecked" Value="True">
                             <Setter TargetName="ControlIcon" Property="Visibility" Value="Visible" />
-                            <Setter TargetName="ControlBorderIconPresenter" Property="Background" Value="{markup:BrushResource AccentFillSecondaryBrush}" />
-                            <Setter TargetName="StrokeBorder" Property="BorderBrush" Value="{markup:BrushResource SubtleFillColorTransparentBrush}" />
+                            <Setter TargetName="ControlBorderIconPresenter" Property="Background" Value="{m:BrushResource AccentFillSecondaryBrush}" />
+                            <Setter TargetName="StrokeBorder" Property="BorderBrush" Value="{m:BrushResource SubtleFillColorTransparentBrush}" />
                             <Trigger.EnterActions>
                                 <BeginStoryboard Name="SlideIn">
                                     <Storyboard>
@@ -117,7 +104,7 @@
                                             Storyboard.TargetProperty="(controls:ClipExtensions.ClipPercentage)"
                                             From="0"
                                             To="1"
-                                            Duration="{StaticResource CheckBoxAnimationDuration}">
+                                            Duration="00:00:00.250">
                                             <DoubleAnimation.EasingFunction>
                                                 <CubicEase EasingMode="EaseOut" />
                                             </DoubleAnimation.EasingFunction>
@@ -129,12 +116,12 @@
                         <!--  Skip the animation when it becomes visible  -->
                         <Trigger Property="Visibility" Value="Visible">
                             <Trigger.EnterActions>
-                                <SeekStoryboard BeginStoryboardName="SlideIn" Offset="{StaticResource CheckBoxAnimationOffset}" />
+                                <SeekStoryboard BeginStoryboardName="SlideIn" Offset="00:00:00.250" />
                             </Trigger.EnterActions>
                         </Trigger>
                         <!--  Skip the animation on load  -->
                         <EventTrigger RoutedEvent="FrameworkElement.Loaded">
-                            <SeekStoryboard BeginStoryboardName="SlideIn" Offset="{StaticResource CheckBoxAnimationOffset}" />
+                            <SeekStoryboard BeginStoryboardName="SlideIn" Offset="00:00:00.250" />
                         </EventTrigger>
                         <MultiTrigger>
                             <MultiTrigger.Conditions>
@@ -142,7 +129,7 @@
                                 <Condition Property="IsPressed" Value="False" />
                                 <Condition Property="IsChecked" Value="False" />
                             </MultiTrigger.Conditions>
-                            <Setter TargetName="StrokeBorder" Property="Background" Value="{markup:BrushResource ControlAltFillColorTertiaryBrush}" />
+                            <Setter TargetName="StrokeBorder" Property="Background" Value="{m:BrushResource ControlAltFillColorTertiaryBrush}" />
                         </MultiTrigger>
                         <MultiTrigger>
                             <MultiTrigger.Conditions>
@@ -150,7 +137,7 @@
                                 <Condition Property="IsPressed" Value="True" />
                                 <Condition Property="IsChecked" Value="False" />
                             </MultiTrigger.Conditions>
-                            <Setter TargetName="StrokeBorder" Property="Background" Value="{markup:BrushResource ControlAltFillColorQuarternaryBrush}" />
+                            <Setter TargetName="StrokeBorder" Property="Background" Value="{m:BrushResource ControlAltFillColorQuarternaryBrush}" />
                         </MultiTrigger>
                         <MultiTrigger>
                             <MultiTrigger.Conditions>
@@ -158,8 +145,8 @@
                                 <Condition Property="IsPressed" Value="False" />
                                 <Condition Property="IsChecked" Value="{x:Null}" />
                             </MultiTrigger.Conditions>
-                            <Setter TargetName="ControlBorderIconPresenter" Property="Background" Value="{markup:BrushResource AccentFillPrimaryBrush}" />
-                            <Setter TargetName="StrokeBorder" Property="BorderBrush" Value="{markup:BrushResource SubtleFillColorTransparentBrush}" />
+                            <Setter TargetName="ControlBorderIconPresenter" Property="Background" Value="{m:BrushResource AccentFillPrimaryBrush}" />
+                            <Setter TargetName="StrokeBorder" Property="BorderBrush" Value="{m:BrushResource SubtleFillColorTransparentBrush}" />
                         </MultiTrigger>
                         <MultiTrigger>
                             <MultiTrigger.Conditions>
@@ -167,8 +154,8 @@
                                 <Condition Property="IsPressed" Value="True" />
                                 <Condition Property="IsChecked" Value="{x:Null}" />
                             </MultiTrigger.Conditions>
-                            <Setter TargetName="ControlBorderIconPresenter" Property="Background" Value="{markup:BrushResource AccentFillTertiaryBrush}" />
-                            <Setter TargetName="StrokeBorder" Property="BorderBrush" Value="{markup:BrushResource SubtleFillColorTransparentBrush}" />
+                            <Setter TargetName="ControlBorderIconPresenter" Property="Background" Value="{m:BrushResource AccentFillTertiaryBrush}" />
+                            <Setter TargetName="StrokeBorder" Property="BorderBrush" Value="{m:BrushResource SubtleFillColorTransparentBrush}" />
                         </MultiTrigger>
                         <MultiTrigger>
                             <MultiTrigger.Conditions>
@@ -176,8 +163,8 @@
                                 <Condition Property="IsPressed" Value="False" />
                                 <Condition Property="IsChecked" Value="True" />
                             </MultiTrigger.Conditions>
-                            <Setter TargetName="ControlBorderIconPresenter" Property="Background" Value="{markup:BrushResource AccentFillPrimaryBrush}" />
-                            <Setter TargetName="StrokeBorder" Property="BorderBrush" Value="{markup:BrushResource SubtleFillColorTransparentBrush}" />
+                            <Setter TargetName="ControlBorderIconPresenter" Property="Background" Value="{m:BrushResource AccentFillPrimaryBrush}" />
+                            <Setter TargetName="StrokeBorder" Property="BorderBrush" Value="{m:BrushResource SubtleFillColorTransparentBrush}" />
                         </MultiTrigger>
                         <MultiTrigger>
                             <MultiTrigger.Conditions>
@@ -185,14 +172,14 @@
                                 <Condition Property="IsPressed" Value="True" />
                                 <Condition Property="IsChecked" Value="True" />
                             </MultiTrigger.Conditions>
-                            <Setter TargetName="ControlBorderIconPresenter" Property="Background" Value="{markup:BrushResource AccentFillTertiaryBrush}" />
-                            <Setter TargetName="StrokeBorder" Property="BorderBrush" Value="{markup:BrushResource SubtleFillColorTransparentBrush}" />
+                            <Setter TargetName="ControlBorderIconPresenter" Property="Background" Value="{m:BrushResource AccentFillTertiaryBrush}" />
+                            <Setter TargetName="StrokeBorder" Property="BorderBrush" Value="{m:BrushResource SubtleFillColorTransparentBrush}" />
                         </MultiTrigger>
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter TargetName="ControlBorderIconPresenter" Property="Background" Value="{markup:BrushResource ControlAltFillColorDisabledBrush}" />
-                            <Setter TargetName="StrokeBorder" Property="BorderBrush" Value="{markup:BrushResource ControlStrongStrokeColorDisabledBrush}" />
-                            <Setter TargetName="ControlIcon" Property="Foreground" Value="{markup:BrushResource TextFillColorDisabledBrush}" />
-                            <Setter Property="Foreground" Value="{markup:BrushResource TextFillColorDisabledBrush}" />
+                            <Setter TargetName="ControlBorderIconPresenter" Property="Background" Value="{m:BrushResource ControlAltFillColorDisabledBrush}" />
+                            <Setter TargetName="StrokeBorder" Property="BorderBrush" Value="{m:BrushResource ControlStrongStrokeColorDisabledBrush}" />
+                            <Setter TargetName="ControlIcon" Property="Foreground" Value="{m:BrushResource TextFillColorDisabledBrush}" />
+                            <Setter Property="Foreground" Value="{m:BrushResource TextFillColorDisabledBrush}" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -200,11 +187,6 @@
         </Setter>
     </Style>
 
-    <Style
-        x:Key="{x:Static theming:StyleKeys.DefaultUiCheckBoxStyle}"
-        BasedOn="{StaticResource {x:Static theming:StyleKeys.DefaultCheckBoxStyle}}"
-        TargetType="{x:Type controls:CheckBox}" />
-
-    <Style BasedOn="{StaticResource {x:Static theming:StyleKeys.DefaultUiCheckBoxStyle}}" TargetType="{x:Type controls:CheckBox}" />
+    <Style BasedOn="{StaticResource {x:Static t:StyleKeys.DefaultCheckBoxStyle}}" TargetType="{x:Type CheckBox}" />
 
 </ResourceDictionary>

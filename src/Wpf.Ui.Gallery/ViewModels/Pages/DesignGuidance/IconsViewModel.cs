@@ -5,7 +5,6 @@
 
 using Wpf.Ui.Controls;
 using Wpf.Ui.Gallery.Models;
-using UiCheckBox = Wpf.Ui.Controls.CheckBox;
 
 namespace Wpf.Ui.Gallery.ViewModels.Pages.DesignGuidance;
 

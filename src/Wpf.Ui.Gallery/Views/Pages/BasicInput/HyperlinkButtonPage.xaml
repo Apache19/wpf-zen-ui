@@ -32,7 +32,7 @@
                     Icon="{ui:SymbolIcon Link24}"
                     IsEnabled="{Binding IsHyperlinkDisabled, Converter={StaticResource BoolInvertConverter}}"
                     NavigateUri="https://lepo.co/" />
-                <ui:CheckBox
+                <CheckBox
                     Grid.Column="1"
                     Content="Disable hyperlink"
                     IsChecked="{Binding IsHyperlinkDisabled, Mode=TwoWay}" />

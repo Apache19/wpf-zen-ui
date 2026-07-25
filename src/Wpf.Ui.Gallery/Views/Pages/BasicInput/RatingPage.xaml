@@ -41,7 +41,7 @@
                     <Label Margin="0,0,0,-4" Content="Value:" />
                     <TextBlock Margin="0" Text="{Binding FirstRatingValue, Mode=OneWay}" />
                 </StackPanel>
-                <ui:CheckBox
+                <CheckBox
                     Grid.Column="2"
                     VerticalAlignment="Center"
                     Content="Disable rating"
@@ -72,7 +72,7 @@
                     <Label Margin="0,0,0,-4" Content="Value:" />
                     <TextBlock Margin="0" Text="{Binding SecondRatingValue, Mode=TwoWay}" />
                 </StackPanel>
-                <ui:CheckBox
+                <CheckBox
                     Grid.Column="2"
                     VerticalAlignment="Center"
                     Content="Disable rating"

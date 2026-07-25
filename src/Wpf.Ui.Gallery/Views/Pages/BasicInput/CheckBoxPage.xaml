@@ -17,14 +17,14 @@
 
     <StackPanel Margin="0,0,0,24">
         <controls:ControlExample HeaderText="A 2-state CheckBox." XamlCode="&lt;CheckBox Content=&quot;Standard WPF checkbox&quot; /&gt;">
-            <ui:CheckBox Content="Two-state CheckBox" />
+            <CheckBox Content="Two-state CheckBox" />
         </controls:ControlExample>
 
         <controls:ControlExample
             Margin="0,32,0,0"
             HeaderText="A 3-state CheckBox."
             XamlCode="&lt;CheckBox IsThreeState=&quot;True&quot; /&gt;">
-            <ui:CheckBox
+            <CheckBox
                 Content="Three-state CheckBox"
                 IsChecked="{x:Null}"
                 IsThreeState="True" />
@@ -35,19 +35,19 @@
             HeaderText="Using a 3-state CheckBox."
             XamlCode="&lt;CheckBox IsThreeState=&quot;True&quot; /&gt;">
             <StackPanel>
-                <ui:CheckBox
+                <CheckBox
                     Content="Select all"
                     IsChecked="{Binding SelectAllCheckBoxChecked, Mode=TwoWay}"
                     IsThreeState="True" />
-                <ui:CheckBox
+                <CheckBox
                     Margin="24,0,0,0"
                     Content="Option 1"
                     IsChecked="{Binding OptionOneCheckBoxChecked, Mode=TwoWay}" />
-                <ui:CheckBox
+                <CheckBox
                     Margin="24,0,0,0"
                     Content="Option 2"
                     IsChecked="{Binding OptionTwoCheckBoxChecked, Mode=TwoWay}" />
-                <ui:CheckBox
+                <CheckBox
                     Margin="24,0,0,0"
                     Content="Option 3"
                     IsChecked="{Binding OptionThreeCheckBoxChecked, Mode=TwoWay}" />

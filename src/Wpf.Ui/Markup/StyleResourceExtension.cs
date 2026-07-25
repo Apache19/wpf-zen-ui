@@ -38,7 +38,6 @@ public class StyleResourceExtension : DynamicResourceExtension
             StyleId.UiMenuItemStyle                 => StyleKeys.UiMenuItemStyle,
             StyleId.MenuItemSeparatorStyle          => StyleKeys.MenuItemSeparatorStyle,
             StyleId.DefaultCheckBoxStyle            => StyleKeys.DefaultCheckBoxStyle,
-            StyleId.DefaultUiCheckBoxStyle          => StyleKeys.DefaultUiCheckBoxStyle,
             StyleId.DefaultComboBoxStyle            => StyleKeys.DefaultComboBoxStyle,
             StyleId.DefaultUiComboBoxStyle          => StyleKeys.DefaultUiComboBoxStyle,
             StyleId.DefaultTextBoxStyle             => StyleKeys.DefaultTextBoxStyle,
