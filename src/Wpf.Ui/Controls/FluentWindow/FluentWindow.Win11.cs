@@ -20,7 +20,19 @@ namespace Wpf.Ui.Controls;
 public partial class FluentWindow
 {
     private static readonly Color BlackTransparentColor = Color.FromArgb(0, 0, 0, 0);
-    private static readonly Brush BlackTransparentBrush = new SolidColorBrush(BlackTransparentColor);
+    private static readonly Brush BlackTransparentBrush = CreateBlackTransparentBrush();
+
+    private static Brush CreateBlackTransparentBrush()
+    {
+        var brush = new SolidColorBrush(BlackTransparentColor);
+
+        // FluentWindow metadata is process-wide and can be initialized by any UI thread. An unfrozen Freezable
+        // remains bound to that first Dispatcher and fails when backdrop coercion returns it to a window on another
+        // STA. The brush is immutable by design, so freezing both documents that contract and makes it safe to share.
+        brush.Freeze();
+
+        return brush;
+    }
 
     private static void InitializeStatic_Win11()
     {

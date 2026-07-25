@@ -11,6 +11,17 @@ namespace Wpf.Ui.UnitTests.Controls.FluentWindow;
 public class FluentWindowNonClientAreaTests
 {
     [Fact]
+    public void WindowFrameInsets_ClampEveryNegativeMeasurement()
+    {
+        var frame = new WindowFrameInsets(-1, -2, -3, -4);
+
+        Assert.Equal(0, frame.Left);
+        Assert.Equal(0, frame.Top);
+        Assert.Equal(0, frame.Right);
+        Assert.Equal(0, frame.Bottom);
+    }
+
+    [Fact]
     public void MeasureFrame_UsesPhysicalSideAndBottomOffsets()
     {
         var window = Rect(-1600, -900, -600, -200);
@@ -96,6 +107,20 @@ public class FluentWindowNonClientAreaTests
         Assert.Equal(8, first.Top);
         Assert.Equal(12, second.Left);
         Assert.Equal(12, second.Top);
+    }
+
+    [Fact]
+    public void MeasureFrame_ClampsClientRectThatExtendsOutsideWindow()
+    {
+        var frame = FluentWindowNonClientArea.MeasureFrame(
+            Rect(100, 100, 500, 400),
+            Rect(90, 80, 520, 430)
+        );
+
+        Assert.Equal(0, frame.Left);
+        Assert.Equal(0, frame.Top);
+        Assert.Equal(0, frame.Right);
+        Assert.Equal(0, frame.Bottom);
     }
 
     [Theory]
@@ -221,6 +246,29 @@ public class FluentWindowNonClientAreaTests
             Rect(-500, -300, -100, 0),
             new Point(x, y),
             new WindowFrameInsets(8, 9, 11, 9)
+        );
+
+        Assert.Equal((IntPtr)expectedHitTest, result);
+    }
+
+    [Theory]
+    [InlineData(7, 8, 13)]
+    [InlineData(8, 8, 12)]
+    [InlineData(388, 8, 12)]
+    [InlineData(389, 8, 14)]
+    [InlineData(8, 9, 0)]
+    [InlineData(389, 290, 17)]
+    [InlineData(388, 290, 15)]
+    public void HitTestResizeBorder_UsesHalfOpenAsymmetricBoundaries(
+        double x,
+        double y,
+        int expectedHitTest
+    )
+    {
+        var result = FluentWindowNonClientArea.HitTestResizeBorder(
+            Rect(0, 0, 400, 300),
+            new Point(x, y),
+            new WindowFrameInsets(8, 9, 11, 10)
         );
 
         Assert.Equal((IntPtr)expectedHitTest, result);
