@@ -35,7 +35,7 @@
         </Border>
         <ControlTemplate.Triggers>
             <!--  Hover  -->
-            <Trigger Property="IsMouseActualOver" Value="True">
+            <Trigger Property="IsPointerOver" Value="True">
                 <Setter TargetName="RootBorder" Property="Background" Value="{markup:BrushResource ControlAltFillColorQuarternaryBrush}" />
                 <Setter TargetName="IconPath" Property="Fill" Value="{markup:BrushResource TextFillColorPrimaryBrush}" />
             </Trigger>
@@ -68,7 +68,7 @@
                 <Setter TargetName="IconPath" Property="Data" Value="{StaticResource TitleBarMaximizeIconData}" />
             </DataTrigger>
             <!--  Hover  -->
-            <Trigger Property="IsMouseActualOver" Value="True">
+            <Trigger Property="IsPointerOver" Value="True">
                 <Setter TargetName="RootBorder" Property="Background" Value="{markup:BrushResource ControlAltFillColorQuarternaryBrush}" />
                 <Setter TargetName="IconPath" Property="Fill" Value="{markup:BrushResource TextFillColorPrimaryBrush}" />
             </Trigger>
@@ -94,7 +94,7 @@
         </Border>
         <ControlTemplate.Triggers>
             <!--  Hover  -->
-            <Trigger Property="IsMouseActualOver" Value="True">
+            <Trigger Property="IsPointerOver" Value="True">
                 <Setter TargetName="RootBorder" Property="Background" Value="{StaticResource TitleBarButtonCloseBackgroundPointerOver}" />
                 <Setter TargetName="IconPath" Property="Fill" Value="{StaticResource TitleBarButtonCloseForegroundHot}" />
             </Trigger>
@@ -121,7 +121,7 @@
         </Border>
         <ControlTemplate.Triggers>
             <!--  Hover  -->
-            <Trigger Property="IsMouseActualOver" Value="True">
+            <Trigger Property="IsPointerOver" Value="True">
                 <Setter TargetName="RootBorder" Property="Background" Value="{markup:BrushResource ControlAltFillColorQuarternaryBrush}" />
             </Trigger>
             <!--  Pressed  -->
@@ -134,16 +134,16 @@
     <Style x:Key="DefaultTitleBarButtonStyle" TargetType="{x:Type controls:TitleBarButton}">
         <Style.Triggers>
             <!--  Template Selector  -->
-            <Trigger Property="controls:TitleBar.ElementIdentity" Value="MinimizeButton">
+            <Trigger Property="controls:TitleBar.HitTestRole" Value="MinimizeButton">
                 <Setter Property="Template" Value="{StaticResource MinimizeButtonTemplate}" />
             </Trigger>
-            <Trigger Property="controls:TitleBar.ElementIdentity" Value="MaximizeButton">
+            <Trigger Property="controls:TitleBar.HitTestRole" Value="MaximizeButton">
                 <Setter Property="Template" Value="{StaticResource MaximizeButtonTemplate}" />
             </Trigger>
-            <Trigger Property="controls:TitleBar.ElementIdentity" Value="CloseButton">
+            <Trigger Property="controls:TitleBar.HitTestRole" Value="CloseButton">
                 <Setter Property="Template" Value="{StaticResource CloseButtonTemplate}" />
             </Trigger>
-            <Trigger Property="controls:TitleBar.ElementIdentity" Value="HelpButton">
+            <Trigger Property="controls:TitleBar.HitTestRole" Value="HelpButton">
                 <Setter Property="Template" Value="{StaticResource HelpButtonTemplate}" />
             </Trigger>
             <!--  Disabled  -->
@@ -173,7 +173,7 @@
                     </Border>
                     <ControlTemplate.Triggers>
                         <!--  Hover  -->
-                        <Trigger Property="IsMouseActualOver" Value="True">
+                        <Trigger Property="IsPointerOver" Value="True">
                             <Setter TargetName="RootBorder" Property="Background" Value="{StaticResource TitleBarButtonCloseBackgroundPointerOver}" />
                             <Setter TargetName="IconPath" Property="Fill" Value="{StaticResource TitleBarButtonCloseForegroundHot}" />
                         </Trigger>

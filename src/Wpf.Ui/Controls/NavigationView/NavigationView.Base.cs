@@ -459,8 +459,8 @@ public partial class NavigationView : Control, INavigationView
         AutomationProperties.SetAutomationId(button, automationId);
 
         // A contributed title-bar button must remain client content. Otherwise the inherited
-        // Caption identity would turn a click into a native window drag operation.
-        TitleBar.SetElementIdentity(button, TitleBarElementIdentity.UserContent);
+        // Caption role would turn a click into a native window drag operation.
+        TitleBar.SetHitTestRole(button, TitleBarHitTestRole.Client);
         return button;
     }
 

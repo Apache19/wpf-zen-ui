@@ -6,10 +6,8 @@
 using Windows.Win32;
 using Windows.Win32.Foundation;
 using Windows.Win32.Graphics.Dwm;
-using Windows.Win32.UI.Controls;
-using Windows.Win32.UI.WindowsAndMessaging;
 using Wpf.Ui.Appearance;
-using Wpf.Ui.Interop;
+using Wpf.Ui.Win32;
 
 // ReSharper disable once CheckNamespace
 namespace Wpf.Ui.Controls;
@@ -41,50 +39,70 @@ public partial class FluentWindow
         );
     }
 
-    // 必须将非客户区效果扩展到整个窗口，否则任何效果都出不来
-    private static void ExtendFrameIntoClientArea(HWND hwnd, bool extend)
+    /// <summary>
+    /// Synchronizes the DWM frame surface with the selected backdrop and non-client strategies.
+    /// </summary>
+    /// <remarks>
+    /// Backdrop materials require the conventional <c>-1</c> sheet-of-glass extension. A window using
+    /// <see cref="FluentWindowFrameStrategy.Windows11Client"/> must instead keep a one-physical-pixel extension
+    /// when no backdrop is active; otherwise its client rectangle covers every native frame pixel and DWM drops
+    /// both the visible outline and rounded-corner treatment. The one-pixel extension does not require a transparent
+    /// WPF composition target and therefore does not alter the window's normal background.
+    /// </remarks>
+    private void UpdateDwmFrameExtension_Win11(HWND hwnd, bool isBackdropApplied)
     {
-        var margins = default(MARGINS);
-        if (extend)
+        var margins = FluentWindowNonClientArea.CalculateDwmFrameMargins(
+            GetFrameStrategy(),
+            isBackdropApplied
+        );
+        _ = PInvoke.DwmExtendFrameIntoClientArea(hwnd, in margins);
+    }
+
+    /// <summary>
+    /// Applies the active accent color to a fully client-rendered Win11 DWM frame.
+    /// </summary>
+    /// <remarks>
+    /// Extending one DWM frame pixel preserves the native outline and rounded corners, but that synthetic frame does
+    /// not automatically participate in the user's "show accent color on title bars and window borders" setting.
+    /// Native-frame mode must remain on <c>DWMWA_COLOR_DEFAULT</c> because Windows already implements the correct
+    /// activation policy there. Restoring the default in every non-accent state also prevents a forced color from
+    /// surviving activation loss or a runtime switch back to <see cref="UseNativeWindowBorder"/>.
+    /// </remarks>
+    private void UpdateDwmBorderColor_Win11()
+    {
+        if (!Utilities.IsWin_11_Or_Greater || _hwnd == HWND.Null || !PInvoke.IsWindow(_hwnd))
         {
-            margins.cxLeftWidth    = -1;
-            margins.cxRightWidth   = -1;
-            margins.cyBottomHeight = -1;
-            margins.cyTopHeight    = -1;
+            return;
         }
 
-        PInvoke.DwmExtendFrameIntoClientArea(hwnd, in margins);
+        var borderColor = PInvoke.DWMWA_COLOR_DEFAULT;
+        if (
+            FluentWindowNonClientArea.ShouldApplyDwmAccentBorder(
+                UseNativeWindowBorder,
+                IsNcActive,
+                IsAccentOnTitleBarAndBorder,
+                SystemParameters.HighContrast
+            )
+            && PInvoke.DwmGetColorizationColor(out var colorizationColor, out _) == HRESULT.S_OK
+        )
+        {
+            // DwmGetColorizationColor and DWMWA_BORDER_COLOR intentionally use opposite byte orders.
+            borderColor = FluentWindowNonClientArea.ConvertDwmColorizationColorToColorRef(colorizationColor);
+        }
+
+        _ = DwmAttributes.SetBorderColor(_hwnd, borderColor);
     }
 
     private Color _originalBackgroundColor = Color.FromRgb(0, 0, 0);
-    private bool  _isBackdropApplied;
-
-    private void InitializeInstance_Win11()
-    {
-    }
-
-    private void OnSourceInitialized_Win11(HwndSource hwndSource)
-    {
-        UnsafeNativeMethods.RemoveWindowCaption(hwndSource.Handle);
-    }
-
-    // todo 移除系统菜单以后，应让窗口响应 Alt+Space 弹出系统菜单
-    private void RemoveSystemMenu(HWND hwnd)
-    {
-        // 移除窗口菜单前先获取一次，以便系统生成菜单，
-        // 否则移除 WS_SYSMENU 风格后无法再获得窗口菜单句柄、无法弹出窗口菜单
-        PInvoke.GetSystemMenu(hwnd, false);
-
-        var style = PInvoke.GetWindowLong(hwnd, WINDOW_LONG_PTR_INDEX.GWL_STYLE);
-        style &= ~(int)WINDOW_STYLE.WS_SYSMENU;
-        _ = PInvoke.SetWindowLong(hwnd, WINDOW_LONG_PTR_INDEX.GWL_STYLE, style);
-    }
+    private bool _isBackdropApplied;
 
     // 窗口创建Hwnd时、属性变更时、主题变更时，需要调用此方法
     private void UpdateBackdrop_Win11()
     {
-        if (PresentationSource.FromVisual(this) is not HwndSource hwndSource ||
-            hwndSource.CompositionTarget == null)
+        if (
+            PresentationSource.FromVisual(this) is not HwndSource hwndSource
+            || hwndSource.CompositionTarget == null
+        )
         {
             return;
         }
@@ -101,6 +119,10 @@ public partial class FluentWindow
                 // 移除Backdrop
                 DwmAttributes.SetSystemBackdrop(hwnd, DWM_SYSTEMBACKDROP_TYPE.DWMSBT_NONE);
 
+                // High contrast removes the full-window backdrop sheet. Windows11Client still retains its minimal
+                // frame bridge so DWM can render the system outline instead of relying on a low-contrast WPF color.
+                UpdateDwmFrameExtension_Win11(hwnd, false);
+
                 // 将窗口背景色还原
                 hwndSource.CompositionTarget.BackgroundColor = _originalBackgroundColor;
 
@@ -116,33 +138,25 @@ public partial class FluentWindow
                 // 根据 CurrentTheme 设置暗黑/明亮模式
                 var theme = ThemeManager.CurrentTheme;
 
-                DwmAttributes.SetUseImmersiveDarkMode(
-                    hwnd,
-                    theme == ApplicationTheme.Dark
-                );
+                DwmAttributes.SetUseImmersiveDarkMode(hwnd, theme == ApplicationTheme.Dark);
 
                 // 系统开启了将主题色应用到窗口边框或标题栏且激活窗口时DWM会在窗口顶部用强调色绘制标题栏背景，
                 // 为了解决此问题，可以将标题栏颜色设置为DWMWA_COLOR_NONE。
                 DwmAttributes.SetCaptionColor(hwnd, PInvoke.DWMWA_COLOR_NONE);
 
-                // 移除 WS_SYSMENU 风格，否则启用 Backdrop 会出现原生系统按钮，即使顶部标题栏已被去除。
-                // 带来的后果就是无法用 Alt + Space 弹出窗口菜单了
-                // todo 确认：已经使用主题Api去掉了系统菜单，看看不调用这个会如何
-                RemoveSystemMenu(hwnd);
-
                 var dwmResult = false;
-                var wbt       = WindowBackdropType;
+                var wbt = WindowBackdropType;
 
                 if (IsSupportedBackdrop(wbt))
                 {
                     var backdrop = wbt switch
                     {
-                        WindowBackdropType.None     => DWM_SYSTEMBACKDROP_TYPE.DWMSBT_NONE,
-                        WindowBackdropType.Auto     => DWM_SYSTEMBACKDROP_TYPE.DWMSBT_AUTO,
-                        WindowBackdropType.Acrylic  => DWM_SYSTEMBACKDROP_TYPE.DWMSBT_TRANSIENTWINDOW,
-                        WindowBackdropType.Mica     => DWM_SYSTEMBACKDROP_TYPE.DWMSBT_MAINWINDOW,
+                        WindowBackdropType.None => DWM_SYSTEMBACKDROP_TYPE.DWMSBT_NONE,
+                        WindowBackdropType.Auto => DWM_SYSTEMBACKDROP_TYPE.DWMSBT_AUTO,
+                        WindowBackdropType.Acrylic => DWM_SYSTEMBACKDROP_TYPE.DWMSBT_TRANSIENTWINDOW,
+                        WindowBackdropType.Mica => DWM_SYSTEMBACKDROP_TYPE.DWMSBT_MAINWINDOW,
                         WindowBackdropType.Mica_Alt => DWM_SYSTEMBACKDROP_TYPE.DWMSBT_TABBEDWINDOW,
-                        _                           => DWM_SYSTEMBACKDROP_TYPE.DWMSBT_NONE
+                        _ => DWM_SYSTEMBACKDROP_TYPE.DWMSBT_NONE,
                     };
 
                     dwmResult = DwmAttributes.SetSystemBackdrop(hwnd, backdrop);
@@ -174,12 +188,16 @@ public partial class FluentWindow
                     hwndSource.CompositionTarget.BackgroundColor = _originalBackgroundColor;
                 }
 
-                ExtendFrameIntoClientArea(hwnd, applied);
+                UpdateDwmFrameExtension_Win11(hwnd, applied);
 
                 _isBackdropApplied = applied;
                 CoerceValue(BackgroundProperty);
             }
         }
+
+        // Backdrop and frame changes can cause DWM to reevaluate non-client attributes. Apply the border policy last
+        // so a runtime backdrop or native-border transition cannot silently discard the explicit active color.
+        UpdateDwmBorderColor_Win11();
     }
 
     private void OnWindowCornerPreferenceChanged(WindowCornerPreference corner)
@@ -190,11 +208,11 @@ public partial class FluentWindow
         {
             var dwmcp = corner switch
             {
-                WindowCornerPreference.Default    => DWM_WINDOW_CORNER_PREFERENCE.DWMWCP_DEFAULT,
+                WindowCornerPreference.Default => DWM_WINDOW_CORNER_PREFERENCE.DWMWCP_DEFAULT,
                 WindowCornerPreference.DoNotRound => DWM_WINDOW_CORNER_PREFERENCE.DWMWCP_DONOTROUND,
-                WindowCornerPreference.Round      => DWM_WINDOW_CORNER_PREFERENCE.DWMWCP_ROUND,
+                WindowCornerPreference.Round => DWM_WINDOW_CORNER_PREFERENCE.DWMWCP_ROUND,
                 WindowCornerPreference.RoundSmall => DWM_WINDOW_CORNER_PREFERENCE.DWMWCP_ROUNDSMALL,
-                _                                 => DWM_WINDOW_CORNER_PREFERENCE.DWMWCP_DEFAULT
+                _ => DWM_WINDOW_CORNER_PREFERENCE.DWMWCP_DEFAULT,
             };
             DwmAttributes.SetWindowCornerPreference(hwnd, dwmcp);
         }

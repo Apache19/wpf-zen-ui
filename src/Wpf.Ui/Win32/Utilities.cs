@@ -78,14 +78,6 @@ internal sealed class Utilities
     // 这是正式支持 SYSTEMBACKDROP 的版本
     public static bool IsWin_11_22H2_Or_Greater => _osVersion.Build >= 22621;
 
-    public static readonly OsVersion OsVersion =
-        IsWin_11_Or_Greater ? OsVersion.Win11 :
-        IsWin_10_Or_Greater ? OsVersion.Win10 :
-        IsWin_8_Or_Greater  ? OsVersion.Win8 :
-        IsWin_7_Or_Greater  ? OsVersion.Win7 :
-        IsVista_Or_Greater  ? OsVersion.Vista :
-                              OsVersion.Unknown;
-
     /// <summary>
     /// Get the WindowState as the native HWND knows it to be.
     /// This isn't necessarily the same as what Window thinks.

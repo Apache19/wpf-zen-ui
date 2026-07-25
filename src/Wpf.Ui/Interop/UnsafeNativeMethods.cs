@@ -212,53 +212,24 @@ internal static class UnsafeNativeMethods
     }
 
     /// <summary>
-    /// Tries to remove titlebar from selected <see cref="Window"/>.
+    /// Removes <c>WS_SYSMENU</c> from a FluentWindow after its standard menu has been cached.
     /// </summary>
-    /// <param name="window">The window to which the effect is to be applied.</param>
-    /// <returns><see langword="true"/> if invocation of native Windows function succeeds.</returns>
-    public static bool RemoveWindowTitlebarContents(Window? window)
+    /// <param name="hwnd">Window handle.</param>
+    /// <returns><see langword="true"/> when the style is absent after the update.</returns>
+    /// <remarks>
+    /// DWM uses this style as the authoritative signal for caption-button rendering. Theme attributes can hide
+    /// caption text and icons, but do not reliably suppress the three buttons on modern Windows versions.
+    /// </remarks>
+    internal static bool RemoveWindowSystemMenuStyle(HWND hwnd)
     {
-        if (window == null)
-        {
-            return false;
-        }
-
-        if (window.IsLoaded)
-        {
-            return GetHandle(window, out IntPtr windowHandle) && RemoveWindowTitlebarContents(windowHandle);
-        }
-
-        window.Loaded += (sender, _1) =>
-        {
-            _ = GetHandle(sender as Window, out IntPtr windowHandle);
-            _ = RemoveWindowTitlebarContents(windowHandle);
-        };
-
-        return true;
-    }
-
-    /// <summary>
-    /// Tries to remove titlebar from selected window handle.
-    /// </summary>
-    /// <param name="handle">Window handle.</param>
-    /// <returns><see langword="true"/> if invocation of native Windows function succeeds.</returns>
-    public static bool RemoveWindowTitlebarContents(IntPtr handle)
-    {
-        if (handle == IntPtr.Zero)
-        {
-            return false;
-        }
-
-        var hwnd = new HWND(handle);
-
-        if (!PInvoke.IsWindow(hwnd))
+        if (hwnd == HWND.Null || !PInvoke.IsWindow(hwnd))
         {
             return false;
         }
 
         const int SysMenuFlag = (int)WINDOW_STYLE.WS_SYSMENU;
 
-        var style   = PInvoke.GetWindowLong(hwnd, WINDOW_LONG_PTR_INDEX.GWL_STYLE);
+        var style = PInvoke.GetWindowLong(hwnd, WINDOW_LONG_PTR_INDEX.GWL_STYLE);
         var updated = style & ~SysMenuFlag;
 
         if (updated != style)
@@ -372,17 +343,14 @@ internal static class UnsafeNativeMethods
     {
         var nativeBounds = new RECT
         {
-            left   = (int)Math.Floor(bounds.Left),
-            top    = (int)Math.Floor(bounds.Top),
-            right  = (int)Math.Ceiling(bounds.Right),
+            left = (int)Math.Floor(bounds.Left),
+            top = (int)Math.Floor(bounds.Top),
+            right = (int)Math.Ceiling(bounds.Right),
             bottom = (int)Math.Ceiling(bounds.Bottom),
         };
 
         var monitor = PInvoke.MonitorFromRect(in nativeBounds, MONITOR_FROM_FLAGS.MONITOR_DEFAULTTONEAREST);
-        var monitorInfo = new MONITORINFO
-        {
-            cbSize = (uint)Marshal.SizeOf<MONITORINFO>(),
-        };
+        var monitorInfo = new MONITORINFO { cbSize = (uint)Marshal.SizeOf<MONITORINFO>() };
 
         if (PInvoke.GetMonitorInfo(monitor, ref monitorInfo))
         {
@@ -398,7 +366,17 @@ internal static class UnsafeNativeMethods
         );
     }
 
-    public static unsafe bool RemoveWindowCaption(IntPtr hWnd)
+    /// <summary>
+    /// Suppresses themed drawing of the native caption text and icon.
+    /// </summary>
+    /// <param name="hWnd">Handle of the window whose native caption rendering should be suppressed.</param>
+    /// <returns><see langword="true"/> when the theme service accepts the non-client rendering options.</returns>
+    /// <remarks>
+    /// These flags do not reliably suppress DWM caption buttons. FluentWindow removes <c>WS_SYSMENU</c> separately
+    /// for that purpose. Failure here is non-fatal because the caption is also removed from the calculated client
+    /// rectangle.
+    /// </remarks>
+    public static unsafe bool SuppressWindowCaptionRendering(IntPtr hWnd)
     {
         if (hWnd == IntPtr.Zero)
         {
@@ -412,14 +390,16 @@ internal static class UnsafeNativeMethods
 
         var wtaOptions = new WTA_OPTIONS()
         {
-            dwFlags = PInvoke.WTNCA_NODRAWCAPTION
-                    | PInvoke.WTNCA_NODRAWICON
-                    | PInvoke.WTNCA_NOMIRRORHELP
-                    | PInvoke.WTNCA_NOSYSMENU,
-            dwMask = PInvoke.WTNCA_NODRAWCAPTION
-                   | PInvoke.WTNCA_NODRAWICON
-                   | PInvoke.WTNCA_NOMIRRORHELP
-                   | PInvoke.WTNCA_NOSYSMENU,
+            dwFlags =
+                PInvoke.WTNCA_NODRAWCAPTION
+                | PInvoke.WTNCA_NODRAWICON
+                | PInvoke.WTNCA_NOMIRRORHELP
+                | PInvoke.WTNCA_NOSYSMENU,
+            dwMask =
+                PInvoke.WTNCA_NODRAWCAPTION
+                | PInvoke.WTNCA_NODRAWICON
+                | PInvoke.WTNCA_NOMIRRORHELP
+                | PInvoke.WTNCA_NOSYSMENU,
         };
 
         return PInvoke.SetWindowThemeAttribute(
@@ -449,18 +429,21 @@ internal static class UnsafeNativeMethods
     }
 
     [DllImport("user32.dll", CharSet = CharSet.Unicode, ExactSpelling = true, SetLastError = true)]
-    internal static extern int SetWindowCompositionAttribute(IntPtr hwnd, ref WindowCompositionAttributeData data);
+    internal static extern int SetWindowCompositionAttribute(
+        IntPtr hwnd,
+        ref WindowCompositionAttributeData data
+    );
 
     [StructLayout(LayoutKind.Sequential)]
     internal struct DWM_COLORIZATION_PARAMS
     {
         public COLORREF Color;
         public COLORREF Afterglow;
-        public uint     Intensity;
-        public uint     AfterGlowBalance;
-        public uint     BlurBalance;
-        public uint     GlassReflectionIntensity;
-        public bool     Opaque;
+        public uint Intensity;
+        public uint AfterGlowBalance;
+        public uint BlurBalance;
+        public uint GlassReflectionIntensity;
+        public bool Opaque;
     }
 
     [DllImport("dwmapi.dll", EntryPoint = "#127", PreserveSig = false)]

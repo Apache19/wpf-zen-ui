@@ -3,36 +3,30 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-using System.Runtime.InteropServices;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
-using System.Windows.Threading;
-using Windows.Win32;
-using Windows.Win32.Foundation;
-using Windows.Win32.UI.Input.KeyboardAndMouse;
 
-#pragma warning disable SA1512 // Single-line comments should not be followed by blank line
-// ReSharper disable SuspiciousTypeConversion.Global
 // ReSharper disable once CheckNamespace
 namespace Wpf.Ui.Controls;
 
 /// <summary>
-/// Represents a button designed specifically for use within a <see cref="TitleBar"/>.
+/// Represents a WPF-rendered caption button hosted by a <see cref="TitleBar"/>.
 /// </summary>
 /// <remarks>
-/// <see cref="TitleBarButton"/> integrates with non-client area input handling
-/// to provide native caption button behavior while still supporting WPF
-/// interactions such as commands and visual states.
-/// <para/>
-/// This control is intended to be hosted exclusively within a <see cref="TitleBar"/>.
-/// When used outside a TitleBar, its behavior is undefined and may not meet
-/// typical button interaction expectations.
+/// <para>
+/// When hosted by <see cref="FluentWindow"/>, the window returns the native HT value associated with the button's
+/// <see cref="TitleBar.HitTestRoleProperty"/>. This preserves Windows features such as the maximize-button Snap
+/// Layout while FluentWindow converts the resulting non-client press into ordinary ButtonBase capture and click
+/// semantics.
+/// </para>
+/// <para>
+/// The control owns no HWND hook. Its only native-facing surface consists of internal state-transition methods
+/// called by FluentWindow, which prevents message ordering from depending on template load order.
+/// </para>
 /// </remarks>
 public class TitleBarButton : ButtonBase
 {
-    #region Static constructor
-
     static TitleBarButton()
     {
         DefaultStyleKeyProperty.OverrideMetadata(
@@ -40,45 +34,23 @@ public class TitleBarButton : ButtonBase
             new FrameworkPropertyMetadata(typeof(TitleBarButton))
         );
 
-        // Title bar buttons must not participate in keyboard focus navigation.
-        // Non-client interactions are driven by hit testing and system commands;
-        // introducing focus or tab stops would desynchronize visual states and
-        // conflict with the system-driven non-client interaction model.
-
+        // Caption buttons do not become keyboard focus or tab stops. Alt+Space and the system menu retain the
+        // platform keyboard contract, while application commands can still invoke the ButtonBase command directly.
         FocusableProperty.OverrideMetadata(
             typeof(TitleBarButton),
-            new FrameworkPropertyMetadata(
-                false,
-                null,
-                static (_, _) => false
-            )
+            new FrameworkPropertyMetadata(false, null, static (_, _) => false)
         );
-
         IsTabStopProperty.OverrideMetadata(
             typeof(TitleBarButton),
-            new FrameworkPropertyMetadata(
-                false,
-                null,
-                static (_, _) => false
-            )
+            new FrameworkPropertyMetadata(false, null, static (_, _) => false)
         );
-
-        // Title bar buttons must trigger clicks on Release.
-        // Hover and Press states must not participate in non-client mouse resolution;
-        // otherwise they would interfere with window behaviors such as dragging,
-        // resizing, and system command dispatch.
         ClickModeProperty.OverrideMetadata(
             typeof(TitleBarButton),
-            new FrameworkPropertyMetadata(
-                ClickMode.Release,
-                null,
-                static (_, _) => ClickMode.Release
-            )
+            new FrameworkPropertyMetadata(ClickMode.Release, null, static (_, _) => ClickMode.Release)
         );
 
-        // Ensure a non-null Background by default to preserve hit-testing behavior.
-        // A Transparent brush is used as a safe fallback to prevent hit testing from
-        // being disabled when Background is explicitly set to null.
+        // A transparent background keeps the complete caption-button rectangle in WPF hit testing even when a
+        // consumer clears Background explicitly.
         BackgroundProperty.OverrideMetadata(
             typeof(TitleBarButton),
             new FrameworkPropertyMetadata(
@@ -89,213 +61,143 @@ public class TitleBarButton : ButtonBase
         );
     }
 
-    #endregion
-
-    #region DependencyProperty: IsMouseActualOver
-
-    private static readonly DependencyPropertyKey IsMouseActualOverPropertyKey =
+    private static readonly DependencyPropertyKey IsPointerOverPropertyKey =
         DependencyProperty.RegisterReadOnly(
-            nameof(IsMouseActualOver),
+            nameof(IsPointerOver),
             typeof(bool),
             typeof(TitleBarButton),
             new PropertyMetadata(false)
         );
 
     /// <summary>
-    /// Identifies the <see cref="IsMouseActualOver"/> dependency property.
+    /// Identifies the <see cref="IsPointerOver"/> dependency property.
     /// </summary>
-    public static readonly DependencyProperty IsMouseActualOverProperty =
-        IsMouseActualOverPropertyKey.DependencyProperty;
+    public static readonly DependencyProperty IsPointerOverProperty = IsPointerOverPropertyKey.DependencyProperty;
 
     /// <summary>
-    /// Gets or sets a value indicating whether the mouse pointer is currently
-    /// considered to be over this element.
+    /// Gets a value indicating whether the pointer is resolved over this button in either client or non-client input mode.
     /// </summary>
     /// <remarks>
-    /// This property represents the final, resolved mouse-over state for the element.
-    /// It is independent of mouse capture, button state, keyboard modifiers,
-    /// or any other interaction context.
-    /// <para/>
-    /// This property is only meaningful when the element is hosted within a
-    /// <see cref="TitleBar"/>. Outside a TitleBar, the value is not guaranteed
-    /// to be accurate or stable.
+    /// WPF's <see cref="UIElement.IsMouseOver"/> is not updated while Windows treats the element as a non-client
+    /// caption target. This property combines that native hover state with normal ButtonBase capture semantics so a
+    /// single template trigger can render consistent pointer feedback. The default value is <see langword="false"/>.
     /// </remarks>
-    public bool IsMouseActualOver
+    public bool IsPointerOver
     {
-        get => (bool)GetValue(IsMouseActualOverProperty);
-        protected set => SetValue(IsMouseActualOverPropertyKey, value);
+        get => (bool)GetValue(IsPointerOverProperty);
+        private set => SetValue(IsPointerOverPropertyKey, value);
     }
 
-    #endregion
-
-    private HwndSource? _hwndSource;
-    private bool        _isHitTestTarget;
+    private bool _isNonClientPointerOver;
+    private bool _isNonClientPress;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="TitleBarButton"/> class.
     /// </summary>
-    public TitleBarButton()
+    public TitleBarButton() { }
+
+    /// <summary>
+    /// Updates the pointer state resolved by FluentWindow's non-client hit testing.
+    /// </summary>
+    internal void SetNonClientPointerOver(bool value)
     {
-        Loaded   += OnLoaded;
-        Unloaded += OnUnloaded;
+        _isNonClientPointerOver = value;
+        if (!IsMouseCaptured)
+        {
+            IsPointerOver = value || IsMouseOver;
+        }
     }
 
-    private void OnLoaded(object sender, RoutedEventArgs e)
+    /// <summary>
+    /// Converts a native caption-button press into WPF mouse capture.
+    /// </summary>
+    /// <remarks>
+    /// Windows must first see the button as HTMINBUTTON/HTMAXBUTTON/HTCLOSE/HTHELP to expose its native hover
+    /// affordances. Capturing here moves the remainder of the gesture into ButtonBase so commands, routed Click and
+    /// cancellation when the pointer leaves the button retain normal WPF behavior.
+    /// </remarks>
+    internal void BeginNonClientPress()
     {
-        // Defer adding the HwndSource hook until the window is fully loaded,
-        // ensuring that this hook is invoked before the TitleBar processes
-        // window messages.
-        Dispatcher.BeginInvoke(
-            () =>
-            {
-                var window = Window.GetWindow(this);
-                if (window is not null)
-                {
-                    _hwndSource = PresentationSource.FromVisual(window) as HwndSource;
-                    _hwndSource?.AddHook(HwndSourceHook);
-                }
-            },
-            DispatcherPriority.Loaded
-        );
+        if (!IsEnabled || Mouse.Captured is not null)
+        {
+            return;
+        }
+
+        _isNonClientPress = true;
+        IsPointerOver = true;
+
+        // ButtonBase normally establishes these states in OnMouseLeftButtonDown, but that WPF event does not exist
+        // for WM_NCLBUTTONDOWN. Its public OnMouseLeftButtonUp implementation still raises Click when capture and
+        // IsPressed are present, so seeding precisely those states reuses ButtonBase's release/cancel/command path.
+        #pragma warning disable WPF0041
+        IsPressed = true;
+        #pragma warning restore WPF0041
+
+        if (!CaptureMouse())
+        {
+            _isNonClientPress = false;
+            #pragma warning disable WPF0041
+            IsPressed = false;
+            #pragma warning restore WPF0041
+        }
     }
 
-    private void OnUnloaded(object sender, RoutedEventArgs e)
-    {
-        _hwndSource?.RemoveHook(HwndSourceHook);
-        _hwndSource = null;
-    }
-
+    /// <inheritdoc />
     protected override void OnMouseEnter(MouseEventArgs e)
     {
         base.OnMouseEnter(e);
-        IsMouseActualOver = true;
+        UpdatePointerState();
     }
 
+    /// <inheritdoc />
     protected override void OnMouseMove(MouseEventArgs e)
     {
         base.OnMouseMove(e);
-
-        if (IsMouseCaptured && Mouse.LeftButton == MouseButtonState.Pressed)
-        {
-            IsMouseActualOver = IsPressed;
-        }
-        else
-        {
-            IsMouseActualOver = IsMouseOver;
-        }
+        UpdatePointerState();
     }
 
-    protected override void OnMouseLeftButtonUp(MouseButtonEventArgs e)
-    {
-        // todo 逻辑似乎有问题，鼠标在别处按下，进入按钮放开鼠标，则会消失背景色
-        if (!IsPressed)
-        {
-            IsMouseActualOver = false;
-        }
-
-        base.OnMouseLeftButtonUp(e);
-    }
-
+    /// <inheritdoc />
     protected override void OnMouseLeave(MouseEventArgs e)
     {
         base.OnMouseLeave(e);
-
-        // 如果工作在标题栏模式，则不需要
-        IsMouseActualOver = false;
+        UpdatePointerState();
     }
 
+    /// <inheritdoc />
+    protected override void OnMouseLeftButtonUp(MouseButtonEventArgs e)
+    {
+        base.OnMouseLeftButtonUp(e);
+        UpdatePointerState();
+    }
+
+    /// <inheritdoc />
     protected override void OnLostMouseCapture(MouseEventArgs e)
     {
-        if (_hwndSource is not null)
-        {
-            // Restore non-client mouse leave tracking that was explicitly canceled
-            // during client-area interaction, ensuring that subsequent non-client
-            // transitions are handled correctly.
-            var tme = new TRACKMOUSEEVENT
-            {
-                cbSize      = (uint)Marshal.SizeOf<TRACKMOUSEEVENT>(),
-                dwFlags     = TRACKMOUSEEVENT_FLAGS.TME_NONCLIENT | TRACKMOUSEEVENT_FLAGS.TME_LEAVE,
-                hwndTrack   = (HWND)_hwndSource.Handle,
-                dwHoverTime = 0
-            };
-            PInvoke.TrackMouseEvent(ref tme);
-        }
-
+        _isNonClientPress = false;
+        _isNonClientPointerOver = false;
         base.OnLostMouseCapture(e);
+
+        // The native hover bit described the location before capture started and is stale now. IsMouseOver is
+        // recalculated by WPF at release; a following WM_NCHITTEST/WM_NCMOUSEMOVE will restore native hover when
+        // the pointer is still over the caption button.
+        IsPointerOver = IsMouseOver;
+
+        // Non-client leave tracking is cancelled before capture so Windows does not send a false leave while the
+        // gesture changes domains. Re-arm it only after ButtonBase has released capture.
+        if (Window.GetWindow(this) is FluentWindow window)
+        {
+            window.RestoreNonClientMouseTracking();
+        }
     }
 
-    private IntPtr HwndSourceHook(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
+    private void UpdatePointerState()
     {
-        var uMsg = (uint)msg;
-
-        if (uMsg == FluentWindow.WM_NCHITTEST_RESOLVED)
+        if (_isNonClientPress && IsMouseCaptured && Mouse.LeftButton == MouseButtonState.Pressed)
         {
-            _isHitTestTarget = wParam.ToInt32() == 1 && lParam.ToInt32() == GetHashCode();
-            return IntPtr.Zero;
+            IsPointerOver = IsPressed;
+            return;
         }
 
-        switch (uMsg)
-        {
-            // Handle WM_NCMOUSEMOVE to update IsMouseActualOver
-            case PInvoke.WM_NCMOUSEMOVE:
-            {
-                IsMouseActualOver = _isHitTestTarget;
-                break;
-            }
-
-            // When a non-client mouse button is pressed, capture the mouse to transition the button
-            // into client-area interaction mode.
-            // This controlled switch between non-client and client behavior allows the button to
-            // preserve native system features (such as tooltips and Snap Layout) while still enabling
-            // normal WPF click, command, and interaction handling.
-            case PInvoke.WM_NCLBUTTONDOWN:
-            {
-                if (_isHitTestTarget)
-                {
-                    // Only handle caption button hit targets.
-                    var isRelevantHitTest = (uint)wParam switch
-                    {
-                        PInvoke.HTMAXBUTTON => true, PInvoke.HTMINBUTTON => true,
-                        PInvoke.HTCLOSE     => true, PInvoke.HTHELP      => true,
-                        _                   => false
-                    };
-
-                    if (isRelevantHitTest && Mouse.Captured == null)
-                    {
-                        // Cancel non-client mouse tracking before capturing the mouse
-                        // to prevent spurious WM_NCMOUSELEAVE messages when entering
-                        // client-area interaction mode.
-                        var tme = new TRACKMOUSEEVENT
-                        {
-                            cbSize      = (uint)Marshal.SizeOf<TRACKMOUSEEVENT>(),
-                            dwFlags     = TRACKMOUSEEVENT_FLAGS.TME_NONCLIENT | TRACKMOUSEEVENT_FLAGS.TME_LEAVE | TRACKMOUSEEVENT_FLAGS.TME_CANCEL,
-                            hwndTrack   = (HWND)hwnd,
-                            dwHoverTime = 0
-                        };
-                        PInvoke.TrackMouseEvent(ref tme);
-
-                        // Directly set pressed state and capture mouse.
-
-                        #pragma warning disable WPF0041
-                        IsPressed = true;
-                        #pragma warning restore WPF0041
-
-                        CaptureMouse();
-                    }
-                }
-
-                break;
-            }
-
-            case PInvoke.WM_NCMOUSELEAVE:
-            {
-                _isHitTestTarget  = false;
-                IsMouseActualOver = false;
-                break;
-            }
-        }
-
-        return IntPtr.Zero;
+        IsPointerOver = IsMouseOver || _isNonClientPointerOver;
     }
 }
-#pragma warning restore SA1512 // Single-line comments should not be followed by blank line

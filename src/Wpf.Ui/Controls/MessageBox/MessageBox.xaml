@@ -35,7 +35,7 @@
                         x:Name="WindowBorder"
                         Background="{TemplateBinding Background}"
                         BorderBrush="{markup:BrushResource WindowBorderBrush}"
-                        BorderThickness="0,1,0,0">
+                        BorderThickness="{TemplateBinding BorderThickness}">
                         <AdornerDecorator>
                             <Grid>
                                 <Grid.RowDefinitions>
@@ -126,9 +126,6 @@
                     </Border>
                     <ControlTemplate.Triggers>
                         <!--  FluentWindow逻辑  -->
-                        <Trigger Property="OsVersion" Value="Win11">
-                            <Setter TargetName="WindowBorder" Property="BorderThickness" Value="0" />
-                        </Trigger>
                         <Trigger Property="IsNcActive" Value="False">
                             <Setter TargetName="WindowBorder" Property="BorderBrush" Value="{markup:BrushResource WindowBorderInactiveBrush}" />
                         </Trigger>
@@ -139,10 +136,6 @@
                             </MultiTrigger.Conditions>
                             <Setter TargetName="WindowBorder" Property="BorderBrush" Value="{markup:BrushResource AccentStrokeBrush}" />
                         </MultiTrigger>
-                        <Trigger Property="ActualWindowState" Value="Maximized">
-                            <Setter TargetName="WindowBorder" Property="BorderThickness" Value="0" />
-                        </Trigger>
-
                         <!--  按钮逻辑  -->
                         <Trigger Property="IsPrimaryButtonEnabled" Value="False">
                             <Setter TargetName="PrimaryColumn" Property="Width" Value="0" />

@@ -14,7 +14,7 @@
 
     <!--  ToolWindow TitleBar  -->
     <ControlTemplate x:Key="ToolWindowTitleBarTemplate" TargetType="{x:Type controls:TitleBar}">
-        <Grid controls:TitleBar.ElementIdentity="Caption" Background="{TemplateBinding Background}">
+        <Grid controls:TitleBar.HitTestRole="Caption" Background="{TemplateBinding Background}">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="Auto" />
@@ -26,7 +26,7 @@
             <ContentPresenter
                 x:Name="LeftContentPresenter"
                 Grid.Column="0"
-                controls:TitleBar.ElementIdentity="UserContent"
+                controls:TitleBar.HitTestRole="Client"
                 Content="{TemplateBinding LeftContent}"
                 IsEnabled="{TemplateBinding IsUserContentEnabled}"
                 Visibility="Collapsed" />
@@ -45,7 +45,7 @@
             <ContentPresenter
                 Grid.Column="2"
                 VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
-                controls:TitleBar.ElementIdentity="UserContent"
+                controls:TitleBar.HitTestRole="Client"
                 IsEnabled="{TemplateBinding IsUserContentEnabled}" />
 
             <!--  Close Button  -->
@@ -56,7 +56,7 @@
                 Margin="0,0,8,0"
                 HorizontalAlignment="Right"
                 VerticalAlignment="Center"
-                controls:TitleBar.ElementIdentity="CloseButton"
+                controls:TitleBar.HitTestRole="CloseButton"
                 Style="{DynamicResource SmallCloseTitleBarButtonStyle}" />
 
         </Grid>
@@ -86,7 +86,7 @@
                         x:Name="MainGrid"
                         HorizontalAlignment="Stretch"
                         VerticalAlignment="Stretch"
-                        controls:TitleBar.ElementIdentity="Caption"
+                        controls:TitleBar.HitTestRole="Caption"
                         Background="{TemplateBinding Background}">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto" />
@@ -102,7 +102,7 @@
                         <ContentPresenter
                             x:Name="LeftContentPresenter"
                             Grid.Column="0"
-                            controls:TitleBar.ElementIdentity="UserContent"
+                            controls:TitleBar.HitTestRole="Client"
                             ContentSource="LeftContent"
                             IsEnabled="{TemplateBinding IsUserContentEnabled}"
                             Visibility="Collapsed" />
@@ -124,7 +124,7 @@
                                 Grid.Column="0"
                                 Height="16"
                                 VerticalAlignment="Center"
-                                controls:TitleBar.ElementIdentity="Icon"
+                                controls:TitleBar.HitTestRole="Icon"
                                 AutomationProperties.AutomationId="TitleBarIcon"
                                 Content="{TemplateBinding Icon}"
                                 Focusable="False"
@@ -150,7 +150,7 @@
                             <ContentPresenter
                                 Grid.Column="1"
                                 VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
-                                controls:TitleBar.ElementIdentity="UserContent"
+                                controls:TitleBar.HitTestRole="Client"
                                 IsEnabled="{TemplateBinding IsUserContentEnabled}" />
 
                             <!--  System buttons - Close, Restore, Maximize, Minimize  -->
@@ -169,7 +169,7 @@
                                     Grid.Column="0"
                                     Width="46"
                                     Height="32"
-                                    controls:TitleBar.ElementIdentity="MinimizeButton"
+                                    controls:TitleBar.HitTestRole="MinimizeButton"
                                     AutomationProperties.AutomationId="TitleBarMinimizeButton" />
 
                                 <controls:TitleBarButton
@@ -177,7 +177,7 @@
                                     Grid.Column="1"
                                     Width="46"
                                     Height="32"
-                                    controls:TitleBar.ElementIdentity="MaximizeButton"
+                                    controls:TitleBar.HitTestRole="MaximizeButton"
                                     AutomationProperties.AutomationId="TitleBarMaximizeButton" />
 
                                 <controls:TitleBarButton
@@ -185,7 +185,7 @@
                                     Grid.Column="2"
                                     Width="46"
                                     Height="32"
-                                    controls:TitleBar.ElementIdentity="CloseButton"
+                                    controls:TitleBar.HitTestRole="CloseButton"
                                     AutomationProperties.AutomationId="TitleBarCloseButton" />
                             </Grid>
                         </Grid>

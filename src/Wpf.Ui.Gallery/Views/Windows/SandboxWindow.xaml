@@ -1,11 +1,14 @@
 <ui:FluentWindow
     x:Class="Wpf.Ui.Gallery.Views.Windows.SandboxWindow"
+    x:Name="RootWindow"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:local="clr-namespace:Wpf.Ui.Gallery.Views.Windows"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:system="clr-namespace:System;assembly=System.Runtime"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    xmlns:wpf="clr-namespace:System.Windows;assembly=PresentationFramework"
     Title="SandboxWindow"
     Width="1450"
     Height="802"
@@ -17,6 +20,28 @@
     d:Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
     WindowStartupLocation="CenterScreen"
     mc:Ignorable="d">
+    <ui:FluentWindow.Resources>
+        <!--
+            These enum sources intentionally bind directly to the live window. The sandbox is used for manual
+            non-client verification, so changing an item must exercise the same dependency-property callbacks that
+            an application would use instead of recreating the window with a different startup configuration.
+        -->
+        <ObjectDataProvider x:Key="BackdropTypes" MethodName="GetValues" ObjectType="{x:Type system:Enum}">
+            <ObjectDataProvider.MethodParameters>
+                <x:Type TypeName="ui:WindowBackdropType" />
+            </ObjectDataProvider.MethodParameters>
+        </ObjectDataProvider>
+        <ObjectDataProvider x:Key="ResizeModes" MethodName="GetValues" ObjectType="{x:Type system:Enum}">
+            <ObjectDataProvider.MethodParameters>
+                <x:Type TypeName="wpf:ResizeMode" />
+            </ObjectDataProvider.MethodParameters>
+        </ObjectDataProvider>
+        <ObjectDataProvider x:Key="WindowStates" MethodName="GetValues" ObjectType="{x:Type system:Enum}">
+            <ObjectDataProvider.MethodParameters>
+                <x:Type TypeName="wpf:WindowState" />
+            </ObjectDataProvider.MethodParameters>
+        </ObjectDataProvider>
+    </ui:FluentWindow.Resources>
     <StackPanel>
         <ui:TitleBar
             x:Name="TitleBar"
@@ -67,6 +92,34 @@
 
         <StackPanel Margin="24">
             <TextBlock Text="Hello World!" />
+
+            <WrapPanel Margin="0,16,0,0" VerticalAlignment="Center">
+                <CheckBox
+                    Margin="0,0,24,0"
+                    VerticalAlignment="Center"
+                    Content="Use native Windows 10/11 border"
+                    IsChecked="{Binding UseNativeWindowBorder, ElementName=RootWindow, Mode=TwoWay}" />
+
+                <TextBlock Margin="0,0,8,0" VerticalAlignment="Center" Text="Backdrop" />
+                <ComboBox
+                    Width="130"
+                    Margin="0,0,24,0"
+                    ItemsSource="{Binding Source={StaticResource BackdropTypes}}"
+                    SelectedItem="{Binding WindowBackdropType, ElementName=RootWindow, Mode=TwoWay}" />
+
+                <TextBlock Margin="0,0,8,0" VerticalAlignment="Center" Text="Resize mode" />
+                <ComboBox
+                    Width="150"
+                    Margin="0,0,24,0"
+                    ItemsSource="{Binding Source={StaticResource ResizeModes}}"
+                    SelectedItem="{Binding ResizeMode, ElementName=RootWindow, Mode=TwoWay}" />
+
+                <TextBlock Margin="0,0,8,0" VerticalAlignment="Center" Text="Window state" />
+                <ComboBox
+                    Width="120"
+                    ItemsSource="{Binding Source={StaticResource WindowStates}}"
+                    SelectedItem="{Binding WindowState, ElementName=RootWindow, Mode=TwoWay}" />
+            </WrapPanel>
 
             <ui:AutoSuggestBox
                 Margin="0,24,0,0"

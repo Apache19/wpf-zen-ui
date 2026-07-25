@@ -3,14 +3,14 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Windows.Threading;
 using Windows.Win32;
 using Windows.Win32.Foundation;
+using Windows.Win32.UI.Input.KeyboardAndMouse;
 using Windows.Win32.UI.WindowsAndMessaging;
 using Wpf.Ui.Appearance;
-using Wpf.Ui.Hardware;
+using Wpf.Ui.Extensions.Wpf;
 using Wpf.Ui.Interop;
 using Wpf.Ui.Win32;
 
@@ -18,13 +18,26 @@ using Wpf.Ui.Win32;
 namespace Wpf.Ui.Controls;
 
 /// <summary>
-/// FluentWindow
+/// Provides a WPF window whose content extends through the native caption while retaining platform window behavior.
 /// </summary>
 /// <remarks>
-/// Important: Do not use WindowChrome on this window.
+/// <para>
+/// FluentWindow implements its frame directly through <c>WM_NCCALCSIZE</c>. Do not attach
+/// <see cref="System.Windows.Shell.WindowChrome"/>: both components would rewrite the same client rectangle and
+/// compete for non-client hit testing.
+/// </para>
+/// <para>
+/// A hosted <see cref="TitleBar"/> supplies semantic hit-test roles through its visual tree. FluentWindow remains
+/// the only HWND hook, which keeps resize borders, caption buttons, Snap Layout and WPF input in one ordered state
+/// machine.
+/// </para>
 /// </remarks>
 public partial class FluentWindow : Window
 {
+    private const int SizeRestored = 0;
+    private const int SizeMinimized = 1;
+    private const int SizeMaximized = 2;
+
     static FluentWindow()
     {
         DefaultStyleKeyProperty.OverrideMetadata(
@@ -32,29 +45,30 @@ public partial class FluentWindow : Window
             new FrameworkPropertyMetadata(typeof(FluentWindow))
         );
 
+        // A FluentWindow border represents the fallback visual frame, not arbitrary content decoration. Coercing
+        // this value keeps custom templates and derived windows synchronized with the active native frame strategy.
+        BorderThicknessProperty.OverrideMetadata(
+            typeof(FluentWindow),
+            new FrameworkPropertyMetadata(new Thickness(1), null, CoerceBorderThickness)
+        );
+
         if (Utilities.IsWin_11_Or_Greater)
         {
             InitializeStatic_Win11();
         }
-        else
-        {
-            // InitializeForLegacyWindows();
-        }
     }
 
-    #region DependencyProperties
+    #region Dependency properties
 
-    #region ActualWindowState
-
-    /// <summary>
-    /// Identifies the <see cref="ActualWindowState"/> dependency property.
-    /// </summary>
     private static readonly DependencyPropertyKey ActualWindowStatePropertyKey =
         DependencyProperty.RegisterReadOnly(
             nameof(ActualWindowState),
             typeof(WindowState),
             typeof(FluentWindow),
-            new FrameworkPropertyMetadata(WindowState.Normal)
+            new FrameworkPropertyMetadata(
+                WindowState.Normal,
+                static (d, _) => d.CoerceValue(BorderThicknessProperty)
+            )
         );
 
     /// <summary>
@@ -64,89 +78,38 @@ public partial class FluentWindow : Window
         ActualWindowStatePropertyKey.DependencyProperty;
 
     /// <summary>
-    /// Gets the real state of the window.
-    /// This property reflects the actual state of the native Windows window, updated through window message handling.
+    /// Gets the state reported by the native <c>WM_SIZE</c> message.
     /// </summary>
+    /// <remarks>
+    /// Public HwndSource hooks run before WPF synchronizes <see cref="WindowState"/>. This property is retained so
+    /// frame templates and caption glyphs can observe the state that Windows is processing without timing races.
+    /// </remarks>
     public WindowState ActualWindowState
     {
         get => (WindowState)GetValue(ActualWindowStateProperty);
         private set => SetValue(ActualWindowStatePropertyKey, value);
     }
 
-    #endregion
-
-    #region IsNcActive
-
-    private static readonly DependencyPropertyKey IsNcActivePropertyKey =
-        DependencyProperty.RegisterReadOnly(
-            nameof(IsNcActive),
-            typeof(bool),
-            typeof(FluentWindow),
-            new PropertyMetadata(false)
-        );
+    private static readonly DependencyPropertyKey IsNcActivePropertyKey = DependencyProperty.RegisterReadOnly(
+        nameof(IsNcActive),
+        typeof(bool),
+        typeof(FluentWindow),
+        new PropertyMetadata(false)
+    );
 
     /// <summary>
     /// Identifies the <see cref="IsNcActive"/> dependency property.
     /// </summary>
-    public static readonly DependencyProperty IsNcActiveProperty =
-        IsNcActivePropertyKey.DependencyProperty;
+    public static readonly DependencyProperty IsNcActiveProperty = IsNcActivePropertyKey.DependencyProperty;
 
     /// <summary>
-    /// Gets a value indicating whether the window's non-client area
-    /// (title bar, borders, etc.) is active.
+    /// Gets a value indicating whether Windows currently renders the non-client area as active.
     /// </summary>
-    /// <remarks>
-    /// Unlike <see cref="System.Windows.Window.IsActive"/>, which represents
-    /// the logical activation state of the window, <see cref="IsNcActive"/>
-    /// reflects the visual activation state of the non-client area as reported
-    /// by the operating system.
-    ///
-    /// <para>
-    /// When a modal window is shown, clicking the parent window behind it may
-    /// cause the system to momentarily toggle the non-client activation state
-    /// (often accompanied by a flash), which is reflected by changes in
-    /// <see cref="IsNcActive"/> even though <see cref="System.Windows.Window.IsActive"/>
-    /// remains <c>true</c> or <c>false</c>.
-    /// </para>
-    /// </remarks>
     public bool IsNcActive
     {
         get => (bool)GetValue(IsNcActiveProperty);
         private set => SetValue(IsNcActivePropertyKey, value);
     }
-
-    #endregion
-
-    #region OsVersion
-
-    // todo 将来移植到静态资源类里
-
-    private static readonly DependencyPropertyKey OsVersionPropertyKey =
-        DependencyProperty.RegisterReadOnly(
-            nameof(OsVersion),
-            typeof(OsVersion),
-            typeof(FluentWindow),
-            new PropertyMetadata(OsVersion.Unknown)
-        );
-
-    /// <summary>
-    /// Identifies the <see cref="OsVersion"/> dependency property.
-    /// </summary>
-    public static readonly DependencyProperty OsVersionProperty =
-        OsVersionPropertyKey.DependencyProperty;
-
-    /// <summary>
-    /// Gets the version of the current operating system.
-    /// </summary>
-    public OsVersion OsVersion
-    {
-        get { return (OsVersion)GetValue(OsVersionProperty); }
-        private set { SetValue(OsVersionPropertyKey, value); }
-    }
-
-    #endregion
-
-    #region IsAccentOnTitleBarAndBorder
 
     private static readonly DependencyPropertyKey IsAccentOnTitleBarAndBorderPropertyKey =
         DependencyProperty.RegisterReadOnly(
@@ -163,40 +126,66 @@ public partial class FluentWindow : Window
         IsAccentOnTitleBarAndBorderPropertyKey.DependencyProperty;
 
     /// <summary>
-    /// Gets a value indicating whether the accent color is applied to the title bar and window border.
+    /// Gets a value indicating whether the user enabled the Windows setting that applies the accent color to title bars and borders.
     /// </summary>
     public bool IsAccentOnTitleBarAndBorder
     {
-        get { return (bool)GetValue(IsAccentOnTitleBarAndBorderProperty); }
-        private set { SetValue(IsAccentOnTitleBarAndBorderPropertyKey, value); }
+        get => (bool)GetValue(IsAccentOnTitleBarAndBorderProperty);
+        private set => SetValue(IsAccentOnTitleBarAndBorderPropertyKey, value);
     }
 
-    #endregion
+    /// <summary>
+    /// Identifies the <see cref="UseNativeWindowBorder"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty UseNativeWindowBorderProperty = DependencyProperty.Register(
+        nameof(UseNativeWindowBorder),
+        typeof(bool),
+        typeof(FluentWindow),
+        new FrameworkPropertyMetadata(true, OnUseNativeWindowBorderChanged)
+    );
 
-    #region WindowBackdropType
+    /// <summary>
+    /// Gets or sets a value indicating whether Windows 10 or later retains its usable native side and bottom frame margins.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// The default value is <see langword="true"/>. Setting the property to <see langword="false"/> makes the
+    /// normal client area fill the HWND, which avoids the native-frame startup flash seen by some WPF windows.
+    /// On Windows 11, FluentWindow retains a minimal DWM frame extension so the system continues to draw the
+    /// outline, shadow and rounded corners even when <see cref="WindowBackdropType"/> is <see cref="WindowBackdropType.None"/>.
+    /// On Windows 10, FluentWindow replaces the removed native frame with a four-edge WPF border.
+    /// </para>
+    /// <para>
+    /// On Windows 10, <see langword="true"/> selects the three-edge hybrid native frame and
+    /// <see langword="false"/> selects the fully client-rendered fallback. The property has no visual effect on
+    /// Windows 8.1 and earlier because those systems always require the fallback.
+    /// </para>
+    /// <para>
+    /// The property can be changed after the HWND is shown. FluentWindow requests <c>SWP_FRAMECHANGED</c> so Windows
+    /// immediately runs a fresh non-client calculation without changing the window's bounds or activation state.
+    /// </para>
+    /// </remarks>
+    public bool UseNativeWindowBorder
+    {
+        get => (bool)GetValue(UseNativeWindowBorderProperty);
+        set => SetValue(UseNativeWindowBorderProperty, value);
+    }
 
     /// <summary>
     /// Identifies the <see cref="WindowBackdropType"/> dependency property.
     /// </summary>
-    public static readonly DependencyProperty WindowBackdropTypeProperty =
-        DependencyProperty.Register(
-            nameof(WindowBackdropType),
-            typeof(WindowBackdropType),
-            typeof(FluentWindow),
-            new PropertyMetadata(
-                WindowBackdropType.None,
-                static (d, e) =>
-                {
-                    if (d is FluentWindow fw && e.NewValue is WindowBackdropType wbt)
-                    {
-                        fw._UpdateBackdrop?.Invoke();
-                    }
-                }
-            )
-        );
+    public static readonly DependencyProperty WindowBackdropTypeProperty = DependencyProperty.Register(
+        nameof(WindowBackdropType),
+        typeof(WindowBackdropType),
+        typeof(FluentWindow),
+        new PropertyMetadata(
+            WindowBackdropType.None,
+            static (d, _) => ((FluentWindow)d)._updateBackdrop?.Invoke()
+        )
+    );
 
     /// <summary>
-    /// Gets or sets a value determining preferred backdrop type for current <see cref="Window"/>.
+    /// Gets or sets the preferred system backdrop for this window.
     /// </summary>
     public WindowBackdropType WindowBackdropType
     {
@@ -204,37 +193,23 @@ public partial class FluentWindow : Window
         set => SetValue(WindowBackdropTypeProperty, value);
     }
 
-    #endregion
-
-    #region WindowCornerPreference
-
     /// <summary>
     /// Identifies the <see cref="WindowCornerPreference"/> dependency property.
     /// </summary>
-    public static readonly DependencyProperty WindowCornerPreferenceProperty =
-        DependencyProperty.Register(
-            nameof(WindowCornerPreference),
-            typeof(WindowCornerPreference),
-            typeof(FluentWindow),
-            new PropertyMetadata(
-                WindowCornerPreference.Default,
-                static (d, e) =>
-                {
-                    if (d is FluentWindow fw &&
-                        e.NewValue is WindowCornerPreference wcp)
-                    {
-                        fw.OnWindowCornerPreferenceChanged(wcp);
-                    }
-                }
-            )
-        );
+    public static readonly DependencyProperty WindowCornerPreferenceProperty = DependencyProperty.Register(
+        nameof(WindowCornerPreference),
+        typeof(WindowCornerPreference),
+        typeof(FluentWindow),
+        new PropertyMetadata(
+            WindowCornerPreference.Default,
+            static (d, e) =>
+                ((FluentWindow)d).OnWindowCornerPreferenceChanged((WindowCornerPreference)e.NewValue)
+        )
+    );
 
     /// <summary>
-    /// Gets or sets the window corner preference.
+    /// Gets or sets the Windows 11 DWM corner preference.
     /// </summary>
-    /// <remarks>
-    /// This option only takes effect on Windows 11 or later.
-    /// </remarks>
     public WindowCornerPreference WindowCornerPreference
     {
         get => (WindowCornerPreference)GetValue(WindowCornerPreferenceProperty);
@@ -243,301 +218,657 @@ public partial class FluentWindow : Window
 
     #endregion
 
-    #endregion
+    private readonly Action? _updateBackdrop;
 
-    internal static readonly uint WM_NCHITTEST_RESOLVED = PInvoke.RegisterWindowMessage("WM_NCHITTEST_RESOLVED");
-    internal static readonly uint WM_NCHITTEST_REQUEST  = PInvoke.RegisterWindowMessage("WM_NCHITTEST_REQUEST");
+    private HwndSource? _hwndSource;
+    private HWND _hwnd;
+    private HMENU _systemMenu;
+    private WindowFrameInsets _resizeFrame;
+    private TitleBarButton? _pendingCaptionButton;
+    private TitleBarButton? _pressedCaptionButton;
+    private TitleBarButton? _hotCaptionButton;
+    private bool _isTrackingNonClientMouse;
+    private bool _isThemeSubscribed;
 
-    #pragma warning disable SA1306 // Field names should begin with lower-case letter
-
-    private readonly MessageHandler?    _MSG_NCCALCSIZE = null;
-    private readonly Action<HwndSource> _OnSourceInitialized;
-    private readonly Action?            _UpdateBackdrop;
-
-    private bool _firstShownFired;
-
-    #pragma warning restore SA1306 // Field names should begin with lower-case letter
-
-    public event EventHandler? FirstShown;
-
+    /// <summary>
+    /// Initializes a new instance of the <see cref="FluentWindow"/> class.
+    /// </summary>
     public FluentWindow()
     {
-        OsVersion = Utilities.OsVersion;
-
-        switch (Utilities.OsVersion)
+        if (Utilities.IsWin_11_Or_Greater)
         {
-            case OsVersion.Unknown:
-            case OsVersion.Vista:
-            case OsVersion.Win7:
-            case OsVersion.Win8:
-            case OsVersion.Win10:
-            {
-                _OnSourceInitialized = OnSourceInitialized_Win10;
-                break;
-            }
-
-            case OsVersion.Win11:
-            default:
-            {
-                _UpdateBackdrop      = UpdateBackdrop_Win11;
-                _OnSourceInitialized = OnSourceInitialized_Win11;
-                break;
-            }
+            _updateBackdrop = UpdateBackdrop_Win11;
         }
-
-        ContentRendered += OnContentRenderedInternal;
 
         IsAccentOnTitleBarAndBorder = UnsafeNativeMethods.IsAccentColorOnTitleBarsEnabled();
     }
 
-    private void OnContentRenderedInternal(object? sender, EventArgs e)
-    {
-        // 双保险：防止极端情况下被触发多次
-        if (_firstShownFired)
-        {
-            return;
-        }
-
-        _firstShownFired = true;
-
-        // 立刻取消订阅，生命周期只触发一次
-        ContentRendered -= OnContentRenderedInternal;
-
-        OnFirstShown(EventArgs.Empty);
-    }
-
-    /// <summary>
-    /// 窗口第一次真正显示到屏幕上时触发
-    /// </summary>
-    protected virtual void OnFirstShown(EventArgs e)
-    {
-        ThemeManager.Changed += OnAppThemeChanged;
-        FirstShown?.Invoke(this, e);
-    }
-
-    protected override void OnClosed(EventArgs e)
-    {
-        ThemeManager.Changed -= OnAppThemeChanged;
-        base.OnClosed(e);
-    }
-
-    private void OnAppThemeChanged(object? sender, ThemeChangedEventArgs e)
-    {
-        _UpdateBackdrop?.Invoke();
-    }
-
+    /// <inheritdoc />
     protected override void OnSourceInitialized(EventArgs e)
     {
         base.OnSourceInitialized(e);
 
-        if (PresentationSource.FromVisual(this) is HwndSource hwndSource)
+        if (PresentationSource.FromVisual(this) is not HwndSource source)
         {
-            hwndSource.AddHook(FluentWindowSourceHook);
-
-            _OnSourceInitialized(hwndSource);
-            _UpdateBackdrop?.Invoke();
+            return;
         }
 
+        _hwndSource = source;
+        _hwnd = (HWND)source.Handle;
+        source.AddHook(FluentWindowSourceHook);
+
+        ActualWindowState = Utilities.GetHwndState(_hwnd);
+        IsNcActive = IsActive;
+
+        // Cache the standard menu before removing WS_SYSMENU. GetSystemMenu may no longer return it once the style
+        // disappears, but the HWND-owned menu remains valid for the lifetime of the window and can still dispatch
+        // standard WM_SYSCOMMAND values.
+        _systemMenu = PInvoke.GetSystemMenu(_hwnd, false);
+
+        // WS_SYSMENU makes modern DWM paths paint caption buttons independently of the WTA_NONCLIENT flags. There
+        // is no supported policy that disables only those buttons while retaining DWM borders and shadows, so the
+        // style is removed and FluentWindow supplies the menu entry points itself.
+        _ = UnsafeNativeMethods.RemoveWindowSystemMenuStyle(_hwnd);
+
+        // WTNCA_NODRAWCAPTION remains useful for the native title and icon. It is deliberately only a best-effort
+        // supplement; WS_SYSMENU removal above is what guarantees that native caption buttons are absent.
+        _ = UnsafeNativeMethods.SuppressWindowCaptionRendering(source.Handle);
+
+        if (!_isThemeSubscribed)
+        {
+            ThemeManager.Changed += OnAppThemeChanged;
+            _isThemeSubscribed = true;
+        }
+
+        _updateBackdrop?.Invoke();
+        UpdateLegacyFrameExtension();
         OnWindowCornerPreferenceChanged(WindowCornerPreference);
+        CoerceValue(BorderThicknessProperty);
+        RequestFrameRecalculation();
+    }
+
+    /// <inheritdoc />
+    protected override void OnClosed(EventArgs e)
+    {
+        if (_isThemeSubscribed)
+        {
+            ThemeManager.Changed -= OnAppThemeChanged;
+            _isThemeSubscribed = false;
+        }
+
+        _hwndSource?.RemoveHook(FluentWindowSourceHook);
+        _hwndSource = null;
+        _hwnd = HWND.Null;
+        _systemMenu = default;
+
+        base.OnClosed(e);
+    }
+
+    private static object CoerceBorderThickness(DependencyObject d, object? baseValue)
+    {
+        var window = (FluentWindow)d;
+        return FluentWindowNonClientArea.CalculateVisualBorderThickness(
+            window.GetFrameStrategy(),
+            window.ActualWindowState
+        );
+    }
+
+    private static void OnUseNativeWindowBorderChanged(
+        DependencyObject d,
+        DependencyPropertyChangedEventArgs e
+    )
+    {
+        var window = (FluentWindow)d;
+
+        // BorderThickness is an effective frame output rather than an independent decoration value. Re-coercion
+        // must happen even before the HWND exists so templates update immediately when this property is data-bound.
+        window.CoerceValue(BorderThicknessProperty);
+
+        if (Utilities.IsWin_10_Or_Greater && window._hwnd != HWND.Null)
+        {
+            if (Utilities.IsWin_11_Or_Greater)
+            {
+                // Win11's client-frame bridge depends on both the border and backdrop strategies. Reapplying the
+                // backdrop also selects the correct full-window or one-pixel DWM margins for the new frame policy.
+                window._updateBackdrop?.Invoke();
+            }
+            else
+            {
+                window.UpdateLegacyFrameExtension();
+            }
+
+            window.RequestFrameRecalculation();
+        }
+    }
+
+    private void OnAppThemeChanged(object? sender, ThemeChangedEventArgs e)
+    {
+        _updateBackdrop?.Invoke();
+    }
+
+    private FluentWindowFrameStrategy GetFrameStrategy()
+    {
+        // Before Windows 11, replacing the caption while retaining all four default frame margins can make DWM
+        // paint a second, non-interactive caption. Windows 10 tolerates three native edges, so only its top line is
+        // supplied by WPF. Older versions use a complete client frame because their native result is less reliable.
+        // Windows 11 fixes the false-caption bug, but retaining its complete top resize frame leaves a conspicuous
+        // blank strip above WPF content. The native strategy therefore keeps the side and bottom margins while the
+        // client covers the top frame; WM_NCHITTEST still supplies the measured top resize zone from inside the HWND.
+        return FluentWindowNonClientArea.SelectFrameStrategy(
+            Utilities.IsWin_11_Or_Greater,
+            Utilities.IsWin_10_Or_Greater,
+            UseNativeWindowBorder
+        );
+    }
+
+    private void RequestFrameRecalculation()
+    {
+        if (_hwnd == HWND.Null || !PInvoke.IsWindow(_hwnd))
+        {
+            return;
+        }
+
+        const SET_WINDOW_POS_FLAGS flags =
+            SET_WINDOW_POS_FLAGS.SWP_FRAMECHANGED
+            | SET_WINDOW_POS_FLAGS.SWP_NOMOVE
+            | SET_WINDOW_POS_FLAGS.SWP_NOSIZE
+            | SET_WINDOW_POS_FLAGS.SWP_NOZORDER
+            | SET_WINDOW_POS_FLAGS.SWP_NOACTIVATE;
+
+        _ = PInvoke.SetWindowPos(_hwnd, HWND.Null, 0, 0, 0, 0, flags);
+    }
+
+    private IntPtr FluentWindowSourceHook(
+        IntPtr hwndValue,
+        int msg,
+        IntPtr wParam,
+        IntPtr lParam,
+        ref bool handled
+    )
+    {
+        var hwnd = (HWND)hwndValue;
+        var message = (uint)msg;
+
+        switch (message)
+        {
+            case PInvoke.WM_STYLECHANGING:
+                PreventSystemMenuStyle(lParam, wParam);
+                break;
+
+            case PInvoke.WM_NCCALCSIZE:
+                return HandleNcCalcSize(hwnd, message, wParam, lParam, out handled);
+
+            case PInvoke.WM_NCHITTEST:
+                return HandleNcHitTest(hwnd, lParam, out handled);
+
+            case PInvoke.WM_NCMOUSEMOVE:
+                SetHotCaptionButton(IsCaptionButtonHit(wParam.ToInt32()) ? _pendingCaptionButton : null);
+                BeginNonClientMouseTracking(hwnd);
+                break;
+
+            case PInvoke.WM_NCMOUSELEAVE:
+                _isTrackingNonClientMouse = false;
+                _pendingCaptionButton = null;
+                SetHotCaptionButton(null);
+                break;
+
+            case PInvoke.WM_NCLBUTTONDOWN:
+                if (wParam.ToInt32() == PInvoke.HTSYSMENU)
+                {
+                    // Fluent Design title bars do not expose the legacy single-click icon menu. Swallowing the
+                    // first click, rather than opening a modal TrackPopupMenu loop, allows Windows to synthesize
+                    // WM_NCLBUTTONDBLCLK for the optional icon double-click-to-close interaction.
+                    handled = true;
+                    break;
+                }
+
+                if (IsCaptionButtonHit(wParam.ToInt32()) && _pendingCaptionButton is not null)
+                {
+                    CancelNonClientMouseTracking(hwnd);
+                    SetHotCaptionButton(_pendingCaptionButton);
+                    _pressedCaptionButton = _pendingCaptionButton;
+                    _pendingCaptionButton.BeginNonClientPress();
+                    handled = true;
+                }
+
+                break;
+
+            case PInvoke.WM_NCLBUTTONUP:
+                if (wParam.ToInt32() == PInvoke.HTSYSMENU)
+                {
+                    // This release belongs to the icon press deliberately consumed above. The system menu remains
+                    // available through Alt+Space and a title-bar right click, but never through a left click.
+                    handled = true;
+                    break;
+                }
+
+                if (IsCaptionButtonHit(wParam.ToInt32()) && _pressedCaptionButton is not null)
+                {
+                    // A non-client press is converted to a captured WPF interaction on button-down. Suppressing the
+                    // native button-up prevents DefWindowProc from issuing the same system command a second time.
+                    _pressedCaptionButton = null;
+                    handled = true;
+                }
+
+                break;
+
+            case PInvoke.WM_NCRBUTTONUP:
+                var rightButtonHitTest = wParam.ToInt32();
+                if (
+                    rightButtonHitTest == (int)PInvoke.HTCAPTION
+                    || rightButtonHitTest == (int)PInvoke.HTSYSMENU
+                )
+                {
+                    var point = LParamToScreenPoint(lParam);
+                    ShowSystemMenuPhysicalCoordinates(hwnd, (int)point.X, (int)point.Y);
+                    handled = true;
+                }
+
+                break;
+
+            case PInvoke.WM_SYSKEYDOWN:
+                // Once WS_SYSMENU is removed DefWindowProc is no longer required to translate Alt+Space into
+                // SC_KEYMENU. Handling the system-key message directly also avoids depending on WPF input focus.
+                if (wParam.ToInt32() == (int)VIRTUAL_KEY.VK_SPACE && (lParam.ToInt64() & (1L << 29)) != 0)
+                {
+                    ShowSystemMenuAtWindowCorner(hwnd);
+                    handled = true;
+                }
+
+                break;
+
+            case PInvoke.WM_NCLBUTTONDBLCLK:
+                if (wParam.ToInt32() == PInvoke.HTSYSMENU)
+                {
+                    // IsIconInteractionEnabled maps the icon to HTSYSMENU only when this opt-in behavior is wanted.
+                    // No single-click menu is opened, so the double-click can reach this message normally.
+                    _ = PInvoke.PostMessage(hwnd, PInvoke.WM_SYSCOMMAND, PInvoke.SC_CLOSE, 0);
+                    handled = true;
+                    break;
+                }
+
+                if (IsCaptionButtonHit(wParam.ToInt32()) && _pendingCaptionButton is not null)
+                {
+                    CancelNonClientMouseTracking(hwnd);
+                    SetHotCaptionButton(_pendingCaptionButton);
+                    _pressedCaptionButton = _pendingCaptionButton;
+                    _pendingCaptionButton.BeginNonClientPress();
+                    handled = true;
+                }
+
+                break;
+
+            case PInvoke.WM_NCACTIVATE:
+                IsNcActive = wParam != IntPtr.Zero;
+                UpdateDwmBorderColor_Win11();
+
+                // IsNcActive drives title-bar brushes. A render-priority pass prevents an inactive caption color
+                // from lingering while Windows enters its modal move/size loop.
+                Dispatcher.Invoke(DispatcherPriority.Render, new Action(() => { }));
+
+                handled = true;
+                return PInvoke.DefWindowProc(
+                    hwnd,
+                    message,
+                    new WPARAM(unchecked((nuint)wParam.ToInt64())),
+                    new LPARAM(-1)
+                );
+
+            case PInvoke.WM_SIZE:
+                UpdateActualWindowState(wParam.ToInt32());
+                break;
+
+            case PInvoke.WM_SETTINGCHANGE:
+                if (lParam != IntPtr.Zero && Marshal.PtrToStringAuto(lParam) == "ImmersiveColorSet")
+                {
+                    IsAccentOnTitleBarAndBorder = UnsafeNativeMethods.IsAccentColorOnTitleBarsEnabled();
+                }
+
+                // High-contrast and transparency settings also arrive through WM_SETTINGCHANGE. Reapplying the
+                // backdrop for every setting notification is inexpensive and guarantees an immediate safe fallback.
+                _updateBackdrop?.Invoke();
+                UpdateLegacyFrameExtension();
+
+                break;
+
+            case PInvoke.WM_THEMECHANGED:
+                _ = UnsafeNativeMethods.SuppressWindowCaptionRendering(hwndValue);
+                _updateBackdrop?.Invoke();
+                UpdateLegacyFrameExtension();
+                RequestFrameRecalculation();
+                break;
+
+            case PInvoke.WM_DWMCOMPOSITIONCHANGED:
+                // Frame extensions are not persistent across a DWM composition transition. Win11 restores either
+                // the backdrop sheet or its one-pixel client-frame bridge; older systems restore the shadow bridge.
+                _updateBackdrop?.Invoke();
+                UpdateLegacyFrameExtension();
+                break;
+
+            case PInvoke.WM_DWMCOLORIZATIONCOLORCHANGED:
+                IsAccentOnTitleBarAndBorder = UnsafeNativeMethods.IsAccentColorOnTitleBarsEnabled();
+                UpdateDwmBorderColor_Win11();
+                break;
+        }
+
+        return IntPtr.Zero;
+    }
+
+    private IntPtr HandleNcCalcSize(HWND hwnd, uint message, IntPtr wParam, IntPtr lParam, out bool handled)
+    {
+        handled = true;
+        var isMaximized = IsNativeWindowMaximized(hwnd);
+
+        if (wParam == IntPtr.Zero)
+        {
+            var proposedWindow = Marshal.PtrToStructure<RECT>(lParam);
+
+            // DefWindowProc is the authoritative per-message measurement source. It accounts for the HWND's
+            // current styles, DPI and theme without converting a cached SystemParameters thickness to pixels.
+            _ = PInvoke.DefWindowProc(hwnd, message, default, new LPARAM(lParam));
+            var nativeClient = Marshal.PtrToStructure<RECT>(lParam);
+
+            _resizeFrame = FluentWindowNonClientArea.MeasureFrame(proposedWindow, nativeClient);
+            var client = FluentWindowNonClientArea.CalculateClientRect(
+                proposedWindow,
+                _resizeFrame,
+                GetFrameStrategy(),
+                isMaximized
+            );
+            Marshal.StructureToPtr(client, lParam, false);
+            return IntPtr.Zero;
+        }
+
+        var proposed = Marshal.PtrToStructure<NCCALCSIZE_PARAMS>(lParam);
+        var proposedWindowRect = proposed.rgrc._0;
+
+        // Preserve the proposed window before asking DefWindowProc to replace rgrc[0] with its native client.
+        _ = PInvoke.DefWindowProc(
+            hwnd,
+            message,
+            new WPARAM(unchecked((nuint)wParam.ToInt64())),
+            new LPARAM(lParam)
+        );
+        var native = Marshal.PtrToStructure<NCCALCSIZE_PARAMS>(lParam);
+
+        _resizeFrame = FluentWindowNonClientArea.MeasureFrame(proposedWindowRect, native.rgrc._0);
+        native.rgrc._0 = FluentWindowNonClientArea.CalculateClientRect(
+            proposedWindowRect,
+            _resizeFrame,
+            GetFrameStrategy(),
+            isMaximized
+        );
+        Marshal.StructureToPtr(native, lParam, false);
+
+        // Returning zero avoids the WVR_REDRAW path that can relocate retained WPF content when a theme change
+        // produces WM_NCCALCSIZE without a corresponding size or position change.
+        return IntPtr.Zero;
+    }
+
+    private IntPtr HandleNcHitTest(HWND hwnd, IntPtr lParam, out bool handled)
+    {
+        var screenPoint = LParamToScreenPoint(lParam);
+
+        // Resize borders deliberately win over title-bar content at the outermost physical pixels. Otherwise a
+        // button or custom client element stretched to the edge could make that part of the HWND impossible to size.
+        if (
+            ResizeMode is ResizeMode.CanResize or ResizeMode.CanResizeWithGrip
+            && !IsNativeWindowMaximized(hwnd)
+            && PInvoke.GetWindowRect(hwnd, out RECT windowRect)
+        )
+        {
+            var resizeResult = FluentWindowNonClientArea.HitTestResizeBorder(
+                windowRect,
+                screenPoint,
+                _resizeFrame
+            );
+
+            if ((uint)resizeResult is >= PInvoke.HTLEFT and <= PInvoke.HTBOTTOMRIGHT)
+            {
+                _pendingCaptionButton = null;
+                handled = true;
+                return resizeResult;
+            }
+        }
+
+        var localPoint = PointFromScreen(screenPoint);
+        if (
+            localPoint.X < 0
+            || localPoint.Y < 0
+            || localPoint.X >= ActualWidth
+            || localPoint.Y >= ActualHeight
+            || InputHitTest(localPoint) is not DependencyObject hitElement
+        )
+        {
+            _pendingCaptionButton = null;
+            handled = false;
+            return IntPtr.Zero;
+        }
+
+        var role = TitleBar.GetHitTestRole(hitElement);
+        if (role == TitleBarHitTestRole.None)
+        {
+            _pendingCaptionButton = null;
+            handled = false;
+            return IntPtr.Zero;
+        }
+
+        var titleBar = hitElement as TitleBar ?? hitElement.FindAncestor<TitleBar>();
+        _pendingCaptionButton = role
+            is TitleBarHitTestRole.MinimizeButton
+                or TitleBarHitTestRole.MaximizeButton
+                or TitleBarHitTestRole.CloseButton
+                or TitleBarHitTestRole.HelpButton
+            ? hitElement as TitleBarButton ?? hitElement.FindAncestor<TitleBarButton>()
+            : null;
+
+        handled = true;
+        return FluentWindowNonClientArea.MapTitleBarRole(role, titleBar?.IsIconInteractionEnabled == true);
+    }
+
+    private void UpdateActualWindowState(int sizeCode)
+    {
+        switch (sizeCode)
+        {
+            case SizeRestored:
+                ActualWindowState = WindowState.Normal;
+                break;
+            case SizeMinimized:
+                ActualWindowState = WindowState.Minimized;
+                break;
+            case SizeMaximized:
+                ActualWindowState = WindowState.Maximized;
+                break;
+        }
+    }
+
+    private static bool IsNativeWindowMaximized(HWND hwnd)
+    {
+        var style = (WINDOW_STYLE)PInvoke.GetWindowLong(hwnd, WINDOW_LONG_PTR_INDEX.GWL_STYLE);
+        return (style & WINDOW_STYLE.WS_MAXIMIZE) != 0;
+    }
+
+    private static Point LParamToScreenPoint(IntPtr lParam)
+    {
+        var value = lParam.ToInt64();
+        return new Point((short)value, (short)(value >> 16));
+    }
+
+    private static bool IsCaptionButtonHit(int hitTest)
+    {
+        return hitTest
+            is (int)PInvoke.HTMINBUTTON
+                or (int)PInvoke.HTMAXBUTTON
+                or (int)PInvoke.HTCLOSE
+                or (int)PInvoke.HTHELP;
+    }
+
+    private void SetHotCaptionButton(TitleBarButton? button)
+    {
+        if (ReferenceEquals(_hotCaptionButton, button))
+        {
+            return;
+        }
+
+        _hotCaptionButton?.SetNonClientPointerOver(false);
+        _hotCaptionButton = button;
+        _hotCaptionButton?.SetNonClientPointerOver(true);
+    }
+
+    private void BeginNonClientMouseTracking(HWND hwnd)
+    {
+        if (_isTrackingNonClientMouse)
+        {
+            return;
+        }
+
+        var tracking = new TRACKMOUSEEVENT
+        {
+            cbSize = (uint)Marshal.SizeOf<TRACKMOUSEEVENT>(),
+            dwFlags = TRACKMOUSEEVENT_FLAGS.TME_NONCLIENT | TRACKMOUSEEVENT_FLAGS.TME_LEAVE,
+            hwndTrack = hwnd,
+        };
+
+        _isTrackingNonClientMouse = PInvoke.TrackMouseEvent(ref tracking);
+    }
+
+    private void CancelNonClientMouseTracking(HWND hwnd)
+    {
+        if (!_isTrackingNonClientMouse)
+        {
+            return;
+        }
+
+        var tracking = new TRACKMOUSEEVENT
+        {
+            cbSize = (uint)Marshal.SizeOf<TRACKMOUSEEVENT>(),
+            dwFlags =
+                TRACKMOUSEEVENT_FLAGS.TME_NONCLIENT
+                | TRACKMOUSEEVENT_FLAGS.TME_LEAVE
+                | TRACKMOUSEEVENT_FLAGS.TME_CANCEL,
+            hwndTrack = hwnd,
+        };
+
+        _ = PInvoke.TrackMouseEvent(ref tracking);
+        _isTrackingNonClientMouse = false;
+    }
+
+    /// <summary>
+    /// Restores non-client leave tracking after a caption button releases WPF mouse capture.
+    /// </summary>
+    internal void RestoreNonClientMouseTracking()
+    {
+        _pressedCaptionButton = null;
+
+        if (_hwnd != HWND.Null)
+        {
+            _isTrackingNonClientMouse = false;
+            BeginNonClientMouseTracking(_hwnd);
+        }
+    }
+
+    private void ShowSystemMenuAtWindowCorner(HWND hwnd)
+    {
+        if (!PInvoke.GetWindowRect(hwnd, out RECT windowRect))
+        {
+            return;
+        }
+
+        // The menu is intentionally anchored inside the measured top-left frame rather than using WPF logical
+        // coordinates. This stays stable on mixed-DPI monitors and with negative virtual-screen coordinates.
+        ShowSystemMenuPhysicalCoordinates(
+            hwnd,
+            windowRect.left + _resizeFrame.Left,
+            windowRect.top + _resizeFrame.Top
+        );
+    }
+
+    private unsafe void ShowSystemMenuPhysicalCoordinates(HWND hwnd, int x, int y)
+    {
+        const TRACK_POPUP_MENU_FLAGS flags =
+            TRACK_POPUP_MENU_FLAGS.TPM_LEFTBUTTON
+            | TRACK_POPUP_MENU_FLAGS.TPM_RIGHTBUTTON
+            | TRACK_POPUP_MENU_FLAGS.TPM_RETURNCMD;
+
+        var menu = _systemMenu;
+        if (menu.Value == null)
+        {
+            return;
+        }
+
+        var style = (WINDOW_STYLE)PInvoke.GetWindowLong(hwnd, WINDOW_LONG_PTR_INDEX.GWL_STYLE);
+        UpdateSystemMenu(menu, style, Utilities.GetHwndState(hwnd));
+
+        var command = PInvoke.TrackPopupMenuEx(menu, (uint)flags, x, y, hwnd);
+        if (command)
+        {
+            _ = PInvoke.PostMessage(hwnd, PInvoke.WM_SYSCOMMAND, (nuint)command.Value, 0);
+        }
+    }
+
+    private static void PreventSystemMenuStyle(IntPtr lParam, IntPtr wParam)
+    {
+        if (lParam == IntPtr.Zero || wParam.ToInt32() != (int)WINDOW_LONG_PTR_INDEX.GWL_STYLE)
+        {
+            return;
+        }
+
+        // WPF starts every top-level Window with WS_SYSMENU and can rebuild the style when WindowStyle or
+        // ResizeMode changes. Editing STYLESTRUCT during WM_STYLECHANGING prevents a later property change from
+        // silently reintroducing DWM caption buttons and avoids a second SetWindowLong recursion.
+        var styles = Marshal.PtrToStructure<STYLESTRUCT>(lParam);
+        styles.styleNew &= ~(uint)WINDOW_STYLE.WS_SYSMENU;
+        Marshal.StructureToPtr(styles, lParam, false);
+    }
+
+    private static void UpdateSystemMenu(HMENU menu, WINDOW_STYLE style, WindowState state)
+    {
+        const MENU_ITEM_FLAGS enabled = MENU_ITEM_FLAGS.MF_ENABLED | MENU_ITEM_FLAGS.MF_BYCOMMAND;
+        const MENU_ITEM_FLAGS disabled =
+            MENU_ITEM_FLAGS.MF_GRAYED | MENU_ITEM_FLAGS.MF_DISABLED | MENU_ITEM_FLAGS.MF_BYCOMMAND;
+
+        var canMinimize = (style & WINDOW_STYLE.WS_MINIMIZEBOX) != 0;
+        var canMaximize = (style & WINDOW_STYLE.WS_MAXIMIZEBOX) != 0;
+        var canSize = (style & WINDOW_STYLE.WS_THICKFRAME) != 0;
+
+        switch (state)
+        {
+            case WindowState.Maximized:
+                _ = PInvoke.EnableMenuItem(menu, PInvoke.SC_RESTORE, enabled);
+                _ = PInvoke.EnableMenuItem(menu, PInvoke.SC_MOVE, disabled);
+                _ = PInvoke.EnableMenuItem(menu, PInvoke.SC_SIZE, disabled);
+                _ = PInvoke.EnableMenuItem(menu, PInvoke.SC_MINIMIZE, canMinimize ? enabled : disabled);
+                _ = PInvoke.EnableMenuItem(menu, PInvoke.SC_MAXIMIZE, disabled);
+                break;
+
+            case WindowState.Minimized:
+                _ = PInvoke.EnableMenuItem(menu, PInvoke.SC_RESTORE, enabled);
+                _ = PInvoke.EnableMenuItem(menu, PInvoke.SC_MOVE, disabled);
+                _ = PInvoke.EnableMenuItem(menu, PInvoke.SC_SIZE, disabled);
+                _ = PInvoke.EnableMenuItem(menu, PInvoke.SC_MINIMIZE, disabled);
+                _ = PInvoke.EnableMenuItem(menu, PInvoke.SC_MAXIMIZE, canMaximize ? enabled : disabled);
+                break;
+
+            default:
+                _ = PInvoke.EnableMenuItem(menu, PInvoke.SC_RESTORE, disabled);
+                _ = PInvoke.EnableMenuItem(menu, PInvoke.SC_MOVE, enabled);
+                _ = PInvoke.EnableMenuItem(menu, PInvoke.SC_SIZE, canSize ? enabled : disabled);
+                _ = PInvoke.EnableMenuItem(menu, PInvoke.SC_MINIMIZE, canMinimize ? enabled : disabled);
+                _ = PInvoke.EnableMenuItem(menu, PInvoke.SC_MAXIMIZE, canMaximize ? enabled : disabled);
+                break;
+        }
     }
 
     private static bool IsSupportedBackdrop(WindowBackdropType backdropType)
     {
         return backdropType switch
         {
-            WindowBackdropType.Auto     => Utilities.IsWin_11_22H2_Or_Greater,
+            WindowBackdropType.Auto => Utilities.IsWin_11_22H2_Or_Greater,
             WindowBackdropType.Mica_Alt => Utilities.IsWin_11_22H2_Or_Greater,
-            WindowBackdropType.Mica     => Utilities.IsWin_10_Or_Greater,
-            WindowBackdropType.Acrylic  => Utilities.IsWin_7_Or_Greater,
-            WindowBackdropType.None     => true,
-            _                           => false
+            WindowBackdropType.Mica => Utilities.IsWin_10_Or_Greater,
+            WindowBackdropType.Acrylic => Utilities.IsWin_7_Or_Greater,
+            WindowBackdropType.None => true,
+            _ => false,
         };
     }
-
-    private IntPtr FluentWindowSourceHook(IntPtr hwndIntPtr, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
-    {
-        var uMsg = (uint)msg;
-        var hwnd = (HWND)hwndIntPtr;
-
-        switch (uMsg)
-        {
-            // 窗口在不同DPI的监视器之间移动，会收到此消息
-            case PInvoke.WM_DPICHANGED:
-            {
-                InvalidateBorderMetricsCache();
-
-                // 更新缓存的DPI
-                var yx = wParam.ToInt64();
-                _cachedDpi = new DisplayDpi((short)yx, (short)(yx >> 16));
-
-                // 更新窗口大小
-                const SET_WINDOW_POS_FLAGS swpFlag
-                    = SET_WINDOW_POS_FLAGS.SWP_NOZORDER | SET_WINDOW_POS_FLAGS.SWP_NOACTIVATE;
-
-                var rc = Marshal.PtrToStructure<RECT>(lParam);
-                PInvoke.SetWindowPos(hwnd, HWND.Null, rc.left, rc.top, rc.Width, rc.Height, swpFlag);
-
-                break;
-            }
-
-            case PInvoke.WM_THEMECHANGED:
-                InvalidateBorderMetricsCache();
-                break;
-
-            case PInvoke.WM_SETTINGCHANGE:
-            {
-                Debug.WriteLine($"[WM_SETTINGCHANGE] wParam: {wParam:x8}, lParam: \"{Marshal.PtrToStringAuto(lParam)}\"");
-
-                if (lParam != IntPtr.Zero)
-                {
-                    var spiStr = Marshal.PtrToStringAuto(lParam);
-                    switch (spiStr)
-                    {
-                        case "ImmersiveColorSet":
-                            IsAccentOnTitleBarAndBorder = UnsafeNativeMethods.IsAccentColorOnTitleBarsEnabled();
-                            break;
-
-                        case "ThemeElement":
-                            InvalidateBorderMetricsCache();
-                            break;
-                    }
-                }
-
-                if (wParam == (IntPtr)SYSTEM_PARAMETERS_INFO_ACTION.SPI_SETLOGICALDPIOVERRIDE)
-                {
-                    InvalidateDpi();
-                }
-
-                break;
-            }
-
-            case PInvoke.WM_SIZE:
-            case PInvoke.WM_WINDOWPOSCHANGED:
-            case PInvoke.WM_STYLECHANGED:
-            {
-                ActualWindowState = Utilities.GetHwndState(hwnd);
-                break;
-            }
-
-            // 核心消息，此为实现将客户区内容放到标题栏的核心机制。
-            // 它能保持完整可调整尺寸边框厚度，并且保持原生边框视觉样式（例如Win10以上系统的边框包含一部分透明区域）。
-            // 注意：WindowChrome已过时，请不要在FluentWindow上使用。
-            case PInvoke.WM_NCCALCSIZE:
-            {
-                if (_MSG_NCCALCSIZE != null)
-                {
-                    return _MSG_NCCALCSIZE(hwnd, uMsg, wParam, lParam, out handled);
-                }
-
-                if (wParam.ToInt32() != 0)
-                {
-                    var isMaximized = Utilities.GetHwndState(hwnd) == WindowState.Maximized;
-
-                    var p = Marshal.PtrToStructure<NCCALCSIZE_PARAMS>(lParam);
-
-                    // 第二个矩形为原窗口坐标，第三个矩形为原客户区坐标，
-                    // 通过计算即可得出窗口边框厚度，可以将这个值存储起来以便后用。
-                    // 用这种方法可免去 获取系统指标再经过DPI计算得出窗口边框厚度 的复杂过程。
-                    var l = Math.Abs(p.rgrc._1.left - p.rgrc._2.left);
-                    var b = Math.Abs(p.rgrc._1.bottom - p.rgrc._2.bottom);
-
-                    var cx = _cxBorder = l > 0 ? l : _cxBorder;
-                    var cy = _cyBorder = b > 0 ? b : _cyBorder;
-
-                    // 保留左、下、右三个原生边框，以便Dwm可以绘制透明的边框范围。
-                    // 顶部：
-                    // 最大化时则保留顶部边框厚度，可保证客户区显示完整；
-                    // 非最大化时则让顶部边框厚度为零，以便移除标题栏，把客户区内容“放进标题区域”。
-                    // 关键：不能同时保留四条边框，否则在Win10及以下系统会出现完整的不可交互的假标题栏，
-                    // 这个问题从Vista就存在，居然直到Win11才修复。。。
-                    p.rgrc._0.left   += cx;
-                    p.rgrc._0.right  -= cx;
-                    p.rgrc._0.top    += isMaximized ? cy : 0;
-                    p.rgrc._0.bottom -= cy;
-
-                    Marshal.StructureToPtr(p, lParam, false);
-
-                    // 设置主题色居然也会触发这个消息，
-                    // 此时如果窗口尺寸、位置没有任何改变，返回 WVR_REDRAW 会让系统莫名其妙地把客户区移动并“左对齐”，
-                    // 只要截获此消息并返回 0 即可解决。
-                    handled = true;
-                }
-
-                break;
-            }
-
-            // 窗口处理调整尺寸边框和相关逻辑，没有结果再将消息转发给标题栏。
-            case PInvoke.WM_NCHITTEST:
-            {
-                var isMaximized = Utilities.GetHwndState(hwnd) == WindowState.Maximized;
-
-                // 优先处理调整尺寸边框的命中测试
-                if ((ResizeMode is ResizeMode.CanResize or ResizeMode.CanResizeWithGrip) && !isMaximized)
-                {
-                    var point = LParamToPoint(lParam);
-                    var rect  = GetWindowRect(hwnd);
-
-                    var ht = HitTestResizeBorder(rect, point);
-
-                    if ((uint)ht is >= PInvoke.HTLEFT and <= PInvoke.HTBOTTOMRIGHT)
-                    {
-                        // The resize border has been hit and the hit-test result is finalized.
-                        // Notify other components participating in non-client interaction
-                        // so they can update their state accordingly.
-                        PInvoke.SendMessage(hwnd, WM_NCHITTEST_RESOLVED, 0, 0);
-
-                        handled = true;
-                        return ht;
-                    }
-                }
-
-                // 没有结果，将消息转发给标题栏，让标题栏处理拖动窗口、图标、和系统按钮的命中测试。
-                // 标题栏在有结果的情况下应该处理 WM_NCHITTEST_RESOLVED 消息。
-                var tResult = PInvoke.SendMessage(hwnd, WM_NCHITTEST_REQUEST, 0, lParam);
-                if (tResult != IntPtr.Zero)
-                {
-                    handled = true;
-                    return tResult;
-                }
-
-                // No specific non-client element was hit during this pass.
-                // Still send WM_NCHITTEST_RESOLVED as a completion notification,
-                // allowing title bar buttons and other participants to reset
-                // their visual state if necessary.
-                PInvoke.SendMessage(hwnd, WM_NCHITTEST_RESOLVED, 0, 0);
-                break;
-            }
-
-            case PInvoke.WM_NCACTIVATE:
-            {
-                IsNcActive = wParam != IntPtr.Zero;
-
-                // 强制刷新渲染队列，以便依赖 IsNcActive 属性的视觉状态及时刷新，
-                // 否则在标题栏按下鼠标准备拖动时会有500ms延迟。
-                // 例如拖动前标题栏前景色在活动和非活动之间切换
-                Dispatcher.Invoke(DispatcherPriority.Render, new Action(() => { }));
-
-                // 可以消除在特定情况（例如没有 WS_CAPTION）时激活瞬间绘制原生标题栏的问题（包括系统按钮）
-                // https://learn.microsoft.com/en-us/windows/win32/winmsg/wm-ncactivate
-                handled = true;
-                return PInvoke.DefWindowProc(hwnd, uMsg, new WPARAM((uint)wParam), -1);
-            }
-
-            case PInvoke.WM_DWMCOLORIZATIONCOLORCHANGED:
-            {
-                InvalidateBorderMetricsCache();
-                break;
-            }
-        }
-
-        return IntPtr.Zero;
-
-        static Point LParamToPoint(IntPtr lParam)
-        {
-            var yx = lParam.ToInt64();
-            return new Point((short)yx, (short)(yx >> 16));
-        }
-    }
-
-    private delegate IntPtr MessageHandler(IntPtr hwnd, uint uMsg, IntPtr wParam, IntPtr lParam, out bool handled);
 }

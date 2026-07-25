@@ -36,16 +36,11 @@ SC_CLOSE
 SYSTEM_PARAMETERS_INFO_ACTION
 
 SetWindowPos
-SendMessage
 PostMessage
 TrackMouseEvent
-RegisterWindowMessage
-GetSystemMetrics
 IsWindow
-CopyRect
 DefWindowProc
 
-DwmDefWindowProc
 DwmIsCompositionEnabled
 DwmSetWindowAttribute
 DwmGetWindowAttribute
@@ -65,6 +60,7 @@ COLORREF
 ITaskbarList4
 TaskbarList
 WINDOW_STYLE
+VIRTUAL_KEY
 WTA_OPTIONS
 WTNCA_*
 WM_*

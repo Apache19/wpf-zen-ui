@@ -6,37 +6,26 @@
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Data;
-using Windows.Win32;
-using Windows.Win32.Foundation;
-using Windows.Win32.UI.WindowsAndMessaging;
-using Wpf.Ui.Extensions.Wpf;
-using Wpf.Ui.Win32;
 
 // ReSharper disable SuspiciousTypeConversion.Global
 // ReSharper disable once CheckNamespace
 namespace Wpf.Ui.Controls;
 
 /// <summary>
-/// Represents a customizable window title bar that integrates native
-/// non-client title bar behavior with WPF rendering and layout.
+/// Represents a customizable WPF title bar with semantic window hit-test regions.
 /// </summary>
 /// <remarks>
-/// <see cref="TitleBar"/> enables a WPF control to function as the visual
-/// and interactive representation of a window's title bar while preserving
-/// native window behaviors such as caption buttons, window dragging,
-/// and system commands.
-/// <para/>
-/// The control participates in non-client hit testing and propagates
-/// relevant window state information (such as activation and window state)
-/// to its visual elements, allowing caption buttons and other title bar
-/// components to behave consistently with the operating system.
-/// <para/>
-/// <see cref="TitleBar"/> is designed to be used as part of a window's
-/// title bar infrastructure. Using it outside a window context or without
-/// the associated window message handling may result in undefined behavior.
-/// <para/>
-/// This control coordinates with the underlying window and message loop
-/// rather than attempting to reimplement the system title bar logic.
+/// <para>
+/// The default template assigns <see cref="HitTestRoleProperty"/> to draggable caption content, interactive content,
+/// the application icon and caption buttons. A containing <see cref="FluentWindow"/> resolves those roles from its
+/// visual tree and maps them to native HT values, preserving resize, drag, system-menu and Windows 11 Snap Layout
+/// behavior without giving this control its own HWND hook.
+/// </para>
+/// <para>
+/// TitleBar can also be hosted in an ordinary <see cref="Window"/>. Its caption buttons still execute the associated
+/// <see cref="SystemCommands"/>, but native dragging, Snap Layout and non-client hit testing are guaranteed only when
+/// a FluentWindow owns the HWND message pipeline.
+/// </para>
 /// </remarks>
 public class TitleBar : ContentControl
 {
@@ -68,7 +57,7 @@ public class TitleBar : ContentControl
         );
     }
 
-    #region DP: LeftContent, LeftContentState, Icon, Title, IsIconInteractionEnabled, IsUserContentEnabled, ElementIdentity
+    #region DP: LeftContent, LeftContentState, Icon, Title, IsIconInteractionEnabled, IsUserContentEnabled, HitTestRole
 
     #region LeftContent
 
@@ -132,8 +121,7 @@ public class TitleBar : ContentControl
     /// </remarks>
     [Browsable(false)]
     [ReadOnly(true)]
-    public TitleBarContentState LeftContentState =>
-        (TitleBarContentState)GetValue(LeftContentStateProperty);
+    public TitleBarContentState LeftContentState => (TitleBarContentState)GetValue(LeftContentStateProperty);
 
     // LeftContent usually changes only once when a cooperating control claims the slot. Its
     // Visibility can then change independently, so the title bar needs a second dependency-property
@@ -145,15 +133,10 @@ public class TitleBar : ContentControl
             "TrackedLeftContentVisibility",
             typeof(Visibility),
             typeof(TitleBar),
-            new FrameworkPropertyMetadata(
-                Visibility.Visible,
-                OnTrackedLeftContentVisibilityChanged
-            )
+            new FrameworkPropertyMetadata(Visibility.Visible, OnTrackedLeftContentVisibilityChanged)
         );
 
-    private static void OnLeftContentChanged(
-        DependencyObject d,
-        DependencyPropertyChangedEventArgs e)
+    private static void OnLeftContentChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
         if (d is not TitleBar titleBar)
         {
@@ -167,11 +150,7 @@ public class TitleBar : ContentControl
             BindingOperations.SetBinding(
                 titleBar,
                 TrackedLeftContentVisibilityProperty,
-                new Binding(nameof(UIElement.Visibility))
-                {
-                    Mode   = BindingMode.OneWay,
-                    Source = element,
-                }
+                new Binding(nameof(UIElement.Visibility)) { Mode = BindingMode.OneWay, Source = element }
             );
         }
         else
@@ -187,7 +166,8 @@ public class TitleBar : ContentControl
 
     private static void OnTrackedLeftContentVisibilityChanged(
         DependencyObject d,
-        DependencyPropertyChangedEventArgs e)
+        DependencyPropertyChangedEventArgs e
+    )
     {
         if (d is TitleBar titleBar)
         {
@@ -204,12 +184,12 @@ public class TitleBar : ContentControl
     {
         TitleBarContentState state = LeftContent switch
         {
-            null        => TitleBarContentState.Empty,
+            null => TitleBarContentState.Empty,
             UIElement _ => (Visibility)GetValue(TrackedLeftContentVisibilityProperty) switch
             {
-                Visibility.Hidden    => TitleBarContentState.Hidden,
+                Visibility.Hidden => TitleBarContentState.Hidden,
                 Visibility.Collapsed => TitleBarContentState.Collapsed,
-                _                    => TitleBarContentState.Visible,
+                _ => TitleBarContentState.Visible,
             },
             _ => TitleBarContentState.Visible,
         };
@@ -294,24 +274,23 @@ public class TitleBar : ContentControl
     /// <summary>
     /// Identifies the <see cref="IsIconInteractionEnabled"/> dependency property.
     /// </summary>
-    public static readonly DependencyProperty IsIconInteractionEnabledProperty =
-        DependencyProperty.Register(
-            nameof(IsIconInteractionEnabled),
-            typeof(bool),
-            typeof(TitleBar),
-            new PropertyMetadata(false)
-        );
+    public static readonly DependencyProperty IsIconInteractionEnabledProperty = DependencyProperty.Register(
+        nameof(IsIconInteractionEnabled),
+        typeof(bool),
+        typeof(TitleBar),
+        new PropertyMetadata(false)
+    );
 
     /// <summary>
-    /// Gets or sets a value indicating whether standard system-defined
-    /// interactions for the title bar icon are permitted.
+    /// Gets or sets a value indicating whether double-clicking the title bar icon closes the window.
     /// </summary>
     /// <remarks>
-    /// When enabled, the title bar does not restrict system-defined
-    /// interactions associated with the window icon.
+    /// When enabled and hosted by a <see cref="FluentWindow"/>, the icon participates in non-client hit testing and
+    /// a double-click posts the standard close command. A single left click intentionally has no behavior; the
+    /// legacy icon system menu does not fit the Fluent Design title-bar interaction model.
     ///
-    /// When disabled, such interactions are not permitted, and the icon
-    /// area behaves as a non-interactive part of the title bar.
+    /// When disabled, the icon area behaves as part of the draggable caption. A <see cref="TitleBar"/> hosted by a
+    /// regular <see cref="Window"/> displays the icon but cannot provide this HWND-level interaction guarantee.
     ///
     /// The default value is <see langword="false"/>.
     /// </remarks>
@@ -328,13 +307,12 @@ public class TitleBar : ContentControl
     /// <summary>
     /// Identifies the <see cref="IsUserContentEnabled"/> dependency property.
     /// </summary>
-    internal static readonly DependencyProperty IsUserContentEnabledProperty =
-        DependencyProperty.Register(
-            nameof(IsUserContentEnabled),
-            typeof(bool),
-            typeof(TitleBar),
-            new PropertyMetadata(true)
-        );
+    internal static readonly DependencyProperty IsUserContentEnabledProperty = DependencyProperty.Register(
+        nameof(IsUserContentEnabled),
+        typeof(bool),
+        typeof(TitleBar),
+        new PropertyMetadata(true)
+    );
 
     /// <summary>
     /// Gets a value indicating whether user-provided content is enabled.
@@ -352,70 +330,66 @@ public class TitleBar : ContentControl
 
     #endregion
 
-    #region ElementIdentity
+    #region HitTestRole
 
     /// <summary>
-    /// Identifies the semantic role of an element within the title bar.
+    /// Identifies the <c>TitleBar.HitTestRole</c> attached dependency property.
     /// </summary>
     /// <remarks>
     /// This attached property is used to associate a visual element in the title bar
-    /// with a specific non-client area identity. The assigned value is used internally
-    /// to participate in non-client hit testing and window interaction logic.
+    /// with a semantic non-client hit-test role. <see cref="FluentWindow"/> maps the role to native HT values;
+    /// templates therefore remain independent of Win32 constants.
     ///
     /// The property value is inherited, allowing container elements to define an
-    /// identity that applies to their visual children.
+    /// identity that applies to their visual children. The default value is <see cref="TitleBarHitTestRole.None"/>.
     ///
     /// This property is not intended for general application logic and should only be
     /// used when integrating custom elements into the title bar interaction model.
     /// </remarks>
-    private static readonly DependencyProperty ElementIdentityProperty =
-        DependencyProperty.RegisterAttached(
-            "ElementIdentity",
-            typeof(TitleBarElementIdentity),
-            typeof(TitleBar),
-            new FrameworkPropertyMetadata(
-                TitleBarElementIdentity.Unknown,
-                FrameworkPropertyMetadataOptions.Inherits
-            )
-        );
+    public static readonly DependencyProperty HitTestRoleProperty = DependencyProperty.RegisterAttached(
+        "HitTestRole",
+        typeof(TitleBarHitTestRole),
+        typeof(TitleBar),
+        new FrameworkPropertyMetadata(TitleBarHitTestRole.None, FrameworkPropertyMetadataOptions.Inherits)
+    );
 
     /// <summary>
-    /// Helper for getting <see cref="ElementIdentityProperty"/> from <paramref name="obj"/>.
+    /// Gets the title-bar hit-test role inherited by <paramref name="obj"/>.
     /// </summary>
     /// <param name="obj">
-    /// <see cref="DependencyObject"/> to read <see cref="ElementIdentityProperty"/> from.
+    /// Dependency object whose role should be read.
     /// </param>
     /// <returns>
-    /// ElementIdentity property value.
+    /// The effective <see cref="TitleBarHitTestRole"/>.
     /// </returns>
     [AttachedPropertyBrowsableForType(typeof(DependencyObject))]
-    public static TitleBarElementIdentity GetElementIdentity(DependencyObject obj)
+    public static TitleBarHitTestRole GetHitTestRole(DependencyObject obj)
     {
         if (obj == null)
         {
             throw new ArgumentNullException(nameof(obj));
         }
 
-        return (TitleBarElementIdentity)obj.GetValue(ElementIdentityProperty);
+        return (TitleBarHitTestRole)obj.GetValue(HitTestRoleProperty);
     }
 
     /// <summary>
-    /// Helper for setting <see cref="ElementIdentityProperty"/> on <paramref name="obj"/>.
+    /// Sets the title-bar hit-test role inherited from <paramref name="obj"/>.
     /// </summary>
     /// <param name="obj">
-    /// <see cref="DependencyObject"/> to set <see cref="ElementIdentityProperty"/> on.
+    /// Dependency object on which the role should be assigned.
     /// </param>
     /// <param name="value">
-    /// ElementIdentity property value.
+    /// Semantic role to assign.
     /// </param>
-    public static void SetElementIdentity(DependencyObject obj, TitleBarElementIdentity value)
+    public static void SetHitTestRole(DependencyObject obj, TitleBarHitTestRole value)
     {
         if (obj == null)
         {
             throw new ArgumentNullException(nameof(obj));
         }
 
-        obj.SetValue(ElementIdentityProperty, value);
+        obj.SetValue(HitTestRoleProperty, value);
     }
 
     #endregion
@@ -431,7 +405,7 @@ public class TitleBar : ContentControl
     {
         AddHandler(ButtonBase.ClickEvent, new RoutedEventHandler(OnButtonClick));
 
-        Loaded   += OnLoaded;
+        Loaded += OnLoaded;
         Unloaded += OnUnloaded;
     }
 
@@ -443,170 +417,11 @@ public class TitleBar : ContentControl
         }
 
         _window = Window.GetWindow(this);
-
-        if (_window is not null)
-        {
-            var hwndSource = PresentationSource.FromVisual(_window) as HwndSource;
-            hwndSource?.AddHook(OwnerWindowSourceHook);
-        }
     }
 
     private void OnUnloaded(object sender, RoutedEventArgs e)
     {
-        if (_window is not null)
-        {
-            var hwndSource = PresentationSource.FromVisual(_window) as HwndSource;
-            hwndSource?.RemoveHook(OwnerWindowSourceHook);
-            _window = null;
-        }
-    }
-
-    private IntPtr OwnerWindowSourceHook(IntPtr hwndIntPtr, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
-    {
-        var hwnd = (HWND)hwndIntPtr;
-        var uMsg = (uint)msg;
-
-        if (uMsg == FluentWindow.WM_NCHITTEST_REQUEST)
-        {
-            var lyx         = lParam.ToInt64();
-            var screenPoint = new Point((short)lyx, (short)(lyx >> 16));
-            var localPoint  = PointFromScreen(screenPoint);
-
-            if (localPoint is { X: >= 0, Y: >= 0 } && localPoint.X < ActualWidth && localPoint.Y < ActualHeight)
-            {
-                if (InputHitTest(localPoint) is DependencyObject hitElement)
-                {
-                    var id = GetElementIdentity(hitElement);
-
-                    if (id != TitleBarElementIdentity.Unknown)
-                    {
-                        var button = hitElement.FindAncestor<TitleBarButton>();
-                        if (button is not null)
-                        {
-                            var hash = button.GetHashCode();
-                            PInvoke.SendMessage(hwnd, FluentWindow.WM_NCHITTEST_RESOLVED, 1, new LPARAM(hash));
-                        }
-                        else
-                        {
-                            PInvoke.SendMessage(hwnd, FluentWindow.WM_NCHITTEST_RESOLVED, 0, 0);
-                        }
-
-                        if (id == TitleBarElementIdentity.Icon && !IsIconInteractionEnabled)
-                        {
-                            id = TitleBarElementIdentity.Caption;
-                        }
-
-                        handled = true;
-                        return (IntPtr)id;
-                    }
-                }
-            }
-
-            return IntPtr.Zero;
-        }
-
-        switch (uMsg)
-        {
-            // Intercept non-client mouse interactions for specific hit-test targets
-            // (typically system buttons) to suppress the default system rendering and
-            // behavior in the title bar.
-            //
-            // This prevents the window from drawing native system button visuals over
-            // the custom title bar implementation.
-            case PInvoke.WM_NCLBUTTONDOWN:
-            case PInvoke.WM_NCLBUTTONUP:
-            {
-                handled = (uint)wParam switch
-                {
-                    PInvoke.HTMAXBUTTON => true, PInvoke.HTMINBUTTON => true,
-                    PInvoke.HTCLOSE     => true, PInvoke.HTHELP      => true,
-                    _                   => handled
-                };
-
-                break;
-            }
-
-            case PInvoke.WM_NCRBUTTONUP:
-            {
-                if (wParam.ToInt32() != PInvoke.HTCAPTION)
-                {
-                    break;
-                }
-
-                var yx = lParam.ToInt64();
-                ShowSystemMenuPhysicalCoordinates(hwnd, (short)yx, (short)(yx >> 16));
-
-                break;
-            }
-        }
-
-        return IntPtr.Zero;
-    }
-
-    private static void ShowSystemMenuPhysicalCoordinates(HWND hwnd, short x, short y)
-    {
-        const TRACK_POPUP_MENU_FLAGS flag
-            = TRACK_POPUP_MENU_FLAGS.TPM_LEFTBUTTON | TRACK_POPUP_MENU_FLAGS.TPM_RIGHTBUTTON |
-              TRACK_POPUP_MENU_FLAGS.TPM_RETURNCMD;
-
-        var hmenu = PInvoke.GetSystemMenu(hwnd, false);
-        var style = (WINDOW_STYLE)PInvoke.GetWindowLong(hwnd, WINDOW_LONG_PTR_INDEX.GWL_STYLE);
-        var state = Utilities.GetHwndState(hwnd);
-
-        UpdateSystemMenu(hmenu, style, state);
-
-        unsafe
-        {
-            var cmd = PInvoke.TrackPopupMenuEx(hmenu, (uint)flag, x, y, hwnd);
-            if (cmd)
-            {
-                PInvoke.PostMessage(hwnd, PInvoke.WM_SYSCOMMAND, (nuint)cmd.Value, 0);
-            }
-        }
-    }
-
-    private static void UpdateSystemMenu(HMENU hmenu, WINDOW_STYLE style, WindowState state)
-    {
-        const MENU_ITEM_FLAGS en = MENU_ITEM_FLAGS.MF_ENABLED | MENU_ITEM_FLAGS.MF_BYCOMMAND;
-        const MENU_ITEM_FLAGS di = MENU_ITEM_FLAGS.MF_GRAYED | MENU_ITEM_FLAGS.MF_DISABLED | MENU_ITEM_FLAGS.MF_BYCOMMAND;
-
-        var canMinimize = (style & WINDOW_STYLE.WS_MINIMIZEBOX) != 0;
-        var canMaximize = (style & WINDOW_STYLE.WS_MAXIMIZEBOX) != 0;
-        var canSize     = (style & WINDOW_STYLE.WS_THICKFRAME) != 0;
-
-        switch (state)
-        {
-            case WindowState.Maximized:
-            {
-                PInvoke.EnableMenuItem(hmenu, PInvoke.SC_RESTORE,  en);
-                PInvoke.EnableMenuItem(hmenu, PInvoke.SC_MOVE,     di);
-                PInvoke.EnableMenuItem(hmenu, PInvoke.SC_SIZE,     di);
-                PInvoke.EnableMenuItem(hmenu, PInvoke.SC_MINIMIZE, canMinimize ? en : di);
-                PInvoke.EnableMenuItem(hmenu, PInvoke.SC_MAXIMIZE, di);
-                break;
-            }
-
-            case WindowState.Minimized:
-            {
-                PInvoke.EnableMenuItem(hmenu, PInvoke.SC_RESTORE,  en);
-                PInvoke.EnableMenuItem(hmenu, PInvoke.SC_MOVE,     di);
-                PInvoke.EnableMenuItem(hmenu, PInvoke.SC_SIZE,     di);
-                PInvoke.EnableMenuItem(hmenu, PInvoke.SC_MINIMIZE, di);
-                PInvoke.EnableMenuItem(hmenu, PInvoke.SC_MAXIMIZE, canMaximize ? en : di);
-                break;
-            }
-
-            case WindowState.Normal:
-            default:
-            {
-                PInvoke.EnableMenuItem(hmenu, PInvoke.SC_RESTORE,  di);
-                PInvoke.EnableMenuItem(hmenu, PInvoke.SC_MOVE,     en);
-                PInvoke.EnableMenuItem(hmenu, PInvoke.SC_SIZE,     canSize ? en : di);
-                PInvoke.EnableMenuItem(hmenu, PInvoke.SC_MINIMIZE, canMinimize ? en : di);
-                PInvoke.EnableMenuItem(hmenu, PInvoke.SC_MAXIMIZE, canMaximize ? en : di);
-                break;
-            }
-        }
+        _window = null;
     }
 
     private void CloseWindow()
@@ -655,18 +470,18 @@ public class TitleBar : ContentControl
     {
         if (e.OriginalSource is TitleBarButton d)
         {
-            var id = GetElementIdentity(d);
-            switch (id)
+            var role = GetHitTestRole(d);
+            switch (role)
             {
-                case TitleBarElementIdentity.MaximizeButton:
+                case TitleBarHitTestRole.MaximizeButton:
                     MaximizeWindow();
                     break;
 
-                case TitleBarElementIdentity.CloseButton:
+                case TitleBarHitTestRole.CloseButton:
                     CloseWindow();
                     break;
 
-                case TitleBarElementIdentity.MinimizeButton:
+                case TitleBarHitTestRole.MinimizeButton:
                     MinimizeWindow();
                     break;
             }
