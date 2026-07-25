@@ -22,9 +22,7 @@
             x:Name="WindowBorder"
             Background="{TemplateBinding Background}"
             BorderBrush="{TemplateBinding BorderBrush}"
-            BorderThickness="{TemplateBinding BorderThickness}"
-            RenderOptions.EdgeMode="Aliased"
-            SnapsToDevicePixels="True">
+            BorderThickness="{TemplateBinding BorderThickness}">
             <Grid>
                 <AdornerDecorator>
                     <ContentPresenter />
