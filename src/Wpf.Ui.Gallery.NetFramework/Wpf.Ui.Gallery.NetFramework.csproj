@@ -1,0 +1,155 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Wpf.Ui.Gallery</RootNamespace>
+    <AssemblyName>Wpf.Ui.Gallery.NetFramework</AssemblyName>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net462</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <LangVersion>14.0</LangVersion>
+    <ApplicationIcon>wpfui.ico</ApplicationIcon>
+    <NoWarn>$(NoWarn);SA1601</NoWarn>
+    <GenerateDocumentationFile>True</GenerateDocumentationFile>
+    <Platforms>AnyCPU;x86;x64;arm64</Platforms>
+    <IncludePackageReferencesDuringMarkupCompilation>true</IncludePackageReferencesDuringMarkupCompilation>
+    <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+    <CompilerGeneratedFilesOutputPath>$(BaseIntermediateOutputPath)GeneratedFiles</CompilerGeneratedFilesOutputPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="wpfui.ico" />
+  </ItemGroup>
+
+  <!--
+    The WPF MarkupCompilePass2 creates a temporary project (_wpftmp.csproj) that recompiles
+    all source files. For .NET Framework targets, CommunityToolkit.Mvvm source generators
+    do not run in this temp project. We work around this by:
+    1. Emitting generator outputs to disk (EmitCompilerGeneratedFiles=true)
+    2. Cleaning stale outputs before each CoreCompile
+    3. Injecting the generated files directly into the temp project file after it's created
+  -->
+  <Target Name="CleanSgOutputForFreshBuild" BeforeTargets="CoreCompile">
+    <RemoveDir Directories="$(BaseIntermediateOutputPath)GeneratedFiles"
+               Condition="Exists('$(BaseIntermediateOutputPath)GeneratedFiles')" />
+  </Target>
+
+  <Target Name="InjectSgOutputIntoMarkupTempProject"
+          AfterTargets="CoreCompile"
+          BeforeTargets="GenerateTemporaryTargetAssembly">
+    <ItemGroup>
+      <_SgGenerated Include="$(BaseIntermediateOutputPath)GeneratedFiles\**\*.cs" />
+    </ItemGroup>
+
+    <!-- Add emitted SG outputs to Compile so GenerateTemporaryTargetAssembly includes
+         them when creating the _wpftmp.csproj temp project. Since CoreCompile has already
+         finished, these items will not affect the main compilation (SG auto-injection
+         already handled it). -->
+    <ItemGroup Condition="@(_SgGenerated->Count()) &gt; 0">
+      <Compile Include="@(_SgGenerated)" />
+    </ItemGroup>
+  </Target>
+
+  <!-- ========== Linked XAML Pages from Original Gallery ========== -->
+  <ItemGroup>
+    <Page Include="..\Wpf.Ui.Gallery\**\*.xaml"
+          Exclude="..\Wpf.Ui.Gallery\obj\**;
+                   ..\Wpf.Ui.Gallery\App.xaml;
+                   ..\Wpf.Ui.Gallery\Views\Windows\MainWindow.xaml;
+                   ..\Wpf.Ui.Gallery\Views\Windows\MonacoWindow.xaml;
+                   ..\Wpf.Ui.Gallery\Views\Windows\SandboxWindow.xaml;
+                   ..\Wpf.Ui.Gallery\Controls\ControlExample.xaml" />
+  </ItemGroup>
+
+  <!-- ========== Linked C# Source Files from Original Gallery ========== -->
+  <ItemGroup>
+    <Compile Include="..\Wpf.Ui.Gallery\**\*.cs"
+             Exclude="..\Wpf.Ui.Gallery\obj\**;
+                      ..\Wpf.Ui.Gallery\App.xaml.cs;
+                      ..\Wpf.Ui.Gallery\Views\Windows\MainWindow.xaml.cs;
+                      ..\Wpf.Ui.Gallery\Views\Windows\MonacoWindow.xaml.cs;
+                      ..\Wpf.Ui.Gallery\ViewModels\Windows\MainWindowViewModel.cs;
+                      ..\Wpf.Ui.Gallery\ViewModels\Windows\MonacoWindowViewModel.cs;
+                      ..\Wpf.Ui.Gallery\ViewModels\Pages\Windows\WindowsViewModel.cs;
+                      ..\Wpf.Ui.Gallery\Controllers\MonacoController.cs;
+                      ..\Wpf.Ui.Gallery\Models\Monaco\*.cs;
+                      ..\Wpf.Ui.Gallery\Services\ApplicationHostService.cs;
+                      ..\Wpf.Ui.Gallery\Controls\PageControlDocumentation.xaml.cs;
+                      ..\Wpf.Ui.Gallery\ViewModels\Pages\OpSystem\FilePickerViewModel.cs" />
+  </ItemGroup>
+
+  <!-- ========== Linked Resources / Assets from Original Gallery ========== -->
+  <!-- Each Resource must use LogicalName so the WPF pack URI resolves
+       correctly (e.g. "pack://application:,,,/Assets/wpfui.png").
+       Link metadata alone is NOT used by WPF for resource naming. -->
+  <ItemGroup>
+    <Resource Include="..\Wpf.Ui.Gallery\Assets\geo_icons.png"
+              LogicalName="Assets\geo_icons.png" />
+    <Resource Include="..\Wpf.Ui.Gallery\Assets\octonaut.jpg"
+              LogicalName="Assets\octonaut.jpg" />
+    <Resource Include="..\Wpf.Ui.Gallery\Assets\pexels-johannes-plenio-1103970.jpg"
+              LogicalName="Assets\pexels-johannes-plenio-1103970.jpg" />
+    <Resource Include="..\Wpf.Ui.Gallery\Assets\WinUiGallery\Button.png"
+              LogicalName="Assets\WinUiGallery\Button.png" />
+    <Resource Include="..\Wpf.Ui.Gallery\Assets\WinUiGallery\Flyout.png"
+              LogicalName="Assets\WinUiGallery\Flyout.png" />
+    <Resource Include="..\Wpf.Ui.Gallery\Assets\WinUiGallery\MenuBar.png"
+              LogicalName="Assets\WinUiGallery\MenuBar.png" />
+    <Resource Include="..\Wpf.Ui.Gallery\Assets\wpfui.png"
+              LogicalName="Assets\wpfui.png" />
+    <Resource Include="..\Wpf.Ui.Gallery\Assets\wpfui_full.png"
+              LogicalName="Assets\wpfui_full.png" />
+    <Resource Include="..\Wpf.Ui.Gallery\CodeSamples\Typography\TypographySample_xaml.txt"
+              LogicalName="CodeSamples\Typography\TypographySample_xaml.txt" />
+    <Resource Include="..\Wpf.Ui.Gallery\CodeSamples\BasicInput\DropDownButton_xaml.txt"
+              LogicalName="CodeSamples\BasicInput\DropDownButton_xaml.txt" />
+    <Resource Include="..\Wpf.Ui.Gallery\CodeSamples\BasicInput\ContextMenu_xaml.txt"
+              LogicalName="CodeSamples\BasicInput\ContextMenu_xaml.txt" />
+    <Resource Include="..\Wpf.Ui.Gallery\CodeSamples\BasicInput\DropDownButtonScrolling_xaml.txt"
+              LogicalName="CodeSamples\BasicInput\DropDownButtonScrolling_xaml.txt" />
+    <Resource Include="..\Wpf.Ui.Gallery\CodeSamples\BasicInput\ContextMenuScrolling_xaml.txt"
+              LogicalName="CodeSamples\BasicInput\ContextMenuScrolling_xaml.txt" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="..\Wpf.Ui.Gallery\Assets\Monaco\**">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <Link>Assets\Monaco\%(RecursiveDir)%(Filename)%(Extension)</Link>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="..\Wpf.Ui.Gallery\License - Monaco.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>License - Monaco.txt</Link>
+    </None>
+    <None Update="..\Wpf.Ui.Gallery\License - Images.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>License - Images.txt</Link>
+    </None>
+  </ItemGroup>
+
+  <!-- ========== Package References ========== -->
+  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" />
+    <PackageReference Include="Microsoft.Web.WebView2" />
+    <PackageReference Include="ReflectionEventing" />
+    <PackageReference Include="ReflectionEventing.DependencyInjection" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" VersionOverride="8.0.1" />
+  </ItemGroup>
+
+  <!-- ========== Project References ========== -->
+  <ItemGroup>
+    <ProjectReference Include="..\Wpf.Ui.DependencyInjection\Wpf.Ui.DependencyInjection.csproj" />
+    <ProjectReference Include="..\Wpf.Ui\Wpf.Ui.csproj" />
+  </ItemGroup>
+
+  <!-- ========== Localization Resources ========== -->
+  <ItemGroup>
+    <EmbeddedResource Include="..\Wpf.Ui.Gallery\Resources\Translations.pl-PL.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Translations.pl-PL.Designer.cs</LastGenOutput>
+      <Link>Resources\Translations.pl-PL.resx</Link>
+    </EmbeddedResource>
+  </ItemGroup>
+
+</Project>
