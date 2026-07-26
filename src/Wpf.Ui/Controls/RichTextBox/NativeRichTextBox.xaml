@@ -1,0 +1,15 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/RichTextBox/RichTextBoxBaseStyle.xaml" />
+    </ResourceDictionary.MergedDictionaries>
+
+    <!--
+        OverridesDefaultStyle prevents the native control's foreground colors and
+        font properties from leaking into the themed appearance
+    -->
+    <Style BasedOn="{StaticResource RichTextBoxBaseStyle}" TargetType="{x:Type RichTextBox}">
+        <Setter Property="OverridesDefaultStyle" Value="True" />
+    </Style>
+
+</ResourceDictionary>

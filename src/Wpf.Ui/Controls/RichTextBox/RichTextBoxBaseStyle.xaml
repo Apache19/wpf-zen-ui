@@ -1,0 +1,60 @@
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="clr-namespace:Wpf.Ui.Controls"
+    xmlns:m="clr-namespace:Wpf.Ui.Markup">
+
+    <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Resources/DefaultEditorContextMenu.xaml" />
+    </ResourceDictionary.MergedDictionaries>
+
+    <ControlTemplate x:Key="DefaultRichTextBoxTemplate" TargetType="{x:Type RichTextBox}">
+        <Border
+            x:Name="MainBorder"
+            Background="{TemplateBinding Background}"
+            BorderBrush="{TemplateBinding BorderBrush}"
+            BorderThickness="{TemplateBinding BorderThickness}"
+            CornerRadius="{TemplateBinding Border.CornerRadius}"
+            SnapsToDevicePixels="True">
+            <controls:PassiveScrollViewer
+                x:Name="PART_ContentHost"
+                Focusable="false"
+                HorizontalScrollBarVisibility="Hidden"
+                ScrollSpillMode="Disabled"
+                VerticalScrollBarVisibility="Hidden" />
+        </Border>
+        <ControlTemplate.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter TargetName="MainBorder" Property="Background" Value="{m:BrushResource ControlFillColorPrimaryBrush}" />
+            </Trigger>
+            <Trigger Property="IsKeyboardFocused" Value="True">
+                <Setter TargetName="MainBorder" Property="Background" Value="{m:BrushResource ControlFillColorInputActiveBrush}" />
+            </Trigger>
+            <Trigger Property="IsEnabled" Value="False">
+                <Setter TargetName="MainBorder" Property="Background" Value="{m:BrushResource ControlFillColorDisabledBrush}" />
+                <Setter TargetName="MainBorder" Property="BorderBrush" Value="{m:BrushResource ControlStrokeColorDefaultBrush}" />
+                <Setter Property="Foreground" Value="{m:BrushResource TextFillColorDisabledBrush}" />
+            </Trigger>
+        </ControlTemplate.Triggers>
+    </ControlTemplate>
+
+    <Style x:Key="RichTextBoxBaseStyle" TargetType="{x:Type RichTextBox}">
+        <Setter Property="KeyboardNavigation.TabNavigation" Value="None" />
+        <Setter Property="AllowDrop" Value="true" />
+        <Setter Property="ScrollViewer.PanningMode" Value="VerticalFirst" />
+        <Setter Property="Stylus.IsFlicksEnabled" Value="False" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="CaretBrush" Value="{Binding Foreground, RelativeSource={RelativeSource Self}}" />
+        <Setter Property="Background" Value="{m:BrushResource ControlFillColorSecondaryBrush}" />
+        <Setter Property="BorderBrush" Value="{m:BrushResource ControlStrokeColorSecondaryBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="Padding" Value="{m:VariableResource TextControlThemePadding}" />
+        <Setter Property="Border.CornerRadius" Value="{m:VariableResource ControlCornerRadius}" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="Validation.ErrorTemplate" Value="{m:StyleResource DefaultValidationTemplate}" />
+        <Setter Property="ContextMenu" Value="{StaticResource DefaultEditorContextMenu}" />
+        <Setter Property="Template" Value="{StaticResource DefaultRichTextBoxTemplate}" />
+    </Style>
+
+</ResourceDictionary>

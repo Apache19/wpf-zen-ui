@@ -22,6 +22,8 @@ public static class StyleKeys
     public static ComponentResourceKey UiComboBoxStyle                 { get; private set; }
     public static ComponentResourceKey DefaultTextBoxStyle             { get; private set; }
     public static ComponentResourceKey DefaultUiTextBoxStyle           { get; private set; }
+    public static ComponentResourceKey DefaultRichTextBoxStyle         { get; private set; }
+    public static ComponentResourceKey UiRichTextBoxStyle              { get; private set; }
     public static ComponentResourceKey DefaultTextBoxScrollViewerStyle { get; private set; }
     public static ComponentResourceKey DefaultControlFocusVisualStyle  { get; private set; }
     public static ComponentResourceKey DefaultScrollBarStyle           { get; private set; }

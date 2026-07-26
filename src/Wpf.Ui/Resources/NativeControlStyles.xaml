@@ -20,6 +20,7 @@
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/DatePicker/DatePicker.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/ProgressBar/ProgressBar.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/CheckBox/CheckBox.xaml" />
+        <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/RichTextBox/NativeRichTextBox.xaml" />
     </ResourceDictionary.MergedDictionaries>
 
 </ResourceDictionary>

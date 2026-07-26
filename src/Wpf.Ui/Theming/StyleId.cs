@@ -24,6 +24,9 @@ public enum StyleId
     DefaultTextBoxStyle,
     DefaultUiTextBoxStyle,
 
+    DefaultRichTextBoxStyle,
+    UiRichTextBoxStyle,
+
     DefaultTextBoxScrollViewerStyle,
     DefaultControlFocusVisualStyle,
 

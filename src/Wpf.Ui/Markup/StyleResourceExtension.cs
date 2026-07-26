@@ -43,6 +43,8 @@ public class StyleResourceExtension : DynamicResourceExtension
             StyleId.UiComboBoxStyle                 => StyleKeys.UiComboBoxStyle,
             StyleId.DefaultTextBoxStyle             => StyleKeys.DefaultTextBoxStyle,
             StyleId.DefaultUiTextBoxStyle           => StyleKeys.DefaultUiTextBoxStyle,
+            StyleId.DefaultRichTextBoxStyle         => StyleKeys.DefaultRichTextBoxStyle,
+            StyleId.UiRichTextBoxStyle              => StyleKeys.UiRichTextBoxStyle,
             StyleId.DefaultTextBoxScrollViewerStyle => StyleKeys.DefaultTextBoxScrollViewerStyle,
             StyleId.DefaultControlFocusVisualStyle  => StyleKeys.DefaultControlFocusVisualStyle,
             StyleId.DefaultScrollBarStyle           => StyleKeys.DefaultScrollBarStyle,
