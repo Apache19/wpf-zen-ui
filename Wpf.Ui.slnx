@@ -24,11 +24,6 @@
   </Folder>
   <Project Path="src/Wpf.Ui.Abstractions/Wpf.Ui.Abstractions.csproj" />
   <Project Path="src/Wpf.Ui.DependencyInjection/Wpf.Ui.DependencyInjection.csproj" />
-  <Project Path="src/Wpf.Ui.Gallery.NetFramework/Wpf.Ui.Gallery.NetFramework.csproj">
-    <Platform Solution="*|arm64" Project="arm64" />
-    <Platform Solution="*|x64" Project="x64" />
-    <Platform Solution="*|x86" Project="x86" />
-  </Project>
   <Project Path="src/Wpf.Ui.Gallery/Wpf.Ui.Gallery.csproj">
     <Platform Solution="*|arm64" Project="arm64" />
     <Platform Solution="*|x64" Project="x64" />
