@@ -19,73 +19,20 @@
 
     <ResourceDictionary.MergedDictionaries>
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Resources/DefaultEditorContextMenu.xaml" />
+        <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/ComboBox/ComboBoxBaseStyle.xaml" />
+        <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/ComboBox/ComboBoxItem.xaml" />
     </ResourceDictionary.MergedDictionaries>
 
-    <converters:DoubleToDoubleConverter x:Key="UiComboBoxActiveRectHeightConverter" Multiply="0.5" />
+    <converters:ThicknessTransformConverter x:Key="ContentPaddingConverter" BaseThickness="2,0" />
 
-    <Style x:Key="DefaultUiComboBoxItemStyle" TargetType="{x:Type ComboBoxItem}">
-        <Setter Property="OverridesDefaultStyle" Value="True" />
-        <Setter Property="Background" Value="Transparent" />
-        <Setter Property="Border.CornerRadius" Value="{m:VariableResource ControlCornerRadius}" />
-        <Setter Property="Cursor" Value="Hand" />
-        <Setter Property="FocusVisualStyle" Value="{m:StyleResource DefaultControlFocusVisualStyle}" />
-        <Setter Property="Padding" Value="10,8,8,8" />
-        <Setter Property="SnapsToDevicePixels" Value="True" />
-        <Setter Property="Template">
-            <Setter.Value>
-                <ControlTemplate TargetType="{x:Type ComboBoxItem}">
-                    <Grid Background="Transparent">
-                        <Border
-                            Name="ContentBorder"
-                            Margin="6,4,6,0"
-                            Padding="0"
-                            VerticalAlignment="Stretch"
-                            CornerRadius="{TemplateBinding Border.CornerRadius}"
-                            SnapsToDevicePixels="True">
-                            <Grid>
-                                <ContentPresenter
-                                    x:Name="PART_ContentPresenter"
-                                    Margin="{TemplateBinding Padding}"
-                                    VerticalAlignment="Center" />
-                                <Rectangle
-                                    x:Name="ActiveRectangle"
-                                    Width="3"
-                                    Height="{Binding ActualHeight, ElementName=ContentBorder, Converter={StaticResource UiComboBoxActiveRectHeightConverter}}"
-                                    Margin="0"
-                                    HorizontalAlignment="Left"
-                                    VerticalAlignment="Center"
-                                    Fill="{m:BrushResource AccentSelectionBrush}"
-                                    RadiusX="2"
-                                    RadiusY="2"
-                                    Visibility="Collapsed" />
-                            </Grid>
-                        </Border>
-                    </Grid>
-                    <ControlTemplate.Triggers>
-                        <Trigger Property="IsHighlighted" Value="True">
-                            <Setter TargetName="ContentBorder" Property="Background" Value="{m:BrushResource SubtleFillColorSecondaryBrush}" />
-                        </Trigger>
-                        <Trigger Property="IsSelected" Value="True">
-                            <Setter TargetName="PART_ContentPresenter" Property="TextElement.Foreground" Value="{m:BrushResource TextFillColorPrimaryBrush}" />
-                            <Setter TargetName="ActiveRectangle" Property="Visibility" Value="Visible" />
-                        </Trigger>
-                        <Trigger Property="IsEnabled" Value="False">
-                            <Setter Property="Foreground" Value="{m:BrushResource TextFillColorDisabledBrush}" />
-                        </Trigger>
-                    </ControlTemplate.Triggers>
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
-    </Style>
-
-    <ControlTemplate x:Key="DefaultUiComboBoxTemplate" TargetType="{x:Type controls:ComboBox}">
+    <ControlTemplate x:Key="UiComboBoxTemplate" TargetType="{x:Type controls:ComboBox}">
         <Grid>
             <Border
                 x:Name="ContentBorder"
                 Background="{TemplateBinding VisualBackground}"
                 BorderBrush="{TemplateBinding VisualBorderBrush}"
                 BorderThickness="{TemplateBinding BorderThickness}"
-                CornerRadius="{TemplateBinding CornerRadius}"
+                CornerRadius="{TemplateBinding Border.CornerRadius}"
                 SnapsToDevicePixels="True">
                 <Grid>
                     <Grid.ColumnDefinitions>
@@ -93,6 +40,7 @@
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
 
+                    <!--  Placeholder (watermark) control. Uses Margin to match the TextEditor's default 2,0,2,0 padding.  -->
                     <controls:PlaceholderControl
                         x:Name="PART_Placeholder"
                         Margin="2,0"
@@ -101,25 +49,20 @@
                         VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
                         Foreground="{m:BrushResource TextPlaceholderColorBrush}" />
 
-                    <!--  这个 Grid 用于模仿 TextBoxView.Margin  -->
-                    <Grid
+                    <!--  A converter is used to simulate the TextEditor's 2,0,2,0 margin, since Padding may not be honored.  -->
+                    <ContentPresenter
+                        Name="PART_ContentPresenter"
                         Grid.Column="0"
-                        Margin="2,0"
-                        IsHitTestVisible="False">
-                        <ContentPresenter
-                            Name="PART_ContentPresenter"
-                            Margin="{TemplateBinding Padding}"
-                            HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
-                            VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
-                            Content="{TemplateBinding SelectionBoxItem}"
-                            ContentStringFormat="{TemplateBinding SelectionBoxItemStringFormat}"
-                            ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
-                            ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}"
-                            SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"
-                            TextElement.Foreground="{TemplateBinding VisualForeground}" />
-                    </Grid>
+                        Margin="{TemplateBinding Padding, Converter={StaticResource ContentPaddingConverter}}"
+                        HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                        VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                        Content="{TemplateBinding SelectionBoxItem}"
+                        ContentStringFormat="{TemplateBinding SelectionBoxItemStringFormat}"
+                        ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                        ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}"
+                        SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"
+                        TextElement.Foreground="{TemplateBinding VisualForeground}" />
 
-                    <!--  下拉按钮小箭头图标，切换时用动画翻转  -->
                     <controls:SymbolIcon
                         x:Name="ChevronIcon"
                         Grid.Column="1"
@@ -134,7 +77,7 @@
                         </controls:SymbolIcon.RenderTransform>
                     </controls:SymbolIcon>
 
-                    <!--  可编辑状态的文本编辑框，仅在可编辑时可见  -->
+                    <!--  Editable text box input area, visible only when the ComboBox is in editable mode.  -->
                     <controls:TextBox
                         x:Name="PART_EditableTextBox"
                         Grid.Column="0"
@@ -159,7 +102,13 @@
                         </controls:TextBox.Template>
                     </controls:TextBox>
 
-                    <!--  全透明的 ToggleButton，接受交互。可编辑时，缩回图标列；不可编辑时，扩展到2列，铺满整个控件。  -->
+                    <!--
+                        Fully transparent ToggleButton overlay that sits on top to receive input.
+                        When editable it collapses into the icon column; when non-editable it spans both
+                        columns and fills the entire control.
+                        OverridesDefaultStyle strips all visual appearance — the control template
+                        contains only a single transparent Border.
+                    -->
                     <ToggleButton
                         Name="ToggleButton"
                         Grid.Column="0"
@@ -171,10 +120,7 @@
                         OverridesDefaultStyle="True">
                         <ToggleButton.Template>
                             <ControlTemplate TargetType="{x:Type ToggleButton}">
-                                <Border
-                                    Background="Transparent"
-                                    CornerRadius="{m:VariableResource ControlCornerRadius}"
-                                    SnapsToDevicePixels="True" />
+                                <Border Background="Transparent" SnapsToDevicePixels="True" />
                             </ControlTemplate>
                         </ToggleButton.Template>
                     </ToggleButton>
@@ -184,22 +130,22 @@
                 x:Name="AccentBorder"
                 BorderBrush="{m:BrushResource AccentStrokeBrush}"
                 BorderThickness="0,0,0,2"
-                CornerRadius="{TemplateBinding CornerRadius}"
+                CornerRadius="{TemplateBinding Border.CornerRadius}"
                 IsHitTestVisible="False"
                 Visibility="Collapsed" />
 
-            <!--  弹出框，采用 PopupShadowChrome 用 PopupShadow 呈现阴影  -->
+            <!--  Drop-down popup. Shadow is rendered via PopupShadow; animation is handled by PopupAnimator.  -->
             <Popup
                 x:Name="Popup"
                 controls:PopupAnimator.IsEnabled="True"
+                controls:PopupPlacement.IsEnabled="True"
                 controls:PopupShadow.IsEnabled="True"
                 AllowsTransparency="True"
                 Focusable="False"
                 IsOpen="{TemplateBinding IsDropDownOpen}"
                 Placement="{TemplateBinding Popup.Placement}"
                 PlacementTarget="{Binding ElementName=ContentBorder}"
-                PopupAnimation="{TemplateBinding Popup.PopupAnimation}"
-                VerticalOffset="1">
+                PopupAnimation="{TemplateBinding Popup.PopupAnimation}">
                 <Border
                     x:Name="DropDownBorder"
                     MinWidth="{TemplateBinding ActualWidth}"
@@ -225,6 +171,13 @@
             </Popup>
         </Grid>
         <ControlTemplate.Triggers>
+            <Trigger SourceName="Popup" Property="controls:PopupPlacement.ActualPlacement" Value="Bottom">
+                <Setter TargetName="Popup" Property="VerticalOffset" Value="1" />
+            </Trigger>
+            <Trigger SourceName="Popup" Property="controls:PopupPlacement.ActualPlacement" Value="Top">
+                <Setter TargetName="Popup" Property="VerticalOffset" Value="-1" />
+            </Trigger>
+
             <Trigger Property="IsDropDownOpen" Value="True">
                 <Trigger.EnterActions>
                     <BeginStoryboard>
@@ -282,29 +235,9 @@
         </ControlTemplate.Triggers>
     </ControlTemplate>
 
-    <Style x:Key="UiComboBoxBaseStyle" TargetType="{x:Type controls:ComboBox}">
-        <Setter Property="Background" Value="{m:BrushResource ControlFillColorSecondaryBrush}" />
-        <Setter Property="CornerRadius" Value="{m:VariableResource ControlCornerRadius}" />
-        <Setter Property="BorderBrush" Value="{m:BrushResource ControlStrokeColorSecondaryBrush}" />
-        <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="FocusVisualStyle" Value="{m:StyleResource DefaultControlFocusVisualStyle}" />
-        <Setter Property="Foreground" Value="{m:BrushResource TextFillColorPrimaryBrush}" />
-        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-        <Setter Property="ItemContainerStyle" Value="{StaticResource DefaultUiComboBoxItemStyle}" />
-        <Setter Property="Padding" Value="{m:VariableResource TextControlThemePadding}" />
-        <Setter Property="Popup.Placement" Value="Bottom" />
-        <Setter Property="Popup.PopupAnimation" Value="None" />
-        <Setter Property="ScrollViewer.CanContentScroll" Value="True" />
-        <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled" />
-        <Setter Property="ScrollViewer.IsDeferredScrollingEnabled" Value="False" />
-        <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto" />
-        <Setter Property="SnapsToDevicePixels" Value="True" />
-        <Setter Property="Validation.ErrorTemplate" Value="{m:StyleResource DefaultValidationTemplate}" />
-        <Setter Property="VerticalContentAlignment" Value="Top" />
-        <Setter Property="Template" Value="{StaticResource DefaultUiComboBoxTemplate}" />
-    </Style>
-
-    <Style x:Key="{x:Static t:StyleKeys.DefaultUiComboBoxStyle}" BasedOn="{StaticResource UiComboBoxBaseStyle}" TargetType="{x:Type controls:ComboBox}">
+    <Style x:Key="{x:Static t:StyleKeys.UiComboBoxStyle}" BasedOn="{StaticResource ComboBoxBaseStyle}" TargetType="{x:Type controls:ComboBox}">
+        <Setter Property="ItemContainerStyle" Value="{StaticResource {x:Static t:StyleKeys.DefaultComboBoxItemStyle}}" />
+        <Setter Property="Template" Value="{StaticResource UiComboBoxTemplate}" />
         <Setter Property="MouseOverBackground" Value="{m:BrushResource ControlFillColorPrimaryBrush}" />
         <Setter Property="FocusedBackground" Value="{m:BrushResource ControlFillColorInputActiveBrush}" />
         <Setter Property="DropDownOpenBackground" Value="{m:BrushResource ControlFillColorTertiaryBrush}" />
@@ -327,6 +260,6 @@
         </Style.Triggers>
     </Style>
 
-    <Style BasedOn="{StaticResource {x:Static t:StyleKeys.DefaultUiComboBoxStyle}}" TargetType="{x:Type controls:ComboBox}" />
+    <Style BasedOn="{StaticResource {x:Static t:StyleKeys.UiComboBoxStyle}}" TargetType="{x:Type controls:ComboBox}" />
 
 </ResourceDictionary>

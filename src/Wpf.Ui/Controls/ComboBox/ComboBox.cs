@@ -344,28 +344,6 @@ public class ComboBox : System.Windows.Controls.ComboBox
     [Category("Appearance")]
     public Brush? VisualBorderBrush => (Brush?)GetValue(VisualBorderBrushProperty);
 
-    /// <summary>Identifies the <see cref="CornerRadius"/> dependency property.</summary>
-    public static readonly DependencyProperty CornerRadiusProperty =
-        DependencyProperty.Register(
-            nameof(CornerRadius),
-            typeof(CornerRadius),
-            typeof(ComboBox),
-            new FrameworkPropertyMetadata(default(CornerRadius))
-        );
-
-    /// <summary>
-    /// Gets or sets the radius applied to the closed combo-box chrome and its focus indicator.
-    /// The property affects template rendering but does not change layout measurement or the
-    /// separate popup's corner radius.
-    /// </summary>
-    [Bindable(true)]
-    [Category("Appearance")]
-    public CornerRadius CornerRadius
-    {
-        get => (CornerRadius)GetValue(CornerRadiusProperty);
-        set => SetValue(CornerRadiusProperty, value);
-    }
-
     #endregion
 
     static ComboBox()

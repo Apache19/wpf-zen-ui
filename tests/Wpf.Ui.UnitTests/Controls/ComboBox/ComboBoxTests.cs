@@ -88,13 +88,11 @@ public class ComboBoxTests
                 var background = new SolidColorBrush(Colors.Red);
                 var borderBrush = new SolidColorBrush(Colors.Green);
                 var foreground = new SolidColorBrush(Colors.Blue);
-                var cornerRadius = new CornerRadius(2, 4, 6, 8);
                 var comboBox = new UiComboBox
                 {
                     Background = background,
                     BorderBrush = borderBrush,
                     Foreground = foreground,
-                    CornerRadius = cornerRadius,
                 };
                 var root = new Grid();
                 root.Resources.MergedDictionaries.Add(
@@ -110,7 +108,6 @@ public class ComboBoxTests
 
                 Assert.Same(background, contentBorder.Background);
                 Assert.Same(borderBrush, contentBorder.BorderBrush);
-                Assert.Equal(cornerRadius, contentBorder.CornerRadius);
                 Assert.Equal(foreground, TextElement.GetForeground(contentBorder));
             }
         );

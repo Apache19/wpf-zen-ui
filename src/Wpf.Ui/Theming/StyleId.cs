@@ -18,7 +18,8 @@ public enum StyleId
     DefaultCheckBoxStyle,
 
     DefaultComboBoxStyle,
-    DefaultUiComboBoxStyle,
+    DefaultComboBoxItemStyle,
+    UiComboBoxStyle,
 
     DefaultTextBoxStyle,
     DefaultUiTextBoxStyle,

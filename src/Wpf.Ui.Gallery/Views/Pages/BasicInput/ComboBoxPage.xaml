@@ -35,24 +35,24 @@
             Margin="0,32,0,0"
             HeaderText="A ComboBox with ItemsSource set."
             XamlCode="&lt;ComboBox ItemsSource=&quot;{Binding FontFamilies}&quot; /&gt;">
-            <ComboBox
+            <ui:ComboBox
                 MinWidth="200"
                 HorizontalAlignment="Left"
                 ui:PlaceholderService.Content="Placeholder"
                 ItemsSource="{Binding ComboBoxFontFamilies}">
-                <ComboBox.ItemTemplate>
+                <ui:ComboBox.ItemTemplate>
                     <DataTemplate>
                         <TextBlock FontFamily="{Binding}" Text="{Binding}" />
                     </DataTemplate>
-                </ComboBox.ItemTemplate>
-            </ComboBox>
+                </ui:ComboBox.ItemTemplate>
+            </ui:ComboBox>
         </controls:ControlExample>
 
         <controls:ControlExample
             Margin="0,32,0,0"
             HeaderText="An editable ComboBox."
             XamlCode="&lt;ComboBox IsEditable=&quot;True&quot; /&gt;">
-            <ComboBox
+            <ui:ComboBox
                 MinWidth="200"
                 HorizontalAlignment="Left"
                 ui:PlaceholderService.Content="Placeholder"
@@ -72,14 +72,14 @@
                     </CollectionViewSource.GroupDescriptions>
                 </CollectionViewSource>
             </controls:ControlExample.Resources>
-            <ComboBox
+            <ui:ComboBox
                 MinWidth="200"
                 HorizontalAlignment="Left"
                 DisplayMemberPath="Name"
                 ItemsSource="{Binding Source={StaticResource GroupedItemsSource}}"
                 ScrollViewer.VerticalScrollBarVisibility="Auto"
                 SelectedIndex="0">
-                <ComboBox.GroupStyle>
+                <ui:ComboBox.GroupStyle>
                     <GroupStyle>
                         <GroupStyle.HeaderTemplate>
                             <DataTemplate DataType="{x:Type vm:GroupedComboBoxItem}">
@@ -91,8 +91,8 @@
                             </DataTemplate>
                         </GroupStyle.HeaderTemplate>
                     </GroupStyle>
-                </ComboBox.GroupStyle>
-            </ComboBox>
+                </ui:ComboBox.GroupStyle>
+            </ui:ComboBox>
         </controls:ControlExample>
     </StackPanel>
 </Page>
