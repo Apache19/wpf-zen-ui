@@ -9,7 +9,6 @@ using System.Windows;
 using Wpf.Ui.Appearance;
 using Wpf.Ui.Controls;
 using Wpf.Ui.Input;
-using Color = System.Windows.Media.Color;
 
 namespace Wpf.Ui.SyntaxHighlight.Controls;
 
@@ -19,6 +18,8 @@ namespace Wpf.Ui.SyntaxHighlight.Controls;
 public class CodeBlock : System.Windows.Controls.ContentControl
 {
     private string _sourceCode = string.Empty;
+
+    #region DP: SyntaxContent
 
     /// <summary>
     /// Property for <see cref="SyntaxContent"/>.
@@ -31,6 +32,19 @@ public class CodeBlock : System.Windows.Controls.ContentControl
     );
 
     /// <summary>
+    /// Gets the formatted <see cref="System.Windows.Controls.ContentControl.Content"/>.
+    /// </summary>
+    public object? SyntaxContent
+    {
+        get => GetValue(SyntaxContentProperty);
+        internal set => SetValue(SyntaxContentProperty, value);
+    }
+
+    #endregion
+
+    #region DP: ButtonCommand
+
+    /// <summary>
     /// Property for <see cref="ButtonCommand"/>.
     /// </summary>
     public static readonly DependencyProperty ButtonCommandProperty = DependencyProperty.Register(
@@ -40,18 +54,19 @@ public class CodeBlock : System.Windows.Controls.ContentControl
     );
 
     /// <summary>
-    /// Gets the formatted <see cref="System.Windows.Controls.ContentControl.Content"/>.
-    /// </summary>
-    public object? SyntaxContent
-    {
-        get => GetValue(SyntaxContentProperty);
-        internal set => SetValue(SyntaxContentProperty, value);
-    }
-
-    /// <summary>
     /// Gets the command triggered after clicking the control button.
     /// </summary>
     public IRelayCommand ButtonCommand => (IRelayCommand)GetValue(ButtonCommandProperty);
+
+    #endregion
+
+    static CodeBlock()
+    {
+        DefaultStyleKeyProperty.OverrideMetadata(
+            typeof(CodeBlock),
+            new FrameworkPropertyMetadata(typeof(CodeBlock))
+        );
+    }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="CodeBlock"/> class, and assigns <see cref="ButtonCommand"/> default action.
@@ -92,14 +107,7 @@ public class CodeBlock : System.Windows.Controls.ContentControl
     {
         _sourceCode = Highlighter.Clean(Content as string ?? string.Empty);
 
-        var richTextBox = new RichTextBox()
-        {
-            UseTextBlockAppearance     = true,
-            VerticalContentAlignment   = VerticalAlignment.Center,
-            VerticalAlignment          = VerticalAlignment.Center,
-            HorizontalAlignment        = HorizontalAlignment.Left,
-            HorizontalContentAlignment = HorizontalAlignment.Left,
-        };
+        var richTextBox = new RichTextBox();
 
         richTextBox.Document.Blocks.Clear();
         richTextBox.Document.Blocks.Add(Highlighter.FormatAsParagraph(_sourceCode));

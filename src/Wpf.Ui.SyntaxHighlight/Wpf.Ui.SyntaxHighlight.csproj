@@ -6,27 +6,16 @@
     <Description>Syntax highlighting support for WPF using the WPF UI library.</Description>
     <CommonTags>$(CommonTags);syntax;highlight</CommonTags>
     <UseWPF>true</UseWPF>
-    <EnableWindowsTargeting>true</EnableWindowsTargeting>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <!-- 目前尚不稳定，仅限于 Gallery 项目使用，所以暂不生成包  -->
+    <!--<GeneratePackageOnBuild>true</GeneratePackageOnBuild>-->
   </PropertyGroup>
 
   <ItemGroup>
     <None Remove="Controls\CodeBlock.bmp" />
-    <None Remove="Fonts\FiraCode-Regular.ttf" />
   </ItemGroup>
 
   <ItemGroup>
     <EmbeddedResource Include="Controls\CodeBlock.bmp" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Resource Include="Fonts\FiraCode-Regular.ttf" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Update="License - Fira Code.txt">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
   </ItemGroup>
 
   <ItemGroup>
