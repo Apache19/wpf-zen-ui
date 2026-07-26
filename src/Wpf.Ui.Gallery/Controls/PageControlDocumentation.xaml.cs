@@ -199,7 +199,9 @@ public class PageControlDocumentation : Control
             }
         }
 
-        return string.Concat(baseUrl, pageUrl, fileExtension);
+        // .NET Framework: string.Concat doesn't have Span/ReadOnlySpan overloads.
+        // Convert to string first for cross-target compatibility.
+        return string.Concat(baseUrl, pageUrl.ToString(), fileExtension.ToString());
     }
 
     private static string CreateUrlForDocumentation(Type type)

@@ -189,7 +189,13 @@ public partial class FilePickerViewModel : ViewModel
 
         try
         {
+#if NET10_0_OR_GREATER
             await File.WriteAllTextAsync(saveFileDialog.FileName, FileToSaveContents, cancellation);
+#else
+            // .NET Framework: File.WriteAllTextAsync doesn't exist. Use synchronous API.
+            cancellation.ThrowIfCancellationRequested();
+            File.WriteAllText(saveFileDialog.FileName, FileToSaveContents);
+#endif
         }
         catch (Exception e)
         {
