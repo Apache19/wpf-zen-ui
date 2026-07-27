@@ -57,6 +57,7 @@ public class StyleResourceExtension : DynamicResourceExtension
             StyleId.DefaultCalendarStyle            => StyleKeys.DefaultCalendarStyle,
             StyleId.DefaultDatePickerStyle          => StyleKeys.DefaultDatePickerStyle,
             StyleId.UiSplitButtonStyle              => StyleKeys.UiSplitButtonStyle,
+            StyleId.UiAutoSuggestBoxStyle           => StyleKeys.UiAutoSuggestBoxStyle,
             StyleId.DefaultProgressBarStyle         => StyleKeys.DefaultProgressBarStyle,
 
             StyleId.DefaultValidationTemplate       => StyleKeys.DefaultValidationTemplate,

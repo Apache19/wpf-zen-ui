@@ -49,6 +49,7 @@ public enum StyleId
     DefaultDatePickerStyle,
 
     UiSplitButtonStyle,
+    UiAutoSuggestBoxStyle,
 
     DefaultProgressBarStyle,
 
