@@ -16,6 +16,7 @@ public enum StyleId
     MenuItemSeparatorStyle,
 
     DefaultCheckBoxStyle,
+    DefaultRadioButtonStyle,
 
     DefaultComboBoxStyle,
     DefaultComboBoxItemStyle,

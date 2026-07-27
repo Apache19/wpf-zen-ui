@@ -17,6 +17,7 @@ public static class StyleKeys
     public static ComponentResourceKey UiMenuItemStyle                 { get; private set; }
     public static ComponentResourceKey MenuItemSeparatorStyle          { get; private set; }
     public static ComponentResourceKey DefaultCheckBoxStyle            { get; private set; }
+    public static ComponentResourceKey DefaultRadioButtonStyle         { get; private set; }
     public static ComponentResourceKey DefaultComboBoxStyle            { get; private set; }
     public static ComponentResourceKey DefaultComboBoxItemStyle        { get; private set; }
     public static ComponentResourceKey UiComboBoxStyle                 { get; private set; }

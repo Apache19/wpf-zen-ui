@@ -25,17 +25,17 @@
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
-                <StackPanel Grid.Column="0">
-                    <ui:RadioButton
+                <StackPanel Grid.Column="0" HorizontalAlignment="Left">
+                    <RadioButton
                         Content="Option 1"
                         GroupName="radio_group_one"
                         IsChecked="True"
                         IsEnabled="{Binding IsRadioButtonDisabled, Converter={StaticResource BoolInvertConverter}}" />
-                    <ui:RadioButton
+                    <RadioButton
                         Content="Option 2"
                         GroupName="radio_group_one"
                         IsEnabled="{Binding IsRadioButtonDisabled, Converter={StaticResource BoolInvertConverter}}" />
-                    <ui:RadioButton
+                    <RadioButton
                         Content="Option 3"
                         GroupName="radio_group_one"
                         IsEnabled="{Binding IsRadioButtonDisabled, Converter={StaticResource BoolInvertConverter}}" />
@@ -51,17 +51,17 @@
             Margin="0,36,0,0"
             HeaderText="RadioButton with right to left flow direction."
             XamlCode="&lt;RadioButton FlowDirection=&quot;RightToLeft&quot; /&gt;">
-            <StackPanel>
-                <ui:RadioButton
+            <StackPanel HorizontalAlignment="Left">
+                <RadioButton
                     Content="Option 1"
                     FlowDirection="RightToLeft"
                     GroupName="radio_group_two"
                     IsChecked="True" />
-                <ui:RadioButton
+                <RadioButton
                     Content="Option 2"
                     FlowDirection="RightToLeft"
                     GroupName="radio_group_two" />
-                <ui:RadioButton
+                <RadioButton
                     Content="Option 3"
                     FlowDirection="RightToLeft"
                     GroupName="radio_group_two" />
