@@ -4,6 +4,7 @@
 // All Rights Reserved.
 
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 
 // ReSharper disable once CheckNamespace
@@ -467,6 +468,25 @@ public class Button : System.Windows.Controls.Button, IAppearanceControl, IIconC
     public Button()
     {
         UpdateVisualBrushes();
+    }
+
+    /// <summary>
+    /// Updates the pressed state on behalf of a focus-owning composite control.
+    /// </summary>
+    /// <remarks>
+    /// <see cref="ButtonBase.IsPressed"/> has a protected setter because WPF normally derives the
+    /// state from input received directly by the button. Composite controls such as
+    /// <see cref="SplitButton"/> deliberately keep keyboard focus on their public wrapper while
+    /// their private button parts retain responsibility for rendering interaction states. This
+    /// narrow internal bridge lets that wrapper use the same read-only dependency property and
+    /// visual-state callbacks as native <see cref="ButtonBase"/> keyboard handling, without
+    /// reflecting over WPF internals or duplicating the button template's pressed visuals.
+    /// </remarks>
+    internal void SetPressedFromOwningControl(bool isPressed)
+    {
+#pragma warning disable WPF0041 // IsPressed is read-only; the inherited protected setter owns its key.
+        IsPressed = isPressed;
+#pragma warning restore WPF0041
     }
 
     /// <inheritdoc />

@@ -3,6 +3,7 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
+using System.Collections.Generic;
 using System.Reflection;
 using System.Runtime.ExceptionServices;
 using System.Threading;
@@ -478,6 +479,168 @@ public class SplitButtonTests
                     );
 
                     Assert.Equal(1, clickCount);
+                }
+                finally
+                {
+                    window.Close();
+                }
+            }
+        );
+    }
+
+    [Fact]
+    public void SpaceRelease_DrivesPrimaryPressedVisualAndOtherKeyCancelsActivation()
+    {
+        RunOnStaThread(
+            () =>
+            {
+                var root = new StackPanel();
+                var splitButton = CreateTemplatedSplitButton(
+                    new SplitButton
+                    {
+                        Background        = Brushes.AliceBlue,
+                        PressedBackground = Brushes.DarkGray,
+                    },
+                    root
+                );
+                var primaryButton = Assert.IsType<Wpf.Ui.Controls.Button>(
+                    splitButton.Template.FindName("PART_PrimaryButton", splitButton)
+                );
+                var window = new Window { Content = root };
+                var clickCount = 0;
+                splitButton.Click += (_, _) => clickCount++;
+
+                try
+                {
+                    window.Show();
+                    Assert.True(splitButton.Focus());
+                    PresentationSource source = Assert.IsAssignableFrom<PresentationSource>(
+                        PresentationSource.FromVisual(splitButton)
+                    );
+
+                    splitButton.RaiseEvent(CreateKeyEvent(source, Key.Space, Keyboard.KeyDownEvent));
+
+                    Assert.True(primaryButton.IsPressed);
+                    Assert.Same(Brushes.DarkGray, primaryButton.VisualBackground);
+                    Assert.Equal(0, clickCount);
+
+                    splitButton.RaiseEvent(CreateKeyEvent(source, Key.Space, Keyboard.KeyUpEvent));
+
+                    Assert.False(primaryButton.IsPressed);
+                    Assert.Same(Brushes.AliceBlue, primaryButton.VisualBackground);
+                    Assert.Equal(1, clickCount);
+
+                    splitButton.RaiseEvent(CreateKeyEvent(source, Key.Space, Keyboard.KeyDownEvent));
+                    splitButton.RaiseEvent(CreateKeyEvent(source, Key.F4, Keyboard.KeyDownEvent));
+                    splitButton.RaiseEvent(CreateKeyEvent(source, Key.Space, Keyboard.KeyUpEvent));
+
+                    Assert.False(primaryButton.IsPressed);
+                    Assert.Equal(1, clickCount);
+                }
+                finally
+                {
+                    window.Close();
+                }
+            }
+        );
+    }
+
+    [Fact]
+    public void EnterAndAccessKey_UsePrimaryButtonAsDefaultRoutedCommandTarget()
+    {
+        RunOnStaThread(
+            () =>
+            {
+                var command = new RoutedCommand();
+                var root = new StackPanel();
+                var previousFocus = new System.Windows.Controls.TextBox();
+                root.Children.Add(previousFocus);
+                var splitButton = CreateTemplatedSplitButton(
+                    new SplitButton { Command = command, Content = "_Run" },
+                    root
+                );
+                var primaryButton = Assert.IsType<Wpf.Ui.Controls.Button>(
+                    splitButton.Template.FindName("PART_PrimaryButton", splitButton)
+                );
+                var commandSources = new List<object>();
+                root.CommandBindings.Add(
+                    new CommandBinding(
+                        command,
+                        (_, e) => commandSources.Add(e.OriginalSource),
+                        (_, e) => e.CanExecute = true
+                    )
+                );
+                var window = new Window { Content = root };
+
+                try
+                {
+                    window.Show();
+                    DrainDispatcher();
+                    PresentationSource source = Assert.IsAssignableFrom<PresentationSource>(
+                        PresentationSource.FromVisual(splitButton)
+                    );
+
+                    Assert.True(splitButton.Focus());
+                    splitButton.RaiseEvent(CreateKeyEvent(source, Key.Enter, Keyboard.KeyDownEvent));
+
+                    Assert.Equal([primaryButton], commandSources);
+
+                    KeyboardNavigation.SetAcceptsReturn(splitButton, false);
+                    splitButton.RaiseEvent(CreateKeyEvent(source, Key.Enter, Keyboard.KeyDownEvent));
+                    Assert.Single(commandSources);
+
+                    Assert.True(previousFocus.Focus());
+                    AccessKeyManager.ProcessKey(source, "R", false);
+
+                    Assert.Equal([primaryButton, primaryButton], commandSources);
+                    Assert.True(previousFocus.IsKeyboardFocused);
+                }
+                finally
+                {
+                    window.Close();
+                }
+            }
+        );
+    }
+
+    [Fact]
+    public void RepeatedAccessKey_CyclesFocusAcrossSplitButtonWrappersWithoutInvoking()
+    {
+        RunOnStaThread(
+            () =>
+            {
+                var root = new StackPanel();
+                var first = CreateTemplatedSplitButton(
+                    new SplitButton { Content = "_Zoom in" },
+                    root
+                );
+                var second = CreateTemplatedSplitButton(
+                    new SplitButton { Content = "_Zoom out" },
+                    root
+                );
+                var firstClickCount = 0;
+                var secondClickCount = 0;
+                first.Click += (_, _) => firstClickCount++;
+                second.Click += (_, _) => secondClickCount++;
+                var window = new Window { Content = root };
+
+                try
+                {
+                    window.Show();
+                    DrainDispatcher();
+                    PresentationSource source = Assert.IsAssignableFrom<PresentationSource>(
+                        PresentationSource.FromVisual(first)
+                    );
+
+                    AccessKeyManager.ProcessKey(source, "Z", false);
+                    Assert.True(first.IsKeyboardFocused);
+                    Assert.Equal(0, firstClickCount);
+                    Assert.Equal(0, secondClickCount);
+
+                    AccessKeyManager.ProcessKey(source, "Z", false);
+                    Assert.True(second.IsKeyboardFocused);
+                    Assert.Equal(0, firstClickCount);
+                    Assert.Equal(0, secondClickCount);
                 }
                 finally
                 {

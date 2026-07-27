@@ -528,6 +528,24 @@ public class SplitButton : ContentControl, ICommandSource, IAppearanceControl, I
             typeof(SplitButton),
             new FrameworkPropertyMetadata(true)
         );
+
+        // ButtonBase opts into Enter activation through this attached property. SplitButton does
+        // not derive from ButtonBase, so it must establish the same default explicitly while still
+        // allowing an application to turn the behavior off on an individual control.
+        KeyboardNavigation.AcceptsReturnProperty.OverrideMetadata(
+            typeof(SplitButton),
+            new FrameworkPropertyMetadata(true)
+        );
+
+        // AccessText lives inside the non-focusable primary template button. ButtonBase therefore
+        // initially selects that private button as the access-key target. Rewrite only that target
+        // at the public wrapper boundary so a single match invokes the primary action and multiple
+        // matches can cycle keyboard focus between SplitButton controls.
+        EventManager.RegisterClassHandler(
+            typeof(SplitButton),
+            AccessKeyManager.AccessKeyPressedEvent,
+            new AccessKeyPressedEventHandler(OnAccessKeyPressed)
+        );
     }
 
     /// <inheritdoc />
@@ -545,6 +563,7 @@ public class SplitButton : ContentControl, ICommandSource, IAppearanceControl, I
         {
             _primaryButton.PreviewMouseLeftButtonDown += OnPrimaryButtonPreviewMouseLeftButtonDown;
             _primaryButton.Click                      += OnPrimaryButtonClick;
+            _primaryButton.IsEnabledChanged           += OnPrimaryButtonIsEnabledChanged;
         }
 
         if (_dropDownButton is not null)
@@ -626,7 +645,7 @@ public class SplitButton : ContentControl, ICommandSource, IAppearanceControl, I
             // ButtonBase cancels a pending Space activation when any other key is pressed. Without
             // this reset, Space followed by F4 or another shortcut would invoke the primary action
             // when the original Space key is eventually released.
-            _isSpaceKeyDown = false;
+            CancelSpaceKeyPress();
         }
 
         if (IsDropDownShortcut(e))
@@ -658,9 +677,21 @@ public class SplitButton : ContentControl, ICommandSource, IAppearanceControl, I
             if (!_isSpaceKeyDown)
             {
                 _isSpaceKeyDown = true;
+                SetPrimaryButtonPressed(true);
                 if (ClickMode == ClickMode.Press)
                 {
-                    InvokePrimaryAction();
+                    try
+                    {
+                        InvokePrimaryAction();
+                    }
+                    catch
+                    {
+                        // ButtonBase clears its input state if a Press-mode Click or command throws.
+                        // Otherwise an exception caught by application code would leave the primary
+                        // segment looking permanently pressed until another keyboard transition.
+                        CancelSpaceKeyPress();
+                        throw;
+                    }
                 }
             }
 
@@ -669,6 +700,7 @@ public class SplitButton : ContentControl, ICommandSource, IAppearanceControl, I
         else if (
             key == Key.Enter
             && ClickMode != ClickMode.Hover
+            && KeyboardNavigation.GetAcceptsReturn(this)
             && ReferenceEquals(e.OriginalSource, this)
         )
         {
@@ -692,8 +724,9 @@ public class SplitButton : ContentControl, ICommandSource, IAppearanceControl, I
             return;
         }
 
-        _isSpaceKeyDown = false;
-        if (ClickMode == ClickMode.Release)
+        bool shouldInvoke = ClickMode == ClickMode.Release && _primaryButton?.IsPressed == true;
+        CancelSpaceKeyPress();
+        if (shouldInvoke)
         {
             InvokePrimaryAction();
         }
@@ -704,8 +737,37 @@ public class SplitButton : ContentControl, ICommandSource, IAppearanceControl, I
     /// <inheritdoc />
     protected override void OnLostKeyboardFocus(KeyboardFocusChangedEventArgs e)
     {
-        _isSpaceKeyDown = false;
+        CancelSpaceKeyPress();
         base.OnLostKeyboardFocus(e);
+    }
+
+    /// <inheritdoc />
+    protected override void OnAccessKey(AccessKeyEventArgs e)
+    {
+        if (e.IsMultiple)
+        {
+            // WPF buttons focus rather than invoke when an access key has multiple matches. Focus
+            // the public wrapper so the next press can advance to the following SplitButton.
+            base.OnAccessKey(e);
+            return;
+        }
+
+        InvokePrimaryAction();
+    }
+
+    private static void OnAccessKeyPressed(object sender, AccessKeyPressedEventArgs e)
+    {
+        var splitButton = (SplitButton)sender;
+        if (
+            e.Key is not "\r" and not "\x1B"
+         && ReferenceEquals(e.Target, splitButton._primaryButton)
+        )
+        {
+            // Enter/Escape registrations belong to Button.IsDefault/IsCancel and must stay on the
+            // actual button so WPF can apply their specialized behavior. Mnemonics rendered by
+            // the primary content instead target the focus-owning wrapper.
+            e.Target = splitButton;
+        }
     }
 
     private static bool IsDropDownShortcut(KeyEventArgs e)
@@ -830,6 +892,20 @@ public class SplitButton : ContentControl, ICommandSource, IAppearanceControl, I
         // event is allowed to cross the template boundary, which gives consumers one stable source.
         e.Handled = true;
         OnClick();
+    }
+
+    private void OnPrimaryButtonIsEnabledChanged(
+        object sender,
+        DependencyPropertyChangedEventArgs e
+    )
+    {
+        if (!(bool)e.NewValue)
+        {
+            // A command can become unavailable while Space is held (including from a Press-mode
+            // Click handler). Clear the synthetic state just as ButtonBase loses its mouse capture
+            // when a native button becomes disabled.
+            CancelSpaceKeyPress();
+        }
     }
 
     private void OnPrimaryButtonPreviewMouseLeftButtonDown(
@@ -983,28 +1059,58 @@ public class SplitButton : ContentControl, ICommandSource, IAppearanceControl, I
             return;
         }
 
-        OnClick();
+        Button primaryButton = _primaryButton!;
 
-        if (Command is RoutedCommand routedCommand)
+        // Raise the private ButtonBase event so every activation route crosses the same adapter as
+        // a mouse click. Raising the event directly intentionally avoids publishing a second UIA
+        // Invoke notification for a template child that SplitButtonAutomationPeer hides.
+        primaryButton.RaiseEvent(
+            new RoutedEventArgs(ButtonBase.ClickEvent, primaryButton)
+        );
+
+        ICommand? command   = primaryButton.Command;
+        object?  parameter = primaryButton.CommandParameter;
+        if (command is RoutedCommand routedCommand)
         {
-            var target = CommandTarget ?? this;
-            if (routedCommand.CanExecute(CommandParameter, target))
+            // ButtonBase defaults a routed command's target to the command source itself. Using
+            // the primary template button here keeps keyboard and automation input identical to
+            // mouse and access-key input when CommandTarget is omitted.
+            IInputElement target = primaryButton.CommandTarget ?? primaryButton;
+            if (routedCommand.CanExecute(parameter, target))
             {
-                routedCommand.Execute(CommandParameter, target);
+                routedCommand.Execute(parameter, target);
             }
         }
-        else if (Command?.CanExecute(CommandParameter) == true)
+        else if (command?.CanExecute(parameter) == true)
         {
-            Command.Execute(CommandParameter);
+            command.Execute(parameter);
         }
+    }
+
+    private void SetPrimaryButtonPressed(bool isPressed)
+    {
+        if (_primaryButton is null || (isPressed && !_primaryButton.IsEnabled))
+        {
+            return;
+        }
+
+        _primaryButton.SetPressedFromOwningControl(isPressed);
+    }
+
+    private void CancelSpaceKeyPress()
+    {
+        _isSpaceKeyDown = false;
+        SetPrimaryButtonPressed(false);
     }
 
     private void DetachTemplatePartHandlers()
     {
         if (_primaryButton is not null)
         {
+            _primaryButton.SetPressedFromOwningControl(false);
             _primaryButton.PreviewMouseLeftButtonDown -= OnPrimaryButtonPreviewMouseLeftButtonDown;
             _primaryButton.Click                      -= OnPrimaryButtonClick;
+            _primaryButton.IsEnabledChanged           -= OnPrimaryButtonIsEnabledChanged;
         }
 
         if (_dropDownButton is not null)
@@ -1015,5 +1121,6 @@ public class SplitButton : ContentControl, ICommandSource, IAppearanceControl, I
 
         _primaryButton  = null;
         _dropDownButton = null;
+        _isSpaceKeyDown = false;
     }
 }
