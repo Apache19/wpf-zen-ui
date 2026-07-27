@@ -3,6 +3,7 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
+using System.Linq;
 using System.Reflection;
 using System.Runtime.ExceptionServices;
 using System.Threading;
@@ -15,6 +16,49 @@ namespace Wpf.Ui.UnitTests.Controls;
 
 public class TextEditorContextMenuPlacementHelperTests
 {
+    [Fact]
+    public void DefaultEditorContextMenu_SnapshotsPlacementTarget_ForEveryCommandItem()
+    {
+        RunOnStaThread(
+            () =>
+            {
+                var resources = new ResourceDictionary
+                {
+                    Source = new Uri(
+                        "pack://application:,,,/Wpf.Ui;component/Resources/DefaultEditorContextMenu.xaml"
+                    ),
+                };
+                var contextMenu = Assert.IsType<ContextMenu>(resources["DefaultEditorContextMenu"]);
+                var firstOwner = new System.Windows.Controls.TextBox();
+                var secondOwner = new System.Windows.Controls.TextBox();
+
+                contextMenu.PlacementTarget = firstOwner;
+                contextMenu.RaiseEvent(new RoutedEventArgs(ContextMenu.OpenedEvent, contextMenu));
+
+                Assert.All(
+                    contextMenu.Items.OfType<MenuItem>(),
+                    menuItem => Assert.Same(firstOwner, menuItem.CommandTarget)
+                );
+
+                // The target is an opening-time snapshot rather than a live binding. It must survive
+                // the popup route disappearing before MenuItem performs its deferred execution.
+                contextMenu.PlacementTarget = null;
+                Assert.All(
+                    contextMenu.Items.OfType<MenuItem>(),
+                    menuItem => Assert.Same(firstOwner, menuItem.CommandTarget)
+                );
+
+                contextMenu.PlacementTarget = secondOwner;
+                contextMenu.RaiseEvent(new RoutedEventArgs(ContextMenu.OpenedEvent, contextMenu));
+
+                Assert.All(
+                    contextMenu.Items.OfType<MenuItem>(),
+                    menuItem => Assert.Same(secondOwner, menuItem.CommandTarget)
+                );
+            }
+        );
+    }
+
     [Fact]
     public void KeyboardInvokedContextMenu_RestoresPlacement_WhenClosed()
     {
