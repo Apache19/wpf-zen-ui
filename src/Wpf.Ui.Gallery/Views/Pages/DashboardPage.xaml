@@ -7,6 +7,7 @@
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
     xmlns:vm="clr-namespace:Wpf.Ui.Gallery.ViewModels.Pages"
     Title="Dashboard Page"
+    Margin="0,32,0,0"
     d:Background="{ui:BrushResource WindowBackgroundBrush}"
     d:DataContext="{d:DesignInstance vm:DashboardViewModel,
                                      IsDesignTimeCreatable=True}"
