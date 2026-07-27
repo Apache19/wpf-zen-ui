@@ -50,6 +50,7 @@ public enum StyleId
 
     UiSplitButtonStyle,
     UiAutoSuggestBoxStyle,
+    UiBadgeStyle,
 
     DefaultProgressBarStyle,
 
