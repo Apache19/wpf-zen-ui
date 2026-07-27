@@ -47,8 +47,8 @@
                     VerticalAlignment="Center"
                     Fill="{m:BrushResource AccentSelectionBrush}"
                     Opacity="0"
-                    RadiusX="2"
-                    RadiusY="2" />
+                    RadiusX="1.5"
+                    RadiusY="1.5" />
                 <ContentPresenter
                     x:Name="HeaderPresenter"
                     Grid.Column="1"
@@ -216,7 +216,6 @@
             <Button
                 x:Name="PART_HeaderButton"
                 Grid.Row="0"
-                Padding="0"
                 HorizontalContentAlignment="Stretch"
                 Background="{m:BrushResource SubtleFillColorTransparentBrush}"
                 BorderBrush="{TemplateBinding BorderBrush}"
@@ -224,6 +223,8 @@
                 Content="{TemplateBinding Header}"
                 ContentTemplate="{TemplateBinding HeaderTemplate}"
                 ContentTemplateSelector="{TemplateBinding HeaderTemplateSelector}"
+                OverridesDefaultStyle="True"
+                Style="{x:Null}"
                 Template="{StaticResource NavigationViewItemLeftHeaderButtonTemplate}" />
             <ItemsPresenter
                 x:Name="PART_ItemsPresenter"
@@ -274,7 +275,6 @@
         <Grid>
             <Button
                 x:Name="PART_HeaderButton"
-                Padding="0"
                 HorizontalContentAlignment="Stretch"
                 Background="{m:BrushResource SubtleFillColorTransparentBrush}"
                 BorderBrush="{TemplateBinding BorderBrush}"
@@ -282,6 +282,8 @@
                 Content="{TemplateBinding Header}"
                 ContentTemplate="{TemplateBinding HeaderTemplate}"
                 ContentTemplateSelector="{TemplateBinding HeaderTemplateSelector}"
+                OverridesDefaultStyle="True"
+                Style="{x:Null}"
                 Template="{StaticResource NavigationViewItemLeftHeaderButtonTemplate}">
                 <Button.ContextMenu>
                     <!--  See NavigationViewItemTopTemplate for the native projection contract.  -->

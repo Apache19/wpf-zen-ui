@@ -12,7 +12,7 @@
         <Grid>
             <Button
                 x:Name="PART_HeaderButton"
-                MinHeight="40"
+                MinHeight="44"
                 Padding="12,0"
                 HorizontalContentAlignment="Stretch"
                 Background="{m:BrushResource SubtleFillColorTransparentBrush}"
@@ -20,51 +20,66 @@
                 BorderThickness="{TemplateBinding BorderThickness}"
                 Content="{TemplateBinding Header}"
                 ContentTemplate="{TemplateBinding HeaderTemplate}"
-                ContentTemplateSelector="{TemplateBinding HeaderTemplateSelector}">
+                ContentTemplateSelector="{TemplateBinding HeaderTemplateSelector}"
+                OverridesDefaultStyle="True"
+                Style="{x:Null}">
                 <Button.Template>
                     <ControlTemplate TargetType="{x:Type Button}">
-                        <Border
-                            x:Name="HeaderSurface"
-                            Padding="{TemplateBinding Padding}"
-                            Background="{TemplateBinding Background}"
-                            BorderBrush="{TemplateBinding BorderBrush}"
-                            BorderThickness="{TemplateBinding BorderThickness}"
-                            CornerRadius="4">
-                            <StackPanel HorizontalAlignment="Center" Orientation="Horizontal">
-                                <ContentPresenter
-                                    x:Name="IconPresenter"
-                                    Margin="0,0,8,0"
-                                    VerticalAlignment="Center"
-                                    Content="{Binding Icon, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}" />
-                                <ContentPresenter
-                                    VerticalAlignment="Center"
-                                    Content="{TemplateBinding Content}"
-                                    ContentTemplate="{TemplateBinding ContentTemplate}"
-                                    ContentTemplateSelector="{TemplateBinding ContentTemplateSelector}"
-                                    RecognizesAccessKey="True" />
-                                <ContentPresenter
-                                    x:Name="InfoBadgePresenter"
-                                    Margin="8,0,0,0"
-                                    VerticalAlignment="Center"
-                                    Content="{Binding InfoBadge, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}" />
-                            </StackPanel>
-                        </Border>
+                        <Grid>
+                            <Border
+                                x:Name="HeaderSurface"
+                                Padding="{TemplateBinding Padding}"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="4">
+                                <StackPanel HorizontalAlignment="Center" Orientation="Horizontal">
+                                    <ContentPresenter
+                                        x:Name="IconPresenter"
+                                        Margin="0,0,8,0"
+                                        VerticalAlignment="Center"
+                                        Content="{Binding Icon, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}" />
+                                    <ContentPresenter
+                                        VerticalAlignment="Center"
+                                        Content="{TemplateBinding Content}"
+                                        ContentTemplate="{TemplateBinding ContentTemplate}"
+                                        ContentTemplateSelector="{TemplateBinding ContentTemplateSelector}"
+                                        RecognizesAccessKey="True" />
+                                    <ContentPresenter
+                                        x:Name="InfoBadgePresenter"
+                                        Margin="8,0,0,0"
+                                        VerticalAlignment="Center"
+                                        Content="{Binding InfoBadge, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}" />
+                                </StackPanel>
+                            </Border>
+                            <Rectangle
+                                x:Name="ActiveIndicator"
+                                Width="16"
+                                Height="3"
+                                Margin="0,0,0,3"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Bottom"
+                                Fill="{m:BrushResource AccentSelectionBrush}"
+                                RadiusX="1.5"
+                                RadiusY="1.5"
+                                Visibility="Collapsed" />
+                        </Grid>
                         <ControlTemplate.Triggers>
+                            <MultiDataTrigger>
+                                <MultiDataTrigger.Conditions>
+                                    <Condition Binding="{Binding IsBranchActive, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}" Value="True" />
+                                </MultiDataTrigger.Conditions>
+                                <Setter TargetName="ActiveIndicator" Property="Visibility" Value="Visible" />
+                            </MultiDataTrigger>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="HeaderSurface" Property="Background" Value="{m:BrushResource SubtleFillColorSecondaryBrush}" />
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
                                 <Setter TargetName="HeaderSurface" Property="Background" Value="{m:BrushResource SubtleFillColorTertiaryBrush}" />
                             </Trigger>
-                            <DataTrigger Binding="{Binding IsActive, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}" Value="True">
+                            <!--<DataTrigger Binding="{Binding IsSubmenuOpen, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}" Value="True">
                                 <Setter TargetName="HeaderSurface" Property="Background" Value="{m:BrushResource SubtleFillColorSecondaryBrush}" />
-                            </DataTrigger>
-                            <DataTrigger Binding="{Binding IsDescendantActive, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}" Value="True">
-                                <Setter TargetName="HeaderSurface" Property="Background" Value="{m:BrushResource SubtleFillColorSecondaryBrush}" />
-                            </DataTrigger>
-                            <DataTrigger Binding="{Binding IsSubmenuOpen, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}" Value="True">
-                                <Setter TargetName="HeaderSurface" Property="Background" Value="{m:BrushResource SubtleFillColorSecondaryBrush}" />
-                            </DataTrigger>
+                            </DataTrigger>-->
                             <DataTrigger Binding="{Binding Icon, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}" Value="{x:Null}">
                                 <Setter TargetName="IconPresenter" Property="Visibility" Value="Collapsed" />
                             </DataTrigger>
@@ -84,8 +99,7 @@
                     <ContextMenu
                         x:Name="PART_SubMenuContextMenu"
                         Placement="Bottom"
-                        Style="{Binding SubmenuContextMenuStyle, RelativeSource={RelativeSource TemplatedParent}}"
-                        VerticalOffset="8" />
+                        Style="{Binding SubmenuContextMenuStyle, RelativeSource={RelativeSource TemplatedParent}}" />
                 </Button.ContextMenu>
             </Button>
         </Grid>

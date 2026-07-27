@@ -20,7 +20,9 @@
                 BorderThickness="{TemplateBinding BorderThickness}"
                 Content="{TemplateBinding Header}"
                 ContentTemplate="{TemplateBinding HeaderTemplate}"
-                ContentTemplateSelector="{TemplateBinding HeaderTemplateSelector}">
+                ContentTemplateSelector="{TemplateBinding HeaderTemplateSelector}"
+                OverridesDefaultStyle="True"
+                Style="{x:Null}">
                 <Button.Template>
                     <ControlTemplate TargetType="{x:Type Button}">
                         <Border
