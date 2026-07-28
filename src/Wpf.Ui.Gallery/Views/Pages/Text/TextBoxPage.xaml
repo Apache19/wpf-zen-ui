@@ -9,12 +9,12 @@
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
     xmlns:vm="clr-namespace:Wpf.Ui.Gallery.ViewModels.Pages.Text"
     Title="TextBoxPage"
-    Style="{ui:StyleResource DynamicScrollPageStyle}"
+    Style="{ui:DynamicStyle DynamicScrollPage}"
     controls:PageControlDocumentation.DocumentationType="{x:Type ui:TextBox}"
-    d:Background="{ui:BrushResource WindowBackgroundBrush}"
+    d:Background="{ui:DynamicBrush WindowBackground}"
     d:DataContext="{d:DesignInstance vm:TextBoxViewModel, IsDesignTimeCreatable=False}"
     d:DesignWidth="800"
-    Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
+    Foreground="{ui:DynamicBrush TextFillPrimary}"
     mc:Ignorable="d">
 
     <StackPanel Margin="0,0,0,24">

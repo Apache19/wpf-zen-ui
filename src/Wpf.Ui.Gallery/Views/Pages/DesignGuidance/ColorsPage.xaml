@@ -7,11 +7,11 @@
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
     xmlns:vm="clr-namespace:Wpf.Ui.Gallery.ViewModels.Pages.DesignGuidance"
     Title="ColorsPage"
-    d:Background="{ui:BrushResource WindowBackgroundBrush}"
+    d:Background="{ui:DynamicBrush WindowBackground}"
     d:DataContext="{d:DesignInstance vm:ColorsViewModel, IsDesignTimeCreatable=False}"
     d:DesignWidth="800"
-    Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
-    Style="{ui:StyleResource DynamicScrollPageStyle}"
+    Foreground="{ui:DynamicBrush TextFillPrimary}"
+    Style="{ui:DynamicStyle DynamicScrollPage}"
     mc:Ignorable="d">
 
     <StackPanel Margin="0,0,0,24">
@@ -37,7 +37,7 @@
         <Border
             Margin="0,12,0,0"
             Padding="12"
-            Background="{ui:BrushResource ControlFillColorPrimaryBrush}"
+            Background="{ui:DynamicBrush ControlFillPrimary}"
             CornerRadius="8">
             <StackPanel>
                 <ui:TextBlock Text="For UI labels and static text" />
@@ -60,9 +60,9 @@
             </Grid.ColumnDefinitions>
             <Border
                 Grid.Column="0"
-                Background="{ui:BrushResource TextFillColorPrimaryBrush}"
+                Background="{ui:DynamicBrush TextFillPrimary}"
                 CornerRadius="8,0,0,8"
-                TextElement.Foreground="{ui:BrushResource TextFillColorInverseBrush}">
+                TextElement.Foreground="{ui:DynamicBrush TextFillInverse}">
                 <Grid Margin="12">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
@@ -79,9 +79,9 @@
             </Border>
             <Border
                 Grid.Column="1"
-                Background="{ui:BrushResource TextFillColorSecondaryBrush}"
+                Background="{ui:DynamicBrush TextFillSecondary}"
                 CornerRadius="0"
-                TextElement.Foreground="{ui:BrushResource TextFillColorInverseBrush}">
+                TextElement.Foreground="{ui:DynamicBrush TextFillInverse}">
                 <Grid Margin="12">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
@@ -98,9 +98,9 @@
             </Border>
             <Border
                 Grid.Column="2"
-                Background="{ui:BrushResource TextFillColorTertiaryBrush}"
+                Background="{ui:DynamicBrush TextFillTertiary}"
                 CornerRadius="0"
-                TextElement.Foreground="{ui:BrushResource TextFillColorInverseBrush}">
+                TextElement.Foreground="{ui:DynamicBrush TextFillInverse}">
                 <Grid Margin="12">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
@@ -117,9 +117,9 @@
             </Border>
             <Border
                 Grid.Column="3"
-                Background="{ui:BrushResource TextFillColorDisabledBrush}"
+                Background="{ui:DynamicBrush TextFillDisabled}"
                 CornerRadius="0,8,8,0"
-                TextElement.Foreground="{ui:BrushResource TextFillColorInverseBrush}">
+                TextElement.Foreground="{ui:DynamicBrush TextFillInverse}">
                 <Grid Margin="12">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
@@ -152,9 +152,9 @@
             Rows="2">
             <Border
                 MinHeight="110"
-                Background="{ui:BrushResource AccentFillPrimaryBrush}"
+                Background="{ui:DynamicBrush AccentFillPrimary}"
                 CornerRadius="8 0 0 0"
-                TextElement.Foreground="{ui:BrushResource TextOnAccentPrimaryBrush}">
+                TextElement.Foreground="{ui:DynamicBrush TextOnAccentPrimary}">
                 <Grid Margin="12">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
@@ -168,9 +168,9 @@
             </Border>
             <Border
                 MinHeight="110"
-                Background="{ui:BrushResource AccentFillSecondaryBrush}"
+                Background="{ui:DynamicBrush AccentFillSecondary}"
                 CornerRadius="0"
-                TextElement.Foreground="{ui:BrushResource TextOnAccentPrimaryBrush}">
+                TextElement.Foreground="{ui:DynamicBrush TextOnAccentPrimary}">
                 <Grid Margin="12">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
@@ -184,8 +184,8 @@
             </Border>
             <Border
                 MinHeight="110"
-                Background="{ui:BrushResource AccentFillTertiaryBrush}"
-                TextElement.Foreground="{ui:BrushResource TextOnAccentPrimaryBrush}">
+                Background="{ui:DynamicBrush AccentFillTertiary}"
+                TextElement.Foreground="{ui:DynamicBrush TextOnAccentPrimary}">
                 <Grid Margin="12">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
@@ -200,9 +200,9 @@
             <Border
                 MinHeight="110"
       
-                Background="{ui:BrushResource AccentSelectionBrush}"
+                Background="{ui:DynamicBrush AccentSelection}"
                 CornerRadius="0 8 0 0"
-                TextElement.Foreground="{ui:BrushResource TextOnAccentPrimaryBrush}">
+                TextElement.Foreground="{ui:DynamicBrush TextOnAccentPrimary}">
                 <Grid Margin="12">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
@@ -217,9 +217,9 @@
             <Border
                 MinHeight="110"
         
-                Background="{ui:BrushResource AccentTextPrimaryBrush}"
+                Background="{ui:DynamicBrush AccentTextPrimary}"
                 CornerRadius="0 0 0 8"
-                TextElement.Foreground="{ui:BrushResource TextFillColorInverseBrush}">
+                TextElement.Foreground="{ui:DynamicBrush TextFillInverse}">
                 <Grid Margin="12">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
@@ -233,9 +233,9 @@
             </Border>
             <Border
                 MinHeight="110"
-                Background="{ui:BrushResource AccentTextSecondaryBrush}"
+                Background="{ui:DynamicBrush AccentTextSecondary}"
                 CornerRadius="0"
-                TextElement.Foreground="{ui:BrushResource TextFillColorInverseBrush}">
+                TextElement.Foreground="{ui:DynamicBrush TextFillInverse}">
                 <Grid Margin="12">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
@@ -251,9 +251,9 @@
             <Border
                 MinHeight="110"
      
-                Background="{ui:BrushResource AccentStrokeBrush}"
+                Background="{ui:DynamicBrush AccentStroke}"
                 CornerRadius="0"
-                TextElement.Foreground="{ui:BrushResource TextFillColorInverseBrush}">
+                TextElement.Foreground="{ui:DynamicBrush TextFillInverse}">
                 <Grid Margin="12">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
@@ -268,9 +268,9 @@
             <Border
                 MinHeight="110"
           
-                Background="{ui:BrushResource TextOnAccentPrimaryBrush}"
+                Background="{ui:DynamicBrush TextOnAccentPrimary}"
                 CornerRadius="0 0 8 0"
-                TextElement.Foreground="{ui:BrushResource TextFillColorPrimaryBrush}">
+                TextElement.Foreground="{ui:DynamicBrush TextFillPrimary}">
                 <Grid Margin="12">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
@@ -278,7 +278,7 @@
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
                     <ui:TextBlock Grid.Row="0" FontTypography="BodyStrong" Text="Text on Accent" />
-                    <ui:TextBlock Grid.Row="1" Foreground="{ui:BrushResource TextFillColorTertiaryBrush}" TextWrapping="WrapWithOverflow" FontSize="12" Text="Used for text on accent colored controls or fills" />
+                    <ui:TextBlock Grid.Row="1" Foreground="{ui:DynamicBrush TextFillTertiary}" TextWrapping="WrapWithOverflow" FontSize="12" Text="Used for text on accent colored controls or fills" />
                     <ui:TextBox Grid.Row="2" Text="TextOnAccentPrimaryBrush" />
                 </Grid>
             </Border>

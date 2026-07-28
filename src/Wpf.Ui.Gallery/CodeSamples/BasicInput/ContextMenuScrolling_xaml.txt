@@ -1,5 +1,5 @@
-<Border Background="{ui:BrushResource CardBackgroundFillColorDefaultBrush}"
-       BorderBrush="{ui:BrushResource CardStrokeColorDefaultBrush}"
+<Border Background="{ui:DynamicBrush CardBackgroundFillDefault}"
+       BorderBrush="{ui:DynamicBrush CardStrokeDefault}"
        BorderThickness="1"
        CornerRadius="8"
        Padding="24">

@@ -9,11 +9,11 @@
     xmlns:vm="clr-namespace:Wpf.Ui.Gallery.ViewModels.Pages.DialogsAndFlyouts"
     Title="SnackbarPage"
     controls:PageControlDocumentation.DocumentationType="{x:Type ui:Snackbar}"
-    d:Background="{ui:BrushResource WindowBackgroundBrush}"
+    d:Background="{ui:DynamicBrush WindowBackground}"
     d:DataContext="{d:DesignInstance vm:SnackbarViewModel, IsDesignTimeCreatable=False}"
     d:DesignWidth="800"
-    Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
-    Style="{ui:StyleResource DynamicScrollPageStyle}"
+    Foreground="{ui:DynamicBrush TextFillPrimary}"
+    Style="{ui:DynamicStyle DynamicScrollPage}"
     mc:Ignorable="d">
 
     <Grid Margin="0,0,0,24">

@@ -10,11 +10,11 @@
     Title="{Binding ApplicationTitle, Mode=OneWay}"
     Width="1100"
     Height="650"
-    d:Background="{ui:BrushResource WindowBackgroundBrush}"
+    d:Background="{ui:DynamicBrush WindowBackground}"
     d:DataContext="{d:DesignInstance vm:MainWindowViewModel, IsDesignTimeCreatable=True}"
     d:DesignHeight="450"
     d:DesignWidth="800"
-    Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
+    Foreground="{ui:DynamicBrush TextFillPrimary}"
     WindowStartupLocation="CenterScreen"
     mc:Ignorable="d">
     <ui:FluentWindow.InputBindings>

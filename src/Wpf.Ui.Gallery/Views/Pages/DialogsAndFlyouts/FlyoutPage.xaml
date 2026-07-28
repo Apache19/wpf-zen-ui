@@ -9,11 +9,11 @@
     xmlns:vm="clr-namespace:Wpf.Ui.Gallery.ViewModels.Pages.DialogsAndFlyouts"
     Title="FlyoutPage"
     controls:PageControlDocumentation.DocumentationType="{x:Type ui:Flyout}"
-    d:Background="{ui:BrushResource WindowBackgroundBrush}"
+    d:Background="{ui:DynamicBrush WindowBackground}"
     d:DataContext="{d:DesignInstance vm:FlyoutViewModel, IsDesignTimeCreatable=False}"
     d:DesignWidth="800"
-    Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
-    Style="{ui:StyleResource DynamicScrollPageStyle}"
+    Foreground="{ui:DynamicBrush TextFillPrimary}"
+    Style="{ui:DynamicStyle DynamicScrollPage}"
     mc:Ignorable="d">
 
     <Grid Margin="0,0,0,24">

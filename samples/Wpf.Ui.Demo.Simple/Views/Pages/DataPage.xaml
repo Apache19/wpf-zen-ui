@@ -7,15 +7,15 @@
     xmlns:models="clr-namespace:Wpf.Ui.Demo.Simple.Models"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
     Title="DataPage"
-    d:Background="{ui:BrushResource WindowBackgroundBrush}"
+    d:Background="{ui:DynamicBrush WindowBackground}"
     d:DesignHeight="450"
     d:DesignWidth="800"
-    Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
+    Foreground="{ui:DynamicBrush TextFillPrimary}"
     mc:Ignorable="d">
     <Grid Margin="42">
         <ui:VirtualizingItemsControl
             x:Name="ColorsItemsControl"
-            Foreground="{ui:BrushResource TextFillColorSecondaryBrush}"
+            Foreground="{ui:DynamicBrush TextFillSecondary}"
             VirtualizingPanel.CacheLengthUnit="Item">
             <ItemsControl.ItemTemplate>
                 <DataTemplate DataType="{x:Type models:DataColor}">

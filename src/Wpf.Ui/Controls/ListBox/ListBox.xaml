@@ -10,7 +10,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Ui.Controls"
     xmlns:converters="clr-namespace:Wpf.Ui.Converters"
-    xmlns:markup="clr-namespace:Wpf.Ui.Markup">
+    xmlns:m="clr-namespace:Wpf.Ui.Markup">
 
     <converters:BrushToColorConverter x:Key="BrushToColorConverter" />
 
@@ -39,9 +39,9 @@
         <Setter Property="ItemContainerStyle">
             <Setter.Value>
                 <Style TargetType="{x:Type ListBoxItem}">
-                    <Setter Property="Foreground" Value="{markup:BrushResource TextFillColorPrimaryBrush}" />
-                    <Setter Property="Background" Value="{markup:BrushResource AccentFillSecondaryBrush}" />
-                    <Setter Property="BorderBrush" Value="{markup:BrushResource AccentStrokeBrush}" />
+                    <Setter Property="Foreground" Value="{m:DynamicBrush TextFillPrimary}" />
+                    <Setter Property="Background" Value="{m:DynamicBrush AccentFillSecondary}" />
+                    <Setter Property="BorderBrush" Value="{m:DynamicBrush AccentStroke}" />
                     <Setter Property="Margin" Value="0" />
                     <Setter Property="Padding" Value="12" />
                     <Setter Property="Border.CornerRadius" Value="0" />
@@ -61,14 +61,14 @@
                                 <ControlTemplate.Triggers>
                                     <Trigger Property="IsMouseOver" Value="True">
                                         <Setter TargetName="Border" Property="Background"
-                                                Value="{markup:BrushResource SubtleFillColorSecondaryBrush}" />
+                                                Value="{m:DynamicBrush SubtleFillSecondary}" />
                                     </Trigger>
 
                                     <Trigger Property="IsSelected" Value="True">
                                         <Setter TargetName="Border" Property="Background"
-                                                Value="{markup:BrushResource AccentSelectionBrush}" />
+                                                Value="{m:DynamicBrush AccentSelection}" />
                                         <Setter Property="Foreground"
-                                                Value="{markup:BrushResource TextOnAccentPrimaryBrush}" />
+                                                Value="{m:DynamicBrush TextOnAccentPrimary}" />
                                     </Trigger>
                                 </ControlTemplate.Triggers>
                             </ControlTemplate>

@@ -10,11 +10,11 @@
     Title="WPF UI - Editor"
     Width="1250"
     Height="652"
-    d:Background="{ui:BrushResource WindowBackgroundBrush}"
+    d:Background="{ui:DynamicBrush WindowBackground}"
     d:DataContext="{d:DesignInstance local:EditorWindow, IsDesignTimeCreatable=False}"
     d:DesignHeight="650"
     d:DesignWidth="900"
-    d:Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
+    d:Foreground="{ui:DynamicBrush TextFillPrimary}"
     WindowStartupLocation="CenterOwner"
     mc:Ignorable="d">
     <Grid>
@@ -235,7 +235,7 @@
                 <StackPanel>
                     <TextBlock FontWeight="Medium" Text="WPF UI - Editor" />
                     <TextBlock
-                        Foreground="{ui:BrushResource TextFillColorSecondaryBrush}"
+                        Foreground="{ui:DynamicBrush TextFillSecondary}"
                         Text="Congratulations, you clicked the button on the menu"
                         TextAlignment="Justify"
                         TextWrapping="WrapWithOverflow" />

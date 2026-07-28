@@ -12,12 +12,12 @@
     xmlns:theming="clr-namespace:Wpf.Ui.Theming;assembly=Wpf.Ui"
     Title="InfoBadgePage"
     controls:PageControlDocumentation.DocumentationType="{x:Type ui:InfoBadge}"
-    d:Background="{ui:BrushResource WindowBackgroundBrush}"
+    d:Background="{ui:DynamicBrush WindowBackground}"
     d:DataContext="{d:DesignInstance vm:InfoBadgeViewModel,
                                      IsDesignTimeCreatable=False}"
     d:DesignWidth="800"
-    Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
-    Style="{ui:StyleResource DynamicScrollPageStyle}"
+    Foreground="{ui:DynamicBrush TextFillPrimary}"
+    Style="{ui:DynamicStyle DynamicScrollPage}"
     mc:Ignorable="d">
 
     <StackPanel Margin="0,0,0,24">

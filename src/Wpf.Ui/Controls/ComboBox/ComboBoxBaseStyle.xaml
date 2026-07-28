@@ -4,14 +4,14 @@
     xmlns:m="clr-namespace:Wpf.Ui.Markup">
 
     <Style x:Key="ComboBoxBaseStyle" TargetType="{x:Type ComboBox}">
-        <Setter Property="Background" Value="{m:BrushResource ControlFillColorSecondaryBrush}" />
-        <Setter Property="Border.CornerRadius" Value="{m:VariableResource ControlCornerRadius}" />
-        <Setter Property="BorderBrush" Value="{m:BrushResource ControlStrokeColorSecondaryBrush}" />
+        <Setter Property="Background" Value="{m:DynamicBrush ControlFillSecondary}" />
+        <Setter Property="Border.CornerRadius" Value="{m:DynamicValue ControlCornerRadius}" />
+        <Setter Property="BorderBrush" Value="{m:DynamicBrush ControlStrokeSecondary}" />
         <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="FocusVisualStyle" Value="{m:StyleResource DefaultControlFocusVisualStyle}" />
-        <Setter Property="Foreground" Value="{m:BrushResource TextFillColorPrimaryBrush}" />
+        <Setter Property="FocusVisualStyle" Value="{m:DynamicStyle DefaultControlFocusVisual}" />
+        <Setter Property="Foreground" Value="{m:DynamicBrush TextFillPrimary}" />
         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-        <Setter Property="Padding" Value="{m:VariableResource TextControlThemePadding}" />
+        <Setter Property="Padding" Value="{m:DynamicValue TextControlThemePadding}" />
         <Setter Property="Popup.Placement" Value="Bottom" />
         <Setter Property="Popup.PopupAnimation" Value="None" />
         <Setter Property="ScrollViewer.CanContentScroll" Value="True" />
@@ -19,7 +19,7 @@
         <Setter Property="ScrollViewer.IsDeferredScrollingEnabled" Value="False" />
         <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
-        <Setter Property="Validation.ErrorTemplate" Value="{m:StyleResource DefaultValidationTemplate}" />
+        <Setter Property="Validation.ErrorTemplate" Value="{m:DynamicTemplate DefaultValidation}" />
         <Setter Property="VerticalContentAlignment" Value="Top" />
  </Style>
 

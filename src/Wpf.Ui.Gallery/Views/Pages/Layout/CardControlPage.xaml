@@ -8,11 +8,11 @@
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
     xmlns:vm="clr-namespace:Wpf.Ui.Gallery.ViewModels.Pages.Layout"
     Title="CardControlPage"
-    d:Background="{ui:BrushResource WindowBackgroundBrush}"
+    d:Background="{ui:DynamicBrush WindowBackground}"
     d:DataContext="{d:DesignInstance vm:CardControlViewModel, IsDesignTimeCreatable=False}"
     d:DesignWidth="800"
-    Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
-    Style="{ui:StyleResource DynamicScrollPageStyle}"
+    Foreground="{ui:DynamicBrush TextFillPrimary}"
+    Style="{ui:DynamicStyle DynamicScrollPage}"
     mc:Ignorable="d">
     <StackPanel Margin="0,0,0,24">
         <controls:ControlExample
@@ -52,12 +52,12 @@
                             <ui:TextBlock
                                 Margin="0"
                                 FontTypography="BodyStrong"
-                                Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
+                                Foreground="{ui:DynamicBrush TextFillPrimary}"
                                 Text="This is the header text"
                                 TextWrapping="WrapWithOverflow" />
                             <ui:TextBlock
                                 Appearance="Secondary"
-                                Foreground="{ui:BrushResource TextFillColorSecondaryBrush}"
+                                Foreground="{ui:DynamicBrush TextFillSecondary}"
                                 Text="This is a description text."
                                 TextWrapping="WrapWithOverflow" />
                         </StackPanel>
@@ -89,12 +89,12 @@
                             <ui:TextBlock
                                 Margin="0"
                                 FontTypography="BodyStrong"
-                                Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
+                                Foreground="{ui:DynamicBrush TextFillPrimary}"
                                 Text="This is the header text"
                                 TextWrapping="WrapWithOverflow" />
                             <ui:TextBlock
                                 Appearance="Secondary"
-                                Foreground="{ui:BrushResource TextFillColorSecondaryBrush}"
+                                Foreground="{ui:DynamicBrush TextFillSecondary}"
                                 Text="This is a description text."
                                 TextWrapping="WrapWithOverflow" />
                         </StackPanel>

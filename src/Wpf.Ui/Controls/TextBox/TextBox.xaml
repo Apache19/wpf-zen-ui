@@ -94,7 +94,7 @@
                         Padding="{TemplateBinding Padding}"
                         HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
                         VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
-                        Foreground="{m:BrushResource TextPlaceholderColorBrush}"
+                        Foreground="{m:DynamicBrush TextPlaceholder}"
                         IsHitTestVisible="False"
                         Text="{TemplateBinding PlaceholderText}" />
 
@@ -135,7 +135,7 @@
             </Border>
             <Border
                 x:Name="FocusIndicator"
-                BorderBrush="{m:BrushResource AccentStrokeBrush}"
+                BorderBrush="{m:DynamicBrush AccentStroke}"
                 BorderThickness="0,0,0,2"
                 CornerRadius="{TemplateBinding CornerRadius}"
                 IsHitTestVisible="False"
@@ -216,20 +216,20 @@
         <Setter Property="Stylus.IsFlicksEnabled" Value="False" />
         <Setter Property="FocusVisualStyle" Value="{x:Null}" />
         <Setter Property="CaretBrush" Value="{Binding Foreground, RelativeSource={RelativeSource Self}}" />
-        <Setter Property="Background" Value="{m:BrushResource ControlFillColorSecondaryBrush}" />
-        <Setter Property="BorderBrush" Value="{m:BrushResource ControlStrokeColorSecondaryBrush}" />
-        <Setter Property="MouseOverBackground" Value="{m:BrushResource ControlFillColorPrimaryBrush}" />
-        <Setter Property="FocusedBackground" Value="{m:BrushResource ControlFillColorInputActiveBrush}" />
-        <Setter Property="DisabledForeground" Value="{m:BrushResource TextFillColorDisabledBrush}" />
-        <Setter Property="DisabledBackground" Value="{m:BrushResource ControlFillColorDisabledBrush}" />
-        <Setter Property="DisabledBorderBrush" Value="{m:BrushResource ControlStrokeColorDefaultBrush}" />
+        <Setter Property="Background" Value="{m:DynamicBrush ControlFillSecondary}" />
+        <Setter Property="BorderBrush" Value="{m:DynamicBrush ControlStrokeSecondary}" />
+        <Setter Property="MouseOverBackground" Value="{m:DynamicBrush ControlFillPrimary}" />
+        <Setter Property="FocusedBackground" Value="{m:DynamicBrush ControlFillInputActive}" />
+        <Setter Property="DisabledForeground" Value="{m:DynamicBrush TextFillDisabled}" />
+        <Setter Property="DisabledBackground" Value="{m:DynamicBrush ControlFillDisabled}" />
+        <Setter Property="DisabledBorderBrush" Value="{m:DynamicBrush ControlStrokeDefault}" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
-        <Setter Property="Padding" Value="{m:VariableResource TextControlThemePadding}" />
-        <Setter Property="CornerRadius" Value="{m:VariableResource ControlCornerRadius}" />
+        <Setter Property="Padding" Value="{m:DynamicValue TextControlThemePadding}" />
+        <Setter Property="CornerRadius" Value="{m:DynamicValue ControlCornerRadius}" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
-        <Setter Property="Validation.ErrorTemplate" Value="{m:StyleResource DefaultValidationTemplate}" />
+        <Setter Property="Validation.ErrorTemplate" Value="{m:DynamicTemplate DefaultValidation}" />
         <Setter Property="ContextMenu" Value="{StaticResource DefaultEditorContextMenu}" />
         <Style.Triggers>
             <Trigger Property="UseTextBlockAppearance" Value="False">
@@ -246,7 +246,7 @@
                     Supplying its focused color through the public state property keeps a
                     local FocusedBackground value free to override this theme default.
                 -->
-                <Setter Property="FocusedBackground" Value="{m:BrushResource ControlFillColorTertiaryBrush}" />
+                <Setter Property="FocusedBackground" Value="{m:DynamicBrush ControlFillTertiary}" />
             </Trigger>
 
             <MultiTrigger>
@@ -258,7 +258,7 @@
                     todo: 主题资源中尚未有文本选择色，增加后把这里替换掉
                     <Setter Property="SelectionBrush" Value="{DynamicResource {x:Static SystemColors.InactiveSelectionHighlightBrushKey}}" />
                     todo: 旧版.NET Framework 中的 TextBox 没有这个属性，可在控件中引入桥接属性，以便新版 .NET 的 ui:TextBox 能正常工作。
-                    <Setter Property="SelectionTextBrush" Value="{m:BrushResource TextFillColorPrimaryBrush}" />
+                    <Setter Property="SelectionTextBrush" Value="{m:DynamicBrush TextFillPrimary}" />
                 -->
             </MultiTrigger>
         </Style.Triggers>

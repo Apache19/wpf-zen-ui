@@ -9,11 +9,11 @@
     xmlns:vm="clr-namespace:Wpf.Ui.Gallery.ViewModels.Pages.Collections"
     Title="CollectionsPage"
     controls:PageControlDocumentation.Show="False"
-    d:Background="{ui:BrushResource WindowBackgroundBrush}"
+    d:Background="{ui:DynamicBrush WindowBackground}"
     d:DataContext="{d:DesignInstance vm:CollectionsViewModel, IsDesignTimeCreatable=False}"
     d:DesignWidth="800"
-    Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
-    Style="{ui:StyleResource DynamicScrollPageStyle}"
+    Foreground="{ui:DynamicBrush TextFillPrimary}"
+    Style="{ui:DynamicStyle DynamicScrollPage}"
     mc:Ignorable="d">
 
     <Grid>
@@ -34,8 +34,8 @@
                     RadiusY="8">
                     <Rectangle.Fill>
                         <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                            <GradientStop Offset="0" Color="{ui:ColorResource SnowflakeGradientTop}" />
-                            <GradientStop Offset="1" Color="{ui:ColorResource SnowflakeGradientBottom}" />
+                            <GradientStop Offset="0" Color="{ui:DynamicColor SnowflakeGradientTop}" />
+                            <GradientStop Offset="1" Color="{ui:DynamicColor SnowflakeGradientBottom}" />
                         </LinearGradientBrush>
                     </Rectangle.Fill>
                 </Rectangle>
@@ -61,7 +61,7 @@
                         HorizontalAlignment="Center"
                         Panel.ZIndex="-1"
                         FontSize="14"
-                        Foreground="{ui:BrushResource TextPlaceholderColorBrush}"
+                        Foreground="{ui:DynamicBrush TextPlaceholder}"
                         TextWrapping="Wrap">
                         WPF UI provides the Fluent experience in your known and loved WPF framework. Intuitive design, themes, navigation and new immersive controls. All natively and effortlessly. Library changes the base elements like Page, ToggleButton or List, and also includes additional controls like Navigation, NumberBox, Dialog or Snackbar.<LineBreak />
                         <LineBreak />

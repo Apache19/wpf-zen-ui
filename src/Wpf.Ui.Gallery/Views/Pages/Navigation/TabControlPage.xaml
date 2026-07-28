@@ -13,10 +13,10 @@
     d:DataContext="{d:DesignInstance vm:TabControlViewModel,
                                      IsDesignTimeCreatable=False}"
     d:DesignWidth="800"
-    d:Background="{ui:BrushResource WindowBackgroundBrush}"
-    Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
+    d:Background="{ui:DynamicBrush WindowBackground}"
+    Foreground="{ui:DynamicBrush TextFillPrimary}"
     mc:Ignorable="d"
-    Style="{ui:StyleResource DynamicScrollPageStyle}">
+    Style="{ui:DynamicStyle DynamicScrollPage}">
 
     <Grid Margin="0,0,0,24">
         <controls:ControlExample

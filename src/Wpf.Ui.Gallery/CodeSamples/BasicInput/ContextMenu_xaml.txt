@@ -1,8 +1,8 @@
-<Border Background="{ui:BrushResource CardBackgroundFillColorDefaultBrush}"
-       BorderBrush="{ui:BrushResource CardStrokeColorDefaultBrush}"
-       BorderThickness="1"
-       CornerRadius="8"
-       Padding="24">
+<Border Background="{ui:DynamicBrush CardBackgroundFillDefault}"
+        BorderBrush="{ui:DynamicBrush CardStrokeDefault}"
+        BorderThickness="1"
+        CornerRadius="8"
+        Padding="24">
     <Border.ContextMenu>
         <ContextMenu>
             <MenuItem Header="Cut" Icon="{ui:SymbolIcon Cut24}" />

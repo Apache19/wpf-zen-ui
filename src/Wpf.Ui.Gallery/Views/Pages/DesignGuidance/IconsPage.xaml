@@ -11,10 +11,10 @@
     xmlns:vm="clr-namespace:Wpf.Ui.Gallery.ViewModels.Pages.DesignGuidance"
     Title="IconsPage"
     controls:PageControlDocumentation.DocumentationType="{x:Type ui:SymbolIcon}"
-    d:Background="{ui:BrushResource WindowBackgroundBrush}"
+    d:Background="{ui:DynamicBrush WindowBackground}"
     d:DataContext="{d:DesignInstance vm:IconsViewModel, IsDesignTimeCreatable=False}"
     d:DesignWidth="800"
-    Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
+    Foreground="{ui:DynamicBrush TextFillPrimary}"
     mc:Ignorable="d">
 
     <Grid>
@@ -69,7 +69,7 @@
 
             <Border
                 Grid.Column="0"
-                BorderBrush="{ui:BrushResource CardBackgroundFillColorDefaultBrush}"
+                BorderBrush="{ui:DynamicBrush CardBackgroundFillDefault}"
                 BorderThickness="1,1,0,0"
                 CornerRadius="8,0,0,0">
                 <ui:VirtualizingItemsControl
@@ -99,8 +99,8 @@
             <Border
                 Grid.Column="1"
                 MinWidth="300"
-                Background="{ui:BrushResource CardBackgroundFillColorSecondaryBrush}"
-                BorderBrush="{ui:BrushResource CardBackgroundFillColorDefaultBrush}"
+                Background="{ui:DynamicBrush CardBackgroundFillSecondary}"
+                BorderBrush="{ui:DynamicBrush CardBackgroundFillDefault}"
                 BorderThickness="0,1,1,0"
                 CornerRadius="0,8,0,0">
                 <Grid Margin="24">
@@ -135,7 +135,7 @@
                     <ui:TextBox
                         Grid.Row="3"
                         Margin="0,4,0,0"
-                        Foreground="{ui:BrushResource TextFillColorSecondaryBrush}"
+                        Foreground="{ui:DynamicBrush TextFillSecondary}"
                         Text="{Binding SelectedSymbolName, Mode=OneWay}"
                         UseTextBlockAppearance="True" />
                     <ui:TextBlock
@@ -146,7 +146,7 @@
                     <ui:TextBox
                         Grid.Row="5"
                         Margin="0,4,0,0"
-                        Foreground="{ui:BrushResource TextFillColorSecondaryBrush}"
+                        Foreground="{ui:DynamicBrush TextFillSecondary}"
                         Text="{Binding SelectedSymbolUnicodePoint, Mode=OneWay}"
                         UseTextBlockAppearance="True" />
                     <ui:TextBlock
@@ -157,7 +157,7 @@
                     <ui:TextBox
                         Grid.Row="7"
                         Margin="0,4,0,0"
-                        Foreground="{ui:BrushResource TextFillColorSecondaryBrush}"
+                        Foreground="{ui:DynamicBrush TextFillSecondary}"
                         Text="{Binding SelectedSymbolTextGlyph, Mode=OneWay}"
                         UseTextBlockAppearance="True" />
                     <ui:TextBlock
@@ -169,7 +169,7 @@
                         Grid.Row="9"
                         MaxWidth="250"
                         Margin="0,4,0,0"
-                        Foreground="{ui:BrushResource TextFillColorSecondaryBrush}"
+                        Foreground="{ui:DynamicBrush TextFillSecondary}"
                         Text="{Binding SelectedSymbolXaml, Mode=OneWay}"
                         TextWrapping="WrapWithOverflow"
                         UseTextBlockAppearance="True" />

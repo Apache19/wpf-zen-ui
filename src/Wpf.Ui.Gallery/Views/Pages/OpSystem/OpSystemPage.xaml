@@ -8,13 +8,13 @@
     xmlns:vm="clr-namespace:Wpf.Ui.Gallery.ViewModels.Pages.OpSystem"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
-    Style="{ui:StyleResource DynamicScrollPageStyle}"
+    Style="{ui:DynamicStyle DynamicScrollPage}"
     controls:PageControlDocumentation.Show="False"
     d:DataContext="{d:DesignInstance vm:OpSystemViewModel,
                                      IsDesignTimeCreatable=False}"
     d:DesignWidth="800"
-    d:Background="{ui:BrushResource WindowBackgroundBrush}"
-    Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
+    d:Background="{ui:DynamicBrush WindowBackground}"
+    Foreground="{ui:DynamicBrush TextFillPrimary}"
     mc:Ignorable="d">
 
     <Grid>
@@ -27,8 +27,8 @@
                 <Rectangle VerticalAlignment="Bottom" Height="200" RadiusX="8" RadiusY="8" Panel.ZIndex="0">
                     <Rectangle.Fill>
                         <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                            <GradientStop Color="{ui:ColorResource SnowflakeGradientTop}" Offset="0"/>
-                            <GradientStop Color="{ui:ColorResource SnowflakeGradientBottom}" Offset="1"/>
+                            <GradientStop Color="{ui:DynamicColor SnowflakeGradientTop}" Offset="0"/>
+                            <GradientStop Color="{ui:DynamicColor SnowflakeGradientBottom}" Offset="1"/>
                         </LinearGradientBrush>
                     </Rectangle.Fill>
                 </Rectangle>
@@ -52,7 +52,7 @@
                         Grid.Column="1"
                         HorizontalAlignment="Center"
                         Margin="30"
-                        Foreground="{ui:BrushResource TextPlaceholderColorBrush}" 
+                        Foreground="{ui:DynamicBrush TextPlaceholder}" 
                         FontSize="14" 
                         Panel.ZIndex="-1"
                         TextWrapping="Wrap">

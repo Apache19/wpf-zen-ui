@@ -7,10 +7,10 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
     Title="TypographyPage"
-    d:Background="{ui:BrushResource WindowBackgroundBrush}"
+    d:Background="{ui:DynamicBrush WindowBackground}"
     d:DesignWidth="800"
-    Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
-    Style="{ui:StyleResource DynamicScrollPageStyle}"
+    Foreground="{ui:DynamicBrush TextFillPrimary}"
+    Style="{ui:DynamicStyle DynamicScrollPage}"
     mc:Ignorable="d">
 
     <StackPanel Margin="0,0,0,24">
@@ -58,7 +58,7 @@
                 </Grid>
 
                 <controls:TypographyControl
-                    Background="{ui:BrushResource CardBackgroundFillColorDefaultBrush}"
+                    Background="{ui:DynamicBrush CardBackgroundFillDefault}"
                     Example="Caption"
                     ExampleFontTypography="Caption"
                     SizeLinHeight="12/16"
@@ -71,7 +71,7 @@
                     VariableFont="Regular" />
 
                 <controls:TypographyControl
-                    Background="{ui:BrushResource CardBackgroundFillColorDefaultBrush}"
+                    Background="{ui:DynamicBrush CardBackgroundFillDefault}"
                     Example="Body strong"
                     ExampleFontTypography="BodyStrong"
                     SizeLinHeight="14/20"
@@ -84,7 +84,7 @@
                     VariableFont="SemiBold" />
 
                 <controls:TypographyControl
-                    Background="{ui:BrushResource CardBackgroundFillColorDefaultBrush}"
+                    Background="{ui:DynamicBrush CardBackgroundFillDefault}"
                     Example="Title"
                     ExampleFontTypography="Title"
                     SizeLinHeight="28/36"
@@ -97,7 +97,7 @@
                     VariableFont="SemiBold" />
 
                 <controls:TypographyControl
-                    Background="{ui:BrushResource CardBackgroundFillColorDefaultBrush}"
+                    Background="{ui:DynamicBrush CardBackgroundFillDefault}"
                     Example="Display"
                     ExampleFontTypography="Display"
                     SizeLinHeight="68/92"

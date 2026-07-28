@@ -46,7 +46,7 @@
                         Padding="{TemplateBinding Padding}"
                         HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
                         VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
-                        Foreground="{m:BrushResource TextPlaceholderColorBrush}" />
+                        Foreground="{m:DynamicBrush TextPlaceholder}" />
 
                     <!--  A converter is used to simulate the TextEditor's 2,0,2,0 margin, since Padding may not be honored.  -->
                     <ContentPresenter
@@ -68,7 +68,7 @@
                         Margin="8,0,10,0"
                         VerticalAlignment="Center"
                         FontSize="11"
-                        Foreground="{m:BrushResource TextFillColorSecondaryBrush}"
+                        Foreground="{m:DynamicBrush TextFillSecondary}"
                         RenderTransformOrigin="0.5, 0.5"
                         Symbol="ChevronDown24">
                         <controls:SymbolIcon.RenderTransform>
@@ -126,7 +126,7 @@
             </Border>
             <Border
                 x:Name="AccentBorder"
-                BorderBrush="{m:BrushResource AccentStrokeBrush}"
+                BorderBrush="{m:DynamicBrush AccentStroke}"
                 BorderThickness="0,0,0,2"
                 CornerRadius="{TemplateBinding Border.CornerRadius}"
                 IsHitTestVisible="False"
@@ -151,10 +151,10 @@
                     MaxHeight="{TemplateBinding MaxDropDownHeight}"
                     Margin="0"
                     Padding="0,4,0,6"
-                    Background="{m:BrushResource AcrylicBackgroundFillColorDefaultBrush}"
-                    BorderBrush="{m:BrushResource SurfaceStrokeColorDefaultBrush}"
+                    Background="{m:DynamicBrush AcrylicBackgroundFillDefault}"
+                    BorderBrush="{m:DynamicBrush SurfaceStrokeDefault}"
                     BorderThickness="1"
-                    CornerRadius="{m:VariableResource PopupCornerRadius}"
+                    CornerRadius="{m:DynamicValue PopupCornerRadius}"
                     SnapsToDevicePixels="True">
                     <controls:PassiveScrollViewer
                         Margin="0"
@@ -222,27 +222,27 @@
             </Trigger>
 
             <Trigger Property="IsMouseOver" Value="True">
-                <Setter TargetName="ContentBorder" Property="Background" Value="{m:BrushResource ControlFillColorPrimaryBrush}" />
+                <Setter TargetName="ContentBorder" Property="Background" Value="{m:DynamicBrush ControlFillPrimary}" />
             </Trigger>
             <MultiTrigger>
                 <MultiTrigger.Conditions>
                     <Condition Property="IsEditable" Value="False" />
                     <Condition Property="IsDropDownOpen" Value="True" />
                 </MultiTrigger.Conditions>
-                <Setter TargetName="ContentBorder" Property="Background" Value="{m:BrushResource ControlFillColorTertiaryBrush}" />
+                <Setter TargetName="ContentBorder" Property="Background" Value="{m:DynamicBrush ControlFillTertiary}" />
             </MultiTrigger>
             <MultiTrigger>
                 <MultiTrigger.Conditions>
                     <Condition Property="IsKeyboardFocusWithin" Value="True" />
                     <Condition Property="IsEditable" Value="True" />
                 </MultiTrigger.Conditions>
-                <Setter TargetName="ContentBorder" Property="Background" Value="{m:BrushResource ControlFillColorInputActiveBrush}" />
+                <Setter TargetName="ContentBorder" Property="Background" Value="{m:DynamicBrush ControlFillInputActive}" />
                 <Setter TargetName="AccentBorder" Property="Visibility" Value="Visible" />
             </MultiTrigger>
             <Trigger Property="IsEnabled" Value="False">
-                <Setter TargetName="ContentBorder" Property="Background" Value="{m:BrushResource ControlFillColorDisabledBrush}" />
-                <Setter TargetName="ContentBorder" Property="BorderBrush" Value="{m:BrushResource ControlStrokeColorDefaultBrush}" />
-                <Setter Property="Foreground" Value="{m:BrushResource TextFillColorDisabledBrush}" />
+                <Setter TargetName="ContentBorder" Property="Background" Value="{m:DynamicBrush ControlFillDisabled}" />
+                <Setter TargetName="ContentBorder" Property="BorderBrush" Value="{m:DynamicBrush ControlStrokeDefault}" />
+                <Setter Property="Foreground" Value="{m:DynamicBrush TextFillDisabled}" />
                 <Setter TargetName="PART_Placeholder" Property="Opacity" Value="0.5" />
             </Trigger>
         </ControlTemplate.Triggers>

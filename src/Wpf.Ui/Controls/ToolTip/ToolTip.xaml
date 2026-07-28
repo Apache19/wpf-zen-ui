@@ -13,10 +13,10 @@
 
     <Style x:Key="UiToolTipStyle" TargetType="{x:Type ToolTip}">
         <Setter Property="MaxWidth" Value="260" />
-        <Setter Property="FontSize" Value="{m:VariableResource ControlContentThemeFontSize}" />
-        <Setter Property="Foreground" Value="{m:BrushResource TextFillColorPrimaryBrush}" />
-        <Setter Property="Background" Value="{m:BrushResource AcrylicBackgroundFillColorDefaultBrush}" />
-        <Setter Property="BorderBrush" Value="{m:BrushResource SurfaceStrokeColorFlyoutBrush}" />
+        <Setter Property="FontSize" Value="{m:DynamicValue ControlContentThemeFontSize}" />
+        <Setter Property="Foreground" Value="{m:DynamicBrush TextFillPrimary}" />
+        <Setter Property="Background" Value="{m:DynamicBrush AcrylicBackgroundFillDefault}" />
+        <Setter Property="BorderBrush" Value="{m:DynamicBrush SurfaceStrokeFlyout}" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
         <Setter Property="HasDropShadow" Value="True" />
         <Setter Property="controls:PopupAnimator.IsEnabled" Value="True" />

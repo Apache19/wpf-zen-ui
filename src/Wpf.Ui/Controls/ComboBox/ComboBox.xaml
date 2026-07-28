@@ -47,7 +47,7 @@
                         Padding="{TemplateBinding Padding}"
                         HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
                         VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
-                        Foreground="{m:BrushResource TextPlaceholderColorBrush}" />
+                        Foreground="{m:DynamicBrush TextPlaceholder}" />
 
                     <!--  A converter is used to simulate the TextEditor's 2,0,2,0 margin, since Padding may not be honored.  -->
                     <ContentPresenter
@@ -69,7 +69,7 @@
                         Margin="8,0,10,0"
                         VerticalAlignment="Center"
                         FontSize="11"
-                        Foreground="{m:BrushResource TextFillColorSecondaryBrush}"
+                        Foreground="{m:DynamicBrush TextFillSecondary}"
                         RenderTransformOrigin="0.5, 0.5"
                         Symbol="ChevronDown24">
                         <controls:SymbolIcon.RenderTransform>
@@ -128,7 +128,7 @@
             </Border>
             <Border
                 x:Name="AccentBorder"
-                BorderBrush="{m:BrushResource AccentStrokeBrush}"
+                BorderBrush="{m:DynamicBrush AccentStroke}"
                 BorderThickness="0,0,0,2"
                 CornerRadius="{TemplateBinding Border.CornerRadius}"
                 IsHitTestVisible="False"
@@ -152,10 +152,10 @@
                     MaxHeight="{TemplateBinding MaxDropDownHeight}"
                     Margin="0"
                     Padding="0,4,0,6"
-                    Background="{m:BrushResource AcrylicBackgroundFillColorDefaultBrush}"
-                    BorderBrush="{m:BrushResource SurfaceStrokeColorDefaultBrush}"
+                    Background="{m:DynamicBrush AcrylicBackgroundFillDefault}"
+                    BorderBrush="{m:DynamicBrush SurfaceStrokeDefault}"
                     BorderThickness="1"
-                    CornerRadius="{m:VariableResource PopupCornerRadius}"
+                    CornerRadius="{m:DynamicValue PopupCornerRadius}"
                     SnapsToDevicePixels="True">
                     <controls:PassiveScrollViewer
                         Margin="0"
@@ -238,12 +238,12 @@
     <Style x:Key="{x:Static t:StyleKeys.UiComboBoxStyle}" BasedOn="{StaticResource ComboBoxBaseStyle}" TargetType="{x:Type controls:ComboBox}">
         <Setter Property="ItemContainerStyle" Value="{StaticResource {x:Static t:StyleKeys.DefaultComboBoxItemStyle}}" />
         <Setter Property="Template" Value="{StaticResource UiComboBoxTemplate}" />
-        <Setter Property="MouseOverBackground" Value="{m:BrushResource ControlFillColorPrimaryBrush}" />
-        <Setter Property="FocusedBackground" Value="{m:BrushResource ControlFillColorInputActiveBrush}" />
-        <Setter Property="DropDownOpenBackground" Value="{m:BrushResource ControlFillColorTertiaryBrush}" />
-        <Setter Property="DisabledForeground" Value="{m:BrushResource TextFillColorDisabledBrush}" />
-        <Setter Property="DisabledBackground" Value="{m:BrushResource ControlFillColorDisabledBrush}" />
-        <Setter Property="DisabledBorderBrush" Value="{m:BrushResource ControlStrokeColorDefaultBrush}" />
+        <Setter Property="MouseOverBackground" Value="{m:DynamicBrush ControlFillPrimary}" />
+        <Setter Property="FocusedBackground" Value="{m:DynamicBrush ControlFillInputActive}" />
+        <Setter Property="DropDownOpenBackground" Value="{m:DynamicBrush ControlFillTertiary}" />
+        <Setter Property="DisabledForeground" Value="{m:DynamicBrush TextFillDisabled}" />
+        <Setter Property="DisabledBackground" Value="{m:DynamicBrush ControlFillDisabled}" />
+        <Setter Property="DisabledBorderBrush" Value="{m:DynamicBrush ControlStrokeDefault}" />
         <Style.Triggers>
             <MultiTrigger>
                 <MultiTrigger.Conditions>
@@ -255,7 +255,7 @@
                     quieter focused fill matches TextBox while leaving non-editable selectors
                     unaffected; a local FocusedBackground still has higher precedence.
                 -->
-                <Setter Property="FocusedBackground" Value="{m:BrushResource ControlFillColorTertiaryBrush}" />
+                <Setter Property="FocusedBackground" Value="{m:DynamicBrush ControlFillTertiary}" />
             </MultiTrigger>
         </Style.Triggers>
     </Style>

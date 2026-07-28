@@ -47,7 +47,7 @@ ThemeManager.Configure(
 
 ## 主题色资源
 
-每个角色都有对应的颜色（`ColorKeys` 和 `ColorId`）和画刷（`BrushKeys` 和 `BrushId`）：
+每个角色都有对应的颜色（`ColorKeys` 和 `ColorToken`）和画刷（`BrushKeys` 和 `BrushToken`）：
 
 - `AccentFillPrimary` 是较亮的填充层级。
 - `AccentFillSecondary` 是常规的填充层级。
@@ -62,10 +62,10 @@ ThemeManager.Configure(
 
 ```xml
 <Style TargetType="ui:Button">
-    <Setter Property="Background" Value="{ui:BrushResource AccentFillSecondaryBrush}" />
-    <Setter Property="MouseOverBackground" Value="{ui:BrushResource AccentFillPrimaryBrush}" />
-    <Setter Property="PressedBackground" Value="{ui:BrushResource AccentFillTertiaryBrush}" />
-    <Setter Property="Foreground" Value="{ui:BrushResource TextOnAccentPrimaryBrush}" />
+    <Setter Property="Background" Value="{ui:DynamicBrush AccentFillSecondary}" />
+    <Setter Property="MouseOverBackground" Value="{ui:DynamicBrush AccentFillPrimary}" />
+    <Setter Property="PressedBackground" Value="{ui:DynamicBrush AccentFillTertiary}" />
+    <Setter Property="Foreground" Value="{ui:DynamicBrush TextOnAccentPrimary}" />
 </Style>
 ```
 

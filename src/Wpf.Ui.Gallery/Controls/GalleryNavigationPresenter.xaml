@@ -33,19 +33,19 @@
                                         <ui:SymbolIcon
                                             FontSize="30"
                                             Symbol="{Binding Icon, Mode=OneTime}"
-                                            TextElement.Foreground="{ui:BrushResource TextFillColorPrimaryBrush}" />
+                                            TextElement.Foreground="{ui:DynamicBrush TextFillPrimary}" />
                                     </ui:CardAction.Icon>
                                     <StackPanel>
                                         <ui:TextBlock
                                             FontSize="16"
                                             FontTypography="BodyStrong"
-                                            Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
+                                            Foreground="{ui:DynamicBrush TextFillPrimary}"
                                             Text="{Binding Name, Mode=OneTime}"
                                             TextWrapping="Wrap" />
                                         <ui:TextBlock
                                             Appearance="Secondary"
                                             FontSize="12"
-                                            Foreground="{ui:BrushResource TextFillColorSecondaryBrush}"
+                                            Foreground="{ui:DynamicBrush TextFillSecondary}"
                                             Text="{Binding Description, Mode=OneTime}"
                                             TextWrapping="Wrap" />
                                     </StackPanel>

@@ -10,7 +10,7 @@
     d:DesignHeight="450"
     d:DesignWidth="800"
     ui:Theme.ApplyToRootVisual="True"
-    Background="{ui:BrushResource WindowBackgroundBrush}"
+    Background="{ui:DynamicBrush WindowBackground}"
     mc:Ignorable="d">
 
     <UserControl.Resources>

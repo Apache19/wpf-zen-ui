@@ -748,9 +748,9 @@ public class SplitButtonTests
     }
 
     [Fact]
-    public void StyleResourceExtension_MapsTheSplitButtonComponentKey()
+    public void DynamicStyleExtension_MapsTheSplitButtonComponentKey()
     {
-        var extension = new StyleResourceExtension(StyleId.UiSplitButtonStyle);
+        var extension = new DynamicStyleExtension(StyleToken.UiSplitButton);
 
         Assert.Same(StyleKeys.UiSplitButtonStyle, extension.ResourceKey);
     }

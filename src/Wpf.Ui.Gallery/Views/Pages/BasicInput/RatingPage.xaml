@@ -10,17 +10,17 @@
     xmlns:vm="clr-namespace:Wpf.Ui.Gallery.ViewModels.Pages.BasicInput"
     Title="RatingPage"
     controls:PageControlDocumentation.DocumentationType="{x:Type ui:RatingControl}"
-    d:Background="{ui:BrushResource WindowBackgroundBrush}"
+    d:Background="{ui:DynamicBrush WindowBackground}"
     d:DataContext="{d:DesignInstance vm:RatingViewModel, IsDesignTimeCreatable=False}"
     d:DesignWidth="800"
-    Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
-    Style="{ui:StyleResource DynamicScrollPageStyle}"
+    Foreground="{ui:DynamicBrush TextFillPrimary}"
+    Style="{ui:DynamicStyle DynamicScrollPage}"
     mc:Ignorable="d">
 
     <StackPanel Margin="0,0,0,24">
         <controls:ControlExample
             Margin="0"
-            Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
+            Foreground="{ui:DynamicBrush TextFillPrimary}"
             HeaderText="WPF UI rating."
             XamlCode="&lt;ui:RatingControl /&gt;">
             <Grid>

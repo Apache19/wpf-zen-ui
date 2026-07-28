@@ -9,8 +9,8 @@
     Title="Terms of use"
     d:DesignHeight="1000"
     d:DesignWidth="750"
-    d:Background="{ui:BrushResource WindowBackgroundBrush}"
-    d:Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
+    d:Background="{ui:DynamicBrush WindowBackground}"
+    d:Foreground="{ui:DynamicBrush TextFillPrimary}"
     CloseButtonText="Close"
     DialogMaxWidth="750"
     mc:Ignorable="d">

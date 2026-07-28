@@ -9,11 +9,11 @@
     xmlns:vm="clr-namespace:Wpf.Ui.Gallery.ViewModels.Pages.BasicInput"
     Title="ButtonPage"
     controls:PageControlDocumentation.DocumentationType="{x:Type ui:Button}"
-    d:Background="{ui:BrushResource WindowBackgroundBrush}"
+    d:Background="{ui:DynamicBrush WindowBackground}"
     d:DataContext="{d:DesignInstance vm:ButtonViewModel, IsDesignTimeCreatable=True}"
     d:DesignWidth="800"
-    Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
-    Style="{ui:StyleResource DynamicScrollPageStyle}"
+    Foreground="{ui:DynamicBrush TextFillPrimary}"
+    Style="{ui:DynamicStyle DynamicScrollPage}"
     mc:Ignorable="d">
 
     <Page.Resources>
@@ -142,8 +142,8 @@
                 HorizontalAlignment="Left"
                 ContentTemplate="{StaticResource ViewBoxCustomButtonContentTemplate}">
                 <Canvas Width="47" Height="99">
-                    <Path Data="M0,19H18V84h29v15H0V19Z" Fill="{ui:BrushResource TextFillColorSecondaryBrush}" />
-                    <Path Data="M46,80H29V15H0V0H46V80Z" Fill="{ui:BrushResource TextFillColorSecondaryBrush}" />
+                    <Path Data="M0,19H18V84h29v15H0V19Z" Fill="{ui:DynamicBrush TextFillSecondary}" />
+                    <Path Data="M46,80H29V15H0V0H46V80Z" Fill="{ui:DynamicBrush TextFillSecondary}" />
                 </Canvas>
             </ui:Button>
         </controls:ControlExample>

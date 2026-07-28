@@ -13,7 +13,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Ui.Controls"
     xmlns:theming="clr-namespace:Wpf.Ui.Theming"
-    xmlns:markup="clr-namespace:Wpf.Ui.Markup">
+    xmlns:m="clr-namespace:Wpf.Ui.Markup">
 
     <Thickness x:Key="HyperlinkButtonPadding">11,5,11,6</Thickness>
     <Thickness x:Key="HyperlinkButtonBorderThemeThickness">0</Thickness>
@@ -23,8 +23,8 @@
         <!--  Universal WPF UI focus  -->
         <Setter Property="FocusVisualStyle" Value="{DynamicResource {x:Static theming:StyleKeys.DefaultControlFocusVisualStyle}}" />
         <!--  Universal WPF UI focus  -->
-        <Setter Property="Background" Value="{markup:BrushResource SubtleFillColorTransparentBrush}" />
-        <Setter Property="Foreground" Value="{markup:BrushResource AccentTextPrimaryBrush}" />
+        <Setter Property="Background" Value="{m:DynamicBrush SubtleFillTransparent}" />
+        <Setter Property="Foreground" Value="{m:DynamicBrush AccentTextPrimary}" />
         <Setter Property="BorderThickness" Value="{StaticResource HyperlinkButtonBorderThemeThickness}" />
         <Setter Property="BorderBrush" Value="Transparent" />
         <Setter Property="Padding" Value="{StaticResource HyperlinkButtonPadding}" />
@@ -34,7 +34,7 @@
         <Setter Property="VerticalContentAlignment" Value="Center" />
         <Setter Property="FontWeight" Value="Normal" />
         <Setter Property="Cursor" Value="Hand" />
-        <Setter Property="CornerRadius" Value="{DynamicResource {x:Static theming:VariableKeys.ControlCornerRadius}}" />
+        <Setter Property="CornerRadius" Value="{m:DynamicValue ControlCornerRadius}" />
         <Setter Property="Appearance" Value="Normal" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
         <Setter Property="Template">
@@ -82,26 +82,26 @@
                                 <Condition Property="IsMouseOver" Value="True" />
                                 <Condition Property="IsPressed" Value="False" />
                             </MultiTrigger.Conditions>
-                            <Setter TargetName="ContentBorder" Property="Background" Value="{markup:BrushResource SubtleFillColorSecondaryBrush}" />
-                            <Setter TargetName="ContentPresenter" Property="TextElement.Foreground" Value="{markup:BrushResource AccentTextSecondaryBrush}" />
+                            <Setter TargetName="ContentBorder" Property="Background" Value="{m:DynamicBrush SubtleFillSecondary}" />
+                            <Setter TargetName="ContentPresenter" Property="TextElement.Foreground" Value="{m:DynamicBrush AccentTextSecondary}" />
                         </MultiTrigger>
                         <MultiTrigger>
                             <MultiTrigger.Conditions>
                                 <Condition Property="IsMouseOver" Value="True" />
                                 <Condition Property="IsPressed" Value="True" />
                             </MultiTrigger.Conditions>
-                            <Setter Property="Background" Value="{markup:BrushResource SubtleFillColorTertiaryBrush}" />
-                            <Setter TargetName="ControlIcon" Property="Foreground" Value="{markup:BrushResource AccentTextPrimaryBrush}" />
-                            <Setter TargetName="ContentPresenter" Property="TextElement.Foreground" Value="{markup:BrushResource AccentTextPrimaryBrush}" />
+                            <Setter Property="Background" Value="{m:DynamicBrush SubtleFillTertiary}" />
+                            <Setter TargetName="ControlIcon" Property="Foreground" Value="{m:DynamicBrush AccentTextPrimary}" />
+                            <Setter TargetName="ContentPresenter" Property="TextElement.Foreground" Value="{m:DynamicBrush AccentTextPrimary}" />
                         </MultiTrigger>
                         <Trigger Property="Icon" Value="{x:Null}">
                             <Setter TargetName="ControlIcon" Property="Margin" Value="0" />
                             <Setter TargetName="ControlIcon" Property="Visibility" Value="Collapsed" />
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter Property="Background" Value="{markup:BrushResource SubtleFillColorDisabledBrush}" />
-                            <Setter TargetName="ControlIcon" Property="Foreground" Value="{markup:BrushResource TextFillColorDisabledBrush}" />
-                            <Setter TargetName="ContentPresenter" Property="TextElement.Foreground" Value="{markup:BrushResource TextFillColorDisabledBrush}" />
+                            <Setter Property="Background" Value="{m:DynamicBrush SubtleFillDisabled}" />
+                            <Setter TargetName="ControlIcon" Property="Foreground" Value="{m:DynamicBrush TextFillDisabled}" />
+                            <Setter TargetName="ContentPresenter" Property="TextElement.Foreground" Value="{m:DynamicBrush TextFillDisabled}" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>

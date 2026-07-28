@@ -11,9 +11,9 @@
     d:DataContext="{d:DesignInstance vm:MultilevelNavigationSample,
                                      IsDesignTimeCreatable=False}"
     d:DesignWidth="800"
-    d:Background="{ui:BrushResource WindowBackgroundBrush}"
-    Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
-    Style="{ui:StyleResource DynamicScrollPageStyle}"
+    d:Background="{ui:DynamicBrush WindowBackground}"
+    Foreground="{ui:DynamicBrush TextFillPrimary}"
+    Style="{ui:DynamicStyle DynamicScrollPage}"
     ui:NavigationView.HeaderContent="Page 2"
     mc:Ignorable="d">
 

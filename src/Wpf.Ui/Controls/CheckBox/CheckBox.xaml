@@ -21,11 +21,11 @@
     <Style x:Key="{x:Static t:StyleKeys.DefaultCheckBoxStyle}" TargetType="{x:Type CheckBox}">
         <Setter Property="OverridesDefaultStyle" Value="True" />
         <Setter Property="FocusVisualStyle" Value="{DynamicResource {x:Static t:StyleKeys.DefaultControlFocusVisualStyle}}" />
-        <Setter Property="Background" Value="{m:BrushResource ControlAltFillColorSecondaryBrush}" />
-        <Setter Property="BorderBrush" Value="{m:BrushResource ControlStrongStrokeColorDefaultBrush}" />
+        <Setter Property="Background" Value="{m:DynamicBrush ControlAltFillSecondary}" />
+        <Setter Property="BorderBrush" Value="{m:DynamicBrush ControlStrongStrokeDefault}" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="Padding" Value="11,5,11,6" />
-        <Setter Property="Border.CornerRadius" Value="{DynamicResource {x:Static t:VariableKeys.ControlCornerRadius}}" />
+        <Setter Property="Border.CornerRadius" Value="{m:DynamicValue ControlCornerRadius}" />
         <Setter Property="HorizontalAlignment" Value="Left" />
         <Setter Property="VerticalAlignment" Value="Center" />
         <Setter Property="HorizontalContentAlignment" Value="Left" />
@@ -64,7 +64,7 @@
                                         controls:ClipExtensions.ObserveSizeChanges="True"
                                         FontSize="13"
                                         FontWeight="Bold"
-                                        Foreground="{m:BrushResource TextOnAccentPrimaryBrush}"
+                                        Foreground="{m:DynamicBrush TextOnAccentPrimary}"
                                         Symbol="Checkmark48"
                                         Visibility="Collapsed" />
                                 </Border>
@@ -89,13 +89,13 @@
                         <Trigger Property="IsChecked" Value="{x:Null}">
                             <Setter TargetName="ControlIcon" Property="Symbol" Value="Subtract16" />
                             <Setter TargetName="ControlIcon" Property="Visibility" Value="Visible" />
-                            <Setter TargetName="ControlBorderIconPresenter" Property="Background" Value="{m:BrushResource AccentFillSecondaryBrush}" />
-                            <Setter TargetName="StrokeBorder" Property="BorderBrush" Value="{m:BrushResource SubtleFillColorTransparentBrush}" />
+                            <Setter TargetName="ControlBorderIconPresenter" Property="Background" Value="{m:DynamicBrush AccentFillSecondary}" />
+                            <Setter TargetName="StrokeBorder" Property="BorderBrush" Value="{m:DynamicBrush SubtleFillTransparent}" />
                         </Trigger>
                         <Trigger Property="IsChecked" Value="True">
                             <Setter TargetName="ControlIcon" Property="Visibility" Value="Visible" />
-                            <Setter TargetName="ControlBorderIconPresenter" Property="Background" Value="{m:BrushResource AccentFillSecondaryBrush}" />
-                            <Setter TargetName="StrokeBorder" Property="BorderBrush" Value="{m:BrushResource SubtleFillColorTransparentBrush}" />
+                            <Setter TargetName="ControlBorderIconPresenter" Property="Background" Value="{m:DynamicBrush AccentFillSecondary}" />
+                            <Setter TargetName="StrokeBorder" Property="BorderBrush" Value="{m:DynamicBrush SubtleFillTransparent}" />
                             <Trigger.EnterActions>
                                 <BeginStoryboard Name="SlideIn">
                                     <Storyboard>
@@ -129,7 +129,7 @@
                                 <Condition Property="IsPressed" Value="False" />
                                 <Condition Property="IsChecked" Value="False" />
                             </MultiTrigger.Conditions>
-                            <Setter TargetName="StrokeBorder" Property="Background" Value="{m:BrushResource ControlAltFillColorTertiaryBrush}" />
+                            <Setter TargetName="StrokeBorder" Property="Background" Value="{m:DynamicBrush ControlAltFillTertiary}" />
                         </MultiTrigger>
                         <MultiTrigger>
                             <MultiTrigger.Conditions>
@@ -137,7 +137,7 @@
                                 <Condition Property="IsPressed" Value="True" />
                                 <Condition Property="IsChecked" Value="False" />
                             </MultiTrigger.Conditions>
-                            <Setter TargetName="StrokeBorder" Property="Background" Value="{m:BrushResource ControlAltFillColorQuarternaryBrush}" />
+                            <Setter TargetName="StrokeBorder" Property="Background" Value="{m:DynamicBrush ControlAltFillQuarternary}" />
                         </MultiTrigger>
                         <MultiTrigger>
                             <MultiTrigger.Conditions>
@@ -145,8 +145,8 @@
                                 <Condition Property="IsPressed" Value="False" />
                                 <Condition Property="IsChecked" Value="{x:Null}" />
                             </MultiTrigger.Conditions>
-                            <Setter TargetName="ControlBorderIconPresenter" Property="Background" Value="{m:BrushResource AccentFillPrimaryBrush}" />
-                            <Setter TargetName="StrokeBorder" Property="BorderBrush" Value="{m:BrushResource SubtleFillColorTransparentBrush}" />
+                            <Setter TargetName="ControlBorderIconPresenter" Property="Background" Value="{m:DynamicBrush AccentFillPrimary}" />
+                            <Setter TargetName="StrokeBorder" Property="BorderBrush" Value="{m:DynamicBrush SubtleFillTransparent}" />
                         </MultiTrigger>
                         <MultiTrigger>
                             <MultiTrigger.Conditions>
@@ -154,8 +154,8 @@
                                 <Condition Property="IsPressed" Value="True" />
                                 <Condition Property="IsChecked" Value="{x:Null}" />
                             </MultiTrigger.Conditions>
-                            <Setter TargetName="ControlBorderIconPresenter" Property="Background" Value="{m:BrushResource AccentFillTertiaryBrush}" />
-                            <Setter TargetName="StrokeBorder" Property="BorderBrush" Value="{m:BrushResource SubtleFillColorTransparentBrush}" />
+                            <Setter TargetName="ControlBorderIconPresenter" Property="Background" Value="{m:DynamicBrush AccentFillTertiary}" />
+                            <Setter TargetName="StrokeBorder" Property="BorderBrush" Value="{m:DynamicBrush SubtleFillTransparent}" />
                         </MultiTrigger>
                         <MultiTrigger>
                             <MultiTrigger.Conditions>
@@ -163,8 +163,8 @@
                                 <Condition Property="IsPressed" Value="False" />
                                 <Condition Property="IsChecked" Value="True" />
                             </MultiTrigger.Conditions>
-                            <Setter TargetName="ControlBorderIconPresenter" Property="Background" Value="{m:BrushResource AccentFillPrimaryBrush}" />
-                            <Setter TargetName="StrokeBorder" Property="BorderBrush" Value="{m:BrushResource SubtleFillColorTransparentBrush}" />
+                            <Setter TargetName="ControlBorderIconPresenter" Property="Background" Value="{m:DynamicBrush AccentFillPrimary}" />
+                            <Setter TargetName="StrokeBorder" Property="BorderBrush" Value="{m:DynamicBrush SubtleFillTransparent}" />
                         </MultiTrigger>
                         <MultiTrigger>
                             <MultiTrigger.Conditions>
@@ -172,14 +172,14 @@
                                 <Condition Property="IsPressed" Value="True" />
                                 <Condition Property="IsChecked" Value="True" />
                             </MultiTrigger.Conditions>
-                            <Setter TargetName="ControlBorderIconPresenter" Property="Background" Value="{m:BrushResource AccentFillTertiaryBrush}" />
-                            <Setter TargetName="StrokeBorder" Property="BorderBrush" Value="{m:BrushResource SubtleFillColorTransparentBrush}" />
+                            <Setter TargetName="ControlBorderIconPresenter" Property="Background" Value="{m:DynamicBrush AccentFillTertiary}" />
+                            <Setter TargetName="StrokeBorder" Property="BorderBrush" Value="{m:DynamicBrush SubtleFillTransparent}" />
                         </MultiTrigger>
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter TargetName="ControlBorderIconPresenter" Property="Background" Value="{m:BrushResource ControlAltFillColorDisabledBrush}" />
-                            <Setter TargetName="StrokeBorder" Property="BorderBrush" Value="{m:BrushResource ControlStrongStrokeColorDisabledBrush}" />
-                            <Setter TargetName="ControlIcon" Property="Foreground" Value="{m:BrushResource TextFillColorDisabledBrush}" />
-                            <Setter Property="Foreground" Value="{m:BrushResource TextFillColorDisabledBrush}" />
+                            <Setter TargetName="ControlBorderIconPresenter" Property="Background" Value="{m:DynamicBrush ControlAltFillDisabled}" />
+                            <Setter TargetName="StrokeBorder" Property="BorderBrush" Value="{m:DynamicBrush ControlStrongStrokeDisabled}" />
+                            <Setter TargetName="ControlIcon" Property="Foreground" Value="{m:DynamicBrush TextFillDisabled}" />
+                            <Setter Property="Foreground" Value="{m:DynamicBrush TextFillDisabled}" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>

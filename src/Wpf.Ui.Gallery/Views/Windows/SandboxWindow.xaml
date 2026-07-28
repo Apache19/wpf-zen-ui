@@ -13,11 +13,11 @@
     Width="1450"
     Height="802"
     MinWidth="900"
-    d:Background="{ui:BrushResource WindowBackgroundBrush}"
+    d:Background="{ui:DynamicBrush WindowBackground}"
     d:DataContext="{d:DesignInstance local:SandboxWindow, IsDesignTimeCreatable=False}"
     d:DesignHeight="650"
     d:DesignWidth="1000"
-    d:Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
+    d:Foreground="{ui:DynamicBrush TextFillPrimary}"
     WindowStartupLocation="CenterScreen"
     mc:Ignorable="d">
     <ui:FluentWindow.Resources>
@@ -82,10 +82,10 @@
                     </MenuItem>
                 </Menu>
                 <Menu Grid.Column="1" HorizontalAlignment="Right">
-                    <MenuItem Foreground="{ui:BrushResource PaletteDeepOrangeBrush}" Icon="{ui:SymbolIcon Fire24, True}" />
-                    <MenuItem Foreground="{ui:BrushResource PaletteGreenBrush}" Icon="{ui:SymbolIcon Play24}" />
-                    <MenuItem Foreground="{ui:BrushResource PaletteRedBrush}" Icon="{ui:SymbolIcon Stop24}" />
-                    <MenuItem Foreground="{ui:BrushResource PaletteLightBlueBrush}" Icon="{ui:SymbolIcon ArrowClockwise24}" />
+                    <MenuItem Foreground="{ui:DynamicBrush PaletteDeepOrange}" Icon="{ui:SymbolIcon Fire24, True}" />
+                    <MenuItem Foreground="{ui:DynamicBrush PaletteGreen}" Icon="{ui:SymbolIcon Play24}" />
+                    <MenuItem Foreground="{ui:DynamicBrush PaletteRed}" Icon="{ui:SymbolIcon Stop24}" />
+                    <MenuItem Foreground="{ui:DynamicBrush PaletteLightBlue}" Icon="{ui:SymbolIcon ArrowClockwise24}" />
                 </Menu>
             </Grid>
         </ui:TitleBar>

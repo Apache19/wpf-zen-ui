@@ -114,16 +114,16 @@
                             <Setter TargetName="IconPresenter" Property="Visibility" Value="Collapsed" />
                         </Trigger>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="ItemBorder" Property="Background" Value="{m:BrushResource SubtleFillColorSecondaryBrush}" />
+                            <Setter TargetName="ItemBorder" Property="Background" Value="{m:DynamicBrush SubtleFillSecondary}" />
                         </Trigger>
                         <Trigger Property="IsHighlighted" Value="True">
-                            <Setter TargetName="ItemBorder" Property="Background" Value="{m:BrushResource SubtleFillColorSecondaryBrush}" />
+                            <Setter TargetName="ItemBorder" Property="Background" Value="{m:DynamicBrush SubtleFillSecondary}" />
                         </Trigger>
                         <Trigger Property="IsPressed" Value="True">
-                            <Setter TargetName="ItemBorder" Property="Background" Value="{m:BrushResource SubtleFillColorTertiaryBrush}" />
+                            <Setter TargetName="ItemBorder" Property="Background" Value="{m:DynamicBrush SubtleFillTertiary}" />
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter Property="Foreground" Value="{m:BrushResource TextFillColorDisabledBrush}" />
+                            <Setter Property="Foreground" Value="{m:DynamicBrush TextFillDisabled}" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>

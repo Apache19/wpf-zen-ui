@@ -16,7 +16,7 @@
     xmlns:converters="clr-namespace:Wpf.Ui.Converters"
     xmlns:theming="clr-namespace:Wpf.Ui.Theming"
     xmlns:system="clr-namespace:System;assembly=System.Runtime"
-    xmlns:markup="clr-namespace:Wpf.Ui.Markup">
+    xmlns:m="clr-namespace:Wpf.Ui.Markup">
 
     <Thickness x:Key="CardExpanderPadding">14,16,14,16</Thickness>
     <Thickness x:Key="CardExpanderBorderThemeThickness">1</Thickness>
@@ -89,9 +89,9 @@
         <!--  Universal WPF UI focus  -->
         <Setter Property="FocusVisualStyle" Value="{DynamicResource {x:Static theming:StyleKeys.DefaultControlFocusVisualStyle}}" />
         <!--  Universal WPF UI focus  -->
-        <Setter Property="Background" Value="{markup:BrushResource CardBackgroundFillColorDefaultBrush}" />
-        <Setter Property="Foreground" Value="{markup:BrushResource TextFillColorPrimaryBrush}" />
-        <Setter Property="BorderBrush" Value="{markup:BrushResource CardStrokeColorDefaultBrush}" />
+        <Setter Property="Background" Value="{m:DynamicBrush CardBackgroundFillDefault}" />
+        <Setter Property="Foreground" Value="{m:DynamicBrush TextFillPrimary}" />
+        <Setter Property="BorderBrush" Value="{m:DynamicBrush CardStrokeDefault}" />
         <Setter Property="BorderThickness" Value="{StaticResource CardExpanderBorderThemeThickness}" />
         <Setter Property="Padding" Value="{StaticResource CardExpanderPadding}" />
         <Setter Property="ContentPadding" Value="{StaticResource CardExpanderPadding}" />
@@ -99,9 +99,9 @@
         <Setter Property="VerticalAlignment" Value="Center" />
         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
-        <Setter Property="FontSize" Value="{DynamicResource {x:Static theming:VariableKeys.ControlContentThemeFontSize}}" />
+        <Setter Property="FontSize" Value="{m:DynamicValue ControlContentThemeFontSize}" />
         <Setter Property="FontWeight" Value="Normal" />
-        <Setter Property="CornerRadius" Value="{DynamicResource {x:Static theming:VariableKeys.ControlCornerRadius}}" />
+        <Setter Property="CornerRadius" Value="{m:DynamicValue ControlCornerRadius}" />
         <Setter Property="IsExpanded" Value="False" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
         <Setter Property="Template">
@@ -176,7 +176,7 @@
                         <Grid Grid.Row="1" ClipToBounds="True">
                             <Border
                                 x:Name="ContentPresenterBorder"
-                                Background="{markup:BrushResource CardBackgroundFillColorDefaultBrush}"
+                                Background="{m:DynamicBrush CardBackgroundFillDefault}"
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="1,0,1,1"
                                 Visibility="Collapsed">
@@ -243,10 +243,10 @@
                             </Trigger.ExitActions>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter Property="Background" Value="{markup:BrushResource ControlFillColorDisabledBrush}" />
-                            <Setter Property="BorderBrush" Value="{markup:BrushResource ControlStrokeColorDefaultBrush}" />
-                            <Setter TargetName="ContentPresenter" Property="TextElement.Foreground" Value="{markup:BrushResource TextFillColorDisabledBrush}" />
-                            <Setter TargetName="ExpanderToggleButton" Property="Foreground" Value="{markup:BrushResource TextFillColorDisabledBrush}" />
+                            <Setter Property="Background" Value="{m:DynamicBrush ControlFillDisabled}" />
+                            <Setter Property="BorderBrush" Value="{m:DynamicBrush ControlStrokeDefault}" />
+                            <Setter TargetName="ContentPresenter" Property="TextElement.Foreground" Value="{m:DynamicBrush TextFillDisabled}" />
+                            <Setter TargetName="ExpanderToggleButton" Property="Foreground" Value="{m:DynamicBrush TextFillDisabled}" />
                         </Trigger>
                         <Trigger Property="Icon" Value="{x:Null}">
                             <Setter TargetName="ControlIcon" Property="Margin" Value="0" />

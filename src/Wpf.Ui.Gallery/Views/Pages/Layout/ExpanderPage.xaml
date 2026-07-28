@@ -8,10 +8,10 @@
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
     xmlns:vm="clr-namespace:Wpf.Ui.Gallery.ViewModels.Pages.Layout"
     Title="ExpanderPage"
-    Style="{ui:StyleResource DynamicScrollPageStyle}"
-    d:Background="{ui:BrushResource WindowBackgroundBrush}"
+    Style="{ui:DynamicStyle DynamicScrollPage}"
+    d:Background="{ui:DynamicBrush WindowBackground}"
     d:DesignWidth="800"
-    Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
+    Foreground="{ui:DynamicBrush TextFillPrimary}"
     d:DataContext="{d:DesignInstance vm:ExpanderViewModel, IsDesignTimeCreatable=False}"
     mc:Ignorable="d">
 
@@ -63,7 +63,7 @@
                                 Grid.Row="1"
                                 Grid.Column="0"
                                 FontSize="12"
-                                Foreground="{ui:BrushResource TextFillColorSecondaryBrush}"
+                                Foreground="{ui:DynamicBrush TextFillSecondary}"
                                 Text="This is a description text" />
                             <ui:ToggleSwitch
                                 Grid.Row="0"
@@ -91,12 +91,12 @@
                                     <ui:TextBlock
                                         Margin="0"
                                         FontTypography="BodyStrong"
-                                        Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
+                                        Foreground="{ui:DynamicBrush TextFillPrimary}"
                                         Text="This is a header text"
                                         TextWrapping="WrapWithOverflow" />
                                     <ui:TextBlock
                                         Appearance="Secondary"
-                                        Foreground="{ui:BrushResource TextFillColorSecondaryBrush}"
+                                        Foreground="{ui:DynamicBrush TextFillSecondary}"
                                         Text="This is a description text."
                                         TextWrapping="WrapWithOverflow" />
                                 </StackPanel>

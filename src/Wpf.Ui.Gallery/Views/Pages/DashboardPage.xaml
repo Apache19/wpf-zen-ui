@@ -8,12 +8,12 @@
     xmlns:vm="clr-namespace:Wpf.Ui.Gallery.ViewModels.Pages"
     Title="Dashboard Page"
     Margin="0,32,0,0"
-    d:Background="{ui:BrushResource WindowBackgroundBrush}"
+    d:Background="{ui:DynamicBrush WindowBackground}"
     d:DataContext="{d:DesignInstance vm:DashboardViewModel,
                                      IsDesignTimeCreatable=True}"
     d:DesignWidth="800"
-    Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
-    Style="{ui:StyleResource DynamicScrollPageStyle}"
+    Foreground="{ui:DynamicBrush TextFillPrimary}"
+    Style="{ui:DynamicStyle DynamicScrollPage}"
     mc:Ignorable="d">
 
     <Grid>
@@ -117,7 +117,7 @@
                             TextWrapping="WrapWithOverflow" />
                         <ui:TextBlock
                             Appearance="Secondary"
-                            Foreground="{ui:BrushResource TextFillColorSecondaryBrush}"
+                            Foreground="{ui:DynamicBrush TextFillSecondary}"
                             Text="Buttons, CheckBoxes, Sliders..."
                             TextWrapping="WrapWithOverflow" />
                     </StackPanel>
@@ -155,7 +155,7 @@
                             TextWrapping="WrapWithOverflow" />
                         <ui:TextBlock
                             Appearance="Secondary"
-                            Foreground="{ui:BrushResource TextFillColorSecondaryBrush}"
+                            Foreground="{ui:DynamicBrush TextFillSecondary}"
                             Text="Contextual notifications."
                             TextWrapping="WrapWithOverflow" />
                     </StackPanel>
@@ -193,7 +193,7 @@
                             TextWrapping="WrapWithOverflow" />
                         <ui:TextBlock
                             Appearance="Secondary"
-                            Foreground="{ui:BrushResource TextFillColorSecondaryBrush}"
+                            Foreground="{ui:DynamicBrush TextFillSecondary}"
                             Text="Managing the displayed pages."
                             TextWrapping="WrapWithOverflow" />
                     </StackPanel>

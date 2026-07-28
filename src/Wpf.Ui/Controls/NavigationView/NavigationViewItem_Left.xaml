@@ -37,7 +37,7 @@
                     VerticalAlignment="Center"
                     Content="{Binding Icon, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}"
                     TextElement.FontSize="16"
-                    TextElement.Foreground="{m:BrushResource TextFillColorPrimaryBrush}" />
+                    TextElement.Foreground="{m:DynamicBrush TextFillPrimary}" />
                 <Rectangle
                     x:Name="ActiveIndicator"
                     Grid.Column="0"
@@ -45,7 +45,7 @@
                     Height="16"
                     HorizontalAlignment="Left"
                     VerticalAlignment="Center"
-                    Fill="{m:BrushResource AccentSelectionBrush}"
+                    Fill="{m:DynamicBrush AccentSelection}"
                     Opacity="0"
                     RadiusX="1.5"
                     RadiusY="1.5" />
@@ -75,7 +75,7 @@
                     HorizontalAlignment="Center"
                     VerticalAlignment="Center"
                     FontSize="12"
-                    Foreground="{m:BrushResource TextFillColorPrimaryBrush}"
+                    Foreground="{m:DynamicBrush TextFillPrimary}"
                     IsHitTestVisible="False"
                     RenderTransformOrigin="0.5,0.5"
                     Symbol="ChevronDown24"
@@ -88,14 +88,14 @@
         </Border>
         <ControlTemplate.Triggers>
             <Trigger Property="IsMouseOver" Value="True">
-                <Setter TargetName="HeaderSurface" Property="Background" Value="{m:BrushResource SubtleFillColorSecondaryBrush}" />
+                <Setter TargetName="HeaderSurface" Property="Background" Value="{m:DynamicBrush SubtleFillSecondary}" />
             </Trigger>
             <Trigger Property="IsPressed" Value="True">
-                <Setter TargetName="HeaderSurface" Property="Background" Value="{m:BrushResource SubtleFillColorTertiaryBrush}" />
+                <Setter TargetName="HeaderSurface" Property="Background" Value="{m:DynamicBrush SubtleFillTertiary}" />
             </Trigger>
             <DataTrigger Binding="{Binding IsActive, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}" Value="True">
                 <Setter TargetName="ActiveIndicator" Property="Opacity" Value="1" />
-                <Setter TargetName="HeaderSurface" Property="Background" Value="{m:BrushResource SubtleFillColorSecondaryBrush}" />
+                <Setter TargetName="HeaderSurface" Property="Background" Value="{m:DynamicBrush SubtleFillSecondary}" />
             </DataTrigger>
             <!--
                 Once an inline branch is collapsed, its active descendant no longer has a visible
@@ -108,7 +108,7 @@
                     <Condition Binding="{Binding IsExpanded, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}" Value="False" />
                 </MultiDataTrigger.Conditions>
                 <Setter TargetName="ActiveIndicator" Property="Opacity" Value="1" />
-                <Setter TargetName="HeaderSurface" Property="Background" Value="{m:BrushResource SubtleFillColorSecondaryBrush}" />
+                <Setter TargetName="HeaderSurface" Property="Background" Value="{m:DynamicBrush SubtleFillSecondary}" />
             </MultiDataTrigger>
             <!--
                 IsExpanded is intentionally preserved when the Left pane closes. In that detached
@@ -122,7 +122,7 @@
                     <Condition Binding="{Binding IsPaneOpen, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}" Value="False" />
                 </MultiDataTrigger.Conditions>
                 <Setter TargetName="ActiveIndicator" Property="Opacity" Value="1" />
-                <Setter TargetName="HeaderSurface" Property="Background" Value="{m:BrushResource SubtleFillColorSecondaryBrush}" />
+                <Setter TargetName="HeaderSurface" Property="Background" Value="{m:DynamicBrush SubtleFillSecondary}" />
             </MultiDataTrigger>
             <MultiDataTrigger>
                 <MultiDataTrigger.Conditions>
@@ -130,10 +130,10 @@
                     <Condition Binding="{Binding PaneDisplayMode, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}" Value="{x:Static controls:NavigationViewPaneDisplayMode.LeftMinimal}" />
                 </MultiDataTrigger.Conditions>
                 <Setter TargetName="ActiveIndicator" Property="Opacity" Value="1" />
-                <Setter TargetName="HeaderSurface" Property="Background" Value="{m:BrushResource SubtleFillColorSecondaryBrush}" />
+                <Setter TargetName="HeaderSurface" Property="Background" Value="{m:DynamicBrush SubtleFillSecondary}" />
             </MultiDataTrigger>
             <DataTrigger Binding="{Binding IsSubmenuOpen, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}" Value="True">
-                <Setter TargetName="HeaderSurface" Property="Background" Value="{m:BrushResource SubtleFillColorSecondaryBrush}" />
+                <Setter TargetName="HeaderSurface" Property="Background" Value="{m:DynamicBrush SubtleFillSecondary}" />
             </DataTrigger>
 
             <DataTrigger Binding="{Binding Icon, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}" Value="{x:Null}">
@@ -217,7 +217,7 @@
                 x:Name="PART_HeaderButton"
                 Grid.Row="0"
                 HorizontalContentAlignment="Stretch"
-                Background="{m:BrushResource SubtleFillColorTransparentBrush}"
+                Background="{m:DynamicBrush SubtleFillTransparent}"
                 BorderBrush="{TemplateBinding BorderBrush}"
                 BorderThickness="{TemplateBinding BorderThickness}"
                 Content="{TemplateBinding Header}"
@@ -276,7 +276,7 @@
             <Button
                 x:Name="PART_HeaderButton"
                 HorizontalContentAlignment="Stretch"
-                Background="{m:BrushResource SubtleFillColorTransparentBrush}"
+                Background="{m:DynamicBrush SubtleFillTransparent}"
                 BorderBrush="{TemplateBinding BorderBrush}"
                 BorderThickness="{TemplateBinding BorderThickness}"
                 Content="{TemplateBinding Header}"

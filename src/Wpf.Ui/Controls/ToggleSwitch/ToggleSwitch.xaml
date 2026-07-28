@@ -14,7 +14,7 @@
     xmlns:controls="clr-namespace:Wpf.Ui.Controls"
     xmlns:theming="clr-namespace:Wpf.Ui.Theming"
     xmlns:system="clr-namespace:System;assembly=System.Runtime"
-    xmlns:markup="clr-namespace:Wpf.Ui.Markup">
+    xmlns:m="clr-namespace:Wpf.Ui.Markup">
 
     <system:Double x:Key="RadioButtonBorderThemeThickness">1</system:Double>
     <system:Double x:Key="ToggleButtonWidth">40</system:Double>
@@ -27,8 +27,8 @@
         <!--  Universal WPF UI focus  -->
         <Setter Property="FocusVisualStyle" Value="{DynamicResource {x:Static theming:StyleKeys.DefaultControlFocusVisualStyle}}" />
         <!--  Universal WPF UI focus  -->
-        <Setter Property="Background" Value="{markup:BrushResource AccentFillSecondaryBrush}" />
-        <Setter Property="Foreground" Value="{markup:BrushResource TextFillColorPrimaryBrush}" />
+        <Setter Property="Background" Value="{m:DynamicBrush AccentFillSecondary}" />
+        <Setter Property="Foreground" Value="{m:DynamicBrush TextFillPrimary}" />
         <Setter Property="BorderBrush" Value="Transparent" />
         <Setter Property="BorderThickness" Value="{StaticResource ToggleSwitchBorderThemeThickness}" />
         <Setter Property="Padding" Value="{StaticResource ToggleSwitchPadding}" />
@@ -37,7 +37,7 @@
         <Setter Property="ContentPlacement" Value="Right" />
         <Setter Property="HorizontalContentAlignment" Value="Left" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
-        <Setter Property="FontSize" Value="{DynamicResource {x:Static theming:VariableKeys.ControlContentThemeFontSize}}" />
+        <Setter Property="FontSize" Value="{m:DynamicValue ControlContentThemeFontSize}" />
         <Setter Property="FontWeight" Value="Normal" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
         <Setter Property="Template">
@@ -59,10 +59,10 @@
                                 Height="{StaticResource ToggleButtonHeight}"
                                 HorizontalAlignment="Center"
                                 VerticalAlignment="Center"
-                                Fill="{markup:BrushResource ControlAltFillColorSecondaryBrush}"
+                                Fill="{m:DynamicBrush ControlAltFillSecondary}"
                                 RadiusX="10"
                                 RadiusY="10"
-                                Stroke="{markup:BrushResource ControlStrongStrokeColorDefaultBrush}"
+                                Stroke="{m:DynamicBrush ControlStrongStrokeDefault}"
                                 StrokeThickness="1" />
                             <Rectangle
                                 x:Name="ActiveToggleRectangle"
@@ -81,7 +81,7 @@
                                 Height="12"
                                 HorizontalAlignment="Center"
                                 VerticalAlignment="Center"
-                                Fill="{markup:BrushResource TextFillColorSecondaryBrush}"
+                                Fill="{m:DynamicBrush TextFillSecondary}"
                                 RadiusX="7"
                                 RadiusY="7"
                                 StrokeThickness="0">
@@ -95,7 +95,7 @@
                                 Height="12"
                                 HorizontalAlignment="Center"
                                 VerticalAlignment="Center"
-                                Fill="{markup:BrushResource TextOnAccentPrimaryBrush}"
+                                Fill="{m:DynamicBrush TextOnAccentPrimary}"
                                 Opacity="0.0"
                                 RadiusX="7"
                                 RadiusY="7"
@@ -325,9 +325,9 @@
                                 <Condition Property="IsChecked" Value="False" />
                                 <Condition Property="IsEnabled" Value="True" />
                             </MultiTrigger.Conditions>
-                            <Setter TargetName="ToggleRectangle" Property="Fill" Value="{markup:BrushResource ControlAltFillColorTertiaryBrush}" />
-                            <Setter TargetName="ToggleRectangle" Property="Stroke" Value="{markup:BrushResource ControlStrongStrokeColorDefaultBrush}" />
-                            <Setter TargetName="ToggleEllipse" Property="Fill" Value="{markup:BrushResource TextFillColorSecondaryBrush}" />
+                            <Setter TargetName="ToggleRectangle" Property="Fill" Value="{m:DynamicBrush ControlAltFillTertiary}" />
+                            <Setter TargetName="ToggleRectangle" Property="Stroke" Value="{m:DynamicBrush ControlStrongStrokeDefault}" />
+                            <Setter TargetName="ToggleEllipse" Property="Fill" Value="{m:DynamicBrush TextFillSecondary}" />
                         </MultiTrigger>
 
                         <MultiTrigger>
@@ -337,9 +337,9 @@
                                 <Condition Property="IsChecked" Value="False" />
                                 <Condition Property="IsEnabled" Value="True" />
                             </MultiTrigger.Conditions>
-                            <Setter TargetName="ToggleRectangle" Property="Fill" Value="{markup:BrushResource ControlAltFillColorQuarternaryBrush}" />
-                            <Setter TargetName="ToggleRectangle" Property="Stroke" Value="{markup:BrushResource ControlStrongStrokeColorDefaultBrush}" />
-                            <Setter TargetName="ToggleEllipse" Property="Fill" Value="{markup:BrushResource TextFillColorSecondaryBrush}" />
+                            <Setter TargetName="ToggleRectangle" Property="Fill" Value="{m:DynamicBrush ControlAltFillQuarternary}" />
+                            <Setter TargetName="ToggleRectangle" Property="Stroke" Value="{m:DynamicBrush ControlStrongStrokeDefault}" />
+                            <Setter TargetName="ToggleEllipse" Property="Fill" Value="{m:DynamicBrush TextFillSecondary}" />
                         </MultiTrigger>
 
                         <MultiTrigger>
@@ -349,9 +349,9 @@
                                 <Condition Property="IsChecked" Value="True" />
                                 <Condition Property="IsEnabled" Value="True" />
                             </MultiTrigger.Conditions>
-                            <Setter Property="Background" Value="{markup:BrushResource AccentFillPrimaryBrush}" />
-                            <Setter TargetName="ToggleRectangle" Property="Stroke" Value="{markup:BrushResource AccentFillPrimaryBrush}" />
-                            <Setter TargetName="ActiveToggleEllipse" Property="Fill" Value="{markup:BrushResource TextOnAccentPrimaryBrush}" />
+                            <Setter Property="Background" Value="{m:DynamicBrush AccentFillPrimary}" />
+                            <Setter TargetName="ToggleRectangle" Property="Stroke" Value="{m:DynamicBrush AccentFillPrimary}" />
+                            <Setter TargetName="ActiveToggleEllipse" Property="Fill" Value="{m:DynamicBrush TextOnAccentPrimary}" />
                         </MultiTrigger>
 
                         <MultiTrigger>
@@ -361,9 +361,9 @@
                                 <Condition Property="IsChecked" Value="True" />
                                 <Condition Property="IsEnabled" Value="True" />
                             </MultiTrigger.Conditions>
-                            <Setter Property="Background" Value="{markup:BrushResource AccentFillTertiaryBrush}" />
-                            <Setter TargetName="ToggleRectangle" Property="Stroke" Value="{markup:BrushResource AccentFillTertiaryBrush}" />
-                            <Setter TargetName="ActiveToggleEllipse" Property="Fill" Value="{markup:BrushResource TextOnAccentPrimaryBrush}" />
+                            <Setter Property="Background" Value="{m:DynamicBrush AccentFillTertiary}" />
+                            <Setter TargetName="ToggleRectangle" Property="Stroke" Value="{m:DynamicBrush AccentFillTertiary}" />
+                            <Setter TargetName="ActiveToggleEllipse" Property="Fill" Value="{m:DynamicBrush TextOnAccentPrimary}" />
                         </MultiTrigger>
 
                         <MultiTrigger>
@@ -371,19 +371,19 @@
                                 <Condition Property="IsChecked" Value="False" />
                                 <Condition Property="IsEnabled" Value="False" />
                             </MultiTrigger.Conditions>
-                            <Setter TargetName="ToggleRectangle" Property="Stroke" Value="{markup:BrushResource ControlStrongStrokeColorDisabledBrush}" />
-                            <Setter TargetName="ToggleRectangle" Property="Fill" Value="{markup:BrushResource ControlAltFillColorDisabledBrush}" />
-                            <Setter TargetName="ToggleEllipse" Property="Fill" Value="{markup:BrushResource TextFillColorDisabledBrush}" />
-                            <Setter Property="Foreground" Value="{markup:BrushResource TextFillColorDisabledBrush}" />
+                            <Setter TargetName="ToggleRectangle" Property="Stroke" Value="{m:DynamicBrush ControlStrongStrokeDisabled}" />
+                            <Setter TargetName="ToggleRectangle" Property="Fill" Value="{m:DynamicBrush ControlAltFillDisabled}" />
+                            <Setter TargetName="ToggleEllipse" Property="Fill" Value="{m:DynamicBrush TextFillDisabled}" />
+                            <Setter Property="Foreground" Value="{m:DynamicBrush TextFillDisabled}" />
                         </MultiTrigger>
                         <MultiTrigger>
                             <MultiTrigger.Conditions>
                                 <Condition Property="IsChecked" Value="True" />
                                 <Condition Property="IsEnabled" Value="False" />
                             </MultiTrigger.Conditions>
-                            <Setter TargetName="ActiveToggleRectangle" Property="Fill" Value="{markup:BrushResource ControlFillColorDisabledBrush}" />
-                            <Setter TargetName="ActiveToggleEllipse" Property="Fill" Value="{markup:BrushResource TextFillColorDisabledBrush}" />
-                            <Setter Property="Foreground" Value="{markup:BrushResource TextFillColorDisabledBrush}" />
+                            <Setter TargetName="ActiveToggleRectangle" Property="Fill" Value="{m:DynamicBrush ControlFillDisabled}" />
+                            <Setter TargetName="ActiveToggleEllipse" Property="Fill" Value="{m:DynamicBrush TextFillDisabled}" />
+                            <Setter Property="Foreground" Value="{m:DynamicBrush TextFillDisabled}" />
                         </MultiTrigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>

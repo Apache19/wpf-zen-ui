@@ -19,7 +19,7 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Ui.Controls"
-    xmlns:markup="clr-namespace:Wpf.Ui.Markup"
+    xmlns:m="clr-namespace:Wpf.Ui.Markup"
     xmlns:theming="clr-namespace:Wpf.Ui.Theming">
 
     <ResourceDictionary.MergedDictionaries>
@@ -65,10 +65,10 @@
                                             Storyboard.TargetName="SymbolIcon"
                                             Storyboard.TargetProperty="Foreground"
                                             Duration="0">
-                                            <DiscreteObjectKeyFrame KeyTime="0" Value="{markup:BrushResource SubtleFillColorTransparentBrush}" />
+                                            <DiscreteObjectKeyFrame KeyTime="0" Value="{m:DynamicBrush SubtleFillTransparent}" />
                                         </ObjectAnimationUsingKeyFrames>
                                         <ObjectAnimationUsingKeyFrames Storyboard.TargetProperty="Background" Duration="0">
-                                            <DiscreteObjectKeyFrame KeyTime="0" Value="{markup:BrushResource SubtleFillColorTransparentBrush}" />
+                                            <DiscreteObjectKeyFrame KeyTime="0" Value="{m:DynamicBrush SubtleFillTransparent}" />
                                         </ObjectAnimationUsingKeyFrames>
                                     </Storyboard>
                                 </VisualState>
@@ -78,10 +78,10 @@
                                             Storyboard.TargetName="SymbolIcon"
                                             Storyboard.TargetProperty="Foreground"
                                             Duration="0">
-                                            <DiscreteObjectKeyFrame KeyTime="0" Value="{markup:BrushResource TextFillColorSecondaryBrush}" />
+                                            <DiscreteObjectKeyFrame KeyTime="0" Value="{m:DynamicBrush TextFillSecondary}" />
                                         </ObjectAnimationUsingKeyFrames>
                                         <ObjectAnimationUsingKeyFrames Storyboard.TargetProperty="Background" Duration="0">
-                                            <DiscreteObjectKeyFrame KeyTime="0" Value="{markup:BrushResource SubtleFillColorSecondaryBrush}" />
+                                            <DiscreteObjectKeyFrame KeyTime="0" Value="{m:DynamicBrush SubtleFillSecondary}" />
                                         </ObjectAnimationUsingKeyFrames>
                                     </Storyboard>
                                 </VisualState>
@@ -91,10 +91,10 @@
                                             Storyboard.TargetName="SymbolIcon"
                                             Storyboard.TargetProperty="Foreground"
                                             Duration="0">
-                                            <DiscreteObjectKeyFrame KeyTime="0" Value="{markup:BrushResource TextFillColorTertiaryBrush}" />
+                                            <DiscreteObjectKeyFrame KeyTime="0" Value="{m:DynamicBrush TextFillTertiary}" />
                                         </ObjectAnimationUsingKeyFrames>
                                         <ObjectAnimationUsingKeyFrames Storyboard.TargetProperty="Background" Duration="0">
-                                            <DiscreteObjectKeyFrame KeyTime="0" Value="{markup:BrushResource SubtleFillColorTertiaryBrush}" />
+                                            <DiscreteObjectKeyFrame KeyTime="0" Value="{m:DynamicBrush SubtleFillTertiary}" />
                                         </ObjectAnimationUsingKeyFrames>
                                     </Storyboard>
                                 </VisualState>
@@ -104,10 +104,10 @@
                                             Storyboard.TargetName="SymbolIcon"
                                             Storyboard.TargetProperty="Foreground"
                                             Duration="0">
-                                            <DiscreteObjectKeyFrame KeyTime="0" Value="{markup:BrushResource TextFillColorDisabledBrush}" />
+                                            <DiscreteObjectKeyFrame KeyTime="0" Value="{m:DynamicBrush TextFillDisabled}" />
                                         </ObjectAnimationUsingKeyFrames>
                                         <ObjectAnimationUsingKeyFrames Storyboard.TargetProperty="Background" Duration="0">
-                                            <DiscreteObjectKeyFrame KeyTime="0" Value="{markup:BrushResource SubtleFillColorDisabledBrush}" />
+                                            <DiscreteObjectKeyFrame KeyTime="0" Value="{m:DynamicBrush SubtleFillDisabled}" />
                                         </ObjectAnimationUsingKeyFrames>
                                     </Storyboard>
                                 </VisualState>
@@ -173,7 +173,7 @@
         <Setter Property="MinHeight" Value="40" />
         <Setter Property="Margin" Value="0" />
         <Setter Property="Padding" Value="0" />
-        <Setter Property="BorderBrush" Value="{markup:BrushResource DividerStrokeColorDefaultBrush}" />
+        <Setter Property="BorderBrush" Value="{m:DynamicBrush DividerStrokeDefault}" />
         <Setter Property="BorderThickness" Value="0,0,0,1" />
         <Setter Property="IsTabStop" Value="False" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
@@ -187,7 +187,7 @@
                         Margin="-4,0,-12,0"
                         HorizontalAlignment="Center"
                         VerticalAlignment="Center"
-                        Foreground="{markup:BrushResource SystemFillColorCriticalBrush}"
+                        Foreground="{m:DynamicBrush SystemFillCritical}"
                         Symbol="ErrorCircle12" />
                 </ControlTemplate>
             </Setter.Value>
@@ -235,7 +235,7 @@
                                 Margin="8,0,0,0"
                                 HorizontalAlignment="Left"
                                 VerticalAlignment="Center"
-                                Fill="{markup:BrushResource AccentSelectionBrush}"
+                                Fill="{m:DynamicBrush AccentSelection}"
                                 IsHitTestVisible="False"
                                 RadiusX="2"
                                 RadiusY="2"
@@ -405,10 +405,10 @@
                                 <Condition Property="IsEnabled" Value="True" />
                                 <Condition Property="IsMouseOver" Value="True" />
                             </MultiTrigger.Conditions>
-                            <Setter TargetName="DGR_Border" Property="Background" Value="{markup:BrushResource SubtleFillColorSecondaryBrush}" />
+                            <Setter TargetName="DGR_Border" Property="Background" Value="{m:DynamicBrush SubtleFillSecondary}" />
                         </MultiTrigger>
                         <Trigger Property="IsSelected" Value="True">
-                            <Setter TargetName="DGR_Border" Property="Background" Value="{markup:BrushResource SubtleFillColorSecondaryBrush}" />
+                            <Setter TargetName="DGR_Border" Property="Background" Value="{m:DynamicBrush SubtleFillSecondary}" />
                         </Trigger>
                         <MultiTrigger>
                             <MultiTrigger.Conditions>
@@ -440,7 +440,7 @@
     <!--  Style and template for the DataGridRowHeader.  -->
     <Style x:Key="DefaultDataGridRowHeaderStyle" TargetType="{x:Type DataGridRowHeader}">
         <Setter Property="Background" Value="Transparent" />
-        <Setter Property="BorderBrush" Value="{markup:BrushResource ControlElevationBorderBrush}" />
+        <Setter Property="BorderBrush" Value="{m:DynamicBrush ControlElevationBorder}" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type DataGridRowHeader}">
@@ -524,8 +524,8 @@
 
     <!--  Style and template for the DataGridColumnHeader.  -->
     <Style x:Key="DefaultDataGridColumnHeaderStyle" TargetType="{x:Type DataGridColumnHeader}">
-        <Setter Property="Background" Value="{markup:BrushResource LayerFillColorAltBrush}" />
-        <Setter Property="BorderBrush" Value="{markup:BrushResource DividerStrokeColorDefaultBrush}" />
+        <Setter Property="Background" Value="{m:DynamicBrush LayerFillAlt}" />
+        <Setter Property="BorderBrush" Value="{m:DynamicBrush DividerStrokeDefault}" />
         <Setter Property="BorderThickness" Value="0,0,0,1" />
         <Setter Property="Margin" Value="0" />
         <Setter Property="Padding" Value="12,0" />
@@ -582,13 +582,13 @@
                     </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="HeaderBorder" Property="Background" Value="{markup:BrushResource SubtleFillColorSecondaryBrush}" />
+                            <Setter TargetName="HeaderBorder" Property="Background" Value="{m:DynamicBrush SubtleFillSecondary}" />
                         </Trigger>
                         <Trigger Property="IsPressed" Value="True">
-                            <Setter TargetName="HeaderBorder" Property="Background" Value="{markup:BrushResource SubtleFillColorTertiaryBrush}" />
+                            <Setter TargetName="HeaderBorder" Property="Background" Value="{m:DynamicBrush SubtleFillTertiary}" />
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter Property="TextElement.Foreground" Value="{markup:BrushResource TextFillColorDisabledBrush}" />
+                            <Setter Property="TextElement.Foreground" Value="{m:DynamicBrush TextFillDisabled}" />
                         </Trigger>
                         <Trigger Property="SortDirection" Value="{x:Null}">
                             <Setter TargetName="SortIcon" Property="Visibility" Value="Collapsed" />
@@ -650,12 +650,12 @@
     </Style>
 
     <Style x:Key="DefaultDragIndicatorStyleStyle" TargetType="{x:Type Control}">
-        <Setter Property="Background" Value="{markup:BrushResource SubtleFillColorTertiaryBrush}" />
+        <Setter Property="Background" Value="{m:DynamicBrush SubtleFillTertiary}" />
         <Setter Property="Template">
             <Setter.Value>
                 <!--  DataGridColumnFloatingHeader  is  internal  -->
                 <ControlTemplate TargetType="Control">
-                    <Border Background="{TemplateBinding Background}" CornerRadius="{DynamicResource {x:Static theming:VariableKeys.ControlCornerRadius}}">
+                    <Border Background="{TemplateBinding Background}" CornerRadius="{m:DynamicValue ControlCornerRadius}">
                         <Grid
                             Margin="{TemplateBinding Padding}"
                             HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
@@ -714,12 +714,12 @@
     <Style x:Key="DefaultDataGridStyle" TargetType="{x:Type DataGrid}">
         <Setter Property="FocusVisualStyle" Value="{x:Null}" />
         <Setter Property="Background" Value="Transparent" />
-        <Setter Property="BorderBrush" Value="{markup:BrushResource DividerStrokeColorDefaultBrush}" />
+        <Setter Property="BorderBrush" Value="{m:DynamicBrush DividerStrokeDefault}" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="RowBackground" Value="Transparent" />
-        <Setter Property="Foreground" Value="{markup:BrushResource TextFillColorPrimaryBrush}" />
-        <Setter Property="HorizontalGridLinesBrush" Value="{markup:BrushResource ControlElevationBorderBrush}" />
-        <Setter Property="VerticalGridLinesBrush" Value="{markup:BrushResource ControlElevationBorderBrush}" />
+        <Setter Property="Foreground" Value="{m:DynamicBrush TextFillPrimary}" />
+        <Setter Property="HorizontalGridLinesBrush" Value="{m:DynamicBrush ControlElevationBorder}" />
+        <Setter Property="VerticalGridLinesBrush" Value="{m:DynamicBrush ControlElevationBorder}" />
         <Setter Property="GridLinesVisibility" Value="None" />
         <Setter Property="ColumnWidth" Value="*" />
         <Setter Property="HeadersVisibility" Value="Column" />
@@ -727,7 +727,7 @@
         <Setter Property="ScrollViewer.CanContentScroll" Value="True" />
         <Setter Property="ScrollViewer.PanningMode" Value="Both" />
         <Setter Property="Stylus.IsFlicksEnabled" Value="False" />
-        <Setter Property="Border.CornerRadius" Value="{DynamicResource {x:Static theming:VariableKeys.ControlCornerRadius}}" />
+        <Setter Property="Border.CornerRadius" Value="{m:DynamicValue ControlCornerRadius}" />
         <Setter Property="RowStyle" Value="{StaticResource DefaultDataGridRowStyle}" />
         <Setter Property="RowHeaderStyle" Value="{StaticResource DefaultDataGridRowHeaderStyle}" />
         <Setter Property="CellStyle" Value="{StaticResource DefaultDataGridCellStyle}" />
@@ -912,7 +912,7 @@
 
     <Style x:Key="DefaultDataGridTextElementStyle" TargetType="{x:Type TextBlock}">
         <Setter Property="FocusVisualStyle" Value="{DynamicResource {x:Static theming:StyleKeys.DefaultControlFocusVisualStyle}}" />
-        <Setter Property="Foreground" Value="{markup:BrushResource TextFillColorPrimaryBrush}" />
+        <Setter Property="Foreground" Value="{m:DynamicBrush TextFillPrimary}" />
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="HorizontalAlignment" Value="Stretch" />
         <Setter Property="VerticalAlignment" Value="Center" />

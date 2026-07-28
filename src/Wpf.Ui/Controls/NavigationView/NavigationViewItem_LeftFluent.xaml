@@ -46,7 +46,7 @@
                                     Margin="-4,0,0,0"
                                     HorizontalAlignment="Left"
                                     VerticalAlignment="Center"
-                                    Fill="{m:BrushResource AccentSelectionBrush}"
+                                    Fill="{m:DynamicBrush AccentSelection}"
                                     Opacity="0"
                                     RadiusX="1.5"
                                     RadiusY="1.5" />
@@ -84,15 +84,15 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="HeaderSurface" Property="Background" Value="{m:BrushResource ControlFillColorPrimaryBrush}" />
+                                <Setter TargetName="HeaderSurface" Property="Background" Value="{m:DynamicBrush ControlFillPrimary}" />
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="HeaderSurface" Property="Background" Value="{m:BrushResource SubtleFillColorTertiaryBrush}" />
+                                <Setter TargetName="HeaderSurface" Property="Background" Value="{m:DynamicBrush SubtleFillTertiary}" />
                             </Trigger>
                             <DataTrigger Binding="{Binding IsBranchActive, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}" Value="True">
                                 <Setter TargetName="ActiveIndicator" Property="Opacity" Value="1" />
-                                <Setter TargetName="HeaderSurface" Property="Background" Value="{m:BrushResource ControlFillColorPrimaryBrush}" />
-                                <Setter TargetName="IconPresenter" Property="TextElement.Foreground" Value="{m:BrushResource AccentTextPrimaryBrush}" />
+                                <Setter TargetName="HeaderSurface" Property="Background" Value="{m:DynamicBrush ControlFillPrimary}" />
+                                <Setter TargetName="IconPresenter" Property="TextElement.Foreground" Value="{m:DynamicBrush AccentTextPrimary}" />
                                 <DataTrigger.EnterActions>
                                     <BeginStoryboard>
                                         <Storyboard>
@@ -130,7 +130,7 @@
                                 </DataTrigger.ExitActions>
                             </DataTrigger>
                             <DataTrigger Binding="{Binding IsSubmenuOpen, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}" Value="True">
-                                <Setter TargetName="HeaderSurface" Property="Background" Value="{m:BrushResource ControlFillColorPrimaryBrush}" />
+                                <Setter TargetName="HeaderSurface" Property="Background" Value="{m:DynamicBrush ControlFillPrimary}" />
                             </DataTrigger>
                             <DataTrigger Binding="{Binding Icon, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}" Value="{x:Null}">
                                 <Setter TargetName="IconPresenter" Property="Visibility" Value="Collapsed" />

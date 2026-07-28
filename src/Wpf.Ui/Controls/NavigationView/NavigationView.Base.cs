@@ -27,7 +27,7 @@ namespace Wpf.Ui.Controls;
 /// standard <see cref="ScrollViewer"/>, <see cref="DynamicScrollViewer"/>, or no scrolling host at
 /// all. Pages that want the library's full-page dynamic scrolling can explicitly apply the
 /// <see cref="Theming.StyleKeys.DynamicScrollPageStyle"/> resource, normally through
-/// <see cref="Markup.StyleResourceExtension"/>. In particular,
+/// <see cref="Markup.DynamicStyleExtension"/>. In particular,
 /// <see cref="ScrollViewer.CanContentScroll"/> retains its WPF-defined meaning of selecting logical
 /// versus pixel scrolling inside the page's own scroll viewer.
 /// A custom page template that also keeps its scroll viewer at the navigation edge should set

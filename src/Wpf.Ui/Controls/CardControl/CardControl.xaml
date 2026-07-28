@@ -13,8 +13,8 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Ui.Controls"
     xmlns:system="clr-namespace:System;assembly=System.Runtime"
-    xmlns:theming="clr-namespace:Wpf.Ui.Theming"
-    xmlns:markup="clr-namespace:Wpf.Ui.Markup">
+    xmlns:t="clr-namespace:Wpf.Ui.Theming"
+    xmlns:m="clr-namespace:Wpf.Ui.Markup">
 
     <Thickness x:Key="CardControlPadding">14,16,14,16</Thickness>
     <Thickness x:Key="CardControlBorderThemeThickness">1</Thickness>
@@ -24,20 +24,20 @@
 
     <Style x:Key="DefaultUiCardControlStyle" TargetType="{x:Type controls:CardControl}">
         <!--  Universal WPF UI focus  -->
-        <Setter Property="FocusVisualStyle" Value="{DynamicResource {x:Static theming:StyleKeys.DefaultControlFocusVisualStyle}}" />
+        <Setter Property="FocusVisualStyle" Value="{DynamicResource {x:Static t:StyleKeys.DefaultControlFocusVisualStyle}}" />
         <!--  Universal WPF UI focus  -->
-        <Setter Property="Background" Value="{markup:BrushResource CardBackgroundFillColorDefaultBrush}" />
-        <Setter Property="Foreground" Value="{markup:BrushResource TextFillColorPrimaryBrush}" />
-        <Setter Property="BorderBrush" Value="{markup:BrushResource CardStrokeColorDefaultBrush}" />
+        <Setter Property="Background" Value="{m:DynamicBrush CardBackgroundFillDefault}" />
+        <Setter Property="Foreground" Value="{m:DynamicBrush TextFillPrimary}" />
+        <Setter Property="BorderBrush" Value="{m:DynamicBrush CardStrokeDefault}" />
         <Setter Property="BorderThickness" Value="{StaticResource CardControlBorderThemeThickness}" />
         <Setter Property="Padding" Value="{StaticResource CardControlPadding}" />
         <Setter Property="HorizontalAlignment" Value="Stretch" />
         <Setter Property="VerticalAlignment" Value="Center" />
         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
-        <Setter Property="FontSize" Value="{DynamicResource {x:Static theming:VariableKeys.ControlContentThemeFontSize}}" />
+        <Setter Property="FontSize" Value="{m:DynamicValue ControlContentThemeFontSize}" />
         <Setter Property="FontWeight" Value="Normal" />
-        <Setter Property="CornerRadius" Value="{DynamicResource {x:Static theming:VariableKeys.ControlCornerRadius}}" />
+        <Setter Property="CornerRadius" Value="{m:DynamicValue ControlCornerRadius}" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
         <Setter Property="Template">
             <Setter.Value>

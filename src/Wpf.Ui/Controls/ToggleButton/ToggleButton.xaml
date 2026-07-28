@@ -25,7 +25,7 @@
                 <ControlTemplate>
                     <!--  ReSharper disable once Xaml.BindingWithContextNotResolved  -->
                     <Border
-                        BorderBrush="{m:BrushResource KeyboardFocusBorderColorBrush}"
+                        BorderBrush="{m:DynamicBrush KeyboardFocusBorder}"
                         BorderThickness="1"
                         CornerRadius="{Binding AdornedElement.CornerRadius, RelativeSource={RelativeSource AncestorType={x:Type Adorner}}}"
                         IsHitTestVisible="False"
@@ -37,13 +37,13 @@
 
     <Style x:Key="DefaultToggleButtonStyle" TargetType="{x:Type controls:ToggleButton}">
         <Setter Property="FocusVisualStyle" Value="{StaticResource ToggleButtonFocusVisualStyle}" />
-        <Setter Property="Background" Value="{m:BrushResource ControlFillColorSecondaryBrush}" />
-        <Setter Property="BorderBrush" Value="{m:BrushResource ControlElevationBorderBrush}" />
+        <Setter Property="Background" Value="{m:DynamicBrush ControlFillSecondary}" />
+        <Setter Property="BorderBrush" Value="{m:DynamicBrush ControlElevationBorder}" />
         <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="Padding" Value="{m:VariableResource ButtonThemePadding}" />
+        <Setter Property="Padding" Value="{m:DynamicValue ButtonThemePadding}" />
         <Setter Property="HorizontalContentAlignment" Value="Center" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
-        <Setter Property="CornerRadius" Value="{m:VariableResource ControlCornerRadius}" />
+        <Setter Property="CornerRadius" Value="{m:DynamicValue ControlCornerRadius}" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
         <Setter Property="Template">
             <Setter.Value>
@@ -100,7 +100,7 @@
                                 <Condition Property="IsChecked" Value="False" />
                                 <Condition Property="IsMouseOver" Value="True" />
                             </MultiTrigger.Conditions>
-                            <Setter Property="Background" Value="{m:BrushResource ControlFillColorPrimaryBrush}" />
+                            <Setter Property="Background" Value="{m:DynamicBrush ControlFillPrimary}" />
                         </MultiTrigger>
 
                         <MultiTrigger>
@@ -108,9 +108,9 @@
                                 <Condition Property="IsChecked" Value="False" />
                                 <Condition Property="IsPressed" Value="True" />
                             </MultiTrigger.Conditions>
-                            <Setter Property="Background" Value="{m:BrushResource ControlFillColorTertiaryBrush}" />
-                            <Setter Property="BorderBrush" Value="{m:BrushResource ControlStrokeColorDefaultBrush}" />
-                            <Setter Property="Foreground" Value="{m:BrushResource TextFillColorTertiaryBrush}" />
+                            <Setter Property="Background" Value="{m:DynamicBrush ControlFillTertiary}" />
+                            <Setter Property="BorderBrush" Value="{m:DynamicBrush ControlStrokeDefault}" />
+                            <Setter Property="Foreground" Value="{m:DynamicBrush TextFillTertiary}" />
                         </MultiTrigger>
 
                         <MultiTrigger>
@@ -118,9 +118,9 @@
                                 <Condition Property="IsChecked" Value="False" />
                                 <Condition Property="IsEnabled" Value="False" />
                             </MultiTrigger.Conditions>
-                            <Setter Property="Background" Value="{m:BrushResource ControlFillColorDisabledBrush}" />
-                            <Setter Property="BorderBrush" Value="{m:BrushResource ControlStrokeColorDefaultBrush}" />
-                            <Setter Property="Foreground" Value="{m:BrushResource TextFillColorDisabledBrush}" />
+                            <Setter Property="Background" Value="{m:DynamicBrush ControlFillDisabled}" />
+                            <Setter Property="BorderBrush" Value="{m:DynamicBrush ControlStrokeDefault}" />
+                            <Setter Property="Foreground" Value="{m:DynamicBrush TextFillDisabled}" />
                         </MultiTrigger>
 
                         <!--  Checked  -->
@@ -130,10 +130,10 @@
                                 <Condition Property="IsChecked" Value="True" />
                                 <Condition Property="IsEnabled" Value="True" />
                             </MultiTrigger.Conditions>
-                            <Setter Property="Background" Value="{m:BrushResource AccentFillSecondaryBrush}" />
-                            <Setter Property="Foreground" Value="{m:BrushResource TextOnAccentPrimaryBrush}" />
+                            <Setter Property="Background" Value="{m:DynamicBrush AccentFillSecondary}" />
+                            <Setter Property="Foreground" Value="{m:DynamicBrush TextOnAccentPrimary}" />
                             <Setter TargetName="border" Property="BorderPlacement" Value="Inside" />
-                            <Setter Property="BorderBrush" Value="{m:BrushResource AccentControlElevationBorderBrush}" />
+                            <Setter Property="BorderBrush" Value="{m:DynamicBrush AccentControlElevationBorder}" />
                         </MultiTrigger>
 
                         <MultiTrigger>
@@ -141,10 +141,10 @@
                                 <Condition Property="IsChecked" Value="True" />
                                 <Condition Property="IsMouseOver" Value="True" />
                             </MultiTrigger.Conditions>
-                            <Setter Property="Background" Value="{m:BrushResource AccentFillPrimaryBrush}" />
-                            <Setter Property="Foreground" Value="{m:BrushResource TextOnAccentPrimaryBrush}" />
+                            <Setter Property="Background" Value="{m:DynamicBrush AccentFillPrimary}" />
+                            <Setter Property="Foreground" Value="{m:DynamicBrush TextOnAccentPrimary}" />
                             <Setter TargetName="border" Property="BorderPlacement" Value="Inside" />
-                            <Setter Property="BorderBrush" Value="{m:BrushResource AccentControlElevationBorderBrush}" />
+                            <Setter Property="BorderBrush" Value="{m:DynamicBrush AccentControlElevationBorder}" />
                         </MultiTrigger>
 
                         <MultiTrigger>
@@ -152,9 +152,9 @@
                                 <Condition Property="IsChecked" Value="True" />
                                 <Condition Property="IsPressed" Value="True" />
                             </MultiTrigger.Conditions>
-                            <Setter Property="Background" Value="{m:BrushResource AccentFillTertiaryBrush}" />
+                            <Setter Property="Background" Value="{m:DynamicBrush AccentFillTertiary}" />
                             <Setter Property="BorderThickness" Value="0" />
-                            <Setter Property="Foreground" Value="{m:BrushResource TextOnAccentPrimaryBrush}" />
+                            <Setter Property="Foreground" Value="{m:DynamicBrush TextOnAccentPrimary}" />
                         </MultiTrigger>
 
                         <MultiTrigger>
@@ -162,10 +162,10 @@
                                 <Condition Property="IsChecked" Value="True" />
                                 <Condition Property="IsEnabled" Value="False" />
                             </MultiTrigger.Conditions>
-                            <Setter Property="Background" Value="{m:BrushResource ControlFillColorDisabledBrush}" />
+                            <Setter Property="Background" Value="{m:DynamicBrush ControlFillDisabled}" />
                             <Setter TargetName="border" Property="BorderPlacement" Value="Inside" />
-                            <Setter Property="BorderBrush" Value="{m:BrushResource ControlStrokeColorDefaultBrush}" />
-                            <Setter Property="Foreground" Value="{m:BrushResource TextFillColorDisabledBrush}" />
+                            <Setter Property="BorderBrush" Value="{m:DynamicBrush ControlStrokeDefault}" />
+                            <Setter Property="Foreground" Value="{m:DynamicBrush TextFillDisabled}" />
                         </MultiTrigger>
 
                     </ControlTemplate.Triggers>

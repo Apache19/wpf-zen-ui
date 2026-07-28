@@ -9,11 +9,11 @@
     xmlns:vm="clr-namespace:Wpf.Ui.Gallery.ViewModels.Pages.BasicInput"
     Title="AnchorPage"
     controls:PageControlDocumentation.DocumentationType="{x:Type ui:Anchor}"
-    d:Background="{ui:BrushResource WindowBackgroundBrush}"
+    d:Background="{ui:DynamicBrush WindowBackground}"
     d:DataContext="{d:DesignInstance vm:AnchorViewModel, IsDesignTimeCreatable=False}"
     d:DesignWidth="800"
-    Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
-    Style="{ui:StyleResource DynamicScrollPageStyle}"
+    Foreground="{ui:DynamicBrush TextFillPrimary}"
+    Style="{ui:DynamicStyle DynamicScrollPage}"
     mc:Ignorable="d">
 
     <Grid Margin="0,0,0,24">

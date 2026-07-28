@@ -11,12 +11,12 @@
     xmlns:vm="clr-namespace:Wpf.Ui.Gallery.ViewModels.Pages.Media"
     xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
     Title="WebViewPage"
-    Style="{ui:StyleResource DynamicScrollPageStyle}"
+    Style="{ui:DynamicStyle DynamicScrollPage}"
     d:DataContext="{d:DesignInstance vm:WebViewViewModel,
                                      IsDesignTimeCreatable=False}"
     d:DesignWidth="800"
-    d:Background="{ui:BrushResource WindowBackgroundBrush}"
-    Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
+    d:Background="{ui:DynamicBrush WindowBackground}"
+    Foreground="{ui:DynamicBrush TextFillPrimary}"
     mc:Ignorable="d">
 
     <StackPanel Margin="0,0,0,24">

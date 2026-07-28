@@ -15,7 +15,7 @@
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="MinHeight" Value="40" />
         <Setter Property="MinWidth" Value="40" />
-        <Setter Property="Border.CornerRadius" Value="{m:VariableResource ControlCornerRadius}" />
+        <Setter Property="Border.CornerRadius" Value="{m:DynamicValue ControlCornerRadius}" />
         <Setter Property="HorizontalContentAlignment" Value="Left" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
@@ -116,14 +116,14 @@
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="LayoutRoot" Property="Background" Value="{m:BrushResource SubtleFillColorSecondaryBrush}" />
+                            <Setter TargetName="LayoutRoot" Property="Background" Value="{m:DynamicBrush SubtleFillSecondary}" />
                         </Trigger>
                         <Trigger Property="IsPressed" Value="True">
-                            <Setter TargetName="LayoutRoot" Property="Background" Value="{m:BrushResource SubtleFillColorTertiaryBrush}" />
+                            <Setter TargetName="LayoutRoot" Property="Background" Value="{m:DynamicBrush SubtleFillTertiary}" />
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter Property="Background" Value="{m:BrushResource SubtleFillColorDisabledBrush}" />
-                            <Setter Property="Foreground" Value="{m:BrushResource TextFillColorDisabledBrush}" />
+                            <Setter Property="Background" Value="{m:DynamicBrush SubtleFillDisabled}" />
+                            <Setter Property="Foreground" Value="{m:DynamicBrush TextFillDisabled}" />
                         </Trigger>
                         <Trigger Property="Content" Value="{x:Null}">
                             <Setter TargetName="contentPresenter" Property="Margin" Value="0" />

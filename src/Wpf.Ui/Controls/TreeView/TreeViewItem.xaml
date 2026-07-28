@@ -9,7 +9,7 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Ui.Controls"
-    xmlns:markup="clr-namespace:Wpf.Ui.Markup"
+    xmlns:m="clr-namespace:Wpf.Ui.Markup"
     xmlns:system="clr-namespace:System;assembly=System.Runtime"
     xmlns:theming="clr-namespace:Wpf.Ui.Theming">
 
@@ -21,7 +21,7 @@
         <Setter Property="FocusVisualStyle" Value="{DynamicResource {x:Static theming:StyleKeys.DefaultControlFocusVisualStyle}}" />
         <!--  Universal WPF UI focus  -->
         <Setter Property="Focusable" Value="False" />
-        <Setter Property="Foreground" Value="{markup:BrushResource TextFillColorPrimaryBrush}" />
+        <Setter Property="Foreground" Value="{m:DynamicBrush TextFillPrimary}" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
         <Setter Property="Template">
             <Setter.Value>
@@ -77,11 +77,11 @@
         <!--  Universal WPF UI focus  -->
         <Setter Property="FocusVisualStyle" Value="{DynamicResource {x:Static theming:StyleKeys.DefaultControlFocusVisualStyle}}" />
         <!--  Universal WPF UI focus  -->
-        <Setter Property="Foreground" Value="{markup:BrushResource TextFillColorPrimaryBrush}" />
-        <Setter Property="Background" Value="{markup:BrushResource SubtleFillColorTransparentBrush}" />
+        <Setter Property="Foreground" Value="{m:DynamicBrush TextFillPrimary}" />
+        <Setter Property="Background" Value="{m:DynamicBrush SubtleFillTransparent}" />
         <Setter Property="Padding" Value="4" />
         <Setter Property="FontSize" Value="{StaticResource TreeViewItemFontSize}" />
-        <Setter Property="Border.CornerRadius" Value="{DynamicResource {x:Static theming:VariableKeys.ControlCornerRadius}}" />
+        <Setter Property="Border.CornerRadius" Value="{m:DynamicValue ControlCornerRadius}" />
         <Setter Property="IsTabStop" Value="True" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
         <Setter Property="Template">
@@ -109,7 +109,7 @@
                                     Margin="0,0,0,0"
                                     HorizontalAlignment="Left"
                                     VerticalAlignment="Center"
-                                    Fill="{markup:BrushResource AccentSelectionBrush}"
+                                    Fill="{m:DynamicBrush AccentSelection}"
                                     RadiusX="2"
                                     RadiusY="2"
                                     Visibility="Collapsed" />
@@ -148,10 +148,10 @@
                             <Setter TargetName="ItemsHost" Property="Visibility" Value="Visible" />
                         </Trigger>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="Border" Property="Background" Value="{markup:BrushResource SubtleFillColorSecondaryBrush}" />
+                            <Setter TargetName="Border" Property="Background" Value="{m:DynamicBrush SubtleFillSecondary}" />
                         </Trigger>
                         <Trigger Property="IsSelected" Value="True">
-                            <Setter TargetName="Border" Property="Background" Value="{markup:BrushResource SubtleFillColorSecondaryBrush}" />
+                            <Setter TargetName="Border" Property="Background" Value="{m:DynamicBrush SubtleFillSecondary}" />
                             <Setter TargetName="ActiveRectangle" Property="Visibility" Value="Visible" />
                         </Trigger>
                         <MultiTrigger>
@@ -192,8 +192,8 @@
         注意模板选择器
     -->
     <Style x:Key="DefaultUiTreeViewItemStyle" TargetType="{x:Type controls:TreeViewItem}">
-        <Setter Property="Foreground" Value="{markup:BrushResource TextFillColorPrimaryBrush}" />
-        <Setter Property="Background" Value="{markup:BrushResource SubtleFillColorTransparentBrush}" />
+        <Setter Property="Foreground" Value="{m:DynamicBrush TextFillPrimary}" />
+        <Setter Property="Background" Value="{m:DynamicBrush SubtleFillTransparent}" />
         <Setter Property="Padding" Value="4" />
         <Setter Property="FocusVisualStyle" Value="{StaticResource TreeViewItemFocusVisual}" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
@@ -219,7 +219,7 @@
                             Margin="0,0,0,0"
                             HorizontalAlignment="Left"
                             VerticalAlignment="Center"
-                            Fill="{markup:BrushResource AccentSelectionBrush}"
+                            Fill="{m:DynamicBrush AccentSelection}"
                             RadiusX="2"
                             RadiusY="2"
                             Visibility="Collapsed" />
@@ -235,10 +235,10 @@
                             Grid.Row="0"
                             Grid.Column="1"
                             Padding="{TemplateBinding Padding}"
-                            Background="{markup:BrushResource SubtleFillColorTransparentBrush}"
+                            Background="{m:DynamicBrush SubtleFillTransparent}"
                             BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="{TemplateBinding BorderThickness}"
-                            CornerRadius="{DynamicResource {x:Static theming:VariableKeys.ControlCornerRadius}}">
+                            CornerRadius="{m:DynamicValue ControlCornerRadius}">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto" />
@@ -327,10 +327,10 @@
                             <Setter TargetName="Expander" Property="Visibility" Value="Hidden" />
                         </Trigger>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="Bd" Property="Background" Value="{markup:BrushResource SubtleFillColorSecondaryBrush}" />
+                            <Setter TargetName="Bd" Property="Background" Value="{m:DynamicBrush SubtleFillSecondary}" />
                         </Trigger>
                         <Trigger Property="IsSelected" Value="True">
-                            <Setter TargetName="Bd" Property="Background" Value="{markup:BrushResource SubtleFillColorSecondaryBrush}" />
+                            <Setter TargetName="Bd" Property="Background" Value="{m:DynamicBrush SubtleFillSecondary}" />
                             <Setter TargetName="ActiveRectangle" Property="Visibility" Value="Visible" />
                         </Trigger>
                         <MultiTrigger>

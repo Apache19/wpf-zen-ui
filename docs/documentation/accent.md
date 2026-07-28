@@ -47,7 +47,7 @@ The alpha channel of `CustomAccentColor` is ignored. Opacity is a property of th
 
 ## Accent resources
 
-Each role is available as a color (`ColorKeys` and `ColorId`) and as a brush (`BrushKeys` and `BrushId`):
+Each role is available as a color (`ColorKeys` and `ColorToken`) and as a brush (`BrushKeys` and `BrushToken`):
 
 - `AccentFillPrimary` is the brighter fill level.
 - `AccentFillSecondary` is the normal fill level.
@@ -62,10 +62,10 @@ The names express a reusable color hierarchy, not fixed control states. Each con
 
 ```xml
 <Style TargetType="ui:Button">
-    <Setter Property="Background" Value="{ui:BrushResource AccentFillSecondaryBrush}" />
-    <Setter Property="MouseOverBackground" Value="{ui:BrushResource AccentFillPrimaryBrush}" />
-    <Setter Property="PressedBackground" Value="{ui:BrushResource AccentFillTertiaryBrush}" />
-    <Setter Property="Foreground" Value="{ui:BrushResource TextOnAccentPrimaryBrush}" />
+    <Setter Property="Background" Value="{ui:DynamicBrush AccentFillSecondary}" />
+    <Setter Property="MouseOverBackground" Value="{ui:DynamicBrush AccentFillPrimary}" />
+    <Setter Property="PressedBackground" Value="{ui:DynamicBrush AccentFillTertiary}" />
+    <Setter Property="Foreground" Value="{ui:DynamicBrush TextOnAccentPrimary}" />
 </Style>
 ```
 

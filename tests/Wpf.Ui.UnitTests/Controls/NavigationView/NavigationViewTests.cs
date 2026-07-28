@@ -339,7 +339,7 @@ public class NavigationViewTests
         {
             Assert.Null(Application.Current);
             var page = new Page { Content = new Border { Height = 200D } };
-            // SetResourceReference is the programmatic equivalent of StyleResourceExtension's
+            // SetResourceReference is the programmatic equivalent of DynamicStyleExtension's
             // DynamicResource result. Do not merge Generic.xaml here: this verifies that WPF can
             // locate the ComponentResourceKey in the library theme dictionary without relying on
             // a string entry in Application.Resources.
@@ -509,9 +509,9 @@ public class NavigationViewTests
     }
 
     [Fact]
-    public void DynamicScrollPageStyle_IsAvailableThroughStronglyTypedResourceExtension()
+    public void DynamicScrollPageStyle_IsAvailableThroughDynamicStyleExtension()
     {
-        var extension = new StyleResourceExtension(StyleId.DynamicScrollPageStyle);
+        var extension = new DynamicStyleExtension(StyleToken.DynamicScrollPage);
 
         Assert.Same(StyleKeys.DynamicScrollPageStyle, extension.ResourceKey);
     }

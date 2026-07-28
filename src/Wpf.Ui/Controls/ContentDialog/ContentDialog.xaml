@@ -3,8 +3,8 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Ui.Controls"
     xmlns:converters="clr-namespace:Wpf.Ui.Converters"
-    xmlns:markup="clr-namespace:Wpf.Ui.Markup"
-    xmlns:theming="clr-namespace:Wpf.Ui.Theming">
+    xmlns:m="clr-namespace:Wpf.Ui.Markup"
+    xmlns:t="clr-namespace:Wpf.Ui.Theming">
 
     <converters:ContentDialogButtonEnumToBoolConverter x:Key="EnumToBoolConverter" />
     <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" />
@@ -44,7 +44,7 @@
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
 
-                    <Border Background="{markup:BrushResource LayerFillColorAltBrush}" CornerRadius="{StaticResource DialogOverlayCornerRadius}" />
+                    <Border Background="{m:DynamicBrush LayerFillAlt}" CornerRadius="{StaticResource DialogOverlayCornerRadius}" />
 
                     <Grid
                         Grid.Row="0"
@@ -100,7 +100,7 @@
                         Padding="{TemplateBinding Padding}"
                         HorizontalAlignment="Stretch"
                         VerticalAlignment="Bottom"
-                        BorderBrush="{markup:BrushResource CardStrokeColorDefaultBrush}"
+                        BorderBrush="{m:DynamicBrush CardStrokeDefault}"
                         BorderThickness="0,1,0,0"
                         CornerRadius="{StaticResource DialogFooterCornerRadius}"
                         Focusable="False"
@@ -205,15 +205,15 @@
     </ControlTemplate>
 
     <Style TargetType="{x:Type controls:ContentDialog}">
-        <Setter Property="Background" Value="{markup:BrushResource SolidBackgroundFillColorBaseBrush}" />
-        <Setter Property="Border.CornerRadius" Value="{DynamicResource {x:Static theming:VariableKeys.PopupCornerRadius}}" />
-        <Setter Property="BorderBrush" Value="{markup:BrushResource SurfaceStrokeColorDefaultBrush}" />
+        <Setter Property="Background" Value="{m:DynamicBrush SolidBackgroundFillBase}" />
+        <Setter Property="Border.CornerRadius" Value="{m:DynamicValue PopupCornerRadius}" />
+        <Setter Property="BorderBrush" Value="{m:DynamicBrush SurfaceStrokeDefault}" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="DialogMargin" Value="35" />
         <Setter Property="DialogMaxHeight" Value="850" />
         <Setter Property="DialogMaxWidth" Value="1000" />
         <Setter Property="Focusable" Value="False" />
-        <Setter Property="Foreground" Value="{markup:BrushResource TextFillColorPrimaryBrush}" />
+        <Setter Property="Foreground" Value="{m:DynamicBrush TextFillPrimary}" />
         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
         <Setter Property="KeyboardNavigation.ControlTabNavigation" Value="Cycle" />
         <Setter Property="KeyboardNavigation.DirectionalNavigation" Value="Cycle" />

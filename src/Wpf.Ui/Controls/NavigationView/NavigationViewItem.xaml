@@ -12,7 +12,7 @@
     </ResourceDictionary.MergedDictionaries>
 
     <Style x:Key="NavigationViewItemDefaultStyle" TargetType="{x:Type controls:NavigationViewItem}">
-        <Setter Property="Border.CornerRadius" Value="{m:VariableResource ControlCornerRadius}" />
+        <Setter Property="Border.CornerRadius" Value="{m:DynamicValue ControlCornerRadius}" />
         <Setter Property="Cursor" Value="Hand" />
         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
         <Setter Property="Background" Value="Transparent" />

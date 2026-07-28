@@ -30,7 +30,7 @@
                 HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
                 VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
                 Focusable="False"
-                Foreground="{m:BrushResource TextPlaceholderColorBrush}"
+                Foreground="{m:DynamicBrush TextPlaceholder}"
                 IsHitTestVisible="False"
                 Opacity="0" />
             <controls:PassiveScrollViewer
@@ -54,7 +54,7 @@
                     <VisualState x:Name="Disabled">
                         <Storyboard>
                             <ObjectAnimationUsingKeyFrames Storyboard.TargetName="PART_Watermark" Storyboard.TargetProperty="Foreground">
-                                <DiscreteObjectKeyFrame KeyTime="0" Value="{m:BrushResource TextFillColorDisabledBrush}" />
+                                <DiscreteObjectKeyFrame KeyTime="0" Value="{m:DynamicBrush TextFillDisabled}" />
                             </ObjectAnimationUsingKeyFrames>
                         </Storyboard>
                     </VisualState>
@@ -150,7 +150,7 @@
 
             <Border
                 x:Name="FocusIndicator"
-                BorderBrush="{m:BrushResource AccentStrokeBrush}"
+                BorderBrush="{m:DynamicBrush AccentStroke}"
                 BorderThickness="0,0,0,2"
                 CornerRadius="{TemplateBinding Border.CornerRadius}"
                 IsHitTestVisible="False"
@@ -167,13 +167,13 @@
                     <VisualState x:Name="Disabled">
                         <Storyboard>
                             <ObjectAnimationUsingKeyFrames Storyboard.TargetName="RootBorder" Storyboard.TargetProperty="Background">
-                                <DiscreteObjectKeyFrame KeyTime="0" Value="{m:BrushResource ControlFillColorDisabledBrush}" />
+                                <DiscreteObjectKeyFrame KeyTime="0" Value="{m:DynamicBrush ControlFillDisabled}" />
                             </ObjectAnimationUsingKeyFrames>
                             <ObjectAnimationUsingKeyFrames Storyboard.TargetName="RootBorder" Storyboard.TargetProperty="BorderBrush">
-                                <DiscreteObjectKeyFrame KeyTime="0" Value="{m:BrushResource ControlStrokeColorDefaultBrush}" />
+                                <DiscreteObjectKeyFrame KeyTime="0" Value="{m:DynamicBrush ControlStrokeDefault}" />
                             </ObjectAnimationUsingKeyFrames>
                             <ObjectAnimationUsingKeyFrames Storyboard.TargetName="RootBorder" Storyboard.TargetProperty="(TextElement.Foreground)">
-                                <DiscreteObjectKeyFrame KeyTime="0" Value="{m:BrushResource TextFillColorDisabledBrush}" />
+                                <DiscreteObjectKeyFrame KeyTime="0" Value="{m:DynamicBrush TextFillDisabled}" />
                             </ObjectAnimationUsingKeyFrames>
                             <ObjectAnimationUsingKeyFrames Storyboard.TargetName="FocusIndicator" Storyboard.TargetProperty="Visibility">
                                 <DiscreteObjectKeyFrame KeyTime="0" Value="{x:Static Visibility.Collapsed}" />
@@ -192,10 +192,10 @@
                 routing while keeping one TextBox-like surface.
             -->
             <Trigger SourceName="PART_TextBox" Property="IsMouseOver" Value="True">
-                <Setter TargetName="RootBorder" Property="Background" Value="{m:BrushResource ControlFillColorPrimaryBrush}" />
+                <Setter TargetName="RootBorder" Property="Background" Value="{m:DynamicBrush ControlFillPrimary}" />
             </Trigger>
             <Trigger SourceName="PART_TextBox" Property="IsKeyboardFocused" Value="True">
-                <Setter TargetName="RootBorder" Property="Background" Value="{m:BrushResource ControlFillColorInputActiveBrush}" />
+                <Setter TargetName="RootBorder" Property="Background" Value="{m:DynamicBrush ControlFillInputActive}" />
                 <Setter TargetName="FocusIndicator" Property="Visibility" Value="Visible" />
             </Trigger>
         </ControlTemplate.Triggers>
@@ -206,17 +206,17 @@
         <Setter Property="IsTodayHighlighted" Value="True" />
         <Setter Property="SelectedDateFormat" Value="Short" />
         <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-        <Setter Property="Background" Value="{m:BrushResource ControlFillColorSecondaryBrush}" />
-        <Setter Property="Padding" Value="{m:VariableResource TextControlThemePadding}" />
-        <Setter Property="BorderBrush" Value="{m:BrushResource ControlStrokeColorSecondaryBrush}" />
+        <Setter Property="Background" Value="{m:DynamicBrush ControlFillSecondary}" />
+        <Setter Property="Padding" Value="{m:DynamicValue TextControlThemePadding}" />
+        <Setter Property="BorderBrush" Value="{m:DynamicBrush ControlStrokeSecondary}" />
         <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="Border.CornerRadius" Value="{m:VariableResource ControlCornerRadius}" />
+        <Setter Property="Border.CornerRadius" Value="{m:DynamicValue ControlCornerRadius}" />
         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
-        <Setter Property="Validation.ErrorTemplate" Value="{m:StyleResource DefaultValidationTemplate}" />
+        <Setter Property="Validation.ErrorTemplate" Value="{m:DynamicTemplate DefaultValidation}" />
         <Setter Property="Template" Value="{StaticResource DefaultDatePickerTemplate}" />
-        <Setter Property="CalendarStyle" Value="{m:StyleResource DefaultCalendarStyle}" />
+        <Setter Property="CalendarStyle" Value="{m:DynamicStyle DefaultCalendar}" />
     </Style>
 
     <Style BasedOn="{StaticResource {x:Static t:StyleKeys.DefaultDatePickerStyle}}" TargetType="{x:Type DatePicker}" />

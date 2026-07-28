@@ -50,7 +50,7 @@
                             Grid.Row="1"
                             Height="1"
                             Margin="0,4,0,4"
-                            Background="{m:BrushResource LeftNavigationViewSeparatorBrush}" />
+                            Background="{m:DynamicBrush LeftNavigationViewSeparator}" />
 
                         <!--  Scrollable Menu Items  -->
                         <controls:NavigationViewList
@@ -81,7 +81,7 @@
                             Grid.Row="3"
                             Height="1"
                             Margin="0,4,0,4"
-                            Background="{m:BrushResource LeftNavigationViewSeparatorBrush}" />
+                            Background="{m:DynamicBrush LeftNavigationViewSeparator}" />
 
                         <!--  Footer (Fixed)  -->
                         <Grid Grid.Row="4">
@@ -122,8 +122,8 @@
             <Border
                 Grid.Column="1"
                 Margin="{TemplateBinding FrameMargin}"
-                Background="{m:BrushResource LayerFillColorDefaultBrush}"
-                BorderBrush="{m:BrushResource CardStrokeColorDefaultBrush}"
+                Background="{m:DynamicBrush LayerFillDefault}"
+                BorderBrush="{m:DynamicBrush CardStrokeDefault}"
                 BorderThickness="1,1,0,0"
                 CornerRadius="8,0,0,0">
                 <Grid>

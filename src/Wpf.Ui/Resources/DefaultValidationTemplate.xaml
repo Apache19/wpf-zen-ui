@@ -4,10 +4,10 @@
     xmlns:m="clr-namespace:Wpf.Ui.Markup"
     xmlns:t="clr-namespace:Wpf.Ui.Theming">
 
-    <ControlTemplate x:Key="{x:Static t:StyleKeys.DefaultValidationTemplate}">
+    <ControlTemplate x:Key="{x:Static t:TemplateKeys.DefaultValidationTemplate}">
         <Grid>
             <Border
-                BorderBrush="{m:BrushResource PaletteRedBrush}"
+                BorderBrush="{m:DynamicBrush PaletteRed}"
                 BorderThickness="1"
                 CornerRadius="5"
                 SnapsToDevicePixels="True">

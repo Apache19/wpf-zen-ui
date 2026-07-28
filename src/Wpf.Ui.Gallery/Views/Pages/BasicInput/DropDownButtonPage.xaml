@@ -9,11 +9,11 @@
     xmlns:vm="clr-namespace:Wpf.Ui.Gallery.ViewModels.Pages.BasicInput"
     Title="DropDownButtonPage"
     controls:PageControlDocumentation.DocumentationType="{x:Type ui:DropDownButton}"
-    d:Background="{ui:BrushResource WindowBackgroundBrush}"
+    d:Background="{ui:DynamicBrush WindowBackground}"
     d:DataContext="{d:DesignInstance vm:DropDownButtonViewModel, IsDesignTimeCreatable=False}"
     d:DesignWidth="800"
-    Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
-    Style="{ui:StyleResource DynamicScrollPageStyle}"
+    Foreground="{ui:DynamicBrush TextFillPrimary}"
+    Style="{ui:DynamicStyle DynamicScrollPage}"
     mc:Ignorable="d">
 
     <StackPanel Margin="0,0,0,24">
@@ -71,7 +71,7 @@
                 <TextBlock
                     Margin="12,12,0,0"
                     FontSize="13"
-                    Foreground="{ui:BrushResource TextFillColorSecondaryBrush}"
+                    Foreground="{ui:DynamicBrush TextFillSecondary}"
                     Text="{Binding StatusMessage}" />
             </StackPanel>
         </controls:ControlExample>
@@ -87,8 +87,8 @@
             <Border
                 MinWidth="320"
                 Padding="24"
-                Background="{ui:BrushResource CardBackgroundFillColorDefaultBrush}"
-                BorderBrush="{ui:BrushResource CardStrokeColorDefaultBrush}"
+                Background="{ui:DynamicBrush CardBackgroundFillDefault}"
+                BorderBrush="{ui:DynamicBrush CardStrokeDefault}"
                 BorderThickness="1"
                 CornerRadius="8"
                 Cursor="Hand"
@@ -142,7 +142,7 @@
                             VerticalAlignment="Center"
                             Filled="True"
                             FontSize="20"
-                            Foreground="{ui:BrushResource TextFillColorSecondaryBrush}"
+                            Foreground="{ui:DynamicBrush TextFillSecondary}"
                             Symbol="Cursor24" />
                         <TextBlock
                             Margin="8,0,0,0"
@@ -154,7 +154,7 @@
                     <TextBlock
                         Margin="0,8,0,0"
                         FontSize="13"
-                        Foreground="{ui:BrushResource TextFillColorSecondaryBrush}"
+                        Foreground="{ui:DynamicBrush TextFillSecondary}"
                         Text="Right-click here to show context menu."
                         TextWrapping="Wrap" />
                 </StackPanel>
@@ -229,8 +229,8 @@
             <Border
                 MinWidth="320"
                 Padding="24"
-                Background="{ui:BrushResource CardBackgroundFillColorDefaultBrush}"
-                BorderBrush="{ui:BrushResource CardStrokeColorDefaultBrush}"
+                Background="{ui:DynamicBrush CardBackgroundFillDefault}"
+                BorderBrush="{ui:DynamicBrush CardStrokeDefault}"
                 BorderThickness="1"
                 CornerRadius="8"
                 Cursor="Hand"
@@ -369,7 +369,7 @@
                             VerticalAlignment="Center"
                             Filled="True"
                             FontSize="20"
-                            Foreground="{ui:BrushResource PaletteLightBlueBrush}"
+                            Foreground="{ui:DynamicBrush PaletteLightBlue}"
                             Symbol="List24" />
                         <TextBlock
                             Margin="8,0,0,0"
@@ -381,7 +381,7 @@
                     <TextBlock
                         Margin="0,8,0,0"
                         FontSize="13"
-                        Foreground="{ui:BrushResource TextFillColorSecondaryBrush}"
+                        Foreground="{ui:DynamicBrush TextFillSecondary}"
                         Text="Right-click here to show a very long scrolling context menu with many items."
                         TextWrapping="Wrap" />
                 </StackPanel>

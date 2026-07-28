@@ -8,12 +8,12 @@
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
     xmlns:vm="clr-namespace:Wpf.Ui.Gallery.ViewModels.Pages"
     Title="Settings Page"
-    Style="{ui:StyleResource DynamicScrollPageStyle}"
+    Style="{ui:DynamicStyle DynamicScrollPage}"
     controls:PageControlDocumentation.Show="False"
-    d:Background="{ui:BrushResource WindowBackgroundBrush}"
+    d:Background="{ui:DynamicBrush WindowBackground}"
     d:DataContext="{d:DesignInstance vm:SettingsViewModel, IsDesignTimeCreatable=True}"
     d:DesignWidth="800"
-    Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
+    Foreground="{ui:DynamicBrush TextFillPrimary}"
     mc:Ignorable="d">
 
     <StackPanel Margin="0,0,0,24">
@@ -34,7 +34,7 @@
                         Text="App theme" />
                     <ui:TextBlock
                         Grid.Row="1"
-                        Foreground="{ui:BrushResource TextFillColorSecondaryBrush}"
+                        Foreground="{ui:DynamicBrush TextFillSecondary}"
                         Text="Select which app theme to display" />
                 </Grid>
             </ui:CardControl.Header>
@@ -93,7 +93,7 @@
                     <ui:TextBlock
                         Grid.Row="1"
                         Grid.Column="0"
-                        Foreground="{ui:BrushResource TextFillColorSecondaryBrush}"
+                        Foreground="{ui:DynamicBrush TextFillSecondary}"
                         Text="© 2025 lepo.co | Leszek Pomianowski &amp; WPF UI Contributors" />
                     <TextBlock
                         Grid.Row="0"
@@ -101,7 +101,7 @@
                         Grid.Column="1"
                         Margin="0,0,16,0"
                         VerticalAlignment="Center"
-                        Foreground="{ui:BrushResource TextFillColorSecondaryBrush}"
+                        Foreground="{ui:DynamicBrush TextFillSecondary}"
                         Text="{Binding AppVersion}" />
                 </Grid>
             </ui:CardExpander.Header>
@@ -114,7 +114,7 @@
                     <TextBlock Grid.Column="0" Text="To clone this repository" />
                     <TextBlock
                         Grid.Column="1"
-                        Foreground="{ui:BrushResource TextFillColorSecondaryBrush}"
+                        Foreground="{ui:DynamicBrush TextFillSecondary}"
                         Text="git clone https://github.com/lepoco/wpfui.git" />
                 </Grid>
                 <ui:Anchor

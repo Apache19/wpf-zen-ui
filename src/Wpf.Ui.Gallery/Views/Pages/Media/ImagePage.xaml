@@ -10,13 +10,13 @@
     xmlns:system="clr-namespace:System;assembly=System.Runtime"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
     Title="ImagePage"
-    Style="{ui:StyleResource DynamicScrollPageStyle}"
+    Style="{ui:DynamicStyle DynamicScrollPage}"
     controls:PageControlDocumentation.DocumentationType="{x:Type ui:Image}"
     d:DataContext="{d:DesignInstance vm:ImageViewModel,
                                      IsDesignTimeCreatable=False}"
     d:DesignWidth="800"
-    d:Background="{ui:BrushResource WindowBackgroundBrush}"
-    Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
+    d:Background="{ui:DynamicBrush WindowBackground}"
+    Foreground="{ui:DynamicBrush TextFillPrimary}"
     mc:Ignorable="d">
     <Page.Resources>
         <system:String x:Key="PageXamlUrl">https://github.com/dotnet/wpf</system:String>

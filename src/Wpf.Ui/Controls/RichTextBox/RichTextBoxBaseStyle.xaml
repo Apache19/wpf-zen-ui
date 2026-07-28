@@ -25,15 +25,15 @@
         </Border>
         <ControlTemplate.Triggers>
             <Trigger Property="IsMouseOver" Value="True">
-                <Setter TargetName="MainBorder" Property="Background" Value="{m:BrushResource ControlFillColorPrimaryBrush}" />
+                <Setter TargetName="MainBorder" Property="Background" Value="{m:DynamicBrush ControlFillPrimary}" />
             </Trigger>
             <Trigger Property="IsKeyboardFocused" Value="True">
-                <Setter TargetName="MainBorder" Property="Background" Value="{m:BrushResource ControlFillColorInputActiveBrush}" />
+                <Setter TargetName="MainBorder" Property="Background" Value="{m:DynamicBrush ControlFillInputActive}" />
             </Trigger>
             <Trigger Property="IsEnabled" Value="False">
-                <Setter TargetName="MainBorder" Property="Background" Value="{m:BrushResource ControlFillColorDisabledBrush}" />
-                <Setter TargetName="MainBorder" Property="BorderBrush" Value="{m:BrushResource ControlStrokeColorDefaultBrush}" />
-                <Setter Property="Foreground" Value="{m:BrushResource TextFillColorDisabledBrush}" />
+                <Setter TargetName="MainBorder" Property="Background" Value="{m:DynamicBrush ControlFillDisabled}" />
+                <Setter TargetName="MainBorder" Property="BorderBrush" Value="{m:DynamicBrush ControlStrokeDefault}" />
+                <Setter Property="Foreground" Value="{m:DynamicBrush TextFillDisabled}" />
             </Trigger>
         </ControlTemplate.Triggers>
     </ControlTemplate>
@@ -45,14 +45,14 @@
         <Setter Property="Stylus.IsFlicksEnabled" Value="False" />
         <Setter Property="FocusVisualStyle" Value="{x:Null}" />
         <Setter Property="CaretBrush" Value="{Binding Foreground, RelativeSource={RelativeSource Self}}" />
-        <Setter Property="Background" Value="{m:BrushResource ControlFillColorSecondaryBrush}" />
-        <Setter Property="BorderBrush" Value="{m:BrushResource ControlStrokeColorSecondaryBrush}" />
+        <Setter Property="Background" Value="{m:DynamicBrush ControlFillSecondary}" />
+        <Setter Property="BorderBrush" Value="{m:DynamicBrush ControlStrokeSecondary}" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-        <Setter Property="Padding" Value="{m:VariableResource TextControlThemePadding}" />
-        <Setter Property="Border.CornerRadius" Value="{m:VariableResource ControlCornerRadius}" />
+        <Setter Property="Padding" Value="{m:DynamicValue TextControlThemePadding}" />
+        <Setter Property="Border.CornerRadius" Value="{m:DynamicValue ControlCornerRadius}" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
-        <Setter Property="Validation.ErrorTemplate" Value="{m:StyleResource DefaultValidationTemplate}" />
+        <Setter Property="Validation.ErrorTemplate" Value="{m:DynamicTemplate DefaultValidation}" />
         <Setter Property="ContextMenu" Value="{StaticResource DefaultEditorContextMenu}" />
         <Setter Property="Template" Value="{StaticResource DefaultRichTextBoxTemplate}" />
     </Style>

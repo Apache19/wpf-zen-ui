@@ -12,7 +12,7 @@
     xmlns:m="clr-namespace:Wpf.Ui.Markup">
 
     <Style x:Key="{x:Static MenuItem.SeparatorStyleKey}" TargetType="{x:Type Separator}">
-        <Setter Property="Background" Value="{m:BrushResource ControlAltFillColorTertiaryBrush}" />
+        <Setter Property="Background" Value="{m:DynamicBrush ControlAltFillTertiary}" />
         <Setter Property="Margin" Value="0,2,0,2" />
         <Setter Property="Focusable" Value="false" />
         <Setter Property="Template">
@@ -46,7 +46,7 @@
                         RadiusX="4"
                         RadiusY="4"
                         SnapsToDevicePixels="True"
-                        Stroke="{m:BrushResource KeyboardFocusBorderColorBrush}"
+                        Stroke="{m:DynamicBrush KeyboardFocusBorder}"
                         StrokeThickness="1" />
                 </ControlTemplate>
             </Setter.Value>
@@ -115,8 +115,8 @@
                 <Border
                     x:Name="SubmenuBorder"
                     Padding="0,3,0,3"
-                    Background="{m:BrushResource AcrylicBackgroundFillColorDefaultBrush}"
-                    BorderBrush="{m:BrushResource SurfaceStrokeColorFlyoutBrush}"
+                    Background="{m:DynamicBrush AcrylicBackgroundFillDefault}"
+                    BorderBrush="{m:DynamicBrush SurfaceStrokeFlyout}"
                     BorderThickness="1"
                     CornerRadius="8"
                     SnapsToDevicePixels="True">
@@ -158,16 +158,16 @@
 
             <!--  视觉状态触发器  -->
             <Trigger Property="IsMouseOver" Value="True">
-                <Setter TargetName="TopLevelHeaderBorder" Property="Background" Value="{m:BrushResource SubtleFillColorSecondaryBrush}" />
+                <Setter TargetName="TopLevelHeaderBorder" Property="Background" Value="{m:DynamicBrush SubtleFillSecondary}" />
             </Trigger>
             <Trigger Property="IsHighlighted" Value="True">
-                <Setter TargetName="TopLevelHeaderBorder" Property="Background" Value="{m:BrushResource SubtleFillColorSecondaryBrush}" />
+                <Setter TargetName="TopLevelHeaderBorder" Property="Background" Value="{m:DynamicBrush SubtleFillSecondary}" />
             </Trigger>
             <Trigger Property="IsPressed" Value="True">
-                <Setter TargetName="TopLevelHeaderBorder" Property="Background" Value="{m:BrushResource SubtleFillColorTertiaryBrush}" />
+                <Setter TargetName="TopLevelHeaderBorder" Property="Background" Value="{m:DynamicBrush SubtleFillTertiary}" />
             </Trigger>
             <Trigger Property="IsEnabled" Value="False">
-                <Setter Property="Foreground" Value="{m:BrushResource TextFillColorDisabledBrush}" />
+                <Setter Property="Foreground" Value="{m:DynamicBrush TextFillDisabled}" />
             </Trigger>
         </ControlTemplate.Triggers>
     </ControlTemplate>
@@ -241,16 +241,16 @@
 
             <!--  视觉状态触发器  -->
             <Trigger Property="IsMouseOver" Value="True">
-                <Setter TargetName="TopLevelItemBorder" Property="Background" Value="{m:BrushResource SubtleFillColorSecondaryBrush}" />
+                <Setter TargetName="TopLevelItemBorder" Property="Background" Value="{m:DynamicBrush SubtleFillSecondary}" />
             </Trigger>
             <Trigger Property="IsHighlighted" Value="True">
-                <Setter TargetName="TopLevelItemBorder" Property="Background" Value="{m:BrushResource SubtleFillColorSecondaryBrush}" />
+                <Setter TargetName="TopLevelItemBorder" Property="Background" Value="{m:DynamicBrush SubtleFillSecondary}" />
             </Trigger>
             <Trigger Property="IsPressed" Value="True">
-                <Setter TargetName="TopLevelItemBorder" Property="Background" Value="{m:BrushResource SubtleFillColorTertiaryBrush}" />
+                <Setter TargetName="TopLevelItemBorder" Property="Background" Value="{m:DynamicBrush SubtleFillTertiary}" />
             </Trigger>
             <Trigger Property="IsEnabled" Value="False">
-                <Setter Property="Foreground" Value="{m:BrushResource TextFillColorDisabledBrush}" />
+                <Setter Property="Foreground" Value="{m:DynamicBrush TextFillDisabled}" />
             </Trigger>
         </ControlTemplate.Triggers>
     </ControlTemplate>
@@ -309,7 +309,7 @@
                         HorizontalAlignment="Right"
                         VerticalAlignment="Center"
                         FontSize="11"
-                        Foreground="{m:BrushResource TextFillColorDisabledBrush}"
+                        Foreground="{m:DynamicBrush TextFillDisabled}"
                         Text="{TemplateBinding InputGestureText}"
                         UseLayoutRounding="True" />
                 </Grid>
@@ -338,16 +338,16 @@
 
             <!--  视觉状态触发器  -->
             <Trigger Property="IsMouseOver" Value="True">
-                <Setter TargetName="SubmenuItemBorder" Property="Background" Value="{m:BrushResource SubtleFillColorSecondaryBrush}" />
+                <Setter TargetName="SubmenuItemBorder" Property="Background" Value="{m:DynamicBrush SubtleFillSecondary}" />
             </Trigger>
             <Trigger Property="IsHighlighted" Value="True">
-                <Setter TargetName="SubmenuItemBorder" Property="Background" Value="{m:BrushResource SubtleFillColorSecondaryBrush}" />
+                <Setter TargetName="SubmenuItemBorder" Property="Background" Value="{m:DynamicBrush SubtleFillSecondary}" />
             </Trigger>
             <Trigger Property="IsPressed" Value="True">
-                <Setter TargetName="SubmenuItemBorder" Property="Background" Value="{m:BrushResource SubtleFillColorTertiaryBrush}" />
+                <Setter TargetName="SubmenuItemBorder" Property="Background" Value="{m:DynamicBrush SubtleFillTertiary}" />
             </Trigger>
             <Trigger Property="IsEnabled" Value="False">
-                <Setter Property="Foreground" Value="{m:BrushResource TextFillColorDisabledBrush}" />
+                <Setter Property="Foreground" Value="{m:DynamicBrush TextFillDisabled}" />
             </Trigger>
         </ControlTemplate.Triggers>
     </ControlTemplate>
@@ -420,8 +420,8 @@
                 <Border
                     x:Name="SubmenuBorder"
                     Padding="0,3,0,3"
-                    Background="{m:BrushResource AcrylicBackgroundFillColorDefaultBrush}"
-                    BorderBrush="{m:BrushResource SurfaceStrokeColorFlyoutBrush}"
+                    Background="{m:DynamicBrush AcrylicBackgroundFillDefault}"
+                    BorderBrush="{m:DynamicBrush SurfaceStrokeFlyout}"
                     BorderThickness="1"
                     CornerRadius="8"
                     SnapsToDevicePixels="True">
@@ -460,16 +460,16 @@
 
             <!--  视觉状态触发器  -->
             <Trigger Property="IsMouseOver" Value="True">
-                <Setter TargetName="SubmenuHeaderBorder" Property="Background" Value="{m:BrushResource SubtleFillColorSecondaryBrush}" />
+                <Setter TargetName="SubmenuHeaderBorder" Property="Background" Value="{m:DynamicBrush SubtleFillSecondary}" />
             </Trigger>
             <Trigger Property="IsHighlighted" Value="true">
-                <Setter TargetName="SubmenuHeaderBorder" Property="Background" Value="{m:BrushResource SubtleFillColorSecondaryBrush}" />
+                <Setter TargetName="SubmenuHeaderBorder" Property="Background" Value="{m:DynamicBrush SubtleFillSecondary}" />
             </Trigger>
             <Trigger Property="IsPressed" Value="True">
-                <Setter TargetName="SubmenuHeaderBorder" Property="Background" Value="{m:BrushResource SubtleFillColorTertiaryBrush}" />
+                <Setter TargetName="SubmenuHeaderBorder" Property="Background" Value="{m:DynamicBrush SubtleFillTertiary}" />
             </Trigger>
             <Trigger Property="IsEnabled" Value="false">
-                <Setter Property="Foreground" Value="{m:BrushResource TextFillColorDisabledBrush}" />
+                <Setter Property="Foreground" Value="{m:DynamicBrush TextFillDisabled}" />
             </Trigger>
         </ControlTemplate.Triggers>
     </ControlTemplate>

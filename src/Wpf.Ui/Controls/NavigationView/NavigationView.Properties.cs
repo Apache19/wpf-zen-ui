@@ -259,11 +259,11 @@ public partial class NavigationView
         {
             return;
         }
-
+#warning 研究一下这面包屑控件是否应该实现成单独的面包屑控件和项目控件样式
         breadcrumbBar.ItemsSource = navigationView._breadcrumbItems;
 
         breadcrumbBar.ItemTemplate ??=
-            navigationView.TryFindResource(StyleKeys.NavigationViewItemDataTemplate) as DataTemplate;
+            navigationView.TryFindResource(TemplateKeys.NavigationViewItemDataTemplate) as DataTemplate;
 
         // todo 考察一下使用路由事件是否比强绑定要好一点
         breadcrumbBar.ItemClicked += navigationView.BreadcrumbBarOnItemClicked;

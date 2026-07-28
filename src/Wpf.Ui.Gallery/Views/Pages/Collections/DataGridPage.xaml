@@ -11,11 +11,11 @@
     xmlns:vm="clr-namespace:Wpf.Ui.Gallery.ViewModels.Pages.Collections"
     Title="DataGridPage"
     controls:PageControlDocumentation.DocumentationType="{x:Type ui:DataGrid}"
-    d:Background="{ui:BrushResource WindowBackgroundBrush}"
+    d:Background="{ui:DynamicBrush WindowBackground}"
     d:DataContext="{d:DesignInstance vm:DataGridViewModel, IsDesignTimeCreatable=False}"
     d:DesignWidth="800"
-    Style="{ui:StyleResource DynamicScrollPageStyle}"
-    Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
+    Style="{ui:DynamicStyle DynamicScrollPage}"
+    Foreground="{ui:DynamicBrush TextFillPrimary}"
     mc:Ignorable="d">
     <Page.Resources>
         <system:String x:Key="PageXamlUrl">https://github.com/lepoco/wpfui/blob/development/src/Wpf.Ui/Resources/Controls/DataGrid.xaml</system:String>

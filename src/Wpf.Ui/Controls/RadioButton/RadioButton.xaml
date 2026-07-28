@@ -16,9 +16,9 @@
 
     <Style x:Key="{x:Static t:StyleKeys.DefaultRadioButtonStyle}" TargetType="{x:Type RadioButton}">
         <Setter Property="OverridesDefaultStyle" Value="True" />
-        <Setter Property="FocusVisualStyle" Value="{m:StyleResource DefaultControlFocusVisualStyle}" />
-        <Setter Property="Background" Value="{m:BrushResource ControlAltFillColorSecondaryBrush}" />
-        <Setter Property="BorderBrush" Value="{m:BrushResource ControlStrongStrokeColorDefaultBrush}" />
+        <Setter Property="FocusVisualStyle" Value="{m:DynamicStyle DefaultControlFocusVisual}" />
+        <Setter Property="Background" Value="{m:DynamicBrush ControlAltFillSecondary}" />
+        <Setter Property="BorderBrush" Value="{m:DynamicBrush ControlStrongStrokeDefault}" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="HorizontalContentAlignment" Value="Left" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
@@ -45,7 +45,7 @@
                                         x:Name="CheckGlyph"
                                         Width="11"
                                         Height="11"
-                                        Fill="{m:BrushResource TextOnAccentPrimaryBrush}"
+                                        Fill="{m:DynamicBrush TextOnAccentPrimary}"
                                         RenderTransformOrigin="0.5,0.5"
                                         SnapsToDevicePixels="False"
                                         UseLayoutRounding="False"
@@ -80,7 +80,7 @@
                                 <Condition Property="IsMouseOver" Value="True" />
                                 <Condition Property="IsPressed" Value="False" />
                             </MultiTrigger.Conditions>
-                            <Setter Property="Background" Value="{m:BrushResource ControlAltFillColorTertiaryBrush}" />
+                            <Setter Property="Background" Value="{m:DynamicBrush ControlAltFillTertiary}" />
                         </MultiTrigger>
 
                         <!--  Unchecked + Pressed  -->
@@ -91,8 +91,8 @@
                                 <Condition Property="IsPressed" Value="True" />
                             </MultiTrigger.Conditions>
                             <Setter TargetName="CheckGlyph" Property="Visibility" Value="Visible" />
-                            <Setter Property="Background" Value="{m:BrushResource ControlAltFillColorQuarternaryBrush}" />
-                            <Setter Property="BorderBrush" Value="{m:BrushResource ControlStrokeColorDefaultBrush}" />
+                            <Setter Property="Background" Value="{m:DynamicBrush ControlAltFillQuarternary}" />
+                            <Setter Property="BorderBrush" Value="{m:DynamicBrush ControlStrokeDefault}" />
                             <MultiTrigger.EnterActions>
                                 <BeginStoryboard Name="UncheckedPressedEnlarge" HandoffBehavior="SnapshotAndReplace">
                                     <Storyboard FillBehavior="HoldEnd">
@@ -122,16 +122,16 @@
                                 <Condition Property="IsChecked" Value="False" />
                                 <Condition Property="IsEnabled" Value="False" />
                             </MultiTrigger.Conditions>
-                            <Setter Property="Foreground" Value="{m:BrushResource TextFillColorDisabledBrush}" />
-                            <Setter Property="Background" Value="{m:BrushResource ControlAltFillColorDisabledBrush}" />
-                            <Setter Property="BorderBrush" Value="{m:BrushResource ControlStrongStrokeColorDisabledBrush}" />
+                            <Setter Property="Foreground" Value="{m:DynamicBrush TextFillDisabled}" />
+                            <Setter Property="Background" Value="{m:DynamicBrush ControlAltFillDisabled}" />
+                            <Setter Property="BorderBrush" Value="{m:DynamicBrush ControlStrongStrokeDisabled}" />
                         </MultiTrigger>
 
                         <!--  Checked + Normal  -->
                         <Trigger Property="IsChecked" Value="True">
                             <Setter TargetName="CheckGlyph" Property="Visibility" Value="Visible" />
-                            <Setter Property="Background" Value="{m:BrushResource AccentFillSecondaryBrush}" />
-                            <Setter Property="BorderBrush" Value="{m:BrushResource AccentFillSecondaryBrush}" />
+                            <Setter Property="Background" Value="{m:DynamicBrush AccentFillSecondary}" />
+                            <Setter Property="BorderBrush" Value="{m:DynamicBrush AccentFillSecondary}" />
                         </Trigger>
 
                         <!--  Checked + Hover  -->
@@ -143,8 +143,8 @@
                                 <Condition Property="IsPressed" Value="False" />
                             </MultiTrigger.Conditions>
                             <Setter TargetName="CheckGlyph" Property="Visibility" Value="Visible" />
-                            <Setter Property="Background" Value="{m:BrushResource AccentFillPrimaryBrush}" />
-                            <Setter Property="BorderBrush" Value="{m:BrushResource AccentFillPrimaryBrush}" />
+                            <Setter Property="Background" Value="{m:DynamicBrush AccentFillPrimary}" />
+                            <Setter Property="BorderBrush" Value="{m:DynamicBrush AccentFillPrimary}" />
                             <MultiTrigger.EnterActions>
                                 <BeginStoryboard Name="CheckedHoverEnlarge" HandoffBehavior="SnapshotAndReplace">
                                     <Storyboard FillBehavior="HoldEnd">
@@ -201,11 +201,11 @@
                                 <Condition Property="IsChecked" Value="True" />
                                 <Condition Property="IsEnabled" Value="False" />
                             </MultiTrigger.Conditions>
-                            <Setter Property="Foreground" Value="{m:BrushResource TextFillColorDisabledBrush}" />
-                            <Setter Property="Background" Value="{m:BrushResource ControlAltFillColorDisabledBrush}" />
-                            <Setter Property="BorderBrush" Value="{m:BrushResource ControlStrongStrokeColorDisabledBrush}" />
+                            <Setter Property="Foreground" Value="{m:DynamicBrush TextFillDisabled}" />
+                            <Setter Property="Background" Value="{m:DynamicBrush ControlAltFillDisabled}" />
+                            <Setter Property="BorderBrush" Value="{m:DynamicBrush ControlStrongStrokeDisabled}" />
                             <Setter TargetName="CheckGlyph" Property="Visibility" Value="Visible" />
-                            <Setter TargetName="CheckGlyph" Property="Fill" Value="{m:BrushResource TextFillColorDisabledBrush}" />
+                            <Setter TargetName="CheckGlyph" Property="Fill" Value="{m:DynamicBrush TextFillDisabled}" />
                         </MultiTrigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>

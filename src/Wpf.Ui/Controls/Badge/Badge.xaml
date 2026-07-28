@@ -13,9 +13,9 @@
     xmlns:t="clr-namespace:Wpf.Ui.Theming">
 
     <Style x:Key="{x:Static t:StyleKeys.UiBadgeStyle}" TargetType="{x:Type controls:Badge}">
-        <Setter Property="Foreground" Value="{m:BrushResource TextOnAccentPrimaryBrush}" />
-        <Setter Property="Background" Value="{m:BrushResource AccentFillSecondaryBrush}" />
-        <!--<Setter Property="BorderBrush" Value="{markup:BrushResource AccentStrokeBrush}" />-->
+        <Setter Property="Foreground" Value="{m:DynamicBrush TextOnAccentPrimary}" />
+        <Setter Property="Background" Value="{m:DynamicBrush AccentFillSecondary}" />
+        <!--<Setter Property="BorderBrush" Value="{m:DynamicBrush AccentStroke}" />-->
         <Setter Property="BorderBrush" Value="Transparent" />
         <Setter Property="Padding" Value="4" />
         <Setter Property="Focusable" Value="False" />
@@ -34,34 +34,34 @@
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="Appearance" Value="Transparent">
-                            <Setter Property="BorderBrush" Value="{m:BrushResource ControlElevationBorderBrush}" />
+                            <Setter Property="BorderBrush" Value="{m:DynamicBrush ControlElevationBorder}" />
                             <Setter TargetName="Border" Property="Background" Value="Transparent" />
                         </Trigger>
                         <Trigger Property="Appearance" Value="Normal">
-                            <Setter Property="BorderBrush" Value="{m:BrushResource ControlElevationBorderBrush}" />
-                            <Setter TargetName="Border" Property="Background" Value="{m:BrushResource ControlFillColorSecondaryBrush}" />
+                            <Setter Property="BorderBrush" Value="{m:DynamicBrush ControlElevationBorder}" />
+                            <Setter TargetName="Border" Property="Background" Value="{m:DynamicBrush ControlFillSecondary}" />
                         </Trigger>
                         <Trigger Property="Appearance" Value="Info">
-                            <Setter TargetName="Border" Property="Background" Value="{m:BrushResource PaletteLightBlueBrush}" />
+                            <Setter TargetName="Border" Property="Background" Value="{m:DynamicBrush PaletteLightBlue}" />
                         </Trigger>
                         <Trigger Property="Appearance" Value="Caution">
-                            <Setter TargetName="Border" Property="Background" Value="{m:BrushResource PaletteOrangeBrush}" />
+                            <Setter TargetName="Border" Property="Background" Value="{m:DynamicBrush PaletteOrange}" />
                         </Trigger>
                         <Trigger Property="Appearance" Value="Danger">
-                            <Setter TargetName="Border" Property="Background" Value="{m:BrushResource PaletteRedBrush}" />
+                            <Setter TargetName="Border" Property="Background" Value="{m:DynamicBrush PaletteRed}" />
                         </Trigger>
                         <Trigger Property="Appearance" Value="Success">
-                            <Setter TargetName="Border" Property="Background" Value="{m:BrushResource PaletteGreenBrush}" />
+                            <Setter TargetName="Border" Property="Background" Value="{m:DynamicBrush PaletteGreen}" />
                         </Trigger>
                         <Trigger Property="Appearance" Value="Dark">
-                            <Setter TargetName="Border" Property="Background" Value="{m:BrushResource ControlStrongFillColorDarkBrush}" />
-                            <Setter Property="Foreground" Value="{m:BrushResource TextFillColorLightPrimaryBrush}" />
-                            <Setter Property="BorderBrush" Value="{m:BrushResource ControlElevationBorderBrush}" />
+                            <Setter TargetName="Border" Property="Background" Value="{m:DynamicBrush ControlStrongFillDark}" />
+                            <Setter Property="Foreground" Value="{m:DynamicBrush TextFillLightPrimary}" />
+                            <Setter Property="BorderBrush" Value="{m:DynamicBrush ControlElevationBorder}" />
                         </Trigger>
                         <Trigger Property="Appearance" Value="Light">
-                            <Setter TargetName="Border" Property="Background" Value="{m:BrushResource ControlStrongFillColorLightBrush}" />
-                            <Setter Property="Foreground" Value="{m:BrushResource TextFillColorDarkPrimaryBrush}" />
-                            <Setter Property="BorderBrush" Value="{m:BrushResource ControlElevationBorderBrush}" />
+                            <Setter TargetName="Border" Property="Background" Value="{m:DynamicBrush ControlStrongFillLight}" />
+                            <Setter Property="Foreground" Value="{m:DynamicBrush TextFillDarkPrimary}" />
+                            <Setter Property="BorderBrush" Value="{m:DynamicBrush ControlElevationBorder}" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>

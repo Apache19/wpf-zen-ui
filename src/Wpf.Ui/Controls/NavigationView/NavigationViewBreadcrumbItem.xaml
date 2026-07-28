@@ -9,10 +9,11 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Ui.Controls"
-    xmlns:theming="clr-namespace:Wpf.Ui.Theming">
+    xmlns:t="clr-namespace:Wpf.Ui.Theming">
 
-    <DataTemplate x:Key="{x:Static theming:StyleKeys.NavigationViewItemDataTemplate}" DataType="{x:Type controls:NavigationViewBreadcrumbItem}">
-        <!-- 
+    <!--  todo: 应该实现单独的面包屑控件和项样式，现在搅得一团糟  -->
+    <DataTemplate x:Key="{x:Static t:TemplateKeys.NavigationViewItemDataTemplate}" DataType="{x:Type controls:NavigationViewBreadcrumbItem}">
+        <!--
             todo 生产环境中用面包屑栏来显示标题很不好看，考虑新增页面标题分部，单纯显示标题。
             现有面包屑栏则下移一栏，用于显示真正的路径。
         -->

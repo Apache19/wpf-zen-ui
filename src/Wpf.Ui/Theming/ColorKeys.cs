@@ -3,210 +3,180 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-using System.Reflection;
-
-// ReSharper disable UnusedAutoPropertyAccessor.Local
-#pragma warning disable CS8618
-
 namespace Wpf.Ui.Theming;
 
+/// <summary>
+/// Provides assembly-scoped keys for color resources published by WPF UI.
+/// </summary>
+/// <remarks>
+/// XAML consumers should normally use <c>DynamicColor</c> or <c>StaticColor</c>. The key properties remain
+/// available for resource declarations and programmatic lookup.
+/// </remarks>
 public static class ColorKeys
 {
-    public static ComponentResourceKey Unknown { get; private set; }
-
     // Light.xaml / Dark.xaml / HighContrast.xaml
+    public static ComponentResourceKey AccentFillPrimary                   { get; } = Create(nameof(AccentFillPrimary));
+    public static ComponentResourceKey AccentFillSecondary                 { get; } = Create(nameof(AccentFillSecondary));
+    public static ComponentResourceKey AccentFillTertiary                  { get; } = Create(nameof(AccentFillTertiary));
+    public static ComponentResourceKey AccentTextPrimary                   { get; } = Create(nameof(AccentTextPrimary));
+    public static ComponentResourceKey AccentTextSecondary                 { get; } = Create(nameof(AccentTextSecondary));
+    public static ComponentResourceKey TextOnAccentPrimary                 { get; } = Create(nameof(TextOnAccentPrimary));
+    public static ComponentResourceKey AccentStroke                        { get; } = Create(nameof(AccentStroke));
+    public static ComponentResourceKey AccentSelection                     { get; } = Create(nameof(AccentSelection));
+    public static ComponentResourceKey SystemColorWindowTextColor          { get; } = Create(nameof(SystemColorWindowTextColor));
+    public static ComponentResourceKey SystemColorWindowColor              { get; } = Create(nameof(SystemColorWindowColor));
+    public static ComponentResourceKey SystemColorHighlightTextColor       { get; } = Create(nameof(SystemColorHighlightTextColor));
+    public static ComponentResourceKey SystemColorHighlightColor           { get; } = Create(nameof(SystemColorHighlightColor));
+    public static ComponentResourceKey SystemColorControlTextColor         { get; } = Create(nameof(SystemColorControlTextColor));
+    public static ComponentResourceKey SystemColorControlColor             { get; } = Create(nameof(SystemColorControlColor));
+    public static ComponentResourceKey SystemColorHotTrackColor            { get; } = Create(nameof(SystemColorHotTrackColor));
+    public static ComponentResourceKey SystemColorGrayTextColor            { get; } = Create(nameof(SystemColorGrayTextColor));
+    public static ComponentResourceKey SystemColorWindowFrameColor         { get; } = Create(nameof(SystemColorWindowFrameColor));
+    public static ComponentResourceKey WindowBackgroundColor               { get; } = Create(nameof(WindowBackgroundColor));
+    public static ComponentResourceKey WindowBorderColor                   { get; } = Create(nameof(WindowBorderColor));
+    public static ComponentResourceKey WindowBorderColorInactive           { get; } = Create(nameof(WindowBorderColorInactive));
+    public static ComponentResourceKey KeyboardFocusBorderColor            { get; } = Create(nameof(KeyboardFocusBorderColor));
+    public static ComponentResourceKey TextFillColorPrimary                { get; } = Create(nameof(TextFillColorPrimary));
+    public static ComponentResourceKey TextFillColorSecondary              { get; } = Create(nameof(TextFillColorSecondary));
+    public static ComponentResourceKey TextFillColorTertiary               { get; } = Create(nameof(TextFillColorTertiary));
+    public static ComponentResourceKey TextFillColorDisabled               { get; } = Create(nameof(TextFillColorDisabled));
+    public static ComponentResourceKey TextPlaceholderColor                { get; } = Create(nameof(TextPlaceholderColor));
+    public static ComponentResourceKey TextFillColorInverse                { get; } = Create(nameof(TextFillColorInverse));
+    public static ComponentResourceKey ControlFillColorPrimary             { get; } = Create(nameof(ControlFillColorPrimary));
+    public static ComponentResourceKey ControlFillColorSecondary           { get; } = Create(nameof(ControlFillColorSecondary));
+    public static ComponentResourceKey ControlFillColorTertiary            { get; } = Create(nameof(ControlFillColorTertiary));
+    public static ComponentResourceKey ControlFillColorDisabled            { get; } = Create(nameof(ControlFillColorDisabled));
+    public static ComponentResourceKey ControlFillColorInputActive         { get; } = Create(nameof(ControlFillColorInputActive));
+    public static ComponentResourceKey ControlStrongFillColorDefault       { get; } = Create(nameof(ControlStrongFillColorDefault));
+    public static ComponentResourceKey ControlStrongFillColorDisabled      { get; } = Create(nameof(ControlStrongFillColorDisabled));
+    public static ComponentResourceKey ControlSolidFillColorDefault        { get; } = Create(nameof(ControlSolidFillColorDefault));
+    public static ComponentResourceKey SubtleFillColorTransparent          { get; } = Create(nameof(SubtleFillColorTransparent));
+    public static ComponentResourceKey SubtleFillColorSecondary            { get; } = Create(nameof(SubtleFillColorSecondary));
+    public static ComponentResourceKey SubtleFillColorTertiary             { get; } = Create(nameof(SubtleFillColorTertiary));
+    public static ComponentResourceKey SubtleFillColorDisabled             { get; } = Create(nameof(SubtleFillColorDisabled));
+    public static ComponentResourceKey ControlAltFillColorTransparent      { get; } = Create(nameof(ControlAltFillColorTransparent));
+    public static ComponentResourceKey ControlAltFillColorSecondary        { get; } = Create(nameof(ControlAltFillColorSecondary));
+    public static ComponentResourceKey ControlAltFillColorTertiary         { get; } = Create(nameof(ControlAltFillColorTertiary));
+    public static ComponentResourceKey ControlAltFillColorQuarternary      { get; } = Create(nameof(ControlAltFillColorQuarternary));
+    public static ComponentResourceKey ControlAltFillColorDisabled         { get; } = Create(nameof(ControlAltFillColorDisabled));
+    public static ComponentResourceKey ControlOnImageFillColorDefault      { get; } = Create(nameof(ControlOnImageFillColorDefault));
+    public static ComponentResourceKey ControlOnImageFillColorSecondary    { get; } = Create(nameof(ControlOnImageFillColorSecondary));
+    public static ComponentResourceKey ControlOnImageFillColorTertiary     { get; } = Create(nameof(ControlOnImageFillColorTertiary));
+    public static ComponentResourceKey ControlOnImageFillColorDisabled     { get; } = Create(nameof(ControlOnImageFillColorDisabled));
+    public static ComponentResourceKey ControlStrokeColorDefault           { get; } = Create(nameof(ControlStrokeColorDefault));
+    public static ComponentResourceKey ControlStrokeColorSecondary         { get; } = Create(nameof(ControlStrokeColorSecondary));
+    public static ComponentResourceKey ControlStrokeColorTertiary          { get; } = Create(nameof(ControlStrokeColorTertiary));
+    public static ComponentResourceKey ControlStrokeColorOnAccentDefault   { get; } = Create(nameof(ControlStrokeColorOnAccentDefault));
+    public static ComponentResourceKey ControlStrokeColorOnAccentSecondary { get; } = Create(nameof(ControlStrokeColorOnAccentSecondary));
+    public static ComponentResourceKey ControlStrokeColorOnAccentTertiary  { get; } = Create(nameof(ControlStrokeColorOnAccentTertiary));
+    public static ComponentResourceKey ControlStrokeColorOnAccentDisabled  { get; } = Create(nameof(ControlStrokeColorOnAccentDisabled));
 
-    /// <summary>Gets the brightest member of the accent fill color hierarchy.</summary>
-    public static ComponentResourceKey AccentFillPrimary                          { get; private set; }
+    public static ComponentResourceKey ControlStrokeColorForStrongFillWhenOnImage { get; } =
+        Create(nameof(ControlStrokeColorForStrongFillWhenOnImage));
 
-    /// <summary>Gets the normal accent fill color key.</summary>
-    public static ComponentResourceKey AccentFillSecondary                        { get; private set; }
-
-    /// <summary>Gets the dimmest member of the accent fill color hierarchy.</summary>
-    public static ComponentResourceKey AccentFillTertiary                         { get; private set; }
-
-    /// <summary>Gets the primary accent-colored text and glyph color key.</summary>
-    public static ComponentResourceKey AccentTextPrimary                          { get; private set; }
-
-    /// <summary>Gets the lower-emphasis accent-colored text and glyph color key.</summary>
-    public static ComponentResourceKey AccentTextSecondary                        { get; private set; }
-
-    /// <summary>Gets the high-contrast text and glyph color key intended for use over accent fills.</summary>
-    public static ComponentResourceKey TextOnAccentPrimary                        { get; private set; }
-
-    /// <summary>Gets the accent-colored stroke and focus indicator color key.</summary>
-    public static ComponentResourceKey AccentStroke                               { get; private set; }
-
-    /// <summary>Gets the accent selection background color key.</summary>
-    public static ComponentResourceKey AccentSelection                            { get; private set; }
-    public static ComponentResourceKey SystemColorWindowTextColor                 { get; private set; }
-    public static ComponentResourceKey SystemColorWindowColor                     { get; private set; }
-    public static ComponentResourceKey SystemColorHighlightTextColor              { get; private set; }
-    public static ComponentResourceKey SystemColorHighlightColor                  { get; private set; }
-    public static ComponentResourceKey SystemColorControlTextColor                { get; private set; }
-    public static ComponentResourceKey SystemColorControlColor                    { get; private set; }
-    public static ComponentResourceKey SystemColorHotTrackColor                   { get; private set; }
-    public static ComponentResourceKey SystemColorGrayTextColor                   { get; private set; }
-    public static ComponentResourceKey SystemColorWindowFrameColor                { get; private set; }
-    public static ComponentResourceKey WindowBackgroundColor                      { get; private set; }
-    public static ComponentResourceKey WindowBorderColor                          { get; private set; }
-    public static ComponentResourceKey WindowBorderColorInactive                  { get; private set; }
-    public static ComponentResourceKey KeyboardFocusBorderColor                   { get; private set; }
-    public static ComponentResourceKey TextFillColorPrimary                       { get; private set; }
-    public static ComponentResourceKey TextFillColorSecondary                     { get; private set; }
-    public static ComponentResourceKey TextFillColorTertiary                      { get; private set; }
-    public static ComponentResourceKey TextFillColorDisabled                      { get; private set; }
-    public static ComponentResourceKey TextPlaceholderColor                       { get; private set; }
-    public static ComponentResourceKey TextFillColorInverse                       { get; private set; }
-    public static ComponentResourceKey ControlFillColorPrimary                    { get; private set; }
-    public static ComponentResourceKey ControlFillColorSecondary                  { get; private set; }
-    public static ComponentResourceKey ControlFillColorTertiary                   { get; private set; }
-    public static ComponentResourceKey ControlFillColorDisabled                   { get; private set; }
-    public static ComponentResourceKey ControlFillColorInputActive                { get; private set; }
-    public static ComponentResourceKey ControlStrongFillColorDefault              { get; private set; }
-    public static ComponentResourceKey ControlStrongFillColorDisabled             { get; private set; }
-    public static ComponentResourceKey ControlSolidFillColorDefault               { get; private set; }
-    public static ComponentResourceKey SubtleFillColorTransparent                 { get; private set; }
-    public static ComponentResourceKey SubtleFillColorSecondary                   { get; private set; }
-    public static ComponentResourceKey SubtleFillColorTertiary                    { get; private set; }
-    public static ComponentResourceKey SubtleFillColorDisabled                    { get; private set; }
-    public static ComponentResourceKey ControlAltFillColorTransparent             { get; private set; }
-    public static ComponentResourceKey ControlAltFillColorSecondary               { get; private set; }
-    public static ComponentResourceKey ControlAltFillColorTertiary                { get; private set; }
-    public static ComponentResourceKey ControlAltFillColorQuarternary             { get; private set; }
-    public static ComponentResourceKey ControlAltFillColorDisabled                { get; private set; }
-    public static ComponentResourceKey ControlOnImageFillColorDefault             { get; private set; }
-    public static ComponentResourceKey ControlOnImageFillColorSecondary           { get; private set; }
-    public static ComponentResourceKey ControlOnImageFillColorTertiary            { get; private set; }
-    public static ComponentResourceKey ControlOnImageFillColorDisabled            { get; private set; }
-    public static ComponentResourceKey ControlStrokeColorDefault                  { get; private set; }
-    public static ComponentResourceKey ControlStrokeColorSecondary                { get; private set; }
-    public static ComponentResourceKey ControlStrokeColorTertiary                 { get; private set; }
-    public static ComponentResourceKey ControlStrokeColorOnAccentDefault          { get; private set; }
-    public static ComponentResourceKey ControlStrokeColorOnAccentSecondary        { get; private set; }
-    public static ComponentResourceKey ControlStrokeColorOnAccentTertiary         { get; private set; }
-    public static ComponentResourceKey ControlStrokeColorOnAccentDisabled         { get; private set; }
-    public static ComponentResourceKey ControlStrokeColorForStrongFillWhenOnImage { get; private set; }
-    public static ComponentResourceKey CardStrokeColorDefault                     { get; private set; }
-    public static ComponentResourceKey CardStrokeColorDefaultSolid                { get; private set; }
-    public static ComponentResourceKey ControlStrongStrokeColorDefault            { get; private set; }
-    public static ComponentResourceKey ControlStrongStrokeColorDisabled           { get; private set; }
-    public static ComponentResourceKey SurfaceStrokeColorDefault                  { get; private set; }
-    public static ComponentResourceKey SurfaceStrokeColorFlyout                   { get; private set; }
-    public static ComponentResourceKey SurfaceStrokeColorInverse                  { get; private set; }
-    public static ComponentResourceKey DividerStrokeColorDefault                  { get; private set; }
-    public static ComponentResourceKey FocusStrokeColorOuter                      { get; private set; }
-    public static ComponentResourceKey FocusStrokeColorInner                      { get; private set; }
-    public static ComponentResourceKey CardBackgroundFillColorDefault             { get; private set; }
-    public static ComponentResourceKey CardBackgroundFillColorSecondary           { get; private set; }
-    public static ComponentResourceKey EmbeddedFillColorDefault                   { get; private set; }
-    public static ComponentResourceKey EmbeddedFillColorStrong                    { get; private set; }
-    public static ComponentResourceKey EmbeddedFillColorDeep                      { get; private set; }
-    public static ComponentResourceKey SmokeFillColorDefault                      { get; private set; }
-    public static ComponentResourceKey LayerFillColorDefault                      { get; private set; }
-    public static ComponentResourceKey LayerFillColorAlt                          { get; private set; }
-    public static ComponentResourceKey LayerOnAcrylicFillColorDefault             { get; private set; }
-    public static ComponentResourceKey LayerOnAccentAcrylicFillColorDefault       { get; private set; }
-    public static ComponentResourceKey SnowflakeGradientTop                       { get; private set; }
-    public static ComponentResourceKey SnowflakeGradientBottom                    { get; private set; }
-    public static ComponentResourceKey AcrylicBackgroundFillColorDefault          { get; private set; }
-    public static ComponentResourceKey LayerOnMicaBaseAltFillColorDefault         { get; private set; }
-    public static ComponentResourceKey LayerOnMicaBaseAltFillColorSecondary       { get; private set; }
-    public static ComponentResourceKey LayerOnMicaBaseAltFillColorTertiary        { get; private set; }
-    public static ComponentResourceKey LayerOnMicaBaseAltFillColorTransparent     { get; private set; }
-    public static ComponentResourceKey SolidBackgroundFillColorBase               { get; private set; }
-    public static ComponentResourceKey SolidBackgroundFillColorSecondary          { get; private set; }
-    public static ComponentResourceKey SolidBackgroundFillColorTertiary           { get; private set; }
-    public static ComponentResourceKey SolidBackgroundFillColorQuarternary        { get; private set; }
-    public static ComponentResourceKey SolidBackgroundFillColorTransparent        { get; private set; }
-    public static ComponentResourceKey SolidBackgroundFillColorBaseAlt            { get; private set; }
-    public static ComponentResourceKey SystemFillColorAttention                   { get; private set; }
-    public static ComponentResourceKey SystemFillColorInformational               { get; private set; }
-    public static ComponentResourceKey SystemFillColorSuccess                     { get; private set; }
-    public static ComponentResourceKey SystemFillColorCaution                     { get; private set; }
-    public static ComponentResourceKey SystemFillColorCritical                    { get; private set; }
-    public static ComponentResourceKey SystemFillColorNeutral                     { get; private set; }
-    public static ComponentResourceKey SystemFillColorSolidNeutral                { get; private set; }
-    public static ComponentResourceKey SystemFillColorAttentionBackground         { get; private set; }
-    public static ComponentResourceKey SystemFillColorSuccessBackground           { get; private set; }
-    public static ComponentResourceKey SystemFillColorCautionBackground           { get; private set; }
-    public static ComponentResourceKey SystemFillColorCriticalBackground          { get; private set; }
-    public static ComponentResourceKey SystemFillColorNeutralBackground           { get; private set; }
-    public static ComponentResourceKey SystemFillColorSolidAttentionBackground    { get; private set; }
-    public static ComponentResourceKey SystemFillColorSolidNeutralBackground      { get; private set; }
+    public static ComponentResourceKey CardStrokeColorDefault                  { get; } = Create(nameof(CardStrokeColorDefault));
+    public static ComponentResourceKey CardStrokeColorDefaultSolid             { get; } = Create(nameof(CardStrokeColorDefaultSolid));
+    public static ComponentResourceKey ControlStrongStrokeColorDefault         { get; } = Create(nameof(ControlStrongStrokeColorDefault));
+    public static ComponentResourceKey ControlStrongStrokeColorDisabled        { get; } = Create(nameof(ControlStrongStrokeColorDisabled));
+    public static ComponentResourceKey SurfaceStrokeColorDefault               { get; } = Create(nameof(SurfaceStrokeColorDefault));
+    public static ComponentResourceKey SurfaceStrokeColorFlyout                { get; } = Create(nameof(SurfaceStrokeColorFlyout));
+    public static ComponentResourceKey SurfaceStrokeColorInverse               { get; } = Create(nameof(SurfaceStrokeColorInverse));
+    public static ComponentResourceKey DividerStrokeColorDefault               { get; } = Create(nameof(DividerStrokeColorDefault));
+    public static ComponentResourceKey FocusStrokeColorOuter                   { get; } = Create(nameof(FocusStrokeColorOuter));
+    public static ComponentResourceKey FocusStrokeColorInner                   { get; } = Create(nameof(FocusStrokeColorInner));
+    public static ComponentResourceKey CardBackgroundFillColorDefault          { get; } = Create(nameof(CardBackgroundFillColorDefault));
+    public static ComponentResourceKey CardBackgroundFillColorSecondary        { get; } = Create(nameof(CardBackgroundFillColorSecondary));
+    public static ComponentResourceKey EmbeddedFillColorDefault                { get; } = Create(nameof(EmbeddedFillColorDefault));
+    public static ComponentResourceKey EmbeddedFillColorStrong                 { get; } = Create(nameof(EmbeddedFillColorStrong));
+    public static ComponentResourceKey EmbeddedFillColorDeep                   { get; } = Create(nameof(EmbeddedFillColorDeep));
+    public static ComponentResourceKey SmokeFillColorDefault                   { get; } = Create(nameof(SmokeFillColorDefault));
+    public static ComponentResourceKey LayerFillColorDefault                   { get; } = Create(nameof(LayerFillColorDefault));
+    public static ComponentResourceKey LayerFillColorAlt                       { get; } = Create(nameof(LayerFillColorAlt));
+    public static ComponentResourceKey LayerOnAcrylicFillColorDefault          { get; } = Create(nameof(LayerOnAcrylicFillColorDefault));
+    public static ComponentResourceKey LayerOnAccentAcrylicFillColorDefault    { get; } = Create(nameof(LayerOnAccentAcrylicFillColorDefault));
+    public static ComponentResourceKey SnowflakeGradientTop                    { get; } = Create(nameof(SnowflakeGradientTop));
+    public static ComponentResourceKey SnowflakeGradientBottom                 { get; } = Create(nameof(SnowflakeGradientBottom));
+    public static ComponentResourceKey AcrylicBackgroundFillColorDefault       { get; } = Create(nameof(AcrylicBackgroundFillColorDefault));
+    public static ComponentResourceKey LayerOnMicaBaseAltFillColorDefault      { get; } = Create(nameof(LayerOnMicaBaseAltFillColorDefault));
+    public static ComponentResourceKey LayerOnMicaBaseAltFillColorSecondary    { get; } = Create(nameof(LayerOnMicaBaseAltFillColorSecondary));
+    public static ComponentResourceKey LayerOnMicaBaseAltFillColorTertiary     { get; } = Create(nameof(LayerOnMicaBaseAltFillColorTertiary));
+    public static ComponentResourceKey LayerOnMicaBaseAltFillColorTransparent  { get; } = Create(nameof(LayerOnMicaBaseAltFillColorTransparent));
+    public static ComponentResourceKey SolidBackgroundFillColorBase            { get; } = Create(nameof(SolidBackgroundFillColorBase));
+    public static ComponentResourceKey SolidBackgroundFillColorSecondary       { get; } = Create(nameof(SolidBackgroundFillColorSecondary));
+    public static ComponentResourceKey SolidBackgroundFillColorTertiary        { get; } = Create(nameof(SolidBackgroundFillColorTertiary));
+    public static ComponentResourceKey SolidBackgroundFillColorQuarternary     { get; } = Create(nameof(SolidBackgroundFillColorQuarternary));
+    public static ComponentResourceKey SolidBackgroundFillColorTransparent     { get; } = Create(nameof(SolidBackgroundFillColorTransparent));
+    public static ComponentResourceKey SolidBackgroundFillColorBaseAlt         { get; } = Create(nameof(SolidBackgroundFillColorBaseAlt));
+    public static ComponentResourceKey SystemFillColorAttention                { get; } = Create(nameof(SystemFillColorAttention));
+    public static ComponentResourceKey SystemFillColorInformational            { get; } = Create(nameof(SystemFillColorInformational));
+    public static ComponentResourceKey SystemFillColorSuccess                  { get; } = Create(nameof(SystemFillColorSuccess));
+    public static ComponentResourceKey SystemFillColorCaution                  { get; } = Create(nameof(SystemFillColorCaution));
+    public static ComponentResourceKey SystemFillColorCritical                 { get; } = Create(nameof(SystemFillColorCritical));
+    public static ComponentResourceKey SystemFillColorNeutral                  { get; } = Create(nameof(SystemFillColorNeutral));
+    public static ComponentResourceKey SystemFillColorSolidNeutral             { get; } = Create(nameof(SystemFillColorSolidNeutral));
+    public static ComponentResourceKey SystemFillColorAttentionBackground      { get; } = Create(nameof(SystemFillColorAttentionBackground));
+    public static ComponentResourceKey SystemFillColorSuccessBackground        { get; } = Create(nameof(SystemFillColorSuccessBackground));
+    public static ComponentResourceKey SystemFillColorCautionBackground        { get; } = Create(nameof(SystemFillColorCautionBackground));
+    public static ComponentResourceKey SystemFillColorCriticalBackground       { get; } = Create(nameof(SystemFillColorCriticalBackground));
+    public static ComponentResourceKey SystemFillColorNeutralBackground        { get; } = Create(nameof(SystemFillColorNeutralBackground));
+    public static ComponentResourceKey SystemFillColorSolidAttentionBackground { get; } = Create(nameof(SystemFillColorSolidAttentionBackground));
+    public static ComponentResourceKey SystemFillColorSolidNeutralBackground   { get; } = Create(nameof(SystemFillColorSolidNeutralBackground));
 
     // Palette.xaml
-
-    public static ComponentResourceKey PalettePrimaryColor          { get; private set; }
-    public static ComponentResourceKey PaletteRedColor              { get; private set; }
-    public static ComponentResourceKey PaletteRedColorBright        { get; private set; }
-    public static ComponentResourceKey PaletteRedColorDim           { get; private set; }
-    public static ComponentResourceKey PalettePinkColor             { get; private set; }
-    public static ComponentResourceKey PalettePinkColorBright       { get; private set; }
-    public static ComponentResourceKey PalettePinkColorDim          { get; private set; }
-    public static ComponentResourceKey PalettePurpleColor           { get; private set; }
-    public static ComponentResourceKey PaletteDeepPurpleColor       { get; private set; }
-    public static ComponentResourceKey PaletteIndigoColor           { get; private set; }
-    public static ComponentResourceKey PaletteBlueColor             { get; private set; }
-    public static ComponentResourceKey PaletteBlueColorBright       { get; private set; }
-    public static ComponentResourceKey PaletteBlueColorDim          { get; private set; }
-    public static ComponentResourceKey PaletteLightBlueColor        { get; private set; }
-    public static ComponentResourceKey PaletteLightBlueColorBright  { get; private set; }
-    public static ComponentResourceKey PaletteLightBlueColorDim     { get; private set; }
-    public static ComponentResourceKey PaletteCyanColor             { get; private set; }
-    public static ComponentResourceKey PaletteCyanColorBright       { get; private set; }
-    public static ComponentResourceKey PaletteCyanColorDim          { get; private set; }
-    public static ComponentResourceKey PaletteTealColor             { get; private set; }
-    public static ComponentResourceKey PaletteGreenColor            { get; private set; }
-    public static ComponentResourceKey PaletteGreenColorBright      { get; private set; }
-    public static ComponentResourceKey PaletteGreenColorDim         { get; private set; }
-    public static ComponentResourceKey PaletteLightGreenColor       { get; private set; }
-    public static ComponentResourceKey PaletteLimeColor             { get; private set; }
-    public static ComponentResourceKey PaletteYellowColor           { get; private set; }
-    public static ComponentResourceKey PaletteYellowColorBright     { get; private set; }
-    public static ComponentResourceKey PaletteYellowColorDim        { get; private set; }
-    public static ComponentResourceKey PaletteAmberColor            { get; private set; }
-    public static ComponentResourceKey PaletteOrangeColor           { get; private set; }
-    public static ComponentResourceKey PaletteOrangeColorBright     { get; private set; }
-    public static ComponentResourceKey PaletteOrangeColorDim        { get; private set; }
-    public static ComponentResourceKey PaletteDeepOrangeColor       { get; private set; }
-    public static ComponentResourceKey PaletteDeepOrangeColorBright { get; private set; }
-    public static ComponentResourceKey PaletteDeepOrangeColorDim    { get; private set; }
-    public static ComponentResourceKey PaletteBrownColor            { get; private set; }
-    public static ComponentResourceKey PaletteGreyColor             { get; private set; }
-    public static ComponentResourceKey PaletteBlueGreyColor         { get; private set; }
+    public static ComponentResourceKey PalettePrimaryColor          { get; } = Create(nameof(PalettePrimaryColor));
+    public static ComponentResourceKey PaletteRedColor              { get; } = Create(nameof(PaletteRedColor));
+    public static ComponentResourceKey PaletteRedColorBright        { get; } = Create(nameof(PaletteRedColorBright));
+    public static ComponentResourceKey PaletteRedColorDim           { get; } = Create(nameof(PaletteRedColorDim));
+    public static ComponentResourceKey PalettePinkColor             { get; } = Create(nameof(PalettePinkColor));
+    public static ComponentResourceKey PalettePinkColorBright       { get; } = Create(nameof(PalettePinkColorBright));
+    public static ComponentResourceKey PalettePinkColorDim          { get; } = Create(nameof(PalettePinkColorDim));
+    public static ComponentResourceKey PalettePurpleColor           { get; } = Create(nameof(PalettePurpleColor));
+    public static ComponentResourceKey PaletteDeepPurpleColor       { get; } = Create(nameof(PaletteDeepPurpleColor));
+    public static ComponentResourceKey PaletteIndigoColor           { get; } = Create(nameof(PaletteIndigoColor));
+    public static ComponentResourceKey PaletteBlueColor             { get; } = Create(nameof(PaletteBlueColor));
+    public static ComponentResourceKey PaletteBlueColorBright       { get; } = Create(nameof(PaletteBlueColorBright));
+    public static ComponentResourceKey PaletteBlueColorDim          { get; } = Create(nameof(PaletteBlueColorDim));
+    public static ComponentResourceKey PaletteLightBlueColor        { get; } = Create(nameof(PaletteLightBlueColor));
+    public static ComponentResourceKey PaletteLightBlueColorBright  { get; } = Create(nameof(PaletteLightBlueColorBright));
+    public static ComponentResourceKey PaletteLightBlueColorDim     { get; } = Create(nameof(PaletteLightBlueColorDim));
+    public static ComponentResourceKey PaletteCyanColor             { get; } = Create(nameof(PaletteCyanColor));
+    public static ComponentResourceKey PaletteCyanColorBright       { get; } = Create(nameof(PaletteCyanColorBright));
+    public static ComponentResourceKey PaletteCyanColorDim          { get; } = Create(nameof(PaletteCyanColorDim));
+    public static ComponentResourceKey PaletteTealColor             { get; } = Create(nameof(PaletteTealColor));
+    public static ComponentResourceKey PaletteGreenColor            { get; } = Create(nameof(PaletteGreenColor));
+    public static ComponentResourceKey PaletteGreenColorBright      { get; } = Create(nameof(PaletteGreenColorBright));
+    public static ComponentResourceKey PaletteGreenColorDim         { get; } = Create(nameof(PaletteGreenColorDim));
+    public static ComponentResourceKey PaletteLightGreenColor       { get; } = Create(nameof(PaletteLightGreenColor));
+    public static ComponentResourceKey PaletteLimeColor             { get; } = Create(nameof(PaletteLimeColor));
+    public static ComponentResourceKey PaletteYellowColor           { get; } = Create(nameof(PaletteYellowColor));
+    public static ComponentResourceKey PaletteYellowColorBright     { get; } = Create(nameof(PaletteYellowColorBright));
+    public static ComponentResourceKey PaletteYellowColorDim        { get; } = Create(nameof(PaletteYellowColorDim));
+    public static ComponentResourceKey PaletteAmberColor            { get; } = Create(nameof(PaletteAmberColor));
+    public static ComponentResourceKey PaletteOrangeColor           { get; } = Create(nameof(PaletteOrangeColor));
+    public static ComponentResourceKey PaletteOrangeColorBright     { get; } = Create(nameof(PaletteOrangeColorBright));
+    public static ComponentResourceKey PaletteOrangeColorDim        { get; } = Create(nameof(PaletteOrangeColorDim));
+    public static ComponentResourceKey PaletteDeepOrangeColor       { get; } = Create(nameof(PaletteDeepOrangeColor));
+    public static ComponentResourceKey PaletteDeepOrangeColorBright { get; } = Create(nameof(PaletteDeepOrangeColorBright));
+    public static ComponentResourceKey PaletteDeepOrangeColorDim    { get; } = Create(nameof(PaletteDeepOrangeColorDim));
+    public static ComponentResourceKey PaletteBrownColor            { get; } = Create(nameof(PaletteBrownColor));
+    public static ComponentResourceKey PaletteGreyColor             { get; } = Create(nameof(PaletteGreyColor));
+    public static ComponentResourceKey PaletteBlueGreyColor         { get; } = Create(nameof(PaletteBlueGreyColor));
 
     // StaticColors.xaml
-
-    public static ComponentResourceKey TextFillColorLightPrimary       { get; private set; }
-    public static ComponentResourceKey TextFillColorLightSecondary     { get; private set; }
-    public static ComponentResourceKey TextFillColorLightTertiary      { get; private set; }
-    public static ComponentResourceKey TextFillColorLightDisabled      { get; private set; }
-    public static ComponentResourceKey TextFillColorLightInverse       { get; private set; }
-    public static ComponentResourceKey TextFillColorDarkPrimary        { get; private set; }
-    public static ComponentResourceKey TextFillColorDarkSecondary      { get; private set; }
-    public static ComponentResourceKey TextFillColorDarkTertiary       { get; private set; }
-    public static ComponentResourceKey TextFillColorDarkDisabled       { get; private set; }
-    public static ComponentResourceKey TextFillColorDarkInverse        { get; private set; }
-    public static ComponentResourceKey ApplicationBackgroundColorLight { get; private set; }
-    public static ComponentResourceKey ApplicationBackgroundColorDark  { get; private set; }
-    public static ComponentResourceKey ControlStrongFillColorLight     { get; private set; }
-    public static ComponentResourceKey ControlStrongFillColorDark      { get; private set; }
-
-    static ColorKeys()
-    {
-        // 使用反射统一设置每个属性值
-        var type       = typeof(ColorKeys);
-        var properties = type.GetProperties(BindingFlags.Public | BindingFlags.Static);
-        foreach (var property in properties)
-        {
-            if (property.PropertyType == typeof(ComponentResourceKey))
-            {
-                var key = Create(property.Name);
-                property.SetValue(null, key);
-            }
-        }
-    }
+    public static ComponentResourceKey TextFillColorLightPrimary       { get; } = Create(nameof(TextFillColorLightPrimary));
+    public static ComponentResourceKey TextFillColorLightSecondary     { get; } = Create(nameof(TextFillColorLightSecondary));
+    public static ComponentResourceKey TextFillColorLightTertiary      { get; } = Create(nameof(TextFillColorLightTertiary));
+    public static ComponentResourceKey TextFillColorLightDisabled      { get; } = Create(nameof(TextFillColorLightDisabled));
+    public static ComponentResourceKey TextFillColorLightInverse       { get; } = Create(nameof(TextFillColorLightInverse));
+    public static ComponentResourceKey TextFillColorDarkPrimary        { get; } = Create(nameof(TextFillColorDarkPrimary));
+    public static ComponentResourceKey TextFillColorDarkSecondary      { get; } = Create(nameof(TextFillColorDarkSecondary));
+    public static ComponentResourceKey TextFillColorDarkTertiary       { get; } = Create(nameof(TextFillColorDarkTertiary));
+    public static ComponentResourceKey TextFillColorDarkDisabled       { get; } = Create(nameof(TextFillColorDarkDisabled));
+    public static ComponentResourceKey TextFillColorDarkInverse        { get; } = Create(nameof(TextFillColorDarkInverse));
+    public static ComponentResourceKey ApplicationBackgroundColorLight { get; } = Create(nameof(ApplicationBackgroundColorLight));
+    public static ComponentResourceKey ApplicationBackgroundColorDark  { get; } = Create(nameof(ApplicationBackgroundColorDark));
+    public static ComponentResourceKey ControlStrongFillColorLight     { get; } = Create(nameof(ControlStrongFillColorLight));
+    public static ComponentResourceKey ControlStrongFillColorDark      { get; } = Create(nameof(ControlStrongFillColorDark));
 
     private static ComponentResourceKey Create(object resourceId)
     {

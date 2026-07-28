@@ -8,7 +8,7 @@
         <Setter Property="Padding" Value="11,5,11,6" />
         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
         <Setter Property="VerticalContentAlignment" Value="Stretch" />
-        <Setter Property="Border.CornerRadius" Value="{ui:VariableResource ControlCornerRadius}" />
+        <Setter Property="Border.CornerRadius" Value="{ui:DynamicValue ControlCornerRadius}" />
         <Setter Property="Focusable" Value="False" />
         <Setter Property="FontFamily" Value="Consolas, Microsoft YaHei UI" />
         <Setter Property="SnapsToDevicePixels" Value="True" />

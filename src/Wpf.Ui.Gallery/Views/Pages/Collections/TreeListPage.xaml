@@ -12,10 +12,10 @@
     d:DataContext="{d:DesignInstance vm:TreeListViewModel,
                                      IsDesignTimeCreatable=False}"
     d:DesignWidth="800"
-    d:Background="{ui:BrushResource WindowBackgroundBrush}"
-    Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
+    d:Background="{ui:DynamicBrush WindowBackground}"
+    Foreground="{ui:DynamicBrush TextFillPrimary}"
     mc:Ignorable="d"
-    Style="{ui:StyleResource DynamicScrollPageStyle}">
+    Style="{ui:DynamicStyle DynamicScrollPage}">
 
     <controls:ControlExample Margin="0" HeaderText="WPF UI TreeList.">
         <TextBlock Text="To do." />

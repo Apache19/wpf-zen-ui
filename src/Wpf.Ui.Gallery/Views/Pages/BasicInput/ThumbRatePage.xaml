@@ -9,11 +9,11 @@
     xmlns:vm="clr-namespace:Wpf.Ui.Gallery.ViewModels.Pages.BasicInput"
     Title="ThumbRatePage"
     controls:PageControlDocumentation.DocumentationType="{x:Type ui:ThumbRate}"
-    d:Background="{ui:BrushResource WindowBackgroundBrush}"
+    d:Background="{ui:DynamicBrush WindowBackground}"
     d:DataContext="{d:DesignInstance vm:ThumbRateViewModel, IsDesignTimeCreatable=False}"
     d:DesignWidth="800"
-    Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
-    Style="{ui:StyleResource DynamicScrollPageStyle}"
+    Foreground="{ui:DynamicBrush TextFillPrimary}"
+    Style="{ui:DynamicStyle DynamicScrollPage}"
     mc:Ignorable="d">
 
     <Grid Margin="0,0,0,24">
@@ -31,7 +31,7 @@
                     Grid.Column="1"
                     MinWidth="60"
                     VerticalAlignment="Center">
-                    <Label Content="State:" Foreground="{ui:BrushResource TextFillColorTertiaryBrush}" />
+                    <Label Content="State:" Foreground="{ui:DynamicBrush TextFillTertiary}" />
                     <TextBlock Margin="0,4,0,0" Text="{Binding ThumbRateStateText}" />
                 </StackPanel>
             </Grid>

@@ -13,9 +13,9 @@
 
     <Style x:Key="{x:Static t:StyleKeys.DefaultProgressBarStyle}" TargetType="{x:Type ProgressBar}">
         <Setter Property="OverridesDefaultStyle" Value="True" />
-        <Setter Property="Foreground" Value="{m:BrushResource AccentFillSecondaryBrush}" />
-        <Setter Property="Background" Value="{m:BrushResource ControlStrongStrokeColorDefaultBrush}" />
-        <Setter Property="BorderBrush" Value="{m:BrushResource ControlStrokeColorDefaultBrush}" />
+        <Setter Property="Foreground" Value="{m:DynamicBrush AccentFillSecondary}" />
+        <Setter Property="Background" Value="{m:DynamicBrush ControlStrongStrokeDefault}" />
+        <Setter Property="BorderBrush" Value="{m:DynamicBrush ControlStrokeDefault}" />
         <Setter Property="Height" Value="6" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="SnapsToDevicePixels" Value="True" />

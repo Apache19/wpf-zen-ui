@@ -20,7 +20,7 @@
                         RadiusX="4"
                         RadiusY="4"
                         SnapsToDevicePixels="True"
-                        Stroke="{m:BrushResource KeyboardFocusBorderColorBrush}"
+                        Stroke="{m:DynamicBrush KeyboardFocusBorder}"
                         StrokeThickness="1" />
                 </ControlTemplate>
             </Setter.Value>
@@ -61,13 +61,13 @@
                         <!--
                         <Ellipse
                             Fill="Transparent"
-                            Stroke="{m:BrushResource ControlStrongStrokeColorDefaultBrush}"
+                            Stroke="{m:DynamicBrush ControlStrongStrokeDefault}"
                             StrokeThickness="1" />
                         -->
                         <Ellipse
                             Width="8"
                             Height="8"
-                            Fill="{m:BrushResource TextFillColorPrimaryBrush}" />
+                            Fill="{m:DynamicBrush TextFillPrimary}" />
                     </Grid>
 
                     <ContentPresenter
@@ -90,16 +90,16 @@
                 <Setter TargetName="RadioIndicator" Property="Visibility" Value="Visible" />
             </Trigger>
             <Trigger Property="IsMouseOver" Value="True">
-                <Setter TargetName="TopLevelItemBorder" Property="Background" Value="{m:BrushResource SubtleFillColorSecondaryBrush}" />
+                <Setter TargetName="TopLevelItemBorder" Property="Background" Value="{m:DynamicBrush SubtleFillSecondary}" />
             </Trigger>
             <Trigger Property="IsHighlighted" Value="True">
-                <Setter TargetName="TopLevelItemBorder" Property="Background" Value="{m:BrushResource SubtleFillColorSecondaryBrush}" />
+                <Setter TargetName="TopLevelItemBorder" Property="Background" Value="{m:DynamicBrush SubtleFillSecondary}" />
             </Trigger>
             <Trigger Property="IsPressed" Value="True">
-                <Setter TargetName="TopLevelItemBorder" Property="Background" Value="{m:BrushResource SubtleFillColorTertiaryBrush}" />
+                <Setter TargetName="TopLevelItemBorder" Property="Background" Value="{m:DynamicBrush SubtleFillTertiary}" />
             </Trigger>
             <Trigger Property="IsEnabled" Value="False">
-                <Setter Property="Foreground" Value="{m:BrushResource TextFillColorDisabledBrush}" />
+                <Setter Property="Foreground" Value="{m:DynamicBrush TextFillDisabled}" />
                 <Setter TargetName="RadioIndicator" Property="Opacity" Value="0.4" />
             </Trigger>
         </ControlTemplate.Triggers>
@@ -136,13 +136,13 @@
                         <!--
                         <Ellipse
                             Fill="Transparent"
-                            Stroke="{m:BrushResource ControlStrongStrokeColorDefaultBrush}"
+                            Stroke="{m:DynamicBrush ControlStrongStrokeDefault}"
                             StrokeThickness="1" />
                         -->                        
                         <Ellipse
                             Width="8"
                             Height="8"
-                            Fill="{m:BrushResource TextFillColorPrimaryBrush}" />
+                            Fill="{m:DynamicBrush TextFillPrimary}" />
                     </Grid>
 
                     <ContentPresenter
@@ -160,7 +160,7 @@
                         HorizontalAlignment="Right"
                         VerticalAlignment="Center"
                         FontSize="11"
-                        Foreground="{m:BrushResource TextFillColorDisabledBrush}"
+                        Foreground="{m:DynamicBrush TextFillDisabled}"
                         Text="{TemplateBinding InputGestureText}"
                         UseLayoutRounding="True" />
                 </Grid>
@@ -178,16 +178,16 @@
                 <Setter TargetName="InputGesture" Property="Visibility" Value="Collapsed" />
             </Trigger>
             <Trigger Property="IsMouseOver" Value="True">
-                <Setter TargetName="SubmenuItemBorder" Property="Background" Value="{m:BrushResource SubtleFillColorSecondaryBrush}" />
+                <Setter TargetName="SubmenuItemBorder" Property="Background" Value="{m:DynamicBrush SubtleFillSecondary}" />
             </Trigger>
             <Trigger Property="IsHighlighted" Value="True">
-                <Setter TargetName="SubmenuItemBorder" Property="Background" Value="{m:BrushResource SubtleFillColorSecondaryBrush}" />
+                <Setter TargetName="SubmenuItemBorder" Property="Background" Value="{m:DynamicBrush SubtleFillSecondary}" />
             </Trigger>
             <Trigger Property="IsPressed" Value="True">
-                <Setter TargetName="SubmenuItemBorder" Property="Background" Value="{m:BrushResource SubtleFillColorTertiaryBrush}" />
+                <Setter TargetName="SubmenuItemBorder" Property="Background" Value="{m:DynamicBrush SubtleFillTertiary}" />
             </Trigger>
             <Trigger Property="IsEnabled" Value="False">
-                <Setter Property="Foreground" Value="{m:BrushResource TextFillColorDisabledBrush}" />
+                <Setter Property="Foreground" Value="{m:DynamicBrush TextFillDisabled}" />
                 <Setter TargetName="RadioIndicator" Property="Opacity" Value="0.4" />
             </Trigger>
         </ControlTemplate.Triggers>

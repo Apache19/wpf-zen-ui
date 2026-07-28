@@ -10,9 +10,9 @@
     <Style x:Key="{x:Static t:StyleKeys.DefaultComboBoxItemStyle}" TargetType="{x:Type ComboBoxItem}">
         <Setter Property="OverridesDefaultStyle" Value="True" />
         <Setter Property="Background" Value="Transparent" />
-        <Setter Property="Border.CornerRadius" Value="{m:VariableResource ControlCornerRadius}" />
+        <Setter Property="Border.CornerRadius" Value="{m:DynamicValue ControlCornerRadius}" />
         <Setter Property="Cursor" Value="Hand" />
-        <Setter Property="FocusVisualStyle" Value="{m:StyleResource DefaultControlFocusVisualStyle}" />
+        <Setter Property="FocusVisualStyle" Value="{m:DynamicStyle DefaultControlFocusVisual}" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
         <Setter Property="Padding" Value="10,8,8,8" />
@@ -41,7 +41,7 @@
                                     Height="{Binding ActualHeight, ElementName=ContentBorder, Converter={StaticResource ComboBoxItemActiveIndicatorHeightConverter}}"
                                     HorizontalAlignment="Left"
                                     VerticalAlignment="Center"
-                                    Fill="{m:BrushResource AccentSelectionBrush}"
+                                    Fill="{m:DynamicBrush AccentSelection}"
                                     RadiusX="1.5"
                                     RadiusY="1.5"
                                     Visibility="Collapsed" />
@@ -50,14 +50,14 @@
                     </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsHighlighted" Value="True">
-                            <Setter TargetName="ContentBorder" Property="Background" Value="{m:BrushResource SubtleFillColorSecondaryBrush}" />
+                            <Setter TargetName="ContentBorder" Property="Background" Value="{m:DynamicBrush SubtleFillSecondary}" />
                         </Trigger>
                         <Trigger Property="IsSelected" Value="True">
-                            <Setter TargetName="PART_ContentPresenter" Property="TextElement.Foreground" Value="{m:BrushResource TextFillColorPrimaryBrush}" />
+                            <Setter TargetName="PART_ContentPresenter" Property="TextElement.Foreground" Value="{m:DynamicBrush TextFillPrimary}" />
                             <Setter TargetName="ActiveIndicator" Property="Visibility" Value="Visible" />
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter Property="Foreground" Value="{m:BrushResource TextFillColorDisabledBrush}" />
+                            <Setter Property="Foreground" Value="{m:DynamicBrush TextFillDisabled}" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>

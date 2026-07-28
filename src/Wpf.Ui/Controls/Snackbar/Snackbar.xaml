@@ -9,13 +9,13 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Ui.Controls"
-    xmlns:markup="clr-namespace:Wpf.Ui.Markup">
+    xmlns:m="clr-namespace:Wpf.Ui.Markup">
 
     <Style TargetType="{x:Type controls:Snackbar}">
-        <Setter Property="Foreground" Value="{markup:BrushResource TextFillColorPrimaryBrush}" />
-        <Setter Property="ContentForeground" Value="{markup:BrushResource TextFillColorPrimaryBrush}" />
-        <Setter Property="Background" Value="{markup:BrushResource AcrylicBackgroundFillColorDefaultBrush}" />
-        <Setter Property="BorderBrush" Value="{markup:BrushResource SurfaceStrokeColorFlyoutBrush}" />
+        <Setter Property="Foreground" Value="{m:DynamicBrush TextFillPrimary}" />
+        <Setter Property="ContentForeground" Value="{m:DynamicBrush TextFillPrimary}" />
+        <Setter Property="Background" Value="{m:DynamicBrush AcrylicBackgroundFillDefault}" />
+        <Setter Property="BorderBrush" Value="{m:DynamicBrush SurfaceStrokeFlyout}" />
         <Setter Property="Margin" Value="24" />
         <Setter Property="MinHeight" Value="68" />
         <Setter Property="Focusable" Value="False" />
@@ -222,7 +222,7 @@
                         <SolidColorBrush Color="#87FFFFFF" />
                     </Setter.Value>
                 </Setter>
-                <Setter Property="Background" Value="{markup:BrushResource PaletteLightBlueBrush}" />
+                <Setter Property="Background" Value="{m:DynamicBrush PaletteLightBlue}" />
             </Trigger>
             <Trigger Property="Appearance" Value="Danger">
                 <Setter Property="Foreground">
@@ -235,7 +235,7 @@
                         <SolidColorBrush Color="#87FFFFFF" />
                     </Setter.Value>
                 </Setter>
-                <Setter Property="Background" Value="{markup:BrushResource PaletteRedBrush}" />
+                <Setter Property="Background" Value="{m:DynamicBrush PaletteRed}" />
             </Trigger>
             <Trigger Property="Appearance" Value="Success">
                 <Setter Property="Foreground">
@@ -248,7 +248,7 @@
                         <SolidColorBrush Color="#87FFFFFF" />
                     </Setter.Value>
                 </Setter>
-                <Setter Property="Background" Value="{markup:BrushResource PaletteGreenBrush}" />
+                <Setter Property="Background" Value="{m:DynamicBrush PaletteGreen}" />
             </Trigger>
             <Trigger Property="Appearance" Value="Caution">
                 <Setter Property="Foreground">
@@ -261,7 +261,7 @@
                         <SolidColorBrush Color="#87FFFFFF" />
                     </Setter.Value>
                 </Setter>
-                <Setter Property="Background" Value="{markup:BrushResource PaletteOrangeBrush}" />
+                <Setter Property="Background" Value="{m:DynamicBrush PaletteOrange}" />
             </Trigger>
         </Style.Triggers>
     </Style>

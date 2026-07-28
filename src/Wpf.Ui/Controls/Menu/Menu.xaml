@@ -13,8 +13,8 @@
 
     <Style x:Key="UiMenuStyle" TargetType="{x:Type Menu}">
         <Setter Property="Background" Value="Transparent" />
-        <Setter Property="FontSize" Value="{m:VariableResource ControlContentThemeFontSize}" />
-        <Setter Property="Foreground" Value="{m:BrushResource TextFillColorPrimaryBrush}" />
+        <Setter Property="FontSize" Value="{m:DynamicValue ControlContentThemeFontSize}" />
+        <Setter Property="Foreground" Value="{m:DynamicBrush TextFillPrimary}" />
         <Setter Property="controls:OrientationAssist.Orientation" Value="Vertical" />
     </Style>
 

@@ -3,7 +3,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Ui.Controls"
     xmlns:theming="clr-namespace:Wpf.Ui.Theming"
-    xmlns:markup="clr-namespace:Wpf.Ui.Markup">
+    xmlns:m="clr-namespace:Wpf.Ui.Markup">
 
     <Thickness x:Key="TimePickerBorderThemeThickness">1,1,1,1</Thickness>
 
@@ -11,17 +11,17 @@
         <!--  Universal WPF UI focus  -->
         <Setter Property="FocusVisualStyle" Value="{DynamicResource {x:Static theming:StyleKeys.DefaultControlFocusVisualStyle}}" />
         <!--  Universal WPF UI focus  -->
-        <Setter Property="Foreground" Value="{markup:BrushResource TextFillColorSecondaryBrush}" />
-        <Setter Property="Background" Value="{markup:BrushResource ControlFillColorTertiaryBrush}" />
-        <Setter Property="BorderBrush" Value="{markup:BrushResource ControlElevationBorderBrush}" />
+        <Setter Property="Foreground" Value="{m:DynamicBrush TextFillSecondary}" />
+        <Setter Property="Background" Value="{m:DynamicBrush ControlFillTertiary}" />
+        <Setter Property="BorderBrush" Value="{m:DynamicBrush ControlElevationBorder}" />
         <Setter Property="BorderThickness" Value="{StaticResource TimePickerBorderThemeThickness}" />
-        <Setter Property="FontSize" Value="{DynamicResource {x:Static theming:VariableKeys.ControlContentThemeFontSize}}" />
+        <Setter Property="FontSize" Value="{m:DynamicValue ControlContentThemeFontSize}" />
         <Setter Property="HorizontalAlignment" Value="Stretch" />
         <Setter Property="VerticalAlignment" Value="Center" />
         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
         <Setter Property="VerticalContentAlignment" Value="Top" />
-        <Setter Property="Padding" Value="{DynamicResource {x:Static theming:VariableKeys.TextControlThemePadding}}" />
-        <Setter Property="Border.CornerRadius" Value="{DynamicResource {x:Static theming:VariableKeys.ControlCornerRadius}}" />
+        <Setter Property="Padding" Value="{m:DynamicValue TextControlThemePadding}" />
+        <Setter Property="Border.CornerRadius" Value="{m:DynamicValue ControlCornerRadius}" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
         <Setter Property="Template">
             <Setter.Value>
@@ -84,18 +84,18 @@
                     </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter Property="Background" Value="{markup:BrushResource ControlFillColorSecondaryBrush}" />
-                            <Setter Property="Foreground" Value="{markup:BrushResource TextFillColorPrimaryBrush}" />
+                            <Setter Property="Background" Value="{m:DynamicBrush ControlFillSecondary}" />
+                            <Setter Property="Foreground" Value="{m:DynamicBrush TextFillPrimary}" />
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter Property="Background" Value="{markup:BrushResource ControlFillColorDisabledBrush}" />
-                            <Setter Property="BorderBrush" Value="{markup:BrushResource ControlStrokeColorDefaultBrush}" />
-                            <Setter Property="Foreground" Value="{markup:BrushResource TextFillColorDisabledBrush}" />
+                            <Setter Property="Background" Value="{m:DynamicBrush ControlFillDisabled}" />
+                            <Setter Property="BorderBrush" Value="{m:DynamicBrush ControlStrokeDefault}" />
+                            <Setter Property="Foreground" Value="{m:DynamicBrush TextFillDisabled}" />
                         </Trigger>
                         <Trigger Property="IsPressed" Value="True">
-                            <Setter Property="Background" Value="{markup:BrushResource ControlFillColorTertiaryBrush}" />
-                            <Setter Property="BorderBrush" Value="{markup:BrushResource ControlStrokeColorDefaultBrush}" />
-                            <Setter Property="Foreground" Value="{markup:BrushResource TextFillColorSecondaryBrush}" />
+                            <Setter Property="Background" Value="{m:DynamicBrush ControlFillTertiary}" />
+                            <Setter Property="BorderBrush" Value="{m:DynamicBrush ControlStrokeDefault}" />
+                            <Setter Property="Foreground" Value="{m:DynamicBrush TextFillSecondary}" />
                         </Trigger>
                         <Trigger Property="ClockIdentifier" Value="Clock24Hour">
                             <Setter TargetName="GridColumnType" Property="Visibility" Value="Hidden" />

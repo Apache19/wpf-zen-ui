@@ -3,7 +3,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Ui.Controls"
     xmlns:converters="clr-namespace:Wpf.Ui.Converters"
-    xmlns:markup="clr-namespace:Wpf.Ui.Markup">
+    xmlns:m="clr-namespace:Wpf.Ui.Markup">
 
     <converters:IconElementCloneConverter x:Key="IconElementCloneConverter" />
 
@@ -89,7 +89,7 @@
                                     HorizontalAlignment="Left"
                                     VerticalAlignment="Center"
                                     AutomationProperties.AutomationId="NavigationAutoSuggestBoxButton"
-                                    Icon="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=AutoSuggestBox.Icon, Converter={StaticResource IconElementCloneConverter}, FallbackValue={markup:SymbolIcon Search24}}"
+                                    Icon="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=AutoSuggestBox.Icon, Converter={StaticResource IconElementCloneConverter}, FallbackValue={m:SymbolIcon Search24}}"
                                     Visibility="Hidden" />
                             </Grid>
                         </Grid>
@@ -100,7 +100,7 @@
                             Grid.Row="1"
                             Height="1"
                             Margin="0,4,0,4"
-                            Background="{markup:BrushResource LeftNavigationViewSeparatorBrush}" />
+                            Background="{m:DynamicBrush LeftNavigationViewSeparator}" />
 
                         <!--  Scrollable Menu Items  -->
                         <controls:NavigationViewList
@@ -131,7 +131,7 @@
                             Grid.Row="3"
                             Height="1"
                             Margin="0,4,0,4"
-                            Background="{markup:BrushResource LeftNavigationViewSeparatorBrush}" />
+                            Background="{m:DynamicBrush LeftNavigationViewSeparator}" />
 
                         <!--  Footer (Fixed)  -->
                         <Grid Grid.Row="4">
@@ -172,8 +172,8 @@
             <Border
                 Grid.Column="1"
                 Margin="{TemplateBinding FrameMargin}"
-                Background="{markup:BrushResource LayerFillColorDefaultBrush}"
-                BorderBrush="{markup:BrushResource CardStrokeColorDefaultBrush}"
+                Background="{m:DynamicBrush LayerFillDefault}"
+                BorderBrush="{m:DynamicBrush CardStrokeDefault}"
                 BorderThickness="1,1,0,0"
                 CornerRadius="8,0,0,0">
                 <Grid>

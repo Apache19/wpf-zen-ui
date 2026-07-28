@@ -9,13 +9,13 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Ui.Controls"
-    xmlns:markup="clr-namespace:Wpf.Ui.Markup">
+    xmlns:m="clr-namespace:Wpf.Ui.Markup">
 
     <Style x:Key="UiContextMenuStyle" TargetType="{x:Type ContextMenu}">
-        <Setter Property="FontSize" Value="{markup:VariableResource ControlContentThemeFontSize}" />
-        <Setter Property="Foreground" Value="{markup:BrushResource TextFillColorPrimaryBrush}" />
-        <Setter Property="Background" Value="{markup:BrushResource AcrylicBackgroundFillColorDefaultBrush}" />
-        <Setter Property="BorderBrush" Value="{markup:BrushResource SurfaceStrokeColorFlyoutBrush}" />
+        <Setter Property="FontSize" Value="{m:DynamicValue ControlContentThemeFontSize}" />
+        <Setter Property="Foreground" Value="{m:DynamicBrush TextFillPrimary}" />
+        <Setter Property="Background" Value="{m:DynamicBrush AcrylicBackgroundFillDefault}" />
+        <Setter Property="BorderBrush" Value="{m:DynamicBrush SurfaceStrokeFlyout}" />
         <Setter Property="HasDropShadow" Value="True" />
         <Setter Property="MinWidth" Value="140" />
         <Setter Property="controls:PopupAnimator.IsEnabled" Value="True" />

@@ -10,11 +10,11 @@
     xmlns:vm="clr-namespace:Wpf.Ui.Gallery.ViewModels.Pages.BasicInput"
     Title="SplitButtonPage"
     controls:PageControlDocumentation.DocumentationType="{x:Type ui:SplitButton}"
-    d:Background="{ui:BrushResource WindowBackgroundBrush}"
+    d:Background="{ui:DynamicBrush WindowBackground}"
     d:DataContext="{d:DesignInstance vm:SplitButtonViewModel, IsDesignTimeCreatable=False}"
     d:DesignWidth="800"
-    Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
-    Style="{ui:StyleResource DynamicScrollPageStyle}"
+    Foreground="{ui:DynamicBrush TextFillPrimary}"
+    Style="{ui:DynamicStyle DynamicScrollPage}"
     mc:Ignorable="d">
 
     <StackPanel Margin="0,0,0,24">
@@ -194,7 +194,7 @@
                     <ui:TextBlock
                         Width="200"
                         Margin="0,12,0,0"
-                        Foreground="{ui:BrushResource TextFillColorSecondaryBrush}"
+                        Foreground="{ui:DynamicBrush TextFillSecondary}"
                         Text="Hover and press both segments to compare their independent interaction states."
                         TextWrapping="Wrap" />
                 </StackPanel>
@@ -265,7 +265,7 @@
 
                     <ui:TextBlock
                         Margin="0,12,0,0"
-                        Foreground="{ui:BrushResource TextFillColorSecondaryBrush}"
+                        Foreground="{ui:DynamicBrush TextFillSecondary}"
                         Text="Brush values accept named colors and #AARRGGBB notation."
                         TextWrapping="Wrap" />
                 </StackPanel>

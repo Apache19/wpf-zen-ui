@@ -13,9 +13,9 @@
     controls:PageControlDocumentation.DocumentationType="{x:Type ui:RichTextBox}"
     d:DataContext="{d:DesignInstance vm:RichTextBoxViewModel, IsDesignTimeCreatable=True}"
     d:DesignWidth="800"
-    d:Background="{ui:BrushResource WindowBackgroundBrush}"
-    Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
-    Style="{ui:StyleResource DynamicScrollPageStyle}"
+    d:Background="{ui:DynamicBrush WindowBackground}"
+    Foreground="{ui:DynamicBrush TextFillPrimary}"
+    Style="{ui:DynamicStyle DynamicScrollPage}"
     mc:Ignorable="d">
 
     <controls:ControlExample

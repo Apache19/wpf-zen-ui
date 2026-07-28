@@ -3,70 +3,44 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-using System.Reflection;
-
-#pragma warning disable CS8618 // 在退出构造函数时，不可为 null 的字段必须包含非 null 值。请考虑添加 'required' 修饰符或声明为可以为 null。
-
 namespace Wpf.Ui.Theming;
 
+/// <summary>
+/// Provides assembly-scoped keys for reusable styles published by WPF UI.
+/// </summary>
+/// <remarks>
+/// XAML consumers should normally use <c>DynamicStyle</c> or <c>StaticStyle</c>. Each property is initialized
+/// explicitly so adding a key does not depend on reflection or a writable static property.
+/// </remarks>
 public static class StyleKeys
 {
-    public static ComponentResourceKey MenuStyle                       { get; private set; }
-    public static ComponentResourceKey UiMenuStyle                     { get; private set; }
-    public static ComponentResourceKey MenuItemStyle                   { get; private set; }
-    public static ComponentResourceKey UiMenuItemStyle                 { get; private set; }
-    public static ComponentResourceKey MenuItemSeparatorStyle          { get; private set; }
-    public static ComponentResourceKey DefaultCheckBoxStyle            { get; private set; }
-    public static ComponentResourceKey DefaultRadioButtonStyle         { get; private set; }
-    public static ComponentResourceKey DefaultComboBoxStyle            { get; private set; }
-    public static ComponentResourceKey DefaultComboBoxItemStyle        { get; private set; }
-    public static ComponentResourceKey UiComboBoxStyle                 { get; private set; }
-    public static ComponentResourceKey DefaultTextBoxStyle             { get; private set; }
-    public static ComponentResourceKey DefaultUiTextBoxStyle           { get; private set; }
-    public static ComponentResourceKey DefaultRichTextBoxStyle         { get; private set; }
-    public static ComponentResourceKey UiRichTextBoxStyle              { get; private set; }
-    public static ComponentResourceKey DefaultTextBoxScrollViewerStyle { get; private set; }
-    public static ComponentResourceKey DefaultControlFocusVisualStyle  { get; private set; }
-    public static ComponentResourceKey DefaultScrollBarStyle           { get; private set; }
-
-    /// <summary>
-    /// Gets the assembly-scoped key for the opt-in dynamic scrolling <see cref="System.Windows.Controls.Page"/> style.
-    /// </summary>
-    /// <remarks>
-    /// A <see cref="ComponentResourceKey"/> is required here because pages can be created without an
-    /// <see cref="Application"/> resource scope, for example when WPF content is hosted by WinForms.
-    /// WPF can resolve this key from this assembly's theme dictionary instead of relying on an
-    /// application-level string resource.
-    /// </remarks>
-    public static ComponentResourceKey DynamicScrollPageStyle { get; private set; }
-
-    public static ComponentResourceKey NavigationViewItemDataTemplate { get; private set; }
-
-    public static ComponentResourceKey IconInfoBadgeStyle        { get; private set; }
-    public static ComponentResourceKey ValueInfoBadgeStyle       { get; private set; }
-    public static ComponentResourceKey DotInfoBadgeStyle         { get; private set; }
-    public static ComponentResourceKey DefaultCalendarStyle      { get; private set; }
-    public static ComponentResourceKey DefaultDatePickerStyle    { get; private set; }
-    public static ComponentResourceKey UiSplitButtonStyle        { get; private set; }
-    public static ComponentResourceKey UiAutoSuggestBoxStyle     { get; private set; }
-    public static ComponentResourceKey UiBadgeStyle              { get; private set; }
-    public static ComponentResourceKey DefaultProgressBarStyle   { get; private set; }
-    public static ComponentResourceKey DefaultValidationTemplate { get; private set; }
-
-    static StyleKeys()
-    {
-        // 使用反射统一设置每个属性值
-        var type       = typeof(StyleKeys);
-        var properties = type.GetProperties(BindingFlags.Public | BindingFlags.Static);
-        foreach (var property in properties)
-        {
-            if (property.PropertyType == typeof(ComponentResourceKey))
-            {
-                var key = Create(property.Name);
-                property.SetValue(null, key);
-            }
-        }
-    }
+    public static ComponentResourceKey MenuStyle                       { get; } = Create(nameof(MenuStyle));
+    public static ComponentResourceKey UiMenuStyle                     { get; } = Create(nameof(UiMenuStyle));
+    public static ComponentResourceKey MenuItemStyle                   { get; } = Create(nameof(MenuItemStyle));
+    public static ComponentResourceKey UiMenuItemStyle                 { get; } = Create(nameof(UiMenuItemStyle));
+    public static ComponentResourceKey MenuItemSeparatorStyle          { get; } = Create(nameof(MenuItemSeparatorStyle));
+    public static ComponentResourceKey DefaultCheckBoxStyle            { get; } = Create(nameof(DefaultCheckBoxStyle));
+    public static ComponentResourceKey DefaultRadioButtonStyle         { get; } = Create(nameof(DefaultRadioButtonStyle));
+    public static ComponentResourceKey DefaultComboBoxStyle            { get; } = Create(nameof(DefaultComboBoxStyle));
+    public static ComponentResourceKey DefaultComboBoxItemStyle        { get; } = Create(nameof(DefaultComboBoxItemStyle));
+    public static ComponentResourceKey UiComboBoxStyle                 { get; } = Create(nameof(UiComboBoxStyle));
+    public static ComponentResourceKey DefaultTextBoxStyle             { get; } = Create(nameof(DefaultTextBoxStyle));
+    public static ComponentResourceKey DefaultUiTextBoxStyle           { get; } = Create(nameof(DefaultUiTextBoxStyle));
+    public static ComponentResourceKey DefaultRichTextBoxStyle         { get; } = Create(nameof(DefaultRichTextBoxStyle));
+    public static ComponentResourceKey UiRichTextBoxStyle              { get; } = Create(nameof(UiRichTextBoxStyle));
+    public static ComponentResourceKey DefaultTextBoxScrollViewerStyle { get; } = Create(nameof(DefaultTextBoxScrollViewerStyle));
+    public static ComponentResourceKey DefaultControlFocusVisualStyle  { get; } = Create(nameof(DefaultControlFocusVisualStyle));
+    public static ComponentResourceKey DefaultScrollBarStyle           { get; } = Create(nameof(DefaultScrollBarStyle));
+    public static ComponentResourceKey DynamicScrollPageStyle          { get; } = Create(nameof(DynamicScrollPageStyle));
+    public static ComponentResourceKey IconInfoBadgeStyle              { get; } = Create(nameof(IconInfoBadgeStyle));
+    public static ComponentResourceKey ValueInfoBadgeStyle             { get; } = Create(nameof(ValueInfoBadgeStyle));
+    public static ComponentResourceKey DotInfoBadgeStyle               { get; } = Create(nameof(DotInfoBadgeStyle));
+    public static ComponentResourceKey DefaultCalendarStyle            { get; } = Create(nameof(DefaultCalendarStyle));
+    public static ComponentResourceKey DefaultDatePickerStyle          { get; } = Create(nameof(DefaultDatePickerStyle));
+    public static ComponentResourceKey UiSplitButtonStyle              { get; } = Create(nameof(UiSplitButtonStyle));
+    public static ComponentResourceKey UiAutoSuggestBoxStyle           { get; } = Create(nameof(UiAutoSuggestBoxStyle));
+    public static ComponentResourceKey UiBadgeStyle                    { get; } = Create(nameof(UiBadgeStyle));
+    public static ComponentResourceKey DefaultProgressBarStyle         { get; } = Create(nameof(DefaultProgressBarStyle));
 
     private static ComponentResourceKey Create(object resourceId)
     {

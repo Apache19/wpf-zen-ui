@@ -14,7 +14,7 @@
     <Style x:Key="DefaultTextBlockStyle" BasedOn="{StaticResource {x:Type TextBlock}}" TargetType="{x:Type TextBlock}">
 
         <!-- ReSharper disable once Xaml.RedundantStyledValue -->
-        <Setter Property="controls:TextBlock.DefaultForeground" Value="{m:BrushResource TextFillColorPrimaryBrush}" />
+        <Setter Property="controls:TextBlock.DefaultForeground" Value="{m:DynamicBrush TextFillPrimary}" />
     </Style>
 
     <Style BasedOn="{StaticResource DefaultTextBlockStyle}" TargetType="{x:Type TextBlock}" />

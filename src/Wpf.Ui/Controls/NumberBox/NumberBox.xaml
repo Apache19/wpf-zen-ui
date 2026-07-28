@@ -34,8 +34,8 @@
         <Setter Property="IsTabStop" Value="False" />
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="Border.CornerRadius" Value="3" />
-        <Setter Property="BorderBrush" Value="{m:BrushResource ControlStrokeColorDefaultBrush}" />
-        <Setter Property="Foreground" Value="{m:BrushResource TextFillColorPrimaryBrush}" />
+        <Setter Property="BorderBrush" Value="{m:DynamicBrush ControlStrokeDefault}" />
+        <Setter Property="Foreground" Value="{m:DynamicBrush TextFillPrimary}" />
         <Setter Property="HorizontalContentAlignment" Value="Center" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
@@ -58,17 +58,17 @@
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="ContentBorder" Property="Background" Value="{m:BrushResource ControlFillColorPrimaryBrush}" />
-                            <Setter TargetName="ContentBorder" Property="BorderBrush" Value="{m:BrushResource ControlStrokeColorSecondaryBrush}" />
+                            <Setter TargetName="ContentBorder" Property="Background" Value="{m:DynamicBrush ControlFillPrimary}" />
+                            <Setter TargetName="ContentBorder" Property="BorderBrush" Value="{m:DynamicBrush ControlStrokeSecondary}" />
                         </Trigger>
                         <Trigger Property="IsPressed" Value="True">
-                            <Setter TargetName="ContentBorder" Property="Background" Value="{m:BrushResource ControlFillColorSecondaryBrush}" />
-                            <Setter Property="Foreground" Value="{m:BrushResource TextFillColorTertiaryBrush}" />
+                            <Setter TargetName="ContentBorder" Property="Background" Value="{m:DynamicBrush ControlFillSecondary}" />
+                            <Setter Property="Foreground" Value="{m:DynamicBrush TextFillTertiary}" />
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter TargetName="ContentBorder" Property="Background" Value="{m:BrushResource SubtleFillColorDisabledBrush}" />
-                            <Setter TargetName="ContentBorder" Property="BorderBrush" Value="{m:BrushResource ControlStrokeColorDefaultBrush}" />
-                            <Setter Property="Foreground" Value="{m:BrushResource TextFillColorDisabledBrush}" />
+                            <Setter TargetName="ContentBorder" Property="Background" Value="{m:DynamicBrush SubtleFillDisabled}" />
+                            <Setter TargetName="ContentBorder" Property="BorderBrush" Value="{m:DynamicBrush ControlStrokeDefault}" />
+                            <Setter Property="Foreground" Value="{m:DynamicBrush TextFillDisabled}" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -118,7 +118,7 @@
                 Padding="0"
                 controls:NumberBox.ButtonKind="Increment"
                 BorderBrush="Transparent"
-                Foreground="{m:BrushResource TextFillColorSecondaryBrush}"
+                Foreground="{m:DynamicBrush TextFillSecondary}"
                 Style="{StaticResource NumberBoxRepeatButtonStyle}">
                 <controls:SymbolIcon FontSize="{StaticResource NumberBoxButtonIconSize}" Symbol="ChevronUp24" />
             </RepeatButton>
@@ -129,7 +129,7 @@
                 Padding="0"
                 controls:NumberBox.ButtonKind="Decrement"
                 BorderBrush="Transparent"
-                Foreground="{m:BrushResource TextFillColorSecondaryBrush}"
+                Foreground="{m:DynamicBrush TextFillSecondary}"
                 Style="{StaticResource NumberBoxRepeatButtonStyle}">
                 <controls:SymbolIcon FontSize="{StaticResource NumberBoxButtonIconSize}" Symbol="ChevronDown24" />
             </RepeatButton>
@@ -170,7 +170,7 @@
                         Padding="{TemplateBinding Padding}"
                         HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
                         VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
-                        Foreground="{m:BrushResource TextPlaceholderColorBrush}"
+                        Foreground="{m:DynamicBrush TextPlaceholder}"
                         IsHitTestVisible="False"
                         Text="{TemplateBinding PlaceholderText}" />
 
@@ -229,7 +229,7 @@
 
             <Border
                 x:Name="FocusIndicator"
-                BorderBrush="{m:BrushResource AccentStrokeBrush}"
+                BorderBrush="{m:DynamicBrush AccentStroke}"
                 BorderThickness="0,0,0,2"
                 CornerRadius="{TemplateBinding Border.CornerRadius}"
                 IsHitTestVisible="False"
@@ -247,8 +247,8 @@
                 StaysOpen="True">
                 <Border
                     Padding="4"
-                    Background="{m:BrushResource SolidBackgroundFillColorTertiaryBrush}"
-                    BorderBrush="{m:BrushResource ControlStrokeColorDefaultBrush}"
+                    Background="{m:DynamicBrush SolidBackgroundFillTertiary}"
+                    BorderBrush="{m:DynamicBrush ControlStrokeDefault}"
                     BorderThickness="1"
                     CornerRadius="8"
                     SnapsToDevicePixels="True">
@@ -304,10 +304,10 @@
             </Trigger>
 
             <Trigger Property="IsMouseOver" Value="True">
-                <Setter TargetName="ContentBorder" Property="Background" Value="{m:BrushResource ControlFillColorSecondaryBrush}" />
+                <Setter TargetName="ContentBorder" Property="Background" Value="{m:DynamicBrush ControlFillSecondary}" />
             </Trigger>
             <Trigger Property="IsKeyboardFocused" Value="True">
-                <Setter TargetName="ContentBorder" Property="Background" Value="{m:BrushResource ControlFillColorInputActiveBrush}" />
+                <Setter TargetName="ContentBorder" Property="Background" Value="{m:DynamicBrush ControlFillInputActive}" />
                 <Setter TargetName="FocusIndicator" Property="Visibility" Value="Visible" />
             </Trigger>
             <Trigger Property="IsReadOnly" Value="True">
@@ -323,12 +323,12 @@
                 <Setter TargetName="PART_CompactPopup" Property="IsOpen" Value="True" />
             </MultiTrigger>
             <Trigger Property="IsEnabled" Value="False">
-                <Setter TargetName="ContentBorder" Property="Background" Value="{m:BrushResource ControlFillColorDisabledBrush}" />
-                <Setter TargetName="ContentBorder" Property="BorderBrush" Value="{m:BrushResource ControlStrokeColorDefaultBrush}" />
-                <Setter TargetName="FocusIndicator" Property="BorderBrush" Value="{m:BrushResource ControlStrokeColorDefaultBrush}" />
+                <Setter TargetName="ContentBorder" Property="Background" Value="{m:DynamicBrush ControlFillDisabled}" />
+                <Setter TargetName="ContentBorder" Property="BorderBrush" Value="{m:DynamicBrush ControlStrokeDefault}" />
+                <Setter TargetName="FocusIndicator" Property="BorderBrush" Value="{m:DynamicBrush ControlStrokeDefault}" />
                 <Setter Property="ClearButtonEnabled" Value="False" />
-                <Setter TargetName="PlaceholderTextBox" Property="Foreground" Value="{m:BrushResource TextFillColorDisabledBrush}" />
-                <Setter Property="Foreground" Value="{m:BrushResource TextFillColorDisabledBrush}" />
+                <Setter TargetName="PlaceholderTextBox" Property="Foreground" Value="{m:DynamicBrush TextFillDisabled}" />
+                <Setter Property="Foreground" Value="{m:DynamicBrush TextFillDisabled}" />
                 <Setter Property="SpinButtonPlacementMode" Value="Hidden" />
             </Trigger>
         </ControlTemplate.Triggers>
@@ -341,17 +341,17 @@
         <Setter Property="Stylus.IsFlicksEnabled" Value="False" />
         <Setter Property="FocusVisualStyle" Value="{x:Null}" />
         <Setter Property="CaretBrush" Value="{Binding Foreground, RelativeSource={RelativeSource Self}}" />
-        <Setter Property="Background" Value="{m:BrushResource ControlFillColorSecondaryBrush}" />
-        <Setter Property="BorderBrush" Value="{m:BrushResource ControlStrokeColorSecondaryBrush}" />
+        <Setter Property="Background" Value="{m:DynamicBrush ControlFillSecondary}" />
+        <Setter Property="BorderBrush" Value="{m:DynamicBrush ControlStrokeSecondary}" />
         <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="Border.CornerRadius" Value="{m:VariableResource ControlCornerRadius}" />
+        <Setter Property="Border.CornerRadius" Value="{m:DynamicValue ControlCornerRadius}" />
         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
-        <Setter Property="Padding" Value="{m:VariableResource TextControlThemePadding}" />
+        <Setter Property="Padding" Value="{m:DynamicValue TextControlThemePadding}" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
         <Setter Property="ContextMenu" Value="{StaticResource DefaultEditorContextMenu}" />
         <Setter Property="Template" Value="{StaticResource NumberBoxControlTemplate}" />
-        <Setter Property="Validation.ErrorTemplate" Value="{m:StyleResource DefaultValidationTemplate}" />
+        <Setter Property="Validation.ErrorTemplate" Value="{m:DynamicTemplate DefaultValidation}" />
     </Style>
 
     <Style BasedOn="{StaticResource DefaultUiNumberBoxStyle}" TargetType="{x:Type controls:NumberBox}" />

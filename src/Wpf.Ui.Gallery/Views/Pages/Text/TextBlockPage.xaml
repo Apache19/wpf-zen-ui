@@ -11,12 +11,12 @@
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
     Title="TextBlockPage"
     controls:PageControlDocumentation.DocumentationType="{x:Type ui:TextBlock}"
-    d:Background="{ui:BrushResource WindowBackgroundBrush}"
+    d:Background="{ui:DynamicBrush WindowBackground}"
     d:DataContext="{d:DesignInstance vm:TextBlockViewModel, IsDesignTimeCreatable=False}"
     d:DesignWidth="800"
-    Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
+    Foreground="{ui:DynamicBrush TextFillPrimary}"
     mc:Ignorable="d"
-    Style="{ui:StyleResource DynamicScrollPageStyle}">
+    Style="{ui:DynamicStyle DynamicScrollPage}">
 
     <StackPanel Margin="0,0,0,24">
         <controls:ControlExample
@@ -66,11 +66,11 @@
                 &lt;/TextBlock&gt;
             </controls:ControlExample.XamlCode>
             <TextBlock>
-                <Run Foreground="{ui:BrushResource TextFillColorTertiaryBrush}" Text="file:" />
+                <Run Foreground="{ui:DynamicBrush TextFillTertiary}" Text="file:" />
                 <ui:FluentSymbol
                     Filled="True"
                     FontSize="16"
-                    Foreground="{ui:BrushResource PaletteBlueGreyBrush}"
+                    Foreground="{ui:DynamicBrush PaletteBlueGrey}"
                     Symbol="Document24" />
                 <Run Text="Document.txt" />
             </TextBlock>

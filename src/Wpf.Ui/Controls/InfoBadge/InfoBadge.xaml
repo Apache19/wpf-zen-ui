@@ -2,18 +2,18 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Ui.Controls"
-    xmlns:markup="clr-namespace:Wpf.Ui.Markup"
+    xmlns:m="clr-namespace:Wpf.Ui.Markup"
     xmlns:theming="clr-namespace:Wpf.Ui.Theming">
 
     <CornerRadius x:Key="ValueInfoBadgeStyleCornerRadius">8</CornerRadius>
     <Thickness x:Key="IconBadgeMargin">2</Thickness>
 
     <Style x:Key="{x:Static theming:StyleKeys.DotInfoBadgeStyle}" TargetType="{x:Type controls:InfoBadge}">
-        <Setter Property="Background" Value="{markup:BrushResource SystemFillColorInformationalBrush}" />
+        <Setter Property="Background" Value="{m:DynamicBrush SystemFillInformational}" />
         <Setter Property="Focusable" Value="False" />
         <Setter Property="KeyboardNavigation.IsTabStop" Value="False" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
-        <Setter Property="Foreground" Value="{markup:BrushResource TextFillColorPrimaryBrush}" />
+        <Setter Property="Foreground" Value="{m:DynamicBrush TextFillPrimary}" />
         <Setter Property="FontWeight" Value="Normal" />
         <Setter Property="Template">
             <Setter.Value>
@@ -32,19 +32,19 @@
                     </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="Severity" Value="Attention">
-                            <Setter TargetName="ContentBorder" Property="Background" Value="{markup:BrushResource SystemFillColorAttentionBrush}" />
+                            <Setter TargetName="ContentBorder" Property="Background" Value="{m:DynamicBrush SystemFillAttention}" />
                         </Trigger>
                         <Trigger Property="Severity" Value="Informational">
-                            <Setter TargetName="ContentBorder" Property="Background" Value="{markup:BrushResource SystemFillColorInformationalBrush}" />
+                            <Setter TargetName="ContentBorder" Property="Background" Value="{m:DynamicBrush SystemFillInformational}" />
                         </Trigger>
                         <Trigger Property="Severity" Value="Success">
-                            <Setter TargetName="ContentBorder" Property="Background" Value="{markup:BrushResource SystemFillColorSuccessBrush}" />
+                            <Setter TargetName="ContentBorder" Property="Background" Value="{m:DynamicBrush SystemFillSuccess}" />
                         </Trigger>
                         <Trigger Property="Severity" Value="Caution">
-                            <Setter TargetName="ContentBorder" Property="Background" Value="{markup:BrushResource SystemFillColorCautionBrush}" />
+                            <Setter TargetName="ContentBorder" Property="Background" Value="{m:DynamicBrush SystemFillCaution}" />
                         </Trigger>
                         <Trigger Property="Severity" Value="Critical">
-                            <Setter TargetName="ContentBorder" Property="Background" Value="{markup:BrushResource SystemFillColorCriticalBrush}" />
+                            <Setter TargetName="ContentBorder" Property="Background" Value="{m:DynamicBrush SystemFillCritical}" />
                         </Trigger>
                     </ControlTemplate.Triggers>
 
@@ -55,11 +55,11 @@
     </Style>
 
     <Style x:Key="{x:Static theming:StyleKeys.IconInfoBadgeStyle}" TargetType="{x:Type controls:InfoBadge}">
-        <Setter Property="Background" Value="{markup:BrushResource SystemFillColorInformationalBrush}" />
+        <Setter Property="Background" Value="{m:DynamicBrush SystemFillInformational}" />
         <Setter Property="Focusable" Value="False" />
         <Setter Property="KeyboardNavigation.IsTabStop" Value="False" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
-        <Setter Property="Foreground" Value="{markup:BrushResource TextFillColorPrimaryBrush}" />
+        <Setter Property="Foreground" Value="{m:DynamicBrush TextFillPrimary}" />
         <Setter Property="FontWeight" Value="Normal" />
 
         <Setter Property="Template">
@@ -80,24 +80,24 @@
                                 Content="{TemplateBinding Icon}"
                                 Focusable="False"
                                 TextElement.FontSize="{TemplateBinding FontSize}"
-                                TextElement.Foreground="{markup:BrushResource TextFillColorInverseBrush}" />
+                                TextElement.Foreground="{m:DynamicBrush TextFillInverse}" />
                         </Border>
                     </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="Severity" Value="Attention">
-                            <Setter TargetName="ContentBorder" Property="Background" Value="{markup:BrushResource SystemFillColorAttentionBrush}" />
+                            <Setter TargetName="ContentBorder" Property="Background" Value="{m:DynamicBrush SystemFillAttention}" />
                         </Trigger>
                         <Trigger Property="Severity" Value="Informational">
-                            <Setter TargetName="ContentBorder" Property="Background" Value="{markup:BrushResource SystemFillColorInformationalBrush}" />
+                            <Setter TargetName="ContentBorder" Property="Background" Value="{m:DynamicBrush SystemFillInformational}" />
                         </Trigger>
                         <Trigger Property="Severity" Value="Success">
-                            <Setter TargetName="ContentBorder" Property="Background" Value="{markup:BrushResource SystemFillColorSuccessBrush}" />
+                            <Setter TargetName="ContentBorder" Property="Background" Value="{m:DynamicBrush SystemFillSuccess}" />
                         </Trigger>
                         <Trigger Property="Severity" Value="Caution">
-                            <Setter TargetName="ContentBorder" Property="Background" Value="{markup:BrushResource SystemFillColorCautionBrush}" />
+                            <Setter TargetName="ContentBorder" Property="Background" Value="{m:DynamicBrush SystemFillCaution}" />
                         </Trigger>
                         <Trigger Property="Severity" Value="Critical">
-                            <Setter TargetName="ContentBorder" Property="Background" Value="{markup:BrushResource SystemFillColorCriticalBrush}" />
+                            <Setter TargetName="ContentBorder" Property="Background" Value="{m:DynamicBrush SystemFillCritical}" />
                         </Trigger>
 
                     </ControlTemplate.Triggers>
@@ -109,11 +109,11 @@
     </Style>
 
     <Style x:Key="{x:Static theming:StyleKeys.ValueInfoBadgeStyle}" TargetType="{x:Type controls:InfoBadge}">
-        <Setter Property="Background" Value="{markup:BrushResource SystemFillColorInformationalBrush}" />
+        <Setter Property="Background" Value="{m:DynamicBrush SystemFillInformational}" />
         <Setter Property="Focusable" Value="False" />
         <Setter Property="KeyboardNavigation.IsTabStop" Value="False" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
-        <Setter Property="Foreground" Value="{markup:BrushResource TextFillColorPrimaryBrush}" />
+        <Setter Property="Foreground" Value="{m:DynamicBrush TextFillPrimary}" />
         <Setter Property="FontWeight" Value="Normal" />
         <Setter Property="Template">
             <Setter.Value>
@@ -139,7 +139,7 @@
                                 VerticalAlignment="Center"
                                 Focusable="False"
                                 FontSize="{TemplateBinding FontSize}"
-                                Foreground="{markup:BrushResource TextFillColorInverseBrush}"
+                                Foreground="{m:DynamicBrush TextFillInverse}"
                                 Text="{TemplateBinding Value}"
                                 TextWrapping="Wrap" />
 
@@ -147,19 +147,19 @@
                     </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="Severity" Value="Attention">
-                            <Setter TargetName="ContentBorder" Property="Background" Value="{markup:BrushResource SystemFillColorAttentionBrush}" />
+                            <Setter TargetName="ContentBorder" Property="Background" Value="{m:DynamicBrush SystemFillAttention}" />
                         </Trigger>
                         <Trigger Property="Severity" Value="Informational">
-                            <Setter TargetName="ContentBorder" Property="Background" Value="{markup:BrushResource SystemFillColorInformationalBrush}" />
+                            <Setter TargetName="ContentBorder" Property="Background" Value="{m:DynamicBrush SystemFillInformational}" />
                         </Trigger>
                         <Trigger Property="Severity" Value="Success">
-                            <Setter TargetName="ContentBorder" Property="Background" Value="{markup:BrushResource SystemFillColorSuccessBrush}" />
+                            <Setter TargetName="ContentBorder" Property="Background" Value="{m:DynamicBrush SystemFillSuccess}" />
                         </Trigger>
                         <Trigger Property="Severity" Value="Caution">
-                            <Setter TargetName="ContentBorder" Property="Background" Value="{markup:BrushResource SystemFillColorCautionBrush}" />
+                            <Setter TargetName="ContentBorder" Property="Background" Value="{m:DynamicBrush SystemFillCaution}" />
                         </Trigger>
                         <Trigger Property="Severity" Value="Critical">
-                            <Setter TargetName="ContentBorder" Property="Background" Value="{markup:BrushResource SystemFillColorCriticalBrush}" />
+                            <Setter TargetName="ContentBorder" Property="Background" Value="{m:DynamicBrush SystemFillCritical}" />
                         </Trigger>
 
 

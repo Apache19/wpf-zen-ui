@@ -8,15 +8,15 @@
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
     xmlns:vm="clr-namespace:Wpf.Ui.Demo.Mvvm.ViewModels"
     Title="DataPage"
-    d:Background="{ui:BrushResource WindowBackgroundBrush}"
+    d:Background="{ui:DynamicBrush WindowBackground}"
     d:DataContext="{d:DesignInstance vm:DataViewModel, IsDesignTimeCreatable=False}"
     d:DesignHeight="450"
     d:DesignWidth="800"
-    Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
+    Foreground="{ui:DynamicBrush TextFillPrimary}"
     mc:Ignorable="d">
     <Grid Margin="42">
         <ui:VirtualizingItemsControl
-            Foreground="{ui:BrushResource TextFillColorSecondaryBrush}"
+            Foreground="{ui:DynamicBrush TextFillSecondary}"
             ItemsSource="{Binding Colors, Mode=OneWay}"
             VirtualizingPanel.CacheLengthUnit="Item">
             <ItemsControl.ItemTemplate>

@@ -15,9 +15,9 @@
     d:DataContext="{d:DesignInstance vm:BreadcrumbBarViewModel,
                                      IsDesignTimeCreatable=False}"
     d:DesignWidth="850"
-    d:Background="{ui:BrushResource WindowBackgroundBrush}"
-    Foreground="{ui:BrushResource TextFillColorPrimaryBrush}"
-    Style="{ui:StyleResource DynamicScrollPageStyle}"
+    d:Background="{ui:DynamicBrush WindowBackground}"
+    Foreground="{ui:DynamicBrush TextFillPrimary}"
+    Style="{ui:DynamicStyle DynamicScrollPage}"
     WindowWidth="850"
     mc:Ignorable="d">
 

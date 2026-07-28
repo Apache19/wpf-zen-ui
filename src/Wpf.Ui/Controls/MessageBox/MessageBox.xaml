@@ -10,16 +10,16 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Ui.Controls"
     xmlns:converters="clr-namespace:Wpf.Ui.Converters"
-    xmlns:markup="clr-namespace:Wpf.Ui.Markup">
+    xmlns:m="clr-namespace:Wpf.Ui.Markup">
 
     <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" />
 
     <Style TargetType="{x:Type controls:MessageBox}">
         <Setter Property="MaxWidth" Value="450" />
         <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="Background" Value="{markup:BrushResource SolidBackgroundFillColorBaseBrush}" />
+        <Setter Property="Background" Value="{m:DynamicBrush SolidBackgroundFillBase}" />
         <Setter Property="Padding" Value="12" />
-        <Setter Property="Foreground" Value="{markup:BrushResource TextFillColorPrimaryBrush}" />
+        <Setter Property="Foreground" Value="{m:DynamicBrush TextFillPrimary}" />
         <Setter Property="TextElement.FontWeight" Value="Regular" />
         <Setter Property="ShowInTaskbar" Value="False" />
         <Setter Property="RenderOptions.BitmapScalingMode" Value="Fant" />
@@ -34,7 +34,7 @@
                     <Border
                         x:Name="WindowBorder"
                         Background="{TemplateBinding Background}"
-                        BorderBrush="{markup:BrushResource WindowBorderBrush}"
+                        BorderBrush="{m:DynamicBrush WindowBorder}"
                         BorderThickness="{TemplateBinding BorderThickness}">
                         <AdornerDecorator>
                             <Grid>
@@ -43,7 +43,7 @@
                                     <RowDefinition Height="*" />
                                     <RowDefinition Height="Auto" />
                                 </Grid.RowDefinitions>
-                                <Border Grid.RowSpan="2" Background="{markup:BrushResource LayerFillColorAltBrush}" />
+                                <Border Grid.RowSpan="2" Background="{m:DynamicBrush LayerFillAlt}" />
                                 <TextBlock
                                     x:Name="Title"
                                     Grid.Row="0"
@@ -75,7 +75,7 @@
                                     Padding="{TemplateBinding Padding}"
                                     HorizontalAlignment="Stretch"
                                     VerticalAlignment="Bottom"
-                                    BorderBrush="{markup:BrushResource CardStrokeColorDefaultBrush}"
+                                    BorderBrush="{m:DynamicBrush CardStrokeDefault}"
                                     BorderThickness="0,1,0,0"
                                     CornerRadius="0">
                                     <Grid>
@@ -127,14 +127,14 @@
                     <ControlTemplate.Triggers>
                         <!--  FluentWindow逻辑  -->
                         <Trigger Property="IsNcActive" Value="False">
-                            <Setter TargetName="WindowBorder" Property="BorderBrush" Value="{markup:BrushResource WindowBorderInactiveBrush}" />
+                            <Setter TargetName="WindowBorder" Property="BorderBrush" Value="{m:DynamicBrush WindowBorderInactive}" />
                         </Trigger>
                         <MultiTrigger>
                             <MultiTrigger.Conditions>
                                 <Condition Property="IsAccentOnTitleBarAndBorder" Value="True" />
                                 <Condition Property="IsNcActive" Value="True" />
                             </MultiTrigger.Conditions>
-                            <Setter TargetName="WindowBorder" Property="BorderBrush" Value="{markup:BrushResource AccentStrokeBrush}" />
+                            <Setter TargetName="WindowBorder" Property="BorderBrush" Value="{m:DynamicBrush AccentStroke}" />
                         </MultiTrigger>
                         <!--  按钮逻辑  -->
                         <Trigger Property="IsPrimaryButtonEnabled" Value="False">
