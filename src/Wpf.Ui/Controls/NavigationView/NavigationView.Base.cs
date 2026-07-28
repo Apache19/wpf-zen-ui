@@ -95,7 +95,6 @@ public partial class NavigationView : Control, INavigationView
         // templates expose only a host slot, and OnApplyTemplate moves this stable frame between
         // those slots.
 
-        _navigationFrame.Navigating += OnNavigationFrameNavigating;
         _navigationFrame.Navigated += OnNavigationFrameNavigated;
         _navigationFrame.Unloaded += OnNavigationFrameUnloaded;
 

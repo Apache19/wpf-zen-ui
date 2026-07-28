@@ -48,7 +48,7 @@ public sealed partial class SettingsViewModel : ViewModel
         _navigationService = navigationService;
     }
 
-    public override void OnNavigatedTo()
+    public override void OnNavigationEntered()
     {
         if (!_isInitialized)
         {

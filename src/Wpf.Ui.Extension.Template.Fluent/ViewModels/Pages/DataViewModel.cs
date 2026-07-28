@@ -1,4 +1,4 @@
-﻿using System.Windows.Media;
+using System.Windows.Media;
 using $safeprojectname$.Models;
 using Wpf.Ui.Abstractions.Controls;
 
@@ -11,7 +11,7 @@ namespace $safeprojectname$.ViewModels.Pages
         [ObservableProperty]
         private IEnumerable<DataColor> _colors;
 
-        public Task OnNavigatedToAsync()
+        public Task OnNavigationEnteredAsync()
         {
             if (!_isInitialized)
                 InitializeViewModel();
@@ -19,7 +19,7 @@ namespace $safeprojectname$.ViewModels.Pages
             return Task.CompletedTask;
         }
 
-        public Task OnNavigatedFromAsync() => Task.CompletedTask;
+        public Task OnNavigationExitedAsync() => Task.CompletedTask;
 
         private void InitializeViewModel()
         {

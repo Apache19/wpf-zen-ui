@@ -645,6 +645,86 @@ public class NavigationViewTests
     }
 
     [Fact]
+    public void Navigate_WithNavigationAwareDataContext_EntersAndExitsPages()
+    {
+        RunOnStaThread(() =>
+        {
+            var resources = new ResourceDictionary { Source = CreateResourceUri() };
+            var navigationView = new Wpf.Ui.Controls.NavigationView
+            {
+                Style = Assert.IsType<Style>(resources[typeof(Wpf.Ui.Controls.NavigationView)]),
+            };
+            var window = new Window { Content = navigationView };
+            var firstViewModel = new NavigationAwareViewModel();
+            var secondViewModel = new NavigationAwareViewModel();
+
+            try
+            {
+                window.Show();
+                DrainDispatcher();
+
+                Assert.True(
+                    navigationView.Navigate(typeof(NavigationAwarePageOne), firstViewModel)
+                );
+                DrainDispatcher();
+                Assert.Equal(1, firstViewModel.NavigationEnteredCount);
+                Assert.Equal(0, firstViewModel.NavigationExitedCount);
+
+                Assert.True(
+                    navigationView.Navigate(typeof(NavigationAwarePageTwo), secondViewModel)
+                );
+                DrainDispatcher();
+                Assert.Equal(1, firstViewModel.NavigationExitedCount);
+                Assert.Equal(1, secondViewModel.NavigationEnteredCount);
+                Assert.Equal(0, secondViewModel.NavigationExitedCount);
+            }
+            finally
+            {
+                window.Close();
+                DrainDispatcher();
+            }
+
+            Assert.Equal(1, secondViewModel.NavigationExitedCount);
+        });
+    }
+
+    [Fact]
+    public void NavigationCommitted_WithLateDataContext_EntersAndExitsViewModel()
+    {
+        RunOnStaThread(() =>
+        {
+            var resources = new ResourceDictionary { Source = CreateResourceUri() };
+            var navigationView = new Wpf.Ui.Controls.NavigationView
+            {
+                Style = Assert.IsType<Style>(resources[typeof(Wpf.Ui.Controls.NavigationView)]),
+            };
+            var window = new Window { Content = navigationView };
+            var firstViewModel = new NavigationAwareViewModel();
+            var firstPage = new LateDataContextPage(firstViewModel);
+            var secondPage = new Border();
+
+            try
+            {
+                window.Show();
+                DrainDispatcher();
+
+                Assert.True(navigationView.ReplaceContent(firstPage));
+                DrainDispatcher();
+                Assert.Equal(1, firstViewModel.NavigationEnteredCount);
+
+                Assert.True(navigationView.ReplaceContent(secondPage));
+                DrainDispatcher();
+                Assert.Equal(1, firstViewModel.NavigationExitedCount);
+            }
+            finally
+            {
+                window.Close();
+                DrainDispatcher();
+            }
+        });
+    }
+
+    [Fact]
     public void RapidNavigation_SerializesNavigationAwareNotifications()
     {
         RunOnStaThread(() =>
@@ -654,30 +734,33 @@ public class NavigationViewTests
             {
                 Style = Assert.IsType<Style>(resources[typeof(Wpf.Ui.Controls.NavigationView)]),
             };
-            var firstPage = new DeferredNavigatingFromPage();
+            var firstPage = new DeferredNavigationExitPage();
             var secondPage = new NavigationAwarePage();
             var thirdPage = new NavigationAwarePage();
 
             Assert.True(navigationView.ApplyTemplate());
             Assert.True(navigationView.ReplaceContent(firstPage));
             DrainDispatcher();
-            Assert.Equal(1, firstPage.NavigatedToCount);
+            Assert.Equal(1, firstPage.NavigationEnteredCount);
 
             Assert.True(navigationView.ReplaceContent(secondPage));
             Assert.True(navigationView.ReplaceContent(thirdPage));
             DrainDispatcher();
 
-            Assert.Equal(1, firstPage.NavigatedFromCount);
-            Assert.Equal(0, secondPage.NavigatedToCount);
-            Assert.Equal(0, secondPage.NavigatedFromCount);
-            Assert.Equal(0, thirdPage.NavigatedToCount);
+            Assert.Equal(1, firstPage.NavigationExitedCount);
+            Assert.Equal(0, secondPage.NavigationEnteredCount);
+            Assert.Equal(0, secondPage.NavigationExitedCount);
+            Assert.Equal(0, thirdPage.NavigationEnteredCount);
 
-            firstPage.CompleteNavigatingFrom();
-            DrainDispatcher();
+            firstPage.CompleteNavigationExit();
+            DrainDispatcher(TimeSpan.FromMilliseconds(50D));
 
-            Assert.Equal(1, secondPage.NavigatedToCount);
-            Assert.Equal(1, secondPage.NavigatedFromCount);
-            Assert.Equal(1, thirdPage.NavigatedToCount);
+            // WPF stops the second request before committing it when a third request arrives in
+            // the same dispatcher turn. Navigation-aware entry is tied to successful navigation,
+            // so superseded content must not receive either lifecycle callback.
+            Assert.Equal(0, secondPage.NavigationEnteredCount);
+            Assert.Equal(0, secondPage.NavigationExitedCount);
+            Assert.Equal(1, thirdPage.NavigationEnteredCount);
         });
     }
 
@@ -971,8 +1054,8 @@ public class NavigationViewTests
 
                 Assert.True(navigationView.ReplaceContent(page));
                 DrainDispatcher();
-                Assert.Equal(1, page.NavigatedToCount);
-                Assert.Equal(0, page.NavigatedFromCount);
+                Assert.Equal(1, page.NavigationEnteredCount);
+                Assert.Equal(0, page.NavigationExitedCount);
 
                 navigationView.PaneDisplayMode = NavigationViewPaneDisplayMode.LeftFluent;
                 Assert.True(navigationView.ApplyTemplate());
@@ -980,8 +1063,8 @@ public class NavigationViewTests
 
                 Assert.Same(navigationFrame, GetNavigationFrame(navigationView));
                 Assert.Same(page, navigationFrame.Content);
-                Assert.Equal(1, page.NavigatedToCount);
-                Assert.Equal(0, page.NavigatedFromCount);
+                Assert.Equal(1, page.NavigationEnteredCount);
+                Assert.Equal(0, page.NavigationExitedCount);
             }
             finally
             {
@@ -989,7 +1072,7 @@ public class NavigationViewTests
                 DrainDispatcher();
             }
 
-            Assert.Equal(1, page.NavigatedFromCount);
+            Assert.Equal(1, page.NavigationExitedCount);
         });
     }
 
@@ -1097,44 +1180,80 @@ public class NavigationViewTests
 
     private sealed class NavigationAwarePage : Border, INavigationAware
     {
-        public int NavigatedToCount { get; private set; }
+        public int NavigationEnteredCount { get; private set; }
 
-        public int NavigatedFromCount { get; private set; }
+        public int NavigationExitedCount { get; private set; }
 
-        public Task OnNavigatedToAsync()
+        public Task OnNavigationEnteredAsync()
         {
-            NavigatedToCount++;
+            NavigationEnteredCount++;
             return Task.CompletedTask;
         }
 
-        public Task OnNavigatedFromAsync()
+        public Task OnNavigationExitedAsync()
         {
-            NavigatedFromCount++;
+            NavigationExitedCount++;
             return Task.CompletedTask;
         }
     }
 
-    private sealed class DeferredNavigatingFromPage : Border, INavigationAware
+    private sealed class NavigationAwareViewModel : INavigationAware
     {
-        private readonly TaskCompletionSource<object?> _navigatedFromCompletion = new();
+        public int NavigationEnteredCount { get; private set; }
 
-        public int NavigatedToCount { get; private set; }
+        public int NavigationExitedCount { get; private set; }
 
-        public int NavigatedFromCount { get; private set; }
-
-        public Task OnNavigatedToAsync()
+        public Task OnNavigationEnteredAsync()
         {
-            NavigatedToCount++;
+            NavigationEnteredCount++;
             return Task.CompletedTask;
         }
 
-        public Task OnNavigatedFromAsync()
+        public Task OnNavigationExitedAsync()
         {
-            NavigatedFromCount++;
-            return _navigatedFromCompletion.Task;
+            NavigationExitedCount++;
+            return Task.CompletedTask;
+        }
+    }
+
+    private sealed class LateDataContextPage(NavigationAwareViewModel viewModel) : Border
+    {
+        protected override void OnVisualParentChanged(DependencyObject oldParent)
+        {
+            base.OnVisualParentChanged(oldParent);
+
+            if (VisualParent is not null)
+            {
+                DataContext = viewModel;
+            }
+        }
+    }
+
+    public sealed class NavigationAwarePageOne : Border { }
+
+    public sealed class NavigationAwarePageTwo : Border { }
+
+    private sealed class DeferredNavigationExitPage : Border, INavigationAware
+    {
+        private readonly TaskCompletionSource<object?> _navigationExitedCompletion = new();
+
+        public int NavigationEnteredCount { get; private set; }
+
+        public int NavigationExitedCount { get; private set; }
+
+        public Task OnNavigationEnteredAsync()
+        {
+            NavigationEnteredCount++;
+            return Task.CompletedTask;
         }
 
-        public void CompleteNavigatingFrom() => _navigatedFromCompletion.SetResult(null);
+        public Task OnNavigationExitedAsync()
+        {
+            NavigationExitedCount++;
+            return _navigationExitedCompletion.Task;
+        }
+
+        public void CompleteNavigationExit() => _navigationExitedCompletion.SetResult(null);
     }
 
     private sealed class InputTestNavigationView : Wpf.Ui.Controls.NavigationView

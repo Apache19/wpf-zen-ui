@@ -46,7 +46,7 @@ public partial class SettingsViewModel : ViewModel
         }
     }
 
-    public override void OnNavigatedTo()
+    public override void OnNavigationEntered()
     {
         InitializeViewModel();
     }

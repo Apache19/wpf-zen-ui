@@ -10,30 +10,30 @@ namespace Wpf.Ui.Demo.Mvvm.ViewModels;
 public abstract class ViewModel : ObservableObject, INavigationAware
 {
     /// <inheritdoc />
-    public virtual Task OnNavigatedToAsync()
+    public virtual Task OnNavigationEnteredAsync()
     {
-        OnNavigatedTo();
+        OnNavigationEntered();
 
         return Task.CompletedTask;
     }
 
     /// <summary>
-    /// Handles the event that is fired after the component is navigated to.
+    /// Handles the component entering the current navigation state.
     /// </summary>
     // ReSharper disable once MemberCanBeProtected.Global
-    public virtual void OnNavigatedTo() { }
+    public virtual void OnNavigationEntered() { }
 
     /// <inheritdoc />
-    public virtual Task OnNavigatedFromAsync()
+    public virtual Task OnNavigationExitedAsync()
     {
-        OnNavigatedFrom();
+        OnNavigationExited();
 
         return Task.CompletedTask;
     }
 
     /// <summary>
-    /// Handles the event that is fired before the component is navigated from.
+    /// Handles the component leaving the current navigation state.
     /// </summary>
     // ReSharper disable once MemberCanBeProtected.Global
-    public virtual void OnNavigatedFrom() { }
+    public virtual void OnNavigationExited() { }
 }

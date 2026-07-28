@@ -42,13 +42,11 @@ public partial class NavigationView
     private Task _navigationNotificationTask = Task.CompletedTask;
 
     /// <summary>
-    /// The content from the latest accepted navigation request.
+    /// The content from the latest completed navigation.
     /// </summary>
     /// <remarks>
-    /// WPF can defer updating <see cref="ContentControl.Content"/> until after
-    /// <see cref="Frame.Navigate(object)"/> returns. Tracking the requested content separately
-    /// ensures that two requests issued in the same dispatcher turn still identify the second page
-    /// as the one departing during the third request.
+    /// Tracking only content confirmed by <see cref="Frame.Navigated"/> prevents a failed, stopped,
+    /// or superseded request from becoming part of the public navigation lifecycle.
     /// </remarks>
     private object? _navigationAwareContent;
 
@@ -122,44 +120,14 @@ public partial class NavigationView
     }
 
     /// <summary>
-    /// Dispatches navigation-aware leave and enter notifications in a deterministic order.
-    /// </summary>
-    /// <remarks>
-    /// WPF navigation events are synchronous and do not provide an awaitable cancellation model.
-    /// Consequently, only the public <see cref="Navigating"/> event can cancel navigation; the
-    /// asynchronous awareness callbacks are notifications. Leave completes before enter so a
-    /// shared view model cannot have a newly started operation cancelled by the previous page's
-    /// cleanup.
-    /// </remarks>
-    private async void OnNavigationFrameNavigating(
-        object sender,
-        System.Windows.Navigation.NavigatingCancelEventArgs eventArgs
-    )
-    {
-        if (eventArgs.Content is null)
-        {
-            return;
-        }
-
-        object? departingContent = _navigationAwareContent;
-        object arrivingContent = eventArgs.Content;
-        _navigationAwareContent = arrivingContent;
-
-        await QueueNavigationNotificationAsync(async () =>
-        {
-            await NotifyContentAboutNavigatingFromAsync(departingContent);
-            await NotifyContentAboutNavigatingToAsync(arrivingContent);
-        });
-    }
-
-    /// <summary>
-    /// Applies the visual transition and discards WPF's implementation journal entry.
+    /// Commits the successful navigation lifecycle, applies the visual transition, and discards
+    /// WPF's journal entry.
     /// </summary>
     /// <remarks>
     /// Selection and hierarchy semantics live in <see cref="NavigationView"/>'s own journal.
     /// Retaining the frame entry would create a second, independently navigable history.
     /// </remarks>
-    private void OnNavigationFrameNavigated(object sender, NavigationEventArgs eventArgs)
+    private async void OnNavigationFrameNavigated(object sender, NavigationEventArgs eventArgs)
     {
         _ = _navigationFrame.RemoveBackEntry();
 
@@ -169,6 +137,62 @@ public partial class NavigationView
         {
             ApplyTransitionEffectToNavigationFrame();
         }
+
+        object? exitedContent = _navigationAwareContent;
+        _navigationAwareContent = eventArgs.Content;
+
+        // Frame.Navigated is the commit point for object navigation. Failed, stopped, and
+        // superseded requests never reach this handler and therefore never enter the lifecycle.
+        // Resolve targets at Loaded priority because WPF attaches the frame presenter after raising
+        // Navigated; a page may establish its DataContext during that attachment.
+        await QueueNavigationNotificationAsync(
+            () => NotifyNavigationTransitionAfterAttachmentAsync(exitedContent, eventArgs.Content)
+        );
+    }
+
+    /// <summary>
+    /// Notifies the page that lost current-navigation status before the page that gained it.
+    /// </summary>
+    private Task NotifyNavigationTransitionAfterAttachmentAsync(
+        object? exitedContent,
+        object? enteredContent
+    )
+    {
+        return _navigationFrame.Dispatcher
+           .InvokeAsync(
+                () => NotifyNavigationTransitionAsync(exitedContent, enteredContent),
+                System.Windows.Threading.DispatcherPriority.Loaded
+            )
+           .Task.Unwrap();
+    }
+
+    /// <summary>
+    /// Completes both sides of a committed transition even if the exiting component fails.
+    /// </summary>
+    /// <remarks>
+    /// WPF has already committed the destination before this lifecycle transaction starts. An
+    /// exception from the old component must therefore not prevent the new current component from
+    /// learning that it entered. The original exit exception is rethrown after entry completes so
+    /// the originating asynchronous event handler still observes the failure.
+    /// </remarks>
+    private static async Task NotifyNavigationTransitionAsync(
+        object? exitedContent,
+        object? enteredContent
+    )
+    {
+        ExceptionDispatchInfo? exitException = null;
+
+        try
+        {
+            await NotifyContentAboutNavigationExitedAsync(exitedContent);
+        }
+        catch (Exception exception)
+        {
+            exitException = ExceptionDispatchInfo.Capture(exception);
+        }
+
+        await NotifyContentAboutNavigationEnteredAsync(enteredContent);
+        exitException?.Throw();
     }
 
     /// <summary>
@@ -248,7 +272,7 @@ public partial class NavigationView
 
         object? content = _navigationAwareContent;
         _navigationAwareContent = null;
-        await QueueNavigationNotificationAsync(() => NotifyContentAboutNavigatingFromAsync(content));
+        await QueueNavigationNotificationAsync(() => NotifyContentAboutNavigationExitedAsync(content));
     }
 
     /// <summary>
@@ -256,7 +280,7 @@ public partial class NavigationView
     /// </summary>
     /// <remarks>
     /// A WPF <see cref="Frame"/> does not await event handlers. Without this queue, a second
-    /// navigation can notify its page before the first page has finished leaving. A failure from a
+    /// navigation can notify its page before the first page has finished exiting. A failure from a
     /// previous notification is ignored only by the queue continuation—the originating async event
     /// handler still observes and reports that failure—so one faulty page cannot permanently stop
     /// later lifecycle notifications.
@@ -339,11 +363,17 @@ public partial class NavigationView
         _ = TransitionAnimationProvider.ApplyTransition(_navigationFrame, Transition, TransitionDuration);
     }
 
-    private static Task NotifyContentAboutNavigatingToAsync(object? content) =>
-        NotifyContentAboutNavigatingAsync(content, navigationAware => navigationAware.OnNavigatedToAsync());
+    private static Task NotifyContentAboutNavigationEnteredAsync(object? content) =>
+        NotifyContentAboutNavigationAsync(
+            content,
+            navigationAware => navigationAware.OnNavigationEnteredAsync()
+        );
 
-    private static Task NotifyContentAboutNavigatingFromAsync(object? content) =>
-        NotifyContentAboutNavigatingAsync(content, navigationAware => navigationAware.OnNavigatedFromAsync());
+    private static Task NotifyContentAboutNavigationExitedAsync(object? content) =>
+        NotifyContentAboutNavigationAsync(
+            content,
+            navigationAware => navigationAware.OnNavigationExitedAsync()
+        );
 
     /// <summary>
     /// Invokes a navigation notification for both a view and its distinct view model.
@@ -353,7 +383,7 @@ public partial class NavigationView
     /// the view model from performing required cleanup. The original view exception is rethrown
     /// after the view-model callback completes.
     /// </remarks>
-    private static async Task NotifyContentAboutNavigatingAsync(
+    private static async Task NotifyContentAboutNavigationAsync(
         object? content,
         Func<INavigationAware, Task> notification
     )

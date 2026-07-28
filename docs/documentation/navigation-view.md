@@ -267,7 +267,10 @@ private void OnNavigating(NavigationView sender, NavigatingCancelEventArgs args)
 
 ## Navigation-Aware Pages
 
-Implement `INavigationAware` on your page's code-behind or `INavigableView<T>` on your ViewModel to receive navigation events directly.
+Implement `INavigationAware` on your page's code-behind or on the ViewModel exposed by
+`INavigableView<T>` to receive successful navigation lifecycle notifications. These callbacks
+describe navigation entry and exit; they are not WPF `Loaded` or `Unloaded` events and cannot cancel
+navigation.
 
 ### INavigationAware
 
@@ -276,14 +279,16 @@ This interface is ideal for code-behind scenarios.
 ```csharp
 public partial class MyPage : INavigationAware
 {
-    public void OnNavigatedTo()
+    public Task OnNavigationEnteredAsync()
     {
-        // Page was navigated to
+        // The page successfully became the current navigation content.
+        return Task.CompletedTask;
     }
 
-    public void OnNavigatedFrom()
+    public Task OnNavigationExitedAsync()
     {
-        // Page was navigated away from
+        // The page is no longer the current navigation content.
+        return Task.CompletedTask;
     }
 }
 ```
@@ -314,14 +319,16 @@ public partial class MyPage : INavigableView<MyViewModel>
 ```csharp
 public partial class MyViewModel : ObservableObject, INavigationAware
 {
-    public void OnNavigatedTo()
+    public Task OnNavigationEnteredAsync()
     {
-        // Page was navigated to
+        // The associated page successfully entered the navigation lifecycle.
+        return Task.CompletedTask;
     }
 
-    public void OnNavigatedFrom()
+    public Task OnNavigationExitedAsync()
     {
-        // Page was navigated away from
+        // The associated page exited the navigation lifecycle.
+        return Task.CompletedTask;
     }
 }
 ```

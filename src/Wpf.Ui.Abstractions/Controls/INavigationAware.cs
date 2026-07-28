@@ -6,19 +6,32 @@
 namespace Wpf.Ui.Abstractions.Controls;
 
 /// <summary>
-/// Notifies class about being navigated.
+/// Participates in the successful navigation lifecycle of a navigation host.
 /// </summary>
+/// <remarks>
+/// These callbacks describe navigation state, not WPF visual-tree state. They are independent of
+/// <c>Loaded</c> and <c>Unloaded</c>, and cannot cancel a navigation request.
+/// </remarks>
 public interface INavigationAware
 {
     /// <summary>
-    /// Asynchronously handles the event that is fired after the component is navigated to.
+    /// Asynchronously handles the component entering the current navigation state.
     /// </summary>
+    /// <remarks>
+    /// The navigation host invokes this callback only after it has successfully committed the
+    /// destination. Failed, stopped, or superseded requests do not enter the navigation lifecycle.
+    /// </remarks>
     /// <returns>A task that represents the asynchronous operation.</returns>
-    Task OnNavigatedToAsync();
+    Task OnNavigationEnteredAsync();
 
     /// <summary>
-    /// Asynchronously handles the event that is fired before the component is navigated from.
+    /// Asynchronously handles the component leaving the current navigation state.
     /// </summary>
+    /// <remarks>
+    /// During a successful transition, the navigation host awaits this callback before invoking
+    /// <see cref="OnNavigationEnteredAsync"/> on the new component. The host also invokes it when
+    /// the current navigation surface is genuinely detached from the visual tree.
+    /// </remarks>
     /// <returns>A task that represents the asynchronous operation.</returns>
-    Task OnNavigatedFromAsync();
+    Task OnNavigationExitedAsync();
 }

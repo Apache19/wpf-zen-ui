@@ -1,4 +1,4 @@
-﻿using Wpf.Ui.Appearance;
+using Wpf.Ui.Appearance;
 using Wpf.Ui.Abstractions.Controls;
 
 namespace $safeprojectname$.ViewModels.Pages
@@ -13,7 +13,7 @@ namespace $safeprojectname$.ViewModels.Pages
         [ObservableProperty]
         private ApplicationTheme _currentTheme = ApplicationTheme.Unknown;
 
-        public Task OnNavigatedToAsync()
+        public Task OnNavigationEnteredAsync()
         {
             if (!_isInitialized)
                 InitializeViewModel();
@@ -21,7 +21,7 @@ namespace $safeprojectname$.ViewModels.Pages
             return Task.CompletedTask;
         }
 
-        public Task OnNavigatedFromAsync() => Task.CompletedTask;
+        public Task OnNavigationExitedAsync() => Task.CompletedTask;
 
         private void InitializeViewModel()
         {

@@ -8,12 +8,15 @@ namespace Wpf.Ui.Abstractions.Controls;
 /// <summary>
 /// A component whose ViewModel is separate from the DataContext and can be navigated by INavigationView.
 /// </summary>
-/// <typeparam name="T">The type of the ViewModel associated with the view. This type optionally may implement <see cref="INavigationAware"/> to participate in navigation processes.</typeparam>
+/// <typeparam name="T">
+/// The type of the ViewModel associated with the view. It may implement
+/// <see cref="INavigationAware"/> to receive successful navigation entry and exit notifications.
+/// </typeparam>
 public interface INavigableView<out T>
 {
     /// <summary>
     /// Gets the view model used by the view.
-    /// Optionally, it may implement <see cref="INavigationAware"/> and be navigated by INavigationView.
+    /// It may implement <see cref="INavigationAware"/> to participate in the navigation lifecycle.
     /// </summary>
     T ViewModel { get; }
 }

@@ -15,7 +15,7 @@ public partial class DataViewModel : ViewModel
     [ObservableProperty]
     private List<DataColor> _colors = [];
 
-    public override void OnNavigatedTo()
+    public override void OnNavigationEntered()
     {
         if (!_isInitialized)
         {
