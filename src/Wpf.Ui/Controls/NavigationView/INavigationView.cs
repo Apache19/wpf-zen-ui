@@ -187,24 +187,44 @@ public interface INavigationView
     BreadcrumbBar? BreadcrumbBar { get; set; }
 
     /// <summary>
-    /// Gets or sets the style applied to navigation item containers.
+    /// Gets or sets the default style applied throughout the primary menu item hierarchy.
     /// </summary>
-    Style? ItemContainerStyle { get; set; }
+    Style? MenuItemContainerStyle { get; set; }
 
     /// <summary>
-    /// Gets or sets custom style-selection logic for navigation item containers.
+    /// Gets or sets custom style-selection logic used throughout the primary menu hierarchy.
     /// </summary>
-    StyleSelector? ItemContainerStyleSelector { get; set; }
+    StyleSelector? MenuItemContainerStyleSelector { get; set; }
 
     /// <summary>
-    /// Gets or sets the data template used to display navigation items.
+    /// Gets or sets the default style applied throughout the footer menu item hierarchy.
     /// </summary>
-    DataTemplate? ItemTemplate { get; set; }
+    Style? FooterMenuItemContainerStyle { get; set; }
 
     /// <summary>
-    /// Gets or sets custom template-selection logic for navigation items.
+    /// Gets or sets custom style-selection logic used throughout the footer menu hierarchy.
     /// </summary>
-    DataTemplateSelector? ItemTemplateSelector { get; set; }
+    StyleSelector? FooterMenuItemContainerStyleSelector { get; set; }
+
+    /// <summary>
+    /// Gets or sets the data template used to display primary menu items.
+    /// </summary>
+    DataTemplate? MenuItemTemplate { get; set; }
+
+    /// <summary>
+    /// Gets or sets custom template-selection logic for primary menu items.
+    /// </summary>
+    DataTemplateSelector? MenuItemTemplateSelector { get; set; }
+
+    /// <summary>
+    /// Gets or sets the data template used to display footer menu items.
+    /// </summary>
+    DataTemplate? FooterMenuItemTemplate { get; set; }
+
+    /// <summary>
+    /// Gets or sets custom template-selection logic for footer menu items.
+    /// </summary>
+    DataTemplateSelector? FooterMenuItemTemplateSelector { get; set; }
 
     /// <summary>
     /// Gets or sets a value deciding how long the effect of the transition between the pages should take.

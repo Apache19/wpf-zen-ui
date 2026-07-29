@@ -520,6 +520,9 @@ public partial class NavigationViewItem : HeaderedItemsControl
     private readonly HashSet<NavigationViewItem> _directNavigationChildren = [];
     private NavigationViewItem?                  _parentItem;
     private ButtonBase?                          _headerButton;
+    private BindingBase?                         _inheritedItemContainerStyleBinding;
+    private BindingBase?                         _inheritedItemContainerStyleSelectorBinding;
+    private ItemsControl?                        _itemContainerPresentationOwner;
     private bool                                 _hadItems;
 
     private NavigationView? NavigationViewHost =>
@@ -865,11 +868,11 @@ public partial class NavigationViewItem : HeaderedItemsControl
 
     /// <inheritdoc />
     /// <remarks>
-    /// WPF copies <see cref="ItemsControl.ItemTemplate"/>,
-    /// <see cref="ItemsControl.ItemContainerStyle"/> and hierarchical
-    /// bindings in the base implementation. Parent attachment is kept separate so both generated
-    /// containers and directly supplied <see cref="NavigationViewItem"/> instances share the same
-    /// depth, keyboard and detached-menu ownership model.
+    /// WPF copies <see cref="ItemsControl.ItemTemplate"/> and container-presentation properties in
+    /// the base implementation only when a data item receives a generated container. A directly
+    /// supplied <see cref="NavigationViewItem"/> is its own container, so the framework deliberately
+    /// skips that copy. <see cref="InheritItemContainerPresentationFrom"/> fills that gap for the
+    /// child generator without changing the style already selected for the child itself.
     /// </remarks>
     protected override void PrepareContainerForItemOverride(DependencyObject element, object item)
     {
@@ -877,6 +880,11 @@ public partial class NavigationViewItem : HeaderedItemsControl
 
         if (element is NavigationViewItem child)
         {
+            if (ReferenceEquals(element, item))
+            {
+                child.InheritItemContainerPresentationFrom(this);
+            }
+
             NavigationViewList.PrepareDataContainer(child, item);
             child.AttachToParent(this);
 
@@ -890,15 +898,22 @@ public partial class NavigationViewItem : HeaderedItemsControl
     /// <inheritdoc />
     protected override void ClearContainerForItemOverride(DependencyObject element, object item)
     {
-        if (element is NavigationViewItem child && !ReferenceEquals(element, item))
+        if (element is NavigationViewItem child)
         {
-            NavigationViewHost?.UnregisterGeneratedNavigationItem(child);
-
-            NavigationViewList.ClearDataContainer(child);
-
-            if (ReferenceEquals(child._parentItem, this))
+            if (ReferenceEquals(element, item))
             {
-                child.DetachFromParent(this);
+                child.ClearInheritedItemContainerPresentation(this);
+            }
+            else
+            {
+                NavigationViewHost?.UnregisterGeneratedNavigationItem(child);
+
+                NavigationViewList.ClearDataContainer(child);
+
+                if (ReferenceEquals(child._parentItem, this))
+                {
+                    child.DetachFromParent(this);
+                }
             }
         }
 
@@ -1644,6 +1659,135 @@ public partial class NavigationViewItem : HeaderedItemsControl
     {
         ApplyTemplate();
         return _headerButton is { IsEnabled: true, Focusable: true } && _headerButton.Focus();
+    }
+
+    /// <summary>
+    /// Extends WPF's item-container presentation inheritance to a navigation item that is supplied
+    /// directly rather than generated from data.
+    /// </summary>
+    /// <param name="owner">The list or parent navigation item whose children include this item.</param>
+    /// <remarks>
+    /// <para>
+    /// WPF's internal <c>ItemsControl.PrepareItemsControl</c> copies
+    /// <see cref="ItemsControl.ItemContainerStyle"/> and
+    /// <see cref="ItemsControl.ItemContainerStyleSelector"/> into a generated
+    /// <see cref="HeaderedItemsControl"/> so the same presentation continues through deeper data
+    /// levels. It intentionally does nothing when the item is already its own container. Without
+    /// this complement, a NavigationView-level container style reaches a directly declared root
+    /// item but not that item's directly declared descendants.
+    /// </para>
+    /// <para>
+    /// Each non-null owner value is bound only while its target property still has the default value.
+    /// Consequently, an <see cref="ItemsControl.ItemContainerStyle"/> or selector declared directly
+    /// on this item, including one supplied by its own Style, remains a branch-local override. A
+    /// binding rather than a copied value also keeps the default chain synchronized when the owning
+    /// NavigationView changes its menu or footer container presentation at runtime.
+    /// </para>
+    /// </remarks>
+    internal void InheritItemContainerPresentationFrom(ItemsControl owner)
+    {
+        if (ReferenceEquals(_itemContainerPresentationOwner, owner))
+        {
+            return;
+        }
+
+        ClearInheritedItemContainerPresentation();
+
+        _inheritedItemContainerStyleBinding = BindDefaultContainerPresentationProperty(
+            owner,
+            ItemContainerStyleProperty
+        );
+        _inheritedItemContainerStyleSelectorBinding = BindDefaultContainerPresentationProperty(
+            owner,
+            ItemContainerStyleSelectorProperty
+        );
+
+        if (
+            _inheritedItemContainerStyleBinding is not null
+            || _inheritedItemContainerStyleSelectorBinding is not null
+        )
+        {
+            _itemContainerPresentationOwner = owner;
+        }
+    }
+
+    /// <summary>
+    /// Releases container-presentation bindings owned by the specified former items owner.
+    /// </summary>
+    internal void ClearInheritedItemContainerPresentation(ItemsControl owner)
+    {
+        if (ReferenceEquals(_itemContainerPresentationOwner, owner))
+        {
+            ClearInheritedItemContainerPresentation();
+        }
+    }
+
+    /// <summary>
+    /// Creates a one-way fallback binding only when application code or this item's Style has not
+    /// already configured the target property.
+    /// </summary>
+    private BindingBase? BindDefaultContainerPresentationProperty(
+        ItemsControl owner,
+        DependencyProperty property)
+    {
+        // Match WPF's copy rule by leaving a null source value completely unset. Installing a
+        // null-valued local Binding would unnecessarily outrank an ItemContainerStyle supplied by
+        // an implicit or subsequently applied Style on the direct navigation item.
+        if (
+            owner.GetValue(property) is null
+            || DependencyPropertyHelper.GetValueSource(this, property).BaseValueSource
+                != BaseValueSource.Default
+        )
+        {
+            return null;
+        }
+
+        var binding = new Binding
+        {
+            Source = owner,
+            Path = new PropertyPath(property),
+            Mode = BindingMode.OneWay,
+        };
+        BindingOperations.SetBinding(this, property, binding);
+        return binding;
+    }
+
+    /// <summary>
+    /// Clears only bindings that are still owned by this inheritance mechanism. If application
+    /// code replaced either binding with a local value, that explicit branch configuration must
+    /// survive removal and reparenting.
+    /// </summary>
+    private void ClearInheritedItemContainerPresentation()
+    {
+        ClearInheritedItemContainerPresentationBinding(
+            ItemContainerStyleProperty,
+            _inheritedItemContainerStyleBinding
+        );
+        ClearInheritedItemContainerPresentationBinding(
+            ItemContainerStyleSelectorProperty,
+            _inheritedItemContainerStyleSelectorBinding
+        );
+
+        _inheritedItemContainerStyleBinding = null;
+        _inheritedItemContainerStyleSelectorBinding = null;
+        _itemContainerPresentationOwner = null;
+    }
+
+    /// <summary>Clears an inherited binding without disturbing an application replacement.</summary>
+    private void ClearInheritedItemContainerPresentationBinding(
+        DependencyProperty property,
+        BindingBase? inheritedBinding)
+    {
+        if (
+            inheritedBinding is not null
+            && ReferenceEquals(
+                BindingOperations.GetBindingBase(this, property),
+                inheritedBinding
+            )
+        )
+        {
+            BindingOperations.ClearBinding(this, property);
+        }
     }
 
     /// <summary>

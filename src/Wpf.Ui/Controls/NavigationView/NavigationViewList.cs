@@ -137,6 +137,11 @@ public class NavigationViewList : ItemsControl
 
         if (element is NavigationViewItem navigationItem)
         {
+            if (ReferenceEquals(element, item))
+            {
+                navigationItem.InheritItemContainerPresentationFrom(this);
+            }
+
             PrepareDataContainer(navigationItem, item);
 
             if (NavigationView.GetNavigationParent(this) is { } navigationView)
@@ -156,6 +161,11 @@ public class NavigationViewList : ItemsControl
     {
         if (element is NavigationViewItem navigationItem)
         {
+            if (ReferenceEquals(element, item))
+            {
+                navigationItem.ClearInheritedItemContainerPresentation(this);
+            }
+
             if (
                 NavigationView.GetNavigationParent(this) is { } navigationView
                 && !ReferenceEquals(element, item)

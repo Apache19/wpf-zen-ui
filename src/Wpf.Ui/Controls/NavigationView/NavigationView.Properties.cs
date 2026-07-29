@@ -15,7 +15,8 @@ namespace Wpf.Ui.Controls;
 /// <content>
 /// Defines the dependency properties and dp callbacks for <see cref="NavigationView"/> control
 /// </content>
-[StyleTypedProperty(Property = nameof(ItemContainerStyle), StyleTargetType = typeof(NavigationViewItem))]
+[StyleTypedProperty(Property = nameof(MenuItemContainerStyle), StyleTargetType = typeof(NavigationViewItem))]
+[StyleTypedProperty(Property = nameof(FooterMenuItemContainerStyle), StyleTargetType = typeof(NavigationViewItem))]
 public partial class NavigationView
 {
     #region Read-only attached DP: ContentPadding
@@ -753,51 +754,127 @@ public partial class NavigationView
 
     #endregion
 
-    #region DP: ItemContainerStyle
+    #region DP: MenuItemContainerStyle
 
-    /// <summary>Identifies the <see cref="ItemContainerStyle"/> dependency property.</summary>
-    public static readonly DependencyProperty ItemContainerStyleProperty =
+    /// <summary>Identifies the <see cref="MenuItemContainerStyle"/> dependency property.</summary>
+    public static readonly DependencyProperty MenuItemContainerStyleProperty =
         DependencyProperty.Register(
-            nameof(ItemContainerStyle),
+            nameof(MenuItemContainerStyle),
             typeof(Style),
             typeof(NavigationView),
             new FrameworkPropertyMetadata(null)
         );
 
-    /// <inheritdoc/>
-    public Style? ItemContainerStyle
+    /// <summary>
+    /// Gets or sets the default style applied to <see cref="NavigationViewItem"/> containers in the
+    /// complete primary-menu hierarchy rooted at <see cref="MenuItems"/> or
+    /// <see cref="MenuItemsSource"/>.
+    /// </summary>
+    /// <remarks>
+    /// The default is <see langword="null"/>. This property configures only the primary menu host;
+    /// use <see cref="FooterMenuItemContainerStyle"/> to style footer item containers independently.
+    /// Both generated containers and directly supplied items receive the style at every depth. A
+    /// <see cref="ItemsControl.ItemContainerStyle"/> set on an individual item takes precedence
+    /// for that item's descendants, matching the standard WPF branch-override model.
+    /// </remarks>
+    public Style? MenuItemContainerStyle
     {
-        get => (Style?)GetValue(ItemContainerStyleProperty);
-        set => SetValue(ItemContainerStyleProperty, value);
+        get => (Style?)GetValue(MenuItemContainerStyleProperty);
+        set => SetValue(MenuItemContainerStyleProperty, value);
     }
 
     #endregion
 
-    #region DP: ItemContainerStyleSelector
+    #region DP: MenuItemContainerStyleSelector
 
-    /// <summary>Identifies the <see cref="ItemContainerStyleSelector"/> dependency property.</summary>
-    public static readonly DependencyProperty ItemContainerStyleSelectorProperty =
+    /// <summary>Identifies the <see cref="MenuItemContainerStyleSelector"/> dependency property.</summary>
+    public static readonly DependencyProperty MenuItemContainerStyleSelectorProperty =
         DependencyProperty.Register(
-            nameof(ItemContainerStyleSelector),
+            nameof(MenuItemContainerStyleSelector),
             typeof(StyleSelector),
             typeof(NavigationView),
             new FrameworkPropertyMetadata(null)
         );
 
-    /// <inheritdoc/>
-    public StyleSelector? ItemContainerStyleSelector
+    /// <summary>
+    /// Gets or sets the selector that chooses a container style for each primary menu item.
+    /// </summary>
+    /// <remarks>
+    /// The selector is used throughout the primary-menu hierarchy. WPF consults it when
+    /// <see cref="MenuItemContainerStyle"/> is <see langword="null"/>; use
+    /// <see cref="FooterMenuItemContainerStyleSelector"/> for footer-specific selection.
+    /// </remarks>
+    public StyleSelector? MenuItemContainerStyleSelector
     {
-        get => (StyleSelector?)GetValue(ItemContainerStyleSelectorProperty);
-        set => SetValue(ItemContainerStyleSelectorProperty, value);
+        get => (StyleSelector?)GetValue(MenuItemContainerStyleSelectorProperty);
+        set => SetValue(MenuItemContainerStyleSelectorProperty, value);
     }
 
     #endregion
 
-    #region DP: ItemTemplate
+    #region DP: FooterMenuItemContainerStyle
 
-    /// <summary>Identifies the <see cref="ItemTemplate"/> dependency property.</summary>
-    public static readonly DependencyProperty ItemTemplateProperty = DependencyProperty.Register(
-        nameof(ItemTemplate),
+    /// <summary>Identifies the <see cref="FooterMenuItemContainerStyle"/> dependency property.</summary>
+    public static readonly DependencyProperty FooterMenuItemContainerStyleProperty =
+        DependencyProperty.Register(
+            nameof(FooterMenuItemContainerStyle),
+            typeof(Style),
+            typeof(NavigationView),
+            new FrameworkPropertyMetadata(null)
+        );
+
+    /// <summary>
+    /// Gets or sets the default style applied to <see cref="NavigationViewItem"/> containers in the
+    /// complete footer-menu hierarchy rooted at <see cref="FooterMenuItems"/> or
+    /// <see cref="FooterMenuItemsSource"/>.
+    /// </summary>
+    /// <remarks>
+    /// The default is <see langword="null"/>. Keeping this value separate from
+    /// <see cref="MenuItemContainerStyle"/> lets templates present the fixed footer region without a
+    /// selector that must infer which list owns an item. An individual item's
+    /// <see cref="ItemsControl.ItemContainerStyle"/> remains a branch-local override.
+    /// </remarks>
+    public Style? FooterMenuItemContainerStyle
+    {
+        get => (Style?)GetValue(FooterMenuItemContainerStyleProperty);
+        set => SetValue(FooterMenuItemContainerStyleProperty, value);
+    }
+
+    #endregion
+
+    #region DP: FooterMenuItemContainerStyleSelector
+
+    /// <summary>
+    /// Identifies the <see cref="FooterMenuItemContainerStyleSelector"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty FooterMenuItemContainerStyleSelectorProperty =
+        DependencyProperty.Register(
+            nameof(FooterMenuItemContainerStyleSelector),
+            typeof(StyleSelector),
+            typeof(NavigationView),
+            new FrameworkPropertyMetadata(null)
+        );
+
+    /// <summary>
+    /// Gets or sets the selector that chooses a container style for each footer menu item.
+    /// </summary>
+    /// <remarks>
+    /// The selector is used throughout the footer-menu hierarchy. WPF consults it when
+    /// <see cref="FooterMenuItemContainerStyle"/> is <see langword="null"/>.
+    /// </remarks>
+    public StyleSelector? FooterMenuItemContainerStyleSelector
+    {
+        get => (StyleSelector?)GetValue(FooterMenuItemContainerStyleSelectorProperty);
+        set => SetValue(FooterMenuItemContainerStyleSelectorProperty, value);
+    }
+
+    #endregion
+
+    #region DP: MenuItemTemplate
+
+    /// <summary>Identifies the <see cref="MenuItemTemplate"/> dependency property.</summary>
+    public static readonly DependencyProperty MenuItemTemplateProperty = DependencyProperty.Register(
+        nameof(MenuItemTemplate),
         typeof(DataTemplate),
         typeof(NavigationView),
         new FrameworkPropertyMetadata(
@@ -806,31 +883,105 @@ public partial class NavigationView
         )
     );
 
-    /// <inheritdoc/>
-    public DataTemplate? ItemTemplate
+    /// <summary>
+    /// Gets or sets the template used to present data items in <see cref="MenuItems"/> or
+    /// <see cref="MenuItemsSource"/>.
+    /// </summary>
+    /// <remarks>
+    /// The default is <see langword="null"/>. The template is forwarded only to the primary menu
+    /// host and affects measurement when changed. It supplies the generated
+    /// <see cref="HeaderedItemsControl.HeaderTemplate"/> for data items; directly supplied UI elements
+    /// continue to own their presentation according to normal WPF item-container semantics.
+    /// </remarks>
+    public DataTemplate? MenuItemTemplate
     {
-        get => (DataTemplate?)GetValue(ItemTemplateProperty);
-        set => SetValue(ItemTemplateProperty, value);
+        get => (DataTemplate?)GetValue(MenuItemTemplateProperty);
+        set => SetValue(MenuItemTemplateProperty, value);
     }
 
     #endregion
 
-    #region DP: ItemTemplateSelector
+    #region DP: MenuItemTemplateSelector
 
-    /// <summary>Identifies the <see cref="ItemTemplateSelector"/> dependency property.</summary>
-    public static readonly DependencyProperty ItemTemplateSelectorProperty =
+    /// <summary>Identifies the <see cref="MenuItemTemplateSelector"/> dependency property.</summary>
+    public static readonly DependencyProperty MenuItemTemplateSelectorProperty =
         DependencyProperty.Register(
-            nameof(ItemTemplateSelector),
+            nameof(MenuItemTemplateSelector),
             typeof(DataTemplateSelector),
             typeof(NavigationView),
             new FrameworkPropertyMetadata(null)
         );
 
-    /// <inheritdoc/>
-    public DataTemplateSelector? ItemTemplateSelector
+    /// <summary>
+    /// Gets or sets the selector that chooses a data template for each primary menu item.
+    /// </summary>
+    /// <remarks>
+    /// The selector is forwarded only to the <see cref="MenuItems"/> host. WPF consults it when
+    /// <see cref="MenuItemTemplate"/> is <see langword="null"/>; use
+    /// <see cref="FooterMenuItemTemplateSelector"/> for footer-specific selection.
+    /// </remarks>
+    public DataTemplateSelector? MenuItemTemplateSelector
     {
-        get => (DataTemplateSelector?)GetValue(ItemTemplateSelectorProperty);
-        set => SetValue(ItemTemplateSelectorProperty, value);
+        get => (DataTemplateSelector?)GetValue(MenuItemTemplateSelectorProperty);
+        set => SetValue(MenuItemTemplateSelectorProperty, value);
+    }
+
+    #endregion
+
+    #region DP: FooterMenuItemTemplate
+
+    /// <summary>Identifies the <see cref="FooterMenuItemTemplate"/> dependency property.</summary>
+    public static readonly DependencyProperty FooterMenuItemTemplateProperty = DependencyProperty.Register(
+        nameof(FooterMenuItemTemplate),
+        typeof(DataTemplate),
+        typeof(NavigationView),
+        new FrameworkPropertyMetadata(
+            null,
+            FrameworkPropertyMetadataOptions.AffectsMeasure
+        )
+    );
+
+    /// <summary>
+    /// Gets or sets the template used to present data items in <see cref="FooterMenuItems"/> or
+    /// <see cref="FooterMenuItemsSource"/>.
+    /// </summary>
+    /// <remarks>
+    /// The default is <see langword="null"/>. The template is forwarded only to the footer menu
+    /// host and affects measurement when changed, allowing its data presentation to differ from
+    /// the primary menu without requiring a selector to identify the owning list.
+    /// </remarks>
+    public DataTemplate? FooterMenuItemTemplate
+    {
+        get => (DataTemplate?)GetValue(FooterMenuItemTemplateProperty);
+        set => SetValue(FooterMenuItemTemplateProperty, value);
+    }
+
+    #endregion
+
+    #region DP: FooterMenuItemTemplateSelector
+
+    /// <summary>
+    /// Identifies the <see cref="FooterMenuItemTemplateSelector"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty FooterMenuItemTemplateSelectorProperty =
+        DependencyProperty.Register(
+            nameof(FooterMenuItemTemplateSelector),
+            typeof(DataTemplateSelector),
+            typeof(NavigationView),
+            new FrameworkPropertyMetadata(null)
+        );
+
+    /// <summary>
+    /// Gets or sets the selector that chooses a data template for each footer menu item.
+    /// </summary>
+    /// <remarks>
+    /// The selector is forwarded only to the <see cref="FooterMenuItems"/> host. WPF consults it
+    /// when <see cref="FooterMenuItemTemplate"/> is <see langword="null"/>.
+    /// </remarks>
+    public DataTemplateSelector? FooterMenuItemTemplateSelector
+    {
+        get => (DataTemplateSelector?)GetValue(FooterMenuItemTemplateSelectorProperty);
+        set => SetValue(FooterMenuItemTemplateSelectorProperty, value);
     }
 
     #endregion

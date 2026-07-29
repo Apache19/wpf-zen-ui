@@ -380,8 +380,8 @@ public class NavigationViewItemTests
             var navigationView = new Wpf.Ui.Controls.NavigationView
             {
                 Style = Assert.IsType<Style>(resources[typeof(Wpf.Ui.Controls.NavigationView)]),
-                ItemContainerStyle = itemContainerStyle,
-                ItemTemplate = itemTemplate,
+                MenuItemContainerStyle = itemContainerStyle,
+                MenuItemTemplate = itemTemplate,
             };
             navigationView.MenuItems.Add("Root data");
             var window = new Window
@@ -425,6 +425,371 @@ public class NavigationViewItemTests
                 Assert.Same(root, child.NavigationViewItemParent);
                 Assert.True(child.IsSubItem);
                 Assert.Equal(root.PaneDisplayMode, child.PaneDisplayMode);
+            }
+            finally
+            {
+                window.Close();
+                DrainDispatcher();
+            }
+        });
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void DirectItemsInheritRegionContainerStyleThroughTheEntireTree(bool useFooter)
+    {
+        RunOnStaThread(() =>
+        {
+            var resources = new ResourceDictionary { Source = CreateResourceUri() };
+            var itemContainerStyle = new Style(
+                typeof(NavigationViewItem),
+                Assert.IsType<Style>(resources[typeof(NavigationViewItem)])
+            );
+            itemContainerStyle.Setters.Add(new Setter(FrameworkElement.TagProperty, "root"));
+            var subItemTrigger = new Trigger
+            {
+                Property = NavigationViewItem.IsSubItemProperty,
+                Value = true,
+            };
+            subItemTrigger.Setters.Add(new Setter(FrameworkElement.TagProperty, "subitem"));
+            itemContainerStyle.Triggers.Add(subItemTrigger);
+            var replacementStyle = new Style(
+                typeof(NavigationViewItem),
+                Assert.IsType<Style>(resources[typeof(NavigationViewItem)])
+            );
+            replacementStyle.Setters.Add(
+                new Setter(FrameworkElement.TagProperty, "replacement")
+            );
+
+            var grandchild = new NavigationViewItem { Header = "Grandchild" };
+            var child = new NavigationViewItem { Header = "Child", IsExpanded = true };
+            child.Items.Add(grandchild);
+            var root = new NavigationViewItem { Header = "Root", IsExpanded = true };
+            root.Items.Add(child);
+
+            var navigationView = new Wpf.Ui.Controls.NavigationView
+            {
+                PaneDisplayMode = NavigationViewPaneDisplayMode.Left,
+                IsPaneOpen = true,
+                Style = Assert.IsType<Style>(resources[typeof(Wpf.Ui.Controls.NavigationView)]),
+            };
+
+            if (useFooter)
+            {
+                navigationView.FooterMenuItemContainerStyle = itemContainerStyle;
+                navigationView.FooterMenuItems.Add(root);
+            }
+            else
+            {
+                navigationView.MenuItemContainerStyle = itemContainerStyle;
+                navigationView.MenuItems.Add(root);
+            }
+
+            var window = new Window
+            {
+                Content = navigationView,
+                Width = 400,
+                Height = 400,
+                Left = -10_000,
+                Top = -10_000,
+                ShowActivated = false,
+                ShowInTaskbar = false,
+                WindowStyle = WindowStyle.None,
+            };
+
+            try
+            {
+                window.Show();
+                DrainDispatcher();
+
+                Assert.Same(itemContainerStyle, root.Style);
+                Assert.Same(itemContainerStyle, root.ItemContainerStyle);
+                Assert.Equal("root", root.Tag);
+
+                Assert.Same(root, child.NavigationViewItemParent);
+                Assert.Same(itemContainerStyle, child.Style);
+                Assert.Same(itemContainerStyle, child.ItemContainerStyle);
+                Assert.Equal("subitem", child.Tag);
+
+                Assert.Same(child, grandchild.NavigationViewItemParent);
+                Assert.Same(itemContainerStyle, grandchild.Style);
+                Assert.Same(itemContainerStyle, grandchild.ItemContainerStyle);
+                Assert.Equal("subitem", grandchild.Tag);
+
+                if (useFooter)
+                {
+                    navigationView.FooterMenuItemContainerStyle = replacementStyle;
+                }
+                else
+                {
+                    navigationView.MenuItemContainerStyle = replacementStyle;
+                }
+
+                DrainDispatcher();
+
+                Assert.Same(replacementStyle, root.Style);
+                Assert.Same(replacementStyle, root.ItemContainerStyle);
+                Assert.Same(replacementStyle, child.Style);
+                Assert.Same(replacementStyle, child.ItemContainerStyle);
+                Assert.Same(replacementStyle, grandchild.Style);
+                Assert.Equal("replacement", grandchild.Tag);
+            }
+            finally
+            {
+                window.Close();
+                DrainDispatcher();
+            }
+        });
+    }
+
+    [Fact]
+    public void DirectItemContainerStyleOverridesTheInheritedStyleForItsBranch()
+    {
+        RunOnStaThread(() =>
+        {
+            var resources = new ResourceDictionary { Source = CreateResourceUri() };
+            Style defaultItemStyle = Assert.IsType<Style>(
+                resources[typeof(NavigationViewItem)]
+            );
+            var menuStyle = new Style(typeof(NavigationViewItem), defaultItemStyle);
+            menuStyle.Setters.Add(new Setter(FrameworkElement.TagProperty, "menu"));
+            var branchStyle = new Style(typeof(NavigationViewItem), defaultItemStyle);
+            branchStyle.Setters.Add(new Setter(FrameworkElement.TagProperty, "branch"));
+
+            var grandchild = new NavigationViewItem { Header = "Grandchild" };
+            var child = new NavigationViewItem { Header = "Child", IsExpanded = true };
+            child.Items.Add(grandchild);
+            var root = new NavigationViewItem
+            {
+                Header = "Root",
+                IsExpanded = true,
+                ItemContainerStyle = branchStyle,
+            };
+            root.Items.Add(child);
+
+            var navigationView = new Wpf.Ui.Controls.NavigationView
+            {
+                PaneDisplayMode = NavigationViewPaneDisplayMode.Left,
+                IsPaneOpen = true,
+                Style = Assert.IsType<Style>(resources[typeof(Wpf.Ui.Controls.NavigationView)]),
+                MenuItemContainerStyle = menuStyle,
+            };
+            navigationView.MenuItems.Add(root);
+            var window = new Window
+            {
+                Content = navigationView,
+                Width = 400,
+                Height = 300,
+                Left = -10_000,
+                Top = -10_000,
+                ShowActivated = false,
+                ShowInTaskbar = false,
+                WindowStyle = WindowStyle.None,
+            };
+
+            try
+            {
+                window.Show();
+                DrainDispatcher();
+
+                Assert.Same(menuStyle, root.Style);
+                Assert.Equal("menu", root.Tag);
+                Assert.Same(branchStyle, root.ItemContainerStyle);
+
+                Assert.Same(branchStyle, child.Style);
+                Assert.Equal("branch", child.Tag);
+                Assert.Same(branchStyle, child.ItemContainerStyle);
+
+                Assert.Same(branchStyle, grandchild.Style);
+                Assert.Equal("branch", grandchild.Tag);
+            }
+            finally
+            {
+                window.Close();
+                DrainDispatcher();
+            }
+        });
+    }
+
+    [Fact]
+    public void DirectItemsInheritContainerStyleSelectorInDetachedPresentation()
+    {
+        RunOnStaThread(() =>
+        {
+            var resources = new ResourceDictionary { Source = CreateResourceUri() };
+            var selectedStyle = new Style(
+                typeof(NavigationViewItem),
+                Assert.IsType<Style>(resources[typeof(NavigationViewItem)])
+            );
+            selectedStyle.Setters.Add(new Setter(FrameworkElement.TagProperty, "selected"));
+            var selector = new FixedStyleSelector(selectedStyle);
+
+            var grandchild = new NavigationViewItem { Header = "Grandchild" };
+            var child = new NavigationViewItem { Header = "Child" };
+            child.Items.Add(grandchild);
+            var root = new NavigationViewItem { Header = "Root" };
+            root.Items.Add(child);
+
+            var navigationView = new Wpf.Ui.Controls.NavigationView
+            {
+                PaneDisplayMode = NavigationViewPaneDisplayMode.Top,
+                Style = Assert.IsType<Style>(resources[typeof(Wpf.Ui.Controls.NavigationView)]),
+                MenuItemContainerStyleSelector = selector,
+            };
+            navigationView.MenuItems.Add(root);
+            var window = new Window
+            {
+                Content = navigationView,
+                Width = 400,
+                Height = 300,
+                Left = -10_000,
+                Top = -10_000,
+                ShowActivated = false,
+                ShowInTaskbar = false,
+                WindowStyle = WindowStyle.None,
+            };
+
+            try
+            {
+                window.Show();
+                DrainDispatcher();
+                root.IsSubmenuOpen = true;
+                DrainDispatcher();
+
+                Assert.Same(selectedStyle, root.Style);
+                Assert.Same(selector, root.ItemContainerStyleSelector);
+                Assert.Same(selectedStyle, child.Style);
+                Assert.Same(selector, child.ItemContainerStyleSelector);
+                Assert.Same(selectedStyle, grandchild.Style);
+                Assert.Same(selector, grandchild.ItemContainerStyleSelector);
+                Assert.Equal("selected", grandchild.Tag);
+            }
+            finally
+            {
+                window.Close();
+                DrainDispatcher();
+            }
+        });
+    }
+
+    [Fact]
+    public void NullRegionContainerPresentationDoesNotMaskAnItemStyleSetter()
+    {
+        RunOnStaThread(() =>
+        {
+            var resources = new ResourceDictionary { Source = CreateResourceUri() };
+            Style defaultItemStyle = Assert.IsType<Style>(
+                resources[typeof(NavigationViewItem)]
+            );
+            var childStyle = new Style(typeof(NavigationViewItem), defaultItemStyle);
+            childStyle.Setters.Add(new Setter(FrameworkElement.TagProperty, "child"));
+            var branchOwnerStyle = new Style(typeof(NavigationViewItem), defaultItemStyle);
+            branchOwnerStyle.Setters.Add(
+                new Setter(ItemsControl.ItemContainerStyleProperty, childStyle)
+            );
+
+            var child = new NavigationViewItem { Header = "Child" };
+            var root = new NavigationViewItem { Header = "Root", IsExpanded = true };
+            root.Items.Add(child);
+            var navigationView = new Wpf.Ui.Controls.NavigationView
+            {
+                PaneDisplayMode = NavigationViewPaneDisplayMode.Left,
+                IsPaneOpen = true,
+                Style = Assert.IsType<Style>(resources[typeof(Wpf.Ui.Controls.NavigationView)]),
+            };
+            navigationView.MenuItems.Add(root);
+            var window = new Window
+            {
+                Content = navigationView,
+                Width = 400,
+                Height = 300,
+                Left = -10_000,
+                Top = -10_000,
+                ShowActivated = false,
+                ShowInTaskbar = false,
+                WindowStyle = WindowStyle.None,
+            };
+
+            try
+            {
+                window.Show();
+                DrainDispatcher();
+
+                Assert.Null(
+                    BindingOperations.GetBindingBase(
+                        root,
+                        ItemsControl.ItemContainerStyleProperty
+                    )
+                );
+
+                root.Style = branchOwnerStyle;
+                DrainDispatcher();
+
+                Assert.Same(childStyle, root.ItemContainerStyle);
+                Assert.Same(childStyle, child.Style);
+                Assert.Equal("child", child.Tag);
+            }
+            finally
+            {
+                window.Close();
+                DrainDispatcher();
+            }
+        });
+    }
+
+    [Fact]
+    public void ReparentedDirectItemUsesItsNewRegionContainerStyle()
+    {
+        RunOnStaThread(() =>
+        {
+            var resources = new ResourceDictionary { Source = CreateResourceUri() };
+            Style defaultItemStyle = Assert.IsType<Style>(
+                resources[typeof(NavigationViewItem)]
+            );
+            var menuStyle = new Style(typeof(NavigationViewItem), defaultItemStyle);
+            menuStyle.Setters.Add(new Setter(FrameworkElement.TagProperty, "menu"));
+            var footerStyle = new Style(typeof(NavigationViewItem), defaultItemStyle);
+            footerStyle.Setters.Add(new Setter(FrameworkElement.TagProperty, "footer"));
+
+            var root = new NavigationViewItem { Header = "Root" };
+            var navigationView = new Wpf.Ui.Controls.NavigationView
+            {
+                PaneDisplayMode = NavigationViewPaneDisplayMode.Left,
+                IsPaneOpen = true,
+                Style = Assert.IsType<Style>(resources[typeof(Wpf.Ui.Controls.NavigationView)]),
+                MenuItemContainerStyle = menuStyle,
+                FooterMenuItemContainerStyle = footerStyle,
+            };
+            navigationView.MenuItems.Add(root);
+            var window = new Window
+            {
+                Content = navigationView,
+                Width = 400,
+                Height = 300,
+                Left = -10_000,
+                Top = -10_000,
+                ShowActivated = false,
+                ShowInTaskbar = false,
+                WindowStyle = WindowStyle.None,
+            };
+
+            try
+            {
+                window.Show();
+                DrainDispatcher();
+
+                Assert.Same(menuStyle, root.Style);
+                Assert.Same(menuStyle, root.ItemContainerStyle);
+                Assert.Equal("menu", root.Tag);
+
+                navigationView.MenuItems.Remove(root);
+                navigationView.FooterMenuItems.Add(root);
+                DrainDispatcher();
+
+                Assert.Same(footerStyle, root.Style);
+                Assert.Same(footerStyle, root.ItemContainerStyle);
+                Assert.Equal("footer", root.Tag);
             }
             finally
             {
@@ -2444,6 +2809,11 @@ public class NavigationViewItemTests
     private sealed class InspectableNavigationView : Wpf.Ui.Controls.NavigationView
     {
         public bool ContainsPageKey(string key) => PageKeyIndex.ContainsKey(key);
+    }
+
+    private sealed class FixedStyleSelector(Style style) : StyleSelector
+    {
+        public override Style SelectStyle(object item, DependencyObject container) => style;
     }
 
     private static void RunOnStaThread(Action action)

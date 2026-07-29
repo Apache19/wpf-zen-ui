@@ -240,6 +240,61 @@ public class NavigationViewTests
 
     [Theory]
     [InlineData(NavigationViewPaneDisplayMode.Left)]
+    [InlineData(NavigationViewPaneDisplayMode.LeftMinimal)]
+    [InlineData(NavigationViewPaneDisplayMode.LeftFluent)]
+    [InlineData(NavigationViewPaneDisplayMode.Top)]
+    [InlineData(NavigationViewPaneDisplayMode.Bottom)]
+    public void BuiltInTemplates_ForwardIndependentContainerPresentationToEachMenuHost(
+        NavigationViewPaneDisplayMode displayMode
+    )
+    {
+        RunOnStaThread(() =>
+        {
+            var resources = new ResourceDictionary { Source = CreateResourceUri() };
+            var menuStyle = new Style(typeof(NavigationViewItem));
+            var footerStyle = new Style(typeof(NavigationViewItem));
+            var menuSelector = new FixedStyleSelector(menuStyle);
+            var footerSelector = new FixedStyleSelector(footerStyle);
+            var menuTemplate = new DataTemplate(typeof(string));
+            var footerTemplate = new DataTemplate(typeof(int));
+            var menuTemplateSelector = new FixedDataTemplateSelector(menuTemplate);
+            var footerTemplateSelector = new FixedDataTemplateSelector(footerTemplate);
+            var navigationView = new Wpf.Ui.Controls.NavigationView
+            {
+                Style = Assert.IsType<Style>(resources[typeof(Wpf.Ui.Controls.NavigationView)]),
+                PaneDisplayMode = displayMode,
+                MenuItemContainerStyle = menuStyle,
+                MenuItemContainerStyleSelector = menuSelector,
+                FooterMenuItemContainerStyle = footerStyle,
+                FooterMenuItemContainerStyleSelector = footerSelector,
+                MenuItemTemplate = menuTemplate,
+                MenuItemTemplateSelector = menuTemplateSelector,
+                FooterMenuItemTemplate = footerTemplate,
+                FooterMenuItemTemplateSelector = footerTemplateSelector,
+            };
+
+            Assert.True(navigationView.ApplyTemplate());
+
+            var menuItemsList = Assert.IsType<NavigationViewList>(
+                navigationView.Template.FindName("PART_MenuItemsList", navigationView)
+            );
+            var footerMenuItemsList = Assert.IsType<NavigationViewList>(
+                navigationView.Template.FindName("PART_FooterMenuItemsList", navigationView)
+            );
+
+            Assert.Same(menuStyle, menuItemsList.ItemContainerStyle);
+            Assert.Same(menuSelector, menuItemsList.ItemContainerStyleSelector);
+            Assert.Same(footerStyle, footerMenuItemsList.ItemContainerStyle);
+            Assert.Same(footerSelector, footerMenuItemsList.ItemContainerStyleSelector);
+            Assert.Same(menuTemplate, menuItemsList.ItemTemplate);
+            Assert.Same(menuTemplateSelector, menuItemsList.ItemTemplateSelector);
+            Assert.Same(footerTemplate, footerMenuItemsList.ItemTemplate);
+            Assert.Same(footerTemplateSelector, footerMenuItemsList.ItemTemplateSelector);
+        });
+    }
+
+    [Theory]
+    [InlineData(NavigationViewPaneDisplayMode.Left)]
     [InlineData(NavigationViewPaneDisplayMode.LeftFluent)]
     [InlineData(NavigationViewPaneDisplayMode.LeftMinimal)]
     public void BuiltInVerticalTemplates_UseDynamicViewerInsideNavigationViewList(
@@ -1559,6 +1614,16 @@ public class NavigationViewTests
         {
             BreadcrumbClickCount++;
         }
+    }
+
+    private sealed class FixedStyleSelector(Style style) : StyleSelector
+    {
+        public override Style SelectStyle(object item, DependencyObject container) => style;
+    }
+
+    private sealed class FixedDataTemplateSelector(DataTemplate template) : DataTemplateSelector
+    {
+        public override DataTemplate SelectTemplate(object item, DependencyObject container) => template;
     }
 
     private sealed class DeferredNavigationExitPage : Border, INavigationAware
