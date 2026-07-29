@@ -6,11 +6,9 @@
 /* Based on Windows UI Library
    Copyright(c) Microsoft Corporation.All rights reserved. */
 
-using System.Collections.Specialized;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
-using Wpf.Ui.Input;
 
 // ReSharper disable once CheckNamespace
 namespace Wpf.Ui.Controls;
@@ -34,38 +32,6 @@ public class BreadcrumbBar : ItemsControl
         new PropertyMetadata(null)
     );
 
-    /// <summary>Identifies the <see cref="TemplateButtonCommand"/> dependency property.</summary>
-    public static readonly DependencyProperty TemplateButtonCommandProperty = DependencyProperty.Register(
-        nameof(TemplateButtonCommand),
-        typeof(IRelayCommand),
-        typeof(BreadcrumbBar),
-        new PropertyMetadata(null)
-    );
-
-    /// <summary>Identifies the <see cref="ItemClicked"/> routed event.</summary>
-    public static readonly RoutedEvent ItemClickedEvent = EventManager.RegisterRoutedEvent(
-        nameof(ItemClicked),
-        RoutingStrategy.Bubble,
-        typeof(TypedEventHandler<BreadcrumbBar, BreadcrumbBarItemClickedEventArgs>),
-        typeof(BreadcrumbBar)
-    );
-
-    static BreadcrumbBar()
-    {
-        DefaultStyleKeyProperty.OverrideMetadata(
-            typeof(BreadcrumbBar),
-            new FrameworkPropertyMetadata(typeof(BreadcrumbBar))
-        );
-    }
-
-    /// <summary>
-    /// Gets the <see cref="RelayCommand{T}"/> triggered after clicking
-    /// </summary>
-    public IRelayCommand TemplateButtonCommand
-    {
-        get => (IRelayCommand)GetValue(TemplateButtonCommandProperty);
-    }
-
     /// <summary>
     /// Gets or sets custom command executed after selecting the item.
     /// </summary>
@@ -78,6 +44,14 @@ public class BreadcrumbBar : ItemsControl
         set => SetValue(CommandProperty, value);
     }
 
+    /// <summary>Identifies the <see cref="ItemClicked"/> routed event.</summary>
+    public static readonly RoutedEvent ItemClickedEvent = EventManager.RegisterRoutedEvent(
+        nameof(ItemClicked),
+        RoutingStrategy.Bubble,
+        typeof(TypedEventHandler<BreadcrumbBar, BreadcrumbBarItemClickedEventArgs>),
+        typeof(BreadcrumbBar)
+    );
+
     /// <summary>
     /// Occurs when an item is clicked in the <see cref="BreadcrumbBar"/>.
     /// </summary>
@@ -87,30 +61,45 @@ public class BreadcrumbBar : ItemsControl
         remove => RemoveHandler(ItemClickedEvent, value);
     }
 
+    static BreadcrumbBar()
+    {
+        DefaultStyleKeyProperty.OverrideMetadata(
+            typeof(BreadcrumbBar),
+            new FrameworkPropertyMetadata(typeof(BreadcrumbBar))
+        );
+    }
+
     /// <summary>
     /// Initializes a new instance of the <see cref="BreadcrumbBar"/> class.
     /// </summary>
     public BreadcrumbBar()
     {
-        SetValue(TemplateButtonCommandProperty, new RelayCommand<object>(OnTemplateButtonClick));
-
-        Loaded   += OnLoaded;
-        Unloaded += OnUnloaded;
+        // BreadcrumbBarItem is the interactive container, so its native Click event identifies the
+        // exact generated container without a template command or an ancestor binding. Handling the
+        // routed event at the owner also works for custom item templates.
+        AddHandler(ButtonBase.ClickEvent, new RoutedEventHandler(OnItemContainerClick));
+        ItemContainerGenerator.ItemsChanged += ItemContainerGeneratorOnItemsChanged;
+        ItemContainerGenerator.StatusChanged += ItemContainerGeneratorOnStatusChanged;
     }
 
-    protected virtual void OnItemClicked(object item, int index)
+    /// <summary>
+    /// Raises <see cref="ItemClicked"/> and executes <see cref="Command"/> for an activated item.
+    /// </summary>
+    /// <param name="item">The original item supplied through the items collection or source.</param>
+    /// <param name="container">The realized container that received the input.</param>
+    /// <param name="index">The current index of <paramref name="item"/>.</param>
+    /// <remarks>
+    /// The source item is deliberately kept separate from the container so derived controls can
+    /// customize invocation without leaking presentation objects into view-model commands.
+    /// </remarks>
+    protected virtual void OnItemClicked(object item, BreadcrumbBarItem container, int index)
     {
-        var args = new BreadcrumbBarItemClickedEventArgs(ItemClickedEvent, this, item, index);
+        var args = new BreadcrumbBarItemClickedEventArgs(ItemClickedEvent, this, item, container, index);
         RaiseEvent(args);
 
-        if (Command?.CanExecute(item) ?? false)
+        if (Command?.CanExecute(item) == true)
         {
             Command.Execute(item);
-        }
-
-        if (Command?.CanExecute(null) ?? false)
-        {
-            Command.Execute(null);
         }
     }
 
@@ -124,21 +113,22 @@ public class BreadcrumbBar : ItemsControl
         return new BreadcrumbBarItem();
     }
 
-    private void OnLoaded(object sender, RoutedEventArgs e)
+    /// <inheritdoc />
+    protected override void PrepareContainerForItemOverride(DependencyObject element, object item)
     {
-        ItemContainerGenerator.ItemsChanged  += ItemContainerGeneratorOnItemsChanged;
-        ItemContainerGenerator.StatusChanged += ItemContainerGeneratorOnStatusChanged;
-
-        UpdateLastContainer();
+        base.PrepareContainerForItemOverride(element, item);
+        UpdateContainerPositions();
     }
 
-    private void OnUnloaded(object sender, RoutedEventArgs e)
+    /// <inheritdoc />
+    protected override void ClearContainerForItemOverride(DependencyObject element, object item)
     {
-        Loaded   -= OnLoaded;
-        Unloaded -= OnUnloaded;
+        if (element is BreadcrumbBarItem container)
+        {
+            container.SetIsLast(false);
+        }
 
-        ItemContainerGenerator.ItemsChanged  -= ItemContainerGeneratorOnItemsChanged;
-        ItemContainerGenerator.StatusChanged -= ItemContainerGeneratorOnStatusChanged;
+        base.ClearContainerForItemOverride(element, item);
     }
 
     private void ItemContainerGeneratorOnStatusChanged(object? sender, EventArgs e)
@@ -148,59 +138,48 @@ public class BreadcrumbBar : ItemsControl
             return;
         }
 
-        if (ItemContainerGenerator.Items.Count <= 1)
-        {
-            UpdateLastContainer();
-
-            return;
-        }
-
-        InteractWithItemContainer(
-            2,
-            static item => item.SetCurrentValue(BreadcrumbBarItem.IsLastProperty, false)
-        );
-        UpdateLastContainer();
+        UpdateContainerPositions();
     }
 
     private void ItemContainerGeneratorOnItemsChanged(object sender, ItemsChangedEventArgs e)
     {
-        if (e.Action != NotifyCollectionChangedAction.Remove)
+        UpdateContainerPositions();
+    }
+
+    private void OnItemContainerClick(object sender, RoutedEventArgs e)
+    {
+        if (e.OriginalSource is not BreadcrumbBarItem container || container.IsLast)
         {
             return;
         }
 
-        UpdateLastContainer();
-    }
-
-    private void OnTemplateButtonClick(object? obj)
-    {
-        if (obj is null)
-        {
-            throw new ArgumentNullException("Item content is null");
-        }
-
-        DependencyObject container = ItemContainerGenerator.ContainerFromItem(obj);
-        int              index     = ItemContainerGenerator.IndexFromContainer(container);
-
-        OnItemClicked(obj, index);
-    }
-
-    private void InteractWithItemContainer(int offsetFromEnd, Action<BreadcrumbBarItem> action)
-    {
-        if (ItemContainerGenerator.Items.Count <= 0)
+        int index = ItemContainerGenerator.IndexFromContainer(container);
+        if (index < 0)
         {
             return;
         }
 
-        var item      = ItemContainerGenerator.Items[^offsetFromEnd];
-        var container = (BreadcrumbBarItem)ItemContainerGenerator.ContainerFromItem(item);
-
-        action.Invoke(container);
+        object item = ItemContainerGenerator.ItemFromContainer(container);
+        OnItemClicked(item, container, index);
     }
 
-    private void UpdateLastContainer() =>
-        InteractWithItemContainer(
-            1,
-            static item => item.SetCurrentValue(BreadcrumbBarItem.IsLastProperty, true)
-        );
+    /// <summary>
+    /// Recomputes positional state for every realized container after generator changes.
+    /// </summary>
+    /// <remarks>
+    /// Breadcrumb bars are short, non-virtualized paths. Updating all realized containers avoids
+    /// stale IsLast values after Move, Replace, Reset, or source replacement without coupling the
+    /// algorithm to the shape of a particular collection notification.
+    /// </remarks>
+    private void UpdateContainerPositions()
+    {
+        int lastIndex = Items.Count - 1;
+        for (int index = 0; index < Items.Count; index++)
+        {
+            if (ItemContainerGenerator.ContainerFromIndex(index) is BreadcrumbBarItem container)
+            {
+                container.SetIsLast(index == lastIndex);
+            }
+        }
+    }
 }

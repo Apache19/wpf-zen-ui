@@ -141,7 +141,7 @@ public partial class MainWindow : IWindow
 
         NavigationView.SetCurrentValue(
             NavigationView.HeaderVisibilityProperty,
-            navigationView.SelectedItem?.TargetPageType != typeof(DashboardPage)
+            (navigationView.SelectedItem as INavigationItem)?.TargetPageType != typeof(DashboardPage)
                 ? Visibility.Visible
                 : Visibility.Collapsed
         );

@@ -22,21 +22,21 @@ public partial class SandboxWindow
 
         MyTestNavigationView.Loaded += (sender, args) =>
         {
+            var menuItems = new ObservableCollection<object>()
+            {
+                new NavigationItem("Home", SymbolRegular.Home24, typeof(SamplePage1)),
+            };
+
             MyTestNavigationView.SetCurrentValue(
                 NavigationView.MenuItemsSourceProperty,
-                new ObservableCollection<object>()
-                {
-                    new NavigationViewItem("Home", SymbolRegular.Home24, typeof(SamplePage1)),
-                }
+                menuItems
             );
 
             var configurationBasedLogic = true;
 
             if (configurationBasedLogic)
             {
-                _ = MyTestNavigationView.MenuItems.Add(
-                    new NavigationViewItem("Test", SymbolRegular.Home24, typeof(SamplePage2))
-                );
+                menuItems.Add(new NavigationItem("Test", SymbolRegular.Home24, typeof(SamplePage2)));
             }
         };
     }

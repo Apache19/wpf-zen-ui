@@ -8,7 +8,6 @@ using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.Windows.Controls;
 using Wpf.Ui.Animations;
-using Wpf.Ui.Theming;
 
 // ReSharper disable once CheckNamespace
 namespace Wpf.Ui.Controls;
@@ -247,11 +246,15 @@ public partial class NavigationView
             return;
         }
 
-        if (e.NewValue is null && e.OldValue is BreadcrumbBar oldValue)
+        if (e.OldValue is BreadcrumbBar oldValue)
         {
-            oldValue.ItemClicked -= navigationView.BreadcrumbBarOnItemClicked;
+            navigationView.DetachBreadcrumbBar(oldValue);
+
+            if (ReferenceEquals(oldValue.ItemsSource, navigationView.BreadcrumbItems))
             {
-                return;
+                // SetCurrentValue mirrors the assignment below: a consumer binding must survive
+                // detachment even when it happened to evaluate to our collection at this moment.
+                oldValue.SetCurrentValue(ItemsControl.ItemsSourceProperty, null);
             }
         }
 
@@ -259,14 +262,12 @@ public partial class NavigationView
         {
             return;
         }
-#warning 研究一下这面包屑控件是否应该实现成单独的面包屑控件和项目控件样式
-        breadcrumbBar.ItemsSource = navigationView._breadcrumbItems;
 
-        breadcrumbBar.ItemTemplate ??=
-            navigationView.TryFindResource(TemplateKeys.NavigationViewItemDataTemplate) as DataTemplate;
-
-        // todo 考察一下使用路由事件是否比强绑定要好一点
-        breadcrumbBar.ItemClicked += navigationView.BreadcrumbBarOnItemClicked;
+        // The collaboration owns only data and navigation. BreadcrumbBar retains complete control
+        // over ItemTemplate, ItemTemplateSelector, and ItemContainerStyle so the same source item
+        // can have a presentation distinct from the navigation pane.
+        breadcrumbBar.SetCurrentValue(ItemsControl.ItemsSourceProperty, navigationView.BreadcrumbItems);
+        navigationView.AttachBreadcrumbBar(breadcrumbBar);
     }
 
     #endregion
@@ -384,17 +385,8 @@ public partial class NavigationView
             return;
         }
 
-        navigationView.ReplaceMenuItemsSource(
-            navigationView.FooterMenuItems,
-            e.OldValue,
-            e.NewValue,
-            navigationView.OnFooterMenuItemsSourceCollectionChanged
-        );
-    }
-
-    private void OnFooterMenuItemsSourceCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
-    {
-        NavigationViewItemsSourceSynchronizer.SyncCollectionFromSource(FooterMenuItems, sender, e);
+        navigationView.UpdateMenuItemsHosts();
+        navigationView.RebuildNavigationIndexes();
     }
 
     #endregion
@@ -765,11 +757,11 @@ public partial class NavigationView
 
     /// <summary>Identifies the <see cref="ItemContainerStyle"/> dependency property.</summary>
     public static readonly DependencyProperty ItemContainerStyleProperty =
-        DependencyProperty.RegisterAttached(
+        DependencyProperty.Register(
             nameof(ItemContainerStyle),
             typeof(Style),
             typeof(NavigationView),
-            new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.Inherits)
+            new FrameworkPropertyMetadata(null)
         );
 
     /// <inheritdoc/>
@@ -779,46 +771,17 @@ public partial class NavigationView
         set => SetValue(ItemContainerStyleProperty, value);
     }
 
-    // ReSharper disable UnusedMember.Global
-
-    /// <summary>
-    /// Helper for getting <see cref="ItemContainerStyleProperty"/> from <paramref name="element"/>.
-    /// </summary>
-    /// <param name="element">
-    /// <see cref="DependencyObject"/> to read <see cref="ItemContainerStyleProperty"/> from.
-    /// </param>
-    /// <returns>ItemContainerStyle property value.</returns>
-    [AttachedPropertyBrowsableForType(typeof(DependencyObject))]
-    public static Style? GetItemContainerStyle(DependencyObject element)
-    {
-        return (Style?)element.GetValue(ItemContainerStyleProperty);
-    }
-
-    /// <summary>
-    /// Helper for setting <see cref="ItemContainerStyleProperty"/> on <paramref name="element"/>.
-    /// </summary>
-    /// <param name="element">
-    /// <see cref="DependencyObject"/> to set <see cref="ItemContainerStyleProperty"/> on.
-    /// </param>
-    /// <param name="value">ItemContainerStyle property value.</param>
-    public static void SetItemContainerStyle(DependencyObject element, Style? value)
-    {
-        element.SetValue(ItemContainerStyleProperty, value);
-    }
-
-    // ReSharper restore UnusedMember.Global
-
     #endregion
 
     #region DP: ItemContainerStyleSelector
 
     /// <summary>Identifies the <see cref="ItemContainerStyleSelector"/> dependency property.</summary>
     public static readonly DependencyProperty ItemContainerStyleSelectorProperty =
-        DependencyProperty.RegisterAttached(
+        DependencyProperty.Register(
             nameof(ItemContainerStyleSelector),
             typeof(StyleSelector),
             typeof(NavigationView),
-            new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.Inherits)
+            new FrameworkPropertyMetadata(null)
         );
 
     /// <inheritdoc/>
@@ -828,47 +791,18 @@ public partial class NavigationView
         set => SetValue(ItemContainerStyleSelectorProperty, value);
     }
 
-    // ReSharper disable UnusedMember.Global
-
-    /// <summary>
-    /// Helper for getting <see cref="ItemContainerStyleSelectorProperty"/> from <paramref name="element"/>.
-    /// </summary>
-    /// <param name="element">
-    /// <see cref="DependencyObject"/> to read <see cref="ItemContainerStyleSelectorProperty"/> from.
-    /// </param>
-    /// <returns>ItemContainerStyleSelector property value.</returns>
-    [AttachedPropertyBrowsableForType(typeof(DependencyObject))]
-    public static StyleSelector? GetItemContainerStyleSelector(DependencyObject element)
-    {
-        return (StyleSelector?)element.GetValue(ItemContainerStyleSelectorProperty);
-    }
-
-    /// <summary>
-    /// Helper for setting <see cref="ItemContainerStyleSelectorProperty"/> on <paramref name="element"/>.
-    /// </summary>
-    /// <param name="element">
-    /// <see cref="DependencyObject"/> to set <see cref="ItemContainerStyleSelectorProperty"/> on.
-    /// </param>
-    /// <param name="value">ItemContainerStyleSelector property value.</param>
-    public static void SetItemContainerStyleSelector(DependencyObject element, StyleSelector? value)
-    {
-        element.SetValue(ItemContainerStyleSelectorProperty, value);
-    }
-
-    // ReSharper restore UnusedMember.Global
-
     #endregion
 
     #region DP: ItemTemplate
 
     /// <summary>Identifies the <see cref="ItemTemplate"/> dependency property.</summary>
-    public static readonly DependencyProperty ItemTemplateProperty = DependencyProperty.RegisterAttached(
+    public static readonly DependencyProperty ItemTemplateProperty = DependencyProperty.Register(
         nameof(ItemTemplate),
         typeof(DataTemplate),
         typeof(NavigationView),
         new FrameworkPropertyMetadata(
             null,
-            FrameworkPropertyMetadataOptions.AffectsMeasure | FrameworkPropertyMetadataOptions.Inherits
+            FrameworkPropertyMetadataOptions.AffectsMeasure
         )
     );
 
@@ -879,46 +813,17 @@ public partial class NavigationView
         set => SetValue(ItemTemplateProperty, value);
     }
 
-    // ReSharper disable UnusedMember.Global
-
-    /// <summary>
-    /// Helper for getting <see cref="ItemTemplateProperty"/> from <paramref name="element"/>.
-    /// </summary>
-    /// <param name="element">
-    /// <see cref="DependencyObject"/> to read <see cref="ItemTemplateProperty"/> from.
-    /// </param>
-    /// <returns>ItemTemplate property value.</returns>
-    [AttachedPropertyBrowsableForType(typeof(DependencyObject))]
-    public static DataTemplate? GetItemTemplate(DependencyObject element)
-    {
-        return (DataTemplate?)element.GetValue(ItemTemplateProperty);
-    }
-
-    /// <summary>
-    /// Helper for setting <see cref="ItemTemplateProperty"/> on <paramref name="element"/>.
-    /// </summary>
-    /// <param name="element">
-    /// <see cref="DependencyObject"/> to set <see cref="ItemTemplateProperty"/> on.
-    /// </param>
-    /// <param name="value">ItemTemplate property value.</param>
-    public static void SetItemTemplate(DependencyObject element, DataTemplate? value)
-    {
-        element.SetValue(ItemTemplateProperty, value);
-    }
-
-    // ReSharper restore UnusedMember.Global
-
     #endregion
 
     #region DP: ItemTemplateSelector
 
     /// <summary>Identifies the <see cref="ItemTemplateSelector"/> dependency property.</summary>
     public static readonly DependencyProperty ItemTemplateSelectorProperty =
-        DependencyProperty.RegisterAttached(
+        DependencyProperty.Register(
             nameof(ItemTemplateSelector),
             typeof(DataTemplateSelector),
             typeof(NavigationView),
-            new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.Inherits)
+            new FrameworkPropertyMetadata(null)
         );
 
     /// <inheritdoc/>
@@ -927,35 +832,6 @@ public partial class NavigationView
         get => (DataTemplateSelector?)GetValue(ItemTemplateSelectorProperty);
         set => SetValue(ItemTemplateSelectorProperty, value);
     }
-
-    // ReSharper disable UnusedMember.Global
-
-    /// <summary>
-    /// Helper for getting <see cref="ItemTemplateSelectorProperty"/> from <paramref name="element"/>.
-    /// </summary>
-    /// <param name="element">
-    /// <see cref="DependencyObject"/> to read <see cref="ItemTemplateSelectorProperty"/> from.
-    /// </param>
-    /// <returns>ItemTemplateSelector property value.</returns>
-    [AttachedPropertyBrowsableForType(typeof(DependencyObject))]
-    public static DataTemplateSelector? GetItemTemplateSelector(DependencyObject element)
-    {
-        return (DataTemplateSelector?)element.GetValue(ItemTemplateSelectorProperty);
-    }
-
-    /// <summary>
-    /// Helper for setting <see cref="ItemTemplateSelectorProperty"/> on <paramref name="element"/>.
-    /// </summary>
-    /// <param name="element">
-    /// <see cref="DependencyObject"/> to set <see cref="ItemTemplateSelectorProperty"/> on.
-    /// </param>
-    /// <param name="value">ItemTemplateSelector property value.</param>
-    public static void SetItemTemplateSelector(DependencyObject element, DataTemplateSelector? value)
-    {
-        element.SetValue(ItemTemplateSelectorProperty, value);
-    }
-
-    // ReSharper restore UnusedMember.Global
 
     #endregion
 
@@ -976,26 +852,12 @@ public partial class NavigationView
 
     private void OnFooterMenuItemsCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
-        ProcessRootMenuItemsCollectionChange(FooterMenuItems, HasFooterMenuItemsPropertyKey, e);
+        RebuildNavigationIndexes();
     }
 
     private void OnMenuItemsCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
-        ProcessRootMenuItemsCollectionChange(MenuItems, HasMenuItemsPropertyKey, e);
-    }
-
-    /// <summary>
-    /// Maintains state owned by a root collection, then forwards the change to the shared navigation-data
-    /// pipeline used by both roots and all descendant menu collections.
-    /// </summary>
-    private void ProcessRootMenuItemsCollectionChange(
-        IList rootItems,
-        DependencyPropertyKey hasItemsPropertyKey,
-        NotifyCollectionChangedEventArgs e
-    )
-    {
-        SetValue(hasItemsPropertyKey, rootItems.Count > 0);
-        ProcessNavigationItemsCollectionChange(e);
+        RebuildNavigationIndexes();
     }
 
     #endregion
@@ -1025,57 +887,8 @@ public partial class NavigationView
             return;
         }
 
-        navigationView.ReplaceMenuItemsSource(
-            navigationView.MenuItems,
-            e.OldValue,
-            e.NewValue,
-            navigationView.OnMenuItemsSourceCollectionChanged
-        );
-    }
-
-    private void OnMenuItemsSourceCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
-    {
-        NavigationViewItemsSourceSynchronizer.SyncCollectionFromSource(MenuItems, sender, e);
-    }
-
-    /// <summary>
-    /// Replaces the external source mirrored by one of the control's stable root menu collections.
-    /// </summary>
-    /// <remarks>
-    /// Both roots deliberately use the same replacement order. Detaching first prevents stale sources from
-    /// mutating the control during replacement; populating the stable collection then sends every item through
-    /// the normal root collection pipeline before live change tracking is attached to the new source.
-    /// </remarks>
-    private void ReplaceMenuItemsSource(
-        IList targetCollection,
-        object? oldSource,
-        object? newSource,
-        NotifyCollectionChangedEventHandler sourceCollectionChangedHandler
-    )
-    {
-        if (oldSource is INotifyCollectionChanged oldCollection)
-        {
-            oldCollection.CollectionChanged -= sourceCollectionChangedHandler;
-        }
-
-        targetCollection.Clear();
-
-        if (newSource is IEnumerable newItemsSource and not string)
-        {
-            foreach (var item in newItemsSource)
-            {
-                _ = targetCollection.Add(item);
-            }
-        }
-        else if (newSource is not null)
-        {
-            _ = targetCollection.Add(newSource);
-        }
-
-        if (newSource is INotifyCollectionChanged newCollection)
-        {
-            newCollection.CollectionChanged += sourceCollectionChangedHandler;
-        }
+        navigationView.UpdateMenuItemsHosts();
+        navigationView.RebuildNavigationIndexes();
     }
 
     #endregion
@@ -1174,6 +987,34 @@ public partial class NavigationView
             navigationView.UpdateVisibleLeftPaneTargetWidth(e.Property);
         }
     }
+
+    #endregion
+
+    #region DP: SelectedItem
+
+    private static readonly DependencyPropertyKey SelectedItemPropertyKey =
+        DependencyProperty.RegisterReadOnly(
+            nameof(SelectedItem),
+            typeof(object),
+            typeof(NavigationView),
+            new FrameworkPropertyMetadata(null)
+        );
+
+    /// <summary>Identifies the read-only <see cref="SelectedItem"/> dependency property.</summary>
+    public static readonly DependencyProperty SelectedItemProperty =
+        SelectedItemPropertyKey.DependencyProperty;
+
+    /// <summary>Gets the selected source item.</summary>
+    /// <remarks>
+    /// In data-driven mode this value is the object from <see cref="MenuItemsSource"/> or
+    /// <see cref="FooterMenuItemsSource"/>. The generated <see cref="NavigationViewItem"/> is only
+    /// presentation state and is intentionally not exposed as selection identity.
+    /// </remarks>
+    [Bindable(true)]
+    [Browsable(false)]
+    public object? SelectedItem => GetValue(SelectedItemProperty);
+
+    private void SetSelectedItem(object? item) => SetValue(SelectedItemPropertyKey, item);
 
     #endregion
 

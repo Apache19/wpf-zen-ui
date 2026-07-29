@@ -38,16 +38,16 @@ public partial class TextPage : INavigableView<TextViewModel>
             navigationControl.BreadcrumbBar.SetCurrentValue(VisibilityProperty, Visibility.Collapsed);
         }
 
-        INavigationViewItem? selectedItem = navigationControl?.SelectedItem;
+        INavigationItem? selectedItem = navigationControl?.SelectedItem as INavigationItem;
         if (selectedItem != null)
         {
-            string? newTitle = selectedItem.Header?.ToString();
+            string? newTitle = selectedItem.Content?.ToString();
             if (MainTitle.Text != newTitle)
             {
                 MainTitle.SetCurrentValue(System.Windows.Controls.TextBlock.TextProperty, newTitle);
             }
 
-            if (selectedItem.Icon is SymbolIcon selectedIcon && MainSymbolIcon.Symbol != selectedIcon.Symbol)
+            if (selectedItem.IconSource is SymbolIconSource selectedIcon && MainSymbolIcon.Symbol != selectedIcon.Symbol)
             {
                 MainSymbolIcon.SetCurrentValue(SymbolIcon.SymbolProperty, selectedIcon.Symbol);
             }

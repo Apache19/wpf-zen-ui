@@ -135,16 +135,18 @@ public class NavigationViewList : ItemsControl
     {
         base.PrepareContainerForItemOverride(element, item);
 
-        if (
-            element is NavigationViewItem navigationItem &&
-            NavigationView.GetNavigationParent(this) is { } navigationView
-        )
+        if (element is NavigationViewItem navigationItem)
         {
-            navigationItem.AttachToNavigationViewHost(navigationView);
+            PrepareDataContainer(navigationItem, item);
 
-            if (!ReferenceEquals(element, item))
+            if (NavigationView.GetNavigationParent(this) is { } navigationView)
             {
-                navigationView.RegisterGeneratedNavigationItem(navigationItem);
+                navigationItem.AttachToNavigationViewHost(navigationView);
+
+                if (!ReferenceEquals(element, item))
+                {
+                    navigationView.RegisterGeneratedNavigationItem(navigationItem, item);
+                }
             }
         }
     }
@@ -152,17 +154,126 @@ public class NavigationViewList : ItemsControl
     /// <inheritdoc />
     protected override void ClearContainerForItemOverride(DependencyObject element, object item)
     {
-        if (
-            element is NavigationViewItem navigationItem &&
-            NavigationView.GetNavigationParent(this) is { } navigationView
-        )
+        if (element is NavigationViewItem navigationItem)
         {
-            if (!ReferenceEquals(element, item))
+            if (
+                NavigationView.GetNavigationParent(this) is { } navigationView
+                && !ReferenceEquals(element, item)
+            )
             {
                 navigationView.UnregisterGeneratedNavigationItem(navigationItem);
+            }
+
+            if (!ReferenceEquals(element, item))
+            {
+                ClearDataContainer(navigationItem);
             }
         }
 
         base.ClearContainerForItemOverride(element, item);
+    }
+
+    /// <summary>
+    /// Applies the optional convenience presentation supplied by the library navigation model.
+    /// </summary>
+    /// <remarks>
+    /// Navigation semantics are read from the source entry, not these container values. Children
+    /// and icons are projected only so <see cref="NavigationItem"/> remains useful without a custom
+    /// style; an explicit hierarchical template or container style still wins through dependency-
+    /// property precedence.
+    /// </remarks>
+    internal static void PrepareDataContainer(NavigationViewItem container, object item)
+    {
+        if (item is not INavigationItem dataItem)
+        {
+            return;
+        }
+
+        if (container.ItemsSource is null && dataItem.Children is not null)
+        {
+            container.SetCurrentValue(ItemsControl.ItemsSourceProperty, dataItem.Children);
+            container.UsesNavigationDataChildren = true;
+        }
+
+        if (container.Icon is null && dataItem.IconSource is not null)
+        {
+            container.SetCurrentValue(
+                NavigationViewItem.IconProperty,
+                new IconSourceElement { IconSource = dataItem.IconSource }
+            );
+            container.UsesNavigationDataIcon = true;
+        }
+    }
+
+    /// <summary>
+    /// Synchronizes values previously projected by <see cref="PrepareDataContainer"/> after a data
+    /// item reports a property change.
+    /// </summary>
+    /// <remarks>
+    /// Ownership flags are essential here. An ItemsSource or Icon supplied by an application style
+    /// must continue to win; only values created by the default convenience projection are replaced.
+    /// </remarks>
+    internal static void SynchronizeDataContainer(NavigationViewItem container, INavigationItem item)
+    {
+        if (container.UsesNavigationDataChildren)
+        {
+            if (item.Children is null)
+            {
+                container.ClearValue(ItemsControl.ItemsSourceProperty);
+                container.UsesNavigationDataChildren = false;
+            }
+            else
+            {
+                container.SetCurrentValue(ItemsControl.ItemsSourceProperty, item.Children);
+            }
+        }
+        else if (container.ItemsSource is null && item.Children is not null)
+        {
+            container.SetCurrentValue(ItemsControl.ItemsSourceProperty, item.Children);
+            container.UsesNavigationDataChildren = true;
+        }
+
+        if (container.UsesNavigationDataIcon)
+        {
+            if (item.IconSource is null)
+            {
+                container.ClearValue(NavigationViewItem.IconProperty);
+                container.UsesNavigationDataIcon = false;
+            }
+            else
+            {
+                container.SetCurrentValue(
+                    NavigationViewItem.IconProperty,
+                    new IconSourceElement { IconSource = item.IconSource }
+                );
+            }
+        }
+        else if (container.Icon is null && item.IconSource is not null)
+        {
+            container.SetCurrentValue(
+                NavigationViewItem.IconProperty,
+                new IconSourceElement { IconSource = item.IconSource }
+            );
+            container.UsesNavigationDataIcon = true;
+        }
+    }
+
+    /// <summary>
+    /// Releases only values owned by the default data projection before WPF reuses a generated
+    /// container for another source item.
+    /// </summary>
+    internal static void ClearDataContainer(NavigationViewItem container)
+    {
+        if (container.UsesNavigationDataChildren)
+        {
+            container.ClearValue(ItemsControl.ItemsSourceProperty);
+            container.UsesNavigationDataChildren = false;
+        }
+
+        if (container.UsesNavigationDataIcon)
+        {
+            container.ClearValue(NavigationViewItem.IconProperty);
+            container.UsesNavigationDataIcon = false;
+        }
     }
 }

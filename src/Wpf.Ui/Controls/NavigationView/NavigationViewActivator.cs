@@ -26,7 +26,7 @@ internal static class NavigationViewActivator
         if (!typeof(FrameworkElement).IsAssignableFrom(pageType))
         {
             throw new InvalidCastException(
-                $"PageType of the ${typeof(INavigationViewItem)} must be derived from {typeof(FrameworkElement)}. {pageType} is not."
+                $"TargetPageType must be derived from {typeof(FrameworkElement)}. {pageType} is not."
             );
         }
 

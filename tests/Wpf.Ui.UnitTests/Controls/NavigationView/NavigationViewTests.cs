@@ -5,12 +5,14 @@
 
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using Wpf.Ui.Abstractions.Controls;
 using Wpf.Ui.Controls;
@@ -1153,6 +1155,271 @@ public class NavigationViewTests
         System.Windows.Threading.Dispatcher.PushFrame(frame);
     }
 
+    [Fact]
+    public void NavigationItemSource_CanNavigateCollapsedDataBeforeContainerGeneration()
+    {
+        RunOnStaThread(() =>
+        {
+            var child = new NavigationItem("Child", typeof(NavigationAwarePageOne));
+            var root = new NavigationItem("Root") { Children = new[] { child } };
+            var navigationView = new Wpf.Ui.Controls.NavigationView
+            {
+                MenuItemsSource = new[] { root },
+            };
+
+            Assert.True(navigationView.Navigate(typeof(NavigationAwarePageOne)));
+            Assert.Same(child, navigationView.SelectedItem);
+            Assert.Same(child, Assert.Single(navigationView.BreadcrumbItems));
+        });
+    }
+
+    [Fact]
+    public void NavigationView_BreadcrumbCollaboration_PreservesSourceAndPresentation()
+    {
+        RunOnStaThread(() =>
+        {
+            var itemTemplate = new DataTemplate(typeof(NavigationItem));
+            var breadcrumbBar = new BreadcrumbBar { ItemTemplate = itemTemplate };
+            var item = new NavigationItem("Page", typeof(NavigationAwarePageOne));
+            var navigationView = new Wpf.Ui.Controls.NavigationView
+            {
+                MenuItemsSource = new[] { item },
+                BreadcrumbBar = breadcrumbBar,
+            };
+
+            Assert.Same(itemTemplate, breadcrumbBar.ItemTemplate);
+            Assert.Same(navigationView.BreadcrumbItems, breadcrumbBar.ItemsSource);
+
+            Assert.True(navigationView.Navigate(typeof(NavigationAwarePageOne)));
+            Assert.Same(item, Assert.Single(breadcrumbBar.Items));
+        });
+    }
+
+    [Fact]
+    public void BreadcrumbBar_GeneratedContainer_UsesSourceItemAndPreparedTemplate()
+    {
+        RunOnStaThread(() =>
+        {
+            var resources = new ResourceDictionary { Source = CreateResourceUri() };
+            var itemTemplate = new DataTemplate(typeof(NavigationItem));
+            var first = new NavigationItem("First");
+            var second = new NavigationItem("Second");
+            var breadcrumbBar = new BreadcrumbBar
+            {
+                Style = Assert.IsType<Style>(resources[typeof(BreadcrumbBar)]),
+                ItemTemplate = itemTemplate,
+                ItemsSource = new[] { first, second },
+            };
+            var window = new Window
+            {
+                Content = breadcrumbBar,
+                Width = 320,
+                Height = 80,
+                Left = -10_000,
+                Top = -10_000,
+                ShowActivated = false,
+                ShowInTaskbar = false,
+            };
+
+            BreadcrumbBarItemClickedEventArgs? clicked = null;
+            breadcrumbBar.ItemClicked += (_, args) => clicked = args;
+
+            try
+            {
+                window.Show();
+                breadcrumbBar.UpdateLayout();
+
+                var firstContainer = Assert.IsType<BreadcrumbBarItem>(
+                    breadcrumbBar.ItemContainerGenerator.ContainerFromIndex(0)
+                );
+                var lastContainer = Assert.IsType<BreadcrumbBarItem>(
+                    breadcrumbBar.ItemContainerGenerator.ContainerFromIndex(1)
+                );
+
+                Assert.Same(first, firstContainer.Content);
+                Assert.Same(itemTemplate, firstContainer.ContentTemplate);
+                Assert.False(firstContainer.IsLast);
+                Assert.True(lastContainer.IsLast);
+
+                firstContainer.RaiseEvent(
+                    new RoutedEventArgs(ButtonBase.ClickEvent, firstContainer)
+                );
+
+                Assert.NotNull(clicked);
+                Assert.Same(first, clicked.Item);
+                Assert.Same(firstContainer, clicked.Container);
+                Assert.Equal(0, clicked.Index);
+            }
+            finally
+            {
+                window.Close();
+            }
+        });
+    }
+
+    [Fact]
+    public void ObservableSource_RemovingJournalAndSelectedItems_ReconcilesNavigationState()
+    {
+        RunOnStaThread(() =>
+        {
+            var first = new NavigationItem("First", typeof(NavigationAwarePageOne));
+            var second = new NavigationItem("Second", typeof(NavigationAwarePageTwo));
+            var source = new ObservableCollection<object> { first, second };
+            var navigationView = new Wpf.Ui.Controls.NavigationView { MenuItemsSource = source };
+
+            Assert.True(navigationView.Navigate(typeof(NavigationAwarePageOne)));
+            Assert.True(navigationView.Navigate(typeof(NavigationAwarePageTwo)));
+            Assert.True(navigationView.CanGoBack);
+
+            source.Remove(first);
+
+            Assert.False(navigationView.CanGoBack);
+            Assert.False(navigationView.GoBack());
+            Assert.Same(second, navigationView.SelectedItem);
+
+            source.Remove(second);
+
+            Assert.Null(navigationView.SelectedItem);
+            Assert.Empty(navigationView.BreadcrumbItems);
+        });
+    }
+
+    [Fact]
+    public void NavigationItem_AllPropertiesNotification_RebuildsChildrenHierarchy()
+    {
+        RunOnStaThread(() =>
+        {
+            var initialChild = new MutableNavigationItem("initial", "Initial")
+            {
+                TargetPageType = typeof(NavigationAwarePageOne),
+            };
+            var replacementChild = new MutableNavigationItem("replacement", "Replacement")
+            {
+                TargetPageType = typeof(NavigationAwarePageTwo),
+            };
+            var root = new MutableNavigationItem("root", "Root")
+            {
+                Children = new[] { initialChild },
+            };
+            var navigationView = new Wpf.Ui.Controls.NavigationView
+            {
+                MenuItemsSource = new[] { root },
+            };
+
+            root.Children = new[] { replacementChild };
+            root.NotifyAllPropertiesChanged();
+
+            Assert.False(navigationView.Navigate(initialChild.Id));
+            Assert.True(navigationView.Navigate(replacementChild.Id));
+            Assert.Same(replacementChild, navigationView.SelectedItem);
+        });
+    }
+
+    [Fact]
+    public void NavigationItemNotifications_UseSourceReferenceIdentity()
+    {
+        RunOnStaThread(() =>
+        {
+            var first = new MutableNavigationItem("first", "First", "equal")
+            {
+                TargetPageType = typeof(NavigationAwarePageOne),
+            };
+            var second = new MutableNavigationItem("second", "Second", "equal")
+            {
+                TargetPageType = typeof(NavigationAwarePageTwo),
+            };
+            var navigationView = new Wpf.Ui.Controls.NavigationView
+            {
+                MenuItemsSource = new[] { first, second },
+            };
+
+            second.TargetPageTag = "updated-second";
+            second.NotifyPropertyChanged(nameof(INavigationItem.TargetPageTag));
+
+            Assert.True(navigationView.Navigate("updated-second"));
+            Assert.Same(second, navigationView.SelectedItem);
+        });
+    }
+
+    [Fact]
+    public void NavigationItemCacheModeChange_MigratesExistingCachedPage()
+    {
+        RunOnStaThread(() =>
+        {
+            CacheProbePage.InstanceCount = 0;
+            var cachedItem = new NavigationItem("Cached", typeof(CacheProbePage))
+            {
+                NavigationCacheMode = NavigationCacheMode.Required,
+            };
+            var otherItem = new NavigationItem("Other", typeof(NavigationAwarePageTwo));
+            var navigationView = new Wpf.Ui.Controls.NavigationView
+            {
+                MenuItemsSource = new[] { cachedItem, otherItem },
+            };
+
+            Assert.True(navigationView.Navigate(typeof(CacheProbePage)));
+            Assert.Equal(1, CacheProbePage.InstanceCount);
+
+            cachedItem.NavigationCacheMode = NavigationCacheMode.Enabled;
+            Assert.True(navigationView.Navigate(typeof(NavigationAwarePageTwo)));
+            Assert.True(navigationView.Navigate(typeof(CacheProbePage)));
+
+            Assert.Equal(1, CacheProbePage.InstanceCount);
+        });
+    }
+
+    [Fact]
+    public void BreadcrumbCollaboration_ReattachesAfterNavigationViewReload()
+    {
+        RunOnStaThread(() =>
+        {
+            var breadcrumbBar = new BreadcrumbBar();
+            var navigationView = new BreadcrumbLifecycleNavigationView
+            {
+                BreadcrumbBar = breadcrumbBar,
+                Header = breadcrumbBar,
+            };
+            var window = new Window
+            {
+                Content = navigationView,
+                Width = 320,
+                Height = 120,
+                Left = -10_000,
+                Top = -10_000,
+                ShowActivated = false,
+                ShowInTaskbar = false,
+            };
+
+            try
+            {
+                window.Show();
+                DrainDispatcher();
+
+                window.Content = null;
+                DrainDispatcher();
+                window.Content = navigationView;
+                DrainDispatcher();
+
+                navigationView.ResetBreadcrumbClickCount();
+                breadcrumbBar.RaiseEvent(
+                    new BreadcrumbBarItemClickedEventArgs(
+                        BreadcrumbBar.ItemClickedEvent,
+                        breadcrumbBar,
+                        new object(),
+                        new BreadcrumbBarItem(),
+                        0
+                    )
+                );
+
+                Assert.Equal(1, navigationView.BreadcrumbClickCount);
+            }
+            finally
+            {
+                window.Close();
+            }
+        });
+    }
+
     private static void RunOnStaThread(Action action)
     {
         Exception? exception = null;
@@ -1232,6 +1499,67 @@ public class NavigationViewTests
     public sealed class NavigationAwarePageOne : Border { }
 
     public sealed class NavigationAwarePageTwo : Border { }
+
+    public sealed class CacheProbePage : Border
+    {
+        public CacheProbePage()
+        {
+            InstanceCount++;
+        }
+
+        public static int InstanceCount { get; set; }
+    }
+
+    private sealed class MutableNavigationItem(
+        string id,
+        object? content,
+        string? equalityKey = null) : INavigationItem, INotifyPropertyChanged
+    {
+        private readonly string _equalityKey = equalityKey ?? id;
+
+        public string Id { get; } = id;
+
+        public object? Content { get; set; } = content;
+
+        public IconSource? IconSource { get; set; }
+
+        public string? TargetPageTag { get; set; }
+
+        public Type? TargetPageType { get; set; }
+
+        public NavigationCacheMode NavigationCacheMode { get; set; }
+
+        public System.Collections.IEnumerable? Children { get; set; }
+
+        public string? SearchText { get; set; }
+
+        public event PropertyChangedEventHandler? PropertyChanged;
+
+        public void NotifyAllPropertiesChanged() =>
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(null));
+
+        public void NotifyPropertyChanged(string propertyName) =>
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+
+        public override bool Equals(object? obj) =>
+            obj is MutableNavigationItem other && other._equalityKey == _equalityKey;
+
+        public override int GetHashCode() => _equalityKey.GetHashCode();
+    }
+
+    private sealed class BreadcrumbLifecycleNavigationView : Wpf.Ui.Controls.NavigationView
+    {
+        public int BreadcrumbClickCount { get; private set; }
+
+        public void ResetBreadcrumbClickCount() => BreadcrumbClickCount = 0;
+
+        protected override void BreadcrumbBarOnItemClicked(
+            BreadcrumbBar sender,
+            BreadcrumbBarItemClickedEventArgs e)
+        {
+            BreadcrumbClickCount++;
+        }
+    }
 
     private sealed class DeferredNavigationExitPage : Border, INavigationAware
     {

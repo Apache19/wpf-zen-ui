@@ -17,22 +17,28 @@ namespace Wpf.Ui.Controls;
 /// </content>
 public partial class NavigationView
 {
-    protected List<string> Journal { get; } = [with(50)];
+    // Journal entries retain semantic identity rather than an Id snapshot. INavigationItem.Id is a
+    // lookup key and can be supplied by mutable application data; keeping only the string would make
+    // a later property change or collection rebuild strand history on a key that no longer exists.
+    private List<NavigationEntry> Journal { get; } = [with(50)];
 
-    protected ObservableCollection<INavigationViewItem> NavigationStack { get; } = [];
+    internal ObservableCollection<NavigationEntry> NavigationStack { get; } = [];
 
     private readonly NavigationCache _cache = new();
 
-    private readonly Dictionary<INavigationViewItem, List<INavigationViewItem?[]>> _complexNavigationStackHistory = [];
+    // Pages that are navigated without a menu item remain valid navigation targets across an
+    // unrelated menu-source rebuild. They are deliberately indexed only as fallbacks so a newly
+    // added application menu item for the same page type takes precedence.
+    private readonly HashSet<NavigationEntry> _unregisteredEntries = [];
+
+    private readonly Dictionary<NavigationEntry, List<NavigationEntry?[]>> _complexNavigationStackHistory = [];
 
     private IServiceProvider? _serviceProvider;
 
     private INavigationViewPageProvider? _pageService;
 
-    private int _currentIndexInJournal;
-
     /// <inheritdoc />
-    public bool CanGoBack => Journal.Count > 1 && _currentIndexInJournal >= 0;
+    public bool CanGoBack => Journal.Count > 1;
 
     /// <inheritdoc />
     public void SetPageProviderService(INavigationViewPageProvider pageProvider)
@@ -51,7 +57,7 @@ public partial class NavigationView
             return NavigateInternal(nvItem, dataContext);
         }
 
-        return TryToNavigateWithoutINavigationViewItem(pageType, false, dataContext);
+        return TryNavigateUnregisteredPage(pageType, false, dataContext);
     }
 
     /// <inheritdoc />
@@ -73,7 +79,7 @@ public partial class NavigationView
             return NavigateInternal(nvItem, dataContext, true);
         }
 
-        return TryToNavigateWithoutINavigationViewItem(pageType, true, dataContext);
+        return TryNavigateUnregisteredPage(pageType, true, dataContext);
     }
 
     /// <inheritdoc />
@@ -113,20 +119,6 @@ public partial class NavigationView
     public virtual bool GoForward()
     {
         throw new NotImplementedException();
-
-        /*if (Journal.Count <= 1)
-        {
-            return false;
-        }
-
-        _currentIndexInJournal += 1;
-
-        if (_currentIndexInJournal > Journal.Count - 1)
-        {
-            return false;
-        }
-
-        return Navigate(Journal[_currentIndexInJournal]);*/
     }
 
     /// <inheritdoc />
@@ -137,43 +129,43 @@ public partial class NavigationView
             return false;
         }
 
-        var itemId = Journal[^2];
+        NavigationEntry previousEntry = Journal[^2];
 
         OnBackRequested();
-        return NavigateInternal(PageKeyIndex[itemId], null, false, true);
+        return NavigateInternal(previousEntry, null, false, true);
     }
 
     /// <inheritdoc />
     public virtual void ClearJournal()
     {
-        _currentIndexInJournal = 0;
-
         Journal.Clear();
         _complexNavigationStackHistory.Clear();
         UpdateBackNavigationState();
     }
 
-    private bool TryToNavigateWithoutINavigationViewItem(
+    private bool TryNavigateUnregisteredPage(
         Type pageType,
         bool addToNavigationStack,
         object? dataContext = null
     )
     {
-        var nvItem = new NavigationViewItem(pageType);
+        var container = new NavigationViewItem(pageType);
+        var entry = new NavigationEntry(container, null, false) { Container = container };
 
-        if (!NavigateInternal(nvItem, dataContext, addToNavigationStack))
+        if (!NavigateInternal(entry, dataContext, addToNavigationStack))
         {
             return false;
         }
 
-        PageTypeIndex.Add(pageType, nvItem);
-        PageKeyIndex.Add(nvItem.Id, nvItem);
+        PageTypeIndex.Add(pageType, entry);
+        PageKeyIndex.Add(entry.Id, entry);
+        _unregisteredEntries.Add(entry);
 
         return true;
     }
 
     private bool NavigateInternal(
-        INavigationViewItem viewItem,
+        NavigationEntry viewItem,
         object? dataContext = null,
         bool addToNavigationStack = false,
         bool isBackwardsNavigated = false
@@ -218,35 +210,107 @@ public partial class NavigationView
         AddToNavigationStack(viewItem, addToNavigationStack, isBackwardsNavigated);
         AddToJournal(viewItem, isBackwardsNavigated);
 
-        if (SelectedItem != NavigationStack[0] && NavigationStack[0].IsMenuElement)
+        if (!ReferenceEquals(SelectedItem, NavigationStack[0].Item) && NavigationStack[0].IsMenuElement)
         {
-            SelectedItem = NavigationStack[0];
+            SetSelectedItem(NavigationStack[0].Item);
             OnSelectionChanged();
         }
 
         return true;
     }
 
-    private void AddToJournal(INavigationViewItem viewItem, bool isBackwardsNavigated)
+    private void AddToJournal(NavigationEntry viewItem, bool isBackwardsNavigated)
     {
         if (isBackwardsNavigated)
         {
-            Journal.RemoveAt(Journal.LastIndexOf(Journal[^2]));
-            Journal.RemoveAt(Journal.LastIndexOf(Journal[^1]));
+            // The target is already the penultimate entry. Removing only the current entry keeps
+            // the surviving history in order and avoids resolving a mutable Id through PageKeyIndex.
+            Journal.RemoveAt(Journal.Count - 1);
 
-            _currentIndexInJournal -= 2;
+            if (Journal.Count == 0 || !ReferenceEquals(Journal[^1], viewItem))
+            {
+                Journal.Add(viewItem);
+            }
         }
-
-        Journal.Add(viewItem.Id);
-        _currentIndexInJournal++;
+        else
+        {
+            Journal.Add(viewItem);
+        }
 
         UpdateBackNavigationState();
 
-        Debug.WriteLineIf(EnableDebugMessages, $"JOURNAL INDEX {_currentIndexInJournal}");
+        Debug.WriteLineIf(EnableDebugMessages, $"JOURNAL COUNT {Journal.Count}");
 
         if (Journal.Count > 0)
         {
-            Debug.WriteLineIf(EnableDebugMessages, $"JOURNAL LAST ELEMENT {Journal[^1]}");
+            Debug.WriteLineIf(EnableDebugMessages, $"JOURNAL LAST ELEMENT {Journal[^1].Id}");
+        }
+    }
+
+    /// <summary>
+    /// Reconciles history and selection after the semantic menu hierarchy has been rebuilt.
+    /// </summary>
+    /// <remarks>
+    /// Observable menu sources may remove an item that is still selected or present in the back
+    /// journal. WPF collection changes are valid application operations and must not turn a later
+    /// GoBack into a dictionary-index exception. Unregistered pages remain valid because they are
+    /// navigation targets independent of the menu hierarchy.
+    /// </remarks>
+    private void ReconcileNavigationStateAfterIndexRebuild()
+    {
+        var validEntries = new HashSet<NavigationEntry>(_entriesByItem.Values);
+        validEntries.UnionWith(_unregisteredEntries);
+
+        Journal.RemoveAll(entry => !validEntries.Contains(entry));
+        UpdateBackNavigationState();
+
+        for (int index = NavigationStack.Count - 1; index >= 0; index--)
+        {
+            NavigationEntry entry = NavigationStack[index];
+            if (validEntries.Contains(entry))
+            {
+                continue;
+            }
+
+            entry.Deactivate(this);
+            NavigationStack.RemoveAt(index);
+        }
+
+        if (SelectedItem is not null && !_entriesByItem.ContainsKey(SelectedItem))
+        {
+            SetSelectedItem(null);
+            OnSelectionChanged();
+        }
+    }
+
+    /// <summary>Restores non-menu navigation targets without overriding current menu indexes.</summary>
+    private void IndexUnregisteredNavigationEntries()
+    {
+        foreach (NavigationEntry entry in _unregisteredEntries)
+        {
+            if (!string.IsNullOrWhiteSpace(entry.Id))
+            {
+                if (!PageKeyIndex.ContainsKey(entry.Id))
+                {
+                    PageKeyIndex.Add(entry.Id, entry);
+                }
+            }
+
+            if (!string.IsNullOrWhiteSpace(entry.TargetPageTag))
+            {
+                if (!PageKeyIndex.ContainsKey(entry.TargetPageTag!))
+                {
+                    PageKeyIndex.Add(entry.TargetPageTag!, entry);
+                }
+            }
+
+            if (entry.TargetPageType is { } targetPageType)
+            {
+                if (!PageTypeIndex.ContainsKey(targetPageType))
+                {
+                    PageTypeIndex.Add(targetPageType, entry);
+                }
+            }
         }
     }
 
@@ -257,7 +321,7 @@ public partial class NavigationView
     /// </summary>
     private void UpdateBackNavigationState() => SetValue(IsBackEnabledPropertyKey, CanGoBack);
 
-    private object GetNavigationItemInstance(INavigationViewItem viewItem)
+    private object GetNavigationItemInstance(NavigationEntry viewItem)
     {
         if (viewItem.TargetPageType is null)
         {
@@ -296,12 +360,42 @@ public partial class NavigationView
     }
 
     internal void NotifyNavigationCacheModeChanged(
-        INavigationViewItem nvItem,
+        NavigationEntry nvItem,
         NavigationCacheMode oldCacheMode,
         NavigationCacheMode newCacheMode
     )
     {
         _cache.UpdateCacheMode(nvItem.TargetPageType, oldCacheMode, newCacheMode, NavigationCacheSize);
+    }
+
+    /// <summary>
+    /// Migrates cache state after a data navigation item raises a property-change notification.
+    /// </summary>
+    /// <remarks>
+    /// Unlike a dependency-property callback, INotifyPropertyChanged does not carry the previous
+    /// value. NavigationEntry retains that snapshot so Required and Enabled entries can be moved
+    /// between the cache partitions instead of leaving two instances for the same page type. A page
+    /// type change removes the old type because a Required cache entry would otherwise be retained
+    /// indefinitely after the item stopped targeting it.
+    /// </remarks>
+    private void SynchronizeNavigationEntryCacheState(NavigationEntry entry)
+    {
+        Type? oldPageType = entry.LastKnownTargetPageType;
+        Type? newPageType = entry.TargetPageType;
+        NavigationCacheMode oldCacheMode = entry.LastKnownNavigationCacheMode;
+        NavigationCacheMode newCacheMode = entry.NavigationCacheMode;
+
+        if (oldPageType == newPageType)
+        {
+            _cache.UpdateCacheMode(oldPageType, oldCacheMode, newCacheMode, NavigationCacheSize);
+        }
+        else
+        {
+            _cache.Remove(oldPageType);
+        }
+
+        entry.LastKnownTargetPageType = newPageType;
+        entry.LastKnownNavigationCacheMode = newCacheMode;
     }
 
     private object? GetPageInstanceFromCache(Type? targetPageType)
@@ -341,7 +435,7 @@ public partial class NavigationView
             ?? throw new InvalidOperationException("Failed to create instance of the page");
     }
 
-    private void ApplyAttachedProperties(INavigationViewItem viewItem, object pageInstance)
+    private void ApplyAttachedProperties(NavigationEntry viewItem, object pageInstance)
     {
         if (pageInstance is FrameworkElement frameworkElement)
         {
@@ -351,7 +445,7 @@ public partial class NavigationView
             // Apply HeaderContent if already available
             if (GetHeaderContent(frameworkElement) is { } headerContent)
             {
-                viewItem.Header = headerContent;
+                viewItem.Content = headerContent;
                 UpdateBreadcrumbContents();
             }
         }
@@ -359,9 +453,9 @@ public partial class NavigationView
 
     internal void NotifyHeaderContentChanged(FrameworkElement page, object? headerContent)
     {
-        if (page.GetValue(PageNavigationItemProperty) is INavigationViewItem navItem)
+        if (page.GetValue(PageNavigationItemProperty) is NavigationEntry navItem)
         {
-            navItem.Header = headerContent;
+            navItem.Content = headerContent;
             UpdateBreadcrumbContents();
         }
     }
@@ -377,7 +471,7 @@ public partial class NavigationView
     }
 
     private void AddToNavigationStack(
-        INavigationViewItem viewItem,
+        NavigationEntry viewItem,
         bool addToNavigationStack,
         bool isBackwardsNavigated
     )
@@ -401,7 +495,7 @@ public partial class NavigationView
         ClearNavigationStack(viewItem);
     }
 
-    private void UpdateCurrentNavigationStackItem(INavigationViewItem viewItem)
+    private void UpdateCurrentNavigationStackItem(NavigationEntry viewItem)
     {
         if (NavigationStack.Contains(viewItem))
         {
@@ -426,15 +520,15 @@ public partial class NavigationView
         ClearNavigationStack(1);
     }
 
-    private void RecreateNavigationStackFromHistory(INavigationViewItem item)
+    private void RecreateNavigationStackFromHistory(NavigationEntry item)
     {
-        List<INavigationViewItem?[]>? historyList;
+        List<NavigationEntry?[]>? historyList;
         if (!_complexNavigationStackHistory.TryGetValue(item, out historyList) || historyList.Count == 0)
         {
             return;
         }
 
-        INavigationViewItem?[] latestHistory = historyList[^1];
+        NavigationEntry?[] latestHistory = historyList[^1];
         var startIndex = 0;
 
         if (latestHistory[0]!.IsMenuElement)
@@ -459,15 +553,15 @@ public partial class NavigationView
         */
 
 #if NET6_0_OR_GREATER
-        System.Buffers.ArrayPool<INavigationViewItem>.Shared.Return(latestHistory!, true);
+        System.Buffers.ArrayPool<NavigationEntry>.Shared.Return(latestHistory!, true);
 #endif
 
         AddToNavigationStack(item, true, false);
     }
 
-    private void AddToNavigationStackHistory(INavigationViewItem viewItem)
+    private void AddToNavigationStackHistory(NavigationEntry viewItem)
     {
-        INavigationViewItem lastItem = NavigationStack[^1];
+        NavigationEntry lastItem = NavigationStack[^1];
         var startIndex = NavigationStack.IndexOf(viewItem);
 
         if (startIndex < 0)
@@ -475,27 +569,27 @@ public partial class NavigationView
             startIndex = 0;
         }
 
-        List<INavigationViewItem?[]>? historyList;
+        List<NavigationEntry?[]>? historyList;
         if (!_complexNavigationStackHistory.TryGetValue(lastItem, out historyList))
         {
-            historyList = new List<INavigationViewItem?[]>(5);
+            historyList = new List<NavigationEntry?[]>(5);
             _complexNavigationStackHistory.Add(lastItem, historyList);
         }
 
         int arrayLength = NavigationStack.Count - 1 - startIndex;
 
-        INavigationViewItem[] array;
+        NavigationEntry[] array;
 
         // OPTIMIZATION: Initializing an array every time well... not an ideal
 #if NET6_0_OR_GREATER
-        array = System.Buffers.ArrayPool<INavigationViewItem>.Shared.Rent(arrayLength);
+        array = System.Buffers.ArrayPool<NavigationEntry>.Shared.Rent(arrayLength);
 #else
-        array = new INavigationViewItem[arrayLength];
+        array = new NavigationEntry[arrayLength];
 #endif
 
         historyList.Add(array);
 
-        INavigationViewItem?[] latestHistory = historyList[^1];
+        NavigationEntry?[] latestHistory = historyList[^1];
         int i = 0;
 
         for (int j = startIndex; j < NavigationStack.Count - 1; j++)
@@ -521,7 +615,7 @@ public partial class NavigationView
         }
     }
 
-    private void ClearNavigationStack(INavigationViewItem item)
+    private void ClearNavigationStack(NavigationEntry item)
     {
         var navigationStackCount = NavigationStack.Count;
         if (navigationStackCount <= 1)
@@ -539,7 +633,7 @@ public partial class NavigationView
         ClearNavigationStack(++index);
     }
 
-    private void ReplaceThirstElementInNavigationStack(INavigationViewItem newItem)
+    private void ReplaceThirstElementInNavigationStack(NavigationEntry newItem)
     {
         NavigationStack[0].Deactivate(this);
         NavigationStack[0] = newItem;

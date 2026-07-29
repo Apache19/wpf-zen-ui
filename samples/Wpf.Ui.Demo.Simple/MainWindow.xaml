@@ -27,7 +27,10 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
-        <ui:NavigationView x:Name="RootNavigation" Grid.Row="1">
+        <ui:NavigationView
+            x:Name="RootNavigation"
+            Grid.Row="1"
+            BreadcrumbBar="{Binding ElementName=BreadcrumbBar}">
             <ui:NavigationView.AutoSuggestBox>
                 <ui:AutoSuggestBox x:Name="AutoSuggestBox" PlaceholderText="Search">
                     <ui:AutoSuggestBox.Icon>
@@ -39,6 +42,7 @@
             </ui:NavigationView.AutoSuggestBox>
             <ui:NavigationView.Header>
                 <ui:BreadcrumbBar
+                    x:Name="BreadcrumbBar"
                     Margin="42,32,0,0"
                     FontSize="28"
                     FontWeight="DemiBold" />

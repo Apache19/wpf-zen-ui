@@ -15,6 +15,5 @@ namespace Wpf.Ui.Theming;
 public enum TemplateToken
 {
     None,
-    NavigationViewItemData,
     DefaultValidation,
 }

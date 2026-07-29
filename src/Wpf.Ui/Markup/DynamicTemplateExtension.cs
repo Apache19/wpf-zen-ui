@@ -43,7 +43,6 @@ internal static class TemplateTokenResourceKey
     {
         return token switch
         {
-            TemplateToken.NavigationViewItemData => TemplateKeys.NavigationViewItemDataTemplate,
             TemplateToken.DefaultValidation      => TemplateKeys.DefaultValidationTemplate,
 
             _ => throw new ArgumentOutOfRangeException(nameof(token), token, "The template token is not registered."),

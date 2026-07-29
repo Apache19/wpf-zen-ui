@@ -14,7 +14,6 @@ namespace Wpf.Ui.Theming;
 /// </remarks>
 public static class TemplateKeys
 {
-    public static ComponentResourceKey NavigationViewItemDataTemplate { get; } = Create(nameof(NavigationViewItemDataTemplate));
     public static ComponentResourceKey DefaultValidationTemplate      { get; } = Create(nameof(DefaultValidationTemplate));
 
     private static ComponentResourceKey Create(object resourceId)

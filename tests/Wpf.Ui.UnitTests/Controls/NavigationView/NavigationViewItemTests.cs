@@ -4,6 +4,7 @@
 // All Rights Reserved.
 
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -121,10 +122,10 @@ public class NavigationViewItemTests
             MethodInfo activateMethod = typeof(NavigationViewItem).GetMethod(nameof(NavigationViewItem.Activate))!;
             MethodInfo deactivateMethod = typeof(NavigationViewItem).GetMethod(nameof(NavigationViewItem.Deactivate))!;
 
-            // Interface implementations may be represented as virtual final methods in metadata;
-            // IsFinal is the relevant guarantee that a derived control cannot override them.
-            Assert.True(activateMethod.IsFinal);
-            Assert.True(deactivateMethod.IsFinal);
+            // Activation remains a container concern, but NavigationView no longer exposes the
+            // container through a data interface or uses it as public selection identity.
+            Assert.False(activateMethod.IsVirtual);
+            Assert.False(deactivateMethod.IsVirtual);
             Assert.True(
                 typeof(NavigationViewItem)
                    .GetMethod("OnActivated", BindingFlags.NonPublic | BindingFlags.Instance)!
@@ -424,6 +425,73 @@ public class NavigationViewItemTests
                 Assert.Same(root, child.NavigationViewItemParent);
                 Assert.True(child.IsSubItem);
                 Assert.Equal(root.PaneDisplayMode, child.PaneDisplayMode);
+            }
+            finally
+            {
+                window.Close();
+                DrainDispatcher();
+            }
+        });
+    }
+
+    [Fact]
+    public void NavigationItemDefaultProjection_TracksMutableChildrenAndIconSource()
+    {
+        RunOnStaThread(() =>
+        {
+            var resources = new ResourceDictionary { Source = CreateResourceUri() };
+            var initialChildren = new ObservableCollection<object> { new NavigationItem("Initial") };
+            var replacementChildren = new ObservableCollection<object> { new NavigationItem("Replacement") };
+            var initialIcon = new SymbolIconSource { Symbol = SymbolRegular.Home24 };
+            var replacementIcon = new SymbolIconSource { Symbol = SymbolRegular.Settings24 };
+            var item = new NavigationItem("Root")
+            {
+                Children = initialChildren,
+                IconSource = initialIcon,
+            };
+            var navigationView = new Wpf.Ui.Controls.NavigationView
+            {
+                Style = Assert.IsType<Style>(resources[typeof(Wpf.Ui.Controls.NavigationView)]),
+                MenuItemsSource = new[] { item },
+            };
+            var window = new Window
+            {
+                Content = navigationView,
+                Width = 400,
+                Height = 300,
+                Left = -10_000,
+                Top = -10_000,
+                ShowActivated = false,
+                ShowInTaskbar = false,
+                WindowStyle = WindowStyle.None,
+            };
+
+            try
+            {
+                window.Show();
+                DrainDispatcher();
+
+                var rootList = Assert.IsType<NavigationViewList>(
+                    navigationView.Template.FindName("PART_MenuItemsList", navigationView)
+                );
+                var container = Assert.IsType<NavigationViewItem>(
+                    rootList.ItemContainerGenerator.ContainerFromIndex(0)
+                );
+
+                Assert.Same(initialChildren, container.ItemsSource);
+                Assert.Equal(SymbolRegular.Home24, Assert.IsType<SymbolIcon>(container.Icon).Symbol);
+
+                item.Children = replacementChildren;
+                item.IconSource = replacementIcon;
+
+                Assert.Same(replacementChildren, container.ItemsSource);
+                Assert.Equal(SymbolRegular.Settings24, Assert.IsType<SymbolIcon>(container.Icon).Symbol);
+
+                item.Children = null;
+                item.IconSource = null;
+
+                Assert.Null(container.ItemsSource);
+                Assert.Null(container.Icon);
             }
             finally
             {
@@ -974,18 +1042,15 @@ public class NavigationViewItemTests
 
             Assert.Same(item, navigationView.MenuItems[0]);
             Assert.Same(item, navigationView.SelectedItem);
-            var navigationStack = Assert.IsAssignableFrom<IEnumerable<INavigationViewItem>>(
-                typeof(Wpf.Ui.Controls.NavigationView)
-                    .GetProperty("NavigationStack", BindingFlags.Instance | BindingFlags.NonPublic)!
-                    .GetValue(navigationView)
-            );
-            var journal = Assert.IsAssignableFrom<IEnumerable<string>>(
+            var journal = Assert.IsAssignableFrom<IEnumerable<NavigationEntry>>(
                 typeof(Wpf.Ui.Controls.NavigationView)
                     .GetProperty("Journal", BindingFlags.Instance | BindingFlags.NonPublic)!
                     .GetValue(navigationView)
             );
-            Assert.Same(item, Assert.Single(navigationStack));
-            Assert.Equal(itemId, Assert.Single(journal));
+            Assert.Same(item, Assert.Single(navigationView.BreadcrumbItems));
+            NavigationEntry journalEntry = Assert.Single(journal);
+            Assert.Same(item, journalEntry.Item);
+            Assert.Equal(itemId, journalEntry.Id);
             item.RaiseEvent(new RoutedEventArgs(FrameworkElement.UnloadedEvent));
         });
     }
@@ -1636,7 +1701,7 @@ public class NavigationViewItemTests
 
                 Assert.NotNull(projectedItem.Command);
                 projectedItem.Command.Execute(projectedItem.CommandParameter);
-                Assert.Same(generatedSource, navigationView.SelectedItem);
+                Assert.Equal("Data leaf", navigationView.SelectedItem);
             }
             finally
             {
@@ -2119,10 +2184,9 @@ public class NavigationViewItemTests
                 window.Show();
                 DrainDispatcher();
 
-                // ItemsSource may supply NavigationViewItem containers that have never entered the
-                // active visual tree. Such descendants retain the presentation-property defaults
-                // (Left/open) even though their semantic root is already Left/collapsed.
-                Assert.True(child.IsPaneOpen);
+                // A realized direct child now receives presentation context from its root even
+                // though navigation identity is maintained independently from the container.
+                Assert.False(child.IsPaneOpen);
                 Assert.Equal(NavigationViewPaneDisplayMode.Left, child.PaneDisplayMode);
                 InvokeClick(parent);
                 DrainDispatcher();

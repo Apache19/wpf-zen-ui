@@ -5,7 +5,10 @@
     <Platform Name="x64" />
     <Platform Name="x86" />
   </Configurations>
-  <Folder Name="/Samples/" />
+  <Folder Name="/Samples/">
+    <Project Path="samples/Wpf.Ui.Demo.Mvvm/Wpf.Ui.Demo.Mvvm.csproj" />
+    <Project Path="samples/Wpf.Ui.Demo.Simple/Wpf.Ui.Demo.Simple.csproj" />
+  </Folder>
   <Folder Name="/Solution Items/">
     <File Path=".editorconfig" />
     <File Path="Directory.Build.props" />

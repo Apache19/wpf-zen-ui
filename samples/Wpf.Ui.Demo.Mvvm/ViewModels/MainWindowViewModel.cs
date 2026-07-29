@@ -4,6 +4,7 @@
 // All Rights Reserved.
 
 using System.Collections.ObjectModel;
+using System.Windows.Controls;
 using Wpf.Ui.Controls;
 
 namespace Wpf.Ui.Demo.Mvvm.ViewModels;
@@ -13,16 +14,16 @@ public partial class MainWindowViewModel : ViewModel
     private bool _isInitialized = false;
 
     [ObservableProperty]
-    private string _applicationTitle = string.Empty;
+    public partial string ApplicationTitle { get; set; } = string.Empty;
 
     [ObservableProperty]
-    private ObservableCollection<object> _navigationItems = [];
+    public partial ObservableCollection<object> NavigationItems { get; set; } = [];
 
     [ObservableProperty]
-    private ObservableCollection<object> _navigationFooter = [];
+    public partial ObservableCollection<object> NavigationFooter { get; set; } = [];
 
     [ObservableProperty]
-    private ObservableCollection<MenuItem> _trayMenuItems = [];
+    public partial ObservableCollection<MenuItem> TrayMenuItems { get; set; } = [];
 
     [System.Diagnostics.CodeAnalysis.SuppressMessage(
         "Style",
@@ -43,26 +44,26 @@ public partial class MainWindowViewModel : ViewModel
 
         NavigationItems =
         [
-            new NavigationViewItem()
+            new NavigationItem()
             {
-                Header = "Home",
-                Icon = new SymbolIcon { Symbol = SymbolRegular.Home24 },
+                Content = "Home",
+                IconSource = new SymbolIconSource { Symbol = SymbolRegular.Home24 },
                 TargetPageType = typeof(Views.Pages.DashboardPage),
             },
-            new NavigationViewItem()
+            new NavigationItem()
             {
-                Header = "Data",
-                Icon = new SymbolIcon { Symbol = SymbolRegular.DataHistogram24 },
+                Content = "Data",
+                IconSource = new SymbolIconSource { Symbol = SymbolRegular.DataHistogram24 },
                 TargetPageType = typeof(Views.Pages.DataPage),
             },
         ];
 
         NavigationFooter =
         [
-            new NavigationViewItem()
+            new NavigationItem()
             {
-                Header = "Settings",
-                Icon = new SymbolIcon { Symbol = SymbolRegular.Settings24 },
+                Content = "Settings",
+                IconSource = new SymbolIconSource { Symbol = SymbolRegular.Settings24 },
                 TargetPageType = typeof(Views.Pages.SettingsPage),
             },
         ];

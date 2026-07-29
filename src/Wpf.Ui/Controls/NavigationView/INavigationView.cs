@@ -7,6 +7,7 @@
    Copyright(c) Microsoft Corporation.All rights reserved. */
 
 using System.Collections;
+using System.Collections.ObjectModel;
 using System.Windows.Controls;
 using Wpf.Ui.Abstractions;
 using Wpf.Ui.Animations;
@@ -75,9 +76,23 @@ public interface INavigationView
     bool IsFooterSeparatorVisible { get; set; }
 
     /// <summary>
-    /// Gets the selected item.
+    /// Gets the selected source item.
     /// </summary>
-    INavigationViewItem? SelectedItem { get; }
+    /// <remarks>
+    /// For an ItemsSource-driven menu this is the original object supplied by the application,
+    /// not the generated <see cref="NavigationViewItem"/> container.
+    /// </remarks>
+    object? SelectedItem { get; }
+
+    /// <summary>
+    /// Gets the current hierarchical navigation path as the original source objects.
+    /// </summary>
+    /// <remarks>
+    /// The collection instance remains stable and can be assigned directly to a
+    /// <see cref="ItemsControl.ItemsSource"/>. Generated navigation containers are never exposed
+    /// through this API.
+    /// </remarks>
+    ReadOnlyObservableCollection<object> BreadcrumbItems { get; }
 
     /// <summary>
     /// Gets or sets a UI element that is shown at the top of the control, below the pane if PaneDisplayMode is Top.

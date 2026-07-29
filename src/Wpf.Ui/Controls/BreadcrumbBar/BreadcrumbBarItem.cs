@@ -12,7 +12,7 @@ namespace Wpf.Ui.Controls;
 /// <summary>
 /// Represents an item in a <see cref="BreadcrumbBar"/> control.
 /// </summary>
-public class BreadcrumbBarItem : System.Windows.Controls.ContentControl
+public class BreadcrumbBarItem : System.Windows.Controls.Primitives.ButtonBase
 {
     /// <summary>Identifies the <see cref="Icon"/> dependency property.</summary>
     public static readonly DependencyProperty IconProperty = DependencyProperty.Register(
@@ -21,30 +21,6 @@ public class BreadcrumbBarItem : System.Windows.Controls.ContentControl
         typeof(BreadcrumbBarItem),
         new PropertyMetadata(null, null, IconElement.Coerce)
     );
-
-    /// <summary>Identifies the <see cref="IconMargin"/> dependency property.</summary>
-    public static readonly DependencyProperty IconMarginProperty = DependencyProperty.Register(
-        nameof(IconMargin),
-        typeof(Thickness),
-        typeof(BreadcrumbBarItem),
-        new PropertyMetadata(new Thickness(0))
-    );
-
-    /// <summary>Identifies the <see cref="IsLast"/> dependency property.</summary>
-    public static readonly DependencyProperty IsLastProperty = DependencyProperty.Register(
-        nameof(IsLast),
-        typeof(bool),
-        typeof(BreadcrumbBarItem),
-        new PropertyMetadata(false)
-    );
-
-    static BreadcrumbBarItem()
-    {
-        DefaultStyleKeyProperty.OverrideMetadata(
-            typeof(BreadcrumbBarItem),
-            new FrameworkPropertyMetadata(typeof(BreadcrumbBarItem))
-        );
-    }
 
     /// <summary>
     /// Gets or sets displayed <see cref="IconElement"/>.
@@ -55,6 +31,14 @@ public class BreadcrumbBarItem : System.Windows.Controls.ContentControl
         set => SetValue(IconProperty, value);
     }
 
+    /// <summary>Identifies the <see cref="IconMargin"/> dependency property.</summary>
+    public static readonly DependencyProperty IconMarginProperty = DependencyProperty.Register(
+        nameof(IconMargin),
+        typeof(Thickness),
+        typeof(BreadcrumbBarItem),
+        new PropertyMetadata(new Thickness(0))
+    );
+
     /// <summary>
     /// Gets or sets get or sets margin for the <see cref="Icon"/>
     /// </summary>
@@ -64,12 +48,35 @@ public class BreadcrumbBarItem : System.Windows.Controls.ContentControl
         set => SetValue(IconMarginProperty, value);
     }
 
+    /// <summary>Identifies the <see cref="IsLast"/> dependency property.</summary>
+    private static readonly DependencyPropertyKey IsLastPropertyKey =
+        DependencyProperty.RegisterReadOnly(
+            nameof(IsLast),
+            typeof(bool),
+            typeof(BreadcrumbBarItem),
+            new PropertyMetadata(false)
+        );
+
     /// <summary>
-    /// Gets or sets a value indicating whether the current item is the last one.
+    /// Gets a value indicating whether the current item is the last one.
     /// </summary>
-    public bool IsLast
+    /// <remarks>
+    /// The owning <see cref="BreadcrumbBar"/> maintains this value as containers are generated or
+    /// cleared. It is read-only because callers cannot change an item's structural position.
+    /// </remarks>
+    public bool IsLast => (bool)GetValue(IsLastProperty);
+
+    /// <summary>Updates the position state owned by the parent item generator.</summary>
+    internal void SetIsLast(bool value) => SetValue(IsLastPropertyKey, value);
+
+    /// <summary>Identifies the <see cref="IsLast"/> dependency property.</summary>
+    public static readonly DependencyProperty IsLastProperty = IsLastPropertyKey.DependencyProperty;
+
+    static BreadcrumbBarItem()
     {
-        get => (bool)GetValue(IsLastProperty);
-        set => SetValue(IsLastProperty, value);
+        DefaultStyleKeyProperty.OverrideMetadata(
+            typeof(BreadcrumbBarItem),
+            new FrameworkPropertyMetadata(typeof(BreadcrumbBarItem))
+        );
     }
 }

@@ -91,7 +91,7 @@ public partial class NavigationView
         );
 
     /// <summary>
-    /// Gets the parent <see cref="NavigationView"/> for its <see cref="INavigationViewItem"/> children.
+    /// Gets the parent <see cref="NavigationView"/> for its item containers.
     /// </summary>
     internal NavigationView? NavigationParent
     {
@@ -111,7 +111,7 @@ public partial class NavigationView
     // ============================================================
 
     /// <summary>
-    /// Internal attached property that stores the owning <see cref="INavigationViewItem"/>
+    /// Internal attached property that stores the owning navigation entry
     /// directly on the page's <see cref="FrameworkElement"/>, avoiding a separate
     /// dictionary lookup when <see cref="HeaderContentProperty"/> changes.
     /// The value lives and dies with the page — no leak.
@@ -119,7 +119,7 @@ public partial class NavigationView
     internal static readonly DependencyProperty PageNavigationItemProperty =
         DependencyProperty.RegisterAttached(
             "PageNavigationItem",
-            typeof(INavigationViewItem),
+            typeof(NavigationEntry),
             typeof(NavigationView),
             new PropertyMetadata(null)
         );

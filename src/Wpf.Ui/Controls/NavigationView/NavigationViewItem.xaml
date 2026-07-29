@@ -30,17 +30,11 @@
         <Setter Property="SubmenuMenuItemStyle" Value="{StaticResource NavigationViewItemSubmenuMenuItemStyle}" />
         <Setter Property="Template" Value="{StaticResource NavigationViewItemLeftTemplate}" />
         <!--
-            NavigationView's item customization properties are inheritable attached properties.
-            Project them onto this HeaderedItemsControl's native generator properties so data items
-            at every depth receive the same templates and container styles as root data. Local
-            values on an item still take precedence over these style setters.
+            Generated containers receive HeaderTemplate, child ItemTemplate, and hierarchical
+            ItemsSource through WPF's HeaderedItemsControl preparation pipeline. Keeping those
+            properties unset here is essential: a style value would mask values supplied by a
+            HierarchicalDataTemplate and make child generation depend on property inheritance.
         -->
-        <Setter Property="ItemContainerStyle" Value="{Binding RelativeSource={RelativeSource Self}, Path=(controls:NavigationView.ItemContainerStyle)}" />
-        <Setter Property="ItemContainerStyleSelector" Value="{Binding RelativeSource={RelativeSource Self}, Path=(controls:NavigationView.ItemContainerStyleSelector)}" />
-        <Setter Property="ItemTemplate" Value="{Binding RelativeSource={RelativeSource Self}, Path=(controls:NavigationView.ItemTemplate)}" />
-        <Setter Property="ItemTemplateSelector" Value="{Binding RelativeSource={RelativeSource Self}, Path=(controls:NavigationView.ItemTemplateSelector)}" />
-        <Setter Property="HeaderTemplate" Value="{Binding RelativeSource={RelativeSource Self}, Path=(controls:NavigationView.ItemTemplate)}" />
-        <Setter Property="HeaderTemplateSelector" Value="{Binding RelativeSource={RelativeSource Self}, Path=(controls:NavigationView.ItemTemplateSelector)}" />
         <Style.Triggers>
             <Trigger Property="PaneDisplayMode" Value="LeftMinimal">
                 <Setter Property="Template" Value="{StaticResource NavigationViewItemLeftCompactTemplate}" />

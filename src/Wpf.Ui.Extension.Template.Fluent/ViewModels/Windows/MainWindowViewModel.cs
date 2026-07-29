@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Windows.Controls;
 using Wpf.Ui.Controls;
 
 namespace $safeprojectname$.ViewModels.Windows
@@ -11,16 +12,16 @@ namespace $safeprojectname$.ViewModels.Windows
         [ObservableProperty]
         private ObservableCollection<object> _menuItems = new()
         {
-            new NavigationViewItem()
+            new NavigationItem()
             {
-                Header = "Home",
-                Icon = new SymbolIcon { Symbol = SymbolRegular.Home24 },
+                Content = "Home",
+                IconSource = new SymbolIconSource { Symbol = SymbolRegular.Home24 },
                 TargetPageType = typeof(Views.Pages.DashboardPage)
             },
-            new NavigationViewItem()
+            new NavigationItem()
             {
-                Header = "Data",
-                Icon = new SymbolIcon { Symbol = SymbolRegular.DataHistogram24 },
+                Content = "Data",
+                IconSource = new SymbolIconSource { Symbol = SymbolRegular.DataHistogram24 },
                 TargetPageType = typeof(Views.Pages.DataPage)
             }
         };
@@ -28,10 +29,10 @@ namespace $safeprojectname$.ViewModels.Windows
         [ObservableProperty]
         private ObservableCollection<object> _footerMenuItems = new()
         {
-            new NavigationViewItem()
+            new NavigationItem()
             {
-                Header = "Settings",
-                Icon = new SymbolIcon { Symbol = SymbolRegular.Settings24 },
+                Content = "Settings",
+                IconSource = new SymbolIconSource { Symbol = SymbolRegular.Settings24 },
                 TargetPageType = typeof(Views.Pages.SettingsPage)
             }
         };

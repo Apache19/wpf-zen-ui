@@ -131,8 +131,7 @@ public partial class NavigationView
         FooterMenuItemsList = RequireTemplateChild<NavigationViewList>(PartFooterMenuItemsList);
         PaneButtonsPresenter = GetTemplateChild(PartPaneButtonsPresenter) as ContentPresenter;
 
-        MenuItemsList.SetCurrentValue(ItemsControl.ItemsSourceProperty, MenuItems);
-        FooterMenuItemsList.SetCurrentValue(ItemsControl.ItemsSourceProperty, FooterMenuItems);
+        UpdateMenuItemsHosts();
 
         NavigationFrameHost.SetCurrentValue(ContentPresenter.ContentProperty, _navigationFrame);
 

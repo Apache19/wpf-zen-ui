@@ -42,7 +42,7 @@ namespace Wpf.Ui.Controls;
 [TemplatePart(Name = "PART_SubMenuContextMenu", Type = typeof(ContextMenu))]
 [TemplatePart(Name = HeaderButtonPartName, Type = typeof(ButtonBase))]
 [StyleTypedProperty(Property = nameof(ItemContainerStyle), StyleTargetType = typeof(NavigationViewItem))]
-public partial class NavigationViewItem : HeaderedItemsControl, INavigationViewItem
+public partial class NavigationViewItem : HeaderedItemsControl
 {
     private const string HeaderButtonPartName = "PART_HeaderButton";
 
@@ -360,7 +360,7 @@ public partial class NavigationViewItem : HeaderedItemsControl, INavigationViewI
             new PropertyMetadata(null, OnIconChanged, IconElement.Coerce)
         );
 
-    /// <inheritdoc />
+    /// <summary>Gets or sets the icon displayed by this visual container.</summary>
     [Bindable(true)]
     [Category("Appearance")]
     public IconElement? Icon
@@ -382,7 +382,7 @@ public partial class NavigationViewItem : HeaderedItemsControl, INavigationViewI
             new PropertyMetadata(string.Empty, OnNavigationLookupPropertyChanged)
         );
 
-    /// <inheritdoc />
+    /// <summary>Gets or sets the navigation tag used by directly supplied container items.</summary>
     public string TargetPageTag
     {
         get => (string)GetValue(TargetPageTagProperty);
@@ -402,7 +402,7 @@ public partial class NavigationViewItem : HeaderedItemsControl, INavigationViewI
             new PropertyMetadata(null, OnNavigationLookupPropertyChanged)
         );
 
-    /// <inheritdoc />
+    /// <summary>Gets or sets the page type used by directly supplied container items.</summary>
     public Type? TargetPageType
     {
         get => (Type?)GetValue(TargetPageTypeProperty);
@@ -477,7 +477,7 @@ public partial class NavigationViewItem : HeaderedItemsControl, INavigationViewI
             )
         );
 
-    /// <inheritdoc/>
+    /// <summary>Gets or sets the page caching policy used by this direct container item.</summary>
     public NavigationCacheMode NavigationCacheMode
     {
         get => (NavigationCacheMode)GetValue(NavigationCacheModeProperty);
@@ -486,13 +486,33 @@ public partial class NavigationViewItem : HeaderedItemsControl, INavigationViewI
 
     #endregion
 
-    /// <inheritdoc />
-    public INavigationViewItem? NavigationViewItemParent => _parentItem;
+    /// <summary>Gets the realized parent container in the semantic navigation hierarchy.</summary>
+    public NavigationViewItem? NavigationViewItemParent => _parentItem;
 
-    /// <inheritdoc />
-    bool INavigationViewItem.IsMenuElement { get; set; }
+    /// <summary>
+    /// Gets or sets the presentation-independent entry represented by this realized container.
+    /// </summary>
+    /// <remarks>
+    /// Generated containers receive this association from their owner and release it when cleared.
+    /// Keeping it internal prevents application code from treating container lifetime as data
+    /// lifetime.
+    /// </remarks>
+    internal NavigationEntry? NavigationEntry { get; set; }
 
-    /// <inheritdoc />
+    /// <summary>
+    /// Gets or sets a value indicating whether the owner projected
+    /// <see cref="INavigationItem.Children"/> into this
+    /// container rather than receiving an explicit ItemsSource value from application styling.
+    /// </summary>
+    internal bool UsesNavigationDataChildren { get; set; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether the owner created the current icon from
+    /// <see cref="INavigationItem.IconSource"/>.
+    /// </summary>
+    internal bool UsesNavigationDataIcon { get; set; }
+
+    /// <summary>Gets the stable identifier used when this container is supplied directly.</summary>
     public string Id { get; }
 
     internal string SearchableContent { get; private set; } = string.Empty;
@@ -857,11 +877,12 @@ public partial class NavigationViewItem : HeaderedItemsControl, INavigationViewI
 
         if (element is NavigationViewItem child)
         {
+            NavigationViewList.PrepareDataContainer(child, item);
             child.AttachToParent(this);
 
             if (!ReferenceEquals(element, item))
             {
-                NavigationViewHost?.RegisterGeneratedNavigationItem(child);
+                NavigationViewHost?.RegisterGeneratedNavigationItem(child, item);
             }
         }
     }
@@ -872,6 +893,8 @@ public partial class NavigationViewItem : HeaderedItemsControl, INavigationViewI
         if (element is NavigationViewItem child && !ReferenceEquals(element, item))
         {
             NavigationViewHost?.UnregisterGeneratedNavigationItem(child);
+
+            NavigationViewList.ClearDataContainer(child);
 
             if (ReferenceEquals(child._parentItem, this))
             {
@@ -977,7 +1000,11 @@ public partial class NavigationViewItem : HeaderedItemsControl, INavigationViewI
         bool shouldOpenChildMenu = hasItems && !IsChildMenuOpen;
         bool actionPerformed = false;
 
-        if (TargetPageType is not null && NavigationViewHost is { } navigationView)
+        if (
+            NavigationViewHost is { } navigationView
+            && navigationView.TryGetNavigationEntry(this, out NavigationEntry? entry)
+            && entry?.TargetPageType is not null
+        )
         {
             actionPerformed = navigationView.OnNavigationViewItemClick(this);
         }
@@ -1102,7 +1129,7 @@ public partial class NavigationViewItem : HeaderedItemsControl, INavigationViewI
 
     private bool HasOpenSubmenuAncestor()
     {
-        for (INavigationViewItem? parent = NavigationViewItemParent; parent is not null; parent = parent.NavigationViewItemParent)
+        for (NavigationViewItem? parent = NavigationViewItemParent; parent is not null; parent = parent.NavigationViewItemParent)
         {
             if (parent is NavigationViewItem { IsSubmenuOpen: true })
             {
@@ -1249,11 +1276,17 @@ public partial class NavigationViewItem : HeaderedItemsControl, INavigationViewI
             return;
         }
 
-        navigationViewItem.NavigationViewHost?.NotifyNavigationCacheModeChanged(
-            navigationViewItem,
-            (NavigationCacheMode)e.OldValue,
-            (NavigationCacheMode)e.NewValue
-        );
+        if (
+            navigationViewItem.NavigationViewHost is { } navigationView
+            && navigationViewItem.NavigationEntry is { } entry
+        )
+        {
+            navigationView.NotifyNavigationCacheModeChanged(
+                entry,
+                (NavigationCacheMode)e.OldValue,
+                (NavigationCacheMode)e.NewValue
+            );
+        }
     }
 
     private static void OnIconChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
