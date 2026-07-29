@@ -95,27 +95,37 @@ public class FontIconSource : IconSource
     {
         var fontIcon = new FontIcon() { Glyph = Glyph };
 
-        if (!Equals(FontFamily, SystemFonts.MessageFontFamily))
+        if (DependencyPropertyHelper
+               .GetValueSource(this, FontFamilyProperty)
+               .BaseValueSource != BaseValueSource.Default)
         {
             fontIcon.FontFamily = FontFamily;
         }
 
-        if (!FontSize.Equals(SystemFonts.MessageFontSize))
+        if (DependencyPropertyHelper
+               .GetValueSource(this, FontSizeProperty)
+               .BaseValueSource != BaseValueSource.Default)
         {
             fontIcon.FontSize = FontSize;
         }
 
-        if (FontWeight != FontWeights.Normal)
+        if (DependencyPropertyHelper
+               .GetValueSource(this, FontWeightProperty)
+               .BaseValueSource != BaseValueSource.Default)
         {
             fontIcon.FontWeight = FontWeight;
         }
 
-        if (FontStyle != FontStyles.Normal)
+        if (DependencyPropertyHelper
+               .GetValueSource(this, FontStyleProperty)
+               .BaseValueSource != BaseValueSource.Default)
         {
             fontIcon.FontStyle = FontStyle;
         }
 
-        if (Foreground != SystemColors.ControlTextBrush)
+        if (DependencyPropertyHelper
+               .GetValueSource(this, ForegroundProperty)
+               .BaseValueSource != BaseValueSource.Default)
         {
             fontIcon.Foreground = Foreground;
         }

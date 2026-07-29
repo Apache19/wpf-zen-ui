@@ -94,24 +94,32 @@ public class SymbolIconSource : IconSource
 
     public override IconElement CreateIconElement()
     {
-        SymbolIcon symbolIcon = new(Symbol, FontSize, Filled);
+        SymbolIcon symbolIcon = new(Symbol, Filled);
 
-        if (!FontSize.Equals(SystemFonts.MessageFontSize))
+        if (DependencyPropertyHelper
+               .GetValueSource(this, FontSizeProperty)
+               .BaseValueSource != BaseValueSource.Default)
         {
             symbolIcon.FontSize = FontSize;
         }
 
-        if (FontWeight != FontWeights.Normal)
+        if (DependencyPropertyHelper
+               .GetValueSource(this, FontWeightProperty)
+               .BaseValueSource != BaseValueSource.Default)
         {
             symbolIcon.FontWeight = FontWeight;
         }
 
-        if (FontStyle != FontStyles.Normal)
+        if (DependencyPropertyHelper
+               .GetValueSource(this, FontStyleProperty)
+               .BaseValueSource != BaseValueSource.Default)
         {
             symbolIcon.FontStyle = FontStyle;
         }
 
-        if (Foreground != SystemColors.ControlTextBrush)
+        if (DependencyPropertyHelper
+               .GetValueSource(this, ForegroundProperty)
+               .BaseValueSource != BaseValueSource.Default)
         {
             symbolIcon.Foreground = Foreground;
         }
