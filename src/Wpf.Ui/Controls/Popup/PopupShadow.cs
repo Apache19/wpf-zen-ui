@@ -969,8 +969,8 @@ public static class PopupShadow
             }
 
             StopOpenAnimation();
-            // Start hidden every time. Bounds may already be correct from a previous open, but opacity and content
-            // clipping are transient animation state and must be re-established for this open cycle.
+            // Start hidden every time. Each opening strategy decides when the shadow becomes visible, while content
+            // clipping is transient animation state and must be re-established for this open cycle.
             _shadowRoot.Opacity = 0D;
             UpdateShadowContentBounds(default);
 
@@ -1114,9 +1114,12 @@ public static class PopupShadow
             // Native PopupAnimation.Slide/Scroll animates inside WPF's popup root. There is no public clock to bind to,
             // so the shadow samples the rendered transform each frame and shrinks its visible chrome to the currently
             // revealed portion of the popup content.
+            UpdateShadowContentBounds(GetPopupRootAnimationOffset());
             SubscribeRendering();
 
-            BeginRootFadeIn(duration);
+            // The animated clip already reveals only the shadow belonging to visible popup content. A concurrent
+            // opacity clock adds composition work without providing another useful visual transition.
+            _shadowRoot.Opacity = 1D;
         }
 
         private bool TryBeginParallelDynamicContentBoundsAnimation(DependencyObject owner, Duration duration)
@@ -1139,7 +1142,9 @@ public static class PopupShadow
             UpdateShadowContentBounds(new Vector(0D, startOffset));
             SubscribeRendering();
 
-            BeginRootFadeIn(duration);
+            // The bounds animation itself is the reveal. Keep the root fully opaque instead of running a second,
+            // parallel opacity animation on the per-pixel-alpha companion window.
+            _shadowRoot.Opacity = 1D;
 
             return true;
         }
