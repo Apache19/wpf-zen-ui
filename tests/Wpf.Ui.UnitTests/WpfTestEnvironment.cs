@@ -14,23 +14,28 @@ internal static class WpfTestEnvironment
     {
         // WPF's font cache constructs the Windows Fonts URI directly from the process-level
         // windir variable. Some isolated test hosts omit it even though SystemRoot is present.
-        if (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("windir")))
+        if (string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("windir")))
         {
-            return;
+            var windowsDirectory = Environment.GetEnvironmentVariable("SystemRoot");
+            if (string.IsNullOrWhiteSpace(windowsDirectory))
+            {
+                windowsDirectory = Environment.GetEnvironmentVariable(
+                    "windir",
+                    EnvironmentVariableTarget.Machine
+                );
+            }
+
+            if (!string.IsNullOrWhiteSpace(windowsDirectory))
+            {
+                Environment.SetEnvironmentVariable("windir", windowsDirectory);
+            }
         }
 
-        var windowsDirectory = Environment.GetEnvironmentVariable("SystemRoot");
-        if (string.IsNullOrWhiteSpace(windowsDirectory))
-        {
-            windowsDirectory = Environment.GetEnvironmentVariable(
-                "windir",
-                EnvironmentVariableTarget.Machine
-            );
-        }
-
-        if (!string.IsNullOrWhiteSpace(windowsDirectory))
-        {
-            Environment.SetEnvironmentVariable("windir", windowsDirectory);
-        }
+        // Application.ApplicationInit installs WPF's application resource package in
+        // PreloadedPackages. ResourceDictionary.Source depends on that process-wide registration,
+        // but unit tests do not construct a normal Application instance. Perform the framework's
+        // static initialization before xUnit starts parallel test classes so resource loading does
+        // not depend on whichever test happens to touch Application first.
+        RuntimeHelpers.RunClassConstructor(typeof(System.Windows.Application).TypeHandle);
     }
 }

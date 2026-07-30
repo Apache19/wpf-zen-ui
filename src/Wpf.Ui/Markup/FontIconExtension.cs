@@ -9,7 +9,7 @@ using Wpf.Ui.Controls;
 namespace Wpf.Ui.Markup;
 
 /// <summary>
-/// Custom <see cref="MarkupExtension"/> which can provide <see cref="FontIcon"/>.
+/// Creates a native <see cref="TextBlock"/> containing a glyph from the requested font.
 /// </summary>
 /// <example>
 /// <code lang="xml">
@@ -29,7 +29,7 @@ namespace Wpf.Ui.Markup;
 /// </code>
 /// </example>
 [ContentProperty(nameof(Glyph))]
-[MarkupExtensionReturnType(typeof(FontIcon))]
+[MarkupExtensionReturnType(typeof(TextBlock))]
 public class FontIconExtension : MarkupExtension
 {
     public FontIconExtension() { }
@@ -49,13 +49,20 @@ public class FontIconExtension : MarkupExtension
 
     public override object ProvideValue(IServiceProvider serviceProvider)
     {
-        FontIcon fontIcon = new() { Glyph = Glyph!, FontFamily = FontFamily };
+        TextBlock textBlock = new()
+        {
+            Text = Glyph,
+            FontFamily = FontFamily,
+            TextAlignment = TextAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+            Focusable = false,
+        };
 
         if (FontSize > 0)
         {
-            fontIcon.FontSize = FontSize;
+            textBlock.FontSize = FontSize;
         }
 
-        return fontIcon;
+        return textBlock;
     }
 }

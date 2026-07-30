@@ -11,7 +11,7 @@ namespace Wpf.Ui.Controls;
 public interface IIconControl
 {
     /// <summary>
-    /// Gets or sets displayed <see cref="IconElement"/>.
+    /// Gets or sets the content displayed in the control's icon slot.
     /// </summary>
-    IconElement? Icon { get; set; }
+    object? Icon { get; set; }
 }

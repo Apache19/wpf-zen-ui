@@ -72,9 +72,7 @@
                     AutomationProperties.AutomationId="NavigationAutoSuggestBox"
                     PlaceholderText="{i18n:StringLocalizer 'Search'}">
                     <ui:AutoSuggestBox.Icon>
-                        <ui:IconSourceElement>
-                            <ui:SymbolIconSource Symbol="Search24" />
-                        </ui:IconSourceElement>
+                        <ui:SymbolIcon Symbol="Search24" />
                     </ui:AutoSuggestBox.Icon>
                 </ui:AutoSuggestBox>
             </ui:NavigationView.AutoSuggestBox>
@@ -91,7 +89,7 @@
             Grid.Row="0"
             IsIconInteractionEnabled="True">
             <ui:TitleBar.Icon>
-                <ui:ImageIcon Source="pack://application:,,,/Assets/wpfui.png" />
+                <Image Source="pack://application:,,,/Assets/wpfui.png" Stretch="UniformToFill" />
             </ui:TitleBar.Icon>
             <Grid Margin="12,0">
                 <Grid.ColumnDefinitions>

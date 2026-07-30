@@ -36,7 +36,7 @@ public class SnackbarService : ISnackbarService
         string title,
         string message,
         ControlAppearance appearance,
-        IconElement? icon,
+        object? icon,
         TimeSpan timeout
     )
     {

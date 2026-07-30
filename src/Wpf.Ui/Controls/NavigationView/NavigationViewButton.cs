@@ -36,8 +36,8 @@ public class NavigationViewButton : ButtonBase
     /// Gets or sets the content presented in the button's icon slot.
     /// </summary>
     /// <remarks>
-    /// The value is intentionally not restricted to <see cref="IconElement"/>. Applications may
-    /// supply a visual element, a view-model resolved by an implicit data template, text, or any
+    /// The value is intentionally ordinary WPF content. Applications may supply a visual element,
+    /// a view-model resolved by an implicit data template, text, or any
     /// other content understood by their control template. When the value is <see langword="null"/>,
     /// the default template selects its built-in glyph from <see cref="Role"/>.
     /// </remarks>

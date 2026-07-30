@@ -268,18 +268,18 @@ public class NavigationViewItemTests
             );
 
             Assert.Equal("Symbol group", symbolGroup.Header);
-            Assert.Equal(SymbolRegular.Folder24, Assert.IsType<SymbolIcon>(symbolGroup.Icon).Symbol);
+            Assert.Equal(SymbolRegular.Folder24, Assert.IsType<SymbolRegular>(symbolGroup.Icon));
             Assert.Null(symbolGroup.TargetPageType);
             Assert.Same(children, symbolGroup.ItemsSource);
 
             var iconOnly = new NavigationViewItem(SymbolRegular.Heart24, typeof(Border));
 
             Assert.Null(iconOnly.Header);
-            Assert.Equal(SymbolRegular.Heart24, Assert.IsType<SymbolIcon>(iconOnly.Icon).Symbol);
+            Assert.Equal(SymbolRegular.Heart24, Assert.IsType<SymbolRegular>(iconOnly.Icon));
             Assert.Equal(typeof(Border), iconOnly.TargetPageType);
 
             var header = new System.Windows.Controls.TextBlock { Text = "Custom header" };
-            var icon = new FontIcon { Glyph = "A" };
+            var icon = new System.Windows.Controls.TextBlock { Text = "A" };
             var infoBadge = new InfoBadge();
             var complete = new NavigationViewItem(
                 header: header,
@@ -800,19 +800,19 @@ public class NavigationViewItemTests
     }
 
     [Fact]
-    public void NavigationItemDefaultProjection_TracksMutableChildrenAndIconSource()
+    public void NavigationItemDefaultProjection_TracksMutableChildrenAndIconData()
     {
         RunOnStaThread(() =>
         {
             var resources = new ResourceDictionary { Source = CreateResourceUri() };
             var initialChildren = new ObservableCollection<object> { new NavigationItem("Initial") };
             var replacementChildren = new ObservableCollection<object> { new NavigationItem("Replacement") };
-            var initialIcon = new SymbolIconSource { Symbol = SymbolRegular.Home24 };
-            var replacementIcon = new SymbolIconSource { Symbol = SymbolRegular.Settings24 };
+            object initialIcon = SymbolRegular.Home24;
+            object replacementIcon = SymbolRegular.Settings24;
             var item = new NavigationItem("Root")
             {
                 Children = initialChildren,
-                IconSource = initialIcon,
+                Icon = initialIcon,
             };
             var navigationView = new Wpf.Ui.Controls.NavigationView
             {
@@ -844,16 +844,16 @@ public class NavigationViewItemTests
                 );
 
                 Assert.Same(initialChildren, container.ItemsSource);
-                Assert.Equal(SymbolRegular.Home24, Assert.IsType<SymbolIcon>(container.Icon).Symbol);
+                Assert.Same(initialIcon, container.Icon);
 
                 item.Children = replacementChildren;
-                item.IconSource = replacementIcon;
+                item.Icon = replacementIcon;
 
                 Assert.Same(replacementChildren, container.ItemsSource);
-                Assert.Equal(SymbolRegular.Settings24, Assert.IsType<SymbolIcon>(container.Icon).Symbol);
+                Assert.Same(replacementIcon, container.Icon);
 
                 item.Children = null;
-                item.IconSource = null;
+                item.Icon = null;
 
                 Assert.Null(container.ItemsSource);
                 Assert.Null(container.Icon);
@@ -1895,7 +1895,7 @@ public class NavigationViewItemTests
             var child = new NavigationViewItem
             {
                 Header = "Child",
-                Icon = new SymbolIcon(SymbolRegular.Home24),
+                Icon = SymbolRegular.Home24,
             };
             var grandchild = new NavigationViewItem { Header = "Grandchild" };
             child.Items.Add(grandchild);
@@ -1945,9 +1945,7 @@ public class NavigationViewItemTests
                         MenuItem.IsSubmenuOpenProperty
                     )
                 );
-                var projectedIcon = Assert.IsType<SymbolIcon>(childMenuItem.Icon);
-                Assert.NotSame(child.Icon, projectedIcon);
-                Assert.Equal(((SymbolIcon)child.Icon).Symbol, projectedIcon.Symbol);
+                Assert.Equal(SymbolRegular.Home24, Assert.IsType<SymbolRegular>(childMenuItem.Icon));
 
                 var grandchildMenuItem = Assert.IsType<MenuItem>(Assert.Single(childMenuItem.Items));
                 Assert.Same(grandchild, grandchildMenuItem.DataContext);

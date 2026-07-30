@@ -1037,7 +1037,7 @@ public partial class NavigationView : Control, INavigationView
             && changedEntry.Container is { } container
             && (allPropertiesChanged
                 || e.PropertyName == nameof(INavigationItem.Children)
-                || e.PropertyName == nameof(INavigationItem.IconSource))
+                || e.PropertyName == nameof(INavigationItem.Icon))
         )
         {
             NavigationViewList.SynchronizeDataContainer(container, sourceItem);

@@ -24,9 +24,9 @@ public class ToggleButton : System.Windows.Controls.Primitives.ToggleButton, IIc
     public static readonly DependencyProperty IconProperty =
         DependencyProperty.Register(
             nameof(Icon),
-            typeof(IconElement),
+            typeof(object),
             typeof(ToggleButton),
-            new PropertyMetadata(null, null, IconElement.Coerce)
+            new PropertyMetadata(null)
         );
 
     /// <summary>
@@ -35,9 +35,9 @@ public class ToggleButton : System.Windows.Controls.Primitives.ToggleButton, IIc
     /// </summary>
     [Bindable(true)]
     [Category("Appearance")]
-    public IconElement? Icon
+    public object? Icon
     {
-        get => (IconElement?)GetValue(IconProperty);
+        get => GetValue(IconProperty);
         set => SetValue(IconProperty, value);
     }
 

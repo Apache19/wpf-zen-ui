@@ -1576,7 +1576,7 @@ public class NavigationViewTests
 
         public object? Content { get; set; } = content;
 
-        public IconSource? IconSource { get; set; }
+        public object? Icon { get; set; }
 
         public string? TargetPageTag { get; set; }
 

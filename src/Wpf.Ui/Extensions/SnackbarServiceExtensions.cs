@@ -57,7 +57,7 @@ public static class SnackbarServiceExtensions
         this ISnackbarService snackbarService,
         string title,
         string message,
-        IconElement icon
+        object icon
     )
     {
         snackbarService.Show(
@@ -117,7 +117,7 @@ public static class SnackbarServiceExtensions
         this ISnackbarService snackbarService,
         string title,
         string message,
-        IconElement icon,
+        object icon,
         TimeSpan timeout
     )
     {

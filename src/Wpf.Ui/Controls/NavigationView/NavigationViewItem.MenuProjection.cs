@@ -9,7 +9,6 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Threading;
-using Wpf.Ui.Converters;
 
 // ReSharper disable once CheckNamespace
 namespace Wpf.Ui.Controls;
@@ -732,22 +731,19 @@ public partial class NavigationViewItem
     }
 
     /// <summary>
-    /// Uses the library's icon clone converter and rejects an unsupported converter fallback that
-    /// returns the original FrameworkElement. A missing custom icon is preferable to reparenting it
-    /// out of the source NavigationViewItem; custom menu styles can supply another representation.
+    /// Passes reusable icon data to the projected MenuItem while refusing to reparent a visual
+    /// element already owned by the source container. The submenu dictionary supplies an implicit
+    /// SymbolRegular template; applications can supply equivalent templates for their own data.
     /// </summary>
     private sealed class ProjectedIconConverter : IValueConverter
     {
-        private readonly IconElementCloneConverter _cloneConverter = new();
-
         public object? Convert(
             object? value,
             Type targetType,
             object? parameter,
             CultureInfo culture)
         {
-            object? clone = _cloneConverter.Convert(value, targetType, parameter, culture);
-            return ReferenceEquals(value, clone) && value is FrameworkElement ? null : clone;
+            return value is FrameworkElement ? null : value;
         }
 
         public object ConvertBack(

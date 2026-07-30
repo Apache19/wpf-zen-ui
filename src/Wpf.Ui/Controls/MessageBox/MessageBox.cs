@@ -53,7 +53,7 @@ public class MessageBox : FluentWindow
     /// <summary>Identifies the <see cref="PrimaryButtonIcon"/> dependency property.</summary>
     public static readonly DependencyProperty PrimaryButtonIconProperty = DependencyProperty.Register(
         nameof(PrimaryButtonIcon),
-        typeof(IconElement),
+        typeof(object),
         typeof(MessageBox),
         new PropertyMetadata(null)
     );
@@ -61,7 +61,7 @@ public class MessageBox : FluentWindow
     /// <summary>Identifies the <see cref="SecondaryButtonIcon"/> dependency property.</summary>
     public static readonly DependencyProperty SecondaryButtonIconProperty = DependencyProperty.Register(
         nameof(SecondaryButtonIcon),
-        typeof(IconElement),
+        typeof(object),
         typeof(MessageBox),
         new PropertyMetadata(null)
     );
@@ -69,7 +69,7 @@ public class MessageBox : FluentWindow
     /// <summary>Identifies the <see cref="CloseButtonIcon"/> dependency property.</summary>
     public static readonly DependencyProperty CloseButtonIconProperty = DependencyProperty.Register(
         nameof(CloseButtonIcon),
-        typeof(IconElement),
+        typeof(object),
         typeof(MessageBox),
         new PropertyMetadata(null)
     );
@@ -175,29 +175,29 @@ public class MessageBox : FluentWindow
     }
 
     /// <summary>
-    /// Gets or sets the <see cref="SymbolRegular"/> on the primary button
+    /// Gets or sets the content displayed in the primary button's icon slot.
     /// </summary>
-    public IconElement? PrimaryButtonIcon
+    public object? PrimaryButtonIcon
     {
-        get => (IconElement?)GetValue(PrimaryButtonIconProperty);
+        get => GetValue(PrimaryButtonIconProperty);
         set => SetValue(PrimaryButtonIconProperty, value);
     }
 
     /// <summary>
-    /// Gets or sets the <see cref="SymbolRegular"/> on the secondary button
+    /// Gets or sets the content displayed in the secondary button's icon slot.
     /// </summary>
-    public IconElement? SecondaryButtonIcon
+    public object? SecondaryButtonIcon
     {
-        get => (IconElement?)GetValue(SecondaryButtonIconProperty);
+        get => GetValue(SecondaryButtonIconProperty);
         set => SetValue(SecondaryButtonIconProperty, value);
     }
 
     /// <summary>
-    /// Gets or sets the <see cref="SymbolRegular"/> on the close button
+    /// Gets or sets the content displayed in the close button's icon slot.
     /// </summary>
-    public IconElement? CloseButtonIcon
+    public object? CloseButtonIcon
     {
-        get => (IconElement?)GetValue(CloseButtonIconProperty);
+        get => GetValue(CloseButtonIconProperty);
         set => SetValue(CloseButtonIconProperty, value);
     }
 

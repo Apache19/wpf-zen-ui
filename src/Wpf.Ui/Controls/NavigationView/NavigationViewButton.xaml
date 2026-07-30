@@ -47,11 +47,9 @@
                                 object. An explicit or derived-style Icon value can therefore replace
                                 the default and can use implicit data templates.
 
-                                The SymbolRegular template deliberately lives on this presenter rather
-                                than in the containing theme dictionary. Its implicit lookup is therefore
-                                confined to this icon slot and cannot change how an application presents
-                                SymbolRegular values elsewhere. Keeping the template implicit locally also
-                                lets UIElement values use ContentPresenter's native direct-visual path.
+                                SymbolRegular values are resolved by the implicit template in Generic.xaml.
+                                UIElement values continue to use ContentPresenter's native direct-visual path,
+                                while applications can override the symbol view with a nearer data template.
                             -->
                             <Grid
                                 x:Name="IconRoot"
@@ -72,18 +70,7 @@
                                     VerticalAlignment="Center"
                                     Content="{TemplateBinding Icon}"
                                     Focusable="False"
-                                    SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}">
-                                    <ContentPresenter.Resources>
-                                        <!--
-                                            Role defaults are value objects because a Style setter is shared
-                                            by all controls, whereas a UIElement can have only one visual parent.
-                                            The template creates an independent SymbolIcon for each presenter.
-                                        -->
-                                        <DataTemplate DataType="{x:Type controls:SymbolRegular}">
-                                            <controls:SymbolIcon Symbol="{Binding}" />
-                                        </DataTemplate>
-                                    </ContentPresenter.Resources>
-                                </ContentPresenter>
+                                    SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
                             </Grid>
 
                             <ContentPresenter

@@ -28,7 +28,7 @@ public class NavigationViewItemHeader : System.Windows.Controls.Control
     /// <summary>Identifies the <see cref="Icon"/> dependency property.</summary>
     public static readonly DependencyProperty IconProperty = DependencyProperty.Register(
         nameof(Icon),
-        typeof(IconElement),
+        typeof(object),
         typeof(NavigationViewItemHeader),
         new PropertyMetadata(null)
     );
@@ -56,9 +56,9 @@ public class NavigationViewItemHeader : System.Windows.Controls.Control
     /// </summary>
     [Bindable(true)]
     [Category("Appearance")]
-    public IconElement? Icon
+    public object? Icon
     {
-        get => (IconElement?)GetValue(IconProperty);
+        get => GetValue(IconProperty);
         set => SetValue(IconProperty, value);
     }
 }

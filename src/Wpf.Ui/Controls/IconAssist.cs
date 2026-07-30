@@ -11,11 +11,14 @@ namespace Wpf.Ui.Controls;
 /// </summary>
 public static class IconAssist
 {
+    /// <summary>
+    /// Identifies the attached property that stores arbitrary WPF content for an icon slot.
+    /// </summary>
     public static readonly DependencyProperty IconProperty = DependencyProperty.RegisterAttached(
         "Icon",
-        typeof(IconElement),
+        typeof(object),
         typeof(IconAssist),
-        new FrameworkPropertyMetadata(null, null, IconElement.Coerce)
+        new FrameworkPropertyMetadata(null)
     );
 
     /// <summary>
@@ -26,9 +29,9 @@ public static class IconAssist
     /// </param>
     /// <returns>Icon property value.</returns>
     [AttachedPropertyBrowsableForType(typeof(FrameworkElement))]
-    public static IconElement? GetIcon(DependencyObject element)
+    public static object? GetIcon(DependencyObject element)
     {
-        return (IconElement?)element.GetValue(IconProperty);
+        return element.GetValue(IconProperty);
     }
 
     /// <summary>
@@ -38,7 +41,7 @@ public static class IconAssist
     /// <see cref="DependencyObject"/> to set <see cref="IconProperty"/> on.
     /// </param>
     /// <param name="value">Icon property value.</param>
-    public static void SetIcon(DependencyObject element, IconElement? value)
+    public static void SetIcon(DependencyObject element, object? value)
     {
         element.SetValue(IconProperty, value);
     }

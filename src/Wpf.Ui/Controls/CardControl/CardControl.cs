@@ -24,7 +24,7 @@ public class CardControl : System.Windows.Controls.Primitives.ButtonBase, IIconC
     /// <summary>Identifies the <see cref="Icon"/> dependency property.</summary>
     public static readonly DependencyProperty IconProperty = DependencyProperty.Register(
         nameof(Icon),
-        typeof(IconElement),
+        typeof(object),
         typeof(CardControl),
         new PropertyMetadata(null)
     );
@@ -56,13 +56,13 @@ public class CardControl : System.Windows.Controls.Primitives.ButtonBase, IIconC
     }
 
     /// <summary>
-    /// Gets or sets displayed <see cref="IconElement"/>.
+    /// Gets or sets the content displayed in the icon slot.
     /// </summary>
     [Bindable(true)]
     [Category("Appearance")]
-    public IconElement? Icon
+    public object? Icon
     {
-        get => (IconElement?)GetValue(IconProperty);
+        get => GetValue(IconProperty);
         set => SetValue(IconProperty, value);
     }
 

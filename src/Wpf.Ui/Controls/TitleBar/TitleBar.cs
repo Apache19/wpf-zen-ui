@@ -206,7 +206,7 @@ public class TitleBar : ContentControl
     /// </summary>
     public static readonly DependencyProperty IconProperty = DependencyProperty.Register(
         nameof(Icon),
-        typeof(IconElement),
+        typeof(object),
         typeof(TitleBar),
         new PropertyMetadata(null)
     );
@@ -225,9 +225,9 @@ public class TitleBar : ContentControl
     /// If set to <see langword="null"/>, no icon is displayed and no icon-related
     /// interactions are available.
     /// </remarks>
-    public IconElement? Icon
+    public object? Icon
     {
-        get => (IconElement?)GetValue(IconProperty);
+        get => GetValue(IconProperty);
         set => SetValue(IconProperty, value);
     }
 

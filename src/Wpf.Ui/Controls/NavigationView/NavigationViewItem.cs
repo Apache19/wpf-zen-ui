@@ -355,17 +355,17 @@ public partial class NavigationViewItem : HeaderedItemsControl
     public static readonly DependencyProperty IconProperty =
         DependencyProperty.Register(
             nameof(Icon),
-            typeof(IconElement),
+            typeof(object),
             typeof(NavigationViewItem),
-            new PropertyMetadata(null, OnIconChanged, IconElement.Coerce)
+            new PropertyMetadata(null, OnIconChanged)
         );
 
     /// <summary>Gets or sets the icon displayed by this visual container.</summary>
     [Bindable(true)]
     [Category("Appearance")]
-    public IconElement? Icon
+    public object? Icon
     {
-        get => (IconElement?)GetValue(IconProperty);
+        get => GetValue(IconProperty);
         set => SetValue(IconProperty, value);
     }
 
@@ -507,8 +507,8 @@ public partial class NavigationViewItem : HeaderedItemsControl
     internal bool UsesNavigationDataChildren { get; set; }
 
     /// <summary>
-    /// Gets or sets a value indicating whether the owner created the current icon from
-    /// <see cref="INavigationItem.IconSource"/>.
+    /// Gets or sets a value indicating whether the owner projected the current icon from
+    /// <see cref="INavigationItem.Icon"/>.
     /// </summary>
     internal bool UsesNavigationDataIcon { get; set; }
 
@@ -622,7 +622,7 @@ public partial class NavigationViewItem : HeaderedItemsControl
     /// </remarks>
     public NavigationViewItem(
         object? header,
-        IconElement? icon = null,
+        object? icon = null,
         Type? targetPageType = null,
         IEnumerable? itemsSource = null,
         string? targetPageTag = null,
@@ -687,7 +687,7 @@ public partial class NavigationViewItem : HeaderedItemsControl
         NavigationCacheMode navigationCacheMode = NavigationCacheMode.Disabled)
         : this(
             header,
-            new SymbolIcon(icon),
+            (object)icon,
             targetPageType,
             itemsSource,
             targetPageTag,
@@ -704,8 +704,8 @@ public partial class NavigationViewItem : HeaderedItemsControl
     /// <param name="targetPageType">The optional page type activated by the item.</param>
     /// <param name="itemsSource">The optional source used to generate child items.</param>
     public NavigationViewItem(
-        IconElement  icon,
-        Type?        targetPageType = null,
+        object       icon,
+        Type?        targetPageType,
         IEnumerable? itemsSource = null)
         : this(null, icon, targetPageType, itemsSource)
     { }

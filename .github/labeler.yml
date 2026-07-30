@@ -58,4 +58,4 @@ gallery:
 
 icons:
 - changed-files:
-  - any-glob-to-any-file: [ 'src/Wpf.Ui/Resources/Fonts/**', 'src/Wpf.Ui/Controls/IconSource/*', 'src/Wpf.Ui/Controls/IconElement/*' ]
+  - any-glob-to-any-file: [ 'src/Wpf.Ui/Resources/Fonts/**', 'src/Wpf.Ui/Controls/SymbolIcon/**', 'src/Wpf.Ui/Markup/*IconExtension.cs' ]

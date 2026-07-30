@@ -96,7 +96,7 @@ public class CalendarDatePicker : ToggleButton
         return baseValue is null
             ? ((CalendarDatePicker)dependencyObject)._defaultIcon ??=
                 new SymbolIcon(SymbolRegular.CalendarRtl24)
-            : IconElement.Coerce(dependencyObject, baseValue);
+            : baseValue;
     }
 
     /// <summary>

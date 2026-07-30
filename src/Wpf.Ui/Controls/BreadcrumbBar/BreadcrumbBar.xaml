@@ -23,18 +23,8 @@
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="Foreground" Value="{m:DynamicBrush TextFillPrimary}" />
         <Setter Property="FocusVisualStyle" Value="{DynamicResource {x:Static t:StyleKeys.DefaultControlFocusVisualStyle}}" />
-        <Setter Property="Icon">
-            <Setter.Value>
-                <controls:IconSourceElement>
-                    <controls:IconSourceElement.IconSource>
-                        <controls:SymbolIconSource
-                            FontSize="18.0"
-                            FontWeight="DemiBold"
-                            Symbol="ChevronRight24" />
-                    </controls:IconSourceElement.IconSource>
-                </controls:IconSourceElement>
-            </Setter.Value>
-        </Setter>
+        <!--  A Style must not share one FrameworkElement between every breadcrumb container.  -->
+        <Setter Property="Icon" Value="{m:Symbol ChevronRight24}" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type controls:BreadcrumbBarItem}">
@@ -55,7 +45,9 @@
                             Grid.Column="1"
                             Margin="{TemplateBinding IconMargin}"
                             Content="{TemplateBinding Icon}"
-                            Focusable="False" />
+                            Focusable="False"
+                            TextElement.FontSize="18.0"
+                            TextElement.FontWeight="DemiBold" />
                     </Grid>
 
                     <ControlTemplate.Triggers>

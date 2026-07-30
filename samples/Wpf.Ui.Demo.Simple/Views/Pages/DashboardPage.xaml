@@ -21,7 +21,7 @@
             Grid.Column="0"
             Click="OnBaseButtonClick"
             Content="Click me!"
-            Icon="{ui:SymbolIcon Fluent24}" />
+            Icon="{ui:Symbol Fluent24}" />
         <TextBlock
             x:Name="CounterTextBlock"
             Grid.Column="1"

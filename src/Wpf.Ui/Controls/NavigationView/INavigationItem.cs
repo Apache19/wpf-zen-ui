@@ -38,12 +38,13 @@ public interface INavigationItem
     /// </remarks>
     object? Content { get; set; }
 
-    /// <summary>Gets the reusable icon description associated with the item.</summary>
+    /// <summary>Gets the data or visual content presented in the item's icon slot.</summary>
     /// <remarks>
-    /// An <see cref="IconSource"/> is used instead of an <see cref="IconElement"/> because one
-    /// visual element cannot be parented by both a navigation container and another presentation.
+    /// Prefer a presentation-independent value, such as <see cref="SymbolRegular"/> or an
+    /// application view-model, when the item can appear in multiple presenters. WPF data templates
+    /// then create one visual instance per presenter without cloning a <see cref="FrameworkElement"/>.
     /// </remarks>
-    IconSource? IconSource { get; }
+    object? Icon { get; }
 
     /// <summary>Gets the optional tag used by <see cref="NavigationView.Navigate(string, object?)"/>.</summary>
     string? TargetPageTag { get; }

@@ -165,7 +165,9 @@ public class NavigationViewButtonTests
             Assert.Equal(typeof(object), NavigationViewButton.IconProperty.PropertyType);
             Assert.Null(typeof(NavigationViewButton).GetProperty("IconTemplate"));
             Assert.Null(typeof(NavigationViewButton).GetField("IconTemplateProperty"));
-            Assert.False(resources.Contains(new DataTemplateKey(typeof(SymbolRegular))));
+            // Navigation resources provide the native data-template path used by reusable symbol
+            // values. The template creates visuals; Icon itself remains an unrestricted object.
+            Assert.True(resources.Contains(new DataTemplateKey(typeof(SymbolRegular))));
 
             var button = new NavigationViewButton { Style = style };
             Assert.Equal(NavigationViewButtonPlacement.None, button.Placement);
@@ -406,15 +408,14 @@ public class NavigationViewButtonTests
     }
 
     [Fact]
-    public void AutoSuggestBoxSymbolButton_Icon_CreatedFromIconSourceElement()
+    public void AutoSuggestBoxSymbolButton_UsesIndependentReusableSymbolData()
     {
         RunOnStaThread(() =>
         {
             var resources = new ResourceDictionary { Source = CreateResourceUri() };
 
-            var iconSource = new SymbolIconSource { Symbol = SymbolRegular.Search24 };
-            var iconSourceElement = new IconSourceElement { IconSource = iconSource };
-            var autoSuggestBox = new AutoSuggestBox { Icon = iconSourceElement };
+            var autoSuggestIcon = new Border();
+            var autoSuggestBox = new AutoSuggestBox { Icon = autoSuggestIcon };
 
             var navigationView = new Wpf.Ui.Controls.NavigationView
             {
@@ -431,53 +432,13 @@ public class NavigationViewButtonTests
                 )
             );
 
-            // The button icon should be a fresh IconElement, not the same FrameworkElement instance
-            Assert.NotNull(button.Icon);
-            Assert.IsType(iconSourceElement.CreateIconElement()!.GetType(), button.Icon);
-            Assert.NotSame(autoSuggestBox.Icon, button.Icon);
-        });
-    }
+            Assert.Same(autoSuggestIcon, autoSuggestBox.Icon);
+            Assert.Equal(SymbolRegular.Search24, Assert.IsType<SymbolRegular>(button.Icon));
 
-    [Fact]
-    public void AutoSuggestBoxSymbolButton_Icon_UpdatesWhenAutoSuggestBoxIconChanges()
-    {
-        RunOnStaThread(() =>
-        {
-            var resources = new ResourceDictionary { Source = CreateResourceUri() };
-
-            var iconSource = new SymbolIconSource { Symbol = SymbolRegular.Search24 };
-            var autoSuggestBox = new AutoSuggestBox
-            {
-                Icon = new IconSourceElement { IconSource = iconSource }
-            };
-
-            var navigationView = new Wpf.Ui.Controls.NavigationView
-            {
-                Style = Assert.IsType<Style>(resources[typeof(Wpf.Ui.Controls.NavigationView)]),
-                AutoSuggestBox = autoSuggestBox,
-            };
-
-            Assert.True(navigationView.ApplyTemplate());
-
-            var button = Assert.IsType<NavigationViewButton>(
-                navigationView.Template.FindName(
-                    "PART_AutoSuggestBoxSymbolButton",
-                    navigationView
-                )
-            );
-
-            var firstIcon = button.Icon;
-            Assert.NotNull(firstIcon);
-
-            // Change the AutoSuggestBox icon
-            autoSuggestBox.Icon = new IconSourceElement
-            {
-                IconSource = new SymbolIconSource { Symbol = SymbolRegular.Home24 }
-            };
-
-            // The button icon should be a new instance matching the updated source
-            Assert.NotNull(button.Icon);
-            Assert.NotSame(firstIcon, button.Icon);
+            // The compact command represents the search role; it must not try to clone or reparent
+            // arbitrary visual content owned by AutoSuggestBox.
+            autoSuggestBox.Icon = new System.Windows.Controls.TextBlock { Text = "Replacement" };
+            Assert.Equal(SymbolRegular.Search24, Assert.IsType<SymbolRegular>(button.Icon));
         });
     }
 
@@ -502,10 +463,7 @@ public class NavigationViewButtonTests
                 )
             );
 
-            // When AutoSuggestBox is null, the binding's FallbackValue provides a
-            // default search icon so the compact-pane button is never icon-less.
-            var icon = Assert.IsType<SymbolIcon>(button.Icon);
-            Assert.Equal(SymbolRegular.Search24, icon.Symbol);
+            Assert.Equal(SymbolRegular.Search24, Assert.IsType<SymbolRegular>(button.Icon));
         });
     }
 

@@ -1,6 +1,7 @@
 <ResourceDictionary
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="clr-namespace:Wpf.Ui.Controls">
 
     <ResourceDictionary.MergedDictionaries>
         <!--
@@ -33,6 +34,16 @@
     <Style
         x:Key="NavigationViewItemSubmenuMenuItemStyle"
         BasedOn="{StaticResource UiMenuItemStyle}"
-        TargetType="{x:Type MenuItem}" />
+        TargetType="{x:Type MenuItem}">
+        <!--
+            A submenu is hosted in a Popup and therefore cannot inherit the state from the projected
+            NavigationViewItem through the ordinary element tree. Copy only that semantic state to
+            the native MenuItem boundary; the SymbolIcon created by Generic.xaml then inherits it
+            normally, without requiring a navigation-specific data template.
+        -->
+        <Setter
+            Property="controls:NavigationViewItemTemplateBehavior.IsIconFilled"
+            Value="{Binding (controls:NavigationViewItemTemplateBehavior.IsIconFilled)}" />
+    </Style>
 
 </ResourceDictionary>

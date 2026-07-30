@@ -67,9 +67,9 @@ public class Snackbar : ContentControl, IAppearanceControl, IIconControl
     /// <summary>Identifies the <see cref="Icon"/> dependency property.</summary>
     public static readonly DependencyProperty IconProperty = DependencyProperty.Register(
         nameof(Icon),
-        typeof(IconElement),
+        typeof(object),
         typeof(Snackbar),
-        new PropertyMetadata(null, null, IconElement.Coerce)
+        new PropertyMetadata(null)
     );
 
     /// <summary>Identifies the <see cref="Appearance"/> dependency property.</summary>
@@ -196,9 +196,9 @@ public class Snackbar : ContentControl, IAppearanceControl, IIconControl
     /// </summary>
     [Bindable(true)]
     [Category("Appearance")]
-    public IconElement? Icon
+    public object? Icon
     {
-        get => (IconElement?)GetValue(IconProperty);
+        get => GetValue(IconProperty);
         set => SetValue(IconProperty, value);
     }
 

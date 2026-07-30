@@ -17,17 +17,17 @@ public class BreadcrumbBarItem : System.Windows.Controls.Primitives.ButtonBase
     /// <summary>Identifies the <see cref="Icon"/> dependency property.</summary>
     public static readonly DependencyProperty IconProperty = DependencyProperty.Register(
         nameof(Icon),
-        typeof(IconElement),
+        typeof(object),
         typeof(BreadcrumbBarItem),
-        new PropertyMetadata(null, null, IconElement.Coerce)
+        new PropertyMetadata(null)
     );
 
     /// <summary>
-    /// Gets or sets displayed <see cref="IconElement"/>.
+    /// Gets or sets the content displayed in the icon slot.
     /// </summary>
-    public IconElement? Icon
+    public object? Icon
     {
-        get => (IconElement?)GetValue(IconProperty);
+        get => GetValue(IconProperty);
         set => SetValue(IconProperty, value);
     }
 

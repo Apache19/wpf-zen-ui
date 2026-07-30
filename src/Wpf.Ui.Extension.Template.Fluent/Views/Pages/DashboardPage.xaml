@@ -24,7 +24,7 @@
             Grid.Column="0"
             Command="{Binding ViewModel.CounterIncrementCommand, Mode=OneWay}"
             Content="Click me!"
-            Icon="Fluent24" />
+            Icon="{ui:Symbol Fluent24}" />
         <TextBlock
             Grid.Column="1"
             Margin="12,0,0,0"

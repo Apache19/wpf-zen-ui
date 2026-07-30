@@ -27,17 +27,17 @@ Define `NavigationView` in your XAML and add `NavigationViewItem` objects to the
     <ui:NavigationView.MenuItems>
         <ui:NavigationViewItem
             Header="Home"
-            Icon="{ui:SymbolIcon Home24}"
+            Icon="{ui:Symbol Home24}"
             TargetPageType="{x:Type pages:DashboardPage}" />
         <ui:NavigationViewItem
             Header="Data"
-            Icon="{ui:SymbolIcon DataHistogram24}"
+            Icon="{ui:Symbol DataHistogram24}"
             TargetPageType="{x:Type pages:DataPage}" />
     </ui:NavigationView.MenuItems>
     <ui:NavigationView.FooterMenuItems>
         <ui:NavigationViewItem
             Header="Settings"
-            Icon="{ui:SymbolIcon Settings24}"
+            Icon="{ui:Symbol Settings24}"
             TargetPageType="{x:Type pages:SettingsPage}" />
     </ui:NavigationView.FooterMenuItems>
 </ui:NavigationView>
@@ -55,7 +55,7 @@ header and expands from its chevron; a grouping parent without a target also tog
 header is invoked.
 
 ```xml
-<ui:NavigationViewItem Header="Library" Icon="{ui:SymbolIcon Library24}">
+<ui:NavigationViewItem Header="Library" Icon="{ui:Symbol Library24}">
     <ui:NavigationViewItem.Items>
         <ui:NavigationViewItem
             Header="Recent"

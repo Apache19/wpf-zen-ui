@@ -5,6 +5,7 @@
 
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Windows;
@@ -22,6 +23,9 @@ public class TextEditorContextMenuPlacementHelperTests
         RunOnStaThread(
             () =>
             {
+                // Pack URI parsing is registered by WPF's Application type initializer. Test order
+                // must not determine whether a resource URI is syntactically recognized.
+                RuntimeHelpers.RunClassConstructor(typeof(Application).TypeHandle);
                 var resources = new ResourceDictionary
                 {
                     Source = new Uri(

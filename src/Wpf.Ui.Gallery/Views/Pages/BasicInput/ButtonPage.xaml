@@ -87,7 +87,7 @@
                     VerticalAlignment="Center"
                     Appearance="{Binding UiButtonAppearance}"
                     Content="WPF UI button"
-                    Icon="{ui:SymbolIcon Fluent24}"
+                    Icon="{ui:Symbol Fluent24}"
                     IsEnabled="{Binding IsUiButtonDisabled, Converter={StaticResource BoolInvertConverter}}" />
                 <StackPanel Grid.Column="1" Orientation="Vertical">
                     <StackPanel Orientation="Horizontal">

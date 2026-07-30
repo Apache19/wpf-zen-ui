@@ -10,9 +10,9 @@ public class InfoBadge : System.Windows.Controls.Control
     /// <summary>Identifies the <see cref="Icon"/> dependency property.</summary>
     public static readonly DependencyProperty IconProperty = DependencyProperty.Register(
         nameof(Icon),
-        typeof(IconElement),
+        typeof(object),
         typeof(InfoBadge),
-        new PropertyMetadata(null, null, IconElement.Coerce)
+        new PropertyMetadata(null)
     );
 
     /// <summary>Identifies the <see cref="Severity"/> dependency property.</summary>
@@ -78,13 +78,13 @@ public class InfoBadge : System.Windows.Controls.Control
     }
 
     /// <summary>
-    /// Gets or sets displayed <see cref="IconElement"/>.
+    /// Gets or sets the content displayed in the icon slot.
     /// </summary>
     [Bindable(true)]
     [Category("Appearance")]
-    public IconElement? Icon
+    public object? Icon
     {
-        get => (IconElement?)GetValue(IconProperty);
+        get => GetValue(IconProperty);
         set => SetValue(IconProperty, value);
     }
 }

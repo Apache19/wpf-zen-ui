@@ -14,11 +14,21 @@ public static class NavigationViewItemTemplateBehavior
     /// <summary>
     /// Identifies the attached property that lets a template render a symbol icon in its filled state.
     /// </summary>
+    /// <remarks>
+    /// The value inherits through the item's template so a SymbolIcon created by a DataTemplate can
+    /// observe it without a reference to a particular visual ancestor. The default item style sets
+    /// an explicit false value at every NavigationViewItem boundary to prevent nested items from
+    /// inheriting an active ancestor's state.
+    /// </remarks>
     public static readonly DependencyProperty IsIconFilledProperty = DependencyProperty.RegisterAttached(
         "IsIconFilled",
         typeof(bool),
         typeof(NavigationViewItemTemplateBehavior),
-        new PropertyMetadata(false, OnIsIconFilledChanged)
+        new FrameworkPropertyMetadata(
+            false,
+            FrameworkPropertyMetadataOptions.Inherits,
+            OnIsIconFilledChanged
+        )
     );
 
     /// <summary>
@@ -87,6 +97,15 @@ public static class NavigationViewItemTemplateBehavior
 
     private static void OnIsIconFilledChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
+        if (d is SymbolIcon symbolIcon)
+        {
+            // DataTemplate-created symbols receive the state through property inheritance. Mapping
+            // it here avoids binding the generated visual back to a particular template ancestor,
+            // which would fail when the same data template is used inside a Popup.
+            symbolIcon.SetCurrentValue(SymbolIcon.FilledProperty, (bool)e.NewValue);
+            return;
+        }
+
         if (d is NavigationViewItem item)
         {
             UpdateIcon(item);

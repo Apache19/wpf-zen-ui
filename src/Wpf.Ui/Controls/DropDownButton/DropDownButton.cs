@@ -143,7 +143,7 @@ public class DropDownButton : Button
             {
                 FontSize = 10D,
             }
-            : IconElement.Coerce(dependencyObject, baseValue);
+            : baseValue;
     }
 
     /// <summary>This method is invoked when the <see cref="FlyoutProperty"/> changes.</summary>

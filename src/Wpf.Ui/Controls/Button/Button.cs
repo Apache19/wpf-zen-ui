@@ -19,13 +19,7 @@ namespace Wpf.Ui.Controls;
 /// &lt;ui:Button
 ///     Appearance="Success"
 ///     Content="WPF UI button with font icon"
-///     Icon="{ui:SymbolIcon Symbol=Fluent24}" /&gt;
-/// </code>
-/// <code lang="xml">
-/// &lt;ui:Button
-///     Appearance="Info"
-///     Content="WPF UI button with font icon"
-///     Icon="{ui:FontIcon '&#xF0858;'}" /&gt;
+///     Icon="{ui:Symbol Fluent24}" /&gt;
 /// </code>
 /// </example>
 public class Button : System.Windows.Controls.Button, IAppearanceControl, IIconControl
@@ -36,19 +30,19 @@ public class Button : System.Windows.Controls.Button, IAppearanceControl, IIconC
     public static readonly DependencyProperty IconProperty =
         DependencyProperty.Register(
             nameof(Icon),
-            typeof(IconElement),
+            typeof(object),
             typeof(Button),
-            new PropertyMetadata(null, null, IconElement.Coerce)
+            new PropertyMetadata(null)
         );
 
     /// <summary>
-    /// Gets or sets displayed <see cref="IconElement"/>.
+    /// Gets or sets the content displayed in the icon slot.
     /// </summary>
     [Bindable(true)]
     [Category("Appearance")]
-    public IconElement? Icon
+    public object? Icon
     {
-        get => (IconElement?)GetValue(IconProperty);
+        get => GetValue(IconProperty);
         set => SetValue(IconProperty, value);
     }
 
@@ -60,20 +54,20 @@ public class Button : System.Windows.Controls.Button, IAppearanceControl, IIconC
     public static readonly DependencyProperty RightIconProperty =
         DependencyProperty.Register(
             nameof(RightIcon),
-            typeof(IconElement),
+            typeof(object),
             typeof(Button),
-            new PropertyMetadata(null, null, IconElement.Coerce)
+            new PropertyMetadata(null)
         );
 
     /// <summary>
-    /// Gets or sets the <see cref="IconElement"/> displayed after the button content.
+    /// Gets or sets the content displayed after the button content.
     /// When no right icon is supplied, the template removes its presenter from layout.
     /// </summary>
     [Bindable(true)]
     [Category("Appearance")]
-    public IconElement? RightIcon
+    public object? RightIcon
     {
-        get => (IconElement?)GetValue(RightIconProperty);
+        get => GetValue(RightIconProperty);
         set => SetValue(RightIconProperty, value);
     }
 

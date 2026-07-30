@@ -9,7 +9,7 @@ using Wpf.Ui.Controls;
 namespace Wpf.Ui.Markup;
 
 /// <summary>
-/// Custom <see cref="MarkupExtension"/> which can provide <see cref="ImageIcon"/>.
+/// Creates a native WPF <see cref="Image"/> for use in a content slot.
 /// </summary>
 /// <example>
 /// <code lang="xml">
@@ -29,7 +29,7 @@ namespace Wpf.Ui.Markup;
 /// </code>
 /// </example>
 [ContentProperty(nameof(Source))]
-[MarkupExtensionReturnType(typeof(ImageIcon))]
+[MarkupExtensionReturnType(typeof(Image))]
 public class ImageIconExtension : MarkupExtension
 {
     public ImageIconExtension(ImageSource? source)
@@ -46,13 +46,15 @@ public class ImageIconExtension : MarkupExtension
 
     public override object ProvideValue(IServiceProvider serviceProvider)
     {
-        var imageIcon = new ImageIcon
+        var image = new Image
         {
             Source = Source,
             Width = Width,
             Height = Height,
+            Stretch = Stretch.UniformToFill,
+            Focusable = false,
         };
 
-        return imageIcon;
+        return image;
     }
 }

@@ -26,9 +26,7 @@ namespace Wpf.Ui.Controls;
 /// <code lang="xml">
 /// &lt;ui:AutoSuggestBox x:Name="AutoSuggestBox" PlaceholderText="Search"&gt;
 ///     &lt;ui:AutoSuggestBox.Icon&gt;
-///         &lt;ui:IconSourceElement&gt;
-///             &lt;ui:SymbolIconSource Symbol="Search24" /&gt;
-///         &lt;/ui:IconSourceElement&gt;
+///         &lt;ui:SymbolIcon Symbol="Search24" /&gt;
 ///     &lt;/ui:AutoSuggestBox.Icon&gt;
 /// &lt;/ui:AutoSuggestBox&gt;
 /// </code>
@@ -228,17 +226,17 @@ public class AutoSuggestBox : ItemsControl, IIconControl
     /// </summary>
     public static readonly DependencyProperty IconProperty = DependencyProperty.Register(
         nameof(Icon),
-        typeof(IconElement),
+        typeof(object),
         typeof(AutoSuggestBox),
         new PropertyMetadata(null)
     );
 
     /// <summary>
-    /// Gets or sets displayed <see cref="IconElement"/>.
+    /// Gets or sets the content displayed in the icon slot.
     /// </summary>
-    public IconElement? Icon
+    public object? Icon
     {
-        get => (IconElement?)GetValue(IconProperty);
+        get => GetValue(IconProperty);
         set => SetValue(IconProperty, value);
     }
 

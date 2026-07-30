@@ -4,7 +4,6 @@
 // All Rights Reserved.
 
 using System.Collections;
-using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
 // ReSharper disable once CheckNamespace
@@ -24,7 +23,7 @@ public class NavigationItem : INavigationItem, INotifyPropertyChanged
 {
     private string              _id;
     private object?             _content;
-    private IconSource?         _iconSource;
+    private object?             _icon;
     private string?             _targetPageTag;
     private Type?               _targetPageType;
     private NavigationCacheMode _navigationCacheMode;
@@ -49,7 +48,7 @@ public class NavigationItem : INavigationItem, INotifyPropertyChanged
 
     /// <summary>Initializes a new instance of the <see cref="NavigationItem"/> class.</summary>
     /// <param name="content">Content used by the default presentation.</param>
-    /// <param name="icon">Symbol used to create a reusable icon source.</param>
+    /// <param name="icon">Reusable symbol data presented by the navigation item template.</param>
     /// <param name="targetPageType">Page type activated by this item.</param>
     /// <param name="children">Optional semantic child collection.</param>
     public NavigationItem(
@@ -59,10 +58,7 @@ public class NavigationItem : INavigationItem, INotifyPropertyChanged
         IEnumerable?  children       = null)
         : this(content, targetPageType)
     {
-        IconSource = new SymbolIconSource
-        {
-            Symbol = icon
-        };
+        Icon = icon;
         Children = children;
     }
 
@@ -81,10 +77,10 @@ public class NavigationItem : INavigationItem, INotifyPropertyChanged
     }
 
     /// <inheritdoc />
-    public IconSource? IconSource
+    public object? Icon
     {
-        get => _iconSource;
-        set => SetProperty(ref _iconSource, value);
+        get => _icon;
+        set => SetProperty(ref _icon, value);
     }
 
     /// <inheritdoc />

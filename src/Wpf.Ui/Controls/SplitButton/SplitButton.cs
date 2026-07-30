@@ -325,15 +325,15 @@ public class SplitButton : ContentControl, ICommandSource, IAppearanceControl, I
     /// <summary>Identifies the <see cref="Icon"/> dependency property.</summary>
     public static readonly DependencyProperty IconProperty = Button.IconProperty.AddOwner(
         typeof(SplitButton),
-        new FrameworkPropertyMetadata(null, null, IconElement.Coerce)
+        new FrameworkPropertyMetadata(null)
     );
 
     /// <inheritdoc />
     [Bindable(true)]
     [Category("Appearance")]
-    public IconElement? Icon
+    public object? Icon
     {
-        get => (IconElement?)GetValue(IconProperty);
+        get => GetValue(IconProperty);
         set => SetValue(IconProperty, value);
     }
 
