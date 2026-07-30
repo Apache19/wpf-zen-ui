@@ -32,6 +32,10 @@ namespace Wpf.Ui.Markup;
 [MarkupExtensionReturnType(typeof(Image))]
 public class ImageIconExtension : MarkupExtension
 {
+    public ImageIconExtension()
+    {
+    }
+
     public ImageIconExtension(ImageSource? source)
     {
         Source = source;
