@@ -6,6 +6,7 @@
 using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Windows.Controls;
+using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Media;
 using Wpf.Ui.Controls;
@@ -191,6 +192,57 @@ public class IconContentTests
             {
                 window.Close();
             }
+        });
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void NavigationSymbolVisual_CombinesExplicitAndNavigationFilledState(bool filled)
+    {
+        RunOnStaThread(() =>
+        {
+            var icon = new SymbolIcon(SymbolRegular.Home24, filled);
+            var item = new NavigationViewItem { Icon = icon };
+
+            NavigationViewItemTemplateBehavior.SetIsIconFilled(item, !filled);
+
+            Assert.True(icon.Filled);
+            Assert.Equal(filled, icon.ReadLocalValue(SymbolIcon.FilledProperty));
+
+            NavigationViewItemTemplateBehavior.SetIsIconFilled(item, false);
+
+            Assert.Equal(filled, icon.Filled);
+            Assert.Equal(filled, icon.ReadLocalValue(SymbolIcon.FilledProperty));
+        });
+    }
+
+    [Fact]
+    public void NavigationSymbolVisual_PreservesFilledBindingDuringNavigationStateChanges()
+    {
+        RunOnStaThread(() =>
+        {
+            var source = new Border { Tag = false };
+            var icon = new SymbolIcon(SymbolRegular.Home24);
+            BindingOperations.SetBinding(
+                icon,
+                SymbolIcon.FilledProperty,
+                new Binding(nameof(FrameworkElement.Tag)) { Source = source }
+            );
+            var item = new NavigationViewItem { Icon = icon };
+
+            NavigationViewItemTemplateBehavior.SetIsIconFilled(item, true);
+
+            Assert.True(icon.Filled);
+            Assert.True(BindingOperations.IsDataBound(icon, SymbolIcon.FilledProperty));
+
+            NavigationViewItemTemplateBehavior.SetIsIconFilled(item, false);
+
+            Assert.False(icon.Filled);
+            Assert.True(BindingOperations.IsDataBound(icon, SymbolIcon.FilledProperty));
+
+            source.Tag = true;
+            Assert.True(icon.Filled);
         });
     }
 

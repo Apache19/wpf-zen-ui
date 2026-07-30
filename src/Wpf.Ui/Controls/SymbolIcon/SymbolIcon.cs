@@ -26,6 +26,8 @@ namespace Wpf.Ui.Controls;
 /// </remarks>
 public class SymbolIcon : TextBlock
 {
+    #region DP: Symbol
+
     /// <summary>Identifies the <see cref="Symbol"/> dependency property.</summary>
     public static readonly DependencyProperty SymbolProperty = DependencyProperty.Register(
         nameof(Symbol),
@@ -38,6 +40,22 @@ public class SymbolIcon : TextBlock
         )
     );
 
+    /// <summary>Gets or sets the Fluent symbol displayed by this element.</summary>
+    public SymbolRegular Symbol
+    {
+        get => (SymbolRegular)GetValue(SymbolProperty);
+        set => SetValue(SymbolProperty, value);
+    }
+
+    private static void OnSymbolChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        ((SymbolIcon)d).UpdateGlyph();
+    }
+
+    #endregion
+
+    #region DP: Filled
+
     /// <summary>Identifies the <see cref="Filled"/> dependency property.</summary>
     public static readonly DependencyProperty FilledProperty = DependencyProperty.Register(
         nameof(Filled),
@@ -46,25 +64,66 @@ public class SymbolIcon : TextBlock
         new FrameworkPropertyMetadata(
             false,
             FrameworkPropertyMetadataOptions.AffectsMeasure | FrameworkPropertyMetadataOptions.AffectsRender,
-            OnFilledChanged
+            OnFilledChanged,
+            CoerceFilled
         )
     );
-
-    /// <summary>Gets or sets the Fluent symbol displayed by this element.</summary>
-    public SymbolRegular Symbol
-    {
-        get => (SymbolRegular)GetValue(SymbolProperty);
-        set => SetValue(SymbolProperty, value);
-    }
 
     /// <summary>
     /// Gets or sets a value indicating whether the filled Fluent icon font and corresponding glyph are used.
     /// </summary>
+    /// <remarks>
+    /// The default value is <see langword="false"/>. A containing control may temporarily coerce
+    /// the effective value to <see langword="true"/> for presentation state, such as an active
+    /// navigation item. Coercion does not replace this property's local value, style, or binding;
+    /// the configured value becomes effective again when the presentation state ends.
+    /// </remarks>
     public bool Filled
     {
         get => (bool)GetValue(FilledProperty);
         set => SetValue(FilledProperty, value);
     }
+
+    private static void OnFilledChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        var self = (SymbolIcon)d;
+        self.UpdateFontFamily();
+        self.UpdateGlyph();
+    }
+
+    private static object CoerceFilled(DependencyObject d, object? baseValue)
+    {
+        return (bool)baseValue! || (bool)d.GetValue(IsFilledRequestedProperty);
+    }
+
+    #endregion
+
+    #region Internal DP: IsFilledRequested
+
+    /// <summary>
+    /// Identifies the internal presentation request combined with <see cref="FilledProperty"/>.
+    /// </summary>
+    /// <remarks>
+    /// Controls such as <see cref="NavigationViewItem"/> can request a filled visual for transient
+    /// state without replacing the value, binding, or style supplied to <see cref="Filled"/>. WPF
+    /// coercion exposes the combined effective value and automatically restores the untouched base
+    /// value when the presentation request is removed.
+    /// </remarks>
+    internal static readonly DependencyProperty IsFilledRequestedProperty = DependencyProperty.Register(
+        "IsFilledRequested",
+        typeof(bool),
+        typeof(SymbolIcon),
+        new PropertyMetadata(false, OnIsFilledRequestedChanged)
+    );
+
+    private static void OnIsFilledRequestedChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        // CoerceValue recalculates the effective value while preserving Filled's original value
+        // source. In particular, an application binding is never detached by transient control state.
+        d.CoerceValue(FilledProperty);
+    }
+
+    #endregion
 
     /// <summary>Initializes a new instance of the <see cref="SymbolIcon"/> class.</summary>
     public SymbolIcon()
@@ -135,17 +194,5 @@ public class SymbolIcon : TextBlock
             FontFamilyProperty,
             Filled ? FontFamilyKeys.FluentSystemIconsFilled : FontFamilyKeys.FluentSystemIcons
         );
-    }
-
-    private static void OnSymbolChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
-    {
-        ((SymbolIcon)d).UpdateGlyph();
-    }
-
-    private static void OnFilledChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
-    {
-        var self = (SymbolIcon)d;
-        self.UpdateFontFamily();
-        self.UpdateGlyph();
     }
 }

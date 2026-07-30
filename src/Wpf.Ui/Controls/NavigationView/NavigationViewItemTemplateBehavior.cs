@@ -86,12 +86,15 @@ public static class NavigationViewItemTemplateBehavior
     {
         if (oldIcon is not null && !ReferenceEquals(oldIcon, item.Icon))
         {
-            oldIcon.SetCurrentValue(SymbolIcon.FilledProperty, false);
+            oldIcon.ClearValue(SymbolIcon.IsFilledRequestedProperty);
         }
 
         if (item.Icon is SymbolIcon symbolIcon)
         {
-            symbolIcon.SetCurrentValue(SymbolIcon.FilledProperty, GetIsIconFilled(item));
+            symbolIcon.SetCurrentValue(
+                SymbolIcon.IsFilledRequestedProperty,
+                GetIsIconFilled(item)
+            );
         }
     }
 
@@ -99,10 +102,10 @@ public static class NavigationViewItemTemplateBehavior
     {
         if (d is SymbolIcon symbolIcon)
         {
-            // DataTemplate-created symbols receive the state through property inheritance. Mapping
-            // it here avoids binding the generated visual back to a particular template ancestor,
-            // which would fail when the same data template is used inside a Popup.
-            symbolIcon.SetCurrentValue(SymbolIcon.FilledProperty, (bool)e.NewValue);
+            // DataTemplate-created symbols receive the state through property inheritance. Keep it
+            // separate from Filled so application values and bindings remain the base value that
+            // WPF's coercion system restores whenever navigation no longer requests a filled icon.
+            symbolIcon.SetCurrentValue(SymbolIcon.IsFilledRequestedProperty, (bool)e.NewValue);
             return;
         }
 
