@@ -22,6 +22,30 @@ namespace Wpf.Ui.UnitTests.Controls;
 [Collection(nameof(KeyboardFocusTestCollection))]
 public class PopupSlideAnimatorTests
 {
+    [Theory]
+    [InlineData(0D, 167D, false)]
+    [InlineData(0.09D, 167D, false)]
+    [InlineData(-90D, 0D, false)]
+    [InlineData(-90D, 167D, true)]
+    public void HasAnimatedContentBounds_ReflectsEffectiveMovement(
+        double startOffset,
+        double duration,
+        bool expected)
+    {
+        RunOnStaThread(
+            () =>
+            {
+                var popup = new Popup();
+                PopupSlideAnimator.SetAnimationSettings(
+                    popup,
+                    new PopupAnimationSettings { StartOffset = startOffset, Duration = duration }
+                );
+
+                Assert.Equal(expected, PopupSlideAnimator.HasAnimatedContentBounds(popup));
+            }
+        );
+    }
+
     [Fact]
     public void DefaultSettings_PreserveWpfUiSlideMotion()
     {

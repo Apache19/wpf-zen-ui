@@ -173,6 +173,21 @@ public static class PopupSlideAnimator
         return new Duration(GetEffectiveAnimationSettings(owner)?.GetDuration() ?? TimeSpan.Zero);
     }
 
+    /// <summary>
+    /// Returns whether the replacement slide clock can change the popup content bounds.
+    /// </summary>
+    /// <remarks>
+    /// This is intentionally separate from <see cref="IsAnimationActive"/>. The behavior may be attached and select
+    /// native <see cref="PopupAnimation.Slide"/>, yet a zero duration or negligible offset causes the controller to
+    /// commit the final transform immediately. The detached shadow must not perform render-tick sampling in that case.
+    /// </remarks>
+    internal static bool HasAnimatedContentBounds(DependencyObject owner)
+    {
+        return GetEffectiveAnimationSettings(owner) is { } settings &&
+               settings.GetDuration() > TimeSpan.Zero &&
+               Math.Abs(settings.StartOffset) >= 0.1D;
+    }
+
     private static PopupAnimationSettings? GetEffectiveAnimationSettings(DependencyObject element)
     {
         return GetAnimationSettings(element) ?? (GetIsEnabled(element) ? PopupAnimationSettings.Default : null);

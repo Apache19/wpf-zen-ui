@@ -497,6 +497,22 @@ public static class PopupAnimator
     }
 
     /// <summary>
+    /// Returns whether the configured custom opening animation can change the popup content bounds.
+    /// </summary>
+    /// <remarks>
+    /// <see cref="PopupShadow"/> uses this distinction to avoid subscribing to
+    /// <see cref="CompositionTarget.Rendering"/> for an animation whose content remains at its final rectangle.
+    /// Keep the thresholds synchronized with <see cref="PopupAnimationController.StartOpenAnimation"/>: a zero
+    /// duration or a sub-pixel start offset is committed immediately and therefore has no moving bounds to mirror.
+    /// </remarks>
+    internal static bool HasAnimatedContentBounds(DependencyObject owner)
+    {
+        return GetEffectiveAnimationSettings(owner) is { } settings &&
+               settings.GetDuration() > TimeSpan.Zero &&
+               Math.Abs(settings.StartOffset) >= 0.1D;
+    }
+
+    /// <summary>
     /// Gets the custom opening easing function for the detached shadow animation.
     /// </summary>
     /// <remarks>

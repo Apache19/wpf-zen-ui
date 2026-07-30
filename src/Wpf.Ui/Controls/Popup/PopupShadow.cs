@@ -983,7 +983,13 @@ public static class PopupShadow
                 // but keeps it on PopupRoot's native animation layer. Sample that real transform just like ordinary
                 // Slide while using the replacement duration so the detached shadow does not finish 17ms early.
                 var duration = PopupSlideAnimator.GetAnimationDuration(_owner);
-                if (_chrome.AnimationMode == PopupShadowAnimationMode.DynamicContentBounds)
+                if (!PopupSlideAnimator.HasAnimatedContentBounds(_owner))
+                {
+                    // The behavior is active but its clock commits the final transform immediately. Treat this like
+                    // a non-animated popup; subscribing to Rendering would only rebuild an unchanged clip each frame.
+                    BeginDeferredFadeIn(TimeSpan.Zero, ShadowFadeInDuration);
+                }
+                else if (_chrome.AnimationMode == PopupShadowAnimationMode.DynamicContentBounds)
                 {
                     BeginDynamicContentBoundsAnimation(duration);
                 }
@@ -1000,7 +1006,13 @@ public static class PopupShadow
                 // The content is driven by Wpf.Ui's custom opening timeline, so the detached shadow follows the
                 // same duration and reveal offset instead of treating the popup as a native WPF animation.
                 var duration = PopupAnimator.GetAnimationDuration(_owner);
-                if (_chrome.AnimationMode == PopupShadowAnimationMode.DynamicContentBounds)
+                if (!PopupAnimator.HasAnimatedContentBounds(_owner))
+                {
+                    // A custom animation with no effective translation has a stable content rectangle. Mirroring its
+                    // opacity (when present) needs only a WPF animation clock and no per-frame geometry reconstruction.
+                    BeginRootFadeIn(duration);
+                }
+                else if (_chrome.AnimationMode == PopupShadowAnimationMode.DynamicContentBounds)
                 {
                     if (TryBeginParallelDynamicContentBoundsAnimation(_owner, duration))
                     {
