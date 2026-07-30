@@ -1751,7 +1751,8 @@ public class NavigationViewItemTests
             Assert.True(contextMenu.Focusable);
             Assert.Same(parent.SubmenuContextMenuStyle, contextMenu.Style);
             Assert.NotNull(parent.SubmenuMenuItemStyle);
-            Assert.True(PopupAnimator.GetIsEnabled(contextMenu));
+            Assert.False(PopupAnimator.GetIsEnabled(contextMenu));
+            Assert.Equal(PopupAnimation.Fade, contextMenu.GetValue(Popup.PopupAnimationProperty));
             Assert.True(PopupShadow.GetIsEnabled(contextMenu));
             parent.RaiseEvent(new RoutedEventArgs(FrameworkElement.UnloadedEvent));
         });
@@ -1814,7 +1815,7 @@ public class NavigationViewItemTests
                 );
 
                 contextMenu.IsOpen = false;
-                DrainDispatcher();
+                DrainDispatcher(TimeSpan.FromMilliseconds(200));
 
                 Assert.Equal(PlacementMode.Right, contextMenu.Placement);
                 Assert.True(
@@ -1972,6 +1973,8 @@ public class NavigationViewItemTests
                     childMenuItem.Template.FindName("Popup", childMenuItem)
                 );
                 Assert.True(childPopup.IsOpen);
+                Assert.False(PopupAnimator.GetIsEnabled(childPopup));
+                Assert.Equal(PopupAnimation.Fade, childPopup.PopupAnimation);
                 Assert.NotNull(childPopup.PlacementTarget);
                 var childPopupSource = Assert.IsType<System.Windows.Interop.HwndSource>(
                     PresentationSource.FromVisual(childPopup.Child)
@@ -1992,7 +1995,7 @@ public class NavigationViewItemTests
                 childMenuItem.IsSubmenuOpen = true;
                 DrainDispatcher();
                 parentContextMenu.IsOpen = false;
-                DrainDispatcher();
+                DrainDispatcher(TimeSpan.FromMilliseconds(200));
 
                 Assert.False(parent.IsSubmenuOpen);
                 Assert.False(child.IsSubmenuOpen);
@@ -2175,7 +2178,7 @@ public class NavigationViewItemTests
                 );
 
                 contextMenu.IsOpen = false;
-                DrainDispatcher();
+                DrainDispatcher(TimeSpan.FromMilliseconds(200));
                 Assert.Empty(contextMenu.Items);
 
                 parent.IsSubmenuOpen = true;
@@ -2730,6 +2733,24 @@ public class NavigationViewItemTests
             System.Windows.Threading.DispatcherPriority.ApplicationIdle,
             new Action(() => frame.Continue = false)
         );
+        System.Windows.Threading.Dispatcher.PushFrame(frame);
+    }
+
+    private static void DrainDispatcher(TimeSpan delay)
+    {
+        var frame = new System.Windows.Threading.DispatcherFrame();
+        var timer = new System.Windows.Threading.DispatcherTimer(
+            System.Windows.Threading.DispatcherPriority.ApplicationIdle
+        )
+        {
+            Interval = delay,
+        };
+        timer.Tick += (_, _) =>
+        {
+            timer.Stop();
+            frame.Continue = false;
+        };
+        timer.Start();
         System.Windows.Threading.Dispatcher.PushFrame(frame);
     }
 

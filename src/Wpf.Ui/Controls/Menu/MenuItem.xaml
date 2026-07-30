@@ -103,14 +103,14 @@
             </Border>
             <Popup
                 x:Name="Popup"
-                controls:PopupAnimator.IsEnabled="True"
+                controls:PopupAnimator.IsEnabled="{TemplateBinding controls:PopupAnimator.IsEnabled}"
                 controls:PopupShadow.IsEnabled="True"
                 AllowsTransparency="True"
                 Focusable="False"
                 IsOpen="{TemplateBinding IsSubmenuOpen}"
                 Placement="Bottom"
                 PlacementTarget="{Binding ElementName=TopLevelHeaderBorder}"
-                PopupAnimation="None"
+                PopupAnimation="{TemplateBinding Popup.PopupAnimation}"
                 VerticalOffset="1">
                 <Border
                     x:Name="SubmenuBorder"
@@ -408,14 +408,14 @@
             </Border>
             <Popup
                 x:Name="Popup"
-                controls:PopupAnimator.IsEnabled="True"
+                controls:PopupAnimator.IsEnabled="{TemplateBinding controls:PopupAnimator.IsEnabled}"
                 controls:PopupShadow.IsEnabled="True"
                 AllowsTransparency="True"
                 Focusable="False"
                 IsOpen="{TemplateBinding IsSubmenuOpen}"
                 Placement="Right"
                 PlacementTarget="{Binding ElementName=SubmenuHeaderBorder}"
-                PopupAnimation="None"
+                PopupAnimation="{TemplateBinding Popup.PopupAnimation}"
                 VerticalOffset="-5">
                 <Border
                     x:Name="SubmenuBorder"
@@ -487,6 +487,14 @@
         <Setter Property="Stylus.IsFlicksEnabled" Value="False" />
         <Setter Property="controls:MenuItemCommandIcon.AutoSetIcon" Value="True" />
         <Setter Property="controls:OrientationAssist.Orientation" Value="Horizontal" />
+        <!--
+            MenuItem owns the Popup used for cascading submenus. Keep the library's custom animation
+            as the ordinary default, but pass both animation switches through the template so a
+            specialized menu style can select WPF's native animation without duplicating the full
+            role-specific templates.
+        -->
+        <Setter Property="controls:PopupAnimator.IsEnabled" Value="True" />
+        <Setter Property="Popup.PopupAnimation" Value="None" />
         <Style.Triggers>
             <Trigger Property="Role" Value="TopLevelHeader">
                 <Setter Property="FocusVisualStyle" Value="{StaticResource TopLevelMenuItemFocusVisualStyle}" />
