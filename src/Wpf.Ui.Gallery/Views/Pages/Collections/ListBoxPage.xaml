@@ -4,18 +4,15 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Ui.Gallery.Controls"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:local="clr-namespace:Wpf.Ui.Gallery.Views.Pages.Collections"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:vm="clr-namespace:Wpf.Ui.Gallery.ViewModels.Pages.Collections"
-    xmlns:system="clr-namespace:System;assembly=System.Runtime"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    xmlns:vm="clr-namespace:Wpf.Ui.Gallery.ViewModels.Pages.Collections"
     Title="ListBoxPage"
-    d:DataContext="{d:DesignInstance vm:ListBoxViewModel,
-                                     IsDesignTimeCreatable=False}"
-    d:DesignWidth="800"
     d:Background="{ui:DynamicBrush WindowBackground}"
+    d:DataContext="{d:DesignInstance vm:ListBoxViewModel, IsDesignTimeCreatable=False}"
+    d:DesignWidth="800"
     Foreground="{ui:DynamicBrush TextFillPrimary}"
-    Style="{ui:DynamicStyle DynamicScrollPage}"
+    Style="{ui:StaticStyle DynamicScrollPage}"
     mc:Ignorable="d">
 
     <StackPanel Margin="0,0,0,24">
@@ -26,7 +23,7 @@
                 \t&lt;ListBoxItem Content=&quot;Green&quot;/&gt;\n
                 &lt;/ListBox&gt;
             </controls:ControlExample.XamlCode>
-            <ui:ListBox SelectedIndex="0">
+            <ui:ListBox BorderThickness="0" SelectedIndex="0">
                 <ListBoxItem>Blue</ListBoxItem>
                 <ListBoxItem>Green</ListBoxItem>
                 <ListBoxItem>Red</ListBoxItem>
@@ -40,6 +37,7 @@
             XamlCode="&lt;ListBox Height=&quot;100&quot; ItemsSource=&quot;{Binding ListBoxItems}&quot; /&gt;">
             <ui:ListBox
                 Height="164"
+                BorderThickness="0"
                 ItemsSource="{Binding ListBoxItems, Mode=TwoWay}"
                 SelectedIndex="2" />
         </controls:ControlExample>

@@ -3,10 +3,12 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
+using System.Runtime.CompilerServices;
 using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 using Wpf.Ui.Controls;
 
 namespace Wpf.Ui.UnitTests.Controls.ScrollViewer;
@@ -84,6 +86,60 @@ public class PassiveScrollViewerTests
             {
                 var scrollViewer = new TestPassiveScrollViewer();
 
+                Assert.Equal(ScrollSpillMode.Enabled, scrollViewer.ScrollSpillMode);
+            }
+        );
+    }
+
+    [Fact]
+    public void ScrollSpillMode_CanBeSetOnTemplateOwner()
+    {
+        RunOnStaThread(
+            () =>
+            {
+                var templateOwner = new System.Windows.Controls.ListBox();
+
+                PassiveScrollViewer.SetScrollSpillMode(
+                    templateOwner,
+                    ScrollSpillMode.Disabled
+                );
+
+                Assert.Equal(
+                    ScrollSpillMode.Disabled,
+                    PassiveScrollViewer.GetScrollSpillMode(templateOwner)
+                );
+            }
+        );
+    }
+
+    [Fact]
+    public void DefaultListBoxTemplate_ForwardsAttachedScrollSpillMode()
+    {
+        RunOnStaThread(
+            () =>
+            {
+                RuntimeHelpers.RunClassConstructor(typeof(Application).TypeHandle);
+                var resources = new ResourceDictionary
+                {
+                    Source = System.IO.Packaging.PackUriHelper.Create(
+                        new Uri("application:///", UriKind.Absolute),
+                        new Uri(
+                            "/Wpf.Ui;component/Controls/ListBox/DefaultListBox.xaml",
+                            UriKind.Relative
+                        )
+                    ),
+                };
+                var listBox = new System.Windows.Controls.ListBox
+                {
+                    Style = Assert.IsType<Style>(resources["DefaultListBoxStyle"]),
+                };
+                PassiveScrollViewer.SetScrollSpillMode(listBox, ScrollSpillMode.Enabled);
+
+                Assert.True(listBox.ApplyTemplate());
+
+                var scrollViewer = Assert.IsType<PassiveScrollViewer>(
+                    FindVisualDescendant<PassiveScrollViewer>(listBox)
+                );
                 Assert.Equal(ScrollSpillMode.Enabled, scrollViewer.ScrollSpillMode);
             }
         );
@@ -264,6 +320,26 @@ public class PassiveScrollViewerTests
         {
             ExceptionDispatchInfo.Capture(exception).Throw();
         }
+    }
+
+    private static T? FindVisualDescendant<T>(DependencyObject parent)
+        where T : DependencyObject
+    {
+        for (var index = 0; index < VisualTreeHelper.GetChildrenCount(parent); index++)
+        {
+            DependencyObject child = VisualTreeHelper.GetChild(parent, index);
+            if (child is T match)
+            {
+                return match;
+            }
+
+            if (FindVisualDescendant<T>(child) is { } descendant)
+            {
+                return descendant;
+            }
+        }
+
+        return null;
     }
 
     private sealed class TestPassiveScrollViewer : PassiveScrollViewer
