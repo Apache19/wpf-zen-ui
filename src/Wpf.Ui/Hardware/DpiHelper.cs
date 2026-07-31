@@ -26,53 +26,6 @@ internal static class DpiHelper
     /// </summary>
     internal const int DefaultDpi = 96;
 
-    /*
-    /// <summary>
-    /// Occurs when application DPI is changed.
-    /// </summary>
-    public static event EventHandler<DpiChangedEventArgs> DpiChanged;
-    */
-
-    /// <summary>
-    /// Gets DPI of the selected <see cref="Window"/> based on it's handle.
-    /// </summary>
-    /// <param name="hwnd">Handle of the window that you want to get information about.</param>
-    public static DisplayDpi GetWindowDpi(HWND hwnd)
-    {
-        if (hwnd == IntPtr.Zero || !PInvoke.IsWindow(hwnd))
-        {
-            return new DisplayDpi(DefaultDpi, DefaultDpi);
-        }
-
-        if (Utilities.IsWin_10_1607_Or_Greater)
-        {
-            #pragma warning disable CA1416
-            var windowDpi = (int)PInvoke.GetDpiForWindow(hwnd);
-            #pragma warning restore CA1416
-
-            return new DisplayDpi(windowDpi, windowDpi);
-        }
-
-        return GetWindowDpi(HwndSource.FromHwnd(hwnd)?.RootVisual as Window);
-    }
-
-    /// <summary>
-    /// Gets DPI of the selected <see cref="Window"/>.
-    /// </summary>
-    /// <param name="window">The window that you want to get information about.</param>
-    [Obsolete("This method is unreliable in non-WPF hosting environments. Use VisualTreeHelper.GetDpi(Visual) instead.")]
-    public static DisplayDpi GetWindowDpi(Window? window)
-    {
-        if (window is null)
-        {
-            return new DisplayDpi(DefaultDpi, DefaultDpi);
-        }
-
-        var dpiScale = VisualTreeHelper.GetDpi(window);
-
-        return new DisplayDpi(dpiScale.DpiScaleX, dpiScale.DpiScaleY);
-    }
-
     // TODO: Look into utilizing preprocessor symbols for more functionality
     // ----
     // There is an opportunity to check against NET46 if we can use

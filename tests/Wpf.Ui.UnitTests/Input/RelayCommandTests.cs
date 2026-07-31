@@ -79,7 +79,7 @@ public class RelayCommandTests
         // Without a canExecute predicate, the command is always executable.
         var command = new RelayCommand<int>(_ => { });
 
-        bool result = command.CanExecute((object?)null);
+        bool result = command.CanExecute(null);
 
         Assert.True(result);
     }
@@ -91,7 +91,7 @@ public class RelayCommandTests
         // be meaningfully evaluated — defer to false (safe default).
         var command = new RelayCommand<int>(_ => { }, i => i > -1);
 
-        bool result = command.CanExecute((object?)null);
+        bool result = command.CanExecute(null);
 
         Assert.False(result);
     }
@@ -109,7 +109,7 @@ public class RelayCommandTests
                 return true;
             });
 
-        bool result = command.CanExecute((object?)null);
+        bool result = command.CanExecute(null);
 
         Assert.False(result);
     }
@@ -128,7 +128,7 @@ public class RelayCommandTests
     {
         var command = new RelayCommand<int>(_ => { });
 
-        Assert.Throws<ArgumentException>(() => command.CanExecute((object)"not an int"));
+        Assert.Throws<ArgumentException>(() => command.CanExecute("not an int"));
     }
 
     #endregion
@@ -143,7 +143,7 @@ public class RelayCommandTests
         // WPF calls CanExecute(null) during initialization → should return true.
         var command = new RelayCommand<ThumbRateState>(_ => { });
 
-        bool result = command.CanExecute((object?)null);
+        bool result = command.CanExecute(null);
 
         Assert.True(result);
     }
@@ -175,7 +175,7 @@ public class RelayCommandTests
             _ => { },
             s => s == ThumbRateState.Liked);
 
-        bool result = command.CanExecute((object?)null);
+        bool result = command.CanExecute(null);
 
         Assert.False(result);
     }
@@ -309,7 +309,7 @@ public class RelayCommandTests
     {
         var command = new RelayCommand<string>(_ => { });
 
-        Assert.Throws<ArgumentException>(() => command.CanExecute((object)42));
+        Assert.Throws<ArgumentException>(() => command.CanExecute(42));
     }
 
     #endregion
@@ -343,7 +343,7 @@ public class RelayCommandTests
     {
         var command = new RelayCommand<int>(_ => { });
 
-        Assert.Throws<ArgumentException>(() => command.Execute((object)"wrong"));
+        Assert.Throws<ArgumentException>(() => command.Execute("wrong"));
     }
 
     [Fact]
@@ -353,7 +353,7 @@ public class RelayCommandTests
         // Callers should check CanExecute first (which handles null).
         var command = new RelayCommand<int>(_ => { });
 
-        Assert.Throws<ArgumentException>(() => command.Execute((object?)null));
+        Assert.Throws<ArgumentException>(() => command.Execute(null));
     }
 
     #endregion
@@ -387,7 +387,7 @@ public class RelayCommandTests
     {
         var command = new RelayCommand<string>(_ => { });
 
-        Assert.Throws<ArgumentException>(() => command.Execute((object)42));
+        Assert.Throws<ArgumentException>(() => command.Execute(42));
     }
 
     #endregion
@@ -453,8 +453,8 @@ public class RelayCommandTests
     {
         // Three ways null can show up as object?
         object? bareNull = null;                    // CLR null reference
-        object? fromNullableInt = (int?)null;       // Nullable<int> boxing → null
-        object? fromNullableEnum = (ThumbRateState?)null;
+        object? fromNullableInt = null;       // Nullable<int> boxing → null
+        object? fromNullableEnum = null;
 
         // They are all the same thing: a bare null reference.
         Assert.True(bareNull is null);
@@ -494,7 +494,7 @@ public class RelayCommandTests
         // The guard prevents:
         //   TryGetCommandArgument(null for int) → false → ThrowArgumentException
         // And instead returns true (no predicate = always executable).
-        bool result = command.CanExecute((object?)null);
+        bool result = command.CanExecute(null);
 
         Assert.True(result);
     }
@@ -510,10 +510,10 @@ public class RelayCommandTests
 
         // The real proof: check what the guard does. For int+null:
         var noGuard = new RelayCommand<int>(_ => { });
-        Assert.True(noGuard.CanExecute((object?)null));   // guard fires → true
+        Assert.True(noGuard.CanExecute(null));   // guard fires → true
 
         var withPredicate = new RelayCommand<int>(_ => { }, i => i > -1);
-        Assert.False(withPredicate.CanExecute((object?)null)); // guard → false
+        Assert.False(withPredicate.CanExecute(null)); // guard → false
     }
 
     [Fact]
@@ -524,7 +524,11 @@ public class RelayCommandTests
         string? received = "untouched";
         var command = new RelayCommand<string>(
             _ => { },
-            s => { received = s; return s is not null; });
+            s =>
+            {
+                received = s;
+                return s is not null;
+            });
 
         bool result = command.CanExecute((object?)null);
 
@@ -540,7 +544,11 @@ public class RelayCommandTests
         int? received = 42;
         var command = new RelayCommand<int?>(
             _ => { },
-            i => { received = i; return i.HasValue; });
+            i =>
+            {
+                received = i;
+                return i.HasValue;
+            });
 
         bool result = command.CanExecute((object?)null);
 
@@ -559,7 +567,7 @@ public class RelayCommandTests
         System.Windows.Input.ICommand iCommand = command;
 
         bool typedResult = command.CanExecute(5);
-        bool objectResult = iCommand.CanExecute((object)5);
+        bool objectResult = iCommand.CanExecute(5);
 
         Assert.Equal(typedResult, objectResult);
     }
@@ -575,7 +583,7 @@ public class RelayCommandTests
         command.Execute(7);
         Assert.Equal(7, received);
 
-        iCommand.Execute((object)13);
+        iCommand.Execute(13);
         Assert.Equal(13, received);
     }
 
