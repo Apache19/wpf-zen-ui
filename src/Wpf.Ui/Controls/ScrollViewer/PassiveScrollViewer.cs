@@ -14,21 +14,52 @@ namespace Wpf.Ui.Controls;
 /// </summary>
 public class PassiveScrollViewer : ScrollViewer
 {
-    /// <summary>Identifies the <see cref="ScrollSpillMode"/> dependency property.</summary>
-    public static readonly DependencyProperty ScrollSpillModeProperty = DependencyProperty.Register(
-        nameof(ScrollSpillMode),
-        typeof(ScrollSpillMode),
-        typeof(PassiveScrollViewer),
-        new PropertyMetadata(ScrollSpillMode.Enabled)
-    );
+    /// <summary>
+    /// Identifies the <see cref="ScrollSpillMode"/> attached dependency property.
+    /// </summary>
+    /// <remarks>
+    /// The property is attached so a control can configure the scrolling host hidden inside its
+    /// template. Templates must forward the value explicitly; it deliberately does not inherit
+    /// through the element tree because nested scrolling surfaces can require different policies.
+    /// </remarks>
+    public static readonly DependencyProperty ScrollSpillModeProperty =
+        DependencyProperty.RegisterAttached(
+            nameof(ScrollSpillMode),
+            typeof(ScrollSpillMode),
+            typeof(PassiveScrollViewer),
+            new FrameworkPropertyMetadata(ScrollSpillMode.Enabled)
+        );
+
+    /// <summary>
+    /// Sets how the <see cref="PassiveScrollViewer"/> created by an element's control template
+    /// handles mouse-wheel input that cannot scroll its own content.
+    /// </summary>
+    /// <param name="element">The element whose scrolling policy is being configured.</param>
+    /// <param name="value">The mouse-wheel spill policy forwarded by the element's template.</param>
+    public static void SetScrollSpillMode(DependencyObject element, ScrollSpillMode value)
+    {
+        element.SetValue(ScrollSpillModeProperty, value);
+    }
+
+    /// <summary>
+    /// Gets the mouse-wheel spill policy configured for an element.
+    /// </summary>
+    /// <param name="element">The element whose scrolling policy is being queried.</param>
+    /// <returns>
+    /// The configured spill policy, or <see cref="Controls.ScrollSpillMode.Enabled"/> when unset.
+    /// </returns>
+    public static ScrollSpillMode GetScrollSpillMode(DependencyObject element)
+    {
+        return (ScrollSpillMode)element.GetValue(ScrollSpillModeProperty);
+    }
 
     /// <summary>
     /// Gets or sets how mouse wheel events are handled when the content cannot scroll further.
     /// </summary>
     public ScrollSpillMode ScrollSpillMode
     {
-        get { return (ScrollSpillMode)GetValue(ScrollSpillModeProperty); }
-        set { SetValue(ScrollSpillModeProperty, value); }
+        get => GetScrollSpillMode(this);
+        set => SetScrollSpillMode(this, value);
     }
 
     static PassiveScrollViewer()

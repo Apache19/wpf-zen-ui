@@ -32,8 +32,11 @@ public class NavigationViewTests
             var navigationViewList = new NavigationViewList
             {
                 Style = Assert.IsType<Style>(resources[typeof(NavigationViewList)]),
-                ScrollSpillMode = ScrollSpillMode.Disabled,
             };
+            PassiveScrollViewer.SetScrollSpillMode(
+                navigationViewList,
+                ScrollSpillMode.Disabled
+            );
             System.Windows.Controls.ScrollViewer.SetCanContentScroll(navigationViewList, true);
             System.Windows.Controls.ScrollViewer.SetHorizontalScrollBarVisibility(
                 navigationViewList,
