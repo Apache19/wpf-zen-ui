@@ -176,7 +176,7 @@
             <MultiDataTrigger>
                 <MultiDataTrigger.Conditions>
                     <Condition Binding="{Binding Placement, RelativeSource={RelativeSource Self}}" Value="Pane" />
-                    <Condition Binding="{Binding PaneTitle, RelativeSource={RelativeSource AncestorType=controls:NavigationView}}" Value="{x:Null}" />
+                    <Condition Binding="{Binding PaneTitle, RelativeSource={RelativeSource Self}}" Value="{x:Null}" />
                 </MultiDataTrigger.Conditions>
                 <Setter Property="HorizontalAlignment" Value="Left" />
             </MultiDataTrigger>
