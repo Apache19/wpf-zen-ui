@@ -70,6 +70,7 @@
     <IsPackable>true</IsPackable>
     <IsPublishable>true</IsPublishable>
     <ContinuousIntegrationBuild>$(TF_BUILD)</ContinuousIntegrationBuild>
+    <UseArtifactsOutput>true</UseArtifactsOutput>
   </PropertyGroup>
   <PropertyGroup Condition="'$(IsBelowNet8)' == 'false'">
     <DefineConstants>$(DefineConstants);NET8_0_OR_GREATER</DefineConstants>
