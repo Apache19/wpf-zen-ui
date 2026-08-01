@@ -28,6 +28,7 @@
                 CanContentScroll="{TemplateBinding ScrollViewer.CanContentScroll}"
                 Focusable="False"
                 HorizontalScrollBarVisibility="{TemplateBinding ScrollViewer.HorizontalScrollBarVisibility}"
+                ScrollSpillMode="{TemplateBinding controls:PassiveScrollViewer.ScrollSpillMode}"
                 VerticalScrollBarVisibility="{TemplateBinding ScrollViewer.VerticalScrollBarVisibility}">
                 <ItemsPresenter SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
             </controls:PassiveScrollViewer>
@@ -141,6 +142,7 @@
                 Focusable="False"
                 HorizontalScrollBarVisibility="{TemplateBinding ScrollViewer.HorizontalScrollBarVisibility}"
                 HorizontalScrollBarVisibilityThreshold="1"
+                ScrollSpillMode="{TemplateBinding controls:PassiveScrollViewer.ScrollSpillMode}"
                 Template="{StaticResource GridViewScrollViewerTemplate}"
                 VerticalScrollBarVisibility="{TemplateBinding ScrollViewer.VerticalScrollBarVisibility}">
                 <ItemsPresenter SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
@@ -169,6 +171,7 @@
         <Setter Property="VirtualizingPanel.IsVirtualizingWhenGrouping" Value="True" />
         <Setter Property="VirtualizingPanel.VirtualizationMode" Value="Recycling" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="controls:PassiveScrollViewer.ScrollSpillMode" Value="Disabled" />
         <Setter Property="ItemsPanel">
             <Setter.Value>
                 <ItemsPanelTemplate>
