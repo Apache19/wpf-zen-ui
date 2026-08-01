@@ -49,10 +49,16 @@
                 <Setter Property="controls:Button.PressedBorderBrush" Value="Transparent" />
             </Trigger>
 
+            <!--
+                In High Contrast mode a Transparent border is invisible. Any
+                appearance that explicitly sets PressedBorderBrush to Transparent
+                (Accent, Dark, Light, Danger, Success, Caution) must restore a
+                visible border so the button retains a discernible pressed outline.
+            -->
             <MultiDataTrigger>
                 <MultiDataTrigger.Conditions>
-                    <Condition Binding="{Binding (controls:Button.Appearance), RelativeSource={RelativeSource Self}}" Value="Accent" />
                     <Condition Binding="{Binding Source={x:Static SystemParameters.HighContrast}}" Value="True" />
+                    <Condition Binding="{Binding PressedBorderBrush, RelativeSource={RelativeSource Self}}" Value="Transparent" />
                 </MultiDataTrigger.Conditions>
                 <Setter Property="controls:Button.PressedBorderBrush" Value="{m:DynamicBrush AccentControlElevationBorder}" />
             </MultiDataTrigger>
