@@ -13,6 +13,7 @@ using System.Windows.Markup;
 using System.Windows.Media;
 using System.Windows.Shapes;
 using System.Windows.Threading;
+using Wpf.Ui.Theming;
 using NativeGridViewColumn = System.Windows.Controls.GridViewColumn;
 using NativeGridViewColumnHeader = System.Windows.Controls.GridViewColumnHeader;
 using NativeGridViewColumnHeaderRole = System.Windows.Controls.GridViewColumnHeaderRole;
@@ -201,7 +202,7 @@ public class GridViewTests
         {
             var listView = new TestListView { View = new UiGridView() };
 
-            Assert.Same(UiGridView.GridViewStyleKey, listView.CurrentDefaultStyleKey);
+            Assert.Same(StyleKeys.GridViewListViewStyle, listView.CurrentDefaultStyleKey);
         });
     }
 
@@ -237,6 +238,8 @@ public class GridViewTests
 
             Assert.Equal(new Thickness(0, 0, 0, 1), firstItem.BorderThickness);
             Assert.Equal(new Thickness(0), lastItem.BorderThickness);
+            Assert.Same(firstItem.Template, lastItem.Template);
+            Assert.NotNull(FindVisualChild<NativeGridViewRowPresenter>(lastItem));
 
             listView.Items.Add("Third");
             root.UpdateLayout();
@@ -256,6 +259,40 @@ public class GridViewTests
             Assert.Equal(new Thickness(0, 0, 0, 1), firstItem.BorderThickness);
             Assert.Equal(new Thickness(0, 0, 0, 1), lastItem.BorderThickness);
             Assert.Equal(new Thickness(0, 0, 0, 1), newLastItem.BorderThickness);
+        });
+    }
+
+    [Fact]
+    public void GridView_ColumnHeaderStyleToken_AllowsPartialExternalStyleCustomization()
+    {
+        RunOnStaThread(static () =>
+        {
+            var resources = new ResourceDictionary
+            {
+                Source = new Uri(
+                    "pack://application:,,,/Wpf.Ui;component/Controls/GridView/GridViewColumnHeader.xaml",
+                    UriKind.Absolute
+                ),
+            };
+            var headerStyle = new Style(typeof(NativeGridViewColumnHeader))
+            {
+                BasedOn = Assert.IsType<Style>(
+                    resources[StyleKeys.GridViewColumnHeaderStyle]
+                ),
+            };
+            headerStyle.Setters.Add(
+                new Setter(FrameworkElement.MinHeightProperty, 52D)
+            );
+
+            var header = new NativeGridViewColumnHeader
+            {
+                Content = "Value",
+                Style = headerStyle,
+            };
+
+            Assert.True(header.ApplyTemplate());
+            Assert.Equal(52D, header.MinHeight);
+            Assert.NotNull(header.Template.FindName("PART_HeaderGripper", header));
         });
     }
 

@@ -77,6 +77,9 @@ internal static class StyleTokenResourceKey
             StyleToken.UiAutoSuggestBox           => StyleKeys.UiAutoSuggestBoxStyle,
             StyleToken.UiBadge                    => StyleKeys.UiBadgeStyle,
             StyleToken.DefaultProgressBar         => StyleKeys.DefaultProgressBarStyle,
+            StyleToken.GridViewListView           => StyleKeys.GridViewListViewStyle,
+            StyleToken.GridViewItemContainer      => StyleKeys.GridViewItemContainerStyle,
+            StyleToken.GridViewColumnHeader       => StyleKeys.GridViewColumnHeaderStyle,
 
             _ => throw new ArgumentOutOfRangeException(nameof(token), token, "The style token is not registered."),
         };

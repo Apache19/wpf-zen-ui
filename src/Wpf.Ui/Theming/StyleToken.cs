@@ -43,4 +43,19 @@ public enum StyleToken
     UiAutoSuggestBox,
     UiBadge,
     DefaultProgressBar,
+
+    /// <summary>
+    /// Identifies the ListView style selected while a WPF UI GridView is active.
+    /// </summary>
+    GridViewListView,
+
+    /// <summary>
+    /// Identifies the item-container style selected for rows in a WPF UI GridView.
+    /// </summary>
+    GridViewItemContainer,
+
+    /// <summary>
+    /// Identifies the default Fluent style for column-header containers in a WPF UI GridView.
+    /// </summary>
+    GridViewColumnHeader,
 }

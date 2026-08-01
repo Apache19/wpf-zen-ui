@@ -3,6 +3,8 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
+using Wpf.Ui.Theming;
+
 namespace Wpf.Ui.Controls;
 
 /// <summary>
@@ -16,6 +18,11 @@ namespace Wpf.Ui.Controls;
 /// <see cref="System.Windows.Controls.ListView"/> reads the view's protected style keys and applies
 /// them to the list and its generated containers. This type exists only to select the library's
 /// Fluent resources through that framework-supported extension point; all visuals remain in XAML.
+/// </para>
+/// <para>
+/// The routed styles are published through <see cref="StyleKeys"/> instead of shadowing WPF's
+/// native GridView resource-key properties. This keeps theme routing separate from the public,
+/// strongly typed resource surface used by <c>StaticStyle</c> and <c>DynamicStyle</c>.
 /// </para>
 /// <para>
 /// Use <see cref="GridViewColumn"/> when a column needs <see cref="GridLength"/> sizing. Native
@@ -38,21 +45,9 @@ namespace Wpf.Ui.Controls;
 /// </example>
 public class GridView : System.Windows.Controls.GridView
 {
-    /// <summary>
-    /// Gets the resource key for the Fluent <see cref="ListView"/> style selected by this view.
-    /// </summary>
-    public static new ResourceKey GridViewStyleKey { get; } =
-        new ComponentResourceKey(typeof(GridView), nameof(GridViewStyleKey));
-
-    /// <summary>
-    /// Gets the resource key for the Fluent item-container style selected by this view.
-    /// </summary>
-    public static new ResourceKey GridViewItemContainerStyleKey { get; } =
-        new ComponentResourceKey(typeof(GridView), nameof(GridViewItemContainerStyleKey));
+    /// <inheritdoc />
+    protected override object DefaultStyleKey => StyleKeys.GridViewListViewStyle;
 
     /// <inheritdoc />
-    protected override object DefaultStyleKey => GridViewStyleKey;
-
-    /// <inheritdoc />
-    protected override object ItemContainerDefaultStyleKey => GridViewItemContainerStyleKey;
+    protected override object ItemContainerDefaultStyleKey => StyleKeys.GridViewItemContainerStyle;
 }

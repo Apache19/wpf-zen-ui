@@ -10,7 +10,8 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Ui.Controls"
     xmlns:converters="clr-namespace:Wpf.Ui.Converters"
-    xmlns:m="clr-namespace:Wpf.Ui.Markup">
+    xmlns:m="clr-namespace:Wpf.Ui.Markup"
+    xmlns:t="clr-namespace:Wpf.Ui.Theming">
 
     <ControlTemplate x:Key="DefaultListViewItemTemplate" TargetType="{x:Type ListViewItem}">
         <Border
@@ -146,7 +147,7 @@
         <Setter Property="Template" Value="{StaticResource DefaultListViewItemTemplate}" />
     </Style>
 
-    <Style x:Key="{x:Static controls:GridView.GridViewItemContainerStyleKey}" BasedOn="{StaticResource DefaultListViewItemStyle}" TargetType="{x:Type ListViewItem}">
+    <Style x:Key="{x:Static t:StyleKeys.GridViewItemContainerStyle}" BasedOn="{StaticResource DefaultListViewItemStyle}" TargetType="{x:Type ListViewItem}">
         <Setter Property="Padding" Value="0" />
         <Setter Property="Template" Value="{StaticResource GridViewItemTemplate}" />
     </Style>

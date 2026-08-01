@@ -9,15 +9,10 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Ui.Controls"
-    xmlns:m="clr-namespace:Wpf.Ui.Markup">
+    xmlns:m="clr-namespace:Wpf.Ui.Markup"
+    xmlns:t="clr-namespace:Wpf.Ui.Theming">
 
     <ResourceDictionary.MergedDictionaries>
-        <!--
-            The GridView-specific last-item style below derives from the normal GridView item
-            container style. Merge that dictionary here so StaticResource resolution follows an
-            explicit dependency instead of relying on sibling ordering in Generic.xaml.
-        -->
-        <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/ListView/ListViewItem.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/GridView/GridViewColumnHeader.xaml" />
     </ResourceDictionary.MergedDictionaries>
 
@@ -87,7 +82,7 @@
                             Margin="12,0,0,0"
                             controls:ColumnHeaderResizeBehavior.IsEnabled="True"
                             AllowsColumnReorder="{Binding TemplatedParent.View.AllowsColumnReorder, RelativeSource={RelativeSource TemplatedParent}}"
-                            ColumnHeaderContainerStyle="{Binding TemplatedParent.View.ColumnHeaderContainerStyle, RelativeSource={RelativeSource TemplatedParent}, TargetNullValue={StaticResource UiGridViewColumnHeaderStyle}}"
+                            ColumnHeaderContainerStyle="{Binding TemplatedParent.View.ColumnHeaderContainerStyle, RelativeSource={RelativeSource TemplatedParent}, TargetNullValue={m:StaticStyle GridViewColumnHeader}}"
                             ColumnHeaderContextMenu="{Binding TemplatedParent.View.ColumnHeaderContextMenu, RelativeSource={RelativeSource TemplatedParent}}"
                             ColumnHeaderStringFormat="{Binding TemplatedParent.View.ColumnHeaderStringFormat, RelativeSource={RelativeSource TemplatedParent}}"
                             ColumnHeaderTemplate="{Binding TemplatedParent.View.ColumnHeaderTemplate, RelativeSource={RelativeSource TemplatedParent}}"
@@ -197,22 +192,23 @@
         view for these two keys and applies the returned styles to ListView and ListViewItem. The
         lightweight Wpf.Ui GridView type exists solely to select these Fluent XAML resources.
     -->
-    <Style x:Key="{x:Static controls:GridView.GridViewStyleKey}" BasedOn="{StaticResource DefaultListViewBaseStyle}" TargetType="{x:Type ListView}">
+    <Style x:Key="{x:Static t:StyleKeys.GridViewListViewStyle}" BasedOn="{StaticResource DefaultListViewBaseStyle}" TargetType="{x:Type ListView}">
         <!--
             ListView changes to this view-specific style through ViewBase.DefaultStyleKey. Keeping
             the selector here (instead of DefaultListViewBaseStyle) makes the rule follow the
             GridView lifecycle automatically, including a View replacement at runtime. No mirrored
             "has view" dependency property or trigger is necessary.
 
-            The last-item style is based on the same key that GridView assigns to every generated
-            container. This preserves the Fluent row template and all of its setters while removing
-            only the trailing divider. A standalone style would replace that view-selected style.
+            WPF keeps the ordinary Style selected here separate from the ThemeStyle resolved through
+            GridView.ItemContainerDefaultStyleKey. Consequently this style only needs to override
+            the trailing divider; the Fluent row template and remaining setters continue to come
+            from the GridView theme style.
         -->
         <Setter Property="ItemContainerStyleSelector">
             <Setter.Value>
                 <controls:ListItemContainerStyleSelector>
                     <controls:ListItemContainerStyleSelector.LastItemStyle>
-                        <Style BasedOn="{StaticResource {x:Static controls:GridView.GridViewItemContainerStyleKey}}" TargetType="{x:Type ListViewItem}">
+                        <Style TargetType="{x:Type ListViewItem}">
                             <Setter Property="BorderThickness" Value="0" />
                         </Style>
                     </controls:ListItemContainerStyleSelector.LastItemStyle>

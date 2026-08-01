@@ -42,6 +42,25 @@ public static class StyleKeys
     public static ComponentResourceKey UiBadgeStyle                    { get; } = Create(nameof(UiBadgeStyle));
     public static ComponentResourceKey DefaultProgressBarStyle         { get; } = Create(nameof(DefaultProgressBarStyle));
 
+    /// <summary>
+    /// Gets the theme-routing key for the ListView style used while a WPF UI GridView is active.
+    /// </summary>
+    public static ComponentResourceKey GridViewListViewStyle           { get; } = Create(nameof(GridViewListViewStyle));
+
+    /// <summary>
+    /// Gets the theme-routing key for item containers generated while a WPF UI GridView is active.
+    /// </summary>
+    public static ComponentResourceKey GridViewItemContainerStyle      { get; } = Create(nameof(GridViewItemContainerStyle));
+
+    /// <summary>
+    /// Gets the reusable Fluent column-header style key for a WPF UI GridView.
+    /// </summary>
+    /// <remarks>
+    /// Use <c>StaticStyle GridViewColumnHeader</c> as a <see cref="Style.BasedOn"/> value when a
+    /// custom header should preserve the default template, resize gripper, and role-specific behavior.
+    /// </remarks>
+    public static ComponentResourceKey GridViewColumnHeaderStyle       { get; } = Create(nameof(GridViewColumnHeaderStyle));
+
     private static ComponentResourceKey Create(object resourceId)
     {
         return new ComponentResourceKey(typeof(ThemeResourceAnchor), resourceId);
