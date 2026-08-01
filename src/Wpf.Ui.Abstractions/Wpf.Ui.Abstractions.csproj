@@ -6,7 +6,6 @@
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Description>Abstractions for the WPF UI.</Description>
     <CommonTags>$(CommonTags);abstractions;standard</CommonTags>
-    <_SilenceIsAotCompatibleUnsupportedWarning>true</_SilenceIsAotCompatibleUnsupportedWarning>
   </PropertyGroup>
 
 </Project>
