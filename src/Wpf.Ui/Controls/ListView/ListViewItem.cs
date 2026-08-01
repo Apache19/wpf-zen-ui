@@ -22,4 +22,9 @@ public class ListViewItem : System.Windows.Controls.ListViewItem
             new FrameworkPropertyMetadata(typeof(ListViewItem))
         );
     }
+
+    // This container currently adds no custom behavior of its own — it exists so the owning
+    // ListView can produce a Fluent-styled item container via GetContainerForItemOverride.
+    // Keep the type around as an extension point; any item-level behavior specific to the
+    // Fluent design can be added here without affecting consumers that supply native containers.
 }

@@ -110,6 +110,7 @@
                 Maximum="{TemplateBinding ScrollableWidth}"
                 Minimum="0"
                 Orientation="Horizontal"
+                Style="{m:DynamicStyle DefaultScrollBar}"
                 ViewportSize="{TemplateBinding ViewportWidth}"
                 Visibility="{TemplateBinding EffectiveHorizontalScrollBarVisibility}"
                 Value="{Binding HorizontalOffset, Mode=OneWay, RelativeSource={RelativeSource TemplatedParent}}" />
@@ -121,6 +122,7 @@
                 Maximum="{TemplateBinding ScrollableHeight}"
                 Minimum="0"
                 Orientation="Vertical"
+                Style="{m:DynamicStyle DefaultScrollBar}"
                 ViewportSize="{TemplateBinding ViewportHeight}"
                 Visibility="{TemplateBinding ComputedVerticalScrollBarVisibility}"
                 Value="{Binding VerticalOffset, Mode=OneWay, RelativeSource={RelativeSource TemplatedParent}}" />
@@ -156,10 +158,8 @@
     </ControlTemplate>
 
     <Style x:Key="DefaultListViewBaseStyle" TargetType="{x:Type ListView}">
-        <Setter Property="Background" Value="Transparent" />
         <Setter Property="BorderBrush" Value="{m:DynamicBrush DividerStrokeDefault}" />
         <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="Padding" Value="0" />
         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
         <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Auto" />
@@ -167,22 +167,8 @@
         <Setter Property="ScrollViewer.CanContentScroll" Value="True" />
         <Setter Property="ScrollViewer.PanningMode" Value="Both" />
         <Setter Property="Stylus.IsFlicksEnabled" Value="False" />
-        <Setter Property="VirtualizingPanel.IsVirtualizing" Value="True" />
-        <Setter Property="VirtualizingPanel.IsVirtualizingWhenGrouping" Value="True" />
-        <Setter Property="VirtualizingPanel.VirtualizationMode" Value="Recycling" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
         <Setter Property="controls:PassiveScrollViewer.ScrollSpillMode" Value="Disabled" />
-        <Setter Property="ItemsPanel">
-            <Setter.Value>
-                <ItemsPanelTemplate>
-                    <VirtualizingStackPanel
-                        IsVirtualizing="{TemplateBinding VirtualizingPanel.IsVirtualizing}"
-                        IsVirtualizingWhenGrouping="{TemplateBinding VirtualizingPanel.IsVirtualizingWhenGrouping}"
-                        ScrollUnit="{TemplateBinding VirtualizingPanel.ScrollUnit}"
-                        VirtualizationMode="{TemplateBinding VirtualizingPanel.VirtualizationMode}" />
-                </ItemsPanelTemplate>
-            </Setter.Value>
-        </Setter>
         <Setter Property="Template" Value="{StaticResource DefaultListViewTemplate}" />
         <Style.Triggers>
             <!--

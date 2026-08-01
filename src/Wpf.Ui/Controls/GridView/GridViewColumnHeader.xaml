@@ -31,10 +31,10 @@
         <Setter Property="MinHeight" Value="40" />
         <!--
             Native GridViewRowPresenter gives generated cell content a six-pixel horizontal margin.
-            Matching it here keeps header text aligned with row text; the separate twelve-pixel
-            leading gutter in the presenter templates is reserved for the selection indicator.
+            Matching it here keeps header text aligned with row text.
         -->
-        <Setter Property="Padding" Value="6,0" />
+        <Setter Property="Padding" Value="6,4" />
+        <Setter Property="Border.CornerRadius" Value="{m:DynamicValue ControlCornerRadius}" />
         <Setter Property="Foreground" Value="{m:DynamicBrush TextFillSecondary}" />
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="HorizontalContentAlignment" Value="Left" />
@@ -49,12 +49,13 @@
                         <Border
                             x:Name="HeaderBorder"
                             Padding="{TemplateBinding Padding}"
+                            HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                            VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
                             Background="{TemplateBinding Background}"
                             BorderBrush="{TemplateBinding BorderBrush}"
-                            BorderThickness="{TemplateBinding BorderThickness}">
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="{TemplateBinding Border.CornerRadius}">
                             <ContentPresenter
-                                HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
-                                VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
                                 Content="{TemplateBinding Content}"
                                 ContentStringFormat="{TemplateBinding ContentStringFormat}"
                                 ContentTemplate="{TemplateBinding ContentTemplate}"
@@ -63,13 +64,11 @@
                                 SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
                         </Border>
                         <Canvas>
-                            <Thumb
-                                x:Name="PART_HeaderGripper"
-                                Style="{StaticResource UiGridViewColumnHeaderGripperStyle}" />
+                            <Thumb x:Name="PART_HeaderGripper" Style="{StaticResource UiGridViewColumnHeaderGripperStyle}" />
                         </Canvas>
                     </Grid>
                     <ControlTemplate.Triggers>
-                        <Trigger Property="IsMouseOver" Value="True">
+                        <Trigger SourceName="HeaderBorder" Property="IsMouseOver" Value="True">
                             <Setter TargetName="HeaderBorder" Property="Background" Value="{m:DynamicBrush SubtleFillSecondary}" />
                         </Trigger>
                         <Trigger Property="IsPressed" Value="True">

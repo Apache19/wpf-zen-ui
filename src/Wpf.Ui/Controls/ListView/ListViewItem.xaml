@@ -9,6 +9,7 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Ui.Controls"
+    xmlns:converters="clr-namespace:Wpf.Ui.Converters"
     xmlns:m="clr-namespace:Wpf.Ui.Markup">
 
     <ControlTemplate x:Key="DefaultListViewItemTemplate" TargetType="{x:Type ListViewItem}">
@@ -67,32 +68,43 @@
         </ControlTemplate.Triggers>
     </ControlTemplate>
 
+
+    <converters:DoubleToDoubleConverter x:Key="ListViewItemSelectionIndicatorHeightConverter" Multiply="0.375" />
+
     <ControlTemplate x:Key="GridViewItemTemplate" TargetType="{x:Type ListViewItem}">
         <Border
             x:Name="RowBorder"
             Background="{TemplateBinding Background}"
             BorderBrush="{TemplateBinding BorderBrush}"
             BorderThickness="{TemplateBinding BorderThickness}"
+            CornerRadius="{TemplateBinding Border.CornerRadius}"
             SnapsToDevicePixels="True">
             <Grid>
-                <GridViewRowPresenter
-                    Margin="12,0,0,0"
-                    HorizontalAlignment="Stretch"
-                    VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
-                    Columns="{TemplateBinding GridView.ColumnCollection}"
-                    Content="{TemplateBinding Content}" />
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
                 <Rectangle
                     x:Name="SelectionIndicator"
+                    Grid.Column="0"
                     Width="3"
-                    Height="18"
-                    Margin="8,0,0,0"
+                    Height="{TemplateBinding ActualHeight, Converter={StaticResource ListViewItemSelectionIndicatorHeightConverter}}"
+                    Margin="6,0,3,0"
                     HorizontalAlignment="Left"
                     VerticalAlignment="Center"
                     Fill="{m:DynamicBrush AccentSelection}"
                     IsHitTestVisible="False"
-                    RadiusX="2"
-                    RadiusY="2"
-                    Visibility="Collapsed" />
+                    RadiusX="1.5"
+                    RadiusY="1.5"
+                    SnapsToDevicePixels="False"
+                    UseLayoutRounding="False"
+                    Visibility="Hidden" />
+                <GridViewRowPresenter
+                    Grid.Column="1"
+                    Margin="{TemplateBinding Padding}"
+                    HorizontalAlignment="Stretch"
+                    VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                    Columns="{TemplateBinding GridView.ColumnCollection}" />
             </Grid>
         </Border>
         <ControlTemplate.Triggers>
@@ -113,6 +125,9 @@
                 </MultiTrigger.Conditions>
                 <Setter TargetName="SelectionIndicator" Property="Visibility" Value="Visible" />
             </MultiTrigger>
+            <Trigger Property="controls:SelectionIndicator.IsSelectionIndicatorVisible" Value="False">
+                <Setter TargetName="SelectionIndicator" Property="Visibility" Value="Collapsed" />
+            </Trigger>
             <Trigger Property="IsEnabled" Value="False">
                 <Setter Property="Foreground" Value="{m:DynamicBrush TextFillDisabled}" />
             </Trigger>
@@ -121,9 +136,6 @@
 
     <Style x:Key="DefaultListViewItemStyle" TargetType="{x:Type ListViewItem}">
         <Setter Property="MinHeight" Value="40" />
-        <Setter Property="Margin" Value="0" />
-        <Setter Property="Padding" Value="12,0" />
-        <Setter Property="Foreground" Value="{m:DynamicBrush TextFillPrimary}" />
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="BorderBrush" Value="{m:DynamicBrush DividerStrokeDefault}" />
         <Setter Property="BorderThickness" Value="0,0,0,1" />
