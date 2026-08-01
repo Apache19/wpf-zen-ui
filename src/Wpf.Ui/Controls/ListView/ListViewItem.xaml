@@ -76,6 +76,7 @@
             SnapsToDevicePixels="True">
             <Grid>
                 <GridViewRowPresenter
+                    Margin="12,0,0,0"
                     HorizontalAlignment="Stretch"
                     VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
                     Columns="{TemplateBinding GridView.ColumnCollection}"
@@ -133,10 +134,7 @@
         <Setter Property="Template" Value="{StaticResource DefaultListViewItemTemplate}" />
     </Style>
 
-    <Style
-        x:Key="{x:Static controls:GridView.GridViewItemContainerStyleKey}"
-        BasedOn="{StaticResource DefaultListViewItemStyle}"
-        TargetType="{x:Type ListViewItem}">
+    <Style x:Key="{x:Static controls:GridView.GridViewItemContainerStyleKey}" BasedOn="{StaticResource DefaultListViewItemStyle}" TargetType="{x:Type ListViewItem}">
         <Setter Property="Padding" Value="0" />
         <Setter Property="Template" Value="{StaticResource GridViewItemTemplate}" />
     </Style>

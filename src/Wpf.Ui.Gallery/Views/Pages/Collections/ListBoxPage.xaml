@@ -23,7 +23,7 @@
                 \t&lt;ListBoxItem Content=&quot;Green&quot;/&gt;\n
                 &lt;/ListBox&gt;
             </controls:ControlExample.XamlCode>
-            <ui:ListBox BorderThickness="0" SelectedIndex="0">
+            <ui:ListBox SelectedIndex="0">
                 <ListBoxItem>Blue</ListBoxItem>
                 <ListBoxItem>Green</ListBoxItem>
                 <ListBoxItem>Red</ListBoxItem>
@@ -37,7 +37,6 @@
             XamlCode="&lt;ListBox Height=&quot;100&quot; ItemsSource=&quot;{Binding ListBoxItems}&quot; /&gt;">
             <ui:ListBox
                 Height="164"
-                BorderThickness="0"
                 ItemsSource="{Binding ListBoxItems, Mode=TwoWay}"
                 SelectedIndex="2" />
         </controls:ControlExample>

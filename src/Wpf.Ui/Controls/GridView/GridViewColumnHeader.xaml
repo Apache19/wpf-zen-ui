@@ -29,11 +29,14 @@
 
     <Style x:Key="UiGridViewColumnHeaderStyle" TargetType="{x:Type GridViewColumnHeader}">
         <Setter Property="MinHeight" Value="40" />
-        <Setter Property="Padding" Value="12,0" />
+        <!--
+            Native GridViewRowPresenter gives generated cell content a six-pixel horizontal margin.
+            Matching it here keeps header text aligned with row text; the separate twelve-pixel
+            leading gutter in the presenter templates is reserved for the selection indicator.
+        -->
+        <Setter Property="Padding" Value="6,0" />
         <Setter Property="Foreground" Value="{m:DynamicBrush TextFillSecondary}" />
         <Setter Property="Background" Value="Transparent" />
-        <Setter Property="BorderBrush" Value="{m:DynamicBrush DividerStrokeDefault}" />
-        <Setter Property="BorderThickness" Value="0,0,0,1" />
         <Setter Property="HorizontalContentAlignment" Value="Left" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
         <Setter Property="FontWeight" Value="SemiBold" />

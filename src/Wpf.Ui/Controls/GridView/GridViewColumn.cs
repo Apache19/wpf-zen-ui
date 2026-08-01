@@ -203,6 +203,20 @@ public class GridViewColumn : NativeGridViewColumn
     }
 
     /// <summary>
+    /// Publishes the pixel result of an interactive boundary resize for an Auto or fixed column.
+    /// </summary>
+    /// <remarks>
+    /// Native GridView has no separate desired and display widths. Consequently, a non-star column
+    /// that absorbs a neighboring star resize becomes fixed, exactly as it does when its own native
+    /// gripper is dragged. Keeping this transition here prevents the layout algorithm from writing
+    /// the hidden native <see cref="NativeGridViewColumn.WidthProperty"/> directly.
+    /// </remarks>
+    internal void SetInteractiveWidth(double value)
+    {
+        SetCurrentValue(WidthProperty, new GridLength(CoerceWidth(value)));
+    }
+
+    /// <summary>
     /// Applies MinWidth and MaxWidth to WPF's shared native Auto measurement.
     /// </summary>
     internal void CoerceAutoDesiredWidth()

@@ -223,6 +223,95 @@ public class ListViewAndDataGridTests
     }
 
     [Fact]
+    public void DataGridColumnStyleBindings_ReturnAfterExplicitStyleIsCleared()
+    {
+        RunOnStaThread(static () =>
+        {
+            var gridStyle = new Style(typeof(TextBlock));
+            var explicitStyle = new Style(typeof(TextBlock));
+            var dataGrid = new UiDataGrid { TextColumnElementStyle = gridStyle };
+            Initialize(dataGrid);
+            var column = new DataGridTextColumn();
+            dataGrid.Columns.Add(column);
+
+            Assert.Same(gridStyle, column.ElementStyle);
+
+            column.ElementStyle = explicitStyle;
+            Assert.Same(explicitStyle, column.ElementStyle);
+
+            column.ClearValue(DataGridBoundColumn.ElementStyleProperty);
+
+            Assert.Same(gridStyle, column.ElementStyle);
+            Assert.Same(
+                dataGrid,
+                BindingOperations
+                    .GetBinding(column, DataGridBoundColumn.ElementStyleProperty)
+                    ?.Source
+            );
+        });
+    }
+
+    [Fact]
+    public void DataGridCellTemplate_ShowsTextColorRectangleOnlyForCellSelection()
+    {
+        RunOnStaThread(static () =>
+        {
+            var item = new GroupedRow("A", "Value");
+            var dataGrid = new UiDataGrid
+            {
+                AutoGenerateColumns = false,
+                Height = 120,
+                ItemsSource = new[] { item },
+                SelectionUnit = DataGridSelectionUnit.Cell,
+                Width = 300,
+            };
+            var column = new DataGridTextColumn { Binding = new Binding(nameof(GroupedRow.Name)) };
+            dataGrid.Columns.Add(column);
+            Arrange(dataGrid, 300, 120);
+
+            dataGrid.SelectedCells.Add(new DataGridCellInfo(item, column));
+            dataGrid.UpdateLayout();
+
+            var cell = Assert.IsType<DataGridCell>(FindVisualChild<DataGridCell>(dataGrid));
+            var selectionBorder = Assert.IsType<Border>(
+                cell.Template.FindName("CellSelectionBorder", cell)
+            );
+            Assert.Equal(Visibility.Visible, selectionBorder.Visibility);
+            Assert.Equal(new Thickness(1d), selectionBorder.BorderThickness);
+            Assert.NotNull(selectionBorder.BorderBrush);
+            Assert.False(selectionBorder.IsHitTestVisible);
+
+            dataGrid.SelectionUnit = DataGridSelectionUnit.FullRow;
+            dataGrid.SelectedItem = item;
+            dataGrid.UpdateLayout();
+
+            Assert.Equal(Visibility.Collapsed, selectionBorder.Visibility);
+        });
+    }
+
+    [Fact]
+    public void DataGridDragIndicatorTemplate_ContainsVisualBrushCanvasPart()
+    {
+        RunOnStaThread(static () =>
+        {
+            var dataGrid = new UiDataGrid();
+            Arrange(dataGrid, 300, 120);
+            var floatingHeader = new Control
+            {
+                Height = 40,
+                Style = dataGrid.DragIndicatorStyle,
+                Width = 120,
+            };
+            Arrange(floatingHeader, 120, 40);
+
+            var canvas = Assert.IsType<Canvas>(
+                floatingHeader.Template.FindName("PART_VisualBrushCanvas", floatingHeader)
+            );
+            Assert.False(canvas.IsHitTestVisible);
+        });
+    }
+
+    [Fact]
     public void DataGridColumnStyleBindings_DoNotReplaceExplicitColumnStyles()
     {
         RunOnStaThread(static () =>

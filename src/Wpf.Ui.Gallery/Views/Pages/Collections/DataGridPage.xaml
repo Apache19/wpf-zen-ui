@@ -4,7 +4,6 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Ui.Gallery.Controls"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:local="clr-namespace:Wpf.Ui.Gallery.Views.Pages.Collections"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:system="clr-namespace:System;assembly=System.Runtime"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
@@ -14,8 +13,8 @@
     d:Background="{ui:DynamicBrush WindowBackground}"
     d:DataContext="{d:DesignInstance vm:DataGridViewModel, IsDesignTimeCreatable=False}"
     d:DesignWidth="800"
-    Style="{ui:DynamicStyle DynamicScrollPage}"
     Foreground="{ui:DynamicBrush TextFillPrimary}"
+    Style="{ui:DynamicStyle DynamicScrollPage}"
     mc:Ignorable="d">
     <Page.Resources>
         <system:String x:Key="PageXamlUrl">https://github.com/lepoco/wpfui/blob/development/src/Wpf.Ui/Resources/Controls/DataGrid.xaml</system:String>
@@ -34,7 +33,11 @@
             Margin="0,36,0,0"
             HeaderText="WPF UI DataGrid with ItemsSource."
             XamlCode="&lt;ui:DataGrid ItemsSource=&quot;{Binding ProductsCollection, Mode=TwoWay}&quot; /&gt;">
-            <ui:DataGrid Height="400" ItemsSource="{Binding ProductsCollection, Mode=TwoWay}" />
+            <ui:DataGrid
+                Height="400"
+                ItemsSource="{Binding ProductsCollection, Mode=TwoWay}"
+                SelectionMode="Single"
+                SelectionUnit="CellOrRowHeader" />
         </controls:ControlExample>
     </StackPanel>
 </Page>

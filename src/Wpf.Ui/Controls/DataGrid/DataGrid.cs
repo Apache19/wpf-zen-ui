@@ -24,6 +24,9 @@ public class DataGrid : System.Windows.Controls.DataGrid
 {
     private readonly Dictionary<DataGridColumn, Dictionary<DependencyProperty, BindingBase>>
         _columnStyleBindings = new();
+    private readonly Dictionary<DataGridColumn, Dictionary<DependencyProperty, ColumnStyleObserver>>
+        _columnStyleObservers = new();
+    private bool _isReconcilingColumnStyles;
 
     /// <summary>
     /// Identifies the <see cref="IsSelectionIndicatorVisible"/> dependency property.
@@ -183,17 +186,30 @@ public class DataGrid : System.Windows.Controls.DataGrid
         // owning grid. Bindings supply that missing inheritance. Remove only bindings installed by
         // this grid before a column is moved elsewhere; otherwise the detached column keeps this
         // DataGrid alive and continues to use its styles in the new owner.
-        foreach (DataGridColumn trackedColumn in _columnStyleBindings.Keys.ToArray())
+        _isReconcilingColumnStyles = true;
+        try
         {
-            if (!Columns.Contains(trackedColumn))
+            foreach (
+                DataGridColumn trackedColumn in _columnStyleObservers
+                    .Keys.Concat(_columnStyleBindings.Keys)
+                    .Distinct()
+                    .ToArray()
+            )
             {
-                RemoveColumnElementStyleBindings(trackedColumn);
+                if (!Columns.Contains(trackedColumn))
+                {
+                    RemoveColumnElementStyleTracking(trackedColumn);
+                }
+            }
+
+            foreach (DataGridColumn singleColumn in Columns)
+            {
+                UpdateSingleColumn(singleColumn);
             }
         }
-
-        foreach (DataGridColumn singleColumn in Columns)
+        finally
         {
-            UpdateSingleColumn(singleColumn);
+            _isReconcilingColumnStyles = false;
         }
     }
 
@@ -251,6 +267,8 @@ public class DataGrid : System.Windows.Controls.DataGrid
         DependencyProperty sourceProperty
     )
     {
+        EnsureColumnStylePropertyTracking(column, targetProperty);
+
         // A local style or user-authored binding always wins. SetBinding is only used for an empty
         // slot so adding a column never overwrites an explicit per-column customization.
         if (column.ReadLocalValue(targetProperty) != DependencyProperty.UnsetValue)
@@ -268,6 +286,67 @@ public class DataGrid : System.Windows.Controls.DataGrid
         }
 
         bindings[targetProperty] = binding;
+    }
+
+    private void EnsureColumnStylePropertyTracking(
+        DataGridColumn column,
+        DependencyProperty targetProperty
+    )
+    {
+        if (!_columnStyleObservers.TryGetValue(column, out var observers))
+        {
+            observers = new Dictionary<DependencyProperty, ColumnStyleObserver>();
+            _columnStyleObservers.Add(column, observers);
+        }
+
+        if (observers.ContainsKey(targetProperty))
+        {
+            return;
+        }
+
+        // DataGridColumn is not in the visual/logical tree, so ClearValue cannot naturally reveal
+        // an inherited grid-level style. A binding observer supplies change notification without
+        // DependencyPropertyDescriptor's global strong reference to the column. Explicit values and
+        // bindings remain untouched because EnsureColumnElementStyleBinding checks precedence first.
+        observers.Add(targetProperty, new ColumnStyleObserver(this, column, targetProperty));
+    }
+
+    private void OnColumnStylePropertyChanged(object? sender, EventArgs e)
+    {
+        if (
+            _isReconcilingColumnStyles
+            || sender is not DataGridColumn column
+            || !Columns.Contains(column)
+        )
+        {
+            return;
+        }
+
+        _isReconcilingColumnStyles = true;
+        try
+        {
+            UpdateSingleColumn(column);
+        }
+        finally
+        {
+            _isReconcilingColumnStyles = false;
+        }
+    }
+
+    private void RemoveColumnElementStyleTracking(DataGridColumn column)
+    {
+        RemoveColumnElementStyleBindings(column);
+
+        if (!_columnStyleObservers.TryGetValue(column, out var observers))
+        {
+            return;
+        }
+
+        _columnStyleObservers.Remove(column);
+        foreach (ColumnStyleObserver observer in observers.Values)
+        {
+            observer.Detach();
+        }
     }
 
     private void RemoveColumnElementStyleBindings(DataGridColumn column)
@@ -294,6 +373,58 @@ public class DataGrid : System.Windows.Controls.DataGrid
             {
                 BindingOperations.ClearBinding(column, bindingEntry.Key);
             }
+        }
+    }
+
+    /// <summary>
+    /// Observes a column dependency property through WPF's binding engine. Unlike
+    /// DependencyPropertyDescriptor, the observer is owned by the grid and does not register the
+    /// column in a process-wide descriptor table, so an abandoned grid remains collectible.
+    /// </summary>
+    private sealed class ColumnStyleObserver : DependencyObject
+    {
+        private static readonly DependencyProperty ValueProperty = DependencyProperty.Register(
+            "Value",
+            typeof(object),
+            typeof(ColumnStyleObserver),
+            new PropertyMetadata(null, OnValueChanged)
+        );
+
+        private readonly DataGrid _owner;
+        private readonly DataGridColumn _column;
+
+        internal ColumnStyleObserver(
+            DataGrid owner,
+            DataGridColumn column,
+            DependencyProperty targetProperty
+        )
+        {
+            _owner = owner;
+            _column = column;
+            _ = BindingOperations.SetBinding(
+                this,
+                ValueProperty,
+                new Binding
+                {
+                    Mode = BindingMode.OneWay,
+                    Path = new PropertyPath(targetProperty),
+                    Source = column,
+                }
+            );
+        }
+
+        internal void Detach()
+        {
+            BindingOperations.ClearBinding(this, ValueProperty);
+        }
+
+        private static void OnValueChanged(
+            DependencyObject d,
+            DependencyPropertyChangedEventArgs e
+        )
+        {
+            var observer = (ColumnStyleObserver)d;
+            observer._owner.OnColumnStylePropertyChanged(observer._column, EventArgs.Empty);
         }
     }
 }

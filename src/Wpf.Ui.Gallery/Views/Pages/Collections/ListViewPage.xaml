@@ -14,8 +14,8 @@
     d:Background="{ui:DynamicBrush WindowBackground}"
     d:DataContext="{d:DesignInstance vm:ListViewViewModel, IsDesignTimeCreatable=False}"
     d:DesignWidth="800"
-    Style="{ui:DynamicStyle DynamicScrollPage}"
     Foreground="{ui:DynamicBrush TextFillPrimary}"
+    Style="{ui:DynamicStyle DynamicScrollPage}"
     mc:Ignorable="d">
 
     <StackPanel Margin="0,0,0,24">
@@ -132,10 +132,12 @@
                 &lt;/ListView&gt;
             </controls:ControlExample.XamlCode>
             <ui:ListView
-                MaxHeight="200"
+                MaxHeight="230"
                 d:ItemsSource="{d:SampleData ItemCount=2}"
-                BorderThickness="0"
-                ItemsSource="{Binding BasicListViewItems, Mode=TwoWay}">
+                ui:PassiveScrollViewer.ScrollSpillMode="Disabled"
+                BorderThickness="1"
+                ItemsSource="{Binding BasicListViewItems, Mode=TwoWay}"
+                ScrollViewer.CanContentScroll="False">
                 <ui:ListView.View>
                     <ui:GridView>
                         <ui:GridViewColumn

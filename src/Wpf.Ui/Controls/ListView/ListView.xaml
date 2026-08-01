@@ -60,24 +60,36 @@
                 Grid.RowSpan="2"
                 Grid.ColumnSpan="2"
                 Margin="{TemplateBinding Padding}">
-                <ScrollViewer
-                    DockPanel.Dock="Top"
+
+                <Border
                     Background="{m:DynamicBrush LayerFillAlt}"
-                    Focusable="False"
-                    HorizontalScrollBarVisibility="Hidden"
-                    VerticalScrollBarVisibility="Hidden">
-                    <GridViewHeaderRowPresenter
-                        AllowsColumnReorder="{Binding TemplatedParent.View.AllowsColumnReorder, RelativeSource={RelativeSource TemplatedParent}}"
-                        ColumnHeaderContainerStyle="{Binding TemplatedParent.View.ColumnHeaderContainerStyle, RelativeSource={RelativeSource TemplatedParent}, TargetNullValue={StaticResource UiGridViewColumnHeaderStyle}}"
-                        ColumnHeaderContextMenu="{Binding TemplatedParent.View.ColumnHeaderContextMenu, RelativeSource={RelativeSource TemplatedParent}}"
-                        ColumnHeaderStringFormat="{Binding TemplatedParent.View.ColumnHeaderStringFormat, RelativeSource={RelativeSource TemplatedParent}}"
-                        ColumnHeaderTemplate="{Binding TemplatedParent.View.ColumnHeaderTemplate, RelativeSource={RelativeSource TemplatedParent}}"
-                        ColumnHeaderTemplateSelector="{Binding TemplatedParent.View.ColumnHeaderTemplateSelector, RelativeSource={RelativeSource TemplatedParent}}"
-                        ColumnHeaderToolTip="{Binding TemplatedParent.View.ColumnHeaderToolTip, RelativeSource={RelativeSource TemplatedParent}}"
-                        controls:ColumnHeaderResizeBehavior.IsEnabled="True"
-                        Columns="{Binding TemplatedParent.View.Columns, RelativeSource={RelativeSource TemplatedParent}}"
-                        SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
-                </ScrollViewer>
+                    BorderBrush="{m:DynamicBrush DividerStrokeDefault}"
+                    BorderThickness="0,0,0,1"
+                    DockPanel.Dock="Top">
+                    <ScrollViewer
+                        Focusable="False"
+                        HorizontalScrollBarVisibility="Hidden"
+                        VerticalScrollBarVisibility="Hidden">
+                        <!--
+                            This presenter must remain the ScrollViewer's direct content: WPF's native
+                            GridView scrolling contract synchronizes it with the body by that structure.
+                            The leading margin reserves the selection-indicator gutter without replacing
+                            the presenter or altering its native column logic.
+                        -->
+                        <GridViewHeaderRowPresenter
+                            Margin="12,0,0,0"
+                            controls:ColumnHeaderResizeBehavior.IsEnabled="True"
+                            AllowsColumnReorder="{Binding TemplatedParent.View.AllowsColumnReorder, RelativeSource={RelativeSource TemplatedParent}}"
+                            ColumnHeaderContainerStyle="{Binding TemplatedParent.View.ColumnHeaderContainerStyle, RelativeSource={RelativeSource TemplatedParent}, TargetNullValue={StaticResource UiGridViewColumnHeaderStyle}}"
+                            ColumnHeaderContextMenu="{Binding TemplatedParent.View.ColumnHeaderContextMenu, RelativeSource={RelativeSource TemplatedParent}}"
+                            ColumnHeaderStringFormat="{Binding TemplatedParent.View.ColumnHeaderStringFormat, RelativeSource={RelativeSource TemplatedParent}}"
+                            ColumnHeaderTemplate="{Binding TemplatedParent.View.ColumnHeaderTemplate, RelativeSource={RelativeSource TemplatedParent}}"
+                            ColumnHeaderTemplateSelector="{Binding TemplatedParent.View.ColumnHeaderTemplateSelector, RelativeSource={RelativeSource TemplatedParent}}"
+                            ColumnHeaderToolTip="{Binding TemplatedParent.View.ColumnHeaderToolTip, RelativeSource={RelativeSource TemplatedParent}}"
+                            Columns="{Binding TemplatedParent.View.Columns, RelativeSource={RelativeSource TemplatedParent}}"
+                            SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
+                    </ScrollViewer>
+                </Border>
 
                 <ScrollContentPresenter
                     x:Name="PART_ScrollContentPresenter"
@@ -86,28 +98,31 @@
                     ContentTemplate="{TemplateBinding ContentTemplate}"
                     KeyboardNavigation.DirectionalNavigation="Local"
                     SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
+
             </DockPanel>
 
             <ScrollBar
                 x:Name="PART_HorizontalScrollBar"
                 Grid.Row="1"
+                Grid.Column="0"
                 Cursor="Arrow"
                 Maximum="{TemplateBinding ScrollableWidth}"
                 Minimum="0"
                 Orientation="Horizontal"
-                Value="{Binding HorizontalOffset, Mode=OneWay, RelativeSource={RelativeSource TemplatedParent}}"
                 ViewportSize="{TemplateBinding ViewportWidth}"
-                Visibility="{TemplateBinding EffectiveHorizontalScrollBarVisibility}" />
+                Visibility="{TemplateBinding EffectiveHorizontalScrollBarVisibility}"
+                Value="{Binding HorizontalOffset, Mode=OneWay, RelativeSource={RelativeSource TemplatedParent}}" />
             <ScrollBar
                 x:Name="PART_VerticalScrollBar"
+                Grid.Row="0"
                 Grid.Column="1"
                 Cursor="Arrow"
                 Maximum="{TemplateBinding ScrollableHeight}"
                 Minimum="0"
                 Orientation="Vertical"
-                Value="{Binding VerticalOffset, Mode=OneWay, RelativeSource={RelativeSource TemplatedParent}}"
                 ViewportSize="{TemplateBinding ViewportHeight}"
-                Visibility="{TemplateBinding ComputedVerticalScrollBarVisibility}" />
+                Visibility="{TemplateBinding ComputedVerticalScrollBarVisibility}"
+                Value="{Binding VerticalOffset, Mode=OneWay, RelativeSource={RelativeSource TemplatedParent}}" />
         </Grid>
     </ControlTemplate>
 
@@ -120,11 +135,12 @@
             SnapsToDevicePixels="True">
             <controls:PassiveScrollViewer
                 Padding="{TemplateBinding Padding}"
-                CanContentScroll="{TemplateBinding ScrollViewer.CanContentScroll}"
                 controls:GridViewColumnSizing.Columns="{Binding View.Columns, RelativeSource={RelativeSource TemplatedParent}}"
+                controls:GridViewColumnSizing.LeadingContentWidth="12"
+                CanContentScroll="{TemplateBinding ScrollViewer.CanContentScroll}"
                 Focusable="False"
-                HorizontalScrollBarVisibilityThreshold="1"
                 HorizontalScrollBarVisibility="{TemplateBinding ScrollViewer.HorizontalScrollBarVisibility}"
+                HorizontalScrollBarVisibilityThreshold="1"
                 Template="{StaticResource GridViewScrollViewerTemplate}"
                 VerticalScrollBarVisibility="{TemplateBinding ScrollViewer.VerticalScrollBarVisibility}">
                 <ItemsPresenter SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
@@ -186,10 +202,7 @@
         view for these two keys and applies the returned styles to ListView and ListViewItem. The
         lightweight Wpf.Ui GridView type exists solely to select these Fluent XAML resources.
     -->
-    <Style
-        x:Key="{x:Static controls:GridView.GridViewStyleKey}"
-        BasedOn="{StaticResource DefaultListViewBaseStyle}"
-        TargetType="{x:Type ListView}">
+    <Style x:Key="{x:Static controls:GridView.GridViewStyleKey}" BasedOn="{StaticResource DefaultListViewBaseStyle}" TargetType="{x:Type ListView}">
         <Setter Property="Template" Value="{StaticResource GridViewTemplate}" />
     </Style>
 

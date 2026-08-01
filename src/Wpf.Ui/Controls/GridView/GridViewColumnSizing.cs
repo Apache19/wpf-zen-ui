@@ -40,6 +40,27 @@ public static class GridViewColumnSizing
         new PropertyMetadata(null, OnColumnsChanged)
     );
 
+    /// <summary>
+    /// Identifies the <c>LeadingContentWidth</c> attached dependency property.
+    /// </summary>
+    /// <remarks>
+    /// This value reserves viewport space used by template content that precedes the first column,
+    /// such as the Fluent row-selection indicator gutter. The default is <c>0</c> so replacement
+    /// templates without leading content continue to allocate the complete viewport to columns.
+    /// </remarks>
+    public static readonly DependencyProperty LeadingContentWidthProperty =
+        DependencyProperty.RegisterAttached(
+            "LeadingContentWidth",
+            typeof(double),
+            typeof(GridViewColumnSizing),
+            new FrameworkPropertyMetadata(0.0, OnLeadingContentWidthChanged),
+            static value =>
+                value is double width
+                && !double.IsNaN(width)
+                && !double.IsInfinity(width)
+                && width >= 0.0
+        );
+
     private static readonly DependencyProperty CoordinatorProperty = DependencyProperty.RegisterAttached(
         "Coordinator",
         typeof(Coordinator),
@@ -66,6 +87,38 @@ public static class GridViewColumnSizing
     public static void SetColumns(DependencyObject element, NativeGridViewColumnCollection? value)
     {
         element.SetValue(ColumnsProperty, value);
+    }
+
+    /// <summary>
+    /// Gets the width reserved before the first coordinated column.
+    /// </summary>
+    /// <param name="element">The ScrollViewer that owns the GridView viewport.</param>
+    /// <returns>The reserved device-independent width. The default is <c>0</c>.</returns>
+    [AttachedPropertyBrowsableForType(typeof(ScrollViewer))]
+    public static double GetLeadingContentWidth(DependencyObject element)
+    {
+        return (double)element.GetValue(LeadingContentWidthProperty);
+    }
+
+    /// <summary>
+    /// Sets the width occupied by template content before the first coordinated column.
+    /// </summary>
+    /// <param name="element">The ScrollViewer that owns the GridView viewport.</param>
+    /// <param name="value">A finite, non-negative device-independent width.</param>
+    public static void SetLeadingContentWidth(DependencyObject element, double value)
+    {
+        element.SetValue(LeadingContentWidthProperty, value);
+    }
+
+    private static void OnLeadingContentWidthChanged(
+        DependencyObject d,
+        DependencyPropertyChangedEventArgs e
+    )
+    {
+        if (d.GetValue(CoordinatorProperty) is Coordinator coordinator)
+        {
+            coordinator.OnLeadingContentWidthChanged();
+        }
     }
 
     private static void OnColumnsChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
@@ -123,6 +176,12 @@ public static class GridViewColumnSizing
             _scrollViewer.Loaded -= OnLoaded;
             _scrollViewer.Unloaded -= OnUnloaded;
             Deactivate();
+        }
+
+        internal void OnLeadingContentWidthChanged()
+        {
+            UpdateWidths();
+            ScheduleUpdate();
         }
 
         private void OnLoaded(object sender, RoutedEventArgs e)
@@ -229,7 +288,8 @@ public static class GridViewColumnSizing
                     column,
                     e.PreviousWidth,
                     e.RequestedWidth,
-                    viewportWidth
+                    viewportWidth,
+                    GetLeadingContentWidth(_scrollViewer)
                 );
             }
             finally
@@ -308,7 +368,11 @@ public static class GridViewColumnSizing
             try
             {
                 GridViewColumnLayout.CoerceAutoColumns(_columns);
-                _ = GridViewColumnLayout.ResolveStarColumns(_columns, viewportWidth);
+                _ = GridViewColumnLayout.ResolveStarColumns(
+                    _columns,
+                    viewportWidth,
+                    GetLeadingContentWidth(_scrollViewer)
+                );
             }
             finally
             {

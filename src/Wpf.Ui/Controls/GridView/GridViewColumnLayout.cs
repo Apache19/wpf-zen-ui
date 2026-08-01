@@ -36,15 +36,17 @@ internal static class GridViewColumnLayout
     /// WPF's GridView header writes a finite value to the native double Width property for every
     /// drag. Treating that write as a new pixel definition permanently removes one star column on
     /// each resize. Instead, the boundary's star columns to the right absorb the delta, which is
-    /// the same directional contract used by WPF DataGrid and GridSplitter. If no star column exists
-    /// to the right, the trailing boundary is immovable.
+    /// the same directional contract used by WPF DataGrid and GridSplitter. Adjustable Auto and
+    /// fixed columns to the right participate after the available star capacity is exhausted. As
+    /// with native GridView resizing, an Auto column changed by that interaction becomes fixed.
     /// </remarks>
     internal static bool TryResizeStarColumn(
         NativeGridViewColumnCollection columns,
         GridViewColumn resizingColumn,
         double previousWidth,
         double requestedWidth,
-        double availableWidth
+        double availableWidth,
+        double leadingContentWidth = 0.0
     )
     {
         if (
@@ -52,6 +54,7 @@ internal static class GridViewColumnLayout
             || !IsFiniteNonNegative(previousWidth)
             || !IsFiniteNonNegative(requestedWidth)
             || !IsFiniteNonNegative(availableWidth)
+            || !IsFiniteNonNegative(leadingContentWidth)
         )
         {
             return false;
@@ -65,24 +68,36 @@ internal static class GridViewColumnLayout
 
         var starColumns = new List<GridViewColumn>();
         var rightStarColumns = new List<GridViewColumn>();
+        var rightNonStarColumns = new List<GridViewColumn>();
         var desiredWidths = new Dictionary<GridViewColumn, double>();
         double nonStarSpace = 0.0;
 
         for (int index = 0; index < columns.Count; index++)
         {
             NativeGridViewColumn nativeColumn = columns[index];
-            if (nativeColumn is GridViewColumn { Width.IsStar: true } starColumn)
+            if (nativeColumn is GridViewColumn column)
             {
-                starColumns.Add(starColumn);
-                if (index > resizingIndex)
-                {
-                    rightStarColumns.Add(starColumn);
-                }
-
-                double actualWidth = ReferenceEquals(starColumn, resizingColumn)
+                double actualWidth = ReferenceEquals(column, resizingColumn)
                     ? previousWidth
-                    : GetFiniteWidth(starColumn);
-                desiredWidths.Add(starColumn, starColumn.CoerceWidth(actualWidth));
+                    : GetFiniteWidth(column);
+                desiredWidths.Add(column, column.CoerceWidth(actualWidth));
+
+                if (column.Width.IsStar)
+                {
+                    starColumns.Add(column);
+                    if (index > resizingIndex)
+                    {
+                        rightStarColumns.Add(column);
+                    }
+                }
+                else
+                {
+                    nonStarSpace += column.ActualWidth;
+                    if (index > resizingIndex)
+                    {
+                        rightNonStarColumns.Add(column);
+                    }
+                }
             }
             else if (IsFiniteNonNegative(nativeColumn.ActualWidth))
             {
@@ -93,9 +108,9 @@ internal static class GridViewColumnLayout
         // A trailing star boundary has no definition to its right that can absorb the change.
         // Marking the request handled restores the current allocation instead of silently turning
         // the star into a fixed pixel column.
-        if (rightStarColumns.Count == 0)
+        if (rightStarColumns.Count == 0 && rightNonStarColumns.Count == 0)
         {
-            _ = ResolveStarColumns(columns, availableWidth);
+            _ = ResolveStarColumns(columns, availableWidth, leadingContentWidth);
             return true;
         }
 
@@ -103,9 +118,9 @@ internal static class GridViewColumnLayout
         double targetWidth = resizingColumn.CoerceWidth(requestedWidth);
         double availableStarSpace = Math.Max(
             0.0,
-            availableWidth - NativePaddingHeaderWidth - nonStarSpace
+            availableWidth - NativePaddingHeaderWidth - leadingContentWidth - nonStarSpace
         );
-        double currentStarSpace = desiredWidths.Values.Sum();
+        double currentStarSpace = starColumns.Sum(column => desiredWidths[column]);
 
         if (targetWidth > currentWidth)
         {
@@ -113,32 +128,61 @@ internal static class GridViewColumnLayout
             double unusedSpace = Math.Max(0.0, availableStarSpace - currentStarSpace);
             double growthFromUnusedSpace = Math.Min(requestedGrowth, unusedSpace);
             double remainingGrowth = requestedGrowth - growthFromUnusedSpace;
-            double growthFromRight = RedistributeWidth(
+            double growthFromRightStars = RedistributeWidth(
                 rightStarColumns,
                 desiredWidths,
                 remainingGrowth,
                 shrink: true
             );
+            double growthFromRightNonStars = RedistributeWidth(
+                rightNonStarColumns,
+                desiredWidths,
+                remainingGrowth - growthFromRightStars,
+                shrink: true,
+                useDefinitionWeights: false
+            );
             desiredWidths[resizingColumn] =
-                currentWidth + growthFromUnusedSpace + growthFromRight;
+                currentWidth
+                + growthFromUnusedSpace
+                + growthFromRightStars
+                + growthFromRightNonStars;
         }
         else if (targetWidth < currentWidth)
         {
             double requestedShrink = currentWidth - targetWidth;
-            double shrinkAbsorbedOnRight = RedistributeWidth(
+            double shrinkAbsorbedByRightStars = RedistributeWidth(
                 rightStarColumns,
                 desiredWidths,
                 requestedShrink,
                 shrink: false
             );
-            desiredWidths[resizingColumn] = currentWidth - shrinkAbsorbedOnRight;
+            double shrinkAbsorbedByRightNonStars = RedistributeWidth(
+                rightNonStarColumns,
+                desiredWidths,
+                requestedShrink - shrinkAbsorbedByRightStars,
+                shrink: false,
+                useDefinitionWeights: false
+            );
+            desiredWidths[resizingColumn] =
+                currentWidth - shrinkAbsorbedByRightStars - shrinkAbsorbedByRightNonStars;
+        }
+
+        // WPF GridView has no separate desired/display widths for non-star columns. Once an Auto or
+        // fixed column absorbs a manual boundary change, publish the resulting pixel definition;
+        // this is the same observable result as dragging that column's own native gripper.
+        foreach (GridViewColumn column in rightNonStarColumns)
+        {
+            if (!AreClose(column.ActualWidth, desiredWidths[column]))
+            {
+                column.SetInteractiveWidth(desiredWidths[column]);
+            }
         }
 
         // Star values are ratios, so normalize the new pixel proportions back to the original
         // aggregate weight. This keeps XAML-scale weights readable while preserving the exact
         // boundary selected by the user. Constraint-bound columns are resolved by the normal pass.
         double originalWeight = starColumns.Sum(static column => column.Width.Value);
-        double desiredTotal = desiredWidths.Values.Sum();
+        double desiredTotal = starColumns.Sum(column => desiredWidths[column]);
         double weightScale = originalWeight > 0.0 && desiredTotal > 0.0
             ? originalWeight / desiredTotal
             : 1.0;
@@ -148,7 +192,7 @@ internal static class GridViewColumnLayout
             starColumn.SetStarWeight(desiredWidths[starColumn] * weightScale);
         }
 
-        _ = ResolveStarColumns(columns, availableWidth);
+        _ = ResolveStarColumns(columns, availableWidth, leadingContentWidth);
         return true;
     }
 
@@ -164,10 +208,15 @@ internal static class GridViewColumnLayout
     /// </remarks>
     internal static bool ResolveStarColumns(
         NativeGridViewColumnCollection? columns,
-        double availableWidth
+        double availableWidth,
+        double leadingContentWidth = 0.0
     )
     {
-        if (columns is null || !IsFiniteNonNegative(availableWidth))
+        if (
+            columns is null
+            || !IsFiniteNonNegative(availableWidth)
+            || !IsFiniteNonNegative(leadingContentWidth)
+        )
         {
             return false;
         }
@@ -196,7 +245,7 @@ internal static class GridViewColumnLayout
 
         double remainingSpace = Math.Max(
             0.0,
-            availableWidth - NativePaddingHeaderWidth - occupiedWidth
+            availableWidth - NativePaddingHeaderWidth - leadingContentWidth - occupiedWidth
         );
         double remainingWeight = starColumns.Sum(static column => column.Weight);
         var unresolvedColumns = new List<StarColumn>(starColumns);
@@ -270,7 +319,8 @@ internal static class GridViewColumnLayout
         IReadOnlyCollection<GridViewColumn> columns,
         IDictionary<GridViewColumn, double> widths,
         double requestedChange,
-        bool shrink
+        bool shrink,
+        bool useDefinitionWeights = true
     )
     {
         if (requestedChange <= 0.0)
@@ -283,7 +333,9 @@ internal static class GridViewColumnLayout
 
         while (remainingChange > 0.000001 && unresolvedColumns.Count > 0)
         {
-            double totalWeight = unresolvedColumns.Sum(static column => column.Width.Value);
+            double totalWeight = useDefinitionWeights
+                ? unresolvedColumns.Sum(static column => column.Width.Value)
+                : unresolvedColumns.Count;
             bool useEqualWeights = totalWeight <= 0.0;
             if (useEqualWeights)
             {
@@ -294,7 +346,7 @@ internal static class GridViewColumnLayout
             for (int index = unresolvedColumns.Count - 1; index >= 0; index--)
             {
                 GridViewColumn column = unresolvedColumns[index];
-                double weight = useEqualWeights ? 1.0 : column.Width.Value;
+                double weight = useEqualWeights || !useDefinitionWeights ? 1.0 : column.Width.Value;
                 double proposedChange = remainingChange * weight / totalWeight;
                 double capacity = shrink
                     ? Math.Max(0.0, widths[column] - column.MinWidth)
@@ -319,7 +371,7 @@ internal static class GridViewColumnLayout
             double changeForPass = remainingChange;
             foreach (GridViewColumn column in unresolvedColumns)
             {
-                double weight = useEqualWeights ? 1.0 : column.Width.Value;
+                double weight = useEqualWeights || !useDefinitionWeights ? 1.0 : column.Width.Value;
                 ApplyChange(column, widths, changeForPass * weight / totalWeight, shrink);
             }
 

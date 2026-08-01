@@ -613,6 +613,146 @@ public class GridViewTests
     }
 
     [Fact]
+    public void GridViewTemplate_StarResizeFallsBackToRightAutoAndFixedColumns()
+    {
+        RunOnStaThread(static () =>
+        {
+            var view = new UiGridView();
+            var starColumn = new UiGridViewColumn
+            {
+                Header = "Star",
+                MinWidth = 80,
+                Width = new GridLength(1, GridUnitType.Star),
+            };
+            var autoColumn = new UiGridViewColumn
+            {
+                DisplayMemberBinding = new System.Windows.Data.Binding(),
+                Header = "Automatic content",
+                MinWidth = 60,
+                Width = GridLength.Auto,
+            };
+            var fixedColumn = new UiGridViewColumn
+            {
+                Header = "Fixed",
+                MinWidth = 60,
+                Width = new GridLength(140),
+            };
+            view.Columns.Add(starColumn);
+            view.Columns.Add(autoColumn);
+            view.Columns.Add(fixedColumn);
+            var listView = new UiListView
+            {
+                Height = 160,
+                ItemsSource = new[] { "Automatic content value" },
+                View = view,
+                Width = 600,
+            };
+            var window = new Window
+            {
+                Content = listView,
+                Height = 200,
+                ShowInTaskbar = false,
+                Width = 640,
+                WindowStyle = WindowStyle.None,
+            };
+
+            try
+            {
+                window.Show();
+                AssertColumnsFillViewport(listView, view);
+                double starWidth = starColumn.ActualWidth;
+                double autoWidth = autoColumn.ActualWidth;
+                double fixedWidth = fixedColumn.ActualWidth;
+
+                starColumn.SetValue(NativeGridViewColumn.WidthProperty, starWidth + 40d);
+                listView.UpdateLayout();
+
+                Assert.True(starColumn.Width.IsStar);
+                Assert.True(autoColumn.Width.IsAbsolute);
+                Assert.True(fixedColumn.Width.IsAbsolute);
+                Assert.True(autoColumn.ActualWidth < autoWidth);
+                Assert.True(fixedColumn.ActualWidth < fixedWidth);
+                AssertColumnsFillViewport(listView, view);
+            }
+            finally
+            {
+                window.Close();
+            }
+        });
+    }
+
+    [Fact]
+    public void GridViewTemplates_AlignHeaderAndRowTextAfterSelectionIndicatorGutter()
+    {
+        RunOnStaThread(static () =>
+        {
+            var view = new UiGridView();
+            view.Columns.Add(
+                new UiGridViewColumn
+                {
+                    DisplayMemberBinding = new System.Windows.Data.Binding(),
+                    Header = "Header",
+                    Width = new GridLength(1, GridUnitType.Star),
+                }
+            );
+            var listView = new UiListView
+            {
+                Height = 160,
+                ItemsSource = new[] { "Row" },
+                View = view,
+                Width = 400,
+            };
+            var window = new Window
+            {
+                Content = listView,
+                Height = 200,
+                ShowInTaskbar = false,
+                Width = 440,
+                WindowStyle = WindowStyle.None,
+            };
+
+            try
+            {
+                window.Show();
+                listView.UpdateLayout();
+                var item = Assert.IsAssignableFrom<System.Windows.Controls.ListViewItem>(
+                    listView.ItemContainerGenerator.ContainerFromIndex(0)
+                );
+                var header = Assert.IsType<NativeGridViewColumnHeader>(
+                    FindVisualChild<NativeGridViewColumnHeader>(
+                        listView,
+                        static candidate => candidate.Role == NativeGridViewColumnHeaderRole.Normal
+                    )
+                );
+                var headerContent = Assert.IsType<ContentPresenter>(
+                    header.Template.FindName("contentPresenter", header)
+                    ?? FindVisualChild<ContentPresenter>(header)
+                );
+                var rowPresenter = Assert.IsType<NativeGridViewRowPresenter>(
+                    FindVisualChild<NativeGridViewRowPresenter>(item)
+                );
+                var rowText = Assert.IsType<TextBlock>(FindVisualChild<TextBlock>(rowPresenter));
+                var indicator = Assert.IsType<Rectangle>(
+                    item.Template.FindName("SelectionIndicator", item)
+                );
+
+                double headerTextX = headerContent.TranslatePoint(default, listView).X;
+                double rowTextX = rowText.TranslatePoint(default, listView).X;
+                double presenterX = rowPresenter.TranslatePoint(default, listView).X;
+                double indicatorRight =
+                    indicator.TranslatePoint(default, listView).X + indicator.ActualWidth;
+
+                Assert.Equal(headerTextX, rowTextX, 3);
+                Assert.True(indicatorRight <= presenterX);
+            }
+            finally
+            {
+                window.Close();
+            }
+        });
+    }
+
+    [Fact]
     public void GalleryNestedScrollLayout_UsesViewportWithoutContentWidthFeedback()
     {
         RunOnStaThread(static () =>
@@ -711,7 +851,7 @@ public class GridViewTests
                 Assert.True(listView.IsArrangeValid);
 
                 double totalColumnWidth = view.Columns.Cast<NativeGridViewColumn>().Sum(static column => column.ActualWidth);
-                Assert.InRange(totalColumnWidth, 795d, 798d);
+                Assert.InRange(totalColumnWidth, 783d, 786d);
                 Assert.InRange(
                     Assert.IsType<NativeGridViewHeaderRowPresenter>(
                         FindVisualChild<NativeGridViewHeaderRowPresenter>(listView)
@@ -771,7 +911,7 @@ public class GridViewTests
             .Cast<NativeGridViewColumn>()
             .Sum(static column => column.ActualWidth);
 
-        Assert.Equal(scrollViewer.ViewportWidth - 2d, totalColumnWidth, 3);
+        Assert.Equal(scrollViewer.ViewportWidth - 14d, totalColumnWidth, 3);
         Assert.InRange(scrollViewer.ScrollableWidth, 0d, 0.001d);
         Assert.True(listView.IsMeasureValid);
         Assert.True(listView.IsArrangeValid);

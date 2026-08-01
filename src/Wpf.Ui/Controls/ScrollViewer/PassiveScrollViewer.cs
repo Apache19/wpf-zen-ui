@@ -3,8 +3,10 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
+using System.Windows.Automation.Peers;
 using System.Windows.Controls;
 using System.Windows.Input;
+using Wpf.Ui.AutomationPeers;
 
 // ReSharper disable once CheckNamespace
 namespace Wpf.Ui.Controls;
@@ -141,7 +143,32 @@ public class PassiveScrollViewer : ScrollViewer
         )
         {
             UpdateEffectiveHorizontalScrollBarVisibility();
+
+            if (
+                e.Property == HorizontalScrollBarVisibilityProperty
+                || e.Property == HorizontalScrollBarVisibilityThresholdProperty
+            )
+            {
+                if (IsHorizontalScrollRangeSuppressed && HorizontalOffset != 0.0)
+                {
+                    // A threshold change can suppress an already active range without producing a
+                    // ScrollChanged event of its own. Commit the same zero-offset invariant here.
+                    ScrollToHorizontalOffset(0.0);
+                }
+
+                GetExistingAutomationPeer()?.RaiseHorizontalScrollSemanticsChanged();
+            }
         }
+    }
+
+    /// <summary>
+    /// Creates the automation peer that applies the same horizontal overflow threshold exposed by
+    /// the visual scrollbar template.
+    /// </summary>
+    /// <returns>A threshold-aware scroll provider for this viewer.</returns>
+    protected override AutomationPeer OnCreateAutomationPeer()
+    {
+        return new PassiveScrollViewerAutomationPeer(this);
     }
 
     protected override void OnMouseWheel(MouseWheelEventArgs e)
@@ -196,8 +223,7 @@ public class PassiveScrollViewer : ScrollViewer
         // sub-threshold rounding range so that range cannot reappear as a tiny visual displacement
         // after a later extent update.
         if (
-            HorizontalScrollBarVisibility == ScrollBarVisibility.Auto
-            && ScrollableWidth <= HorizontalScrollBarVisibilityThreshold
+            IsHorizontalScrollRangeSuppressed
             && HorizontalOffset != 0.0
         )
         {
@@ -205,20 +231,43 @@ public class PassiveScrollViewer : ScrollViewer
         }
 
         base.OnScrollChanged(e);
+        GetExistingAutomationPeer()?.SynchronizeHorizontalScrollState();
     }
 
     private void UpdateEffectiveHorizontalScrollBarVisibility()
     {
         Visibility visibility = ComputedHorizontalScrollBarVisibility;
         if (
-            HorizontalScrollBarVisibility == ScrollBarVisibility.Auto
-            && ScrollableWidth <= HorizontalScrollBarVisibilityThreshold
+            IsHorizontalScrollRangeSuppressed
         )
         {
             visibility = Visibility.Collapsed;
         }
 
         SetValue(EffectiveHorizontalScrollBarVisibilityPropertyKey, visibility);
+    }
+
+    /// <summary>
+    /// Gets a value indicating whether a positive raw horizontal range is intentionally suppressed by the configured
+    /// automatic-visibility threshold.
+    /// </summary>
+    internal bool IsHorizontalScrollRangeSuppressed
+    {
+        get =>
+            HorizontalScrollBarVisibility == ScrollBarVisibility.Auto
+            && ScrollableWidth <= HorizontalScrollBarVisibilityThreshold;
+    }
+
+    /// <summary>
+    /// Gets a value indicating whether WPF has connected this viewer to an
+    /// <see cref="System.Windows.Controls.Primitives.IScrollInfo"/>
+    /// implementation. The automation peer cannot access ScrollViewer's protected member directly.
+    /// </summary>
+    internal bool HasScrollInfo => ScrollInfo is not null;
+
+    private PassiveScrollViewerAutomationPeer? GetExistingAutomationPeer()
+    {
+        return UIElementAutomationPeer.FromElement(this) as PassiveScrollViewerAutomationPeer;
     }
 
     private bool IsContentSmallerThanViewport

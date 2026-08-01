@@ -6,9 +6,13 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.ExceptionServices;
 using System.Threading;
+using System.Windows.Automation;
+using System.Windows.Automation.Peers;
+using System.Windows.Automation.Provider;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using Wpf.Ui.AutomationPeers;
 using Wpf.Ui.Controls;
 
 namespace Wpf.Ui.UnitTests.Controls.ScrollViewer;
@@ -240,6 +244,61 @@ public class PassiveScrollViewerTests
                     scrollViewer.UpdateLayout();
 
                     Assert.Equal(coercedOffset, scrollViewer.VerticalOffset);
+                }
+                finally
+                {
+                    window.Close();
+                }
+            }
+        );
+    }
+
+    [Fact]
+    public void AutomationPeer_AppliesHorizontalOverflowThresholdSemantics()
+    {
+        RunOnStaThread(
+            () =>
+            {
+                var scrollViewer = new PassiveScrollViewer
+                {
+                    Content = new Border { Height = 50d, Width = 100.5d },
+                    Height = 80d,
+                    HorizontalScrollBarVisibility = ScrollBarVisibility.Auto,
+                    HorizontalScrollBarVisibilityThreshold = 1d,
+                    Width = 100d,
+                };
+                var window = new Window
+                {
+                    Content = scrollViewer,
+                    Height = 100d,
+                    ShowInTaskbar = false,
+                    Width = 120d,
+                    WindowStyle = WindowStyle.None,
+                };
+
+                try
+                {
+                    window.Show();
+                    scrollViewer.UpdateLayout();
+
+                    Assert.InRange(scrollViewer.ScrollableWidth, 0.01d, 1d);
+                    var peer = new PassiveScrollViewerAutomationPeer(scrollViewer);
+                    var provider = Assert.IsAssignableFrom<IScrollProvider>(
+                        peer.GetPattern(PatternInterface.Scroll)
+                    );
+
+                    Assert.False(provider.HorizontallyScrollable);
+                    Assert.Equal(ScrollPatternIdentifiers.NoScroll, provider.HorizontalScrollPercent);
+                    Assert.Equal(100d, provider.HorizontalViewSize);
+                    Assert.Throws<InvalidOperationException>(() =>
+                        provider.Scroll(ScrollAmount.SmallIncrement, ScrollAmount.NoAmount)
+                    );
+
+                    scrollViewer.HorizontalScrollBarVisibilityThreshold = 0d;
+
+                    Assert.True(provider.HorizontallyScrollable);
+                    Assert.Equal(0d, provider.HorizontalScrollPercent);
+                    Assert.True(provider.HorizontalViewSize < 100d);
                 }
                 finally
                 {
