@@ -54,9 +54,9 @@ public class HyperlinkButton : Button
             {
             }
         }
-        catch (Exception e)
+        catch (Exception)
         {
-            Debug.WriteLine(e);
+            // ignored
         }
     }
 }

@@ -3,7 +3,6 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-using System.Diagnostics;
 using System.Windows.Controls;
 using System.Windows.Input;
 using Wpf.Ui.Input;
@@ -811,8 +810,6 @@ public class TextBox : System.Windows.Controls.TextBox
     /// </summary>
     protected virtual void OnTemplateButtonClick(string? parameter)
     {
-        Debug.WriteLine($"INFO: {typeof(TextBox)} button clicked", "Wpf.Ui.TextBox");
-
         OnClearButtonClick();
     }
 

@@ -6,7 +6,6 @@
 /* Based on Windows UI Library */
 
 using System.Collections.ObjectModel;
-using System.Diagnostics;
 using Wpf.Ui.Abstractions;
 
 // ReSharper disable once CheckNamespace
@@ -180,17 +179,8 @@ public partial class NavigationView
 
         if (OnNavigating(pageInstance))
         {
-            Debug.WriteLineIf(EnableDebugMessages, "Navigation canceled");
-
             return false;
         }
-
-        Debug.WriteLineIf(
-            EnableDebugMessages,
-            $"DEBUG | {viewItem.Id} - {(string.IsNullOrEmpty(viewItem.TargetPageTag)
-                ? "NO_TAG"
-                : viewItem.TargetPageTag)} - {viewItem.TargetPageType} | NAVIGATED"
-        );
 
         OnNavigated(pageInstance);
 
@@ -238,13 +228,6 @@ public partial class NavigationView
         }
 
         UpdateBackNavigationState();
-
-        Debug.WriteLineIf(EnableDebugMessages, $"JOURNAL COUNT {Journal.Count}");
-
-        if (Journal.Count > 0)
-        {
-            Debug.WriteLineIf(EnableDebugMessages, $"JOURNAL LAST ELEMENT {Journal[^1].Id}");
-        }
     }
 
     /// <summary>
@@ -407,11 +390,6 @@ public partial class NavigationView
 
         if (_serviceProvider is not null)
         {
-            Debug.WriteLineIf(
-                EnableDebugMessages,
-                $"Getting {targetPageType} from cache using IServiceProvider."
-            );
-
             return _serviceProvider.GetService(targetPageType)
                 ?? throw new InvalidOperationException(
                     $"{nameof(_serviceProvider.GetService)} returned null"
@@ -420,16 +398,9 @@ public partial class NavigationView
 
         if (_pageService is not null)
         {
-            Debug.WriteLineIf(
-                EnableDebugMessages,
-                $"Getting {targetPageType} from cache using INavigationViewPageProvider."
-            );
-
             return _pageService.GetPage(targetPageType)
                 ?? throw new InvalidOperationException($"{nameof(_pageService.GetPage)} returned null");
         }
-
-        Debug.WriteLineIf(EnableDebugMessages, $"Getting {targetPageType} from cache using reflection.");
 
         return NavigationViewActivator.CreateInstance(targetPageType)
             ?? throw new InvalidOperationException("Failed to create instance of the page");

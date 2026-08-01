@@ -382,7 +382,6 @@ public partial class ContentDialog : ContentControl
         if (DialogHeight > DialogMaxHeight)
         {
             SetCurrentValue(DialogMaxHeightProperty, DialogHeight);
-            /*Debug.WriteLine($"DEBUG | {GetType()} | WARNING | DialogHeight > DialogMaxHeight after resizing width!");*/
         }
     }
 
@@ -401,7 +400,6 @@ public partial class ContentDialog : ContentControl
         if (DialogWidth > DialogMaxWidth)
         {
             SetCurrentValue(DialogMaxWidthProperty, DialogWidth);
-            /*Debug.WriteLine($"DEBUG | {GetType()} | WARNING | DialogWidth > DialogMaxWidth after resizing height!");*/
         }
     }
 }

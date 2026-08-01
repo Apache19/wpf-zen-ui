@@ -318,27 +318,6 @@ public partial class NavigationView
 
     #endregion
 
-    #region DP: EnableDebugMessages
-
-    /// <summary>Identifies the <see cref="EnableDebugMessages"/> dependency property.</summary>
-    public static readonly DependencyProperty EnableDebugMessagesProperty = DependencyProperty.Register(
-        nameof(EnableDebugMessages),
-        typeof(bool),
-        typeof(NavigationView),
-        new FrameworkPropertyMetadata(false)
-    );
-
-    /// <summary>
-    /// Gets or sets a value indicating whether debugging messages for this control are enabled
-    /// </summary>
-    public bool EnableDebugMessages
-    {
-        get => (bool)GetValue(EnableDebugMessagesProperty);
-        set => SetValue(EnableDebugMessagesProperty, value);
-    }
-
-    #endregion
-
     #region DP: FooterMenuItems
 
     private static readonly DependencyPropertyKey FooterMenuItemsPropertyKey =

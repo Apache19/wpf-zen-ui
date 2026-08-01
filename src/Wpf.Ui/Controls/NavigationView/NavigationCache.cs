@@ -6,8 +6,6 @@
 // Based on Windows UI Library
 // Copyright(c) Microsoft Corporation.All rights reserved.
 
-using System.Diagnostics;
-
 // ReSharper disable once CheckNamespace
 namespace Wpf.Ui.Controls;
 
@@ -32,23 +30,13 @@ internal class NavigationCache
         {
             Remove(entryType);
 
-            Debug.WriteLine(
-                $"Cache for {entryType} is disabled. Generating instance using action..."
-            );
-
             return generate.Invoke();
         }
 
         if (TryGetValue(entryType, cacheMode, out var value))
         {
-            Debug.WriteLine($"{entryType} found in cache.");
-
             return value;
         }
-
-        Debug.WriteLine(
-            $"{entryType} not found in cache, generating instance using action..."
-        );
 
         value = generate.Invoke();
 
