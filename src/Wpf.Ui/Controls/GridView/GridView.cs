@@ -6,17 +6,32 @@
 namespace Wpf.Ui.Controls;
 
 /// <summary>
-/// Displays <see cref="ListView"/> data in columns with Fluent styling and Grid-like column sizing.
+/// Selects the Fluent <see cref="ListView"/> and item-container styles for WPF's column view.
 /// </summary>
+/// <remarks>
+/// <para>
+/// A <see cref="System.Windows.Controls.GridView"/> is a
+/// <see cref="System.Windows.Controls.ViewBase"/>, not a visual
+/// element, so it cannot receive a WPF <see cref="Style"/> itself. When a view is assigned,
+/// <see cref="System.Windows.Controls.ListView"/> reads the view's protected style keys and applies
+/// them to the list and its generated containers. This type exists only to select the library's
+/// Fluent resources through that framework-supported extension point; all visuals remain in XAML.
+/// </para>
+/// <para>
+/// Use <see cref="GridViewColumn"/> when a column needs <see cref="GridLength"/> sizing. Native
+/// <see cref="System.Windows.Controls.GridViewColumn"/> instances remain supported for WPF's
+/// built-in Auto and pixel widths.
+/// </para>
+/// </remarks>
 /// <example>
 /// To use this enhanced GridView in a ListView:
 /// <code lang="xml">
 /// &lt;ListView&gt;
 ///     &lt;ListView.View&gt;
-///         &lt;local:GridView&gt;
-///             &lt;GridViewColumn Header="First Name" DisplayMemberBinding="{Binding FirstName}"/&gt;
-///             &lt;GridViewColumn Header="Last Name" DisplayMemberBinding="{Binding LastName}"/&gt;
-///         &lt;/local:GridView&gt;
+///         &lt;ui:GridView&gt;
+///             &lt;ui:GridViewColumn Width="Auto" Header="First Name" DisplayMemberBinding="{Binding FirstName}"/&gt;
+///             &lt;ui:GridViewColumn Width="*" Header="Last Name" DisplayMemberBinding="{Binding LastName}"/&gt;
+///         &lt;/ui:GridView&gt;
 ///     &lt;/ListView.View&gt;
 /// &lt;/ListView&gt;
 /// </code>
@@ -24,13 +39,13 @@ namespace Wpf.Ui.Controls;
 public class GridView : System.Windows.Controls.GridView
 {
     /// <summary>
-    /// Gets the resource key for the default <see cref="ListView"/> style used by this view.
+    /// Gets the resource key for the Fluent <see cref="ListView"/> style selected by this view.
     /// </summary>
     public static new ResourceKey GridViewStyleKey { get; } =
         new ComponentResourceKey(typeof(GridView), nameof(GridViewStyleKey));
 
     /// <summary>
-    /// Gets the resource key for the default item container style used by this view.
+    /// Gets the resource key for the Fluent item-container style selected by this view.
     /// </summary>
     public static new ResourceKey GridViewItemContainerStyleKey { get; } =
         new ComponentResourceKey(typeof(GridView), nameof(GridViewItemContainerStyleKey));

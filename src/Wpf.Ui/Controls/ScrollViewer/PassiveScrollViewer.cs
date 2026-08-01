@@ -31,6 +31,36 @@ public class PassiveScrollViewer : ScrollViewer
         );
 
     /// <summary>
+    /// Identifies the <see cref="HorizontalScrollBarVisibilityThreshold"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty HorizontalScrollBarVisibilityThresholdProperty =
+        DependencyProperty.Register(
+            nameof(HorizontalScrollBarVisibilityThreshold),
+            typeof(double),
+            typeof(PassiveScrollViewer),
+            new FrameworkPropertyMetadata(0.0),
+            static value =>
+                value is double threshold
+                && !double.IsNaN(threshold)
+                && !double.IsInfinity(threshold)
+                && threshold >= 0.0
+        );
+
+    private static readonly DependencyPropertyKey EffectiveHorizontalScrollBarVisibilityPropertyKey =
+        DependencyProperty.RegisterReadOnly(
+            nameof(EffectiveHorizontalScrollBarVisibility),
+            typeof(Visibility),
+            typeof(PassiveScrollViewer),
+            new FrameworkPropertyMetadata(Visibility.Collapsed)
+        );
+
+    /// <summary>
+    /// Identifies the read-only <see cref="EffectiveHorizontalScrollBarVisibility"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty EffectiveHorizontalScrollBarVisibilityProperty =
+        EffectiveHorizontalScrollBarVisibilityPropertyKey.DependencyProperty;
+
+    /// <summary>
     /// Sets how the <see cref="PassiveScrollViewer"/> created by an element's control template
     /// handles mouse-wheel input that cannot scroll its own content.
     /// </summary>
@@ -62,12 +92,56 @@ public class PassiveScrollViewer : ScrollViewer
         set => SetScrollSpillMode(this, value);
     }
 
+    /// <summary>
+    /// Gets or sets the smallest horizontal scroll range that automatic scrollbar visibility treats
+    /// as meaningful. The default is <c>0</c> device-independent pixels.
+    /// </summary>
+    /// <remarks>
+    /// A positive value is useful for column controls whose independently rounded headers, cells,
+    /// borders, and viewport can differ by a fraction of a pixel. It only suppresses automatic
+    /// visibility; an explicitly <see cref="ScrollBarVisibility.Visible"/> scrollbar remains visible,
+    /// and overflow larger than the threshold retains normal WPF scrolling behavior.
+    /// </remarks>
+    public double HorizontalScrollBarVisibilityThreshold
+    {
+        get => (double)GetValue(HorizontalScrollBarVisibilityThresholdProperty);
+        set => SetValue(HorizontalScrollBarVisibilityThresholdProperty, value);
+    }
+
+    /// <summary>
+    /// Gets the horizontal scrollbar visibility after applying
+    /// <see cref="HorizontalScrollBarVisibilityThreshold"/> to WPF's computed visibility.
+    /// </summary>
+    public Visibility EffectiveHorizontalScrollBarVisibility
+    {
+        get => (Visibility)GetValue(EffectiveHorizontalScrollBarVisibilityProperty);
+    }
+
     static PassiveScrollViewer()
     {
         DefaultStyleKeyProperty.OverrideMetadata(
             typeof(PassiveScrollViewer),
             new FrameworkPropertyMetadata(typeof(PassiveScrollViewer))
         );
+    }
+
+    /// <summary>
+    /// Responds when WPF publishes a new horizontal extent, viewport, or computed scrollbar state.
+    /// </summary>
+    /// <param name="e">The dependency-property change data.</param>
+    protected override void OnPropertyChanged(DependencyPropertyChangedEventArgs e)
+    {
+        base.OnPropertyChanged(e);
+
+        if (
+            e.Property == ScrollableWidthProperty
+            || e.Property == ComputedHorizontalScrollBarVisibilityProperty
+            || e.Property == HorizontalScrollBarVisibilityProperty
+            || e.Property == HorizontalScrollBarVisibilityThresholdProperty
+        )
+        {
+            UpdateEffectiveHorizontalScrollBarVisibility();
+        }
     }
 
     protected override void OnMouseWheel(MouseWheelEventArgs e)
@@ -118,7 +192,33 @@ public class PassiveScrollViewer : ScrollViewer
             ScrollToVerticalOffset(Math.Min(Math.Max(offsetBeforeLayoutChange, 0d), ScrollableHeight));
         }
 
+        // ScrollContentPresenter keeps an independent requested offset. Commit zero for a
+        // sub-threshold rounding range so that range cannot reappear as a tiny visual displacement
+        // after a later extent update.
+        if (
+            HorizontalScrollBarVisibility == ScrollBarVisibility.Auto
+            && ScrollableWidth <= HorizontalScrollBarVisibilityThreshold
+            && HorizontalOffset != 0.0
+        )
+        {
+            ScrollToHorizontalOffset(0.0);
+        }
+
         base.OnScrollChanged(e);
+    }
+
+    private void UpdateEffectiveHorizontalScrollBarVisibility()
+    {
+        Visibility visibility = ComputedHorizontalScrollBarVisibility;
+        if (
+            HorizontalScrollBarVisibility == ScrollBarVisibility.Auto
+            && ScrollableWidth <= HorizontalScrollBarVisibilityThreshold
+        )
+        {
+            visibility = Visibility.Collapsed;
+        }
+
+        SetValue(EffectiveHorizontalScrollBarVisibilityPropertyKey, visibility);
     }
 
     private bool IsContentSmallerThanViewport
@@ -128,9 +228,9 @@ public class PassiveScrollViewer : ScrollViewer
 
     private bool HasReachedEndOfScrolling(MouseWheelEventArgs e)
     {
-        var isScrollingUp      = e.Delta > 0;
-        var isScrollingDown    = e.Delta < 0;
-        var isTopOfViewport    = VerticalOffset == 0;
+        var isScrollingUp = e.Delta > 0;
+        var isScrollingDown = e.Delta < 0;
+        var isTopOfViewport = VerticalOffset == 0;
         var isBottomOfViewport = VerticalOffset >= ScrollableHeight;
 
         return (isScrollingUp && isTopOfViewport) || (isScrollingDown && isBottomOfViewport);

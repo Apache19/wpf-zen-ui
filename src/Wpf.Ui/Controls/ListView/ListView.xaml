@@ -13,7 +13,6 @@
 
     <ResourceDictionary.MergedDictionaries>
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/GridView/GridViewColumnHeader.xaml" />
-        <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/GridView/GridViewHeaderRowIndicator.xaml" />
     </ResourceDictionary.MergedDictionaries>
 
     <ControlTemplate x:Key="DefaultListViewTemplate" TargetType="{x:Type ListView}">
@@ -40,7 +39,13 @@
         </ControlTemplate.Triggers>
     </ControlTemplate>
 
-    <ControlTemplate x:Key="GridViewScrollViewerTemplate" TargetType="{x:Type ScrollViewer}">
+    <!--
+        Keep WPF's native GridView presenters as the template contract. They own shared Auto
+        measurement, column reordering, horizontal synchronization, virtualization awareness, and
+        automation. GridLength star allocation is orthogonal and is attached once to the outer
+        ScrollViewer in GridViewTemplate; it must not be duplicated by every realized row.
+    -->
+    <ControlTemplate x:Key="GridViewScrollViewerTemplate" TargetType="{x:Type controls:PassiveScrollViewer}">
         <Grid Background="{TemplateBinding Background}" SnapsToDevicePixels="True">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
@@ -61,7 +66,7 @@
                     Focusable="False"
                     HorizontalScrollBarVisibility="Hidden"
                     VerticalScrollBarVisibility="Hidden">
-                    <controls:GridViewHeaderRowPresenter
+                    <GridViewHeaderRowPresenter
                         AllowsColumnReorder="{Binding TemplatedParent.View.AllowsColumnReorder, RelativeSource={RelativeSource TemplatedParent}}"
                         ColumnHeaderContainerStyle="{Binding TemplatedParent.View.ColumnHeaderContainerStyle, RelativeSource={RelativeSource TemplatedParent}, TargetNullValue={StaticResource UiGridViewColumnHeaderStyle}}"
                         ColumnHeaderContextMenu="{Binding TemplatedParent.View.ColumnHeaderContextMenu, RelativeSource={RelativeSource TemplatedParent}}"
@@ -69,7 +74,7 @@
                         ColumnHeaderTemplate="{Binding TemplatedParent.View.ColumnHeaderTemplate, RelativeSource={RelativeSource TemplatedParent}}"
                         ColumnHeaderTemplateSelector="{Binding TemplatedParent.View.ColumnHeaderTemplateSelector, RelativeSource={RelativeSource TemplatedParent}}"
                         ColumnHeaderToolTip="{Binding TemplatedParent.View.ColumnHeaderToolTip, RelativeSource={RelativeSource TemplatedParent}}"
-                        ColumnReorderIndicatorTemplate="{StaticResource GridViewHeaderRowIndicatorTemplate}"
+                        controls:ColumnHeaderResizeBehavior.IsEnabled="True"
                         Columns="{Binding TemplatedParent.View.Columns, RelativeSource={RelativeSource TemplatedParent}}"
                         SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
                 </ScrollViewer>
@@ -92,7 +97,7 @@
                 Orientation="Horizontal"
                 Value="{Binding HorizontalOffset, Mode=OneWay, RelativeSource={RelativeSource TemplatedParent}}"
                 ViewportSize="{TemplateBinding ViewportWidth}"
-                Visibility="{TemplateBinding ComputedHorizontalScrollBarVisibility}" />
+                Visibility="{TemplateBinding EffectiveHorizontalScrollBarVisibility}" />
             <ScrollBar
                 x:Name="PART_VerticalScrollBar"
                 Grid.Column="1"
@@ -116,7 +121,9 @@
             <controls:PassiveScrollViewer
                 Padding="{TemplateBinding Padding}"
                 CanContentScroll="{TemplateBinding ScrollViewer.CanContentScroll}"
+                controls:GridViewColumnSizing.Columns="{Binding View.Columns, RelativeSource={RelativeSource TemplatedParent}}"
                 Focusable="False"
+                HorizontalScrollBarVisibilityThreshold="1"
                 HorizontalScrollBarVisibility="{TemplateBinding ScrollViewer.HorizontalScrollBarVisibility}"
                 Template="{StaticResource GridViewScrollViewerTemplate}"
                 VerticalScrollBarVisibility="{TemplateBinding ScrollViewer.VerticalScrollBarVisibility}">
@@ -174,6 +181,11 @@
         </Style.Triggers>
     </Style>
 
+    <!--
+        ViewBase is not a FrameworkElement and therefore has no Style property. WPF asks the active
+        view for these two keys and applies the returned styles to ListView and ListViewItem. The
+        lightweight Wpf.Ui GridView type exists solely to select these Fluent XAML resources.
+    -->
     <Style
         x:Key="{x:Static controls:GridView.GridViewStyleKey}"
         BasedOn="{StaticResource DefaultListViewBaseStyle}"

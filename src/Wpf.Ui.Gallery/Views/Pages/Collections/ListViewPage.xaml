@@ -121,9 +121,12 @@
                 &lt;ListView ItemsSource=&quot;{Binding ViewModel.BasicListViewItems}&quot;&gt;\n
                 \t&lt;ListView.View&gt;\n
                 \t\t&lt;ui:GridView&gt;\n
-                \t\t\t&lt;ui:GridViewColumn Width=&quot;Auto&quot; MinWidth=&quot;100&quot; DisplayMemberBinding=&quot;{Binding FirstName}&quot; Header=&quot;First Name&quot;/&gt;\n
+                \t\t\t&lt;ui:GridViewColumn Width=&quot;*&quot; MinWidth=&quot;100&quot; DisplayMemberBinding=&quot;{Binding FirstName}&quot; Header=&quot;First Name&quot;/&gt;\n
                 \t\t\t&lt;ui:GridViewColumn Width=&quot;*&quot; MinWidth=&quot;100&quot; DisplayMemberBinding=&quot;{Binding LastName}&quot; Header=&quot;Last Name&quot;/&gt;\n
-                \t\t\t&lt;ui:GridViewColumn Width=&quot;2*&quot; MinWidth=&quot;160&quot; DisplayMemberBinding=&quot;{Binding Company}&quot; Header=&quot;Company&quot;/&gt;\n
+                \t\t\t&lt;ui:GridViewColumn Width=&quot;*&quot; MinWidth=&quot;100&quot; DisplayMemberBinding=&quot;{Binding Name}&quot; Header=&quot;Full Name&quot;/&gt;\n
+                \t\t\t&lt;ui:GridViewColumn Width=&quot;2*&quot; MinWidth=&quot;180&quot; DisplayMemberBinding=&quot;{Binding Company}&quot; Header=&quot;Company&quot;/&gt;\n
+                \t\t\t&lt;ui:GridViewColumn Width=&quot;*&quot; MinWidth=&quot;160&quot; DisplayMemberBinding=&quot;{Binding Email}&quot; Header=&quot;Email&quot;/&gt;\n
+                \t\t\t&lt;ui:GridViewColumn Width=&quot;*&quot; MinWidth=&quot;140&quot; DisplayMemberBinding=&quot;{Binding Phone}&quot; Header=&quot;Phone&quot;/&gt;\n
                 \t\t&lt;/ui:GridView&gt;\n
                 \t&lt;/ListView.View&gt;\n
                 &lt;/ListView&gt;
@@ -136,20 +139,29 @@
                 <ui:ListView.View>
                     <ui:GridView>
                         <ui:GridViewColumn
-                            Width="Auto"
-                            MinWidth="100"
+                            Width="*"
                             DisplayMemberBinding="{Binding FirstName}"
                             Header="First Name" />
                         <ui:GridViewColumn
                             Width="*"
-                            MinWidth="100"
                             DisplayMemberBinding="{Binding LastName}"
                             Header="Last Name" />
                         <ui:GridViewColumn
+                            Width="*"
+                            DisplayMemberBinding="{Binding Name}"
+                            Header="Full Name" />
+                        <ui:GridViewColumn
                             Width="2*"
-                            MinWidth="160"
                             DisplayMemberBinding="{Binding Company}"
                             Header="Company" />
+                        <ui:GridViewColumn
+                            Width="*"
+                            DisplayMemberBinding="{Binding Email}"
+                            Header="Email" />
+                        <ui:GridViewColumn
+                            Width="*"
+                            DisplayMemberBinding="{Binding Phone}"
+                            Header="Phone" />
                     </ui:GridView>
                 </ui:ListView.View>
             </ui:ListView>

@@ -8,6 +8,7 @@
 <ResourceDictionary
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="clr-namespace:Wpf.Ui.Controls"
     xmlns:m="clr-namespace:Wpf.Ui.Markup">
 
     <!--  The hit target stays wide enough to resize while remaining visually transparent.  -->
@@ -73,6 +74,15 @@
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter Property="Foreground" Value="{m:DynamicBrush TextFillDisabled}" />
+                        </Trigger>
+                        <!--
+                            There is no column boundary after the last visible column. Keeping this
+                            documented WPF template part for visual consistency, but removing it
+                            from hit testing, prevents both drag and native Auto double-click.
+                        -->
+                        <Trigger Property="controls:ColumnHeaderResizeBehavior.IsLastColumnHeader" Value="True">
+                            <Setter TargetName="PART_HeaderGripper" Property="Cursor" Value="Arrow" />
+                            <Setter TargetName="PART_HeaderGripper" Property="IsHitTestVisible" Value="False" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>

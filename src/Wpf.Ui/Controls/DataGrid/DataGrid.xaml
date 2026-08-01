@@ -590,6 +590,11 @@
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter Property="TextElement.Foreground" Value="{m:DynamicBrush TextFillDisabled}" />
                         </Trigger>
+                        <!-- The final trailing edge is not a boundary between two columns. -->
+                        <Trigger Property="controls:ColumnHeaderResizeBehavior.IsLastColumnHeader" Value="True">
+                            <Setter TargetName="PART_RightHeaderGripper" Property="Cursor" Value="Arrow" />
+                            <Setter TargetName="PART_RightHeaderGripper" Property="IsHitTestVisible" Value="False" />
+                        </Trigger>
                         <Trigger Property="SortDirection" Value="{x:Null}">
                             <Setter TargetName="SortIcon" Property="Visibility" Value="Collapsed" />
                         </Trigger>
@@ -745,7 +750,10 @@
                         BorderThickness="{TemplateBinding BorderThickness}"
                         CornerRadius="{TemplateBinding Border.CornerRadius}"
                         SnapsToDevicePixels="True">
-                        <controls:PassiveScrollViewer x:Name="DG_ScrollViewer" Focusable="False">
+                        <controls:PassiveScrollViewer
+                            x:Name="DG_ScrollViewer"
+                            Focusable="False"
+                            HorizontalScrollBarVisibilityThreshold="1">
                             <controls:PassiveScrollViewer.Template>
                                 <ControlTemplate TargetType="{x:Type controls:PassiveScrollViewer}">
                                     <Grid>
@@ -771,6 +779,7 @@
                                             x:Name="PART_ColumnHeadersPresenter"
                                             Grid.Row="0"
                                             Grid.Column="1"
+                                            controls:ColumnHeaderResizeBehavior.IsEnabled="True"
                                             Visibility="{Binding HeadersVisibility, ConverterParameter={x:Static DataGridHeadersVisibility.Column}, Converter={x:Static DataGrid.HeadersVisibilityConverter}, RelativeSource={RelativeSource AncestorType={x:Type DataGrid}}}" />
 
                                         <ScrollContentPresenter
@@ -804,7 +813,7 @@
                                                 Orientation="Horizontal"
                                                 Style="{DynamicResource {x:Static theming:StyleKeys.DefaultScrollBarStyle}}"
                                                 ViewportSize="{TemplateBinding ViewportWidth}"
-                                                Visibility="{TemplateBinding ComputedHorizontalScrollBarVisibility}"
+                                                Visibility="{TemplateBinding EffectiveHorizontalScrollBarVisibility}"
                                                 Value="{Binding HorizontalOffset, Mode=OneWay, RelativeSource={RelativeSource TemplatedParent}}" />
                                         </Grid>
                                     </Grid>

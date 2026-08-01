@@ -75,7 +75,7 @@
             BorderThickness="{TemplateBinding BorderThickness}"
             SnapsToDevicePixels="True">
             <Grid>
-                <controls:GridViewRowPresenter
+                <GridViewRowPresenter
                     HorizontalAlignment="Stretch"
                     VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
                     Columns="{TemplateBinding GridView.ColumnCollection}"

@@ -3,6 +3,7 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
+using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.ExceptionServices;
 using System.Threading;
@@ -328,6 +329,225 @@ public class ListViewAndDataGridTests
         });
     }
 
+    [Fact]
+    public void DataGridTemplate_StarColumnResizeDoesNotExposeHorizontalScrollRange()
+    {
+        RunOnStaThread(static () =>
+        {
+            var dataGrid = new UiDataGrid
+            {
+                Height = 200,
+                ItemsSource = Enumerable.Range(0, 100).Select(static index => new WideRow(
+                    index,
+                    $"Code {index}",
+                    $"Name {index}",
+                    $"Quantity {index}",
+                    $"Unit {index}",
+                    $"Price {index}",
+                    $"Stock {index}",
+                    $"Virtual {index}",
+                    $"Other {index}"
+                )).ToArray(),
+                Width = 500,
+            };
+
+            var window = new Window
+            {
+                Content = dataGrid,
+                Height = 240,
+                ShowInTaskbar = false,
+                Width = 540,
+                WindowStyle = WindowStyle.None,
+            };
+
+            try
+            {
+                window.Show();
+                window.Dispatcher.Invoke(static () => { }, System.Windows.Threading.DispatcherPriority.ApplicationIdle);
+
+                var headers = FindVisualChildren<DataGridColumnHeader>(dataGrid)
+                    .Where(static header => header.Column is not null)
+                    .OrderBy(static header => header.Column.DisplayIndex)
+                    .ToArray();
+                var gripper = Assert.IsType<Thumb>(headers[0].Template.FindName("PART_RightHeaderGripper", headers[0]));
+                gripper.RaiseEvent(new DragStartedEventArgs(0d, 0d) { RoutedEvent = Thumb.DragStartedEvent });
+                gripper.RaiseEvent(new DragDeltaEventArgs(80d, 0d) { RoutedEvent = Thumb.DragDeltaEvent });
+                gripper.RaiseEvent(new DragCompletedEventArgs(80d, 0d, false) { RoutedEvent = Thumb.DragCompletedEvent });
+                window.Dispatcher.Invoke(static () => { }, System.Windows.Threading.DispatcherPriority.ApplicationIdle);
+
+                var scrollViewer = Assert.IsType<UiPassiveScrollViewer>(
+                    FindVisualChild<UiPassiveScrollViewer>(dataGrid)
+                );
+                Assert.Equal(0d, scrollViewer.ScrollableWidth, 6);
+            }
+            finally
+            {
+                window.Close();
+            }
+        });
+    }
+
+    [Fact]
+    public void FluentColumnHeaders_DisableTheLastTrailingResizeHandle()
+    {
+        RunOnStaThread(static () =>
+        {
+            var view = new Wpf.Ui.Controls.GridView();
+            view.Columns.Add(new Wpf.Ui.Controls.GridViewColumn { Header = "First", Width = new GridLength(1, GridUnitType.Star) });
+            view.Columns.Add(new Wpf.Ui.Controls.GridViewColumn { Header = "Last", Width = new GridLength(1, GridUnitType.Star) });
+            var listView = new UiListView
+            {
+                Height = 160,
+                ItemsSource = new[] { "Value" },
+                View = view,
+                Width = 500,
+            };
+            var dataGrid = new UiDataGrid
+            {
+                AutoGenerateColumns = false,
+                Height = 160,
+                ItemsSource = new[] { new GroupedRow("A", "Value") },
+                Width = 500,
+            };
+            dataGrid.Columns.Add(new DataGridTextColumn { Header = "First", Binding = new Binding(nameof(GroupedRow.Group)) });
+            dataGrid.Columns.Add(new DataGridTextColumn { Header = "Last", Binding = new Binding(nameof(GroupedRow.Name)) });
+
+            var root = new StackPanel();
+            root.Children.Add(listView);
+            root.Children.Add(dataGrid);
+            var window = new Window
+            {
+                Content = root,
+                Height = 360,
+                ShowInTaskbar = false,
+                Width = 540,
+                WindowStyle = WindowStyle.None,
+            };
+
+            try
+            {
+                window.Show();
+                window.Dispatcher.Invoke(static () => { }, System.Windows.Threading.DispatcherPriority.ApplicationIdle);
+
+                GridViewColumnHeader[] listHeaders = FindVisualChildren<GridViewColumnHeader>(listView)
+                    .Where(static header => header.Role == GridViewColumnHeaderRole.Normal)
+                    .ToArray();
+                GridViewColumnHeader firstListHeader = listHeaders.Single(header =>
+                    ReferenceEquals(header.Column, view.Columns[0])
+                );
+                GridViewColumnHeader lastListHeader = listHeaders.Single(header =>
+                    ReferenceEquals(header.Column, view.Columns[1])
+                );
+                Thumb firstListGripper = Assert.IsType<Thumb>(
+                    firstListHeader.Template.FindName("PART_HeaderGripper", firstListHeader)
+                );
+                Thumb lastListGripper = Assert.IsType<Thumb>(
+                    lastListHeader.Template.FindName("PART_HeaderGripper", lastListHeader)
+                );
+
+                DataGridColumnHeader[] dataGridHeaders = FindVisualChildren<DataGridColumnHeader>(dataGrid)
+                    .Where(static header => header.Column is not null)
+                    .OrderBy(static header => header.Column.DisplayIndex)
+                    .ToArray();
+                Thumb firstDataGridGripper = Assert.IsType<Thumb>(
+                    dataGridHeaders[0].Template.FindName("PART_RightHeaderGripper", dataGridHeaders[0])
+                );
+                Thumb lastDataGridGripper = Assert.IsType<Thumb>(
+                    dataGridHeaders[1].Template.FindName("PART_RightHeaderGripper", dataGridHeaders[1])
+                );
+
+                Assert.True(firstListGripper.IsHitTestVisible);
+                Assert.False(lastListGripper.IsHitTestVisible);
+                Assert.True(firstDataGridGripper.IsHitTestVisible);
+                Assert.False(lastDataGridGripper.IsHitTestVisible);
+
+                view.Columns.Move(1, 0);
+                dataGrid.Columns[0].DisplayIndex = 1;
+                window.Dispatcher.Invoke(
+                    static () => { },
+                    System.Windows.Threading.DispatcherPriority.ApplicationIdle
+                );
+
+                Assert.False(firstListGripper.IsHitTestVisible);
+                Assert.True(lastListGripper.IsHitTestVisible);
+                Assert.False(firstDataGridGripper.IsHitTestVisible);
+                Assert.True(lastDataGridGripper.IsHitTestVisible);
+            }
+            finally
+            {
+                window.Close();
+            }
+        });
+    }
+
+    [Fact]
+    public void DataGridTemplate_IgnoresSubPixelHorizontalOverflowButKeepsRealOverflow()
+    {
+        RunOnStaThread(static () =>
+        {
+            var dataGrid = new UiDataGrid
+            {
+                AutoGenerateColumns = false,
+                Height = 160,
+                ItemsSource = new[] { new GroupedRow("A", "Value") },
+                Width = 500,
+            };
+            var firstColumn = new DataGridTextColumn
+            {
+                Header = "First",
+                Binding = new Binding(nameof(GroupedRow.Group)),
+            };
+            var lastColumn = new DataGridTextColumn
+            {
+                Header = "Last",
+                Binding = new Binding(nameof(GroupedRow.Name)),
+            };
+            dataGrid.Columns.Add(firstColumn);
+            dataGrid.Columns.Add(lastColumn);
+
+            var window = new Window
+            {
+                Content = dataGrid,
+                Height = 200,
+                ShowInTaskbar = false,
+                Width = 540,
+                WindowStyle = WindowStyle.None,
+            };
+
+            try
+            {
+                window.Show();
+                window.Dispatcher.Invoke(static () => { }, System.Windows.Threading.DispatcherPriority.ApplicationIdle);
+                var scrollViewer = Assert.IsType<UiPassiveScrollViewer>(
+                    FindVisualChild<UiPassiveScrollViewer>(dataGrid)
+                );
+                var horizontalScrollBar = Assert.IsType<ScrollBar>(
+                    scrollViewer.Template.FindName("PART_HorizontalScrollBar", scrollViewer)
+                );
+                double columnsViewport = scrollViewer.ViewportWidth - dataGrid.CellsPanelHorizontalOffset;
+
+                firstColumn.Width = new DataGridLength(columnsViewport / 2.0);
+                lastColumn.Width = new DataGridLength((columnsViewport / 2.0) + 0.5);
+                window.Dispatcher.Invoke(static () => { }, System.Windows.Threading.DispatcherPriority.ApplicationIdle);
+
+                Assert.InRange(scrollViewer.ScrollableWidth, 0.01, 1.0);
+                Assert.Equal(Visibility.Collapsed, scrollViewer.EffectiveHorizontalScrollBarVisibility);
+                Assert.Equal(Visibility.Collapsed, horizontalScrollBar.Visibility);
+
+                lastColumn.Width = new DataGridLength(lastColumn.ActualWidth + 2.0);
+                window.Dispatcher.Invoke(static () => { }, System.Windows.Threading.DispatcherPriority.ApplicationIdle);
+
+                Assert.True(scrollViewer.ScrollableWidth > 1.0);
+                Assert.Equal(Visibility.Visible, scrollViewer.EffectiveHorizontalScrollBarVisibility);
+                Assert.Equal(Visibility.Visible, horizontalScrollBar.Visibility);
+            }
+            finally
+            {
+                window.Close();
+            }
+        });
+    }
+
     private static void Initialize(FrameworkElement element)
     {
         element.BeginInit();
@@ -390,6 +610,24 @@ public class ListViewAndDataGridTests
         return null;
     }
 
+    private static IEnumerable<T> FindVisualChildren<T>(DependencyObject parent)
+        where T : DependencyObject
+    {
+        for (int index = 0; index < VisualTreeHelper.GetChildrenCount(parent); index++)
+        {
+            DependencyObject child = VisualTreeHelper.GetChild(parent, index);
+            if (child is T result)
+            {
+                yield return result;
+            }
+
+            foreach (T descendant in FindVisualChildren<T>(child))
+            {
+                yield return descendant;
+            }
+        }
+    }
+
     private static int CountVisualChildren<T>(DependencyObject parent)
         where T : DependencyObject
     {
@@ -422,4 +660,16 @@ public class ListViewAndDataGridTests
     }
 
     private sealed record GroupedRow(string Group, string Name);
+
+    private sealed record WideRow(
+        int Id,
+        string Code,
+        string Name,
+        string Quantity,
+        string Unit,
+        string Price,
+        string Stock,
+        string Virtual,
+        string Other
+    );
 }

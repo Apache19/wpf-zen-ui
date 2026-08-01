@@ -3,6 +3,7 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
+using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.ExceptionServices;
 using System.Threading;
@@ -15,10 +16,11 @@ using System.Windows.Threading;
 using NativeGridViewColumn = System.Windows.Controls.GridViewColumn;
 using NativeGridViewColumnHeader = System.Windows.Controls.GridViewColumnHeader;
 using NativeGridViewColumnHeaderRole = System.Windows.Controls.GridViewColumnHeaderRole;
+using NativeGridViewHeaderRowPresenter = System.Windows.Controls.GridViewHeaderRowPresenter;
+using NativeGridViewRowPresenter = System.Windows.Controls.GridViewRowPresenter;
 using UiDataGrid = Wpf.Ui.Controls.DataGrid;
 using UiGridView = Wpf.Ui.Controls.GridView;
 using UiGridViewColumn = Wpf.Ui.Controls.GridViewColumn;
-using UiGridViewHeaderRowPresenter = Wpf.Ui.Controls.GridViewHeaderRowPresenter;
 using UiListView = Wpf.Ui.Controls.ListView;
 using UiListViewItem = Wpf.Ui.Controls.ListViewItem;
 using UiPassiveScrollViewer = Wpf.Ui.Controls.PassiveScrollViewer;
@@ -63,9 +65,7 @@ public class GridViewTests
             view.Columns.Add(firstStarColumn);
             view.Columns.Add(secondStarColumn);
 
-            var presenter = new UiGridViewHeaderRowPresenter { Columns = view.Columns };
-            presenter.Measure(new Size(600, 100));
-            presenter.Arrange(new Rect(0, 0, 600, 40));
+            Assert.True(Wpf.Ui.Controls.GridViewColumnLayout.ResolveStarColumns(view.Columns, 600));
 
             Assert.Equal(100.0, fixedColumn.ActualWidth, 3);
             Assert.Equal(498.0 / 3.0, firstStarColumn.ActualWidth, 3);
@@ -99,9 +99,7 @@ public class GridViewTests
             view.Columns.Add(limitedColumn);
             view.Columns.Add(remainingColumn);
 
-            var presenter = new UiGridViewHeaderRowPresenter { Columns = view.Columns };
-            presenter.Measure(new Size(500, 100));
-            presenter.Arrange(new Rect(0, 0, 500, 40));
+            Assert.True(Wpf.Ui.Controls.GridViewColumnLayout.ResolveStarColumns(view.Columns, 500));
 
             Assert.Equal(120.0, limitedColumn.ActualWidth, 3);
             Assert.Equal(378.0, remainingColumn.ActualWidth, 3);
@@ -109,31 +107,20 @@ public class GridViewTests
     }
 
     [Fact]
-    public void InfiniteHeaderMeasure_DoesNotDiscardWidthResolvedByFiniteRows()
+    public void StarColumn_NeverPublishesAutoWidthToNativePresenters()
     {
         RunOnStaThread(static () =>
         {
-            var view = new UiGridView();
             var column = new UiGridViewColumn
             {
                 Header = "Description",
                 MinWidth = 100,
                 Width = new GridLength(1, GridUnitType.Star),
             };
-            view.Columns.Add(column);
 
-            // WPF's GridView template measures the header inside a horizontally enabled
-            // ScrollViewer, so its horizontal constraint is infinite. Rows eventually resolve
-            // against the finite viewport. Both presenters share the same GridViewColumn instance.
-            var finiteWidthPresenter = new UiGridViewHeaderRowPresenter { Columns = view.Columns };
-            finiteWidthPresenter.Measure(new Size(500, 100));
-            double rowResolvedWidth = column.ActualWidth;
-
-            var headerPresenter = new UiGridViewHeaderRowPresenter { Columns = view.Columns };
-            headerPresenter.Measure(new Size(double.PositiveInfinity, 100));
-
-            Assert.Equal(498.0, rowResolvedWidth, 3);
-            Assert.Equal(rowResolvedWidth, column.ActualWidth, 3);
+            Assert.True(column.Width.IsStar);
+            Assert.Equal(100.0, (double)column.GetValue(NativeGridViewColumn.WidthProperty), 3);
+            Assert.Equal(100.0, column.ActualWidth, 3);
         });
     }
 
@@ -152,6 +139,58 @@ public class GridViewTests
             column.SetValue(NativeGridViewColumn.WidthProperty, double.NaN);
 
             Assert.True(column.Width.IsAuto);
+        });
+    }
+
+    [Fact]
+    public void AutoColumn_ReMeasuresContentWhenMaximumWidthIsRelaxed()
+    {
+        RunOnStaThread(static () =>
+        {
+            var view = new UiGridView();
+            var autoColumn = new UiGridViewColumn
+            {
+                DisplayMemberBinding = new System.Windows.Data.Binding(nameof(TestRow.Name)),
+                Header = "Value",
+                MaxWidth = 80,
+                Width = GridLength.Auto,
+            };
+            view.Columns.Add(autoColumn);
+
+            var listView = new UiListView
+            {
+                Height = 120,
+                ItemsSource = new[] { new TestRow(new string('W', 100)) },
+                View = view,
+                Width = 600,
+            };
+            var window = new Window
+            {
+                Content = listView,
+                Height = 160,
+                ShowInTaskbar = false,
+                Width = 640,
+                WindowStyle = WindowStyle.None,
+            };
+
+            try
+            {
+                window.Show();
+                listView.Dispatcher.Invoke(static () => { }, DispatcherPriority.ApplicationIdle);
+                listView.UpdateLayout();
+                Assert.Equal(80.0, autoColumn.ActualWidth, 3);
+
+                autoColumn.MaxWidth = 400;
+                listView.UpdateLayout();
+                listView.Dispatcher.Invoke(static () => { }, DispatcherPriority.ApplicationIdle);
+                listView.UpdateLayout();
+
+                Assert.Equal(400.0, autoColumn.ActualWidth, 3);
+            }
+            finally
+            {
+                window.Close();
+            }
         });
     }
 
@@ -198,7 +237,7 @@ public class GridViewTests
             root.Arrange(new Rect(0, 0, 600, 240));
             root.UpdateLayout();
 
-            Assert.NotNull(FindVisualChild<UiGridViewHeaderRowPresenter>(listView));
+            Assert.NotNull(FindVisualChild<NativeGridViewHeaderRowPresenter>(listView));
             var columnHeader = Assert.IsType<NativeGridViewColumnHeader>(
                 FindVisualChild<NativeGridViewColumnHeader>(
                     listView,
@@ -339,11 +378,11 @@ public class GridViewTests
                 var scrollBar = Assert.IsType<ScrollBar>(
                     scrollViewer.Template.FindName("PART_HorizontalScrollBar", scrollViewer)
                 );
-                var headerPresenter = Assert.IsType<UiGridViewHeaderRowPresenter>(
-                    FindVisualChild<UiGridViewHeaderRowPresenter>(listView)
+                var headerPresenter = Assert.IsType<NativeGridViewHeaderRowPresenter>(
+                    FindVisualChild<NativeGridViewHeaderRowPresenter>(listView)
                 );
-                var rowPresenter = Assert.IsType<Wpf.Ui.Controls.GridViewRowPresenter>(
-                    FindVisualChild<Wpf.Ui.Controls.GridViewRowPresenter>(listView)
+                var rowPresenter = Assert.IsType<NativeGridViewRowPresenter>(
+                    FindVisualChild<NativeGridViewRowPresenter>(listView)
                 );
 
                 Assert.True(scrollViewer.ScrollableWidth > 0d);
@@ -411,6 +450,159 @@ public class GridViewTests
 
                 window.Width = 1040;
                 window.UpdateLayout();
+                AssertColumnsFillViewport(listView, view);
+            }
+            finally
+            {
+                window.Close();
+            }
+        });
+    }
+
+    [Fact]
+    public void GridViewTemplate_HeaderResizeDoesNotPublishTransientHorizontalExtent()
+    {
+        RunOnStaThread(static () =>
+        {
+            var view = new UiGridView();
+            var fixedColumn = new UiGridViewColumn
+            {
+                Header = "Fixed",
+                Width = new GridLength(120),
+            };
+            view.Columns.Add(fixedColumn);
+            view.Columns.Add(
+                new UiGridViewColumn
+                {
+                    Header = "Star",
+                    MinWidth = 100,
+                    Width = new GridLength(1, GridUnitType.Star),
+                }
+            );
+
+            var listView = new UiListView
+            {
+                Height = 160,
+                ItemsSource = new[] { "First", "Second" },
+                View = view,
+                Width = 600,
+            };
+            var window = new Window
+            {
+                Content = listView,
+                Height = 200,
+                ShowInTaskbar = false,
+                Width = 640,
+                WindowStyle = WindowStyle.None,
+            };
+
+            try
+            {
+                window.Show();
+                AssertColumnsFillViewport(listView, view);
+
+                var scrollViewer = Assert.IsType<UiPassiveScrollViewer>(
+                    FindVisualChild<UiPassiveScrollViewer>(listView)
+                );
+                var publishedScrollableWidths = new List<double>();
+                scrollViewer.ScrollChanged += (_, _) =>
+                    publishedScrollableWidths.Add(scrollViewer.ScrollableWidth);
+
+                // GridViewColumnHeader writes the native double Width property while dragging.
+                // Exercise that exact path rather than only changing the GridLength definition.
+                fixedColumn.SetValue(NativeGridViewColumn.WidthProperty, 260.0);
+                listView.UpdateLayout();
+                listView.Dispatcher.Invoke(static () => { }, DispatcherPriority.ApplicationIdle);
+                listView.UpdateLayout();
+
+                Assert.True(fixedColumn.Width.IsAbsolute);
+                Assert.Equal(260.0, fixedColumn.Width.Value, 3);
+                Assert.Equal(0.0, scrollViewer.ScrollableWidth, 3);
+                Assert.All(publishedScrollableWidths, width => Assert.InRange(width, 0.0, 0.001));
+            }
+            finally
+            {
+                window.Close();
+            }
+        });
+    }
+
+    [Fact]
+    public void GridViewTemplate_StarHeaderResizeRetainsStarSizingAndFillsViewport()
+    {
+        RunOnStaThread(static () =>
+        {
+            var view = new UiGridView();
+            var firstColumn = new UiGridViewColumn
+            {
+                Header = "First",
+                MinWidth = 80,
+                Width = new GridLength(1, GridUnitType.Star),
+            };
+            var secondColumn = new UiGridViewColumn
+            {
+                Header = "Second",
+                MinWidth = 80,
+                Width = new GridLength(1, GridUnitType.Star),
+            };
+            var thirdColumn = new UiGridViewColumn
+            {
+                Header = "Third",
+                MinWidth = 80,
+                Width = new GridLength(1, GridUnitType.Star),
+            };
+            view.Columns.Add(firstColumn);
+            view.Columns.Add(secondColumn);
+            view.Columns.Add(thirdColumn);
+
+            var listView = new UiListView
+            {
+                Height = 160,
+                ItemsSource = new[] { "First", "Second" },
+                View = view,
+                Width = 600,
+            };
+            var window = new Window
+            {
+                Content = listView,
+                Height = 200,
+                ShowInTaskbar = false,
+                Width = 640,
+                WindowStyle = WindowStyle.None,
+            };
+
+            try
+            {
+                window.Show();
+                AssertColumnsFillViewport(listView, view);
+                double firstWidthBeforeResize = firstColumn.ActualWidth;
+                double secondWidthBeforeResize = secondColumn.ActualWidth;
+
+                // This is the finite native Width write performed by GridViewColumnHeader.DragDelta.
+                firstColumn.SetValue(
+                    NativeGridViewColumn.WidthProperty,
+                    firstWidthBeforeResize + 80.0
+                );
+                listView.UpdateLayout();
+                window.Dispatcher.Invoke(static () => { }, DispatcherPriority.ApplicationIdle);
+                listView.UpdateLayout();
+
+                Assert.True(firstColumn.Width.IsStar);
+                Assert.True(secondColumn.Width.IsStar);
+                Assert.True(thirdColumn.Width.IsStar);
+                Assert.True(firstColumn.ActualWidth > firstWidthBeforeResize + 79.0);
+                Assert.True(secondColumn.ActualWidth < secondWidthBeforeResize);
+                AssertColumnsFillViewport(listView, view);
+
+                double trailingWidthBeforeResize = thirdColumn.ActualWidth;
+                thirdColumn.SetValue(
+                    NativeGridViewColumn.WidthProperty,
+                    trailingWidthBeforeResize - 60.0
+                );
+                listView.UpdateLayout();
+
+                Assert.True(thirdColumn.Width.IsStar);
+                Assert.Equal(trailingWidthBeforeResize, thirdColumn.ActualWidth, 3);
                 AssertColumnsFillViewport(listView, view);
             }
             finally
@@ -521,15 +713,15 @@ public class GridViewTests
                 double totalColumnWidth = view.Columns.Cast<NativeGridViewColumn>().Sum(static column => column.ActualWidth);
                 Assert.InRange(totalColumnWidth, 795d, 798d);
                 Assert.InRange(
-                    Assert.IsType<UiGridViewHeaderRowPresenter>(
-                        FindVisualChild<UiGridViewHeaderRowPresenter>(listView)
+                    Assert.IsType<NativeGridViewHeaderRowPresenter>(
+                        FindVisualChild<NativeGridViewHeaderRowPresenter>(listView)
                     ).DesiredSize.Width,
                     795d,
                     800d
                 );
                 Assert.InRange(
-                    Assert.IsType<Wpf.Ui.Controls.GridViewRowPresenter>(
-                        FindVisualChild<Wpf.Ui.Controls.GridViewRowPresenter>(listView)
+                    Assert.IsType<NativeGridViewRowPresenter>(
+                        FindVisualChild<NativeGridViewRowPresenter>(listView)
                     ).DesiredSize.Width,
                     795d,
                     800d

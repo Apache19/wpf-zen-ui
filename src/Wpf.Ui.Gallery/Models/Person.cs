@@ -15,10 +15,16 @@ public record Person
 
     public string Company { get; init; }
 
-    public Person(string firstName, string lastName, string company)
+    public string Email { get; init; }
+
+    public string Phone { get; init; }
+
+    public Person(string firstName, string lastName, string company, string email, string phone)
     {
         FirstName = firstName;
         LastName = lastName;
         Company = company;
+        Email = email;
+        Phone = phone;
     }
 }
