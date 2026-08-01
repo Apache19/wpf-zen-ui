@@ -206,6 +206,60 @@ public class GridViewTests
     }
 
     [Fact]
+    public void GridView_DefaultContainerSelector_RemovesOnlyTheLastRowDivider()
+    {
+        RunOnStaThread(static () =>
+        {
+            var listView = new UiListView
+            {
+                Height = 200,
+                View = new UiGridView(),
+                Width = 300,
+            };
+            listView.Items.Add("First");
+            listView.Items.Add("Second");
+            var root = new Grid();
+            root.Children.Add(listView);
+
+            root.Measure(new Size(300, 200));
+            root.Arrange(new Rect(0, 0, 300, 200));
+            root.UpdateLayout();
+
+            Assert.IsType<Wpf.Ui.Controls.ListItemContainerStyleSelector>(
+                listView.ItemContainerStyleSelector
+            );
+            var firstItem = Assert.IsType<UiListViewItem>(
+                listView.ItemContainerGenerator.ContainerFromIndex(0)
+            );
+            var lastItem = Assert.IsType<UiListViewItem>(
+                listView.ItemContainerGenerator.ContainerFromIndex(1)
+            );
+
+            Assert.Equal(new Thickness(0, 0, 0, 1), firstItem.BorderThickness);
+            Assert.Equal(new Thickness(0), lastItem.BorderThickness);
+
+            listView.Items.Add("Third");
+            root.UpdateLayout();
+
+            var newLastItem = Assert.IsType<UiListViewItem>(
+                listView.ItemContainerGenerator.ContainerFromIndex(2)
+            );
+            Assert.Equal(new Thickness(0, 0, 0, 1), lastItem.BorderThickness);
+            Assert.Equal(new Thickness(0), newLastItem.BorderThickness);
+
+            // ViewBase restores the normal ListView style when the view is removed. This verifies
+            // that the GridView-only selector does not leak into the default non-column layout.
+            listView.View = null;
+            root.UpdateLayout();
+
+            Assert.Null(listView.ItemContainerStyleSelector);
+            Assert.Equal(new Thickness(0, 0, 0, 1), firstItem.BorderThickness);
+            Assert.Equal(new Thickness(0, 0, 0, 1), lastItem.BorderThickness);
+            Assert.Equal(new Thickness(0, 0, 0, 1), newLastItem.BorderThickness);
+        });
+    }
+
+    [Fact]
     public void DefaultTemplates_LoadAndSelectionIndicatorSettingIsInherited()
     {
         RunOnStaThread(static () =>

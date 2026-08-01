@@ -12,6 +12,12 @@
     xmlns:m="clr-namespace:Wpf.Ui.Markup">
 
     <ResourceDictionary.MergedDictionaries>
+        <!--
+            The GridView-specific last-item style below derives from the normal GridView item
+            container style. Merge that dictionary here so StaticResource resolution follows an
+            explicit dependency instead of relying on sibling ordering in Generic.xaml.
+        -->
+        <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/ListView/ListViewItem.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Ui;component/Controls/GridView/GridViewColumnHeader.xaml" />
     </ResourceDictionary.MergedDictionaries>
 
@@ -192,6 +198,27 @@
         lightweight Wpf.Ui GridView type exists solely to select these Fluent XAML resources.
     -->
     <Style x:Key="{x:Static controls:GridView.GridViewStyleKey}" BasedOn="{StaticResource DefaultListViewBaseStyle}" TargetType="{x:Type ListView}">
+        <!--
+            ListView changes to this view-specific style through ViewBase.DefaultStyleKey. Keeping
+            the selector here (instead of DefaultListViewBaseStyle) makes the rule follow the
+            GridView lifecycle automatically, including a View replacement at runtime. No mirrored
+            "has view" dependency property or trigger is necessary.
+
+            The last-item style is based on the same key that GridView assigns to every generated
+            container. This preserves the Fluent row template and all of its setters while removing
+            only the trailing divider. A standalone style would replace that view-selected style.
+        -->
+        <Setter Property="ItemContainerStyleSelector">
+            <Setter.Value>
+                <controls:ListItemContainerStyleSelector>
+                    <controls:ListItemContainerStyleSelector.LastItemStyle>
+                        <Style BasedOn="{StaticResource {x:Static controls:GridView.GridViewItemContainerStyleKey}}" TargetType="{x:Type ListViewItem}">
+                            <Setter Property="BorderThickness" Value="0" />
+                        </Style>
+                    </controls:ListItemContainerStyleSelector.LastItemStyle>
+                </controls:ListItemContainerStyleSelector>
+            </Setter.Value>
+        </Setter>
         <Setter Property="Template" Value="{StaticResource GridViewTemplate}" />
     </Style>
 

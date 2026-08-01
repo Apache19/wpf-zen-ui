@@ -4,6 +4,7 @@
 // All Rights Reserved.
 
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Runtime.ExceptionServices;
 using System.Threading;
@@ -13,6 +14,7 @@ using System.Windows.Data;
 using System.Windows.Media;
 using NativeListViewItem = System.Windows.Controls.ListViewItem;
 using UiDataGrid = Wpf.Ui.Controls.DataGrid;
+using UiListItemContainerStyleSelector = Wpf.Ui.Controls.ListItemContainerStyleSelector;
 using UiListView = Wpf.Ui.Controls.ListView;
 using UiListViewItem = Wpf.Ui.Controls.ListViewItem;
 using UiPassiveScrollViewer = Wpf.Ui.Controls.PassiveScrollViewer;
@@ -22,6 +24,121 @@ namespace Wpf.Ui.UnitTests.Controls;
 
 public class ListViewAndDataGridTests
 {
+    [Fact]
+    public void ListItemContainerStyleSelector_AppliesSpecificPositionalRulesToListView()
+    {
+        RunOnStaThread(static () =>
+        {
+            var selector = new UiListItemContainerStyleSelector
+            {
+                DefaultStyle = CreateTaggedListViewItemStyle("default"),
+                EvenItemStyle = CreateTaggedListViewItemStyle("even"),
+                FirstItemStyle = CreateTaggedListViewItemStyle("first"),
+                LastItemStyle = CreateTaggedListViewItemStyle("last"),
+                OddItemStyle = CreateTaggedListViewItemStyle("odd"),
+                SingleItemStyle = CreateTaggedListViewItemStyle("single"),
+            };
+            var listView = new UiListView
+            {
+                Height = 200,
+                ItemContainerStyleSelector = selector,
+                ItemsSource = new[] { "A", "B", "C", "D" },
+                Width = 300,
+            };
+
+            Arrange(listView, 300, 200);
+
+            Assert.Equal("first", GetListViewItem(listView, 0).Tag);
+            Assert.Equal("odd", GetListViewItem(listView, 1).Tag);
+            Assert.Equal("even", GetListViewItem(listView, 2).Tag);
+            Assert.Equal("last", GetListViewItem(listView, 3).Tag);
+
+            listView.ItemsSource = new[] { "only" };
+            listView.UpdateLayout();
+
+            Assert.Equal("single", GetListViewItem(listView, 0).Tag);
+        });
+    }
+
+    [Fact]
+    public void ListItemContainerStyleSelector_ReevaluatesSurvivingListViewContainersAfterCollectionChanges()
+    {
+        RunOnStaThread(static () =>
+        {
+            var items = new ObservableCollection<string> { "A", "B" };
+            var listView = new UiListView
+            {
+                Height = 200,
+                ItemContainerStyleSelector = new UiListItemContainerStyleSelector
+                {
+                    DefaultStyle = CreateTaggedListViewItemStyle("default"),
+                    FirstItemStyle = CreateTaggedListViewItemStyle("first"),
+                    LastItemStyle = CreateTaggedListViewItemStyle("last"),
+                    OddItemStyle = CreateTaggedListViewItemStyle("odd"),
+                    SingleItemStyle = CreateTaggedListViewItemStyle("single"),
+                },
+                ItemsSource = items,
+                Width = 300,
+            };
+
+            Arrange(listView, 300, 200);
+            UiListViewItem secondContainer = GetListViewItem(listView, 1);
+            Assert.Equal("last", secondContainer.Tag);
+
+            items.Add("C");
+            listView.UpdateLayout();
+
+            Assert.Same(secondContainer, GetListViewItem(listView, 1));
+            Assert.Equal("odd", secondContainer.Tag);
+            Assert.Equal("last", GetListViewItem(listView, 2).Tag);
+
+            items.RemoveAt(0);
+            listView.UpdateLayout();
+
+            Assert.Same(secondContainer, GetListViewItem(listView, 0));
+            Assert.Equal("first", secondContainer.Tag);
+
+            items.RemoveAt(1);
+            listView.UpdateLayout();
+
+            Assert.Equal("single", GetListViewItem(listView, 0).Tag);
+        });
+    }
+
+    [Fact]
+    public void ListItemContainerStyleSelector_PreservesExplicitListViewContainerStyle()
+    {
+        RunOnStaThread(static () =>
+        {
+            Style explicitStyle = CreateTaggedListViewItemStyle("explicit");
+            var explicitContainer = new UiListViewItem { Content = "A", Style = explicitStyle };
+            var listView = new UiListView
+            {
+                Height = 200,
+                ItemContainerStyleSelector = new UiListItemContainerStyleSelector
+                {
+                    FirstItemStyle = CreateTaggedListViewItemStyle("first"),
+                    LastItemStyle = CreateTaggedListViewItemStyle("last"),
+                },
+                Width = 300,
+            };
+            listView.Items.Add(explicitContainer);
+            listView.Items.Add("B");
+
+            Arrange(listView, 300, 200);
+            Style runtimeStyle = CreateTaggedListViewItemStyle("runtime");
+            UiListViewItem generatedContainer = GetListViewItem(listView, 1);
+            generatedContainer.Style = runtimeStyle;
+            listView.Items.Insert(0, "new");
+            listView.UpdateLayout();
+
+            Assert.Same(explicitStyle, explicitContainer.Style);
+            Assert.Equal("explicit", explicitContainer.Tag);
+            Assert.Same(runtimeStyle, generatedContainer.Style);
+            Assert.Equal("runtime", generatedContainer.Tag);
+        });
+    }
+
     [Fact]
     public void ListView_AcceptsNativeAndFluentItemsAsContainers()
     {
@@ -641,6 +758,18 @@ public class ListViewAndDataGridTests
     {
         element.BeginInit();
         element.EndInit();
+    }
+
+    private static UiListViewItem GetListViewItem(UiListView listView, int index)
+    {
+        return Assert.IsType<UiListViewItem>(listView.ItemContainerGenerator.ContainerFromIndex(index));
+    }
+
+    private static Style CreateTaggedListViewItemStyle(string tag)
+    {
+        var style = new Style(typeof(NativeListViewItem));
+        style.Setters.Add(new Setter(FrameworkElement.TagProperty, tag));
+        return style;
     }
 
     private static void Arrange(FrameworkElement element, double width, double height)

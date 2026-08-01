@@ -3,18 +3,65 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
+using System.Collections.ObjectModel;
 using System.Runtime.ExceptionServices;
 using System.Threading;
+using System.Windows.Controls;
 using System.Windows.Input;
 using NativeListBoxItem = System.Windows.Controls.ListBoxItem;
 using UiListBox = Wpf.Ui.Controls.ListBox;
 using UiListBoxItem = Wpf.Ui.Controls.ListBoxItem;
 using UiListBoxItemDoubleClickEventArgs = Wpf.Ui.Controls.ListBoxItemDoubleClickEventArgs;
+using UiListItemContainerStyleSelector = Wpf.Ui.Controls.ListItemContainerStyleSelector;
 
 namespace Wpf.Ui.UnitTests.Controls;
 
 public class ListBoxTests
 {
+    [Fact]
+    public void ListItemContainerStyleSelector_ReevaluatesSurvivingListBoxContainersAfterCollectionChanges()
+    {
+        RunOnStaThread(static () =>
+        {
+            var items = new ObservableCollection<string> { "A", "B" };
+            var listBox = new UiListBox
+            {
+                Height = 200,
+                ItemContainerStyleSelector = new UiListItemContainerStyleSelector
+                {
+                    FirstItemStyle = CreateTaggedListBoxItemStyle("first"),
+                    LastItemStyle = CreateTaggedListBoxItemStyle("last"),
+                    OddItemStyle = CreateTaggedListBoxItemStyle("odd"),
+                    SingleItemStyle = CreateTaggedListBoxItemStyle("single"),
+                },
+                ItemsSource = items,
+                Width = 300,
+            };
+
+            Arrange(listBox);
+            UiListBoxItem secondContainer = GetListBoxItem(listBox, 1);
+            Assert.Equal("last", secondContainer.Tag);
+
+            items.Add("C");
+            listBox.UpdateLayout();
+
+            Assert.Same(secondContainer, GetListBoxItem(listBox, 1));
+            Assert.Equal("odd", secondContainer.Tag);
+            Assert.Equal("last", GetListBoxItem(listBox, 2).Tag);
+
+            items.RemoveAt(0);
+            listBox.UpdateLayout();
+
+            Assert.Same(secondContainer, GetListBoxItem(listBox, 0));
+            Assert.Equal("first", secondContainer.Tag);
+
+            items.RemoveAt(1);
+            listBox.UpdateLayout();
+
+            Assert.Equal("single", GetListBoxItem(listBox, 0).Tag);
+        });
+    }
+
     [Fact]
     public void ListBox_GeneratesFluentContainersAndAcceptsNativeContainers()
     {
@@ -91,6 +138,27 @@ public class ListBoxTests
         {
             ExceptionDispatchInfo.Capture(exception).Throw();
         }
+    }
+
+    private static void Arrange(FrameworkElement element)
+    {
+        // Theme styles are resolved only after a control enters a logical tree. A lightweight host
+        // exercises the same container generation path as application markup without showing a window.
+        var host = new Grid();
+        host.Children.Add(element);
+        host.Measure(new Size(element.Width, element.Height));
+        host.Arrange(new Rect(0, 0, element.Width, element.Height));
+        host.UpdateLayout();
+    }
+
+    private static UiListBoxItem GetListBoxItem(UiListBox listBox, int index) =>
+        Assert.IsType<UiListBoxItem>(listBox.ItemContainerGenerator.ContainerFromIndex(index));
+
+    private static Style CreateTaggedListBoxItemStyle(string tag)
+    {
+        var style = new Style(typeof(UiListBoxItem));
+        style.Setters.Add(new Setter(FrameworkElement.TagProperty, tag));
+        return style;
     }
 
     private sealed class TestListBox : UiListBox

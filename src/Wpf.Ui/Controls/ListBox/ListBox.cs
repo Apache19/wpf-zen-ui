@@ -3,6 +3,7 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
+using System.Collections.Specialized;
 using System.Windows.Input;
 using NativeListBoxItem = System.Windows.Controls.ListBoxItem;
 using UiListBoxItem = Wpf.Ui.Controls.ListBoxItem;
@@ -159,5 +160,36 @@ public class ListBox : System.Windows.Controls.ListBox
     protected override DependencyObject GetContainerForItemOverride()
     {
         return new UiListBoxItem();
+    }
+
+    /// <summary>
+    /// Re-evaluates position-dependent styles for realized containers after an item collection
+    /// insertion, removal, replacement, move, or reset.
+    /// </summary>
+    /// <remarks>
+    /// WPF does not call an item-container style selector again for containers that survive a
+    /// collection change. Delegating to the shared manager keeps first, last, single, and alternating
+    /// rules correct while retaining virtualization and caller-assigned local styles.
+    /// </remarks>
+    protected override void OnItemsChanged(NotifyCollectionChangedEventArgs e)
+    {
+        base.OnItemsChanged(e);
+
+        if (
+            ItemContainerStyle is null
+            && ItemContainerStyleSelector is ListItemContainerStyleSelector selector
+        )
+        {
+            ListItemContainerStyleManager.RefreshRealizedContainers(this, selector);
+        }
+    }
+
+    /// <summary>
+    /// Clears positional-selector bookkeeping before WPF reuses an item container.
+    /// </summary>
+    protected override void ClearContainerForItemOverride(DependencyObject element, object item)
+    {
+        ListItemContainerStyleManager.ClearContainer(element);
+        base.ClearContainerForItemOverride(element, item);
     }
 }

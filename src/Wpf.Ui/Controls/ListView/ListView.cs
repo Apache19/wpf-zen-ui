@@ -3,6 +3,7 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
+using System.Collections.Specialized;
 using NativeListViewItem = System.Windows.Controls.ListViewItem;
 using UiListViewItem = Wpf.Ui.Controls.ListViewItem;
 
@@ -70,5 +71,41 @@ public class ListView : System.Windows.Controls.ListView
         // native ListViewItem explicitly. Rejecting the native base type makes WPF wrap that item in
         // another container, which breaks routed input, selection ownership, and item styling.
         return item is NativeListViewItem;
+    }
+
+    /// <summary>
+    /// Re-evaluates position-dependent container styles after the item collection changes.
+    /// </summary>
+    /// <remarks>
+    /// WPF invokes the active <see cref="System.Windows.Controls.StyleSelector"/> while preparing a container, but it does
+    /// not invoke the selector again for surviving containers after an insertion, removal, or move.
+    /// Every realized index may change (including alternating rules), so all realized containers are
+    /// updated. Unrealized containers are handled by the normal preparation path when virtualization
+    /// brings them into view.
+    /// </remarks>
+    protected override void OnItemsChanged(NotifyCollectionChangedEventArgs e)
+    {
+        base.OnItemsChanged(e);
+
+        if (
+            ItemContainerStyle is not null
+            || ItemContainerStyleSelector is not ListItemContainerStyleSelector selector
+        )
+        {
+            return;
+        }
+
+        ListItemContainerStyleManager.RefreshRealizedContainers(this, selector);
+    }
+
+    /// <summary>
+    /// Removes selector bookkeeping before a container is recycled. This is especially important
+    /// when an earlier rule returned no style: WPF then has no generator-style flag with which to
+    /// clear a style that a later collection mutation may have applied.
+    /// </summary>
+    protected override void ClearContainerForItemOverride(DependencyObject element, object item)
+    {
+        ListItemContainerStyleManager.ClearContainer(element);
+        base.ClearContainerForItemOverride(element, item);
     }
 }
