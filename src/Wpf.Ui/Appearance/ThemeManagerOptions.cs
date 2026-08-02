@@ -23,6 +23,17 @@ namespace Wpf.Ui;
 /// <para>
 /// At runtime, changing any property after initialization triggers an immediate theme refresh.
 /// </para>
+/// <para>
+/// Additional theme dictionaries configured by this type are palette extensions. They should contain only
+/// non-structural values such as colors, brushes, numbers, and thicknesses. Styles, control or data templates, event
+/// setters, and other resources that require WPF to replace a theme style or template are unsupported. Keeping that
+/// graph stable is what allows a global theme switch to preserve control, popup, focus, and animation state.
+/// </para>
+/// <para>
+/// In an applicationless host, process-wide overrides must use the assembly-scoped keys published by
+/// <c>Wpf.Ui.Theming</c>. WPF does not route ordinary string keys through its system-theme dictionaries; keep such
+/// application-specific resources in a window or element resource scope instead.
+/// </para>
 /// </remarks>
 /// <example>
 /// <code lang="xml">
@@ -153,7 +164,9 @@ public class ThemeManagerOptions : ResourceDictionary, ISupportInitialize
     /// <summary>
     /// Gets or sets a value indicating whether to merge implicit styles
     /// for native WPF controls so they adopt the Fluent UI theme.
-    /// The default value is <c>true</c>.
+    /// The default value is <c>true</c>. This value takes effect only when a <see cref="ThemeManagerOptions"/>
+    /// instance is initialized or ThemeManager is otherwise configured; referencing Wpf.Ui alone never changes
+    /// native control styles.
     /// </summary>
     public bool EnableNativeControlStyling
     {
@@ -171,6 +184,13 @@ public class ThemeManagerOptions : ResourceDictionary, ISupportInitialize
     /// <summary>
     /// Gets or sets an additional resource dictionary URI to merge when the Light theme is active.
     /// </summary>
+    /// <remarks>
+    /// The dictionary should contain only non-structural palette values such as colors, brushes, numbers, and
+    /// thicknesses. Do not define styles, control or data templates, event setters, or other resources that require
+    /// replacement of the stable theme-style/template graph.
+    /// In an applicationless host, use the assembly-scoped keys published by <c>Wpf.Ui.Theming</c> for process-wide
+    /// overrides; ordinary string keys require a normal application, window, or element resource scope.
+    /// </remarks>
     public Uri? AdditionalLightThemeSource
     {
         get => _additionalLightThemeSource;
@@ -187,6 +207,13 @@ public class ThemeManagerOptions : ResourceDictionary, ISupportInitialize
     /// <summary>
     /// Gets or sets an additional resource dictionary URI to merge when the Dark theme is active.
     /// </summary>
+    /// <remarks>
+    /// The dictionary should contain only non-structural palette values such as colors, brushes, numbers, and
+    /// thicknesses. Do not define styles, control or data templates, event setters, or other resources that require
+    /// replacement of the stable theme-style/template graph.
+    /// In an applicationless host, use the assembly-scoped keys published by <c>Wpf.Ui.Theming</c> for process-wide
+    /// overrides; ordinary string keys require a normal application, window, or element resource scope.
+    /// </remarks>
     public Uri? AdditionalDarkThemeSource
     {
         get => _additionalDarkThemeSource;
@@ -203,6 +230,13 @@ public class ThemeManagerOptions : ResourceDictionary, ISupportInitialize
     /// <summary>
     /// Gets or sets an additional resource dictionary URI to merge when a light high contrast theme is active.
     /// </summary>
+    /// <remarks>
+    /// The dictionary should contain only non-structural palette values such as colors, brushes, numbers, and
+    /// thicknesses. Do not define styles, control or data templates, event setters, or other resources that require
+    /// replacement of the stable theme-style/template graph.
+    /// In an applicationless host, use the assembly-scoped keys published by <c>Wpf.Ui.Theming</c> for process-wide
+    /// overrides; ordinary string keys require a normal application, window, or element resource scope.
+    /// </remarks>
     public Uri? AdditionalHighContrastLightThemeSource
     {
         get => _additionalHighContrastLightThemeSource;
@@ -219,6 +253,13 @@ public class ThemeManagerOptions : ResourceDictionary, ISupportInitialize
     /// <summary>
     /// Gets or sets an additional resource dictionary URI to merge when a dark high contrast theme is active.
     /// </summary>
+    /// <remarks>
+    /// The dictionary should contain only non-structural palette values such as colors, brushes, numbers, and
+    /// thicknesses. Do not define styles, control or data templates, event setters, or other resources that require
+    /// replacement of the stable theme-style/template graph.
+    /// In an applicationless host, use the assembly-scoped keys published by <c>Wpf.Ui.Theming</c> for process-wide
+    /// overrides; ordinary string keys require a normal application, window, or element resource scope.
+    /// </remarks>
     public Uri? AdditionalHighContrastDarkThemeSource
     {
         get => _additionalHighContrastDarkThemeSource;
@@ -254,11 +295,15 @@ public class ThemeManagerOptions : ResourceDictionary, ISupportInitialize
         base.EndInit();
         _isInitializing = false;
 
+        // The presence of ThemeManagerOptions is itself the consumer's explicit opt-in. Apply even when every XAML
+        // property equals its CLR default; otherwise an empty options dictionary would be indistinguishable from a
+        // mere assembly reference and the default EnableNativeControlStyling=true setting would never take effect.
         if (_pendingApply)
         {
             _pendingApply = false;
-            ApplyConfiguration();
         }
+
+        ApplyConfiguration();
     }
 
     /// <inheritdoc cref="ISupportInitialize.BeginInit"/>

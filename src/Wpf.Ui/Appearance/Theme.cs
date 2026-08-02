@@ -23,14 +23,14 @@ public static class Theme
     /// </summary>
     /// <remarks>
     /// <para>
-    /// This property is used to register the RootVisual element with ThemeManager,
-    /// allowing it to respond to global theme changes.
+    /// This optional property registers the owning presentation root as an explicit element-resource target.
+    /// The active theme dictionary is copied into that root's <see cref="FrameworkElement.Resources"/> collection.
     /// </para>
     /// <para>
-    /// This is specifically designed for non-WPF hosting environments (e.g., WinForms ElementHost)
-    /// where WPF content does not have a global Application object.
-    /// When set to true on the root UserControl, the RootVisual will be registered
-    /// and will automatically update when <see cref="ThemeManager.ThemeMode"/> changes.
+    /// It is not required for global theme switching, including WinForms <c>ElementHost</c> scenarios without an
+    /// <see cref="Application"/>. ThemeManager hosts global resources through WPF's system-theme mechanism and detects
+    /// new presentation roots automatically. Use this property only when a root intentionally needs its own resource
+    /// scope; use <see cref="RequestedProperty"/> for a local Light/Dark theme that differs from the global theme.
     /// </para>
     /// </remarks>
     /// <example>

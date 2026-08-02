@@ -12,10 +12,10 @@ namespace Wpf.Ui.UnitTests;
 /// Owns the single long-lived STA dispatcher used by tests that touch <see cref="Application.Current"/>.
 /// </summary>
 /// <remarks>
-/// ThemeManager intentionally creates one process-wide WPF Application when the host did not provide one.
-/// Creating that Application on a short-lived test thread leaves its dispatcher owned by a terminated thread and
-/// makes later resource mutations nondeterministic. Keeping this dispatcher alive mirrors a real WPF host and also
-/// gives every test a stable thread on which to inspect and mutate application resources.
+/// The main unit-test assembly intentionally exercises the conventional WPF Application resource path. Creating its
+/// Application on a short-lived test thread would leave the singleton owned by a terminated dispatcher and make
+/// later resource mutations nondeterministic. Keeping this dispatcher alive mirrors a normal WPF host and leaves the
+/// applicationless backend to the isolated WinForms host test processes.
 /// </remarks>
 internal static class WpfApplicationTestHost
 {

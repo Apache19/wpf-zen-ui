@@ -25,6 +25,7 @@
             CornerRadius="{TemplateBinding Border.CornerRadius}"
             SnapsToDevicePixels="true">
             <ContentPresenter
+                x:Name="ContentPresenter"
                 HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
                 VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
                 SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
@@ -52,11 +53,15 @@
                     <Condition Property="IsEnabled" Value="False" />
                     <Condition Property="IsSelected" Value="True" />
                 </MultiTrigger.Conditions>
-                <Setter Property="Foreground">
-                    <Setter.Value>
-                        <SolidColorBrush Opacity="0.6" Color="{m:DynamicColor TextOnAccentPrimary}" />
-                    </Setter.Value>
-                </Setter>
+                <!--
+                    Theme styles can be shared by WPF's process-wide SystemResources table across several STA
+                    dispatchers. A SolidColorBrush whose Color contains a DynamicResource cannot freeze, so embedding
+                    one in this template binds the sealed template to the dispatcher that first loads it. Keep the
+                    dynamic brush as a per-control resource expression and apply disabled opacity to the generated
+                    content instead; this preserves the visual result without an unshareable Freezable.
+                -->
+                <Setter Property="Foreground" Value="{m:DynamicBrush TextOnAccentPrimary}" />
+                <Setter TargetName="ContentPresenter" Property="Opacity" Value="0.6" />
             </MultiTrigger>
         </ControlTemplate.Triggers>
     </ControlTemplate>

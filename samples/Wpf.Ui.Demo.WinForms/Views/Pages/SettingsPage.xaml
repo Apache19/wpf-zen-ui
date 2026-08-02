@@ -15,7 +15,8 @@
     Style="{ui:DynamicStyle DynamicScrollPage}"
     mc:Ignorable="d">
     <StackPanel Margin="42">
-        <ui:TextBlock
+        <!--  用两种不同的 TextBlock 测试主题功能  -->
+        <TextBlock
             FontSize="20"
             FontWeight="Medium"
             Text="Personalization" />

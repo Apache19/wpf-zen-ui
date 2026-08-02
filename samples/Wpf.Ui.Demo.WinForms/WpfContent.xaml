@@ -8,13 +8,12 @@
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
     d:DesignHeight="450"
     d:DesignWidth="800"
-    ui:Theme.ApplyToRootVisual="True"
     Background="{ui:DynamicBrush WindowBackground}"
     FontSize="{ui:DynamicValue ControlContentThemeFontSize}"
     mc:Ignorable="d">
 
     <UserControl.Resources>
-        <ui:ThemeManagerOptions AccentSource="System" ThemeMode="Dark" />
+        <ui:ThemeManagerOptions ThemeMode="Dark" />
     </UserControl.Resources>
 
     <Grid>

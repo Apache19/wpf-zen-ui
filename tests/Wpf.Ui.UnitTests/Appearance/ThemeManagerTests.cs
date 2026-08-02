@@ -27,6 +27,78 @@ public class ThemeManagerTests
     );
 
     [Fact]
+    public void Initialize_DoesNotInstallGlobalThemeUntilExplicitConfiguration()
+    {
+        RunIsolated(() =>
+        {
+            Application.Current!.Resources = new ResourceDictionary();
+            SetThemeManagementActivationState(0);
+
+            ThemeManager.Initialize();
+
+            Assert.Empty(Application.Current.Resources.MergedDictionaries);
+
+            // The first explicit configuration must apply even though every value equals ThemeManager's defaults.
+            ThemeManager.Configure(
+                UiThemeMode.Default,
+                AccentColorSource.Default,
+                BuiltInAccent,
+                true,
+                null,
+                null,
+                null,
+                null
+            );
+
+            Assert.Same(
+                GetThemeDictionary(UiThemeMode.Light),
+                Assert.Single(Application.Current.Resources.MergedDictionaries)
+            );
+            Assert.True(ContainsMergedSource("/Wpf.Ui;component/Resources/NativeControlStyles.xaml"));
+        });
+    }
+
+    [Fact]
+    public void ConfigureWithDefaultValues_ExplicitlyActivatesThemeManagement()
+    {
+        RunIsolated(() =>
+        {
+            Application.Current!.Resources = new ResourceDictionary();
+            SetThemeManagementActivationState(0);
+
+            // Calling ThemeManager.Configure is itself an explicit opt-in. The first call must therefore install
+            // the global resources even when the supplied values are identical to the manager's current defaults.
+            ThemeManager.Configure(UiThemeMode.Default, AccentColorSource.Default);
+
+            Assert.Same(
+                GetThemeDictionary(UiThemeMode.Light),
+                Assert.Single(Application.Current.Resources.MergedDictionaries)
+            );
+            Assert.True(ContainsMergedSource("/Wpf.Ui;component/Resources/NativeControlStyles.xaml"));
+        });
+    }
+
+    [Fact]
+    public void EmptyThemeManagerOptions_ExplicitlyActivatesDefaultConfiguration()
+    {
+        RunIsolated(() =>
+        {
+            Application.Current!.Resources = new ResourceDictionary();
+            SetThemeManagementActivationState(0);
+
+            var options = new ThemeManagerOptions();
+            options.BeginInit();
+            options.EndInit();
+
+            Assert.Same(
+                GetThemeDictionary(UiThemeMode.Light),
+                Assert.Single(Application.Current.Resources.MergedDictionaries)
+            );
+            Assert.True(ContainsMergedSource("/Wpf.Ui;component/Resources/NativeControlStyles.xaml"));
+        });
+    }
+
+    [Fact]
     public void DefaultMode_AppliesLightCompatibleResourcesButReportsDefault()
     {
         RunIsolated(() =>
@@ -343,6 +415,46 @@ public class ThemeManagerTests
     }
 
     [Fact]
+    public void AdditionalThemeUris_AreAppendedToTheirMatchingPaletteOnly()
+    {
+        RunIsolated(() =>
+        {
+            ThemeManager.SetAdditionalThemeUris(
+                DarkThemeUri,
+                LightThemeUri,
+                LightThemeUri,
+                DarkThemeUri
+            );
+
+            var normalLight = new List<ResourceDictionary>();
+            var normalDark = new List<ResourceDictionary>();
+            ThemeManager.PopulateThemeDictionaries(
+                normalLight,
+                normalDark,
+                highContrast: false,
+                accentColor: BuiltInAccent,
+                nativeControlStyles: null
+            );
+
+            Assert.Equal(DarkThemeUri, normalLight[^1].Source);
+            Assert.Equal(LightThemeUri, normalDark[^1].Source);
+
+            var highContrastLight = new List<ResourceDictionary>();
+            var highContrastDark = new List<ResourceDictionary>();
+            ThemeManager.PopulateThemeDictionaries(
+                highContrastLight,
+                highContrastDark,
+                highContrast: true,
+                accentColor: default,
+                nativeControlStyles: null
+            );
+
+            Assert.Equal(LightThemeUri, highContrastLight[^1].Source);
+            Assert.Equal(DarkThemeUri, highContrastDark[^1].Source);
+        });
+    }
+
+    [Fact]
     public void AdditionalUriProperties_RefreshIndependentlyAndIgnoreEqualAssignments()
     {
         RunIsolated(() =>
@@ -603,6 +715,16 @@ public class ThemeManagerTests
         );
 
         return Assert.IsType<ResourceDictionary>(field?.GetValue(null));
+    }
+
+    private static void SetThemeManagementActivationState(int value)
+    {
+        var field = typeof(ThemeManager).GetField(
+            "_themeManagementActivationState",
+            System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic
+        );
+        Assert.NotNull(field);
+        field.SetValue(null, value);
     }
 
     private static bool ContainsMergedSource(string source)

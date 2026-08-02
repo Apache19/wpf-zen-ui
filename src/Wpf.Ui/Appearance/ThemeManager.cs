@@ -4,6 +4,7 @@
 // All Rights Reserved.
 
 using Microsoft.Win32;
+using System.Collections;
 using System.Reflection;
 using System.Windows.Threading;
 using Wpf.Ui.Appearance;
@@ -17,6 +18,11 @@ namespace Wpf.Ui;
 /// Manages application theme state, listens to system theme events,
 /// synchronizes system theme, and coordinates theme resource loading.
 /// </summary>
+/// <remarks>
+/// Referencing Wpf.Ui or calling <see cref="Initialize"/> does not install a global theme or replace native WPF
+/// control styles. Global theme management begins only after an explicit configuration API or property setter is
+/// used, or after a <see cref="ThemeManagerOptions"/> dictionary finishes initialization.
+/// </remarks>
 public sealed class ThemeManager
 {
     #region Private Constants, Fields
@@ -47,6 +53,15 @@ public sealed class ThemeManager
     private static readonly List<WeakReference<FrameworkElement>>        _registeredElements        = [];
     private static readonly List<WeakReference<FrameworkContentElement>> _registeredContentElements = [];
 
+    // Automatically discovered roots are deliberately separate from _registeredElements. The latter opt into a
+    // local ResourceDictionary through Theme.ApplyToRootVisual/Requested; these roots only provide lifetime-safe
+    // dispatcher discovery for the process-wide SystemResources backend and must not mutate element resources.
+    private static readonly List<WeakReference<FrameworkElement>> _systemThemeRoots = [];
+
+    // A root can raise Loaded repeatedly as it is reparented. Keep a short strong reference only while its targeted
+    // replay is queued; the persistent registry above remains weak so closed ElementHost trees can be collected.
+    private static readonly HashSet<FrameworkElement> _pendingSystemThemeInvalidationRoots = [];
+
     private static readonly DebounceDispatcher _themeChangedDebouncer = new();
 
     private static readonly PropertyInfo? _isInitializePendingProperty =
@@ -54,6 +69,18 @@ public sealed class ThemeManager
             "IsInitializePending",
             BindingFlags.Instance | BindingFlags.NonPublic
         );
+
+    // System ThemeStyle has stricter validation than an Application implicit style (notably it rejects
+    // OverridesDefaultStyle). Keep independently loaded dictionaries so compatibility normalization never changes the
+    // public dictionaries merged into Application or element resources.
+    private static ResourceDictionary _lightSystemDictionary = [];
+    private static ResourceDictionary _darkSystemDictionary  = [];
+
+    // Theme mode is deliberately absent from this key. Light and Dark dictionaries are built as one immutable pair,
+    // so changing only the selected mode must not reload XAML. Settings that affect dictionary contents do invalidate
+    // both the normal and reflected-backend snapshots.
+    private static ThemeResourceConfiguration? _normalThemeResourceConfiguration;
+    private static ThemeResourceConfiguration? _systemThemeResourceConfiguration;
 
     private static Uri? _additionalLightThemeUri;
     private static Uri? _additionalDarkThemeUri;
@@ -66,6 +93,16 @@ public sealed class ThemeManager
 
     private static bool _enableNativeControlStyling = true;
 
+    // Merely referencing Wpf.Ui must not replace the implicit styles of native WPF controls. Theme resources are
+    // built eagerly for Generic.xaml-compatible local requests, but the global Application/SystemResources layer is
+    // installed only after a consumer explicitly configures ThemeManager.
+    private static int _themeManagementActivationState;
+
+    // Applicationless hosts first use WPF's real system-theme lookup path. Keep the Application path as a permanent
+    // compatibility fallback because the reflected contract is intentionally allowed to fail on future WPF versions.
+    private static SystemThemeResourceHost? _systemThemeResourceHost;
+    private static bool                     _systemThemeResourceHostUnavailable;
+
     private static ThemeManager Instance { get; } = new();
 
     #endregion
@@ -73,8 +110,8 @@ public sealed class ThemeManager
     #region Initialize
 
     /// <summary>
-    /// Forces the static constructor to run, ensuring that theme resources
-    /// are loaded and system event listeners are registered.
+    /// Forces the static constructor to run, preparing theme resources and system event listeners without applying a
+    /// global theme or changing native WPF control styles.
     /// </summary>
     public static void Initialize() { }
 
@@ -83,40 +120,204 @@ public sealed class ThemeManager
         // Static constructor is a suitable place for library initialization
         LibraryInitializer.EnsureInitialized();
 
+        _ = RebuildThemeDictionaries();
+
         if (!DesignerProperties.GetIsInDesignMode(new DependencyObject()))
         {
-            EnsureApplicationResourceHost();
+            // Loaded is the first public, framework-owned notification at which an arbitrary WPF visual island is
+            // guaranteed to have a PresentationSource. A class handler removes the need for ElementHost consumers to
+            // opt into Theme.ApplyToRootVisual merely so detached ThemeStyle values can be refreshed.
+            EventManager.RegisterClassHandler(
+                typeof(FrameworkElement),
+                FrameworkElement.LoadedEvent,
+                new RoutedEventHandler(OnFrameworkElementLoadedForSystemTheme),
+                handledEventsToo: true
+            );
 
             SystemEvents.UserPreferenceChanged     += SystemEvents_UserPreferenceChanged;
             SystemParameters.StaticPropertyChanged += SystemParameters_StaticPropertyChanged;
         }
-
-        RebuildThemeDictionaries();
     }
 
     /// <summary>
-    /// Ensures that WPF has the process-wide resource scope required by application theme resources.
+    /// Selects the process-wide resource host used by the global theme.
     /// </summary>
     /// <remarks>
-    /// A normal WPF executable creates <see cref="Application"/> before loading application resources, so this
-    /// method simply reuses that instance. WinForms <c>ElementHost</c> and similar hosts create WPF visual trees
-    /// without creating an Application. A root-level resource dictionary is not an equivalent substitute:
-    /// framework theme lookup, implicit native-control styles, navigation boundaries such as
-    /// <see cref="System.Windows.Controls.Frame"/>,
-    /// and detached presentation trees ultimately rely on <see cref="Application.Resources"/> as WPF's shared
-    /// fallback scope.
-    ///
-    /// The synthetic instance is deliberately not passed to <see cref="Application.Run()"/>. The outer UI
-    /// framework owns the Win32 message loop; WPF's dispatcher participates on the same STA thread while the
-    /// Application exists only to host resources and expose that dispatcher. Consequently callers must first
-    /// initialize ThemeManager from their UI thread, just as all WPF objects must be created on their owning UI
-    /// thread.
+    /// Normal WPF applications keep using <see cref="Application.Resources"/>, preserving the public and familiar
+    /// resource override surface. A WinForms <c>ElementHost</c> has no Application, so it first attempts to install
+    /// the active dictionary in WPF's internal system-theme table. That path reaches Frame navigation content,
+    /// Popup roots, and other presentation islands through WPF's own ThemeStyle lookup and invalidation machinery.
+    /// If reflection is unavailable, the method falls back to a resource-only Application so theming remains
+    /// functional rather than failing application startup.
+    /// </remarks>
+    private static void EnsureGlobalResourceHost(bool nativeControlStylesChanged)
+    {
+        ResourceDictionary activeTheme = GetSystemThemeDictionary();
+
+        if (Application.Current is not null)
+        {
+            // ThemeManager can be initialized unusually early, before a normal WPF executable constructs App.
+            // Once that App exists, return SystemResources to Windows ownership and use Application.Resources.
+            _systemThemeResourceHost?.Restore();
+            _systemThemeResourceHost = null;
+            return;
+        }
+
+        if (!_systemThemeResourceHostUnavailable)
+        {
+            if (_systemThemeResourceHost is null
+                && !SystemThemeResourceHost.TryCreate(out _systemThemeResourceHost))
+            {
+                _systemThemeResourceHostUnavailable = true;
+            }
+
+            if (_systemThemeResourceHost?.TryApply(activeTheme, nativeControlStylesChanged) is true)
+            {
+                return;
+            }
+
+            // A later installation can fail after an earlier one succeeded (for example, after a WPF update changes
+            // an internal state transition). Remove the old overlay before switching resource-host strategies.
+            _systemThemeResourceHost?.Restore();
+            _systemThemeResourceHost = null;
+            _systemThemeResourceHostUnavailable = true;
+        }
+
+        EnsureApplicationResourceHost();
+    }
+
+    /// <summary>
+    /// Creates the compatibility Application used only when the system-theme backend is unavailable.
+    /// </summary>
+    /// <remarks>
+    /// The synthetic instance is deliberately not passed to <see cref="Application.Run()"/>. The outer UI framework
+    /// continues to own the Win32 message loop; this object only supplies WPF's process-wide resource scope. This is
+    /// a safe fallback for framework versions whose private SystemResources layout is not recognized.
     /// </remarks>
     private static void EnsureApplicationResourceHost()
     {
         if (Application.Current is null)
         {
             _ = new Application { ShutdownMode = ShutdownMode.OnExplicitShutdown };
+        }
+    }
+
+    /// <summary>
+    /// Detects newly connected presentation roots and schedules one SystemResources replay for their dispatcher.
+    /// </summary>
+    /// <remarks>
+    /// WPF's own theme-change invalidation enumerates only the PresentationSources that exist at the instant the
+    /// change occurs. Controls commonly get their initial ThemeStyle while XAML is being constructed, before an
+    /// ElementHost assigns its child to an HwndSource. Without this replay those controls retain Generic.xaml's
+    /// original Light style even though later resource lookups already observe the Dark system overlay.
+    /// </remarks>
+    private static void OnFrameworkElementLoadedForSystemTheme(object sender, RoutedEventArgs e)
+    {
+        if (sender is not FrameworkElement element)
+        {
+            return;
+        }
+
+        PresentationSource? source = PresentationSource.FromDependencyObject(element);
+        if (source is null || !ReferenceEquals(source.RootVisual, element))
+        {
+            return;
+        }
+
+        RegisterSystemThemeRoot(element);
+
+        if (_systemThemeResourceHost is null)
+        {
+            return;
+        }
+
+        Dispatcher dispatcher = source.Dispatcher;
+        lock (_lock)
+        {
+            if (!_pendingSystemThemeInvalidationRoots.Add(element))
+            {
+                return;
+            }
+        }
+
+        _ = dispatcher.BeginInvoke(
+            DispatcherPriority.Loaded,
+            new Action(() =>
+            {
+                lock (_lock)
+                {
+                    _pendingSystemThemeInvalidationRoots.Remove(element);
+                }
+
+                PresentationSource? currentSource = PresentationSource.FromDependencyObject(element);
+                if (currentSource is not null && ReferenceEquals(currentSource.RootVisual, element))
+                {
+                    TryInitializeSystemThemePresentationSource(element);
+                }
+            })
+        );
+    }
+
+    /// <summary>
+    /// Retains an automatically discovered presentation root without opting it into element-local resources.
+    /// </summary>
+    private static void RegisterSystemThemeRoot(FrameworkElement root)
+    {
+        lock (_lock)
+        {
+            _systemThemeRoots.RemoveAll(reference => !reference.TryGetTarget(out _));
+            if (_systemThemeRoots.Any(
+                    reference => reference.TryGetTarget(out FrameworkElement? target)
+                        && ReferenceEquals(target, root)
+                ))
+            {
+                return;
+            }
+
+            _systemThemeRoots.Add(new WeakReference<FrameworkElement>(root));
+        }
+    }
+
+    /// <summary>
+    /// Initializes a newly connected root without re-evaluating ThemeStyle in existing presentation sources.
+    /// </summary>
+    private static void TryInitializeSystemThemePresentationSource(FrameworkElement root)
+    {
+        if (_systemThemeResourceHost is not { } systemHost
+            || systemHost.TryInitializePresentationSource(root))
+        {
+            return;
+        }
+
+        FallBackFromSystemThemeHost(systemHost);
+    }
+
+    /// <summary>
+    /// Replays palette-resource invalidation, or switches atomically to the Application fallback on failure.
+    /// </summary>
+    private static void TryInvalidateSystemThemePresentationSources()
+    {
+        if (_systemThemeResourceHost is not { } systemHost
+            || systemHost.TryInvalidatePresentationSources())
+        {
+            return;
+        }
+
+        FallBackFromSystemThemeHost(systemHost);
+    }
+
+    private static void FallBackFromSystemThemeHost(SystemThemeResourceHost systemHost)
+    {
+        // Do not keep a partially functional global host. The compatibility Application restores the same
+        // process-wide resource reach while leaving the surrounding WinForms message loop in control.
+        systemHost.Restore();
+        _systemThemeResourceHost = null;
+        _systemThemeResourceHostUnavailable = true;
+        EnsureApplicationResourceHost();
+
+        if (Application.Current is { } application)
+        {
+            ApplyThemeToResources(application.Resources, _themeMode);
         }
     }
 
@@ -128,6 +329,23 @@ public sealed class ThemeManager
     /// Sets additional theme URIs in a single operation,
     /// triggering only one theme refresh.
     /// </summary>
+    /// <remarks>
+    /// <para>
+    /// These dictionaries are palette extensions. They should contain only non-structural resources that can be
+    /// refreshed in place, such as <see cref="Color"/>, <see cref="Brush"/>, numbers, thicknesses, and other values
+    /// consumed through dynamic resource references.
+    /// </para>
+    /// <para>
+    /// Do not place styles, control or data templates, event setters, or other resources that require WPF to replace
+    /// a control's theme style or template in these dictionaries. Global theme changes deliberately preserve the
+    /// existing style and template graph so control state, popup state, focus, and visual-state animations survive.
+    /// </para>
+    /// <para>
+    /// In an applicationless host, WPF's system-theme lookup accepts only assembly-scoped type or resource keys.
+    /// Use the keys published by <c>Wpf.Ui.Theming</c> when overriding Wpf.Ui palette entries; ordinary string keys
+    /// must remain in an Application, window, or element resource scope.
+    /// </para>
+    /// </remarks>
     /// <param name="lightThemeUri">
     /// The URI of the additional light theme resource dictionary, or <c>null</c> to clear.
     /// </param>
@@ -172,7 +390,8 @@ public sealed class ThemeManager
             changed = true;
         }
 
-        if (changed)
+        bool activated = ActivateThemeManagement();
+        if (changed || activated)
         {
             RefreshTheme(ThemeChangeSource.Manual);
         }
@@ -228,7 +447,8 @@ public sealed class ThemeManager
             changed = true;
         }
 
-        if (changed)
+        bool activated = ActivateThemeManagement();
+        if (changed || activated)
         {
             RefreshTheme(ThemeChangeSource.Manual);
         }
@@ -237,6 +457,13 @@ public sealed class ThemeManager
     /// <summary>
     /// Configures multiple theme settings in a single operation, triggering only one theme refresh.
     /// </summary>
+    /// <remarks>
+    /// The four additional theme dictionaries are palette extensions and should contain only non-structural values
+    /// such as colors, brushes, numbers, and thicknesses. They must not define styles, control or data templates,
+    /// event setters, or other resources that require replacement of the stable theme-style/template graph.
+    /// In an applicationless host, process-wide overrides must use the assembly-scoped keys published by
+    /// <c>Wpf.Ui.Theming</c>; WPF does not route ordinary string keys through its system-theme dictionaries.
+    /// </remarks>
     /// <param name="themeMode">The theme mode to apply.</param>
     /// <param name="accentSource">The source from which the base accent color is obtained.</param>
     /// <param name="customAccentColor">
@@ -324,7 +551,8 @@ public sealed class ThemeManager
             changed = true;
         }
 
-        if (changed)
+        bool activated = ActivateThemeManagement();
+        if (changed || activated)
         {
             RefreshTheme(ThemeChangeSource.Manual);
         }
@@ -351,7 +579,7 @@ public sealed class ThemeManager
     /// </summary>
     /// <remarks>
     /// This property allows consumers to provide extra theme resources
-    /// that extend or override the built-in Light theme dictionary.
+    /// that extend or override non-structural values in the built-in Light theme dictionary.
     ///
     /// When set, the specified resource dictionary will be merged
     /// after the default Light theme resources, giving it higher
@@ -359,15 +587,26 @@ public sealed class ThemeManager
     ///
     /// Changing this property triggers an immediate theme refresh,
     /// causing the new dictionary to be loaded and applied dynamically.
+    /// The dictionary should contain palette values such as colors, brushes, numbers, and thicknesses. It must not
+    /// contain styles, control or data templates, event setters, or other structural resources: theme switching
+    /// intentionally keeps the existing style and template graph to preserve live control state.
+    /// Applicationless process-wide overrides must use the assembly-scoped keys published by
+    /// <c>Wpf.Ui.Theming</c>; ordinary string keys are not routed through WPF's system-theme dictionaries.
     /// </remarks>
     public static Uri? AdditionalLightThemeUri
     {
         get => _additionalLightThemeUri;
         set
         {
-            if (_additionalLightThemeUri != value)
+            bool changed = _additionalLightThemeUri != value;
+            if (changed)
             {
                 _additionalLightThemeUri = value;
+            }
+
+            bool activated = ActivateThemeManagement();
+            if (changed || activated)
+            {
                 RefreshTheme(ThemeChangeSource.Manual);
             }
         }
@@ -379,7 +618,7 @@ public sealed class ThemeManager
     /// </summary>
     /// <remarks>
     /// This property allows consumers to provide extra theme resources
-    /// that extend or override the built-in Dark theme dictionary.
+    /// that extend or override non-structural values in the built-in Dark theme dictionary.
     ///
     /// When set, the specified resource dictionary will be merged
     /// after the default Dark theme resources, giving it higher
@@ -387,15 +626,26 @@ public sealed class ThemeManager
     ///
     /// Changing this property triggers an immediate theme refresh,
     /// causing the new dictionary to be loaded and applied dynamically.
+    /// The dictionary should contain palette values such as colors, brushes, numbers, and thicknesses. It must not
+    /// contain styles, control or data templates, event setters, or other structural resources: theme switching
+    /// intentionally keeps the existing style and template graph to preserve live control state.
+    /// Applicationless process-wide overrides must use the assembly-scoped keys published by
+    /// <c>Wpf.Ui.Theming</c>; ordinary string keys are not routed through WPF's system-theme dictionaries.
     /// </remarks>
     public static Uri? AdditionalDarkThemeUri
     {
         get => _additionalDarkThemeUri;
         set
         {
-            if (_additionalDarkThemeUri != value)
+            bool changed = _additionalDarkThemeUri != value;
+            if (changed)
             {
                 _additionalDarkThemeUri = value;
+            }
+
+            bool activated = ActivateThemeManagement();
+            if (changed || activated)
+            {
                 RefreshTheme(ThemeChangeSource.Manual);
             }
         }
@@ -409,15 +659,26 @@ public sealed class ThemeManager
     /// High contrast light vs. dark is determined by comparing the relative
     /// luminance of <see cref="SystemColors.WindowColor"/> and
     /// <see cref="SystemColors.WindowTextColor"/>.
+    /// The dictionary is a palette extension and should contain only non-structural values such as colors, brushes,
+    /// numbers, and thicknesses. Styles, control or data templates, event setters, and other structural resources
+    /// are unsupported because theme switching preserves the existing theme-style/template graph.
+    /// Applicationless process-wide overrides must use the assembly-scoped keys published by
+    /// <c>Wpf.Ui.Theming</c>; ordinary string keys are not routed through WPF's system-theme dictionaries.
     /// </remarks>
     public static Uri? AdditionalHighContrastLightThemeUri
     {
         get => _additionalHighContrastLightThemeUri;
         set
         {
-            if (_additionalHighContrastLightThemeUri != value)
+            bool changed = _additionalHighContrastLightThemeUri != value;
+            if (changed)
             {
                 _additionalHighContrastLightThemeUri = value;
+            }
+
+            bool activated = ActivateThemeManagement();
+            if (changed || activated)
+            {
                 RefreshTheme(ThemeChangeSource.Manual);
             }
         }
@@ -431,15 +692,26 @@ public sealed class ThemeManager
     /// High contrast light vs. dark is determined by comparing the relative
     /// luminance of <see cref="SystemColors.WindowColor"/> and
     /// <see cref="SystemColors.WindowTextColor"/>.
+    /// The dictionary is a palette extension and should contain only non-structural values such as colors, brushes,
+    /// numbers, and thicknesses. Styles, control or data templates, event setters, and other structural resources
+    /// are unsupported because theme switching preserves the existing theme-style/template graph.
+    /// Applicationless process-wide overrides must use the assembly-scoped keys published by
+    /// <c>Wpf.Ui.Theming</c>; ordinary string keys are not routed through WPF's system-theme dictionaries.
     /// </remarks>
     public static Uri? AdditionalHighContrastDarkThemeUri
     {
         get => _additionalHighContrastDarkThemeUri;
         set
         {
-            if (_additionalHighContrastDarkThemeUri != value)
+            bool changed = _additionalHighContrastDarkThemeUri != value;
+            if (changed)
             {
                 _additionalHighContrastDarkThemeUri = value;
+            }
+
+            bool activated = ActivateThemeManagement();
+            if (changed || activated)
+            {
                 RefreshTheme(ThemeChangeSource.Manual);
             }
         }
@@ -479,9 +751,15 @@ public sealed class ThemeManager
         {
             ValidateThemeMode(value);
 
-            if (_themeMode != value)
+            bool changed = _themeMode != value;
+            if (changed)
             {
                 _themeMode = value;
+            }
+
+            bool activated = ActivateThemeManagement();
+            if (changed || activated)
+            {
                 RefreshTheme(ThemeChangeSource.Manual);
             }
         }
@@ -504,9 +782,15 @@ public sealed class ThemeManager
         {
             ValidateAccentSource(value);
 
-            if (_accentSource != value)
+            bool changed = _accentSource != value;
+            if (changed)
             {
                 _accentSource = value;
+            }
+
+            bool activated = ActivateThemeManagement();
+            if (changed || activated)
+            {
                 RefreshTheme(ThemeChangeSource.Manual);
             }
         }
@@ -528,14 +812,14 @@ public sealed class ThemeManager
         {
             value = MakeOpaque(value);
 
-            if (_customAccentColor == value)
+            bool changed = _customAccentColor != value;
+            if (changed)
             {
-                return;
+                _customAccentColor = value;
             }
 
-            _customAccentColor = value;
-
-            if (_accentSource == AccentColorSource.Custom)
+            bool activated = ActivateThemeManagement();
+            if ((changed && _accentSource == AccentColorSource.Custom) || activated)
             {
                 RefreshTheme(ThemeChangeSource.Manual);
             }
@@ -553,16 +837,23 @@ public sealed class ThemeManager
     /// or re-style built-in WPF controls to match the Fluent UI appearance.
     ///
     /// The default value is <c>true</c>.
-    /// Changing this property triggers an immediate theme refresh.
+    /// Setting this property explicitly activates global theme management; subsequent changes trigger an immediate
+    /// theme refresh. Merely referencing Wpf.Ui does not merge the native-control dictionary.
     /// </remarks>
     public static bool EnableNativeControlStyling
     {
         get => _enableNativeControlStyling;
         set
         {
-            if (_enableNativeControlStyling != value)
+            bool changed = _enableNativeControlStyling != value;
+            if (changed)
             {
                 _enableNativeControlStyling = value;
+            }
+
+            bool activated = ActivateThemeManagement();
+            if (changed || activated)
+            {
                 RefreshTheme(ThemeChangeSource.Manual);
             }
         }
@@ -576,16 +867,9 @@ public sealed class ThemeManager
     /// Represents an internal attached property used to mark and track root visual elements.
     /// </summary>
     /// <remarks>
-    /// This property is an internal implementation detail of <see cref="ThemeManager"/>.
-    /// It is used to identify and manage the application's root visual elements.
-    ///
-    /// When an element is marked as a root visual, the theme manager registers it in a
-    /// global theme tracking list and automatically applies the appropriate theme
-    /// resources when the system theme or application theme changes.
-    ///
-    /// A value of <c>true</c> indicates that the element is a root visual and should
-    /// receive theme updates. A value of <c>false</c> indicates that the element is
-    /// not considered a root visual.
+    /// This marker distinguishes roots explicitly opted into an element-local theme dictionary through
+    /// <see cref="Theme.ApplyToRootVisualProperty"/>. It is not used by the applicationless global SystemResources
+    /// backend, which discovers presentation roots automatically and does not modify their Resources collections.
     /// </remarks>
     private static readonly DependencyProperty IsRootVisualProperty =
         DependencyProperty.RegisterAttached(
@@ -662,6 +946,8 @@ public sealed class ThemeManager
             SetIsRootVisual(rootVisual, true);
             RegisterElement(rootVisual);
             ApplyThemeToElement(rootVisual, _themeMode);
+
+            TryInvalidateSystemThemePresentationSources();
         }
     }
 
@@ -730,6 +1016,13 @@ public sealed class ThemeManager
 
     private static void ScheduleThemeChangedDebounced()
     {
+        // System notifications are passive until the consumer has opted into global theme management. Otherwise a
+        // personalization change could make a referenced-but-unconfigured library start restyling native controls.
+        if (!IsThemeManagementActive)
+        {
+            return;
+        }
+
         _themeChangedDebouncer.Debounce(
             TimeSpan.FromMilliseconds(250),
             () =>
@@ -755,9 +1048,7 @@ public sealed class ThemeManager
 
         lock (_lock)
         {
-            // An applicationless host still has a UI dispatcher for each registered root. ThemeManager's
-            // dictionaries are process-wide, so the supported model is the same single UI dispatcher used by a
-            // normal WPF application; the first live root supplies it when Application.Current is unavailable.
+            // Explicitly registered roots remain valid dispatcher owners even when they are temporarily unloaded.
             foreach (WeakReference<FrameworkElement> reference in _registeredElements)
             {
                 if (reference.TryGetTarget(out FrameworkElement? element))
@@ -781,6 +1072,21 @@ public sealed class ThemeManager
                     }
                 }
             }
+
+            // ElementHost and raw HwndSource users do not need Theme.ApplyToRootVisual merely to make system-driven
+            // refreshes possible. Their presentation roots are discovered from Loaded and retained weakly here.
+            _systemThemeRoots.RemoveAll(reference => !reference.TryGetTarget(out _));
+            foreach (WeakReference<FrameworkElement> reference in _systemThemeRoots)
+            {
+                if (reference.TryGetTarget(out FrameworkElement? root))
+                {
+                    Dispatcher dispatcher = root.Dispatcher;
+                    if (!dispatcher.HasShutdownStarted && !dispatcher.HasShutdownFinished)
+                    {
+                        return dispatcher;
+                    }
+                }
+            }
         }
 
         return null;
@@ -790,12 +1096,26 @@ public sealed class ThemeManager
 
     #region Theme Refresh
 
+    private static bool IsThemeManagementActive =>
+        Volatile.Read(ref _themeManagementActivationState) != 0;
+
+    /// <summary>
+    /// Records the consumer's first explicit ThemeManager configuration.
+    /// </summary>
+    /// <returns><see langword="true"/> only for the call that activates global theme management.</returns>
+    private static bool ActivateThemeManagement() =>
+        Interlocked.Exchange(ref _themeManagementActivationState, 1) == 0;
+
     private static void RefreshTheme(ThemeChangeSource source)
     {
         // Build every Source-backed dictionary before beginning transactions on application or
         // element resources. A malformed custom URI therefore leaves both the visible theme and
         // the targets' WPF initialization state intact.
-        RebuildThemeDictionaries();
+        bool nativeControlStylesChanged = RebuildThemeDictionaries();
+
+        // Install the process-wide layer before touching individual roots. DynamicResource expressions and default
+        // styles re-evaluated by those root transactions must already observe the new global theme.
+        EnsureGlobalResourceHost(nativeControlStylesChanged);
 
         // Per-element Default targets are already unregistered in OnRequestedThemeChanged, so
         // the only Default targets here are Application and root visuals. For those, Default
@@ -858,12 +1178,113 @@ public sealed class ThemeManager
         return targets;
     }
 
-    private static void RebuildThemeDictionaries()
+    private static bool RebuildThemeDictionaries()
     {
-        var lightDictionaries = new List<ResourceDictionary>();
-        var darkDictionaries  = new List<ResourceDictionary>();
+        bool highContrast = SystemParameters.HighContrast;
+        Color accentColor = highContrast ? default : ResolveAccentColor();
+        var configuration = new ThemeResourceConfiguration(
+            highContrast,
+            accentColor,
+            _enableNativeControlStyling,
+            _additionalLightThemeUri,
+            _additionalDarkThemeUri,
+            _additionalHighContrastLightThemeUri,
+            _additionalHighContrastDarkThemeUri
+        );
 
-        if (SystemParameters.HighContrast)
+        ThemeResourceConfiguration? previousSystemConfiguration = _systemThemeResourceConfiguration;
+        bool rebuildNormalDictionaries = _normalThemeResourceConfiguration != configuration;
+        bool rebuildSystemDictionaries = Application.Current is null
+            && !_systemThemeResourceHostUnavailable
+            && _systemThemeResourceConfiguration != configuration;
+        bool nativeControlStylesChanged = rebuildSystemDictionaries
+            && previousSystemConfiguration is { } previous
+            && previous.EnableNativeControlStyling != configuration.EnableNativeControlStyling;
+
+        List<ResourceDictionary>? lightDictionaries = null;
+        List<ResourceDictionary>? darkDictionaries = null;
+        ResourceDictionary? lightSystemDictionary = null;
+        ResourceDictionary? darkSystemDictionary = null;
+
+        // Load every Source-backed dictionary before publishing any of them. Besides avoiding repeated parsing on a
+        // mode-only switch, this preserves the all-or-nothing behavior when a custom URI is malformed.
+        if (rebuildNormalDictionaries)
+        {
+            lightDictionaries = [];
+            darkDictionaries = [];
+
+            // Native control styles are structural resources, not theme colors. Both palettes must reference the
+            // same Style objects so replacing Light with Dark cannot invalidate a control template or its state.
+            ResourceDictionary? nativeControlStyles = _enableNativeControlStyling
+                ? new ResourceDictionary { Source = NativeControlStylesUri }
+                : null;
+            PopulateThemeDictionaries(
+                lightDictionaries,
+                darkDictionaries,
+                highContrast,
+                accentColor,
+                nativeControlStyles
+            );
+        }
+
+        if (rebuildSystemDictionaries)
+        {
+            var lightSystemDictionaries = new List<ResourceDictionary>();
+            var darkSystemDictionaries = new List<ResourceDictionary>();
+
+            // SystemResources treats an implicit native-control style as a ThemeStyle and applies stricter
+            // validation than Application.Resources. Load one independent graph for this backend, normalize it
+            // once, then share it between Light and Dark to preserve ThemeStyle identity across palette changes.
+            ResourceDictionary? systemNativeControlStyles = _enableNativeControlStyling
+                ? new ResourceDictionary { Source = NativeControlStylesUri }
+                : null;
+            if (systemNativeControlStyles is not null)
+            {
+                RemoveOverridesDefaultStyleSetters(systemNativeControlStyles);
+            }
+
+            PopulateThemeDictionaries(
+                lightSystemDictionaries,
+                darkSystemDictionaries,
+                highContrast,
+                accentColor,
+                systemNativeControlStyles
+            );
+
+            lightSystemDictionary = new ResourceDictionary();
+            darkSystemDictionary = new ResourceDictionary();
+            ReplaceMergedDictionaries(lightSystemDictionary, lightSystemDictionaries);
+            ReplaceMergedDictionaries(darkSystemDictionary, darkSystemDictionaries);
+        }
+
+        if (rebuildNormalDictionaries)
+        {
+            ReplaceMergedDictionaries(_lightDictionary, lightDictionaries!);
+            ReplaceMergedDictionaries(_darkDictionary, darkDictionaries!);
+            _normalThemeResourceConfiguration = configuration;
+        }
+
+        if (rebuildSystemDictionaries)
+        {
+            _lightSystemDictionary = lightSystemDictionary!;
+            _darkSystemDictionary = darkSystemDictionary!;
+            _systemThemeResourceConfiguration = configuration;
+        }
+
+        // A pure Light/Dark or palette update must keep the state-preserving resource invalidation path. Adding or
+        // removing implicit native-control type keys is different: existing controls must discard their old
+        // ThemeStyle once so the switch actually affects controls that are already connected to a PresentationSource.
+        return nativeControlStylesChanged;
+    }
+
+    internal static void PopulateThemeDictionaries(
+        List<ResourceDictionary> lightDictionaries,
+        List<ResourceDictionary> darkDictionaries,
+        bool highContrast,
+        Color accentColor,
+        ResourceDictionary? nativeControlStyles)
+    {
+        if (highContrast)
         {
             lightDictionaries.Add(
                 new ResourceDictionary { Source = HighContrastThemeUri }
@@ -873,10 +1294,10 @@ public sealed class ThemeManager
                 new ResourceDictionary { Source = HighContrastThemeUri }
             );
 
-            if (_enableNativeControlStyling)
+            if (nativeControlStyles is not null)
             {
-                lightDictionaries.Add(new ResourceDictionary { Source = NativeControlStylesUri });
-                darkDictionaries.Add(new ResourceDictionary { Source = NativeControlStylesUri });
+                lightDictionaries.Add(nativeControlStyles);
+                darkDictionaries.Add(nativeControlStyles);
             }
 
             if (_additionalHighContrastLightThemeUri != null)
@@ -903,17 +1324,16 @@ public sealed class ThemeManager
                 new ResourceDictionary { Source = DarkThemeUri }
             );
 
-            if (_enableNativeControlStyling)
+            if (nativeControlStyles is not null)
             {
-                lightDictionaries.Add(new ResourceDictionary { Source = NativeControlStylesUri });
-                darkDictionaries.Add(new ResourceDictionary { Source = NativeControlStylesUri });
+                lightDictionaries.Add(nativeControlStyles);
+                darkDictionaries.Add(nativeControlStyles);
             }
 
             // UISettings exposes one personalization color, not a documented reusable ramp.
             // Generate WPF UI's own light and dark role palettes from that single stable input.
             // The generated dictionary precedes additional user dictionaries so applications can
             // still override individual semantic roles without replacing the entire accent source.
-            var accentColor = ResolveAccentColor();
             lightDictionaries.Add(
                 BuildAccentDictionary(AccentPalette.Create(accentColor, UiThemeMode.Light))
             );
@@ -935,9 +1355,80 @@ public sealed class ThemeManager
                 );
             }
         }
+    }
 
-        ReplaceMergedDictionaries(_lightDictionary, lightDictionaries);
-        ReplaceMergedDictionaries(_darkDictionary, darkDictionaries);
+    private static void RemoveOverridesDefaultStyleSetters(ResourceDictionary dictionary)
+    {
+        foreach (ResourceDictionary mergedDictionary in dictionary.MergedDictionaries)
+        {
+            RemoveOverridesDefaultStyleSetters(mergedDictionary);
+        }
+
+        List<object>? incompatibleThemeStyleKeys = null;
+        foreach (DictionaryEntry entry in dictionary)
+        {
+            if (entry.Value is not Style style)
+            {
+                continue;
+            }
+
+            if (entry.Key is Type && ContainsEventSetter(style))
+            {
+                // WPF also rejects EventSetter in ThemeStyle. Unlike OverridesDefaultStyle, silently removing an
+                // event handler would change behavior, so omit only this implicit system style and let WPF fall back
+                // to its original style for that control type. Named explicit styles remain available unchanged.
+                incompatibleThemeStyleKeys ??= [];
+                incompatibleThemeStyleKeys.Add(entry.Key);
+                continue;
+            }
+
+            if (style.IsSealed)
+            {
+                // Source-backed dictionaries loaded exclusively for this backend have no owner and therefore should
+                // not be sealed yet. Treat a sealed style as an unsupported custom dictionary rather than attempting
+                // to mutate WPF's compiled style tables through still more reflection.
+                if (style.Setters.OfType<Setter>().Any(
+                        setter => setter.Property == FrameworkElement.OverridesDefaultStyleProperty
+                    ))
+                {
+                    throw new InvalidOperationException(
+                        "A system-theme resource style was sealed before OverridesDefaultStyle could be normalized."
+                    );
+                }
+
+                continue;
+            }
+
+            for (int index = style.Setters.Count - 1; index >= 0; index--)
+            {
+                if (style.Setters[index] is Setter setter
+                    && setter.Property == FrameworkElement.OverridesDefaultStyleProperty)
+                {
+                    style.Setters.RemoveAt(index);
+                }
+            }
+        }
+
+        if (incompatibleThemeStyleKeys is not null)
+        {
+            foreach (object key in incompatibleThemeStyleKeys)
+            {
+                dictionary.Remove(key);
+            }
+        }
+    }
+
+    private static bool ContainsEventSetter(Style style)
+    {
+        for (Style? current = style; current is not null; current = current.BasedOn)
+        {
+            if (current.Setters.OfType<EventSetter>().Any())
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static void ReplaceMergedDictionaries(
@@ -1206,6 +1697,11 @@ public sealed class ThemeManager
         return mode == UiThemeMode.System ? GetSystemThemeMode() : ApplicationTheme.Light;
     }
 
+    private static ResourceDictionary GetSystemThemeDictionary() =>
+        ResolveEffectiveTheme(_themeMode) == ApplicationTheme.Dark
+            ? _darkSystemDictionary
+            : _lightSystemDictionary;
+
     private static void ApplyThemeToElement(FrameworkElement element, UiThemeMode mode)
     {
         ApplyThemeToResources(element.Resources, mode);
@@ -1329,6 +1825,16 @@ public sealed class ThemeManager
     public event EventHandler<ThemeChangedEventArgs>? ChangedInternal;
 
     #endregion
+
+    private readonly record struct ThemeResourceConfiguration(
+        bool HighContrast,
+        Color AccentColor,
+        bool EnableNativeControlStyling,
+        Uri? AdditionalLightThemeUri,
+        Uri? AdditionalDarkThemeUri,
+        Uri? AdditionalHighContrastLightThemeUri,
+        Uri? AdditionalHighContrastDarkThemeUri
+    );
 
     private ThemeManager() { }
 }
