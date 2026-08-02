@@ -103,6 +103,15 @@
 
             </DockPanel>
 
+            <!--
+                Horizontal visibility intentionally differs from the vertical binding below. GridView
+                columns, headers, cells, and the viewport are measured and rounded independently, which
+                can leave a sub-pixel horizontal overflow when column widths are adjusted. This template
+                configures a 1-DIP HorizontalScrollBarVisibilityThreshold, so EffectiveHorizontalScrollBarVisibility
+                preserves WPF's computed result except that it suppresses such insignificant overflow in Auto mode.
+                Vertical scrolling has no equivalent rounding tolerance and therefore continues to use WPF's
+                ComputedVerticalScrollBarVisibility directly.
+            -->
             <ScrollBar
                 x:Name="PART_HorizontalScrollBar"
                 Grid.Row="1"
