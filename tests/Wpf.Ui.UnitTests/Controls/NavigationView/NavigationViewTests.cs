@@ -393,51 +393,6 @@ public class NavigationViewTests
     }
 
     [Fact]
-    public void DynamicScrollPageStyle_ResolvesWithoutApplicationAndDoesNotUseCanContentScroll()
-    {
-        RunOnStaThread(() =>
-        {
-            Assert.Null(Application.Current);
-            var page = new Page { Content = new Border { Height = 200D } };
-            // SetResourceReference is the programmatic equivalent of DynamicStyleExtension's
-            // DynamicResource result. Do not merge Generic.xaml here: this verifies that WPF can
-            // locate the ComponentResourceKey in the library theme dictionary without relying on
-            // a string entry in Application.Resources.
-            page.SetResourceReference(FrameworkElement.StyleProperty, StyleKeys.DynamicScrollPageStyle);
-            var window = new Window
-            {
-                Content = page,
-                Width = 100D,
-                Height = 100D,
-                Left = -10_000D,
-                Top = -10_000D,
-                ShowActivated = false,
-                ShowInTaskbar = false,
-                WindowStyle = WindowStyle.None,
-            };
-            System.Windows.Controls.ScrollViewer.SetCanContentScroll(page, true);
-
-            try
-            {
-                window.Show();
-                DrainDispatcher();
-
-                Assert.NotNull(page.Style);
-                DynamicScrollViewer viewer = Assert.IsType<DynamicScrollViewer>(
-                    FindVisualDescendant<DynamicScrollViewer>(page)
-                );
-                Assert.False(viewer.CanContentScroll);
-                Assert.True(System.Windows.Controls.ScrollViewer.GetCanContentScroll(page));
-            }
-            finally
-            {
-                window.Close();
-                DrainDispatcher();
-            }
-        });
-    }
-
-    [Fact]
     public void NavigationFrame_AppliesPaddingOutsideContentThatDoesNotHandleIt()
     {
         RunOnStaThread(() =>

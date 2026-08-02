@@ -8,6 +8,7 @@
   <Folder Name="/Samples/">
     <Project Path="samples/Wpf.Ui.Demo.Mvvm/Wpf.Ui.Demo.Mvvm.csproj" />
     <Project Path="samples/Wpf.Ui.Demo.Simple/Wpf.Ui.Demo.Simple.csproj" />
+    <Project Path="samples/Wpf.Ui.Demo.WinForms/Wpf.Ui.Demo.WinForms.csproj" Id="687d0807-0bca-41d0-b04d-8c13ada399fd" />
   </Folder>
   <Folder Name="/Solution Items/">
     <File Path=".editorconfig" />
@@ -24,6 +25,7 @@
   <Folder Name="/Tests/">
     <Project Path="tests/Wpf.Ui.Gallery.IntegrationTests/Wpf.Ui.Gallery.IntegrationTests.csproj" />
     <Project Path="tests/Wpf.Ui.UnitTests/Wpf.Ui.UnitTests.csproj" />
+    <Project Path="tests/Wpf.Ui.WinFormsHostTests/Wpf.Ui.WinFormsHostTests.csproj" />
   </Folder>
   <Project Path="src/Wpf.Ui.Abstractions/Wpf.Ui.Abstractions.csproj" />
   <Project Path="src/Wpf.Ui.DependencyInjection/Wpf.Ui.DependencyInjection.csproj" />

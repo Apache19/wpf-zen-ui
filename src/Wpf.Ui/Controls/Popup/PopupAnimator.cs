@@ -120,7 +120,8 @@ public static class PopupAnimator
     /// Set this property on a <see cref="Popup"/>, <see cref="NativeContextMenu"/>, or <see cref="NativeToolTip"/> and keep
     /// <see cref="Popup.PopupAnimation"/> as
     /// <see cref="PopupAnimation.None"/> to enable the custom animation path. Clearing this property detaches the
-    /// behavior and restores any animated values that were touched by the controller.
+    /// behavior and restores any animated values that were touched by the controller. A configured
+    /// <see cref="PopupSlideAnimator"/> takes precedence because it requires native slide mode.
     /// </remarks>
     public static readonly DependencyProperty AnimationSettingsProperty =
         DependencyProperty.RegisterAttached(
@@ -135,7 +136,9 @@ public static class PopupAnimator
     /// </summary>
     /// <remarks>
     /// If <see cref="AnimationSettingsProperty"/> is set, those explicit settings are used. Otherwise setting this
-    /// property to <see langword="true"/> uses <see cref="PopupAnimationSettings.Default"/>.
+    /// property to <see langword="true"/> uses <see cref="PopupAnimationSettings.Default"/>. An enabled
+    /// <see cref="PopupSlideAnimator"/> takes precedence because the two behaviors require mutually exclusive
+    /// native <see cref="Popup.PopupAnimation"/> modes.
     /// </remarks>
     public static readonly DependencyProperty IsEnabledProperty =
         DependencyProperty.RegisterAttached(
@@ -561,7 +564,20 @@ public static class PopupAnimator
 
     private static PopupAnimationSettings? GetEffectiveAnimationSettings(DependencyObject element)
     {
+        if (PopupSlideAnimator.IsConfigured(element))
+        {
+            return null;
+        }
+
         return GetAnimationSettings(element) ?? (GetIsEnabled(element) ? PopupAnimationSettings.Default : null);
+    }
+
+    /// <summary>
+    /// Re-evaluates this behavior after the mutually exclusive native-slide behavior changes.
+    /// </summary>
+    internal static void RefreshAnimationBehavior(DependencyObject element)
+    {
+        OnAnimationBehaviorChanged(element, default);
     }
 
     private static double GetEffectiveStartOffset(

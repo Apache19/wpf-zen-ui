@@ -58,6 +58,26 @@ public class PopupSlideAnimatorTests
     }
 
     [Fact]
+    public void DisablingNativeSlide_RestoresConfiguredCustomAnimator()
+    {
+        RunOnStaThread(
+            () =>
+            {
+                var popup = new Popup { AllowsTransparency = true };
+                PopupAnimator.SetIsEnabled(popup, true);
+
+                PopupSlideAnimator.SetIsEnabled(popup, true);
+                Assert.Equal(PopupAnimation.Slide, popup.PopupAnimation);
+                Assert.False(PopupAnimator.IsCustomAnimationActive(popup));
+
+                PopupSlideAnimator.SetIsEnabled(popup, false);
+                Assert.Equal(PopupAnimation.None, popup.PopupAnimation);
+                Assert.True(PopupAnimator.IsCustomAnimationActive(popup));
+            }
+        );
+    }
+
+    [Fact]
     public void OpeningPopup_ReplacesNativeSlideWithoutAnimatingOpacity()
     {
         RunOnStaThread(
@@ -282,7 +302,7 @@ public class PopupSlideAnimatorTests
     }
 
     [Fact]
-    public void OpeningContextMenu_ReplacesThePrivatePopupSlideClock()
+    public void OpeningContextMenu_NativeSlideOverridesCustomAnimatorAndReplacesItsClock()
     {
         RunOnStaThread(
             () =>
@@ -302,6 +322,9 @@ public class PopupSlideAnimatorTests
                     Content = placementTarget,
                 };
 
+                // UiContextMenuStyle enables PopupAnimator. Keep that condition explicit so this regression test
+                // verifies the public behaviors' precedence even when it runs without application theme resources.
+                PopupAnimator.SetIsEnabled(contextMenu, true);
                 PopupSlideAnimator.SetIsEnabled(contextMenu, true);
                 Assert.Null(GetPrivateRootPopupOrNull(contextMenu));
 

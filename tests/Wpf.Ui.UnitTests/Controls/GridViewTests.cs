@@ -950,13 +950,16 @@ public class GridViewTests
                     795d,
                     800d
                 );
-                Assert.InRange(
-                    Assert.IsType<NativeGridViewRowPresenter>(
-                        FindVisualChild<NativeGridViewRowPresenter>(listView)
-                    ).DesiredSize.Width,
-                    795d,
-                    800d
-                );
+                double rowPresenterWidth = Assert.IsType<NativeGridViewRowPresenter>(
+                    FindVisualChild<NativeGridViewRowPresenter>(listView)
+                ).DesiredSize.Width;
+
+                // The header presenter owns the template's 12-pixel leading margin. Rows instead live in the
+                // second column beside a separate 12-pixel selection-indicator gutter, so their desired width is
+                // the resolved column total plus WPF's two-pixel GridView presenter allowance, not the header's
+                // full width. Keeping the two values distinct prevents the test from encoding contradictory
+                // expectations for the same 800-pixel viewport.
+                Assert.InRange(rowPresenterWidth, 785d, 788d);
             }
             finally
             {

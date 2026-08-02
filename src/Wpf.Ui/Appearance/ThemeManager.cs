@@ -3,8 +3,9 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-using System.Reflection;
 using Microsoft.Win32;
+using System.Reflection;
+using System.Windows.Threading;
 using Wpf.Ui.Appearance;
 using Wpf.Ui.Theming;
 using Wpf.Ui.Threading;
@@ -84,17 +85,7 @@ public sealed class ThemeManager
 
         if (!DesignerProperties.GetIsInDesignMode(new DependencyObject()))
         {
-            // In non-native WPF hosting environments (such as WinForms with ElementHost),
-            // an Application instance is not created automatically.
-            //
-            // WPF resource lookup walks up the logical tree and eventually falls back
-            // to Application-level resources. If no Application exists, resource
-            // resolution may fail when crossing logical tree boundaries
-            // (e.g., ContextMenu, Popup, or Frame).
-            //
-            // Ensure an Application instance exists so global theme resources
-            // have a stable fallback scope.
-            EnsureApplication();
+            EnsureApplicationResourceHost();
 
             SystemEvents.UserPreferenceChanged     += SystemEvents_UserPreferenceChanged;
             SystemParameters.StaticPropertyChanged += SystemParameters_StaticPropertyChanged;
@@ -103,19 +94,28 @@ public sealed class ThemeManager
         RebuildThemeDictionaries();
     }
 
-    private static void EnsureApplication()
+    /// <summary>
+    /// Ensures that WPF has the process-wide resource scope required by application theme resources.
+    /// </summary>
+    /// <remarks>
+    /// A normal WPF executable creates <see cref="Application"/> before loading application resources, so this
+    /// method simply reuses that instance. WinForms <c>ElementHost</c> and similar hosts create WPF visual trees
+    /// without creating an Application. A root-level resource dictionary is not an equivalent substitute:
+    /// framework theme lookup, implicit native-control styles, navigation boundaries such as
+    /// <see cref="System.Windows.Controls.Frame"/>,
+    /// and detached presentation trees ultimately rely on <see cref="Application.Resources"/> as WPF's shared
+    /// fallback scope.
+    ///
+    /// The synthetic instance is deliberately not passed to <see cref="Application.Run()"/>. The outer UI
+    /// framework owns the Win32 message loop; WPF's dispatcher participates on the same STA thread while the
+    /// Application exists only to host resources and expose that dispatcher. Consequently callers must first
+    /// initialize ThemeManager from their UI thread, just as all WPF objects must be created on their owning UI
+    /// thread.
+    /// </remarks>
+    private static void EnsureApplicationResourceHost()
     {
-        if (Application.Current == null)
+        if (Application.Current is null)
         {
-            // Create a lightweight Application instance to act purely as
-            // a resource container. This provides an Application-level
-            // resource scope for WPF resource lookup when hosted in
-            // non-WPF environments.
-            //
-            // IMPORTANT:
-            // Run() must NOT be called. Starting the Dispatcher loop would
-            // take control of the thread lifetime, which is incorrect when
-            // WPF is hosted inside another UI framework.
             _ = new Application { ShutdownMode = ShutdownMode.OnExplicitShutdown };
         }
     }
@@ -734,7 +734,7 @@ public sealed class ThemeManager
             TimeSpan.FromMilliseconds(250),
             () =>
             {
-                var dispatcher = Application.Current?.Dispatcher;
+                Dispatcher? dispatcher = GetThemeDispatcher();
                 if (dispatcher is null || dispatcher.HasShutdownStarted || dispatcher.HasShutdownFinished)
                 {
                     return;
@@ -743,6 +743,47 @@ public sealed class ThemeManager
                 _ = dispatcher.BeginInvoke(() => RefreshTheme(ThemeChangeSource.System));
             }
         );
+    }
+
+    private static Dispatcher? GetThemeDispatcher()
+    {
+        Dispatcher? applicationDispatcher = Application.Current?.Dispatcher;
+        if (applicationDispatcher is { HasShutdownStarted: false, HasShutdownFinished: false })
+        {
+            return applicationDispatcher;
+        }
+
+        lock (_lock)
+        {
+            // An applicationless host still has a UI dispatcher for each registered root. ThemeManager's
+            // dictionaries are process-wide, so the supported model is the same single UI dispatcher used by a
+            // normal WPF application; the first live root supplies it when Application.Current is unavailable.
+            foreach (WeakReference<FrameworkElement> reference in _registeredElements)
+            {
+                if (reference.TryGetTarget(out FrameworkElement? element))
+                {
+                    Dispatcher dispatcher = element.Dispatcher;
+                    if (!dispatcher.HasShutdownStarted && !dispatcher.HasShutdownFinished)
+                    {
+                        return dispatcher;
+                    }
+                }
+            }
+
+            foreach (WeakReference<FrameworkContentElement> reference in _registeredContentElements)
+            {
+                if (reference.TryGetTarget(out FrameworkContentElement? element))
+                {
+                    Dispatcher dispatcher = element.Dispatcher;
+                    if (!dispatcher.HasShutdownStarted && !dispatcher.HasShutdownFinished)
+                    {
+                        return dispatcher;
+                    }
+                }
+            }
+        }
+
+        return null;
     }
 
     #endregion

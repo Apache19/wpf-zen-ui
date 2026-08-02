@@ -6,6 +6,6 @@
 namespace Wpf.Ui.UnitTests;
 
 [CollectionDefinition(nameof(ThemeManagerTestCollection), DisableParallelization = true)]
-public sealed class ThemeManagerTestCollection : ICollectionFixture<WpfApplicationTestFixture>
+public sealed class ThemeManagerTestCollection
 {
 }

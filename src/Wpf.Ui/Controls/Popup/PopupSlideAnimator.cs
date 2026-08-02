@@ -66,7 +66,8 @@ public static class PopupSlideAnimator
     /// <remarks>
     /// Set this property on a <see cref="Popup"/>, <see cref="NativeContextMenu"/>, or <see cref="NativeToolTip"/>.
     /// The behavior selects <see cref="PopupAnimation.Slide"/> and replaces only its opening movement clock. Clearing
-    /// the property detaches the behavior and restores the animation mode observed when it was attached.
+    /// the property detaches the behavior and restores the animation mode observed when it was attached. A
+    /// configured native-slide behavior takes precedence over <see cref="PopupAnimator"/> on the same owner.
     /// </remarks>
     public static readonly DependencyProperty AnimationSettingsProperty =
         DependencyProperty.RegisterAttached(
@@ -83,7 +84,9 @@ public static class PopupSlideAnimator
     /// <remarks>
     /// An explicit <see cref="AnimationSettingsProperty"/> value takes precedence. The behavior requires a
     /// transparent Popup for WPF to enable native popup animation; when transparency is unavailable, WPF safely
-    /// coerces <see cref="Popup.PopupAnimation"/> back to <see cref="PopupAnimation.None"/>.
+    /// coerces <see cref="Popup.PopupAnimation"/> back to <see cref="PopupAnimation.None"/>. While enabled, this
+    /// behavior takes precedence over <see cref="PopupAnimator"/>, whose custom animation requires the mutually
+    /// exclusive <see cref="PopupAnimation.None"/> mode.
     /// </remarks>
     public static readonly DependencyProperty IsEnabledProperty =
         DependencyProperty.RegisterAttached(
@@ -193,6 +196,14 @@ public static class PopupSlideAnimator
         return GetAnimationSettings(element) ?? (GetIsEnabled(element) ? PopupAnimationSettings.Default : null);
     }
 
+    /// <summary>
+    /// Returns whether the owner requests native-slide refinement, independently of whether WPF can realize it.
+    /// </summary>
+    internal static bool IsConfigured(DependencyObject element)
+    {
+        return GetEffectiveAnimationSettings(element) is not null;
+    }
+
     private static PopupSlideAnimationController? GetAnimationController(DependencyObject element)
     {
         return (PopupSlideAnimationController?)element.GetValue(AnimationControllerProperty);
@@ -222,8 +233,17 @@ public static class PopupSlideAnimator
         {
             controller?.Dispose();
             SetAnimationController(d, null);
+
+            // Restoring the slide controller's captured native mode must happen before the custom controller is
+            // reattached; PopupAnimator expects PopupAnimation.None when it prepares the next opening.
+            PopupAnimator.RefreshAnimationBehavior(d);
             return;
         }
+
+        // Default ContextMenu and ToolTip styles enable PopupAnimator. Explicitly opting into native slide must
+        // detach that controller before selecting PopupAnimation.Slide, otherwise both controllers race to restore
+        // incompatible native modes during the same opening.
+        PopupAnimator.RefreshAnimationBehavior(d);
 
         if (controller == null)
         {

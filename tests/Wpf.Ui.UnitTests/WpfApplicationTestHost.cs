@@ -21,20 +21,42 @@ internal static class WpfApplicationTestHost
 {
     private static readonly Lazy<Dispatcher> ApplicationDispatcher = new(CreateDispatcher);
 
+    /// <summary>
+    /// Ensures that the test assembly's single WPF application belongs to the long-lived dispatcher thread.
+    /// </summary>
+    public static void EnsureApplication()
+    {
+        ApplicationDispatcher.Value.Invoke(() =>
+        {
+            if (Application.Current is null)
+            {
+                _ = new Application { ShutdownMode = ShutdownMode.OnExplicitShutdown };
+            }
+        });
+    }
+
     public static void Run(Action action)
     {
         ApplicationDispatcher.Value.Invoke(action);
     }
 
-    public static void ShutdownApplication()
+    /// <summary>
+    /// Shuts down the application and its dispatcher after the assembly fixture has released all tests.
+    /// </summary>
+    public static void Shutdown()
     {
+        if (!ApplicationDispatcher.IsValueCreated)
+        {
+            return;
+        }
+
         var dispatcher = ApplicationDispatcher.Value;
         dispatcher.Invoke(() => Application.Current?.Shutdown());
 
-        // Application.Shutdown queues its cleanup at Normal priority. A lower-priority barrier guarantees that
-        // Application.Current has been cleared before xUnit releases this non-parallel collection and starts tests
-        // which intentionally verify operation without a WPF Application.
+        // Application.Shutdown schedules DoShutdown at Normal priority. The ContextIdle barrier is required
+        // before stopping the dispatcher; otherwise WPF can leave its process-wide package cache half-cleaned.
         dispatcher.Invoke(static () => { }, DispatcherPriority.ContextIdle);
+        dispatcher.InvokeShutdown();
     }
 
     private static Dispatcher CreateDispatcher()
