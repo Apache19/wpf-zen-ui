@@ -4,10 +4,8 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Ui.Gallery.Controls"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:local="clr-namespace:Wpf.Ui.Gallery.Views.Pages.Collections"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:models="clr-namespace:Wpf.Ui.Gallery.Models"
-    xmlns:system="clr-namespace:System;assembly=System.Runtime"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
     xmlns:vm="clr-namespace:Wpf.Ui.Gallery.ViewModels.Pages.Collections"
     Title="ListViewPage"
@@ -121,12 +119,11 @@
                 &lt;ListView ItemsSource=&quot;{Binding ViewModel.BasicListViewItems}&quot;&gt;\n
                 \t&lt;ListView.View&gt;\n
                 \t\t&lt;ui:GridView&gt;\n
-                \t\t\t&lt;ui:GridViewColumn Width=&quot;*&quot; MinWidth=&quot;100&quot; DisplayMemberBinding=&quot;{Binding FirstName}&quot; Header=&quot;First Name&quot;/&gt;\n
-                \t\t\t&lt;ui:GridViewColumn Width=&quot;*&quot; MinWidth=&quot;100&quot; DisplayMemberBinding=&quot;{Binding LastName}&quot; Header=&quot;Last Name&quot;/&gt;\n
-                \t\t\t&lt;ui:GridViewColumn Width=&quot;*&quot; MinWidth=&quot;100&quot; DisplayMemberBinding=&quot;{Binding Name}&quot; Header=&quot;Full Name&quot;/&gt;\n
-                \t\t\t&lt;ui:GridViewColumn Width=&quot;2*&quot; MinWidth=&quot;180&quot; DisplayMemberBinding=&quot;{Binding Company}&quot; Header=&quot;Company&quot;/&gt;\n
-                \t\t\t&lt;ui:GridViewColumn Width=&quot;*&quot; MinWidth=&quot;160&quot; DisplayMemberBinding=&quot;{Binding Email}&quot; Header=&quot;Email&quot;/&gt;\n
-                \t\t\t&lt;ui:GridViewColumn Width=&quot;*&quot; MinWidth=&quot;140&quot; DisplayMemberBinding=&quot;{Binding Phone}&quot; Header=&quot;Phone&quot;/&gt;\n
+                \t\t\t&lt;ui:GridViewColumn Width=&quot;*&quot; DisplayMemberBinding=&quot;{Binding FirstName}&quot; Header=&quot;First Name&quot;/&gt;\n
+                \t\t\t&lt;ui:GridViewColumn Width=&quot;*&quot; DisplayMemberBinding=&quot;{Binding LastName}&quot; Header=&quot;Last Name&quot;/&gt;\n
+                \t\t\t&lt;ui:GridViewColumn Width=&quot;1.3*&quot; DisplayMemberBinding=&quot;{Binding Name}&quot; Header=&quot;Full Name&quot;/&gt;\n
+                \t\t\t&lt;ui:GridViewColumn Width=&quot;2*&quot; DisplayMemberBinding=&quot;{Binding Company}&quot; Header=&quot;Company&quot;/&gt;\n
+                \t\t\t&lt;ui:GridViewColumn Width=&quot;*&quot; DisplayMemberBinding=&quot;{Binding Email}&quot; Header=&quot;Email&quot;/&gt;\n
                 \t\t&lt;/ui:GridView&gt;\n
                 \t&lt;/ListView.View&gt;\n
                 &lt;/ListView&gt;
@@ -149,7 +146,7 @@
                             DisplayMemberBinding="{Binding LastName}"
                             Header="Last Name" />
                         <ui:GridViewColumn
-                            Width="*"
+                            Width="1.3*"
                             DisplayMemberBinding="{Binding Name}"
                             Header="Full Name" />
                         <ui:GridViewColumn
@@ -160,10 +157,6 @@
                             Width="*"
                             DisplayMemberBinding="{Binding Email}"
                             Header="Email" />
-                        <ui:GridViewColumn
-                            Width="*"
-                            DisplayMemberBinding="{Binding Phone}"
-                            Header="Phone" />
                     </ui:GridView>
                 </ui:ListView.View>
             </ui:ListView>
