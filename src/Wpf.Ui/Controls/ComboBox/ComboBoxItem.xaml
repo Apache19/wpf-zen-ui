@@ -42,8 +42,8 @@
                                     HorizontalAlignment="Left"
                                     VerticalAlignment="Center"
                                     Fill="{m:DynamicBrush AccentSelection}"
-                                    RadiusX="1.5"
-                                    RadiusY="1.5"
+                                    RadiusX="2"
+                                    RadiusY="2"
                                     Visibility="Collapsed" />
                             </Grid>
                         </Border>
