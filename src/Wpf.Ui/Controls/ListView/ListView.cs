@@ -4,6 +4,7 @@
 // All Rights Reserved.
 
 using System.Collections.Specialized;
+using System.Windows.Input;
 using NativeListViewItem = System.Windows.Controls.ListViewItem;
 using UiListViewItem = Wpf.Ui.Controls.ListViewItem;
 
@@ -11,8 +12,14 @@ using UiListViewItem = Wpf.Ui.Controls.ListViewItem;
 namespace Wpf.Ui.Controls;
 
 /// <summary>
-/// Extends <see cref="System.Windows.Controls.ListView"/> with Fluent item containers and selection visuals.
+/// Extends <see cref="System.Windows.Controls.ListView"/> with Fluent item containers, selection
+/// visuals, and a data-oriented item double-click contract.
 /// </summary>
+/// <remarks>
+/// <see cref="ItemDoubleClickCommand"/> receives the item from the items source rather than its
+/// visual container. This keeps the command directly usable from a view model without an
+/// interaction behavior or an element-to-data conversion.
+/// </remarks>
 /// <example>
 /// <code lang="xml">
 /// &lt;ui:ListView ItemsSource="{Binding ...}" &gt;
@@ -31,6 +38,28 @@ namespace Wpf.Ui.Controls;
 /// </example>
 public class ListView : System.Windows.Controls.ListView
 {
+    /// <summary>
+    /// Identifies the <see cref="ItemDoubleClickCommand"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty ItemDoubleClickCommandProperty =
+        DependencyProperty.Register(
+            nameof(ItemDoubleClickCommand),
+            typeof(ICommand),
+            typeof(ListView),
+            new PropertyMetadata(null)
+        );
+
+    /// <summary>
+    /// Identifies the <see cref="ItemDoubleClick"/> routed event.
+    /// </summary>
+    public static readonly RoutedEvent ItemDoubleClickEvent =
+        EventManager.RegisterRoutedEvent(
+            nameof(ItemDoubleClick),
+            RoutingStrategy.Bubble,
+            typeof(TypedEventHandler<ListView, ListViewItemDoubleClickEventArgs>),
+            typeof(ListView)
+        );
+
     /// <summary>
     /// Identifies the <see cref="IsSelectionIndicatorVisible"/> dependency property.
     /// </summary>
@@ -52,6 +81,33 @@ public class ListView : System.Windows.Controls.ListView
     }
 
     /// <summary>
+    /// Gets or sets the command invoked when the user double-clicks a realized item.
+    /// </summary>
+    /// <remarks>
+    /// The command parameter is always the corresponding value from
+    /// <see cref="System.Windows.Controls.ItemsControl.Items"/>.
+    /// A double-click on empty space, a group header, or a scroll bar does not invoke the command.
+    /// Routed commands use the clicked item container as their command target.
+    /// </remarks>
+    [Bindable(true)]
+    [Category("Action")]
+    [Localizability(LocalizationCategory.NeverLocalize)]
+    public ICommand? ItemDoubleClickCommand
+    {
+        get => (ICommand?)GetValue(ItemDoubleClickCommandProperty);
+        set => SetValue(ItemDoubleClickCommandProperty, value);
+    }
+
+    /// <summary>
+    /// Occurs when the user double-clicks an item container in the <see cref="ListView"/>.
+    /// </summary>
+    public event TypedEventHandler<ListView, ListViewItemDoubleClickEventArgs> ItemDoubleClick
+    {
+        add => AddHandler(ItemDoubleClickEvent, value);
+        remove => RemoveHandler(ItemDoubleClickEvent, value);
+    }
+
+    /// <summary>
     /// Gets or sets a value indicating whether the selected item displays an accent-colored indicator at its leading edge.
     /// </summary>
     public bool IsSelectionIndicatorVisible
@@ -60,6 +116,82 @@ public class ListView : System.Windows.Controls.ListView
         set => SetValue(IsSelectionIndicatorVisibleProperty, value);
     }
 
+    /// <summary>
+    /// Raises <see cref="ItemDoubleClick"/> and executes <see cref="ItemDoubleClickCommand"/> for
+    /// the activated item.
+    /// </summary>
+    /// <param name="item">The application-owned item from the items collection or source.</param>
+    /// <param name="container">The realized container that received the double-click.</param>
+    /// <param name="index">The current index of <paramref name="item"/>.</param>
+    /// <param name="changedButton">The mouse button that produced the double-click.</param>
+    /// <remarks>
+    /// The source item and its container are deliberately separate. Commands receive data while
+    /// event consumers that need presentation state can explicitly use the container.
+    /// </remarks>
+    protected virtual void OnItemDoubleClick(
+        object item,
+        NativeListViewItem container,
+        int index,
+        MouseButton changedButton
+    )
+    {
+        var args = new ListViewItemDoubleClickEventArgs(
+            ItemDoubleClickEvent,
+            this,
+            item,
+            container,
+            index,
+            changedButton
+        );
+
+        RaiseEvent(args);
+
+        if (ItemDoubleClickCommand is RoutedCommand routedCommand)
+        {
+            if (routedCommand.CanExecute(item, container))
+            {
+                routedCommand.Execute(item, container);
+            }
+
+            return;
+        }
+
+        if (ItemDoubleClickCommand?.CanExecute(item) == true)
+        {
+            ItemDoubleClickCommand.Execute(item);
+        }
+    }
+
+    /// <inheritdoc />
+    protected override void OnMouseDoubleClick(MouseButtonEventArgs e)
+    {
+        base.OnMouseDoubleClick(e);
+
+        // MouseDoubleClick is synthesized independently for each Control on the original mouse
+        // route. Resolve the original visual at owner level so an activation is reported once and
+        // list chrome (including GridView headers and scroll bars) is excluded. Interactive content
+        // can still claim its gesture by marking the input event handled before it reaches us.
+        if (e.Handled || e.OriginalSource is not DependencyObject originalSource)
+        {
+            return;
+        }
+
+        if (ContainerFromElement(this, originalSource) is not NativeListViewItem container)
+        {
+            return;
+        }
+
+        int index = ItemContainerGenerator.IndexFromContainer(container);
+        if (index < 0)
+        {
+            return;
+        }
+
+        object item = ItemContainerGenerator.ItemFromContainer(container);
+        OnItemDoubleClick(item, container, index, e.ChangedButton);
+    }
+
+    /// <inheritdoc />
     protected override DependencyObject GetContainerForItemOverride()
     {
         return new UiListViewItem();
