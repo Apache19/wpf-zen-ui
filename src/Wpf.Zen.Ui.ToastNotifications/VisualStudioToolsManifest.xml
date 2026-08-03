@@ -1,0 +1,5 @@
+<FileList>
+  <File Reference="Wpf.Zen.Ui.ToastNotifications.dll">
+    <ToolboxItems UIFramework="WPF" VSCategory="WPF Zen UI" BlendCategory="WPF Zen UI"></ToolboxItems>
+  </File>
+</FileList>

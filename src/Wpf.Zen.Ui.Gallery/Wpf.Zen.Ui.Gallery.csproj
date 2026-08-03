@@ -1,0 +1,95 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Wpf.Zen.Ui.Gallery</RootNamespace>
+    <OutputType>WinExe</OutputType>
+    <TargetFrameworks>net10.0-windows;net462</TargetFrameworks>
+    <SupportedOSPlatformVersion>7.0</SupportedOSPlatformVersion>
+    <UseWPF>true</UseWPF>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <ApplicationIcon>wpfui.ico</ApplicationIcon>
+    <NoWarn>$(NoWarn);SA1601</NoWarn>
+    <GenerateDocumentationFile>True</GenerateDocumentationFile>
+    <Platforms>AnyCPU;x86;x64;arm64</Platforms>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="wpfui.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Lepo.i18n.DependencyInjection" />
+    <PackageReference Include="Lepo.i18n.Wpf" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" />
+    <PackageReference Include="CommunityToolkit.Mvvm" />
+    <PackageReference Include="Microsoft.Web.WebView2" />
+    <PackageReference Include="ReflectionEventing" />
+    <PackageReference Include="ReflectionEventing.DependencyInjection" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Wpf.Zen.Ui.DependencyInjection\Wpf.Zen.Ui.DependencyInjection.csproj" />
+    <ProjectReference Include="..\Wpf.Zen.Ui.SyntaxHighlight\Wpf.Zen.Ui.SyntaxHighlight.csproj" />
+    <ProjectReference Include="..\Wpf.Zen.Ui.Tray\Wpf.Zen.Ui.Tray.csproj" />
+    <ProjectReference Include="..\Wpf.Zen.Ui\Wpf.Zen.Ui.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Assets\geo_icons.png" />
+    <Resource Include="Assets\octonaut.jpg" />
+    <Resource Include="Assets\pexels-johannes-plenio-1103970.jpg" />
+    <Resource Include="Assets\WinUiGallery\Button.png" />
+    <Resource Include="Assets\WinUiGallery\Flyout.png" />
+    <Resource Include="Assets\WinUiGallery\MenuBar.png" />
+    <Resource Include="Assets\wpfui.png" />
+    <Resource Include="Assets\wpfui_full.png" />
+    <Resource Include="CodeSamples\Typography\TypographySample_xaml.txt" />
+    <Resource Include="CodeSamples\BasicInput\DropDownButton_xaml.txt" />
+    <Resource Include="CodeSamples\BasicInput\ContextMenu_xaml.txt" />
+    <Resource Include="CodeSamples\BasicInput\DropDownButtonScrolling_xaml.txt" />
+    <Resource Include="CodeSamples\BasicInput\ContextMenuScrolling_xaml.txt" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Assets\Monaco\**">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="License - Monaco.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="License - Images.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Assets\Monaco\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="WpfAnalyzers">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Update="Resources\Translations.pl-PL.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Translations.pl-PL.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="Resources\Translations.pl-PL.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Translations.pl-PL.resx</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+</Project>

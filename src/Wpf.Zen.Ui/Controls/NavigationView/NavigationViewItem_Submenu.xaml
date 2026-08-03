@@ -1,0 +1,51 @@
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="clr-namespace:Wpf.Zen.Ui.Controls">
+
+    <ResourceDictionary.MergedDictionaries>
+        <!--
+            NavigationView flyouts are projections of the ordinary WPF menu controls. Merge their
+            concrete library styles locally so independently loaded NavigationView dictionaries do
+            not depend on Generic.xaml merge order.
+        -->
+        <ResourceDictionary Source="pack://application:,,,/Wpf.Zen.Ui;component/Controls/Menu/MenuItem.xaml" />
+        <ResourceDictionary Source="pack://application:,,,/Wpf.Zen.Ui;component/Controls/ContextMenu/ContextMenu.xaml" />
+    </ResourceDictionary.MergedDictionaries>
+
+    <!--
+        The root surface differs from an arbitrary application ContextMenu only in its navigation
+        sizing and animation policy. Navigation can start a page transition while dismissing this
+        menu, so its root and cascading submenus deliberately use WPF's native fade instead of
+        PopupAnimator. Native fade avoids the custom transform and per-frame detached-shadow bounds
+        synchronization competing with navigation and page animations on the UI thread.
+    -->
+    <Style x:Key="NavigationViewItemSubmenuContextMenuStyle" BasedOn="{StaticResource UiContextMenuStyle}" TargetType="{x:Type ContextMenu}">
+        <Setter Property="MinWidth" Value="180" />
+        <Setter Property="MaxHeight" Value="420" />
+        <Setter Property="controls:PopupAnimator.IsEnabled" Value="False" />
+        <Setter Property="Popup.PopupAnimation" Value="Fade" />
+    </Style>
+
+    <!--
+        Every projected row is a real MenuItem and consequently uses the same four native roles
+        (top-level item/header and submenu item/header) as other library menus. Navigation-specific
+        data is connected by bindings in NavigationViewItem; this style owns appearance only.
+    -->
+    <Style x:Key="NavigationViewItemSubmenuMenuItemStyle" BasedOn="{StaticResource UiMenuItemStyle}" TargetType="{x:Type MenuItem}">
+        <!--
+            A submenu is hosted in a Popup and therefore cannot inherit the state from the projected
+            NavigationViewItem through the ordinary element tree. Copy only that semantic state to
+            the native MenuItem boundary; the SymbolIcon created by Generic.xaml then inherits it
+            normally, without requiring a navigation-specific data template.
+        -->
+        <Setter Property="controls:NavigationViewItemTemplateBehavior.IsIconFilled" Value="{Binding (controls:NavigationViewItemTemplateBehavior.IsIconFilled)}" />
+        <!--
+            UiMenuItemStyle passes these values into every role-specific submenu Popup. Keeping the
+            override on the projected MenuItem also applies it recursively to every cascading level.
+        -->
+        <Setter Property="controls:PopupAnimator.IsEnabled" Value="False" />
+        <Setter Property="Popup.PopupAnimation" Value="Fade" />
+    </Style>
+
+</ResourceDictionary>

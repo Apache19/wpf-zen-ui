@@ -1,0 +1,161 @@
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="clr-namespace:Wpf.Zen.Ui.Controls"
+    xmlns:m="clr-namespace:Wpf.Zen.Ui.Markup">
+
+    <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="pack://application:,,,/Wpf.Zen.Ui;component/Controls/NavigationView/NavigationViewItem_Submenu.xaml" />
+    </ResourceDictionary.MergedDictionaries>
+
+    <ControlTemplate x:Key="NavigationViewItemLeftFluentTemplate" TargetType="{x:Type controls:NavigationViewItem}">
+        <Grid>
+            <Button
+                x:Name="PART_HeaderButton"
+                Height="60"
+                Padding="4"
+                Background="Transparent"
+                BorderBrush="{TemplateBinding BorderBrush}"
+                BorderThickness="{TemplateBinding BorderThickness}"
+                Content="{TemplateBinding Header}"
+                ContentTemplate="{TemplateBinding HeaderTemplate}"
+                ContentTemplateSelector="{TemplateBinding HeaderTemplateSelector}"
+                OverridesDefaultStyle="True"
+                Style="{x:Null}">
+                <Button.Template>
+                    <ControlTemplate TargetType="{x:Type Button}">
+                        <Border
+                            x:Name="HeaderSurface"
+                            Padding="{TemplateBinding Padding}"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="4">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="*" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+
+                                <Rectangle
+                                    x:Name="ActiveIndicator"
+                                    Grid.Row="0"
+                                    Grid.RowSpan="2"
+                                    Width="3"
+                                    Height="24"
+                                    Margin="-4,0,0,0"
+                                    HorizontalAlignment="Left"
+                                    VerticalAlignment="Center"
+                                    Fill="{m:DynamicBrush AccentSelection}"
+                                    Opacity="0"
+                                    RadiusX="2"
+                                    RadiusY="2" />
+
+                                <ContentPresenter
+                                    x:Name="IconPresenter"
+                                    Grid.Row="0"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    Content="{Binding Icon, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}"
+                                    TextElement.FontSize="24" />
+
+                                <Grid
+                                    x:Name="ContentGrid"
+                                    Grid.Row="1"
+                                    Height="18">
+                                    <ContentPresenter
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        Content="{TemplateBinding Content}"
+                                        ContentTemplate="{TemplateBinding ContentTemplate}"
+                                        ContentTemplateSelector="{TemplateBinding ContentTemplateSelector}"
+                                        RecognizesAccessKey="True"
+                                        TextElement.FontSize="12" />
+                                </Grid>
+
+                                <ContentPresenter
+                                    x:Name="InfoBadgePresenter"
+                                    Grid.Row="0"
+                                    Grid.RowSpan="2"
+                                    HorizontalAlignment="Right"
+                                    VerticalAlignment="Top"
+                                    Content="{Binding InfoBadge, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}" />
+                            </Grid>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="HeaderSurface" Property="Background" Value="{m:DynamicBrush ControlFillPrimary}" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="HeaderSurface" Property="Background" Value="{m:DynamicBrush SubtleFillTertiary}" />
+                            </Trigger>
+                            <DataTrigger Binding="{Binding IsBranchActive, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}" Value="True">
+                                <Setter TargetName="ActiveIndicator" Property="Opacity" Value="1" />
+                                <Setter TargetName="HeaderSurface" Property="Background" Value="{m:DynamicBrush ControlFillPrimary}" />
+                                <Setter TargetName="IconPresenter" Property="TextElement.Foreground" Value="{m:DynamicBrush AccentTextPrimary}" />
+                                <DataTrigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation
+                                                Storyboard.TargetName="ContentGrid"
+                                                Storyboard.TargetProperty="Height"
+                                                To="0"
+                                                Duration="0:0:.16" />
+                                            <DoubleAnimation
+                                                Storyboard.TargetName="ContentGrid"
+                                                Storyboard.TargetProperty="Opacity"
+                                                From="1"
+                                                To="0"
+                                                Duration="0:0:.16" />
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </DataTrigger.EnterActions>
+                                <DataTrigger.ExitActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation
+                                                Storyboard.TargetName="ContentGrid"
+                                                Storyboard.TargetProperty="Height"
+                                                From="0"
+                                                To="18"
+                                                Duration="0:0:.16" />
+                                            <DoubleAnimation
+                                                Storyboard.TargetName="ContentGrid"
+                                                Storyboard.TargetProperty="Opacity"
+                                                From="0"
+                                                To="1"
+                                                Duration="0:0:.16" />
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </DataTrigger.ExitActions>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding IsSubmenuOpen, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}" Value="True">
+                                <Setter TargetName="HeaderSurface" Property="Background" Value="{m:DynamicBrush ControlFillPrimary}" />
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding Icon, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}" Value="{x:Null}">
+                                <Setter TargetName="IconPresenter" Property="Visibility" Value="Collapsed" />
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding InfoBadge, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}" Value="{x:Null}">
+                                <Setter TargetName="InfoBadgePresenter" Property="Visibility" Value="Collapsed" />
+                            </DataTrigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Button.Template>
+                <Button.ContextMenu>
+                    <!--  See NavigationViewItemTopTemplate for the native projection contract.  -->
+                    <ContextMenu
+                        x:Name="PART_SubMenuContextMenu"
+                        HorizontalOffset="8"
+                        Placement="Right"
+                        Style="{Binding SubmenuContextMenuStyle, RelativeSource={RelativeSource TemplatedParent}}" />
+                </Button.ContextMenu>
+            </Button>
+        </Grid>
+        <ControlTemplate.Triggers>
+            <Trigger Property="IsBranchActive" Value="True">
+                <Setter Property="controls:NavigationViewItemTemplateBehavior.IsIconFilled" Value="True" />
+            </Trigger>
+        </ControlTemplate.Triggers>
+    </ControlTemplate>
+
+</ResourceDictionary>

@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <PackageId>Wpf.Zen.Ui.Abstractions</PackageId>
+    <TargetFrameworks>net8.0-windows;net462</TargetFrameworks>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Description>Abstractions for the WPF Zen UI.</Description>
+    <CommonTags>$(CommonTags);abstractions;standard</CommonTags>
+  </PropertyGroup>
+
+</Project>

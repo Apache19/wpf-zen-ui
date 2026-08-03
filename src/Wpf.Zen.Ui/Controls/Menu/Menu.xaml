@@ -1,0 +1,23 @@
+<!--
+    This Source Code Form is subject to the terms of the MIT License.
+    If a copy of the MIT was not distributed with this file, You can obtain one at https://opensource.org/licenses/MIT.
+    Copyright (C) Leszek Pomianowski and WPF UI Contributors.
+    All Rights Reserved.
+-->
+
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="clr-namespace:Wpf.Zen.Ui.Controls"
+    xmlns:m="clr-namespace:Wpf.Zen.Ui.Markup">
+
+    <Style x:Key="UiMenuStyle" TargetType="{x:Type Menu}">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="FontSize" Value="{m:DynamicValue ControlContentThemeFontSize}" />
+        <Setter Property="Foreground" Value="{m:DynamicBrush TextFillPrimary}" />
+        <Setter Property="controls:OrientationAssist.Orientation" Value="Vertical" />
+    </Style>
+
+    <Style BasedOn="{StaticResource UiMenuStyle}" TargetType="{x:Type Menu}" />
+
+</ResourceDictionary>

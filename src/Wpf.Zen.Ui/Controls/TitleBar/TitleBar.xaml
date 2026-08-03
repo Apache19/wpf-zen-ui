@@ -1,0 +1,239 @@
+<!--
+    This Source Code Form is subject to the terms of the MIT License.
+    If a copy of the MIT was not distributed with this file, You can obtain one at https://opensource.org/licenses/MIT.
+    Copyright (C) Leszek Pomianowski and WPF UI Contributors.
+    All Rights Reserved.
+-->
+
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="clr-namespace:Wpf.Zen.Ui.Controls"
+    xmlns:converters="clr-namespace:Wpf.Zen.Ui.Converters"
+    xmlns:m="clr-namespace:Wpf.Zen.Ui.Markup">
+
+    <!--  ToolWindow TitleBar  -->
+    <ControlTemplate x:Key="ToolWindowTitleBarTemplate" TargetType="{x:Type controls:TitleBar}">
+        <Grid controls:TitleBar.HitTestRole="Caption" Background="{TemplateBinding Background}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <!--  Optional content contributed by controls that cooperate with the title bar.  -->
+            <ContentPresenter
+                x:Name="LeftContentPresenter"
+                Grid.Column="0"
+                controls:TitleBar.HitTestRole="Client"
+                Content="{TemplateBinding LeftContent}"
+                IsEnabled="{TemplateBinding IsUserContentEnabled}"
+                Visibility="Collapsed" />
+
+            <!--  Title  -->
+            <ContentPresenter
+                Grid.Column="1"
+                Margin="8,0,0,0"
+                HorizontalAlignment="Left"
+                VerticalAlignment="Center"
+                controls:TextBlock.FontTypography="Caption"
+                Content="{TemplateBinding Title}"
+                TextBlock.FontSize="12" />
+
+            <!--  User content  -->
+            <ContentPresenter
+                Grid.Column="2"
+                VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                controls:TitleBar.HitTestRole="Client"
+                IsEnabled="{TemplateBinding IsUserContentEnabled}" />
+
+            <!--  Close Button  -->
+            <controls:TitleBarButton
+                Grid.Column="3"
+                Width="22"
+                Height="22"
+                Margin="0,0,8,0"
+                HorizontalAlignment="Right"
+                VerticalAlignment="Center"
+                controls:TitleBar.HitTestRole="CloseButton"
+                Style="{DynamicResource SmallCloseTitleBarButtonStyle}" />
+
+        </Grid>
+        <ControlTemplate.Triggers>
+            <!--
+                The title bar treats only actually visible content as occupying this cooperation
+                slot. In particular, a Hidden child would otherwise retain an unexplained blank
+                region before the tool-window title.
+            -->
+            <Trigger Property="LeftContentState" Value="Visible">
+                <Setter TargetName="LeftContentPresenter" Property="Visibility" Value="Visible" />
+            </Trigger>
+        </ControlTemplate.Triggers>
+    </ControlTemplate>
+
+    <converters:ThicknessTransformConverter x:Key="IconGridMarginConverter" BaseThickness="2 0 0 0" CopySides="Vertical,Right" />
+
+    <Style x:Key="DefaultTitleBarStyle" TargetType="{x:Type controls:TitleBar}">
+        <Setter Property="Foreground" Value="{m:DynamicBrush TextFillPrimary}" />
+        <Setter Property="Padding" Value="16,4,16,4" />
+        <Setter Property="Height" Value="48" />
+        <Setter Property="VerticalContentAlignment" Value="Stretch" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type controls:TitleBar}">
+                    <Grid
+                        x:Name="MainGrid"
+                        HorizontalAlignment="Stretch"
+                        VerticalAlignment="Stretch"
+                        controls:TitleBar.HitTestRole="Caption"
+                        Background="{TemplateBinding Background}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <!--
+                            LeftContent is a public cooperation point, not a NavigationView-specific
+                            template part. Marking the presenter as UserContent keeps interactive
+                            children in WPF's client-input path during title-bar hit testing.
+                        -->
+                        <ContentPresenter
+                            x:Name="LeftContentPresenter"
+                            Grid.Column="0"
+                            controls:TitleBar.HitTestRole="Client"
+                            ContentSource="LeftContent"
+                            IsEnabled="{TemplateBinding IsUserContentEnabled}"
+                            Visibility="Collapsed" />
+
+                        <!--
+                            Title bar icon. Its default margin represents an inactive LeftContent
+                            slot; the Visible state below applies the compact post-command margin.
+                        -->
+                        <Grid
+                            x:Name="IconGrid"
+                            Grid.Column="1"
+                            Margin="{TemplateBinding Padding}"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center">
+
+                            <!--  Custom application icon  -->
+                            <ContentPresenter
+                                x:Name="Icon"
+                                Grid.Column="0"
+                                Height="16"
+                                VerticalAlignment="Center"
+                                controls:TitleBar.HitTestRole="Icon"
+                                AutomationProperties.AutomationId="TitleBarIcon"
+                                Content="{TemplateBinding Icon}"
+                                Focusable="False"
+                                RenderOptions.BitmapScalingMode="HighQuality" />
+                        </Grid>
+
+                        <Grid Grid.Column="2">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <!--  Title  -->
+                            <ContentPresenter
+                                Grid.Column="0"
+                                HorizontalAlignment="Left"
+                                VerticalAlignment="Center"
+                                controls:TextBlock.FontTypography="Caption"
+                                Content="{TemplateBinding Title}" />
+
+                            <!--  User content  -->
+                            <ContentPresenter
+                                Grid.Column="1"
+                                VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                controls:TitleBar.HitTestRole="Client"
+                                IsEnabled="{TemplateBinding IsUserContentEnabled}" />
+
+                            <!--  System buttons - Close, Restore, Maximize, Minimize  -->
+                            <Grid
+                                Grid.Column="2"
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Top">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+
+                                <controls:TitleBarButton
+                                    x:Name="MinimizeButton"
+                                    Grid.Column="0"
+                                    Width="46"
+                                    Height="32"
+                                    controls:TitleBar.HitTestRole="MinimizeButton"
+                                    AutomationProperties.AutomationId="TitleBarMinimizeButton" />
+
+                                <controls:TitleBarButton
+                                    x:Name="MaximizeButton"
+                                    Grid.Column="1"
+                                    Width="46"
+                                    Height="32"
+                                    controls:TitleBar.HitTestRole="MaximizeButton"
+                                    AutomationProperties.AutomationId="TitleBarMaximizeButton" />
+
+                                <controls:TitleBarButton
+                                    x:Name="CloseButton"
+                                    Grid.Column="2"
+                                    Width="46"
+                                    Height="32"
+                                    controls:TitleBar.HitTestRole="CloseButton"
+                                    AutomationProperties.AutomationId="TitleBarCloseButton" />
+                            </Grid>
+                        </Grid>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <!--
+                            Only visible content participates in the leading layout. Null, Hidden,
+                            and Collapsed values all use Padding and collapse the outer presenter so
+                            a Hidden element cannot leave an unexplained command-sized gap.
+                        -->
+                        <Trigger Property="LeftContentState" Value="Visible">
+                            <Setter TargetName="LeftContentPresenter" Property="Visibility" Value="Visible" />
+                            <Setter TargetName="IconGrid" Property="Margin" Value="{Binding Padding, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource IconGridMarginConverter}}" />
+                        </Trigger>
+
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="Icon" Value="{x:Null}" />
+                                <Condition Property="Title" Value="{x:Null}" />
+                            </MultiTrigger.Conditions>
+                            <Setter TargetName="IconGrid" Property="Visibility" Value="Collapsed" />
+                        </MultiTrigger>
+                        <Trigger Property="Icon" Value="{x:Null}">
+                            <Setter TargetName="Icon" Property="Visibility" Value="Collapsed" />
+                            <Setter TargetName="Icon" Property="Margin" Value="0" />
+                        </Trigger>
+                        <DataTrigger Binding="{Binding ResizeMode, RelativeSource={RelativeSource AncestorType=Window}}" Value="NoResize">
+                            <Setter TargetName="MaximizeButton" Property="Visibility" Value="Collapsed" />
+                            <Setter TargetName="MinimizeButton" Property="Visibility" Value="Collapsed" />
+                        </DataTrigger>
+                        <DataTrigger Binding="{Binding ResizeMode, RelativeSource={RelativeSource AncestorType=Window}}" Value="CanMinimize">
+                            <Setter TargetName="MaximizeButton" Property="IsEnabled" Value="False" />
+                        </DataTrigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding IsNcActive, RelativeSource={RelativeSource AncestorType=controls:FluentWindow}, FallbackValue=True}" Value="False">
+                <Setter Property="Foreground" Value="{m:DynamicBrush TextFillDisabled}" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding WindowStyle, RelativeSource={RelativeSource AncestorType=Window}}" Value="ToolWindow">
+                <Setter Property="Height" Value="28" />
+                <Setter Property="Template" Value="{DynamicResource ToolWindowTitleBarTemplate}" />
+            </DataTrigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style BasedOn="{StaticResource DefaultTitleBarStyle}" TargetType="{x:Type controls:TitleBar}" />
+
+</ResourceDictionary>

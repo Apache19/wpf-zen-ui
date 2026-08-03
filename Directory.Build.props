@@ -8,15 +8,15 @@
     <AssemblyVersion>4.2.0</AssemblyVersion>
   </PropertyGroup>
   <PropertyGroup>
-    <Company>lepo.co</Company>
-    <Authors>lepo.co</Authors>
-    <Product>WPF-UI</Product>
-    <CommonTags>lepoco;toolkit;wpf;fluent;navigation;controls;design;icons;system;accent;theme;winui</CommonTags>
+    <Company>thezendev.com</Company>
+    <Authors>thezendev.com</Authors>
+    <Product>Wpf.Zen.Ui</Product>
+    <CommonTags>wpfzenui;toolkit;wpf;fluent;navigation;controls;design;icons;system;accent;theme;winui</CommonTags>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
     <Copyright>Copyright (C) 2021-2025 Leszek Pomianowski and WPF UI Contributors</Copyright>
-    <PackageProjectUrl>https://github.com/lepoco/wpfui</PackageProjectUrl>
-    <PackageReleaseNotes>https://github.com/lepoco/wpfui/releases</PackageReleaseNotes>
+    <PackageProjectUrl>https://github.com/apachezy/wpfui</PackageProjectUrl>
+    <PackageReleaseNotes>https://github.com/apachezy/wpfui/releases</PackageReleaseNotes>
     <PackageIcon>Icon.png</PackageIcon>
     <RepositoryBranch>main</RepositoryBranch>
     <RepositoryType>git</RepositoryType>

@@ -1,0 +1,58 @@
+<FileList>
+  <File Reference="Wpf.Zen.Ui.dll">
+    <ToolboxItems UIFramework="WPF" VSCategory="WPF Zen UI" BlendCategory="WPF Zen UI">
+      <Item Type="Wpf.Zen.Ui.Controls.Anchor" />
+      <Item Type="Wpf.Zen.Ui.Controls.Arc" />
+      <Item Type="Wpf.Zen.Ui.Controls.AutoSuggestBox" />
+      <Item Type="Wpf.Zen.Ui.Controls.Badge" />
+      <Item Type="Wpf.Zen.Ui.Controls.BreadcrumbBar" />
+      <Item Type="Wpf.Zen.Ui.Controls.BreadcrumbBarItem" />
+      <Item Type="Wpf.Zen.Ui.Controls.Button" />
+      <Item Type="Wpf.Zen.Ui.Controls.Card" />
+      <Item Type="Wpf.Zen.Ui.Controls.CardAction" />
+      <Item Type="Wpf.Zen.Ui.Controls.CardColor" />
+      <Item Type="Wpf.Zen.Ui.Controls.CardControl" />
+      <Item Type="Wpf.Zen.Ui.Controls.CardExpander" />
+      <Item Type="Wpf.Zen.Ui.Controls.ClientAreaBorder" />
+      <Item Type="Wpf.Zen.Ui.Controls.ContentDialog" />
+      <Item Type="Wpf.Zen.Ui.Controls.DataGrid" />
+      <Item Type="Wpf.Zen.Ui.Controls.DropDownButton" />
+      <Item Type="Wpf.Zen.Ui.Controls.DynamicScrollBar" />
+      <Item Type="Wpf.Zen.Ui.Controls.DynamicScrollViewer" />
+      <Item Type="Wpf.Zen.Ui.Controls.FluentWindow" />
+      <Item Type="Wpf.Zen.Ui.Controls.Flyout" />
+      <Item Type="Wpf.Zen.Ui.Controls.FontIcon" />
+      <Item Type="Wpf.Zen.Ui.Controls.HyperlinkButton" />
+      <Item Type="Wpf.Zen.Ui.Controls.Image" />
+      <Item Type="Wpf.Zen.Ui.Controls.ImageIcon" />
+      <Item Type="Wpf.Zen.Ui.Controls.InfoBar" />
+      <Item Type="Wpf.Zen.Ui.Controls.InfoBadge" />
+      <Item Type="Wpf.Zen.Ui.Controls.ListView" />
+      <Item Type="Wpf.Zen.Ui.Controls.MenuItem" />
+      <Item Type="Wpf.Zen.Ui.Controls.MessageBox" />
+      <Item Type="Wpf.Zen.Ui.Controls.NavigationView" />
+      <Item Type="Wpf.Zen.Ui.Controls.NavigationViewBreadcrumb" />
+      <Item Type="Wpf.Zen.Ui.Controls.NavigationViewItem" />
+      <Item Type="Wpf.Zen.Ui.Controls.NavigationViewItemHeader" />
+      <Item Type="Wpf.Zen.Ui.Controls.NavigationViewItemSeparator" />
+      <Item Type="Wpf.Zen.Ui.Controls.NumberBox" />
+      <Item Type="Wpf.Zen.Ui.Controls.PasswordBox" />
+      <Item Type="Wpf.Zen.Ui.Controls.ProgressRing" />
+      <Item Type="Wpf.Zen.Ui.Controls.RatingControl" />
+      <Item Type="Wpf.Zen.Ui.Controls.RichTextBox" />
+      <Item Type="Wpf.Zen.Ui.Controls.Snackbar" />
+      <Item Type="Wpf.Zen.Ui.Controls.SplitButton" />
+      <Item Type="Wpf.Zen.Ui.Controls.SymbolIcon" />
+      <Item Type="Wpf.Zen.Ui.Controls.TextBlock" />
+      <Item Type="Wpf.Zen.Ui.Controls.TextBox" />
+      <Item Type="Wpf.Zen.Ui.Controls.ThumbRate" />
+      <Item Type="Wpf.Zen.Ui.Controls.TitleBar" />
+      <Item Type="Wpf.Zen.Ui.Controls.ToggleSwitch" />
+      <Item Type="Wpf.Zen.Ui.Controls.TreeGrid" />
+      <Item Type="Wpf.Zen.Ui.Controls.TreeGridItem" />
+      <Item Type="Wpf.Zen.Ui.Controls.VirtualizingGridView" />
+      <Item Type="Wpf.Zen.Ui.Controls.VirtualizingItemsControl" />
+      <Item Type="Wpf.Zen.Ui.Controls.VirtualizingWrapPanel" />
+    </ToolboxItems>
+  </File>
+</FileList>

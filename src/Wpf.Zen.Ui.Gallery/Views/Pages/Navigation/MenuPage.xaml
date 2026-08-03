@@ -1,0 +1,520 @@
+<Page
+    x:Class="Wpf.Zen.Ui.Gallery.Views.Pages.Navigation.MenuPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="clr-namespace:Wpf.Zen.Ui.Gallery.Controls"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:local="clr-namespace:Wpf.Zen.Ui.Gallery.Views.Pages.Navigation"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:ui="http://schemas.thezendev.com/wpf/2027"
+    xmlns:vm="clr-namespace:Wpf.Zen.Ui.Gallery.ViewModels.Pages.Navigation"
+    Title="MenuPage"
+    Style="{ui:DynamicStyle DynamicScrollPage}"
+    controls:PageControlDocumentation.DocumentationType="{x:Type MenuItem}"
+    d:Background="{ui:DynamicBrush WindowBackground}"
+    d:DataContext="{d:DesignInstance vm:MenuViewModel, IsDesignTimeCreatable=False}"
+    d:DesignWidth="800"
+    Foreground="{ui:DynamicBrush TextFillPrimary}"
+    mc:Ignorable="d">
+
+    <StackPanel Margin="0,0,0,24">
+        <!-- ============================================================ -->
+        <!-- 1. Standard Menu — File, Edit, View, Project, Format         -->
+        <!-- ============================================================ -->
+        <controls:ControlExample Margin="0" HeaderText="Application menu.">
+            <controls:ControlExample.XamlCode>
+                &lt;Menu FontSize="14"&gt;\n
+                \t&lt;!-- File --&gt;\n
+                \t&lt;ui:MenuItem Header="File" Icon="{ui:SymbolIcon Document24}"&gt;\n
+                \t\t&lt;ui:MenuItem Header="New" InputGestureText="Ctrl+N" /&gt;\n
+                \t\t&lt;ui:MenuItem Header="Open..." InputGestureText="Ctrl+O" /&gt;\n
+                \t\t&lt;ui:MenuItem Header="Save" InputGestureText="Ctrl+S" /&gt;\n
+                \t\t&lt;ui:MenuItem Header="Save As..." InputGestureText="Ctrl+Shift+S" /&gt;\n
+                \t\t&lt;Separator /&gt;\n
+                \t\t&lt;ui:MenuItem Header="Exit" /&gt;\n
+                \t&lt;/ui:MenuItem&gt;\n
+                \t&lt;!-- Edit --&gt;\n
+                \t&lt;ui:MenuItem Header="Edit" Icon="{ui:SymbolIcon DocumentEdit20}"&gt;\n
+                \t\t&lt;ui:MenuItem Header="Undo" InputGestureText="Ctrl+Z" /&gt;\n
+                \t\t&lt;Separator /&gt;\n
+                \t\t&lt;ui:MenuItem Header="Cut" InputGestureText="Ctrl+X" /&gt;\n
+                \t\t&lt;ui:MenuItem Header="Copy" InputGestureText="Ctrl+C" /&gt;\n
+                \t\t&lt;ui:MenuItem Header="Paste" InputGestureText="Ctrl+V" /&gt;\n
+                \t\t&lt;ui:MenuItem Header="Delete" IsEnabled="False" /&gt;\n
+                \t\t&lt;Separator /&gt;\n
+                \t\t&lt;ui:MenuItem Header="Word wrap" InputGestureText="Ctrl+Shift+W" IsCheckable="True" IsChecked="True" /&gt;\n
+                \t\t&lt;ui:MenuItem Header="Find..." InputGestureText="Ctrl+F" /&gt;\n
+                \t\t&lt;ui:MenuItem Header="Find next" InputGestureText="F3" /&gt;\n
+                \t\t&lt;Separator /&gt;\n
+                \t\t&lt;ui:MenuItem Header="Select All" InputGestureText="Ctrl+A" /&gt;\n
+                \t&lt;/ui:MenuItem&gt;\n
+                \t&lt;!-- View --&gt;\n
+                \t&lt;ui:MenuItem Header="View" Icon="{ui:SymbolIcon Eye20}"&gt;\n
+                \t\t&lt;ui:MenuItem Header="Toolbar" IsCheckable="True" IsChecked="True" /&gt;\n
+                \t\t&lt;ui:MenuItem Header="Status Bar" IsCheckable="True" IsChecked="True" /&gt;\n
+                \t\t&lt;ui:MenuItem Header="Sidebar" IsCheckable="True" IsChecked="False" /&gt;\n
+                \t\t&lt;Separator /&gt;\n
+                \t\t&lt;ui:MenuItem Header="Layout" Icon="{ui:SymbolIcon PanelLeft20}"&gt;\n
+                \t\t\t&lt;ui:RadioMenuItem Header="Single Pane" IsChecked="True" GroupName="LayoutMode" /&gt;\n
+                \t\t\t&lt;ui:RadioMenuItem Header="Two Panes" GroupName="LayoutMode" /&gt;\n
+                \t\t\t&lt;ui:RadioMenuItem Header="Three Panes" GroupName="LayoutMode" IsEnabled="False" /&gt;\n
+                \t\t\t&lt;ui:RadioMenuItem Header="Grid" GroupName="LayoutMode" /&gt;\n
+                \t\t\t&lt;Separator /&gt;\n
+                \t\t\t&lt;ui:MenuItem Header="Reset Layout" Icon="{ui:SymbolIcon ArrowSync20}" /&gt;\n
+                \t\t&lt;/ui:MenuItem&gt;\n
+                \t\t&lt;Separator /&gt;\n
+                \t\t&lt;ui:MenuItem Header="Zoom" Icon="{ui:SymbolIcon ZoomIn20}"&gt;\n
+                \t\t\t&lt;ui:MenuItem Header="Zoom In" InputGestureText="Ctrl+=" /&gt;\n
+                \t\t\t&lt;ui:MenuItem Header="Zoom Out" InputGestureText="Ctrl+-" /&gt;\n
+                \t\t\t&lt;ui:MenuItem Header="Reset Zoom" InputGestureText="Ctrl+0" /&gt;\n
+                \t\t&lt;/ui:MenuItem&gt;\n
+                \t&lt;/ui:MenuItem&gt;\n
+            \t&lt;!-- Format --&gt;\n
+                \t&lt;ui:MenuItem Header="Format" Icon="{ui:SymbolIcon TextFont20}"&gt;\n
+                \t\t&lt;ui:MenuItem Header="Bold" Icon="{ui:SymbolIcon TextBold20}" InputGestureText="Ctrl+B" /&gt;\n
+                \t\t&lt;ui:MenuItem Header="Italic" Icon="{ui:SymbolIcon TextItalic20}" InputGestureText="Ctrl+I" /&gt;\n
+                \t\t&lt;ui:MenuItem Header="Underline" Icon="{ui:SymbolIcon TextUnderline20}" InputGestureText="Ctrl+U" /&gt;\n
+                \t\t&lt;ui:MenuItem Header="Strikethrough" Icon="{ui:SymbolIcon TextStrikethrough20}" /&gt;\n
+                \t\t&lt;Separator /&gt;\n
+                \t\t&lt;ui:MenuItem Header="Align Left" Icon="{ui:SymbolIcon AlignLeft20}" /&gt;\n
+                \t\t&lt;ui:MenuItem Header="Align Center" Icon="{ui:SymbolIcon AlignCenterHorizontal20}" /&gt;\n
+                \t\t&lt;ui:MenuItem Header="Align Right" Icon="{ui:SymbolIcon AlignRight20}" /&gt;\n
+                \t\t&lt;Separator /&gt;\n
+                \t\t&lt;ui:MenuItem Header="Font..." Icon="{ui:SymbolIcon TextFont20}" /&gt;\n
+                \t\t&lt;ui:MenuItem Header="Color..." Icon="{ui:SymbolIcon Color20}" /&gt;\n
+                \t&lt;/ui:MenuItem&gt;\n
+                \t&lt;Separator /&gt;\n
+                \t&lt;ui:MenuItem Icon="{ui:SymbolIcon TextBold20}" /&gt;\n
+                \t&lt;ui:MenuItem Icon="{ui:SymbolIcon TextItalic20}" /&gt;\n
+                \t&lt;ui:MenuItem Icon="{ui:SymbolIcon TextUnderline20}" /&gt;\n
+                \t&lt;Separator /&gt;\n
+                \t&lt;ui:MenuItem Icon="{ui:SymbolIcon ArrowUndo20}" /&gt;\n
+                \t&lt;ui:MenuItem Icon="{ui:SymbolIcon ArrowRedo20}" /&gt;\n
+                \t&lt;ui:MenuItem Icon="{ui:SymbolIcon ClipboardPaste20}" /&gt;\n
+                \t&lt;Separator /&gt;\n
+                &lt;/Menu&gt;
+            </controls:ControlExample.XamlCode>
+            <Menu FontSize="14">
+                <!-- File -->
+                <MenuItem Header="File" Icon="{ui:SymbolIcon Symbol=Document24}">
+                    <MenuItem Header="New" InputGestureText="Ctrl+N" />
+                    <MenuItem Header="Open..." InputGestureText="Ctrl+O" />
+                    <MenuItem Header="Save" InputGestureText="Ctrl+S" />
+                    <MenuItem Header="Save As..." InputGestureText="Ctrl+Shift+S" />
+                    <Separator />
+                    <MenuItem Header="Exit" />
+                </MenuItem>
+
+                <!-- Edit -->
+                <MenuItem Header="Edit" Icon="{ui:SymbolIcon DocumentEdit20}">
+                    <MenuItem Header="Undo" InputGestureText="Ctrl+Z" />
+                    <Separator />
+                    <MenuItem Header="Cut" InputGestureText="Ctrl+X" />
+                    <MenuItem Header="Copy" InputGestureText="Ctrl+C" />
+                    <MenuItem Header="Paste" InputGestureText="Ctrl+V" />
+                    <MenuItem Header="Delete" IsEnabled="False" />
+                    <Separator />
+                    <MenuItem
+                        Header="Word wrap"
+                        InputGestureText="Ctrl+Shift+W"
+                        IsCheckable="True"
+                        IsChecked="True" />
+                    <MenuItem Header="Find..." InputGestureText="Ctrl+F" />
+                    <MenuItem Header="Find next" InputGestureText="F3" />
+                    <Separator />
+                    <MenuItem Header="Select All" InputGestureText="Ctrl+A" />
+                </MenuItem>
+
+                <!-- View — checkable items & nested submenus -->
+                <MenuItem Header="View" Icon="{ui:SymbolIcon Eye20}">
+                    <MenuItem Header="Toolbar" IsCheckable="True" IsChecked="True" />
+                    <MenuItem Header="Status Bar" IsCheckable="True" IsChecked="True" />
+                    <MenuItem Header="Sidebar" IsCheckable="True" IsChecked="False" />
+                    <Separator />
+                    <MenuItem Header="Layout" Icon="{ui:SymbolIcon PanelLeft20}">
+                        <ui:RadioMenuItem Header="Single Pane" IsChecked="True" GroupName="LayoutMode" />
+                        <ui:RadioMenuItem Header="Two Panes" GroupName="LayoutMode" />
+                        <ui:RadioMenuItem Header="Three Panes" GroupName="LayoutMode" IsEnabled="False" />
+                        <ui:RadioMenuItem Header="Grid" GroupName="LayoutMode" />
+                        <Separator />
+                        <MenuItem Header="Reset Layout" Icon="{ui:SymbolIcon ArrowSync20}" />
+                    </MenuItem>
+                    <Separator />
+                    <MenuItem Header="Zoom" Icon="{ui:SymbolIcon ZoomIn20}">
+                        <MenuItem Header="Zoom In" InputGestureText="Ctrl+=" />
+                        <MenuItem Header="Zoom Out" InputGestureText="Ctrl+-" />
+                        <MenuItem Header="Reset Zoom" InputGestureText="Ctrl+0" />
+                    </MenuItem>
+                </MenuItem>
+
+                <!-- Format — icons on every sub-item -->
+                <MenuItem Header="Format" Icon="{ui:SymbolIcon TextFont20}">
+                    <MenuItem Header="Bold" Icon="{ui:SymbolIcon TextBold20}" InputGestureText="Ctrl+B" />
+                    <MenuItem Header="Italic" Icon="{ui:SymbolIcon TextItalic20}" InputGestureText="Ctrl+I" />
+                    <MenuItem Header="Underline" Icon="{ui:SymbolIcon TextUnderline20}" InputGestureText="Ctrl+U" />
+                    <MenuItem Header="Strikethrough" Icon="{ui:SymbolIcon TextStrikethrough20}" />
+                    <Separator />
+                    <MenuItem Header="Align Left" Icon="{ui:SymbolIcon AlignLeft20}" />
+                    <MenuItem Header="Align Center" Icon="{ui:SymbolIcon AlignCenterHorizontal20}" />
+                    <MenuItem Header="Align Right" Icon="{ui:SymbolIcon AlignRight20}" />
+                    <Separator />
+                    <MenuItem Header="Font..." Icon="{ui:SymbolIcon TextFont20}" />
+                    <MenuItem Header="Color..." Icon="{ui:SymbolIcon Color20}" />
+                </MenuItem>
+
+                <Separator />
+                <MenuItem Icon="{ui:SymbolIcon TextBold20}" />
+                <MenuItem Icon="{ui:SymbolIcon TextItalic20}" />
+                <MenuItem Icon="{ui:SymbolIcon TextUnderline20}" />
+                <Separator />
+                <MenuItem Icon="{ui:SymbolIcon ArrowUndo20}" />
+                <MenuItem Icon="{ui:SymbolIcon ArrowRedo20}" />
+                <MenuItem Icon="{ui:SymbolIcon ClipboardPaste20}" />
+                <Separator />
+            </Menu>
+        </controls:ControlExample>
+
+        <!-- ============================================================ -->
+        <!-- 2. Build & Debug Menu — Disabled States & Mixed States       -->
+        <!-- ============================================================ -->
+        <controls:ControlExample
+            Margin="0,32,0,0"
+            HeaderText="Project menu.">
+            <controls:ControlExample.XamlCode>
+                &lt;Menu FontSize="14"&gt;\n
+                \t&lt;!-- Project --&gt;\n
+                \t&lt;ui:MenuItem Header="Project" Icon="{ui:SymbolIcon FolderOpen20}"&gt;\n
+                \t\t&lt;ui:MenuItem Header="New" Icon="{ui:SymbolIcon AddCircle20}"&gt;\n
+                \t\t\t&lt;ui:MenuItem Header="File" InputGestureText="Ctrl+N" /&gt;\n
+                \t\t\t&lt;ui:MenuItem Header="Folder" /&gt;\n
+                \t\t\t&lt;ui:MenuItem Header="Project from Template..."&gt;\n
+                \t\t\t\t&lt;ui:MenuItem Header="WPF Application" /&gt;\n
+                \t\t\t\t&lt;ui:MenuItem Header="Class Library" /&gt;\n
+                \t\t\t\t&lt;ui:MenuItem Header="Console App" /&gt;\n
+                \t\t\t\t&lt;ui:MenuItem Header="Blazor Hybrid" /&gt;\n
+                \t\t\t&lt;/ui:MenuItem&gt;\n
+                \t\t&lt;/ui:MenuItem&gt;\n
+                \t\t&lt;ui:MenuItem Header="Add" Icon="{ui:SymbolIcon AddSquare20}"&gt;\n
+                \t\t\t&lt;ui:MenuItem Header="New Item..." InputGestureText="Ctrl+Shift+A" /&gt;\n
+                \t\t\t&lt;ui:MenuItem Header="Existing Item..." InputGestureText="Shift+Alt+A" /&gt;\n
+                \t\t\t&lt;Separator /&gt;\n
+                \t\t\t&lt;ui:MenuItem Header="Class" /&gt;\n
+                \t\t\t&lt;ui:MenuItem Header="Interface" /&gt;\n
+                \t\t\t&lt;ui:MenuItem Header="User Control" /&gt;\n
+                \t\t\t&lt;ui:MenuItem Header="Resource Dictionary" /&gt;\n
+                \t\t&lt;/ui:MenuItem&gt;\n
+                \t\t&lt;Separator /&gt;\n
+                \t\t&lt;ui:MenuItem Header="Open Containing Folder" /&gt;\n
+                \t\t&lt;ui:MenuItem Header="Properties" /&gt;\n
+                \t&lt;/ui:MenuItem&gt;\n
+                \t&lt;ui:MenuItem Header="Build" Icon="{ui:SymbolIcon Wrench20}"&gt;\n
+                \t\t&lt;ui:MenuItem Header="Build Solution" InputGestureText="Ctrl+Shift+B" /&gt;\n
+                \t\t&lt;ui:MenuItem Header="Rebuild Solution" /&gt;\n
+                \t\t&lt;ui:MenuItem Header="Clean Solution" /&gt;\n
+                \t\t&lt;Separator /&gt;\n
+                \t\t&lt;ui:MenuItem Header="Publish..." Icon="{ui:SymbolIcon CloudArrowUp20}" IsEnabled="False" /&gt;\n
+                \t\t&lt;ui:MenuItem Header="Package..." Icon="{ui:SymbolIcon Box20}" IsEnabled="False" /&gt;\n
+                \t&lt;/ui:MenuItem&gt;\n
+                \t&lt;ui:MenuItem Header="Debug" Icon="{ui:SymbolIcon Bug20}"&gt;\n
+                \t\t&lt;ui:MenuItem Header="Start Debugging" InputGestureText="F5" /&gt;\n
+                \t\t&lt;ui:MenuItem Header="Start Without Debugging" InputGestureText="Ctrl+F5" /&gt;\n
+                \t\t&lt;Separator /&gt;\n
+                \t\t&lt;ui:MenuItem Header="Breakpoints" Icon="{ui:SymbolIcon Circle20}" /&gt;\n
+                \t\t&lt;ui:MenuItem Header="Watch" /&gt;\n
+                \t\t&lt;ui:MenuItem Header="Call Stack" /&gt;\n
+                \t&lt;/ui:MenuItem&gt;\n
+                &lt;/Menu&gt;
+            </controls:ControlExample.XamlCode>
+            <Menu FontSize="14">
+            <!-- Project — multi-level nesting -->
+                <MenuItem Header="Project" Icon="{ui:SymbolIcon FolderOpen20}">
+                    <MenuItem Header="New" Icon="{ui:SymbolIcon AddCircle20}">
+                        <MenuItem Header="File" InputGestureText="Ctrl+N" />
+                        <MenuItem Header="Folder" />
+                        <MenuItem Header="Project from Template...">
+                            <MenuItem Header="WPF Application" />
+                            <MenuItem Header="Class Library" />
+                            <MenuItem Header="Console App" />
+                            <MenuItem Header="Blazor Hybrid" />
+                        </MenuItem>
+                    </MenuItem>
+                    <MenuItem Header="Add" Icon="{ui:SymbolIcon AddSquare20}">
+                        <MenuItem Header="New Item..." InputGestureText="Ctrl+Shift+A" />
+                        <MenuItem Header="Existing Item..." InputGestureText="Shift+Alt+A" />
+                        <Separator />
+                        <MenuItem Header="Class" />
+                        <MenuItem Header="Interface" />
+                        <MenuItem Header="User Control" />
+                        <MenuItem Header="Resource Dictionary" />
+                    </MenuItem>
+                    <Separator />
+                    <MenuItem Header="Open Containing Folder" />
+                    <MenuItem Header="Properties" />
+                </MenuItem>
+
+                <MenuItem Header="Build" Icon="{ui:SymbolIcon Wrench20}">
+                    <MenuItem Header="Build Solution" InputGestureText="Ctrl+Shift+B" />
+                    <MenuItem Header="Rebuild Solution" />
+                    <MenuItem Header="Clean Solution" />
+                    <Separator />
+                    <MenuItem Header="Publish..." Icon="{ui:SymbolIcon CloudArrowUp20}" IsEnabled="False" />
+                    <MenuItem Header="Package..." Icon="{ui:SymbolIcon Box20}" IsEnabled="False" />
+                </MenuItem>
+                <MenuItem Header="Debug" Icon="{ui:SymbolIcon Bug20}">
+                    <MenuItem Header="Start Debugging" InputGestureText="F5" />
+                    <MenuItem Header="Start Without Debugging" InputGestureText="Ctrl+F5" />
+                    <Separator />
+                    <MenuItem Header="Breakpoints" Icon="{ui:SymbolIcon Circle20}" />
+                    <MenuItem Header="Watch" />
+                    <MenuItem Header="Call Stack" />
+                </MenuItem>
+            </Menu>
+        </controls:ControlExample>
+
+        <!-- ============================================================ -->
+        <!-- 3. First-Item Chain — Every First Item Has Its Own Submenu   -->
+        <!-- ============================================================ -->
+        <controls:ControlExample
+            Margin="0,32,0,0"
+            HeaderText="Deep cascading menu.">
+            <controls:ControlExample.XamlCode>
+                &lt;Menu FontSize="14"&gt;\n
+                \t&lt;ui:MenuItem Header="Navigate" Icon="{ui:SymbolIcon Navigation20}"&gt;\n
+                \t\t&lt;ui:MenuItem Header="Go to..." Icon="{ui:SymbolIcon ArrowRight20}"&gt;\n
+                \t\t\t&lt;ui:MenuItem Header="Type..." Icon="{ui:SymbolIcon ChevronRight20}"&gt;\n
+                \t\t\t\t&lt;ui:MenuItem Header="Class..." Icon="{ui:SymbolIcon Symbols20}"&gt;\n
+                \t\t\t\t\t&lt;ui:MenuItem Header="Class in Solution" /&gt;\n
+                \t\t\t\t\t&lt;ui:MenuItem Header="Class in Project" /&gt;\n
+                \t\t\t\t\t&lt;ui:MenuItem Header="Class with Tests" /&gt;\n
+                \t\t\t\t&lt;/ui:MenuItem&gt;\n
+                \t\t\t\t&lt;ui:MenuItem Header="File..." InputGestureText="Ctrl+Shift+T" /&gt;\n
+                \t\t\t\t&lt;ui:MenuItem Header="Symbol..." InputGestureText="Ctrl+T" /&gt;\n
+                \t\t\t&lt;/ui:MenuItem&gt;\n
+                \t\t\t&lt;ui:MenuItem Header="Base..." /&gt;\n
+                \t\t\t&lt;ui:MenuItem Header="Implementation..." InputGestureText="Ctrl+F12" /&gt;\n
+                \t\t&lt;/ui:MenuItem&gt;\n
+                \t\t&lt;Separator /&gt;\n
+                \t\t&lt;ui:MenuItem Header="Back" InputGestureText="Ctrl+-" /&gt;\n
+                \t\t&lt;ui:MenuItem Header="Forward" InputGestureText="Ctrl+Shift+-" /&gt;\n
+                \t&lt;/ui:MenuItem&gt;\n
+                &lt;/Menu&gt;
+            </controls:ControlExample.XamlCode>
+            <Menu FontSize="14">
+                <MenuItem Header="Navigate" Icon="{ui:SymbolIcon Navigation20}">
+                    <!-- Level 1 — first item has submenu -->
+                    <MenuItem Header="Go to..." Icon="{ui:SymbolIcon ArrowRight20}">
+                        <!-- Level 2 — first item has submenu -->
+                        <MenuItem Header="Type..." Icon="{ui:SymbolIcon ChevronRight20}">
+                            <!-- Level 3 — first item has submenu -->
+                            <MenuItem Header="Class..." Icon="{ui:SymbolIcon Symbols20}">
+                                <!-- Level 4 — finally, leaf items -->
+                                <MenuItem Header="Class in Solution" />
+                                <MenuItem Header="Class in Project" />
+                                <MenuItem Header="Class with Tests" />
+                            </MenuItem>
+                            <MenuItem Header="File..." InputGestureText="Ctrl+Shift+T" />
+                            <MenuItem Header="Symbol..." InputGestureText="Ctrl+T" />
+                        </MenuItem>
+                        <MenuItem Header="Base..." />
+                        <MenuItem Header="Implementation..." InputGestureText="Ctrl+F12" />
+                    </MenuItem>
+                    <Separator />
+                    <MenuItem Header="Back" InputGestureText="Ctrl+-" />
+                    <MenuItem Header="Forward" InputGestureText="Ctrl+Shift+-" />
+                </MenuItem>
+            </Menu>
+        </controls:ControlExample>
+
+        <!-- ============================================================ -->
+        <!-- 4. Top-Level Radio & Checkable — Mixed Radio Group & Toggles -->
+        <!-- ============================================================ -->
+        <controls:ControlExample
+            Margin="0,32,0,0"
+            HeaderText="Top-level radio items and checkable toggles.">
+            <controls:ControlExample.XamlCode>
+                &lt;Menu FontSize="14"&gt;\n
+                \t&lt;ui:RadioMenuItem Header="Bold" IsChecked="True" GroupName="TextStyle" /&gt;\n
+                \t&lt;ui:RadioMenuItem Header="Italic" GroupName="TextStyle" /&gt;\n
+                \t&lt;ui:RadioMenuItem Header="Underline" GroupName="TextStyle" /&gt;\n
+                \t&lt;ui:RadioMenuItem Header="Strikethrough" GroupName="TextStyle" /&gt;\n
+                \t&lt;Separator /&gt;\n
+                \t&lt;ui:MenuItem Header="Show Hidden" IsCheckable="True" IsChecked="True" /&gt;\n
+                \t&lt;ui:MenuItem Header="Word Wrap" IsCheckable="True" /&gt;\n
+                \t&lt;ui:MenuItem Header="Read Only" IsCheckable="True" /&gt;\n
+                &lt;/Menu&gt;
+            </controls:ControlExample.XamlCode>
+            <Menu FontSize="14">
+                <ui:RadioMenuItem Header="Bold" IsChecked="True" GroupName="TextStyle" />
+                <ui:RadioMenuItem Header="Italic" GroupName="TextStyle" />
+                <ui:RadioMenuItem Header="Underline" GroupName="TextStyle" />
+                <ui:RadioMenuItem Header="Strikethrough" GroupName="TextStyle" />
+                <ui:Separator Orientation="Vertical" />
+                <MenuItem Header="Show Hidden" IsCheckable="True" IsChecked="True" />
+                <MenuItem Header="Word Wrap" IsCheckable="True" />
+                <MenuItem Header="Read Only" IsCheckable="True" />
+            </Menu>
+        </controls:ControlExample>
+
+        <!-- ============================================================ -->
+        <!-- 5. Long Text — Truncation & Column Width Stress Test         -->
+        <!-- ============================================================ -->
+        <controls:ControlExample
+            Margin="0,32,0,0"
+            HeaderText="Long headers and shortcuts — truncation and column sizing.">
+            <controls:ControlExample.XamlCode>
+                &lt;Menu FontSize="14"&gt;\n
+                \t&lt;ui:MenuItem Header="Options" Icon="{ui:SymbolIcon Settings20}"&gt;\n
+                \t\t&lt;ui:MenuItem Header="Open Containing Folder in File Explorer" /&gt;\n
+                \t\t&lt;ui:MenuItem Header="Reopen Closed Editor Tab" InputGestureText="Ctrl+Shift+T" /&gt;\n
+                \t\t&lt;ui:MenuItem Header="Toggle Side Bar Visibility" InputGestureText="Ctrl+B" /&gt;\n
+                \t\t&lt;ui:MenuItem Header="Format Document with Default Formatter" InputGestureText="Ctrl+K, Ctrl+D" /&gt;\n
+                \t\t&lt;ui:MenuItem Header="Remove and Sort All Unnecessary Usings" InputGestureText="Ctrl+R, Ctrl+G" /&gt;\n
+                \t\t&lt;ui:MenuItem Header="Go To Implementation of Interface Method" InputGestureText="Ctrl+F12" /&gt;\n
+                \t\t&lt;Separator /&gt;\n
+                \t\t&lt;ui:MenuItem Header="Show All Files Including Hidden and System Files" /&gt;\n
+                \t\t&lt;ui:MenuItem Header="Refresh Solution Explorer Tree View" /&gt;\n
+                \t\t&lt;ui:MenuItem Header="Collapse All Projects in Solution Explorer" /&gt;\n
+                \t&lt;/ui:MenuItem&gt;\n
+                &lt;/Menu&gt;
+            </controls:ControlExample.XamlCode>
+            <Menu FontSize="14">
+                <MenuItem Header="Options" Icon="{ui:SymbolIcon Settings20}">
+                    <MenuItem Header="Open Containing Folder in File Explorer" />
+                    <MenuItem Header="Reopen Closed Editor Tab" InputGestureText="Ctrl+Shift+T" />
+                    <MenuItem Header="Toggle Side Bar Visibility" InputGestureText="Ctrl+B" />
+                    <MenuItem Header="Format Document with Default Formatter" InputGestureText="Ctrl+K, Ctrl+D" />
+                    <MenuItem Header="Remove and Sort All Unnecessary Usings" InputGestureText="Ctrl+R, Ctrl+G" />
+                    <MenuItem Header="Go To Implementation of Interface Method" InputGestureText="Ctrl+F12" />
+                    <Separator />
+                    <MenuItem Header="Show All Files Including Hidden and System Files" />
+                    <MenuItem Header="Refresh Solution Explorer Tree View" />
+                    <MenuItem Header="Collapse All Projects in Solution Explorer" />
+                </MenuItem>
+            </Menu>
+        </controls:ControlExample>
+
+        <!-- ============================================================ -->
+        <!-- 6. Dense Menu — Many Items to Test Scrolling                 -->
+        <!-- ============================================================ -->
+        <controls:ControlExample
+            Margin="0,32,0,0"
+            HeaderText="Dense dropdown — scrolling behavior and visual density.">
+            <controls:ControlExample.XamlCode>
+                &lt;Menu FontSize="14"&gt;\n
+                \t&lt;ui:MenuItem Header="Language" Icon="{ui:SymbolIcon Code20}"&gt;\n
+                \t\t&lt;ui:MenuItem Header="C# / .NET" /&gt;\n
+                \t\t&lt;ui:MenuItem Header="F#" /&gt;\n
+                \t\t&lt;ui:MenuItem Header="Visual Basic" /&gt;\n
+                \t\t&lt;Separator /&gt;\n
+                \t\t&lt;ui:MenuItem Header="C / C++" /&gt;\n
+                \t\t&lt;ui:MenuItem Header="Rust" /&gt;\n
+                \t\t&lt;ui:MenuItem Header="Go" /&gt;\n
+                \t\t&lt;ui:MenuItem Header="Zig" /&gt;\n
+                \t\t&lt;Separator /&gt;\n
+                \t\t&lt;ui:MenuItem Header="Java" /&gt;\n
+                \t\t&lt;ui:MenuItem Header="Kotlin" /&gt;\n
+                \t\t&lt;ui:MenuItem Header="Scala" /&gt;\n
+                \t\t&lt;Separator /&gt;\n
+                \t\t&lt;ui:MenuItem Header="Python" /&gt;\n
+                \t\t&lt;ui:MenuItem Header="Ruby" /&gt;\n
+                \t\t&lt;ui:MenuItem Header="Perl" /&gt;\n
+                \t\t&lt;Separator /&gt;\n
+                \t\t&lt;ui:MenuItem Header="JavaScript" /&gt;\n
+                \t\t&lt;ui:MenuItem Header="TypeScript" /&gt;\n
+                \t\t&lt;ui:MenuItem Header="CoffeeScript" /&gt;\n
+                \t\t&lt;Separator /&gt;\n
+                \t\t&lt;ui:MenuItem Header="HTML / XML" /&gt;\n
+                \t\t&lt;ui:MenuItem Header="CSS / SCSS / Less" /&gt;\n
+                \t\t&lt;ui:MenuItem Header="JSON / YAML / TOML" /&gt;\n
+                \t\t&lt;Separator /&gt;\n
+                \t\t&lt;ui:MenuItem Header="SQL / T-SQL" /&gt;\n
+                \t\t&lt;ui:MenuItem Header="PowerShell" /&gt;\n
+                \t\t&lt;ui:MenuItem Header="Bash / Shell" /&gt;\n
+                \t\t&lt;Separator /&gt;\n
+                \t\t&lt;ui:MenuItem Header="Dart" /&gt;\n
+                \t\t&lt;ui:MenuItem Header="Swift" /&gt;\n
+                \t\t&lt;ui:MenuItem Header="Objective-C" /&gt;\n
+                \t&lt;/ui:MenuItem&gt;\n
+                &lt;/Menu&gt;
+            </controls:ControlExample.XamlCode>
+            <Menu FontSize="14">
+                <MenuItem Header="Language" Icon="{ui:SymbolIcon Code20}">
+                    <MenuItem Header="C# / .NET" />
+                    <MenuItem Header="F#" />
+                    <MenuItem Header="Visual Basic" />
+                    <Separator />
+                    <MenuItem Header="C / C++" />
+                    <MenuItem Header="Rust" />
+                    <MenuItem Header="Go" />
+                    <MenuItem Header="Zig" />
+                    <Separator />
+                    <MenuItem Header="Java" />
+                    <MenuItem Header="Kotlin" />
+                    <MenuItem Header="Scala" />
+                    <Separator />
+                    <MenuItem Header="Python" />
+                    <MenuItem Header="Ruby" />
+                    <MenuItem Header="Perl" />
+                    <Separator />
+                    <MenuItem Header="JavaScript" />
+                    <MenuItem Header="TypeScript" />
+                    <MenuItem Header="CoffeeScript" />
+                    <Separator />
+                    <MenuItem Header="HTML / XML" />
+                    <MenuItem Header="CSS / SCSS / Less" />
+                    <MenuItem Header="JSON / YAML / TOML" />
+                    <Separator />
+                    <MenuItem Header="SQL / T-SQL" />
+                    <MenuItem Header="PowerShell" />
+                    <MenuItem Header="Bash / Shell" />
+                    <Separator />
+                    <MenuItem Header="Dart" />
+                    <MenuItem Header="Swift" />
+                    <MenuItem Header="Objective-C" />
+                </MenuItem>
+            </Menu>
+        </controls:ControlExample>
+
+        <!-- ============================================================ -->
+        <!-- 7. Mixed Column Widths — Icon, Header & Shortcut Alignment   -->
+        <!-- ============================================================ -->
+        <controls:ControlExample
+            Margin="0,32,0,0"
+            HeaderText="Mixed icon, header, and shortcut lengths — SharedSizeGroup alignment.">
+            <controls:ControlExample.XamlCode>
+                &lt;Menu FontSize="14"&gt;\n
+                \t&lt;ui:MenuItem Header="Actions" Icon="{ui:SymbolIcon Wrench20}"&gt;\n
+                \t\t&lt;ui:MenuItem Header="Run" Icon="{ui:SymbolIcon Play20}" InputGestureText="F5" /&gt;\n
+                \t\t&lt;ui:MenuItem Header="Build" Icon="{ui:SymbolIcon Wrench20}" InputGestureText="Ctrl+Shift+B" /&gt;\n
+                \t\t&lt;ui:MenuItem Header="Stop" Icon="{ui:SymbolIcon Stop20}" InputGestureText="Shift+F5" /&gt;\n
+                \t\t&lt;ui:MenuItem Header="R" InputGestureText="Ctrl+R" /&gt;\n
+                \t\t&lt;ui:MenuItem Header="Restart with Full Clean and Rebuild All Projects" Icon="{ui:SymbolIcon ArrowSync20}" /&gt;\n
+                \t\t&lt;ui:MenuItem Header="Publish to Remote Server via SSH" Icon="{ui:SymbolIcon CloudArrowUp20}" InputGestureText="Ctrl+Shift+P, Enter" /&gt;\n
+                \t\t&lt;Separator /&gt;\n
+                \t\t&lt;ui:MenuItem Header="X" InputGestureText="Alt+F4" /&gt;\n
+                \t\t&lt;ui:MenuItem Header="Toggle Breakpoint at Current Line and Continue Execution" Icon="{ui:SymbolIcon Circle20}" InputGestureText="F9" /&gt;\n
+                \t&lt;/ui:MenuItem&gt;\n
+                &lt;/Menu&gt;
+            </controls:ControlExample.XamlCode>
+            <Menu FontSize="14">
+                <MenuItem Header="Actions" Icon="{ui:SymbolIcon Wrench20}">
+                    <!-- Normal item -->
+                    <MenuItem Header="Run" Icon="{ui:SymbolIcon Play20}" InputGestureText="F5" />
+                    <MenuItem Header="Build" Icon="{ui:SymbolIcon Wrench20}" InputGestureText="Ctrl+Shift+B" />
+                    <MenuItem Header="Stop" Icon="{ui:SymbolIcon Stop20}" InputGestureText="Shift+F5" />
+                    <!-- No icon, short header -->
+                    <MenuItem Header="R" InputGestureText="Ctrl+R" />
+                    <!-- Icon but no shortcut, long header -->
+                    <MenuItem Header="Restart with Full Clean and Rebuild All Projects" Icon="{ui:SymbolIcon ArrowSync20}" />
+                    <!-- Icon, long header, long shortcut -->
+                    <MenuItem Header="Publish to Remote Server via SSH" Icon="{ui:SymbolIcon CloudArrowUp20}" InputGestureText="Ctrl+Shift+P, Enter" />
+                    <Separator />
+                    <!-- No icon, short header, short shortcut -->
+                    <MenuItem Header="X" InputGestureText="Alt+F4" />
+                    <!-- Icon, very long header, short shortcut -->
+                    <MenuItem Header="Toggle Breakpoint at Current Line and Continue Execution" Icon="{ui:SymbolIcon Circle20}" InputGestureText="F9" />
+                </MenuItem>
+            </Menu>
+        </controls:ControlExample>
+    </StackPanel>
+</Page>

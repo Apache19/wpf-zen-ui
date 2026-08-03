@@ -1,0 +1,168 @@
+<!--
+    This Source Code Form is subject to the terms of the MIT License.
+    If a copy of the MIT was not distributed with this file, You can obtain one at https://opensource.org/licenses/MIT.
+    Copyright (C) Leszek Pomianowski and WPF UI Contributors.
+    All Rights Reserved.
+-->
+
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="clr-namespace:Wpf.Zen.Ui.Controls"
+    xmlns:converters="clr-namespace:Wpf.Zen.Ui.Converters"
+    xmlns:m="clr-namespace:Wpf.Zen.Ui.Markup"
+    xmlns:t="clr-namespace:Wpf.Zen.Ui.Theming">
+
+    <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="pack://application:,,,/Wpf.Zen.Ui;component/Controls/Button/ButtonAppearance.xaml" />
+    </ResourceDictionary.MergedDictionaries>
+
+    <!--
+        Each segment paints only the outside half of the composite outline. In particular, neither
+        button paints the shared edge; this avoids a double-width seam and lets the independently
+        animated button backgrounds meet cleanly.
+    -->
+    <converters:ThicknessTransformConverter x:Key="SplitButtonLeftBorderThicknessConverter" CopySides="Left,Top,Bottom" />
+    <converters:ThicknessTransformConverter x:Key="SplitButtonRightBorderThicknessConverter" CopySides="Top,Right,Bottom" />
+    <converters:CornerRadiusTransformConverter x:Key="SplitButtonLeftCornerRadiusConverter" CopyCorners="TopLeft,BottomLeft" />
+    <converters:CornerRadiusTransformConverter x:Key="SplitButtonRightCornerRadiusConverter" CopyCorners="TopRight,BottomRight" />
+
+    <Style x:Key="{x:Static t:StyleKeys.UiSplitButtonStyle}" BasedOn="{StaticResource UiButtonAppearanceStyle}" TargetType="{x:Type controls:SplitButton}">
+        <Setter Property="Padding" Value="{m:DynamicValue ButtonThemePadding}" />
+        <Setter Property="CornerRadius" Value="{m:DynamicValue ControlCornerRadius}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="VerticalContentAlignment" Value="Stretch" />
+        <Setter Property="IsTabStop" Value="True" />
+        <Setter Property="FocusVisualStyle" Value="{m:DynamicStyle DefaultControlFocusVisual}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type controls:SplitButton}">
+                    <!--
+                        The wrapper has no input surface of its own. The two ui:Button instances are
+                        intentional: each segment owns its pressed/hover state, while code-behind
+                        translates their ButtonBase.Click events into the SplitButton contract.
+                    -->
+                    <Grid SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <controls:Button
+                            x:Name="PART_PrimaryButton"
+                            Grid.Column="0"
+                            Padding="{TemplateBinding Padding}"
+                            HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                            VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+                            Appearance="{TemplateBinding Appearance}"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness, Converter={StaticResource SplitButtonLeftBorderThicknessConverter}}"
+                            ClickMode="{TemplateBinding ClickMode}"
+                            Command="{TemplateBinding Command}"
+                            CommandParameter="{TemplateBinding CommandParameter}"
+                            CommandTarget="{TemplateBinding CommandTarget}"
+                            Content="{TemplateBinding Content}"
+                            ContentStringFormat="{TemplateBinding ContentStringFormat}"
+                            ContentTemplate="{TemplateBinding ContentTemplate}"
+                            ContentTemplateSelector="{TemplateBinding ContentTemplateSelector}"
+                            CornerRadius="{TemplateBinding CornerRadius, Converter={StaticResource SplitButtonLeftCornerRadiusConverter}}"
+                            DisabledBackground="{TemplateBinding DisabledBackground}"
+                            DisabledBorderBrush="{TemplateBinding DisabledBorderBrush}"
+                            DisabledForeground="{TemplateBinding DisabledForeground}"
+                            Focusable="False"
+                            Foreground="{TemplateBinding Foreground}"
+                            Icon="{TemplateBinding Icon}"
+                            IsTabStop="False"
+                            MouseOverBackground="{TemplateBinding MouseOverBackground}"
+                            MouseOverBorderBrush="{TemplateBinding MouseOverBorderBrush}"
+                            PressedBackground="{TemplateBinding PressedBackground}"
+                            PressedBorderBrush="{TemplateBinding PressedBorderBrush}"
+                            PressedForeground="{TemplateBinding PressedForeground}"
+                            TabIndex="{TemplateBinding TabIndex}" />
+
+                        <!--
+                            The separator is painted separately because neither segment owns the
+                            shared edge. Its normal brush comes from SplitButton, while the template
+                            triggers below redirect it to the hovered segment's resolved visual
+                            brush. Binding to VisualBorderBrush is intentional: Button has already
+                            applied disabled/pressed/hover precedence and state-brush fallbacks, so
+                            the composite template must not duplicate those rules.
+                        -->
+                        <Border
+                            x:Name="Separator"
+                            Grid.Column="1"
+                            Width="1"
+                            Background="{TemplateBinding BorderBrush}"
+                            IsHitTestVisible="False" />
+
+                        <controls:Button
+                            x:Name="PART_DropDownButton"
+                            Grid.Column="2"
+                            MinWidth="32"
+                            Padding="11,0"
+                            VerticalContentAlignment="Center"
+                            Appearance="{TemplateBinding Appearance}"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness, Converter={StaticResource SplitButtonRightBorderThicknessConverter}}"
+                            ClickMode="Press"
+                            CornerRadius="{TemplateBinding CornerRadius, Converter={StaticResource SplitButtonRightCornerRadiusConverter}}"
+                            DisabledBackground="{TemplateBinding DisabledBackground}"
+                            DisabledBorderBrush="{TemplateBinding DisabledBorderBrush}"
+                            DisabledForeground="{TemplateBinding DisabledForeground}"
+                            Focusable="False"
+                            Foreground="{TemplateBinding Foreground}"
+                            IsTabStop="False"
+                            MouseOverBackground="{TemplateBinding MouseOverBackground}"
+                            MouseOverBorderBrush="{TemplateBinding MouseOverBorderBrush}"
+                            PressedBackground="{TemplateBinding PressedBackground}"
+                            PressedBorderBrush="{TemplateBinding PressedBorderBrush}"
+                            PressedForeground="{TemplateBinding PressedForeground}">
+                            <controls:Button.Icon>
+                                <controls:SymbolIcon FontSize="10" Symbol="ChevronDown24" />
+                            </controls:Button.Icon>
+                        </controls:Button>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <!--
+                            A segment takes ownership of the shared edge whenever it has an
+                            interaction state that can change its resolved border brush. State
+                            selection remains inside Button.VisualBorderBrush; these triggers only
+                            choose which segment supplies the separator brush. Hover/pressed
+                            triggers follow the disabled trigger so an enabled sibling under the
+                            pointer can still present one continuous interactive outline. The
+                            shared edge uses the disabled palette only when both segments are
+                            disabled; disabling the primary segment through ICommand.CanExecute
+                            must not make the still-operable drop-down segment look disabled.
+                        -->
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition SourceName="PART_PrimaryButton" Property="IsEnabled" Value="False" />
+                                <Condition SourceName="PART_DropDownButton" Property="IsEnabled" Value="False" />
+                            </MultiTrigger.Conditions>
+                            <Setter TargetName="Separator" Property="Background" Value="{Binding VisualBorderBrush, ElementName=PART_PrimaryButton}" />
+                        </MultiTrigger>
+                        <Trigger SourceName="PART_PrimaryButton" Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Separator" Property="Background" Value="{Binding VisualBorderBrush, ElementName=PART_PrimaryButton}" />
+                        </Trigger>
+                        <Trigger SourceName="PART_DropDownButton" Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Separator" Property="Background" Value="{Binding VisualBorderBrush, ElementName=PART_DropDownButton}" />
+                        </Trigger>
+                        <Trigger SourceName="PART_PrimaryButton" Property="IsPressed" Value="True">
+                            <Setter TargetName="Separator" Property="Background" Value="{Binding VisualBorderBrush, ElementName=PART_PrimaryButton}" />
+                        </Trigger>
+                        <Trigger SourceName="PART_DropDownButton" Property="IsPressed" Value="True">
+                            <Setter TargetName="Separator" Property="Background" Value="{Binding VisualBorderBrush, ElementName=PART_DropDownButton}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style BasedOn="{StaticResource {x:Static t:StyleKeys.UiSplitButtonStyle}}" TargetType="{x:Type controls:SplitButton}" />
+
+</ResourceDictionary>

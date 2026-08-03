@@ -1,0 +1,98 @@
+<Page
+    x:Class="Wpf.Zen.Ui.Gallery.Views.Pages.BasicInput.ComboBoxPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="clr-namespace:Wpf.Zen.Ui.Gallery.Controls"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:ui="http://schemas.thezendev.com/wpf/2027"
+    xmlns:vm="clr-namespace:Wpf.Zen.Ui.Gallery.ViewModels.Pages.BasicInput"
+    Title="ComboBoxPage"
+    d:Background="{ui:DynamicBrush WindowBackground}"
+    d:DataContext="{d:DesignInstance vm:ComboBoxViewModel, IsDesignTimeCreatable=False}"
+    d:DesignWidth="800"
+    Foreground="{ui:DynamicBrush TextFillPrimary}"
+    Style="{ui:DynamicStyle DynamicScrollPage}"
+    mc:Ignorable="d">
+
+    <StackPanel Margin="0,0,0,24">
+        <controls:ControlExample
+            Margin="0"
+            HeaderText="A ComboBox with items defined inline."
+            XamlCode="&lt;ComboBox /&gt;">
+            <ComboBox
+                MinWidth="200"
+                HorizontalAlignment="Left"
+                SelectedIndex="0">
+                <ComboBoxItem Content="Blue" />
+                <ComboBoxItem Content="Green" />
+                <ComboBoxItem Content="Red" />
+                <ComboBoxItem Content="Yellow" />
+            </ComboBox>
+        </controls:ControlExample>
+
+        <controls:ControlExample
+            Margin="0,32,0,0"
+            HeaderText="A ComboBox with ItemsSource set."
+            XamlCode="&lt;ComboBox ItemsSource=&quot;{Binding FontFamilies}&quot; /&gt;">
+            <ui:ComboBox
+                MinWidth="200"
+                HorizontalAlignment="Left"
+                ui:PlaceholderService.Content="Placeholder"
+                ItemsSource="{Binding ComboBoxFontFamilies}">
+                <ui:ComboBox.ItemTemplate>
+                    <DataTemplate>
+                        <TextBlock FontFamily="{Binding}" Text="{Binding}" />
+                    </DataTemplate>
+                </ui:ComboBox.ItemTemplate>
+            </ui:ComboBox>
+        </controls:ControlExample>
+
+        <controls:ControlExample
+            Margin="0,32,0,0"
+            HeaderText="An editable ComboBox."
+            XamlCode="&lt;ComboBox IsEditable=&quot;True&quot; /&gt;">
+            <ui:ComboBox
+                MinWidth="200"
+                HorizontalAlignment="Left"
+                ui:PlaceholderService.Content="Placeholder"
+                IsEditable="True"
+                ItemsSource="{Binding ComboBoxFontSizes}"
+                SelectedIndex="0" />
+        </controls:ControlExample>
+
+        <controls:ControlExample
+            Margin="0,32,0,0"
+            HeaderText="A ComboBox with grouped items using GroupStyle."
+            XamlCode="&lt;ComboBox&gt;&#x0a;  &lt;ComboBox.GroupStyle&gt;&#x0a;    &lt;GroupStyle /&gt;&#x0a;  &lt;/ComboBox.GroupStyle&gt;&#x0a;&lt;/ComboBox&gt;">
+            <controls:ControlExample.Resources>
+                <CollectionViewSource x:Key="GroupedItemsSource" Source="{Binding GroupedItems}">
+                    <CollectionViewSource.GroupDescriptions>
+                        <PropertyGroupDescription PropertyName="Category" />
+                    </CollectionViewSource.GroupDescriptions>
+                </CollectionViewSource>
+            </controls:ControlExample.Resources>
+            <ui:ComboBox
+                MinWidth="200"
+                HorizontalAlignment="Left"
+                DisplayMemberPath="Name"
+                ItemsSource="{Binding Source={StaticResource GroupedItemsSource}}"
+                ScrollViewer.VerticalScrollBarVisibility="Auto"
+                SelectedIndex="0">
+                <ui:ComboBox.GroupStyle>
+                    <GroupStyle>
+                        <GroupStyle.HeaderTemplate>
+                            <DataTemplate DataType="{x:Type vm:GroupedComboBoxItem}">
+                                <TextBlock
+                                    Margin="8,4,0,4"
+                                    FontWeight="SemiBold"
+                                    Foreground="{ui:DynamicBrush TextFillPrimary}"
+                                    Text="{Binding Name}" />
+                            </DataTemplate>
+                        </GroupStyle.HeaderTemplate>
+                    </GroupStyle>
+                </ui:ComboBox.GroupStyle>
+            </ui:ComboBox>
+        </controls:ControlExample>
+    </StackPanel>
+</Page>

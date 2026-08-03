@@ -1,0 +1,391 @@
+<Page
+    x:Class="Wpf.Zen.Ui.Gallery.Views.Pages.BasicInput.DropDownButtonPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="clr-namespace:Wpf.Zen.Ui.Gallery.Controls"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:ui="http://schemas.thezendev.com/wpf/2027"
+    xmlns:vm="clr-namespace:Wpf.Zen.Ui.Gallery.ViewModels.Pages.BasicInput"
+    Title="DropDownButtonPage"
+    controls:PageControlDocumentation.DocumentationType="{x:Type ui:DropDownButton}"
+    d:Background="{ui:DynamicBrush WindowBackground}"
+    d:DataContext="{d:DesignInstance vm:DropDownButtonViewModel, IsDesignTimeCreatable=False}"
+    d:DesignWidth="800"
+    Foreground="{ui:DynamicBrush TextFillPrimary}"
+    Style="{ui:DynamicStyle DynamicScrollPage}"
+    mc:Ignorable="d">
+
+    <StackPanel Margin="0,0,0,24">
+        <!--  ============================================================  -->
+        <!--  1. DropDownButton with comprehensive flyout menu  -->
+        <!--  ============================================================  -->
+        <controls:ControlExample
+            Margin="0"
+            HeaderText="A DropDownButton with file and edit operations."
+            XamlCodeSource="/CodeSamples/BasicInput/DropDownButton_xaml.txt">
+            <StackPanel>
+                <ui:DropDownButton
+                    MinWidth="250"
+                    HorizontalAlignment="Left"
+                    Content="Menu"
+                    Icon="{ui:SymbolIcon Fluent24}">
+                    <ui:DropDownButton.Flyout>
+                        <ContextMenu>
+                            <MenuItem
+                                Command="{Binding NewCommand}"
+                                Header="New"
+                                Icon="{ui:SymbolIcon Add24}"
+                                InputGestureText="Ctrl+N" />
+                            <MenuItem
+                                Command="{Binding OpenCommand}"
+                                Header="Open..."
+                                Icon="{ui:SymbolIcon Open24}"
+                                InputGestureText="Ctrl+O" />
+                            <MenuItem
+                                Command="{Binding SaveCommand}"
+                                Header="Save"
+                                Icon="{ui:SymbolIcon Save24}"
+                                InputGestureText="Ctrl+S" />
+                            <Separator />
+                            <MenuItem
+                                Command="{Binding CutCommand}"
+                                Header="Cut"
+                                Icon="{ui:SymbolIcon Cut24}"
+                                InputGestureText="Ctrl+X" />
+                            <MenuItem
+                                Command="{Binding CopyCommand}"
+                                Header="Copy"
+                                Icon="{ui:SymbolIcon Copy24}"
+                                InputGestureText="Ctrl+C" />
+                            <MenuItem
+                                Command="{Binding PasteCommand}"
+                                Header="Paste"
+                                Icon="{ui:SymbolIcon ClipboardPaste24}"
+                                InputGestureText="Ctrl+V" />
+                        </ContextMenu>
+                    </ui:DropDownButton.Flyout>
+                </ui:DropDownButton>
+
+                <!--  Status feedback  -->
+                <TextBlock
+                    Margin="12,12,0,0"
+                    FontSize="13"
+                    Foreground="{ui:DynamicBrush TextFillSecondary}"
+                    Text="{Binding StatusMessage}" />
+            </StackPanel>
+        </controls:ControlExample>
+
+        <!--  ============================================================  -->
+        <!--  2. Right-click context menu on a control  -->
+        <!--  ============================================================  -->
+        <controls:ControlExample
+            Margin="0,24,0,0"
+            HeaderText="A control with right-click context menu."
+            XamlCodeSource="/CodeSamples/BasicInput/ContextMenu_xaml.txt">
+            <!--  A card-like control with right-click ContextMenu  -->
+            <Border
+                MinWidth="320"
+                Padding="24"
+                Background="{ui:DynamicBrush CardBackgroundFillDefault}"
+                BorderBrush="{ui:DynamicBrush CardStrokeDefault}"
+                BorderThickness="1"
+                CornerRadius="8"
+                Cursor="Hand"
+                Focusable="True"
+                PreviewMouseDown="OnContextMenuCardPreviewMouseDown"
+                ToolTip="Right-click or press Shift+F10 to open context menu">
+                <Border.ContextMenu>
+                    <ContextMenu>
+                        <MenuItem
+                            Command="{Binding CutCommand}"
+                            Header="Cut"
+                            Icon="{ui:SymbolIcon Cut24}"
+                            InputGestureText="Ctrl+X" />
+                        <MenuItem
+                            Command="{Binding CopyCommand}"
+                            Header="Copy"
+                            Icon="{ui:SymbolIcon Copy24}"
+                            InputGestureText="Ctrl+C" />
+                        <MenuItem
+                            Command="{Binding PasteCommand}"
+                            Header="Paste"
+                            Icon="{ui:SymbolIcon ClipboardPaste24}"
+                            InputGestureText="Ctrl+V" />
+                        <MenuItem
+                            Command="{Binding DeleteCommand}"
+                            Header="Delete"
+                            Icon="{ui:SymbolIcon Delete24}"
+                            InputGestureText="Del" />
+                        <Separator />
+                        <MenuItem
+                            Command="{Binding SelectAllCommand}"
+                            Header="Select All"
+                            Icon="{ui:SymbolIcon SelectAllOn24}"
+                            InputGestureText="Ctrl+A" />
+                        <Separator />
+                        <MenuItem
+                            Command="{Binding RefreshCommand}"
+                            Header="Refresh"
+                            Icon="{ui:SymbolIcon ArrowClockwise24}"
+                            InputGestureText="F5" />
+                        <MenuItem
+                            Command="{Binding SettingsCommand}"
+                            Header="Settings..."
+                            Icon="{ui:SymbolIcon Settings24}" />
+                    </ContextMenu>
+                </Border.ContextMenu>
+
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <ui:SymbolIcon
+                            VerticalAlignment="Center"
+                            Filled="True"
+                            FontSize="20"
+                            Foreground="{ui:DynamicBrush TextFillSecondary}"
+                            Symbol="Cursor24" />
+                        <TextBlock
+                            Margin="8,0,0,0"
+                            VerticalAlignment="Center"
+                            FontSize="14"
+                            FontWeight="SemiBold"
+                            Text="Interaction Area" />
+                    </StackPanel>
+                    <TextBlock
+                        Margin="0,8,0,0"
+                        FontSize="13"
+                        Foreground="{ui:DynamicBrush TextFillSecondary}"
+                        Text="Right-click here to show context menu."
+                        TextWrapping="Wrap" />
+                </StackPanel>
+            </Border>
+        </controls:ControlExample>
+
+        <!--  ============================================================  -->
+        <!--  3. Very tall menu — DropDownButton with scrolling flyout  -->
+        <!--  ============================================================  -->
+        <controls:ControlExample
+            Margin="0,24,0,0"
+            HeaderText="A DropDownButton with a very long menu to demonstrate scrolling."
+            XamlCodeSource="/CodeSamples/BasicInput/DropDownButtonScrolling_xaml.txt">
+            <StackPanel>
+                <ui:DropDownButton
+                    MinWidth="250"
+                    HorizontalAlignment="Left"
+                    Content="Languages"
+                    Icon="{ui:SymbolIcon Code24}">
+                    <ui:DropDownButton.Flyout>
+                        <ContextMenu>
+                            <MenuItem
+                                Command="{Binding CutCommand}"
+                                Header="C# / .NET"
+                                Icon="{ui:SymbolIcon Code24}" />
+                            <MenuItem Command="{Binding CutCommand}" Header="F#" />
+                            <MenuItem Command="{Binding CutCommand}" Header="Visual Basic" />
+                            <Separator />
+                            <MenuItem Command="{Binding CutCommand}" Header="Rust" />
+                            <MenuItem Command="{Binding CutCommand}" Header="Go" />
+                            <MenuItem Command="{Binding CutCommand}" Header="Zig" />
+                            <Separator />
+                            <MenuItem Command="{Binding CutCommand}" Header="Java" />
+                            <MenuItem Command="{Binding CutCommand}" Header="Kotlin" />
+                            <MenuItem Command="{Binding CutCommand}" Header="Scala" />
+                            <Separator />
+                            <MenuItem
+                                Command="{Binding CutCommand}"
+                                Header="Python"
+                                Icon="{ui:SymbolIcon Code24}" />
+                            <MenuItem Command="{Binding CutCommand}" Header="Ruby" />
+                            <Separator />
+                            <MenuItem
+                                Command="{Binding CutCommand}"
+                                Header="JavaScript"
+                                Icon="{ui:SymbolIcon Code24}" />
+                            <MenuItem Command="{Binding CutCommand}" Header="TypeScript" />
+                            <Separator />
+                            <MenuItem Command="{Binding CutCommand}" Header="HTML / XML" />
+                            <MenuItem Command="{Binding CutCommand}" Header="CSS / SCSS / Less" />
+                            <Separator />
+                            <MenuItem Command="{Binding CutCommand}" Header="SQL / T-SQL" />
+                            <MenuItem Command="{Binding CutCommand}" Header="PowerShell" />
+                            <MenuItem Command="{Binding CutCommand}" Header="Bash / Shell" />
+                            <Separator />
+                            <MenuItem Command="{Binding CutCommand}" Header="Dart" />
+                            <MenuItem Command="{Binding CutCommand}" Header="Swift" />
+                            <MenuItem Command="{Binding CutCommand}" Header="C / C++" />
+                        </ContextMenu>
+                    </ui:DropDownButton.Flyout>
+                </ui:DropDownButton>
+            </StackPanel>
+        </controls:ControlExample>
+
+        <!--  ============================================================  -->
+        <!--  4. Very tall right-click context menu  -->
+        <!--  ============================================================  -->
+        <controls:ControlExample
+            Margin="0,24,0,0"
+            HeaderText="A control with a very long right-click context menu."
+            XamlCodeSource="/CodeSamples/BasicInput/ContextMenuScrolling_xaml.txt">
+            <Border
+                MinWidth="320"
+                Padding="24"
+                Background="{ui:DynamicBrush CardBackgroundFillDefault}"
+                BorderBrush="{ui:DynamicBrush CardStrokeDefault}"
+                BorderThickness="1"
+                CornerRadius="8"
+                Cursor="Hand"
+                Focusable="True"
+                PreviewMouseDown="OnContextMenuCardPreviewMouseDown"
+                ToolTip="Right-click or press Shift+F10 to open a very long scrolling context menu">
+                <Border.ContextMenu>
+                    <ContextMenu>
+                        <MenuItem
+                            Command="{Binding NewCommand}"
+                            Header="New File"
+                            Icon="{ui:SymbolIcon Add24}"
+                            InputGestureText="Ctrl+N" />
+                        <MenuItem
+                            Command="{Binding OpenCommand}"
+                            Header="Open File..."
+                            Icon="{ui:SymbolIcon Open24}"
+                            InputGestureText="Ctrl+O" />
+                        <MenuItem
+                            Command="{Binding OpenCommand}"
+                            Header="Open Folder..."
+                            Icon="{ui:SymbolIcon FolderOpen24}"
+                            InputGestureText="Ctrl+K, Ctrl+O" />
+                        <Separator />
+                        <MenuItem
+                            Command="{Binding SaveCommand}"
+                            Header="Save"
+                            Icon="{ui:SymbolIcon Save24}"
+                            InputGestureText="Ctrl+S" />
+                        <MenuItem
+                            Command="{Binding SaveAsCommand}"
+                            Header="Save As..."
+                            Icon="{ui:SymbolIcon SaveCopy24}"
+                            InputGestureText="Ctrl+Shift+S" />
+                        <MenuItem
+                            Command="{Binding SaveAsCommand}"
+                            Header="Save All"
+                            Icon="{ui:SymbolIcon SaveMultiple24}"
+                            InputGestureText="Ctrl+K, S" />
+                        <Separator />
+                        <MenuItem
+                            Command="{Binding UndoCommand}"
+                            Header="Undo"
+                            Icon="{ui:SymbolIcon ArrowUndo24}"
+                            InputGestureText="Ctrl+Z" />
+                        <MenuItem
+                            Command="{Binding RedoCommand}"
+                            Header="Redo"
+                            Icon="{ui:SymbolIcon ArrowRedo24}"
+                            InputGestureText="Ctrl+Y" />
+                        <Separator />
+                        <MenuItem
+                            Command="{Binding CutCommand}"
+                            Header="Cut"
+                            Icon="{ui:SymbolIcon Cut24}"
+                            InputGestureText="Ctrl+X" />
+                        <MenuItem
+                            Command="{Binding CopyCommand}"
+                            Header="Copy"
+                            Icon="{ui:SymbolIcon Copy24}"
+                            InputGestureText="Ctrl+C" />
+                        <MenuItem
+                            Command="{Binding PasteCommand}"
+                            Header="Paste"
+                            Icon="{ui:SymbolIcon ClipboardPaste24}"
+                            InputGestureText="Ctrl+V" />
+                        <MenuItem
+                            Command="{Binding DeleteCommand}"
+                            Header="Delete"
+                            Icon="{ui:SymbolIcon Delete24}"
+                            InputGestureText="Del" />
+                        <Separator />
+                        <MenuItem
+                            Command="{Binding SelectAllCommand}"
+                            Header="Select All"
+                            Icon="{ui:SymbolIcon SelectAllOn24}"
+                            InputGestureText="Ctrl+A" />
+                        <Separator />
+                        <MenuItem
+                            Command="{Binding CutCommand}"
+                            Header="Find..."
+                            Icon="{ui:SymbolIcon Search24}"
+                            InputGestureText="Ctrl+F" />
+                        <MenuItem
+                            Command="{Binding CutCommand}"
+                            Header="Find in Files..."
+                            Icon="{ui:SymbolIcon SearchSettings20}"
+                            InputGestureText="Ctrl+Shift+F" />
+                        <MenuItem
+                            Command="{Binding CutCommand}"
+                            Header="Replace..."
+                            Icon="{ui:SymbolIcon ArrowSwap24}"
+                            InputGestureText="Ctrl+H" />
+                        <Separator />
+                        <MenuItem
+                            Command="{Binding CutCommand}"
+                            Header="Go to Line..."
+                            Icon="{ui:SymbolIcon NumberSymbol24}"
+                            InputGestureText="Ctrl+G" />
+                        <MenuItem
+                            Command="{Binding CutCommand}"
+                            Header="Go to Symbol..."
+                            Icon="{ui:SymbolIcon Symbols24}"
+                            InputGestureText="Ctrl+T" />
+                        <Separator />
+                        <MenuItem
+                            Command="{Binding CutCommand}"
+                            Header="Toggle Breakpoint"
+                            Icon="{ui:SymbolIcon Circle24}"
+                            InputGestureText="F9" />
+                        <MenuItem
+                            Command="{Binding CutCommand}"
+                            Header="Start Debugging"
+                            Icon="{ui:SymbolIcon Play24}"
+                            InputGestureText="F5" />
+                        <Separator />
+                        <MenuItem
+                            Command="{Binding RefreshCommand}"
+                            Header="Refresh"
+                            Icon="{ui:SymbolIcon ArrowClockwise24}" />
+                        <MenuItem
+                            Command="{Binding SettingsCommand}"
+                            Header="Settings"
+                            Icon="{ui:SymbolIcon Settings24}" />
+                        <Separator />
+                        <MenuItem
+                            Command="{Binding ExitCommand}"
+                            Header="Exit"
+                            Icon="{ui:SymbolIcon DoorArrowRight20}" />
+                    </ContextMenu>
+                </Border.ContextMenu>
+
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <ui:SymbolIcon
+                            VerticalAlignment="Center"
+                            Filled="True"
+                            FontSize="20"
+                            Foreground="{ui:DynamicBrush PaletteLightBlue}"
+                            Symbol="List24" />
+                        <TextBlock
+                            Margin="8,0,0,0"
+                            VerticalAlignment="Center"
+                            FontSize="14"
+                            FontWeight="SemiBold"
+                            Text="Scrolling Context Menu" />
+                    </StackPanel>
+                    <TextBlock
+                        Margin="0,8,0,0"
+                        FontSize="13"
+                        Foreground="{ui:DynamicBrush TextFillSecondary}"
+                        Text="Right-click here to show a very long scrolling context menu with many items."
+                        TextWrapping="Wrap" />
+                </StackPanel>
+            </Border>
+        </controls:ControlExample>
+    </StackPanel>
+</Page>

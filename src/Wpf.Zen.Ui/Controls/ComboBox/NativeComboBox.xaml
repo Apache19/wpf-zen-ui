@@ -1,0 +1,258 @@
+<!--
+    This Source Code Form is subject to the terms of the MIT License.
+    If a copy of the MIT was not distributed with this file, You can obtain one at https://opensource.org/licenses/MIT.
+    Copyright (C) Leszek Pomianowski and WPF UI Contributors.
+    All Rights Reserved.
+    
+    Based on Microsoft XAML for Win UI
+    Copyright (c) Microsoft Corporation. All Rights Reserved.
+-->
+
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:ani="clr-namespace:Wpf.Zen.Ui.Animations"
+    xmlns:controls="clr-namespace:Wpf.Zen.Ui.Controls"
+    xmlns:converters="clr-namespace:Wpf.Zen.Ui.Converters"
+    xmlns:m="clr-namespace:Wpf.Zen.Ui.Markup"
+    xmlns:t="clr-namespace:Wpf.Zen.Ui.Theming">
+
+    <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="pack://application:,,,/Wpf.Zen.Ui;component/Resources/DefaultEditorContextMenu.xaml" />
+        <ResourceDictionary Source="pack://application:,,,/Wpf.Zen.Ui;component/Controls/ComboBox/ComboBoxBaseStyle.xaml" />
+    </ResourceDictionary.MergedDictionaries>
+
+    <converters:ThicknessTransformConverter x:Key="ContentPaddingConverter" BaseThickness="2,0" />
+
+    <ControlTemplate x:Key="DefaultComboBoxTemplate" TargetType="{x:Type ComboBox}">
+        <Grid>
+            <Border
+                x:Name="ContentBorder"
+                Background="{TemplateBinding Background}"
+                BorderBrush="{TemplateBinding BorderBrush}"
+                BorderThickness="{TemplateBinding BorderThickness}"
+                CornerRadius="{TemplateBinding Border.CornerRadius}"
+                SnapsToDevicePixels="True">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <!--  Placeholder (watermark) control. Uses Margin to match the TextEditor's default 2,0,2,0 padding.  -->
+                    <controls:PlaceholderControl
+                        x:Name="PART_Placeholder"
+                        Margin="2,0"
+                        Padding="{TemplateBinding Padding}"
+                        HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                        VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                        Foreground="{m:DynamicBrush TextPlaceholder}" />
+
+                    <!--  A converter is used to simulate the TextEditor's 2,0,2,0 margin, since Padding may not be honored.  -->
+                    <ContentPresenter
+                        Name="PART_ContentPresenter"
+                        Grid.Column="0"
+                        Margin="{TemplateBinding Padding, Converter={StaticResource ContentPaddingConverter}}"
+                        HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                        VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                        Content="{TemplateBinding SelectionBoxItem}"
+                        ContentStringFormat="{TemplateBinding SelectionBoxItemStringFormat}"
+                        ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                        ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}"
+                        SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
+
+                    <!--  Drop-down chevron icon. Flips with a rotation animation when toggled.  -->
+                    <controls:SymbolIcon
+                        x:Name="ChevronIcon"
+                        Grid.Column="1"
+                        Margin="8,0,10,0"
+                        VerticalAlignment="Center"
+                        FontSize="11"
+                        Foreground="{m:DynamicBrush TextFillSecondary}"
+                        RenderTransformOrigin="0.5, 0.5"
+                        Symbol="ChevronDown24">
+                        <controls:SymbolIcon.RenderTransform>
+                            <RotateTransform Angle="0" />
+                        </controls:SymbolIcon.RenderTransform>
+                    </controls:SymbolIcon>
+
+                    <!--  Editable text box input area, visible only when the ComboBox is in editable mode.  -->
+                    <controls:TextBox
+                        x:Name="PART_EditableTextBox"
+                        Grid.Column="0"
+                        Padding="{TemplateBinding Padding}"
+                        HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                        VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+                        CaretBrush="{Binding Foreground, RelativeSource={RelativeSource Self}}"
+                        ContextMenu="{StaticResource DefaultEditorContextMenu}"
+                        IsReadOnly="{TemplateBinding IsReadOnly}"
+                        OverridesDefaultStyle="True"
+                        VerticalScrollBarVisibility="{TemplateBinding ScrollViewer.VerticalScrollBarVisibility}">
+                        <controls:TextBox.Template>
+                            <ControlTemplate TargetType="{x:Type TextBox}">
+                                <controls:PassiveScrollViewer
+                                    x:Name="PART_ContentHost"
+                                    Focusable="false"
+                                    HorizontalScrollBarVisibility="Hidden"
+                                    ScrollSpillMode="Disabled"
+                                    VerticalScrollBarVisibility="Hidden" />
+                            </ControlTemplate>
+                        </controls:TextBox.Template>
+                    </controls:TextBox>
+
+                    <!--
+                        Fully transparent ToggleButton overlay that sits on top to receive input.
+                        When editable it collapses into the icon column; when non-editable it spans both
+                        columns and fills the entire control.
+                        OverridesDefaultStyle strips all visual appearance — the control template
+                        contains only a single transparent Border.
+                    -->
+                    <ToggleButton
+                        Name="ToggleButton"
+                        Grid.Column="0"
+                        Grid.ColumnSpan="2"
+                        ClickMode="Press"
+                        Focusable="False"
+                        IsChecked="{Binding Path=IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
+                        IsTabStop="False"
+                        OverridesDefaultStyle="True">
+                        <ToggleButton.Template>
+                            <ControlTemplate TargetType="{x:Type ToggleButton}">
+                                <Border Background="Transparent" SnapsToDevicePixels="True" />
+                            </ControlTemplate>
+                        </ToggleButton.Template>
+                    </ToggleButton>
+                </Grid>
+            </Border>
+            <Border
+                x:Name="AccentBorder"
+                BorderBrush="{m:DynamicBrush AccentStroke}"
+                BorderThickness="0,0,0,2"
+                CornerRadius="{TemplateBinding Border.CornerRadius}"
+                IsHitTestVisible="False"
+                Visibility="Collapsed" />
+
+            <!--  Drop-down popup. Shadow is rendered via PopupShadow; animation is handled by PopupAnimator.  -->
+            <Popup
+                x:Name="Popup"
+                controls:PopupAnimator.IsEnabled="True"
+                controls:PopupPlacement.IsEnabled="True"
+                controls:PopupShadow.IsEnabled="True"
+                AllowsTransparency="True"
+                Focusable="False"
+                IsOpen="{TemplateBinding IsDropDownOpen}"
+                Placement="{TemplateBinding Popup.Placement}"
+                PlacementTarget="{Binding ElementName=ContentBorder}"
+                PopupAnimation="{TemplateBinding Popup.PopupAnimation}"
+                VerticalOffset="1">
+                <Border
+                    x:Name="DropDownBorder"
+                    MinWidth="{TemplateBinding ActualWidth}"
+                    MaxHeight="{TemplateBinding MaxDropDownHeight}"
+                    Margin="0"
+                    Padding="0,4,0,6"
+                    Background="{m:DynamicBrush AcrylicBackgroundFillDefault}"
+                    BorderBrush="{m:DynamicBrush SurfaceStrokeDefault}"
+                    BorderThickness="1"
+                    CornerRadius="{m:DynamicValue PopupCornerRadius}"
+                    SnapsToDevicePixels="True">
+                    <controls:PassiveScrollViewer
+                        Margin="0"
+                        HorizontalScrollBarVisibility="{TemplateBinding ScrollViewer.HorizontalScrollBarVisibility}"
+                        SnapsToDevicePixels="True"
+                        VerticalScrollBarVisibility="{TemplateBinding ScrollViewer.VerticalScrollBarVisibility}">
+                        <ItemsPresenter
+                            x:Name="ItemsPresenter"
+                            KeyboardNavigation.DirectionalNavigation="Contained"
+                            SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
+                    </controls:PassiveScrollViewer>
+                </Border>
+            </Popup>
+        </Grid>
+        <ControlTemplate.Triggers>
+            <Trigger SourceName="Popup" Property="controls:PopupPlacement.ActualPlacement" Value="Bottom">
+                <Setter TargetName="Popup" Property="VerticalOffset" Value="1" />
+            </Trigger>
+            <Trigger SourceName="Popup" Property="controls:PopupPlacement.ActualPlacement" Value="Top">
+                <Setter TargetName="Popup" Property="VerticalOffset" Value="-1" />
+            </Trigger>
+
+            <Trigger Property="IsDropDownOpen" Value="True">
+                <Trigger.EnterActions>
+                    <BeginStoryboard>
+                        <Storyboard>
+                            <ani:InterruptibleDoubleAnimation
+                                Storyboard.TargetName="ChevronIcon"
+                                Storyboard.TargetProperty="(controls:SymbolIcon.RenderTransform).(RotateTransform.Angle)"
+                                From="0"
+                                To="180"
+                                Duration="00:00:00.167" />
+                        </Storyboard>
+                    </BeginStoryboard>
+                </Trigger.EnterActions>
+                <Trigger.ExitActions>
+                    <BeginStoryboard>
+                        <Storyboard>
+                            <ani:InterruptibleDoubleAnimation
+                                Storyboard.TargetName="ChevronIcon"
+                                Storyboard.TargetProperty="(controls:SymbolIcon.RenderTransform).(RotateTransform.Angle)"
+                                From="180"
+                                To="0"
+                                Duration="00:00:00.167" />
+                        </Storyboard>
+                    </BeginStoryboard>
+                </Trigger.ExitActions>
+            </Trigger>
+
+            <Trigger Property="HasItems" Value="False">
+                <Setter TargetName="DropDownBorder" Property="MinHeight" Value="32.0" />
+            </Trigger>
+            <Trigger SourceName="Popup" Property="Popup.AllowsTransparency" Value="False">
+                <Setter TargetName="DropDownBorder" Property="CornerRadius" Value="0" />
+            </Trigger>
+            <Trigger Property="IsGrouping" Value="True">
+                <Setter Property="ScrollViewer.CanContentScroll" Value="False" />
+            </Trigger>
+            <Trigger Property="IsEditable" Value="True">
+                <Setter Property="IsTabStop" Value="False" />
+                <Setter TargetName="PART_EditableTextBox" Property="Visibility" Value="Visible" />
+                <Setter TargetName="PART_ContentPresenter" Property="Visibility" Value="Hidden" />
+                <Setter TargetName="ToggleButton" Property="Grid.Column" Value="1" />
+                <Setter TargetName="ToggleButton" Property="Grid.ColumnSpan" Value="1" />
+            </Trigger>
+
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter TargetName="ContentBorder" Property="Background" Value="{m:DynamicBrush ControlFillPrimary}" />
+            </Trigger>
+            <MultiTrigger>
+                <MultiTrigger.Conditions>
+                    <Condition Property="IsEditable" Value="False" />
+                    <Condition Property="IsDropDownOpen" Value="True" />
+                </MultiTrigger.Conditions>
+                <Setter TargetName="ContentBorder" Property="Background" Value="{m:DynamicBrush ControlFillTertiary}" />
+            </MultiTrigger>
+            <MultiTrigger>
+                <MultiTrigger.Conditions>
+                    <Condition Property="IsKeyboardFocusWithin" Value="True" />
+                    <Condition Property="IsEditable" Value="True" />
+                </MultiTrigger.Conditions>
+                <Setter TargetName="ContentBorder" Property="Background" Value="{m:DynamicBrush ControlFillInputActive}" />
+                <Setter TargetName="AccentBorder" Property="Visibility" Value="Visible" />
+            </MultiTrigger>
+            <Trigger Property="IsEnabled" Value="False">
+                <Setter TargetName="ContentBorder" Property="Background" Value="{m:DynamicBrush ControlFillDisabled}" />
+                <Setter TargetName="ContentBorder" Property="BorderBrush" Value="{m:DynamicBrush ControlStrokeDefault}" />
+                <Setter Property="Foreground" Value="{m:DynamicBrush TextFillDisabled}" />
+                <Setter TargetName="PART_Placeholder" Property="Opacity" Value="0.5" />
+            </Trigger>
+        </ControlTemplate.Triggers>
+    </ControlTemplate>
+
+    <Style x:Key="{x:Static t:StyleKeys.DefaultComboBoxStyle}" BasedOn="{StaticResource ComboBoxBaseStyle}" TargetType="{x:Type ComboBox}">
+        <Setter Property="OverridesDefaultStyle" Value="True" />
+        <Setter Property="Template" Value="{StaticResource DefaultComboBoxTemplate}" />
+    </Style>
+
+    <Style BasedOn="{StaticResource {x:Static t:StyleKeys.DefaultComboBoxStyle}}" TargetType="{x:Type ComboBox}" />
+
+</ResourceDictionary>

@@ -1,0 +1,40 @@
+<Solution>
+  <Configurations>
+    <Platform Name="Any CPU" />
+    <Platform Name="arm64" />
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Folder Name="/Samples/">
+    <Project Path="samples/Wpf.Zen.Ui.Demo.Mvvm/Wpf.Zen.Ui.Demo.Mvvm.csproj" />
+    <Project Path="samples/Wpf.Zen.Ui.Demo.Simple/Wpf.Zen.Ui.Demo.Simple.csproj" />
+    <Project Path="samples/Wpf.Zen.Ui.Demo.WinForms/Wpf.Zen.Ui.Demo.WinForms.csproj" Id="687d0807-0bca-41d0-b04d-8c13ada399fd" />
+  </Folder>
+  <Folder Name="/Solution Items/">
+    <File Path=".editorconfig" />
+    <File Path="Directory.Build.props" />
+    <File Path="Directory.Build.targets" />
+    <File Path="Directory.Packages.props" />
+    <File Path="docs/refactoring/wpf-mechanism-roadmap.zh-CN.md" />
+    <File Path="LICENSE" />
+    <File Path="LICENSE.md" />
+    <File Path="nuget.config" />
+    <File Path="README.md" />
+    <File Path="ThirdPartyNotices.txt" />
+  </Folder>
+  <Folder Name="/Tests/">
+    <Project Path="tests/Wpf.Zen.Ui.Gallery.IntegrationTests/Wpf.Zen.Ui.Gallery.IntegrationTests.csproj" />
+    <Project Path="tests/Wpf.Zen.Ui.UnitTests/Wpf.Zen.Ui.UnitTests.csproj" />
+    <Project Path="tests/Wpf.Zen.Ui.WinFormsHostTests/Wpf.Zen.Ui.WinFormsHostTests.csproj" />
+  </Folder>
+  <Project Path="src/Wpf.Zen.Ui.Abstractions/Wpf.Zen.Ui.Abstractions.csproj" />
+  <Project Path="src/Wpf.Zen.Ui.DependencyInjection/Wpf.Zen.Ui.DependencyInjection.csproj" />
+  <Project Path="src/Wpf.Zen.Ui.Gallery/Wpf.Zen.Ui.Gallery.csproj">
+    <Platform Solution="*|arm64" Project="arm64" />
+    <Platform Solution="*|x64" Project="x64" />
+    <Platform Solution="*|x86" Project="x86" />
+  </Project>
+  <Project Path="src/Wpf.Zen.Ui.SyntaxHighlight/Wpf.Zen.Ui.SyntaxHighlight.csproj" />
+  <Project Path="src/Wpf.Zen.Ui.Tray/Wpf.Zen.Ui.Tray.csproj" />
+  <Project Path="src/Wpf.Zen.Ui/Wpf.Zen.Ui.csproj" />
+</Solution>

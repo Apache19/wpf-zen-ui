@@ -1,0 +1,30 @@
+<Page
+    x:Class="Wpf.Zen.Ui.Gallery.Views.Pages.Navigation.MultilevelNavigationPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:local="clr-namespace:Wpf.Zen.Ui.Gallery.Views.Pages.Navigation"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:navigation="clr-namespace:Wpf.Zen.Ui.Gallery.ViewModels.Pages.Navigation"
+    xmlns:vm="clr-namespace:Wpf.Zen.Ui.Gallery.ViewModels.Pages.Navigation"
+    xmlns:samples1="clr-namespace:Wpf.Zen.Ui.Gallery.Views.Pages.Samples"
+    xmlns:ui="http://schemas.thezendev.com/wpf/2027"
+    Title="MultilevelNavigationPage"
+    Style="{ui:DynamicStyle DynamicScrollPage}"
+    d:DataContext="{d:DesignInstance vm:MultilevelNavigationSample,
+                                     IsDesignTimeCreatable=False}"
+    d:DesignWidth="800"
+    d:Background="{ui:DynamicBrush WindowBackground}"
+    Foreground="{ui:DynamicBrush TextFillPrimary}"
+    mc:Ignorable="d">
+
+    <Grid Margin="0,0,0,24">
+        <ui:Button
+            HorizontalAlignment="Center"
+            VerticalAlignment="Center"
+            Command="{Binding NavigateForwardCommand}"
+            CommandParameter="{x:Type samples1:MultilevelNavigationSamplePage1}"
+            Content="Navigate to the first page"
+            FontSize="24" />
+    </Grid>
+</Page>

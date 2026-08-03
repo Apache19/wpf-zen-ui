@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <SupportedOSPlatform>Windows7</SupportedOSPlatform>
+    <UseWPF>true</UseWPF>
+    <ApplicationIcon>applicationIcon.ico</ApplicationIcon>
+    <NoWarn>$(NoWarn);SA1601</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="applicationIcon.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Hosting" />
+    <PackageReference Include="CommunityToolkit.Mvvm" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="Assets\applicationIcon-1024.png" />
+    <None Remove="Assets\applicationIcon-256.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Wpf.Zen.Ui.DependencyInjection\Wpf.Zen.Ui.DependencyInjection.csproj" />
+    <ProjectReference Include="..\..\src\Wpf.Zen.Ui.Tray\Wpf.Zen.Ui.Tray.csproj" />
+    <ProjectReference Include="..\..\src\Wpf.Zen.Ui\Wpf.Zen.Ui.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Assets\applicationIcon-1024.png" />
+    <Resource Include="Assets\applicationIcon-256.png" />
+  </ItemGroup>
+
+</Project>

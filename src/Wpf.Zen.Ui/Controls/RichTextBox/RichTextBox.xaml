@@ -1,0 +1,38 @@
+<!--
+    This Source Code Form is subject to the terms of the MIT License.
+    If a copy of the MIT was not distributed with this file, You can obtain one at https://opensource.org/licenses/MIT.
+    Copyright (C) Leszek Pomianowski and WPF UI Contributors.
+    All Rights Reserved.
+-->
+
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="clr-namespace:Wpf.Zen.Ui.Controls">
+
+    <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="pack://application:,,,/Wpf.Zen.Ui;component/Controls/RichTextBox/RichTextBoxBaseStyle.xaml" />
+    </ResourceDictionary.MergedDictionaries>
+
+    <ControlTemplate x:Key="RichTextBoxTextBlockAppearanceTemplate" TargetType="{x:Type RichTextBox}">
+        <controls:PassiveScrollViewer
+            x:Name="PART_ContentHost"
+            Margin="-2,0"
+            Focusable="false"
+            HorizontalScrollBarVisibility="Hidden"
+            VerticalScrollBarVisibility="Hidden" />
+    </ControlTemplate>
+
+    <Style x:Key="UiRichTextBoxStyle" BasedOn="{StaticResource RichTextBoxBaseStyle}" TargetType="{x:Type controls:RichTextBox}">
+        <Style.Triggers>
+            <Trigger Property="UseTextBlockAppearance" Value="True">
+                <Setter Property="IsReadOnly" Value="True" />
+                <Setter Property="Padding" Value="0" />
+                <Setter Property="Template" Value="{StaticResource RichTextBoxTextBlockAppearanceTemplate}" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style BasedOn="{StaticResource UiRichTextBoxStyle}" TargetType="{x:Type controls:RichTextBox}" />
+
+</ResourceDictionary>

@@ -1,0 +1,14 @@
+<Application
+    x:Class="Wpf.Zen.Ui.Demo.Simple.App"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:ui="http://schemas.thezendev.com/wpf/2027"
+    StartupUri="MainWindow.xaml">
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ui:ThemeManagerOptions AccentSource="System" EnableNativeControlStyling="True" ThemeMode="Light" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

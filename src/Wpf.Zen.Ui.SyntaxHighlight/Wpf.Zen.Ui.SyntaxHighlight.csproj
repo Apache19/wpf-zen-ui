@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <PackageId>Wpf.Zen.Ui.SyntaxHighlight</PackageId>
+    <TargetFrameworks>net8.0-windows;net462</TargetFrameworks>
+    <Description>Syntax highlighting support for WPF using the WPF Zen UI library.</Description>
+    <CommonTags>$(CommonTags);syntax;highlight</CommonTags>
+    <UseWPF>true</UseWPF>
+    <!-- 目前尚不稳定，仅限于 Gallery 项目使用，所以暂不生成包  -->
+    <!--<GeneratePackageOnBuild>true</GeneratePackageOnBuild>-->
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="Controls\CodeBlock.bmp" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Controls\CodeBlock.bmp" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Wpf.Zen.Ui\Wpf.Zen.Ui.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="WpfAnalyzers">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+</Project>

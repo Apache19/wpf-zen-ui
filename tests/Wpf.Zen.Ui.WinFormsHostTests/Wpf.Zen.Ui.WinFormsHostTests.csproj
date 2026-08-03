@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!--
+      net481 consumes Wpf.Zen.Ui's net462 asset and validates the long-standing .NET Framework SystemResources layout;
+      net10 validates the current open-source WPF implementation. Each target runs in its own process because WPF's
+      Application and system-theme caches are AppDomain-wide singletons.
+    -->
+    <TargetFrameworks>net10.0-windows;net481</TargetFrameworks>
+    <OutputType>Exe</OutputType>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="xunit.runner.visualstudio">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Wpf.Zen.Ui\Wpf.Zen.Ui.csproj" />
+  </ItemGroup>
+
+</Project>

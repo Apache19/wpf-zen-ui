@@ -1,0 +1,68 @@
+<!--
+    This Source Code Form is subject to the terms of the MIT License.
+    If a copy of the MIT was not distributed with this file, You can obtain one at https://opensource.org/licenses/MIT.
+    Copyright (C) Leszek Pomianowski and WPF UI Contributors.
+    All Rights Reserved.
+-->
+
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="clr-namespace:Wpf.Zen.Ui.Controls"
+    xmlns:m="clr-namespace:Wpf.Zen.Ui.Markup">
+
+    <!--
+        All operating-system strategies share this visual tree. FluentWindow coerces BorderThickness to a Win10
+        top line, a four-sided pre-Win11 client fallback, or zero when DWM owns the visible outline. Win11's fully
+        client-rendered mode retains a one-physical-pixel DWM extension even without a Backdrop, so it does not need
+        a second WPF border. Keeping the decision in the window prevents templates from branching on OS versions.
+    -->
+    <ControlTemplate x:Key="FluentWindowTemplate" TargetType="{x:Type controls:FluentWindow}">
+        <Border
+            x:Name="WindowBorder"
+            Background="{TemplateBinding Background}"
+            BorderBrush="{TemplateBinding BorderBrush}"
+            BorderThickness="{TemplateBinding BorderThickness}">
+            <Grid>
+                <AdornerDecorator>
+                    <ContentPresenter />
+                </AdornerDecorator>
+                <ResizeGrip
+                    x:Name="WindowResizeGrip"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Bottom"
+                    IsTabStop="False"
+                    Visibility="Collapsed" />
+            </Grid>
+        </Border>
+        <ControlTemplate.Triggers>
+            <MultiTrigger>
+                <MultiTrigger.Conditions>
+                    <Condition Property="ResizeMode" Value="CanResizeWithGrip" />
+                    <Condition Property="ActualWindowState" Value="Normal" />
+                </MultiTrigger.Conditions>
+                <Setter TargetName="WindowResizeGrip" Property="Visibility" Value="Visible" />
+            </MultiTrigger>
+            <Trigger Property="IsNcActive" Value="False">
+                <Setter TargetName="WindowBorder" Property="BorderBrush" Value="{m:DynamicBrush WindowBorderInactive}" />
+            </Trigger>
+            <MultiTrigger>
+                <MultiTrigger.Conditions>
+                    <Condition Property="IsAccentOnTitleBarAndBorder" Value="True" />
+                    <Condition Property="IsNcActive" Value="True" />
+                </MultiTrigger.Conditions>
+                <Setter TargetName="WindowBorder" Property="BorderBrush" Value="{m:DynamicBrush AccentStroke}" />
+            </MultiTrigger>
+        </ControlTemplate.Triggers>
+    </ControlTemplate>
+
+    <Style x:Key="DefaultFluentWindowStyle" TargetType="{x:Type controls:FluentWindow}">
+        <Setter Property="Background" Value="{m:DynamicBrush WindowBackground}" />
+        <Setter Property="Foreground" Value="{m:DynamicBrush WindowForeground}" />
+        <Setter Property="BorderBrush" Value="{m:DynamicBrush WindowBorder}" />
+        <Setter Property="Template" Value="{StaticResource FluentWindowTemplate}" />
+    </Style>
+
+    <Style BasedOn="{StaticResource DefaultFluentWindowStyle}" TargetType="{x:Type controls:FluentWindow}" />
+
+</ResourceDictionary>

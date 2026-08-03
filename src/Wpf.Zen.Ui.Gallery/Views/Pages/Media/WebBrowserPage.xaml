@@ -1,0 +1,37 @@
+<Page
+    x:Class="Wpf.Zen.Ui.Gallery.Views.Pages.Media.WebBrowserPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="clr-namespace:Wpf.Zen.Ui.Gallery.Controls"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:local="clr-namespace:Wpf.Zen.Ui.Gallery.Views.Pages.Media"
+    xmlns:vm="clr-namespace:Wpf.Zen.Ui.Gallery.ViewModels.Pages.Media"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:system="clr-namespace:System;assembly=System.Runtime"
+    xmlns:ui="http://schemas.thezendev.com/wpf/2027"
+    Title="WebBrowserPage"
+    Style="{ui:DynamicStyle DynamicScrollPage}"
+    d:DataContext="{d:DesignInstance vm:WebBrowserViewModel,
+                                     IsDesignTimeCreatable=False}"
+    d:DesignWidth="800"
+    d:Background="{ui:DynamicBrush WindowBackground}"
+    Foreground="{ui:DynamicBrush TextFillPrimary}"
+    mc:Ignorable="d">
+
+    <StackPanel Margin="0,0,0,24">
+        <controls:ControlExample
+            Margin="0"
+            HeaderText="Default WebBrowser."
+            XamlCode="&lt;WebBrowser Source=&quot;https&quot; /&gt;">
+            <WebBrowser MinHeight="300" Source="https://wpfui.thezendev.com" />
+        </controls:ControlExample>
+
+        <ui:TextBlock
+            Grid.Row="1"
+            Margin="0,8,0,0"
+            Foreground="{ui:DynamicBrush TextFillSecondary}"
+            Text="The WebBrowser control internally instantiates the native WebBrowser ActiveX control. WPF enables security features by applying feature controls to the WebBrowser ActiveX control. The feature controls that are applied differ for XBAPs and stand-alone applications. Some applications should apply additional feature controls to prevent malicious content from running. For more information, see the 'WebBrowser Control and Feature Controls' section in Security (WPF) and WebBrowser Control Overviews and Tutorials."
+            TextAlignment="Justify"
+            TextWrapping="WrapWithOverflow" />
+    </StackPanel>
+</Page>

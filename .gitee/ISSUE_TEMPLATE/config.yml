@@ -1,14 +1,14 @@
 blank_issues_enabled: true
 # contact_links:
 #   - name: 文档
-#     url: https://wpfui.lepo.co/documentation/
-#     about: 了解 WPF UI 的工作原理
+#     url: https://wpfui.thezendev.com/documentation/
+#     about: 了解 WPF Zen UI 的工作原理
 #   - name: 教程
-#     url: https://wpfui.lepo.co/documentation/tutorial
+#     url: https://wpfui.thezendev.com/documentation/tutorial
 #     about: 遇到基础问题？请先查阅教程
 #   - name: Gitee 帮助中心
 #     url: https://help.gitee.com/
 #     about: 提供 Git 使用指南、教程、Gitee.com 平台基本功能使用、介绍和常见问题解答
 #   - name: 商务合作
-#     url: https://lepo.co/contact
+#     url: https://thezendev.com/contact
 #     about: 希望建立商务合作？请联系我们

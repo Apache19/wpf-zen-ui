@@ -1,0 +1,64 @@
+<Page
+    x:Class="Wpf.Zen.Ui.Gallery.Views.Pages.BasicInput.HyperlinkButtonPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="clr-namespace:Wpf.Zen.Ui.Gallery.Controls"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:ui="http://schemas.thezendev.com/wpf/2027"
+    xmlns:vm="clr-namespace:Wpf.Zen.Ui.Gallery.ViewModels.Pages.BasicInput"
+    Title="HyperlinkButtonPage"
+    controls:PageControlDocumentation.DocumentationType="{x:Type ui:HyperlinkButton}"
+    d:Background="{ui:DynamicBrush WindowBackground}"
+    d:DataContext="{d:DesignInstance vm:HyperlinkButtonViewModel, IsDesignTimeCreatable=False}"
+    d:DesignWidth="800"
+    Foreground="{ui:DynamicBrush TextFillPrimary}"
+    Style="{ui:DynamicStyle DynamicScrollPage}"
+    mc:Ignorable="d">
+
+    <StackPanel Margin="0,0,0,24">
+        <controls:ControlExample
+            Margin="0"
+            HeaderText="WPF Zen UI hyperlink."
+            XamlCode="&lt;ui:HyperlinkButton NavigateUri=&quot;https://&quot; /&gt;">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <ui:HyperlinkButton
+                    Grid.Column="0"
+                    Content="WPF Zen UI hyperlink"
+                    Icon="{ui:SymbolIcon Link24}"
+                    IsEnabled="{Binding IsHyperlinkDisabled, Converter={StaticResource BoolInvertConverter}}"
+                    NavigateUri="https://thezendev.com/" />
+                <CheckBox
+                    Grid.Column="1"
+                    Content="Disable hyperlink"
+                    IsChecked="{Binding IsHyperlinkDisabled, Mode=TwoWay}" />
+            </Grid>
+        </controls:ControlExample>
+
+        <controls:ControlExample
+            Margin="0,32,0,0"
+            HeaderText="WPF Zen UI hyperlink with FontIcon."
+            XamlCode="&lt;ui:HyperlinkButton NavigateUri=&quot;https://&quot; /&gt;">
+            <ui:HyperlinkButton
+                Content="WPF Zen UI hyperlink"
+                Icon="{ui:FontIcon '&#x1F308;'}"
+                IsEnabled="{Binding IsHyperlinkDisabled, Converter={StaticResource BoolInvertConverter}}"
+                NavigateUri="https://thezendev.com/" />
+        </controls:ControlExample>
+
+        <controls:ControlExample
+            Margin="0,32,0,0"
+            HeaderText="WPF Zen UI hyperlink with ImageIcon."
+            XamlCode="&lt;ui:HyperlinkButton NavigateUri=&quot;https://&quot; /&gt;">
+            <ui:HyperlinkButton
+                Content="WPF Zen UI hyperlink"
+                Icon="{ui:ImageIcon 'pack://application:,,,/Assets/wpfui.png'}"
+                IsEnabled="{Binding IsHyperlinkDisabled, Converter={StaticResource BoolInvertConverter}}"
+                NavigateUri="https://thezendev.com/" />
+        </controls:ControlExample>
+    </StackPanel>
+</Page>

@@ -6,7 +6,7 @@
 
 - 操作系统版本：
 - .NET 版本：
-- WPF-UI NuGet 版本：
+- Wpf.Zen.Ui NuGet 版本：
 
 ## 补充说明
 
