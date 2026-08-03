@@ -61,6 +61,30 @@ public static class StyleKeys
     /// </remarks>
     public static ComponentResourceKey GridViewColumnHeaderStyle       { get; } = Create(nameof(GridViewColumnHeaderStyle));
 
+    /// <summary>
+    /// Gets the reusable, self-contained style key for the inner <see cref="Controls.PassiveScrollViewer"/>
+    /// inside a WPF UI GridView template. The style bundles <c>GridViewScrollViewerTemplate</c>, intrinsic
+    /// constants (<c>Focusable</c>, <c>HorizontalScrollBarVisibilityThreshold</c>, selection-indicator
+    /// gutter), and templated-parent routing (<c>Padding</c>, scroll-bar visibility, <c>CanContentScroll</c>,
+    /// <c>ScrollSpillMode</c>, column definitions) so that a custom <c>GridViewTemplate</c> only needs to
+    /// set this one <c>Style</c> without any local property duplication.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Reference with <c>{m:StaticStyle GridViewScrollViewer}</c>. Apply on a
+    /// <see cref="Controls.PassiveScrollViewer"/> placed inside a <c>GridViewTemplate</c>. The style is
+    /// self-contained: no additional attributes are required on the control instance.
+    /// </para>
+    /// <para>
+    /// <b>This style is scoped exclusively to the GridView template's inner scroll viewer.</b>
+    /// Its <c>TemplatedParent</c> bindings resolve against the hosting <see cref="System.Windows.Controls.ListView"/>;
+    /// using it on a stand-alone <see cref="Controls.PassiveScrollViewer"/> or inside any other template
+    /// will produce silent binding failures and is not supported. Prefer <c>DefaultScrollBarStyle</c> or a
+    /// local style for general-purpose scroll-viewer customization.
+    /// </para>
+    /// </remarks>
+    public static ComponentResourceKey GridViewScrollViewerStyle       { get; } = Create(nameof(GridViewScrollViewerStyle));
+
     private static ComponentResourceKey Create(object resourceId)
     {
         return new ComponentResourceKey(typeof(ThemeResourceAnchor), resourceId);

@@ -139,6 +139,29 @@
         </Grid>
     </ControlTemplate>
 
+    <!--
+        GridView-scoped style for the inner PassiveScrollViewer. It is self-contained: the template,
+        intrinsic constants, and templated-parent routing are all declared here so a custom
+        GridViewTemplate only needs a one-liner <controls:PassiveScrollViewer Style="{m:StaticStyle GridViewScrollViewer}">.
+
+        This style is MEANT ONLY for a PassiveScrollViewer placed inside a ListView ControlTemplate
+        whose active View is a WPF UI GridView. The TemplatedParent bindings resolve against the
+        hosting ListView. Using this style anywhere else will produce silent binding errors and
+        is unsupported — pick the generic DefaultScrollBarStyle or a local style instead.
+    -->
+    <Style x:Key="{x:Static t:StyleKeys.GridViewScrollViewerStyle}" TargetType="{x:Type controls:PassiveScrollViewer}">
+        <Setter Property="Focusable" Value="False" />
+        <Setter Property="HorizontalScrollBarVisibilityThreshold" Value="1" />
+        <Setter Property="controls:GridViewColumnSizing.LeadingContentWidth" Value="12" />
+        <Setter Property="Padding" Value="{Binding Padding, RelativeSource={RelativeSource TemplatedParent}}" />
+        <Setter Property="controls:GridViewColumnSizing.Columns" Value="{Binding View.Columns, RelativeSource={RelativeSource TemplatedParent}}" />
+        <Setter Property="CanContentScroll" Value="{Binding (ScrollViewer.CanContentScroll), RelativeSource={RelativeSource TemplatedParent}}" />
+        <Setter Property="HorizontalScrollBarVisibility" Value="{Binding (ScrollViewer.HorizontalScrollBarVisibility), RelativeSource={RelativeSource TemplatedParent}}" />
+        <Setter Property="VerticalScrollBarVisibility" Value="{Binding (ScrollViewer.VerticalScrollBarVisibility), RelativeSource={RelativeSource TemplatedParent}}" />
+        <Setter Property="ScrollSpillMode" Value="{Binding (controls:PassiveScrollViewer.ScrollSpillMode), RelativeSource={RelativeSource TemplatedParent}}" />
+        <Setter Property="Template" Value="{StaticResource GridViewScrollViewerTemplate}" />
+    </Style>
+
     <ControlTemplate x:Key="GridViewTemplate" TargetType="{x:Type ListView}">
         <Border
             x:Name="RootBorder"
@@ -146,17 +169,7 @@
             BorderBrush="{TemplateBinding BorderBrush}"
             BorderThickness="{TemplateBinding BorderThickness}"
             SnapsToDevicePixels="True">
-            <controls:PassiveScrollViewer
-                Padding="{TemplateBinding Padding}"
-                controls:GridViewColumnSizing.Columns="{Binding View.Columns, RelativeSource={RelativeSource TemplatedParent}}"
-                controls:GridViewColumnSizing.LeadingContentWidth="12"
-                CanContentScroll="{TemplateBinding ScrollViewer.CanContentScroll}"
-                Focusable="False"
-                HorizontalScrollBarVisibility="{TemplateBinding ScrollViewer.HorizontalScrollBarVisibility}"
-                HorizontalScrollBarVisibilityThreshold="1"
-                ScrollSpillMode="{TemplateBinding controls:PassiveScrollViewer.ScrollSpillMode}"
-                Template="{StaticResource GridViewScrollViewerTemplate}"
-                VerticalScrollBarVisibility="{TemplateBinding ScrollViewer.VerticalScrollBarVisibility}">
+            <controls:PassiveScrollViewer Style="{m:StaticStyle GridViewScrollViewer}">
                 <ItemsPresenter SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
             </controls:PassiveScrollViewer>
         </Border>

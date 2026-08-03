@@ -80,6 +80,7 @@ internal static class StyleTokenResourceKey
             StyleToken.GridViewListView           => StyleKeys.GridViewListViewStyle,
             StyleToken.GridViewItemContainer      => StyleKeys.GridViewItemContainerStyle,
             StyleToken.GridViewColumnHeader       => StyleKeys.GridViewColumnHeaderStyle,
+            StyleToken.GridViewScrollViewer       => StyleKeys.GridViewScrollViewerStyle,
 
             _ => throw new ArgumentOutOfRangeException(nameof(token), token, "The style token is not registered."),
         };
