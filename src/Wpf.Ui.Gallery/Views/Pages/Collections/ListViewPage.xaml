@@ -29,13 +29,13 @@
             </controls:ControlExample.XamlCode>
             <ui:ListView
                 MaxHeight="200"
-                d:ItemsSource="{d:SampleData ItemCount=2}"
+                d:ItemsSource="{d:SampleData ItemCount=5}"
                 ItemsSource="{Binding BasicListViewItems, Mode=TwoWay}"
                 SelectedIndex="2"
                 SelectionMode="Single">
                 <ui:ListView.ItemTemplate>
                     <DataTemplate DataType="{x:Type models:Person}">
-                        <ui:TextBlock Margin="8,4" Text="{Binding Name, Mode=OneWay}" />
+                        <ui:TextBlock Margin="6,4" Text="{Binding Name, Mode=OneWay}" />
                     </DataTemplate>
                 </ui:ListView.ItemTemplate>
             </ui:ListView>
@@ -59,13 +59,13 @@
                 <ui:ListView
                     Grid.Column="0"
                     MaxHeight="200"
-                    d:ItemsSource="{d:SampleData ItemCount=2}"
+                    d:ItemsSource="{d:SampleData ItemCount=5}"
                     ItemsSource="{Binding BasicListViewItems, Mode=TwoWay}"
                     SelectedIndex="1"
                     SelectionMode="{Binding ListViewSelectionMode, Mode=OneWay}">
                     <ui:ListView.ItemTemplate>
                         <DataTemplate DataType="{x:Type models:Person}">
-                            <Grid Margin="8,0">
+                            <Grid>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="*" />
                                     <RowDefinition Height="*" />
@@ -130,7 +130,8 @@
             </controls:ControlExample.XamlCode>
             <ui:ListView
                 MaxHeight="230"
-                d:ItemsSource="{d:SampleData ItemCount=2}"
+                d:SelectedIndex="2"
+                d:ItemsSource="{d:SampleData ItemCount=10}"
                 ui:PassiveScrollViewer.ScrollSpillMode="Disabled"
                 BorderThickness="1"
                 ItemsSource="{Binding BasicListViewItems, Mode=TwoWay}"

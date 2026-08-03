@@ -13,6 +13,8 @@
     xmlns:m="clr-namespace:Wpf.Ui.Markup"
     xmlns:t="clr-namespace:Wpf.Ui.Theming">
 
+    <converters:DoubleToDoubleConverter x:Key="ListViewItemSelectionIndicatorHeightConverter" Multiply="0.375" />
+
     <ControlTemplate x:Key="DefaultListViewItemTemplate" TargetType="{x:Type ListViewItem}">
         <Border
             x:Name="RowBorder"
@@ -20,29 +22,35 @@
             Background="{TemplateBinding Background}"
             BorderBrush="{TemplateBinding BorderBrush}"
             BorderThickness="{TemplateBinding BorderThickness}"
+            CornerRadius="{TemplateBinding Border.CornerRadius}"
             SnapsToDevicePixels="True">
             <Grid>
-                <ContentPresenter
-                    HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
-                    VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
-                    Content="{TemplateBinding Content}"
-                    ContentStringFormat="{TemplateBinding ContentStringFormat}"
-                    ContentTemplate="{TemplateBinding ContentTemplate}"
-                    ContentTemplateSelector="{TemplateBinding ContentTemplateSelector}"
-                    RecognizesAccessKey="True"
-                    SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
                 <Rectangle
                     x:Name="SelectionIndicator"
+                    Grid.Column="0"
                     Width="3"
-                    Height="18"
-                    Margin="8,0,0,0"
+                    Height="{TemplateBinding ActualHeight, Converter={StaticResource ListViewItemSelectionIndicatorHeightConverter}}"
+                    Margin="3,0,6,0"
                     HorizontalAlignment="Left"
                     VerticalAlignment="Center"
                     Fill="{m:DynamicBrush AccentSelection}"
                     IsHitTestVisible="False"
                     RadiusX="2"
                     RadiusY="2"
-                    Visibility="Collapsed" />
+                    SnapsToDevicePixels="False"
+                    UseLayoutRounding="False"
+                    Visibility="Hidden" />
+                <ContentPresenter
+                    Grid.Column="1"
+                    Margin="{TemplateBinding Padding}"
+                    HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                    VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                    RecognizesAccessKey="True"
+                    SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
             </Grid>
         </Border>
         <ControlTemplate.Triggers>
@@ -63,14 +71,14 @@
                 </MultiTrigger.Conditions>
                 <Setter TargetName="SelectionIndicator" Property="Visibility" Value="Visible" />
             </MultiTrigger>
+            <Trigger Property="controls:SelectionIndicator.IsSelectionIndicatorVisible" Value="False">
+                <Setter TargetName="SelectionIndicator" Property="Visibility" Value="Collapsed" />
+            </Trigger>
             <Trigger Property="IsEnabled" Value="False">
                 <Setter Property="Foreground" Value="{m:DynamicBrush TextFillDisabled}" />
             </Trigger>
         </ControlTemplate.Triggers>
     </ControlTemplate>
-
-
-    <converters:DoubleToDoubleConverter x:Key="ListViewItemSelectionIndicatorHeightConverter" Multiply="0.375" />
 
     <ControlTemplate x:Key="GridViewItemTemplate" TargetType="{x:Type ListViewItem}">
         <Border
@@ -90,7 +98,7 @@
                     Grid.Column="0"
                     Width="3"
                     Height="{TemplateBinding ActualHeight, Converter={StaticResource ListViewItemSelectionIndicatorHeightConverter}}"
-                    Margin="6,0,3,0"
+                    Margin="3,0,6,0"
                     HorizontalAlignment="Left"
                     VerticalAlignment="Center"
                     Fill="{m:DynamicBrush AccentSelection}"
@@ -105,7 +113,8 @@
                     Margin="{TemplateBinding Padding}"
                     HorizontalAlignment="Stretch"
                     VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
-                    Columns="{TemplateBinding GridView.ColumnCollection}" />
+                    Columns="{TemplateBinding GridView.ColumnCollection}"
+                    SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
             </Grid>
         </Border>
         <ControlTemplate.Triggers>
