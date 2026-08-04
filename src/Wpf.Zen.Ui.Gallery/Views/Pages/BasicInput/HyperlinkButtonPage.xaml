@@ -29,7 +29,7 @@
                 <ui:HyperlinkButton
                     Grid.Column="0"
                     Content="WPF Zen UI hyperlink"
-                    Icon="{ui:SymbolIcon Link24}"
+                    Icon="{ui:FluentIconSource Link24}"
                     IsEnabled="{Binding IsHyperlinkDisabled, Converter={StaticResource BoolInvertConverter}}"
                     NavigateUri="https://thezendev.com/" />
                 <CheckBox

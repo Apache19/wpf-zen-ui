@@ -21,7 +21,7 @@
             Margin="0,0,0,8"
             FontTypography="BodyStrong"
             Text="Appearance &amp; behavior" />
-        <ui:CardControl Margin="0,0,0,12" Icon="{ui:SymbolIcon Color24}">
+        <ui:CardControl Margin="0,0,0,12" Icon="{ui:FluentIconSource Color24}">
             <ui:CardControl.Header>
                 <Grid>
                     <Grid.RowDefinitions>
@@ -55,7 +55,7 @@
 
         </ui:CardControl>
 
-        <ui:CardControl Margin="0,0,0,12" Icon="{ui:SymbolIcon AlignSpaceEvenlyVertical20}">
+        <ui:CardControl Margin="0,0,0,12" Icon="{ui:FluentIconSource AlignSpaceEvenlyVertical20}">
             <ui:CardControl.Header>
                 <ui:TextBlock
                     Grid.Row="0"
@@ -132,7 +132,7 @@
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
                         <TextBlock Grid.Column="0" Text="File a bug or request a new sample" />
-                        <ui:SymbolIcon Grid.Column="1" Symbol="Link24" />
+                        <ui:FluentIcon Grid.Column="1" Symbol="Link24" />
                     </Grid>
                 </ui:Anchor>
                 <ui:Anchor
@@ -150,7 +150,7 @@
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
                         <TextBlock Grid.Column="0" Text="Check out the docs" />
-                        <ui:SymbolIcon Grid.Column="1" Symbol="Link24" />
+                        <ui:FluentIcon Grid.Column="1" Symbol="Link24" />
                     </Grid>
                 </ui:Anchor>
                 <TextBlock Margin="16" Text="{Binding AppVersion}" />

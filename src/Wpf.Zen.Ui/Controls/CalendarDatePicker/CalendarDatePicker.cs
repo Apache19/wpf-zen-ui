@@ -21,8 +21,9 @@ namespace Wpf.Zen.Ui.Controls;
 /// </example>
 public class CalendarDatePicker : ToggleButton
 {
+    private static readonly FluentIconSource DefaultIcon = new(SymbolRegular.CalendarRtl24);
+
     private Popup? _popup;
-    private SymbolIcon? _defaultIcon;
 
     /// <summary>
     /// Identifies the <see cref="IsCalendarOpen"/> dependency property.
@@ -91,12 +92,9 @@ public class CalendarDatePicker : ToggleButton
         return false;
     }
 
-    private static object? CoerceIcon(DependencyObject dependencyObject, object? baseValue)
+    private static object CoerceIcon(DependencyObject dependencyObject, object? baseValue)
     {
-        return baseValue is null
-            ? ((CalendarDatePicker)dependencyObject)._defaultIcon ??=
-                new SymbolIcon(SymbolRegular.CalendarRtl24)
-            : baseValue;
+        return baseValue ?? DefaultIcon;
     }
 
     /// <summary>

@@ -58,7 +58,7 @@ public class NavigationItem : INavigationItem, INotifyPropertyChanged
         IEnumerable?  children       = null)
         : this(content, targetPageType)
     {
-        Icon = new FluentSystemIcon(icon);
+        Icon = new FluentIconSource(icon);
         Children = children;
     }
 

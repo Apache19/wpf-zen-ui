@@ -74,7 +74,7 @@
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <ContentPresenter
+                    <controls:IconPresenter
                         x:Name="IconPresenter"
                         Grid.Column="0"
                         Margin="0,0,6,0"
@@ -83,7 +83,7 @@
                         ContentSource="Icon"
                         SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"
                         TextElement.FontSize="16" />
-                    <controls:SymbolIcon
+                    <controls:FluentIcon
                         x:Name="Checkmark"
                         Grid.Column="0"
                         Margin="0,0,6,0"
@@ -189,7 +189,7 @@
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <ContentPresenter
+                    <controls:IconPresenter
                         x:Name="IconPresenter"
                         Grid.Column="0"
                         Margin="0,0,6,0"
@@ -198,7 +198,7 @@
                         ContentSource="Icon"
                         SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"
                         TextElement.FontSize="16" />
-                    <controls:SymbolIcon
+                    <controls:FluentIcon
                         x:Name="Checkmark"
                         Grid.Column="0"
                         Margin="0,0,6,0"
@@ -275,7 +275,7 @@
                     </Grid.ColumnDefinitions>
 
                     <!--  选中对勾应该与图标在同一列  -->
-                    <controls:SymbolIcon
+                    <controls:FluentIcon
                         x:Name="Checkmark"
                         Grid.Column="0"
                         Margin="0,0,6,0"
@@ -284,7 +284,7 @@
                         Symbol="Checkmark24"
                         Visibility="Collapsed" />
 
-                    <ContentPresenter
+                    <controls:IconPresenter
                         x:Name="IconPresenter"
                         Grid.Column="0"
                         Margin="0,0,6,0"
@@ -370,7 +370,7 @@
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" SharedSizeGroup="Shortcut" />
                     </Grid.ColumnDefinitions>
-                    <controls:SymbolIcon
+                    <controls:FluentIcon
                         x:Name="Checkmark"
                         Grid.Column="0"
                         Margin="0,0,6,0"
@@ -379,7 +379,7 @@
                         Symbol="Checkmark24"
                         Visibility="Collapsed" />
 
-                    <ContentPresenter
+                    <controls:IconPresenter
                         x:Name="IconPresenter"
                         Grid.Column="0"
                         Margin="0,0,6,0"
@@ -397,7 +397,7 @@
                         RecognizesAccessKey="True"
                         UseLayoutRounding="True" />
 
-                    <controls:SymbolIcon
+                    <controls:FluentIcon
                         x:Name="Chevron"
                         Grid.Column="2"
                         Margin="25,0,0,0"

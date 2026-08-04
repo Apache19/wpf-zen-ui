@@ -28,7 +28,7 @@
             <ui:NavigationView.AutoSuggestBox>
                 <ui:AutoSuggestBox x:Name="AutoSuggestBox" PlaceholderText="Search">
                     <ui:AutoSuggestBox.Icon>
-                        <ui:SymbolIcon Symbol="Search24" />
+                        <ui:FluentIcon Symbol="Search24" />
                     </ui:AutoSuggestBox.Icon>
                 </ui:AutoSuggestBox>
             </ui:NavigationView.AutoSuggestBox>
@@ -44,7 +44,7 @@
                     NavigationCacheMode="Enabled"
                     TargetPageType="{x:Type pages:DashboardPage}">
                     <ui:NavigationViewItem.Icon>
-                        <ui:SymbolIcon Symbol="Home24" />
+                        <ui:FluentIcon Symbol="Home24" />
                     </ui:NavigationViewItem.Icon>
                 </ui:NavigationViewItem>
                 <ui:NavigationViewItem
@@ -52,7 +52,7 @@
                     NavigationCacheMode="Enabled"
                     TargetPageType="{x:Type pages:DataPage}">
                     <ui:NavigationViewItem.Icon>
-                        <ui:SymbolIcon Symbol="DataHistogram24" />
+                        <ui:FluentIcon Symbol="DataHistogram24" />
                     </ui:NavigationViewItem.Icon>
                 </ui:NavigationViewItem>
             </ui:NavigationView.MenuItems>
@@ -62,7 +62,7 @@
                     NavigationCacheMode="Disabled"
                     TargetPageType="{x:Type pages:SettingsPage}">
                     <ui:NavigationViewItem.Icon>
-                        <ui:SymbolIcon Symbol="Settings24" />
+                        <ui:FluentIcon Symbol="Settings24" />
                     </ui:NavigationViewItem.Icon>
                 </ui:NavigationViewItem>
             </ui:NavigationView.FooterMenuItems>

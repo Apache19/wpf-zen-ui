@@ -357,7 +357,7 @@ public partial class NavigationViewItem : HeaderedItemsControl
             nameof(Icon),
             typeof(object),
             typeof(NavigationViewItem),
-            new PropertyMetadata(null, OnIconChanged)
+            new PropertyMetadata(null)
         );
 
     /// <summary>Gets or sets the icon displayed by this visual container.</summary>
@@ -687,7 +687,7 @@ public partial class NavigationViewItem : HeaderedItemsControl
         NavigationCacheMode navigationCacheMode = NavigationCacheMode.Disabled)
         : this(
             header,
-            new FluentSystemIcon(icon),
+            new FluentIconSource(icon),
             targetPageType,
             itemsSource,
             targetPageTag,
@@ -1301,14 +1301,6 @@ public partial class NavigationViewItem : HeaderedItemsControl
                 (NavigationCacheMode)e.OldValue,
                 (NavigationCacheMode)e.NewValue
             );
-        }
-    }
-
-    private static void OnIconChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
-    {
-        if (d is NavigationViewItem navigationViewItem)
-        {
-            NavigationViewItemTemplateBehavior.UpdateIcon(navigationViewItem, e.OldValue as SymbolIcon);
         }
     }
 

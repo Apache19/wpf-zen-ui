@@ -25,7 +25,7 @@
             <controls:ControlExample.XamlCode>
                 &lt;Menu FontSize="14"&gt;\n
                 \t&lt;!-- File --&gt;\n
-                \t&lt;ui:MenuItem Header="File" Icon="{ui:SymbolIcon Document24}"&gt;\n
+                \t&lt;ui:MenuItem Header="File" Icon="{ui:FluentIconSource Document24}"&gt;\n
                 \t\t&lt;ui:MenuItem Header="New" InputGestureText="Ctrl+N" /&gt;\n
                 \t\t&lt;ui:MenuItem Header="Open..." InputGestureText="Ctrl+O" /&gt;\n
                 \t\t&lt;ui:MenuItem Header="Save" InputGestureText="Ctrl+S" /&gt;\n
@@ -34,7 +34,7 @@
                 \t\t&lt;ui:MenuItem Header="Exit" /&gt;\n
                 \t&lt;/ui:MenuItem&gt;\n
                 \t&lt;!-- Edit --&gt;\n
-                \t&lt;ui:MenuItem Header="Edit" Icon="{ui:SymbolIcon DocumentEdit20}"&gt;\n
+                \t&lt;ui:MenuItem Header="Edit" Icon="{ui:FluentIconSource DocumentEdit20}"&gt;\n
                 \t\t&lt;ui:MenuItem Header="Undo" InputGestureText="Ctrl+Z" /&gt;\n
                 \t\t&lt;Separator /&gt;\n
                 \t\t&lt;ui:MenuItem Header="Cut" InputGestureText="Ctrl+X" /&gt;\n
@@ -49,54 +49,54 @@
                 \t\t&lt;ui:MenuItem Header="Select All" InputGestureText="Ctrl+A" /&gt;\n
                 \t&lt;/ui:MenuItem&gt;\n
                 \t&lt;!-- View --&gt;\n
-                \t&lt;ui:MenuItem Header="View" Icon="{ui:SymbolIcon Eye20}"&gt;\n
+                \t&lt;ui:MenuItem Header="View" Icon="{ui:FluentIconSource Eye20}"&gt;\n
                 \t\t&lt;ui:MenuItem Header="Toolbar" IsCheckable="True" IsChecked="True" /&gt;\n
                 \t\t&lt;ui:MenuItem Header="Status Bar" IsCheckable="True" IsChecked="True" /&gt;\n
                 \t\t&lt;ui:MenuItem Header="Sidebar" IsCheckable="True" IsChecked="False" /&gt;\n
                 \t\t&lt;Separator /&gt;\n
-                \t\t&lt;ui:MenuItem Header="Layout" Icon="{ui:SymbolIcon PanelLeft20}"&gt;\n
+                \t\t&lt;ui:MenuItem Header="Layout" Icon="{ui:FluentIconSource PanelLeft20}"&gt;\n
                 \t\t\t&lt;ui:RadioMenuItem Header="Single Pane" IsChecked="True" GroupName="LayoutMode" /&gt;\n
                 \t\t\t&lt;ui:RadioMenuItem Header="Two Panes" GroupName="LayoutMode" /&gt;\n
                 \t\t\t&lt;ui:RadioMenuItem Header="Three Panes" GroupName="LayoutMode" IsEnabled="False" /&gt;\n
                 \t\t\t&lt;ui:RadioMenuItem Header="Grid" GroupName="LayoutMode" /&gt;\n
                 \t\t\t&lt;Separator /&gt;\n
-                \t\t\t&lt;ui:MenuItem Header="Reset Layout" Icon="{ui:SymbolIcon ArrowSync20}" /&gt;\n
+                \t\t\t&lt;ui:MenuItem Header="Reset Layout" Icon="{ui:FluentIconSource ArrowSync20}" /&gt;\n
                 \t\t&lt;/ui:MenuItem&gt;\n
                 \t\t&lt;Separator /&gt;\n
-                \t\t&lt;ui:MenuItem Header="Zoom" Icon="{ui:SymbolIcon ZoomIn20}"&gt;\n
+                \t\t&lt;ui:MenuItem Header="Zoom" Icon="{ui:FluentIconSource ZoomIn20}"&gt;\n
                 \t\t\t&lt;ui:MenuItem Header="Zoom In" InputGestureText="Ctrl+=" /&gt;\n
                 \t\t\t&lt;ui:MenuItem Header="Zoom Out" InputGestureText="Ctrl+-" /&gt;\n
                 \t\t\t&lt;ui:MenuItem Header="Reset Zoom" InputGestureText="Ctrl+0" /&gt;\n
                 \t\t&lt;/ui:MenuItem&gt;\n
                 \t&lt;/ui:MenuItem&gt;\n
             \t&lt;!-- Format --&gt;\n
-                \t&lt;ui:MenuItem Header="Format" Icon="{ui:SymbolIcon TextFont20}"&gt;\n
-                \t\t&lt;ui:MenuItem Header="Bold" Icon="{ui:SymbolIcon TextBold20}" InputGestureText="Ctrl+B" /&gt;\n
-                \t\t&lt;ui:MenuItem Header="Italic" Icon="{ui:SymbolIcon TextItalic20}" InputGestureText="Ctrl+I" /&gt;\n
-                \t\t&lt;ui:MenuItem Header="Underline" Icon="{ui:SymbolIcon TextUnderline20}" InputGestureText="Ctrl+U" /&gt;\n
-                \t\t&lt;ui:MenuItem Header="Strikethrough" Icon="{ui:SymbolIcon TextStrikethrough20}" /&gt;\n
+                \t&lt;ui:MenuItem Header="Format" Icon="{ui:FluentIconSource TextFont20}"&gt;\n
+                \t\t&lt;ui:MenuItem Header="Bold" Icon="{ui:FluentIconSource TextBold20}" InputGestureText="Ctrl+B" /&gt;\n
+                \t\t&lt;ui:MenuItem Header="Italic" Icon="{ui:FluentIconSource TextItalic20}" InputGestureText="Ctrl+I" /&gt;\n
+                \t\t&lt;ui:MenuItem Header="Underline" Icon="{ui:FluentIconSource TextUnderline20}" InputGestureText="Ctrl+U" /&gt;\n
+                \t\t&lt;ui:MenuItem Header="Strikethrough" Icon="{ui:FluentIconSource TextStrikethrough20}" /&gt;\n
                 \t\t&lt;Separator /&gt;\n
-                \t\t&lt;ui:MenuItem Header="Align Left" Icon="{ui:SymbolIcon AlignLeft20}" /&gt;\n
-                \t\t&lt;ui:MenuItem Header="Align Center" Icon="{ui:SymbolIcon AlignCenterHorizontal20}" /&gt;\n
-                \t\t&lt;ui:MenuItem Header="Align Right" Icon="{ui:SymbolIcon AlignRight20}" /&gt;\n
+                \t\t&lt;ui:MenuItem Header="Align Left" Icon="{ui:FluentIconSource AlignLeft20}" /&gt;\n
+                \t\t&lt;ui:MenuItem Header="Align Center" Icon="{ui:FluentIconSource AlignCenterHorizontal20}" /&gt;\n
+                \t\t&lt;ui:MenuItem Header="Align Right" Icon="{ui:FluentIconSource AlignRight20}" /&gt;\n
                 \t\t&lt;Separator /&gt;\n
-                \t\t&lt;ui:MenuItem Header="Font..." Icon="{ui:SymbolIcon TextFont20}" /&gt;\n
-                \t\t&lt;ui:MenuItem Header="Color..." Icon="{ui:SymbolIcon Color20}" /&gt;\n
+                \t\t&lt;ui:MenuItem Header="Font..." Icon="{ui:FluentIconSource TextFont20}" /&gt;\n
+                \t\t&lt;ui:MenuItem Header="Color..." Icon="{ui:FluentIconSource Color20}" /&gt;\n
                 \t&lt;/ui:MenuItem&gt;\n
                 \t&lt;Separator /&gt;\n
-                \t&lt;ui:MenuItem Icon="{ui:SymbolIcon TextBold20}" /&gt;\n
-                \t&lt;ui:MenuItem Icon="{ui:SymbolIcon TextItalic20}" /&gt;\n
-                \t&lt;ui:MenuItem Icon="{ui:SymbolIcon TextUnderline20}" /&gt;\n
+                \t&lt;ui:MenuItem Icon="{ui:FluentIconSource TextBold20}" /&gt;\n
+                \t&lt;ui:MenuItem Icon="{ui:FluentIconSource TextItalic20}" /&gt;\n
+                \t&lt;ui:MenuItem Icon="{ui:FluentIconSource TextUnderline20}" /&gt;\n
                 \t&lt;Separator /&gt;\n
-                \t&lt;ui:MenuItem Icon="{ui:SymbolIcon ArrowUndo20}" /&gt;\n
-                \t&lt;ui:MenuItem Icon="{ui:SymbolIcon ArrowRedo20}" /&gt;\n
-                \t&lt;ui:MenuItem Icon="{ui:SymbolIcon ClipboardPaste20}" /&gt;\n
+                \t&lt;ui:MenuItem Icon="{ui:FluentIconSource ArrowUndo20}" /&gt;\n
+                \t&lt;ui:MenuItem Icon="{ui:FluentIconSource ArrowRedo20}" /&gt;\n
+                \t&lt;ui:MenuItem Icon="{ui:FluentIconSource ClipboardPaste20}" /&gt;\n
                 \t&lt;Separator /&gt;\n
                 &lt;/Menu&gt;
             </controls:ControlExample.XamlCode>
             <Menu FontSize="14">
                 <!-- File -->
-                <MenuItem Header="File" Icon="{ui:SymbolIcon Symbol=Document24}">
+                <MenuItem Header="File" Icon="{ui:FluentIconSource Symbol=Document24}">
                     <MenuItem Header="New" InputGestureText="Ctrl+N" />
                     <MenuItem Header="Open..." InputGestureText="Ctrl+O" />
                     <MenuItem Header="Save" InputGestureText="Ctrl+S" />
@@ -106,7 +106,7 @@
                 </MenuItem>
 
                 <!-- Edit -->
-                <MenuItem Header="Edit" Icon="{ui:SymbolIcon DocumentEdit20}">
+                <MenuItem Header="Edit" Icon="{ui:FluentIconSource DocumentEdit20}">
                     <MenuItem Header="Undo" InputGestureText="Ctrl+Z" />
                     <Separator />
                     <MenuItem Header="Cut" InputGestureText="Ctrl+X" />
@@ -126,21 +126,21 @@
                 </MenuItem>
 
                 <!-- View — checkable items & nested submenus -->
-                <MenuItem Header="View" Icon="{ui:SymbolIcon Eye20}">
+                <MenuItem Header="View" Icon="{ui:FluentIconSource Eye20}">
                     <MenuItem Header="Toolbar" IsCheckable="True" IsChecked="True" />
                     <MenuItem Header="Status Bar" IsCheckable="True" IsChecked="True" />
                     <MenuItem Header="Sidebar" IsCheckable="True" IsChecked="False" />
                     <Separator />
-                    <MenuItem Header="Layout" Icon="{ui:SymbolIcon PanelLeft20}">
+                    <MenuItem Header="Layout" Icon="{ui:FluentIconSource PanelLeft20}">
                         <ui:RadioMenuItem Header="Single Pane" IsChecked="True" GroupName="LayoutMode" />
                         <ui:RadioMenuItem Header="Two Panes" GroupName="LayoutMode" />
                         <ui:RadioMenuItem Header="Three Panes" GroupName="LayoutMode" IsEnabled="False" />
                         <ui:RadioMenuItem Header="Grid" GroupName="LayoutMode" />
                         <Separator />
-                        <MenuItem Header="Reset Layout" Icon="{ui:SymbolIcon ArrowSync20}" />
+                        <MenuItem Header="Reset Layout" Icon="{ui:FluentIconSource ArrowSync20}" />
                     </MenuItem>
                     <Separator />
-                    <MenuItem Header="Zoom" Icon="{ui:SymbolIcon ZoomIn20}">
+                    <MenuItem Header="Zoom" Icon="{ui:FluentIconSource ZoomIn20}">
                         <MenuItem Header="Zoom In" InputGestureText="Ctrl+=" />
                         <MenuItem Header="Zoom Out" InputGestureText="Ctrl+-" />
                         <MenuItem Header="Reset Zoom" InputGestureText="Ctrl+0" />
@@ -148,28 +148,28 @@
                 </MenuItem>
 
                 <!-- Format — icons on every sub-item -->
-                <MenuItem Header="Format" Icon="{ui:SymbolIcon TextFont20}">
-                    <MenuItem Header="Bold" Icon="{ui:SymbolIcon TextBold20}" InputGestureText="Ctrl+B" />
-                    <MenuItem Header="Italic" Icon="{ui:SymbolIcon TextItalic20}" InputGestureText="Ctrl+I" />
-                    <MenuItem Header="Underline" Icon="{ui:SymbolIcon TextUnderline20}" InputGestureText="Ctrl+U" />
-                    <MenuItem Header="Strikethrough" Icon="{ui:SymbolIcon TextStrikethrough20}" />
+                <MenuItem Header="Format" Icon="{ui:FluentIconSource TextFont20}">
+                    <MenuItem Header="Bold" Icon="{ui:FluentIconSource TextBold20}" InputGestureText="Ctrl+B" />
+                    <MenuItem Header="Italic" Icon="{ui:FluentIconSource TextItalic20}" InputGestureText="Ctrl+I" />
+                    <MenuItem Header="Underline" Icon="{ui:FluentIconSource TextUnderline20}" InputGestureText="Ctrl+U" />
+                    <MenuItem Header="Strikethrough" Icon="{ui:FluentIconSource TextStrikethrough20}" />
                     <Separator />
-                    <MenuItem Header="Align Left" Icon="{ui:SymbolIcon AlignLeft20}" />
-                    <MenuItem Header="Align Center" Icon="{ui:SymbolIcon AlignCenterHorizontal20}" />
-                    <MenuItem Header="Align Right" Icon="{ui:SymbolIcon AlignRight20}" />
+                    <MenuItem Header="Align Left" Icon="{ui:FluentIconSource AlignLeft20}" />
+                    <MenuItem Header="Align Center" Icon="{ui:FluentIconSource AlignCenterHorizontal20}" />
+                    <MenuItem Header="Align Right" Icon="{ui:FluentIconSource AlignRight20}" />
                     <Separator />
-                    <MenuItem Header="Font..." Icon="{ui:SymbolIcon TextFont20}" />
-                    <MenuItem Header="Color..." Icon="{ui:SymbolIcon Color20}" />
+                    <MenuItem Header="Font..." Icon="{ui:FluentIconSource TextFont20}" />
+                    <MenuItem Header="Color..." Icon="{ui:FluentIconSource Color20}" />
                 </MenuItem>
 
                 <Separator />
-                <MenuItem Icon="{ui:SymbolIcon TextBold20}" />
-                <MenuItem Icon="{ui:SymbolIcon TextItalic20}" />
-                <MenuItem Icon="{ui:SymbolIcon TextUnderline20}" />
+                <MenuItem Icon="{ui:FluentIconSource TextBold20}" />
+                <MenuItem Icon="{ui:FluentIconSource TextItalic20}" />
+                <MenuItem Icon="{ui:FluentIconSource TextUnderline20}" />
                 <Separator />
-                <MenuItem Icon="{ui:SymbolIcon ArrowUndo20}" />
-                <MenuItem Icon="{ui:SymbolIcon ArrowRedo20}" />
-                <MenuItem Icon="{ui:SymbolIcon ClipboardPaste20}" />
+                <MenuItem Icon="{ui:FluentIconSource ArrowUndo20}" />
+                <MenuItem Icon="{ui:FluentIconSource ArrowRedo20}" />
+                <MenuItem Icon="{ui:FluentIconSource ClipboardPaste20}" />
                 <Separator />
             </Menu>
         </controls:ControlExample>
@@ -183,8 +183,8 @@
             <controls:ControlExample.XamlCode>
                 &lt;Menu FontSize="14"&gt;\n
                 \t&lt;!-- Project --&gt;\n
-                \t&lt;ui:MenuItem Header="Project" Icon="{ui:SymbolIcon FolderOpen20}"&gt;\n
-                \t\t&lt;ui:MenuItem Header="New" Icon="{ui:SymbolIcon AddCircle20}"&gt;\n
+                \t&lt;ui:MenuItem Header="Project" Icon="{ui:FluentIconSource FolderOpen20}"&gt;\n
+                \t\t&lt;ui:MenuItem Header="New" Icon="{ui:FluentIconSource AddCircle20}"&gt;\n
                 \t\t\t&lt;ui:MenuItem Header="File" InputGestureText="Ctrl+N" /&gt;\n
                 \t\t\t&lt;ui:MenuItem Header="Folder" /&gt;\n
                 \t\t\t&lt;ui:MenuItem Header="Project from Template..."&gt;\n
@@ -194,7 +194,7 @@
                 \t\t\t\t&lt;ui:MenuItem Header="Blazor Hybrid" /&gt;\n
                 \t\t\t&lt;/ui:MenuItem&gt;\n
                 \t\t&lt;/ui:MenuItem&gt;\n
-                \t\t&lt;ui:MenuItem Header="Add" Icon="{ui:SymbolIcon AddSquare20}"&gt;\n
+                \t\t&lt;ui:MenuItem Header="Add" Icon="{ui:FluentIconSource AddSquare20}"&gt;\n
                 \t\t\t&lt;ui:MenuItem Header="New Item..." InputGestureText="Ctrl+Shift+A" /&gt;\n
                 \t\t\t&lt;ui:MenuItem Header="Existing Item..." InputGestureText="Shift+Alt+A" /&gt;\n
                 \t\t\t&lt;Separator /&gt;\n
@@ -207,19 +207,19 @@
                 \t\t&lt;ui:MenuItem Header="Open Containing Folder" /&gt;\n
                 \t\t&lt;ui:MenuItem Header="Properties" /&gt;\n
                 \t&lt;/ui:MenuItem&gt;\n
-                \t&lt;ui:MenuItem Header="Build" Icon="{ui:SymbolIcon Wrench20}"&gt;\n
+                \t&lt;ui:MenuItem Header="Build" Icon="{ui:FluentIconSource Wrench20}"&gt;\n
                 \t\t&lt;ui:MenuItem Header="Build Solution" InputGestureText="Ctrl+Shift+B" /&gt;\n
                 \t\t&lt;ui:MenuItem Header="Rebuild Solution" /&gt;\n
                 \t\t&lt;ui:MenuItem Header="Clean Solution" /&gt;\n
                 \t\t&lt;Separator /&gt;\n
-                \t\t&lt;ui:MenuItem Header="Publish..." Icon="{ui:SymbolIcon CloudArrowUp20}" IsEnabled="False" /&gt;\n
-                \t\t&lt;ui:MenuItem Header="Package..." Icon="{ui:SymbolIcon Box20}" IsEnabled="False" /&gt;\n
+                \t\t&lt;ui:MenuItem Header="Publish..." Icon="{ui:FluentIconSource CloudArrowUp20}" IsEnabled="False" /&gt;\n
+                \t\t&lt;ui:MenuItem Header="Package..." Icon="{ui:FluentIconSource Box20}" IsEnabled="False" /&gt;\n
                 \t&lt;/ui:MenuItem&gt;\n
-                \t&lt;ui:MenuItem Header="Debug" Icon="{ui:SymbolIcon Bug20}"&gt;\n
+                \t&lt;ui:MenuItem Header="Debug" Icon="{ui:FluentIconSource Bug20}"&gt;\n
                 \t\t&lt;ui:MenuItem Header="Start Debugging" InputGestureText="F5" /&gt;\n
                 \t\t&lt;ui:MenuItem Header="Start Without Debugging" InputGestureText="Ctrl+F5" /&gt;\n
                 \t\t&lt;Separator /&gt;\n
-                \t\t&lt;ui:MenuItem Header="Breakpoints" Icon="{ui:SymbolIcon Circle20}" /&gt;\n
+                \t\t&lt;ui:MenuItem Header="Breakpoints" Icon="{ui:FluentIconSource Circle20}" /&gt;\n
                 \t\t&lt;ui:MenuItem Header="Watch" /&gt;\n
                 \t\t&lt;ui:MenuItem Header="Call Stack" /&gt;\n
                 \t&lt;/ui:MenuItem&gt;\n
@@ -227,8 +227,8 @@
             </controls:ControlExample.XamlCode>
             <Menu FontSize="14">
             <!-- Project — multi-level nesting -->
-                <MenuItem Header="Project" Icon="{ui:SymbolIcon FolderOpen20}">
-                    <MenuItem Header="New" Icon="{ui:SymbolIcon AddCircle20}">
+                <MenuItem Header="Project" Icon="{ui:FluentIconSource FolderOpen20}">
+                    <MenuItem Header="New" Icon="{ui:FluentIconSource AddCircle20}">
                         <MenuItem Header="File" InputGestureText="Ctrl+N" />
                         <MenuItem Header="Folder" />
                         <MenuItem Header="Project from Template...">
@@ -238,7 +238,7 @@
                             <MenuItem Header="Blazor Hybrid" />
                         </MenuItem>
                     </MenuItem>
-                    <MenuItem Header="Add" Icon="{ui:SymbolIcon AddSquare20}">
+                    <MenuItem Header="Add" Icon="{ui:FluentIconSource AddSquare20}">
                         <MenuItem Header="New Item..." InputGestureText="Ctrl+Shift+A" />
                         <MenuItem Header="Existing Item..." InputGestureText="Shift+Alt+A" />
                         <Separator />
@@ -252,19 +252,19 @@
                     <MenuItem Header="Properties" />
                 </MenuItem>
 
-                <MenuItem Header="Build" Icon="{ui:SymbolIcon Wrench20}">
+                <MenuItem Header="Build" Icon="{ui:FluentIconSource Wrench20}">
                     <MenuItem Header="Build Solution" InputGestureText="Ctrl+Shift+B" />
                     <MenuItem Header="Rebuild Solution" />
                     <MenuItem Header="Clean Solution" />
                     <Separator />
-                    <MenuItem Header="Publish..." Icon="{ui:SymbolIcon CloudArrowUp20}" IsEnabled="False" />
-                    <MenuItem Header="Package..." Icon="{ui:SymbolIcon Box20}" IsEnabled="False" />
+                    <MenuItem Header="Publish..." Icon="{ui:FluentIconSource CloudArrowUp20}" IsEnabled="False" />
+                    <MenuItem Header="Package..." Icon="{ui:FluentIconSource Box20}" IsEnabled="False" />
                 </MenuItem>
-                <MenuItem Header="Debug" Icon="{ui:SymbolIcon Bug20}">
+                <MenuItem Header="Debug" Icon="{ui:FluentIconSource Bug20}">
                     <MenuItem Header="Start Debugging" InputGestureText="F5" />
                     <MenuItem Header="Start Without Debugging" InputGestureText="Ctrl+F5" />
                     <Separator />
-                    <MenuItem Header="Breakpoints" Icon="{ui:SymbolIcon Circle20}" />
+                    <MenuItem Header="Breakpoints" Icon="{ui:FluentIconSource Circle20}" />
                     <MenuItem Header="Watch" />
                     <MenuItem Header="Call Stack" />
                 </MenuItem>
@@ -279,10 +279,10 @@
             HeaderText="Deep cascading menu.">
             <controls:ControlExample.XamlCode>
                 &lt;Menu FontSize="14"&gt;\n
-                \t&lt;ui:MenuItem Header="Navigate" Icon="{ui:SymbolIcon Navigation20}"&gt;\n
-                \t\t&lt;ui:MenuItem Header="Go to..." Icon="{ui:SymbolIcon ArrowRight20}"&gt;\n
-                \t\t\t&lt;ui:MenuItem Header="Type..." Icon="{ui:SymbolIcon ChevronRight20}"&gt;\n
-                \t\t\t\t&lt;ui:MenuItem Header="Class..." Icon="{ui:SymbolIcon Symbols20}"&gt;\n
+                \t&lt;ui:MenuItem Header="Navigate" Icon="{ui:FluentIconSource Navigation20}"&gt;\n
+                \t\t&lt;ui:MenuItem Header="Go to..." Icon="{ui:FluentIconSource ArrowRight20}"&gt;\n
+                \t\t\t&lt;ui:MenuItem Header="Type..." Icon="{ui:FluentIconSource ChevronRight20}"&gt;\n
+                \t\t\t\t&lt;ui:MenuItem Header="Class..." Icon="{ui:FluentIconSource Symbols20}"&gt;\n
                 \t\t\t\t\t&lt;ui:MenuItem Header="Class in Solution" /&gt;\n
                 \t\t\t\t\t&lt;ui:MenuItem Header="Class in Project" /&gt;\n
                 \t\t\t\t\t&lt;ui:MenuItem Header="Class with Tests" /&gt;\n
@@ -300,13 +300,13 @@
                 &lt;/Menu&gt;
             </controls:ControlExample.XamlCode>
             <Menu FontSize="14">
-                <MenuItem Header="Navigate" Icon="{ui:SymbolIcon Navigation20}">
+                <MenuItem Header="Navigate" Icon="{ui:FluentIconSource Navigation20}">
                     <!-- Level 1 — first item has submenu -->
-                    <MenuItem Header="Go to..." Icon="{ui:SymbolIcon ArrowRight20}">
+                    <MenuItem Header="Go to..." Icon="{ui:FluentIconSource ArrowRight20}">
                         <!-- Level 2 — first item has submenu -->
-                        <MenuItem Header="Type..." Icon="{ui:SymbolIcon ChevronRight20}">
+                        <MenuItem Header="Type..." Icon="{ui:FluentIconSource ChevronRight20}">
                             <!-- Level 3 — first item has submenu -->
-                            <MenuItem Header="Class..." Icon="{ui:SymbolIcon Symbols20}">
+                            <MenuItem Header="Class..." Icon="{ui:FluentIconSource Symbols20}">
                                 <!-- Level 4 — finally, leaf items -->
                                 <MenuItem Header="Class in Solution" />
                                 <MenuItem Header="Class in Project" />
@@ -363,7 +363,7 @@
             HeaderText="Long headers and shortcuts — truncation and column sizing.">
             <controls:ControlExample.XamlCode>
                 &lt;Menu FontSize="14"&gt;\n
-                \t&lt;ui:MenuItem Header="Options" Icon="{ui:SymbolIcon Settings20}"&gt;\n
+                \t&lt;ui:MenuItem Header="Options" Icon="{ui:FluentIconSource Settings20}"&gt;\n
                 \t\t&lt;ui:MenuItem Header="Open Containing Folder in File Explorer" /&gt;\n
                 \t\t&lt;ui:MenuItem Header="Reopen Closed Editor Tab" InputGestureText="Ctrl+Shift+T" /&gt;\n
                 \t\t&lt;ui:MenuItem Header="Toggle Side Bar Visibility" InputGestureText="Ctrl+B" /&gt;\n
@@ -378,7 +378,7 @@
                 &lt;/Menu&gt;
             </controls:ControlExample.XamlCode>
             <Menu FontSize="14">
-                <MenuItem Header="Options" Icon="{ui:SymbolIcon Settings20}">
+                <MenuItem Header="Options" Icon="{ui:FluentIconSource Settings20}">
                     <MenuItem Header="Open Containing Folder in File Explorer" />
                     <MenuItem Header="Reopen Closed Editor Tab" InputGestureText="Ctrl+Shift+T" />
                     <MenuItem Header="Toggle Side Bar Visibility" InputGestureText="Ctrl+B" />
@@ -401,7 +401,7 @@
             HeaderText="Dense dropdown — scrolling behavior and visual density.">
             <controls:ControlExample.XamlCode>
                 &lt;Menu FontSize="14"&gt;\n
-                \t&lt;ui:MenuItem Header="Language" Icon="{ui:SymbolIcon Code20}"&gt;\n
+                \t&lt;ui:MenuItem Header="Language" Icon="{ui:FluentIconSource Code20}"&gt;\n
                 \t\t&lt;ui:MenuItem Header="C# / .NET" /&gt;\n
                 \t\t&lt;ui:MenuItem Header="F#" /&gt;\n
                 \t\t&lt;ui:MenuItem Header="Visual Basic" /&gt;\n
@@ -438,7 +438,7 @@
                 &lt;/Menu&gt;
             </controls:ControlExample.XamlCode>
             <Menu FontSize="14">
-                <MenuItem Header="Language" Icon="{ui:SymbolIcon Code20}">
+                <MenuItem Header="Language" Icon="{ui:FluentIconSource Code20}">
                     <MenuItem Header="C# / .NET" />
                     <MenuItem Header="F#" />
                     <MenuItem Header="Visual Basic" />
@@ -483,36 +483,36 @@
             HeaderText="Mixed icon, header, and shortcut lengths — SharedSizeGroup alignment.">
             <controls:ControlExample.XamlCode>
                 &lt;Menu FontSize="14"&gt;\n
-                \t&lt;ui:MenuItem Header="Actions" Icon="{ui:SymbolIcon Wrench20}"&gt;\n
-                \t\t&lt;ui:MenuItem Header="Run" Icon="{ui:SymbolIcon Play20}" InputGestureText="F5" /&gt;\n
-                \t\t&lt;ui:MenuItem Header="Build" Icon="{ui:SymbolIcon Wrench20}" InputGestureText="Ctrl+Shift+B" /&gt;\n
-                \t\t&lt;ui:MenuItem Header="Stop" Icon="{ui:SymbolIcon Stop20}" InputGestureText="Shift+F5" /&gt;\n
+                \t&lt;ui:MenuItem Header="Actions" Icon="{ui:FluentIconSource Wrench20}"&gt;\n
+                \t\t&lt;ui:MenuItem Header="Run" Icon="{ui:FluentIconSource Play20}" InputGestureText="F5" /&gt;\n
+                \t\t&lt;ui:MenuItem Header="Build" Icon="{ui:FluentIconSource Wrench20}" InputGestureText="Ctrl+Shift+B" /&gt;\n
+                \t\t&lt;ui:MenuItem Header="Stop" Icon="{ui:FluentIconSource Stop20}" InputGestureText="Shift+F5" /&gt;\n
                 \t\t&lt;ui:MenuItem Header="R" InputGestureText="Ctrl+R" /&gt;\n
-                \t\t&lt;ui:MenuItem Header="Restart with Full Clean and Rebuild All Projects" Icon="{ui:SymbolIcon ArrowSync20}" /&gt;\n
-                \t\t&lt;ui:MenuItem Header="Publish to Remote Server via SSH" Icon="{ui:SymbolIcon CloudArrowUp20}" InputGestureText="Ctrl+Shift+P, Enter" /&gt;\n
+                \t\t&lt;ui:MenuItem Header="Restart with Full Clean and Rebuild All Projects" Icon="{ui:FluentIconSource ArrowSync20}" /&gt;\n
+                \t\t&lt;ui:MenuItem Header="Publish to Remote Server via SSH" Icon="{ui:FluentIconSource CloudArrowUp20}" InputGestureText="Ctrl+Shift+P, Enter" /&gt;\n
                 \t\t&lt;Separator /&gt;\n
                 \t\t&lt;ui:MenuItem Header="X" InputGestureText="Alt+F4" /&gt;\n
-                \t\t&lt;ui:MenuItem Header="Toggle Breakpoint at Current Line and Continue Execution" Icon="{ui:SymbolIcon Circle20}" InputGestureText="F9" /&gt;\n
+                \t\t&lt;ui:MenuItem Header="Toggle Breakpoint at Current Line and Continue Execution" Icon="{ui:FluentIconSource Circle20}" InputGestureText="F9" /&gt;\n
                 \t&lt;/ui:MenuItem&gt;\n
                 &lt;/Menu&gt;
             </controls:ControlExample.XamlCode>
             <Menu FontSize="14">
-                <MenuItem Header="Actions" Icon="{ui:SymbolIcon Wrench20}">
+                <MenuItem Header="Actions" Icon="{ui:FluentIconSource Wrench20}">
                     <!-- Normal item -->
-                    <MenuItem Header="Run" Icon="{ui:SymbolIcon Play20}" InputGestureText="F5" />
-                    <MenuItem Header="Build" Icon="{ui:SymbolIcon Wrench20}" InputGestureText="Ctrl+Shift+B" />
-                    <MenuItem Header="Stop" Icon="{ui:SymbolIcon Stop20}" InputGestureText="Shift+F5" />
+                    <MenuItem Header="Run" Icon="{ui:FluentIconSource Play20}" InputGestureText="F5" />
+                    <MenuItem Header="Build" Icon="{ui:FluentIconSource Wrench20}" InputGestureText="Ctrl+Shift+B" />
+                    <MenuItem Header="Stop" Icon="{ui:FluentIconSource Stop20}" InputGestureText="Shift+F5" />
                     <!-- No icon, short header -->
                     <MenuItem Header="R" InputGestureText="Ctrl+R" />
                     <!-- Icon but no shortcut, long header -->
-                    <MenuItem Header="Restart with Full Clean and Rebuild All Projects" Icon="{ui:SymbolIcon ArrowSync20}" />
+                    <MenuItem Header="Restart with Full Clean and Rebuild All Projects" Icon="{ui:FluentIconSource ArrowSync20}" />
                     <!-- Icon, long header, long shortcut -->
-                    <MenuItem Header="Publish to Remote Server via SSH" Icon="{ui:SymbolIcon CloudArrowUp20}" InputGestureText="Ctrl+Shift+P, Enter" />
+                    <MenuItem Header="Publish to Remote Server via SSH" Icon="{ui:FluentIconSource CloudArrowUp20}" InputGestureText="Ctrl+Shift+P, Enter" />
                     <Separator />
                     <!-- No icon, short header, short shortcut -->
                     <MenuItem Header="X" InputGestureText="Alt+F4" />
                     <!-- Icon, very long header, short shortcut -->
-                    <MenuItem Header="Toggle Breakpoint at Current Line and Continue Execution" Icon="{ui:SymbolIcon Circle20}" InputGestureText="F9" />
+                    <MenuItem Header="Toggle Breakpoint at Current Line and Continue Execution" Icon="{ui:FluentIconSource Circle20}" InputGestureText="F9" />
                 </MenuItem>
             </Menu>
         </controls:ControlExample>

@@ -11,7 +11,7 @@ using System.Windows.Input;
 namespace Wpf.Zen.Ui.Controls;
 
 /// <summary>
-/// Provides an attached property that automatically sets a <see cref="SymbolIcon"/>
+/// Provides an attached property that automatically sets a <see cref="FluentIcon"/>
 /// on a <see cref="MenuItem"/> when its <see cref="MenuItem.Command"/> matches a
 /// well-known built-in WPF command (Cut, Copy, Paste, Delete, etc.).
 /// <para>
@@ -84,7 +84,7 @@ public static class MenuItemCommandIcon
 
     /// <summary>
     /// Attempts to set the <see cref="MenuItem.Icon"/> property to a matching
-    /// <see cref="SymbolIcon"/> when the <see cref="MenuItem.Command"/> is a
+    /// <see cref="FluentIcon"/> when the <see cref="MenuItem.Command"/> is a
     /// recognized built-in command and the Icon has not already been set by the user.
     /// </summary>
     /// <param name="menuItem">The menu item to inspect and potentially decorate.</param>
@@ -99,7 +99,9 @@ public static class MenuItemCommandIcon
         if (menuItem.Command is RoutedCommand routedCommand &&
             CommandIconMap.TryGetValue(routedCommand, out var symbol))
         {
-            menuItem.SetCurrentValue(MenuItem.IconProperty, new SymbolIcon(symbol, fontSize: 16));
+            // Menu templates own the icon size. Supplying reusable source data also keeps command
+            // icons safe when a style or projected menu presents the same command more than once.
+            menuItem.SetCurrentValue(MenuItem.IconProperty, new FluentIconSource(symbol));
             return true;
         }
 

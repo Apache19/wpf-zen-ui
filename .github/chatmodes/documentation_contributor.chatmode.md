@@ -49,7 +49,7 @@ Example format:
     xmlns:ui="http://schemas.thezendev.com/wpf/2027">
     <ui:TitleBar Title="Application" />
     <ui:Card>
-        <ui:Button Content="Click me" Icon="{ui:SymbolIcon Fluent24}" />
+        <ui:Button Content="Click me" Icon="{ui:FluentIconSource Fluent24}" />
     </ui:Card>
 </ui:FluentWindow>
 ```

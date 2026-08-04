@@ -69,7 +69,7 @@
                     benefit from a Chevron. Compact presentations intentionally keep the icon-only
                     surface used before the control-model refactor.
                 -->
-                <controls:SymbolIcon
+                <controls:FluentIcon
                     x:Name="ChevronIcon"
                     Grid.Column="3"
                     HorizontalAlignment="Center"
@@ -80,10 +80,10 @@
                     RenderTransformOrigin="0.5,0.5"
                     Symbol="ChevronDown24"
                     Visibility="Collapsed">
-                    <controls:SymbolIcon.RenderTransform>
+                    <controls:FluentIcon.RenderTransform>
                         <RotateTransform Angle="0" />
-                    </controls:SymbolIcon.RenderTransform>
-                </controls:SymbolIcon>
+                    </controls:FluentIcon.RenderTransform>
+                </controls:FluentIcon>
             </Grid>
         </Border>
         <ControlTemplate.Triggers>

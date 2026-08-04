@@ -81,7 +81,7 @@
                                 Content="{TemplateBinding Content}"
                                 TextElement.Foreground="{TemplateBinding Foreground}" />
 
-                            <controls:SymbolIcon
+                            <controls:FluentIcon
                                 x:Name="ChevronIcon"
                                 Grid.Column="2"
                                 Margin="{StaticResource CardActionChevronMargin}"

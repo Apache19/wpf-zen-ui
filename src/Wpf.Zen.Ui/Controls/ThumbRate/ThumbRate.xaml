@@ -34,7 +34,7 @@
                             Command="{Binding Path=TemplateButtonCommand, Mode=OneWay, RelativeSource={RelativeSource TemplatedParent}}"
                             CommandParameter="{x:Static controls:ThumbRateState.Liked}"
                             Foreground="{TemplateBinding Foreground}">
-                            <controls:SymbolIcon
+                            <controls:FluentIcon
                                 x:Name="ThumbsUpButtonIcon"
                                 FontSize="{TemplateBinding FontSize}"
                                 Symbol="ThumbLike24" />
@@ -47,7 +47,7 @@
                             Command="{Binding Path=TemplateButtonCommand, Mode=OneWay, RelativeSource={RelativeSource TemplatedParent}}"
                             CommandParameter="{x:Static controls:ThumbRateState.Disliked}"
                             Foreground="{TemplateBinding Foreground}">
-                            <controls:SymbolIcon
+                            <controls:FluentIcon
                                 x:Name="ThumbsDownButtonIcon"
                                 FontSize="{TemplateBinding FontSize}"
                                 Symbol="ThumbDislike24" />

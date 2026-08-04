@@ -61,13 +61,13 @@
         <controls:ControlExample Margin="0,36,0,0" HeaderText="A TextBlock with an inline Fluent Symbol.">
             <controls:ControlExample.XamlCode>
                 &lt;TextBlock&gt;\n
-                \t&lt;ui:SymbolSpan Symbol=&quot;Document24&quot; Filled=&quot;True&quot; FontSize=&quot;16&quot; /&gt;\n
+                \t&lt;ui:FluentIconSpan Symbol=&quot;Document24&quot; Filled=&quot;True&quot; FontSize=&quot;16&quot; /&gt;\n
                 \t&lt;Run Text=&quot; Document.txt&quot; /&gt;\n
                 &lt;/TextBlock&gt;
             </controls:ControlExample.XamlCode>
             <TextBlock>
                 <Run Foreground="{ui:DynamicBrush TextFillTertiary}" Text="file:" />
-                <ui:SymbolSpan
+                <ui:FluentIconSpan
                     Filled="True"
                     FontSize="16"
                     Foreground="{ui:DynamicBrush PaletteBlueGrey}"

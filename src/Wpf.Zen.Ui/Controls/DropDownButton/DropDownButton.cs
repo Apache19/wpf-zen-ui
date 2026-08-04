@@ -15,7 +15,7 @@ namespace Wpf.Zen.Ui.Controls;
 /// </summary>
 public class DropDownButton : Button
 {
-    private SymbolIcon? _defaultRightIcon;
+    private FluentIcon? _defaultRightIcon;
 
     static DropDownButton()
     {
@@ -139,7 +139,7 @@ public class DropDownButton : Button
         }
 
         return baseValue is null
-            ? dropDownButton._defaultRightIcon ??= new SymbolIcon(SymbolRegular.ChevronDown24)
+            ? dropDownButton._defaultRightIcon ??= new FluentIcon(SymbolRegular.ChevronDown24)
             {
                 FontSize = 10D,
             }

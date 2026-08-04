@@ -29,39 +29,39 @@
                     MinWidth="250"
                     HorizontalAlignment="Left"
                     Content="Menu"
-                    Icon="{ui:SymbolIcon Fluent24}">
+                    Icon="{ui:FluentIconSource Fluent24}">
                     <ui:DropDownButton.Flyout>
                         <ContextMenu>
                             <MenuItem
                                 Command="{Binding NewCommand}"
                                 Header="New"
-                                Icon="{ui:SymbolIcon Add24}"
+                                Icon="{ui:FluentIconSource Add24}"
                                 InputGestureText="Ctrl+N" />
                             <MenuItem
                                 Command="{Binding OpenCommand}"
                                 Header="Open..."
-                                Icon="{ui:SymbolIcon Open24}"
+                                Icon="{ui:FluentIconSource Open24}"
                                 InputGestureText="Ctrl+O" />
                             <MenuItem
                                 Command="{Binding SaveCommand}"
                                 Header="Save"
-                                Icon="{ui:SymbolIcon Save24}"
+                                Icon="{ui:FluentIconSource Save24}"
                                 InputGestureText="Ctrl+S" />
                             <Separator />
                             <MenuItem
                                 Command="{Binding CutCommand}"
                                 Header="Cut"
-                                Icon="{ui:SymbolIcon Cut24}"
+                                Icon="{ui:FluentIconSource Cut24}"
                                 InputGestureText="Ctrl+X" />
                             <MenuItem
                                 Command="{Binding CopyCommand}"
                                 Header="Copy"
-                                Icon="{ui:SymbolIcon Copy24}"
+                                Icon="{ui:FluentIconSource Copy24}"
                                 InputGestureText="Ctrl+C" />
                             <MenuItem
                                 Command="{Binding PasteCommand}"
                                 Header="Paste"
-                                Icon="{ui:SymbolIcon ClipboardPaste24}"
+                                Icon="{ui:FluentIconSource ClipboardPaste24}"
                                 InputGestureText="Ctrl+V" />
                         </ContextMenu>
                     </ui:DropDownButton.Flyout>
@@ -100,45 +100,45 @@
                         <MenuItem
                             Command="{Binding CutCommand}"
                             Header="Cut"
-                            Icon="{ui:SymbolIcon Cut24}"
+                            Icon="{ui:FluentIconSource Cut24}"
                             InputGestureText="Ctrl+X" />
                         <MenuItem
                             Command="{Binding CopyCommand}"
                             Header="Copy"
-                            Icon="{ui:SymbolIcon Copy24}"
+                            Icon="{ui:FluentIconSource Copy24}"
                             InputGestureText="Ctrl+C" />
                         <MenuItem
                             Command="{Binding PasteCommand}"
                             Header="Paste"
-                            Icon="{ui:SymbolIcon ClipboardPaste24}"
+                            Icon="{ui:FluentIconSource ClipboardPaste24}"
                             InputGestureText="Ctrl+V" />
                         <MenuItem
                             Command="{Binding DeleteCommand}"
                             Header="Delete"
-                            Icon="{ui:SymbolIcon Delete24}"
+                            Icon="{ui:FluentIconSource Delete24}"
                             InputGestureText="Del" />
                         <Separator />
                         <MenuItem
                             Command="{Binding SelectAllCommand}"
                             Header="Select All"
-                            Icon="{ui:SymbolIcon SelectAllOn24}"
+                            Icon="{ui:FluentIconSource SelectAllOn24}"
                             InputGestureText="Ctrl+A" />
                         <Separator />
                         <MenuItem
                             Command="{Binding RefreshCommand}"
                             Header="Refresh"
-                            Icon="{ui:SymbolIcon ArrowClockwise24}"
+                            Icon="{ui:FluentIconSource ArrowClockwise24}"
                             InputGestureText="F5" />
                         <MenuItem
                             Command="{Binding SettingsCommand}"
                             Header="Settings..."
-                            Icon="{ui:SymbolIcon Settings24}" />
+                            Icon="{ui:FluentIconSource Settings24}" />
                     </ContextMenu>
                 </Border.ContextMenu>
 
                 <StackPanel>
                     <StackPanel Orientation="Horizontal">
-                        <ui:SymbolIcon
+                        <ui:FluentIcon
                             VerticalAlignment="Center"
                             Filled="True"
                             FontSize="20"
@@ -173,13 +173,13 @@
                     MinWidth="250"
                     HorizontalAlignment="Left"
                     Content="Languages"
-                    Icon="{ui:SymbolIcon Code24}">
+                    Icon="{ui:FluentIconSource Code24}">
                     <ui:DropDownButton.Flyout>
                         <ContextMenu>
                             <MenuItem
                                 Command="{Binding CutCommand}"
                                 Header="C# / .NET"
-                                Icon="{ui:SymbolIcon Code24}" />
+                                Icon="{ui:FluentIconSource Code24}" />
                             <MenuItem Command="{Binding CutCommand}" Header="F#" />
                             <MenuItem Command="{Binding CutCommand}" Header="Visual Basic" />
                             <Separator />
@@ -194,13 +194,13 @@
                             <MenuItem
                                 Command="{Binding CutCommand}"
                                 Header="Python"
-                                Icon="{ui:SymbolIcon Code24}" />
+                                Icon="{ui:FluentIconSource Code24}" />
                             <MenuItem Command="{Binding CutCommand}" Header="Ruby" />
                             <Separator />
                             <MenuItem
                                 Command="{Binding CutCommand}"
                                 Header="JavaScript"
-                                Icon="{ui:SymbolIcon Code24}" />
+                                Icon="{ui:FluentIconSource Code24}" />
                             <MenuItem Command="{Binding CutCommand}" Header="TypeScript" />
                             <Separator />
                             <MenuItem Command="{Binding CutCommand}" Header="HTML / XML" />
@@ -242,130 +242,130 @@
                         <MenuItem
                             Command="{Binding NewCommand}"
                             Header="New File"
-                            Icon="{ui:SymbolIcon Add24}"
+                            Icon="{ui:FluentIconSource Add24}"
                             InputGestureText="Ctrl+N" />
                         <MenuItem
                             Command="{Binding OpenCommand}"
                             Header="Open File..."
-                            Icon="{ui:SymbolIcon Open24}"
+                            Icon="{ui:FluentIconSource Open24}"
                             InputGestureText="Ctrl+O" />
                         <MenuItem
                             Command="{Binding OpenCommand}"
                             Header="Open Folder..."
-                            Icon="{ui:SymbolIcon FolderOpen24}"
+                            Icon="{ui:FluentIconSource FolderOpen24}"
                             InputGestureText="Ctrl+K, Ctrl+O" />
                         <Separator />
                         <MenuItem
                             Command="{Binding SaveCommand}"
                             Header="Save"
-                            Icon="{ui:SymbolIcon Save24}"
+                            Icon="{ui:FluentIconSource Save24}"
                             InputGestureText="Ctrl+S" />
                         <MenuItem
                             Command="{Binding SaveAsCommand}"
                             Header="Save As..."
-                            Icon="{ui:SymbolIcon SaveCopy24}"
+                            Icon="{ui:FluentIconSource SaveCopy24}"
                             InputGestureText="Ctrl+Shift+S" />
                         <MenuItem
                             Command="{Binding SaveAsCommand}"
                             Header="Save All"
-                            Icon="{ui:SymbolIcon SaveMultiple24}"
+                            Icon="{ui:FluentIconSource SaveMultiple24}"
                             InputGestureText="Ctrl+K, S" />
                         <Separator />
                         <MenuItem
                             Command="{Binding UndoCommand}"
                             Header="Undo"
-                            Icon="{ui:SymbolIcon ArrowUndo24}"
+                            Icon="{ui:FluentIconSource ArrowUndo24}"
                             InputGestureText="Ctrl+Z" />
                         <MenuItem
                             Command="{Binding RedoCommand}"
                             Header="Redo"
-                            Icon="{ui:SymbolIcon ArrowRedo24}"
+                            Icon="{ui:FluentIconSource ArrowRedo24}"
                             InputGestureText="Ctrl+Y" />
                         <Separator />
                         <MenuItem
                             Command="{Binding CutCommand}"
                             Header="Cut"
-                            Icon="{ui:SymbolIcon Cut24}"
+                            Icon="{ui:FluentIconSource Cut24}"
                             InputGestureText="Ctrl+X" />
                         <MenuItem
                             Command="{Binding CopyCommand}"
                             Header="Copy"
-                            Icon="{ui:SymbolIcon Copy24}"
+                            Icon="{ui:FluentIconSource Copy24}"
                             InputGestureText="Ctrl+C" />
                         <MenuItem
                             Command="{Binding PasteCommand}"
                             Header="Paste"
-                            Icon="{ui:SymbolIcon ClipboardPaste24}"
+                            Icon="{ui:FluentIconSource ClipboardPaste24}"
                             InputGestureText="Ctrl+V" />
                         <MenuItem
                             Command="{Binding DeleteCommand}"
                             Header="Delete"
-                            Icon="{ui:SymbolIcon Delete24}"
+                            Icon="{ui:FluentIconSource Delete24}"
                             InputGestureText="Del" />
                         <Separator />
                         <MenuItem
                             Command="{Binding SelectAllCommand}"
                             Header="Select All"
-                            Icon="{ui:SymbolIcon SelectAllOn24}"
+                            Icon="{ui:FluentIconSource SelectAllOn24}"
                             InputGestureText="Ctrl+A" />
                         <Separator />
                         <MenuItem
                             Command="{Binding CutCommand}"
                             Header="Find..."
-                            Icon="{ui:SymbolIcon Search24}"
+                            Icon="{ui:FluentIconSource Search24}"
                             InputGestureText="Ctrl+F" />
                         <MenuItem
                             Command="{Binding CutCommand}"
                             Header="Find in Files..."
-                            Icon="{ui:SymbolIcon SearchSettings20}"
+                            Icon="{ui:FluentIconSource SearchSettings20}"
                             InputGestureText="Ctrl+Shift+F" />
                         <MenuItem
                             Command="{Binding CutCommand}"
                             Header="Replace..."
-                            Icon="{ui:SymbolIcon ArrowSwap24}"
+                            Icon="{ui:FluentIconSource ArrowSwap24}"
                             InputGestureText="Ctrl+H" />
                         <Separator />
                         <MenuItem
                             Command="{Binding CutCommand}"
                             Header="Go to Line..."
-                            Icon="{ui:SymbolIcon NumberSymbol24}"
+                            Icon="{ui:FluentIconSource NumberSymbol24}"
                             InputGestureText="Ctrl+G" />
                         <MenuItem
                             Command="{Binding CutCommand}"
                             Header="Go to Symbol..."
-                            Icon="{ui:SymbolIcon Symbols24}"
+                            Icon="{ui:FluentIconSource Symbols24}"
                             InputGestureText="Ctrl+T" />
                         <Separator />
                         <MenuItem
                             Command="{Binding CutCommand}"
                             Header="Toggle Breakpoint"
-                            Icon="{ui:SymbolIcon Circle24}"
+                            Icon="{ui:FluentIconSource Circle24}"
                             InputGestureText="F9" />
                         <MenuItem
                             Command="{Binding CutCommand}"
                             Header="Start Debugging"
-                            Icon="{ui:SymbolIcon Play24}"
+                            Icon="{ui:FluentIconSource Play24}"
                             InputGestureText="F5" />
                         <Separator />
                         <MenuItem
                             Command="{Binding RefreshCommand}"
                             Header="Refresh"
-                            Icon="{ui:SymbolIcon ArrowClockwise24}" />
+                            Icon="{ui:FluentIconSource ArrowClockwise24}" />
                         <MenuItem
                             Command="{Binding SettingsCommand}"
                             Header="Settings"
-                            Icon="{ui:SymbolIcon Settings24}" />
+                            Icon="{ui:FluentIconSource Settings24}" />
                         <Separator />
                         <MenuItem
                             Command="{Binding ExitCommand}"
                             Header="Exit"
-                            Icon="{ui:SymbolIcon DoorArrowRight20}" />
+                            Icon="{ui:FluentIconSource DoorArrowRight20}" />
                     </ContextMenu>
                 </Border.ContextMenu>
 
                 <StackPanel>
                     <StackPanel Orientation="Horizontal">
-                        <ui:SymbolIcon
+                        <ui:FluentIcon
                             VerticalAlignment="Center"
                             Filled="True"
                             FontSize="20"

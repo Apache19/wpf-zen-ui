@@ -53,8 +53,8 @@
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type Button}">
                     <Border Margin="{TemplateBinding Padding}" CornerRadius="4">
-                        <controls:SymbolIcon
-                            x:Name="SymbolIcon"
+                        <controls:FluentIcon
+                            x:Name="FluentIcon"
                             Filled="True"
                             Symbol="CaretDownRight12" />
                         <VisualStateManager.VisualStateGroups>
@@ -62,7 +62,7 @@
                                 <VisualState x:Name="Normal">
                                     <Storyboard>
                                         <ObjectAnimationUsingKeyFrames
-                                            Storyboard.TargetName="SymbolIcon"
+                                            Storyboard.TargetName="FluentIcon"
                                             Storyboard.TargetProperty="Foreground"
                                             Duration="0">
                                             <DiscreteObjectKeyFrame KeyTime="0" Value="{m:DynamicBrush SubtleFillTransparent}" />
@@ -75,7 +75,7 @@
                                 <VisualState x:Name="MouseOver">
                                     <Storyboard>
                                         <ObjectAnimationUsingKeyFrames
-                                            Storyboard.TargetName="SymbolIcon"
+                                            Storyboard.TargetName="FluentIcon"
                                             Storyboard.TargetProperty="Foreground"
                                             Duration="0">
                                             <DiscreteObjectKeyFrame KeyTime="0" Value="{m:DynamicBrush TextFillSecondary}" />
@@ -88,7 +88,7 @@
                                 <VisualState x:Name="Pressed">
                                     <Storyboard>
                                         <ObjectAnimationUsingKeyFrames
-                                            Storyboard.TargetName="SymbolIcon"
+                                            Storyboard.TargetName="FluentIcon"
                                             Storyboard.TargetProperty="Foreground"
                                             Duration="0">
                                             <DiscreteObjectKeyFrame KeyTime="0" Value="{m:DynamicBrush TextFillTertiary}" />
@@ -101,7 +101,7 @@
                                 <VisualState x:Name="Disabled">
                                     <Storyboard>
                                         <ObjectAnimationUsingKeyFrames
-                                            Storyboard.TargetName="SymbolIcon"
+                                            Storyboard.TargetName="FluentIcon"
                                             Storyboard.TargetProperty="Foreground"
                                             Duration="0">
                                             <DiscreteObjectKeyFrame KeyTime="0" Value="{m:DynamicBrush TextFillDisabled}" />
@@ -210,7 +210,7 @@
         <Setter Property="ValidationErrorTemplate">
             <Setter.Value>
                 <ControlTemplate>
-                    <controls:SymbolIcon
+                    <controls:FluentIcon
                         Width="24"
                         Height="24"
                         Margin="-4,0,-12,0"
@@ -587,16 +587,16 @@
                                     x:Name="ContentPresenter"
                                     Grid.Column="0"
                                     SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
-                                <controls:SymbolIcon
+                                <controls:FluentIcon
                                     x:Name="SortIcon"
                                     Grid.Column="1"
                                     Margin="4,0,0,0"
                                     RenderTransformOrigin="0.5, 0.5"
                                     Symbol="ArrowSortUp24">
-                                    <controls:SymbolIcon.RenderTransform>
+                                    <controls:FluentIcon.RenderTransform>
                                         <RotateTransform Angle="0" />
-                                    </controls:SymbolIcon.RenderTransform>
-                                </controls:SymbolIcon>
+                                    </controls:FluentIcon.RenderTransform>
+                                </controls:FluentIcon>
                             </Grid>
                         </Border>
 
@@ -633,7 +633,7 @@
                                     <Storyboard>
                                         <DoubleAnimation
                                             Storyboard.TargetName="SortIcon"
-                                            Storyboard.TargetProperty="(controls:SymbolIcon.RenderTransform).(RotateTransform.Angle)"
+                                            Storyboard.TargetProperty="(controls:FluentIcon.RenderTransform).(RotateTransform.Angle)"
                                             From="0"
                                             To="180"
                                             Duration="00:00:00.333" />
@@ -645,7 +645,7 @@
                                     <Storyboard>
                                         <DoubleAnimation
                                             Storyboard.TargetName="SortIcon"
-                                            Storyboard.TargetProperty="(controls:SymbolIcon.RenderTransform).(RotateTransform.Angle)"
+                                            Storyboard.TargetProperty="(controls:FluentIcon.RenderTransform).(RotateTransform.Angle)"
                                             From="180"
                                             To="0"
                                             Duration="00:00:00.333" />
@@ -709,7 +709,7 @@
                                 Grid.ColumnSpan="2"
                                 IsHitTestVisible="False" />
 
-                            <controls:SymbolIcon
+                            <controls:FluentIcon
                                 x:Name="SortIcon"
                                 Grid.Column="1"
                                 HorizontalAlignment="Center"
@@ -935,7 +935,7 @@
                                 ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
                                 ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}"
                                 TextElement.Foreground="{TemplateBinding Foreground}" />
-                            <controls:SymbolIcon
+                            <controls:FluentIcon
                                 Grid.Column="1"
                                 Margin="8,0,10,0"
                                 FontSize="11"

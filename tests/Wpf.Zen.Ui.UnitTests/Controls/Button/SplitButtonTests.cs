@@ -51,7 +51,7 @@ public class SplitButtonTests
             () =>
             {
                 var command = new RoutedCommand();
-                var icon = new SymbolIcon(SymbolRegular.PaintBrush24);
+                var icon = new FluentIcon(SymbolRegular.PaintBrush24);
                 var content = new Border();
                 var splitButton = CreateTemplatedSplitButton(
                     new SplitButton

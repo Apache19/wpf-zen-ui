@@ -24,7 +24,7 @@
         <Setter Property="Foreground" Value="{m:DynamicBrush TextFillPrimary}" />
         <Setter Property="FocusVisualStyle" Value="{DynamicResource {x:Static t:StyleKeys.DefaultControlFocusVisualStyle}}" />
         <!--  A Style must not share one FrameworkElement between every breadcrumb container.  -->
-        <Setter Property="Icon" Value="{m:FluentSystemIcon ChevronRight24}" />
+        <Setter Property="Icon" Value="{m:FluentIconSource ChevronRight24}" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type controls:BreadcrumbBarItem}">

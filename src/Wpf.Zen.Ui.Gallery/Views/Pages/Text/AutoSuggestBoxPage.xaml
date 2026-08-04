@@ -19,7 +19,7 @@
     <controls:ControlExample
         Margin="0"
         HeaderText="WPF Zen UI AutoSuggestBox."
-        XamlCode="&lt;ui:AutoSuggestBox Icon=&quot;{ui:SymbolIcon Search24}&quot; OriginalItemsSource=&quot;{Binding AutoSuggestBoxSuggestions, Mode=OneWay}&quot; PlaceholderText=&quot;Search...&quot; ClearButtonEnabled=&quot;{Binding ShowClearButtonDisabled, Converter={StaticResource BoolInvertConverter}}&quot; /&gt;">
+        XamlCode="&lt;ui:AutoSuggestBox Icon=&quot;{ui:FluentIconSource Search24}&quot; OriginalItemsSource=&quot;{Binding AutoSuggestBoxSuggestions, Mode=OneWay}&quot; PlaceholderText=&quot;Search...&quot; ClearButtonEnabled=&quot;{Binding ShowClearButtonDisabled, Converter={StaticResource BoolInvertConverter}}&quot; /&gt;">
         <Grid>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
@@ -30,7 +30,7 @@
                 MinWidth="250"
                 HorizontalAlignment="Left"
                 ClearButtonEnabled="{Binding ShowClearButtonDisabled, Converter={StaticResource BoolInvertConverter}}"
-                Icon="{ui:SymbolIcon Search24}"
+                Icon="{ui:FluentIconSource Search24}"
                 OriginalItemsSource="{Binding AutoSuggestBoxSuggestions, Mode=OneWay}"
                 PlaceholderText="Search..." />
             <CheckBox

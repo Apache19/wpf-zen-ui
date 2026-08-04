@@ -37,7 +37,7 @@
             <ui:NavigationView.AutoSuggestBox>
                 <ui:AutoSuggestBox x:Name="AutoSuggestBox" PlaceholderText="Search">
                     <ui:AutoSuggestBox.Icon>
-                        <ui:SymbolIcon Symbol="Search24" />
+                        <ui:FluentIcon Symbol="Search24" />
                     </ui:AutoSuggestBox.Icon>
                 </ui:AutoSuggestBox>
             </ui:NavigationView.AutoSuggestBox>

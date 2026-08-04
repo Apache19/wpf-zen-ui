@@ -51,8 +51,8 @@
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
                                 <Border Margin="0,2,14,0" VerticalAlignment="Top">
-                                    <controls:SymbolIcon
-                                        x:Name="SymbolIcon"
+                                    <controls:FluentIcon
+                                        x:Name="FluentIcon"
                                         VerticalAlignment="Top"
                                         Filled="True"
                                         FontSize="16" />
@@ -88,7 +88,7 @@
                                         Command="{Binding Path=TemplateButtonCommand, Mode=OneWay, RelativeSource={RelativeSource TemplatedParent}}"
                                         IsEnabled="True">
                                         <controls:Button.Icon>
-                                            <controls:SymbolIcon Symbol="Dismiss24" />
+                                            <controls:FluentIcon Symbol="Dismiss24" />
                                         </controls:Button.Icon>
                                     </controls:Button>
                                 </Border>
@@ -116,26 +116,26 @@
                         </Trigger>
 
                         <Trigger Property="Severity" Value="Informational">
-                            <Setter TargetName="SymbolIcon" Property="Foreground" Value="{m:DynamicBrush SystemFillInformational}" />
-                            <Setter TargetName="SymbolIcon" Property="Symbol" Value="Info24" />
+                            <Setter TargetName="FluentIcon" Property="Foreground" Value="{m:DynamicBrush SystemFillInformational}" />
+                            <Setter TargetName="FluentIcon" Property="Symbol" Value="Info24" />
                             <Setter TargetName="ContentBorder" Property="Background" Value="{m:DynamicBrush SystemFillAttentionBackground}" />
                             <Setter TargetName="ContentBorder" Property="BorderBrush" Value="{m:DynamicBrush CardStrokeDefault}" />
                         </Trigger>
                         <Trigger Property="Severity" Value="Success">
-                            <Setter TargetName="SymbolIcon" Property="Foreground" Value="{m:DynamicBrush SystemFillSuccess}" />
-                            <Setter TargetName="SymbolIcon" Property="Symbol" Value="CheckmarkCircle24" />
+                            <Setter TargetName="FluentIcon" Property="Foreground" Value="{m:DynamicBrush SystemFillSuccess}" />
+                            <Setter TargetName="FluentIcon" Property="Symbol" Value="CheckmarkCircle24" />
                             <Setter TargetName="ContentBorder" Property="Background" Value="{m:DynamicBrush SystemFillSuccessBackground}" />
                             <Setter TargetName="ContentBorder" Property="BorderBrush" Value="{m:DynamicBrush CardStrokeDefault}" />
                         </Trigger>
                         <Trigger Property="Severity" Value="Warning">
-                            <Setter TargetName="SymbolIcon" Property="Foreground" Value="{m:DynamicBrush SystemFillCaution}" />
-                            <Setter TargetName="SymbolIcon" Property="Symbol" Value="ErrorCircle24" />
+                            <Setter TargetName="FluentIcon" Property="Foreground" Value="{m:DynamicBrush SystemFillCaution}" />
+                            <Setter TargetName="FluentIcon" Property="Symbol" Value="ErrorCircle24" />
                             <Setter TargetName="ContentBorder" Property="Background" Value="{m:DynamicBrush SystemFillCautionBackground}" />
                             <Setter TargetName="ContentBorder" Property="BorderBrush" Value="{m:DynamicBrush CardStrokeDefault}" />
                         </Trigger>
                         <Trigger Property="Severity" Value="Error">
-                            <Setter TargetName="SymbolIcon" Property="Foreground" Value="{m:DynamicBrush SystemFillCritical}" />
-                            <Setter TargetName="SymbolIcon" Property="Symbol" Value="DismissCircle24" />
+                            <Setter TargetName="FluentIcon" Property="Foreground" Value="{m:DynamicBrush SystemFillCritical}" />
+                            <Setter TargetName="FluentIcon" Property="Symbol" Value="DismissCircle24" />
                             <Setter TargetName="ContentBorder" Property="Background" Value="{m:DynamicBrush SystemFillCriticalBackground}" />
                             <Setter TargetName="ContentBorder" Property="BorderBrush" Value="{m:DynamicBrush CardStrokeDefault}" />
                         </Trigger>

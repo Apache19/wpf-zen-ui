@@ -87,7 +87,7 @@
                     VerticalAlignment="Center"
                     Appearance="{Binding UiButtonAppearance}"
                     Content="WPF Zen UI button"
-                    Icon="{ui:FluentSystemIcon Fluent24}"
+                    Icon="{ui:FluentIconSource Fluent24}"
                     IsEnabled="{Binding IsUiButtonDisabled, Converter={StaticResource BoolInvertConverter}}" />
                 <StackPanel Grid.Column="1" Orientation="Vertical">
                     <StackPanel Orientation="Horizontal">

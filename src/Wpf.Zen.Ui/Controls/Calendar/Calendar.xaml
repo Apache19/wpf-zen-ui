@@ -391,20 +391,20 @@
                                     MouseOverBackground="{m:DynamicBrush SubtleFillSecondary}"
                                     PressedBackground="{m:DynamicBrush SubtleFillTertiary}">
                                     <controls:Button.Content>
-                                        <controls:SymbolIcon
+                                        <controls:FluentIcon
                                             Filled="True"
                                             FontSize="16"
                                             Symbol="CaretUp16">
-                                            <controls:SymbolIcon.Style>
-                                                <Style TargetType="controls:SymbolIcon">
+                                            <controls:FluentIcon.Style>
+                                                <Style TargetType="controls:FluentIcon">
                                                     <Style.Triggers>
                                                         <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType={x:Type controls:Button}}}" Value="True">
                                                             <Setter Property="Foreground" Value="{m:DynamicBrush TextFillSecondary}" />
                                                         </DataTrigger>
                                                     </Style.Triggers>
                                                 </Style>
-                                            </controls:SymbolIcon.Style>
-                                        </controls:SymbolIcon>
+                                            </controls:FluentIcon.Style>
+                                        </controls:FluentIcon>
                                     </controls:Button.Content>
                                 </controls:Button>
 
@@ -425,20 +425,20 @@
                                     MouseOverBackground="{m:DynamicBrush SubtleFillSecondary}"
                                     PressedBackground="{m:DynamicBrush SubtleFillTertiary}">
                                     <controls:Button.Content>
-                                        <controls:SymbolIcon
+                                        <controls:FluentIcon
                                             Filled="True"
                                             FontSize="16"
                                             Symbol="CaretDown16">
-                                            <controls:SymbolIcon.Style>
-                                                <Style TargetType="controls:SymbolIcon">
+                                            <controls:FluentIcon.Style>
+                                                <Style TargetType="controls:FluentIcon">
                                                     <Style.Triggers>
                                                         <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType={x:Type controls:Button}}}" Value="True">
                                                             <Setter Property="Foreground" Value="{m:DynamicBrush TextFillSecondary}" />
                                                         </DataTrigger>
                                                     </Style.Triggers>
                                                 </Style>
-                                            </controls:SymbolIcon.Style>
-                                        </controls:SymbolIcon>
+                                            </controls:FluentIcon.Style>
+                                        </controls:FluentIcon>
                                     </controls:Button.Content>
                                 </controls:Button>
                             </Grid>

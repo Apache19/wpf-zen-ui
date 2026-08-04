@@ -30,7 +30,7 @@
                                     CommandParameter="{Binding PageType, Mode=OneTime}"
                                     IsChevronVisible="True">
                                     <ui:CardAction.Icon>
-                                        <ui:SymbolIcon
+                                        <ui:FluentIcon
                                             FontSize="30"
                                             Symbol="{Binding Icon, Mode=OneTime}"
                                             TextElement.Foreground="{ui:DynamicBrush TextFillPrimary}" />

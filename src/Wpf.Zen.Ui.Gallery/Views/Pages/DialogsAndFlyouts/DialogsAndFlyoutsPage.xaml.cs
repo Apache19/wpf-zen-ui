@@ -47,9 +47,9 @@ public partial class DialogsAndFlyoutsPage : INavigableView<DialogsAndFlyoutsVie
                 MainTitle.SetCurrentValue(System.Windows.Controls.TextBlock.TextProperty, newTitle);
             }
 
-            if (selectedItem.Icon is SymbolRegular selectedIcon && MainSymbolIcon.Symbol != selectedIcon)
+            if (selectedItem.Icon is SymbolRegular selectedIcon && MainFluentIcon.Symbol != selectedIcon)
             {
-                MainSymbolIcon.SetCurrentValue(SymbolIcon.SymbolProperty, selectedIcon);
+                MainFluentIcon.SetCurrentValue(FluentIcon.SymbolProperty, selectedIcon);
             }
         }
 

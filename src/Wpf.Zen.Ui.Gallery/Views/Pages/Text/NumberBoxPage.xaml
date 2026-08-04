@@ -99,7 +99,7 @@
                 MinWidth="260"
                 HorizontalAlignment="Left"
                 DecimalPlaces="2"
-                Icon="{ui:SymbolIcon NumberSymbolSquare24}"
+                Icon="{ui:FluentIconSource NumberSymbolSquare24}"
                 LargeChange="2.25"
                 Maximum="10"
                 Minimum="-10"
@@ -116,7 +116,7 @@
             <ui:NumberBox
                 MinWidth="260"
                 HorizontalAlignment="Left"
-                Icon="{ui:SymbolIcon NumberSymbolSquare24}"
+                Icon="{ui:FluentIconSource NumberSymbolSquare24}"
                 MaxDecimalPlaces="0"
                 Maximum="100"
                 Minimum="0"

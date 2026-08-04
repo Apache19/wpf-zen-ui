@@ -5,11 +5,11 @@
         Padding="24">
     <Border.ContextMenu>
         <ContextMenu>
-            <MenuItem Header="Cut" Icon="{ui:SymbolIcon Cut24}" />
-            <MenuItem Header="Copy" Icon="{ui:SymbolIcon Copy24}" />
-            <MenuItem Header="Paste" Icon="{ui:SymbolIcon ClipboardPaste24}" />
+            <MenuItem Header="Cut" Icon="{ui:FluentIconSource Cut24}" />
+            <MenuItem Header="Copy" Icon="{ui:FluentIconSource Copy24}" />
+            <MenuItem Header="Paste" Icon="{ui:FluentIconSource ClipboardPaste24}" />
             <Separator />
-            <MenuItem Header="Select All" Icon="{ui:SymbolIcon SelectAllOn24}" />
+            <MenuItem Header="Select All" Icon="{ui:FluentIconSource SelectAllOn24}" />
         </ContextMenu>
     </Border.ContextMenu>
     <TextBlock Text="Right-click here to show context menu." />

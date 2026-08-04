@@ -87,7 +87,7 @@
                 Width="25"
                 Margin="1,1,1,0"
                 controls:NumberBox.ButtonKind="Increment">
-                <controls:SymbolIcon FontSize="10" Symbol="ChevronUp24" />
+                <controls:FluentIcon FontSize="10" Symbol="ChevronUp24" />
                 <RepeatButton.Style>
                     <Style BasedOn="{StaticResource NumberBoxRepeatButtonStyle}" TargetType="{x:Type RepeatButton}">
                         <Setter Property="Border.CornerRadius" Value="2,2,0,0" />
@@ -104,7 +104,7 @@
                         <Setter Property="Border.CornerRadius" Value="0,0,2,2" />
                     </Style>
                 </RepeatButton.Style>
-                <controls:SymbolIcon FontSize="10" Symbol="ChevronDown24" />
+                <controls:FluentIcon FontSize="10" Symbol="ChevronDown24" />
             </RepeatButton>
         </Grid>
     </DataTemplate>
@@ -120,7 +120,7 @@
                 BorderBrush="Transparent"
                 Foreground="{m:DynamicBrush TextFillSecondary}"
                 Style="{StaticResource NumberBoxRepeatButtonStyle}">
-                <controls:SymbolIcon FontSize="{StaticResource NumberBoxButtonIconSize}" Symbol="ChevronUp24" />
+                <controls:FluentIcon FontSize="{StaticResource NumberBoxButtonIconSize}" Symbol="ChevronUp24" />
             </RepeatButton>
             <RepeatButton
                 Width="{StaticResource NumberBoxButtonHeight}"
@@ -131,7 +131,7 @@
                 BorderBrush="Transparent"
                 Foreground="{m:DynamicBrush TextFillSecondary}"
                 Style="{StaticResource NumberBoxRepeatButtonStyle}">
-                <controls:SymbolIcon FontSize="{StaticResource NumberBoxButtonIconSize}" Symbol="ChevronDown24" />
+                <controls:FluentIcon FontSize="{StaticResource NumberBoxButtonIconSize}" Symbol="ChevronDown24" />
             </RepeatButton>
         </StackPanel>
     </DataTemplate>
@@ -198,7 +198,7 @@
                             BorderThickness="0"
                             Command="{Binding Path=TemplateButtonCommand, RelativeSource={RelativeSource TemplatedParent}}"
                             Focusable="False"
-                            Icon="{m:FluentSystemIcon Dismiss24}"
+                            Icon="{m:FluentIconSource Dismiss24}"
                             IsEnabled="{TemplateBinding ClearButtonEnabled}"
                             IsTabStop="False" />
 
@@ -267,7 +267,7 @@
                             Margin="2,2,2,1"
                             controls:NumberBox.ButtonKind="Increment"
                             Style="{StaticResource NumberBoxRepeatButtonStyle}">
-                            <controls:SymbolIcon FontSize="14" Symbol="ChevronUp24" />
+                            <controls:FluentIcon FontSize="14" Symbol="ChevronUp24" />
                         </RepeatButton>
                         <RepeatButton
                             Grid.Row="1"
@@ -276,7 +276,7 @@
                             Margin="2,1,2,2"
                             controls:NumberBox.ButtonKind="Decrement"
                             Style="{StaticResource NumberBoxRepeatButtonStyle}">
-                            <controls:SymbolIcon FontSize="14" Symbol="ChevronDown24" />
+                            <controls:FluentIcon FontSize="14" Symbol="ChevronDown24" />
                         </RepeatButton>
                     </Grid>
                 </Border>

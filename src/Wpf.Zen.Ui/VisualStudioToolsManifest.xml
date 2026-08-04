@@ -42,7 +42,7 @@
       <Item Type="Wpf.Zen.Ui.Controls.RichTextBox" />
       <Item Type="Wpf.Zen.Ui.Controls.Snackbar" />
       <Item Type="Wpf.Zen.Ui.Controls.SplitButton" />
-      <Item Type="Wpf.Zen.Ui.Controls.SymbolIcon" />
+      <Item Type="Wpf.Zen.Ui.Controls.FluentIcon" />
       <Item Type="Wpf.Zen.Ui.Controls.TextBlock" />
       <Item Type="Wpf.Zen.Ui.Controls.TextBox" />
       <Item Type="Wpf.Zen.Ui.Controls.ThumbRate" />

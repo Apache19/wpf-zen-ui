@@ -181,7 +181,7 @@
             Header="{Binding Source={x:Static ApplicationCommands.Delete}, Path=Text}"
             InputGestureText="Del">
             <MenuItem.Icon>
-                <controls:SymbolIcon FontSize="16" Symbol="Delete24" />
+                <controls:FluentIcon FontSize="16" Symbol="Delete24" />
             </MenuItem.Icon>
         </MenuItem>
     </ContextMenu>

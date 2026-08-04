@@ -46,14 +46,14 @@ public class DerivedButtonTests
             {
                 var first = new DropDownButton();
                 var second = new DropDownButton();
-                var firstIcon = Assert.IsType<SymbolIcon>(first.RightIcon);
-                var secondIcon = Assert.IsType<SymbolIcon>(second.RightIcon);
+                var firstIcon = Assert.IsType<FluentIcon>(first.RightIcon);
+                var secondIcon = Assert.IsType<FluentIcon>(second.RightIcon);
 
                 Assert.Equal(SymbolRegular.ChevronDown24, firstIcon.Symbol);
                 Assert.Equal(SymbolRegular.ChevronDown24, secondIcon.Symbol);
                 Assert.NotSame(firstIcon, secondIcon);
 
-                var customIcon = new SymbolIcon(SymbolRegular.Clock24);
+                var customIcon = new FluentIcon(SymbolRegular.Clock24);
                 first.RightIcon = customIcon;
                 Assert.Same(customIcon, first.RightIcon);
 
@@ -67,19 +67,19 @@ public class DerivedButtonTests
     }
 
     [Fact]
-    public void CalendarDatePicker_DefaultIconsAreNotShared()
+    public void CalendarDatePicker_DefaultIconUsesReusableSourceData()
     {
         RunOnStaThread(
             () =>
             {
-                var firstIcon = Assert.IsType<SymbolIcon>(new CalendarDatePicker().Icon);
-                var secondIcon = Assert.IsType<SymbolIcon>(new CalendarDatePicker().Icon);
+                var firstIcon = Assert.IsType<FluentIconSource>(new CalendarDatePicker().Icon);
+                var secondIcon = Assert.IsType<FluentIconSource>(new CalendarDatePicker().Icon);
 
                 Assert.Equal(SymbolRegular.CalendarRtl24, firstIcon.Symbol);
                 Assert.Equal(SymbolRegular.CalendarRtl24, secondIcon.Symbol);
-                Assert.NotSame(firstIcon, secondIcon);
+                Assert.Same(firstIcon, secondIcon);
 
-                var customIcon = new SymbolIcon(SymbolRegular.Clock24);
+                var customIcon = new FluentIcon(SymbolRegular.Clock24);
                 var calendarDatePicker = new CalendarDatePicker { Icon = customIcon };
 
                 Assert.Same(customIcon, calendarDatePicker.Icon);
@@ -204,7 +204,7 @@ public class DerivedButtonTests
                 var calendarDatePicker = new CalendarDatePicker();
                 var toggleButton = new Wpf.Zen.Ui.Controls.ToggleButton
                 {
-                    Icon = new SymbolIcon(SymbolRegular.Calendar24),
+                    Icon = new FluentIcon(SymbolRegular.Calendar24),
                 };
                 var button = new Wpf.Zen.Ui.Controls.Button();
                 var textBox = new Wpf.Zen.Ui.Controls.TextBox();

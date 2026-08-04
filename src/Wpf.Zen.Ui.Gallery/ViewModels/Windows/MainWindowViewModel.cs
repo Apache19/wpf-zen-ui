@@ -159,29 +159,20 @@ public partial class MainWindowViewModel(IStringLocalizer<Translations> localize
         {
             Header = "Home",
             Tag    = "tray_home",
-            Icon = new SymbolIcon
-            {
-                Symbol = SymbolRegular.Home24
-            },
+            Icon = new FluentIconSource(SymbolRegular.Home24),
         },
         new MenuItem()
         {
             Header = "Settings",
             Tag    = "tray_settings",
-            Icon = new SymbolIcon
-            {
-                Symbol = SymbolRegular.Settings24
-            },
+            Icon = new FluentIconSource(SymbolRegular.Settings24),
         },
         new UiSeparator(),
         new MenuItem()
         {
             Header = "Close",
             Tag    = "tray_close",
-            Icon = new SymbolIcon
-            {
-                Symbol = SymbolRegular.Dismiss24
-            },
+            Icon = new FluentIconSource(SymbolRegular.Dismiss24),
         }
     ];
 }

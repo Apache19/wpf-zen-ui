@@ -71,7 +71,7 @@
                     AutomationProperties.AutomationId="NavigationAutoSuggestBox"
                     PlaceholderText="{i18n:StringLocalizer 'Search'}">
                     <ui:AutoSuggestBox.Icon>
-                        <ui:SymbolIcon Symbol="Search24" />
+                        <ui:FluentIcon Symbol="Search24" />
                     </ui:AutoSuggestBox.Icon>
                 </ui:AutoSuggestBox>
             </ui:NavigationView.AutoSuggestBox>
@@ -114,7 +114,7 @@
                     Padding="9"
                     VerticalAlignment="Center"
                     Click="ThemeButton_OnClick"
-                    Icon="{ui:SymbolIcon WeatherSunny24}" />
+                    Icon="{ui:FluentIconSource WeatherSunny24}" />
             </Grid>
 
         </ui:TitleBar>

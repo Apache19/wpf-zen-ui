@@ -45,7 +45,7 @@
                 <Grid.RenderTransform>
                     <RotateTransform Angle="0" />
                 </Grid.RenderTransform>
-                <controls:SymbolIcon
+                <controls:FluentIcon
                     x:Name="ControlChevronIcon"
                     FontSize="{StaticResource ExpanderChevronSize}"
                     Foreground="{TemplateBinding Foreground}"

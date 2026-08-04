@@ -26,7 +26,7 @@
             <Style BasedOn="{StaticResource {x:Type ui:BreadcrumbBarItem}}" TargetType="{x:Type ui:BreadcrumbBarItem}">
                 <Setter Property="Icon">
                     <Setter.Value>
-                        <ui:SymbolIcon
+                        <ui:FluentIcon
                             FontSize="16"
                             FontWeight="Regular"
                             Symbol="ChevronRight24" />

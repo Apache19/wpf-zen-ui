@@ -32,7 +32,7 @@
                         Margin="{TemplateBinding Margin}"
                         Background="{m:DynamicBrush SubtleFillTransparent}"
                         CornerRadius="6">
-                        <controls:SymbolIcon
+                        <controls:FluentIcon
                             Margin="0,0,0,0"
                             HorizontalAlignment="Center"
                             VerticalAlignment="Center"

@@ -86,7 +86,7 @@
                                     HorizontalAlignment="Left"
                                     VerticalAlignment="Center"
                                     AutomationProperties.AutomationId="NavigationAutoSuggestBoxButton"
-                                    Icon="{m:FluentSystemIcon Search24}"
+                                    Icon="{m:FluentIconSource Search24}"
                                     Visibility="Hidden" />
                             </Grid>
                         </Grid>

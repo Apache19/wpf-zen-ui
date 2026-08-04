@@ -31,7 +31,7 @@
                     <ui:Anchor
                         HorizontalAlignment="Left"
                         Content="WPF Zen UI anchor"
-                        Icon="{ui:SymbolIcon Link24}"
+                        Icon="{ui:FluentIconSource Link24}"
                         IsEnabled="{Binding IsAnchorDisabled, Converter={StaticResource BoolInvertConverter}}"
                         NavigateUri="https://thezendev.com/" />
                 </StackPanel>

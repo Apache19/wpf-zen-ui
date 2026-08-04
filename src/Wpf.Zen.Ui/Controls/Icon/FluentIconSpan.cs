@@ -10,22 +10,27 @@ using Wpf.Zen.Ui.Theming;
 namespace Wpf.Zen.Ui.Controls;
 
 /// <summary>
-/// Represents a symbol glyph that can be displayed inline inside a text element.
+/// Displays a Fluent System Icons glyph inline inside a WPF text element.
 /// </summary>
+/// <remarks>
+/// The run is the inline counterpart of <see cref="FluentIcon"/>. It participates in the same
+/// <see cref="IconPresenter.VariantProperty"/> contract, including when the value inherits through
+/// a containing <see cref="System.Windows.Controls.TextBlock"/> into the text content tree.
+/// </remarks>
 /// <example>
 /// <code lang="xml">
 /// &lt;TextBlock&gt;
-///     &lt;ui:SymbolSpan Symbol="Document24" Filled="True" FontSize="12" /&gt;
+///     &lt;ui:FluentIconSpan Symbol="Document24" Filled="True" FontSize="12" /&gt;
 ///     &lt;Run Text="{Binding DeviceName}" /&gt;
 /// &lt;/TextBlock&gt;
 /// </code>
 /// </example>
-public class SymbolSpan : Run
+public class FluentIconSpan : Run
 {
-    static SymbolSpan()
+    static FluentIconSpan()
     {
         BaselineAlignmentProperty.OverrideMetadata(
-            typeof(SymbolSpan),
+            typeof(FluentIconSpan),
             new FrameworkPropertyMetadata(BaselineAlignment.Center)
         );
     }
@@ -34,16 +39,8 @@ public class SymbolSpan : Run
     public static readonly DependencyProperty SymbolProperty = DependencyProperty.Register(
         nameof(Symbol),
         typeof(SymbolRegular),
-        typeof(SymbolSpan),
+        typeof(FluentIconSpan),
         new PropertyMetadata(SymbolRegular.Empty, OnSymbolChanged)
-    );
-
-    /// <summary>Identifies the <see cref="Filled"/> dependency property.</summary>
-    public static readonly DependencyProperty FilledProperty = DependencyProperty.Register(
-        nameof(Filled),
-        typeof(bool),
-        typeof(SymbolSpan),
-        new PropertyMetadata(false, OnFilledChanged)
     );
 
     /// <summary>
@@ -55,6 +52,14 @@ public class SymbolSpan : Run
         set => SetValue(SymbolProperty, value);
     }
 
+    /// <summary>Identifies the <see cref="Filled"/> dependency property.</summary>
+    public static readonly DependencyProperty FilledProperty = DependencyProperty.Register(
+        nameof(Filled),
+        typeof(bool),
+        typeof(FluentIconSpan),
+        new FrameworkPropertyMetadata(false, OnFilledChanged, CoerceFilled)
+    );
+
     /// <summary>
     /// Gets or sets a value indicating whether the filled variant of the icon is displayed.
     /// </summary>
@@ -64,18 +69,35 @@ public class SymbolSpan : Run
         set => SetValue(FilledProperty, value);
     }
 
+    /// <summary>Identifies the <see cref="Variant"/> dependency property.</summary>
+    public static readonly DependencyProperty VariantProperty = IconPresenter.VariantProperty.AddOwner(
+        typeof(FluentIconSpan),
+        new FrameworkPropertyMetadata(
+            IconVariant.Default,
+            FrameworkPropertyMetadataOptions.Inherits,
+            OnVariantChanged
+        )
+    );
+
+    /// <summary>Gets or sets the presentation variant requested for this inline icon.</summary>
+    public IconVariant Variant
+    {
+        get => (IconVariant)GetValue(VariantProperty);
+        set => SetValue(VariantProperty, value);
+    }
+
     /// <summary>
-    /// Initializes a new instance of the <see cref="SymbolSpan"/> class.
+    /// Initializes a new instance of the <see cref="FluentIconSpan"/> class.
     /// </summary>
-    public SymbolSpan()
+    public FluentIconSpan()
     {
         UpdateFontFamily();
     }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="SymbolSpan"/> class.
+    /// Initializes a new instance of the <see cref="FluentIconSpan"/> class.
     /// </summary>
-    public SymbolSpan(SymbolRegular symbol, bool filled = false)
+    public FluentIconSpan(SymbolRegular symbol, bool filled = false)
         : this()
     {
         Symbol = symbol;
@@ -97,13 +119,28 @@ public class SymbolSpan : Run
 
     private static void OnSymbolChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
-        ((SymbolSpan)d).UpdateGlyph();
+        ((FluentIconSpan)d).UpdateGlyph();
     }
 
     private static void OnFilledChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
-        var self = (SymbolSpan)d;
+        var self = (FluentIconSpan)d;
         self.UpdateFontFamily();
         self.UpdateGlyph();
+    }
+
+    private static void OnVariantChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        d.CoerceValue(FilledProperty);
+    }
+
+    private static object CoerceFilled(DependencyObject d, object? baseValue)
+    {
+        return ((FluentIconSpan)d).Variant switch
+        {
+            IconVariant.Regular => false,
+            IconVariant.Filled => true,
+            _ => (bool)baseValue!,
+        };
     }
 }

@@ -51,7 +51,7 @@
                                     RadiusX="2"
                                     RadiusY="2" />
 
-                                <ContentPresenter
+                                <controls:IconPresenter
                                     x:Name="IconPresenter"
                                     Grid.Row="0"
                                     HorizontalAlignment="Center"
@@ -93,6 +93,12 @@
                                 <Setter TargetName="ActiveIndicator" Property="Opacity" Value="1" />
                                 <Setter TargetName="HeaderSurface" Property="Background" Value="{m:DynamicBrush ControlFillPrimary}" />
                                 <Setter TargetName="IconPresenter" Property="TextElement.Foreground" Value="{m:DynamicBrush AccentTextPrimary}" />
+                                <!--
+                                    Request a generic icon variant in the same template namescope as
+                                    the presenter. The navigation template never reaches into the
+                                    generated visual or assumes which icon family produced it.
+                                -->
+                                <Setter TargetName="IconPresenter" Property="controls:IconPresenter.Variant" Value="Filled" />
                                 <DataTrigger.EnterActions>
                                     <BeginStoryboard>
                                         <Storyboard>
@@ -151,11 +157,6 @@
                 </Button.ContextMenu>
             </Button>
         </Grid>
-        <ControlTemplate.Triggers>
-            <Trigger Property="IsBranchActive" Value="True">
-                <Setter Property="controls:NavigationViewItemTemplateBehavior.IsIconFilled" Value="True" />
-            </Trigger>
-        </ControlTemplate.Triggers>
     </ControlTemplate>
 
 </ResourceDictionary>

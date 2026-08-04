@@ -40,13 +40,16 @@
         <controls:ControlExample
             Margin="0,32,0,0"
             HeaderText="A CardAction with an icon, a header and a description."
-            XamlCode="&lt;ui:CardAction Icon=&quot;{ui:SymbolIcon Fluent24}&quot; /&gt;">
+            XamlCode="&lt;ui:CardAction Icon=&quot;{ui:FluentIconSource Fluent24}&quot; /&gt;">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
-                <ui:CardAction Grid.Column="0" Icon="{ui:SymbolIcon DocumentEdit20, FontSize=43, Filled=False}">
+                <ui:CardAction Grid.Column="0">
+                    <ui:CardAction.Icon>
+                        <ui:FluentIcon FontSize="43" Symbol="DocumentEdit20" />
+                    </ui:CardAction.Icon>
                     <StackPanel>
                         <ui:TextBlock
                             Margin="0"

@@ -113,7 +113,7 @@
                                     Command="{Binding Path=TemplateButtonCommand, Mode=OneWay, RelativeSource={RelativeSource TemplatedParent}}"
                                     Foreground="{TemplateBinding Foreground}">
                                     <controls:Button.Icon>
-                                        <controls:SymbolIcon Symbol="Dismiss48" />
+                                        <controls:FluentIcon Symbol="Dismiss48" />
                                     </controls:Button.Icon>
                                 </controls:Button>
                             </Grid>

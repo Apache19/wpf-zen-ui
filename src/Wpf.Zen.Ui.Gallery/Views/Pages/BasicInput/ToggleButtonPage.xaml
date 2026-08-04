@@ -35,14 +35,14 @@
                         <Style BasedOn="{StaticResource {x:Type ui:ToggleButton}}" TargetType="ui:ToggleButton">
                             <Setter Property="Icon">
                                 <Setter.Value>
-                                    <ui:SymbolIcon Filled="False" Symbol="LockOpen24" />
+                                    <ui:FluentIcon Filled="False" Symbol="LockOpen24" />
                                 </Setter.Value>
                             </Setter>
                             <Style.Triggers>
                                 <Trigger Property="IsChecked" Value="True">
                                     <Setter Property="Icon">
                                         <Setter.Value>
-                                            <ui:SymbolIcon Filled="True" Symbol="LockClosed24" />
+                                            <ui:FluentIcon Filled="True" Symbol="LockClosed24" />
                                         </Setter.Value>
                                     </Setter>
                                 </Trigger>

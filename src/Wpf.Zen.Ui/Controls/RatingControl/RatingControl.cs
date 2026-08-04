@@ -12,11 +12,11 @@ namespace Wpf.Zen.Ui.Controls;
 /// <summary>
 /// Displays the rating scale with interactions.
 /// </summary>
-[TemplatePart(Name = "PART_Star1", Type = typeof(SymbolIcon))]
-[TemplatePart(Name = "PART_Star2", Type = typeof(SymbolIcon))]
-[TemplatePart(Name = "PART_Star3", Type = typeof(SymbolIcon))]
-[TemplatePart(Name = "PART_Star4", Type = typeof(SymbolIcon))]
-[TemplatePart(Name = "PART_Star5", Type = typeof(SymbolIcon))]
+[TemplatePart(Name = "PART_Star1", Type = typeof(FluentIcon))]
+[TemplatePart(Name = "PART_Star2", Type = typeof(FluentIcon))]
+[TemplatePart(Name = "PART_Star3", Type = typeof(FluentIcon))]
+[TemplatePart(Name = "PART_Star4", Type = typeof(FluentIcon))]
+[TemplatePart(Name = "PART_Star5", Type = typeof(FluentIcon))]
 public class RatingControl : ContentControl
 {
     private enum StarValue
@@ -31,11 +31,11 @@ public class RatingControl : ContentControl
     private const           int           OffsetTolerance = 8;
     private static readonly SymbolRegular StarSymbol      = SymbolRegular.Star28;
     private static readonly SymbolRegular StarHalfSymbol  = SymbolRegular.StarHalf28;
-    private                 SymbolIcon?   _symbolIconStarOne;
-    private                 SymbolIcon?   _symbolIconStarTwo;
-    private                 SymbolIcon?   _symbolIconStarThree;
-    private                 SymbolIcon?   _symbolIconStarFour;
-    private                 SymbolIcon?   _symbolIconStarFive;
+    private                 FluentIcon?   _iconStarOne;
+    private                 FluentIcon?   _iconStarTwo;
+    private                 FluentIcon?   _iconStarThree;
+    private                 FluentIcon?   _iconStarFour;
+    private                 FluentIcon?   _iconStarFive;
 
     /// <summary>Identifies the <see cref="Value"/> dependency property.</summary>
     public static readonly DependencyProperty ValueProperty = DependencyProperty.Register(
@@ -220,29 +220,29 @@ public class RatingControl : ContentControl
     {
         base.OnApplyTemplate();
 
-        if (GetTemplateChild("PART_Star1") is SymbolIcon starOne)
+        if (GetTemplateChild("PART_Star1") is FluentIcon starOne)
         {
-            _symbolIconStarOne = starOne;
+            _iconStarOne = starOne;
         }
 
-        if (GetTemplateChild("PART_Star2") is SymbolIcon starTwo)
+        if (GetTemplateChild("PART_Star2") is FluentIcon starTwo)
         {
-            _symbolIconStarTwo = starTwo;
+            _iconStarTwo = starTwo;
         }
 
-        if (GetTemplateChild("PART_Star3") is SymbolIcon starThree)
+        if (GetTemplateChild("PART_Star3") is FluentIcon starThree)
         {
-            _symbolIconStarThree = starThree;
+            _iconStarThree = starThree;
         }
 
-        if (GetTemplateChild("PART_Star4") is SymbolIcon starFour)
+        if (GetTemplateChild("PART_Star4") is FluentIcon starFour)
         {
-            _symbolIconStarFour = starFour;
+            _iconStarFour = starFour;
         }
 
-        if (GetTemplateChild("PART_Star5") is SymbolIcon starFive)
+        if (GetTemplateChild("PART_Star5") is FluentIcon starFive)
         {
-            _symbolIconStarFive = starFive;
+            _iconStarFive = starFive;
         }
 
         UpdateStarsFromValue();
@@ -361,13 +361,13 @@ public class RatingControl : ContentControl
 
     private void UpdateStar(int starIndex, StarValue starValue)
     {
-        SymbolIcon? selectedIcon = starIndex switch
+        FluentIcon? selectedIcon = starIndex switch
         {
-            1 => _symbolIconStarTwo,
-            2 => _symbolIconStarThree,
-            3 => _symbolIconStarFour,
-            4 => _symbolIconStarFive,
-            _ => _symbolIconStarOne,
+            1 => _iconStarTwo,
+            2 => _iconStarThree,
+            3 => _iconStarFour,
+            4 => _iconStarFive,
+            _ => _iconStarOne,
         };
 
         if (selectedIcon is null)

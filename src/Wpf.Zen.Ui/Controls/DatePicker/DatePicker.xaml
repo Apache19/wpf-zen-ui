@@ -131,9 +131,10 @@
                             VerticalAlignment="Top"
                             Appearance="Transparent"
                             BorderThickness="0"
-                            Content="{m:SymbolIcon CalendarRtl24, FontSize=16}"
                             Focusable="False"
-                            IsTabStop="False" />
+                            IsTabStop="False">
+                            <controls:FluentIcon FontSize="16" Symbol="CalendarRtl24" />
+                        </controls:Button>
                     </Border>
 
                     <Popup

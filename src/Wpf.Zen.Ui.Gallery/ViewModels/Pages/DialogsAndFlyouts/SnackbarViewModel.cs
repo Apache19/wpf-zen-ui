@@ -33,7 +33,7 @@ public partial class SnackbarViewModel(ISnackbarService snackbarService) : ViewM
             "Don't Blame Yourself.",
             "No Witcher's Ever Died In His Bed.",
             _snackbarAppearance,
-            new SymbolIcon(SymbolRegular.Fluent24),
+            new FluentIconSource(SymbolRegular.Fluent24),
             TimeSpan.FromSeconds(SnackbarTimeout)
         );
     }

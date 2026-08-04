@@ -270,7 +270,7 @@ public class NavigationViewItemTests
             Assert.Equal("Symbol group", symbolGroup.Header);
             Assert.Equal(
                 SymbolRegular.Folder24,
-                Assert.IsType<FluentSystemIcon>(symbolGroup.Icon).Symbol
+                Assert.IsType<FluentIconSource>(symbolGroup.Icon).Symbol
             );
             Assert.Null(symbolGroup.TargetPageType);
             Assert.Same(children, symbolGroup.ItemsSource);
@@ -280,7 +280,7 @@ public class NavigationViewItemTests
             Assert.Null(iconOnly.Header);
             Assert.Equal(
                 SymbolRegular.Heart24,
-                Assert.IsType<FluentSystemIcon>(iconOnly.Icon).Symbol
+                Assert.IsType<FluentIconSource>(iconOnly.Icon).Symbol
             );
             Assert.Equal(typeof(Border), iconOnly.TargetPageType);
 
@@ -1315,7 +1315,7 @@ public class NavigationViewItemTests
                     parent.Template.FindName("PART_HeaderButton", parent)
                 );
                 _ = headerButton.ApplyTemplate();
-                var chevron = Assert.IsAssignableFrom<SymbolIcon>(
+                var chevron = Assert.IsAssignableFrom<FluentIcon>(
                     headerButton.Template.FindName("ChevronIcon", headerButton)
                 );
                 var itemsPresenter = Assert.IsAssignableFrom<ItemsPresenter>(
@@ -2594,51 +2594,82 @@ public class NavigationViewItemTests
             var resources = new ResourceDictionary { Source = CreateResourceUri() };
             var itemStyle = Assert.IsType<Style>(resources[typeof(NavigationViewItem)]);
             var navigationView = new Wpf.Zen.Ui.Controls.NavigationView();
-            var icon = new SymbolIcon(SymbolRegular.Home24);
+            var icon = new FluentIcon(SymbolRegular.Home24);
             var parent = new NavigationViewItem { Icon = icon, Style = itemStyle };
             var child = new NavigationViewItem { Style = itemStyle };
 
             parent.Items.Add(child);
             AttachToNavigationView(parent, navigationView);
-            child.Activate(navigationView);
-            Assert.True(parent.ApplyTemplate());
-
-            Assert.Null(parent.Template.FindName("PART_ChevronButton", parent));
-            Assert.True(child.IsActive);
-            Assert.Same(
-                navigationView,
-                typeof(NavigationViewItem)
-                    .GetProperty("NavigationViewHost", BindingFlags.Instance | BindingFlags.NonPublic)!
-                    .GetValue(parent)
-            );
-
-            parent.Activate(navigationView);
-            foreach (
-                NavigationViewPaneDisplayMode paneDisplayMode in new[]
-                {
-                    NavigationViewPaneDisplayMode.LeftMinimal,
-                    NavigationViewPaneDisplayMode.Top,
-                    NavigationViewPaneDisplayMode.Bottom,
-                }
-            )
+            var window = new Window
             {
-                navigationView.PaneDisplayMode = paneDisplayMode;
+                Content = parent,
+                Width = 200D,
+                Height = 100D,
+                Left = -10_000D,
+                Top = -10_000D,
+                ShowActivated = false,
+                ShowInTaskbar = false,
+                WindowStyle = WindowStyle.None,
+            };
+
+            try
+            {
+                window.Show();
+                child.Activate(navigationView);
+                _ = parent.ApplyTemplate();
+
+                Assert.Null(parent.Template.FindName("PART_ChevronButton", parent));
+                Assert.True(child.IsActive);
+                Assert.Same(
+                    navigationView,
+                    typeof(NavigationViewItem)
+                        .GetProperty("NavigationViewHost", BindingFlags.Instance | BindingFlags.NonPublic)!
+                        .GetValue(parent)
+                );
+
+                parent.Activate(navigationView);
+                foreach (
+                    NavigationViewPaneDisplayMode paneDisplayMode in new[]
+                    {
+                        NavigationViewPaneDisplayMode.LeftMinimal,
+                        NavigationViewPaneDisplayMode.Top,
+                        NavigationViewPaneDisplayMode.Bottom,
+                    }
+                )
+                {
+                    navigationView.PaneDisplayMode = paneDisplayMode;
+                    _ = parent.ApplyTemplate();
+                    Assert.Null(parent.Template.FindName("PART_ChevronButton", parent));
+                }
+
+                navigationView.PaneDisplayMode = NavigationViewPaneDisplayMode.LeftFluent;
                 _ = parent.ApplyTemplate();
                 Assert.Null(parent.Template.FindName("PART_ChevronButton", parent));
+                var headerButton = Assert.IsType<System.Windows.Controls.Button>(
+                    parent.Template.FindName("PART_HeaderButton", parent)
+                );
+                _ = headerButton.ApplyTemplate();
+                parent.UpdateLayout();
+                Assert.True(parent.IsBranchActive);
+                var iconPresenter = Assert.IsType<IconPresenter>(
+                    headerButton.Template.FindName("IconPresenter", headerButton)
+                );
+                Assert.Equal(IconVariant.Filled, iconPresenter.Variant);
+                Assert.Equal(IconVariant.Filled, icon.Variant);
+                Assert.True(icon.Filled);
+
+                parent.Deactivate(navigationView);
+                Assert.True(icon.Filled);
+
+                child.Deactivate(navigationView);
+                Assert.False(icon.Filled);
+
+                parent.RaiseEvent(new RoutedEventArgs(FrameworkElement.UnloadedEvent));
             }
-
-            navigationView.PaneDisplayMode = NavigationViewPaneDisplayMode.LeftFluent;
-            Assert.True(parent.ApplyTemplate());
-            Assert.Null(parent.Template.FindName("PART_ChevronButton", parent));
-            Assert.True(icon.Filled);
-
-            parent.Deactivate(navigationView);
-            Assert.True(icon.Filled);
-
-            child.Deactivate(navigationView);
-            Assert.False(icon.Filled);
-
-            parent.RaiseEvent(new RoutedEventArgs(FrameworkElement.UnloadedEvent));
+            finally
+            {
+                window.Close();
+            }
         });
     }
 

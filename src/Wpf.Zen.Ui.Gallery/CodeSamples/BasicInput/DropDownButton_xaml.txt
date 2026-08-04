@@ -1,13 +1,13 @@
-<ui:DropDownButton Content="Menu" Icon="{ui:SymbolIcon Fluent24}">
+<ui:DropDownButton Content="Menu" Icon="{ui:FluentIconSource Fluent24}">
     <ui:DropDownButton.Flyout>
         <ContextMenu>
-            <MenuItem Header="New" Icon="{ui:SymbolIcon Add24}" />
-            <MenuItem Header="Open..." Icon="{ui:SymbolIcon Open24}" />
-            <MenuItem Header="Save" Icon="{ui:SymbolIcon Save24}" />
+            <MenuItem Header="New" Icon="{ui:FluentIconSource Add24}" />
+            <MenuItem Header="Open..." Icon="{ui:FluentIconSource Open24}" />
+            <MenuItem Header="Save" Icon="{ui:FluentIconSource Save24}" />
             <Separator />
-            <MenuItem Header="Cut" Icon="{ui:SymbolIcon Cut24}" />
-            <MenuItem Header="Copy" Icon="{ui:SymbolIcon Copy24}" />
-            <MenuItem Header="Paste" Icon="{ui:SymbolIcon ClipboardPaste24}" />
+            <MenuItem Header="Cut" Icon="{ui:FluentIconSource Cut24}" />
+            <MenuItem Header="Copy" Icon="{ui:FluentIconSource Copy24}" />
+            <MenuItem Header="Paste" Icon="{ui:FluentIconSource ClipboardPaste24}" />
         </ContextMenu>
     </ui:DropDownButton.Flyout>
 </ui:DropDownButton>

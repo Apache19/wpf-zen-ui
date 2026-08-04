@@ -56,7 +56,7 @@
                                     BorderBrush="{TemplateBinding BorderBrush}"
                                     BorderThickness="{TemplateBinding BorderThickness}"
                                     CornerRadius="{TemplateBinding Border.CornerRadius}">
-                                    <controls:SymbolIcon
+                                    <controls:FluentIcon
                                         x:Name="ControlIcon"
                                         HorizontalAlignment="Center"
                                         VerticalAlignment="Center"

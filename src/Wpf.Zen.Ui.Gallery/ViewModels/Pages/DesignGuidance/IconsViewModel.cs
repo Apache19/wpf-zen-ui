@@ -112,7 +112,7 @@ public partial class IconsViewModel : ViewModel
         SelectedSymbolUnicodePoint = selectedSymbol.Code;
         SelectedSymbolTextGlyph = $"&#x{selectedSymbol.Code};";
         SelectedSymbolXaml =
-            $"<ui:SymbolIcon Symbol=\"{selectedSymbol.Name}\"{(IsIconFilled ? " Filled=\"True\"" : string.Empty)}/>";
+            $"<ui:FluentIcon Symbol=\"{selectedSymbol.Name}\"{(IsIconFilled ? " Filled=\"True\"" : string.Empty)}/>";
     }
 
     private void UpdateSearchResults(string searchedText)

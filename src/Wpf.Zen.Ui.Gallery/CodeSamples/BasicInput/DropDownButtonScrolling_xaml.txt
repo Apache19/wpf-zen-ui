@@ -1,7 +1,7 @@
-<ui:DropDownButton Content="Languages" Icon="{ui:SymbolIcon Code24}">
+<ui:DropDownButton Content="Languages" Icon="{ui:FluentIconSource Code24}">
     <ui:DropDownButton.Flyout>
         <ContextMenu>
-            <MenuItem Header="C# / .NET" Icon="{ui:SymbolIcon Code24}" />
+            <MenuItem Header="C# / .NET" Icon="{ui:FluentIconSource Code24}" />
             <MenuItem Header="F#" />
             <MenuItem Header="Visual Basic" />
             <Separator />
@@ -13,10 +13,10 @@
             <MenuItem Header="Kotlin" />
             <MenuItem Header="Scala" />
             <Separator />
-            <MenuItem Header="Python" Icon="{ui:SymbolIcon Code24}" />
+            <MenuItem Header="Python" Icon="{ui:FluentIconSource Code24}" />
             <MenuItem Header="Ruby" />
             <Separator />
-            <MenuItem Header="JavaScript" Icon="{ui:SymbolIcon Code24}" />
+            <MenuItem Header="JavaScript" Icon="{ui:FluentIconSource Code24}" />
             <MenuItem Header="TypeScript" />
             <Separator />
             <MenuItem Header="HTML / XML" />

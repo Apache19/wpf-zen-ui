@@ -37,7 +37,7 @@
         <controls:ControlExample
             Margin="0,32,0,0"
             HeaderText="A card control with an icon, a header, a description, and a control"
-            XamlCode="&lt;ui:CardControl Icon=&quot;{ui:SymbolIcon FlashSettings24}&quot; /&gt;">
+            XamlCode="&lt;ui:CardControl Icon=&quot;{ui:FluentIconSource FlashSettings24}&quot; /&gt;">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
@@ -46,7 +46,7 @@
                 <ui:CardControl
                     Margin="4"
                     Padding="20,10,20,10"
-                    Icon="{ui:SymbolIcon FlashSettings24}">
+                    Icon="{ui:FluentIconSource FlashSettings24}">
                     <ui:CardControl.Header>
                         <StackPanel>
                             <ui:TextBlock
@@ -99,7 +99,7 @@
                                 TextWrapping="WrapWithOverflow" />
                         </StackPanel>
                     </ui:CardControl.Header>
-                    <ui:DropDownButton Content="Hello" Icon="{ui:SymbolIcon Fluent24}">
+                    <ui:DropDownButton Content="Hello" Icon="{ui:FluentIconSource Fluent24}">
                         <ui:DropDownButton.Flyout>
                             <ContextMenu>
                                 <MenuItem Header="Add" />

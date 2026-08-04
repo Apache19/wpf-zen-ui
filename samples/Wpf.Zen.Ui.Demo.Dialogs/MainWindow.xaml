@@ -23,7 +23,7 @@
             Click="OnShowDialogClick"
             Content="Show dialog">
             <ui:Button.Icon>
-                <ui:SymbolIcon Glyph="&#x1F308;" />
+                <ui:FontIcon Glyph="&#x1F308;" />
             </ui:Button.Icon>
         </ui:Button>
         <ui:ContentDialogHost x:Name="ContentDialogHost" Grid.Row="0" />

@@ -13,7 +13,7 @@ public record WindowCard
 
     public string Description { get; init; }
 
-    public FluentSystemIcon Icon { get; init; }
+    public FluentIconSource Icon { get; init; }
 
     public string Value { get; set; }
 
@@ -21,7 +21,7 @@ public record WindowCard
     {
         Name = name;
         Description = description;
-        Icon = new FluentSystemIcon(icon);
+        Icon = new FluentIconSource(icon);
         Value = value;
     }
 }

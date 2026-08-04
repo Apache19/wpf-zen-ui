@@ -82,10 +82,10 @@
                     </MenuItem>
                 </Menu>
                 <Menu Grid.Column="1" HorizontalAlignment="Right">
-                    <MenuItem Foreground="{ui:DynamicBrush PaletteDeepOrange}" Icon="{ui:SymbolIcon Fire24, True}" />
-                    <MenuItem Foreground="{ui:DynamicBrush PaletteGreen}" Icon="{ui:SymbolIcon Play24}" />
-                    <MenuItem Foreground="{ui:DynamicBrush PaletteRed}" Icon="{ui:SymbolIcon Stop24}" />
-                    <MenuItem Foreground="{ui:DynamicBrush PaletteLightBlue}" Icon="{ui:SymbolIcon ArrowClockwise24}" />
+                    <MenuItem Foreground="{ui:DynamicBrush PaletteDeepOrange}" Icon="{ui:FluentIconSource Fire24, True}" />
+                    <MenuItem Foreground="{ui:DynamicBrush PaletteGreen}" Icon="{ui:FluentIconSource Play24}" />
+                    <MenuItem Foreground="{ui:DynamicBrush PaletteRed}" Icon="{ui:FluentIconSource Stop24}" />
+                    <MenuItem Foreground="{ui:DynamicBrush PaletteLightBlue}" Icon="{ui:FluentIconSource ArrowClockwise24}" />
                 </Menu>
             </Grid>
         </ui:TitleBar>
@@ -126,7 +126,7 @@
                 Text="{Binding ViewModel.AutoSuggestBoxText, Mode=TwoWay}"
                 TextChanged="OnAutoSuggestBoxTextChanged" />
 
-            <ui:DropDownButton Content="Hello" Icon="{ui:SymbolIcon Fluent24}">
+            <ui:DropDownButton Content="Hello" Icon="{ui:FluentIconSource Fluent24}">
                 <ui:DropDownButton.Flyout>
                     <ContextMenu>
                         <MenuItem Command="ApplicationCommands.Undo" />

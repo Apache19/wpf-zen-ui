@@ -167,7 +167,7 @@ public class NavigationViewButtonTests
             Assert.Null(typeof(NavigationViewButton).GetField("IconTemplateProperty"));
             // Navigation resources provide the native data-template path used by reusable symbol
             // values. The template creates visuals; Icon itself remains an unrestricted object.
-            Assert.True(resources.Contains(new DataTemplateKey(typeof(FluentSystemIcon))));
+            Assert.True(resources.Contains(new DataTemplateKey(typeof(FluentIconSource))));
 
             var button = new NavigationViewButton { Style = style };
             Assert.Equal(NavigationViewButtonPlacement.None, button.Placement);
@@ -357,16 +357,16 @@ public class NavigationViewButtonTests
             Assert.Equal(Visibility.Visible, paneTitlePresenter.Visibility);
             Assert.Equal(
                 SymbolRegular.LineHorizontal320,
-                Assert.IsType<FluentSystemIcon>(toggleButton.Icon).Symbol
+                Assert.IsType<FluentIconSource>(toggleButton.Icon).Symbol
             );
             Assert.Same(toggleButton.Icon, iconPresenter.Content);
             Assert.Equal(
                 SymbolRegular.ArrowLeft48,
-                Assert.IsType<FluentSystemIcon>(backButton.Icon).Symbol
+                Assert.IsType<FluentIconSource>(backButton.Icon).Symbol
             );
 
             Assert.True(iconPresenter.ApplyTemplate());
-            Assert.IsType<SymbolIcon>(VisualTreeHelper.GetChild(iconPresenter, 0));
+            Assert.IsType<FluentIcon>(VisualTreeHelper.GetChild(iconPresenter, 0));
 
             navigationView.PaneTitle = null;
             Assert.Equal(Visibility.Collapsed, paneTitlePresenter.Visibility);
@@ -383,7 +383,7 @@ public class NavigationViewButtonTests
 
             // Changing Icon must make ContentPresenter reselect its native UIElement template. If
             // the role-specific SymbolRegular template escapes its local resource scope or is set
-            // explicitly, the Border is instead wrapped in a SymbolIcon and disappears visually.
+            // explicitly, the Border is instead wrapped in a FluentIcon and disappears visually.
             toggleButton.Measure(new Size(100, 40));
             toggleButton.Arrange(new Rect(0, 0, 100, 40));
             Assert.Same(arbitraryIcon, VisualTreeHelper.GetChild(iconPresenter, 0));
@@ -441,7 +441,7 @@ public class NavigationViewButtonTests
             Assert.Same(autoSuggestIcon, autoSuggestBox.Icon);
             Assert.Equal(
                 SymbolRegular.Search24,
-                Assert.IsType<FluentSystemIcon>(button.Icon).Symbol
+                Assert.IsType<FluentIconSource>(button.Icon).Symbol
             );
 
             // The compact command represents the search role; it must not try to clone or reparent
@@ -449,7 +449,7 @@ public class NavigationViewButtonTests
             autoSuggestBox.Icon = new System.Windows.Controls.TextBlock { Text = "Replacement" };
             Assert.Equal(
                 SymbolRegular.Search24,
-                Assert.IsType<FluentSystemIcon>(button.Icon).Symbol
+                Assert.IsType<FluentIconSource>(button.Icon).Symbol
             );
         });
     }
@@ -477,7 +477,7 @@ public class NavigationViewButtonTests
 
             Assert.Equal(
                 SymbolRegular.Search24,
-                Assert.IsType<FluentSystemIcon>(button.Icon).Symbol
+                Assert.IsType<FluentIconSource>(button.Icon).Symbol
             );
         });
     }

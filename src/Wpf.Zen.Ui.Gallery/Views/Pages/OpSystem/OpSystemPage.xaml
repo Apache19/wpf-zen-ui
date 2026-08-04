@@ -39,7 +39,7 @@
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
                     <StackPanel Grid.Column="0" Panel.ZIndex="1">
-                        <ui:SymbolIcon x:Name="MainSymbolIcon" FontSize="100"/>
+                        <ui:FluentIcon x:Name="MainFluentIcon" FontSize="100"/>
                         <ui:TextBlock 
                             x:Name="MainTitle"
                             HorizontalAlignment="Center"

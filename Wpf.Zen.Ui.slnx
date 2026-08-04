@@ -6,6 +6,7 @@
     <Platform Name="x86" />
   </Configurations>
   <Folder Name="/Samples/">
+    <Project Path="samples/Wpf.Zen.Ui.Demo.Dialogs/Wpf.Zen.Ui.Demo.Dialogs.csproj" />
     <Project Path="samples/Wpf.Zen.Ui.Demo.Mvvm/Wpf.Zen.Ui.Demo.Mvvm.csproj" />
     <Project Path="samples/Wpf.Zen.Ui.Demo.Simple/Wpf.Zen.Ui.Demo.Simple.csproj" />
     <Project Path="samples/Wpf.Zen.Ui.Demo.WinForms/Wpf.Zen.Ui.Demo.WinForms.csproj" Id="687d0807-0bca-41d0-b04d-8c13ada399fd" />

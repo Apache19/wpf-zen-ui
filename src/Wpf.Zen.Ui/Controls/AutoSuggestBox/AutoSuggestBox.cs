@@ -26,7 +26,7 @@ namespace Wpf.Zen.Ui.Controls;
 /// <code lang="xml">
 /// &lt;ui:AutoSuggestBox x:Name="AutoSuggestBox" PlaceholderText="Search"&gt;
 ///     &lt;ui:AutoSuggestBox.Icon&gt;
-///         &lt;ui:SymbolIcon Symbol="Search24" /&gt;
+///         &lt;ui:FluentIcon Symbol="Search24" /&gt;
 ///     &lt;/ui:AutoSuggestBox.Icon&gt;
 /// &lt;/ui:AutoSuggestBox&gt;
 /// </code>
