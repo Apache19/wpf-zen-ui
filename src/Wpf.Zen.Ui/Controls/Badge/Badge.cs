@@ -21,7 +21,7 @@ namespace Wpf.Zen.Ui.Controls;
 /// &lt;/ui:Badge&gt;
 /// </code>
 /// </example>
-public class Badge : ContentControl, IAppearanceControl
+public class Badge : ContentControl
 {
     /// <summary>Identifies the <see cref="Appearance"/> dependency property.</summary>
     public static readonly DependencyProperty AppearanceProperty = DependencyProperty.Register(
@@ -31,7 +31,9 @@ public class Badge : ContentControl, IAppearanceControl
         new PropertyMetadata(ControlAppearance.Accent)
     );
 
-    /// <inheritdoc />
+    /// <summary>
+    /// Gets or sets the <see cref="ControlAppearance"/> of the badge.
+    /// </summary>
     public ControlAppearance Appearance
     {
         get => (ControlAppearance)GetValue(AppearanceProperty);

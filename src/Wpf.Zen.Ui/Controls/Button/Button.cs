@@ -22,7 +22,7 @@ namespace Wpf.Zen.Ui.Controls;
 ///     Icon="{ui:Symbol Fluent24}" /&gt;
 /// </code>
 /// </example>
-public class Button : System.Windows.Controls.Button, IAppearanceControl, IIconControl
+public class Button : System.Windows.Controls.Button
 {
     #region DP: Icon
 
@@ -84,7 +84,9 @@ public class Button : System.Windows.Controls.Button, IAppearanceControl, IIconC
             new PropertyMetadata(ControlAppearance.Normal)
         );
 
-    /// <inheritdoc />
+    /// <summary>
+    /// Gets or sets the <see cref="ControlAppearance"/> of the button.
+    /// </summary>
     [Bindable(true)]
     [Category("Appearance")]
     public ControlAppearance Appearance

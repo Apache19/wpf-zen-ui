@@ -11,7 +11,7 @@ namespace Wpf.Zen.Ui.Controls;
 /// <summary>
 /// Inherited from the <see cref="System.Windows.Controls.Primitives.ButtonBase"/> control which displays an additional control on the right side of the card.
 /// </summary>
-public class CardControl : System.Windows.Controls.Primitives.ButtonBase, IIconControl
+public class CardControl : System.Windows.Controls.Primitives.ButtonBase
 {
     /// <summary>Identifies the <see cref="Header"/> dependency property.</summary>
     public static readonly DependencyProperty HeaderProperty = DependencyProperty.Register(

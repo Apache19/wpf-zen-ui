@@ -33,7 +33,7 @@ namespace Wpf.Zen.Ui.Controls;
 /// </example>
 [TemplatePart(Name = ElementTextBox, Type = typeof(TextBox))]
 [TemplatePart(Name = ElementSuggestionsList, Type = typeof(NativeListBox))]
-public class AutoSuggestBox : ItemsControl, IIconControl
+public class AutoSuggestBox : ItemsControl
 {
     private const string ElementTextBox = "PART_TextBox";
     private const string ElementSuggestionsList = "PART_SuggestionsList";

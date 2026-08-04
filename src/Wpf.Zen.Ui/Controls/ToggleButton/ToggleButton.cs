@@ -16,7 +16,7 @@ namespace Wpf.Zen.Ui.Controls;
 /// replace or bind <see cref="System.Windows.Controls.ContentControl.Content"/> independently without
 /// reconstructing an icon-and-label layout.
 /// </remarks>
-public class ToggleButton : System.Windows.Controls.Primitives.ToggleButton, IIconControl
+public class ToggleButton : System.Windows.Controls.Primitives.ToggleButton
 {
     /// <summary>
     /// Identifies the <see cref="Icon"/> dependency property.

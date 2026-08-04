@@ -33,7 +33,7 @@ namespace Wpf.Zen.Ui.Controls;
 /// </remarks>
 [TemplatePart(Name = PrimaryButtonPartName,  Type = typeof(Button))]
 [TemplatePart(Name = DropDownButtonPartName, Type = typeof(Button))]
-public class SplitButton : ContentControl, ICommandSource, IAppearanceControl, IIconControl
+public class SplitButton : ContentControl, ICommandSource
 {
     private const string PrimaryButtonPartName  = "PART_PrimaryButton";
     private const string DropDownButtonPartName = "PART_DropDownButton";
@@ -121,7 +121,9 @@ public class SplitButton : ContentControl, ICommandSource, IAppearanceControl, I
         new FrameworkPropertyMetadata(ControlAppearance.Normal)
     );
 
-    /// <inheritdoc />
+    /// <summary>
+    /// Gets or sets the <see cref="ControlAppearance"/> of the split button.
+    /// </summary>
     [Bindable(true)]
     [Category("Appearance")]
     public ControlAppearance Appearance
@@ -328,7 +330,9 @@ public class SplitButton : ContentControl, ICommandSource, IAppearanceControl, I
         new FrameworkPropertyMetadata(null)
     );
 
-    /// <inheritdoc />
+    /// <summary>
+    /// Gets or sets the content displayed in the icon slot.
+    /// </summary>
     [Bindable(true)]
     [Category("Appearance")]
     public object? Icon

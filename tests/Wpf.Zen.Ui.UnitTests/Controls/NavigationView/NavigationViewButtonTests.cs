@@ -161,7 +161,7 @@ public class NavigationViewButtonTests
 
             Assert.Equal(typeof(ButtonBase), typeof(NavigationViewButton).BaseType);
             Assert.Equal(typeof(NavigationViewButton), style.TargetType);
-            Assert.False(typeof(IIconControl).IsAssignableFrom(typeof(NavigationViewButton)));
+
             Assert.Equal(typeof(object), NavigationViewButton.IconProperty.PropertyType);
             Assert.Null(typeof(NavigationViewButton).GetProperty("IconTemplate"));
             Assert.Null(typeof(NavigationViewButton).GetField("IconTemplateProperty"));

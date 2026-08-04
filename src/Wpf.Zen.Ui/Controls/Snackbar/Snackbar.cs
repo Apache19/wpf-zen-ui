@@ -14,7 +14,7 @@ namespace Wpf.Zen.Ui.Controls;
 /// <summary>
 /// Snackbar inform user of a process that an app has performed or will perform. It appears temporarily, towards the bottom of the window.
 /// </summary>
-public class Snackbar : ContentControl, IAppearanceControl, IIconControl
+public class Snackbar : ContentControl
 {
     /// <summary>Identifies the <see cref="IsCloseButtonEnabled"/> dependency property.</summary>
     public static readonly DependencyProperty IsCloseButtonEnabledProperty = DependencyProperty.Register(
@@ -202,7 +202,9 @@ public class Snackbar : ContentControl, IAppearanceControl, IIconControl
         set => SetValue(IconProperty, value);
     }
 
-    /// <inheritdoc />
+    /// <summary>
+    /// Gets or sets the <see cref="ControlAppearance"/> of the snackbar.
+    /// </summary>
     [Bindable(true)]
     [Category("Appearance")]
     public ControlAppearance Appearance
