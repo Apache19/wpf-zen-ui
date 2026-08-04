@@ -198,7 +198,7 @@
                             BorderThickness="0"
                             Command="{Binding Path=TemplateButtonCommand, RelativeSource={RelativeSource TemplatedParent}}"
                             Focusable="False"
-                            Icon="{m:Symbol Dismiss24}"
+                            Icon="{m:FluentSystemIcon Dismiss24}"
                             IsEnabled="{TemplateBinding ClearButtonEnabled}"
                             IsTabStop="False" />
 

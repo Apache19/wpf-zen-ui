@@ -733,7 +733,7 @@ public partial class NavigationViewItem
     /// <summary>
     /// Passes reusable icon data to the projected MenuItem while refusing to reparent a visual
     /// element already owned by the source container. The submenu dictionary supplies an implicit
-    /// SymbolRegular template; applications can supply equivalent templates for their own data.
+    /// FluentSystemIcon template; applications can supply equivalent templates for their own data.
     /// </summary>
     private sealed class ProjectedIconConverter : IValueConverter
     {

@@ -47,7 +47,7 @@
                                 object. An explicit or derived-style Icon value can therefore replace
                                 the default and can use implicit data templates.
 
-                                SymbolRegular values are resolved by the implicit template in Generic.xaml.
+                                FluentSystemIcon values are resolved by the implicit template in Generic.xaml.
                                 UIElement values continue to use ContentPresenter's native direct-visual path,
                                 while applications can override the symbol view with a nearer data template.
                             -->
@@ -159,10 +159,10 @@
         </Setter>
         <Style.Triggers>
             <Trigger Property="Role" Value="Back">
-                <Setter Property="Icon" Value="{x:Static controls:SymbolRegular.ArrowLeft48}" />
+                <Setter Property="Icon" Value="{m:FluentSystemIcon ArrowLeft48}" />
             </Trigger>
             <Trigger Property="Role" Value="PaneToggle">
-                <Setter Property="Icon" Value="{x:Static controls:SymbolRegular.LineHorizontal320}" />
+                <Setter Property="Icon" Value="{m:FluentSystemIcon LineHorizontal320}" />
             </Trigger>
         </Style.Triggers>
     </Style>

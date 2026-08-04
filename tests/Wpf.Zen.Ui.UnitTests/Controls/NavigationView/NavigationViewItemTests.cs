@@ -268,14 +268,20 @@ public class NavigationViewItemTests
             );
 
             Assert.Equal("Symbol group", symbolGroup.Header);
-            Assert.Equal(SymbolRegular.Folder24, Assert.IsType<SymbolRegular>(symbolGroup.Icon));
+            Assert.Equal(
+                SymbolRegular.Folder24,
+                Assert.IsType<FluentSystemIcon>(symbolGroup.Icon).Symbol
+            );
             Assert.Null(symbolGroup.TargetPageType);
             Assert.Same(children, symbolGroup.ItemsSource);
 
             var iconOnly = new NavigationViewItem(SymbolRegular.Heart24, typeof(Border));
 
             Assert.Null(iconOnly.Header);
-            Assert.Equal(SymbolRegular.Heart24, Assert.IsType<SymbolRegular>(iconOnly.Icon));
+            Assert.Equal(
+                SymbolRegular.Heart24,
+                Assert.IsType<FluentSystemIcon>(iconOnly.Icon).Symbol
+            );
             Assert.Equal(typeof(Border), iconOnly.TargetPageType);
 
             var header = new System.Windows.Controls.TextBlock { Text = "Custom header" };

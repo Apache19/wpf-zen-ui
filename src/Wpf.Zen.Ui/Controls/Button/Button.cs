@@ -19,7 +19,7 @@ namespace Wpf.Zen.Ui.Controls;
 /// &lt;ui:Button
 ///     Appearance="Success"
 ///     Content="WPF Zen UI button with font icon"
-///     Icon="{ui:Symbol Fluent24}" /&gt;
+///     Icon="{ui:FluentSystemIcon Fluent24}" /&gt;
 /// </code>
 /// </example>
 public class Button : System.Windows.Controls.Button

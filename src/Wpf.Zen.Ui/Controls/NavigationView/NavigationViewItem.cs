@@ -687,7 +687,7 @@ public partial class NavigationViewItem : HeaderedItemsControl
         NavigationCacheMode navigationCacheMode = NavigationCacheMode.Disabled)
         : this(
             header,
-            (object)icon,
+            new FluentSystemIcon(icon),
             targetPageType,
             itemsSource,
             targetPageTag,

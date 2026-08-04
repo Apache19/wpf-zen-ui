@@ -48,7 +48,7 @@ public class NavigationItem : INavigationItem, INotifyPropertyChanged
 
     /// <summary>Initializes a new instance of the <see cref="NavigationItem"/> class.</summary>
     /// <param name="content">Content used by the default presentation.</param>
-    /// <param name="icon">Reusable symbol data presented by the navigation item template.</param>
+    /// <param name="icon">The Fluent symbol wrapped as reusable icon data.</param>
     /// <param name="targetPageType">Page type activated by this item.</param>
     /// <param name="children">Optional semantic child collection.</param>
     public NavigationItem(
@@ -58,7 +58,7 @@ public class NavigationItem : INavigationItem, INotifyPropertyChanged
         IEnumerable?  children       = null)
         : this(content, targetPageType)
     {
-        Icon = icon;
+        Icon = new FluentSystemIcon(icon);
         Children = children;
     }
 

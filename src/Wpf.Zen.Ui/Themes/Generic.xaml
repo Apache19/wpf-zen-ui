@@ -96,17 +96,17 @@
     </ResourceDictionary.MergedDictionaries>
 
     <!--
-        SymbolRegular is reusable icon data rather than a shared visual. WPF's native
+        FluentSystemIcon is reusable icon data rather than a shared visual. WPF's native
         ContentPresenter looks up an implicit DataTemplate for the content's runtime type
         before falling back to its text representation. Keeping this mapping in Generic.xaml
-        makes every ordinary content presenter understand SymbolRegular while preserving the
+        makes every ordinary content presenter understand FluentSystemIcon while preserving the
         standard override order: an explicit ContentTemplate, a selector, or a nearer implicit
         template supplied by the application still takes precedence over this library default.
 
-        Each application of the template creates a distinct SymbolIcon, so the same enum value
+        Each application of the template creates a distinct SymbolIcon, so the same data value
         can safely be used by styles and by multiple controls without visual-parent conflicts.
     -->
-    <DataTemplate DataType="{x:Type controls:SymbolRegular}">
-        <controls:SymbolIcon Symbol="{Binding}" />
+    <DataTemplate DataType="{x:Type controls:FluentSystemIcon}">
+        <controls:SymbolIcon Filled="{Binding Filled}" Symbol="{Binding Symbol}" />
     </DataTemplate>
 </ResourceDictionary>

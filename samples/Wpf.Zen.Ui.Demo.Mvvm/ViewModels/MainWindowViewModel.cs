@@ -47,13 +47,13 @@ public partial class MainWindowViewModel : ViewModel
             new NavigationItem()
             {
                 Content = "Home",
-                Icon = SymbolRegular.Home24,
+                Icon = new FluentSystemIcon(SymbolRegular.Home24),
                 TargetPageType = typeof(Views.Pages.DashboardPage),
             },
             new NavigationItem()
             {
                 Content = "Data",
-                Icon = SymbolRegular.DataHistogram24,
+                Icon = new FluentSystemIcon(SymbolRegular.DataHistogram24),
                 TargetPageType = typeof(Views.Pages.DataPage),
             },
         ];
@@ -63,7 +63,7 @@ public partial class MainWindowViewModel : ViewModel
             new NavigationItem()
             {
                 Content = "Settings",
-                Icon = SymbolRegular.Settings24,
+                Icon = new FluentSystemIcon(SymbolRegular.Settings24),
                 TargetPageType = typeof(Views.Pages.SettingsPage),
             },
         ];

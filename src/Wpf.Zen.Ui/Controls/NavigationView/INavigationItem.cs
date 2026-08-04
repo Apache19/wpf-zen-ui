@@ -40,7 +40,7 @@ public interface INavigationItem
 
     /// <summary>Gets the data or visual content presented in the item's icon slot.</summary>
     /// <remarks>
-    /// Prefer a presentation-independent value, such as <see cref="SymbolRegular"/> or an
+    /// Prefer a presentation-independent value, such as <see cref="FluentSystemIcon"/> or an
     /// application view-model, when the item can appear in multiple presenters. WPF data templates
     /// then create one visual instance per presenter without cloning a <see cref="FrameworkElement"/>.
     /// </remarks>

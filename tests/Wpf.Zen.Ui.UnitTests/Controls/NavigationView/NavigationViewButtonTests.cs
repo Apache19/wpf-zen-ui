@@ -167,7 +167,7 @@ public class NavigationViewButtonTests
             Assert.Null(typeof(NavigationViewButton).GetField("IconTemplateProperty"));
             // Navigation resources provide the native data-template path used by reusable symbol
             // values. The template creates visuals; Icon itself remains an unrestricted object.
-            Assert.True(resources.Contains(new DataTemplateKey(typeof(SymbolRegular))));
+            Assert.True(resources.Contains(new DataTemplateKey(typeof(FluentSystemIcon))));
 
             var button = new NavigationViewButton { Style = style };
             Assert.Equal(NavigationViewButtonPlacement.None, button.Placement);
@@ -355,9 +355,15 @@ public class NavigationViewButtonTests
             Assert.True(paneTitlePresenter.RecognizesAccessKey);
             Assert.Equal(Visibility.Collapsed, contentPresenter.Visibility);
             Assert.Equal(Visibility.Visible, paneTitlePresenter.Visibility);
-            Assert.Equal(SymbolRegular.LineHorizontal320, toggleButton.Icon);
-            Assert.Equal(SymbolRegular.LineHorizontal320, iconPresenter.Content);
-            Assert.Equal(SymbolRegular.ArrowLeft48, backButton.Icon);
+            Assert.Equal(
+                SymbolRegular.LineHorizontal320,
+                Assert.IsType<FluentSystemIcon>(toggleButton.Icon).Symbol
+            );
+            Assert.Same(toggleButton.Icon, iconPresenter.Content);
+            Assert.Equal(
+                SymbolRegular.ArrowLeft48,
+                Assert.IsType<FluentSystemIcon>(backButton.Icon).Symbol
+            );
 
             Assert.True(iconPresenter.ApplyTemplate());
             Assert.IsType<SymbolIcon>(VisualTreeHelper.GetChild(iconPresenter, 0));
@@ -433,12 +439,18 @@ public class NavigationViewButtonTests
             );
 
             Assert.Same(autoSuggestIcon, autoSuggestBox.Icon);
-            Assert.Equal(SymbolRegular.Search24, Assert.IsType<SymbolRegular>(button.Icon));
+            Assert.Equal(
+                SymbolRegular.Search24,
+                Assert.IsType<FluentSystemIcon>(button.Icon).Symbol
+            );
 
             // The compact command represents the search role; it must not try to clone or reparent
             // arbitrary visual content owned by AutoSuggestBox.
             autoSuggestBox.Icon = new System.Windows.Controls.TextBlock { Text = "Replacement" };
-            Assert.Equal(SymbolRegular.Search24, Assert.IsType<SymbolRegular>(button.Icon));
+            Assert.Equal(
+                SymbolRegular.Search24,
+                Assert.IsType<FluentSystemIcon>(button.Icon).Symbol
+            );
         });
     }
 
@@ -463,7 +475,10 @@ public class NavigationViewButtonTests
                 )
             );
 
-            Assert.Equal(SymbolRegular.Search24, Assert.IsType<SymbolRegular>(button.Icon));
+            Assert.Equal(
+                SymbolRegular.Search24,
+                Assert.IsType<FluentSystemIcon>(button.Icon).Symbol
+            );
         });
     }
 

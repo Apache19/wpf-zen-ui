@@ -18,15 +18,17 @@ namespace Wpf.Zen.Ui.UnitTests.Controls;
 public class IconContentTests
 {
     [Fact]
-    public void SymbolExtension_ReturnsReusableSymbolData()
+    public void FluentSystemIconExtension_ReturnsReusableIconData()
     {
-        var extension = new SymbolExtension(SymbolRegular.Settings24);
+        var extension = new FluentSystemIconExtension(SymbolRegular.Settings24, filled: true);
 
-        Assert.Equal(SymbolRegular.Settings24, extension.ProvideValue(null!));
+        var icon = Assert.IsType<FluentSystemIcon>(extension.ProvideValue(null!));
+        Assert.Equal(SymbolRegular.Settings24, icon.Symbol);
+        Assert.True(icon.Filled);
     }
 
     [Fact]
-    public void SymbolExtension_WorksInStyleSettersWithoutCreatingAVisual()
+    public void FluentSystemIconExtension_WorksInStyleSettersWithoutCreatingAVisual()
     {
         RunOnStaThread(() =>
         {
@@ -34,12 +36,14 @@ public class IconContentTests
             style.Setters.Add(
                 new Setter(
                     Wpf.Zen.Ui.Controls.Button.IconProperty,
-                    new SymbolExtension(SymbolRegular.Settings24).ProvideValue(null!)
+                    new FluentSystemIconExtension(SymbolRegular.Settings24).ProvideValue(null!)
                 )
             );
             var button = new Wpf.Zen.Ui.Controls.Button { Style = style };
 
-            Assert.Equal(SymbolRegular.Settings24, Assert.IsType<SymbolRegular>(button.Icon));
+            var icon = Assert.IsType<FluentSystemIcon>(button.Icon);
+            Assert.Equal(SymbolRegular.Settings24, icon.Symbol);
+            Assert.False(icon.Filled);
         });
     }
 
@@ -94,12 +98,13 @@ public class IconContentTests
     }
 
     [Fact]
-    public void SymbolRegular_UsesTheLibraryImplicitTemplateInOrdinaryContentPresenters()
+    public void FluentSystemIcon_UsesTheLibraryImplicitTemplateInOrdinaryContentPresenters()
     {
         RunOnStaThread(() =>
         {
-            var firstPresenter = new ContentPresenter { Content = SymbolRegular.Home24 };
-            var secondPresenter = new ContentPresenter { Content = SymbolRegular.Home24 };
+            var iconData = new FluentSystemIcon(SymbolRegular.Home24, filled: true);
+            var firstPresenter = new ContentPresenter { Content = iconData };
+            var secondPresenter = new ContentPresenter { Content = iconData };
             var host = new StackPanel { Children = { firstPresenter, secondPresenter } };
             var window = CreateHiddenWindow(host);
 
@@ -113,6 +118,8 @@ public class IconContentTests
 
                 Assert.Equal(SymbolRegular.Home24, firstIcon.Symbol);
                 Assert.Equal(SymbolRegular.Home24, secondIcon.Symbol);
+                Assert.True(firstIcon.Filled);
+                Assert.True(secondIcon.Filled);
                 Assert.NotSame(firstIcon, secondIcon);
             }
             finally
@@ -123,15 +130,18 @@ public class IconContentTests
     }
 
     [Fact]
-    public void SymbolRegular_NearerImplicitTemplateOverridesTheLibraryDefault()
+    public void FluentSystemIcon_NearerImplicitTemplateOverridesTheLibraryDefault()
     {
         RunOnStaThread(() =>
         {
-            var localTemplate = new DataTemplate(typeof(SymbolRegular))
+            var localTemplate = new DataTemplate(typeof(FluentSystemIcon))
             {
                 VisualTree = new FrameworkElementFactory(typeof(Border)),
             };
-            var presenter = new ContentPresenter { Content = SymbolRegular.Home24 };
+            var presenter = new ContentPresenter
+            {
+                Content = new FluentSystemIcon(SymbolRegular.Home24),
+            };
             presenter.Resources.Add(localTemplate.DataTemplateKey, localTemplate);
             var window = CreateHiddenWindow(presenter);
 
@@ -164,7 +174,7 @@ public class IconContentTests
             };
             var item = new NavigationViewItem
             {
-                Icon = SymbolRegular.Home24,
+                Icon = new FluentSystemIcon(SymbolRegular.Home24),
                 Style = Assert.IsType<Style>(resources[typeof(NavigationViewItem)]),
             };
             var window = CreateHiddenWindow(item);
@@ -186,7 +196,9 @@ public class IconContentTests
                 NavigationViewItemTemplateBehavior.SetIsIconFilled(item, true);
                 Assert.True(NavigationViewItemTemplateBehavior.GetIsIconFilled(generatedIcon));
                 Assert.True(generatedIcon.Filled);
-                Assert.Equal(SymbolRegular.Home24, Assert.IsType<SymbolRegular>(item.Icon));
+                var iconData = Assert.IsType<FluentSystemIcon>(item.Icon);
+                Assert.Equal(SymbolRegular.Home24, iconData.Symbol);
+                Assert.False(iconData.Filled);
             }
             finally
             {
