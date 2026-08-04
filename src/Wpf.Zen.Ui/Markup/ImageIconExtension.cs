@@ -4,7 +4,7 @@
 // All Rights Reserved.
 
 using System.Windows.Markup;
-using Wpf.Zen.Ui.Controls;
+using Image = System.Windows.Controls.Image;
 
 namespace Wpf.Zen.Ui.Markup;
 

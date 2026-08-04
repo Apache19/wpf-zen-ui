@@ -44,7 +44,6 @@
         <ResourceDictionary Source="pack://application:,,,/Wpf.Zen.Ui;component/Controls/GridView/GridViewColumnHeader.xaml" />
         -->
         <ResourceDictionary Source="pack://application:,,,/Wpf.Zen.Ui;component/Controls/HyperlinkButton/HyperlinkButton.xaml" />
-        <ResourceDictionary Source="pack://application:,,,/Wpf.Zen.Ui;component/Controls/Image/Image.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Zen.Ui;component/Controls/InfoBar/InfoBar.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Zen.Ui;component/Controls/InfoBadge/InfoBadge.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Zen.Ui;component/Controls/ListBox/ListBox.xaml" />

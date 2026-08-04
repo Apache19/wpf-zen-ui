@@ -4,19 +4,17 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Zen.Ui.Gallery.Controls"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:local="clr-namespace:Wpf.Zen.Ui.Gallery.Views.Pages.Media"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:vm="clr-namespace:Wpf.Zen.Ui.Gallery.ViewModels.Pages.Media"
     xmlns:system="clr-namespace:System;assembly=System.Runtime"
     xmlns:ui="http://schemas.thezendev.com/wpf/2027"
+    xmlns:vm="clr-namespace:Wpf.Zen.Ui.Gallery.ViewModels.Pages.Media"
     Title="ImagePage"
-    Style="{ui:DynamicStyle DynamicScrollPage}"
     controls:PageControlDocumentation.DocumentationType="{x:Type ui:Image}"
-    d:DataContext="{d:DesignInstance vm:ImageViewModel,
-                                     IsDesignTimeCreatable=False}"
-    d:DesignWidth="800"
     d:Background="{ui:DynamicBrush WindowBackground}"
+    d:DataContext="{d:DesignInstance vm:ImageViewModel, IsDesignTimeCreatable=False}"
+    d:DesignWidth="800"
     Foreground="{ui:DynamicBrush TextFillPrimary}"
+    Style="{ui:DynamicStyle DynamicScrollPage}"
     mc:Ignorable="d">
     <Page.Resources>
         <system:String x:Key="PageXamlUrl">https://github.com/dotnet/wpf</system:String>
@@ -36,15 +34,83 @@
 
         <controls:ControlExample
             Margin="0,32,0,0"
-            HeaderText="WPF Zen UI Image with rounded corners from a local file"
-            XamlCode="&lt;ui:Image CornerRadius=&quot;4&quot; BorderBrush=&quot;#33000000&quot; Height=&quot;100&quot; Source=&quot;Assets\MyImage.jpg&quot; /&gt;">
-            <ui:Image
-                Height="200"
-                HorizontalAlignment="Left"
-                BorderBrush="#33000000"
-                BorderThickness="2"
-                CornerRadius="4"
-                Source="pack://application:,,,/Assets/pexels-johannes-plenio-1103970.jpg" />
+            HeaderText="WPF Zen UI Image with rounded corners and color adjustment"
+            XamlCode="&lt;ui:Image Brightness=&quot;{Binding Value, ElementName=BrightnessSlider}&quot;&#xA;          Contrast=&quot;{Binding Value, ElementName=ContrastSlider}&quot;&#xA;          Saturation=&quot;{Binding Value, ElementName=SaturationSlider}&quot;&#xA;          HueAngle=&quot;{Binding Value, ElementName=HueAngleSlider}&quot; /&gt;">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <Border
+                    Height="204"
+                    HorizontalAlignment="Left"
+                    BorderBrush="#33000000"
+                    BorderThickness="2"
+                    CornerRadius="10">
+                    <ui:Image
+                        Brightness="{Binding Value, ElementName=BrightnessSlider}"
+                        Contrast="{Binding Value, ElementName=ContrastSlider}"
+                        CornerRadius="9"
+                        HueAngle="{Binding Value, ElementName=HueAngleSlider}"
+                        Saturation="{Binding Value, ElementName=SaturationSlider}"
+                        Source="pack://application:,,,/Assets/pexels-johannes-plenio-1103970.jpg" />
+                </Border>
+
+                <StackPanel
+                    Grid.Column="1"
+                    MinWidth="200"
+                    Margin="32,0"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Center">
+                    <DockPanel Margin="0,0,0,4">
+                        <TextBlock DockPanel.Dock="Right" Text="{Binding Value, ElementName=BrightnessSlider, StringFormat=F2}" />
+                        <TextBlock Text="Brightness" />
+                    </DockPanel>
+                    <ui:Slider
+                        x:Name="BrightnessSlider"
+                        Margin="0,0,0,12"
+                        Maximum="2"
+                        Minimum="0"
+                        TickFrequency="0.05"
+                        Value="1.05" />
+
+                    <DockPanel Margin="0,0,0,4">
+                        <TextBlock DockPanel.Dock="Right" Text="{Binding Value, ElementName=ContrastSlider, StringFormat=F2}" />
+                        <TextBlock Text="Contrast" />
+                    </DockPanel>
+                    <ui:Slider
+                        x:Name="ContrastSlider"
+                        Margin="0,0,0,12"
+                        Maximum="2"
+                        Minimum="0"
+                        TickFrequency="0.05"
+                        Value="1.1" />
+
+                    <DockPanel Margin="0,0,0,4">
+                        <TextBlock DockPanel.Dock="Right" Text="{Binding Value, ElementName=SaturationSlider, StringFormat=F2}" />
+                        <TextBlock Text="Saturation" />
+                    </DockPanel>
+                    <ui:Slider
+                        x:Name="SaturationSlider"
+                        Margin="0,0,0,12"
+                        Maximum="2"
+                        Minimum="0"
+                        TickFrequency="0.05"
+                        Value="0.75" />
+
+                    <DockPanel Margin="0,0,0,4">
+                        <TextBlock DockPanel.Dock="Right" Text="{Binding Value, ElementName=HueAngleSlider, StringFormat={}{0:F0}°}" />
+                        <TextBlock Text="Hue angle" />
+                    </DockPanel>
+                    <ui:Slider
+                        x:Name="HueAngleSlider"
+                        Maximum="180"
+                        Minimum="-180"
+                        TickFrequency="1"
+                        Value="0" />
+                </StackPanel>
+            </Grid>
         </controls:ControlExample>
     </StackPanel>
 </Page>

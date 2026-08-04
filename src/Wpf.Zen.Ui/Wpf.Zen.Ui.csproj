@@ -18,6 +18,7 @@
   <ItemGroup>
     <Resource Include="Resources\Fonts\FluentSystemIcons-Filled.ttf" />
     <Resource Include="Resources\Fonts\FluentSystemIcons-Regular.ttf" />
+    <Resource Include="Controls\Image\ImageColorAdjustment.ps" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net462'">
