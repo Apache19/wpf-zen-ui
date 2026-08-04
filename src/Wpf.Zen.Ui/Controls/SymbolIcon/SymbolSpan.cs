@@ -10,22 +10,22 @@ using Wpf.Zen.Ui.Theming;
 namespace Wpf.Zen.Ui.Controls;
 
 /// <summary>
-/// Represents a Fluent System Icon symbol that can be displayed inside a text element.
+/// Represents a symbol glyph that can be displayed inline inside a text element.
 /// </summary>
 /// <example>
 /// <code lang="xml">
 /// &lt;TextBlock&gt;
-///     &lt;ui:FluentSymbol Symbol="Document24" Filled="True" FontSize="12" /&gt;
+///     &lt;ui:SymbolSpan Symbol="Document24" Filled="True" FontSize="12" /&gt;
 ///     &lt;Run Text="{Binding DeviceName}" /&gt;
 /// &lt;/TextBlock&gt;
 /// </code>
 /// </example>
-public class FluentSymbol : Run
+public class SymbolSpan : Run
 {
-    static FluentSymbol()
+    static SymbolSpan()
     {
         BaselineAlignmentProperty.OverrideMetadata(
-            typeof(FluentSymbol),
+            typeof(SymbolSpan),
             new FrameworkPropertyMetadata(BaselineAlignment.Center)
         );
     }
@@ -34,7 +34,7 @@ public class FluentSymbol : Run
     public static readonly DependencyProperty SymbolProperty = DependencyProperty.Register(
         nameof(Symbol),
         typeof(SymbolRegular),
-        typeof(FluentSymbol),
+        typeof(SymbolSpan),
         new PropertyMetadata(SymbolRegular.Empty, OnSymbolChanged)
     );
 
@@ -42,7 +42,7 @@ public class FluentSymbol : Run
     public static readonly DependencyProperty FilledProperty = DependencyProperty.Register(
         nameof(Filled),
         typeof(bool),
-        typeof(FluentSymbol),
+        typeof(SymbolSpan),
         new PropertyMetadata(false, OnFilledChanged)
     );
 
@@ -65,17 +65,17 @@ public class FluentSymbol : Run
     }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="FluentSymbol"/> class.
+    /// Initializes a new instance of the <see cref="SymbolSpan"/> class.
     /// </summary>
-    public FluentSymbol()
+    public SymbolSpan()
     {
         UpdateFontFamily();
     }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="FluentSymbol"/> class.
+    /// Initializes a new instance of the <see cref="SymbolSpan"/> class.
     /// </summary>
-    public FluentSymbol(SymbolRegular symbol, bool filled = false)
+    public SymbolSpan(SymbolRegular symbol, bool filled = false)
         : this()
     {
         Symbol = symbol;
@@ -97,12 +97,12 @@ public class FluentSymbol : Run
 
     private static void OnSymbolChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
-        ((FluentSymbol)d).UpdateGlyph();
+        ((SymbolSpan)d).UpdateGlyph();
     }
 
     private static void OnFilledChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
-        var self = (FluentSymbol)d;
+        var self = (SymbolSpan)d;
         self.UpdateFontFamily();
         self.UpdateGlyph();
     }
