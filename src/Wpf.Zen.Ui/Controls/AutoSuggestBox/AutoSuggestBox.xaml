@@ -8,7 +8,7 @@
     <Style x:Key="UiAutoSuggestBoxItemStyle" TargetType="{x:Type ListBoxItem}">
         <Setter Property="OverridesDefaultStyle" Value="True" />
         <Setter Property="Background" Value="Transparent" />
-        <Setter Property="Border.CornerRadius" Value="6" />
+        <Setter Property="Border.CornerRadius" Value="4" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="BorderBrush" Value="Transparent" />
         <Setter Property="Padding" Value="6,10" />
@@ -39,43 +39,13 @@
                         </Grid>
                     </Border>
                     <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="ContentBorder" Property="Background" Value="{m:DynamicBrush SubtleFillSecondary}" />
+                        </Trigger>
                         <Trigger Property="IsSelected" Value="True">
                             <Setter TargetName="ContentBorder" Property="Background" Value="{m:DynamicBrush SubtleFillSecondary}" />
                             <Setter TargetName="ActiveRectangle" Property="Visibility" Value="Visible" />
                         </Trigger>
-                        <MultiTrigger>
-                            <MultiTrigger.Conditions>
-                                <Condition Property="IsSelected" Value="False" />
-                                <Condition Property="IsMouseOver" Value="True" />
-                            </MultiTrigger.Conditions>
-                            <MultiTrigger.Setters>
-                                <Setter TargetName="ContentBorder" Property="Background" Value="{m:DynamicBrush SubtleFillSecondary}" />
-                            </MultiTrigger.Setters>
-                            <MultiTrigger.EnterActions>
-                                <BeginStoryboard>
-                                    <Storyboard>
-                                        <DoubleAnimation
-                                            Storyboard.TargetName="ContentBorder"
-                                            Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Opacity)"
-                                            From="0.0"
-                                            To="1.0"
-                                            Duration="00:00:00.167" />
-                                    </Storyboard>
-                                </BeginStoryboard>
-                            </MultiTrigger.EnterActions>
-                            <MultiTrigger.ExitActions>
-                                <BeginStoryboard>
-                                    <Storyboard>
-                                        <DoubleAnimation
-                                            Storyboard.TargetName="ContentBorder"
-                                            Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Opacity)"
-                                            From="1.0"
-                                            To="0.0"
-                                            Duration="00:00:00.167" />
-                                    </Storyboard>
-                                </BeginStoryboard>
-                            </MultiTrigger.ExitActions>
-                        </MultiTrigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
@@ -90,7 +60,6 @@
         <Setter Property="SnapsToDevicePixels" Value="True" />
         <Setter Property="ItemContainerStyle" Value="{StaticResource UiAutoSuggestBoxItemStyle}" />
         <Setter Property="Validation.ErrorTemplate" Value="{m:DynamicTemplate DefaultValidation}" />
-        <!--  Store reusable symbol data in the style; the implicit template creates one visual per control.  -->
         <Setter Property="Icon" Value="{m:Symbol Search24}" />
         <Setter Property="Template">
             <Setter.Value>
