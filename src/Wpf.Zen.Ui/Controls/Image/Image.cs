@@ -5,6 +5,7 @@
 
 using System.Diagnostics;
 using System.IO;
+using Wpf.Zen.Ui.Effects;
 
 // ReSharper disable once CheckNamespace
 namespace Wpf.Zen.Ui.Controls;
@@ -31,6 +32,11 @@ namespace Wpf.Zen.Ui.Controls;
 /// All color properties are dependency properties and support WPF animation. The adjustment order
 /// is hue, saturation, brightness, then contrast. The inherited <see cref="UIElement.Effect"/>
 /// remains available and is applied after the internal color adjustment.
+/// </para>
+/// <para>
+/// Use <see cref="ColorAdjustmentEffect"/> on a common container instead when every element in a
+/// visual subtree needs the same adjustment. WPF then applies one effect to the composited subtree,
+/// avoiding a separate effect surface for each <see cref="Image"/>.
 /// </para>
 /// </remarks>
 public class Image : System.Windows.Controls.Image
@@ -196,7 +202,7 @@ public class Image : System.Windows.Controls.Image
     private Size _clipGeometrySize;
     private CornerRadius _clipGeometryCornerRadius;
     private DrawingVisual? _adjustedImageVisual;
-    private ImageColorAdjustmentEffect? _colorAdjustmentEffect;
+    private ColorAdjustmentEffect? _colorAdjustmentEffect;
     private bool _colorAdjustmentUnavailable;
 
     /// <inheritdoc/>
@@ -271,16 +277,11 @@ public class Image : System.Windows.Controls.Image
         ((Image)dependencyObject).UpdateColorAdjustment();
     }
 
-    private static bool IsFiniteDouble(object? value)
-    {
-        double number = (double)value!;
-        return !double.IsNaN(number) && !double.IsInfinity(number);
-    }
+    private static bool IsFiniteDouble(object? value) =>
+        ColorAdjustmentEffect.IsFiniteDouble(value);
 
-    private static object CoerceColorScale(DependencyObject dependencyObject, object? value)
-    {
-        return Math.Max(0D, Math.Min(2D, (double)value!));
-    }
+    private static object CoerceColorScale(DependencyObject dependencyObject, object? value) =>
+        ColorAdjustmentEffect.CoerceColorScale(dependencyObject, value);
 
     private void UpdateColorAdjustment()
     {
@@ -307,7 +308,7 @@ public class Image : System.Windows.Controls.Image
         {
             try
             {
-                _colorAdjustmentEffect = new ImageColorAdjustmentEffect();
+                _colorAdjustmentEffect = new ColorAdjustmentEffect();
                 _adjustedImageVisual = new DrawingVisual { Effect = _colorAdjustmentEffect };
                 AddVisualChild(_adjustedImageVisual);
                 InvalidateVisual();
@@ -333,13 +334,12 @@ public class Image : System.Windows.Controls.Image
             }
         }
 
-        ColorTransform transform = ColorTransform.Create(
+        _colorAdjustmentEffect.SetAdjustments(
             Brightness,
             Contrast,
             Saturation,
             HueAngle
         );
-        _colorAdjustmentEffect.SetTransform(transform);
     }
 
     private void DisableColorAdjustment()

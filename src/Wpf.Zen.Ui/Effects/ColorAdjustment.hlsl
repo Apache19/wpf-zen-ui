@@ -1,4 +1,4 @@
-// Compile with: fxc /T ps_2_0 /E main /Fo ImageColorAdjustment.ps ImageColorAdjustment.hlsl
+// Compile with: fxc /T ps_2_0 /E main /Fo ColorAdjustment.ps ColorAdjustment.hlsl
 //
 // c0..c2 contain affine RGB rows. The fourth component is an offset which is multiplied by source
 // alpha. WPF effect textures use premultiplied alpha, so this preserves transparent pixels and the

@@ -17,6 +17,7 @@ using System.Windows.Markup;
 [assembly: XmlnsDefinition("http://schemas.thezendev.com/wpf/2027", "Wpf.Zen.Ui.Controls")]
 [assembly: XmlnsDefinition("http://schemas.thezendev.com/wpf/2027", "Wpf.Zen.Ui.Markup")]
 [assembly: XmlnsDefinition("http://schemas.thezendev.com/wpf/2027", "Wpf.Zen.Ui.Converters")]
+[assembly: XmlnsDefinition("http://schemas.thezendev.com/wpf/2027", "Wpf.Zen.Ui.Effects")]
 
 [assembly: XmlnsPrefix("http://schemas.thezendev.com/wpf/2027/theming", "theming")]
 [assembly: XmlnsDefinition("http://schemas.thezendev.com/wpf/2027/theming", "Wpf.Zen.Ui.Theming")]

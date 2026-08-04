@@ -258,26 +258,6 @@ public class ImageTests
         );
     }
 
-    [Fact]
-    public void ColorTransform_NeutralValuesProduceIdentityMatrix()
-    {
-        Wpf.Zen.Ui.Controls.ColorTransform transform =
-            Wpf.Zen.Ui.Controls.ColorTransform.Create(1D, 1D, 1D, 0D);
-
-        Assert.Equal(1D, transform.M11, 12);
-        Assert.Equal(0D, transform.M12, 12);
-        Assert.Equal(0D, transform.M13, 12);
-        Assert.Equal(0D, transform.OffsetR, 12);
-        Assert.Equal(0D, transform.M21, 12);
-        Assert.Equal(1D, transform.M22, 12);
-        Assert.Equal(0D, transform.M23, 12);
-        Assert.Equal(0D, transform.OffsetG, 12);
-        Assert.Equal(0D, transform.M31, 12);
-        Assert.Equal(0D, transform.M32, 12);
-        Assert.Equal(1D, transform.M33, 12);
-        Assert.Equal(0D, transform.OffsetB, 12);
-    }
-
     private static BitmapSource CreateSolidBitmap(int width, int height, Color color)
     {
         int stride = width * 4;
