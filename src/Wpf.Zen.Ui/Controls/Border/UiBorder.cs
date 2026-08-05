@@ -3,9 +3,10 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
+// Portions derived from dotnet/wpf Border.cs
+
 using System.Reflection;
 using System.Windows.Controls;
-using System.Windows.Media;
 
 // ReSharper disable once CheckNamespace
 namespace Wpf.Zen.Ui.Controls;
