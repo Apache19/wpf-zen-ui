@@ -169,16 +169,18 @@
     </Style>
 
     <ControlTemplate x:Key="GridViewTemplate" TargetType="{x:Type ListView}">
-        <Border
+        <controls:ClippingBorder
             x:Name="RootBorder"
             Background="{TemplateBinding Background}"
             BorderBrush="{TemplateBinding BorderBrush}"
             BorderThickness="{TemplateBinding BorderThickness}"
+            ClipContent="True"
+            CornerRadius="{TemplateBinding Border.CornerRadius}"
             SnapsToDevicePixels="True">
-            <controls:PassiveScrollViewer Style="{m:StaticStyle GridViewScrollViewer}">
+            <controls:PassiveScrollViewer Style="{StaticResource {x:Static t:StyleKeys.GridViewScrollViewerStyle}}">
                 <ItemsPresenter SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
             </controls:PassiveScrollViewer>
-        </Border>
+        </controls:ClippingBorder>
         <ControlTemplate.Triggers>
             <Trigger Property="IsEnabled" Value="False">
                 <Setter TargetName="RootBorder" Property="Opacity" Value="0.56" />
@@ -196,7 +198,6 @@
         <Setter Property="ScrollViewer.CanContentScroll" Value="True" />
         <Setter Property="ScrollViewer.PanningMode" Value="Both" />
         <Setter Property="Stylus.IsFlicksEnabled" Value="False" />
-        <Setter Property="SnapsToDevicePixels" Value="True" />
         <Setter Property="controls:PassiveScrollViewer.ScrollSpillMode" Value="Disabled" />
         <Setter Property="Template" Value="{StaticResource DefaultListViewTemplate}" />
         <Style.Triggers>

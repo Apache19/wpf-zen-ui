@@ -129,13 +129,29 @@
                 &lt;/ListView&gt;
             </controls:ControlExample.XamlCode>
             <ui:ListView
-                MaxHeight="230"
-                d:SelectedIndex="2"
+                MaxHeight="238"
                 d:ItemsSource="{d:SampleData ItemCount=10}"
+                d:SelectedIndex="4"
                 ui:PassiveScrollViewer.ScrollSpillMode="Disabled"
                 BorderThickness="1"
                 ItemsSource="{Binding BasicListViewItems, Mode=TwoWay}"
                 ScrollViewer.CanContentScroll="False">
+                <ui:ListView.Style>
+                    <Style TargetType="{x:Type ui:ListView}">
+                        <Setter Property="Border.CornerRadius" Value="8" />
+                        <Setter Property="ItemContainerStyleSelector">
+                            <Setter.Value>
+                                <ui:ListItemContainerStyleSelector>
+                                    <ui:ListItemContainerStyleSelector.LastItemStyle>
+                                        <Style TargetType="{x:Type ListViewItem}">
+                                            <Setter Property="BorderThickness" Value="0" />
+                                        </Style>
+                                    </ui:ListItemContainerStyleSelector.LastItemStyle>
+                                </ui:ListItemContainerStyleSelector>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                </ui:ListView.Style>
                 <ui:ListView.View>
                     <ui:GridView>
                         <ui:GridViewColumn
@@ -151,11 +167,11 @@
                             DisplayMemberBinding="{Binding Name}"
                             Header="Full Name" />
                         <ui:GridViewColumn
-                            Width="2*"
+                            Width="1.8*"
                             DisplayMemberBinding="{Binding Company}"
                             Header="Company" />
                         <ui:GridViewColumn
-                            Width="*"
+                            Width="2*"
                             DisplayMemberBinding="{Binding Email}"
                             Header="Email" />
                     </ui:GridView>
