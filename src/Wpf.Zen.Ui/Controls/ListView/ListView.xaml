@@ -79,6 +79,7 @@
                             the presenter or altering its native column logic.
                         -->
                         <GridViewHeaderRowPresenter
+                            x:Name="GridViewHeaderRowPresenter"
                             Margin="12,0,0,0"
                             controls:ColumnHeaderResizeBehavior.IsEnabled="True"
                             AllowsColumnReorder="{Binding TemplatedParent.View.AllowsColumnReorder, RelativeSource={RelativeSource TemplatedParent}}"
@@ -137,6 +138,11 @@
                 Visibility="{TemplateBinding ComputedVerticalScrollBarVisibility}"
                 Value="{Binding VerticalOffset, Mode=OneWay, RelativeSource={RelativeSource TemplatedParent}}" />
         </Grid>
+        <ControlTemplate.Triggers>
+            <Trigger Property="controls:SelectionIndicator.IsSelectionIndicatorVisible" Value="False">
+                <Setter TargetName="GridViewHeaderRowPresenter" Property="Margin" Value="0" />
+            </Trigger>
+        </ControlTemplate.Triggers>
     </ControlTemplate>
 
     <!--
@@ -215,28 +221,6 @@
         lightweight Wpf.Zen.Ui GridView type exists solely to select these Fluent XAML resources.
     -->
     <Style x:Key="{x:Static t:StyleKeys.GridViewListViewStyle}" BasedOn="{StaticResource DefaultListViewBaseStyle}" TargetType="{x:Type ListView}">
-        <!--
-            ListView changes to this view-specific style through ViewBase.DefaultStyleKey. Keeping
-            the selector here (instead of DefaultListViewBaseStyle) makes the rule follow the
-            GridView lifecycle automatically, including a View replacement at runtime. No mirrored
-            "has view" dependency property or trigger is necessary.
-
-            WPF keeps the ordinary Style selected here separate from the ThemeStyle resolved through
-            GridView.ItemContainerDefaultStyleKey. Consequently this style only needs to override
-            the trailing divider; the Fluent row template and remaining setters continue to come
-            from the GridView theme style.
-        -->
-        <Setter Property="ItemContainerStyleSelector">
-            <Setter.Value>
-                <controls:ListItemContainerStyleSelector>
-                    <controls:ListItemContainerStyleSelector.LastItemStyle>
-                        <Style TargetType="{x:Type ListViewItem}">
-                            <Setter Property="BorderThickness" Value="0" />
-                        </Style>
-                    </controls:ListItemContainerStyleSelector.LastItemStyle>
-                </controls:ListItemContainerStyleSelector>
-            </Setter.Value>
-        </Setter>
         <Setter Property="Template" Value="{StaticResource GridViewTemplate}" />
     </Style>
 
