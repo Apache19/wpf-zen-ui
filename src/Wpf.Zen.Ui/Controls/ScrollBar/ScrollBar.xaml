@@ -12,8 +12,6 @@
     xmlns:m="clr-namespace:Wpf.Zen.Ui.Markup"
     xmlns:t="clr-namespace:Wpf.Zen.Ui.Theming">
 
-    <!--  todo: ControlStrongFillDefault 改为 次要，增加主要和第三色，然后把交互色换掉  -->
-
     <Duration x:Key="ScrollAnimationDuration">0:0:0.16</Duration>
 
     <converters:PillCornerConverter x:Key="PillCornerConverter" Factor="0.55" />
@@ -33,8 +31,14 @@
                         <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
                     </Border>
                     <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter Property="Foreground" Value="{m:DynamicBrush ControlStrongFillPrimary}" />
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter Property="Foreground" Value="{m:DynamicBrush ControlStrongFillTertiary}" />
+                        </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter Property="Opacity" Value="0.56" />
+                            <Setter Property="Foreground" Value="{m:DynamicBrush ControlStrongFillDisabled}" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -45,16 +49,16 @@
     <Style x:Key="VerticalScrollBarThumbStyle" TargetType="{x:Type Thumb}">
         <Setter Property="OverridesDefaultStyle" Value="True" />
         <Setter Property="IsTabStop" Value="False" />
-        <Setter Property="Background" Value="{m:DynamicBrush ControlStrongFillDefault}" />
+        <Setter Property="Background" Value="Transparent" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type Thumb}">
-                    <Grid Background="Transparent" SnapsToDevicePixels="True">
+                    <Grid Background="{TemplateBinding Background}" SnapsToDevicePixels="True">
                         <Border
                             x:Name="ThumbBorder"
                             Width="4"
                             HorizontalAlignment="Center"
-                            Background="{TemplateBinding Background}">
+                            Background="{TemplateBinding Foreground}">
                             <Border.CornerRadius>
                                 <MultiBinding Converter="{StaticResource PillCornerConverter}">
                                     <Binding Path="ActualWidth" RelativeSource="{RelativeSource Self}" />
@@ -88,8 +92,14 @@
                                 </BeginStoryboard>
                             </DataTrigger.ExitActions>
                         </DataTrigger>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="ThumbBorder" Property="Background" Value="{m:DynamicBrush ControlStrongFillPrimary}" />
+                        </Trigger>
                         <Trigger Property="IsDragging" Value="True">
-                            <Setter Property="Background" Value="{m:DynamicBrush ControlFillPrimary}" />
+                            <Setter TargetName="ThumbBorder" Property="Background" Value="{m:DynamicBrush ControlStrongFillTertiary}" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="ThumbBorder" Property="Background" Value="{m:DynamicBrush ControlStrongFillDisabled}" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -100,7 +110,7 @@
     <Style x:Key="HorizontalScrollBarThumbStyle" TargetType="{x:Type Thumb}">
         <Setter Property="OverridesDefaultStyle" Value="True" />
         <Setter Property="IsTabStop" Value="False" />
-        <Setter Property="Background" Value="{m:DynamicBrush ControlStrongFillDefault}" />
+        <Setter Property="Background" Value="{m:DynamicBrush ControlStrongFillSecondary}" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type Thumb}">
@@ -143,8 +153,14 @@
                                 </BeginStoryboard>
                             </DataTrigger.ExitActions>
                         </DataTrigger>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="ThumbBorder" Property="Background" Value="{m:DynamicBrush ControlStrongFillPrimary}" />
+                        </Trigger>
                         <Trigger Property="IsDragging" Value="True">
-                            <Setter Property="Background" Value="{m:DynamicBrush ControlFillPrimary}" />
+                            <Setter TargetName="ThumbBorder" Property="Background" Value="{m:DynamicBrush ControlStrongFillTertiary}" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="ThumbBorder" Property="Background" Value="{m:DynamicBrush ControlStrongFillDisabled}" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -181,7 +197,6 @@
                 Command="ScrollBar.LineUpCommand"
                 Content="{m:FluentIconSource CaretUp24, Filled=True}"
                 FontSize="11"
-                Foreground="{m:DynamicBrush ControlStrongFillDefault}"
                 Opacity="0"
                 Style="{StaticResource ScrollBarTransparentRepeatButton}" />
             <Track
@@ -206,7 +221,6 @@
                 Command="ScrollBar.LineDownCommand"
                 Content="{m:FluentIconSource CaretDown24, Filled=True}"
                 FontSize="11"
-                Foreground="{m:DynamicBrush ControlStrongFillDefault}"
                 Opacity="0"
                 Style="{StaticResource ScrollBarTransparentRepeatButton}" />
         </Grid>
@@ -287,7 +301,6 @@
                 Command="ScrollBar.LineLeftCommand"
                 Content="{m:FluentIconSource CaretLeft24, Filled=True}"
                 FontSize="11"
-                Foreground="{m:DynamicBrush ControlStrongFillDefault}"
                 Opacity="0"
                 Style="{StaticResource ScrollBarTransparentRepeatButton}" />
             <Track x:Name="PART_Track" Grid.Column="1">
@@ -309,7 +322,6 @@
                 Command="ScrollBar.LineRightCommand"
                 Content="{m:FluentIconSource CaretRight24, Filled=True}"
                 FontSize="11"
-                Foreground="{m:DynamicBrush ControlStrongFillDefault}"
                 Opacity="0"
                 Style="{StaticResource ScrollBarTransparentRepeatButton}" />
         </Grid>
@@ -374,16 +386,16 @@
     <Style x:Key="{x:Static t:StyleKeys.DefaultScrollBarStyle}" TargetType="{x:Type ScrollBar}">
         <Setter Property="OverridesDefaultStyle" Value="True" />
         <Setter Property="Background" Value="{m:DynamicBrush AcrylicBackgroundFillDefault}" />
-        <Setter Property="Foreground" Value="{m:DynamicBrush ControlStrongFillDefault}" />
+        <Setter Property="Foreground" Value="{m:DynamicBrush ControlStrongFillSecondary}" />
         <Setter Property="Stylus.IsPressAndHoldEnabled" Value="false" />
         <Setter Property="Stylus.IsFlicksEnabled" Value="false" />
-        <Setter Property="Width" Value="14" />
-        <Setter Property="MinWidth" Value="14" />
+        <Setter Property="Width" Value="12" />
+        <Setter Property="MinWidth" Value="12" />
         <Setter Property="Template" Value="{StaticResource VerticalScrollBarTemplate}" />
         <Style.Triggers>
             <Trigger Property="Orientation" Value="Horizontal">
-                <Setter Property="Height" Value="14" />
-                <Setter Property="MinHeight" Value="14" />
+                <Setter Property="Height" Value="12" />
+                <Setter Property="MinHeight" Value="12" />
                 <Setter Property="Width" Value="Auto" />
                 <Setter Property="MinWidth" Value="0" />
                 <Setter Property="Template" Value="{StaticResource HorizontalScrollBarTemplate}" />

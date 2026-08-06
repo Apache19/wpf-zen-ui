@@ -45,6 +45,9 @@ public static class BrushKeys
     public static ComponentResourceKey ControlFillColorTertiaryBrush            { get; } = Create(nameof(ControlFillColorTertiaryBrush));
     public static ComponentResourceKey ControlFillColorDisabledBrush            { get; } = Create(nameof(ControlFillColorDisabledBrush));
     public static ComponentResourceKey ControlFillColorInputActiveBrush         { get; } = Create(nameof(ControlFillColorInputActiveBrush));
+    public static ComponentResourceKey ControlStrongFillColorPrimaryBrush       { get; } = Create(nameof(ControlStrongFillColorPrimaryBrush));
+    public static ComponentResourceKey ControlStrongFillColorSecondaryBrush     { get; } = Create(nameof(ControlStrongFillColorSecondaryBrush));
+    public static ComponentResourceKey ControlStrongFillColorTertiaryBrush      { get; } = Create(nameof(ControlStrongFillColorTertiaryBrush));
     public static ComponentResourceKey ControlStrongFillColorDefaultBrush       { get; } = Create(nameof(ControlStrongFillColorDefaultBrush));
     public static ComponentResourceKey ControlStrongFillColorDisabledBrush      { get; } = Create(nameof(ControlStrongFillColorDisabledBrush));
     public static ComponentResourceKey ControlSolidFillColorDefaultBrush        { get; } = Create(nameof(ControlSolidFillColorDefaultBrush));

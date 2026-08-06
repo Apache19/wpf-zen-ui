@@ -47,6 +47,9 @@ public static class ColorKeys
     public static ComponentResourceKey ControlFillColorTertiary            { get; } = Create(nameof(ControlFillColorTertiary));
     public static ComponentResourceKey ControlFillColorDisabled            { get; } = Create(nameof(ControlFillColorDisabled));
     public static ComponentResourceKey ControlFillColorInputActive         { get; } = Create(nameof(ControlFillColorInputActive));
+    public static ComponentResourceKey ControlStrongFillColorPrimary       { get; } = Create(nameof(ControlStrongFillColorPrimary));
+    public static ComponentResourceKey ControlStrongFillColorSecondary     { get; } = Create(nameof(ControlStrongFillColorSecondary));
+    public static ComponentResourceKey ControlStrongFillColorTertiary      { get; } = Create(nameof(ControlStrongFillColorTertiary));
     public static ComponentResourceKey ControlStrongFillColorDefault       { get; } = Create(nameof(ControlStrongFillColorDefault));
     public static ComponentResourceKey ControlStrongFillColorDisabled      { get; } = Create(nameof(ControlStrongFillColorDisabled));
     public static ComponentResourceKey ControlSolidFillColorDefault        { get; } = Create(nameof(ControlSolidFillColorDefault));
