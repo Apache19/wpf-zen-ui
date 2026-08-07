@@ -30,7 +30,8 @@ public static class StyleKeys
     public static ComponentResourceKey UiRichTextBoxStyle              { get; } = Create(nameof(UiRichTextBoxStyle));
     public static ComponentResourceKey DefaultTextBoxScrollViewerStyle { get; } = Create(nameof(DefaultTextBoxScrollViewerStyle));
     public static ComponentResourceKey DefaultControlFocusVisualStyle  { get; } = Create(nameof(DefaultControlFocusVisualStyle));
-    public static ComponentResourceKey DefaultScrollBarStyle           { get; } = Create(nameof(DefaultScrollBarStyle));
+    public static ComponentResourceKey DefaultScrollViewerStyle        { get; } = Create(nameof(DefaultScrollViewerStyle));
+    public static ComponentResourceKey UiDynamicScrollViewerStyle      { get; } = Create(nameof(UiDynamicScrollViewerStyle));
     public static ComponentResourceKey DynamicScrollPageStyle          { get; } = Create(nameof(DynamicScrollPageStyle));
     public static ComponentResourceKey IconInfoBadgeStyle              { get; } = Create(nameof(IconInfoBadgeStyle));
     public static ComponentResourceKey ValueInfoBadgeStyle             { get; } = Create(nameof(ValueInfoBadgeStyle));

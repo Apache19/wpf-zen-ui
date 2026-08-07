@@ -8,11 +8,22 @@
 <ResourceDictionary
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="clr-namespace:Wpf.Zen.Ui.Controls"
     xmlns:converters="clr-namespace:Wpf.Zen.Ui.Converters"
     xmlns:m="clr-namespace:Wpf.Zen.Ui.Markup"
-    xmlns:t="clr-namespace:Wpf.Zen.Ui.Theming">
+    xmlns:system="clr-namespace:System;assembly=mscorlib">
 
     <Duration x:Key="ScrollAnimationDuration">0:0:0.16</Duration>
+
+    <!--
+        Override the system scroll-bar button size to raise the minimum thumb length.
+        Track.ComputeScrollBarLengths computes thumbMinLength = Floor(buttonSize × 0.5),
+        so a value of 36 yields an 18 px floor. The unmodified system default (~17–21 px)
+        produces a ~8–10 px minimum, which on this 6-px-wide slim bar reads as a tiny dot
+        when content is large — hard to spot and hard to grab.
+    -->
+    <system:Double x:Key="{x:Static SystemParameters.VerticalScrollBarButtonHeightKey}">36</system:Double>
+    <system:Double x:Key="{x:Static SystemParameters.HorizontalScrollBarButtonWidthKey}">36</system:Double>
 
     <converters:PillCornerConverter x:Key="PillCornerConverter" Factor="0.55" />
 
@@ -49,11 +60,10 @@
     <Style x:Key="VerticalScrollBarThumbStyle" TargetType="{x:Type Thumb}">
         <Setter Property="OverridesDefaultStyle" Value="True" />
         <Setter Property="IsTabStop" Value="False" />
-        <Setter Property="Background" Value="Transparent" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type Thumb}">
-                    <Grid Background="{TemplateBinding Background}" SnapsToDevicePixels="True">
+                    <Grid Background="Transparent" SnapsToDevicePixels="True">
                         <Border
                             x:Name="ThumbBorder"
                             Width="4"
@@ -110,7 +120,6 @@
     <Style x:Key="HorizontalScrollBarThumbStyle" TargetType="{x:Type Thumb}">
         <Setter Property="OverridesDefaultStyle" Value="True" />
         <Setter Property="IsTabStop" Value="False" />
-        <Setter Property="Background" Value="{m:DynamicBrush ControlStrongFillSecondary}" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type Thumb}">
@@ -119,7 +128,7 @@
                             x:Name="ThumbBorder"
                             Height="4"
                             VerticalAlignment="Center"
-                            Background="{TemplateBinding Background}">
+                            Background="{TemplateBinding Foreground}">
                             <Border.CornerRadius>
                                 <MultiBinding Converter="{StaticResource PillCornerConverter}">
                                     <Binding Path="ActualWidth" RelativeSource="{RelativeSource Self}" />
@@ -171,9 +180,9 @@
     <ControlTemplate x:Key="VerticalScrollBarTemplate" TargetType="{x:Type ScrollBar}">
         <Grid Background="Transparent">
             <Grid.RowDefinitions>
-                <RowDefinition MaxHeight="14" />
+                <RowDefinition Height="Auto" />
                 <RowDefinition Height="0.00001*" />
-                <RowDefinition MaxHeight="14" />
+                <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
             <Border
                 x:Name="BackBorder"
@@ -192,6 +201,7 @@
             <RepeatButton
                 x:Name="UpButton"
                 Grid.Row="0"
+                Padding="0,1,0,2"
                 HorizontalContentAlignment="Center"
                 VerticalContentAlignment="Center"
                 Command="ScrollBar.LineUpCommand"
@@ -216,6 +226,7 @@
             <RepeatButton
                 x:Name="DownButton"
                 Grid.Row="2"
+                Padding="0,2,0,1"
                 HorizontalContentAlignment="Center"
                 VerticalContentAlignment="Center"
                 Command="ScrollBar.LineDownCommand"
@@ -225,6 +236,25 @@
                 Style="{StaticResource ScrollBarTransparentRepeatButton}" />
         </Grid>
         <ControlTemplate.Triggers>
+            <Trigger Property="controls:DynamicScrollViewer.IsManagedScrollBar" Value="True">
+                <Setter TargetName="PART_Track" Property="Opacity" Value="0.0" />
+            </Trigger>
+            <Trigger Property="controls:DynamicScrollViewer.IsVerticalScrollBarActive" Value="True">
+                <Trigger.EnterActions>
+                    <BeginStoryboard>
+                        <Storyboard TargetProperty="Opacity" TargetName="PART_Track">
+                            <DoubleAnimation To="1.0" Duration="{StaticResource ScrollAnimationDuration}" />
+                        </Storyboard>
+                    </BeginStoryboard>
+                </Trigger.EnterActions>
+                <Trigger.ExitActions>
+                    <BeginStoryboard>
+                        <Storyboard TargetProperty="Opacity" TargetName="PART_Track">
+                            <DoubleAnimation To="0.0" Duration="{StaticResource ScrollAnimationDuration}" />
+                        </Storyboard>
+                    </BeginStoryboard>
+                </Trigger.ExitActions>
+            </Trigger>
             <Trigger Property="IsMouseOver" Value="True">
                 <Trigger.EnterActions>
                     <BeginStoryboard>
@@ -275,9 +305,9 @@
     <ControlTemplate x:Key="HorizontalScrollBarTemplate" TargetType="{x:Type ScrollBar}">
         <Grid Background="Transparent">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition MaxWidth="14" />
+                <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="0.00001*" />
-                <ColumnDefinition MaxWidth="14" />
+                <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
             <Border
                 x:Name="BackBorder"
@@ -296,6 +326,7 @@
             <RepeatButton
                 x:Name="LeftButton"
                 Grid.Column="0"
+                Padding="1,0,2,0"
                 HorizontalContentAlignment="Center"
                 VerticalContentAlignment="Center"
                 Command="ScrollBar.LineLeftCommand"
@@ -317,6 +348,7 @@
             <RepeatButton
                 x:Name="RightButton"
                 Grid.Column="2"
+                Padding="2,0,1,0"
                 HorizontalContentAlignment="Center"
                 VerticalContentAlignment="Center"
                 Command="ScrollBar.LineRightCommand"
@@ -330,6 +362,25 @@
                 <Setter TargetName="LeftButton" Property="Content" Value="{m:FluentIconSource CaretRight24, Filled=True}" />
                 <Setter TargetName="RightButton" Property="Content" Value="{m:FluentIconSource CaretLeft24, Filled=True}" />
             </Trigger>
+            <Trigger Property="controls:DynamicScrollViewer.IsManagedScrollBar" Value="True">
+                <Setter TargetName="PART_Track" Property="Opacity" Value="0.0" />
+            </Trigger>
+            <Trigger Property="controls:DynamicScrollViewer.IsHorizontalScrollBarActive" Value="True">
+                <Trigger.EnterActions>
+                    <BeginStoryboard>
+                        <Storyboard TargetProperty="Opacity" TargetName="PART_Track">
+                            <DoubleAnimation To="1.0" Duration="{StaticResource ScrollAnimationDuration}" />
+                        </Storyboard>
+                    </BeginStoryboard>
+                </Trigger.EnterActions>
+                <Trigger.ExitActions>
+                    <BeginStoryboard>
+                        <Storyboard TargetProperty="Opacity" TargetName="PART_Track">
+                            <DoubleAnimation To="0.0" Duration="{StaticResource ScrollAnimationDuration}" />
+                        </Storyboard>
+                    </BeginStoryboard>
+                </Trigger.ExitActions>
+            </Trigger>
             <Trigger Property="IsMouseOver" Value="True">
                 <Trigger.EnterActions>
                     <BeginStoryboard>
@@ -337,19 +388,16 @@
                             <DoubleAnimation
                                 Storyboard.TargetName="BackBorder"
                                 Storyboard.TargetProperty="Opacity"
-                                From="0.0"
                                 To="1.0"
                                 Duration="{StaticResource ScrollAnimationDuration}" />
                             <DoubleAnimation
                                 Storyboard.TargetName="LeftButton"
                                 Storyboard.TargetProperty="Opacity"
-                                From="0.0"
                                 To="1.0"
                                 Duration="{StaticResource ScrollAnimationDuration}" />
                             <DoubleAnimation
                                 Storyboard.TargetName="RightButton"
                                 Storyboard.TargetProperty="Opacity"
-                                From="0.0"
                                 To="1.0"
                                 Duration="{StaticResource ScrollAnimationDuration}" />
                         </Storyboard>
@@ -361,19 +409,16 @@
                             <DoubleAnimation
                                 Storyboard.TargetName="BackBorder"
                                 Storyboard.TargetProperty="Opacity"
-                                From="1.0"
                                 To="0.0"
                                 Duration="{StaticResource ScrollAnimationDuration}" />
                             <DoubleAnimation
                                 Storyboard.TargetName="LeftButton"
                                 Storyboard.TargetProperty="Opacity"
-                                From="1.0"
                                 To="0.0"
                                 Duration="{StaticResource ScrollAnimationDuration}" />
                             <DoubleAnimation
                                 Storyboard.TargetName="RightButton"
                                 Storyboard.TargetProperty="Opacity"
-                                From="1.0"
                                 To="0.0"
                                 Duration="{StaticResource ScrollAnimationDuration}" />
                         </Storyboard>
@@ -383,8 +428,7 @@
         </ControlTemplate.Triggers>
     </ControlTemplate>
 
-    <Style x:Key="{x:Static t:StyleKeys.DefaultScrollBarStyle}" TargetType="{x:Type ScrollBar}">
-        <Setter Property="OverridesDefaultStyle" Value="True" />
+    <Style x:Key="ScrollBarBaseStyle" TargetType="{x:Type ScrollBar}">
         <Setter Property="Background" Value="{m:DynamicBrush AcrylicBackgroundFillDefault}" />
         <Setter Property="Foreground" Value="{m:DynamicBrush ControlStrongFillSecondary}" />
         <Setter Property="Stylus.IsPressAndHoldEnabled" Value="false" />
@@ -402,7 +446,5 @@
             </Trigger>
         </Style.Triggers>
     </Style>
-
-    <Style BasedOn="{StaticResource {x:Static t:StyleKeys.DefaultScrollBarStyle}}" TargetType="{x:Type ScrollBar}" />
 
 </ResourceDictionary>

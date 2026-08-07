@@ -49,13 +49,12 @@ public class DynamicScrollViewerTests
                     window.Show();
                     scrollViewer.UpdateLayout();
 
-                    var verticalScrollBar = Assert.IsType<DynamicScrollBar>(
+                    var verticalScrollBar = Assert.IsType<UiScrollBar>(
                         scrollViewer.Template.FindName("PART_VerticalScrollBar", scrollViewer)
                     );
 
                     Assert.True(scrollViewer.ScrollableHeight > 0d);
                     Assert.Equal(0d, scrollViewer.VerticalOffset);
-                    Assert.False(verticalScrollBar.IsInteracted);
 
                     scrollViewer.LineDown();
                     DrainDispatcher();
@@ -64,7 +63,6 @@ public class DynamicScrollViewerTests
                     // by one item. This deliberately remains below the pixel-oriented MinimalChange default.
                     Assert.Equal(1d, scrollViewer.VerticalOffset);
                     Assert.True(scrollViewer.IsScrollingVertically);
-                    Assert.True(verticalScrollBar.IsInteracted);
                 }
                 finally
                 {

@@ -33,8 +33,9 @@
     <EmbeddedResource Include="Controls\CardExpander\CardExpander.bmp" />
     <EmbeddedResource Include="Controls\CardAction\CardAction.bmp" />
     <EmbeddedResource Include="Controls\Card\Card.bmp" />
-    <EmbeddedResource Include="Controls\DynamicScrollBar\DynamicScrollBar.bmp" />
-    <EmbeddedResource Include="Controls\DynamicScrollViewer\DynamicScrollViewer.bmp" />
+    <EmbeddedResource Include="Controls\ScrollViewer\PassiveScrollViewer.bmp" />
+    <EmbeddedResource Include="Controls\ScrollViewer\UiScrollBar.bmp" />
+    <EmbeddedResource Include="Controls\ScrollViewer\DynamicScrollViewer.bmp" />
     <EmbeddedResource Include="Controls\MessageBox\MessageBox.bmp" />
     <EmbeddedResource Include="Controls\NavigationView\NavigationView.bmp" />
     <EmbeddedResource Include="Controls\NavigationView\NavigationViewItem.bmp" />
