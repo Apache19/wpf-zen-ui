@@ -212,9 +212,15 @@
             <Trigger SourceName="Popup" Property="Popup.AllowsTransparency" Value="False">
                 <Setter TargetName="DropDownBorder" Property="CornerRadius" Value="0" />
             </Trigger>
-            <Trigger Property="IsGrouping" Value="True">
-                <Setter Property="ScrollViewer.CanContentScroll" Value="False" />
-            </Trigger>
+
+            <MultiTrigger>
+                <MultiTrigger.Conditions>
+                    <Condition Property="IsGrouping" Value="true" />
+                    <Condition Property="VirtualizingPanel.IsVirtualizingWhenGrouping" Value="false" />
+                </MultiTrigger.Conditions>
+                <Setter Property="ScrollViewer.CanContentScroll" Value="false"/>
+            </MultiTrigger>
+
             <Trigger Property="IsEditable" Value="True">
                 <Setter Property="IsTabStop" Value="False" />
                 <Setter TargetName="PART_EditableTextBox" Property="Visibility" Value="Visible" />
