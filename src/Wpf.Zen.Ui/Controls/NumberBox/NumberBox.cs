@@ -1093,8 +1093,15 @@ public class NumberBox : TextBox
         // Before adjusting the value, validate the contents of the textbox so we don't override it.
         ValidateInput();
 
-        var newValue = Value ?? 0;
-        newValue += change;
+        var currentValue = Value ?? 0;
+
+        // NumberBox edits decimal text, so ordinary stepping should follow decimal arithmetic
+        // rather than expose IEEE 754 artifacts such as 128.45 - 1 becoming
+        // 127.44999999999999. Values outside decimal's substantially smaller exponent range still
+        // use double arithmetic so this implementation does not narrow the public Value domain.
+        var newValue = NumberBoxDecimalMath.TryAdd(currentValue, change, out double decimalResult)
+            ? decimalResult
+            : currentValue + change;
 
         SetCurrentValue(ValueProperty, newValue);
 

@@ -4,12 +4,19 @@
 // All Rights Reserved.
 
 // ReSharper disable once CheckNamespace
+
 namespace Wpf.Zen.Ui.Controls;
 
 /// <summary>
-/// A simple recursive-descent parser that evaluates basic arithmetic expressions
-/// consisting of <c>+</c>, <c>-</c>, <c>*</c>, <c>/</c> operators and parentheses.
+/// A recursive-descent parser that evaluates basic arithmetic expressions consisting of
+/// <c>+</c>, <c>-</c>, <c>*</c>, <c>/</c> operators and parentheses.
 /// </summary>
+/// <remarks>
+/// Binary and decimal results are evaluated in parallel. The decimal result is preferred while
+/// every operand and operation remains representable by <see cref="decimal"/>; otherwise the parser
+/// returns the binary result. This gives normal user-entered numbers intuitive decimal semantics
+/// without rejecting expressions that require the wider exponent range of <see cref="double"/>.
+/// </remarks>
 internal static class NumberBoxExpressionParser
 {
     /// <summary>
@@ -21,7 +28,8 @@ internal static class NumberBoxExpressionParser
     /// <returns><see langword="true"/> if the expression was evaluated successfully; otherwise <see langword="false"/>.</returns>
     public static bool TryEvaluate(string expression, CultureInfo culture, out double result)
     {
-        result = 0;
+        result = 0D;
+
         if (string.IsNullOrWhiteSpace(expression))
         {
             return false;
@@ -39,8 +47,8 @@ internal static class NumberBoxExpressionParser
     private ref struct Parser
     {
         private readonly ReadOnlySpan<char> _input;
-        private readonly CultureInfo _culture;
-        private int _pos;
+        private readonly CultureInfo        _culture;
+        private          int                _pos;
 
         public Parser(string input, CultureInfo culture)
         {
@@ -54,9 +62,15 @@ internal static class NumberBoxExpressionParser
             result = 0;
             try
             {
-                result = ParseExpression();
+                EvaluationValue value = ParseExpression();
                 SkipWhitespace();
-                return _pos == _input.Length;
+                if (_pos != _input.Length)
+                {
+                    return false;
+                }
+
+                result = value.Result;
+                return true;
             }
             catch
             {
@@ -65,7 +79,7 @@ internal static class NumberBoxExpressionParser
         }
 
         // expression = term (('+' | '-') term)*
-        private double ParseExpression()
+        private EvaluationValue ParseExpression()
         {
             var value = ParseTerm();
 
@@ -75,12 +89,12 @@ internal static class NumberBoxExpressionParser
                 if (_pos < _input.Length && _input[_pos] == '+')
                 {
                     _pos++;
-                    value += ParseTerm();
+                    value = EvaluationValue.Add(value, ParseTerm());
                 }
                 else if (_pos < _input.Length && _input[_pos] == '-')
                 {
                     _pos++;
-                    value -= ParseTerm();
+                    value = EvaluationValue.Subtract(value, ParseTerm());
                 }
                 else
                 {
@@ -92,7 +106,7 @@ internal static class NumberBoxExpressionParser
         }
 
         // term = unary (('*' | '/') unary)*
-        private double ParseTerm()
+        private EvaluationValue ParseTerm()
         {
             var value = ParseUnary();
 
@@ -102,18 +116,18 @@ internal static class NumberBoxExpressionParser
                 if (_pos < _input.Length && _input[_pos] == '*')
                 {
                     _pos++;
-                    value *= ParseUnary();
+                    value = EvaluationValue.Multiply(value, ParseUnary());
                 }
                 else if (_pos < _input.Length && _input[_pos] == '/')
                 {
                     _pos++;
                     var divisor = ParseUnary();
-                    if (divisor == 0)
+                    if (divisor.BinaryValue == 0)
                     {
                         throw new DivideByZeroException();
                     }
 
-                    value /= divisor;
+                    value = EvaluationValue.Divide(value, divisor);
                 }
                 else
                 {
@@ -125,13 +139,13 @@ internal static class NumberBoxExpressionParser
         }
 
         // unary = '-' unary | primary
-        private double ParseUnary()
+        private EvaluationValue ParseUnary()
         {
             SkipWhitespace();
             if (_pos < _input.Length && _input[_pos] == '-')
             {
                 _pos++;
-                return -ParseUnary();
+                return EvaluationValue.Negate(ParseUnary());
             }
 
             if (_pos < _input.Length && _input[_pos] == '+')
@@ -144,7 +158,7 @@ internal static class NumberBoxExpressionParser
         }
 
         // primary = number | '(' expression ')'
-        private double ParsePrimary()
+        private EvaluationValue ParsePrimary()
         {
             SkipWhitespace();
 
@@ -170,7 +184,7 @@ internal static class NumberBoxExpressionParser
             return ParseNumber();
         }
 
-        private double ParseNumber()
+        private EvaluationValue ParseNumber()
         {
             SkipWhitespace();
             var start = _pos;
@@ -180,17 +194,17 @@ internal static class NumberBoxExpressionParser
             {
                 char character = _input[_pos];
                 if (char.IsDigit(character)
-                    || format.NumberDecimalSeparator.Contains(character)
-                    || format.NumberGroupSeparator.Contains(character)
-                    || character is 'e' or 'E')
+                 || format.NumberDecimalSeparator.Contains(character)
+                 || format.NumberGroupSeparator.Contains(character)
+                 || character is 'e' or 'E')
                 {
                     _pos++;
                     continue;
                 }
 
                 if (character is '+' or '-'
-                    && _pos > start
-                    && _input[_pos - 1] is 'e' or 'E')
+                 && _pos > start
+                 && _input[_pos - 1] is 'e' or 'E')
                 {
                     _pos++;
                     continue;
@@ -204,19 +218,29 @@ internal static class NumberBoxExpressionParser
                 throw new FormatException($"Expected number at position {_pos}.");
             }
 
+            string token = _input[start.._pos].ToString();
             if (!double.TryParse(
-                    _input[start.._pos].ToString(),
+                    token,
                     NumberStyles.Float | NumberStyles.AllowThousands,
                     _culture,
                     out double parsed
                 )
-                || double.IsNaN(parsed)
-                || double.IsInfinity(parsed))
+             || double.IsNaN(parsed)
+             || double.IsInfinity(parsed))
             {
                 throw new FormatException($"Invalid number at position {start}.");
             }
 
-            return parsed;
+            // ReSharper disable once CompareOfFloatsByEqualityOperator
+            bool hasDecimalValue = decimal.TryParse(
+                                       token,
+                                       NumberStyles.Float | NumberStyles.AllowThousands,
+                                       _culture,
+                                       out decimal decimalValue
+                                   )
+                                && (double)decimalValue == parsed;
+
+            return new EvaluationValue(parsed, decimalValue, hasDecimalValue);
         }
 
         private void SkipWhitespace()
@@ -224,6 +248,106 @@ internal static class NumberBoxExpressionParser
             while (_pos < _input.Length && char.IsWhiteSpace(_input[_pos]))
             {
                 _pos++;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Carries the established binary result alongside an optional decimal result so an overflow
+    /// late in an expression can fall back to the result of evaluating the entire expression with
+    /// <see cref="double"/>, rather than mixing decimal intermediates into the fallback path.
+    /// </summary>
+    private readonly struct EvaluationValue
+    {
+        public EvaluationValue(double binaryValue, decimal decimalValue, bool hasDecimalValue)
+        {
+            BinaryValue     = binaryValue;
+            DecimalValue    = decimalValue;
+            HasDecimalValue = hasDecimalValue;
+        }
+
+        public double BinaryValue { get; }
+
+        private decimal DecimalValue { get; }
+
+        private bool HasDecimalValue { get; }
+
+        public double Result => HasDecimalValue ? (double)DecimalValue : BinaryValue;
+
+        public static EvaluationValue Add(EvaluationValue left, EvaluationValue right) =>
+            Create(
+                left.BinaryValue + right.BinaryValue,
+                left,
+                right,
+                static (x, y) => x + y
+            );
+
+        public static EvaluationValue Subtract(EvaluationValue left, EvaluationValue right) =>
+            Create(
+                left.BinaryValue - right.BinaryValue,
+                left,
+                right,
+                static (x, y) => x - y
+            );
+
+        public static EvaluationValue Multiply(EvaluationValue left, EvaluationValue right) =>
+            Create(
+                left.BinaryValue * right.BinaryValue,
+                left,
+                right,
+                static (x, y) => x * y
+            );
+
+        public static EvaluationValue Divide(EvaluationValue left, EvaluationValue right) =>
+            Create(
+                left.BinaryValue / right.BinaryValue,
+                left,
+                right,
+                static (x, y) => x / y
+            );
+
+        public static EvaluationValue Negate(EvaluationValue value)
+        {
+            if (!value.HasDecimalValue)
+            {
+                return new EvaluationValue(-value.BinaryValue, 0M, false);
+            }
+
+            try
+            {
+                return new EvaluationValue(-value.BinaryValue, -value.DecimalValue, true);
+            }
+            catch (OverflowException)
+            {
+                return new EvaluationValue(-value.BinaryValue, 0M, false);
+            }
+        }
+
+        private static EvaluationValue Create(
+            double binaryValue,
+            EvaluationValue left,
+            EvaluationValue right,
+            Func<decimal, decimal, decimal> operation
+        )
+        {
+            if (!left.HasDecimalValue || !right.HasDecimalValue)
+            {
+                return new EvaluationValue(binaryValue, 0M, false);
+            }
+
+            try
+            {
+                return new EvaluationValue(
+                    binaryValue,
+                    operation(left.DecimalValue, right.DecimalValue),
+                    true
+                );
+            }
+            catch (OverflowException)
+            {
+                // Losing decimal support is local to the numeric representation, not a parse
+                // failure. The binary value has been evaluated independently and remains valid.
+                return new EvaluationValue(binaryValue, 0M, false);
             }
         }
     }

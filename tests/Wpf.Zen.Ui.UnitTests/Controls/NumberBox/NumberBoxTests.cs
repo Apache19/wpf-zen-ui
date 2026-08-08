@@ -176,6 +176,100 @@ public class NumberBoxTests
         );
     }
 
+    [Theory]
+    [InlineData(128.88695, 127.88695)]
+    [InlineData(128.45, 127.45)]
+    public void Decrement_UsesDecimalArithmeticForRepresentableValues(double value, double expected)
+    {
+        RunOnStaThread(
+            () =>
+            {
+                var numberBox = new NumberBox { Value = value };
+
+                StepValue(numberBox, -1);
+
+                Assert.Equal(expected, numberBox.Value);
+                Assert.Equal(expected.ToString("G", CultureInfo.CurrentCulture), numberBox.Text);
+            }
+        );
+    }
+
+    [Fact]
+    public void StepValue_OutsideDecimalRangeFallsBackToDoubleArithmetic()
+    {
+        RunOnStaThread(
+            () =>
+            {
+                var numberBox = new NumberBox { Value = 1e100 };
+
+                StepValue(numberBox, 1);
+
+                Assert.Equal(1e100, numberBox.Value);
+            }
+        );
+    }
+
+    [Theory]
+    [InlineData("128.88695-1", 127.88695)]
+    [InlineData("128.45-1", 127.45)]
+    [InlineData("0.1+0.2", 0.3)]
+    public void Expression_UsesDecimalArithmeticWhenRepresentable(string expression, double expected)
+    {
+        RunOnStaThread(
+            () =>
+            {
+                CultureInfo previousCulture = CultureInfo.CurrentCulture;
+                try
+                {
+                    CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
+                    var numberBox = new NumberBox
+                    {
+                        AcceptsExpression = true,
+                        Text = expression,
+                    };
+
+                    CommitText(numberBox);
+
+                    Assert.Equal(expected, numberBox.Value);
+                }
+                finally
+                {
+                    CultureInfo.CurrentCulture = previousCulture;
+                }
+            }
+        );
+    }
+
+    [Theory]
+    [InlineData("1e29+1e29", 2e29)]
+    [InlineData("1e-29+1e-29", 2e-29)]
+    public void Expression_OutsideDecimalRangeFallsBackToDoubleArithmetic(string expression, double expected)
+    {
+        RunOnStaThread(
+            () =>
+            {
+                CultureInfo previousCulture = CultureInfo.CurrentCulture;
+                try
+                {
+                    CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
+                    var numberBox = new NumberBox
+                    {
+                        AcceptsExpression = true,
+                        Text = expression,
+                    };
+
+                    CommitText(numberBox);
+
+                    Assert.Equal(expected, numberBox.Value);
+                }
+                finally
+                {
+                    CultureInfo.CurrentCulture = previousCulture;
+                }
+            }
+        );
+    }
+
     [Fact]
     public void ValueChanged_ReentrantAssignmentRaisesEveryTransition()
     {
@@ -449,6 +543,13 @@ public class NumberBoxTests
         typeof(NumberBox)
             .GetMethod("ValidateInput", BindingFlags.Instance | BindingFlags.NonPublic)!
             .Invoke(numberBox, null);
+    }
+
+    private static void StepValue(NumberBox numberBox, double change)
+    {
+        typeof(NumberBox)
+            .GetMethod("StepValue", BindingFlags.Instance | BindingFlags.NonPublic)!
+            .Invoke(numberBox, [change]);
     }
 
     private static AutomationPeer CreateAutomationPeer(NumberBox numberBox)
