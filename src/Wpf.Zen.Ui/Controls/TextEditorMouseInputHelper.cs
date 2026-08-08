@@ -87,12 +87,23 @@ internal sealed class TextEditorMouseInputHelper
 
     public void OnQueryCursor(QueryCursorEventArgs e)
     {
-        FrameworkElement? renderScope = GetRenderScope();
-        if (
-            renderScope is null
-            || _contentHost is null
-            || !IsPointWithinElementBounds(e.GetPosition(_contentHost), _contentHost)
-        )
+        var renderScope = GetRenderScope();
+        if (renderScope is null || _contentHost is null)
+        {
+            return;
+        }
+
+        var contentHostPoint = e.GetPosition(_contentHost);
+        if (!IsPointWithinElementBounds(contentHostPoint, _contentHost))
+        {
+            return;
+        }
+
+        // Geometry alone cannot distinguish editor padding from an arbitrary hit-test-visible
+        // element overlaid on top of the content host. Only take over input when the actual hit
+        // belongs to the render-scope branch of the visual tree. Independent sibling branches
+        // (scroll bars, buttons, adorners, custom overlays, etc.) keep their own cursor behavior.
+        if (!IsPointOnEditorInputBranch(contentHostPoint, renderScope))
         {
             return;
         }
@@ -105,16 +116,15 @@ internal sealed class TextEditorMouseInputHelper
             return;
         }
 
-        // We are inside PART_ContentHost but outside the render scope, which means the mouse is
-        // over the text editor padding area. Present it as editable text space.
+        // The remaining area is genuine content-host padding, so present it as editable text space.
         e.Cursor = Cursors.IBeam;
         e.Handled = true;
     }
 
     public bool TryForwardMouseDownFromContentHostPadding(MouseButtonEventArgs e)
     {
-        FrameworkElement? renderScope = GetRenderScope();
-        object? textEditor = GetTextEditor();
+        var renderScope = GetRenderScope();
+        var textEditor = GetTextEditor();
 
         // Only bridge the exact gap caused by TextBoxBase padding. If any internal member cannot
         // be reflected, or the mouse is not in the content-host padding band, fall back to normal
@@ -145,7 +155,7 @@ internal sealed class TextEditorMouseInputHelper
 
         // Convert the owner-space click to render-scope space and clamp it to the scope's bounds.
         // WPF's SetCaretPositionOnMouseEvent expects render-scope coordinates.
-        Point mouseDownPoint = GetClampedRenderScopePoint(e.GetPosition(_owner), renderScope);
+        var mouseDownPoint = GetClampedRenderScopePoint(e.GetPosition(_owner), renderScope);
 
         // Use the public change block API around the reflected internal operation. This mirrors
         // the native mouse-down path and keeps selection notifications grouped.
@@ -183,17 +193,88 @@ internal sealed class TextEditorMouseInputHelper
     {
         // First restrict the bridge to PART_ContentHost. This prevents clicks on template chrome,
         // icons, clear buttons or other adjacent elements from becoming text input.
-        Point contentHostPoint = e.GetPosition(_contentHost);
+        var contentHostPoint = e.GetPosition(_contentHost);
         if (!IsPointWithinElementBounds(contentHostPoint, _contentHost!))
+        {
+            return false;
+        }
+
+        // Do not reinterpret arbitrary hit-test-visible overlays as editor padding. A genuine
+        // padding hit lands either on the render scope itself/one of its descendants or on a host
+        // element along the visual ancestry between the render scope and PART_ContentHost.
+        if (!IsPointOnEditorInputBranch(contentHostPoint, renderScope))
         {
             return false;
         }
 
         // Then require the point to be outside the render scope itself. True render-scope hits
         // should flow through native WPF input without interference.
-        Point renderScopePoint = e.GetPosition(renderScope);
+        var renderScopePoint = e.GetPosition(renderScope);
 
         return !IsPointWithinElementBounds(renderScopePoint, renderScope);
+    }
+
+    private bool IsPointOnEditorInputBranch(Point contentHostPoint, FrameworkElement renderScope)
+    {
+        if (_contentHost?.InputHitTest(contentHostPoint) is not DependencyObject hit)
+        {
+            return false;
+        }
+
+        // The hit is safe for editor handling only when it is on the same visual-tree branch as
+        // the render scope. This intentionally uses tree topology rather than control types:
+        //
+        //   PART_ContentHost
+        //       |
+        //       +-- editor host ... -- RenderScope -- ...hit...   => editor branch
+        //       |
+        //       +-- arbitrary overlay -- ...hit...                => independent branch
+        //
+        // An overlay that is not hit-test visible naturally falls through to the editor branch,
+        // which is exactly what WPF input semantics require.
+        return IsAncestorOrSelf(renderScope, hit, _contentHost)
+            || IsAncestorOrSelf(hit, renderScope, _contentHost);
+    }
+
+    private static bool IsAncestorOrSelf(
+        DependencyObject ancestor,
+        DependencyObject descendant,
+        DependencyObject boundary
+    )
+    {
+        for (var current = descendant; current is not null; current = GetInputParent(current))
+        {
+            if (ReferenceEquals(current, ancestor))
+            {
+                return true;
+            }
+
+            if (ReferenceEquals(current, boundary))
+            {
+                break;
+            }
+        }
+
+        return false;
+    }
+
+    private static DependencyObject? GetInputParent(DependencyObject element)
+    {
+        if (element is Visual)
+        {
+            return VisualTreeHelper.GetParent(element);
+        }
+
+        // RichTextBox input can surface ContentElement instances rather than visuals. Follow the
+        // content tree until it rejoins the visual hosting chain so the same branch test continues
+        // to work for both TextBox and RichTextBox.
+        if (element is ContentElement contentElement)
+        {
+            return ContentOperations.GetParent(contentElement)
+                ?? (contentElement as FrameworkContentElement)?.Parent;
+        }
+
+        return null;
     }
 
     private Point GetClampedRenderScopePoint(Point ownerPoint, FrameworkElement renderScope)
@@ -201,8 +282,8 @@ internal sealed class TextEditorMouseInputHelper
         // TextEditorMouse.SetCaretPositionOnMouseEvent consumes points in the render scope's
         // coordinate space. Transform from the public owner coordinate space into the internal
         // render-scope coordinate space.
-        GeneralTransform transform = _owner.TransformToDescendant(renderScope);
-        if (transform is null || !transform.TryTransform(ownerPoint, out Point renderScopePoint))
+        var transform = _owner.TransformToDescendant(renderScope);
+        if (transform is null || !transform.TryTransform(ownerPoint, out var renderScopePoint))
         {
             return default;
         }
@@ -241,7 +322,7 @@ internal sealed class TextEditorMouseInputHelper
         // This is intentionally invoked even from a handled QueryCursor route. It lets WPF
         // recompute the correct cursor for real render-scope hits after a template element, such
         // as PART_ContentHost, has supplied a broader Cursor value.
-        object? textEditor = GetTextEditor();
+        var textEditor = GetTextEditor();
         if (textEditor is null || TextEditorMouseOnQueryCursorMethod is null)
         {
             return;
