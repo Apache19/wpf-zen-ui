@@ -4,8 +4,6 @@
 // All Rights Reserved.
 
 using System.Reflection;
-using System.Runtime.ExceptionServices;
-using System.Threading;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using UiBorder = Wpf.Zen.Ui.Controls.UiBorder;
@@ -371,29 +369,7 @@ public class UiBorderTests
 
     private static void RunOnStaThread(Action action)
     {
-        Exception? exception = null;
-        var thread = new Thread(
-            () =>
-            {
-                try
-                {
-                    action();
-                }
-                catch (Exception caughtException)
-                {
-                    exception = caughtException;
-                }
-            }
-        );
-
-        thread.SetApartmentState(ApartmentState.STA);
-        thread.Start();
-        thread.Join();
-
-        if (exception is not null)
-        {
-            ExceptionDispatchInfo.Capture(exception).Throw();
-        }
+        WpfTestThread.Run(action);
     }
 
     private sealed class FixedSizeElement : FrameworkElement

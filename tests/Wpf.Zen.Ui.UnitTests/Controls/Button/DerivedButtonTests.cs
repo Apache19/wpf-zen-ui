@@ -4,8 +4,6 @@
 // All Rights Reserved.
 
 using System.Reflection;
-using System.Runtime.ExceptionServices;
-using System.Threading;
 using System.Windows;
 using System.Windows.Controls.Primitives;
 using System.Windows.Data;
@@ -276,29 +274,7 @@ public class DerivedButtonTests
 
     private static void RunOnStaThread(Action action)
     {
-        Exception? exception = null;
-        var thread = new Thread(
-            () =>
-            {
-                try
-                {
-                    action();
-                }
-                catch (Exception caughtException)
-                {
-                    exception = caughtException;
-                }
-            }
-        );
-
-        thread.SetApartmentState(ApartmentState.STA);
-        thread.Start();
-        thread.Join();
-
-        if (exception is not null)
-        {
-            ExceptionDispatchInfo.Capture(exception).Throw();
-        }
+        WpfTestThread.Run(action);
     }
 
     private sealed class AnchorProbe : Anchor

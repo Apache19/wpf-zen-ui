@@ -4,8 +4,6 @@
 // All Rights Reserved.
 
 using System.Runtime.CompilerServices;
-using System.Runtime.ExceptionServices;
-using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
@@ -181,28 +179,6 @@ public class ComboBoxTests
 
     private static void RunOnStaThread(Action action)
     {
-        Exception? exception = null;
-        var thread = new Thread(
-            () =>
-            {
-                try
-                {
-                    action();
-                }
-                catch (Exception caughtException)
-                {
-                    exception = caughtException;
-                }
-            }
-        );
-
-        thread.SetApartmentState(ApartmentState.STA);
-        thread.Start();
-        thread.Join();
-
-        if (exception is not null)
-        {
-            ExceptionDispatchInfo.Capture(exception).Throw();
-        }
+        WpfTestThread.Run(action);
     }
 }

@@ -3,8 +3,6 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-using System.Runtime.ExceptionServices;
-using System.Threading;
 using System.Windows.Media;
 using UiButton = Wpf.Zen.Ui.Controls.Button;
 
@@ -162,29 +160,7 @@ public class ButtonTests
 
     private static void RunOnStaThread(Action action)
     {
-        Exception? exception = null;
-        var thread = new Thread(
-            () =>
-            {
-                try
-                {
-                    action();
-                }
-                catch (Exception caughtException)
-                {
-                    exception = caughtException;
-                }
-            }
-        );
-
-        thread.SetApartmentState(ApartmentState.STA);
-        thread.Start();
-        thread.Join();
-
-        if (exception is not null)
-        {
-            ExceptionDispatchInfo.Capture(exception).Throw();
-        }
+        WpfTestThread.Run(action);
     }
 
     private sealed class TestButton : UiButton
