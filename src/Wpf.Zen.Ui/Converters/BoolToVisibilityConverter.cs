@@ -6,101 +6,99 @@
 using System.Windows.Data;
 using System.Windows.Markup;
 
+// ReSharper disable UnusedAutoPropertyAccessor.Global
+
 namespace Wpf.Zen.Ui.Converters;
 
 /// <summary>
-/// A WPF value converter that converts between <see cref="bool"/> and <see cref="Visibility"/>.
+/// Converts a Boolean value to a <see cref="Visibility"/> value and supports reverse conversion.
 /// </summary>
 /// <remarks>
-/// Conversion rules:
-/// - When <see cref="Invert"/> is false (default):
-///   true → <see cref="Visibility.Visible"/>
-///   false → <see cref="Visibility.Hidden"/> or <see cref="Visibility.Collapsed"/> (depending on <see cref="UseHidden"/>).
-///
-/// - When <see cref="Invert"/> is true:
-///   false → <see cref="Visibility.Visible"/>
-///   true → <see cref="Visibility.Hidden"/> or <see cref="Visibility.Collapsed"/>.
-///
-/// Hidden mode:
-/// - If <see cref="UseHidden"/> is true, the converter returns <see cref="Visibility.Hidden"/>.
-/// - Otherwise (default), it returns <see cref="Visibility.Collapsed"/>.
-///
-/// Example usage (XAML):
+/// <para>
+/// The converter uses two configurable <see cref="Visibility"/> properties to define
+/// the values corresponding to <c>true</c> and <c>false</c>.
+/// </para>
+/// <para>
+/// The default mapping is:
+/// </para>
+/// <list type="bullet">
+/// <item>
+/// <description>
+/// <c>true</c> → <see cref="TrueValue"/> (default: <see cref="Visibility.Visible"/>)
+/// </description>
+/// </item>
+/// <item>
+/// <description>
+/// <c>false</c> → <see cref="FalseValue"/> (default: <see cref="Visibility.Collapsed"/>)
+/// </description>
+/// </item>
+/// </list>
+/// <para>
+/// Any Boolean-to-Visibility mapping can be configured by setting
+/// <see cref="TrueValue"/> and <see cref="FalseValue"/>.
+/// </para>
+/// <para>Usage examples (XAML):</para>
 /// <code>
-/// &lt;Window xmlns:conv="clr-namespace:VideoLibrary.Converters"&gt;
-///     &lt;Window.Resources&gt;
-///         &lt;conv:BoolToVisibilityConverter x:Key="BoolToVisibility" /&gt;
-///         &lt;conv:BoolToVisibilityConverter x:Key="BoolToVisibility_Invert" Invert="True" /&gt;
-///         &lt;conv:BoolToVisibilityConverter x:Key="BoolToVisibility_Hidden" UseHidden="True" /&gt;
-///     &lt;/Window.Resources&gt;
+/// &lt;!-- Default: true→Visible, false→Collapsed --&gt;
+/// &lt;conv:BoolToVisibilityConverter x:Key="BoolToVisibility" /&gt;
 ///
-///     &lt;TextBlock Text="Example"
-///                Visibility="{Binding IsShown, Converter={StaticResource BoolToVisibility}}" /&gt;
+/// &lt;!-- Hidden mode: true→Visible, false→Hidden (preserves layout space) --&gt;
+/// &lt;conv:BoolToVisibilityConverter x:Key="BoolToVisibilityHidden"
+///     FalseValue="Hidden" /&gt;
 ///
-///     &lt;TextBlock Text="Invert Example"
-///                Visibility="{Binding IsShown, Converter={StaticResource BoolToVisibility_Invert}}" /&gt;
-///
-///     &lt;TextBlock Text="Hidden Example"
-///                Visibility="{Binding IsShown, Converter={StaticResource BoolToVisibility_Hidden}}" /&gt;
-/// &lt;/Window&gt;
+/// &lt;!-- Inverted mapping: true→Collapsed, false→Visible --&gt;
+/// &lt;conv:BoolToVisibilityConverter x:Key="BoolToVisibilityInvert"
+///     TrueValue="Collapsed" FalseValue="Visible" /&gt;
 /// </code>
 /// </remarks>
 [ValueConversion(typeof(bool), typeof(Visibility))]
+[MarkupExtensionReturnType(typeof(BoolToVisibilityConverter))]
 public sealed class BoolToVisibilityConverter : MarkupExtension, IValueConverter
 {
     /// <summary>
-    /// Gets or sets a value indicating whether the conversion logic should be inverted.
+    /// Gets or sets the value returned when the Boolean value is <c>true</c>.
+    /// The default value is <see cref="Visibility.Visible"/>.
     /// </summary>
-    /// <value>
-    /// - false (default): true → Visible, false → Hidden/Collapsed.
-    /// - true: false → Visible, true → Hidden/Collapsed.
-    /// </value>
-    public bool Invert { get; set; }
+    public Visibility TrueValue { get; set; } = Visibility.Visible;
 
     /// <summary>
-    /// Gets or sets a value indicating whether the hidden state should use
-    /// <see cref="Visibility.Hidden"/> instead of <see cref="Visibility.Collapsed"/>.
+    /// Gets or sets the value returned when the Boolean value is <c>false</c>.
+    /// The default value is <see cref="Visibility.Collapsed"/>.
     /// </summary>
-    /// <value>
-    /// - true: Uses <see cref="Visibility.Hidden"/> (element is invisible but still occupies layout space).
-    /// - false (default): Uses <see cref="Visibility.Collapsed"/> (element does not occupy layout space).
-    /// </value>
-    public bool UseHidden { get; set; }
+    public Visibility FalseValue { get; set; } = Visibility.Collapsed;
 
     /// <summary>
-    /// Converts a <see cref="bool"/> value to <see cref="Visibility"/>.
+    /// Converts a Boolean value to a <see cref="Visibility"/>.
     /// </summary>
     public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
         if (value is bool b)
         {
-            if (Invert)
-            {
-                b = !b;
-            }
-
-            return b ? Visibility.Visible : UseHidden ? Visibility.Hidden : Visibility.Collapsed;
+            return b ? TrueValue : FalseValue;
         }
 
         return DependencyProperty.UnsetValue;
     }
 
     /// <summary>
-    /// Converts a <see cref="Visibility"/> value back to <see cref="bool"/>.
+    /// Converts a <see cref="Visibility"/> value back to a Boolean value.
     /// </summary>
+    /// <remarks>
+    /// Returns <c>true</c> when the value equals <see cref="TrueValue"/>;
+    /// otherwise, returns <c>false</c>.
+    /// </remarks>
     public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
         if (value is Visibility vis)
         {
-            var isVisible = vis == Visibility.Visible;
-            return Invert ? !isVisible : isVisible;
+            return vis == TrueValue;
         }
 
         return DependencyProperty.UnsetValue;
     }
 
     /// <summary>
-    /// Provides the converter instance for XAML markup extension usage.
+    /// Provides the converter instance to the XAML markup extension system.
     /// </summary>
     public override object ProvideValue(IServiceProvider serviceProvider)
     {

@@ -12,11 +12,8 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Zen.Ui.Controls"
-    xmlns:converters="clr-namespace:Wpf.Zen.Ui.Converters"
     xmlns:m="clr-namespace:Wpf.Zen.Ui.Markup"
     xmlns:t="clr-namespace:Wpf.Zen.Ui.Theming">
-
-    <converters:FallbackBrushConverter x:Key="FallbackBrushConverter" />
 
     <Style x:Key="{x:Static t:StyleKeys.DefaultCheckBoxStyle}" TargetType="{x:Type CheckBox}">
         <Setter Property="OverridesDefaultStyle" Value="True" />
