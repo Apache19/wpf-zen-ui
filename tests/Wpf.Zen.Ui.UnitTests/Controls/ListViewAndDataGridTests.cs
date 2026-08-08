@@ -16,6 +16,7 @@ using UiListItemContainerStyleSelector = Wpf.Zen.Ui.Controls.ListItemContainerSt
 using UiListView = Wpf.Zen.Ui.Controls.ListView;
 using UiListViewItem = Wpf.Zen.Ui.Controls.ListViewItem;
 using UiPassiveScrollViewer = Wpf.Zen.Ui.Controls.PassiveScrollViewer;
+using UiScrollBar = Wpf.Zen.Ui.Controls.UiScrollBar;
 using UiVirtualizingGridView = Wpf.Zen.Ui.Controls.VirtualizingGridView;
 
 namespace Wpf.Zen.Ui.UnitTests.Controls;
@@ -512,7 +513,7 @@ public class ListViewAndDataGridTests
                 var scrollViewer = Assert.IsType<UiPassiveScrollViewer>(
                     FindVisualChild<UiPassiveScrollViewer>(dataGrid)
                 );
-                var scrollBar = Assert.IsType<ScrollBar>(
+                var scrollBar = Assert.IsType<UiScrollBar>(
                     scrollViewer.Template.FindName("PART_VerticalScrollBar", scrollViewer)
                 );
 
@@ -725,7 +726,7 @@ public class ListViewAndDataGridTests
                 var scrollViewer = Assert.IsType<UiPassiveScrollViewer>(
                     FindVisualChild<UiPassiveScrollViewer>(dataGrid)
                 );
-                var horizontalScrollBar = Assert.IsType<ScrollBar>(
+                var horizontalScrollBar = Assert.IsType<UiScrollBar>(
                     scrollViewer.Template.FindName("PART_HorizontalScrollBar", scrollViewer)
                 );
                 double columnsViewport = scrollViewer.ViewportWidth - dataGrid.CellsPanelHorizontalOffset;

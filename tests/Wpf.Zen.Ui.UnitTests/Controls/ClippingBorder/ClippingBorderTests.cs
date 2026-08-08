@@ -53,7 +53,11 @@ public class ClippingBorderTests
                 Arrange(border, 40, 40);
 
                 Assert.Same(childClip, child.Clip);
-                var contentHost = Assert.IsType<Decorator>(VisualTreeHelper.GetChild(border, 0));
+#pragma warning disable xUnit2032 // Type assertions based on 'assignable from' are confusingly named
+                var contentHost = Assert.IsAssignableFrom<Decorator>(
+                    VisualTreeHelper.GetChild(border, 0)
+                );
+#pragma warning restore xUnit2032 // Type assertions based on 'assignable from' are confusingly named
                 Assert.NotNull(contentHost.Clip);
             }
         );

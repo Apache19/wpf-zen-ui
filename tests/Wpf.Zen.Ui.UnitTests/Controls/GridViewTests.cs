@@ -6,7 +6,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Controls;
-using System.Windows.Controls.Primitives;
 using System.Windows.Markup;
 using System.Windows.Media;
 using System.Windows.Shapes;
@@ -23,6 +22,7 @@ using UiGridViewColumn = Wpf.Zen.Ui.Controls.GridViewColumn;
 using UiListView = Wpf.Zen.Ui.Controls.ListView;
 using UiListViewItem = Wpf.Zen.Ui.Controls.ListViewItem;
 using UiPassiveScrollViewer = Wpf.Zen.Ui.Controls.PassiveScrollViewer;
+using UiScrollBar = Wpf.Zen.Ui.Controls.UiScrollBar;
 
 namespace Wpf.Zen.Ui.UnitTests.Controls;
 
@@ -205,7 +205,7 @@ public class GridViewTests
     }
 
     [Fact]
-    public void GridView_DefaultContainerSelector_RemovesOnlyTheLastRowDivider()
+    public void GridView_DefaultContainers_KeepRowDividers()
     {
         RunOnStaThread(static () =>
         {
@@ -224,9 +224,7 @@ public class GridViewTests
             root.Arrange(new Rect(0, 0, 300, 200));
             root.UpdateLayout();
 
-            Assert.IsType<Wpf.Zen.Ui.Controls.ListItemContainerStyleSelector>(
-                listView.ItemContainerStyleSelector
-            );
+            Assert.Null(listView.ItemContainerStyleSelector);
             var firstItem = Assert.IsType<UiListViewItem>(
                 listView.ItemContainerGenerator.ContainerFromIndex(0)
             );
@@ -235,7 +233,7 @@ public class GridViewTests
             );
 
             Assert.Equal(new Thickness(0, 0, 0, 1), firstItem.BorderThickness);
-            Assert.Equal(new Thickness(0), lastItem.BorderThickness);
+            Assert.Equal(new Thickness(0, 0, 0, 1), lastItem.BorderThickness);
             Assert.Same(firstItem.Template, lastItem.Template);
             Assert.NotNull(FindVisualChild<NativeGridViewRowPresenter>(lastItem));
 
@@ -246,7 +244,7 @@ public class GridViewTests
                 listView.ItemContainerGenerator.ContainerFromIndex(2)
             );
             Assert.Equal(new Thickness(0, 0, 0, 1), lastItem.BorderThickness);
-            Assert.Equal(new Thickness(0), newLastItem.BorderThickness);
+            Assert.Equal(new Thickness(0, 0, 0, 1), newLastItem.BorderThickness);
 
             // ViewBase restores the normal ListView style when the view is removed. This verifies
             // that the GridView-only selector does not leak into the default non-column layout.
@@ -401,7 +399,7 @@ public class GridViewTests
                 var scrollViewer = Assert.IsType<UiPassiveScrollViewer>(
                     FindVisualChild<UiPassiveScrollViewer>(listView)
                 );
-                var scrollBar = Assert.IsType<ScrollBar>(
+                var scrollBar = Assert.IsType<UiScrollBar>(
                     scrollViewer.Template.FindName("PART_VerticalScrollBar", scrollViewer)
                 );
                 Assert.True(scrollViewer.ScrollableHeight > 0d);
@@ -464,7 +462,7 @@ public class GridViewTests
                 var scrollViewer = Assert.IsType<UiPassiveScrollViewer>(
                     FindVisualChild<UiPassiveScrollViewer>(listView)
                 );
-                var scrollBar = Assert.IsType<ScrollBar>(
+                var scrollBar = Assert.IsType<UiScrollBar>(
                     scrollViewer.Template.FindName("PART_HorizontalScrollBar", scrollViewer)
                 );
                 var headerPresenter = Assert.IsType<NativeGridViewHeaderRowPresenter>(
