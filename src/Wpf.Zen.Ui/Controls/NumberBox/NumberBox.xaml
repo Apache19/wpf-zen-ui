@@ -174,10 +174,10 @@
                         IsHitTestVisible="False"
                         Text="{TemplateBinding PlaceholderText}" />
 
-                    <!--  todo: 测试禁止穿透会不会影响数值滚动  -->
                     <controls:PassiveScrollViewer
                         x:Name="PART_ContentHost"
                         Grid.Column="1"
+                        controls:ScrollViewerAssist.OverlayMode="Traditional"
                         Focusable="false"
                         HorizontalScrollBarVisibility="Hidden"
                         ScrollSpillMode="Disabled"
@@ -257,9 +257,6 @@
                             <RowDefinition Height="*" />
                             <RowDefinition Height="*" />
                         </Grid.RowDefinitions>
-                        <!--
-                            todo: 分离原生按钮样式，以 ButtonBase 为类型，这样 RepeatButton 就可以兼容样式了
-                        -->
                         <RepeatButton
                             Grid.Row="0"
                             Width="40"

@@ -36,6 +36,7 @@
             <controls:PassiveScrollViewer
                 x:Name="PART_ContentHost"
                 Grid.Column="0"
+                controls:ScrollViewerAssist.OverlayMode="Traditional"
                 Focusable="false"
                 HorizontalScrollBarVisibility="Hidden"
                 ScrollSpillMode="Disabled"

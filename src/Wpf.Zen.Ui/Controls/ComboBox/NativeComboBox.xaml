@@ -92,6 +92,7 @@
                             <ControlTemplate TargetType="{x:Type TextBox}">
                                 <controls:PassiveScrollViewer
                                     x:Name="PART_ContentHost"
+                                    controls:ScrollViewerAssist.OverlayMode="Traditional"
                                     Focusable="false"
                                     HorizontalScrollBarVisibility="Hidden"
                                     ScrollSpillMode="Disabled"
