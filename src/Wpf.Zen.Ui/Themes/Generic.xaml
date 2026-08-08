@@ -12,7 +12,6 @@
         <ResourceDictionary Source="pack://application:,,,/Wpf.Zen.Ui;component/Resources/Palette.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Zen.Ui;component/Resources/DefaultValidationTemplate.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Zen.Ui;component/Resources/DefaultFocusVisualStyle.xaml" />
-        <ResourceDictionary Source="pack://application:,,,/Wpf.Zen.Ui;component/Resources/DefaultTextBoxScrollViewerStyle.xaml" />
         <!--  Default Theme  -->
         <ResourceDictionary Source="pack://application:,,,/Wpf.Zen.Ui;component/Resources/Theme/Light.xaml" />
 

@@ -28,7 +28,6 @@ public static class StyleKeys
     public static ComponentResourceKey DefaultUiTextBoxStyle           { get; } = Create(nameof(DefaultUiTextBoxStyle));
     public static ComponentResourceKey DefaultRichTextBoxStyle         { get; } = Create(nameof(DefaultRichTextBoxStyle));
     public static ComponentResourceKey UiRichTextBoxStyle              { get; } = Create(nameof(UiRichTextBoxStyle));
-    public static ComponentResourceKey DefaultTextBoxScrollViewerStyle { get; } = Create(nameof(DefaultTextBoxScrollViewerStyle));
     public static ComponentResourceKey DefaultControlFocusVisualStyle  { get; } = Create(nameof(DefaultControlFocusVisualStyle));
     public static ComponentResourceKey DefaultScrollViewerStyle        { get; } = Create(nameof(DefaultScrollViewerStyle));
     public static ComponentResourceKey UiDynamicScrollViewerStyle      { get; } = Create(nameof(UiDynamicScrollViewerStyle));
