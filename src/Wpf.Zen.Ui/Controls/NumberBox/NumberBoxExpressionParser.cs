@@ -16,12 +16,10 @@ internal static class NumberBoxExpressionParser
     /// Attempts to evaluate <paramref name="expression"/> as a basic arithmetic expression.
     /// </summary>
     /// <param name="expression">The expression string to evaluate.</param>
-    /// <param name="numberParser">
-    /// The parser used for each numeric operand so expression and direct-input culture rules match.
-    /// </param>
+    /// <param name="culture">The culture used to parse each numeric operand.</param>
     /// <param name="result">The computed result, or zero if evaluation failed.</param>
     /// <returns><see langword="true"/> if the expression was evaluated successfully; otherwise <see langword="false"/>.</returns>
-    public static bool TryEvaluate(string expression, INumberParser numberParser, out double result)
+    public static bool TryEvaluate(string expression, CultureInfo culture, out double result)
     {
         result = 0;
         if (string.IsNullOrWhiteSpace(expression))
@@ -29,26 +27,26 @@ internal static class NumberBoxExpressionParser
             return false;
         }
 
-        if (numberParser is null)
+        if (culture is null)
         {
-            throw new ArgumentNullException(nameof(numberParser));
+            throw new ArgumentNullException(nameof(culture));
         }
 
-        var parser = new Parser(expression, numberParser);
+        var parser = new Parser(expression, culture);
         return parser.TryParse(out result);
     }
 
     private ref struct Parser
     {
         private readonly ReadOnlySpan<char> _input;
-        private readonly INumberParser _numberParser;
+        private readonly CultureInfo _culture;
         private int _pos;
 
-        public Parser(string input, INumberParser numberParser)
+        public Parser(string input, CultureInfo culture)
         {
-            _input        = input.AsSpan();
-            _numberParser = numberParser;
-            _pos          = 0;
+            _input   = input.AsSpan();
+            _culture = culture;
+            _pos     = 0;
         }
 
         public bool TryParse(out double result)
@@ -177,9 +175,28 @@ internal static class NumberBoxExpressionParser
             SkipWhitespace();
             var start = _pos;
 
-            while (_pos < _input.Length && (char.IsDigit(_input[_pos]) || _input[_pos] == '.' || _input[_pos] == ','))
+            NumberFormatInfo format = _culture.NumberFormat;
+            while (_pos < _input.Length)
             {
-                _pos++;
+                char character = _input[_pos];
+                if (char.IsDigit(character)
+                    || format.NumberDecimalSeparator.Contains(character)
+                    || format.NumberGroupSeparator.Contains(character)
+                    || character is 'e' or 'E')
+                {
+                    _pos++;
+                    continue;
+                }
+
+                if (character is '+' or '-'
+                    && _pos > start
+                    && _input[_pos - 1] is 'e' or 'E')
+                {
+                    _pos++;
+                    continue;
+                }
+
+                break;
             }
 
             if (_pos == start)
@@ -187,16 +204,19 @@ internal static class NumberBoxExpressionParser
                 throw new FormatException($"Expected number at position {_pos}.");
             }
 
-            // Reuse NumberBox's configured parser for every operand. Treating both '.' and ',' as
-            // decimal separators corrupts grouping (for example en-US "1,234" became 1.234) and
-            // makes expression input disagree with direct numeric input.
-            var parsed = _numberParser.ParseDouble(_input[start.._pos].ToString());
-            if (parsed is null || double.IsNaN(parsed.Value))
+            if (!double.TryParse(
+                    _input[start.._pos].ToString(),
+                    NumberStyles.Float | NumberStyles.AllowThousands,
+                    _culture,
+                    out double parsed
+                )
+                || double.IsNaN(parsed)
+                || double.IsInfinity(parsed))
             {
                 throw new FormatException($"Invalid number at position {start}.");
             }
 
-            return parsed.Value;
+            return parsed;
         }
 
         private void SkipWhitespace()

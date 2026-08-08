@@ -5,43 +5,66 @@
 
 // This Source Code is partially based on the source code provided by the .NET Foundation.
 
+using System.Diagnostics;
 using System.Windows.Automation.Peers;
 using System.Windows.Controls.Primitives;
 using System.Windows.Data;
 using System.Windows.Input;
-using System.Windows.Threading;
 using Wpf.Zen.Ui.AutomationPeers;
+using Wpf.Zen.Ui.Extensions.Wpf;
 
 // ReSharper disable UnusedParameter.Local
 // ReSharper disable once CheckNamespace
 namespace Wpf.Zen.Ui.Controls;
 
 /// <summary>
-/// Provides a single-line numeric editor with optional spin buttons, range constraints,
-/// culture-aware formatting, and basic arithmetic-expression evaluation.
+/// Represents a single-line editor for nullable numeric values, with range constraints,
+/// culture-aware display formatting, keyboard and pointer stepping, and optional arithmetic
+/// expression evaluation.
 /// </summary>
 /// <remarks>
 /// <para>
-/// <see cref="Value"/> is the authoritative numeric state. Text typed by the user is committed
-/// when focus leaves the control, Enter is pressed, a spin operation is requested, or a paste is
-/// accepted. Invalid text is restored or retained according to <see cref="ValidationMode"/>.
+/// <see cref="Value"/> is the authoritative state; the inherited <see cref="TextBox"/> text
+/// property is an editable representation of that value. An empty edit commits <see langword="null"/>.
+/// Other edits are committed when keyboard focus leaves the control, Enter is pressed, a stepping
+/// operation is requested, or text is pasted. Characters unrelated to numeric input are blocked,
+/// while incomplete but potentially valid text, such as a sign or exponent, may remain during
+/// editing. If that text is still invalid when committed, it is discarded and the current
+/// <see cref="Value"/> is displayed again.
+/// </para>
+/// <para>
+/// Committed values are displayed using <see cref="FormatString"/> and
+/// <see cref="CultureInfo.CurrentCulture"/>. Formatting changes only the displayed text and does
+/// not change the stored value. When <see cref="AcceptsExpression"/> is enabled, input that is not
+/// a number may instead be evaluated as a basic arithmetic expression at commit time.
+/// </para>
+/// <para>
+/// Arrow keys, a focused mouse wheel, and spin buttons normally use <see cref="SmallStep"/>.
+/// Page Up and Page Down use <see cref="LargeStep"/>; Ctrl, Alt, or Shift also selects the large
+/// step for arrow-key, wheel, and spin-button operations. Holding a spin button continuously for
+/// three seconds selects the large step. Every committed or stepped value is constrained to
+/// <see cref="Minimum"/> and <see cref="Maximum"/>.
 /// </para>
 /// <para>
 /// The default template requires <c>PART_ContentHost</c> through the inherited WPF text-box
-/// contract. <c>PART_CompactPopup</c> and <c>PART_SpinButtons</c> are optional; compact placement
-/// falls back to the control bounds when either is absent. Template buttons declare their
-/// operation through <see cref="ButtonKindProperty"/>.
+/// contract. <c>PART_CompactPopup</c> and <c>PART_SpinButtons</c> are optional template parts;
+/// omitting them preserves text editing and keyboard stepping but removes their corresponding
+/// spin-button presentation. Compact popup placement falls back to the control bounds when its
+/// spin-button anchor is unavailable. Template buttons declare their operation through
+/// <see cref="ButtonKindProperty"/> so replacement templates need not use fixed button names.
 /// </para>
 /// </remarks>
 [TemplatePart(Name = "PART_CompactPopup", Type = typeof(Popup))]
 [TemplatePart(Name = "PART_SpinButtons",  Type = typeof(FrameworkElement))]
 public class NumberBox : TextBox
 {
-    private static readonly ValidateNumberFormatter DefaultNumberFormatter = new();
+    private const double LargeStepHoldDurationSeconds = 3.0;
 
     private Popup?            _compactPopup;
     private FrameworkElement? _spinButtons;
     private Window?           _parentWindow;
+    private ButtonBase?       _heldSpinButton;
+    private long              _spinButtonPressTimestamp;
 
     #region Dependency properties
 
@@ -115,10 +138,7 @@ public class NumberBox : TextBox
 
                 if (baseValue is double dv)
                 {
-                    // Value owns the committed precision invariant. Applying it in coercion keeps
-                    // bindings, automation, direct assignment, expression input, and spin input
-                    // consistent instead of rounding only the displayed string.
-                    var clamped = Math.Round(dv, numberBox.MaxDecimalPlaces);
+                    var clamped = dv;
 
                     if (clamped > numberBox.Maximum)
                     {
@@ -152,88 +172,45 @@ public class NumberBox : TextBox
 
     #endregion
 
-    #region DecimalPlacesProperty
+    #region FormatStringProperty
 
-    /// <summary>Identifies the <see cref="DecimalPlaces"/> dependency property.</summary>
-    public static readonly DependencyProperty DecimalPlacesProperty = DependencyProperty.Register(
-        nameof(DecimalPlaces),
-        typeof(int?),
+    /// <summary>Identifies the <see cref="FormatString"/> dependency property.</summary>
+    public static readonly DependencyProperty FormatStringProperty = DependencyProperty.Register(
+        nameof(FormatString),
+        typeof(string),
         typeof(NumberBox),
         new PropertyMetadata(
-            null,
-            static (d, e) =>
-            {
-                if (d is NumberBox numberBox)
-                {
-                    numberBox.UpdateTextToValue();
-                }
-            }
+            "G",
+            static (d, e) => ((NumberBox)d).UpdateTextToValue()
         ),
-        static value => value is null or (>= 0 and <= 15)
+        static value => value is string format && IsValidFormatString(format)
     );
 
     /// <summary>
-    /// Gets or sets the number of decimal places to always display when formatting the value.
-    /// When set, the value is always shown with exactly this many decimal places (e.g., <c>1</c> displays as <c>1.00</c> when <see cref="DecimalPlaces"/> is <c>2</c>).
-    /// When <see langword="null"/>, the default formatter behavior is used.
+    /// Gets or sets the standard or custom numeric format string used to display <see cref="Value"/>.
     /// </summary>
-    /// <example>
-    /// <code lang="xml">
-    /// &lt;ui:NumberBox DecimalPlaces="2" /&gt;
-    /// </code>
-    /// </example>
-    public int? DecimalPlaces
+    /// <remarks>
+    /// The default is <c>G</c>. Formatting uses <see cref="CultureInfo.CurrentCulture"/> and only
+    /// affects displayed text; it never rounds or otherwise changes the stored numeric value.
+    /// </remarks>
+    public string FormatString
     {
-        get => (int?)GetValue(DecimalPlacesProperty);
-        set => SetValue(DecimalPlacesProperty, value);
+        get => (string)GetValue(FormatStringProperty);
+        set => SetValue(FormatStringProperty, value);
     }
 
     #endregion
 
-    #region MaxDecimalPlacesProperty
+    #region SmallStepProperty
 
-    /// <summary>Identifies the <see cref="MaxDecimalPlaces"/> dependency property.</summary>
-    public static readonly DependencyProperty MaxDecimalPlacesProperty = DependencyProperty.Register(
-        nameof(MaxDecimalPlaces),
-        typeof(int),
-        typeof(NumberBox),
-        new PropertyMetadata(
-            6,
-            propertyChangedCallback: static (d, e) =>
-            {
-                if (d is NumberBox numberBox)
-                {
-                    numberBox.CoerceValue(ValueProperty);
-                    numberBox.UpdateTextToValue();
-                }
-            }
-        ),
-        validateValueCallback: static value => value is >= 0 and <= 15
-    );
-
-    /// <summary>
-    /// Gets or sets the maximum number of decimal places retained by <see cref="Value"/>.
-    /// Changing this property immediately rounds the current value; range coercion is applied
-    /// afterward, so a more precise boundary remains authoritative when necessary.
-    /// </summary>
-    public int MaxDecimalPlaces
-    {
-        get => (int)GetValue(MaxDecimalPlacesProperty);
-        set => SetValue(MaxDecimalPlacesProperty, value);
-    }
-
-    #endregion
-
-    #region SmallChangeProperty
-
-    /// <summary>Identifies the <see cref="SmallChange"/> dependency property.</summary>
-    public static readonly DependencyProperty SmallChangeProperty = DependencyProperty.Register(
-        nameof(SmallChange),
+    /// <summary>Identifies the <see cref="SmallStep"/> dependency property.</summary>
+    public static readonly DependencyProperty SmallStepProperty = DependencyProperty.Register(
+        nameof(SmallStep),
         typeof(double),
         typeof(NumberBox),
         new PropertyMetadata(
             1.0d,
-            static (d, e) => NumberBoxAutomationPeer.RaiseSmallChangePropertyChangedEvent(
+            static (d, e) => NumberBoxAutomationPeer.RaiseSmallStepPropertyChangedEvent(
                 (NumberBox)d,
                 (double)e.OldValue,
                 (double)e.NewValue
@@ -263,26 +240,27 @@ public class NumberBox : TextBox
     );
 
     /// <summary>
-    /// Gets or sets the value that is added to or subtracted from <see cref="Value"/> when a small change is made, such as with an arrow key or scrolling.
+    /// Gets or sets the value added to or subtracted from <see cref="Value"/> by an arrow key,
+    /// mouse-wheel notch, or spin-button click when large-step activation is not active.
     /// </summary>
-    public double SmallChange
+    public double SmallStep
     {
-        get => (double)GetValue(SmallChangeProperty);
-        set => SetValue(SmallChangeProperty, value);
+        get => (double)GetValue(SmallStepProperty);
+        set => SetValue(SmallStepProperty, value);
     }
 
     #endregion
 
-    #region LargeChangeProperty
+    #region LargeStepProperty
 
-    /// <summary>Identifies the <see cref="LargeChange"/> dependency property.</summary>
-    public static readonly DependencyProperty LargeChangeProperty = DependencyProperty.Register(
-        nameof(LargeChange),
+    /// <summary>Identifies the <see cref="LargeStep"/> dependency property.</summary>
+    public static readonly DependencyProperty LargeStepProperty = DependencyProperty.Register(
+        nameof(LargeStep),
         typeof(double),
         typeof(NumberBox),
         new PropertyMetadata(
             10.0d,
-            static (d, e) => NumberBoxAutomationPeer.RaiseLargeChangePropertyChangedEvent(
+            static (d, e) => NumberBoxAutomationPeer.RaiseLargeStepPropertyChangedEvent(
                 (NumberBox)d,
                 (double)e.OldValue,
                 (double)e.NewValue
@@ -291,7 +269,7 @@ public class NumberBox : TextBox
             {
                 if (baseValue is double dv)
                 {
-                    // Coerce large change relative to instance range;
+                    // Coerce the large step relative to instance range;
                     // validation rejects non-positive/invalid values.
                     if (d is NumberBox nb)
                     {
@@ -312,12 +290,14 @@ public class NumberBox : TextBox
     );
 
     /// <summary>
-    /// Gets or sets the value that is added to or subtracted from <see cref="Value"/> when a large change is made, such as with the PageUP and PageDown keys.
+    /// Gets or sets the value added to or subtracted from <see cref="Value"/> by Page Up and Page
+    /// Down, or while Ctrl, Alt, or Shift is held during an arrow-key, wheel, or spin operation.
     /// </summary>
-    public double LargeChange
+    /// <remarks>Holding a spin button continuously for three seconds also activates this step.</remarks>
+    public double LargeStep
     {
-        get => (double)GetValue(LargeChangeProperty);
-        set => SetValue(LargeChangeProperty, value);
+        get => (double)GetValue(LargeStepProperty);
+        set => SetValue(LargeStepProperty, value);
     }
 
     #endregion
@@ -339,8 +319,8 @@ public class NumberBox : TextBox
                     // Step coercion depends on the effective range. Re-running it here both
                     // tightens a step after a range reduction and restores its base value after
                     // the range expands again.
-                    numberBox.CoerceValue(SmallChangeProperty);
-                    numberBox.CoerceValue(LargeChangeProperty);
+                    numberBox.CoerceValue(SmallStepProperty);
+                    numberBox.CoerceValue(LargeStepProperty);
                     numberBox.CoerceValue(ValueProperty);
                     NumberBoxAutomationPeer.RaiseMaximumPropertyChangedEvent(
                         numberBox,
@@ -398,8 +378,8 @@ public class NumberBox : TextBox
                     // Maximum is coerced upward. Coercing Maximum again is essential because WPF
                     // retains its uncoerced base value and can restore it when Minimum decreases.
                     numberBox.CoerceValue(MaximumProperty);
-                    numberBox.CoerceValue(SmallChangeProperty);
-                    numberBox.CoerceValue(LargeChangeProperty);
+                    numberBox.CoerceValue(SmallStepProperty);
+                    numberBox.CoerceValue(LargeStepProperty);
                     numberBox.CoerceValue(ValueProperty);
                     NumberBoxAutomationPeer.RaiseMinimumPropertyChangedEvent(
                         numberBox,
@@ -476,84 +456,6 @@ public class NumberBox : TextBox
 
     #endregion
 
-    #region ValidationModeProperty
-
-    /// <summary>Identifies the <see cref="ValidationMode"/> dependency property.</summary>
-    public static readonly DependencyProperty ValidationModeProperty = DependencyProperty.Register(
-        nameof(ValidationMode),
-        typeof(NumberBoxValidationMode),
-        typeof(NumberBox),
-        new PropertyMetadata(NumberBoxValidationMode.InvalidInputOverwritten),
-        static value => value is NumberBoxValidationMode mode
-                     && Enum.IsDefined(typeof(NumberBoxValidationMode), mode)
-    );
-
-    /// <summary>
-    /// Gets or sets the input validation behavior to invoke when invalid input is entered.
-    /// </summary>
-    public NumberBoxValidationMode ValidationMode
-    {
-        get => (NumberBoxValidationMode)GetValue(ValidationModeProperty);
-        set => SetValue(ValidationModeProperty, value);
-    }
-
-    #endregion
-
-    #region NumberFormatterProperty
-
-    /// <summary>Identifies the <see cref="NumberFormatter"/> dependency property.</summary>
-    public static readonly DependencyProperty NumberFormatterProperty = DependencyProperty.Register(
-        nameof(NumberFormatter),
-        typeof(INumberFormatter),
-        typeof(NumberBox),
-        new PropertyMetadata(
-            DefaultNumberFormatter,
-            static (d, e) => ((NumberBox)d).UpdateTextToValue()
-        ),
-        static value => value is INumberFormatter and INumberParser
-    );
-
-    /// <summary>
-    /// Gets or sets the formatter and parser used for committed numeric text.
-    /// The value must implement both <see cref="INumberFormatter"/> and <see cref="INumberParser"/>.
-    /// Changing it immediately reformats the current <see cref="Value"/>.
-    /// </summary>
-    public INumberFormatter NumberFormatter
-    {
-        get => (INumberFormatter)GetValue(NumberFormatterProperty);
-        set => SetValue(NumberFormatterProperty, value);
-    }
-
-    #endregion
-
-    #region RestrictInputToNumbersProperty
-
-    /// <summary>Identifies the <see cref="RestrictInputToNumbers"/> dependency property.</summary>
-    public static readonly DependencyProperty RestrictInputToNumbersProperty = DependencyProperty.Register(
-        nameof(RestrictInputToNumbers),
-        typeof(bool),
-        typeof(NumberBox),
-        new PropertyMetadata(false)
-    );
-
-    /// <summary>
-    /// Gets or sets a value indicating whether keyboard input is restricted to numeric characters only.
-    /// When <see langword="true"/>, non-numeric characters (except decimal separators and sign characters) are blocked at input time.
-    /// When <see langword="false"/>, input is unrestricted and validation occurs on commit.
-    /// </summary>
-    /// <example>
-    /// <code lang="xml">
-    /// &lt;ui:NumberBox RestrictInputToNumbers="True" /&gt;
-    /// </code>
-    /// </example>
-    public bool RestrictInputToNumbers
-    {
-        get => (bool)GetValue(RestrictInputToNumbersProperty);
-        set => SetValue(RestrictInputToNumbersProperty, value);
-    }
-
-    #endregion
-
     #endregion
 
     #region Events
@@ -626,12 +528,17 @@ public class NumberBox : TextBox
     }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="NumberBox"/> class with the current-culture
-    /// formatter and installs paste validation without replacing inherited TextBox behavior.
+    /// Initializes a new instance of the <see cref="NumberBox"/> class and installs paste
+    /// validation without replacing inherited <see cref="TextBox"/> behavior.
     /// </summary>
     public NumberBox()
     {
         DataObject.AddPastingHandler(this, OnClipboardPaste);
+        // Popup reconnects routed events to its PlacementTarget. Keep handlers for events that
+        // cross that boundary on NumberBox itself; registering the same callbacks on the popup
+        // would invoke them once at Popup and again when the route reaches this control.
+        AddHandler(ButtonBase.ClickEvent, new RoutedEventHandler(OnButtonClick));
+        AddHandler(Mouse.LostMouseCaptureEvent, new MouseEventHandler(OnSpinButtonLostMouseCapture));
     }
 
     /// <inheritdoc />
@@ -645,22 +552,25 @@ public class NumberBox : TextBox
             return;
         }
 
-        switch (e.Key)
+        // WPF reports Alt-modified keys through Key.System. Normalize to SystemKey so Alt can
+        // participate in the same large-step gesture as Ctrl and Shift.
+        Key key = e.Key == Key.System ? e.SystemKey : e.Key;
+        switch (key)
         {
             case Key.PageUp:
-                StepValue(LargeChange);
+                StepValue(LargeStep);
                 e.Handled = true;
                 break;
             case Key.PageDown:
-                StepValue(-LargeChange);
+                StepValue(-LargeStep);
                 e.Handled = true;
                 break;
             case Key.Up:
-                StepValue(SmallChange);
+                StepValue(GetStep());
                 e.Handled = true;
                 break;
             case Key.Down:
-                StepValue(-SmallChange);
+                StepValue(-GetStep());
                 e.Handled = true;
                 break;
         }
@@ -695,32 +605,29 @@ public class NumberBox : TextBox
     /// <inheritdoc />
     protected override void OnPreviewTextInput(TextCompositionEventArgs e)
     {
-        if (RestrictInputToNumbers && !IsReadOnly)
+        if (!IsReadOnly && !IsAllowedInputText(e.Text))
         {
-            var text             = e.Text;
-            var decimalSeparator = CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator;
-            var groupSeparator   = CultureInfo.CurrentCulture.NumberFormat.NumberGroupSeparator;
-
-            foreach (var ch in text)
-            {
-                var s = ch.ToString();
-                if (!char.IsDigit(ch)
-                 && s != decimalSeparator
-                 && s != groupSeparator
-                 && ch != '-'
-                 && ch != '+')
-                {
-                    // Allow expression operators only when AcceptsExpression is enabled
-                    if (!AcceptsExpression || (ch != '*' && ch != '/' && ch != '(' && ch != ')'))
-                    {
-                        e.Handled = true;
-                        break;
-                    }
-                }
-            }
+            // TextBox would otherwise retain characters that can never form a numeric value.
+            // Syntax-level validation remains deferred so transient input such as "-" or "1e"
+            // is still editable, but unrelated characters never enter the document.
+            e.Handled = true;
         }
 
         base.OnPreviewTextInput(e);
+    }
+
+    /// <inheritdoc />
+    protected override void OnPreviewMouseLeftButtonDown(MouseButtonEventArgs e)
+    {
+        BeginSpinButtonHold(e.OriginalSource as DependencyObject);
+        base.OnPreviewMouseLeftButtonDown(e);
+    }
+
+    /// <inheritdoc />
+    protected override void OnPreviewMouseLeftButtonUp(MouseButtonEventArgs e)
+    {
+        EndSpinButtonHold();
+        base.OnPreviewMouseLeftButtonUp(e);
     }
 
     /// <inheritdoc />
@@ -740,7 +647,8 @@ public class NumberBox : TextBox
             return;
         }
 
-        StepValue(e.Delta > 0 ? SmallChange : -SmallChange);
+        var step = GetStep();
+        StepValue(e.Delta > 0 ? step : -step);
         e.Handled = true;
 
         base.OnPreviewMouseWheel(e);
@@ -767,15 +675,12 @@ public class NumberBox : TextBox
         #pragma warning disable WPF0091 // Name the invoked method OnEventName
         #pragma warning disable WPF0041 // Set mutable dependency properties using SetCurrentValue
 
-        // Detach handlers from the previous visual tree before WPF replaces the template parts.
-        RemoveHandler(ButtonBase.ClickEvent, new RoutedEventHandler(OnButtonClick));
-        _compactPopup?.RemoveHandler(ButtonBase.ClickEvent, new RoutedEventHandler(OnButtonClick));
+        // Preview mouse events do not continue from a standalone Popup to its PlacementTarget,
+        // so these are the only handlers owned by the current popup template part.
+        _compactPopup?.RemoveHandler(Mouse.PreviewMouseDownEvent, new MouseButtonEventHandler(OnSpinButtonMouseDown));
+        _compactPopup?.RemoveHandler(Mouse.PreviewMouseUpEvent,   new MouseButtonEventHandler(OnSpinButtonMouseUp));
 
         base.OnApplyTemplate();
-
-        // A template can be reapplied more than once. Keep exactly one class-level handler so
-        // a single press cannot increment the value multiple times after a theme change.
-        AddHandler(ButtonBase.ClickEvent, new RoutedEventHandler(OnButtonClick));
 
         _compactPopup = GetTemplateChild("PART_CompactPopup") as Popup;
         _spinButtons  = GetTemplateChild("PART_SpinButtons") as FrameworkElement;
@@ -783,7 +688,8 @@ public class NumberBox : TextBox
         if (_compactPopup is not null)
         {
             _compactPopup.CustomPopupPlacementCallback = CompactPopupPlacementCallback;
-            _compactPopup.AddHandler(ButtonBase.ClickEvent, new RoutedEventHandler(OnButtonClick));
+            _compactPopup.AddHandler(Mouse.PreviewMouseDownEvent, new MouseButtonEventHandler(OnSpinButtonMouseDown));
+            _compactPopup.AddHandler(Mouse.PreviewMouseUpEvent,   new MouseButtonEventHandler(OnSpinButtonMouseUp));
         }
 
         // Text-only initialization is supported because NumberBox inherits TextBox.Text. Once a
@@ -1001,11 +907,11 @@ public class NumberBox : TextBox
                     break;
 
                 case NumberBoxButtonKind.Increment:
-                    StepValue(SmallChange);
+                    StepValue(GetStep(btn));
                     break;
 
                 case NumberBoxButtonKind.Decrement:
-                    StepValue(-SmallChange);
+                    StepValue(-GetStep(btn));
                     break;
 
                 case NumberBoxButtonKind.None:
@@ -1014,6 +920,67 @@ public class NumberBox : TextBox
             }
         }
     }
+
+    private void OnSpinButtonMouseDown(object sender, MouseButtonEventArgs e) =>
+        BeginSpinButtonHold(e.OriginalSource as DependencyObject);
+
+    private void OnSpinButtonMouseUp(object sender, MouseButtonEventArgs e) =>
+        EndSpinButtonHold();
+
+    private void OnSpinButtonLostMouseCapture(object sender, MouseEventArgs e)
+    {
+        ButtonBase? button = e.OriginalSource as ButtonBase
+                          ?? (e.OriginalSource as DependencyObject).FindAncestor<ButtonBase>();
+        if (ReferenceEquals(button, _heldSpinButton))
+        {
+            EndSpinButtonHold();
+        }
+    }
+
+    private void BeginSpinButtonHold(DependencyObject? source)
+    {
+        ButtonBase? button = source as ButtonBase ?? source.FindAncestor<ButtonBase>();
+        if (button is null || GetButtonKind(button) is not (NumberBoxButtonKind.Increment or NumberBoxButtonKind.Decrement))
+        {
+            return;
+        }
+
+        // RepeatButton raises an initial Click immediately and subsequent Click events from its
+        // internal timer. Recording the physical press here gives every template the same
+        // two-second acceleration threshold without replacing or reflecting that WPF timer.
+        _heldSpinButton           = button;
+        _spinButtonPressTimestamp = Stopwatch.GetTimestamp();
+    }
+
+    private void EndSpinButtonHold()
+    {
+        // Mouse capture can retarget the release away from the original template child. Any
+        // release ends the one physical press tracked by this NumberBox.
+        _heldSpinButton           = null;
+        _spinButtonPressTimestamp = 0;
+    }
+
+    private double GetStep(ButtonBase? spinButton = null)
+    {
+        if (IsLargeStepModifierActive())
+        {
+            return LargeStep;
+        }
+
+        if (spinButton is not null
+         && ReferenceEquals(spinButton, _heldSpinButton)
+         && _spinButtonPressTimestamp != 0
+         && (Stopwatch.GetTimestamp() - _spinButtonPressTimestamp) / (double)Stopwatch.Frequency
+         >= LargeStepHoldDurationSeconds)
+        {
+            return LargeStep;
+        }
+
+        return SmallStep;
+    }
+
+    private static bool IsLargeStepModifierActive() =>
+        (Keyboard.Modifiers & (ModifierKeys.Control | ModifierKeys.Alt | ModifierKeys.Shift)) != ModifierKeys.None;
 
     /// <summary>
     /// Is called when <see cref="Value"/> in this <see cref="NumberBox"/> changes.
@@ -1071,12 +1038,18 @@ public class NumberBox : TextBox
             return;
         }
 
-        // Handle pasted text: try to parse the resulting text and accept/format it immediately.
-        // If parsing fails and validation mode is set to overwrite invalid input, cancel paste and restore.
-
         if (e.DataObject.GetDataPresent(DataFormats.UnicodeText))
         {
             var pasteText = e.DataObject.GetData(DataFormats.UnicodeText) as string ?? string.Empty;
+
+            // Paste bypasses PreviewTextInput, so apply the same character-level restriction
+            // here. Cancelling leaves the existing edit untouched; restoring Value would reject
+            // more than the invalid insertion and unexpectedly discard otherwise valid input.
+            if (!nb.IsAllowedInputText(pasteText))
+            {
+                e.CancelCommand();
+                return;
+            }
 
             // Compute resulting text after paste (respecting current selection)
             var current   = nb.Text;
@@ -1088,46 +1061,26 @@ public class NumberBox : TextBox
                 : current.Insert(selStart, pasteText);
 
             var trimmed = result.Trim();
-
-            var parser = (INumberParser)nb.NumberFormatter;
-            var parsed = parser.ParseDouble(trimmed);
-
-            if (parsed is double directValue && double.IsNaN(directValue))
+            if (string.IsNullOrEmpty(trimmed))
             {
-                parsed = null;
-            }
-
-            // When direct number parsing fails and expression is enabled,
-            // try to evaluate the expression instead.
-            if (parsed is null && nb.AcceptsExpression)
-            {
-                if (NumberBoxExpressionParser.TryEvaluate(trimmed, parser, out var exprResult))
-                {
-                    parsed = exprResult;
-                }
-            }
-
-            if (parsed is not null)
-            {
-                // Accept parsed value: update Value and display formatted text instead of raw paste
-                nb.SetCurrentValue(ValueProperty, parsed);
+                nb.SetCurrentValue(ValueProperty, null);
                 nb.UpdateTextToValue();
                 nb.MoveCaretToTextEnd();
                 e.CancelCommand();
                 return;
             }
 
-            if (nb.ValidationMode == NumberBoxValidationMode.InvalidInputOverwritten)
+            if (nb.TryParseInput(trimmed, out double parsed))
             {
-                // Reject paste and restore formatted value
-                e.CancelCommand();
+                // Commit valid pasted content immediately so raw, unformatted text never becomes
+                // observable through Text and invalid content never enters the TextBox document.
+                nb.SetCurrentValue(ValueProperty, parsed);
                 nb.UpdateTextToValue();
-                return;
+                nb.MoveCaretToTextEnd();
             }
         }
 
-        // Let the default paste occur, then validate asynchronously to avoid interfering with paste operation
-        nb.Dispatcher.BeginInvoke(() => nb.ValidateInput(), DispatcherPriority.Input);
+        e.CancelCommand();
     }
 
     private void StepValue(double change)
@@ -1154,10 +1107,7 @@ public class NumberBox : TextBox
 
         if (Value is not null)
         {
-            var d = Math.Round((double)Value, MaxDecimalPlaces);
-            newText = DecimalPlaces is { } dp
-                ? d.ToString("F" + dp, CultureInfo.CurrentCulture)
-                : NumberFormatter.FormatDouble(d);
+            newText = Value.Value.ToString(FormatString, CultureInfo.CurrentCulture);
         }
 
         SetCurrentValue(TextProperty, newText);
@@ -1179,33 +1129,11 @@ public class NumberBox : TextBox
             return;
         }
 
-        var numberParser = (INumberParser)NumberFormatter;
-        var value        = numberParser.ParseDouble(text);
-
-        if (value is double directValue && double.IsNaN(directValue))
+        if (!TryParseInput(text, out double value))
         {
-            value = null;
-        }
-
-        // If direct parsing failed, try expression evaluation
-        if (value is null && AcceptsExpression)
-        {
-            if (NumberBoxExpressionParser.TryEvaluate(text, numberParser, out var exprResult))
-            {
-                value = exprResult;
-            }
-        }
-
-        // If parsing failed
-        if (value is null)
-        {
-            if (ValidationMode == NumberBoxValidationMode.InvalidInputOverwritten)
-            {
-                // Restore formatted current Value
-                UpdateTextToValue();
-            }
-
-            // If validation is disabled, leave the user's text as-is
+            // Invalid input is never a second state of the control. Value remains authoritative,
+            // and commit restores its formatted representation immediately.
+            UpdateTextToValue();
             return;
         }
 
@@ -1218,6 +1146,61 @@ public class NumberBox : TextBox
         }
 
         SetCurrentValue(ValueProperty, value);
+    }
+
+    private bool TryParseInput(string text, out double value)
+    {
+        if (double.TryParse(
+                text,
+                NumberStyles.Float | NumberStyles.AllowThousands,
+                CultureInfo.CurrentCulture,
+                out value
+            )
+         && !double.IsNaN(value)
+         && !double.IsInfinity(value))
+        {
+            return true;
+        }
+
+        return AcceptsExpression
+            && NumberBoxExpressionParser.TryEvaluate(text, CultureInfo.CurrentCulture, out value)
+            && !double.IsNaN(value)
+            && !double.IsInfinity(value);
+    }
+
+    private bool IsAllowedInputText(string text)
+    {
+        NumberFormatInfo format = CultureInfo.CurrentCulture.NumberFormat;
+        foreach (char character in text)
+        {
+            if (char.IsDigit(character)
+             || format.NumberDecimalSeparator.Contains(character)
+             || format.NumberGroupSeparator.Contains(character)
+             || format.PositiveSign.Contains(character)
+             || format.NegativeSign.Contains(character)
+             || character is '+' or '-' or 'e' or 'E'
+             || (AcceptsExpression && character is '*' or '/' or '(' or ')'))
+            {
+                continue;
+            }
+
+            return false;
+        }
+
+        return true;
+    }
+
+    private static bool IsValidFormatString(string format)
+    {
+        try
+        {
+            _ = 0.0.ToString(format, CultureInfo.InvariantCulture);
+            return true;
+        }
+        catch (FormatException)
+        {
+            return false;
+        }
     }
 
     private void MoveCaretToTextEnd()

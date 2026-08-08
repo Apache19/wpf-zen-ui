@@ -51,13 +51,17 @@ internal sealed class NumberBoxAutomationPeer : TextBoxAutomationPeer, IRangeVal
 
     bool IRangeValueProvider.IsReadOnly => !_owner.IsEnabled || _owner.IsReadOnly;
 
-    double IRangeValueProvider.LargeChange => _owner.LargeChange;
+    // "SmallChange" and "LargeChange" are fixed names in the UI Automation RangeValue
+    // contract; they do not prescribe the public terminology of the represented control.
+    // NumberBox deliberately exposes step sizes as SmallStep and LargeStep, and this peer is the
+    // adapter between those control semantics and the standardized automation vocabulary.
+    double IRangeValueProvider.LargeChange => _owner.LargeStep;
 
     double IRangeValueProvider.Maximum => _owner.Maximum;
 
     double IRangeValueProvider.Minimum => _owner.Minimum;
 
-    double IRangeValueProvider.SmallChange => _owner.SmallChange;
+    double IRangeValueProvider.SmallChange => _owner.SmallStep;
 
     double IRangeValueProvider.Value => GetAutomationValue(_owner, _owner.Value);
 
@@ -132,11 +136,11 @@ internal sealed class NumberBoxAutomationPeer : TextBoxAutomationPeer, IRangeVal
         RaisePropertyChangedEvent(owner, RangeValuePatternIdentifiers.MaximumProperty, oldValue, newValue);
 
     /// <summary>Raises a RangeValue notification for an effective small-step change.</summary>
-    internal static void RaiseSmallChangePropertyChangedEvent(NumberBox owner, double oldValue, double newValue) =>
+    internal static void RaiseSmallStepPropertyChangedEvent(NumberBox owner, double oldValue, double newValue) =>
         RaisePropertyChangedEvent(owner, RangeValuePatternIdentifiers.SmallChangeProperty, oldValue, newValue);
 
     /// <summary>Raises a RangeValue notification for an effective large-step change.</summary>
-    internal static void RaiseLargeChangePropertyChangedEvent(NumberBox owner, double oldValue, double newValue) =>
+    internal static void RaiseLargeStepPropertyChangedEvent(NumberBox owner, double oldValue, double newValue) =>
         RaisePropertyChangedEvent(owner, RangeValuePatternIdentifiers.LargeChangeProperty, oldValue, newValue);
 
     /// <summary>Raises a RangeValue notification when editing becomes read-only or writable.</summary>

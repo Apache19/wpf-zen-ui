@@ -4,8 +4,10 @@
 // All Rights Reserved.
 
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.Reflection;
+using System.Windows;
 using System.Windows.Automation;
 using System.Windows.Automation.Peers;
 using System.Windows.Automation.Provider;
@@ -44,23 +46,23 @@ public class NumberBoxTests
                 {
                     Minimum = 10,
                     Maximum = 5,
-                    SmallChange = 100,
-                    LargeChange = 150,
+                    SmallStep = 100,
+                    LargeStep = 150,
                 };
 
                 Assert.Equal(10, numberBox.Maximum);
                 numberBox.Minimum = 0;
                 Assert.Equal(5, numberBox.Maximum);
-                Assert.Equal(5, numberBox.SmallChange);
-                Assert.Equal(5, numberBox.LargeChange);
+                Assert.Equal(5, numberBox.SmallStep);
+                Assert.Equal(5, numberBox.LargeStep);
 
                 numberBox.Maximum = 200;
-                Assert.Equal(100, numberBox.SmallChange);
-                Assert.Equal(150, numberBox.LargeChange);
+                Assert.Equal(100, numberBox.SmallStep);
+                Assert.Equal(150, numberBox.LargeStep);
 
                 numberBox.Maximum = 10;
-                Assert.Equal(10, numberBox.SmallChange);
-                Assert.Equal(10, numberBox.LargeChange);
+                Assert.Equal(10, numberBox.SmallStep);
+                Assert.Equal(10, numberBox.LargeStep);
             }
         );
     }
@@ -80,48 +82,67 @@ public class NumberBoxTests
 
                 Assert.Null(numberBox.Value);
                 Assert.Equal(string.Empty, numberBox.Text);
+
+                numberBox.Value = 5;
+                numberBox.Text = "invalid";
+                CommitText(numberBox);
+
+                Assert.Equal(5, numberBox.Value);
+                Assert.Equal("5", numberBox.Text);
             }
         );
     }
 
     [Fact]
-    public void NumberFormatter_IsRequiredAndRefreshesDisplayWhenChanged()
+    public void FormatString_RefreshesDisplayWithoutChangingValue()
     {
         RunOnStaThread(
             () =>
             {
-                var numberBox = new NumberBox { Value = 1.5 };
+                var numberBox = new NumberBox { Value = 1.5, FormatString = "F2" };
 
-                Assert.Throws<ArgumentException>(
-                    () => numberBox.SetValue(NumberBox.NumberFormatterProperty, null)
-                );
-
-                numberBox.NumberFormatter = new PrefixNumberFormatter();
-
-                Assert.Equal("value:1.5", numberBox.Text);
+                Assert.Equal("1.50", numberBox.Text);
+                Assert.Equal(1.5, numberBox.Value);
+                Assert.Throws<ArgumentException>(() => numberBox.FormatString = "Q");
             }
         );
     }
 
     [Fact]
-    public void Commit_RoundsValueToMaxDecimalPlaces()
+    public void Commit_PreservesParsedPrecision()
     {
         RunOnStaThread(
             () =>
             {
-                var numberBox = new NumberBox { MaxDecimalPlaces = 2, Text = "1.239" };
+                var numberBox = new NumberBox { Text = "1.239" };
 
                 CommitText(numberBox);
 
-                Assert.Equal(1.24, numberBox.Value);
-                Assert.Equal("1.24", numberBox.Text);
+                Assert.Equal(1.239, numberBox.Value);
+                Assert.Equal("1.239", numberBox.Text);
+            }
+        );
+    }
 
-                numberBox.Value = 9.876;
-                Assert.Equal(9.88, numberBox.Value);
+    [Fact]
+    public void InvalidPaste_IsBlockedWithoutDiscardingCurrentEdit()
+    {
+        RunOnStaThread(
+            () =>
+            {
+                var numberBox = new TestNumberBox { Value = 5, Text = "12" };
+                var dataObject = new System.Windows.DataObject(DataFormats.UnicodeText, "invalid");
+                var args = new DataObjectPastingEventArgs(
+                    dataObject,
+                    isDragDrop: false,
+                    DataFormats.UnicodeText
+                );
 
-                numberBox.MaxDecimalPlaces = 1;
-                Assert.Equal(9.9, numberBox.Value);
-                Assert.Equal("9.9", numberBox.Text);
+                numberBox.RaiseClipboardPaste(args);
+
+                Assert.True(args.CommandCancelled);
+                Assert.Equal("12", numberBox.Text);
+                Assert.Equal(5, numberBox.Value);
             }
         );
     }
@@ -236,6 +257,96 @@ public class NumberBoxTests
     }
 
     [Fact]
+    public void CompactPopupClick_IsHandledOnceWhenRouteReturnsToNumberBox()
+    {
+        RunOnStaThread(
+            () =>
+            {
+                var numberBox = new NumberBox
+                {
+                    SpinButtonPlacementMode = NumberBoxSpinButtonPlacementMode.Compact,
+                    Value = 0,
+                };
+                var root = new Grid();
+                root.Resources.MergedDictionaries.Add(
+                    new ResourceDictionary
+                    {
+                        Source = new Uri(
+                            "pack://application:,,,/Wpf.Zen.Ui;component/Themes/Generic.xaml",
+                            UriKind.Absolute
+                        ),
+                    }
+                );
+                root.Children.Add(numberBox);
+
+                var window = new Window
+                {
+                    Content = root,
+                    ShowInTaskbar = false,
+                    Width = 320,
+                    Height = 200,
+                };
+
+                try
+                {
+                    window.Show();
+                    numberBox.ApplyTemplate();
+                    root.UpdateLayout();
+
+                    var popup = Assert.IsType<Popup>(
+                        numberBox.Template.FindName("PART_CompactPopup", numberBox)
+                    );
+                    popup.SetCurrentValue(Popup.IsOpenProperty, true);
+                    RepeatButton incrementButton = Assert.Single(
+                        FindVisualDescendants<RepeatButton>(popup.Child),
+                        button => NumberBox.GetButtonKind(button) == NumberBoxButtonKind.Increment
+                    );
+
+                    incrementButton.RaiseEvent(
+                        new RoutedEventArgs(ButtonBase.ClickEvent, incrementButton)
+                    );
+
+                    Assert.Equal(1, numberBox.Value);
+                }
+                finally
+                {
+                    window.Close();
+                }
+            }
+        );
+    }
+
+    [Fact]
+    public void SpinButton_HeldForThreeSecondsUsesLargeStep()
+    {
+        RunOnStaThread(
+            () =>
+            {
+                NumberBox numberBox = CreateTemplatedNumberBox(
+                    new NumberBox { Value = 0, SmallStep = 1, LargeStep = 10 }
+                );
+                RepeatButton incrementButton = Assert.Single(
+                    FindVisualDescendants<RepeatButton>(numberBox),
+                    button => NumberBox.GetButtonKind(button) == NumberBoxButtonKind.Increment
+                );
+
+                typeof(NumberBox)
+                    .GetField("_heldSpinButton", BindingFlags.Instance | BindingFlags.NonPublic)!
+                    .SetValue(numberBox, incrementButton);
+                typeof(NumberBox)
+                    .GetField("_spinButtonPressTimestamp", BindingFlags.Instance | BindingFlags.NonPublic)!
+                    .SetValue(numberBox, Stopwatch.GetTimestamp() - (3 * Stopwatch.Frequency));
+
+                incrementButton.RaiseEvent(
+                    new RoutedEventArgs(ButtonBase.ClickEvent, incrementButton)
+                );
+
+                Assert.Equal(10, numberBox.Value);
+            }
+        );
+    }
+
+    [Fact]
     public void AutomationPeer_ExposesWritableRange()
     {
         RunOnStaThread(
@@ -245,8 +356,8 @@ public class NumberBoxTests
                 {
                     Minimum = -10,
                     Maximum = 10,
-                    SmallChange = 0.5,
-                    LargeChange = 2,
+                    SmallStep = 0.5,
+                    LargeStep = 2,
                     Value = 1,
                 };
                 AutomationPeer peer = CreateAutomationPeer(numberBox);
@@ -286,9 +397,6 @@ public class NumberBoxTests
 
                 Assert.Throws<ArgumentException>(
                     () => numberBox.SpinButtonPlacementMode = (NumberBoxSpinButtonPlacementMode)99
-                );
-                Assert.Throws<ArgumentException>(
-                    () => numberBox.ValidationMode = (NumberBoxValidationMode)99
                 );
                 Assert.Throws<ArgumentException>(
                     () => NumberBox.SetButtonKind(numberBox, (NumberBoxButtonKind)99)
@@ -352,30 +460,9 @@ public class NumberBoxTests
 
     private static void RunOnStaThread(Action action) => WpfTestThread.Run(action);
 
-    private sealed class PrefixNumberFormatter : INumberFormatter, INumberParser
+    private sealed class TestNumberBox : NumberBox
     {
-        public string FormatDouble(double? value) =>
-            value is null
-                ? string.Empty
-                : $"value:{value.Value.ToString("G", CultureInfo.InvariantCulture)}";
-
-        public string FormatInt(int? value) => value?.ToString(CultureInfo.InvariantCulture) ?? string.Empty;
-
-        public string FormatUInt(uint? value) => value?.ToString(CultureInfo.InvariantCulture) ?? string.Empty;
-
-        public double? ParseDouble(string? value) =>
-            double.TryParse(value, NumberStyles.Number, CultureInfo.InvariantCulture, out double result)
-                ? result
-                : null;
-
-        public int? ParseInt(string? value) =>
-            int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out int result)
-                ? result
-                : null;
-
-        public uint? ParseUInt(string? value) =>
-            uint.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out uint result)
-                ? result
-                : null;
+        public void RaiseClipboardPaste(DataObjectPastingEventArgs args) =>
+            OnClipboardPaste(this, args);
     }
 }
