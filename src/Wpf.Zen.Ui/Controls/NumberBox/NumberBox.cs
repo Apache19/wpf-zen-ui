@@ -5,20 +5,43 @@
 
 // This Source Code is partially based on the source code provided by the .NET Foundation.
 
-using System.Windows.Controls;
+using System.Windows.Automation.Peers;
 using System.Windows.Controls.Primitives;
 using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Threading;
+using Wpf.Zen.Ui.AutomationPeers;
 
+// ReSharper disable UnusedParameter.Local
 // ReSharper disable once CheckNamespace
 namespace Wpf.Zen.Ui.Controls;
 
+/// <summary>
+/// Provides a single-line numeric editor with optional spin buttons, range constraints,
+/// culture-aware formatting, and basic arithmetic-expression evaluation.
+/// </summary>
+/// <remarks>
+/// <para>
+/// <see cref="Value"/> is the authoritative numeric state. Text typed by the user is committed
+/// when focus leaves the control, Enter is pressed, a spin operation is requested, or a paste is
+/// accepted. Invalid text is restored or retained according to <see cref="ValidationMode"/>.
+/// </para>
+/// <para>
+/// The default template requires <c>PART_ContentHost</c> through the inherited WPF text-box
+/// contract. <c>PART_CompactPopup</c> and <c>PART_SpinButtons</c> are optional; compact placement
+/// falls back to the control bounds when either is absent. Template buttons declare their
+/// operation through <see cref="ButtonKindProperty"/>.
+/// </para>
+/// </remarks>
 [TemplatePart(Name = "PART_CompactPopup", Type = typeof(Popup))]
+[TemplatePart(Name = "PART_SpinButtons",  Type = typeof(FrameworkElement))]
 public class NumberBox : TextBox
 {
-    private Popup?  _compactPopup;
-    private Window? _parentWindow;
+    private static readonly ValidateNumberFormatter DefaultNumberFormatter = new();
+
+    private Popup?            _compactPopup;
+    private FrameworkElement? _spinButtons;
+    private Window?           _parentWindow;
 
     #region Dependency properties
 
@@ -30,7 +53,9 @@ public class NumberBox : TextBox
             "ButtonKind",
             typeof(NumberBoxButtonKind),
             typeof(NumberBox),
-            new PropertyMetadata(NumberBoxButtonKind.None)
+            new PropertyMetadata(NumberBoxButtonKind.None),
+            static value => value is NumberBoxButtonKind kind
+                         && Enum.IsDefined(typeof(NumberBoxButtonKind), kind)
         );
 
     /// <summary>
@@ -90,7 +115,10 @@ public class NumberBox : TextBox
 
                 if (baseValue is double dv)
                 {
-                    var clamped = dv;
+                    // Value owns the committed precision invariant. Applying it in coercion keeps
+                    // bindings, automation, direct assignment, expression input, and spin input
+                    // consistent instead of rounding only the displayed string.
+                    var clamped = Math.Round(dv, numberBox.MaxDecimalPlaces);
 
                     if (clamped > numberBox.Maximum)
                     {
@@ -109,7 +137,8 @@ public class NumberBox : TextBox
             },
             false,
             UpdateSourceTrigger.LostFocus
-        )
+        ),
+        static value => value is null || (value is double dv && !double.IsNaN(dv))
     );
 
     /// <summary>
@@ -174,6 +203,7 @@ public class NumberBox : TextBox
             {
                 if (d is NumberBox numberBox)
                 {
+                    numberBox.CoerceValue(ValueProperty);
                     numberBox.UpdateTextToValue();
                 }
             }
@@ -182,7 +212,9 @@ public class NumberBox : TextBox
     );
 
     /// <summary>
-    /// Gets or sets the number of decimal places to be rounded when converting from Text to Value.
+    /// Gets or sets the maximum number of decimal places retained by <see cref="Value"/>.
+    /// Changing this property immediately rounds the current value; range coercion is applied
+    /// afterward, so a more precise boundary remains authoritative when necessary.
     /// </summary>
     public int MaxDecimalPlaces
     {
@@ -201,7 +233,11 @@ public class NumberBox : TextBox
         typeof(NumberBox),
         new PropertyMetadata(
             1.0d,
-            null,
+            static (d, e) => NumberBoxAutomationPeer.RaiseSmallChangePropertyChangedEvent(
+                (NumberBox)d,
+                (double)e.OldValue,
+                (double)e.NewValue
+            ),
             coerceValueCallback: static (d, baseValue) =>
             {
                 if (baseValue is double dv)
@@ -246,7 +282,11 @@ public class NumberBox : TextBox
         typeof(NumberBox),
         new PropertyMetadata(
             10.0d,
-            null,
+            static (d, e) => NumberBoxAutomationPeer.RaiseLargeChangePropertyChangedEvent(
+                (NumberBox)d,
+                (double)e.OldValue,
+                (double)e.NewValue
+            ),
             coerceValueCallback: static (d, baseValue) =>
             {
                 if (baseValue is double dv)
@@ -296,7 +336,17 @@ public class NumberBox : TextBox
             {
                 if (d is NumberBox numberBox)
                 {
+                    // Step coercion depends on the effective range. Re-running it here both
+                    // tightens a step after a range reduction and restores its base value after
+                    // the range expands again.
+                    numberBox.CoerceValue(SmallChangeProperty);
+                    numberBox.CoerceValue(LargeChangeProperty);
                     numberBox.CoerceValue(ValueProperty);
+                    NumberBoxAutomationPeer.RaiseMaximumPropertyChangedEvent(
+                        numberBox,
+                        (double)e.OldValue,
+                        (double)e.NewValue
+                    );
                 }
             },
             coerceValueCallback: static (d, baseValue) =>
@@ -344,24 +394,19 @@ public class NumberBox : TextBox
             {
                 if (d is NumberBox numberBox)
                 {
+                    // Match WPF RangeBase's one-way range invariant: Minimum is authoritative and
+                    // Maximum is coerced upward. Coercing Maximum again is essential because WPF
+                    // retains its uncoerced base value and can restore it when Minimum decreases.
+                    numberBox.CoerceValue(MaximumProperty);
+                    numberBox.CoerceValue(SmallChangeProperty);
+                    numberBox.CoerceValue(LargeChangeProperty);
                     numberBox.CoerceValue(ValueProperty);
+                    NumberBoxAutomationPeer.RaiseMinimumPropertyChangedEvent(
+                        numberBox,
+                        (double)e.OldValue,
+                        (double)e.NewValue
+                    );
                 }
-            },
-            coerceValueCallback: static (d, baseValue) =>
-            {
-                if (d is not NumberBox numberBox)
-                {
-                    return baseValue;
-                }
-
-                if (baseValue is double dv)
-                {
-                    // Coerce Minimum to be at most Maximum
-                    var maximum = numberBox.Maximum;
-                    return dv > maximum ? maximum : dv;
-                }
-
-                return baseValue;
             }
         ),
         validateValueCallback: static v => v is double dv && !double.IsNaN(dv) && !double.IsInfinity(dv)
@@ -415,7 +460,9 @@ public class NumberBox : TextBox
         nameof(SpinButtonPlacementMode),
         typeof(NumberBoxSpinButtonPlacementMode),
         typeof(NumberBox),
-        new PropertyMetadata(NumberBoxSpinButtonPlacementMode.Inline)
+        new PropertyMetadata(NumberBoxSpinButtonPlacementMode.Inline),
+        static value => value is NumberBoxSpinButtonPlacementMode mode
+                     && Enum.IsDefined(typeof(NumberBoxSpinButtonPlacementMode), mode)
     );
 
     /// <summary>
@@ -436,7 +483,9 @@ public class NumberBox : TextBox
         nameof(ValidationMode),
         typeof(NumberBoxValidationMode),
         typeof(NumberBox),
-        new PropertyMetadata(NumberBoxValidationMode.InvalidInputOverwritten)
+        new PropertyMetadata(NumberBoxValidationMode.InvalidInputOverwritten),
+        static value => value is NumberBoxValidationMode mode
+                     && Enum.IsDefined(typeof(NumberBoxValidationMode), mode)
     );
 
     /// <summary>
@@ -457,16 +506,21 @@ public class NumberBox : TextBox
         nameof(NumberFormatter),
         typeof(INumberFormatter),
         typeof(NumberBox),
-        new PropertyMetadata(null),
-        static (value) => value is null or INumberParser
+        new PropertyMetadata(
+            DefaultNumberFormatter,
+            static (d, e) => ((NumberBox)d).UpdateTextToValue()
+        ),
+        static value => value is INumberFormatter and INumberParser
     );
 
     /// <summary>
-    /// Gets or sets the number formatter.
+    /// Gets or sets the formatter and parser used for committed numeric text.
+    /// The value must implement both <see cref="INumberFormatter"/> and <see cref="INumberParser"/>.
+    /// Changing it immediately reformats the current <see cref="Value"/>.
     /// </summary>
-    public INumberFormatter? NumberFormatter
+    public INumberFormatter NumberFormatter
     {
-        get => (INumberFormatter?)GetValue(NumberFormatterProperty);
+        get => (INumberFormatter)GetValue(NumberFormatterProperty);
         set => SetValue(NumberFormatterProperty, value);
     }
 
@@ -513,7 +567,8 @@ public class NumberBox : TextBox
     );
 
     /// <summary>
-    /// Occurs after the user triggers evaluation of new input by pressing the Enter key, clicking a spin button, or by changing focus.
+    /// Occurs whenever the effective <see cref="Value"/> changes, whether through user input,
+    /// automation, binding, coercion, or direct property assignment.
     /// </summary>
     public event NumberBoxValueChangedEvent ValueChanged
     {
@@ -556,12 +611,26 @@ public class NumberBox : TextBox
                 (d, baseValue) => 1
             )
         );
+
+        IsReadOnlyProperty.OverrideMetadata(
+            typeof(NumberBox),
+            new FrameworkPropertyMetadata(
+                false,
+                static (d, e) => NumberBoxAutomationPeer.RaiseIsReadOnlyPropertyChangedEvent(
+                    (NumberBox)d,
+                    (bool)e.OldValue,
+                    (bool)e.NewValue
+                )
+            )
+        );
     }
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="NumberBox"/> class with the current-culture
+    /// formatter and installs paste validation without replacing inherited TextBox behavior.
+    /// </summary>
     public NumberBox()
     {
-        NumberFormatter ??= GetRegionalSettingsAwareDecimalFormatter();
-
         DataObject.AddPastingHandler(this, OnClipboardPaste);
     }
 
@@ -570,6 +639,9 @@ public class NumberBox : TextBox
     {
         if (IsReadOnly)
         {
+            // TextBoxBase forwards this virtual call to WPF's internal TextEditor. Read-only text
+            // still needs that path for caret movement, selection, and copy gestures.
+            base.OnPreviewKeyDown(e);
             return;
         }
 
@@ -695,11 +767,18 @@ public class NumberBox : TextBox
         #pragma warning disable WPF0091 // Name the invoked method OnEventName
         #pragma warning disable WPF0041 // Set mutable dependency properties using SetCurrentValue
 
-        AddHandler(ButtonBase.ClickEvent, new RoutedEventHandler(OnButtonClick));
-
+        // Detach handlers from the previous visual tree before WPF replaces the template parts.
+        RemoveHandler(ButtonBase.ClickEvent, new RoutedEventHandler(OnButtonClick));
         _compactPopup?.RemoveHandler(ButtonBase.ClickEvent, new RoutedEventHandler(OnButtonClick));
 
+        base.OnApplyTemplate();
+
+        // A template can be reapplied more than once. Keep exactly one class-level handler so
+        // a single press cannot increment the value multiple times after a theme change.
+        AddHandler(ButtonBase.ClickEvent, new RoutedEventHandler(OnButtonClick));
+
         _compactPopup = GetTemplateChild("PART_CompactPopup") as Popup;
+        _spinButtons  = GetTemplateChild("PART_SpinButtons") as FrameworkElement;
 
         if (_compactPopup is not null)
         {
@@ -707,8 +786,9 @@ public class NumberBox : TextBox
             _compactPopup.AddHandler(ButtonBase.ClickEvent, new RoutedEventHandler(OnButtonClick));
         }
 
-        // If Text has been set, but Value hasn't, update Value based on Text.
-        if (string.IsNullOrEmpty(Text) && Value != null)
+        // Text-only initialization is supported because NumberBox inherits TextBox.Text. Once a
+        // Value exists it remains authoritative when both properties were supplied in XAML.
+        if (!string.IsNullOrWhiteSpace(Text) && Value is null)
         {
             UpdateValueToText();
         }
@@ -716,8 +796,6 @@ public class NumberBox : TextBox
         {
             UpdateTextToValue();
         }
-
-        base.OnApplyTemplate();
 
         #pragma warning restore WPF0041 // Set mutable dependency properties using SetCurrentValue
         #pragma warning restore WPF0091 // Name the invoked method OnEventName
@@ -792,22 +870,126 @@ public class NumberBox : TextBox
 
     private CustomPopupPlacement[] CompactPopupPlacementCallback(Size popupSize, Size targetSize, Point offset)
     {
-        // Place popup so its left edge aligns with the control's right edge,
-        // then shift it left by 27px so it visually overlays the classic buttons area.
+        if (!TryGetScreenOrigin(this, out var targetOrigin) ||
+            _spinButtons is null ||
+            !TryGetScreenBounds(_spinButtons, out var spinButtonBounds))
+        {
+            // The callback can run while a template is being detached. Keep the popup usable
+            // during that transient state; the next layout pass will retry with the real part.
+            var fallbackX = FlowDirection == FlowDirection.RightToLeft
+                ? -targetSize.Width
+                : targetSize.Width - popupSize.Width;
+            return
+            [
+                new CustomPopupPlacement(
+                    new Point(fallbackX, (targetSize.Height - popupSize.Height) / 2.0),
+                    PopupPrimaryAxis.None
+                ),
+            ];
+        }
+
+        // WPF invokes this callback with sizes expressed in physical screen pixels after all DPI,
+        // layout, render, and FlowDirection transforms. Its returned point is relative to the
+        // target's transformed local (0, 0), which is the physical right edge under RTL—not the
+        // target's axis-aligned left edge. PointToScreen supplies that exact origin and prevents
+        // the large RTL offset caused by treating targetSize.Width as a left-to-right coordinate.
         //
-        // Note: The 27px offset represents the total horizontal footprint of the small
-        // classic buttons, including both their width and surrounding margin. This ensures
-        // consistent visual alignment across different DPI settings.
-        var dpi = VisualTreeHelper.GetDpi(this);
-        var x   = targetSize.Width - (27.0 * dpi.DpiScaleX);
-        var y   = (targetSize.Height - popupSize.Height) / 2.0;
+        // The large popup grows toward the outside edge: in LTR its left edge covers the small
+        // buttons; in RTL its right edge does. Measuring the named part keeps this valid when a
+        // custom template changes the classic buttons' size, margin, alignment, or transform.
+        var popupLeft = FlowDirection == FlowDirection.RightToLeft
+            ? spinButtonBounds.Right - popupSize.Width
+            : spinButtonBounds.Left;
+        var popupTop = spinButtonBounds.Top + ((spinButtonBounds.Height - popupSize.Height) / 2.0);
+        var x        = popupLeft - targetOrigin.X;
+        var y        = popupTop - targetOrigin.Y;
+
         return [new CustomPopupPlacement(new Point(x, y), PopupPrimaryAxis.None)];
+    }
+
+    /// <summary>
+    /// Gets the transformed local origin used by WPF as the base point for custom Popup placement.
+    /// </summary>
+    private static bool TryGetScreenOrigin(FrameworkElement element, out Point origin)
+    {
+        origin = default;
+
+        if (PresentationSource.FromVisual(element) is null)
+        {
+            return false;
+        }
+
+        try
+        {
+            origin = element.PointToScreen(default);
+            return true;
+        }
+        catch (InvalidOperationException)
+        {
+            // PointToScreen throws while PresentationSource is being replaced. The next layout
+            // pass retries placement after the element reconnects to its presentation source.
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Gets an element's axis-aligned screen bounds in physical pixels, matching the coordinate
+    /// space used internally by WPF's custom Popup placement callback.
+    /// </summary>
+    private static bool TryGetScreenBounds(FrameworkElement element, out Rect bounds)
+    {
+        bounds = Rect.Empty;
+
+        if (PresentationSource.FromVisual(element) is null)
+        {
+            return false;
+        }
+
+        try
+        {
+            // Transform every corner independently: FlowDirection and user supplied render
+            // transforms can reverse or skew an axis, for which a two-corner shortcut is invalid.
+            var topLeft     = element.PointToScreen(new Point(0.0,                 0.0));
+            var topRight    = element.PointToScreen(new Point(element.ActualWidth, 0.0));
+            var bottomLeft  = element.PointToScreen(new Point(0.0,                 element.ActualHeight));
+            var bottomRight = element.PointToScreen(new Point(element.ActualWidth, element.ActualHeight));
+
+            var left   = Math.Min(Math.Min(topLeft.X, topRight.X), Math.Min(bottomLeft.X, bottomRight.X));
+            var top    = Math.Min(Math.Min(topLeft.Y, topRight.Y), Math.Min(bottomLeft.Y, bottomRight.Y));
+            var right  = Math.Max(Math.Max(topLeft.X, topRight.X), Math.Max(bottomLeft.X, bottomRight.X));
+            var bottom = Math.Max(Math.Max(topLeft.Y, topRight.Y), Math.Max(bottomLeft.Y, bottomRight.Y));
+
+            bounds = new Rect(new Point(left, top), new Point(right, bottom));
+            return !bounds.IsEmpty;
+        }
+        catch (InvalidOperationException)
+        {
+            // PointToScreen throws while PresentationSource is being replaced. Popup placement
+            // is refreshed on the next layout pass, so falling back for one pass is sufficient.
+            return false;
+        }
     }
 
     private void OnButtonClick(object sender, RoutedEventArgs e)
     {
+        // Templates are replaceable and local SpinButtonPlacementMode values outrank template
+        // triggers. Enforce read-only semantics here instead of relying on buttons being hidden.
+        if (!IsEnabled || IsReadOnly)
+        {
+            return;
+        }
+
         if (e.OriginalSource is ButtonBase btn)
         {
+            if (SpinButtonPlacementMode == NumberBoxSpinButtonPlacementMode.Compact &&
+                _spinButtons?.IsAncestorOf(btn) == true)
+            {
+                // Compact mode keeps the classic buttons visible beneath the Popup. Ignore even
+                // programmatically raised clicks here so monitor-edge nudging cannot expose a
+                // working button and automation cannot bypass the template's hit-test guard.
+                return;
+            }
+
             Focus();
 
             var buttonKind = GetButtonKind(btn);
@@ -833,23 +1015,20 @@ public class NumberBox : TextBox
         }
     }
 
-    private bool _valueUpdating;
-
     /// <summary>
     /// Is called when <see cref="Value"/> in this <see cref="NumberBox"/> changes.
     /// </summary>
     private void OnValueChangedCore(double? oldValue, double? newValue)
     {
-        if (_valueUpdating || Equals(newValue, oldValue))
+        if (Equals(newValue, oldValue))
         {
             return;
         }
 
-        _valueUpdating = true;
-
+        // Do not suppress nested DP changes. WPF property-change notifications are synchronous,
+        // and each effective Value transition must produce its own routed and automation events.
+        NumberBoxAutomationPeer.RaiseValuePropertyChangedEvent(this, oldValue, newValue);
         OnValueChanged(oldValue, newValue);
-
-        _valueUpdating = false;
     }
 
     /// <summary>
@@ -886,6 +1065,12 @@ public class NumberBox : TextBox
             return;
         }
 
+        if (nb.IsReadOnly)
+        {
+            e.CancelCommand();
+            return;
+        }
+
         // Handle pasted text: try to parse the resulting text and accept/format it immediately.
         // If parsing fails and validation mode is set to overwrite invalid input, cancel paste and restore.
 
@@ -904,14 +1089,19 @@ public class NumberBox : TextBox
 
             var trimmed = result.Trim();
 
-            var parser = nb.NumberFormatter as INumberParser;
-            var parsed = parser?.ParseDouble(trimmed);
+            var parser = (INumberParser)nb.NumberFormatter;
+            var parsed = parser.ParseDouble(trimmed);
+
+            if (parsed is double directValue && double.IsNaN(directValue))
+            {
+                parsed = null;
+            }
 
             // When direct number parsing fails and expression is enabled,
             // try to evaluate the expression instead.
             if (parsed is null && nb.AcceptsExpression)
             {
-                if (NumberBoxExpressionParser.TryEvaluate(trimmed, out var exprResult))
+                if (NumberBoxExpressionParser.TryEvaluate(trimmed, parser, out var exprResult))
                 {
                     parsed = exprResult;
                 }
@@ -942,6 +1132,11 @@ public class NumberBox : TextBox
 
     private void StepValue(double change)
     {
+        if (!IsEnabled || IsReadOnly)
+        {
+            return;
+        }
+
         // Before adjusting the value, validate the contents of the textbox so we don't override it.
         ValidateInput();
 
@@ -957,10 +1152,10 @@ public class NumberBox : TextBox
     {
         var newText = string.Empty;
 
-        if (Value is not null && NumberFormatter is not null)
+        if (Value is not null)
         {
             var d = Math.Round((double)Value, MaxDecimalPlaces);
-            newText = DecimalPlaces is int dp
+            newText = DecimalPlaces is { } dp
                 ? d.ToString("F" + dp, CultureInfo.CurrentCulture)
                 : NumberFormatter.FormatDouble(d);
         }
@@ -984,13 +1179,18 @@ public class NumberBox : TextBox
             return;
         }
 
-        var numberParser = NumberFormatter as INumberParser;
-        var value        = numberParser!.ParseDouble(text);
+        var numberParser = (INumberParser)NumberFormatter;
+        var value        = numberParser.ParseDouble(text);
+
+        if (value is double directValue && double.IsNaN(directValue))
+        {
+            value = null;
+        }
 
         // If direct parsing failed, try expression evaluation
         if (value is null && AcceptsExpression)
         {
-            if (NumberBoxExpressionParser.TryEvaluate(text, out var exprResult))
+            if (NumberBoxExpressionParser.TryEvaluate(text, numberParser, out var exprResult))
             {
                 value = exprResult;
             }
@@ -1025,8 +1225,6 @@ public class NumberBox : TextBox
         CaretIndex = Text.Length;
     }
 
-    private static ValidateNumberFormatter GetRegionalSettingsAwareDecimalFormatter()
-    {
-        return new ValidateNumberFormatter();
-    }
+    /// <inheritdoc />
+    protected override AutomationPeer OnCreateAutomationPeer() => new NumberBoxAutomationPeer(this);
 }

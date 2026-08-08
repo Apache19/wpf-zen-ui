@@ -16,9 +16,12 @@ internal static class NumberBoxExpressionParser
     /// Attempts to evaluate <paramref name="expression"/> as a basic arithmetic expression.
     /// </summary>
     /// <param name="expression">The expression string to evaluate.</param>
-    /// <param name="result">The computed result, or <see langword="null"/> if evaluation failed.</param>
+    /// <param name="numberParser">
+    /// The parser used for each numeric operand so expression and direct-input culture rules match.
+    /// </param>
+    /// <param name="result">The computed result, or zero if evaluation failed.</param>
     /// <returns><see langword="true"/> if the expression was evaluated successfully; otherwise <see langword="false"/>.</returns>
-    public static bool TryEvaluate(string expression, out double result)
+    public static bool TryEvaluate(string expression, INumberParser numberParser, out double result)
     {
         result = 0;
         if (string.IsNullOrWhiteSpace(expression))
@@ -26,19 +29,26 @@ internal static class NumberBoxExpressionParser
             return false;
         }
 
-        var parser = new Parser(expression);
+        if (numberParser is null)
+        {
+            throw new ArgumentNullException(nameof(numberParser));
+        }
+
+        var parser = new Parser(expression, numberParser);
         return parser.TryParse(out result);
     }
 
     private ref struct Parser
     {
         private readonly ReadOnlySpan<char> _input;
+        private readonly INumberParser _numberParser;
         private int _pos;
 
-        public Parser(string input)
+        public Parser(string input, INumberParser numberParser)
         {
-            _input = input.AsSpan();
-            _pos   = 0;
+            _input        = input.AsSpan();
+            _numberParser = numberParser;
+            _pos          = 0;
         }
 
         public bool TryParse(out double result)
@@ -177,30 +187,16 @@ internal static class NumberBoxExpressionParser
                 throw new FormatException($"Expected number at position {_pos}.");
             }
 
-            var token = _input[start.._pos];
-
-            // Normalize decimal separator to current culture
-            Span<char> normalized = stackalloc char[token.Length];
-            token.CopyTo(normalized);
-            var decimalSeparator = CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator[0];
-            for (var i = 0; i < normalized.Length; i++)
-            {
-                if (normalized[i] == '.' || normalized[i] == ',')
-                {
-                    normalized[i] = decimalSeparator;
-                }
-            }
-
-#if NET6_0_OR_GREATER
-            if (!double.TryParse(normalized, NumberStyles.Number, CultureInfo.CurrentCulture, out var result))
-#else
-            if (!double.TryParse(normalized.ToString(), NumberStyles.Number, CultureInfo.CurrentCulture, out var result))
-#endif
+            // Reuse NumberBox's configured parser for every operand. Treating both '.' and ',' as
+            // decimal separators corrupts grouping (for example en-US "1,234" became 1.234) and
+            // makes expression input disagree with direct numeric input.
+            var parsed = _numberParser.ParseDouble(_input[start.._pos].ToString());
+            if (parsed is null || double.IsNaN(parsed.Value))
             {
                 throw new FormatException($"Invalid number at position {start}.");
             }
 
-            return result;
+            return parsed.Value;
         }
 
         private void SkipWhitespace()

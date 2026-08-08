@@ -44,4 +44,9 @@ public class NumberBoxValueChangedEventArgs : RoutedEventArgs
     public double? NewValue { get; private set; }
 }
 
+/// <summary>
+/// Represents the method that handles <see cref="NumberBox.ValueChanged"/> routed events.
+/// </summary>
+/// <param name="sender">The control whose effective numeric value changed.</param>
+/// <param name="args">The previous and current nullable numeric values.</param>
 public delegate void NumberBoxValueChangedEvent(object sender, NumberBoxValueChangedEventArgs args);
