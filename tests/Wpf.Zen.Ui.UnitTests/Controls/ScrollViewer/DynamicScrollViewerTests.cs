@@ -4,6 +4,7 @@
 // All Rights Reserved.
 
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Threading;
 using Wpf.Zen.Ui.Controls;
 
@@ -11,6 +12,50 @@ namespace Wpf.Zen.Ui.UnitTests.Controls.ScrollViewer;
 
 public class DynamicScrollViewerTests
 {
+    [Fact]
+    public void MouseEnter_ActivatesBothScrollBars()
+    {
+        RunOnStaThread(
+            () =>
+            {
+                var scrollViewer = new DynamicScrollViewer();
+                var window = new Window
+                {
+                    Content = scrollViewer,
+                    ShowInTaskbar = false,
+                    WindowStyle = WindowStyle.None,
+                };
+
+                try
+                {
+                    window.Show();
+                    scrollViewer.UpdateLayout();
+
+                    var verticalScrollBar = Assert.IsType<UiScrollBar>(
+                        scrollViewer.Template.FindName("PART_VerticalScrollBar", scrollViewer)
+                    );
+                    var horizontalScrollBar = Assert.IsType<UiScrollBar>(
+                        scrollViewer.Template.FindName("PART_HorizontalScrollBar", scrollViewer)
+                    );
+
+                    scrollViewer.RaiseEvent(
+                        new MouseEventArgs(Mouse.PrimaryDevice, Environment.TickCount)
+                        {
+                            RoutedEvent = Mouse.MouseEnterEvent,
+                        }
+                    );
+
+                    Assert.True(DynamicScrollViewer.GetIsVerticalScrollBarActive(verticalScrollBar));
+                    Assert.True(DynamicScrollViewer.GetIsHorizontalScrollBarActive(horizontalScrollBar));
+                }
+                finally
+                {
+                    window.Close();
+                }
+            }
+        );
+    }
+
     [Fact]
     public void LogicalScroll_ShowsVerticalScrollBarForItemSizedOffsetChange()
     {

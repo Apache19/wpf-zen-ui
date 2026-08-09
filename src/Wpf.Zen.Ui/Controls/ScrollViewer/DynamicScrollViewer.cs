@@ -12,7 +12,7 @@ using System.Windows.Threading;
 namespace Wpf.Zen.Ui.Controls;
 
 /// <summary>
-/// Provides a scroll viewer that tracks scrolling and scroll-bar interaction,
+/// Provides a scroll viewer that tracks scrolling and pointer interaction,
 /// allowing its template to present scroll bars only while they are active.
 /// </summary>
 [DefaultEvent(nameof(ScrollChanged))]
@@ -85,7 +85,7 @@ public sealed class DynamicScrollViewer : PassiveScrollViewer
     /// Helper for getting <see cref="IsVerticalScrollBarActiveProperty"/> from <paramref name="element"/>.
     /// </summary>
     /// <remarks>
-    /// This includes scrolling, pointer hover, mouse capture, and the configured hide delay.
+    /// This includes scrolling, pointer presence within the viewer, mouse capture, and the configured hide delay.
     /// </remarks>
     /// <param name="element">
     /// <see cref="DependencyObject"/> to read <see cref="IsVerticalScrollBarActiveProperty"/> from.
@@ -124,7 +124,7 @@ public sealed class DynamicScrollViewer : PassiveScrollViewer
     /// Helper for getting <see cref="IsHorizontalScrollBarActiveProperty"/> from <paramref name="element"/>.
     /// </summary>
     /// <remarks>
-    /// This includes scrolling, pointer hover, mouse capture, and the configured hide delay.
+    /// This includes scrolling, pointer presence within the viewer, mouse capture, and the configured hide delay.
     /// </remarks>
     /// <param name="element">
     /// <see cref="DependencyObject"/> to read <see cref="IsHorizontalScrollBarActiveProperty"/> from.
@@ -314,6 +314,27 @@ public sealed class DynamicScrollViewer : PassiveScrollViewer
         }
     }
 
+    /// <inheritdoc />
+    protected override void OnMouseEnter(MouseEventArgs e)
+    {
+        base.OnMouseEnter(e);
+
+        // WinUI-style dynamic scroll bars are revealed when the pointer enters the scrolling
+        // surface, not only after it reaches the much narrower scroll-bar hit target. Both axes
+        // become active together so the template responds consistently for diagonal overflow.
+        BeginPointerInteraction(_verticalState);
+        BeginPointerInteraction(_horizontalState);
+    }
+
+    /// <inheritdoc />
+    protected override void OnMouseLeave(MouseEventArgs e)
+    {
+        base.OnMouseLeave(e);
+
+        EndPointerInteraction(_verticalState);
+        EndPointerInteraction(_horizontalState);
+    }
+
     private bool IsScrollActivity(double offsetChange)
     {
         // ScrollChangedEventArgs uses the coordinate system of the active IScrollInfo. Physical scrolling
@@ -347,21 +368,14 @@ public sealed class DynamicScrollViewer : PassiveScrollViewer
         state.Timer.Stop();
         SetState(this, state.ScrollingPropertyKey, false);
 
-        if (!IsInteractingWith(state.ScrollBar) && state.ScrollBar is not null)
+        if (!IsInteractingWithViewer(state) && state.ScrollBar is not null)
         {
             SetState(state.ScrollBar, state.ActivePropertyKey, false);
         }
     }
 
-    private void OnScrollBarInteractionStarted(object sender, MouseEventArgs e)
+    private void BeginPointerInteraction(AxisState state)
     {
-        var state = GetState(sender);
-
-        if (state is null)
-        {
-            return;
-        }
-
         // When the timer represents only a pending hide, pointer interaction cancels it. A timer that
         // still represents scrolling must continue so IsScrolling* can return to false on schedule.
         if (!GetState(this, state.ScrollingPropertyKey))
@@ -375,16 +389,9 @@ public sealed class DynamicScrollViewer : PassiveScrollViewer
         }
     }
 
-    private void OnScrollBarInteractionEnded(object sender, MouseEventArgs e)
+    private void EndPointerInteraction(AxisState state)
     {
-        var state = GetState(sender);
-
-        if (state is null)
-        {
-            return;
-        }
-
-        if (GetState(this, state.ScrollingPropertyKey) || IsInteractingWith(state.ScrollBar))
+        if (GetState(this, state.ScrollingPropertyKey) || IsInteractingWithViewer(state))
         {
             if (state.ScrollBar is not null)
             {
@@ -395,6 +402,22 @@ public sealed class DynamicScrollViewer : PassiveScrollViewer
         }
 
         RestartTimer(state.Timer);
+    }
+
+    private void OnScrollBarCaptureStarted(object sender, MouseEventArgs e)
+    {
+        if (GetState(sender) is { } state)
+        {
+            BeginPointerInteraction(state);
+        }
+    }
+
+    private void OnScrollBarCaptureEnded(object sender, MouseEventArgs e)
+    {
+        if (GetState(sender) is { } state)
+        {
+            EndPointerInteraction(state);
+        }
     }
 
     private void AttachScrollBar(AxisState state, ScrollBar? scrollBar)
@@ -408,10 +431,10 @@ public sealed class DynamicScrollViewer : PassiveScrollViewer
 
         scrollBar.SetValue(IsManagedScrollBarPropertyKey, true);
 
-        scrollBar.MouseEnter += OnScrollBarInteractionStarted;
-        scrollBar.GotMouseCapture += OnScrollBarInteractionStarted;
-        scrollBar.MouseLeave += OnScrollBarInteractionEnded;
-        scrollBar.LostMouseCapture += OnScrollBarInteractionEnded;
+        // Hover is tracked by the containing viewer. Capture remains attached to the individual
+        // scroll bar because a thumb can retain capture after the pointer leaves the viewer bounds.
+        scrollBar.GotMouseCapture += OnScrollBarCaptureStarted;
+        scrollBar.LostMouseCapture += OnScrollBarCaptureEnded;
     }
 
     private void DetachScrollBar(AxisState state)
@@ -421,10 +444,8 @@ public sealed class DynamicScrollViewer : PassiveScrollViewer
             return;
         }
 
-        scrollBar.MouseEnter -= OnScrollBarInteractionStarted;
-        scrollBar.GotMouseCapture -= OnScrollBarInteractionStarted;
-        scrollBar.MouseLeave -= OnScrollBarInteractionEnded;
-        scrollBar.LostMouseCapture -= OnScrollBarInteractionEnded;
+        scrollBar.GotMouseCapture -= OnScrollBarCaptureStarted;
+        scrollBar.LostMouseCapture -= OnScrollBarCaptureEnded;
 
         scrollBar.ClearValue(IsManagedScrollBarPropertyKey);
 
@@ -438,7 +459,7 @@ public sealed class DynamicScrollViewer : PassiveScrollViewer
             SetState(
                 state.ScrollBar,
                 state.ActivePropertyKey,
-                GetState(this, state.ScrollingPropertyKey) || IsInteractingWith(state.ScrollBar)
+                GetState(this, state.ScrollingPropertyKey) || IsInteractingWithViewer(state)
             );
         }
     }
@@ -497,9 +518,9 @@ public sealed class DynamicScrollViewer : PassiveScrollViewer
         _horizontalState.Timer.Interval = interval;
     }
 
-    private static bool IsInteractingWith(ScrollBar? scrollBar)
+    private bool IsInteractingWithViewer(AxisState state)
     {
-        return scrollBar is { IsMouseOver: true } or { IsMouseCaptureWithin: true };
+        return IsMouseOver || state.ScrollBar is { IsMouseCaptureWithin: true };
     }
 
     private static void RestartTimer(DispatcherTimer timer)
