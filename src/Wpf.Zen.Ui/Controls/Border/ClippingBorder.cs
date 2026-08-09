@@ -327,6 +327,22 @@ public sealed class ClippingBorder : Decorator
     {
         base.OnRender(drawingContext);
 
+        var borderThickness = GetLayoutBorderThickness();
+        var cornerRadius     = CornerRadius;
+
+        // WPF Border deliberately avoids the two-geometry code path for the overwhelmingly common case of a
+        // uniform border, uniform corners, and an origin-independent border brush. A filled border ring and the
+        // inner background otherwise rasterize their shared edge independently; their anti-aliased coverage is not
+        // guaranteed to be complementary, which can leave a visible hairline along straight edges as well as arcs.
+        // Drawing the border with a centered pen follows Border.OnRender and gives MILCore one continuous stroke.
+        // Keep the geometry path for non-uniform values and non-solid brushes, where a single pen cannot preserve
+        // the requested thickness or brush mapping.
+        if (CanUseSimpleRenderPath(borderThickness, cornerRadius, BorderBrush))
+        {
+            RenderUniformBorder(drawingContext, borderThickness, cornerRadius);
+            return;
+        }
+
         if (_borderGeometry is not null && BorderBrush is not null)
         {
             drawingContext.DrawGeometry(BorderBrush, null, _borderGeometry);
@@ -336,6 +352,92 @@ public sealed class ClippingBorder : Decorator
         {
             drawingContext.DrawGeometry(Background, null, _backgroundGeometry);
         }
+    }
+
+    private void RenderUniformBorder(
+        DrawingContext drawingContext,
+        Thickness borderThickness,
+        CornerRadius cornerRadius)
+    {
+        var borderBrush = BorderBrush;
+        var thickness   = borderThickness.Left;
+        var rounded     = cornerRadius.TopLeft > 0.0;
+
+        if (thickness > 0.0 && borderBrush is not null)
+        {
+            var halfThickness = thickness * 0.5;
+            var borderRect = new Rect(
+                halfThickness,
+                halfThickness,
+                Math.Max(0.0, RenderSize.Width - thickness),
+                Math.Max(0.0, RenderSize.Height - thickness)
+            );
+
+            if (borderRect.Width > 0.0 && borderRect.Height > 0.0)
+            {
+                var pen = new Pen(borderBrush, thickness);
+
+                if (borderBrush.IsFrozen)
+                {
+                    pen.Freeze();
+                }
+
+                if (rounded)
+                {
+                    drawingContext.DrawRoundedRectangle(
+                        null,
+                        pen,
+                        borderRect,
+                        cornerRadius.TopLeft,
+                        cornerRadius.TopLeft
+                    );
+                }
+                else
+                {
+                    drawingContext.DrawRectangle(null, pen, borderRect);
+                }
+            }
+        }
+
+        var background = Background;
+
+        if (background is null)
+        {
+            return;
+        }
+
+        var backgroundRect = DeflateRect(new Rect(RenderSize), borderThickness);
+
+        if (backgroundRect.Width <= 0.0 || backgroundRect.Height <= 0.0)
+        {
+            return;
+        }
+
+        if (rounded)
+        {
+            var innerRadius = new Radii(cornerRadius, borderThickness, outer: false).TopLeft;
+            drawingContext.DrawRoundedRectangle(
+                background,
+                null,
+                backgroundRect,
+                innerRadius,
+                innerRadius
+            );
+        }
+        else
+        {
+            drawingContext.DrawRectangle(background, null, backgroundRect);
+        }
+    }
+
+    private static bool CanUseSimpleRenderPath(
+        Thickness borderThickness,
+        CornerRadius cornerRadius,
+        Brush? borderBrush)
+    {
+        return IsUniform(borderThickness) &&
+               IsUniform(cornerRadius) &&
+               (borderBrush is null || borderBrush is SolidColorBrush);
     }
 
     private void BuildRenderGeometries(
@@ -518,6 +620,20 @@ public sealed class ClippingBorder : Decorator
     {
         return thickness.Left > 0.0 || thickness.Top > 0.0 ||
                thickness.Right > 0.0 || thickness.Bottom > 0.0;
+    }
+
+    private static bool IsUniform(Thickness thickness)
+    {
+        return thickness.Left.Equals(thickness.Top) &&
+               thickness.Left.Equals(thickness.Right) &&
+               thickness.Left.Equals(thickness.Bottom);
+    }
+
+    private static bool IsUniform(CornerRadius cornerRadius)
+    {
+        return cornerRadius.TopLeft.Equals(cornerRadius.TopRight) &&
+               cornerRadius.TopLeft.Equals(cornerRadius.BottomRight) &&
+               cornerRadius.TopLeft.Equals(cornerRadius.BottomLeft);
     }
 
     private static bool ValidateThickness(object? value)

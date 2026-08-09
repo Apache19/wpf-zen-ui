@@ -158,6 +158,37 @@ public class ClippingBorderTests
         );
     }
 
+    [Fact]
+    public void Render_UniformBorderMatchesNativeBorderChrome()
+    {
+        RunOnStaThread(
+            () =>
+            {
+                var borderBrush = new SolidColorBrush(Color.FromRgb(69, 68, 64));
+                var background = new SolidColorBrush(Color.FromRgb(61, 60, 56));
+                var clippingBorder = new ClippingBorder
+                {
+                    Background = background,
+                    BorderBrush = borderBrush,
+                    BorderThickness = new Thickness(1),
+                    CornerRadius = new CornerRadius(8),
+                };
+                var nativeBorder = new Border
+                {
+                    Background = background,
+                    BorderBrush = borderBrush,
+                    BorderThickness = new Thickness(1),
+                    CornerRadius = new CornerRadius(8),
+                };
+
+                Assert.Equal(
+                    RenderPixels(nativeBorder, 40, 40),
+                    RenderPixels(clippingBorder, 40, 40)
+                );
+            }
+        );
+    }
+
     private static Color RenderPixel(UIElement element, int width, int height, int x, int y)
     {
         Arrange(element, width, height);
@@ -169,6 +200,20 @@ public class ClippingBorderTests
         bitmap.CopyPixels(new Int32Rect(x, y, 1, 1), pixels, 4, 0);
 
         return Color.FromArgb(pixels[3], pixels[2], pixels[1], pixels[0]);
+    }
+
+    private static byte[] RenderPixels(UIElement element, int width, int height)
+    {
+        Arrange(element, width, height);
+
+        var bitmap = new RenderTargetBitmap(width, height, 96, 96, PixelFormats.Pbgra32);
+        bitmap.Render(element);
+
+        var stride = width * 4;
+        var pixels = new byte[stride * height];
+        bitmap.CopyPixels(pixels, stride, 0);
+
+        return pixels;
     }
 
     private static void Arrange(UIElement element, int width, int height)
