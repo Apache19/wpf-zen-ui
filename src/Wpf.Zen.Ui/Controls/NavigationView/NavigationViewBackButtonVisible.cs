@@ -3,9 +3,6 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-// Based on Windows UI Library
-// Copyright(c) Microsoft Corporation.All rights reserved.
-
 // ReSharper disable once CheckNamespace
 namespace Wpf.Zen.Ui.Controls;
 

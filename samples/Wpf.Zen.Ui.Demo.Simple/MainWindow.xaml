@@ -48,7 +48,7 @@
             <ui:NavigationView.MenuItems>
                 <ui:NavigationViewItem
                     Header="Dashboard"
-                    NavigationCacheMode="Enabled"
+                    NavigationCacheMode="Evictable"
                     TargetPageType="{x:Type pages:DashboardPage}">
                     <ui:NavigationViewItem.Icon>
                         <ui:FluentIcon Symbol="Home24" />
@@ -56,7 +56,7 @@
                 </ui:NavigationViewItem>
                 <ui:NavigationViewItem
                     Header="Data"
-                    NavigationCacheMode="Enabled"
+                    NavigationCacheMode="Evictable"
                     TargetPageType="{x:Type pages:DataPage}">
                     <ui:NavigationViewItem.Icon>
                         <ui:FluentIcon Symbol="DataHistogram24" />

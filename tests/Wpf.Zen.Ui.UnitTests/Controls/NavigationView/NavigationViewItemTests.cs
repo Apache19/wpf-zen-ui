@@ -292,7 +292,7 @@ public class NavigationViewItemTests
                 itemsSource: children,
                 targetPageTag: "custom-tag",
                 infoBadge: infoBadge,
-                navigationCacheMode: NavigationCacheMode.Required
+                navigationCacheMode: NavigationCacheMode.Permanent
             );
 
             Assert.Same(header, complete.Header);
@@ -301,7 +301,7 @@ public class NavigationViewItemTests
             Assert.Same(children, complete.ItemsSource);
             Assert.Equal("custom-tag", complete.TargetPageTag);
             Assert.Same(infoBadge, complete.InfoBadge);
-            Assert.Equal(NavigationCacheMode.Required, complete.NavigationCacheMode);
+            Assert.Equal(NavigationCacheMode.Permanent, complete.NavigationCacheMode);
         });
     }
 

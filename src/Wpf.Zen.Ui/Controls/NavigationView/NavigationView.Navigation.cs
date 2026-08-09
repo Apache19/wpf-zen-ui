@@ -3,8 +3,6 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-/* Based on Windows UI Library */
-
 using System.Collections.ObjectModel;
 
 // ReSharper disable once CheckNamespace

@@ -1359,7 +1359,7 @@ public class NavigationViewTests
             CacheProbePage.InstanceCount = 0;
             var cachedItem = new NavigationItem("Cached", typeof(CacheProbePage))
             {
-                NavigationCacheMode = NavigationCacheMode.Required,
+                NavigationCacheMode = NavigationCacheMode.Permanent,
             };
             var otherItem = new NavigationItem("Other", typeof(NavigationAwarePageTwo));
             var navigationView = new Wpf.Zen.Ui.Controls.NavigationView
@@ -1370,7 +1370,7 @@ public class NavigationViewTests
             Assert.True(navigationView.Navigate(typeof(CacheProbePage)));
             Assert.Equal(1, CacheProbePage.InstanceCount);
 
-            cachedItem.NavigationCacheMode = NavigationCacheMode.Enabled;
+            cachedItem.NavigationCacheMode = NavigationCacheMode.Evictable;
             Assert.True(navigationView.Navigate(typeof(NavigationAwarePageTwo)));
             Assert.True(navigationView.Navigate(typeof(CacheProbePage)));
 

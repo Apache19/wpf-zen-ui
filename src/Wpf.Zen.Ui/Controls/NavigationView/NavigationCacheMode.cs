@@ -3,9 +3,6 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-// Based on Windows UI Library
-// Copyright(c) Microsoft Corporation.All rights reserved.
-
 // ReSharper disable once CheckNamespace
 namespace Wpf.Zen.Ui.Controls;
 
@@ -15,17 +12,19 @@ namespace Wpf.Zen.Ui.Controls;
 public enum NavigationCacheMode
 {
     /// <summary>
-    /// The page is never cached and a new instance of the page is created on each visit.
+    /// The page is never cached and a new instance is created on each visit.
     /// </summary>
     Disabled,
 
     /// <summary>
-    /// The page is cached, but the cached instance is discarded when the size of the cache for the frame is exceeded.
+    /// The page is cached and reused across visits, and may be evicted under LRU policy
+    /// when the number of cached pages exceeds <see cref="NavigationView.NavigationCacheSize"/>.
     /// </summary>
-    Enabled,
+    Evictable,
 
     /// <summary>
-    /// The page is cached and the cached instance is reused for every visit regardless of the cache size for the frame.
+    /// The page is cached and reused across visits. The instance is never evicted
+    /// and does not count toward <see cref="NavigationView.NavigationCacheSize"/>.
     /// </summary>
-    Required,
+    Permanent,
 }

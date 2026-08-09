@@ -3,11 +3,6 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-// Based on Windows UI Library
-// Copyright(c) Microsoft Corporation.All rights reserved.
-//
-// https://docs.microsoft.com/en-us/uwp/api/windows.ui.xaml.controls.navigationviewitemheader?view=winrt-22621
-
 // ReSharper disable once CheckNamespace
 
 namespace Wpf.Zen.Ui.Controls;

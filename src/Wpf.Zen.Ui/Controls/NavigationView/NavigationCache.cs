@@ -3,17 +3,14 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-// Based on Windows UI Library
-// Copyright(c) Microsoft Corporation.All rights reserved.
-
 // ReSharper disable once CheckNamespace
 namespace Wpf.Zen.Ui.Controls;
 
 internal class NavigationCache
 {
-    private readonly Dictionary<Type, object?> _requiredEntries = [];
-    private readonly Dictionary<Type, object?> _enabledEntries = [];
-    private readonly LinkedList<Type> _enabledEntryUsage = [];
+    private readonly Dictionary<Type, object?> _permanentEntries = [];
+    private readonly Dictionary<Type, object?> _expirableEntries = [];
+    private readonly LinkedList<Type> _expirableEntryUsage = [];
 
     public object? Remember(
         Type? entryType,
@@ -52,8 +49,8 @@ internal class NavigationCache
             return;
         }
 
-        _requiredEntries.Remove(entryType);
-        _enabledEntries.Remove(entryType);
+        _permanentEntries.Remove(entryType);
+        _expirableEntries.Remove(entryType);
 
         RemoveFromUsage(entryType);
     }
@@ -75,20 +72,20 @@ internal class NavigationCache
             return;
         }
 
-        if (oldCacheMode == NavigationCacheMode.Required
-            && _requiredEntries.TryGetValue(entryType, out var requiredEntry))
+        if (oldCacheMode == NavigationCacheMode.Permanent
+            && _permanentEntries.TryGetValue(entryType, out var permanentEntry))
         {
-            _requiredEntries.Remove(entryType);
-            Remember(entryType, newCacheMode, cacheSize, requiredEntry);
+            _permanentEntries.Remove(entryType);
+            Remember(entryType, newCacheMode, cacheSize, permanentEntry);
             return;
         }
 
-        if (oldCacheMode == NavigationCacheMode.Enabled
-            && _enabledEntries.TryGetValue(entryType, out var enabledEntry))
+        if (oldCacheMode == NavigationCacheMode.Evictable
+            && _expirableEntries.TryGetValue(entryType, out var expirableEntry))
         {
-            _enabledEntries.Remove(entryType);
+            _expirableEntries.Remove(entryType);
             RemoveFromUsage(entryType);
-            Remember(entryType, newCacheMode, cacheSize, enabledEntry);
+            Remember(entryType, newCacheMode, cacheSize, expirableEntry);
             return;
         }
 
@@ -97,27 +94,27 @@ internal class NavigationCache
 
     public void Trim(int cacheSize)
     {
-        while (_enabledEntries.Count > cacheSize)
+        while (_expirableEntries.Count > cacheSize)
         {
-            LinkedListNode<Type>? oldestEntryNode = _enabledEntryUsage.First;
+            LinkedListNode<Type>? oldestEntryNode = _expirableEntryUsage.First;
             if (oldestEntryNode is null)
             {
                 return;
             }
 
-            _enabledEntries.Remove(oldestEntryNode.Value);
-            _enabledEntryUsage.RemoveFirst();
+            _expirableEntries.Remove(oldestEntryNode.Value);
+            _expirableEntryUsage.RemoveFirst();
         }
     }
 
     private bool TryGetValue(Type entryType, NavigationCacheMode cacheMode, out object? value)
     {
-        if (cacheMode == NavigationCacheMode.Required)
+        if (cacheMode == NavigationCacheMode.Permanent)
         {
-            return _requiredEntries.TryGetValue(entryType, out value);
+            return _permanentEntries.TryGetValue(entryType, out value);
         }
 
-        if (_enabledEntries.TryGetValue(entryType, out value))
+        if (_expirableEntries.TryGetValue(entryType, out value))
         {
             MoveToMostRecentlyUsed(entryType);
 
@@ -133,9 +130,9 @@ internal class NavigationCache
         int cacheSize,
         object? value)
     {
-        if (cacheMode == NavigationCacheMode.Required)
+        if (cacheMode == NavigationCacheMode.Permanent)
         {
-            _requiredEntries[entryType] = value;
+            _permanentEntries[entryType] = value;
             return;
         }
 
@@ -144,7 +141,7 @@ internal class NavigationCache
             return;
         }
 
-        _enabledEntries[entryType] = value;
+        _expirableEntries[entryType] = value;
         MoveToMostRecentlyUsed(entryType);
         Trim(cacheSize);
     }
@@ -152,15 +149,15 @@ internal class NavigationCache
     private void MoveToMostRecentlyUsed(Type entryType)
     {
         RemoveFromUsage(entryType);
-        _enabledEntryUsage.AddLast(entryType);
+        _expirableEntryUsage.AddLast(entryType);
     }
 
     private void RemoveFromUsage(Type entryType)
     {
-        LinkedListNode<Type>? node = _enabledEntryUsage.Find(entryType);
+        LinkedListNode<Type>? node = _expirableEntryUsage.Find(entryType);
         if (node is not null)
         {
-            _enabledEntryUsage.Remove(node);
+            _expirableEntryUsage.Remove(node);
         }
     }
 }

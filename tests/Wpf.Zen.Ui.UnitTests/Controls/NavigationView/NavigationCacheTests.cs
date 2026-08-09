@@ -11,44 +11,44 @@ namespace Wpf.Zen.Ui.UnitTests.Controls.NavigationView;
 public class NavigationCacheTests
 {
     [Fact]
-    public void Remember_DoesNotEvictRequiredEntries_WhenEnabledCacheSizeIsExceeded()
+    public void Remember_DoesNotEvictPermanentEntries_WhenExpirableCacheSizeIsExceeded()
     {
         var cache = new NavigationCacheAccessor();
-        var requiredPage = new object();
+        var permanentPage = new object();
 
-        var firstRequiredResult = cache.Remember(
-            typeof(RequiredPage),
-            NavigationCacheMode.Required,
+        var firstPermanentResult = cache.Remember(
+            typeof(PermanentPage),
+            NavigationCacheMode.Permanent,
             cacheSize: 1,
-            () => requiredPage
+            () => permanentPage
         );
 
         _ = cache.Remember(
-            typeof(FirstEnabledPage),
-            NavigationCacheMode.Enabled,
+            typeof(FirstExpirablePage),
+            NavigationCacheMode.Evictable,
             cacheSize: 1,
             () => new object()
         );
         _ = cache.Remember(
-            typeof(SecondEnabledPage),
-            NavigationCacheMode.Enabled,
+            typeof(SecondExpirablePage),
+            NavigationCacheMode.Evictable,
             cacheSize: 1,
             () => new object()
         );
 
-        var secondRequiredResult = cache.Remember(
-            typeof(RequiredPage),
-            NavigationCacheMode.Required,
+        var secondPermanentResult = cache.Remember(
+            typeof(PermanentPage),
+            NavigationCacheMode.Permanent,
             cacheSize: 1,
             () => new object()
         );
 
-        Assert.Same(requiredPage, firstRequiredResult);
-        Assert.Same(requiredPage, secondRequiredResult);
+        Assert.Same(permanentPage, firstPermanentResult);
+        Assert.Same(permanentPage, secondPermanentResult);
     }
 
     [Fact]
-    public void Remember_EvictsLeastRecentlyUsedEnabledEntry_WhenEnabledCacheSizeIsExceeded()
+    public void Remember_EvictsLeastRecentlyUsedExpirableEntry_WhenExpirableCacheSizeIsExceeded()
     {
         var cache = new NavigationCacheAccessor();
         var firstPage = new object();
@@ -56,21 +56,21 @@ public class NavigationCacheTests
         var recreatedFirstPage = new object();
 
         _ = cache.Remember(
-            typeof(FirstEnabledPage),
-            NavigationCacheMode.Enabled,
+            typeof(FirstExpirablePage),
+            NavigationCacheMode.Evictable,
             cacheSize: 1,
             () => firstPage
         );
         _ = cache.Remember(
-            typeof(SecondEnabledPage),
-            NavigationCacheMode.Enabled,
+            typeof(SecondExpirablePage),
+            NavigationCacheMode.Evictable,
             cacheSize: 1,
             () => secondPage
         );
 
         var result = cache.Remember(
-            typeof(FirstEnabledPage),
-            NavigationCacheMode.Enabled,
+            typeof(FirstExpirablePage),
+            NavigationCacheMode.Evictable,
             cacheSize: 1,
             () => recreatedFirstPage
         );
@@ -80,8 +80,8 @@ public class NavigationCacheTests
     }
 
     [Theory]
-    [InlineData(NavigationCacheMode.Enabled)]
-    [InlineData(NavigationCacheMode.Required)]
+    [InlineData(NavigationCacheMode.Evictable)]
+    [InlineData(NavigationCacheMode.Permanent)]
     public void UpdateCacheMode_RemovesEntry_WhenCacheModeChangesToDisabled(
         NavigationCacheMode oldCacheMode
     )
@@ -91,21 +91,21 @@ public class NavigationCacheTests
         var recreatedPage = new object();
 
         _ = cache.Remember(
-            typeof(FirstEnabledPage),
+            typeof(FirstExpirablePage),
             oldCacheMode,
             cacheSize: 1,
             () => cachedPage
         );
 
         cache.UpdateCacheMode(
-            typeof(FirstEnabledPage),
+            typeof(FirstExpirablePage),
             oldCacheMode,
             NavigationCacheMode.Disabled,
             cacheSize: 1
         );
 
         var result = cache.Remember(
-            typeof(FirstEnabledPage),
+            typeof(FirstExpirablePage),
             oldCacheMode,
             cacheSize: 1,
             () => recreatedPage
@@ -116,8 +116,8 @@ public class NavigationCacheTests
     }
 
     [Theory]
-    [InlineData(NavigationCacheMode.Enabled)]
-    [InlineData(NavigationCacheMode.Required)]
+    [InlineData(NavigationCacheMode.Evictable)]
+    [InlineData(NavigationCacheMode.Permanent)]
     public void UpdateCacheMode_DoesNotCacheTemporaryEntry_WhenCacheModeChangesFromDisabled(
         NavigationCacheMode newCacheMode
     )
@@ -127,27 +127,27 @@ public class NavigationCacheTests
         var cachedPage = new object();
 
         var disabledResult = cache.Remember(
-            typeof(FirstEnabledPage),
+            typeof(FirstExpirablePage),
             NavigationCacheMode.Disabled,
             cacheSize: 1,
             () => disabledPage
         );
 
         cache.UpdateCacheMode(
-            typeof(FirstEnabledPage),
+            typeof(FirstExpirablePage),
             NavigationCacheMode.Disabled,
             newCacheMode,
             cacheSize: 1
         );
 
         var firstCachedResult = cache.Remember(
-            typeof(FirstEnabledPage),
+            typeof(FirstExpirablePage),
             newCacheMode,
             cacheSize: 1,
             () => cachedPage
         );
         var secondCachedResult = cache.Remember(
-            typeof(FirstEnabledPage),
+            typeof(FirstExpirablePage),
             newCacheMode,
             cacheSize: 1,
             () => new object()
@@ -160,9 +160,9 @@ public class NavigationCacheTests
     }
 
     [Theory]
-    [InlineData(NavigationCacheMode.Enabled, NavigationCacheMode.Required)]
-    [InlineData(NavigationCacheMode.Required, NavigationCacheMode.Enabled)]
-    public void UpdateCacheMode_PreservesEntry_WhenCacheModeChangesBetweenEnabledAndRequired(
+    [InlineData(NavigationCacheMode.Evictable, NavigationCacheMode.Permanent)]
+    [InlineData(NavigationCacheMode.Permanent, NavigationCacheMode.Evictable)]
+    public void UpdateCacheMode_PreservesEntry_WhenCacheModeChangesBetweenExpirableAndPermanent(
         NavigationCacheMode oldCacheMode,
         NavigationCacheMode newCacheMode
     )
@@ -171,21 +171,21 @@ public class NavigationCacheTests
         var cachedPage = new object();
 
         _ = cache.Remember(
-            typeof(FirstEnabledPage),
+            typeof(FirstExpirablePage),
             oldCacheMode,
             cacheSize: 1,
             () => cachedPage
         );
 
         cache.UpdateCacheMode(
-            typeof(FirstEnabledPage),
+            typeof(FirstExpirablePage),
             oldCacheMode,
             newCacheMode,
             cacheSize: 1
         );
 
         var result = cache.Remember(
-            typeof(FirstEnabledPage),
+            typeof(FirstExpirablePage),
             newCacheMode,
             cacheSize: 1,
             () => new object()
@@ -195,79 +195,79 @@ public class NavigationCacheTests
     }
 
     [Fact]
-    public void UpdateCacheMode_MakesEntryEvictable_WhenCacheModeChangesFromRequiredToEnabled()
+    public void UpdateCacheMode_MakesEntryEvictable_WhenCacheModeChangesFromPermanentToExpirable()
     {
         var cache = new NavigationCacheAccessor();
-        var requiredPage = new object();
+        var permanentPage = new object();
         var recreatedPage = new object();
 
         _ = cache.Remember(
-            typeof(RequiredPage),
-            NavigationCacheMode.Required,
+            typeof(PermanentPage),
+            NavigationCacheMode.Permanent,
             cacheSize: 1,
-            () => requiredPage
+            () => permanentPage
         );
 
         cache.UpdateCacheMode(
-            typeof(RequiredPage),
-            NavigationCacheMode.Required,
-            NavigationCacheMode.Enabled,
+            typeof(PermanentPage),
+            NavigationCacheMode.Permanent,
+            NavigationCacheMode.Evictable,
             cacheSize: 1
         );
 
         _ = cache.Remember(
-            typeof(FirstEnabledPage),
-            NavigationCacheMode.Enabled,
+            typeof(FirstExpirablePage),
+            NavigationCacheMode.Evictable,
             cacheSize: 1,
             () => new object()
         );
 
         var result = cache.Remember(
-            typeof(RequiredPage),
-            NavigationCacheMode.Enabled,
+            typeof(PermanentPage),
+            NavigationCacheMode.Evictable,
             cacheSize: 1,
             () => recreatedPage
         );
 
         Assert.Same(recreatedPage, result);
-        Assert.NotSame(requiredPage, result);
+        Assert.NotSame(permanentPage, result);
     }
 
     [Fact]
-    public void UpdateCacheMode_PreventsEntryEviction_WhenCacheModeChangesFromEnabledToRequired()
+    public void UpdateCacheMode_PreventsEntryEviction_WhenCacheModeChangesFromExpirableToPermanent()
     {
         var cache = new NavigationCacheAccessor();
-        var enabledPage = new object();
+        var expirablePage = new object();
 
         _ = cache.Remember(
-            typeof(FirstEnabledPage),
-            NavigationCacheMode.Enabled,
+            typeof(FirstExpirablePage),
+            NavigationCacheMode.Evictable,
             cacheSize: 1,
-            () => enabledPage
+            () => expirablePage
         );
 
         cache.UpdateCacheMode(
-            typeof(FirstEnabledPage),
-            NavigationCacheMode.Enabled,
-            NavigationCacheMode.Required,
+            typeof(FirstExpirablePage),
+            NavigationCacheMode.Evictable,
+            NavigationCacheMode.Permanent,
             cacheSize: 1
         );
 
         _ = cache.Remember(
-            typeof(SecondEnabledPage),
-            NavigationCacheMode.Enabled,
+            typeof(SecondExpirablePage),
+            NavigationCacheMode.Evictable,
             cacheSize: 1,
             () => new object()
         );
 
         var result = cache.Remember(
-            typeof(FirstEnabledPage),
-            NavigationCacheMode.Required,
+            typeof(FirstExpirablePage),
+            NavigationCacheMode.Permanent,
             cacheSize: 1,
             () => new object()
         );
 
-        Assert.Same(enabledPage, result);
+        Assert.Same(expirablePage, result);
     }
 
     private sealed class NavigationCacheAccessor
@@ -303,9 +303,9 @@ public class NavigationCacheTests
         );
     }
 
-    private sealed class RequiredPage;
+    private sealed class PermanentPage;
 
-    private sealed class FirstEnabledPage;
+    private sealed class FirstExpirablePage;
 
-    private sealed class SecondEnabledPage;
+    private sealed class SecondExpirablePage;
 }

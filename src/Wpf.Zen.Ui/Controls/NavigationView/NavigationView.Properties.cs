@@ -1035,8 +1035,8 @@ public partial class NavigationView
     );
 
     /// <summary>
-    /// Gets or sets the number of pages with <see cref="NavigationCacheMode.Enabled"/> kept in cache.
-    /// Pages with <see cref="NavigationCacheMode.Required"/> do not count toward this size.
+    /// Gets or sets the number of pages with <see cref="NavigationCacheMode.Evictable"/> kept in cache.
+    /// Pages with <see cref="NavigationCacheMode.Permanent"/> do not count toward this size.
     /// <para>The default value is <c>10</c>.</para>
     /// </summary>
     [Bindable(true)]
