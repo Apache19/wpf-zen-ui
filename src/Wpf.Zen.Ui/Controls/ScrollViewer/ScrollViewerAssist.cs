@@ -14,6 +14,63 @@ namespace Wpf.Zen.Ui.Controls;
 public static class ScrollViewerAssist
 {
     /// <summary>
+    /// Identifies the <see cref="GetHideButtons"/> and <see cref="SetHideButtons"/> attached
+    /// dependency property.
+    /// </summary>
+    /// <remarks>
+    /// The default value is <see langword="false"/>. When set on a <see cref="ScrollViewer"/>,
+    /// the line-decrement and line-increment buttons in both scroll bars are collapsed while the
+    /// track and thumb remain available. The property may also be set on a control whose template
+    /// creates a <see cref="PassiveScrollViewer"/>; that viewer forwards the value from its
+    /// templated parent in the same way that WPF forwards its standard scrolling attached
+    /// properties.
+    /// </remarks>
+    public static readonly DependencyProperty HideButtonsProperty = DependencyProperty.RegisterAttached(
+        "HideButtons",
+        typeof(bool),
+        typeof(ScrollViewerAssist),
+        new FrameworkPropertyMetadata(false)
+    );
+
+    /// <summary>
+    /// Gets whether the line-decrement and line-increment buttons in an element's scroll bars are
+    /// hidden.
+    /// </summary>
+    /// <param name="element">The scroll viewer or template-owning control to query.</param>
+    /// <returns>
+    /// <see langword="true"/> when the scroll-bar buttons are hidden; otherwise,
+    /// <see langword="false"/>.
+    /// </returns>
+    public static bool GetHideButtons(DependencyObject element)
+    {
+        if (element == null)
+        {
+            throw new ArgumentNullException(nameof(element));
+        }
+
+        return (bool)element.GetValue(HideButtonsProperty);
+    }
+
+    /// <summary>
+    /// Sets whether the line-decrement and line-increment buttons in an element's scroll bars are
+    /// hidden.
+    /// </summary>
+    /// <param name="element">The scroll viewer or template-owning control to configure.</param>
+    /// <param name="value">
+    /// <see langword="true"/> to collapse the buttons and give their space to the track;
+    /// otherwise, <see langword="false"/>.
+    /// </param>
+    public static void SetHideButtons(DependencyObject element, bool value)
+    {
+        if (element == null)
+        {
+            throw new ArgumentNullException(nameof(element));
+        }
+
+        element.SetValue(HideButtonsProperty, value);
+    }
+
+    /// <summary>
     /// Identifies the <see cref="OverlayModeProperty"/> attached dependency property.
     /// </summary>
     public static readonly DependencyProperty OverlayModeProperty = DependencyProperty.RegisterAttached(

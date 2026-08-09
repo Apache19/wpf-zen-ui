@@ -180,9 +180,9 @@
     <ControlTemplate x:Key="VerticalScrollBarTemplate" TargetType="{x:Type ScrollBar}">
         <Grid Background="Transparent">
             <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" MinHeight="4" />
                 <RowDefinition Height="0.00001*" />
-                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" MinHeight="4" />
             </Grid.RowDefinitions>
             <Border
                 x:Name="BackBorder"
@@ -236,6 +236,14 @@
                 Style="{StaticResource ScrollBarTransparentRepeatButton}" />
         </Grid>
         <ControlTemplate.Triggers>
+            <Trigger Property="controls:ScrollViewerAssist.HideButtons" Value="True">
+                <!--
+                    Collapsing the RepeatButtons, rather than merely making them transparent,
+                    removes their Auto-sized rows so PART_Track receives the reclaimed space.
+                -->
+                <Setter TargetName="UpButton" Property="Visibility" Value="Collapsed" />
+                <Setter TargetName="DownButton" Property="Visibility" Value="Collapsed" />
+            </Trigger>
             <Trigger Property="controls:DynamicScrollViewer.IsManagedScrollBar" Value="True">
                 <Setter TargetName="PART_Track" Property="Opacity" Value="0.0" />
             </Trigger>
@@ -305,9 +313,9 @@
     <ControlTemplate x:Key="HorizontalScrollBarTemplate" TargetType="{x:Type ScrollBar}">
         <Grid Background="Transparent">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" MinWidth="4" />
                 <ColumnDefinition Width="0.00001*" />
-                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" MinWidth="4" />
             </Grid.ColumnDefinitions>
             <Border
                 x:Name="BackBorder"
@@ -358,6 +366,11 @@
                 Style="{StaticResource ScrollBarTransparentRepeatButton}" />
         </Grid>
         <ControlTemplate.Triggers>
+            <Trigger Property="controls:ScrollViewerAssist.HideButtons" Value="True">
+                <!--  Keep horizontal and vertical behavior symmetrical, including layout reclaim.  -->
+                <Setter TargetName="LeftButton" Property="Visibility" Value="Collapsed" />
+                <Setter TargetName="RightButton" Property="Visibility" Value="Collapsed" />
+            </Trigger>
             <Trigger Property="FlowDirection" Value="RightToLeft">
                 <Setter TargetName="LeftButton" Property="Content" Value="{m:FluentIconSource CaretRight24, Filled=True}" />
                 <Setter TargetName="RightButton" Property="Content" Value="{m:FluentIconSource CaretLeft24, Filled=True}" />

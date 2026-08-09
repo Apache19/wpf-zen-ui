@@ -5,6 +5,7 @@
 
 using System.Windows.Automation.Peers;
 using System.Windows.Controls;
+using System.Windows.Data;
 using System.Windows.Input;
 using Wpf.Zen.Ui.AutomationPeers;
 
@@ -128,6 +129,16 @@ public class PassiveScrollViewer : ScrollViewer
     }
 
     /// <summary>
+    /// Applies the control template and connects scrolling policies supplied by the control that
+    /// owns this viewer in its template.
+    /// </summary>
+    public override void OnApplyTemplate()
+    {
+        BindHideButtonsToTemplatedParentIfUnset();
+        base.OnApplyTemplate();
+    }
+
+    /// <summary>
     /// Responds when WPF publishes a new horizontal extent, viewport, or computed scrollbar state.
     /// </summary>
     /// <param name="e">The dependency-property change data.</param>
@@ -159,6 +170,39 @@ public class PassiveScrollViewer : ScrollViewer
                 GetExistingAutomationPeer()?.RaiseHorizontalScrollSemanticsChanged();
             }
         }
+    }
+
+    /// <summary>
+    /// Mirrors WPF's forwarding behavior for attached ScrollViewer properties that are set on a
+    /// template owner, without turning the property into an inheritable tree-wide policy.
+    /// </summary>
+    private void BindHideButtonsToTemplatedParentIfUnset()
+    {
+        if (
+            TemplatedParent == null
+            || DependencyPropertyHelper.GetValueSource(this, ScrollViewerAssist.HideButtonsProperty)
+                    .BaseValueSource
+                != BaseValueSource.Default
+        )
+        {
+            return;
+        }
+
+        // ScrollViewer.OnPreApplyTemplate performs the same conditional binding for WPF's
+        // HorizontalScrollBarVisibility, VerticalScrollBarVisibility and related attached
+        // properties. HideButtons cannot participate in that internal method, so the library's
+        // ScrollViewer derivative reproduces the public effect here. A local value or style on the
+        // actual viewer intentionally wins, and avoiding property inheritance prevents an outer
+        // viewer's setting from leaking into independently nested scrolling surfaces in its content.
+        BindingOperations.SetBinding(
+            this,
+            ScrollViewerAssist.HideButtonsProperty,
+            new Binding
+            {
+                Path = new PropertyPath(ScrollViewerAssist.HideButtonsProperty),
+                RelativeSource = RelativeSource.TemplatedParent,
+            }
+        );
     }
 
     /// <summary>

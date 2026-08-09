@@ -4,17 +4,16 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Zen.Ui.Gallery.Controls"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:local="clr-namespace:Wpf.Zen.Ui.Gallery.Views.Pages.Text"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:ui="http://schemas.thezendev.com/wpf/2027"
     xmlns:vm="clr-namespace:Wpf.Zen.Ui.Gallery.ViewModels.Pages.Text"
     Title="TextBoxPage"
-    Style="{ui:DynamicStyle DynamicScrollPage}"
     controls:PageControlDocumentation.DocumentationType="{x:Type ui:TextBox}"
     d:Background="{ui:DynamicBrush WindowBackground}"
     d:DataContext="{d:DesignInstance vm:TextBoxViewModel, IsDesignTimeCreatable=False}"
     d:DesignWidth="800"
     Foreground="{ui:DynamicBrush TextFillPrimary}"
+    Style="{ui:DynamicStyle DynamicScrollPage}"
     mc:Ignorable="d">
 
     <StackPanel Margin="0,0,0,24">
@@ -54,6 +53,7 @@
                 MinHeight="100"
                 MaxHeight="150"
                 VerticalContentAlignment="Top"
+                ui:ScrollViewerAssist.HideButtons="True"
                 AcceptsReturn="True"
                 HorizontalScrollBarVisibility="Disabled"
                 Icon="{ui:FluentIconSource DocumentBulletList24}"

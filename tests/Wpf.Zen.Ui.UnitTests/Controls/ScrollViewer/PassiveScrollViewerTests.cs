@@ -8,6 +8,7 @@ using System.Windows.Automation;
 using System.Windows.Automation.Peers;
 using System.Windows.Automation.Provider;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
 using Wpf.Zen.Ui.AutomationPeers;
@@ -143,6 +144,116 @@ public class PassiveScrollViewerTests
                     FindVisualDescendant<PassiveScrollViewer>(listBox)
                 );
                 Assert.Equal(ScrollSpillMode.Enabled, scrollViewer.ScrollSpillMode);
+            }
+        );
+    }
+
+    [Fact]
+    public void HideButtons_SetOnScrollViewer_CollapsesButtonsAndReclaimsTheirSpace()
+    {
+        RunOnStaThread(
+            () =>
+            {
+                var scrollViewer = new PassiveScrollViewer
+                {
+                    Width = 100d,
+                    Height = 100d,
+                    Content = new Border { Width = 400d, Height = 400d },
+                    HorizontalScrollBarVisibility = ScrollBarVisibility.Visible,
+                    VerticalScrollBarVisibility = ScrollBarVisibility.Visible,
+                };
+                ScrollViewerAssist.SetHideButtons(scrollViewer, true);
+
+                var window = new Window
+                {
+                    Content = scrollViewer,
+                    ShowInTaskbar = false,
+                    WindowStyle = WindowStyle.None,
+                    Width = 120d,
+                    Height = 120d,
+                };
+
+                try
+                {
+                    window.Show();
+                    scrollViewer.UpdateLayout();
+
+                    var verticalScrollBar = Assert.IsType<UiScrollBar>(
+                        scrollViewer.Template.FindName("PART_VerticalScrollBar", scrollViewer)
+                    );
+                    var horizontalScrollBar = Assert.IsType<UiScrollBar>(
+                        scrollViewer.Template.FindName("PART_HorizontalScrollBar", scrollViewer)
+                    );
+
+                    AssertScrollBarButtonsCollapsed(verticalScrollBar, "UpButton", "DownButton");
+                    AssertScrollBarButtonsCollapsed(horizontalScrollBar, "LeftButton", "RightButton");
+                }
+                finally
+                {
+                    window.Close();
+                }
+            }
+        );
+    }
+
+    [Fact]
+    public void DefaultListBoxTemplate_ForwardsAttachedHideButtonsOnlyToItsScrollViewer()
+    {
+        RunOnStaThread(
+            () =>
+            {
+                RuntimeHelpers.RunClassConstructor(typeof(Application).TypeHandle);
+                var resources = new ResourceDictionary
+                {
+                    Source = System.IO.Packaging.PackUriHelper.Create(
+                        new Uri("application:///", UriKind.Absolute),
+                        new Uri(
+                            "/Wpf.Zen.Ui;component/Controls/ListBox/DefaultListBox.xaml",
+                            UriKind.Relative
+                        )
+                    ),
+                };
+                var nestedScrollViewer = new PassiveScrollViewer();
+                var listBox = new System.Windows.Controls.ListBox
+                {
+                    ItemsSource = new[] { nestedScrollViewer },
+                    Style = Assert.IsType<Style>(resources["DefaultListBoxStyle"]),
+                };
+                ScrollViewerAssist.SetHideButtons(listBox, true);
+
+                var window = new Window
+                {
+                    Content = listBox,
+                    ShowInTaskbar = false,
+                    WindowStyle = WindowStyle.None,
+                    Width = 120d,
+                    Height = 120d,
+                };
+
+                try
+                {
+                    window.Show();
+                    listBox.UpdateLayout();
+
+                    var templateScrollViewer = Assert.IsType<PassiveScrollViewer>(
+                        FindVisualDescendant<PassiveScrollViewer>(listBox)
+                    );
+
+                    Assert.True(ScrollViewerAssist.GetHideButtons(templateScrollViewer));
+                    Assert.False(ScrollViewerAssist.GetHideButtons(nestedScrollViewer));
+
+                    var verticalScrollBar = Assert.IsType<UiScrollBar>(
+                        templateScrollViewer.Template.FindName(
+                            "PART_VerticalScrollBar",
+                            templateScrollViewer
+                        )
+                    );
+                    AssertScrollBarButtonsCollapsed(verticalScrollBar, "UpButton", "DownButton");
+                }
+                finally
+                {
+                    window.Close();
+                }
             }
         );
     }
@@ -312,6 +423,30 @@ public class PassiveScrollViewerTests
         {
             RoutedEvent = UIElement.MouseWheelEvent,
         };
+    }
+
+    private static void AssertScrollBarButtonsCollapsed(
+        UiScrollBar scrollBar,
+        string decrementButtonName,
+        string incrementButtonName
+    )
+    {
+        Assert.True(ScrollViewerAssist.GetHideButtons(scrollBar));
+        _ = scrollBar.ApplyTemplate();
+
+        var decrementButton = Assert.IsType<RepeatButton>(
+            scrollBar.Template.FindName(decrementButtonName, scrollBar)
+        );
+        var incrementButton = Assert.IsType<RepeatButton>(
+            scrollBar.Template.FindName(incrementButtonName, scrollBar)
+        );
+
+        Assert.Equal(Visibility.Collapsed, decrementButton.Visibility);
+        Assert.Equal(Visibility.Collapsed, incrementButton.Visibility);
+        Assert.Equal(0d, decrementButton.ActualWidth);
+        Assert.Equal(0d, decrementButton.ActualHeight);
+        Assert.Equal(0d, incrementButton.ActualWidth);
+        Assert.Equal(0d, incrementButton.ActualHeight);
     }
 
     private static void WithScrollableViewer(ScrollSpillMode mode, Action<TestPassiveScrollViewer> action)
