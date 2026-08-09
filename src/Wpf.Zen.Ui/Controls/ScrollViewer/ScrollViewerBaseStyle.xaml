@@ -28,9 +28,9 @@
                         <ScrollContentPresenter
                             x:Name="ScrollContent"
                             Grid.Row="0"
-                            Grid.RowSpan="{Binding Path=(controls:ScrollViewerAssist.OverlayMode), RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource SpanConverter}}"
+                            Grid.RowSpan="{TemplateBinding controls:ScrollViewerAssist.OverlayMode, Converter={StaticResource SpanConverter}}"
                             Grid.Column="0"
-                            Grid.ColumnSpan="{Binding Path=(controls:ScrollViewerAssist.OverlayMode), RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource SpanConverter}}"
+                            Grid.ColumnSpan="{TemplateBinding controls:ScrollViewerAssist.OverlayMode, Converter={StaticResource SpanConverter}}"
                             Margin="{TemplateBinding Padding}"
                             CanContentScroll="{TemplateBinding CanContentScroll}" />
                         <controls:UiScrollBar
