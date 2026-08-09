@@ -22,6 +22,7 @@
                 <ResourceDictionary Source="Controls/ControlExample.xaml" />
                 <ResourceDictionary Source="Controls/TypographyControl.xaml" />
                 <ResourceDictionary Source="Controls/PageControlDocumentation.xaml" />
+                <ResourceDictionary Source="Controls/SyntaxHighlight/CodeBlock.xaml" />
 
             </ResourceDictionary.MergedDictionaries>
 

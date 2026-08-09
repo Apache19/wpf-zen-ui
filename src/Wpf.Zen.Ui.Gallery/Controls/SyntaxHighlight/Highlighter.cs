@@ -5,13 +5,11 @@
 
 // TODO: This class is work in progress.
 //
-using System.Linq;
 using System.Text.RegularExpressions;
 using System.Windows.Documents;
-using System.Windows.Media;
 using Wpf.Zen.Ui.Appearance;
 
-namespace Wpf.Zen.Ui.SyntaxHighlight;
+namespace Wpf.Zen.Ui.Gallery.Controls.SyntaxHighlight;
 
 /// <summary>
 /// Formats a string of code into <see cref="System.Windows.Controls.TextBox"/> control.

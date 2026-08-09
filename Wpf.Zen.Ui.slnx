@@ -33,7 +33,7 @@
     <Platform Solution="*|x64" Project="x64" />
     <Platform Solution="*|x86" Project="x86" />
   </Project>
-  <Project Path="src/Wpf.Zen.Ui.SyntaxHighlight/Wpf.Zen.Ui.SyntaxHighlight.csproj" />
+
   <Project Path="src/Wpf.Zen.Ui.Tray/Wpf.Zen.Ui.Tray.csproj" />
   <Project Path="src/Wpf.Zen.Ui/Wpf.Zen.Ui.csproj" />
 </Solution>

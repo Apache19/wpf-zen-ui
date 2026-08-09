@@ -3,7 +3,7 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-namespace Wpf.Zen.Ui.SyntaxHighlight;
+namespace Wpf.Zen.Ui.Gallery.Controls.SyntaxHighlight;
 
 /// <summary>
 /// Supported languages for syntax highlighting.

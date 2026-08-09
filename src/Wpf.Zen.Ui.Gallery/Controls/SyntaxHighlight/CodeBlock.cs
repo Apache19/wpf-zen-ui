@@ -3,14 +3,10 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-using System;
-using System.Diagnostics;
-using System.Windows;
 using Wpf.Zen.Ui.Appearance;
 using Wpf.Zen.Ui.Controls;
-using Wpf.Zen.Ui.Input;
 
-namespace Wpf.Zen.Ui.SyntaxHighlight.Controls;
+namespace Wpf.Zen.Ui.Gallery.Controls.SyntaxHighlight;
 
 /// <summary>
 /// Formats and display a fragment of the source code.
@@ -42,24 +38,6 @@ public class CodeBlock : System.Windows.Controls.ContentControl
 
     #endregion
 
-    #region DP: ButtonCommand
-
-    /// <summary>
-    /// Property for <see cref="ButtonCommand"/>.
-    /// </summary>
-    public static readonly DependencyProperty ButtonCommandProperty = DependencyProperty.Register(
-        nameof(ButtonCommand),
-        typeof(IRelayCommand),
-        typeof(CodeBlock)
-    );
-
-    /// <summary>
-    /// Gets the command triggered after clicking the control button.
-    /// </summary>
-    public IRelayCommand ButtonCommand => (IRelayCommand)GetValue(ButtonCommandProperty);
-
-    #endregion
-
     static CodeBlock()
     {
         DefaultStyleKeyProperty.OverrideMetadata(
@@ -69,11 +47,14 @@ public class CodeBlock : System.Windows.Controls.ContentControl
     }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="CodeBlock"/> class, and assigns <see cref="ButtonCommand"/> default action.
+    /// Initializes a new instance of the <see cref="CodeBlock"/> class.
     /// </summary>
     public CodeBlock()
     {
-        SetValue(ButtonCommandProperty, new RelayCommand<string>(OnTemplateButtonClick));
+        CommandBindings.Add(
+            new CommandBinding(ApplicationCommands.Copy, OnCopyExecuted)
+        );
+
         Unloaded += CodeBlock_Unloaded;
         Loaded   += CodeBlock_Loaded;
     }
@@ -115,16 +96,16 @@ public class CodeBlock : System.Windows.Controls.ContentControl
         SetCurrentValue(SyntaxContentProperty, richTextBox);
     }
 
-    private void OnTemplateButtonClick(string? _)
+    private void OnCopyExecuted(object sender, ExecutedRoutedEventArgs e)
     {
         try
         {
             Clipboard.Clear();
             Clipboard.SetText(_sourceCode);
         }
-        catch (Exception e)
+        catch (Exception ex)
         {
-            Debug.WriteLine(e);
+            Debug.WriteLine(ex);
         }
     }
 }

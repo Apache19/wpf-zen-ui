@@ -30,7 +30,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Wpf.Zen.Ui.DependencyInjection\Wpf.Zen.Ui.DependencyInjection.csproj" />
-    <ProjectReference Include="..\Wpf.Zen.Ui.SyntaxHighlight\Wpf.Zen.Ui.SyntaxHighlight.csproj" />
+
     <ProjectReference Include="..\Wpf.Zen.Ui.Tray\Wpf.Zen.Ui.Tray.csproj" />
     <ProjectReference Include="..\Wpf.Zen.Ui\Wpf.Zen.Ui.csproj" />
   </ItemGroup>
