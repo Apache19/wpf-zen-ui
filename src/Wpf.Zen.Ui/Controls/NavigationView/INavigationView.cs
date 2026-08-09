@@ -9,7 +9,6 @@
 using System.Collections;
 using System.Collections.ObjectModel;
 using System.Windows.Controls;
-using Wpf.Zen.Ui.Abstractions;
 using Wpf.Zen.Ui.Animations;
 
 // ReSharper disable once CheckNamespace

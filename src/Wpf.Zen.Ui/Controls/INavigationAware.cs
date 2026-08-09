@@ -3,7 +3,7 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-namespace Wpf.Zen.Ui.Abstractions.Controls;
+namespace Wpf.Zen.Ui.Controls;
 
 /// <summary>
 /// Participates in the successful navigation lifecycle of a navigation host.

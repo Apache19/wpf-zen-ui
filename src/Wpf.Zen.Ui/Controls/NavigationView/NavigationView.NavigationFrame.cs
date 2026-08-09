@@ -7,7 +7,6 @@ using System.Runtime.ExceptionServices;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Navigation;
-using Wpf.Zen.Ui.Abstractions.Controls;
 using Wpf.Zen.Ui.Animations;
 
 // ReSharper disable once CheckNamespace

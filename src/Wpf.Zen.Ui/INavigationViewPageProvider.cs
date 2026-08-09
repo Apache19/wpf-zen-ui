@@ -3,7 +3,7 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-namespace Wpf.Zen.Ui.Abstractions;
+namespace Wpf.Zen.Ui;
 
 /// <summary>
 /// Defines a service that provides pages for navigation.
@@ -14,6 +14,6 @@ public interface INavigationViewPageProvider
     /// Retrieves a page of the specified type.
     /// </summary>
     /// <param name="pageType">The type of the page to retrieve.</param>
-    /// <returns>An instance of the specified page type, or null if the page is not found.</returns>
-    public object? GetPage(Type pageType);
+    /// <returns>An instance of the specified page type, or <see langword="null"/> if the page is not found.</returns>
+    object? GetPage(Type pageType);
 }

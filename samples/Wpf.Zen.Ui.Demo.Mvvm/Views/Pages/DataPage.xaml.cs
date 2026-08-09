@@ -3,7 +3,7 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-using Wpf.Zen.Ui.Abstractions.Controls;
+using Wpf.Zen.Ui.Controls;
 
 namespace Wpf.Zen.Ui.Demo.Mvvm.Views.Pages;
 

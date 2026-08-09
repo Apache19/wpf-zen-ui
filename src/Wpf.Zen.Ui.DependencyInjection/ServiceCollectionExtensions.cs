@@ -4,7 +4,7 @@
 // All Rights Reserved.
 
 using Microsoft.Extensions.DependencyInjection;
-using Wpf.Zen.Ui.Abstractions;
+using Wpf.Zen.Ui;
 
 namespace Wpf.Zen.Ui.DependencyInjection;
 

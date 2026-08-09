@@ -3,7 +3,6 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-using Wpf.Zen.Ui.Abstractions;
 using Wpf.Zen.Ui.Controls;
 
 namespace Wpf.Zen.Ui;

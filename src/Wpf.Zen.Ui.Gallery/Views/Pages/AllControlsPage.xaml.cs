@@ -3,6 +3,7 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
+using Wpf.Zen.Ui.Controls;
 using Wpf.Zen.Ui.Gallery.ViewModels.Pages;
 
 namespace Wpf.Zen.Ui.Gallery.Views.Pages;

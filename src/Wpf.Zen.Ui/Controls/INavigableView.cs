@@ -3,13 +3,13 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-namespace Wpf.Zen.Ui.Abstractions.Controls;
+namespace Wpf.Zen.Ui.Controls;
 
 /// <summary>
-/// A component whose ViewModel is separate from the DataContext and can be navigated by INavigationView.
+/// Defines a navigable view whose view model is exposed independently of its WPF data context.
 /// </summary>
 /// <typeparam name="T">
-/// The type of the ViewModel associated with the view. It may implement
+/// The type of the view model associated with the view. It may implement
 /// <see cref="INavigationAware"/> to receive successful navigation entry and exit notifications.
 /// </typeparam>
 public interface INavigableView<out T>

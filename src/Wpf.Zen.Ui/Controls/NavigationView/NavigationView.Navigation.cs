@@ -6,7 +6,6 @@
 /* Based on Windows UI Library */
 
 using System.Collections.ObjectModel;
-using Wpf.Zen.Ui.Abstractions;
 
 // ReSharper disable once CheckNamespace
 namespace Wpf.Zen.Ui.Controls;

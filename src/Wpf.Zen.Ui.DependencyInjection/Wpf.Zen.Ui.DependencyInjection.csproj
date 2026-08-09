@@ -5,7 +5,7 @@
     <TargetFrameworks>net8.0-windows;net462</TargetFrameworks>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Description>Dependency injection for the WPF Zen UI.</Description>
-    <CommonTags>$(CommonTags);dependency;injection;abstractions;standard</CommonTags>
+    <CommonTags>$(CommonTags);dependency;injection;standard</CommonTags>
   </PropertyGroup>
 
   <ItemGroup>
@@ -13,7 +13,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Wpf.Zen.Ui.Abstractions\Wpf.Zen.Ui.Abstractions.csproj" />
+    <ProjectReference Include="..\Wpf.Zen.Ui\Wpf.Zen.Ui.csproj" />
   </ItemGroup>
 
 </Project>

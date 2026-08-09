@@ -5,7 +5,6 @@
 
 using System.Reflection;
 using System.Windows.Controls;
-using Wpf.Zen.Ui.Abstractions;
 
 // ReSharper disable once CheckNamespace
 namespace Wpf.Zen.Ui.Controls;
