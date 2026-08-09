@@ -189,6 +189,69 @@ public class ClippingBorderTests
         );
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Render_SnapsToDevicePixelsMatchesNativeBorderAtFractionalOffset(bool snapsToDevicePixels)
+    {
+        RunOnStaThread(
+            () =>
+            {
+                var clippingBorder = new ClippingBorder
+                {
+                    Width = 8,
+                    Height = 8,
+                    BorderBrush = Brushes.Black,
+                    BorderThickness = new Thickness(1),
+                    SnapsToDevicePixels = snapsToDevicePixels,
+                };
+                var nativeBorder = new Border
+                {
+                    Width = 8,
+                    Height = 8,
+                    BorderBrush = Brushes.Black,
+                    BorderThickness = new Thickness(1),
+                    SnapsToDevicePixels = snapsToDevicePixels,
+                };
+
+                Assert.Equal(
+                    RenderAtFractionalOffset(nativeBorder),
+                    RenderAtFractionalOffset(clippingBorder)
+                );
+            }
+        );
+    }
+
+    [Fact]
+    public void Render_SnapsToDevicePixelsChangesFractionallyOffsetChrome()
+    {
+        RunOnStaThread(
+            () =>
+            {
+                var unsnapped = new ClippingBorder
+                {
+                    Width = 8,
+                    Height = 8,
+                    BorderBrush = Brushes.Black,
+                    BorderThickness = new Thickness(1),
+                };
+                var snapped = new ClippingBorder
+                {
+                    Width = 8,
+                    Height = 8,
+                    BorderBrush = Brushes.Black,
+                    BorderThickness = new Thickness(1),
+                    SnapsToDevicePixels = true,
+                };
+
+                Assert.NotEqual(
+                    RenderAtFractionalOffset(unsnapped),
+                    RenderAtFractionalOffset(snapped)
+                );
+            }
+        );
+    }
+
     private static Color RenderPixel(UIElement element, int width, int height, int x, int y)
     {
         Arrange(element, width, height);
@@ -214,6 +277,21 @@ public class ClippingBorderTests
         bitmap.CopyPixels(pixels, stride, 0);
 
         return pixels;
+    }
+
+    private static byte[] RenderAtFractionalOffset(UIElement child)
+    {
+        var canvas = new Canvas
+        {
+            Width = 12,
+            Height = 12,
+        };
+
+        Canvas.SetLeft(child, 0.25);
+        Canvas.SetTop(child, 0.25);
+        canvas.Children.Add(child);
+
+        return RenderPixels(canvas, 12, 12);
     }
 
     private static void Arrange(UIElement element, int width, int height)
