@@ -5,6 +5,7 @@
 
 // Portions derived from dotnet/wpf Border.cs
 
+using System.Collections;
 using System.Windows.Controls;
 using System.Windows.Markup;
 
@@ -18,8 +19,6 @@ namespace Wpf.Zen.Ui.Controls;
 [ContentProperty(nameof(Child))]
 public sealed class ClippingBorder : Decorator
 {
-    private sealed class ContentHost : Decorator;
-
     private const string DoNotApplyLayoutRoundingToBorderThicknessSwitchName =
         "Switch.MS.Internal.DoNotApplyLayoutRoundingToMarginsAndBorderThickness";
 
@@ -28,7 +27,8 @@ public sealed class ClippingBorder : Decorator
 
     private static readonly Geometry EmptyClipGeometry = CreateEmptyGeometry();
 
-    private readonly ContentHost _contentHost;
+    private readonly ContainerVisual _contentHost;
+    private UIElement? _child;
 
     private Geometry? _borderGeometry;
     private Geometry? _backgroundGeometry;
@@ -49,25 +49,79 @@ public sealed class ClippingBorder : Decorator
     /// </summary>
     public ClippingBorder()
     {
-        _contentHost = new ContentHost();
+        _contentHost = new ContainerVisual();
 
-        // Keep the private host as Decorator's actual visual/logical child. The public
-        // Child property below forwards the user's content to this host.
-        base.Child = _contentHost;
+        // ContainerVisual supplies an independent Clip without inserting another FrameworkElement into the
+        // logical tree. Keeping the host purely visual is important: inherited dependency properties and
+        // FrameworkElement.Parent must observe ClippingBorder as the content's immediate logical parent, just as
+        // they do for a native Border. Force-inherited input properties still cross the non-input visual because
+        // WPF walks to the nearest containing UIElement.
+        AddVisualChild(_contentHost);
     }
 
     /// <summary>Gets or sets the element displayed inside the border.</summary>
     /// <remarks>
-    /// The content is wrapped in an internal host so that its own
-    /// <see cref="UIElement.Clip"/> value is preserved. Consequently,
-    /// the content's immediate visual and logical parent is the internal
-    /// host rather than this <see cref="ClippingBorder"/>.
+    /// A private visual-only host carries the rounded clip so that the content's own
+    /// <see cref="UIElement.Clip"/> value is preserved. The host does not participate in the logical tree;
+    /// consequently, this <see cref="ClippingBorder"/> remains the content's direct logical parent and inherited
+    /// dependency properties are not exposed to an unnecessary intermediate framework element.
     /// </remarks>
     [DefaultValue(null)]
     public override UIElement? Child
     {
-        get => _contentHost.Child;
-        set => _contentHost.Child = value;
+        get => _child;
+        set
+        {
+            if (ReferenceEquals(_child, value))
+            {
+                return;
+            }
+
+            if (_child is not null)
+            {
+                _contentHost.Children.Remove(_child);
+                RemoveLogicalChild(_child);
+            }
+
+            _child = value;
+
+            if (_child is not null)
+            {
+                // Match Decorator.Child's ordering: establish the logical relationship before attaching the
+                // visual. This gives bindings and inherited values the expected parent as soon as the child enters
+                // the rendered tree.
+                AddLogicalChild(_child);
+                _contentHost.Children.Add(_child);
+            }
+
+            InvalidateMeasure();
+        }
+    }
+
+    /// <summary>
+    /// Gets an enumerator over the public content rather than the private visual clip host.
+    /// </summary>
+    /// <remarks>
+    /// The visual-only host is deliberately hidden from logical-tree consumers so resource lookup, inherited
+    /// properties, element bindings, and <see cref="FrameworkElement.Parent"/> retain native decorator semantics.
+    /// </remarks>
+    protected override IEnumerator LogicalChildren =>
+        _child is null
+            ? Array.Empty<object>().GetEnumerator()
+            : new object[] { _child }.GetEnumerator();
+
+    /// <inheritdoc />
+    protected override int VisualChildrenCount => 1;
+
+    /// <inheritdoc />
+    protected override Visual GetVisualChild(int index)
+    {
+        if (index != 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(index));
+        }
+
+        return _contentHost;
     }
 
     /// <summary>Identifies the <see cref="BorderThickness"/> dependency property.</summary>
@@ -228,11 +282,11 @@ public sealed class ClippingBorder : Decorator
             Math.Max(0.0, constraint.Height - decorationSize.Height)
         );
 
-        _contentHost.Measure(childConstraint);
+        _child?.Measure(childConstraint);
 
         return new Size(
-            _contentHost.DesiredSize.Width + decorationSize.Width,
-            _contentHost.DesiredSize.Height + decorationSize.Height
+            (_child?.DesiredSize.Width ?? 0.0) + decorationSize.Width,
+            (_child?.DesiredSize.Height ?? 0.0) + decorationSize.Height
         );
     }
 
@@ -245,7 +299,10 @@ public sealed class ClippingBorder : Decorator
         var innerRect    = DeflateRect(outerRect, border);
         var contentRect  = DeflateRect(innerRect, Padding);
 
-        _contentHost.Arrange(contentRect);
+        // ContainerVisual has no layout participation and shares this control's coordinate system. Arrange the
+        // public child in the actual content rectangle so its own layout rounding, margin, and alignment logic see
+        // the same layout slot they would receive from a native Border.
+        _child?.Arrange(contentRect);
 
         if (!_renderGeometryCacheValid ||
             !_cachedRenderSize.Equals(finalSize) ||
@@ -260,7 +317,7 @@ public sealed class ClippingBorder : Decorator
             _renderGeometryCacheValid    = true;
         }
 
-        UpdateContentClip(innerRect, contentRect, border, cornerRadius);
+        UpdateContentClip(innerRect, border, cornerRadius);
 
         return finalSize;
     }
@@ -328,7 +385,6 @@ public sealed class ClippingBorder : Decorator
 
     private void UpdateContentClip(
         Rect innerRect,
-        Rect contentRect,
         Thickness borderThickness,
         CornerRadius cornerRadius)
     {
@@ -352,10 +408,9 @@ public sealed class ClippingBorder : Decorator
             return;
         }
 
-        // Clip is expressed in the private host's coordinate system. Its negative
-        // origin intentionally includes the padding area while stopping at the
-        // inner edge of the border.
-        var clipRect = new Rect(innerRect.X - contentRect.X, innerRect.Y - contentRect.Y, innerRect.Width, innerRect.Height);
+        // The visual-only host shares ClippingBorder's coordinate system. Clipping to the inner rectangle permits
+        // overflowing content to occupy padding while still stopping it at the inner edge of the border.
+        var clipRect = innerRect;
 
         if (!_contentClipCacheValid ||
             !_cachedClipRect.Equals(clipRect) ||

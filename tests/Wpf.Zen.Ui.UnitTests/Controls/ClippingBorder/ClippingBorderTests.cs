@@ -4,6 +4,7 @@
 // All Rights Reserved.
 
 using System.Windows.Controls;
+using System.Windows.Documents;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
@@ -13,6 +14,35 @@ namespace Wpf.Zen.Ui.UnitTests.Controls;
 
 public class ClippingBorderTests
 {
+    [Fact]
+    public void Child_UsesBorderAsLogicalParentAndInheritsFrameworkValues()
+    {
+        RunOnStaThread(
+            () =>
+            {
+                var dataContext = new object();
+                var fontFamily = new FontFamily("Consolas");
+                var child = new System.Windows.Controls.TextBlock();
+                var border = new ClippingBorder
+                {
+                    DataContext = dataContext,
+                    FlowDirection = FlowDirection.RightToLeft,
+                    IsEnabled = false,
+                    Child = child,
+                };
+
+                border.SetValue(TextElement.FontFamilyProperty, fontFamily);
+
+                Assert.Same(border, child.Parent);
+                Assert.Same(border, LogicalTreeHelper.GetParent(child));
+                Assert.Same(dataContext, child.DataContext);
+                Assert.Equal(FlowDirection.RightToLeft, child.FlowDirection);
+                Assert.False(child.IsEnabled);
+                Assert.Equal(fontFamily, child.FontFamily);
+            }
+        );
+    }
+
     [Fact]
     public void MeasureAndArrange_ReserveBorderThicknessAndPadding()
     {
@@ -53,11 +83,9 @@ public class ClippingBorderTests
                 Arrange(border, 40, 40);
 
                 Assert.Same(childClip, child.Clip);
-#pragma warning disable xUnit2032 // Type assertions based on 'assignable from' are confusingly named
-                var contentHost = Assert.IsAssignableFrom<Decorator>(
+                var contentHost = Assert.IsType<ContainerVisual>(
                     VisualTreeHelper.GetChild(border, 0)
                 );
-#pragma warning restore xUnit2032 // Type assertions based on 'assignable from' are confusingly named
                 Assert.NotNull(contentHost.Clip);
             }
         );
