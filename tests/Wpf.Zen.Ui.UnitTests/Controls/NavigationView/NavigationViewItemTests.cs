@@ -1395,7 +1395,7 @@ public class NavigationViewItemTests
         RunOnStaThread(() =>
         {
             var navigationView = new Wpf.Zen.Ui.Controls.NavigationView();
-            var item = new NavigationViewItem(typeof(Border));
+            var item = new NavigationViewItem(typeof(Border)) { Header = "Root" };
             item.Items.Add(new NavigationViewItem());
             navigationView.MenuItems.Add(item);
             AttachToNavigationView(item, navigationView);
@@ -1416,7 +1416,11 @@ public class NavigationViewItemTests
                     .GetProperty("Journal", BindingFlags.Instance | BindingFlags.NonPublic)!
                     .GetValue(navigationView)
             );
-            Assert.Same(item, Assert.Single(navigationView.BreadcrumbItems));
+            // Navigation state keeps the declarative control as its semantic identity, while the
+            // breadcrumb has a dedicated non-visual model and cannot acquire the same Visual parent.
+            NavigationBreadcrumbItem breadcrumbItem = Assert.Single(navigationView.BreadcrumbItems);
+            Assert.Same(item, breadcrumbItem.SourceItem);
+            Assert.Equal("Root", breadcrumbItem.Content);
             NavigationEntry journalEntry = Assert.Single(journal);
             Assert.Same(item, journalEntry.Item);
             Assert.Equal(itemId, journalEntry.Id);

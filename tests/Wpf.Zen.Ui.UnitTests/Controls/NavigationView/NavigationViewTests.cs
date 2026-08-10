@@ -1179,7 +1179,9 @@ public class NavigationViewTests
 
             Assert.True(navigationView.Navigate(typeof(NavigationAwarePageOne)));
             Assert.Same(child, navigationView.SelectedItem);
-            Assert.Same(child, Assert.Single(navigationView.BreadcrumbItems));
+            NavigationBreadcrumbItem breadcrumbItem = Assert.Single(navigationView.BreadcrumbItems);
+            Assert.Same(child, breadcrumbItem.SourceItem);
+            Assert.Equal("Child", breadcrumbItem.Content);
         });
     }
 
@@ -1188,7 +1190,7 @@ public class NavigationViewTests
     {
         RunOnStaThread(() =>
         {
-            var itemTemplate = new DataTemplate(typeof(NavigationItem));
+            var itemTemplate = new DataTemplate(typeof(NavigationBreadcrumbItem));
             var breadcrumbBar = new BreadcrumbBar { ItemTemplate = itemTemplate };
             var item = new NavigationItem("Page", typeof(NavigationAwarePageOne));
             var navigationView = new Wpf.Zen.Ui.Controls.NavigationView
@@ -1201,7 +1203,111 @@ public class NavigationViewTests
             Assert.Same(navigationView.BreadcrumbItems, breadcrumbBar.ItemsSource);
 
             Assert.True(navigationView.Navigate(typeof(NavigationAwarePageOne)));
-            Assert.Same(item, Assert.Single(breadcrumbBar.Items));
+            NavigationBreadcrumbItem breadcrumbItem =
+                Assert.IsType<NavigationBreadcrumbItem>(Assert.Single(breadcrumbBar.Items));
+            Assert.Same(item, breadcrumbItem.SourceItem);
+            Assert.Equal("Page", breadcrumbItem.Content);
+        });
+    }
+
+    [Fact]
+    public void NavigationView_BreadcrumbClick_NavigatesByEntryIdentityInsteadOfParallelIndex()
+    {
+        RunOnStaThread(() =>
+        {
+            var child = new NavigationItem("Child", typeof(NavigationAwarePageOne));
+            var root = new NavigationItem("Root", typeof(NavigationAwarePageTwo))
+            {
+                Children = new[] { child },
+            };
+            var breadcrumbBar = new BreadcrumbBar();
+            var navigationView = new Wpf.Zen.Ui.Controls.NavigationView
+            {
+                MenuItemsSource = new[] { root },
+                BreadcrumbBar = breadcrumbBar,
+            };
+
+            Assert.True(navigationView.Navigate(typeof(NavigationAwarePageTwo)));
+            Assert.True(navigationView.NavigateWithHierarchy(typeof(NavigationAwarePageOne)));
+            NavigationBreadcrumbItem rootBreadcrumb = navigationView.BreadcrumbItems[0];
+            Assert.Same(root, rootBreadcrumb.SourceItem);
+
+            object? navigatedPage = null;
+            navigationView.Navigated += (_, args) => navigatedPage = args.Page;
+
+            // Deliberately pass the child's index. NavigationView must use the breadcrumb's
+            // semantic identity rather than assuming two observable collections remain aligned.
+            breadcrumbBar.RaiseEvent(
+                new BreadcrumbBarItemClickedEventArgs(
+                    BreadcrumbBar.ItemClickedEvent,
+                    breadcrumbBar,
+                    rootBreadcrumb,
+                    new BreadcrumbBarItem(),
+                    1
+                )
+            );
+
+            Assert.IsType<NavigationAwarePageTwo>(navigatedPage);
+        });
+    }
+
+    [Fact]
+    public void NavigationView_LoadedNavigation_DoesNotReparentDeclarativeMenuItemIntoBreadcrumb()
+    {
+        RunOnStaThread(() =>
+        {
+            var resources = new ResourceDictionary { Source = CreateResourceUri() };
+            var breadcrumbBar = new BreadcrumbBar
+            {
+                Style = Assert.IsType<Style>(resources[typeof(BreadcrumbBar)]),
+            };
+            var navigationItem = new NavigationViewItem
+            {
+                Header = "Dashboard",
+                TargetPageType = typeof(NavigationAwarePageOne),
+            };
+            var navigationView = new Wpf.Zen.Ui.Controls.NavigationView
+            {
+                Style = Assert.IsType<Style>(resources[typeof(Wpf.Zen.Ui.Controls.NavigationView)]),
+                BreadcrumbBar = breadcrumbBar,
+                Header = breadcrumbBar,
+            };
+            navigationView.MenuItems.Add(navigationItem);
+
+            var window = new Window
+            {
+                Content = navigationView,
+                Width = 800,
+                Height = 600,
+                Left = -10_000,
+                Top = -10_000,
+                ShowActivated = false,
+                ShowInTaskbar = false,
+                WindowStyle = WindowStyle.None,
+            };
+            bool? navigated = null;
+            window.Loaded += (_, _) =>
+                navigated = navigationView.Navigate(typeof(NavigationAwarePageOne));
+
+            try
+            {
+                window.Show();
+                DrainDispatcher();
+
+                Assert.True(navigated);
+                Assert.Same(navigationItem, navigationView.SelectedItem);
+                NavigationBreadcrumbItem breadcrumbItem =
+                    Assert.Single(navigationView.BreadcrumbItems);
+                Assert.Same(navigationItem, breadcrumbItem.SourceItem);
+                Assert.Equal("Dashboard", breadcrumbItem.Content);
+                Assert.Same(breadcrumbItem, Assert.Single(breadcrumbBar.Items));
+                Assert.NotNull(System.Windows.Media.VisualTreeHelper.GetParent(navigationItem));
+            }
+            finally
+            {
+                window.Close();
+                DrainDispatcher();
+            }
         });
     }
 

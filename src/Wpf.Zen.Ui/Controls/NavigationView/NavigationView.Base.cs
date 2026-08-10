@@ -169,21 +169,21 @@ public partial class NavigationView : Control, INavigationView
         footerMenuItems.CollectionChanged += OnFooterMenuItemsCollectionChanged;
         SetValue(FooterMenuItemsPropertyKey, footerMenuItems);
 
-        BreadcrumbItems = new ReadOnlyObservableCollection<object>(_breadcrumbItems);
+        BreadcrumbItems = new ReadOnlyObservableCollection<NavigationBreadcrumbItem>(_breadcrumbItems);
         NavigationStack.CollectionChanged += NavigationStackOnCollectionChanged;
     }
 
     /// <summary>
-    /// Gets the current navigation path as the original source objects supplied to the navigation
-    /// view.
+    /// Gets the current navigation path as presentation-safe, non-visual breadcrumb items.
     /// </summary>
     /// <remarks>
     /// The collection is stable for the lifetime of the control and can be assigned directly to a
-    /// <see cref="ItemsControl.ItemsSource"/> on a <see cref="BreadcrumbBar"/>. Its items
-    /// intentionally retain the same identity as
-    /// <see cref="MenuItemsSource"/> rather than exposing generated containers or wrapper objects.
+    /// <see cref="ItemsControl.ItemsSource"/> on a <see cref="BreadcrumbBar"/>. Every path segment
+    /// uses the same <see cref="NavigationBreadcrumbItem"/> model, regardless of whether the menu
+    /// originated from data or directly declared controls. This keeps navigation identity,
+    /// breadcrumb presentation, and WPF visual ownership as separate responsibilities.
     /// </remarks>
-    public ReadOnlyObservableCollection<object> BreadcrumbItems { get; }
+    public ReadOnlyObservableCollection<NavigationBreadcrumbItem> BreadcrumbItems { get; }
 
     internal Dictionary<string, NavigationEntry> PageKeyIndex { get; } = [];
     internal Dictionary<Type, NavigationEntry> PageTypeIndex { get; } = [];
@@ -205,7 +205,7 @@ public partial class NavigationView : Control, INavigationView
         ReferenceComparer<INotifyPropertyChanged>.Instance
     );
     private readonly ObservableCollection<string> _autoSuggestItems = [];
-    private readonly ObservableCollection<object> _breadcrumbItems = [];
+    private readonly ObservableCollection<NavigationBreadcrumbItem> _breadcrumbItems = [];
     private readonly NavigationViewButton _paneBackButton;
     private readonly NavigationViewButton _paneToggleButton;
     private readonly NavigationViewButton _titleBarBackButton;
@@ -708,9 +708,12 @@ public partial class NavigationView : Control, INavigationView
         BreadcrumbBarItemClickedEventArgs e
     )
     {
-        if (_entriesByItem.TryGetValue(e.Item, out NavigationEntry? entry))
+        // The breadcrumb model carries the semantic entry that created it. Direct identity mapping
+        // remains correct if either collection changes during routed-event handling and avoids the
+        // fragile requirement that two independently observable collections stay index-aligned.
+        if (e.Item is NavigationBreadcrumbItem item && _breadcrumbItems.Contains(item))
         {
-            _ = NavigateInternal(entry);
+            _ = NavigateInternal(item.NavigationEntry);
         }
     }
 
@@ -1203,12 +1206,17 @@ public partial class NavigationView : Control, INavigationView
         _breadcrumbItems.Clear();
         foreach (NavigationEntry entry in NavigationStack)
         {
-            _breadcrumbItems.Add(entry.Item);
+            _breadcrumbItems.Add(new NavigationBreadcrumbItem(entry));
         }
     }
 
     private void UpdateBreadcrumbContents()
     {
+        foreach (NavigationBreadcrumbItem item in _breadcrumbItems)
+        {
+            item.NotifyPresentationChanged();
+        }
+
         CollectionViewSource.GetDefaultView(_breadcrumbItems)?.Refresh();
     }
 

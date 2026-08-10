@@ -78,15 +78,5 @@
             Title="WPF Zen UI - Simple Demo"
             Grid.Row="0"
             Icon="pack://application:,,,/Assets/applicationIcon-256.png" />
-        <tray:NotifyIcon
-            Grid.Row="0"
-            FocusOnLeftClick="True"
-            Icon="pack://application:,,,/Assets/applicationIcon-256.png"
-            MenuOnRightClick="True"
-            TooltipText="Wpf.Zen.Ui.Demo.Simple">
-            <tray:NotifyIcon.Menu>
-                <ContextMenu ItemsSource="{Binding ViewModel.TrayMenuItems, Mode=OneWay}" />
-            </tray:NotifyIcon.Menu>
-        </tray:NotifyIcon>
     </Grid>
 </ui:FluentWindow>

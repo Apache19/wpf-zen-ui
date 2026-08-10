@@ -81,14 +81,15 @@ public interface INavigationView
     object? SelectedItem { get; }
 
     /// <summary>
-    /// Gets the current hierarchical navigation path as the original source objects.
+    /// Gets the current hierarchical navigation path as non-visual presentation models.
     /// </summary>
     /// <remarks>
     /// The collection instance remains stable and can be assigned directly to a
-    /// <see cref="ItemsControl.ItemsSource"/>. Generated navigation containers are never exposed
-    /// through this API.
+    /// <see cref="ItemsControl.ItemsSource"/>. Each <see cref="NavigationBreadcrumbItem"/>
+    /// separates source identity from presentation content, so generated or directly supplied menu
+    /// controls are never reused as breadcrumb visuals.
     /// </remarks>
-    ReadOnlyObservableCollection<object> BreadcrumbItems { get; }
+    ReadOnlyObservableCollection<NavigationBreadcrumbItem> BreadcrumbItems { get; }
 
     /// <summary>
     /// Gets or sets a UI element that is shown at the top of the control, below the pane if PaneDisplayMode is Top.

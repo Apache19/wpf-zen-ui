@@ -264,9 +264,9 @@ public partial class NavigationView
             return;
         }
 
-        // The collaboration owns only data and navigation. BreadcrumbBar retains complete control
-        // over ItemTemplate, ItemTemplateSelector, and ItemContainerStyle so the same source item
-        // can have a presentation distinct from the navigation pane.
+        // The collaboration owns only the path models and navigation. BreadcrumbBar retains
+        // complete control over ItemTemplate, ItemTemplateSelector, and ItemContainerStyle; custom
+        // templates can bind NavigationBreadcrumbItem.SourceItem for source-specific presentation.
         breadcrumbBar.SetCurrentValue(ItemsControl.ItemsSourceProperty, navigationView.BreadcrumbItems);
         navigationView.AttachBreadcrumbBar(breadcrumbBar);
     }
