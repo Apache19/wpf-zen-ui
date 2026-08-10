@@ -326,14 +326,4 @@ public interface INavigationView
     /// Clears the NavigationView history.
     /// </summary>
     void ClearJournal();
-
-    /// <summary>
-    /// Allows you to assign to the NavigationView a special service responsible for retrieving the page instances.
-    /// </summary>
-    void SetPageProviderService(INavigationViewPageProvider navigationViewPageProvider);
-
-    /// <summary>
-    /// Allows you to assign a general <see cref="IServiceProvider"/> to the NavigationView that will be used to retrieve page instances and view models.
-    /// </summary>
-    void SetServiceProvider(IServiceProvider serviceProvider);
 }

@@ -29,6 +29,18 @@ namespace Wpf.Zen.Ui.Gallery.ViewModels.Windows;
 
 public partial class MainWindowViewModel(IStringLocalizer<Translations> localizer) : ViewModel
 {
+    /// <summary>
+    /// Gets or sets the presentation mode of this window's navigation view.
+    /// </summary>
+    /// <remarks>
+    /// Navigation appearance is window state, not a navigation-service operation. Keeping it on
+    /// the window view model lets the settings page update the correct scoped shell through normal
+    /// binding without exposing the concrete NavigationView from INavigationService.
+    /// </remarks>
+    [ObservableProperty]
+    public partial NavigationViewPaneDisplayMode NavigationPaneDisplayMode { get; set; } =
+        NavigationViewPaneDisplayMode.Left;
+
     [ObservableProperty]
     public partial string ApplicationTitle { get; set; } = localizer["WPF Zen UI Gallery"];
 

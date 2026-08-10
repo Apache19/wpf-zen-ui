@@ -13,28 +13,36 @@ using UiComboBox = Wpf.Zen.Ui.Controls.ComboBox;
 
 namespace Wpf.Zen.Ui.Gallery.Views.Windows;
 
+[System.Diagnostics.CodeAnalysis.SuppressMessage(
+    "IDisposableAnalyzers.Correctness",
+    "IDISP006:Implement IDisposable",
+    Justification = "WPF Window owns the navigation scope and deterministically releases it from OnClosed."
+)]
 public partial class MainWindow : IWindow
 {
+    private readonly INavigationScope _navigationScope;
+
     public MainWindow(
-        MainWindowViewModel viewModel,
-        INavigationService navigationService,
-        IServiceProvider serviceProvider,
+        INavigationScopeFactory navigationScopes,
         ISnackbarService snackbarService,
         IContentDialogService contentDialogService
     )
     {
-        ViewModel   = viewModel;
-        DataContext = this;
-
         InitializeComponent();
 
+        _navigationScope = navigationScopes.Attach(NavigationView, "gallery-main");
+        ViewModel = _navigationScope.Services.GetRequiredService<MainWindowViewModel>();
+        DataContext = this;
+
         snackbarService.SetSnackbarPresenter(SnackbarPresenter);
-        navigationService.SetNavigationControl(NavigationView);
         contentDialogService.SetDialogHost(RootContentDialog);
         SetupTrayMenuEvents();
     }
 
     public MainWindowViewModel ViewModel { get; }
+
+    /// <summary>Gets the navigator scoped to the gallery's primary navigation surface.</summary>
+    public INavigationService Navigation => _navigationScope.Navigation;
 
     private bool _isUserClosedPane;
 
@@ -124,7 +132,7 @@ public partial class MainWindow : IWindow
     {
         try
         {
-            NavigationView.Navigate(pageType);
+            _ = Navigation.Navigate(pageType);
         }
         catch (Exception ex)
         {
@@ -201,5 +209,12 @@ public partial class MainWindow : IWindow
             theme == ApplicationTheme.Light
                 ? UiThemeMode.Dark
                 : UiThemeMode.Light;
+    }
+
+    /// <summary>Releases pages and scoped services owned by this navigation surface.</summary>
+    protected override void OnClosed(EventArgs e)
+    {
+        _navigationScope.Dispose();
+        base.OnClosed(e);
     }
 }

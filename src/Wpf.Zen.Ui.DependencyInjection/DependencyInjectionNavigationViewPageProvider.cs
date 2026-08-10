@@ -8,8 +8,13 @@ using Wpf.Zen.Ui;
 namespace Wpf.Zen.Ui.DependencyInjection;
 
 /// <summary>
-/// Service that provides pages for navigation.
+/// Resolves pages from the dependency-injection scope owned by one navigation host.
 /// </summary>
+/// <remarks>
+/// The provider is registered as scoped by <see cref="ServiceCollectionExtensions.AddNavigation"/>.
+/// It must never capture the application's root provider because that would let UIElement and
+/// scoped view-model instances cross window or ElementHost boundaries.
+/// </remarks>
 public class DependencyInjectionNavigationViewPageProvider(IServiceProvider serviceProvider)
     : INavigationViewPageProvider
 {

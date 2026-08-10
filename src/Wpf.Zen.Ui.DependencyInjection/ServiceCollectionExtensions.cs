@@ -4,26 +4,53 @@
 // All Rights Reserved.
 
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Wpf.Zen.Ui;
 
 namespace Wpf.Zen.Ui.DependencyInjection;
 
-/// <summary>
-/// Provides extension methods for <see cref="IServiceCollection"/> to support WPF Zen UI navigation and services.
-/// </summary>
+/// <summary>Registers navigation services with host-scoped page and view-model lifetimes.</summary>
 public static class ServiceCollectionExtensions
 {
     /// <summary>
-    /// Adds the services necessary for page navigation within a WPF Zen UI NavigationView.
+    /// Adds the factory, router, scoped navigator, and scoped page provider required by navigation.
     /// </summary>
-    /// <param name="services">The <see cref="IServiceCollection"/> to add the services to.</param>
-    /// <returns>The <see cref="IServiceCollection"/> so that additional calls can be chained.</returns>
-    public static IServiceCollection AddNavigationViewPageProvider(this IServiceCollection services)
+    /// <param name="services">The application's service collection.</param>
+    /// <returns>The same collection so registrations can be chained.</returns>
+    /// <remarks>
+    /// Calling this method does not create an application-global current navigation target. Each
+    /// call to <see cref="INavigationScopeFactory.Attach"/> creates a child dependency-injection
+    /// scope and binds its navigator exactly once. Pages should normally be registered as transient;
+    /// NavigationView's cache then decides whether an instance is retained for that host.
+    /// </remarks>
+    public static IServiceCollection AddNavigation(this IServiceCollection services)
     {
-        _ = services.AddSingleton<
+        if (services is null)
+        {
+            throw new ArgumentNullException(nameof(services));
+        }
+
+        services.TryAddScoped<ScopedNavigationService>();
+
+        // The lifetime is an architectural invariant, not an optional default. Retaining a legacy
+        // singleton INavigationService registration would let pages resolve a different navigator
+        // from the one attached to their host, recreating the cross-window bug this API prevents.
+        // Custom page providers remain replaceable, but the contextual navigator is always owned
+        // by the child scope created for the host.
+        services.RemoveAll<INavigationService>();
+        services.AddScoped<INavigationService>(
+            provider => provider.GetRequiredService<ScopedNavigationService>()
+        );
+        services.TryAddScoped<
             INavigationViewPageProvider,
             DependencyInjectionNavigationViewPageProvider
         >();
+
+        services.TryAddSingleton<NavigationRouter>();
+        services.TryAddSingleton<INavigationRouter>(
+            provider => provider.GetRequiredService<NavigationRouter>()
+        );
+        services.TryAddSingleton<INavigationScopeFactory, NavigationScopeFactory>();
 
         return services;
     }

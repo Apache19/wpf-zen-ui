@@ -11,16 +11,14 @@ namespace Wpf.Zen.Ui.Gallery.Views.Pages.OpSystem;
 
 public partial class OpSystemPage : INavigableView<OpSystemViewModel>
 {
-    private readonly INavigationService _navigationService;
     private SnowflakeEffect? _snowflake;
 
     public OpSystemViewModel ViewModel { get; }
 
-    public OpSystemPage(OpSystemViewModel viewModel, INavigationService navigationService)
+    public OpSystemPage(OpSystemViewModel viewModel)
     {
         ViewModel   = viewModel;
         DataContext = viewModel;
-        _navigationService = navigationService;
 
         InitializeComponent();
         Loaded += HandleLoaded;
@@ -29,7 +27,7 @@ public partial class OpSystemPage : INavigableView<OpSystemViewModel>
 
     private void HandleLoaded(object sender, RoutedEventArgs e)
     {
-        INavigationView? navigationControl = _navigationService.GetNavigationControl();
+        INavigationView? navigationControl = Wpf.Zen.Ui.Navigation.GetHost(this) as INavigationView;
         if (
             navigationControl?.BreadcrumbBar != null
             && navigationControl.BreadcrumbBar.Visibility != Visibility.Collapsed
@@ -59,7 +57,7 @@ public partial class OpSystemPage : INavigableView<OpSystemViewModel>
 
     private void HandleUnloaded(object sender, RoutedEventArgs e)
     {
-        INavigationView? navigationControl = _navigationService.GetNavigationControl();
+        INavigationView? navigationControl = Wpf.Zen.Ui.Navigation.GetHost(this) as INavigationView;
         if (
             navigationControl?.BreadcrumbBar != null
             && navigationControl.BreadcrumbBar.Visibility != Visibility.Visible

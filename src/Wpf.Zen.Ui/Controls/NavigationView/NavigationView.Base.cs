@@ -40,7 +40,7 @@ namespace Wpf.Zen.Ui.Controls;
 /// raw input and routed commands at the navigation boundary can configure
 /// <see cref="SuppressedNavigationInput"/>.
 /// </remarks>
-public partial class NavigationView : Control, INavigationView
+public partial class NavigationView : Control, INavigationView, INavigationHost
 {
     /// <summary>
     /// Notifies navigation-owned template helpers that <see cref="PaneTitle"/> changed. This is an

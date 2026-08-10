@@ -67,6 +67,6 @@ public class ApplicationHostService : IHostedService
             return;
         }
 
-        _ = mainWindow.NavigationView.Navigate(typeof(DashboardPage));
+        _ = mainWindow.Navigation.Navigate(typeof(DashboardPage));
     }
 }

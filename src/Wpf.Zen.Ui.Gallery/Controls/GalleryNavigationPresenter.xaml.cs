@@ -46,9 +46,7 @@ public class GalleryNavigationPresenter : System.Windows.Controls.Control
 
     private void OnTemplateButtonClick(Type? pageType)
     {
-        INavigationService navigationService = App.GetRequiredService<INavigationService>();
-
-        if (pageType is not null)
+        if (pageType is not null && Navigation.GetService(this) is { } navigationService)
         {
             _ = navigationService.Navigate(pageType);
         }

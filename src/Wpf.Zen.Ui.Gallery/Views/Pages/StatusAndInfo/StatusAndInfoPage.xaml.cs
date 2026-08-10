@@ -11,16 +11,14 @@ namespace Wpf.Zen.Ui.Gallery.Views.Pages.StatusAndInfo;
 
 public partial class StatusAndInfoPage : INavigableView<StatusAndInfoViewModel>
 {
-    private readonly INavigationService _navigationService;
     private SnowflakeEffect? _snowflake;
 
     public StatusAndInfoViewModel ViewModel { get; }
 
-    public StatusAndInfoPage(StatusAndInfoViewModel viewModel, INavigationService navigationService)
+    public StatusAndInfoPage(StatusAndInfoViewModel viewModel)
     {
         ViewModel   = viewModel;
         DataContext = viewModel;
-        _navigationService = navigationService;
 
         InitializeComponent();
         Loaded += HandleLoaded;
@@ -29,7 +27,7 @@ public partial class StatusAndInfoPage : INavigableView<StatusAndInfoViewModel>
 
     private void HandleLoaded(object sender, RoutedEventArgs e)
     {
-        INavigationView? navigationControl = _navigationService.GetNavigationControl();
+        INavigationView? navigationControl = Wpf.Zen.Ui.Navigation.GetHost(this) as INavigationView;
         if (
             navigationControl?.BreadcrumbBar != null
             && navigationControl.BreadcrumbBar.Visibility != Visibility.Collapsed
@@ -59,7 +57,7 @@ public partial class StatusAndInfoPage : INavigableView<StatusAndInfoViewModel>
 
     private void HandleUnloaded(object sender, RoutedEventArgs e)
     {
-        INavigationView? navigationControl = _navigationService.GetNavigationControl();
+        INavigationView? navigationControl = Wpf.Zen.Ui.Navigation.GetHost(this) as INavigationView;
         if (
             navigationControl?.BreadcrumbBar != null
             && navigationControl.BreadcrumbBar.Visibility != Visibility.Visible

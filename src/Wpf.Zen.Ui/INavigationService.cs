@@ -3,76 +3,66 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-using Wpf.Zen.Ui.Controls;
-
 namespace Wpf.Zen.Ui;
 
 /// <summary>
-/// Represents a contract with a <see cref="System.Windows.FrameworkElement"/> that contains <see cref="INavigationView"/>.
-/// Through defined <see cref="INavigationViewPageProvider"/> service allows you to use the Dependency Injection pattern in <c>WPF Zen UI</c> navigation.
+/// Provides navigation operations for exactly one attached navigation host.
 /// </summary>
+/// <remarks>
+/// A navigation service is scoped to a navigation surface rather than to an application or a
+/// window. Its target is immutable after attachment, so resolving this service from a page or view
+/// model can never redirect a request to a different window, tab, or hosted WPF island.
+/// </remarks>
 public interface INavigationService
 {
-    /// <summary>
-    /// Lets you navigate to the selected page based on it's type. Should be used with <see cref="INavigationViewPageProvider"/>.
-    /// </summary>
-    /// <param name="pageType"><see langword="Type"/> of the page.</param>
-    /// <returns><see langword="true"/> if the operation succeeds. <see langword="false"/> otherwise.</returns>
-    bool Navigate(Type pageType);
+    /// <summary>Gets a value indicating whether the attached host can navigate back.</summary>
+    bool CanGoBack { get; }
+
+    /// <summary>Requests navigation using an explicit target, parameter, and navigation mode.</summary>
+    /// <param name="request">The complete navigation request.</param>
+    /// <returns>A result describing whether the host performed the request.</returns>
+    NavigationResult Navigate(NavigationRequest request);
+
+    /// <summary>Requests navigation to a page type.</summary>
+    /// <param name="pageType">The page type to resolve inside this navigation scope.</param>
+    /// <param name="parameter">An optional parameter published to the destination visual tree.</param>
+    /// <returns>A result describing whether the host performed the request.</returns>
+    NavigationResult Navigate(Type pageType, object? parameter = null);
+
+    /// <summary>Requests navigation to a target registered under an id or tag.</summary>
+    /// <param name="pageIdOrTargetTag">The navigation item id or target tag.</param>
+    /// <param name="parameter">An optional parameter published to the destination visual tree.</param>
+    /// <returns>A result describing whether the host performed the request.</returns>
+    NavigationResult Navigate(string pageIdOrTargetTag, object? parameter = null);
+
+    /// <summary>Requests hierarchical navigation to a page type.</summary>
+    /// <param name="pageType">The page type to add to the active hierarchy.</param>
+    /// <param name="parameter">An optional parameter published to the destination visual tree.</param>
+    /// <returns>A result describing whether the host performed the request.</returns>
+    NavigationResult NavigateWithHierarchy(Type pageType, object? parameter = null);
+
+    /// <summary>Requests navigation to the preceding history entry.</summary>
+    /// <returns>A result describing whether the host performed the request.</returns>
+    NavigationResult GoBack();
+
+    /// <summary>Clears the history owned by this navigation scope.</summary>
+    void ClearHistory();
 
     /// <summary>
-    /// Lets you navigate to the selected page based on it's type, Should be used with <see cref="INavigationViewPageProvider"/>.
+    /// Asynchronously requests navigation, dispatching to the host's UI thread when necessary.
     /// </summary>
-    /// <param name="pageType"><see langword="Type"/> of the page.</param>
-    /// <param name="dataContext">DataContext <see cref="object"/></param>
-    /// <returns><see langword="true"/> if the operation succeeds. <see langword="false"/> otherwise.</returns>
-    bool Navigate(Type pageType, object? dataContext);
+    /// <param name="request">The complete navigation request.</param>
+    /// <param name="cancellationToken">Cancels a request that has not begun on the UI thread.</param>
+    /// <returns>A task containing the navigation result.</returns>
+    Task<NavigationResult> NavigateAsync(
+        NavigationRequest request,
+        CancellationToken cancellationToken = default
+    );
 
     /// <summary>
-    /// Lets you navigate to the selected page based on it's tag. Should be used with <see cref="INavigationViewPageProvider"/>.
+    /// Asynchronously requests back navigation, dispatching to the host's UI thread when necessary.
     /// </summary>
-    /// <param name="pageIdOrTargetTag">Id or tag of the page.</param>
-    /// <returns><see langword="true"/> if the operation succeeds. <see langword="false"/> otherwise.</returns>
-    bool Navigate(string pageIdOrTargetTag);
-
-    /// <summary>
-    /// Lets you navigate to the selected page based on it's tag. Should be used with <see cref="INavigationViewPageProvider"/>.
-    /// </summary>
-    /// <param name="pageIdOrTargetTag">Id or tag of the page.</param>
-    /// <param name="dataContext">DataContext <see cref="object"/></param>
-    /// <returns><see langword="true"/> if the operation succeeds. <see langword="false"/> otherwise.</returns>
-    bool Navigate(string pageIdOrTargetTag, object? dataContext);
-
-    /// <summary>
-    /// Synchronously adds an element to the navigation stack and navigates current navigation Frame to the
-    /// </summary>
-    /// <param name="pageType">Type of control to be synchronously added to the navigation stack</param>
-    /// <returns><see langword="true"/> if the operation succeeds. <see langword="false"/> otherwise.</returns>
-    bool NavigateWithHierarchy(Type pageType);
-
-    /// <summary>
-    /// Synchronously adds an element to the navigation stack and navigates current navigation Frame to the
-    /// </summary>
-    /// <param name="pageType">Type of control to be synchronously added to the navigation stack</param>
-    /// <param name="dataContext">DataContext <see cref="object"/></param>
-    /// <returns><see langword="true"/> if the operation succeeds. <see langword="false"/> otherwise.</returns>
-    bool NavigateWithHierarchy(Type pageType, object? dataContext);
-
-    /// <summary>
-    /// Provides direct access to the control responsible for navigation.
-    /// </summary>
-    /// <returns>Instance of the <see cref="INavigationView"/> control.</returns>
-    INavigationView GetNavigationControl();
-
-    /// <summary>
-    /// Lets you attach the control that represents the <see cref="INavigationView"/>.
-    /// </summary>
-    /// <param name="navigation">Instance of the <see cref="INavigationView"/>.</param>
-    void SetNavigationControl(INavigationView navigation);
-
-    /// <summary>
-    /// Navigates the NavigationView to the previous journal entry.
-    /// </summary>
-    /// <returns><see langword="true"/> if the operation succeeds. <see langword="false"/> otherwise.</returns>
-    bool GoBack();
+    /// <param name="cancellationToken">Cancels a request that has not begun on the UI thread.</param>
+    /// <returns>A task containing the navigation result.</returns>
+    Task<NavigationResult> GoBackAsync(CancellationToken cancellationToken = default);
 }

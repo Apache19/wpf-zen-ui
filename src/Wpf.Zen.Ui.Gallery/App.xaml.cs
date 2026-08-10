@@ -33,26 +33,25 @@ public partial class App
         .ConfigureServices(
             (_1, services) =>
             {
-                _ = services.AddNavigationViewPageProvider();
+                _ = services.AddNavigation();
 
                 // App Host
                 _ = services.AddHostedService<ApplicationHostService>();
 
                 // Main window container with navigation
                 _ = services.AddSingleton<IWindow, MainWindow>();
-                _ = services.AddSingleton<MainWindowViewModel>();
-                _ = services.AddSingleton<INavigationService, NavigationService>();
+                _ = services.AddScoped<MainWindowViewModel>();
                 _ = services.AddSingleton<ISnackbarService, SnackbarService>();
                 _ = services.AddSingleton<IContentDialogService, ContentDialogService>();
                 _ = services.AddSingleton<WindowsProviderService>();
 
                 // Top-level pages
-                _ = services.AddSingleton<DashboardPage>();
-                _ = services.AddSingleton<DashboardViewModel>();
-                _ = services.AddSingleton<AllControlsPage>();
-                _ = services.AddSingleton<AllControlsViewModel>();
-                _ = services.AddSingleton<SettingsPage>();
-                _ = services.AddSingleton<SettingsViewModel>();
+                _ = services.AddTransient<DashboardPage>();
+                _ = services.AddTransient<DashboardViewModel>();
+                _ = services.AddTransient<AllControlsPage>();
+                _ = services.AddTransient<AllControlsViewModel>();
+                _ = services.AddTransient<SettingsPage>();
+                _ = services.AddTransient<SettingsViewModel>();
 
                 // All other pages and view models
                 _ = services.AddTransientFromNamespace("Wpf.Zen.Ui.Gallery.Views", GalleryAssembly.Asssembly);

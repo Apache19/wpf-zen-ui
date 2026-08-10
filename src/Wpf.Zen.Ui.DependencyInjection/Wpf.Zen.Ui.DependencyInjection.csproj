@@ -6,6 +6,8 @@
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Description>Dependency injection for the WPF Zen UI.</Description>
     <CommonTags>$(CommonTags);dependency;injection;standard</CommonTags>
+    <UseWPF>true</UseWPF>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
   </PropertyGroup>
 
   <ItemGroup>

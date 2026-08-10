@@ -3,6 +3,7 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
+using Microsoft.Extensions.DependencyInjection;
 using Wpf.Zen.Ui.Demo.Mvvm.Views;
 
 namespace Wpf.Zen.Ui.Demo.Mvvm.Services;
@@ -12,7 +13,7 @@ namespace Wpf.Zen.Ui.Demo.Mvvm.Services;
 /// </summary>
 public class ApplicationHostService(IServiceProvider serviceProvider) : IHostedService
 {
-    private INavigationWindow? _navigationWindow;
+    private MainWindow? _mainWindow;
 
     /// <summary>
     /// Triggered when the application host is ready to start the service.
@@ -41,10 +42,10 @@ public class ApplicationHostService(IServiceProvider serviceProvider) : IHostedS
 
         if (!Application.Current.Windows.OfType<MainWindow>().Any())
         {
-            _navigationWindow = (serviceProvider.GetService(typeof(INavigationWindow)) as INavigationWindow)!;
-            _navigationWindow!.ShowWindow();
+            _mainWindow = serviceProvider.GetRequiredService<MainWindow>();
+            _mainWindow.Show();
 
-            _ = _navigationWindow.Navigate(typeof(Views.Pages.DashboardPage));
+            _ = _mainWindow.Navigation.Navigate(typeof(Views.Pages.DashboardPage));
         }
 
         await Task.CompletedTask;

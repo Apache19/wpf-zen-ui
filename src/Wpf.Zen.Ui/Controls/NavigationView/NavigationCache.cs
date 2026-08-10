@@ -55,6 +55,19 @@ internal class NavigationCache
         RemoveFromUsage(entryType);
     }
 
+    /// <summary>Releases every page retained by this navigation host.</summary>
+    /// <remarks>
+    /// Page disposal remains the responsibility of the navigation dependency-injection scope. The
+    /// cache must nevertheless drop its references when that scope ends so a later scope cannot
+    /// reuse a page whose scoped services have already been disposed.
+    /// </remarks>
+    public void Clear()
+    {
+        _permanentEntries.Clear();
+        _expirableEntries.Clear();
+        _expirableEntryUsage.Clear();
+    }
+
     public void UpdateCacheMode(
         Type? entryType,
         NavigationCacheMode oldCacheMode,

@@ -46,7 +46,7 @@
             LeftPaneOpenWidth="300"
             MenuItemsSource="{Binding ViewModel.MenuItems, Mode=OneWay}"
             PaneClosed="NavigationView_OnPaneClosed"
-            PaneDisplayMode="Left"
+            PaneDisplayMode="{Binding ViewModel.NavigationPaneDisplayMode}"
             PaneOpened="NavigationView_OnPaneOpened"
             SelectionChanged="OnNavigationSelectionChanged"
             TitleBar="{Binding ElementName=TitleBar, Mode=OneWay}"

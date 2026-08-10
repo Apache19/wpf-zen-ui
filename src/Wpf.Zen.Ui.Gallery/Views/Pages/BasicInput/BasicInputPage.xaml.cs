@@ -11,17 +11,14 @@ namespace Wpf.Zen.Ui.Gallery.Views.Pages.BasicInput;
 
 public partial class BasicInputPage : INavigableView<BasicInputViewModel>
 {
-    private readonly INavigationService _navigationService;
     private          SnowflakeEffect?   _snowflake;
 
     public BasicInputViewModel ViewModel { get; }
 
-    public BasicInputPage(BasicInputViewModel viewModel, INavigationService navigationService)
+    public BasicInputPage(BasicInputViewModel viewModel)
     {
         ViewModel   = viewModel;
         DataContext = viewModel;
-
-        _navigationService = navigationService;
 
         InitializeComponent();
 
@@ -31,7 +28,7 @@ public partial class BasicInputPage : INavigableView<BasicInputViewModel>
 
     private void HandleLoaded(object sender, RoutedEventArgs e)
     {
-        INavigationView? navigationControl = _navigationService.GetNavigationControl();
+        INavigationView? navigationControl = Wpf.Zen.Ui.Navigation.GetHost(this) as INavigationView;
         if (
             navigationControl?.BreadcrumbBar != null
          && navigationControl.BreadcrumbBar.Visibility != Visibility.Collapsed
@@ -61,7 +58,7 @@ public partial class BasicInputPage : INavigableView<BasicInputViewModel>
 
     private void HandleUnloaded(object sender, RoutedEventArgs e)
     {
-        INavigationView? navigationControl = _navigationService.GetNavigationControl();
+        INavigationView? navigationControl = Wpf.Zen.Ui.Navigation.GetHost(this) as INavigationView;
         if (
             navigationControl?.BreadcrumbBar != null
          && navigationControl.BreadcrumbBar.Visibility != Visibility.Visible

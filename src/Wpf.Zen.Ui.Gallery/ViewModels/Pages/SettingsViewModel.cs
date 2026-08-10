@@ -6,7 +6,7 @@
 using System.ComponentModel;
 using Wpf.Zen.Ui.Appearance;
 using Wpf.Zen.Ui.Controls;
-using Wpf.Zen.Ui.Extensions;
+using Wpf.Zen.Ui.Gallery.ViewModels.Windows;
 
 namespace Wpf.Zen.Ui.Gallery.ViewModels.Pages;
 
@@ -14,7 +14,7 @@ public sealed partial class SettingsViewModel : ViewModel
 {
     public record ThemeItem(string Display, UiThemeMode ThemeMode);
 
-    private readonly INavigationService? _navigationService;
+    private readonly MainWindowViewModel? _mainWindowViewModel;
 
     private bool _isInitialized = false;
 
@@ -43,9 +43,10 @@ public sealed partial class SettingsViewModel : ViewModel
     {
     }
 
-    public SettingsViewModel(INavigationService navigationService)
+    public SettingsViewModel(MainWindowViewModel mainWindowViewModel)
     {
-        _navigationService = navigationService;
+        _mainWindowViewModel = mainWindowViewModel;
+        CurrentApplicationNavigationStyle = mainWindowViewModel.NavigationPaneDisplayMode;
     }
 
     public override void OnNavigationEntered()
@@ -72,7 +73,10 @@ public sealed partial class SettingsViewModel : ViewModel
         NavigationViewPaneDisplayMode oldValue,
         NavigationViewPaneDisplayMode newValue)
     {
-        _ = _navigationService?.SetPaneDisplayMode(newValue);
+        if (_mainWindowViewModel is not null)
+        {
+            _mainWindowViewModel.NavigationPaneDisplayMode = newValue;
+        }
     }
 
     private void InitializeViewModel()

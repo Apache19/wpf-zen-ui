@@ -32,6 +32,57 @@ namespace Wpf.Zen.Ui.WinFormsHostTests;
 public class ElementHostThemeTests
 {
     /// <summary>
+    /// Verifies that a navigation scope can own pages and contextual services inside ElementHost
+    /// without manufacturing a WPF Window or Application singleton.
+    /// </summary>
+    [Fact]
+    public void NavigationScope_NavigatesInsideElementHost_WithoutWpfWindowOrApplication()
+    {
+        RunOnStaThread(() =>
+        {
+            Assert.Null(Application.Current);
+
+            var navigationView = new UiNavigationView();
+            ElementHostNavigationPage? navigatedPage = null;
+            navigationView.Navigated += (_, args) =>
+                navigatedPage = Assert.IsType<ElementHostNavigationPage>(args.Page);
+
+            using INavigationScope navigationScope = Wpf.Zen.Ui.NavigationScope.Attach(navigationView);
+            using var form = new Forms.Form
+            {
+                ShowInTaskbar = false,
+                StartPosition = Forms.FormStartPosition.Manual,
+                Location = new System.Drawing.Point(-10_000, -10_000),
+                Size = new System.Drawing.Size(320, 240),
+            };
+            using var elementHost = new ElementHost
+            {
+                Dock = Forms.DockStyle.Fill,
+                Child = navigationView,
+            };
+            form.Controls.Add(elementHost);
+
+            form.Show();
+            Forms.Application.DoEvents();
+            DrainDispatcher();
+
+            Assert.True(
+                navigationScope.Navigation
+                   .Navigate(typeof(ElementHostNavigationPage), "from-winforms")
+                   .Succeeded
+            );
+            Assert.NotNull(navigatedPage);
+            Assert.Null(Application.Current);
+            Assert.Same(
+                navigationScope.Navigation,
+                Wpf.Zen.Ui.Navigation.GetService(navigatedPage)
+            );
+            Assert.Same(navigationView, Wpf.Zen.Ui.Navigation.GetHost(navigatedPage));
+            Assert.Equal("from-winforms", Wpf.Zen.Ui.Navigation.GetParameter(navigatedPage));
+        });
+    }
+
+    /// <summary>
     /// Verifies that ThemeManager uses WPF's system-theme resource path without creating an Application, and that
     /// native controls inside a navigated page update after the visual tree has already been presented.
     /// </summary>
@@ -573,6 +624,19 @@ public class ElementHostThemeTests
             {
                 exception = caughtException;
             }
+            finally
+            {
+                // Each test owns this temporary WPF UI thread. Shutting down its Dispatcher is part of tearing down
+                // the visual island: ThemeManager deliberately retains discovered roots weakly, and an ElementHost
+                // tree can remain reachable briefly after disposal. Without an explicit shutdown, that stale root
+                // still exposes a Dispatcher whose thread has exited but whose shutdown flags remain false, so a
+                // later test island could incorrectly select it as the active theme dispatcher.
+                Dispatcher dispatcher = Dispatcher.CurrentDispatcher;
+                if (!dispatcher.HasShutdownStarted && !dispatcher.HasShutdownFinished)
+                {
+                    dispatcher.InvokeShutdown();
+                }
+            }
         });
 
         thread.SetApartmentState(ApartmentState.STA);
@@ -584,4 +648,6 @@ public class ElementHostThemeTests
             ExceptionDispatchInfo.Capture(exception).Throw();
         }
     }
+
+    private sealed class ElementHostNavigationPage : Border { }
 }

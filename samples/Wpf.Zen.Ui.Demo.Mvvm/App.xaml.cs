@@ -36,7 +36,7 @@ public partial class App
         .ConfigureServices(
             (context, services) =>
             {
-                _ = services.AddNavigationViewPageProvider();
+                _ = services.AddNavigation();
 
                 // App Host
                 _ = services.AddHostedService<ApplicationHostService>();
@@ -44,20 +44,18 @@ public partial class App
                 // TaskBar manipulation
                 _ = services.AddSingleton<ITaskBarService, TaskBarService>();
 
-                // Service containing navigation, same as INavigationWindow... but without window
-                _ = services.AddSingleton<INavigationService, NavigationService>();
-
-                // Main window with navigation
-                _ = services.AddSingleton<INavigationWindow, Views.MainWindow>();
-                _ = services.AddSingleton<ViewModels.MainWindowViewModel>();
+                // The window owns one navigation scope. Pages and view models resolved by that
+                // scope cannot accidentally navigate a different window.
+                _ = services.AddSingleton<Views.MainWindow>();
+                _ = services.AddScoped<ViewModels.MainWindowViewModel>();
 
                 // Views and ViewModels
-                _ = services.AddSingleton<Views.Pages.DashboardPage>();
-                _ = services.AddSingleton<ViewModels.DashboardViewModel>();
-                _ = services.AddSingleton<Views.Pages.DataPage>();
-                _ = services.AddSingleton<ViewModels.DataViewModel>();
-                _ = services.AddSingleton<Views.Pages.SettingsPage>();
-                _ = services.AddSingleton<ViewModels.SettingsViewModel>();
+                _ = services.AddTransient<Views.Pages.DashboardPage>();
+                _ = services.AddTransient<ViewModels.DashboardViewModel>();
+                _ = services.AddTransient<Views.Pages.DataPage>();
+                _ = services.AddTransient<ViewModels.DataViewModel>();
+                _ = services.AddTransient<Views.Pages.SettingsPage>();
+                _ = services.AddTransient<ViewModels.SettingsViewModel>();
 
                 // Configuration
                 _ = services.Configure<AppConfig>(context.Configuration.GetSection(nameof(AppConfig)));
