@@ -36,6 +36,70 @@ public class NavigationScopeTests
     }
 
     [Fact]
+    public void AddNavigation_DoesNotRegisterPageProviderAsAnApplicationService()
+    {
+        var services = new ServiceCollection();
+
+        _ = services.AddNavigation();
+
+        Assert.DoesNotContain(
+            services,
+            descriptor => descriptor.ServiceType == typeof(INavigationViewPageProvider)
+        );
+    }
+
+    [Fact]
+    public void Attach_ActivatesUnregisteredPageAndInjectsScopedDependencies()
+    {
+        WpfTestThread.Run(() =>
+        {
+            var services = new ServiceCollection();
+            _ = services.AddNavigation();
+            _ = services.AddScoped<ScopedDisposable>();
+
+            using ServiceProvider provider = services.BuildServiceProvider();
+            INavigationScopeFactory factory = provider.GetRequiredService<INavigationScopeFactory>();
+            var host = new NavigationView();
+            UnregisteredPage? page = null;
+            host.Navigated += (_, args) => page = Assert.IsType<UnregisteredPage>(args.Page);
+
+            using INavigationScope scope = factory.Attach(host);
+
+            Assert.True(scope.Navigation.Navigate(typeof(UnregisteredPage)).Succeeded);
+            Assert.NotNull(page);
+            Assert.Same(
+                scope.Services.GetRequiredService<ScopedDisposable>(),
+                page.Dependency
+            );
+            Assert.Null(scope.Services.GetService<INavigationViewPageProvider>());
+        });
+    }
+
+    [Fact]
+    public void Attach_RespectsExplicitPageRegistration()
+    {
+        WpfTestThread.Run(() =>
+        {
+            var registeredPage = new ProviderCreatedPage("registered-instance");
+            var services = new ServiceCollection();
+            _ = services.AddNavigation();
+            _ = services.AddSingleton(registeredPage);
+
+            using ServiceProvider provider = services.BuildServiceProvider();
+            INavigationScopeFactory factory = provider.GetRequiredService<INavigationScopeFactory>();
+            var host = new NavigationView();
+            ProviderCreatedPage? navigatedPage = null;
+            host.Navigated += (_, args) =>
+                navigatedPage = Assert.IsType<ProviderCreatedPage>(args.Page);
+
+            using INavigationScope scope = factory.Attach(host);
+
+            Assert.True(scope.Navigation.Navigate(typeof(ProviderCreatedPage)).Succeeded);
+            Assert.Same(registeredPage, navigatedPage);
+        });
+    }
+
+    [Fact]
     public void AttachWithoutContainer_PublishesCompleteNavigationContext()
     {
         WpfTestThread.Run(() =>
@@ -394,6 +458,11 @@ public class NavigationScopeTests
     private sealed class OtherScopedPage : Border { }
 
     private sealed class ContainerFreePage : Border { }
+
+    private sealed class UnregisteredPage(ScopedDisposable dependency) : Border
+    {
+        public ScopedDisposable Dependency { get; } = dependency;
+    }
 
     private sealed class ProviderCreatedPage(string source) : Border
     {

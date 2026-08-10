@@ -4,9 +4,7 @@
 // All Rights Reserved.
 
 using System.Windows.Controls;
-using Microsoft.Extensions.Localization;
 using Wpf.Zen.Ui.Controls;
-using Wpf.Zen.Ui.Gallery.Resources;
 using Wpf.Zen.Ui.Gallery.Views.Pages;
 using Wpf.Zen.Ui.Gallery.Views.Pages.BasicInput;
 using Wpf.Zen.Ui.Gallery.Views.Pages.Collections;
@@ -27,7 +25,7 @@ using UiSeparator = Wpf.Zen.Ui.Controls.Separator;
 
 namespace Wpf.Zen.Ui.Gallery.ViewModels.Windows;
 
-public partial class MainWindowViewModel(IStringLocalizer<Translations> localizer) : ViewModel
+public partial class MainWindowViewModel : ViewModel
 {
     /// <summary>
     /// Gets or sets the presentation mode of this window's navigation view.
@@ -42,7 +40,7 @@ public partial class MainWindowViewModel(IStringLocalizer<Translations> localize
         NavigationViewPaneDisplayMode.Left;
 
     [ObservableProperty]
-    public partial string ApplicationTitle { get; set; } = localizer["WPF Zen UI Gallery"];
+    public partial string ApplicationTitle { get; set; } = "WPF Zen UI Gallery";
 
     [ObservableProperty]
     public partial ObservableCollection<object> MenuItems { get; set; } =

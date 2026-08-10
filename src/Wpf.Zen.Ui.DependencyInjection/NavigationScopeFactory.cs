@@ -45,8 +45,12 @@ internal sealed class NavigationScopeFactory(
                .GetRequiredService<ScopedNavigationService>();
             navigationService.Attach(host);
 
-            INavigationViewPageProvider pageProvider = serviceScope.ServiceProvider
-               .GetRequiredService<INavigationViewPageProvider>();
+            // Page activation is bound directly to this host scope. It is intentionally not resolved
+            // as an application service: consumers should not need to register a provider or every
+            // navigable Page merely because the application uses dependency injection.
+            var pageProvider = new DependencyInjectionNavigationViewPageProvider(
+                serviceScope.ServiceProvider
+            );
 
             // Reserve an explicit route before mutating the host. A duplicate id then fails without
             // requiring asynchronous detachment of an otherwise valid host and page lifecycle.

@@ -10,7 +10,7 @@ WPF Zen UI 的导航以“一个导航宿主对应一个导航作用域”为基
 
 ## 使用依赖注入
 
-先注册导航基础设施以及页面、视图模型：
+先注册导航基础设施以及页面所依赖的视图模型或服务。页面类型本身无需注册：
 
 ```csharp
 services.AddNavigation();
@@ -18,13 +18,15 @@ services.AddNavigation();
 services.AddSingleton<MainWindow>();
 services.AddScoped<MainWindowViewModel>();
 
-// 页面和页面视图模型通常注册为 transient。
-// 页面是否复用由各 NavigationView 自己的 NavigationCacheMode 决定。
-services.AddTransient<DashboardPage>();
+// 只注册页面的构造函数依赖。
 services.AddTransient<DashboardViewModel>();
-services.AddTransient<SettingsPage>();
 services.AddTransient<SettingsViewModel>();
 ```
+
+`AddNavigation()` 不注册也不要求应用注册 `INavigationViewPageProvider`。导航时会先尊重页面
+类型已有的显式 DI 注册；页面未注册时，则由当前导航宿主的子作用域直接创建，并为其注入
+已注册的构造函数依赖。因此，只有页面需要自定义工厂、替换实例或特殊生命周期时，才需要
+显式注册页面类型。
 
 窗口在初始化控件后创建自己的导航作用域：
 
@@ -119,7 +121,7 @@ public partial class MainWindow
 }
 ```
 
-默认的 `ActivatorNavigationViewPageProvider` 使用页面的无参构造函数。需要构造函数参数、
+默认的 `ActivatorNavigationViewPageProvider` 使用页面的无参构造函数。需要自定义构造规则、
 已有页面实例或自定义创建规则时，实现 `INavigationViewPageProvider`：
 
 ```csharp

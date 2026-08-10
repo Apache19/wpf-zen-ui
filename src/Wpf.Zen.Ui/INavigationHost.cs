@@ -40,7 +40,10 @@ public interface INavigationHost
     /// Attaches the immutable service and page provider belonging to one navigation scope.
     /// </summary>
     /// <param name="navigationService">The contextual navigation service.</param>
-    /// <param name="pageProvider">The provider resolved from the same dependency-injection scope.</param>
+    /// <param name="pageProvider">
+    /// The page activator bound to this navigation scope. In DI mode it uses the same scoped service
+    /// provider as <paramref name="navigationService"/>, but is not itself an application service.
+    /// </param>
     /// <exception cref="InvalidOperationException">The host is already attached.</exception>
     void AttachNavigationScope(
         INavigationService navigationService,

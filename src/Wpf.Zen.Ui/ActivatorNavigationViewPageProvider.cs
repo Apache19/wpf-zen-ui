@@ -8,14 +8,12 @@ using Wpf.Zen.Ui.Controls;
 namespace Wpf.Zen.Ui;
 
 /// <summary>
-/// Creates navigation pages through their parameterless constructors without requiring a dependency-injection
-/// container.
+/// Creates pages for a container-free navigation scope without requiring dependency injection.
 /// </summary>
 /// <remarks>
-/// The provider uses the same activator as <see cref="NavigationView"/>, including its design-mode fallback and
-/// validation that destinations derive from <see cref="FrameworkElement"/>. Applications that need constructor
-/// injection or an existing-object registry can pass their own <see cref="INavigationViewPageProvider"/> to
-/// <see cref="NavigationScope.Attach(INavigationHost,INavigationViewPageProvider?)"/>.
+/// The provider uses the same activator as <see cref="NavigationView"/>, including its design-mode fallback,
+/// one-argument data-context convention, and validation that destinations derive from
+/// <see cref="FrameworkElement"/>. DI scopes use their own scoped activator and do not register this provider.
 /// </remarks>
 public sealed class ActivatorNavigationViewPageProvider : INavigationViewPageProvider
 {

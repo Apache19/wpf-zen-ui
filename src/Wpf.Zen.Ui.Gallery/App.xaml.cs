@@ -3,7 +3,7 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-using Lepo.i18n.DependencyInjection;
+using Lepo.i18n.Wpf;
 using Wpf.Zen.Ui.Appearance;
 using Wpf.Zen.Ui.DependencyInjection;
 using Wpf.Zen.Ui.Gallery.DependencyModel;
@@ -13,7 +13,6 @@ using Wpf.Zen.Ui.Gallery.Services;
 using Wpf.Zen.Ui.Gallery.Services.Contracts;
 using Wpf.Zen.Ui.Gallery.ViewModels.Pages;
 using Wpf.Zen.Ui.Gallery.ViewModels.Windows;
-using Wpf.Zen.Ui.Gallery.Views.Pages;
 using Wpf.Zen.Ui.Gallery.Views.Windows;
 
 namespace Wpf.Zen.Ui.Gallery;
@@ -45,22 +44,14 @@ public partial class App
                 _ = services.AddSingleton<IContentDialogService, ContentDialogService>();
                 _ = services.AddSingleton<WindowsProviderService>();
 
-                // Top-level pages
-                _ = services.AddTransient<DashboardPage>();
+                // Page types are intentionally not registered. AddNavigation activates concrete
+                // pages from each host scope and injects their registered view models.
                 _ = services.AddTransient<DashboardViewModel>();
-                _ = services.AddTransient<AllControlsPage>();
                 _ = services.AddTransient<AllControlsViewModel>();
-                _ = services.AddTransient<SettingsPage>();
                 _ = services.AddTransient<SettingsViewModel>();
 
-                // All other pages and view models
-                _ = services.AddTransientFromNamespace("Wpf.Zen.Ui.Gallery.Views", GalleryAssembly.Asssembly);
+                // View models and other non-page dependencies retain ordinary DI lifetimes.
                 _ = services.AddTransientFromNamespace("Wpf.Zen.Ui.Gallery.ViewModels", GalleryAssembly.Asssembly);
-
-                _ = services.AddStringLocalizer(b =>
-                {
-                    b.FromResource<Translations>(new("pl-PL"));
-                });
             }
         )
         .Build();
@@ -81,6 +72,13 @@ public partial class App
     /// </summary>
     private void OnStartup(object sender, StartupEventArgs e)
     {
+        // Lepo.i18n's WPF integration owns its localization provider; routing it through the
+        // application DI container adds registrations without providing a useful lifetime boundary.
+        _ = this.UseStringLocalizer(builder =>
+        {
+            builder.FromResource<Translations>(new("pl-PL"));
+        });
+
         /*
         var theme = LoadAppTheme();
 
