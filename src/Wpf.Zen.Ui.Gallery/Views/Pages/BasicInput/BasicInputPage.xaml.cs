@@ -28,7 +28,7 @@ public partial class BasicInputPage : INavigableView<BasicInputViewModel>
 
     private void HandleLoaded(object sender, RoutedEventArgs e)
     {
-        INavigationView? navigationControl = Wpf.Zen.Ui.Navigation.GetHost(this) as INavigationView;
+        NavigationView? navigationControl = Wpf.Zen.Ui.Navigation.GetHost(this) as NavigationView;
         if (
             navigationControl?.BreadcrumbBar != null
          && navigationControl.BreadcrumbBar.Visibility != Visibility.Collapsed
@@ -58,7 +58,7 @@ public partial class BasicInputPage : INavigableView<BasicInputViewModel>
 
     private void HandleUnloaded(object sender, RoutedEventArgs e)
     {
-        INavigationView? navigationControl = Wpf.Zen.Ui.Navigation.GetHost(this) as INavigationView;
+        NavigationView? navigationControl = Wpf.Zen.Ui.Navigation.GetHost(this) as NavigationView;
         if (
             navigationControl?.BreadcrumbBar != null
          && navigationControl.BreadcrumbBar.Visibility != Visibility.Visible

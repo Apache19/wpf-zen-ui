@@ -52,7 +52,7 @@ public class PageControlDocumentation : Control
     /// <summary>Identifies the <see cref="NavigationView"/> dependency property.</summary>
     public static readonly DependencyProperty NavigationViewProperty = DependencyProperty.Register(
         nameof(NavigationView),
-        typeof(INavigationView),
+        typeof(NavigationView),
         typeof(PageControlDocumentation),
         new FrameworkPropertyMetadata(null)
     );
@@ -74,9 +74,9 @@ public class PageControlDocumentation : Control
         new PropertyMetadata(null)
     );
 
-    public INavigationView? NavigationView
+    public NavigationView? NavigationView
     {
-        get => (INavigationView?)GetValue(NavigationViewProperty);
+        get => (NavigationView?)GetValue(NavigationViewProperty);
         set => SetValue(NavigationViewProperty, value);
     }
 

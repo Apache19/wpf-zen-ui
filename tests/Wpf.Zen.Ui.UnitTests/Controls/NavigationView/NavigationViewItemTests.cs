@@ -2832,7 +2832,7 @@ public class NavigationViewItemTests
 
         public bool WasExpandedWhenInvoked { get; private set; }
 
-        protected override void OnActivated(INavigationView navigationView)
+        protected override void OnActivated(Wpf.Zen.Ui.Controls.NavigationView navigationView)
         {
             ActivatedState = (
                 IsActive,
@@ -2840,7 +2840,7 @@ public class NavigationViewItemTests
             );
         }
 
-        protected override void OnDeactivated(INavigationView navigationView)
+        protected override void OnDeactivated(Wpf.Zen.Ui.Controls.NavigationView navigationView)
         {
             DeactivatedState = (
                 IsActive,

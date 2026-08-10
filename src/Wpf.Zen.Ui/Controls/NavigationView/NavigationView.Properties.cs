@@ -169,7 +169,7 @@ public partial class NavigationView
         new FrameworkPropertyMetadata(false)
     );
 
-    /// <inheritdoc/>
+    /// <summary>Gets or sets a value indicating whether the header remains visible when no header content is available.</summary>
     public bool AlwaysShowHeader
     {
         get => (bool)GetValue(AlwaysShowHeaderProperty);
@@ -188,7 +188,7 @@ public partial class NavigationView
         new FrameworkPropertyMetadata(null, OnAutoSuggestBoxChanged)
     );
 
-    /// <inheritdoc/>
+    /// <summary>Gets or sets the suggestion box displayed in the navigation pane.</summary>
     public AutoSuggestBox? AutoSuggestBox
     {
         get => (AutoSuggestBox?)GetValue(AutoSuggestBoxProperty);
@@ -233,7 +233,7 @@ public partial class NavigationView
         new FrameworkPropertyMetadata(null, OnBreadcrumbBarChanged)
     );
 
-    /// <inheritdoc/>
+    /// <summary>Gets or sets the breadcrumb bar associated with the current navigation hierarchy.</summary>
     public BreadcrumbBar? BreadcrumbBar
     {
         get => (BreadcrumbBar?)GetValue(BreadcrumbBarProperty);
@@ -309,7 +309,7 @@ public partial class NavigationView
         new FrameworkPropertyMetadata(null)
     );
 
-    /// <inheritdoc/>
+    /// <summary>Gets or sets content displayed above the navigated page content.</summary>
     public object? ContentOverlay
     {
         get => GetValue(ContentOverlayProperty);
@@ -332,7 +332,7 @@ public partial class NavigationView
     public static readonly DependencyProperty FooterMenuItemsProperty =
         FooterMenuItemsPropertyKey.DependencyProperty;
 
-    /// <inheritdoc/>
+    /// <summary>Gets the collection of items displayed in the footer menu.</summary>
     public IList FooterMenuItems => (ObservableCollection<object>)GetValue(FooterMenuItemsProperty);
 
     #endregion
@@ -347,7 +347,7 @@ public partial class NavigationView
         new FrameworkPropertyMetadata(null, OnFooterMenuItemsSourceChanged)
     );
 
-    /// <inheritdoc/>
+    /// <summary>Gets or sets the source used to generate footer menu items.</summary>
     [Bindable(true)]
     public object? FooterMenuItemsSource
     {
@@ -381,7 +381,7 @@ public partial class NavigationView
         new FrameworkPropertyMetadata(default(Thickness))
     );
 
-    /// <inheritdoc/>
+    /// <summary>Gets or sets the margin applied around the navigation frame.</summary>
     public Thickness FrameMargin
     {
         get => (Thickness)GetValue(FrameMarginProperty);
@@ -458,7 +458,7 @@ public partial class NavigationView
         new FrameworkPropertyMetadata(null)
     );
 
-    /// <inheritdoc/>
+    /// <summary>Gets or sets the content displayed in the page header.</summary>
     public object? Header
     {
         get => GetValue(HeaderProperty);
@@ -477,7 +477,7 @@ public partial class NavigationView
         new FrameworkPropertyMetadata(Visibility.Visible)
     );
 
-    /// <inheritdoc/>
+    /// <summary>Gets or sets the visibility of the page header.</summary>
     public Visibility HeaderVisibility
     {
         get => (Visibility)GetValue(HeaderVisibilityProperty);
@@ -601,7 +601,7 @@ public partial class NavigationView
         new FrameworkPropertyMetadata(true)
     );
 
-    /// <inheritdoc/>
+    /// <summary>Gets or sets a value indicating whether the separator above the footer menu is visible.</summary>
     public bool IsFooterSeparatorVisible
     {
         get => (bool)GetValue(IsFooterSeparatorVisibleProperty);
@@ -620,7 +620,7 @@ public partial class NavigationView
         new FrameworkPropertyMetadata(true, OnIsPaneOpenChanged)
     );
 
-    /// <inheritdoc/>
+    /// <summary>Gets or sets a value indicating whether the navigation pane is expanded to its open width.</summary>
     public bool IsPaneOpen
     {
         get => (bool)GetValue(IsPaneOpenProperty);
@@ -667,7 +667,7 @@ public partial class NavigationView
         new FrameworkPropertyMetadata(true, OnPaneButtonVisibilityChanged)
     );
 
-    /// <inheritdoc/>
+    /// <summary>Gets or sets a value indicating whether the pane toggle button is visible.</summary>
     public bool IsPaneToggleVisible
     {
         get => (bool)GetValue(IsPaneToggleVisibleProperty);
@@ -705,7 +705,7 @@ public partial class NavigationView
         new FrameworkPropertyMetadata(false)
     );
 
-    /// <inheritdoc/>
+    /// <summary>Gets or sets a value indicating whether the navigation pane is displayed.</summary>
     public bool IsPaneVisible
     {
         get => (bool)GetValue(IsPaneVisibleProperty);
@@ -724,7 +724,7 @@ public partial class NavigationView
         new FrameworkPropertyMetadata(true)
     );
 
-    /// <inheritdoc/>
+    /// <summary>Gets or sets a value indicating whether the separator above the primary menu is visible.</summary>
     public bool IsTopSeparatorVisible
     {
         get => (bool)GetValue(IsTopSeparatorVisibleProperty);
@@ -977,7 +977,7 @@ public partial class NavigationView
     /// <summary>Identifies the <see cref="MenuItems"/> dependency property.</summary>
     public static readonly DependencyProperty MenuItemsProperty = MenuItemsPropertyKey.DependencyProperty;
 
-    /// <inheritdoc/>
+    /// <summary>Gets the collection of items displayed in the primary menu.</summary>
     public IList MenuItems => (ObservableCollection<object>)GetValue(MenuItemsProperty);
 
     private void OnFooterMenuItemsCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
@@ -1002,7 +1002,7 @@ public partial class NavigationView
         new FrameworkPropertyMetadata(null, OnMenuItemsSourceChanged)
     );
 
-    /// <inheritdoc/>
+    /// <summary>Gets or sets the source used to generate primary menu items.</summary>
     [Bindable(true)]
     public object? MenuItemsSource
     {
@@ -1158,7 +1158,7 @@ public partial class NavigationView
         new FrameworkPropertyMetadata(NavigationViewPaneDisplayMode.Left, OnPaneDisplayModeChanged)
     );
 
-    /// <inheritdoc/>
+    /// <summary>Gets or sets how the pane and content regions are arranged.</summary>
     public NavigationViewPaneDisplayMode PaneDisplayMode
     {
         get => (NavigationViewPaneDisplayMode)GetValue(PaneDisplayModeProperty);
@@ -1194,7 +1194,7 @@ public partial class NavigationView
         new FrameworkPropertyMetadata(null)
     );
 
-    /// <inheritdoc/>
+    /// <summary>Gets or sets content displayed at the bottom of the navigation pane.</summary>
     public object? PaneFooter
     {
         get => GetValue(PaneFooterProperty);
@@ -1213,7 +1213,7 @@ public partial class NavigationView
         new FrameworkPropertyMetadata(null)
     );
 
-    /// <inheritdoc/>
+    /// <summary>Gets or sets content displayed at the top of the navigation pane.</summary>
     public object? PaneHeader
     {
         get => GetValue(PaneHeaderProperty);
@@ -1232,7 +1232,7 @@ public partial class NavigationView
         new FrameworkPropertyMetadata(null, OnPaneTitleChanged)
     );
 
-    /// <inheritdoc/>
+    /// <summary>Gets or sets the label displayed beside the menu icon while the pane is open.</summary>
     public string? PaneTitle
     {
         get => (string?)GetValue(PaneTitleProperty);
@@ -1301,7 +1301,7 @@ public partial class NavigationView
         new FrameworkPropertyMetadata(Transition.FadeInWithSlide)
     );
 
-    /// <inheritdoc/>
+    /// <summary>Gets or sets the transition used when changing pages.</summary>
     public Transition Transition
     {
         get => (Transition)GetValue(TransitionProperty);
@@ -1320,7 +1320,7 @@ public partial class NavigationView
         new FrameworkPropertyMetadata(200)
     );
 
-    /// <inheritdoc/>
+    /// <summary>Gets or sets the page-transition duration, in milliseconds.</summary>
     [Bindable(true)]
     [Category("Appearance")]
     public int TransitionDuration

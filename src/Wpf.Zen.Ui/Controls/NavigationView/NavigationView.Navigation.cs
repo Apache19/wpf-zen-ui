@@ -42,10 +42,13 @@ public partial class NavigationView
 
     private DependencyObject? _navigationContextOwner;
 
-    /// <inheritdoc />
+    /// <summary>Gets a value indicating whether the journal contains an entry to navigate back to.</summary>
     public bool CanGoBack => Journal.Count > 1;
 
-    /// <inheritdoc />
+    /// <summary>Navigates to a page identified by its CLR type.</summary>
+    /// <param name="pageType">The page type to activate.</param>
+    /// <param name="dataContext">The optional data context assigned to the page.</param>
+    /// <returns><see langword="true"/> when navigation succeeds; otherwise, <see langword="false"/>.</returns>
     public virtual bool Navigate(Type pageType, object? dataContext = null)
     {
         if (PageTypeIndex.TryGetValue(pageType, out var nvItem))
@@ -56,7 +59,10 @@ public partial class NavigationView
         return TryNavigateUnregisteredPage(pageType, false, dataContext);
     }
 
-    /// <inheritdoc />
+    /// <summary>Navigates to the item whose page identifier or target tag matches the supplied value.</summary>
+    /// <param name="pageIdOrTargetTag">The page identifier or navigation-item target tag.</param>
+    /// <param name="dataContext">The optional data context assigned to the page.</param>
+    /// <returns><see langword="true"/> when navigation succeeds; otherwise, <see langword="false"/>.</returns>
     public virtual bool Navigate(string pageIdOrTargetTag, object? dataContext = null)
     {
         if (PageKeyIndex.TryGetValue(pageIdOrTargetTag, out var nvItem))
@@ -67,7 +73,10 @@ public partial class NavigationView
         return false;
     }
 
-    /// <inheritdoc />
+    /// <summary>Navigates to a page and activates the matching hierarchy of menu items.</summary>
+    /// <param name="pageType">The page type to activate.</param>
+    /// <param name="dataContext">The optional data context assigned to the page.</param>
+    /// <returns><see langword="true"/> when navigation succeeds; otherwise, <see langword="false"/>.</returns>
     public virtual bool NavigateWithHierarchy(Type pageType, object? dataContext = null)
     {
         if (PageTypeIndex.TryGetValue(pageType, out var nvItem))
@@ -78,7 +87,9 @@ public partial class NavigationView
         return TryNavigateUnregisteredPage(pageType, true, dataContext);
     }
 
-    /// <inheritdoc />
+    /// <summary>Replaces the frame content without changing selection or raising <see cref="SelectionChanged"/>.</summary>
+    /// <param name="pageTypeToEmbed">The page type to create and display.</param>
+    /// <returns><see langword="true"/> when the content is replaced; otherwise, <see langword="false"/>.</returns>
     public virtual bool ReplaceContent(Type? pageTypeToEmbed)
     {
         if (pageTypeToEmbed == null)
@@ -96,7 +107,10 @@ public partial class NavigationView
         return true;
     }
 
-    /// <inheritdoc />
+    /// <summary>Replaces the frame content with an existing element without changing selection.</summary>
+    /// <param name="pageInstanceToEmbed">The element to display.</param>
+    /// <param name="dataContext">The optional data context assigned to the element.</param>
+    /// <returns><see langword="true"/> when the content is replaced; otherwise, <see langword="false"/>.</returns>
     public virtual bool ReplaceContent(UIElement pageInstanceToEmbed, object? dataContext = null)
     {
         UpdateContent(pageInstanceToEmbed, dataContext);
@@ -104,13 +118,15 @@ public partial class NavigationView
         return true;
     }
 
-    /// <inheritdoc />
+    /// <summary>Navigates to the next journal entry.</summary>
+    /// <returns><see langword="true"/> when forward navigation succeeds; otherwise, <see langword="false"/>.</returns>
     public virtual bool GoForward()
     {
         throw new NotImplementedException();
     }
 
-    /// <inheritdoc />
+    /// <summary>Navigates to the previous journal entry.</summary>
+    /// <returns><see langword="true"/> when back navigation succeeds; otherwise, <see langword="false"/>.</returns>
     public virtual bool GoBack()
     {
         if (Journal.Count <= 1)
@@ -131,7 +147,7 @@ public partial class NavigationView
         );
     }
 
-    /// <inheritdoc />
+    /// <summary>Clears the navigation journal while retaining the current page.</summary>
     public virtual void ClearJournal()
     {
         Journal.Clear();

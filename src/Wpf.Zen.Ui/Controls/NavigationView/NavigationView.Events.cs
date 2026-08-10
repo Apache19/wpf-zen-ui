@@ -75,56 +75,56 @@ public partial class NavigationView
         typeof(NavigationView)
     );
 
-    /// <inheritdoc/>
+    /// <summary>Occurs when the navigation pane is opened.</summary>
     public event TypedEventHandler<NavigationView, RoutedEventArgs> PaneOpened
     {
         add => AddHandler(PaneOpenedEvent, value);
         remove => RemoveHandler(PaneOpenedEvent, value);
     }
 
-    /// <inheritdoc/>
+    /// <summary>Occurs when the navigation pane is closed.</summary>
     public event TypedEventHandler<NavigationView, RoutedEventArgs> PaneClosed
     {
         add => AddHandler(PaneClosedEvent, value);
         remove => RemoveHandler(PaneClosedEvent, value);
     }
 
-    /// <inheritdoc/>
+    /// <summary>Occurs when <see cref="PaneDisplayMode"/> changes.</summary>
     public event TypedEventHandler<NavigationView, RoutedEventArgs> PaneDisplayModeChanged
     {
         add => AddHandler(PaneDisplayModeChangedEvent, value);
         remove => RemoveHandler(PaneDisplayModeChangedEvent, value);
     }
 
-    /// <inheritdoc/>
+    /// <summary>Occurs when the currently selected navigation item changes.</summary>
     public event TypedEventHandler<NavigationView, RoutedEventArgs> SelectionChanged
     {
         add => AddHandler(SelectionChangedEvent, value);
         remove => RemoveHandler(SelectionChangedEvent, value);
     }
 
-    /// <inheritdoc/>
+    /// <summary>Occurs when a menu item receives an interaction such as a click or tap.</summary>
     public event TypedEventHandler<NavigationView, RoutedEventArgs> ItemInvoked
     {
         add => AddHandler(ItemInvokedEvent, value);
         remove => RemoveHandler(ItemInvokedEvent, value);
     }
 
-    /// <inheritdoc/>
+    /// <summary>Occurs when the back button receives an interaction such as a click or tap.</summary>
     public event TypedEventHandler<NavigationView, RoutedEventArgs> BackRequested
     {
         add => AddHandler(BackRequestedEvent, value);
         remove => RemoveHandler(BackRequestedEvent, value);
     }
 
-    /// <inheritdoc/>
+    /// <summary>Occurs before a requested navigation is performed and allows it to be cancelled.</summary>
     public event TypedEventHandler<NavigationView, NavigatingCancelEventArgs> Navigating
     {
         add => AddHandler(NavigatingEvent, value);
         remove => RemoveHandler(NavigatingEvent, value);
     }
 
-    /// <inheritdoc/>
+    /// <summary>Occurs after the control has navigated to a page.</summary>
     public event TypedEventHandler<NavigationView, NavigatedEventArgs> Navigated
     {
         add => AddHandler(NavigatedEvent, value);

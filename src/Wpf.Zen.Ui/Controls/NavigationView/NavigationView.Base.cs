@@ -21,6 +21,12 @@ namespace Wpf.Zen.Ui.Controls;
 /// Represents a container that enables navigation of app content. It has a header, a view for the main content, and a menu pane for navigation commands.
 /// </summary>
 /// <remarks>
+/// Navigation infrastructure should depend on <see cref="Wpf.Zen.Ui.INavigationHost"/>, which is
+/// intentionally limited to host-level navigation operations. The visual surface remains a
+/// concrete control contract: mirroring its dependency properties, routed events, and template
+/// integration in a second interface would create another API that must change in lockstep without
+/// providing an independently implementable WPF control abstraction.
+///
 /// Navigated content is hosted by a stable WPF <see cref="Frame"/> so changing
 /// <see cref="PaneDisplayMode"/> does not recreate the current page. The frame does not add a
 /// <see cref="ScrollViewer"/> around the page: each page owns its scrolling policy and may use a
@@ -40,7 +46,7 @@ namespace Wpf.Zen.Ui.Controls;
 /// raw input and routed commands at the navigation boundary can configure
 /// <see cref="SuppressedNavigationInput"/>.
 /// </remarks>
-public partial class NavigationView : Control, INavigationView, INavigationHost
+public partial class NavigationView : Control, INavigationHost
 {
     /// <summary>
     /// Notifies navigation-owned template helpers that <see cref="PaneTitle"/> changed. This is an

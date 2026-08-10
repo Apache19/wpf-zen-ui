@@ -27,7 +27,7 @@ public partial class DateAndTimePage : INavigableView<DateAndTimeViewModel>
 
     private void HandleLoaded(object sender, RoutedEventArgs e)
     {
-        INavigationView? navigationControl = Wpf.Zen.Ui.Navigation.GetHost(this) as INavigationView;
+        NavigationView? navigationControl = Wpf.Zen.Ui.Navigation.GetHost(this) as NavigationView;
         if (
             navigationControl?.BreadcrumbBar != null
             && navigationControl.BreadcrumbBar.Visibility != Visibility.Collapsed
@@ -57,7 +57,7 @@ public partial class DateAndTimePage : INavigableView<DateAndTimeViewModel>
 
     private void HandleUnloaded(object sender, RoutedEventArgs e)
     {
-        INavigationView? navigationControl = Wpf.Zen.Ui.Navigation.GetHost(this) as INavigationView;
+        NavigationView? navigationControl = Wpf.Zen.Ui.Navigation.GetHost(this) as NavigationView;
         if (
             navigationControl?.BreadcrumbBar != null
             && navigationControl.BreadcrumbBar.Visibility != Visibility.Visible

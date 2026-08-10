@@ -17,7 +17,7 @@ namespace Wpf.Zen.Ui.Controls;
 /// <see cref="NavigationView.MenuItemsSource"/> and
 /// <see cref="NavigationView.FooterMenuItemsSource"/> to contain ordinary data rather than
 /// <see cref="NavigationViewItem"/> controls. The source object remains the public item identity:
-/// it is returned by <see cref="INavigationView.SelectedItem"/> and is forwarded to a connected
+/// it is returned by <see cref="NavigationView.SelectedItem"/> and is forwarded to a connected
 /// <see cref="BreadcrumbBar"/>. Item templates and container styles remain responsible for visual
 /// presentation.
 /// </remarks>

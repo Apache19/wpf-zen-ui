@@ -129,7 +129,7 @@ internal sealed class NavigationEntry
         }
     }
 
-    internal void Activate(INavigationView navigationView) => Container?.Activate(navigationView);
+    internal void Activate(NavigationView navigationView) => Container?.Activate(navigationView);
 
-    internal void Deactivate(INavigationView navigationView) => Container?.Deactivate(navigationView);
+    internal void Deactivate(NavigationView navigationView) => Container?.Deactivate(navigationView);
 }

@@ -769,7 +769,7 @@ public partial class NavigationViewItem : HeaderedItemsControl
     /// Marks this item active without changing the active state of its ancestors, then invokes
     /// <see cref="OnActivated"/>.
     /// </summary>
-    public void Activate(INavigationView navigationView)
+    public void Activate(NavigationView navigationView)
     {
         NavigationViewItemTemplateBehavior.SetIsActive(this, true);
         OnActivated(navigationView);
@@ -779,7 +779,7 @@ public partial class NavigationViewItem : HeaderedItemsControl
     /// Marks this item inactive without changing the active state of its ancestors, then invokes
     /// <see cref="OnDeactivated"/>.
     /// </summary>
-    public void Deactivate(INavigationView navigationView)
+    public void Deactivate(NavigationView navigationView)
     {
         NavigationViewItemTemplateBehavior.SetIsActive(this, false);
         OnDeactivated(navigationView);
@@ -789,13 +789,13 @@ public partial class NavigationViewItem : HeaderedItemsControl
     /// Called after this item and its semantic ancestors have observed the active state.
     /// </summary>
     /// <param name="navigationView">The navigation view that activated the item.</param>
-    protected virtual void OnActivated(INavigationView navigationView) { }
+    protected virtual void OnActivated(NavigationView navigationView) { }
 
     /// <summary>
     /// Called after this item and its semantic ancestors have observed the inactive state.
     /// </summary>
     /// <param name="navigationView">The navigation view that deactivated the item.</param>
-    protected virtual void OnDeactivated(INavigationView navigationView) { }
+    protected virtual void OnDeactivated(NavigationView navigationView) { }
 
     /// <inheritdoc />
     protected override void OnInitialized(EventArgs e)

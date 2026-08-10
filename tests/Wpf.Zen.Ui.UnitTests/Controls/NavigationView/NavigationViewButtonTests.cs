@@ -134,7 +134,11 @@ public class NavigationViewButtonTests
                 RoutingStrategy.Bubble,
                 Wpf.Zen.Ui.Controls.NavigationView.PaneDisplayModeChangedEvent.RoutingStrategy
             );
-            Assert.NotNull(typeof(INavigationView).GetEvent(nameof(INavigationView.PaneDisplayModeChanged)));
+            Assert.NotNull(
+                typeof(Wpf.Zen.Ui.Controls.NavigationView).GetEvent(
+                    nameof(Wpf.Zen.Ui.Controls.NavigationView.PaneDisplayModeChanged)
+                )
+            );
         });
     }
 
@@ -145,8 +149,6 @@ public class NavigationViewButtonTests
         Assert.Null(typeof(Wpf.Zen.Ui.Controls.NavigationView).GetProperty("TitleBarButtonStyle"));
         Assert.Null(typeof(Wpf.Zen.Ui.Controls.NavigationView).GetField("PaneButtonStyleProperty"));
         Assert.Null(typeof(Wpf.Zen.Ui.Controls.NavigationView).GetField("TitleBarButtonStyleProperty"));
-        Assert.Null(typeof(INavigationView).GetProperty("PaneButtonStyle"));
-        Assert.Null(typeof(INavigationView).GetProperty("TitleBarButtonStyle"));
     }
 
     [Fact]
