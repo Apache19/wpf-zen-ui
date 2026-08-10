@@ -12,6 +12,7 @@ namespace Wpf.Zen.Ui.Gallery.Views.Pages.Collections;
 public partial class CollectionsPage : INavigableView<CollectionsViewModel>
 {
     private SnowflakeEffect? _snowflake;
+    private          NavigationView?    _navigationView;
 
     public CollectionsViewModel ViewModel { get; }
 
@@ -27,16 +28,15 @@ public partial class CollectionsPage : INavigableView<CollectionsViewModel>
 
     private void HandleLoaded(object sender, RoutedEventArgs e)
     {
-        NavigationView? navigationControl = Wpf.Zen.Ui.Navigation.GetHost(this) as NavigationView;
         if (
-            navigationControl?.BreadcrumbBar != null
-            && navigationControl.BreadcrumbBar.Visibility != Visibility.Collapsed
+            _navigationView?.BreadcrumbBar != null
+            && _navigationView.BreadcrumbBar.Visibility != Visibility.Collapsed
         )
         {
-            navigationControl.BreadcrumbBar.SetCurrentValue(VisibilityProperty, Visibility.Collapsed);
+            _navigationView.BreadcrumbBar.SetCurrentValue(VisibilityProperty, Visibility.Collapsed);
         }
 
-        INavigationItem? selectedItem = navigationControl?.SelectedItem as INavigationItem;
+        INavigationItem? selectedItem = _navigationView?.SelectedItem as INavigationItem;
         if (selectedItem != null)
         {
             string? newTitle = selectedItem.Content?.ToString();
@@ -57,13 +57,12 @@ public partial class CollectionsPage : INavigableView<CollectionsViewModel>
 
     private void HandleUnloaded(object sender, RoutedEventArgs e)
     {
-        NavigationView? navigationControl = Wpf.Zen.Ui.Navigation.GetHost(this) as NavigationView;
         if (
-            navigationControl?.BreadcrumbBar != null
-            && navigationControl.BreadcrumbBar.Visibility != Visibility.Visible
+            _navigationView?.BreadcrumbBar != null
+            && _navigationView.BreadcrumbBar.Visibility != Visibility.Visible
         )
         {
-            navigationControl.BreadcrumbBar.SetCurrentValue(VisibilityProperty, Visibility.Visible);
+            _navigationView.BreadcrumbBar.SetCurrentValue(VisibilityProperty, Visibility.Visible);
         }
 
         _snowflake?.Stop();
