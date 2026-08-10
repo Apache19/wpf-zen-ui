@@ -1,21 +1,18 @@
 <Page
     x:Class="Wpf.Zen.Ui.Gallery.Views.Pages.Navigation.BreadcrumbBarPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:controls="clr-namespace:Wpf.Zen.Ui.Gallery.Controls"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:local="clr-namespace:Wpf.Zen.Ui.Gallery.Views.Pages.Navigation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:vm="clr-namespace:Wpf.Zen.Ui.Gallery.ViewModels.Pages.Navigation"
-    xmlns:models="clr-namespace:Wpf.Zen.Ui.Gallery.Models"
-    xmlns:system="clr-namespace:System;assembly=System.Runtime"
     xmlns:ui="http://schemas.thezendev.com/wpf/2027"
+    xmlns:controls="clr-namespace:Wpf.Zen.Ui.Gallery.Controls"
+    xmlns:models="clr-namespace:Wpf.Zen.Ui.Gallery.Models"
+    xmlns:vm="clr-namespace:Wpf.Zen.Ui.Gallery.ViewModels.Pages.Navigation"
     Title="BreadcrumbBar"
     controls:PageControlDocumentation.DocumentationType="{x:Type ui:BreadcrumbBar}"
-    d:DataContext="{d:DesignInstance vm:BreadcrumbBarViewModel,
-                                     IsDesignTimeCreatable=False}"
-    d:DesignWidth="850"
     d:Background="{ui:DynamicBrush WindowBackground}"
+    d:DataContext="{d:DesignInstance vm:BreadcrumbBarViewModel, IsDesignTimeCreatable=False}"
+    d:DesignWidth="850"
     Foreground="{ui:DynamicBrush TextFillPrimary}"
     Style="{ui:DynamicStyle DynamicScrollPage}"
     WindowWidth="850"
@@ -24,14 +21,7 @@
     <Page.Resources>
         <ResourceDictionary>
             <Style BasedOn="{StaticResource {x:Type ui:BreadcrumbBarItem}}" TargetType="{x:Type ui:BreadcrumbBarItem}">
-                <Setter Property="Icon">
-                    <Setter.Value>
-                        <ui:FluentIcon
-                            FontSize="16"
-                            FontWeight="Regular"
-                            Symbol="ChevronRight24" />
-                    </Setter.Value>
-                </Setter>
+                <Setter Property="Icon" Value="{ui:FluentIconSource ChevronRight24}" />
                 <Setter Property="FontWeight" Value="Regular" />
             </Style>
         </ResourceDictionary>
