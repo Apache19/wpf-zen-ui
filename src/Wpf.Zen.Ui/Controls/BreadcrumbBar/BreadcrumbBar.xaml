@@ -9,53 +9,65 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Zen.Ui.Controls"
-    xmlns:m="clr-namespace:Wpf.Zen.Ui.Markup"
-    xmlns:t="clr-namespace:Wpf.Zen.Ui.Theming">
+    xmlns:m="clr-namespace:Wpf.Zen.Ui.Markup">
 
     <Style x:Key="DefaultUiBreadcrumbBarItemStyle" TargetType="{x:Type controls:BreadcrumbBarItem}">
-        <Setter Property="SnapsToDevicePixels" Value="True" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
-        <Setter Property="VerticalAlignment" Value="Center" />
-        <Setter Property="IconMargin" Value="10,0,10,0" />
-        <Setter Property="Focusable" Value="False" />
         <Setter Property="Background" Value="Transparent" />
-        <Setter Property="Foreground" Value="{m:DynamicBrush TextFillPrimary}" />
-        <Setter Property="FocusVisualStyle" Value="{DynamicResource {x:Static t:StyleKeys.DefaultControlFocusVisualStyle}}" />
-        <!--  A Style must not share one FrameworkElement between every breadcrumb container.  -->
-        <Setter Property="Icon" Value="{m:FluentIconSource ChevronRight24}" />
+        <Setter Property="Foreground" Value="{m:DynamicBrush TextFillSecondary}" />
+        <Setter Property="FocusVisualStyle">
+            <Setter.Value>
+                <Style>
+                    <Setter Property="Control.Template">
+                        <Setter.Value>
+                            <ControlTemplate>
+                                <Rectangle
+                                    Margin="-4"
+                                    RadiusX="4"
+                                    RadiusY="4"
+                                    SnapsToDevicePixels="True"
+                                    Stroke="{m:DynamicBrush KeyboardFocusBorder}"
+                                    StrokeThickness="1" />
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </Setter.Value>
+        </Setter>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type controls:BreadcrumbBarItem}">
-                    <Grid Background="{TemplateBinding Background}">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-
+                    <StackPanel Background="{TemplateBinding Background}" Orientation="Horizontal">
                         <ContentPresenter
-                            x:Name="Presenter"
-                            Grid.Column="0"
+                            x:Name="contentPresenter"
                             HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
-                            VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
-
-                        <ContentControl
-                            x:Name="Icon"
-                            Grid.Column="1"
-                            Margin="{TemplateBinding IconMargin}"
-                            VerticalAlignment="Center"
-                            Content="{TemplateBinding Icon}"
-                            Focusable="False"
-                            TextElement.FontSize="18.0"
-                            TextElement.FontWeight="DemiBold" />
-                    </Grid>
-
+                            VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                            RecognizesAccessKey="True" />
+                        <controls:FluentIcon
+                            x:Name="icon"
+                            Margin="8,0"
+                            VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                            Foreground="{m:DynamicBrush TextFillSecondary}"
+                            Symbol="ChevronRight24" />
+                    </StackPanel>
                     <ControlTemplate.Triggers>
-                        <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="Presenter" Property="TextElement.Foreground" Value="{m:DynamicBrush TextFillSecondary}" />
+                        <Trigger Property="FlowDirection" Value="RightToLeft">
+                            <Setter TargetName="icon" Property="Symbol" Value="ChevronLeft24" />
                         </Trigger>
                         <Trigger Property="IsLast" Value="True">
-                            <Setter Property="IsEnabled" Value="False" />
-                            <Setter TargetName="Icon" Property="Visibility" Value="Collapsed" />
+                            <Setter TargetName="icon" Property="Visibility" Value="Collapsed" />
+                            <Setter Property="Foreground" Value="{m:DynamicBrush TextFillPrimary}" />
+                        </Trigger>
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="IsLast" Value="False" />
+                                <Condition Property="IsMouseOver" Value="True" />
+                            </MultiTrigger.Conditions>
+                            <Setter Property="Foreground" Value="{m:DynamicBrush TextFillPrimary}" />
+                        </MultiTrigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Foreground" Value="{m:DynamicBrush TextFillDisabled}" />
+                            <Setter TargetName="icon" Property="Foreground" Value="{m:DynamicBrush TextFillDisabled}" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -64,7 +76,8 @@
     </Style>
 
     <Style x:Key="DefaultUiBreadcrumbBarStyle" TargetType="{x:Type controls:BreadcrumbBar}">
-        <Setter Property="FocusVisualStyle" Value="{m:DynamicStyle DefaultControlFocusVisual}" />
+        <Setter Property="Focusable" Value="False" />
+        <Setter Property="IsTabStop" Value="False" />
         <Setter Property="ItemsPanel">
             <Setter.Value>
                 <ItemsPanelTemplate>

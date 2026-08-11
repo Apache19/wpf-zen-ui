@@ -14,40 +14,6 @@ namespace Wpf.Zen.Ui.Controls;
 /// </summary>
 public class BreadcrumbBarItem : System.Windows.Controls.Primitives.ButtonBase
 {
-    /// <summary>Identifies the <see cref="Icon"/> dependency property.</summary>
-    public static readonly DependencyProperty IconProperty = DependencyProperty.Register(
-        nameof(Icon),
-        typeof(object),
-        typeof(BreadcrumbBarItem),
-        new PropertyMetadata(null)
-    );
-
-    /// <summary>
-    /// Gets or sets the content displayed in the icon slot.
-    /// </summary>
-    public object? Icon
-    {
-        get => GetValue(IconProperty);
-        set => SetValue(IconProperty, value);
-    }
-
-    /// <summary>Identifies the <see cref="IconMargin"/> dependency property.</summary>
-    public static readonly DependencyProperty IconMarginProperty = DependencyProperty.Register(
-        nameof(IconMargin),
-        typeof(Thickness),
-        typeof(BreadcrumbBarItem),
-        new PropertyMetadata(new Thickness(0))
-    );
-
-    /// <summary>
-    /// Gets or sets get or sets margin for the <see cref="Icon"/>
-    /// </summary>
-    public Thickness IconMargin
-    {
-        get => (Thickness)GetValue(IconMarginProperty);
-        set => SetValue(IconMarginProperty, value);
-    }
-
     /// <summary>Identifies the <see cref="IsLast"/> dependency property.</summary>
     private static readonly DependencyPropertyKey IsLastPropertyKey =
         DependencyProperty.RegisterReadOnly(
