@@ -10,7 +10,9 @@ public partial class MultilevelNavigationSample(INavigationService navigationSer
     [RelayCommand]
     private void NavigateForward(Type type)
     {
-        _ = navigationService.NavigateWithHierarchy(type);
+        // The map owns Page 1 → Page 2 → Page 3. Navigation only selects the destination; it does
+        // not mutate a hidden hierarchy stack or derive parentage from the page we came from.
+        _ = navigationService.Navigate(type);
     }
 
     [RelayCommand]

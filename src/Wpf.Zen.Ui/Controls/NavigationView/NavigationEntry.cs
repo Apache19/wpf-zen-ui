@@ -22,18 +22,15 @@ internal sealed class NavigationEntry
 {
     private readonly string _fallbackId = Guid.NewGuid().ToString("n");
 
-    internal NavigationEntry(object item, NavigationEntry? parent, bool isMenuElement)
+    internal NavigationEntry(object item, bool isMenuElement)
     {
         Item                         = item;
-        Parent                       = parent;
         IsMenuElement                = isMenuElement;
         LastKnownTargetPageType      = TargetPageType;
         LastKnownNavigationCacheMode = NavigationCacheMode;
     }
 
     internal object Item { get; }
-
-    internal NavigationEntry? Parent { get; set; }
 
     internal NavigationViewItem? Container { get; set; }
 

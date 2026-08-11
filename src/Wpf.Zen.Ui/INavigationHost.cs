@@ -21,8 +21,14 @@ public interface INavigationHost
     /// <summary>Gets the dispatcher that owns this navigation surface.</summary>
     Dispatcher Dispatcher { get; }
 
+    /// <summary>Gets the semantic navigation state owned by this host.</summary>
+    INavigationState NavigationState { get; }
+
     /// <summary>Gets a value indicating whether this host has an entry to which it can navigate back.</summary>
     bool CanGoBack { get; }
+
+    /// <summary>Gets a value indicating whether this host has a forward history entry.</summary>
+    bool CanGoForward { get; }
 
     /// <summary>Performs a navigation request on the host's dispatcher.</summary>
     /// <param name="request">The request to perform.</param>
@@ -32,6 +38,10 @@ public interface INavigationHost
     /// <summary>Performs back navigation on the host's dispatcher.</summary>
     /// <returns>The result of the request.</returns>
     NavigationResult RequestGoBack();
+
+    /// <summary>Performs forward navigation on the host's dispatcher.</summary>
+    /// <returns>The result of the request.</returns>
+    NavigationResult RequestGoForward();
 
     /// <summary>Clears history owned by this host.</summary>
     void ClearNavigationHistory();

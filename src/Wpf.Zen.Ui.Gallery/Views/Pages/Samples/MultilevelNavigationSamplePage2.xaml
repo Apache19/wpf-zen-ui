@@ -14,7 +14,7 @@
     d:Background="{ui:DynamicBrush WindowBackground}"
     Foreground="{ui:DynamicBrush TextFillPrimary}"
     Style="{ui:DynamicStyle DynamicScrollPage}"
-    ui:NavigationView.HeaderContent="Page 2"
+    ui:NavigationView.BreadcrumbContent="Page 2"
     mc:Ignorable="d">
 
     <Grid>

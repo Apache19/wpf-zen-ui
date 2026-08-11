@@ -46,7 +46,7 @@ namespace Wpf.Zen.Ui.Controls;
 /// raw input and routed commands at the navigation boundary can configure
 /// <see cref="SuppressedNavigationInput"/>.
 /// </remarks>
-public partial class NavigationView : Control, INavigationHost
+public partial class NavigationView : Control, INavigationHost, INavigationState
 {
     /// <summary>
     /// Notifies navigation-owned template helpers that <see cref="PaneTitle"/> changed. This is an
@@ -166,7 +166,7 @@ public partial class NavigationView : Control, INavigationHost
 
         // These collections are the direct-content alternative to ItemsSource, matching the two
         // mutually exclusive item paths exposed by WPF ItemsControl. ItemsSource is never copied
-        // into them; preserving source identity is required for selection and breadcrumb binding.
+        // into them; preserving source identity is required for menu selection and invocation.
         var menuItems = new ObservableCollection<object>();
         menuItems.CollectionChanged += OnMenuItemsCollectionChanged;
         SetValue(MenuItemsPropertyKey, menuItems);
@@ -175,21 +175,21 @@ public partial class NavigationView : Control, INavigationHost
         footerMenuItems.CollectionChanged += OnFooterMenuItemsCollectionChanged;
         SetValue(FooterMenuItemsPropertyKey, footerMenuItems);
 
-        BreadcrumbItems = new ReadOnlyObservableCollection<NavigationBreadcrumbItem>(_breadcrumbItems);
-        NavigationStack.CollectionChanged += NavigationStackOnCollectionChanged;
+        Breadcrumbs = new ReadOnlyObservableCollection<BreadcrumbSegment>(_breadcrumbs);
+        SetCurrentValue(NavigationMapProperty, new NavigationMap());
     }
 
     /// <summary>
-    /// Gets the current navigation path as presentation-safe, non-visual breadcrumb items.
+    /// Gets the current semantic path as presentation-safe, non-visual breadcrumb segments.
     /// </summary>
     /// <remarks>
     /// The collection is stable for the lifetime of the control and can be assigned directly to a
-    /// <see cref="ItemsControl.ItemsSource"/> on a <see cref="BreadcrumbBar"/>. Every path segment
-    /// uses the same <see cref="NavigationBreadcrumbItem"/> model, regardless of whether the menu
-    /// originated from data or directly declared controls. This keeps navigation identity,
-    /// breadcrumb presentation, and WPF visual ownership as separate responsibilities.
+    /// <see cref="ItemsControl.ItemsSource"/> on a <see cref="BreadcrumbBar"/>. The collection is a
+    /// projection of <see cref="CurrentLocation"/> and never contains menu items or live controls.
+    /// A BreadcrumbBar remains an ordinary independent presenter: the NavigationView neither owns
+    /// it nor modifies its templates, visibility, source, or event subscriptions.
     /// </remarks>
-    public ReadOnlyObservableCollection<NavigationBreadcrumbItem> BreadcrumbItems { get; }
+    public ReadOnlyObservableCollection<BreadcrumbSegment> Breadcrumbs { get; }
 
     internal Dictionary<string, NavigationEntry> PageKeyIndex { get; } = [];
     internal Dictionary<Type, NavigationEntry> PageTypeIndex { get; } = [];
@@ -211,7 +211,7 @@ public partial class NavigationView : Control, INavigationHost
         ReferenceComparer<INotifyPropertyChanged>.Instance
     );
     private readonly ObservableCollection<string> _autoSuggestItems = [];
-    private readonly ObservableCollection<NavigationBreadcrumbItem> _breadcrumbItems = [];
+    private readonly BreadcrumbCollection _breadcrumbs = [];
     private readonly NavigationViewButton _paneBackButton;
     private readonly NavigationViewButton _paneToggleButton;
     private readonly NavigationViewButton _titleBarBackButton;
@@ -220,6 +220,43 @@ public partial class NavigationView : Control, INavigationHost
     private TitleBar? _titleBarContentOwner;
     private object? _displacedTitleBarLeftContent;
     private bool _isLeftPaneWidthInitialized;
+
+    /// <summary>
+    /// Replaces a resolved path with one reset notification. Ordinary Clear/Add projection would
+    /// expose transient partial paths to bindings and make one dynamic label change produce many
+    /// layout passes in BreadcrumbBar.
+    /// </summary>
+    private sealed class BreadcrumbCollection : ObservableCollection<BreadcrumbSegment>
+    {
+        internal void ReplaceWith(IReadOnlyList<BreadcrumbSegment> items)
+        {
+            if (Count == items.Count && this.SequenceEqual(items))
+            {
+                return;
+            }
+
+            CheckReentrancy();
+            bool countChanged = Count != items.Count;
+            Items.Clear();
+            foreach (BreadcrumbSegment item in items)
+            {
+                Items.Add(item);
+            }
+
+            if (countChanged)
+            {
+                OnPropertyChanged(new PropertyChangedEventArgs(nameof(Count)));
+            }
+
+            OnPropertyChanged(new PropertyChangedEventArgs("Item[]"));
+            OnCollectionChanged(
+                new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset)
+            );
+        }
+    }
+
+    /// <inheritdoc />
+    public event EventHandler? CurrentLocationChanged;
 
     /// <summary>
     /// Compares source items by object identity so navigation state remains associated with the
@@ -286,7 +323,6 @@ public partial class NavigationView : Control, INavigationHost
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
         RebuildNavigationIndexes();
-        AttachBreadcrumbBar(BreadcrumbBar);
         UpdatePaneButtonPlacement();
     }
 
@@ -308,8 +344,6 @@ public partial class NavigationView : Control, INavigationHost
             AutoSuggestBox.SuggestionChosen -= AutoSuggestBoxOnSuggestionChosen;
             AutoSuggestBox.QuerySubmitted -= AutoSuggestBoxOnQuerySubmitted;
         }
-
-        DetachBreadcrumbBar(BreadcrumbBar);
 
         // Descendant sources can outlive this control. Release every recursively discovered
         // subscription; OnLoaded rebuilds the semantic model if this instance is reused.
@@ -631,10 +665,7 @@ public partial class NavigationView : Control, INavigationHost
     /// </summary>
     internal void ClearSelectedItem()
     {
-        if (NavigationStack.Count > 0)
-        {
-            NavigationStack[0].Deactivate(this);
-        }
+        _currentEntry?.Deactivate(this);
 
         SetSelectedItem(null);
         OnSelectionChanged();
@@ -707,46 +738,6 @@ public partial class NavigationView : Control, INavigationHost
         // only the caller's data object. The HashSet also makes direct roots encountered through
         // both paths close exactly once.
         return roots;
-    }
-
-    protected virtual void BreadcrumbBarOnItemClicked(
-        BreadcrumbBar sender,
-        BreadcrumbBarItemClickedEventArgs e
-    )
-    {
-        // The breadcrumb model carries the semantic entry that created it. Direct identity mapping
-        // remains correct if either collection changes during routed-event handling and avoids the
-        // fragile requirement that two independently observable collections stay index-aligned.
-        if (e.Item is NavigationBreadcrumbItem item && _breadcrumbItems.Contains(item))
-        {
-            _ = NavigateInternal(item.NavigationEntry);
-        }
-    }
-
-    /// <summary>Connects the configured breadcrumb surface to navigation invocation.</summary>
-    /// <remarks>
-    /// Dependency-property assignment can happen before Loaded, while a NavigationView can later be
-    /// unloaded and inserted into another visual tree without its BreadcrumbBar property changing.
-    /// Removing before adding makes this operation idempotent for both lifecycle paths.
-    /// </remarks>
-    private void AttachBreadcrumbBar(BreadcrumbBar? breadcrumbBar)
-    {
-        if (breadcrumbBar is null)
-        {
-            return;
-        }
-
-        breadcrumbBar.ItemClicked -= BreadcrumbBarOnItemClicked;
-        breadcrumbBar.ItemClicked += BreadcrumbBarOnItemClicked;
-    }
-
-    /// <summary>Releases the event connection while retaining the public data association.</summary>
-    private void DetachBreadcrumbBar(BreadcrumbBar? breadcrumbBar)
-    {
-        if (breadcrumbBar is not null)
-        {
-            breadcrumbBar.ItemClicked -= BreadcrumbBarOnItemClicked;
-        }
     }
 
     private void UpdateAutoSuggestBoxSuggestions()
@@ -823,7 +814,6 @@ public partial class NavigationView : Control, INavigationHost
     /// </summary>
     private void AddItemsToNavigationIndexes(
         IEnumerable items,
-        NavigationEntry? parent = null,
         bool isMenuElement = true)
     {
         SubscribeToNavigationCollection(items);
@@ -844,7 +834,6 @@ public partial class NavigationView : Control, INavigationHost
                 // unrelated collection notification would invalidate a currently realized item.
                 if (_entriesByItem.TryGetValue(item, out NavigationEntry? fallbackEntry))
                 {
-                    fallbackEntry.Parent = parent;
                     fallbackEntry.IsMenuElement = isMenuElement;
                     _entriesSeenDuringRebuild.Add(item);
                     IndexNavigationEntry(fallbackEntry);
@@ -855,12 +844,11 @@ public partial class NavigationView : Control, INavigationHost
 
             if (!_entriesByItem.TryGetValue(item, out NavigationEntry? entry))
             {
-                entry = new NavigationEntry(item, parent, isMenuElement);
+                entry = new NavigationEntry(item, isMenuElement);
                 _entriesByItem[item] = entry;
             }
             else
             {
-                entry.Parent = parent;
                 entry.IsMenuElement = isMenuElement;
             }
 
@@ -899,13 +887,13 @@ public partial class NavigationView : Control, INavigationHost
 
             if (entry.Children is { } children)
             {
-                AddItemsToNavigationIndexes(children, entry, isMenuElement);
+                AddItemsToNavigationIndexes(children, isMenuElement);
             }
         }
     }
 
     /// <summary>
-    /// Registers the current main and footer navigation hierarchies in the page lookup indexes.
+    /// Registers the current main and footer menu hierarchies in the page lookup indexes.
     /// </summary>
     protected virtual void AddItemsToNavigationIndexes()
     {
@@ -965,7 +953,7 @@ public partial class NavigationView : Control, INavigationHost
     {
         if (!_entriesByItem.TryGetValue(sourceItem, out NavigationEntry? entry))
         {
-            entry = new NavigationEntry(sourceItem, item.NavigationViewItemParent?.NavigationEntry, true)
+            entry = new NavigationEntry(sourceItem, true)
             {
                 Container = item,
             };
@@ -981,7 +969,7 @@ public partial class NavigationView : Control, INavigationHost
         // navigation before layout and through collapsed branches.
         IndexNavigationEntry(entry);
 
-        if (NavigationStack.Contains(entry))
+        if (ReferenceEquals(_currentEntry, entry))
         {
             entry.Activate(this);
         }
@@ -1073,7 +1061,7 @@ public partial class NavigationView : Control, INavigationHost
         }
 
         UpdateAutoSuggestBoxSuggestions();
-        UpdateBreadcrumbContents();
+        RefreshCurrentLocation();
     }
 
     private void RebuildNavigationIndexes()
@@ -1192,7 +1180,7 @@ public partial class NavigationView : Control, INavigationHost
 
         if (ReferenceEquals(sourceItem, container) || container.TargetPageType is not null)
         {
-            entry = new NavigationEntry(container, container.NavigationViewItemParent?.NavigationEntry, true)
+            entry = new NavigationEntry(container, true)
             {
                 Container = container,
             };
@@ -1204,26 +1192,6 @@ public partial class NavigationView : Control, INavigationHost
 
         entry = null!;
         return false;
-    }
-
-    [DebuggerStepThrough]
-    private void NavigationStackOnCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
-    {
-        _breadcrumbItems.Clear();
-        foreach (NavigationEntry entry in NavigationStack)
-        {
-            _breadcrumbItems.Add(new NavigationBreadcrumbItem(entry));
-        }
-    }
-
-    private void UpdateBreadcrumbContents()
-    {
-        foreach (NavigationBreadcrumbItem item in _breadcrumbItems)
-        {
-            item.NotifyPresentationChanged();
-        }
-
-        CollectionViewSource.GetDefaultView(_breadcrumbItems)?.Refresh();
     }
 
     /// <summary>Returns the authoritative main-menu sequence without copying source items.</summary>

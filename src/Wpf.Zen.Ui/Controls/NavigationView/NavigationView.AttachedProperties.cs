@@ -44,38 +44,175 @@ public partial class NavigationView
         );
 
     // ============================================================
-    // HeaderContent Attached Property
+    // BreadcrumbContent Attached Property
     // ============================================================
 
-    /// <summary>Registers attached property NavigationView.HeaderContent</summary>
-    public static readonly DependencyProperty HeaderContentProperty = DependencyProperty.RegisterAttached(
-        "HeaderContent",
+    /// <summary>
+    /// Identifies the attached <c>NavigationView.BreadcrumbContent</c> dependency property.
+    /// </summary>
+    /// <remarks>
+    /// The property supplies only the active leaf's breadcrumb label. It never mutates a menu
+    /// item's content and does not act as a page heading. For richer dynamic paths, implement
+    /// <see cref="INavigationLocationSource"/> on the page or its data context.
+    /// </remarks>
+    public static readonly DependencyProperty BreadcrumbContentProperty = DependencyProperty.RegisterAttached(
+        "BreadcrumbContent",
         typeof(object),
         typeof(NavigationView),
-        new FrameworkPropertyMetadata(null, OnHeaderContentChanged)
+        new FrameworkPropertyMetadata(null, OnBreadcrumbContentChanged)
     );
 
-    private static void OnHeaderContentChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    private static void OnBreadcrumbContentChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
         if (d is not FrameworkElement frameworkElement)
         {
             return;
         }
 
-        GetNavigationParent(frameworkElement)?.NotifyHeaderContentChanged(frameworkElement, e.NewValue);
+        GetNavigationParent(frameworkElement)?.NotifyBreadcrumbDeclarationChanged(frameworkElement);
     }
 
-    /// <summary>Helper for getting <see cref="HeaderContentProperty"/> from <paramref name="target"/>.</summary>
-    /// <param name="target"><see cref="FrameworkElement"/> to read <see cref="HeaderContentProperty"/> from.</param>
-    /// <returns>HeaderContent property value.</returns>
+    /// <summary>Gets the current leaf label declared by <paramref name="target"/>.</summary>
+    /// <param name="target">The page root on which the label is declared.</param>
+    /// <returns>The breadcrumb content, or <see langword="null"/> when no override is declared.</returns>
     [AttachedPropertyBrowsableForType(typeof(FrameworkElement))]
-    public static object? GetHeaderContent(FrameworkElement target) => target.GetValue(HeaderContentProperty);
+    public static object? GetBreadcrumbContent(FrameworkElement target) =>
+        target.GetValue(BreadcrumbContentProperty);
 
-    /// <summary>Helper for setting <see cref="HeaderContentProperty"/> on <paramref name="target"/>.</summary>
-    /// <param name="target"><see cref="FrameworkElement"/> to set <see cref="HeaderContentProperty"/> on.</param>
-    /// <param name="headerContent">HeaderContent property value.</param>
-    public static void SetHeaderContent(FrameworkElement target, object? headerContent) =>
-        target.SetValue(HeaderContentProperty, headerContent);
+    /// <summary>Sets the active leaf label declared by <paramref name="target"/>.</summary>
+    /// <param name="target">The page root on which the label is declared.</param>
+    /// <param name="content">The dynamic breadcrumb content.</param>
+    public static void SetBreadcrumbContent(FrameworkElement target, object? content) =>
+        target.SetValue(BreadcrumbContentProperty, content);
+
+    // ============================================================
+    // BreadcrumbParentKey Attached Property
+    // ============================================================
+
+    /// <summary>
+    /// Identifies the attached <c>NavigationView.BreadcrumbParentKey</c> dependency property.
+    /// </summary>
+    /// <remarks>
+    /// The value selects a node in the host's <see cref="Wpf.Zen.Ui.NavigationMap"/> whose resolved
+    /// path is placed before the current page. It is intentionally a route key rather than a page
+    /// type because one page type can occupy multiple semantic locations. The property supports
+    /// bindings and refreshes the active location without creating journal history. Its default is
+    /// <see langword="null"/>; it has no direct layout or rendering effect.
+    /// </remarks>
+    public static readonly DependencyProperty BreadcrumbParentKeyProperty =
+        DependencyProperty.RegisterAttached(
+            "BreadcrumbParentKey",
+            typeof(string),
+            typeof(NavigationView),
+            new FrameworkPropertyMetadata(null, OnBreadcrumbParentKeyChanged),
+            value => value is null || !string.IsNullOrWhiteSpace((string)value)
+        );
+
+    /// <summary>Gets the map route declared as the semantic parent of <paramref name="target"/>.</summary>
+    /// <param name="target">The page root on which the parent is declared.</param>
+    /// <returns>The parent route key, or <see langword="null"/> when no parent is declared.</returns>
+    [AttachedPropertyBrowsableForType(typeof(FrameworkElement))]
+    public static string? GetBreadcrumbParentKey(FrameworkElement target) =>
+        (string?)target.GetValue(BreadcrumbParentKeyProperty);
+
+    /// <summary>Sets the map route used as the semantic parent of <paramref name="target"/>.</summary>
+    /// <param name="target">The page root on which the parent is declared.</param>
+    /// <param name="routeKey">The stable key of a node in the host navigation map.</param>
+    public static void SetBreadcrumbParentKey(FrameworkElement target, string? routeKey) =>
+        target.SetValue(BreadcrumbParentKeyProperty, routeKey);
+
+    // ============================================================
+    // BreadcrumbPath Attached Property
+    // ============================================================
+
+    private static readonly DependencyProperty BreadcrumbPathChangedHandlerProperty =
+        DependencyProperty.RegisterAttached(
+            "BreadcrumbPathChangedHandler",
+            typeof(EventHandler<EventArgs>),
+            typeof(NavigationView),
+            new PropertyMetadata(null)
+        );
+
+    /// <summary>
+    /// Identifies the attached <c>NavigationView.BreadcrumbPath</c> dependency property.
+    /// </summary>
+    /// <remarks>
+    /// A declared path is complete and therefore takes precedence over parent inference and the
+    /// navigation map. <see cref="Wpf.Zen.Ui.BreadcrumbPath"/> is a Freezable collection, so segment
+    /// bindings inherit the page data context and automatically refresh the active location. Its
+    /// default is <see langword="null"/>; it has no direct layout or rendering effect.
+    /// </remarks>
+    public static readonly DependencyProperty BreadcrumbPathProperty =
+        DependencyProperty.RegisterAttached(
+            "BreadcrumbPath",
+            typeof(Wpf.Zen.Ui.BreadcrumbPath),
+            typeof(NavigationView),
+            new FrameworkPropertyMetadata(null, OnBreadcrumbPathChanged)
+        );
+
+    /// <summary>Gets the complete path declared by <paramref name="target"/>.</summary>
+    /// <param name="target">The page root on which the path is declared.</param>
+    /// <returns>The declared path, or <see langword="null"/> when map inference should be used.</returns>
+    [AttachedPropertyBrowsableForType(typeof(FrameworkElement))]
+    public static BreadcrumbPath? GetBreadcrumbPath(FrameworkElement target) =>
+        (BreadcrumbPath?)target.GetValue(BreadcrumbPathProperty);
+
+    /// <summary>Sets the complete path declared by <paramref name="target"/>.</summary>
+    /// <param name="target">The page root on which the path is declared.</param>
+    /// <param name="path">The complete semantic path, including the active leaf.</param>
+    public static void SetBreadcrumbPath(FrameworkElement target, BreadcrumbPath? path) =>
+        target.SetValue(BreadcrumbPathProperty, path);
+
+    private static void OnBreadcrumbParentKeyChanged(
+        DependencyObject d,
+        DependencyPropertyChangedEventArgs e)
+    {
+        if (d is FrameworkElement frameworkElement)
+        {
+            GetNavigationParent(frameworkElement)?.NotifyBreadcrumbDeclarationChanged(frameworkElement);
+        }
+    }
+
+    private static void OnBreadcrumbPathChanged(
+        DependencyObject d,
+        DependencyPropertyChangedEventArgs e)
+    {
+        if (d is not FrameworkElement frameworkElement)
+        {
+            return;
+        }
+
+        EventHandler<EventArgs>? handler = (EventHandler<EventArgs>?)frameworkElement.GetValue(
+            BreadcrumbPathChangedHandlerProperty
+        );
+        if (e.OldValue is BreadcrumbPath oldPath && handler is not null)
+        {
+            WeakEventManager<BreadcrumbPath, EventArgs>.RemoveHandler(
+                oldPath,
+                nameof(Freezable.Changed),
+                handler
+            );
+        }
+
+        frameworkElement.ClearValue(BreadcrumbPathChangedHandlerProperty);
+
+        if (e.NewValue is BreadcrumbPath newPath)
+        {
+            // A Freezable propagates child dependency-property changes through Changed. A weak
+            // subscription is important when an application places a shared path in resources;
+            // that resource must not retain every page instance that has used it.
+            handler = (_, _) =>
+                GetNavigationParent(frameworkElement)?.NotifyBreadcrumbDeclarationChanged(frameworkElement);
+            frameworkElement.SetValue(BreadcrumbPathChangedHandlerProperty, handler);
+            WeakEventManager<BreadcrumbPath, EventArgs>.AddHandler(
+                newPath,
+                nameof(Freezable.Changed),
+                handler
+            );
+        }
+
+        GetNavigationParent(frameworkElement)?.NotifyBreadcrumbDeclarationChanged(frameworkElement);
+    }
 
     // ============================================================
     // NavigationParent Attached Property
@@ -105,22 +242,4 @@ public partial class NavigationView
     [AttachedPropertyBrowsableForType(typeof(DependencyObject))]
     internal static NavigationView? GetNavigationParent(DependencyObject navigationItem) =>
         navigationItem.GetValue(NavigationParentProperty) as NavigationView;
-
-    // ============================================================
-    // PageNavigationItem Internal Attached Property
-    // ============================================================
-
-    /// <summary>
-    /// Internal attached property that stores the owning navigation entry
-    /// directly on the page's <see cref="FrameworkElement"/>, avoiding a separate
-    /// dictionary lookup when <see cref="HeaderContentProperty"/> changes.
-    /// The value lives and dies with the page — no leak.
-    /// </summary>
-    internal static readonly DependencyProperty PageNavigationItemProperty =
-        DependencyProperty.RegisterAttached(
-            "PageNavigationItem",
-            typeof(NavigationEntry),
-            typeof(NavigationView),
-            new PropertyMetadata(null)
-        );
 }

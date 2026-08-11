@@ -17,7 +17,7 @@ namespace Wpf.Zen.Ui.Controls;
 /// Applications may use this type directly or implement <see cref="INavigationItem"/> on their
 /// own view-model type. This class intentionally derives from neither <see cref="DependencyObject"/>
 /// nor a WPF control: it can safely live in a view model, be unit-tested without a dispatcher, and
-/// be presented simultaneously by a <see cref="NavigationView"/> and a <see cref="BreadcrumbBar"/>.
+/// be presented simultaneously by multiple menu or search surfaces.
 /// </remarks>
 public class NavigationItem : INavigationItem, INotifyPropertyChanged
 {

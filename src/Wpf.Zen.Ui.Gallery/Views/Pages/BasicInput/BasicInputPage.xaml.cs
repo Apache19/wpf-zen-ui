@@ -30,14 +30,6 @@ public partial class BasicInputPage : INavigableView<BasicInputViewModel>
     private void HandleLoaded(object sender, RoutedEventArgs e)
     {
         _navigationView = Wpf.Zen.Ui.Navigation.GetHost(this) as NavigationView;
-        if (
-            _navigationView?.BreadcrumbBar != null
-         && _navigationView.BreadcrumbBar.Visibility != Visibility.Collapsed
-        )
-        {
-            _navigationView.BreadcrumbBar.SetCurrentValue(VisibilityProperty, Visibility.Collapsed);
-        }
-
         INavigationItem? selectedItem = _navigationView?.SelectedItem as INavigationItem;
         if (selectedItem != null)
         {
@@ -59,14 +51,6 @@ public partial class BasicInputPage : INavigableView<BasicInputViewModel>
 
     private void HandleUnloaded(object sender, RoutedEventArgs e)
     {
-        if (
-            _navigationView?.BreadcrumbBar != null
-         && _navigationView.BreadcrumbBar.Visibility != Visibility.Visible
-        )
-        {
-            _navigationView.BreadcrumbBar.SetCurrentValue(VisibilityProperty, Visibility.Visible);
-        }
-
         _snowflake?.Stop();
         _snowflake =  null;
         Loaded     -= HandleLoaded;

@@ -4,6 +4,7 @@
 // All Rights Reserved.
 
 using System.Windows.Controls;
+using Wpf.Zen.Ui;
 using Wpf.Zen.Ui.Appearance;
 using Wpf.Zen.Ui.Controls;
 using Wpf.Zen.Ui.Gallery.Services.Contracts;
@@ -32,6 +33,7 @@ public partial class MainWindow : IWindow
 
         _navigationScope = navigationScopes.Attach(NavigationView, "gallery-main");
         ViewModel = _navigationScope.Services.GetRequiredService<MainWindowViewModel>();
+        NavigationView.SetCurrentValue(NavigationView.NavigationMapProperty, ViewModel.NavigationMap);
         DataContext = this;
 
         snackbarService.SetSnackbarPresenter(SnackbarPresenter);
@@ -153,6 +155,19 @@ public partial class MainWindow : IWindow
                 ? Visibility.Visible
                 : Visibility.Collapsed
         );
+    }
+
+    /// <summary>
+    /// Navigates an independently presented breadcrumb segment through this window's scoped service.
+    /// </summary>
+    private void BreadcrumbBar_OnItemClicked(
+        BreadcrumbBar sender,
+        BreadcrumbBarItemClickedEventArgs e)
+    {
+        if (e.Item is BreadcrumbSegment segment)
+        {
+            _ = Navigation.Navigate(segment);
+        }
     }
 
     private void MainWindow_OnSizeChanged(object sender, SizeChangedEventArgs e)

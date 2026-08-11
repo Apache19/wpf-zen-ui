@@ -46,6 +46,20 @@ public class NavigationService : INavigationService
     }
 
     /// <inheritdoc />
+    public bool CanGoForward
+    {
+        get
+        {
+            INavigationHost host = GetHost();
+            VerifyAccess(host);
+            return host.CanGoForward;
+        }
+    }
+
+    /// <inheritdoc />
+    public INavigationState State => GetHost().NavigationState;
+
+    /// <inheritdoc />
     public NavigationResult Navigate(NavigationRequest request)
     {
         if (request is null)
@@ -59,6 +73,21 @@ public class NavigationService : INavigationService
     }
 
     /// <inheritdoc />
+    public NavigationResult Navigate(NavigationTarget target) =>
+        Navigate(NavigationRequest.To(target));
+
+    /// <inheritdoc />
+    public NavigationResult Navigate(BreadcrumbSegment segment)
+    {
+        if (segment is null)
+        {
+            throw new ArgumentNullException(nameof(segment));
+        }
+
+        return segment.Target is { } target ? Navigate(target) : NavigationResult.Rejected;
+    }
+
+    /// <inheritdoc />
     public NavigationResult Navigate(Type pageType, object? parameter = null) =>
         Navigate(NavigationRequest.To(pageType, parameter));
 
@@ -67,15 +96,19 @@ public class NavigationService : INavigationService
         Navigate(NavigationRequest.To(pageIdOrTargetTag, parameter));
 
     /// <inheritdoc />
-    public NavigationResult NavigateWithHierarchy(Type pageType, object? parameter = null) =>
-        Navigate(NavigationRequest.To(pageType, parameter, NavigationMode.Hierarchical));
-
-    /// <inheritdoc />
     public NavigationResult GoBack()
     {
         INavigationHost host = GetHost();
         VerifyAccess(host);
         return host.RequestGoBack();
+    }
+
+    /// <inheritdoc />
+    public NavigationResult GoForward()
+    {
+        INavigationHost host = GetHost();
+        VerifyAccess(host);
+        return host.RequestGoForward();
     }
 
     /// <inheritdoc />
@@ -121,6 +154,21 @@ public class NavigationService : INavigationService
 
         return host.Dispatcher
            .InvokeAsync(host.RequestGoBack, DispatcherPriority.Normal, cancellationToken)
+           .Task;
+    }
+
+    /// <inheritdoc />
+    public Task<NavigationResult> GoForwardAsync(CancellationToken cancellationToken = default)
+    {
+        INavigationHost host = GetHost();
+        if (host.Dispatcher.CheckAccess())
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            return Task.FromResult(host.RequestGoForward());
+        }
+
+        return host.Dispatcher
+           .InvokeAsync(host.RequestGoForward, DispatcherPriority.Normal, cancellationToken)
            .Task;
     }
 

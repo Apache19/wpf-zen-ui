@@ -2,6 +2,10 @@
 
 This library is a refactored fork of [WPF UI](https://github.com/lepoco/wpfui).
 
+## Documentation
+
+- [Navigation, semantic routes, and breadcrumbs](docs/Navigation.md)
+
 ## Original Repository
 
 - **Project Name**: WPF UI

@@ -10,31 +10,31 @@ namespace Wpf.Zen.Ui.Controls;
 
 /// <summary>
 /// Describes the presentation-independent data required by <see cref="NavigationView"/> to
-/// navigate, search, and construct a breadcrumb path.
+/// navigate and search without requiring a visual container.
 /// </summary>
 /// <remarks>
 /// Implement this interface on a view-model item when an application wants
 /// <see cref="NavigationView.MenuItemsSource"/> and
 /// <see cref="NavigationView.FooterMenuItemsSource"/> to contain ordinary data rather than
-/// <see cref="NavigationViewItem"/> controls. The source object remains the public item identity:
-/// it is returned by <see cref="NavigationView.SelectedItem"/> and is forwarded to a connected
-/// <see cref="BreadcrumbBar"/>. Item templates and container styles remain responsible for visual
-/// presentation.
+/// <see cref="NavigationViewItem"/> controls. The source object remains the public item identity
+/// returned by <see cref="NavigationView.SelectedItem"/>. Item templates and container styles
+/// remain responsible for visual presentation. Semantic hierarchy belongs to
+/// <see cref="Wpf.Zen.Ui.NavigationMap"/>, not to this menu contract.
 /// </remarks>
 public interface INavigationItem
 {
     /// <summary>
-    /// Gets the stable identifier used by the navigation journal and breadcrumb navigation.
+    /// Gets the stable identifier used for host lookup and optional navigation-map route matching.
     /// </summary>
     string Id { get; }
 
     /// <summary>
-    /// Gets or sets the content used by the default textual presentation and breadcrumb path.
+    /// Gets or sets the content used by the menu's default textual presentation.
     /// </summary>
     /// <remarks>
-    /// A page can update this value through <see cref="NavigationView.HeaderContentProperty"/>.
     /// Custom data templates receive the complete source item and do not have to display this
-    /// property.
+    /// property. Navigated pages cannot mutate this value implicitly; dynamic breadcrumb labels
+    /// use <see cref="Wpf.Zen.Ui.INavigationLocationSource"/> or a map content resolver.
     /// </remarks>
     object? Content { get; set; }
 
@@ -55,7 +55,7 @@ public interface INavigationItem
     /// <summary>Gets the caching policy used when the target page is created.</summary>
     NavigationCacheMode NavigationCacheMode { get; }
 
-    /// <summary>Gets the child data collection used to build the semantic navigation hierarchy.</summary>
+    /// <summary>Gets the child data collection used only to present nested menu shortcuts.</summary>
     IEnumerable? Children { get; }
 
     /// <summary>

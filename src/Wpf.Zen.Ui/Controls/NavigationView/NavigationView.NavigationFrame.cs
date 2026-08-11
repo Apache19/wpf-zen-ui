@@ -123,7 +123,8 @@ public partial class NavigationView
     /// WPF's journal entry.
     /// </summary>
     /// <remarks>
-    /// Selection and hierarchy semantics live in <see cref="NavigationView"/>'s own journal.
+    /// Selection is projected by <see cref="NavigationView"/>, history lives in its journal, and
+    /// semantic hierarchy is resolved independently through <see cref="Wpf.Zen.Ui.NavigationMap"/>.
     /// Retaining the frame entry would create a second, independently navigable history.
     /// </remarks>
     private async void OnNavigationFrameNavigated(object sender, NavigationEventArgs eventArgs)

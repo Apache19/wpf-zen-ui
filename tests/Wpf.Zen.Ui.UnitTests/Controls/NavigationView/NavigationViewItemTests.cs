@@ -1411,19 +1411,12 @@ public class NavigationViewItemTests
 
             Assert.Same(item, navigationView.MenuItems[0]);
             Assert.Same(item, navigationView.SelectedItem);
-            var journal = Assert.IsAssignableFrom<IEnumerable<NavigationEntry>>(
-                typeof(Wpf.Zen.Ui.Controls.NavigationView)
-                    .GetProperty("Journal", BindingFlags.Instance | BindingFlags.NonPublic)!
-                    .GetValue(navigationView)
-            );
-            // Navigation state keeps the declarative control as its semantic identity, while the
-            // breadcrumb has a dedicated non-visual model and cannot acquire the same Visual parent.
-            NavigationBreadcrumbItem breadcrumbItem = Assert.Single(navigationView.BreadcrumbItems);
-            Assert.Same(item, breadcrumbItem.SourceItem);
-            Assert.Equal("Root", breadcrumbItem.Content);
-            NavigationEntry journalEntry = Assert.Single(journal);
-            Assert.Same(item, journalEntry.Item);
-            Assert.Equal(itemId, journalEntry.Id);
+            // Semantic state exposes only data segments and cannot acquire the declarative menu
+            // control's Visual parent. The journal independently retains the current occurrence.
+            BreadcrumbSegment breadcrumb = Assert.Single(navigationView.Breadcrumbs);
+            Assert.Equal("Root", breadcrumb.Content);
+            Assert.Equal(itemId, breadcrumb.Target?.RouteKey);
+            Assert.False(navigationView.CanGoBack);
             item.RaiseEvent(new RoutedEventArgs(FrameworkElement.UnloadedEvent));
         });
     }

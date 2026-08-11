@@ -5,6 +5,7 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:models="clr-namespace:Wpf.Zen.Ui.Demo.Simple.Models"
+    xmlns:pages="clr-namespace:Wpf.Zen.Ui.Demo.Simple.Views.Pages"
     xmlns:ui="http://schemas.thezendev.com/wpf/2027"
     Title="DataPage"
     d:Background="{ui:DynamicBrush WindowBackground}"
@@ -12,6 +13,15 @@
     d:DesignWidth="800"
     Foreground="{ui:DynamicBrush TextFillPrimary}"
     mc:Ignorable="d">
+    <ui:NavigationView.BreadcrumbPath>
+        <ui:BreadcrumbPath>
+            <ui:BreadcrumbPathSegment Key="samples" Content="Samples" />
+            <ui:BreadcrumbPathSegment
+                Key="data"
+                Content="Data"
+                PageType="{x:Type pages:DataPage}" />
+        </ui:BreadcrumbPath>
+    </ui:NavigationView.BreadcrumbPath>
     <Grid Margin="42">
         <ui:VirtualizingItemsControl
             x:Name="ColorsItemsControl"

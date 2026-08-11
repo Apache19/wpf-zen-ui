@@ -18,10 +18,35 @@ public interface INavigationService
     /// <summary>Gets a value indicating whether the attached host can navigate back.</summary>
     bool CanGoBack { get; }
 
-    /// <summary>Requests navigation using an explicit target, parameter, and navigation mode.</summary>
+    /// <summary>Gets a value indicating whether the attached host can navigate forward.</summary>
+    bool CanGoForward { get; }
+
+    /// <summary>
+    /// Gets the read-only semantic state owned by the attached navigation surface.
+    /// </summary>
+    /// <remarks>
+    /// This is the binding source for independent breadcrumb presenters. The state is scoped to
+    /// the same host as this service and never follows application-global window focus.
+    /// </remarks>
+    INavigationState State { get; }
+
+    /// <summary>Requests navigation using an explicit target and semantic-path hints.</summary>
     /// <param name="request">The complete navigation request.</param>
     /// <returns>A result describing whether the host performed the request.</returns>
     NavigationResult Navigate(NavigationRequest request);
+
+    /// <summary>Requests navigation to a composed semantic target.</summary>
+    /// <param name="target">The route, page type, parameter, and placement identity to enter.</param>
+    /// <returns>A result describing whether the host performed the request.</returns>
+    NavigationResult Navigate(NavigationTarget target);
+
+    /// <summary>Navigates to the target represented by a resolved breadcrumb segment.</summary>
+    /// <param name="segment">The clicked or otherwise invoked breadcrumb segment.</param>
+    /// <returns>
+    /// <see cref="NavigationResultStatus.Rejected"/> for a structural segment without a target;
+    /// otherwise, the host's navigation result.
+    /// </returns>
+    NavigationResult Navigate(BreadcrumbSegment segment);
 
     /// <summary>Requests navigation to a page type.</summary>
     /// <param name="pageType">The page type to resolve inside this navigation scope.</param>
@@ -35,15 +60,13 @@ public interface INavigationService
     /// <returns>A result describing whether the host performed the request.</returns>
     NavigationResult Navigate(string pageIdOrTargetTag, object? parameter = null);
 
-    /// <summary>Requests hierarchical navigation to a page type.</summary>
-    /// <param name="pageType">The page type to add to the active hierarchy.</param>
-    /// <param name="parameter">An optional parameter published to the destination visual tree.</param>
-    /// <returns>A result describing whether the host performed the request.</returns>
-    NavigationResult NavigateWithHierarchy(Type pageType, object? parameter = null);
-
     /// <summary>Requests navigation to the preceding history entry.</summary>
     /// <returns>A result describing whether the host performed the request.</returns>
     NavigationResult GoBack();
+
+    /// <summary>Requests navigation to the next history entry.</summary>
+    /// <returns>A result describing whether the host performed the request.</returns>
+    NavigationResult GoForward();
 
     /// <summary>Clears the history owned by this navigation scope.</summary>
     void ClearHistory();
@@ -65,4 +88,11 @@ public interface INavigationService
     /// <param name="cancellationToken">Cancels a request that has not begun on the UI thread.</param>
     /// <returns>A task containing the navigation result.</returns>
     Task<NavigationResult> GoBackAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Asynchronously requests forward navigation, dispatching to the host's UI thread when necessary.
+    /// </summary>
+    /// <param name="cancellationToken">Cancels a request that has not begun on the UI thread.</param>
+    /// <returns>A task containing the navigation result.</returns>
+    Task<NavigationResult> GoForwardAsync(CancellationToken cancellationToken = default);
 }

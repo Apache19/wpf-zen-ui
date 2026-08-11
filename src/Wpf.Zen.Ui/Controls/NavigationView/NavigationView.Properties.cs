@@ -223,53 +223,80 @@ public partial class NavigationView
 
     #endregion
 
-    #region DP: BreadcrumbBar
+    #region DP: NavigationMap
 
-    /// <summary>Identifies the <see cref="BreadcrumbBar"/> dependency property.</summary>
-    public static readonly DependencyProperty BreadcrumbBarProperty = DependencyProperty.Register(
-        nameof(BreadcrumbBar),
-        typeof(BreadcrumbBar),
+    /// <summary>Identifies the <see cref="NavigationMap"/> dependency property.</summary>
+    /// <remarks>
+    /// The property does not affect layout or rendering directly. Its change callback only moves
+    /// map notifications and resolves the active semantic location again. A unique map is assigned
+    /// by each NavigationView constructor so the dependency-property default is never shared.
+    /// </remarks>
+    public static readonly DependencyProperty NavigationMapProperty = DependencyProperty.Register(
+        nameof(NavigationMap),
+        typeof(NavigationMap),
         typeof(NavigationView),
-        new FrameworkPropertyMetadata(null, OnBreadcrumbBarChanged)
+        new FrameworkPropertyMetadata(null, OnNavigationMapChanged)
     );
 
-    /// <summary>Gets or sets the breadcrumb bar associated with the current navigation hierarchy.</summary>
-    public BreadcrumbBar? BreadcrumbBar
+    /// <summary>
+    /// Gets or sets the semantic route graph used to derive default breadcrumb paths.
+    /// </summary>
+    /// <remarks>
+    /// This map is independent from <see cref="MenuItemsSource"/> and
+    /// <see cref="FooterMenuItemsSource"/>. Reordering a menu therefore never silently reparents a
+    /// page, while mutating this map immediately updates the active location. The map can be
+    /// assigned from code, a resource, or declared inline with <see cref="NavigationMapNode"/>
+    /// children in XAML.
+    /// </remarks>
+    [System.Diagnostics.CodeAnalysis.SuppressMessage(
+        "Maintainability",
+        "WPF0012:CLR property type should match registered dependency-property nullability",
+        Justification = "The constructor assigns a unique map before the control is exposed; nullable metadata avoids a process-wide shared mutable default."
+    )]
+    public NavigationMap NavigationMap
     {
-        get => (BreadcrumbBar?)GetValue(BreadcrumbBarProperty);
-        set => SetValue(BreadcrumbBarProperty, value);
+        get => (NavigationMap?)GetValue(NavigationMapProperty)
+            ?? throw new InvalidOperationException("The navigation map has not been initialized.");
+        set => SetValue(NavigationMapProperty, value ?? throw new ArgumentNullException(nameof(value)));
     }
 
-    private static void OnBreadcrumbBarChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    private static void OnNavigationMapChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
-        if (d is not NavigationView navigationView)
+        if (d is NavigationView navigationView)
         {
-            return;
-        }
+            NavigationMap? oldMap = e.OldValue as NavigationMap;
+            NavigationMap? newMap = e.NewValue as NavigationMap;
+            navigationView.ChangeNavigationMap(oldMap, newMap);
 
-        if (e.OldValue is BreadcrumbBar oldValue)
-        {
-            navigationView.DetachBreadcrumbBar(oldValue);
-
-            if (ReferenceEquals(oldValue.ItemsSource, navigationView.BreadcrumbItems))
+            // ClearValue and a temporarily null binding must not leave INavigationState with an
+            // unusable map. SetCurrentValue preserves an existing binding while assigning a unique
+            // empty graph; the nested callback attaches that replacement normally.
+            if (newMap is null)
             {
-                // SetCurrentValue mirrors the assignment below: a consumer binding must survive
-                // detachment even when it happened to evaluate to our collection at this moment.
-                oldValue.SetCurrentValue(ItemsControl.ItemsSourceProperty, null);
+                navigationView.SetCurrentValue(NavigationMapProperty, new NavigationMap());
             }
         }
-
-        if (e.NewValue is not BreadcrumbBar breadcrumbBar)
-        {
-            return;
-        }
-
-        // The collaboration owns only the path models and navigation. BreadcrumbBar retains
-        // complete control over ItemTemplate, ItemTemplateSelector, and ItemContainerStyle; custom
-        // templates can bind NavigationBreadcrumbItem.SourceItem for source-specific presentation.
-        breadcrumbBar.SetCurrentValue(ItemsControl.ItemsSourceProperty, navigationView.BreadcrumbItems);
-        navigationView.AttachBreadcrumbBar(breadcrumbBar);
     }
+
+    #endregion
+
+    #region Read-only DP: CurrentLocation
+
+    private static readonly DependencyPropertyKey CurrentLocationPropertyKey =
+        DependencyProperty.RegisterReadOnly(
+            nameof(CurrentLocation),
+            typeof(NavigationLocation),
+            typeof(NavigationView),
+            new FrameworkPropertyMetadata(null)
+        );
+
+    /// <summary>Identifies the read-only <see cref="CurrentLocation"/> dependency property.</summary>
+    public static readonly DependencyProperty CurrentLocationProperty =
+        CurrentLocationPropertyKey.DependencyProperty;
+
+    /// <summary>Gets the current semantic location, or <see langword="null"/> before navigation.</summary>
+    public NavigationLocation? CurrentLocation =>
+        (NavigationLocation?)GetValue(CurrentLocationProperty);
 
     #endregion
 

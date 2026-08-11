@@ -28,13 +28,7 @@ public partial class OpSystemPage : INavigableView<OpSystemViewModel>
 
     private void HandleLoaded(object sender, RoutedEventArgs e)
     {
-        if (
-            _navigationView?.BreadcrumbBar != null
-            && _navigationView.BreadcrumbBar.Visibility != Visibility.Collapsed
-        )
-        {
-            _navigationView.BreadcrumbBar.SetCurrentValue(VisibilityProperty, Visibility.Collapsed);
-        }
+        _navigationView = Wpf.Zen.Ui.Navigation.GetHost(this) as NavigationView;
 
         INavigationItem? selectedItem = _navigationView?.SelectedItem as INavigationItem;
         if (selectedItem != null)
@@ -57,14 +51,6 @@ public partial class OpSystemPage : INavigableView<OpSystemViewModel>
 
     private void HandleUnloaded(object sender, RoutedEventArgs e)
     {
-        if (
-            _navigationView?.BreadcrumbBar != null
-            && _navigationView.BreadcrumbBar.Visibility != Visibility.Visible
-        )
-        {
-            _navigationView.BreadcrumbBar.SetCurrentValue(VisibilityProperty, Visibility.Visible);
-        }
-
         _snowflake?.Stop();
         _snowflake = null;
         Loaded -= HandleLoaded;

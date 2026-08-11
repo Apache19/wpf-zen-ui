@@ -486,7 +486,7 @@ public partial class NavigationViewItem : HeaderedItemsControl
 
     #endregion
 
-    /// <summary>Gets the realized parent container in the semantic navigation hierarchy.</summary>
+    /// <summary>Gets the realized parent container in the visual menu hierarchy.</summary>
     public NavigationViewItem? NavigationViewItemParent => _parentItem;
 
     /// <summary>

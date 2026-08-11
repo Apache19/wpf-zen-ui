@@ -4,6 +4,7 @@
 // All Rights Reserved.
 
 using System.Windows.Controls;
+using Wpf.Zen.Ui;
 using Wpf.Zen.Ui.Controls;
 using Wpf.Zen.Ui.Gallery.Views.Pages;
 using Wpf.Zen.Ui.Gallery.Views.Pages.BasicInput;
@@ -15,6 +16,7 @@ using Wpf.Zen.Ui.Gallery.Views.Pages.Layout;
 using Wpf.Zen.Ui.Gallery.Views.Pages.Media;
 using Wpf.Zen.Ui.Gallery.Views.Pages.Navigation;
 using Wpf.Zen.Ui.Gallery.Views.Pages.OpSystem;
+using Wpf.Zen.Ui.Gallery.Views.Pages.Samples;
 using Wpf.Zen.Ui.Gallery.Views.Pages.StatusAndInfo;
 using Wpf.Zen.Ui.Gallery.Views.Pages.Text;
 using Wpf.Zen.Ui.Gallery.Views.Pages.Windows;
@@ -41,6 +43,23 @@ public partial class MainWindowViewModel : ViewModel
 
     [ObservableProperty]
     public partial string ApplicationTitle { get; set; } = "WPF Zen UI Gallery";
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="MainWindowViewModel"/> class and creates its
+    /// semantic navigation map.
+    /// </summary>
+    /// <remarks>
+    /// The semantic graph is authored independently from <see cref="MenuItems"/>. The gallery menu
+    /// can therefore be reordered, filtered, or replaced with shortcuts without changing page
+    /// parentage, while code-only sample pages still participate in the same map.
+    /// </remarks>
+    public MainWindowViewModel()
+    {
+        NavigationMap = CreateNavigationMap();
+    }
+
+    /// <summary>Gets the semantic graph used by this window's scoped navigator.</summary>
+    public NavigationMap NavigationMap { get; }
 
     [ObservableProperty]
     public partial ObservableCollection<object> MenuItems { get; set; } =
@@ -185,4 +204,119 @@ public partial class MainWindowViewModel : ViewModel
             Icon = new FluentIconSource(SymbolRegular.Dismiss24),
         }
     ];
+
+    private static NavigationMap CreateNavigationMap()
+    {
+        var map = new NavigationMap();
+        AddPage<DashboardPage>("Home");
+
+        const string designGuidance = "gallery.design-guidance";
+        AddGroup(designGuidance, "Design guidance");
+        AddPage<TypographyPage>("Typography", designGuidance);
+        AddPage<IconsPage>("Icons", designGuidance);
+        AddPage<ColorsPage>("Colors", designGuidance);
+        AddPage<AllControlsPage>("All samples");
+
+        string basicInput = AddPage<BasicInputPage>("Basic Input");
+        AddPage<AnchorPage>("Anchor", basicInput);
+        AddPage<ButtonPage>("Button", basicInput);
+        AddPage<DropDownButtonPage>("DropDownButton", basicInput);
+        AddPage<HyperlinkButtonPage>("HyperlinkButton", basicInput);
+        AddPage<ToggleButtonPage>("ToggleButton", basicInput);
+        AddPage<ToggleSwitchPage>("ToggleSwitch", basicInput);
+        AddPage<CheckBoxPage>("CheckBox", basicInput);
+        AddPage<ComboBoxPage>("ComboBox", basicInput);
+        AddPage<RadioButtonPage>("RadioButton", basicInput);
+        AddPage<RatingPage>("RatingControl", basicInput);
+        AddPage<ThumbRatePage>("ThumbRate", basicInput);
+        AddPage<SplitButtonPage>("SplitButton", basicInput);
+        AddPage<SliderPage>("Slider", basicInput);
+
+        string collections = AddPage<CollectionsPage>("Collections");
+        AddPage<DataGridPage>("DataGrid", collections);
+        AddPage<ListBoxPage>("ListBox", collections);
+        AddPage<ListViewPage>("ListView", collections);
+        AddPage<TreeViewPage>("TreeView", collections);
+#if DEBUG
+        AddPage<TreeListPage>("TreeList", collections);
+#endif
+
+        string dateAndTime = AddPage<DateAndTimePage>("Date & time");
+        AddPage<CalendarDatePickerPage>("CalendarDatePicker", dateAndTime);
+        AddPage<CalendarPage>("Calendar", dateAndTime);
+        AddPage<DatePickerPage>("DatePicker", dateAndTime);
+        AddPage<TimePickerPage>("TimePicker", dateAndTime);
+
+        string dialogs = AddPage<DialogsAndFlyoutsPage>("Dialogs & flyouts");
+        AddPage<SnackbarPage>("Snackbars", dialogs);
+        AddPage<ContentDialogPage>("ContentDialog", dialogs);
+        AddPage<FlyoutPage>("Flyout", dialogs);
+        AddPage<MessageBoxPage>("MessageBox", dialogs);
+
+#if DEBUG
+        string layout = AddPage<LayoutPage>("Layout");
+        AddPage<ExpanderPage>("Expander", layout);
+        AddPage<CardControlPage>("CardControl", layout);
+        AddPage<CardActionPage>("CardAction", layout);
+#endif
+
+        string media = AddPage<MediaPage>("Media");
+        AddPage<ImagePage>("Image", media);
+        AddPage<CanvasPage>("Canvas", media);
+        AddPage<WebViewPage>("WebView", media);
+        AddPage<WebBrowserPage>("WebBrowser", media);
+
+        string navigation = AddPage<NavigationPage>("Navigation");
+        AddPage<BreadcrumbBarPage>("BreadcrumbBar", navigation);
+        AddPage<NavigationViewPage>("NavigationView", navigation);
+        AddPage<MenuPage>("Menu", navigation);
+        string multilevel = AddPage<MultilevelNavigationPage>("Multilevel navigation", navigation);
+        AddPage<TabControlPage>("TabControl", navigation);
+
+        // These code-only pages demonstrate that map membership does not require a menu shortcut.
+        string page1 = AddPage<MultilevelNavigationSamplePage1>("Page 1", multilevel);
+        string page2 = AddPage<MultilevelNavigationSamplePage2>("Page 2", page1);
+        AddPage<MultilevelNavigationSamplePage3>("Page 3", page2);
+
+        string status = AddPage<StatusAndInfoPage>("Status & info");
+        AddPage<InfoBadgePage>("InfoBadge", status);
+        AddPage<InfoBarPage>("InfoBar", status);
+        AddPage<ProgressBarPage>("ProgressBar", status);
+        AddPage<ProgressRingPage>("ProgressRing", status);
+        AddPage<ToolTipPage>("ToolTip", status);
+
+        string text = AddPage<TextPage>("Text");
+        AddPage<AutoSuggestBoxPage>("AutoSuggestBox", text);
+        AddPage<NumberBoxPage>("NumberBox", text);
+        AddPage<PasswordBoxPage>("PasswordBox", text);
+        AddPage<RichTextBoxPage>("RichTextBox", text);
+        AddPage<LabelPage>("Label", text);
+        AddPage<TextBlockPage>("TextBlock", text);
+        AddPage<TextBoxPage>("TextBox", text);
+
+        string system = AddPage<OpSystemPage>("System");
+        AddPage<ClipboardPage>("Clipboard", system);
+        AddPage<FilePickerPage>("FilePicker", system);
+        AddPage<WindowsPage>("Windows");
+        AddPage<SettingsPage>("Settings");
+
+        return map;
+
+        void AddGroup(string key, object? content, string? parentKey = null) =>
+            map.Add(new NavigationMapNode(key, content, parentKey: parentKey));
+
+        string AddPage<TPage>(object? content, string? parentKey = null)
+        {
+            string key = typeof(TPage).FullName
+                ?? throw new InvalidOperationException("A page route requires a full type name.");
+            map.Add(
+                new NavigationMapNode(
+                    key,
+                    content,
+                    new NavigationTarget(typeof(TPage), key),
+                    parentKey)
+            );
+            return key;
+        }
+    }
 }
