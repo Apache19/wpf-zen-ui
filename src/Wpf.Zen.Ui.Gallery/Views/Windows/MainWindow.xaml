@@ -53,7 +53,9 @@
             <ui:NavigationView.Header>
                 <StackPanel Margin="42,32,42,20">
                     <ui:BreadcrumbBar
-                        FontSize="28"
+                        ui:IconPresenter.IconSize="18"
+                        ui:IconPresenter.IconWeight="SemiBold"
+                        FontSize="24"
                         ItemClicked="BreadcrumbBar_OnItemClicked"
                         ItemsSource="{Binding ElementName=NavigationView, Path=Breadcrumbs}">
                         <ui:BreadcrumbBar.Style>

@@ -4,6 +4,7 @@
 // All Rights Reserved.
 
 using System.Windows.Controls;
+using System.Windows.Documents;
 
 // ReSharper disable once CheckNamespace
 namespace Wpf.Zen.Ui.Controls;
@@ -27,6 +28,133 @@ namespace Wpf.Zen.Ui.Controls;
 /// </remarks>
 public class IconPresenter : ContentPresenter
 {
+    /// <summary>
+    /// Identifies the attached <c>IconSize</c> dependency property.
+    /// </summary>
+    /// <remarks>
+    /// The property is a presentation-scoped counterpart to WPF's inherited text size. Setting it
+    /// on a control, panel, or presenter affects compatible icon elements in that subtree without
+    /// changing the size of ordinary text. <see cref="double.NaN"/> means that no icon-specific
+    /// size was requested, allowing each icon family to preserve its native sizing behavior.
+    /// </remarks>
+    public static readonly DependencyProperty IconSizeProperty = DependencyProperty.RegisterAttached(
+        nameof(IconSize),
+        typeof(double),
+        typeof(IconPresenter),
+        new FrameworkPropertyMetadata(
+            double.NaN,
+            FrameworkPropertyMetadataOptions.Inherits
+        ),
+        ValidateIconSize
+    );
+
+    /// <summary>
+    /// Gets or sets the logical size requested for compatible icon content.
+    /// </summary>
+    /// <remarks>
+    /// The default value is <see cref="double.NaN"/>, which leaves the icon's native size
+    /// unchanged. A concrete value is semantic presentation context and therefore takes precedence
+    /// over a compatible icon's low-level font size while it is in scope.
+    /// </remarks>
+    public double IconSize
+    {
+        get => GetIconSize(this);
+        set => SetIconSize(this, value);
+    }
+
+    /// <summary>Gets the icon size inherited by <paramref name="element"/>.</summary>
+    /// <param name="element">The presentation root or icon element to inspect.</param>
+    /// <returns>
+    /// The effective icon size, or <see cref="double.NaN"/> when native icon sizing is requested.
+    /// </returns>
+    [AttachedPropertyBrowsableForType(typeof(DependencyObject))]
+    public static double GetIconSize(DependencyObject element)
+    {
+        if (element is null)
+        {
+            throw new ArgumentNullException(nameof(element));
+        }
+
+        return (double)element.GetValue(IconSizeProperty);
+    }
+
+    /// <summary>
+    /// Sets the icon size inherited by compatible icon descendants of <paramref name="element"/>.
+    /// </summary>
+    /// <param name="element">The presentation root or icon presenter to configure.</param>
+    /// <param name="value">
+    /// The requested size, or <see cref="double.NaN"/> to restore native icon sizing.
+    /// </param>
+    public static void SetIconSize(DependencyObject element, double value)
+    {
+        if (element is null)
+        {
+            throw new ArgumentNullException(nameof(element));
+        }
+
+        element.SetValue(IconSizeProperty, value);
+    }
+
+    /// <summary>
+    /// Identifies the attached <c>IconWeight</c> dependency property.
+    /// </summary>
+    /// <remarks>
+    /// The property describes icon stroke or font weight independently of ordinary text weight.
+    /// Compatible font-backed icons can map it to <see cref="TextElement.FontWeight"/>, while other
+    /// icon families can interpret the same semantic value using their own rendering mechanism.
+    /// </remarks>
+    public static readonly DependencyProperty IconWeightProperty = DependencyProperty.RegisterAttached(
+        nameof(IconWeight),
+        typeof(FontWeight?),
+        typeof(IconPresenter),
+        new FrameworkPropertyMetadata(
+            null,
+            FrameworkPropertyMetadataOptions.Inherits
+        )
+    );
+
+    /// <summary>
+    /// Gets or sets the logical weight requested for compatible icon content.
+    /// </summary>
+    /// <remarks>
+    /// The default <see langword="null"/> value leaves each icon's native weight unchanged. A
+    /// concrete value is icon-specific presentation context and does not affect ordinary text.
+    /// </remarks>
+    public FontWeight? IconWeight
+    {
+        get => GetIconWeight(this);
+        set => SetIconWeight(this, value);
+    }
+
+    /// <summary>Gets the icon weight inherited by <paramref name="element"/>.</summary>
+    /// <param name="element">The presentation root or icon element to inspect.</param>
+    /// <returns>The effective icon weight, or <see langword="null"/> for native icon weighting.</returns>
+    [AttachedPropertyBrowsableForType(typeof(DependencyObject))]
+    public static FontWeight? GetIconWeight(DependencyObject element)
+    {
+        if (element is null)
+        {
+            throw new ArgumentNullException(nameof(element));
+        }
+
+        return (FontWeight?)element.GetValue(IconWeightProperty);
+    }
+
+    /// <summary>
+    /// Sets the icon weight inherited by compatible icon descendants of <paramref name="element"/>.
+    /// </summary>
+    /// <param name="element">The presentation root or icon presenter to configure.</param>
+    /// <param name="value">The requested weight, or <see langword="null"/> for native weighting.</param>
+    public static void SetIconWeight(DependencyObject element, FontWeight? value)
+    {
+        if (element is null)
+        {
+            throw new ArgumentNullException(nameof(element));
+        }
+
+        element.SetValue(IconWeightProperty, value);
+    }
+
     /// <summary>
     /// Identifies the presentation variant propagated through an icon content subtree.
     /// </summary>
@@ -85,5 +213,15 @@ public class IconPresenter : ContentPresenter
         }
 
         element.SetValue(VariantProperty, value);
+    }
+
+    private static bool ValidateIconSize(object? value)
+    {
+        double size = (double)value!;
+
+        // Reuse WPF's own FontSize validation so font-backed icon families cannot inherit a value
+        // that their rendering property would reject. NaN is reserved as this contract's explicit
+        // "not specified" sentinel and is never forwarded to FontSize.
+        return double.IsNaN(size) || TextElement.FontSizeProperty.IsValidValue(size);
     }
 }

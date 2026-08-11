@@ -81,6 +81,108 @@ public class IconContentTests
     }
 
     [Fact]
+    public void IconPresentationScope_AffectsOnlyCompatibleIcons()
+    {
+        RunOnStaThread(() =>
+        {
+            var icon = new FluentIcon(SymbolRegular.Home24);
+            var text = new System.Windows.Controls.TextBlock { Text = "Home" };
+            var host = new StackPanel { Children = { icon, text } };
+
+            host.SetValue(TextElement.FontSizeProperty, 27D);
+            host.SetValue(TextElement.FontWeightProperty, FontWeights.Bold);
+            IconPresenter.SetIconSize(host, 12D);
+            IconPresenter.SetIconWeight(host, FontWeights.Light);
+            host.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+
+            Assert.Equal(12D, icon.FontSize);
+            Assert.Equal(FontWeights.Light, icon.FontWeight);
+            Assert.Equal(27D, text.FontSize);
+            Assert.Equal(FontWeights.Bold, text.FontWeight);
+            Assert.Equal(DependencyProperty.UnsetValue, icon.ReadLocalValue(TextElement.FontSizeProperty));
+            Assert.Equal(
+                DependencyProperty.UnsetValue,
+                icon.ReadLocalValue(TextElement.FontWeightProperty)
+            );
+        });
+    }
+
+    [Fact]
+    public void FluentIcon_IconPresentationPreservesAndRestoresNativeFontValues()
+    {
+        RunOnStaThread(() =>
+        {
+            var icon = new FluentIcon(SymbolRegular.Home24)
+            {
+                FontSize = 30D,
+                FontWeight = FontWeights.Bold,
+            };
+            var host = new Border { Child = icon };
+
+            IconPresenter.SetIconSize(host, 12D);
+            IconPresenter.SetIconWeight(host, FontWeights.SemiBold);
+            host.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+
+            Assert.Equal(12D, icon.FontSize);
+            Assert.Equal(FontWeights.SemiBold, icon.FontWeight);
+            Assert.Equal(30D, icon.ReadLocalValue(TextElement.FontSizeProperty));
+            Assert.Equal(FontWeights.Bold, icon.ReadLocalValue(TextElement.FontWeightProperty));
+
+            host.ClearValue(IconPresenter.IconSizeProperty);
+            host.ClearValue(IconPresenter.IconWeightProperty);
+
+            Assert.Equal(30D, icon.FontSize);
+            Assert.Equal(FontWeights.Bold, icon.FontWeight);
+            Assert.Equal(30D, icon.ReadLocalValue(TextElement.FontSizeProperty));
+            Assert.Equal(FontWeights.Bold, icon.ReadLocalValue(TextElement.FontWeightProperty));
+        });
+    }
+
+    [Fact]
+    public void BreadcrumbBar_IconPresentationScopeReachesSeparatorInsideItemTemplate()
+    {
+        RunOnStaThread(() =>
+        {
+            var breadcrumbBar = new BreadcrumbBar
+            {
+                ItemsSource = new[] { "Home", "Folder" },
+                FontSize = 27D,
+            };
+            IconPresenter.SetIconSize(breadcrumbBar, 12D);
+            IconPresenter.SetIconWeight(breadcrumbBar, FontWeights.SemiBold);
+            var window = CreateHiddenWindow(breadcrumbBar);
+
+            try
+            {
+                window.Show();
+                breadcrumbBar.UpdateLayout();
+
+                var separator = Assert.IsType<FluentIcon>(
+                    FindVisualDescendant<FluentIcon>(
+                        breadcrumbBar,
+                        icon => icon.Symbol == SymbolRegular.ChevronRight24
+                    )
+                );
+
+                Assert.Equal(12D, separator.FontSize);
+                Assert.Equal(FontWeights.SemiBold, separator.FontWeight);
+                Assert.Equal(
+                    DependencyProperty.UnsetValue,
+                    separator.ReadLocalValue(TextElement.FontSizeProperty)
+                );
+                Assert.Equal(
+                    DependencyProperty.UnsetValue,
+                    separator.ReadLocalValue(TextElement.FontWeightProperty)
+                );
+            }
+            finally
+            {
+                window.Close();
+            }
+        });
+    }
+
+    [Fact]
     public void FluentIcon_UpdatesItsExistingTextElementWhenSymbolChanges()
     {
         RunOnStaThread(() =>

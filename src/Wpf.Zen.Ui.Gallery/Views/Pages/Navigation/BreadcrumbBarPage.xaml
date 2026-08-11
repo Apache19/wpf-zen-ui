@@ -30,13 +30,20 @@
         <controls:ControlExample
             Margin="0"
             HeaderText="A BreadcrumbBar control."
-            XamlCode="&lt;ui:BreadcrumbBar ItemsSource=&quot;{Binding Strings, Mode=OneWay}&quot; /&gt;">
-            <ui:BreadcrumbBar Command="{Binding StringSelectedCommand, Mode=OneWay}" ItemsSource="{Binding Strings, Mode=OneWay}" />
+            XamlCode="&lt;ui:BreadcrumbBar ui:IconPresenter.IconSize=&quot;12&quot; ui:IconPresenter.IconWeight=&quot;SemiBold&quot; ItemsSource=&quot;{Binding Strings, Mode=OneWay}&quot; /&gt;">
+            <ui:BreadcrumbBar
+                ui:IconPresenter.IconSize="12"
+                ui:IconPresenter.IconWeight="SemiBold"
+                Command="{Binding StringSelectedCommand, Mode=OneWay}"
+                ItemsSource="{Binding Strings, Mode=OneWay}" />
         </controls:ControlExample>
 
         <controls:ControlExample Margin="0,32,0,0" HeaderText="BreadcrumbBar Control with Custom DataTemplate.">
             <controls:ControlExample.XamlCode>
-                &lt;ui:BreadcrumbBar ItemsSource=&quot;{Binding Folders, Mode=OneWay}&quot; &gt;\n
+                &lt;ui:BreadcrumbBar
+                \tui:IconPresenter.IconSize=&quot;12&quot;
+                \tui:IconPresenter.IconWeight=&quot;SemiBold&quot;
+                \tItemsSource=&quot;{Binding Folders, Mode=OneWay}&quot; &gt;\n
                 \t&lt;ui:BreadcrumbBar.ItemTemplate&gt;\n
                 \t\t&lt;ui:DataTemplate DataType=&quot;{x:Type models:Folder}&quot; &gt;\n
                 \t\t\t&lt;TextBlock Text=&quot;{Binding Name, Mode=OneTime}&quot; /&gt;\n
@@ -52,12 +59,13 @@
                 <ui:BreadcrumbBar
                     x:Name="BreadcrumbBar2"
                     Grid.Column="0"
+                    ui:IconPresenter.IconSize="12"
+                    ui:IconPresenter.IconWeight="SemiBold"
                     Command="{Binding FolderSelectedCommand, Mode=OneWay}"
-                    FontSize="12"
                     ItemsSource="{Binding Folders, Mode=OneWay}">
                     <ui:BreadcrumbBar.ItemTemplate>
                         <DataTemplate DataType="{x:Type models:Folder}">
-                            <TextBlock FontSize="{ui:DynamicValue ControlContentThemeFontSize}" Text="{Binding Name, Mode=OneTime}" />
+                            <TextBlock Text="{Binding Name, Mode=OneTime}" />
                         </DataTemplate>
                     </ui:BreadcrumbBar.ItemTemplate>
                 </ui:BreadcrumbBar>
