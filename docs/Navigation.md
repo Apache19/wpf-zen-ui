@@ -136,8 +136,37 @@ private void BreadcrumbBar_OnItemClicked(
 ```
 
 `BreadcrumbSegment.Target` 为 `null` 时，该节点只是结构标识，不可导航。表示层
-可根据 `IsNavigable` 自定义样式。是否隐藏只有一节的面包屑，同样是 Shell 的表示策略，
-不应由被导航页面反向操作宿主控件。
+可根据 `IsNavigable` 自定义样式。
+
+### 隐藏路径中的特定节点
+
+某些页面需要留在导航地图中，却不适合成为面包屑节点。例如分类首页本身需要导航目标，
+它也要继续作为子页面的语义父级，但界面只希望展示具体的子页面。此时将地图节点的
+`IsBreadcrumbVisible` 设为 `false`：
+
+```csharp
+string categoryKey = "samples.basic-input";
+map.Add<BasicInputPage>(
+    categoryKey,
+    "Basic Input",
+    isBreadcrumbVisible: false);
+map.Add<ButtonPage>("samples.button", "Button", categoryKey);
+```
+
+该属性只过滤 `Breadcrumbs` 投影，不会把节点从 `NavigationMap` 删除，也不会切断父链。
+导航到 `BasicInputPage` 时路径为空；导航到 `ButtonPage` 时解析仍会穿过分类节点，但最终
+只投影 `Button`。默认值为 `true`，所以只有一节的“全部示例”无需任何特例设置，仍会正常
+显示。
+
+导航地图在 XAML 中声明时也可直接使用：
+
+```xml
+<ui:NavigationMapNode
+    Key="samples.basic-input"
+    Content="Basic Input"
+    IsBreadcrumbVisible="False"
+    PageType="{x:Type pages:BasicInputPage}" />
+```
 
 在视图模型或其他非可视对象中，也可通过作用域服务获取相同状态：
 

@@ -134,14 +134,22 @@ public sealed class NavigationMap : IList<NavigationMapNode>, System.Collections
     /// <param name="content">The default breadcrumb content.</param>
     /// <param name="target">The optional destination; omit it for a structural node.</param>
     /// <param name="parentKey">The optional key of the semantic parent.</param>
+    /// <param name="isBreadcrumbVisible">
+    /// Whether this node contributes a segment to resolved breadcrumb paths. Hidden nodes remain
+    /// in the semantic graph and are still traversed when resolving descendants.
+    /// </param>
     /// <returns>The created node, which can subsequently be configured or moved.</returns>
     public NavigationMapNode Add(
         string key,
         object? content,
         NavigationTarget? target = null,
-        string? parentKey = null)
+        string? parentKey = null,
+        bool isBreadcrumbVisible = true)
     {
-        var node = new NavigationMapNode(key, content, target, parentKey);
+        var node = new NavigationMapNode(key, content, target, parentKey)
+        {
+            IsBreadcrumbVisible = isBreadcrumbVisible,
+        };
         Add(node);
         return node;
     }
@@ -151,9 +159,23 @@ public sealed class NavigationMap : IList<NavigationMapNode>, System.Collections
     /// <param name="key">The stable route key used by children and explicit targets.</param>
     /// <param name="content">The default breadcrumb content.</param>
     /// <param name="parentKey">The optional key of the semantic parent.</param>
+    /// <param name="isBreadcrumbVisible">
+    /// Whether this node contributes a segment to resolved breadcrumb paths. Hidden nodes remain
+    /// in the semantic graph and are still traversed when resolving descendants.
+    /// </param>
     /// <returns>The created node, which can subsequently be configured or moved.</returns>
-    public NavigationMapNode Add<TPage>(string key, object? content, string? parentKey = null) =>
-        Add(key, content, new NavigationTarget(typeof(TPage), key), parentKey);
+    public NavigationMapNode Add<TPage>(
+        string key,
+        object? content,
+        string? parentKey = null,
+        bool isBreadcrumbVisible = true) =>
+        Add(
+            key,
+            content,
+            new NavigationTarget(typeof(TPage), key),
+            parentKey,
+            isBreadcrumbVisible
+        );
 
     /// <summary>Performs a group of map mutations and raises <see cref="Changed"/> at most once.</summary>
     /// <param name="update">The synchronous set of changes to perform.</param>
@@ -389,11 +411,17 @@ public sealed class NavigationMap : IList<NavigationMapNode>, System.Collections
         }
 
         reversedNodes.Reverse();
-        var result = new BreadcrumbSegment[reversedNodes.Count];
-        for (int index = 0; index < reversedNodes.Count; index++)
+
+        // Visibility filters the projection, not traversal. Build the complete semantic chain
+        // first so descendants can resolve through any number of hidden organizational nodes.
+        NavigationMapNode[] visibleNodes = reversedNodes
+            .Where(static node => node.IsBreadcrumbVisible)
+            .ToArray();
+        var result = new BreadcrumbSegment[visibleNodes.Length];
+        for (int index = 0; index < visibleNodes.Length; index++)
         {
-            NavigationMapNode node = reversedNodes[index];
-            object? content = index == reversedNodes.Count - 1 && leafContentOverride is not null
+            NavigationMapNode node = visibleNodes[index];
+            object? content = ReferenceEquals(node, leaf) && leafContentOverride is not null
                 ? leafContentOverride
                 : node.ContentResolver?.Invoke(context) ?? node.Content;
 

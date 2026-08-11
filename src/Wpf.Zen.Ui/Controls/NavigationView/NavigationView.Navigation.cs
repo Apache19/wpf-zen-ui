@@ -725,7 +725,9 @@ public partial class NavigationView
             {
                 var combined = new List<BreadcrumbSegment>(NavigationMap.ResolvePath(parent, context));
                 BreadcrumbSegment leaf = CreateLeafSegment(request.Target, fallbackLeafContent);
-                if (combined.Count == 0 || combined[^1].Key != leaf.Key)
+                NavigationMapNode? mappedLeaf = NavigationMap.FindNode(request.Target);
+                if (mappedLeaf?.IsBreadcrumbVisible != false
+                    && (combined.Count == 0 || combined[^1].Key != leaf.Key))
                 {
                     combined.Add(leaf);
                 }
@@ -734,8 +736,9 @@ public partial class NavigationView
             }
             else
             {
+                NavigationMapNode? mappedLeaf = NavigationMap.FindNode(request.Target);
                 resolved = NavigationMap.ResolvePath(request.Target, context, leafContentOverride);
-                if (resolved.Count == 0)
+                if (resolved.Count == 0 && mappedLeaf is null)
                 {
                     resolved = _oneTimeBreadcrumbFallback is { Count: > 0 } fallback
                         ? fallback

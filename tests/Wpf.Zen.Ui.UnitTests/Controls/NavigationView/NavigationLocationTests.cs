@@ -287,6 +287,7 @@ public class NavigationLocationTests
                         Key="destination"
                         ParentKey="root"
                         Content="Destination"
+                        IsBreadcrumbVisible="False"
                         PageType="{x:Type Border}" />
                 </ui:NavigationMap>
                 """;
@@ -297,6 +298,36 @@ public class NavigationLocationTests
             Assert.True(map.TryGetNode("destination", out NavigationMapNode destination));
             Assert.Equal("root", destination.ParentKey);
             Assert.Equal(typeof(Border), destination.PageType);
+            Assert.False(destination.IsBreadcrumbVisible);
+        });
+    }
+
+    [Fact]
+    public void HiddenMapNode_IsOmittedWithoutLeavingMapOrBreakingDescendantResolution()
+    {
+        WpfTestThread.Run(() =>
+        {
+            var navigationView = new Wpf.Zen.Ui.Controls.NavigationView();
+            NavigationMapNode category = navigationView.NavigationMap.Add<DestinationPage>(
+                "category",
+                "Category",
+                isBreadcrumbVisible: false
+            );
+            navigationView.NavigationMap.Add<ArticleListPage>("article", "Article", "category");
+
+            Assert.True(navigationView.Navigate(typeof(DestinationPage)));
+            Assert.Empty(navigationView.Breadcrumbs);
+            Assert.Contains(category, navigationView.NavigationMap);
+            Assert.False(navigationView.CanGoBack);
+
+            category.IsBreadcrumbVisible = true;
+
+            Assert.Equal("Category", Assert.Single(navigationView.Breadcrumbs).Content);
+            Assert.False(navigationView.CanGoBack);
+
+            category.IsBreadcrumbVisible = false;
+            Assert.True(navigationView.Navigate(typeof(ArticleListPage)));
+            Assert.Equal("Article", Assert.Single(navigationView.Breadcrumbs).Content);
         });
     }
 

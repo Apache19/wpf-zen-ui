@@ -22,12 +22,14 @@ public sealed class NavigationMapNode : INotifyPropertyChanged
     private object? _content;
     private NavigationTarget? _target;
     private Func<NavigationLocationContext, object?>? _contentResolver;
+    private bool _isBreadcrumbVisible = true;
     private NavigationMap? _owner;
 
     /// <summary>Initializes a new instance of the <see cref="NavigationMapNode"/> class for XAML construction.</summary>
     /// <remarks>
     /// XAML assigns <see cref="Key"/> before inserting the node into a map. Application code should
-    /// normally use the validating constructor or one of <see cref="NavigationMap.Add(string, object?, NavigationTarget?, string?)"/>
+    /// normally use the validating constructor or one of
+    /// <see cref="NavigationMap.Add(string, object?, NavigationTarget?, string?, bool)"/>
     /// overloads instead. A node with an empty key cannot be added to a map.
     /// </remarks>
     public NavigationMapNode() { }
@@ -158,6 +160,22 @@ public sealed class NavigationMapNode : INotifyPropertyChanged
     {
         get => _contentResolver;
         set => SetProperty(ref _contentResolver, value);
+    }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether this node is included in resolved breadcrumb paths.
+    /// </summary>
+    /// <remarks>
+    /// The default is <see langword="true"/>. Setting this property to <see langword="false"/>
+    /// removes only this node's visual segment from the breadcrumb projection. The node remains in
+    /// the navigation map, remains navigable, and is still traversed when resolving descendants,
+    /// so hiding a category label never breaks the semantic parent chain. Changing the value while
+    /// the node is active refreshes <see cref="NavigationLocation"/> without creating history.
+    /// </remarks>
+    public bool IsBreadcrumbVisible
+    {
+        get => _isBreadcrumbVisible;
+        set => SetProperty(ref _isBreadcrumbVisible, value);
     }
 
     /// <inheritdoc />

@@ -53,19 +53,18 @@
             <ui:NavigationView.Header>
                 <StackPanel Margin="42,32,42,20">
                     <ui:BreadcrumbBar
-                        x:Name="BreadcrumbBar"
+                        FontSize="28"
                         ItemClicked="BreadcrumbBar_OnItemClicked"
                         ItemsSource="{Binding ElementName=NavigationView, Path=Breadcrumbs}">
                         <ui:BreadcrumbBar.Style>
                             <Style BasedOn="{StaticResource {x:Type ui:BreadcrumbBar}}" TargetType="{x:Type ui:BreadcrumbBar}">
                                 <Setter Property="Visibility" Value="Visible" />
                                 <Style.Triggers>
-                                    <!--  A single segment is a location label, not useful navigation. The shell,
-                                          rather than a navigated page, owns this presentation policy.  -->
+                                    <!--
+                                        Nodes decide whether they participate in the breadcrumb projection.
+                                        The shell only collapses the presenter when that projection is empty.
+                                    -->
                                     <DataTrigger Binding="{Binding Items.Count, RelativeSource={RelativeSource Self}}" Value="0">
-                                        <Setter Property="Visibility" Value="Collapsed" />
-                                    </DataTrigger>
-                                    <DataTrigger Binding="{Binding Items.Count, RelativeSource={RelativeSource Self}}" Value="1">
                                         <Setter Property="Visibility" Value="Collapsed" />
                                     </DataTrigger>
                                 </Style.Triggers>
@@ -75,13 +74,6 @@
                     <controls:PageControlDocumentation Margin="0,10,0,0" NavigationView="{Binding ElementName=NavigationView}" />
                 </StackPanel>
             </ui:NavigationView.Header>
-            <!--<ui:NavigationView.PaneHeader>
-                <Border
-                    Height="80"
-                    Margin="1,0,1,5"
-                    Background="{ui:DynamicBrush StripedBackground}"
-                    CornerRadius="4" />
-            </ui:NavigationView.PaneHeader>-->
             <ui:NavigationView.AutoSuggestBox>
                 <ui:AutoSuggestBox
                     x:Name="AutoSuggestBox"

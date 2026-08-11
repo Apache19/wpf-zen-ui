@@ -24,6 +24,10 @@ public sealed class NavigationLocation
     /// <summary>Gets the page instance currently displayed by the navigation host.</summary>
     public object Page { get; }
 
-    /// <summary>Gets the immutable semantic path resolved for this occurrence.</summary>
+    /// <summary>Gets the immutable breadcrumb projection resolved for this occurrence.</summary>
+    /// <remarks>
+    /// The projection can be empty when every node in the semantic path opts out through
+    /// <see cref="NavigationMapNode.IsBreadcrumbVisible"/>. Those nodes still exist in the map.
+    /// </remarks>
     public IReadOnlyList<BreadcrumbSegment> Breadcrumbs { get; }
 }

@@ -80,14 +80,13 @@ public partial class MainWindowViewModel : ViewModel
         {
             Children = new object[]
             {
-                new NavigationItem("Anchor",          typeof(AnchorPage)), new NavigationItem("Button", typeof(ButtonPage)),
-                new NavigationItem("DropDownButton",  typeof(DropDownButtonPage)),
-                new NavigationItem("HyperlinkButton", typeof(HyperlinkButtonPage)),
-                new NavigationItem("ToggleButton",    typeof(ToggleButtonPage)), new NavigationItem("ToggleSwitch", typeof(ToggleSwitchPage)),
-                new NavigationItem("CheckBox",        typeof(CheckBoxPage)), new NavigationItem("ComboBox",         typeof(ComboBoxPage)),
-                new NavigationItem("RadioButton",     typeof(RadioButtonPage)), new NavigationItem("RatingControl", typeof(RatingPage)),
-                new NavigationItem("ThumbRate",       typeof(ThumbRatePage)), new NavigationItem("SplitButton",     typeof(SplitButtonPage)),
-                new NavigationItem("Slider",          typeof(SliderPage))
+                new NavigationItem("Anchor",         typeof(AnchorPage)), new NavigationItem("Button",                  typeof(ButtonPage)),
+                new NavigationItem("DropDownButton", typeof(DropDownButtonPage)), new NavigationItem("HyperlinkButton", typeof(HyperlinkButtonPage)),
+                new NavigationItem("ToggleButton",   typeof(ToggleButtonPage)), new NavigationItem("ToggleSwitch",      typeof(ToggleSwitchPage)),
+                new NavigationItem("CheckBox",       typeof(CheckBoxPage)), new NavigationItem("ComboBox",              typeof(ComboBoxPage)),
+                new NavigationItem("RadioButton",    typeof(RadioButtonPage)), new NavigationItem("RatingControl",      typeof(RatingPage)),
+                new NavigationItem("ThumbRate",      typeof(ThumbRatePage)), new NavigationItem("SplitButton",          typeof(SplitButtonPage)),
+                new NavigationItem("Slider",         typeof(SliderPage))
             },
         },
         new NavigationItem("Collections", SymbolRegular.Table24, typeof(CollectionsPage))
@@ -105,9 +104,8 @@ public partial class MainWindowViewModel : ViewModel
         {
             Children = new object[]
             {
-                new NavigationItem("CalendarDatePicker", typeof(CalendarDatePickerPage)),
-                new NavigationItem("Calendar",           typeof(CalendarPage)), new NavigationItem("DatePicker", typeof(DatePickerPage)),
-                new NavigationItem("TimePicker",         typeof(TimePickerPage)),
+                new NavigationItem("CalendarDatePicker", typeof(CalendarDatePickerPage)), new NavigationItem("Calendar", typeof(CalendarPage)),
+                new NavigationItem("DatePicker",         typeof(DatePickerPage)), new NavigationItem("TimePicker",       typeof(TimePickerPage)),
             },
         },
         new NavigationItem("Dialogs & flyouts", SymbolRegular.Chat24, typeof(DialogsAndFlyoutsPage))
@@ -140,10 +138,9 @@ public partial class MainWindowViewModel : ViewModel
         {
             Children = new object[]
             {
-                new NavigationItem("BreadcrumbBar",         typeof(BreadcrumbBarPage)),
-                new NavigationItem("NavigationView",        typeof(NavigationViewPage)), new NavigationItem("Menu", typeof(MenuPage)),
-                new NavigationItem("Multilevel navigation", typeof(MultilevelNavigationPage)),
-                new NavigationItem("TabControl",            typeof(TabControlPage)),
+                new NavigationItem("BreadcrumbBar", typeof(BreadcrumbBarPage)), new NavigationItem("NavigationView", typeof(NavigationViewPage)),
+                new NavigationItem("Menu",          typeof(MenuPage)), new NavigationItem("Multilevel navigation", typeof(MultilevelNavigationPage)),
+                new NavigationItem("TabControl",    typeof(TabControlPage)),
             },
         },
         new NavigationItem("Status & info", SymbolRegular.ChatBubblesQuestion24, typeof(StatusAndInfoPage))
@@ -188,36 +185,36 @@ public partial class MainWindowViewModel : ViewModel
         {
             Header = "Home",
             Tag    = "tray_home",
-            Icon = new FluentIconSource(SymbolRegular.Home24),
+            Icon   = new FluentIconSource(SymbolRegular.Home24),
         },
         new MenuItem()
         {
             Header = "Settings",
             Tag    = "tray_settings",
-            Icon = new FluentIconSource(SymbolRegular.Settings24),
+            Icon   = new FluentIconSource(SymbolRegular.Settings24),
         },
         new UiSeparator(),
         new MenuItem()
         {
             Header = "Close",
             Tag    = "tray_close",
-            Icon = new FluentIconSource(SymbolRegular.Dismiss24),
+            Icon   = new FluentIconSource(SymbolRegular.Dismiss24),
         }
     ];
 
     private static NavigationMap CreateNavigationMap()
     {
         var map = new NavigationMap();
-        AddPage<DashboardPage>("Home");
+        AddPage<DashboardPage>("Home", isBreadcrumbVisible: false);
 
         const string designGuidance = "gallery.design-guidance";
-        AddGroup(designGuidance, "Design guidance");
+        AddGroup(designGuidance, "Design guidance", isBreadcrumbVisible: false);
         AddPage<TypographyPage>("Typography", designGuidance);
         AddPage<IconsPage>("Icons", designGuidance);
         AddPage<ColorsPage>("Colors", designGuidance);
         AddPage<AllControlsPage>("All samples");
 
-        string basicInput = AddPage<BasicInputPage>("Basic Input");
+        string basicInput = AddPage<BasicInputPage>("Basic Input", isBreadcrumbVisible: false);
         AddPage<AnchorPage>("Anchor", basicInput);
         AddPage<ButtonPage>("Button", basicInput);
         AddPage<DropDownButtonPage>("DropDownButton", basicInput);
@@ -232,41 +229,41 @@ public partial class MainWindowViewModel : ViewModel
         AddPage<SplitButtonPage>("SplitButton", basicInput);
         AddPage<SliderPage>("Slider", basicInput);
 
-        string collections = AddPage<CollectionsPage>("Collections");
+        string collections = AddPage<CollectionsPage>("Collections", isBreadcrumbVisible: false);
         AddPage<DataGridPage>("DataGrid", collections);
         AddPage<ListBoxPage>("ListBox", collections);
         AddPage<ListViewPage>("ListView", collections);
         AddPage<TreeViewPage>("TreeView", collections);
-#if DEBUG
+        #if DEBUG
         AddPage<TreeListPage>("TreeList", collections);
-#endif
+        #endif
 
-        string dateAndTime = AddPage<DateAndTimePage>("Date & time");
+        string dateAndTime = AddPage<DateAndTimePage>("Date & time", isBreadcrumbVisible: false);
         AddPage<CalendarDatePickerPage>("CalendarDatePicker", dateAndTime);
         AddPage<CalendarPage>("Calendar", dateAndTime);
         AddPage<DatePickerPage>("DatePicker", dateAndTime);
         AddPage<TimePickerPage>("TimePicker", dateAndTime);
 
-        string dialogs = AddPage<DialogsAndFlyoutsPage>("Dialogs & flyouts");
+        string dialogs = AddPage<DialogsAndFlyoutsPage>("Dialogs & flyouts", isBreadcrumbVisible: false);
         AddPage<SnackbarPage>("Snackbars", dialogs);
         AddPage<ContentDialogPage>("ContentDialog", dialogs);
         AddPage<FlyoutPage>("Flyout", dialogs);
         AddPage<MessageBoxPage>("MessageBox", dialogs);
 
-#if DEBUG
-        string layout = AddPage<LayoutPage>("Layout");
+        #if DEBUG
+        string layout = AddPage<LayoutPage>("Layout", isBreadcrumbVisible: false);
         AddPage<ExpanderPage>("Expander", layout);
         AddPage<CardControlPage>("CardControl", layout);
         AddPage<CardActionPage>("CardAction", layout);
-#endif
+        #endif
 
-        string media = AddPage<MediaPage>("Media");
+        string media = AddPage<MediaPage>("Media", isBreadcrumbVisible: false);
         AddPage<ImagePage>("Image", media);
         AddPage<CanvasPage>("Canvas", media);
         AddPage<WebViewPage>("WebView", media);
         AddPage<WebBrowserPage>("WebBrowser", media);
 
-        string navigation = AddPage<NavigationPage>("Navigation");
+        string navigation = AddPage<NavigationPage>("Navigation", isBreadcrumbVisible: false);
         AddPage<BreadcrumbBarPage>("BreadcrumbBar", navigation);
         AddPage<NavigationViewPage>("NavigationView", navigation);
         AddPage<MenuPage>("Menu", navigation);
@@ -278,14 +275,14 @@ public partial class MainWindowViewModel : ViewModel
         string page2 = AddPage<MultilevelNavigationSamplePage2>("Page 2", page1);
         AddPage<MultilevelNavigationSamplePage3>("Page 3", page2);
 
-        string status = AddPage<StatusAndInfoPage>("Status & info");
+        string status = AddPage<StatusAndInfoPage>("Status & info", isBreadcrumbVisible: false);
         AddPage<InfoBadgePage>("InfoBadge", status);
         AddPage<InfoBarPage>("InfoBar", status);
         AddPage<ProgressBarPage>("ProgressBar", status);
         AddPage<ProgressRingPage>("ProgressRing", status);
         AddPage<ToolTipPage>("ToolTip", status);
 
-        string text = AddPage<TextPage>("Text");
+        string text = AddPage<TextPage>("Text", isBreadcrumbVisible: false);
         AddPage<AutoSuggestBoxPage>("AutoSuggestBox", text);
         AddPage<NumberBoxPage>("NumberBox", text);
         AddPage<PasswordBoxPage>("PasswordBox", text);
@@ -294,27 +291,37 @@ public partial class MainWindowViewModel : ViewModel
         AddPage<TextBlockPage>("TextBlock", text);
         AddPage<TextBoxPage>("TextBox", text);
 
-        string system = AddPage<OpSystemPage>("System");
+        string system = AddPage<OpSystemPage>("System", isBreadcrumbVisible: false);
         AddPage<ClipboardPage>("Clipboard", system);
         AddPage<FilePickerPage>("FilePicker", system);
-        AddPage<WindowsPage>("Windows");
-        AddPage<SettingsPage>("Settings");
+        AddPage<WindowsPage>("Windows", isBreadcrumbVisible: false);
+        AddPage<SettingsPage>("Settings", isBreadcrumbVisible: false);
 
         return map;
 
-        void AddGroup(string key, object? content, string? parentKey = null) =>
-            map.Add(new NavigationMapNode(key, content, parentKey: parentKey));
+        void AddGroup(string key, object? content, string? parentKey = null, bool isBreadcrumbVisible = true)
+        {
+            map.Add(
+                new NavigationMapNode(key, content, parentKey: parentKey)
+                {
+                    IsBreadcrumbVisible = isBreadcrumbVisible
+                }
+            );
+        }
 
-        string AddPage<TPage>(object? content, string? parentKey = null)
+        string AddPage<TPage>(object? content, string? parentKey = null, bool isBreadcrumbVisible = true)
         {
             string key = typeof(TPage).FullName
-                ?? throw new InvalidOperationException("A page route requires a full type name.");
+                      ?? throw new InvalidOperationException("A page route requires a full type name.");
             map.Add(
                 new NavigationMapNode(
                     key,
                     content,
                     new NavigationTarget(typeof(TPage), key),
                     parentKey)
+                {
+                    IsBreadcrumbVisible = isBreadcrumbVisible,
+                }
             );
             return key;
         }
