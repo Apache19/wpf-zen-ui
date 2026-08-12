@@ -9,10 +9,13 @@ using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
+using System.Windows.Automation.Peers;
+using System.Windows.Automation.Provider;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using Wpf.Zen.Ui.Controls;
+using Wpf.Zen.Ui.Input;
 using Wpf.Zen.Ui.Markup;
 using Wpf.Zen.Ui.Theming;
 
@@ -1356,14 +1359,86 @@ public class NavigationViewTests
                 Assert.False(firstContainer.IsLast);
                 Assert.True(lastContainer.IsLast);
 
-                firstContainer.RaiseEvent(
-                    new RoutedEventArgs(ButtonBase.ClickEvent, firstContainer)
+                var button = Assert.IsType<System.Windows.Controls.Button>(
+                    firstContainer.Template.FindName("PART_Button", firstContainer)
                 );
+                button.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent, button));
 
                 Assert.NotNull(clicked);
                 Assert.Same(first, clicked.Item);
                 Assert.Same(firstContainer, clicked.Container);
                 Assert.Equal(0, clicked.Index);
+
+                clicked = null;
+                var separator = Assert.IsType<FluentIcon>(
+                    FindVisualDescendant<FluentIcon>(firstContainer)
+                );
+                Assert.False(separator.IsHitTestVisible);
+
+                // Even an explicitly raised ButtonBase event from the separator must not cross the
+                // BreadcrumbBarItem contract. Real pointer input cannot reach it because hit testing
+                // is disabled, and the owner listens only for BreadcrumbBarItem.ClickEvent.
+                separator.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent, separator));
+                Assert.Null(clicked);
+            }
+            finally
+            {
+                window.Close();
+            }
+        });
+    }
+
+    [Fact]
+    public void BreadcrumbBarItem_TemplateButton_RaisesClickThenExecutesForwardedCommand()
+    {
+        RunOnStaThread(() =>
+        {
+            var resources = new ResourceDictionary { Source = CreateResourceUri() };
+            var invocationOrder = new List<string>();
+            const string commandParameter = "Folder";
+            var item = new BreadcrumbBarItem
+            {
+                Style = Assert.IsType<Style>(resources[typeof(BreadcrumbBarItem)]),
+                Content = "Folder",
+                CommandParameter = commandParameter,
+                Command = new RelayCommand<object>(parameter =>
+                {
+                    Assert.Equal(commandParameter, parameter);
+                    invocationOrder.Add("Command");
+                }),
+            };
+            item.Click += (_, _) => invocationOrder.Add("Click");
+
+            var window = new Window
+            {
+                Content = item,
+                Width = 320,
+                Height = 80,
+                Left = -10_000,
+                Top = -10_000,
+                ShowActivated = false,
+                ShowInTaskbar = false,
+            };
+
+            try
+            {
+                window.Show();
+                item.UpdateLayout();
+
+                var button = Assert.IsType<System.Windows.Controls.Button>(
+                    item.Template.FindName("PART_Button", item)
+                );
+                Assert.Same(item.Command, button.Command);
+                Assert.Same(item.CommandParameter, button.CommandParameter);
+
+                var peer = new ButtonAutomationPeer(button);
+                var invokeProvider = Assert.IsAssignableFrom<IInvokeProvider>(
+                    peer.GetPattern(PatternInterface.Invoke)
+                );
+                invokeProvider.Invoke();
+                DrainDispatcher();
+
+                Assert.Equal(new[] { "Click", "Command" }, invocationOrder);
             }
             finally
             {

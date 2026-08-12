@@ -74,10 +74,10 @@ public class BreadcrumbBar : ItemsControl
     /// </summary>
     public BreadcrumbBar()
     {
-        // BreadcrumbBarItem is the interactive container, so its native Click event identifies the
-        // exact generated container without a template command or an ancestor binding. Handling the
-        // routed event at the owner also works for custom item templates.
-        AddHandler(ButtonBase.ClickEvent, new RoutedEventHandler(OnItemContainerClick));
+        // BreadcrumbBarItem translates only its bounded template button into this event. Listening
+        // for the container-owned event therefore excludes separator clicks while still identifying
+        // the exact generated container without an ancestor binding or template command.
+        AddHandler(BreadcrumbBarItem.ClickEvent, new RoutedEventHandler(OnItemContainerClick));
         ItemContainerGenerator.ItemsChanged += ItemContainerGeneratorOnItemsChanged;
         ItemContainerGenerator.StatusChanged += ItemContainerGeneratorOnStatusChanged;
     }

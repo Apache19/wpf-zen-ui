@@ -13,41 +13,74 @@
 
     <Style x:Key="DefaultUiBreadcrumbBarItemStyle" TargetType="{x:Type controls:BreadcrumbBarItem}">
         <Setter Property="VerticalContentAlignment" Value="Center" />
-        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Focusable" Value="False" />
+        <Setter Property="IsTabStop" Value="False" />
         <Setter Property="Foreground" Value="{m:DynamicBrush TextFillSecondary}" />
-        <Setter Property="FocusVisualStyle">
-            <Setter.Value>
-                <Style>
-                    <Setter Property="Control.Template">
-                        <Setter.Value>
-                            <ControlTemplate>
-                                <Rectangle
-                                    Margin="-4"
-                                    RadiusX="4"
-                                    RadiusY="4"
-                                    SnapsToDevicePixels="True"
-                                    Stroke="{m:DynamicBrush KeyboardFocusBorder}"
-                                    StrokeThickness="1" />
-                            </ControlTemplate>
-                        </Setter.Value>
-                    </Setter>
-                </Style>
-            </Setter.Value>
-        </Setter>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type controls:BreadcrumbBarItem}">
                     <StackPanel Background="{TemplateBinding Background}" Orientation="Horizontal">
-                        <ContentPresenter
-                            x:Name="contentPresenter"
+                        <Button
+                            x:Name="PART_Button"
                             HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
                             VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
-                            RecognizesAccessKey="True" />
+                            Background="Transparent"
+                            Command="{TemplateBinding Command}"
+                            CommandParameter="{TemplateBinding CommandParameter}"
+                            CommandTarget="{TemplateBinding CommandTarget}"
+                            Content="{TemplateBinding Content}"
+                            ContentStringFormat="{TemplateBinding ContentStringFormat}"
+                            ContentTemplate="{TemplateBinding ContentTemplate}"
+                            ContentTemplateSelector="{TemplateBinding ContentTemplateSelector}"
+                            OverridesDefaultStyle="True">
+                            <Button.Template>
+                                <ControlTemplate TargetType="{x:Type Button}">
+                                    <Border Background="{TemplateBinding Background}" SnapsToDevicePixels="True">
+                                        <ContentPresenter
+                                            HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                            VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                            RecognizesAccessKey="True" />
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter Property="Foreground" Value="{m:DynamicBrush TextFillPrimary}" />
+                                        </Trigger>
+                                        <Trigger Property="IsPressed" Value="True">
+                                            <Setter Property="Foreground" Value="{m:DynamicBrush TextFillTertiary}" />
+                                        </Trigger>
+                                        <DataTrigger Binding="{Binding IsLast, RelativeSource={RelativeSource AncestorType=controls:BreadcrumbBarItem}}" Value="True">
+                                            <Setter Property="Foreground" Value="{m:DynamicBrush TextFillPrimary}" />
+                                        </DataTrigger>
+                                        <Trigger Property="IsEnabled" Value="False">
+                                            <Setter Property="Foreground" Value="{m:DynamicBrush TextFillDisabled}" />
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Button.Template>
+                            <Button.FocusVisualStyle>
+                                <Style>
+                                    <Setter Property="Control.Template">
+                                        <Setter.Value>
+                                            <ControlTemplate>
+                                                <Rectangle
+                                                    Margin="-4"
+                                                    RadiusX="4"
+                                                    RadiusY="4"
+                                                    SnapsToDevicePixels="True"
+                                                    Stroke="{m:DynamicBrush KeyboardFocusBorder}"
+                                                    StrokeThickness="1" />
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Style>
+                            </Button.FocusVisualStyle>
+                        </Button>
                         <controls:FluentIcon
                             x:Name="icon"
                             Margin="8,0"
                             VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
                             Foreground="{m:DynamicBrush TextFillSecondary}"
+                            IsHitTestVisible="False"
                             Symbol="ChevronRight24" />
                     </StackPanel>
                     <ControlTemplate.Triggers>
@@ -56,18 +89,9 @@
                         </Trigger>
                         <Trigger Property="IsLast" Value="True">
                             <Setter TargetName="icon" Property="Visibility" Value="Collapsed" />
-                            <Setter Property="Foreground" Value="{m:DynamicBrush TextFillPrimary}" />
                         </Trigger>
-                        <MultiTrigger>
-                            <MultiTrigger.Conditions>
-                                <Condition Property="IsLast" Value="False" />
-                                <Condition Property="IsMouseOver" Value="True" />
-                            </MultiTrigger.Conditions>
-                            <Setter Property="Foreground" Value="{m:DynamicBrush TextFillPrimary}" />
-                        </MultiTrigger>
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter Property="Foreground" Value="{m:DynamicBrush TextFillDisabled}" />
-                            <Setter TargetName="icon" Property="Foreground" Value="{m:DynamicBrush TextFillDisabled}" />
+                            <Setter Property="controls:IconPresenter.IconForeground" Value="{m:DynamicBrush TextFillDisabled}" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
