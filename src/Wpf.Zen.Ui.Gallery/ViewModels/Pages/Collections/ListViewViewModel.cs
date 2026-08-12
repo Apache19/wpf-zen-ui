@@ -70,19 +70,19 @@ public partial class ListViewViewModel : ViewModel
 
         for (int i = 0; i < 50; i++)
         {
-            var firstName = names[random.Next(0, names.Length)];
-                var lastName = surnames[random.Next(0, surnames.Length)];
-                var company = companies[random.Next(0, companies.Length)];
+            var firstName = names[random.Next(0,     names.Length)];
+            var lastName  = surnames[random.Next(0,  surnames.Length)];
+            var company   = companies[random.Next(0, companies.Length)];
 
-                persons.Add(
-                    new Person(
-                        firstName,
-                        lastName,
-                        company,
-                        $"{firstName.ToLowerInvariant()}.{lastName.ToLowerInvariant()}@example.com",
-                        $"+1 ({random.Next(200, 999)}) {random.Next(100, 999)}-{random.Next(1000, 9999)}"
-                    )
-                );
+            persons.Add(
+                new Person(
+                    firstName,
+                    lastName,
+                    company,
+                    $"{firstName.ToLowerInvariant()}.{lastName.ToLowerInvariant()}@example.com",
+                    $"+1 ({random.Next(200, 999)}) {random.Next(100, 999)}-{random.Next(1000, 9999)}"
+                )
+            );
         }
 
         return persons;

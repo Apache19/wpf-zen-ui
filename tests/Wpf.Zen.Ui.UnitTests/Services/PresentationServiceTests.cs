@@ -157,6 +157,7 @@ public class PresentationServiceTests
                 PumpUntilCompleted(resultTask);
 
                 Assert.True(resultTask.IsCompletedSuccessfully);
+                // ReSharper disable once AsyncApostle.AsyncWait
                 Assert.Equal(ContentDialogResult.Primary, resultTask.Result);
                 Assert.Null(dialogHost.Content);
                 Assert.True(applicationContent.IsEnabled);
@@ -226,6 +227,7 @@ public class PresentationServiceTests
             dialog.Hide(ContentDialogResult.Secondary);
             PumpUntilCompleted(resultTask);
 
+            // ReSharper disable once AsyncApostle.AsyncWait
             Assert.Equal(ContentDialogResult.Secondary, resultTask.Result);
             Assert.True(applicationContent.IsEnabled);
         });

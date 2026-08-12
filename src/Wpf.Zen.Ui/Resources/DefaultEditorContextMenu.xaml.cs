@@ -5,7 +5,7 @@
 
 using System.Windows.Controls;
 
-namespace Wpf.Zen.Ui.Resources;
+namespace Wpf.Zen.Ui.Controls;
 
 /// <summary>
 /// Provides the shared resource definitions used by the default text-editor context menu.

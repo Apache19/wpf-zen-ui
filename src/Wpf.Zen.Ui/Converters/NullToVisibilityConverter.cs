@@ -66,7 +66,9 @@ namespace Wpf.Zen.Ui.Converters;
 ///     TreatEmptyStringAsNull="True" /&gt;
 /// </code>
 /// </remarks>
+#pragma warning disable WPF0072 // ValueConversion must use correct types
 [ValueConversion(typeof(object), typeof(Visibility))]
+#pragma warning restore WPF0072 // ValueConversion must use correct types
 [MarkupExtensionReturnType(typeof(NullToVisibilityConverter))]
 public sealed class NullToVisibilityConverter : MarkupExtension, IValueConverter
 {
