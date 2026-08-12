@@ -3,8 +3,6 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-using System.Windows.Controls;
-using System.Windows.Documents;
 using Wpf.Zen.Ui.Theming;
 
 // ReSharper disable once CheckNamespace
@@ -38,7 +36,11 @@ public class FluentIcon : TextBlock
             typeof(FluentIcon),
             new FrameworkPropertyMetadata(
                 propertyChangedCallback: null,
-                coerceValueCallback: CoerceFontSize
+                static (d, baseValue) =>
+                {
+                    double iconSize = ((FluentIcon)d).IconSize;
+                    return double.IsNaN(iconSize) ? baseValue! : iconSize;
+                }
             )
         );
 
@@ -46,7 +48,15 @@ public class FluentIcon : TextBlock
             typeof(FluentIcon),
             new FrameworkPropertyMetadata(
                 propertyChangedCallback: null,
-                coerceValueCallback: CoerceFontWeight
+                coerceValueCallback: static (d, baseValue) => ((FluentIcon)d).IconWeight ?? (FontWeight)baseValue
+            )
+        );
+
+        ForegroundProperty.OverrideMetadata(
+            typeof(FluentIcon),
+            new FrameworkPropertyMetadata(
+                propertyChangedCallback: null,
+                coerceValueCallback: static (d, baseValue) => ((FluentIcon)d).IconForeground ?? baseValue
             )
         );
     }
@@ -57,9 +67,9 @@ public class FluentIcon : TextBlock
         typeof(SymbolRegular),
         typeof(FluentIcon),
         new FrameworkPropertyMetadata(
-            SymbolRegular.Empty,
+            defaultValue: SymbolRegular.Empty,
             FrameworkPropertyMetadataOptions.AffectsMeasure | FrameworkPropertyMetadataOptions.AffectsRender,
-            OnSymbolChanged
+            propertyChangedCallback: static (d, _) => ((FluentIcon)d).UpdateGlyph()
         )
     );
 
@@ -76,10 +86,20 @@ public class FluentIcon : TextBlock
         typeof(bool),
         typeof(FluentIcon),
         new FrameworkPropertyMetadata(
-            false,
+            defaultValue: false,
             FrameworkPropertyMetadataOptions.AffectsMeasure | FrameworkPropertyMetadataOptions.AffectsRender,
-            OnFilledChanged,
-            CoerceFilled
+            propertyChangedCallback: static (d, _) =>
+            {
+                var self = (FluentIcon)d;
+                self.UpdateFontFamily();
+                self.UpdateGlyph();
+            },
+            coerceValueCallback: static (d, baseValue) => ((FluentIcon)d).Variant switch
+            {
+                IconVariant.Regular => false,
+                IconVariant.Filled  => true,
+                _                   => (bool)baseValue!,
+            }
         )
     );
 
@@ -104,7 +124,10 @@ public class FluentIcon : TextBlock
         new FrameworkPropertyMetadata(
             double.NaN,
             FrameworkPropertyMetadataOptions.Inherits,
-            OnIconSizeChanged
+            propertyChangedCallback: static (d, _) =>
+                // FontSize may have any WPF value source. Re-coercion updates only its effective value and
+                // therefore preserves that source for the moment the icon-size scope is removed.
+                d.CoerceValue(FontSizeProperty)
         )
     );
 
@@ -134,7 +157,10 @@ public class FluentIcon : TextBlock
         new FrameworkPropertyMetadata(
             null,
             FrameworkPropertyMetadataOptions.Inherits,
-            OnIconWeightChanged
+            propertyChangedCallback: static (d, _) =>
+                // As with IconSize, coercing only the effective FontWeight preserves its binding, style,
+                // local value, and animation so native behavior returns when the icon scope is removed.
+                d.CoerceValue(FontWeightProperty)
         )
     );
 
@@ -154,6 +180,40 @@ public class FluentIcon : TextBlock
         set => SetValue(IconWeightProperty, value);
     }
 
+    /// <summary>Identifies the <see cref="IconForeground"/> dependency property.</summary>
+    /// <remarks>
+    /// This is the same inheritable presentation property exposed by <see cref="IconPresenter"/>.
+    /// The value remains separate from ordinary text foreground and is mapped to the native text
+    /// property only by this font-backed icon implementation.
+    /// </remarks>
+    public static readonly DependencyProperty IconForegroundProperty =
+        IconPresenter.IconForegroundProperty.AddOwner(
+            typeof(FluentIcon),
+            new FrameworkPropertyMetadata(
+                null,
+                FrameworkPropertyMetadataOptions.Inherits,
+                propertyChangedCallback: static (d, _) =>
+                    // Coercion changes only Foreground's effective value. Its binding, resource reference,
+                    // style, inherited value, or animation remains available as soon as the icon scope ends.
+                    d.CoerceValue(ForegroundProperty)
+            )
+        );
+
+    /// <summary>
+    /// Gets or sets the logical foreground brush of this icon.
+    /// </summary>
+    /// <remarks>
+    /// A concrete brush overrides the effective native
+    /// <see cref="System.Windows.Controls.TextBlock.Foreground"/>. The default
+    /// <see langword="null"/> value preserves native Foreground inheritance, styles, local values,
+    /// bindings, dynamic resources, and animations unchanged.
+    /// </remarks>
+    public Brush? IconForeground
+    {
+        get => (Brush?)GetValue(IconForegroundProperty);
+        set => SetValue(IconForegroundProperty, value);
+    }
+
     /// <summary>Identifies the <see cref="Variant"/> dependency property.</summary>
     /// <remarks>
     /// This is the same dependency property exposed by <see cref="IconPresenter"/>. Adding this
@@ -165,7 +225,10 @@ public class FluentIcon : TextBlock
         new FrameworkPropertyMetadata(
             IconVariant.Default,
             FrameworkPropertyMetadataOptions.Inherits,
-            OnVariantChanged
+            propertyChangedCallback: static (d, _) =>
+                // Re-coercion changes only Filled's effective value. Its source value and any application
+                // binding remain intact and become effective again when the presenter returns to Default.
+                d.CoerceValue(FilledProperty)
         )
     );
 
@@ -185,8 +248,8 @@ public class FluentIcon : TextBlock
     /// <summary>Initializes a new instance of the <see cref="FluentIcon"/> class.</summary>
     public FluentIcon()
     {
-        Focusable = false;
-        TextAlignment = TextAlignment.Center;
+        Focusable         = false;
+        TextAlignment     = TextAlignment.Center;
         VerticalAlignment = VerticalAlignment.Center;
         UpdateFontFamily();
         UpdateGlyph();
@@ -207,60 +270,6 @@ public class FluentIcon : TextBlock
         : this(symbol)
     {
         Filled = filled;
-    }
-
-    private static void OnSymbolChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
-    {
-        ((FluentIcon)d).UpdateGlyph();
-    }
-
-    private static void OnFilledChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
-    {
-        var self = (FluentIcon)d;
-        self.UpdateFontFamily();
-        self.UpdateGlyph();
-    }
-
-    private static void OnVariantChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
-    {
-        // Re-coercion changes only Filled's effective value. Its source value and any application
-        // binding remain intact and become effective again when the presenter returns to Default.
-        d.CoerceValue(FilledProperty);
-    }
-
-    private static void OnIconSizeChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
-    {
-        // FontSize may have any WPF value source. Re-coercion updates only its effective value and
-        // therefore preserves that source for the moment the icon-size scope is removed.
-        d.CoerceValue(FontSizeProperty);
-    }
-
-    private static object CoerceFontSize(DependencyObject d, object? baseValue)
-    {
-        double iconSize = ((FluentIcon)d).IconSize;
-        return double.IsNaN(iconSize) ? baseValue! : iconSize;
-    }
-
-    private static void OnIconWeightChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
-    {
-        // As with IconSize, coercing only the effective FontWeight preserves its binding, style,
-        // local value, and animation so native behavior returns when the icon scope is removed.
-        d.CoerceValue(FontWeightProperty);
-    }
-
-    private static object CoerceFontWeight(DependencyObject d, object? baseValue)
-    {
-        return ((FluentIcon)d).IconWeight ?? (FontWeight)baseValue!;
-    }
-
-    private static object CoerceFilled(DependencyObject d, object? baseValue)
-    {
-        return ((FluentIcon)d).Variant switch
-        {
-            IconVariant.Regular => false,
-            IconVariant.Filled => true,
-            _ => (bool)baseValue!,
-        };
     }
 
     private void UpdateGlyph()

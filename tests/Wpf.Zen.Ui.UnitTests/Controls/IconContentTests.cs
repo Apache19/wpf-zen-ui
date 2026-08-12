@@ -91,18 +91,28 @@ public class IconContentTests
 
             host.SetValue(TextElement.FontSizeProperty, 27D);
             host.SetValue(TextElement.FontWeightProperty, FontWeights.Bold);
+            var textForeground = new SolidColorBrush(Colors.Crimson);
+            var iconForeground = new SolidColorBrush(Colors.CornflowerBlue);
+            host.SetValue(TextElement.ForegroundProperty, textForeground);
             IconPresenter.SetIconSize(host, 12D);
             IconPresenter.SetIconWeight(host, FontWeights.Light);
+            IconPresenter.SetIconForeground(host, iconForeground);
             host.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
 
             Assert.Equal(12D, icon.FontSize);
             Assert.Equal(FontWeights.Light, icon.FontWeight);
+            Assert.Same(iconForeground, icon.Foreground);
             Assert.Equal(27D, text.FontSize);
             Assert.Equal(FontWeights.Bold, text.FontWeight);
+            Assert.Same(textForeground, text.Foreground);
             Assert.Equal(DependencyProperty.UnsetValue, icon.ReadLocalValue(TextElement.FontSizeProperty));
             Assert.Equal(
                 DependencyProperty.UnsetValue,
                 icon.ReadLocalValue(TextElement.FontWeightProperty)
+            );
+            Assert.Equal(
+                DependencyProperty.UnsetValue,
+                icon.ReadLocalValue(TextElement.ForegroundProperty)
             );
         });
     }
@@ -116,25 +126,32 @@ public class IconContentTests
             {
                 FontSize = 30D,
                 FontWeight = FontWeights.Bold,
+                Foreground = Brushes.Crimson,
             };
             var host = new Border { Child = icon };
 
             IconPresenter.SetIconSize(host, 12D);
             IconPresenter.SetIconWeight(host, FontWeights.SemiBold);
+            IconPresenter.SetIconForeground(host, Brushes.CornflowerBlue);
             host.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
 
             Assert.Equal(12D, icon.FontSize);
             Assert.Equal(FontWeights.SemiBold, icon.FontWeight);
+            Assert.Same(Brushes.CornflowerBlue, icon.Foreground);
             Assert.Equal(30D, icon.ReadLocalValue(TextElement.FontSizeProperty));
             Assert.Equal(FontWeights.Bold, icon.ReadLocalValue(TextElement.FontWeightProperty));
+            Assert.Same(Brushes.Crimson, icon.ReadLocalValue(TextElement.ForegroundProperty));
 
             host.ClearValue(IconPresenter.IconSizeProperty);
             host.ClearValue(IconPresenter.IconWeightProperty);
+            host.ClearValue(IconPresenter.IconForegroundProperty);
 
             Assert.Equal(30D, icon.FontSize);
             Assert.Equal(FontWeights.Bold, icon.FontWeight);
+            Assert.Same(Brushes.Crimson, icon.Foreground);
             Assert.Equal(30D, icon.ReadLocalValue(TextElement.FontSizeProperty));
             Assert.Equal(FontWeights.Bold, icon.ReadLocalValue(TextElement.FontWeightProperty));
+            Assert.Same(Brushes.Crimson, icon.ReadLocalValue(TextElement.ForegroundProperty));
         });
     }
 

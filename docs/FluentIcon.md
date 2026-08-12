@@ -91,18 +91,20 @@ public FluentIconSource HomeIcon { get; } =
 
 ## 用图标呈现作用域隔离文本外观
 
-WPF 的 `FontSize` 和 `FontWeight` 会沿元素树继承。在同时包含文本和图标的复杂布局中，
-直接设置这些属性会同时改变两者。`IconPresenter.IconSize` 和
-`IconPresenter.IconWeight` 提供了只由兼容图标消费的可继承呈现上下文：
+WPF 的 `FontSize`、`FontWeight` 和 `Foreground` 会沿元素树继承。在同时包含文本和图标的
+复杂布局中，直接设置这些属性会同时改变两者。`IconPresenter.IconSize`、
+`IconPresenter.IconWeight` 和 `IconPresenter.IconForeground` 提供了只由兼容图标消费的可继承
+呈现上下文：
 
 ```xml
 <StackPanel
     FontSize="14"
     FontWeight="Regular"
     ui:IconPresenter.IconSize="12"
-    ui:IconPresenter.IconWeight="SemiBold">
+    ui:IconPresenter.IconWeight="SemiBold"
+    ui:IconPresenter.IconForeground="CornflowerBlue">
 
-    <TextBlock Text="正文仍然是 14 / Regular" />
+    <TextBlock Foreground="Crimson" Text="正文仍然是 14 / Regular / Crimson" />
     <ui:FluentIcon Symbol="ChevronRight24" />
 </StackPanel>
 ```
@@ -114,6 +116,7 @@ WPF 的 `FontSize` 和 `FontWeight` 会沿元素树继承。在同时包含文�
 <ui:BreadcrumbBar
     ui:IconPresenter.IconSize="12"
     ui:IconPresenter.IconWeight="SemiBold"
+    ui:IconPresenter.IconForeground="{ui:DynamicBrush TextFillSecondary}"
     ItemsSource="{Binding Folders}" />
 ```
 
@@ -130,23 +133,30 @@ WPF 的 `FontSize` 和 `FontWeight` 会沿元素树继承。在同时包含文�
 </StackPanel>
 ```
 
-### 尺寸与粗细的优先级
+### 尺寸、粗细与前景色的优先级
 
-`IconSize` 默认值为 `NaN`，`IconWeight` 默认值为 `null`。默认值表示图标呈现层不介入，
-`FluentIcon` 完整保留原生 `FontSize` 和 `FontWeight` 的样式、继承、本地值、绑定与动画。
+`IconSize` 默认值为 `NaN`，`IconWeight` 和 `IconForeground` 默认值为 `null`。默认值表示图标
+呈现层不介入，`FluentIcon` 完整保留原生 `FontSize`、`FontWeight` 和 `Foreground` 的样式、
+继承、本地值、绑定、动态资源与动画。
 
-设置具体的 `IconSize` 或 `IconWeight` 后，图标语义属性优先于对应的原生字体属性。实现只
-强制图标属性的有效值，不会替换其原始值来源；清除图标作用域后，原有绑定、样式或本地值
-会立即恢复。
+设置具体的 `IconSize`、`IconWeight` 或 `IconForeground` 后，图标语义属性优先于对应的原生
+文本属性。实现只强制图标属性的有效值，不会替换其原始值来源；清除图标作用域后，原有
+绑定、动态资源、样式或本地值会立即恢复。
 
 ```csharp
 IconPresenter.SetIconSize(toolbar, 16);
 IconPresenter.SetIconWeight(toolbar, FontWeights.SemiBold);
+IconPresenter.SetIconForeground(toolbar, Brushes.CornflowerBlue);
 
-// 恢复子树中每个图标原本的 WPF 字体值。
+// 恢复子树中每个图标原本的 WPF 文本外观值。
 toolbar.ClearValue(IconPresenter.IconSizeProperty);
 toolbar.ClearValue(IconPresenter.IconWeightProperty);
+toolbar.ClearValue(IconPresenter.IconForegroundProperty);
 ```
+
+这里使用 `IconForeground` 而不是 `IconColor`，是因为 WPF 的前景外观类型是 `Brush`：除了
+纯色，它还可以接受主题动态资源、渐变画刷及动画。该命名也与原生 `Foreground` 形成直接
+对应，便于理解它的回退与优先级语义。
 
 当前内置 Fluent 字体主要提供 Regular 与 Filled 两套字形，并不是完整的多字重字体族。
 因此 `IconWeight` 的实际视觉差异取决于 WPF 字体匹配；该属性同时也是其它图标家族可以
@@ -203,8 +213,8 @@ toolbar.ClearValue(IconPresenter.IconWeightProperty);
 
 `FluentIconSpan` 是 `Run`，会继承文本元素的字体属性，并默认将图标居中到文本基线。它支持
 与 `FluentIcon` 相同的 `Symbol`、`Filled` 和 `Variant` 语义。当前图标呈现作用域的
-`IconSize` 与 `IconWeight` 由独立的 `FluentIcon` 元素消费；行内图标应直接使用
-`FontSize` 和 `FontWeight`。
+`IconSize`、`IconWeight` 与 `IconForeground` 由独立的 `FluentIcon` 元素消费；行内图标应
+直接使用 `FontSize`、`FontWeight` 和 `Foreground`。
 
 ## 属性速查
 
@@ -215,8 +225,10 @@ toolbar.ClearValue(IconPresenter.IconWeightProperty);
 | `FluentIcon.Variant` | `IconVariant` | `Default` | 当前呈现位置请求的形态 |
 | `FluentIcon.IconSize` | `double` | `NaN` | 图标专用尺寸；具体值优先于 `FontSize` |
 | `FluentIcon.IconWeight` | `FontWeight?` | `null` | 图标专用粗细；具体值优先于 `FontWeight` |
+| `FluentIcon.IconForeground` | `Brush?` | `null` | 图标专用前景画刷；具体值优先于 `Foreground` |
 | `IconPresenter.IconSize` | 附加 `double` | `NaN` | 向兼容图标子树传递尺寸 |
 | `IconPresenter.IconWeight` | 附加 `FontWeight?` | `null` | 向兼容图标子树传递粗细 |
+| `IconPresenter.IconForeground` | 附加 `Brush?` | `null` | 向兼容图标子树传递前景画刷 |
 | `IconPresenter.Variant` | 附加 `IconVariant` | `Default` | 向兼容图标子树传递形态请求 |
 
 ## 自定义图标家族

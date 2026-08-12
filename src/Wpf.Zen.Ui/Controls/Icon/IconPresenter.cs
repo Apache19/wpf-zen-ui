@@ -28,9 +28,7 @@ namespace Wpf.Zen.Ui.Controls;
 /// </remarks>
 public class IconPresenter : ContentPresenter
 {
-    /// <summary>
-    /// Identifies the attached <c>IconSize</c> dependency property.
-    /// </summary>
+    /// <summary>Identifies the <see cref="IconSize"/> dependency property.</summary>
     /// <remarks>
     /// The property is a presentation-scoped counterpart to WPF's inherited text size. Setting it
     /// on a control, panel, or presenter affects compatible icon elements in that subtree without
@@ -45,8 +43,8 @@ public class IconPresenter : ContentPresenter
             double.NaN,
             FrameworkPropertyMetadataOptions.Inherits
         ),
-        ValidateIconSize
-    );
+        validateValueCallback: value =>
+            double.IsNaN((double)value) || TextElement.FontSizeProperty.IsValidValue((double)value));
 
     /// <summary>
     /// Gets or sets the logical size requested for compatible icon content.
@@ -62,11 +60,13 @@ public class IconPresenter : ContentPresenter
         set => SetIconSize(this, value);
     }
 
-    /// <summary>Gets the icon size inherited by <paramref name="element"/>.</summary>
-    /// <param name="element">The presentation root or icon element to inspect.</param>
-    /// <returns>
-    /// The effective icon size, or <see cref="double.NaN"/> when native icon sizing is requested.
-    /// </returns>
+    /// <summary>
+    /// Helper for getting <see cref="IconSizeProperty"/> from <paramref name="element"/>.
+    /// </summary>
+    /// <param name="element">
+    /// <see cref="DependencyObject"/> to read <see cref="IconSizeProperty"/> from.
+    /// </param>
+    /// <returns>IconSize property value.</returns>
     [AttachedPropertyBrowsableForType(typeof(DependencyObject))]
     public static double GetIconSize(DependencyObject element)
     {
@@ -79,12 +79,12 @@ public class IconPresenter : ContentPresenter
     }
 
     /// <summary>
-    /// Sets the icon size inherited by compatible icon descendants of <paramref name="element"/>.
+    /// Helper for setting <see cref="IconSizeProperty"/> on <paramref name="element"/>.
     /// </summary>
-    /// <param name="element">The presentation root or icon presenter to configure.</param>
-    /// <param name="value">
-    /// The requested size, or <see cref="double.NaN"/> to restore native icon sizing.
+    /// <param name="element">
+    /// <see cref="DependencyObject"/> to set <see cref="IconSizeProperty"/> on.
     /// </param>
+    /// <param name="value">IconSize property value.</param>
     public static void SetIconSize(DependencyObject element, double value)
     {
         if (element is null)
@@ -96,7 +96,7 @@ public class IconPresenter : ContentPresenter
     }
 
     /// <summary>
-    /// Identifies the attached <c>IconWeight</c> dependency property.
+    /// Identifies the <see cref="IconWeight"/> dependency property.
     /// </summary>
     /// <remarks>
     /// The property describes icon stroke or font weight independently of ordinary text weight.
@@ -126,9 +126,13 @@ public class IconPresenter : ContentPresenter
         set => SetIconWeight(this, value);
     }
 
-    /// <summary>Gets the icon weight inherited by <paramref name="element"/>.</summary>
-    /// <param name="element">The presentation root or icon element to inspect.</param>
-    /// <returns>The effective icon weight, or <see langword="null"/> for native icon weighting.</returns>
+    /// <summary>
+    /// Helper for getting <see cref="IconWeightProperty"/> from <paramref name="element"/>.
+    /// </summary>
+    /// <param name="element">
+    /// <see cref="DependencyObject"/> to read <see cref="IconWeightProperty"/> from.
+    /// </param>
+    /// <returns>IconWeight property value.</returns>
     [AttachedPropertyBrowsableForType(typeof(DependencyObject))]
     public static FontWeight? GetIconWeight(DependencyObject element)
     {
@@ -141,10 +145,12 @@ public class IconPresenter : ContentPresenter
     }
 
     /// <summary>
-    /// Sets the icon weight inherited by compatible icon descendants of <paramref name="element"/>.
+    /// Helper for setting <see cref="IconWeightProperty"/> on <paramref name="element"/>.
     /// </summary>
-    /// <param name="element">The presentation root or icon presenter to configure.</param>
-    /// <param name="value">The requested weight, or <see langword="null"/> for native weighting.</param>
+    /// <param name="element">
+    /// <see cref="DependencyObject"/> to set <see cref="IconWeightProperty"/> on.
+    /// </param>
+    /// <param name="value">IconWeight property value.</param>
     public static void SetIconWeight(DependencyObject element, FontWeight? value)
     {
         if (element is null)
@@ -156,7 +162,75 @@ public class IconPresenter : ContentPresenter
     }
 
     /// <summary>
-    /// Identifies the presentation variant propagated through an icon content subtree.
+    /// Identifies the <see cref="IconForeground"/> dependency property.
+    /// </summary>
+    /// <remarks>
+    /// The property carries an icon-specific foreground brush through a presentation subtree
+    /// without changing the foreground of ordinary text. It intentionally uses a
+    /// <see cref="Brush"/> rather than a color so callers retain WPF foreground capabilities such
+    /// as theme resources, gradients, opacity, and animation. A <see langword="null"/> value means
+    /// that compatible icon families should preserve their native foreground behavior.
+    /// </remarks>
+    public static readonly DependencyProperty IconForegroundProperty = DependencyProperty.RegisterAttached(
+        nameof(IconForeground),
+        typeof(Brush),
+        typeof(IconPresenter),
+        new FrameworkPropertyMetadata(
+            null,
+            FrameworkPropertyMetadataOptions.Inherits
+        )
+    );
+
+    /// <summary>
+    /// Gets or sets the foreground brush requested for compatible icon content.
+    /// </summary>
+    /// <remarks>
+    /// The default <see langword="null"/> value leaves each icon's native foreground unchanged. A
+    /// concrete brush is icon-specific presentation context and does not affect ordinary text.
+    /// </remarks>
+    public Brush? IconForeground
+    {
+        get => GetIconForeground(this);
+        set => SetIconForeground(this, value);
+    }
+
+    /// <summary>
+    /// Helper for getting <see cref="IconForegroundProperty"/> from <paramref name="element"/>.
+    /// </summary>
+    /// <param name="element">
+    /// <see cref="DependencyObject"/> to read <see cref="IconForegroundProperty"/> from.
+    /// </param>
+    /// <returns>IconForeground property value.</returns>
+    [AttachedPropertyBrowsableForType(typeof(DependencyObject))]
+    public static Brush? GetIconForeground(DependencyObject element)
+    {
+        if (element is null)
+        {
+            throw new ArgumentNullException(nameof(element));
+        }
+
+        return (Brush?)element.GetValue(IconForegroundProperty);
+    }
+
+    /// <summary>
+    /// Helper for setting <see cref="IconForegroundProperty"/> on <paramref name="element"/>.
+    /// </summary>
+    /// <param name="element">
+    /// <see cref="DependencyObject"/> to set <see cref="IconForegroundProperty"/> on.
+    /// </param>
+    /// <param name="value">IconForeground property value.</param>
+    public static void SetIconForeground(DependencyObject element, Brush? value)
+    {
+        if (element is null)
+        {
+            throw new ArgumentNullException(nameof(element));
+        }
+
+        element.SetValue(IconForegroundProperty, value);
+    }
+
+    /// <summary>
+    /// Identifies the <see cref="Variant"/> dependency property.
     /// </summary>
     /// <remarks>
     /// The property is registered as attached as well as exposed by the presenter so a detached
@@ -188,9 +262,13 @@ public class IconPresenter : ContentPresenter
         set => SetVariant(this, value);
     }
 
-    /// <summary>Gets the icon variant inherited by <paramref name="element"/>.</summary>
-    /// <param name="element">The presentation root or icon element to inspect.</param>
-    /// <returns>The effective icon variant.</returns>
+    /// <summary>
+    /// Helper for getting <see cref="VariantProperty"/> from <paramref name="element"/>.
+    /// </summary>
+    /// <param name="element">
+    /// <see cref="DependencyObject"/> to read <see cref="VariantProperty"/> from.
+    /// </param>
+    /// <returns>Variant property value.</returns>
     [AttachedPropertyBrowsableForType(typeof(DependencyObject))]
     public static IconVariant GetVariant(DependencyObject element)
     {
@@ -202,9 +280,13 @@ public class IconPresenter : ContentPresenter
         return (IconVariant)element.GetValue(VariantProperty);
     }
 
-    /// <summary>Sets the icon variant inherited by descendants of <paramref name="element"/>.</summary>
-    /// <param name="element">The presentation root or icon presenter to configure.</param>
-    /// <param name="value">The variant requested from compatible icon families.</param>
+    /// <summary>
+    /// Helper for setting <see cref="VariantProperty"/> on <paramref name="element"/>.
+    /// </summary>
+    /// <param name="element">
+    /// <see cref="DependencyObject"/> to set <see cref="VariantProperty"/> on.
+    /// </param>
+    /// <param name="value">Variant property value.</param>
     public static void SetVariant(DependencyObject element, IconVariant value)
     {
         if (element is null)
@@ -213,15 +295,5 @@ public class IconPresenter : ContentPresenter
         }
 
         element.SetValue(VariantProperty, value);
-    }
-
-    private static bool ValidateIconSize(object? value)
-    {
-        double size = (double)value!;
-
-        // Reuse WPF's own FontSize validation so font-backed icon families cannot inherit a value
-        // that their rendering property would reject. NaN is reserved as this contract's explicit
-        // "not specified" sentinel and is never forwarded to FontSize.
-        return double.IsNaN(size) || TextElement.FontSizeProperty.IsValidValue(size);
     }
 }
