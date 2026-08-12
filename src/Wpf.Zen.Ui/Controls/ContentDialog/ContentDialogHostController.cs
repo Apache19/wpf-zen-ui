@@ -295,6 +295,15 @@ internal sealed class ContentDialogHostController
         // Special handling for the TitleBar
         if (d is TitleBar titleBar)
         {
+            // Unlike UIElement.IsEnabled, TitleBar exposes a separate switch for its user
+            // content. Record the title bar only when this controller actually changes that
+            // switch; otherwise closing a dialog would enable content which the application
+            // deliberately kept disabled before the dialog opened.
+            if (!titleBar.IsUserContentEnabled)
+            {
+                return;
+            }
+
             try
             {
                 titleBar.IsUserContentEnabled = false;

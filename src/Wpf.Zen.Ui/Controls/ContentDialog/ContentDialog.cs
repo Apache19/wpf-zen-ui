@@ -190,8 +190,10 @@ public partial class ContentDialog : ContentControl
 
     protected TaskCompletionSource<ContentDialogResult>? Tcs { get; set; }
 
-    // Helper indicating whether the dialog is currently shown (the async operation hasn't completed yet)
-    private bool IsShowing => Tcs is not null && !Tcs.Task.IsCompleted;
+    // Keep the dialog reserved until ShowAsync has finished removing it from the host and raising
+    // Closed. A completed Task alone is insufficient: a button handler can synchronously call
+    // ShowAsync again before the first invocation's asynchronous finally block has run.
+    private bool IsShowing => Tcs is not null;
 
     /// <summary>
     /// Shows the dialog
@@ -208,19 +210,40 @@ public partial class ContentDialog : ContentControl
             throw new InvalidOperationException("DialogHost was not set");
         }
 
+        if (IsShowing)
+        {
+            throw new InvalidOperationException(
+                "This ContentDialog instance is already being shown."
+            );
+        }
+
         if (cancellationToken.IsCancellationRequested)
         {
             return ContentDialogResult.None;
         }
 
-        Tcs = new TaskCompletionSource<ContentDialogResult>(
+        var completionSource = new TaskCompletionSource<ContentDialogResult>(
             TaskCreationOptions.RunContinuationsAsynchronously
         );
+        Tcs = completionSource;
 
         CancellationTokenRegistration tokenRegistration = cancellationToken.Register(
-            o => Tcs.TrySetCanceled((CancellationToken)o!),
-            cancellationToken
+            () =>
+            {
+                _ = completionSource.TrySetCanceled(cancellationToken);
+            }
         );
+
+        // ContentDialog itself can remain the host's Content after the containing Window or
+        // presentation scope is detached. Listening to the host is therefore required; relying
+        // only on ContentDialog.Unloaded cannot distinguish that case from an active host which
+        // still owns this dialog.
+        void OnDialogHostUnloaded(object sender, RoutedEventArgs args)
+        {
+            _ = completionSource.TrySetResult(ContentDialogResult.None);
+        }
+
+        _dialogHost.Unloaded += OnDialogHostUnloaded;
 
         ContentDialogResult result = ContentDialogResult.None;
 
@@ -228,7 +251,7 @@ public partial class ContentDialog : ContentControl
         {
             _dialogHost.Content = this;
 
-            result = await Tcs.Task;
+            result = await completionSource.Task;
 
             return result;
         }
@@ -238,21 +261,35 @@ public partial class ContentDialog : ContentControl
         }
         finally
         {
-            #if NET6_0_OR_GREATER
+#if NET6_0_OR_GREATER
             await tokenRegistration.DisposeAsync();
-            #else
+#else
             tokenRegistration.Dispose();
-            #endif
+#endif
 
-            // DialogHost is a public container. To prevent the new dialog from being closed immediately when
-            // it opens due to the unconditional clearing of the Content upon the closure of the previous dialog,
-            // only clear the DialogHost content if this instance is still the current content.
-            if (_dialogHost is not null && ReferenceEquals(_dialogHost.Content, this))
+            _dialogHost.Unloaded -= OnDialogHostUnloaded;
+
+            try
             {
-                _dialogHost.Content = null;
-            }
+                // DialogHost is a public container. To prevent the new dialog from being closed immediately when
+                // it opens due to the unconditional clearing of the Content upon the closure of the previous dialog,
+                // only clear the DialogHost content if this instance is still the current content.
+                if (ReferenceEquals(_dialogHost.Content, this))
+                {
+                    _dialogHost.Content = null;
+                }
 
-            OnClosed(result);
+                OnClosed(result);
+            }
+            finally
+            {
+                // Clear only our own operation. Keeping this conditional makes the invariant explicit
+                // for derived implementations which can participate in the completion lifecycle.
+                if (ReferenceEquals(Tcs, completionSource))
+                {
+                    Tcs = null;
+                }
+            }
         }
     }
 
@@ -296,9 +333,9 @@ public partial class ContentDialog : ContentControl
 
         ContentDialogResult result = button switch
         {
-            ContentDialogButton.Primary   => ContentDialogResult.Primary,
+            ContentDialogButton.Primary => ContentDialogResult.Primary,
             ContentDialogButton.Secondary => ContentDialogResult.Secondary,
-            _                             => ContentDialogResult.None,
+            _ => ContentDialogResult.None,
         };
 
         Hide(result);
@@ -339,13 +376,10 @@ public partial class ContentDialog : ContentControl
                 rootElement.Measure(availableSize);
                 Size desiredSize = rootElement.DesiredSize;
 
-                Size newSize = GetNewDialogSize(desiredSize);
+                Size newSize = GetConstrainedDialogSize(desiredSize);
 
                 SetCurrentValue(DialogHeightProperty, newSize.Height);
-                SetCurrentValue(DialogWidthProperty,  newSize.Width);
-
-                ResizeWidth(rootElement);
-                ResizeHeight(rootElement);
+                SetCurrentValue(DialogWidthProperty, newSize.Width);
 
                 return desiredSize;
             }
@@ -354,54 +388,18 @@ public partial class ContentDialog : ContentControl
         return base.MeasureOverride(availableSize);
     }
 
-    private Size GetNewDialogSize(Size desiredSize)
+    private Size GetConstrainedDialogSize(Size desiredSize)
     {
         // TODO: Handle negative values
-        var paddingWidth  = Padding.Left + Padding.Right;
+        var paddingWidth = Padding.Left + Padding.Right;
         var paddingHeight = Padding.Top + Padding.Bottom;
 
         var marginHeight = DialogMargin.Bottom + DialogMargin.Top;
-        var marginWidth  = DialogMargin.Left + DialogMargin.Right;
+        var marginWidth = DialogMargin.Left + DialogMargin.Right;
 
-        var width  = desiredSize.Width - marginWidth + paddingWidth;
-        var height = desiredSize.Height - marginHeight + paddingHeight;
+        var width = Math.Min(desiredSize.Width - marginWidth + paddingWidth, DialogMaxWidth);
+        var height = Math.Min(desiredSize.Height - marginHeight + paddingHeight, DialogMaxHeight);
 
         return new Size(width, height);
-    }
-
-    private void ResizeWidth(UIElement element)
-    {
-        if (DialogWidth <= DialogMaxWidth)
-        {
-            return;
-        }
-
-        SetCurrentValue(DialogWidthProperty, DialogMaxWidth);
-        element.UpdateLayout();
-
-        SetCurrentValue(DialogHeightProperty, element.DesiredSize.Height);
-
-        if (DialogHeight > DialogMaxHeight)
-        {
-            SetCurrentValue(DialogMaxHeightProperty, DialogHeight);
-        }
-    }
-
-    private void ResizeHeight(UIElement element)
-    {
-        if (DialogHeight <= DialogMaxHeight)
-        {
-            return;
-        }
-
-        SetCurrentValue(DialogHeightProperty, DialogMaxHeight);
-        element.UpdateLayout();
-
-        SetCurrentValue(DialogWidthProperty, element.DesiredSize.Width);
-
-        if (DialogWidth > DialogMaxWidth)
-        {
-            SetCurrentValue(DialogMaxWidthProperty, DialogWidth);
-        }
     }
 }

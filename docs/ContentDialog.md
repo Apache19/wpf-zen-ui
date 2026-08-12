@@ -1,22 +1,22 @@
-# ContentDialog 使用说明
+# ContentDialog 开发指南
 
-`ContentDialog` 在应用自己的视觉树内呈现模态内容。它不创建新的 WPF `Window`，也不依赖
-`NavigationView` 或全局窗口注册；每个表示作用域显式放置一个 `ContentDialogHost`，并把该
-宿主实例交给对话框或 `IContentDialogService`。
+`ContentDialog` 用于在当前 WPF 界面中请求用户确认、收集少量输入或展示必须处理的信息。
+它是应用视觉树中的模态层，不会创建新的 `Window`。开发者通常通过
+`IContentDialogService` 显示对话框；只有在调用方已经持有宿主引用时，才需要直接调用
+`ContentDialog.ShowAsync()`。
 
-这种模型同样适用于多窗口、一个窗口内的多个独立区域、WinForms `ElementHost`、
-`HwndSource` 和插件 UI。决定对话框覆盖范围的不是原生窗口，而是宿主在元素树中的位置。
-
-本文中的示例假定已声明 WPF Zen UI 的 XAML 命名空间：
+本文示例使用以下 XAML 命名空间：
 
 ```xml
 xmlns:ui="http://schemas.thezendev.com/wpf/2027"
 ```
 
-## 在根容器中放置宿主
+## 快速开始
 
-把业务内容和 `ContentDialogHost` 放在同一个 `Grid` 中，并让宿主成为最后一个子元素。
-宿主应跨越所有需要覆盖的行和列：
+### 1. 在 Shell 中添加宿主
+
+每个窗口或独立 UI 区域需要一个 `ContentDialogHost`。将它放在根 `Grid` 的最后，使遮罩能够
+覆盖之前声明的内容：
 
 ```xml
 <Window ...>
@@ -31,7 +31,6 @@ xmlns:ui="http://schemas.thezendev.com/wpf/2027"
             x:Name="RootNavigation"
             Grid.Row="1" />
 
-        <!-- 最后声明，以覆盖上面的窗口内容。 -->
         <ui:ContentDialogHost
             x:Name="RootContentDialogHost"
             Grid.Row="0"
@@ -41,32 +40,20 @@ xmlns:ui="http://schemas.thezendev.com/wpf/2027"
 </Window>
 ```
 
-不要把宿主放进 `NavigationView` 的页面内容或控件模板。否则它只能覆盖导航内容，无法覆盖
-标题栏、导航面板等同属窗口的区域，页面切换或模板重建还可能中断正在显示的对话框。
+`IsDisableSiblingsEnabled="True"` 会在对话框显示时禁用宿主的同级元素，并在关闭后恢复它们
+原来的启用状态。窗口级对话框建议启用此选项，避免用户通过鼠标、快捷键或访问键操作背景
+界面。
 
-`IsDisableSiblingsEnabled="True"` 会在对话框显示期间禁用宿主父容器中的同级元素，并在关闭
-后恢复各元素原来的启用状态。它的作用域严格由“宿主的直接父级”决定，因此：
+### 2. 注册并绑定服务
 
-- 需要模态化整个 Shell 时，把宿主作为 Shell 根面板的直接子元素。
-- 只需要模态化插件或局部工作区时，把宿主放在该区域的根面板中。
-- 不要把宿主包在一个只有装饰用途的额外容器里；此时被禁用的只会是这个额外容器中的
-  同级元素，而不是实际业务内容。
-- 宿主必须和需要阻止输入的内容位于同一个 WPF 元素树中。它不会跨越 `Popup`、另一个
-  `HwndSource` 或另一个原生窗口。
-
-默认值为 `False`。只有应用通过其它机制可靠地阻止背景交互时，才应保留默认值。
-
-## 使用表示作用域服务
-
-使用依赖注入时，服务生命周期必须与拥有宿主的表示作用域一致。不要把服务注册为
-Singleton，因为 Singleton 会让所有窗口和插件共享同一个不可变宿主。
+服务实例应与宿主拥有相同的生命周期。使用依赖注入时，通常按窗口或导航作用域注册为
+Scoped，不要注册为 Singleton：
 
 ```csharp
 services.AddScoped<IContentDialogService, ContentDialogService>();
 ```
 
-如果 Shell 已经拥有 `INavigationScope`，可以让对话框服务使用同一个 DI 子作用域。窗口在
-`InitializeComponent()` 之后绑定宿主：
+在 `InitializeComponent()` 之后，将当前作用域中的服务绑定到 XAML 宿主：
 
 ```csharp
 public partial class MainWindow
@@ -78,12 +65,12 @@ public partial class MainWindow
         InitializeComponent();
 
         _scope = scopes.Attach(RootNavigation, "main");
-        _scope.Services
-            .GetRequiredService<IContentDialogService>()
-            .Attach(RootContentDialogHost);
 
-        DataContext = _scope.Services
-            .GetRequiredService<MainWindowViewModel>();
+        IContentDialogService dialogs = _scope.Services
+            .GetRequiredService<IContentDialogService>();
+        dialogs.Attach(RootContentDialogHost);
+
+        DataContext = _scope.Services.GetRequiredService<MainWindowViewModel>();
     }
 
     protected override void OnClosed(EventArgs e)
@@ -94,19 +81,12 @@ public partial class MainWindow
 }
 ```
 
-没有导航时，可为窗口、`ElementHost` 或插件区域创建普通 `IServiceScope`，从该作用域解析服务，
-并在视觉区域永久销毁时释放作用域。不要把临时的 `Loaded`/`Unloaded` 当作作用域生命周期；
-WPF 在换模板或重新挂接元素树时也可能触发它们。
+没有使用 `INavigationScope` 时，为每个窗口或独立区域创建普通 `IServiceScope` 即可，并在该
+区域永久销毁时释放它。
 
-`Attach` 是一次性绑定：再次传入同一宿主是幂等操作，尝试换成另一个宿主会抛出
-`InvalidOperationException`。这可以防止较晚初始化的窗口悄悄重定向已注入其它对象的服务。
+### 3. 从业务代码显示对话框
 
-宿主可以在加载前绑定，但只能在宿主已经 `Loaded` 后显示对话框。显示操作也必须从宿主的
-Dispatcher 线程发起。
-
-## 显示简单对话框
-
-页面或视图模型只需注入当前作用域的服务：
+引入扩展方法命名空间后，视图模型可以直接注入服务：
 
 ```csharp
 using Wpf.Zen.Ui.Extensions;
@@ -132,7 +112,19 @@ public sealed class EditorViewModel(IContentDialogService dialogs)
 }
 ```
 
-`ShowAlertAsync` 适合只有一个关闭按钮的提示：
+必须 `await` 显示任务后再继续需要用户选择的业务流程。服务不会维护对话框队列；如果应用的
+多个请求可能同时到达，应在业务层排队或串行化它们。
+
+## 选择合适的调用方式
+
+| 需求 | 推荐入口 |
+| --- | --- |
+| 仅显示消息和一个关闭按钮 | `ShowAlertAsync(...)` |
+| 标题、内容和最多三个标准按钮 | `ShowSimpleDialogAsync(...)` |
+| 自定义内容、按钮外观、事件或数据模板 | 创建 `ContentDialog`，调用服务的 `ShowAsync(...)` |
+| 调用方已经持有 `ContentDialogHost` | 创建带宿主的 `ContentDialog`，直接调用 `ShowAsync(...)` |
+
+### 单按钮提示
 
 ```csharp
 await dialogs.ShowAlertAsync(
@@ -142,26 +134,18 @@ await dialogs.ShowAlertAsync(
     cancellationToken);
 ```
 
-结果含义如下：
+如果信息不要求用户立即确认，优先考虑非模态的 `Snackbar`；删除确认、未保存更改和必须处理
+的错误更适合 `ContentDialog`。
 
-| 结果 | 含义 |
-| --- | --- |
-| `Primary` | 用户选择主按钮 |
-| `Secondary` | 用户选择次按钮 |
-| `None` | 用户选择关闭按钮、调用 `Hide()` 未指定结果，或显示被取消/中断 |
+### 自定义内容
 
-取消令牌用于结束这次显示操作；当前实现会返回 `None`，不会把
-`OperationCanceledException` 传播给调用方。
-
-## 自定义内容与交互
-
-复杂内容可以直接创建 `ContentDialog`，其 `Content` 支持任意 WPF 对象、数据模板和绑定：
+`Content` 是标准 WPF 内容槽，可使用控件、视图模型、`DataTemplate` 和绑定：
 
 ```csharp
 var dialog = new ContentDialog
 {
     Title = "连接设置",
-    Content = new ConnectionEditorViewModel(),
+    Content = connectionEditorViewModel,
     ContentTemplate = (DataTemplate)resources["ConnectionEditorTemplate"],
     PrimaryButtonText = "连接",
     CloseButtonText = "取消",
@@ -171,30 +155,88 @@ var dialog = new ContentDialog
 ContentDialogResult result = await dialogs.ShowAsync(dialog, cancellationToken);
 ```
 
-也可以派生 `ContentDialog` 并用 XAML 定义内容，之后仍通过服务显示该实例。服务会为尚未
-关联宿主的对话框设置当前作用域的宿主；如果对话框已绑定到另一个宿主，则会拒绝显示。
-`DialogHost` 一经赋值不可更换。
+复杂表单也可以派生 `ContentDialog`，在 XAML 中定义内容和绑定，然后仍通过服务显示：
 
-主按钮或次按钮文本为空时，对应按钮不会显示；关闭按钮由 `CloseButtonVisibility` 明确控制。
-常用属性包括：
+```csharp
+var dialog = new ConnectionContentDialog
+{
+    DataContext = connectionEditorViewModel,
+};
+
+ContentDialogResult result = await dialogs.ShowAsync(dialog, cancellationToken);
+```
+
+服务会在首次显示时为对话框关联当前宿主。`DialogHost` 一旦赋值便不能更换，因此不要把同一
+对话框实例复用于不同窗口或区域；通常应为每次业务交互创建一个新实例。
+
+## 处理用户选择
+
+`ShowAsync()` 的返回值描述对话框如何结束：
+
+| 返回值 | 触发方式 |
+| --- | --- |
+| `Primary` | 用户激活主按钮，或代码调用 `Hide(ContentDialogResult.Primary)` |
+| `Secondary` | 用户激活次按钮，或代码调用 `Hide(ContentDialogResult.Secondary)` |
+| `None` | 用户激活关闭按钮、调用无参数 `Hide()`、取消显示，或宿主被卸载/内容被替换 |
+
+关闭按钮没有单独的 `ContentDialogResult`，应把 `None` 当作“未确认”分支处理。不要只判断
+`Secondary` 来推断用户拒绝了操作：
+
+```csharp
+if (await dialogs.ShowAsync(dialog, cancellationToken) != ContentDialogResult.Primary)
+{
+    return;
+}
+
+await SaveAsync(cancellationToken);
+```
+
+传入的 `CancellationToken` 用于终止等待和移除对话框。取消会返回 `None`，不会向调用方传播
+`OperationCanceledException`。如果令牌在调用前已经取消，对话框不会显示；如果显示期间宿主
+被卸载（例如窗口关闭），等待任务同样以 `None` 完成。
+
+## 按钮、默认操作与尺寸
+
+常用属性如下：
 
 | 属性 | 用途 |
 | --- | --- |
-| `Title`、`Content`、`ContentTemplate` | 标题和主体内容 |
+| `Title`、`TitleTemplate` | 标题内容及模板 |
+| `Content`、`ContentTemplate` | 主体内容及模板 |
 | `PrimaryButtonText`、`SecondaryButtonText`、`CloseButtonText` | 三个底部按钮的文本 |
-| `PrimaryButtonIcon`、`SecondaryButtonIcon`、`CloseButtonIcon` | 按钮图标槽 |
-| `IsPrimaryButtonEnabled`、`IsSecondaryButtonEnabled`、`IsCloseButtonEnabled` | 动态控制按钮可用性 |
-| `PrimaryButtonAppearance`、`SecondaryButtonAppearance`、`CloseButtonAppearance` | 按钮语义外观 |
-| `DefaultButton` | Enter 键触发的按钮；内容中没有可聚焦控件时也是初始焦点候选 |
-| `IsFooterVisible` | 是否呈现整个底部按钮区 |
+| `PrimaryButtonIcon`、`SecondaryButtonIcon`、`CloseButtonIcon` | 三个按钮的图标内容槽 |
+| `IsPrimaryButtonEnabled`、`IsSecondaryButtonEnabled`、`IsCloseButtonEnabled` | 动态控制按钮是否可用 |
+| `PrimaryButtonAppearance`、`SecondaryButtonAppearance`、`CloseButtonAppearance` | 设置按钮的语义外观 |
+| `CloseButtonVisibility` | 显式控制关闭按钮可见性 |
+| `DefaultButton` | 指定 Enter 键触发的按钮，并参与初始焦点选择 |
+| `IsFooterVisible` | 显示或隐藏整个底部按钮区 |
+| `DialogMaxWidth`、`DialogMaxHeight`、`DialogMargin` | 限制对话框面板的尺寸和外边距 |
 
-`Opened`、`ButtonClicked`、`Closing` 和 `Closed` 是冒泡路由事件。需要验证输入时，可以在
-`Closing` 中取消关闭：
+主按钮和次按钮的文本为空时，对应按钮不会显示。关闭按钮的显示由
+`CloseButtonVisibility` 控制。`DefaultButton` 应指向一个实际可见且可用的按钮；确认类操作
+通常使用 `Primary`，破坏性操作则应避免让 Enter 键轻易触发。
+
+`DialogMaxWidth` 和 `DialogMaxHeight` 是上限。宿主空间不足时，对话框会进一步收缩，但不会
+为了适应宿主而改写开发者配置的最大值。主体内容较长时，应自行提供 `ScrollViewer` 或适当的
+内容模板。
+
+## 验证输入与关闭事件
+
+对话框公开以下冒泡路由事件：
+
+| 事件 | 时机与用途 |
+| --- | --- |
+| `Opened` | 对话框已加载并完成初始焦点设置 |
+| `ButtonClicked` | 标准按钮被激活，可用于记录具体按钮交互 |
+| `Closing` | 显式关闭前触发，可通过 `Cancel` 阻止关闭 |
+| `Closed` | 显示生命周期结束，宿主内容已清理 |
+
+需要在用户确认前验证表单时，在 `Closing` 中取消主按钮导致的关闭：
 
 ```csharp
 dialog.Closing += (_, e) =>
 {
-    if (e.Result == ContentDialogResult.Primary && !viewModel.IsValid)
+    if (e.Result == ContentDialogResult.Primary && !viewModel.Validate())
     {
         e.Cancel = true;
         viewModel.ShowValidationErrors();
@@ -202,12 +244,23 @@ dialog.Closing += (_, e) =>
 };
 ```
 
-`Closing` 只针对通过按钮或 `Hide(...)` 发起的显式关闭。宿主被卸载、内容被另一个对话框
-替换等被动移除不会触发 `Closing`，但等待中的操作会以 `None` 结束，随后触发 `Closed`。
+`ButtonClicked` 发生在 `Closing` 之前。`Closing` 只针对按钮或 `Hide(...)` 发起的显式关闭；显示
+期间取消、宿主卸载或内容被替换等被动结束不会触发它，但 `ShowAsync()` 仍会完成，随后触发
+`Closed`。
 
-## 不使用服务
+代码也可以主动结束当前对话框：
 
-简单的局部 UI 可以直接把宿主交给对话框：
+```csharp
+dialog.Hide(ContentDialogResult.Primary);
+```
+
+同一个 `ContentDialog` 实例不能同时执行两次 `ShowAsync()`；第二次调用会抛出
+`InvalidOperationException`。第一次调用完成并执行完 `Closed` 后，可以在同一宿主上再次显示
+该实例，但按交互创建新实例通常更容易管理状态和事件订阅。
+
+## 不使用依赖注入
+
+调用方天然拥有宿主引用时，可以直接指定宿主：
 
 ```csharp
 var dialog = new ContentDialog(RootContentDialogHost)
@@ -222,12 +275,22 @@ var dialog = new ContentDialog(RootContentDialogHost)
 ContentDialogResult result = await dialog.ShowAsync(cancellationToken);
 ```
 
-服务并不提供额外的全局注册能力；它只是让视图模型能够使用当前作用域已经绑定的宿主。
-如果调用方天然拥有宿主引用，直接使用通常更简单。
+`IContentDialogService` 的主要价值是让视图模型和其它业务对象不必持有视图中的宿主引用；它
+不会提供全局宿主查找、并发显示或自动排队能力。
 
-## 多窗口与非 Window 宿主
+## 宿主范围与多窗口
 
-每个独立视觉区域都应拥有自己的宿主和服务实例：
+`ContentDialogHost` 在元素树中的位置决定遮罩范围。需要覆盖整个 Shell 时，把它作为 Shell
+根面板的直接子元素；只需要覆盖插件或局部工作区时，把它放在该区域的根面板中。
+
+不要把窗口级宿主放进 `NavigationView` 的页面内容或控件模板，否则页面切换或模板重建可能
+中断正在显示的对话框，而且遮罩无法覆盖标题栏、导航面板等 Shell 内容。
+
+`IsDisableSiblingsEnabled` 只会禁用宿主父面板中的实际同级元素，也不会跨越 `Popup`、另一个
+`HwndSource` 或另一个原生窗口。额外的装饰容器会改变这个作用域，因此宿主应与需要禁止输入
+的业务内容共享直接父面板。
+
+每个窗口、WinForms `ElementHost`、`HwndSource` 或独立插件区域应拥有自己的宿主和服务实例：
 
 ```text
 Window A / ElementHost A       Window B / plug-in region B
@@ -236,21 +299,33 @@ Window A / ElementHost A       Window B / plug-in region B
    └─ service A                  └─ service B
 ```
 
-服务绑定的是 `ContentDialogHost`，而不是 `Window`。因此在 `Window.GetWindow(root)` 返回
-`null` 的 `HwndSource` 或 WinForms `ElementHost` 中仍可工作。键盘焦点约束、访问键与命令
-抑制也以宿主所在区域为边界，不会修改外层 WPF `Window` 的 `InputBindings` 或
-`CommandBindings`。
+服务绑定宿主而不是 `Window`，因此同样适用于 `Window.GetWindow(root)` 返回 `null` 的 UI 树。
+`Attach` 可以在宿主加载前调用；再次传入同一宿主是幂等操作，但尝试改绑其它宿主会抛出
+`InvalidOperationException`。
 
-一个原生窗口内若有多个互不相关的插件区域，也应给每个区域创建独立的根面板、宿主和 DI
-作用域；不要让它们共享服务。
+## 常见问题
 
-## 生命周期与常见错误
+### 服务提示尚未绑定宿主
 
-- `Attach` 前调用服务：服务会报告尚未绑定 `ContentDialogHost`。
-- 宿主尚未加载：等 Shell 的视觉树完成加载后再响应显示命令。
-- 从后台线程显示：使用宿主 Dispatcher 切回 UI 线程，再调用服务。
-- 把服务注册为 Singleton：改为每窗口或每区域的 Scoped/自管实例。
-- 宿主不是最后一个同级元素：后声明的内容可能盖住对话框，应调整根容器子元素顺序。
-- 宿主放错父容器：`IsDisableSiblingsEnabled` 只能禁用宿主的真实同级元素。
-- 同时显示多个对话框：一个宿主一次只承载一个内容；应用应等待当前 `ShowAsync` 完成，或在
-  业务层串行化请求。
+确保在 `InitializeComponent()` 之后对当前作用域的服务调用了 `Attach(...)`，并确认视图模型
+解析自同一个作用域，而不是应用根容器或另一个窗口的作用域。
+
+### 宿主尚未加载
+
+只能在 `ContentDialogHost.Loaded` 之后显示。不要在窗口构造函数中过早调用 `ShowAsync()`；可
+在 `Loaded`、导航完成或用户命令中发起显示。
+
+### 后台线程调用失败
+
+显示操作必须从宿主的 Dispatcher 线程发起。后台任务完成后，通过 UI Dispatcher 切回，再
+调用对话框服务。
+
+### 对话框没有覆盖完整窗口
+
+检查宿主是否位于 Shell 根面板、是否跨越所有行列，以及是否为最后声明的子元素。若只禁用
+了少量控件，检查宿主与业务内容是否真的是同一父面板的同级元素。
+
+### 多个显示请求互相替换
+
+一个宿主一次只能承载一个对话框，服务不负责排队。等待当前 `ShowAsync()` 完成后再显示下一
+个，或在应用层使用队列/互斥机制协调请求。不要并发显示同一个对话框实例。

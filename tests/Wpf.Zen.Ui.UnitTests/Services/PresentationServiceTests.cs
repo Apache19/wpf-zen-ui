@@ -170,6 +170,185 @@ public class PresentationServiceTests
     }
 
     [Fact]
+    public void ContentDialog_CannotShowTheSameInstanceConcurrently()
+    {
+        WpfTestThread.Run(() =>
+        {
+            SynchronizationContext.SetSynchronizationContext(
+                new DispatcherSynchronizationContext(Dispatcher.CurrentDispatcher)
+            );
+
+            (Window window, _, _, ContentDialogHost dialogHost) = CreateWindow();
+
+            try
+            {
+                window.Show();
+                DrainDispatcher();
+
+                var service = new ContentDialogService();
+                service.Attach(dialogHost);
+                var dialog = new ContentDialog();
+
+                Task<ContentDialogResult> firstShow = service.ShowAsync(
+                    dialog,
+                    CancellationToken.None
+                );
+                Task<ContentDialogResult> secondShow = service.ShowAsync(
+                    dialog,
+                    CancellationToken.None
+                );
+
+                _ = Assert.Throws<InvalidOperationException>(
+                    () => secondShow.GetAwaiter().GetResult()
+                );
+
+                dialog.Hide(ContentDialogResult.Primary);
+                PumpUntilCompleted(firstShow);
+
+                // ReSharper disable once AsyncApostle.AsyncWait
+                Assert.Equal(ContentDialogResult.Primary, firstShow.Result);
+
+                // Reuse remains supported after the complete close lifecycle has released the
+                // instance; only overlapping presentations are rejected.
+                Task<ContentDialogResult> thirdShow = service.ShowAsync(
+                    dialog,
+                    CancellationToken.None
+                );
+                dialog.Hide(ContentDialogResult.Secondary);
+                PumpUntilCompleted(thirdShow);
+
+                // ReSharper disable once AsyncApostle.AsyncWait
+                Assert.Equal(ContentDialogResult.Secondary, thirdShow.Result);
+            }
+            finally
+            {
+                window.Close();
+            }
+        });
+    }
+
+    [Fact]
+    public void ContentDialog_CompletesWhenItsHostIsUnloaded()
+    {
+        WpfTestThread.Run(() =>
+        {
+            SynchronizationContext.SetSynchronizationContext(
+                new DispatcherSynchronizationContext(Dispatcher.CurrentDispatcher)
+            );
+
+            (Window window, _, _, ContentDialogHost dialogHost) = CreateWindow();
+            window.Show();
+            DrainDispatcher();
+
+            var service = new ContentDialogService();
+            service.Attach(dialogHost);
+            Task<ContentDialogResult> resultTask = service.ShowAsync(
+                new ContentDialog(),
+                CancellationToken.None
+            );
+
+            // WPF unloads the visual tree when a Window closes, but it deliberately retains
+            // ContentControl.Content. The dialog operation must therefore observe the host's
+            // lifetime instead of waiting for Content to be cleared by application code.
+            window.Close();
+            PumpUntilCompleted(resultTask);
+
+            // ReSharper disable once AsyncApostle.AsyncWait
+            Assert.Equal(ContentDialogResult.None, resultTask.Result);
+            Assert.Null(dialogHost.Content);
+        });
+    }
+
+    [Fact]
+    public void ContentDialog_ConstrainsSizeWithoutChangingConfiguredMaximums()
+    {
+        WpfTestThread.Run(() =>
+        {
+            SynchronizationContext.SetSynchronizationContext(
+                new DispatcherSynchronizationContext(Dispatcher.CurrentDispatcher)
+            );
+
+            (Window window, _, _, ContentDialogHost dialogHost) = CreateWindow();
+
+            try
+            {
+                window.Show();
+                DrainDispatcher();
+
+                var service = new ContentDialogService();
+                service.Attach(dialogHost);
+                var dialog = new ContentDialog
+                {
+                    Content = new Border { Width = 2_000D, Height = 2_000D },
+                    DialogMaxWidth = 100D,
+                    DialogMaxHeight = 80D,
+                };
+
+                Task<ContentDialogResult> resultTask = service.ShowAsync(
+                    dialog,
+                    CancellationToken.None
+                );
+                DrainDispatcher();
+
+                Assert.Equal(100D, dialog.DialogMaxWidth);
+                Assert.Equal(80D, dialog.DialogMaxHeight);
+                Assert.InRange(dialog.DialogWidth, 0D, dialog.DialogMaxWidth);
+                Assert.InRange(dialog.DialogHeight, 0D, dialog.DialogMaxHeight);
+
+                dialog.Hide();
+                PumpUntilCompleted(resultTask);
+            }
+            finally
+            {
+                window.Close();
+            }
+        });
+    }
+
+    [Fact]
+    public void ContentDialogHost_PreservesDisabledTitleBarContent()
+    {
+        WpfTestThread.Run(() =>
+        {
+            SynchronizationContext.SetSynchronizationContext(
+                new DispatcherSynchronizationContext(Dispatcher.CurrentDispatcher)
+            );
+
+            var titleBar = new TitleBar { IsUserContentEnabled = false };
+            var dialogHost = new ContentDialogHost { IsDisableSiblingsEnabled = true };
+            var root = new Grid();
+            _ = root.Children.Add(titleBar);
+            _ = root.Children.Add(dialogHost);
+            var window = CreateHiddenWindow(root);
+
+            try
+            {
+                window.Show();
+                DrainDispatcher();
+
+                var service = new ContentDialogService();
+                service.Attach(dialogHost);
+                var dialog = new ContentDialog();
+                Task<ContentDialogResult> resultTask = service.ShowAsync(
+                    dialog,
+                    CancellationToken.None
+                );
+
+                Assert.False(titleBar.IsUserContentEnabled);
+
+                dialog.Hide();
+                PumpUntilCompleted(resultTask);
+
+                Assert.False(titleBar.IsUserContentEnabled);
+            }
+            finally
+            {
+                window.Close();
+            }
+        });
+    }
+
+    [Fact]
     public void PresentationServices_WorkInHwndSourceWithoutWpfWindow()
     {
         WpfTestThread.Run(() =>
