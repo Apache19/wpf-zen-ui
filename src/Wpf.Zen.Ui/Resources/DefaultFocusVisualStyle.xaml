@@ -8,10 +8,10 @@
 <ResourceDictionary
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:theming="clr-namespace:Wpf.Zen.Ui.Theming"
-    xmlns:m="clr-namespace:Wpf.Zen.Ui.Markup">
+    xmlns:m="clr-namespace:Wpf.Zen.Ui.Markup"
+    xmlns:t="clr-namespace:Wpf.Zen.Ui.Theming">
 
-    <Style x:Key="{x:Static theming:StyleKeys.DefaultControlFocusVisualStyle}">
+    <Style x:Key="{x:Static t:StyleKeys.DefaultControlFocusVisualStyle}">
         <Setter Property="Control.Template">
             <Setter.Value>
                 <ControlTemplate>
@@ -26,6 +26,6 @@
         </Setter>
     </Style>
 
-    <Style x:Key="{x:Static SystemParameters.FocusVisualStyleKey}" BasedOn="{StaticResource {x:Static theming:StyleKeys.DefaultControlFocusVisualStyle}}" />
+    <Style x:Key="{x:Static SystemParameters.FocusVisualStyleKey}" BasedOn="{StaticResource {x:Static t:StyleKeys.DefaultControlFocusVisualStyle}}" />
 
 </ResourceDictionary>

@@ -19,15 +19,18 @@
         <ResourceDictionary Source="pack://application:,,,/Wpf.Zen.Ui;component/Controls/Button/ButtonAppearance.xaml" />
     </ResourceDictionary.MergedDictionaries>
 
+    <converters:CornerRadiusTransformConverter x:Key="FocusCornerRadiusConverter" Offset="2 2 2 2" />
+
     <Style x:Key="UiButtonFocusVisualStyle">
         <Setter Property="Control.Template">
             <Setter.Value>
                 <ControlTemplate>
                     <!--  ReSharper disable once Xaml.BindingWithContextNotResolved  -->
                     <Border
+                        Margin="-2"
                         BorderBrush="{m:DynamicBrush KeyboardFocusBorder}"
                         BorderThickness="1"
-                        CornerRadius="{Binding AdornedElement.CornerRadius, RelativeSource={RelativeSource AncestorType={x:Type Adorner}}}"
+                        CornerRadius="{Binding AdornedElement.CornerRadius, RelativeSource={RelativeSource AncestorType={x:Type Adorner}}, Converter={StaticResource FocusCornerRadiusConverter}}"
                         IsHitTestVisible="False"
                         SnapsToDevicePixels="True" />
                 </ControlTemplate>

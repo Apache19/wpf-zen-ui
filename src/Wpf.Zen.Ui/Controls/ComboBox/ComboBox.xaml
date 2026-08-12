@@ -86,7 +86,9 @@
                         VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
                         CaretBrush="{Binding Foreground, RelativeSource={RelativeSource Self}}"
                         ContextMenu="{StaticResource DefaultEditorContextMenu}"
+                        FocusVisualStyle="{x:Null}"
                         Foreground="{TemplateBinding VisualForeground}"
+                        IsEnabled="{TemplateBinding IsEditable}"
                         IsReadOnly="{TemplateBinding IsReadOnly}"
                         OverridesDefaultStyle="True"
                         VerticalScrollBarVisibility="{TemplateBinding ScrollViewer.VerticalScrollBarVisibility}">
@@ -218,7 +220,7 @@
                     <Condition Property="IsGrouping" Value="true" />
                     <Condition Property="VirtualizingPanel.IsVirtualizingWhenGrouping" Value="false" />
                 </MultiTrigger.Conditions>
-                <Setter Property="ScrollViewer.CanContentScroll" Value="false"/>
+                <Setter Property="ScrollViewer.CanContentScroll" Value="false" />
             </MultiTrigger>
 
             <Trigger Property="IsEditable" Value="True">

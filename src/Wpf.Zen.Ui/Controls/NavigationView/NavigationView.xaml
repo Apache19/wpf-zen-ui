@@ -23,7 +23,7 @@
         <Setter Property="Foreground" Value="{m:DynamicBrush TextFillPrimary}" />
         <Setter Property="LeftPaneOpenWidth" Value="320" />
         <Setter Property="LeftPaneCompactWidth" Value="40" />
-        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="Focusable" Value="False" />
         <Setter Property="IsTabStop" Value="False" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
         <Style.Triggers>

@@ -24,7 +24,10 @@
             CornerRadius="{Binding (Border.CornerRadius), RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}">
             <Grid Margin="{Binding Indentation, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}" Background="Transparent">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition x:Name="IconColumn" Width="40" SharedSizeGroup="Icon" />
+                    <ColumnDefinition
+                        x:Name="IconColumn"
+                        Width="40"
+                        SharedSizeGroup="Icon" />
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition x:Name="ExpandColumn" Width="0" />
@@ -223,6 +226,7 @@
                 Content="{TemplateBinding Header}"
                 ContentTemplate="{TemplateBinding HeaderTemplate}"
                 ContentTemplateSelector="{TemplateBinding HeaderTemplateSelector}"
+                FocusVisualStyle="{m:DynamicStyle DefaultControlFocusVisual}"
                 OverridesDefaultStyle="True"
                 Style="{x:Null}"
                 Template="{StaticResource NavigationViewItemLeftHeaderButtonTemplate}" />
@@ -282,6 +286,7 @@
                 Content="{TemplateBinding Header}"
                 ContentTemplate="{TemplateBinding HeaderTemplate}"
                 ContentTemplateSelector="{TemplateBinding HeaderTemplateSelector}"
+                FocusVisualStyle="{m:DynamicStyle DefaultControlFocusVisual}"
                 OverridesDefaultStyle="True"
                 Style="{x:Null}"
                 Template="{StaticResource NavigationViewItemLeftHeaderButtonTemplate}">

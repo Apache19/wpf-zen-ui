@@ -19,6 +19,7 @@
         <Setter Property="HorizontalContentAlignment" Value="Left" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="FocusVisualStyle" Value="{m:DynamicStyle DefaultControlFocusVisual}" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type controls:NavigationViewButton}">
@@ -46,7 +47,7 @@
                                 role-based defaults, while this template only presents the resulting
                                 object. An explicit or derived-style Icon value can therefore replace
                                 the default and can use implicit data templates.
-
+                                
                                 FluentIconSource values are resolved by the implicit template in Generic.xaml.
                                 UIElement values continue to use ContentPresenter's native direct-visual path,
                                 while applications can override the symbol view with a nearer data template.
