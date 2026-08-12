@@ -60,10 +60,10 @@
     <!--  Colors  -->
 
     <Color x:Key="{x:Static t:ColorKeys.TextFillColorPrimary}">#FFFFFF</Color>
-    <Color x:Key="{x:Static t:ColorKeys.TextFillColorSecondary}">#C5FFFFFF</Color>
-    <Color x:Key="{x:Static t:ColorKeys.TextFillColorTertiary}">#87FFFFFF</Color>
-    <Color x:Key="{x:Static t:ColorKeys.TextFillColorDisabled}">#5DFFFFFF</Color>
-    <Color x:Key="{x:Static t:ColorKeys.TextPlaceholderColor}">#87FFFFFF</Color>
+    <Color x:Key="{x:Static t:ColorKeys.TextFillColorSecondary}">#B8FFFFFF</Color>
+    <Color x:Key="{x:Static t:ColorKeys.TextFillColorTertiary}">#78FFFFFF</Color>
+    <Color x:Key="{x:Static t:ColorKeys.TextFillColorDisabled}">#4DFFFFFF</Color>
+    <Color x:Key="{x:Static t:ColorKeys.TextPlaceholderColor}">#78FFFFFF</Color>
     <Color x:Key="{x:Static t:ColorKeys.TextFillColorInverse}">#E4000000</Color>
 
     <Color x:Key="{x:Static t:ColorKeys.ControlFillColorPrimary}">#15FFFFFF</Color>
