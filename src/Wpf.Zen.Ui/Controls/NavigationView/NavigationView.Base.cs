@@ -167,13 +167,8 @@ public partial class NavigationView : Control, INavigationHost, INavigationState
         // These collections are the direct-content alternative to ItemsSource, matching the two
         // mutually exclusive item paths exposed by WPF ItemsControl. ItemsSource is never copied
         // into them; preserving source identity is required for menu selection and invocation.
-        var menuItems = new ObservableCollection<object>();
-        menuItems.CollectionChanged += OnMenuItemsCollectionChanged;
-        SetValue(MenuItemsPropertyKey, menuItems);
-
-        var footerMenuItems = new ObservableCollection<object>();
-        footerMenuItems.CollectionChanged += OnFooterMenuItemsCollectionChanged;
-        SetValue(FooterMenuItemsPropertyKey, footerMenuItems);
+        MenuItems.CollectionChanged += OnMenuItemsCollectionChanged;
+        FooterMenuItems.CollectionChanged += OnFooterMenuItemsCollectionChanged;
 
         Breadcrumbs = new ReadOnlyObservableCollection<BreadcrumbSegment>(_breadcrumbs);
         SetCurrentValue(NavigationMapProperty, new NavigationMap());

@@ -3,7 +3,6 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-using System.Collections;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.Windows.Controls;
@@ -326,22 +325,23 @@ public partial class NavigationView
 
     #endregion
 
-    #region DP: FooterMenuItems
+    #region Collection: FooterMenuItems
 
-    private static readonly DependencyPropertyKey FooterMenuItemsPropertyKey =
-        DependencyProperty.RegisterReadOnly(
-            nameof(FooterMenuItems),
-            typeof(ObservableCollection<object>),
-            typeof(NavigationView),
-            new PropertyMetadata(null)
-        );
-
-    /// <summary>Identifies the <see cref="FooterMenuItems"/> dependency property.</summary>
-    public static readonly DependencyProperty FooterMenuItemsProperty =
-        FooterMenuItemsPropertyKey.DependencyProperty;
-
-    /// <summary>Gets the collection of items displayed in the footer menu.</summary>
-    public IList FooterMenuItems => (ObservableCollection<object>)GetValue(FooterMenuItemsProperty);
+    /// <summary>
+    /// Gets the collection of items displayed in the footer menu.
+    /// </summary>
+    /// <remarks>
+    /// The collection instance is owned by the control and remains stable for its lifetime. It is
+    /// deliberately a CLR collection property rather than a read-only dependency property. WPF's
+    /// designer gives dependency-property metadata precedence over the CLR collection contract;
+    /// a read-only dependency property can therefore be rejected as inaccessible even though the
+    /// runtime XAML loader can populate the returned collection. This follows
+    /// <see cref="ItemsControl.Items"/>: XAML adds children to the existing collection instead of
+    /// assigning a replacement value.
+    /// </remarks>
+    [Bindable(true)]
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Content)]
+    public ObservableCollection<object> FooterMenuItems { get; } = new();
 
     #endregion
 
@@ -973,20 +973,21 @@ public partial class NavigationView
 
     #endregion
 
-    #region DP: MenuItems
+    #region Collection: MenuItems
 
-    private static readonly DependencyPropertyKey MenuItemsPropertyKey = DependencyProperty.RegisterReadOnly(
-        nameof(MenuItems),
-        typeof(ObservableCollection<object>),
-        typeof(NavigationView),
-        new PropertyMetadata(null)
-    );
-
-    /// <summary>Identifies the <see cref="MenuItems"/> dependency property.</summary>
-    public static readonly DependencyProperty MenuItemsProperty = MenuItemsPropertyKey.DependencyProperty;
-
-    /// <summary>Gets the collection of items displayed in the primary menu.</summary>
-    public IList MenuItems => (ObservableCollection<object>)GetValue(MenuItemsProperty);
+    /// <summary>
+    /// Gets the collection of items displayed in the primary menu.
+    /// </summary>
+    /// <remarks>
+    /// The collection instance is owned by the control and remains stable for its lifetime. It is
+    /// deliberately not registered as a dependency property: design tools otherwise interpret
+    /// explicit <c>NavigationView.MenuItems</c> syntax as an attempt to set a read-only dependency
+    /// property. The CLR-only collection contract matches <see cref="ItemsControl.Items"/> and is
+    /// sufficient because the control forwards collection changes to its internal item hosts.
+    /// </remarks>
+    [Bindable(true)]
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Content)]
+    public ObservableCollection<object> MenuItems { get; } = new();
 
     private void OnFooterMenuItemsCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {

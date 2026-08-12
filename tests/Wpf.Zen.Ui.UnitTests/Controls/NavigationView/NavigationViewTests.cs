@@ -23,6 +23,30 @@ namespace Wpf.Zen.Ui.UnitTests.Controls.NavigationView;
 
 public class NavigationViewTests
 {
+    [Theory]
+    [InlineData(nameof(Wpf.Zen.Ui.Controls.NavigationView.MenuItems))]
+    [InlineData(nameof(Wpf.Zen.Ui.Controls.NavigationView.FooterMenuItems))]
+    public void DirectItemCollection_UsesClrContentCollectionContract(string propertyName)
+    {
+        PropertyDescriptor? property =
+            TypeDescriptor.GetProperties(typeof(Wpf.Zen.Ui.Controls.NavigationView))[propertyName];
+        Assert.NotNull(property);
+        var visibility = Assert.IsType<DesignerSerializationVisibilityAttribute>(
+            property.Attributes[typeof(DesignerSerializationVisibilityAttribute)]
+        );
+
+        Assert.True(property.IsReadOnly);
+        Assert.Equal(typeof(ObservableCollection<object>), property.PropertyType);
+        Assert.Equal(DesignerSerializationVisibility.Content, visibility.Visibility);
+        Assert.Null(
+            DependencyPropertyDescriptor.FromName(
+                propertyName,
+                typeof(Wpf.Zen.Ui.Controls.NavigationView),
+                typeof(Wpf.Zen.Ui.Controls.NavigationView)
+            )
+        );
+    }
+
     [Fact]
     public void NavigationViewList_DefaultTemplate_HostsItemsPresenterInPassiveScrollViewer()
     {
