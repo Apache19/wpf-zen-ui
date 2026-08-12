@@ -19,18 +19,18 @@ public partial class SettingsPage
 
         AppVersionTextBlock.Text = $"WPF Zen UI - Simple Demo - {GetAssemblyVersion()}";
 
-        switch (ThemeManager.ThemeMode)
+        switch (ThemeManager.Preference)
         {
-            case UiThemeMode.Light:
-            case UiThemeMode.Default:
-                DarkThemeRadioButton.IsChecked = true;
-                break;
-
-            case UiThemeMode.Dark:
+            case ThemePreference.Light:
+            case ThemePreference.Default:
                 LightThemeRadioButton.IsChecked = true;
                 break;
 
-            case UiThemeMode.System:
+            case ThemePreference.Dark:
+                DarkThemeRadioButton.IsChecked = true;
+                break;
+
+            case ThemePreference.System:
                 SysThemeRadioButton.IsChecked = true;
                 break;
 
@@ -41,17 +41,17 @@ public partial class SettingsPage
 
     private void OnLightThemeRadioButtonChecked(object sender, RoutedEventArgs e)
     {
-        ThemeManager.ThemeMode = UiThemeMode.Light;
+        ThemeManager.Preference = ThemePreference.Light;
     }
 
     private void OnDarkThemeRadioButtonChecked(object sender, RoutedEventArgs e)
     {
-        ThemeManager.ThemeMode = UiThemeMode.Dark;
+        ThemeManager.Preference = ThemePreference.Dark;
     }
 
     private void OnSysThemeRadioButtonChecked(object sender, RoutedEventArgs e)
     {
-        ThemeManager.ThemeMode = UiThemeMode.System;
+        ThemeManager.Preference = ThemePreference.System;
     }
 
     private string GetAssemblyVersion()

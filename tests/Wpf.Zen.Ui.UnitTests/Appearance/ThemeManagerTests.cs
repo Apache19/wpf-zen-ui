@@ -40,7 +40,7 @@ public class ThemeManagerTests
 
             // The first explicit configuration must apply even though every value equals ThemeManager's defaults.
             ThemeManager.Configure(
-                UiThemeMode.Default,
+                ThemePreference.Default,
                 AccentColorSource.Default,
                 BuiltInAccent,
                 false,
@@ -51,7 +51,7 @@ public class ThemeManagerTests
             );
 
             Assert.Same(
-                GetThemeDictionary(UiThemeMode.Light),
+                GetThemeDictionary(ThemeVariant.Light),
                 Assert.Single(Application.Current.Resources.MergedDictionaries)
             );
             Assert.False(ContainsMergedSource("/Wpf.Zen.Ui;component/Resources/NativeControlStyles.xaml"));
@@ -68,10 +68,10 @@ public class ThemeManagerTests
 
             // Calling ThemeManager.Configure is itself an explicit opt-in. The first call must therefore install
             // the global resources even when the supplied values are identical to the manager's current defaults.
-            ThemeManager.Configure(UiThemeMode.Default, AccentColorSource.Default);
+            ThemeManager.Configure(ThemePreference.Default, AccentColorSource.Default);
 
             Assert.Same(
-                GetThemeDictionary(UiThemeMode.Light),
+                GetThemeDictionary(ThemeVariant.Light),
                 Assert.Single(Application.Current.Resources.MergedDictionaries)
             );
             Assert.False(ContainsMergedSource("/Wpf.Zen.Ui;component/Resources/NativeControlStyles.xaml"));
@@ -91,7 +91,7 @@ public class ThemeManagerTests
             options.EndInit();
 
             Assert.Same(
-                GetThemeDictionary(UiThemeMode.Light),
+                GetThemeDictionary(ThemeVariant.Light),
                 Assert.Single(Application.Current.Resources.MergedDictionaries)
             );
             Assert.False(ContainsMergedSource("/Wpf.Zen.Ui;component/Resources/NativeControlStyles.xaml"));
@@ -99,14 +99,14 @@ public class ThemeManagerTests
     }
 
     [Fact]
-    public void DefaultMode_AppliesLightCompatibleResourcesButReportsDefault()
+    public void DefaultPreference_AppliesLightCompatibleResourcesAndReportsEffectiveLightTheme()
     {
         RunIsolated(() =>
         {
             var resources = Application.Current!.Resources;
 
-            Assert.Equal(UiThemeMode.Default, ThemeManager.ThemeMode);
-            Assert.Equal(ApplicationTheme.Default, ThemeManager.CurrentTheme);
+            Assert.Equal(ThemePreference.Default, ThemeManager.Preference);
+            Assert.Equal(ThemeVariant.Light, ThemeManager.EffectiveTheme);
             Assert.Equal(AccentColorSource.Default, ThemeManager.AccentSource);
             Assert.Equal(BuiltInAccent, ThemeManager.CustomAccentColor);
             Assert.False(ThemeManager.EnableNativeControlStyling);
@@ -114,13 +114,13 @@ public class ThemeManagerTests
             Assert.Null(ThemeManager.AdditionalDarkThemeUri);
             Assert.Null(ThemeManager.AdditionalHighContrastLightThemeUri);
             Assert.Null(ThemeManager.AdditionalHighContrastDarkThemeUri);
-            Assert.Same(GetThemeDictionary(UiThemeMode.Light), resources.MergedDictionaries[0]);
+            Assert.Same(GetThemeDictionary(ThemeVariant.Light), resources.MergedDictionaries[0]);
             Assert.NotNull(resources[BrushKeys.WindowBackgroundBrush]);
         });
     }
 
     [Fact]
-    public void ThemeMode_RefreshesOncePerChangeAndPublishesAppliedThemeAfterResources()
+    public void Preference_RefreshesOncePerChangeAndPublishesEffectiveThemeAfterResources()
     {
         RunIsolated(() =>
         {
@@ -133,18 +133,18 @@ public class ThemeManagerTests
 
             try
             {
-                ThemeManager.ThemeMode = UiThemeMode.Dark;
-                ThemeManager.ThemeMode = UiThemeMode.Dark;
-                ThemeManager.ThemeMode = UiThemeMode.Light;
-                ThemeManager.ThemeMode = UiThemeMode.Default;
+                ThemeManager.Preference = ThemePreference.Dark;
+                ThemeManager.Preference = ThemePreference.Dark;
+                ThemeManager.Preference = ThemePreference.Light;
+                ThemeManager.Preference = ThemePreference.Default;
 
                 Assert.Collection(
                     notifications,
-                    item => AssertNotification(item, ApplicationTheme.Dark),
-                    item => AssertNotification(item, ApplicationTheme.Light),
-                    item => AssertNotification(item, ApplicationTheme.Default)
+                    item => AssertNotification(item, ThemeVariant.Dark),
+                    item => AssertNotification(item, ThemeVariant.Light),
+                    item => AssertNotification(item, ThemeVariant.Light)
                 );
-                Assert.Equal(ApplicationTheme.Default, ThemeManager.CurrentTheme);
+                Assert.Equal(ThemeVariant.Light, ThemeManager.EffectiveTheme);
             }
             finally
             {
@@ -158,24 +158,24 @@ public class ThemeManagerTests
     {
         RunIsolated(() =>
         {
-            var invalidMode = (UiThemeMode)int.MaxValue;
+            var invalidPreference = (ThemePreference)int.MaxValue;
             var invalidSource = (AccentColorSource)int.MaxValue;
 
-            var modeException = Assert.Throws<ArgumentOutOfRangeException>(() =>
-                ThemeManager.ThemeMode = invalidMode
+            var preferenceException = Assert.Throws<ArgumentOutOfRangeException>(() =>
+                ThemeManager.Preference = invalidPreference
             );
             var sourceException = Assert.Throws<ArgumentOutOfRangeException>(() =>
                 ThemeManager.AccentSource = invalidSource
             );
             Assert.Throws<ArgumentOutOfRangeException>(() =>
-                ThemeManager.Configure(invalidMode, AccentColorSource.Default)
+                ThemeManager.Configure(invalidPreference, AccentColorSource.Default)
             );
             Assert.Throws<ArgumentOutOfRangeException>(() =>
-                ThemeManager.Configure(UiThemeMode.Light, invalidSource)
+                ThemeManager.Configure(ThemePreference.Light, invalidSource)
             );
             Assert.Throws<ArgumentOutOfRangeException>(() =>
                 ThemeManager.Configure(
-                    invalidMode,
+                    invalidPreference,
                     AccentColorSource.Default,
                     BuiltInAccent,
                     true,
@@ -186,11 +186,11 @@ public class ThemeManagerTests
                 )
             );
 
-            Assert.Equal("mode", modeException.ParamName);
+            Assert.Equal("preference", preferenceException.ParamName);
             Assert.Equal("source", sourceException.ParamName);
-            Assert.Equal(UiThemeMode.Default, ThemeManager.ThemeMode);
+            Assert.Equal(ThemePreference.Default, ThemeManager.Preference);
             Assert.Equal(AccentColorSource.Default, ThemeManager.AccentSource);
-            Assert.Equal(ApplicationTheme.Default, ThemeManager.CurrentTheme);
+            Assert.Equal(ThemeVariant.Light, ThemeManager.EffectiveTheme);
         });
     }
 
@@ -215,7 +215,7 @@ public class ThemeManagerTests
                 ThemeManager.AccentSource = AccentColorSource.Custom;
                 Assert.Equal(1, notificationCount);
 
-                var expected = AccentPalette.Create(opaque, UiThemeMode.Light);
+                var expected = AccentPalette.Create(opaque, ThemeVariant.Light);
                 var resources = Application.Current!.Resources;
                 Assert.Equal(expected.AccentFillPrimary, resources[ColorKeys.AccentFillPrimary]);
                 Assert.Equal(expected.AccentTextPrimary, resources[ColorKeys.SystemFillColorAttention]);
@@ -267,22 +267,22 @@ public class ThemeManagerTests
         RunIsolated(() =>
         {
             ThemeManager.Configure(
-                UiThemeMode.Light,
+                ThemePreference.Light,
                 AccentColorSource.Default,
                 enableNativeControlStyling: true
             );
 
-            ThemeManager.Configure(UiThemeMode.Dark, AccentColorSource.System);
+            ThemeManager.Configure(ThemePreference.Dark, AccentColorSource.System);
 
             Assert.True(ThemeManager.EnableNativeControlStyling);
             Assert.True(ContainsMergedSource("/Wpf.Zen.Ui;component/Resources/NativeControlStyles.xaml"));
 
             ThemeManager.Configure(
-                UiThemeMode.Light,
+                ThemePreference.Light,
                 AccentColorSource.Default,
                 enableNativeControlStyling: false
             );
-            ThemeManager.Configure(UiThemeMode.Dark);
+            ThemeManager.Configure(ThemePreference.Dark);
 
             Assert.False(ThemeManager.EnableNativeControlStyling);
             Assert.False(ContainsMergedSource("/Wpf.Zen.Ui;component/Resources/NativeControlStyles.xaml"));
@@ -302,7 +302,7 @@ public class ThemeManagerTests
             try
             {
                 ThemeManager.Configure(
-                    UiThemeMode.Dark,
+                    ThemePreference.Dark,
                     AccentColorSource.Custom,
                     customAccent,
                     false,
@@ -313,8 +313,8 @@ public class ThemeManagerTests
                 );
 
                 Assert.Equal(1, notificationCount);
-                Assert.Equal(UiThemeMode.Dark, ThemeManager.ThemeMode);
-                Assert.Equal(ApplicationTheme.Dark, ThemeManager.CurrentTheme);
+                Assert.Equal(ThemePreference.Dark, ThemeManager.Preference);
+                Assert.Equal(ThemeVariant.Dark, ThemeManager.EffectiveTheme);
                 Assert.Equal(AccentColorSource.Custom, ThemeManager.AccentSource);
                 Assert.Equal(Color.FromRgb(0xAA, 0x51, 0x0C), ThemeManager.CustomAccentColor);
                 Assert.False(ThemeManager.EnableNativeControlStyling);
@@ -326,7 +326,7 @@ public class ThemeManagerTests
                 Assert.True(ContainsMergedSource(LightThemeUri.OriginalString));
 
                 ThemeManager.Configure(
-                    UiThemeMode.Dark,
+                    ThemePreference.Dark,
                     AccentColorSource.Custom,
                     customAccent,
                     false,
@@ -362,14 +362,14 @@ public class ThemeManagerTests
             try
             {
                 ThemeManager.Configure(
-                    UiThemeMode.Dark,
+                    ThemePreference.Dark,
                     AccentColorSource.Custom,
                     Color.FromArgb(0x30, 0x22, 0x66, 0xAA),
                     false
                 );
 
                 Assert.Equal(1, notificationCount);
-                Assert.Equal(UiThemeMode.Dark, ThemeManager.ThemeMode);
+                Assert.Equal(ThemePreference.Dark, ThemeManager.Preference);
                 Assert.Equal(AccentColorSource.Custom, ThemeManager.AccentSource);
                 Assert.Equal(Color.FromRgb(0x22, 0x66, 0xAA), ThemeManager.CustomAccentColor);
                 Assert.False(ThemeManager.EnableNativeControlStyling);
@@ -381,18 +381,18 @@ public class ThemeManagerTests
                 ThemeManager.CustomAccentColor = Color.FromRgb(0xBB, 0x44, 0x11);
                 Assert.Equal(2, notificationCount);
                 var generatedAccentDictionary = Assert.Single(
-                    GetThemeDictionary(UiThemeMode.Dark).MergedDictionaries,
+                    GetThemeDictionary(ThemeVariant.Dark).MergedDictionaries,
                     dictionary =>
                         dictionary.Source is null && dictionary.Contains(ColorKeys.AccentFillPrimary)
                 );
                 Assert.Equal(
-                    AccentPalette.Create(Color.FromRgb(0xBB, 0x44, 0x11), UiThemeMode.Dark)
+                    AccentPalette.Create(Color.FromRgb(0xBB, 0x44, 0x11), ThemeVariant.Dark)
                         .AccentFillPrimary,
                     generatedAccentDictionary[ColorKeys.AccentFillPrimary]
                 );
 
                 ThemeManager.Configure(
-                    UiThemeMode.Dark,
+                    ThemePreference.Dark,
                     AccentColorSource.Custom,
                     Color.FromRgb(0xBB, 0x44, 0x11),
                     false
@@ -520,7 +520,7 @@ public class ThemeManagerTests
     {
         RunIsolated(() =>
         {
-            ThemeManager.ThemeMode = UiThemeMode.Dark;
+            ThemeManager.Preference = ThemePreference.Dark;
             var resources = Application.Current!.Resources;
             var previouslyApplied = resources.MergedDictionaries[0];
             var missingDictionary = new Uri(
@@ -534,7 +534,7 @@ public class ThemeManagerTests
 
             Assert.Contains(missingDictionary.OriginalString, exception.Message, StringComparison.Ordinal);
             Assert.Same(previouslyApplied, resources.MergedDictionaries[0]);
-            Assert.Equal(ApplicationTheme.Dark, ThemeManager.CurrentTheme);
+            Assert.Equal(ThemeVariant.Dark, ThemeManager.EffectiveTheme);
 
             // A failed refresh records the requested URI, so explicitly clear it before test cleanup.
             ThemeManager.SetAdditionalThemeUris(null, null, null, null);
@@ -550,23 +550,23 @@ public class ThemeManagerTests
             var userDictionary = new ResourceDictionary { ["UserKey"] = "UserValue" };
             element.Resources.MergedDictionaries.Add(userDictionary);
 
-            Theme.SetRequested(element, UiThemeMode.Dark);
-            Assert.Same(GetThemeDictionary(UiThemeMode.Dark), element.Resources.MergedDictionaries[0]);
+            Theme.SetRequested(element, ThemePreference.Dark);
+            Assert.Same(GetThemeDictionary(ThemeVariant.Dark), element.Resources.MergedDictionaries[0]);
             Assert.Same(userDictionary, element.Resources.MergedDictionaries[1]);
             Assert.Equal("UserValue", element.Resources["UserKey"]);
 
-            ThemeManager.ThemeMode = UiThemeMode.Light;
-            Assert.Same(GetThemeDictionary(UiThemeMode.Dark), element.Resources.MergedDictionaries[0]);
+            ThemeManager.Preference = ThemePreference.Light;
+            Assert.Same(GetThemeDictionary(ThemeVariant.Dark), element.Resources.MergedDictionaries[0]);
             Assert.Single(
                 element.Resources.MergedDictionaries,
-                dictionary => ReferenceEquals(dictionary, GetThemeDictionary(UiThemeMode.Dark))
+                dictionary => ReferenceEquals(dictionary, GetThemeDictionary(ThemeVariant.Dark))
             );
 
-            Theme.SetRequested(element, UiThemeMode.Light);
-            Assert.Same(GetThemeDictionary(UiThemeMode.Light), element.Resources.MergedDictionaries[0]);
+            Theme.SetRequested(element, ThemePreference.Light);
+            Assert.Same(GetThemeDictionary(ThemeVariant.Light), element.Resources.MergedDictionaries[0]);
             Assert.Equal(2, element.Resources.MergedDictionaries.Count);
 
-            Theme.SetRequested(element, UiThemeMode.Default);
+            Theme.SetRequested(element, ThemePreference.Default);
             Assert.Single(element.Resources.MergedDictionaries);
             Assert.Same(userDictionary, element.Resources.MergedDictionaries[0]);
         });
@@ -579,13 +579,13 @@ public class ThemeManagerTests
         {
             var run = new Run("Theme scope");
 
-            Theme.SetRequested(run, UiThemeMode.Dark);
-            Assert.Same(GetThemeDictionary(UiThemeMode.Dark), run.Resources.MergedDictionaries[0]);
+            Theme.SetRequested(run, ThemePreference.Dark);
+            Assert.Same(GetThemeDictionary(ThemeVariant.Dark), run.Resources.MergedDictionaries[0]);
 
             ThemeManager.AccentSource = AccentColorSource.Custom;
-            Assert.Same(GetThemeDictionary(UiThemeMode.Dark), run.Resources.MergedDictionaries[0]);
+            Assert.Same(GetThemeDictionary(ThemeVariant.Dark), run.Resources.MergedDictionaries[0]);
 
-            Theme.SetRequested(run, UiThemeMode.Default);
+            Theme.SetRequested(run, ThemePreference.Default);
             Assert.Empty(run.Resources.MergedDictionaries);
         });
     }
@@ -600,8 +600,8 @@ public class ThemeManagerTests
 
             try
             {
-                Theme.SetRequested(element, UiThemeMode.Dark);
-                Assert.Same(GetThemeDictionary(UiThemeMode.Dark), element.Resources.MergedDictionaries[0]);
+                Theme.SetRequested(element, ThemePreference.Dark);
+                Assert.Same(GetThemeDictionary(ThemeVariant.Dark), element.Resources.MergedDictionaries[0]);
 
                 // The owner, rather than ThemeManager, still owns the matching EndInit call.
                 void BeginNestedTransaction() => element.Resources.BeginInit();
@@ -610,7 +610,7 @@ public class ThemeManagerTests
             finally
             {
                 element.Resources.EndInit();
-                Theme.SetRequested(element, UiThemeMode.Default);
+                Theme.SetRequested(element, ThemePreference.Default);
             }
         });
     }
@@ -645,31 +645,27 @@ public class ThemeManagerTests
             EventHandler<ThemeChangedEventArgs> handler = (_, _) => notificationCount++;
 
             ThemeManager.Changed += handler;
-            ThemeManager.ThemeMode = UiThemeMode.Dark;
+            ThemeManager.Preference = ThemePreference.Dark;
             ThemeManager.Changed -= handler;
-            ThemeManager.ThemeMode = UiThemeMode.Light;
+            ThemeManager.Preference = ThemePreference.Light;
 
             Assert.Equal(1, notificationCount);
         });
     }
 
     [Fact]
-    public void SystemMode_ResolvesToAConcreteTheme()
+    public void SystemPreference_ResolvesToAConcreteTheme()
     {
         RunIsolated(() =>
         {
-            ThemeManager.ThemeMode = UiThemeMode.System;
+            ThemeManager.Preference = ThemePreference.System;
 
             Assert.Contains(
-                ThemeManager.CurrentTheme,
-                new[] { ApplicationTheme.Light, ApplicationTheme.Dark }
+                ThemeManager.EffectiveTheme,
+                new[] { ThemeVariant.Light, ThemeVariant.Dark }
             );
             Assert.Same(
-                GetThemeDictionary(
-                    ThemeManager.CurrentTheme == ApplicationTheme.Dark
-                        ? UiThemeMode.Dark
-                        : UiThemeMode.Light
-                ),
+                GetThemeDictionary(ThemeManager.EffectiveTheme),
                 Application.Current!.Resources.MergedDictionaries[0]
             );
         });
@@ -716,7 +712,7 @@ public class ThemeManagerTests
         // Move through a different state first so Configure cannot short-circuit after a preceding test happened
         // to leave the static manager at the desired defaults.
         ThemeManager.Configure(
-            UiThemeMode.Dark,
+            ThemePreference.Dark,
             AccentColorSource.Default,
             BuiltInAccent,
             false,
@@ -726,7 +722,7 @@ public class ThemeManagerTests
             null
         );
         ThemeManager.Configure(
-            UiThemeMode.Default,
+            ThemePreference.Default,
             AccentColorSource.Default,
             BuiltInAccent,
             false,
@@ -737,9 +733,9 @@ public class ThemeManagerTests
         );
     }
 
-    private static ResourceDictionary GetThemeDictionary(UiThemeMode mode)
+    private static ResourceDictionary GetThemeDictionary(ThemeVariant variant)
     {
-        var fieldName = mode == UiThemeMode.Dark ? "_darkDictionary" : "_lightDictionary";
+        var fieldName = variant == ThemeVariant.Dark ? "_darkDictionary" : "_lightDictionary";
         var field = typeof(ThemeManager).GetField(
             fieldName,
             System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic
@@ -768,11 +764,11 @@ public class ThemeManagerTests
 
     private static void AssertNotification(
         (object? Sender, ThemeChangedEventArgs Args, object? Resource) notification,
-        ApplicationTheme expectedTheme
+        ThemeVariant expectedTheme
     )
     {
         Assert.IsType<ThemeManager>(notification.Sender);
-        Assert.Equal(expectedTheme, notification.Args.AppliedTheme);
+        Assert.Equal(expectedTheme, notification.Args.EffectiveTheme);
         Assert.Equal(ThemeChangeSource.Manual, notification.Args.ChangeSource);
         Assert.NotNull(notification.Resource);
     }

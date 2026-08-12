@@ -9,7 +9,7 @@ namespace Wpf.Zen.Ui.Gallery.Models;
 
 public class AppTheme
 {
-    public UiThemeMode ThemeMode { get; set; }
+    public ThemePreference Preference { get; set; }
 
     public AccentColorSource AccentSource { get; set; } = AccentColorSource.System;
 

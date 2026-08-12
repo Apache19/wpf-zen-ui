@@ -43,8 +43,8 @@
                     MinWidth="200"
                     DisplayMemberPath="Display"
                     ItemsSource="{Binding ThemeList}"
-                    SelectedValue="{Binding CurrentTheme}"
-                    SelectedValuePath="ThemeMode" />
+                    SelectedValue="{Binding SelectedPreference}"
+                    SelectedValuePath="Preference" />
                 <ui:ToggleSwitch
                     Margin="0,10,4,0"
                     HorizontalAlignment="Right"

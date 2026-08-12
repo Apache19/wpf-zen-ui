@@ -16,7 +16,7 @@
             <ResourceDictionary.MergedDictionaries>
 
                 <!--  可选：用于配置主题参数的词典。  -->
-                <ui:ThemeManagerOptions AccentSource="System" EnableNativeControlStyling="True" ThemeMode="Dark" />
+                <ui:ThemeManagerOptions AccentSource="System" EnableNativeControlStyling="True" Preference="Dark" />
 
                 <ResourceDictionary Source="Controls/GalleryNavigationPresenter.xaml" />
                 <ResourceDictionary Source="Controls/ControlExample.xaml" />

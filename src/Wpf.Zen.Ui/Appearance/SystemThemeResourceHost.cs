@@ -225,7 +225,7 @@ internal sealed class SystemThemeResourceHost
                 // EnsureDictionarySlot is the precise private primitive needed here: it allocates only the assembly's
                 // ResourceDictionaries record. WPF's source documents that callers must hold ThemeDictionaryLock.
                 // Reflecting it avoids both Generic.xaml loading and duplicating the framework's slot bookkeeping.
-                wpfUiSlot = EnsureDictionarySlotWithoutLoading(typeof(ApplicationTheme).Assembly);
+                wpfUiSlot = EnsureDictionarySlotWithoutLoading(typeof(ThemeVariant).Assembly);
             }
 
             ResourceDictionary? currentFrameworkDictionary =

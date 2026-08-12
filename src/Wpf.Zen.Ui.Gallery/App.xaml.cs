@@ -90,7 +90,7 @@ public partial class App
         // Request deferred configuration
         options.BeginInit();
 
-        options.ThemeMode = theme.ThemeMode;
+        options.Preference = theme.Preference;
         options.AccentSource = theme.AccentSource;
 
         // To explicitly clear a previously set URI, set the property to null:
@@ -158,7 +158,7 @@ public partial class App
     {
         return new AppTheme()
         {
-            ThemeMode    = UiThemeMode.Dark,
+            Preference   = ThemePreference.Dark,
             AccentSource = AccentColorSource.System
         };
     }

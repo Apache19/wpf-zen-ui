@@ -214,14 +214,10 @@ public partial class MainWindow : IWindow
 
     private void ThemeButton_OnClick(object sender, RoutedEventArgs e)
     {
-        var theme = ThemeManager.CurrentTheme == ApplicationTheme.Default
-            ? ApplicationTheme.Light
-            : ThemeManager.CurrentTheme;
-
-        ThemeManager.ThemeMode =
-            theme == ApplicationTheme.Light
-                ? UiThemeMode.Dark
-                : UiThemeMode.Light;
+        ThemeManager.Preference =
+            ThemeManager.EffectiveTheme == ThemeVariant.Light
+                ? ThemePreference.Dark
+                : ThemePreference.Light;
     }
 
     /// <summary>Releases pages and scoped services owned by this navigation surface.</summary>

@@ -147,10 +147,10 @@ public partial class FluentWindow
         {
             if (hwnd != IntPtr.Zero && PInvoke.IsWindow(hwnd))
             {
-                // 根据 CurrentTheme 设置暗黑/明亮模式
-                var theme = ThemeManager.CurrentTheme;
+                // DWM needs the resolved visual result; the user's preference may still be Default or System.
+                var theme = ThemeManager.EffectiveTheme;
 
-                DwmAttributes.SetUseImmersiveDarkMode(hwnd, theme == ApplicationTheme.Dark);
+                DwmAttributes.SetUseImmersiveDarkMode(hwnd, theme == ThemeVariant.Dark);
 
                 // 系统开启了将主题色应用到窗口边框或标题栏且激活窗口时DWM会在窗口顶部用强调色绘制标题栏背景，
                 // 为了解决此问题，可以将标题栏颜色设置为DWMWA_COLOR_NONE。

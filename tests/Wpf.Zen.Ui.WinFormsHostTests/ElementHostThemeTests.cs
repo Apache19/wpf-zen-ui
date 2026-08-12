@@ -44,7 +44,7 @@ public class ElementHostThemeTests
             EnsureWindowsDirectoryEnvironment();
             ResetThemeManagerToUnconfiguredState();
             Assert.Null(Application.Current);
-            Assert.Equal(ApplicationTheme.Default, ThemeManager.CurrentTheme);
+            Assert.Equal(ThemeVariant.Light, ThemeManager.EffectiveTheme);
 
             var comboBox = new UiComboBox { ItemsSource = new[] { "Item" }, SelectedIndex = 0 };
             var autoSuggestBox = new UiAutoSuggestBox
@@ -101,13 +101,13 @@ public class ElementHostThemeTests
                     GetBrushColor(autoSuggestTextBox.Background)
                 );
 
-                // ThemeMode is intentionally the first configuration API used in this process and is called only
+                // ThemePreference is intentionally the first configuration API used in this process and is called only
                 // after Generic.xaml's Light resources have already supplied the live controls' style values.
-                ThemeManager.ThemeMode = UiThemeMode.Dark;
+                ThemeManager.Preference = ThemePreference.Dark;
                 DrainDispatcher();
 
                 Assert.Null(Application.Current);
-                Assert.Equal(ApplicationTheme.Dark, ThemeManager.CurrentTheme);
+                Assert.Equal(ThemeVariant.Dark, ThemeManager.EffectiveTheme);
                 Assert.Equal(Color.FromRgb(0x20, 0x20, 0x20), GetBrushColor(window.Background));
                 Assert.Equal(
                     Color.FromArgb(0x0F, 0xFF, 0xFF, 0xFF),
@@ -231,7 +231,7 @@ public class ElementHostThemeTests
             // reproduces XAML/programmatic trees that fetched Generic.xaml's Light ThemeStyle while detached from
             // every PresentationSource. No root opt-in is present: the system host must detect the new visual island.
             ThemeManager.Configure(
-                UiThemeMode.Light,
+                ThemePreference.Light,
                 AccentColorSource.Default,
                 enableNativeControlStyling: true
             );
@@ -322,7 +322,7 @@ public class ElementHostThemeTests
                     autoSuggestBox.Template.FindName("SuggestionPopup", autoSuggestBox)
                 );
 
-                Assert.Equal(ApplicationTheme.Light, ThemeManager.CurrentTheme);
+                Assert.Equal(ThemeVariant.Light, ThemeManager.EffectiveTheme);
                 Assert.Equal(
                     Color.FromArgb(0xE4, 0x00, 0x00, 0x00),
                     GetBrushColor(globalBrushProbe.Background)
@@ -359,7 +359,7 @@ public class ElementHostThemeTests
                 Assert.True(suggestionPopup.IsOpen);
 
                 ThemeManager.Configure(
-                    UiThemeMode.Dark,
+                    ThemePreference.Dark,
                     AccentColorSource.Default,
                     enableNativeControlStyling: true
                 );
@@ -367,7 +367,7 @@ public class ElementHostThemeTests
                 DrainDispatcher();
 
                 Assert.Null(Application.Current);
-                Assert.Equal(ApplicationTheme.Dark, ThemeManager.CurrentTheme);
+                Assert.Equal(ThemeVariant.Dark, ThemeManager.EffectiveTheme);
                 Assert.Equal(
                     Color.FromArgb(0x0F, 0xFF, 0xFF, 0xFF),
                     GetBrushColor(textBox.Background)
@@ -434,7 +434,7 @@ public class ElementHostThemeTests
                 DrainDispatcher();
 
                 ThemeManager.Configure(
-                    UiThemeMode.Light,
+                    ThemePreference.Light,
                     AccentColorSource.Default,
                     enableNativeControlStyling: true
                 );
@@ -442,7 +442,7 @@ public class ElementHostThemeTests
                 DrainDispatcher();
 
                 Assert.Null(Application.Current);
-                Assert.Equal(ApplicationTheme.Light, ThemeManager.CurrentTheme);
+                Assert.Equal(ThemeVariant.Light, ThemeManager.EffectiveTheme);
                 Assert.Equal(
                     Color.FromArgb(0x80, 0xF0, 0xF0, 0xF0),
                     GetBrushColor(textBox.Background)
@@ -481,7 +481,7 @@ public class ElementHostThemeTests
                 SimulateWpfSystemThemeCacheReset();
 
                 ThemeManager.Configure(
-                    UiThemeMode.Dark,
+                    ThemePreference.Dark,
                     AccentColorSource.Default,
                     enableNativeControlStyling: true
                 );
@@ -492,7 +492,7 @@ public class ElementHostThemeTests
                 // must detect that its old overlay was unloaded, capture the newly loaded Windows dictionary, and
                 // reinstall the Wpf.Zen.Ui overlay without falling back to Application.
                 Assert.Null(Application.Current);
-                Assert.Equal(ApplicationTheme.Dark, ThemeManager.CurrentTheme);
+                Assert.Equal(ThemeVariant.Dark, ThemeManager.EffectiveTheme);
                 Assert.Equal(
                     Color.FromArgb(0x0F, 0xFF, 0xFF, 0xFF),
                     GetBrushColor(textBox.Background)
@@ -596,7 +596,7 @@ public class ElementHostThemeTests
             );
 
             ThemeManager.Configure(
-                UiThemeMode.Light,
+                ThemePreference.Light,
                 AccentColorSource.Default,
                 Color.FromRgb(0x00, 0x78, 0xD4),
                 enableNativeControlStyling: true,
@@ -628,7 +628,7 @@ public class ElementHostThemeTests
                 Assert.Equal(Color.FromRgb(0x21, 0x43, 0x65), GetBrushColor(pageProbe.Background));
                 Assert.Equal(Color.FromRgb(0x21, 0x43, 0x65), GetBrushColor(popupProbe.Background));
 
-                ThemeManager.ThemeMode = UiThemeMode.Dark;
+                ThemeManager.Preference = ThemePreference.Dark;
                 Forms.Application.DoEvents();
                 DrainDispatcher();
 
@@ -724,10 +724,10 @@ public class ElementHostThemeTests
         hostField.SetValue(null, null);
         managerType.GetField("_systemThemeResourceHostUnavailable", staticNonPublic)!.SetValue(null, false);
         managerType.GetField("_themeManagementActivationState", staticNonPublic)!.SetValue(null, 0);
-        managerType.GetField("_themeMode", staticNonPublic)!.SetValue(null, UiThemeMode.Default);
+        managerType.GetField("_themePreference", staticNonPublic)!.SetValue(null, ThemePreference.Default);
         typeof(ThemeManager)
-           .GetProperty(nameof(ThemeManager.CurrentTheme), BindingFlags.Static | BindingFlags.Public)!
-           .SetValue(null, ApplicationTheme.Default);
+           .GetProperty(nameof(ThemeManager.EffectiveTheme), BindingFlags.Static | BindingFlags.Public)!
+           .SetValue(null, ThemeVariant.Light);
     }
 
     private static void EnsureWindowsDirectoryEnvironment()

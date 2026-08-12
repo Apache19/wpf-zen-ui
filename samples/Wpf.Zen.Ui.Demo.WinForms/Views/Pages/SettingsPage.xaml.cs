@@ -30,12 +30,12 @@ public partial class SettingsPage
     {
         _suppressThemeComboBoxChangedEvent = true;
 
-        ThemeComboBox.SelectedIndex = ThemeManager.ThemeMode switch
+        ThemeComboBox.SelectedIndex = ThemeManager.Preference switch
         {
-            UiThemeMode.Light   => 0,
-            UiThemeMode.Dark    => 1,
-            UiThemeMode.Default => 0, // Default is Light,
-            UiThemeMode.System  => 2,
+            ThemePreference.Light   => 0,
+            ThemePreference.Dark    => 1,
+            ThemePreference.Default => 0, // Default is Light,
+            ThemePreference.System  => 2,
             _                   => 0
         };
 
@@ -60,11 +60,11 @@ public partial class SettingsPage
             return;
         }
 
-        ThemeManager.ThemeMode = (selectedItem.Content as string) switch
+        ThemeManager.Preference = (selectedItem.Content as string) switch
         {
-            "Light" => UiThemeMode.Light,
-            "Dark"  => UiThemeMode.Dark,
-            _       => UiThemeMode.System,
+            "Light" => ThemePreference.Light,
+            "Dark"  => ThemePreference.Dark,
+            _       => ThemePreference.System,
         };
     }
 }

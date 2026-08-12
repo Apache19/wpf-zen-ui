@@ -16,14 +16,14 @@ public class ThemeManagerOptionsTests
     {
         var publicOptions = new ThemeManagerOptions();
         publicOptions.BeginInit();
-        publicOptions.ThemeMode = UiThemeMode.Dark;
+        publicOptions.Preference = ThemePreference.Dark;
 
         Assert.True(GetPrivateFlag(publicOptions, "_isInitializing"));
         Assert.True(GetPrivateFlag(publicOptions, "_pendingApply"));
 
         var xamlOptions = new ThemeManagerOptions();
         ((ISupportInitialize)xamlOptions).BeginInit();
-        xamlOptions.ThemeMode = UiThemeMode.Dark;
+        xamlOptions.Preference = ThemePreference.Dark;
 
         Assert.True(GetPrivateFlag(xamlOptions, "_isInitializing"));
         Assert.True(GetPrivateFlag(xamlOptions, "_pendingApply"));

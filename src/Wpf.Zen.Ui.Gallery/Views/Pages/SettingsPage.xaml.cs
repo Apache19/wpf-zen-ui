@@ -26,7 +26,7 @@ public partial class SettingsPage : INavigableView<SettingsViewModel>
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
         ThemeManager.Changed += OnThemeChanged;
-        ViewModel.UpdateCurrentTheme();
+        ViewModel.UpdateSelectedPreference();
     }
 
     private void OnUnloaded(object sender, RoutedEventArgs e)
@@ -36,6 +36,6 @@ public partial class SettingsPage : INavigableView<SettingsViewModel>
 
     private void OnThemeChanged(object? sender, Appearance.ThemeChangedEventArgs e)
     {
-        ViewModel.UpdateCurrentTheme();
+        ViewModel.UpdateSelectedPreference();
     }
 }

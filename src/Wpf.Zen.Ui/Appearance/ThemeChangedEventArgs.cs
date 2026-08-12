@@ -5,24 +5,45 @@
 
 namespace Wpf.Zen.Ui.Appearance;
 
+/// <summary>
+/// Identifies the origin of a theme refresh.
+/// </summary>
 public enum ThemeChangeSource
 {
-    Manual, // 用户手动设置
-    System, // 系统触发
+    /// <summary>
+    /// The refresh was caused by application configuration.
+    /// </summary>
+    Manual,
+
+    /// <summary>
+    /// The refresh was caused by an operating-system setting change.
+    /// </summary>
+    System,
 }
 
 /// <summary>
 /// Provides data for the theme changed event.
 /// </summary>
-public class ThemeChangedEventArgs : EventArgs
+public sealed class ThemeChangedEventArgs : EventArgs
 {
-    public ApplicationTheme AppliedTheme { get; }
+    /// <summary>
+    /// Gets the concrete Light or Dark variant effective after the refresh.
+    /// </summary>
+    public ThemeVariant EffectiveTheme { get; }
 
+    /// <summary>
+    /// Gets the origin of the refresh.
+    /// </summary>
     public ThemeChangeSource ChangeSource { get; }
 
-    public ThemeChangedEventArgs(ApplicationTheme appliedTheme, ThemeChangeSource changeSource)
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ThemeChangedEventArgs"/> class.
+    /// </summary>
+    /// <param name="effectiveTheme">The resolved Light or Dark variant.</param>
+    /// <param name="changeSource">The origin of the refresh.</param>
+    public ThemeChangedEventArgs(ThemeVariant effectiveTheme, ThemeChangeSource changeSource)
     {
-        AppliedTheme = appliedTheme;
+        EffectiveTheme = effectiveTheme;
         ChangeSource = changeSource;
     }
 }

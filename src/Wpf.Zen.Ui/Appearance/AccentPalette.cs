@@ -35,20 +35,11 @@ internal sealed record AccentPalette(
     /// Creates theme-specific UI roles from a single base accent color.
     /// </summary>
     /// <param name="accentColor">The base accent color. Its alpha channel is ignored.</param>
-    /// <param name="themeMode">The light or dark theme for which resources are being generated.</param>
+    /// <param name="themeVariant">The effective variant for which resources are being generated.</param>
     /// <returns>A complete set of opaque accent role colors.</returns>
-    internal static AccentPalette Create(Color accentColor, UiThemeMode themeMode)
+    internal static AccentPalette Create(Color accentColor, ThemeVariant themeVariant)
     {
-        if (themeMode is not (UiThemeMode.Light or UiThemeMode.Dark))
-        {
-            throw new ArgumentOutOfRangeException(
-                nameof(themeMode),
-                themeMode,
-                "An accent palette requires a light or dark theme."
-            );
-        }
-
-        var isDark = themeMode == UiThemeMode.Dark;
+        var isDark = themeVariant == ThemeVariant.Dark;
         var source = Oklch.FromColor(Color.FromRgb(accentColor.R, accentColor.G, accentColor.B));
 
         // A dark surface needs a substantially lighter fill than the personalization color,

@@ -12,7 +12,7 @@ namespace Wpf.Zen.Ui.Gallery.ViewModels.Pages;
 
 public sealed partial class SettingsViewModel : ViewModel
 {
-    public record ThemeItem(string Display, UiThemeMode ThemeMode);
+    public record ThemeItem(string Display, ThemePreference Preference);
 
     private readonly MainWindowViewModel? _mainWindowViewModel;
 
@@ -22,7 +22,7 @@ public sealed partial class SettingsViewModel : ViewModel
     public partial string AppVersion { get; set; } = string.Empty;
 
     [ObservableProperty]
-    public partial UiThemeMode CurrentTheme { get; set; } = UiThemeMode.Light;
+    public partial ThemePreference SelectedPreference { get; set; } = ThemePreference.Light;
 
     [ObservableProperty]
     public partial bool UseSystemAccent { get; set; } = true;
@@ -34,9 +34,9 @@ public sealed partial class SettingsViewModel : ViewModel
     [ObservableProperty]
     public partial ObservableCollection<ThemeItem> ThemeList { get; set; } =
     [
-        new("Light", UiThemeMode.Light),
-        new("Dark", UiThemeMode.Dark),
-        new("System", UiThemeMode.System)
+        new("Light", ThemePreference.Light),
+        new("Dark", ThemePreference.Dark),
+        new("System", ThemePreference.System)
     ];
 
     public SettingsViewModel()
@@ -57,9 +57,9 @@ public sealed partial class SettingsViewModel : ViewModel
         }
     }
 
-    partial void OnCurrentThemeChanged(UiThemeMode oldValue, UiThemeMode newValue)
+    partial void OnSelectedPreferenceChanged(ThemePreference oldValue, ThemePreference newValue)
     {
-        ThemeManager.ThemeMode = newValue;
+        ThemeManager.Preference = newValue;
     }
 
     partial void OnUseSystemAccentChanged(bool value)
@@ -82,7 +82,7 @@ public sealed partial class SettingsViewModel : ViewModel
     private void InitializeViewModel()
     {
         AppVersion = $"{GetAssemblyVersion()}";
-        UpdateCurrentTheme();
+        UpdateSelectedPreference();
 
         _isInitialized = true;
     }
@@ -92,12 +92,12 @@ public sealed partial class SettingsViewModel : ViewModel
         return Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? string.Empty;
     }
 
-    public void UpdateCurrentTheme()
+    public void UpdateSelectedPreference()
     {
-        var mode = ThemeManager.ThemeMode;
+        ThemePreference preference = ThemeManager.Preference;
 
         // The default theme of the library is Light.
-        CurrentTheme = mode == UiThemeMode.Default ? UiThemeMode.Light : mode;
+        SelectedPreference = preference == ThemePreference.Default ? ThemePreference.Light : preference;
         UseSystemAccent = ThemeManager.AccentSource == AccentColorSource.System;
     }
 }

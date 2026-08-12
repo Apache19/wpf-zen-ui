@@ -10,7 +10,7 @@ namespace Wpf.Zen.Ui;
 
 /// <summary>
 /// A resource dictionary that configures the WPF Zen UI theme system declaratively in XAML.
-/// Place this dictionary in <c>Application.Resources</c> to set the global theme mode,
+/// Place this dictionary in <c>Application.Resources</c> to set the global theme preference,
 /// accent color behavior, and additional theme resource URIs.
 /// In non-WPF environments, such as WinForms projects, it can be merged into the first
 /// XAML content like a UserControl.
@@ -41,7 +41,7 @@ namespace Wpf.Zen.Ui;
 ///     &lt;ResourceDictionary&gt;
 ///         &lt;ResourceDictionary.MergedDictionaries&gt;
 ///             &lt;ui:ThemeManagerOptions
-///                 ThemeMode="Dark"
+///                 Preference="Dark"
 ///                 AccentSource="System"
 ///                 AdditionalLightThemeSource="pack://application:,,,/MyApp;component/Themes/Light.xaml"
 ///                 AdditionalDarkThemeSource="pack://application:,,,/MyApp;component/Themes/Dark.xaml" /&gt;
@@ -56,7 +56,7 @@ namespace Wpf.Zen.Ui;
 ///     &lt;ResourceDictionary&gt;
 ///         &lt;ResourceDictionary.MergedDictionaries&gt;
 ///             &lt;ui:ThemeManagerOptions
-///                 ThemeMode="Dark"
+///                 Preference="Dark"
 ///                 AccentSource="Custom"
 ///                 CustomAccentColor="#7A3FD0"
 ///                 AdditionalLightThemeSource="pack://application:,,,/MyApp;component/Themes/Light.xaml"
@@ -74,7 +74,7 @@ namespace Wpf.Zen.Ui;
 ///
 /// options.BeginInit(); // Request deferred configuration
 ///
-/// options.ThemeMode = UiThemeMode.Dark;
+/// options.Preference = ThemePreference.Dark;
 /// options.AccentSource = AccentColorSource.Custom;
 /// options.CustomAccentColor = Color.FromRgb(0x7A, 0x3F, 0xD0);
 /// options.AdditionalLightThemeSource = new Uri("pack://application:,,,/MyApp;component/Themes/Light.xaml");
@@ -92,7 +92,7 @@ public class ThemeManagerOptions : ResourceDictionary, ISupportInitialize
     private bool _isInitializing;
     private bool _pendingApply;
 
-    private UiThemeMode _themeMode = UiThemeMode.Default;
+    private ThemePreference _preference = ThemePreference.Default;
     private AccentColorSource _accentSource = AccentColorSource.System;
     private Color _customAccentColor = Color.FromRgb(0x00, 0x78, 0xD4);
     private bool _enableNativeControlStyling;
@@ -108,16 +108,16 @@ public class ThemeManagerOptions : ResourceDictionary, ISupportInitialize
     private bool _aHcDarkChanged;
 
     /// <summary>
-    /// Gets or sets the global theme mode for the application.
+    /// Gets or sets the application's theme preference.
     /// </summary>
-    public UiThemeMode ThemeMode
+    public ThemePreference Preference
     {
-        get => _themeMode;
+        get => _preference;
         set
         {
-            if (_themeMode != value)
+            if (_preference != value)
             {
-                _themeMode = value;
+                _preference = value;
                 RequestApply();
             }
         }
@@ -333,7 +333,7 @@ public class ThemeManagerOptions : ResourceDictionary, ISupportInitialize
     private void ApplyConfiguration()
     {
         ThemeManager.Configure(
-            _themeMode,
+            _preference,
             _accentSource,
             _customAccentColor,
             _enableNativeControlStyling,

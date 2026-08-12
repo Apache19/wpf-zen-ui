@@ -76,9 +76,9 @@ public sealed class ThemeManager
     private static ResourceDictionary _lightSystemDictionary = [];
     private static ResourceDictionary _darkSystemDictionary  = [];
 
-    // Theme mode is deliberately absent from this key. Light and Dark dictionaries are built as one immutable pair,
-    // so changing only the selected mode must not reload XAML. Settings that affect dictionary contents do invalidate
-    // both the normal and reflected-backend snapshots.
+    // The theme preference is deliberately absent from this key. Light and Dark dictionaries are built as one
+    // immutable pair, so changing only the selection policy must not reload XAML. Settings that affect dictionary
+    // contents do invalidate both the normal and reflected-backend snapshots.
     private static ThemeResourceConfiguration? _normalThemeResourceConfiguration;
     private static ThemeResourceConfiguration? _systemThemeResourceConfiguration;
 
@@ -87,7 +87,7 @@ public sealed class ThemeManager
     private static Uri? _additionalHighContrastLightThemeUri;
     private static Uri? _additionalHighContrastDarkThemeUri;
 
-    private static UiThemeMode       _themeMode         = UiThemeMode.Default;
+    private static ThemePreference   _themePreference   = ThemePreference.Default;
     private static AccentColorSource _accentSource      = AccentColorSource.System;
     private static Color             _customAccentColor = BuiltInAccentColor;
 
@@ -320,7 +320,7 @@ public sealed class ThemeManager
 
         if (Application.Current is { } application)
         {
-            ApplyThemeToResources(application.Resources, _themeMode);
+            ApplyThemeToResources(application.Resources, _themePreference);
         }
     }
 
@@ -401,40 +401,40 @@ public sealed class ThemeManager
     }
 
     /// <summary>
-    /// Configures the theme mode and accent color source without modifying native WPF control styling or any
+    /// Configures the theme preference and accent color source without modifying native WPF control styling or any
     /// existing additional theme resource URIs.
     /// </summary>
-    /// <param name="themeMode">The theme mode to apply.</param>
+    /// <param name="preference">The theme selection policy to apply.</param>
     /// <param name="accentSource">The source from which the base accent color is obtained.</param>
     /// <param name="customAccentColor">
     /// The custom base color to remember. It is used only when <paramref name="accentSource"/>
     /// is <see cref="AccentColorSource.Custom"/>. A <c>null</c> value preserves the current color.
     /// </param>
     public static void Configure(
-        UiThemeMode themeMode,
+        ThemePreference preference,
         AccentColorSource accentSource = AccentColorSource.System,
         Color? customAccentColor = null)
     {
-        ConfigureCore(themeMode, accentSource, customAccentColor, enableNativeControlStyling: null);
+        ConfigureCore(preference, accentSource, customAccentColor, enableNativeControlStyling: null);
     }
 
     /// <summary>
-    /// Configures the theme mode, accent color source, and native WPF control styling while preserving the remembered
+    /// Configures the theme preference, accent color source, and native WPF control styling while preserving the remembered
     /// custom accent color and all additional theme resource URIs.
     /// </summary>
-    /// <param name="themeMode">The theme mode to apply.</param>
+    /// <param name="preference">The theme selection policy to apply.</param>
     /// <param name="accentSource">The source from which the base accent color is obtained.</param>
     /// <param name="enableNativeControlStyling">A value indicating whether to merge native WPF control styles.</param>
     public static void Configure(
-        UiThemeMode themeMode,
+        ThemePreference preference,
         AccentColorSource accentSource,
         bool enableNativeControlStyling)
     {
-        ConfigureCore(themeMode, accentSource, customAccentColor: null, enableNativeControlStyling);
+        ConfigureCore(preference, accentSource, customAccentColor: null, enableNativeControlStyling);
     }
 
     /// <summary>
-    /// Configures the theme mode, accent color source, and native WPF control styling without modifying any existing
+    /// Configures the theme preference, accent color source, and native WPF control styling without modifying any existing
     /// additional theme resource URIs.
     /// </summary>
     /// <remarks>
@@ -443,7 +443,7 @@ public sealed class ThemeManager
     /// contract for those controls. Use the overload without <paramref name="enableNativeControlStyling"/> when a
     /// theme update should preserve the current opt-in state.
     /// </remarks>
-    /// <param name="themeMode">The theme mode to apply.</param>
+    /// <param name="preference">The theme selection policy to apply.</param>
     /// <param name="accentSource">The source from which the base accent color is obtained.</param>
     /// <param name="customAccentColor">
     /// The custom base color to remember. It is used only when <paramref name="accentSource"/>
@@ -451,37 +451,37 @@ public sealed class ThemeManager
     /// </param>
     /// <param name="enableNativeControlStyling">A value indicating whether to merge native WPF control styles.</param>
     public static void Configure(
-        UiThemeMode themeMode,
+        ThemePreference preference,
         AccentColorSource accentSource,
         Color? customAccentColor,
         bool enableNativeControlStyling)
     {
-        ConfigureCore(themeMode, accentSource, customAccentColor, enableNativeControlStyling);
+        ConfigureCore(preference, accentSource, customAccentColor, enableNativeControlStyling);
     }
 
     /// <summary>
     /// Applies the short-form configuration and optionally changes the independently opt-in native style layer.
     /// </summary>
-    /// <param name="themeMode">The theme mode to apply.</param>
+    /// <param name="preference">The theme selection policy to apply.</param>
     /// <param name="accentSource">The source from which the base accent color is obtained.</param>
     /// <param name="customAccentColor">The custom base color to remember, or <c>null</c> to preserve it.</param>
     /// <param name="enableNativeControlStyling">
     /// The requested native style state, or <c>null</c> to preserve the current state.
     /// </param>
     private static void ConfigureCore(
-        UiThemeMode themeMode,
+        ThemePreference preference,
         AccentColorSource accentSource,
         Color? customAccentColor,
         bool? enableNativeControlStyling)
     {
-        ValidateThemeMode(themeMode);
+        ValidateThemePreference(preference);
         ValidateAccentSource(accentSource);
 
         var changed = false;
 
-        if (_themeMode != themeMode)
+        if (_themePreference != preference)
         {
-            _themeMode = themeMode;
+            _themePreference = preference;
             changed = true;
         }
 
@@ -525,7 +525,7 @@ public sealed class ThemeManager
     /// In an applicationless host, process-wide overrides must use the assembly-scoped keys published by
     /// <c>Wpf.Zen.Ui.Theming</c>; WPF does not route ordinary string keys through its system-theme dictionaries.
     /// </remarks>
-    /// <param name="themeMode">The theme mode to apply.</param>
+    /// <param name="preference">The theme selection policy to apply.</param>
     /// <param name="accentSource">The source from which the base accent color is obtained.</param>
     /// <param name="customAccentColor">
     /// The custom base color to remember. It is used only when <paramref name="accentSource"/>
@@ -539,7 +539,7 @@ public sealed class ThemeManager
     /// <example>
     /// <code lang="csharp">
     /// ThemeManager.Configure(
-    ///     themeMode: UiThemeMode.Dark,
+    ///     preference: ThemePreference.Dark,
     ///     accentSource: AccentColorSource.Custom,
     ///     customAccentColor: Color.FromRgb(0x7A, 0x3F, 0xD0),
     ///     enableNativeControlStyling: true,
@@ -549,7 +549,7 @@ public sealed class ThemeManager
     /// </code>
     /// </example>
     public static void Configure(
-        UiThemeMode themeMode,
+        ThemePreference preference,
         AccentColorSource accentSource,
         Color customAccentColor,
         bool enableNativeControlStyling,
@@ -558,14 +558,14 @@ public sealed class ThemeManager
         Uri? additionalHighContrastLightThemeUri,
         Uri? additionalHighContrastDarkThemeUri)
     {
-        ValidateThemeMode(themeMode);
+        ValidateThemePreference(preference);
         ValidateAccentSource(accentSource);
 
         var changed = false;
 
-        if (_themeMode != themeMode)
+        if (_themePreference != preference)
         {
-            _themeMode = themeMode;
+            _themePreference = preference;
             changed = true;
         }
 
@@ -624,15 +624,18 @@ public sealed class ThemeManager
     #region Public Properties
 
     /// <summary>
-    /// Gets the currently active theme applied to the application.
+    /// Gets the concrete Light or Dark theme currently effective for the application.
     /// </summary>
     /// <remarks>
-    /// Returns <see cref="ApplicationTheme.Default"/> while <see cref="ThemeMode"/> is
-    /// <see cref="UiThemeMode.Default"/>; otherwise it returns the resolved Light or Dark theme.
+    /// This value is the resolved rendering result, not the configured <see cref="Preference"/>. It is
+    /// therefore always <see cref="ThemeVariant.Light"/> or <see cref="ThemeVariant.Dark"/>.
+    /// Outside high contrast, <see cref="ThemePreference.Default"/> resolves to Light while
+    /// <see cref="ThemePreference.System"/> follows the operating-system setting. High contrast can override
+    /// either automatic preference with the variant matching the active high-contrast palette.
     /// Per-element requests made through <see cref="Theme.RequestedProperty"/> are intentionally
     /// scoped to those elements and are not reflected by this global property.
     /// </remarks>
-    public static ApplicationTheme CurrentTheme { get; private set; } = ApplicationTheme.Default;
+    public static ThemeVariant EffectiveTheme { get; private set; } = ThemeVariant.Light;
 
     /// <summary>
     /// Gets or sets an additional resource dictionary URI to be merged
@@ -779,43 +782,42 @@ public sealed class ThemeManager
     }
 
     /// <summary>
-    /// Gets or sets the global theme mode for the application.
+    /// Gets or sets the application's theme preference.
     /// </summary>
     /// <remarks>
-    /// This property controls the overall theme mode of the application. The available values are:
+    /// This property controls how the effective theme is selected. The available values are:
     /// <list>
-    ///     <item><see cref="UiThemeMode.Default"/> - Uses the Light-compatible palette provided
-    ///     by Generic.xaml while reporting <see cref="ApplicationTheme.Default"/>.</item>
-    ///     <item><see cref="UiThemeMode.Light"/> - The application will use the Light theme.</item>
-    ///     <item><see cref="UiThemeMode.Dark"/> - The application will use the Dark theme.</item>
-    ///     <item><see cref="UiThemeMode.System"/> - The application will automatically follow the system theme settings.</item>
+    ///     <item><see cref="ThemePreference.Default"/> - Uses the library default palette, which is Light-compatible outside high contrast.</item>
+    ///     <item><see cref="ThemePreference.Light"/> - The application will use the Light theme.</item>
+    ///     <item><see cref="ThemePreference.Dark"/> - The application will use the Dark theme.</item>
+    ///     <item><see cref="ThemePreference.System"/> - The application will automatically follow the system theme settings.</item>
     /// </list>
     ///
-    /// When set to <see cref="UiThemeMode.System"/>, the application resolves the effective theme
-    /// based on the current system setting. The <see cref="CurrentTheme"/> property will reflect
+    /// When set to <see cref="ThemePreference.System"/>, the application resolves the effective theme
+    /// based on the current system setting. The <see cref="EffectiveTheme"/> property will reflect
     /// the resolved theme (either Light or Dark), and changes to the system theme will
     /// automatically trigger updates.
     ///
-    /// When set to <see cref="UiThemeMode.Default"/>, the manager keeps a Light-compatible global
-    /// resource layer so system accent, native-control, and additional Light resources continue
-    /// to work. This matches the Light dictionary included by Generic.xaml but preserves Default
-    /// as the public mode rather than treating it as an explicit Light selection.
+    /// When set to <see cref="ThemePreference.Default"/>, the manager keeps the global resource layer needed for
+    /// accent, native-control, additional, and high-contrast resources. Outside high contrast this matches the
+    /// Light dictionary included by Generic.xaml, but Default remains the public preference rather than becoming an
+    /// explicit Light selection.
     ///
-    /// Changing the value of this property triggers a theme refresh. If the mode is set to
-    /// <see cref="UiThemeMode.System"/>, the effective theme will be synchronized immediately
+    /// Changing the value of this property triggers a theme refresh. If the preference is set to
+    /// <see cref="ThemePreference.System"/>, the effective theme will be synchronized immediately
     /// with the system setting.
     /// </remarks>
-    public static UiThemeMode ThemeMode
+    public static ThemePreference Preference
     {
-        get => _themeMode;
+        get => _themePreference;
         set
         {
-            ValidateThemeMode(value);
+            ValidateThemePreference(value);
 
-            bool changed = _themeMode != value;
+            bool changed = _themePreference != value;
             if (changed)
             {
-                _themeMode = value;
+                _themePreference = value;
             }
 
             bool activated = ActivateThemeManagement();
@@ -1007,7 +1009,7 @@ public sealed class ThemeManager
         {
             SetIsRootVisual(rootVisual, true);
             RegisterElement(rootVisual);
-            ApplyThemeToElement(rootVisual, _themeMode);
+            ApplyThemeToElement(rootVisual, _themePreference);
 
             TryInvalidateSystemThemePresentationSources();
         }
@@ -1019,11 +1021,11 @@ public sealed class ThemeManager
 
     internal static void OnRequestedThemeChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
-        var newMode = (UiThemeMode)e.NewValue;
+        var newPreference = (ThemePreference)e.NewValue;
 
         if (d is FrameworkElement fe)
         {
-            if (newMode == UiThemeMode.Default)
+            if (newPreference == ThemePreference.Default)
             {
                 RemoveThemeDictionary(fe.Resources);
                 UnregisterElement(fe);
@@ -1031,12 +1033,12 @@ public sealed class ThemeManager
             else
             {
                 RegisterElement(fe);
-                ApplyThemeToElement(fe, newMode);
+                ApplyThemeToElement(fe, newPreference);
             }
         }
         else if (d is FrameworkContentElement fce)
         {
-            if (newMode == UiThemeMode.Default)
+            if (newPreference == ThemePreference.Default)
             {
                 RemoveThemeDictionary(fce.Resources);
                 UnregisterContentElement(fce);
@@ -1044,7 +1046,7 @@ public sealed class ThemeManager
             else
             {
                 RegisterContentElement(fce);
-                ApplyThemeToContentElement(fce, newMode);
+                ApplyThemeToContentElement(fce, newPreference);
             }
         }
     }
@@ -1183,31 +1185,28 @@ public sealed class ThemeManager
         // the only Default targets here are Application and root visuals. For those, Default
         // resolves to Light (matching Generic.xaml) so global accent, native-control, and
         // additional resources remain available.
-        foreach (var (_, resources, mode) in CollectTargets())
+        foreach (var (_, resources, preference) in CollectTargets())
         {
-            ApplyThemeToResources(resources, mode);
+            ApplyThemeToResources(resources, preference);
         }
 
-        var appliedTheme = _themeMode == UiThemeMode.Default
-            ? ApplicationTheme.Default
-            : ResolveEffectiveTheme(_themeMode);
-
-        CurrentTheme = appliedTheme;
+        ThemeVariant effectiveTheme = ResolveEffectiveTheme(_themePreference);
+        EffectiveTheme = effectiveTheme;
 
         // Event handlers may immediately query DynamicResource values, so publish the change
         // only after WPF has completed every resource transaction and invalidated its owners.
-        Instance.ChangedInternal?.Invoke(Instance, new ThemeChangedEventArgs(appliedTheme, source));
+        Instance.ChangedInternal?.Invoke(Instance, new ThemeChangedEventArgs(effectiveTheme, source));
     }
 
-    private static List<(object Target, ResourceDictionary Resources, UiThemeMode Mode)> CollectTargets()
+    private static List<(object Target, ResourceDictionary Resources, ThemePreference Preference)> CollectTargets()
     {
-        var targets = new List<(object, ResourceDictionary, UiThemeMode)>();
+        var targets = new List<(object, ResourceDictionary, ThemePreference)>();
 
         // Application
         var app = Application.Current;
         if (app?.Dispatcher is { HasShutdownStarted: false })
         {
-            targets.Add((app, app.Resources, _themeMode));
+            targets.Add((app, app.Resources, _themePreference));
         }
 
         lock (_lock)
@@ -1219,8 +1218,8 @@ public sealed class ThemeManager
             {
                 if (wr.TryGetTarget(out var fe))
                 {
-                    var mode = GetEffectiveThemeForElement(fe);
-                    targets.Add((fe, fe.Resources, mode));
+                    ThemePreference preference = GetThemePreferenceForElement(fe);
+                    targets.Add((fe, fe.Resources, preference));
                 }
             }
 
@@ -1231,8 +1230,8 @@ public sealed class ThemeManager
             {
                 if (wr.TryGetTarget(out var fce))
                 {
-                    var mode = Theme.GetRequested(fce);
-                    targets.Add((fce, fce.Resources, mode));
+                    ThemePreference preference = Theme.GetRequested(fce);
+                    targets.Add((fce, fce.Resources, preference));
                 }
             }
         }
@@ -1269,7 +1268,7 @@ public sealed class ThemeManager
         ResourceDictionary? darkSystemDictionary = null;
 
         // Load every Source-backed dictionary before publishing any of them. Besides avoiding repeated parsing on a
-        // mode-only switch, this preserves the all-or-nothing behavior when a custom URI is malformed.
+        // preference-only switch, this preserves the all-or-nothing behavior when a custom URI is malformed.
         if (rebuildNormalDictionaries)
         {
             lightDictionaries = [];
@@ -1397,10 +1396,10 @@ public sealed class ThemeManager
             // The generated dictionary precedes additional user dictionaries so applications can
             // still override individual semantic roles without replacing the entire accent source.
             lightDictionaries.Add(
-                BuildAccentDictionary(AccentPalette.Create(accentColor, UiThemeMode.Light))
+                BuildAccentDictionary(AccentPalette.Create(accentColor, ThemeVariant.Light))
             );
             darkDictionaries.Add(
-                BuildAccentDictionary(AccentPalette.Create(accentColor, UiThemeMode.Dark))
+                BuildAccentDictionary(AccentPalette.Create(accentColor, ThemeVariant.Dark))
             );
 
             if (_additionalLightThemeUri != null)
@@ -1699,11 +1698,15 @@ public sealed class ThemeManager
         }
     }
 
-    private static void ValidateThemeMode(UiThemeMode mode)
+    private static void ValidateThemePreference(ThemePreference preference)
     {
-        if (mode is < UiThemeMode.Default or > UiThemeMode.System)
+        if (preference is < ThemePreference.Default or > ThemePreference.System)
         {
-            throw new ArgumentOutOfRangeException(nameof(mode), mode, "The theme mode is not defined.");
+            throw new ArgumentOutOfRangeException(
+                nameof(preference),
+                preference,
+                "The theme preference is not defined."
+            );
         }
     }
 
@@ -1736,49 +1739,49 @@ public sealed class ThemeManager
         return Color.FromRgb(color.R, color.G, color.B);
     }
 
-    private static UiThemeMode GetEffectiveThemeForElement(FrameworkElement element)
+    private static ThemePreference GetThemePreferenceForElement(FrameworkElement element)
     {
         if (GetIsRootVisual(element))
         {
-            return _themeMode;
+            return _themePreference;
         }
 
         return Theme.GetRequested(element);
     }
 
-    private static ApplicationTheme ResolveEffectiveTheme(UiThemeMode mode)
+    private static ThemeVariant ResolveEffectiveTheme(ThemePreference preference)
     {
-        if (mode == UiThemeMode.Light) return ApplicationTheme.Light;
-        if (mode == UiThemeMode.Dark) return ApplicationTheme.Dark;
+        if (preference == ThemePreference.Light) return ThemeVariant.Light;
+        if (preference == ThemePreference.Dark) return ThemeVariant.Dark;
 
         if (SystemParameters.HighContrast)
         {
-            return IsHighContrastDark() ? ApplicationTheme.Dark : ApplicationTheme.Light;
+            return IsHighContrastDark() ? ThemeVariant.Dark : ThemeVariant.Light;
         }
 
-        return mode == UiThemeMode.System ? GetSystemThemeMode() : ApplicationTheme.Light;
+        return preference == ThemePreference.System ? GetSystemThemeVariant() : ThemeVariant.Light;
     }
 
     private static ResourceDictionary GetSystemThemeDictionary() =>
-        ResolveEffectiveTheme(_themeMode) == ApplicationTheme.Dark
+        ResolveEffectiveTheme(_themePreference) == ThemeVariant.Dark
             ? _darkSystemDictionary
             : _lightSystemDictionary;
 
-    private static void ApplyThemeToElement(FrameworkElement element, UiThemeMode mode)
+    private static void ApplyThemeToElement(FrameworkElement element, ThemePreference preference)
     {
-        ApplyThemeToResources(element.Resources, mode);
+        ApplyThemeToResources(element.Resources, preference);
     }
 
-    private static void ApplyThemeToContentElement(FrameworkContentElement element, UiThemeMode mode)
+    private static void ApplyThemeToContentElement(FrameworkContentElement element, ThemePreference preference)
     {
-        ApplyThemeToResources(element.Resources, mode);
+        ApplyThemeToResources(element.Resources, preference);
     }
 
-    private static void ApplyThemeToResources(ResourceDictionary resources, UiThemeMode mode)
+    private static void ApplyThemeToResources(ResourceDictionary resources, ThemePreference preference)
     {
-        var effectiveTheme = ResolveEffectiveTheme(mode);
+        ThemeVariant effectiveTheme = ResolveEffectiveTheme(preference);
 
-        var themeDict = effectiveTheme == ApplicationTheme.Dark
+        var themeDict = effectiveTheme == ThemeVariant.Dark
             ? _darkDictionary
             : _lightDictionary;
 
@@ -1813,7 +1816,7 @@ public sealed class ThemeManager
         return brush;
     }
 
-    private static ApplicationTheme GetSystemThemeMode()
+    private static ThemeVariant GetSystemThemeVariant()
     {
         var value = Registry.GetValue(
             @"HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize",
@@ -1823,9 +1826,9 @@ public sealed class ThemeManager
 
         return value switch
         {
-            1 => ApplicationTheme.Light,
-            0 => ApplicationTheme.Dark,
-            _ => ApplicationTheme.Light
+            1 => ThemeVariant.Light,
+            0 => ThemeVariant.Dark,
+            _ => ThemeVariant.Light
         };
     }
 

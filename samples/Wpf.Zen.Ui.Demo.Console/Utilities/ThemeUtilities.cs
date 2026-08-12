@@ -12,12 +12,12 @@ public static class ThemeUtilities
 {
     public static void ChangeTheme()
     {
-        var themeMode = ThemeManager.CurrentTheme switch
+        var preference = ThemeManager.EffectiveTheme switch
         {
-            ApplicationTheme.Dark => UiThemeMode.Light,
-            _                     => UiThemeMode.Dark
+            ThemeVariant.Dark => ThemePreference.Light,
+            _                     => ThemePreference.Dark
         };
 
-        ThemeManager.ThemeMode = themeMode;
+        ThemeManager.Preference = preference;
     }
 }

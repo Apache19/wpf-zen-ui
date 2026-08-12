@@ -23,9 +23,9 @@ public class AccentPaletteTests
     {
         var accent = Color.FromRgb(red, green, blue);
 
-        foreach (var mode in new[] { UiThemeMode.Light, UiThemeMode.Dark })
+        foreach (ThemeVariant variant in new[] { ThemeVariant.Light, ThemeVariant.Dark })
         {
-            var palette = AccentPalette.Create(accent, mode);
+            var palette = AccentPalette.Create(accent, variant);
 
             Assert.True(
                 AccentPalette.GetPerceptualLightness(palette.AccentFillPrimary)
@@ -41,8 +41,8 @@ public class AccentPaletteTests
     [Fact]
     public void DefaultAccent_ProducesDifferentLightAndDarkFillPalettes()
     {
-        var light = AccentPalette.Create(DefaultAccent, UiThemeMode.Light);
-        var dark = AccentPalette.Create(DefaultAccent, UiThemeMode.Dark);
+        var light = AccentPalette.Create(DefaultAccent, ThemeVariant.Light);
+        var dark = AccentPalette.Create(DefaultAccent, ThemeVariant.Dark);
 
         Assert.NotEqual(light.AccentFillSecondary, dark.AccentFillSecondary);
         Assert.True(
@@ -52,10 +52,10 @@ public class AccentPaletteTests
     }
 
     [Theory]
-    [InlineData(UiThemeMode.Light, 250, 250, 250)]
-    [InlineData(UiThemeMode.Dark, 32, 32, 32)]
+    [InlineData(ThemeVariant.Light, 250, 250, 250)]
+    [InlineData(ThemeVariant.Dark, 32, 32, 32)]
     public void AccentTextPrimary_MeetsNormalTextContrast(
-        UiThemeMode mode,
+        ThemeVariant variant,
         byte backgroundRed,
         byte backgroundGreen,
         byte backgroundBlue)
@@ -64,7 +64,7 @@ public class AccentPaletteTests
 
         foreach (var accent in GetEdgeCaseAccents())
         {
-            var palette = AccentPalette.Create(accent, mode);
+            var palette = AccentPalette.Create(accent, variant);
 
             Assert.True(
                 AccentPalette.GetContrastRatio(palette.AccentTextPrimary, background) >= 4.5
@@ -73,13 +73,13 @@ public class AccentPaletteTests
     }
 
     [Theory]
-    [InlineData(UiThemeMode.Light)]
-    [InlineData(UiThemeMode.Dark)]
-    public void TextOnAccentPrimary_MeetsNormalTextContrastAgainstEveryFill(UiThemeMode mode)
+    [InlineData(ThemeVariant.Light)]
+    [InlineData(ThemeVariant.Dark)]
+    public void TextOnAccentPrimary_MeetsNormalTextContrastAgainstEveryFill(ThemeVariant variant)
     {
         foreach (var accent in GetEdgeCaseAccents())
         {
-            var palette = AccentPalette.Create(accent, mode);
+            var palette = AccentPalette.Create(accent, variant);
 
             Assert.True(AccentPalette.GetContrastRatio(palette.TextOnAccentPrimary, palette.AccentFillPrimary) >= 4.5);
             Assert.True(AccentPalette.GetContrastRatio(palette.TextOnAccentPrimary, palette.AccentFillSecondary) >= 4.5);
@@ -90,8 +90,8 @@ public class AccentPaletteTests
     [Fact]
     public void Create_IgnoresAccentAlpha()
     {
-        var opaque = AccentPalette.Create(DefaultAccent, UiThemeMode.Light);
-        var transparent = AccentPalette.Create(Color.FromArgb(0x10, 0x00, 0x78, 0xD4), UiThemeMode.Light);
+        var opaque = AccentPalette.Create(DefaultAccent, ThemeVariant.Light);
+        var transparent = AccentPalette.Create(Color.FromArgb(0x10, 0x00, 0x78, 0xD4), ThemeVariant.Light);
 
         Assert.Equal(opaque, transparent);
     }

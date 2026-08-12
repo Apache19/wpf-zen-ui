@@ -185,7 +185,7 @@ internal static class Highlighter
 
     private static bool IsLightTheme()
     {
-        return ThemeManager.ThemeMode == UiThemeMode.Light;
+        return ThemeManager.EffectiveTheme == ThemeVariant.Light;
     }
 
     /*
