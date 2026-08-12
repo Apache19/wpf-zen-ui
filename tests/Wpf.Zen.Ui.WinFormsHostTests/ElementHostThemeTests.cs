@@ -20,17 +20,114 @@ using Xunit;
 using Forms = System.Windows.Forms;
 using UiAutoSuggestBox = Wpf.Zen.Ui.Controls.AutoSuggestBox;
 using UiComboBox = Wpf.Zen.Ui.Controls.ComboBox;
+using UiFluentWindow = Wpf.Zen.Ui.Controls.FluentWindow;
 using UiNavigationView = Wpf.Zen.Ui.Controls.NavigationView;
 using UiNavigationViewItem = Wpf.Zen.Ui.Controls.NavigationViewItem;
 
 namespace Wpf.Zen.Ui.WinFormsHostTests;
 
 /// <summary>
-/// Exercises theme resource lookup through a real WinForms <see cref="ElementHost"/> rather than constructing an
-/// artificial WPF state that a supported host would never use.
+/// Exercises applicationless theme resource lookup through real WPF windows and WinForms <see cref="ElementHost"/>
+/// presentation sources rather than constructing an artificial resource state that a supported host would never use.
 /// </summary>
 public class ElementHostThemeTests
 {
+    /// <summary>
+    /// Verifies that the first explicit theme switch refreshes resources that were originally resolved from
+    /// Generic.xaml before an applicationless presentation source existed.
+    /// </summary>
+    [Fact]
+    public void FirstThemeSwitch_AfterWindowIsShown_RefreshesWindowAndControlResources()
+    {
+        RunOnStaThread(() =>
+        {
+            EnsureWindowsDirectoryEnvironment();
+            ResetThemeManagerToUnconfiguredState();
+            Assert.Null(Application.Current);
+            Assert.Equal(ApplicationTheme.Default, ThemeManager.CurrentTheme);
+
+            var comboBox = new UiComboBox { ItemsSource = new[] { "Item" }, SelectedIndex = 0 };
+            var autoSuggestBox = new UiAutoSuggestBox
+            {
+                PlaceholderText = "Search",
+                ItemsSource = new[] { "Dashboard" },
+            };
+            var elementHostRoot = new StackPanel { Children = { comboBox, autoSuggestBox } };
+            using var form = new Forms.Form
+            {
+                ShowInTaskbar = false,
+                StartPosition = Forms.FormStartPosition.Manual,
+                Location = new System.Drawing.Point(-10_000, -10_000),
+                Size = new System.Drawing.Size(320, 240),
+            };
+            using var elementHost = new ElementHost
+            {
+                Dock = Forms.DockStyle.Fill,
+                Child = elementHostRoot,
+            };
+            form.Controls.Add(elementHost);
+
+            var window = new UiFluentWindow
+            {
+                ShowInTaskbar = false,
+                WindowStartupLocation = WindowStartupLocation.Manual,
+                Left = -10_000,
+                Top = -10_000,
+                Width = 320,
+                Height = 240,
+            };
+
+            try
+            {
+                window.Show();
+                form.Show();
+                Forms.Application.DoEvents();
+                DrainDispatcher();
+
+                _ = comboBox.ApplyTemplate();
+                _ = autoSuggestBox.ApplyTemplate();
+                Wpf.Zen.Ui.Controls.TextBox autoSuggestTextBox =
+                    Assert.IsType<Wpf.Zen.Ui.Controls.TextBox>(
+                        autoSuggestBox.Template.FindName("PART_TextBox", autoSuggestBox)
+                    );
+
+                Assert.Equal(Color.FromRgb(0xFA, 0xFA, 0xFA), GetBrushColor(window.Background));
+                Assert.Equal(
+                    Color.FromArgb(0x80, 0xF0, 0xF0, 0xF0),
+                    GetBrushColor(comboBox.Background)
+                );
+                Assert.Equal(
+                    Color.FromArgb(0x80, 0xF0, 0xF0, 0xF0),
+                    GetBrushColor(autoSuggestTextBox.Background)
+                );
+
+                // ThemeMode is intentionally the first configuration API used in this process and is called only
+                // after Generic.xaml's Light resources have already supplied the live controls' style values.
+                ThemeManager.ThemeMode = UiThemeMode.Dark;
+                DrainDispatcher();
+
+                Assert.Null(Application.Current);
+                Assert.Equal(ApplicationTheme.Dark, ThemeManager.CurrentTheme);
+                Assert.Equal(Color.FromRgb(0x20, 0x20, 0x20), GetBrushColor(window.Background));
+                Assert.Equal(
+                    Color.FromArgb(0x0F, 0xFF, 0xFF, 0xFF),
+                    GetBrushColor(comboBox.Background)
+                );
+                Assert.Equal(
+                    Color.FromArgb(0x0F, 0xFF, 0xFF, 0xFF),
+                    GetBrushColor(autoSuggestTextBox.Background)
+                );
+            }
+            finally
+            {
+                window.Close();
+                form.Close();
+                Forms.Application.DoEvents();
+                DrainDispatcher();
+            }
+        });
+    }
+
     /// <summary>
     /// Verifies that a navigation scope can own pages and contextual services inside ElementHost
     /// without manufacturing a WPF Window or Application singleton.
@@ -594,6 +691,43 @@ public class ElementHostThemeTests
         Assert.NotNull(onThemeChanged);
 
         _ = onThemeChanged.Invoke(null, null);
+    }
+
+    /// <summary>
+    /// Restores the process-wide manager state needed to exercise its one-time activation path deterministically.
+    /// </summary>
+    /// <remarks>
+    /// xUnit does not create a new process for every test, while WPF's SystemResources table and ThemeManager are
+    /// process-wide singletons. Public APIs cannot deactivate theme management, so this test-only reset deliberately
+    /// reflects the same private state whose first transition is under test. Restore is invoked before clearing the
+    /// host reference so WPF never retains an overlay that ThemeManager can no longer remove. A missing member is a
+    /// hard test failure: unlike production reflection, silently degrading here would make the regression test pass
+    /// without exercising the intended path.
+    /// </remarks>
+    private static void ResetThemeManagerToUnconfiguredState()
+    {
+        const BindingFlags staticNonPublic = BindingFlags.Static | BindingFlags.NonPublic;
+        Type managerType = typeof(ThemeManager);
+        FieldInfo hostField = managerType.GetField("_systemThemeResourceHost", staticNonPublic)
+            ?? throw new MissingFieldException(managerType.FullName, "_systemThemeResourceHost");
+        object? host = hostField.GetValue(null);
+        if (host is not null)
+        {
+            MethodInfo restoreMethod = host.GetType().GetMethod(
+                    "Restore",
+                    BindingFlags.Instance | BindingFlags.NonPublic
+                )
+                ?? throw new MissingMethodException(host.GetType().FullName, "Restore");
+            _ = restoreMethod.Invoke(host, null);
+        }
+
+        hostField.SetValue(null, null);
+        managerType.GetField("_systemThemeResourceHostUnavailable", staticNonPublic)!.SetValue(null, false);
+        managerType.GetField("_themeManagementActivationState", staticNonPublic)!.SetValue(null, 0);
+        managerType.GetField("_themeMode", staticNonPublic)!.SetValue(null, UiThemeMode.Default);
+        typeof(ThemeManager)
+           .GetProperty(nameof(ThemeManager.CurrentTheme), BindingFlags.Static | BindingFlags.Public)!
+           .SetValue(null, ApplicationTheme.Default);
     }
 
     private static void EnsureWindowsDirectoryEnvironment()

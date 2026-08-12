@@ -275,9 +275,19 @@ internal sealed class SystemThemeResourceHost
             {
                 // First installation replaces Windows' native ThemeStyles, and WM_THEMECHANGED can later replace the
                 // base dictionary underneath this overlay. Those are genuine style transitions and must re-evaluate
-                // ThemeStyle once. Ordinary Light/Dark switches keep the installed slot and take the state-preserving
-                // palette-only branch below.
-                InvalidateThemeResources();
+                // ThemeStyle once. Use the direct tree walk rather than SystemResources.InvalidateResources: WPF's
+                // latter helper only queues ThemeChangeInfo for the initiating Dispatcher, while this process-wide
+                // overlay may already be serving presentation sources on several STA threads.
+                InvalidateThemeStyleResources();
+
+                // A ThemeChangeInfo walk is not sufficient when a Wpf.Zen.Ui control was created before the first
+                // configuration call. Its ThemeStyle comes from Generic.xaml both before and after installation, so
+                // WPF retains that Style object and may leave DynamicResource expressions inside it associated with
+                // Generic.xaml's built-in Light dictionary. Replaying an ordinary dictionary change after the style
+                // transition makes those expressions resolve against the newly installed system overlay. Without
+                // this second walk, the first Dark switch updates direct resource references but leaves values such
+                // as FluentWindow.Background and template brushes Light until the next palette switch.
+                InvalidatePaletteResources();
             }
             else if (nativeControlStylesChanged)
             {
