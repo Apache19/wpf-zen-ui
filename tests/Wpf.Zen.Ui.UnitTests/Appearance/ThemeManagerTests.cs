@@ -43,7 +43,7 @@ public class ThemeManagerTests
                 UiThemeMode.Default,
                 AccentColorSource.Default,
                 BuiltInAccent,
-                true,
+                false,
                 null,
                 null,
                 null,
@@ -54,7 +54,7 @@ public class ThemeManagerTests
                 GetThemeDictionary(UiThemeMode.Light),
                 Assert.Single(Application.Current.Resources.MergedDictionaries)
             );
-            Assert.True(ContainsMergedSource("/Wpf.Zen.Ui;component/Resources/NativeControlStyles.xaml"));
+            Assert.False(ContainsMergedSource("/Wpf.Zen.Ui;component/Resources/NativeControlStyles.xaml"));
         });
     }
 
@@ -74,7 +74,7 @@ public class ThemeManagerTests
                 GetThemeDictionary(UiThemeMode.Light),
                 Assert.Single(Application.Current.Resources.MergedDictionaries)
             );
-            Assert.True(ContainsMergedSource("/Wpf.Zen.Ui;component/Resources/NativeControlStyles.xaml"));
+            Assert.False(ContainsMergedSource("/Wpf.Zen.Ui;component/Resources/NativeControlStyles.xaml"));
         });
     }
 
@@ -94,7 +94,7 @@ public class ThemeManagerTests
                 GetThemeDictionary(UiThemeMode.Light),
                 Assert.Single(Application.Current.Resources.MergedDictionaries)
             );
-            Assert.True(ContainsMergedSource("/Wpf.Zen.Ui;component/Resources/NativeControlStyles.xaml"));
+            Assert.False(ContainsMergedSource("/Wpf.Zen.Ui;component/Resources/NativeControlStyles.xaml"));
         });
     }
 
@@ -109,7 +109,7 @@ public class ThemeManagerTests
             Assert.Equal(ApplicationTheme.Default, ThemeManager.CurrentTheme);
             Assert.Equal(AccentColorSource.Default, ThemeManager.AccentSource);
             Assert.Equal(BuiltInAccent, ThemeManager.CustomAccentColor);
-            Assert.True(ThemeManager.EnableNativeControlStyling);
+            Assert.False(ThemeManager.EnableNativeControlStyling);
             Assert.Null(ThemeManager.AdditionalLightThemeUri);
             Assert.Null(ThemeManager.AdditionalDarkThemeUri);
             Assert.Null(ThemeManager.AdditionalHighContrastLightThemeUri);
@@ -245,6 +245,9 @@ public class ThemeManagerTests
     {
         RunIsolated(() =>
         {
+            Assert.False(ContainsMergedSource("/Wpf.Zen.Ui;component/Resources/NativeControlStyles.xaml"));
+
+            ThemeManager.EnableNativeControlStyling = true;
             Assert.True(ContainsMergedSource("/Wpf.Zen.Ui;component/Resources/NativeControlStyles.xaml"));
 
             ThemeManager.EnableNativeControlStyling = false;
@@ -255,6 +258,34 @@ public class ThemeManagerTests
 
             ThemeManager.EnableNativeControlStyling = true;
             Assert.True(ContainsMergedSource("/Wpf.Zen.Ui;component/Resources/NativeControlStyles.xaml"));
+        });
+    }
+
+    [Fact]
+    public void ConfigureWithoutNativeStyleArgument_PreservesExplicitOptInState()
+    {
+        RunIsolated(() =>
+        {
+            ThemeManager.Configure(
+                UiThemeMode.Light,
+                AccentColorSource.Default,
+                enableNativeControlStyling: true
+            );
+
+            ThemeManager.Configure(UiThemeMode.Dark, AccentColorSource.System);
+
+            Assert.True(ThemeManager.EnableNativeControlStyling);
+            Assert.True(ContainsMergedSource("/Wpf.Zen.Ui;component/Resources/NativeControlStyles.xaml"));
+
+            ThemeManager.Configure(
+                UiThemeMode.Light,
+                AccentColorSource.Default,
+                enableNativeControlStyling: false
+            );
+            ThemeManager.Configure(UiThemeMode.Dark);
+
+            Assert.False(ThemeManager.EnableNativeControlStyling);
+            Assert.False(ContainsMergedSource("/Wpf.Zen.Ui;component/Resources/NativeControlStyles.xaml"));
         });
     }
 
@@ -698,7 +729,7 @@ public class ThemeManagerTests
             UiThemeMode.Default,
             AccentColorSource.Default,
             BuiltInAccent,
-            true,
+            false,
             null,
             null,
             null,

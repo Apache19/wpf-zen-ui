@@ -91,7 +91,10 @@ public sealed class ThemeManager
     private static AccentColorSource _accentSource      = AccentColorSource.System;
     private static Color             _customAccentColor = BuiltInAccentColor;
 
-    private static bool _enableNativeControlStyling = true;
+    // Native WPF controls keep their platform theme unless the consumer explicitly opts into the library's
+    // implicit Type-keyed styles. This is intentionally independent from activating theme management: palette
+    // resources are additive, while native styles replace the visual contract of every matching WPF control.
+    private static bool _enableNativeControlStyling;
 
     // Merely referencing Wpf.Zen.Ui must not replace the implicit styles of native WPF controls. Theme resources are
     // built eagerly for Generic.xaml-compatible local requests, but the global Application/SystemResources layer is
@@ -398,9 +401,48 @@ public sealed class ThemeManager
     }
 
     /// <summary>
-    /// Configures the theme mode and accent color source without modifying
-    /// any existing additional theme resource URIs.
+    /// Configures the theme mode and accent color source without modifying native WPF control styling or any
+    /// existing additional theme resource URIs.
     /// </summary>
+    /// <param name="themeMode">The theme mode to apply.</param>
+    /// <param name="accentSource">The source from which the base accent color is obtained.</param>
+    /// <param name="customAccentColor">
+    /// The custom base color to remember. It is used only when <paramref name="accentSource"/>
+    /// is <see cref="AccentColorSource.Custom"/>. A <c>null</c> value preserves the current color.
+    /// </param>
+    public static void Configure(
+        UiThemeMode themeMode,
+        AccentColorSource accentSource = AccentColorSource.System,
+        Color? customAccentColor = null)
+    {
+        ConfigureCore(themeMode, accentSource, customAccentColor, enableNativeControlStyling: null);
+    }
+
+    /// <summary>
+    /// Configures the theme mode, accent color source, and native WPF control styling while preserving the remembered
+    /// custom accent color and all additional theme resource URIs.
+    /// </summary>
+    /// <param name="themeMode">The theme mode to apply.</param>
+    /// <param name="accentSource">The source from which the base accent color is obtained.</param>
+    /// <param name="enableNativeControlStyling">A value indicating whether to merge native WPF control styles.</param>
+    public static void Configure(
+        UiThemeMode themeMode,
+        AccentColorSource accentSource,
+        bool enableNativeControlStyling)
+    {
+        ConfigureCore(themeMode, accentSource, customAccentColor: null, enableNativeControlStyling);
+    }
+
+    /// <summary>
+    /// Configures the theme mode, accent color source, and native WPF control styling without modifying any existing
+    /// additional theme resource URIs.
+    /// </summary>
+    /// <remarks>
+    /// Native control styling is intentionally a required argument in this overload because enabling it installs
+    /// implicit <see cref="Style"/> resources keyed by WPF control types and therefore replaces the platform visual
+    /// contract for those controls. Use the overload without <paramref name="enableNativeControlStyling"/> when a
+    /// theme update should preserve the current opt-in state.
+    /// </remarks>
     /// <param name="themeMode">The theme mode to apply.</param>
     /// <param name="accentSource">The source from which the base accent color is obtained.</param>
     /// <param name="customAccentColor">
@@ -410,9 +452,27 @@ public sealed class ThemeManager
     /// <param name="enableNativeControlStyling">A value indicating whether to merge native WPF control styles.</param>
     public static void Configure(
         UiThemeMode themeMode,
-        AccentColorSource accentSource = AccentColorSource.System,
-        Color? customAccentColor = null,
-        bool enableNativeControlStyling = true)
+        AccentColorSource accentSource,
+        Color? customAccentColor,
+        bool enableNativeControlStyling)
+    {
+        ConfigureCore(themeMode, accentSource, customAccentColor, enableNativeControlStyling);
+    }
+
+    /// <summary>
+    /// Applies the short-form configuration and optionally changes the independently opt-in native style layer.
+    /// </summary>
+    /// <param name="themeMode">The theme mode to apply.</param>
+    /// <param name="accentSource">The source from which the base accent color is obtained.</param>
+    /// <param name="customAccentColor">The custom base color to remember, or <c>null</c> to preserve it.</param>
+    /// <param name="enableNativeControlStyling">
+    /// The requested native style state, or <c>null</c> to preserve the current state.
+    /// </param>
+    private static void ConfigureCore(
+        UiThemeMode themeMode,
+        AccentColorSource accentSource,
+        Color? customAccentColor,
+        bool? enableNativeControlStyling)
     {
         ValidateThemeMode(themeMode);
         ValidateAccentSource(accentSource);
@@ -441,9 +501,10 @@ public sealed class ThemeManager
             }
         }
 
-        if (_enableNativeControlStyling != enableNativeControlStyling)
+        if (enableNativeControlStyling.HasValue
+            && _enableNativeControlStyling != enableNativeControlStyling.Value)
         {
-            _enableNativeControlStyling = enableNativeControlStyling;
+            _enableNativeControlStyling = enableNativeControlStyling.Value;
             changed = true;
         }
 
@@ -836,7 +897,8 @@ public sealed class ThemeManager
     /// is merged into each theme dictionary, providing implicit styles that re-template
     /// or re-style built-in WPF controls to match the Fluent UI appearance.
     ///
-    /// The default value is <c>true</c>.
+    /// The default value is <c>false</c>. Native control styling is a separate, explicit opt-in from theme
+    /// management because these implicit type-keyed styles replace the platform appearance of matching controls.
     /// Setting this property explicitly activates global theme management; subsequent changes trigger an immediate
     /// theme refresh. Merely referencing Wpf.Zen.Ui does not merge the native-control dictionary.
     /// </remarks>

@@ -13,7 +13,7 @@
     mc:Ignorable="d">
 
     <UserControl.Resources>
-        <ui:ThemeManagerOptions ThemeMode="Dark" />
+        <ui:ThemeManagerOptions EnableNativeControlStyling="True" ThemeMode="Dark" />
     </UserControl.Resources>
 
     <Grid>
