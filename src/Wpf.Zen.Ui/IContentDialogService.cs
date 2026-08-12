@@ -8,51 +8,30 @@ using Wpf.Zen.Ui.Controls;
 namespace Wpf.Zen.Ui;
 
 /// <summary>
-/// Represents a contract with the service that creates <see cref="ContentDialog"/>.
+/// Presents content dialogs through exactly one explicitly attached <see cref="ContentDialogHost"/>.
 /// </summary>
-/// <example>
-/// <code lang="xml">
-/// &lt;ContentDialogHost x:Name="RootContentDialogPresenter" Grid.Row="0" /&gt;
-/// </code>
-/// <code lang="csharp">
-/// IContentDialogService contentDialogService = new ContentDialogService();
-/// contentDialogService.SetContentPresenter(RootContentDialogPresenter);
-///
-/// await _contentDialogService.ShowAsync(
-///     new ContentDialog(){
-///         Title = "The cake?",
-///         Content = "IS A LIE!",
-///         PrimaryButtonText = "Save",
-///         SecondaryButtonText = "Don't Save",
-///         CloseButtonText = "Cancel"
-///     }
-/// );
-/// </code>
-/// </example>
+/// <remarks>
+/// The service lifetime must match the lifetime of the UI scope that owns the host. The host can
+/// belong to a Window, an ElementHost tree, an HwndSource, or an independently composed plug-in.
+/// </remarks>
 public interface IContentDialogService
 {
     /// <summary>
-    /// Sets the <see cref="ContentDialogHost"/> that will host and present content dialogs.
+    /// Attaches the service to its immutable presentation host.
     /// </summary>
-    /// <param name="dialogHost">
-    /// The <see cref="ContentDialogHost"/> instance to use for dialog presentation.
-    /// </param>
-    void SetDialogHost(ContentDialogHost dialogHost);
+    /// <param name="dialogHost">The only host through which this service may present dialogs.</param>
+    /// <exception cref="InvalidOperationException">
+    /// The service was already attached to a different host.
+    /// </exception>
+    /// <exception cref="ArgumentNullException"><paramref name="dialogHost"/> is <see langword="null"/>.</exception>
+    void Attach(ContentDialogHost dialogHost);
 
-    /// <summary>
-    /// Gets the <see cref="ContentDialogHost"/> currently associated with the content.
-    /// </summary>
-    /// <returns>
-    /// The associated <see cref="ContentDialogHost"/> instance, or <see langword="null"/>
-    /// if no dialog host is currently assigned.
-    /// </returns>
-    ContentDialogHost? GetDialogHost();
-
-    /// <summary>
-    /// Asynchronously shows the specified dialog.
-    /// </summary>
-    /// <param name="dialog">The dialog to be displayed.</param>
-    /// <param name="cancellationToken">A cancellation token that can be used to cancel the operation.</param>
-    /// <returns>A task that represents the asynchronous operation. The task result contains the dialog result.</returns>
-    Task<ContentDialogResult> ShowAsync(ContentDialog dialog, CancellationToken cancellationToken);
+    /// <summary>Asynchronously shows <paramref name="dialog"/> through the attached host.</summary>
+    /// <param name="dialog">The dialog to display.</param>
+    /// <param name="cancellationToken">Cancels the dialog operation.</param>
+    /// <returns>A task whose result identifies the button used to close the dialog.</returns>
+    Task<ContentDialogResult> ShowAsync(
+        ContentDialog dialog,
+        CancellationToken cancellationToken
+    );
 }

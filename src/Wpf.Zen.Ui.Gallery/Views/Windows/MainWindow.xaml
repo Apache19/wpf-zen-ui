@@ -86,11 +86,6 @@
                     </ui:AutoSuggestBox.Icon>
                 </ui:AutoSuggestBox>
             </ui:NavigationView.AutoSuggestBox>
-            <ui:NavigationView.ContentOverlay>
-                <Grid>
-                    <ui:SnackbarPresenter x:Name="SnackbarPresenter" />
-                </Grid>
-            </ui:NavigationView.ContentOverlay>
         </ui:NavigationView>
 
         <ui:TitleBar
@@ -141,10 +136,20 @@
             </tray:NotifyIcon.Menu>
         </tray:NotifyIcon>
 
+        <!--
+            Window-level transient UI is intentionally independent of NavigationView. Keeping both
+            presenters as the final root children provides deterministic coverage and lets
+            ContentDialogHost disable the actual application-content siblings while modal.
+        -->
         <ui:ContentDialogHost
             x:Name="RootContentDialog"
             Grid.Row="0"
             Grid.RowSpan="2"
-            d:Visibility="Collapsed" />
+            d:Visibility="Collapsed"
+            IsDisableSiblingsEnabled="True" />
+        <ui:SnackbarPresenter
+            x:Name="SnackbarPresenter"
+            Grid.Row="0"
+            Grid.RowSpan="2" />
     </Grid>
 </ui:FluentWindow>

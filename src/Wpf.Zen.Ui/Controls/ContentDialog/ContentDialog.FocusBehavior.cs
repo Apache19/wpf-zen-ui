@@ -67,8 +67,10 @@ public partial class ContentDialog
             return;
         }
 
-        var window = Window.GetWindow(this);
-        if (e.NewFocus == null || window is not { IsActive: true })
+        // ElementHost and HwndSource roots do not necessarily have a WPF Window. In that case the
+        // WPF tree is still active enough to receive this focus transition, so retain the focus
+        // trap. A known inactive Window is the only case in which focus may legitimately leave.
+        if (e.NewFocus == null || Window.GetWindow(this) is { IsActive: false })
         {
             return;
         }

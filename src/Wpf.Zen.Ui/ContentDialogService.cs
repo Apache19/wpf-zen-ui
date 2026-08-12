@@ -8,65 +8,98 @@ using Wpf.Zen.Ui.Controls;
 namespace Wpf.Zen.Ui;
 
 /// <summary>
-/// Represents a contract with the service that creates <see cref="ContentDialog"/>.
+/// Presents <see cref="ContentDialog"/> instances through the explicit
+/// <see cref="ContentDialogHost"/> attached to this service instance.
 /// </summary>
-/// <example>
-/// <code lang="xml">
-/// &lt;ContentDialogHost x:Name="RootContentDialogPresenter" Grid.Row="0" /&gt;
-/// </code>
-/// <code lang="csharp">
-/// IContentDialogService contentDialogService = new ContentDialogService();
-/// contentDialogService.SetContentPresenter(RootContentDialogPresenter);
-///
-/// await _contentDialogService.ShowAsync(
-///     new ContentDialog(){
-///         Title = "The cake?",
-///         Content = "IS A LIE!",
-///         PrimaryButtonText = "Save",
-///         SecondaryButtonText = "Don't Save",
-///         CloseButtonText = "Cancel"
-///     }
-/// );
-/// </code>
-/// </example>
+/// <remarks>
+/// Create one service per presentation scope and call <see cref="Attach"/> once after constructing
+/// its visual tree. Binding directly to the host avoids assuming that the tree is owned by a WPF
+/// Window while still preventing a later scope from redirecting an already injected service.
+/// </remarks>
 public class ContentDialogService : IContentDialogService
 {
+    private ContentDialogHost? _dialogHost;
+
     static ContentDialogService()
     {
         LibraryInitializer.EnsureInitialized();
     }
 
-    private ContentDialogHost? _dialogHost;
-
-    /// <inheritdoc/>
-    public void SetDialogHost(ContentDialogHost dialogHost)
+    /// <inheritdoc />
+    public void Attach(ContentDialogHost dialogHost)
     {
-        _dialogHost = dialogHost;
-    }
-
-    /// <inheritdoc/>
-    public ContentDialogHost? GetDialogHost()
-    {
-        return _dialogHost;
-    }
-
-    /// <inheritdoc/>
-    public Task<ContentDialogResult> ShowAsync(ContentDialog dialog, CancellationToken cancellationToken)
-    {
-        if (_dialogHost == null)
+        if (dialogHost is null)
         {
-            throw new InvalidOperationException("The DialogHost was never set.");
+            throw new ArgumentNullException(nameof(dialogHost));
         }
 
-        if (dialog.DialogHost != null && _dialogHost != dialog.DialogHost)
+        if (_dialogHost is not null)
         {
+            if (ReferenceEquals(_dialogHost, dialogHost))
+            {
+                return;
+            }
+
             throw new InvalidOperationException(
-                "The DialogHost is not the same as the one that was previously set."
+                "A content dialog service cannot change its host after attachment. "
+                    + "Create one service instance per presentation scope."
             );
         }
 
-        dialog.DialogHost = _dialogHost;
+        _dialogHost = dialogHost;
+    }
+
+    /// <inheritdoc />
+    public Task<ContentDialogResult> ShowAsync(
+        ContentDialog dialog,
+        CancellationToken cancellationToken
+    )
+    {
+        if (dialog is null)
+        {
+            throw new ArgumentNullException(nameof(dialog));
+        }
+
+        ContentDialogHost dialogHost = GetHostForPresentation();
+
+        if (dialog.DialogHost is not null && !ReferenceEquals(dialog.DialogHost, dialogHost))
+        {
+            throw new InvalidOperationException(
+                "The ContentDialog is already associated with a different host."
+            );
+        }
+
+        if (dialog.DialogHost is null)
+        {
+            dialog.DialogHost = dialogHost;
+        }
 
         return dialog.ShowAsync(cancellationToken);
+    }
+
+    private ContentDialogHost GetHostForPresentation()
+    {
+        if (_dialogHost is null)
+        {
+            throw new InvalidOperationException(
+                "The content dialog service has not been attached to a ContentDialogHost."
+            );
+        }
+
+        if (!_dialogHost.Dispatcher.CheckAccess())
+        {
+            throw new InvalidOperationException(
+                "Content dialogs must be shown on their host's dispatcher."
+            );
+        }
+
+        if (!_dialogHost.IsLoaded)
+        {
+            throw new InvalidOperationException(
+                "Content dialogs can only be shown after their ContentDialogHost has loaded."
+            );
+        }
+
+        return _dialogHost;
     }
 }

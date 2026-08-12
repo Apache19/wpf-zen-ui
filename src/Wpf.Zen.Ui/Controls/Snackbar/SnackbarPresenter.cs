@@ -39,16 +39,19 @@ public sealed class SnackbarPresenter : System.Windows.Controls.ContentPresenter
         private set => SetValue(ContentProperty, value);
     }
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="SnackbarPresenter"/> class.
+    /// </summary>
     public SnackbarPresenter()
     {
-        Unloaded += static (sender, _) => ((SnackbarPresenter)sender).OnUnloaded();
+        Unloaded += OnUnloaded;
     }
 
     private Queue<Snackbar> Queue { get; } = new();
     private DispatcherTimer? _timer;
     private int _hideGeneration;
 
-    private void OnUnloaded()
+    private void OnUnloaded(object sender, RoutedEventArgs e)
     {
         StopTimer();
 

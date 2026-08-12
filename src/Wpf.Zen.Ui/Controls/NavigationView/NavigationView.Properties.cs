@@ -326,25 +326,6 @@ public partial class NavigationView
 
     #endregion
 
-    #region DP: ContentOverlay
-
-    /// <summary>Identifies the <see cref="ContentOverlay"/> dependency property.</summary>
-    public static readonly DependencyProperty ContentOverlayProperty = DependencyProperty.Register(
-        nameof(ContentOverlay),
-        typeof(object),
-        typeof(NavigationView),
-        new FrameworkPropertyMetadata(null)
-    );
-
-    /// <summary>Gets or sets content displayed above the navigated page content.</summary>
-    public object? ContentOverlay
-    {
-        get => GetValue(ContentOverlayProperty);
-        set => SetValue(ContentOverlayProperty, value);
-    }
-
-    #endregion
-
     #region DP: FooterMenuItems
 
     private static readonly DependencyPropertyKey FooterMenuItemsPropertyKey =

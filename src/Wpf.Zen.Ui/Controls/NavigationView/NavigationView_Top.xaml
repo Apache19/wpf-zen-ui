@@ -112,12 +112,6 @@
                 -->
                 <ContentPresenter x:Name="PART_NavigationFrameHost" Grid.Row="1" />
 
-                <!--  Overlay  -->
-                <ContentPresenter
-                    Grid.Row="0"
-                    Grid.RowSpan="2"
-                    Margin="0"
-                    Content="{TemplateBinding ContentOverlay}" />
             </Grid>
         </Grid>
     </ControlTemplate>

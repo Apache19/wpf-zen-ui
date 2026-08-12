@@ -4,7 +4,6 @@
 // All Rights Reserved.
 
 using System.Windows.Controls;
-using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Media.Media3D;
 using System.Windows.Threading;
@@ -17,8 +16,8 @@ namespace Wpf.Zen.Ui.Controls;
 
 /// <summary>
 /// Controller that manages the runtime behavior of a single <see cref="ContentDialogHost"/> instance.
-/// It handles storing/restoring focus, blocking/unblocking window input, disabling/restoring sibling UI elements,
-/// and temporarily removing window-level input and command bindings while a dialog is active.
+/// It handles storing/restoring focus, suppressing input routed through the host's sibling scope,
+/// and disabling/restoring sibling UI elements while a dialog is active.
 /// </summary>
 /// <remarks>
 /// This type is internal and intended to be used from the UI thread only. Members are not thread-safe and
@@ -28,12 +27,7 @@ internal sealed class ContentDialogHostController
 {
     private readonly DependencyObject _host;
     private readonly HashSet<DependencyObject> _disabledElements = [];
-    private readonly Dictionary<InputBinding, InputBindingCommandState> _inputBindingCommandStates = [];
-
-    private List<InputBinding>? _hostInputBindings;
-    private List<CommandBinding>? _hostCommandBindings;
-
-    private bool _hostWindowBlocked;
+    private DependencyObject? _inputScope;
     private bool _siblingsIsDisabled;
     private bool _dialogActive;
 
@@ -91,7 +85,7 @@ internal sealed class ContentDialogHostController
     public bool IsDialogActive => _dialogActive;
 
     /// <summary>
-    /// Called when a dialog is added to the host. Stores the previously focused element, blocks window-level input
+    /// Called when a dialog is added to the host. Stores the previously focused element, blocks scope-level input
     /// and disables siblings (if configured).
     /// </summary>
     public void HandleDialogAdded()
@@ -102,7 +96,7 @@ internal sealed class ContentDialogHostController
         }
 
         StorePreviousFocus();
-        BlockHostWindowInput();
+        BlockHostScopeInput();
 
         if (IsDisableSiblingsEnabled && !_siblingsIsDisabled)
         {
@@ -113,7 +107,7 @@ internal sealed class ContentDialogHostController
     }
 
     /// <summary>
-    /// Called when a dialog is removed from the host. Restores sibling state, window input and focus.
+    /// Called when a dialog is removed from the host. Restores sibling state, scope input and focus.
     /// </summary>
     public void HandleDialogRemoved()
     {
@@ -127,7 +121,7 @@ internal sealed class ContentDialogHostController
             RestoreDialogHostSiblings();
         }
 
-        UnblockHostWindowInput();
+        UnblockHostScopeInput();
         RestorePreviousFocus();
 
         _dialogActive = false;
@@ -335,108 +329,48 @@ internal sealed class ContentDialogHostController
         }
     }
 
-    private void BlockHostWindowInput()
+    private void BlockHostScopeInput()
     {
-        if (_hostWindowBlocked)
+        if (_inputScope is not null)
         {
             return;
         }
 
-        if (Window.GetWindow(_host) is not { } window)
+        // The immediate parent defines the same scope whose children are disabled below. Routed
+        // command and access-key handlers attached here see input from both the dialog and its
+        // siblings. Unlike mutating Window.InputBindings, this remains valid for ElementHost and
+        // HwndSource roots and lets independent plug-in regions share one native/WPF window.
+        DependencyObject? scope = _host.GetParent();
+        if (scope is null)
         {
             return;
         }
 
-        AccessKeyManager.AddAccessKeyPressedHandler(window, HostAccessKeySuppressHandler);
-        CommandManager.AddPreviewExecutedHandler(window, PreviewExecutedSuppressHandler);
-        CommandManager.AddPreviewCanExecuteHandler(window, PreviewCanExecuteSuppressHandler);
-
-        if (window.InputBindings.Count > 0 && _hostInputBindings == null)
+        AccessKeyManager.AddAccessKeyPressedHandler(scope, HostAccessKeySuppressHandler);
+        if (scope is UIElement uiScope)
         {
-            _hostInputBindings = [.. window.InputBindings.Cast<InputBinding>()];
-            _inputBindingCommandStates.Clear();
-
-            foreach (var inputBinding in _hostInputBindings)
-            {
-                var commandBinding = BindingOperations.GetBindingBase(
-                    inputBinding,
-                    InputBinding.CommandProperty
-                );
-                var commandValue = commandBinding == null ? inputBinding.Command : null;
-
-                if (commandBinding != null)
-                {
-                    BindingOperations.ClearBinding(inputBinding, InputBinding.CommandProperty);
-                }
-
-                _inputBindingCommandStates[inputBinding] = new InputBindingCommandState(
-                    commandBinding,
-                    commandValue
-                );
-            }
-
-            window.InputBindings.Clear();
+            CommandManager.AddPreviewExecutedHandler(uiScope, PreviewExecutedSuppressHandler);
+            CommandManager.AddPreviewCanExecuteHandler(uiScope, PreviewCanExecuteSuppressHandler);
         }
 
-        if (window.CommandBindings.Count > 0 && _hostCommandBindings == null)
-        {
-            _hostCommandBindings = [.. window.CommandBindings.Cast<CommandBinding>()];
-            window.CommandBindings.Clear();
-        }
-
-        _hostWindowBlocked = true;
+        _inputScope = scope;
     }
 
-    private void UnblockHostWindowInput()
+    private void UnblockHostScopeInput()
     {
-        if (Window.GetWindow(_host) is not { } window)
+        if (_inputScope is not { } scope)
         {
-            _hostWindowBlocked = false;
             return;
         }
 
-        AccessKeyManager.RemoveAccessKeyPressedHandler(window, HostAccessKeySuppressHandler);
-        CommandManager.RemovePreviewExecutedHandler(window, PreviewExecutedSuppressHandler);
-        CommandManager.RemovePreviewCanExecuteHandler(window, PreviewCanExecuteSuppressHandler);
-
-        if (_hostInputBindings != null)
+        AccessKeyManager.RemoveAccessKeyPressedHandler(scope, HostAccessKeySuppressHandler);
+        if (scope is UIElement uiScope)
         {
-            foreach (var ib in _hostInputBindings)
-            {
-                window.InputBindings.Add(ib);
-
-                if (_inputBindingCommandStates.TryGetValue(ib, out var state))
-                {
-                    if (state.CommandBinding != null)
-                    {
-                        BindingOperations.SetBinding(ib, InputBinding.CommandProperty, state.CommandBinding);
-                    }
-                    else if (state.CommandValue != null)
-                    {
-                        ib.Command = state.CommandValue;
-                    }
-                    else
-                    {
-                        ib.ClearValue(InputBinding.CommandProperty);
-                    }
-                }
-            }
-
-            _hostInputBindings = null;
-            _inputBindingCommandStates.Clear();
+            CommandManager.RemovePreviewExecutedHandler(uiScope, PreviewExecutedSuppressHandler);
+            CommandManager.RemovePreviewCanExecuteHandler(uiScope, PreviewCanExecuteSuppressHandler);
         }
 
-        if (_hostCommandBindings != null)
-        {
-            foreach (var cb in _hostCommandBindings)
-            {
-                window.CommandBindings.Add(cb);
-            }
-
-            _hostCommandBindings = null;
-        }
-
-        _hostWindowBlocked = false;
+        _inputScope = null;
     }
 
     private bool IsPartOfHost(DependencyObject d)
@@ -487,11 +421,6 @@ internal sealed class ContentDialogHostController
             e.Handled = true;
         }
     }
-
-    private readonly record struct InputBindingCommandState(
-        BindingBase? CommandBinding,
-        ICommand? CommandValue
-    );
 }
 
 #pragma warning restore IDE0008 // Use explicit type instead of 'var'

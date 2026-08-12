@@ -40,8 +40,11 @@ public partial class App
                 // Main window container with navigation
                 _ = services.AddSingleton<IWindow, MainWindow>();
                 _ = services.AddScoped<MainWindowViewModel>();
-                _ = services.AddSingleton<ISnackbarService, SnackbarService>();
-                _ = services.AddSingleton<IContentDialogService, ContentDialogService>();
+
+                // These services target the overlay presenters attached to one navigation scope;
+                // the scope may be a Window or another independently hosted WPF visual tree.
+                _ = services.AddScoped<ISnackbarService, SnackbarService>();
+                _ = services.AddScoped<IContentDialogService, ContentDialogService>();
                 _ = services.AddSingleton<WindowsProviderService>();
 
                 // Page types are intentionally not registered. AddNavigation activates concrete

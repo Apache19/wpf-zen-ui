@@ -23,11 +23,7 @@ public partial class MainWindow : IWindow
 {
     private readonly INavigationScope _navigationScope;
 
-    public MainWindow(
-        INavigationScopeFactory navigationScopes,
-        ISnackbarService snackbarService,
-        IContentDialogService contentDialogService
-    )
+    public MainWindow(INavigationScopeFactory navigationScopes)
     {
         InitializeComponent();
 
@@ -36,8 +32,10 @@ public partial class MainWindow : IWindow
         NavigationView.SetCurrentValue(NavigationView.NavigationMapProperty, ViewModel.NavigationMap);
         DataContext = this;
 
-        snackbarService.SetSnackbarPresenter(SnackbarPresenter);
-        contentDialogService.SetDialogHost(RootContentDialog);
+        // Pages and their view models resolve these instances from the same presentation scope.
+        // Direct, one-time host attachment also works when the WPF tree has no Window owner.
+        _navigationScope.Services.GetRequiredService<ISnackbarService>().Attach(SnackbarPresenter);
+        _navigationScope.Services.GetRequiredService<IContentDialogService>().Attach(RootContentDialog);
         SetupTrayMenuEvents();
     }
 

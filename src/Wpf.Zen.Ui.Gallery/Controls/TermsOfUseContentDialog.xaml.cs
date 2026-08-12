@@ -10,8 +10,7 @@ namespace Wpf.Zen.Ui.Gallery.Controls;
 
 public partial class TermsOfUseContentDialog : ContentDialog
 {
-    public TermsOfUseContentDialog(ContentDialogHost? contentPresenter)
-        : base(contentPresenter)
+    public TermsOfUseContentDialog()
     {
         InitializeComponent();
     }

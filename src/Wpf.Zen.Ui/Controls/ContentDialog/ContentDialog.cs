@@ -29,7 +29,7 @@ namespace Wpf.Zen.Ui.Controls;
 /// </code>
 /// <code lang="csharp">
 /// var contentDialogService = new ContentDialogService();
-/// contentDialogService.SetDialogHost(RootContentDialogHost);
+/// contentDialogService.Attach(RootContentDialogHost);
 ///
 /// await _contentDialogService.ShowSimpleDialogAsync(
 ///     new SimpleContentDialogCreateOptions()
@@ -158,31 +158,33 @@ public partial class ContentDialog : ContentControl
     /// Gets or sets <see cref="DialogHost"/> inside of which the dialogue will be placed.
     /// </summary>
     /// <exception cref="InvalidOperationException">
-    /// Thrown if trying to set DialogHostEx when DialogHost is already set, or if trying to change DialogHostEx while the dialog is being shown.
+    /// Thrown when attempting to replace an assigned host or to change the host while the dialog is shown.
     /// </exception>
     public ContentDialogHost? DialogHost
     {
         get => _dialogHost;
         set
         {
+            if (ReferenceEquals(_dialogHost, value))
+            {
+                return;
+            }
+
             if (_dialogHost is not null)
             {
                 throw new InvalidOperationException(
-                    "Cannot set DialogHostEx when DialogHost is already set."
+                    "Cannot change DialogHost after it has been assigned."
                 );
             }
 
             if (IsShowing)
             {
                 throw new InvalidOperationException(
-                    "Cannot change DialogHostEx while the dialog is being shown."
+                    "Cannot change DialogHost while the dialog is being shown."
                 );
             }
 
-            if (!ReferenceEquals(_dialogHost, value))
-            {
-                _dialogHost = value;
-            }
+            _dialogHost = value;
         }
     }
 

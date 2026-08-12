@@ -3,41 +3,36 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-using System.Windows.Controls;
 using Wpf.Zen.Ui.Controls;
 
 namespace Wpf.Zen.Ui;
 
-/// <summary>
-/// Represents a contract with the service that provides global <see cref="Snackbar"/>.
-/// </summary>
+/// <summary>Provides snackbar notifications through one explicitly attached presenter.</summary>
+/// <remarks>
+/// The service lifetime must match the owning presentation scope so independent visual trees never
+/// share a presenter, queue, or current notification.
+/// </remarks>
 public interface ISnackbarService
 {
     /// <summary>
-    /// Gets or sets a time for which the <see cref="Snackbar"/> should be visible. (By default 2 seconds)
+    /// Gets or sets the fallback duration used when a show request supplies <see cref="TimeSpan.Zero"/>.
     /// </summary>
     TimeSpan DefaultTimeOut { get; set; }
 
-    /// <summary>
-    /// Sets the <see cref="SnackbarPresenter"/>
-    /// </summary>
-    /// <param name="contentPresenter"><see cref="ContentPresenter"/> inside of which the snackbar will be placed. The new <see cref="Snackbar"/> will replace the current <see cref="ContentPresenter.Content"/>.</param>
-    void SetSnackbarPresenter(SnackbarPresenter contentPresenter);
+    /// <summary>Attaches the service to its immutable presentation host.</summary>
+    /// <param name="presenter">The only presenter through which this service may show notifications.</param>
+    /// <exception cref="InvalidOperationException">The service was already attached to another presenter.</exception>
+    /// <exception cref="ArgumentNullException"><paramref name="presenter"/> is <see langword="null"/>.</exception>
+    void Attach(SnackbarPresenter presenter);
 
     /// <summary>
-    /// Provides direct access to the <see cref="ContentPresenter"/>
+    /// Shows a notification, replacing the notification currently displayed by the attached presenter.
     /// </summary>
-    /// <returns><see cref="Snackbar"/> currently in use.</returns>
-    SnackbarPresenter? GetSnackbarPresenter();
-
-    /// <summary>
-    /// Shows the snackbar. If it is already visible, firstly hides it for a moment, changes its content, and then shows it again.
-    /// </summary>
-    /// <param name="title">Name displayed on top of snackbar.</param>
-    /// <param name="message">Message inside the snackbar.</param>
-    /// <param name="appearance">Display style.</param>
-    /// <param name="icon">Additional icon on the left.</param>
-    /// <param name="timeout">The time after which the snackbar should disappear.</param>
+    /// <param name="title">The notification title.</param>
+    /// <param name="message">The notification message.</param>
+    /// <param name="appearance">The semantic visual appearance.</param>
+    /// <param name="icon">An optional icon displayed beside the text.</param>
+    /// <param name="timeout">The display duration, or zero to use <see cref="DefaultTimeOut"/>.</param>
     void Show(
         string title,
         string message,
