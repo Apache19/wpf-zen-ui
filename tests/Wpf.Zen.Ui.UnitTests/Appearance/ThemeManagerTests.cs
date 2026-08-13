@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Controls;
 using System.Windows.Documents;
+using System.Windows.Markup;
 using System.Windows.Media;
 using Wpf.Zen.Ui.Appearance;
 using Wpf.Zen.Ui.Theming;
@@ -40,7 +41,7 @@ public class ThemeManagerTests
 
             // The first explicit configuration must apply even though every value equals ThemeManager's defaults.
             ThemeManager.Configure(
-                ThemePreference.Default,
+                ThemePreference.Light,
                 AccentColorSource.Default,
                 BuiltInAccent,
                 false,
@@ -68,7 +69,7 @@ public class ThemeManagerTests
 
             // Calling ThemeManager.Configure is itself an explicit opt-in. The first call must therefore install
             // the global resources even when the supplied values are identical to the manager's current defaults.
-            ThemeManager.Configure(ThemePreference.Default, AccentColorSource.Default);
+            ThemeManager.Configure(ThemePreference.Light, AccentColorSource.Default);
 
             Assert.Same(
                 GetThemeDictionary(ThemeVariant.Light),
@@ -99,13 +100,13 @@ public class ThemeManagerTests
     }
 
     [Fact]
-    public void DefaultPreference_AppliesLightCompatibleResourcesAndReportsEffectiveLightTheme()
+    public void InitialPreference_ReportsAndAppliesLightTheme()
     {
         RunIsolated(() =>
         {
             var resources = Application.Current!.Resources;
 
-            Assert.Equal(ThemePreference.Default, ThemeManager.Preference);
+            Assert.Equal(ThemePreference.Light, ThemeManager.Preference);
             Assert.Equal(ThemeVariant.Light, ThemeManager.EffectiveTheme);
             Assert.Equal(AccentColorSource.Default, ThemeManager.AccentSource);
             Assert.Equal(BuiltInAccent, ThemeManager.CustomAccentColor);
@@ -136,12 +137,10 @@ public class ThemeManagerTests
                 ThemeManager.Preference = ThemePreference.Dark;
                 ThemeManager.Preference = ThemePreference.Dark;
                 ThemeManager.Preference = ThemePreference.Light;
-                ThemeManager.Preference = ThemePreference.Default;
 
                 Assert.Collection(
                     notifications,
                     item => AssertNotification(item, ThemeVariant.Dark),
-                    item => AssertNotification(item, ThemeVariant.Light),
                     item => AssertNotification(item, ThemeVariant.Light)
                 );
                 Assert.Equal(ThemeVariant.Light, ThemeManager.EffectiveTheme);
@@ -188,7 +187,7 @@ public class ThemeManagerTests
 
             Assert.Equal("preference", preferenceException.ParamName);
             Assert.Equal("source", sourceException.ParamName);
-            Assert.Equal(ThemePreference.Default, ThemeManager.Preference);
+            Assert.Equal(ThemePreference.Light, ThemeManager.Preference);
             Assert.Equal(AccentColorSource.Default, ThemeManager.AccentSource);
             Assert.Equal(ThemeVariant.Light, ThemeManager.EffectiveTheme);
         });
@@ -566,7 +565,9 @@ public class ThemeManagerTests
             Assert.Same(GetThemeDictionary(ThemeVariant.Light), element.Resources.MergedDictionaries[0]);
             Assert.Equal(2, element.Resources.MergedDictionaries.Count);
 
-            Theme.SetRequested(element, ThemePreference.Default);
+            Theme.ClearRequested(element);
+            Assert.Null(Theme.GetRequested(element));
+            Assert.Same(DependencyProperty.UnsetValue, element.ReadLocalValue(Theme.RequestedProperty));
             Assert.Single(element.Resources.MergedDictionaries);
             Assert.Same(userDictionary, element.Resources.MergedDictionaries[0]);
         });
@@ -585,8 +586,45 @@ public class ThemeManagerTests
             ThemeManager.AccentSource = AccentColorSource.Custom;
             Assert.Same(GetThemeDictionary(ThemeVariant.Dark), run.Resources.MergedDictionaries[0]);
 
-            Theme.SetRequested(run, ThemePreference.Default);
+            Theme.SetRequested(run, null);
+            Assert.Null(Theme.GetRequested(run));
+            Assert.Same(DependencyProperty.UnsetValue, run.ReadLocalValue(Theme.RequestedProperty));
             Assert.Empty(run.Resources.MergedDictionaries);
+        });
+    }
+
+    [Fact]
+    public void RequestedTheme_RejectsUndefinedPreferenceWithoutInjectingResources()
+    {
+        RunIsolated(() =>
+        {
+            var element = new Border();
+
+            Assert.Throws<ArgumentException>(() =>
+                Theme.SetRequested(element, (ThemePreference)int.MaxValue)
+            );
+
+            Assert.Null(Theme.GetRequested(element));
+            Assert.Empty(element.Resources.MergedDictionaries);
+        });
+    }
+
+    [Fact]
+    public void RequestedTheme_XamlAcceptsConcretePreferenceForNullableProperty()
+    {
+        RunIsolated(() =>
+        {
+            const string xaml = """
+                <Border
+                    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:ui="http://schemas.thezendev.com/wpf/2027"
+                    ui:Theme.Requested="Dark" />
+                """;
+
+            var element = Assert.IsType<Border>(XamlReader.Parse(xaml));
+
+            Assert.Equal(ThemePreference.Dark, Theme.GetRequested(element));
+            Assert.Same(GetThemeDictionary(ThemeVariant.Dark), element.Resources.MergedDictionaries[0]);
         });
     }
 
@@ -610,7 +648,7 @@ public class ThemeManagerTests
             finally
             {
                 element.Resources.EndInit();
-                Theme.SetRequested(element, ThemePreference.Default);
+                Theme.ClearRequested(element);
             }
         });
     }
@@ -722,7 +760,7 @@ public class ThemeManagerTests
             null
         );
         ThemeManager.Configure(
-            ThemePreference.Default,
+            ThemePreference.Light,
             AccentColorSource.Default,
             BuiltInAccent,
             false,

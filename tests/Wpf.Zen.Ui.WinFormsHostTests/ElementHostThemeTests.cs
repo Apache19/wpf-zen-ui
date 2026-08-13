@@ -724,7 +724,7 @@ public class ElementHostThemeTests
         hostField.SetValue(null, null);
         managerType.GetField("_systemThemeResourceHostUnavailable", staticNonPublic)!.SetValue(null, false);
         managerType.GetField("_themeManagementActivationState", staticNonPublic)!.SetValue(null, 0);
-        managerType.GetField("_themePreference", staticNonPublic)!.SetValue(null, ThemePreference.Default);
+        managerType.GetField("_themePreference", staticNonPublic)!.SetValue(null, ThemePreference.Light);
         typeof(ThemeManager)
            .GetProperty(nameof(ThemeManager.EffectiveTheme), BindingFlags.Static | BindingFlags.Public)!
            .SetValue(null, ThemeVariant.Light);

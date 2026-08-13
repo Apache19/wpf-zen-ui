@@ -10,7 +10,7 @@ namespace Wpf.Zen.Ui.Appearance;
 /// </summary>
 /// <remarks>
 /// Unlike <see cref="ThemePreference"/>, a variant is never a request or a resolution policy. It is
-/// always the final Light or Dark result after Default, System, and high-contrast behavior have
+/// always the final Light or Dark result after System and high-contrast behavior have
 /// been resolved. Keeping those states out of this enum makes it safe to use for rendering and
 /// platform integration without adding defensive fallback branches.
 /// </remarks>

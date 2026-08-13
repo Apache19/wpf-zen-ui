@@ -92,7 +92,7 @@ public class ThemeManagerOptions : ResourceDictionary, ISupportInitialize
     private bool _isInitializing;
     private bool _pendingApply;
 
-    private ThemePreference _preference = ThemePreference.Default;
+    private ThemePreference _preference = ThemePreference.Light;
     private AccentColorSource _accentSource = AccentColorSource.System;
     private Color _customAccentColor = Color.FromRgb(0x00, 0x78, 0xD4);
     private bool _enableNativeControlStyling;
@@ -108,7 +108,8 @@ public class ThemeManagerOptions : ResourceDictionary, ISupportInitialize
     private bool _aHcDarkChanged;
 
     /// <summary>
-    /// Gets or sets the application's theme preference.
+    /// Gets or sets the application's theme preference. The default value is <see cref="ThemePreference.Light"/>,
+    /// matching the palette included by Generic.xaml when no global theme configuration has been applied.
     /// </summary>
     public ThemePreference Preference
     {

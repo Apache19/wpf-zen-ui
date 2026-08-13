@@ -88,20 +88,23 @@ public static class Theme
     /// Identifies the Requested attached property.
     /// </summary>
     /// <remarks>
-    /// Specifies the theme preference requested for the element on which it is set.
-    ///
-    /// When applied, the theme resources corresponding to the specified
-    /// preference are injected into the resource scope of that element.
-    /// Descendant elements resolve theme resources through the normal
-    /// WPF resource lookup mechanism.
-    ///
-    /// This setting is local in scope and does not modify the global
-    /// <see cref="ThemeManager.Preference"/>.
-    ///
-    /// The final applied theme may still be affected by system policies
-    /// such as high contrast mode. When set to <see cref="ThemePreference.System"/>,
-    /// the requested preference is resolved to either Light or Dark
-    /// based on the current system setting.
+    /// <para>
+    /// Specifies the theme preference requested for the element on which it is set. When a non-null preference is
+    /// applied, the corresponding theme resources are injected into that element's resource scope. Descendants then
+    /// resolve those resources through normal WPF resource lookup.
+    /// </para>
+    /// <para>
+    /// The default value is <c>null</c>, which means that the element has no local theme request and inherits theme
+    /// resources from its ancestors, application, or WPF theme dictionaries. Clearing the property after a local
+    /// request removes the injected dictionary and restores that normal lookup behavior; an enum sentinel is not
+    /// required to represent the dependency property's absence of a value.
+    /// </para>
+    /// <para>
+    /// This setting is local in scope and does not modify the global <see cref="ThemeManager.Preference"/>. The final
+    /// applied theme may still be affected by system policies such as high contrast mode. When set to
+    /// <see cref="ThemePreference.System"/>, the request is resolved to either Light or Dark from the current system
+    /// setting.
+    /// </para>
     /// </remarks>
     /// <example>
     /// <code lang="xml">
@@ -111,13 +114,22 @@ public static class Theme
     public static readonly DependencyProperty RequestedProperty =
         DependencyProperty.RegisterAttached(
             "Requested",
-            typeof(ThemePreference),
+            typeof(ThemePreference?),
             typeof(Theme),
             new FrameworkPropertyMetadata(
-                ThemePreference.Default,
+                null,
                 static (d, e) => ThemeManager.OnRequestedThemeChanged(d, e)
-            )
+            ),
+            ValidateRequested
         );
+
+    // Nullable<T> values are boxed as either null or the underlying enum value. Validate both shapes here so an
+    // invalid cast cannot enter ThemeManager and silently select an unrelated palette during resource resolution.
+    private static bool ValidateRequested(object? value) =>
+        value is null
+            or ThemePreference.Light
+            or ThemePreference.Dark
+            or ThemePreference.System;
 
     /// <summary>
     /// Helper for getting <see cref="RequestedProperty"/> from <paramref name="element"/>.
@@ -125,16 +137,19 @@ public static class Theme
     /// <param name="element">
     /// <see cref="DependencyObject"/> to read <see cref="RequestedProperty"/> from.
     /// </param>
-    /// <returns>Requested property value.</returns>
+    /// <returns>
+    /// The locally effective theme request, or <c>null</c> when the element has no request and uses normal resource
+    /// lookup.
+    /// </returns>
     [AttachedPropertyBrowsableForType(typeof(DependencyObject))]
-    public static ThemePreference GetRequested(DependencyObject element)
+    public static ThemePreference? GetRequested(DependencyObject element)
     {
         if (element == null)
         {
             throw new ArgumentNullException(nameof(element));
         }
 
-        return (ThemePreference)element.GetValue(RequestedProperty);
+        return (ThemePreference?)element.GetValue(RequestedProperty);
     }
 
     /// <summary>
@@ -143,14 +158,45 @@ public static class Theme
     /// <param name="element">
     /// <see cref="DependencyObject"/> to set <see cref="RequestedProperty"/> on.
     /// </param>
-    /// <param name="value">Requested property value.</param>
-    public static void SetRequested(DependencyObject element, ThemePreference value)
+    /// <param name="value">
+    /// The requested theme preference, or <c>null</c> to clear the local request and restore normal resource lookup.
+    /// </param>
+    public static void SetRequested(DependencyObject element, ThemePreference? value)
     {
         if (element == null)
         {
             throw new ArgumentNullException(nameof(element));
         }
 
-        element.SetValue(RequestedProperty, value);
+        if (value.HasValue)
+        {
+            element.SetCurrentValue(RequestedProperty, value.Value);
+        }
+        else
+        {
+            element.ClearValue(RequestedProperty);
+        }
+    }
+
+    /// <summary>
+    /// Clears the local <see cref="RequestedProperty"/> value so the element resumes resolving theme resources from
+    /// its ancestors, application, or WPF theme dictionaries.
+    /// </summary>
+    /// <remarks>
+    /// Clearing the dependency property is intentionally different from requesting <see cref="ThemePreference.Light"/>.
+    /// The former removes the element-local theme dictionary; the latter installs an explicit Light dictionary that
+    /// remains independent of the global preference.
+    /// </remarks>
+    /// <param name="element">
+    /// <see cref="DependencyObject"/> from which to clear <see cref="RequestedProperty"/>.
+    /// </param>
+    public static void ClearRequested(DependencyObject element)
+    {
+        if (element == null)
+        {
+            throw new ArgumentNullException(nameof(element));
+        }
+
+        element.ClearValue(RequestedProperty);
     }
 }

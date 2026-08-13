@@ -11,18 +11,11 @@ namespace Wpf.Zen.Ui.Appearance;
 /// <remarks>
 /// A preference is a request, not necessarily the visual result. Read
 /// <see cref="Wpf.Zen.Ui.ThemeManager.EffectiveTheme"/> when code needs the resolved Light or
-/// Dark variant currently used for rendering.
+/// Dark variant currently used for rendering. The library uses <see cref="Light"/> as its initial
+/// preference because Generic.xaml also supplies the Light palette before global theme management is activated.
 /// </remarks>
 public enum ThemePreference
 {
-    /// <summary>
-    /// Makes no explicit Light or Dark request. Globally, the library default palette remains effective: it is
-    /// Light-compatible outside high contrast and follows the active high-contrast palette when required. On
-    /// <c>Theme.Requested</c>, locally injected resources are removed so normal parent and application resource
-    /// lookup resumes.
-    /// </summary>
-    Default,
-
     /// <summary>
     /// Requests the Light variant regardless of the system preference.
     /// </summary>

@@ -12,6 +12,14 @@ namespace Wpf.Zen.Ui.UnitTests.Appearance;
 public class ThemeManagerOptionsTests
 {
     [Fact]
+    public void Preference_IsLightByDefault()
+    {
+        var options = new ThemeManagerOptions();
+
+        Assert.Equal(ThemePreference.Light, options.Preference);
+    }
+
+    [Fact]
     public void BeginInit_PublicAndInterfacePathsDeferConfiguration()
     {
         var publicOptions = new ThemeManagerOptions();

@@ -32,11 +32,10 @@ public partial class SettingsPage
 
         ThemeComboBox.SelectedIndex = ThemeManager.Preference switch
         {
-            ThemePreference.Light   => 0,
-            ThemePreference.Dark    => 1,
-            ThemePreference.Default => 0, // Default is Light,
-            ThemePreference.System  => 2,
-            _                   => 0
+            ThemePreference.Light  => 0,
+            ThemePreference.Dark   => 1,
+            ThemePreference.System => 2,
+            _                      => 0
         };
 
         _suppressThemeComboBoxChangedEvent = false;

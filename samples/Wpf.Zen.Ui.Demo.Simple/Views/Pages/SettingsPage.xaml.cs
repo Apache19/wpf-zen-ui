@@ -23,7 +23,6 @@ public partial class SettingsPage
         switch (ThemeManager.Preference)
         {
             case ThemePreference.Light:
-            case ThemePreference.Default:
                 LightThemeRadioButton.IsChecked = true;
                 break;
 

@@ -94,10 +94,7 @@ public sealed partial class SettingsViewModel : ViewModel
 
     public void UpdateSelectedPreference()
     {
-        ThemePreference preference = ThemeManager.Preference;
-
-        // The default theme of the library is Light.
-        SelectedPreference = preference == ThemePreference.Default ? ThemePreference.Light : preference;
+        SelectedPreference = ThemeManager.Preference;
         UseSystemAccent = ThemeManager.AccentSource == AccentColorSource.System;
     }
 }

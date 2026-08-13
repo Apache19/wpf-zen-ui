@@ -87,7 +87,7 @@ public sealed class ThemeManager
     private static Uri? _additionalHighContrastLightThemeUri;
     private static Uri? _additionalHighContrastDarkThemeUri;
 
-    private static ThemePreference   _themePreference   = ThemePreference.Default;
+    private static ThemePreference   _themePreference   = ThemePreference.Light;
     private static AccentColorSource _accentSource      = AccentColorSource.System;
     private static Color             _customAccentColor = BuiltInAccentColor;
 
@@ -629,9 +629,8 @@ public sealed class ThemeManager
     /// <remarks>
     /// This value is the resolved rendering result, not the configured <see cref="Preference"/>. It is
     /// therefore always <see cref="ThemeVariant.Light"/> or <see cref="ThemeVariant.Dark"/>.
-    /// Outside high contrast, <see cref="ThemePreference.Default"/> resolves to Light while
-    /// <see cref="ThemePreference.System"/> follows the operating-system setting. High contrast can override
-    /// either automatic preference with the variant matching the active high-contrast palette.
+    /// <see cref="ThemePreference.System"/> follows the operating-system setting. High contrast can override that
+    /// automatic preference with the variant matching the active high-contrast palette.
     /// Per-element requests made through <see cref="Theme.RequestedProperty"/> are intentionally
     /// scoped to those elements and are not reflected by this global property.
     /// </remarks>
@@ -787,7 +786,6 @@ public sealed class ThemeManager
     /// <remarks>
     /// This property controls how the effective theme is selected. The available values are:
     /// <list>
-    ///     <item><see cref="ThemePreference.Default"/> - Uses the library default palette, which is Light-compatible outside high contrast.</item>
     ///     <item><see cref="ThemePreference.Light"/> - The application will use the Light theme.</item>
     ///     <item><see cref="ThemePreference.Dark"/> - The application will use the Dark theme.</item>
     ///     <item><see cref="ThemePreference.System"/> - The application will automatically follow the system theme settings.</item>
@@ -797,12 +795,6 @@ public sealed class ThemeManager
     /// based on the current system setting. The <see cref="EffectiveTheme"/> property will reflect
     /// the resolved theme (either Light or Dark), and changes to the system theme will
     /// automatically trigger updates.
-    ///
-    /// When set to <see cref="ThemePreference.Default"/>, the manager keeps the global resource layer needed for
-    /// accent, native-control, additional, and high-contrast resources. Outside high contrast this matches the
-    /// Light dictionary included by Generic.xaml, but Default remains the public preference rather than becoming an
-    /// explicit Light selection.
-    ///
     /// Changing the value of this property triggers a theme refresh. If the preference is set to
     /// <see cref="ThemePreference.System"/>, the effective theme will be synchronized immediately
     /// with the system setting.
@@ -1021,11 +1013,11 @@ public sealed class ThemeManager
 
     internal static void OnRequestedThemeChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
-        var newPreference = (ThemePreference)e.NewValue;
+        var newPreference = (ThemePreference?)e.NewValue;
 
         if (d is FrameworkElement fe)
         {
-            if (newPreference == ThemePreference.Default)
+            if (!newPreference.HasValue)
             {
                 RemoveThemeDictionary(fe.Resources);
                 UnregisterElement(fe);
@@ -1033,12 +1025,12 @@ public sealed class ThemeManager
             else
             {
                 RegisterElement(fe);
-                ApplyThemeToElement(fe, newPreference);
+                ApplyThemeToElement(fe, newPreference.Value);
             }
         }
         else if (d is FrameworkContentElement fce)
         {
-            if (newPreference == ThemePreference.Default)
+            if (!newPreference.HasValue)
             {
                 RemoveThemeDictionary(fce.Resources);
                 UnregisterContentElement(fce);
@@ -1046,7 +1038,7 @@ public sealed class ThemeManager
             else
             {
                 RegisterContentElement(fce);
-                ApplyThemeToContentElement(fce, newPreference);
+                ApplyThemeToContentElement(fce, newPreference.Value);
             }
         }
     }
@@ -1181,10 +1173,6 @@ public sealed class ThemeManager
         // styles re-evaluated by those root transactions must already observe the new global theme.
         EnsureGlobalResourceHost(nativeControlStylesChanged);
 
-        // Per-element Default targets are already unregistered in OnRequestedThemeChanged, so
-        // the only Default targets here are Application and root visuals. For those, Default
-        // resolves to Light (matching Generic.xaml) so global accent, native-control, and
-        // additional resources remain available.
         foreach (var (_, resources, preference) in CollectTargets())
         {
             ApplyThemeToResources(resources, preference);
@@ -1218,8 +1206,11 @@ public sealed class ThemeManager
             {
                 if (wr.TryGetTarget(out var fe))
                 {
-                    ThemePreference preference = GetThemePreferenceForElement(fe);
-                    targets.Add((fe, fe.Resources, preference));
+                    ThemePreference? preference = GetThemePreferenceForElement(fe);
+                    if (preference.HasValue)
+                    {
+                        targets.Add((fe, fe.Resources, preference.Value));
+                    }
                 }
             }
 
@@ -1230,8 +1221,11 @@ public sealed class ThemeManager
             {
                 if (wr.TryGetTarget(out var fce))
                 {
-                    ThemePreference preference = Theme.GetRequested(fce);
-                    targets.Add((fce, fce.Resources, preference));
+                    ThemePreference? preference = Theme.GetRequested(fce);
+                    if (preference.HasValue)
+                    {
+                        targets.Add((fce, fce.Resources, preference.Value));
+                    }
                 }
             }
         }
@@ -1700,7 +1694,7 @@ public sealed class ThemeManager
 
     private static void ValidateThemePreference(ThemePreference preference)
     {
-        if (preference is < ThemePreference.Default or > ThemePreference.System)
+        if (preference is < ThemePreference.Light or > ThemePreference.System)
         {
             throw new ArgumentOutOfRangeException(
                 nameof(preference),
@@ -1739,7 +1733,7 @@ public sealed class ThemeManager
         return Color.FromRgb(color.R, color.G, color.B);
     }
 
-    private static ThemePreference GetThemePreferenceForElement(FrameworkElement element)
+    private static ThemePreference? GetThemePreferenceForElement(FrameworkElement element)
     {
         if (GetIsRootVisual(element))
         {
@@ -1759,7 +1753,7 @@ public sealed class ThemeManager
             return IsHighContrastDark() ? ThemeVariant.Dark : ThemeVariant.Light;
         }
 
-        return preference == ThemePreference.System ? GetSystemThemeVariant() : ThemeVariant.Light;
+        return GetSystemThemeVariant();
     }
 
     private static ResourceDictionary GetSystemThemeDictionary() =>
