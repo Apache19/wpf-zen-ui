@@ -3,8 +3,8 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
+using System.Collections;
 using System.Collections.ObjectModel;
-using System.ComponentModel;
 
 namespace Wpf.Zen.Ui;
 
@@ -28,10 +28,11 @@ namespace Wpf.Zen.Ui;
 /// without requiring XAML to construct an immutable <see cref="NavigationTarget"/>.
 /// </para>
 /// </remarks>
-public sealed class NavigationMap : IList<NavigationMapNode>, System.Collections.IList
+public sealed class NavigationMap : IList<NavigationMapNode>, IList, ISupportInitialize
 {
     private readonly Dictionary<string, NavigationMapNode> _nodes = new(StringComparer.Ordinal);
     private readonly ObservableCollection<NavigationMapNode> _observableNodes = [];
+    private int _initializationDepth;
     private int _updateDepth;
     private bool _hasDeferredChange;
 
@@ -42,10 +43,11 @@ public sealed class NavigationMap : IList<NavigationMapNode>, System.Collections
     }
 
     /// <summary>Gets the live, read-only sequence of registered placements.</summary>
+    // ReSharper disable once UnusedAutoPropertyAccessor.Global
     public ReadOnlyObservableCollection<NavigationMapNode> Nodes { get; }
 
-    /// <inheritdoc />
-    public int Count => _nodes.Count;
+    /// <inheritdoc cref="IList{NavigationMapNode}" />
+    public int Count => _observableNodes.Count;
 
     /// <inheritdoc />
     public bool IsReadOnly => false;
@@ -67,7 +69,7 @@ public sealed class NavigationMap : IList<NavigationMapNode>, System.Collections
                 throw new ArgumentNullException(nameof(value));
             }
 
-            NavigationMapNode oldNode = _observableNodes[index];
+            var oldNode = _observableNodes[index];
             if (ReferenceEquals(oldNode, value))
             {
                 return;
@@ -119,6 +121,23 @@ public sealed class NavigationMap : IList<NavigationMapNode>, System.Collections
         if (index < 0 || index > _observableNodes.Count)
         {
             throw new ArgumentOutOfRangeException(nameof(index));
+        }
+
+        if (_initializationDepth > 0)
+        {
+            // System.Xaml surrounds object construction with ISupportInitialize. In particular,
+            // the Visual Studio designer may add a collection item before it has replayed that
+            // item's attributes. Keep declaration order immediately so IList.Add can return the
+            // correct index, but defer identity validation and ownership until EndInit, after the
+            // designer has assigned Key. Ordinary runtime Add calls remain strictly validated.
+            if (node is null)
+            {
+                throw new ArgumentNullException(nameof(node));
+            }
+
+            _observableNodes.Insert(index, node);
+            NotifyChanged();
+            return;
         }
 
         ValidateNodeForInsertion(node);
@@ -201,11 +220,84 @@ public sealed class NavigationMap : IList<NavigationMapNode>, System.Collections
         finally
         {
             _updateDepth--;
-            if (_updateDepth == 0 && _hasDeferredChange)
+            if (_updateDepth == 0 && _initializationDepth == 0 && _hasDeferredChange)
             {
                 _hasDeferredChange = false;
                 Changed?.Invoke(this, EventArgs.Empty);
             }
+        }
+    }
+
+    /// <summary>Begins a XAML initialization transaction.</summary>
+    /// <remarks>
+    /// WPF's object writer and the Visual Studio designer can place a newly constructed collection
+    /// item into its parent before all item attributes have been assigned. The map therefore keeps
+    /// nodes in declaration order during initialization, but postpones key validation, lookup-table
+    /// construction, and ownership attachment until <see cref="EndInit"/>. Calls to <see cref="Add(NavigationMapNode)"/>
+    /// outside such a transaction continue to reject incomplete nodes immediately.
+    /// </remarks>
+    public void BeginInit() => _initializationDepth++;
+
+    /// <summary>Completes a XAML initialization transaction and validates the resulting map.</summary>
+    /// <exception cref="InvalidOperationException">
+    /// This method is called without a matching <see cref="BeginInit"/> call.
+    /// </exception>
+    /// <exception cref="ArgumentException">
+    /// A declared node has an empty key, or multiple nodes declare the same key.
+    /// </exception>
+    public void EndInit()
+    {
+        if (_initializationDepth == 0)
+        {
+            throw new InvalidOperationException(
+                $"{nameof(EndInit)} cannot be called without a matching {nameof(BeginInit)} call."
+            );
+        }
+
+        _initializationDepth--;
+        if (_initializationDepth > 0)
+        {
+            return;
+        }
+
+        // Validate the complete declaration before mutating ownership or subscriptions. This keeps
+        // a malformed XAML graph from leaving a partially indexed map when EndInit reports the error.
+        var initializedNodes = new Dictionary<string, NavigationMapNode>(StringComparer.Ordinal);
+        foreach (var node in _observableNodes)
+        {
+            if (string.IsNullOrWhiteSpace(node.Key))
+            {
+                throw new ArgumentException(
+                    "A navigation-map node must declare a non-empty key before initialization completes.",
+                    nameof(node)
+                );
+            }
+
+            if (initializedNodes.ContainsKey(node.Key))
+            {
+                throw new ArgumentException(
+                    $"A navigation-map node with key '{node.Key}' already exists.",
+                    nameof(node)
+                );
+            }
+
+            initializedNodes.Add(node.Key, node);
+        }
+
+        _nodes.Clear();
+        foreach (var pair in initializedNodes)
+        {
+            var node = pair.Value;
+            node.AttachTo(this);
+            node.PropertyChanged -= OnNodePropertyChanged;
+            node.PropertyChanged += OnNodePropertyChanged;
+            _nodes.Add(pair.Key, node);
+        }
+
+        if (_updateDepth == 0 && _hasDeferredChange)
+        {
+            _hasDeferredChange = false;
+            Changed?.Invoke(this, EventArgs.Empty);
         }
     }
 
@@ -223,7 +315,7 @@ public sealed class NavigationMap : IList<NavigationMapNode>, System.Collections
             throw new ArgumentException("A navigation-map key cannot be empty.", nameof(key));
         }
 
-        if (!_nodes.TryGetValue(key, out NavigationMapNode? node))
+        if (!_nodes.TryGetValue(key, out var node))
         {
             return false;
         }
@@ -246,7 +338,7 @@ public sealed class NavigationMap : IList<NavigationMapNode>, System.Collections
             return false;
         }
 
-        return _nodes.TryGetValue(node.Key, out NavigationMapNode? registered)
+        return _nodes.TryGetValue(node.Key, out var registered)
             && ReferenceEquals(node, registered)
             && Remove(node.Key);
     }
@@ -263,7 +355,7 @@ public sealed class NavigationMap : IList<NavigationMapNode>, System.Collections
             return;
         }
 
-        foreach (NavigationMapNode node in _observableNodes)
+        foreach (var node in _observableNodes)
         {
             node.PropertyChanged -= OnNodePropertyChanged;
             node.DetachFrom(this);
@@ -294,7 +386,7 @@ public sealed class NavigationMap : IList<NavigationMapNode>, System.Collections
     /// <returns><see langword="true"/> when the exact placement belongs to this map.</returns>
     public bool Contains(NavigationMapNode node) =>
         node is not null
-        && _nodes.TryGetValue(node.Key, out NavigationMapNode? registered)
+        && _nodes.TryGetValue(node.Key, out var registered)
         && ReferenceEquals(node, registered);
 
     /// <summary>Returns the declaration-order index of an exact placement instance.</summary>
@@ -312,39 +404,39 @@ public sealed class NavigationMap : IList<NavigationMapNode>, System.Collections
     /// <returns>An enumerator over the map.</returns>
     public IEnumerator<NavigationMapNode> GetEnumerator() => _observableNodes.GetEnumerator();
 
-    System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => GetEnumerator();
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
-    bool System.Collections.IList.IsFixedSize => false;
+    bool IList.IsFixedSize => false;
 
-    bool System.Collections.IList.IsReadOnly => false;
+    bool IList.IsReadOnly => false;
 
-    bool System.Collections.ICollection.IsSynchronized => false;
+    bool ICollection.IsSynchronized => false;
 
-    object System.Collections.ICollection.SyncRoot =>
-        ((System.Collections.ICollection)_observableNodes).SyncRoot;
+    object ICollection.SyncRoot =>
+        ((ICollection)_observableNodes).SyncRoot;
 
-    object? System.Collections.IList.this[int index]
+    object? IList.this[int index]
     {
         get => this[index];
         set => this[index] = GetTypedNode(value);
     }
 
-    int System.Collections.IList.Add(object? value)
+    int IList.Add(object? value)
     {
         Add(GetTypedNode(value));
         return Count - 1;
     }
 
-    bool System.Collections.IList.Contains(object? value) =>
+    bool IList.Contains(object? value) =>
         value is NavigationMapNode node && Contains(node);
 
-    int System.Collections.IList.IndexOf(object? value) =>
+    int IList.IndexOf(object? value) =>
         value is NavigationMapNode node ? IndexOf(node) : -1;
 
-    void System.Collections.IList.Insert(int index, object? value) =>
+    void IList.Insert(int index, object? value) =>
         Insert(index, GetTypedNode(value));
 
-    void System.Collections.IList.Remove(object? value)
+    void IList.Remove(object? value)
     {
         if (value is NavigationMapNode node)
         {
@@ -352,8 +444,8 @@ public sealed class NavigationMap : IList<NavigationMapNode>, System.Collections
         }
     }
 
-    void System.Collections.ICollection.CopyTo(Array array, int index) =>
-        ((System.Collections.ICollection)_observableNodes).CopyTo(array, index);
+    void ICollection.CopyTo(Array array, int index) =>
+        ((ICollection)_observableNodes).CopyTo(array, index);
 
     /// <summary>Finds the placement selected by a route key or page type.</summary>
     /// <param name="target">The semantic target to locate.</param>
@@ -369,14 +461,14 @@ public sealed class NavigationMap : IList<NavigationMapNode>, System.Collections
             throw new ArgumentNullException(nameof(target));
         }
 
-        if (target.RouteKey is { } routeKey && _nodes.TryGetValue(routeKey, out NavigationMapNode? keyedNode))
+        if (target.RouteKey is { } routeKey && _nodes.TryGetValue(routeKey, out var keyedNode))
         {
             return keyedNode;
         }
 
         if (target.RouteKey is { } targetRouteKey)
         {
-            NavigationMapNode? aliasedNode = _observableNodes.FirstOrDefault(
+            var aliasedNode = _observableNodes.FirstOrDefault(
                 node => node.Target?.RouteKey == targetRouteKey
             );
             return aliasedNode;
@@ -392,7 +484,7 @@ public sealed class NavigationMap : IList<NavigationMapNode>, System.Collections
         NavigationLocationContext context,
         object? leafContentOverride = null)
     {
-        NavigationMapNode? leaf = FindNode(target);
+        var leaf = FindNode(target);
         if (leaf is null)
         {
             return [];
@@ -400,12 +492,12 @@ public sealed class NavigationMap : IList<NavigationMapNode>, System.Collections
 
         var reversedNodes = new List<NavigationMapNode>();
         var visitedKeys = new HashSet<string>(StringComparer.Ordinal);
-        NavigationMapNode? current = leaf;
+        var current = leaf;
 
         while (current is not null && visitedKeys.Add(current.Key))
         {
             reversedNodes.Add(current);
-            current = current.ParentKey is { } parentKey && _nodes.TryGetValue(parentKey, out NavigationMapNode? parent)
+            current = current.ParentKey is { } parentKey && _nodes.TryGetValue(parentKey, out var parent)
                 ? parent
                 : null;
         }
@@ -414,18 +506,19 @@ public sealed class NavigationMap : IList<NavigationMapNode>, System.Collections
 
         // Visibility filters the projection, not traversal. Build the complete semantic chain
         // first so descendants can resolve through any number of hidden organizational nodes.
-        NavigationMapNode[] visibleNodes = reversedNodes
-            .Where(static node => node.IsBreadcrumbVisible)
-            .ToArray();
+        var visibleNodes = reversedNodes
+           .Where(static node => node.IsBreadcrumbVisible)
+           .ToArray();
+
         var result = new BreadcrumbSegment[visibleNodes.Length];
-        for (int index = 0; index < visibleNodes.Length; index++)
+        for (var index = 0; index < visibleNodes.Length; index++)
         {
-            NavigationMapNode node = visibleNodes[index];
-            object? content = ReferenceEquals(node, leaf) && leafContentOverride is not null
+            var node = visibleNodes[index];
+            var content = ReferenceEquals(node, leaf) && leafContentOverride is not null
                 ? leafContentOverride
                 : node.ContentResolver?.Invoke(context) ?? node.Content;
 
-            NavigationTarget? segmentTarget = node.Target;
+            var segmentTarget = node.Target;
             if (ReferenceEquals(node, leaf))
             {
                 // Preserve occurrence-specific parameters on the active leaf. Parent nodes keep
@@ -472,7 +565,7 @@ public sealed class NavigationMap : IList<NavigationMapNode>, System.Collections
             );
         }
 
-        if (_nodes.TryGetValue(node.Key, out NavigationMapNode? existing)
+        if (_nodes.TryGetValue(node.Key, out var existing)
             && !ReferenceEquals(existing, nodeBeingReplaced))
         {
             throw new ArgumentException(
@@ -491,7 +584,7 @@ public sealed class NavigationMap : IList<NavigationMapNode>, System.Collections
 
     private void NotifyChanged()
     {
-        if (_updateDepth > 0)
+        if (_updateDepth > 0 || _initializationDepth > 0)
         {
             _hasDeferredChange = true;
             return;

@@ -303,6 +303,33 @@ public class NavigationLocationTests
     }
 
     [Fact]
+    public void NavigationMap_DefersIncompleteNodeValidationDuringXamlInitialization()
+    {
+        var map = new NavigationMap();
+        var list = (System.Collections.IList)map;
+        var initialization = (System.ComponentModel.ISupportInitialize)map;
+        var first = new NavigationMapNode();
+        var second = new NavigationMapNode();
+
+        initialization.BeginInit();
+
+        // The designer is allowed to add an object first and replay its attributes afterwards.
+        // IList.Add must still report stable declaration indices while lookup construction waits.
+        Assert.Equal(0, list.Add(first));
+        Assert.Equal(1, list.Add(second));
+        first.Key = "first";
+        second.Key = "second";
+
+        initialization.EndInit();
+
+        Assert.Equal(2, map.Count);
+        Assert.True(map.TryGetNode("first", out NavigationMapNode registeredFirst));
+        Assert.Same(first, registeredFirst);
+        Assert.True(map.TryGetNode("second", out NavigationMapNode registeredSecond));
+        Assert.Same(second, registeredSecond);
+    }
+
+    [Fact]
     public void HiddenMapNode_IsOmittedWithoutLeavingMapOrBreakingDescendantResolution()
     {
         WpfTestThread.Run(() =>
