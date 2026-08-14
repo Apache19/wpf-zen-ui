@@ -109,6 +109,21 @@
                                 RecognizesAccessKey="True" />
                         </Border>
                         <!--
+                            Selection, search, and keyboard focus must never change the card's
+                            DesiredSize. Mutating RootBorder.BorderThickness made wrapped titles
+                            remeasure on click, which in turn rerouted the highlighted connector
+                            away from the ordinary route the user had just seen. This empty overlay
+                            is arranged over the card but contributes only its tiny border minimum
+                            to Grid measurement, so RootBorder remains the stable size authority.
+                        -->
+                        <Border
+                            x:Name="InteractionBorder"
+                            BorderThickness="2"
+                            CornerRadius="6"
+                            IsHitTestVisible="False"
+                            SnapsToDevicePixels="True"
+                            Visibility="Collapsed" />
+                        <!--
                             A root accent makes separate trees in a forest immediately readable.
                             It is presentation-only: unresolved parents and cycle recovery are still
                             exposed through IsRoot for applications that need a different treatment.
@@ -121,6 +136,18 @@
                             Background="{m:DynamicBrush AccentFillSecondary}"
                             CornerRadius="0,0,3,3"
                             IsHitTestVisible="False" />
+                        <!-- Search matches remain visible without replacing editor-selection chrome. -->
+                        <Border
+                            x:Name="SearchMarker"
+                            Width="8"
+                            Height="8"
+                            Margin="0,6,6,0"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Top"
+                            Background="{m:DynamicBrush AccentFillSecondary}"
+                            CornerRadius="4"
+                            IsHitTestVisible="False"
+                            Visibility="Collapsed" />
                     </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsRoot" Value="False">
@@ -134,20 +161,49 @@
                             <Setter TargetName="RootBorder" Property="Background" Value="{m:DynamicBrush ControlFillTertiary}" />
                             <Setter Property="Foreground" Value="{m:DynamicBrush TextFillSecondary}" />
                         </Trigger>
+                        <Trigger Property="IsLayoutSelected" Value="True">
+                            <Setter TargetName="InteractionBorder" Property="BorderBrush" Value="{m:DynamicBrush AccentFillSecondary}" />
+                            <Setter TargetName="InteractionBorder" Property="BorderThickness" Value="2" />
+                            <Setter TargetName="InteractionBorder" Property="Visibility" Value="Visible" />
+                        </Trigger>
+                        <Trigger Property="IsPrimaryLayoutSelection" Value="True">
+                            <Setter TargetName="InteractionBorder" Property="BorderBrush" Value="{m:DynamicBrush AccentFillPrimary}" />
+                            <Setter TargetName="InteractionBorder" Property="BorderThickness" Value="3" />
+                            <Setter TargetName="InteractionBorder" Property="Visibility" Value="Visible" />
+                        </Trigger>
+                        <Trigger Property="IsSearchMatch" Value="True">
+                            <Setter TargetName="SearchMarker" Property="Visibility" Value="Visible" />
+                        </Trigger>
+                        <Trigger Property="IsCurrentSearchMatch" Value="True">
+                            <Setter TargetName="RootBorder" Property="Background" Value="{m:DynamicBrush SubtleFillSecondary}" />
+                            <Setter TargetName="InteractionBorder" Property="BorderBrush" Value="{m:DynamicBrush AccentFillSecondary}" />
+                            <Setter TargetName="InteractionBorder" Property="BorderThickness" Value="2" />
+                            <Setter TargetName="InteractionBorder" Property="Visibility" Value="Visible" />
+                        </Trigger>
                         <Trigger Property="IsKeyboardFocused" Value="True">
-                            <Setter TargetName="RootBorder" Property="BorderBrush" Value="{m:DynamicBrush KeyboardFocusBorder}" />
-                            <Setter TargetName="RootBorder" Property="BorderThickness" Value="2" />
+                            <Setter TargetName="InteractionBorder" Property="BorderBrush" Value="{m:DynamicBrush KeyboardFocusBorder}" />
+                            <Setter TargetName="InteractionBorder" Property="BorderThickness" Value="2" />
+                            <Setter TargetName="InteractionBorder" Property="Visibility" Value="Visible" />
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="RootBorder" Property="Background" Value="{m:DynamicBrush ControlFillDisabled}" />
                             <Setter TargetName="RootBorder" Property="BorderBrush" Value="{m:DynamicBrush ControlStrokeDefault}" />
                             <Setter Property="Foreground" Value="{m:DynamicBrush TextFillDisabled}" />
                             <Setter TargetName="RootAccent" Property="Opacity" Value="0.45" />
+                            <Setter TargetName="InteractionBorder" Property="Visibility" Value="Collapsed" />
                         </Trigger>
                         <Trigger Property="Target" Value="{x:Null}">
                             <!--  Structural nodes remain invokable but do not advertise a page action.  -->
                             <Setter Property="Cursor" Value="Arrow" />
                         </Trigger>
+                        <MultiDataTrigger>
+                            <MultiDataTrigger.Conditions>
+                                <Condition Binding="{Binding IsEditing, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationMapView}}}" Value="True" />
+                                <Condition Binding="{Binding LayoutMode, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationMapView}}}" Value="{x:Static controls:NavigationMapLayoutMode.Manual}" />
+                            </MultiDataTrigger.Conditions>
+                            <!-- Editing owns pointer activation, so every node advertises movement. -->
+                            <Setter Property="Cursor" Value="SizeAll" />
+                        </MultiDataTrigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
@@ -157,8 +213,13 @@
     <Style x:Key="DefaultUiNavigationMapViewStyle" TargetType="{x:Type controls:NavigationMapView}">
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="ConnectorBrush" Value="{m:DynamicBrush DividerStrokeDefault}" />
+        <Setter Property="HighlightedConnectorBrush" Value="{m:DynamicBrush AccentFillSecondary}" />
         <Setter Property="Padding" Value="24" />
-        <Setter Property="Focusable" Value="False" />
+        <!--
+            The editor itself owns keyboard focus. Node containers retain semantic/primary selection
+            visuals, while commands remain available after clicking blank map space.
+        -->
+        <Setter Property="Focusable" Value="True" />
         <Setter Property="ItemTemplateSelector" Value="{StaticResource DefaultNavigationMapNodeTemplateSelector}" />
         <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Auto" />
         <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto" />
@@ -169,7 +230,17 @@
                         ConnectorBrush="{Binding ConnectorBrush, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationMapView}}}"
                         ConnectorThickness="{Binding ConnectorThickness, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationMapView}}}"
                         Direction="{Binding Direction, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationMapView}}}"
+                        GridBrush="#247F7F7F"
+                        GridSize="{Binding GridSize, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationMapView}}}"
+                        HighlightedConnectorBrush="{Binding HighlightedConnectorBrush, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationMapView}}}"
+                        HighlightedConnectorThickness="{Binding HighlightedConnectorThickness, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationMapView}}}"
+                        HighlightedNodeKey="{Binding PrimarySelectedNodeKey, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationMapView}}}"
                         HorizontalSpacing="{Binding HorizontalSpacing, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationMapView}}}"
+                        IsEditing="{Binding IsEditing, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationMapView}}}"
+                        LayoutDefinition="{Binding LayoutDefinition, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationMapView}}}"
+                        LayoutMode="{Binding LayoutMode, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationMapView}}}"
+                        RoutingClearance="{Binding RoutingClearance, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationMapView}}}"
+                        ShowGrid="{Binding ShowGrid, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationMapView}}}"
                         VerticalSpacing="{Binding VerticalSpacing, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationMapView}}}" />
                 </ItemsPanelTemplate>
             </Setter.Value>
@@ -179,13 +250,26 @@
                 <ControlTemplate TargetType="{x:Type controls:NavigationMapView}">
                     <Border Background="{TemplateBinding Background}" SnapsToDevicePixels="True">
                         <controls:PassiveScrollViewer
+                            x:Name="PART_ScrollViewer"
                             Padding="{TemplateBinding Padding}"
                             CanContentScroll="False"
                             Focusable="False"
                             HorizontalScrollBarVisibility="{TemplateBinding ScrollViewer.HorizontalScrollBarVisibility}"
                             ScrollSpillMode="Enabled"
                             VerticalScrollBarVisibility="{TemplateBinding ScrollViewer.VerticalScrollBarVisibility}">
-                            <ItemsPresenter SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
+                            <!--
+                                LayoutTransform is intentional: unlike RenderTransform it publishes
+                                the scaled desired size to ScrollViewer, keeping both scrollbars and
+                                BringIntoView correct at every zoom level.
+                            -->
+                            <Grid>
+                                <Grid.LayoutTransform>
+                                    <ScaleTransform
+                                        ScaleX="{Binding ZoomFactor, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationMapView}}}"
+                                        ScaleY="{Binding ZoomFactor, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationMapView}}}" />
+                                </Grid.LayoutTransform>
+                                <ItemsPresenter SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
+                            </Grid>
                         </controls:PassiveScrollViewer>
                     </Border>
                 </ControlTemplate>

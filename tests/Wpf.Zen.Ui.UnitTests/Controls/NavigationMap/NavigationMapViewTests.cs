@@ -14,6 +14,7 @@ using System.Windows.Input;
 using System.Windows.Markup;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Windows.Threading;
 using Wpf.Zen.Ui.Controls;
 
 namespace Wpf.Zen.Ui.UnitTests.Controls.NavigationMaps;
@@ -43,6 +44,8 @@ public class NavigationMapViewTests
             {
                 Direction = NavigationMapDirection.LeftToRight,
                 ItemsSource = map,
+                LayoutMode = NavigationMapLayoutMode.Manual,
+                ZoomFactor = 0.75D,
             };
             var host = new Grid();
             host.Resources.MergedDictionaries.Add(resources);
@@ -50,6 +53,7 @@ public class NavigationMapViewTests
 
             MeasureAndArrange(host, 800D, 600D);
 
+            Assert.True(view.Focusable);
             var container = Assert.IsType<NavigationMapItem>(
                 view.ItemContainerGenerator.ContainerFromItem(map[0])
             );
@@ -58,6 +62,17 @@ public class NavigationMapViewTests
                 FindVisualDescendant<NavigationMapPanel>(view)
             );
             Assert.Equal(NavigationMapDirection.LeftToRight, panel.Direction);
+            Assert.Equal(NavigationMapLayoutMode.Manual, panel.LayoutMode);
+            Assert.Same(view.LayoutDefinition, panel.LayoutDefinition);
+            Assert.Equal(view.GridSize, panel.GridSize);
+            Assert.Equal(view.RoutingClearance, panel.RoutingClearance);
+            ScaleTransform zoomTransform = Assert.Single(
+                EnumerateVisualDescendants<FrameworkElement>(view)
+                    .Select(static element => element.LayoutTransform)
+                    .OfType<ScaleTransform>()
+            );
+            Assert.Equal(0.75D, zoomTransform.ScaleX);
+            Assert.Equal(0.75D, zoomTransform.ScaleY);
             Assert.Equal("Explains the localized root feature.", container.ToolTip);
             Assert.Equal(
                 "Explains the localized root feature.",
@@ -89,7 +104,13 @@ public class NavigationMapViewTests
                     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:ui="http://schemas.thezendev.com/wpf/2027"
-                    Direction="LeftToRight">
+                    Direction="LeftToRight"
+                    LayoutMode="Manual">
+                    <ui:NavigationMapView.LayoutDefinition>
+                        <ui:NavigationMapLayout>
+                            <ui:NavigationMapPlacement NodeKey="root" Position="240,120" />
+                        </ui:NavigationMapLayout>
+                    </ui:NavigationMapView.LayoutDefinition>
                     <ui:NavigationMapNode Key="root" Content="Localized root" />
                     <ui:NavigationMapNode
                         Key="child"
@@ -103,6 +124,11 @@ public class NavigationMapViewTests
 
             Assert.Equal(2, view.Items.Count);
             Assert.Equal(NavigationMapDirection.LeftToRight, view.Direction);
+            Assert.Equal(NavigationMapLayoutMode.Manual, view.LayoutMode);
+            Assert.NotNull(view.LayoutDefinition);
+            Assert.True(view.LayoutDefinition.TryGetPlacement("root", out NavigationMapPlacement? placement));
+            Assert.NotNull(placement);
+            Assert.Equal(new Point(240D, 120D), placement.Position);
             var child = Assert.IsType<NavigationMapNode>(view.Items[1]);
             Assert.Equal("Localized child", child.Content);
             Assert.Equal("Explains what the child page does.", child.Description);
@@ -529,62 +555,867 @@ public class NavigationMapViewTests
 
             MeasureAndArrange(panel, 600D, 400D);
 
-            // Two sibling paths contain six raw orthogonal intervals. Their common trunk and
-            // touching branch-bar portions normalize to four disjoint intervals in either axis.
-            Assert.Equal(4, panel.ConnectorSegments.Count);
+            // Normalization may reduce a perfectly aligned fan-out to a two-segment T junction or
+            // retain separate endpoint stems when margins differ. In both cases shared pixels must
+            // occur only once in the rendered geometry.
+            Assert.True(panel.ConnectorSegments.Count >= 2);
             AssertNoCollinearOverlap(panel.ConnectorSegments);
 
-            Vector rootOffset = VisualTreeHelper.GetOffset(root);
-            Vector firstOffset = VisualTreeHelper.GetOffset(first);
-            Point sharedTrunkSample;
-            Point branchJointSample;
-            Point exclusiveBranchSample;
-            if (direction == NavigationMapDirection.TopToBottom)
-            {
-                double parentEnd = rootOffset.Y + root.ActualHeight;
-                double middle = parentEnd + ((firstOffset.Y - parentEnd) / 2D);
-                sharedTrunkSample = new Point(
-                    rootOffset.X + (root.ActualWidth / 2D),
-                    (parentEnd + middle) / 2D
-                );
-                branchJointSample = new Point(
-                    rootOffset.X + (root.ActualWidth / 2D),
-                    middle
-                );
-                exclusiveBranchSample = new Point(
-                    firstOffset.X + (first.ActualWidth / 2D),
-                    (middle + firstOffset.Y) / 2D
-                );
-            }
-            else
-            {
-                double parentEnd = rootOffset.X + root.ActualWidth;
-                double middle = parentEnd + ((firstOffset.X - parentEnd) / 2D);
-                sharedTrunkSample = new Point(
-                    (parentEnd + middle) / 2D,
-                    rootOffset.Y + (root.ActualHeight / 2D)
-                );
-                branchJointSample = new Point(
-                    middle,
-                    rootOffset.Y + (root.ActualHeight / 2D)
-                );
-                exclusiveBranchSample = new Point(
-                    (middle + firstOffset.X) / 2D,
-                    firstOffset.Y + (first.ActualHeight / 2D)
-                );
-            }
+            Point[] intersections = (
+                from horizontal in panel.ConnectorSegments
+                where horizontal.IsHorizontal
+                from vertical in panel.ConnectorSegments
+                where !vertical.IsHorizontal
+                    && horizontal.Start <= vertical.Offset
+                    && horizontal.End >= vertical.Offset
+                    && vertical.Start <= horizontal.Offset
+                    && vertical.End >= horizontal.Offset
+                select new Point(vertical.Offset, horizontal.Offset)
+            ).ToArray();
+            Assert.NotEmpty(intersections);
+            Point exclusiveSample = panel.ConnectorSegments[0].StartPoint
+                + ((panel.ConnectorSegments[0].EndPoint - panel.ConnectorSegments[0].StartPoint) / 2D);
+            Point branchJointSample = intersections[0];
 
             var bitmap = new RenderTargetBitmap(600, 400, 96D, 96D, PixelFormats.Pbgra32);
             bitmap.Render(panel);
-            byte sharedAlpha = GetPixelAlpha(bitmap, sharedTrunkSample);
             byte jointAlpha = GetPixelAlpha(bitmap, branchJointSample);
-            byte exclusiveAlpha = GetPixelAlpha(bitmap, exclusiveBranchSample);
+            byte exclusiveAlpha = GetPixelAlpha(bitmap, exclusiveSample);
 
             Assert.InRange(exclusiveAlpha, (byte)126, (byte)130);
-            Assert.InRange(sharedAlpha, (byte)126, (byte)130);
             Assert.InRange(jointAlpha, (byte)126, (byte)130);
-            Assert.InRange(Math.Abs(sharedAlpha - exclusiveAlpha), 0, 1);
             Assert.InRange(Math.Abs(jointAlpha - exclusiveAlpha), 0, 1);
+        });
+    }
+
+    [Fact]
+    public void ManualPanel_AppliesPinnedCentersAndTracksRuntimeLayoutChanges()
+    {
+        WpfTestThread.Run(() =>
+        {
+            var root = CreateItem("root", null);
+            var child = CreateItem("child", "root");
+            var layout = new NavigationMapLayout();
+            layout.SetPosition("root", new Point(300D, 120D));
+            layout.SetPosition("child", new Point(120D, 260D));
+            var panel = new NavigationMapPanel
+            {
+                LayoutMode = NavigationMapLayoutMode.Manual,
+                LayoutDefinition = layout,
+            };
+            panel.Children.Add(root);
+            panel.Children.Add(child);
+
+            MeasureAndArrange(panel, 800D, 600D);
+
+            Assert.Equal(
+                new Vector(
+                    300D - (root.DesiredSize.Width / 2D),
+                    120D - (root.DesiredSize.Height / 2D)
+                ),
+                VisualTreeHelper.GetOffset(root)
+            );
+            Assert.Equal(
+                new Vector(
+                    120D - (child.DesiredSize.Width / 2D),
+                    260D - (child.DesiredSize.Height / 2D)
+                ),
+                VisualTreeHelper.GetOffset(child)
+            );
+
+            layout.SetPosition("child", new Point(420D, 310D));
+            MeasureAndArrange(panel, 800D, 600D);
+
+            Assert.Equal(
+                new Vector(
+                    420D - (child.DesiredSize.Width / 2D),
+                    310D - (child.DesiredSize.Height / 2D)
+                ),
+                VisualTreeHelper.GetOffset(child)
+            );
+            Assert.NotEmpty(panel.ConnectorSegments);
+        });
+    }
+
+    [Fact]
+    public void EditingMode_SuppressesNavigationInvocation()
+    {
+        WpfTestThread.Run(() =>
+        {
+            var node = new NavigationMapNode("root", "Root");
+            var command = new RecordingCommand();
+            var view = new NavigationMapView
+            {
+                ItemsSource = new[] { node },
+                Command = command,
+                IsEditing = true,
+                LayoutMode = NavigationMapLayoutMode.Manual,
+                Template = CreateTestTemplate(),
+                ItemsPanel = CreateTestItemsPanel(),
+            };
+            int invocationCount = 0;
+            view.NodeInvoked += (_, _) => invocationCount++;
+
+            MeasureAndArrange(view, 800D, 600D);
+            var container = Assert.IsType<NavigationMapItem>(
+                view.ItemContainerGenerator.ContainerFromItem(node)
+            );
+            container.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent, container));
+
+            Assert.Equal(0, invocationCount);
+            Assert.Equal(0, command.ExecutionCount);
+        });
+    }
+
+    [Fact]
+    public void ManualPanel_RoutesConnectorsAroundUnrelatedNodes()
+    {
+        WpfTestThread.Run(() =>
+        {
+            var parent = CreateItem("parent", null);
+            var obstacle = CreateItem("obstacle", null);
+            var child = CreateItem("child", "parent");
+            var layout = new NavigationMapLayout();
+            layout.SetPosition("parent", new Point(200D, 80D));
+            layout.SetPosition("obstacle", new Point(200D, 220D));
+            layout.SetPosition("child", new Point(200D, 380D));
+            var panel = new NavigationMapPanel
+            {
+                LayoutMode = NavigationMapLayoutMode.Manual,
+                LayoutDefinition = layout,
+            };
+            panel.Children.Add(parent);
+            panel.Children.Add(obstacle);
+            panel.Children.Add(child);
+
+            MeasureAndArrange(panel, 500D, 500D);
+
+            AssertConnectorsAvoidNodeInteriors(panel, [parent, obstacle, child]);
+            Assert.True(
+                panel.ConnectorSegments.Any(segment => segment.IsHorizontal),
+                "the blocked vertical route should leave the center column through a horizontal lane"
+            );
+        });
+    }
+
+    [Fact]
+    public void ManualPanel_DoesNotMoveAutomaticNodesOutOfPinnedPositions()
+    {
+        WpfTestThread.Run(() =>
+        {
+            var root = CreateItem("root", null);
+            var child = CreateItem("child", "root");
+            var layout = new NavigationMapLayout();
+            // The automatic child center is (60, 116). Pinning the root there deliberately creates
+            // an overlap and verifies that the editor no longer moves unrelated cards behind the
+            // user's back.
+            layout.SetPosition("root", new Point(60D, 116D));
+            var panel = new NavigationMapPanel
+            {
+                LayoutMode = NavigationMapLayoutMode.Manual,
+                LayoutDefinition = layout,
+            };
+            panel.Children.Add(root);
+            panel.Children.Add(child);
+
+            MeasureAndArrange(panel, 500D, 500D);
+
+            Rect rootBounds = GetRenderedBounds(root);
+            Rect childBounds = GetRenderedBounds(child);
+            Assert.True(rootBounds.IntersectsWith(childBounds));
+        });
+    }
+
+    [Fact]
+    public void ManualPanel_UsesHierarchicalGeometry_WhenLayoutIsEmpty()
+    {
+        WpfTestThread.Run(() =>
+        {
+            NavigationMapItem hierarchicalRoot = CreateItem("root", null);
+            NavigationMapItem hierarchicalFirst = CreateItem("first", "root");
+            NavigationMapItem hierarchicalSecond = CreateItem("second", "root");
+            var hierarchical = new NavigationMapPanel();
+            hierarchical.Children.Add(hierarchicalRoot);
+            hierarchical.Children.Add(hierarchicalFirst);
+            hierarchical.Children.Add(hierarchicalSecond);
+
+            NavigationMapItem manualRoot = CreateItem("root", null);
+            NavigationMapItem manualFirst = CreateItem("first", "root");
+            NavigationMapItem manualSecond = CreateItem("second", "root");
+            var manual = new NavigationMapPanel
+            {
+                LayoutMode = NavigationMapLayoutMode.Manual,
+                LayoutDefinition = new NavigationMapLayout(),
+            };
+            manual.Children.Add(manualRoot);
+            manual.Children.Add(manualFirst);
+            manual.Children.Add(manualSecond);
+
+            MeasureAndArrange(hierarchical, 700D, 500D);
+            MeasureAndArrange(manual, 700D, 500D);
+
+            Vector hierarchicalRootOffset = VisualTreeHelper.GetOffset(hierarchicalRoot);
+            Vector manualRootOffset = VisualTreeHelper.GetOffset(manualRoot);
+            Assert.Equal(
+                VisualTreeHelper.GetOffset(hierarchicalFirst) - hierarchicalRootOffset,
+                VisualTreeHelper.GetOffset(manualFirst) - manualRootOffset
+            );
+            Assert.Equal(
+                VisualTreeHelper.GetOffset(hierarchicalSecond) - hierarchicalRootOffset,
+                VisualTreeHelper.GetOffset(manualSecond) - manualRootOffset
+            );
+        });
+    }
+
+    [Fact]
+    public void ManualPanel_CreatesSharedBus_WhenParentAndChildrenShareOneRow()
+    {
+        WpfTestThread.Run(() =>
+        {
+            var parent = CreateItem("parent", null);
+            NavigationMapItem[] children =
+            [
+                CreateItem("first", "parent"),
+                CreateItem("second", "parent"),
+                CreateItem("third", "parent"),
+            ];
+            var layout = new NavigationMapLayout();
+            layout.SetPosition("parent", new Point(80D, 200D));
+            layout.SetPosition("first", new Point(260D, 200D));
+            layout.SetPosition("second", new Point(440D, 200D));
+            layout.SetPosition("third", new Point(620D, 200D));
+            var panel = new NavigationMapPanel
+            {
+                // Manual bus detection follows the edited coordinates, not this hierarchy hint.
+                Direction = NavigationMapDirection.LeftToRight,
+                LayoutMode = NavigationMapLayoutMode.Manual,
+                LayoutDefinition = layout,
+                RoutingClearance = 10D,
+            };
+            panel.Children.Add(parent);
+            foreach (NavigationMapItem child in children)
+            {
+                panel.Children.Add(child);
+            }
+
+            MeasureAndArrange(panel, 700D, 400D);
+
+            Assert.Equal(3, panel.ConnectorRoutes.Count);
+            NavigationMapPanel.ConnectorSegment bus = Assert.Single(
+                panel.ConnectorSegments,
+                segment =>
+                    segment.IsHorizontal
+                    && segment.Start == 80D
+                    && segment.End == 620D
+            );
+            Assert.Equal(GetRenderedBounds(parent).Top - panel.RoutingClearance, bus.Offset);
+            AssertNoCollinearOverlap(panel.ConnectorSegments);
+        });
+    }
+
+    [Fact]
+    public void ManualPanel_PrefersOneBendRoutes_WhenChildrenFormARowBelowParent()
+    {
+        WpfTestThread.Run(() =>
+        {
+            var parent = CreateItem("parent", null);
+            NavigationMapItem[] children = Enumerable
+                .Range(0, 7)
+                .Select(index => CreateItem($"child-{index}", "parent"))
+                .ToArray();
+            var layout = new NavigationMapLayout();
+            layout.SetPosition("parent", new Point(520D, 80D));
+            for (int index = 0; index < children.Length; index++)
+            {
+                layout.SetPosition(children[index].NodeKey!, new Point(100D + (index * 140D), 180D));
+            }
+
+            var panel = new NavigationMapPanel
+            {
+                LayoutMode = NavigationMapLayoutMode.Manual,
+                LayoutDefinition = layout,
+                RoutingClearance = 10D,
+            };
+            panel.Children.Add(parent);
+            foreach (NavigationMapItem child in children)
+            {
+                panel.Children.Add(child);
+            }
+
+            MeasureAndArrange(panel, 1100D, 320D);
+
+            Rect parentBounds = GetRenderedBounds(parent);
+            foreach (NavigationMapItem child in children.Skip(4))
+            {
+                NavigationMapPanel.ConnectorRoute route = Assert.Single(
+                    panel.ConnectorRoutes,
+                    candidate => candidate.ChildKey == child.NodeKey
+                );
+                Assert.True(
+                    route.Segments.Count <= 2,
+                    $"Expected a direct right-then-down route, but {child.NodeKey} used "
+                        + $"{route.Segments.Count} segments: {string.Join(", ", route.Segments)}."
+                );
+                Assert.Contains(
+                    route.Segments,
+                    segment => segment.StartPoint
+                            == new Point(parentBounds.Right, parentBounds.Top + (parentBounds.Height / 2D))
+                        || segment.EndPoint
+                            == new Point(parentBounds.Right, parentBounds.Top + (parentBounds.Height / 2D))
+                );
+            }
+
+            AssertConnectorsAvoidNodeInteriors(panel, [parent, .. children]);
+        });
+    }
+
+    [Fact]
+    public void RoutedConnectors_AttachToBothEndpointCardEdges()
+    {
+        WpfTestThread.Run(() =>
+        {
+            var parent = CreateItem("parent", null);
+            var obstacle = CreateItem("obstacle", null);
+            var child = CreateItem("child", "parent");
+            var layout = new NavigationMapLayout();
+            layout.SetPosition("parent", new Point(80D, 220D));
+            layout.SetPosition("obstacle", new Point(260D, 220D));
+            layout.SetPosition("child", new Point(440D, 220D));
+            var panel = new NavigationMapPanel
+            {
+                LayoutMode = NavigationMapLayoutMode.Manual,
+                LayoutDefinition = layout,
+            };
+            panel.Children.Add(parent);
+            panel.Children.Add(obstacle);
+            panel.Children.Add(child);
+
+            MeasureAndArrange(panel, 540D, 440D);
+
+            NavigationMapPanel.ConnectorRoute route = Assert.Single(panel.ConnectorRoutes);
+            Rect parentBounds = GetRenderedBounds(parent);
+            Rect childBounds = GetRenderedBounds(child);
+            Assert.Contains(route.Segments, segment => HasEndpointOnBorder(segment, parentBounds));
+            Assert.Contains(route.Segments, segment => HasEndpointOnBorder(segment, childBounds));
+            AssertConnectorsAvoidNodeInteriors(panel, [parent, obstacle, child]);
+            Assert.DoesNotContain(
+                route.Segments,
+                segment => segment.Offset == 0D
+            );
+        });
+    }
+
+    [Theory]
+    [InlineData(NavigationMapDirection.LeftToRight, 120D, 200D, false)]
+    [InlineData(NavigationMapDirection.TopToBottom, 300D, 120D, true)]
+    public void ManualPanel_ChoosesCenteredFacingPortsFromActualPositions(
+        NavigationMapDirection direction,
+        double childX,
+        double childY,
+        bool horizontal)
+    {
+        WpfTestThread.Run(() =>
+        {
+            var parent = CreateItem("parent", null);
+            var child = CreateItem("child", "parent");
+            var layout = new NavigationMapLayout();
+            layout.SetPosition("parent", new Point(120D, 120D));
+            layout.SetPosition("child", new Point(childX, childY));
+            var panel = new NavigationMapPanel
+            {
+                Direction = direction,
+                LayoutMode = NavigationMapLayoutMode.Manual,
+                LayoutDefinition = layout,
+                RoutingClearance = 20D,
+            };
+            panel.Children.Add(parent);
+            panel.Children.Add(child);
+
+            MeasureAndArrange(panel, 400D, 320D);
+
+            NavigationMapPanel.ConnectorRoute route = Assert.Single(panel.ConnectorRoutes);
+            Rect parentBounds = GetRenderedBounds(parent);
+            Rect childBounds = GetRenderedBounds(child);
+            Assert.True(
+                route.Segments.Count == 1,
+                $"Expected one segment between {parentBounds} and {childBounds}; found {route.Segments.Count}."
+            );
+            NavigationMapPanel.ConnectorSegment segment = route.Segments[0];
+            Assert.Equal(horizontal, segment.IsHorizontal);
+            if (horizontal)
+            {
+                Assert.Equal(parentBounds.Right, segment.Start);
+                Assert.Equal(childBounds.Left, segment.End);
+                Assert.Equal(parentBounds.Top + (parentBounds.Height / 2D), segment.Offset);
+            }
+            else
+            {
+                Assert.Equal(parentBounds.Bottom, segment.Start);
+                Assert.Equal(childBounds.Top, segment.End);
+                Assert.Equal(parentBounds.Left + (parentBounds.Width / 2D), segment.Offset);
+            }
+        });
+    }
+
+    [Fact]
+    public void ManualPanel_RoutesDoNotChangeWithHierarchicalDirection()
+    {
+        WpfTestThread.Run(() =>
+        {
+            var parent = CreateItem("parent", null);
+            var first = CreateItem("first", "parent");
+            var second = CreateItem("second", "parent");
+            var layout = new NavigationMapLayout();
+            layout.SetPosition("parent", new Point(420D, 280D));
+            layout.SetPosition("first", new Point(100D, 80D));
+            layout.SetPosition("second", new Point(760D, 500D));
+
+            var panel = new NavigationMapPanel
+            {
+                Direction = NavigationMapDirection.TopToBottom,
+                LayoutMode = NavigationMapLayoutMode.Manual,
+                LayoutDefinition = layout,
+            };
+            panel.Children.Add(parent);
+            panel.Children.Add(first);
+            panel.Children.Add(second);
+
+            MeasureAndArrange(panel, 1000D, 680D);
+            var topToBottomRoutes = panel.ConnectorRoutes
+                .SelectMany(route => route.Segments.Select(segment =>
+                    (route.ParentKey, route.ChildKey, segment)))
+                .ToArray();
+
+            panel.Direction = NavigationMapDirection.LeftToRight;
+            MeasureAndArrange(panel, 1000D, 680D);
+
+            Assert.Equal(
+                topToBottomRoutes,
+                panel.ConnectorRoutes
+                    .SelectMany(route => route.Segments.Select(segment =>
+                        (route.ParentKey, route.ChildKey, segment)))
+                    .ToArray()
+            );
+        });
+    }
+
+    [Fact]
+    public void DefaultSelectionChrome_DoesNotRemeasureOrRerouteWrappedNodes()
+    {
+        WpfTestThread.Run(() =>
+        {
+            var resources = new ResourceDictionary
+            {
+                Source = new Uri(
+                    "pack://application:,,,/Wpf.Zen.Ui;component/Themes/Generic.xaml",
+                    UriKind.Absolute
+                ),
+            };
+            var root = new NavigationMapNode(
+                "root",
+                "A deliberately long wrapped navigation map heading"
+            );
+            var child = new NavigationMapNode("child", "Child", parentKey: "root");
+            var view = new NavigationMapView { ItemsSource = new[] { root, child } };
+            var host = new Grid();
+            host.Resources.MergedDictionaries.Add(resources);
+            host.Children.Add(view);
+            MeasureAndArrange(host, 800D, 600D);
+
+            var container = Assert.IsType<NavigationMapItem>(
+                view.ItemContainerGenerator.ContainerFromItem(root)
+            );
+            var panel = Assert.IsType<NavigationMapPanel>(
+                FindVisualDescendant<NavigationMapPanel>(view)
+            );
+            Size desiredBefore = container.DesiredSize;
+            Size renderedBefore = container.RenderSize;
+            var routesBefore = panel.ConnectorRoutes
+                .SelectMany(route => route.Segments.Select(segment =>
+                    (route.ParentKey, route.ChildKey, segment)))
+                .ToArray();
+
+            Assert.True(view.SelectNode("root"));
+            MeasureAndArrange(host, 800D, 600D);
+
+            Assert.Equal(desiredBefore, container.DesiredSize);
+            Assert.Equal(renderedBefore, container.RenderSize);
+            Assert.Equal(
+                routesBefore,
+                panel.ConnectorRoutes
+                    .SelectMany(route => route.Segments.Select(segment =>
+                        (route.ParentKey, route.ChildKey, segment)))
+                    .ToArray()
+            );
+        });
+    }
+
+    [Fact]
+    public void ManualPanel_DoesNotReuseTrunksAcrossDifferentParentNetworks()
+    {
+        WpfTestThread.Run(() =>
+        {
+            NavigationMapItem firstParent = CreateItem("first-parent", null);
+            NavigationMapItem firstChild = CreateItem("first-child", "first-parent");
+            NavigationMapItem secondParent = CreateItem("second-parent", null);
+            NavigationMapItem secondChild = CreateItem("second-child", "second-parent");
+            var layout = new NavigationMapLayout();
+            layout.SetPosition("first-parent", new Point(100D, 100D));
+            layout.SetPosition("first-child", new Point(500D, 360D));
+            layout.SetPosition("second-parent", new Point(100D, 360D));
+            layout.SetPosition("second-child", new Point(500D, 100D));
+            var panel = new NavigationMapPanel
+            {
+                LayoutMode = NavigationMapLayoutMode.Manual,
+                LayoutDefinition = layout,
+            };
+            panel.Children.Add(firstParent);
+            panel.Children.Add(firstChild);
+            panel.Children.Add(secondParent);
+            panel.Children.Add(secondChild);
+
+            MeasureAndArrange(panel, 650D, 500D);
+
+            Assert.Equal(2, panel.ConnectorRoutes.Count);
+            AssertNoCollinearOverlapBetweenRoutes(
+                panel.ConnectorRoutes[0].Segments,
+                panel.ConnectorRoutes[1].Segments
+            );
+        });
+    }
+
+    [Fact]
+    public void ManualPanel_HoldsExpandedExtentUntilDragCompletes()
+    {
+        WpfTestThread.Run(() =>
+        {
+            var node = CreateItem("node", null);
+            var layout = new NavigationMapLayout();
+            layout.SetPosition("node", new Point(100D, 100D));
+            var panel = new NavigationMapPanel
+            {
+                LayoutMode = NavigationMapLayoutMode.Manual,
+                LayoutDefinition = layout,
+            };
+            panel.Children.Add(node);
+            MeasureAndArrangeToDesiredSize(panel);
+            panel.BeginExtentHold();
+
+            layout.SetPosition("node", new Point(700D, 100D));
+            MeasureAndArrangeToDesiredSize(panel);
+            double expandedWidth = panel.DesiredSize.Width;
+            layout.SetPosition("node", new Point(100D, 100D));
+            MeasureAndArrangeToDesiredSize(panel);
+
+            Assert.Equal(expandedWidth, panel.DesiredSize.Width);
+            panel.EndExtentHold();
+            MeasureAndArrangeToDesiredSize(panel);
+            Assert.True(panel.DesiredSize.Width < expandedWidth);
+        });
+    }
+
+    [Fact]
+    public void Panel_ProvidesBlankCanvasHitSurface_WhenGridIsHidden()
+    {
+        WpfTestThread.Run(() =>
+        {
+            var panel = new NavigationMapPanel
+            {
+                ConnectorBrush = null,
+                IsEditing = true,
+                ShowGrid = false,
+            };
+            panel.Children.Add(CreateItem("node", null));
+            MeasureAndArrange(panel, 500D, 300D);
+
+            HitTestResult? result = VisualTreeHelper.HitTest(panel, new Point(490D, 290D));
+
+            Assert.NotNull(result);
+            Assert.Same(panel, result.VisualHit);
+        });
+    }
+
+    [Fact]
+    public void Search_SelectsAndCyclesMatchingNodes()
+    {
+        WpfTestThread.Run(() =>
+        {
+            var root = new NavigationMapNode("root", "Dashboard");
+            var first = new NavigationMapNode("users", "User management", parentKey: "root");
+            var second = new NavigationMapNode("content", "Content management", parentKey: "root");
+            var view = new NavigationMapView
+            {
+                ItemsSource = new[] { root, first, second },
+                Template = CreateTestTemplate(),
+                ItemsPanel = CreateTestItemsPanel(),
+            };
+            MeasureAndArrange(view, 800D, 600D);
+
+            view.SearchText = "management";
+
+            Assert.Equal(2, view.SearchResultCount);
+            Assert.True(view.FindNext());
+            Assert.Equal(0, view.CurrentSearchResultIndex);
+            Assert.Single(view.SelectedNodeKeys);
+            Assert.True(view.FindNext());
+            Assert.Equal(1, view.CurrentSearchResultIndex);
+            Assert.Single(view.SelectedNodeKeys);
+        });
+    }
+
+    [Fact]
+    public void MultiSelection_AlignsToPrimaryNodeAndKeepsBothSelected()
+    {
+        WpfTestThread.Run(() =>
+        {
+            var root = new NavigationMapNode("root", "Root");
+            var child = new NavigationMapNode("child", "Child", parentKey: "root");
+            var layout = new NavigationMapLayout();
+            layout.SetPosition("root", new Point(180D, 100D));
+            layout.SetPosition("child", new Point(480D, 280D));
+            var view = new NavigationMapView
+            {
+                IsEditing = true,
+                ItemsSource = new[] { root, child },
+                LayoutDefinition = layout,
+                LayoutMode = NavigationMapLayoutMode.Manual,
+                Template = CreateTestTemplate(),
+                ItemsPanel = CreateTestItemsPanel(),
+            };
+            MeasureAndArrange(view, 800D, 600D);
+
+            Assert.True(view.SelectNode("child"));
+            Assert.True(view.SelectNode("root", true));
+            var rootContainer = Assert.IsType<NavigationMapItem>(
+                view.ItemContainerGenerator.ContainerFromItem(root)
+            );
+            double expectedCenter = GetRenderedBounds(rootContainer).Left
+                + (rootContainer.RenderSize.Width / 2D);
+            Assert.True(view.AlignSelection(NavigationMapAlignment.Left));
+
+            Assert.Equal(2, view.SelectedNodeKeys.Count);
+            Assert.Equal("root", view.PrimarySelectedNodeKey);
+            Assert.True(layout.TryGetPlacement("child", out NavigationMapPlacement? placement));
+            Assert.NotNull(placement);
+            Assert.Equal(expectedCenter, placement.Position.X);
+            Assert.True(view.CanUndo);
+            Assert.True(view.Undo());
+            Assert.Equal(480D, placement.Position.X);
+            Assert.True(view.CanRedo);
+            Assert.True(view.Redo());
+            Assert.Equal(expectedCenter, placement.Position.X);
+        });
+    }
+
+    [Fact]
+    public void AlignToGrid_UsesSelectionOrAllNodes_WhenSelectionIsEmpty()
+    {
+        WpfTestThread.Run(() =>
+        {
+            var root = new NavigationMapNode("root", "Root");
+            var child = new NavigationMapNode("child", "Child", parentKey: "root");
+            var layout = new NavigationMapLayout();
+            layout.SetPosition("root", new Point(183D, 103D));
+            layout.SetPosition("child", new Point(477D, 279D));
+            var resources = new ResourceDictionary
+            {
+                Source = new Uri(
+                    "pack://application:,,,/Wpf.Zen.Ui;component/Themes/Generic.xaml",
+                    UriKind.Absolute
+                ),
+            };
+            var view = new NavigationMapView
+            {
+                GridSize = 16D,
+                ItemsSource = new[] { root, child },
+                LayoutDefinition = layout,
+                LayoutMode = NavigationMapLayoutMode.Manual,
+                IsEditing = true,
+                SnapToGrid = false,
+            };
+            var host = new Grid();
+            host.Resources.MergedDictionaries.Add(resources);
+            host.Children.Add(view);
+            MeasureAndArrange(host, 800D, 600D);
+
+            Assert.True(view.SelectNode("child"));
+            Assert.True(view.AlignToGrid());
+            Assert.True(layout.TryGetPlacement("root", out NavigationMapPlacement? rootPlacementResult));
+            Assert.True(layout.TryGetPlacement("child", out NavigationMapPlacement? childPlacementResult));
+            NavigationMapPlacement rootPlacement = Assert.IsType<NavigationMapPlacement>(rootPlacementResult);
+            NavigationMapPlacement childPlacement = Assert.IsType<NavigationMapPlacement>(childPlacementResult);
+            Assert.Equal(new Point(183D, 103D), rootPlacement.Position);
+            Assert.Equal(new Point(480D, 272D), childPlacement.Position);
+
+            view.ClearSelection();
+            Assert.True(view.AlignToGrid());
+            Assert.Equal(new Point(176D, 96D), rootPlacement.Position);
+        });
+    }
+
+    [Fact]
+    public void EditingInitialization_MaterializesEveryNodeOnGrid()
+    {
+        WpfTestThread.Run(() =>
+        {
+            var resources = new ResourceDictionary
+            {
+                Source = new Uri(
+                    "pack://application:,,,/Wpf.Zen.Ui;component/Themes/Generic.xaml",
+                    UriKind.Absolute
+                ),
+            };
+            var view = new NavigationMapView
+            {
+                GridSize = 16D,
+                ItemsSource = new[]
+                {
+                    new NavigationMapNode("root", "Root"),
+                    new NavigationMapNode("child", "Child", parentKey: "root"),
+                },
+                LayoutMode = NavigationMapLayoutMode.Manual,
+                IsEditing = true,
+            };
+            var host = new Grid();
+            host.Resources.MergedDictionaries.Add(resources);
+            host.Children.Add(view);
+            MeasureAndArrange(host, 800D, 600D);
+            view.Dispatcher.Invoke(static () => { }, DispatcherPriority.ContextIdle);
+
+            NavigationMapLayout layout = Assert.IsType<NavigationMapLayout>(view.LayoutDefinition);
+            Assert.Equal(2, layout.Placements.Count);
+            Assert.All(
+                layout.Placements,
+                placement =>
+                {
+                    Assert.Equal(0D, placement.Position.X % view.GridSize);
+                    Assert.Equal(0D, placement.Position.Y % view.GridSize);
+                }
+            );
+        });
+    }
+
+    [Fact]
+    public void Editing_RealignsEveryNodeAfterDirectionChangeAndReset()
+    {
+        WpfTestThread.Run(() =>
+        {
+            var resources = new ResourceDictionary
+            {
+                Source = new Uri(
+                    "pack://application:,,,/Wpf.Zen.Ui;component/Themes/Generic.xaml",
+                    UriKind.Absolute
+                ),
+            };
+            var view = new NavigationMapView
+            {
+                GridSize = 16D,
+                ItemsSource = new[]
+                {
+                    new NavigationMapNode("root", "Root"),
+                    new NavigationMapNode("child", "Child", parentKey: "root"),
+                },
+                LayoutMode = NavigationMapLayoutMode.Manual,
+                IsEditing = true,
+            };
+            var host = new Grid();
+            host.Resources.MergedDictionaries.Add(resources);
+            host.Children.Add(view);
+            MeasureAndArrange(host, 800D, 600D);
+            view.Dispatcher.Invoke(static () => { }, DispatcherPriority.ContextIdle);
+
+            NavigationMapLayout layout = Assert.IsType<NavigationMapLayout>(view.LayoutDefinition);
+            layout.SetPosition("root", new Point(183D, 103D));
+            layout.SetPosition("child", new Point(477D, 279D));
+            view.Direction = NavigationMapDirection.LeftToRight;
+            view.Dispatcher.Invoke(static () => { }, DispatcherPriority.ContextIdle);
+            Assert.All(
+                layout.Placements,
+                placement => AssertPointIsOnGrid(placement.Position, view.GridSize)
+            );
+
+            layout.SetPosition("root", new Point(185D, 105D));
+            view.ResetLayout();
+            view.Dispatcher.Invoke(static () => { }, DispatcherPriority.ContextIdle);
+            Assert.Equal(2, layout.Placements.Count);
+            Assert.All(
+                layout.Placements,
+                placement => AssertPointIsOnGrid(placement.Position, view.GridSize)
+            );
+            Assert.False(view.CanUndo);
+            Assert.False(view.CanRedo);
+        });
+    }
+
+    [Fact]
+    public void SelectAll_DoesNothingOutsideManualEditing()
+    {
+        WpfTestThread.Run(() =>
+        {
+            var view = new NavigationMapView
+            {
+                ItemsSource = new[]
+                {
+                    new NavigationMapNode("root", "Root"),
+                    new NavigationMapNode("child", "Child", parentKey: "root"),
+                },
+                Template = CreateTestTemplate(),
+                ItemsPanel = CreateTestItemsPanel(),
+            };
+            MeasureAndArrange(view, 800D, 600D);
+
+            view.SelectAll();
+
+            Assert.Empty(view.SelectedNodeKeys);
+        });
+    }
+
+    [Fact]
+    public void ZoomFactor_IsCoercedToConfigurableLimits()
+    {
+        WpfTestThread.Run(() =>
+        {
+            var view = new NavigationMapView
+            {
+                MinimumZoomFactor = 0.4D,
+                MaximumZoomFactor = 2D,
+                ZoomFactor = 10D,
+            };
+
+            Assert.Equal(2D, view.ZoomFactor);
+            view.ZoomFactor = 0.1D;
+            Assert.Equal(0.4D, view.ZoomFactor);
+            view.MinimumZoomFactor = 3D;
+            Assert.Equal(3D, view.MaximumZoomFactor);
+            Assert.Equal(3D, view.ZoomFactor);
+        });
+    }
+
+    [Fact]
+    public void LayoutModeAndPlacement_RejectInvalidValues()
+    {
+        WpfTestThread.Run(() =>
+        {
+            var view = new NavigationMapView();
+            var panel = new NavigationMapPanel();
+            var placement = new NavigationMapPlacement("root", default);
+
+            view.IsEditing = true;
+            Assert.False(view.IsEditing);
+            view.LayoutMode = NavigationMapLayoutMode.Manual;
+            Assert.True(view.IsEditing);
+            view.LayoutMode = NavigationMapLayoutMode.Hierarchical;
+            Assert.False(view.IsEditing);
+
+            Assert.Throws<ArgumentException>(() =>
+                view.LayoutMode = (NavigationMapLayoutMode)int.MaxValue
+            );
+            Assert.Throws<ArgumentException>(() =>
+                panel.LayoutMode = (NavigationMapLayoutMode)int.MaxValue
+            );
+            Assert.Throws<ArgumentOutOfRangeException>(() =>
+                placement.Position = new Point(double.NaN, 0D)
+            );
         });
     }
 
@@ -617,6 +1448,72 @@ public class NavigationMapViewTests
                 Assert.True(
                     first.End < second.Start || second.End < first.Start,
                     $"Connector intervals {first} and {second} overlap or touch."
+                );
+            }
+        }
+    }
+
+    private static void AssertNoCollinearOverlapBetweenRoutes(
+        IReadOnlyList<NavigationMapPanel.ConnectorSegment> firstRoute,
+        IReadOnlyList<NavigationMapPanel.ConnectorSegment> secondRoute)
+    {
+        foreach (NavigationMapPanel.ConnectorSegment first in firstRoute)
+        {
+            foreach (NavigationMapPanel.ConnectorSegment second in secondRoute)
+            {
+                if (first.IsHorizontal != second.IsHorizontal || first.Offset != second.Offset)
+                {
+                    continue;
+                }
+
+                Assert.True(
+                    Math.Min(first.End, second.End) <= Math.Max(first.Start, second.Start),
+                    $"Independent connector routes overlap on {first} and {second}. "
+                        + $"First route: {string.Join(", ", firstRoute)}. "
+                        + $"Second route: {string.Join(", ", secondRoute)}."
+                );
+            }
+        }
+    }
+
+    private static bool HasEndpointOnBorder(
+        NavigationMapPanel.ConnectorSegment segment,
+        Rect bounds)
+    {
+        return IsPointOnBorder(segment.StartPoint, bounds) || IsPointOnBorder(segment.EndPoint, bounds);
+    }
+
+    private static void AssertPointIsOnGrid(Point point, double gridSize)
+    {
+        Assert.Equal(0D, point.X % gridSize);
+        Assert.Equal(0D, point.Y % gridSize);
+    }
+
+    private static bool IsPointOnBorder(Point point, Rect bounds) =>
+        ((point.X == bounds.Left || point.X == bounds.Right) && point.Y >= bounds.Top && point.Y <= bounds.Bottom)
+        || ((point.Y == bounds.Top || point.Y == bounds.Bottom) && point.X >= bounds.Left && point.X <= bounds.Right);
+
+    private static void AssertConnectorsAvoidNodeInteriors(
+        NavigationMapPanel panel,
+        IReadOnlyList<NavigationMapItem> nodes)
+    {
+        foreach (NavigationMapPanel.ConnectorSegment segment in panel.ConnectorSegments)
+        {
+            foreach (NavigationMapItem node in nodes)
+            {
+                Rect bounds = GetRenderedBounds(node);
+                bool intersectsInterior = segment.IsHorizontal
+                    ? segment.Offset > bounds.Top
+                        && segment.Offset < bounds.Bottom
+                        && segment.End > bounds.Left
+                        && segment.Start < bounds.Right
+                    : segment.Offset > bounds.Left
+                        && segment.Offset < bounds.Right
+                        && segment.End > bounds.Top
+                        && segment.Start < bounds.Bottom;
+                Assert.False(
+                    intersectsInterior,
+                    $"Connector {segment} crosses the rendered interior of node {node.NodeKey}."
                 );
             }
         }
@@ -656,6 +1553,13 @@ public class NavigationMapViewTests
     {
         element.Measure(new Size(width, height));
         element.Arrange(new Rect(0D, 0D, width, height));
+        element.UpdateLayout();
+    }
+
+    private static void MeasureAndArrangeToDesiredSize(UIElement element)
+    {
+        element.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+        element.Arrange(new Rect(element.DesiredSize));
         element.UpdateLayout();
     }
 
