@@ -11,22 +11,19 @@
     controls:PageControlDocumentation.DocumentationType="{x:Type ui:NavigationMapView}"
     d:Background="{ui:DynamicBrush WindowBackground}"
     d:DataContext="{d:DesignInstance vm:NavigationMapViewModel, IsDesignTimeCreatable=False}"
-    d:DesignHeight="780"
     d:DesignWidth="1000"
     Foreground="{ui:DynamicBrush TextFillPrimary}"
     Style="{ui:DynamicStyle DynamicScrollPage}"
     mc:Ignorable="d">
 
     <StackPanel Margin="0,0,0,24">
-        <controls:ControlExample
-            Margin="0"
-            HeaderText="The gallery's live navigation graph. Click a page node to navigate.">
+        <controls:ControlExample Margin="0" HeaderText="The gallery's live navigation graph. Click a page node to navigate.">
             <controls:ControlExample.XamlCode>
                 &lt;ui:NavigationMapView
-                	Command=&quot;{Binding NavigateToNodeCommand}&quot;
-                	Direction=&quot;LeftToRight&quot;
-                	ItemsSource=&quot;{Binding NavigationMap}&quot;
-                	ShowRouteKey=&quot;{Binding IsChecked, ElementName=ShowRouteKeys}&quot; /&gt;
+                Command=&quot;{Binding NavigateToNodeCommand}&quot;
+                Direction=&quot;LeftToRight&quot;
+                ItemsSource=&quot;{Binding NavigationMap}&quot;
+                ShowRouteKey=&quot;{Binding IsChecked, ElementName=ShowRouteKeys}&quot; /&gt;
             </controls:ControlExample.XamlCode>
 
             <Grid>
@@ -47,12 +44,8 @@
                             AutomationProperties.AutomationId="NavigationMapDirectionPicker"
                             SelectedValue="{Binding Direction, ElementName=GalleryNavigationMap, Mode=TwoWay}"
                             SelectedValuePath="Tag">
-                            <ComboBoxItem
-                                Content="Top to bottom"
-                                Tag="{x:Static ui:NavigationMapDirection.TopToBottom}" />
-                            <ComboBoxItem
-                                Content="Left to right"
-                                Tag="{x:Static ui:NavigationMapDirection.LeftToRight}" />
+                            <ComboBoxItem Content="Top to bottom" Tag="{x:Static ui:NavigationMapDirection.TopToBottom}" />
+                            <ComboBoxItem Content="Left to right" Tag="{x:Static ui:NavigationMapDirection.LeftToRight}" />
                         </ComboBox>
                         <ui:ToggleSwitch
                             x:Name="ShowRouteKeys"
@@ -63,7 +56,7 @@
                         VerticalAlignment="Center"
                         FontTypography="Body"
                         Foreground="{ui:DynamicBrush TextFillSecondary}"
-                        Text="This is the same NavigationMap instance used by the main NavigationView." />
+                        Text="Same NavigationMap instance as the main NavigationView." />
                 </DockPanel>
 
                 <Border
@@ -77,25 +70,34 @@
                         AutomationProperties.AutomationId="GalleryNavigationMap"
                         AutomationProperties.ItemStatus="{Binding Direction, RelativeSource={RelativeSource Self}}"
                         Command="{Binding NavigateToNodeCommand}"
-                        HorizontalSpacing="24"
                         ItemsSource="{Binding NavigationMap, Mode=OneWay}"
                         NodeWidth="168"
-                        ShowRouteKey="{Binding IsChecked, ElementName=ShowRouteKeys}"
-                        VerticalSpacing="40" />
+                        ShowRouteKey="{Binding IsChecked, ElementName=ShowRouteKeys}">
+                        <ui:NavigationMapView.Style>
+                            <Style TargetType="{x:Type ui:NavigationMapView}">
+                                <Setter Property="HorizontalSpacing" Value="6" />
+                                <Setter Property="VerticalSpacing" Value="16" />
+                                <Style.Triggers>
+                                    <Trigger Property="Direction" Value="LeftToRight">
+                                        <Setter Property="VerticalSpacing" Value="6" />
+                                        <Setter Property="HorizontalSpacing" Value="16" />
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </ui:NavigationMapView.Style>
+                    </ui:NavigationMapView>
                 </Border>
             </Grid>
         </controls:ControlExample>
 
-        <controls:ControlExample
-            Margin="0,32,0,0"
-            HeaderText="NavigationMapNode items declared directly in XAML. Hover a node to see its description.">
+        <controls:ControlExample Margin="0,32,0,0" HeaderText="NavigationMapNode items declared directly in XAML. Hover a node to see its description.">
             <controls:ControlExample.XamlCode>
                 &lt;ui:NavigationMapView Direction=&quot;LeftToRight&quot;&gt;
-                    &lt;ui:NavigationMapNode Key=&quot;home&quot; Content=&quot;Home&quot; Description=&quot;Application overview and entry point.&quot; /&gt;
-                    &lt;ui:NavigationMapNode Key=&quot;catalog&quot; ParentKey=&quot;home&quot; Content=&quot;Catalog&quot; Description=&quot;Browse and maintain the product catalog.&quot; /&gt;
-                    &lt;ui:NavigationMapNode Key=&quot;orders&quot; ParentKey=&quot;home&quot; Content=&quot;Orders&quot; Description=&quot;Review and process customer orders.&quot; /&gt;
-                    &lt;ui:NavigationMapNode Key=&quot;products&quot; ParentKey=&quot;catalog&quot; Content=&quot;Products&quot; Description=&quot;Manage individual products and their details.&quot; /&gt;
-                    &lt;ui:NavigationMapNode Key=&quot;categories&quot; ParentKey=&quot;catalog&quot; Content=&quot;Categories&quot; Description=&quot;Organize products into browsable categories.&quot; /&gt;
+                &lt;ui:NavigationMapNode Key=&quot;home&quot; Content=&quot;Home&quot; Description=&quot;Application overview and entry point.&quot; /&gt;
+                &lt;ui:NavigationMapNode Key=&quot;catalog&quot; ParentKey=&quot;home&quot; Content=&quot;Catalog&quot; Description=&quot;Browse and maintain the product catalog.&quot; /&gt;
+                &lt;ui:NavigationMapNode Key=&quot;orders&quot; ParentKey=&quot;home&quot; Content=&quot;Orders&quot; Description=&quot;Review and process customer orders.&quot; /&gt;
+                &lt;ui:NavigationMapNode Key=&quot;products&quot; ParentKey=&quot;catalog&quot; Content=&quot;Products&quot; Description=&quot;Manage individual products and their details.&quot; /&gt;
+                &lt;ui:NavigationMapNode Key=&quot;categories&quot; ParentKey=&quot;catalog&quot; Content=&quot;Categories&quot; Description=&quot;Organize products into browsable categories.&quot; /&gt;
                 &lt;/ui:NavigationMapView&gt;
             </controls:ControlExample.XamlCode>
 
