@@ -5,6 +5,8 @@
 
 using System.Collections;
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
+using System.ComponentModel;
 
 namespace Wpf.Zen.Ui;
 
@@ -13,9 +15,12 @@ namespace Wpf.Zen.Ui;
 /// </summary>
 /// <remarks>
 /// <para>
-/// The map is intentionally not an <see cref="System.Windows.Controls.ItemsControl"/> source. A
-/// menu can be filtered, reordered, duplicated, or replaced with shortcuts without changing this
-/// graph. Conversely, structural map nodes can exist without occupying space in any menu.
+/// The map is intentionally independent from any navigation menu's
+/// <see cref="System.Windows.Controls.ItemsControl.ItemsSource"/>. A menu can be filtered,
+/// reordered, duplicated, or replaced with shortcuts without changing this graph. Conversely,
+/// structural map nodes can exist without occupying space in any menu. The map is nevertheless an
+/// observable collection source so dedicated projections such as <see cref="Controls.NavigationMapView"/>
+/// can bind to the semantic graph directly.
 /// </para>
 /// <para>
 /// Parent links form the path used by breadcrumbs. The API accepts incomplete graphs and detects
@@ -28,7 +33,12 @@ namespace Wpf.Zen.Ui;
 /// without requiring XAML to construct an immutable <see cref="NavigationTarget"/>.
 /// </para>
 /// </remarks>
-public sealed class NavigationMap : IList<NavigationMapNode>, IList, ISupportInitialize
+public sealed class NavigationMap :
+    IList<NavigationMapNode>,
+    IList,
+    ISupportInitialize,
+    INotifyCollectionChanged,
+    INotifyPropertyChanged
 {
     private readonly Dictionary<string, NavigationMapNode> _nodes = new(StringComparer.Ordinal);
     private readonly ObservableCollection<NavigationMapNode> _observableNodes = [];
@@ -40,6 +50,7 @@ public sealed class NavigationMap : IList<NavigationMapNode>, IList, ISupportIni
     public NavigationMap()
     {
         Nodes = new ReadOnlyObservableCollection<NavigationMapNode>(_observableNodes);
+        _observableNodes.CollectionChanged += OnNodesCollectionChanged;
     }
 
     /// <summary>Gets the live, read-only sequence of registered placements.</summary>
@@ -91,6 +102,19 @@ public sealed class NavigationMap : IList<NavigationMapNode>, IList, ISupportIni
 
     /// <summary>Occurs after nodes are added, removed, reordered semantically, or mutated.</summary>
     public event EventHandler<EventArgs>? Changed;
+
+    /// <summary>Occurs when nodes are added, removed, replaced, moved, or cleared.</summary>
+    /// <remarks>
+    /// This event makes the map itself a live WPF collection source. Consumers may bind an
+    /// <see cref="System.Windows.Controls.ItemsControl.ItemsSource"/> directly to a map instead of
+    /// reaching through <see cref="Nodes"/>; both surfaces observe the same authoritative list.
+    /// Semantic node-property changes continue to use <see cref="Changed"/> because they do not
+    /// change collection membership.
+    /// </remarks>
+    public event NotifyCollectionChangedEventHandler? CollectionChanged;
+
+    /// <summary>Occurs when <see cref="Count"/> or the indexed list view changes.</summary>
+    public event PropertyChangedEventHandler? PropertyChanged;
 
     /// <summary>Adds a semantic placement to the map.</summary>
     /// <param name="node">The node to add.</param>
@@ -157,15 +181,19 @@ public sealed class NavigationMap : IList<NavigationMapNode>, IList, ISupportIni
     /// Whether this node contributes a segment to resolved breadcrumb paths. Hidden nodes remain
     /// in the semantic graph and are still traversed when resolving descendants.
     /// </param>
+    /// <param name="description">
+    /// Optional localized plain-language text describing the placement for help and semantic consumers.
+    /// </param>
     /// <returns>The created node, which can subsequently be configured or moved.</returns>
     public NavigationMapNode Add(
         string key,
         object? content,
         NavigationTarget? target = null,
         string? parentKey = null,
-        bool isBreadcrumbVisible = true)
+        bool isBreadcrumbVisible = true,
+        string? description = null)
     {
-        var node = new NavigationMapNode(key, content, target, parentKey)
+        var node = new NavigationMapNode(key, content, target, parentKey, description)
         {
             IsBreadcrumbVisible = isBreadcrumbVisible,
         };
@@ -182,18 +210,23 @@ public sealed class NavigationMap : IList<NavigationMapNode>, IList, ISupportIni
     /// Whether this node contributes a segment to resolved breadcrumb paths. Hidden nodes remain
     /// in the semantic graph and are still traversed when resolving descendants.
     /// </param>
+    /// <param name="description">
+    /// Optional localized plain-language text describing the placement for help and semantic consumers.
+    /// </param>
     /// <returns>The created node, which can subsequently be configured or moved.</returns>
     public NavigationMapNode Add<TPage>(
         string key,
         object? content,
         string? parentKey = null,
-        bool isBreadcrumbVisible = true) =>
+        bool isBreadcrumbVisible = true,
+        string? description = null) =>
         Add(
             key,
             content,
             new NavigationTarget(typeof(TPage), key),
             parentKey,
-            isBreadcrumbVisible
+            isBreadcrumbVisible,
+            description
         );
 
     /// <summary>Performs a group of map mutations and raises <see cref="Changed"/> at most once.</summary>
@@ -346,6 +379,40 @@ public sealed class NavigationMap : IList<NavigationMapNode>, IList, ISupportIni
     /// <summary>Removes the placement at a declaration-order index.</summary>
     /// <param name="index">The zero-based index of the placement to remove.</param>
     public void RemoveAt(int index) => Remove(_observableNodes[index].Key);
+
+    /// <summary>Moves a placement to another declaration-order index.</summary>
+    /// <param name="oldIndex">The zero-based index of the placement to move.</param>
+    /// <param name="newIndex">The zero-based destination index.</param>
+    /// <remarks>
+    /// Declaration order controls the visual order of roots and siblings in projections such as
+    /// <see cref="Controls.NavigationMapView"/>. This operation emits one
+    /// <see cref="NotifyCollectionChangedAction.Move"/> notification, allowing WPF item generators
+    /// to retain the existing container, focus, and local visual state. Removing and reinserting the
+    /// node would instead expose a transient incomplete graph and recreate its container.
+    /// </remarks>
+    /// <exception cref="ArgumentOutOfRangeException">
+    /// <paramref name="oldIndex"/> or <paramref name="newIndex"/> is outside the map.
+    /// </exception>
+    public void Move(int oldIndex, int newIndex)
+    {
+        if (oldIndex < 0 || oldIndex >= _observableNodes.Count)
+        {
+            throw new ArgumentOutOfRangeException(nameof(oldIndex));
+        }
+
+        if (newIndex < 0 || newIndex >= _observableNodes.Count)
+        {
+            throw new ArgumentOutOfRangeException(nameof(newIndex));
+        }
+
+        if (oldIndex == newIndex)
+        {
+            return;
+        }
+
+        _observableNodes.Move(oldIndex, newIndex);
+        NotifyChanged();
+    }
 
     /// <summary>Removes every placement from the map.</summary>
     public void Clear()
@@ -581,6 +648,25 @@ public sealed class NavigationMap : IList<NavigationMapNode>, IList, ISupportIni
             $"A navigation map accepts only {nameof(NavigationMapNode)} values.",
             nameof(value)
         );
+
+    private void OnNodesCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        // Forward the exact ObservableCollection mutation rather than converting it to Reset. WPF's
+        // item generator can then preserve unaffected containers, focus, and layout state. Changed
+        // remains separately batchable because it serves semantic location resolution, not views.
+        CollectionChanged?.Invoke(this, e);
+
+        if (
+            e.Action is NotifyCollectionChangedAction.Add
+                or NotifyCollectionChangedAction.Remove
+                or NotifyCollectionChangedAction.Reset
+        )
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Count)));
+        }
+
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("Item[]"));
+    }
 
     private void NotifyChanged()
     {

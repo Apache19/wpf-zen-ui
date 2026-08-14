@@ -20,6 +20,7 @@ public sealed class NavigationMapNode : INotifyPropertyChanged
     private string _key = string.Empty;
     private string? _parentKey;
     private object? _content;
+    private string? _description;
     private NavigationTarget? _target;
     private Func<NavigationLocationContext, object?>? _contentResolver;
     private bool _isBreadcrumbVisible = true;
@@ -29,7 +30,7 @@ public sealed class NavigationMapNode : INotifyPropertyChanged
     /// <remarks>
     /// XAML assigns <see cref="Key"/> before inserting the node into a map. Application code should
     /// normally use the validating constructor or one of
-    /// <see cref="NavigationMap.Add(string, object?, NavigationTarget?, string?, bool)"/>
+    /// <see cref="NavigationMap.Add(string, object?, NavigationTarget?, string?, bool, string?)"/>
     /// overloads instead. A node with an empty key cannot be added to a map.
     /// </remarks>
     public NavigationMapNode() { }
@@ -39,15 +40,20 @@ public sealed class NavigationMapNode : INotifyPropertyChanged
     /// <param name="content">The default breadcrumb content.</param>
     /// <param name="target">The optional page destination; omit it for a structural node.</param>
     /// <param name="parentKey">The optional key of the semantic parent node.</param>
+    /// <param name="description">
+    /// Optional localized text that explains the purpose and capabilities of this placement.
+    /// </param>
     /// <exception cref="ArgumentException"><paramref name="key"/> is empty.</exception>
     public NavigationMapNode(
         string key,
         object? content,
         NavigationTarget? target = null,
-        string? parentKey = null)
+        string? parentKey = null,
+        string? description = null)
     {
         Key = key;
         _content = content;
+        _description = description;
         _target = target;
         ParentKey = parentKey;
     }
@@ -96,11 +102,40 @@ public sealed class NavigationMapNode : INotifyPropertyChanged
         }
     }
 
-    /// <summary>Gets or sets the default breadcrumb content for this placement.</summary>
+    /// <summary>Gets or sets the localized presentation content for this placement.</summary>
+    /// <remarks>
+    /// This value is the node's display alias and is intentionally independent from both
+    /// <see cref="Key"/> and <see cref="NavigationTarget.RouteKey"/>. Breadcrumbs and visual map
+    /// controls use it by default, while applications may replace either presentation with a data
+    /// template. Changing the value notifies all active projections through
+    /// <see cref="INotifyPropertyChanged"/>.
+    /// </remarks>
     public object? Content
     {
         get => _content;
         set => SetProperty(ref _content, value);
+    }
+
+    /// <summary>Gets or sets localized text that explains this placement's purpose and capabilities.</summary>
+    /// <remarks>
+    /// <para>
+    /// Unlike <see cref="Content"/>, which is the concise label shown in breadcrumbs and map nodes,
+    /// this property should contain a plain-language explanation suitable for a tooltip, contextual
+    /// help, accessibility metadata, search indexing, or an AI-readable application manifest.
+    /// Keeping the value textual and independent from <see cref="Key"/> and
+    /// <see cref="NavigationTarget.RouteKey"/> gives semantic consumers useful context without
+    /// requiring them to interpret presentation objects or internal route identifiers.
+    /// </para>
+    /// <para>
+    /// The value may be <see langword="null"/> when no description is available. It is mutable so
+    /// applications can replace it when the UI language or feature availability changes, and such
+    /// changes are reported through <see cref="INotifyPropertyChanged"/>.
+    /// </para>
+    /// </remarks>
+    public string? Description
+    {
+        get => _description;
+        set => SetProperty(ref _description, value);
     }
 
     /// <summary>Gets or sets the optional destination activated by this placement.</summary>

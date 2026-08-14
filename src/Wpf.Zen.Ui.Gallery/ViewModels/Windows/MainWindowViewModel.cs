@@ -138,7 +138,8 @@ public partial class MainWindowViewModel : ViewModel
         {
             Children = new object[]
             {
-                new NavigationItem("BreadcrumbBar", typeof(BreadcrumbBarPage)), new NavigationItem("NavigationView", typeof(NavigationViewPage)),
+                new NavigationItem("BreadcrumbBar", typeof(BreadcrumbBarPage)), new NavigationItem("Navigation map", typeof(NavigationMapPage)),
+                new NavigationItem("NavigationView", typeof(NavigationViewPage)),
                 new NavigationItem("Menu",          typeof(MenuPage)), new NavigationItem("Multilevel navigation", typeof(MultilevelNavigationPage)),
                 new NavigationItem("TabControl",    typeof(TabControlPage)),
             },
@@ -265,6 +266,7 @@ public partial class MainWindowViewModel : ViewModel
 
         string navigation = AddPage<NavigationPage>("Navigation", isBreadcrumbVisible: false);
         AddPage<BreadcrumbBarPage>("BreadcrumbBar", navigation);
+        AddPage<NavigationMapPage>("Navigation map", navigation);
         AddPage<NavigationViewPage>("NavigationView", navigation);
         AddPage<MenuPage>("Menu", navigation);
         string multilevel = AddPage<MultilevelNavigationPage>("Multilevel navigation", navigation);
@@ -304,6 +306,7 @@ public partial class MainWindowViewModel : ViewModel
             map.Add(
                 new NavigationMapNode(key, content, parentKey: parentKey)
                 {
+                    Description = $"Groups the {content} pages in the gallery navigation hierarchy.",
                     IsBreadcrumbVisible = isBreadcrumbVisible
                 }
             );
@@ -318,7 +321,8 @@ public partial class MainWindowViewModel : ViewModel
                     key,
                     content,
                     new NavigationTarget(typeof(TPage), key),
-                    parentKey)
+                    parentKey,
+                    $"Opens the gallery page that demonstrates {content}.")
                 {
                     IsBreadcrumbVisible = isBreadcrumbVisible,
                 }

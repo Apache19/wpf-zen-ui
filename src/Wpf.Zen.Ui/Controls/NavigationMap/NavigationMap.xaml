@@ -1,0 +1,200 @@
+<!--
+    This Source Code Form is subject to the terms of the MIT License.
+    If a copy of the MIT was not distributed with this file, You can obtain one at https://opensource.org/licenses/MIT.
+    Copyright (C) Leszek Pomianowski and WPF UI Contributors.
+    All Rights Reserved.
+-->
+
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="clr-namespace:Wpf.Zen.Ui.Controls"
+    xmlns:m="clr-namespace:Wpf.Zen.Ui.Markup">
+
+    <!--
+        ContentPresenter's built-in string template uses a non-wrapping TextBlock. Navigation-map
+        cards have a deliberate fixed default width, so localized labels need a specialized string
+        template. Returning null for non-strings preserves WPF's implicit typed DataTemplates and
+        direct UIElement handling.
+    -->
+    <controls:NavigationMapContentTemplateSelector x:Key="DefaultNavigationMapContentTemplateSelector">
+        <controls:NavigationMapContentTemplateSelector.TextTemplate>
+            <DataTemplate>
+                <AccessText
+                    Text="{Binding}"
+                    TextAlignment="Center"
+                    TextWrapping="Wrap" />
+            </DataTemplate>
+        </controls:NavigationMapContentTemplateSelector.TextTemplate>
+    </controls:NavigationMapContentTemplateSelector>
+
+    <!--
+        A selector, rather than a default ItemTemplate, preserves both standard customization paths:
+        an application ItemTemplate wins over a selector, while an application ItemTemplateSelector
+        replaces this style value. Non-navigation data falls back to ordinary ContentPresenter rules.
+    -->
+    <controls:NavigationMapNodeTemplateSelector x:Key="DefaultNavigationMapNodeTemplateSelector">
+        <controls:NavigationMapNodeTemplateSelector.NodeTemplate>
+            <DataTemplate>
+                <StackPanel>
+                    <ContentPresenter
+                        HorizontalAlignment="Center"
+                        Content="{Binding Content}"
+                        ContentTemplateSelector="{StaticResource DefaultNavigationMapContentTemplateSelector}"
+                        Focusable="False"
+                        TextElement.FontSize="14"
+                        TextElement.FontWeight="SemiBold" />
+                    <TextBlock
+                        Margin="0,4,0,0"
+                        HorizontalAlignment="Center"
+                        FontFamily="Consolas"
+                        FontSize="11"
+                        Foreground="{m:DynamicBrush TextFillSecondary}"
+                        Text="{Binding Key}"
+                        TextTrimming="CharacterEllipsis">
+                        <TextBlock.Style>
+                            <Style TargetType="{x:Type TextBlock}">
+                                <Setter Property="Visibility" Value="Visible" />
+                                <Style.Triggers>
+                                    <DataTrigger
+                                        Binding="{Binding ShowRouteKey, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationMapView}}}"
+                                        Value="False">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                </StackPanel>
+            </DataTemplate>
+        </controls:NavigationMapNodeTemplateSelector.NodeTemplate>
+    </controls:NavigationMapNodeTemplateSelector>
+
+    <Style x:Key="DefaultUiNavigationMapItemStyle" TargetType="{x:Type controls:NavigationMapItem}">
+        <Setter Property="Width" Value="{Binding NodeWidth, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationMapView}}}" />
+        <Setter Property="MinHeight" Value="64" />
+        <Setter Property="Padding" Value="16,12" />
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="Background" Value="{m:DynamicBrush CardBackgroundFillDefault}" />
+        <Setter Property="BorderBrush" Value="{m:DynamicBrush CardStrokeDefault}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Foreground" Value="{m:DynamicBrush TextFillPrimary}" />
+        <!--
+            Description remains a style-level binding so an application can replace ToolTip locally
+            without a control-specific opt-out property. Null descriptions naturally suppress WPF's
+            tooltip while ShowOnDisabled keeps structural/non-command nodes discoverable.
+        -->
+        <Setter Property="AutomationProperties.HelpText" Value="{Binding Description, RelativeSource={RelativeSource Self}}" />
+        <Setter Property="ToolTip" Value="{Binding Description, RelativeSource={RelativeSource Self}}" />
+        <Setter Property="ToolTipService.ShowOnDisabled" Value="True" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type controls:NavigationMapItem}">
+                    <Grid>
+                        <Border
+                            x:Name="RootBorder"
+                            Padding="{TemplateBinding Padding}"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="6"
+                            SnapsToDevicePixels="True">
+                            <ContentPresenter
+                                HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                Content="{TemplateBinding Content}"
+                                ContentStringFormat="{TemplateBinding ContentStringFormat}"
+                                ContentTemplate="{TemplateBinding ContentTemplate}"
+                                ContentTemplateSelector="{TemplateBinding ContentTemplateSelector}"
+                                RecognizesAccessKey="True" />
+                        </Border>
+                        <!--
+                            A root accent makes separate trees in a forest immediately readable.
+                            It is presentation-only: unresolved parents and cycle recovery are still
+                            exposed through IsRoot for applications that need a different treatment.
+                        -->
+                        <Border
+                            x:Name="RootAccent"
+                            Height="3"
+                            Margin="7,0"
+                            VerticalAlignment="Top"
+                            Background="{m:DynamicBrush AccentFillSecondary}"
+                            CornerRadius="0,0,3,3"
+                            IsHitTestVisible="False" />
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsRoot" Value="False">
+                            <Setter TargetName="RootAccent" Property="Visibility" Value="Collapsed" />
+                        </Trigger>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="RootBorder" Property="Background" Value="{m:DynamicBrush ControlFillSecondary}" />
+                            <Setter TargetName="RootBorder" Property="BorderBrush" Value="{m:DynamicBrush ControlElevationBorder}" />
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="RootBorder" Property="Background" Value="{m:DynamicBrush ControlFillTertiary}" />
+                            <Setter Property="Foreground" Value="{m:DynamicBrush TextFillSecondary}" />
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocused" Value="True">
+                            <Setter TargetName="RootBorder" Property="BorderBrush" Value="{m:DynamicBrush KeyboardFocusBorder}" />
+                            <Setter TargetName="RootBorder" Property="BorderThickness" Value="2" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="RootBorder" Property="Background" Value="{m:DynamicBrush ControlFillDisabled}" />
+                            <Setter TargetName="RootBorder" Property="BorderBrush" Value="{m:DynamicBrush ControlStrokeDefault}" />
+                            <Setter Property="Foreground" Value="{m:DynamicBrush TextFillDisabled}" />
+                            <Setter TargetName="RootAccent" Property="Opacity" Value="0.45" />
+                        </Trigger>
+                        <Trigger Property="Target" Value="{x:Null}">
+                            <!-- Structural nodes remain invokable but do not advertise a page action. -->
+                            <Setter Property="Cursor" Value="Arrow" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="DefaultUiNavigationMapViewStyle" TargetType="{x:Type controls:NavigationMapView}">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="ConnectorBrush" Value="{m:DynamicBrush DividerStrokeDefault}" />
+        <Setter Property="Padding" Value="24" />
+        <Setter Property="Focusable" Value="False" />
+        <Setter Property="ItemTemplateSelector" Value="{StaticResource DefaultNavigationMapNodeTemplateSelector}" />
+        <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Auto" />
+        <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto" />
+        <Setter Property="ItemsPanel">
+            <Setter.Value>
+                <ItemsPanelTemplate>
+                    <controls:NavigationMapPanel
+                        Direction="{Binding Direction, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationMapView}}}"
+                        HorizontalSpacing="{Binding HorizontalSpacing, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationMapView}}}"
+                        VerticalSpacing="{Binding VerticalSpacing, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationMapView}}}"
+                        ConnectorBrush="{Binding ConnectorBrush, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationMapView}}}"
+                        ConnectorThickness="{Binding ConnectorThickness, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationMapView}}}" />
+                </ItemsPanelTemplate>
+            </Setter.Value>
+        </Setter>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type controls:NavigationMapView}">
+                    <Border Background="{TemplateBinding Background}" SnapsToDevicePixels="True">
+                        <ScrollViewer
+                            Padding="{TemplateBinding Padding}"
+                            CanContentScroll="False"
+                            Focusable="False"
+                            HorizontalScrollBarVisibility="{TemplateBinding ScrollViewer.HorizontalScrollBarVisibility}"
+                            VerticalScrollBarVisibility="{TemplateBinding ScrollViewer.VerticalScrollBarVisibility}">
+                            <ItemsPresenter SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
+                        </ScrollViewer>
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style BasedOn="{StaticResource DefaultUiNavigationMapItemStyle}" TargetType="{x:Type controls:NavigationMapItem}" />
+    <Style BasedOn="{StaticResource DefaultUiNavigationMapViewStyle}" TargetType="{x:Type controls:NavigationMapView}" />
+
+</ResourceDictionary>
