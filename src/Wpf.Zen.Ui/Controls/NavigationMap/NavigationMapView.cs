@@ -9,7 +9,6 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Data;
 using System.Windows.Input;
-using System.Windows.Media;
 using System.Windows.Threading;
 
 // ReSharper disable once CheckNamespace
@@ -54,13 +53,19 @@ public class NavigationMapView : ItemsControl
 {
     private const string ScrollViewerPartName = "PART_ScrollViewer";
 
+    #region DP: LayoutMode
+
     /// <summary>Identifies the <see cref="LayoutMode"/> dependency property.</summary>
     public static readonly DependencyProperty LayoutModeProperty = DependencyProperty.Register(
         nameof(LayoutMode),
         typeof(NavigationMapLayoutMode),
         typeof(NavigationMapView),
-        new FrameworkPropertyMetadata(NavigationMapLayoutMode.Hierarchical, OnLayoutModeChanged),
-        ValidateLayoutMode
+        new FrameworkPropertyMetadata(
+            NavigationMapLayoutMode.Hierarchical,
+            OnLayoutModeChanged
+        ),
+        validateValueCallback: static value =>
+            value is NavigationMapLayoutMode.Hierarchical or NavigationMapLayoutMode.Manual
     );
 
     /// <summary>Gets or sets the strategy used to place navigation-map nodes.</summary>
@@ -69,6 +74,10 @@ public class NavigationMapView : ItemsControl
         get => (NavigationMapLayoutMode)GetValue(LayoutModeProperty);
         set => SetValue(LayoutModeProperty, value);
     }
+
+    #endregion
+
+    #region DP: LayoutDefinition
 
     /// <summary>Identifies the <see cref="LayoutDefinition"/> dependency property.</summary>
     public static readonly DependencyProperty LayoutDefinitionProperty = DependencyProperty.Register(
@@ -89,12 +98,21 @@ public class NavigationMapView : ItemsControl
         set => SetValue(LayoutDefinitionProperty, value);
     }
 
+    #endregion
+
+    #region DP: IsEditing
+
     /// <summary>Identifies the <see cref="IsEditing"/> dependency property.</summary>
     public static readonly DependencyProperty IsEditingProperty = DependencyProperty.Register(
         nameof(IsEditing),
         typeof(bool),
         typeof(NavigationMapView),
-        new FrameworkPropertyMetadata(false, OnIsEditingChanged, CoerceIsEditing)
+        new FrameworkPropertyMetadata(
+            false,
+            OnIsEditingChanged,
+            coerceValueCallback: static (d, baseValue) =>
+                ((NavigationMapView)d).LayoutMode == NavigationMapLayoutMode.Manual && baseValue is true
+        )
     );
 
     /// <summary>Gets or sets a value indicating whether Manual layout can be edited.</summary>
@@ -108,6 +126,10 @@ public class NavigationMapView : ItemsControl
         set => SetValue(IsEditingProperty, value);
     }
 
+    #endregion
+
+    #region DP: Direction
+
     /// <summary>Identifies the <see cref="Direction"/> dependency property.</summary>
     public static readonly DependencyProperty DirectionProperty = DependencyProperty.Register(
         nameof(Direction),
@@ -115,12 +137,13 @@ public class NavigationMapView : ItemsControl
         typeof(NavigationMapView),
         new FrameworkPropertyMetadata(
             NavigationMapDirection.TopToBottom,
-            FrameworkPropertyMetadataOptions.AffectsMeasure
-                | FrameworkPropertyMetadataOptions.AffectsArrange
-                | FrameworkPropertyMetadataOptions.AffectsRender,
+            flags: FrameworkPropertyMetadataOptions.AffectsMeasure
+                 | FrameworkPropertyMetadataOptions.AffectsArrange
+                 | FrameworkPropertyMetadataOptions.AffectsRender,
             OnAutomaticLayoutInputChanged
         ),
-        ValidateDirection
+        validateValueCallback: static value =>
+            value is NavigationMapDirection.TopToBottom or NavigationMapDirection.LeftToRight
     );
 
     /// <summary>Gets or sets the direction in which hierarchy levels advance.</summary>
@@ -129,6 +152,10 @@ public class NavigationMapView : ItemsControl
         get => (NavigationMapDirection)GetValue(DirectionProperty);
         set => SetValue(DirectionProperty, value);
     }
+
+    #endregion
+
+    #region DP: NodeWidth
 
     /// <summary>Identifies the <see cref="NodeWidth"/> dependency property.</summary>
     public static readonly DependencyProperty NodeWidthProperty = DependencyProperty.Register(
@@ -150,6 +177,10 @@ public class NavigationMapView : ItemsControl
         set => SetValue(NodeWidthProperty, value);
     }
 
+    #endregion
+
+    #region DP: HorizontalSpacing
+
     /// <summary>Identifies the <see cref="HorizontalSpacing"/> dependency property.</summary>
     public static readonly DependencyProperty HorizontalSpacingProperty = DependencyProperty.Register(
         nameof(HorizontalSpacing),
@@ -169,6 +200,10 @@ public class NavigationMapView : ItemsControl
         get => (double)GetValue(HorizontalSpacingProperty);
         set => SetValue(HorizontalSpacingProperty, value);
     }
+
+    #endregion
+
+    #region DP: VerticalSpacing
 
     /// <summary>Identifies the <see cref="VerticalSpacing"/> dependency property.</summary>
     public static readonly DependencyProperty VerticalSpacingProperty = DependencyProperty.Register(
@@ -190,6 +225,10 @@ public class NavigationMapView : ItemsControl
         set => SetValue(VerticalSpacingProperty, value);
     }
 
+    #endregion
+
+    #region DP: ConnectorBrush
+
     /// <summary>Identifies the <see cref="ConnectorBrush"/> dependency property.</summary>
     public static readonly DependencyProperty ConnectorBrushProperty = DependencyProperty.Register(
         nameof(ConnectorBrush),
@@ -204,6 +243,10 @@ public class NavigationMapView : ItemsControl
         get => (Brush?)GetValue(ConnectorBrushProperty);
         set => SetValue(ConnectorBrushProperty, value);
     }
+
+    #endregion
+
+    #region DP: ConnectorThickness
 
     /// <summary>Identifies the <see cref="ConnectorThickness"/> dependency property.</summary>
     public static readonly DependencyProperty ConnectorThicknessProperty = DependencyProperty.Register(
@@ -221,6 +264,10 @@ public class NavigationMapView : ItemsControl
         set => SetValue(ConnectorThicknessProperty, value);
     }
 
+    #endregion
+
+    #region DP: HighlightedConnectorBrush
+
     /// <summary>Identifies the <see cref="HighlightedConnectorBrush"/> dependency property.</summary>
     public static readonly DependencyProperty HighlightedConnectorBrushProperty = DependencyProperty.Register(
         nameof(HighlightedConnectorBrush),
@@ -235,6 +282,10 @@ public class NavigationMapView : ItemsControl
         get => (Brush?)GetValue(HighlightedConnectorBrushProperty);
         set => SetValue(HighlightedConnectorBrushProperty, value);
     }
+
+    #endregion
+
+    #region DP: HighlightedConnectorThickness
 
     /// <summary>Identifies the <see cref="HighlightedConnectorThickness"/> dependency property.</summary>
     public static readonly DependencyProperty HighlightedConnectorThicknessProperty =
@@ -253,6 +304,10 @@ public class NavigationMapView : ItemsControl
         set => SetValue(HighlightedConnectorThicknessProperty, value);
     }
 
+    #endregion
+
+    #region DP: RoutingClearance
+
     /// <summary>Identifies the <see cref="RoutingClearance"/> dependency property.</summary>
     public static readonly DependencyProperty RoutingClearanceProperty = DependencyProperty.Register(
         nameof(RoutingClearance),
@@ -269,6 +324,10 @@ public class NavigationMapView : ItemsControl
         set => SetValue(RoutingClearanceProperty, value);
     }
 
+    #endregion
+
+    #region DP: ShowRouteKey
+
     /// <summary>Identifies the <see cref="ShowRouteKey"/> dependency property.</summary>
     public static readonly DependencyProperty ShowRouteKeyProperty = DependencyProperty.Register(
         nameof(ShowRouteKey),
@@ -283,6 +342,10 @@ public class NavigationMapView : ItemsControl
         get => (bool)GetValue(ShowRouteKeyProperty);
         set => SetValue(ShowRouteKeyProperty, value);
     }
+
+    #endregion
+
+    #region DP: SnapToGrid
 
     /// <summary>Identifies the <see cref="SnapToGrid"/> dependency property.</summary>
     public static readonly DependencyProperty SnapToGridProperty = DependencyProperty.Register(
@@ -299,6 +362,10 @@ public class NavigationMapView : ItemsControl
         set => SetValue(SnapToGridProperty, value);
     }
 
+    #endregion
+
+    #region DP: ShowGrid
+
     /// <summary>Identifies the <see cref="ShowGrid"/> dependency property.</summary>
     public static readonly DependencyProperty ShowGridProperty = DependencyProperty.Register(
         nameof(ShowGrid),
@@ -313,6 +380,10 @@ public class NavigationMapView : ItemsControl
         get => (bool)GetValue(ShowGridProperty);
         set => SetValue(ShowGridProperty, value);
     }
+
+    #endregion
+
+    #region DP: GridSize
 
     /// <summary>Identifies the <see cref="GridSize"/> dependency property.</summary>
     public static readonly DependencyProperty GridSizeProperty = DependencyProperty.Register(
@@ -330,12 +401,27 @@ public class NavigationMapView : ItemsControl
         set => SetValue(GridSizeProperty, value);
     }
 
+    #endregion
+
+    #region DP: ZoomFactor
+
     /// <summary>Identifies the <see cref="ZoomFactor"/> dependency property.</summary>
     public static readonly DependencyProperty ZoomFactorProperty = DependencyProperty.Register(
         nameof(ZoomFactor),
         typeof(double),
         typeof(NavigationMapView),
-        new FrameworkPropertyMetadata(1D, null, CoerceZoomFactor),
+        new FrameworkPropertyMetadata(
+            1D,
+            null,
+            coerceValueCallback: static (d, value) =>
+            {
+                var view = (NavigationMapView)d;
+                return Math.Max(
+                    view.MinimumZoomFactor,
+                    Math.Min(view.MaximumZoomFactor, (double)value)
+                );
+            }
+        ),
         ValidatePositiveDouble
     );
 
@@ -345,6 +431,10 @@ public class NavigationMapView : ItemsControl
         get => (double)GetValue(ZoomFactorProperty);
         set => SetValue(ZoomFactorProperty, value);
     }
+
+    #endregion
+
+    #region DP: MinimumZoomFactor
 
     /// <summary>Identifies the <see cref="MinimumZoomFactor"/> dependency property.</summary>
     public static readonly DependencyProperty MinimumZoomFactorProperty = DependencyProperty.Register(
@@ -362,12 +452,23 @@ public class NavigationMapView : ItemsControl
         set => SetValue(MinimumZoomFactorProperty, value);
     }
 
+    #endregion
+
+    #region DP: MaximumZoomFactor
+
     /// <summary>Identifies the <see cref="MaximumZoomFactor"/> dependency property.</summary>
     public static readonly DependencyProperty MaximumZoomFactorProperty = DependencyProperty.Register(
         nameof(MaximumZoomFactor),
         typeof(double),
         typeof(NavigationMapView),
-        new FrameworkPropertyMetadata(3D, OnZoomLimitChanged, CoerceMaximumZoomFactor),
+        new FrameworkPropertyMetadata(
+            3D,
+            OnZoomLimitChanged,
+            coerceValueCallback: (d, value) => Math.Max(
+                ((NavigationMapView)d).MinimumZoomFactor,
+                (double)value
+            )
+        ),
         ValidatePositiveDouble
     );
 
@@ -377,6 +478,10 @@ public class NavigationMapView : ItemsControl
         get => (double)GetValue(MaximumZoomFactorProperty);
         set => SetValue(MaximumZoomFactorProperty, value);
     }
+
+    #endregion
+
+    #region DP: ZoomStep
 
     /// <summary>Identifies the <see cref="ZoomStep"/> dependency property.</summary>
     public static readonly DependencyProperty ZoomStepProperty = DependencyProperty.Register(
@@ -394,6 +499,10 @@ public class NavigationMapView : ItemsControl
         set => SetValue(ZoomStepProperty, value);
     }
 
+    #endregion
+
+    #region DP: AutoScrollEdgeSize
+
     /// <summary>Identifies the <see cref="AutoScrollEdgeSize"/> dependency property.</summary>
     public static readonly DependencyProperty AutoScrollEdgeSizeProperty = DependencyProperty.Register(
         nameof(AutoScrollEdgeSize),
@@ -409,6 +518,10 @@ public class NavigationMapView : ItemsControl
         get => (double)GetValue(AutoScrollEdgeSizeProperty);
         set => SetValue(AutoScrollEdgeSizeProperty, value);
     }
+
+    #endregion
+
+    #region DP: MaximumAutoScrollSpeed
 
     /// <summary>Identifies the <see cref="MaximumAutoScrollSpeed"/> dependency property.</summary>
     public static readonly DependencyProperty MaximumAutoScrollSpeedProperty =
@@ -427,6 +540,10 @@ public class NavigationMapView : ItemsControl
         set => SetValue(MaximumAutoScrollSpeedProperty, value);
     }
 
+    #endregion
+
+    #region DP: SearchText
+
     /// <summary>Identifies the <see cref="SearchText"/> dependency property.</summary>
     public static readonly DependencyProperty SearchTextProperty = DependencyProperty.Register(
         nameof(SearchText),
@@ -442,6 +559,10 @@ public class NavigationMapView : ItemsControl
         set => SetValue(SearchTextProperty, value);
     }
 
+    #endregion
+
+    #region Read-only DP: SearchResultCount
+
     private static readonly DependencyPropertyKey SearchResultCountPropertyKey =
         DependencyProperty.RegisterReadOnly(
             nameof(SearchResultCount),
@@ -450,12 +571,16 @@ public class NavigationMapView : ItemsControl
             new FrameworkPropertyMetadata(0)
         );
 
-    /// <summary>Identifies the read-only <see cref="SearchResultCount"/> dependency property.</summary>
+    /// <summary>Identifies the <see cref="SearchResultCount"/> dependency property.</summary>
     public static readonly DependencyProperty SearchResultCountProperty =
         SearchResultCountPropertyKey.DependencyProperty;
 
     /// <summary>Gets the number of nodes matching <see cref="SearchText"/>.</summary>
     public int SearchResultCount => (int)GetValue(SearchResultCountProperty);
+
+    #endregion
+
+    #region Read-only DP: CurrentSearchResultIndex
 
     private static readonly DependencyPropertyKey CurrentSearchResultIndexPropertyKey =
         DependencyProperty.RegisterReadOnly(
@@ -465,12 +590,16 @@ public class NavigationMapView : ItemsControl
             new FrameworkPropertyMetadata(-1)
         );
 
-    /// <summary>Identifies the read-only <see cref="CurrentSearchResultIndex"/> property.</summary>
+    /// <summary>Identifies the <see cref="CurrentSearchResultIndex"/> dependency property.</summary>
     public static readonly DependencyProperty CurrentSearchResultIndexProperty =
         CurrentSearchResultIndexPropertyKey.DependencyProperty;
 
     /// <summary>Gets the zero-based current search-result index, or -1 when no result is active.</summary>
     public int CurrentSearchResultIndex => (int)GetValue(CurrentSearchResultIndexProperty);
+
+    #endregion
+
+    #region Read-only DP: PrimarySelectedNodeKey
 
     private static readonly DependencyPropertyKey PrimarySelectedNodeKeyPropertyKey =
         DependencyProperty.RegisterReadOnly(
@@ -480,12 +609,16 @@ public class NavigationMapView : ItemsControl
             new FrameworkPropertyMetadata(null)
         );
 
-    /// <summary>Identifies the read-only <see cref="PrimarySelectedNodeKey"/> dependency property.</summary>
+    /// <summary>Identifies the <see cref="PrimarySelectedNodeKey"/> dependency property.</summary>
     public static readonly DependencyProperty PrimarySelectedNodeKeyProperty =
         PrimarySelectedNodeKeyPropertyKey.DependencyProperty;
 
     /// <summary>Gets the key of the focused alignment and connector-highlight target.</summary>
     public string? PrimarySelectedNodeKey => (string?)GetValue(PrimarySelectedNodeKeyProperty);
+
+    #endregion
+
+    #region Read-only DP: CanUndo
 
     private static readonly DependencyPropertyKey CanUndoPropertyKey =
         DependencyProperty.RegisterReadOnly(
@@ -495,11 +628,15 @@ public class NavigationMapView : ItemsControl
             new FrameworkPropertyMetadata(false)
         );
 
-    /// <summary>Identifies the read-only <see cref="CanUndo"/> dependency property.</summary>
+    /// <summary>Identifies the <see cref="CanUndo"/> dependency property.</summary>
     public static readonly DependencyProperty CanUndoProperty = CanUndoPropertyKey.DependencyProperty;
 
     /// <summary>Gets a value indicating whether a layout-editor transaction can be undone.</summary>
     public bool CanUndo => (bool)GetValue(CanUndoProperty);
+
+    #endregion
+
+    #region Read-only DP: CanRedo
 
     private static readonly DependencyPropertyKey CanRedoPropertyKey =
         DependencyProperty.RegisterReadOnly(
@@ -509,11 +646,15 @@ public class NavigationMapView : ItemsControl
             new FrameworkPropertyMetadata(false)
         );
 
-    /// <summary>Identifies the read-only <see cref="CanRedo"/> dependency property.</summary>
+    /// <summary>Identifies the <see cref="CanRedo"/> dependency property.</summary>
     public static readonly DependencyProperty CanRedoProperty = CanRedoPropertyKey.DependencyProperty;
 
     /// <summary>Gets a value indicating whether an undone layout transaction can be reapplied.</summary>
     public bool CanRedo => (bool)GetValue(CanRedoProperty);
+
+    #endregion
+
+    #region DP: Command
 
     /// <summary>Identifies the <see cref="Command"/> dependency property.</summary>
     public static readonly DependencyProperty CommandProperty = DependencyProperty.Register(
@@ -530,6 +671,10 @@ public class NavigationMapView : ItemsControl
         set => SetValue(CommandProperty, value);
     }
 
+    #endregion
+
+    #region Event: NodeInvoked
+
     /// <summary>Identifies the <see cref="NodeInvoked"/> routed event.</summary>
     public static readonly RoutedEvent NodeInvokedEvent = EventManager.RegisterRoutedEvent(
         nameof(NodeInvoked),
@@ -538,6 +683,17 @@ public class NavigationMapView : ItemsControl
         typeof(NavigationMapView)
     );
 
+    /// <summary>Occurs when a generated or directly supplied map item is activated.</summary>
+    public event TypedEventHandler<NavigationMapView, NavigationMapNodeInvokedEventArgs> NodeInvoked
+    {
+        add => AddHandler(NodeInvokedEvent, value);
+        remove => RemoveHandler(NodeInvokedEvent, value);
+    }
+
+    #endregion
+
+    #region Event: SelectionChanged
+
     /// <summary>Identifies the <see cref="SelectionChanged"/> routed event.</summary>
     public static readonly RoutedEvent SelectionChangedEvent = EventManager.RegisterRoutedEvent(
         nameof(SelectionChanged),
@@ -545,6 +701,15 @@ public class NavigationMapView : ItemsControl
         typeof(SelectionChangedEventHandler),
         typeof(NavigationMapView)
     );
+
+    /// <summary>Occurs after the editor or a public selection method changes selected nodes.</summary>
+    public event SelectionChangedEventHandler SelectionChanged
+    {
+        add => AddHandler(SelectionChangedEvent, value);
+        remove => RemoveHandler(SelectionChangedEvent, value);
+    }
+
+    #endregion
 
     private readonly HashSet<string> _selectedNodeKeys = new(StringComparer.Ordinal);
     private readonly Dictionary<string, Point> _dragOriginCenters = new(StringComparer.Ordinal);
@@ -583,28 +748,14 @@ public class NavigationMapView : ItemsControl
         SetCurrentValue(LayoutDefinitionProperty, new NavigationMapLayout());
     }
 
-    /// <summary>Occurs when a generated or directly supplied map item is activated.</summary>
-    public event TypedEventHandler<NavigationMapView, NavigationMapNodeInvokedEventArgs> NodeInvoked
-    {
-        add => AddHandler(NodeInvokedEvent, value);
-        remove => RemoveHandler(NodeInvokedEvent, value);
-    }
-
-    /// <summary>Occurs after the editor or a public selection method changes selected nodes.</summary>
-    public event SelectionChangedEventHandler SelectionChanged
-    {
-        add => AddHandler(SelectionChangedEvent, value);
-        remove => RemoveHandler(SelectionChangedEvent, value);
-    }
-
     /// <summary>Gets a snapshot of selected node keys in source order.</summary>
     public IReadOnlyList<string> SelectedNodeKeys =>
         Items
-            .Cast<object>()
-            .Select(GetNodeKey)
-            .Where(key => key is not null && _selectedNodeKeys.Contains(key))
-            .Cast<string>()
-            .ToArray();
+           .Cast<object>()
+           .Select(GetNodeKey)
+           .Where(key => key is not null && _selectedNodeKeys.Contains(key))
+           .Cast<string>()
+           .ToArray();
 
     /// <summary>Selects a node by key and scrolls it into view.</summary>
     /// <param name="nodeKey">The stable key to select.</param>
@@ -612,7 +763,7 @@ public class NavigationMapView : ItemsControl
     /// <returns><see langword="true"/> when a generated node with that key exists.</returns>
     public bool SelectNode(string nodeKey, bool preserveSelection = false)
     {
-        NavigationMapItem? container = FindContainer(nodeKey);
+        var container = FindContainer(nodeKey);
         if (container is null)
         {
             return false;
@@ -621,10 +772,14 @@ public class NavigationMapView : ItemsControl
         var selection = preserveSelection
             ? new HashSet<string>(_selectedNodeKeys, StringComparer.Ordinal)
             : new HashSet<string>(StringComparer.Ordinal);
+
         selection.Add(nodeKey);
         ApplySelection(selection, nodeKey);
+
         _ = CanEditSelection() ? Focus() : container.Focus();
+
         container.BringIntoView();
+
         return true;
     }
 
@@ -644,8 +799,9 @@ public class NavigationMapView : ItemsControl
         }
 
         var keys = new HashSet<string>(StringComparer.Ordinal);
-        string? primary = PrimarySelectedNodeKey;
-        foreach (NavigationMapItem container in GetGeneratedContainers())
+        var primary = PrimarySelectedNodeKey;
+
+        foreach (var container in GetGeneratedContainers())
         {
             if (container.NodeKey is { Length: > 0 } key)
             {
@@ -679,7 +835,7 @@ public class NavigationMapView : ItemsControl
             return false;
         }
 
-        List<NavigationMapItem> selected = GetSelectedContainers();
+        var selected = GetSelectedContainers();
         return AlignContainersToGrid(
             selected.Count == 0 ? GetGeneratedContainers().ToList() : selected,
             recordHistory: true
@@ -712,38 +868,44 @@ public class NavigationMapView : ItemsControl
             return false;
         }
 
-        List<NavigationMapItem> selected = GetSelectedContainers();
+        var selected = GetSelectedContainers();
         if (selected.Count < 2)
         {
             return false;
         }
 
-        string[] selectedKeys = selected
+        var selectedKeys = selected
             .Select(static container => container.NodeKey)
             .Where(static key => key is not null)
             .Cast<string>()
             .ToArray();
-        Dictionary<string, PlacementState> before = CapturePlacementStates(selectedKeys);
-        Rect target = GetContainerBounds(primary);
-        foreach (NavigationMapItem container in selected)
+
+        var before = CapturePlacementStates(selectedKeys);
+        var target = GetContainerBounds(primary);
+
+        foreach (var container in selected)
         {
             if (ReferenceEquals(container, primary) || container.NodeKey is not { Length: > 0 } key)
             {
                 continue;
             }
 
-            Rect bounds = GetContainerBounds(container);
-            Point center = Center(bounds);
+            var bounds = GetContainerBounds(container);
+            var center = Center(bounds);
+
             center = alignment switch
             {
+                // ReSharper disable UseWithExpressionToCopyStruct
                 NavigationMapAlignment.Left => new Point(target.Left + (bounds.Width / 2D), center.Y),
                 NavigationMapAlignment.HorizontalCenter => new Point(Center(target).X, center.Y),
                 NavigationMapAlignment.Right => new Point(target.Right - (bounds.Width / 2D), center.Y),
                 NavigationMapAlignment.Top => new Point(center.X, target.Top + (bounds.Height / 2D)),
                 NavigationMapAlignment.VerticalCenter => new Point(center.X, Center(target).Y),
                 NavigationMapAlignment.Bottom => new Point(center.X, target.Bottom - (bounds.Height / 2D)),
+                // ReSharper restore UseWithExpressionToCopyStruct
                 _ => throw new ArgumentOutOfRangeException(nameof(alignment)),
             };
+
             EnsureLayout().SetPosition(key, ClampCenter(container, center));
         }
 
@@ -772,16 +934,18 @@ public class NavigationMapView : ItemsControl
     /// <returns><see langword="true"/> when the template and map panel are available.</returns>
     public bool ZoomToFit()
     {
-        NavigationMapPanel? panel = FindVisualDescendant<NavigationMapPanel>(this);
+        var panel = FindVisualDescendant<NavigationMapPanel>(this);
         if (_scrollViewer is null || panel is null || panel.RenderSize.Width <= 0D || panel.RenderSize.Height <= 0D)
         {
             return false;
         }
 
-        double horizontal = _scrollViewer.ViewportWidth / panel.RenderSize.Width;
-        double vertical = _scrollViewer.ViewportHeight / panel.RenderSize.Height;
+        var horizontal = _scrollViewer.ViewportWidth / panel.RenderSize.Width;
+        var vertical   = _scrollViewer.ViewportHeight / panel.RenderSize.Height;
+
         SetCurrentValue(ZoomFactorProperty, Math.Min(horizontal, vertical));
         _scrollViewer.ScrollToHome();
+
         return true;
     }
 
@@ -794,11 +958,15 @@ public class NavigationMapView : ItemsControl
             return false;
         }
 
-        LayoutEdit edit = _undoHistory[^1];
+        var edit = _undoHistory[^1];
+
         _undoHistory.RemoveAt(_undoHistory.Count - 1);
+
         ApplyPlacementStates(edit.Before);
         _redoHistory.Add(edit);
+
         UpdateHistoryState();
+
         return true;
     }
 
@@ -811,11 +979,15 @@ public class NavigationMapView : ItemsControl
             return false;
         }
 
-        LayoutEdit edit = _redoHistory[^1];
+        var edit = _redoHistory[^1];
+
         _redoHistory.RemoveAt(_redoHistory.Count - 1);
+
         ApplyPlacementStates(edit.After);
         _undoHistory.Add(edit);
+
         UpdateHistoryState();
+
         return true;
     }
 
@@ -825,8 +997,10 @@ public class NavigationMapView : ItemsControl
     public void ClearLayoutHistory()
     {
         _pendingDragBefore = null;
+
         _undoHistory.Clear();
         _redoHistory.Clear();
+
         UpdateHistoryState();
     }
 
@@ -837,7 +1011,9 @@ public class NavigationMapView : ItemsControl
         // the ScrollViewer receiving offsets. End the gesture before replacing that reference so
         // a captured mouse cannot continue driving a detached template part.
         EndMiddleButtonPanning();
+
         base.OnApplyTemplate();
+
         _scrollViewer = GetTemplateChild(ScrollViewerPartName) as ScrollViewer;
     }
 
@@ -847,7 +1023,9 @@ public class NavigationMapView : ItemsControl
     protected virtual void OnNodeInvoked(object item, NavigationMapItem container)
     {
         var args = new NavigationMapNodeInvokedEventArgs(NodeInvokedEvent, this, item, container);
+
         RaiseEvent(args);
+
         if (!args.Handled && Command?.CanExecute(item) == true)
         {
             Command.Execute(item);
@@ -855,15 +1033,22 @@ public class NavigationMapView : ItemsControl
     }
 
     /// <inheritdoc />
-    protected override bool IsItemItsOwnContainerOverride(object item) => item is NavigationMapItem;
+    protected override bool IsItemItsOwnContainerOverride(object item)
+    {
+        return item is NavigationMapItem;
+    }
 
     /// <inheritdoc />
-    protected override DependencyObject GetContainerForItemOverride() => new NavigationMapItem();
+    protected override DependencyObject GetContainerForItemOverride()
+    {
+        return new NavigationMapItem();
+    }
 
     /// <inheritdoc />
     protected override void PrepareContainerForItemOverride(DependencyObject element, object item)
     {
         base.PrepareContainerForItemOverride(element, item);
+
         if (element is not NavigationMapItem container)
         {
             return;
@@ -888,11 +1073,13 @@ public class NavigationMapView : ItemsControl
         {
             container.SetLayoutSelected(false, false);
             container.SetSearchMatch(false, false);
+
             BindingOperations.ClearBinding(container, NavigationMapItem.NodeKeyProperty);
             BindingOperations.ClearBinding(container, NavigationMapItem.ParentKeyProperty);
             BindingOperations.ClearBinding(container, NavigationMapItem.TargetProperty);
             BindingOperations.ClearBinding(container, NavigationMapItem.DescriptionProperty);
             BindingOperations.ClearBinding(container, AutomationProperties.NameProperty);
+
             container.SetLayoutPosition(0, true, 1, 1);
         }
 
@@ -903,6 +1090,7 @@ public class NavigationMapView : ItemsControl
     protected override void OnItemsChanged(NotifyCollectionChangedEventArgs e)
     {
         base.OnItemsChanged(e);
+
         Dispatcher.BeginInvoke(
             DispatcherPriority.Loaded,
             new Action(() =>
@@ -914,6 +1102,7 @@ public class NavigationMapView : ItemsControl
                     // second dispatcher hop that could cancel the edit-entry alignment while a
                     // template is still being established.
                     UpdateLayout();
+
                     _ = AlignContainersToGrid(
                         GetGeneratedContainers().ToList(),
                         recordHistory: false
@@ -927,6 +1116,7 @@ public class NavigationMapView : ItemsControl
     protected override void OnPreviewMouseLeftButtonDown(MouseButtonEventArgs e)
     {
         base.OnPreviewMouseLeftButtonDown(e);
+
         if (!CanEditSelection() || _isMiddleButtonPanning)
         {
             return;
@@ -937,8 +1127,9 @@ public class NavigationMapView : ItemsControl
         // Keeping keyboard focus here also makes a blank-surface click immediately command-ready.
         _ = Focus();
 
-        DependencyObject? source = e.OriginalSource as DependencyObject;
-        NavigationMapPanel? panel = FindVisualAncestor<NavigationMapPanel>(source);
+        var source = e.OriginalSource as DependencyObject;
+        var panel = FindVisualAncestor<NavigationMapPanel>(source);
+
         if (panel is null || !ReferenceEquals(FindVisualAncestor<NavigationMapView>(panel), this))
         {
             // Scroll bars and template chrome are deliberately excluded. Previously every
@@ -946,7 +1137,7 @@ public class NavigationMapView : ItemsControl
             return;
         }
 
-        NavigationMapItem? container = FindVisualAncestor<NavigationMapItem>(source);
+        var container = FindVisualAncestor<NavigationMapItem>(source);
         if (
             container is null
             || !ReferenceEquals(ItemsControlFromItemContainer(container), this)
@@ -958,9 +1149,10 @@ public class NavigationMapView : ItemsControl
             return;
         }
 
-        ModifierKeys modifiers = Keyboard.Modifiers;
-        bool additive = (modifiers & (ModifierKeys.Control | ModifierKeys.Shift)) != 0;
+        var modifiers = Keyboard.Modifiers;
+        var additive  = (modifiers & (ModifierKeys.Control | ModifierKeys.Shift)) != 0;
         var selection = new HashSet<string>(_selectedNodeKeys, StringComparer.Ordinal);
+
         if ((modifiers & ModifierKeys.Control) != 0 && selection.Contains(key))
         {
             selection.Remove(key);
@@ -975,8 +1167,10 @@ public class NavigationMapView : ItemsControl
         }
 
         selection.Add(key);
+
         ApplySelection(selection, key);
         BeginNodeDragGesture(panel, e);
+
         e.Handled = true;
     }
 
@@ -984,6 +1178,7 @@ public class NavigationMapView : ItemsControl
     protected override void OnPreviewMouseDown(MouseButtonEventArgs e)
     {
         base.OnPreviewMouseDown(e);
+
         if (
             e.ChangedButton != MouseButton.Middle
             || !CanEditSelection()
@@ -993,8 +1188,9 @@ public class NavigationMapView : ItemsControl
             return;
         }
 
-        DependencyObject? source = e.OriginalSource as DependencyObject;
-        NavigationMapPanel? panel = FindVisualAncestor<NavigationMapPanel>(source);
+        var source = e.OriginalSource as DependencyObject;
+        var panel = FindVisualAncestor<NavigationMapPanel>(source);
+
         if (panel is null || !ReferenceEquals(FindVisualAncestor<NavigationMapView>(panel), this))
         {
             // Only the map canvas and its node descendants initiate panning. In particular, a
@@ -1003,10 +1199,12 @@ public class NavigationMapView : ItemsControl
         }
 
         EndEditingGesture();
-        _panPointerOrigin = e.GetPosition(_scrollViewer);
+
+        _panPointerOrigin          = e.GetPosition(_scrollViewer);
         _panHorizontalOffsetOrigin = _scrollViewer.HorizontalOffset;
-        _panVerticalOffsetOrigin = _scrollViewer.VerticalOffset;
-        _isMiddleButtonPanning = CaptureMouse();
+        _panVerticalOffsetOrigin   = _scrollViewer.VerticalOffset;
+        _isMiddleButtonPanning     = CaptureMouse();
+
         if (_isMiddleButtonPanning)
         {
             e.Handled = true;
@@ -1017,6 +1215,7 @@ public class NavigationMapView : ItemsControl
     protected override void OnPreviewMouseMove(MouseEventArgs e)
     {
         base.OnPreviewMouseMove(e);
+
         if (_isMiddleButtonPanning)
         {
             if (e.MiddleButton != MouseButtonState.Pressed)
@@ -1029,10 +1228,12 @@ public class NavigationMapView : ItemsControl
 
             if (_scrollViewer is not null)
             {
-                Point panPointer = e.GetPosition(_scrollViewer);
+                var panPointer = e.GetPosition(_scrollViewer);
+
                 _scrollViewer.ScrollToHorizontalOffset(
                     _panHorizontalOffsetOrigin - (panPointer.X - _panPointerOrigin.X)
                 );
+
                 _scrollViewer.ScrollToVerticalOffset(
                     _panVerticalOffsetOrigin - (panPointer.Y - _panPointerOrigin.Y)
                 );
@@ -1056,7 +1257,8 @@ public class NavigationMapView : ItemsControl
             _lastPointerInScrollViewer = e.GetPosition(_scrollViewer);
         }
 
-        Point pointer = e.GetPosition(_editedPanel);
+        var pointer = e.GetPosition(_editedPanel);
+
         if (
             _editorGesture is EditorGesture.NodeDragPending or EditorGesture.MarqueePending
             && !IsDragThresholdExceeded(e.GetPosition(this))
@@ -1071,6 +1273,7 @@ public class NavigationMapView : ItemsControl
             _editorGesture = EditorGesture.NodeDrag;
             _pendingDragBefore = CapturePlacementStates(_dragOriginCenters.Keys);
             _editedPanel.BeginExtentHold();
+
             StartAutoScroll();
         }
         else if (_editorGesture == EditorGesture.MarqueePending)
@@ -1094,12 +1297,14 @@ public class NavigationMapView : ItemsControl
     protected override void OnPreviewMouseUp(MouseButtonEventArgs e)
     {
         base.OnPreviewMouseUp(e);
+
         if (e.ChangedButton != MouseButton.Middle || !_isMiddleButtonPanning)
         {
             return;
         }
 
         EndMiddleButtonPanning();
+
         e.Handled = true;
     }
 
@@ -1107,6 +1312,7 @@ public class NavigationMapView : ItemsControl
     protected override void OnPreviewMouseLeftButtonUp(MouseButtonEventArgs e)
     {
         base.OnPreviewMouseLeftButtonUp(e);
+
         if (_editedPanel is null || _editorGesture == EditorGesture.None)
         {
             return;
@@ -1118,7 +1324,7 @@ public class NavigationMapView : ItemsControl
         }
         else if (
             _editorGesture == EditorGesture.MarqueePending
-            && (_gestureModifiers & (ModifierKeys.Control | ModifierKeys.Shift)) == 0
+         && (_gestureModifiers & (ModifierKeys.Control | ModifierKeys.Shift)) == 0
         )
         {
             // A click, rather than a drag, on the actual map surface is the only blank-space
@@ -1127,6 +1333,7 @@ public class NavigationMapView : ItemsControl
         }
 
         EndEditingGesture();
+
         e.Handled = true;
     }
 
@@ -1134,6 +1341,7 @@ public class NavigationMapView : ItemsControl
     protected override void OnLostMouseCapture(MouseEventArgs e)
     {
         base.OnLostMouseCapture(e);
+
         EndMiddleButtonPanning(releaseCapture: false);
         EndEditingGesture(releaseCapture: false);
     }
@@ -1148,6 +1356,7 @@ public class NavigationMapView : ItemsControl
         }
 
         ChangeZoomAtPointer(e.Delta > 0 ? ZoomFactor + ZoomStep : ZoomFactor - ZoomStep, e);
+
         e.Handled = true;
     }
 
@@ -1155,6 +1364,7 @@ public class NavigationMapView : ItemsControl
     protected override void OnPreviewKeyDown(KeyEventArgs e)
     {
         base.OnPreviewKeyDown(e);
+
         if (
             CanEditSelection()
             && (Keyboard.Modifiers & ModifierKeys.Control) != 0
@@ -1163,6 +1373,7 @@ public class NavigationMapView : ItemsControl
         {
             _ = (Keyboard.Modifiers & ModifierKeys.Shift) != 0 ? Redo() : Undo();
             e.Handled = true;
+
             return;
         }
 
@@ -1174,6 +1385,7 @@ public class NavigationMapView : ItemsControl
         {
             _ = Redo();
             e.Handled = true;
+
             return;
         }
 
@@ -1181,6 +1393,7 @@ public class NavigationMapView : ItemsControl
         {
             SelectAll();
             e.Handled = true;
+
             return;
         }
 
@@ -1188,6 +1401,7 @@ public class NavigationMapView : ItemsControl
         {
             ClearSelection();
             e.Handled = true;
+
             return;
         }
 
@@ -1196,21 +1410,23 @@ public class NavigationMapView : ItemsControl
             return;
         }
 
-        double step = SnapToGrid ? GridSize : (Keyboard.Modifiers & ModifierKeys.Shift) != 0 ? 10D : 1D;
-        Vector delta = e.Key switch
+        var step = SnapToGrid ? GridSize : (Keyboard.Modifiers & ModifierKeys.Shift) != 0 ? 10D : 1D;
+        var delta = e.Key switch
         {
-            Key.Left => new Vector(-step, 0D),
-            Key.Right => new Vector(step, 0D),
-            Key.Up => new Vector(0D, -step),
-            Key.Down => new Vector(0D, step),
-            _ => default,
+            Key.Left  => new Vector(-step, 0D),
+            Key.Right => new Vector(step,  0D),
+            Key.Up    => new Vector(0D,    -step),
+            Key.Down  => new Vector(0D,    step),
+            _         => default,
         };
+
         if (delta == default)
         {
             return;
         }
 
         MoveSelection(delta);
+
         e.Handled = true;
     }
 
@@ -1227,7 +1443,7 @@ public class NavigationMapView : ItemsControl
             return;
         }
 
-        object item = ItemContainerGenerator.ItemFromContainer(container);
+        var item = ItemContainerGenerator.ItemFromContainer(container);
         if (!ReferenceEquals(item, DependencyProperty.UnsetValue))
         {
             OnNodeInvoked(item, container);
@@ -1237,7 +1453,7 @@ public class NavigationMapView : ItemsControl
     private void BeginNodeDragGesture(NavigationMapPanel panel, MouseButtonEventArgs e)
     {
         _dragOriginCenters.Clear();
-        foreach (NavigationMapItem selected in GetSelectedContainers())
+        foreach (var selected in GetSelectedContainers())
         {
             if (selected.NodeKey is { Length: > 0 } key)
             {
@@ -1260,16 +1476,20 @@ public class NavigationMapView : ItemsControl
         EditorGesture gesture)
     {
         EndEditingGesture();
-        _editedPanel = panel;
-        _editorGesture = gesture;
-        _dragPointerOrigin = e.GetPosition(panel);
+
+        _editedPanel                = panel;
+        _editorGesture              = gesture;
+        _dragPointerOrigin          = e.GetPosition(panel);
         _gesturePointerOriginInView = e.GetPosition(this);
-        _gestureModifiers = Keyboard.Modifiers;
+        _gestureModifiers           = Keyboard.Modifiers;
+
         _selectionAtGestureStart.Clear();
         _selectionAtGestureStart.UnionWith(_selectedNodeKeys);
+
         _pendingDragBefore = null;
 
         _scrollViewer ??= FindVisualDescendant<ScrollViewer>(this);
+
         if (_scrollViewer is not null)
         {
             _lastPointerInScrollViewer = e.GetPosition(_scrollViewer);
@@ -1278,9 +1498,12 @@ public class NavigationMapView : ItemsControl
         CaptureMouse();
     }
 
-    private bool IsDragThresholdExceeded(Point pointerInView) =>
-        Math.Abs(pointerInView.X - _gesturePointerOriginInView.X) >= SystemParameters.MinimumHorizontalDragDistance
-        || Math.Abs(pointerInView.Y - _gesturePointerOriginInView.Y) >= SystemParameters.MinimumVerticalDragDistance;
+    private bool IsDragThresholdExceeded(Point pointerInView)
+    {
+        return
+            Math.Abs(pointerInView.X - _gesturePointerOriginInView.X) >= SystemParameters.MinimumHorizontalDragDistance
+         || Math.Abs(pointerInView.Y - _gesturePointerOriginInView.Y) >= SystemParameters.MinimumVerticalDragDistance;
+    }
 
     private void UpdateMarqueeSelection(Point pointer)
     {
@@ -1290,17 +1513,21 @@ public class NavigationMapView : ItemsControl
         }
 
         var rectangle = new Rect(_dragPointerOrigin, pointer);
+
         _editedPanel.SetSelectionRectangle(rectangle);
-        string[] hits = GetGeneratedContainers()
+
+        var hits = GetGeneratedContainers()
             .Where(container => container.IsVisible && rectangle.IntersectsWith(GetContainerBounds(container)))
             .Select(static container => container.NodeKey)
             .Where(static key => key is not null)
             .Cast<string>()
             .ToArray();
+
         var selection = new HashSet<string>(_selectionAtGestureStart, StringComparer.Ordinal);
+
         if ((_gestureModifiers & ModifierKeys.Control) != 0)
         {
-            foreach (string key in hits)
+            foreach (var key in hits)
             {
                 if (!selection.Add(key))
                 {
@@ -1318,7 +1545,7 @@ public class NavigationMapView : ItemsControl
             selection.UnionWith(hits);
         }
 
-        string? primary = PrimarySelectedNodeKey;
+        var primary = PrimarySelectedNodeKey;
         if (primary is null || !selection.Contains(primary))
         {
             primary = hits.FirstOrDefault(selection.Contains) ?? selection.FirstOrDefault();
@@ -1334,20 +1561,23 @@ public class NavigationMapView : ItemsControl
             return;
         }
 
-        Vector delta = pointer - _dragPointerOrigin;
+        var delta = pointer - _dragPointerOrigin;
+
         if (
             SnapToGrid
             && PrimarySelectedNodeKey is { } primaryKey
-            && _dragOriginCenters.TryGetValue(primaryKey, out Point primaryOrigin)
+            && _dragOriginCenters.TryGetValue(primaryKey, out var primaryOrigin)
         )
         {
-            Point desired = primaryOrigin + delta;
+            var desired = primaryOrigin + delta;
             delta = new Vector(Snap(desired.X) - primaryOrigin.X, Snap(desired.Y) - primaryOrigin.Y);
         }
 
         delta = ClampGroupDelta(delta, _dragOriginCenters);
-        NavigationMapLayout layout = EnsureLayout();
-        foreach (KeyValuePair<string, Point> origin in _dragOriginCenters)
+
+        var layout = EnsureLayout();
+
+        foreach (var origin in _dragOriginCenters)
         {
             layout.SetPosition(origin.Key, origin.Value + delta);
         }
@@ -1356,7 +1586,8 @@ public class NavigationMapView : ItemsControl
     private void MoveSelection(Vector requestedDelta)
     {
         var origins = new Dictionary<string, Point>(StringComparer.Ordinal);
-        foreach (NavigationMapItem container in GetSelectedContainers())
+
+        foreach (var container in GetSelectedContainers())
         {
             if (container.NodeKey is { Length: > 0 } key)
             {
@@ -1364,10 +1595,11 @@ public class NavigationMapView : ItemsControl
             }
         }
 
-        Dictionary<string, PlacementState> before = CapturePlacementStates(origins.Keys);
-        Vector delta = ClampGroupDelta(requestedDelta, origins);
-        NavigationMapLayout layout = EnsureLayout();
-        foreach (KeyValuePair<string, Point> origin in origins)
+        var before = CapturePlacementStates(origins.Keys);
+        var delta  = ClampGroupDelta(requestedDelta, origins);
+        var layout = EnsureLayout();
+
+        foreach (var origin in origins)
         {
             layout.SetPosition(origin.Key, origin.Value + delta);
         }
@@ -1379,27 +1611,29 @@ public class NavigationMapView : ItemsControl
         IReadOnlyList<NavigationMapItem> containers,
         bool recordHistory)
     {
-        string[] keys = containers
+        var keys = containers
             .Select(static container => container.NodeKey)
             .Where(static key => key is not null)
             .Cast<string>()
             .Distinct(StringComparer.Ordinal)
             .ToArray();
+
         if (keys.Length == 0)
         {
             return false;
         }
 
-        Dictionary<string, PlacementState> before = CapturePlacementStates(keys);
-        NavigationMapLayout layout = EnsureLayout();
-        foreach (NavigationMapItem container in containers)
+        var before = CapturePlacementStates(keys);
+        var layout = EnsureLayout();
+
+        foreach (var container in containers)
         {
             if (container.NodeKey is not { Length: > 0 } key)
             {
                 continue;
             }
 
-            Point center = Center(GetContainerBounds(container));
+            var center = Center(GetContainerBounds(container));
             layout.SetPosition(key, ClampCenter(container, new Point(Snap(center.X), Snap(center.Y))));
         }
 
@@ -1413,7 +1647,8 @@ public class NavigationMapView : ItemsControl
 
     private void ScheduleFullGridAlignment()
     {
-        int requestVersion = ++_gridAlignmentRequestVersion;
+        var requestVersion = ++_gridAlignmentRequestVersion;
+
         Dispatcher.BeginInvoke(
             DispatcherPriority.ContextIdle,
             new Action(() =>
@@ -1431,6 +1666,7 @@ public class NavigationMapView : ItemsControl
                 // node-size changes. Always wait for that layout pass, then materialize every center
                 // together so a later group drag cannot mix old and newly snapped coordinates.
                 UpdateLayout();
+
                 _ = AlignContainersToGrid(GetGeneratedContainers().ToList(), recordHistory: false);
             })
         );
@@ -1451,9 +1687,10 @@ public class NavigationMapView : ItemsControl
 
     private Vector ClampGroupDelta(Vector delta, IReadOnlyDictionary<string, Point> origins)
     {
-        double minimumX = double.PositiveInfinity;
-        double minimumY = double.PositiveInfinity;
-        foreach (KeyValuePair<string, Point> origin in origins)
+        var minimumX = double.PositiveInfinity;
+        var minimumY = double.PositiveInfinity;
+
+        foreach (var origin in origins)
         {
             if (FindContainer(origin.Key) is not { } container)
             {
@@ -1476,13 +1713,18 @@ public class NavigationMapView : ItemsControl
     private void EndEditingGesture(bool releaseCapture = true)
     {
         CompletePendingDrag();
-        NavigationMapPanel? panel = _editedPanel;
-        _editedPanel = null;
+
+        var panel = _editedPanel;
+
+        _editedPanel   = null;
         _editorGesture = EditorGesture.None;
         _selectionAtGestureStart.Clear();
+
         panel?.SetSelectionRectangle(null);
         panel?.EndExtentHold();
+
         StopAutoScroll();
+
         if (releaseCapture && IsMouseCaptured)
         {
             ReleaseMouseCapture();
@@ -1497,6 +1739,7 @@ public class NavigationMapView : ItemsControl
         }
 
         _isMiddleButtonPanning = false;
+
         if (releaseCapture && IsMouseCaptured)
         {
             ReleaseMouseCapture();
@@ -1511,6 +1754,7 @@ public class NavigationMapView : ItemsControl
         }
 
         _pendingDragBefore = null;
+
         RecordLayoutEdit(before, CapturePlacementStates(before.Keys));
     }
 
@@ -1521,8 +1765,9 @@ public class NavigationMapView : ItemsControl
             return;
         }
 
-        _lastAutoScrollFrame = DateTime.UtcNow;
+        _lastAutoScrollFrame   = DateTime.UtcNow;
         _isAutoScrollRendering = true;
+
         CompositionTarget.Rendering += OnAutoScrollFrame;
     }
 
@@ -1550,28 +1795,37 @@ public class NavigationMapView : ItemsControl
             return;
         }
 
-        DateTime now = DateTime.UtcNow;
-        double elapsed = Math.Min(0.05D, Math.Max(0D, (now - _lastAutoScrollFrame).TotalSeconds));
+        var now = DateTime.UtcNow;
+        var elapsed = Math.Min(0.05D, Math.Max(0D, (now - _lastAutoScrollFrame).TotalSeconds));
+
         _lastAutoScrollFrame = now;
-        Vector target = new(
+
+        var target = new Vector(
             GetAutoScrollSpeed(_lastPointerInScrollViewer.X, _scrollViewer.ViewportWidth),
             GetAutoScrollSpeed(_lastPointerInScrollViewer.Y, _scrollViewer.ViewportHeight)
         );
-        double smoothing = Math.Min(1D, elapsed * 10D);
+
+        var smoothing = Math.Min(1D, elapsed * 10D);
+
         _autoScrollVelocity += (target - _autoScrollVelocity) * smoothing;
+
         if (_autoScrollVelocity.Length < 0.5D)
         {
             return;
         }
 
-        double oldHorizontal = _scrollViewer.HorizontalOffset;
-        double oldVertical = _scrollViewer.VerticalOffset;
+        var oldHorizontal = _scrollViewer.HorizontalOffset;
+        var oldVertical   = _scrollViewer.VerticalOffset;
+
         _scrollViewer.ScrollToHorizontalOffset(oldHorizontal + (_autoScrollVelocity.X * elapsed));
         _scrollViewer.ScrollToVerticalOffset(oldVertical + (_autoScrollVelocity.Y * elapsed));
+
         _scrollViewer.UpdateLayout();
+
         if (
-            oldHorizontal != _scrollViewer.HorizontalOffset
-            || oldVertical != _scrollViewer.VerticalOffset
+            // ReSharper disable CompareOfFloatsByEqualityOperator
+            oldHorizontal != _scrollViewer.HorizontalOffset || oldVertical != _scrollViewer.VerticalOffset
+            // ReSharper restore CompareOfFloatsByEqualityOperator
         )
         {
             // Scrolling changes the pointer's map coordinate even while the physical mouse remains
@@ -1584,13 +1838,18 @@ public class NavigationMapView : ItemsControl
     {
         if (coordinate < AutoScrollEdgeSize)
         {
-            return -MaximumAutoScrollSpeed * Math.Min(1D, (AutoScrollEdgeSize - coordinate) / AutoScrollEdgeSize);
+            return -MaximumAutoScrollSpeed * Math.Min(
+                1D,
+                (AutoScrollEdgeSize - coordinate) / AutoScrollEdgeSize
+            );
         }
 
         if (coordinate > viewportLength - AutoScrollEdgeSize)
         {
-            return MaximumAutoScrollSpeed
-                * Math.Min(1D, (coordinate - viewportLength + AutoScrollEdgeSize) / AutoScrollEdgeSize);
+            return MaximumAutoScrollSpeed * Math.Min(
+                1D,
+                (coordinate - viewportLength + AutoScrollEdgeSize) / AutoScrollEdgeSize
+            );
         }
 
         return 0D;
@@ -1604,9 +1863,11 @@ public class NavigationMapView : ItemsControl
             return;
         }
 
-        Point mapPoint = e.GetPosition(panel);
-        Point viewportPoint = e.GetPosition(_scrollViewer);
+        var mapPoint      = e.GetPosition(panel);
+        var viewportPoint = e.GetPosition(_scrollViewer);
+
         SetCurrentValue(ZoomFactorProperty, requestedZoom);
+
         Dispatcher.BeginInvoke(
             DispatcherPriority.Loaded,
             new Action(() =>
@@ -1617,10 +1878,13 @@ public class NavigationMapView : ItemsControl
                 }
 
                 UpdateLayout();
-                Point transformed = panel.TransformToAncestor(_scrollViewer).Transform(mapPoint);
+
+                var transformed = panel.TransformToAncestor(_scrollViewer).Transform(mapPoint);
+
                 _scrollViewer.ScrollToHorizontalOffset(
                     _scrollViewer.HorizontalOffset + transformed.X - viewportPoint.X
                 );
+
                 _scrollViewer.ScrollToVerticalOffset(
                     _scrollViewer.VerticalOffset + transformed.Y - viewportPoint.Y
                 );
@@ -1630,20 +1894,24 @@ public class NavigationMapView : ItemsControl
 
     private void ApplySelection(HashSet<string> newSelection, string? primaryKey)
     {
-        string[] removed = _selectedNodeKeys.Except(newSelection, StringComparer.Ordinal).ToArray();
-        string[] added = newSelection.Except(_selectedNodeKeys, StringComparer.Ordinal).ToArray();
+        var removed = _selectedNodeKeys.Except(newSelection, StringComparer.Ordinal).ToArray();
+        var added   = newSelection.Except(_selectedNodeKeys, StringComparer.Ordinal).ToArray();
+
         _selectedNodeKeys.Clear();
         _selectedNodeKeys.UnionWith(newSelection);
+
         if (primaryKey is null || !_selectedNodeKeys.Contains(primaryKey))
         {
             primaryKey = _selectedNodeKeys.FirstOrDefault();
         }
 
         SetValue(PrimarySelectedNodeKeyPropertyKey, primaryKey);
-        foreach (NavigationMapItem container in GetGeneratedContainers())
+
+        foreach (var container in GetGeneratedContainers())
         {
-            string? key = container.NodeKey;
-            bool selected = key is not null && _selectedNodeKeys.Contains(key);
+            var key      = container.NodeKey;
+            var selected = key is not null && _selectedNodeKeys.Contains(key);
+
             container.SetLayoutSelected(
                 selected,
                 selected && StringComparer.Ordinal.Equals(key, primaryKey)
@@ -1659,9 +1927,10 @@ public class NavigationMapView : ItemsControl
     private void RefreshGeneratedState()
     {
         var existingKeys = new HashSet<string>(StringComparer.Ordinal);
-        foreach (NavigationMapItem container in GetGeneratedContainers())
+
+        foreach (var container in GetGeneratedContainers())
         {
-            object item = ItemContainerGenerator.ItemFromContainer(container);
+            var item = ItemContainerGenerator.ItemFromContainer(container);
             if (container.NodeKey is { Length: > 0 } key)
             {
                 existingKeys.Add(key);
@@ -1671,6 +1940,7 @@ public class NavigationMapView : ItemsControl
         }
 
         _selectedNodeKeys.IntersectWith(existingKeys);
+
         if (PrimarySelectedNodeKey is { } primary && !_selectedNodeKeys.Contains(primary))
         {
             SetValue(PrimarySelectedNodeKeyPropertyKey, _selectedNodeKeys.FirstOrDefault());
@@ -1681,23 +1951,27 @@ public class NavigationMapView : ItemsControl
 
     private void UpdateContainerStates(NavigationMapItem container, object item)
     {
-        bool selected = container.NodeKey is { } key && _selectedNodeKeys.Contains(key);
+        var selected = container.NodeKey is { } key && _selectedNodeKeys.Contains(key);
+
         container.SetLayoutSelected(
             selected,
             selected && StringComparer.Ordinal.Equals(container.NodeKey, PrimarySelectedNodeKey)
         );
-        bool match = IsSearchMatch(item, SearchText);
-        container.SetSearchMatch(match, false);
+
+        container.SetSearchMatch(IsSearchMatch(item, SearchText), false);
     }
 
     private void RefreshSearchMatches()
     {
         List<NavigationMapItem> matches = [];
-        foreach (NavigationMapItem container in GetGeneratedContainers())
+
+        foreach (var container in GetGeneratedContainers())
         {
-            object item = ItemContainerGenerator.ItemFromContainer(container);
-            bool match = IsSearchMatch(item, SearchText);
+            var item  = ItemContainerGenerator.ItemFromContainer(container);
+            var match = IsSearchMatch(item, SearchText);
+
             container.SetSearchMatch(match, false);
+
             if (match)
             {
                 matches.Add(container);
@@ -1710,30 +1984,34 @@ public class NavigationMapView : ItemsControl
 
     private bool MoveCurrentSearchResult(int direction)
     {
-        List<NavigationMapItem> matches = GetGeneratedContainers().Where(static item => item.IsSearchMatch).ToList();
+        var matches = GetGeneratedContainers().Where(static item => item.IsSearchMatch).ToList();
         if (matches.Count == 0)
         {
             return false;
         }
 
-        int current = CurrentSearchResultIndex;
-        int next = current < 0
+        var current = CurrentSearchResultIndex;
+        var next = current < 0
             ? direction > 0 ? 0 : matches.Count - 1
             : (current + direction + matches.Count) % matches.Count;
-        for (int index = 0; index < matches.Count; index++)
+
+        for (var index = 0; index < matches.Count; index++)
         {
             matches[index].SetSearchMatch(true, index == next);
         }
 
         SetValue(CurrentSearchResultIndexPropertyKey, next);
-        NavigationMapItem container = matches[next];
+
+        var container = matches[next];
         if (container.NodeKey is { Length: > 0 } key)
         {
             ApplySelection(new HashSet<string>(StringComparer.Ordinal) { key }, key);
         }
 
         _ = CanEditSelection() ? Focus() : container.Focus();
+
         container.BringIntoView();
+
         return true;
     }
 
@@ -1744,30 +2022,38 @@ public class NavigationMapView : ItemsControl
             return false;
         }
 
-        string query = searchText.Trim();
+        var query = searchText.Trim();
+
         return item switch
         {
-            NavigationMapNode node => Contains(node.Key, query)
-                || Contains(node.Content?.ToString(), query)
-                || Contains(node.Description, query),
-            NavigationMapItem container => Contains(container.NodeKey, query)
-                || Contains(container.Content?.ToString(), query)
-                || Contains(container.Description, query),
+            NavigationMapNode node =>
+                Contains(node.Key,                 query)
+             || Contains(node.Content?.ToString(), query)
+             || Contains(node.Description,         query),
+
+            NavigationMapItem container =>
+                Contains(container.NodeKey,             query)
+             || Contains(container.Content?.ToString(), query)
+             || Contains(container.Description,         query),
+
             _ => Contains(item?.ToString(), query),
         };
     }
 
-    private static bool Contains(string? value, string query) =>
-        value?.IndexOf(query, StringComparison.OrdinalIgnoreCase) >= 0;
+    private static bool Contains(string? value, string query)
+    {
+        return value?.IndexOf(query, StringComparison.OrdinalIgnoreCase) >= 0;
+    }
 
     private Dictionary<string, PlacementState> CapturePlacementStates(IEnumerable<string> keys)
     {
         var states = new Dictionary<string, PlacementState>(StringComparer.Ordinal);
-        foreach (string key in keys.Distinct(StringComparer.Ordinal))
+
+        foreach (var key in keys.Distinct(StringComparer.Ordinal))
         {
             if (
                 LayoutDefinition is { } layout
-                && layout.TryGetPlacement(key, out NavigationMapPlacement? placement)
+                && layout.TryGetPlacement(key, out var placement)
                 && placement is not null
             )
             {
@@ -1784,8 +2070,8 @@ public class NavigationMapView : ItemsControl
 
     private void ApplyPlacementStates(IReadOnlyDictionary<string, PlacementState> states)
     {
-        NavigationMapLayout layout = EnsureLayout();
-        foreach (KeyValuePair<string, PlacementState> pair in states)
+        var layout = EnsureLayout();
+        foreach (var pair in states)
         {
             if (!pair.Value.Exists)
             {
@@ -1793,7 +2079,7 @@ public class NavigationMapView : ItemsControl
                 continue;
             }
 
-            NavigationMapPlacement placement = layout.SetPosition(pair.Key, pair.Value.Position);
+            var placement = layout.SetPosition(pair.Key, pair.Value.Position);
             placement.IsPinned = pair.Value.IsPinned;
         }
     }
@@ -1804,10 +2090,11 @@ public class NavigationMapView : ItemsControl
     {
         if (
             before.Count != after.Count
-            || before.Any(pair => !after.TryGetValue(pair.Key, out PlacementState state) || state != pair.Value)
+            || before.Any(pair => !after.TryGetValue(pair.Key, out var state) || state != pair.Value)
         )
         {
             const int maximumHistoryLength = 100;
+
             if (_undoHistory.Count == maximumHistoryLength)
             {
                 _undoHistory.RemoveAt(0);
@@ -1815,6 +2102,7 @@ public class NavigationMapView : ItemsControl
 
             _undoHistory.Add(new LayoutEdit(before, after));
             _redoHistory.Clear();
+
             UpdateHistoryState();
         }
     }
@@ -1837,33 +2125,45 @@ public class NavigationMapView : ItemsControl
         return layout;
     }
 
-    private bool CanEditSelection() => IsEditing && LayoutMode == NavigationMapLayoutMode.Manual;
+    private bool CanEditSelection()
+    {
+        return IsEditing && LayoutMode == NavigationMapLayoutMode.Manual;
+    }
 
-    private double Snap(double coordinate) => Math.Round(coordinate / GridSize) * GridSize;
+    private double Snap(double coordinate)
+    {
+        return Math.Round(coordinate / GridSize) * GridSize;
+    }
 
-    private static Point ClampCenter(NavigationMapItem container, Point center) =>
-        new(
+    private static Point ClampCenter(NavigationMapItem container, Point center)
+    {
+        return new Point(
             Math.Max(container.RenderSize.Width / 2D, center.X),
             Math.Max(container.RenderSize.Height / 2D, center.Y)
         );
+    }
 
     private static Rect GetContainerBounds(NavigationMapItem container)
     {
-        Vector offset = VisualTreeHelper.GetOffset(container);
+        var offset = VisualTreeHelper.GetOffset(container);
         return new Rect(offset.X, offset.Y, container.RenderSize.Width, container.RenderSize.Height);
     }
 
-    private static Point Center(Rect bounds) =>
-        new(bounds.Left + (bounds.Width / 2D), bounds.Top + (bounds.Height / 2D));
+    private static Point Center(Rect bounds)
+    {
+        return new Point(bounds.Left + (bounds.Width / 2D), bounds.Top + (bounds.Height / 2D));
+    }
 
-    private List<NavigationMapItem> GetSelectedContainers() =>
-        GetGeneratedContainers()
+    private List<NavigationMapItem> GetSelectedContainers()
+    {
+        return GetGeneratedContainers()
             .Where(container => container.NodeKey is { } key && _selectedNodeKeys.Contains(key))
             .ToList();
+    }
 
     private IEnumerable<NavigationMapItem> GetGeneratedContainers()
     {
-        for (int index = 0; index < Items.Count; index++)
+        for (var index = 0; index < Items.Count; index++)
         {
             if (ItemContainerGenerator.ContainerFromIndex(index) is NavigationMapItem container)
             {
@@ -1872,20 +2172,24 @@ public class NavigationMapView : ItemsControl
         }
     }
 
-    private NavigationMapItem? FindContainer(string? nodeKey) =>
-        nodeKey is null
+    private NavigationMapItem? FindContainer(string? nodeKey)
+    {
+        return nodeKey is null
             ? null
             : GetGeneratedContainers().FirstOrDefault(container =>
                 StringComparer.Ordinal.Equals(container.NodeKey, nodeKey)
             );
+    }
 
-    private static string? GetNodeKey(object item) =>
-        item switch
+    private static string? GetNodeKey(object item)
+    {
+        return item switch
         {
-            NavigationMapNode node => node.Key,
+            NavigationMapNode node      => node.Key,
             NavigationMapItem container => container.NodeKey,
-            _ => null,
+            _                           => null,
         };
+    }
 
     private static void BindContainer(
         DependencyObject target,
@@ -1903,7 +2207,8 @@ public class NavigationMapView : ItemsControl
     private static T? FindVisualAncestor<T>(DependencyObject? origin)
         where T : DependencyObject
     {
-        DependencyObject? current = origin;
+        var current = origin;
+
         while (current is not null)
         {
             if (current is T match)
@@ -1913,10 +2218,10 @@ public class NavigationMapView : ItemsControl
 
             current = current switch
             {
-                Visual visual => VisualTreeHelper.GetParent(visual),
-                FrameworkContentElement contentElement => contentElement.Parent,
-                ContentElement content => ContentOperations.GetParent(content),
-                _ => LogicalTreeHelper.GetParent(current),
+                Visual visual              => VisualTreeHelper.GetParent(visual),
+                FrameworkContentElement ce => ce.Parent,
+                ContentElement content     => ContentOperations.GetParent(content),
+                _                          => LogicalTreeHelper.GetParent(current),
             };
         }
 
@@ -1926,10 +2231,12 @@ public class NavigationMapView : ItemsControl
     private static T? FindVisualDescendant<T>(DependencyObject root)
         where T : DependencyObject
     {
-        int count = VisualTreeHelper.GetChildrenCount(root);
-        for (int index = 0; index < count; index++)
+        var count = VisualTreeHelper.GetChildrenCount(root);
+
+        for (var index = 0; index < count; index++)
         {
-            DependencyObject child = VisualTreeHelper.GetChild(root, index);
+            var child = VisualTreeHelper.GetChild(root, index);
+
             if (child is T match)
             {
                 return match;
@@ -1944,23 +2251,24 @@ public class NavigationMapView : ItemsControl
         return null;
     }
 
-    private static bool ValidateDirection(object? value) =>
-        value is NavigationMapDirection.TopToBottom or NavigationMapDirection.LeftToRight;
-
-    private static bool ValidateLayoutMode(object? value) =>
-        value is NavigationMapLayoutMode.Hierarchical or NavigationMapLayoutMode.Manual;
-
-    private static bool ValidatePositiveDouble(object? value) =>
-        value is double number && number > 0D && !double.IsInfinity(number) && !double.IsNaN(number);
-
-    private static bool ValidateNonNegativeDouble(object? value) =>
-        value is double number && number >= 0D && !double.IsInfinity(number) && !double.IsNaN(number);
-
-    private static void OnIsEditingChanged(
-        DependencyObject dependencyObject,
-        DependencyPropertyChangedEventArgs args)
+    private static bool ValidatePositiveDouble(object? value)
     {
-        var view = (NavigationMapView)dependencyObject;
+        return value is double number and > 0D
+            && !double.IsInfinity(number)
+            && !double.IsNaN(number);
+    }
+
+    private static bool ValidateNonNegativeDouble(object? value)
+    {
+        return value is double number and >= 0D
+            && !double.IsInfinity(number)
+            && !double.IsNaN(number);
+    }
+
+    private static void OnIsEditingChanged(DependencyObject d, DependencyPropertyChangedEventArgs args)
+    {
+        var view = (NavigationMapView)d;
+
         if ((bool)args.NewValue)
         {
             view.ScheduleFullGridAlignment();
@@ -1974,29 +2282,25 @@ public class NavigationMapView : ItemsControl
         }
     }
 
-    private static void OnLayoutModeChanged(
-        DependencyObject dependencyObject,
-        DependencyPropertyChangedEventArgs args)
+    private static void OnLayoutModeChanged(DependencyObject d, DependencyPropertyChangedEventArgs args)
     {
-        dependencyObject.CoerceValue(IsEditingProperty);
+        d.CoerceValue(IsEditingProperty);
+
         if ((NavigationMapLayoutMode)args.NewValue != NavigationMapLayoutMode.Manual)
         {
-            ((NavigationMapView)dependencyObject).ClearSelection();
+            ((NavigationMapView)d).ClearSelection();
         }
     }
 
-    private static void OnSearchTextChanged(
-        DependencyObject dependencyObject,
-        DependencyPropertyChangedEventArgs _)
+    private static void OnSearchTextChanged(DependencyObject d, DependencyPropertyChangedEventArgs _)
     {
-        ((NavigationMapView)dependencyObject).RefreshSearchMatches();
+        ((NavigationMapView)d).RefreshSearchMatches();
     }
 
-    private static void OnLayoutDefinitionChanged(
-        DependencyObject dependencyObject,
-        DependencyPropertyChangedEventArgs args)
+    private static void OnLayoutDefinitionChanged(DependencyObject d, DependencyPropertyChangedEventArgs args)
     {
-        var view = (NavigationMapView)dependencyObject;
+        var view = (NavigationMapView)d;
+
         if (args.OldValue is NavigationMapLayout oldLayout)
         {
             CollectionChangedEventManager.RemoveHandler(
@@ -2022,47 +2326,31 @@ public class NavigationMapView : ItemsControl
         view.ScheduleFullGridAlignment();
     }
 
-    private static void OnAutomaticLayoutInputChanged(
-        DependencyObject dependencyObject,
-        DependencyPropertyChangedEventArgs _)
+    private static void OnAutomaticLayoutInputChanged(DependencyObject d, DependencyPropertyChangedEventArgs _)
     {
         // These inputs can move hierarchical fallback nodes without touching LayoutDefinition.
         // Normalize only after WPF has completed the invalidated measure/arrange pass.
-        ((NavigationMapView)dependencyObject).ScheduleFullGridAlignment();
+        ((NavigationMapView)d).ScheduleFullGridAlignment();
     }
 
-    private static void OnSnapToGridChanged(
-        DependencyObject dependencyObject,
-        DependencyPropertyChangedEventArgs args)
+    private static void OnSnapToGridChanged(DependencyObject d, DependencyPropertyChangedEventArgs args)
     {
         if ((bool)args.NewValue)
         {
-            ((NavigationMapView)dependencyObject).ScheduleFullGridAlignment();
+            ((NavigationMapView)d).ScheduleFullGridAlignment();
         }
     }
 
-    private static void OnZoomLimitChanged(
-        DependencyObject dependencyObject,
-        DependencyPropertyChangedEventArgs _)
+    private static void OnZoomLimitChanged(DependencyObject d, DependencyPropertyChangedEventArgs _)
     {
-        dependencyObject.CoerceValue(MaximumZoomFactorProperty);
-        dependencyObject.CoerceValue(ZoomFactorProperty);
+        d.CoerceValue(MaximumZoomFactorProperty);
+        d.CoerceValue(ZoomFactorProperty);
     }
 
-    private static object CoerceIsEditing(DependencyObject dependencyObject, object? baseValue) =>
-        ((NavigationMapView)dependencyObject).LayoutMode == NavigationMapLayoutMode.Manual
-        && baseValue is true;
-
-    private static object CoerceMaximumZoomFactor(DependencyObject dependencyObject, object? value) =>
-        Math.Max(((NavigationMapView)dependencyObject).MinimumZoomFactor, (double)value!);
-
-    private static object CoerceZoomFactor(DependencyObject dependencyObject, object? value)
-    {
-        var view = (NavigationMapView)dependencyObject;
-        return Math.Max(view.MinimumZoomFactor, Math.Min(view.MaximumZoomFactor, (double)value!));
-    }
-
-    private readonly record struct PlacementState(bool Exists, Point Position, bool IsPinned)
+    private readonly record struct PlacementState(
+        bool Exists,
+        Point Position,
+        bool IsPinned)
     {
         internal static PlacementState Missing { get; } = new(false, default, false);
     }
