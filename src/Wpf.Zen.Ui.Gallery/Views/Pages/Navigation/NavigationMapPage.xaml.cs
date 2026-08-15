@@ -17,7 +17,7 @@ public partial class NavigationMapPage : INavigableView<NavigationMapViewModel>
     /// <param name="viewModel">The view model resolved from the active navigation scope.</param>
     public NavigationMapPage(NavigationMapViewModel viewModel)
     {
-        ViewModel = viewModel;
+        ViewModel   = viewModel;
         DataContext = viewModel;
 
         InitializeComponent();
@@ -36,19 +36,30 @@ public partial class NavigationMapPage : INavigableView<NavigationMapViewModel>
         _ = GalleryNavigationMap.FindNext();
     }
 
-    private void OnZoomOutClick(object sender, RoutedEventArgs e) => GalleryNavigationMap.ZoomOut();
+    private void OnZoomOutClick(object sender, RoutedEventArgs e)
+    {
+        GalleryNavigationMap.ZoomOut();
+    }
 
-    private void OnZoomToFitClick(object sender, RoutedEventArgs e) =>
+    private void OnZoomToFitClick(object sender, RoutedEventArgs e)
+    {
         _ = GalleryNavigationMap.ZoomToFit();
+    }
 
-    private void OnZoomInClick(object sender, RoutedEventArgs e) => GalleryNavigationMap.ZoomIn();
+    private void OnZoomInClick(object sender, RoutedEventArgs e)
+    {
+        GalleryNavigationMap.ZoomIn();
+    }
 
-    private void OnSelectAllClick(object sender, RoutedEventArgs e) => GalleryNavigationMap.SelectAll();
+    private void OnSelectAllClick(object sender, RoutedEventArgs e)
+    {
+        GalleryNavigationMap.SelectAll();
+    }
 
     private void OnAlignToGridClick(object sender, RoutedEventArgs e)
     {
         bool hasSelection = GalleryNavigationMap.SelectedNodeKeys.Count > 0;
-        bool aligned = GalleryNavigationMap.AlignToGrid();
+        bool aligned      = GalleryNavigationMap.AlignToGrid();
         EditorStatus.SetCurrentValue(
             TextBlock.TextProperty,
             aligned
@@ -57,31 +68,49 @@ public partial class NavigationMapPage : INavigableView<NavigationMapViewModel>
         );
     }
 
-    private void OnAlignLeftClick(object sender, RoutedEventArgs e) =>
+    private void OnAlignLeftClick(object sender, RoutedEventArgs e)
+    {
         ReportAlignmentResult(GalleryNavigationMap.AlignSelection(NavigationMapAlignment.Left));
+    }
 
-    private void OnAlignHorizontalCenterClick(object sender, RoutedEventArgs e) =>
+    private void OnAlignHorizontalCenterClick(object sender, RoutedEventArgs e)
+    {
         ReportAlignmentResult(
             GalleryNavigationMap.AlignSelection(NavigationMapAlignment.HorizontalCenter)
         );
+    }
 
-    private void OnAlignRightClick(object sender, RoutedEventArgs e) =>
+    private void OnAlignRightClick(object sender, RoutedEventArgs e)
+    {
         ReportAlignmentResult(GalleryNavigationMap.AlignSelection(NavigationMapAlignment.Right));
+    }
 
-    private void OnAlignTopClick(object sender, RoutedEventArgs e) =>
+    private void OnAlignTopClick(object sender, RoutedEventArgs e)
+    {
         ReportAlignmentResult(GalleryNavigationMap.AlignSelection(NavigationMapAlignment.Top));
+    }
 
-    private void OnAlignVerticalCenterClick(object sender, RoutedEventArgs e) =>
+    private void OnAlignVerticalCenterClick(object sender, RoutedEventArgs e)
+    {
         ReportAlignmentResult(
             GalleryNavigationMap.AlignSelection(NavigationMapAlignment.VerticalCenter)
         );
+    }
 
-    private void OnAlignBottomClick(object sender, RoutedEventArgs e) =>
+    private void OnAlignBottomClick(object sender, RoutedEventArgs e)
+    {
         ReportAlignmentResult(GalleryNavigationMap.AlignSelection(NavigationMapAlignment.Bottom));
+    }
 
-    private void OnUndoClick(object sender, RoutedEventArgs e) => _ = GalleryNavigationMap.Undo();
+    private void OnUndoClick(object sender, RoutedEventArgs e)
+    {
+        _ = GalleryNavigationMap.Undo();
+    }
 
-    private void OnRedoClick(object sender, RoutedEventArgs e) => _ = GalleryNavigationMap.Redo();
+    private void OnRedoClick(object sender, RoutedEventArgs e)
+    {
+        _ = GalleryNavigationMap.Redo();
+    }
 
     private void OnResetLayoutClick(object sender, RoutedEventArgs e)
     {
@@ -96,12 +125,12 @@ public partial class NavigationMapPage : INavigableView<NavigationMapViewModel>
     {
         var dialog = new SaveFileDialog
         {
-            AddExtension = true,
-            DefaultExt = ".navigationmap.json",
-            Filter = "Navigation map layout (*.navigationmap.json)|*.navigationmap.json|JSON files (*.json)|*.json",
-            FileName = "gallery.navigationmap.json",
+            AddExtension    = true,
+            DefaultExt      = ".navigationmap.json",
+            Filter          = "Navigation map layout (*.navigationmap.json)|*.navigationmap.json|JSON files (*.json)|*.json",
+            FileName        = "gallery.navigationmap.json",
             OverwritePrompt = true,
-            Title = "Save navigation map layout",
+            Title           = "Save navigation map layout",
         };
         if (dialog.ShowDialog() != true)
         {
@@ -119,10 +148,10 @@ public partial class NavigationMapPage : INavigableView<NavigationMapViewModel>
         var dialog = new OpenFileDialog
         {
             CheckFileExists = true,
-            DefaultExt = ".navigationmap.json",
-            Filter = "Navigation map layout (*.navigationmap.json)|*.navigationmap.json|JSON files (*.json)|*.json",
-            Multiselect = false,
-            Title = "Load navigation map layout",
+            DefaultExt      = ".navigationmap.json",
+            Filter          = "Navigation map layout (*.navigationmap.json)|*.navigationmap.json|JSON files (*.json)|*.json",
+            Multiselect     = false,
+            Title           = "Load navigation map layout",
         };
         if (dialog.ShowDialog() != true)
         {
@@ -144,7 +173,6 @@ public partial class NavigationMapPage : INavigableView<NavigationMapViewModel>
             NavigationMapView.LayoutModeProperty,
             NavigationMapLayoutMode.Manual
         );
-        GalleryNavigationMap.SetCurrentValue(NavigationMapView.IsEditingProperty, true);
     }
 
     private void ReportAlignmentResult(bool aligned)
