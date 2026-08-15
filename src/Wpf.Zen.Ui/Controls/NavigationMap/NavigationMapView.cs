@@ -28,10 +28,10 @@ namespace Wpf.Zen.Ui.Controls;
 /// </para>
 /// <para>
 /// The editor supports additive click and marquee selection, group dragging, keyboard movement,
-/// grid snapping, alignment to a primary node, pointer-edge auto-scrolling, and zoom. Search is
-/// exposed as control state and methods instead of embedding a fixed toolbar, allowing an
-/// application to present its own Fluent search UI. The default template supplies the required
-/// scrolling and zoom host.
+/// grid snapping, alignment to a primary node, pointer-edge auto-scrolling, middle-button canvas
+/// panning, and zoom. Search is exposed as control state and methods instead of embedding a fixed
+/// toolbar, allowing an application to present its own Fluent search UI. The default template
+/// supplies the required scrolling and zoom host.
 /// </para>
 /// <para>
 /// A selected node highlights only its incident parent and child edges. This preserves immediate
@@ -557,12 +557,16 @@ public class NavigationMapView : ItemsControl
     private Point _dragPointerOrigin;
     private Point _gesturePointerOriginInView;
     private Point _lastPointerInScrollViewer;
+    private Point _panPointerOrigin;
     private ModifierKeys _gestureModifiers;
     private Vector _autoScrollVelocity;
+    private double _panHorizontalOffsetOrigin;
+    private double _panVerticalOffsetOrigin;
     private DateTime _lastAutoScrollFrame;
     private EditorGesture _editorGesture;
     private int _gridAlignmentRequestVersion;
     private bool _isAutoScrollRendering;
+    private bool _isMiddleButtonPanning;
 
     static NavigationMapView()
     {
@@ -829,6 +833,10 @@ public class NavigationMapView : ItemsControl
     /// <inheritdoc />
     public override void OnApplyTemplate()
     {
+        // A template replacement invalidates both the coordinate space used by the gesture and
+        // the ScrollViewer receiving offsets. End the gesture before replacing that reference so
+        // a captured mouse cannot continue driving a detached template part.
+        EndMiddleButtonPanning();
         base.OnApplyTemplate();
         _scrollViewer = GetTemplateChild(ScrollViewerPartName) as ScrollViewer;
     }
@@ -919,7 +927,7 @@ public class NavigationMapView : ItemsControl
     protected override void OnPreviewMouseLeftButtonDown(MouseButtonEventArgs e)
     {
         base.OnPreviewMouseLeftButtonDown(e);
-        if (!CanEditSelection())
+        if (!CanEditSelection() || _isMiddleButtonPanning)
         {
             return;
         }
@@ -973,9 +981,67 @@ public class NavigationMapView : ItemsControl
     }
 
     /// <inheritdoc />
+    protected override void OnPreviewMouseDown(MouseButtonEventArgs e)
+    {
+        base.OnPreviewMouseDown(e);
+        if (
+            e.ChangedButton != MouseButton.Middle
+            || !CanEditSelection()
+            || _scrollViewer is null
+        )
+        {
+            return;
+        }
+
+        DependencyObject? source = e.OriginalSource as DependencyObject;
+        NavigationMapPanel? panel = FindVisualAncestor<NavigationMapPanel>(source);
+        if (panel is null || !ReferenceEquals(FindVisualAncestor<NavigationMapView>(panel), this))
+        {
+            // Only the map canvas and its node descendants initiate panning. In particular, a
+            // middle click on a ScrollBar must retain the standard ScrollViewer interaction.
+            return;
+        }
+
+        EndEditingGesture();
+        _panPointerOrigin = e.GetPosition(_scrollViewer);
+        _panHorizontalOffsetOrigin = _scrollViewer.HorizontalOffset;
+        _panVerticalOffsetOrigin = _scrollViewer.VerticalOffset;
+        _isMiddleButtonPanning = CaptureMouse();
+        if (_isMiddleButtonPanning)
+        {
+            e.Handled = true;
+        }
+    }
+
+    /// <inheritdoc />
     protected override void OnPreviewMouseMove(MouseEventArgs e)
     {
         base.OnPreviewMouseMove(e);
+        if (_isMiddleButtonPanning)
+        {
+            if (e.MiddleButton != MouseButtonState.Pressed)
+            {
+                // Mouse capture can survive when a release is consumed outside this visual tree.
+                // The physical button state is therefore the authoritative fallback termination.
+                EndMiddleButtonPanning();
+                return;
+            }
+
+            if (_scrollViewer is not null)
+            {
+                Point panPointer = e.GetPosition(_scrollViewer);
+                _scrollViewer.ScrollToHorizontalOffset(
+                    _panHorizontalOffsetOrigin - (panPointer.X - _panPointerOrigin.X)
+                );
+                _scrollViewer.ScrollToVerticalOffset(
+                    _panVerticalOffsetOrigin - (panPointer.Y - _panPointerOrigin.Y)
+                );
+            }
+
+            e.Handled = true;
+            return;
+        }
+
         if (
             _editedPanel is null
             || _editorGesture == EditorGesture.None
@@ -1025,6 +1091,19 @@ public class NavigationMapView : ItemsControl
     }
 
     /// <inheritdoc />
+    protected override void OnPreviewMouseUp(MouseButtonEventArgs e)
+    {
+        base.OnPreviewMouseUp(e);
+        if (e.ChangedButton != MouseButton.Middle || !_isMiddleButtonPanning)
+        {
+            return;
+        }
+
+        EndMiddleButtonPanning();
+        e.Handled = true;
+    }
+
+    /// <inheritdoc />
     protected override void OnPreviewMouseLeftButtonUp(MouseButtonEventArgs e)
     {
         base.OnPreviewMouseLeftButtonUp(e);
@@ -1055,6 +1134,7 @@ public class NavigationMapView : ItemsControl
     protected override void OnLostMouseCapture(MouseEventArgs e)
     {
         base.OnLostMouseCapture(e);
+        EndMiddleButtonPanning(releaseCapture: false);
         EndEditingGesture(releaseCapture: false);
     }
 
@@ -1403,6 +1483,20 @@ public class NavigationMapView : ItemsControl
         panel?.SetSelectionRectangle(null);
         panel?.EndExtentHold();
         StopAutoScroll();
+        if (releaseCapture && IsMouseCaptured)
+        {
+            ReleaseMouseCapture();
+        }
+    }
+
+    private void EndMiddleButtonPanning(bool releaseCapture = true)
+    {
+        if (!_isMiddleButtonPanning)
+        {
+            return;
+        }
+
+        _isMiddleButtonPanning = false;
         if (releaseCapture && IsMouseCaptured)
         {
             ReleaseMouseCapture();
@@ -1874,6 +1968,7 @@ public class NavigationMapView : ItemsControl
         else
         {
             view._gridAlignmentRequestVersion++;
+            view.EndMiddleButtonPanning();
             view.EndEditingGesture();
             view.ClearSelection();
         }
