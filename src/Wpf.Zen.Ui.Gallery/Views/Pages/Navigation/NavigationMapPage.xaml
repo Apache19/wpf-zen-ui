@@ -23,7 +23,10 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <ui:TextBlock Text="Navigation map layout editor." />
+        <ui:TextBlock
+            Margin="0,0,0,16"
+            FontTypography="BodyStrong"
+            Text="Navigation map layout editor." />
 
         <Border
             Grid.Row="1"
@@ -46,11 +49,37 @@
                         <Style TargetType="{x:Type ui:Button}">
                             <Setter Property="Appearance" Value="Transparent" />
                             <Setter Property="BorderThickness" Value="0" />
-                            <Setter Property="Padding" Value="9 7" />
+                            <Setter Property="Padding" Value="8,6" />
+                            <Setter Property="Margin" Value="2" />
+                        </Style>
+                        <Style TargetType="{x:Type ui:ToggleButton}">
+                            <Setter Property="BorderThickness" Value="0" />
+                            <Setter Property="Padding" Value="8,6" />
+                            <Setter Property="Margin" Value="2" />
+                        </Style>
+                        <Style TargetType="{x:Type ui:ComboBox}">
+                            <Setter Property="BorderThickness" Value="0" />
+                            <Setter Property="VerticalContentAlignment" Value="Center" />
+                            <!--
+                            <Setter Property="Background" Value="Transparent" />
+                            -->
+                            <Setter Property="Margin" Value="2" />
+                            <Setter Property="Padding" Value="8,0" />
+                        </Style>
+                        <Style TargetType="{x:Type ui:TextBox}">
+                            <Setter Property="BorderThickness" Value="0" />
+                            <Setter Property="Padding" Value="6,0" />
+                        </Style>
+                        <Style TargetType="{x:Type ui:Separator}">
+                            <Setter Property="Orientation" Value="Vertical" />
+                            <Setter Property="Margin" Value="2,4" />
                         </Style>
                     </ToolBarTray.Resources>
 
-                    <ToolBar Background="Transparent" Band="0">
+                    <ToolBar
+                        Background="Transparent"
+                        Band="0"
+                        ToolBarTray.IsLocked="True">
                         <ui:Button Click="OnLoadLayoutClick" Icon="{ui:FluentIconSource FolderOpen24}" />
                         <ui:Button Click="OnSaveLayoutClick" Icon="{ui:FluentIconSource Save24}" />
                         <ui:Button
@@ -63,38 +92,11 @@
                         <ui:Button
                             Command="{x:Static ApplicationCommands.Undo}"
                             CommandTarget="{Binding ElementName=GalleryNavigationMap}"
-                            Icon="{ui:FluentIconSource ArrowUndo24}"
-                            ToolTip="Undo" />
+                            Icon="{ui:FluentIconSource ArrowUndo24}" />
                         <ui:Button
                             Command="{x:Static ApplicationCommands.Redo}"
                             CommandTarget="{Binding ElementName=GalleryNavigationMap}"
-                            Icon="{ui:FluentIconSource ArrowRedo24}"
-                            ToolTip="Redo" />
-
-                        <ui:Separator Orientation="Vertical" />
-
-                        <ui:AutoSuggestBox
-                            Width="220"
-                            HorizontalAlignment="Left"
-                            AutomationProperties.AutomationId="NavigationMapSearchBox"
-                            Icon="{ui:FluentIconSource Search24}"
-                            PlaceholderText="Search"
-                            Text="{Binding SearchText, ElementName=GalleryNavigationMap, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                        <ui:Button
-                            Command="{x:Static ui:NavigationMapCommands.FindPrevious}"
-                            CommandTarget="{Binding ElementName=GalleryNavigationMap}"
-                            Icon="{ui:FluentIconSource ArrowUp24}"
-                            ToolTip="Previous search result" />
-                        <ui:Button
-                            Command="{x:Static ui:NavigationMapCommands.FindNext}"
-                            CommandTarget="{Binding ElementName=GalleryNavigationMap}"
-                            Icon="{ui:FluentIconSource ArrowDown24}"
-                            ToolTip="Next search result" />
-                        <TextBlock VerticalAlignment="Center">
-                            <Run Text="{Binding CurrentSearchResultIndex, ElementName=GalleryNavigationMap, Mode=OneWay}" />
-                            <Run Text=" / " />
-                            <Run Text="{Binding SearchResultCount, ElementName=GalleryNavigationMap, Mode=OneWay}" />
-                        </TextBlock>
+                            Icon="{ui:FluentIconSource ArrowRedo24}" />
 
                         <ui:Separator Orientation="Vertical" />
 
@@ -107,8 +109,7 @@
                             <ComboBoxItem Content="Manual" Tag="{x:Static ui:NavigationMapLayoutMode.Manual}" />
                         </ui:ComboBox>
                         <ui:ComboBox
-                            Width="126"
-                            Margin="0,0,14,0"
+                            Width="146"
                             AutomationProperties.AutomationId="NavigationMapDirectionPicker"
                             SelectedValue="{Binding Direction, ElementName=GalleryNavigationMap, Mode=TwoWay}"
                             SelectedValuePath="Tag">
@@ -119,26 +120,30 @@
                         <ui:Button
                             Command="{x:Static NavigationCommands.DecreaseZoom}"
                             CommandTarget="{Binding ElementName=GalleryNavigationMap}"
-                            Icon="{ui:FluentIconSource ZoomOut24}"
-                            ToolTip="Zoom out" />
+                            Icon="{ui:FluentIconSource ZoomOut24}" />
                         <ui:Button
                             Command="{x:Static ui:NavigationMapCommands.ZoomToFit}"
                             CommandTarget="{Binding ElementName=GalleryNavigationMap}"
-                            Icon="{ui:FluentIconSource ZoomFit24}"
-                            ToolTip="Zoom to fit" />
+                            Icon="{ui:FluentIconSource ZoomFit24}" />
                         <ui:Button
                             Command="{x:Static NavigationCommands.IncreaseZoom}"
                             CommandTarget="{Binding ElementName=GalleryNavigationMap}"
-                            Icon="{ui:FluentIconSource ZoomIn24}"
-                            ToolTip="Zoom in" />
+                            Icon="{ui:FluentIconSource ZoomIn24}" />
                         <TextBlock
-                            Margin="0,0,14,0"
+                            Margin="2,0,14,0"
                             VerticalAlignment="Center"
                             Text="{Binding ZoomFactor, ElementName=GalleryNavigationMap, StringFormat={}{0:P0}}" />
                     </ToolBar>
 
-                    <ToolBar Background="Transparent" Band="1">
+                    <ToolBar
+                        Background="Transparent"
+                        Band="1"
+                        ToolBarTray.IsLocked="True">
                         <ui:ToggleButton
+                            Margin="2"
+                            Padding="8,6"
+                            Background="Transparent"
+                            BorderThickness="0"
                             Icon="{ui:FluentIconSource Edit24}"
                             IsChecked="{Binding IsEditing, ElementName=GalleryNavigationMap, Mode=TwoWay}"
                             ToolTip="Edit">
@@ -153,38 +158,40 @@
                                 </Style>
                             </ui:ToggleButton.Style>
                         </ui:ToggleButton>
+
+                        <ui:Separator />
+
                         <ui:ToggleButton
-                            Content="Snap"
                             Icon="{ui:FluentIconSource TableCellCenter24}"
                             IsChecked="{Binding SnapToGrid, ElementName=GalleryNavigationMap, Mode=TwoWay}"
                             ToolTip="是否对齐到网格" />
                         <ui:ToggleButton
-                            Content="Grid"
                             Icon="{ui:FluentIconSource Table24}"
                             IsChecked="{Binding ShowGrid, ElementName=GalleryNavigationMap, Mode=TwoWay}"
                             ToolTip="是否显示网格" />
 
                         <ui:NumberBox
-                            Width="120"
-                            Margin="0,0,14,0"
+                            Width="80"
+                            Margin="2"
+                            Padding="8,0"
+                            VerticalContentAlignment="Center"
+                            BorderThickness="0"
                             ClearButtonEnabled="False"
                             Maximum="64"
                             Minimum="4"
                             SmallStep="4"
+                            SpinButtonPlacementMode="Classic"
                             ToolTip="Grid size"
                             Value="{Binding GridSize, ElementName=GalleryNavigationMap, Mode=TwoWay}" />
-                        <TextBlock VerticalAlignment="Center" Text="{Binding GridSize, ElementName=GalleryNavigationMap, Mode=OneWay}" />
 
                         <ui:Button
                             Command="{x:Static ApplicationCommands.SelectAll}"
                             CommandTarget="{Binding ElementName=GalleryNavigationMap}"
-                            Icon="{ui:FluentIconSource SelectAllOn24}"
-                            ToolTip="Select all" />
+                            Icon="{ui:FluentIconSource SelectAllOn24}" />
                         <ui:Button
                             Command="{x:Static ui:NavigationMapCommands.AlignToGrid}"
                             CommandTarget="{Binding ElementName=GalleryNavigationMap}"
-                            Icon="{ui:FluentIconSource TableLightning24}"
-                            ToolTip="Align the selection, or every node when nothing is selected" />
+                            Icon="{ui:FluentIconSource TableLightning24}" />
 
                         <ui:Separator Orientation="Vertical" />
 
@@ -218,6 +225,24 @@
                             CommandParameter="{x:Static ui:NavigationMapAlignment.Bottom}"
                             CommandTarget="{Binding ElementName=GalleryNavigationMap}"
                             Icon="{ui:FluentIconSource AlignBottom24}" />
+
+                        <ui:Separator Orientation="Vertical" />
+
+                        <ui:AutoSuggestBox
+                            Width="180"
+                            Margin="2"
+                            AutomationProperties.AutomationId="NavigationMapSearchBox"
+                            Icon="{ui:FluentIconSource Search24}"
+                            PlaceholderText="Search"
+                            Text="{Binding SearchText, ElementName=GalleryNavigationMap, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                        <ui:Button
+                            Command="{x:Static ui:NavigationMapCommands.FindPrevious}"
+                            CommandTarget="{Binding ElementName=GalleryNavigationMap}"
+                            Icon="{ui:FluentIconSource ArrowUp24}" />
+                        <ui:Button
+                            Command="{x:Static ui:NavigationMapCommands.FindNext}"
+                            CommandTarget="{Binding ElementName=GalleryNavigationMap}"
+                            Icon="{ui:FluentIconSource ArrowDown24}" />
                     </ToolBar>
 
                 </ToolBarTray>

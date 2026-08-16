@@ -87,7 +87,7 @@
                 Width="25"
                 Margin="1,1,1,0"
                 controls:NumberBox.ButtonKind="Increment">
-                <controls:FluentIcon FontSize="10" Symbol="ChevronUp24" />
+                <controls:FluentIcon IconSize="10" Symbol="ChevronUp24" />
                 <RepeatButton.Style>
                     <Style BasedOn="{StaticResource NumberBoxRepeatButtonStyle}" TargetType="{x:Type RepeatButton}">
                         <Setter Property="Border.CornerRadius" Value="2,2,0,0" />
@@ -104,7 +104,7 @@
                         <Setter Property="Border.CornerRadius" Value="0,0,2,2" />
                     </Style>
                 </RepeatButton.Style>
-                <controls:FluentIcon FontSize="10" Symbol="ChevronDown24" />
+                <controls:FluentIcon IconSize="10" Symbol="ChevronDown24" />
             </RepeatButton>
         </Grid>
     </DataTemplate>
@@ -120,7 +120,7 @@
                 BorderBrush="Transparent"
                 Foreground="{m:DynamicBrush TextFillSecondary}"
                 Style="{StaticResource NumberBoxRepeatButtonStyle}">
-                <controls:FluentIcon FontSize="{StaticResource NumberBoxButtonIconSize}" Symbol="ChevronUp24" />
+                <controls:FluentIcon IconSize="{StaticResource NumberBoxButtonIconSize}" Symbol="ChevronUp24" />
             </RepeatButton>
             <RepeatButton
                 Width="{StaticResource NumberBoxButtonHeight}"
@@ -131,7 +131,7 @@
                 BorderBrush="Transparent"
                 Foreground="{m:DynamicBrush TextFillSecondary}"
                 Style="{StaticResource NumberBoxRepeatButtonStyle}">
-                <controls:FluentIcon FontSize="{StaticResource NumberBoxButtonIconSize}" Symbol="ChevronDown24" />
+                <controls:FluentIcon IconSize="{StaticResource NumberBoxButtonIconSize}" Symbol="ChevronDown24" />
             </RepeatButton>
         </StackPanel>
     </DataTemplate>
@@ -153,7 +153,7 @@
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
 
-                    <ContentPresenter
+                    <controls:IconPresenter
                         x:Name="iconPresenter"
                         Grid.Column="0"
                         Margin="10,0,0,0"
@@ -161,7 +161,7 @@
                         ContentSource="Icon"
                         Focusable="False"
                         IsHitTestVisible="False"
-                        TextElement.FontSize="16" />
+                        IconSize="16" />
 
                     <TextBlock
                         x:Name="PlaceholderTextBox"
@@ -285,7 +285,7 @@
                             Margin="2,2,2,1"
                             controls:NumberBox.ButtonKind="Increment"
                             Style="{StaticResource NumberBoxRepeatButtonStyle}">
-                            <controls:FluentIcon FontSize="14" Symbol="ChevronUp24" />
+                            <controls:FluentIcon IconSize="14" Symbol="ChevronUp24" />
                         </RepeatButton>
                         <RepeatButton
                             Grid.Row="1"
@@ -294,7 +294,7 @@
                             Margin="2,1,2,2"
                             controls:NumberBox.ButtonKind="Decrement"
                             Style="{StaticResource NumberBoxRepeatButtonStyle}">
-                            <controls:FluentIcon FontSize="14" Symbol="ChevronDown24" />
+                            <controls:FluentIcon IconSize="14" Symbol="ChevronDown24" />
                         </RepeatButton>
                     </Grid>
                 </Border>

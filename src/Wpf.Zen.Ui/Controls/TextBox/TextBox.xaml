@@ -65,7 +65,7 @@
                         HorizontalAlignment="Center"
                         VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
                         IsHitTestVisible="False">
-                        <ContentPresenter
+                        <controls:IconPresenter
                             x:Name="IconPresenter"
                             VerticalAlignment="Top"
                             ContentSource="Icon"

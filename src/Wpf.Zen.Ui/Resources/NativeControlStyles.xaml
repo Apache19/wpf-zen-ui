@@ -13,6 +13,7 @@
         <ResourceDictionary Source="pack://application:,,,/Wpf.Zen.Ui;component/Controls/Menu/MenuItem.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Zen.Ui;component/Controls/TextBox/NativeTextBox.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Zen.Ui;component/Controls/PasswordBox/NativePasswordBox.xaml" />
+        <ResourceDictionary Source="pack://application:,,,/Wpf.Zen.Ui;component/Controls/ToolBar/ToolBar.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Zen.Ui;component/Controls/ToolTip/ToolTip.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Zen.Ui;component/Controls/ScrollViewer/NativeScrollBar.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Zen.Ui;component/Controls/ScrollViewer/NativeScrollViewer.xaml" />
