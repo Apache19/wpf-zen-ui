@@ -59,7 +59,20 @@ public class NavigationMapViewTests
             var container = Assert.IsType<NavigationMapItem>(
                 view.ItemContainerGenerator.ContainerFromItem(map[0])
             );
-            Assert.Equal(view.NodeWidth, container.ActualWidth);
+            // Card width is a plain style default rather than a view layout property: the default
+            // item-style setter is the single source, and a local Width overrides it per container.
+            var defaultItemStyle = Assert.IsType<Style>(
+                host.FindResource("DefaultUiNavigationMapItemStyle")
+            );
+            var widthSetter = Assert.Single(
+                defaultItemStyle.Setters.OfType<Setter>(),
+                static setter => setter.Property == FrameworkElement.WidthProperty
+            );
+            Assert.Equal((double)widthSetter.Value, container.ActualWidth);
+
+            container.Width = 120D;
+            MeasureAndArrange(host, 800D, 600D);
+            Assert.Equal(120D, container.ActualWidth);
             var panel = Assert.IsType<NavigationMapPanel>(
                 FindVisualDescendant<NavigationMapPanel>(view)
             );

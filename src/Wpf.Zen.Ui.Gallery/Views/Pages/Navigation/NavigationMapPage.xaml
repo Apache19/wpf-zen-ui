@@ -235,8 +235,12 @@
                     ItemsSource="{Binding NavigationMap, Mode=OneWay}"
                     LayoutDefinition="{Binding Layout}"
                     LayoutMode="Manual"
-                    NodeWidth="168"
                     SnapToGrid="True">
+                    <ui:NavigationMapView.ItemContainerStyle>
+                        <Style TargetType="{x:Type ui:NavigationMapItem}">
+                            <Setter Property="Width" Value="168" />
+                        </Style>
+                    </ui:NavigationMapView.ItemContainerStyle>
                     <ui:NavigationMapView.Style>
                         <Style TargetType="{x:Type ui:NavigationMapView}">
                             <Setter Property="HorizontalSpacing" Value="22" />

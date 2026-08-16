@@ -70,7 +70,12 @@
     </controls:NavigationMapNodeTemplateSelector>
 
     <Style x:Key="DefaultUiNavigationMapItemStyle" TargetType="{x:Type controls:NavigationMapItem}">
-        <Setter Property="Width" Value="{Binding NodeWidth, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationMapView}}}" />
+        <!--
+            The fixed uniform default width keeps automatic chart columns even without stretching
+            children. It is a plain style default: a local Width or an ItemContainerStyle setter
+            overrides it per container, and a replaced container style takes over entirely.
+        -->
+        <Setter Property="Width" Value="184" />
         <Setter Property="MinHeight" Value="64" />
         <Setter Property="Padding" Value="16,12" />
         <Setter Property="HorizontalContentAlignment" Value="Stretch" />

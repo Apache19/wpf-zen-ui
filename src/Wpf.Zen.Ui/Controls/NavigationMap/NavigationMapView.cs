@@ -154,30 +154,6 @@ public partial class NavigationMapView : ItemsControl
 
     #endregion
 
-    #region DP: NodeWidth
-
-    /// <summary>Identifies the <see cref="NodeWidth"/> dependency property.</summary>
-    public static readonly DependencyProperty NodeWidthProperty = DependencyProperty.Register(
-        nameof(NodeWidth),
-        typeof(double),
-        typeof(NavigationMapView),
-        new FrameworkPropertyMetadata(
-            184D,
-            FrameworkPropertyMetadataOptions.AffectsMeasure,
-            OnAutomaticLayoutInputChanged
-        ),
-        ValidatePositiveDouble
-    );
-
-    /// <summary>Gets or sets the width assigned to each default node container.</summary>
-    public double NodeWidth
-    {
-        get => (double)GetValue(NodeWidthProperty);
-        set => SetValue(NodeWidthProperty, value);
-    }
-
-    #endregion
-
     #region DP: HorizontalSpacing
 
     /// <summary>Identifies the <see cref="HorizontalSpacing"/> dependency property.</summary>
