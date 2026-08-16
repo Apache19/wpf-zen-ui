@@ -21,12 +21,15 @@ namespace Wpf.Zen.Ui.UnitTests.Controls.NumberBoxControl;
 public class NumberBoxTests
 {
     [Fact]
-    public void ApplyTemplate_ParsesTextOnlyInitialization()
+    public void TextOnlyInitialization_DoesNotDependOnTemplate()
     {
         RunOnStaThread(
             () =>
             {
                 var numberBox = new NumberBox { Text = "42.5" };
+
+                Assert.Equal(42.5, numberBox.Value);
+                Assert.Equal("42.5", numberBox.Text);
 
                 numberBox.OnApplyTemplate();
 
@@ -142,7 +145,117 @@ public class NumberBoxTests
 
                 Assert.True(args.CommandCancelled);
                 Assert.Equal("12", numberBox.Text);
-                Assert.Equal(5, numberBox.Value);
+                Assert.Equal(12, numberBox.Value);
+            }
+        );
+    }
+
+    [Fact]
+    public void ReapplyingTemplate_DoesNotCommitExpressionBeingEdited()
+    {
+        RunOnStaThread(
+            () =>
+            {
+                var numberBox = new NumberBox
+                {
+                    AcceptsExpression = true,
+                    Text = "1+2",
+                };
+
+                numberBox.OnApplyTemplate();
+
+                Assert.Equal(3, numberBox.Value);
+                Assert.Equal("1+2", numberBox.Text);
+            }
+        );
+    }
+
+    [Theory]
+    [InlineData("3", false)]
+    [InlineData("3+4", false)]
+    [InlineData("++", true)]
+    [InlineData("invalid", true)]
+    public void Paste_IsAcceptedOnlyWhenResultingTextCanBeParsed(
+        string pastedText,
+        bool expectedCancelled
+    )
+    {
+        RunOnStaThread(
+            () =>
+            {
+                var numberBox = new TestNumberBox
+                {
+                    AcceptsExpression = true,
+                    Text = "12",
+                    SelectionStart = 0,
+                    SelectionLength = 2,
+                };
+                var dataObject = new System.Windows.DataObject(
+                    DataFormats.UnicodeText,
+                    pastedText
+                );
+                var args = new DataObjectPastingEventArgs(
+                    dataObject,
+                    isDragDrop: false,
+                    DataFormats.UnicodeText
+                );
+
+                numberBox.RaiseClipboardPaste(args);
+
+                Assert.Equal(expectedCancelled, args.CommandCancelled);
+                Assert.Equal("12", numberBox.Text);
+                Assert.Equal(12, numberBox.Value);
+            }
+        );
+    }
+
+    [Fact]
+    public void Text_UpdatesValueAsSoonAsNumberOrExpressionCanBeParsed()
+    {
+        RunOnStaThread(
+            () =>
+            {
+                var numberBox = new NumberBox { AcceptsExpression = true, Value = 56 };
+
+                numberBox.Text = "12";
+                Assert.Equal(12, numberBox.Value);
+
+                numberBox.Text = "12+";
+                Assert.Equal(12, numberBox.Value);
+
+                numberBox.Text = "12+3";
+                Assert.Equal(15, numberBox.Value);
+                Assert.Equal("12+3", numberBox.Text);
+            }
+        );
+    }
+
+    [Fact]
+    public void Text_UsesEffectiveCoercedOrReentrantValueImmediately()
+    {
+        RunOnStaThread(
+            () =>
+            {
+                var rangedNumberBox = new NumberBox { Minimum = 0, Maximum = 10 };
+
+                rangedNumberBox.Text = "12";
+
+                Assert.Equal(10, rangedNumberBox.Value);
+                Assert.Equal("10", rangedNumberBox.Text);
+
+                var reentrantNumberBox = new NumberBox();
+                reentrantNumberBox.ValueChanged += (_, args) =>
+                {
+                    if (args.NewValue == 1)
+                    {
+                        reentrantNumberBox.Value = 2;
+                    }
+                };
+
+                reentrantNumberBox.Text = "1";
+
+                Assert.Equal(2, reentrantNumberBox.Value);
+                Assert.Equal("2", reentrantNumberBox.Text);
             }
         );
     }
@@ -205,6 +318,28 @@ public class NumberBoxTests
                 StepValue(numberBox, 1);
 
                 Assert.Equal(1e100, numberBox.Value);
+            }
+        );
+    }
+
+    [Theory]
+    [InlineData(double.MaxValue, double.MaxValue, double.MaxValue)]
+    [InlineData(-double.MaxValue, -double.MaxValue, -double.MaxValue)]
+    public void StepValue_DoubleOverflowSaturatesAtRangeBoundary(
+        double value,
+        double change,
+        double expected
+    )
+    {
+        RunOnStaThread(
+            () =>
+            {
+                var numberBox = new NumberBox { Value = value };
+
+                StepValue(numberBox, change);
+
+                Assert.Equal(expected, numberBox.Value);
+                Assert.Equal(expected.ToString("G", CultureInfo.CurrentCulture), numberBox.Text);
             }
         );
     }
@@ -541,7 +676,7 @@ public class NumberBoxTests
     private static void CommitText(NumberBox numberBox)
     {
         typeof(NumberBox)
-            .GetMethod("ValidateInput", BindingFlags.Instance | BindingFlags.NonPublic)!
+            .GetMethod("CommitInput", BindingFlags.Instance | BindingFlags.NonPublic)!
             .Invoke(numberBox, null);
     }
 
