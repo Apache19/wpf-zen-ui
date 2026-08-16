@@ -38,14 +38,19 @@
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
 
-                <StackPanel ui:IconPresenter.IconSize="18" Orientation="Vertical">
-                    <StackPanel.Resources>
+                <ToolBarTray
+                    ui:IconPresenter.IconSize="18"
+                    Background="Transparent"
+                    Orientation="Horizontal">
+                    <ToolBarTray.Resources>
                         <Style TargetType="{x:Type ui:Button}">
                             <Setter Property="Appearance" Value="Transparent" />
                             <Setter Property="BorderThickness" Value="0" />
+                            <Setter Property="Padding" Value="9 7" />
                         </Style>
-                    </StackPanel.Resources>
-                    <ToolBar Background="Transparent">
+                    </ToolBarTray.Resources>
+
+                    <ToolBar Background="Transparent" Band="0">
                         <ui:Button Click="OnLoadLayoutClick" Icon="{ui:FluentIconSource FolderOpen24}" />
                         <ui:Button Click="OnSaveLayoutClick" Icon="{ui:FluentIconSource Save24}" />
                         <ui:Button
@@ -132,11 +137,11 @@
                             Text="{Binding ZoomFactor, ElementName=GalleryNavigationMap, StringFormat={}{0:P0}}" />
                     </ToolBar>
 
-                    <ToolBar Background="Transparent">
+                    <ToolBar Background="Transparent" Band="1">
                         <ui:ToggleButton
-                            Content="Edit"
                             Icon="{ui:FluentIconSource Edit24}"
-                            IsChecked="{Binding IsEditing, ElementName=GalleryNavigationMap, Mode=TwoWay}">
+                            IsChecked="{Binding IsEditing, ElementName=GalleryNavigationMap, Mode=TwoWay}"
+                            ToolTip="Edit">
                             <ui:ToggleButton.Style>
                                 <Style TargetType="{x:Type ui:ToggleButton}">
                                     <Setter Property="IsEnabled" Value="False" />
@@ -151,15 +156,14 @@
                         <ui:ToggleButton
                             Content="Snap"
                             Icon="{ui:FluentIconSource TableCellCenter24}"
-                            IsChecked="{Binding SnapToGrid, ElementName=GalleryNavigationMap, Mode=TwoWay}" />
+                            IsChecked="{Binding SnapToGrid, ElementName=GalleryNavigationMap, Mode=TwoWay}"
+                            ToolTip="是否对齐到网格" />
                         <ui:ToggleButton
                             Content="Grid"
                             Icon="{ui:FluentIconSource Table24}"
-                            IsChecked="{Binding ShowGrid, ElementName=GalleryNavigationMap, Mode=TwoWay}" />
-                        <TextBlock
-                            Margin="0,0,6,0"
-                            VerticalAlignment="Center"
-                            Text="Grid size" />
+                            IsChecked="{Binding ShowGrid, ElementName=GalleryNavigationMap, Mode=TwoWay}"
+                            ToolTip="是否显示网格" />
+
                         <ui:NumberBox
                             Width="120"
                             Margin="0,0,14,0"
@@ -167,6 +171,7 @@
                             Maximum="64"
                             Minimum="4"
                             SmallStep="4"
+                            ToolTip="Grid size"
                             Value="{Binding GridSize, ElementName=GalleryNavigationMap, Mode=TwoWay}" />
                         <TextBlock VerticalAlignment="Center" Text="{Binding GridSize, ElementName=GalleryNavigationMap, Mode=OneWay}" />
 
@@ -192,7 +197,7 @@
                             Command="{x:Static ui:NavigationMapCommands.AlignSelection}"
                             CommandParameter="{x:Static ui:NavigationMapAlignment.HorizontalCenter}"
                             CommandTarget="{Binding ElementName=GalleryNavigationMap}"
-                            Icon="{ui:FluentIconSource AlignCenterHorizontal24}" />
+                            Icon="{ui:FluentIconSource AlignCenterVertical24}" />
                         <ui:Button
                             Command="{x:Static ui:NavigationMapCommands.AlignSelection}"
                             CommandParameter="{x:Static ui:NavigationMapAlignment.Right}"
@@ -207,18 +212,15 @@
                             Command="{x:Static ui:NavigationMapCommands.AlignSelection}"
                             CommandParameter="{x:Static ui:NavigationMapAlignment.VerticalCenter}"
                             CommandTarget="{Binding ElementName=GalleryNavigationMap}"
-                            Icon="{ui:FluentIconSource AlignCenterVertical24}" />
+                            Icon="{ui:FluentIconSource AlignCenterHorizontal24}" />
                         <ui:Button
                             Command="{x:Static ui:NavigationMapCommands.AlignSelection}"
                             CommandParameter="{x:Static ui:NavigationMapAlignment.Bottom}"
                             CommandTarget="{Binding ElementName=GalleryNavigationMap}"
                             Icon="{ui:FluentIconSource AlignBottom24}" />
-
-                        <!--  用 TextBox 测试绑定  -->
-                        <TextBox Width="50" Text="{Binding GridSize, ElementName=GalleryNavigationMap}" />
                     </ToolBar>
 
-                </StackPanel>
+                </ToolBarTray>
 
                 <Border Grid.Row="1" Background="{ui:DynamicBrush CardStrokeDefault}" />
 
