@@ -10,6 +10,7 @@ using System.Linq;
 using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
+using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Markup;
 using System.Windows.Media;
@@ -82,6 +83,17 @@ public class NavigationMapViewTests
             Assert.Equal("Updated localized help.", container.Description);
             Assert.Equal("Updated localized help.", container.ToolTip);
             Assert.Equal("Updated localized help.", AutomationProperties.GetHelpText(container));
+            map[0].Description = null;
+            Assert.Null(container.Description);
+            Assert.Null(container.ToolTip);
+            Assert.Equal(string.Empty, AutomationProperties.GetHelpText(container));
+            Assert.Equal(
+                string.Empty,
+                BindingOperations.GetBinding(
+                    container,
+                    AutomationProperties.HelpTextProperty
+                )?.TargetNullValue
+            );
             Assert.Contains(
                 EnumerateVisualDescendants<ContentPresenter>(container),
                 presenter => Equals(presenter.Content, "Localized root")

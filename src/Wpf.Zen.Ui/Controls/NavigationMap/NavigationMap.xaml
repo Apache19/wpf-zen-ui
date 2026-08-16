@@ -82,8 +82,20 @@
             Description remains a style-level binding so an application can replace ToolTip locally
             without a control-specific opt-out property. Null descriptions naturally suppress WPF's
             tooltip while ShowOnDisabled keeps structural/non-command nodes discoverable.
+
+            Unlike ToolTip, WPF registers AutomationProperties.HelpText with an IsNotNull validation
+            callback and uses an empty string to represent missing help text. TargetNullValue keeps
+            the public Description property optional without asking the binding engine to assign an
+            invalid value, which would otherwise emit one data-binding error per undescribed node.
         -->
-        <Setter Property="AutomationProperties.HelpText" Value="{Binding Description, RelativeSource={RelativeSource Self}}" />
+        <Setter Property="AutomationProperties.HelpText">
+            <Setter.Value>
+                <Binding
+                    Path="Description"
+                    RelativeSource="{RelativeSource Self}"
+                    TargetNullValue="" />
+            </Setter.Value>
+        </Setter>
         <Setter Property="ToolTip" Value="{Binding Description, RelativeSource={RelativeSource Self}}" />
         <Setter Property="ToolTipService.ShowOnDisabled" Value="True" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
