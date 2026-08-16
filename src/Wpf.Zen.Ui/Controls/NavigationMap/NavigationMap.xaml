@@ -9,7 +9,8 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Zen.Ui.Controls"
-    xmlns:m="clr-namespace:Wpf.Zen.Ui.Markup">
+    xmlns:m="clr-namespace:Wpf.Zen.Ui.Markup"
+    xmlns:ui="clr-namespace:Wpf.Zen.Ui">
 
     <!--
         ContentPresenter's built-in string template uses a non-wrapping TextBlock. Navigation-map
@@ -35,7 +36,7 @@
     -->
     <controls:NavigationMapNodeTemplateSelector x:Key="DefaultNavigationMapNodeTemplateSelector">
         <controls:NavigationMapNodeTemplateSelector.NodeTemplate>
-            <DataTemplate>
+            <DataTemplate DataType="{x:Type ui:NavigationMapNode}">
                 <StackPanel>
                     <ContentPresenter
                         HorizontalAlignment="Center"
@@ -82,7 +83,7 @@
             Description remains a style-level binding so an application can replace ToolTip locally
             without a control-specific opt-out property. Null descriptions naturally suppress WPF's
             tooltip while ShowOnDisabled keeps structural/non-command nodes discoverable.
-
+            
             Unlike ToolTip, WPF registers AutomationProperties.HelpText with an IsNotNull validation
             callback and uses an empty string to represent missing help text. TargetNullValue keeps
             the public Description property optional without asking the binding engine to assign an
@@ -148,7 +149,7 @@
                             Background="{m:DynamicBrush AccentFillSecondary}"
                             CornerRadius="0,0,3,3"
                             IsHitTestVisible="False" />
-                        <!-- Search matches remain visible without replacing editor-selection chrome. -->
+                        <!--  Search matches remain visible without replacing editor-selection chrome.  -->
                         <Border
                             x:Name="SearchMarker"
                             Width="8"
@@ -213,7 +214,7 @@
                                 <Condition Binding="{Binding IsEditing, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationMapView}}}" Value="True" />
                                 <Condition Binding="{Binding LayoutMode, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationMapView}}}" Value="{x:Static controls:NavigationMapLayoutMode.Manual}" />
                             </MultiDataTrigger.Conditions>
-                            <!-- Editing owns pointer activation, so every node advertises movement. -->
+                            <!--  Editing owns pointer activation, so every node advertises movement.  -->
                             <Setter Property="Cursor" Value="SizeAll" />
                         </MultiDataTrigger>
                     </ControlTemplate.Triggers>
@@ -242,7 +243,7 @@
                         ConnectorBrush="{Binding ConnectorBrush, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationMapView}}}"
                         ConnectorThickness="{Binding ConnectorThickness, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationMapView}}}"
                         Direction="{Binding Direction, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationMapView}}}"
-                        GridBrush="#247F7F7F"
+                        GridBrush="#187F7F7F"
                         GridSize="{Binding GridSize, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationMapView}}}"
                         HighlightedConnectorBrush="{Binding HighlightedConnectorBrush, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationMapView}}}"
                         HighlightedConnectorThickness="{Binding HighlightedConnectorThickness, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationMapView}}}"
@@ -276,9 +277,7 @@
                             -->
                             <Grid>
                                 <Grid.LayoutTransform>
-                                    <ScaleTransform
-                                        ScaleX="{Binding ZoomFactor, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationMapView}}}"
-                                        ScaleY="{Binding ZoomFactor, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationMapView}}}" />
+                                    <ScaleTransform ScaleX="{Binding ZoomFactor, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationMapView}}}" ScaleY="{Binding ZoomFactor, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationMapView}}}" />
                                 </Grid.LayoutTransform>
                                 <ItemsPresenter SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
                             </Grid>
