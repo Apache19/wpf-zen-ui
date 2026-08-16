@@ -13,6 +13,8 @@ using System.Windows.Automation.Peers;
 using System.Windows.Automation.Provider;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
+using System.Windows.Data;
+using System.Windows.Input;
 using System.Windows.Media;
 using Wpf.Zen.Ui.Controls;
 
@@ -71,6 +73,85 @@ public class NumberBoxTests
     }
 
     [Fact]
+    public void RangeChanges_RecoerceValueAndRestoreItsBaseValueWhenPossible()
+    {
+        RunOnStaThread(
+            () =>
+            {
+                var numberBox = new NumberBox { Minimum = 0, Maximum = 10, Value = 20 };
+
+                Assert.Equal(10, numberBox.Value);
+                Assert.Equal("10", numberBox.Text);
+
+                // WPF retains the uncoerced base value. Expanding the range must therefore
+                // restore 20 instead of leaving the previous effective boundary value behind.
+                numberBox.Maximum = 30;
+
+                Assert.Equal(20, numberBox.Value);
+                Assert.Equal("20", numberBox.Text);
+
+                numberBox.Minimum = 25;
+
+                Assert.Equal(25, numberBox.Value);
+                Assert.Equal("25", numberBox.Text);
+
+                numberBox.Minimum = 0;
+
+                Assert.Equal(20, numberBox.Value);
+                Assert.Equal("20", numberBox.Text);
+            }
+        );
+    }
+
+    [Fact]
+    public void NumericDependencyProperties_RejectNonFiniteOrNonPositiveValues()
+    {
+        RunOnStaThread(
+            () =>
+            {
+                var numberBox = new NumberBox();
+
+                Assert.Throws<ArgumentException>(() => numberBox.Value = double.PositiveInfinity);
+                Assert.Throws<ArgumentException>(() => numberBox.Value = double.NegativeInfinity);
+                Assert.Throws<ArgumentException>(() => numberBox.Minimum = double.NaN);
+                Assert.Throws<ArgumentException>(() => numberBox.Maximum = double.PositiveInfinity);
+                Assert.Throws<ArgumentException>(() => numberBox.SmallStep = 0);
+                Assert.Throws<ArgumentException>(() => numberBox.SmallStep = double.NaN);
+                Assert.Throws<ArgumentException>(() => numberBox.LargeStep = -1);
+                Assert.Throws<ArgumentException>(() => numberBox.LargeStep = double.PositiveInfinity);
+            }
+        );
+    }
+
+    [Fact]
+    public void Metadata_EnforcesSingleLineEditingAndLostFocusValueBinding()
+    {
+        RunOnStaThread(
+            () =>
+            {
+                var numberBox = new NumberBox
+                {
+                    AcceptsReturn = true,
+                    TextWrapping = TextWrapping.Wrap,
+                    MinLines = 2,
+                    MaxLines = 5,
+                };
+                var valueMetadata = Assert.IsType<FrameworkPropertyMetadata>(
+                    NumberBox.ValueProperty.GetMetadata(typeof(NumberBox))
+                );
+
+                Assert.False(numberBox.AcceptsReturn);
+                Assert.Equal(TextWrapping.NoWrap, numberBox.TextWrapping);
+                Assert.Equal(1, numberBox.MinLines);
+                Assert.Equal(1, numberBox.MaxLines);
+                Assert.False(InputMethod.GetIsInputMethodEnabled(numberBox));
+                Assert.True(valueMetadata.BindsTwoWayByDefault);
+                Assert.Equal(UpdateSourceTrigger.LostFocus, valueMetadata.DefaultUpdateSourceTrigger);
+            }
+        );
+    }
+
+    [Fact]
     public void Value_RejectsNaNAndInvalidTextDoesNotThrow()
     {
         RunOnStaThread(
@@ -123,6 +204,36 @@ public class NumberBoxTests
 
                 Assert.Equal(1.239, numberBox.Value);
                 Assert.Equal("1.239", numberBox.Text);
+            }
+        );
+    }
+
+    [Fact]
+    public void Commit_SkipsCanonicalTextWithoutRevertingLossyFormatting()
+    {
+        RunOnStaThread(
+            () =>
+            {
+                // "F0" displays 1.5 as "2". LostFocus and LostKeyboardFocus both commit on the
+                // common focus-loss path; the second commit must not parse the display text back
+                // and round the stored value.
+                var numberBox = new NumberBox { FormatString = "F0", Text = "1.5" };
+
+                // Valid editable text updates Value immediately, but it remains unformatted until
+                // the first commit ends the edit. This reproduces the state transition between the
+                // two focus-loss callbacks instead of starting from already-canonical text.
+                Assert.Equal(1.5, numberBox.Value);
+                Assert.Equal("1.5", numberBox.Text);
+
+                CommitText(numberBox);
+
+                Assert.Equal(1.5, numberBox.Value);
+                Assert.Equal("2", numberBox.Text);
+
+                CommitText(numberBox);
+
+                Assert.Equal(1.5, numberBox.Value);
+                Assert.Equal("2", numberBox.Text);
             }
         );
     }
@@ -226,6 +337,131 @@ public class NumberBoxTests
                 numberBox.Text = "12+3";
                 Assert.Equal(15, numberBox.Value);
                 Assert.Equal("12+3", numberBox.Text);
+            }
+        );
+    }
+
+    [Fact]
+    public void EmptyAndIncompleteInput_HaveDistinctValueAndCommitSemantics()
+    {
+        RunOnStaThread(
+            () =>
+            {
+                var numberBox = new NumberBox { Value = 12 };
+
+                numberBox.Text = string.Empty;
+
+                Assert.Null(numberBox.Value);
+                Assert.Equal(string.Empty, numberBox.Text);
+
+                numberBox.Value = 12;
+                numberBox.Text = "-";
+
+                Assert.Equal(12, numberBox.Value);
+                Assert.Equal("-", numberBox.Text);
+
+                CommitText(numberBox);
+
+                Assert.Equal(12, numberBox.Value);
+                Assert.Equal("12", numberBox.Text);
+            }
+        );
+    }
+
+    [Fact]
+    public void DisablingExpressions_CommitsTheLastEvaluatedValue()
+    {
+        RunOnStaThread(
+            () =>
+            {
+                var numberBox = new NumberBox { AcceptsExpression = true, Text = "1+2" };
+
+                Assert.Equal(3, numberBox.Value);
+                Assert.Equal("1+2", numberBox.Text);
+
+                numberBox.AcceptsExpression = false;
+
+                Assert.Equal(3, numberBox.Value);
+                Assert.Equal("3", numberBox.Text);
+            }
+        );
+    }
+
+    [Fact]
+    public void KeyboardCommands_StepCommitAndDiscardAccordingToTheirContracts()
+    {
+        RunOnStaThread(
+            () =>
+            {
+                var numberBox = new TestNumberBox
+                {
+                    AcceptsExpression = true,
+                    SmallStep = 1,
+                    LargeStep = 10,
+                    Value = 5,
+                };
+                var window = new Window
+                {
+                    Content = numberBox,
+                    ShowInTaskbar = false,
+                    WindowStyle = WindowStyle.None,
+                };
+
+                try
+                {
+                    window.Show();
+                    PresentationSource source = Assert.IsAssignableFrom<PresentationSource>(
+                        PresentationSource.FromVisual(numberBox)
+                    );
+
+                    numberBox.Text = "-";
+                    KeyEventArgs escape = CreateKeyEvent(source, Key.Escape);
+                    numberBox.ProcessPreviewKeyDown(escape);
+
+                    Assert.True(escape.Handled);
+                    Assert.Equal(5, numberBox.Value);
+                    Assert.Equal("5", numberBox.Text);
+
+                    numberBox.Text = "1+2";
+                    numberBox.CaretIndex = 0;
+                    KeyEventArgs enter = CreateKeyEvent(source, Key.Enter);
+                    numberBox.ProcessPreviewKeyDown(enter);
+
+                    Assert.True(enter.Handled);
+                    Assert.Equal(3, numberBox.Value);
+                    Assert.Equal("3", numberBox.Text);
+                    Assert.Equal(numberBox.Text.Length, numberBox.CaretIndex);
+
+                    KeyEventArgs redundantEnter = CreateKeyEvent(source, Key.Enter);
+                    numberBox.ProcessPreviewKeyDown(redundantEnter);
+                    Assert.False(redundantEnter.Handled);
+
+                    foreach ((Key key, double expected) in new[]
+                    {
+                        (Key.Up, 4d),
+                        (Key.Down, 3d),
+                        (Key.PageUp, 13d),
+                        (Key.PageDown, 3d),
+                    })
+                    {
+                        KeyEventArgs step = CreateKeyEvent(source, key);
+                        numberBox.ProcessPreviewKeyDown(step);
+
+                        Assert.True(step.Handled);
+                        Assert.Equal(expected, numberBox.Value);
+                    }
+
+                    numberBox.IsReadOnly = true;
+                    KeyEventArgs readOnlyStep = CreateKeyEvent(source, Key.Up);
+                    numberBox.ProcessPreviewKeyDown(readOnlyStep);
+
+                    Assert.False(readOnlyStep.Handled);
+                    Assert.Equal(3, numberBox.Value);
+                }
+                finally
+                {
+                    window.Close();
+                }
             }
         );
     }
@@ -694,11 +930,21 @@ public class NumberBoxTests
             .Invoke(numberBox, null)!;
     }
 
+    private static KeyEventArgs CreateKeyEvent(PresentationSource source, Key key)
+    {
+        return new KeyEventArgs(Keyboard.PrimaryDevice, source, Environment.TickCount, key)
+        {
+            RoutedEvent = Keyboard.PreviewKeyDownEvent,
+        };
+    }
+
     private static void RunOnStaThread(Action action) => WpfTestThread.Run(action);
 
     private sealed class TestNumberBox : NumberBox
     {
         public void RaiseClipboardPaste(DataObjectPastingEventArgs args) =>
             OnClipboardPaste(this, args);
+
+        public void ProcessPreviewKeyDown(KeyEventArgs args) => OnPreviewKeyDown(args);
     }
 }

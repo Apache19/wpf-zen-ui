@@ -1173,6 +1173,16 @@ public class NumberBox : TextBox
     /// </summary>
     private void CommitInput()
     {
+        // OnLostFocus and OnLostKeyboardFocus both commit on the common focus-loss path, so the
+        // second call reaches here after the first one already normalized the text. When the text
+        // already shows the canonical form of Value there is nothing left to parse or normalize,
+        // and re-parsing it would even change Value under a lossy FormatString (for example, F0
+        // displays 1.5 as "2"). Treat that state as a completed edit.
+        if (Text == FormatValue())
+        {
+            return;
+        }
+
         if (TryParseText(Text, out var value))
         {
             ApplyTextValue(value);

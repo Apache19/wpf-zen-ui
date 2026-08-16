@@ -6,6 +6,7 @@
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Data;
 using System.Windows.Input;
 using UiNumberBox = Wpf.Zen.Ui.Controls.NumberBox;
 using UiRichTextBox = Wpf.Zen.Ui.Controls.RichTextBox;
@@ -25,6 +26,60 @@ public class TextInputFocusTests
                 var numberBox = new UiNumberBox();
 
                 VerifyBackgroundRestoredWhenKeyboardFocusLeavesScope(numberBox, "ContentBorder");
+            }
+        );
+    }
+
+    [Fact]
+    public void NumberBoxKeyboardFocusLeavingScope_UpdatesDefaultValueBinding()
+    {
+        RunOnStaThread(
+            () =>
+            {
+                var source = new NumberBoxBindingSource { Value = 1 };
+                var numberBox = new UiNumberBox();
+                numberBox.SetBinding(
+                    UiNumberBox.ValueProperty,
+                    new Binding(nameof(NumberBoxBindingSource.Value))
+                    {
+                        Source = source,
+                        Mode = BindingMode.TwoWay,
+                    }
+                );
+                var otherControl = new Button();
+                var root = new StackPanel();
+                root.Children.Add(CreateFocusScope(numberBox));
+                root.Children.Add(CreateFocusScope(otherControl));
+                var window = new Window
+                {
+                    Content = root,
+                    ShowInTaskbar = false,
+                    WindowStyle = WindowStyle.None,
+                };
+
+                try
+                {
+                    window.Show();
+                    Assert.True(numberBox.Focus());
+
+                    numberBox.Text = "2";
+
+                    Assert.Equal(2, numberBox.Value);
+                    Assert.Equal(1, source.Value);
+
+                    // Logical focus remains in the first focus scope, so WPF's ordinary LostFocus
+                    // binding trigger does not run. NumberBox must push the source when keyboard
+                    // focus crosses into the other scope.
+                    Assert.True(otherControl.Focus());
+
+                    Assert.True(numberBox.IsFocused);
+                    Assert.False(numberBox.IsKeyboardFocused);
+                    Assert.Equal(2, source.Value);
+                }
+                finally
+                {
+                    window.Close();
+                }
             }
         );
     }
@@ -112,5 +167,10 @@ public class TextInputFocusTests
     private static void RunOnStaThread(Action action)
     {
         WpfTestThread.Run(action);
+    }
+
+    private sealed class NumberBoxBindingSource
+    {
+        public double? Value { get; set; }
     }
 }
