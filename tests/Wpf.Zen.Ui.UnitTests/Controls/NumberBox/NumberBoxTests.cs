@@ -642,6 +642,59 @@ public class NumberBoxTests
     }
 
     [Fact]
+    public void ExpressionParser_HandlesDeepNestingWithoutConsumingTheCallStack()
+    {
+        const int depth = 100_000;
+        string expression = new string('(', depth) + "1" + new string(')', depth);
+
+        bool parsed = NumberBoxExpressionParser.TryEvaluate(
+            expression,
+            CultureInfo.InvariantCulture,
+            out double result
+        );
+
+        Assert.True(parsed);
+        Assert.Equal(1, result);
+    }
+
+    [Fact]
+    public void ExpressionParser_HandlesLongUnaryChainsWithoutConsumingTheCallStack()
+    {
+        const int signCount = 100_000;
+        string expression = new string('-', signCount) + "1";
+
+        bool parsed = NumberBoxExpressionParser.TryEvaluate(
+            expression,
+            CultureInfo.InvariantCulture,
+            out double result
+        );
+
+        Assert.True(parsed);
+        Assert.Equal(1, result);
+    }
+
+    [Theory]
+    [InlineData("1+2*3", 7)]
+    [InlineData("(1+2)*3", 9)]
+    [InlineData("8/4/2", 1)]
+    [InlineData("1--2", 3)]
+    [InlineData("-(1+-2)*3", 3)]
+    public void ExpressionParser_PreservesPrecedenceAndUnarySemantics(
+        string expression,
+        double expected
+    )
+    {
+        Assert.True(
+            NumberBoxExpressionParser.TryEvaluate(
+                expression,
+                CultureInfo.InvariantCulture,
+                out double result
+            )
+        );
+        Assert.Equal(expected, result);
+    }
+
+    [Fact]
     public void ValueChanged_ReentrantAssignmentRaisesEveryTransition()
     {
         RunOnStaThread(

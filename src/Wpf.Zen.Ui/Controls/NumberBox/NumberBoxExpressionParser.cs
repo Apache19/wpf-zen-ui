@@ -8,7 +8,7 @@
 namespace Wpf.Zen.Ui.Controls;
 
 /// <summary>
-/// A recursive-descent parser that evaluates basic arithmetic expressions consisting of
+/// An iterative parser that evaluates basic arithmetic expressions consisting of
 /// <c>+</c>, <c>-</c>, <c>*</c>, <c>/</c> operators and parentheses.
 /// </summary>
 /// <remarks>
@@ -62,14 +62,71 @@ internal static class NumberBoxExpressionParser
             result = 0;
             try
             {
-                EvaluationValue value = ParseExpression();
-                SkipWhitespace();
-                if (_pos != _input.Length)
+                var values         = new List<EvaluationValue>();
+                var operators      = new List<Operator>();
+                var expectsOperand = true;
+
+                while (true)
+                {
+                    SkipWhitespace();
+
+                    if (_pos >= _input.Length)
+                    {
+                        break;
+                    }
+
+                    if (expectsOperand)
+                    {
+                        expectsOperand = !ParseOperand(values, operators);
+                        continue;
+                    }
+
+                    var character = _input[_pos];
+                    if (character == ')')
+                    {
+                        _pos++;
+                        ReduceParenthesizedExpression(values, operators);
+                        continue;
+                    }
+
+                    if (!TryGetBinaryOperator(character, out var currentOperator))
+                    {
+                        return false;
+                    }
+
+                    _pos++;
+
+                    while (operators.Count > 0
+                        && GetPrecedence(operators[^1]) >= GetPrecedence(currentOperator))
+                    {
+                        ApplyTopOperator(values, operators);
+                    }
+
+                    operators.Add(currentOperator);
+                    expectsOperand = true;
+                }
+
+                if (expectsOperand || values.Count == 0)
                 {
                     return false;
                 }
 
-                result = value.Result;
+                while (operators.Count > 0)
+                {
+                    if (operators[^1] == Operator.LeftParenthesis)
+                    {
+                        return false;
+                    }
+
+                    ApplyTopOperator(values, operators);
+                }
+
+                if (values.Count != 1)
+                {
+                    return false;
+                }
+
+                result = values[0].Result;
                 return true;
             }
             catch
@@ -78,133 +135,164 @@ internal static class NumberBoxExpressionParser
             }
         }
 
-        // expression = term (('+' | '-') term)*
-        private EvaluationValue ParseExpression()
+        /// <summary>
+        /// Parses the operand-side grammar without recursion. Unary signs are folded before the
+        /// operand is pushed; a negation that precedes a parenthesis is retained on the operator
+        /// stack and applied when that parenthesized expression closes.
+        /// </summary>
+        /// <returns>
+        /// <see langword="true"/> when a numeric operand was completed; <see langword="false"/>
+        /// when an opening parenthesis requires another operand on the next iteration.
+        /// </returns>
+        private bool ParseOperand(List<EvaluationValue> values, List<Operator> operators)
         {
-            var value = ParseTerm();
+            var negate = false;
 
             while (true)
             {
                 SkipWhitespace();
-                if (_pos < _input.Length && _input[_pos] == '+')
+
+                if (_pos >= _input.Length)
                 {
-                    _pos++;
-                    value = EvaluationValue.Add(value, ParseTerm());
-                }
-                else if (_pos < _input.Length && _input[_pos] == '-')
-                {
-                    _pos++;
-                    value = EvaluationValue.Subtract(value, ParseTerm());
-                }
-                else
-                {
-                    break;
-                }
-            }
-
-            return value;
-        }
-
-        // term = unary (('*' | '/') unary)*
-        private EvaluationValue ParseTerm()
-        {
-            var value = ParseUnary();
-
-            while (true)
-            {
-                SkipWhitespace();
-                if (_pos < _input.Length && _input[_pos] == '*')
-                {
-                    _pos++;
-                    value = EvaluationValue.Multiply(value, ParseUnary());
-                }
-                else if (_pos < _input.Length && _input[_pos] == '/')
-                {
-                    _pos++;
-                    var divisor = ParseUnary();
-                    if (divisor.BinaryValue == 0)
-                    {
-                        throw new DivideByZeroException();
-                    }
-
-                    value = EvaluationValue.Divide(value, divisor);
-                }
-                else
-                {
-                    break;
-                }
-            }
-
-            return value;
-        }
-
-        // unary = '-' unary | primary
-        private EvaluationValue ParseUnary()
-        {
-            SkipWhitespace();
-            if (_pos < _input.Length && _input[_pos] == '-')
-            {
-                _pos++;
-                return EvaluationValue.Negate(ParseUnary());
-            }
-
-            if (_pos < _input.Length && _input[_pos] == '+')
-            {
-                _pos++;
-                return ParseUnary();
-            }
-
-            return ParsePrimary();
-        }
-
-        // primary = number | '(' expression ')'
-        private EvaluationValue ParsePrimary()
-        {
-            SkipWhitespace();
-
-            if (_pos >= _input.Length)
-            {
-                throw new FormatException("Unexpected end of expression.");
-            }
-
-            if (_input[_pos] == '(')
-            {
-                _pos++;
-                var value = ParseExpression();
-                SkipWhitespace();
-                if (_pos >= _input.Length || _input[_pos] != ')')
-                {
-                    throw new FormatException("Missing closing parenthesis.");
+                    throw new FormatException("Unexpected end of expression.");
                 }
 
-                _pos++;
-                return value;
-            }
-
-            return ParseNumber();
-        }
-
-        private EvaluationValue ParseNumber()
-        {
-            SkipWhitespace();
-            var start = _pos;
-
-            NumberFormatInfo format = _culture.NumberFormat;
-            while (_pos < _input.Length)
-            {
-                char character = _input[_pos];
-                if (char.IsDigit(character)
-                 || format.NumberDecimalSeparator.Contains(character)
-                 || format.NumberGroupSeparator.Contains(character)
-                 || character is 'e' or 'E')
+                if (_input[_pos] == '+')
                 {
                     _pos++;
                     continue;
                 }
 
-                if (character is '+' or '-'
-                 && _pos > start
-                 && _input[_pos - 1] is 'e' or 'E')
+                if (_input[_pos] == '-')
+                {
+                    _pos++;
+                    negate = !negate;
+                    continue;
+                }
+
+                break;
+            }
+
+            if (_input[_pos] == '(')
+            {
+                if (negate)
+                {
+                    operators.Add(Operator.Negate);
+                }
+
+                _pos++;
+                operators.Add(Operator.LeftParenthesis);
+                return false;
+            }
+
+            var value = ParseNumber();
+            values.Add(negate ? EvaluationValue.Negate(value) : value);
+            return true;
+        }
+
+        private static void ReduceParenthesizedExpression(
+            List<EvaluationValue> values,
+            List<Operator> operators
+        )
+        {
+            while (operators.Count > 0 && operators[^1] != Operator.LeftParenthesis)
+            {
+                ApplyTopOperator(values, operators);
+            }
+
+            if (operators.Count == 0)
+            {
+                throw new FormatException("Unexpected closing parenthesis.");
+            }
+
+            operators.RemoveAt(operators.Count - 1);
+            if (operators.Count > 0 && operators[^1] == Operator.Negate)
+            {
+                ApplyTopOperator(values, operators);
+            }
+        }
+
+        private static void ApplyTopOperator(
+            List<EvaluationValue> values,
+            List<Operator> operators
+        )
+        {
+            var operation = operators[^1];
+            operators.RemoveAt(operators.Count - 1);
+
+            if (operation == Operator.Negate)
+            {
+                if (values.Count == 0)
+                {
+                    throw new FormatException("Missing operand for unary negation.");
+                }
+
+                values[^1] = EvaluationValue.Negate(values[^1]);
+                return;
+            }
+
+            if (values.Count < 2)
+            {
+                throw new FormatException("Missing operand for binary operator.");
+            }
+
+            var right = values[^1];
+            values.RemoveAt(values.Count - 1);
+            var left  = values[^1];
+
+            values[^1] = operation switch
+            {
+                Operator.Add      => EvaluationValue.Add(left, right),
+                Operator.Subtract => EvaluationValue.Subtract(left, right),
+                Operator.Multiply => EvaluationValue.Multiply(left, right),
+                Operator.Divide when right.BinaryValue != 0 => EvaluationValue.Divide(left, right),
+                Operator.Divide   => throw new DivideByZeroException(),
+                _ => throw new FormatException("Invalid operator state."),
+            };
+        }
+
+        private static bool TryGetBinaryOperator(char character, out Operator operation)
+        {
+            operation = character switch
+            {
+                '+' => Operator.Add,
+                '-' => Operator.Subtract,
+                '*' => Operator.Multiply,
+                '/' => Operator.Divide,
+                _   => Operator.None,
+            };
+            return operation != Operator.None;
+        }
+
+        private static int GetPrecedence(Operator operation) => operation switch
+        {
+            Operator.Add or Operator.Subtract    => 1,
+            Operator.Multiply or Operator.Divide => 2,
+            Operator.Negate                      => 3,
+            _                                    => -1,
+        };
+
+        private EvaluationValue ParseNumber()
+        {
+            SkipWhitespace();
+
+            var start  = _pos;
+            var format = _culture.NumberFormat;
+
+            while (_pos < _input.Length)
+            {
+                var character = _input[_pos];
+
+                if (char.IsDigit(character)
+                    || format.NumberDecimalSeparator.Contains(character)
+                    || format.NumberGroupSeparator.Contains(character)
+                    || character is 'e' or 'E')
+                {
+                    _pos++;
+                    continue;
+                }
+
+                if (character is '+' or '-' && _pos > start && _input[_pos - 1] is 'e' or 'E')
                 {
                     _pos++;
                     continue;
@@ -218,27 +306,29 @@ internal static class NumberBoxExpressionParser
                 throw new FormatException($"Expected number at position {_pos}.");
             }
 
-            string token = _input[start.._pos].ToString();
+            var token = _input[start.._pos].ToString();
+
             if (!double.TryParse(
                     token,
                     NumberStyles.Float | NumberStyles.AllowThousands,
                     _culture,
-                    out double parsed
+                    out var parsed
                 )
-             || double.IsNaN(parsed)
-             || double.IsInfinity(parsed))
+                || double.IsNaN(parsed)
+                || double.IsInfinity(parsed))
             {
                 throw new FormatException($"Invalid number at position {start}.");
             }
 
             // ReSharper disable once CompareOfFloatsByEqualityOperator
-            bool hasDecimalValue = decimal.TryParse(
-                                       token,
-                                       NumberStyles.Float | NumberStyles.AllowThousands,
-                                       _culture,
-                                       out decimal decimalValue
-                                   )
-                                && (double)decimalValue == parsed;
+            var hasDecimalValue =
+                decimal.TryParse(
+                    token,
+                    NumberStyles.Float | NumberStyles.AllowThousands,
+                    _culture,
+                    out var decimalValue
+                )
+                && (double)decimalValue == parsed;
 
             return new EvaluationValue(parsed, decimalValue, hasDecimalValue);
         }
@@ -250,6 +340,17 @@ internal static class NumberBoxExpressionParser
                 _pos++;
             }
         }
+    }
+
+    private enum Operator
+    {
+        None,
+        Add,
+        Subtract,
+        Multiply,
+        Divide,
+        Negate,
+        LeftParenthesis,
     }
 
     /// <summary>
