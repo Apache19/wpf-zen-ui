@@ -86,7 +86,7 @@ public partial class NavigationMapView
 
         if (
             e.ChangedButton != MouseButton.Middle
-            || !CanEditSelection()
+         // || !CanEditSelection()
             || _scrollViewer is null
         )
         {
