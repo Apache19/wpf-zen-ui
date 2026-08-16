@@ -34,11 +34,11 @@
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="Appearance" Value="Transparent">
-                            <Setter Property="BorderBrush" Value="{m:DynamicBrush ControlElevationBorder}" />
+                            <Setter TargetName="Border" Property="BorderBrush" Value="{m:DynamicBrush ControlElevationBorder}" />
                             <Setter TargetName="Border" Property="Background" Value="Transparent" />
                         </Trigger>
                         <Trigger Property="Appearance" Value="Normal">
-                            <Setter Property="BorderBrush" Value="{m:DynamicBrush ControlElevationBorder}" />
+                            <Setter TargetName="Border" Property="BorderBrush" Value="{m:DynamicBrush ControlElevationBorder}" />
                             <Setter TargetName="Border" Property="Background" Value="{m:DynamicBrush ControlFillSecondary}" />
                         </Trigger>
                         <Trigger Property="Appearance" Value="Info">
@@ -56,12 +56,12 @@
                         <Trigger Property="Appearance" Value="Dark">
                             <Setter TargetName="Border" Property="Background" Value="{m:DynamicBrush ControlStrongFillDark}" />
                             <Setter Property="Foreground" Value="{m:DynamicBrush TextFillLightPrimary}" />
-                            <Setter Property="BorderBrush" Value="{m:DynamicBrush ControlElevationBorder}" />
+                            <Setter TargetName="Border" Property="BorderBrush" Value="{m:DynamicBrush ControlElevationBorder}" />
                         </Trigger>
                         <Trigger Property="Appearance" Value="Light">
                             <Setter TargetName="Border" Property="Background" Value="{m:DynamicBrush ControlStrongFillLight}" />
                             <Setter Property="Foreground" Value="{m:DynamicBrush TextFillDarkPrimary}" />
-                            <Setter Property="BorderBrush" Value="{m:DynamicBrush ControlElevationBorder}" />
+                            <Setter TargetName="Border" Property="BorderBrush" Value="{m:DynamicBrush ControlElevationBorder}" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>

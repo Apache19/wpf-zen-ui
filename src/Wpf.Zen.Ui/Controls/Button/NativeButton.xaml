@@ -32,8 +32,8 @@
                     <Condition Property="IsEnabled" Value="False" />
                     <Condition Property="ToggleButton.IsChecked" Value="False" />
                 </MultiTrigger.Conditions>
-                <Setter Property="Background" Value="{m:DynamicBrush ControlFillDisabled}" />
-                <Setter Property="BorderBrush" Value="{m:DynamicBrush ControlStrokeDefault}" />
+                <Setter TargetName="border" Property="Background" Value="{m:DynamicBrush ControlFillDisabled}" />
+                <Setter TargetName="border" Property="BorderBrush" Value="{m:DynamicBrush ControlStrokeDefault}" />
                 <Setter Property="Foreground" Value="{m:DynamicBrush TextFillDisabled}" />
             </MultiTrigger>
             <MultiTrigger>
@@ -41,7 +41,7 @@
                     <Condition Property="IsEnabled" Value="False" />
                     <Condition Property="ToggleButton.IsChecked" Value="True" />
                 </MultiTrigger.Conditions>
-                <Setter Property="Background" Value="{m:DynamicBrush ControlFillDisabled}" />
+                <Setter TargetName="border" Property="Background" Value="{m:DynamicBrush ControlFillDisabled}" />
                 <Setter Property="BorderThickness" Value="0" />
                 <Setter Property="Foreground" Value="{m:DynamicBrush TextFillDisabled}" />
             </MultiTrigger>
@@ -50,7 +50,7 @@
                     <Condition Property="IsEnabled" Value="True" />
                     <Condition Property="ToggleButton.IsChecked" Value="True" />
                 </MultiTrigger.Conditions>
-                <Setter Property="Background" Value="{m:DynamicBrush AccentFillSecondary}" />
+                <Setter TargetName="border" Property="Background" Value="{m:DynamicBrush AccentFillSecondary}" />
                 <Setter Property="BorderThickness" Value="0" />
                 <Setter Property="Foreground" Value="{m:DynamicBrush TextOnAccentPrimary}" />
             </MultiTrigger>

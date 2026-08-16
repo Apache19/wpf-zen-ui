@@ -84,17 +84,17 @@
                     </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter Property="Background" Value="{m:DynamicBrush ControlFillSecondary}" />
+                            <Setter TargetName="ContentBorder" Property="Background" Value="{m:DynamicBrush ControlFillSecondary}" />
                             <Setter Property="Foreground" Value="{m:DynamicBrush TextFillPrimary}" />
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter Property="Background" Value="{m:DynamicBrush ControlFillDisabled}" />
-                            <Setter Property="BorderBrush" Value="{m:DynamicBrush ControlStrokeDefault}" />
+                            <Setter TargetName="ContentBorder" Property="Background" Value="{m:DynamicBrush ControlFillDisabled}" />
+                            <Setter TargetName="ContentBorder" Property="BorderBrush" Value="{m:DynamicBrush ControlStrokeDefault}" />
                             <Setter Property="Foreground" Value="{m:DynamicBrush TextFillDisabled}" />
                         </Trigger>
                         <Trigger Property="IsPressed" Value="True">
-                            <Setter Property="Background" Value="{m:DynamicBrush ControlFillTertiary}" />
-                            <Setter Property="BorderBrush" Value="{m:DynamicBrush ControlStrokeDefault}" />
+                            <Setter TargetName="ContentBorder" Property="Background" Value="{m:DynamicBrush ControlFillTertiary}" />
+                            <Setter TargetName="ContentBorder" Property="BorderBrush" Value="{m:DynamicBrush ControlStrokeDefault}" />
                             <Setter Property="Foreground" Value="{m:DynamicBrush TextFillSecondary}" />
                         </Trigger>
                         <Trigger Property="ClockIdentifier" Value="Clock24Hour">

@@ -90,7 +90,7 @@
                                 <Condition Property="IsMouseOver" Value="True" />
                                 <Condition Property="IsPressed" Value="True" />
                             </MultiTrigger.Conditions>
-                            <Setter Property="Background" Value="{m:DynamicBrush SubtleFillTertiary}" />
+                            <Setter TargetName="ContentBorder" Property="Background" Value="{m:DynamicBrush SubtleFillTertiary}" />
                             <Setter TargetName="ControlIcon" Property="Foreground" Value="{m:DynamicBrush AccentTextPrimary}" />
                             <Setter TargetName="ContentPresenter" Property="TextElement.Foreground" Value="{m:DynamicBrush AccentTextPrimary}" />
                         </MultiTrigger>
@@ -99,7 +99,7 @@
                             <Setter TargetName="ControlIcon" Property="Visibility" Value="Collapsed" />
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter Property="Background" Value="{m:DynamicBrush SubtleFillDisabled}" />
+                            <Setter TargetName="ContentBorder" Property="Background" Value="{m:DynamicBrush SubtleFillDisabled}" />
                             <Setter TargetName="ControlIcon" Property="Foreground" Value="{m:DynamicBrush TextFillDisabled}" />
                             <Setter TargetName="ContentPresenter" Property="TextElement.Foreground" Value="{m:DynamicBrush TextFillDisabled}" />
                         </Trigger>

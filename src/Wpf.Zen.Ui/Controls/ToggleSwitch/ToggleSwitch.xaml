@@ -349,7 +349,7 @@
                                 <Condition Property="IsChecked" Value="True" />
                                 <Condition Property="IsEnabled" Value="True" />
                             </MultiTrigger.Conditions>
-                            <Setter Property="Background" Value="{m:DynamicBrush AccentFillPrimary}" />
+                            <Setter TargetName="ActiveToggleRectangle" Property="Fill" Value="{m:DynamicBrush AccentFillPrimary}" />
                             <Setter TargetName="ToggleRectangle" Property="Stroke" Value="{m:DynamicBrush AccentFillPrimary}" />
                             <Setter TargetName="ActiveToggleEllipse" Property="Fill" Value="{m:DynamicBrush TextOnAccentPrimary}" />
                         </MultiTrigger>
@@ -361,7 +361,7 @@
                                 <Condition Property="IsChecked" Value="True" />
                                 <Condition Property="IsEnabled" Value="True" />
                             </MultiTrigger.Conditions>
-                            <Setter Property="Background" Value="{m:DynamicBrush AccentFillTertiary}" />
+                            <Setter TargetName="ActiveToggleRectangle" Property="Fill" Value="{m:DynamicBrush AccentFillTertiary}" />
                             <Setter TargetName="ToggleRectangle" Property="Stroke" Value="{m:DynamicBrush AccentFillTertiary}" />
                             <Setter TargetName="ActiveToggleEllipse" Property="Fill" Value="{m:DynamicBrush TextOnAccentPrimary}" />
                         </MultiTrigger>

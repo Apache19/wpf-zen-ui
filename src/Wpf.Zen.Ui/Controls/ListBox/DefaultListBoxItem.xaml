@@ -18,6 +18,7 @@
 
     <ControlTemplate x:Key="DefaultListBoxItemTemplate" TargetType="{x:Type ListBoxItem}">
         <Border
+            x:Name="ContentBorder"
             Padding="{TemplateBinding Padding}"
             Background="{TemplateBinding Background}"
             BorderBrush="{TemplateBinding BorderBrush}"
@@ -32,10 +33,10 @@
         </Border>
         <ControlTemplate.Triggers>
             <Trigger Property="IsMouseOver" Value="True">
-                <Setter Property="Background" Value="{m:DynamicBrush ControlFillTertiary}" />
+                <Setter TargetName="ContentBorder" Property="Background" Value="{m:DynamicBrush ControlFillTertiary}" />
             </Trigger>
             <Trigger Property="IsSelected" Value="True">
-                <Setter Property="Background" Value="{m:DynamicBrush AccentSelection}" />
+                <Setter TargetName="ContentBorder" Property="Background" Value="{m:DynamicBrush AccentSelection}" />
                 <Setter Property="Foreground" Value="{m:DynamicBrush TextOnAccentPrimary}" />
             </Trigger>
             <MultiTrigger>
@@ -43,7 +44,7 @@
                     <Condition Property="Selector.IsSelectionActive" Value="False" />
                     <Condition Property="IsSelected" Value="True" />
                 </MultiTrigger.Conditions>
-                <Setter Property="Background" Value="{m:DynamicBrush ControlStrongFillDisabled}" />
+                <Setter TargetName="ContentBorder" Property="Background" Value="{m:DynamicBrush ControlStrongFillDisabled}" />
             </MultiTrigger>
             <Trigger Property="IsEnabled" Value="False">
                 <Setter Property="Foreground" Value="{m:DynamicBrush TextFillDisabled}" />

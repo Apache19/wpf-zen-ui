@@ -34,6 +34,7 @@
                             <BulletDecorator.Bullet>
                                 <Grid Height="20">
                                     <Ellipse
+                                        x:Name="OuterEllipse"
                                         Width="20"
                                         Height="20"
                                         Fill="{TemplateBinding Background}"
@@ -80,7 +81,7 @@
                                 <Condition Property="IsMouseOver" Value="True" />
                                 <Condition Property="IsPressed" Value="False" />
                             </MultiTrigger.Conditions>
-                            <Setter Property="Background" Value="{m:DynamicBrush ControlAltFillTertiary}" />
+                            <Setter TargetName="OuterEllipse" Property="Fill" Value="{m:DynamicBrush ControlAltFillTertiary}" />
                         </MultiTrigger>
 
                         <!--  Unchecked + Pressed  -->
@@ -91,8 +92,8 @@
                                 <Condition Property="IsPressed" Value="True" />
                             </MultiTrigger.Conditions>
                             <Setter TargetName="CheckGlyph" Property="Visibility" Value="Visible" />
-                            <Setter Property="Background" Value="{m:DynamicBrush ControlAltFillQuarternary}" />
-                            <Setter Property="BorderBrush" Value="{m:DynamicBrush ControlStrokeDefault}" />
+                            <Setter TargetName="OuterEllipse" Property="Fill" Value="{m:DynamicBrush ControlAltFillQuarternary}" />
+                            <Setter TargetName="OuterEllipse" Property="Stroke" Value="{m:DynamicBrush ControlStrokeDefault}" />
                             <MultiTrigger.EnterActions>
                                 <BeginStoryboard Name="UncheckedPressedEnlarge" HandoffBehavior="SnapshotAndReplace">
                                     <Storyboard FillBehavior="HoldEnd">
@@ -123,15 +124,15 @@
                                 <Condition Property="IsEnabled" Value="False" />
                             </MultiTrigger.Conditions>
                             <Setter Property="Foreground" Value="{m:DynamicBrush TextFillDisabled}" />
-                            <Setter Property="Background" Value="{m:DynamicBrush ControlAltFillDisabled}" />
-                            <Setter Property="BorderBrush" Value="{m:DynamicBrush ControlStrongStrokeDisabled}" />
+                            <Setter TargetName="OuterEllipse" Property="Fill" Value="{m:DynamicBrush ControlAltFillDisabled}" />
+                            <Setter TargetName="OuterEllipse" Property="Stroke" Value="{m:DynamicBrush ControlStrongStrokeDisabled}" />
                         </MultiTrigger>
 
                         <!--  Checked + Normal  -->
                         <Trigger Property="IsChecked" Value="True">
                             <Setter TargetName="CheckGlyph" Property="Visibility" Value="Visible" />
-                            <Setter Property="Background" Value="{m:DynamicBrush AccentFillSecondary}" />
-                            <Setter Property="BorderBrush" Value="{m:DynamicBrush AccentFillSecondary}" />
+                            <Setter TargetName="OuterEllipse" Property="Fill" Value="{m:DynamicBrush AccentFillSecondary}" />
+                            <Setter TargetName="OuterEllipse" Property="Stroke" Value="{m:DynamicBrush AccentFillSecondary}" />
                         </Trigger>
 
                         <!--  Checked + Hover  -->
@@ -143,8 +144,8 @@
                                 <Condition Property="IsPressed" Value="False" />
                             </MultiTrigger.Conditions>
                             <Setter TargetName="CheckGlyph" Property="Visibility" Value="Visible" />
-                            <Setter Property="Background" Value="{m:DynamicBrush AccentFillPrimary}" />
-                            <Setter Property="BorderBrush" Value="{m:DynamicBrush AccentFillPrimary}" />
+                            <Setter TargetName="OuterEllipse" Property="Fill" Value="{m:DynamicBrush AccentFillPrimary}" />
+                            <Setter TargetName="OuterEllipse" Property="Stroke" Value="{m:DynamicBrush AccentFillPrimary}" />
                             <MultiTrigger.EnterActions>
                                 <BeginStoryboard Name="CheckedHoverEnlarge" HandoffBehavior="SnapshotAndReplace">
                                     <Storyboard FillBehavior="HoldEnd">
@@ -202,8 +203,8 @@
                                 <Condition Property="IsEnabled" Value="False" />
                             </MultiTrigger.Conditions>
                             <Setter Property="Foreground" Value="{m:DynamicBrush TextFillDisabled}" />
-                            <Setter Property="Background" Value="{m:DynamicBrush ControlAltFillDisabled}" />
-                            <Setter Property="BorderBrush" Value="{m:DynamicBrush ControlStrongStrokeDisabled}" />
+                            <Setter TargetName="OuterEllipse" Property="Fill" Value="{m:DynamicBrush ControlAltFillDisabled}" />
+                            <Setter TargetName="OuterEllipse" Property="Stroke" Value="{m:DynamicBrush ControlStrongStrokeDisabled}" />
                             <Setter TargetName="CheckGlyph" Property="Visibility" Value="Visible" />
                             <Setter TargetName="CheckGlyph" Property="Fill" Value="{m:DynamicBrush TextFillDisabled}" />
                         </MultiTrigger>

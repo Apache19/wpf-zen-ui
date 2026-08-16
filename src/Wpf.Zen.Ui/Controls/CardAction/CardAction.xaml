@@ -92,23 +92,23 @@
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter Property="Background" Value="{m:DynamicBrush ControlFillSecondary}" />
-                            <Setter Property="BorderBrush" Value="{m:DynamicBrush ControlElevationBorder}" />
+                            <Setter TargetName="ContentBorder" Property="Background" Value="{m:DynamicBrush ControlFillSecondary}" />
+                            <Setter TargetName="ContentBorder" Property="BorderBrush" Value="{m:DynamicBrush ControlElevationBorder}" />
                             <Setter Property="Foreground" Value="{m:DynamicBrush TextFillPrimary}" />
                         </Trigger>
                         <Trigger Property="IsChevronVisible" Value="False">
                             <Setter TargetName="ChevronIcon" Property="Visibility" Value="Collapsed" />
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter Property="Background" Value="{m:DynamicBrush ControlFillDisabled}" />
-                            <Setter Property="BorderBrush" Value="{m:DynamicBrush ControlStrokeDefault}" />
+                            <Setter TargetName="ContentBorder" Property="Background" Value="{m:DynamicBrush ControlFillDisabled}" />
+                            <Setter TargetName="ContentBorder" Property="BorderBrush" Value="{m:DynamicBrush ControlStrokeDefault}" />
                             <Setter TargetName="ContentPresenter" Property="TextElement.Foreground" Value="{m:DynamicBrush TextFillDisabled}" />
                             <Setter TargetName="ControlIcon" Property="Foreground" Value="{m:DynamicBrush TextFillDisabled}" />
                             <Setter TargetName="ChevronIcon" Property="Foreground" Value="{m:DynamicBrush TextFillDisabled}" />
                         </Trigger>
                         <Trigger Property="IsPressed" Value="True">
-                            <Setter Property="Background" Value="{m:DynamicBrush ControlFillTertiary}" />
-                            <Setter Property="BorderBrush" Value="{m:DynamicBrush ControlStrokeDefault}" />
+                            <Setter TargetName="ContentBorder" Property="Background" Value="{m:DynamicBrush ControlFillTertiary}" />
+                            <Setter TargetName="ContentBorder" Property="BorderBrush" Value="{m:DynamicBrush ControlStrokeDefault}" />
                             <Setter TargetName="ContentPresenter" Property="TextElement.Foreground" Value="{m:DynamicBrush TextFillSecondary}" />
                             <Setter TargetName="ControlIcon" Property="Foreground" Value="{m:DynamicBrush TextFillSecondary}" />
                             <Setter TargetName="ChevronIcon" Property="Foreground" Value="{m:DynamicBrush TextFillSecondary}" />

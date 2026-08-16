@@ -110,7 +110,7 @@
                             <Setter TargetName="LayoutRoot" Property="Background" Value="{m:DynamicBrush SubtleFillTertiary}" />
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter Property="Background" Value="{m:DynamicBrush SubtleFillDisabled}" />
+                            <Setter TargetName="LayoutRoot" Property="Background" Value="{m:DynamicBrush SubtleFillDisabled}" />
                             <Setter Property="Foreground" Value="{m:DynamicBrush TextFillDisabled}" />
                         </Trigger>
                         <Trigger Property="Content" Value="{x:Null}">
