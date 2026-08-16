@@ -25,9 +25,11 @@ namespace Wpf.Zen.Ui.Controls;
 /// <para>
 /// The editor supports additive click and marquee selection, group dragging, keyboard movement,
 /// grid snapping, alignment to a primary node, pointer-edge auto-scrolling, middle-button canvas
-/// panning, and zoom. Search is exposed as control state and methods instead of embedding a fixed
-/// toolbar, allowing an application to present its own Fluent search UI. The default template
-/// supplies the required scrolling and zoom host.
+/// panning, and zoom. Standard WPF routed commands own common editing, movement, and zoom actions;
+/// <see cref="NavigationMapCommands"/> supplies map-specific selection, search, alignment, and
+/// viewport actions. Search state remains independent of a fixed toolbar, allowing an application
+/// to present its own Fluent search UI and target this control from buttons or menus. The default
+/// template supplies the required scrolling and zoom host.
 /// </para>
 /// <para>
 /// A selected node highlights only its incident parent and child edges. This preserves immediate
@@ -409,7 +411,7 @@ public partial class NavigationMapView : ItemsControl
         typeof(NavigationMapView),
         new FrameworkPropertyMetadata(
             1D,
-            null,
+            OnZoomFactorChanged,
             coerceValueCallback: static (d, value) =>
             {
                 var view = (NavigationMapView)d;
@@ -736,6 +738,8 @@ public partial class NavigationMapView : ItemsControl
             typeof(NavigationMapView),
             new FrameworkPropertyMetadata(typeof(NavigationMapView))
         );
+
+        RegisterCommandBindings();
     }
 
     /// <summary>Initializes a new instance of the <see cref="NavigationMapView"/> class.</summary>
@@ -758,6 +762,7 @@ public partial class NavigationMapView : ItemsControl
     /// <param name="nodeKey">The stable key to select.</param>
     /// <param name="preserveSelection">Whether existing selected nodes remain selected.</param>
     /// <returns><see langword="true"/> when a generated node with that key exists.</returns>
+    /// <seealso cref="NavigationMapCommands.SelectNode"/>
     public bool SelectNode(string nodeKey, bool preserveSelection = false)
     {
         var container = FindContainer(nodeKey);
@@ -781,6 +786,7 @@ public partial class NavigationMapView : ItemsControl
     }
 
     /// <summary>Clears every selected editor node and connector highlight.</summary>
+    /// <seealso cref="NavigationMapCommands.ClearSelection"/>
     public void ClearSelection() => ApplySelection([], null);
 
     /// <summary>Selects every generated node and retains the current primary target.</summary>
@@ -788,6 +794,7 @@ public partial class NavigationMapView : ItemsControl
     /// This editor command is intentionally a no-op outside active Manual editing. Read-only maps
     /// use ordinary node invocation and must not acquire an invisible bulk-selection state.
     /// </remarks>
+    /// <seealso cref="ApplicationCommands.SelectAll"/>
     public void SelectAll()
     {
         if (!CanEditSelection())
@@ -825,6 +832,7 @@ public partial class NavigationMapView : ItemsControl
     /// Unlike drag snapping, this command snaps each node independently. It is therefore suitable
     /// for normalizing imported layouts and the initial hierarchical fallback before group editing.
     /// </remarks>
+    /// <seealso cref="NavigationMapCommands.AlignToGrid"/>
     public bool AlignToGrid()
     {
         if (!CanEditSelection())
@@ -848,6 +856,7 @@ public partial class NavigationMapView : ItemsControl
     /// generated hierarchy must first complete WPF layout before its centers can be snapped; the
     /// method therefore schedules normalization at dispatcher context-idle priority.
     /// </remarks>
+    /// <seealso cref="NavigationMapCommands.ResetLayout"/>
     public void ResetLayout()
     {
         EnsureLayout().Clear();
@@ -858,6 +867,7 @@ public partial class NavigationMapView : ItemsControl
     /// <summary>Aligns selected nodes to the primary selected node.</summary>
     /// <param name="alignment">The edge or center axis to share.</param>
     /// <returns><see langword="true"/> when at least two generated nodes were aligned.</returns>
+    /// <seealso cref="NavigationMapCommands.AlignSelection"/>
     public bool AlignSelection(NavigationMapAlignment alignment)
     {
         if (!CanEditSelection() || FindContainer(PrimarySelectedNodeKey) is not { } primary)
@@ -912,23 +922,29 @@ public partial class NavigationMapView : ItemsControl
 
     /// <summary>Activates the next search result, selecting and scrolling it into view.</summary>
     /// <returns><see langword="true"/> when a result exists.</returns>
+    /// <seealso cref="NavigationMapCommands.FindNext"/>
     public bool FindNext() => MoveCurrentSearchResult(1);
 
     /// <summary>Activates the previous search result, selecting and scrolling it into view.</summary>
     /// <returns><see langword="true"/> when a result exists.</returns>
+    /// <seealso cref="NavigationMapCommands.FindPrevious"/>
     public bool FindPrevious() => MoveCurrentSearchResult(-1);
 
     /// <summary>Increases <see cref="ZoomFactor"/> by <see cref="ZoomStep"/>.</summary>
+    /// <seealso cref="NavigationCommands.IncreaseZoom"/>
     public void ZoomIn() => SetCurrentValue(ZoomFactorProperty, ZoomFactor + ZoomStep);
 
     /// <summary>Decreases <see cref="ZoomFactor"/> by <see cref="ZoomStep"/>.</summary>
+    /// <seealso cref="NavigationCommands.DecreaseZoom"/>
     public void ZoomOut() => SetCurrentValue(ZoomFactorProperty, ZoomFactor - ZoomStep);
 
     /// <summary>Restores a one-to-one map scale.</summary>
+    /// <seealso cref="NavigationMapCommands.ResetZoom"/>
     public void ResetZoom() => SetCurrentValue(ZoomFactorProperty, 1D);
 
     /// <summary>Scales the complete map to fit the current scrolling viewport.</summary>
     /// <returns><see langword="true"/> when the template and map panel are available.</returns>
+    /// <seealso cref="NavigationMapCommands.ZoomToFit"/>
     public bool ZoomToFit()
     {
         var panel = FindVisualDescendant<NavigationMapPanel>(this);
@@ -948,6 +964,7 @@ public partial class NavigationMapView : ItemsControl
 
     /// <summary>Reverts the most recent drag, nudge, or alignment transaction.</summary>
     /// <returns><see langword="true"/> when a transaction was reverted.</returns>
+    /// <seealso cref="ApplicationCommands.Undo"/>
     public bool Undo()
     {
         if (_undoHistory.Count == 0)
@@ -969,6 +986,7 @@ public partial class NavigationMapView : ItemsControl
 
     /// <summary>Reapplies the most recently undone layout-editor transaction.</summary>
     /// <returns><see langword="true"/> when a transaction was reapplied.</returns>
+    /// <seealso cref="ApplicationCommands.Redo"/>
     public bool Redo()
     {
         if (_redoHistory.Count == 0)
@@ -991,6 +1009,10 @@ public partial class NavigationMapView : ItemsControl
     /// <summary>
     /// Clears editor undo and redo history, for example after an application loads another file.
     /// </summary>
+    /// <remarks>
+    /// This is a document-lifecycle operation rather than a user edit and intentionally has no
+    /// routed command. Applications should call it after replacing or externally loading a layout.
+    /// </remarks>
     public void ClearLayoutHistory()
     {
         _pendingDragBefore = null;
@@ -1030,6 +1052,8 @@ public partial class NavigationMapView : ItemsControl
             view.EndEditingGesture();
             view.ClearSelection();
         }
+
+        CommandManager.InvalidateRequerySuggested();
     }
 
     private static void OnLayoutModeChanged(DependencyObject d, DependencyPropertyChangedEventArgs args)
@@ -1040,6 +1064,8 @@ public partial class NavigationMapView : ItemsControl
         {
             ((NavigationMapView)d).ClearSelection();
         }
+
+        CommandManager.InvalidateRequerySuggested();
     }
 
     private static void OnSearchTextChanged(DependencyObject d, DependencyPropertyChangedEventArgs _)
@@ -1095,5 +1121,10 @@ public partial class NavigationMapView : ItemsControl
     {
         d.CoerceValue(MaximumZoomFactorProperty);
         d.CoerceValue(ZoomFactorProperty);
+    }
+
+    private static void OnZoomFactorChanged(DependencyObject d, DependencyPropertyChangedEventArgs _)
+    {
+        CommandManager.InvalidateRequerySuggested();
     }
 }

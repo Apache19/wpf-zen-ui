@@ -48,18 +48,23 @@
                     <ToolBar Background="Transparent">
                         <ui:Button Click="OnLoadLayoutClick" Icon="{ui:FluentIconSource FolderOpen24}" />
                         <ui:Button Click="OnSaveLayoutClick" Icon="{ui:FluentIconSource Save24}" />
-                        <ui:Button Click="OnResetLayoutClick" Icon="{ui:FluentIconSource ArrowCounterclockwise24}" />
+                        <ui:Button
+                            Command="{x:Static ui:NavigationMapCommands.ResetLayout}"
+                            CommandTarget="{Binding ElementName=GalleryNavigationMap}"
+                            Icon="{ui:FluentIconSource ArrowCounterclockwise24}" />
 
                         <ui:Separator Orientation="Vertical" />
 
                         <ui:Button
-                            Click="OnUndoClick"
+                            Command="{x:Static ApplicationCommands.Undo}"
+                            CommandTarget="{Binding ElementName=GalleryNavigationMap}"
                             Icon="{ui:FluentIconSource ArrowUndo24}"
-                            IsEnabled="{Binding CanUndo, ElementName=GalleryNavigationMap, Mode=OneWay}" />
+                            ToolTip="Undo" />
                         <ui:Button
-                            Click="OnRedoClick"
+                            Command="{x:Static ApplicationCommands.Redo}"
+                            CommandTarget="{Binding ElementName=GalleryNavigationMap}"
                             Icon="{ui:FluentIconSource ArrowRedo24}"
-                            IsEnabled="{Binding CanRedo, ElementName=GalleryNavigationMap, Mode=OneWay}" />
+                            ToolTip="Redo" />
 
                         <ui:Separator Orientation="Vertical" />
 
@@ -71,11 +76,13 @@
                             PlaceholderText="Search"
                             Text="{Binding SearchText, ElementName=GalleryNavigationMap, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                         <ui:Button
-                            Click="OnPreviousSearchResultClick"
+                            Command="{x:Static ui:NavigationMapCommands.FindPrevious}"
+                            CommandTarget="{Binding ElementName=GalleryNavigationMap}"
                             Icon="{ui:FluentIconSource ArrowUp24}"
                             ToolTip="Previous search result" />
                         <ui:Button
-                            Click="OnNextSearchResultClick"
+                            Command="{x:Static ui:NavigationMapCommands.FindNext}"
+                            CommandTarget="{Binding ElementName=GalleryNavigationMap}"
                             Icon="{ui:FluentIconSource ArrowDown24}"
                             ToolTip="Next search result" />
                         <TextBlock VerticalAlignment="Center">
@@ -105,15 +112,18 @@
                         </ui:ComboBox>
                         <ui:Separator Orientation="Vertical" />
                         <ui:Button
-                            Click="OnZoomOutClick"
+                            Command="{x:Static NavigationCommands.DecreaseZoom}"
+                            CommandTarget="{Binding ElementName=GalleryNavigationMap}"
                             Icon="{ui:FluentIconSource ZoomOut24}"
                             ToolTip="Zoom out" />
                         <ui:Button
-                            Click="OnZoomToFitClick"
+                            Command="{x:Static ui:NavigationMapCommands.ZoomToFit}"
+                            CommandTarget="{Binding ElementName=GalleryNavigationMap}"
                             Icon="{ui:FluentIconSource ZoomFit24}"
                             ToolTip="Zoom to fit" />
                         <ui:Button
-                            Click="OnZoomInClick"
+                            Command="{x:Static NavigationCommands.IncreaseZoom}"
+                            CommandTarget="{Binding ElementName=GalleryNavigationMap}"
                             Icon="{ui:FluentIconSource ZoomIn24}"
                             ToolTip="Zoom in" />
                         <TextBlock
@@ -161,24 +171,48 @@
                         <TextBlock VerticalAlignment="Center" Text="{Binding GridSize, ElementName=GalleryNavigationMap, Mode=OneWay}" />
 
                         <ui:Button
-                            Click="OnSelectAllClick"
+                            Command="{x:Static ApplicationCommands.SelectAll}"
+                            CommandTarget="{Binding ElementName=GalleryNavigationMap}"
                             Icon="{ui:FluentIconSource SelectAllOn24}"
-                            IsEnabled="{Binding IsEditing, ElementName=GalleryNavigationMap}"
                             ToolTip="Select all" />
                         <ui:Button
-                            Click="OnAlignToGridClick"
+                            Command="{x:Static ui:NavigationMapCommands.AlignToGrid}"
+                            CommandTarget="{Binding ElementName=GalleryNavigationMap}"
                             Icon="{ui:FluentIconSource TableLightning24}"
-                            IsEnabled="{Binding IsEditing, ElementName=GalleryNavigationMap}"
                             ToolTip="Align the selection, or every node when nothing is selected" />
 
                         <ui:Separator Orientation="Vertical" />
 
-                        <ui:Button Click="OnAlignLeftClick" Icon="{ui:FluentIconSource AlignLeft24}" />
-                        <ui:Button Click="OnAlignHorizontalCenterClick" Icon="{ui:FluentIconSource AlignCenterHorizontal24}" />
-                        <ui:Button Click="OnAlignRightClick" Icon="{ui:FluentIconSource AlignRight24}" />
-                        <ui:Button Click="OnAlignTopClick" Icon="{ui:FluentIconSource AlignTop24}" />
-                        <ui:Button Click="OnAlignVerticalCenterClick" Icon="{ui:FluentIconSource AlignCenterVertical24}" />
-                        <ui:Button Click="OnAlignBottomClick" Icon="{ui:FluentIconSource AlignBottom24}" />
+                        <ui:Button
+                            Command="{x:Static ui:NavigationMapCommands.AlignSelection}"
+                            CommandParameter="{x:Static ui:NavigationMapAlignment.Left}"
+                            CommandTarget="{Binding ElementName=GalleryNavigationMap}"
+                            Icon="{ui:FluentIconSource AlignLeft24}" />
+                        <ui:Button
+                            Command="{x:Static ui:NavigationMapCommands.AlignSelection}"
+                            CommandParameter="{x:Static ui:NavigationMapAlignment.HorizontalCenter}"
+                            CommandTarget="{Binding ElementName=GalleryNavigationMap}"
+                            Icon="{ui:FluentIconSource AlignCenterHorizontal24}" />
+                        <ui:Button
+                            Command="{x:Static ui:NavigationMapCommands.AlignSelection}"
+                            CommandParameter="{x:Static ui:NavigationMapAlignment.Right}"
+                            CommandTarget="{Binding ElementName=GalleryNavigationMap}"
+                            Icon="{ui:FluentIconSource AlignRight24}" />
+                        <ui:Button
+                            Command="{x:Static ui:NavigationMapCommands.AlignSelection}"
+                            CommandParameter="{x:Static ui:NavigationMapAlignment.Top}"
+                            CommandTarget="{Binding ElementName=GalleryNavigationMap}"
+                            Icon="{ui:FluentIconSource AlignTop24}" />
+                        <ui:Button
+                            Command="{x:Static ui:NavigationMapCommands.AlignSelection}"
+                            CommandParameter="{x:Static ui:NavigationMapAlignment.VerticalCenter}"
+                            CommandTarget="{Binding ElementName=GalleryNavigationMap}"
+                            Icon="{ui:FluentIconSource AlignCenterVertical24}" />
+                        <ui:Button
+                            Command="{x:Static ui:NavigationMapCommands.AlignSelection}"
+                            CommandParameter="{x:Static ui:NavigationMapAlignment.Bottom}"
+                            CommandTarget="{Binding ElementName=GalleryNavigationMap}"
+                            Icon="{ui:FluentIconSource AlignBottom24}" />
 
                         <!--  用 TextBox 测试绑定  -->
                         <TextBox Width="50" Text="{Binding GridSize, ElementName=GalleryNavigationMap}" />
@@ -221,6 +255,6 @@
             Grid.Row="2"
             Margin="4,12,4,0"
             Foreground="{ui:DynamicBrush TextFillSecondary}"
-            Text="Drag empty map space to marquee-select. Ctrl/Shift adds nodes; drag a selected node to move the group. Ctrl+A selects all, arrow keys nudge, Ctrl+wheel zooms." />
+            Text="Drag empty map space to marquee-select. Ctrl/Shift adds nodes; drag a selected node to move the group. Ctrl+A selects all, arrow keys nudge, Ctrl+wheel or Ctrl+plus/minus zooms." />
     </Grid>
 </Page>

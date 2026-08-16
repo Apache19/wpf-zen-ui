@@ -7,6 +7,7 @@ using System.Collections.Specialized;
 using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Data;
+using System.Windows.Input;
 using System.Windows.Threading;
 
 // ReSharper disable once CheckNamespace
@@ -29,6 +30,7 @@ public partial class NavigationMapView
         base.OnApplyTemplate();
 
         _scrollViewer = GetTemplateChild(ScrollViewerPartName) as ScrollViewer;
+        CommandManager.InvalidateRequerySuggested();
     }
 
     /// <summary>Raises invocation and then executes <see cref="Command"/>.</summary>

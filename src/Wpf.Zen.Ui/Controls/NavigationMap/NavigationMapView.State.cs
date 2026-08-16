@@ -50,6 +50,8 @@ public partial class NavigationMapView
         {
             RaiseEvent(new SelectionChangedEventArgs(SelectionChangedEvent, removed, added));
         }
+
+        CommandManager.InvalidateRequerySuggested();
     }
 
     private void RefreshGeneratedState()
@@ -108,6 +110,7 @@ public partial class NavigationMapView
 
         SetValue(SearchResultCountPropertyKey, matches.Count);
         SetValue(CurrentSearchResultIndexPropertyKey, -1);
+        CommandManager.InvalidateRequerySuggested();
     }
 
     private bool MoveCurrentSearchResult(int direction)
@@ -239,6 +242,7 @@ public partial class NavigationMapView
     {
         SetValue(CanUndoPropertyKey, _undoHistory.Count > 0);
         SetValue(CanRedoPropertyKey, _redoHistory.Count > 0);
+        CommandManager.InvalidateRequerySuggested();
     }
 
     private NavigationMapLayout EnsureLayout()

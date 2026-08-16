@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="SelectNode" xml:space="preserve"><value>ノードを選択</value></data>
+  <data name="ClearSelection" xml:space="preserve"><value>選択を解除</value></data>
+  <data name="FindNext" xml:space="preserve"><value>次を検索</value></data>
+  <data name="FindPrevious" xml:space="preserve"><value>前を検索</value></data>
+  <data name="AlignToGrid" xml:space="preserve"><value>グリッドに合わせる</value></data>
+  <data name="AlignSelection" xml:space="preserve"><value>選択項目を整列</value></data>
+  <data name="ResetLayout" xml:space="preserve"><value>レイアウトをリセット</value></data>
+  <data name="ResetZoom" xml:space="preserve"><value>ズームをリセット</value></data>
+  <data name="ZoomToFit" xml:space="preserve"><value>全体を表示</value></data>
+</root>

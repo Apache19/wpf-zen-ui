@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.Globalization;
 using System.Linq;
 using System.Windows.Automation;
 using System.Windows.Controls;
@@ -1148,6 +1149,144 @@ public class NavigationMapViewTests
     }
 
     [Fact]
+    public void RoutedEditorCommands_ExecuteAgainstTheMapAndTrackCanExecuteState()
+    {
+        WpfTestThread.Run(() =>
+        {
+            var root = new NavigationMapNode("root", "Root");
+            var child = new NavigationMapNode("child", "Child", parentKey: "root");
+            var layout = new NavigationMapLayout();
+            layout.SetPosition("root", new Point(180D, 100D));
+            layout.SetPosition("child", new Point(480D, 280D));
+            var view = new NavigationMapView
+            {
+                IsEditing = true,
+                ItemsSource = new[] { root, child },
+                LayoutDefinition = layout,
+                LayoutMode = NavigationMapLayoutMode.Manual,
+                SnapToGrid = false,
+                Template = CreateTestTemplate(),
+                ItemsPanel = CreateTestItemsPanel(),
+            };
+            MeasureAndArrange(view, 800D, 600D);
+
+            Assert.True(NavigationMapCommands.SelectNode.CanExecute("root", view));
+            Assert.False(NavigationMapCommands.SelectNode.CanExecute("missing", view));
+            NavigationMapCommands.SelectNode.Execute("root", view);
+            Assert.Equal("root", Assert.Single(view.SelectedNodeKeys));
+            var rootContainer = Assert.IsType<NavigationMapItem>(
+                view.ItemContainerGenerator.ContainerFromItem(root)
+            );
+            double movedCenterX = GetRenderedBounds(rootContainer).Left
+                + (rootContainer.RenderSize.Width / 2D)
+                + 1D;
+
+            Assert.True(ComponentCommands.MoveRight.CanExecute(null, view));
+            ComponentCommands.MoveRight.Execute(null, view);
+            Assert.True(layout.TryGetPlacement("root", out NavigationMapPlacement? placement));
+            Assert.NotNull(placement);
+            Assert.Equal(movedCenterX, placement.Position.X);
+
+            Assert.True(ApplicationCommands.Undo.CanExecute(null, view));
+            ApplicationCommands.Undo.Execute(null, view);
+            Assert.Equal(180D, placement.Position.X);
+            Assert.True(ApplicationCommands.Redo.CanExecute(null, view));
+            ApplicationCommands.Redo.Execute(null, view);
+            Assert.Equal(movedCenterX, placement.Position.X);
+
+            Assert.True(ApplicationCommands.SelectAll.CanExecute(null, view));
+            ApplicationCommands.SelectAll.Execute(null, view);
+            Assert.Equal(2, view.SelectedNodeKeys.Count);
+            Assert.True(NavigationMapCommands.ClearSelection.CanExecute(null, view));
+            NavigationMapCommands.ClearSelection.Execute(null, view);
+            Assert.Empty(view.SelectedNodeKeys);
+
+            view.IsEditing = false;
+            Assert.False(ApplicationCommands.Undo.CanExecute(null, view));
+            Assert.False(ApplicationCommands.SelectAll.CanExecute(null, view));
+            Assert.False(ComponentCommands.MoveRight.CanExecute(null, view));
+            Assert.False(NavigationMapCommands.ResetLayout.CanExecute(null, view));
+        });
+    }
+
+    [Fact]
+    public void SearchAndZoomCommands_ValidateParametersAndUseStandardWpfCommands()
+    {
+        WpfTestThread.Run(() =>
+        {
+            var view = new NavigationMapView
+            {
+                ItemsSource = new[]
+                {
+                    new NavigationMapNode("root", "Dashboard"),
+                    new NavigationMapNode("users", "User management", parentKey: "root"),
+                },
+                Template = CreateTestTemplate(),
+                ItemsPanel = CreateTestItemsPanel(),
+            };
+            MeasureAndArrange(view, 800D, 600D);
+
+            Assert.False(NavigationMapCommands.FindNext.CanExecute(null, view));
+            view.SearchText = "management";
+            Assert.True(NavigationMapCommands.FindNext.CanExecute(null, view));
+            NavigationMapCommands.FindNext.Execute(null, view);
+            Assert.Equal(0, view.CurrentSearchResultIndex);
+            Assert.True(NavigationMapCommands.FindPrevious.CanExecute(null, view));
+
+            Assert.True(NavigationCommands.Zoom.CanExecute("175%", view));
+            Assert.False(NavigationCommands.Zoom.CanExecute("not-a-percentage", view));
+            NavigationCommands.Zoom.Execute("175%", view);
+            Assert.Equal(1.75D, view.ZoomFactor);
+            Assert.True(NavigationMapCommands.ResetZoom.CanExecute(null, view));
+            NavigationMapCommands.ResetZoom.Execute(null, view);
+            Assert.Equal(1D, view.ZoomFactor);
+
+            view.ZoomFactor = view.MaximumZoomFactor;
+            Assert.False(NavigationCommands.IncreaseZoom.CanExecute(null, view));
+            Assert.True(NavigationCommands.DecreaseZoom.CanExecute(null, view));
+            NavigationCommands.DecreaseZoom.Execute(null, view);
+            Assert.Equal(view.MaximumZoomFactor - view.ZoomStep, view.ZoomFactor);
+        });
+    }
+
+    [Fact]
+    public void AlignmentCommand_RequiresAnAlignmentParameterAndMultipleSelectedNodes()
+    {
+        WpfTestThread.Run(() =>
+        {
+            var root = new NavigationMapNode("root", "Root");
+            var child = new NavigationMapNode("child", "Child", parentKey: "root");
+            var layout = new NavigationMapLayout();
+            layout.SetPosition("root", new Point(180D, 100D));
+            layout.SetPosition("child", new Point(480D, 280D));
+            var view = new NavigationMapView
+            {
+                IsEditing = true,
+                ItemsSource = new[] { root, child },
+                LayoutDefinition = layout,
+                LayoutMode = NavigationMapLayoutMode.Manual,
+                Template = CreateTestTemplate(),
+                ItemsPanel = CreateTestItemsPanel(),
+            };
+            MeasureAndArrange(view, 800D, 600D);
+
+            view.SelectNode("root");
+            Assert.False(NavigationMapCommands.AlignSelection.CanExecute(null, view));
+            Assert.False(NavigationMapCommands.AlignSelection.CanExecute("Left", view));
+            Assert.False(
+                NavigationMapCommands.AlignSelection.CanExecute(NavigationMapAlignment.Left, view)
+            );
+
+            view.SelectNode("child", preserveSelection: true);
+            Assert.True(
+                NavigationMapCommands.AlignSelection.CanExecute(NavigationMapAlignment.Left, view)
+            );
+            NavigationMapCommands.AlignSelection.Execute(NavigationMapAlignment.Left, view);
+            Assert.True(view.CanUndo);
+        });
+    }
+
+    [Fact]
     public void Search_SelectsAndCyclesMatchingNodes()
     {
         WpfTestThread.Run(() =>
@@ -1429,6 +1568,84 @@ public class NavigationMapViewTests
                 placement.Position = new Point(double.NaN, 0D)
             );
         });
+    }
+
+    [Fact]
+    public void CommandResources_CoverWpfSatelliteCulturesAndFallBackToNeutralEnglish()
+    {
+        string[] commandNames =
+        [
+            "SelectNode",
+            "ClearSelection",
+            "FindNext",
+            "FindPrevious",
+            "AlignToGrid",
+            "AlignSelection",
+            "ResetLayout",
+            "ResetZoom",
+            "ZoomToFit",
+        ];
+        string[] wpfSatelliteCultures =
+        [
+            "cs",
+            "de",
+            "es",
+            "fr",
+            "it",
+            "ja",
+            "ko",
+            "pl",
+            "pt-BR",
+            "ru",
+            "tr",
+            "zh-Hans",
+            "zh-Hant",
+        ];
+
+        foreach (string cultureName in wpfSatelliteCultures)
+        {
+            var culture = new CultureInfo(cultureName);
+            foreach (string commandName in commandNames)
+            {
+                string neutralText = NavigationMapCommandResources.GetString(
+                    commandName,
+                    CultureInfo.InvariantCulture
+                );
+                string localizedText = NavigationMapCommandResources.GetString(
+                    commandName,
+                    culture
+                );
+
+                Assert.NotEqual(neutralText, localizedText);
+            }
+        }
+
+        // zh-CN and zh-TW intentionally use the framework's normal script-parent fallback, just
+        // as current WPF packages do, rather than carrying duplicate region-specific resources.
+        Assert.Equal(
+            "选择节点",
+            NavigationMapCommandResources.GetString("SelectNode", new CultureInfo("zh-CN"))
+        );
+        Assert.Equal(
+            "缩放以适应",
+            NavigationMapCommandResources.GetString("ZoomToFit", new CultureInfo("zh-CN"))
+        );
+        Assert.Equal(
+            "選取節點",
+            NavigationMapCommandResources.GetString("SelectNode", new CultureInfo("zh-TW"))
+        );
+        Assert.Equal(
+            "Ajuster à la fenêtre",
+            NavigationMapCommandResources.GetString("ZoomToFit", new CultureInfo("fr-FR"))
+        );
+        Assert.Equal(
+            "Select Node",
+            NavigationMapCommandResources.GetString("SelectNode", new CultureInfo("en-US"))
+        );
+        Assert.Equal(
+            "Reset Layout",
+            NavigationMapCommandResources.GetString("ResetLayout", new CultureInfo("ar-SA"))
+        );
     }
 
     private static NavigationMapItem CreateItem(string key, string? parentKey) =>

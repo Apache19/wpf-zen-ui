@@ -26,101 +26,6 @@ public partial class NavigationMapPage : INavigableView<NavigationMapViewModel>
     /// <summary>Gets the view model used by this sample page.</summary>
     public NavigationMapViewModel ViewModel { get; }
 
-    private void OnPreviousSearchResultClick(object sender, RoutedEventArgs e)
-    {
-        _ = GalleryNavigationMap.FindPrevious();
-    }
-
-    private void OnNextSearchResultClick(object sender, RoutedEventArgs e)
-    {
-        _ = GalleryNavigationMap.FindNext();
-    }
-
-    private void OnZoomOutClick(object sender, RoutedEventArgs e)
-    {
-        GalleryNavigationMap.ZoomOut();
-    }
-
-    private void OnZoomToFitClick(object sender, RoutedEventArgs e)
-    {
-        _ = GalleryNavigationMap.ZoomToFit();
-    }
-
-    private void OnZoomInClick(object sender, RoutedEventArgs e)
-    {
-        GalleryNavigationMap.ZoomIn();
-    }
-
-    private void OnSelectAllClick(object sender, RoutedEventArgs e)
-    {
-        GalleryNavigationMap.SelectAll();
-    }
-
-    private void OnAlignToGridClick(object sender, RoutedEventArgs e)
-    {
-        bool hasSelection = GalleryNavigationMap.SelectedNodeKeys.Count > 0;
-        bool aligned      = GalleryNavigationMap.AlignToGrid();
-        EditorStatus.SetCurrentValue(
-            TextBlock.TextProperty,
-            aligned
-                ? hasSelection ? "Aligned the selection to the grid." : "Aligned every node to the grid."
-                : "Enable Manual editing before aligning nodes."
-        );
-    }
-
-    private void OnAlignLeftClick(object sender, RoutedEventArgs e)
-    {
-        ReportAlignmentResult(GalleryNavigationMap.AlignSelection(NavigationMapAlignment.Left));
-    }
-
-    private void OnAlignHorizontalCenterClick(object sender, RoutedEventArgs e)
-    {
-        ReportAlignmentResult(
-            GalleryNavigationMap.AlignSelection(NavigationMapAlignment.HorizontalCenter)
-        );
-    }
-
-    private void OnAlignRightClick(object sender, RoutedEventArgs e)
-    {
-        ReportAlignmentResult(GalleryNavigationMap.AlignSelection(NavigationMapAlignment.Right));
-    }
-
-    private void OnAlignTopClick(object sender, RoutedEventArgs e)
-    {
-        ReportAlignmentResult(GalleryNavigationMap.AlignSelection(NavigationMapAlignment.Top));
-    }
-
-    private void OnAlignVerticalCenterClick(object sender, RoutedEventArgs e)
-    {
-        ReportAlignmentResult(
-            GalleryNavigationMap.AlignSelection(NavigationMapAlignment.VerticalCenter)
-        );
-    }
-
-    private void OnAlignBottomClick(object sender, RoutedEventArgs e)
-    {
-        ReportAlignmentResult(GalleryNavigationMap.AlignSelection(NavigationMapAlignment.Bottom));
-    }
-
-    private void OnUndoClick(object sender, RoutedEventArgs e)
-    {
-        _ = GalleryNavigationMap.Undo();
-    }
-
-    private void OnRedoClick(object sender, RoutedEventArgs e)
-    {
-        _ = GalleryNavigationMap.Redo();
-    }
-
-    private void OnResetLayoutClick(object sender, RoutedEventArgs e)
-    {
-        GalleryNavigationMap.ResetLayout();
-        EditorStatus.SetCurrentValue(
-            TextBlock.TextProperty,
-            "Layout reset to the grid-aligned hierarchical starting arrangement."
-        );
-    }
-
     private void OnSaveLayoutClick(object sender, RoutedEventArgs e)
     {
         var dialog = new SaveFileDialog
@@ -172,16 +77,6 @@ public partial class NavigationMapPage : INavigableView<NavigationMapViewModel>
         GalleryNavigationMap.SetCurrentValue(
             NavigationMapView.LayoutModeProperty,
             NavigationMapLayoutMode.Manual
-        );
-    }
-
-    private void ReportAlignmentResult(bool aligned)
-    {
-        EditorStatus.SetCurrentValue(
-            TextBlock.TextProperty,
-            aligned
-                ? "Selection aligned to the primary node."
-                : "Select at least two nodes in Manual edit mode before aligning."
         );
     }
 
