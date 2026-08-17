@@ -84,7 +84,6 @@
                             MinWidth="{TemplateBinding ActualWidth}"
                             MinHeight="{TemplateBinding ActualHeight}"
                             controls:PopupSlideAnimator.IsEnabled="True"
-                            controls:PopupDismissal.ExcludedElement="{Binding RelativeSource={RelativeSource TemplatedParent}}"
                             controls:PopupPlacement.IsEnabled="True"
                             controls:PopupShadow.IsEnabled="True"
                             AllowsTransparency="True"

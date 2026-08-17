@@ -3,40 +3,50 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
+using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 using Wpf.Zen.Ui.Controls;
 
 namespace Wpf.Zen.Ui;
 
 /// <summary>
-/// Provides a centralized entry point to ensure that the library-level initialization logic
-/// is executed exactly once.
+/// Provides the single entry point for process-wide library initialization.
 /// </summary>
 /// <remarks>
-/// Some controls in the library require metadata overrides or other initialization logic
-/// to run before the control is used for the first time. This type acts as a lightweight
-/// trigger to guarantee that such initialization happens early and only once.
+/// WPF metadata customization and class-handler registration must be completed before an
+/// application creates native controls or dispatches popup input. The module initializer forces
+/// this type's static constructor to run when the assembly is loaded, making that behavior
+/// independent of which library control or theme service an application touches first.
 ///
-/// Any frequently used type in the library may call <see cref="EnsureInitialized"/> from its
-/// static constructor to ensure that the initialization logic has been executed.
+/// Existing library entry points may still call <see cref="EnsureInitialized"/> explicitly. Such
+/// calls are intentionally harmless and document that the caller depends on library initialization.
 /// </remarks>
 internal static class LibraryInitializer
 {
     static LibraryInitializer()
     {
         TextBlock.InitializeMetadata();
+        PopupDismissal.Initialize();
     }
 
     /// <summary>
-    /// Ensures that the library initialization logic has been executed.
+    /// Initializes process-wide WPF metadata and input policies when the assembly is loaded, or
+    /// ensures that initialization has already completed when called explicitly.
     /// </summary>
     /// <remarks>
-    /// Calling this method forces the runtime to trigger the static constructor
-    /// of <see cref="LibraryInitializer"/> if it has not already run.
+    /// The runtime invokes this method as a module initializer. Before entering the method, CLR type
+    /// initialization guarantees execution of <see cref="LibraryInitializer"/>'s static constructor.
     ///
-    /// The method intentionally contains no implementation. Its sole purpose
-    /// is to provide a convenient and explicit way for other types to guarantee
-    /// that the library initialization has occurred.
+    /// The empty body also provides a convenient explicit initialization barrier to existing callers
+    /// without repeating either initialization operation.
     /// </remarks>
+    [ModuleInitializer]
+    [SuppressMessage(
+        "Usage",
+        "CA2255:The 'ModuleInitializer' attribute should not be used in libraries",
+        Justification =
+            "Library-wide WPF metadata and class handlers must be installed before controls are used."
+    )]
     public static void EnsureInitialized()
     {
     }

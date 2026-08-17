@@ -323,7 +323,7 @@ public class AutoSuggestBoxTests
     }
 
     [Fact]
-    public void DefaultPopup_UsesDismissalExclusionForAutoSuggestBoxOwner()
+    public void DefaultPopup_UsesPlacementTargetForOwnerDismissal()
     {
         RunOnStaThread(() =>
         {
@@ -357,7 +357,8 @@ public class AutoSuggestBoxTests
                 textBox.Text = "a";
                 Assert.False(popup.StaysOpen);
                 Assert.True(popup.IsOpen);
-                Assert.Same(autoSuggestBox, PopupDismissal.GetExcludedElement(popup));
+                Assert.Null(PopupDismissal.GetExcludedElement(popup));
+                Assert.Same(autoSuggestBox, popup.PlacementTarget);
 
                 popup.RaiseEvent(
                     CreateMouseButtonEvent(popup, Mouse.PreviewMouseDownOutsideCapturedElementEvent)
