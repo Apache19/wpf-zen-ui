@@ -17,13 +17,13 @@
         The root surface differs from an arbitrary application ContextMenu only in its navigation
         sizing and animation policy. Navigation can start a page transition while dismissing this
         menu, so its root and cascading submenus deliberately use WPF's native fade instead of
-        PopupAnimator. Native fade avoids the custom transform and per-frame detached-shadow bounds
+        PopupSlideAnimator. Native fade avoids the slide transform and per-frame detached-shadow bounds
         synchronization competing with navigation and page animations on the UI thread.
     -->
     <Style x:Key="NavigationViewItemSubmenuContextMenuStyle" BasedOn="{StaticResource UiContextMenuStyle}" TargetType="{x:Type ContextMenu}">
         <Setter Property="MinWidth" Value="180" />
         <Setter Property="MaxHeight" Value="420" />
-        <Setter Property="controls:PopupAnimator.IsEnabled" Value="False" />
+        <Setter Property="controls:PopupSlideAnimator.IsEnabled" Value="False" />
         <Setter Property="Popup.PopupAnimation" Value="Fade" />
     </Style>
 
@@ -43,7 +43,7 @@
             UiMenuItemStyle passes these values into every role-specific submenu Popup. Keeping the
             override on the projected MenuItem also applies it recursively to every cascading level.
         -->
-        <Setter Property="controls:PopupAnimator.IsEnabled" Value="False" />
+        <Setter Property="controls:PopupSlideAnimator.IsEnabled" Value="False" />
         <Setter Property="Popup.PopupAnimation" Value="Fade" />
         <Style.Triggers>
             <DataTrigger Binding="{Binding IsBranchActive}" Value="True">

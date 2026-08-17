@@ -214,13 +214,13 @@
                                 Style="{StaticResource ToolBarOverflowButtonStyle}">
                                 <Popup
                                     x:Name="OverflowPopup"
-                                    controls:PopupAnimator.IsEnabled="True"
+                                    controls:PopupSlideAnimator.IsEnabled="True"
                                     controls:PopupShadow.IsEnabled="True"
                                     AllowsTransparency="True"
                                     Focusable="False"
                                     IsOpen="{Binding IsOverflowOpen, RelativeSource={RelativeSource TemplatedParent}}"
                                     Placement="Bottom"
-                                    PopupAnimation="None"
+                                    PopupAnimation="Slide"
                                     StaysOpen="False">
                                     <!--  todo BorderBrush 原为MenuBorderColorDefaultBrush，但资源中不存在  -->
                                     <Border

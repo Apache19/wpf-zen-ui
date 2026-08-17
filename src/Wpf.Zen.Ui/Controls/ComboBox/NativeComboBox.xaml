@@ -135,10 +135,10 @@
                 IsHitTestVisible="False"
                 Visibility="Collapsed" />
 
-            <!--  Drop-down popup. Shadow is rendered via PopupShadow; animation is handled by PopupAnimator.  -->
+            <!--  Drop-down popup. Shadow is rendered via PopupShadow; animation is handled by PopupSlideAnimator.  -->
             <Popup
                 x:Name="Popup"
-                controls:PopupAnimator.IsEnabled="True"
+                controls:PopupSlideAnimator.IsEnabled="True"
                 controls:PopupPlacement.IsEnabled="True"
                 controls:PopupShadow.IsEnabled="True"
                 AllowsTransparency="True"

@@ -141,11 +141,12 @@
                     <Popup
                         x:Name="PART_Popup"
                         Grid.Column="0"
-                        controls:PopupAnimator.IsEnabled="True"
+                        controls:PopupSlideAnimator.IsEnabled="True"
                         controls:PopupShadow.IsEnabled="True"
                         AllowsTransparency="True"
                         Placement="Bottom"
                         PlacementTarget="{Binding ElementName=RootBorder}"
+                        PopupAnimation="Slide"
                         StaysOpen="False" />
                 </Grid>
             </Border>

@@ -13,7 +13,7 @@
         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
         <Setter Property="Padding" Value="{m:DynamicValue TextControlThemePadding}" />
         <Setter Property="Popup.Placement" Value="Bottom" />
-        <Setter Property="Popup.PopupAnimation" Value="None" />
+        <Setter Property="Popup.PopupAnimation" Value="Slide" />
         <Setter Property="ScrollViewer.CanContentScroll" Value="True" />
         <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled" />
         <Setter Property="ScrollViewer.IsDeferredScrollingEnabled" Value="False" />

@@ -103,7 +103,7 @@
             </Border>
             <Popup
                 x:Name="Popup"
-                controls:PopupAnimator.IsEnabled="{TemplateBinding controls:PopupAnimator.IsEnabled}"
+                controls:PopupSlideAnimator.IsEnabled="{TemplateBinding controls:PopupSlideAnimator.IsEnabled}"
                 controls:PopupShadow.IsEnabled="True"
                 AllowsTransparency="True"
                 Focusable="False"
@@ -408,7 +408,7 @@
             </Border>
             <Popup
                 x:Name="Popup"
-                controls:PopupAnimator.IsEnabled="{TemplateBinding controls:PopupAnimator.IsEnabled}"
+                controls:PopupSlideAnimator.IsEnabled="{TemplateBinding controls:PopupSlideAnimator.IsEnabled}"
                 controls:PopupShadow.IsEnabled="True"
                 AllowsTransparency="True"
                 Focusable="False"
@@ -488,13 +488,12 @@
         <Setter Property="controls:MenuItemCommandIcon.AutoSetIcon" Value="True" />
         <Setter Property="controls:OrientationAssist.Orientation" Value="Horizontal" />
         <!--
-            MenuItem owns the Popup used for cascading submenus. Keep the library's custom animation
-            as the ordinary default, but pass both animation switches through the template so a
-            specialized menu style can select WPF's native animation without duplicating the full
-            role-specific templates.
+            MenuItem owns the Popup used for cascading submenus. Keep the shortened native Slide as
+            the ordinary default, but pass both animation settings through the template so a specialized
+            menu style can select a different native animation without duplicating the role templates.
         -->
-        <Setter Property="controls:PopupAnimator.IsEnabled" Value="True" />
-        <Setter Property="Popup.PopupAnimation" Value="None" />
+        <Setter Property="controls:PopupSlideAnimator.IsEnabled" Value="True" />
+        <Setter Property="Popup.PopupAnimation" Value="Slide" />
         <Style.Triggers>
             <Trigger Property="Role" Value="TopLevelHeader">
                 <Setter Property="FocusVisualStyle" Value="{StaticResource TopLevelMenuItemFocusVisualStyle}" />

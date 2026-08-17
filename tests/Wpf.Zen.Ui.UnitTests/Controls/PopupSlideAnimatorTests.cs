@@ -9,6 +9,7 @@ using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
+using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
@@ -24,8 +25,8 @@ public class PopupSlideAnimatorTests
     [Theory]
     [InlineData(0D, 167D, false)]
     [InlineData(0.09D, 167D, false)]
-    [InlineData(-90D, 0D, false)]
-    [InlineData(-90D, 167D, true)]
+    [InlineData(90D, 0D, false)]
+    [InlineData(90D, 167D, true)]
     public void HasAnimatedContentBounds_ReflectsEffectiveMovement(
         double startOffset,
         double duration,
@@ -46,38 +47,153 @@ public class PopupSlideAnimatorTests
     }
 
     [Fact]
-    public void DefaultSettings_PreserveWpfUiSlideMotion()
+    public void DefaultSettings_LimitNativeSlideToNinetyPixels()
     {
         var settings = PopupAnimationSettings.Default;
-        var easing = Assert.IsType<CircleEase>(settings.EasingFunction);
 
-        Assert.Equal(-90D, settings.StartOffset);
+        Assert.Equal(PopupSlideAnimator.MaximumSlideDistance, settings.StartOffset);
         Assert.Equal(167D, settings.Duration);
+        var easing = Assert.IsType<CircleEase>(settings.EasingFunction);
         Assert.Equal(EasingMode.EaseOut, easing.EasingMode);
     }
 
     [Fact]
-    public void DisablingNativeSlide_RestoresConfiguredCustomAnimator()
+    public void EnablingAndDisabling_DoesNotChangePopupAnimationBinding()
     {
         RunOnStaThread(
             () =>
             {
-                var popup = new Popup { AllowsTransparency = true };
-                PopupAnimator.SetIsEnabled(popup, true);
+                var animationSource = new Popup
+                {
+                    AllowsTransparency = true,
+                    PopupAnimation = PopupAnimation.Fade,
+                };
+                var popup = new Popup
+                {
+                    AllowsTransparency = true,
+                };
+                BindingOperations.SetBinding(
+                    popup,
+                    Popup.PopupAnimationProperty,
+                    new Binding(nameof(Popup.PopupAnimation)) { Source = animationSource }
+                );
 
                 PopupSlideAnimator.SetIsEnabled(popup, true);
-                Assert.Equal(PopupAnimation.Slide, popup.PopupAnimation);
-                Assert.False(PopupAnimator.IsCustomAnimationActive(popup));
+                Assert.True(BindingOperations.IsDataBound(popup, Popup.PopupAnimationProperty));
+                Assert.Equal(PopupAnimation.Fade, popup.PopupAnimation);
+
+                animationSource.PopupAnimation = PopupAnimation.Scroll;
+                Assert.Equal(PopupAnimation.Scroll, popup.PopupAnimation);
 
                 PopupSlideAnimator.SetIsEnabled(popup, false);
-                Assert.Equal(PopupAnimation.None, popup.PopupAnimation);
-                Assert.True(PopupAnimator.IsCustomAnimationActive(popup));
+                Assert.True(BindingOperations.IsDataBound(popup, Popup.PopupAnimationProperty));
+                Assert.Equal(PopupAnimation.Scroll, popup.PopupAnimation);
             }
         );
     }
 
     [Fact]
-    public void OpeningPopup_ReplacesNativeSlideWithoutAnimatingOpacity()
+    public void OpeningNonSlidePopup_DoesNotInvokeConfiguredEasingOrChangeMode()
+    {
+        RunOnStaThread(
+            () =>
+            {
+                var placementTarget = new Border { Width = 120D, Height = 32D };
+                var easing = new TrackingEasingFunction();
+                var window = new Window
+                {
+                    Width = 320D,
+                    Height = 240D,
+                    ShowInTaskbar = false,
+                    Content = placementTarget,
+                };
+                var popup = new Popup
+                {
+                    AllowsTransparency = true,
+                    Child = new Border { Width = 140D, Height = 100D },
+                    PlacementTarget = placementTarget,
+                    PopupAnimation = PopupAnimation.Fade,
+                };
+
+                PopupSlideAnimator.SetAnimationSettings(
+                    popup,
+                    new PopupAnimationSettings { EasingFunction = easing }
+                );
+
+                try
+                {
+                    window.Show();
+                    popup.IsOpen = true;
+                    window.Dispatcher.Invoke(static () => { }, DispatcherPriority.ApplicationIdle);
+
+                    Assert.Equal(PopupAnimation.Fade, popup.PopupAnimation);
+                    Assert.False(PopupSlideAnimator.IsAnimationActive(popup));
+                    Assert.Equal(0, easing.InvocationCount);
+                }
+                finally
+                {
+                    popup.IsOpen = false;
+                    window.Dispatcher.Invoke(static () => { }, DispatcherPriority.ApplicationIdle);
+                    window.Close();
+                }
+            }
+        );
+    }
+
+    [Fact]
+    public void OpeningSlidePopup_UsesConfiguredEasing()
+    {
+        RunOnStaThread(
+            () =>
+            {
+                var placementTarget = new Border { Width = 120D, Height = 32D };
+                var easing = new TrackingEasingFunction();
+                var window = new Window
+                {
+                    Width = 320D,
+                    Height = 240D,
+                    ShowInTaskbar = false,
+                    Content = placementTarget,
+                };
+                var popup = new Popup
+                {
+                    AllowsTransparency = true,
+                    Child = new Border { Width = 140D, Height = 100D },
+                    PlacementTarget = placementTarget,
+                    PopupAnimation = PopupAnimation.Slide,
+                };
+                var wasActiveWhenOpened = false;
+
+                PopupSlideAnimator.SetAnimationSettings(
+                    popup,
+                    new PopupAnimationSettings { Duration = 500D, EasingFunction = easing }
+                );
+                popup.Opened += (_, _) => wasActiveWhenOpened = PopupSlideAnimator.IsAnimationActive(popup);
+
+                try
+                {
+                    window.Show();
+                    popup.IsOpen = true;
+                    Thread.Sleep(50);
+                    window.Dispatcher.Invoke(static () => { }, DispatcherPriority.ApplicationIdle);
+
+                    Assert.Equal(PopupAnimation.Slide, popup.PopupAnimation);
+                    Assert.True(wasActiveWhenOpened);
+                    Assert.True(PopupSlideAnimator.IsAnimationActive(popup));
+                    Assert.True(easing.InvocationCount > 0);
+                }
+                finally
+                {
+                    popup.IsOpen = false;
+                    window.Dispatcher.Invoke(static () => { }, DispatcherPriority.ApplicationIdle);
+                    window.Close();
+                }
+            }
+        );
+    }
+
+    [Fact]
+    public void OpeningPopup_ConcealsColdFirstFrameThenStartsClampedSlide()
     {
         RunOnStaThread(
             () =>
@@ -99,16 +215,33 @@ public class PopupSlideAnimatorTests
                     Child = popupChild,
                     Placement = PlacementMode.Bottom,
                     PlacementTarget = placementTarget,
+                    PopupAnimation = PopupAnimation.Slide,
                     StaysOpen = false,
                 };
 
-                PopupSlideAnimator.SetIsEnabled(popup, true);
+                PopupSlideAnimator.SetAnimationSettings(
+                    popup,
+                    new PopupAnimationSettings { StartOffset = 240D }
+                );
+                double? opacityWhenOpened = null;
+                popup.Opened += (_, _) =>
+                {
+                    opacityWhenOpened = Assert.IsAssignableFrom<UIElement>(
+                        (PresentationSource.FromVisual(popupChild) as HwndSource)?.RootVisual
+                    ).Opacity;
+                };
 
                 try
                 {
                     window.Show();
                     window.UpdateLayout();
                     popup.IsOpen = true;
+
+                    // WM_SHOWWINDOW and Opened both run inside Popup.IsOpen's synchronous opening stack. The root
+                    // must remain transparent here; otherwise any one-time work later in that stack is exposed as a
+                    // stationary, partially translated first frame.
+                    Assert.Equal(0D, opacityWhenOpened);
+
                     window.Dispatcher.Invoke(static () => { }, DispatcherPriority.ApplicationIdle);
 
                     var popupRoot = Assert.IsAssignableFrom<UIElement>(
@@ -138,6 +271,7 @@ public class PopupSlideAnimatorTests
             () =>
             {
                 var placementTarget = new Border { Width = 100D, Height = 32D };
+                var popupChild = new Border { Width = 120D, Height = 80D };
                 var window = new Window
                 {
                     Width = 240D,
@@ -148,8 +282,9 @@ public class PopupSlideAnimatorTests
                 var popup = new Popup
                 {
                     AllowsTransparency = true,
-                    Child = new Border { Width = 120D, Height = 80D },
+                    Child = popupChild,
                     PlacementTarget = placementTarget,
+                    PopupAnimation = PopupAnimation.Slide,
                 };
                 var closedCount = 0;
 
@@ -161,6 +296,12 @@ public class PopupSlideAnimatorTests
                     window.Show();
                     window.UpdateLayout();
                     popup.IsOpen = true;
+                    var popupRoot = Assert.IsAssignableFrom<UIElement>(
+                        (PresentationSource.FromVisual(popupChild) as HwndSource)?.RootVisual
+                    );
+                    var translateTransform = GetNativeTranslateTransform(popupRoot);
+                    Assert.Equal(0D, popupRoot.Opacity);
+
                     popup.IsOpen = false;
 
                     // WPF intentionally queues Popup HWND destruction at Input priority. The lightweight animator
@@ -169,6 +310,8 @@ public class PopupSlideAnimatorTests
 
                     window.Dispatcher.Invoke(static () => { }, DispatcherPriority.ApplicationIdle);
                     Assert.Equal(1, closedCount);
+                    Assert.Equal(1D, popupRoot.Opacity);
+                    Assert.Equal(0D, translateTransform.Y);
                 }
                 finally
                 {
@@ -203,6 +346,7 @@ public class PopupSlideAnimatorTests
                     Child = popupChild,
                     Placement = PlacementMode.Top,
                     PlacementTarget = placementTarget,
+                    PopupAnimation = PopupAnimation.Slide,
                 };
 
                 PopupSlideAnimator.SetIsEnabled(popup, true);
@@ -246,6 +390,7 @@ public class PopupSlideAnimatorTests
                     AllowsTransparency = true,
                     Child = popupChild,
                     PlacementTarget = placementTarget,
+                    PopupAnimation = PopupAnimation.Slide,
                 };
                 var openedOffsets = new List<double>();
                 var closedCount = 0;
@@ -301,7 +446,71 @@ public class PopupSlideAnimatorTests
     }
 
     [Fact]
-    public void OpeningContextMenu_NativeSlideOverridesCustomAnimatorAndReplacesItsClock()
+    public void OpeningSlidePopup_ConcealsDetachedShadowUntilReplacementClockStarts()
+    {
+        RunOnStaThread(
+            () =>
+            {
+                var placementTarget = new Border { Width = 120D, Height = 32D };
+                var popupChild = new Border { Width = 160D, Height = 180D };
+                var window = new Window
+                {
+                    Width = 420D,
+                    Height = 360D,
+                    Left = 100D,
+                    Top = 100D,
+                    ShowInTaskbar = false,
+                    Content = placementTarget,
+                };
+                var popup = new Popup
+                {
+                    AllowsTransparency = true,
+                    Child = popupChild,
+                    Placement = PlacementMode.Bottom,
+                    PlacementTarget = placementTarget,
+                    PopupAnimation = PopupAnimation.Slide,
+                };
+
+                PopupSlideAnimator.SetIsEnabled(popup, true);
+                PopupShadow.SetIsEnabled(popup, true);
+
+                Grid? shadowRootWhenOpened = null;
+                popup.Opened += (_, _) => shadowRootWhenOpened = GetShadowRoot(popup);
+
+                try
+                {
+                    window.Show();
+                    window.UpdateLayout();
+                    popup.IsOpen = true;
+
+                    // The shadow HWND is independent from PopupRoot and therefore needs its own reveal gate. At the
+                    // synchronous Opened boundary, the custom clock is still deferred and neither surface may expose
+                    // an end-position frame.
+                    Assert.NotNull(shadowRootWhenOpened);
+                    Assert.Equal(0D, shadowRootWhenOpened.Opacity);
+
+                    window.Dispatcher.Invoke(static () => { }, DispatcherPriority.ApplicationIdle);
+
+                    var popupRoot = Assert.IsAssignableFrom<UIElement>(
+                        (PresentationSource.FromVisual(popupChild) as HwndSource)?.RootVisual
+                    );
+                    Assert.True(GetNativeTranslateTransform(popupRoot).HasAnimatedProperties);
+                    Assert.Equal(1D, popupRoot.Opacity);
+                    Assert.Equal(1D, GetShadowRoot(popup).Opacity);
+                }
+                finally
+                {
+                    popup.IsOpen = false;
+                    window.Dispatcher.Invoke(static () => { }, DispatcherPriority.ApplicationIdle);
+                    PopupShadow.SetIsEnabled(popup, false);
+                    window.Close();
+                }
+            }
+        );
+    }
+
+    [Fact]
+    public void ContextMenu_ExplicitSlideOverridesWpfSystemAnimationOnFirstOpening()
     {
         RunOnStaThread(
             () =>
@@ -320,17 +529,19 @@ public class PopupSlideAnimatorTests
                     ShowInTaskbar = false,
                     Content = placementTarget,
                 };
-
-                // UiContextMenuStyle enables PopupAnimator. Keep that condition explicit so this regression test
-                // verifies the public behaviors' precedence even when it runs without application theme resources.
-                PopupAnimator.SetIsEnabled(contextMenu, true);
+                window.Resources[SystemParameters.MenuPopupAnimationKey] = PopupAnimation.Fade;
                 PopupSlideAnimator.SetIsEnabled(contextMenu, true);
+                contextMenu.SetValue(Popup.PopupAnimationProperty, PopupAnimation.Slide);
                 Assert.Null(GetPrivateRootPopupOrNull(contextMenu));
 
                 try
                 {
                     window.Show();
                     window.UpdateLayout();
+
+                    // WPF creates the private Popup itself. SourceChanged fires after that construction but before
+                    // SetupAnimations, allowing the explicit attached value to replace the system Fade on the first
+                    // opening without invoking ContextMenu.HookupParentPopup ahead of its normal lifecycle.
                     contextMenu.IsOpen = true;
                     window.Dispatcher.Invoke(static () => { }, DispatcherPriority.ApplicationIdle);
 
@@ -521,6 +732,23 @@ public class PopupSlideAnimatorTests
         return Assert.IsType<TranslateTransform>(animationLayer.RenderTransform);
     }
 
+    private static Grid GetShadowRoot(DependencyObject owner)
+    {
+        var controllerProperty = Assert.IsType<DependencyProperty>(
+            typeof(PopupShadow)
+               .GetField("ShadowControllerProperty", BindingFlags.Static | BindingFlags.NonPublic)
+              ?.GetValue(null)
+        );
+        var controller = Assert.IsAssignableFrom<object>(owner.GetValue(controllerProperty));
+
+        return Assert.IsType<Grid>(
+            controller
+               .GetType()
+               .GetField("_shadowRoot", BindingFlags.Instance | BindingFlags.NonPublic)
+              ?.GetValue(controller)
+        );
+    }
+
     private static double GetCurrentOffset(Visual popupChild)
     {
         var popupRoot = Assert.IsAssignableFrom<UIElement>(
@@ -587,5 +815,16 @@ public class PopupSlideAnimatorTests
     private static void RunOnStaThread(Action action)
     {
         WpfTestThread.Run(action);
+    }
+
+    private sealed class TrackingEasingFunction : IEasingFunction
+    {
+        public int InvocationCount { get; private set; }
+
+        public double Ease(double normalizedTime)
+        {
+            InvocationCount++;
+            return normalizedTime;
+        }
     }
 }

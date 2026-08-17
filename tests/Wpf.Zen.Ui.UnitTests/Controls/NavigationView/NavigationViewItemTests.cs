@@ -1752,7 +1752,7 @@ public class NavigationViewItemTests
             Assert.True(contextMenu.Focusable);
             Assert.Same(parent.SubmenuContextMenuStyle, contextMenu.Style);
             Assert.NotNull(parent.SubmenuMenuItemStyle);
-            Assert.False(PopupAnimator.GetIsEnabled(contextMenu));
+            Assert.False(PopupSlideAnimator.GetIsEnabled(contextMenu));
             Assert.Equal(PopupAnimation.Fade, contextMenu.GetValue(Popup.PopupAnimationProperty));
             Assert.True(PopupShadow.GetIsEnabled(contextMenu));
             parent.RaiseEvent(new RoutedEventArgs(FrameworkElement.UnloadedEvent));
@@ -1974,7 +1974,7 @@ public class NavigationViewItemTests
                     childMenuItem.Template.FindName("Popup", childMenuItem)
                 );
                 Assert.True(childPopup.IsOpen);
-                Assert.False(PopupAnimator.GetIsEnabled(childPopup));
+                Assert.False(PopupSlideAnimator.GetIsEnabled(childPopup));
                 Assert.Equal(PopupAnimation.Fade, childPopup.PopupAnimation);
                 Assert.NotNull(childPopup.PlacementTarget);
                 var childPopupSource = Assert.IsType<System.Windows.Interop.HwndSource>(

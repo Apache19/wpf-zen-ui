@@ -217,7 +217,7 @@ public class CalendarDatePicker : ToggleButton
             StaysOpen          = false,
             VerticalOffset     = 1D,
             VerticalAlignment  = VerticalAlignment.Center,
-            PopupAnimation     = PopupAnimation.None,
+            PopupAnimation     = PopupAnimation.Slide,
             AllowsTransparency = true,
         };
 
@@ -234,7 +234,7 @@ public class CalendarDatePicker : ToggleButton
         _popup.Opened += OnPopupOpened;
 
         PopupShadow.SetIsEnabled(_popup, true);
-        PopupAnimator.SetIsEnabled(_popup, true);
+        PopupSlideAnimator.SetIsEnabled(_popup, true);
     }
 
     /// <summary>

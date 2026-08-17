@@ -9,8 +9,12 @@ using System.Windows.Media.Animation;
 namespace Wpf.Zen.Ui.Controls;
 
 /// <summary>
-/// Describes the opening animation applied by <see cref="PopupAnimator"/> or <see cref="PopupSlideAnimator"/>.
+/// Describes how <see cref="PopupSlideAnimator"/> shortens WPF's native Slide opening animation.
 /// </summary>
+/// <remarks>
+/// These settings affect only the native vertical Slide clock. WPF continues to determine the actual direction,
+/// placement, clipping, opacity, and popup-window lifecycle.
+/// </remarks>
 public sealed class PopupAnimationSettings : Freezable
 {
     private static readonly IEasingFunction DefaultEasingFunction = CreateDefaultEasingFunction();
@@ -22,8 +26,8 @@ public sealed class PopupAnimationSettings : Freezable
         nameof(StartOffset),
         typeof(double),
         typeof(PopupAnimationSettings),
-        new PropertyMetadata(-90D),
-        value => value is double doubleValue && IsValidDouble(doubleValue)
+        new PropertyMetadata(PopupSlideAnimator.MaximumSlideDistance),
+        value => value is double doubleValue && IsValidDouble(doubleValue) && doubleValue >= 0D
     );
 
     /// <summary>
@@ -63,8 +67,13 @@ public sealed class PopupAnimationSettings : Freezable
     }
 
     /// <summary>
-    /// Gets or sets the starting vertical offset, in logical pixels, for downward popup placement.
+    /// Gets or sets the requested Slide travel distance, in logical pixels.
     /// </summary>
+    /// <remarks>
+    /// The default is 90. The effective distance is also limited by the native full-height offset and
+    /// <see cref="PopupSlideAnimator.MaximumSlideDistance"/>. WPF's native clock determines direction, so this value
+    /// is non-negative and does not encode placement direction.
+    /// </remarks>
     public double StartOffset
     {
         get { return (double)GetValue(StartOffsetProperty); }
@@ -74,6 +83,7 @@ public sealed class PopupAnimationSettings : Freezable
     /// <summary>
     /// Gets or sets the opening animation duration, in milliseconds.
     /// </summary>
+    /// <remarks>The default is 167 milliseconds. A value of zero completes the native Slide immediately.</remarks>
     public double Duration
     {
         get { return (double)GetValue(DurationProperty); }
@@ -81,8 +91,13 @@ public sealed class PopupAnimationSettings : Freezable
     }
 
     /// <summary>
-    /// Gets or sets the easing function used by the opening animation.
+    /// Gets or sets the easing function applied to the shortened vertical Slide clock.
     /// </summary>
+    /// <remarks>
+    /// The default is a frozen <see cref="CircleEase"/> configured with <see cref="EasingMode.EaseOut"/>. The
+    /// animator clones a mutable easing object before assigning it to a new clock, so a bound or shared settings
+    /// object is never frozen or otherwise mutated as a side effect of opening a Popup.
+    /// </remarks>
     public IEasingFunction EasingFunction
     {
         get { return (IEasingFunction)GetValue(EasingFunctionProperty); }
@@ -111,6 +126,8 @@ public sealed class PopupAnimationSettings : Freezable
 
     internal IEasingFunction GetEasingFunction()
     {
+        // AnimationTimeline.Freeze may recursively freeze its easing function. Clone Freezable implementations so
+        // callers can continue changing a shared or data-bound settings object after an opening has completed.
         if (EasingFunction is Freezable freezable)
         {
             return (IEasingFunction)freezable.CloneCurrentValue();
@@ -135,7 +152,6 @@ public sealed class PopupAnimationSettings : Freezable
         };
 
         easingFunction.Freeze();
-
         return easingFunction;
     }
 

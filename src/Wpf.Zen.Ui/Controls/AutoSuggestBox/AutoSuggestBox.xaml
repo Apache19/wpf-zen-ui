@@ -83,7 +83,7 @@
                             x:Name="SuggestionPopup"
                             MinWidth="{TemplateBinding ActualWidth}"
                             MinHeight="{TemplateBinding ActualHeight}"
-                            controls:PopupAnimator.IsEnabled="True"
+                            controls:PopupSlideAnimator.IsEnabled="True"
                             controls:PopupDismissal.ExcludedElement="{Binding RelativeSource={RelativeSource TemplatedParent}}"
                             controls:PopupPlacement.IsEnabled="True"
                             controls:PopupShadow.IsEnabled="True"
@@ -91,6 +91,7 @@
                             Focusable="False"
                             IsOpen="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=IsSuggestionListOpen, Mode=TwoWay}"
                             PlacementTarget="{Binding RelativeSource={RelativeSource TemplatedParent}}"
+                            PopupAnimation="Slide"
                             StaysOpen="False">
                             <Border
                                 x:Name="SuggestionsBorder"

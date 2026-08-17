@@ -19,7 +19,8 @@
         <Setter Property="BorderBrush" Value="{m:DynamicBrush SurfaceStrokeFlyout}" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
         <Setter Property="HasDropShadow" Value="True" />
-        <Setter Property="controls:PopupAnimator.IsEnabled" Value="True" />
+        <Setter Property="Popup.PopupAnimation" Value="Slide" />
+        <Setter Property="controls:PopupSlideAnimator.IsEnabled" Value="True" />
         <Setter Property="controls:PopupShadow.PopupShadowChrome">
             <Setter.Value>
                 <controls:PopupShadowChrome

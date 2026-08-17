@@ -29,7 +29,7 @@
         <Setter Property="Placement" Value="Top" />
         <Setter Property="Popup.AllowsTransparency" Value="True" />
         <Setter Property="Popup.StaysOpen" Value="False" />
-        <Setter Property="Popup.PopupAnimation" Value="None" />
+        <Setter Property="Popup.PopupAnimation" Value="Slide" />
         <Setter Property="Popup.VerticalOffset" Value="1" />
         <Setter Property="Focusable" Value="False" />
         <Setter Property="KeyboardNavigation.IsTabStop" Value="False" />
@@ -44,13 +44,13 @@
                             MinHeight="{TemplateBinding MinHeight}"
                             HorizontalAlignment="{TemplateBinding HorizontalAlignment}"
                             VerticalAlignment="{TemplateBinding VerticalAlignment}"
-                            controls:PopupAnimator.IsEnabled="True"
+                            controls:PopupSlideAnimator.IsEnabled="True"
                             controls:PopupShadow.IsEnabled="True"
                             AllowsTransparency="{TemplateBinding Popup.AllowsTransparency}"
                             Focusable="False"
                             IsOpen="{TemplateBinding IsOpen}"
                             Placement="{TemplateBinding Placement}"
-                            PopupAnimation="None"
+                            PopupAnimation="{TemplateBinding Popup.PopupAnimation}"
                             StaysOpen="{TemplateBinding Popup.StaysOpen}"
                             VerticalOffset="1">
                             <Border

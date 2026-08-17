@@ -232,9 +232,6 @@ public static class PopupShadow
         private Grid?              _shadowRoot;
         private DispatcherTimer?   _deferredFadeInTimer;
         private Duration           _contentBoundsAnimationDuration = PopupAnimationDuration;
-        private IEasingFunction?   _contentBoundsAnimationEasingFunction;
-        private double             _contentBoundsAnimationStartOffset;
-        private bool               _isParallelContentBoundsAnimation;
         private bool               _isOpenAnimationPending;
         private DateTime           _shadowAnimationStartedAt;
         private bool               _isAttached;
@@ -242,6 +239,9 @@ public static class PopupShadow
         private bool               _isSourceBorderCornerRadiusChangedSubscribed;
         private bool               _isRenderingSubscribed;
         private bool               _isUpdatingShadow;
+        // PopupSlideAnimator temporarily hides only PopupRoot, not this detached HWND. While its replacement clock is
+        // deferred, keep the companion invisible and wait for the animator's exact pre-reveal synchronization point.
+        private bool               _isWaitingForSlideReveal;
         // Popup HWND movement can generate several window messages for a single open/close transition. Keep only one
         // deferred bounds refresh so shadow positioning cannot monopolize the dispatcher ahead of input processing.
         private bool               _isShadowBoundsUpdatePending;
@@ -628,6 +628,7 @@ public static class PopupShadow
             _shadowBorder = null;
             SetSourceBorder(null);
             _shadowRoot   = null;
+            _isWaitingForSlideReveal = false;
         }
 
         private PopupAnimation GetPopupAnimation()
@@ -957,8 +958,48 @@ public static class PopupShadow
                 return;
             }
 
+            if (_isWaitingForSlideReveal)
+            {
+                return;
+            }
+
+            // PopupSlideAnimator conceals PopupRoot between WM_SHOWWINDOW and its Loaded-priority clock attachment.
+            // The shadow is a separate HWND, so sampling during that interval sees the deliberately reset transform
+            // at zero and exposes a full shadow at the final position. Register before consuming the pending-open bit;
+            // the callback starts shadow tracking after the transform clock exists and immediately before PopupRoot
+            // becomes visible. Cancellation posts a normal retry so disabling the animator cannot strand the shadow.
+            if (PopupSlideAnimator.TryRegisterOpeningRevealCallback(_owner, OnSlideOpeningReveal))
+            {
+                _isWaitingForSlideReveal = true;
+                HideShadowImmediately();
+                return;
+            }
+
             _isOpenAnimationPending = false;
             BeginOpenAnimation();
+        }
+
+        private void OnSlideOpeningReveal(bool isAnimationStarting)
+        {
+            _isWaitingForSlideReveal = false;
+            if (_isDisposed || !IsOwnerOpen)
+            {
+                return;
+            }
+
+            if (isAnimationStarting)
+            {
+                BeginPendingOpenAnimation();
+                return;
+            }
+
+            // A gate can be cancelled because the animator was disabled or superseded by a rapid reopen. Retry after
+            // the current lifecycle stack: a replacement opening will register its own gate first, while a disabled
+            // animator falls back to PopupShadow's ordinary native-animation path.
+            if (!_dispatcher.HasShutdownStarted && !_dispatcher.HasShutdownFinished)
+            {
+                _ = _dispatcher.BeginInvoke(Open, DispatcherPriority.Loaded);
+            }
         }
 
         private void BeginOpenAnimation()
@@ -976,12 +1017,9 @@ public static class PopupShadow
 
             if (PopupSlideAnimator.IsAnimationActive(_owner))
             {
-                // Check the lightweight path first so explicitly opted-in popups do not initialize
-                // PopupAnimator's legacy static metadata hooks merely because a shadow is present.
-                //
-                // PopupSlideAnimator replaces WPF's native 150ms linear Y clock with the configured Wpf.Zen.Ui clock,
-                // but keeps it on PopupRoot's native animation layer. Sample that real transform just like ordinary
-                // Slide while using the replacement duration so the detached shadow does not finish 17ms early.
+                // PopupSlideAnimator replaces only WPF's native Y clock and keeps it on PopupRoot's animation layer.
+                // Sample that real transform just like ordinary Slide while using the replacement duration so the
+                // detached shadow remains synchronized with the shortened clock.
                 var duration = PopupSlideAnimator.GetAnimationDuration(_owner);
                 if (!PopupSlideAnimator.HasAnimatedContentBounds(_owner))
                 {
@@ -995,36 +1033,6 @@ public static class PopupShadow
                 }
                 else
                 {
-                    BeginDeferredFadeIn(duration.TimeSpan);
-                }
-
-                return;
-            }
-
-            if (PopupAnimator.IsCustomAnimationActive(_owner))
-            {
-                // The content is driven by Wpf.Zen.Ui's custom opening timeline, so the detached shadow follows the
-                // same duration and reveal offset instead of treating the popup as a native WPF animation.
-                var duration = PopupAnimator.GetAnimationDuration(_owner);
-                if (!PopupAnimator.HasAnimatedContentBounds(_owner))
-                {
-                    // A custom animation with no effective translation has a stable content rectangle. Mirroring its
-                    // opacity (when present) needs only a WPF animation clock and no per-frame geometry reconstruction.
-                    BeginRootFadeIn(duration);
-                }
-                else if (_chrome.AnimationMode == PopupShadowAnimationMode.DynamicContentBounds)
-                {
-                    if (TryBeginParallelDynamicContentBoundsAnimation(_owner, duration))
-                    {
-                        return;
-                    }
-
-                    BeginDynamicContentBoundsAnimation(duration);
-                }
-                else
-                {
-                    // In fixed-bounds mode the full shadow would look detached during a slide, so reveal it
-                    // after the content animation duration instead.
                     BeginDeferredFadeIn(duration.TimeSpan);
                 }
 
@@ -1074,12 +1082,7 @@ public static class PopupShadow
             StopRendering();
             StopDeferredFadeIn();
 
-            // These fields describe the temporary strategy for the current open animation. Reset them together so a
-            // later non-animated open cannot accidentally reuse an easing function or start offset from an older one.
-            _contentBoundsAnimationDuration       = PopupAnimationDuration;
-            _contentBoundsAnimationEasingFunction = null;
-            _contentBoundsAnimationStartOffset    = 0D;
-            _isParallelContentBoundsAnimation     = false;
+            _contentBoundsAnimationDuration = PopupAnimationDuration;
 
             _shadowRoot.BeginAnimation(UIElement.OpacityProperty, null);
             _shadowRoot.Opacity = 0D;
@@ -1132,33 +1135,6 @@ public static class PopupShadow
             // The animated clip already reveals only the shadow belonging to visible popup content. A concurrent
             // opacity clock adds composition work without providing another useful visual transition.
             _shadowRoot.Opacity = 1D;
-        }
-
-        private bool TryBeginParallelDynamicContentBoundsAnimation(DependencyObject owner, Duration duration)
-        {
-            if (_shadowRoot == null ||
-                _popupSource?.RootVisual is not UIElement popupRoot ||
-                !PopupAnimator.TryGetAnimationStartOffset(owner, popupRoot, out var startOffset))
-            {
-                return false;
-            }
-
-            _contentBoundsAnimationDuration       = duration;
-            _contentBoundsAnimationEasingFunction = PopupAnimator.GetAnimationEasingFunction(owner);
-            _contentBoundsAnimationStartOffset    = startOffset;
-            _isParallelContentBoundsAnimation     = true;
-            _shadowAnimationStartedAt             = DateTime.UtcNow;
-
-            // The custom animation starts by moving the popup root from startOffset back to zero. Apply the matching
-            // offset before the first render tick so the shadow never shows around content that is still hidden.
-            UpdateShadowContentBounds(new Vector(0D, startOffset));
-            SubscribeRendering();
-
-            // The bounds animation itself is the reveal. Keep the root fully opaque instead of running a second,
-            // parallel opacity animation on the per-pixel-alpha companion window.
-            _shadowRoot.Opacity = 1D;
-
-            return true;
         }
 
         private void BeginDeferredFadeIn(TimeSpan delay)
@@ -1291,28 +1267,7 @@ public static class PopupShadow
                 return;
             }
 
-            UpdateShadowContentBounds(
-                _isParallelContentBoundsAnimation
-                    ? GetParallelContentBoundsAnimationOffset(elapsed)
-                    : GetPopupRootAnimationOffset()
-            );
-        }
-
-        private Vector GetParallelContentBoundsAnimationOffset(TimeSpan elapsed)
-        {
-            var duration = _contentBoundsAnimationDuration.TimeSpan;
-            if (duration <= TimeSpan.Zero)
-            {
-                return default;
-            }
-
-            var progress      = Math.Max(0D, Math.Min(1D, elapsed.TotalMilliseconds / duration.TotalMilliseconds));
-            var easedProgress = _contentBoundsAnimationEasingFunction?.Ease(progress) ?? progress;
-
-            // This recreates the same "start offset to zero" timeline used by PopupAnimator instead of
-            // reading the popup transform. It is used only when the custom behavior can provide a reliable start
-            // offset; otherwise the controller falls back to sampling the visual tree.
-            return new Vector(0D, _contentBoundsAnimationStartOffset * (1D - easedProgress));
+            UpdateShadowContentBounds(GetPopupRootAnimationOffset());
         }
 
         private Vector GetPopupRootAnimationOffset()
