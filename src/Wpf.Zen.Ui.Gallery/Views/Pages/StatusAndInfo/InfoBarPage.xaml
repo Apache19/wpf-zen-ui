@@ -9,19 +9,19 @@
     xmlns:ui="http://schemas.thezendev.com/wpf/2027"
     xmlns:vm="clr-namespace:Wpf.Zen.Ui.Gallery.ViewModels.Pages.StatusAndInfo"
     Title="InfoBarPage"
-    Style="{ui:DynamicStyle DynamicScrollPage}"
     controls:PageControlDocumentation.DocumentationType="{x:Type ui:InfoBar}"
     d:Background="{ui:DynamicBrush WindowBackground}"
-    d:DataContext="{d:DesignInstance vm:InfoBarViewModel, IsDesignTimeCreatable=False}"
+    d:DataContext="{d:DesignInstance vm:InfoBarViewModel, IsDesignTimeCreatable=True}"
     d:DesignWidth="800"
     Foreground="{ui:DynamicBrush TextFillPrimary}"
+    Style="{ui:DynamicStyle DynamicScrollPage}"
     mc:Ignorable="d">
 
     <StackPanel Margin="0,0,0,24">
         <controls:ControlExample
             Margin="0,0,0,42"
-            HeaderText="A closable InfoBar."
-            XamlCode="&lt;ui:InfoBar Title=&quot;Title&quot; Message=&quot;Essential message.&quot; /&gt;">
+            HeaderText="A persistent InfoBar without an icon and with customized corners."
+            XamlCode="&lt;ui:InfoBar Title=&quot;Title&quot; IsClosable=&quot;False&quot; IsIconVisible=&quot;False&quot; CornerRadius=&quot;8&quot;&gt;Essential message.&lt;/ui:InfoBar&gt;">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
@@ -30,22 +30,30 @@
                 <ui:InfoBar
                     Title="Title"
                     Grid.Column="0"
-                    IsOpen="{Binding IsShortInfoBarOpened, Mode=TwoWay}"
-                    Message="Essential app message."
-                    Severity="{Binding ShortInfoBarSeverity, Mode=OneWay}" />
+                    CornerRadius="8"
+                    IsClosable="False"
+                    IsIconVisible="{Binding ShowIcon}"
+                    IsOpen="{Binding IsShortInfoBarOpened}"
+                    Severity="{Binding ShortInfoBarSeverity, Mode=OneWay}">
+                    Essential app message.
+                </ui:InfoBar>
                 <Grid Grid.Column="1" Margin="12,0,0,0">
                     <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
                     <CheckBox
                         Grid.Row="0"
-                        MinWidth="0"
                         Content="Is open"
                         IsChecked="{Binding IsShortInfoBarOpened, Mode=TwoWay}" />
-                    <ComboBox
+                    <CheckBox
                         Grid.Row="1"
-                        MinWidth="140"
+                        Content="Show Icon"
+                        IsChecked="{Binding ShowIcon}" />
+                    <ComboBox
+                        Grid.Row="2"
+                        MinWidth="180"
                         Margin="0,8,0,0"
                         SelectedIndex="{Binding ShortInfoBarSeverityComboBoxSelectedIndex, Mode=TwoWay}">
                         <ComboBoxItem Content="Informational" />
@@ -60,7 +68,7 @@
         <controls:ControlExample
             Margin="0"
             HeaderText="A closable InfoBar with a long message."
-            XamlCode="&lt;ui:InfoBar Title=&quot;Title&quot; Message=&quot;Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.&quot; /&gt;">
+            XamlCode="&lt;ui:InfoBar Title=&quot;Title&quot;&gt;Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.&lt;/ui:InfoBar&gt;">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
@@ -70,8 +78,9 @@
                     Title="Title"
                     Grid.Column="0"
                     IsOpen="{Binding IsLongInfoBarOpened, Mode=TwoWay}"
-                    Message="Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat."
-                    Severity="{Binding LongInfoBarSeverity, Mode=OneWay}" />
+                    Severity="{Binding LongInfoBarSeverity, Mode=OneWay}">
+                    Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+                </ui:InfoBar>
                 <Grid Grid.Column="1" Margin="12,0,0,0">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
@@ -84,7 +93,7 @@
                         IsChecked="{Binding IsLongInfoBarOpened, Mode=TwoWay}" />
                     <ComboBox
                         Grid.Row="1"
-                        MinWidth="140"
+                        MinWidth="180"
                         Margin="0,8,0,0"
                         SelectedIndex="{Binding LongInfoBarSeverityComboBoxSelectedIndex, Mode=TwoWay}">
                         <ComboBoxItem Content="Informational" />

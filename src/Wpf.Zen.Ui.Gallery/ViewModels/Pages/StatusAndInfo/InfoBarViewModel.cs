@@ -13,6 +13,9 @@ public partial class InfoBarViewModel : ViewModel
     public partial bool IsShortInfoBarOpened { get; set; } = true;
 
     [ObservableProperty]
+    public partial bool ShowIcon { get; set; } = true;
+
+    [ObservableProperty]
     public partial bool IsLongInfoBarOpened { get; set; } = true;
 
     [ObservableProperty]
