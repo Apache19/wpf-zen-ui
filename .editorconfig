@@ -348,6 +348,9 @@ dotnet_diagnostic.CA2242.severity = warning
 # IDE0008: Use explicit type instead of "var"
 dotnet_diagnostic.IDE0008.severity = none
 
+# IDE0016: Use "throw" expression
+dotnet_diagnostic.IDE0016.severity = none
+
 dotnet_diagnostic.IDE0060.severity = none
 
 # Require file header OR A source file contains a header that does not match the required text
@@ -430,6 +433,9 @@ dotnet_diagnostic.SA1502.severity = none
 dotnet_diagnostic.SA1503.severity = none # SA1503: Braces should not be omitted
 dotnet_diagnostic.SA1010.severity = none # Opening square brackets should not be preceded by a space
                                          # conflicts with collection expressions and IDE0028
+
+# WPF0061: Accessor method for attached property should have standard documentation text
+dotnet_diagnostic.WPF0061.severity = silent
 
 # Suppress some ValueConverter warnings
 dotnet_diagnostic.WPF0073.severity = none # Add ValueConversion attribute (unknown types)

@@ -3,13 +3,12 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-using System.ComponentModel;
 using System.Reflection;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
-using System.Windows.Interop;
 using System.Windows.Media.Animation;
 using System.Windows.Threading;
+
 using NativeContextMenu = System.Windows.Controls.ContextMenu;
 using NativeToolTip = System.Windows.Controls.ToolTip;
 
@@ -218,6 +217,7 @@ public static class PopupSlideAnimator
         return GetAnimationSettings(element) ?? (GetIsEnabled(element) ? PopupAnimationSettings.Default : null);
     }
 
+    [AttachedPropertyBrowsableForType(typeof(DependencyObject))]
     private static PopupSlideAnimationController? GetAnimationController(DependencyObject element)
     {
         return (PopupSlideAnimationController?)element.GetValue(AnimationControllerProperty);
@@ -242,7 +242,8 @@ public static class PopupSlideAnimator
         }
 
         var controller = GetAnimationController(d);
-        var settings = GetEffectiveAnimationSettings(d);
+        var settings   = GetEffectiveAnimationSettings(d);
+
         if (settings == null)
         {
             controller?.Dispose();
@@ -279,20 +280,20 @@ public static class PopupSlideAnimator
         private readonly DependencyObject _owner;
 
         private PopupAnimationSettings _settings;
-        private IInputElement?          _watchedElement;
-        private HwndSource?             _popupSource;
-        private Popup?                  _overriddenPrivatePopup;
-        private DispatcherOperation?    _pendingAnimationStart;
-        private UIElement?              _openingPopupRoot;
-        private TranslateTransform?     _openingTransform;
-        private Action<bool>?            _openingRevealCallbacks;
-        private int                     _openingVersion;
-        private bool                    _isAttached;
-        private bool                    _isDisposed;
+        private IInputElement?         _watchedElement;
+        private HwndSource?            _popupSource;
+        private Popup?                 _overriddenPrivatePopup;
+        private DispatcherOperation?   _pendingAnimationStart;
+        private UIElement?             _openingPopupRoot;
+        private TranslateTransform?    _openingTransform;
+        private Action<bool>?          _openingRevealCallbacks;
+        private int                    _openingVersion;
+        private bool                   _isAttached;
+        private bool                   _isDisposed;
 
         public PopupSlideAnimationController(DependencyObject owner)
         {
-            _owner = owner;
+            _owner    = owner;
             _settings = PopupAnimationSettings.Default;
         }
 
@@ -359,7 +360,7 @@ public static class PopupSlideAnimator
             // original system resource so disabling the behavior also restores framework semantics.
             CancelCurrentOpening(restoreVisualState: true);
             IsCurrentOpeningRefined = false;
-            _isDisposed = true;
+            _isDisposed             = true;
         }
 
         private void OnOwnerClosed(object? sender, EventArgs e)
@@ -387,24 +388,32 @@ public static class PopupSlideAnimator
             switch (_owner)
             {
                 case Popup popup:
+                {
                     popup.Closed += OnOwnerClosed;
+
                     DependencyPropertyDescriptor
-                       .FromProperty(Popup.ChildProperty, typeof(Popup))
-                      ?.AddValueChanged(popup, OnPopupChildChanged);
+                        .FromProperty(Popup.ChildProperty, typeof(Popup))
+                       ?.AddValueChanged(popup, OnPopupChildChanged);
+
                     WatchElement(popup.Child);
                     break;
+                }
 
                 case NativeContextMenu contextMenu:
+                {
                     contextMenu.Closed += OnOwnerClosed;
                     AddPopupAnimationValueChanged(contextMenu);
                     WatchElement(contextMenu);
                     break;
+                }
 
                 case NativeToolTip toolTip:
+                {
                     toolTip.Closed += OnOwnerClosed;
                     AddPopupAnimationValueChanged(toolTip);
                     WatchElement(toolTip);
                     break;
+                }
             }
         }
 
@@ -413,21 +422,29 @@ public static class PopupSlideAnimator
             switch (_owner)
             {
                 case Popup popup:
+                {
                     popup.Closed -= OnOwnerClosed;
+
                     DependencyPropertyDescriptor
-                       .FromProperty(Popup.ChildProperty, typeof(Popup))
-                      ?.RemoveValueChanged(popup, OnPopupChildChanged);
+                        .FromProperty(Popup.ChildProperty, typeof(Popup))
+                       ?.RemoveValueChanged(popup, OnPopupChildChanged);
+
                     break;
+                }
 
                 case NativeContextMenu contextMenu:
+                {
                     contextMenu.Closed -= OnOwnerClosed;
                     RemovePopupAnimationValueChanged(contextMenu);
                     break;
+                }
 
                 case NativeToolTip toolTip:
+                {
                     toolTip.Closed -= OnOwnerClosed;
                     RemovePopupAnimationValueChanged(toolTip);
                     break;
+                }
             }
 
             WatchElement(null);
@@ -454,15 +471,15 @@ public static class PopupSlideAnimator
         private void AddPopupAnimationValueChanged(DependencyObject owner)
         {
             DependencyPropertyDescriptor
-               .FromProperty(Popup.PopupAnimationProperty, owner.GetType())
-              ?.AddValueChanged(owner, OnOwnerPopupAnimationChanged);
+                .FromProperty(Popup.PopupAnimationProperty, owner.GetType())
+               ?.AddValueChanged(owner, OnOwnerPopupAnimationChanged);
         }
 
         private void RemovePopupAnimationValueChanged(DependencyObject owner)
         {
             DependencyPropertyDescriptor
-               .FromProperty(Popup.PopupAnimationProperty, owner.GetType())
-              ?.RemoveValueChanged(owner, OnOwnerPopupAnimationChanged);
+                .FromProperty(Popup.PopupAnimationProperty, owner.GetType())
+               ?.RemoveValueChanged(owner, OnOwnerPopupAnimationChanged);
         }
 
         private void WatchElement(IInputElement? element)
@@ -478,6 +495,7 @@ public static class PopupSlideAnimator
             }
 
             DetachPopupSource();
+
             _watchedElement = element;
             if (_watchedElement == null)
             {
@@ -485,6 +503,7 @@ public static class PopupSlideAnimator
             }
 
             PresentationSource.AddSourceChangedHandler(_watchedElement, OnPresentationSourceChanged);
+
             if (_watchedElement is Visual visual)
             {
                 AttachPopupSource(PresentationSource.FromVisual(visual) as HwndSource);
@@ -504,6 +523,7 @@ public static class PopupSlideAnimator
             }
 
             DetachPopupSource();
+
             _popupSource = source;
             if (_popupSource == null)
             {
@@ -521,12 +541,8 @@ public static class PopupSlideAnimator
         private void DetachPopupSource()
         {
             CancelCurrentOpening(restoreVisualState: true);
-
-            if (_popupSource != null)
-            {
-                _popupSource.RemoveHook(OnPopupWindowMessage);
-                _popupSource = null;
-            }
+            _popupSource?.RemoveHook(OnPopupWindowMessage);
+            _popupSource = null;
         }
 
         private IntPtr OnPopupWindowMessage(
@@ -543,6 +559,7 @@ public static class PopupSlideAnimator
 
             CancelCurrentOpening(restoreVisualState: true);
             IsCurrentOpeningRefined = false;
+
             var popup = GetRootPopup();
             if (popup != null && IsSlideSelected(popup))
             {
@@ -588,6 +605,7 @@ public static class PopupSlideAnimator
             try
             {
                 DoubleAnimation? animation = null;
+
                 if (duration > TimeSpan.Zero && Math.Abs(startOffset) >= 0.1D)
                 {
                     animation = new DoubleAnimation(
@@ -644,6 +662,7 @@ public static class PopupSlideAnimator
             }
 
             _pendingAnimationStart = null;
+
             if (!popup.IsOpen ||
                 !ReferenceEquals(_popupSource?.RootVisual, popupRoot) ||
                 !IsSlideSelected(popup))
@@ -715,6 +734,7 @@ public static class PopupSlideAnimator
 
             translateTransform.SetCurrentValue(TranslateTransform.YProperty, 0D);
             translateTransform.BeginAnimation(TranslateTransform.YProperty, null);
+
             ClearOpeningVisualReferences();
         }
 
@@ -728,6 +748,7 @@ public static class PopupSlideAnimator
             }
 
             _pendingAnimationStart = null;
+
             if (restoreVisualState)
             {
                 if (_openingTransform != null)
@@ -809,10 +830,10 @@ public static class PopupSlideAnimator
         out double startOffset,
         out TimeSpan duration)
     {
-        popupRoot = null!;
+        popupRoot          = null!;
         translateTransform = null!;
-        startOffset = 0D;
-        duration = TimeSpan.Zero;
+        startOffset        = 0D;
+        duration           = TimeSpan.Zero;
 
         if (popup.Child is not Visual child ||
             (PresentationSource.FromVisual(child) as HwndSource)?.RootVisual is not UIElement actualPopupRoot ||
@@ -836,10 +857,11 @@ public static class PopupSlideAnimator
             Math.Min(settings.StartOffset, MaximumSlideDistance),
             nativeDistance
         );
-        popupRoot = actualPopupRoot;
+
+        popupRoot          = actualPopupRoot;
         translateTransform = actualTranslateTransform;
-        startOffset = animateFromBottom ? distance : -distance;
-        duration = settings.GetDuration();
+        startOffset        = animateFromBottom ? distance : -distance;
+        duration           = settings.GetDuration();
 
         return true;
     }
@@ -866,7 +888,7 @@ public static class PopupSlideAnimator
         return owner switch
         {
             NativeContextMenu contextMenu => TryGetPrivateRootPopup(contextMenu, ContextMenuParentPopupField),
-            NativeToolTip toolTip         => TryGetPrivateRootPopup(toolTip, ToolTipParentPopupField),
+            NativeToolTip toolTip         => TryGetPrivateRootPopup(toolTip,     ToolTipParentPopupField),
             _                             => null,
         };
     }
