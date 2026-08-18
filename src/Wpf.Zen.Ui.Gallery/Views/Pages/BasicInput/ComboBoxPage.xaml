@@ -18,7 +18,7 @@
     <StackPanel Margin="0,0,0,24">
         <controls:ControlExample
             Margin="0"
-            HeaderText="A ComboBox with items defined inline."
+            HeaderText="A Native ComboBox with items defined inline."
             XamlCode="&lt;ComboBox /&gt;">
             <ComboBox
                 MinWidth="200"
@@ -33,12 +33,13 @@
 
         <controls:ControlExample
             Margin="0,32,0,0"
-            HeaderText="A ComboBox with ItemsSource set."
+            HeaderText="A ComboBox with ItemsSource and an Icon."
             XamlCode="&lt;ComboBox ItemsSource=&quot;{Binding FontFamilies}&quot; /&gt;">
             <ui:ComboBox
                 MinWidth="200"
                 HorizontalAlignment="Left"
                 ui:PlaceholderService.Content="Placeholder"
+                Icon="{ui:FluentIconSource TextFont24}"
                 ItemsSource="{Binding ComboBoxFontFamilies}">
                 <ui:ComboBox.ItemTemplate>
                     <DataTemplate>

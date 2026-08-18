@@ -346,6 +346,30 @@ public class ComboBox : System.Windows.Controls.ComboBox
 
     #endregion
 
+    #region DP: Icon
+
+    /// <summary>Identifies the <see cref="Icon"/> dependency property.</summary>
+    public static readonly DependencyProperty IconProperty =
+        DependencyProperty.Register(
+            nameof(Icon),
+            typeof(object),
+            typeof(ComboBox),
+            new PropertyMetadata(null)
+        );
+
+    /// <summary>
+    /// Gets or sets the content displayed in the icon slot.
+    /// </summary>
+    [Bindable(true)]
+    [Category("Appearance")]
+    public object? Icon
+    {
+        get => GetValue(IconProperty);
+        set => SetValue(IconProperty, value);
+    }
+
+    #endregion
+
     static ComboBox()
     {
         DefaultStyleKeyProperty.OverrideMetadata(

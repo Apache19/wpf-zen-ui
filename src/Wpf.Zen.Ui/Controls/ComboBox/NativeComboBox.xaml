@@ -22,7 +22,7 @@
         <ResourceDictionary Source="pack://application:,,,/Wpf.Zen.Ui;component/Controls/ComboBox/ComboBoxBaseStyle.xaml" />
     </ResourceDictionary.MergedDictionaries>
 
-    <converters:ThicknessTransformConverter x:Key="ContentPaddingConverter" BaseThickness="2,0" />
+    <converters:ThicknessTransformConverter x:Key="ContentPaddingConverter" Offset="2,0" />
 
     <ControlTemplate x:Key="DefaultComboBoxTemplate" TargetType="{x:Type ComboBox}">
         <Grid>
@@ -67,8 +67,8 @@
                         Grid.Column="1"
                         Margin="8,0,10,0"
                         VerticalAlignment="Center"
-                        FontSize="11"
-                        Foreground="{m:DynamicBrush TextFillSecondary}"
+                        IconForeground="{m:DynamicBrush TextFillSecondary}"
+                        IconSize="11"
                         RenderTransformOrigin="0.5, 0.5"
                         Symbol="ChevronDown24">
                         <controls:FluentIcon.RenderTransform>
@@ -89,7 +89,8 @@
                         IsEnabled="{TemplateBinding IsEditable}"
                         IsReadOnly="{TemplateBinding IsReadOnly}"
                         OverridesDefaultStyle="True"
-                        VerticalScrollBarVisibility="{TemplateBinding ScrollViewer.VerticalScrollBarVisibility}">
+                        VerticalScrollBarVisibility="{TemplateBinding ScrollViewer.VerticalScrollBarVisibility}"
+                        Visibility="Hidden">
                         <controls:TextBox.Template>
                             <ControlTemplate TargetType="{x:Type TextBox}">
                                 <controls:PassiveScrollViewer
@@ -138,9 +139,9 @@
             <!--  Drop-down popup. Shadow is rendered via PopupShadow; animation is handled by PopupSlideAnimator.  -->
             <Popup
                 x:Name="Popup"
-                controls:PopupSlideAnimator.IsEnabled="True"
                 controls:PopupPlacement.IsEnabled="True"
                 controls:PopupShadow.IsEnabled="True"
+                controls:PopupSlideAnimator.IsEnabled="True"
                 AllowsTransparency="True"
                 Focusable="False"
                 IsOpen="{TemplateBinding IsDropDownOpen}"
