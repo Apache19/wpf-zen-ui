@@ -55,6 +55,7 @@ internal static class ColorTokenResourceKey
             ColorToken.AccentTextPrimary                     => ColorKeys.AccentTextPrimary,
             ColorToken.AccentTextSecondary                   => ColorKeys.AccentTextSecondary,
             ColorToken.TextOnAccentPrimary                   => ColorKeys.TextOnAccentPrimary,
+            ColorToken.TextOnAccentSecondary                 => ColorKeys.TextOnAccentSecondary,
             ColorToken.AccentStroke                          => ColorKeys.AccentStroke,
             ColorToken.AccentSelection                       => ColorKeys.AccentSelection,
             ColorToken.SystemWindowText                      => ColorKeys.SystemColorWindowTextColor,

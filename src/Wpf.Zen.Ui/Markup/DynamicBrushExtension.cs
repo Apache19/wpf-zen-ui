@@ -56,6 +56,7 @@ internal static class BrushTokenResourceKey
             BrushToken.AccentTextPrimary                     => BrushKeys.AccentTextPrimaryBrush,
             BrushToken.AccentTextSecondary                   => BrushKeys.AccentTextSecondaryBrush,
             BrushToken.TextOnAccentPrimary                   => BrushKeys.TextOnAccentPrimaryBrush,
+            BrushToken.TextOnAccentSecondary                 => BrushKeys.TextOnAccentSecondaryBrush,
             BrushToken.AccentStroke                          => BrushKeys.AccentStrokeBrush,
             BrushToken.AccentSelection                       => BrushKeys.AccentSelectionBrush,
             BrushToken.SystemWindowText                      => BrushKeys.SystemColorWindowTextBrush,

@@ -26,6 +26,7 @@
     <Color x:Key="{x:Static t:ColorKeys.AccentTextPrimary}">#0075D0</Color>
     <Color x:Key="{x:Static t:ColorKeys.AccentTextSecondary}">#298BE8</Color>
     <Color x:Key="{x:Static t:ColorKeys.TextOnAccentPrimary}">#FFFFFF</Color>
+    <Color x:Key="{x:Static t:ColorKeys.TextOnAccentSecondary}">#A7CEEC</Color>
     <Color x:Key="{x:Static t:ColorKeys.AccentStroke}">#0075D0</Color>
     <Color x:Key="{x:Static t:ColorKeys.AccentSelection}">#0064B2</Color>
 
@@ -216,6 +217,7 @@
     <SolidColorBrush x:Key="{x:Static t:BrushKeys.AccentTextPrimaryBrush}" Color="{StaticResource {x:Static t:ColorKeys.AccentTextPrimary}}" />
     <SolidColorBrush x:Key="{x:Static t:BrushKeys.AccentTextSecondaryBrush}" Color="{StaticResource {x:Static t:ColorKeys.AccentTextSecondary}}" />
     <SolidColorBrush x:Key="{x:Static t:BrushKeys.TextOnAccentPrimaryBrush}" Color="{StaticResource {x:Static t:ColorKeys.TextOnAccentPrimary}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.TextOnAccentSecondaryBrush}" Color="{StaticResource {x:Static t:ColorKeys.TextOnAccentSecondary}}" />
     <SolidColorBrush x:Key="{x:Static t:BrushKeys.AccentStrokeBrush}" Color="{StaticResource {x:Static t:ColorKeys.AccentStroke}}" />
     <SolidColorBrush x:Key="{x:Static t:BrushKeys.AccentSelectionBrush}" Color="{StaticResource {x:Static t:ColorKeys.AccentSelection}}" />
 

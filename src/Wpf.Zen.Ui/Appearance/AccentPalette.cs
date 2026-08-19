@@ -20,6 +20,7 @@ internal sealed record AccentPalette(
     Color AccentTextPrimary,
     Color AccentTextSecondary,
     Color TextOnAccentPrimary,
+    Color TextOnAccentSecondary,
     Color AccentStroke,
     Color AccentSelection)
 {
@@ -75,6 +76,24 @@ internal sealed record AccentPalette(
             ? Black
             : White;
 
+        // Secondary on-accent text is the primary neutral blended a short distance toward the
+        // lightest fill in sRGB space: perceptibly softer than the primary while staying in the
+        // same tone family. A fixed 35% step keeps the gap small on every accent; pushing toward
+        // the 3:1 floor instead would make the secondary read as a different color, not a
+        // quieter variant of the primary.
+        var textOnAccentSecondary = Blend(textOnAccent, fillPrimary, 0.35);
+
+        // The fixed step can brush against the large-text threshold in a light theme, where the
+        // white neutral moves toward the lightest fill. Only then walk back toward the primary
+        // until the 3:1 floor holds; the dark theme never triggers this because the black
+        // neutral keeps abundant contrast against the light fill family.
+        textOnAccentSecondary = EnsureContrast(
+            Oklch.FromColor(textOnAccentSecondary),
+            fillPrimary,
+            SecondaryTextContrast,
+            lighten: !isDark
+        );
+
         return new AccentPalette(
             fillPrimary,
             fillSecondary,
@@ -82,6 +101,7 @@ internal sealed record AccentPalette(
             accentTextPrimary,
             accentTextSecondary,
             textOnAccent,
+            textOnAccentSecondary,
             accentTextPrimary,
             fillSecondary
         );
@@ -139,6 +159,22 @@ internal sealed record AccentPalette(
         }
 
         return result;
+    }
+
+    /// <summary>
+    /// Returns an sRGB-channel mix of two opaque colors. <paramref name="weight"/> is the
+    /// contribution of <paramref name="second"/>; <c>0</c> returns <paramref name="first"/>
+    /// unchanged and <c>1</c> returns <paramref name="second"/>.
+    /// </summary>
+    private static Color Blend(Color first, Color second, double weight)
+    {
+        var inverse = 1.0 - weight;
+
+        return Color.FromRgb(
+            (byte)Math.Round((first.R * inverse) + (second.R * weight)),
+            (byte)Math.Round((first.G * inverse) + (second.G * weight)),
+            (byte)Math.Round((first.B * inverse) + (second.B * weight))
+        );
     }
 
     private static double MinimumContrast(Color foreground, params Color[] backgrounds)

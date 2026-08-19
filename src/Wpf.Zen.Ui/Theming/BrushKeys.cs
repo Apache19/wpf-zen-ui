@@ -21,6 +21,7 @@ public static class BrushKeys
     public static ComponentResourceKey AccentTextPrimaryBrush                   { get; } = Create(nameof(AccentTextPrimaryBrush));
     public static ComponentResourceKey AccentTextSecondaryBrush                 { get; } = Create(nameof(AccentTextSecondaryBrush));
     public static ComponentResourceKey TextOnAccentPrimaryBrush                 { get; } = Create(nameof(TextOnAccentPrimaryBrush));
+    public static ComponentResourceKey TextOnAccentSecondaryBrush               { get; } = Create(nameof(TextOnAccentSecondaryBrush));
     public static ComponentResourceKey AccentStrokeBrush                        { get; } = Create(nameof(AccentStrokeBrush));
     public static ComponentResourceKey AccentSelectionBrush                     { get; } = Create(nameof(AccentSelectionBrush));
     public static ComponentResourceKey SystemColorWindowTextBrush               { get; } = Create(nameof(SystemColorWindowTextBrush));

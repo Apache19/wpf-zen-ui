@@ -46,6 +46,7 @@
     <DynamicResource x:Key="{x:Static t:ColorKeys.AccentTextPrimary}" ResourceKey="{x:Static SystemColors.HotTrackColorKey}" />
     <DynamicResource x:Key="{x:Static t:ColorKeys.AccentTextSecondary}" ResourceKey="{x:Static SystemColors.HotTrackColorKey}" />
     <DynamicResource x:Key="{x:Static t:ColorKeys.TextOnAccentPrimary}" ResourceKey="{x:Static SystemColors.HighlightTextColorKey}" />
+    <DynamicResource x:Key="{x:Static t:ColorKeys.TextOnAccentSecondary}" ResourceKey="{x:Static SystemColors.HighlightTextColorKey}" />
     <DynamicResource x:Key="{x:Static t:ColorKeys.AccentStroke}" ResourceKey="{x:Static SystemColors.HighlightColorKey}" />
     <DynamicResource x:Key="{x:Static t:ColorKeys.AccentSelection}" ResourceKey="{x:Static SystemColors.HighlightColorKey}" />
 
@@ -189,6 +190,7 @@
     <SolidColorBrush x:Key="{x:Static t:BrushKeys.AccentTextPrimaryBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorHotTrackColor}}" />
     <SolidColorBrush x:Key="{x:Static t:BrushKeys.AccentTextSecondaryBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorHotTrackColor}}" />
     <SolidColorBrush x:Key="{x:Static t:BrushKeys.TextOnAccentPrimaryBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorHighlightTextColor}}" />
+    <SolidColorBrush x:Key="{x:Static t:BrushKeys.TextOnAccentSecondaryBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorHighlightTextColor}}" />
     <SolidColorBrush x:Key="{x:Static t:BrushKeys.AccentStrokeBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorHighlightColor}}" />
     <SolidColorBrush x:Key="{x:Static t:BrushKeys.AccentSelectionBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorHighlightColor}}" />
     <SolidColorBrush x:Key="{x:Static t:BrushKeys.SystemFillColorAttentionForegroundBrush}" Color="{StaticResource {x:Static t:ColorKeys.SystemColorHighlightColor}}" />

@@ -87,6 +87,74 @@ public class AccentPaletteTests
         }
     }
 
+    [Theory]
+    [InlineData(ThemeVariant.Light)]
+    [InlineData(ThemeVariant.Dark)]
+    public void TextOnAccentSecondary_MeetsLargeTextContrastAgainstEveryFill(ThemeVariant variant)
+    {
+        foreach (var accent in GetEdgeCaseAccents())
+        {
+            var palette = AccentPalette.Create(accent, variant);
+
+            Assert.True(AccentPalette.GetContrastRatio(palette.TextOnAccentSecondary, palette.AccentFillPrimary) >= 3.0);
+            Assert.True(AccentPalette.GetContrastRatio(palette.TextOnAccentSecondary, palette.AccentFillSecondary) >= 3.0);
+            Assert.True(AccentPalette.GetContrastRatio(palette.TextOnAccentSecondary, palette.AccentFillTertiary) >= 3.0);
+        }
+    }
+
+    [Theory]
+    [InlineData(ThemeVariant.Light)]
+    [InlineData(ThemeVariant.Dark)]
+    public void TextOnAccentSecondary_SitsBetweenPrimaryAndLightestFill(ThemeVariant variant)
+    {
+        foreach (var accent in GetEdgeCaseAccents())
+        {
+            var palette = AccentPalette.Create(accent, variant);
+
+            double primaryLightness = AccentPalette.GetPerceptualLightness(palette.TextOnAccentPrimary);
+            double secondaryLightness = AccentPalette.GetPerceptualLightness(palette.TextOnAccentSecondary);
+            double fillLightness = AccentPalette.GetPerceptualLightness(palette.AccentFillPrimary);
+
+            // The secondary is a lower-emphasis variant: its lightness lies strictly between
+            // the full-contrast neutral and the fill family it sits on.
+            Assert.True(
+                (primaryLightness < secondaryLightness && secondaryLightness < fillLightness)
+                || (fillLightness < secondaryLightness && secondaryLightness < primaryLightness)
+            );
+        }
+    }
+
+    [Theory]
+    [InlineData(ThemeVariant.Light)]
+    [InlineData(ThemeVariant.Dark)]
+    public void TextOnAccentSecondary_StaysCloseToPrimaryNeutral(ThemeVariant variant)
+    {
+        foreach (var accent in GetEdgeCaseAccents())
+        {
+            var palette = AccentPalette.Create(accent, variant);
+
+            double primaryLightness = AccentPalette.GetPerceptualLightness(palette.TextOnAccentPrimary);
+            double secondaryLightness = AccentPalette.GetPerceptualLightness(palette.TextOnAccentSecondary);
+            double fillLightness = AccentPalette.GetPerceptualLightness(palette.AccentFillPrimary);
+
+            // The secondary is only a small step from the primary: it must remain closer
+            // to the neutral than to the fill family it is blended with.
+            Assert.True(
+                System.Math.Abs(secondaryLightness - primaryLightness)
+                < System.Math.Abs(secondaryLightness - fillLightness)
+            );
+        }
+    }
+
+    [Fact]
+    public void DefaultAccent_ProducesDifferentLightAndDarkSecondaryOnAccent()
+    {
+        var light = AccentPalette.Create(DefaultAccent, ThemeVariant.Light);
+        var dark = AccentPalette.Create(DefaultAccent, ThemeVariant.Dark);
+
+        Assert.NotEqual(light.TextOnAccentSecondary, dark.TextOnAccentSecondary);
+    }
+
     [Fact]
     public void Create_IgnoresAccentAlpha()
     {

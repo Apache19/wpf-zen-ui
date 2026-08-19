@@ -43,7 +43,7 @@
                 <Setter Property="controls:Button.MouseOverBackground" Value="{m:DynamicBrush AccentFillPrimary}" />
                 <Setter Property="controls:Button.PressedBackground" Value="{m:DynamicBrush AccentFillTertiary}" />
                 <Setter Property="Control.Foreground" Value="{m:DynamicBrush TextOnAccentPrimary}" />
-                <Setter Property="controls:Button.PressedForeground" Value="{m:DynamicBrush TextOnAccentPrimary}" />
+                <Setter Property="controls:Button.PressedForeground" Value="{m:DynamicBrush TextOnAccentSecondary}" />
                 <Setter Property="Control.BorderBrush" Value="{m:DynamicBrush AccentControlElevationBorder}" />
                 <Setter Property="controls:Button.MouseOverBorderBrush" Value="{m:DynamicBrush AccentControlElevationBorder}" />
                 <Setter Property="controls:Button.PressedBorderBrush" Value="Transparent" />

@@ -16,6 +16,7 @@ public enum ColorToken
     AccentTextPrimary,
     AccentTextSecondary,
     TextOnAccentPrimary,
+    TextOnAccentSecondary,
     AccentStroke,
     AccentSelection,
     SystemWindowText,

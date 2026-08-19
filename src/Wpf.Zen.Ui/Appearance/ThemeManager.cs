@@ -1519,6 +1519,7 @@ public sealed class ThemeManager
             [ColorKeys.AccentTextPrimary]        = palette.AccentTextPrimary,
             [ColorKeys.AccentTextSecondary]      = palette.AccentTextSecondary,
             [ColorKeys.TextOnAccentPrimary]      = palette.TextOnAccentPrimary,
+            [ColorKeys.TextOnAccentSecondary]    = palette.TextOnAccentSecondary,
             [ColorKeys.AccentStroke]             = palette.AccentStroke,
             [ColorKeys.AccentSelection]          = palette.AccentSelection,
             [BrushKeys.AccentFillPrimaryBrush]   = FreezeBrush(palette.AccentFillPrimary),
@@ -1527,6 +1528,7 @@ public sealed class ThemeManager
             [BrushKeys.AccentTextPrimaryBrush]   = FreezeBrush(palette.AccentTextPrimary),
             [BrushKeys.AccentTextSecondaryBrush] = FreezeBrush(palette.AccentTextSecondary),
             [BrushKeys.TextOnAccentPrimaryBrush] = FreezeBrush(palette.TextOnAccentPrimary),
+            [BrushKeys.TextOnAccentSecondaryBrush] = FreezeBrush(palette.TextOnAccentSecondary),
             [BrushKeys.AccentStrokeBrush]        = FreezeBrush(palette.AccentStroke),
             [BrushKeys.AccentSelectionBrush]     = FreezeBrush(palette.AccentSelection),
 

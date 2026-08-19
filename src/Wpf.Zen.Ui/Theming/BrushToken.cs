@@ -24,6 +24,7 @@ public enum BrushToken
     AccentTextPrimary,
     AccentTextSecondary,
     TextOnAccentPrimary,
+    TextOnAccentSecondary,
     AccentStroke,
     AccentSelection,
     SystemWindowText,

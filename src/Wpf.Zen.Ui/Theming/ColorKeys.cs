@@ -21,6 +21,7 @@ public static class ColorKeys
     public static ComponentResourceKey AccentTextPrimary                   { get; } = Create(nameof(AccentTextPrimary));
     public static ComponentResourceKey AccentTextSecondary                 { get; } = Create(nameof(AccentTextSecondary));
     public static ComponentResourceKey TextOnAccentPrimary                 { get; } = Create(nameof(TextOnAccentPrimary));
+    public static ComponentResourceKey TextOnAccentSecondary               { get; } = Create(nameof(TextOnAccentSecondary));
     public static ComponentResourceKey AccentStroke                        { get; } = Create(nameof(AccentStroke));
     public static ComponentResourceKey AccentSelection                     { get; } = Create(nameof(AccentSelection));
     public static ComponentResourceKey SystemColorWindowTextColor          { get; } = Create(nameof(SystemColorWindowTextColor));
