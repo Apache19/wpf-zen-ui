@@ -774,6 +774,70 @@ public class NavigationViewTests
     }
 
     [Fact]
+    public void Navigate_SamePageDifferentParameter_CommitsOccurrenceAndReEntersLifecycle()
+    {
+        RunOnStaThread(() =>
+        {
+            var resources = new ResourceDictionary { Source = CreateResourceUri() };
+            var navigationView = new Wpf.Zen.Ui.Controls.NavigationView
+            {
+                Style = Assert.IsType<Style>(resources[typeof(Wpf.Zen.Ui.Controls.NavigationView)]),
+            };
+            var window = new Window { Content = navigationView };
+            NavigationAwareViewModel? firstViewModel = null;
+            NavigationAwareViewModel? secondViewModel = null;
+
+            try
+            {
+                window.Show();
+                DrainDispatcher();
+
+                // Parameters enter through the navigation request: the public Navigate overloads
+                // take no parameter, and the unregistered page path has no container to carry one.
+                Wpf.Zen.Ui.INavigationHost host = navigationView;
+                Assert.Equal(
+                    Wpf.Zen.Ui.NavigationResultStatus.Succeeded,
+                    host.Navigate(Wpf.Zen.Ui.NavigationRequest.To(typeof(NavigationAwarePageOne), "first")).Status);
+                DrainDispatcher();
+                var firstPage = Assert.IsType<NavigationAwarePageOne>(navigationView.CurrentLocation?.Page);
+                firstViewModel = Assert.IsType<NavigationAwareViewModel>(firstPage.DataContext);
+                Assert.Equal(1, firstViewModel.NavigationEnteredCount);
+                Assert.Equal(0, firstViewModel.NavigationExitedCount);
+                Assert.Equal("first", navigationView.CurrentLocation?.Target.Parameter);
+
+                // A different parameter must commit a new occurrence even though the same page
+                // type is already current: the exiting instance leaves and a fresh instance
+                // (caching is Disabled for unregistered pages) enters.
+                Assert.Equal(
+                    Wpf.Zen.Ui.NavigationResultStatus.Succeeded,
+                    host.Navigate(Wpf.Zen.Ui.NavigationRequest.To(typeof(NavigationAwarePageOne), "second")).Status);
+                DrainDispatcher();
+                Assert.Equal(1, firstViewModel.NavigationExitedCount);
+                var secondPage = Assert.IsType<NavigationAwarePageOne>(navigationView.CurrentLocation?.Page);
+                Assert.NotSame(firstPage, secondPage);
+                secondViewModel = Assert.IsType<NavigationAwareViewModel>(secondPage.DataContext);
+                Assert.Equal(1, secondViewModel.NavigationEnteredCount);
+                Assert.Equal(0, secondViewModel.NavigationExitedCount);
+                Assert.Equal("second", navigationView.CurrentLocation?.Target.Parameter);
+
+                // The same page type with the same parameter is a redundant request: it must be
+                // rejected without any additional lifecycle notification.
+                Assert.Equal(
+                    Wpf.Zen.Ui.NavigationResultStatus.Rejected,
+                    host.Navigate(Wpf.Zen.Ui.NavigationRequest.To(typeof(NavigationAwarePageOne), "second")).Status);
+                DrainDispatcher();
+                Assert.Equal(1, secondViewModel.NavigationEnteredCount);
+                Assert.Equal(0, secondViewModel.NavigationExitedCount);
+            }
+            finally
+            {
+                window.Close();
+                DrainDispatcher();
+            }
+        });
+    }
+
+    [Fact]
     public void NavigationCommitted_WithLateDataContext_EntersAndExitsViewModel()
     {
         RunOnStaThread(() =>

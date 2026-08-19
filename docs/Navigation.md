@@ -642,6 +642,72 @@ object? parameter = Navigation.GetParameter(this);
 非可视对象和视图模型在 DI 模式下应优先通过构造函数注入 `INavigationService`，而不是
 依赖视觉树查找。
 
+### 视图模型中的导航参数
+
+`Navigation.GetParameter` 需要传入视觉树中的 `DependencyObject`，纯视图模型无法直接
+调用。DI 模式下，视图模型通过构造函数注入 `INavigationService` 后，有两种取参方式。
+
+**方式 A：在 `INavigationAware` 生命周期回调中读取（推荐）**
+
+视图模型实现 `INavigationAware` 后，宿主在每次成功提交导航时调用
+`OnNavigationEnteredAsync`。此时位置刷新已完成，本次导航的参数已发布到
+`State.CurrentLocation.Target.Parameter`，可直接读取：
+
+```csharp
+public sealed class ArticleViewModel : INavigationAware
+{
+    private readonly INavigationService _navigation;
+
+    public ArticleViewModel(INavigationService navigation)
+    {
+        _navigation = navigation;
+    }
+
+    public async Task OnNavigationEnteredAsync()
+    {
+        int articleId = (int)(_navigation.State.CurrentLocation?.Target.Parameter ?? 0);
+        await LoadArticleAsync(articleId);
+    }
+
+    public Task OnNavigationExitedAsync() => Task.CompletedTask;
+}
+```
+
+视图模型能收到回调需要满足以下任一条件：
+
+- 页面实现 `INavigationAware` 且其 `DataContext` 也实现 `INavigationAware`：视图先收到
+  通知，视图抛出的异常不会阻断视图模型的回调；
+- 页面实现 `INavigableView<object>` 且其 `ViewModel` 实现 `INavigationAware`；
+- 页面是普通 `FrameworkElement` 且 `DataContext` 实现 `INavigationAware`。
+
+`OnNavigationEnteredAsync` 与 `Loaded`/`Unloaded` 无关，无法取消导航，每个成功提交的
+导航都会触发。参数不覆盖 `DataContext`，需要与页面 `DataContext` 合并时请自行处理。
+
+**方式 B：由页面读取并转发**
+
+不想让视图模型依赖导航框架时，页面读取参数后转发给视图模型的自定义方法。参数发布在
+页面根节点，页面是天然的转发点：
+
+```csharp
+// 页面实现 INavigationAware（或使用 Loaded / DataContextChanged 钩子）
+public async Task OnNavigationEnteredAsync()
+{
+    if (DataContext is ArticleViewModel viewModel)
+    {
+        viewModel.ApplyNavigationParameter(Navigation.GetParameter(this));
+    }
+}
+```
+
+无 DI 作用域的应用无法构造注入 `INavigationService`，应使用本方式。
+
+**注意事项**
+
+- `Navigated` 路由事件的 `NavigatedEventArgs` 只有 `Page` 属性，不含导航参数。
+- `State.CurrentLocationChanged` 不止在导航时触发（地图变更、`DataContext` 变化、面包屑
+  刷新也会触发）；若通过订阅它读取参数，应使用 `CurrentLocation.Page` 身份或参数变化
+  进行过滤。
+
 ## 使用约束
 
 - 一个 `INavigationHost` 同一时间只能附加一个作用域；重复附加会抛出异常。
