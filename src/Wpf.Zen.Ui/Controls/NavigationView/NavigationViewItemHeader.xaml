@@ -12,6 +12,7 @@
     xmlns:m="clr-namespace:Wpf.Zen.Ui.Markup">
 
     <Style TargetType="{x:Type controls:NavigationViewItemHeader}">
+        <Setter Property="controls:IconAssist.IconMargin" Value="0,0,4,0" />
         <Setter Property="Foreground" Value="{m:DynamicBrush TextFillPrimary}" />
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="HorizontalAlignment" Value="Left" />
@@ -33,9 +34,9 @@
                         <ContentPresenter
                             x:Name="IconPresenter"
                             Grid.Column="0"
-                            Margin="0,0,4,0"
+                            Margin="{TemplateBinding controls:IconAssist.IconMargin}"
                             VerticalAlignment="Center"
-                            Content="{TemplateBinding Icon}"
+                            Content="{TemplateBinding controls:IconAssist.Icon}"
                             TextElement.FontSize="{TemplateBinding FontSize}"
                             TextElement.Foreground="{TemplateBinding Foreground}" />
 
@@ -46,7 +47,7 @@
                             Text="{TemplateBinding Text}" />
                     </Grid>
                     <ControlTemplate.Triggers>
-                        <Trigger Property="Icon" Value="{x:Null}">
+                        <Trigger Property="controls:IconAssist.Icon" Value="{x:Null}">
                             <Setter TargetName="IconPresenter" Property="Margin" Value="0" />
                             <Setter TargetName="IconPresenter" Property="Visibility" Value="Collapsed" />
                         </Trigger>

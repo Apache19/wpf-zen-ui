@@ -8,8 +8,9 @@ using System.Windows.Controls;
 namespace Wpf.Zen.Ui.Controls;
 
 /// <summary>
-/// Extends the WPF <see cref="System.Windows.Controls.Primitives.ToggleButton"/> with a leading
-/// <see cref="Icon"/> while preserving the native checked, unchecked, and indeterminate state model.
+/// Extends the WPF <see cref="System.Windows.Controls.Primitives.ToggleButton"/> with Fluent visuals
+/// while preserving the native checked, unchecked, and indeterminate state model. Its default
+/// template implements the primary icon-slot contract defined by <see cref="IconAssist"/>.
 /// </summary>
 /// <remarks>
 /// The icon is part of the default template rather than the button content. Applications can therefore
@@ -18,29 +19,6 @@ namespace Wpf.Zen.Ui.Controls;
 /// </remarks>
 public class ToggleButton : System.Windows.Controls.Primitives.ToggleButton
 {
-    /// <summary>
-    /// Identifies the <see cref="Icon"/> dependency property.
-    /// </summary>
-    public static readonly DependencyProperty IconProperty =
-        DependencyProperty.Register(
-            nameof(Icon),
-            typeof(object),
-            typeof(ToggleButton),
-            new PropertyMetadata(null)
-        );
-
-    /// <summary>
-    /// Gets or sets the icon displayed before the toggle button content.
-    /// A value of <see langword="null"/> collapses the icon presenter and removes its reserved spacing.
-    /// </summary>
-    [Bindable(true)]
-    [Category("Appearance")]
-    public object? Icon
-    {
-        get => GetValue(IconProperty);
-        set => SetValue(IconProperty, value);
-    }
-
     /// <summary>Identifies the <see cref="CornerRadius"/> dependency property.</summary>
     public static readonly DependencyProperty CornerRadiusProperty =
         Border.CornerRadiusProperty.AddOwner(

@@ -25,7 +25,7 @@
             <ui:SplitButton
                 MinWidth="200"
                 HorizontalAlignment="Left"
-                Icon="{ui:FluentIconSource PaintBrush24}">
+                ui:IconAssist.Icon="{ui:FluentIconSource PaintBrush24}">
                 <Border
                     Height="24"
                     Background="Green"
@@ -155,7 +155,7 @@
                         MinWidth="200"
                         Appearance="{Binding SelectedItem, ElementName=SplitButtonAppearanceComboBox}"
                         Content="Run action"
-                        Icon="{ui:FluentIconSource Play24}">
+                        ui:IconAssist.Icon="{ui:FluentIconSource Play24}">
                         <ui:SplitButton.Style>
                             <Style
                                 BasedOn="{StaticResource {x:Type ui:SplitButton}}"

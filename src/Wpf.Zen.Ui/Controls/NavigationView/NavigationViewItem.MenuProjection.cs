@@ -91,7 +91,8 @@ public partial class NavigationViewItem
     /// <remarks>
     /// Each projected MenuItem uses its source <see cref="NavigationViewItem"/> as
     /// <see cref="FrameworkElement.DataContext"/>. A custom style can therefore bind to properties
-    /// such as <see cref="HeaderedContentControl.Header"/>, <see cref="Icon"/>, <see cref="IsActive"/> or
+    /// such as <see cref="HeaderedContentControl.Header"/>, <see cref="IconAssist.IconProperty"/>,
+    /// <see cref="IsActive"/> or
     /// <see cref="TargetPageType"/> without requiring a second public item model. The default
     /// projection converts an arbitrary UIElement Header to accessible text because WPF forbids one
     /// visual from belonging to both the navigation and menu trees; a custom style can render an
@@ -458,8 +459,9 @@ public partial class NavigationViewItem
         BindingOperations.SetBinding(
             menuItem,
             MenuItem.IconProperty,
-            new Binding(nameof(Icon))
+            new Binding
             {
+                Path = new PropertyPath(IconAssist.IconProperty),
                 Source = source,
                 Mode = BindingMode.OneWay,
                 Converter = MenuIconConverter,

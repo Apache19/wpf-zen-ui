@@ -34,15 +34,15 @@
                 IsPaneToggleVisible="True"
                 PaneDisplayMode="Left">
                 <ui:NavigationView.MenuItems>
-                    <ui:NavigationViewItem Header="Dashboard" Icon="{ui:FluentIconSource Home24}" />
-                    <ui:NavigationViewItem Header="Items" Icon="{ui:FluentIconSource Library24}">
+                    <ui:NavigationViewItem Header="Dashboard" ui:IconAssist.Icon="{ui:FluentIconSource Home24}" />
+                    <ui:NavigationViewItem Header="Items" ui:IconAssist.Icon="{ui:FluentIconSource Library24}">
                         <ui:NavigationViewItem.InfoBadge>
                             <ui:InfoBadge Severity="Attention" Value="3" />
                         </ui:NavigationViewItem.InfoBadge>
                     </ui:NavigationViewItem>
                 </ui:NavigationView.MenuItems>
                 <ui:NavigationView.FooterMenuItems>
-                    <ui:NavigationViewItem Header="Settings" Icon="{ui:FluentIconSource Settings24}" />
+                    <ui:NavigationViewItem Header="Settings" ui:IconAssist.Icon="{ui:FluentIconSource Settings24}" />
                 </ui:NavigationView.FooterMenuItems>
             </ui:NavigationView>
             <controls:ControlExample.XamlCode>
@@ -66,7 +66,7 @@
                     <ui:InfoBadge
                         Margin="10"
                         CornerRadius="30"
-                        Icon="{ui:FluentIconSource Alert16}"
+                        ui:IconAssist.Icon="{ui:FluentIconSource Alert16}"
                         Severity="{Binding InfoBadgeSeverity}"
                         Style="{DynamicResource {x:Static theming:StyleKeys.IconInfoBadgeStyle}}" />
 

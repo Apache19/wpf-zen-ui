@@ -33,13 +33,13 @@ public class IconContentTests
             var style = new Style(typeof(Wpf.Zen.Ui.Controls.Button));
             style.Setters.Add(
                 new Setter(
-                    Wpf.Zen.Ui.Controls.Button.IconProperty,
+                    IconAssist.IconProperty,
                     new FluentIconSourceExtension(SymbolRegular.Settings24).ProvideValue(null!)
                 )
             );
             var button = new Wpf.Zen.Ui.Controls.Button { Style = style };
 
-            var icon = Assert.IsType<FluentIconSource>(button.Icon);
+            var icon = Assert.IsType<FluentIconSource>(IconAssist.GetIcon(button));
             Assert.Equal(SymbolRegular.Settings24, icon.Symbol);
             Assert.False(icon.Filled);
         });
@@ -51,11 +51,64 @@ public class IconContentTests
         RunOnStaThread(() =>
         {
             var content = new Border();
-            var button = new Wpf.Zen.Ui.Controls.Button { Icon = content };
+            var button = new Wpf.Zen.Ui.Controls.Button();
+            IconAssist.SetIcon(button, content);
 
-            Assert.Equal(typeof(object), Wpf.Zen.Ui.Controls.Button.IconProperty.PropertyType);
-            Assert.Same(content, button.Icon);
-            Assert.Same(content, button.ReadLocalValue(Wpf.Zen.Ui.Controls.Button.IconProperty));
+            Assert.Equal(typeof(object), IconAssist.IconProperty.PropertyType);
+            Assert.Same(content, IconAssist.GetIcon(button));
+            Assert.Same(content, button.ReadLocalValue(IconAssist.IconProperty));
+        });
+    }
+
+    [Fact]
+    public void IconMargin_IsLocalToTheOwningControl()
+    {
+        RunOnStaThread(() =>
+        {
+            var parent = new Wpf.Zen.Ui.Controls.Button();
+            var child = new Wpf.Zen.Ui.Controls.Button();
+            parent.Content = child;
+
+            IconAssist.SetIconMargin(parent, new Thickness(1D, 2D, 3D, 4D));
+
+            Assert.Equal(new Thickness(1D, 2D, 3D, 4D), IconAssist.GetIconMargin(parent));
+            Assert.Equal(default, IconAssist.GetIconMargin(child));
+            Assert.Same(
+                DependencyProperty.UnsetValue,
+                child.ReadLocalValue(IconAssist.IconMarginProperty)
+            );
+        });
+    }
+
+    [Fact]
+    public void NativeButtonTemplate_ConsumesTheSharedIconContract()
+    {
+        RunOnStaThread(() =>
+        {
+            var resources = new ResourceDictionary
+            {
+                Source = new Uri(
+                    "pack://application:,,,/Wpf.Zen.Ui;component/Controls/Button/NativeButton.xaml",
+                    UriKind.Absolute
+                ),
+            };
+            var button = new System.Windows.Controls.Button
+            {
+                Content = "Native",
+                Style = Assert.IsType<Style>(resources[typeof(System.Windows.Controls.Button)]),
+            };
+            var icon = new FluentIconSource(SymbolRegular.Home24);
+            var margin = new Thickness(1D, 2D, 3D, 4D);
+            IconAssist.SetIcon(button, icon);
+            IconAssist.SetIconMargin(button, margin);
+
+            Assert.True(button.ApplyTemplate());
+            var presenter = Assert.IsType<IconPresenter>(
+                button.Template.FindName("iconPresenter", button)
+            );
+
+            Assert.Same(icon, presenter.Content);
+            Assert.Equal(margin, presenter.Margin);
         });
     }
 

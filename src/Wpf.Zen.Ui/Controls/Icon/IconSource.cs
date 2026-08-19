@@ -11,7 +11,7 @@ namespace Wpf.Zen.Ui.Controls;
 /// </summary>
 /// <remarks>
 /// <para>
-/// Icon properties on library controls remain ordinary WPF content properties, so applications
+/// Icon slots defined by <see cref="IconAssist.IconProperty"/> remain ordinary WPF content, so applications
 /// may still supply any visual or data object. Deriving reusable icon descriptions from this type
 /// gives icon families a common semantic boundary without forcing them into one rendering model.
 /// </para>

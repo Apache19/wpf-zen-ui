@@ -24,11 +24,10 @@ namespace Wpf.Zen.Ui.Controls;
 /// </summary>
 /// <example>
 /// <code lang="xml">
-/// &lt;ui:AutoSuggestBox x:Name="AutoSuggestBox" PlaceholderText="Search"&gt;
-///     &lt;ui:AutoSuggestBox.Icon&gt;
-///         &lt;ui:FluentIcon Symbol="Search24" /&gt;
-///     &lt;/ui:AutoSuggestBox.Icon&gt;
-/// &lt;/ui:AutoSuggestBox&gt;
+/// &lt;ui:AutoSuggestBox
+///     x:Name="AutoSuggestBox"
+///     PlaceholderText="Search"
+///     ui:IconAssist.Icon="{ui:FluentIconSource Search24}" /&gt;
 /// </code>
 /// </example>
 [TemplatePart(Name = ElementTextBox, Type = typeof(TextBox))]
@@ -215,29 +214,6 @@ public class AutoSuggestBox : ItemsControl
     {
         get => (double)GetValue(MaxSuggestionListHeightProperty);
         set => SetValue(MaxSuggestionListHeightProperty, value);
-    }
-
-    #endregion
-
-    #region DP: Icon
-
-    /// <summary>
-    /// Identifies the <see cref="Icon"/> dependency property.
-    /// </summary>
-    public static readonly DependencyProperty IconProperty = DependencyProperty.Register(
-        nameof(Icon),
-        typeof(object),
-        typeof(AutoSuggestBox),
-        new PropertyMetadata(null)
-    );
-
-    /// <summary>
-    /// Gets or sets the content displayed in the icon slot.
-    /// </summary>
-    public object? Icon
-    {
-        get => GetValue(IconProperty);
-        set => SetValue(IconProperty, value);
     }
 
     #endregion

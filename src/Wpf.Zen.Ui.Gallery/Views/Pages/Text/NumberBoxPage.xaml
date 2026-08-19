@@ -98,7 +98,7 @@
                 MinWidth="260"
                 HorizontalAlignment="Left"
                 FormatString="F2"
-                Icon="{ui:FluentIconSource NumberSymbolSquare24}"
+                ui:IconAssist.Icon="{ui:FluentIconSource NumberSymbolSquare24}"
                 LargeStep="2.25"
                 Maximum="10"
                 Minimum="-10"
@@ -115,7 +115,7 @@
             <ui:NumberBox
                 MinWidth="260"
                 HorizontalAlignment="Left"
-                Icon="{ui:FluentIconSource NumberSymbolSquare24}"
+                ui:IconAssist.Icon="{ui:FluentIconSource NumberSymbolSquare24}"
                 FormatString="F0"
                 Maximum="100"
                 Minimum="0"

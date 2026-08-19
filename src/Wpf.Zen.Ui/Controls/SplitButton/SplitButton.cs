@@ -322,27 +322,6 @@ public class SplitButton : ContentControl, ICommandSource
 
     #endregion
 
-    #region DP: Icon
-
-    /// <summary>Identifies the <see cref="Icon"/> dependency property.</summary>
-    public static readonly DependencyProperty IconProperty = Button.IconProperty.AddOwner(
-        typeof(SplitButton),
-        new FrameworkPropertyMetadata(null)
-    );
-
-    /// <summary>
-    /// Gets or sets the content displayed in the icon slot.
-    /// </summary>
-    [Bindable(true)]
-    [Category("Appearance")]
-    public object? Icon
-    {
-        get => GetValue(IconProperty);
-        set => SetValue(IconProperty, value);
-    }
-
-    #endregion
-
     #region DP: CornerRadius
 
     /// <summary>Identifies the <see cref="CornerRadius"/> dependency property.</summary>

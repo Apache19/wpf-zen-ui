@@ -20,14 +20,6 @@ public class NavigationViewItemHeader : System.Windows.Controls.Control
         new PropertyMetadata(string.Empty)
     );
 
-    /// <summary>Identifies the <see cref="Icon"/> dependency property.</summary>
-    public static readonly DependencyProperty IconProperty = DependencyProperty.Register(
-        nameof(Icon),
-        typeof(object),
-        typeof(NavigationViewItemHeader),
-        new PropertyMetadata(null)
-    );
-
     static NavigationViewItemHeader()
     {
         DefaultStyleKeyProperty.OverrideMetadata(
@@ -44,16 +36,5 @@ public class NavigationViewItemHeader : System.Windows.Controls.Control
     {
         get => (string)GetValue(TextProperty);
         set => SetValue(TextProperty, value);
-    }
-
-    /// <summary>
-    /// Gets or sets the icon.
-    /// </summary>
-    [Bindable(true)]
-    [Category("Appearance")]
-    public object? Icon
-    {
-        get => GetValue(IconProperty);
-        set => SetValue(IconProperty, value);
     }
 }

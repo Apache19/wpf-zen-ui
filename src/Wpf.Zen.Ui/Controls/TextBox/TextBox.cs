@@ -307,23 +307,6 @@ public class TextBox : System.Windows.Controls.TextBox
 
     #endregion
 
-    /// <summary>Identifies the <see cref="Icon"/> dependency property.</summary>
-    public static readonly DependencyProperty IconProperty = DependencyProperty.Register(
-        nameof(Icon),
-        typeof(object),
-        typeof(TextBox),
-        new PropertyMetadata(null)
-    );
-
-    /// <summary>
-    /// Gets or sets the content displayed in the icon slot.
-    /// </summary>
-    public object? Icon
-    {
-        get => GetValue(IconProperty);
-        set => SetValue(IconProperty, value);
-    }
-
     /// <summary>Identifies the <see cref="IconPlacement"/> dependency property.</summary>
     public static readonly DependencyProperty IconPlacementProperty = DependencyProperty.Register(
         nameof(IconPlacement),

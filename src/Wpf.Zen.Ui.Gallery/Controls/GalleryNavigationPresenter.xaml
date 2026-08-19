@@ -29,12 +29,12 @@
                                     Command="{Binding TemplateButtonCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=controls:GalleryNavigationPresenter}, Mode=OneWay}"
                                     CommandParameter="{Binding PageType, Mode=OneTime}"
                                     IsChevronVisible="True">
-                                    <ui:CardAction.Icon>
+                                    <ui:IconAssist.Icon>
                                         <ui:FluentIcon
                                             FontSize="30"
                                             Symbol="{Binding Icon, Mode=OneTime}"
                                             TextElement.Foreground="{ui:DynamicBrush TextFillPrimary}" />
-                                    </ui:CardAction.Icon>
+                                    </ui:IconAssist.Icon>
                                     <StackPanel>
                                         <ui:TextBlock
                                             FontSize="16"

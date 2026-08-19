@@ -78,6 +78,11 @@
         <Setter Property="Foreground" Value="{m:DynamicBrush TextFillPrimary}" />
         <Setter Property="Padding" Value="16,4,16,4" />
         <Setter Property="Height" Value="48" />
+        <Setter Property="controls:IconAssist.IconMargin">
+            <Setter.Value>
+                <Binding Path="Padding" RelativeSource="{RelativeSource Self}" />
+            </Setter.Value>
+        </Setter>
         <Setter Property="Focusable" Value="False" />
         <Setter Property="IsTabStop" Value="False" />
         <Setter Property="VerticalContentAlignment" Value="Stretch" />
@@ -116,7 +121,7 @@
                         <Grid
                             x:Name="IconGrid"
                             Grid.Column="1"
-                            Margin="{TemplateBinding Padding}"
+                            Margin="{TemplateBinding controls:IconAssist.IconMargin}"
                             HorizontalAlignment="Left"
                             VerticalAlignment="Center">
 
@@ -128,7 +133,7 @@
                                 VerticalAlignment="Center"
                                 controls:TitleBar.HitTestRole="Icon"
                                 AutomationProperties.AutomationId="TitleBarIcon"
-                                Content="{TemplateBinding Icon}"
+                                Content="{TemplateBinding controls:IconAssist.Icon}"
                                 Focusable="False"
                                 RenderOptions.BitmapScalingMode="HighQuality" />
                         </Grid>
@@ -200,17 +205,16 @@
                         -->
                         <Trigger Property="LeftContentState" Value="Visible">
                             <Setter TargetName="LeftContentPresenter" Property="Visibility" Value="Visible" />
-                            <Setter TargetName="IconGrid" Property="Margin" Value="{Binding Padding, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource IconGridMarginConverter}}" />
                         </Trigger>
 
                         <MultiTrigger>
                             <MultiTrigger.Conditions>
-                                <Condition Property="Icon" Value="{x:Null}" />
+                                <Condition Property="controls:IconAssist.Icon" Value="{x:Null}" />
                                 <Condition Property="Title" Value="{x:Null}" />
                             </MultiTrigger.Conditions>
                             <Setter TargetName="IconGrid" Property="Visibility" Value="Collapsed" />
                         </MultiTrigger>
-                        <Trigger Property="Icon" Value="{x:Null}">
+                        <Trigger Property="controls:IconAssist.Icon" Value="{x:Null}">
                             <Setter TargetName="Icon" Property="Visibility" Value="Collapsed" />
                             <Setter TargetName="Icon" Property="Margin" Value="0" />
                         </Trigger>
@@ -226,6 +230,16 @@
             </Setter.Value>
         </Setter>
         <Style.Triggers>
+            <Trigger Property="LeftContentState" Value="Visible">
+                <Setter Property="controls:IconAssist.IconMargin">
+                    <Setter.Value>
+                        <Binding
+                            Path="Padding"
+                            RelativeSource="{RelativeSource Self}"
+                            Converter="{StaticResource IconGridMarginConverter}" />
+                    </Setter.Value>
+                </Setter>
+            </Trigger>
             <DataTrigger Binding="{Binding IsNcActive, RelativeSource={RelativeSource AncestorType=controls:FluentWindow}, FallbackValue=True}" Value="False">
                 <Setter Property="Foreground" Value="{m:DynamicBrush TextFillDisabled}" />
             </DataTrigger>

@@ -16,16 +16,16 @@ namespace Wpf.Zen.Ui.Markup;
 /// &lt;ui:Button
 ///     Appearance="Primary"
 ///     Content="WPF Zen UI button with font icon"
-///     Icon="{ui:ImageIcon '/my-icon.png'}" /&gt;
+///     ui:IconAssist.Icon="{ui:ImageIcon '/my-icon.png'}" /&gt;
 /// </code>
 /// <code lang="xml">
-/// &lt;ui:Button Icon="{ui:ImageIcon 'pack://application:,,,/Assets/wpfui.png'}" /&gt;
+/// &lt;ui:Button ui:IconAssist.Icon="{ui:ImageIcon 'pack://application:,,,/Assets/wpfui.png'}" /&gt;
 /// </code>
 /// <code lang="xml">
-/// &lt;ui:HyperlinkButton Icon="{ui:ImageIcon 'pack://application:,,,/Assets/wpfui.png'}" /&gt;
+/// &lt;ui:HyperlinkButton ui:IconAssist.Icon="{ui:ImageIcon 'pack://application:,,,/Assets/wpfui.png'}" /&gt;
 /// </code>
 /// <code lang="xml">
-/// &lt;ui:TitleBar Icon="{ui:ImageIcon 'pack://application:,,,/Assets/wpfui.png'}" /&gt;
+/// &lt;ui:TitleBar ui:IconAssist.Icon="{ui:ImageIcon 'pack://application:,,,/Assets/wpfui.png'}" /&gt;
 /// </code>
 /// </example>
 [ContentProperty(nameof(Source))]

@@ -39,7 +39,7 @@
                 MinWidth="200"
                 HorizontalAlignment="Left"
                 ui:PlaceholderService.Content="Placeholder"
-                Icon="{ui:FluentIconSource TextFont24}"
+                ui:IconAssist.Icon="{ui:FluentIconSource TextFont24}"
                 ItemsSource="{Binding ComboBoxFontFamilies}">
                 <ui:ComboBox.ItemTemplate>
                     <DataTemplate>

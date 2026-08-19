@@ -60,7 +60,8 @@
         <Setter Property="SnapsToDevicePixels" Value="True" />
         <Setter Property="ItemContainerStyle" Value="{StaticResource UiAutoSuggestBoxItemStyle}" />
         <Setter Property="Validation.ErrorTemplate" Value="{m:DynamicTemplate DefaultValidation}" />
-        <Setter Property="Icon" Value="{m:FluentIconSource Search24}" />
+        <Setter Property="controls:IconAssist.Icon" Value="{m:FluentIconSource Search24}" />
+        <Setter Property="controls:IconAssist.IconMargin" Value="0,0,10,0" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type controls:AutoSuggestBox}">
@@ -73,7 +74,8 @@
                             VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
                             controls:IconPresenter.IconSize="{TemplateBinding FontSize}"
                             ClearButtonEnabled="{TemplateBinding ClearButtonEnabled}"
-                            Icon="{TemplateBinding Icon}"
+                            controls:IconAssist.Icon="{TemplateBinding controls:IconAssist.Icon}"
+                            controls:IconAssist.IconMargin="{TemplateBinding controls:IconAssist.IconMargin}"
                             IconPlacement="Right"
                             IsTabStop="{TemplateBinding IsTabStop}"
                             PlaceholderText="{TemplateBinding PlaceholderText}"

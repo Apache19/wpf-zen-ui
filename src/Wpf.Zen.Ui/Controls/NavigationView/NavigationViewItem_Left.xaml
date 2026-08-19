@@ -36,9 +36,10 @@
                 <ContentPresenter
                     x:Name="IconPresenter"
                     Grid.Column="0"
+                    Margin="{Binding Path=(controls:IconAssist.IconMargin), RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}"
                     HorizontalAlignment="Center"
                     VerticalAlignment="Center"
-                    Content="{Binding Icon, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}"
+                    Content="{Binding Path=(controls:IconAssist.Icon), RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}"
                     TextElement.FontSize="16"
                     TextElement.Foreground="{m:DynamicBrush TextFillPrimary}" />
                 <Rectangle
@@ -139,7 +140,7 @@
                 <Setter TargetName="HeaderSurface" Property="Background" Value="{m:DynamicBrush SubtleFillSecondary}" />
             </DataTrigger>
 
-            <DataTrigger Binding="{Binding Icon, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}" Value="{x:Null}">
+            <DataTrigger Binding="{Binding Path=(controls:IconAssist.Icon), RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}" Value="{x:Null}">
                 <Setter TargetName="IconColumn" Property="Width" Value="3" />
                 <Setter TargetName="IconPresenter" Property="Visibility" Value="Collapsed" />
                 <Setter TargetName="HeaderPresenter" Property="Margin" Value="10,0,0,0" />
@@ -147,7 +148,6 @@
 
             <DataTrigger Binding="{Binding IsSubItem, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}" Value="True">
                 <Setter TargetName="IconColumn" Property="Width" Value="Auto" />
-                <Setter TargetName="IconPresenter" Property="Margin" Value="10,0,8,0" />
                 <Setter TargetName="IconPresenter" Property="Visibility" Value="Visible" />
                 <Setter TargetName="HeaderPresenter" Property="Margin" Value="0,0,0,0" />
             </DataTrigger>
@@ -155,9 +155,8 @@
             <MultiDataTrigger>
                 <MultiDataTrigger.Conditions>
                     <Condition Binding="{Binding IsSubItem, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}" Value="True" />
-                    <Condition Binding="{Binding Icon, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}" Value="{x:Null}" />
+                    <Condition Binding="{Binding Path=(controls:IconAssist.Icon), RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}" Value="{x:Null}" />
                 </MultiDataTrigger.Conditions>
-                <Setter TargetName="IconPresenter" Property="Margin" Value="10,0,0,0" />
             </MultiDataTrigger>
 
             <DataTrigger Binding="{Binding InfoBadge, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}" Value="{x:Null}">

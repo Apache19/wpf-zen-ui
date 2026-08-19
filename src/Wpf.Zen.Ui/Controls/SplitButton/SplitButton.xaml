@@ -28,6 +28,7 @@
     <converters:CornerRadiusTransformConverter x:Key="SplitButtonRightCornerRadiusConverter" CopyCorners="TopRight,BottomRight" />
 
     <Style x:Key="{x:Static t:StyleKeys.UiSplitButtonStyle}" BasedOn="{StaticResource UiButtonAppearanceStyle}" TargetType="{x:Type controls:SplitButton}">
+        <Setter Property="controls:IconAssist.IconMargin" Value="0,0,8,0" />
         <Setter Property="Padding" Value="{m:DynamicValue ButtonThemePadding}" />
         <Setter Property="CornerRadius" Value="{m:DynamicValue ControlCornerRadius}" />
         <Setter Property="BorderThickness" Value="1" />
@@ -74,7 +75,8 @@
                             DisabledForeground="{TemplateBinding DisabledForeground}"
                             Focusable="False"
                             Foreground="{TemplateBinding Foreground}"
-                            Icon="{TemplateBinding Icon}"
+                            controls:IconAssist.Icon="{TemplateBinding controls:IconAssist.Icon}"
+                            controls:IconAssist.IconMargin="{TemplateBinding controls:IconAssist.IconMargin}"
                             IsTabStop="False"
                             MouseOverBackground="{TemplateBinding MouseOverBackground}"
                             MouseOverBorderBrush="{TemplateBinding MouseOverBorderBrush}"
@@ -121,9 +123,9 @@
                             PressedBackground="{TemplateBinding PressedBackground}"
                             PressedBorderBrush="{TemplateBinding PressedBorderBrush}"
                             PressedForeground="{TemplateBinding PressedForeground}">
-                            <controls:Button.Icon>
+                            <controls:IconAssist.Icon>
                                 <controls:FluentIcon FontSize="10" Symbol="ChevronDown24" />
-                            </controls:Button.Icon>
+                            </controls:IconAssist.Icon>
                         </controls:Button>
                     </Grid>
                     <ControlTemplate.Triggers>

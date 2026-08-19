@@ -6,6 +6,7 @@
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Data;
+using IconAssist = Wpf.Zen.Ui.Controls.IconAssist;
 using UiInfoBar = Wpf.Zen.Ui.Controls.InfoBar;
 
 namespace Wpf.Zen.Ui.UnitTests.Controls.InfoBar;
@@ -54,15 +55,15 @@ public class InfoBarTests
                 {
                     CornerRadius = new CornerRadius(8D),
                     IsIconVisible = false,
-                    Icon = icon,
                     IconTemplate = iconTemplate,
                     CloseButtonStyle = closeButtonStyle,
                     CloseButtonToolTip = toolTip,
                 };
+                IconAssist.SetIcon(infoBar, icon);
 
                 Assert.Equal(new CornerRadius(8D), infoBar.CornerRadius);
                 Assert.False(infoBar.IsIconVisible);
-                Assert.Same(icon, infoBar.Icon);
+                Assert.Same(icon, IconAssist.GetIcon(infoBar));
                 Assert.Same(iconTemplate, infoBar.IconTemplate);
                 Assert.Same(closeButtonStyle, infoBar.CloseButtonStyle);
                 Assert.Same(toolTip, infoBar.CloseButtonToolTip);
@@ -77,17 +78,18 @@ public class InfoBarTests
             () =>
             {
                 var icon = new Border();
-                var infoBar = new UiInfoBar { Icon = icon };
+                var infoBar = new UiInfoBar();
+                IconAssist.SetIcon(infoBar, icon);
 
                 Assert.True(infoBar.IsIconVisible);
 
                 infoBar.IsIconVisible = false;
                 Assert.False(infoBar.IsIconVisible);
-                Assert.Same(icon, infoBar.Icon);
+                Assert.Same(icon, IconAssist.GetIcon(infoBar));
 
                 infoBar.IsIconVisible = true;
                 Assert.True(infoBar.IsIconVisible);
-                Assert.Same(icon, infoBar.Icon);
+                Assert.Same(icon, IconAssist.GetIcon(infoBar));
             }
         );
     }

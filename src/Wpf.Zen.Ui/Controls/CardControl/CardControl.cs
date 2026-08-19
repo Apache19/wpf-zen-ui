@@ -21,14 +21,6 @@ public class CardControl : System.Windows.Controls.Primitives.ButtonBase
         new PropertyMetadata(null)
     );
 
-    /// <summary>Identifies the <see cref="Icon"/> dependency property.</summary>
-    public static readonly DependencyProperty IconProperty = DependencyProperty.Register(
-        nameof(Icon),
-        typeof(object),
-        typeof(CardControl),
-        new PropertyMetadata(null)
-    );
-
     /// <summary>Identifies the <see cref="CornerRadius"/> dependency property.</summary>
     public static readonly DependencyProperty CornerRadiusProperty = DependencyProperty.Register(
         nameof(CornerRadius),
@@ -53,17 +45,6 @@ public class CardControl : System.Windows.Controls.Primitives.ButtonBase
     {
         get => GetValue(HeaderProperty);
         set => SetValue(HeaderProperty, value);
-    }
-
-    /// <summary>
-    /// Gets or sets the content displayed in the icon slot.
-    /// </summary>
-    [Bindable(true)]
-    [Category("Appearance")]
-    public object? Icon
-    {
-        get => GetValue(IconProperty);
-        set => SetValue(IconProperty, value);
     }
 
     /// <summary>

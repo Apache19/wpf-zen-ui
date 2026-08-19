@@ -30,7 +30,7 @@
                         Appearance="Normal"
                         Background="{Binding Color, Mode=OneWay}"
                         FontSize="25"
-                        Icon="{ui:FluentIconSource Fluent24}" />
+                        ui:IconAssist.Icon="{ui:FluentIconSource Fluent24}" />
                 </DataTemplate>
             </ItemsControl.ItemTemplate>
         </ui:VirtualizingItemsControl>

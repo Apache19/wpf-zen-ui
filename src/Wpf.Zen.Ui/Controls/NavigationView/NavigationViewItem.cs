@@ -349,28 +349,6 @@ public partial class NavigationViewItem : HeaderedItemsControl
 
     #endregion
 
-    #region DP: Icon
-
-    /// <summary>Identifies the <see cref="Icon"/> dependency property.</summary>
-    public static readonly DependencyProperty IconProperty =
-        DependencyProperty.Register(
-            nameof(Icon),
-            typeof(object),
-            typeof(NavigationViewItem),
-            new PropertyMetadata(null)
-        );
-
-    /// <summary>Gets or sets the icon displayed by this visual container.</summary>
-    [Bindable(true)]
-    [Category("Appearance")]
-    public object? Icon
-    {
-        get => GetValue(IconProperty);
-        set => SetValue(IconProperty, value);
-    }
-
-    #endregion
-
     #region DP: TargetPageTag
 
     /// <summary>Identifies the <see cref="TargetPageTag"/> dependency property.</summary>
@@ -637,7 +615,7 @@ public partial class NavigationViewItem : HeaderedItemsControl
 
         if (icon is not null)
         {
-            SetValue(IconProperty, icon);
+            SetValue(IconAssist.IconProperty, icon);
         }
 
         if (targetPageType is not null)

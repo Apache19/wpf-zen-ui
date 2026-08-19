@@ -81,9 +81,9 @@
                     x:Name="AutoSuggestBox"
                     AutomationProperties.AutomationId="NavigationAutoSuggestBox"
                     PlaceholderText="{i18n:StringLocalizer 'Search'}">
-                    <ui:AutoSuggestBox.Icon>
+                    <ui:IconAssist.Icon>
                         <ui:FluentIcon Symbol="Search24" />
-                    </ui:AutoSuggestBox.Icon>
+                    </ui:IconAssist.Icon>
                 </ui:AutoSuggestBox>
             </ui:NavigationView.AutoSuggestBox>
         </ui:NavigationView>
@@ -93,9 +93,9 @@
             Title="{Binding ViewModel.ApplicationTitle}"
             Grid.Row="0"
             IsIconInteractionEnabled="True">
-            <ui:TitleBar.Icon>
+            <ui:IconAssist.Icon>
                 <Image Source="pack://application:,,,/Assets/wpfui.png" Stretch="UniformToFill" />
-            </ui:TitleBar.Icon>
+            </ui:IconAssist.Icon>
             <Grid Margin="12,0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition />
@@ -120,7 +120,7 @@
                     Padding="9"
                     VerticalAlignment="Center"
                     Click="ThemeButton_OnClick"
-                    Icon="{ui:FluentIconSource WeatherSunny24}" />
+                    ui:IconAssist.Icon="{ui:FluentIconSource WeatherSunny24}" />
             </Grid>
 
         </ui:TitleBar>

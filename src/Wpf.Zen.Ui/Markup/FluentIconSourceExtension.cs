@@ -18,8 +18,8 @@ namespace Wpf.Zen.Ui.Markup;
 /// </remarks>
 /// <example>
 /// <code lang="xml">
-/// &lt;ui:Button Icon="{ui:FluentIconSource Home24}" /&gt;
-/// &lt;Setter Property="Icon" Value="{ui:FluentIconSource Settings24, Filled=True}" /&gt;
+/// &lt;ui:Button ui:IconAssist.Icon="{ui:FluentIconSource Home24}" /&gt;
+/// &lt;Setter Property="ui:IconAssist.Icon" Value="{ui:FluentIconSource Settings24, Filled=True}" /&gt;
 /// </code>
 /// </example>
 [ContentProperty(nameof(Symbol))]

@@ -55,6 +55,7 @@
     </Style>
 
     <Style x:Key="{x:Static theming:StyleKeys.IconInfoBadgeStyle}" TargetType="{x:Type controls:InfoBadge}">
+        <Setter Property="controls:IconAssist.IconMargin" Value="10" />
         <Setter Property="Background" Value="{m:DynamicBrush SystemFillInformationalForeground}" />
         <Setter Property="Focusable" Value="False" />
         <Setter Property="KeyboardNavigation.IsTabStop" Value="False" />
@@ -74,10 +75,10 @@
                             Opacity="{TemplateBinding Opacity}">
                             <ContentPresenter
                                 x:Name="ControlIcon"
-                                Margin="10"
+                                Margin="{TemplateBinding controls:IconAssist.IconMargin}"
                                 HorizontalAlignment="Center"
                                 VerticalAlignment="Center"
-                                Content="{TemplateBinding Icon}"
+                                Content="{TemplateBinding controls:IconAssist.Icon}"
                                 Focusable="False"
                                 TextElement.FontSize="{TemplateBinding FontSize}"
                                 TextElement.Foreground="{m:DynamicBrush TextFillInverse}" />

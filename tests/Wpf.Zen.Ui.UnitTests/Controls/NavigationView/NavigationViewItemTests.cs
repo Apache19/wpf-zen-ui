@@ -249,7 +249,10 @@ public class NavigationViewItemTests
             var headerOnly = new NavigationViewItem("Header only");
 
             Assert.Equal("Header only", headerOnly.Header);
-            Assert.Equal(DependencyProperty.UnsetValue, headerOnly.ReadLocalValue(NavigationViewItem.IconProperty));
+            Assert.Equal(
+                DependencyProperty.UnsetValue,
+                headerOnly.ReadLocalValue(IconAssist.IconProperty)
+            );
             Assert.Equal(
                 DependencyProperty.UnsetValue,
                 headerOnly.ReadLocalValue(NavigationViewItem.TargetPageTypeProperty)
@@ -268,7 +271,7 @@ public class NavigationViewItemTests
             Assert.Equal("Symbol group", symbolGroup.Header);
             Assert.Equal(
                 SymbolRegular.Folder24,
-                Assert.IsType<FluentIconSource>(symbolGroup.Icon).Symbol
+                Assert.IsType<FluentIconSource>(IconAssist.GetIcon(symbolGroup)).Symbol
             );
             Assert.Null(symbolGroup.TargetPageType);
             Assert.Same(children, symbolGroup.ItemsSource);
@@ -278,7 +281,7 @@ public class NavigationViewItemTests
             Assert.Null(iconOnly.Header);
             Assert.Equal(
                 SymbolRegular.Heart24,
-                Assert.IsType<FluentIconSource>(iconOnly.Icon).Symbol
+                Assert.IsType<FluentIconSource>(IconAssist.GetIcon(iconOnly)).Symbol
             );
             Assert.Equal(typeof(Border), iconOnly.TargetPageType);
 
@@ -296,7 +299,7 @@ public class NavigationViewItemTests
             );
 
             Assert.Same(header, complete.Header);
-            Assert.Same(icon, complete.Icon);
+            Assert.Same(icon, IconAssist.GetIcon(complete));
             Assert.Equal(typeof(Border), complete.TargetPageType);
             Assert.Same(children, complete.ItemsSource);
             Assert.Equal("custom-tag", complete.TargetPageTag);
@@ -848,19 +851,19 @@ public class NavigationViewItemTests
                 );
 
                 Assert.Same(initialChildren, container.ItemsSource);
-                Assert.Same(initialIcon, container.Icon);
+                Assert.Same(initialIcon, IconAssist.GetIcon(container));
 
                 item.Children = replacementChildren;
                 item.Icon = replacementIcon;
 
                 Assert.Same(replacementChildren, container.ItemsSource);
-                Assert.Same(replacementIcon, container.Icon);
+                Assert.Same(replacementIcon, IconAssist.GetIcon(container));
 
                 item.Children = null;
                 item.Icon = null;
 
                 Assert.Null(container.ItemsSource);
-                Assert.Null(container.Icon);
+                Assert.Null(IconAssist.GetIcon(container));
             }
             finally
             {
@@ -1894,11 +1897,8 @@ public class NavigationViewItemTests
                 Style = Assert.IsType<Style>(resources[typeof(Wpf.Zen.Ui.Controls.NavigationView)]),
             };
             var parent = new NavigationViewItem { Header = "Parent" };
-            var child = new NavigationViewItem
-            {
-                Header = "Child",
-                Icon = SymbolRegular.Home24,
-            };
+            var child = new NavigationViewItem { Header = "Child" };
+            IconAssist.SetIcon(child, SymbolRegular.Home24);
             var grandchild = new NavigationViewItem { Header = "Grandchild" };
             child.Items.Add(grandchild);
             parent.Items.Add(child);
@@ -2590,7 +2590,8 @@ public class NavigationViewItemTests
             var itemStyle = Assert.IsType<Style>(resources[typeof(NavigationViewItem)]);
             var navigationView = new Wpf.Zen.Ui.Controls.NavigationView();
             var icon = new FluentIcon(SymbolRegular.Home24);
-            var parent = new NavigationViewItem { Icon = icon, Style = itemStyle };
+            var parent = new NavigationViewItem { Style = itemStyle };
+            IconAssist.SetIcon(parent, icon);
             var child = new NavigationViewItem { Style = itemStyle };
 
             parent.Items.Add(child);

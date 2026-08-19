@@ -12,6 +12,7 @@
     </ResourceDictionary.MergedDictionaries>
 
     <Style x:Key="NavigationViewItemDefaultStyle" TargetType="{x:Type controls:NavigationViewItem}">
+        <Setter Property="controls:IconAssist.IconMargin" Value="0" />
         <Setter Property="Border.CornerRadius" Value="{m:DynamicValue ControlCornerRadius}" />
         <Setter Property="Cursor" Value="Hand" />
         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
@@ -46,10 +47,22 @@
             </Trigger>
             <Trigger Property="PaneDisplayMode" Value="Top">
                 <Setter Property="Template" Value="{StaticResource NavigationViewItemTopTemplate}" />
+                <Setter Property="controls:IconAssist.IconMargin" Value="0,0,8,0" />
             </Trigger>
             <Trigger Property="PaneDisplayMode" Value="Bottom">
                 <Setter Property="Template" Value="{StaticResource NavigationViewItemBottomTemplate}" />
+                <Setter Property="controls:IconAssist.IconMargin" Value="0,0,8,0" />
             </Trigger>
+            <Trigger Property="IsSubItem" Value="True">
+                <Setter Property="controls:IconAssist.IconMargin" Value="10,0,8,0" />
+            </Trigger>
+            <MultiTrigger>
+                <MultiTrigger.Conditions>
+                    <Condition Property="IsSubItem" Value="True" />
+                    <Condition Property="controls:IconAssist.Icon" Value="{x:Null}" />
+                </MultiTrigger.Conditions>
+                <Setter Property="controls:IconAssist.IconMargin" Value="10,0,0,0" />
+            </MultiTrigger>
             <MultiTrigger>
                 <MultiTrigger.Conditions>
                     <Condition Property="PaneDisplayMode" Value="Left" />

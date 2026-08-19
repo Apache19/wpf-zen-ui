@@ -10,6 +10,7 @@
         impose NavigationView-specific values on contributed content.
     -->
     <Style x:Key="BaseNavigationViewButtonStyle" TargetType="{x:Type controls:NavigationViewButton}">
+        <Setter Property="controls:IconAssist.IconMargin" Value="1,0,0,0" />
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="BorderBrush" Value="Transparent" />
         <Setter Property="BorderThickness" Value="1" />
@@ -55,7 +56,7 @@
                             <Grid
                                 x:Name="IconRoot"
                                 Grid.Column="0"
-                                Margin="1,0,0,0"
+                                Margin="{TemplateBinding controls:IconAssist.IconMargin}"
                                 HorizontalAlignment="Center"
                                 VerticalAlignment="Center"
                                 RenderTransformOrigin="0.5, 0.5"
@@ -69,7 +70,7 @@
                                     x:Name="iconPresenter"
                                     HorizontalAlignment="Center"
                                     VerticalAlignment="Center"
-                                    Content="{TemplateBinding Icon}"
+                                    Content="{TemplateBinding controls:IconAssist.Icon}"
                                     Focusable="False"
                                     SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
                             </Grid>
@@ -160,10 +161,10 @@
         </Setter>
         <Style.Triggers>
             <Trigger Property="Role" Value="Back">
-                <Setter Property="Icon" Value="{m:FluentIconSource ArrowLeft48}" />
+                <Setter Property="controls:IconAssist.Icon" Value="{m:FluentIconSource ArrowLeft48}" />
             </Trigger>
             <Trigger Property="Role" Value="PaneToggle">
-                <Setter Property="Icon" Value="{m:FluentIconSource LineHorizontal320}" />
+                <Setter Property="controls:IconAssist.Icon" Value="{m:FluentIconSource LineHorizontal320}" />
             </Trigger>
         </Style.Triggers>
     </Style>

@@ -24,10 +24,11 @@
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="BorderThickness" Value="0" />
         <Setter Property="IsEnabled" Value="True" />
-        <Setter Property="Icon" Value="{m:FluentIconSource Dismiss24}" />
+        <Setter Property="controls:IconAssist.Icon" Value="{m:FluentIconSource Dismiss24}" />
     </Style>
 
     <Style TargetType="{x:Type controls:InfoBar}">
+        <Setter Property="controls:IconAssist.IconMargin" Value="0,0,12,0" />
         <Setter Property="Background" Value="{m:DynamicBrush ControlFillPrimary}" />
         <Setter Property="Padding" Value="12,10" />
         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
@@ -61,7 +62,7 @@
                                 </Grid.ColumnDefinitions>
                                 <Grid
                                     x:Name="IconHost"
-                                    Margin="0,0,12,0"
+                                    Margin="{TemplateBinding controls:IconAssist.IconMargin}"
                                     VerticalAlignment="Top"
                                     controls:IconPresenter.IconSize="{TemplateBinding FontSize, Converter={StaticResource IconSizeConverter}}">
                                     <controls:FluentIcon
@@ -72,7 +73,7 @@
                                     <ContentPresenter
                                         x:Name="CustomIconPresenter"
                                         VerticalAlignment="Top"
-                                        Content="{TemplateBinding Icon}"
+                                        Content="{TemplateBinding controls:IconAssist.Icon}"
                                         ContentTemplate="{TemplateBinding IconTemplate}" />
                                 </Grid>
 
@@ -119,7 +120,7 @@
                             <Setter TargetName="CloseButtonHost" Property="Visibility" Value="Collapsed" />
                         </Trigger>
 
-                        <Trigger Property="Icon" Value="{x:Null}">
+                        <Trigger Property="controls:IconAssist.Icon" Value="{x:Null}">
                             <Setter TargetName="FluentIcon" Property="Visibility" Value="Visible" />
                             <Setter TargetName="CustomIconPresenter" Property="Visibility" Value="Collapsed" />
                         </Trigger>

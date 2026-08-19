@@ -29,7 +29,7 @@
                 <ui:HyperlinkButton
                     Grid.Column="0"
                     Content="WPF Zen UI hyperlink"
-                    Icon="{ui:FluentIconSource Link24}"
+                    ui:IconAssist.Icon="{ui:FluentIconSource Link24}"
                     IsEnabled="{Binding IsHyperlinkDisabled, Converter={StaticResource BoolInvertConverter}}"
                     NavigateUri="https://thezendev.com/" />
                 <CheckBox
@@ -45,7 +45,7 @@
             XamlCode="&lt;ui:HyperlinkButton NavigateUri=&quot;https://&quot; /&gt;">
             <ui:HyperlinkButton
                 Content="WPF Zen UI hyperlink"
-                Icon="{ui:FontIcon '&#x1F308;'}"
+                ui:IconAssist.Icon="{ui:FontIcon '&#x1F308;'}"
                 IsEnabled="{Binding IsHyperlinkDisabled, Converter={StaticResource BoolInvertConverter}}"
                 NavigateUri="https://thezendev.com/" />
         </controls:ControlExample>
@@ -56,7 +56,7 @@
             XamlCode="&lt;ui:HyperlinkButton NavigateUri=&quot;https://&quot; /&gt;">
             <ui:HyperlinkButton
                 Content="WPF Zen UI hyperlink"
-                Icon="{ui:ImageIcon 'pack://application:,,,/Assets/wpfui.png'}"
+                ui:IconAssist.Icon="{ui:ImageIcon 'pack://application:,,,/Assets/wpfui.png'}"
                 IsEnabled="{Binding IsHyperlinkDisabled, Converter={StaticResource BoolInvertConverter}}"
                 NavigateUri="https://thezendev.com/" />
         </controls:ControlExample>

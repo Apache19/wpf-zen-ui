@@ -29,7 +29,7 @@ public class DerivedButtonTests
                     new CalendarDatePickerProbe().ExposedDefaultStyleKey
                 );
                 Assert.Equal(
-                    typeof(Wpf.Zen.Ui.Controls.Button),
+                    typeof(DropDownButton),
                     new DropDownButtonProbe().ExposedDefaultStyleKey
                 );
             }
@@ -37,31 +37,10 @@ public class DerivedButtonTests
     }
 
     [Fact]
-    public void DropDownButton_DefaultRightIconsAreNotShared()
+    public void DropDownButton_DoesNotExposeTheLegacyRightIconSlot()
     {
-        RunOnStaThread(
-            () =>
-            {
-                var first = new DropDownButton();
-                var second = new DropDownButton();
-                var firstIcon = Assert.IsType<FluentIcon>(first.RightIcon);
-                var secondIcon = Assert.IsType<FluentIcon>(second.RightIcon);
-
-                Assert.Equal(SymbolRegular.ChevronDown24, firstIcon.Symbol);
-                Assert.Equal(SymbolRegular.ChevronDown24, secondIcon.Symbol);
-                Assert.NotSame(firstIcon, secondIcon);
-
-                var customIcon = new FluentIcon(SymbolRegular.Clock24);
-                first.RightIcon = customIcon;
-                Assert.Same(customIcon, first.RightIcon);
-
-                first.IsDropDownArrowVisible = false;
-                Assert.Null(first.RightIcon);
-
-                first.IsDropDownArrowVisible = true;
-                Assert.Same(customIcon, first.RightIcon);
-            }
-        );
+        Assert.Null(typeof(Wpf.Zen.Ui.Controls.Button).GetProperty("RightIcon"));
+        Assert.Null(typeof(Wpf.Zen.Ui.Controls.Button).GetField("RightIconProperty"));
     }
 
     [Fact]
@@ -70,17 +49,22 @@ public class DerivedButtonTests
         RunOnStaThread(
             () =>
             {
-                var firstIcon = Assert.IsType<FluentIconSource>(new CalendarDatePicker().Icon);
-                var secondIcon = Assert.IsType<FluentIconSource>(new CalendarDatePicker().Icon);
+                var firstIcon = Assert.IsType<FluentIconSource>(
+                    IconAssist.GetIcon(new CalendarDatePicker())
+                );
+                var secondIcon = Assert.IsType<FluentIconSource>(
+                    IconAssist.GetIcon(new CalendarDatePicker())
+                );
 
                 Assert.Equal(SymbolRegular.CalendarRtl24, firstIcon.Symbol);
                 Assert.Equal(SymbolRegular.CalendarRtl24, secondIcon.Symbol);
                 Assert.Same(firstIcon, secondIcon);
 
                 var customIcon = new FluentIcon(SymbolRegular.Clock24);
-                var calendarDatePicker = new CalendarDatePicker { Icon = customIcon };
+                var calendarDatePicker = new CalendarDatePicker();
+                IconAssist.SetIcon(calendarDatePicker, customIcon);
 
-                Assert.Same(customIcon, calendarDatePicker.Icon);
+                Assert.Same(customIcon, IconAssist.GetIcon(calendarDatePicker));
             }
         );
     }
@@ -200,10 +184,8 @@ public class DerivedButtonTests
                 var splitButton = new SplitButton();
                 var anchor = new Anchor();
                 var calendarDatePicker = new CalendarDatePicker();
-                var toggleButton = new Wpf.Zen.Ui.Controls.ToggleButton
-                {
-                    Icon = new FluentIcon(SymbolRegular.Calendar24),
-                };
+                var toggleButton = new Wpf.Zen.Ui.Controls.ToggleButton();
+                IconAssist.SetIcon(toggleButton, new FluentIcon(SymbolRegular.Calendar24));
                 var button = new Wpf.Zen.Ui.Controls.Button();
                 var textBox = new Wpf.Zen.Ui.Controls.TextBox();
                 var root = new System.Windows.Controls.StackPanel();
@@ -232,35 +214,36 @@ public class DerivedButtonTests
                 Assert.True(button.ApplyTemplate());
                 Assert.True(textBox.ApplyTemplate());
 
-                var buttonRightIconPresenter = Assert.IsType<System.Windows.Controls.ContentPresenter>(
-                    button.Template.FindName("rightIconPresenter", button)
+                Assert.Null(button.Template.FindName("rightIconPresenter", button));
+                var dropDownChevron = Assert.IsType<FluentIcon>(
+                    dropDownButton.Template.FindName("DropDownChevron", dropDownButton)
                 );
-                var dropDownButtonRightIconPresenter =
-                    Assert.IsType<System.Windows.Controls.ContentPresenter>(
-                        dropDownButton.Template.FindName("rightIconPresenter", dropDownButton)
-                    );
+                Assert.Equal(SymbolRegular.ChevronDown24, dropDownChevron.Symbol);
+                Assert.Equal(Visibility.Visible, dropDownChevron.Visibility);
 
-                Assert.Equal(Visibility.Collapsed, buttonRightIconPresenter.Visibility);
-                Assert.Equal(Visibility.Visible, dropDownButtonRightIconPresenter.Visibility);
-                Assert.Same(dropDownButton.RightIcon, dropDownButtonRightIconPresenter.Content);
+                dropDownButton.IsDropDownArrowVisible = false;
+                Assert.Equal(Visibility.Collapsed, dropDownChevron.Visibility);
 
                 var toggleButtonIconPresenter =
-                    Assert.IsType<System.Windows.Controls.ContentPresenter>(
+                    Assert.IsAssignableFrom<System.Windows.Controls.ContentPresenter>(
                         toggleButton.Template.FindName("iconPresenter", toggleButton)
                     );
 
                 Assert.Equal(Visibility.Visible, toggleButtonIconPresenter.Visibility);
-                Assert.Same(toggleButton.Icon, toggleButtonIconPresenter.Content);
+                Assert.Same(IconAssist.GetIcon(toggleButton), toggleButtonIconPresenter.Content);
 
                 var calendarDatePickerIconPresenter =
-                    Assert.IsType<System.Windows.Controls.ContentPresenter>(
+                    Assert.IsAssignableFrom<System.Windows.Controls.ContentPresenter>(
                         calendarDatePicker.Template.FindName(
                             "iconPresenter",
                             calendarDatePicker
                         )
                     );
 
-                Assert.Same(calendarDatePicker.Icon, calendarDatePickerIconPresenter.Content);
+                Assert.Same(
+                    IconAssist.GetIcon(calendarDatePicker),
+                    calendarDatePickerIconPresenter.Content
+                );
 
                 var clearButton = Assert.IsType<Wpf.Zen.Ui.Controls.Button>(
                     textBox.Template.FindName("ClearButton", textBox)

@@ -16,16 +16,16 @@ namespace Wpf.Zen.Ui.Markup;
 /// &lt;ui:Button
 ///     Appearance="Primary"
 ///     Content="WPF Zen UI button with font icon"
-///     Icon="{ui:FontIcon '&#x1F308;'}" /&gt;
+///     ui:IconAssist.Icon="{ui:FontIcon '&#x1F308;'}" /&gt;
 /// </code>
 /// <code lang="xml">
-/// &lt;ui:Button Icon="{ui:FontIcon '&amp;#x1F308;'}" /&gt;
+/// &lt;ui:Button ui:IconAssist.Icon="{ui:FontIcon '&amp;#x1F308;'}" /&gt;
 /// </code>
 /// <code lang="xml">
-/// &lt;ui:HyperlinkButton Icon="{ui:FontIcon '&amp;#x1F308;'}" /&gt;
+/// &lt;ui:HyperlinkButton ui:IconAssist.Icon="{ui:FontIcon '&amp;#x1F308;'}" /&gt;
 /// </code>
 /// <code lang="xml">
-/// &lt;ui:TitleBar Icon="{ui:FontIcon '&amp;#x1F308;'}" /&gt;
+/// &lt;ui:TitleBar ui:IconAssist.Icon="{ui:FontIcon '&amp;#x1F308;'}" /&gt;
 /// </code>
 /// </example>
 [ContentProperty(nameof(Glyph))]

@@ -62,7 +62,7 @@ public class SnackbarService : ISnackbarService
         snackbar.SetCurrentValue(Snackbar.TitleProperty, title);
         snackbar.SetCurrentValue(System.Windows.Controls.ContentControl.ContentProperty, message);
         snackbar.SetCurrentValue(Snackbar.AppearanceProperty, appearance);
-        snackbar.SetCurrentValue(Snackbar.IconProperty, icon);
+        snackbar.SetCurrentValue(IconAssist.IconProperty, icon);
         snackbar.SetCurrentValue(
             Snackbar.TimeoutProperty,
             timeout == TimeSpan.Zero ? DefaultTimeOut : timeout

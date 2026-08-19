@@ -23,6 +23,7 @@
     <system:Double x:Key="CardControlIconSize">24.0</system:Double>
 
     <Style x:Key="DefaultUiCardControlStyle" TargetType="{x:Type controls:CardControl}">
+        <Setter Property="controls:IconAssist.IconMargin" Value="{StaticResource CardControlIconMargin}" />
         <!--  Universal WPF Zen UI focus  -->
         <Setter Property="FocusVisualStyle" Value="{DynamicResource {x:Static t:StyleKeys.DefaultControlFocusVisualStyle}}" />
         <!--  Universal WPF Zen UI focus  -->
@@ -64,9 +65,9 @@
                             <ContentControl
                                 x:Name="ControlIcon"
                                 Grid.Column="0"
-                                Margin="{StaticResource CardControlIconMargin}"
+                                Margin="{TemplateBinding controls:IconAssist.IconMargin}"
                                 VerticalAlignment="Center"
-                                Content="{TemplateBinding Icon}"
+                                Content="{TemplateBinding controls:IconAssist.Icon}"
                                 Focusable="False"
                                 FontSize="{StaticResource CardControlIconSize}"
                                 Foreground="{TemplateBinding Foreground}"
@@ -99,7 +100,7 @@
                         <Trigger Property="Header" Value="">
                             <Setter TargetName="ControlIcon" Property="Margin" Value="0" />
                         </Trigger>
-                        <Trigger Property="Icon" Value="{x:Null}">
+                        <Trigger Property="controls:IconAssist.Icon" Value="{x:Null}">
                             <Setter TargetName="ControlIcon" Property="Margin" Value="0" />
                             <Setter TargetName="ControlIcon" Property="Visibility" Value="Collapsed" />
                         </Trigger>

@@ -176,11 +176,11 @@ public class NavigationViewList : ItemsControl
             container.UsesNavigationDataChildren = true;
         }
 
-        if (container.Icon is null && dataItem.Icon is not null)
+        if (IconAssist.GetIcon(container) is null && dataItem.Icon is not null)
         {
             // Keep the source value as data. Each ContentPresenter can then apply an implicit or
             // explicit DataTemplate and create its own visual instance through normal WPF rules.
-            container.SetCurrentValue(NavigationViewItem.IconProperty, dataItem.Icon);
+            container.SetCurrentValue(IconAssist.IconProperty, dataItem.Icon);
             container.UsesNavigationDataIcon = true;
         }
     }
@@ -217,17 +217,17 @@ public class NavigationViewList : ItemsControl
         {
             if (item.Icon is null)
             {
-                container.ClearValue(NavigationViewItem.IconProperty);
+                container.ClearValue(IconAssist.IconProperty);
                 container.UsesNavigationDataIcon = false;
             }
             else
             {
-                container.SetCurrentValue(NavigationViewItem.IconProperty, item.Icon);
+                container.SetCurrentValue(IconAssist.IconProperty, item.Icon);
             }
         }
-        else if (container.Icon is null && item.Icon is not null)
+        else if (IconAssist.GetIcon(container) is null && item.Icon is not null)
         {
-            container.SetCurrentValue(NavigationViewItem.IconProperty, item.Icon);
+            container.SetCurrentValue(IconAssist.IconProperty, item.Icon);
             container.UsesNavigationDataIcon = true;
         }
     }
@@ -246,7 +246,7 @@ public class NavigationViewList : ItemsControl
 
         if (container.UsesNavigationDataIcon)
         {
-            container.ClearValue(NavigationViewItem.IconProperty);
+            container.ClearValue(IconAssist.IconProperty);
             container.UsesNavigationDataIcon = false;
         }
     }

@@ -23,14 +23,6 @@ public class CardAction : ButtonBase
         new PropertyMetadata(true)
     );
 
-    /// <summary>Identifies the <see cref="Icon"/> dependency property.</summary>
-    public static readonly DependencyProperty IconProperty = DependencyProperty.Register(
-        nameof(Icon),
-        typeof(object),
-        typeof(CardAction),
-        new PropertyMetadata(null)
-    );
-
     static CardAction()
     {
         DefaultStyleKeyProperty.OverrideMetadata(
@@ -48,17 +40,6 @@ public class CardAction : ButtonBase
     {
         get => (bool)GetValue(IsChevronVisibleProperty);
         set => SetValue(IsChevronVisibleProperty, value);
-    }
-
-    /// <summary>
-    /// Gets or sets the content displayed in the icon slot.
-    /// </summary>
-    [Bindable(true)]
-    [Category("Appearance")]
-    public object? Icon
-    {
-        get => GetValue(IconProperty);
-        set => SetValue(IconProperty, value);
     }
 
     protected override AutomationPeer OnCreateAutomationPeer()

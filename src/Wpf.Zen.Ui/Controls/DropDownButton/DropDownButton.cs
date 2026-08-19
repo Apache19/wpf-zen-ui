@@ -15,28 +15,17 @@ namespace Wpf.Zen.Ui.Controls;
 /// </summary>
 public class DropDownButton : Button
 {
-    private FluentIcon? _defaultRightIcon;
-
     static DropDownButton()
     {
-        RightIconProperty.OverrideMetadata(
+        // DropDownButton owns the trailing-chevron contract, so it needs its own default template
+        // instead of forcing every Button to carry a second public icon slot.
+        DefaultStyleKeyProperty.OverrideMetadata(
             typeof(DropDownButton),
-            new FrameworkPropertyMetadata(null, null, CoerceRightIcon)
+            new FrameworkPropertyMetadata(typeof(DropDownButton))
         );
     }
 
     private ContextMenu? _contextMenu;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="DropDownButton"/> class.
-    /// </summary>
-    public DropDownButton()
-    {
-        // Coercion is not evaluated until the property is first requested or invalidated.
-        // Run it eagerly so the inherited Button template can display the default arrow
-        // as soon as it is applied.
-        CoerceValue(RightIconProperty);
-    }
 
     /// <summary>Identifies the <see cref="Flyout"/> dependency property.</summary>
     public static readonly DependencyProperty FlyoutProperty = DependencyProperty.Register(
@@ -59,7 +48,7 @@ public class DropDownButton : Button
         nameof(IsDropDownArrowVisible),
         typeof(bool),
         typeof(DropDownButton),
-        new PropertyMetadata(true, OnIsDropDownArrowVisibleChanged)
+        new PropertyMetadata(true)
     );
 
     /// <summary>
@@ -111,39 +100,6 @@ public class DropDownButton : Button
         {
             dropDownButton.OnIsDropDownOpenChanged((bool)e.NewValue);
         }
-    }
-
-    private static void OnIsDropDownArrowVisibleChanged(
-        DependencyObject d,
-        DependencyPropertyChangedEventArgs e
-    )
-    {
-        // RightIcon may be supplied by a binding or style. Re-coercing preserves that
-        // base value while allowing this compatibility property to hide and restore it.
-        d.CoerceValue(RightIconProperty);
-    }
-
-    /// <summary>
-    /// Supplies the conventional drop-down chevron when no explicit right icon is set.
-    /// The icon is cached per control because a FrameworkElement cannot belong to more
-    /// than one visual tree. A hidden arrow coerces to null, allowing the shared Button
-    /// template to remove the right-icon presenter from layout.
-    /// </summary>
-    private static object? CoerceRightIcon(DependencyObject dependencyObject, object? baseValue)
-    {
-        var dropDownButton = (DropDownButton)dependencyObject;
-
-        if (!dropDownButton.IsDropDownArrowVisible)
-        {
-            return null;
-        }
-
-        return baseValue is null
-            ? dropDownButton._defaultRightIcon ??= new FluentIcon(SymbolRegular.ChevronDown24)
-            {
-                FontSize = 10D,
-            }
-            : baseValue;
     }
 
     /// <summary>This method is invoked when the <see cref="FlyoutProperty"/> changes.</summary>

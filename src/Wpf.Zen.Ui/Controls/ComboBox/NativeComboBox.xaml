@@ -35,13 +35,23 @@
                 SnapsToDevicePixels="True">
                 <Grid>
                     <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
 
+                    <controls:IconPresenter
+                        x:Name="IconPresenter"
+                        Grid.Column="0"
+                        Margin="{TemplateBinding controls:IconAssist.IconMargin}"
+                        VerticalAlignment="Center"
+                        Content="{TemplateBinding controls:IconAssist.Icon}"
+                        Focusable="False" />
+
                     <!--  Placeholder (watermark) control. Uses Margin to match the TextEditor's default 2,0,2,0 padding.  -->
                     <controls:PlaceholderControl
                         x:Name="PART_Placeholder"
+                        Grid.Column="1"
                         Margin="2,0"
                         Padding="{TemplateBinding Padding}"
                         HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
@@ -51,7 +61,7 @@
                     <!--  A converter is used to simulate the TextEditor's 2,0,2,0 margin, since Padding may not be honored.  -->
                     <ContentPresenter
                         Name="PART_ContentPresenter"
-                        Grid.Column="0"
+                        Grid.Column="1"
                         Margin="{TemplateBinding Padding, Converter={StaticResource ContentPaddingConverter}}"
                         HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
                         VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
@@ -64,7 +74,7 @@
                     <!--  Drop-down chevron icon. Flips with a rotation animation when toggled.  -->
                     <controls:FluentIcon
                         x:Name="ChevronIcon"
-                        Grid.Column="1"
+                        Grid.Column="2"
                         Margin="8,0,10,0"
                         VerticalAlignment="Center"
                         IconForeground="{m:DynamicBrush TextFillSecondary}"
@@ -79,7 +89,7 @@
                     <!--  Editable text box input area, visible only when the ComboBox is in editable mode.  -->
                     <controls:TextBox
                         x:Name="PART_EditableTextBox"
-                        Grid.Column="0"
+                        Grid.Column="1"
                         Padding="{TemplateBinding Padding}"
                         HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
                         VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
@@ -114,7 +124,7 @@
                     <ToggleButton
                         Name="ToggleButton"
                         Grid.Column="0"
-                        Grid.ColumnSpan="2"
+                        Grid.ColumnSpan="3"
                         ClickMode="Press"
                         Focusable="False"
                         IsChecked="{Binding Path=IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
@@ -174,6 +184,9 @@
             </Popup>
         </Grid>
         <ControlTemplate.Triggers>
+            <Trigger Property="controls:IconAssist.Icon" Value="{x:Null}">
+                <Setter TargetName="IconPresenter" Property="Visibility" Value="Collapsed" />
+            </Trigger>
             <Trigger SourceName="Popup" Property="controls:PopupPlacement.ActualPlacement" Value="Bottom">
                 <Setter TargetName="Popup" Property="VerticalOffset" Value="1" />
             </Trigger>
@@ -227,7 +240,7 @@
                 <Setter Property="IsTabStop" Value="False" />
                 <Setter TargetName="PART_EditableTextBox" Property="Visibility" Value="Visible" />
                 <Setter TargetName="PART_ContentPresenter" Property="Visibility" Value="Hidden" />
-                <Setter TargetName="ToggleButton" Property="Grid.Column" Value="1" />
+                <Setter TargetName="ToggleButton" Property="Grid.Column" Value="2" />
                 <Setter TargetName="ToggleButton" Property="Grid.ColumnSpan" Value="1" />
             </Trigger>
 
@@ -260,6 +273,7 @@
 
     <Style x:Key="{x:Static t:StyleKeys.DefaultComboBoxStyle}" BasedOn="{StaticResource ComboBoxBaseStyle}" TargetType="{x:Type ComboBox}">
         <Setter Property="OverridesDefaultStyle" Value="True" />
+        <Setter Property="controls:IconAssist.IconMargin" Value="10,0,0,0" />
         <Setter Property="Template" Value="{StaticResource DefaultComboBoxTemplate}" />
     </Style>
 

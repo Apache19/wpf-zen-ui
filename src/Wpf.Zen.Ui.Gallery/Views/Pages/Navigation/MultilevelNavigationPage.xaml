@@ -25,6 +25,6 @@
             Command="{Binding NavigateForwardCommand}"
             CommandParameter="{x:Type samples1:MultilevelNavigationSamplePage1}"
             FontSize="24"
-            Icon="{ui:FluentIconSource ArrowRight24}" />
+            ui:IconAssist.Icon="{ui:FluentIconSource ArrowRight24}" />
     </Grid>
 </Page>

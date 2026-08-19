@@ -51,9 +51,8 @@ public class SplitButtonTests
                 var command = new RoutedCommand();
                 var icon = new FluentIcon(SymbolRegular.PaintBrush24);
                 var content = new Border();
-                var splitButton = CreateTemplatedSplitButton(
-                    new SplitButton
-                    {
+                var splitButton = new SplitButton
+                {
                         Appearance       = ControlAppearance.Accent,
                         Background       = Brushes.AliceBlue,
                         BorderBrush      = Brushes.Bisque,
@@ -64,7 +63,6 @@ public class SplitButtonTests
                         Content          = content,
                         CornerRadius     = new CornerRadius(5, 6, 7, 8),
                         Foreground       = Brushes.Coral,
-                        Icon             = icon,
                         MouseOverBackground  = Brushes.DarkBlue,
                         MouseOverBorderBrush = Brushes.DarkCyan,
                         PressedBackground    = Brushes.DarkGray,
@@ -73,8 +71,9 @@ public class SplitButtonTests
                         DisabledBackground   = Brushes.DimGray,
                         DisabledBorderBrush  = Brushes.Gray,
                         DisabledForeground   = Brushes.LightGray,
-                    }
-                );
+                };
+                IconAssist.SetIcon(splitButton, icon);
+                splitButton = CreateTemplatedSplitButton(splitButton);
 
                 var primaryButton = Assert.IsType<Wpf.Zen.Ui.Controls.Button>(
                     splitButton.Template.FindName("PART_PrimaryButton", splitButton)
@@ -99,7 +98,7 @@ public class SplitButtonTests
                 Assert.Same(command, primaryButton.Command);
                 Assert.Equal("parameter", primaryButton.CommandParameter);
                 Assert.Same(content, primaryButton.Content);
-                Assert.Same(icon, primaryButton.Icon);
+                Assert.Same(icon, IconAssist.GetIcon(primaryButton));
             }
         );
     }

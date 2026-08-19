@@ -14,43 +14,6 @@ namespace Wpf.Zen.Ui.Controls;
 /// </summary>
 public class NavigationViewButton : ButtonBase
 {
-    #region DP: Icon
-
-    /// <summary>
-    /// Identifies the <see cref="Icon"/> dependency property.
-    /// </summary>
-    /// <remarks>
-    /// The property accepts any object and defaults to <see langword="null"/>. It carries content
-    /// for the template's icon slot and does not invalidate layout or rendering by itself; the
-    /// active template determines how a value is presented.
-    /// </remarks>
-    public static readonly DependencyProperty IconProperty =
-        DependencyProperty.Register(
-            nameof(Icon),
-            typeof(object),
-            typeof(NavigationViewButton),
-            new FrameworkPropertyMetadata(null)
-        );
-
-    /// <summary>
-    /// Gets or sets the content presented in the button's icon slot.
-    /// </summary>
-    /// <remarks>
-    /// The value is intentionally ordinary WPF content. Applications may supply a visual element,
-    /// a view-model resolved by an implicit data template, text, or any
-    /// other content understood by their control template. When the value is <see langword="null"/>,
-    /// the default template selects its built-in glyph from <see cref="Role"/>.
-    /// </remarks>
-    [Bindable(true)]
-    [Category("Appearance")]
-    public object? Icon
-    {
-        get => GetValue(IconProperty);
-        set => SetValue(IconProperty, value);
-    }
-
-    #endregion
-
     #region DP: PaneTitle
 
     private static readonly DependencyPropertyKey PaneTitlePropertyKey =

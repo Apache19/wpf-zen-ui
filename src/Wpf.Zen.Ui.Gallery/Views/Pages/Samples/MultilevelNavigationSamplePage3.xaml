@@ -47,7 +47,7 @@
             VerticalAlignment="Top"
             Command="{Binding NavigateBackCommand}"
             FontSize="24"
-            Icon="{ui:FluentIconSource ArrowLeft24}" />
+            ui:IconAssist.Icon="{ui:FluentIconSource ArrowLeft24}" />
 
         <ui:Button
             Grid.Row="1"
@@ -60,6 +60,6 @@
             Command="{Binding NavigateForwardCommand}"
             CommandParameter="{x:Type samples1:MultilevelNavigationSamplePage1}"
             FontSize="24"
-            Icon="{ui:FluentIconSource ArrowHookUpLeft24}" />
+            ui:IconAssist.Icon="{ui:FluentIconSource ArrowHookUpLeft24}" />
     </Grid>
 </Page>

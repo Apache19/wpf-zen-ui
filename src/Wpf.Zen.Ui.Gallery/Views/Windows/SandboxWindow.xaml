@@ -48,9 +48,9 @@
             Title="WPF Zen UI Gallery - Sandbox"
             Margin="0"
             IsIconInteractionEnabled="True">
-            <ui:TitleBar.Icon>
+            <ui:IconAssist.Icon>
                 <Image Source="pack://application:,,,/Assets/wpfui.png" Stretch="UniformToFill" />
-            </ui:TitleBar.Icon>
+            </ui:IconAssist.Icon>
             <Grid Margin="12,0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
@@ -126,7 +126,7 @@
                 Text="{Binding ViewModel.AutoSuggestBoxText, Mode=TwoWay}"
                 TextChanged="OnAutoSuggestBoxTextChanged" />
 
-            <ui:DropDownButton Content="Hello" Icon="{ui:FluentIconSource Fluent24}">
+            <ui:DropDownButton Content="Hello" ui:IconAssist.Icon="{ui:FluentIconSource Fluent24}">
                 <ui:DropDownButton.Flyout>
                     <ContextMenu>
                         <MenuItem Command="ApplicationCommands.Undo" />

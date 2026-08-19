@@ -52,20 +52,17 @@
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
-
-                <ContentPresenter
+                <controls:IconPresenter
                     x:Name="iconPresenter"
                     Grid.Column="0"
-                    Margin="0,0,8,0"
+                    Margin="{TemplateBinding controls:IconAssist.IconMargin}"
                     VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
-                    ContentSource="Icon"
+                    Content="{TemplateBinding controls:IconAssist.Icon}"
                     Focusable="False"
-                    SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"
-                    TextElement.FontSize="{TemplateBinding FontSize, Converter={converters:DoubleToDoubleConverter Add=1}}"
-                    TextElement.Foreground="{TemplateBinding VisualForeground}" />
-
+                    IconForeground="{TemplateBinding VisualForeground}"
+                    IconSize="{TemplateBinding FontSize, Converter={converters:DoubleToDoubleConverter Add=1}}"
+                    SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
                 <ContentPresenter
                     Grid.Column="1"
                     VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
@@ -73,49 +70,19 @@
                     RecognizesAccessKey="True"
                     SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"
                     TextElement.Foreground="{TemplateBinding VisualForeground}" />
-
-                <ContentPresenter
-                    x:Name="rightIconPresenter"
-                    Grid.Column="2"
-                    Margin="8,0,0,0"
-                    VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
-                    ContentSource="RightIcon"
-                    Focusable="False"
-                    SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"
-                    TextElement.FontSize="{TemplateBinding FontSize, Converter={converters:DoubleToDoubleConverter Add=1}}"
-                    TextElement.Foreground="{TemplateBinding VisualForeground}" />
             </Grid>
         </controls:UiBorder>
         <ControlTemplate.Triggers>
+            <Trigger Property="controls:IconAssist.Icon" Value="{x:Null}">
+                <Setter TargetName="iconPresenter" Property="Visibility" Value="Collapsed" />
+                <Setter TargetName="iconPresenter" Property="Margin" Value="0" />
+            </Trigger>
             <Trigger Property="Content" Value="{x:Null}">
                 <Setter TargetName="iconPresenter" Property="Margin" Value="0" />
             </Trigger>
             <Trigger Property="Content" Value="">
                 <Setter TargetName="iconPresenter" Property="Margin" Value="0" />
             </Trigger>
-            <Trigger Property="Icon" Value="{x:Null}">
-                <Setter TargetName="iconPresenter" Property="Margin" Value="0" />
-                <Setter TargetName="iconPresenter" Property="Visibility" Value="Collapsed" />
-            </Trigger>
-            <Trigger Property="RightIcon" Value="{x:Null}">
-                <Setter TargetName="rightIconPresenter" Property="Margin" Value="0" />
-                <Setter TargetName="rightIconPresenter" Property="Visibility" Value="Collapsed" />
-            </Trigger>
-            <MultiTrigger>
-                <MultiTrigger.Conditions>
-                    <Condition Property="Content" Value="{x:Null}" />
-                    <Condition Property="Icon" Value="{x:Null}" />
-                </MultiTrigger.Conditions>
-                <Setter TargetName="rightIconPresenter" Property="Margin" Value="0" />
-            </MultiTrigger>
-            <MultiTrigger>
-                <MultiTrigger.Conditions>
-                    <Condition Property="Content" Value="" />
-                    <Condition Property="Icon" Value="{x:Null}" />
-                </MultiTrigger.Conditions>
-                <Setter TargetName="rightIconPresenter" Property="Margin" Value="0" />
-            </MultiTrigger>
-
             <Trigger Property="Appearance" Value="Normal">
                 <Setter TargetName="border" Property="BorderPlacement" Value="Outside" />
             </Trigger>
@@ -134,6 +101,7 @@
         <Setter Property="Template" Value="{StaticResource UiButtonControlTemplate}" />
         <Setter Property="FocusVisualStyle" Value="{StaticResource UiButtonFocusVisualStyle}" />
         <Setter Property="controls:UiBorder.BorderPlacement" Value="Inside" />
+        <Setter Property="controls:IconAssist.IconMargin" Value="0,0,8,0" />
     </Style>
 
     <Style BasedOn="{StaticResource UiButtonStyle}" TargetType="{x:Type controls:Button}" />

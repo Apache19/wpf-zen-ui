@@ -11,68 +11,20 @@ using System.Windows.Input;
 namespace Wpf.Zen.Ui.Controls;
 
 /// <summary>
-/// Extends <see cref="System.Windows.Controls.Button"/> by adding support for
-/// an <see cref="Icon"/> and <see cref="Appearance"/>.
+/// Extends <see cref="System.Windows.Controls.Button"/> with Fluent visual states and
+/// <see cref="Appearance"/>. Its default template implements the primary icon-slot contract
+/// defined by <see cref="IconAssist"/>.
 /// </summary>
 /// <example>
 /// <code lang="xml">
 /// &lt;ui:Button
 ///     Appearance="Success"
 ///     Content="WPF Zen UI button with font icon"
-///     Icon="{ui:FluentIconSource Fluent24}" /&gt;
+///     ui:IconAssist.Icon="{ui:FluentIconSource Fluent24}" /&gt;
 /// </code>
 /// </example>
 public class Button : System.Windows.Controls.Button
 {
-    #region DP: Icon
-
-    /// <summary>Identifies the <see cref="Icon"/> dependency property.</summary>
-    public static readonly DependencyProperty IconProperty =
-        DependencyProperty.Register(
-            nameof(Icon),
-            typeof(object),
-            typeof(Button),
-            new PropertyMetadata(null)
-        );
-
-    /// <summary>
-    /// Gets or sets the content displayed in the icon slot.
-    /// </summary>
-    [Bindable(true)]
-    [Category("Appearance")]
-    public object? Icon
-    {
-        get => GetValue(IconProperty);
-        set => SetValue(IconProperty, value);
-    }
-
-    #endregion
-
-    #region DP: RightIcon
-
-    /// <summary>Identifies the <see cref="RightIcon"/> dependency property.</summary>
-    public static readonly DependencyProperty RightIconProperty =
-        DependencyProperty.Register(
-            nameof(RightIcon),
-            typeof(object),
-            typeof(Button),
-            new PropertyMetadata(null)
-        );
-
-    /// <summary>
-    /// Gets or sets the content displayed after the button content.
-    /// When no right icon is supplied, the template removes its presenter from layout.
-    /// </summary>
-    [Bindable(true)]
-    [Category("Appearance")]
-    public object? RightIcon
-    {
-        get => GetValue(RightIconProperty);
-        set => SetValue(RightIconProperty, value);
-    }
-
-    #endregion
-
     #region DP: Appearance
 
     /// <summary>Identifies the <see cref="Appearance"/> dependency property.</summary>

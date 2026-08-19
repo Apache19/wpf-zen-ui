@@ -162,7 +162,9 @@ public class NavigationViewButtonTests
             Assert.Equal(typeof(ButtonBase), typeof(NavigationViewButton).BaseType);
             Assert.Equal(typeof(NavigationViewButton), style.TargetType);
 
-            Assert.Equal(typeof(object), NavigationViewButton.IconProperty.PropertyType);
+            Assert.Equal(typeof(object), IconAssist.IconProperty.PropertyType);
+            Assert.Null(typeof(NavigationViewButton).GetProperty("Icon"));
+            Assert.Null(typeof(NavigationViewButton).GetField("IconProperty"));
             Assert.Null(typeof(NavigationViewButton).GetProperty("IconTemplate"));
             Assert.Null(typeof(NavigationViewButton).GetField("IconTemplateProperty"));
             // Navigation resources provide the native data-template path used by reusable symbol
@@ -172,8 +174,8 @@ public class NavigationViewButtonTests
             var button = new NavigationViewButton { Style = style };
             Assert.Equal(NavigationViewButtonPlacement.None, button.Placement);
             var arbitraryIcon = new Border();
-            button.Icon = arbitraryIcon;
-            Assert.Same(arbitraryIcon, button.Icon);
+            IconAssist.SetIcon(button, arbitraryIcon);
+            Assert.Same(arbitraryIcon, IconAssist.GetIcon(button));
             Assert.True(button.ApplyTemplate());
             Assert.NotNull(button.Template);
         });
@@ -357,12 +359,12 @@ public class NavigationViewButtonTests
             Assert.Equal(Visibility.Visible, paneTitlePresenter.Visibility);
             Assert.Equal(
                 SymbolRegular.LineHorizontal320,
-                Assert.IsType<FluentIconSource>(toggleButton.Icon).Symbol
+                Assert.IsType<FluentIconSource>(IconAssist.GetIcon(toggleButton)).Symbol
             );
-            Assert.Same(toggleButton.Icon, iconPresenter.Content);
+            Assert.Same(IconAssist.GetIcon(toggleButton), iconPresenter.Content);
             Assert.Equal(
                 SymbolRegular.ArrowLeft48,
-                Assert.IsType<FluentIconSource>(backButton.Icon).Symbol
+                Assert.IsType<FluentIconSource>(IconAssist.GetIcon(backButton)).Symbol
             );
 
             Assert.True(iconPresenter.ApplyTemplate());
@@ -374,7 +376,7 @@ public class NavigationViewButtonTests
             navigationView.PaneTitle = "_Navigation";
             toggleButton.Content = "Application content";
             var arbitraryIcon = new Border();
-            toggleButton.Icon = arbitraryIcon;
+            IconAssist.SetIcon(toggleButton, arbitraryIcon);
 
             Assert.Equal(Visibility.Visible, contentPresenter.Visibility);
             Assert.Equal(Visibility.Collapsed, paneTitlePresenter.Visibility);
@@ -421,7 +423,8 @@ public class NavigationViewButtonTests
             var resources = new ResourceDictionary { Source = CreateResourceUri() };
 
             var autoSuggestIcon = new Border();
-            var autoSuggestBox = new AutoSuggestBox { Icon = autoSuggestIcon };
+            var autoSuggestBox = new AutoSuggestBox();
+            IconAssist.SetIcon(autoSuggestBox, autoSuggestIcon);
 
             var navigationView = new Wpf.Zen.Ui.Controls.NavigationView
             {
@@ -438,18 +441,21 @@ public class NavigationViewButtonTests
                 )
             );
 
-            Assert.Same(autoSuggestIcon, autoSuggestBox.Icon);
+            Assert.Same(autoSuggestIcon, IconAssist.GetIcon(autoSuggestBox));
             Assert.Equal(
                 SymbolRegular.Search24,
-                Assert.IsType<FluentIconSource>(button.Icon).Symbol
+                Assert.IsType<FluentIconSource>(IconAssist.GetIcon(button)).Symbol
             );
 
             // The compact command represents the search role; it must not try to clone or reparent
             // arbitrary visual content owned by AutoSuggestBox.
-            autoSuggestBox.Icon = new System.Windows.Controls.TextBlock { Text = "Replacement" };
+            IconAssist.SetIcon(
+                autoSuggestBox,
+                new System.Windows.Controls.TextBlock { Text = "Replacement" }
+            );
             Assert.Equal(
                 SymbolRegular.Search24,
-                Assert.IsType<FluentIconSource>(button.Icon).Symbol
+                Assert.IsType<FluentIconSource>(IconAssist.GetIcon(button)).Symbol
             );
         });
     }
@@ -477,7 +483,7 @@ public class NavigationViewButtonTests
 
             Assert.Equal(
                 SymbolRegular.Search24,
-                Assert.IsType<FluentIconSource>(button.Icon).Symbol
+                Assert.IsType<FluentIconSource>(IconAssist.GetIcon(button)).Symbol
             );
         });
     }

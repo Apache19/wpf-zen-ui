@@ -12,14 +12,6 @@ namespace Wpf.Zen.Ui.Controls;
 /// </summary>
 public class CardExpander : System.Windows.Controls.Expander
 {
-    /// <summary>Identifies the <see cref="Icon"/> dependency property.</summary>
-    public static readonly DependencyProperty IconProperty = DependencyProperty.Register(
-        nameof(Icon),
-        typeof(object),
-        typeof(CardExpander),
-        new PropertyMetadata(null)
-    );
-
     /// <summary>Identifies the <see cref="CornerRadius"/> dependency property.</summary>
     public static readonly DependencyProperty CornerRadiusProperty = DependencyProperty.Register(
         nameof(CornerRadius),
@@ -45,17 +37,6 @@ public class CardExpander : System.Windows.Controls.Expander
             typeof(CardExpander),
             new FrameworkPropertyMetadata(typeof(CardExpander))
         );
-    }
-
-    /// <summary>
-    /// Gets or sets the content displayed in the icon slot.
-    /// </summary>
-    [Bindable(true)]
-    [Category("Appearance")]
-    public object? Icon
-    {
-        get => GetValue(IconProperty);
-        set => SetValue(IconProperty, value);
     }
 
     /// <summary>

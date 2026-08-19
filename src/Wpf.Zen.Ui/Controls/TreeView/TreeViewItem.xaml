@@ -84,6 +84,7 @@
         <Setter Property="Border.CornerRadius" Value="{m:DynamicValue ControlCornerRadius}" />
         <Setter Property="IsTabStop" Value="True" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="controls:IconAssist.IconMargin" Value="0,0,8,0" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type TreeViewItem}">
@@ -120,13 +121,24 @@
                                     ClickMode="Press"
                                     IsChecked="{Binding IsExpanded, RelativeSource={RelativeSource TemplatedParent}}"
                                     Style="{StaticResource ExpandCollapseToggleButtonStyle}" />
-                                <ContentPresenter
-                                    x:Name="PART_Header"
-                                    Grid.Column="1"
-                                    Margin="{TemplateBinding Padding}"
-                                    HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
-                                    ContentSource="Header"
-                                    TextElement.FontSize="{TemplateBinding FontSize}" />
+                                <Grid Grid.Column="1" Margin="{TemplateBinding Padding}">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <controls:IconPresenter
+                                        x:Name="NativeIconPresenter"
+                                        Margin="{TemplateBinding controls:IconAssist.IconMargin}"
+                                        VerticalAlignment="Center"
+                                        Content="{TemplateBinding controls:IconAssist.Icon}"
+                                        Focusable="False" />
+                                    <ContentPresenter
+                                        x:Name="PART_Header"
+                                        Grid.Column="1"
+                                        HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                        ContentSource="Header"
+                                        TextElement.FontSize="{TemplateBinding FontSize}" />
+                                </Grid>
                             </Grid>
                         </Border>
                         <Grid Grid.Row="1">
@@ -141,6 +153,9 @@
                         </Grid>
                     </Grid>
                     <ControlTemplate.Triggers>
+                        <Trigger Property="controls:IconAssist.Icon" Value="{x:Null}">
+                            <Setter TargetName="NativeIconPresenter" Property="Visibility" Value="Collapsed" />
+                        </Trigger>
                         <Trigger Property="HasItems" Value="False">
                             <Setter TargetName="Expander" Property="Visibility" Value="Hidden" />
                         </Trigger>
@@ -192,6 +207,7 @@
         注意模板选择器
     -->
     <Style x:Key="DefaultUiTreeViewItemStyle" TargetType="{x:Type controls:TreeViewItem}">
+        <Setter Property="controls:IconAssist.IconMargin" Value="0,0,8,0" />
         <Setter Property="Foreground" Value="{m:DynamicBrush TextFillPrimary}" />
         <Setter Property="Background" Value="{m:DynamicBrush SubtleFillTransparent}" />
         <Setter Property="Padding" Value="4" />
@@ -248,8 +264,8 @@
                                 <ContentPresenter
                                     x:Name="FluentIcon"
                                     Grid.Column="0"
-                                    Margin="0,0,8,0"
-                                    Content="{TemplateBinding Icon}"
+                                    Margin="{TemplateBinding controls:IconAssist.IconMargin}"
+                                    Content="{TemplateBinding controls:IconAssist.Icon}"
                                     TextElement.Foreground="{TemplateBinding Foreground}" />
 
                                 <ContentPresenter
@@ -319,7 +335,7 @@
                         </VisualStateManager.VisualStateGroups>
                     </Grid>
                     <ControlTemplate.Triggers>
-                        <Trigger Property="Icon" Value="{x:Null}">
+                        <Trigger Property="controls:IconAssist.Icon" Value="{x:Null}">
                             <Setter TargetName="FluentIcon" Property="Visibility" Value="Collapsed" />
                             <Setter TargetName="FluentIcon" Property="Margin" Value="0" />
                         </Trigger>

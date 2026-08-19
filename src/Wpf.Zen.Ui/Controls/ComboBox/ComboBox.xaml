@@ -46,14 +46,14 @@
                     <Border
                         x:Name="IconContainer"
                         Grid.Column="0"
-                        Margin="10,0,0,0"
+                        Margin="{TemplateBinding controls:IconAssist.IconMargin}"
                         HorizontalAlignment="Center"
                         VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
                         IsHitTestVisible="False">
                         <controls:IconPresenter
                             x:Name="IconPresenter"
                             VerticalAlignment="Top"
-                            ContentSource="Icon"
+                            Content="{TemplateBinding controls:IconAssist.Icon}"
                             IconForeground="{TemplateBinding VisualForeground}"
                             IconSize="{TemplateBinding FontSize, Converter={converters:DoubleToDoubleConverter Add=1}}" />
                     </Border>
@@ -211,7 +211,7 @@
                 <Setter TargetName="IconPresenter" Property="Margin" Value="{Binding Padding, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource IconBottomPaddingConverter}}" />
             </Trigger>
 
-            <Trigger Property="Icon" Value="{x:Null}">
+            <Trigger Property="controls:IconAssist.Icon" Value="{x:Null}">
                 <Setter TargetName="IconContainer" Property="Visibility" Value="Collapsed" />
                 <Setter TargetName="IconContainer" Property="Margin" Value="0" />
             </Trigger>
@@ -280,6 +280,7 @@
     </ControlTemplate>
 
     <Style x:Key="{x:Static t:StyleKeys.UiComboBoxStyle}" BasedOn="{StaticResource ComboBoxBaseStyle}" TargetType="{x:Type controls:ComboBox}">
+        <Setter Property="controls:IconAssist.IconMargin" Value="10,0,0,0" />
         <Setter Property="ItemContainerStyle" Value="{StaticResource {x:Static t:StyleKeys.DefaultComboBoxItemStyle}}" />
         <Setter Property="Template" Value="{StaticResource UiComboBoxTemplate}" />
         <Setter Property="MouseOverBackground" Value="{m:DynamicBrush ControlFillPrimary}" />

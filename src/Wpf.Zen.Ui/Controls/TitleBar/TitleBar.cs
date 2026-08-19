@@ -57,7 +57,7 @@ public class TitleBar : ContentControl
         );
     }
 
-    #region DP: LeftContent, LeftContentState, Icon, Title, IsIconInteractionEnabled, IsUserContentEnabled, HitTestRole
+    #region DP: LeftContent, LeftContentState, Title, IsIconInteractionEnabled, IsUserContentEnabled, HitTestRole
 
     #region LeftContent
 
@@ -195,40 +195,6 @@ public class TitleBar : ContentControl
         };
 
         SetValue(LeftContentStatePropertyKey, state);
-    }
-
-    #endregion
-
-    #region Icon
-
-    /// <summary>
-    /// Identifies the <see cref="Icon"/> dependency property.
-    /// </summary>
-    public static readonly DependencyProperty IconProperty = DependencyProperty.Register(
-        nameof(Icon),
-        typeof(object),
-        typeof(TitleBar),
-        new PropertyMetadata(null)
-    );
-
-    /// <summary>
-    /// Gets or sets the icon displayed in the title bar.
-    /// </summary>
-    /// <remarks>
-    /// This property represents the window icon shown in the title bar, following
-    /// conventional Windows window icon behavior.
-    ///
-    /// When the icon is double-clicked, the window may be closed, consistent with
-    /// standard system title bar semantics. This behavior is controlled by the
-    /// <see cref="IsIconInteractionEnabled"/> property.
-    ///
-    /// If set to <see langword="null"/>, no icon is displayed and no icon-related
-    /// interactions are available.
-    /// </remarks>
-    public object? Icon
-    {
-        get => GetValue(IconProperty);
-        set => SetValue(IconProperty, value);
     }
 
     #endregion

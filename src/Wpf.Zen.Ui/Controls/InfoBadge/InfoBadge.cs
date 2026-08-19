@@ -7,14 +7,6 @@ namespace Wpf.Zen.Ui.Controls;
 
 public class InfoBadge : System.Windows.Controls.Control
 {
-    /// <summary>Identifies the <see cref="Icon"/> dependency property.</summary>
-    public static readonly DependencyProperty IconProperty = DependencyProperty.Register(
-        nameof(Icon),
-        typeof(object),
-        typeof(InfoBadge),
-        new PropertyMetadata(null)
-    );
-
     /// <summary>Identifies the <see cref="Severity"/> dependency property.</summary>
     public static readonly DependencyProperty SeverityProperty = DependencyProperty.Register(
         nameof(Severity),
@@ -75,16 +67,5 @@ public class InfoBadge : System.Windows.Controls.Control
     {
         get => (CornerRadius)GetValue(CornerRadiusProperty);
         set => SetValue(CornerRadiusProperty, value);
-    }
-
-    /// <summary>
-    /// Gets or sets the content displayed in the icon slot.
-    /// </summary>
-    [Bindable(true)]
-    [Category("Appearance")]
-    public object? Icon
-    {
-        get => GetValue(IconProperty);
-        set => SetValue(IconProperty, value);
     }
 }

@@ -64,14 +64,6 @@ public class Snackbar : ContentControl
         new PropertyMetadata(null)
     );
 
-    /// <summary>Identifies the <see cref="Icon"/> dependency property.</summary>
-    public static readonly DependencyProperty IconProperty = DependencyProperty.Register(
-        nameof(Icon),
-        typeof(object),
-        typeof(Snackbar),
-        new PropertyMetadata(null)
-    );
-
     /// <summary>Identifies the <see cref="Appearance"/> dependency property.</summary>
     public static readonly DependencyProperty AppearanceProperty = DependencyProperty.Register(
         nameof(Appearance),
@@ -189,17 +181,6 @@ public class Snackbar : ContentControl
     {
         get => (DataTemplate?)GetValue(TitleTemplateProperty);
         set => SetValue(TitleTemplateProperty, value);
-    }
-
-    /// <summary>
-    /// Gets or sets the icon
-    /// </summary>
-    [Bindable(true)]
-    [Category("Appearance")]
-    public object? Icon
-    {
-        get => GetValue(IconProperty);
-        set => SetValue(IconProperty, value);
     }
 
     /// <summary>

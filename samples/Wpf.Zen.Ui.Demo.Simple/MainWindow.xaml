@@ -47,7 +47,7 @@
             <ui:NavigationView.AutoSuggestBox>
                 <ui:AutoSuggestBox
                     x:Name="AutoSuggestBox"
-                    Icon="{ui:FluentIconSource Search24}"
+                    ui:IconAssist.Icon="{ui:FluentIconSource Search24}"
                     PlaceholderText="Search" />
             </ui:NavigationView.AutoSuggestBox>
             <ui:NavigationView.Header>
@@ -63,17 +63,17 @@
                     Header="Dashboard"
                     NavigationCacheMode="Evictable"
                     TargetPageType="{x:Type pages:DashboardPage}">
-                    <ui:NavigationViewItem.Icon>
+                    <ui:IconAssist.Icon>
                         <ui:FluentIcon Symbol="Home24" />
-                    </ui:NavigationViewItem.Icon>
+                    </ui:IconAssist.Icon>
                 </ui:NavigationViewItem>
                 <ui:NavigationViewItem
                     Header="Data"
                     NavigationCacheMode="Evictable"
                     TargetPageType="{x:Type pages:DataPage}">
-                    <ui:NavigationViewItem.Icon>
+                    <ui:IconAssist.Icon>
                         <ui:FluentIcon Symbol="DataHistogram24" />
-                    </ui:NavigationViewItem.Icon>
+                    </ui:IconAssist.Icon>
                 </ui:NavigationViewItem>
             </ui:NavigationView.MenuItems>
             <ui:NavigationView.FooterMenuItems>
@@ -81,15 +81,15 @@
                     Header="Settings"
                     NavigationCacheMode="Disabled"
                     TargetPageType="{x:Type pages:SettingsPage}">
-                    <ui:NavigationViewItem.Icon>
+                    <ui:IconAssist.Icon>
                         <ui:FluentIcon Symbol="Settings24" />
-                    </ui:NavigationViewItem.Icon>
+                    </ui:IconAssist.Icon>
                 </ui:NavigationViewItem>
             </ui:NavigationView.FooterMenuItems>
         </ui:NavigationView>
         <ui:TitleBar
             Title="WPF Zen UI - Simple Demo"
             Grid.Row="0"
-            Icon="{ui:ImageIcon Source='pack://application:,,,/Assets/applicationIcon-256.png'}" />
+            ui:IconAssist.Icon="{ui:ImageIcon Source='pack://application:,,,/Assets/applicationIcon-256.png'}" />
     </Grid>
 </ui:FluentWindow>

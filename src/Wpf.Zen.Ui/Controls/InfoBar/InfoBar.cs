@@ -24,7 +24,8 @@ namespace Wpf.Zen.Ui.Controls;
 /// </para>
 /// <para>
 /// <see cref="IsIconVisible"/> is the single authority for the semantic icon slot. Disabling it
-/// suppresses both the severity-derived default icon and custom <see cref="Icon"/> content, so
+/// suppresses both the severity-derived default icon and custom
+/// <see cref="IconAssist.IconProperty"/> content, so
 /// consumers do not need to clear or restore their icon value merely to change presentation.
 /// </para>
 /// <para>
@@ -186,7 +187,8 @@ public class InfoBar : ContentControl
     /// The default value is <see langword="true"/>. Setting this property to
     /// <see langword="false"/> removes the complete icon slot from the default template, including
     /// its spacing, regardless of whether the slot would otherwise contain the icon selected by
-    /// <see cref="Severity"/> or custom <see cref="Icon"/> content. The icon value is retained and
+    /// <see cref="Severity"/> or custom <see cref="IconAssist.IconProperty"/> content. The icon
+    /// value is retained and
     /// becomes visible again when this property returns to <see langword="true"/>.
     /// </remarks>
     [Bindable(true)]
@@ -199,32 +201,7 @@ public class InfoBar : ContentControl
 
     #endregion
 
-    #region DP: Icon
-
-    /// <summary>Identifies the <see cref="Icon"/> dependency property.</summary>
-    public static readonly DependencyProperty IconProperty = DependencyProperty.Register(
-        nameof(Icon),
-        typeof(object),
-        typeof(InfoBar),
-        new PropertyMetadata(null)
-    );
-
-    /// <summary>
-    /// Gets or sets custom content for the semantic icon slot.
-    /// </summary>
-    /// <remarks>
-    /// A <see langword="null"/> value lets the default template select an icon from
-    /// <see cref="Severity"/>. Any other value replaces that generated icon and is rendered using
-    /// <see cref="IconTemplate"/> when one is provided. <see cref="IsIconVisible"/> can suppress
-    /// either form without discarding this value.
-    /// </remarks>
-    [Bindable(true)]
-    [Category("Content")]
-    public object? Icon
-    {
-        get => GetValue(IconProperty);
-        set => SetValue(IconProperty, value);
-    }
+    #region DP: Icon template
 
     /// <summary>Identifies the <see cref="IconTemplate"/> dependency property.</summary>
     public static readonly DependencyProperty IconTemplateProperty = DependencyProperty.Register(
@@ -235,12 +212,12 @@ public class InfoBar : ContentControl
     );
 
     /// <summary>
-    /// Gets or sets the data template used to render <see cref="Icon"/>.
+    /// Gets or sets the data template used to render <see cref="IconAssist.IconProperty"/>.
     /// </summary>
     /// <remarks>
     /// The default is <see langword="null"/>, allowing WPF to render elements directly and to use
     /// implicit data templates for model objects. This property has no effect while
-    /// <see cref="Icon"/> is <see langword="null"/>.
+    /// <see cref="IconAssist.IconProperty"/> is <see langword="null"/>.
     /// </remarks>
     [Bindable(true)]
     [Category("Content")]

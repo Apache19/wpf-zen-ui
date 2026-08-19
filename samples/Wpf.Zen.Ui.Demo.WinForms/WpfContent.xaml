@@ -27,9 +27,9 @@
             LeftPaneOpenWidth="200">
             <ui:NavigationView.AutoSuggestBox>
                 <ui:AutoSuggestBox x:Name="AutoSuggestBox" PlaceholderText="Search">
-                    <ui:AutoSuggestBox.Icon>
+                    <ui:IconAssist.Icon>
                         <ui:FluentIcon Symbol="Search24" />
-                    </ui:AutoSuggestBox.Icon>
+                    </ui:IconAssist.Icon>
                 </ui:AutoSuggestBox>
             </ui:NavigationView.AutoSuggestBox>
             <ui:NavigationView.Header>
@@ -43,17 +43,17 @@
                     Header="Dashboard"
                     NavigationCacheMode="Evictable"
                     TargetPageType="{x:Type pages:DashboardPage}">
-                    <ui:NavigationViewItem.Icon>
+                    <ui:IconAssist.Icon>
                         <ui:FluentIcon Symbol="Home24" />
-                    </ui:NavigationViewItem.Icon>
+                    </ui:IconAssist.Icon>
                 </ui:NavigationViewItem>
                 <ui:NavigationViewItem
                     Header="Data"
                     NavigationCacheMode="Evictable"
                     TargetPageType="{x:Type pages:DataPage}">
-                    <ui:NavigationViewItem.Icon>
+                    <ui:IconAssist.Icon>
                         <ui:FluentIcon Symbol="DataHistogram24" />
-                    </ui:NavigationViewItem.Icon>
+                    </ui:IconAssist.Icon>
                 </ui:NavigationViewItem>
             </ui:NavigationView.MenuItems>
             <ui:NavigationView.FooterMenuItems>
@@ -61,9 +61,9 @@
                     Header="Settings"
                     NavigationCacheMode="Disabled"
                     TargetPageType="{x:Type pages:SettingsPage}">
-                    <ui:NavigationViewItem.Icon>
+                    <ui:IconAssist.Icon>
                         <ui:FluentIcon Symbol="Settings24" />
-                    </ui:NavigationViewItem.Icon>
+                    </ui:IconAssist.Icon>
                 </ui:NavigationViewItem>
             </ui:NavigationView.FooterMenuItems>
         </ui:NavigationView>
