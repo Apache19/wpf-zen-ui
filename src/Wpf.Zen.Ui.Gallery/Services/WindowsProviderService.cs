@@ -22,9 +22,11 @@ public class WindowsProviderService
             throw new InvalidOperationException($"The window class should be derived from {typeof(Window)}.");
         }
 
-        Window windowInstance =
-            _serviceProvider.GetService<T>() as Window
-            ?? throw new InvalidOperationException("Window is not registered as service.");
+        // Windows are UI views and are intentionally not registered in the container, matching the
+        // page activation rules of AddNavigation. GetServiceOrCreateInstance activates the window
+        // and injects its registered constructor dependencies, such as the view model, while an
+        // explicit registration (custom factory or lifetime) is still honored when present.
+        Window windowInstance = (Window)ActivatorUtilities.GetServiceOrCreateInstance(_serviceProvider, typeof(T));
         windowInstance.Owner = Application.Current.MainWindow;
         windowInstance.Show();
     }
