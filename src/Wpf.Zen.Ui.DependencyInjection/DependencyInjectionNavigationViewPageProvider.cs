@@ -23,7 +23,7 @@ internal sealed class DependencyInjectionNavigationViewPageProvider(IServiceProv
     : INavigationViewPageProvider
 {
     /// <inheritdoc />
-    public object? GetPage(Type pageType)
+    public object GetPage(Type pageType)
     {
         if (pageType is null)
         {

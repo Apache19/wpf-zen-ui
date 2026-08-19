@@ -417,6 +417,51 @@ public class NavigationViewTests
     }
 
     [Fact]
+    public void ReplaceContent_WithPageType_WorksWithoutAttachedScope()
+    {
+        RunOnStaThread(() =>
+        {
+            var resources = new ResourceDictionary { Source = CreateResourceUri() };
+            var navigationView = new Wpf.Zen.Ui.Controls.NavigationView
+            {
+                Style = Assert.IsType<Style>(resources[typeof(Wpf.Zen.Ui.Controls.NavigationView)]),
+            };
+            var window = new Window
+            {
+                Content = navigationView,
+                Width = 100D,
+                Height = 100D,
+                Left = -10_000D,
+                Top = -10_000D,
+                ShowActivated = false,
+                ShowInTaskbar = false,
+                WindowStyle = WindowStyle.None,
+            };
+
+            try
+            {
+                window.Show();
+                DrainDispatcher();
+                _ = navigationView.ApplyTemplate();
+                var navigationFrame = GetNavigationFrame(navigationView);
+
+                // ReplaceContent(Type) must resolve pages even when no navigation scope is attached,
+                // falling back to the container-free activator exactly like Navigate does.
+                Assert.True(navigationView.ReplaceContent(typeof(Page)));
+                DrainDispatcher();
+                _ = navigationFrame.ApplyTemplate();
+
+                Assert.IsType<Page>(navigationFrame.Content);
+            }
+            finally
+            {
+                window.Close();
+                DrainDispatcher();
+            }
+        });
+    }
+
+    [Fact]
     public void NavigationFrame_AppliesPaddingOutsideContentThatDoesNotHandleIt()
     {
         RunOnStaThread(() =>

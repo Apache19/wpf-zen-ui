@@ -62,12 +62,12 @@ public partial class NavigationView
     /// <returns><see langword="true"/> when content is replaced.</returns>
     public virtual bool ReplaceContent(Type? pageTypeToEmbed)
     {
-        if (pageTypeToEmbed is null || _pageService is null)
+        if (pageTypeToEmbed is null)
         {
             return false;
         }
 
-        UpdateContent(_pageService.GetPage(pageTypeToEmbed));
+        UpdateContent(CreatePageInstance(pageTypeToEmbed));
         return true;
     }
 
@@ -508,7 +508,8 @@ public partial class NavigationView
 
     private object GetNavigationItemInstance(NavigationEntry entry)
     {
-        if (entry.TargetPageType is null)
+        Type? targetPageType = entry.TargetPageType;
+        if (targetPageType is null)
         {
             throw new InvalidOperationException(
                 $"The {nameof(entry)}.{nameof(entry.TargetPageType)} property cannot be null."
@@ -516,13 +517,13 @@ public partial class NavigationView
         }
 
         return _cache.Remember(
-                entry.TargetPageType,
+                targetPageType,
                 entry.NavigationCacheMode,
                 NavigationCacheSize,
-                () => GetPageInstanceFromCache(entry.TargetPageType)
+                () => CreatePageInstance(targetPageType)
             )
             ?? throw new InvalidOperationException(
-                $"Unable to get or create instance of {entry.TargetPageType} from cache."
+                $"Unable to get or create instance of {targetPageType} from cache."
             );
     }
 
@@ -553,21 +554,19 @@ public partial class NavigationView
         entry.LastKnownNavigationCacheMode = newCacheMode;
     }
 
-    private object? GetPageInstanceFromCache(Type? targetPageType)
+    /// <summary>
+    /// Resolves a page instance for the given type via the attached page provider, or the
+    /// container-free activator when no provider is attached. The navigation cache is consulted by
+    /// <see cref="GetNavigationItemInstance"/> before this factory is invoked.
+    /// </summary>
+    private object CreatePageInstance(Type targetPageType)
     {
-        if (targetPageType is null)
-        {
-            return null;
-        }
-
         if (_pageService is not null)
         {
-            return _pageService.GetPage(targetPageType)
-                ?? throw new InvalidOperationException($"{nameof(_pageService.GetPage)} returned null");
+            return _pageService.GetPage(targetPageType);
         }
 
-        return NavigationViewActivator.CreateInstance(targetPageType)
-            ?? throw new InvalidOperationException("Failed to create an instance of the page.");
+        return ActivatorNavigationViewPageProvider.Instance.GetPage(targetPageType);
     }
 
     internal void NotifyBreadcrumbDeclarationChanged(FrameworkElement page)

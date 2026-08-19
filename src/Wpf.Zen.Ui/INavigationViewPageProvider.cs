@@ -20,6 +20,10 @@ public interface INavigationViewPageProvider
     /// Retrieves a page of the specified type.
     /// </summary>
     /// <param name="pageType">The type of the page to retrieve.</param>
-    /// <returns>An instance of the specified page type, or <see langword="null"/> if the page is not found.</returns>
-    object? GetPage(Type pageType);
+    /// <remarks>
+    /// Implementations never return <see langword="null"/>: a page is either produced or an exception
+    /// is thrown.
+    /// </remarks>
+    /// <returns>An instance of the specified page type.</returns>
+    object GetPage(Type pageType);
 }

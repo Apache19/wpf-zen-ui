@@ -473,7 +473,7 @@ public class NavigationScopeTests
     {
         public int ProviderPageRequests { get; private set; }
 
-        public object? GetPage(Type pageType)
+        public object GetPage(Type pageType)
         {
             if (pageType == typeof(ProviderCreatedPage))
             {
