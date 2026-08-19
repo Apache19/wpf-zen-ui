@@ -32,7 +32,6 @@ public static class BrushKeys
     public static ComponentResourceKey SystemColorHotTrackBrush                 { get; } = Create(nameof(SystemColorHotTrackBrush));
     public static ComponentResourceKey SystemColorGrayTextBrush                 { get; } = Create(nameof(SystemColorGrayTextBrush));
     public static ComponentResourceKey SystemColorWindowFrameBrush              { get; } = Create(nameof(SystemColorWindowFrameBrush));
-    public static ComponentResourceKey SystemFillColorAttentionBrush            { get; } = Create(nameof(SystemFillColorAttentionBrush));
     public static ComponentResourceKey KeyboardFocusBorderColorBrush            { get; } = Create(nameof(KeyboardFocusBorderColorBrush));
     public static ComponentResourceKey TextFillColorPrimaryBrush                { get; } = Create(nameof(TextFillColorPrimaryBrush));
     public static ComponentResourceKey TextFillColorSecondaryBrush              { get; } = Create(nameof(TextFillColorSecondaryBrush));
@@ -107,22 +106,35 @@ public static class BrushKeys
     public static ComponentResourceKey SolidBackgroundFillColorTertiaryBrush    { get; } = Create(nameof(SolidBackgroundFillColorTertiaryBrush));
     public static ComponentResourceKey SolidBackgroundFillColorQuarternaryBrush { get; } = Create(nameof(SolidBackgroundFillColorQuarternaryBrush));
     public static ComponentResourceKey SolidBackgroundFillColorBaseAltBrush     { get; } = Create(nameof(SolidBackgroundFillColorBaseAltBrush));
-    public static ComponentResourceKey SystemFillColorSuccessBrush              { get; } = Create(nameof(SystemFillColorSuccessBrush));
-    public static ComponentResourceKey SystemFillColorCautionBrush              { get; } = Create(nameof(SystemFillColorCautionBrush));
-    public static ComponentResourceKey SystemFillColorCriticalBrush             { get; } = Create(nameof(SystemFillColorCriticalBrush));
-    public static ComponentResourceKey SystemFillColorNeutralBrush              { get; } = Create(nameof(SystemFillColorNeutralBrush));
-    public static ComponentResourceKey SystemFillColorSolidNeutralBrush         { get; } = Create(nameof(SystemFillColorSolidNeutralBrush));
-    public static ComponentResourceKey SystemFillColorAttentionBackgroundBrush  { get; } = Create(nameof(SystemFillColorAttentionBackgroundBrush));
-    public static ComponentResourceKey SystemFillColorSuccessBackgroundBrush    { get; } = Create(nameof(SystemFillColorSuccessBackgroundBrush));
-    public static ComponentResourceKey SystemFillColorCautionBackgroundBrush    { get; } = Create(nameof(SystemFillColorCautionBackgroundBrush));
-    public static ComponentResourceKey SystemFillColorCriticalBackgroundBrush   { get; } = Create(nameof(SystemFillColorCriticalBackgroundBrush));
-    public static ComponentResourceKey SystemFillColorNeutralBackgroundBrush    { get; } = Create(nameof(SystemFillColorNeutralBackgroundBrush));
-
-    public static ComponentResourceKey SystemFillColorSolidAttentionBackgroundBrush { get; } =
-        Create(nameof(SystemFillColorSolidAttentionBackgroundBrush));
-
-    public static ComponentResourceKey SystemFillColorSolidNeutralBackgroundBrush { get; } =
-        Create(nameof(SystemFillColorSolidNeutralBackgroundBrush));
+    public static ComponentResourceKey SystemFillColorAttentionForegroundBrush      { get; } = Create(nameof(SystemFillColorAttentionForegroundBrush));
+    public static ComponentResourceKey SystemFillColorInformationalForegroundBrush  { get; } = Create(nameof(SystemFillColorInformationalForegroundBrush));
+    public static ComponentResourceKey SystemFillColorSuccessForegroundBrush        { get; } = Create(nameof(SystemFillColorSuccessForegroundBrush));
+    public static ComponentResourceKey SystemFillColorCautionForegroundBrush        { get; } = Create(nameof(SystemFillColorCautionForegroundBrush));
+    public static ComponentResourceKey SystemFillColorCriticalForegroundBrush       { get; } = Create(nameof(SystemFillColorCriticalForegroundBrush));
+    public static ComponentResourceKey SystemFillColorNeutralForegroundBrush        { get; } = Create(nameof(SystemFillColorNeutralForegroundBrush));
+    public static ComponentResourceKey SystemFillColorSolidNeutralForegroundBrush   { get; } = Create(nameof(SystemFillColorSolidNeutralForegroundBrush));
+    public static ComponentResourceKey SystemFillColorAttentionBackgroundBrush      { get; } = Create(nameof(SystemFillColorAttentionBackgroundBrush));
+    public static ComponentResourceKey SystemFillColorInformationalBackgroundBrush  { get; } = Create(nameof(SystemFillColorInformationalBackgroundBrush));
+    public static ComponentResourceKey SystemFillColorSuccessBackgroundBrush        { get; } = Create(nameof(SystemFillColorSuccessBackgroundBrush));
+    public static ComponentResourceKey SystemFillColorCautionBackgroundBrush        { get; } = Create(nameof(SystemFillColorCautionBackgroundBrush));
+    public static ComponentResourceKey SystemFillColorCriticalBackgroundBrush       { get; } = Create(nameof(SystemFillColorCriticalBackgroundBrush));
+    public static ComponentResourceKey SystemFillColorNeutralBackgroundBrush        { get; } = Create(nameof(SystemFillColorNeutralBackgroundBrush));
+    public static ComponentResourceKey SystemFillColorSolidAttentionBackgroundBrush { get; } = Create(nameof(SystemFillColorSolidAttentionBackgroundBrush));
+    public static ComponentResourceKey SystemFillColorSolidNeutralBackgroundBrush   { get; } = Create(nameof(SystemFillColorSolidNeutralBackgroundBrush));
+    public static ComponentResourceKey SystemFillColorAttentionBorderBrush          { get; } = Create(nameof(SystemFillColorAttentionBorderBrush));
+    public static ComponentResourceKey SystemFillColorInformationalBorderBrush      { get; } = Create(nameof(SystemFillColorInformationalBorderBrush));
+    public static ComponentResourceKey SystemFillColorSuccessBorderBrush            { get; } = Create(nameof(SystemFillColorSuccessBorderBrush));
+    public static ComponentResourceKey SystemFillColorCautionBorderBrush            { get; } = Create(nameof(SystemFillColorCautionBorderBrush));
+    public static ComponentResourceKey SystemFillColorCriticalBorderBrush           { get; } = Create(nameof(SystemFillColorCriticalBorderBrush));
+    public static ComponentResourceKey SystemFillColorNeutralBorderBrush            { get; } = Create(nameof(SystemFillColorNeutralBorderBrush));
+    public static ComponentResourceKey SystemFillColorSolidNeutralBorderBrush       { get; } = Create(nameof(SystemFillColorSolidNeutralBorderBrush));
+    public static ComponentResourceKey SystemFillColorAttentionMutedBrush           { get; } = Create(nameof(SystemFillColorAttentionMutedBrush));
+    public static ComponentResourceKey SystemFillColorInformationalMutedBrush       { get; } = Create(nameof(SystemFillColorInformationalMutedBrush));
+    public static ComponentResourceKey SystemFillColorSuccessMutedBrush             { get; } = Create(nameof(SystemFillColorSuccessMutedBrush));
+    public static ComponentResourceKey SystemFillColorCautionMutedBrush             { get; } = Create(nameof(SystemFillColorCautionMutedBrush));
+    public static ComponentResourceKey SystemFillColorCriticalMutedBrush            { get; } = Create(nameof(SystemFillColorCriticalMutedBrush));
+    public static ComponentResourceKey SystemFillColorNeutralMutedBrush             { get; } = Create(nameof(SystemFillColorNeutralMutedBrush));
+    public static ComponentResourceKey SystemFillColorSolidNeutralMutedBrush        { get; } = Create(nameof(SystemFillColorSolidNeutralMutedBrush));
 
     public static ComponentResourceKey ControlElevationBorderBrush            { get; } = Create(nameof(ControlElevationBorderBrush));
     public static ComponentResourceKey CircleElevationBorderBrush             { get; } = Create(nameof(CircleElevationBorderBrush));
@@ -133,7 +145,6 @@ public static class BrushKeys
     public static ComponentResourceKey WindowForegroundBrush                  { get; } = Create(nameof(WindowForegroundBrush));
     public static ComponentResourceKey WindowBorderBrush                      { get; } = Create(nameof(WindowBorderBrush));
     public static ComponentResourceKey WindowBorderInactiveBrush              { get; } = Create(nameof(WindowBorderInactiveBrush));
-    public static ComponentResourceKey SystemFillColorInformationalBrush      { get; } = Create(nameof(SystemFillColorInformationalBrush));
     public static ComponentResourceKey LeftNavigationViewSeparatorBrush       { get; } = Create(nameof(LeftNavigationViewSeparatorBrush));
 
     // Palette.xaml:

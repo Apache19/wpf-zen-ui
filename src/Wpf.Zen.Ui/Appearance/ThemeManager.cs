@@ -1532,8 +1532,8 @@ public sealed class ThemeManager
 
             // Attention is an existing higher-level token whose default meaning is the current
             // accent. Override both representations so ColorResource and BrushResource agree.
-            [ColorKeys.SystemFillColorAttention]      = palette.AccentTextPrimary,
-            [BrushKeys.SystemFillColorAttentionBrush] = FreezeBrush(palette.AccentTextPrimary),
+            [ColorKeys.SystemFillColorAttentionForeground]      = palette.AccentTextPrimary,
+            [BrushKeys.SystemFillColorAttentionForegroundBrush] = FreezeBrush(palette.AccentTextPrimary),
         };
     }
 

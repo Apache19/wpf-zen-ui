@@ -30,7 +30,7 @@
                 <ui:InfoBar
                     Title="Title"
                     Grid.Column="0"
-                    CornerRadius="8"
+                    CornerRadius="8" VerticalAlignment="Top"
                     IsClosable="False"
                     IsIconVisible="{Binding ShowIcon}"
                     IsOpen="{Binding IsShortInfoBarOpened}"
@@ -76,7 +76,7 @@
                 </Grid.ColumnDefinitions>
                 <ui:InfoBar
                     Title="Title"
-                    Grid.Column="0"
+                    Grid.Column="0" VerticalAlignment="Top"
                     IsOpen="{Binding IsLongInfoBarOpened, Mode=TwoWay}"
                     Severity="{Binding LongInfoBarSeverity, Mode=OneWay}">
                     Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.

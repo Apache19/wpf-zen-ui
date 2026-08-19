@@ -217,14 +217,14 @@ public class ThemeManagerTests
                 var expected = AccentPalette.Create(opaque, ThemeVariant.Light);
                 var resources = Application.Current!.Resources;
                 Assert.Equal(expected.AccentFillPrimary, resources[ColorKeys.AccentFillPrimary]);
-                Assert.Equal(expected.AccentTextPrimary, resources[ColorKeys.SystemFillColorAttention]);
+                Assert.Equal(expected.AccentTextPrimary, resources[ColorKeys.SystemFillColorAttentionForeground]);
 
                 var brush = Assert.IsType<SolidColorBrush>(resources[BrushKeys.AccentFillPrimaryBrush]);
                 Assert.Equal(expected.AccentFillPrimary, brush.Color);
                 Assert.True(brush.IsFrozen);
 
                 var attentionBrush = Assert.IsType<SolidColorBrush>(
-                    resources[BrushKeys.SystemFillColorAttentionBrush]
+                    resources[BrushKeys.SystemFillColorAttentionForegroundBrush]
                 );
                 Assert.Equal(expected.AccentTextPrimary, attentionBrush.Color);
                 Assert.True(attentionBrush.IsFrozen);
