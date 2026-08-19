@@ -16,7 +16,7 @@ namespace Wpf.Zen.Ui;
 /// real page or surfaces construction errors itself. <see cref="NavigationView"/> uses this provider as its
 /// non-DI fallback; DI scopes use their own scoped activator and do not register this provider.
 /// </remarks>
-public sealed class ActivatorNavigationViewPageProvider : INavigationViewPageProvider
+internal sealed class ActivatorNavigationViewPageProvider : INavigationViewPageProvider
 {
     /// <summary>Gets the shared stateless provider used by navigation scopes that do not specify one.</summary>
     public static ActivatorNavigationViewPageProvider Instance { get; } = new();
@@ -31,13 +31,12 @@ public sealed class ActivatorNavigationViewPageProvider : INavigationViewPagePro
             throw new ArgumentNullException(nameof(pageType));
         }
 
-        if (!typeof(FrameworkElement).IsAssignableFrom(pageType))
-        {
-            throw new InvalidCastException(
-                $"TargetPageType must be derived from {typeof(FrameworkElement)}. {pageType} is not."
-            );
-        }
-
+        // Activation is hand-rolled via reflection instead of Activator.CreateInstance so that a
+        // page without a public parameterless constructor produces a domain-specific error pointing
+        // at the supported alternatives (DI scope or custom provider) rather than a raw
+        // MissingMethodException. The lookup runs once per navigation, not on a hot path, so the
+        // metadata needs no caching; on any failure the exception propagates and navigation aborts
+        // loudly instead of degrading silently.
         var emptyConstructor =
             pageType.GetConstructor(Type.EmptyTypes)
             ?? throw new InvalidOperationException(

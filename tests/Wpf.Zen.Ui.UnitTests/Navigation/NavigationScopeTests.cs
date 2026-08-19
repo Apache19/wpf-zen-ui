@@ -76,6 +76,27 @@ public class NavigationScopeTests
     }
 
     [Fact]
+    public void Attach_DiScope_RejectsNonFrameworkElementTargetWithSameDiagnostic()
+    {
+        WpfTestThread.Run(() =>
+        {
+            var services = new ServiceCollection();
+            _ = services.AddNavigation();
+            using ServiceProvider provider = services.BuildServiceProvider();
+            INavigationScopeFactory factory = provider.GetRequiredService<INavigationScopeFactory>();
+            var host = new NavigationView();
+            using INavigationScope scope = factory.Attach(host);
+
+            // The FrameworkElement invariant is enforced at the page-factory chokepoint, so the DI
+            // path fails identically to the container-free activator instead of rendering
+            // template-less content inside the frame.
+            InvalidCastException exception = Assert.Throws<InvalidCastException>(() =>
+                scope.Navigation.Navigate(typeof(object)));
+            Assert.Contains("must be derived from", exception.Message);
+        });
+    }
+
+    [Fact]
     public void Attach_RespectsExplicitPageRegistration()
     {
         WpfTestThread.Run(() =>

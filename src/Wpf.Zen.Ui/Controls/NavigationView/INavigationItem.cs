@@ -46,7 +46,7 @@ public interface INavigationItem
     /// </remarks>
     object? Icon { get; }
 
-    /// <summary>Gets the optional tag used by <see cref="NavigationView.Navigate(string, object?)"/>.</summary>
+    /// <summary>Gets the optional tag used by <see cref="NavigationView.Navigate(string)"/>.</summary>
     string? TargetPageTag { get; }
 
     /// <summary>Gets the page type activated by this item, or <see langword="null"/> for a group.</summary>

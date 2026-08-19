@@ -45,17 +45,15 @@ public partial class NavigationView
 
     /// <summary>Navigates to a page identified by its CLR type.</summary>
     /// <param name="pageType">The page type to activate.</param>
-    /// <param name="dataContext">The optional data context assigned to the page.</param>
     /// <returns><see langword="true"/> when navigation succeeds; otherwise, <see langword="false"/>.</returns>
-    public virtual bool Navigate(Type pageType, object? dataContext = null) =>
-        PerformRequest(NavigationRequest.To(pageType), dataContext).Succeeded;
+    public virtual bool Navigate(Type pageType) =>
+        PerformRequest(NavigationRequest.To(pageType)).Succeeded;
 
     /// <summary>Navigates to a route, menu-item id, or target tag.</summary>
     /// <param name="routeKey">The exact semantic route or host lookup key.</param>
-    /// <param name="dataContext">The optional data context assigned to the page.</param>
     /// <returns><see langword="true"/> when navigation succeeds; otherwise, <see langword="false"/>.</returns>
-    public virtual bool Navigate(string routeKey, object? dataContext = null) =>
-        PerformRequest(NavigationRequest.To(routeKey), dataContext).Succeeded;
+    public virtual bool Navigate(string routeKey) =>
+        PerformRequest(NavigationRequest.To(routeKey)).Succeeded;
 
     /// <summary>Replaces frame content without changing semantic location, selection, or history.</summary>
     /// <param name="pageTypeToEmbed">The page type to create and display.</param>
@@ -73,11 +71,10 @@ public partial class NavigationView
 
     /// <summary>Replaces frame content with an existing element without changing semantic state.</summary>
     /// <param name="pageInstanceToEmbed">The element to display.</param>
-    /// <param name="dataContext">The optional data context assigned to the element.</param>
     /// <returns><see langword="true"/> when content is replaced.</returns>
-    public virtual bool ReplaceContent(UIElement pageInstanceToEmbed, object? dataContext = null)
+    public virtual bool ReplaceContent(UIElement pageInstanceToEmbed)
     {
-        UpdateContent(pageInstanceToEmbed, dataContext);
+        UpdateContent(pageInstanceToEmbed);
         return true;
     }
 
@@ -94,7 +91,6 @@ public partial class NavigationView
         return NavigateInternal(
             next.Entry,
             next.Request,
-            next.DataContext,
             isForwardsNavigated: true,
             restoredOccurrence: next
         );
@@ -114,7 +110,6 @@ public partial class NavigationView
         return NavigateInternal(
             previous.Entry,
             previous.Request,
-            previous.DataContext,
             isBackwardsNavigated: true,
             restoredOccurrence: previous
         );
@@ -244,7 +239,7 @@ public partial class NavigationView
         return exitNotificationTask;
     }
 
-    private NavigationResult PerformRequest(NavigationRequest request, object? dataContext = null)
+    private NavigationResult PerformRequest(NavigationRequest request)
     {
         if (request is null)
         {
@@ -279,7 +274,7 @@ public partial class NavigationView
                 }
             }
 
-            return NavigateInternal(entry, request, dataContext)
+            return NavigateInternal(entry, request)
                 ? NavigationResult.Success
                 : NavigationResult.Rejected;
         }
@@ -290,7 +285,7 @@ public partial class NavigationView
             return NavigationResult.TargetNotFound;
         }
 
-        return TryNavigateUnregisteredPage(pageType, request, dataContext)
+        return TryNavigateUnregisteredPage(pageType, request)
             ? NavigationResult.Success
             : NavigationResult.Rejected;
     }
@@ -330,14 +325,11 @@ public partial class NavigationView
         );
     }
 
-    private bool TryNavigateUnregisteredPage(
-        Type pageType,
-        NavigationRequest request,
-        object? dataContext = null)
+    private bool TryNavigateUnregisteredPage(Type pageType, NavigationRequest request)
     {
         var container = new NavigationViewItem(pageType);
         var entry = new NavigationEntry(container, false) { Container = container };
-        if (!NavigateInternal(entry, request, dataContext))
+        if (!NavigateInternal(entry, request))
         {
             return false;
         }
@@ -359,7 +351,6 @@ public partial class NavigationView
     private bool NavigateInternal(
         NavigationEntry entry,
         NavigationRequest? request = null,
-        object? dataContext = null,
         bool isBackwardsNavigated = false,
         bool isForwardsNavigated = false,
         NavigationJournalEntry? restoredOccurrence = null)
@@ -367,7 +358,7 @@ public partial class NavigationView
         request ??= CreateRequestForEntry(entry);
         if (!isBackwardsNavigated
             && !isForwardsNavigated
-            && IsRedundantRequest(entry, request, dataContext))
+            && IsRedundantRequest(entry, request))
         {
             return false;
         }
@@ -390,7 +381,7 @@ public partial class NavigationView
             frameworkElement.SetValue(NavigationParentProperty, this);
         }
 
-        UpdateContent(pageInstance, dataContext, request.Target.Parameter);
+        UpdateContent(pageInstance, request.Target.Parameter);
 
         _currentEntry?.Deactivate(this);
         _currentEntry = entry;
@@ -418,7 +409,7 @@ public partial class NavigationView
         }
         else
         {
-            _currentOccurrence = new NavigationJournalEntry(entry, request, dataContext);
+            _currentOccurrence = new NavigationJournalEntry(entry, request);
             Journal.Add(_currentOccurrence);
             ForwardJournal.Clear();
         }
@@ -439,10 +430,7 @@ public partial class NavigationView
         return true;
     }
 
-    private bool IsRedundantRequest(
-        NavigationEntry entry,
-        NavigationRequest request,
-        object? dataContext)
+    private bool IsRedundantRequest(NavigationEntry entry, NavigationRequest request)
     {
         if (!ReferenceEquals(_currentEntry, entry) || _currentOccurrence is null)
         {
@@ -453,7 +441,6 @@ public partial class NavigationView
         return current.Target.RouteKey == request.Target.RouteKey
             && current.Target.PageType == request.Target.PageType
             && Equals(current.Target.Parameter, request.Target.Parameter)
-            && Equals(_currentOccurrence.DataContext, dataContext)
             && request.Breadcrumbs is null
             && request.BreadcrumbParent is null
             && request.BreadcrumbContent is null;
@@ -561,9 +548,28 @@ public partial class NavigationView
     /// </summary>
     private object CreatePageInstance(Type targetPageType)
     {
+        // Every page must derive from FrameworkElement: the navigation host relies on DataContext,
+        // attached properties, and breadcrumb declarations that only a FrameworkElement root can
+        // carry. Enforce the invariant once at this chokepoint so the DI provider, the container-free
+        // activator, and custom providers all fail with the same diagnostic instead of rendering
+        // template-less content inside the frame.
+        if (!typeof(FrameworkElement).IsAssignableFrom(targetPageType))
+        {
+            throw new InvalidCastException(
+                $"TargetPageType must be derived from {typeof(FrameworkElement)}. {targetPageType} is not."
+            );
+        }
+
         if (_pageService is not null)
         {
-            return _pageService.GetPage(targetPageType);
+            // The provider contract declares a non-nullable result, but a custom implementation
+            // may still violate it. Reject null here, before the navigation cache can store it:
+            // a cached null would poison the entry and reject every later navigation to this type
+            // without re-invoking the provider.
+            return _pageService.GetPage(targetPageType)
+                ?? throw new InvalidOperationException(
+                    $"The page provider {_pageService.GetType().Name} returned null for {targetPageType}."
+                );
         }
 
         return ActivatorNavigationViewPageProvider.Instance.GetPage(targetPageType);
@@ -597,16 +603,8 @@ public partial class NavigationView
         }
     }
 
-    private void UpdateContent(
-        object? content,
-        object? dataContext = null,
-        object? navigationParameter = null)
+    private void UpdateContent(object? content, object? navigationParameter = null)
     {
-        if (dataContext is not null && content is FrameworkElement frameworkViewContent)
-        {
-            frameworkViewContent.DataContext = dataContext;
-        }
-
         SetNavigationContextOwner(content as DependencyObject, navigationParameter);
         _ = _navigationFrame.Navigate(content);
     }
@@ -870,16 +868,11 @@ public partial class NavigationView
         }
     }
 
-    private sealed class NavigationJournalEntry(
-        NavigationEntry entry,
-        NavigationRequest request,
-        object? dataContext)
+    private sealed class NavigationJournalEntry(NavigationEntry entry, NavigationRequest request)
     {
         internal NavigationEntry Entry { get; } = entry;
 
         internal NavigationRequest Request { get; } = request;
-
-        internal object? DataContext { get; } = dataContext;
 
         internal IReadOnlyList<BreadcrumbSegment> BreadcrumbSnapshot { get; set; } = [];
     }

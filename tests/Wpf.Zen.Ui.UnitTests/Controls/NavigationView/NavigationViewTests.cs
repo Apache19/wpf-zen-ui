@@ -729,7 +729,7 @@ public class NavigationViewTests
     }
 
     [Fact]
-    public void Navigate_WithNavigationAwareDataContext_EntersAndExitsPages()
+    public void Navigate_PageOwnedDataContext_EntersAndExitsViewModel()
     {
         RunOnStaThread(() =>
         {
@@ -739,26 +739,27 @@ public class NavigationViewTests
                 Style = Assert.IsType<Style>(resources[typeof(Wpf.Zen.Ui.Controls.NavigationView)]),
             };
             var window = new Window { Content = navigationView };
-            var firstViewModel = new NavigationAwareViewModel();
-            var secondViewModel = new NavigationAwareViewModel();
+            NavigationAwareViewModel? firstViewModel = null;
+            NavigationAwareViewModel? secondViewModel = null;
 
             try
             {
                 window.Show();
                 DrainDispatcher();
 
-                Assert.True(
-                    navigationView.Navigate(typeof(NavigationAwarePageOne), firstViewModel)
-                );
+                // The navigation view never assigns a data context; the page owns its view model.
+                Assert.True(navigationView.Navigate(typeof(NavigationAwarePageOne)));
                 DrainDispatcher();
+                var firstPage = Assert.IsType<NavigationAwarePageOne>(navigationView.CurrentLocation?.Page);
+                firstViewModel = Assert.IsType<NavigationAwareViewModel>(firstPage.DataContext);
                 Assert.Equal(1, firstViewModel.NavigationEnteredCount);
                 Assert.Equal(0, firstViewModel.NavigationExitedCount);
 
-                Assert.True(
-                    navigationView.Navigate(typeof(NavigationAwarePageTwo), secondViewModel)
-                );
+                Assert.True(navigationView.Navigate(typeof(NavigationAwarePageTwo)));
                 DrainDispatcher();
                 Assert.Equal(1, firstViewModel.NavigationExitedCount);
+                var secondPage = Assert.IsType<NavigationAwarePageTwo>(navigationView.CurrentLocation?.Page);
+                secondViewModel = Assert.IsType<NavigationAwareViewModel>(secondPage.DataContext);
                 Assert.Equal(1, secondViewModel.NavigationEnteredCount);
                 Assert.Equal(0, secondViewModel.NavigationExitedCount);
             }
@@ -768,7 +769,7 @@ public class NavigationViewTests
                 DrainDispatcher();
             }
 
-            Assert.Equal(1, secondViewModel.NavigationExitedCount);
+            Assert.Equal(1, secondViewModel!.NavigationExitedCount);
         });
     }
 
@@ -1631,6 +1632,44 @@ public class NavigationViewTests
         });
     }
 
+    [Fact]
+    public void Navigate_ScopeLess_RejectsNonFrameworkElementTarget()
+    {
+        RunOnStaThread(() =>
+        {
+            var navigationView = new Wpf.Zen.Ui.Controls.NavigationView();
+
+            InvalidCastException exception = Assert.Throws<InvalidCastException>(() =>
+                navigationView.Navigate(typeof(object)));
+            Assert.Contains("must be derived from", exception.Message);
+        });
+    }
+
+    [Fact]
+    public void NullReturningPageProvider_ThrowsWithoutPoisoningNavigationCache()
+    {
+        RunOnStaThread(() =>
+        {
+            var provider = new NullReturningPageProvider();
+            var navigationView = new Wpf.Zen.Ui.Controls.NavigationView();
+            using INavigationScope scope = NavigationScope.Attach(navigationView, provider);
+            var item = new NavigationItem("Page", typeof(NavigationAwarePageOne))
+            {
+                NavigationCacheMode = NavigationCacheMode.Permanent,
+            };
+            navigationView.MenuItemsSource = new[] { item };
+
+            Assert.Throws<InvalidOperationException>(() =>
+                navigationView.Navigate(typeof(NavigationAwarePageOne)));
+            Assert.Throws<InvalidOperationException>(() =>
+                navigationView.Navigate(typeof(NavigationAwarePageOne)));
+
+            // A null result must fail before the cache write; otherwise the second navigation
+            // would hit the poisoned cache entry without re-invoking the provider.
+            Assert.Equal(2, provider.CallCount);
+        });
+    }
+
     private static void RunOnStaThread(Action action)
     {
         WpfTestThread.Run(action);
@@ -1652,6 +1691,17 @@ public class NavigationViewTests
         {
             NavigationExitedCount++;
             return Task.CompletedTask;
+        }
+    }
+
+    private sealed class NullReturningPageProvider : INavigationViewPageProvider
+    {
+        public int CallCount { get; private set; }
+
+        public object GetPage(Type pageType)
+        {
+            CallCount++;
+            return null!; // Deliberate contract violation: page providers must produce a page or throw.
         }
     }
 
@@ -1687,9 +1737,15 @@ public class NavigationViewTests
         }
     }
 
-    public sealed class NavigationAwarePageOne : Border { }
+    public sealed class NavigationAwarePageOne : Border
+    {
+        public NavigationAwarePageOne() => DataContext = new NavigationAwareViewModel();
+    }
 
-    public sealed class NavigationAwarePageTwo : Border { }
+    public sealed class NavigationAwarePageTwo : Border
+    {
+        public NavigationAwarePageTwo() => DataContext = new NavigationAwareViewModel();
+    }
 
     public sealed class CacheProbePage : Border
     {

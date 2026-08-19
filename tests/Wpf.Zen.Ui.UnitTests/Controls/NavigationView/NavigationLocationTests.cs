@@ -255,24 +255,6 @@ public class NavigationLocationTests
     }
 
     [Fact]
-    public void SameTarget_WithDifferentDataContext_IsANewOccurrence()
-    {
-        WpfTestThread.Run(() =>
-        {
-            var navigationView = new Wpf.Zen.Ui.Controls.NavigationView();
-            var first = new object();
-            var second = new object();
-
-            Assert.True(navigationView.Navigate(typeof(DestinationPage), first));
-            Assert.True(navigationView.Navigate(typeof(DestinationPage), second));
-            Assert.True(navigationView.CanGoBack);
-            Assert.Same(second, navigationView.CurrentLocation?.Page is FrameworkElement page
-                ? page.DataContext
-                : null);
-        });
-    }
-
-    [Fact]
     public void NavigationMap_ParsesDirectNodeCollectionFromXaml()
     {
         WpfTestThread.Run(() =>

@@ -558,20 +558,21 @@ public partial class MainWindow
 }
 ```
 
-默认的 `ActivatorNavigationViewPageProvider` 使用页面的无参构造函数。需要自定义构造规则、
-已有页面实例或自定义创建规则时，实现 `INavigationViewPageProvider`：
+默认（未提供自定义提供器）时，页面通过公开无参构造函数激活。需要自定义构造规则、
+已有页面实例或自定义创建规则时，实现 `INavigationViewPageProvider`。提供自定义提供器
+会取代默认激活，因此提供器必须为每个目标类型产出页面实例，或对未处理类型抛出异常：
 
 ```csharp
 public sealed class ApplicationPageProvider : INavigationViewPageProvider
 {
-    public object? GetPage(Type pageType)
+    public object GetPage(Type pageType)
     {
         if (pageType == typeof(DashboardPage))
         {
             return new DashboardPage(new DashboardViewModel());
         }
 
-        return ActivatorNavigationViewPageProvider.Instance.GetPage(pageType);
+        throw new InvalidOperationException($"Unhandled page type: {pageType}");
     }
 }
 ```
