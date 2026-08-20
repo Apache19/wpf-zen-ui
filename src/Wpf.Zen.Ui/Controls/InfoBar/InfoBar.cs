@@ -32,8 +32,9 @@ namespace Wpf.Zen.Ui.Controls;
 /// <see cref="IsOpen"/> is the notification's logical state; the default template collapses its
 /// internal root when that state is <see langword="false"/>. It deliberately does not modify
 /// <see cref="UIElement.Visibility"/>, which remains an independent, application-owned layout
-/// concern. Activating <c>PART_CloseButton</c> changes that same state rather than introducing a
-/// second closing mechanism.
+/// concern. Activating <c>PART_CloseButton</c> and the content-driven behavior controlled by
+/// <see cref="IsOpenAutoManaged"/> change that same state rather than introducing additional state
+/// mechanisms.
 /// </para>
 /// <para>
 /// <see cref="IsClosable"/> controls the built-in user-dismiss action. The default template
@@ -82,6 +83,40 @@ public class InfoBar : ContentControl
 
     #endregion
 
+    #region DP: IsOpenAutoManaged
+
+    /// <summary>Identifies the <see cref="IsOpenAutoManaged"/> dependency property.</summary>
+    public static readonly DependencyProperty IsOpenAutoManagedProperty =
+        DependencyProperty.Register(
+            nameof(IsOpenAutoManaged),
+            typeof(bool),
+            typeof(InfoBar),
+            new PropertyMetadata(true, OnIsOpenAutoManagedChanged)
+        );
+
+    /// <summary>
+    /// Gets or sets a value indicating whether <see cref="IsOpen"/> follows the presence of title
+    /// or body content.
+    /// </summary>
+    /// <remarks>
+    /// The default value is <see langword="true"/>. The notification opens when either
+    /// <see cref="Title"/> or <see cref="ContentControl.Content"/> has content, and closes when both
+    /// slots are empty. A slot is empty only when its value is <see langword="null"/> or an empty
+    /// <see cref="string"/>; whitespace and non-string objects remain valid content. Enabling this
+    /// behavior evaluates the current values immediately. Automatic transitions update
+    /// <see cref="IsOpen"/> through its current value so an existing binding is retained and, for
+    /// the default two-way binding mode, receives the new state.
+    /// </remarks>
+    [Bindable(true)]
+    [Category("Behavior")]
+    public bool IsOpenAutoManaged
+    {
+        get => (bool)GetValue(IsOpenAutoManagedProperty);
+        set => SetValue(IsOpenAutoManagedProperty, value);
+    }
+
+    #endregion
+
     #region DP: IsOpen
 
     /// <summary>Identifies the <see cref="IsOpen"/> dependency property.</summary>
@@ -121,7 +156,7 @@ public class InfoBar : ContentControl
         nameof(Title),
         typeof(object),
         typeof(InfoBar),
-        new PropertyMetadata(null)
+        new PropertyMetadata(null, OnTitleChanged)
     );
 
     /// <summary>
@@ -319,6 +354,19 @@ public class InfoBar : ContentControl
 
     /// <inheritdoc />
     /// <remarks>
+    /// ContentControl's callback has already updated the logical tree before this override runs.
+    /// Evaluating the content-driven state contract here keeps inherited
+    /// <see cref="ContentControl.Content"/> semantics intact while ensuring bindings, styles and
+    /// direct assignments all use the same close path.
+    /// </remarks>
+    protected override void OnContentChanged(object oldContent, object newContent)
+    {
+        base.OnContentChanged(oldContent, newContent);
+        UpdateIsOpenFromContent();
+    }
+
+    /// <inheritdoc />
+    /// <remarks>
     /// Template parts are event sources owned by a replaceable visual tree. The previous handler
     /// is removed before resolving the new part so repeated template application cannot retain an
     /// obsolete button or execute the close transition more than once.
@@ -354,6 +402,48 @@ public class InfoBar : ContentControl
         // surface. Always consume its click, including the rejected IsClosable=false path, so a
         // custom template cannot turn the private part into an accidental application-level event.
         e.Handled = true;
+    }
+
+    private static void OnIsOpenAutoManagedChanged(
+        DependencyObject d,
+        DependencyPropertyChangedEventArgs e
+    )
+    {
+        if ((bool)e.NewValue)
+        {
+            ((InfoBar)d).UpdateIsOpenFromContent();
+        }
+    }
+
+    private static void OnTitleChanged(
+        DependencyObject d,
+        DependencyPropertyChangedEventArgs e
+    )
+    {
+        ((InfoBar)d).UpdateIsOpenFromContent();
+    }
+
+    private void UpdateIsOpenFromContent()
+    {
+        if (!IsOpenAutoManaged)
+        {
+            return;
+        }
+
+        var shouldOpen = !IsEmptyContentValue(Title) || !IsEmptyContentValue(Content);
+        if (IsOpen == shouldOpen)
+        {
+            return;
+        }
+
+        // SetCurrentValue retains bindings and lets IsOpen's two-way-by-default metadata publish
+        // either transition instead of replacing the application's binding with a local value.
+        SetCurrentValue(IsOpenProperty, shouldOpen);
+    }
+
+    private static bool IsEmptyContentValue(object? value)
+    {
+        return value is null or string { Length: 0 };
     }
 
     private void DetachCloseButton()

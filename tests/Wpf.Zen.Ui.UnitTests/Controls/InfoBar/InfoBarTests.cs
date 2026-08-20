@@ -42,6 +42,128 @@ public class InfoBarTests
     }
 
     [Fact]
+    public void AutoManagedOpenState_DefaultsToEnabledAndFollowsContent()
+    {
+        WpfTestThread.Run(
+            () =>
+            {
+                var infoBar = new UiInfoBar();
+
+                Assert.True(infoBar.IsOpenAutoManaged);
+                Assert.False(infoBar.IsOpen);
+
+                infoBar.Content = "Content";
+                Assert.True(infoBar.IsOpen);
+
+                infoBar.Content = string.Empty;
+                Assert.False(infoBar.IsOpen);
+            }
+        );
+    }
+
+    [Theory]
+    [InlineData(null, "Content")]
+    [InlineData("Title", null)]
+    [InlineData("", "Content")]
+    [InlineData("Title", "")]
+    [InlineData(" ", null)]
+    [InlineData(null, " ")]
+    public void AutoManagedOpenState_OpensWhenEitherSlotHasContent(
+        string? title,
+        string? content
+    )
+    {
+        WpfTestThread.Run(
+            () =>
+            {
+                var infoBar = new UiInfoBar { Title = title, Content = content };
+
+                Assert.True(infoBar.IsOpen);
+            }
+        );
+    }
+
+    [Fact]
+    public void AutoManagedOpenState_ClosesWhenLastContentSlotIsCleared()
+    {
+        WpfTestThread.Run(
+            () =>
+            {
+                var infoBar = new UiInfoBar
+                {
+                    Title = "Title",
+                    Content = "Content",
+                    IsOpen = true,
+                };
+
+                infoBar.Title = string.Empty;
+                Assert.True(infoBar.IsOpen);
+
+                infoBar.Content = null;
+                Assert.False(infoBar.IsOpen);
+            }
+        );
+    }
+
+    [Fact]
+    public void AutoManagedOpenState_CanBeDisabledAndEvaluatesImmediatelyWhenReenabled()
+    {
+        WpfTestThread.Run(
+            () =>
+            {
+                var infoBar = new UiInfoBar
+                {
+                    IsOpenAutoManaged = false,
+                    Content = "Content",
+                };
+
+                Assert.False(infoBar.IsOpen);
+
+                infoBar.IsOpen = true;
+                infoBar.Content = null;
+                Assert.True(infoBar.IsOpen);
+
+                infoBar.IsOpenAutoManaged = true;
+
+                Assert.False(infoBar.IsOpen);
+            }
+        );
+    }
+
+    [Fact]
+    public void AutoManagedOpenState_PreservesBindingAndPublishesBothTransitions()
+    {
+        WpfTestThread.Run(
+            () =>
+            {
+                var source = new Border { Tag = false };
+                var infoBar = new UiInfoBar();
+                BindingOperations.SetBinding(
+                    infoBar,
+                    UiInfoBar.IsOpenProperty,
+                    new Binding(nameof(FrameworkElement.Tag))
+                    {
+                        Source = source,
+                        Mode = BindingMode.TwoWay,
+                    }
+                );
+
+                infoBar.Title = "Title";
+
+                Assert.True(infoBar.IsOpen);
+                Assert.Equal(true, source.Tag);
+                Assert.True(BindingOperations.IsDataBound(infoBar, UiInfoBar.IsOpenProperty));
+
+                infoBar.Title = null;
+
+                Assert.False(infoBar.IsOpen);
+                Assert.Equal(false, source.Tag);
+                Assert.True(BindingOperations.IsDataBound(infoBar, UiInfoBar.IsOpenProperty));
+            }
+        );
+    }
+
+    [Fact]
     public void AppearanceProperties_AcceptTemplateCustomizationValues()
     {
         WpfTestThread.Run(
@@ -101,7 +223,11 @@ public class InfoBarTests
             () =>
             {
                 var source = new Border { Tag = true };
-                var infoBar = new UiInfoBar { Template = CreateTemplate(typeof(Button)) };
+                var infoBar = new UiInfoBar
+                {
+                    Content = "Content",
+                    Template = CreateTemplate(typeof(Button)),
+                };
                 BindingOperations.SetBinding(
                     infoBar,
                     UiInfoBar.IsOpenProperty,
@@ -135,6 +261,7 @@ public class InfoBarTests
             {
                 var infoBar = new UiInfoBar
                 {
+                    Content = "Content",
                     IsOpen = true,
                     Template = CreateTemplate(typeof(Border), "PresentationRoot"),
                 };
@@ -153,6 +280,7 @@ public class InfoBarTests
             {
                 var infoBar = new UiInfoBar
                 {
+                    Content = "Content",
                     IsClosable = false,
                     IsOpen = true,
                     Template = CreateTemplate(typeof(Button)),
@@ -184,6 +312,7 @@ public class InfoBarTests
             {
                 var infoBar = new UiInfoBar
                 {
+                    Content = "Content",
                     IsOpen = true,
                     Template = CreateTemplate(typeof(Button)),
                 };
