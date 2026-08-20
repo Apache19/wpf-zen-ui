@@ -21,32 +21,33 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
+
         <ui:NavigationView
             x:Name="RootNavigation"
             Grid.Row="1"
             LeftPaneOpenWidth="200">
+
             <ui:NavigationView.AutoSuggestBox>
-                <ui:AutoSuggestBox x:Name="AutoSuggestBox" PlaceholderText="Search">
+                <ui:AutoSuggestBox PlaceholderText="Search">
                     <ui:IconAssist.Icon>
                         <ui:FluentIcon Symbol="Search24" />
                     </ui:IconAssist.Icon>
                 </ui:AutoSuggestBox>
             </ui:NavigationView.AutoSuggestBox>
+
             <ui:NavigationView.Header>
                 <ui:BreadcrumbBar
                     Margin="42,32,0,0"
                     FontSize="28"
                     FontWeight="DemiBold" />
             </ui:NavigationView.Header>
+
             <ui:NavigationView.MenuItems>
                 <ui:NavigationViewItem
+                    ui:IconAssist.Icon="{ui:FluentIconSource Home24}"
                     Header="Dashboard"
                     NavigationCacheMode="Evictable"
-                    TargetPageType="{x:Type pages:DashboardPage}">
-                    <ui:IconAssist.Icon>
-                        <ui:FluentIcon Symbol="Home24" />
-                    </ui:IconAssist.Icon>
-                </ui:NavigationViewItem>
+                    TargetPageType="{x:Type pages:DashboardPage}" />
                 <ui:NavigationViewItem
                     Header="Data"
                     NavigationCacheMode="Evictable"
@@ -56,6 +57,7 @@
                     </ui:IconAssist.Icon>
                 </ui:NavigationViewItem>
             </ui:NavigationView.MenuItems>
+
             <ui:NavigationView.FooterMenuItems>
                 <ui:NavigationViewItem
                     Header="Settings"
@@ -66,7 +68,7 @@
                     </ui:IconAssist.Icon>
                 </ui:NavigationViewItem>
             </ui:NavigationView.FooterMenuItems>
+
         </ui:NavigationView>
-        <ui:TitleBar Title="WPF Zen UI - Simple Demo" Grid.Row="0" />
     </Grid>
 </UserControl>

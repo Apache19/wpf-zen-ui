@@ -13,60 +13,66 @@
     d:DesignWidth="900"
     WindowStartupLocation="CenterScreen"
     mc:Ignorable="d">
+
     <ui:FluentWindow.InputBindings>
         <KeyBinding
             Key="F"
             Command="{Binding ElementName=AutoSuggestBox, Path=FocusCommand}"
             Modifiers="Control" />
     </ui:FluentWindow.InputBindings>
+
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
-        <ui:NavigationView x:Name="RootNavigation" Grid.Row="1">
+
+        <ui:TitleBar
+            x:Name="TitleBar"
+            Title="WPF Zen UI - Console Demo"
+            Grid.Row="0" />
+
+        <ui:NavigationView
+            x:Name="RootNavigation"
+            Grid.Row="1"
+            TitleBar="{Binding ElementName=TitleBar}">
+
             <ui:NavigationView.AutoSuggestBox>
-                <ui:AutoSuggestBox x:Name="AutoSuggestBox" PlaceholderText="Search">
-                    <ui:IconAssist.Icon>
-                        <ui:FluentIcon Symbol="Search24" />
-                    </ui:IconAssist.Icon>
-                </ui:AutoSuggestBox>
+                <ui:AutoSuggestBox
+                    x:Name="AutoSuggestBox"
+                    ui:IconAssist.Icon="{ui:FluentIconSource Search24}"
+                    PlaceholderText="Search" />
             </ui:NavigationView.AutoSuggestBox>
+
             <ui:NavigationView.Header>
                 <ui:BreadcrumbBar
                     Margin="42,32,0,0"
                     FontSize="28"
                     FontWeight="DemiBold" />
             </ui:NavigationView.Header>
+
             <ui:NavigationView.MenuItems>
                 <ui:NavigationViewItem
+                    ui:IconAssist.Icon="{ui:FluentIconSource Home24}"
                     Header="Dashboard"
                     NavigationCacheMode="Evictable"
-                    TargetPageType="{x:Type pages:DashboardPage}">
-                    <ui:IconAssist.Icon>
-                        <ui:FluentIcon Symbol="Home24" />
-                    </ui:IconAssist.Icon>
-                </ui:NavigationViewItem>
+                    TargetPageType="{x:Type pages:DashboardPage}" />
                 <ui:NavigationViewItem
+                    ui:IconAssist.Icon="{ui:FluentIconSource DataHistogram24}"
                     Header="Data"
                     NavigationCacheMode="Evictable"
-                    TargetPageType="{x:Type pages:DataPage}">
-                    <ui:IconAssist.Icon>
-                        <ui:FluentIcon Symbol="DataHistogram24" />
-                    </ui:IconAssist.Icon>
-                </ui:NavigationViewItem>
+                    TargetPageType="{x:Type pages:DataPage}" />
             </ui:NavigationView.MenuItems>
+
             <ui:NavigationView.FooterMenuItems>
                 <ui:NavigationViewItem
+                    ui:IconAssist.Icon="{ui:FluentIconSource Settings24}"
                     Header="Settings"
                     NavigationCacheMode="Evictable"
-                    TargetPageType="{x:Type pages:SettingsPage}">
-                    <ui:IconAssist.Icon>
-                        <ui:FluentIcon Symbol="Settings24" />
-                    </ui:IconAssist.Icon>
-                </ui:NavigationViewItem>
+                    TargetPageType="{x:Type pages:SettingsPage}" />
             </ui:NavigationView.FooterMenuItems>
+
         </ui:NavigationView>
-        <ui:TitleBar Title="WPF Zen UI - Console Demo" Grid.Row="0" />
+
     </Grid>
 </ui:FluentWindow>

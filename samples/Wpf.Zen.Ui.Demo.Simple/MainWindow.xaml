@@ -5,7 +5,6 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:pages="clr-namespace:Wpf.Zen.Ui.Demo.Simple.Views.Pages"
-    xmlns:tray="http://schemas.thezendev.com/wpf/2027/tray"
     xmlns:ui="http://schemas.thezendev.com/wpf/2027"
     Title="WPF Zen UI - Simple Demo"
     Width="1100"
@@ -16,18 +15,31 @@
     Foreground="{ui:DynamicBrush TextFillPrimary}"
     WindowStartupLocation="CenterScreen"
     mc:Ignorable="d">
+
     <ui:FluentWindow.InputBindings>
         <KeyBinding
             Key="F"
             Command="{Binding ElementName=AutoSuggestBox, Path=FocusCommand}"
             Modifiers="Control" />
     </ui:FluentWindow.InputBindings>
+
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
-        <ui:NavigationView x:Name="RootNavigation" Grid.Row="1">
+
+        <ui:TitleBar
+            x:Name="TitleBar"
+            Title="WPF Zen UI - Simple Demo"
+            Grid.Row="0"
+            ui:IconAssist.Icon="{ui:ImageIcon Source='pack://application:,,,/Assets/applicationIcon-256.png'}" />
+
+        <ui:NavigationView
+            x:Name="RootNavigation"
+            Grid.Row="1"
+            TitleBar="{Binding ElementName=TitleBar}">
+
             <ui:NavigationView.NavigationMap>
                 <ui:NavigationMap>
                     <ui:NavigationMapNode
@@ -44,12 +56,14 @@
                         PageType="{x:Type pages:SettingsPage}" />
                 </ui:NavigationMap>
             </ui:NavigationView.NavigationMap>
+
             <ui:NavigationView.AutoSuggestBox>
                 <ui:AutoSuggestBox
                     x:Name="AutoSuggestBox"
                     ui:IconAssist.Icon="{ui:FluentIconSource Search24}"
                     PlaceholderText="Search" />
             </ui:NavigationView.AutoSuggestBox>
+
             <ui:NavigationView.Header>
                 <ui:BreadcrumbBar
                     x:Name="BreadcrumbBar"
@@ -58,6 +72,7 @@
                     FontWeight="DemiBold"
                     ItemsSource="{Binding ElementName=RootNavigation, Path=Breadcrumbs}" />
             </ui:NavigationView.Header>
+
             <ui:NavigationView.MenuItems>
                 <ui:NavigationViewItem
                     Header="Dashboard"
@@ -76,6 +91,7 @@
                     </ui:IconAssist.Icon>
                 </ui:NavigationViewItem>
             </ui:NavigationView.MenuItems>
+
             <ui:NavigationView.FooterMenuItems>
                 <ui:NavigationViewItem
                     Header="Settings"
@@ -86,10 +102,8 @@
                     </ui:IconAssist.Icon>
                 </ui:NavigationViewItem>
             </ui:NavigationView.FooterMenuItems>
+
         </ui:NavigationView>
-        <ui:TitleBar
-            Title="WPF Zen UI - Simple Demo"
-            Grid.Row="0"
-            ui:IconAssist.Icon="{ui:ImageIcon Source='pack://application:,,,/Assets/applicationIcon-256.png'}" />
+
     </Grid>
 </ui:FluentWindow>
