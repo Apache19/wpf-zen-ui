@@ -21,14 +21,13 @@
     -->
     <Style x:Key="DefaultInfoBarCloseButtonStyle" TargetType="{x:Type controls:Button}">
         <Setter Property="Padding" Value="4" />
-        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Appearance" Value="Transparent" />
         <Setter Property="BorderThickness" Value="0" />
-        <Setter Property="IsEnabled" Value="True" />
         <Setter Property="controls:IconAssist.Icon" Value="{m:FluentIconSource Dismiss24}" />
     </Style>
 
     <Style TargetType="{x:Type controls:InfoBar}">
-        <Setter Property="controls:IconAssist.IconMargin" Value="0,0,12,0" />
+        <Setter Property="controls:IconAssist.IconMargin" Value="0,0,12,-6" />
         <Setter Property="Background" Value="{m:DynamicBrush ControlFillPrimary}" />
         <Setter Property="Padding" Value="12,10" />
         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
@@ -98,16 +97,13 @@
                                     </ContentPresenter>
                                 </WrapPanel>
 
-                                <Border
-                                    x:Name="CloseButtonHost"
+                                <controls:Button
+                                    x:Name="PART_CloseButton"
                                     Grid.Column="2"
-                                    Margin="12,-2,0,0"
-                                    VerticalAlignment="Top">
-                                    <controls:Button
-                                        x:Name="PART_CloseButton"
-                                        Style="{TemplateBinding CloseButtonStyle}"
-                                        ToolTip="{TemplateBinding CloseButtonToolTip}" />
-                                </Border>
+                                    Margin="12,-3,0,-6"
+                                    VerticalAlignment="Top"
+                                    Style="{TemplateBinding CloseButtonStyle}"
+                                    ToolTip="{TemplateBinding CloseButtonToolTip}" />
                             </Grid>
                         </Border>
                     </Grid>
@@ -117,7 +113,7 @@
                         </Trigger>
 
                         <Trigger Property="IsClosable" Value="False">
-                            <Setter TargetName="CloseButtonHost" Property="Visibility" Value="Collapsed" />
+                            <Setter TargetName="PART_CloseButton" Property="Visibility" Value="Collapsed" />
                         </Trigger>
 
                         <Trigger Property="controls:IconAssist.Icon" Value="{x:Null}">

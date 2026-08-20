@@ -4,7 +4,6 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Zen.Ui.Gallery.Controls"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:local="clr-namespace:Wpf.Zen.Ui.Gallery.Views.Pages.StatusAndInfo"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:ui="http://schemas.thezendev.com/wpf/2027"
     xmlns:vm="clr-namespace:Wpf.Zen.Ui.Gallery.ViewModels.Pages.StatusAndInfo"
@@ -21,7 +20,7 @@
         <controls:ControlExample
             Margin="0,0,0,42"
             HeaderText="A persistent InfoBar without an icon and with customized corners."
-            XamlCode="&lt;ui:InfoBar Title=&quot;Title&quot; IsClosable=&quot;False&quot; IsIconVisible=&quot;False&quot; CornerRadius=&quot;8&quot;&gt;Essential message.&lt;/ui:InfoBar&gt;">
+            XamlCode="&lt;ui:InfoBar Title=&quot;Title&quot; IsClosable=&quot;True&quot; IsIconVisible=&quot;True&quot; CornerRadius=&quot;8&quot;&gt;Essential message.&lt;/ui:InfoBar&gt;">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
@@ -30,8 +29,9 @@
                 <ui:InfoBar
                     Title="Title"
                     Grid.Column="0"
-                    CornerRadius="8" VerticalAlignment="Top"
-                    IsClosable="False"
+                    VerticalAlignment="Top"
+                    CornerRadius="8"
+                    IsClosable="True"
                     IsIconVisible="{Binding ShowIcon}"
                     IsOpen="{Binding IsShortInfoBarOpened}"
                     Severity="{Binding ShortInfoBarSeverity, Mode=OneWay}">
@@ -76,7 +76,8 @@
                 </Grid.ColumnDefinitions>
                 <ui:InfoBar
                     Title="Title"
-                    Grid.Column="0" VerticalAlignment="Top"
+                    Grid.Column="0"
+                    VerticalAlignment="Top"
                     IsOpen="{Binding IsLongInfoBarOpened, Mode=TwoWay}"
                     Severity="{Binding LongInfoBarSeverity, Mode=OneWay}">
                     Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
