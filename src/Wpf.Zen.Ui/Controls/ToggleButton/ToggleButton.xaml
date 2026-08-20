@@ -69,8 +69,8 @@
                                 VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
                                 Content="{TemplateBinding controls:IconAssist.Icon}"
                                 Focusable="False"
-                                IconSize="{TemplateBinding FontSize, Converter={converters:DoubleToDoubleConverter Add=1}}"
-                                SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
+                                SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"
+                                TextElement.FontSize="{TemplateBinding FontSize, Converter={converters:DoubleToDoubleConverter Add=1}}" />
 
                             <ContentPresenter
                                 Grid.Column="1"

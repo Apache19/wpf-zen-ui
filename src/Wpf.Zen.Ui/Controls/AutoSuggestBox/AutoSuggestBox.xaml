@@ -72,7 +72,6 @@
                             Grid.Row="0"
                             HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
                             VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
-                            controls:IconPresenter.IconSize="{TemplateBinding FontSize}"
                             ClearButtonEnabled="{TemplateBinding ClearButtonEnabled}"
                             controls:IconAssist.Icon="{TemplateBinding controls:IconAssist.Icon}"
                             controls:IconAssist.IconMargin="{TemplateBinding controls:IconAssist.IconMargin}"

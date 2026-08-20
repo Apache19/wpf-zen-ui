@@ -54,8 +54,8 @@
                             x:Name="IconPresenter"
                             VerticalAlignment="Top"
                             Content="{TemplateBinding controls:IconAssist.Icon}"
-                            IconForeground="{TemplateBinding VisualForeground}"
-                            IconSize="{TemplateBinding FontSize, Converter={converters:DoubleToDoubleConverter Add=1}}" />
+                            TextElement.Foreground="{TemplateBinding VisualForeground}"
+                            TextElement.FontSize="{TemplateBinding FontSize, Converter={converters:DoubleToDoubleConverter Add=1}}" />
                     </Border>
 
                     <!--  Placeholder (watermark) control. Uses Margin to match the TextEditor's default 2,0,2,0 padding.  -->

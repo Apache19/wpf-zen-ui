@@ -64,7 +64,7 @@
                                     x:Name="IconHost"
                                     Margin="{TemplateBinding controls:IconAssist.IconMargin}"
                                     VerticalAlignment="Top"
-                                    controls:IconPresenter.IconSize="{TemplateBinding FontSize, Converter={StaticResource IconSizeConverter}}">
+                                    TextElement.FontSize="{TemplateBinding FontSize, Converter={StaticResource IconSizeConverter}}">
                                     <controls:FluentIcon
                                         x:Name="FluentIcon"
                                         VerticalAlignment="Top"
