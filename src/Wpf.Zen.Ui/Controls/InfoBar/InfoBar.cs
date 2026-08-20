@@ -5,6 +5,7 @@
 
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
+using System.Windows.Data;
 using System.Windows.Markup;
 
 // ReSharper disable once CheckNamespace
@@ -275,12 +276,13 @@ public class InfoBar : ContentControl
     );
 
     /// <summary>
-    /// Gets or sets the style applied to <c>PART_CloseButton</c> by the default template.
+    /// Gets or sets the style applied to <c>PART_CloseButton</c>.
     /// </summary>
     /// <remarks>
     /// This property provides a supported way to change the close glyph, spacing, colors or focus
-    /// visuals without copying the complete <see cref="ControlTemplate"/>. A custom template may
-    /// choose whether to consume it.
+    /// visuals without copying the complete <see cref="ControlTemplate"/>. The control binds the
+    /// property to the named template part when the template is applied, so custom templates only
+    /// need to preserve the documented part name and do not need to repeat that binding.
     /// </remarks>
     [Bindable(true)]
     [Category("Appearance")]
@@ -288,30 +290,6 @@ public class InfoBar : ContentControl
     {
         get => (Style?)GetValue(CloseButtonStyleProperty);
         set => SetValue(CloseButtonStyleProperty, value);
-    }
-
-    /// <summary>Identifies the <see cref="CloseButtonToolTip"/> dependency property.</summary>
-    public static readonly DependencyProperty CloseButtonToolTipProperty = DependencyProperty.Register(
-        nameof(CloseButtonToolTip),
-        typeof(object),
-        typeof(InfoBar),
-        new PropertyMetadata("Close")
-    );
-
-    /// <summary>
-    /// Gets or sets the tooltip content shown for the built-in close button.
-    /// </summary>
-    /// <remarks>
-    /// The default value is <c>Close</c>. The value is object-based so applications can provide
-    /// localized text or rich tooltip content without replacing the control template.
-    /// </remarks>
-    [Bindable(true)]
-    [Category("Appearance")]
-    [Localizability(LocalizationCategory.Text)]
-    public object? CloseButtonToolTip
-    {
-        get => GetValue(CloseButtonToolTipProperty);
-        set => SetValue(CloseButtonToolTipProperty, value);
     }
 
     #endregion
@@ -377,7 +355,21 @@ public class InfoBar : ContentControl
         base.OnApplyTemplate();
 
         _closeButton = GetTemplateChild(CloseButtonPartName) as ButtonBase;
-        _closeButton?.Click += OnCloseButtonClick;
+        if (_closeButton is not null)
+        {
+            // CloseButtonStyle is a control contract rather than a convention of the default
+            // template. WPF uses the same owner-to-child binding pattern for properties such as
+            // DatePicker.CalendarStyle and Calendar.CalendarButtonStyle. Installing the binding
+            // here also keeps later style, resource and binding updates synchronized when a
+            // custom template provides the part but does not explicitly forward the property.
+            BindingOperations.SetBinding(
+                _closeButton,
+                FrameworkElement.StyleProperty,
+                new Binding(nameof(CloseButtonStyle)) { Source = this }
+            );
+
+            _closeButton.Click += OnCloseButtonClick;
+        }
     }
 
     /// <inheritdoc />

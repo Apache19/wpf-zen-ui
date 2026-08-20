@@ -172,14 +172,12 @@ public class InfoBarTests
                 var icon = new Border();
                 var iconTemplate = new DataTemplate();
                 var closeButtonStyle = new Style(typeof(Button));
-                var toolTip = new TextBlock { Text = "Dismiss notification" };
                 var infoBar = new UiInfoBar
                 {
                     CornerRadius = new CornerRadius(8D),
                     IsIconVisible = false,
                     IconTemplate = iconTemplate,
                     CloseButtonStyle = closeButtonStyle,
-                    CloseButtonToolTip = toolTip,
                 };
                 IconAssist.SetIcon(infoBar, icon);
 
@@ -188,7 +186,6 @@ public class InfoBarTests
                 Assert.Same(icon, IconAssist.GetIcon(infoBar));
                 Assert.Same(iconTemplate, infoBar.IconTemplate);
                 Assert.Same(closeButtonStyle, infoBar.CloseButtonStyle);
-                Assert.Same(toolTip, infoBar.CloseButtonToolTip);
             }
         );
     }
@@ -249,6 +246,37 @@ public class InfoBarTests
                 Assert.Equal(false, source.Tag);
                 Assert.True(BindingOperations.IsDataBound(infoBar, UiInfoBar.IsOpenProperty));
                 Assert.Equal(Visibility.Visible, infoBar.Visibility);
+            }
+        );
+    }
+
+    [Fact]
+    public void CloseButtonStyle_IsAppliedWhenCustomTemplateDoesNotForwardProperty()
+    {
+        WpfTestThread.Run(
+            () =>
+            {
+                var initialStyle = new Style(typeof(Button));
+                var updatedStyle = new Style(typeof(Button));
+                var infoBar = new UiInfoBar
+                {
+                    CloseButtonStyle = initialStyle,
+                    Template = CreateTemplate(typeof(Button)),
+                };
+
+                Assert.True(infoBar.ApplyTemplate());
+                var closeButton = Assert.IsType<Button>(
+                    infoBar.Template.FindName("PART_CloseButton", infoBar)
+                );
+
+                Assert.Same(initialStyle, closeButton.Style);
+                Assert.True(
+                    BindingOperations.IsDataBound(closeButton, FrameworkElement.StyleProperty)
+                );
+
+                infoBar.CloseButtonStyle = updatedStyle;
+
+                Assert.Same(updatedStyle, closeButton.Style);
             }
         );
     }

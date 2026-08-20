@@ -10,20 +10,22 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Zen.Ui.Controls"
     xmlns:converters="clr-namespace:Wpf.Zen.Ui.Converters"
-    xmlns:m="clr-namespace:Wpf.Zen.Ui.Markup">
+    xmlns:m="clr-namespace:Wpf.Zen.Ui.Markup"
+    xmlns:primitives="clr-namespace:System.Windows.Controls.Primitives;assembly=PresentationFramework">
 
     <converters:DoubleToDoubleConverter x:Key="IconSizeConverter" Add="2" />
 
     <!--
         Kept as a separate public customization seam through CloseButtonStyle. Applications can
-        replace this style without copying the InfoBar template, while the template part remains
-        responsible only for forwarding clicks to the control.
+        replace this style without copying the InfoBar template. InfoBar applies it to the named
+        part from OnApplyTemplate so custom templates do not need to duplicate a TemplateBinding.
     -->
-    <Style x:Key="DefaultInfoBarCloseButtonStyle" TargetType="{x:Type controls:Button}">
+    <Style x:Key="DefaultInfoBarCloseButtonStyle" TargetType="{x:Type primitives:ButtonBase}">
         <Setter Property="Padding" Value="4" />
-        <Setter Property="Appearance" Value="Transparent" />
+        <Setter Property="controls:Button.Appearance" Value="Transparent" />
         <Setter Property="BorderThickness" Value="0" />
         <Setter Property="controls:IconAssist.Icon" Value="{m:FluentIconSource Dismiss24}" />
+        <Setter Property="ToolTip" Value="Close" />
     </Style>
 
     <Style TargetType="{x:Type controls:InfoBar}">
@@ -101,9 +103,7 @@
                                     x:Name="PART_CloseButton"
                                     Grid.Column="2"
                                     Margin="12,-3,0,-6"
-                                    VerticalAlignment="Top"
-                                    Style="{TemplateBinding CloseButtonStyle}"
-                                    ToolTip="{TemplateBinding CloseButtonToolTip}" />
+                                    VerticalAlignment="Top" />
                             </Grid>
                         </Border>
                     </Grid>
