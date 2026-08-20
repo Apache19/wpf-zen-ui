@@ -25,6 +25,7 @@
         <Setter Property="controls:Button.Appearance" Value="Transparent" />
         <Setter Property="BorderThickness" Value="0" />
         <Setter Property="controls:IconAssist.Icon" Value="{m:FluentIconSource Dismiss24}" />
+        <Setter Property="controls:IconPresenter.IconSize" Value="{Binding FontSize, RelativeSource={RelativeSource Self}}" />
         <Setter Property="ToolTip" Value="Close" />
     </Style>
 
