@@ -49,7 +49,15 @@ public interface INavigationItem
     /// <summary>Gets the optional tag used by <see cref="NavigationView.Navigate(string)"/>.</summary>
     string? TargetPageTag { get; }
 
-    /// <summary>Gets the page type activated by this item, or <see langword="null"/> for a group.</summary>
+    /// <summary>
+    /// Gets the page type activated when this item's header is invoked. A <see langword="null"/>
+    /// value creates a pure grouping header whose only action is toggling its child presentation.
+    /// </summary>
+    /// <remarks>
+    /// An item may combine a page type with <see cref="Children"/>. The header then navigates to
+    /// the page and toggles the group from the same action, so a grouping item is not limited to
+    /// <see langword="null"/>.
+    /// </remarks>
     Type? TargetPageType { get; }
 
     /// <summary>Gets the caching policy used when the target page is created.</summary>
