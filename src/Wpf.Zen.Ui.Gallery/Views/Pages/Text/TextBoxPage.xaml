@@ -52,7 +52,6 @@
             <ui:TextBox
                 MinHeight="100"
                 MaxHeight="150"
-                VerticalContentAlignment="Top"
                 ui:ScrollViewerAssist.HideButtons="True"
                 AcceptsReturn="True"
                 HorizontalScrollBarVisibility="Disabled"
