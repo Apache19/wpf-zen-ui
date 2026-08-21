@@ -3,41 +3,100 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-/* https://docs.microsoft.com/en-us/fluent-ui/web-components/components/progress-ring */
-
 using System.Windows.Controls;
 
 // ReSharper disable once CheckNamespace
 namespace Wpf.Zen.Ui.Controls;
 
 /// <summary>
-/// Rotating loading ring.
+/// Displays determinate progress as a circular arc or continuous activity when
+/// <see cref="IsIndeterminate"/> is enabled.
 /// </summary>
+/// <remarks>
+/// The default template supplies <c>PART_DeterminateArc</c>. A custom template may omit the part;
+/// range properties continue to work, but no determinate geometry is produced.
+/// </remarks>
+[TemplatePart(Name = DeterminateArcPartName, Type = typeof(Arc))]
 public class ProgressRing : Control
 {
+    private const string DeterminateArcPartName = "PART_DeterminateArc";
+    private Arc? determinateArc;
+
+    #region DP: Minimum
+
     /// <summary>Identifies the <see cref="Minimum"/> dependency property.</summary>
     public static readonly DependencyProperty MinimumProperty = DependencyProperty.Register(
         nameof(Minimum),
         typeof(double),
         typeof(ProgressRing),
-        new PropertyMetadata(0.0d, OnMinimumChanged)
+        new FrameworkPropertyMetadata(0.0d, OnMinimumChanged),
+        ValidateFiniteDouble
     );
+
+    /// <summary>
+    /// Gets or sets the lower bound of the determinate range. The default is <c>0</c>.
+    /// Changing it coerces <see cref="Maximum"/> and <see cref="Value"/> to preserve a valid range.
+    /// </summary>
+    public double Minimum
+    {
+        get => (double)GetValue(MinimumProperty);
+        set => SetValue(MinimumProperty, value);
+    }
+
+    #endregion
+
+    #region DP: Maximum
 
     /// <summary>Identifies the <see cref="Maximum"/> dependency property.</summary>
     public static readonly DependencyProperty MaximumProperty = DependencyProperty.Register(
         nameof(Maximum),
         typeof(double),
         typeof(ProgressRing),
-        new PropertyMetadata(100.0d, OnMaximumChanged)
+        new FrameworkPropertyMetadata(100.0d, OnMaximumChanged, CoerceMaximum),
+        ValidateFiniteDouble
     );
 
-    /// <summary>Identifies the <see cref="Progress"/> dependency property.</summary>
-    public static readonly DependencyProperty ProgressProperty = DependencyProperty.Register(
-        nameof(Progress),
+    /// <summary>
+    /// Gets or sets the upper bound of the determinate range. The default is <c>100</c>; values
+    /// below <see cref="Minimum"/> are coerced to the minimum.
+    /// </summary>
+    public double Maximum
+    {
+        get => (double)GetValue(MaximumProperty);
+        set => SetValue(MaximumProperty, value);
+    }
+
+    #endregion
+
+    #region DP: Value
+
+    /// <summary>Identifies the <see cref="Value"/> dependency property.</summary>
+    public static readonly DependencyProperty ValueProperty = DependencyProperty.Register(
+        nameof(Value),
         typeof(double),
         typeof(ProgressRing),
-        new PropertyMetadata(50d, OnProgressChanged)
+        new FrameworkPropertyMetadata(
+            0.0d,
+            FrameworkPropertyMetadataOptions.BindsTwoWayByDefault,
+            OnValueChanged,
+            CoerceValue
+        ),
+        ValidateFiniteDouble
     );
+
+    /// <summary>
+    /// Gets or sets the current determinate progress. The default is <c>0</c>; values outside
+    /// <see cref="Minimum"/> and <see cref="Maximum"/> are coerced to the effective range.
+    /// </summary>
+    public double Value
+    {
+        get => (double)GetValue(ValueProperty);
+        set => SetValue(ValueProperty, value);
+    }
+
+    #endregion
+
+    #region DP: IsIndeterminate
 
     /// <summary>Identifies the <see cref="IsIndeterminate"/> dependency property.</summary>
     public static readonly DependencyProperty IsIndeterminateProperty = DependencyProperty.Register(
@@ -47,58 +106,63 @@ public class ProgressRing : Control
         new PropertyMetadata(false)
     );
 
-    /// <summary>Identifies the <see cref="EndAngle"/> dependency property.</summary>
-    public static readonly DependencyProperty EndAngleProperty = DependencyProperty.Register(
-        nameof(EndAngle),
-        typeof(double),
-        typeof(ProgressRing),
-        new PropertyMetadata(180.0d)
-    );
+    /// <summary>
+    /// Gets or sets a value indicating whether the ring displays continuous activity instead of
+    /// the determinate <see cref="Value"/>. Switching modes does not replace the template visuals.
+    /// </summary>
+    public bool IsIndeterminate
+    {
+        get => (bool)GetValue(IsIndeterminateProperty);
+        set => SetValue(IsIndeterminateProperty, value);
+    }
 
-    /// <summary>Identifies the <see cref="IndeterminateAngle"/> dependency property.</summary>
-    public static readonly DependencyProperty IndeterminateAngleProperty = DependencyProperty.Register(
-        nameof(IndeterminateAngle),
-        typeof(double),
-        typeof(ProgressRing),
-        new PropertyMetadata(180.0d)
-    );
+    #endregion
 
-    /// <summary>Identifies the <see cref="CoverRingStroke"/> dependency property.</summary>
-    public static readonly DependencyProperty CoverRingStrokeProperty = DependencyProperty.RegisterAttached(
-        nameof(CoverRingStroke),
-        typeof(Brush),
-        typeof(ProgressRing),
-        new FrameworkPropertyMetadata(
-            Brushes.Black,
-            FrameworkPropertyMetadataOptions.AffectsRender
-                | FrameworkPropertyMetadataOptions.SubPropertiesDoNotAffectRender
-                | FrameworkPropertyMetadataOptions.Inherits
-        )
-    );
-
-    /// <summary>Identifies the <see cref="CoverRingVisibility"/> dependency property.</summary>
-    public static readonly DependencyProperty CoverRingVisibilityProperty = DependencyProperty.Register(
-        nameof(CoverRingVisibility),
-        typeof(Visibility),
-        typeof(ProgressRing),
-        new PropertyMetadata(Visibility.Visible)
-    );
+    #region DP: StrokeThickness
 
     /// <summary>Identifies the <see cref="StrokeThickness"/> dependency property.</summary>
     public static readonly DependencyProperty StrokeThicknessProperty = DependencyProperty.Register(
         nameof(StrokeThickness),
         typeof(double),
         typeof(ProgressRing),
-        new PropertyMetadata(double.NaN)
+        new PropertyMetadata(double.NaN),
+        ValidateStrokeThickness
     );
+
+    /// <summary>
+    /// Gets or sets the stroke thickness of both the indicator and background ring. The default
+    /// <see cref="double.NaN"/> derives a thickness equal to one eighth of the shorter arranged side.
+    /// </summary>
+    public double StrokeThickness
+    {
+        get => (double)GetValue(StrokeThicknessProperty);
+        set => SetValue(StrokeThicknessProperty, value);
+    }
+
+    #endregion
+
+    #region DP: StrokeLineCap
 
     /// <summary>Identifies the <see cref="StrokeLineCap"/> dependency property.</summary>
     public static readonly DependencyProperty StrokeLineCapProperty = DependencyProperty.Register(
         nameof(StrokeLineCap),
         typeof(PenLineCap),
         typeof(ProgressRing),
-        new PropertyMetadata(PenLineCap.Round)
+        new PropertyMetadata(PenLineCap.Round),
+        ValidateStrokeLineCap
     );
+
+    /// <summary>
+    /// Gets or sets the line cap used at both ends of the indicator and background arcs. The
+    /// default is <see cref="PenLineCap.Round"/>.
+    /// </summary>
+    public PenLineCap StrokeLineCap
+    {
+        get => (PenLineCap)GetValue(StrokeLineCapProperty);
+        set => SetValue(StrokeLineCapProperty, value);
+    }
+
+    #endregion
 
     static ProgressRing()
     {
@@ -109,159 +173,93 @@ public class ProgressRing : Control
     }
 
     /// <summary>
-    /// Gets or sets the minimum allowed value.
+    /// Resolves the optional determinate template part and synchronizes its derived geometry.
     /// </summary>
-    public double Minimum
+    public override void OnApplyTemplate()
     {
-        get => (double)GetValue(MinimumProperty);
-        set => SetValue(MinimumProperty, value);
+        base.OnApplyTemplate();
+
+        determinateArc = GetTemplateChild(DeterminateArcPartName) as Arc;
+        UpdateProgressAngle();
     }
 
     /// <summary>
-    /// Gets or sets the maximum allowed value.
-    /// </summary>
-    public double Maximum
-    {
-        get => (double)GetValue(MaximumProperty);
-        set => SetValue(MaximumProperty, value);
-    }
-
-    /// <summary>
-    /// Gets or sets the progress.
-    /// </summary>
-    public double Progress
-    {
-        get => (double)GetValue(ProgressProperty);
-        set => SetValue(ProgressProperty, value);
-    }
-
-    /// <summary>
-    /// Gets or sets a value indicating whether <see cref="ProgressRing"/> shows actual values (<see langword="false"/>)
-    /// or generic, continuous progress feedback.
-    /// </summary>
-    public bool IsIndeterminate
-    {
-        get => (bool)GetValue(IsIndeterminateProperty);
-        set => SetValue(IsIndeterminateProperty, value);
-    }
-
-    /// <summary>
-    /// Gets or sets the <see cref="Arc.EndAngle"/>.
-    /// </summary>
-    public double EndAngle
-    {
-        get => (double)GetValue(EndAngleProperty);
-        set => SetValue(EndAngleProperty, value);
-    }
-
-    /// <summary>
-    /// Gets or sets the <see cref="Arc.EndAngle"/> when <see cref="IsIndeterminate"/> is <see langword="true"/>.
-    /// </summary>
-    public double IndeterminateAngle
-    {
-        get => (double)GetValue(IndeterminateAngleProperty);
-        set => SetValue(IndeterminateAngleProperty, value);
-    }
-
-    /// <summary>
-    /// Gets or sets background ring fill.
-    /// </summary>
-    public Brush CoverRingStroke
-    {
-        get => (Brush)GetValue(CoverRingStrokeProperty);
-        set => SetValue(CoverRingStrokeProperty, value);
-    }
-
-    /// <summary>
-    /// Gets or sets background ring visibility.
-    /// </summary>
-    public Visibility CoverRingVisibility
-    {
-        get => (Visibility)GetValue(CoverRingVisibilityProperty);
-        set => SetValue(CoverRingVisibilityProperty, value);
-    }
-
-    /// <summary>
-    /// Gets or sets the stroke thickness of the ring.
-    /// When set to <see cref="double.NaN"/>, the thickness is automatically calculated as <c>Height / 8</c>.
-    /// </summary>
-    public double StrokeThickness
-    {
-        get => (double)GetValue(StrokeThicknessProperty);
-        set => SetValue(StrokeThicknessProperty, value);
-    }
-
-    /// <summary>
-    /// Gets or sets the <see cref="PenLineCap"/> for the start and end of the ring arc.
-    /// </summary>
-    public PenLineCap StrokeLineCap
-    {
-        get => (PenLineCap)GetValue(StrokeLineCapProperty);
-        set => SetValue(StrokeLineCapProperty, value);
-    }
-
-    /// <summary>
-    /// Re-draws <see cref="Arc.EndAngle"/> depending on <see cref="Progress"/>,
-    /// <see cref="Minimum"/>, and <see cref="Maximum"/>.
+    /// Updates the template arc from the range properties. The angle is deliberately not exposed
+    /// as another dependency property: it is derived state and allowing callers to write it would
+    /// create two competing sources of truth for determinate progress.
     /// </summary>
     private void UpdateProgressAngle()
     {
-        var minimum = Minimum;
-        var maximum = Maximum;
-        var progress = Progress;
-
-        var range = maximum - minimum;
-
-        if (range <= 0)
+        if (determinateArc is null)
         {
-            SetCurrentValue(EndAngleProperty, 0.0d);
-
             return;
         }
 
-        var percentage = (progress - minimum) / range;
-
-        if (percentage > 1)
-        {
-            percentage = 1;
-        }
-
-        if (percentage < 0)
-        {
-            percentage = 0;
-        }
-
-        // (360 / 100) * percentage
-        SetCurrentValue(EndAngleProperty, 360d * percentage);
+        var range = Maximum - Minimum;
+        var angle = range <= 0.0d ? 0.0d : 360.0d * ((Value - Minimum) / range);
+        determinateArc.SetCurrentValue(Arc.EndAngleProperty, angle);
     }
 
     private static void OnMinimumChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
-        if (d is not ProgressRing control)
-        {
-            return;
-        }
-
+        var control = (ProgressRing)d;
+        control.CoerceValue(MaximumProperty);
+        control.CoerceValue(ValueProperty);
         control.UpdateProgressAngle();
     }
 
     private static void OnMaximumChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
-        if (d is not ProgressRing control)
-        {
-            return;
-        }
-
+        var control = (ProgressRing)d;
+        control.CoerceValue(ValueProperty);
         control.UpdateProgressAngle();
     }
 
-    private static void OnProgressChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    private static void OnValueChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
-        if (d is not ProgressRing control)
-        {
-            return;
-        }
-
-        control.UpdateProgressAngle();
+        ((ProgressRing)d).UpdateProgressAngle();
     }
+
+    /// <summary>
+    /// Maintains a non-negative range while preserving the requested base value for later coercion.
+    /// </summary>
+    private static object CoerceMaximum(DependencyObject d, object? value)
+    {
+        var control = (ProgressRing)d;
+        return Math.Max(control.Minimum, (double)value!);
+    }
+
+    /// <summary>
+    /// Constrains determinate progress to the effective range so geometry never needs a second
+    /// clamping policy that could disagree with the public value.
+    /// </summary>
+    private static object CoerceValue(DependencyObject d, object? value)
+    {
+        var control = (ProgressRing)d;
+        return Math.Max(control.Minimum, Math.Min(control.Maximum, (double)value!));
+    }
+
+    /// <summary>
+    /// Rejects values that cannot define a finite range or WPF geometry.
+    /// </summary>
+    private static bool ValidateFiniteDouble(object? value)
+    {
+        var number = (double)value!;
+        return !double.IsNaN(number) && !double.IsInfinity(number);
+    }
+
+    /// <summary>
+    /// Preserves <see cref="double.NaN"/> as automatic sizing while rejecting invalid WPF pens.
+    /// </summary>
+    private static bool ValidateStrokeThickness(object? value)
+    {
+        var thickness = (double)value!;
+        return double.IsNaN(thickness) || (!double.IsInfinity(thickness) && thickness >= 0.0d);
+    }
+
+    /// <summary>
+    /// Prevents undefined enum values from reaching the Arc line-cap properties.
+    /// </summary>
+    private static bool ValidateStrokeLineCap(object? value) =>
+        value is not null && Enum.IsDefined(typeof(PenLineCap), value);
 }
