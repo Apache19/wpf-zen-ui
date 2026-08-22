@@ -21,8 +21,8 @@
         <controls:ControlExample
             Margin="0"
             Foreground="{ui:DynamicBrush TextFillPrimary}"
-            HeaderText="WPF Zen UI rating."
-            XamlCode="&lt;ui:RatingControl /&gt;">
+            HeaderText="Rating with quarter-star precision and a placeholder value."
+            XamlCode="&lt;ui:RatingControl\n    IsClearEnabled=&quot;True&quot;\n    PlaceholderRating=&quot;2.5&quot;\n    Precision=&quot;QuarterStar&quot;\n    Rating=&quot;{Binding FirstRatingValue}&quot; /&gt;">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
@@ -31,14 +31,17 @@
                 </Grid.ColumnDefinitions>
                 <ui:RatingControl
                     HorizontalAlignment="Left"
+                    IsClearEnabled="True"
                     IsEnabled="{Binding IsFirstRatingDisabled, Converter={StaticResource BoolInvertConverter}}"
-                    Value="{Binding FirstRatingValue}" />
+                    PlaceholderRating="2.5"
+                    Precision="QuarterStar"
+                    Rating="{Binding FirstRatingValue}" />
                 <StackPanel
                     Grid.Column="1"
                     MinWidth="60"
                     Margin="0,4,0,0"
                     VerticalAlignment="Center">
-                    <Label Margin="0,0,0,-4" Content="Value:" />
+                    <Label Margin="0,0,0,-4" Content="Rating:" />
                     <TextBlock Margin="0" Text="{Binding FirstRatingValue, Mode=OneWay}" />
                 </StackPanel>
                 <CheckBox
@@ -52,7 +55,7 @@
         <controls:ControlExample
             Margin="0,36,0,0"
             HeaderText="WPF Zen UI rating with full stars only."
-            XamlCode="&lt;ui:RatingControl HalfStarEnabled=&quot;False&quot; /&gt;">
+            XamlCode="&lt;ui:RatingControl Precision=&quot;FullStar&quot; /&gt;">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
@@ -61,15 +64,15 @@
                 </Grid.ColumnDefinitions>
                 <ui:RatingControl
                     HorizontalAlignment="Left"
-                    HalfStarEnabled="False"
                     IsEnabled="{Binding IsSecondRatingDisabled, Converter={StaticResource BoolInvertConverter}}"
-                    Value="{Binding SecondRatingValue, Mode=TwoWay}" />
+                    Precision="FullStar"
+                    Rating="{Binding SecondRatingValue, Mode=TwoWay}" />
                 <StackPanel
                     Grid.Column="1"
                     MinWidth="60"
                     Margin="0,4,0,0"
                     VerticalAlignment="Center">
-                    <Label Margin="0,0,0,-4" Content="Value:" />
+                    <Label Margin="0,0,0,-4" Content="Rating:" />
                     <TextBlock Margin="0" Text="{Binding SecondRatingValue, Mode=TwoWay}" />
                 </StackPanel>
                 <CheckBox

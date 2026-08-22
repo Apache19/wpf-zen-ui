@@ -9,91 +9,128 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Zen.Ui.Controls"
-    xmlns:theming="clr-namespace:Wpf.Zen.Ui.Theming"
-    xmlns:m="clr-namespace:Wpf.Zen.Ui.Markup">
+    xmlns:m="clr-namespace:Wpf.Zen.Ui.Markup"
+    xmlns:theming="clr-namespace:Wpf.Zen.Ui.Theming">
 
     <Style TargetType="{x:Type controls:RatingControl}">
-        <!--  Universal WPF Zen UI focus  -->
-        <Setter Property="FocusVisualStyle" Value="{DynamicResource {x:Static theming:StyleKeys.DefaultControlFocusVisualStyle}}" />
-        <!--  Universal WPF Zen UI focus  -->
-        <Setter Property="Foreground" Value="{m:DynamicBrush AccentFillSecondary}" />
-
+        <Setter Property="FocusVisualStyle" Value="{m:DynamicStyle DefaultControlFocusVisual}" />
+        <Setter Property="Foreground" Value="{m:DynamicBrush TextFillSecondary}" />
         <Setter Property="FontSize" Value="20" />
         <Setter Property="HorizontalAlignment" Value="Left" />
-        <Setter Property="VerticalAlignment" Value="Center" />
-        <Setter Property="HorizontalContentAlignment" Value="Center" />
-        <Setter Property="VerticalContentAlignment" Value="Center" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
-        <Setter Property="Margin" Value="0" />
-        <Setter Property="Padding" Value="0" />
+        <Setter Property="ItemTemplate">
+            <Setter.Value>
+                <DataTemplate DataType="{x:Type controls:RatingItem}">
+                    <!--
+                        RatingItem exposes semantic state only. The default theme chooses Fluent
+                        icons here so replacing ItemTemplate also replaces the visual vocabulary
+                        without any icon-system dependency in RatingControl or its item model.
+                    -->
+                    <controls:FluentIcon
+                        x:Name="Icon"
+                        RenderTransformOrigin="0.5,0.5"
+                        Symbol="Star24" />
+                    <DataTemplate.Triggers>
+                        <DataTrigger Binding="{Binding State}" Value="{x:Static controls:RatingItemState.QuarterStar}">
+                            <Setter TargetName="Icon" Property="Symbol" Value="StarOneQuarter24" />
+                        </DataTrigger>
+                        <DataTrigger Binding="{Binding State}" Value="{x:Static controls:RatingItemState.HalfStar}">
+                            <Setter TargetName="Icon" Property="Symbol" Value="StarHalf24" />
+                        </DataTrigger>
+                        <DataTrigger Binding="{Binding State}" Value="{x:Static controls:RatingItemState.ThreeQuarterStar}">
+                            <Setter TargetName="Icon" Property="Symbol" Value="StarThreeQuarter24" />
+                        </DataTrigger>
+                        <DataTrigger Binding="{Binding State}" Value="{x:Static controls:RatingItemState.FullStar}">
+                            <Setter TargetName="Icon" Property="Filled" Value="True" />
+                        </DataTrigger>
+
+                        <DataTrigger Binding="{Binding DisplayMode}" Value="{x:Static controls:RatingItemDisplayMode.Rating}">
+                            <Setter TargetName="Icon" Property="Foreground" Value="{m:DynamicBrush AccentFillSecondary}" />
+                        </DataTrigger>
+                        <DataTrigger Binding="{Binding DisplayMode}" Value="{x:Static controls:RatingItemDisplayMode.Preview}">
+                            <Setter TargetName="Icon" Property="Foreground" Value="{m:DynamicBrush AccentFillSecondary}" />
+                        </DataTrigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="Icon" Property="Foreground" Value="{m:DynamicBrush TextFillDisabled}" />
+                        </Trigger>
+
+                        <!--
+                            Fluent System Icons contains only left-filled partial stars. The panel
+                            already reverses item layout under RTL; these state-specific transforms
+                            also reverse the partial glyph itself while leaving symmetric empty and
+                            full stars untouched. Custom item templates own the equivalent policy
+                            for their own content.
+                        -->
+                        <MultiDataTrigger>
+                            <MultiDataTrigger.Conditions>
+                                <Condition Binding="{Binding State}" Value="{x:Static controls:RatingItemState.QuarterStar}" />
+                                <Condition Binding="{Binding FlowDirection, RelativeSource={RelativeSource AncestorType={x:Type controls:RatingControl}}}" Value="RightToLeft" />
+                            </MultiDataTrigger.Conditions>
+                            <Setter TargetName="Icon" Property="RenderTransform">
+                                <Setter.Value>
+                                    <ScaleTransform ScaleX="-1" />
+                                </Setter.Value>
+                            </Setter>
+                        </MultiDataTrigger>
+                        <MultiDataTrigger>
+                            <MultiDataTrigger.Conditions>
+                                <Condition Binding="{Binding State}" Value="{x:Static controls:RatingItemState.HalfStar}" />
+                                <Condition Binding="{Binding FlowDirection, RelativeSource={RelativeSource AncestorType={x:Type controls:RatingControl}}}" Value="RightToLeft" />
+                            </MultiDataTrigger.Conditions>
+                            <Setter TargetName="Icon" Property="RenderTransform">
+                                <Setter.Value>
+                                    <ScaleTransform ScaleX="-1" />
+                                </Setter.Value>
+                            </Setter>
+                        </MultiDataTrigger>
+                        <MultiDataTrigger>
+                            <MultiDataTrigger.Conditions>
+                                <Condition Binding="{Binding State}" Value="{x:Static controls:RatingItemState.ThreeQuarterStar}" />
+                                <Condition Binding="{Binding FlowDirection, RelativeSource={RelativeSource AncestorType={x:Type controls:RatingControl}}}" Value="RightToLeft" />
+                            </MultiDataTrigger.Conditions>
+                            <Setter TargetName="Icon" Property="RenderTransform">
+                                <Setter.Value>
+                                    <ScaleTransform ScaleX="-1" />
+                                </Setter.Value>
+                            </Setter>
+                        </MultiDataTrigger>
+                    </DataTemplate.Triggers>
+                </DataTemplate>
+            </Setter.Value>
+        </Setter>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type controls:RatingControl}">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="*" />
-                        </Grid.ColumnDefinitions>
-
-                        <Grid
-                            x:Name="StarsContainer"
-                            Grid.Column="0"
-                            HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
-                            VerticalAlignment="{TemplateBinding VerticalContentAlignment}">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
-
-                            <controls:FluentIcon
-                                x:Name="PART_Star1"
-                                Grid.Column="0"
-                                FontSize="{TemplateBinding FontSize}"
-                                Foreground="{TemplateBinding Foreground}"
-                                Symbol="Star28" />
-                            <controls:FluentIcon
-                                x:Name="PART_Star2"
-                                Grid.Column="1"
-                                FontSize="{TemplateBinding FontSize}"
-                                Foreground="{TemplateBinding Foreground}"
-                                Symbol="Star28" />
-                            <controls:FluentIcon
-                                x:Name="PART_Star3"
-                                Grid.Column="2"
-                                FontSize="{TemplateBinding FontSize}"
-                                Foreground="{TemplateBinding Foreground}"
-                                Symbol="Star28" />
-                            <controls:FluentIcon
-                                x:Name="PART_Star4"
-                                Grid.Column="3"
-                                FontSize="{TemplateBinding FontSize}"
-                                Foreground="{TemplateBinding Foreground}"
-                                Symbol="Star28" />
-                            <controls:FluentIcon
-                                x:Name="PART_Star5"
-                                Grid.Column="4"
-                                FontSize="{TemplateBinding FontSize}"
-                                Foreground="{TemplateBinding Foreground}"
-                                Symbol="Star28" />
-                        </Grid>
-
-                        <Grid
-                            x:Name="ContentGrid"
-                            Grid.Column="1"
-                            Margin="8,0,0,0"
-                            VerticalAlignment="Center">
-                            <ContentPresenter TextElement.FontSize="13" TextElement.Foreground="{m:DynamicBrush TextFillPrimary}" />
-                        </Grid>
-                    </Grid>
+                    <!--
+                        RatingControl owns only the item states and input semantics. Star spacing,
+                        direction, wrapping, and sizing remain ordinary ItemsControl/Panel concerns,
+                        so a replacement style can change layout without a parallel control API.
+                    -->
+                    <ItemsControl
+                        x:Name="PART_ItemsHost"
+                        VerticalAlignment="Center"
+                        Focusable="False"
+                        FontSize="{TemplateBinding FontSize}"
+                        Foreground="{TemplateBinding Foreground}"
+                        IsTabStop="False"
+                        ItemTemplate="{TemplateBinding ItemTemplate}"
+                        SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel Orientation="Horizontal" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                    </ItemsControl>
                     <ControlTemplate.Triggers>
-                        <Trigger Property="Content" Value="{x:Null}">
-                            <Setter TargetName="ContentGrid" Property="Margin" Value="0" />
-                        </Trigger>
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="IsEnabled" Value="True" />
+                                <Condition Property="IsReadOnly" Value="False" />
+                            </MultiTrigger.Conditions>
+                            <Setter Property="Cursor" Value="Hand" />
+                        </MultiTrigger>
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter TargetName="StarsContainer" Property="Opacity" Value="0.5" />
+                            <Setter TargetName="PART_ItemsHost" Property="Opacity" Value="0.5" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>

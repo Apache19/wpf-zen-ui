@@ -13,11 +13,11 @@ public partial class RatingViewModel : ViewModel
     public partial bool IsFirstRatingDisabled { get; set; }
 
     [ObservableProperty]
-    public partial double FirstRatingValue { get; set; } = 1.5D;
+    public partial double? FirstRatingValue { get; set; } = 1.5D;
 
     [ObservableProperty]
     public partial bool IsSecondRatingDisabled { get; set; }
 
     [ObservableProperty]
-    public partial double SecondRatingValue { get; set; } = 3D;
+    public partial double? SecondRatingValue { get; set; } = 3D;
 }

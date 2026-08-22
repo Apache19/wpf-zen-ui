@@ -3,6 +3,7 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
+using System.Collections.ObjectModel;
 using System.Windows.Controls;
 using System.Windows.Input;
 
@@ -10,68 +11,38 @@ using System.Windows.Input;
 namespace Wpf.Zen.Ui.Controls;
 
 /// <summary>
-/// Displays the rating scale with interactions.
+/// Presents a nullable score as a configurable number of stars and optionally lets the user
+/// select that score with the pointer or keyboard.
 /// </summary>
-[TemplatePart(Name = "PART_Star1", Type = typeof(FluentIcon))]
-[TemplatePart(Name = "PART_Star2", Type = typeof(FluentIcon))]
-[TemplatePart(Name = "PART_Star3", Type = typeof(FluentIcon))]
-[TemplatePart(Name = "PART_Star4", Type = typeof(FluentIcon))]
-[TemplatePart(Name = "PART_Star5", Type = typeof(FluentIcon))]
-public class RatingControl : ContentControl
+/// <remarks>
+/// <para>
+/// <see cref="Rating"/> deliberately preserves every finite value supplied by an application.
+/// Display rounding and range limiting are presentation concerns and never replace a binding's
+/// source value. Values produced by user interaction, however, are aligned to
+/// <see cref="Precision"/> and constrained to the interval from zero through
+/// <see cref="MaximumRating"/>.
+/// </para>
+/// <para>
+/// A <see langword="null"/> rating represents an unrated item. In that state the control displays
+/// <see cref="PlaceholderRating"/> without turning the placeholder into an actual score. The
+/// template owns star layout through <c>PART_ItemsHost</c>; changing its items panel is therefore
+/// sufficient to change spacing or arrangement without adding layout properties to this control.
+/// </para>
+/// <para>
+/// <c>PART_ItemsHost</c> is the only template part and is optional for safe degradation. When it
+/// is absent, the control cannot render stars or translate pointer positions, but dependency
+/// properties, keyboard input, and <see cref="RatingChanged"/> continue to operate normally.
+/// </para>
+/// </remarks>
+[TemplatePart(Name = ItemsHostPartName, Type = typeof(ItemsControl))]
+public class RatingControl : Control
 {
-    private enum StarValue
-    {
-        Empty,
-        HalfFilled,
-        Filled,
-    }
+    private const string ItemsHostPartName = "PART_ItemsHost";
 
-    private const           double        MaxValue        = 5.0D;
-    private const           double        MinValue        = 0.0D;
-    private const           int           OffsetTolerance = 8;
-    private static readonly SymbolRegular StarSymbol      = SymbolRegular.Star28;
-    private static readonly SymbolRegular StarHalfSymbol  = SymbolRegular.StarHalf28;
-    private                 FluentIcon?   _iconStarOne;
-    private                 FluentIcon?   _iconStarTwo;
-    private                 FluentIcon?   _iconStarThree;
-    private                 FluentIcon?   _iconStarFour;
-    private                 FluentIcon?   _iconStarFive;
+    private readonly ObservableCollection<RatingItem> _ratingItems = [];
 
-    /// <summary>Identifies the <see cref="Value"/> dependency property.</summary>
-    public static readonly DependencyProperty ValueProperty = DependencyProperty.Register(
-        nameof(Value),
-        typeof(double),
-        typeof(RatingControl),
-        new FrameworkPropertyMetadata(
-            0.0D,
-            FrameworkPropertyMetadataOptions.BindsTwoWayByDefault,
-            OnValueChanged
-        )
-    );
-
-    /// <summary>Identifies the <see cref="MaxRating"/> dependency property.</summary>
-    public static readonly DependencyProperty MaxRatingProperty = DependencyProperty.Register(
-        nameof(MaxRating),
-        typeof(int),
-        typeof(RatingControl),
-        new PropertyMetadata(5)
-    );
-
-    /// <summary>Identifies the <see cref="HalfStarEnabled"/> dependency property.</summary>
-    public static readonly DependencyProperty HalfStarEnabledProperty = DependencyProperty.Register(
-        nameof(HalfStarEnabled),
-        typeof(bool),
-        typeof(RatingControl),
-        new PropertyMetadata(true)
-    );
-
-    /// <summary>Identifies the <see cref="ValueChanged"/> routed event.</summary>
-    public static readonly RoutedEvent ValueChangedEvent = EventManager.RegisterRoutedEvent(
-        nameof(ValueChanged),
-        RoutingStrategy.Bubble,
-        typeof(RoutedEventHandler),
-        typeof(RatingControl)
-    );
+    private ItemsControl? _itemsHost;
+    private double?       _previewRating;
 
     static RatingControl()
     {
@@ -82,345 +53,559 @@ public class RatingControl : ContentControl
     }
 
     /// <summary>
-    /// Gets or sets the rating value.
+    /// Initializes a new instance of the <see cref="RatingControl"/> class.
     /// </summary>
-    public double Value
+    public RatingControl()
     {
-        get => (double)GetValue(ValueProperty);
-        set => SetValue(ValueProperty, value);
+        RebuildRatingItems();
+    }
+
+    #region RatingProperty
+
+    /// <summary>Identifies the <see cref="Rating"/> dependency property.</summary>
+    public static readonly DependencyProperty RatingProperty = DependencyProperty.Register(
+        nameof(Rating),
+        typeof(double?),
+        typeof(RatingControl),
+        new FrameworkPropertyMetadata(
+            null,
+            FrameworkPropertyMetadataOptions.BindsTwoWayByDefault,
+            static (d, e) =>
+            {
+                var control = (RatingControl)d;
+                control.RefreshRatingItems();
+                control.OnRatingChanged(
+                    new RoutedPropertyChangedEventArgs<double?>(
+                        (double?)e.OldValue,
+                        (double?)e.NewValue,
+                        RatingChangedEvent
+                    )
+                );
+            }
+        ),
+        static value => value is null || (value is double number && IsFinite(number))
+    );
+
+    /// <summary>
+    /// Gets or sets the score represented by the control, or <see langword="null"/> when no score
+    /// has been assigned.
+    /// </summary>
+    /// <remarks>
+    /// The default is <see langword="null"/>. Finite values outside the displayed range and values
+    /// with more precision than <see cref="Precision"/> are retained unchanged. Only the star
+    /// presentation is rounded and constrained.
+    /// </remarks>
+    public double? Rating
+    {
+        get => (double?)GetValue(RatingProperty);
+        set => SetValue(RatingProperty, value);
+    }
+
+    #endregion
+
+    #region ItemTemplateProperty
+
+    /// <summary>Identifies the <see cref="ItemTemplate"/> dependency property.</summary>
+    public static readonly DependencyProperty ItemTemplateProperty = DependencyProperty.Register(
+        nameof(ItemTemplate),
+        typeof(DataTemplate),
+        typeof(RatingControl),
+        new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.AffectsMeasure)
+    );
+
+    /// <summary>
+    /// Gets or sets the template used to display each <see cref="RatingItem"/>.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// The default style supplies a Fluent star template. A custom template can bind to
+    /// <see cref="RatingItem.State"/>, <see cref="RatingItem.DisplayMode"/>,
+    /// <see cref="RatingItem.Fill"/>, and the other read-only item properties to present every
+    /// fraction and score source independently.
+    /// </para>
+    /// <para>
+    /// This property controls only item appearance. Arrangement, spacing, and direction remain
+    /// responsibilities of the <c>PART_ItemsHost</c> items panel in the control template.
+    /// </para>
+    /// </remarks>
+    public DataTemplate? ItemTemplate
+    {
+        get => (DataTemplate?)GetValue(ItemTemplateProperty);
+        set => SetValue(ItemTemplateProperty, value);
+    }
+
+    #endregion
+
+    #region MaximumRatingProperty
+
+    /// <summary>Identifies the <see cref="MaximumRating"/> dependency property.</summary>
+    public static readonly DependencyProperty MaximumRatingProperty = DependencyProperty.Register(
+        nameof(MaximumRating),
+        typeof(int),
+        typeof(RatingControl),
+        new FrameworkPropertyMetadata(
+            5,
+            FrameworkPropertyMetadataOptions.AffectsMeasure,
+            static (d, _) =>
+            {
+                var control = (RatingControl)d;
+                control._previewRating = null;
+                control.RebuildRatingItems();
+            }
+        ),
+        static value => value is int maximum && maximum > 0
+    );
+
+    /// <summary>
+    /// Gets or sets the number of stars displayed by the control.
+    /// </summary>
+    /// <remarks>
+    /// The default is <c>5</c>. The value must be greater than zero. Changing it never modifies
+    /// <see cref="Rating"/> or <see cref="PlaceholderRating"/>; it only changes the interactive and
+    /// displayed range.
+    /// </remarks>
+    public int MaximumRating
+    {
+        get => (int)GetValue(MaximumRatingProperty);
+        set => SetValue(MaximumRatingProperty, value);
+    }
+
+    #endregion
+
+    #region PrecisionProperty
+
+    /// <summary>Identifies the <see cref="Precision"/> dependency property.</summary>
+    public static readonly DependencyProperty PrecisionProperty = DependencyProperty.Register(
+        nameof(Precision),
+        typeof(RatingPrecision),
+        typeof(RatingControl),
+        new FrameworkPropertyMetadata(
+            RatingPrecision.FullStar,
+            FrameworkPropertyMetadataOptions.AffectsRender,
+            static (d, _) =>
+            {
+                var control = (RatingControl)d;
+                control._previewRating = null;
+                control.RefreshRatingItems();
+            }
+        ),
+        static value => value is RatingPrecision precision
+                     && Enum.IsDefined(typeof(RatingPrecision), precision)
+    );
+
+    /// <summary>
+    /// Gets or sets the smallest star fraction used for presentation and user interaction.
+    /// </summary>
+    /// <remarks>The default is <see cref="RatingPrecision.FullStar"/>.</remarks>
+    public RatingPrecision Precision
+    {
+        get => (RatingPrecision)GetValue(PrecisionProperty);
+        set => SetValue(PrecisionProperty, value);
+    }
+
+    #endregion
+
+    #region IsClearEnabledProperty
+
+    /// <summary>Identifies the <see cref="IsClearEnabled"/> dependency property.</summary>
+    public static readonly DependencyProperty IsClearEnabledProperty = DependencyProperty.Register(
+        nameof(IsClearEnabled),
+        typeof(bool),
+        typeof(RatingControl),
+        new PropertyMetadata(false)
+    );
+
+    /// <summary>
+    /// Gets or sets a value indicating whether selecting the current rating clears it.
+    /// </summary>
+    /// <remarks>
+    /// The default is <see langword="false"/>. When enabled, selecting the same score a second time
+    /// assigns <see langword="null"/> rather than zero. This behavior applies only when the control
+    /// is not read-only.
+    /// </remarks>
+    public bool IsClearEnabled
+    {
+        get => (bool)GetValue(IsClearEnabledProperty);
+        set => SetValue(IsClearEnabledProperty, value);
+    }
+
+    #endregion
+
+    #region PlaceholderRatingProperty
+
+    /// <summary>Identifies the <see cref="PlaceholderRating"/> dependency property.</summary>
+    public static readonly DependencyProperty PlaceholderRatingProperty = DependencyProperty.Register(
+        nameof(PlaceholderRating),
+        typeof(double),
+        typeof(RatingControl),
+        new FrameworkPropertyMetadata(
+            0.0,
+            FrameworkPropertyMetadataOptions.AffectsRender,
+            static (d, _) => ((RatingControl)d).RefreshRatingItems()
+        ),
+        static value => value is double number && IsFinite(number)
+    );
+
+    /// <summary>
+    /// Gets or sets the score displayed while <see cref="Rating"/> is <see langword="null"/>.
+    /// </summary>
+    /// <remarks>
+    /// The default is <c>0</c>. Like <see cref="Rating"/>, this value is retained as supplied while
+    /// its presentation is rounded and constrained to the visible star range.
+    /// </remarks>
+    public double PlaceholderRating
+    {
+        get => (double)GetValue(PlaceholderRatingProperty);
+        set => SetValue(PlaceholderRatingProperty, value);
+    }
+
+    #endregion
+
+    #region IsReadOnlyProperty
+
+    /// <summary>Identifies the <see cref="IsReadOnly"/> dependency property.</summary>
+    public static readonly DependencyProperty IsReadOnlyProperty = DependencyProperty.Register(
+        nameof(IsReadOnly),
+        typeof(bool),
+        typeof(RatingControl),
+        new PropertyMetadata(
+            false,
+            static (d, e) =>
+            {
+                if ((bool)e.NewValue)
+                {
+                    var control = (RatingControl)d;
+                    control._previewRating = null;
+                    control.RefreshRatingItems();
+                }
+            }
+        )
+    );
+
+    /// <summary>
+    /// Gets or sets a value indicating whether pointer and keyboard changes are disabled.
+    /// </summary>
+    /// <remarks>
+    /// The default is <see langword="false"/>. A read-only control remains focusable so that its
+    /// score can still be reached by keyboard and accessibility users.
+    /// </remarks>
+    public bool IsReadOnly
+    {
+        get => (bool)GetValue(IsReadOnlyProperty);
+        set => SetValue(IsReadOnlyProperty, value);
+    }
+
+    #endregion
+
+    #region RatingChangedEvent
+
+    /// <summary>Identifies the <see cref="RatingChanged"/> routed event.</summary>
+    public static readonly RoutedEvent RatingChangedEvent = EventManager.RegisterRoutedEvent(
+        nameof(RatingChanged),
+        RoutingStrategy.Bubble,
+        typeof(RoutedPropertyChangedEventHandler<double?>),
+        typeof(RatingControl)
+    );
+
+    /// <summary>
+    /// Occurs when <see cref="Rating"/> changes, whether the change came from input, a binding, or
+    /// direct property assignment.
+    /// </summary>
+    public event RoutedPropertyChangedEventHandler<double?> RatingChanged
+    {
+        add => AddHandler(RatingChangedEvent, value);
+        remove => RemoveHandler(RatingChangedEvent, value);
+    }
+
+    #endregion
+
+    /// <summary>
+    /// Reconnects the control to the items host supplied by its current template.
+    /// </summary>
+    /// <remarks>
+    /// The items host is template-owned and therefore cannot be resolved before this lifecycle
+    /// point. Reapplying a template first releases the previous host so it cannot retain the
+    /// presentation collection after its visual tree has been replaced.
+    /// </remarks>
+    public override void OnApplyTemplate()
+    {
+        _itemsHost?.ClearValue(ItemsControl.ItemsSourceProperty);
+
+        base.OnApplyTemplate();
+
+        _itemsHost = GetTemplateChild(ItemsHostPartName) as ItemsControl;
+
+        // PART_ItemsHost is owned by the control contract. Supplying the collection here keeps
+        // layout entirely in the template while avoiding a public presentation-only property.
+        _itemsHost?.SetCurrentValue(ItemsControl.ItemsSourceProperty, _ratingItems);
+
+        RefreshRatingItems();
     }
 
     /// <summary>
-    /// Gets or sets the maximum allowed rating value.
+    /// Raises <see cref="RatingChanged"/> for a completed dependency-property transition.
     /// </summary>
-    public int MaxRating
+    /// <param name="e">The old and new rating values.</param>
+    protected virtual void OnRatingChanged(RoutedPropertyChangedEventArgs<double?> e)
     {
-        get => (int)GetValue(MaxRatingProperty);
-        set => SetValue(MaxRatingProperty, value);
+        RaiseEvent(e);
     }
 
-    /// <summary>
-    /// Gets or sets a value indicating whether half of the star can be selected.
-    /// </summary>
-    public bool HalfStarEnabled
-    {
-        get => (bool)GetValue(HalfStarEnabledProperty);
-        set => SetValue(HalfStarEnabledProperty, value);
-    }
-
-    /// <summary>
-    /// Occurs after the user selects the rating.
-    /// </summary>
-    public event RoutedEventHandler ValueChanged
-    {
-        add => AddHandler(ValueChangedEvent, value);
-        remove => RemoveHandler(ValueChangedEvent, value);
-    }
-
-    /// <summary>
-    /// Is called when <see cref="Value"/> changes.
-    /// </summary>
-    private void OnValueChanged(double oldValue)
-    {
-        if (Value > MaxValue)
-        {
-            SetCurrentValue(ValueProperty, MaxValue);
-
-            return;
-        }
-
-        if (Value < MinValue)
-        {
-            SetCurrentValue(ValueProperty, MinValue);
-
-            return;
-        }
-
-        if (!Value.Equals(oldValue))
-        {
-            OnValueChanged();
-        }
-
-        UpdateStarsFromValue();
-    }
-
-    /// <summary>
-    /// Raises the <see cref="ValueChanged"/> routed event when the rating value changes.
-    /// </summary>
-    protected virtual void OnValueChanged()
-    {
-        RaiseEvent(new RoutedEventArgs(ValueChangedEvent));
-    }
-
-    /// <summary>
-    /// Is called when mouse is moved away from the control.
-    /// </summary>
-    protected override void OnMouseLeave(MouseEventArgs e)
-    {
-        base.OnMouseLeave(e);
-
-        UpdateStarsFromValue();
-    }
-
-    /// <summary>
-    /// Is called when mouse is moved around the control.
-    /// </summary>
+    /// <inheritdoc />
     protected override void OnMouseMove(MouseEventArgs e)
     {
         base.OnMouseMove(e);
 
-        Point currentPossition = e.GetPosition(this);
-        var   mouseOffset      = currentPossition.X * 100 / ActualWidth;
-
-        if (e.LeftButton != MouseButtonState.Pressed)
+        if (IsReadOnly)
         {
-            UpdateStarsOnMousePreview(mouseOffset);
+            return;
+        }
+
+        if (TryGetRatingFromPointer(e, out var rating))
+        {
+            _previewRating = rating;
+            RefreshRatingItems();
+        }
+        else if (_previewRating is not null)
+        {
+            // A custom template may stretch the control beyond its items host. Clear the preview
+            // as soon as the pointer enters that non-rating area instead of waiting for the pointer
+            // to leave the outer control entirely.
+            _previewRating = null;
+            RefreshRatingItems();
+        }
+    }
+
+    /// <inheritdoc />
+    protected override void OnMouseLeave(MouseEventArgs e)
+    {
+        base.OnMouseLeave(e);
+
+        _previewRating = null;
+        RefreshRatingItems();
+    }
+
+    /// <inheritdoc />
+    protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
+    {
+        base.OnMouseLeftButtonDown(e);
+
+        Focus();
+
+        if (IsReadOnly || !TryGetRatingFromPointer(e, out var rating))
+        {
+            return;
+        }
+
+        SetRatingFromInteraction(rating);
+        e.Handled = true;
+    }
+
+    /// <inheritdoc />
+    protected override void OnKeyDown(KeyEventArgs e)
+    {
+        base.OnKeyDown(e);
+
+        if (IsReadOnly)
+        {
+            return;
+        }
+
+        switch (e.Key)
+        {
+            case Key.Right:
+                // Key values describe physical keys and are not mirrored by WPF. Keep horizontal
+                // keyboard navigation aligned with the visual item order: in RTL, moving right
+                // approaches the low-rating edge. Vertical keys retain their score semantics.
+                StepRating(FlowDirection == FlowDirection.RightToLeft ? -1 : 1);
+                e.Handled = true;
+                break;
+
+            case Key.Left:
+                // Mirrors Key.Right: in RTL layout, moving left approaches the high-rating edge.
+                StepRating(FlowDirection == FlowDirection.RightToLeft ? 1 : -1);
+                e.Handled = true;
+                break;
+
+            case Key.Up:
+                StepRating(1);
+                e.Handled = true;
+                break;
+
+            case Key.Down:
+                StepRating(-1);
+                e.Handled = true;
+                break;
+
+            case Key.Home:
+                SetRatingFromInteraction(0);
+                e.Handled = true;
+                break;
+
+            case Key.End:
+                SetRatingFromInteraction(MaximumRating);
+                e.Handled = true;
+                break;
+
+            case Key.Delete when IsClearEnabled:
+                SetCurrentValue(RatingProperty, null);
+                e.Handled = true;
+                break;
         }
     }
 
     /// <summary>
-    /// Is called when mouse is cliked down.
+    /// Applies a score created by pointer or keyboard interaction.
     /// </summary>
-    protected override void OnMouseDown(MouseButtonEventArgs e)
+    /// <remarks>
+    /// SetCurrentValue is required here: WPF keeps the property's existing binding or other value
+    /// source while publishing the user's edit back through it. Unlike source-provided values,
+    /// interactive values are always aligned and constrained before being assigned.
+    /// </remarks>
+    internal void SetRatingFromInteraction(double rating)
     {
-        base.OnMouseDown(e);
-
-        Point currentPossition = e.GetPosition(this);
-        var   mouseOffset      = currentPossition.X * 100 / ActualWidth;
-
-        if (e.LeftButton == MouseButtonState.Pressed)
+        if (IsReadOnly)
         {
-            UpdateStarsOnMouseClick(mouseOffset);
+            return;
         }
+
+        double interactiveRating = NormalizeInteractiveRating(rating);
+
+        // ReSharper disable once CompareOfFloatsByEqualityOperator
+        double? newRating = IsClearEnabled && Rating == interactiveRating
+            ? null
+            : interactiveRating;
+
+        _previewRating = null;
+
+        SetCurrentValue(RatingProperty, newRating);
+        RefreshRatingItems();
     }
 
     /// <summary>
-    /// Adjusts the control's <see cref="Value" /> in response to keyboard input, incrementing or decrementing based on the key pressed.
+    /// Produces the score shown for an arbitrary finite source value without mutating that source.
     /// </summary>
-    /// <param name="e">Key event arguments containing details about the key press.</param>
-    protected override void OnKeyUp(KeyEventArgs e)
+    internal double GetDisplayedRating(double rating)
     {
-        base.OnKeyUp(e);
+        var constrained = Math.Max(0, Math.Min(MaximumRating, rating));
+        var step = GetPrecisionStep();
+        return Math.Min(
+            MaximumRating,
+            Math.Round(constrained / step, MidpointRounding.AwayFromZero) * step
+        );
+    }
 
-        if ((e.Key == Key.Right || e.Key == Key.Up) && Value < MaxValue)
+    private static bool IsFinite(double value)
+    {
+        return !double.IsNaN(value) && !double.IsInfinity(value);
+    }
+
+    private void RebuildRatingItems()
+    {
+        _ratingItems.Clear();
+
+        for (var index = 0; index < MaximumRating; index++)
         {
-            Value += HalfStarEnabled ? 0.5D : 1;
+            _ratingItems.Add(new RatingItem(index));
         }
 
-        if ((e.Key == Key.Left || e.Key == Key.Down) && Value > MinValue)
+        RefreshRatingItems();
+    }
+
+    private void RefreshRatingItems()
+    {
+        var sourceRating = _previewRating ?? Rating ?? PlaceholderRating;
+        var displayedRating = GetDisplayedRating(sourceRating);
+        var displayMode = _previewRating is not null
+            ? RatingItemDisplayMode.Preview
+            : Rating is not null
+                ? RatingItemDisplayMode.Rating
+                : RatingItemDisplayMode.Placeholder;
+
+        for (var index = 0; index < _ratingItems.Count; index++)
         {
-            Value -= HalfStarEnabled ? 0.5D : 1;
+            var fill = Math.Max(0, Math.Min(1, displayedRating - index));
+            _ratingItems[index].Update(fill, displayMode);
         }
     }
 
-    /// <summary>
-    /// Is called when Template is changed.
-    /// </summary>
-    public override void OnApplyTemplate()
+    private void StepRating(int direction)
     {
-        base.OnApplyTemplate();
-
-        if (GetTemplateChild("PART_Star1") is FluentIcon starOne)
-        {
-            _iconStarOne = starOne;
-        }
-
-        if (GetTemplateChild("PART_Star2") is FluentIcon starTwo)
-        {
-            _iconStarTwo = starTwo;
-        }
-
-        if (GetTemplateChild("PART_Star3") is FluentIcon starThree)
-        {
-            _iconStarThree = starThree;
-        }
-
-        if (GetTemplateChild("PART_Star4") is FluentIcon starFour)
-        {
-            _iconStarFour = starFour;
-        }
-
-        if (GetTemplateChild("PART_Star5") is FluentIcon starFive)
-        {
-            _iconStarFive = starFive;
-        }
-
-        UpdateStarsFromValue();
+        var displayedRating = GetDisplayedRating(Rating ?? PlaceholderRating);
+        SetRatingFromInteraction(displayedRating + (direction * GetPrecisionStep()));
     }
 
-    private void UpdateStarsOnMousePreview(double offsetPercentage)
+    private double NormalizeInteractiveRating(double rating)
     {
-        SetStarsPresence(ExtractValueFromOffset(offsetPercentage));
+        var constrained = Math.Max(0, Math.Min(MaximumRating, rating));
+        var step = GetPrecisionStep();
+        return Math.Min(
+            MaximumRating,
+            Math.Round(constrained / step, MidpointRounding.AwayFromZero) * step
+        );
     }
 
-    private void UpdateStarsOnMouseClick(double offsetPercentage)
+    private double GetPrecisionStep()
     {
-        var currentValue = ExtractValueFromOffset(offsetPercentage);
-
-        SetCurrentValue(ValueProperty, currentValue / 2.0);
-    }
-
-    private void UpdateStarsFromValue()
-    {
-        SetStarsPresence(ExtractValueFromOffset(Value * 100 / 5));
-    }
-
-    private void SetStarsPresence(int index)
-    {
-        switch (index)
+        return Precision switch
         {
-            case 10:
-                UpdateStar(4, StarValue.Filled);
-                UpdateStar(3, StarValue.Filled);
-                UpdateStar(2, StarValue.Filled);
-                UpdateStar(1, StarValue.Filled);
-                UpdateStar(0, StarValue.Filled);
-                break;
-
-            case 9:
-                UpdateStar(4, StarValue.HalfFilled);
-                UpdateStar(3, StarValue.Filled);
-                UpdateStar(2, StarValue.Filled);
-                UpdateStar(1, StarValue.Filled);
-                UpdateStar(0, StarValue.Filled);
-                break;
-
-            case 8:
-                UpdateStar(4, StarValue.Empty);
-                UpdateStar(3, StarValue.Filled);
-                UpdateStar(2, StarValue.Filled);
-                UpdateStar(1, StarValue.Filled);
-                UpdateStar(0, StarValue.Filled);
-                break;
-
-            case 7:
-                UpdateStar(4, StarValue.Empty);
-                UpdateStar(3, StarValue.HalfFilled);
-                UpdateStar(2, StarValue.Filled);
-                UpdateStar(1, StarValue.Filled);
-                UpdateStar(0, StarValue.Filled);
-                break;
-
-            case 6:
-                UpdateStar(4, StarValue.Empty);
-                UpdateStar(3, StarValue.Empty);
-                UpdateStar(2, StarValue.Filled);
-                UpdateStar(1, StarValue.Filled);
-                UpdateStar(0, StarValue.Filled);
-                break;
-
-            case 5:
-                UpdateStar(4, StarValue.Empty);
-                UpdateStar(3, StarValue.Empty);
-                UpdateStar(2, StarValue.HalfFilled);
-                UpdateStar(1, StarValue.Filled);
-                UpdateStar(0, StarValue.Filled);
-                break;
-
-            case 4:
-                UpdateStar(4, StarValue.Empty);
-                UpdateStar(3, StarValue.Empty);
-                UpdateStar(2, StarValue.Empty);
-                UpdateStar(1, StarValue.Filled);
-                UpdateStar(0, StarValue.Filled);
-                break;
-
-            case 3:
-                UpdateStar(4, StarValue.Empty);
-                UpdateStar(3, StarValue.Empty);
-                UpdateStar(2, StarValue.Empty);
-                UpdateStar(1, StarValue.HalfFilled);
-                UpdateStar(0, StarValue.Filled);
-                break;
-
-            case 2:
-                UpdateStar(4, StarValue.Empty);
-                UpdateStar(3, StarValue.Empty);
-                UpdateStar(2, StarValue.Empty);
-                UpdateStar(1, StarValue.Empty);
-                UpdateStar(0, StarValue.Filled);
-                break;
-
-            case 1:
-                UpdateStar(4, StarValue.Empty);
-                UpdateStar(3, StarValue.Empty);
-                UpdateStar(2, StarValue.Empty);
-                UpdateStar(1, StarValue.Empty);
-                UpdateStar(0, StarValue.HalfFilled);
-                break;
-
-            default:
-                UpdateStar(4, StarValue.Empty);
-                UpdateStar(3, StarValue.Empty);
-                UpdateStar(2, StarValue.Empty);
-                UpdateStar(1, StarValue.Empty);
-                UpdateStar(0, StarValue.Empty);
-                break;
-        }
-    }
-
-    private void UpdateStar(int starIndex, StarValue starValue)
-    {
-        FluentIcon? selectedIcon = starIndex switch
-        {
-            1 => _iconStarTwo,
-            2 => _iconStarThree,
-            3 => _iconStarFour,
-            4 => _iconStarFive,
-            _ => _iconStarOne,
+            RatingPrecision.QuarterStar => 0.25,
+            RatingPrecision.HalfStar    => 0.5,
+            _                           => 1.0,
         };
-
-        if (selectedIcon is null)
-        {
-            return;
-        }
-
-        switch (starValue)
-        {
-            case StarValue.HalfFilled:
-                selectedIcon.Filled = false;
-                selectedIcon.Symbol = StarHalfSymbol;
-                break;
-
-            case StarValue.Filled:
-                selectedIcon.Filled = true;
-                selectedIcon.Symbol = StarSymbol;
-                break;
-
-            default:
-                selectedIcon.Filled = false;
-                selectedIcon.Symbol = StarSymbol;
-                break;
-        }
     }
 
-    private int ExtractValueFromOffset(double offset)
+    private bool TryGetRatingFromPointer(MouseEventArgs e, out double rating)
     {
-        var starValue = (int)(offset + OffsetTolerance) / 10;
+        rating = 0;
 
-        if (!HalfStarEnabled)
+        if (_itemsHost is null)
         {
-            if (starValue < 2)
-            {
-                return 0;
-            }
-
-            if (starValue % 2 != 0)
-            {
-                starValue += 1;
-            }
+            return false;
         }
 
-        return starValue;
+        var hitElement = _itemsHost.InputHitTest(e.GetPosition(_itemsHost));
+
+        // ReSharper disable once SuspiciousTypeConversion.Global
+        if (hitElement is not DependencyObject hitObject
+            || _itemsHost.ContainerFromElement(hitObject) is not FrameworkElement container
+            || container.ActualWidth <= 0)
+        {
+            return false;
+        }
+
+        var index = _itemsHost.ItemContainerGenerator.IndexFromContainer(container);
+        if (index < 0)
+        {
+            return false;
+        }
+
+        rating = GetRatingFromItemPosition(
+            index,
+            e.GetPosition(container).X,
+            container.ActualWidth
+        );
+
+        return true;
     }
 
-    private static void OnValueChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    /// <summary>
+    /// Converts an item-local horizontal coordinate into an interactive score.
+    /// </summary>
+    /// <remarks>
+    /// <paramref name="localX"/> must use the coordinate system returned by WPF for the item
+    /// container. A <see cref="FlowDirection.RightToLeft"/> mirror is already represented by
+    /// that coordinate system and must not be applied again here.
+    /// </remarks>
+    internal double GetRatingFromItemPosition(int index, double localX, double actualWidth)
     {
-        if (d is not RatingControl ratingControl)
-        {
-            return;
-        }
+        var fraction = Math.Max(0, Math.Min(1, localX / actualWidth));
+        var step = GetPrecisionStep();
 
-        ratingControl.OnValueChanged((double)e.OldValue);
+        // A star's first segment represents the smallest selectable non-zero score. Subtracting a
+        // tiny tolerance keeps an exact visual boundary in the segment on its left despite layout
+        // transform noise (for example, 0.50000000001 at the half-star boundary).
+        var segment = Math.Ceiling((fraction - 1e-10) / step) * step;
+        return NormalizeInteractiveRating(index + Math.Max(step, segment));
     }
 }
