@@ -17,36 +17,38 @@ namespace Wpf.Zen.Ui.Gallery.Controls.SyntaxHighlight;
 /// </summary>
 internal static class Highlighter
 {
+    // Each pattern below carries a named group. FormatAsParagraph decides the colour from
+    // the name of the group that captured a match, so token colours never depend on
+    // heuristics over token content.
     private const string EndlinePattern = /* language=regex */
-        "(\n)";
+        @"(?<Endline>\n)";
 
     private const string TabPattern = /* language=regex */
-        "(\t)";
+        @"(?<Tab>\t)";
 
     private const string QuotePattern = /* language=regex */
-        "(\"(?:\\\"|[^\"])*\")|('(?:\\'|[^'])*')";
+        @"(?<Quote>""(?:\\""|[^""])*""|'(?:\\'|[^'])*')";
 
     private const string CommentPattern = /* language=regex */
-        @"(\/\/.*?(?:\n|$)|\/\*.*?\*\/)";
+        @"(?<Comment>//.*?(?:\n|$)|/\*.*?\*/)";
 
+    // Matches only the opening bracket and tag name; attributes and their values are left
+    // for Quote/Plain so they can be coloured separately. The bracket and the tag name are
+    // captured as distinct groups so they can take different colours.
     private const string TagPattern = /* language=regex */
-        @"(<\/?)([a-zA-Z\-:]+)(.*?)(\/?>)";
+        @"(?<Bracket></?)(?<Tag>[a-zA-Z][a-zA-Z0-9\-:]*)>?";
 
     private const string EntityPattern = /* language=regex */
-        @"(&[a-zA-Z0-9#]+;)";
+        @"(?<Entity>&[a-zA-Z0-9#]+;)";
 
-    // private const string PunctuationPattern = /* language=regex */
-    //    @"(!==?|(?:[[\\] ()\{\}.:;,+\\-?=!]|&lt;|&gt;)+|&&|\\|\\|)";
+    /// <summary>Number of spaces a single tab is expanded to when rendering code samples.</summary>
+    private const int TabWidth = 4;
 
-    // private const string NumberPattern = /* language=regex */
-    //    @"(-? (?:\.\d+|\d+(?:\.\d+)?))";
-
-    // private const string BooleanPattern = /* language=regex */
-    //    "\b(true|false)\b";
-
-    // private const string AttributePattern = /* language=regex */
-    //     "(\\s*)([a-zA-Z\\d\\-:]+)=(\" | ')(.*?)\\3";
-    ////
+    // Catch-all that consumes any character not claimed by a more specific pattern above,
+    // so that ordinary whitespace (indentation, inter-token spaces) and plain text survive
+    // tokenization instead of being dropped between matches.
+    private const string PlainPattern = /* language=regex */
+        @"(?<Plain>[\s\S])";
 
     public static Paragraph FormatAsParagraph(
         string code,
@@ -58,107 +60,55 @@ internal static class Highlighter
 
         bool lightTheme = IsLightTheme();
 
+        SolidColorBrush quoteBrush = lightTheme ? Brushes.DarkCyan : Brushes.CornflowerBlue;
+        SolidColorBrush tagBrush = lightTheme ? Brushes.DarkCyan : Brushes.CornflowerBlue;
+        SolidColorBrush tagNameBrush = Brushes.Aqua;
+        SolidColorBrush plainBrush = lightTheme ? Brushes.DarkSlateGray : Brushes.WhiteSmoke;
+
+        // Every alternative in the pattern carries a named group and the final catch-all
+        // consumes any character not claimed by a more specific one. Iterating the matches
+        // therefore covers the entire input without gaps and colours each token by the name
+        // of the group that produced it.
         foreach (Match match in rgx.Matches(code).Cast<Match>())
         {
-            foreach (object group in match.Groups)
+            string token = match.Value;
+
+            if (match.Groups["Endline"].Success)
             {
-                // Remove whole matches
-                if (group is Match)
+                paragraph.Inlines.Add(new LineBreak());
+            }
+            else if (match.Groups["Tab"].Success)
+            {
+                paragraph.Inlines.Add(Line(new string(' ', TabWidth), Brushes.Transparent));
+            }
+            else if (match.Groups["Comment"].Success)
+            {
+                paragraph.Inlines.Add(Line(token, Brushes.Orange));
+            }
+            else if (match.Groups["Tag"].Success)
+            {
+                Group bracket = match.Groups["Bracket"];
+
+                if (bracket.Success)
                 {
-                    continue;
+                    paragraph.Inlines.Add(Line(bracket.Value, tagBrush));
                 }
 
-                // Cast to group
-                Group codeMatched = (Group)group;
+                paragraph.Inlines.Add(Line(match.Groups["Tag"].Value, tagNameBrush));
 
-                // Remove empty groups
-                if (string.IsNullOrEmpty(codeMatched.Value))
+                // A tag immediately followed by ">" (no attributes) carries it in this match.
+                if (token.EndsWith(">"))
                 {
-                    continue;
+                    paragraph.Inlines.Add(Line(">", tagBrush));
                 }
-
-                if (codeMatched.Value.Contains('\t'))
-                {
-                    paragraph.Inlines.Add(Line("  ", Brushes.Transparent));
-                }
-                else if (codeMatched.Value.Contains("/*") || codeMatched.Value.Contains("//"))
-                {
-                    paragraph.Inlines.Add(Line(codeMatched.Value, Brushes.Orange));
-                }
-                else if (codeMatched.Value.Contains('<') || codeMatched.Value.Contains('>'))
-                {
-                    paragraph.Inlines.Add(
-                        Line(codeMatched.Value, lightTheme ? Brushes.DarkCyan : Brushes.CornflowerBlue)
-                    );
-                }
-                else if (codeMatched.Value.Contains('"'))
-                {
-                    string[] attributeArray = codeMatched.Value.Split('"');
-                    attributeArray = attributeArray.Where(x => !string.IsNullOrEmpty(x.Trim())).ToArray();
-
-                    if (attributeArray.Length % 2 == 0)
-                    {
-                        for (int i = 0; i < attributeArray.Length; i += 2)
-                        {
-                            paragraph.Inlines.Add(
-                                Line(
-                                    attributeArray[i],
-                                    lightTheme ? Brushes.DarkSlateGray : Brushes.WhiteSmoke
-                                )
-                            );
-                            paragraph.Inlines.Add(
-                                Line("\"", lightTheme ? Brushes.DarkCyan : Brushes.CornflowerBlue)
-                            );
-                            paragraph.Inlines.Add(Line(attributeArray[i + 1], Brushes.Coral));
-                            paragraph.Inlines.Add(
-                                Line("\"", lightTheme ? Brushes.DarkCyan : Brushes.CornflowerBlue)
-                            );
-                        }
-                    }
-                    else
-                    {
-                        paragraph.Inlines.Add(
-                            Line(codeMatched.Value, lightTheme ? Brushes.DarkSlateGray : Brushes.WhiteSmoke)
-                        );
-                    }
-                }
-                else if (codeMatched.Value.Contains('\''))
-                {
-                    string[] attributeArray = codeMatched.Value.Split('\'');
-                    attributeArray = attributeArray.Where(x => !string.IsNullOrEmpty(x.Trim())).ToArray();
-
-                    if (attributeArray.Length % 2 == 0)
-                    {
-                        for (int i = 0; i < attributeArray.Length; i += 2)
-                        {
-                            paragraph.Inlines.Add(
-                                Line(
-                                    attributeArray[i],
-                                    lightTheme ? Brushes.DarkSlateGray : Brushes.WhiteSmoke
-                                )
-                            );
-                            paragraph.Inlines.Add(
-                                Line("'", lightTheme ? Brushes.DarkCyan : Brushes.CornflowerBlue)
-                            );
-                            paragraph.Inlines.Add(Line(attributeArray[i + 1], Brushes.Coral));
-                            paragraph.Inlines.Add(
-                                Line("'", lightTheme ? Brushes.DarkCyan : Brushes.CornflowerBlue)
-                            );
-                        }
-                    }
-                    else
-                    {
-                        paragraph.Inlines.Add(
-                            Line(codeMatched.Value, lightTheme ? Brushes.DarkSlateGray : Brushes.WhiteSmoke)
-                        );
-                    }
-                }
-                else
-                {
-                    paragraph.Inlines.Add(
-                        Line(codeMatched.Value, lightTheme ? Brushes.CornflowerBlue : Brushes.Aqua)
-                    );
-                }
+            }
+            else if (match.Groups["Quote"].Success)
+            {
+                AddQuotedRun(paragraph, token, quoteBrush);
+            }
+            else
+            {
+                paragraph.Inlines.Add(Line(token, plainBrush));
             }
         }
 
@@ -181,6 +131,20 @@ internal static class Highlighter
     private static Run Line(string line, SolidColorBrush brush)
     {
         return new Run(line) { Foreground = brush };
+    }
+
+    /// <summary>
+    /// Renders a quoted token so the surrounding quotes take the accent colour while the
+    /// inner content (an attribute or string value) is highlighted.
+    /// </summary>
+    private static void AddQuotedRun(Paragraph paragraph, string token, SolidColorBrush quoteBrush)
+    {
+        char quote = token[0];
+
+        // A single matched string is always of the form quote + content + quote.
+        paragraph.Inlines.Add(Line(quote.ToString(), quoteBrush));
+        paragraph.Inlines.Add(Line(token.Substring(1, token.Length - 2), Brushes.Coral));
+        paragraph.Inlines.Add(Line(quote.ToString(), quoteBrush));
     }
 
     private static bool IsLightTheme()
@@ -219,6 +183,7 @@ internal static class Highlighter
                 pattern += "|" + CommentPattern;
                 pattern += "|" + EntityPattern;
                 pattern += "|" + TagPattern;
+                pattern += "|" + PlainPattern;
                 break;
 
             case SyntaxLanguage.XAML:
@@ -228,6 +193,7 @@ internal static class Highlighter
                 pattern += "|" + CommentPattern;
                 pattern += "|" + EntityPattern;
                 pattern += "|" + TagPattern;
+                pattern += "|" + PlainPattern;
                 break;
         }
 
