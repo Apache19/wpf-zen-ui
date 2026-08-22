@@ -4,6 +4,7 @@
 // All Rights Reserved.
 
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 
 // ReSharper disable once CheckNamespace
 namespace Wpf.Zen.Ui.Controls;
@@ -13,88 +14,17 @@ namespace Wpf.Zen.Ui.Controls;
 /// <see cref="IsIndeterminate"/> is enabled.
 /// </summary>
 /// <remarks>
-/// The default template supplies <c>PART_DeterminateArc</c>. A custom template may omit the part;
-/// range properties continue to work, but no determinate geometry is produced.
+/// The range contract — <see cref="RangeBase.Minimum"/>, <see cref="RangeBase.Maximum"/>,
+/// <see cref="RangeBase.Value"/>, their coercion/validation and the <see cref="RangeBase.ValueChanged"/>
+/// event — is inherited from <see cref="RangeBase"/>, matching the native <see cref="ProgressBar"/>
+/// pattern. The default template supplies <c>PART_DeterminateArc</c>. A custom template may omit the
+/// part; range properties continue to work, but no determinate geometry is produced.
 /// </remarks>
 [TemplatePart(Name = DeterminateArcPartName, Type = typeof(Arc))]
-public class ProgressRing : Control
+public class ProgressRing : RangeBase
 {
     private const string DeterminateArcPartName = "PART_DeterminateArc";
     private Arc? determinateArc;
-
-    #region DP: Minimum
-
-    /// <summary>Identifies the <see cref="Minimum"/> dependency property.</summary>
-    public static readonly DependencyProperty MinimumProperty = DependencyProperty.Register(
-        nameof(Minimum),
-        typeof(double),
-        typeof(ProgressRing),
-        new FrameworkPropertyMetadata(0.0d, OnMinimumChanged),
-        ValidateFiniteDouble
-    );
-
-    /// <summary>
-    /// Gets or sets the lower bound of the determinate range. The default is <c>0</c>.
-    /// Changing it coerces <see cref="Maximum"/> and <see cref="Value"/> to preserve a valid range.
-    /// </summary>
-    public double Minimum
-    {
-        get => (double)GetValue(MinimumProperty);
-        set => SetValue(MinimumProperty, value);
-    }
-
-    #endregion
-
-    #region DP: Maximum
-
-    /// <summary>Identifies the <see cref="Maximum"/> dependency property.</summary>
-    public static readonly DependencyProperty MaximumProperty = DependencyProperty.Register(
-        nameof(Maximum),
-        typeof(double),
-        typeof(ProgressRing),
-        new FrameworkPropertyMetadata(100.0d, OnMaximumChanged, CoerceMaximum),
-        ValidateFiniteDouble
-    );
-
-    /// <summary>
-    /// Gets or sets the upper bound of the determinate range. The default is <c>100</c>; values
-    /// below <see cref="Minimum"/> are coerced to the minimum.
-    /// </summary>
-    public double Maximum
-    {
-        get => (double)GetValue(MaximumProperty);
-        set => SetValue(MaximumProperty, value);
-    }
-
-    #endregion
-
-    #region DP: Value
-
-    /// <summary>Identifies the <see cref="Value"/> dependency property.</summary>
-    public static readonly DependencyProperty ValueProperty = DependencyProperty.Register(
-        nameof(Value),
-        typeof(double),
-        typeof(ProgressRing),
-        new FrameworkPropertyMetadata(
-            0.0d,
-            FrameworkPropertyMetadataOptions.BindsTwoWayByDefault,
-            OnValueChanged,
-            CoerceValue
-        ),
-        ValidateFiniteDouble
-    );
-
-    /// <summary>
-    /// Gets or sets the current determinate progress. The default is <c>0</c>; values outside
-    /// <see cref="Minimum"/> and <see cref="Maximum"/> are coerced to the effective range.
-    /// </summary>
-    public double Value
-    {
-        get => (double)GetValue(ValueProperty);
-        set => SetValue(ValueProperty, value);
-    }
-
-    #endregion
 
     #region DP: IsIndeterminate
 
@@ -108,7 +38,7 @@ public class ProgressRing : Control
 
     /// <summary>
     /// Gets or sets a value indicating whether the ring displays continuous activity instead of
-    /// the determinate <see cref="Value"/>. Switching modes does not replace the template visuals.
+    /// the determinate <see cref="RangeBase.Value"/>. Switching modes does not replace the template visuals.
     /// </summary>
     public bool IsIndeterminate
     {
@@ -166,9 +96,22 @@ public class ProgressRing : Control
 
     static ProgressRing()
     {
+        // RangeBase defaults Maximum to 1, but a progress indicator expresses percent by default.
+        // The native ProgressBar applies the same override; coercion and change callbacks from
+        // RangeBase are preserved.
+        RangeBase.MaximumProperty.OverrideMetadata(
+            typeof(ProgressRing),
+            new FrameworkPropertyMetadata(100.0d)
+        );
+
         DefaultStyleKeyProperty.OverrideMetadata(
             typeof(ProgressRing),
             new FrameworkPropertyMetadata(typeof(ProgressRing))
+        );
+
+        FocusableProperty.OverrideMetadata(
+            typeof(ProgressRing),
+            new FrameworkPropertyMetadata(false)
         );
     }
 
@@ -180,6 +123,27 @@ public class ProgressRing : Control
         base.OnApplyTemplate();
 
         determinateArc = GetTemplateChild(DeterminateArcPartName) as Arc;
+        UpdateProgressAngle();
+    }
+
+    /// <inheritdoc />
+    protected override void OnMinimumChanged(double oldMinimum, double newMinimum)
+    {
+        base.OnMinimumChanged(oldMinimum, newMinimum);
+        UpdateProgressAngle();
+    }
+
+    /// <inheritdoc />
+    protected override void OnMaximumChanged(double oldMaximum, double newMaximum)
+    {
+        base.OnMaximumChanged(oldMaximum, newMaximum);
+        UpdateProgressAngle();
+    }
+
+    /// <inheritdoc />
+    protected override void OnValueChanged(double oldValue, double newValue)
+    {
+        base.OnValueChanged(oldValue, newValue);
         UpdateProgressAngle();
     }
 
@@ -200,54 +164,6 @@ public class ProgressRing : Control
         determinateArc.SetCurrentValue(Arc.EndAngleProperty, angle);
     }
 
-    private static void OnMinimumChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
-    {
-        var control = (ProgressRing)d;
-        control.CoerceValue(MaximumProperty);
-        control.CoerceValue(ValueProperty);
-        control.UpdateProgressAngle();
-    }
-
-    private static void OnMaximumChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
-    {
-        var control = (ProgressRing)d;
-        control.CoerceValue(ValueProperty);
-        control.UpdateProgressAngle();
-    }
-
-    private static void OnValueChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
-    {
-        ((ProgressRing)d).UpdateProgressAngle();
-    }
-
-    /// <summary>
-    /// Maintains a non-negative range while preserving the requested base value for later coercion.
-    /// </summary>
-    private static object CoerceMaximum(DependencyObject d, object? value)
-    {
-        var control = (ProgressRing)d;
-        return Math.Max(control.Minimum, (double)value!);
-    }
-
-    /// <summary>
-    /// Constrains determinate progress to the effective range so geometry never needs a second
-    /// clamping policy that could disagree with the public value.
-    /// </summary>
-    private static object CoerceValue(DependencyObject d, object? value)
-    {
-        var control = (ProgressRing)d;
-        return Math.Max(control.Minimum, Math.Min(control.Maximum, (double)value!));
-    }
-
-    /// <summary>
-    /// Rejects values that cannot define a finite range or WPF geometry.
-    /// </summary>
-    private static bool ValidateFiniteDouble(object? value)
-    {
-        var number = (double)value!;
-        return !double.IsNaN(number) && !double.IsInfinity(number);
-    }
-
     /// <summary>
     /// Preserves <see cref="double.NaN"/> as automatic sizing while rejecting invalid WPF pens.
     /// </summary>
@@ -260,6 +176,8 @@ public class ProgressRing : Control
     /// <summary>
     /// Prevents undefined enum values from reaching the Arc line-cap properties.
     /// </summary>
-    private static bool ValidateStrokeLineCap(object? value) =>
-        value is not null && Enum.IsDefined(typeof(PenLineCap), value);
+    private static bool ValidateStrokeLineCap(object? value)
+    {
+        return value is not null && Enum.IsDefined(typeof(PenLineCap), value);
+    }
 }

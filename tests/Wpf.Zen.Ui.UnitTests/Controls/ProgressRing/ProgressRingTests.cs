@@ -186,7 +186,11 @@ public class ProgressRingTests
         Assert.Null(typeof(ProgressRing).GetProperty("CoverRingStroke", declaredPublic));
         Assert.Null(typeof(ProgressRing).GetProperty("CoverRingVisibility", declaredPublic));
 
-        Assert.NotNull(typeof(ProgressRing).GetProperty(nameof(ProgressRing.Value), declaredPublic));
+        // The range API is inherited from RangeBase rather than declared locally, so it is
+        // asserted without DeclaredOnly while the duplicate/derived properties above still are.
+        Assert.NotNull(typeof(ProgressRing).GetProperty(nameof(ProgressRing.Minimum)));
+        Assert.NotNull(typeof(ProgressRing).GetProperty(nameof(ProgressRing.Maximum)));
+        Assert.NotNull(typeof(ProgressRing).GetProperty(nameof(ProgressRing.Value)));
         Assert.NotNull(typeof(Control).GetProperty(nameof(Control.Background)));
     }
 
