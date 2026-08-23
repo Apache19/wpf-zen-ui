@@ -16,9 +16,8 @@ namespace Wpf.Zen.Ui;
 /// </remarks>
 public sealed class NavigationScope : INavigationScope
 {
-    private readonly object _disposeSyncRoot = new();
     private readonly INavigationHost _host;
-    private Task? _disposeTask;
+    private int _isDisposed;
 
     private NavigationScope(
         INavigationHost host,
@@ -83,48 +82,24 @@ public sealed class NavigationScope : INavigationScope
     /// <inheritdoc />
     public void Dispose()
     {
-        Task disposeTask = DisposeAsync();
-
-        // Navigation-aware pages may perform real asynchronous exit work. Blocking the UI thread
-        // here could deadlock their continuation, so synchronous disposal initiates that work and
-        // observes it only when it has already completed. Await DisposeAsync when the caller needs
-        // a strict completion boundary.
-        if (disposeTask.IsCompleted)
+        if (Interlocked.Exchange(ref _isDisposed, 1) != 0)
         {
-            disposeTask.GetAwaiter().GetResult();
+            return;
         }
-    }
 
-    /// <inheritdoc />
-    public Task DisposeAsync()
-    {
-        lock (_disposeSyncRoot)
-        {
-            return _disposeTask ??= DisposeCoreAsync();
-        }
-    }
-
-    private Task DisposeCoreAsync()
-    {
-        Task detachTask;
         if (_host.Dispatcher.CheckAccess())
         {
-            detachTask = _host.DetachNavigationScopeAsync(Navigation);
+            _host.DetachNavigationScope(Navigation);
         }
         else if (!_host.Dispatcher.HasShutdownStarted && !_host.Dispatcher.HasShutdownFinished)
         {
-            detachTask = _host.Dispatcher.Invoke(
-                () => _host.DetachNavigationScopeAsync(Navigation)
-            );
+            _host.Dispatcher.Invoke(() => _host.DetachNavigationScope(Navigation));
         }
         else
         {
             // Once the owning Dispatcher has shut down, WPF state can no longer be touched. There
             // are no container-owned services in this scope, so graceful degradation is complete.
-            detachTask = Task.CompletedTask;
         }
-
-        return detachTask;
     }
 
     private sealed class NavigationScopeServiceProvider(

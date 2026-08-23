@@ -87,7 +87,7 @@ public partial class NavigationView
             return false;
         }
 
-        NavigationJournalEntry next = ForwardJournal[^1];
+        var next = ForwardJournal[^1];
         return NavigateInternal(
             next.Entry,
             next.Request,
@@ -105,7 +105,7 @@ public partial class NavigationView
             return false;
         }
 
-        NavigationJournalEntry previous = Journal[^2];
+        var previous = Journal[^2];
         OnBackRequested();
         return NavigateInternal(
             previous.Entry,
@@ -197,21 +197,31 @@ public partial class NavigationView
         "CA1033:Interface methods should be callable by child types",
         Justification = "Only the owning navigation scope may remove contextual services and pages."
     )]
-    Task INavigationHost.DetachNavigationScopeAsync(INavigationService navigationService)
+    void INavigationHost.DetachNavigationScope(INavigationService navigationService)
     {
         if (!ReferenceEquals(_navigationService, navigationService))
         {
-            return Task.CompletedTask;
+            return;
         }
 
-        object? navigationAwareContent = _navigationAwareContent;
+        CancelCurrentNavigationEnter();
+
+        var navigationAwareContent = _navigationAwareContent;
+        var navigationAwareTarget  = _navigationAwareTarget;
+
         _navigationAwareContent = null;
-        Task exitNotificationTask = QueueNavigationNotificationAsync(
-            () => NotifyContentAboutNavigationExitedAsync(navigationAwareContent)
+        _navigationAwareTarget  = null;
+
+        var callbackFailures = new List<NavigationCallbackException>();
+        NotifyContentAboutNavigationExited(
+            navigationAwareContent,
+            navigationAwareTarget,
+            callbackFailures
         );
 
         DetachCurrentLocationSource();
         ClearNavigationParent(_currentPage as FrameworkElement);
+
         if (_navigationContextOwner is not null)
         {
             Navigation.ClearContext(_navigationContextOwner);
@@ -219,24 +229,31 @@ public partial class NavigationView
         }
 
         _ = _navigationFrame.Navigate(null);
+
         _currentEntry?.Deactivate(this);
         _currentEntry = null;
         _currentPage = null;
         _currentOccurrence = null;
+
         Journal.Clear();
         ForwardJournal.Clear();
         _unregisteredEntries.Clear();
         _cache.Clear();
+
         SetSelectedItem(null);
         SetValue(CurrentLocationPropertyKey, null);
+
         _breadcrumbs.Clear();
+
         RebuildNavigationIndexes();
         UpdateBackNavigationState();
+
         CurrentLocationChanged?.Invoke(this, EventArgs.Empty);
 
         _navigationService = null;
         _pageService = null;
-        return exitNotificationTask;
+
+        ReportNavigationCallbackFailures(callbackFailures);
     }
 
     private NavigationResult PerformRequest(NavigationRequest request)
@@ -246,7 +263,7 @@ public partial class NavigationView
             throw new ArgumentNullException(nameof(request));
         }
 
-        NavigationMapNode? mappedNode = NavigationMap.FindNode(request.Target);
+        var mappedNode = NavigationMap.FindNode(request.Target);
         if (request.Target.RouteKey is null && mappedNode is not null)
         {
             request = request.WithTarget(
@@ -258,11 +275,12 @@ public partial class NavigationView
             );
         }
 
-        NavigationEntry? entry = ResolveNavigationEntry(request.Target);
+        var entry = ResolveNavigationEntry(request.Target);
         if (entry is not null)
         {
-            bool targetIsMenuLookup = request.Target.RouteKey == entry.Id
-                || request.Target.RouteKey == entry.TargetPageTag;
+            var targetIsMenuLookup = request.Target.RouteKey == entry.Id
+                                     || request.Target.RouteKey == entry.TargetPageTag;
+
             if (mappedNode is null && targetIsMenuLookup && entry.TargetPageType is { } entryPageType)
             {
                 mappedNode = NavigationMap.FindNode(NavigationTarget.ForPage(entryPageType));
@@ -279,7 +297,7 @@ public partial class NavigationView
                 : NavigationResult.Rejected;
         }
 
-        Type? pageType = request.Target.PageType ?? mappedNode?.Target?.PageType;
+        var pageType = request.Target.PageType ?? mappedNode?.Target?.PageType;
         if (pageType is null)
         {
             return NavigationResult.TargetNotFound;
@@ -292,34 +310,35 @@ public partial class NavigationView
 
     private NavigationEntry? ResolveNavigationEntry(NavigationTarget target)
     {
-        if (target.RouteKey is { } routeKey && PageKeyIndex.TryGetValue(routeKey, out NavigationEntry? keyed))
+        if (target.RouteKey is { } routeKey && PageKeyIndex.TryGetValue(routeKey, out var keyed))
         {
             return keyed;
         }
 
-        if (target.PageType is { } pageType && PageTypeIndex.TryGetValue(pageType, out NavigationEntry? typed))
+        if (target.PageType is { } pageType && PageTypeIndex.TryGetValue(pageType, out var typed))
         {
             return typed;
         }
 
-        NavigationTarget? mappedTarget = NavigationMap.FindNode(target)?.Target;
+        var mappedTarget = NavigationMap.FindNode(target)?.Target;
         if (mappedTarget?.RouteKey is { } mappedRoute
-            && PageKeyIndex.TryGetValue(mappedRoute, out NavigationEntry? mappedByRoute))
+            && PageKeyIndex.TryGetValue(mappedRoute, out var mappedByRoute))
         {
             return mappedByRoute;
         }
 
         return mappedTarget?.PageType is { } mappedPageType
-            && PageTypeIndex.TryGetValue(mappedPageType, out NavigationEntry? mappedByType)
+            && PageTypeIndex.TryGetValue(mappedPageType, out var mappedByType)
                 ? mappedByType
                 : null;
     }
 
     private NavigationRequest CreateRequestForEntry(NavigationEntry entry, object? parameter = null)
     {
-        NavigationMapNode? mapNode = entry.TargetPageType is { } pageType
+        var mapNode = entry.TargetPageType is { } pageType
             ? NavigationMap.FindNode(NavigationTarget.ForPage(pageType))
             : null;
+
         return NavigationRequest.To(
             new NavigationTarget(entry.TargetPageType, mapNode?.Key ?? entry.Id, parameter)
         );
@@ -329,6 +348,7 @@ public partial class NavigationView
     {
         var container = new NavigationViewItem(pageType);
         var entry = new NavigationEntry(container, false) { Container = container };
+
         if (!NavigateInternal(entry, request))
         {
             return false;
@@ -363,7 +383,7 @@ public partial class NavigationView
             return false;
         }
 
-        object pageInstance = GetNavigationItemInstance(entry);
+        var pageInstance = GetNavigationItemInstance(entry);
         if (OnNavigating(pageInstance))
         {
             return false;
@@ -381,30 +401,37 @@ public partial class NavigationView
             frameworkElement.SetValue(NavigationParentProperty, this);
         }
 
-        UpdateContent(pageInstance, request.Target.Parameter);
+        UpdateContent(pageInstance, request.Target.Parameter, request.Target);
 
         _currentEntry?.Deactivate(this);
         _currentEntry = entry;
         _currentEntry.Activate(this);
+
         _currentPage = pageInstance;
+
         AttachCurrentLocationSource(pageInstance);
 
         if (isBackwardsNavigated)
         {
-            NavigationJournalEntry departedOccurrence = _currentOccurrence
+            var departedOccurrence = _currentOccurrence
                 ?? throw new InvalidOperationException("Back navigation requires a current journal occurrence.");
+
             Journal.RemoveAt(Journal.Count - 1);
             ForwardJournal.Add(departedOccurrence);
+
             _currentOccurrence = restoredOccurrence
                 ?? throw new InvalidOperationException("Back navigation requires a journal occurrence.");
+
             _oneTimeBreadcrumbFallback = _currentOccurrence.BreadcrumbSnapshot;
         }
         else if (isForwardsNavigated)
         {
             _currentOccurrence = restoredOccurrence
                 ?? throw new InvalidOperationException("Forward navigation requires a journal occurrence.");
+
             ForwardJournal.RemoveAt(ForwardJournal.Count - 1);
             Journal.Add(_currentOccurrence);
+
             _oneTimeBreadcrumbFallback = _currentOccurrence.BreadcrumbSnapshot;
         }
         else
@@ -418,8 +445,8 @@ public partial class NavigationView
         _currentOccurrence.BreadcrumbSnapshot = CurrentLocation?.Breadcrumbs ?? [];
         UpdateBackNavigationState();
 
-        bool isLiveMenuEntry = entry.IsMenuElement && _entriesByItem.Values.Contains(entry);
-        object? selectedItem = isLiveMenuEntry ? entry.Item : null;
+        var isLiveMenuEntry = entry.IsMenuElement && _entriesByItem.Values.Contains(entry);
+        var selectedItem = isLiveMenuEntry ? entry.Item : null;
         if (!ReferenceEquals(SelectedItem, selectedItem))
         {
             SetSelectedItem(selectedItem);
@@ -437,7 +464,7 @@ public partial class NavigationView
             return false;
         }
 
-        NavigationRequest current = _currentOccurrence.Request;
+        var current = _currentOccurrence.Request;
         return current.Target.RouteKey == request.Target.RouteKey
             && current.Target.PageType == request.Target.PageType
             && Equals(current.Target.Parameter, request.Target.Parameter)
@@ -456,7 +483,7 @@ public partial class NavigationView
     /// </remarks>
     private void ReconcileNavigationStateAfterIndexRebuild()
     {
-        bool currentIsLiveMenuEntry = _currentEntry is not null
+        var currentIsLiveMenuEntry = _currentEntry is not null
             && _currentEntry.IsMenuElement
             && _entriesByItem.Values.Contains(_currentEntry);
 
@@ -472,7 +499,7 @@ public partial class NavigationView
     /// <summary>Restores code-only targets as fallback lookup entries after a menu rebuild.</summary>
     private void IndexUnregisteredNavigationEntries()
     {
-        foreach (NavigationEntry entry in _unregisteredEntries)
+        foreach (var entry in _unregisteredEntries)
         {
             if (!string.IsNullOrWhiteSpace(entry.Id) && !PageKeyIndex.ContainsKey(entry.Id))
             {
@@ -495,7 +522,7 @@ public partial class NavigationView
 
     private object GetNavigationItemInstance(NavigationEntry entry)
     {
-        Type? targetPageType = entry.TargetPageType;
+        var targetPageType = entry.TargetPageType;
         if (targetPageType is null)
         {
             throw new InvalidOperationException(
@@ -523,10 +550,10 @@ public partial class NavigationView
     /// <summary>Migrates cache state after mutable menu metadata changes.</summary>
     private void SynchronizeNavigationEntryCacheState(NavigationEntry entry)
     {
-        Type? oldPageType = entry.LastKnownTargetPageType;
-        Type? newPageType = entry.TargetPageType;
-        NavigationCacheMode oldCacheMode = entry.LastKnownNavigationCacheMode;
-        NavigationCacheMode newCacheMode = entry.NavigationCacheMode;
+        var oldPageType  = entry.LastKnownTargetPageType;
+        var newPageType  = entry.TargetPageType;
+        var oldCacheMode = entry.LastKnownNavigationCacheMode;
+        var newCacheMode = entry.NavigationCacheMode;
 
         if (oldPageType == newPageType)
         {
@@ -603,10 +630,14 @@ public partial class NavigationView
         }
     }
 
-    private void UpdateContent(object? content, object? navigationParameter = null)
+    private void UpdateContent(
+        object? content,
+        object? navigationParameter = null,
+        NavigationTarget? navigationTarget = null
+    )
     {
         SetNavigationContextOwner(content as DependencyObject, navigationParameter);
-        _ = _navigationFrame.Navigate(content);
+        _ = _navigationFrame.Navigate(content, new NavigationFrameState(navigationTarget));
     }
 
     /// <summary>Moves scope context from the exited page root to the destination page root.</summary>
@@ -681,9 +712,10 @@ public partial class NavigationView
             return;
         }
 
-        NavigationRequest request = _currentOccurrence.Request;
-        NavigationLocationContext context = new(request.Target, _currentPage);
-        NavigationLocationDescriptor? descriptor = _currentLocationSource?.GetNavigationLocation(context);
+        var request = _currentOccurrence.Request;
+        var context = new NavigationLocationContext(request.Target, _currentPage);
+        var descriptor = _currentLocationSource?.GetNavigationLocation(context);
+
         IReadOnlyList<BreadcrumbSegment> resolved;
 
         if (request.Breadcrumbs is { Count: > 0 } explicitRequestPath)
@@ -701,28 +733,31 @@ public partial class NavigationView
         }
         else
         {
-            object? leafContentOverride = request.BreadcrumbContent
+            var leafContentOverride = request.BreadcrumbContent
                 ?? descriptor?.Content
                 ?? (_currentPage is FrameworkElement element ? GetBreadcrumbContent(element) : null);
-            object? fallbackLeafContent = leafContentOverride
+
+            var fallbackLeafContent = leafContentOverride
                 ?? GetSafeEntryContent(_currentEntry)
                 ?? request.Target.PageType?.Name
                 ?? _currentEntry?.TargetPageType?.Name
                 ?? request.Target.RouteKey;
 
-            string? declaredParentKey = _currentPage is FrameworkElement parentElement
+            var declaredParentKey = _currentPage is FrameworkElement parentElement
                 ? GetBreadcrumbParentKey(parentElement)
                 : null;
-            NavigationTarget? parent = request.BreadcrumbParent
+
+            var parent = request.BreadcrumbParent
                 ?? descriptor?.Parent
                 ?? (declaredParentKey is null
                     ? null
                     : NavigationTarget.ForRoute(declaredParentKey));
+
             if (parent is not null)
             {
                 var combined = new List<BreadcrumbSegment>(NavigationMap.ResolvePath(parent, context));
-                BreadcrumbSegment leaf = CreateLeafSegment(request.Target, fallbackLeafContent);
-                NavigationMapNode? mappedLeaf = NavigationMap.FindNode(request.Target);
+                var leaf = CreateLeafSegment(request.Target, fallbackLeafContent);
+                var mappedLeaf = NavigationMap.FindNode(request.Target);
                 if (mappedLeaf?.IsBreadcrumbVisible != false
                     && (combined.Count == 0 || combined[^1].Key != leaf.Key))
                 {
@@ -733,7 +768,7 @@ public partial class NavigationView
             }
             else
             {
-                NavigationMapNode? mappedLeaf = NavigationMap.FindNode(request.Target);
+                var mappedLeaf = NavigationMap.FindNode(request.Target);
                 resolved = NavigationMap.ResolvePath(request.Target, context, leafContentOverride);
                 if (resolved.Count == 0 && mappedLeaf is null)
                 {
@@ -745,6 +780,7 @@ public partial class NavigationView
         }
 
         _oneTimeBreadcrumbFallback = null;
+
         var immutablePath = SnapshotResolvedPath(resolved);
         var location = new NavigationLocation(request.Target, _currentPage, immutablePath);
         SetValue(CurrentLocationPropertyKey, location);
@@ -767,7 +803,7 @@ public partial class NavigationView
         IReadOnlyList<BreadcrumbSegment> path)
     {
         var snapshot = new BreadcrumbSegment[path.Count];
-        for (int index = 0; index < path.Count; index++)
+        for (var index = 0; index < path.Count; index++)
         {
             snapshot[index] = path[index]
                 ?? throw new InvalidOperationException(
@@ -780,24 +816,27 @@ public partial class NavigationView
 
     private BreadcrumbSegment CreateLeafSegment(NavigationTarget requestedTarget, object? content)
     {
-        Type? pageType = requestedTarget.PageType ?? _currentEntry?.TargetPageType;
-        string key = requestedTarget.RouteKey
+        var pageType = requestedTarget.PageType ?? _currentEntry?.TargetPageType;
+
+        var key = requestedTarget.RouteKey
             ?? pageType?.FullName
             ?? _currentEntry?.Id
             ?? Guid.NewGuid().ToString("n");
+
         var target = new NavigationTarget(pageType, requestedTarget.RouteKey, requestedTarget.Parameter);
         return new BreadcrumbSegment(key, content, target);
     }
 
     private static object? GetSafeEntryContent(NavigationEntry? entry)
     {
-        object? content = entry?.Content;
+        var content = entry?.Content;
         return content is UIElement ? entry?.SearchText : content;
     }
 
     private void AttachCurrentLocationSource(object page)
     {
         DetachCurrentLocationSource();
+
         _currentLocationElement = page as FrameworkElement;
         if (_currentLocationElement is not null)
         {
@@ -806,6 +845,7 @@ public partial class NavigationView
 
         _currentLocationSource = page as INavigationLocationSource
             ?? _currentLocationElement?.DataContext as INavigationLocationSource;
+
         if (_currentLocationSource is not null)
         {
             _currentLocationSource.LocationChanged += OnCurrentLocationSourceChanged;

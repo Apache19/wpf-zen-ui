@@ -504,14 +504,10 @@ public sealed class DashboardViewModel(INavigationService navigation)
 }
 ```
 
-如果页面的 `OnNavigationExitedAsync()` 会执行真正的异步清理，并且调用方需要等待清理
-和 scoped 服务释放完毕，应使用：
-
-```csharp
-await _navigationScope.DisposeAsync();
-```
-
-同步 `Dispose()` 不会阻塞 UI 线程等待未完成的异步退出回调，以避免死锁。
+`Dispose()` 会先取消当前页面的异步 Enter，随后同步调用 `OnNavigationExited()`，最后释放
+scoped 服务。因此页面退出与依赖释放之间具有确定的顺序，不需要额外的异步处置入口。
+需要异步保存或关闭确认时，应由窗口或应用自己的关闭流程负责，而不要放入已经无法取消
+或回滚导航的 Exit 回调。
 
 ### 显式跨宿主导航
 
@@ -663,13 +659,16 @@ public sealed class ArticleViewModel : INavigationAware
         _navigation = navigation;
     }
 
-    public async Task OnNavigationEnteredAsync()
+    public async Task OnNavigationEnteredAsync(CancellationToken cancellationToken)
     {
         int articleId = (int)(_navigation.State.CurrentLocation?.Target.Parameter ?? 0);
-        await LoadArticleAsync(articleId);
+        await LoadArticleAsync(articleId, cancellationToken);
     }
 
-    public Task OnNavigationExitedAsync() => Task.CompletedTask;
+    public void OnNavigationExited()
+    {
+        // 仅执行必须在离开导航状态时同步完成的状态清理。
+    }
 }
 ```
 
@@ -680,8 +679,24 @@ public sealed class ArticleViewModel : INavigationAware
 - 页面实现 `INavigableView<object>` 且其 `ViewModel` 实现 `INavigationAware`；
 - 页面是普通 `FrameworkElement` 且 `DataContext` 实现 `INavigationAware`。
 
-`OnNavigationEnteredAsync` 与 `Loaded`/`Unloaded` 无关，无法取消导航，每个成功提交的
-导航都会触发。参数不覆盖 `DataContext`，需要与页面 `DataContext` 合并时请自行处理。
+`OnNavigationEnteredAsync` 与 `Loaded`/`Unloaded` 无关，每个成功提交的导航都会触发。
+传入的令牌不会取消已经提交的导航；它表示这一次导航已被后续导航取代，或者宿主已真正
+卸载/与作用域分离。宿主不会等待 Enter 完成，因此旧页面的慢请求不会阻塞新页面。实现应
+把令牌传给网络、数据库等可取消操作，并在取消后避免把过期结果写回视图模型。
+
+Exit 是同步回调，并且总在新内容的 Enter 启动前执行。同一个缓存页面实例因参数变化而
+再次导航时，也会先 Exit、取消旧 Enter 的令牌，再用新令牌重新 Enter。
+
+页面回调发生在 WPF `Frame.Navigated` 提交之后，并延迟到 `DispatcherPriority.Loaded`，
+以便页面在挂入 Frame 后建立 `DataContext`。它晚于 `NavigationView.Navigated` 路由事件；
+同时使用两者时，不应假设它们位于同一 dispatcher 轮次。
+
+异步 Enter 抛出的非取消异常会通过 `NavigationView.NavigationCallbackFailed` 明确上报，
+其中的 `NavigationCallbackException` 包含回调阶段、页面内容、实际回调对象和语义导航
+目标。处理器记录或展示异常后可设置 `Handled = true`；未处理异常会在控件 Dispatcher
+上重新抛出。宿主已取消令牌时产生的 `OperationCanceledException` 属于正常结束，不会上报。
+
+参数不会覆盖 `DataContext`，需要与页面 `DataContext` 合并时请自行处理。
 
 **方式 B：由页面读取并转发**
 
@@ -689,14 +704,20 @@ public sealed class ArticleViewModel : INavigationAware
 页面根节点，页面是天然的转发点：
 
 ```csharp
-// 页面实现 INavigationAware（或使用 Loaded / DataContextChanged 钩子）
-public async Task OnNavigationEnteredAsync()
+// 页面实现 INavigationAware
+public Task OnNavigationEnteredAsync(CancellationToken cancellationToken)
 {
+    cancellationToken.ThrowIfCancellationRequested();
+
     if (DataContext is ArticleViewModel viewModel)
     {
         viewModel.ApplyNavigationParameter(Navigation.GetParameter(this));
     }
+
+    return Task.CompletedTask;
 }
+
+public void OnNavigationExited() { }
 ```
 
 无 DI 作用域的应用无法构造注入 `INavigationService`，应使用本方式。

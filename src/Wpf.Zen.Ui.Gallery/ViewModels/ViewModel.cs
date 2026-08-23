@@ -10,8 +10,9 @@ namespace Wpf.Zen.Ui.Gallery.ViewModels;
 public abstract partial class ViewModel : ObservableObject, INavigationAware
 {
     /// <inheritdoc />
-    public virtual Task OnNavigationEnteredAsync()
+    public virtual Task OnNavigationEnteredAsync(CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         OnNavigationEntered();
 
         return Task.CompletedTask;
@@ -22,14 +23,6 @@ public abstract partial class ViewModel : ObservableObject, INavigationAware
     /// </summary>
     // ReSharper disable once MemberCanBeProtected.Global
     public virtual void OnNavigationEntered() { }
-
-    /// <inheritdoc />
-    public virtual Task OnNavigationExitedAsync()
-    {
-        OnNavigationExited();
-
-        return Task.CompletedTask;
-    }
 
     /// <summary>
     /// Handles the component leaving the current navigation state.

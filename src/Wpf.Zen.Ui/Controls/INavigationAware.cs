@@ -17,21 +17,29 @@ public interface INavigationAware
     /// <summary>
     /// Asynchronously handles the component entering the current navigation state.
     /// </summary>
+    /// <param name="cancellationToken">
+    /// A token that is cancelled when a later navigation supersedes this occurrence or when the
+    /// navigation host is detached. Implementations should pass it to cancellable asynchronous
+    /// work and avoid publishing stale results after cancellation.
+    /// </param>
     /// <remarks>
     /// The navigation host invokes this callback only after it has successfully committed the
-    /// destination. Failed, stopped, or superseded requests do not enter the navigation lifecycle.
+    /// destination and attached its visual tree. Failed or stopped requests do not enter the
+    /// navigation lifecycle. The callback is not awaited by the host: a slow page cannot delay
+    /// lifecycle delivery to a later destination.
     /// </remarks>
     /// <returns>A task that represents the asynchronous operation.</returns>
-    Task OnNavigationEnteredAsync();
+    Task OnNavigationEnteredAsync(CancellationToken cancellationToken);
 
     /// <summary>
-    /// Asynchronously handles the component leaving the current navigation state.
+    /// Handles the component leaving the current navigation state.
     /// </summary>
     /// <remarks>
-    /// During a successful transition, the navigation host awaits this callback before invoking
-    /// <see cref="OnNavigationEnteredAsync"/> on the new component. The host also invokes it when
-    /// the current navigation surface is genuinely detached from the visual tree.
+    /// During a successful transition, the navigation host invokes this callback before starting
+    /// <see cref="OnNavigationEnteredAsync(CancellationToken)"/> on the new component. The host
+    /// also invokes it when the current navigation surface is genuinely detached from the visual
+    /// tree. Exit is deliberately synchronous because navigation has already committed and cannot
+    /// be rolled back or delayed by cleanup work at this boundary.
     /// </remarks>
-    /// <returns>A task that represents the asynchronous operation.</returns>
-    Task OnNavigationExitedAsync();
+    void OnNavigationExited();
 }

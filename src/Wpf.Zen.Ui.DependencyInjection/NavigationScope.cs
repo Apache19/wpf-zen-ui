@@ -3,7 +3,7 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-using System.Threading.Tasks;
+using System.Threading;
 using Microsoft.Extensions.DependencyInjection;
 using Wpf.Zen.Ui;
 
@@ -18,8 +18,7 @@ internal sealed class NavigationScope(
     NavigationRouter router
 ) : INavigationScope
 {
-    private readonly object _disposeSyncRoot = new();
-    private Task? _disposeTask;
+    private int _isDisposed;
 
     /// <inheritdoc />
     public string? Id { get; } = id;
@@ -33,24 +32,30 @@ internal sealed class NavigationScope(
     /// <inheritdoc />
     public void Dispose()
     {
-        Task disposeTask = DisposeAsync();
-
-        // Most pages complete their exit notification synchronously. If a page performs genuinely
-        // asynchronous cleanup, blocking the UI thread here could deadlock its continuation. In
-        // that case disposal continues in the background; callers requiring a strict completion
-        // boundary should await DisposeAsync instead.
-        if (disposeTask.IsCompleted)
+        if (Interlocked.Exchange(ref _isDisposed, 1) != 0)
         {
-            disposeTask.GetAwaiter().GetResult();
+            return;
         }
-    }
 
-    /// <inheritdoc />
-    public Task DisposeAsync()
-    {
-        lock (_disposeSyncRoot)
+        if (Id is not null)
         {
-            return _disposeTask ??= DisposeCoreAsync();
+            router.Unregister(Id, Navigation);
+        }
+
+        try
+        {
+            if (host.Dispatcher.CheckAccess())
+            {
+                host.DetachNavigationScope(Navigation);
+            }
+            else if (!host.Dispatcher.HasShutdownStarted && !host.Dispatcher.HasShutdownFinished)
+            {
+                host.Dispatcher.Invoke(() => host.DetachNavigationScope(Navigation));
+            }
+        }
+        finally
+        {
+            DisposeServiceScope();
         }
     }
 
@@ -59,36 +64,5 @@ internal sealed class NavigationScope(
         "IDISP007:Don't dispose injected",
         Justification = "The factory transfers ownership of this child IServiceScope to NavigationScope specifically for disposal here."
     )]
-    private async Task DisposeCoreAsync()
-    {
-        if (Id is not null)
-        {
-            router.Unregister(Id, Navigation);
-        }
-
-        try
-        {
-            Task detachTask;
-            if (host.Dispatcher.CheckAccess())
-            {
-                detachTask = host.DetachNavigationScopeAsync(Navigation);
-            }
-            else if (!host.Dispatcher.HasShutdownStarted && !host.Dispatcher.HasShutdownFinished)
-            {
-                detachTask = host.Dispatcher.Invoke(
-                    () => host.DetachNavigationScopeAsync(Navigation)
-                );
-            }
-            else
-            {
-                detachTask = Task.CompletedTask;
-            }
-
-            await detachTask.ConfigureAwait(false);
-        }
-        finally
-        {
-            serviceScope.Dispose();
-        }
-    }
+    private void DisposeServiceScope() => serviceScope.Dispose();
 }

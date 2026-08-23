@@ -27,12 +27,6 @@ public interface INavigationScope : IDisposable
     /// their navigation service and page provider.
     /// </summary>
     IServiceProvider Services { get; }
-
-    /// <summary>
-    /// Asynchronously detaches the host, waits for page-exit callbacks, and disposes scoped services.
-    /// </summary>
-    /// <returns>A task that represents complete navigation-scope disposal.</returns>
-    Task DisposeAsync();
 }
 
 /// <summary>Creates independently disposable navigation scopes.</summary>

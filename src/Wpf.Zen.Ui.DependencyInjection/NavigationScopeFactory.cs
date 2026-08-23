@@ -34,15 +34,17 @@ internal sealed class NavigationScopeFactory(
             );
         }
 
-        IServiceScope serviceScope = serviceScopeFactory.CreateScope();
+        var serviceScope = serviceScopeFactory.CreateScope();
+        var hostAttached = false;
+        var routeRegistered = false;
+
         ScopedNavigationService? navigationService = null;
-        bool hostAttached = false;
-        bool routeRegistered = false;
 
         try
         {
             navigationService = serviceScope.ServiceProvider
                .GetRequiredService<ScopedNavigationService>();
+
             navigationService.Attach(host);
 
             // Page activation is bound directly to this host scope. It is intentionally not resolved
@@ -80,7 +82,7 @@ internal sealed class NavigationScopeFactory(
 
             if (hostAttached && navigationService is not null)
             {
-                host.DetachNavigationScopeAsync(navigationService).GetAwaiter().GetResult();
+                host.DetachNavigationScope(navigationService);
             }
 
             serviceScope.Dispose();

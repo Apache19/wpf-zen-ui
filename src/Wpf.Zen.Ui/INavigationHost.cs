@@ -62,9 +62,10 @@ public interface INavigationHost
 
     /// <summary>Detaches a previously attached scope and clears context published to its page.</summary>
     /// <param name="navigationService">The service used when the scope was attached.</param>
-    /// <returns>
-    /// A task that completes after the current page has received its asynchronous navigation-exit
-    /// notification and scoped services are safe to dispose.
-    /// </returns>
-    Task DetachNavigationScopeAsync(INavigationService navigationService);
+    /// <remarks>
+    /// Detachment synchronously cancels current entry work and delivers the page-exit callback
+    /// before returning, so the owning scope can release services through ordinary
+    /// <see cref="IDisposable"/> semantics.
+    /// </remarks>
+    void DetachNavigationScope(INavigationService navigationService);
 }

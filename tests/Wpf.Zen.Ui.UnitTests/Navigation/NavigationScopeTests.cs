@@ -4,6 +4,7 @@
 // All Rights Reserved.
 
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Controls;
 using System.Windows.Threading;
@@ -352,37 +353,35 @@ public class NavigationScopeTests
     }
 
     [Fact]
-    public void DisposeAsync_WaitsForPageExitBeforeDisposingScopedDependencies()
+    public void Dispose_CancelsEntryAndExitsBeforeDisposingScopedDependencies()
     {
         WpfTestThread.Run(() =>
         {
             var services = new ServiceCollection();
             _ = services.AddNavigation();
             _ = services.AddScoped<ScopedDisposable>();
-            _ = services.AddTransient<AsyncExitPage>();
+            _ = services.AddTransient<CancellableEntryPage>();
 
             using ServiceProvider provider = services.BuildServiceProvider();
             INavigationScopeFactory factory = provider.GetRequiredService<INavigationScopeFactory>();
             var host = new NavigationView();
-            AsyncExitPage? page = null;
-            host.Navigated += (_, args) => page = Assert.IsType<AsyncExitPage>(args.Page);
+            CancellableEntryPage? page = null;
+            host.Navigated += (_, args) => page = Assert.IsType<CancellableEntryPage>(args.Page);
             using INavigationScope scope = factory.Attach(host);
 
-            Assert.True(scope.Navigation.Navigate(typeof(AsyncExitPage)).Succeeded);
+            Assert.True(scope.Navigation.Navigate(typeof(CancellableEntryPage)).Succeeded);
             Dispatcher.CurrentDispatcher.Invoke(
                 static () => { },
                 DispatcherPriority.ApplicationIdle
             );
             Assert.NotNull(page);
-
-            Task disposeTask = scope.DisposeAsync();
-
-            Assert.False(disposeTask.IsCompleted);
+            Assert.False(page.EntryCancellationToken.IsCancellationRequested);
             Assert.False(page.Dependency.IsDisposed);
 
-            page.CompleteExit();
-            disposeTask.GetAwaiter().GetResult();
+            scope.Dispose();
 
+            Assert.True(page.EntryCancellationToken.IsCancellationRequested);
+            Assert.True(page.ExitedBeforeDependencyDisposal);
             Assert.True(page.Dependency.IsDisposed);
         });
     }
@@ -506,17 +505,25 @@ public class NavigationScopeTests
         }
     }
 
-    private sealed class AsyncExitPage(ScopedDisposable dependency) : Border, INavigationAware
+    private sealed class CancellableEntryPage(ScopedDisposable dependency)
+        : Border, INavigationAware
     {
-        private readonly TaskCompletionSource<object?> _exitCompletion = new();
-
         public ScopedDisposable Dependency { get; } = dependency;
 
-        public Task OnNavigationEnteredAsync() => Task.CompletedTask;
+        public CancellationToken EntryCancellationToken { get; private set; }
 
-        public Task OnNavigationExitedAsync() => _exitCompletion.Task;
+        public bool ExitedBeforeDependencyDisposal { get; private set; }
 
-        public void CompleteExit() => _exitCompletion.SetResult(null);
+        public Task OnNavigationEnteredAsync(CancellationToken cancellationToken)
+        {
+            EntryCancellationToken = cancellationToken;
+            return Task.Delay(Timeout.Infinite, cancellationToken);
+        }
+
+        public void OnNavigationExited()
+        {
+            ExitedBeforeDependencyDisposal = !Dependency.IsDisposed;
+        }
     }
 
     private sealed class ScopedDisposable : IDisposable
