@@ -56,7 +56,6 @@
         <ResourceDictionary Source="pack://application:,,,/Wpf.Zen.Ui;component/Controls/NavigationView/NavigationView.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Zen.Ui;component/Controls/NavigationView/NavigationViewButton.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Zen.Ui;component/Controls/NavigationView/NavigationViewItem.xaml" />
-        <ResourceDictionary Source="pack://application:,,,/Wpf.Zen.Ui;component/Controls/NavigationView/NavigationViewItemHeader.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Zen.Ui;component/Controls/NavigationView/NavigationViewList.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Zen.Ui;component/Controls/NavigationMap/NavigationMap.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Zen.Ui;component/Controls/NumberBox/NumberBox.xaml" />

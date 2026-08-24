@@ -188,11 +188,11 @@ public class NavigationViewTests
             var itemContainerStyle = new Style(typeof(NavigationViewItem));
             var navigationItem = new NavigationViewItem();
             var separator = new Wpf.Zen.Ui.Controls.Separator();
-            var header = new NavigationViewItemHeader();
+            var groupLabel = new System.Windows.Controls.TextBlock();
             var navigationViewList = new NavigationViewList { ItemContainerStyle = itemContainerStyle };
             navigationViewList.Items.Add(navigationItem);
             navigationViewList.Items.Add(separator);
-            navigationViewList.Items.Add(header);
+            navigationViewList.Items.Add(groupLabel);
 
             var window = new Window
             {
@@ -221,7 +221,7 @@ public class NavigationViewTests
                 );
                 Assert.Equal(
                     DependencyProperty.UnsetValue,
-                    header.ReadLocalValue(FrameworkElement.StyleProperty)
+                    groupLabel.ReadLocalValue(FrameworkElement.StyleProperty)
                 );
             }
             finally

@@ -85,8 +85,9 @@ public class NavigationViewList : ItemsControl
     /// <inheritdoc />
     protected override bool IsItemItsOwnContainerOverride(object item)
     {
-        // Structural controls such as NavigationViewItemHeader must remain intact. Plain data is the
-        // only category for which this list owns navigation-container generation.
+        // Structural elements supplied by the application, such as a Separator or a group label,
+        // must remain intact. Plain data is the only category for which this list owns
+        // navigation-container generation.
         return item is UIElement;
     }
 

@@ -293,17 +293,6 @@ public class NavigationViewAuditTests
         });
     }
 
-    [Fact]
-    public void NavigationItemHeaderIsNotAKeyboardStop()
-    {
-        WpfTestThread.Run(() =>
-        {
-            var header = new NavigationViewItemHeader();
-            Assert.False(header.Focusable);
-            Assert.False(System.Windows.Input.KeyboardNavigation.GetIsTabStop(header));
-        });
-    }
-
     private static Window CreateWindow(object content) => new()
     {
         Content = content,

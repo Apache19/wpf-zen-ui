@@ -33,8 +33,6 @@
       <Item Type="Wpf.Zen.Ui.Controls.NavigationView" />
       <Item Type="Wpf.Zen.Ui.Controls.NavigationViewBreadcrumb" />
       <Item Type="Wpf.Zen.Ui.Controls.NavigationViewItem" />
-      <Item Type="Wpf.Zen.Ui.Controls.NavigationViewItemHeader" />
-      <Item Type="Wpf.Zen.Ui.Controls.NavigationViewItemSeparator" />
       <Item Type="Wpf.Zen.Ui.Controls.NumberBox" />
       <Item Type="Wpf.Zen.Ui.Controls.PasswordBox" />
       <Item Type="Wpf.Zen.Ui.Controls.ProgressRing" />
