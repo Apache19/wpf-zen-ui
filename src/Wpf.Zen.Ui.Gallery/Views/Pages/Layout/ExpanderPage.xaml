@@ -8,7 +8,7 @@
     xmlns:ui="http://schemas.thezendev.com/wpf/2027"
     xmlns:vm="clr-namespace:Wpf.Zen.Ui.Gallery.ViewModels.Pages.Layout"
     Title="ExpanderPage"
-    Style="{ui:DynamicStyle DynamicScrollPage}"
+    ui:NavigationView.IsNavigationFrameScrollEnabled="True"
     d:Background="{ui:DynamicBrush WindowBackground}"
     d:DesignWidth="800"
     Foreground="{ui:DynamicBrush TextFillPrimary}"

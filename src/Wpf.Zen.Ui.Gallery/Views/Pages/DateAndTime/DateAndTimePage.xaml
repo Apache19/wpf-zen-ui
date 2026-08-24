@@ -12,7 +12,7 @@
     controls:PageControlDocumentation.Show="False"
     d:DataContext="{d:DesignInstance vm:DateAndTimeViewModel,
                                      IsDesignTimeCreatable=False}"
-    Style="{ui:DynamicStyle DynamicScrollPage}"
+    ui:NavigationView.IsNavigationFrameScrollEnabled="True"
     d:DesignWidth="800"
     d:Background="{ui:DynamicBrush WindowBackground}"
     Foreground="{ui:DynamicBrush TextFillPrimary}"

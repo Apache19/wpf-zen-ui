@@ -33,7 +33,6 @@ public enum StyleToken
     DefaultControlFocusVisual,
     DefaultScrollViewer,
     UiDynamicScrollViewer,
-    DynamicScrollPage,
     IconInfoBadge,
     ValueInfoBadge,
     DotInfoBadge,

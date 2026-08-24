@@ -11,7 +11,7 @@
     xmlns:vm="clr-namespace:Wpf.Zen.Ui.Gallery.ViewModels.Pages.Media"
     xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
     Title="WebViewPage"
-    Style="{ui:DynamicStyle DynamicScrollPage}"
+    ui:NavigationView.IsNavigationFrameScrollEnabled="True"
     d:DataContext="{d:DesignInstance vm:WebViewViewModel,
                                      IsDesignTimeCreatable=False}"
     d:DesignWidth="800"

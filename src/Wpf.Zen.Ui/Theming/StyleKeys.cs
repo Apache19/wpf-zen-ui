@@ -31,7 +31,6 @@ public static class StyleKeys
     public static ComponentResourceKey DefaultControlFocusVisualStyle  { get; } = Create(nameof(DefaultControlFocusVisualStyle));
     public static ComponentResourceKey DefaultScrollViewerStyle        { get; } = Create(nameof(DefaultScrollViewerStyle));
     public static ComponentResourceKey UiDynamicScrollViewerStyle      { get; } = Create(nameof(UiDynamicScrollViewerStyle));
-    public static ComponentResourceKey DynamicScrollPageStyle          { get; } = Create(nameof(DynamicScrollPageStyle));
     public static ComponentResourceKey IconInfoBadgeStyle              { get; } = Create(nameof(IconInfoBadgeStyle));
     public static ComponentResourceKey ValueInfoBadgeStyle             { get; } = Create(nameof(ValueInfoBadgeStyle));
     public static ComponentResourceKey DotInfoBadgeStyle               { get; } = Create(nameof(DotInfoBadgeStyle));

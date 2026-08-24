@@ -14,7 +14,7 @@
     d:DataContext="{d:DesignInstance vm:BreadcrumbBarViewModel, IsDesignTimeCreatable=False}"
     d:DesignWidth="850"
     Foreground="{ui:DynamicBrush TextFillPrimary}"
-    Style="{ui:DynamicStyle DynamicScrollPage}"
+    ui:NavigationView.IsNavigationFrameScrollEnabled="True"
     WindowWidth="850"
     mc:Ignorable="d">
 

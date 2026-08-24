@@ -16,7 +16,7 @@
     d:Background="{ui:DynamicBrush WindowBackground}"
     Foreground="{ui:DynamicBrush TextFillPrimary}"
     mc:Ignorable="d"
-    Style="{ui:DynamicStyle DynamicScrollPage}">
+    ui:NavigationView.IsNavigationFrameScrollEnabled="True">
 
     <Grid Margin="0,0,0,24">
         <controls:ControlExample

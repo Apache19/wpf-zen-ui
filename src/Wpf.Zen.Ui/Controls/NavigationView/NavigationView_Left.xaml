@@ -2,7 +2,12 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Zen.Ui.Controls"
+    xmlns:converters="clr-namespace:Wpf.Zen.Ui.Converters"
     xmlns:m="clr-namespace:Wpf.Zen.Ui.Markup">
+
+    <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="pack://application:,,,/Wpf.Zen.Ui;component/Controls/NavigationView/NavigationViewFrameHost.xaml" />
+    </ResourceDictionary.MergedDictionaries>
 
     <!--
         导航视图 Left 模式布局：
@@ -85,8 +90,8 @@
                                     x:Name="PART_AutoSuggestBoxSymbolButton"
                                     HorizontalAlignment="Left"
                                     VerticalAlignment="Center"
-                                    AutomationProperties.AutomationId="NavigationAutoSuggestBoxButton"
                                     controls:IconAssist.Icon="{m:FluentIconSource Search24}"
+                                    AutomationProperties.AutomationId="NavigationAutoSuggestBoxButton"
                                     Visibility="Hidden" />
                             </Grid>
                         </Grid>
@@ -104,6 +109,7 @@
                             x:Name="PART_MenuItemsList"
                             Grid.Row="2"
                             Margin="0,0,-4,0"
+                            Padding="0,0,4,0"
                             AutomationProperties.AutomationId="NavigationItems"
                             Focusable="False"
                             IsDynamicScrollViewerEnabled="True"
@@ -112,7 +118,6 @@
                             ItemTemplate="{TemplateBinding MenuItemTemplate}"
                             ItemTemplateSelector="{TemplateBinding MenuItemTemplateSelector}"
                             KeyboardNavigation.DirectionalNavigation="Contained"
-                            Padding="0,0,4,0"
                             ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                             ScrollViewer.VerticalScrollBarVisibility="Auto">
                             <controls:NavigationViewList.ItemsPanel>
@@ -181,8 +186,9 @@
 
                     <!--  Header (e.g., BreadcrumbBar)  -->
                     <ContentPresenter
+                        x:Name="HeaderPresenter"
                         Grid.Row="0"
-                        Margin="0"
+                        Margin="{Binding Padding, RelativeSource={RelativeSource TemplatedParent}, Converter={converters:ThicknessTransformConverter CopySides='Left,Top,Right'}}"
                         Content="{TemplateBinding Header}"
                         Visibility="{TemplateBinding HeaderVisibility}" />
 
@@ -191,7 +197,11 @@
                         NavigationView owns the frame so changing PaneDisplayMode does not destroy
                         the current page together with this template's generated visual tree.
                     -->
-                    <ContentPresenter x:Name="PART_NavigationFrameHost" Grid.Row="1" />
+                    <ContentControl
+                        x:Name="PART_NavigationFrameHost"
+                        Grid.Row="1"
+                        Padding="{Binding Padding, RelativeSource={RelativeSource TemplatedParent}, Converter={converters:ThicknessTransformConverter CopySides='Left,Right,Bottom'}}"
+                        Style="{StaticResource NavigationFrameHostStyle}" />
 
                 </Grid>
             </Border>

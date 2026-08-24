@@ -67,7 +67,6 @@ internal static class StyleTokenResourceKey
             StyleToken.DefaultControlFocusVisual  => StyleKeys.DefaultControlFocusVisualStyle,
             StyleToken.DefaultScrollViewer        => StyleKeys.DefaultScrollViewerStyle,
             StyleToken.UiDynamicScrollViewer      => StyleKeys.UiDynamicScrollViewerStyle,
-            StyleToken.DynamicScrollPage          => StyleKeys.DynamicScrollPageStyle,
             StyleToken.IconInfoBadge              => StyleKeys.IconInfoBadgeStyle,
             StyleToken.ValueInfoBadge             => StyleKeys.ValueInfoBadgeStyle,
             StyleToken.DotInfoBadge               => StyleKeys.DotInfoBadgeStyle,

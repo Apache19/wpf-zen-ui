@@ -19,38 +19,4 @@
 
     <Style BasedOn="{StaticResource {x:Static t:StyleKeys.UiDynamicScrollViewerStyle}}" TargetType="{x:Type controls:DynamicScrollViewer}" />
 
-    <!--
-        Navigation surfaces deliberately do not impose scrolling on their content. This keyed
-        style is an explicit page-owned opt-in for applications that want the former convenient
-        full-page DynamicScrollViewer behavior. Because the viewer lives in the Page template,
-        ScrollViewer.CanContentScroll keeps its normal WPF meaning for controls inside the page.
-    -->
-    <Style x:Key="{x:Static t:StyleKeys.DynamicScrollPageStyle}" TargetType="{x:Type Page}">
-        <!--
-            The viewer consumes NavigationView.ContentPadding inside its viewport, so the host
-            must not apply the same inset outside the Page.
-        -->
-        <Setter Property="controls:NavigationView.IsContentPaddingHandled" Value="True" />
-        <Setter Property="Template">
-            <Setter.Value>
-                <ControlTemplate TargetType="{x:Type Page}">
-                    <Border Background="{TemplateBinding Background}">
-                        <!--
-                            ScrollViewer.OnPreApplyTemplate otherwise auto-binds CanContentScroll
-                            to the Page templated parent. Pin pixel scrolling on this actual viewer
-                            so an unrelated attached value on Page cannot alter its layout mode.
-                        -->
-                        <controls:DynamicScrollViewer
-                            Padding="{Binding Path=(controls:NavigationView.ContentPadding), RelativeSource={RelativeSource Self}}"
-                            CanContentScroll="False"
-                            FlowDirection="{TemplateBinding FlowDirection}"
-                            Focusable="False">
-                            <ContentPresenter Content="{TemplateBinding Page.Content}" />
-                        </controls:DynamicScrollViewer>
-                    </Border>
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
-    </Style>
-
 </ResourceDictionary>

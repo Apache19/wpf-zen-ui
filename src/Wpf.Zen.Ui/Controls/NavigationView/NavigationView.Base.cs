@@ -27,18 +27,15 @@ namespace Wpf.Zen.Ui.Controls;
 /// providing an independently implementable WPF control abstraction.
 ///
 /// Navigated content is hosted by a stable WPF <see cref="Frame"/> so changing
-/// <see cref="PaneDisplayMode"/> does not recreate the current page. The frame does not add a
-/// <see cref="ScrollViewer"/> around the page: each page owns its scrolling policy and may use a
-/// standard <see cref="ScrollViewer"/>, <see cref="DynamicScrollViewer"/>, or no scrolling host at
-/// all. Pages that want the library's full-page dynamic scrolling can explicitly apply the
-/// <see cref="Theming.StyleKeys.DynamicScrollPageStyle"/> resource, normally through
-/// <see cref="Markup.DynamicStyleExtension"/>. In particular,
+/// <see cref="PaneDisplayMode"/> does not recreate the current page. Content can request a
+/// navigation-owned <see cref="DynamicScrollViewer"/> through
+/// <see cref="IsNavigationFrameScrollEnabledProperty"/>; otherwise the frame is presented directly.
+/// Both layouts belong entirely to the control template. The header consumes the left, top, and
+/// right portions of <see cref="Control.Padding"/>, while the frame region consumes the left,
+/// right, and bottom portions. This keeps scroll bars at the content-region edge without publishing
+/// host padding through WPF's frame inheritance boundary or requiring a page-specific template.
 /// <see cref="ScrollViewer.CanContentScroll"/> retains its WPF-defined meaning of selecting logical
-/// versus pixel scrolling inside the page's own scroll viewer.
-/// A custom page template that also keeps its scroll viewer at the navigation edge should set
-/// <see cref="IsContentPaddingHandledProperty"/> and apply the inherited
-/// <see cref="ContentPaddingProperty"/> inside that viewer. Ordinary content requires no opt-in and
-/// continues to receive <see cref="Control.Padding"/> from the native frame.
+/// versus physical scrolling on the actual viewer.
 ///
 /// The internal frame's browser-era command bindings are removed, and mouse side buttons do not
 /// implicitly change this control's journal. Applications that also want to stop the corresponding
@@ -64,19 +61,6 @@ public partial class NavigationView : Control, INavigationHost, INavigationState
         DefaultStyleKeyProperty.OverrideMetadata(
             typeof(NavigationView),
             new FrameworkPropertyMetadata(typeof(NavigationView))
-        );
-
-        // Control.Padding normally invalidates the parent measure, which remains appropriate for
-        // NavigationView. The callback additionally republishes the value to the current page: a
-        // native Frame is an inheritance boundary, so page-owned scrolling cannot obtain this
-        // content inset through ordinary property inheritance or an ancestor binding.
-        PaddingProperty.OverrideMetadata(
-            typeof(NavigationView),
-            new FrameworkPropertyMetadata(
-                default(Thickness),
-                FrameworkPropertyMetadataOptions.AffectsParentMeasure,
-                OnPaddingChanged
-            )
         );
     }
 

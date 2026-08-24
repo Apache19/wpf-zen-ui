@@ -686,6 +686,9 @@ public partial class NavigationView
         NavigationTarget? navigationTarget = null
     )
     {
+        // Select the host template before Frame receives the destination. Waiting for Navigated
+        // would briefly arrange the new page using the previous page's scrolling policy.
+        UpdateNavigationFrameScrollState(content);
         SetNavigationContextOwner(content as DependencyObject, navigationParameter);
         _ = _navigationFrame.Navigate(content, new NavigationFrameState(navigationTarget));
     }

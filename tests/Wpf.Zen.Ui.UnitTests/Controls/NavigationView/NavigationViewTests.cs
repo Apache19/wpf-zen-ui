@@ -17,8 +17,6 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using Wpf.Zen.Ui.Controls;
 using Wpf.Zen.Ui.Input;
-using Wpf.Zen.Ui.Markup;
-using Wpf.Zen.Ui.Theming;
 
 namespace Wpf.Zen.Ui.UnitTests.Controls.NavigationView;
 
@@ -463,15 +461,17 @@ public class NavigationViewTests
     }
 
     [Fact]
-    public void NavigationFrame_AppliesPaddingOutsideContentThatDoesNotHandleIt()
+    public void NavigationTemplate_SplitsPaddingBetweenHeaderAndFrameRegion()
     {
         RunOnStaThread(() =>
         {
             var resources = new ResourceDictionary { Source = CreateResourceUri() };
             var contentPadding = new Thickness(7D, 8D, 9D, 10D);
+            var header = new Border();
             var content = new Border();
             var navigationView = new Wpf.Zen.Ui.Controls.NavigationView
             {
+                Header = header,
                 Padding = contentPadding,
                 Style = Assert.IsType<Style>(resources[typeof(Wpf.Zen.Ui.Controls.NavigationView)]),
             };
@@ -493,18 +493,20 @@ public class NavigationViewTests
                 DrainDispatcher();
                 _ = navigationView.ApplyTemplate();
                 Frame navigationFrame = GetNavigationFrame(navigationView);
+                ContentControl navigationFrameHost = GetNavigationFrameHost(navigationView);
 
                 Assert.True(navigationView.ReplaceContent(content));
                 DrainDispatcher();
                 _ = navigationFrame.ApplyTemplate();
                 DrainDispatcher();
 
-                Assert.False(Wpf.Zen.Ui.Controls.NavigationView.GetIsContentPaddingHandled(content));
-                Assert.Equal(contentPadding, navigationFrame.Padding);
-                Assert.Equal(
-                    new Point(contentPadding.Left, contentPadding.Top),
-                    content.TranslatePoint(default, navigationFrame)
+                var headerPresenter = Assert.IsType<ContentPresenter>(
+                    navigationView.Template.FindName("HeaderPresenter", navigationView)
                 );
+                Assert.Equal(new Thickness(7D, 8D, 9D, 0D), headerPresenter.Margin);
+                Assert.Equal(new Thickness(7D, 0D, 9D, 10D), navigationFrameHost.Padding);
+                Assert.False(navigationView.IsNavigationFrameScrollActive);
+                Assert.Null(FindVisualDescendant<DynamicScrollViewer>(navigationFrameHost));
             }
             finally
             {
@@ -515,14 +517,14 @@ public class NavigationViewTests
     }
 
     [Fact]
-    public void DynamicScrollPageStyle_KeepsViewerAtNavigationEdgeAndInsetsOnlyItsContent()
+    public void NavigationFrameScrollContract_WrapsStableFrameAndKeepsViewerAtRegionEdge()
     {
         RunOnStaThread(() =>
         {
             var resources = new ResourceDictionary { Source = CreateResourceUri() };
             var contentPadding = new Thickness(11D, 12D, 13D, 14D);
             var page = new Page { Content = new Border { Height = 500D } };
-            page.SetResourceReference(FrameworkElement.StyleProperty, StyleKeys.DynamicScrollPageStyle);
+            Wpf.Zen.Ui.Controls.NavigationView.SetIsNavigationFrameScrollEnabled(page, true);
             var navigationView = new Wpf.Zen.Ui.Controls.NavigationView
             {
                 Padding = contentPadding,
@@ -546,6 +548,7 @@ public class NavigationViewTests
                 DrainDispatcher();
                 _ = navigationView.ApplyTemplate();
                 Frame navigationFrame = GetNavigationFrame(navigationView);
+                ContentControl navigationFrameHost = GetNavigationFrameHost(navigationView);
 
                 Assert.True(navigationView.ReplaceContent(page));
                 DrainDispatcher();
@@ -554,36 +557,37 @@ public class NavigationViewTests
                 DrainDispatcher();
 
                 DynamicScrollViewer viewer = Assert.IsType<DynamicScrollViewer>(
-                    FindVisualDescendant<DynamicScrollViewer>(page)
+                    FindVisualDescendant<DynamicScrollViewer>(navigationFrameHost)
                 );
                 _ = viewer.ApplyTemplate();
                 DrainDispatcher();
 
-                // The page declares that it handles ContentPadding, so the native Frame receives
-                // no outer inset. The page-owned viewer fills the navigation viewport and applies
-                // that inset to its own content, leaving its scroll bars at the outer edge.
+                // Scrolling belongs to the host template. The viewer fills the frame region while
+                // its Padding insets the stable Frame without moving the scroll bars inward.
+                Assert.True(navigationView.IsNavigationFrameScrollActive);
                 Assert.Equal(default(Thickness), navigationFrame.Padding);
-                Assert.True(Wpf.Zen.Ui.Controls.NavigationView.GetIsContentPaddingHandled(page));
-                Assert.Equal(contentPadding, Wpf.Zen.Ui.Controls.NavigationView.GetContentPadding(viewer));
-                Assert.Equal(contentPadding, viewer.Padding);
-                Assert.Equal(new Point(0D, 0D), viewer.TranslatePoint(default, navigationFrame));
+                Assert.True(Wpf.Zen.Ui.Controls.NavigationView.GetIsNavigationFrameScrollEnabled(page));
+                Assert.False(viewer.CanContentScroll);
+                Assert.Equal(new Thickness(11D, 0D, 13D, 14D), viewer.Padding);
+                Assert.Equal(new Point(0D, 0D), viewer.TranslatePoint(default, navigationFrameHost));
 
                 var updatedPadding = new Thickness(21D, 22D, 23D, 24D);
                 navigationView.Padding = updatedPadding;
                 DrainDispatcher();
 
                 Assert.Equal(default(Thickness), navigationFrame.Padding);
-                Assert.Equal(updatedPadding, Wpf.Zen.Ui.Controls.NavigationView.GetContentPadding(viewer));
-                Assert.Equal(updatedPadding, viewer.Padding);
+                Assert.Equal(new Thickness(21D, 0D, 23D, 24D), viewer.Padding);
 
-                // The attached inset is host-owned state. Navigating away clears it from the old
-                // page while ordinary replacement content resumes native Frame padding.
+                // The destination contract is inspected before Frame navigation. Replacing it with
+                // ordinary content removes the viewer while retaining the same Frame instance.
                 var replacement = new Border();
                 Assert.True(navigationView.ReplaceContent(replacement));
                 DrainDispatcher();
 
-                Assert.Equal(default(Thickness), Wpf.Zen.Ui.Controls.NavigationView.GetContentPadding(page));
-                Assert.Equal(updatedPadding, navigationFrame.Padding);
+                Assert.False(navigationView.IsNavigationFrameScrollActive);
+                Assert.Null(FindVisualDescendant<DynamicScrollViewer>(navigationFrameHost));
+                Assert.Same(navigationFrame, GetNavigationFrame(navigationView));
+                Assert.Equal(new Thickness(21D, 0D, 23D, 24D), navigationFrameHost.Padding);
             }
             finally
             {
@@ -591,14 +595,6 @@ public class NavigationViewTests
                 DrainDispatcher();
             }
         });
-    }
-
-    [Fact]
-    public void DynamicScrollPageStyle_IsAvailableThroughDynamicStyleExtension()
-    {
-        var extension = new DynamicStyleExtension(StyleToken.DynamicScrollPage);
-
-        Assert.Same(StyleKeys.DynamicScrollPageStyle, extension.ResourceKey);
     }
 
     [Fact]
@@ -1331,12 +1327,15 @@ public class NavigationViewTests
 
     private static Frame GetNavigationFrame(Wpf.Zen.Ui.Controls.NavigationView navigationView)
     {
-        var host = Assert.IsType<ContentPresenter>(
+        return Assert.IsType<Frame>(GetNavigationFrameHost(navigationView).Content);
+    }
+
+    private static ContentControl GetNavigationFrameHost(
+        Wpf.Zen.Ui.Controls.NavigationView navigationView
+    ) =>
+        Assert.IsType<ContentControl>(
             navigationView.Template.FindName("PART_NavigationFrameHost", navigationView)
         );
-
-        return Assert.IsType<Frame>(host.Content);
-    }
 
     private static bool HasVisualDescendant<T>(DependencyObject root)
         where T : DependencyObject => FindVisualDescendant<T>(root) is not null;

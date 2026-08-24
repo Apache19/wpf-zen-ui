@@ -10,7 +10,7 @@
     xmlns:system="clr-namespace:System;assembly=System.Runtime"
     xmlns:ui="http://schemas.thezendev.com/wpf/2027"
     Title="WebBrowserPage"
-    Style="{ui:DynamicStyle DynamicScrollPage}"
+    ui:NavigationView.IsNavigationFrameScrollEnabled="True"
     d:DataContext="{d:DesignInstance vm:WebBrowserViewModel,
                                      IsDesignTimeCreatable=False}"
     d:DesignWidth="800"

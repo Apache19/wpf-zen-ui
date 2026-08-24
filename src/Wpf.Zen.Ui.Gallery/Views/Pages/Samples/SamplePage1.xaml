@@ -10,7 +10,7 @@
     d:Background="{ui:DynamicBrush WindowBackground}"
     d:DesignWidth="800"
     Foreground="{ui:DynamicBrush TextFillPrimary}"
-    Style="{ui:DynamicStyle DynamicScrollPage}"
+    ui:NavigationView.IsNavigationFrameScrollEnabled="True"
     mc:Ignorable="d">
 
     <Grid>

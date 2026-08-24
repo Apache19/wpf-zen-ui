@@ -14,7 +14,7 @@
     d:DataContext="{d:DesignInstance vm:ImageViewModel, IsDesignTimeCreatable=False}"
     d:DesignWidth="800"
     Foreground="{ui:DynamicBrush TextFillPrimary}"
-    Style="{ui:DynamicStyle DynamicScrollPage}"
+    ui:NavigationView.IsNavigationFrameScrollEnabled="True"
     mc:Ignorable="d">
     <Page.Resources>
         <system:String x:Key="PageXamlUrl">https://github.com/dotnet/wpf</system:String>

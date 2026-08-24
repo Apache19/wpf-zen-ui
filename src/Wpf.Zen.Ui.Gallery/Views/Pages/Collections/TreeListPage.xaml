@@ -15,7 +15,7 @@
     d:Background="{ui:DynamicBrush WindowBackground}"
     Foreground="{ui:DynamicBrush TextFillPrimary}"
     mc:Ignorable="d"
-    Style="{ui:DynamicStyle DynamicScrollPage}">
+    ui:NavigationView.IsNavigationFrameScrollEnabled="True">
 
     <controls:ControlExample Margin="0" HeaderText="WPF Zen UI TreeList.">
         <TextBlock Text="To do." />

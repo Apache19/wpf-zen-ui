@@ -19,23 +19,6 @@ namespace Wpf.Zen.Ui.Controls;
 public partial class NavigationView
 {
     /// <summary>
-    /// Stores the control that currently publishes <see cref="ContentPaddingProperty"/> on a
-    /// navigation root.
-    /// </summary>
-    /// <remarks>
-    /// This private marker is required because a page style supplied through DynamicResource can
-    /// set <see cref="IsContentPaddingHandledProperty"/> after <see cref="Frame.Navigated"/>. The
-    /// property-changed callback can then update the correct frame without a visual-tree search.
-    /// </remarks>
-    private static readonly DependencyProperty ContentPaddingHostProperty =
-        DependencyProperty.RegisterAttached(
-            "ContentPaddingHost",
-            typeof(NavigationView),
-            typeof(NavigationView),
-            new FrameworkPropertyMetadata(null)
-        );
-
-    /// <summary>
     /// The content from the latest completed navigation.
     /// </summary>
     /// <remarks>
@@ -62,16 +45,6 @@ public partial class NavigationView
     /// from detachment and possibly released its services.
     /// </remarks>
     private DispatcherOperation? _navigationTransitionOperation;
-
-    /// <summary>
-    /// The navigation root on which this control has published
-    /// <see cref="ContentPaddingProperty"/>.
-    /// </summary>
-    /// <remarks>
-    /// Keeping the owner explicit lets navigation remove control-owned attached state from a
-    /// cached page before that page is handed to another host.
-    /// </remarks>
-    private DependencyObject? _contentPaddingOwner;
 
     /// <summary>
     /// Creates the frame that owns WPF navigation state for this control.
@@ -145,7 +118,7 @@ public partial class NavigationView
     {
         _ = _navigationFrame.RemoveBackEntry();
 
-        SetNavigatedContentPaddingOwner(eventArgs.Content as DependencyObject);
+        UpdateNavigationFrameScrollState(eventArgs.Content);
 
         if (eventArgs.Content is not null)
         {
@@ -239,59 +212,19 @@ public partial class NavigationView
         }
     }
 
-    /// <summary>
-    /// Replaces the root on which this control publishes <see cref="ContentPaddingProperty"/>.
-    /// </summary>
-    /// <param name="newOwner">
-    /// The newly navigated root, or <see langword="null"/> when the frame no longer has content.
-    /// </param>
+    /// <summary>Synchronizes the template-facing scrolling state with a navigation root.</summary>
     /// <remarks>
-    /// Frame sets <see cref="InheritanceBehavior"/> to
-    /// <see cref="InheritanceBehavior.SkipToAppNow"/> in the WPF constructor. That isolation is
-    /// intentional for navigation, but it also prevents page-owned scroll viewers from inheriting
-    /// NavigationView's content inset. A read-only attached value provides the narrow bridge needed
-    /// for layout while leaving the page's own Margin, Padding, and scrolling properties untouched.
+    /// The destination is inspected before <see cref="Frame.Navigate(object)"/> whenever the
+    /// NavigationView initiates navigation, preventing a one-frame flash of the previous host
+    /// template. The Navigated handler calls this method again as the commit-time safeguard for
+    /// null navigation and any future navigation path that targets the private frame directly.
     /// </remarks>
-    private void SetNavigatedContentPaddingOwner(DependencyObject? newOwner)
+    private void UpdateNavigationFrameScrollState(object? content)
     {
-        if (!ReferenceEquals(_contentPaddingOwner, newOwner))
-        {
-            _contentPaddingOwner?.ClearValue(ContentPaddingPropertyKey);
-            _contentPaddingOwner?.ClearValue(ContentPaddingHostProperty);
-            _contentPaddingOwner = newOwner;
-            _contentPaddingOwner?.SetCurrentValue(ContentPaddingHostProperty, this);
-        }
+        bool isActive = content is DependencyObject dependencyObject
+            && GetIsNavigationFrameScrollEnabled(dependencyObject);
 
-        UpdateNavigatedContentPadding();
-    }
-
-    /// <summary>
-    /// Refreshes the host-provided inset after <see cref="Control.Padding"/> changes.
-    /// </summary>
-    private void UpdateNavigatedContentPadding()
-    {
-        _contentPaddingOwner?.SetValue(ContentPaddingPropertyKey, Padding);
-        UpdateNavigationFramePadding();
-    }
-
-    /// <summary>
-    /// Applies the content inset at exactly one side of the page boundary.
-    /// </summary>
-    /// <remarks>
-    /// Ordinary content receives Padding from WPF's native Frame template. Content that declares
-    /// <see cref="IsContentPaddingHandledProperty"/> keeps Frame.Padding empty and consumes the
-    /// separately published <see cref="ContentPaddingProperty"/> inside its own viewport. This
-    /// preserves ordinary-page layout while keeping page-owned scroll bars at the outer edge.
-    /// </remarks>
-    private void UpdateNavigationFramePadding()
-    {
-        bool isHandledByContent =
-            _contentPaddingOwner is not null && GetIsContentPaddingHandled(_contentPaddingOwner);
-
-        _navigationFrame.SetCurrentValue(
-            Control.PaddingProperty,
-            isHandledByContent ? default(Thickness) : Padding
-        );
+        SetValue(IsNavigationFrameScrollActivePropertyKey, isActive);
     }
 
     /// <summary>

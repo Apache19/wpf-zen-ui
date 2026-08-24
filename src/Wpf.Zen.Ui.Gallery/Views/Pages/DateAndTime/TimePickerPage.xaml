@@ -11,7 +11,7 @@
     xmlns:ui="http://schemas.thezendev.com/wpf/2027"
     Title="TimePickerPage"
     controls:PageControlDocumentation.DocumentationType="{x:Type ui:TimePicker}"
-    Style="{ui:DynamicStyle DynamicScrollPage}"
+    ui:NavigationView.IsNavigationFrameScrollEnabled="True"
     d:DataContext="{d:DesignInstance vm:TimePickerViewModel,
                                      IsDesignTimeCreatable=False}"
     d:DesignWidth="800"

@@ -10,7 +10,7 @@
     xmlns:models="clr-namespace:Wpf.Zen.Ui.Gallery.Models"
     xmlns:ui="http://schemas.thezendev.com/wpf/2027"
     Title="DialogsAndFlyoutsPage"
-    Style="{ui:DynamicStyle DynamicScrollPage}"
+    ui:NavigationView.IsNavigationFrameScrollEnabled="True"
     controls:PageControlDocumentation.Show="False"
     d:DataContext="{d:DesignInstance vm:LayoutViewModel,
                                      IsDesignTimeCreatable=False}"

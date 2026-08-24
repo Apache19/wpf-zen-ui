@@ -10,7 +10,7 @@
     xmlns:ui="http://schemas.thezendev.com/wpf/2027"
     xmlns:vm="clr-namespace:Wpf.Zen.Ui.Gallery.ViewModels.Pages.DateAndTime"
     Title="CalendarPage"
-    Style="{ui:DynamicStyle DynamicScrollPage}"
+    ui:NavigationView.IsNavigationFrameScrollEnabled="True"
     d:DataContext="{d:DesignInstance vm:CalendarViewModel,
                                      IsDesignTimeCreatable=False}"
     d:DesignWidth="800"

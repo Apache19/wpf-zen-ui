@@ -18,145 +18,97 @@ namespace Wpf.Zen.Ui.Controls;
 [StyleTypedProperty(Property = nameof(FooterMenuItemContainerStyle), StyleTargetType = typeof(NavigationViewItem))]
 public partial class NavigationView
 {
-    #region Read-only attached DP: ContentPadding
+    #region Attached DP: IsNavigationFrameScrollEnabled
 
-    private static readonly DependencyPropertyKey ContentPaddingPropertyKey =
-        DependencyProperty.RegisterAttachedReadOnly(
-            "ContentPadding",
-            typeof(Thickness),
+    /// <summary>
+    /// Identifies the <c>NavigationView.IsNavigationFrameScrollEnabled</c> attached dependency
+    /// property.
+    /// </summary>
+    /// <remarks>
+    /// The default value is <see langword="false"/>. Set this property on a navigation content root
+    /// to request that its owning <see cref="NavigationView"/> place the stable navigation frame
+    /// inside a <see cref="DynamicScrollViewer"/>. The navigation view inspects only the root before
+    /// passing it to WPF's <see cref="Frame"/>; the value is not inherited and changing it after a
+    /// navigation has committed does not retroactively replace the host layout.
+    ///
+    /// This contract is deliberately independent from <see cref="ScrollViewer.CanContentScroll"/>.
+    /// That WPF property continues to select logical or physical scrolling on the actual scroll
+    /// viewer and must not also control whether NavigationView creates a viewer.
+    /// </remarks>
+    public static readonly DependencyProperty IsNavigationFrameScrollEnabledProperty =
+        DependencyProperty.RegisterAttached(
+            "IsNavigationFrameScrollEnabled",
+            typeof(bool),
             typeof(NavigationView),
-            new FrameworkPropertyMetadata(default(Thickness), FrameworkPropertyMetadataOptions.Inherits)
+            new FrameworkPropertyMetadata(false)
         );
 
     /// <summary>
-    /// Identifies the read-only <c>NavigationView.ContentPadding</c> attached dependency property.
+    /// Gets whether <paramref name="element"/> requests scrolling from its navigation frame.
     /// </summary>
-    /// <remarks>
-    /// <see cref="NavigationView"/> publishes its <see cref="Control.Padding"/> value on the root
-    /// object currently hosted by its private <see cref="Frame"/>. The value then inherits through
-    /// that root's page subtree, allowing a page-owned scroll viewer to use it as content padding
-    /// while its own viewport remains edge-to-edge. It is read-only because the value describes
-    /// navigation-host state and must not diverge from the owning control.
-    /// </remarks>
-    public static readonly DependencyProperty ContentPaddingProperty =
-        ContentPaddingPropertyKey.DependencyProperty;
-
-    /// <summary>
-    /// Gets the content inset published by the <see cref="NavigationView"/> currently hosting
-    /// <paramref name="element"/>.
-    /// </summary>
-    /// <param name="element">
-    /// The navigated root element, or one of its descendants, from which to read the
-    /// host-provided inset.
-    /// </param>
-    /// <returns>
-    /// The owning navigation view's <see cref="Control.Padding"/>, or an empty
-    /// <see cref="Thickness"/> when the element is not current navigation content.
-    /// </returns>
-    /// <remarks>
-    /// WPF's <see cref="Frame"/> uses <see cref="InheritanceBehavior.SkipToAppNow"/>, so a
-    /// navigated <see cref="Page"/> cannot reliably locate the frame with an ancestor binding or
-    /// inherit a property from it. This attached value is the explicit bridge for layout metadata;
-    /// it does not add scrolling and does not modify any page-owned layout property. The value
-    /// participates in property-value inheritance only after it has been published on the current
-    /// navigation root; it does not cross into a Page from the Frame.
-    /// </remarks>
-    [AttachedPropertyBrowsableForType(typeof(DependencyObject))]
-    public static Thickness GetContentPadding(DependencyObject element)
+    /// <param name="element">The navigation content root to read.</param>
+    /// <returns><see langword="true"/> when the navigation frame should be scrollable.</returns>
+    [AttachedPropertyBrowsableForType(typeof(FrameworkElement))]
+    public static bool GetIsNavigationFrameScrollEnabled(DependencyObject element)
     {
         if (element is null)
         {
             throw new ArgumentNullException(nameof(element));
         }
 
-        return (Thickness)element.GetValue(ContentPaddingProperty);
+        return (bool)element.GetValue(IsNavigationFrameScrollEnabledProperty);
     }
 
-    private static void OnPaddingChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    /// <summary>
+    /// Sets whether <paramref name="element"/> requests scrolling from its navigation frame.
+    /// </summary>
+    /// <param name="element">The navigation content root to configure.</param>
+    /// <param name="value">
+    /// <see langword="true"/> to wrap the navigation frame in the host's dynamic scroll viewer;
+    /// otherwise, <see langword="false"/>.
+    /// </param>
+    public static void SetIsNavigationFrameScrollEnabled(DependencyObject element, bool value)
     {
-        if (d is NavigationView navigationView)
+        if (element is null)
         {
-            navigationView.UpdateNavigatedContentPadding();
+            throw new ArgumentNullException(nameof(element));
         }
+
+        element.SetValue(IsNavigationFrameScrollEnabledProperty, value);
     }
 
     #endregion
 
-    #region Attached DP: IsContentPaddingHandled
+    #region Read-only DP: IsNavigationFrameScrollActive
 
-    /// <summary>
-    /// Identifies the <c>NavigationView.IsContentPaddingHandled</c> attached dependency property.
-    /// </summary>
-    /// <remarks>
-    /// The default value is <see langword="false"/>. In that mode the private navigation frame
-    /// applies <see cref="Control.Padding"/> outside the current content, which is appropriate for
-    /// ordinary pages. A page template that places a scroll viewer at its outer edge should set
-    /// this value to <see langword="true"/> and apply <see cref="ContentPaddingProperty"/> inside
-    /// that viewer instead. This explicit contract avoids inferring layout ownership from
-    /// <see cref="ScrollViewer.CanContentScrollProperty"/> or from an incompletely generated visual
-    /// tree.
-    /// </remarks>
-    public static readonly DependencyProperty IsContentPaddingHandledProperty =
-        DependencyProperty.RegisterAttached(
-            "IsContentPaddingHandled",
+    private static readonly DependencyPropertyKey IsNavigationFrameScrollActivePropertyKey =
+        DependencyProperty.RegisterReadOnly(
+            nameof(IsNavigationFrameScrollActive),
             typeof(bool),
             typeof(NavigationView),
-            new FrameworkPropertyMetadata(false, OnIsContentPaddingHandledChanged)
+            new FrameworkPropertyMetadata(false)
         );
 
-    private static void OnIsContentPaddingHandledChanged(
-        DependencyObject d,
-        DependencyPropertyChangedEventArgs e
-    )
-    {
-        // A DynamicResource page style can resolve after Frame.Navigated has fired. The private
-        // host marker lets this late change refresh only the NavigationView that currently owns
-        // the content, without walking across Frame's inheritance boundary.
-        if (d.GetValue(ContentPaddingHostProperty) is NavigationView navigationView)
-        {
-            navigationView.UpdateNavigationFramePadding();
-        }
-    }
+    /// <summary>
+    /// Identifies the read-only <see cref="IsNavigationFrameScrollActive"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty IsNavigationFrameScrollActiveProperty =
+        IsNavigationFrameScrollActivePropertyKey.DependencyProperty;
 
     /// <summary>
-    /// Gets whether <paramref name="element"/> applies the owning navigation view's
-    /// <see cref="ContentPaddingProperty"/> within its own layout.
+    /// Gets a value indicating whether the current navigation frame is hosted by the built-in
+    /// dynamic scroll viewer.
     /// </summary>
-    /// <param name="element">The navigation content root to inspect.</param>
-    /// <returns>
-    /// <see langword="true"/> when the content handles the inset; otherwise,
-    /// <see langword="false"/>.
-    /// </returns>
-    [AttachedPropertyBrowsableForType(typeof(DependencyObject))]
-    public static bool GetIsContentPaddingHandled(DependencyObject element)
-    {
-        if (element is null)
-        {
-            throw new ArgumentNullException(nameof(element));
-        }
-
-        return (bool)element.GetValue(IsContentPaddingHandledProperty);
-    }
-
-    /// <summary>
-    /// Sets whether <paramref name="element"/> applies the owning navigation view's
-    /// <see cref="ContentPaddingProperty"/> within its own layout.
-    /// </summary>
-    /// <param name="element">The navigation content root on which to declare layout ownership.</param>
-    /// <param name="value">
-    /// <see langword="true"/> to keep the content edge-to-edge and consume
-    /// <see cref="ContentPaddingProperty"/> inside it; <see langword="false"/> to let the frame
-    /// apply the inset outside the content.
-    /// </param>
-    public static void SetIsContentPaddingHandled(DependencyObject element, bool value)
-    {
-        if (element is null)
-        {
-            throw new ArgumentNullException(nameof(element));
-        }
-
-        element.SetValue(IsContentPaddingHandledProperty, value);
-    }
+    /// <remarks>
+    /// This value is derived from <see cref="IsNavigationFrameScrollEnabledProperty"/> on the
+    /// destination root before WPF receives the navigation request. It is read-only so custom
+    /// templates can select a presentation without allowing application code to create a layout
+    /// state that disagrees with the current page contract.
+    /// </remarks>
+    [Browsable(false)]
+    [ReadOnly(true)]
+    public bool IsNavigationFrameScrollActive =>
+        (bool)GetValue(IsNavigationFrameScrollActiveProperty);
 
     #endregion
 

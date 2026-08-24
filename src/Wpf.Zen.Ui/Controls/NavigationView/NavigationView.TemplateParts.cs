@@ -12,7 +12,7 @@ namespace Wpf.Zen.Ui.Controls;
 /// <content>
 /// Defines the template parts for the <see cref="NavigationView"/> control
 /// </content>
-[TemplatePart(Name = PartNavigationFrameHost, Type = typeof(ContentPresenter))]
+[TemplatePart(Name = PartNavigationFrameHost, Type = typeof(ContentControl))]
 [TemplatePart(Name = PartMenuItemsList, Type = typeof(NavigationViewList))]
 [TemplatePart(Name = PartFooterMenuItemsList, Type = typeof(NavigationViewList))]
 [TemplatePart(Name = PartPaneButtonsPresenter, Type = typeof(ContentPresenter))]
@@ -20,9 +20,10 @@ namespace Wpf.Zen.Ui.Controls;
 public partial class NavigationView
 {
     /// <summary>
-    /// Template slot that hosts the control-owned WPF <see cref="Frame"/>.
-    /// Keeping the frame outside the generated template subtree preserves the current page and the
-    /// navigation service when <see cref="PaneDisplayMode"/> selects another template.
+    /// Template host that presents the control-owned WPF <see cref="Frame"/> either directly or
+    /// inside a dynamic scroll viewer. Keeping the frame outside the generated template subtree
+    /// preserves the current page and navigation service when <see cref="PaneDisplayMode"/> selects
+    /// another template.
     /// </summary>
     private const string PartNavigationFrameHost = "PART_NavigationFrameHost";
 
@@ -53,7 +54,7 @@ public partial class NavigationView
     /// <remarks>
     /// This is intentionally an implementation field rather than a public presenter control. A
     /// native <see cref="Frame"/> already supplies the required content and navigation behavior;
-    /// page scrolling remains part of each page's own visual tree.
+    /// the surrounding template independently supplies optional host scrolling.
     /// </remarks>
     private readonly Frame _navigationFrame = CreateNavigationFrame();
 
@@ -62,7 +63,7 @@ public partial class NavigationView
     /// built-in template provides this required part; it is cleared before a new template is
     /// attached because a WPF element cannot simultaneously have two visual parents.
     /// </summary>
-    protected ContentPresenter NavigationFrameHost { get; set; } = null!;
+    protected ContentControl NavigationFrameHost { get; set; } = null!;
 
     /// <summary>
     /// Gets or sets the required list that hosts the primary navigation menu.
@@ -107,7 +108,7 @@ public partial class NavigationView
         // children explicitly before assigning them to slots in the newly generated subtree.
         if (NavigationFrameHost is not null)
         {
-            NavigationFrameHost.SetCurrentValue(ContentPresenter.ContentProperty, null);
+            NavigationFrameHost.SetCurrentValue(ContentControl.ContentProperty, null);
         }
 
         if (PaneButtonsPresenter is not null)
@@ -123,14 +124,14 @@ public partial class NavigationView
 
         base.OnApplyTemplate();
 
-        NavigationFrameHost = RequireTemplateChild<ContentPresenter>(PartNavigationFrameHost);
+        NavigationFrameHost = RequireTemplateChild<ContentControl>(PartNavigationFrameHost);
         MenuItemsList = RequireTemplateChild<NavigationViewList>(PartMenuItemsList);
         FooterMenuItemsList = RequireTemplateChild<NavigationViewList>(PartFooterMenuItemsList);
         PaneButtonsPresenter = GetTemplateChild(PartPaneButtonsPresenter) as ContentPresenter;
 
         UpdateMenuItemsHosts();
 
-        NavigationFrameHost.SetCurrentValue(ContentPresenter.ContentProperty, _navigationFrame);
+        NavigationFrameHost.SetCurrentValue(ContentControl.ContentProperty, _navigationFrame);
 
         if (GetTemplateChild(PartAutoSuggestBoxButton) is ButtonBase autoSuggestBoxSymbolButton)
         {

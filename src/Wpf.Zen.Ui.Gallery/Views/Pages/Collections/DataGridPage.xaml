@@ -14,7 +14,7 @@
     d:DataContext="{d:DesignInstance vm:DataGridViewModel, IsDesignTimeCreatable=False}"
     d:DesignWidth="800"
     Foreground="{ui:DynamicBrush TextFillPrimary}"
-    Style="{ui:DynamicStyle DynamicScrollPage}"
+    ui:NavigationView.IsNavigationFrameScrollEnabled="True"
     mc:Ignorable="d">
     <Page.Resources>
         <system:String x:Key="PageXamlUrl">https://github.com/apachezy/wpfui/blob/development/src/Wpf.Zen.Ui/Resources/Controls/DataGrid.xaml</system:String>

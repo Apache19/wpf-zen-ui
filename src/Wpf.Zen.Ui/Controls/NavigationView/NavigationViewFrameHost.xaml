@@ -1,0 +1,65 @@
+<!--
+    This Source Code Form is subject to the terms of the MIT License.
+    If a copy of the MIT License was not distributed with this file, You can obtain one at https://opensource.org/licenses/MIT.
+    Copyright (C) Leszek Pomianowski and WPF UI Contributors.
+    All Rights Reserved.
+-->
+
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="clr-namespace:Wpf.Zen.Ui.Controls">
+
+    <!--
+        The stable Frame remains owned by NavigationView; this ContentControl style owns only its
+        presentation. Keeping these templates outside a Frame subclass prevents navigation and
+        layout policy from becoming one inseparable control contract. Padding is assigned by each
+        NavigationView template because the frame region intentionally excludes the header's top
+        inset.
+    -->
+    <ControlTemplate x:Key="NavigationFrameHostTemplate" TargetType="{x:Type ContentControl}">
+        <ContentPresenter
+            Margin="{TemplateBinding Padding}"
+            HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+            VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+            Content="{TemplateBinding Content}"
+            ContentStringFormat="{TemplateBinding ContentStringFormat}"
+            ContentTemplate="{TemplateBinding ContentTemplate}"
+            ContentTemplateSelector="{TemplateBinding ContentTemplateSelector}"
+            SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
+    </ControlTemplate>
+
+    <ControlTemplate x:Key="ScrollableNavigationFrameHostTemplate" TargetType="{x:Type ContentControl}">
+        <!--
+            The outer viewer scrolls a complete Frame, so its extent is necessarily physical. Pin
+            CanContentScroll to false instead of allowing an unrelated inherited attached value to
+            make ScrollViewer search the Frame for IScrollInfo.
+        -->
+        <controls:DynamicScrollViewer
+            Padding="{TemplateBinding Padding}"
+            CanContentScroll="False"
+            FlowDirection="{TemplateBinding FlowDirection}"
+            Focusable="False">
+            <ContentPresenter
+                HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                Content="{TemplateBinding Content}"
+                ContentStringFormat="{TemplateBinding ContentStringFormat}"
+                ContentTemplate="{TemplateBinding ContentTemplate}"
+                ContentTemplateSelector="{TemplateBinding ContentTemplateSelector}"
+                SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
+        </controls:DynamicScrollViewer>
+    </ControlTemplate>
+
+    <Style x:Key="NavigationFrameHostStyle" TargetType="{x:Type ContentControl}">
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="VerticalContentAlignment" Value="Stretch" />
+        <Setter Property="Template" Value="{StaticResource NavigationFrameHostTemplate}" />
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding IsNavigationFrameScrollActive, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationView}}}" Value="True">
+                <Setter Property="Template" Value="{StaticResource ScrollableNavigationFrameHostTemplate}" />
+            </DataTrigger>
+        </Style.Triggers>
+    </Style>
+
+</ResourceDictionary>

@@ -10,7 +10,7 @@
     xmlns:ui="http://schemas.thezendev.com/wpf/2027"
     xmlns:vm="clr-namespace:Wpf.Zen.Ui.Gallery.ViewModels.Pages.Navigation"
     Title="NavigationViewPage"
-    Style="{ui:DynamicStyle DynamicScrollPage}"
+    ui:NavigationView.IsNavigationFrameScrollEnabled="True"
     controls:PageControlDocumentation.DocumentationType="{x:Type ui:NavigationView}"
     d:Background="{ui:DynamicBrush WindowBackground}"
     d:DataContext="{d:DesignInstance vm:NavigationViewViewModel, IsDesignTimeCreatable=False}"

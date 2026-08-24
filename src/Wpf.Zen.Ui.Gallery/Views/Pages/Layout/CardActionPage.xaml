@@ -11,7 +11,7 @@
     xmlns:vm="clr-namespace:Wpf.Zen.Ui.Gallery.ViewModels.Pages.Layout"
     Title="CardActionPage"
     d:DesignWidth="800"
-    Style="{ui:DynamicStyle DynamicScrollPage}"
+    ui:NavigationView.IsNavigationFrameScrollEnabled="True"
     d:Background="{ui:DynamicBrush WindowBackground}"
     Foreground="{ui:DynamicBrush TextFillPrimary}"
     mc:Ignorable="d">

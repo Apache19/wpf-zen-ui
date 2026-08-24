@@ -39,7 +39,7 @@
         <ui:NavigationView
             x:Name="NavigationView"
             Grid.Row="1"
-            Padding="42,0,42,0"
+            Padding="42,32,42,0"
             FooterMenuItemsSource="{Binding ViewModel.FooterMenuItems, Mode=OneWay}"
             FrameMargin="0"
             LeftPaneOpenWidth="300"
@@ -51,7 +51,7 @@
             TitleBar="{Binding ElementName=TitleBar, Mode=OneWay}"
             Transition="FadeInWithSlide">
             <ui:NavigationView.Header>
-                <StackPanel Margin="42,32,42,20">
+                <StackPanel Margin="0,0,0,20">
                     <ui:BreadcrumbBar
                         ui:IconPresenter.IconSize="18"
                         ui:IconPresenter.IconWeight="SemiBold"
@@ -119,8 +119,8 @@
                     Grid.Column="1"
                     Padding="9"
                     VerticalAlignment="Center"
-                    Click="ThemeButton_OnClick"
-                    ui:IconAssist.Icon="{ui:FluentIconSource WeatherSunny24}" />
+                    ui:IconAssist.Icon="{ui:FluentIconSource WeatherSunny24}"
+                    Click="ThemeButton_OnClick" />
             </Grid>
 
         </ui:TitleBar>
@@ -150,6 +150,7 @@
         <ui:SnackbarPresenter
             x:Name="SnackbarPresenter"
             Grid.Row="0"
-            Grid.RowSpan="2" />
+            Grid.RowSpan="2"
+            d:Visibility="Collapsed" />
     </Grid>
 </ui:FluentWindow>

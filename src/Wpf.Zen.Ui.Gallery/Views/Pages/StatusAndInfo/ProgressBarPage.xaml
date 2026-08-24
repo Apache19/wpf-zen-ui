@@ -12,7 +12,7 @@
     d:DataContext="{d:DesignInstance vm:ProgressBarViewModel, IsDesignTimeCreatable=False}"
     d:DesignWidth="800"
     Foreground="{ui:DynamicBrush TextFillPrimary}"
-    Style="{ui:DynamicStyle DynamicScrollPage}"
+    ui:NavigationView.IsNavigationFrameScrollEnabled="True"
     mc:Ignorable="d">
 
     <controls:ControlExample

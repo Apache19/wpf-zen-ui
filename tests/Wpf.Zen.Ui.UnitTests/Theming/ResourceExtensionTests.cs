@@ -103,10 +103,6 @@ public class ResourceExtensionTests
             new DynamicColorExtension(ColorToken.SystemWindowText).ResourceKey
         );
         Assert.Same(
-            StyleKeys.DynamicScrollPageStyle,
-            new StaticStyleExtension(StyleToken.DynamicScrollPage).ResourceKey
-        );
-        Assert.Same(
             TemplateKeys.DefaultValidationTemplate,
             new StaticTemplateExtension(TemplateToken.DefaultValidation).ResourceKey
         );
