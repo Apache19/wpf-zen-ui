@@ -21,7 +21,7 @@
             Margin="0,0,0,8"
             FontTypography="BodyStrong"
             Text="Appearance &amp; behavior" />
-        <ui:CardControl Margin="0,0,0,12" ui:IconAssist.Icon="{ui:FluentIconSource Color24}">
+        <ui:CardControl Margin="0,0,0,12" Icon="{ui:FluentIconSource Color24}">
             <ui:CardControl.Header>
                 <Grid>
                     <Grid.RowDefinitions>
@@ -55,7 +55,7 @@
 
         </ui:CardControl>
 
-        <ui:CardControl Margin="0,0,0,12" ui:IconAssist.Icon="{ui:FluentIconSource AlignSpaceEvenlyVertical20}">
+        <ui:CardControl Margin="0,0,0,12" Icon="{ui:FluentIconSource AlignSpaceEvenlyVertical20}">
             <ui:CardControl.Header>
                 <ui:TextBlock
                     Grid.Row="0"
@@ -74,7 +74,7 @@
             Margin="0,24,0,8"
             FontTypography="BodyStrong"
             Text="About" />
-        <ui:CardExpander ContentPadding="0" ui:IconAssist.Icon="{ui:ImageIcon 'pack://application:,,,/Assets/wpfui.png', Width=38, Height=35}">
+        <ui:CardExpander ContentPadding="0" Icon="{ui:ImageIcon 'pack://application:,,,/Assets/wpfui.png', Width=38, Height=35}">
             <ui:CardExpander.Header>
                 <Grid>
                     <Grid.RowDefinitions>

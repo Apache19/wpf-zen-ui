@@ -18,19 +18,8 @@
                 BorderThickness="{TemplateBinding BorderThickness}"
                 CornerRadius="{TemplateBinding Border.CornerRadius}">
                 <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="*" />
-                    </Grid.ColumnDefinitions>
-                    <controls:IconPresenter
-                        x:Name="IconPresenter"
-                        Margin="{TemplateBinding controls:IconAssist.IconMargin}"
-                        VerticalAlignment="Center"
-                        Content="{TemplateBinding controls:IconAssist.Icon}"
-                        Focusable="False" />
                     <controls:PlaceholderControl
                         x:Name="PART_Placeholder"
-                        Grid.Column="1"
                         Margin="2,0"
                         Padding="{TemplateBinding Padding}"
                         HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
@@ -39,7 +28,6 @@
 
                     <controls:PassiveScrollViewer
                         x:Name="PART_ContentHost"
-                        Grid.Column="1"
                         controls:ScrollViewerAssist.OverlayMode="Traditional"
                         Focusable="false"
                         HorizontalScrollBarVisibility="Hidden"
@@ -55,9 +43,6 @@
                 Visibility="Collapsed" />
         </Grid>
         <ControlTemplate.Triggers>
-            <Trigger Property="controls:IconAssist.Icon" Value="{x:Null}">
-                <Setter TargetName="IconPresenter" Property="Visibility" Value="Collapsed" />
-            </Trigger>
             <Trigger Property="IsMouseOver" Value="True">
                 <Setter TargetName="ContentBorder" Property="Background" Value="{m:DynamicBrush ControlFillPrimary}" />
                 <!--  TODO: Update theme style — change ControlStrokeColorDefault to Primary and apply it to the border here  -->
@@ -98,7 +83,6 @@
         <Setter Property="SnapsToDevicePixels" Value="True" />
         <Setter Property="Validation.ErrorTemplate" Value="{m:DynamicTemplate DefaultValidation}" />
         <Setter Property="ContextMenu" Value="{StaticResource DefaultEditorContextMenu}" />
-        <Setter Property="controls:IconAssist.IconMargin" Value="10,0,0,0" />
         <Setter Property="Template" Value="{StaticResource DefaultTextBoxControlTemplate}" />
         <Style.Triggers>
             <MultiTrigger>

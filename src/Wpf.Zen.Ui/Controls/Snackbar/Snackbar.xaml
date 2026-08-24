@@ -12,7 +12,7 @@
     xmlns:m="clr-namespace:Wpf.Zen.Ui.Markup">
 
     <Style TargetType="{x:Type controls:Snackbar}">
-        <Setter Property="controls:IconAssist.IconMargin" Value="0,0,12,0" />
+        <Setter Property="IconMargin" Value="0,0,12,0" />
         <Setter Property="Foreground" Value="{m:DynamicBrush TextFillPrimary}" />
         <Setter Property="ContentForeground" Value="{m:DynamicBrush TextFillPrimary}" />
         <Setter Property="Background" Value="{m:DynamicBrush AcrylicBackgroundFillDefault}" />
@@ -60,9 +60,9 @@
                                 <ContentPresenter
                                     x:Name="CardIcon"
                                     Grid.Column="0"
-                                    Margin="{TemplateBinding controls:IconAssist.IconMargin}"
+                                    Margin="{TemplateBinding IconMargin}"
                                     VerticalAlignment="Center"
-                                    Content="{TemplateBinding controls:IconAssist.Icon}"
+                                    Content="{TemplateBinding Icon}"
                                     TextElement.FontSize="28"
                                     TextElement.Foreground="{TemplateBinding Foreground}" />
 
@@ -113,15 +113,15 @@
                                     Appearance="{TemplateBinding Appearance}"
                                     Command="{Binding Path=TemplateButtonCommand, Mode=OneWay, RelativeSource={RelativeSource TemplatedParent}}"
                                     Foreground="{TemplateBinding Foreground}">
-                                    <controls:IconAssist.Icon>
+                                    <controls:Button.Icon>
                                         <controls:FluentIcon Symbol="Dismiss48" />
-                                    </controls:IconAssist.Icon>
+                                    </controls:Button.Icon>
                                 </controls:Button>
                             </Grid>
                         </Border>
                     </Grid>
                     <ControlTemplate.Triggers>
-                        <Trigger Property="controls:IconAssist.Icon" Value="{x:Null}">
+                        <Trigger Property="Icon" Value="{x:Null}">
                             <Setter TargetName="CardIcon" Property="Margin" Value="0" />
                         </Trigger>
                         <Trigger Property="IsCloseButtonEnabled" Value="False">

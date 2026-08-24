@@ -25,7 +25,7 @@
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
-                <ui:CardAction Grid.Column="0" ui:IconAssist.Icon="{ui:ImageIcon 'pack://application:,,,/Assets/wpfui.png'}">
+                <ui:CardAction Grid.Column="0" Icon="{ui:ImageIcon 'pack://application:,,,/Assets/wpfui.png'}">
                     <StackPanel>
                         <ui:TextBlock
                             Margin="0"
@@ -47,9 +47,9 @@
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
                 <ui:CardAction Grid.Column="0">
-                    <ui:IconAssist.Icon>
+                    <ui:CardAction.Icon>
                         <ui:FluentIcon FontSize="43" Symbol="DocumentEdit20" />
-                    </ui:IconAssist.Icon>
+                    </ui:CardAction.Icon>
                     <StackPanel>
                         <ui:TextBlock
                             Margin="0"

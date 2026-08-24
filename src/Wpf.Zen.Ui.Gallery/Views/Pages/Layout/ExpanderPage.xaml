@@ -42,7 +42,7 @@
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
-                <ui:CardExpander Grid.Column="0" ui:IconAssist.Icon="{ui:FluentIconSource PlaySettings20}">
+                <ui:CardExpander Grid.Column="0" Icon="{ui:FluentIconSource PlaySettings20}">
                     <ui:CardExpander.Header>
                         <Grid>
                             <Grid.RowDefinitions>
@@ -85,7 +85,7 @@
                         <ui:CardControl
                             Margin="0,0.5,0,0"
                             Padding="20,10,20,10"
-                            ui:IconAssist.Icon="{ui:FluentIconSource FlashSettings24}">
+                            Icon="{ui:FluentIconSource FlashSettings24}">
                             <ui:CardControl.Header>
                                 <StackPanel>
                                     <ui:TextBlock
@@ -101,7 +101,7 @@
                                         TextWrapping="WrapWithOverflow" />
                                 </StackPanel>
                             </ui:CardControl.Header>
-                            <ui:DropDownButton Content="Hello" ui:IconAssist.Icon="{ui:FluentIconSource Fluent24}">
+                            <ui:DropDownButton Content="Hello" Icon="{ui:FluentIconSource Fluent24}">
                                 <ui:DropDownButton.Flyout>
                                     <ContextMenu>
                                         <MenuItem Header="Add" />

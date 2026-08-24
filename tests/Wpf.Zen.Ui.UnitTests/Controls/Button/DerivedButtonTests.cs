@@ -49,12 +49,8 @@ public class DerivedButtonTests
         RunOnStaThread(
             () =>
             {
-                var firstIcon = Assert.IsType<FluentIconSource>(
-                    IconAssist.GetIcon(new CalendarDatePicker())
-                );
-                var secondIcon = Assert.IsType<FluentIconSource>(
-                    IconAssist.GetIcon(new CalendarDatePicker())
-                );
+                var firstIcon = Assert.IsType<FluentIconSource>(new CalendarDatePicker().Icon);
+                var secondIcon = Assert.IsType<FluentIconSource>(new CalendarDatePicker().Icon);
 
                 Assert.Equal(SymbolRegular.CalendarRtl24, firstIcon.Symbol);
                 Assert.Equal(SymbolRegular.CalendarRtl24, secondIcon.Symbol);
@@ -62,9 +58,9 @@ public class DerivedButtonTests
 
                 var customIcon = new FluentIcon(SymbolRegular.Clock24);
                 var calendarDatePicker = new CalendarDatePicker();
-                IconAssist.SetIcon(calendarDatePicker, customIcon);
+                calendarDatePicker.Icon = customIcon;
 
-                Assert.Same(customIcon, IconAssist.GetIcon(calendarDatePicker));
+                Assert.Same(customIcon, calendarDatePicker.Icon);
             }
         );
     }
@@ -185,7 +181,7 @@ public class DerivedButtonTests
                 var anchor = new Anchor();
                 var calendarDatePicker = new CalendarDatePicker();
                 var toggleButton = new Wpf.Zen.Ui.Controls.ToggleButton();
-                IconAssist.SetIcon(toggleButton, new FluentIcon(SymbolRegular.Calendar24));
+                toggleButton.Icon = new FluentIcon(SymbolRegular.Calendar24);
                 var button = new Wpf.Zen.Ui.Controls.Button();
                 var textBox = new Wpf.Zen.Ui.Controls.TextBox();
                 var root = new System.Windows.Controls.StackPanel();
@@ -230,7 +226,7 @@ public class DerivedButtonTests
                     );
 
                 Assert.Equal(Visibility.Visible, toggleButtonIconPresenter.Visibility);
-                Assert.Same(IconAssist.GetIcon(toggleButton), toggleButtonIconPresenter.Content);
+                Assert.Same(toggleButton.Icon, toggleButtonIconPresenter.Content);
 
                 var calendarDatePickerIconPresenter =
                     Assert.IsAssignableFrom<System.Windows.Controls.ContentPresenter>(
@@ -241,7 +237,7 @@ public class DerivedButtonTests
                     );
 
                 Assert.Same(
-                    IconAssist.GetIcon(calendarDatePicker),
+                    calendarDatePicker.Icon,
                     calendarDatePickerIconPresenter.Content
                 );
 

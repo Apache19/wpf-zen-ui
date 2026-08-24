@@ -27,7 +27,7 @@
                         VerticalAlignment="Stretch"
                         Command="{Binding ViewModel.OpenWindowCommand, RelativeSource={RelativeSource AncestorType=Page}, Mode=OneWay}"
                         CommandParameter="{Binding Value, Mode=OneTime}"
-                        ui:IconAssist.Icon="{Binding Icon, Mode=OneTime}"
+                        Icon="{Binding Icon, Mode=OneTime}"
                         IsChevronVisible="True">
                         <StackPanel>
                             <ui:TextBlock

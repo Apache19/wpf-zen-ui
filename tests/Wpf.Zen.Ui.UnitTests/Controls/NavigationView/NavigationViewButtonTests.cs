@@ -162,9 +162,11 @@ public class NavigationViewButtonTests
             Assert.Equal(typeof(ButtonBase), typeof(NavigationViewButton).BaseType);
             Assert.Equal(typeof(NavigationViewButton), style.TargetType);
 
-            Assert.Equal(typeof(object), IconAssist.IconProperty.PropertyType);
-            Assert.Null(typeof(NavigationViewButton).GetProperty("Icon"));
-            Assert.Null(typeof(NavigationViewButton).GetField("IconProperty"));
+            // The icon slot is the control's own property, so a designer can discover it on the
+            // control and it cannot be set on a control that has no icon slot.
+            Assert.Equal(typeof(object), NavigationViewButton.IconProperty.PropertyType);
+            Assert.NotNull(typeof(NavigationViewButton).GetProperty("Icon"));
+            Assert.NotNull(typeof(NavigationViewButton).GetField("IconProperty"));
             Assert.Null(typeof(NavigationViewButton).GetProperty("IconTemplate"));
             Assert.Null(typeof(NavigationViewButton).GetField("IconTemplateProperty"));
             // Navigation resources provide the native data-template path used by reusable symbol
@@ -174,8 +176,8 @@ public class NavigationViewButtonTests
             var button = new NavigationViewButton { Style = style };
             Assert.Equal(NavigationViewButtonPlacement.None, button.Placement);
             var arbitraryIcon = new Border();
-            IconAssist.SetIcon(button, arbitraryIcon);
-            Assert.Same(arbitraryIcon, IconAssist.GetIcon(button));
+            button.Icon = arbitraryIcon;
+            Assert.Same(arbitraryIcon, button.Icon);
             Assert.True(button.ApplyTemplate());
             Assert.NotNull(button.Template);
         });
@@ -359,12 +361,12 @@ public class NavigationViewButtonTests
             Assert.Equal(Visibility.Visible, paneTitlePresenter.Visibility);
             Assert.Equal(
                 SymbolRegular.LineHorizontal320,
-                Assert.IsType<FluentIconSource>(IconAssist.GetIcon(toggleButton)).Symbol
+                Assert.IsType<FluentIconSource>(toggleButton.Icon).Symbol
             );
-            Assert.Same(IconAssist.GetIcon(toggleButton), iconPresenter.Content);
+            Assert.Same(toggleButton.Icon, iconPresenter.Content);
             Assert.Equal(
                 SymbolRegular.ArrowLeft48,
-                Assert.IsType<FluentIconSource>(IconAssist.GetIcon(backButton)).Symbol
+                Assert.IsType<FluentIconSource>(backButton.Icon).Symbol
             );
 
             Assert.True(iconPresenter.ApplyTemplate());
@@ -376,7 +378,7 @@ public class NavigationViewButtonTests
             navigationView.PaneTitle = "_Navigation";
             toggleButton.Content = "Application content";
             var arbitraryIcon = new Border();
-            IconAssist.SetIcon(toggleButton, arbitraryIcon);
+            toggleButton.Icon = arbitraryIcon;
 
             Assert.Equal(Visibility.Visible, contentPresenter.Visibility);
             Assert.Equal(Visibility.Collapsed, paneTitlePresenter.Visibility);
@@ -424,7 +426,7 @@ public class NavigationViewButtonTests
 
             var autoSuggestIcon = new Border();
             var autoSuggestBox = new AutoSuggestBox();
-            IconAssist.SetIcon(autoSuggestBox, autoSuggestIcon);
+            autoSuggestBox.Icon = autoSuggestIcon;
 
             var navigationView = new Wpf.Zen.Ui.Controls.NavigationView
             {
@@ -441,21 +443,18 @@ public class NavigationViewButtonTests
                 )
             );
 
-            Assert.Same(autoSuggestIcon, IconAssist.GetIcon(autoSuggestBox));
+            Assert.Same(autoSuggestIcon, autoSuggestBox.Icon);
             Assert.Equal(
                 SymbolRegular.Search24,
-                Assert.IsType<FluentIconSource>(IconAssist.GetIcon(button)).Symbol
+                Assert.IsType<FluentIconSource>(button.Icon).Symbol
             );
 
             // The compact command represents the search role; it must not try to clone or reparent
             // arbitrary visual content owned by AutoSuggestBox.
-            IconAssist.SetIcon(
-                autoSuggestBox,
-                new System.Windows.Controls.TextBlock { Text = "Replacement" }
-            );
+            autoSuggestBox.Icon = new System.Windows.Controls.TextBlock { Text = "Replacement" };
             Assert.Equal(
                 SymbolRegular.Search24,
-                Assert.IsType<FluentIconSource>(IconAssist.GetIcon(button)).Symbol
+                Assert.IsType<FluentIconSource>(button.Icon).Symbol
             );
         });
     }
@@ -483,7 +482,7 @@ public class NavigationViewButtonTests
 
             Assert.Equal(
                 SymbolRegular.Search24,
-                Assert.IsType<FluentIconSource>(IconAssist.GetIcon(button)).Symbol
+                Assert.IsType<FluentIconSource>(button.Icon).Symbol
             );
         });
     }

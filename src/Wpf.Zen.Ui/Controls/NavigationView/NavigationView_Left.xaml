@@ -90,7 +90,7 @@
                                     x:Name="PART_AutoSuggestBoxSymbolButton"
                                     HorizontalAlignment="Left"
                                     VerticalAlignment="Center"
-                                    controls:IconAssist.Icon="{m:FluentIconSource Search24}"
+                                    Icon="{m:FluentIconSource Search24}"
                                     AutomationProperties.AutomationId="NavigationAutoSuggestBoxButton"
                                     Visibility="Hidden" />
                             </Grid>

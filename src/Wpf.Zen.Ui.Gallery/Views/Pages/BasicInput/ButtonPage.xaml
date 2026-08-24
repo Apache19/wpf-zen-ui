@@ -87,7 +87,7 @@
                     VerticalAlignment="Center"
                     Appearance="{Binding UiButtonAppearance}"
                     Content="WPF Zen UI button"
-                    ui:IconAssist.Icon="{ui:FluentIconSource Fluent24}"
+                    Icon="{ui:FluentIconSource Fluent24}"
                     IsEnabled="{Binding IsUiButtonDisabled, Converter={StaticResource BoolInvertConverter}}" />
                 <StackPanel Grid.Column="1" Orientation="Vertical">
                     <StackPanel Orientation="Horizontal">
@@ -118,7 +118,7 @@
                 HorizontalAlignment="Left"
                 Appearance="Normal"
                 Content="WPF Zen UI button with font icon"
-                ui:IconAssist.Icon="{ui:FontIcon '&#x1F308;'}" />
+                Icon="{ui:FontIcon '&#x1F308;'}" />
         </controls:ControlExample>
 
         <controls:ControlExample
@@ -130,7 +130,7 @@
                 HorizontalAlignment="Left"
                 Appearance="Normal"
                 Content="WPF Zen UI button with image icon"
-                ui:IconAssist.Icon="{ui:ImageIcon 'pack://application:,,,/Assets/wpfui.png'}" />
+                Icon="{ui:ImageIcon 'pack://application:,,,/Assets/wpfui.png'}" />
         </controls:ControlExample>
 
         <controls:ControlExample

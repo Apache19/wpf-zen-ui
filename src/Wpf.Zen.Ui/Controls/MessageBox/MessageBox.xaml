@@ -94,7 +94,7 @@
                                             Command="{Binding RelativeSource={RelativeSource AncestorType={x:Type controls:MessageBox}}, Path=TemplateButtonCommand, Mode=OneTime}"
                                             CommandParameter="{x:Static controls:MessageBoxButton.Primary}"
                                             Content="{TemplateBinding PrimaryButtonText}"
-                                            controls:IconAssist.Icon="{TemplateBinding PrimaryButtonIcon}"
+                                            Icon="{TemplateBinding PrimaryButtonIcon}"
                                             IsDefault="True"
                                             IsEnabled="{TemplateBinding IsPrimaryButtonEnabled}"
                                             Visibility="{TemplateBinding IsPrimaryButtonEnabled, Converter={StaticResource BoolToVisibilityConverter}}" />
@@ -106,7 +106,7 @@
                                             Command="{Binding RelativeSource={RelativeSource AncestorType={x:Type controls:MessageBox}}, Path=TemplateButtonCommand, Mode=OneTime}"
                                             CommandParameter="{x:Static controls:MessageBoxButton.Secondary}"
                                             Content="{TemplateBinding SecondaryButtonText}"
-                                            controls:IconAssist.Icon="{TemplateBinding SecondaryButtonIcon}"
+                                            Icon="{TemplateBinding SecondaryButtonIcon}"
                                             IsEnabled="{TemplateBinding IsSecondaryButtonEnabled}"
                                             Visibility="{TemplateBinding IsSecondaryButtonEnabled, Converter={StaticResource BoolToVisibilityConverter}}" />
 
@@ -117,7 +117,7 @@
                                             Command="{Binding RelativeSource={RelativeSource AncestorType={x:Type controls:MessageBox}}, Path=TemplateButtonCommand, Mode=OneTime}"
                                             CommandParameter="{x:Static controls:MessageBoxButton.Close}"
                                             Content="{TemplateBinding CloseButtonText}"
-                                            controls:IconAssist.Icon="{TemplateBinding CloseButtonIcon}"
+                                            Icon="{TemplateBinding CloseButtonIcon}"
                                             IsCancel="True" />
                                     </Grid>
                                 </Border>

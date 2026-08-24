@@ -11,20 +11,66 @@ using System.Windows.Input;
 namespace Wpf.Zen.Ui.Controls;
 
 /// <summary>
-/// Extends <see cref="System.Windows.Controls.Button"/> with Fluent visual states and
-/// <see cref="Appearance"/>. Its default template implements the primary icon-slot contract
-/// defined by <see cref="IconAssist"/>.
+/// Extends <see cref="System.Windows.Controls.Button"/> with Fluent visual states,
+/// <see cref="Appearance"/>, and an <see cref="Icon"/> slot presented by its default template.
 /// </summary>
 /// <example>
 /// <code lang="xml">
 /// &lt;ui:Button
 ///     Appearance="Success"
 ///     Content="WPF Zen UI button with font icon"
-///     ui:IconAssist.Icon="{ui:FluentIconSource Fluent24}" /&gt;
+///     Icon="{ui:FluentIconSource Fluent24}" /&gt;
 /// </code>
 /// </example>
 public class Button : System.Windows.Controls.Button
 {
+    #region DP: Icon
+
+    /// <summary>Identifies the <see cref="Icon"/> dependency property.</summary>
+    public static readonly DependencyProperty IconProperty = DependencyProperty.Register(
+        nameof(Icon),
+        typeof(object),
+        typeof(Button),
+        new PropertyMetadata(null)
+    );
+
+    /// <summary>
+    /// Gets or sets the content displayed in the icon slot.
+    /// </summary>
+    [Bindable(true)]
+    [Category("Appearance")]
+    public object? Icon
+    {
+        get => GetValue(IconProperty);
+        set => SetValue(IconProperty, value);
+    }
+
+    #endregion
+
+    #region DP: IconMargin
+
+    /// <summary>Identifies the <see cref="IconMargin"/> dependency property.</summary>
+    public static readonly DependencyProperty IconMarginProperty = DependencyProperty.Register(
+        nameof(IconMargin),
+        typeof(Thickness),
+        typeof(Button),
+        new PropertyMetadata(default(Thickness))
+    );
+
+    /// <summary>
+    /// Gets or sets the external margin of the icon slot. The visual default comes from the
+    /// control's style, so a locally supplied value takes precedence over it.
+    /// </summary>
+    [Bindable(true)]
+    [Category("Appearance")]
+    public Thickness IconMargin
+    {
+        get => (Thickness)GetValue(IconMarginProperty);
+        set => SetValue(IconMarginProperty, value);
+    }
+
+    #endregion
+
     #region DP: Appearance
 
     /// <summary>Identifies the <see cref="Appearance"/> dependency property.</summary>

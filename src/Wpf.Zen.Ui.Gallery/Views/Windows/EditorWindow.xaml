@@ -29,7 +29,7 @@
             <ui:TitleBar
                 Title="WPF Zen UI - Editor"
                 Grid.Row="0"
-                ui:IconAssist.Icon="pack://application:,,,/Assets/wpfui.png" />
+                Icon="pack://application:,,,/Assets/wpfui.png" />
 
             <Menu
                 Grid.Row="1"

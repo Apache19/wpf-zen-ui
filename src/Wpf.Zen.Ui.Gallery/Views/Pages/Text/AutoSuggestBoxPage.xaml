@@ -30,7 +30,7 @@
                 MinWidth="250"
                 HorizontalAlignment="Left"
                 ClearButtonEnabled="{Binding ShowClearButtonDisabled, Converter={StaticResource BoolInvertConverter}}"
-                ui:IconAssist.Icon="{ui:FluentIconSource Search24}"
+                Icon="{ui:FluentIconSource Search24}"
                 OriginalItemsSource="{Binding AutoSuggestBoxSuggestions, Mode=OneWay}"
                 PlaceholderText="Search..." />
             <CheckBox

@@ -30,6 +30,53 @@ namespace Wpf.Zen.Ui.Controls;
 /// </remarks>
 public class ComboBox : System.Windows.Controls.ComboBox
 {
+    #region DP: Icon
+
+    /// <summary>Identifies the <see cref="Icon"/> dependency property.</summary>
+    public static readonly DependencyProperty IconProperty = DependencyProperty.Register(
+        nameof(Icon),
+        typeof(object),
+        typeof(ComboBox),
+        new PropertyMetadata(null)
+    );
+
+    /// <summary>
+    /// Gets or sets the content displayed in the icon slot.
+    /// </summary>
+    [Bindable(true)]
+    [Category("Appearance")]
+    public object? Icon
+    {
+        get => GetValue(IconProperty);
+        set => SetValue(IconProperty, value);
+    }
+
+    #endregion
+
+    #region DP: IconMargin
+
+    /// <summary>Identifies the <see cref="IconMargin"/> dependency property.</summary>
+    public static readonly DependencyProperty IconMarginProperty = DependencyProperty.Register(
+        nameof(IconMargin),
+        typeof(Thickness),
+        typeof(ComboBox),
+        new PropertyMetadata(default(Thickness))
+    );
+
+    /// <summary>
+    /// Gets or sets the external margin of the icon slot. The visual default comes from the
+    /// control's style, so a locally supplied value takes precedence over it.
+    /// </summary>
+    [Bindable(true)]
+    [Category("Appearance")]
+    public Thickness IconMargin
+    {
+        get => (Thickness)GetValue(IconMarginProperty);
+        set => SetValue(IconMarginProperty, value);
+    }
+
+    #endregion
+
     #region Interaction appearance
 
     /// <summary>Identifies the <see cref="MouseOverForeground"/> dependency property.</summary>

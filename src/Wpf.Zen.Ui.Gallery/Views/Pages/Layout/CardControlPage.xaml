@@ -46,7 +46,7 @@
                 <ui:CardControl
                     Margin="4"
                     Padding="20,10,20,10"
-                    ui:IconAssist.Icon="{ui:FluentIconSource FlashSettings24}">
+                    Icon="{ui:FluentIconSource FlashSettings24}">
                     <ui:CardControl.Header>
                         <StackPanel>
                             <ui:TextBlock
@@ -83,7 +83,7 @@
                 <ui:CardControl
                     Margin="4"
                     Padding="20,10,20,10"
-                    ui:IconAssist.Icon="{ui:ImageIcon 'pack://application:,,,/Assets/wpfui.png'}">
+                    Icon="{ui:ImageIcon 'pack://application:,,,/Assets/wpfui.png'}">
                     <ui:CardControl.Header>
                         <StackPanel>
                             <ui:TextBlock
@@ -99,7 +99,7 @@
                                 TextWrapping="WrapWithOverflow" />
                         </StackPanel>
                     </ui:CardControl.Header>
-                    <ui:DropDownButton Content="Hello" ui:IconAssist.Icon="{ui:FluentIconSource Fluent24}">
+                    <ui:DropDownButton Content="Hello" Icon="{ui:FluentIconSource Fluent24}">
                         <ui:DropDownButton.Flyout>
                             <ContextMenu>
                                 <MenuItem Header="Add" />

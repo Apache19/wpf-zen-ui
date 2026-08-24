@@ -30,16 +30,16 @@
                 PaneDisplayMode="Left"
                 PaneTitle="Pane Title">
                 <ui:NavigationView.AutoSuggestBox>
-                    <ui:AutoSuggestBox ui:IconAssist.Icon="{ui:FluentIconSource Search24}" PlaceholderText="Search" />
+                    <ui:AutoSuggestBox Icon="{ui:FluentIconSource Search24}" PlaceholderText="Search" />
                 </ui:NavigationView.AutoSuggestBox>
                 <ui:NavigationView.MenuItems>
                     <ui:NavigationViewItem
                         Header="Dashboard"
-                        ui:IconAssist.Icon="{ui:FluentIconSource Home24}"
+                        Icon="{ui:FluentIconSource Home24}"
                         TargetPageType="{x:Type samples:SamplePage1}" />
                     <ui:NavigationViewItem
                         Header="Items"
-                        ui:IconAssist.Icon="{ui:FluentIconSource Library24}"
+                        Icon="{ui:FluentIconSource Library24}"
                         TargetPageType="{x:Type samples:SamplePage2}">
                         <ui:NavigationViewItem.Items>
                             <ui:NavigationViewItem Header="Recent" TargetPageType="{x:Type samples:SamplePage2}" />
@@ -54,7 +54,7 @@
                 <ui:NavigationView.FooterMenuItems>
                     <ui:NavigationViewItem
                         Header="Settings"
-                        ui:IconAssist.Icon="{ui:FluentIconSource Settings24}"
+                        Icon="{ui:FluentIconSource Settings24}"
                         TargetPageType="{x:Type samples:SamplePage3}" />
                 </ui:NavigationView.FooterMenuItems>
                 <ui:NavigationView.Header>
@@ -118,9 +118,9 @@
                 <ui:NavigationView.MenuItems>
                     <ui:NavigationViewItem
                         Header="Dashboard"
-                        ui:IconAssist.Icon="{ui:FluentIconSource Home24}"
+                        Icon="{ui:FluentIconSource Home24}"
                         TargetPageType="{x:Type samples:SamplePage1}" />
-                    <ui:NavigationViewItem Header="Library" ui:IconAssist.Icon="{ui:FluentIconSource Library24}">
+                    <ui:NavigationViewItem Header="Library" Icon="{ui:FluentIconSource Library24}">
                         <ui:NavigationViewItem.Items>
                             <ui:NavigationViewItem Header="Recent" TargetPageType="{x:Type samples:SamplePage2}" />
                             <ui:NavigationViewItem Header="Folders">
@@ -134,7 +134,7 @@
                 <ui:NavigationView.FooterMenuItems>
                     <ui:NavigationViewItem
                         Header="Settings"
-                        ui:IconAssist.Icon="{ui:FluentIconSource Settings24}"
+                        Icon="{ui:FluentIconSource Settings24}"
                         TargetPageType="{x:Type samples:SamplePage3}" />
                 </ui:NavigationView.FooterMenuItems>
             </ui:NavigationView>
@@ -160,11 +160,11 @@
                 <ui:NavigationView.MenuItems>
                     <ui:NavigationViewItem
                         Header="Dashboard"
-                        ui:IconAssist.Icon="{ui:FluentIconSource Home24}"
+                        Icon="{ui:FluentIconSource Home24}"
                         TargetPageType="{x:Type samples:SamplePage1}" />
                     <ui:NavigationViewItem
                         Header="Items"
-                        ui:IconAssist.Icon="{ui:FluentIconSource Library24}"
+                        Icon="{ui:FluentIconSource Library24}"
                         TargetPageType="{x:Type samples:SamplePage2}">
                         <ui:NavigationViewItem.Items>
                             <ui:NavigationViewItem Header="Recent" TargetPageType="{x:Type samples:SamplePage2}" />
@@ -179,7 +179,7 @@
                 <ui:NavigationView.FooterMenuItems>
                     <ui:NavigationViewItem
                         Header="Settings"
-                        ui:IconAssist.Icon="{ui:FluentIconSource Settings24}"
+                        Icon="{ui:FluentIconSource Settings24}"
                         TargetPageType="{x:Type samples:SamplePage3}" />
                 </ui:NavigationView.FooterMenuItems>
                 <ui:NavigationView.Header>
@@ -250,7 +250,7 @@
                 <ui:NavigationView.MenuItems>
                     <ui:NavigationViewItem
                         Header="Menu Item 1"
-                        ui:IconAssist.Icon="{ui:FluentIconSource Home24}"
+                        Icon="{ui:FluentIconSource Home24}"
                         TargetPageType="{x:Type samples:SamplePage1}">
                         <ui:NavigationViewItem.Items>
                             <ui:NavigationViewItem Header="Menu SubItem 1" TargetPageType="{x:Type samples:SamplePage3}" />
@@ -263,19 +263,19 @@
                     </ui:NavigationViewItem>
                     <ui:NavigationViewItem
                         Header="Menu Item 2"
-                        ui:IconAssist.Icon="{ui:FluentIconSource AppFolder24}"
+                        Icon="{ui:FluentIconSource AppFolder24}"
                         TargetPageType="{x:Type samples:SamplePage2}" />
                     <ui:NavigationViewItem
                         Header="Menu Item 3"
-                        ui:IconAssist.Icon="{ui:FluentIconSource BezierCurveSquare20}"
+                        Icon="{ui:FluentIconSource BezierCurveSquare20}"
                         TargetPageType="{x:Type samples:SamplePage3}" />
                     <ui:NavigationViewItem
                         Header="Menu Item 4"
-                        ui:IconAssist.Icon="{ui:FluentIconSource Library24}"
+                        Icon="{ui:FluentIconSource Library24}"
                         TargetPageType="{x:Type samples:SamplePage1}" />
                 </ui:NavigationView.MenuItems>
                 <ui:NavigationView.FooterMenuItems>
-                    <ui:NavigationViewItem ui:IconAssist.Icon="{ui:FluentIconSource Settings24}" TargetPageType="{x:Type samples:SamplePage3}" />
+                    <ui:NavigationViewItem Icon="{ui:FluentIconSource Settings24}" TargetPageType="{x:Type samples:SamplePage3}" />
                 </ui:NavigationView.FooterMenuItems>
                 <ui:NavigationView.AutoSuggestBox>
                     <ui:AutoSuggestBox
@@ -347,7 +347,7 @@
                 <ui:NavigationView.MenuItems>
                     <ui:NavigationViewItem
                         Header="Menu Item 1"
-                        ui:IconAssist.Icon="{ui:FluentIconSource Home24}"
+                        Icon="{ui:FluentIconSource Home24}"
                         TargetPageType="{x:Type samples:SamplePage1}">
                         <ui:NavigationViewItem.Items>
                             <ui:NavigationViewItem Header="Menu SubItem 1" TargetPageType="{x:Type samples:SamplePage2}" />
@@ -360,19 +360,19 @@
                     </ui:NavigationViewItem>
                     <ui:NavigationViewItem
                         Header="Menu Item 2"
-                        ui:IconAssist.Icon="{ui:FluentIconSource AppFolder24}"
+                        Icon="{ui:FluentIconSource AppFolder24}"
                         TargetPageType="{x:Type samples:SamplePage2}" />
                     <ui:NavigationViewItem
                         Header="Menu Item 3"
-                        ui:IconAssist.Icon="{ui:FluentIconSource BezierCurveSquare20}"
+                        Icon="{ui:FluentIconSource BezierCurveSquare20}"
                         TargetPageType="{x:Type samples:SamplePage3}" />
                     <ui:NavigationViewItem
                         Header="Menu Item 4"
-                        ui:IconAssist.Icon="{ui:FluentIconSource Library24}"
+                        Icon="{ui:FluentIconSource Library24}"
                         TargetPageType="{x:Type samples:SamplePage1}" />
                 </ui:NavigationView.MenuItems>
                 <ui:NavigationView.FooterMenuItems>
-                    <ui:NavigationViewItem ui:IconAssist.Icon="{ui:FluentIconSource Settings24}" TargetPageType="{x:Type samples:SamplePage3}" />
+                    <ui:NavigationViewItem Icon="{ui:FluentIconSource Settings24}" TargetPageType="{x:Type samples:SamplePage3}" />
                 </ui:NavigationView.FooterMenuItems>
                 <ui:NavigationView.AutoSuggestBox>
                     <ui:AutoSuggestBox

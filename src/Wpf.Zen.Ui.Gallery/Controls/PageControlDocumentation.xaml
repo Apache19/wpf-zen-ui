@@ -23,7 +23,7 @@
                                 Command="{Binding Path=TemplateButtonCommand, RelativeSource={RelativeSource TemplatedParent}}"
                                 CommandParameter="doc"
                                 Content="Documentation"
-                                ui:IconAssist.Icon="{ui:FluentIconSource Document24}"
+                                Icon="{ui:FluentIconSource Document24}"
                                 Visibility="{TemplateBinding IsDocumentationLinkVisible}" />
                             <ui:Button
                                 Margin="0,0,5,0"
@@ -40,7 +40,7 @@
                             Grid.Column="1"
                             Command="{Binding Path=TemplateButtonCommand, RelativeSource={RelativeSource TemplatedParent}}"
                             CommandParameter="theme"
-                            ui:IconAssist.Icon="{ui:FluentIconSource WeatherSunny24}"
+                            Icon="{ui:FluentIconSource WeatherSunny24}"
                             ToolTip="Toggle theme" />
                         <ui:Separator
                             Grid.Column="2"
@@ -51,12 +51,12 @@
                             Grid.Column="3"
                             Command="{Binding Path=TemplateButtonCommand, RelativeSource={RelativeSource TemplatedParent}}"
                             CommandParameter="copy"
-                            ui:IconAssist.Icon="{ui:FluentIconSource Link24}"
+                            Icon="{ui:FluentIconSource Link24}"
                             ToolTip="Copy link" />
                         <ui:Anchor
                             Grid.Column="4"
                             Margin="4,0,0,0"
-                            ui:IconAssist.Icon="{ui:FluentIconSource PersonFeedback24}"
+                            Icon="{ui:FluentIconSource PersonFeedback24}"
                             NavigateUri="https://github.com/apachezy/wpfui/issues/new?assignees=pomianowski&amp;labels=bug,gallery&amp;template=bug_report.yaml&amp;title=WPF+UI+Gallery+Problem"
                             ToolTip="Send feedback" />
                     </Grid>

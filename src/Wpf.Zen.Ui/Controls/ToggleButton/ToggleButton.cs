@@ -10,7 +10,7 @@ namespace Wpf.Zen.Ui.Controls;
 /// <summary>
 /// Extends the WPF <see cref="System.Windows.Controls.Primitives.ToggleButton"/> with Fluent visuals
 /// while preserving the native checked, unchecked, and indeterminate state model. Its default
-/// template implements the primary icon-slot contract defined by <see cref="IconAssist"/>.
+/// template presents an <see cref="Icon"/> slot.
 /// </summary>
 /// <remarks>
 /// The icon is part of the default template rather than the button content. Applications can therefore
@@ -19,6 +19,53 @@ namespace Wpf.Zen.Ui.Controls;
 /// </remarks>
 public class ToggleButton : System.Windows.Controls.Primitives.ToggleButton
 {
+    #region DP: Icon
+
+    /// <summary>Identifies the <see cref="Icon"/> dependency property.</summary>
+    public static readonly DependencyProperty IconProperty = DependencyProperty.Register(
+        nameof(Icon),
+        typeof(object),
+        typeof(ToggleButton),
+        new PropertyMetadata(null)
+    );
+
+    /// <summary>
+    /// Gets or sets the content displayed in the icon slot.
+    /// </summary>
+    [Bindable(true)]
+    [Category("Appearance")]
+    public object? Icon
+    {
+        get => GetValue(IconProperty);
+        set => SetValue(IconProperty, value);
+    }
+
+    #endregion
+
+    #region DP: IconMargin
+
+    /// <summary>Identifies the <see cref="IconMargin"/> dependency property.</summary>
+    public static readonly DependencyProperty IconMarginProperty = DependencyProperty.Register(
+        nameof(IconMargin),
+        typeof(Thickness),
+        typeof(ToggleButton),
+        new PropertyMetadata(default(Thickness))
+    );
+
+    /// <summary>
+    /// Gets or sets the external margin of the icon slot. The visual default comes from the
+    /// control's style, so a locally supplied value takes precedence over it.
+    /// </summary>
+    [Bindable(true)]
+    [Category("Appearance")]
+    public Thickness IconMargin
+    {
+        get => (Thickness)GetValue(IconMarginProperty);
+        set => SetValue(IconMarginProperty, value);
+    }
+
+    #endregion
+
     /// <summary>Identifies the <see cref="CornerRadius"/> dependency property.</summary>
     public static readonly DependencyProperty CornerRadiusProperty =
         Border.CornerRadiusProperty.AddOwner(

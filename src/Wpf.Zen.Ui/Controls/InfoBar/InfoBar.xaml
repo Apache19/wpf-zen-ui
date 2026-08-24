@@ -24,12 +24,12 @@
         <Setter Property="Padding" Value="4" />
         <Setter Property="controls:Button.Appearance" Value="Transparent" />
         <Setter Property="BorderThickness" Value="0" />
-        <Setter Property="controls:IconAssist.Icon" Value="{m:FluentIconSource Dismiss24}" />
+        <Setter Property="controls:Button.Icon" Value="{m:FluentIconSource Dismiss24}" />
         <Setter Property="controls:IconPresenter.IconSize" Value="{Binding FontSize, RelativeSource={RelativeSource Self}}" />
     </Style>
 
     <Style TargetType="{x:Type controls:InfoBar}">
-        <Setter Property="controls:IconAssist.IconMargin" Value="0,0,12,-6" />
+        <Setter Property="IconMargin" Value="0,0,12,-6" />
         <Setter Property="Background" Value="{m:DynamicBrush ControlFillPrimary}" />
         <Setter Property="Padding" Value="12,10" />
         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
@@ -63,7 +63,7 @@
                                 </Grid.ColumnDefinitions>
                                 <Grid
                                     x:Name="IconHost"
-                                    Margin="{TemplateBinding controls:IconAssist.IconMargin}"
+                                    Margin="{TemplateBinding IconMargin}"
                                     VerticalAlignment="Top"
                                     TextElement.FontSize="{TemplateBinding FontSize, Converter={StaticResource IconSizeConverter}}">
                                     <controls:FluentIcon
@@ -74,7 +74,7 @@
                                     <ContentPresenter
                                         x:Name="CustomIconPresenter"
                                         VerticalAlignment="Top"
-                                        Content="{TemplateBinding controls:IconAssist.Icon}"
+                                        Content="{TemplateBinding Icon}"
                                         ContentTemplate="{TemplateBinding IconTemplate}" />
                                 </Grid>
 
@@ -116,7 +116,7 @@
                             <Setter TargetName="PART_CloseButton" Property="Visibility" Value="Collapsed" />
                         </Trigger>
 
-                        <Trigger Property="controls:IconAssist.Icon" Value="{x:Null}">
+                        <Trigger Property="Icon" Value="{x:Null}">
                             <Setter TargetName="FluentIcon" Property="Visibility" Value="Visible" />
                             <Setter TargetName="CustomIconPresenter" Property="Visibility" Value="Collapsed" />
                         </Trigger>

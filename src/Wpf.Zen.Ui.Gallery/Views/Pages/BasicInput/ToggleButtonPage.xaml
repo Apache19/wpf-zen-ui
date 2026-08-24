@@ -33,14 +33,14 @@
                     IsEnabled="{Binding IsToggleButtonDisabled, Converter={StaticResource BoolInvertConverter}}">
                     <ui:ToggleButton.Style>
                         <Style TargetType="ui:ToggleButton">
-                            <Setter Property="ui:IconAssist.Icon">
+                            <Setter Property="Icon">
                                 <Setter.Value>
                                     <ui:FluentIcon Filled="False" Symbol="LockOpen24" />
                                 </Setter.Value>
                             </Setter>
                             <Style.Triggers>
                                 <Trigger Property="IsChecked" Value="True">
-                                    <Setter Property="ui:IconAssist.Icon">
+                                    <Setter Property="Icon">
                                         <Setter.Value>
                                             <ui:FluentIcon Filled="True" Symbol="LockClosed24" />
                                         </Setter.Value>

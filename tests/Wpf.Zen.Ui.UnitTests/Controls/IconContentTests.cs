@@ -33,13 +33,13 @@ public class IconContentTests
             var style = new Style(typeof(Wpf.Zen.Ui.Controls.Button));
             style.Setters.Add(
                 new Setter(
-                    IconAssist.IconProperty,
+                    Wpf.Zen.Ui.Controls.Button.IconProperty,
                     new FluentIconSourceExtension(SymbolRegular.Settings24).ProvideValue(null!)
                 )
             );
             var button = new Wpf.Zen.Ui.Controls.Button { Style = style };
 
-            var icon = Assert.IsType<FluentIconSource>(IconAssist.GetIcon(button));
+            var icon = Assert.IsType<FluentIconSource>(button.Icon);
             Assert.Equal(SymbolRegular.Settings24, icon.Symbol);
             Assert.False(icon.Filled);
         });
@@ -51,12 +51,14 @@ public class IconContentTests
         RunOnStaThread(() =>
         {
             var content = new Border();
-            var button = new Wpf.Zen.Ui.Controls.Button();
-            IconAssist.SetIcon(button, content);
+            var button = new Wpf.Zen.Ui.Controls.Button { Icon = content };
 
-            Assert.Equal(typeof(object), IconAssist.IconProperty.PropertyType);
-            Assert.Same(content, IconAssist.GetIcon(button));
-            Assert.Same(content, button.ReadLocalValue(IconAssist.IconProperty));
+            Assert.Equal(typeof(object), Wpf.Zen.Ui.Controls.Button.IconProperty.PropertyType);
+            Assert.Same(content, button.Icon);
+            Assert.Same(
+                content,
+                button.ReadLocalValue(Wpf.Zen.Ui.Controls.Button.IconProperty)
+            );
         });
     }
 
@@ -69,19 +71,33 @@ public class IconContentTests
             var child = new Wpf.Zen.Ui.Controls.Button();
             parent.Content = child;
 
-            IconAssist.SetIconMargin(parent, new Thickness(1D, 2D, 3D, 4D));
+            var margin = new Thickness(1D, 2D, 3D, 4D);
+            parent.IconMargin = margin;
 
-            Assert.Equal(new Thickness(1D, 2D, 3D, 4D), IconAssist.GetIconMargin(parent));
-            Assert.Equal(default, IconAssist.GetIconMargin(child));
+            Assert.Equal(margin, parent.IconMargin);
+
+            // Slot layout belongs to the templated control and must not leak into the control's
+            // content. The nested button therefore keeps the value its own style supplies and
+            // never acquires a local one.
+            Assert.NotEqual(margin, child.IconMargin);
             Assert.Same(
                 DependencyProperty.UnsetValue,
-                child.ReadLocalValue(IconAssist.IconMarginProperty)
+                child.ReadLocalValue(Wpf.Zen.Ui.Controls.Button.IconMarginProperty)
+            );
+            Assert.Equal(
+                default(Thickness),
+                Wpf.Zen.Ui.Controls.Button.IconMarginProperty.DefaultMetadata.DefaultValue
             );
         });
     }
 
+    /// <summary>
+    /// The icon slot is a per-control contract, not something every WPF control opts into. Native
+    /// control styles therefore carry no icon host at all; applications that want an icon use the
+    /// library control (for example <see cref="Wpf.Zen.Ui.Controls.Button"/>) instead.
+    /// </summary>
     [Fact]
-    public void NativeButtonTemplate_ConsumesTheSharedIconContract()
+    public void NativeButtonTemplate_HasNoIconSlot()
     {
         RunOnStaThread(() =>
         {
@@ -97,18 +113,12 @@ public class IconContentTests
                 Content = "Native",
                 Style = Assert.IsType<Style>(resources[typeof(System.Windows.Controls.Button)]),
             };
-            var icon = new FluentIconSource(SymbolRegular.Home24);
-            var margin = new Thickness(1D, 2D, 3D, 4D);
-            IconAssist.SetIcon(button, icon);
-            IconAssist.SetIconMargin(button, margin);
 
             Assert.True(button.ApplyTemplate());
-            var presenter = Assert.IsType<IconPresenter>(
-                button.Template.FindName("iconPresenter", button)
-            );
 
-            Assert.Same(icon, presenter.Content);
-            Assert.Equal(margin, presenter.Margin);
+            Assert.Null(button.Template.FindName("iconPresenter", button));
+            Assert.Null(typeof(System.Windows.Controls.Button).GetProperty("Icon"));
+            Assert.Null(typeof(System.Windows.Controls.Button).GetProperty("IconMargin"));
         });
     }
 

@@ -54,10 +54,10 @@
                                 <controls:IconPresenter
                                     x:Name="IconPresenter"
                                     Grid.Row="0"
-                                    Margin="{Binding Path=(controls:IconAssist.IconMargin), RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}"
+                                    Margin="{Binding Path=IconMargin, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}"
                                     HorizontalAlignment="Center"
                                     VerticalAlignment="Center"
-                                    Content="{Binding Path=(controls:IconAssist.Icon), RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}"
+                                    Content="{Binding Path=Icon, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}"
                                     TextElement.FontSize="24" />
 
                                 <Grid
@@ -139,7 +139,7 @@
                             <DataTrigger Binding="{Binding IsSubmenuOpen, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}" Value="True">
                                 <Setter TargetName="HeaderSurface" Property="Background" Value="{m:DynamicBrush ControlFillPrimary}" />
                             </DataTrigger>
-                            <DataTrigger Binding="{Binding Path=(controls:IconAssist.Icon), RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}" Value="{x:Null}">
+                            <DataTrigger Binding="{Binding Path=Icon, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}" Value="{x:Null}">
                                 <Setter TargetName="IconPresenter" Property="Visibility" Value="Collapsed" />
                             </DataTrigger>
                             <DataTrigger Binding="{Binding InfoBadge, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}" Value="{x:Null}">

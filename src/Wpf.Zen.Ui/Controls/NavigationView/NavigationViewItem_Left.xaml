@@ -36,10 +36,10 @@
                 <ContentPresenter
                     x:Name="IconPresenter"
                     Grid.Column="0"
-                    Margin="{Binding Path=(controls:IconAssist.IconMargin), RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}"
+                    Margin="{Binding Path=IconMargin, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}"
                     HorizontalAlignment="Center"
                     VerticalAlignment="Center"
-                    Content="{Binding Path=(controls:IconAssist.Icon), RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}"
+                    Content="{Binding Path=Icon, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}"
                     TextElement.FontSize="16"
                     TextElement.Foreground="{m:DynamicBrush TextFillPrimary}" />
                 <Rectangle
@@ -140,7 +140,7 @@
                 <Setter TargetName="HeaderSurface" Property="Background" Value="{m:DynamicBrush SubtleFillSecondary}" />
             </DataTrigger>
 
-            <DataTrigger Binding="{Binding Path=(controls:IconAssist.Icon), RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}" Value="{x:Null}">
+            <DataTrigger Binding="{Binding Path=Icon, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}" Value="{x:Null}">
                 <Setter TargetName="IconColumn" Property="Width" Value="3" />
                 <Setter TargetName="IconPresenter" Property="Visibility" Value="Collapsed" />
                 <Setter TargetName="HeaderPresenter" Property="Margin" Value="10,0,0,0" />
@@ -155,7 +155,7 @@
             <MultiDataTrigger>
                 <MultiDataTrigger.Conditions>
                     <Condition Binding="{Binding IsSubItem, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}" Value="True" />
-                    <Condition Binding="{Binding Path=(controls:IconAssist.Icon), RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}" Value="{x:Null}" />
+                    <Condition Binding="{Binding Path=Icon, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}" Value="{x:Null}" />
                 </MultiDataTrigger.Conditions>
             </MultiDataTrigger>
 

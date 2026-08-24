@@ -36,9 +36,9 @@
                                 <StackPanel HorizontalAlignment="Center" Orientation="Horizontal">
                                     <ContentPresenter
                                         x:Name="IconPresenter"
-                                        Margin="{Binding Path=(controls:IconAssist.IconMargin), RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}"
+                                        Margin="{Binding Path=IconMargin, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}"
                                         VerticalAlignment="Center"
-                                        Content="{Binding Path=(controls:IconAssist.Icon), RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}" />
+                                        Content="{Binding Path=Icon, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}" />
                                     <ContentPresenter
                                         VerticalAlignment="Center"
                                         Content="{TemplateBinding Content}"
@@ -80,7 +80,7 @@
                             <!--<DataTrigger Binding="{Binding IsSubmenuOpen, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}" Value="True">
                                 <Setter TargetName="HeaderSurface" Property="Background" Value="{m:DynamicBrush SubtleFillSecondary}" />
                             </DataTrigger>-->
-                            <DataTrigger Binding="{Binding Path=(controls:IconAssist.Icon), RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}" Value="{x:Null}">
+                            <DataTrigger Binding="{Binding Path=Icon, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}" Value="{x:Null}">
                                 <Setter TargetName="IconPresenter" Property="Visibility" Value="Collapsed" />
                             </DataTrigger>
                             <DataTrigger Binding="{Binding InfoBadge, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}" Value="{x:Null}">

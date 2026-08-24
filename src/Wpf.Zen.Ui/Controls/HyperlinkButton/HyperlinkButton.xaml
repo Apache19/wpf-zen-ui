@@ -20,7 +20,7 @@
     <Thickness x:Key="HyperlinkButtonIconMargin">0,0,8,0</Thickness>
 
     <Style x:Key="DefaultUiHyperlinkButtonStyle" TargetType="{x:Type controls:HyperlinkButton}">
-        <Setter Property="controls:IconAssist.IconMargin" Value="{StaticResource HyperlinkButtonIconMargin}" />
+        <Setter Property="IconMargin" Value="{StaticResource HyperlinkButtonIconMargin}" />
         <!--  Universal WPF Zen UI focus  -->
         <Setter Property="FocusVisualStyle" Value="{DynamicResource {x:Static theming:StyleKeys.DefaultControlFocusVisualStyle}}" />
         <!--  Universal WPF Zen UI focus  -->
@@ -63,9 +63,9 @@
                             <ContentControl
                                 x:Name="ControlIcon"
                                 Grid.Column="0"
-                                Margin="{TemplateBinding controls:IconAssist.IconMargin}"
+                                Margin="{TemplateBinding IconMargin}"
                                 VerticalAlignment="Center"
-                                Content="{TemplateBinding controls:IconAssist.Icon}"
+                                Content="{TemplateBinding Icon}"
                                 Focusable="False"
                                 Foreground="{TemplateBinding Foreground}" />
 
@@ -95,7 +95,7 @@
                             <Setter TargetName="ControlIcon" Property="Foreground" Value="{m:DynamicBrush AccentTextPrimary}" />
                             <Setter TargetName="ContentPresenter" Property="TextElement.Foreground" Value="{m:DynamicBrush AccentTextPrimary}" />
                         </MultiTrigger>
-                        <Trigger Property="controls:IconAssist.Icon" Value="{x:Null}">
+                        <Trigger Property="Icon" Value="{x:Null}">
                             <Setter TargetName="ControlIcon" Property="Margin" Value="0" />
                             <Setter TargetName="ControlIcon" Property="Visibility" Value="Collapsed" />
                         </Trigger>

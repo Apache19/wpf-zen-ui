@@ -72,7 +72,7 @@ public class SplitButtonTests
                         DisabledBorderBrush  = Brushes.Gray,
                         DisabledForeground   = Brushes.LightGray,
                 };
-                IconAssist.SetIcon(splitButton, icon);
+                splitButton.Icon = icon;
                 splitButton = CreateTemplatedSplitButton(splitButton);
 
                 var primaryButton = Assert.IsType<Wpf.Zen.Ui.Controls.Button>(
@@ -98,7 +98,7 @@ public class SplitButtonTests
                 Assert.Same(command, primaryButton.Command);
                 Assert.Equal("parameter", primaryButton.CommandParameter);
                 Assert.Same(content, primaryButton.Content);
-                Assert.Same(icon, IconAssist.GetIcon(primaryButton));
+                Assert.Same(icon, primaryButton.Icon);
             }
         );
     }

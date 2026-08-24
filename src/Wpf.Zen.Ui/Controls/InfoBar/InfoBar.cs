@@ -25,8 +25,7 @@ namespace Wpf.Zen.Ui.Controls;
 /// </para>
 /// <para>
 /// <see cref="IsIconVisible"/> is the single authority for the semantic icon slot. Disabling it
-/// suppresses both the severity-derived default icon and custom
-/// <see cref="IconAssist.IconProperty"/> content, so
+/// suppresses both the severity-derived default icon and custom <see cref="Icon"/> content, so
 /// consumers do not need to clear or restore their icon value merely to change presentation.
 /// </para>
 /// <para>
@@ -53,6 +52,53 @@ public class InfoBar : ContentControl
     private const string CloseButtonPartName = "PART_CloseButton";
 
     private ButtonBase? _closeButton;
+
+    #region DP: Icon
+
+    /// <summary>Identifies the <see cref="Icon"/> dependency property.</summary>
+    public static readonly DependencyProperty IconProperty = DependencyProperty.Register(
+        nameof(Icon),
+        typeof(object),
+        typeof(InfoBar),
+        new PropertyMetadata(null)
+    );
+
+    /// <summary>
+    /// Gets or sets the content displayed in the icon slot.
+    /// </summary>
+    [Bindable(true)]
+    [Category("Appearance")]
+    public object? Icon
+    {
+        get => GetValue(IconProperty);
+        set => SetValue(IconProperty, value);
+    }
+
+    #endregion
+
+    #region DP: IconMargin
+
+    /// <summary>Identifies the <see cref="IconMargin"/> dependency property.</summary>
+    public static readonly DependencyProperty IconMarginProperty = DependencyProperty.Register(
+        nameof(IconMargin),
+        typeof(Thickness),
+        typeof(InfoBar),
+        new PropertyMetadata(default(Thickness))
+    );
+
+    /// <summary>
+    /// Gets or sets the external margin of the icon slot. The visual default comes from the
+    /// control's style, so a locally supplied value takes precedence over it.
+    /// </summary>
+    [Bindable(true)]
+    [Category("Appearance")]
+    public Thickness IconMargin
+    {
+        get => (Thickness)GetValue(IconMarginProperty);
+        set => SetValue(IconMarginProperty, value);
+    }
+
+    #endregion
 
     #region DP: IsClosable
 
@@ -223,8 +269,7 @@ public class InfoBar : ContentControl
     /// The default value is <see langword="true"/>. Setting this property to
     /// <see langword="false"/> removes the complete icon slot from the default template, including
     /// its spacing, regardless of whether the slot would otherwise contain the icon selected by
-    /// <see cref="Severity"/> or custom <see cref="IconAssist.IconProperty"/> content. The icon
-    /// value is retained and
+    /// <see cref="Severity"/> or custom <see cref="Icon"/> content. The icon value is retained and
     /// becomes visible again when this property returns to <see langword="true"/>.
     /// </remarks>
     [Bindable(true)]
@@ -248,12 +293,12 @@ public class InfoBar : ContentControl
     );
 
     /// <summary>
-    /// Gets or sets the data template used to render <see cref="IconAssist.IconProperty"/>.
+    /// Gets or sets the data template used to render <see cref="Icon"/>.
     /// </summary>
     /// <remarks>
     /// The default is <see langword="null"/>, allowing WPF to render elements directly and to use
     /// implicit data templates for model objects. This property has no effect while
-    /// <see cref="IconAssist.IconProperty"/> is <see langword="null"/>.
+    /// <see cref="Icon"/> is <see langword="null"/>.
     /// </remarks>
     [Bindable(true)]
     [Category("Content")]

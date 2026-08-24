@@ -78,7 +78,7 @@
         <Setter Property="Foreground" Value="{m:DynamicBrush TextFillPrimary}" />
         <Setter Property="Padding" Value="16,4,16,4" />
         <Setter Property="Height" Value="48" />
-        <Setter Property="controls:IconAssist.IconMargin">
+        <Setter Property="IconMargin">
             <Setter.Value>
                 <Binding Path="Padding" RelativeSource="{RelativeSource Self}" />
             </Setter.Value>
@@ -121,7 +121,7 @@
                         <Grid
                             x:Name="IconGrid"
                             Grid.Column="1"
-                            Margin="{TemplateBinding controls:IconAssist.IconMargin}"
+                            Margin="{TemplateBinding IconMargin}"
                             HorizontalAlignment="Left"
                             VerticalAlignment="Center">
 
@@ -133,7 +133,7 @@
                                 VerticalAlignment="Center"
                                 controls:TitleBar.HitTestRole="Icon"
                                 AutomationProperties.AutomationId="TitleBarIcon"
-                                Content="{TemplateBinding controls:IconAssist.Icon}"
+                                Content="{TemplateBinding Icon}"
                                 Focusable="False"
                                 RenderOptions.BitmapScalingMode="HighQuality" />
                         </Grid>
@@ -209,12 +209,12 @@
 
                         <MultiTrigger>
                             <MultiTrigger.Conditions>
-                                <Condition Property="controls:IconAssist.Icon" Value="{x:Null}" />
+                                <Condition Property="Icon" Value="{x:Null}" />
                                 <Condition Property="Title" Value="{x:Null}" />
                             </MultiTrigger.Conditions>
                             <Setter TargetName="IconGrid" Property="Visibility" Value="Collapsed" />
                         </MultiTrigger>
-                        <Trigger Property="controls:IconAssist.Icon" Value="{x:Null}">
+                        <Trigger Property="Icon" Value="{x:Null}">
                             <Setter TargetName="Icon" Property="Visibility" Value="Collapsed" />
                             <Setter TargetName="Icon" Property="Margin" Value="0" />
                         </Trigger>
@@ -231,7 +231,7 @@
         </Setter>
         <Style.Triggers>
             <Trigger Property="LeftContentState" Value="Visible">
-                <Setter Property="controls:IconAssist.IconMargin">
+                <Setter Property="IconMargin">
                     <Setter.Value>
                         <Binding
                             Path="Padding"

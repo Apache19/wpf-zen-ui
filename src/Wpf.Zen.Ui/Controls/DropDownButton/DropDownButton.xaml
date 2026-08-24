@@ -45,9 +45,9 @@
                 <ContentPresenter
                     x:Name="iconPresenter"
                     Grid.Column="0"
-                    Margin="{TemplateBinding controls:IconAssist.IconMargin}"
+                    Margin="{TemplateBinding IconMargin}"
                     VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
-                    Content="{TemplateBinding controls:IconAssist.Icon}"
+                    Content="{TemplateBinding Icon}"
                     Focusable="False"
                     SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"
                     TextElement.FontSize="{TemplateBinding FontSize, Converter={converters:DoubleToDoubleConverter Add=1}}"
@@ -73,7 +73,7 @@
             </Grid>
         </controls:UiBorder>
         <ControlTemplate.Triggers>
-            <Trigger Property="controls:IconAssist.Icon" Value="{x:Null}">
+            <Trigger Property="Icon" Value="{x:Null}">
                 <Setter TargetName="iconPresenter" Property="Visibility" Value="Collapsed" />
             </Trigger>
             <Trigger Property="IsDropDownArrowVisible" Value="False">
@@ -82,14 +82,14 @@
             <MultiTrigger>
                 <MultiTrigger.Conditions>
                     <Condition Property="Content" Value="{x:Null}" />
-                    <Condition Property="controls:IconAssist.Icon" Value="{x:Null}" />
+                    <Condition Property="Icon" Value="{x:Null}" />
                 </MultiTrigger.Conditions>
                 <Setter TargetName="DropDownChevron" Property="Margin" Value="0" />
             </MultiTrigger>
             <MultiTrigger>
                 <MultiTrigger.Conditions>
                     <Condition Property="Content" Value="" />
-                    <Condition Property="controls:IconAssist.Icon" Value="{x:Null}" />
+                    <Condition Property="Icon" Value="{x:Null}" />
                 </MultiTrigger.Conditions>
                 <Setter TargetName="DropDownChevron" Property="Margin" Value="0" />
             </MultiTrigger>

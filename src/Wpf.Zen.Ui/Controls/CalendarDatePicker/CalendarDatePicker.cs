@@ -64,7 +64,7 @@ public class CalendarDatePicker : ToggleButton
 
     static CalendarDatePicker()
     {
-        IconAssist.IconProperty.OverrideMetadata(
+        IconProperty.OverrideMetadata(
             typeof(CalendarDatePicker),
             new FrameworkPropertyMetadata(null, null, CoerceIcon)
         );
@@ -102,7 +102,7 @@ public class CalendarDatePicker : ToggleButton
     /// </summary>
     public CalendarDatePicker()
     {
-        CoerceValue(IconAssist.IconProperty);
+        CoerceValue(IconProperty);
 
         // IsCalendarOpen is the public, non-nullable state exposed by the date picker. Keep WPF's nullable
         // ToggleButton state as the binding target so an application remains free to bind IsCalendarOpen without

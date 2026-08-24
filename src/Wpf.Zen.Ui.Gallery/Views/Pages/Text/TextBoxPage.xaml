@@ -33,7 +33,7 @@
                 <ui:TextBox
                     Width="200"
                     Margin="8,0,0,0"
-                    ui:IconAssist.Icon="{ui:FluentIconSource Edit24}"
+                    Icon="{ui:FluentIconSource Edit24}"
                     PlaceholderText="Iconic Text Editor" />
                 <ui:TextBox
                     Width="200"
@@ -55,7 +55,7 @@
                 ui:ScrollViewerAssist.HideButtons="True"
                 AcceptsReturn="True"
                 HorizontalScrollBarVisibility="Disabled"
-                ui:IconAssist.Icon="{ui:FluentIconSource DocumentBulletList24}"
+                Icon="{ui:FluentIconSource DocumentBulletList24}"
                 PlaceholderText="Type something..."
                 TextWrapping="Wrap"
                 VerticalScrollBarVisibility="Auto" />
