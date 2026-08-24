@@ -16,11 +16,12 @@ namespace Wpf.Zen.Ui.Controls;
 /// </summary>
 /// <remarks>
 /// <para>
-/// <see cref="Rating"/> deliberately preserves every finite value supplied by an application.
-/// Display rounding and range limiting are presentation concerns and never replace a binding's
-/// source value. Values produced by user interaction, however, are aligned to
-/// <see cref="Precision"/> and constrained to the interval from zero through
-/// <see cref="MaximumRating"/>.
+/// <see cref="Rating"/> preserves finite values supplied by an application rather than silently
+/// rounding them to <see cref="Precision"/>. Display rounding and range limiting are presentation
+/// concerns. Values produced by user interaction are aligned to <see cref="Precision"/> and
+/// constrained to the interval from zero through <see cref="MaximumRating"/>. Reducing
+/// <see cref="MaximumRating"/> is the exception: an existing score above the new maximum is
+/// immediately clamped so the control cannot retain an impossible score after its range changes.
 /// </para>
 /// <para>
 /// A <see langword="null"/> rating represents an unrated item. In that state the control displays
@@ -91,9 +92,10 @@ public class RatingControl : Control
     /// has been assigned.
     /// </summary>
     /// <remarks>
-    /// The default is <see langword="null"/>. Finite values outside the displayed range and values
-    /// with more precision than <see cref="Precision"/> are retained unchanged. Only the star
-    /// presentation is rounded and constrained.
+    /// The default is <see langword="null"/>. Finite values assigned directly are retained without
+    /// precision rounding; only the star presentation is rounded and constrained. If
+    /// <see cref="MaximumRating"/> is subsequently reduced below the current score, the score is
+    /// clamped to that new maximum.
     /// </remarks>
     public double? Rating
     {
@@ -150,19 +152,28 @@ public class RatingControl : Control
             {
                 var control = (RatingControl)d;
                 control._previewRating = null;
+
+                // MaximumRating defines the control's score range, not merely its item count.
+                // SetCurrentValue preserves a Rating binding while publishing the clamped value
+                // through it; assigning the CLR property here would replace that value source.
+                if (control.Rating is { } rating && rating > control.MaximumRating)
+                {
+                    control.SetCurrentValue(RatingProperty, (double?)control.MaximumRating);
+                }
+
                 control.RebuildRatingItems();
             }
         ),
-        static value => value is int maximum && maximum > 0
+        validateValueCallback: static value => value is > 0
     );
 
     /// <summary>
     /// Gets or sets the number of stars displayed by the control.
     /// </summary>
     /// <remarks>
-    /// The default is <c>5</c>. The value must be greater than zero. Changing it never modifies
-    /// <see cref="Rating"/> or <see cref="PlaceholderRating"/>; it only changes the interactive and
-    /// displayed range.
+    /// The default is <c>5</c>. The value must be greater than zero. Reducing it clamps an existing
+    /// <see cref="Rating"/> to the new maximum while leaving <see cref="PlaceholderRating"/>
+    /// unchanged.
     /// </remarks>
     public int MaximumRating
     {
@@ -438,12 +449,12 @@ public class RatingControl : Control
                 break;
 
             case Key.Home:
-                SetRatingFromInteraction(0);
+                SetRatingFromKeyboard(0);
                 e.Handled = true;
                 break;
 
             case Key.End:
-                SetRatingFromInteraction(MaximumRating);
+                SetRatingFromKeyboard(MaximumRating);
                 e.Handled = true;
                 break;
 
@@ -531,8 +542,49 @@ public class RatingControl : Control
 
     private void StepRating(int direction)
     {
-        var displayedRating = GetDisplayedRating(Rating ?? PlaceholderRating);
-        SetRatingFromInteraction(displayedRating + (direction * GetPrecisionStep()));
+        // Keyboard adjustment forms a bounded sequence whose lowest state is null, followed by
+        // zero and then each precision step. It intentionally does not call
+        // SetRatingFromInteraction: that method implements repeated pointer selection clearing,
+        // which would otherwise make a held arrow key wrap at either end of the sequence.
+        if (Rating is null)
+        {
+            if (direction > 0)
+            {
+                SetRatingFromKeyboard(0);
+            }
+            else
+            {
+                SetRatingFromKeyboard(null);
+            }
+
+            return;
+        }
+
+        var displayedRating = GetDisplayedRating(Rating.Value);
+        if (direction < 0 && displayedRating <= 0)
+        {
+            SetRatingFromKeyboard(null);
+            return;
+        }
+
+        if (direction > 0 && displayedRating >= MaximumRating)
+        {
+            SetRatingFromKeyboard(MaximumRating);
+            return;
+        }
+
+        var steppedRating = displayedRating + (direction * GetPrecisionStep());
+        SetRatingFromKeyboard(NormalizeInteractiveRating(steppedRating));
+    }
+
+    private void SetRatingFromKeyboard(double? rating)
+    {
+        // Keyboard edits must not inherit IsClearEnabled's repeated pointer-selection toggle.
+        // Refresh explicitly because assigning an endpoint that is already current does not invoke
+        // the dependency-property callback, but must still dismiss a pointer preview.
+        _previewRating = null;
+        SetCurrentValue(RatingProperty, rating);
+        RefreshRatingItems();
     }
 
     private double NormalizeInteractiveRating(double rating)

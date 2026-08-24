@@ -179,6 +179,67 @@ public class RatingControlTests
     }
 
     [Fact]
+    public void ArrowKeys_StopAtMaximumAndNullInsteadOfWrapping()
+    {
+        RunOnStaThread(
+            () =>
+            {
+                var control = new TestRatingControl
+                {
+                    IsClearEnabled = true,
+                    MaximumRating = 2,
+                    Rating = 2,
+                };
+
+                control.ProcessKey(Key.Up);
+                Assert.Equal(2, control.Rating);
+
+                control.ProcessKey(Key.End);
+                Assert.Equal(2, control.Rating);
+
+                control.Rating = 0;
+                control.ProcessKey(Key.Home);
+                Assert.Equal(0, control.Rating);
+
+                control.ProcessKey(Key.Down);
+                Assert.Null(control.Rating);
+
+                control.ProcessKey(Key.Down);
+                Assert.Null(control.Rating);
+
+                control.ProcessKey(Key.Up);
+                Assert.Equal(0, control.Rating);
+            }
+        );
+    }
+
+    [Fact]
+    public void ReducingMaximumRating_ClampsRatingAndPreservesBinding()
+    {
+        RunOnStaThread(
+            () =>
+            {
+                var source = new BoundRatingSource { Rating = 7 };
+                var control = new RatingControl { MaximumRating = 10 };
+                control.SetBinding(
+                    RatingControl.RatingProperty,
+                    new Binding(nameof(BoundRatingSource.Rating))
+                    {
+                        Mode = BindingMode.TwoWay,
+                        Source = source,
+                    }
+                );
+
+                control.MaximumRating = 5;
+
+                Assert.Equal(5, control.Rating);
+                Assert.Equal(5, source.Rating);
+                Assert.True(BindingOperations.IsDataBound(control, RatingControl.RatingProperty));
+            }
+        );
+    }
+
+    [Fact]
     public void ClearEnabled_RepeatedSelectionClearsRatherThanAssigningZero()
     {
         RunOnStaThread(
@@ -536,6 +597,30 @@ public class RatingControlTests
     private sealed class TestRatingControl : RatingControl
     {
         public void ProcessKeyDown(KeyEventArgs args) => OnKeyDown(args);
+
+        public void ProcessKey(Key key)
+        {
+            var args = new KeyEventArgs(
+                Keyboard.PrimaryDevice,
+                new TestPresentationSource(),
+                Environment.TickCount,
+                key
+            )
+            {
+                RoutedEvent = Keyboard.KeyDownEvent,
+            };
+
+            OnKeyDown(args);
+        }
+    }
+
+    private sealed class TestPresentationSource : PresentationSource
+    {
+        public override Visual RootVisual { get; set; } = null!;
+
+        public override bool IsDisposed => false;
+
+        protected override CompositionTarget? GetCompositionTargetCore() => null;
     }
 
     private sealed class BoundRatingSource : DependencyObject
