@@ -61,6 +61,7 @@ public partial class NavigationView
     /// participates in property-value inheritance only after it has been published on the current
     /// navigation root; it does not cross into a Page from the Frame.
     /// </remarks>
+    [AttachedPropertyBrowsableForType(typeof(DependencyObject))]
     public static Thickness GetContentPadding(DependencyObject element)
     {
         if (element is null)
@@ -126,6 +127,7 @@ public partial class NavigationView
     /// <see langword="true"/> when the content handles the inset; otherwise,
     /// <see langword="false"/>.
     /// </returns>
+    [AttachedPropertyBrowsableForType(typeof(DependencyObject))]
     public static bool GetIsContentPaddingHandled(DependencyObject element)
     {
         if (element is null)
@@ -201,11 +203,18 @@ public partial class NavigationView
             return;
         }
 
-        if (e.NewValue is null && e.OldValue is AutoSuggestBox oldValue)
+        if (e.OldValue is AutoSuggestBox oldValue)
         {
             oldValue.SuggestionChosen -= navigationView.AutoSuggestBoxOnSuggestionChosen;
             oldValue.QuerySubmitted -= navigationView.AutoSuggestBoxOnQuerySubmitted;
-            return;
+
+            // OriginalItemsSource is owned by NavigationView only while the box is associated with
+            // this control. Releasing it here prevents a replaced box from retaining the complete
+            // navigation index through the private observable projection.
+            if (ReferenceEquals(oldValue.OriginalItemsSource, navigationView._autoSuggestItems))
+            {
+                oldValue.ClearValue(AutoSuggestBox.OriginalItemsSourceProperty);
+            }
         }
 
         if (e.NewValue is not AutoSuggestBox autoSuggestBox)
@@ -216,8 +225,13 @@ public partial class NavigationView
         autoSuggestBox.OriginalItemsSource = navigationView._autoSuggestItems;
         navigationView.UpdateAutoSuggestBoxSuggestions();
 
-        autoSuggestBox.SuggestionChosen += navigationView.AutoSuggestBoxOnSuggestionChosen;
-        autoSuggestBox.QuerySubmitted += navigationView.AutoSuggestBoxOnQuerySubmitted;
+        // The property can change while the control is unloaded. Event handlers are attached only
+        // for a live presentation; OnLoaded establishes the same pair after ordinary reparenting.
+        if (navigationView.IsLoaded)
+        {
+            autoSuggestBox.SuggestionChosen += navigationView.AutoSuggestBoxOnSuggestionChosen;
+            autoSuggestBox.QuerySubmitted += navigationView.AutoSuggestBoxOnQuerySubmitted;
+        }
     }
 
     #endregion
@@ -289,7 +303,7 @@ public partial class NavigationView
             new FrameworkPropertyMetadata(null)
         );
 
-    /// <summary>Identifies the read-only <see cref="CurrentLocation"/> dependency property.</summary>
+    /// <summary>Identifies the <see cref="CurrentLocation"/> dependency property.</summary>
     public static readonly DependencyProperty CurrentLocationProperty =
         CurrentLocationPropertyKey.DependencyProperty;
 
@@ -341,7 +355,7 @@ public partial class NavigationView
     /// </remarks>
     [Bindable(true)]
     [DesignerSerializationVisibility(DesignerSerializationVisibility.Content)]
-    public ObservableCollection<object> FooterMenuItems { get; } = new();
+    public ObservableCollection<object> FooterMenuItems { get; } = [];
 
     #endregion
 
@@ -408,7 +422,7 @@ public partial class NavigationView
             new PropertyMetadata(false)
         );
 
-    /// <summary>Identifies the read-only <see cref="HasFooterMenuItems"/> dependency property.</summary>
+    /// <summary>Identifies the <see cref="HasFooterMenuItems"/> dependency property.</summary>
     public static readonly DependencyProperty HasFooterMenuItemsProperty =
         HasFooterMenuItemsPropertyKey.DependencyProperty;
 
@@ -437,7 +451,7 @@ public partial class NavigationView
             new PropertyMetadata(false)
         );
 
-    /// <summary>Identifies the read-only <see cref="HasMenuItems"/> dependency property.</summary>
+    /// <summary>Identifies the <see cref="HasMenuItems"/> dependency property.</summary>
     public static readonly DependencyProperty HasMenuItemsProperty =
         HasMenuItemsPropertyKey.DependencyProperty;
 
@@ -504,7 +518,8 @@ public partial class NavigationView
         typeof(NavigationViewInput),
         typeof(NavigationView),
         new FrameworkPropertyMetadata(NavigationViewInput.None),
-        ValidateSuppressedNavigationInput
+        validateValueCallback: value
+            => value is NavigationViewInput input && (input & ~NavigationViewInput.All) == 0
     );
 
     /// <summary>
@@ -524,9 +539,6 @@ public partial class NavigationView
         get => (NavigationViewInput)GetValue(SuppressedNavigationInputProperty);
         set => SetValue(SuppressedNavigationInputProperty, value);
     }
-
-    private static bool ValidateSuppressedNavigationInput(object? value) =>
-        value is NavigationViewInput input && (input & ~NavigationViewInput.All) == 0;
 
     #endregion
 
@@ -570,9 +582,7 @@ public partial class NavigationView
             new FrameworkPropertyMetadata(false, OnIsBackEnabledChanged)
         );
 
-    /// <summary>
-    /// Identifies the read-only <see cref="IsBackEnabled"/> dependency property.
-    /// </summary>
+    /// <summary>Identifies the <see cref="IsBackEnabled"/> dependency property.</summary>
     public static readonly DependencyProperty IsBackEnabledProperty =
         IsBackEnabledPropertyKey.DependencyProperty;
 
@@ -987,7 +997,7 @@ public partial class NavigationView
     /// </remarks>
     [Bindable(true)]
     [DesignerSerializationVisibility(DesignerSerializationVisibility.Content)]
-    public ObservableCollection<object> MenuItems { get; } = new();
+    public ObservableCollection<object> MenuItems { get; } = [];
 
     private void OnFooterMenuItemsCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
@@ -1101,9 +1111,7 @@ public partial class NavigationView
             new FrameworkPropertyMetadata(0D)
         );
 
-    /// <summary>
-    /// Identifies the read-only <see cref="LeftPaneWidth"/> dependency property.
-    /// </summary>
+    /// <summary>Identifies the <see cref="LeftPaneWidth"/> dependency property.</summary>
     public static readonly DependencyProperty LeftPaneWidthProperty =
         LeftPaneWidthPropertyKey.DependencyProperty;
 
@@ -1139,7 +1147,7 @@ public partial class NavigationView
             new FrameworkPropertyMetadata(null)
         );
 
-    /// <summary>Identifies the read-only <see cref="SelectedItem"/> dependency property.</summary>
+    /// <summary>Identifies the <see cref="SelectedItem"/> dependency property.</summary>
     public static readonly DependencyProperty SelectedItemProperty =
         SelectedItemPropertyKey.DependencyProperty;
 

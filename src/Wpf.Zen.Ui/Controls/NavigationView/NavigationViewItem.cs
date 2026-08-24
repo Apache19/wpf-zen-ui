@@ -686,7 +686,8 @@ public partial class NavigationViewItem : HeaderedItemsControl
         Type?        targetPageType,
         IEnumerable? itemsSource = null)
         : this(null, icon, targetPageType, itemsSource)
-    { }
+    {
+    }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="NavigationViewItem"/> class without a header
@@ -698,9 +699,10 @@ public partial class NavigationViewItem : HeaderedItemsControl
     public NavigationViewItem(
         SymbolRegular icon,
         Type?         targetPageType = null,
-        IEnumerable?  itemsSource = null)
+        IEnumerable?  itemsSource    = null)
         : this((object?)null, icon, targetPageType, itemsSource)
-    { }
+    {
+    }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="NavigationViewItem"/> class for the specified page type.
@@ -708,7 +710,8 @@ public partial class NavigationViewItem : HeaderedItemsControl
     /// <param name="targetPageType">The page type activated by the header action.</param>
     public NavigationViewItem(Type targetPageType)
         : this(null, icon: null, targetPageType)
-    { }
+    {
+    }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="NavigationViewItem"/> class with a text header and target page.
@@ -717,7 +720,8 @@ public partial class NavigationViewItem : HeaderedItemsControl
     /// <param name="targetPageType">The page type activated by the header action.</param>
     public NavigationViewItem(string name, Type targetPageType)
         : this(name, icon: null, targetPageType)
-    { }
+    {
+    }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="NavigationViewItem"/> class with a text header,
@@ -728,7 +732,8 @@ public partial class NavigationViewItem : HeaderedItemsControl
     /// <param name="targetPageType">The page type activated by the header action.</param>
     public NavigationViewItem(string name, SymbolRegular icon, Type targetPageType)
         : this((object?)name, icon, targetPageType)
-    { }
+    {
+    }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="NavigationViewItem"/> class whose children are
@@ -741,7 +746,8 @@ public partial class NavigationViewItem : HeaderedItemsControl
     // ReSharper disable once UnusedMember.Global
     public NavigationViewItem(string name, SymbolRegular icon, Type targetPageType, IEnumerable itemsSource)
         : this((object?)name, icon, targetPageType, itemsSource)
-    { }
+    {
+    }
 
     /// <summary>
     /// Marks this item active without changing the active state of its ancestors, then invokes
@@ -1124,7 +1130,7 @@ public partial class NavigationViewItem : HeaderedItemsControl
     {
         for (NavigationViewItem? parent = NavigationViewItemParent; parent is not null; parent = parent.NavigationViewItemParent)
         {
-            if (parent is NavigationViewItem { IsSubmenuOpen: true })
+            if (parent is { IsSubmenuOpen: true })
             {
                 return true;
             }
@@ -1270,8 +1276,11 @@ public partial class NavigationViewItem : HeaderedItemsControl
         }
 
         if (
-            navigationViewItem.NavigationViewHost is { } navigationView
-            && navigationViewItem.NavigationEntry is { } entry
+            navigationViewItem is
+            {
+                NavigationViewHost: { } navigationView,
+                NavigationEntry: { } entry
+            }
         )
         {
             navigationView.NotifyNavigationCacheModeChanged(
@@ -1296,6 +1305,11 @@ public partial class NavigationViewItem : HeaderedItemsControl
         var item = (NavigationViewItem)d;
         item.UpdateBranchActiveState();
         item._parentItem?.UpdateDescendantActiveState();
+        NavigationViewItemAutomationPeer.RaiseSelectionAutomationEvent(
+            item,
+            (bool)e.OldValue,
+            (bool)e.NewValue
+        );
     }
 
     /// <summary>
@@ -1381,9 +1395,9 @@ public partial class NavigationViewItem : HeaderedItemsControl
     {
         var ancestors = new Stack<NavigationViewItem>();
         for (
-            var parent = NavigationViewItemParent as NavigationViewItem;
+            var parent = NavigationViewItemParent;
             parent is not null;
-            parent = parent.NavigationViewItemParent as NavigationViewItem
+            parent = parent.NavigationViewItemParent
         )
         {
             ancestors.Push(parent);

@@ -6,10 +6,9 @@
 using System.Collections;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
-using System.ComponentModel;
-using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Windows.Automation;
+using System.Windows.Automation.Peers;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Threading;
@@ -65,11 +64,6 @@ public partial class NavigationView : Control, INavigationHost, INavigationState
         DefaultStyleKeyProperty.OverrideMetadata(
             typeof(NavigationView),
             new FrameworkPropertyMetadata(typeof(NavigationView))
-        );
-
-        MarginProperty.OverrideMetadata(
-            typeof(NavigationView),
-            new FrameworkPropertyMetadata(new Thickness(0, 0, 0, 0))
         );
 
         // Control.Padding normally invalidates the parent measure, which remains appropriate for
@@ -214,6 +208,8 @@ public partial class NavigationView : Control, INavigationHost, INavigationState
     private readonly StackPanel _paneButtonsHost = new();
     private TitleBar? _titleBarContentOwner;
     private object? _displacedTitleBarLeftContent;
+    private bool _isTitleBarContentContributed;
+    private bool _isTitleBarContentContributionSuppressed;
     private bool _isLeftPaneWidthInitialized;
 
     /// <summary>
@@ -315,9 +311,30 @@ public partial class NavigationView : Control, INavigationHost, INavigationState
         RebuildNavigationIndexes();
     }
 
+    /// <inheritdoc />
+    protected override AutomationPeer OnCreateAutomationPeer()
+    {
+        return new NavigationViewAutomationPeer(this);
+    }
+
+    /// <summary>Gets the realized container representing the current single selection.</summary>
+    internal NavigationViewItem? GetSelectedNavigationContainer() => _currentEntry?.Container;
+
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
         RebuildNavigationIndexes();
+
+        if (AutoSuggestBox is { } autoSuggestBox)
+        {
+            // A NavigationView can leave and re-enter a loaded tree without its dependency
+            // properties changing. Remove before add so manually raised or repeated Loaded events
+            // cannot multiply the handlers.
+            autoSuggestBox.SuggestionChosen -= AutoSuggestBoxOnSuggestionChosen;
+            autoSuggestBox.QuerySubmitted -= AutoSuggestBoxOnQuerySubmitted;
+            autoSuggestBox.SuggestionChosen += AutoSuggestBoxOnSuggestionChosen;
+            autoSuggestBox.QuerySubmitted += AutoSuggestBoxOnQuerySubmitted;
+        }
+
         UpdatePaneButtonPlacement();
     }
 
@@ -331,8 +348,6 @@ public partial class NavigationView : Control, INavigationHost, INavigationState
         ReleaseTitleBarContent();
 
         ClearRegisteredNavigationItems();
-
-        ClearJournal();
 
         if (AutoSuggestBox is not null)
         {
@@ -403,7 +418,7 @@ public partial class NavigationView : Control, INavigationHost, INavigationState
         // The LeftFluent template intentionally omits the pane command host, so its visual contract
         // is achieved without permanently changing button visibility when the caller returns to Left.
         UpdatePaneButtonPlacement();
-        RaiseEvent(new RoutedEventArgs(PaneDisplayModeChangedEvent, this));
+        RaiseEvent(new NavigationViewRoutedEventArgs(PaneDisplayModeChangedEvent, this));
     }
 
     /// <summary>
@@ -530,6 +545,10 @@ public partial class NavigationView : Control, INavigationHost, INavigationState
         button.InitializeOwner(this, placement, role);
 
         AutomationProperties.SetAutomationId(button, automationId);
+        AutomationProperties.SetName(
+            button,
+            role == NavigationViewButtonRole.Back ? "Back" : "Toggle navigation pane"
+        );
 
         // A contributed title-bar button must remain client content. Otherwise the inherited
         // Caption role would turn a click into a native window drag operation.
@@ -572,7 +591,21 @@ public partial class NavigationView : Control, INavigationHost, INavigationState
             {
                 _titleBarContentOwner = titleBar;
                 _displacedTitleBarLeftContent = titleBar.LeftContent;
+                _isTitleBarContentContributionSuppressed = false;
             }
+        }
+        else if (
+            _isTitleBarContentContributed
+            && _titleBarContentOwner is not null
+            && !ReferenceEquals(_titleBarContentOwner.LeftContent, _titleBarBackButton)
+            && !ReferenceEquals(_titleBarContentOwner.LeftContent, _titleBarToggleButton)
+            && _titleBarContentOwner.LeftContent is not null
+        )
+        {
+            // Once an application replaces the contributed value, its newer value owns the slot.
+            // Do not reacquire it during an unrelated pane or visibility update.
+            _isTitleBarContentContributed = false;
+            _isTitleBarContentContributionSuppressed = true;
         }
 
         if (
@@ -584,6 +617,7 @@ public partial class NavigationView : Control, INavigationHost, INavigationState
         )
         {
             _titleBarContentOwner.SetCurrentValue(TitleBar.LeftContentProperty, null);
+            _isTitleBarContentContributed = false;
         }
 
         _paneButtonsHost.Children.Clear();
@@ -611,8 +645,12 @@ public partial class NavigationView : Control, INavigationHost, INavigationState
         PaneButtonsPresenter?.SetCurrentValue(ContentPresenter.ContentProperty, _paneButtonsHost);
 
         // SetCurrentValue preserves a binding placed on LeftContent. NavigationView owns the
-        // effective value only while it is associated with this TitleBar.
-        titleBar?.SetCurrentValue(TitleBar.LeftContentProperty, titleButton);
+        // effective value only until the application explicitly replaces it.
+        if (titleBar is not null && !_isTitleBarContentContributionSuppressed)
+        {
+            titleBar.SetCurrentValue(TitleBar.LeftContentProperty, titleButton);
+            _isTitleBarContentContributed = true;
+        }
     }
 
     private void AddPaneButton(bool shouldAdd, NavigationViewButton button)
@@ -634,11 +672,10 @@ public partial class NavigationView : Control, INavigationHost, INavigationState
             return;
         }
 
-        if (
-            ReferenceEquals(_titleBarContentOwner.LeftContent, _titleBarBackButton)
-            || ReferenceEquals(_titleBarContentOwner.LeftContent, _titleBarToggleButton)
-            || _titleBarContentOwner.LeftContent is null
-        )
+        if (_isTitleBarContentContributed
+            && (ReferenceEquals(_titleBarContentOwner.LeftContent, _titleBarBackButton)
+                || ReferenceEquals(_titleBarContentOwner.LeftContent, _titleBarToggleButton)
+                || _titleBarContentOwner.LeftContent is null))
         {
             _titleBarContentOwner.SetCurrentValue(
                 TitleBar.LeftContentProperty,
@@ -648,6 +685,8 @@ public partial class NavigationView : Control, INavigationHost, INavigationState
 
         _titleBarContentOwner = null;
         _displacedTitleBarLeftContent = null;
+        _isTitleBarContentContributed = false;
+        _isTitleBarContentContributionSuppressed = false;
     }
 
     internal void ToggleAllExpands()
@@ -807,9 +846,7 @@ public partial class NavigationView : Control, INavigationHost, INavigationState
     /// <summary>
     /// Rebuilds presentation-independent entries from an item source and its declared descendants.
     /// </summary>
-    private void AddItemsToNavigationIndexes(
-        IEnumerable items,
-        bool isMenuElement = true)
+    private void AddItemsToNavigationIndexes(IEnumerable items, bool isMenuElement = true)
     {
         SubscribeToNavigationCollection(items);
 
@@ -1188,6 +1225,12 @@ public partial class NavigationView : Control, INavigationHost, INavigationState
         entry = null!;
         return false;
     }
+
+    /// <summary>
+    /// Determines whether a directly supplied root container still belongs to the semantic menu.
+    /// </summary>
+    internal bool ContainsNavigationItemSource(NavigationViewItem item) =>
+        _entriesByItem.TryGetValue(item, out NavigationEntry? entry) && entry.IsMenuElement;
 
     /// <summary>Returns the authoritative main-menu sequence without copying source items.</summary>
     internal IEnumerable GetEffectiveMenuItems() => GetEffectiveItems(MenuItemsSource, MenuItems);

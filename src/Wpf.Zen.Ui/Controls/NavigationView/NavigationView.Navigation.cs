@@ -32,7 +32,8 @@ public partial class NavigationView
     private FrameworkElement? _currentLocationElement;
     private INavigationLocationSource? _currentLocationSource;
     private IReadOnlyList<BreadcrumbSegment>? _oneTimeBreadcrumbFallback;
-    private bool _isLocationRefreshPending;
+    private int _isLocationRefreshPending;
+    private bool _isNavigationRequestInProgress;
 
     /// <summary>Gets a value indicating whether the journal contains an earlier occurrence.</summary>
     public bool CanGoBack => Journal.Count > 1;
@@ -106,7 +107,6 @@ public partial class NavigationView
         }
 
         var previous = Journal[^2];
-        OnBackRequested();
         return NavigateInternal(
             previous.Entry,
             previous.Request,
@@ -197,14 +197,15 @@ public partial class NavigationView
         "CA1033:Interface methods should be callable by child types",
         Justification = "Only the owning navigation scope may remove contextual services and pages."
     )]
-    void INavigationHost.DetachNavigationScope(INavigationService navigationService)
+    Task INavigationHost.DetachNavigationScope(INavigationService navigationService)
     {
         if (!ReferenceEquals(_navigationService, navigationService))
         {
-            return;
+            return Task.CompletedTask;
         }
 
-        CancelCurrentNavigationEnter();
+        Task entryCompletion = CancelCurrentNavigationEnter();
+        AbortPendingNavigationTransition();
 
         var navigationAwareContent = _navigationAwareContent;
         var navigationAwareTarget  = _navigationAwareTarget;
@@ -254,6 +255,7 @@ public partial class NavigationView
         _pageService = null;
 
         ReportNavigationCallbackFailures(callbackFailures);
+        return entryCompletion;
     }
 
     private NavigationResult PerformRequest(NavigationRequest request)
@@ -278,6 +280,14 @@ public partial class NavigationView
         var entry = ResolveNavigationEntry(request.Target);
         if (entry is not null)
         {
+            if (entry.TargetPageType is null)
+            {
+                // Structural menu entries participate in route lookup so maps and breadcrumbs can
+                // refer to them, but they are not navigation destinations. Preserve the public
+                // result contract instead of passing an absent page type to page activation.
+                return NavigationResult.TargetNotFound;
+            }
+
             var targetIsMenuLookup = request.Target.RouteKey == entry.Id
                                      || request.Target.RouteKey == entry.TargetPageTag;
 
@@ -346,8 +356,11 @@ public partial class NavigationView
 
     private bool TryNavigateUnregisteredPage(Type pageType, NavigationRequest request)
     {
-        var container = new NavigationViewItem(pageType);
-        var entry = new NavigationEntry(container, false) { Container = container };
+        // Code-only targets need semantic lookup state, not a WPF container. Retaining a fabricated
+        // NavigationViewItem for every encountered page type would keep an unnecessary dispatcher-
+        // affine control graph alive for the complete scope. The data model supplies the same page
+        // identity and generated route id without any visual or template state.
+        var entry = new NavigationEntry(new NavigationItem(pageType.Name, pageType), false);
 
         if (!NavigateInternal(entry, request))
         {
@@ -375,12 +388,49 @@ public partial class NavigationView
         bool isForwardsNavigated = false,
         NavigationJournalEntry? restoredOccurrence = null)
     {
+        // Routed callbacks are synchronous and application code may request another navigation
+        // from Navigating, BackRequested, or Navigated. Reject that nested transaction so it cannot
+        // commit a journal occurrence that the outer request immediately overwrites.
+        if (_isNavigationRequestInProgress)
+        {
+            return false;
+        }
+
+        _isNavigationRequestInProgress = true;
+        try
+        {
+            return NavigateInternalCore(
+                entry,
+                request,
+                isBackwardsNavigated,
+                isForwardsNavigated,
+                restoredOccurrence
+            );
+        }
+        finally
+        {
+            _isNavigationRequestInProgress = false;
+        }
+    }
+
+    private bool NavigateInternalCore(
+        NavigationEntry entry,
+        NavigationRequest? request,
+        bool isBackwardsNavigated,
+        bool isForwardsNavigated,
+        NavigationJournalEntry? restoredOccurrence)
+    {
         request ??= CreateRequestForEntry(entry);
         if (!isBackwardsNavigated
             && !isForwardsNavigated
             && IsRedundantRequest(entry, request))
         {
             return false;
+        }
+
+        if (isBackwardsNavigated)
+        {
+            OnBackRequested();
         }
 
         var pageInstance = GetNavigationItemInstance(entry);
@@ -892,16 +942,22 @@ public partial class NavigationView
         {
             RefreshCurrentLocation();
         }
-        else if (!_isLocationRefreshPending
-                 && !Dispatcher.HasShutdownStarted
+        else if (!Dispatcher.HasShutdownStarted
                  && !Dispatcher.HasShutdownFinished)
         {
-            _isLocationRefreshPending = true;
+            // Notifications can arrive concurrently from unrelated view models. Interlocked owns
+            // the pending bit across those producers and the dispatcher consumer without relying
+            // on an otherwise unsynchronized Boolean read/write pair.
+            if (Interlocked.CompareExchange(ref _isLocationRefreshPending, 1, 0) != 0)
+            {
+                return;
+            }
+
             _ = Dispatcher.BeginInvoke(
                 DispatcherPriority.DataBind,
                 new Action(() =>
                 {
-                    _isLocationRefreshPending = false;
+                    Volatile.Write(ref _isLocationRefreshPending, 0);
                     RefreshCurrentLocation();
                 })
             );

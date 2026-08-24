@@ -54,6 +54,16 @@ public partial class NavigationView
     private NavigationEnterOperation? _navigationEnterOperation;
 
     /// <summary>
+    /// The Loaded-priority lifecycle delivery associated with the latest Frame commit.
+    /// </summary>
+    /// <remarks>
+    /// Keeping the operation explicit lets scope detachment abort work that has not started. A bare
+    /// BeginInvoke delegate would otherwise enter or exit pages after the owning scope had returned
+    /// from detachment and possibly released its services.
+    /// </remarks>
+    private DispatcherOperation? _navigationTransitionOperation;
+
+    /// <summary>
     /// The navigation root on which this control has published
     /// <see cref="ContentPaddingProperty"/>.
     /// </summary>
@@ -142,7 +152,8 @@ public partial class NavigationView
             ApplyTransitionEffectToNavigationFrame();
         }
 
-        CancelCurrentNavigationEnter();
+        _ = CancelCurrentNavigationEnter();
+        AbortPendingNavigationTransition();
 
         var exitedContent = _navigationAwareContent;
         var exitedTarget  = _navigationAwareTarget;
@@ -164,21 +175,34 @@ public partial class NavigationView
         var dispatchOperation = _navigationFrame.Dispatcher.BeginInvoke(
             DispatcherPriority.Loaded,
             new Action(
-                () => NotifyNavigationTransitionAfterAttachment(
-                    exitedContent,
-                    exitedTarget,
-                    eventArgs.Content,
-                    enteredTarget,
-                    enterOperation
-                )
+                () =>
+                {
+                    _navigationTransitionOperation = null;
+                    NotifyNavigationTransitionAfterAttachment(
+                        exitedContent,
+                        exitedTarget,
+                        eventArgs.Content,
+                        enteredTarget,
+                        enterOperation
+                    );
+                }
             )
         );
+        _navigationTransitionOperation = dispatchOperation;
 
         if (enterOperation is not null)
         {
             // A dispatcher can abort pending work during shutdown. Release the operation's initial
             // dispatch lease in that path so a cancelled token source is not retained forever.
-            dispatchOperation.Aborted += (_, _) => enterOperation.CompleteDispatch();
+            dispatchOperation.Aborted += (_, _) =>
+            {
+                if (ReferenceEquals(_navigationTransitionOperation, dispatchOperation))
+                {
+                    _navigationTransitionOperation = null;
+                }
+
+                enterOperation.CompleteDispatch();
+            };
         }
     }
 
@@ -295,7 +319,8 @@ public partial class NavigationView
             return;
         }
 
-        CancelCurrentNavigationEnter();
+        _ = CancelCurrentNavigationEnter();
+        AbortPendingNavigationTransition();
 
         var content = _navigationAwareContent;
         var target  = _navigationAwareTarget;
@@ -543,7 +568,7 @@ public partial class NavigationView
     }
 
     /// <summary>Cancels the entry work associated with the previous committed occurrence.</summary>
-    private void CancelCurrentNavigationEnter()
+    private Task CancelCurrentNavigationEnter()
     {
         var operation = _navigationEnterOperation;
 
@@ -551,7 +576,7 @@ public partial class NavigationView
 
         if (operation is null)
         {
-            return;
+            return Task.CompletedTask;
         }
 
         var cancellationException = operation.Cancel();
@@ -568,6 +593,20 @@ public partial class NavigationView
                     ),
                 ]
             );
+        }
+
+        return operation.Completion;
+    }
+
+    /// <summary>Aborts lifecycle delivery that has not begun on the owning dispatcher.</summary>
+    private void AbortPendingNavigationTransition()
+    {
+        DispatcherOperation? operation = _navigationTransitionOperation;
+        _navigationTransitionOperation = null;
+
+        if (operation is { Status: DispatcherOperationStatus.Pending })
+        {
+            operation.Abort();
         }
     }
 
@@ -656,12 +695,21 @@ public partial class NavigationView
     )
     {
         private readonly CancellationTokenSource _cancellationTokenSource = new();
+        private readonly TaskCompletionSource<bool> _completion = new(
+            TaskCreationOptions.RunContinuationsAsynchronously
+        );
         private int _dispatchCompleted;
         private int _isCancellationRequested;
         private int _isDisposed;
         private int _pendingLeases = 1;
 
         internal CancellationToken Token => _cancellationTokenSource.Token;
+
+        /// <summary>
+        /// Gets a task that completes after the Loaded-priority dispatch and every asynchronous
+        /// callback lease end.
+        /// </summary>
+        internal Task Completion => _completion.Task;
 
         internal object Content { get; } = content;
 
@@ -727,6 +775,7 @@ public partial class NavigationView
         {
             if (Interlocked.Decrement(ref _pendingLeases) == 0)
             {
+                _completion.TrySetResult(true);
                 TryDispose();
             }
         }

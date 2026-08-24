@@ -131,12 +131,12 @@ public partial class NavigationView
     public static readonly RoutedEvent NavigatingEvent = EventManager.RegisterRoutedEvent(
         nameof(Navigating),
         RoutingStrategy.Bubble,
-        typeof(TypedEventHandler<NavigationView, NavigatingCancelEventArgs>),
+        typeof(TypedEventHandler<NavigationView, NavigatingEventArgs>),
         typeof(NavigationView)
     );
 
     /// <summary>Occurs before a requested navigation is performed and allows it to be cancelled.</summary>
-    public event TypedEventHandler<NavigationView, NavigatingCancelEventArgs> Navigating
+    public event TypedEventHandler<NavigationView, NavigatingEventArgs> Navigating
     {
         add => AddHandler(NavigatingEvent, value);
         remove => RemoveHandler(NavigatingEvent, value);
@@ -154,7 +154,13 @@ public partial class NavigationView
         typeof(NavigationView)
     );
 
-    /// <summary>Occurs after the control has navigated to a page.</summary>
+    /// <summary>Occurs after the host commits a page to its semantic navigation state.</summary>
+    /// <remarks>
+    /// This event is synchronous with the accepted request so selection, history, and
+    /// <see cref="CurrentLocation"/> are already observable by its handlers. WPF may attach the
+    /// private Frame presenter later; visual-tree-dependent initialization belongs in Loaded or
+    /// <see cref="INavigationAware.OnNavigationEnteredAsync(CancellationToken)"/>.
+    /// </remarks>
     public event TypedEventHandler<NavigationView, NavigatedEventArgs> Navigated
     {
         add => AddHandler(NavigatedEvent, value);
@@ -179,7 +185,7 @@ public partial class NavigationView
     /// </summary>
     protected virtual void OnPaneOpened()
     {
-        RaiseEvent(new RoutedEventArgs(PaneOpenedEvent, this));
+        RaiseEvent(new NavigationViewRoutedEventArgs(PaneOpenedEvent, this));
     }
 
     /// <summary>
@@ -187,7 +193,7 @@ public partial class NavigationView
     /// </summary>
     protected virtual void OnPaneClosed()
     {
-        RaiseEvent(new RoutedEventArgs(PaneClosedEvent, this));
+        RaiseEvent(new NavigationViewRoutedEventArgs(PaneClosedEvent, this));
     }
 
     /// <summary>
@@ -195,7 +201,7 @@ public partial class NavigationView
     /// </summary>
     protected virtual void OnSelectionChanged()
     {
-        RaiseEvent(new RoutedEventArgs(SelectionChangedEvent, this));
+        RaiseEvent(new NavigationViewRoutedEventArgs(SelectionChangedEvent, this));
     }
 
     /// <summary>
@@ -203,7 +209,7 @@ public partial class NavigationView
     /// </summary>
     protected virtual void OnItemInvoked()
     {
-        RaiseEvent(new RoutedEventArgs(ItemInvokedEvent, this));
+        RaiseEvent(new NavigationViewRoutedEventArgs(ItemInvokedEvent, this));
     }
 
     /// <summary>
@@ -211,7 +217,7 @@ public partial class NavigationView
     /// </summary>
     protected virtual void OnBackRequested()
     {
-        RaiseEvent(new RoutedEventArgs(BackRequestedEvent));
+        RaiseEvent(new NavigationViewRoutedEventArgs(BackRequestedEvent, this));
     }
 
     /// <summary>
@@ -219,7 +225,7 @@ public partial class NavigationView
     /// </summary>
     protected virtual bool OnNavigating(object sourcePage)
     {
-        var eventArgs = new NavigatingCancelEventArgs(NavigatingEvent, this) { Page = sourcePage };
+        var eventArgs = new NavigatingEventArgs(NavigatingEvent, this) { Page = sourcePage };
 
         RaiseEvent(eventArgs);
 

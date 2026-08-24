@@ -17,7 +17,8 @@ namespace Wpf.Zen.Ui;
 public sealed class NavigationScope : INavigationScope
 {
     private readonly INavigationHost _host;
-    private int _isDisposed;
+    private readonly object _disposeGate = new();
+    private Task? _disposeTask;
 
     private NavigationScope(
         INavigationHost host,
@@ -71,8 +72,7 @@ public sealed class NavigationScope : INavigationScope
             );
         }
 
-        INavigationViewPageProvider effectivePageProvider =
-            pageProvider ?? ActivatorNavigationViewPageProvider.Instance;
+        var effectivePageProvider = pageProvider ?? ActivatorNavigationViewPageProvider.Instance;
         var navigation = new NavigationService(host);
         host.AttachNavigationScope(navigation, effectivePageProvider);
 
@@ -80,20 +80,77 @@ public sealed class NavigationScope : INavigationScope
     }
 
     /// <inheritdoc />
+    /// <remarks>
+    /// Disposal never blocks a foreign thread waiting for the WPF dispatcher. When asynchronous
+    /// detachment is required, cleanup continues in the background; use <see cref="DisposeAsync"/>
+    /// when the caller must observe completion.
+    /// </remarks>
     public void Dispose()
     {
-        if (Interlocked.Exchange(ref _isDisposed, 1) != 0)
+        Task disposeTask = BeginDispose();
+        if (disposeTask.IsCompleted)
         {
-            return;
+            disposeTask.GetAwaiter().GetResult();
         }
+    }
 
+    /// <inheritdoc />
+    public Task DisposeAsync()
+    {
+        return BeginDispose();
+    }
+
+    /// <summary>Creates or returns the one cleanup operation shared by both disposal APIs.</summary>
+    private Task BeginDispose()
+    {
+        lock (_disposeGate)
+        {
+            if (_disposeTask is not null)
+            {
+                return _disposeTask;
+            }
+
+            var completion = new TaskCompletionSource<bool>(
+                TaskCreationOptions.RunContinuationsAsynchronously
+            );
+
+            _disposeTask = completion.Task;
+
+            _ = CompleteDisposeAsync(completion);
+
+            return _disposeTask;
+        }
+    }
+
+    /// <summary>Publishes synchronous and asynchronous cleanup failures through one stable task.</summary>
+    private async Task CompleteDisposeAsync(TaskCompletionSource<bool> completion)
+    {
+        try
+        {
+            await DisposeCoreAsync().ConfigureAwait(false);
+            completion.TrySetResult(true);
+        }
+        catch (Exception exception)
+        {
+            completion.TrySetException(exception);
+        }
+    }
+
+    /// <summary>Marshals host detachment without synchronously waiting across dispatchers.</summary>
+    private async Task DisposeCoreAsync()
+    {
         if (_host.Dispatcher.CheckAccess())
         {
-            _host.DetachNavigationScope(Navigation);
+            await _host.DetachNavigationScope(Navigation).ConfigureAwait(false);
         }
         else if (!_host.Dispatcher.HasShutdownStarted && !_host.Dispatcher.HasShutdownFinished)
         {
-            _host.Dispatcher.Invoke(() => _host.DetachNavigationScope(Navigation));
+            Task detachTask = await _host.Dispatcher
+                .InvokeAsync(() => _host.DetachNavigationScope(Navigation))
+                .Task
+                .ConfigureAwait(false);
+
+            await detachTask.ConfigureAwait(false);
         }
         else
         {

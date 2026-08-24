@@ -504,10 +504,12 @@ public sealed class DashboardViewModel(INavigationService navigation)
 }
 ```
 
-`Dispose()` 会先取消当前页面的异步 Enter，随后同步调用 `OnNavigationExited()`，最后释放
-scoped 服务。因此页面退出与依赖释放之间具有确定的顺序，不需要额外的异步处置入口。
-需要异步保存或关闭确认时，应由窗口或应用自己的关闭流程负责，而不要放入已经无法取消
-或回滚导航的 Exit 回调。
+`Dispose()` 会立即取消当前页面的异步 Enter、同步调用 `OnNavigationExited()`，且不会在非
+UI 线程上阻塞等待 WPF Dispatcher。若 Enter 任务在取消后仍未完成，scoped 服务会延迟到
+该任务完成后再释放，避免回调继续访问已释放的依赖。需要确定等待完整清理时，请在应用的
+异步关闭流程中 `await _navigationScope.DisposeAsync()`；同步的 `OnClosed`/`Dispose(bool)`
+仍可调用 `Dispose()` 发起安全清理。页面的异步保存或关闭确认应由窗口或应用关闭流程负责，
+不要放入已经无法取消或回滚导航的 Exit 回调。
 
 ### 显式跨宿主导航
 

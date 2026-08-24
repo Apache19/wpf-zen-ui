@@ -137,12 +137,21 @@ public class NavigationViewList : ItemsControl
                 navigationItem.ClearInheritedItemContainerPresentation(this);
             }
 
-            if (
-                NavigationView.GetNavigationParent(this) is { } navigationView
-                && !ReferenceEquals(element, item)
-            )
+            if (NavigationView.GetNavigationParent(this) is { } navigationView)
             {
-                navigationView.UnregisterGeneratedNavigationItem(navigationItem);
+                if (!ReferenceEquals(element, item))
+                {
+                    navigationView.UnregisterGeneratedNavigationItem(navigationItem);
+                    navigationItem.DetachFromNavigationViewHost(navigationView);
+                }
+                else if (!navigationView.ContainsNavigationItemSource(navigationItem))
+                {
+                    // Direct containers remain semantically attached while a template merely
+                    // replaces its list presenter. Once the source itself is removed, however, the
+                    // local host value and source bindings must be released just like a generated
+                    // container's state.
+                    navigationItem.DetachFromNavigationViewHost(navigationView);
+                }
             }
 
             if (!ReferenceEquals(element, item))

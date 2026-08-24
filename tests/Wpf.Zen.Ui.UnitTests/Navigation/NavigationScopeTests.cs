@@ -382,6 +382,10 @@ public class NavigationScopeTests
 
             Assert.True(page.EntryCancellationToken.IsCancellationRequested);
             Assert.True(page.ExitedBeforeDependencyDisposal);
+
+            // Dispose initiates foreign-thread-safe cleanup without blocking the WPF dispatcher.
+            // Await the explicit completion path before asserting service-scope disposal.
+            scope.DisposeAsync().GetAwaiter().GetResult();
             Assert.True(page.Dependency.IsDisposed);
         });
     }

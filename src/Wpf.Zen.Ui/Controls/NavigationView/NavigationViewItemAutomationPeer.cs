@@ -171,14 +171,48 @@ internal class NavigationViewItemAutomationPeer
         );
     }
 
+    /// <summary>
+    /// Reports selection changes at the read-only active-state boundary so mouse, keyboard,
+    /// programmatic navigation, and UI Automation all publish the same provider transition.
+    /// </summary>
+    internal static void RaiseSelectionAutomationEvent(
+        NavigationViewItem owner,
+        bool oldValue,
+        bool newValue)
+    {
+        if (oldValue == newValue
+            || UIElementAutomationPeer.FromElement(owner) is not NavigationViewItemAutomationPeer peer)
+        {
+            return;
+        }
+
+        peer.RaisePropertyChangedEvent(
+            SelectionItemPatternIdentifiers.IsSelectedProperty,
+            oldValue,
+            newValue
+        );
+
+        if (newValue)
+        {
+            peer.RaiseAutomationEvent(AutomationEvents.SelectionItemPatternOnElementSelected);
+        }
+    }
+
     protected override AutomationPeer? GetLabeledByCore()
     {
+        // UIElementAutomationPeer gives an explicit AutomationProperties.LabeledBy relationship
+        // precedence over inferred content. Only infer the header when no such relationship exists.
+        if (base.GetLabeledByCore() is { } explicitLabel)
+        {
+            return explicitLabel;
+        }
+
         if (_owner.Header is UIElement element)
         {
             return CreatePeerForElement(element);
         }
 
-        return base.GetLabeledByCore();
+        return null;
     }
 
     protected override string GetNameCore()

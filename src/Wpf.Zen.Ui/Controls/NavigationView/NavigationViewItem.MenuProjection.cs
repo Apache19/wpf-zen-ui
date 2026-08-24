@@ -715,8 +715,12 @@ public partial class NavigationViewItem
             {
                 AccessText accessText => accessText.Text,
                 System.Windows.Controls.TextBlock textBlock => textBlock.Text,
+                System.Windows.Documents.Run run => run.Text,
                 ContentControl { Content: not DependencyObject } contentControl => contentControl.Content,
-                _ => value.ToString(),
+                // DependencyObject.ToString() normally exposes a CLR type name, which is never a
+                // meaningful native-menu label. An empty value lets AutomationProperties.Name or
+                // an application-supplied template provide the accessible fallback instead.
+                _ => string.Empty,
             };
         }
 

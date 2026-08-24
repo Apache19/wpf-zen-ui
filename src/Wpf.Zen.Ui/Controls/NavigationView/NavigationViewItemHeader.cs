@@ -26,6 +26,18 @@ public class NavigationViewItemHeader : System.Windows.Controls.Control
             typeof(NavigationViewItemHeader),
             new FrameworkPropertyMetadata(typeof(NavigationViewItemHeader))
         );
+
+        // A group label has no primary action. Keeping it out of keyboard navigation avoids a dead
+        // tab stop while still allowing assistive technology to discover its text in the tree.
+        FocusableProperty.OverrideMetadata(
+            typeof(NavigationViewItemHeader),
+            new FrameworkPropertyMetadata(false)
+        );
+
+        System.Windows.Input.KeyboardNavigation.IsTabStopProperty.OverrideMetadata(
+            typeof(NavigationViewItemHeader),
+            new FrameworkPropertyMetadata(false)
+        );
     }
 
     /// <summary>

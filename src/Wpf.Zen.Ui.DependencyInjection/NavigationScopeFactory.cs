@@ -82,7 +82,7 @@ internal sealed class NavigationScopeFactory(
 
             if (hostAttached && navigationService is not null)
             {
-                host.DetachNavigationScope(navigationService);
+                _ = host.DetachNavigationScope(navigationService);
             }
 
             serviceScope.Dispose();

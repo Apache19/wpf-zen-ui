@@ -4,6 +4,7 @@
 // All Rights Reserved.
 
 using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Wpf.Zen.Ui;
 
@@ -18,7 +19,8 @@ internal sealed class NavigationScope(
     NavigationRouter router
 ) : INavigationScope
 {
-    private int _isDisposed;
+    private readonly object _disposeGate = new();
+    private Task? _disposeTask;
 
     /// <inheritdoc />
     public string? Id { get; } = id;
@@ -30,13 +32,63 @@ internal sealed class NavigationScope(
     public IServiceProvider Services => serviceScope.ServiceProvider;
 
     /// <inheritdoc />
+    /// <remarks>
+    /// This method initiates cleanup without blocking a foreign thread on the WPF dispatcher. A
+    /// cancellation-compliant entry callback normally completes during detachment, preserving
+    /// immediate service disposal on the dispatcher. Use <see cref="DisposeAsync"/> to await an
+    /// uncooperative or genuinely asynchronous callback before its scoped services are released.
+    /// </remarks>
     public void Dispose()
     {
-        if (Interlocked.Exchange(ref _isDisposed, 1) != 0)
+        Task disposeTask = BeginDispose();
+        if (disposeTask.IsCompleted)
         {
-            return;
+            disposeTask.GetAwaiter().GetResult();
         }
+    }
 
+    /// <inheritdoc />
+    public Task DisposeAsync()
+    {
+        return BeginDispose();
+    }
+
+    /// <summary>Creates or returns the one cleanup operation shared by both disposal APIs.</summary>
+    private Task BeginDispose()
+    {
+        lock (_disposeGate)
+        {
+            if (_disposeTask is not null)
+            {
+                return _disposeTask;
+            }
+
+            var completion = new TaskCompletionSource<bool>(
+                TaskCreationOptions.RunContinuationsAsynchronously
+            );
+            _disposeTask = completion.Task;
+            _ = CompleteDisposeAsync(completion);
+            return _disposeTask;
+        }
+    }
+
+    /// <summary>Publishes synchronous and asynchronous cleanup failures through one stable task.</summary>
+    private async Task CompleteDisposeAsync(TaskCompletionSource<bool> completion)
+    {
+        try
+        {
+            await DisposeCoreAsync().ConfigureAwait(false);
+            completion.TrySetResult(true);
+        }
+        catch (Exception exception)
+        {
+            completion.TrySetException(exception);
+        }
+    }
+
+    /// <summary>Detaches the host, drains entry callbacks, then releases container services.</summary>
+    private async Task DisposeCoreAsync()
+    {
         if (Id is not null)
         {
             router.Unregister(Id, Navigation);
@@ -46,11 +98,16 @@ internal sealed class NavigationScope(
         {
             if (host.Dispatcher.CheckAccess())
             {
-                host.DetachNavigationScope(Navigation);
+                await host.DetachNavigationScope(Navigation).ConfigureAwait(false);
             }
             else if (!host.Dispatcher.HasShutdownStarted && !host.Dispatcher.HasShutdownFinished)
             {
-                host.Dispatcher.Invoke(() => host.DetachNavigationScope(Navigation));
+                Task detachTask = await host.Dispatcher
+                    .InvokeAsync(() => host.DetachNavigationScope(Navigation))
+                    .Task
+                    .ConfigureAwait(false);
+
+                await detachTask.ConfigureAwait(false);
             }
         }
         finally
