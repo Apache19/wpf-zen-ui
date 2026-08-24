@@ -4,7 +4,6 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Zen.Ui.Gallery.Controls"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:local="clr-namespace:Wpf.Zen.Ui.Gallery.Views.Pages.BasicInput"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:ui="http://schemas.thezendev.com/wpf/2027"
     xmlns:vm="clr-namespace:Wpf.Zen.Ui.Gallery.ViewModels.Pages.BasicInput"
@@ -31,6 +30,7 @@
                 </Grid.ColumnDefinitions>
                 <ui:RatingControl
                     HorizontalAlignment="Left"
+                    VerticalAlignment="Center"
                     IsClearEnabled="True"
                     IsEnabled="{Binding IsFirstRatingDisabled, Converter={StaticResource BoolInvertConverter}}"
                     PlaceholderRating="2.5"
@@ -64,6 +64,7 @@
                 </Grid.ColumnDefinitions>
                 <ui:RatingControl
                     HorizontalAlignment="Left"
+                    VerticalAlignment="Center"
                     IsEnabled="{Binding IsSecondRatingDisabled, Converter={StaticResource BoolInvertConverter}}"
                     Precision="FullStar"
                     Rating="{Binding SecondRatingValue, Mode=TwoWay}" />
