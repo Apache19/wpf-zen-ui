@@ -7,6 +7,7 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Data;
 using UiInfoBar = Wpf.Zen.Ui.Controls.InfoBar;
+using UiInfoBarDismissedVisibility = Wpf.Zen.Ui.Controls.InfoBarDismissedVisibility;
 
 namespace Wpf.Zen.Ui.UnitTests.Controls.InfoBar;
 
@@ -31,31 +32,21 @@ public class InfoBarTests
     }
 
     [Fact]
-    public void IsOpen_BindsTwoWayByDefault()
-    {
-        var metadata = (FrameworkPropertyMetadata)UiInfoBar.IsOpenProperty.GetMetadata(
-            typeof(UiInfoBar)
-        );
-
-        Assert.True(metadata.BindsTwoWayByDefault);
-    }
-
-    [Fact]
-    public void AutoManagedOpenState_DefaultsToEnabledAndFollowsContent()
+    public void AutoVisibility_DefaultsToEnabledAndFollowsContent()
     {
         WpfTestThread.Run(
             () =>
             {
                 var infoBar = new UiInfoBar();
 
-                Assert.True(infoBar.IsOpenAutoManaged);
-                Assert.False(infoBar.IsOpen);
+                Assert.True(infoBar.IsAutoVisibilityEnabled);
+                Assert.Equal(Visibility.Collapsed, infoBar.Visibility);
 
                 infoBar.Content = "Content";
-                Assert.True(infoBar.IsOpen);
+                Assert.Equal(Visibility.Visible, infoBar.Visibility);
 
                 infoBar.Content = string.Empty;
-                Assert.False(infoBar.IsOpen);
+                Assert.Equal(Visibility.Collapsed, infoBar.Visibility);
             }
         );
     }
@@ -67,79 +58,69 @@ public class InfoBarTests
     [InlineData("Title", "")]
     [InlineData(" ", null)]
     [InlineData(null, " ")]
-    public void AutoManagedOpenState_OpensWhenEitherSlotHasContent(
-        string? title,
-        string? content
-    )
+    public void AutoVisibility_ShowsWhenEitherSlotHasContent(string? title, string? content)
     {
         WpfTestThread.Run(
             () =>
             {
                 var infoBar = new UiInfoBar { Title = title, Content = content };
 
-                Assert.True(infoBar.IsOpen);
+                Assert.Equal(Visibility.Visible, infoBar.Visibility);
             }
         );
     }
 
     [Fact]
-    public void AutoManagedOpenState_ClosesWhenLastContentSlotIsCleared()
+    public void AutoVisibility_DismissesWhenLastContentSlotIsCleared()
     {
         WpfTestThread.Run(
             () =>
             {
-                var infoBar = new UiInfoBar
-                {
-                    Title = "Title",
-                    Content = "Content",
-                    IsOpen = true,
-                };
+                var infoBar = new UiInfoBar { Title = "Title", Content = "Content" };
 
                 infoBar.Title = string.Empty;
-                Assert.True(infoBar.IsOpen);
+                Assert.Equal(Visibility.Visible, infoBar.Visibility);
 
                 infoBar.Content = null;
-                Assert.False(infoBar.IsOpen);
+                Assert.Equal(Visibility.Collapsed, infoBar.Visibility);
             }
         );
     }
 
     [Fact]
-    public void AutoManagedOpenState_CanBeDisabledAndEvaluatesImmediatelyWhenReenabled()
+    public void AutoVisibility_CanBeDisabledAndEvaluatesImmediatelyWhenReenabled()
     {
         WpfTestThread.Run(
             () =>
             {
                 var infoBar = new UiInfoBar
                 {
-                    IsOpenAutoManaged = false,
-                    Content = "Content",
+                    IsAutoVisibilityEnabled = false,
+                    Visibility = Visibility.Visible,
                 };
 
-                Assert.False(infoBar.IsOpen);
-
-                infoBar.IsOpen = true;
+                infoBar.Content = "Content";
                 infoBar.Content = null;
-                Assert.True(infoBar.IsOpen);
+                Assert.Equal(Visibility.Visible, infoBar.Visibility);
 
-                infoBar.IsOpenAutoManaged = true;
+                infoBar.IsAutoVisibilityEnabled = true;
 
-                Assert.False(infoBar.IsOpen);
+                Assert.Equal(Visibility.Collapsed, infoBar.Visibility);
             }
         );
     }
 
     [Fact]
-    public void AutoManagedOpenState_PreservesBindingAndPublishesBothTransitions()
+    public void AutoVisibility_PreservesBindingAndPublishesBothTransitions()
     {
         WpfTestThread.Run(
             () =>
             {
-                var source = new Border { Tag = false };
+                var source = new Border { Tag = Visibility.Collapsed };
                 var infoBar = new UiInfoBar();
                 BindingOperations.SetBinding(
                     infoBar,
-                    UiInfoBar.IsOpenProperty,
+                    UIElement.VisibilityProperty,
                     new Binding(nameof(FrameworkElement.Tag))
                     {
                         Source = source,
@@ -149,15 +130,43 @@ public class InfoBarTests
 
                 infoBar.Title = "Title";
 
-                Assert.True(infoBar.IsOpen);
-                Assert.Equal(true, source.Tag);
-                Assert.True(BindingOperations.IsDataBound(infoBar, UiInfoBar.IsOpenProperty));
+                Assert.Equal(Visibility.Visible, infoBar.Visibility);
+                Assert.Equal(Visibility.Visible, source.Tag);
+                Assert.True(BindingOperations.IsDataBound(infoBar, UIElement.VisibilityProperty));
 
                 infoBar.Title = null;
 
-                Assert.False(infoBar.IsOpen);
-                Assert.Equal(false, source.Tag);
-                Assert.True(BindingOperations.IsDataBound(infoBar, UiInfoBar.IsOpenProperty));
+                Assert.Equal(Visibility.Collapsed, infoBar.Visibility);
+                Assert.Equal(Visibility.Collapsed, source.Tag);
+                Assert.True(BindingOperations.IsDataBound(infoBar, UIElement.VisibilityProperty));
+            }
+        );
+    }
+
+    [Fact]
+    public void DismissedVisibility_UsesDedicatedTypeWithOnlyDismissedStates()
+    {
+        WpfTestThread.Run(
+            () =>
+            {
+                var infoBar = new UiInfoBar();
+
+                Assert.Equal(
+                    UiInfoBarDismissedVisibility.Collapsed,
+                    infoBar.DismissedVisibility
+                );
+                Assert.Equal(
+                    typeof(UiInfoBarDismissedVisibility),
+                    UiInfoBar.DismissedVisibilityProperty.PropertyType
+                );
+
+                infoBar.DismissedVisibility = UiInfoBarDismissedVisibility.Hidden;
+                Assert.Equal(Visibility.Hidden, infoBar.Visibility);
+
+                Assert.Throws<ArgumentException>(
+                    () =>
+                        infoBar.DismissedVisibility = (UiInfoBarDismissedVisibility)int.MaxValue
+                );
             }
         );
     }
@@ -177,8 +186,8 @@ public class InfoBarTests
                     IsIconVisible = false,
                     IconTemplate = iconTemplate,
                     CloseButtonStyle = closeButtonStyle,
+                    Icon = icon,
                 };
-                infoBar.Icon = icon;
 
                 Assert.Equal(new CornerRadius(8D), infoBar.CornerRadius);
                 Assert.False(infoBar.IsIconVisible);
@@ -196,8 +205,7 @@ public class InfoBarTests
             () =>
             {
                 var icon = new Border();
-                var infoBar = new UiInfoBar();
-                infoBar.Icon = icon;
+                var infoBar = new UiInfoBar { Icon = icon };
 
                 Assert.True(infoBar.IsIconVisible);
 
@@ -212,21 +220,27 @@ public class InfoBarTests
         );
     }
 
-    [Fact]
-    public void CloseButton_ClosesWithoutChangingVisibilityOrRemovingBinding()
+    [Theory]
+    [InlineData(UiInfoBarDismissedVisibility.Collapsed, Visibility.Collapsed)]
+    [InlineData(UiInfoBarDismissedVisibility.Hidden, Visibility.Hidden)]
+    public void CloseButton_DismissesControlUsingConfiguredVisibility(
+        UiInfoBarDismissedVisibility dismissedVisibility,
+        Visibility expectedVisibility
+    )
     {
         WpfTestThread.Run(
             () =>
             {
-                var source = new Border { Tag = true };
+                var source = new Border { Tag = Visibility.Visible };
                 var infoBar = new UiInfoBar
                 {
                     Content = "Content",
+                    DismissedVisibility = dismissedVisibility,
                     Template = CreateTemplate(typeof(Button)),
                 };
                 BindingOperations.SetBinding(
                     infoBar,
-                    UiInfoBar.IsOpenProperty,
+                    UIElement.VisibilityProperty,
                     new Binding(nameof(FrameworkElement.Tag))
                     {
                         Source = source,
@@ -241,10 +255,48 @@ public class InfoBarTests
 
                 closeButton.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
 
-                Assert.False(infoBar.IsOpen);
-                Assert.Equal(false, source.Tag);
-                Assert.True(BindingOperations.IsDataBound(infoBar, UiInfoBar.IsOpenProperty));
-                Assert.Equal(Visibility.Visible, infoBar.Visibility);
+                Assert.Equal(expectedVisibility, infoBar.Visibility);
+                Assert.Equal(expectedVisibility, source.Tag);
+                Assert.True(BindingOperations.IsDataBound(infoBar, UIElement.VisibilityProperty));
+            }
+        );
+    }
+
+    [Theory]
+    [InlineData(UiInfoBarDismissedVisibility.Collapsed, 0D, 0D)]
+    [InlineData(UiInfoBarDismissedVisibility.Hidden, 120D, 40D)]
+    public void Dismissal_UsesWholeControlLayoutSemantics(
+        UiInfoBarDismissedVisibility dismissedVisibility,
+        double expectedWidth,
+        double expectedHeight
+    )
+    {
+        WpfTestThread.Run(
+            () =>
+            {
+                var infoBar = new UiInfoBar
+                {
+                    Width = 100D,
+                    Height = 20D,
+                    Margin = new Thickness(10D),
+                    Content = "Content",
+                    DismissedVisibility = dismissedVisibility,
+                    Template = CreateTemplate(typeof(Button)),
+                };
+                var panel = new StackPanel();
+                panel.Children.Add(infoBar);
+                panel.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+
+                Assert.Equal(new Size(120D, 40D), panel.DesiredSize);
+                infoBar.ApplyTemplate();
+                var closeButton = Assert.IsType<Button>(
+                    infoBar.Template.FindName("PART_CloseButton", infoBar)
+                );
+
+                closeButton.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+                panel.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+
+                Assert.Equal(new Size(expectedWidth, expectedHeight), panel.DesiredSize);
             }
         );
     }
@@ -289,12 +341,11 @@ public class InfoBarTests
                 var infoBar = new UiInfoBar
                 {
                     Content = "Content",
-                    IsOpen = true,
                     Template = CreateTemplate(typeof(Border), "PresentationRoot"),
                 };
 
                 Assert.True(infoBar.ApplyTemplate());
-                Assert.True(infoBar.IsOpen);
+                Assert.Equal(Visibility.Visible, infoBar.Visibility);
             }
         );
     }
@@ -309,7 +360,6 @@ public class InfoBarTests
                 {
                     Content = "Content",
                     IsClosable = false,
-                    IsOpen = true,
                     Template = CreateTemplate(typeof(Button)),
                 };
 
@@ -325,7 +375,7 @@ public class InfoBarTests
 
                 closeButton.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
 
-                Assert.True(infoBar.IsOpen);
+                Assert.Equal(Visibility.Visible, infoBar.Visibility);
                 Assert.False(clickReachedParent);
             }
         );
@@ -340,7 +390,6 @@ public class InfoBarTests
                 var infoBar = new UiInfoBar
                 {
                     Content = "Content",
-                    IsOpen = true,
                     Template = CreateTemplate(typeof(Button)),
                 };
 
@@ -352,7 +401,7 @@ public class InfoBarTests
                 infoBar.Template = CreateTemplate(typeof(Border), "PresentationRoot");
                 previousButton.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
 
-                Assert.True(infoBar.IsOpen);
+                Assert.Equal(Visibility.Visible, infoBar.Visibility);
             }
         );
     }

@@ -29,19 +29,18 @@ namespace Wpf.Zen.Ui.Controls;
 /// consumers do not need to clear or restore their icon value merely to change presentation.
 /// </para>
 /// <para>
-/// <see cref="IsOpen"/> is the notification's logical state; the default template collapses its
-/// internal root when that state is <see langword="false"/>. It deliberately does not modify
-/// <see cref="UIElement.Visibility"/>, which remains an independent, application-owned layout
-/// concern. Activating <c>PART_CloseButton</c> and the content-driven behavior controlled by
-/// <see cref="IsOpenAutoManaged"/> change that same state rather than introducing additional state
-/// mechanisms.
+/// The notification uses the inherited <see cref="UIElement.Visibility"/> property as its only
+/// display state. Activating <c>PART_CloseButton</c> changes the control itself to
+/// <see cref="DismissedVisibility"/>, so its margin and other layout properties obey normal WPF
+/// visibility semantics. <see cref="IsAutoVisibilityEnabled"/> can additionally derive visibility
+/// from whether the title or body contains a value.
 /// </para>
 /// <para>
 /// <see cref="IsClosable"/> controls the built-in user-dismiss action. The default template
 /// removes the button when it is <see langword="false"/>, and the control also checks the property
 /// before accepting a click so a custom template cannot accidentally bypass the contract. A
 /// missing or differently typed button part is tolerated and leaves programmatic control through
-/// <see cref="IsOpen"/> intact.
+/// <see cref="UIElement.Visibility"/> intact.
 /// </para>
 /// </remarks>
 [ContentProperty(nameof(Content))]
@@ -118,7 +117,7 @@ public class InfoBar : ContentControl
     /// The default value is <see langword="true"/>. When set to <see langword="false"/>, the
     /// default template removes the close button from layout and the control ignores clicks from a
     /// close-button part retained by a custom template. This property does not prevent application
-    /// code from changing <see cref="IsOpen"/> or <see cref="UIElement.Visibility"/>.
+    /// code from changing <see cref="UIElement.Visibility"/>.
     /// </remarks>
     [Bindable(true)]
     [Category("Behavior")]
@@ -130,68 +129,73 @@ public class InfoBar : ContentControl
 
     #endregion
 
-    #region DP: IsOpenAutoManaged
+    #region DP: IsAutoVisibilityEnabled
 
-    /// <summary>Identifies the <see cref="IsOpenAutoManaged"/> dependency property.</summary>
-    public static readonly DependencyProperty IsOpenAutoManagedProperty =
+    /// <summary>Identifies the <see cref="IsAutoVisibilityEnabled"/> dependency property.</summary>
+    public static readonly DependencyProperty IsAutoVisibilityEnabledProperty =
         DependencyProperty.Register(
-            nameof(IsOpenAutoManaged),
+            nameof(IsAutoVisibilityEnabled),
             typeof(bool),
             typeof(InfoBar),
-            new PropertyMetadata(true, OnIsOpenAutoManagedChanged)
+            new PropertyMetadata(true, OnIsAutoVisibilityEnabledChanged)
         );
 
     /// <summary>
-    /// Gets or sets a value indicating whether <see cref="IsOpen"/> follows the presence of title
-    /// or body content.
+    /// Gets or sets a value indicating whether <see cref="UIElement.Visibility"/> follows the
+    /// presence of title or body content.
     /// </summary>
     /// <remarks>
-    /// The default value is <see langword="true"/>. The notification opens when either
-    /// <see cref="Title"/> or <see cref="ContentControl.Content"/> has content, and closes when both
-    /// slots are empty. A slot is empty only when its value is <see langword="null"/> or an empty
-    /// <see cref="string"/>; whitespace and non-string objects remain valid content. Enabling this
-    /// behavior evaluates the current values immediately. Automatic transitions update
-    /// <see cref="IsOpen"/> through its current value so an existing binding is retained and, for
-    /// the default two-way binding mode, receives the new state.
+    /// The default value is <see langword="true"/>. The control becomes
+    /// <see cref="Visibility.Visible"/> when either <see cref="Title"/> or
+    /// <see cref="ContentControl.Content"/> has content, and changes to
+    /// <see cref="DismissedVisibility"/> when both slots are empty. A slot is empty only when its
+    /// value is <see langword="null"/> or an empty <see cref="string"/>; whitespace and non-string
+    /// objects remain valid content. Enabling this behavior evaluates the current values
+    /// immediately. Disabling it leaves the current visibility unchanged and returns subsequent
+    /// visibility control to the application.
     /// </remarks>
     [Bindable(true)]
     [Category("Behavior")]
-    public bool IsOpenAutoManaged
+    public bool IsAutoVisibilityEnabled
     {
-        get => (bool)GetValue(IsOpenAutoManagedProperty);
-        set => SetValue(IsOpenAutoManagedProperty, value);
+        get => (bool)GetValue(IsAutoVisibilityEnabledProperty);
+        set => SetValue(IsAutoVisibilityEnabledProperty, value);
     }
 
     #endregion
 
-    #region DP: IsOpen
+    #region DP: DismissedVisibility
 
-    /// <summary>Identifies the <see cref="IsOpen"/> dependency property.</summary>
-    public static readonly DependencyProperty IsOpenProperty = DependencyProperty.Register(
-        nameof(IsOpen),
-        typeof(bool),
-        typeof(InfoBar),
-        new FrameworkPropertyMetadata(
-            false,
-            FrameworkPropertyMetadataOptions.BindsTwoWayByDefault
-        )
-    );
+    /// <summary>Identifies the <see cref="DismissedVisibility"/> dependency property.</summary>
+    public static readonly DependencyProperty DismissedVisibilityProperty =
+        DependencyProperty.Register(
+            nameof(DismissedVisibility),
+            typeof(InfoBarDismissedVisibility),
+            typeof(InfoBar),
+            new PropertyMetadata(
+                InfoBarDismissedVisibility.Collapsed,
+                OnDismissedVisibilityChanged
+            ),
+            ValidateDismissedVisibility
+        );
 
     /// <summary>
-    /// Gets or sets a value indicating whether the notification is logically open.
+    /// Gets or sets the visibility state used when the notification is dismissed or has no content.
     /// </summary>
     /// <remarks>
-    /// The default value is <see langword="false"/>. The default template uses this property only
-    /// to show or collapse its internal presentation; it never overwrites
-    /// <see cref="UIElement.Visibility"/>. The property binds two-way by default so a close-button
-    /// activation can update a view-model without replacing the binding expression.
+    /// The default is <see cref="InfoBarDismissedVisibility.Collapsed"/>, which removes the complete
+    /// control, including its margin, from layout.
+    /// <see cref="InfoBarDismissedVisibility.Hidden"/> may be selected when the layout slot must be
+    /// retained. The dedicated enum exposes only meaningful non-visible states to C#, XAML editors
+    /// and property inspectors. Changing the property while the control is already non-visible
+    /// applies the new state immediately.
     /// </remarks>
     [Bindable(true)]
     [Category("Behavior")]
-    public bool IsOpen
+    public InfoBarDismissedVisibility DismissedVisibility
     {
-        get => (bool)GetValue(IsOpenProperty);
-        set => SetValue(IsOpenProperty, value);
+        get => (InfoBarDismissedVisibility)GetValue(DismissedVisibilityProperty);
+        set => SetValue(DismissedVisibilityProperty, value);
     }
 
     #endregion
@@ -373,6 +377,15 @@ public class InfoBar : ContentControl
             typeof(InfoBar),
             new FrameworkPropertyMetadata(typeof(InfoBar))
         );
+
+        // Auto visibility is enabled by default, so an empty InfoBar must not briefly reserve
+        // layout space before its title or content is assigned. Overriding the inherited default
+        // also avoids installing a local Visibility value, preserving normal style and binding
+        // precedence for applications that disable automatic management.
+        VisibilityProperty.OverrideMetadata(
+            typeof(InfoBar),
+            new FrameworkPropertyMetadata(Visibility.Collapsed)
+        );
     }
 
     /// <inheritdoc />
@@ -380,12 +393,12 @@ public class InfoBar : ContentControl
     /// ContentControl's callback has already updated the logical tree before this override runs.
     /// Evaluating the content-driven state contract here keeps inherited
     /// <see cref="ContentControl.Content"/> semantics intact while ensuring bindings, styles and
-    /// direct assignments all use the same close path.
+    /// direct assignments all use the same visibility path.
     /// </remarks>
     protected override void OnContentChanged(object oldContent, object newContent)
     {
         base.OnContentChanged(oldContent, newContent);
-        UpdateIsOpenFromContent();
+        UpdateVisibilityFromContent();
     }
 
     /// <inheritdoc />
@@ -421,7 +434,7 @@ public class InfoBar : ContentControl
     protected override void OnTemplateChanged(ControlTemplate oldTemplate, ControlTemplate newTemplate)
     {
         // Template replacement need not be followed by an immediate layout pass. Detaching here
-        // prevents a retained old visual from changing IsOpen while the new template is pending.
+        // prevents a retained old visual from changing Visibility while the new template is pending.
         DetachCloseButton();
         base.OnTemplateChanged(oldTemplate, newTemplate);
     }
@@ -430,9 +443,10 @@ public class InfoBar : ContentControl
     {
         if (IsClosable)
         {
-            // SetCurrentValue preserves a consumer's binding. IsOpen is the only state transition:
-            // Visibility remains untouched even when the default template stops presenting the bar.
-            SetCurrentValue(IsOpenProperty, false);
+            // The control itself must become non-visible so its margin follows WPF's standard
+            // layout behavior. SetCurrentValue retains a binding on Visibility; an explicitly
+            // two-way binding can therefore observe user dismissal without losing the expression.
+            SetCurrentValue(VisibilityProperty, GetDismissedVisibility());
         }
 
         // The button is an implementation detail rather than part of InfoBar's public event
@@ -441,14 +455,28 @@ public class InfoBar : ContentControl
         e.Handled = true;
     }
 
-    private static void OnIsOpenAutoManagedChanged(
+    private static void OnIsAutoVisibilityEnabledChanged(
         DependencyObject d,
         DependencyPropertyChangedEventArgs e
     )
     {
         if ((bool)e.NewValue)
         {
-            ((InfoBar)d).UpdateIsOpenFromContent();
+            ((InfoBar)d).UpdateVisibilityFromContent();
+        }
+    }
+
+    private static void OnDismissedVisibilityChanged(
+        DependencyObject d,
+        DependencyPropertyChangedEventArgs e
+    )
+    {
+        var infoBar = (InfoBar)d;
+        if (infoBar.Visibility != Visibility.Visible)
+        {
+            // Hidden and Collapsed are semantically the same dismissed state for InfoBar. Apply
+            // the new layout policy immediately without requiring another content transition.
+            infoBar.SetCurrentValue(VisibilityProperty, infoBar.GetDismissedVisibility());
         }
     }
 
@@ -457,25 +485,49 @@ public class InfoBar : ContentControl
         DependencyPropertyChangedEventArgs e
     )
     {
-        ((InfoBar)d).UpdateIsOpenFromContent();
+        ((InfoBar)d).UpdateVisibilityFromContent();
     }
 
-    private void UpdateIsOpenFromContent()
+    private void UpdateVisibilityFromContent()
     {
-        if (!IsOpenAutoManaged)
+        if (!IsAutoVisibilityEnabled)
         {
             return;
         }
 
-        var shouldOpen = !IsEmptyContentValue(Title) || !IsEmptyContentValue(Content);
-        if (IsOpen == shouldOpen)
+        var visibility =
+            !IsEmptyContentValue(Title) || !IsEmptyContentValue(Content)
+                ? Visibility.Visible
+                : GetDismissedVisibility();
+        if (Visibility == visibility)
         {
             return;
         }
 
-        // SetCurrentValue retains bindings and lets IsOpen's two-way-by-default metadata publish
-        // either transition instead of replacing the application's binding with a local value.
-        SetCurrentValue(IsOpenProperty, shouldOpen);
+        // Content-driven behavior and application control intentionally share the inherited
+        // property. SetCurrentValue changes its effective value without discarding an existing
+        // binding, allowing the application to resume control when automatic management is off.
+        SetCurrentValue(VisibilityProperty, visibility);
+    }
+
+    private static bool ValidateDismissedVisibility(object? value)
+    {
+        return value is InfoBarDismissedVisibility.Hidden or InfoBarDismissedVisibility.Collapsed;
+    }
+
+    private Visibility GetDismissedVisibility()
+    {
+        // The public enum intentionally models the policy rather than reusing WPF's three-state
+        // Visibility type. Keep the conversion at the point where the inherited property is
+        // updated so the rest of the control continues to use normal WPF layout semantics.
+        return DismissedVisibility switch
+        {
+            InfoBarDismissedVisibility.Hidden => Visibility.Hidden,
+            InfoBarDismissedVisibility.Collapsed => Visibility.Collapsed,
+            _ => throw new InvalidOperationException(
+                $"Unsupported dismissed visibility value: {DismissedVisibility}."
+            ),
+        };
     }
 
     private static bool IsEmptyContentValue(object? value)

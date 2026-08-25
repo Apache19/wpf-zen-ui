@@ -10,13 +10,13 @@ namespace Wpf.Zen.Ui.Gallery.ViewModels.Pages.StatusAndInfo;
 public partial class InfoBarViewModel : ViewModel
 {
     [ObservableProperty]
-    public partial bool IsShortInfoBarOpened { get; set; } = true;
+    public partial bool IsShortInfoBarVisible { get; set; } = true;
 
     [ObservableProperty]
     public partial bool ShowIcon { get; set; } = true;
 
     [ObservableProperty]
-    public partial bool IsLongInfoBarOpened { get; set; } = true;
+    public partial bool IsLongInfoBarVisible { get; set; } = true;
 
     [ObservableProperty]
     public partial InfoBarSeverity ShortInfoBarSeverity { get; set; } = InfoBarSeverity.Informational;
