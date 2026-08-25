@@ -11,6 +11,6 @@ public enum NavigationCallbackStage
     /// <summary>The synchronous notification that a component left navigation state.</summary>
     Exited,
 
-    /// <summary>The asynchronous notification that a component entered navigation state.</summary>
+    /// <summary>The notification that a component entered navigation state.</summary>
     Entered,
 }

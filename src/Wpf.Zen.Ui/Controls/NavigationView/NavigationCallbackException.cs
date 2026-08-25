@@ -6,7 +6,7 @@
 namespace Wpf.Zen.Ui.Controls;
 
 /// <summary>
-/// Adds navigation context to an exception thrown by an <see cref="INavigationAware"/> callback.
+/// Adds navigation context to an exception thrown by a navigation lifecycle callback.
 /// </summary>
 /// <remarks>
 /// WPF commits object navigation on a dispatcher operation after the original navigation method
@@ -19,7 +19,7 @@ public sealed class NavigationCallbackException : Exception
     internal NavigationCallbackException(
         NavigationCallbackStage stage,
         object content,
-        INavigationAware callbackTarget,
+        object callbackTarget,
         NavigationTarget? navigationTarget,
         Exception innerException
     )
@@ -37,8 +37,8 @@ public sealed class NavigationCallbackException : Exception
     /// <summary>Gets the page or content object being transitioned.</summary>
     public object Content { get; }
 
-    /// <summary>Gets the view or view model whose callback failed.</summary>
-    public INavigationAware CallbackTarget { get; }
+    /// <summary>Gets the view or view model whose lifecycle callback failed.</summary>
+    public object CallbackTarget { get; }
 
     /// <summary>
     /// Gets the semantic occurrence associated with <see cref="Content"/>, or
@@ -49,7 +49,7 @@ public sealed class NavigationCallbackException : Exception
     private static string CreateMessage(
         NavigationCallbackStage stage,
         object content,
-        INavigationAware callbackTarget,
+        object callbackTarget,
         NavigationTarget? navigationTarget
     )
     {

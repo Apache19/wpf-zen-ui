@@ -10,13 +10,16 @@ namespace Wpf.Zen.Ui.Controls;
 /// </summary>
 /// <typeparam name="T">
 /// The type of the view model associated with the view. It may implement
-/// <see cref="INavigationAware"/> to receive successful navigation entry and exit notifications.
+/// <see cref="INavigationAware"/>, <see cref="IAsyncNavigationAware"/>, or
+/// <see cref="ICancellableAsyncNavigationAware"/> to receive successful navigation entry and exit
+/// notifications.
 /// </typeparam>
 public interface INavigableView<out T>
 {
     /// <summary>
     /// Gets the view model used by the view.
-    /// It may implement <see cref="INavigationAware"/> to participate in the navigation lifecycle.
+    /// It may implement <see cref="INavigationAware"/>, <see cref="IAsyncNavigationAware"/>, or
+    /// <see cref="ICancellableAsyncNavigationAware"/> to participate in the navigation lifecycle.
     /// </summary>
     T ViewModel { get; }
 }

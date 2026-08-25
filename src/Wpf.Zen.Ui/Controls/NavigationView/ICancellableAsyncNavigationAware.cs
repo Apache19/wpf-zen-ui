@@ -6,13 +6,15 @@
 namespace Wpf.Zen.Ui.Controls;
 
 /// <summary>
-/// Participates in the successful navigation lifecycle of a navigation host.
+/// Asynchronously participates in navigation entry and supports cancellation of obsolete work.
 /// </summary>
 /// <remarks>
-/// These callbacks describe navigation state, not WPF visual-tree state. They are independent of
-/// <c>Loaded</c> and <c>Unloaded</c>, and cannot cancel a navigation request.
+/// This callback describes navigation state, not WPF visual-tree state. It is independent of
+/// <c>Loaded</c> and cannot cancel a navigation request. Unlike <see cref="IAsyncNavigationAware"/>,
+/// it receives a token so work that no longer belongs to the current navigation occurrence can
+/// stop promptly.
 /// </remarks>
-public interface INavigationAware
+public interface ICancellableAsyncNavigationAware : INavigationExited
 {
     /// <summary>
     /// Asynchronously handles the component entering the current navigation state.
@@ -30,16 +32,4 @@ public interface INavigationAware
     /// </remarks>
     /// <returns>A task that represents the asynchronous operation.</returns>
     Task OnNavigationEnteredAsync(CancellationToken cancellationToken);
-
-    /// <summary>
-    /// Handles the component leaving the current navigation state.
-    /// </summary>
-    /// <remarks>
-    /// During a successful transition, the navigation host invokes this callback before starting
-    /// <see cref="OnNavigationEnteredAsync(CancellationToken)"/> on the new component. The host
-    /// also invokes it when the current navigation surface is genuinely detached from the visual
-    /// tree. Exit is deliberately synchronous because navigation has already committed and cannot
-    /// be rolled back or delayed by cleanup work at this boundary.
-    /// </remarks>
-    void OnNavigationExited();
 }

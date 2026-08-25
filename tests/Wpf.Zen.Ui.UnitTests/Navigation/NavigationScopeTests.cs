@@ -510,7 +510,7 @@ public class NavigationScopeTests
     }
 
     private sealed class CancellableEntryPage(ScopedDisposable dependency)
-        : Border, INavigationAware
+        : Border, ICancellableAsyncNavigationAware
     {
         public ScopedDisposable Dependency { get; } = dependency;
 

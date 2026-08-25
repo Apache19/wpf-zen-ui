@@ -645,14 +645,16 @@ object? parameter = Navigation.GetParameter(this);
 `Navigation.GetParameter` 需要传入视觉树中的 `DependencyObject`，纯视图模型无法直接
 调用。DI 模式下，视图模型通过构造函数注入 `INavigationService` 后，有两种取参方式。
 
-**方式 A：在 `INavigationAware` 生命周期回调中读取（推荐）**
+**方式 A：在导航感知生命周期回调中读取（推荐）**
 
-视图模型实现 `INavigationAware` 后，宿主在每次成功提交导航时调用
-`OnNavigationEnteredAsync`。此时位置刷新已完成，本次导航的参数已发布到
-`State.CurrentLocation.Target.Parameter`，可直接读取：
+视图模型可实现同步的 `INavigationAware`、普通异步的 `IAsyncNavigationAware`，或可取消
+异步的 `ICancellableAsyncNavigationAware`。宿主在每次成功提交导航时调用相应的 Enter
+方法。此时位置刷新已完成，本次导航的参数已发布到
+`State.CurrentLocation.Target.Parameter`，可直接读取。需要执行可取消 I/O 时使用可取消
+版本：
 
 ```csharp
-public sealed class ArticleViewModel : INavigationAware
+public sealed class ArticleViewModel : ICancellableAsyncNavigationAware
 {
     private readonly INavigationService _navigation;
 
@@ -676,15 +678,17 @@ public sealed class ArticleViewModel : INavigationAware
 
 视图模型能收到回调需要满足以下任一条件：
 
-- 页面实现 `INavigationAware` 且其 `DataContext` 也实现 `INavigationAware`：视图先收到
+- 页面实现 `INavigationExited` 且其 `DataContext` 也实现 `INavigationExited`：视图先收到
   通知，视图抛出的异常不会阻断视图模型的回调；
-- 页面实现 `INavigableView<object>` 且其 `ViewModel` 实现 `INavigationAware`；
-- 页面是普通 `FrameworkElement` 且 `DataContext` 实现 `INavigationAware`。
+- 页面实现 `INavigableView<object>` 且其 `ViewModel` 实现 `INavigationExited`；
+- 页面是普通 `FrameworkElement` 且 `DataContext` 实现 `INavigationExited`。
 
-`OnNavigationEnteredAsync` 与 `Loaded`/`Unloaded` 无关，每个成功提交的导航都会触发。
-传入的令牌不会取消已经提交的导航；它表示这一次导航已被后续导航取代，或者宿主已真正
-卸载/与作用域分离。宿主不会等待 Enter 完成，因此旧页面的慢请求不会阻塞新页面。实现应
-把令牌传给网络、数据库等可取消操作，并在取消后避免把过期结果写回视图模型。
+`OnNavigationEntered` 和两个 `OnNavigationEnteredAsync` 版本都与 `Loaded`/`Unloaded`
+无关，每个成功提交的导航都会触发。`IAsyncNavigationAware` 适用于无需取消的短异步工作；
+`ICancellableAsyncNavigationAware` 收到的令牌不会取消已经提交的导航，它表示这一次导航
+已被后续导航取代，或者宿主已真正卸载/与作用域分离。宿主不会等待异步 Enter 完成，因此
+旧页面的慢请求不会阻塞新页面。可取消版本应把令牌传给网络、数据库等可取消操作，并在
+取消后避免把过期结果写回视图模型。如果同一对象实现两个异步接口，宿主只调用可取消版本。
 
 Exit 是同步回调，并且总在新内容的 Enter 启动前执行。同一个缓存页面实例因参数变化而
 再次导航时，也会先 Exit、取消旧 Enter 的令牌，再用新令牌重新 Enter。
@@ -693,7 +697,8 @@ Exit 是同步回调，并且总在新内容的 Enter 启动前执行。同一�
 以便页面在挂入 Frame 后建立 `DataContext`。它晚于 `NavigationView.Navigated` 路由事件；
 同时使用两者时，不应假设它们位于同一 dispatcher 轮次。
 
-异步 Enter 抛出的非取消异常会通过 `NavigationView.NavigationCallbackFailed` 明确上报，
+同步或异步生命周期回调抛出的非取消异常会通过
+`NavigationView.NavigationCallbackFailed` 明确上报，
 其中的 `NavigationCallbackException` 包含回调阶段、页面内容、实际回调对象和语义导航
 目标。处理器记录或展示异常后可设置 `Handled = true`；未处理异常会在控件 Dispatcher
 上重新抛出。宿主已取消令牌时产生的 `OperationCanceledException` 属于正常结束，不会上报。
@@ -707,16 +712,12 @@ Exit 是同步回调，并且总在新内容的 Enter 启动前执行。同一�
 
 ```csharp
 // 页面实现 INavigationAware
-public Task OnNavigationEnteredAsync(CancellationToken cancellationToken)
+public void OnNavigationEntered()
 {
-    cancellationToken.ThrowIfCancellationRequested();
-
     if (DataContext is ArticleViewModel viewModel)
     {
         viewModel.ApplyNavigationParameter(Navigation.GetParameter(this));
     }
-
-    return Task.CompletedTask;
 }
 
 public void OnNavigationExited() { }

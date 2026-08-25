@@ -158,8 +158,9 @@ public partial class NavigationView
     /// <remarks>
     /// This event is synchronous with the accepted request so selection, history, and
     /// <see cref="CurrentLocation"/> are already observable by its handlers. WPF may attach the
-    /// private Frame presenter later; visual-tree-dependent initialization belongs in Loaded or
-    /// <see cref="INavigationAware.OnNavigationEnteredAsync(CancellationToken)"/>.
+    /// private Frame presenter later; visual-tree-dependent initialization belongs in Loaded,
+    /// <see cref="IAsyncNavigationAware.OnNavigationEnteredAsync"/>, or
+    /// <see cref="ICancellableAsyncNavigationAware.OnNavigationEnteredAsync(CancellationToken)"/>.
     /// </remarks>
     public event TypedEventHandler<NavigationView, NavigatedEventArgs> Navigated
     {
@@ -170,13 +171,13 @@ public partial class NavigationView
     #endregion
 
     /// <summary>
-    /// Occurs when an <see cref="INavigationAware"/> lifecycle callback fails.
+    /// Occurs when a navigation lifecycle callback fails.
     /// </summary>
     /// <remarks>
     /// Navigation is already committed when this event is raised and cannot be rolled back. The
-    /// event is the explicit observation boundary for asynchronous entry callbacks. If no handler
-    /// marks <see cref="NavigationCallbackFailedEventArgs.Handled"/>, the contextual exception is
-    /// rethrown on this control's dispatcher.
+    /// event is the explicit observation boundary for synchronous and asynchronous lifecycle
+    /// callbacks. If no handler marks <see cref="NavigationCallbackFailedEventArgs.Handled"/>, the
+    /// contextual exception is rethrown on this control's dispatcher.
     /// </remarks>
     public event EventHandler<NavigationCallbackFailedEventArgs>? NavigationCallbackFailed;
 

@@ -771,6 +771,24 @@ public class NavigationViewTests
     }
 
     [Fact]
+    public void ReplaceContent_ExitOnlyParticipant_ReceivesExitNotification()
+    {
+        RunOnStaThread(() =>
+        {
+            var navigationView = new Wpf.Zen.Ui.Controls.NavigationView();
+            var page = new NavigationExitedPage();
+
+            Assert.True(navigationView.ReplaceContent(page));
+            DrainDispatcher();
+            Assert.Equal(0, page.NavigationExitedCount);
+
+            Assert.True(navigationView.ReplaceContent(new Border()));
+            DrainDispatcher();
+            Assert.Equal(1, page.NavigationExitedCount);
+        });
+    }
+
+    [Fact]
     public void Navigate_SamePageDifferentParameter_CommitsOccurrenceAndReEntersLifecycle()
     {
         RunOnStaThread(() =>
@@ -897,6 +915,47 @@ public class NavigationViewTests
             Assert.False(firstPage.EntryTask.IsCompleted);
             Assert.Equal(1, secondPage.NavigationEnteredCount);
             Assert.Equal(0, secondPage.NavigationExitedCount);
+        });
+    }
+
+    [Fact]
+    public void ReplaceContent_NonCancellableAsyncParticipant_ReceivesEntryAndExit()
+    {
+        RunOnStaThread(() =>
+        {
+            var navigationView = new Wpf.Zen.Ui.Controls.NavigationView();
+            var page = new AsyncNavigationAwarePage();
+
+            Assert.True(navigationView.ReplaceContent(page));
+            DrainDispatcher();
+            Assert.Equal(1, page.NavigationEnteredCount);
+            Assert.Equal(0, page.NavigationExitedCount);
+
+            Assert.True(navigationView.ReplaceContent(new Border()));
+            DrainDispatcher();
+            Assert.Equal(1, page.NavigationExitedCount);
+        });
+    }
+
+    [Fact]
+    public void ReplaceContent_ParticipantWithBothAsyncContracts_UsesCancellableContract()
+    {
+        RunOnStaThread(() =>
+        {
+            var navigationView = new Wpf.Zen.Ui.Controls.NavigationView();
+            var page = new DualAsyncNavigationAwarePage();
+
+            Assert.True(navigationView.ReplaceContent(page));
+            DrainDispatcher();
+
+            Assert.Equal(0, page.NonCancellableEntryCount);
+            Assert.Equal(1, page.CancellableEntryCount);
+            Assert.False(page.EntryCancellationToken.IsCancellationRequested);
+
+            Assert.True(navigationView.ReplaceContent(new Border()));
+            DrainDispatcher();
+            Assert.True(page.EntryCancellationToken.IsCancellationRequested);
+            Assert.Equal(1, page.NavigationExitedCount);
         });
     }
 
@@ -1842,7 +1901,7 @@ public class NavigationViewTests
         WpfTestThread.Run(action);
     }
 
-    private sealed class NavigationAwarePage : Border, INavigationAware
+    private sealed class NavigationAwarePage : Border, ICancellableAsyncNavigationAware
     {
         public List<CancellationToken> EntryCancellationTokens { get; } = [];
 
@@ -1854,6 +1913,54 @@ public class NavigationViewTests
         {
             EntryCancellationTokens.Add(cancellationToken);
             NavigationEnteredCount++;
+            return Task.CompletedTask;
+        }
+
+        public void OnNavigationExited()
+        {
+            NavigationExitedCount++;
+        }
+    }
+
+    private sealed class AsyncNavigationAwarePage : Border, IAsyncNavigationAware
+    {
+        public int NavigationEnteredCount { get; private set; }
+
+        public int NavigationExitedCount { get; private set; }
+
+        public Task OnNavigationEnteredAsync()
+        {
+            NavigationEnteredCount++;
+            return Task.CompletedTask;
+        }
+
+        public void OnNavigationExited()
+        {
+            NavigationExitedCount++;
+        }
+    }
+
+    private sealed class DualAsyncNavigationAwarePage
+        : Border, IAsyncNavigationAware, ICancellableAsyncNavigationAware
+    {
+        public int NonCancellableEntryCount { get; private set; }
+
+        public int CancellableEntryCount { get; private set; }
+
+        public int NavigationExitedCount { get; private set; }
+
+        public CancellationToken EntryCancellationToken { get; private set; }
+
+        public Task OnNavigationEnteredAsync()
+        {
+            NonCancellableEntryCount++;
+            return Task.CompletedTask;
+        }
+
+        public Task OnNavigationEnteredAsync(CancellationToken cancellationToken)
+        {
+            CancellableEntryCount++;
+            EntryCancellationToken = cancellationToken;
             return Task.CompletedTask;
         }
 
@@ -1887,16 +1994,22 @@ public class NavigationViewTests
 
         public int NavigationExitedCount { get; private set; }
 
-        public Task OnNavigationEnteredAsync(CancellationToken cancellationToken)
+        public void OnNavigationEntered()
         {
             NavigationEnteredCount++;
-            return Task.CompletedTask;
         }
 
         public void OnNavigationExited()
         {
             NavigationExitedCount++;
         }
+    }
+
+    private sealed class NavigationExitedPage : Border, INavigationExited
+    {
+        public int NavigationExitedCount { get; private set; }
+
+        public void OnNavigationExited() => NavigationExitedCount++;
     }
 
     private sealed class LateDataContextPage(NavigationAwareViewModel viewModel) : Border
@@ -1979,7 +2092,7 @@ public class NavigationViewTests
         public override DataTemplate SelectTemplate(object item, DependencyObject container) => template;
     }
 
-    private sealed class DeferredNavigationEnterPage : Border, INavigationAware
+    private sealed class DeferredNavigationEnterPage : Border, ICancellableAsyncNavigationAware
     {
         private readonly TaskCompletionSource<object?> _navigationEnteredCompletion = new();
 
@@ -2009,10 +2122,13 @@ public class NavigationViewTests
         bool failOnExit = false
     ) : Border, INavigationAware
     {
-        public Task OnNavigationEnteredAsync(CancellationToken cancellationToken) =>
-            failOnEnter
-                ? Task.FromException(new InvalidOperationException("entry failed"))
-                : Task.CompletedTask;
+        public void OnNavigationEntered()
+        {
+            if (failOnEnter)
+            {
+                throw new InvalidOperationException("entry failed");
+            }
+        }
 
         public void OnNavigationExited()
         {
@@ -2023,7 +2139,8 @@ public class NavigationViewTests
         }
     }
 
-    private sealed class DeferredFailingNavigationAwarePage : Border, INavigationAware
+    private sealed class DeferredFailingNavigationAwarePage
+        : Border, ICancellableAsyncNavigationAware
     {
         private readonly TaskCompletionSource<object?> _entryCompletion = new();
 

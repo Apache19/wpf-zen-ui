@@ -347,7 +347,8 @@ public class NavigationViewAuditTests
         public void Dispose() => IsDisposed = true;
     }
 
-    private sealed class DeferredEntryPage(AuditDisposable dependency) : Border, INavigationAware
+    private sealed class DeferredEntryPage(AuditDisposable dependency)
+        : Border, ICancellableAsyncNavigationAware
     {
         private readonly TaskCompletionSource<bool> _entryCompletion = new(
             TaskCreationOptions.RunContinuationsAsynchronously
@@ -374,10 +375,9 @@ public class NavigationViewAuditTests
 
         public int ExitedCount { get; private set; }
 
-        public Task OnNavigationEnteredAsync(CancellationToken cancellationToken)
+        public void OnNavigationEntered()
         {
             EnteredCount++;
-            return Task.CompletedTask;
         }
 
         public void OnNavigationExited() => ExitedCount++;
