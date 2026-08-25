@@ -7,7 +7,6 @@
     xmlns:ui="http://schemas.thezendev.com/wpf/2027"
     xmlns:vm="clr-namespace:Wpf.Zen.Ui.Gallery.ViewModels.Pages"
     Title="Dashboard Page"
-    Margin="0,32,0,0"
     d:Background="{ui:DynamicBrush WindowBackground}"
     d:DataContext="{d:DesignInstance vm:DashboardViewModel, IsDesignTimeCreatable=True}"
     d:DesignWidth="800"

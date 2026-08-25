@@ -90,8 +90,8 @@
                                     x:Name="PART_AutoSuggestBoxSymbolButton"
                                     HorizontalAlignment="Left"
                                     VerticalAlignment="Center"
-                                    Icon="{m:FluentIconSource Search24}"
                                     AutomationProperties.AutomationId="NavigationAutoSuggestBoxButton"
+                                    Icon="{m:FluentIconSource Search24}"
                                     Visibility="Hidden" />
                             </Grid>
                         </Grid>
@@ -315,6 +315,10 @@
                 <Setter TargetName="PART_PaneButtonsPresenter" Property="Visibility" Value="Collapsed" />
                 <Setter TargetName="PART_PaneButtonsPresenter" Property="Margin" Value="0" />
             </MultiTrigger>
+
+            <Trigger Property="HeaderVisibility" Value="Collapsed">
+                <Setter TargetName="PART_NavigationFrameHost" Property="Padding" Value="{Binding Padding, RelativeSource={RelativeSource TemplatedParent}}" />
+            </Trigger>
 
             <MultiTrigger>
                 <MultiTrigger.Conditions>

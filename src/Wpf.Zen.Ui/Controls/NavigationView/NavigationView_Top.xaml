@@ -124,6 +124,11 @@
 
             </Grid>
         </Grid>
+        <ControlTemplate.Triggers>
+            <Trigger Property="HeaderVisibility" Value="Collapsed">
+                <Setter TargetName="PART_NavigationFrameHost" Property="Padding" Value="{Binding Padding, RelativeSource={RelativeSource TemplatedParent}}" />
+            </Trigger>
+        </ControlTemplate.Triggers>
     </ControlTemplate>
 
 </ResourceDictionary>

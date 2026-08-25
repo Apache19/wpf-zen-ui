@@ -157,6 +157,9 @@
             <Trigger Property="HasFooterMenuItems" Value="False">
                 <Setter TargetName="PART_FooterSeparator" Property="Visibility" Value="Collapsed" />
             </Trigger>
+            <Trigger Property="HeaderVisibility" Value="Collapsed">
+                <Setter TargetName="PART_NavigationFrameHost" Property="Padding" Value="{Binding Padding, RelativeSource={RelativeSource TemplatedParent}}" />
+            </Trigger>
         </ControlTemplate.Triggers>
     </ControlTemplate>
 
