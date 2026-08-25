@@ -802,7 +802,16 @@ public partial class NavigationViewItem : HeaderedItemsControl
     /// </summary>
     public void Activate(NavigationView navigationView)
     {
-        NavigationViewItemTemplateBehavior.SetIsActive(this, true);
+        SetValue(IsActivePropertyKey, true);
+
+        if (UsesInlineExpansion && NavigationViewItemParent is NavigationViewItem parentItem)
+        {
+            // Inline activation must reveal the selected row. Expansion remains independent from
+            // selection: OnIsActiveChanged propagates descendant state to ancestors without
+            // incorrectly marking those ancestors active.
+            parentItem.SetCurrentValue(IsExpandedProperty, true);
+        }
+
         OnActivated(navigationView);
     }
 
@@ -812,7 +821,7 @@ public partial class NavigationViewItem : HeaderedItemsControl
     /// </summary>
     public void Deactivate(NavigationView navigationView)
     {
-        NavigationViewItemTemplateBehavior.SetIsActive(this, false);
+        SetValue(IsActivePropertyKey, false);
         OnDeactivated(navigationView);
     }
 
