@@ -17,9 +17,13 @@ namespace Wpf.Zen.Ui.Controls;
 /// </summary>
 public class PassiveScrollViewer : ScrollViewer
 {
-    /// <summary>
-    /// Identifies the <see cref="ScrollSpillMode"/> attached dependency property.
-    /// </summary>
+    private static readonly DependencyProperty[] TemplatedParentAssistProperties =
+    [
+        ScrollViewerAssist.HideButtonsProperty,
+        ScrollViewerAssist.OverlayModeProperty,
+    ];
+
+    /// <summary>Identifies the <see cref="ScrollSpillMode"/> dependency property.</summary>
     /// <remarks>
     /// The property is attached so a control can configure the scrolling host hidden inside its
     /// template. Templates must forward the value explicitly; it deliberately does not inherit
@@ -58,7 +62,7 @@ public class PassiveScrollViewer : ScrollViewer
         );
 
     /// <summary>
-    /// Identifies the read-only <see cref="EffectiveHorizontalScrollBarVisibility"/> dependency property.
+    /// Identifies the <see cref="EffectiveHorizontalScrollBarVisibility"/> dependency property.
     /// </summary>
     public static readonly DependencyProperty EffectiveHorizontalScrollBarVisibilityProperty =
         EffectiveHorizontalScrollBarVisibilityPropertyKey.DependencyProperty;
@@ -81,6 +85,7 @@ public class PassiveScrollViewer : ScrollViewer
     /// <returns>
     /// The configured spill policy, or <see cref="Controls.ScrollSpillMode.Enabled"/> when unset.
     /// </returns>
+    [AttachedPropertyBrowsableForType(typeof(DependencyObject))]
     public static ScrollSpillMode GetScrollSpillMode(DependencyObject element)
     {
         return (ScrollSpillMode)element.GetValue(ScrollSpillModeProperty);
@@ -134,7 +139,7 @@ public class PassiveScrollViewer : ScrollViewer
     /// </summary>
     public override void OnApplyTemplate()
     {
-        BindHideButtonsToTemplatedParentIfUnset();
+        BindAssistPropertiesToTemplatedParentIfUnset();
         base.OnApplyTemplate();
     }
 
@@ -173,36 +178,42 @@ public class PassiveScrollViewer : ScrollViewer
     }
 
     /// <summary>
-    /// Mirrors WPF's forwarding behavior for attached ScrollViewer properties that are set on a
-    /// template owner, without turning the property into an inheritable tree-wide policy.
+    /// Connects library scrolling properties set on the template owner to this viewer when its
+    /// template, style, or local values do not already choose a value.
     /// </summary>
-    private void BindHideButtonsToTemplatedParentIfUnset()
+    private void BindAssistPropertiesToTemplatedParentIfUnset()
     {
-        if (
-            TemplatedParent == null
-            || DependencyPropertyHelper.GetValueSource(this, ScrollViewerAssist.HideButtonsProperty)
-                    .BaseValueSource
-                != BaseValueSource.Default
-        )
+        if (TemplatedParent == null)
         {
             return;
         }
 
-        // ScrollViewer.OnPreApplyTemplate performs the same conditional binding for WPF's
-        // HorizontalScrollBarVisibility, VerticalScrollBarVisibility and related attached
-        // properties. HideButtons cannot participate in that internal method, so the library's
-        // ScrollViewer derivative reproduces the public effect here. A local value or style on the
-        // actual viewer intentionally wins, and avoiding property inheritance prevents an outer
-        // viewer's setting from leaking into independently nested scrolling surfaces in its content.
-        BindingOperations.SetBinding(
-            this,
-            ScrollViewerAssist.HideButtonsProperty,
-            new Binding
+        foreach (DependencyProperty property in TemplatedParentAssistProperties)
+        {
+            if (
+                DependencyPropertyHelper.GetValueSource(this, property).BaseValueSource
+                != BaseValueSource.Default
+            )
             {
-                Path = new PropertyPath(ScrollViewerAssist.HideButtonsProperty),
-                RelativeSource = RelativeSource.TemplatedParent,
+                continue;
             }
-        );
+
+            // ScrollViewer.OnPreApplyTemplate conditionally binds WPF's own scrolling attached
+            // properties to the templated parent. WPF's helper is internal and only handles its
+            // fixed property list, so PassiveScrollViewer reproduces that contract for the
+            // library-specific settings. A value supplied directly by the viewer or its style
+            // intentionally wins. Property inheritance is not used because it would continue into
+            // the owner's content and unintentionally configure independently nested viewers.
+            BindingOperations.SetBinding(
+                this,
+                property,
+                new Binding
+                {
+                    Path = new PropertyPath(property),
+                    RelativeSource = RelativeSource.TemplatedParent,
+                }
+            );
+        }
     }
 
     /// <summary>
@@ -254,10 +265,8 @@ public class PassiveScrollViewer : ScrollViewer
         // range. This both rejects anchoring shifts from growing content and commits a valid replacement
         // for an offset invalidated by shrinking content, including zero when content no longer overflows.
         // Use the public command queue so custom IScrollInfo implementations retain their normal contract.
-        if (
-            e.VerticalChange != 0d
-         && (e.ExtentHeightChange != 0d || e.ViewportHeightChange != 0d)
-        )
+        if (e.VerticalChange != 0d
+            && (e.ExtentHeightChange != 0d || e.ViewportHeightChange != 0d))
         {
             double offsetBeforeLayoutChange = e.VerticalOffset - e.VerticalChange;
             ScrollToVerticalOffset(Math.Min(Math.Max(offsetBeforeLayoutChange, 0d), ScrollableHeight));
@@ -266,10 +275,7 @@ public class PassiveScrollViewer : ScrollViewer
         // ScrollContentPresenter keeps an independent requested offset. Commit zero for a
         // sub-threshold rounding range so that range cannot reappear as a tiny visual displacement
         // after a later extent update.
-        if (
-            IsHorizontalScrollRangeSuppressed
-            && HorizontalOffset != 0.0
-        )
+        if (IsHorizontalScrollRangeSuppressed && HorizontalOffset != 0.0)
         {
             ScrollToHorizontalOffset(0.0);
         }

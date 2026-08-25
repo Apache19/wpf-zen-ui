@@ -197,7 +197,7 @@ public class PassiveScrollViewerTests
     }
 
     [Fact]
-    public void DefaultListBoxTemplate_ForwardsAttachedHideButtonsOnlyToItsScrollViewer()
+    public void DefaultListBoxTemplate_ForwardsAssistPropertiesOnlyToItsScrollViewer()
     {
         RunOnStaThread(
             () =>
@@ -220,6 +220,7 @@ public class PassiveScrollViewerTests
                     Style = Assert.IsType<Style>(resources["DefaultListBoxStyle"]),
                 };
                 ScrollViewerAssist.SetHideButtons(listBox, true);
+                ScrollViewerAssist.SetOverlayMode(listBox, ScrollViewerOverlayMode.Traditional);
 
                 var window = new Window
                 {
@@ -240,7 +241,24 @@ public class PassiveScrollViewerTests
                     );
 
                     Assert.True(ScrollViewerAssist.GetHideButtons(templateScrollViewer));
+                    Assert.Equal(
+                        ScrollViewerOverlayMode.Traditional,
+                        ScrollViewerAssist.GetOverlayMode(templateScrollViewer)
+                    );
                     Assert.False(ScrollViewerAssist.GetHideButtons(nestedScrollViewer));
+                    Assert.Equal(
+                        ScrollViewerOverlayMode.Overlay,
+                        ScrollViewerAssist.GetOverlayMode(nestedScrollViewer)
+                    );
+
+                    var scrollContentPresenter = Assert.IsType<ScrollContentPresenter>(
+                        templateScrollViewer.Template.FindName(
+                            "ScrollContent",
+                            templateScrollViewer
+                        )
+                    );
+                    Assert.Equal(1, Grid.GetRowSpan(scrollContentPresenter));
+                    Assert.Equal(1, Grid.GetColumnSpan(scrollContentPresenter));
 
                     var verticalScrollBar = Assert.IsType<UiScrollBar>(
                         templateScrollViewer.Template.FindName(
@@ -249,6 +267,15 @@ public class PassiveScrollViewerTests
                         )
                     );
                     AssertScrollBarButtonsCollapsed(verticalScrollBar, "UpButton", "DownButton");
+
+                    ScrollViewerAssist.SetOverlayMode(listBox, ScrollViewerOverlayMode.Overlay);
+
+                    Assert.Equal(
+                        ScrollViewerOverlayMode.Overlay,
+                        ScrollViewerAssist.GetOverlayMode(templateScrollViewer)
+                    );
+                    Assert.Equal(2, Grid.GetRowSpan(scrollContentPresenter));
+                    Assert.Equal(2, Grid.GetColumnSpan(scrollContentPresenter));
                 }
                 finally
                 {

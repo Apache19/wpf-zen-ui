@@ -21,9 +21,9 @@ public static class ScrollViewerAssist
     /// The default value is <see langword="false"/>. When set on a <see cref="ScrollViewer"/>,
     /// the line-decrement and line-increment buttons in both scroll bars are collapsed while the
     /// track and thumb remain available. The property may also be set on a control whose template
-    /// creates a <see cref="PassiveScrollViewer"/>; that viewer forwards the value from its
-    /// templated parent in the same way that WPF forwards its standard scrolling attached
-    /// properties.
+    /// creates a <see cref="PassiveScrollViewer"/>. Unless the viewer has its own value, it obtains
+    /// this setting from the template owner in the same way that WPF forwards its standard
+    /// scrolling attached properties.
     /// </remarks>
     public static readonly DependencyProperty HideButtonsProperty = DependencyProperty.RegisterAttached(
         "HideButtons",
@@ -41,6 +41,7 @@ public static class ScrollViewerAssist
     /// <see langword="true"/> when the scroll-bar buttons are hidden; otherwise,
     /// <see langword="false"/>.
     /// </returns>
+    [AttachedPropertyBrowsableForType(typeof(Control))]
     public static bool GetHideButtons(DependencyObject element)
     {
         if (element == null)
@@ -71,8 +72,16 @@ public static class ScrollViewerAssist
     }
 
     /// <summary>
-    /// Identifies the <see cref="OverlayModeProperty"/> attached dependency property.
+    /// Identifies the <see cref="GetOverlayMode"/> and <see cref="SetOverlayMode"/> attached
+    /// dependency property.
     /// </summary>
+    /// <remarks>
+    /// The default value is <see cref="ScrollViewerOverlayMode.Overlay"/>. The property can be set
+    /// directly on a <see cref="ScrollViewer"/> or on a control whose template creates a
+    /// <see cref="PassiveScrollViewer"/>. Unless that viewer has its own value, it obtains the mode
+    /// from the template owner without allowing the setting to leak into independently nested
+    /// scrolling controls in the owner's content.
+    /// </remarks>
     public static readonly DependencyProperty OverlayModeProperty = DependencyProperty.RegisterAttached(
         "OverlayMode",
         typeof(ScrollViewerOverlayMode),
@@ -81,13 +90,13 @@ public static class ScrollViewerAssist
     );
 
     /// <summary>
-    /// Helper for getting <see cref="OverlayModeProperty"/> from <paramref name="element"/>.
+    /// Gets how an element's scroll bars are placed relative to its scrolling viewport.
     /// </summary>
     /// <param name="element">
-    /// <see cref="DependencyObject"/> to read <see cref="OverlayModeProperty"/> from.
+    /// The scroll viewer or template-owning control to query.
     /// </param>
-    /// <returns>OverlayMode property value.</returns>
-    [AttachedPropertyBrowsableForType(typeof(ScrollViewer))]
+    /// <returns>The configured scroll-bar placement mode.</returns>
+    [AttachedPropertyBrowsableForType(typeof(Control))]
     public static ScrollViewerOverlayMode GetOverlayMode(DependencyObject element)
     {
         if (element == null)
@@ -99,12 +108,12 @@ public static class ScrollViewerAssist
     }
 
     /// <summary>
-    /// Helper for setting <see cref="OverlayModeProperty"/> on <paramref name="element"/>.
+    /// Sets how an element's scroll bars are placed relative to its scrolling viewport.
     /// </summary>
     /// <param name="element">
-    /// <see cref="ScrollViewer"/> to set <see cref="OverlayModeProperty"/> on.
+    /// The scroll viewer or template-owning control to configure.
     /// </param>
-    /// <param name="value">OverlayMode property value.</param>
+    /// <param name="value">The scroll-bar placement mode.</param>
     public static void SetOverlayMode(DependencyObject element, ScrollViewerOverlayMode value)
     {
         if (element == null)
