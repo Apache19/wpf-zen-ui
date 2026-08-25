@@ -158,9 +158,8 @@ public partial class NavigationView
     /// <remarks>
     /// This event is synchronous with the accepted request so selection, history, and
     /// <see cref="CurrentLocation"/> are already observable by its handlers. WPF may attach the
-    /// private Frame presenter later; visual-tree-dependent initialization belongs in Loaded,
-    /// <see cref="IAsyncNavigationAware.OnNavigationEnteredAsync"/>, or
-    /// <see cref="ICancellableAsyncNavigationAware.OnNavigationEnteredAsync(CancellationToken)"/>.
+    /// private Frame presenter later; visual-tree-dependent initialization belongs in Loaded or
+    /// <see cref="IAsyncNavigationAware.OnNavigationEnteredAsync(CancellationToken)"/>.
     /// </remarks>
     public event TypedEventHandler<NavigationView, NavigatedEventArgs> Navigated
     {

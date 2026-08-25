@@ -287,16 +287,14 @@ public partial class NavigationView
     }
 
     /// <summary>
-    /// Invokes every synchronous entry callback and starts the applicable asynchronous callback.
+    /// Invokes every synchronous entry callback and starts every asynchronous entry callback.
     /// </summary>
     /// <remarks>
     /// All callbacks run on the dispatcher after visual attachment. Asynchronous methods preserve
     /// the normal WPF synchronization context up to their first incomplete await, then their
     /// completions are observed independently so a slow page cannot block a later destination.
-    /// A target that deliberately implements synchronous and asynchronous entry interfaces
-    /// receives both callbacks, with the synchronous callback first. When a target implements both
-    /// asynchronous contracts, the cancellable contract takes precedence so one navigation
-    /// occurrence cannot start the same logical work twice.
+    /// A target that deliberately implements both entry interfaces receives both callbacks, with
+    /// the synchronous callback first.
     /// </remarks>
     private void StartNavigationEntered(
         object? content,
@@ -332,64 +330,38 @@ public partial class NavigationView
                 }
             }
 
-            if (operation is null)
+            if (callbackTarget is not IAsyncNavigationAware asynchronousCallbackTarget
+                || operation is null)
             {
                 continue;
             }
 
-            if (callbackTarget is ICancellableAsyncNavigationAware cancellableCallbackTarget)
-            {
-                operation.RememberCancellationCallbackTarget(cancellableCallbackTarget);
-                StartAsyncNavigationEntered(
-                    content,
-                    cancellableCallbackTarget,
-                    () => cancellableCallbackTarget.OnNavigationEnteredAsync(operation.Token),
-                    nameof(ICancellableAsyncNavigationAware.OnNavigationEnteredAsync),
-                    navigationTarget,
-                    operation,
-                    operation.Token,
-                    synchronousFailures
-                );
-            }
-            else if (callbackTarget is IAsyncNavigationAware asynchronousCallbackTarget)
-            {
-                StartAsyncNavigationEntered(
-                    content,
-                    asynchronousCallbackTarget,
-                    asynchronousCallbackTarget.OnNavigationEnteredAsync,
-                    nameof(IAsyncNavigationAware.OnNavigationEnteredAsync),
-                    navigationTarget,
-                    operation,
-                    CancellationToken.None,
-                    synchronousFailures
-                );
-            }
+            StartAsyncNavigationEntered(
+                content,
+                asynchronousCallbackTarget,
+                navigationTarget,
+                operation,
+                synchronousFailures
+            );
         }
     }
 
     /// <summary>Starts and observes one asynchronous entry callback.</summary>
-    /// <remarks>
-    /// The supplied token is also the exception-classification token. It is deliberately
-    /// <see cref="CancellationToken.None"/> for the non-cancellable contract so a task that cancels
-    /// itself is still reported instead of being mistaken for work superseded by navigation.
-    /// </remarks>
     private void StartAsyncNavigationEntered(
         object content,
-        INavigationExited callbackTarget,
-        Func<Task> callback,
-        string callbackName,
+        IAsyncNavigationAware callbackTarget,
         NavigationTarget? navigationTarget,
         NavigationEnterOperation operation,
-        CancellationToken cancellationToken,
         List<NavigationCallbackException> synchronousFailures
     )
     {
+        operation.RememberCallbackTarget(callbackTarget);
         Task task;
         try
         {
-            task = callback()
+            task = callbackTarget.OnNavigationEnteredAsync(operation.Token)
                 ?? throw new InvalidOperationException(
-                    $"{callbackTarget.GetType().FullName}.{callbackName} returned null."
+                    $"{callbackTarget.GetType().FullName}.{nameof(IAsyncNavigationAware.OnNavigationEnteredAsync)} returned null."
                 );
         }
         catch (Exception exception)
@@ -401,7 +373,7 @@ public partial class NavigationView
                 callbackTarget,
                 navigationTarget,
                 exception,
-                cancellationToken
+                operation.Token
             );
             return;
         }
@@ -413,7 +385,7 @@ public partial class NavigationView
                 content,
                 callbackTarget,
                 navigationTarget,
-                cancellationToken,
+                operation.Token,
                 synchronousFailures
             );
         }
@@ -426,7 +398,7 @@ public partial class NavigationView
                     content,
                     callbackTarget,
                     navigationTarget,
-                    cancellationToken
+                    operation.Token
                 )
             );
         }
@@ -499,7 +471,7 @@ public partial class NavigationView
     private static void ObserveCompletedNavigationEnter(
         Task task,
         object content,
-        INavigationExited callbackTarget,
+        IAsyncNavigationAware callbackTarget,
         NavigationTarget? navigationTarget,
         CancellationToken cancellationToken,
         List<NavigationCallbackException> failures
@@ -527,7 +499,7 @@ public partial class NavigationView
     private void ObserveCompletedNavigationEnter(
         Task task,
         object content,
-        INavigationExited callbackTarget,
+        IAsyncNavigationAware callbackTarget,
         NavigationTarget? navigationTarget,
         CancellationToken cancellationToken
     )
@@ -587,15 +559,14 @@ public partial class NavigationView
         }
 
         var cancellationException = operation.Cancel();
-        if (cancellationException is not null
-            && operation.CancellationCallbackTarget is not null)
+        if (cancellationException is not null && operation.CallbackTarget is not null)
         {
             QueueNavigationCallbackFailures(
                 [
                     new NavigationCallbackException(
                         NavigationCallbackStage.Entered,
                         operation.Content,
-                        operation.CancellationCallbackTarget,
+                        operation.CallbackTarget,
                         operation.NavigationTarget,
                         cancellationException
                     ),
@@ -723,13 +694,11 @@ public partial class NavigationView
 
         internal NavigationTarget? NavigationTarget { get; } = navigationTarget;
 
-        internal ICancellableAsyncNavigationAware? CancellationCallbackTarget { get; private set; }
+        internal IAsyncNavigationAware? CallbackTarget { get; private set; }
 
-        internal void RememberCancellationCallbackTarget(
-            ICancellableAsyncNavigationAware callbackTarget
-        )
+        internal void RememberCallbackTarget(IAsyncNavigationAware callbackTarget)
         {
-            CancellationCallbackTarget ??= callbackTarget;
+            CallbackTarget ??= callbackTarget;
         }
 
         internal void Track(Task task, Action<Task> observer)

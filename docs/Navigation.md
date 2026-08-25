@@ -647,14 +647,12 @@ object? parameter = Navigation.GetParameter(this);
 
 **方式 A：在导航感知生命周期回调中读取（推荐）**
 
-视图模型可实现同步的 `INavigationAware`、普通异步的 `IAsyncNavigationAware`，或可取消
-异步的 `ICancellableAsyncNavigationAware`。宿主在每次成功提交导航时调用相应的 Enter
-方法。此时位置刷新已完成，本次导航的参数已发布到
-`State.CurrentLocation.Target.Parameter`，可直接读取。需要执行可取消 I/O 时使用可取消
-版本：
+视图模型可实现同步的 `INavigationAware` 或异步的 `IAsyncNavigationAware`。宿主在每次
+成功提交导航时调用相应的 Enter 方法。此时位置刷新已完成，本次导航的参数已发布到
+`State.CurrentLocation.Target.Parameter`，可直接读取：
 
 ```csharp
-public sealed class ArticleViewModel : ICancellableAsyncNavigationAware
+public sealed class ArticleViewModel : IAsyncNavigationAware
 {
     private readonly INavigationService _navigation;
 
@@ -683,12 +681,11 @@ public sealed class ArticleViewModel : ICancellableAsyncNavigationAware
 - 页面实现 `INavigableView<object>` 且其 `ViewModel` 实现 `INavigationExited`；
 - 页面是普通 `FrameworkElement` 且 `DataContext` 实现 `INavigationExited`。
 
-`OnNavigationEntered` 和两个 `OnNavigationEnteredAsync` 版本都与 `Loaded`/`Unloaded`
-无关，每个成功提交的导航都会触发。`IAsyncNavigationAware` 适用于无需取消的短异步工作；
-`ICancellableAsyncNavigationAware` 收到的令牌不会取消已经提交的导航，它表示这一次导航
-已被后续导航取代，或者宿主已真正卸载/与作用域分离。宿主不会等待异步 Enter 完成，因此
-旧页面的慢请求不会阻塞新页面。可取消版本应把令牌传给网络、数据库等可取消操作，并在
-取消后避免把过期结果写回视图模型。如果同一对象实现两个异步接口，宿主只调用可取消版本。
+`OnNavigationEntered` 和 `OnNavigationEnteredAsync` 与 `Loaded`/`Unloaded` 无关，每个成功
+提交的导航都会触发。异步方法收到的令牌不会取消已经提交的导航；它表示这一次导航已被
+后续导航取代，或者宿主已真正卸载/与作用域分离。宿主不会等待异步 Enter 完成，因此旧
+页面的慢请求不会阻塞新页面。实现应把令牌传给网络、数据库等可取消操作，并在取消后避免
+把过期结果写回视图模型。
 
 Exit 是同步回调，并且总在新内容的 Enter 启动前执行。同一个缓存页面实例因参数变化而
 再次导航时，也会先 Exit、取消旧 Enter 的令牌，再用新令牌重新 Enter。

@@ -347,8 +347,7 @@ public class NavigationViewAuditTests
         public void Dispose() => IsDisposed = true;
     }
 
-    private sealed class DeferredEntryPage(AuditDisposable dependency)
-        : Border, ICancellableAsyncNavigationAware
+    private sealed class DeferredEntryPage(AuditDisposable dependency) : Border, IAsyncNavigationAware
     {
         private readonly TaskCompletionSource<bool> _entryCompletion = new(
             TaskCreationOptions.RunContinuationsAsynchronously

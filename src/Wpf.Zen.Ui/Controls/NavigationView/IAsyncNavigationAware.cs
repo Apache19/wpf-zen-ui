@@ -10,15 +10,18 @@ namespace Wpf.Zen.Ui.Controls;
 /// </summary>
 /// <remarks>
 /// This callback describes navigation state, not WPF visual-tree state. It is independent of
-/// <c>Loaded</c> and cannot cancel a navigation request. Implement
-/// <see cref="ICancellableAsyncNavigationAware"/> instead when the asynchronous work can stop
-/// after a later navigation supersedes it.
+/// <c>Loaded</c> and cannot cancel a navigation request.
 /// </remarks>
 public interface IAsyncNavigationAware : INavigationExited
 {
     /// <summary>
     /// Asynchronously handles the component entering the current navigation state.
     /// </summary>
+    /// <param name="cancellationToken">
+    /// A token that is cancelled when a later navigation supersedes this occurrence or when the
+    /// navigation host is detached. Implementations should pass it to cancellable asynchronous
+    /// work and avoid publishing stale results after cancellation.
+    /// </param>
     /// <remarks>
     /// The navigation host invokes this callback only after it has successfully committed the
     /// destination and attached its visual tree. Failed or stopped requests do not enter the
@@ -26,5 +29,5 @@ public interface IAsyncNavigationAware : INavigationExited
     /// lifecycle delivery to a later destination.
     /// </remarks>
     /// <returns>A task that represents the asynchronous operation.</returns>
-    Task OnNavigationEnteredAsync();
+    Task OnNavigationEnteredAsync(CancellationToken cancellationToken);
 }
