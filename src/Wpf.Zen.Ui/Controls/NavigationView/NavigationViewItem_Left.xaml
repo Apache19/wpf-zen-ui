@@ -40,8 +40,7 @@
                     HorizontalAlignment="Center"
                     VerticalAlignment="Center"
                     Content="{Binding Path=Icon, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationViewItem}}}"
-                    TextElement.FontSize="16"
-                    TextElement.Foreground="{m:DynamicBrush TextFillPrimary}" />
+                    TextElement.FontSize="16" />
                 <Rectangle
                     x:Name="ActiveIndicator"
                     Grid.Column="0"
@@ -79,7 +78,6 @@
                     HorizontalAlignment="Center"
                     VerticalAlignment="Center"
                     FontSize="12"
-                    Foreground="{m:DynamicBrush TextFillPrimary}"
                     IsHitTestVisible="False"
                     RenderTransformOrigin="0.5,0.5"
                     Symbol="ChevronDown24"
@@ -205,6 +203,10 @@
                     </BeginStoryboard>
                 </MultiDataTrigger.ExitActions>
             </MultiDataTrigger>
+
+            <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Foreground" Value="{m:DynamicBrush TextFillDisabled}" />
+            </Trigger>
         </ControlTemplate.Triggers>
     </ControlTemplate>
 
