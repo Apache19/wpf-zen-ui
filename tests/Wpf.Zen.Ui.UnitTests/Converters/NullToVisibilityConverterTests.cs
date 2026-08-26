@@ -45,11 +45,11 @@ public class NullToVisibilityConverterTests
     {
         var converter = new NullToVisibilityConverter { TreatEmptyCollectionAsNull = true };
 
-        Assert.Equal(Visibility.Visible, Convert(converter, string.Empty));
-
-        converter.TreatEmptyStringAsNull = true;
-
         Assert.Equal(Visibility.Collapsed, Convert(converter, string.Empty));
+
+        converter.TreatEmptyStringAsNull = false;
+
+        Assert.Equal(Visibility.Visible, Convert(converter, string.Empty));
     }
 
     [Fact]
@@ -90,12 +90,12 @@ public class NullToVisibilityConverterTests
     {
         var converter = new NullToVisibilityConverter();
 
-        Assert.Equal(Visibility.Visible, Convert(converter, 0));
-
-        converter.TreatZeroAsNull = true;
-
         Assert.Equal(Visibility.Collapsed, Convert(converter, 0));
         Assert.Equal(Visibility.Visible, Convert(converter, 1));
+
+        converter.TreatZeroAsNull = false;
+
+        Assert.Equal(Visibility.Visible, Convert(converter, 0));
     }
 
     private static Visibility Convert(NullToVisibilityConverter converter, object? value)
