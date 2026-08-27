@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="Pagination" xml:space="preserve"><value>Разбиение на страницы</value></data>
+  <data name="PageSizeLabel" xml:space="preserve"><value>На странице:</value></data>
+  <data name="PreviousPage" xml:space="preserve"><value>Предыдущая</value></data>
+  <data name="NextPage" xml:space="preserve"><value>Следующая</value></data>
+  <data name="PageSizeSelectorAutomationName" xml:space="preserve"><value>Элементов на странице</value></data>
+  <data name="CurrentPageInputAutomationName" xml:space="preserve"><value>Целевая страница</value></data>
+  <data name="CurrentPageInputToolTip" xml:space="preserve"><value>Введите номер страницы и нажмите Enter</value></data>
+  <data name="PageItemAutomationNameFormat" xml:space="preserve"><value>Страница {0}</value></data>
+  <data name="CurrentPageItemAutomationNameFormat" xml:space="preserve"><value>Текущая страница {0}</value></data>
+  <data name="PreviousEllipsisAutomationNameFormat" xml:space="preserve"><value>Перейти назад к странице {0}</value></data>
+  <data name="NextEllipsisAutomationNameFormat" xml:space="preserve"><value>Перейти вперёд к странице {0}</value></data>
+  <data name="PageRequestNotAllowed" xml:space="preserve"><value>Команда не может перейти к запрошенной странице.</value></data>
+</root>

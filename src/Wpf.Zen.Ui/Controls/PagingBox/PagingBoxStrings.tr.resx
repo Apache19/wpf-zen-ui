@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="Pagination" xml:space="preserve"><value>Sayfalama</value></data>
+  <data name="PageSizeLabel" xml:space="preserve"><value>Sayfa başına:</value></data>
+  <data name="PreviousPage" xml:space="preserve"><value>Önceki</value></data>
+  <data name="NextPage" xml:space="preserve"><value>Sonraki</value></data>
+  <data name="PageSizeSelectorAutomationName" xml:space="preserve"><value>Sayfa başına öğe sayısı</value></data>
+  <data name="CurrentPageInputAutomationName" xml:space="preserve"><value>Hedef sayfa</value></data>
+  <data name="CurrentPageInputToolTip" xml:space="preserve"><value>Bir sayfa numarası girin ve Enter tuşuna basın</value></data>
+  <data name="PageItemAutomationNameFormat" xml:space="preserve"><value>Sayfa {0}</value></data>
+  <data name="CurrentPageItemAutomationNameFormat" xml:space="preserve"><value>Geçerli sayfa {0}</value></data>
+  <data name="PreviousEllipsisAutomationNameFormat" xml:space="preserve"><value>{0}. sayfaya geri git</value></data>
+  <data name="NextEllipsisAutomationNameFormat" xml:space="preserve"><value>{0}. sayfaya ileri git</value></data>
+  <data name="PageRequestNotAllowed" xml:space="preserve"><value>Komut istenen sayfaya gidemez.</value></data>
+</root>

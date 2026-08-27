@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="Pagination" xml:space="preserve"><value>Pagination</value></data>
+  <data name="PageSizeLabel" xml:space="preserve"><value>Par page :</value></data>
+  <data name="PreviousPage" xml:space="preserve"><value>Précédent</value></data>
+  <data name="NextPage" xml:space="preserve"><value>Suivant</value></data>
+  <data name="PageSizeSelectorAutomationName" xml:space="preserve"><value>Éléments par page</value></data>
+  <data name="CurrentPageInputAutomationName" xml:space="preserve"><value>Page cible</value></data>
+  <data name="CurrentPageInputToolTip" xml:space="preserve"><value>Entrez un numéro de page et appuyez sur Entrée</value></data>
+  <data name="PageItemAutomationNameFormat" xml:space="preserve"><value>Page {0}</value></data>
+  <data name="CurrentPageItemAutomationNameFormat" xml:space="preserve"><value>Page actuelle {0}</value></data>
+  <data name="PreviousEllipsisAutomationNameFormat" xml:space="preserve"><value>Reculer jusqu’à la page {0}</value></data>
+  <data name="NextEllipsisAutomationNameFormat" xml:space="preserve"><value>Avancer jusqu’à la page {0}</value></data>
+  <data name="PageRequestNotAllowed" xml:space="preserve"><value>La commande ne peut pas accéder à la page demandée.</value></data>
+</root>
