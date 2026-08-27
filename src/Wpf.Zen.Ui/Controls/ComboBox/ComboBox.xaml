@@ -275,6 +275,7 @@
             </MultiTrigger>
             <Trigger Property="IsEnabled" Value="False">
                 <Setter TargetName="PART_Placeholder" Property="Opacity" Value="0.5" />
+                <Setter TargetName="ChevronIcon" Property="IconForeground" Value="{m:DynamicBrush TextFillDisabled}" />
             </Trigger>
         </ControlTemplate.Triggers>
     </ControlTemplate>
