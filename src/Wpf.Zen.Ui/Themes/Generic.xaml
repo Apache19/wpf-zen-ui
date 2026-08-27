@@ -59,6 +59,7 @@
         <ResourceDictionary Source="pack://application:,,,/Wpf.Zen.Ui;component/Controls/NavigationView/NavigationViewList.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Zen.Ui;component/Controls/NavigationMap/NavigationMap.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Zen.Ui;component/Controls/NumberBox/NumberBox.xaml" />
+        <ResourceDictionary Source="pack://application:,,,/Wpf.Zen.Ui;component/Controls/PagingBox/PagingBox.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Zen.Ui;component/Controls/PasswordBox/PasswordBox.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Zen.Ui;component/Controls/ProgressBar/ProgressBar.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Zen.Ui;component/Controls/ProgressRing/ProgressRing.xaml" />

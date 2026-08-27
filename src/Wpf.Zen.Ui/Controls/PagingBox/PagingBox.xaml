@@ -1,0 +1,290 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:m="clr-namespace:Wpf.Zen.Ui.Markup"
+    xmlns:controls="clr-namespace:Wpf.Zen.Ui.Controls">
+
+    <Style x:Key="PagingBoxButtonStyle" TargetType="{x:Type Button}">
+        <Setter Property="OverridesDefaultStyle" Value="True" />
+        <Setter Property="HorizontalContentAlignment" Value="Center" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="TextBlock.TextAlignment" Value="Center" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type Button}">
+                    <Border
+                        x:Name="Bd"
+                        Padding="{TemplateBinding Padding}"
+                        Background="{TemplateBinding Background}"
+                        BorderBrush="{TemplateBinding BorderBrush}"
+                        BorderThickness="{TemplateBinding BorderThickness}">
+                        <ContentPresenter
+                            HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                            VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                            RecognizesAccessKey="True" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{m:DynamicBrush ControlFillPrimary}" />
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{m:DynamicBrush ControlFillTertiary}" />
+                            <Setter Property="Foreground" Value="{m:DynamicBrush TextFillSecondary}" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="Bd" Property="Background" Value="Transparent" />
+                            <Setter Property="Foreground" Value="{m:DynamicBrush TextFillDisabled}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <DataTemplate x:Key="PagingBoxNormalItemTemplate" DataType="{x:Type controls:PagingItem}">
+        <Button
+            Padding="{Binding Padding, RelativeSource={RelativeSource AncestorType={x:Type controls:PagingBox}}}"
+            AutomationProperties.Name="{Binding Description}"
+            BorderBrush="{Binding BorderBrush, RelativeSource={RelativeSource AncestorType={x:Type controls:PagingBox}}}"
+            BorderThickness="0,0,1,0"
+            IsEnabled="{Binding IsEnabled}"
+            Tag="{Binding Page}">
+            <Button.Style>
+                <Style BasedOn="{StaticResource PagingBoxButtonStyle}" TargetType="{x:Type Button}">
+                    <Setter Property="Background" Value="{Binding Background, RelativeSource={RelativeSource AncestorType={x:Type controls:PagingBox}}}" />
+                    <Setter Property="Content" Value="{Binding Page}" />
+                    <Style.Triggers>
+
+                        <DataTrigger Binding="{Binding IsCurrent}" Value="True">
+                            <Setter Property="Background" Value="{m:DynamicBrush ControlFillPrimary}" />
+                        </DataTrigger>
+
+                        <!-- Preserve the width so the item does not resize when the pointer moves over it. -->
+                        <DataTrigger Binding="{Binding State}" Value="PreviousEllipsis">
+                            <Setter Property="Content">
+                                <Setter.Value>
+                                    <Grid>
+                                        <controls:FluentIcon Symbol="IosArrowLtr24" />
+                                        <TextBlock Text="{Binding Page}" Visibility="Hidden" />
+                                    </Grid>
+                                </Setter.Value>
+                            </Setter>
+                        </DataTrigger>
+
+                        <DataTrigger Binding="{Binding State}" Value="NextEllipsis">
+                            <Setter Property="Content">
+                                <Setter.Value>
+                                    <Grid>
+                                        <controls:FluentIcon Symbol="IosArrowRtl24" />
+                                        <TextBlock Text="{Binding Page}" Visibility="Hidden" />
+                                    </Grid>
+                                </Setter.Value>
+                            </Setter>
+                        </DataTrigger>
+
+                        <MultiDataTrigger>
+                            <MultiDataTrigger.Conditions>
+                                <Condition Binding="{Binding IsMouseOver, RelativeSource={RelativeSource Self}}" Value="True" />
+                                <Condition Binding="{Binding IsEllipsis}" Value="True" />
+                            </MultiDataTrigger.Conditions>
+                            <Setter Property="Content">
+                                <Setter.Value>
+                                    <Grid>
+                                        <controls:FluentIcon Symbol="IosArrowRtl24" Visibility="Hidden" />
+                                        <TextBlock Text="{Binding Page}" />
+                                    </Grid>
+                                </Setter.Value>
+                            </Setter>
+                        </MultiDataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Button.Style>
+        </Button>
+    </DataTemplate>
+
+    <DataTemplate x:Key="PagingBoxLastItemTemplate" DataType="{x:Type controls:PagingItem}">
+        <Button
+            Padding="{Binding Padding, RelativeSource={RelativeSource AncestorType={x:Type controls:PagingBox}}}"
+            AutomationProperties.Name="{Binding Description}"
+            BorderThickness="0,0,0,0"
+            IsEnabled="{Binding IsEnabled}"
+            Tag="{Binding Page}">
+            <Button.Style>
+                <Style BasedOn="{StaticResource PagingBoxButtonStyle}" TargetType="{x:Type Button}">
+                    <Setter Property="Background" Value="{Binding Background, RelativeSource={RelativeSource AncestorType={x:Type controls:PagingBox}}}" />
+                    <!-- The last item has no border; add one pixel of right margin so its effective width remains unchanged. -->
+                    <Setter Property="Content">
+                        <Setter.Value>
+                            <TextBlock Margin="0,0,1,0" Text="{Binding Page}" />
+                        </Setter.Value>
+                    </Setter>
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding IsCurrent}" Value="True">
+                            <Setter Property="Background" Value="{m:DynamicBrush ControlFillPrimary}" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Button.Style>
+        </Button>
+    </DataTemplate>
+
+    <ControlTemplate x:Key="PagingBoxTemplate" TargetType="{x:Type controls:PagingBox}">
+        <StackPanel HorizontalAlignment="Center" Orientation="Horizontal">
+            <controls:ClippingBorder
+                x:Name="PageSizeArea"
+                Margin="0,0,4,0"
+                Background="{TemplateBinding Background}"
+                BorderBrush="{TemplateBinding BorderBrush}"
+                BorderThickness="{TemplateBinding BorderThickness}"
+                CornerRadius="{TemplateBinding Border.CornerRadius}"
+                SnapsToDevicePixels="True">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock
+                        Margin="12,0,4,0"
+                        VerticalAlignment="Center"
+                        Text="{TemplateBinding PageSizeLabel}" />
+                    <controls:Separator
+                        Width="1"
+                        Margin="0"
+                        Background="{TemplateBinding BorderBrush}"
+                        Orientation="Vertical" />
+                    <controls:ComboBox
+                        x:Name="PART_PageSizeComboBox"
+                        MinWidth="72"
+                        VerticalContentAlignment="Center"
+                        AutomationProperties.Name="{TemplateBinding PageSizeSelectorAutomationName}"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        DisabledBackground="Transparent"
+                        IsEditable="{TemplateBinding IsPageSizeEditable}"
+                        IsEnabled="{TemplateBinding CanChangePageSize}"
+                        IsTextSearchEnabled="False"
+                        ItemsSource="{TemplateBinding PageSizeOptions}"
+                        TextBlock.TextAlignment="Center">
+                        <controls:ComboBox.Style>
+                            <Style>
+                                <Setter Property="Border.CornerRadius" Value="0" />
+                            </Style>
+                        </controls:ComboBox.Style>
+                    </controls:ComboBox>
+                </StackPanel>
+            </controls:ClippingBorder>
+
+            <controls:ClippingBorder
+                x:Name="PageItemsArea"
+                Margin="0,0,4,0" ClipContent="True"
+                HorizontalAlignment="Center"
+                BorderBrush="{TemplateBinding BorderBrush}"
+                BorderThickness="{TemplateBinding BorderThickness}"
+                CornerRadius="{TemplateBinding Border.CornerRadius}"
+                SnapsToDevicePixels="True">
+                <ItemsControl x:Name="PART_PageItemsControl" ItemsSource="{TemplateBinding PageList}">
+                    <ItemsControl.ItemTemplateSelector>
+                        <controls:LastItemTemplateSelector LastItemTemplate="{StaticResource PagingBoxLastItemTemplate}" NormalTemplate="{StaticResource PagingBoxNormalItemTemplate}" />
+                    </ItemsControl.ItemTemplateSelector>
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <UniformGrid IsItemsHost="True" Rows="1" />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                </ItemsControl>
+            </controls:ClippingBorder>
+
+            <controls:ClippingBorder
+                x:Name="CompactArea"
+                BorderBrush="{TemplateBinding BorderBrush}"
+                BorderThickness="{TemplateBinding BorderThickness}"
+                CornerRadius="{TemplateBinding Border.CornerRadius}"
+                SnapsToDevicePixels="True">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <Button
+                        x:Name="PART_PreviousButton"
+                        Grid.Column="0"
+                        Padding="{TemplateBinding Padding}"
+                        AutomationProperties.Name="{TemplateBinding PreviousPageText}"
+                        Background="{TemplateBinding Background}"
+                        BorderBrush="{TemplateBinding BorderBrush}"
+                        BorderThickness="0,0,1,0"
+                        IsEnabled="{TemplateBinding CanGoPrevious}"
+                        Style="{StaticResource PagingBoxButtonStyle}">
+                        <TextBlock>
+                            <controls:FluentIconSpan FontSize="13" Symbol="IosArrowLtr24" />
+                            <Run Text="{TemplateBinding PreviousPageText}" />
+                        </TextBlock>
+                    </Button>
+
+                    <controls:TextBox
+                        x:Name="PART_CurrentPageTextBox"
+                        Grid.Column="1"
+                        MinWidth="60"
+                        VerticalContentAlignment="Center"
+                        AutoSelect="True"
+                        AutomationProperties.Name="{TemplateBinding CurrentPageInputAutomationName}"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        ClearButtonEnabled="False"
+                        CornerRadius="0"
+                        DisabledBackground="Transparent"
+                        IsEnabled="{TemplateBinding HasPages}"
+                        TextAlignment="Center"
+                        ToolTip="{TemplateBinding CurrentPageInputToolTip}" />
+
+                    <Button
+                        x:Name="PART_NextButton"
+                        Grid.Column="2"
+                        Padding="{TemplateBinding Padding}"
+                        AutomationProperties.Name="{TemplateBinding NextPageText}"
+                        Background="{TemplateBinding Background}"
+                        BorderBrush="{TemplateBinding BorderBrush}"
+                        BorderThickness="1,0,0,0"
+                        IsEnabled="{TemplateBinding CanGoNext}"
+                        Style="{StaticResource PagingBoxButtonStyle}">
+                        <TextBlock>
+                            <Run Text="{TemplateBinding NextPageText}" />
+                            <controls:FluentIconSpan FontSize="13" Symbol="IosArrowRtl24" />
+                        </TextBlock>
+                    </Button>
+                </Grid>
+            </controls:ClippingBorder>
+        </StackPanel>
+
+        <ControlTemplate.Triggers>
+            <Trigger Property="PageSizeOptions" Value="{x:Null}">
+                <Setter TargetName="PageSizeArea" Property="Visibility" Value="Collapsed" />
+            </Trigger>
+            <Trigger Property="DisplayMode" Value="Compact">
+                <Setter TargetName="PageItemsArea" Property="Visibility" Value="Collapsed" />
+            </Trigger>
+            <Trigger Property="DisplayMode" Value="List">
+                <Setter TargetName="PageItemsArea" Property="Margin" Value="0" />
+                <Setter TargetName="CompactArea" Property="Visibility" Value="Collapsed" />
+            </Trigger>
+            <Trigger Property="HasPages" Value="False">
+                <Setter TargetName="PageItemsArea" Property="Visibility" Value="Collapsed" />
+            </Trigger>
+            <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Foreground" Value="{m:DynamicBrush TextFillDisabled}" />
+            </Trigger>
+        </ControlTemplate.Triggers>
+    </ControlTemplate>
+
+    <Style x:Key="PagingBoxStyleKey" TargetType="{x:Type controls:PagingBox}">
+        <Setter Property="HorizontalAlignment" Value="Center" />
+        <Setter Property="Padding" Value="12,6" />
+        <Setter Property="BorderBrush" Value="{m:DynamicBrush ControlStrokeSecondary}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Border.CornerRadius" Value="6" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Template" Value="{StaticResource PagingBoxTemplate}" />
+    </Style>
+
+    <Style BasedOn="{StaticResource ResourceKey=PagingBoxStyleKey}" TargetType="{x:Type controls:PagingBox}" />
+
+</ResourceDictionary>
