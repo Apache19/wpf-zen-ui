@@ -600,7 +600,7 @@ public class PagingBox : Control, ICommandSource
 
     #endregion
 
-    #region DP: CanGoPrevious
+    #region Read-Only DP: CanGoPrevious
 
     private static readonly DependencyPropertyKey CanGoPreviousPropertyKey =
         DependencyProperty.RegisterReadOnly(
@@ -623,7 +623,7 @@ public class PagingBox : Control, ICommandSource
 
     #endregion
 
-    #region DP: CanGoNext
+    #region Read-Only DP: CanGoNext
 
     private static readonly DependencyPropertyKey CanGoNextPropertyKey =
         DependencyProperty.RegisterReadOnly(
