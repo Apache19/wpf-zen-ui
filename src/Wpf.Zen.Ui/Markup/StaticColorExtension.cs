@@ -28,6 +28,10 @@ public sealed class StaticColorExtension : StaticResourceExtension
         }
     }
 
+    public StaticColorExtension()
+    {
+    }
+
     /// <summary>Initializes a new instance of the <see cref="StaticColorExtension"/> class for the specified token.</summary>
     /// <param name="token">The color role to resolve from the current resource scope.</param>
     public StaticColorExtension(ColorToken token)

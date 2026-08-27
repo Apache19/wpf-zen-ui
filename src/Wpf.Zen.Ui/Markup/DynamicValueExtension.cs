@@ -32,6 +32,10 @@ public sealed class DynamicValueExtension : DynamicResourceExtension
         }
     }
 
+    public DynamicValueExtension()
+    {
+    }
+
     /// <summary>Initializes a new instance of the <see cref="DynamicValueExtension"/> class for the specified token.</summary>
     /// <param name="token">The theme value role to resolve from the active resource scope.</param>
     public DynamicValueExtension(ValueToken token)

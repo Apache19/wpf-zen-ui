@@ -34,6 +34,10 @@ public sealed class DynamicColorExtension : DynamicResourceExtension
         }
     }
 
+    public DynamicColorExtension()
+    {
+    }
+
     /// <summary>Initializes a new instance of the <see cref="DynamicColorExtension"/> class for the specified token.</summary>
     /// <param name="token">The color role to resolve from the active resource scope.</param>
     public DynamicColorExtension(ColorToken token)

@@ -32,6 +32,10 @@ public sealed class StaticBrushExtension : StaticResourceExtension
         }
     }
 
+    public StaticBrushExtension()
+    {
+    }
+
     /// <summary>Initializes a new instance of the <see cref="StaticBrushExtension"/> class for the specified token.</summary>
     /// <param name="token">The brush role to resolve from the current resource scope.</param>
     public StaticBrushExtension(BrushToken token)

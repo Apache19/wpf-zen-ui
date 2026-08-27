@@ -28,6 +28,10 @@ public sealed class StaticTemplateExtension : StaticResourceExtension
         }
     }
 
+    public StaticTemplateExtension()
+    {
+    }
+
     /// <summary>Initializes a new instance of the <see cref="StaticTemplateExtension"/> class for the specified token.</summary>
     /// <param name="token">The template role to resolve from the current resource scope.</param>
     public StaticTemplateExtension(TemplateToken token)

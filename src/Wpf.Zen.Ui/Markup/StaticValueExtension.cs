@@ -28,6 +28,10 @@ public sealed class StaticValueExtension : StaticResourceExtension
         }
     }
 
+    public StaticValueExtension()
+    {
+    }
+
     /// <summary>Initializes a new instance of the <see cref="StaticValueExtension"/> class for the specified token.</summary>
     /// <param name="token">The theme value role to resolve from the current resource scope.</param>
     public StaticValueExtension(ValueToken token)

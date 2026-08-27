@@ -28,6 +28,10 @@ public sealed class DynamicTemplateExtension : DynamicResourceExtension
         }
     }
 
+    public DynamicTemplateExtension()
+    {
+    }
+
     /// <summary>Initializes a new instance of the <see cref="DynamicTemplateExtension"/> class for the specified token.</summary>
     /// <param name="token">The template role to resolve from the active resource scope.</param>
     public DynamicTemplateExtension(TemplateToken token)

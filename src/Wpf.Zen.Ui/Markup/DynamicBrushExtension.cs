@@ -34,6 +34,10 @@ public sealed class DynamicBrushExtension : DynamicResourceExtension
         }
     }
 
+    public DynamicBrushExtension()
+    {
+    }
+
     /// <summary>Initializes a new instance of the <see cref="DynamicBrushExtension"/> class for the specified token.</summary>
     /// <param name="token">The brush role to resolve from the active resource scope.</param>
     public DynamicBrushExtension(BrushToken token)

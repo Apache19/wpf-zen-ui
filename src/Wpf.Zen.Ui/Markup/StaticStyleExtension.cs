@@ -33,6 +33,10 @@ public sealed class StaticStyleExtension : StaticResourceExtension
         }
     }
 
+    public StaticStyleExtension()
+    {
+    }
+
     /// <summary>Initializes a new instance of the <see cref="StaticStyleExtension"/> class for the specified token.</summary>
     /// <param name="token">The style role to resolve from the current resource scope.</param>
     public StaticStyleExtension(StyleToken token)

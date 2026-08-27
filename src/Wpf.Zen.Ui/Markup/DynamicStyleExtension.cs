@@ -33,6 +33,10 @@ public sealed class DynamicStyleExtension : DynamicResourceExtension
         }
     }
 
+    public DynamicStyleExtension()
+    {
+    }
+
     /// <summary>
     /// Initializes a new instance of the <see cref="DynamicStyleExtension"/> class for the specified token.
     /// </summary>
