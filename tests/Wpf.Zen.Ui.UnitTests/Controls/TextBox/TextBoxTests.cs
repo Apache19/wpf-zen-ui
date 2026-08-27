@@ -16,6 +16,84 @@ namespace Wpf.Zen.Ui.UnitTests.Controls;
 public class TextBoxTests
 {
     [Fact]
+    public void AutoSelect_WhenKeyboardFocusIsReceived_SelectsAllText()
+    {
+        RunOnStaThread(
+            () =>
+            {
+                var textBox = new UiTextBox { AutoSelect = true, Text = "Text" };
+                var otherControl = new Button();
+                var textBoxScope = CreateFocusScope(textBox);
+                var otherScope = CreateFocusScope(otherControl);
+                var root = new StackPanel();
+                root.Children.Add(textBoxScope);
+                root.Children.Add(otherScope);
+
+                var window = new Window
+                {
+                    Content = root,
+                    ShowInTaskbar = false,
+                    WindowStyle = WindowStyle.None,
+                };
+
+                try
+                {
+                    window.Show();
+
+                    Assert.True(textBox.Focus());
+                    Assert.Equal(0, textBox.SelectionStart);
+                    Assert.Equal(textBox.Text.Length, textBox.SelectionLength);
+
+                    Assert.True(otherControl.Focus());
+                    textBox.Select(1, 2);
+
+                    // Logical focus remains in textBoxScope and a partial selection already exists.
+                    // The second entry therefore verifies both that the behavior follows keyboard
+                    // focus rather than only GotFocus and that it always replaces the old selection.
+                    Assert.True(textBox.Focus());
+                    Assert.Equal(0, textBox.SelectionStart);
+                    Assert.Equal(textBox.Text.Length, textBox.SelectionLength);
+                }
+                finally
+                {
+                    window.Close();
+                }
+            }
+        );
+    }
+
+    [Fact]
+    public void AutoSelect_WhenSelectionAlreadyExists_SelectsAllText()
+    {
+        RunOnStaThread(
+            () =>
+            {
+                var textBox = new UiTextBox { AutoSelect = true, Text = "Text" };
+                textBox.Select(1, 2);
+                var window = new Window
+                {
+                    Content = textBox,
+                    ShowInTaskbar = false,
+                    WindowStyle = WindowStyle.None,
+                };
+
+                try
+                {
+                    window.Show();
+
+                    Assert.True(textBox.Focus());
+                    Assert.Equal(0, textBox.SelectionStart);
+                    Assert.Equal(textBox.Text.Length, textBox.SelectionLength);
+                }
+                finally
+                {
+                    window.Close();
+                }
+            }
+        );
+    }
+
+    [Fact]
     public void KeyboardFocusLeavingScope_RefreshesVisualBrushesAndClearButton()
     {
         RunOnStaThread(

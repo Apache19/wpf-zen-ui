@@ -508,6 +508,30 @@ public class TextBox : System.Windows.Controls.TextBox
         set => SetValue(UseTextBlockAppearanceProperty, value);
     }
 
+    /// <summary>Identifies the <see cref="AutoSelect"/> dependency property.</summary>
+    public static readonly DependencyProperty AutoSelectProperty = DependencyProperty.Register(
+        nameof(AutoSelect),
+        typeof(bool),
+        typeof(TextBox),
+        new PropertyMetadata(false)
+    );
+
+    /// <summary>
+    /// Gets or sets a value indicating whether all text is selected whenever the text box receives
+    /// keyboard focus. The default value is <see langword="false"/>.
+    /// </summary>
+    /// <remarks>
+    /// Enabling this property deliberately replaces any existing selection on every keyboard-focus
+    /// entry. This gives repeated mouse and keyboard entry the same predictable select-all behavior.
+    /// </remarks>
+    [Bindable(true)]
+    [Category("Behavior")]
+    public bool AutoSelect
+    {
+        get => (bool)GetValue(AutoSelectProperty);
+        set => SetValue(AutoSelectProperty, value);
+    }
+
     /// <summary>Identifies the <see cref="TemplateButtonCommand"/> dependency property.</summary>
     public static readonly DependencyProperty TemplateButtonCommandProperty = DependencyProperty.Register(
         nameof(TemplateButtonCommand),
@@ -711,6 +735,8 @@ public class TextBox : System.Windows.Controls.TextBox
     /// <inheritdoc />
     protected override void OnMouseDown(MouseButtonEventArgs e)
     {
+        bool shouldRestoreAutomaticSelection = AutoSelect && !IsKeyboardFocused;
+
         // Let TextBoxBase run the native TextEditorMouse focus, IME and hit-test path first. A
         // padding hit is marked handled after focus but deliberately receives no caret or mouse
         // capture. Bridging it here keeps every observable focus event in WPF's normal MouseDown
@@ -727,6 +753,14 @@ public class TextBox : System.Windows.Controls.TextBox
         )
         {
             e.Handled = true;
+        }
+
+        if (shouldRestoreAutomaticSelection && IsKeyboardFocused)
+        {
+            // TextEditorMouse moves the caret after it assigns keyboard focus. That native ordering
+            // collapses a selection made from the focus event for an ordinary single click, so apply
+            // the same opt-in selection once more after WPF has completed its mouse editing path.
+            SelectAll();
         }
     }
 
@@ -767,9 +801,26 @@ public class TextBox : System.Windows.Controls.TextBox
         CoerceValue(ForegroundProperty);
         UpdateVisualBrushes();
 
-        CaretIndex = Text.Length;
+        if (!AutoSelect)
+        {
+            CaretIndex = Text.Length;
+        }
 
         RevealClearButton();
+    }
+
+    /// <inheritdoc />
+    protected override void OnGotKeyboardFocus(KeyboardFocusChangedEventArgs e)
+    {
+        base.OnGotKeyboardFocus(e);
+
+        if (AutoSelect)
+        {
+            // Keyboard focus can return while logical focus is retained by a focus scope. GotFocus
+            // is not raised in that case, so the keyboard-focus event is the reliable boundary for
+            // applying this behavior on every entry into the editor.
+            SelectAll();
+        }
     }
 
     /// <inheritdoc />
