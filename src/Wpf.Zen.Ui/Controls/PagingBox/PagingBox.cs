@@ -644,6 +644,35 @@ public class PagingBox : Control, ICommandSource
 
     #endregion
 
+    #region Read-Only DP: CanChangeCurrentPage
+
+    private static readonly DependencyPropertyKey CanChangeCurrentPagePropertyKey =
+        DependencyProperty.RegisterReadOnly(
+            nameof(CanChangeCurrentPage),
+            typeof(bool),
+            typeof(PagingBox),
+            new PropertyMetadata(false)
+        );
+
+    /// <summary>
+    /// Identifies the <see cref="CanChangeCurrentPage"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty CanChangeCurrentPageProperty =
+        CanChangeCurrentPagePropertyKey.DependencyProperty;
+
+    /// <summary>
+    /// Gets a value indicating whether the current-page input can request one of the navigation targets represented
+    /// by the control's current page list.
+    /// </summary>
+    /// <remarks>
+    /// The input accepts an arbitrary page number, so its eventual command parameter is not known while the editor is
+    /// idle. This state follows the generated navigation targets instead: it remains available when at least one target
+    /// is executable and becomes unavailable when command requery disables every paging action.
+    /// </remarks>
+    public bool CanChangeCurrentPage => (bool)GetValue(CanChangeCurrentPageProperty);
+
+    #endregion
+
     #region Read-Only DP: CanChangePageSize
 
     private static readonly DependencyPropertyKey CanChangePageSizePropertyKey =
@@ -1119,6 +1148,11 @@ public class PagingBox : Control, ICommandSource
     private void UpdatePageList()
     {
         var newItems = GeneratePageItems();
+        SetValue(
+            CanChangeCurrentPagePropertyKey,
+            newItems.Any(static item => item.IsEnabled)
+        );
+
         if (!PageList.SequenceEqual(newItems, PagingItemComparer.Instance))
         {
             SetValue(PageListPropertyKey, newItems);

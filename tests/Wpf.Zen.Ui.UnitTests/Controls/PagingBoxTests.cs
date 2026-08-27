@@ -77,6 +77,7 @@ namespace Wpf.Zen.Ui.UnitTests.Controls
 
                 Assert.False(control.CanGoPrevious);
                 Assert.False(control.CanGoNext);
+                Assert.False(control.CanChangeCurrentPage);
                 Assert.All(control.PageList, item => Assert.False(item.IsEnabled));
 
                 allowRequests = true;
@@ -84,9 +85,43 @@ namespace Wpf.Zen.Ui.UnitTests.Controls
 
                 Assert.True(control.CanGoPrevious);
                 Assert.True(control.CanGoNext);
+                Assert.True(control.CanChangeCurrentPage);
                 Assert.True(control.PageList.Single(item => item.Page == 1).IsEnabled);
                 Assert.False(control.PageList.Single(item => item.Page == 2).IsEnabled);
                 Assert.True(control.PageList.Single(item => item.Page == 3).IsEnabled);
+            });
+        }
+
+        [Fact]
+        public void CurrentPageTextBox_AllPagingActionsDisabled_IsDisabled()
+        {
+            WpfTestThread.Run(() =>
+            {
+                var allowRequests = true;
+                var command = new TestCommand(_ => allowRequests);
+                var control = new TestPagingBox
+                {
+                    CurrentPage = 2,
+                    PageCount = 5,
+                    Command = command
+                };
+                var window = ShowInWindow(control);
+
+                try
+                {
+                    var textBox = Assert.IsType<Wpf.Zen.Ui.Controls.TextBox>(
+                        control.Template.FindName("PART_CurrentPageTextBox", control));
+                    Assert.True(textBox.IsEnabled);
+
+                    allowRequests = false;
+                    command.RaiseCanExecuteChanged();
+
+                    Assert.False(textBox.IsEnabled);
+                }
+                finally
+                {
+                    window.Close();
+                }
             });
         }
 

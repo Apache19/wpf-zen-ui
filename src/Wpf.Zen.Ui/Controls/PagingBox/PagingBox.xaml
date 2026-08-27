@@ -148,6 +148,7 @@
                 SnapsToDevicePixels="True">
                 <StackPanel Orientation="Horizontal">
                     <TextBlock
+                        x:Name="pageSizeLabel"
                         Margin="12,0,4,0"
                         VerticalAlignment="Center"
                         Text="{TemplateBinding PageSizeLabel}" />
@@ -242,7 +243,7 @@
                         ClearButtonEnabled="False"
                         CornerRadius="0"
                         DisabledBackground="Transparent"
-                        IsEnabled="{TemplateBinding HasPages}"
+                        IsEnabled="{TemplateBinding CanChangeCurrentPage}"
                         TextAlignment="Center"
                         ToolTip="{TemplateBinding CurrentPageInputToolTip}" />
 
@@ -300,6 +301,9 @@
 
             <Trigger Property="HasPages" Value="False">
                 <Setter TargetName="PageItemsArea" Property="Visibility" Value="Collapsed" />
+            </Trigger>
+            <Trigger Property="CanChangePageSize" Value="False">
+                <Setter TargetName="pageSizeLabel" Property="Foreground" Value="{m:DynamicBrush TextFillDisabled}" />
             </Trigger>
             <Trigger Property="IsEnabled" Value="False">
                 <Setter Property="Foreground" Value="{m:DynamicBrush TextFillDisabled}" />
