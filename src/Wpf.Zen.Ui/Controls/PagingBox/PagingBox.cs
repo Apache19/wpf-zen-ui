@@ -873,29 +873,54 @@ public class PagingBox : Control, ICommandSource
         }
     }
 
-    private static object CoerceMaxVisiblePages(DependencyObject d, object value)
+    private static object? CoerceMaxVisiblePages(DependencyObject d, object? value)
     {
+        if (value is null)
+        {
+            return value;
+        }
+
         var count = Clamp((int)value, MinimumVisiblePages, MaximumVisiblePages);
         return count % 2 == 0 ? count - 1 : count;
     }
 
-    private static object CoerceEllipsisStep(DependencyObject d, object value)
+    private static object? CoerceEllipsisStep(DependencyObject d, object? value)
     {
+        if (value is null)
+        {
+            return value;
+        }
+
         return Math.Max((int)value, 0);
     }
 
-    private static object CoerceCurrentPage(DependencyObject d, object value)
+    private static object? CoerceCurrentPage(DependencyObject d, object? value)
     {
+        if (value is null)
+        {
+            return value;
+        }
+
         return Math.Max((int)value, 1);
     }
 
-    private static object CoercePageCount(DependencyObject d, object value)
+    private static object? CoercePageCount(DependencyObject d, object? value)
     {
+        if (value is null)
+        {
+            return value;
+        }
+
         return Math.Max((int)value, 0);
     }
 
-    private static object CoercePageSize(DependencyObject d, object value)
+    private static object? CoercePageSize(DependencyObject d, object? value)
     {
+        if (value is null)
+        {
+            return value;
+        }
+
         return Clamp((int)value, 1, ((PagingBox)d).MaximumPageSize);
     }
 
@@ -1220,8 +1245,10 @@ public class PagingBox : Control, ICommandSource
                 result.Add(CreatePageItem(page, currentPageIsValid));
             }
         }
-        else // 当前页在中间连续页范围内，显示第一页 + 前省略号 + 中间连续页 + 后省略号 + 最后一页
+        else
         {
+            // 当前页在中间连续页范围内，显示第一页 + 前省略号 + 中间连续页 + 后省略号 + 最后一页
+
             result.Add(CreatePageItem(1, currentPageIsValid));
             result.Add(CreateEllipsisItem(
                 ClampInnerPage((long)CurrentPage - step),

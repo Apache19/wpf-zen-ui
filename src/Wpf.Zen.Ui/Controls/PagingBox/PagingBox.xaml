@@ -6,15 +6,55 @@
     xmlns:converters="clr-namespace:Wpf.Zen.Ui.Converters"
     xmlns:m="clr-namespace:Wpf.Zen.Ui.Markup">
 
+    <converters:CornerRadiusTransformConverter x:Key="LeftCornersConverter" CopyCorners="Left">
+        <converters:CornerRadiusTransformConverter.Offset>
+            <CornerRadius>-1,0,0,-1</CornerRadius>
+        </converters:CornerRadiusTransformConverter.Offset>
+    </converters:CornerRadiusTransformConverter>
+
+    <converters:CornerRadiusTransformConverter x:Key="RightCornersConverter" CopyCorners="Right">
+        <converters:CornerRadiusTransformConverter.Offset>
+            <CornerRadius>0,-1,-1,0</CornerRadius>
+        </converters:CornerRadiusTransformConverter.Offset>
+    </converters:CornerRadiusTransformConverter>
+
     <Style x:Key="PagingBoxButtonFocusVisualStyle">
         <Setter Property="Control.Template">
             <Setter.Value>
                 <ControlTemplate>
                     <Border
-                        Margin="2,2,3,2"
+                        Margin="0,0,1,0"
                         BorderBrush="{m:DynamicBrush KeyboardFocusBorder}"
                         BorderThickness="1"
-                        CornerRadius="4"
+                        SnapsToDevicePixels="True" />
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="PagingBoxFirstButtonFocusVisualStyle">
+        <Setter Property="Control.Template">
+            <Setter.Value>
+                <ControlTemplate>
+                    <Border
+                        Margin="0,0,1,0"
+                        BorderBrush="{m:DynamicBrush KeyboardFocusBorder}"
+                        BorderThickness="1"
+                        CornerRadius="{Binding AdornedElement.CornerRadius, RelativeSource={RelativeSource AncestorType={x:Type Adorner}}, Converter={StaticResource LeftCornersConverter}}"
+                        SnapsToDevicePixels="True" />
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="PagingBoxLastButtonFocusVisualStyle">
+        <Setter Property="Control.Template">
+            <Setter.Value>
+                <ControlTemplate>
+                    <Border
+                        BorderBrush="{m:DynamicBrush KeyboardFocusBorder}"
+                        BorderThickness="1"
+                        CornerRadius="{Binding AdornedElement.CornerRadius, RelativeSource={RelativeSource AncestorType={x:Type Adorner}}, Converter={StaticResource RightCornersConverter}}"
                         SnapsToDevicePixels="True" />
                 </ControlTemplate>
             </Setter.Value>
@@ -120,11 +160,39 @@
         </controls:Button>
     </DataTemplate>
 
+    <DataTemplate x:Key="PagingBoxFirstItemTemplate" DataType="{x:Type controls:PagingItem}">
+        <!--  CornerRadius 不应用在按钮本体上，而是用来传递到焦点视觉样式  -->
+        <controls:Button
+            Padding="{Binding Padding, RelativeSource={RelativeSource AncestorType={x:Type controls:PagingBox}}}"
+            AutomationProperties.Name="{Binding Description}"
+            BorderBrush="{Binding BorderBrush, RelativeSource={RelativeSource AncestorType={x:Type controls:PagingBox}}}"
+            BorderThickness="0,0,1,0"
+            Content="{Binding Page}"
+            CornerRadius="{Binding (Border.CornerRadius), RelativeSource={RelativeSource AncestorType={x:Type controls:PagingBox}}}"
+            FocusVisualStyle="{StaticResource PagingBoxFirstButtonFocusVisualStyle}"
+            IsEnabled="{Binding IsEnabled}"
+            Tag="{Binding Page}">
+            <controls:Button.Style>
+                <Style BasedOn="{StaticResource PagingBoxButtonStyle}" TargetType="{x:Type controls:Button}">
+                    <Setter Property="Background" Value="{Binding Background, RelativeSource={RelativeSource AncestorType={x:Type controls:PagingBox}}}" />
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding IsCurrent}" Value="True">
+                            <Setter Property="Background" Value="{m:DynamicBrush ControlFillPrimary}" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </controls:Button.Style>
+        </controls:Button>
+    </DataTemplate>
+
     <DataTemplate x:Key="PagingBoxLastItemTemplate" DataType="{x:Type controls:PagingItem}">
+        <!--  CornerRadius 不应用在按钮本体上，而是用来传递到焦点视觉样式  -->
         <controls:Button
             Padding="{Binding Padding, RelativeSource={RelativeSource AncestorType={x:Type controls:PagingBox}}}"
             AutomationProperties.Name="{Binding Description}"
             BorderThickness="0,0,0,0"
+            CornerRadius="{Binding (Border.CornerRadius), RelativeSource={RelativeSource AncestorType={x:Type controls:PagingBox}}}"
+            FocusVisualStyle="{StaticResource PagingBoxLastButtonFocusVisualStyle}"
             IsEnabled="{Binding IsEnabled}"
             Tag="{Binding Page}">
             <controls:Button.Style>
@@ -216,7 +284,10 @@
                         </ControlTemplate>
                     </ItemsControl.Template>
                     <ItemsControl.ItemTemplateSelector>
-                        <controls:LastItemTemplateSelector LastItemTemplate="{StaticResource PagingBoxLastItemTemplate}" NormalTemplate="{StaticResource PagingBoxNormalItemTemplate}" />
+                        <controls:ListItemTemplateSelector
+                            DefaultTemplate="{StaticResource PagingBoxNormalItemTemplate}"
+                            FirstItemTemplate="{StaticResource PagingBoxFirstItemTemplate}"
+                            LastItemTemplate="{StaticResource PagingBoxLastItemTemplate}" />
                     </ItemsControl.ItemTemplateSelector>
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
@@ -266,7 +337,7 @@
                                                 Margin="0,0,1,0"
                                                 BorderBrush="{m:DynamicBrush KeyboardFocusBorder}"
                                                 BorderThickness="1"
-                                                CornerRadius="{Binding AdornedElement.CornerRadius, RelativeSource={RelativeSource AncestorType={x:Type Adorner}}, Converter={converters:CornerRadiusTransformConverter Offset='-1,0,0,-1', CopyCorners='Left'}}"
+                                                CornerRadius="{Binding AdornedElement.CornerRadius, RelativeSource={RelativeSource AncestorType={x:Type Adorner}}, Converter={StaticResource LeftCornersConverter}}"
                                                 SnapsToDevicePixels="True" />
                                         </ControlTemplate>
                                     </Setter.Value>
@@ -316,7 +387,7 @@
                                                 Margin="1,0,0,0"
                                                 BorderBrush="{m:DynamicBrush KeyboardFocusBorder}"
                                                 BorderThickness="1"
-                                                CornerRadius="{Binding AdornedElement.CornerRadius, RelativeSource={RelativeSource AncestorType={x:Type Adorner}}, Converter={converters:CornerRadiusTransformConverter Offset='0,-1,-1,0', CopyCorners='Right'}}"
+                                                CornerRadius="{Binding AdornedElement.CornerRadius, RelativeSource={RelativeSource AncestorType={x:Type Adorner}}, Converter={StaticResource RightCornersConverter}}"
                                                 SnapsToDevicePixels="True" />
                                         </ControlTemplate>
                                     </Setter.Value>
