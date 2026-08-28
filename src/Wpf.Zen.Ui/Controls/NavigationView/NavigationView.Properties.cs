@@ -6,7 +6,6 @@
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.Windows.Controls;
-using Wpf.Zen.Ui.Animations;
 
 // ReSharper disable once CheckNamespace
 namespace Wpf.Zen.Ui.Controls;
@@ -1260,43 +1259,4 @@ public partial class NavigationView
 
     #endregion
 
-    #region DP: Transition
-
-    /// <summary>Identifies the <see cref="Transition"/> dependency property.</summary>
-    public static readonly DependencyProperty TransitionProperty = DependencyProperty.Register(
-        nameof(Transition),
-        typeof(Transition),
-        typeof(NavigationView),
-        new FrameworkPropertyMetadata(Transition.FadeInWithSlide)
-    );
-
-    /// <summary>Gets or sets the transition used when changing pages.</summary>
-    public Transition Transition
-    {
-        get => (Transition)GetValue(TransitionProperty);
-        set => SetValue(TransitionProperty, value);
-    }
-
-    #endregion
-
-    #region DP: TransitionDuration
-
-    /// <summary>Identifies the <see cref="TransitionDuration"/> dependency property.</summary>
-    public static readonly DependencyProperty TransitionDurationProperty = DependencyProperty.Register(
-        nameof(TransitionDuration),
-        typeof(int),
-        typeof(NavigationView),
-        new FrameworkPropertyMetadata(200)
-    );
-
-    /// <summary>Gets or sets the page-transition duration, in milliseconds.</summary>
-    [Bindable(true)]
-    [Category("Appearance")]
-    public int TransitionDuration
-    {
-        get => (int)GetValue(TransitionDurationProperty);
-        set => SetValue(TransitionDurationProperty, value);
-    }
-
-    #endregion
 }

@@ -690,7 +690,16 @@ public partial class NavigationView
         // would briefly arrange the new page using the previous page's scrolling policy.
         UpdateNavigationFrameScrollState(content);
         SetNavigationContextOwner(content as DependencyObject, navigationParameter);
-        _ = _navigationFrame.Navigate(content, new NavigationFrameState(navigationTarget));
+
+        // Read page-owned transition declarations only after activation has produced the concrete
+        // instance and Navigating has had a chance to configure it. WPF object navigation may commit
+        // asynchronously, so carrying this snapshot with the request also gives the commit handler
+        // a coherent fallback if a future navigation path supplies non-DependencyObject content.
+        var transitionSettings = GetNavigationTransitionSettings(content);
+        _ = _navigationFrame.Navigate(
+            content,
+            new NavigationFrameState(navigationTarget, transitionSettings)
+        );
     }
 
     /// <summary>Moves scope context from the exited page root to the destination page root.</summary>

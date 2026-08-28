@@ -120,9 +120,17 @@ public partial class NavigationView
 
         UpdateNavigationFrameScrollState(eventArgs.Content);
 
+        var frameState = eventArgs.ExtraData as NavigationFrameState;
+
         if (eventArgs.Content is not null)
         {
-            ApplyTransitionEffectToNavigationFrame();
+            // Re-read the committed page so a binding or Navigating handler that updated the
+            // attached declarations after the pre-navigation snapshot still controls this entry.
+            var transitionSettings = GetNavigationTransitionSettings(
+                eventArgs.Content, frameState?.TransitionSettings
+            );
+
+            ApplyTransitionEffectToNavigationFrame(transitionSettings);
         }
 
         _ = CancelCurrentNavigationEnter();
@@ -130,7 +138,7 @@ public partial class NavigationView
 
         var exitedContent = _navigationAwareContent;
         var exitedTarget  = _navigationAwareTarget;
-        var enteredTarget = (eventArgs.ExtraData as NavigationFrameState)?.NavigationTarget;
+        var enteredTarget = frameState?.NavigationTarget;
 
         _navigationAwareContent = eventArgs.Content;
         _navigationAwareTarget  = enteredTarget;
@@ -276,14 +284,57 @@ public partial class NavigationView
     /// stable frame is an implementation detail, so animating it produces the same visual result
     /// without mutating the navigated page.
     /// </remarks>
-    private void ApplyTransitionEffectToNavigationFrame()
+    private void ApplyTransitionEffectToNavigationFrame(
+        NavigationTransitionSettings transitionSettings)
     {
-        if (TransitionDuration < 1)
+        if (transitionSettings.Duration < 1)
         {
             return;
         }
 
-        _ = TransitionAnimationProvider.ApplyTransition(_navigationFrame, Transition, TransitionDuration);
+        _ = TransitionAnimationProvider.ApplyTransition(
+            _navigationFrame,
+            transitionSettings.Transition,
+            transitionSettings.Duration
+        );
+    }
+
+    /// <summary>Resolves page-local overrides against this navigation view's global defaults.</summary>
+    /// <remarks>
+    /// A dependency property's metadata default cannot distinguish an omitted attached declaration
+    /// from a declaration whose value equals that default. <see cref="DependencyPropertyHelper"/>
+    /// preserves that distinction and also recognizes values supplied by a style or binding. Each
+    /// setting is resolved independently, so a page may override only the transition or only its
+    /// duration. The request snapshot keeps direct or future non-dependency-object navigation
+    /// deterministic across WPF's asynchronous object-navigation queue.
+    /// </remarks>
+    internal NavigationTransitionSettings GetNavigationTransitionSettings(
+        object? content,
+        NavigationTransitionSettings? fallback = null)
+    {
+        if (content is DependencyObject dependencyObject)
+        {
+            var transitionValueSource = DependencyPropertyHelper.GetValueSource(
+                dependencyObject,
+                TransitionProperty
+            );
+            var durationValueSource = DependencyPropertyHelper.GetValueSource(
+                dependencyObject,
+                TransitionDurationProperty
+            );
+
+            return new NavigationTransitionSettings(
+                transitionValueSource.BaseValueSource is BaseValueSource.Default
+                    ? Transition
+                    : GetTransition(dependencyObject),
+                durationValueSource.BaseValueSource is BaseValueSource.Default
+                    ? TransitionDuration
+                    : GetTransitionDuration(dependencyObject)
+            );
+        }
+
+        return fallback
+            ?? new NavigationTransitionSettings(Transition, TransitionDuration);
     }
 
     /// <summary>
@@ -648,10 +699,24 @@ public partial class NavigationView
         }
     }
 
-    /// <summary>Carries semantic context through WPF's asynchronous object-navigation queue.</summary>
-    private sealed class NavigationFrameState(NavigationTarget? navigationTarget)
+    /// <summary>Carries semantic and presentation context through WPF object navigation.</summary>
+    private sealed class NavigationFrameState(
+        NavigationTarget? navigationTarget,
+        NavigationTransitionSettings transitionSettings)
     {
         internal NavigationTarget? NavigationTarget { get; } = navigationTarget;
+
+        internal NavigationTransitionSettings TransitionSettings { get; } = transitionSettings;
+    }
+
+    /// <summary>Represents the immutable entrance-animation declaration for one navigation.</summary>
+    internal readonly struct NavigationTransitionSettings(
+        Transition transition,
+        int duration)
+    {
+        internal Transition Transition { get; } = transition;
+
+        internal int Duration { get; } = duration;
     }
 
     /// <summary>
