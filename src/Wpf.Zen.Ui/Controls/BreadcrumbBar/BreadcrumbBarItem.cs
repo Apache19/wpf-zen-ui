@@ -38,6 +38,7 @@ public class BreadcrumbBarItem : ContentControl, ICommandSource
     private const string ButtonPartName = "PART_Button";
 
     private ButtonBase? _button;
+    private bool _owningCommandCanExecute = true;
 
     #region Routed Event: Click
 
@@ -166,6 +167,29 @@ public class BreadcrumbBarItem : ContentControl, ICommandSource
             typeof(BreadcrumbBarItem),
             new FrameworkPropertyMetadata(typeof(BreadcrumbBarItem))
         );
+        IsEnabledProperty.OverrideMetadata(
+            typeof(BreadcrumbBarItem),
+            new UIPropertyMetadata(true, null, CoerceIsEnabled)
+        );
+    }
+
+    /// <summary>
+    /// Updates the command constraint supplied by the owning <see cref="BreadcrumbBar"/>.
+    /// </summary>
+    /// <remarks>
+    /// Coercion preserves the consumer's original <see cref="UIElement.IsEnabled"/> value and its
+    /// binding or style source. Removing the command constraint therefore restores that value
+    /// instead of replacing it with a locally assigned Boolean.
+    /// </remarks>
+    internal void SetOwningCommandCanExecute(bool value)
+    {
+        if (_owningCommandCanExecute == value)
+        {
+            return;
+        }
+
+        _owningCommandCanExecute = value;
+        CoerceValue(IsEnabledProperty);
     }
 
     /// <inheritdoc />
@@ -217,5 +241,13 @@ public class BreadcrumbBarItem : ContentControl, ICommandSource
 
         _button.Click -= OnButtonClick;
         _button = null;
+    }
+
+    private static object CoerceIsEnabled(DependencyObject d, object? baseValue)
+    {
+        // WPF composes this callback with UIElement's inherited IsEnabled coercion. The additional
+        // condition only represents the owning bar's aggregate command; standalone items and the
+        // current-location item leave it set to true.
+        return (bool)baseValue! && ((BreadcrumbBarItem)d)._owningCommandCanExecute;
     }
 }

@@ -16,25 +16,44 @@ namespace Wpf.Zen.Ui.Controls;
 /// <summary>
 /// The <see cref="BreadcrumbBar"/> control provides the direct path of pages or folders to the current location.
 /// </summary>
+/// <remarks>
+/// <para>
+/// The control is a composite <see cref="ICommandSource"/>: each non-final breadcrumb segment is
+/// an invocation surface, and the corresponding source item becomes <see cref="CommandParameter"/>
+/// for the duration of that invocation.
+/// </para>
+/// <para>
+/// <see cref="ICommand.CanExecute(object)"/> is evaluated independently for every realized
+/// segment. A command can therefore disable one path target without disabling the complete bar.
+/// The final segment represents the current location and is never governed by the bar command.
+/// </para>
+/// </remarks>
 /// <example>
 /// <code lang="xml">
 /// &lt;ui:BreadcrumbBar x:Name="BreadcrumbBar" /&gt;
 /// </code>
 /// </example>
 [StyleTypedProperty(Property = nameof(ItemContainerStyle), StyleTargetType = typeof(BreadcrumbBarItem))]
-public class BreadcrumbBar : ItemsControl
+public class BreadcrumbBar : ItemsControl, ICommandSource
 {
+    private int _userActionDepth;
+
+    #region DP: Command
+
     /// <summary>Identifies the <see cref="Command"/> dependency property.</summary>
-    public static readonly DependencyProperty CommandProperty = DependencyProperty.Register(
-        nameof(Command),
-        typeof(ICommand),
+    public static readonly DependencyProperty CommandProperty = ButtonBase.CommandProperty.AddOwner(
         typeof(BreadcrumbBar),
-        new PropertyMetadata(null)
+        new FrameworkPropertyMetadata(null, OnCommandChanged)
     );
 
     /// <summary>
-    /// Gets or sets custom command executed after selecting the item.
+    /// Gets or sets the command executed after a non-final breadcrumb item is activated.
     /// </summary>
+    /// <remarks>
+    /// The activated source item is supplied as <see cref="CommandParameter"/>. Command execution
+    /// follows <see cref="ItemClicked"/>, matching the event-before-command ordering of
+    /// <see cref="ButtonBase"/>.
+    /// </remarks>
     [Bindable(true)]
     [Category("Action")]
     [Localizability(LocalizationCategory.NeverLocalize)]
@@ -43,6 +62,64 @@ public class BreadcrumbBar : ItemsControl
         get => (ICommand?)GetValue(CommandProperty);
         set => SetValue(CommandProperty, value);
     }
+
+    #endregion
+
+    #region Read-only DP: CommandParameter
+
+    private static readonly DependencyPropertyKey CommandParameterPropertyKey =
+        DependencyProperty.RegisterReadOnly(
+            nameof(CommandParameter),
+            typeof(object),
+            typeof(BreadcrumbBar),
+            new PropertyMetadata(null)
+        );
+
+    /// <summary>Identifies the <see cref="CommandParameter"/> dependency property.</summary>
+    public static readonly DependencyProperty CommandParameterProperty =
+        CommandParameterPropertyKey.DependencyProperty;
+
+    /// <summary>
+    /// Gets the source item for the user action currently being dispatched.
+    /// </summary>
+    /// <remarks>
+    /// The value is <see langword="null"/> while no breadcrumb action is in progress. It is
+    /// read-only because the item generator, rather than the consumer, determines which source
+    /// item corresponds to an activated container.
+    /// </remarks>
+    [Bindable(true)]
+    [Category("Action")]
+    [Localizability(LocalizationCategory.NeverLocalize)]
+    public object? CommandParameter => GetValue(CommandParameterProperty);
+
+    #endregion
+
+    #region DP: CommandTarget
+
+    /// <summary>Identifies the <see cref="CommandTarget"/> dependency property.</summary>
+    public static readonly DependencyProperty CommandTargetProperty =
+        ButtonBase.CommandTargetProperty.AddOwner(
+            typeof(BreadcrumbBar),
+            new FrameworkPropertyMetadata(null, OnCommandTargetChanged)
+        );
+
+    /// <summary>
+    /// Gets or sets the element at which a routed <see cref="Command"/> starts routing.
+    /// </summary>
+    /// <remarks>
+    /// When this value is <see langword="null"/>, the activated <see cref="BreadcrumbBarItem"/>
+    /// is used. This keeps routed-command lookup anchored to the visual source of the action
+    /// instead of the element that happened to own keyboard focus.
+    /// </remarks>
+    [Bindable(true)]
+    [Category("Action")]
+    public IInputElement? CommandTarget
+    {
+        get => (IInputElement?)GetValue(CommandTargetProperty);
+        set => SetValue(CommandTargetProperty, value);
+    }
+
+    #endregion
 
     /// <summary>Identifies the <see cref="ItemClicked"/> routed event.</summary>
     public static readonly RoutedEvent ItemClickedEvent = EventManager.RegisterRoutedEvent(
@@ -94,12 +171,31 @@ public class BreadcrumbBar : ItemsControl
     /// </remarks>
     protected virtual void OnItemClicked(object item, BreadcrumbBarItem container, int index)
     {
-        var args = new BreadcrumbBarItemClickedEventArgs(ItemClickedEvent, this, item, container, index);
-        RaiseEvent(args);
+        var previousParameter = CommandParameter;
+        _userActionDepth++;
+        SetValue(CommandParameterPropertyKey, item);
 
-        if (Command?.CanExecute(item) == true)
+        try
         {
-            Command.Execute(item);
+            var args = new BreadcrumbBarItemClickedEventArgs(ItemClickedEvent, this, item, container, index);
+            RaiseEvent(args);
+
+            // Keep the source-item snapshot stable even when an ItemClicked handler synchronously
+            // changes ItemsSource or otherwise causes the original container to be recycled.
+            ExecuteCommand(item, container);
+        }
+        finally
+        {
+            _userActionDepth--;
+            SetValue(
+                CommandParameterPropertyKey,
+                _userActionDepth == 0 ? null : previousParameter
+            );
+
+            if (_userActionDepth == 0)
+            {
+                UpdateContainerCommandStates();
+            }
         }
     }
 
@@ -126,6 +222,9 @@ public class BreadcrumbBar : ItemsControl
         if (element is BreadcrumbBarItem container)
         {
             container.SetIsLast(false);
+            // Containers may be recycled by a custom items panel. Remove the owner-specific
+            // command constraint before the container is returned to the generator.
+            container.SetOwningCommandCanExecute(true);
         }
 
         base.ClearContainerForItemOverride(element, item);
@@ -144,6 +243,35 @@ public class BreadcrumbBar : ItemsControl
     private void ItemContainerGeneratorOnItemsChanged(object sender, ItemsChangedEventArgs e)
     {
         UpdateContainerPositions();
+    }
+
+    private static void OnCommandChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        var control = (BreadcrumbBar)d;
+
+        if (e.OldValue is ICommand oldCommand)
+        {
+            CanExecuteChangedEventManager.RemoveHandler(oldCommand, control.OnCanExecuteChanged);
+        }
+
+        if (e.NewValue is ICommand newCommand)
+        {
+            // Weak subscription prevents a long-lived view-model command from retaining a bar
+            // that has been removed from the visual tree.
+            CanExecuteChangedEventManager.AddHandler(newCommand, control.OnCanExecuteChanged);
+        }
+
+        control.UpdateContainerCommandStates();
+    }
+
+    private static void OnCommandTargetChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        ((BreadcrumbBar)d).UpdateContainerCommandStates();
+    }
+
+    private void OnCanExecuteChanged(object? sender, EventArgs e)
+    {
+        UpdateContainerCommandStates();
     }
 
     private void OnItemContainerClick(object sender, RoutedEventArgs e)
@@ -179,7 +307,59 @@ public class BreadcrumbBar : ItemsControl
             if (ItemContainerGenerator.ContainerFromIndex(index) is BreadcrumbBarItem container)
             {
                 container.SetIsLast(index == lastIndex);
+                UpdateContainerCommandState(container, Items[index], index == lastIndex);
             }
+        }
+    }
+
+    /// <summary>
+    /// Re-evaluates the bar command against every realized source item.
+    /// </summary>
+    /// <remarks>
+    /// Breadcrumb paths are short and non-virtualized, so a complete pass is both predictable and
+    /// less error-prone than retaining per-container command subscriptions. Unrealized containers
+    /// receive the same state when the generator prepares them.
+    /// </remarks>
+    private void UpdateContainerCommandStates()
+    {
+        int lastIndex = Items.Count - 1;
+        for (int index = 0; index < Items.Count; index++)
+        {
+            if (ItemContainerGenerator.ContainerFromIndex(index) is BreadcrumbBarItem container)
+            {
+                UpdateContainerCommandState(container, Items[index], index == lastIndex);
+            }
+        }
+    }
+
+    private void UpdateContainerCommandState(BreadcrumbBarItem container, object item, bool isLast)
+    {
+        // The final segment is current-location presentation rather than a navigation request.
+        // Its enabled state must remain independent from a command that the bar never invokes.
+        container.SetOwningCommandCanExecute(isLast || CanExecuteCommand(item, container));
+    }
+
+    private bool CanExecuteCommand(object item, BreadcrumbBarItem container)
+    {
+        return Command switch
+        {
+            null                  => true,
+            RoutedCommand routed => routed.CanExecute(item, CommandTarget ?? container),
+            _                     => Command.CanExecute(item)
+        };
+    }
+
+    private void ExecuteCommand(object item, BreadcrumbBarItem container)
+    {
+        switch (Command)
+        {
+            case RoutedCommand routed when routed.CanExecute(item, CommandTarget ?? container):
+                routed.Execute(item, CommandTarget ?? container);
+                break;
+
+            case { } command when command.CanExecute(item):
+                command.Execute(item);
+                break;
         }
     }
 }

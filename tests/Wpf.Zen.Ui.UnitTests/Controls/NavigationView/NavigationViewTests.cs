@@ -1644,6 +1644,163 @@ public class NavigationViewTests
     }
 
     [Fact]
+    public void BreadcrumbBar_CommandSource_UsesPerItemCanExecuteAndInvocationParameter()
+    {
+        RunOnStaThread(() =>
+        {
+            var resources = new ResourceDictionary { Source = CreateResourceUri() };
+            var first = new NavigationItem("First");
+            var second = new NavigationItem("Second");
+            var current = new NavigationItem("Current");
+            object allowedItem = first;
+            object? eventParameter = null;
+            object? executedParameter = null;
+            var command = new RelayCommand<object>(
+                parameter => executedParameter = parameter,
+                parameter => ReferenceEquals(parameter, allowedItem)
+            );
+            var breadcrumbBar = new BreadcrumbBar
+            {
+                Style = Assert.IsType<Style>(resources[typeof(BreadcrumbBar)]),
+                ItemsSource = new[] { first, second, current },
+                Command = command,
+            };
+            breadcrumbBar.ItemClicked += (_, _) => eventParameter = breadcrumbBar.CommandParameter;
+
+            var window = new Window
+            {
+                Content = breadcrumbBar,
+                Width = 320,
+                Height = 80,
+                Left = -10_000,
+                Top = -10_000,
+                ShowActivated = false,
+                ShowInTaskbar = false,
+            };
+
+            try
+            {
+                window.Show();
+                breadcrumbBar.UpdateLayout();
+
+                var commandSource = Assert.IsAssignableFrom<ICommandSource>(breadcrumbBar);
+                Assert.Same(command, commandSource.Command);
+                Assert.Null(commandSource.CommandParameter);
+
+                var firstContainer = Assert.IsType<BreadcrumbBarItem>(
+                    breadcrumbBar.ItemContainerGenerator.ContainerFromIndex(0)
+                );
+                var secondContainer = Assert.IsType<BreadcrumbBarItem>(
+                    breadcrumbBar.ItemContainerGenerator.ContainerFromIndex(1)
+                );
+                var currentContainer = Assert.IsType<BreadcrumbBarItem>(
+                    breadcrumbBar.ItemContainerGenerator.ContainerFromIndex(2)
+                );
+
+                Assert.True(firstContainer.IsEnabled);
+                Assert.False(secondContainer.IsEnabled);
+                // The current-location segment is not an invocation surface, so the bar command
+                // must not make its presentation disabled.
+                Assert.True(currentContainer.IsEnabled);
+
+                allowedItem = second;
+                command.NotifyCanExecuteChanged();
+
+                Assert.False(firstContainer.IsEnabled);
+                Assert.True(secondContainer.IsEnabled);
+
+                // Command coercion must not replace a consumer-owned IsEnabled value. When the
+                // command permits the item again, its explicit disabled state remains authoritative.
+                firstContainer.IsEnabled = false;
+                allowedItem = first;
+                command.NotifyCanExecuteChanged();
+                Assert.False(firstContainer.IsEnabled);
+                firstContainer.ClearValue(UIElement.IsEnabledProperty);
+                Assert.True(firstContainer.IsEnabled);
+
+                allowedItem = second;
+                command.NotifyCanExecuteChanged();
+
+                var button = Assert.IsType<System.Windows.Controls.Button>(
+                    secondContainer.Template.FindName("PART_Button", secondContainer)
+                );
+                button.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent, button));
+
+                Assert.Same(second, eventParameter);
+                Assert.Same(second, executedParameter);
+                Assert.Null(breadcrumbBar.CommandParameter);
+            }
+            finally
+            {
+                window.Close();
+            }
+        });
+    }
+
+    [Fact]
+    public void BreadcrumbBar_RoutedCommand_UsesExplicitTarget()
+    {
+        RunOnStaThread(() =>
+        {
+            var resources = new ResourceDictionary { Source = CreateResourceUri() };
+            var target = new Border();
+            var command = new RoutedCommand();
+            object? executedParameter = null;
+            target.CommandBindings.Add(
+                new CommandBinding(
+                    command,
+                    (_, args) => executedParameter = args.Parameter,
+                    (_, args) => args.CanExecute = true
+                )
+            );
+
+            var first = new NavigationItem("First");
+            var breadcrumbBar = new BreadcrumbBar
+            {
+                Style = Assert.IsType<Style>(resources[typeof(BreadcrumbBar)]),
+                ItemsSource = new[] { first, new NavigationItem("Current") },
+                Command = command,
+                CommandTarget = target,
+            };
+            var root = new Grid();
+            root.Children.Add(target);
+            root.Children.Add(breadcrumbBar);
+            var window = new Window
+            {
+                Content = root,
+                Width = 320,
+                Height = 80,
+                Left = -10_000,
+                Top = -10_000,
+                ShowActivated = false,
+                ShowInTaskbar = false,
+            };
+
+            try
+            {
+                window.Show();
+                breadcrumbBar.UpdateLayout();
+
+                var firstContainer = Assert.IsType<BreadcrumbBarItem>(
+                    breadcrumbBar.ItemContainerGenerator.ContainerFromIndex(0)
+                );
+                Assert.True(firstContainer.IsEnabled);
+
+                var button = Assert.IsType<System.Windows.Controls.Button>(
+                    firstContainer.Template.FindName("PART_Button", firstContainer)
+                );
+                button.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent, button));
+
+                Assert.Same(first, executedParameter);
+            }
+            finally
+            {
+                window.Close();
+            }
+        });
+    }
+
+    [Fact]
     public void BreadcrumbBarItem_TemplateButton_RaisesClickThenExecutesForwardedCommand()
     {
         RunOnStaThread(() =>
