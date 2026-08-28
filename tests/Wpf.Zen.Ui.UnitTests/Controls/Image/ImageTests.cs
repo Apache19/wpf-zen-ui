@@ -3,7 +3,11 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
+using System.IO;
 using System.Reflection;
+using System.Security;
+using System.Windows.Data;
+using System.Windows.Markup;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Media.Effects;
@@ -14,6 +18,135 @@ namespace Wpf.Zen.Ui.UnitTests.Controls;
 
 public class ImageTests
 {
+    [Fact]
+    public void FileSource_DecodesAndReleasesFileBeforeReturning()
+    {
+        string filePath = CreateTemporaryPng(32, 24, Colors.CornflowerBlue);
+
+        try
+        {
+            RunOnStaThread(
+                () =>
+                {
+                    var image = new UiImage
+                    {
+                        DecodePixelWidth = 16,
+                        FileSource = filePath,
+                    };
+
+                    BitmapSource source = Assert.IsAssignableFrom<BitmapSource>(image.Source);
+                    Assert.True(source.IsFrozen);
+                    Assert.Equal(16, source.PixelWidth);
+                    Assert.Equal(12, source.PixelHeight);
+
+                    File.Delete(filePath);
+
+                    Assert.False(File.Exists(filePath));
+                    Assert.Equal(
+                        Colors.CornflowerBlue,
+                        RenderPixel(image, 16, 12, 8, 6)
+                    );
+                }
+            );
+        }
+        finally
+        {
+            File.Delete(filePath);
+        }
+    }
+
+    [Fact]
+    public void FileSourceXamlLiteral_DecodesAndReleasesFile()
+    {
+        string filePath = CreateTemporaryPng(20, 20, Colors.OrangeRed);
+
+        try
+        {
+            RunOnStaThread(
+                () =>
+                {
+                    string escapedPath = SecurityElement.Escape(filePath) ?? filePath;
+                    string xaml =
+                        $"""
+                        <ui:Image
+                            xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                            xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                            xmlns:ui="clr-namespace:Wpf.Zen.Ui.Controls;assembly=Wpf.Zen.Ui"
+                            FileSource="{escapedPath}" />
+                        """;
+
+                    var image = Assert.IsType<UiImage>(XamlReader.Parse(xaml));
+                    BitmapSource source = Assert.IsAssignableFrom<BitmapSource>(image.Source);
+
+                    Assert.True(source.IsFrozen);
+                    File.Delete(filePath);
+                    Assert.False(File.Exists(filePath));
+                    Assert.Equal(Colors.OrangeRed, RenderPixel(image, 20, 20, 10, 10));
+                }
+            );
+        }
+        finally
+        {
+            File.Delete(filePath);
+        }
+    }
+
+    [Fact]
+    public void FileSource_ReusesFrozenBitmapForUnchangedFileAndDecodeSize()
+    {
+        string filePath = CreateTemporaryPng(24, 24, Colors.MediumPurple);
+
+        try
+        {
+            RunOnStaThread(
+                () =>
+                {
+                    var first = new UiImage { FileSource = filePath };
+                    var second = new UiImage { FileSource = filePath };
+
+                    Assert.Same(first.Source, second.Source);
+
+                    File.Delete(filePath);
+                    Assert.False(File.Exists(filePath));
+                }
+            );
+        }
+        finally
+        {
+            File.Delete(filePath);
+        }
+    }
+
+    [Fact]
+    public void FileSource_StringBindingUsesNoLockDecodePath()
+    {
+        string filePath = CreateTemporaryPng(18, 18, Colors.SeaGreen);
+
+        try
+        {
+            RunOnStaThread(
+                () =>
+                {
+                    var image = new UiImage();
+                    image.SetBinding(
+                        UiImage.FileSourceProperty,
+                        new Binding { Source = filePath }
+                    );
+
+                    Assert.Equal(filePath, image.FileSource);
+                    Assert.IsAssignableFrom<BitmapSource>(image.Source);
+
+                    File.Delete(filePath);
+                    Assert.False(File.Exists(filePath));
+                }
+            );
+        }
+        finally
+        {
+            File.Delete(filePath);
+        }
+    }
+
     [Fact]
     public void Defaults_UseNativeImageWithoutAdditionalVisualOrEffect()
     {
@@ -280,6 +413,20 @@ public class ImageTests
         );
         bitmap.Freeze();
         return bitmap;
+    }
+
+    private static string CreateTemporaryPng(int width, int height, Color color)
+    {
+        string filePath = Path.Combine(Path.GetTempPath(), $"WpfZenUi-{Guid.NewGuid():N}.png");
+        var encoder = new PngBitmapEncoder();
+        encoder.Frames.Add(BitmapFrame.Create(CreateSolidBitmap(width, height, color)));
+
+        using (var stream = new FileStream(filePath, FileMode.CreateNew, FileAccess.Write, FileShare.None))
+        {
+            encoder.Save(stream);
+        }
+
+        return filePath;
     }
 
     private static Color RenderPixel(UIElement element, int width, int height, int x, int y)

@@ -5,6 +5,8 @@
 
 using System.Diagnostics;
 using System.IO;
+using System.Security;
+using System.Windows.Markup;
 using Wpf.Zen.Ui.Effects;
 
 // ReSharper disable once CheckNamespace
@@ -17,9 +19,12 @@ namespace Wpf.Zen.Ui.Controls;
 /// <remarks>
 /// <para>
 /// This type derives directly from the native WPF <see cref="System.Windows.Controls.Image"/>.
-/// It therefore preserves the native image loading, DPI, layout, automation, URI, and
+/// It therefore preserves the native DPI, layout, automation, and
 /// <see cref="System.Windows.Controls.Image.ImageFailed"/> behavior instead of reproducing those
-/// framework responsibilities in a control template.
+/// framework responsibilities in a control template. Assign local paths to
+/// <see cref="FileSource"/> when the file must be deletable or replaceable after loading;
+/// <see cref="System.Windows.Controls.Image.Source"/> retains its native WPF semantics for pack,
+/// network, stream, and application-created image sources.
 /// </para>
 /// <para>
 /// A zero <see cref="CornerRadius"/> and neutral color values use the native rendering path without
@@ -41,6 +46,98 @@ namespace Wpf.Zen.Ui.Controls;
 /// </remarks>
 public class Image : System.Windows.Controls.Image
 {
+    /// <summary>
+    /// Identifies the <see cref="FileSource"/> dependency property.
+    /// </summary>
+    /// <remarks>
+    /// A changed path is decoded synchronously and replaces the native
+    /// <see cref="System.Windows.Controls.Image.Source"/>. The decoded pixels are cached before the
+    /// file stream is disposed, so rendering never depends on an open file. The property affects
+    /// measurement through the resulting native
+    /// <see cref="System.Windows.Controls.Image.SourceProperty"/> change.
+    /// </remarks>
+    public static readonly DependencyProperty FileSourceProperty = DependencyProperty.Register(
+        nameof(FileSource),
+        typeof(string),
+        typeof(Image),
+        new FrameworkPropertyMetadata(null, OnFileSourceChanged)
+    );
+
+    /// <summary>
+    /// Gets or sets the path of a local image file that should be loaded without retaining a file
+    /// handle.
+    /// </summary>
+    /// <value>
+    /// An absolute file-system path, a <c>file:</c> URI, or a path relative to the control's XAML
+    /// base URI. When no file base URI is available, a relative path is resolved against the
+    /// process working directory. The default is <see langword="null"/>.
+    /// </value>
+    /// <remarks>
+    /// While this property is non-empty it owns the effective native
+    /// <see cref="System.Windows.Controls.Image.Source"/>. Set it to <see langword="null"/> before
+    /// assigning that property directly. Loading is synchronous, matching WPF's ordinary local URI
+    /// conversion. A failed load clears the effective image and writes a warning to the trace
+    /// listeners.
+    /// </remarks>
+    public string? FileSource
+    {
+        get => (string?)GetValue(FileSourceProperty);
+        set => SetValue(FileSourceProperty, value);
+    }
+
+    /// <summary>
+    /// Identifies the <see cref="DecodePixelWidth"/> dependency property.
+    /// </summary>
+    /// <remarks>
+    /// The value controls WIC decoding for <see cref="FileSource"/> only. A value of zero preserves
+    /// the source width or derives it from <see cref="DecodePixelHeight"/> while retaining aspect
+    /// ratio. Changing the value reloads an active file source and can substantially reduce memory
+    /// and decode work for thumbnail scenarios.
+    /// </remarks>
+    public static readonly DependencyProperty DecodePixelWidthProperty = DependencyProperty.Register(
+        nameof(DecodePixelWidth),
+        typeof(int),
+        typeof(Image),
+        new FrameworkPropertyMetadata(0, OnDecodePixelSizeChanged),
+        IsValidDecodePixelSize
+    );
+
+    /// <summary>
+    /// Gets or sets the pixel width used when decoding <see cref="FileSource"/>.
+    /// </summary>
+    /// <value>A non-negative width. The default value of <c>0</c> uses the source width.</value>
+    public int DecodePixelWidth
+    {
+        get => (int)GetValue(DecodePixelWidthProperty);
+        set => SetValue(DecodePixelWidthProperty, value);
+    }
+
+    /// <summary>
+    /// Identifies the <see cref="DecodePixelHeight"/> dependency property.
+    /// </summary>
+    /// <remarks>
+    /// The value controls WIC decoding for <see cref="FileSource"/> only. A value of zero preserves
+    /// the source height or derives it from <see cref="DecodePixelWidth"/> while retaining aspect
+    /// ratio. Changing the value reloads an active file source.
+    /// </remarks>
+    public static readonly DependencyProperty DecodePixelHeightProperty = DependencyProperty.Register(
+        nameof(DecodePixelHeight),
+        typeof(int),
+        typeof(Image),
+        new FrameworkPropertyMetadata(0, OnDecodePixelSizeChanged),
+        IsValidDecodePixelSize
+    );
+
+    /// <summary>
+    /// Gets or sets the pixel height used when decoding <see cref="FileSource"/>.
+    /// </summary>
+    /// <value>A non-negative height. The default value of <c>0</c> uses the source height.</value>
+    public int DecodePixelHeight
+    {
+        get => (int)GetValue(DecodePixelHeightProperty);
+        set => SetValue(DecodePixelHeightProperty, value);
+    }
+
     /// <summary>
     /// Identifies the <see cref="CornerRadius"/> dependency property.
     /// </summary>
@@ -204,6 +301,7 @@ public class Image : System.Windows.Controls.Image
     private DrawingVisual? _adjustedImageVisual;
     private ColorAdjustmentEffect? _colorAdjustmentEffect;
     private bool _colorAdjustmentUnavailable;
+    private ImageSource? _fileSourceImage;
 
     /// <inheritdoc/>
     protected override int VisualChildrenCount => _adjustedImageVisual is null ? 0 : 1;
@@ -254,6 +352,82 @@ public class Image : System.Windows.Controls.Image
         finally
         {
             drawingContext.Pop();
+        }
+    }
+
+    private static void OnFileSourceChanged(
+        DependencyObject dependencyObject,
+        DependencyPropertyChangedEventArgs eventArgs
+    )
+    {
+        ((Image)dependencyObject).ReloadFileSource();
+    }
+
+    private static void OnDecodePixelSizeChanged(
+        DependencyObject dependencyObject,
+        DependencyPropertyChangedEventArgs eventArgs
+    )
+    {
+        var image = (Image)dependencyObject;
+        if (!string.IsNullOrWhiteSpace(image.FileSource))
+        {
+            image.ReloadFileSource();
+        }
+    }
+
+    private static bool IsValidDecodePixelSize(object? value)
+    {
+        return value is int pixelSize && pixelSize >= 0;
+    }
+
+    private void ReloadFileSource()
+    {
+        string? fileSource = FileSource;
+        if (string.IsNullOrWhiteSpace(fileSource))
+        {
+            // Do not clear a Source that the consumer assigned after FileSource. Reference identity
+            // makes removing FileSource safe even when the two properties are data-bound separately.
+            if (ReferenceEquals(Source, _fileSourceImage))
+            {
+                SetCurrentValue(System.Windows.Controls.Image.SourceProperty, null);
+            }
+
+            _fileSourceImage = null;
+            return;
+        }
+
+        try
+        {
+            Uri? baseUri = ((IUriContext)this).BaseUri;
+            string filePath = FileImageLoader.ResolveFilePath(
+                fileSource!,
+                baseUri,
+                resolveRelativeAgainstCurrentDirectory: true
+            );
+            ImageSource loadedImage = FileImageLoader.Load(
+                filePath,
+                DecodePixelWidth,
+                DecodePixelHeight
+            );
+
+            _fileSourceImage = loadedImage;
+            SetCurrentValue(System.Windows.Controls.Image.SourceProperty, loadedImage);
+        }
+        catch (Exception exception) when (
+            exception is ArgumentException
+                or IOException
+                or NotSupportedException
+                or SecurityException
+                or UnauthorizedAccessException
+        )
+        {
+            _fileSourceImage = null;
+            SetCurrentValue(System.Windows.Controls.Image.SourceProperty, null);
+            Trace.TraceWarning(
+                "Image file source '{0}' could not be loaded: {1}",
+                fileSource,
+                exception.Message
+            );
         }
     }
 
