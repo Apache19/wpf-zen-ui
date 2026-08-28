@@ -5,8 +5,24 @@
     xmlns:controls="clr-namespace:Wpf.Zen.Ui.Controls"
     xmlns:m="clr-namespace:Wpf.Zen.Ui.Markup">
 
+    <Style x:Key="PagingBoxButtonFocusVisualStyle">
+        <Setter Property="Control.Template">
+            <Setter.Value>
+                <ControlTemplate>
+                    <Border
+                        Margin="2,2,3,2"
+                        BorderBrush="{m:DynamicBrush KeyboardFocusBorder}"
+                        BorderThickness="1"
+                        CornerRadius="4"
+                        SnapsToDevicePixels="True" />
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <Style x:Key="PagingBoxButtonStyle" TargetType="{x:Type Button}">
         <Setter Property="OverridesDefaultStyle" Value="True" />
+        <Setter Property="FocusVisualStyle" Value="{StaticResource PagingBoxButtonFocusVisualStyle}" />
         <Setter Property="HorizontalContentAlignment" Value="Center" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
         <Setter Property="TextBlock.TextAlignment" Value="Center" />
@@ -188,7 +204,16 @@
                 ClipContent="True"
                 CornerRadius="{TemplateBinding Border.CornerRadius}"
                 SnapsToDevicePixels="True">
-                <ItemsControl x:Name="PART_PageItemsControl" ItemsSource="{TemplateBinding PageList}">
+                <ItemsControl
+                    x:Name="PART_PageItemsControl"
+                    Focusable="False"
+                    ItemsSource="{TemplateBinding PageList}"
+                    OverridesDefaultStyle="True">
+                    <ItemsControl.Template>
+                        <ControlTemplate>
+                            <ItemsPresenter SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
+                        </ControlTemplate>
+                    </ItemsControl.Template>
                     <ItemsControl.ItemTemplateSelector>
                         <controls:LastItemTemplateSelector LastItemTemplate="{StaticResource PagingBoxLastItemTemplate}" NormalTemplate="{StaticResource PagingBoxNormalItemTemplate}" />
                     </ItemsControl.ItemTemplateSelector>
@@ -261,6 +286,22 @@
                             <Run Text="{TemplateBinding NextPageText}" />
                             <controls:FluentIconSpan FontSize="13" Symbol="IosArrowRtl24" />
                         </TextBlock>
+                        <Button.FocusVisualStyle>
+                            <Style>
+                                <Setter Property="Control.Template">
+                                    <Setter.Value>
+                                        <ControlTemplate>
+                                            <Border
+                                                Margin="1,0,0,0"
+                                                BorderBrush="{m:DynamicBrush KeyboardFocusBorder}"
+                                                BorderThickness="1"
+                                                CornerRadius="0 4 4 0"
+                                                SnapsToDevicePixels="True" />
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </Button.FocusVisualStyle>
                     </Button>
                 </Grid>
             </controls:ClippingBorder>
@@ -312,6 +353,8 @@
     </ControlTemplate>
 
     <Style x:Key="PagingBoxStyleKey" TargetType="{x:Type controls:PagingBox}">
+        <Setter Property="Focusable" Value="False" />
+        <Setter Property="IsTabStop" Value="False" />
         <Setter Property="Padding" Value="12,6" />
         <Setter Property="BorderBrush" Value="{m:DynamicBrush ControlStrokeSecondary}" />
         <Setter Property="BorderThickness" Value="1" />
