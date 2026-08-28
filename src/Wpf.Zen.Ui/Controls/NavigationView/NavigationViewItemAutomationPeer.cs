@@ -58,6 +58,30 @@ internal class NavigationViewItemAutomationPeer
     }
 
     /// <inheritdoc />
+    protected override Rect GetBoundingRectangleCore()
+    {
+        // NavigationViewItem owns the inline child presenter, so its visual bounds grow when the
+        // branch expands. UIA represents this peer as the selectable header row, however, and its
+        // focus indicator must therefore use the bounded input surface rather than the whole branch.
+        return GetHeaderButtonAutomationPeer()?.GetBoundingRectangle()
+            ?? base.GetBoundingRectangleCore();
+    }
+
+    /// <inheritdoc />
+    protected override Point GetClickablePointCore()
+    {
+        return GetHeaderButtonAutomationPeer()?.GetClickablePoint()
+            ?? base.GetClickablePointCore();
+    }
+
+    /// <inheritdoc />
+    protected override bool IsOffscreenCore()
+    {
+        return GetHeaderButtonAutomationPeer()?.IsOffscreen()
+            ?? base.IsOffscreenCore();
+    }
+
+    /// <inheritdoc />
     /// <remarks>
     /// PART_HeaderButton is the implementation surface for the selection and expand/collapse
     /// patterns exposed by this peer. Returning its Button peer as an additional control would
@@ -67,10 +91,25 @@ internal class NavigationViewItemAutomationPeer
     protected override List<AutomationPeer>? GetChildrenCore()
     {
         List<AutomationPeer>? children = base.GetChildrenCore();
-        children?.RemoveAll(
-            peer => peer is ButtonBaseAutomationPeer buttonPeer &&
-                    ReferenceEquals(buttonPeer.Owner, _owner.HeaderButton)
-        );
+        if (children is null)
+        {
+            return null;
+        }
+
+        children.RemoveAll(peer =>
+        {
+            if (
+                peer is not ButtonBaseAutomationPeer buttonPeer
+                || !ReferenceEquals(buttonPeer.Owner, _owner.HeaderButton)
+            )
+            {
+                return false;
+            }
+
+            ConfigureHeaderButtonAutomationPeer(buttonPeer);
+            return true;
+        });
+
         return children;
     }
 
@@ -311,5 +350,42 @@ internal class NavigationViewItemAutomationPeer
         {
             throw new ElementNotEnabledException();
         }
+    }
+
+    /// <summary>
+    /// Gets the peer for the concrete header surface and aggregates its events into this semantic
+    /// navigation-item peer.
+    /// </summary>
+    /// <remarks>
+    /// The template button remains hidden from the public automation tree to prevent duplicate
+    /// announcements. WPF still creates its peer when the button receives keyboard focus, so the
+    /// event source must be configured anywhere this peer delegates header geometry, even before a
+    /// UIA client has requested the navigation item's children.
+    /// </remarks>
+    private AutomationPeer? GetHeaderButtonAutomationPeer()
+    {
+        if (
+            _owner.HeaderButton is not { } headerButton
+            || UIElementAutomationPeer.CreatePeerForElement(headerButton) is not { } peer
+        )
+        {
+            return null;
+        }
+
+        ConfigureHeaderButtonAutomationPeer(peer);
+        return peer;
+    }
+
+    /// <summary>
+    /// Redirects automation events from the hidden template implementation to the navigation item
+    /// exposed to UIA clients.
+    /// </summary>
+    private void ConfigureHeaderButtonAutomationPeer(AutomationPeer peer)
+    {
+        // Keyboard focus belongs to the template button, but that implementation peer is omitted
+        // from the public automation tree. WPF resolves focus changes through EventsSource after
+        // creating the peer for the focused input element. Without this aggregation UIA receives
+        // the hidden button as the focus source and cannot track the NavigationViewItem.
+        peer.EventsSource = this;
     }
 }

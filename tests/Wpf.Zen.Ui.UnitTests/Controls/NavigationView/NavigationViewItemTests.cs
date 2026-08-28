@@ -9,6 +9,7 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Windows.Automation;
+using System.Windows.Automation.Peers;
 using System.Windows.Automation.Provider;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -94,6 +95,34 @@ public class NavigationViewItemTests
             Assert.False(KeyboardNavigation.GetIsTabStop(item));
             Assert.True(headerButton.Focusable);
             Assert.Null(item.Template.FindName("PART_ExpandButton", item));
+        });
+    }
+
+    [Fact]
+    public void AutomationPeer_RoutesHiddenHeaderButtonFocusToNavigationItem()
+    {
+        RunOnStaThread(() =>
+        {
+            var resources = new ResourceDictionary { Source = CreateResourceUri() };
+            var item = new NavigationViewItem
+            {
+                Header = "Settings",
+                Style = Assert.IsType<Style>(resources[typeof(NavigationViewItem)]),
+            };
+
+            Assert.True(item.ApplyTemplate());
+            var headerButton = Assert.IsAssignableFrom<ButtonBase>(
+                item.Template.FindName("PART_HeaderButton", item)
+            );
+            var itemPeer = CreateAutomationPeer(item);
+
+            List<System.Windows.Automation.Peers.AutomationPeer>? children = itemPeer.GetChildren();
+            var headerButtonPeer = Assert.IsAssignableFrom<ButtonBaseAutomationPeer>(
+                UIElementAutomationPeer.CreatePeerForElement(headerButton)
+            );
+
+            Assert.DoesNotContain(children ?? [], peer => ReferenceEquals(peer, headerButtonPeer));
+            Assert.Same(itemPeer, headerButtonPeer.EventsSource);
         });
     }
 
@@ -309,7 +338,7 @@ public class NavigationViewItemTests
     }
 
     [Fact]
-    public void FocusingVisibleHeaderDoesNotRevealTheExpandedContainerBounds()
+    public void FocusAndAutomationBoundsRemainOnHeaderWhenBranchChangesExpansion()
     {
         RunOnStaThread(() =>
         {
@@ -363,6 +392,30 @@ public class NavigationViewItemTests
 
                 Assert.Equal(offsetBeforeFocus, scrollViewer.VerticalOffset);
                 Assert.True(parent.ActualHeight > scrollViewer.ViewportHeight);
+
+                var itemPeer = CreateAutomationPeer(parent);
+                var headerButtonPeer = Assert.IsAssignableFrom<ButtonBaseAutomationPeer>(
+                    UIElementAutomationPeer.CreatePeerForElement(headerButton)
+                );
+
+                Assert.Equal(
+                    headerButtonPeer.GetBoundingRectangle(),
+                    itemPeer.GetBoundingRectangle()
+                );
+
+                parent.IsExpanded = false;
+                window.UpdateLayout();
+                Assert.Equal(
+                    headerButtonPeer.GetBoundingRectangle(),
+                    itemPeer.GetBoundingRectangle()
+                );
+
+                parent.IsExpanded = true;
+                window.UpdateLayout();
+                Assert.Equal(
+                    headerButtonPeer.GetBoundingRectangle(),
+                    itemPeer.GetBoundingRectangle()
+                );
             }
             finally
             {
