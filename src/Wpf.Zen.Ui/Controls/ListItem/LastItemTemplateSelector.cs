@@ -34,19 +34,6 @@ namespace Wpf.Zen.Ui.Controls;
 /// </example>
 public sealed class LastItemTemplateSelector : DataTemplateSelector
 {
-    // ┌─────────────────────────────────────────┐
-    // │ Product List                            │
-    // │┌───────────────────────────────────────┐│
-    // ││ Product A                             ││ ← NormalTemplate
-    // │├───────────────────────────────────────┤│
-    // ││ Product B                             ││ ← NormalTemplate
-    // │├───────────────────────────────────────┤│
-    // ││ Product C                             ││ ← NormalTemplate
-    // │├───────────────────────────────────────┤│
-    // ││ [Load More...]                        ││ ← LastItemTemplate（different template for the last item）
-    // │└───────────────────────────────────────┘│
-    // └─────────────────────────────────────────┘
-
     /// <summary>
     /// Gets or sets the template used for every item except the last item. The default value is
     /// <see langword="null"/>, which lets WPF continue with its ordinary implicit-template lookup.
