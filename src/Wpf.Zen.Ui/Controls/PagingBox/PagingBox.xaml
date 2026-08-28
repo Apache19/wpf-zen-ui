@@ -117,12 +117,23 @@
                             <Setter Property="Background" Value="{m:DynamicBrush ControlFillPrimary}" />
                         </DataTrigger>
 
-                        <!--  Preserve the width so the item does not resize when the pointer moves over it.  -->
                         <DataTrigger Binding="{Binding State}" Value="PreviousEllipsis">
                             <Setter Property="Content">
                                 <Setter.Value>
                                     <Grid>
-                                        <controls:FluentIcon Symbol="IosArrowLtr24" />
+                                        <controls:FluentIcon>
+                                            <controls:FluentIcon.Style>
+                                                <Style TargetType="{x:Type controls:FluentIcon}">
+                                                    <Setter Property="Symbol" Value="IosArrowLtr24" />
+                                                    <Style.Triggers>
+                                                        <Trigger Property="FlowDirection" Value="RightToLeft">
+                                                            <Setter Property="Symbol" Value="IosArrowRtl24" />
+                                                        </Trigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </controls:FluentIcon.Style>
+                                        </controls:FluentIcon>
+                                        <!--  Preserve the width so the item does not resize when the pointer moves over it.  -->
                                         <TextBlock Text="{Binding Page}" Visibility="Hidden" />
                                     </Grid>
                                 </Setter.Value>
@@ -133,7 +144,19 @@
                             <Setter Property="Content">
                                 <Setter.Value>
                                     <Grid>
-                                        <controls:FluentIcon Symbol="IosArrowRtl24" />
+                                        <controls:FluentIcon>
+                                            <controls:FluentIcon.Style>
+                                                <Style TargetType="{x:Type controls:FluentIcon}">
+                                                    <Setter Property="Symbol" Value="IosArrowRtl24" />
+                                                    <Style.Triggers>
+                                                        <Trigger Property="FlowDirection" Value="RightToLeft">
+                                                            <Setter Property="Symbol" Value="IosArrowLtr24" />
+                                                        </Trigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </controls:FluentIcon.Style>
+                                        </controls:FluentIcon>
+                                        <!--  Preserve the width so the item does not resize when the pointer moves over it.  -->
                                         <TextBlock Text="{Binding Page}" Visibility="Hidden" />
                                     </Grid>
                                 </Setter.Value>
@@ -148,6 +171,7 @@
                             <Setter Property="Content">
                                 <Setter.Value>
                                     <Grid>
+                                        <!--  Preserve the width so the item does not resize when the pointer moves over it.  -->
                                         <controls:FluentIcon Symbol="IosArrowRtl24" Visibility="Hidden" />
                                         <TextBlock Text="{Binding Page}" />
                                     </Grid>
@@ -325,7 +349,18 @@
                         IsEnabled="{TemplateBinding CanGoPrevious}"
                         Style="{StaticResource PagingBoxButtonStyle}">
                         <TextBlock>
-                            <controls:FluentIconSpan FontSize="13" Symbol="IosArrowLtr24" />
+                            <controls:FluentIconSpan FontSize="13">
+                                <controls:FluentIconSpan.Style>
+                                    <Style TargetType="{x:Type controls:FluentIconSpan}">
+                                        <Setter Property="Symbol" Value="IosArrowLtr24" />
+                                        <Style.Triggers>
+                                            <Trigger Property="FlowDirection" Value="RightToLeft">
+                                                <Setter Property="Symbol" Value="IosArrowRtl24" />
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </controls:FluentIconSpan.Style>
+                            </controls:FluentIconSpan>
                             <Run Text="{TemplateBinding PreviousPageText}" />
                         </TextBlock>
                         <controls:Button.FocusVisualStyle>
@@ -376,7 +411,18 @@
                         Style="{StaticResource PagingBoxButtonStyle}">
                         <TextBlock>
                             <Run Text="{TemplateBinding NextPageText}" />
-                            <controls:FluentIconSpan FontSize="13" Symbol="IosArrowRtl24" />
+                            <controls:FluentIconSpan FontSize="13">
+                                <controls:FluentIconSpan.Style>
+                                    <Style TargetType="{x:Type controls:FluentIconSpan}">
+                                        <Setter Property="Symbol" Value="IosArrowRtl24" />
+                                        <Style.Triggers>
+                                            <Trigger Property="FlowDirection" Value="RightToLeft">
+                                                <Setter Property="Symbol" Value="IosArrowLtr24" />
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </controls:FluentIconSpan.Style>
+                            </controls:FluentIconSpan>
                         </TextBlock>
                         <controls:Button.FocusVisualStyle>
                             <Style>
