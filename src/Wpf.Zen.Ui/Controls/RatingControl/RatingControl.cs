@@ -28,22 +28,28 @@ namespace Wpf.Zen.Ui.Controls;
 /// <see cref="PlaceholderRating"/> without turning the placeholder into an actual score. The
 /// template owns star layout through <c>PART_ItemsHost</c>; changing its items panel is therefore
 /// sufficient to change spacing or arrangement without adding layout properties to this control.
+/// <c>PART_ZeroRatingTarget</c> provides a separate hit target at the low-rating edge so that zero
+/// remains selectable without changing the fractional semantics inside the first star.
 /// </para>
 /// <para>
-/// <c>PART_ItemsHost</c> is the only template part and is optional for safe degradation. When it
-/// is absent, the control cannot render stars or translate pointer positions, but dependency
-/// properties, keyboard input, and <see cref="RatingChanged"/> continue to operate normally.
+/// Both template parts are optional for safe degradation. Without <c>PART_ItemsHost</c>, the
+/// control cannot render stars or translate star positions. Without <c>PART_ZeroRatingTarget</c>,
+/// pointer input cannot select zero directly. Dependency properties, keyboard input, and
+/// <see cref="RatingChanged"/> continue to operate normally when either part is absent.
 /// </para>
 /// </remarks>
 [TemplatePart(Name = ItemsHostPartName, Type = typeof(ItemsControl))]
+[TemplatePart(Name = ZeroRatingTargetPartName, Type = typeof(FrameworkElement))]
 public class RatingControl : Control
 {
-    private const string ItemsHostPartName = "PART_ItemsHost";
+    private const string ItemsHostPartName        = "PART_ItemsHost";
+    private const string ZeroRatingTargetPartName = "PART_ZeroRatingTarget";
 
     private readonly ObservableCollection<RatingItem> _ratingItems = [];
 
-    private ItemsControl? _itemsHost;
-    private double?       _previewRating;
+    private ItemsControl?     _itemsHost;
+    private FrameworkElement? _zeroRatingTarget;
+    private double?           _previewRating;
 
     static RatingControl()
     {
@@ -331,12 +337,12 @@ public class RatingControl : Control
     #endregion
 
     /// <summary>
-    /// Reconnects the control to the items host supplied by its current template.
+    /// Reconnects the control to the interaction elements supplied by its current template.
     /// </summary>
     /// <remarks>
-    /// The items host is template-owned and therefore cannot be resolved before this lifecycle
-    /// point. Reapplying a template first releases the previous host so it cannot retain the
-    /// presentation collection after its visual tree has been replaced.
+    /// Template parts cannot be resolved before this lifecycle point. Reapplying a template first
+    /// releases the previous items host so it cannot retain the presentation collection after its
+    /// visual tree has been replaced.
     /// </remarks>
     public override void OnApplyTemplate()
     {
@@ -345,6 +351,7 @@ public class RatingControl : Control
         base.OnApplyTemplate();
 
         _itemsHost = GetTemplateChild(ItemsHostPartName) as ItemsControl;
+        _zeroRatingTarget = GetTemplateChild(ZeroRatingTargetPartName) as FrameworkElement;
 
         // PART_ItemsHost is owned by the control contract. Supplying the collection here keeps
         // layout entirely in the template while avoiding a public presentation-only property.
@@ -611,6 +618,11 @@ public class RatingControl : Control
     {
         rating = 0;
 
+        if (IsPointerOverZeroRatingTarget(e))
+        {
+            return true;
+        }
+
         if (_itemsHost is null)
         {
             return false;
@@ -639,6 +651,54 @@ public class RatingControl : Control
         );
 
         return true;
+    }
+
+    private bool IsPointerOverZeroRatingTarget(MouseEventArgs e)
+    {
+        if (_zeroRatingTarget is null || _zeroRatingTarget.ActualWidth <= 0)
+        {
+            return false;
+        }
+
+        // OriginalSource is the reliable path for ordinary routed mouse input and also supports
+        // a custom zero target containing its own visuals. The coordinate fallback preserves the
+        // contract for templates whose target has no hit-testable background: in that case WPF
+        // reports an ancestor as the source even though the pointer is inside the target's bounds.
+        if (e.OriginalSource is DependencyObject source
+            && (ReferenceEquals(source, _zeroRatingTarget)
+                || (source is System.Windows.Media.Visual
+                    && _zeroRatingTarget.IsAncestorOf(source))))
+        {
+            return true;
+        }
+
+        return IsPositionInZeroRatingRegion(e.GetPosition(this));
+    }
+
+    /// <summary>
+    /// Determines whether a control-local point occupies the zero-rating region supplied by the
+    /// current template.
+    /// </summary>
+    internal bool IsPositionInZeroRatingRegion(Point position)
+    {
+        if (_zeroRatingTarget is null || _zeroRatingTarget.ActualWidth <= 0)
+        {
+            return false;
+        }
+
+        var targetStart = _zeroRatingTarget.TranslatePoint(new Point(0, 0), this);
+        var targetEnd   = _zeroRatingTarget.TranslatePoint(
+            new Point(_zeroRatingTarget.ActualWidth, 0),
+            this
+        );
+        var targetRight = Math.Max(targetStart.X, targetEnd.X);
+
+        // The control's padding lies outside the template part. Include the contiguous area from
+        // the control boundary through the target's far edge so the outermost pixels remain
+        // interactive. Translate both target edges into the control's coordinate space because a
+        // custom template may place the target inside additional layout containers.
+        return position.Y >= 0 && position.Y <= ActualHeight
+            && position.X >= 0 && position.X <= targetRight;
     }
 
     /// <summary>

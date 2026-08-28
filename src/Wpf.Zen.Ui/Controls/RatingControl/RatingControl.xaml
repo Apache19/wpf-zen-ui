@@ -15,7 +15,7 @@
         <Setter Property="FocusVisualStyle" Value="{m:DynamicStyle DefaultControlFocusVisual}" />
         <Setter Property="Foreground" Value="{m:DynamicBrush TextFillSecondary}" />
         <Setter Property="FontSize" Value="20" />
-        <Setter Property="Padding" Value="8,6" />
+        <Setter Property="Padding" Value="0,6,8,6" />
         <Setter Property="HorizontalAlignment" Value="Left" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
         <Setter Property="ItemTemplate">
@@ -108,27 +108,52 @@
                         BorderThickness="{TemplateBinding BorderThickness}"
                         CornerRadius="{TemplateBinding Border.CornerRadius}"
                         SnapsToDevicePixels="True">
-                        <ItemsControl
-                            x:Name="PART_ItemsHost"
-                            VerticalAlignment="Center"
-                            Focusable="False"
-                            FontSize="{TemplateBinding FontSize}"
-                            Foreground="{TemplateBinding Foreground}"
-                            IsTabStop="False"
-                            ItemTemplate="{TemplateBinding ItemTemplate}"
-                            OverridesDefaultStyle="True"
-                            SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}">
-                            <ItemsControl.Template>
-                                <ControlTemplate>
-                                    <ItemsPresenter SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
-                                </ControlTemplate>
-                            </ItemsControl.Template>
-                            <ItemsControl.ItemsPanel>
-                                <ItemsPanelTemplate>
-                                    <StackPanel Orientation="Horizontal" />
-                                </ItemsPanelTemplate>
-                            </ItemsControl.ItemsPanel>
-                        </ItemsControl>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <!--
+                                A star always maps its first segment to the smallest non-zero
+                                precision step. Keeping zero in a separate hit target preserves
+                                that predictable mapping and gives zero an equally stable location
+                                for every Precision. The template trigger below swaps the columns
+                                in RTL because WPF does not reorder Grid children automatically.
+
+                                Background is intentionally transparent rather than null: an empty
+                                Border otherwise contributes layout but cannot become the original
+                                source of a mouse event. Custom templates may change its size or
+                                appearance, but should retain a hit-testable surface. RatingControl
+                                also extends this region through the padding at the low-rating edge
+                                so that the outermost pixels do not become dead space.
+                            -->
+                            <Border
+                                x:Name="PART_ZeroRatingTarget"
+                                Width="8"
+                                Background="Transparent" />
+                            <ItemsControl
+                                x:Name="PART_ItemsHost"
+                                Grid.Column="1"
+                                VerticalAlignment="Center"
+                                Focusable="False"
+                                FontSize="{TemplateBinding FontSize}"
+                                Foreground="{TemplateBinding Foreground}"
+                                IsTabStop="False"
+                                ItemTemplate="{TemplateBinding ItemTemplate}"
+                                OverridesDefaultStyle="True"
+                                SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}">
+                                <ItemsControl.Template>
+                                    <ControlTemplate>
+                                        <ItemsPresenter SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
+                                    </ControlTemplate>
+                                </ItemsControl.Template>
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <StackPanel Orientation="Horizontal" />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                            </ItemsControl>
+                        </Grid>
                     </Border>
                     <ControlTemplate.Triggers>
                         <MultiTrigger>

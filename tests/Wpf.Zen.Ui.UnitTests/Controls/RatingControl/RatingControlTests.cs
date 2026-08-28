@@ -90,6 +90,88 @@ public class RatingControlTests
         );
     }
 
+    [Fact]
+    public void ZeroRatingTarget_PreviewsAndCommitsZero()
+    {
+        RunOnStaThread(
+            () =>
+            {
+                RatingControl control = CreateTemplatedRatingControl(
+                    new TestRatingControl
+                    {
+                        Precision = RatingPrecision.QuarterStar,
+                        Rating = 3,
+                    }
+                );
+                var testControl = Assert.IsType<TestRatingControl>(control);
+                var zeroTarget = Assert.IsAssignableFrom<FrameworkElement>(
+                    control.Template.FindName("PART_ZeroRatingTarget", control)
+                );
+                ItemsControl itemsHost = Assert.Single(
+                    FindVisualDescendants<ItemsControl>(control)
+                );
+
+                Assert.True(zeroTarget.ActualWidth > 0);
+
+                testControl.ProcessMouseMove(zeroTarget);
+
+                Assert.All(
+                    itemsHost.Items.Cast<RatingItem>(),
+                    item =>
+                    {
+                        Assert.Equal(RatingItemState.Empty, item.State);
+                        Assert.Equal(RatingItemDisplayMode.Preview, item.DisplayMode);
+                    }
+                );
+
+                MouseButtonEventArgs click = testControl.ProcessMouseLeftButtonDown(zeroTarget);
+
+                Assert.True(click.Handled);
+                Assert.Equal(0, control.Rating);
+            }
+        );
+    }
+
+    [Theory]
+    [InlineData(FlowDirection.LeftToRight, true)]
+    [InlineData(FlowDirection.RightToLeft, false)]
+    public void ZeroRatingTarget_RemainsOnTheLowRatingEdge(
+        FlowDirection flowDirection,
+        bool targetPrecedesItems
+    )
+    {
+        RunOnStaThread(
+            () =>
+            {
+                RatingControl control = CreateTemplatedRatingControl(
+                    new RatingControl { FlowDirection = flowDirection }
+                );
+                var zeroTarget = Assert.IsAssignableFrom<FrameworkElement>(
+                    control.Template.FindName("PART_ZeroRatingTarget", control)
+                );
+                ItemsControl itemsHost = Assert.Single(
+                    FindVisualDescendants<ItemsControl>(control)
+                );
+                double targetCenter = zeroTarget
+                    .TranslatePoint(new Point(zeroTarget.ActualWidth / 2, 0), control)
+                    .X;
+                double itemsCenter = itemsHost
+                    .TranslatePoint(new Point(itemsHost.ActualWidth / 2, 0), control)
+                    .X;
+                Point lowEdge = flowDirection == FlowDirection.LeftToRight
+                    ? new Point(0, control.ActualHeight / 2)
+                    : new Point(control.ActualWidth, control.ActualHeight / 2);
+                Point highEdge = flowDirection == FlowDirection.LeftToRight
+                    ? new Point(control.ActualWidth, control.ActualHeight / 2)
+                    : new Point(0, control.ActualHeight / 2);
+
+                Assert.Equal(targetPrecedesItems, targetCenter < itemsCenter);
+                Assert.True(control.IsPositionInZeroRatingRegion(lowEdge));
+                Assert.False(control.IsPositionInZeroRatingRegion(highEdge));
+            }
+        );
+    }
+
     [Theory]
     [InlineData(10, 0.25)]
     [InlineData(25, 0.25)]
@@ -596,6 +678,33 @@ public class RatingControlTests
 
     private sealed class TestRatingControl : RatingControl
     {
+        public void ProcessMouseMove(DependencyObject source)
+        {
+            var args = new MouseEventArgs(Mouse.PrimaryDevice, Environment.TickCount)
+            {
+                RoutedEvent = Mouse.MouseMoveEvent,
+                Source = source,
+            };
+
+            OnMouseMove(args);
+        }
+
+        public MouseButtonEventArgs ProcessMouseLeftButtonDown(DependencyObject source)
+        {
+            var args = new MouseButtonEventArgs(
+                Mouse.PrimaryDevice,
+                Environment.TickCount,
+                MouseButton.Left
+            )
+            {
+                RoutedEvent = UIElement.MouseLeftButtonDownEvent,
+                Source = source,
+            };
+
+            OnMouseLeftButtonDown(args);
+            return args;
+        }
+
         public void ProcessKeyDown(KeyEventArgs args) => OnKeyDown(args);
 
         public void ProcessKey(Key key)
