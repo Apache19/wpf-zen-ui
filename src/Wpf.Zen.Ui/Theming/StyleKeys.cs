@@ -40,6 +40,8 @@ public static class StyleKeys
     public static ComponentResourceKey UiAutoSuggestBoxStyle           { get; } = Create(nameof(UiAutoSuggestBoxStyle));
     public static ComponentResourceKey UiBadgeStyle                    { get; } = Create(nameof(UiBadgeStyle));
     public static ComponentResourceKey DefaultProgressBarStyle         { get; } = Create(nameof(DefaultProgressBarStyle));
+    public static ComponentResourceKey UiBreadcrumbBarStyle            { get; } = Create(nameof(UiBreadcrumbBarStyle));
+    public static ComponentResourceKey UiBreadcrumbBarItemStyle        { get; } = Create(nameof(UiBreadcrumbBarItemStyle));
 
     /// <summary>
     /// Gets the theme-routing key for the ListView style used while a WPF Zen UI GridView is active.

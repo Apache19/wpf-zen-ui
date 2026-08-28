@@ -80,6 +80,9 @@ internal static class StyleTokenResourceKey
             StyleToken.UiAutoSuggestBox           => StyleKeys.UiAutoSuggestBoxStyle,
             StyleToken.UiBadge                    => StyleKeys.UiBadgeStyle,
             StyleToken.DefaultProgressBar         => StyleKeys.DefaultProgressBarStyle,
+            StyleToken.UiBreadcrumbBar            => StyleKeys.UiBreadcrumbBarStyle,
+            StyleToken.UiBreadcrumbBarItem        =>StyleKeys.UiBreadcrumbBarItemStyle,
+
             StyleToken.GridViewListView           => StyleKeys.GridViewListViewStyle,
             StyleToken.GridViewItemContainer      => StyleKeys.GridViewItemContainerStyle,
             StyleToken.GridViewColumnHeader       => StyleKeys.GridViewColumnHeaderStyle,

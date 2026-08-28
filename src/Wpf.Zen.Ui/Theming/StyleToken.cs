@@ -42,6 +42,8 @@ public enum StyleToken
     UiAutoSuggestBox,
     UiBadge,
     DefaultProgressBar,
+    UiBreadcrumbBar,
+    UiBreadcrumbBarItem,
 
     /// <summary>
     /// Identifies the ListView style selected while a WPF Zen UI GridView is active.

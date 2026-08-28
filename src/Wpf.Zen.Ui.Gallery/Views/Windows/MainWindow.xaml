@@ -59,7 +59,7 @@
                         ItemClicked="BreadcrumbBar_OnItemClicked"
                         ItemsSource="{Binding ElementName=NavigationView, Path=Breadcrumbs}">
                         <ui:BreadcrumbBar.Style>
-                            <Style BasedOn="{StaticResource {x:Type ui:BreadcrumbBar}}" TargetType="{x:Type ui:BreadcrumbBar}">
+                            <Style TargetType="{x:Type ui:BreadcrumbBar}">
                                 <Setter Property="Visibility" Value="Visible" />
                                 <Style.Triggers>
                                     <!--

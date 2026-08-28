@@ -9,9 +9,10 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Zen.Ui.Controls"
-    xmlns:m="clr-namespace:Wpf.Zen.Ui.Markup">
+    xmlns:m="clr-namespace:Wpf.Zen.Ui.Markup"
+    xmlns:theming="clr-namespace:Wpf.Zen.Ui.Theming">
 
-    <Style x:Key="DefaultUiBreadcrumbBarItemStyle" TargetType="{x:Type controls:BreadcrumbBarItem}">
+    <Style x:Key="{x:Static theming:StyleKeys.UiBreadcrumbBarItemStyle}" TargetType="{x:Type controls:BreadcrumbBarItem}">
         <Setter Property="VerticalContentAlignment" Value="Center" />
         <Setter Property="Focusable" Value="False" />
         <Setter Property="IsTabStop" Value="False" />
@@ -99,7 +100,7 @@
         </Setter>
     </Style>
 
-    <Style x:Key="DefaultUiBreadcrumbBarStyle" TargetType="{x:Type controls:BreadcrumbBar}">
+    <Style x:Key="{x:Static theming:StyleKeys.UiBreadcrumbBarStyle}" TargetType="{x:Type controls:BreadcrumbBar}">
         <Setter Property="Focusable" Value="False" />
         <Setter Property="IsTabStop" Value="False" />
         <Setter Property="ItemsPanel">
@@ -118,7 +119,7 @@
         </Setter>
     </Style>
 
-    <Style BasedOn="{StaticResource DefaultUiBreadcrumbBarItemStyle}" TargetType="{x:Type controls:BreadcrumbBarItem}" />
-    <Style BasedOn="{StaticResource DefaultUiBreadcrumbBarStyle}" TargetType="{x:Type controls:BreadcrumbBar}" />
+    <Style BasedOn="{m:StaticStyle UiBreadcrumbBarItem}" TargetType="{x:Type controls:BreadcrumbBarItem}" />
+    <Style BasedOn="{m:StaticStyle UiBreadcrumbBar}" TargetType="{x:Type controls:BreadcrumbBar}" />
 
 </ResourceDictionary>
