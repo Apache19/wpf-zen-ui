@@ -9,7 +9,6 @@
     xmlns:models="clr-namespace:Wpf.Zen.Ui.Gallery.Models"
     xmlns:ui="http://schemas.thezendev.com/wpf/2027"
     xmlns:vm="clr-namespace:Wpf.Zen.Ui.Gallery.ViewModels.Pages.DesignGuidance"
-    xmlns:vw="clr-namespace:WpfToolkit.Controls;assembly=VirtualizingWrapPanel"
     Title="IconsPage"
     controls:PageControlDocumentation.DocumentationType="{x:Type ui:FluentIcon}"
     d:Background="{ui:DynamicBrush WindowBackground}"
@@ -104,7 +103,8 @@
                     </ItemsControl.ItemTemplate>
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
-                            <vw:VirtualizingWrapPanel SpacingMode="StartAndEndOnly" />
+                            <!--  临时使用，需要虚拟化面板  -->
+                            <WrapPanel IsItemsHost="True" />
                         </ItemsPanelTemplate>
                     </ItemsControl.ItemsPanel>
                 </ItemsControl>

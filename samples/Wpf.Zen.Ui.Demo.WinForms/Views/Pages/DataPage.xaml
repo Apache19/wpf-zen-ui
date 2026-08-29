@@ -6,7 +6,6 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:models="clr-namespace:Wpf.Zen.Ui.Demo.Simple.Models"
-    xmlns:controls="clr-namespace:WpfToolkit.Controls;assembly=VirtualizingWrapPanel"
     Title="DataPage"
     d:Background="{ui:DynamicBrush WindowBackground}"
     d:DesignHeight="450"
@@ -15,7 +14,8 @@
     Foreground="{ui:DynamicBrush TextFillPrimary}"
     mc:Ignorable="d">
     <Grid Margin="42">
-        <controls:VirtualizingItemsControl
+        <!--  临时使用，需要虚拟化面板  -->
+        <ItemsControl
             x:Name="ColorsItemsControl"
             Foreground="{ui:DynamicBrush TextFillSecondary}"
             VirtualizingPanel.CacheLengthUnit="Item">
@@ -34,6 +34,6 @@
                         Icon="{ui:FluentIconSource Fluent24}" />
                 </DataTemplate>
             </ItemsControl.ItemTemplate>
-        </controls:VirtualizingItemsControl>
+        </ItemsControl>
     </Grid>
 </Page>
