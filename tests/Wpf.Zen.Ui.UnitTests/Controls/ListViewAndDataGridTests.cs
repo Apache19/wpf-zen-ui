@@ -17,7 +17,6 @@ using UiListView = Wpf.Zen.Ui.Controls.ListView;
 using UiListViewItem = Wpf.Zen.Ui.Controls.ListViewItem;
 using UiPassiveScrollViewer = Wpf.Zen.Ui.Controls.PassiveScrollViewer;
 using UiScrollBar = Wpf.Zen.Ui.Controls.UiScrollBar;
-using UiVirtualizingGridView = Wpf.Zen.Ui.Controls.VirtualizingGridView;
 
 namespace Wpf.Zen.Ui.UnitTests.Controls;
 
@@ -231,36 +230,6 @@ public class ListViewAndDataGridTests
             Assert.True(dataGrid.IsGrouping);
             var scrollViewer = Assert.IsType<UiPassiveScrollViewer>(
                 FindVisualChild<UiPassiveScrollViewer>(dataGrid)
-            );
-            Assert.Equal(isVirtualizingWhenGrouping, scrollViewer.CanContentScroll);
-        });
-    }
-
-    [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public void GroupedVirtualizingGridView_PreservesGroupedVirtualizationPolicy(
-        bool isVirtualizingWhenGrouping
-    )
-    {
-        RunOnStaThread(() =>
-        {
-            var gridView = new UiVirtualizingGridView
-            {
-                Height = 160,
-                ItemsSource = new[] { "A", "A", "B" },
-                Width = 400,
-            };
-            gridView.GroupStyle.Add(new GroupStyle());
-            gridView.Items.GroupDescriptions.Add(new PropertyGroupDescription());
-            gridView.Items.Refresh();
-            VirtualizingPanel.SetIsVirtualizingWhenGrouping(gridView, isVirtualizingWhenGrouping);
-
-            Arrange(gridView, 400, 160);
-
-            Assert.True(gridView.IsGrouping);
-            var scrollViewer = Assert.IsType<UiPassiveScrollViewer>(
-                FindVisualChild<UiPassiveScrollViewer>(gridView)
             );
             Assert.Equal(isVirtualizingWhenGrouping, scrollViewer.CanContentScroll);
         });

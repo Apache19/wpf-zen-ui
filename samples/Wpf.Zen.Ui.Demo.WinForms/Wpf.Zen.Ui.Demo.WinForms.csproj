@@ -19,4 +19,8 @@
     <None Include="App.config" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="VirtualizingWrapPanel" />
+  </ItemGroup>
+
 </Project>

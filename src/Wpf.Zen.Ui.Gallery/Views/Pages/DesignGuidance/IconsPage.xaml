@@ -9,6 +9,7 @@
     xmlns:models="clr-namespace:Wpf.Zen.Ui.Gallery.Models"
     xmlns:ui="http://schemas.thezendev.com/wpf/2027"
     xmlns:vm="clr-namespace:Wpf.Zen.Ui.Gallery.ViewModels.Pages.DesignGuidance"
+    xmlns:vw="clr-namespace:WpfToolkit.Controls;assembly=VirtualizingWrapPanel"
     Title="IconsPage"
     controls:PageControlDocumentation.DocumentationType="{x:Type ui:FluentIcon}"
     d:Background="{ui:DynamicBrush WindowBackground}"
@@ -72,11 +73,18 @@
                 BorderBrush="{ui:DynamicBrush CardBackgroundFillDefault}"
                 BorderThickness="1,1,0,0"
                 CornerRadius="8,0,0,0">
-                <ui:VirtualizingItemsControl
+                <ItemsControl
                     Margin="0,24,4,0"
-                    Padding="0"
                     ItemsSource="{Binding FilteredIconsCollection, Mode=OneWay}"
+                    ScrollViewer.CanContentScroll="True"
                     VirtualizingPanel.CacheLengthUnit="Pixel">
+                    <ItemsControl.Template>
+                        <ControlTemplate>
+                            <ui:PassiveScrollViewer>
+                                <ItemsPresenter SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
+                            </ui:PassiveScrollViewer>
+                        </ControlTemplate>
+                    </ItemsControl.Template>
                     <ItemsControl.ItemTemplate>
                         <DataTemplate DataType="{x:Type models:DisplayableIcon}">
                             <ui:Button
@@ -94,7 +102,12 @@
                             </ui:Button>
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
-                </ui:VirtualizingItemsControl>
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <vw:VirtualizingWrapPanel SpacingMode="StartAndEndOnly" />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                </ItemsControl>
             </Border>
             <Border
                 Grid.Column="1"

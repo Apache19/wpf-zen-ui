@@ -48,9 +48,6 @@
       <Item Type="Wpf.Zen.Ui.Controls.ToggleSwitch" />
       <Item Type="Wpf.Zen.Ui.Controls.TreeGrid" />
       <Item Type="Wpf.Zen.Ui.Controls.TreeGridItem" />
-      <Item Type="Wpf.Zen.Ui.Controls.VirtualizingGridView" />
-      <Item Type="Wpf.Zen.Ui.Controls.VirtualizingItemsControl" />
-      <Item Type="Wpf.Zen.Ui.Controls.VirtualizingWrapPanel" />
     </ToolboxItems>
   </File>
 </FileList>

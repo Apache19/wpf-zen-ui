@@ -7,6 +7,7 @@
     xmlns:models="clr-namespace:Wpf.Zen.Ui.Demo.Simple.Models"
     xmlns:pages="clr-namespace:Wpf.Zen.Ui.Demo.Simple.Views.Pages"
     xmlns:ui="http://schemas.thezendev.com/wpf/2027"
+    xmlns:controls="clr-namespace:WpfToolkit.Controls;assembly=VirtualizingWrapPanel"
     Title="DataPage"
     d:Background="{ui:DynamicBrush WindowBackground}"
     d:DesignHeight="450"
@@ -23,11 +24,11 @@
         </ui:BreadcrumbPath>
     </ui:NavigationView.BreadcrumbPath>
     <Grid Margin="42">
-        <ui:VirtualizingItemsControl
+        <controls:VirtualizingItemsControl
             x:Name="ColorsItemsControl"
             Foreground="{ui:DynamicBrush TextFillSecondary}"
             VirtualizingPanel.CacheLengthUnit="Item">
-            <ItemsControl.ItemTemplate>
+            <controls:VirtualizingItemsControl.ItemTemplate>
                 <DataTemplate DataType="{x:Type models:DataColor}">
                     <ui:Button
                         Width="80"
@@ -41,7 +42,7 @@
                         FontSize="25"
                         Icon="{ui:FluentIconSource Fluent24}" />
                 </DataTemplate>
-            </ItemsControl.ItemTemplate>
-        </ui:VirtualizingItemsControl>
+            </controls:VirtualizingItemsControl.ItemTemplate>
+        </controls:VirtualizingItemsControl>
     </Grid>
 </Page>

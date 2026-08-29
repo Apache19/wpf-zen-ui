@@ -89,9 +89,6 @@
         <ResourceDictionary Source="pack://application:,,,/Wpf.Zen.Ui;component/Controls/TreeGrid/TreeGrid.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Zen.Ui;component/Controls/TreeView/TreeView.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Zen.Ui;component/Controls/TreeView/TreeViewItem.xaml" />
-        <ResourceDictionary Source="pack://application:,,,/Wpf.Zen.Ui;component/Controls/VirtualizingGridView/VirtualizingGridView.xaml" />
-        <ResourceDictionary Source="pack://application:,,,/Wpf.Zen.Ui;component/Controls/VirtualizingItemsControl/VirtualizingItemsControl.xaml" />
-        <ResourceDictionary Source="pack://application:,,,/Wpf.Zen.Ui;component/Controls/VirtualizingWrapPanel/VirtualizingWrapPanel.xaml" />
     </ResourceDictionary.MergedDictionaries>
 
     <!--

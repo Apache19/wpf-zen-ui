@@ -8,17 +8,18 @@
     xmlns:models="clr-namespace:Wpf.Zen.Ui.Gallery.Models"
     xmlns:ui="http://schemas.thezendev.com/wpf/2027"
     xmlns:vm="clr-namespace:Wpf.Zen.Ui.Gallery.ViewModels.Pages.Windows"
+    xmlns:vw="clr-namespace:WpfToolkit.Controls;assembly=VirtualizingWrapPanel"
     Title="WindowsPage"
     controls:PageControlDocumentation.Show="False"
     d:Background="{ui:DynamicBrush WindowBackground}"
     d:DataContext="{d:DesignInstance vm:WindowsViewModel, IsDesignTimeCreatable=False}"
     d:DesignWidth="800"
-    Foreground="{ui:DynamicBrush TextFillPrimary}"
     ui:NavigationView.IsNavigationFrameScrollEnabled="True"
+    Foreground="{ui:DynamicBrush TextFillPrimary}"
     mc:Ignorable="d">
 
     <Grid>
-        <ItemsControl ItemsSource="{Binding WindowCards, Mode=OneWay}">
+        <ItemsControl ItemsSource="{Binding WindowCards, Mode=OneWay}" ScrollViewer.CanContentScroll="True">
             <ItemsControl.ItemTemplate>
                 <DataTemplate DataType="{x:Type models:WindowCard}">
                     <ui:CardAction
@@ -45,12 +46,7 @@
             </ItemsControl.ItemTemplate>
             <ItemsControl.ItemsPanel>
                 <ItemsPanelTemplate>
-                    <ui:VirtualizingWrapPanel
-                        IsItemsHost="True"
-                        ItemSize="290,80"
-                        Orientation="Vertical"
-                        SpacingMode="Uniform"
-                        StretchItems="True" />
+                    <vw:VirtualizingWrapPanel IsItemsHost="True"  />
                 </ItemsPanelTemplate>
             </ItemsControl.ItemsPanel>
         </ItemsControl>

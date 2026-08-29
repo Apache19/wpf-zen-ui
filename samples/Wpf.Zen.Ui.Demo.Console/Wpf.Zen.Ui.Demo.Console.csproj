@@ -17,6 +17,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="VirtualizingWrapPanel" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\src\Wpf.Zen.Ui\Wpf.Zen.Ui.csproj" />
   </ItemGroup>
 
