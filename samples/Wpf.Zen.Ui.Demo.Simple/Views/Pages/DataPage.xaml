@@ -23,26 +23,41 @@
         </ui:BreadcrumbPath>
     </ui:NavigationView.BreadcrumbPath>
     <Grid Margin="42">
-        <!--  临时使用，需要虚拟化面板  -->
         <ItemsControl
             x:Name="ColorsItemsControl"
             Foreground="{ui:DynamicBrush TextFillSecondary}"
-            VirtualizingPanel.CacheLengthUnit="Item">
+            ScrollViewer.CanContentScroll="True"
+            VirtualizingPanel.CacheLength="0"
+            VirtualizingPanel.CacheLengthUnit="Item"
+            VirtualizingPanel.IsVirtualizing="True"
+            VirtualizingPanel.ScrollUnit="Item"
+            VirtualizingPanel.VirtualizationMode="Recycling">
+            <ItemsControl.Template>
+                <ControlTemplate>
+                    <ui:PassiveScrollViewer Padding="16">
+                        <ItemsPresenter SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
+                    </ui:PassiveScrollViewer>
+                </ControlTemplate>
+            </ItemsControl.Template>
             <ItemsControl.ItemTemplate>
                 <DataTemplate DataType="{x:Type models:DataColor}">
                     <ui:Button
-                        Width="80"
-                        Height="80"
-                        Margin="2"
                         Padding="0"
-                        HorizontalAlignment="Stretch"
-                        VerticalAlignment="Stretch"
                         Appearance="Normal"
                         Background="{Binding Color, Mode=OneWay}"
                         FontSize="25"
                         Icon="{ui:FluentIconSource Fluent24}" />
                 </DataTemplate>
             </ItemsControl.ItemTemplate>
+            <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <ui:VirtualizingWrapPanel
+                        HorizontalSpacing="4"
+                        ItemHeight="80"
+                        ItemWidth="80"
+                        VerticalSpacing="4" />
+                </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
         </ItemsControl>
     </Grid>
 </Page>

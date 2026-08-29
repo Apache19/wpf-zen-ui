@@ -22,7 +22,6 @@
             <ItemsControl.ItemTemplate>
                 <DataTemplate DataType="{x:Type models:WindowCard}">
                     <ui:CardAction
-                        Margin="4"
                         HorizontalAlignment="Stretch"
                         VerticalAlignment="Stretch"
                         Command="{Binding ViewModel.OpenWindowCommand, RelativeSource={RelativeSource AncestorType=Page}, Mode=OneWay}"
@@ -45,8 +44,11 @@
             </ItemsControl.ItemTemplate>
             <ItemsControl.ItemsPanel>
                 <ItemsPanelTemplate>
-                    <!--  临时使用，需要虚拟化面板  -->
-                    <WrapPanel IsItemsHost="True"  />
+                    <ui:VirtualizingWrapPanel
+                        HorizontalSpacing="8"
+                        ItemHeight="80"
+                        MaximumItemWidth="350"
+                        VerticalSpacing="8" />
                 </ItemsPanelTemplate>
             </ItemsControl.ItemsPanel>
         </ItemsControl>

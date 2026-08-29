@@ -72,14 +72,22 @@
                 BorderBrush="{ui:DynamicBrush CardBackgroundFillDefault}"
                 BorderThickness="1,1,0,0"
                 CornerRadius="8,0,0,0">
+                <!--
+                    Each icon item contains an interactive button template. Keep only viewport rows
+                    realized while dragging the scrollbar and recycle their containers so distant
+                    jumps update content instead of rebuilding the complete visual subtree.
+                -->
                 <ItemsControl
-                    Margin="0,24,4,0"
+                    Margin="16,16,0,0"
                     ItemsSource="{Binding FilteredIconsCollection, Mode=OneWay}"
                     ScrollViewer.CanContentScroll="True"
-                    VirtualizingPanel.CacheLengthUnit="Pixel">
+                    VirtualizingPanel.CacheLength="0"
+                    VirtualizingPanel.IsVirtualizing="True"
+                    VirtualizingPanel.ScrollUnit="Pixel"
+                    VirtualizingPanel.VirtualizationMode="Recycling">
                     <ItemsControl.Template>
                         <ControlTemplate>
-                            <ui:PassiveScrollViewer>
+                            <ui:PassiveScrollViewer Padding="0,0,16,0">
                                 <ItemsPresenter SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
                             </ui:PassiveScrollViewer>
                         </ControlTemplate>
@@ -87,12 +95,7 @@
                     <ItemsControl.ItemTemplate>
                         <DataTemplate DataType="{x:Type models:DisplayableIcon}">
                             <ui:Button
-                                Width="80"
-                                Height="80"
-                                Margin="2"
                                 Padding="0"
-                                HorizontalAlignment="Stretch"
-                                VerticalAlignment="Stretch"
                                 Command="{Binding ViewModel.IconSelectedCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:IconsPage}}"
                                 CommandParameter="{Binding Path=Id, Mode=OneTime}"
                                 ToolTip="{Binding Name, Mode=OneTime}"
@@ -103,8 +106,12 @@
                     </ItemsControl.ItemTemplate>
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
-                            <!--  临时使用，需要虚拟化面板  -->
-                            <WrapPanel IsItemsHost="True" />
+                            <ui:VirtualizingWrapPanel
+                                HorizontalSpacing="4"
+                                ItemHeight="80"
+                                ItemWidth="80"
+                                ItemsAlignment="Center"
+                                VerticalSpacing="4" />
                         </ItemsPanelTemplate>
                     </ItemsControl.ItemsPanel>
                 </ItemsControl>
