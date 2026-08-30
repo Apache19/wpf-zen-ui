@@ -1,9 +1,10 @@
 <ResourceDictionary
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:m="clr-namespace:Wpf.Zen.Ui.Markup">
+    xmlns:m="clr-namespace:Wpf.Zen.Ui.Markup"
+    xmlns:t="clr-namespace:Wpf.Zen.Ui.Theming">
 
-    <Style x:Key="DefaultSeparatorStyle" TargetType="{x:Type Separator}">
+    <Style x:Key="{x:Static t:StyleKeys.DefaultSeparatorStyle}" TargetType="{x:Type Separator}">
         <Setter Property="OverridesDefaultStyle" Value="True" />
         <Setter Property="Background" Value="{m:DynamicBrush DividerStrokeDefault}" />
         <Setter Property="Margin" Value="0,2,0,2" />
@@ -22,6 +23,6 @@
         </Setter>
     </Style>
 
-    <Style BasedOn="{StaticResource DefaultSeparatorStyle}" TargetType="{x:Type Separator}" />
+    <Style BasedOn="{StaticResource {x:Static t:StyleKeys.DefaultSeparatorStyle}}" TargetType="{x:Type Separator}" />
 
 </ResourceDictionary>

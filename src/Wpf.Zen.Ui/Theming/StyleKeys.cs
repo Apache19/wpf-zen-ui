@@ -42,6 +42,10 @@ public static class StyleKeys
     public static ComponentResourceKey DefaultProgressBarStyle         { get; } = Create(nameof(DefaultProgressBarStyle));
     public static ComponentResourceKey UiBreadcrumbBarStyle            { get; } = Create(nameof(UiBreadcrumbBarStyle));
     public static ComponentResourceKey UiBreadcrumbBarItemStyle        { get; } = Create(nameof(UiBreadcrumbBarItemStyle));
+    public static ComponentResourceKey DefaultStatusBarStyle           { get; } = Create(nameof(DefaultStatusBarStyle));
+    public static ComponentResourceKey DefaultStatusBarItemStyle       { get; } = Create(nameof(DefaultStatusBarItemStyle));
+    public static ComponentResourceKey DefaultSeparatorStyle           { get; } = Create(nameof(DefaultSeparatorStyle));
+    public static ComponentResourceKey UiSeparatorStyle                { get; } = Create(nameof(UiSeparatorStyle));
 
     /// <summary>
     /// Gets the theme-routing key for the ListView style used while a WPF Zen UI GridView is active.

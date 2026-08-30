@@ -9,10 +9,11 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Zen.Ui.Controls"
-    xmlns:m="clr-namespace:Wpf.Zen.Ui.Markup">
+    xmlns:m="clr-namespace:Wpf.Zen.Ui.Markup"
+    xmlns:t="clr-namespace:Wpf.Zen.Ui.Theming">
 
     <!--  Wpf.Zen.Ui.Controls.Separator  -->
-    <Style x:Key="DefaultUiSeparatorStyle" TargetType="{x:Type controls:Separator}">
+    <Style x:Key="{x:Static t:StyleKeys.UiSeparatorStyle}" TargetType="{x:Type controls:Separator}">
         <Setter Property="Background" Value="{m:DynamicBrush DividerStrokeDefault}" />
         <Setter Property="Focusable" Value="false" />
         <Setter Property="DefaultMarginHorizontal" Value="0,2,0,2" />
@@ -42,6 +43,6 @@
         </Setter>
     </Style>
 
-    <Style BasedOn="{StaticResource DefaultUiSeparatorStyle}" TargetType="{x:Type controls:Separator}" />
+    <Style BasedOn="{StaticResource {x:Static t:StyleKeys.UiSeparatorStyle}}" TargetType="{x:Type controls:Separator}" />
 
 </ResourceDictionary>

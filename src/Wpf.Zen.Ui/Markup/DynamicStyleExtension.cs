@@ -81,7 +81,11 @@ internal static class StyleTokenResourceKey
             StyleToken.UiBadge                    => StyleKeys.UiBadgeStyle,
             StyleToken.DefaultProgressBar         => StyleKeys.DefaultProgressBarStyle,
             StyleToken.UiBreadcrumbBar            => StyleKeys.UiBreadcrumbBarStyle,
-            StyleToken.UiBreadcrumbBarItem        =>StyleKeys.UiBreadcrumbBarItemStyle,
+            StyleToken.UiBreadcrumbBarItem        => StyleKeys.UiBreadcrumbBarItemStyle,
+            StyleToken.DefaultStatusBar           => StyleKeys.DefaultStatusBarStyle,
+            StyleToken.DefaultStatusBarItem       => StyleKeys.DefaultStatusBarItemStyle,
+            StyleToken.DefaultSeparator           => StyleKeys.DefaultSeparatorStyle,
+            StyleToken.UiSeparator                => StyleKeys.UiSeparatorStyle,
 
             StyleToken.GridViewListView           => StyleKeys.GridViewListViewStyle,
             StyleToken.GridViewItemContainer      => StyleKeys.GridViewItemContainerStyle,

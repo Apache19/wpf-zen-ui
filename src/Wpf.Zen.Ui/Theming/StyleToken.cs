@@ -44,6 +44,10 @@ public enum StyleToken
     DefaultProgressBar,
     UiBreadcrumbBar,
     UiBreadcrumbBarItem,
+    DefaultStatusBar,
+    DefaultStatusBarItem,
+    DefaultSeparator,
+    UiSeparator,
 
     /// <summary>
     /// Identifies the ListView style selected while a WPF Zen UI GridView is active.
