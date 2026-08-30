@@ -15,16 +15,6 @@
 
     <Duration x:Key="ScrollAnimationDuration">0:0:0.16</Duration>
 
-    <!--
-        Override the system scroll-bar button size to raise the minimum thumb length.
-        Track.ComputeScrollBarLengths computes thumbMinLength = Floor(buttonSize × 0.5),
-        so a value of 36 yields an 18 px floor. The unmodified system default (~17–21 px)
-        produces a ~8–10 px minimum, which on this 6-px-wide slim bar reads as a tiny dot
-        when content is large — hard to spot and hard to grab.
-    -->
-    <system:Double x:Key="{x:Static SystemParameters.VerticalScrollBarButtonHeightKey}">36</system:Double>
-    <system:Double x:Key="{x:Static SystemParameters.HorizontalScrollBarButtonWidthKey}">36</system:Double>
-
     <converters:PillCornerConverter x:Key="PillCornerConverter" Factor="0.55" />
 
     <Style x:Key="ScrollBarTransparentRepeatButton" TargetType="{x:Type RepeatButton}">
@@ -442,6 +432,14 @@
     </ControlTemplate>
 
     <Style x:Key="ScrollBarBaseStyle" TargetType="{x:Type ScrollBar}">
+        <Style.Resources>
+            <!--
+                ThumbMinLength = Floor(buttonSize × 0.5). To achieve the intended 18 DIP minimum,
+                buttonSize must be set to 36, compensating for the halving formula.
+            -->
+            <system:Double x:Key="{x:Static SystemParameters.VerticalScrollBarButtonHeightKey}">36</system:Double>
+            <system:Double x:Key="{x:Static SystemParameters.HorizontalScrollBarButtonWidthKey}">36</system:Double>
+        </Style.Resources>
         <Setter Property="Background" Value="{m:DynamicBrush AcrylicBackgroundFillDefault}" />
         <Setter Property="Foreground" Value="{m:DynamicBrush ControlStrongFillSecondary}" />
         <Setter Property="Stylus.IsPressAndHoldEnabled" Value="false" />

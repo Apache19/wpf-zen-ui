@@ -23,6 +23,7 @@ using UiComboBox = Wpf.Zen.Ui.Controls.ComboBox;
 using UiFluentWindow = Wpf.Zen.Ui.Controls.FluentWindow;
 using UiNavigationView = Wpf.Zen.Ui.Controls.NavigationView;
 using UiNavigationViewItem = Wpf.Zen.Ui.Controls.NavigationViewItem;
+using UiScrollBar = Wpf.Zen.Ui.Controls.UiScrollBar;
 
 namespace Wpf.Zen.Ui.WinFormsHostTests;
 
@@ -32,6 +33,150 @@ namespace Wpf.Zen.Ui.WinFormsHostTests;
 /// </summary>
 public class ElementHostThemeTests
 {
+    /// <summary>
+    /// Verifies that the slim scroll-bar style scopes WPF's button-size resource overrides where the template Track
+    /// can resolve them without relying on Application.Resources or on SystemResources accepting system-key
+    /// overrides in a themed dictionary.
+    /// </summary>
+    [Fact]
+    public void ScrollBarThumbMinimum_UsesStyleResourcesWithoutApplication()
+    {
+        RunOnStaThread(() =>
+        {
+            EnsureWindowsDirectoryEnvironment();
+            ResetThemeManagerToUnconfiguredState();
+            Assert.Null(Application.Current);
+
+            var verticalScrollBar = new UiScrollBar
+            {
+                Width = 12,
+                Height = 120,
+                Maximum = 10_000,
+                ViewportSize = 1,
+            };
+            var horizontalScrollBar = new UiScrollBar
+            {
+                Width = 120,
+                Height = 12,
+                Maximum = 10_000,
+                ViewportSize = 1,
+                Orientation = Orientation.Horizontal,
+            };
+            var root = new StackPanel
+            {
+                Children = { verticalScrollBar, horizontalScrollBar },
+            };
+
+            using var form = new Forms.Form
+            {
+                ShowInTaskbar = false,
+                StartPosition = Forms.FormStartPosition.Manual,
+                Location = new System.Drawing.Point(-10_000, -10_000),
+                Size = new System.Drawing.Size(240, 240),
+            };
+            using var host = new ElementHost { Dock = Forms.DockStyle.Fill, Child = root };
+            form.Controls.Add(host);
+
+            try
+            {
+                form.Show();
+                Forms.Application.DoEvents();
+                DrainDispatcher();
+                root.UpdateLayout();
+
+                Assert.Null(Application.Current);
+                AssertScrollBarThumbMinimum(verticalScrollBar, isVertical: true);
+                AssertScrollBarThumbMinimum(horizontalScrollBar, isVertical: false);
+            }
+            finally
+            {
+                form.Close();
+                Forms.Application.DoEvents();
+                DrainDispatcher();
+            }
+        });
+    }
+
+    /// <summary>
+    /// Verifies that WPF's menu-container preparation resolves <see cref="MenuItem.SeparatorStyleKey"/> from the
+    /// system-theme overlay for a top-level ContextMenu separator, which has no MenuItem ancestor that could provide
+    /// the resource through Style.Resources.
+    /// </summary>
+    [Fact]
+    public void ContextMenuSeparator_UsesSystemThemeKeyWithoutApplication()
+    {
+        RunOnStaThread(() =>
+        {
+            EnsureWindowsDirectoryEnvironment();
+            ResetThemeManagerToUnconfiguredState();
+            Assert.Null(Application.Current);
+
+            var separator = new Separator();
+            var contextMenu = new ContextMenu
+            {
+                Items =
+                {
+                    new MenuItem { Header = "Before" },
+                    separator,
+                    new MenuItem { Header = "After" },
+                },
+            };
+            var placementTarget = new Border
+            {
+                Width = 80,
+                Height = 30,
+                ContextMenu = contextMenu,
+            };
+
+            ThemeManager.Configure(
+                ThemePreference.Light,
+                AccentColorSource.Default,
+                enableNativeControlStyling: true
+            );
+
+            using var form = new Forms.Form
+            {
+                ShowInTaskbar = false,
+                StartPosition = Forms.FormStartPosition.Manual,
+                Location = new System.Drawing.Point(-10_000, -10_000),
+                Size = new System.Drawing.Size(160, 120),
+            };
+            using var host = new ElementHost
+            {
+                Dock = Forms.DockStyle.Fill,
+                Child = placementTarget,
+            };
+            form.Controls.Add(host);
+
+            try
+            {
+                form.Show();
+                contextMenu.PlacementTarget = placementTarget;
+                contextMenu.IsOpen = true;
+                Forms.Application.DoEvents();
+                DrainDispatcher();
+                contextMenu.UpdateLayout();
+
+                Assert.Null(Application.Current);
+                Assert.True(contextMenu.IsOpen);
+                Assert.Same(
+                    separator.TryFindResource(MenuItem.SeparatorStyleKey),
+                    separator.Style
+                );
+                Assert.Equal(new Thickness(0, 2, 0, 2), separator.Margin);
+                _ = separator.ApplyTemplate();
+                Assert.NotNull(separator.Template.FindName("Border", separator));
+            }
+            finally
+            {
+                contextMenu.IsOpen = false;
+                form.Close();
+                Forms.Application.DoEvents();
+                DrainDispatcher();
+            }
+        });
+    }
+
     /// <summary>
     /// Verifies that the first explicit theme switch refreshes resources that were originally resolved from
     /// Generic.xaml before an applicationless presentation source existed.
@@ -652,6 +797,18 @@ public class ElementHostThemeTests
         Dispatcher.CurrentDispatcher.Invoke(static () => { }, DispatcherPriority.ApplicationIdle);
 
     private static Color GetBrushColor(Brush brush) => Assert.IsType<SolidColorBrush>(brush).Color;
+
+    private static void AssertScrollBarThumbMinimum(UiScrollBar scrollBar, bool isVertical)
+    {
+        _ = scrollBar.ApplyTemplate();
+        var track = Assert.IsType<Track>(scrollBar.Template.FindName("PART_Track", scrollBar));
+        ResourceKey resourceKey = isVertical
+            ? SystemParameters.VerticalScrollBarButtonHeightKey
+            : SystemParameters.HorizontalScrollBarButtonWidthKey;
+
+        Assert.Equal(36d, Assert.IsType<double>(track.TryFindResource(resourceKey)));
+        Assert.Equal(18d, isVertical ? track.Thumb.ActualHeight : track.Thumb.ActualWidth);
+    }
 
     private static Color GetTextForeground(DependencyObject element) =>
         GetBrushColor(Assert.IsAssignableFrom<Brush>(element.GetValue(TextElement.ForegroundProperty)));
