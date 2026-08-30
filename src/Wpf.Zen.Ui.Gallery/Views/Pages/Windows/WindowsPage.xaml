@@ -47,7 +47,7 @@
                     <ui:VirtualizingWrapPanel
                         HorizontalSpacing="8"
                         ItemHeight="80"
-                        MaximumItemWidth="350"
+                        MinimumItemWidth="340"
                         VerticalSpacing="8" />
                 </ItemsPanelTemplate>
             </ItemsControl.ItemsPanel>

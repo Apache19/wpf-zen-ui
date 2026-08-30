@@ -29,7 +29,7 @@ public enum VirtualizingWrapPanelItemSizingMode
 
     /// <summary>
     /// The panel selects a column count and calculates a uniform width from the current viewport,
-    /// horizontal spacing, and maximum width.
+    /// horizontal spacing, item count, and the configured width constraints.
     /// </summary>
     Responsive,
 }
@@ -68,13 +68,16 @@ public enum VirtualizingWrapPanelItemsAlignment
 /// <see cref="ItemWidth"/> selects fixed-width wrapping. When no hard width policy exists, the
 /// combination of <see cref="ItemHeight"/> and <see cref="ItemAspectRatio"/> derives the same kind
 /// of fixed width. Neither fixed form is stretched to fill the viewport. Responsive sizing is
-/// selected only when
-/// <see cref="ItemWidth"/> is automatic and <see cref="MaximumItemWidth"/> is finite; the panel then
-/// chooses a column count first and gives every column the same width, so a resize never leaves a
-/// clipped partial column. A new column is added only when keeping the current count would exceed
-/// <see cref="MaximumItemWidth"/>. This distinction keeps automatic sizing opt-in and deliberately
-/// avoids minimum or preferred widths whose competing breakpoints can make responsive behavior
-/// difficult to predict.
+/// selected only when <see cref="ItemWidth"/> is automatic and at least one non-default
+/// <see cref="MinimumItemWidth"/> or <see cref="MaximumItemWidth"/> constraint is present. The panel
+/// then chooses a column count first and gives every column the same width, so a resize never leaves
+/// a clipped partial column. The minimum determines when another column can fit without making text
+/// or other content too narrow; the maximum prevents an existing column set from growing without
+/// bound. When both are present, widths remain inside that interval and any space which cannot yet
+/// accommodate another minimum-width item remains available for <see cref="ItemsAlignment"/>.
+/// Responsive columns are also capped by the collection count, so a collection which already fits
+/// on one row stops adding empty columns after its items reach the maximum. No preferred width is
+/// needed: the two constraints have independent, observable responsibilities.
 /// </para>
 /// <para>
 /// A predictable cell width and height are required to map an item index to a scroll row without
@@ -132,6 +135,7 @@ public enum VirtualizingWrapPanelItemsAlignment
 ///                 VerticalSpacing="16"
 ///                 ItemsAlignment="Center"
 ///                 ItemAspectRatio="1.7777778"
+///                 MinimumItemWidth="220"
 ///                 MaximumItemWidth="320" />
 ///         </ItemsPanelTemplate>
 ///     </ListBox.ItemsPanel>
@@ -265,10 +269,11 @@ public partial class VirtualizingWrapPanel : VirtualizingPanel, IScrollInfo
     /// width automatic. The default is <see cref="double.NaN"/>.
     /// </summary>
     /// <remarks>
-    /// A finite value always takes precedence over <see cref="MaximumItemWidth"/>. The panel wraps
-    /// fixed-width cells but never expands or contracts them to consume remaining viewport space.
-    /// Combine this property with <see cref="ItemHeight"/> or <see cref="ItemAspectRatio"/> to
-    /// provide the predictable cell geometry required for row virtualization.
+    /// A finite value always takes precedence over <see cref="MinimumItemWidth"/> and
+    /// <see cref="MaximumItemWidth"/>. The panel wraps fixed-width cells but never expands or
+    /// contracts them to consume remaining viewport space. Combine this property with
+    /// <see cref="ItemHeight"/> or <see cref="ItemAspectRatio"/> to provide the predictable cell
+    /// geometry required for row virtualization.
     /// </remarks>
     public double ItemWidth
     {
@@ -314,6 +319,44 @@ public partial class VirtualizingWrapPanel : VirtualizingPanel, IScrollInfo
 
     #endregion
 
+    #region DP: MinimumItemWidth
+
+    /// <summary>Identifies the <see cref="MinimumItemWidth"/> dependency property.</summary>
+    public static readonly DependencyProperty MinimumItemWidthProperty =
+        DependencyProperty.Register(
+            nameof(MinimumItemWidth),
+            typeof(double),
+            typeof(VirtualizingWrapPanel),
+            new FrameworkPropertyMetadata(
+                0D,
+                FrameworkPropertyMetadataOptions.AffectsMeasure
+                | FrameworkPropertyMetadataOptions.AffectsArrange
+            ),
+            ValidateMinimumItemWidth
+        );
+
+    /// <summary>
+    /// Gets or sets the hard lower bound for a responsive item cell's width. A positive value opts
+    /// into automatic responsive width calculation when <see cref="ItemWidth"/> is automatic. The
+    /// default is <c>0</c>, which supplies no lower bound.
+    /// </summary>
+    /// <remarks>
+    /// The panel removes a column before filling the available width would make its cells narrower
+    /// than this value. If the viewport itself is narrower than one minimum-width cell, one column
+    /// is retained at the minimum and the content overflows horizontally; silently shrinking below
+    /// the requested constraint would reintroduce the text wrapping or clipping this property is
+    /// intended to prevent. When this value exceeds <see cref="MaximumItemWidth"/>, the minimum wins
+    /// for layout, matching WPF's general minimum-size precedence. A finite <see cref="ItemWidth"/>
+    /// takes precedence over both responsive constraints. This property affects measure and arrange.
+    /// </remarks>
+    public double MinimumItemWidth
+    {
+        get => (double)GetValue(MinimumItemWidthProperty);
+        set => SetValue(MinimumItemWidthProperty, value);
+    }
+
+    #endregion
+
     #region DP: MaximumItemWidth
 
     /// <summary>Identifies the <see cref="MaximumItemWidth"/> dependency property.</summary>
@@ -331,15 +374,18 @@ public partial class VirtualizingWrapPanel : VirtualizingPanel, IScrollInfo
         );
 
     /// <summary>
-    /// Gets or sets the hard upper bound for a responsive item cell's width. A finite value opts
-    /// into automatic responsive width calculation when <see cref="ItemWidth"/> is automatic. The
-    /// default is <see cref="double.PositiveInfinity"/>, which leaves automatic sizing disabled.
+    /// Gets or sets the upper bound for a responsive item cell's width. A finite value opts into
+    /// automatic responsive width calculation when <see cref="ItemWidth"/> is automatic. The
+    /// default is <see cref="double.PositiveInfinity"/>, which supplies no upper bound.
     /// </summary>
     /// <remarks>
     /// When the available width would make cells wider than this value, the panel increases the
-    /// column count. Any remaining sub-pixel slack is positioned according to
-    /// <see cref="ItemsAlignment"/>. A finite <see cref="ItemWidth"/> takes precedence and disables
-    /// this responsive behavior. This property affects measure and arrange.
+    /// column count only if the resulting cells also satisfy <see cref="MinimumItemWidth"/>. Until
+    /// then, the cells stay at this upper bound and the remaining space is positioned according to
+    /// <see cref="ItemsAlignment"/>. The effective maximum is raised to the minimum if the configured
+    /// bounds cross, so minimum content width has deterministic precedence. A finite
+    /// <see cref="ItemWidth"/> takes precedence and disables responsive behavior. This property
+    /// affects measure and arrange.
     /// </remarks>
     public double MaximumItemWidth
     {
@@ -634,6 +680,13 @@ public partial class VirtualizingWrapPanel : VirtualizingPanel, IScrollInfo
     private static bool ValidateMaximumItemWidth(object? value)
     {
         return value is double number and > 0D && !double.IsNaN(number);
+    }
+
+    private static bool ValidateMinimumItemWidth(object? value)
+    {
+        return value is double number and >= 0D
+               && !double.IsInfinity(number)
+               && !double.IsNaN(number);
     }
 
     private static bool ValidateItemsAlignment(object? value)

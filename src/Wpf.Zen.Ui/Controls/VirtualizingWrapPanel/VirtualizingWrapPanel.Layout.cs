@@ -28,6 +28,7 @@ public partial class VirtualizingWrapPanel
         var layoutWidth    = ResolveLayoutWidth(availableSize.Width);
         var fixedItemWidth = ResolveFixedItemWidth(
             ItemWidth,
+            MinimumItemWidth,
             MaximumItemWidth,
             ItemAspectRatio,
             ItemHeight
@@ -37,7 +38,7 @@ public partial class VirtualizingWrapPanel
         var hasFixedItemWidth = !double.IsNaN(fixedItemWidth);
 
         _usesManagedItemWidth =
-            (hasFixedItemWidth || !double.IsInfinity(MaximumItemWidth))
+            (hasFixedItemWidth || HasResponsiveWidthConstraint())
             && IsFiniteNonNegative(layoutWidth);
 
         _usesAutomaticItemSizing = _usesManagedItemWidth && !hasFixedItemWidth;
@@ -51,9 +52,11 @@ public partial class VirtualizingWrapPanel
                 HorizontalSpacing,
                 VerticalSpacing,
                 fixedItemWidth,
+                MinimumItemWidth,
                 MaximumItemWidth,
                 ItemAspectRatio,
-                ItemHeight
+                ItemHeight,
+                _itemCount
             );
         }
 
@@ -111,18 +114,21 @@ public partial class VirtualizingWrapPanel
     /// Calculates the stable cell geometry used by both layout and virtualization.
     /// </summary>
     /// <remarks>
-    /// In responsive mode, the maximum width alone determines the column breakpoint. The current
-    /// columns consume all available width until doing so would exceed that limit; only then is one
-    /// more column introduced. Because the calculated width may shrink after a breakpoint, every
-    /// finite viewport has a valid layout without imposing a conflicting minimum width.
+    /// In responsive mode, the upper bound selects the fewest columns needed to prevent unbounded
+    /// growth, while the lower bound limits that result to the number of columns which can remain
+    /// readable. Cells consume the available width inside the resulting interval; unused width is
+    /// intentional when another minimum-width column does not yet fit. The item count caps the
+    /// result so a one-row collection never manufactures empty columns as its viewport grows.
     /// </remarks>
     internal static (int Columns, double ItemWidth, double ItemHeight) CalculateLayout(
         double availableWidth,
         double horizontalSpacing,
         double itemWidth,
+        double minimumItemWidth,
         double maximumItemWidth,
         double itemAspectRatio,
-        double itemHeight
+        double itemHeight,
+        int    itemCount = int.MaxValue
     )
     {
         var result = CalculateUniformLayout(
@@ -130,9 +136,11 @@ public partial class VirtualizingWrapPanel
             horizontalSpacing,
             0D,
             itemWidth,
+            minimumItemWidth,
             maximumItemWidth,
             itemAspectRatio,
-            itemHeight
+            itemHeight,
+            itemCount
         );
 
         return (result.Columns, result.ItemWidth, result.ItemHeight);
@@ -143,13 +151,16 @@ public partial class VirtualizingWrapPanel
         double horizontalSpacing,
         double verticalSpacing,
         double itemWidth,
+        double minimumItemWidth,
         double maximumItemWidth,
         double itemAspectRatio,
-        double itemHeight
+        double itemHeight,
+        int    itemCount
     )
     {
         itemWidth = ResolveFixedItemWidth(
             itemWidth,
+            minimumItemWidth,
             maximumItemWidth,
             itemAspectRatio,
             itemHeight
@@ -173,19 +184,49 @@ public partial class VirtualizingWrapPanel
         }
         else
         {
-            // Ceiling is the essential responsive rule: retain the current column count while its
-            // cells fit at or below the maximum, and introduce another column at the first pixel
-            // that would otherwise violate the upper bound. The subsequent equal division ensures
-            // that no partial column is ever left at the trailing edge.
-            columns = GetColumnCount(
-                widthWithTrailingGap / (maximumItemWidth + horizontalSpacing),
-                roundUp: true
-            );
+            var hasMinimum = minimumItemWidth > 0D;
+            var hasMaximum = !double.IsInfinity(maximumItemWidth);
+
+            // WPF's FrameworkElement gives a minimum size precedence when MinWidth and MaxWidth
+            // cross. Normalizing the calculation in the same way avoids order-dependent DP
+            // coercion while keeping the configured values available to bindings and styles.
+            var effectiveMaximum = hasMaximum
+                ? Math.Max(minimumItemWidth, maximumItemWidth)
+                : double.PositiveInfinity;
+
+            // The maximum produces the smallest useful column count (largest cells). The minimum
+            // produces the largest count that can fit without narrowing cells below their content
+            // constraint. Taking the smaller count preserves the panel's item-size-first policy;
+            // if the two breakpoints leave a gap, cells stop at the maximum and alignment receives
+            // the remainder until another minimum-width column fits.
+            var columnsForMaximum = hasMaximum
+                ? GetColumnCount(
+                    widthWithTrailingGap / (effectiveMaximum + horizontalSpacing),
+                    roundUp: true
+                )
+                : int.MaxValue;
+            var columnsForMinimum = hasMinimum
+                ? GetColumnCount(
+                    widthWithTrailingGap / (minimumItemWidth + horizontalSpacing),
+                    roundUp: false
+                )
+                : int.MaxValue;
+
+            columns = hasMaximum && hasMinimum
+                ? Math.Min(columnsForMaximum, columnsForMinimum)
+                : hasMaximum
+                    ? columnsForMaximum
+                    : columnsForMinimum;
+
+            // Once all items occupy one row, additional theoretical columns cannot display more
+            // content. Capping here prevents repeated width drops as a sparse collection's viewport
+            // crosses breakpoints for columns that would remain empty.
+            columns = Math.Min(columns, Math.Max(1, itemCount));
 
             var totalSpacing    = horizontalSpacing * Math.Max(0, columns - 1);
             var calculatedWidth = Math.Max(0D, (availableWidth - totalSpacing) / columns);
 
-            width = Math.Min(calculatedWidth, maximumItemWidth);
+            width = Math.Max(minimumItemWidth, Math.Min(calculatedWidth, effectiveMaximum));
         }
 
         var height = !double.IsNaN(itemHeight)
@@ -827,6 +868,7 @@ public partial class VirtualizingWrapPanel
     {
         var fixedItemWidth = ResolveFixedItemWidth(
             ItemWidth,
+            MinimumItemWidth,
             MaximumItemWidth,
             ItemAspectRatio,
             ItemHeight
@@ -837,13 +879,19 @@ public partial class VirtualizingWrapPanel
             return fixedItemWidth;
         }
 
-        return !double.IsInfinity(MaximumItemWidth)
-            ? MaximumItemWidth
+        if (!double.IsInfinity(MaximumItemWidth))
+        {
+            return Math.Max(MinimumItemWidth, MaximumItemWidth);
+        }
+
+        return MinimumItemWidth > 0D
+            ? MinimumItemWidth
             : double.PositiveInfinity;
     }
 
     private static double ResolveFixedItemWidth(
         double itemWidth,
+        double minimumItemWidth,
         double maximumItemWidth,
         double itemAspectRatio,
         double itemHeight
@@ -854,7 +902,8 @@ public partial class VirtualizingWrapPanel
             return itemWidth;
         }
 
-        if (!double.IsInfinity(maximumItemWidth)
+        if (minimumItemWidth > 0D
+            || !double.IsInfinity(maximumItemWidth)
             || double.IsNaN(itemAspectRatio)
             || double.IsNaN(itemHeight))
         {
@@ -870,6 +919,11 @@ public partial class VirtualizingWrapPanel
         return derivedWidth > 0D && !double.IsInfinity(derivedWidth)
             ? derivedWidth
             : double.NaN;
+    }
+
+    private bool HasResponsiveWidthConstraint()
+    {
+        return MinimumItemWidth > 0D || !double.IsInfinity(MaximumItemWidth);
     }
 
     private static int GetColumnCount(double quotient, bool roundUp)

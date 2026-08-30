@@ -26,10 +26,10 @@ public class VirtualizingWrapPanelTests
             Assert.True(double.IsNaN(panel.ItemAspectRatio));
             Assert.True(double.IsNaN(panel.ItemWidth));
             Assert.True(double.IsNaN(panel.ItemHeight));
+            Assert.Equal(0D, panel.MinimumItemWidth);
             Assert.Equal(double.PositiveInfinity, panel.MaximumItemWidth);
             Assert.Equal(UiItemsAlignment.Start, panel.ItemsAlignment);
             Assert.Null(typeof(UiVirtualizingWrapPanel).GetProperty("PreferredItemWidth"));
-            Assert.Null(typeof(UiVirtualizingWrapPanel).GetProperty("MinimumItemWidth"));
             Assert.False(panel.IsVirtualizationActive);
             Assert.Equal(UiItemSizingMode.Natural, panel.ActualItemSizingMode);
             Assert.Equal(ScrollUnit.Pixel, panel.ActualScrollUnit);
@@ -136,6 +136,7 @@ public class VirtualizingWrapPanelTests
             1000D,
             20D,
             double.NaN,
+            0D,
             400D,
             16D / 9D,
             double.NaN
@@ -153,6 +154,7 @@ public class VirtualizingWrapPanelTests
             820D,
             20D,
             double.NaN,
+            0D,
             400D,
             2D,
             double.NaN
@@ -161,6 +163,7 @@ public class VirtualizingWrapPanelTests
             821D,
             20D,
             double.NaN,
+            0D,
             400D,
             2D,
             double.NaN
@@ -170,6 +173,157 @@ public class VirtualizingWrapPanelTests
         Assert.Equal(400D, exactLayout.ItemWidth, 3);
         Assert.Equal(3, overflowLayout.Columns);
         Assert.Equal(781D / 3D, overflowLayout.ItemWidth, 3);
+    }
+
+    [Fact]
+    public void ResponsiveLayout_DoesNotAddEmptyColumnsAfterAllItemsFitOneRow()
+    {
+        RunOnStaThread(static () =>
+        {
+            var panel = new UiVirtualizingWrapPanel
+            {
+                HorizontalSpacing = 10D,
+                ItemAspectRatio = 1D,
+                MaximumItemWidth = 300D,
+                ItemsAlignment = UiItemsAlignment.Center,
+            };
+            panel.Children.Add(new Border());
+            panel.Children.Add(new Border());
+
+            Arrange(panel, new Size(500D, 320D));
+
+            Assert.Equal(2, panel.Columns);
+            Assert.Equal(245D, panel.ActualItemWidth, 3);
+
+            panel.Width = 950D;
+            panel.Height = 320D;
+            Relayout(panel, new Size(950D, 320D));
+
+            Assert.Equal(2, panel.Columns);
+            Assert.Equal(300D, panel.ActualItemWidth, 3);
+            Assert.Equal(170D, panel.Children[0].TranslatePoint(default, panel).X, 3);
+            Assert.Equal(480D, panel.Children[1].TranslatePoint(default, panel).X, 3);
+        });
+    }
+
+    [Fact]
+    public void ResponsiveRange_DelaysNewColumnUntilItsMinimumWidthFits()
+    {
+        var beforeBreakpoint = UiVirtualizingWrapPanel.CalculateLayout(
+            939D,
+            20D,
+            double.NaN,
+            300D,
+            400D,
+            2D,
+            double.NaN
+        );
+        var atBreakpoint = UiVirtualizingWrapPanel.CalculateLayout(
+            940D,
+            20D,
+            double.NaN,
+            300D,
+            400D,
+            2D,
+            double.NaN
+        );
+
+        Assert.Equal(2, beforeBreakpoint.Columns);
+        Assert.Equal(400D, beforeBreakpoint.ItemWidth, 3);
+        Assert.Equal(3, atBreakpoint.Columns);
+        Assert.Equal(300D, atBreakpoint.ItemWidth, 3);
+    }
+
+    [Fact]
+    public void MinimumWidthAlone_ExplicitlyEnablesResponsiveSizing()
+    {
+        RunOnStaThread(static () =>
+        {
+            var panel = new UiVirtualizingWrapPanel
+            {
+                HorizontalSpacing = 20D,
+                MinimumItemWidth = 300D,
+                ItemAspectRatio = 2D,
+            };
+            for (int index = 0; index < 10; index++)
+            {
+                panel.Children.Add(new Border());
+            }
+
+            Arrange(panel, new Size(1000D, 400D));
+
+            Assert.Equal(UiItemSizingMode.Responsive, panel.ActualItemSizingMode);
+            Assert.Equal(3, panel.Columns);
+            Assert.Equal(320D, panel.ActualItemWidth, 3);
+            Assert.Equal(160D, panel.ActualItemHeight, 3);
+        });
+    }
+
+    [Fact]
+    public void MinimumWidthAlone_ProvidesPredictableGeometryForVirtualization()
+    {
+        RunOnStaThread(static () =>
+        {
+            System.Windows.Controls.ListBox listBox = CreateListBox(
+                itemCount: 1000,
+                configurePanel: factory =>
+                {
+                    factory.SetValue(UiVirtualizingWrapPanel.HorizontalSpacingProperty, 8D);
+                    factory.SetValue(UiVirtualizingWrapPanel.ItemAspectRatioProperty, 1.5D);
+                    factory.SetValue(UiVirtualizingWrapPanel.MinimumItemWidthProperty, 180D);
+                }
+            );
+
+            Arrange(listBox, new Size(640D, 320D));
+            UiVirtualizingWrapPanel panel = Assert.IsType<UiVirtualizingWrapPanel>(
+                FindVisualChild<UiVirtualizingWrapPanel>(listBox)
+            );
+
+            Assert.Equal(UiItemSizingMode.Responsive, panel.ActualItemSizingMode);
+            Assert.True(panel.IsVirtualizationActive);
+            Assert.Equal(3, panel.Columns);
+            Assert.Equal((panel.ViewportWidth - 16D) / 3D, panel.ActualItemWidth, 3);
+            Assert.True(panel.ActualItemWidth >= panel.MinimumItemWidth);
+            Assert.InRange(panel.Children.Count, 1, 30);
+        });
+    }
+
+    [Fact]
+    public void ResponsiveMinimum_TakesPrecedenceWhenBoundsCross()
+    {
+        var layout = UiVirtualizingWrapPanel.CalculateLayout(
+            650D,
+            0D,
+            double.NaN,
+            300D,
+            200D,
+            1D,
+            double.NaN
+        );
+
+        Assert.Equal(2, layout.Columns);
+        Assert.Equal(300D, layout.ItemWidth, 3);
+    }
+
+    [Fact]
+    public void ResponsiveMinimum_UsesHorizontalOverflowWhenOneCellCannotFit()
+    {
+        RunOnStaThread(static () =>
+        {
+            var panel = new UiVirtualizingWrapPanel
+            {
+                MinimumItemWidth = 300D,
+                MaximumItemWidth = 400D,
+                ItemHeight = 100D,
+            };
+            panel.Children.Add(new Border());
+
+            Arrange(panel, new Size(200D, 120D));
+
+            Assert.Equal(1, panel.Columns);
+            Assert.Equal(300D, panel.ActualItemWidth, 3);
+            Assert.Equal(300D, panel.ExtentWidth, 3);
+        });
     }
 
     [Fact]
@@ -269,8 +423,8 @@ public class VirtualizingWrapPanelTests
                 UiItemSizingMode.Responsive,
                 panel.ActualItemSizingMode
             );
-            Assert.Equal(3, panel.Columns);
-            Assert.Equal(500D / 3D, panel.ActualItemWidth, 3);
+            Assert.Equal(1, panel.Columns);
+            Assert.Equal(200D, panel.ActualItemWidth, 3);
             Assert.Equal(90D, panel.ActualItemHeight, 3);
         });
     }
@@ -306,6 +460,8 @@ public class VirtualizingWrapPanelTests
             Assert.Throws<ArgumentException>(() => panel.VerticalSpacing = double.PositiveInfinity);
             Assert.Throws<ArgumentException>(() => panel.ItemAspectRatio = 0D);
             Assert.Throws<ArgumentException>(() => panel.ItemWidth = 0D);
+            Assert.Throws<ArgumentException>(() => panel.MinimumItemWidth = -1D);
+            Assert.Throws<ArgumentException>(() => panel.MinimumItemWidth = double.PositiveInfinity);
             Assert.Throws<ArgumentException>(() => panel.MaximumItemWidth = double.NaN);
             Assert.Throws<ArgumentException>(() => panel.ItemHeight = double.PositiveInfinity);
         });
@@ -885,11 +1041,12 @@ public class VirtualizingWrapPanelTests
         RunOnStaThread(static () =>
         {
             const string xaml =
-                "<ui:VirtualizingWrapPanel xmlns:ui=\"http://schemas.thezendev.com/wpf/2027\" ItemAspectRatio=\"1.5\" ItemsAlignment=\"Center\" />";
+                "<ui:VirtualizingWrapPanel xmlns:ui=\"http://schemas.thezendev.com/wpf/2027\" ItemAspectRatio=\"1.5\" MinimumItemWidth=\"180\" ItemsAlignment=\"Center\" />";
 
             var panel = Assert.IsType<UiVirtualizingWrapPanel>(XamlReader.Parse(xaml));
 
             Assert.Equal(1.5D, panel.ItemAspectRatio);
+            Assert.Equal(180D, panel.MinimumItemWidth);
             Assert.Equal(UiItemsAlignment.Center, panel.ItemsAlignment);
         });
     }
