@@ -95,6 +95,7 @@ public partial class MainWindowViewModel : ViewModel
             {
                 new NavigationItem("DataGrid", typeof(DataGridPage)), new NavigationItem("ListBox",  typeof(ListBoxPage)),
                 new NavigationItem("ListView", typeof(ListViewPage)), new NavigationItem("TreeView", typeof(TreeViewPage)),
+                new NavigationItem("VirtualizingWrapPanel", typeof(VirtualizingWrapPanelPage)),
                 #if DEBUG
                 new NavigationItem("TreeList", typeof(TreeListPage)),
                 #endif
@@ -235,6 +236,7 @@ public partial class MainWindowViewModel : ViewModel
         AddPage<ListBoxPage>("ListBox", collections);
         AddPage<ListViewPage>("ListView", collections);
         AddPage<TreeViewPage>("TreeView", collections);
+        AddPage<VirtualizingWrapPanelPage>("VirtualizingWrapPanel", collections);
         #if DEBUG
         AddPage<TreeListPage>("TreeList", collections);
         #endif
