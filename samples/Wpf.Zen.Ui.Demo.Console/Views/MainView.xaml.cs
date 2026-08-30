@@ -18,8 +18,6 @@ public partial class MainView
         InitializeComponent();
 
         Loaded += (_, _) => RootNavigation.Navigate(typeof(DashboardPage));
-
-        Application.Current.MainWindow = this;
     }
 
     protected override void OnKeyDown(KeyEventArgs e)
