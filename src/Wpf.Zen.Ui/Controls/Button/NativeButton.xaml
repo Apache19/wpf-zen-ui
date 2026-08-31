@@ -6,8 +6,8 @@
 
     <converters:CornerRadiusTransformConverter
         x:Key="FocusCornerRadiusConverter"
-        Offset="2 2 2 2"
-        PreserveZeroCorners="True" />
+        PreserveZeroCorners="True"
+        Offset="2 2 2 2" />
 
     <Style x:Key="UiButtonFocusVisualStyle">
         <Setter Property="Control.Template">
@@ -18,9 +18,15 @@
                         Margin="-2"
                         BorderBrush="{m:DynamicBrush KeyboardFocusBorder}"
                         BorderThickness="1"
-                        CornerRadius="{Binding AdornedElement.CornerRadius, RelativeSource={RelativeSource AncestorType={x:Type Adorner}}, Converter={StaticResource FocusCornerRadiusConverter}}"
                         IsHitTestVisible="False"
-                        SnapsToDevicePixels="True" />
+                        SnapsToDevicePixels="True">
+                        <Border.CornerRadius>
+                            <Binding
+                                Converter="{StaticResource FocusCornerRadiusConverter}"
+                                Path="AdornedElement.(Border.CornerRadius)"
+                                RelativeSource="{RelativeSource AncestorType={x:Type Adorner}}" />
+                        </Border.CornerRadius>
+                    </Border>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>

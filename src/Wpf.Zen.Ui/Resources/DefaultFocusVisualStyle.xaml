@@ -15,17 +15,21 @@
         <Setter Property="Control.Template">
             <Setter.Value>
                 <ControlTemplate>
-                    <Rectangle
-                        RadiusX="4"
-                        RadiusY="4"
-                        SnapsToDevicePixels="True"
-                        Stroke="{m:DynamicBrush KeyboardFocusBorder}"
-                        StrokeThickness="1" />
+                    <Border
+                        BorderBrush="{m:DynamicBrush KeyboardFocusBorder}"
+                        BorderThickness="1"
+                        IsHitTestVisible="False"
+                        SnapsToDevicePixels="True">
+                        <Border.CornerRadius>
+                            <PriorityBinding FallbackValue="4">
+                                <Binding Path="AdornedElement.CornerRadius" RelativeSource="{RelativeSource AncestorType={x:Type Adorner}}" />
+                                <Binding Path="AdornedElement.(Border.CornerRadius)" RelativeSource="{RelativeSource AncestorType={x:Type Adorner}}" />
+                            </PriorityBinding>
+                        </Border.CornerRadius>
+                    </Border>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
     </Style>
-
-    <Style x:Key="{x:Static SystemParameters.FocusVisualStyleKey}" BasedOn="{StaticResource {x:Static t:StyleKeys.DefaultControlFocusVisualStyle}}" />
 
 </ResourceDictionary>
