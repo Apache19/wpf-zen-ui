@@ -30,7 +30,6 @@
     <EmbeddedResource Include="Controls\Arc\Arc.bmp" />
     <EmbeddedResource Include="Controls\AutoSuggestBox\AutoSuggestBox.bmp" />
     <EmbeddedResource Include="Controls\Button\Badge.bmp" />
-    <EmbeddedResource Include="Controls\CardExpander\CardExpander.bmp" />
     <EmbeddedResource Include="Controls\CardAction\CardAction.bmp" />
     <EmbeddedResource Include="Controls\Card\Card.bmp" />
     <EmbeddedResource Include="Controls\ScrollViewer\PassiveScrollViewer.bmp" />

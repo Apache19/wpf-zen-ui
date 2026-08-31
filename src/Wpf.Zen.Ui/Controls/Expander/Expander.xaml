@@ -78,6 +78,8 @@
                                 Grid.Column="1"
                                 Margin="8"
                                 Padding="8"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
                                 CornerRadius="6">
                                 <controls:FluentIcon
                                     x:Name="chevronIcon"
@@ -227,6 +229,7 @@
                             x:Name="contentHost"
                             DockPanel.Dock="Bottom"
                             ExpandDirection="{TemplateBinding ExpandDirection}"
+                            ExpandDuration="0:0:0.333"
                             IsExpanded="{TemplateBinding IsExpanded}">
                             <ContentControl
                                 x:Name="contentControl"

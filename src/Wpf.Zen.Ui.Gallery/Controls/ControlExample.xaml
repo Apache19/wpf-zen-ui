@@ -39,10 +39,14 @@
                             <ContentPresenter Content="{TemplateBinding ExampleContent}" />
                         </Border>
 
-                        <ui:CardExpander
+                        <Expander
                             Grid.Row="2"
-                            CornerRadius="0,0,8,8"
                             Header="Source code">
+                            <Expander.Style>
+                                <Style BasedOn="{StaticResource DefaultExpanderStyle}" TargetType="{x:Type Expander}">
+                                    <Setter Property="Border.CornerRadius" Value="0,0,8,8" />
+                                </Style>
+                            </Expander.Style>
                             <StackPanel>
                                 <StackPanel x:Name="XamlCodeBlock">
                                     <ui:TextBlock
@@ -80,7 +84,7 @@
                                         Content="{TemplateBinding CsharpCode}" />
                                 </StackPanel>
                             </StackPanel>
-                        </ui:CardExpander>
+                        </Expander>
                     </Grid>
 
                     <ControlTemplate.Triggers>

@@ -12,7 +12,6 @@
       <Item Type="Wpf.Zen.Ui.Controls.CardAction" />
       <Item Type="Wpf.Zen.Ui.Controls.CardColor" />
       <Item Type="Wpf.Zen.Ui.Controls.CardControl" />
-      <Item Type="Wpf.Zen.Ui.Controls.CardExpander" />
       <Item Type="Wpf.Zen.Ui.Controls.ClientAreaBorder" />
       <Item Type="Wpf.Zen.Ui.Controls.ContentDialog" />
       <Item Type="Wpf.Zen.Ui.Controls.DataGrid" />

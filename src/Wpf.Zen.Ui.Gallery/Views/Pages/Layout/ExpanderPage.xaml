@@ -29,51 +29,63 @@
                     Grid.Column="0"
                     Content="This is in the content"
                     Header="This text is in the header" />
-                <!--  TODO: ExpandDirection  -->
             </Grid>
         </controls:ControlExample>
 
         <controls:ControlExample
             Margin="0,32,0,0"
             HeaderText="An Expander with an Icon, a header text, a description, a control, and content areas"
-            XamlCode="&lt;Expander Icon=&quot;{ui:FluentIconSource PlaySettings20}&quot;/&gt;">
+            XamlCode="&lt;Expander&gt;&#x0a;    &lt;Expander.Header&gt;&#x0a;        &lt;ui:FluentIcon Symbol=&quot;PlaySettings20&quot; /&gt;&#x0a;    &lt;/Expander.Header&gt;&#x0a;&lt;/Expander&gt;">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
-                <ui:CardExpander Grid.Column="0" Icon="{ui:FluentIconSource PlaySettings20}">
-                    <ui:CardExpander.Header>
+                <Expander Grid.Column="0">
+                    <Expander.Header>
                         <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                            </Grid.RowDefinitions>
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
-                            <ui:TextBlock
-                                Grid.Row="0"
+
+                            <ui:FluentIcon
                                 Grid.Column="0"
-                                FontSize="16"
-                                FontTypography="Body"
-                                Text="This is a header text" />
-                            <ui:TextBlock
-                                Grid.Row="1"
-                                Grid.Column="0"
-                                FontSize="12"
-                                Foreground="{ui:DynamicBrush TextFillSecondary}"
-                                Text="This is a description text" />
-                            <ui:ToggleSwitch
-                                Grid.Row="0"
-                                Grid.RowSpan="2"
-                                Grid.Column="1"
-                                Margin="0,0,16,0"
-                                OffContent="Off"
-                                OnContent="On" />
+                                Margin="0,0,14,0"
+                                IconSize="24"
+                                Symbol="PlaySettings20" />
+
+                            <Grid Grid.Column="1">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <ui:TextBlock
+                                    Grid.Row="0"
+                                    Grid.Column="0"
+                                    FontSize="16"
+                                    FontTypography="Body"
+                                    Text="This is a header text" />
+                                <ui:TextBlock
+                                    Grid.Row="1"
+                                    Grid.Column="0"
+                                    FontSize="12"
+                                    Foreground="{ui:DynamicBrush TextFillSecondary}"
+                                    Text="This is a description text" />
+                                <ui:ToggleSwitch
+                                    Grid.Row="0"
+                                    Grid.RowSpan="2"
+                                    Grid.Column="1"
+                                    Margin="0,0,16,0"
+                                    OffContent="Off"
+                                    OnContent="On" />
+                            </Grid>
                         </Grid>
-                    </ui:CardExpander.Header>
+                    </Expander.Header>
                     <StackPanel Margin="24,0.5,24,0">
                         <ui:CardControl Padding="20,10,20,10" Header="This is an item">
                             <ui:ToggleSwitch
@@ -114,8 +126,7 @@
 
                         </ui:CardControl>
                     </StackPanel>
-                </ui:CardExpander>
-                <!--  TODO: ExpandDirection  -->
+                </Expander>
             </Grid>
         </controls:ControlExample>
     </StackPanel>

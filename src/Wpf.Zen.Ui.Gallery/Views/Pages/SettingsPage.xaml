@@ -74,37 +74,46 @@
             Margin="0,24,0,8"
             FontTypography="BodyStrong"
             Text="About" />
-        <ui:CardExpander ContentPadding="0" Icon="{ui:ImageIcon 'pack://application:,,,/Assets/wpfui.png', Width=38, Height=35}">
-            <ui:CardExpander.Header>
-                <Grid>
+        <Expander Padding="0">
+            <Expander.Header>
+                <Grid Margin="14,16">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
                     <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
+                    <Image
+                        Grid.RowSpan="2"
+                        Grid.Column="0"
+                        Width="38"
+                        Height="35"
+                        Margin="0,0,14,0"
+                        Source="pack://application:,,,/Assets/wpfui.png"
+                        Stretch="UniformToFill" />
                     <ui:TextBlock
                         Grid.Row="0"
-                        Grid.Column="0"
+                        Grid.Column="1"
                         FontTypography="Body"
                         Text="WPF Zen UI" />
                     <ui:TextBlock
                         Grid.Row="1"
-                        Grid.Column="0"
+                        Grid.Column="1"
                         Foreground="{ui:DynamicBrush TextFillSecondary}"
                         Text="© 2025 thezendev.com | Leszek Pomianowski &amp; WPF Zen UI Contributors" />
                     <TextBlock
                         Grid.Row="0"
                         Grid.RowSpan="2"
-                        Grid.Column="1"
+                        Grid.Column="2"
                         Margin="0,0,16,0"
                         VerticalAlignment="Center"
                         Foreground="{ui:DynamicBrush TextFillSecondary}"
                         Text="{Binding AppVersion}" />
                 </Grid>
-            </ui:CardExpander.Header>
+            </Expander.Header>
             <StackPanel>
                 <Grid Margin="16">
                     <Grid.ColumnDefinitions>
@@ -155,6 +164,6 @@
                 </ui:Anchor>
                 <TextBlock Margin="16" Text="{Binding AppVersion}" />
             </StackPanel>
-        </ui:CardExpander>
+        </Expander>
     </StackPanel>
 </Page>
