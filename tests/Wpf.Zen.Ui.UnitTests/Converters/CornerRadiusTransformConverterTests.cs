@@ -76,6 +76,69 @@ public class CornerRadiusTransformConverterTests
     }
 
     [Fact]
+    public void Convert_PreserveZeroCorners_SkipsOffsetForZeroTargetCorners()
+    {
+        var converter = new CornerRadiusTransformConverter
+        {
+            Offset = new CornerRadius(2),
+            PreserveZeroCorners = true,
+        };
+
+        var result = Convert(converter, new CornerRadius(4, 4, 0, 0));
+
+        Assert.Equal(new CornerRadius(6, 6, 0, 0), result);
+    }
+
+    [Fact]
+    public void Convert_PreserveZeroCorners_UsesValueAfterMultiplier()
+    {
+        var converter = new CornerRadiusTransformConverter
+        {
+            BaseCornerRadius = new CornerRadius(3, 0, 3, 0),
+            CopyCorners = CornerRadiusCorners.Top,
+            Multiplier = 0,
+            Offset = new CornerRadius(2),
+            PreserveZeroCorners = true,
+        };
+
+        var result = Convert(converter, new CornerRadius(4, 0, 8, 8));
+
+        Assert.Equal(new CornerRadius(0), result);
+    }
+
+    [Fact]
+    public void Convert_PreserveZeroCorners_AppliesOffsetToNonZeroBaseCorners()
+    {
+        var converter = new CornerRadiusTransformConverter
+        {
+            BaseCornerRadius = new CornerRadius(3, 0, 3, 0),
+            CopyCorners = CornerRadiusCorners.None,
+            Offset = new CornerRadius(2),
+            PreserveZeroCorners = true,
+        };
+
+        var result = Convert(converter, new CornerRadius(0));
+
+        Assert.Equal(new CornerRadius(5, 0, 5, 0), result);
+    }
+
+    [Fact]
+    public void Convert_PreserveZeroCorners_PreservesCopiedZeroOverNonZeroBaseCorner()
+    {
+        var converter = new CornerRadiusTransformConverter
+        {
+            BaseCornerRadius = new CornerRadius(3),
+            CopyCorners = CornerRadiusCorners.TopLeft,
+            Offset = new CornerRadius(2),
+            PreserveZeroCorners = true,
+        };
+
+        var result = Convert(converter, new CornerRadius(0));
+
+        Assert.Equal(new CornerRadius(0, 5, 5, 5), result);
+    }
+
+    [Fact]
     public void Convert_AppliesMultiplierAndClamp()
     {
         var converter = new CornerRadiusTransformConverter

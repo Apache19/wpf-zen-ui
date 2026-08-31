@@ -73,8 +73,9 @@ public enum CornerRadiusCorners
 /// <remarks>
 /// The converter starts with <see cref="BaseCornerRadius" />, copies the same-named source corners
 /// selected by <see cref="CopyCorners" />, applies source-to-target corner mappings, multiplies the
-/// result by <see cref="Multiplier" />, adds <see cref="Offset" />, and finally clamps the result
-/// between <see cref="Minimum" /> and <see cref="Maximum" />.
+/// result by <see cref="Multiplier" />, adds <see cref="Offset" /> according to
+/// <see cref="PreserveZeroCorners" />, and finally clamps the result between <see cref="Minimum" />
+/// and <see cref="Maximum" />.
 /// </remarks>
 [ValueConversion(typeof(CornerRadius), typeof(CornerRadius))]
 [MarkupExtensionReturnType(typeof(CornerRadiusTransformConverter))]
@@ -116,6 +117,17 @@ public sealed class CornerRadiusTransformConverter : MarkupExtension, IValueConv
     public CornerRadius Offset { get; set; } = new(0);
 
     /// <summary>
+    /// Gets or sets a value indicating whether target corners whose value is zero remain zero when
+    /// <see cref="Offset" /> is applied. The default is <see langword="false" />.
+    /// </summary>
+    /// <remarks>
+    /// The zero check uses the target value produced by <see cref="BaseCornerRadius" />, copying, mapping, and
+    /// <see cref="Multiplier" />. This preserves intentionally square corners when an offset is used to create
+    /// a parallel outline around an expanded rectangle.
+    /// </remarks>
+    public bool PreserveZeroCorners { get; set; }
+
+    /// <summary>
     /// Gets or sets the multiplier applied before <see cref="Offset" />. The default is <c>1</c>.
     /// </summary>
     public double Multiplier { get; set; } = 1d;
@@ -143,7 +155,7 @@ public sealed class CornerRadiusTransformConverter : MarkupExtension, IValueConv
         }
 
         result = Multiply(result, Multiplier);
-        result = Add(result, Offset);
+        result = Add(result, Offset, PreserveZeroCorners);
 
         return Clamp(result, Minimum, Maximum);
     }
@@ -205,14 +217,21 @@ public sealed class CornerRadiusTransformConverter : MarkupExtension, IValueConv
         return new CornerRadius(topLeft, topRight, bottomRight, bottomLeft);
     }
 
-    private static CornerRadius Add(CornerRadius cornerRadius, CornerRadius offset)
+    private static CornerRadius Add(CornerRadius cornerRadius, CornerRadius offset, bool preserveZeroCorners)
     {
         return new CornerRadius(
-            cornerRadius.TopLeft + offset.TopLeft,
-            cornerRadius.TopRight + offset.TopRight,
-            cornerRadius.BottomRight + offset.BottomRight,
-            cornerRadius.BottomLeft + offset.BottomLeft
+            Add(cornerRadius.TopLeft,     offset.TopLeft,     preserveZeroCorners),
+            Add(cornerRadius.TopRight,    offset.TopRight,    preserveZeroCorners),
+            Add(cornerRadius.BottomRight, offset.BottomRight, preserveZeroCorners),
+            Add(cornerRadius.BottomLeft,  offset.BottomLeft,  preserveZeroCorners)
         );
+    }
+
+    private static double Add(double value, double offset, bool preserveZero)
+    {
+        // A zero corner describes a deliberate square corner rather than a zero-sized arc. Expanding a surrounding
+        // outline must keep that geometric discontinuity instead of introducing a new rounded corner.
+        return preserveZero && value == 0d ? 0d : value + offset;
     }
 
     private static CornerRadius Multiply(CornerRadius cornerRadius, double multiplier)

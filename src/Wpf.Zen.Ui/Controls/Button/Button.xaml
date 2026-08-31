@@ -19,7 +19,10 @@
         <ResourceDictionary Source="pack://application:,,,/Wpf.Zen.Ui;component/Controls/Button/ButtonAppearance.xaml" />
     </ResourceDictionary.MergedDictionaries>
 
-    <converters:CornerRadiusTransformConverter x:Key="FocusCornerRadiusConverter" Offset="2 2 2 2" />
+    <converters:CornerRadiusTransformConverter
+        x:Key="FocusCornerRadiusConverter"
+        Offset="2 2 2 2"
+        PreserveZeroCorners="True" />
 
     <Style x:Key="UiButtonFocusVisualStyle">
         <Setter Property="Control.Template">
