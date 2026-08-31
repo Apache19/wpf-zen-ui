@@ -12,7 +12,6 @@ using System.Windows.Threading;
 using System.Xml;
 using Windows.Win32;
 using Windows.Win32.Foundation;
-using Wpf.Zen.Ui.Input;
 using NativeListBox = System.Windows.Controls.ListBox;
 using NativeListBoxItem = System.Windows.Controls.ListBoxItem;
 
@@ -265,25 +264,6 @@ public class AutoSuggestBox : ItemsControl
 
     #endregion
 
-    #region DP: FocusCommand
-
-    /// <summary>
-    /// Identifies the <see cref="FocusCommand"/> dependency property.
-    /// </summary>
-    public static readonly DependencyProperty FocusCommandProperty = DependencyProperty.Register(
-        nameof(FocusCommand),
-        typeof(ICommand),
-        typeof(AutoSuggestBox),
-        new PropertyMetadata(null)
-    );
-
-    /// <summary>
-    /// Gets command used for focusing control.
-    /// </summary>
-    public ICommand FocusCommand => (ICommand)GetValue(FocusCommandProperty);
-
-    #endregion
-
     #region DP: ClearButtonEnabled
 
     /// <summary>
@@ -435,8 +415,6 @@ public class AutoSuggestBox : ItemsControl
     {
         Loaded += OnLoaded;
         Unloaded += OnUnloaded;
-
-        SetValue(FocusCommandProperty, new RelayCommand<object>(_ => Focus()));
     }
 
     public override void OnApplyTemplate()

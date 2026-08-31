@@ -3,7 +3,8 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-using Wpf.Zen.Ui.Input;
+using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 
 // ReSharper disable once CheckNamespace
 namespace Wpf.Zen.Ui.Controls;
@@ -11,8 +12,16 @@ namespace Wpf.Zen.Ui.Controls;
 /// <summary>
 /// Allows to rate positively or negatively by clicking on one of the thumbs.
 /// </summary>
+[TemplatePart(Name = LikeButtonPartName, Type = typeof(ButtonBase))]
+[TemplatePart(Name = DislikeButtonPartName, Type = typeof(ButtonBase))]
 public class ThumbRate : System.Windows.Controls.Control
 {
+    private const string LikeButtonPartName = "PART_LikeButton";
+    private const string DislikeButtonPartName = "PART_DislikeButton";
+
+    private ButtonBase? _likeButton;
+    private ButtonBase? _dislikeButton;
+
     /// <summary>Identifies the <see cref="State"/> dependency property.</summary>
     public static readonly DependencyProperty StateProperty = DependencyProperty.Register(
         nameof(State),
@@ -46,14 +55,6 @@ public class ThumbRate : System.Windows.Controls.Control
         remove => RemoveHandler(StateChangedEvent, value);
     }
 
-    /// <summary>Identifies the <see cref="TemplateButtonCommand"/> dependency property.</summary>
-    public static readonly DependencyProperty TemplateButtonCommandProperty = DependencyProperty.Register(
-        nameof(TemplateButtonCommand),
-        typeof(IRelayCommand),
-        typeof(ThumbRate),
-        new PropertyMetadata(null)
-    );
-
     /// <summary>
     /// Gets or sets the value determining the current state of the control.
     /// </summary>
@@ -64,30 +65,49 @@ public class ThumbRate : System.Windows.Controls.Control
     }
 
     /// <summary>
-    /// Gets the command triggered when clicking the button.
+    /// Updates the rating after the user activates one of the template buttons.
     /// </summary>
-    public IRelayCommand TemplateButtonCommand => (IRelayCommand)GetValue(TemplateButtonCommandProperty);
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="ThumbRate"/> class and attaches <see cref="TemplateButtonCommand"/>.
-    /// </summary>
-    public ThumbRate()
+    /// <param name="state">The state represented by the activated button.</param>
+    protected virtual void OnButtonClick(ThumbRateState state)
     {
-        SetValue(TemplateButtonCommandProperty, new RelayCommand<ThumbRateState>(OnTemplateButtonClick));
-    }
-
-    /// <summary>
-    /// Triggered by clicking a button in the control template.
-    /// </summary>
-    protected virtual void OnTemplateButtonClick(ThumbRateState parameter)
-    {
-        if (State == parameter)
+        if (State == state)
         {
             SetCurrentValue(StateProperty, ThumbRateState.None);
             return;
         }
 
-        SetCurrentValue(StateProperty, parameter);
+        SetCurrentValue(StateProperty, state);
+    }
+
+    /// <inheritdoc />
+    /// <remarks>
+    /// Both buttons are optional template parts. Resolving them on each application keeps event
+    /// ownership aligned with WPF's replaceable template visual tree.
+    /// </remarks>
+    public override void OnApplyTemplate()
+    {
+        DetachTemplateButtons();
+        base.OnApplyTemplate();
+
+        _likeButton = GetTemplateChild(LikeButtonPartName) as ButtonBase;
+        _dislikeButton = GetTemplateChild(DislikeButtonPartName) as ButtonBase;
+
+        if (_likeButton is not null)
+        {
+            _likeButton.Click += OnLikeButtonClick;
+        }
+
+        if (_dislikeButton is not null)
+        {
+            _dislikeButton.Click += OnDislikeButtonClick;
+        }
+    }
+
+    /// <inheritdoc />
+    protected override void OnTemplateChanged(ControlTemplate oldTemplate, ControlTemplate newTemplate)
+    {
+        DetachTemplateButtons();
+        base.OnTemplateChanged(oldTemplate, newTemplate);
     }
 
     /// <summary>
@@ -106,5 +126,30 @@ public class ThumbRate : System.Windows.Controls.Control
         }
 
         thumbRate.OnStateChanged((ThumbRateState)e.OldValue, (ThumbRateState)e.NewValue);
+    }
+
+    private void OnLikeButtonClick(object sender, RoutedEventArgs e)
+    {
+        OnButtonClick(ThumbRateState.Liked);
+    }
+
+    private void OnDislikeButtonClick(object sender, RoutedEventArgs e)
+    {
+        OnButtonClick(ThumbRateState.Disliked);
+    }
+
+    private void DetachTemplateButtons()
+    {
+        if (_likeButton is not null)
+        {
+            _likeButton.Click -= OnLikeButtonClick;
+            _likeButton = null;
+        }
+
+        if (_dislikeButton is not null)
+        {
+            _dislikeButton.Click -= OnDislikeButtonClick;
+            _dislikeButton = null;
+        }
     }
 }

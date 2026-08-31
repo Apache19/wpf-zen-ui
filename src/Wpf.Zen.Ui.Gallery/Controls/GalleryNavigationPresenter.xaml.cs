@@ -18,7 +18,7 @@ public class GalleryNavigationPresenter : System.Windows.Controls.Control
     /// <summary>Identifies the <see cref="TemplateButtonCommand"/> dependency property.</summary>
     public static readonly DependencyProperty TemplateButtonCommandProperty = DependencyProperty.Register(
         nameof(TemplateButtonCommand),
-        typeof(Wpf.Zen.Ui.Input.IRelayCommand),
+        typeof(IRelayCommand<Type>),
         typeof(GalleryNavigationPresenter),
         new PropertyMetadata(null)
     );
@@ -32,8 +32,8 @@ public class GalleryNavigationPresenter : System.Windows.Controls.Control
     /// <summary>
     /// Gets the command triggered after clicking the titlebar button.
     /// </summary>
-    public Wpf.Zen.Ui.Input.IRelayCommand TemplateButtonCommand =>
-        (Wpf.Zen.Ui.Input.IRelayCommand)GetValue(TemplateButtonCommandProperty);
+    public IRelayCommand<Type> TemplateButtonCommand =>
+        (IRelayCommand<Type>)GetValue(TemplateButtonCommandProperty);
 
     /// <summary>
     /// Initializes a new instance of the <see cref="GalleryNavigationPresenter"/> class.
@@ -41,7 +41,7 @@ public class GalleryNavigationPresenter : System.Windows.Controls.Control
     /// </summary>
     public GalleryNavigationPresenter()
     {
-        SetValue(TemplateButtonCommandProperty, new Input.RelayCommand<Type>(o => OnTemplateButtonClick(o)));
+        SetValue(TemplateButtonCommandProperty, new RelayCommand<Type>(OnTemplateButtonClick));
     }
 
     private void OnTemplateButtonClick(Type? pageType)

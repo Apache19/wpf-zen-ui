@@ -3,6 +3,8 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
+using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using UiPasswordBox = Wpf.Zen.Ui.Controls.PasswordBox;
 
@@ -58,7 +60,7 @@ public class PasswordBoxTests
                     Password = "old",
                 };
 
-                ExecuteTemplateCommand(passwordBox, "reveal");
+                ClickTemplateButton(passwordBox, "PART_RevealButton");
 
                 passwordBox.Text = "new-password";
 
@@ -70,7 +72,7 @@ public class PasswordBoxTests
     }
 
     [Fact]
-    public void RevealCommand_TogglesBetweenPlainTextAndMask()
+    public void RevealButtonClick_TogglesBetweenPlainTextAndMask()
     {
         RunOnStaThread(
             () =>
@@ -80,12 +82,12 @@ public class PasswordBoxTests
                     Password = "secret",
                 };
 
-                ExecuteTemplateCommand(passwordBox, "reveal");
+                ClickTemplateButton(passwordBox, "PART_RevealButton");
 
                 Assert.True(passwordBox.IsPasswordRevealed);
                 Assert.Equal("secret", passwordBox.Text);
 
-                ExecuteTemplateCommand(passwordBox, "reveal");
+                ClickTemplateButton(passwordBox, "PART_RevealButton");
 
                 Assert.False(passwordBox.IsPasswordRevealed);
                 Assert.Equal(Mask(passwordBox), passwordBox.Text);
@@ -94,7 +96,7 @@ public class PasswordBoxTests
     }
 
     [Fact]
-    public void RevealButtonDisabled_MasksRevealedPasswordAndBlocksRevealCommand()
+    public void RevealButtonDisabled_MasksRevealedPasswordAndBlocksButtonClick()
     {
         RunOnStaThread(
             () =>
@@ -104,13 +106,13 @@ public class PasswordBoxTests
                     Password = "secret",
                 };
 
-                ExecuteTemplateCommand(passwordBox, "reveal");
+                ClickTemplateButton(passwordBox, "PART_RevealButton");
                 passwordBox.RevealButtonEnabled = false;
 
                 Assert.False(passwordBox.IsPasswordRevealed);
                 Assert.Equal(Mask(passwordBox), passwordBox.Text);
 
-                ExecuteTemplateCommand(passwordBox, "reveal");
+                ClickTemplateButton(passwordBox, "PART_RevealButton");
 
                 Assert.False(passwordBox.IsPasswordRevealed);
                 Assert.Equal(Mask(passwordBox), passwordBox.Text);
@@ -139,7 +141,7 @@ public class PasswordBoxTests
     }
 
     [Fact]
-    public void DisablingControl_MasksRevealedPasswordAndBlocksRevealCommand()
+    public void DisablingControl_MasksRevealedPasswordAndBlocksRevealButtonClick()
     {
         RunOnStaThread(
             () =>
@@ -149,13 +151,13 @@ public class PasswordBoxTests
                     Password = "secret",
                 };
 
-                ExecuteTemplateCommand(passwordBox, "reveal");
+                ClickTemplateButton(passwordBox, "PART_RevealButton");
                 passwordBox.IsEnabled = false;
 
                 Assert.False(passwordBox.IsPasswordRevealed);
                 Assert.Equal(Mask(passwordBox), passwordBox.Text);
 
-                ExecuteTemplateCommand(passwordBox, "reveal");
+                ClickTemplateButton(passwordBox, "PART_RevealButton");
 
                 Assert.False(passwordBox.IsPasswordRevealed);
                 Assert.Equal(Mask(passwordBox), passwordBox.Text);
@@ -164,7 +166,7 @@ public class PasswordBoxTests
     }
 
     [Fact]
-    public void ClearCommand_ClearsPassword_WhenEditable()
+    public void ClearButtonClick_ClearsPassword_WhenEditable()
     {
         RunOnStaThread(
             () =>
@@ -174,7 +176,7 @@ public class PasswordBoxTests
                     Password = "secret",
                 };
 
-                ExecuteTemplateCommand(passwordBox, "clear");
+                ClickTemplateButton(passwordBox, "PART_ClearButton");
 
                 Assert.Equal(string.Empty, passwordBox.Password);
                 Assert.Equal(string.Empty, passwordBox.Text);
@@ -183,7 +185,7 @@ public class PasswordBoxTests
     }
 
     [Fact]
-    public void ClearCommand_DoesNotChangePassword_WhenClearButtonDisabled()
+    public void ClearButtonClick_DoesNotChangePassword_WhenClearButtonDisabled()
     {
         RunOnStaThread(
             () =>
@@ -194,7 +196,7 @@ public class PasswordBoxTests
                     ClearButtonEnabled = false,
                 };
 
-                ExecuteTemplateCommand(passwordBox, "clear");
+                ClickTemplateButton(passwordBox, "PART_ClearButton");
 
                 Assert.Equal("secret", passwordBox.Password);
                 Assert.Equal(Mask(passwordBox), passwordBox.Text);
@@ -203,7 +205,7 @@ public class PasswordBoxTests
     }
 
     [Fact]
-    public void ClearCommand_DoesNotChangePassword_WhenReadOnly()
+    public void ClearButtonClick_DoesNotChangePassword_WhenReadOnly()
     {
         RunOnStaThread(
             () =>
@@ -214,7 +216,7 @@ public class PasswordBoxTests
                     IsReadOnly = true,
                 };
 
-                ExecuteTemplateCommand(passwordBox, "clear");
+                ClickTemplateButton(passwordBox, "PART_ClearButton");
 
                 Assert.Equal("secret", passwordBox.Password);
                 Assert.Equal(Mask(passwordBox), passwordBox.Text);
@@ -223,7 +225,7 @@ public class PasswordBoxTests
     }
 
     [Fact]
-    public void ClearCommand_DoesNotChangePassword_WhenDisabled()
+    public void ClearButtonClick_DoesNotChangePassword_WhenDisabled()
     {
         RunOnStaThread(
             () =>
@@ -234,7 +236,7 @@ public class PasswordBoxTests
                     IsEnabled = false,
                 };
 
-                ExecuteTemplateCommand(passwordBox, "clear");
+                ClickTemplateButton(passwordBox, "PART_ClearButton");
 
                 Assert.Equal("secret", passwordBox.Password);
                 Assert.Equal(Mask(passwordBox), passwordBox.Text);
@@ -300,9 +302,50 @@ public class PasswordBoxTests
         );
     }
 
-    private static void ExecuteTemplateCommand(UiPasswordBox passwordBox, string parameter)
+    [Fact]
+    public void ReplacingTemplate_DetachesPreviousRevealButtonImmediately()
     {
-        passwordBox.TemplateButtonCommand.Execute(parameter);
+        RunOnStaThread(() =>
+        {
+            var passwordBox = new UiPasswordBox
+            {
+                Password = "secret",
+                Template = CreateTemplate("PART_RevealButton"),
+            };
+
+            Assert.True(passwordBox.ApplyTemplate());
+            var oldButton = Assert.IsAssignableFrom<ButtonBase>(
+                passwordBox.Template.FindName("PART_RevealButton", passwordBox)
+            );
+
+            passwordBox.Template = CreateTemplate("ReplacementRoot");
+            oldButton.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent, oldButton));
+
+            Assert.False(passwordBox.IsPasswordRevealed);
+            Assert.Equal(Mask(passwordBox), passwordBox.Text);
+        });
+    }
+
+    private static void ClickTemplateButton(UiPasswordBox passwordBox, string partName)
+    {
+        if (passwordBox.Template?.FindName(partName, passwordBox) is not ButtonBase)
+        {
+            passwordBox.Template = CreateTemplate(partName);
+            Assert.True(passwordBox.ApplyTemplate());
+        }
+
+        var button = Assert.IsAssignableFrom<ButtonBase>(
+            passwordBox.Template.FindName(partName, passwordBox)
+        );
+        button.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent, button));
+    }
+
+    private static ControlTemplate CreateTemplate(string partName)
+    {
+#pragma warning disable CS0618 // FrameworkElementFactory is sufficient for template-contract tests.
+        var root = new FrameworkElementFactory(typeof(Button)) { Name = partName };
+        return new ControlTemplate(typeof(UiPasswordBox)) { VisualTree = root };
+#pragma warning restore CS0618
     }
 
     private static string Mask(UiPasswordBox passwordBox)

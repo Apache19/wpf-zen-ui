@@ -119,14 +119,13 @@
                         HorizontalAlignment="Center"
                         VerticalAlignment="{TemplateBinding VerticalContentAlignment}">
                         <controls:Button
-                            x:Name="ClearButton"
+                            x:Name="PART_ClearButton"
                             MinWidth="24"
                             MinHeight="24"
                             Padding="0"
                             VerticalAlignment="Top"
                             Appearance="Transparent"
                             BorderThickness="0"
-                            Command="{Binding Path=TemplateButtonCommand, RelativeSource={RelativeSource TemplatedParent}}"
                             Focusable="False"
                             Icon="{m:FluentIconSource Dismiss24}"
                             IsEnabled="{TemplateBinding ClearButtonEnabled}"
@@ -148,15 +147,15 @@
 
             <Trigger Property="VerticalContentAlignment" Value="Stretch">
                 <Setter TargetName="IconPresenter" Property="Margin" Value="{Binding Padding, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource IconTopPaddingConverter}}" />
-                <Setter TargetName="ClearButton" Property="Margin" Value="{Binding Padding, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource ButtonTopPaddingConverter}}" />
+                <Setter TargetName="PART_ClearButton" Property="Margin" Value="{Binding Padding, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource ButtonTopPaddingConverter}}" />
             </Trigger>
             <Trigger Property="VerticalContentAlignment" Value="Top">
                 <Setter TargetName="IconPresenter" Property="Margin" Value="{Binding Padding, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource IconTopPaddingConverter}}" />
-                <Setter TargetName="ClearButton" Property="Margin" Value="{Binding Padding, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource ButtonTopPaddingConverter}}" />
+                <Setter TargetName="PART_ClearButton" Property="Margin" Value="{Binding Padding, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource ButtonTopPaddingConverter}}" />
             </Trigger>
             <Trigger Property="VerticalContentAlignment" Value="Bottom">
                 <Setter TargetName="IconPresenter" Property="Margin" Value="{Binding Padding, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource IconBottomPaddingConverter}}" />
-                <Setter TargetName="ClearButton" Property="Margin" Value="{Binding Padding, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource ButtonBottomPaddingConverter}}" />
+                <Setter TargetName="PART_ClearButton" Property="Margin" Value="{Binding Padding, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource ButtonBottomPaddingConverter}}" />
             </Trigger>
 
             <Trigger Property="IsPlaceholderVisible" Value="False">

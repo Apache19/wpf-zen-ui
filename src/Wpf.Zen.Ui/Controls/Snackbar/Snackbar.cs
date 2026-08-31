@@ -6,7 +6,7 @@
 /* TODO: Refactor as popup, detach from the window renderer */
 
 using System.Windows.Controls;
-using Wpf.Zen.Ui.Input;
+using System.Windows.Controls.Primitives;
 
 // ReSharper disable once CheckNamespace
 namespace Wpf.Zen.Ui.Controls;
@@ -14,8 +14,13 @@ namespace Wpf.Zen.Ui.Controls;
 /// <summary>
 /// Snackbar inform user of a process that an app has performed or will perform. It appears temporarily, towards the bottom of the window.
 /// </summary>
+[TemplatePart(Name = CloseButtonPartName, Type = typeof(ButtonBase))]
 public class Snackbar : ContentControl
 {
+    private const string CloseButtonPartName = "PART_CloseButton";
+
+    private ButtonBase? _closeButton;
+
     #region DP: Icon
 
     /// <summary>Identifies the <see cref="Icon"/> dependency property.</summary>
@@ -117,14 +122,6 @@ public class Snackbar : ContentControl
         typeof(ControlAppearance),
         typeof(Snackbar),
         new PropertyMetadata(ControlAppearance.Normal)
-    );
-
-    /// <summary>Identifies the <see cref="TemplateButtonCommand"/> dependency property.</summary>
-    public static readonly DependencyProperty TemplateButtonCommandProperty = DependencyProperty.Register(
-        nameof(TemplateButtonCommand),
-        typeof(IRelayCommand),
-        typeof(Snackbar),
-        new PropertyMetadata(null)
     );
 
     /// <summary>Identifies the <see cref="ContentForeground"/> dependency property.</summary>
@@ -253,11 +250,6 @@ public class Snackbar : ContentControl
     }
 
     /// <summary>
-    /// Gets the command triggered after clicking the button in the template.
-    /// </summary>
-    public IRelayCommand TemplateButtonCommand => (IRelayCommand)GetValue(TemplateButtonCommandProperty);
-
-    /// <summary>
     /// Occurs when the snackbar is about to open.
     /// </summary>
     public event TypedEventHandler<Snackbar, RoutedEventArgs> Opened
@@ -282,8 +274,32 @@ public class Snackbar : ContentControl
     public Snackbar(SnackbarPresenter presenter)
     {
         Presenter = presenter;
+    }
 
-        SetValue(TemplateButtonCommandProperty, new RelayCommand<object>(_ => Hide()));
+    /// <inheritdoc />
+    /// <remarks>
+    /// The close button is an optional template part. The handler follows the applied visual tree
+    /// rather than being exposed as a command, so custom templates can omit the button without
+    /// affecting queue-driven display and dismissal.
+    /// </remarks>
+    public override void OnApplyTemplate()
+    {
+        DetachCloseButton();
+        base.OnApplyTemplate();
+
+        _closeButton = GetTemplateChild(CloseButtonPartName) as ButtonBase;
+        if (_closeButton is not null)
+        {
+            _closeButton.Click += OnCloseButtonClick;
+        }
+    }
+
+    /// <inheritdoc />
+    protected override void OnTemplateChanged(ControlTemplate oldTemplate, ControlTemplate newTemplate)
+    {
+        // Detach at assignment time because applying the replacement can be deferred until layout.
+        DetachCloseButton();
+        base.OnTemplateChanged(oldTemplate, newTemplate);
     }
 
     protected SnackbarPresenter Presenter { get; }
@@ -340,6 +356,22 @@ public class Snackbar : ContentControl
     protected virtual void Hide()
     {
         _ = Presenter.HideCurrent();
+    }
+
+    private void OnCloseButtonClick(object sender, RoutedEventArgs e)
+    {
+        Hide();
+    }
+
+    private void DetachCloseButton()
+    {
+        if (_closeButton is null)
+        {
+            return;
+        }
+
+        _closeButton.Click -= OnCloseButtonClick;
+        _closeButton = null;
     }
 
     /// <summary>

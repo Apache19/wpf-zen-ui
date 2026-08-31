@@ -4,7 +4,8 @@
 // All Rights Reserved.
 
 using System.Reflection;
-using Wpf.Zen.Ui.Input;
+using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using Size = System.Windows.Size;
 #if NET8_0_OR_GREATER
 using System.Runtime.CompilerServices;
@@ -16,8 +17,19 @@ namespace Wpf.Zen.Ui.Controls;
 /// <summary>
 /// Customized window for notifications.
 /// </summary>
+[TemplatePart(Name = PrimaryButtonPartName, Type = typeof(ButtonBase))]
+[TemplatePart(Name = SecondaryButtonPartName, Type = typeof(ButtonBase))]
+[TemplatePart(Name = CloseButtonPartName, Type = typeof(ButtonBase))]
 public class MessageBox : FluentWindow
 {
+    private const string PrimaryButtonPartName = "PART_PrimaryButton";
+    private const string SecondaryButtonPartName = "PART_SecondaryButton";
+    private const string CloseButtonPartName = "PART_CloseButton";
+
+    private ButtonBase? _primaryButton;
+    private ButtonBase? _secondaryButton;
+    private ButtonBase? _closeButton;
+
     /// <summary>Identifies the <see cref="ShowTitle"/> dependency property.</summary>
     public static readonly DependencyProperty ShowTitleProperty = DependencyProperty.Register(
         nameof(ShowTitle),
@@ -120,14 +132,6 @@ public class MessageBox : FluentWindow
         typeof(bool),
         typeof(MessageBox),
         new PropertyMetadata(true)
-    );
-
-    /// <summary>Identifies the <see cref="TemplateButtonCommand"/> dependency property.</summary>
-    public static readonly DependencyProperty TemplateButtonCommandProperty = DependencyProperty.Register(
-        nameof(TemplateButtonCommand),
-        typeof(IRelayCommand),
-        typeof(MessageBox),
-        new PropertyMetadata(null)
     );
 
     static MessageBox()
@@ -255,11 +259,6 @@ public class MessageBox : FluentWindow
         set => SetValue(IsPrimaryButtonEnabledProperty, value);
     }
 
-    /// <summary>
-    /// Gets the command triggered after clicking the button on the Footer.
-    /// </summary>
-    public IRelayCommand TemplateButtonCommand => (IRelayCommand)GetValue(TemplateButtonCommandProperty);
-
     #if !NET8_0_OR_GREATER
     private static readonly PropertyInfo CanCenterOverWPFOwnerPropertyInfo = typeof(Window).GetProperty(
         "CanCenterOverWPFOwner",
@@ -273,7 +272,6 @@ public class MessageBox : FluentWindow
     public MessageBox()
     {
         Topmost = true;
-        SetValue(TemplateButtonCommandProperty, new RelayCommand<MessageBoxButton>(OnButtonClick));
 
         PreviewMouseDoubleClick += static (_, args) => args.Handled = true;
 
@@ -282,6 +280,46 @@ public class MessageBox : FluentWindow
             var self = (MessageBox)sender;
             self.OnLoaded();
         };
+    }
+
+    /// <inheritdoc />
+    /// <remarks>
+    /// Footer buttons are optional template parts. Handlers are attached to the currently applied
+    /// visual tree only, which lets custom templates omit actions and makes template replacement
+    /// safe.
+    /// </remarks>
+    public override void OnApplyTemplate()
+    {
+        DetachTemplateButtons();
+        base.OnApplyTemplate();
+
+        _primaryButton = GetTemplateChild(PrimaryButtonPartName) as ButtonBase;
+        _secondaryButton = GetTemplateChild(SecondaryButtonPartName) as ButtonBase;
+        _closeButton = GetTemplateChild(CloseButtonPartName) as ButtonBase;
+
+        if (_primaryButton is not null)
+        {
+            _primaryButton.Click += OnPrimaryButtonClick;
+        }
+
+        if (_secondaryButton is not null)
+        {
+            _secondaryButton.Click += OnSecondaryButtonClick;
+        }
+
+        if (_closeButton is not null)
+        {
+            _closeButton.Click += OnCloseButtonClick;
+        }
+    }
+
+    /// <inheritdoc />
+    protected override void OnTemplateChanged(ControlTemplate oldTemplate, ControlTemplate newTemplate)
+    {
+        // Template assignment can leave the old tree alive until the next layout pass. It must no
+        // longer be able to close this window during that interval.
+        DetachTemplateButtons();
+        base.OnTemplateChanged(oldTemplate, newTemplate);
     }
 
     protected TaskCompletionSource<MessageBoxResult>? Tcs { get; set; }
@@ -475,6 +513,42 @@ public class MessageBox : FluentWindow
         };
 
         Close(result);
+    }
+
+    private void OnPrimaryButtonClick(object sender, RoutedEventArgs e)
+    {
+        OnButtonClick(MessageBoxButton.Primary);
+    }
+
+    private void OnSecondaryButtonClick(object sender, RoutedEventArgs e)
+    {
+        OnButtonClick(MessageBoxButton.Secondary);
+    }
+
+    private void OnCloseButtonClick(object sender, RoutedEventArgs e)
+    {
+        OnButtonClick(MessageBoxButton.Close);
+    }
+
+    private void DetachTemplateButtons()
+    {
+        if (_primaryButton is not null)
+        {
+            _primaryButton.Click -= OnPrimaryButtonClick;
+            _primaryButton = null;
+        }
+
+        if (_secondaryButton is not null)
+        {
+            _secondaryButton.Click -= OnSecondaryButtonClick;
+            _secondaryButton = null;
+        }
+
+        if (_closeButton is not null)
+        {
+            _closeButton.Click -= OnCloseButtonClick;
+            _closeButton = null;
+        }
     }
 
     private void CloseCore()

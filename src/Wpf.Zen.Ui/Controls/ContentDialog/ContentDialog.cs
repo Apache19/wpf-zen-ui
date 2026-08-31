@@ -5,8 +5,8 @@
 
 using System.Windows.Automation.Peers;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using Wpf.Zen.Ui.AutomationPeers;
-using Wpf.Zen.Ui.Input;
 
 // ReSharper disable once CheckNamespace
 namespace Wpf.Zen.Ui.Controls;
@@ -14,6 +14,11 @@ namespace Wpf.Zen.Ui.Controls;
 /// <summary>
 /// Dialogue displayed inside the application covering its internals, displaying some content.
 /// </summary>
+/// <remarks>
+/// The default template exposes primary, secondary and close buttons as optional template parts.
+/// Custom templates may omit buttons they do not present; programmatic dialog operations remain
+/// available when a part is absent.
+/// </remarks>
 /// <example>
 /// <code lang="xml">
 /// &lt;ContentDialogHost x:Name="RootContentDialogHost" Grid.Row="0" /&gt;
@@ -43,8 +48,19 @@ namespace Wpf.Zen.Ui.Controls;
 ///     );
 /// </code>
 /// </example>
+[TemplatePart(Name = PrimaryButtonPartName, Type = typeof(ButtonBase))]
+[TemplatePart(Name = SecondaryButtonPartName, Type = typeof(ButtonBase))]
+[TemplatePart(Name = CloseButtonPartName, Type = typeof(ButtonBase))]
 public partial class ContentDialog : ContentControl
 {
+    private const string PrimaryButtonPartName = "PART_PrimaryButton";
+    private const string SecondaryButtonPartName = "PART_SecondaryButton";
+    private const string CloseButtonPartName = "PART_CloseButton";
+
+    private ButtonBase? _primaryButton;
+    private ButtonBase? _secondaryButton;
+    private ButtonBase? _closeButton;
+
     static ContentDialog()
     {
         DefaultStyleKeyProperty.OverrideMetadata(
@@ -52,11 +68,6 @@ public partial class ContentDialog : ContentControl
             new FrameworkPropertyMetadata(typeof(ContentDialog))
         );
     }
-
-    /// <summary>
-    /// Gets command triggered after clicking the button in the template.
-    /// </summary>
-    public IRelayCommand TemplateButtonCommand => (IRelayCommand)GetValue(TemplateButtonCommandProperty);
 
     /// <summary>
     /// Occurs after the dialog is opened.
@@ -114,7 +125,6 @@ public partial class ContentDialog : ContentControl
     /// </summary>
     public ContentDialog()
     {
-        SetValue(TemplateButtonCommandProperty, new RelayCommand<ContentDialogButton>(OnButtonClick));
         RegisterRuntimeEventHandlers();
     }
 
@@ -127,9 +137,47 @@ public partial class ContentDialog : ContentControl
     {
         DialogHost = dialogHost ?? throw new ArgumentNullException(nameof(dialogHost));
 
-        SetValue(TemplateButtonCommandProperty, new RelayCommand<ContentDialogButton>(OnButtonClick));
-
         RegisterRuntimeEventHandlers();
+    }
+
+    /// <inheritdoc />
+    /// <remarks>
+    /// Template buttons belong to a replaceable visual tree. Existing handlers are removed before
+    /// resolving the new parts so applying a template repeatedly cannot retain obsolete buttons or
+    /// invoke a dialog action more than once.
+    /// </remarks>
+    public override void OnApplyTemplate()
+    {
+        DetachTemplateButtons();
+        base.OnApplyTemplate();
+
+        _primaryButton = GetTemplateChild(PrimaryButtonPartName) as ButtonBase;
+        _secondaryButton = GetTemplateChild(SecondaryButtonPartName) as ButtonBase;
+        _closeButton = GetTemplateChild(CloseButtonPartName) as ButtonBase;
+
+        if (_primaryButton is not null)
+        {
+            _primaryButton.Click += OnPrimaryButtonClick;
+        }
+
+        if (_secondaryButton is not null)
+        {
+            _secondaryButton.Click += OnSecondaryButtonClick;
+        }
+
+        if (_closeButton is not null)
+        {
+            _closeButton.Click += OnCloseButtonClick;
+        }
+    }
+
+    /// <inheritdoc />
+    protected override void OnTemplateChanged(ControlTemplate oldTemplate, ControlTemplate newTemplate)
+    {
+        // A replacement template is not necessarily applied immediately. Detach here so a retained
+        // old visual cannot complete the dialog while the new visual tree is still pending.
+        DetachTemplateButtons();
+        base.OnTemplateChanged(oldTemplate, newTemplate);
     }
 
     private void RegisterRuntimeEventHandlers()
@@ -339,6 +387,42 @@ public partial class ContentDialog : ContentControl
         };
 
         Hide(result);
+    }
+
+    private void OnPrimaryButtonClick(object sender, RoutedEventArgs e)
+    {
+        OnButtonClick(ContentDialogButton.Primary);
+    }
+
+    private void OnSecondaryButtonClick(object sender, RoutedEventArgs e)
+    {
+        OnButtonClick(ContentDialogButton.Secondary);
+    }
+
+    private void OnCloseButtonClick(object sender, RoutedEventArgs e)
+    {
+        OnButtonClick(ContentDialogButton.Close);
+    }
+
+    private void DetachTemplateButtons()
+    {
+        if (_primaryButton is not null)
+        {
+            _primaryButton.Click -= OnPrimaryButtonClick;
+            _primaryButton = null;
+        }
+
+        if (_secondaryButton is not null)
+        {
+            _secondaryButton.Click -= OnSecondaryButtonClick;
+            _secondaryButton = null;
+        }
+
+        if (_closeButton is not null)
+        {
+            _closeButton.Click -= OnCloseButtonClick;
+            _closeButton = null;
+        }
     }
 
     protected override AutomationPeer OnCreateAutomationPeer()

@@ -194,7 +194,6 @@
                             VerticalAlignment="Center"
                             Appearance="Transparent"
                             BorderThickness="0"
-                            Command="{Binding Path=TemplateButtonCommand, RelativeSource={RelativeSource TemplatedParent}}"
                             Focusable="False"
                             Icon="{m:FluentIconSource Dismiss24}"
                             IsEnabled="{TemplateBinding ClearButtonEnabled}"

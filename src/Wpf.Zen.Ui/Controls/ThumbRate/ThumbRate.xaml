@@ -28,11 +28,10 @@
                         </Grid.ColumnDefinitions>
 
                         <controls:Button
+                            x:Name="PART_LikeButton"
                             Grid.Column="0"
                             Background="Transparent"
                             BorderBrush="Transparent"
-                            Command="{Binding Path=TemplateButtonCommand, Mode=OneWay, RelativeSource={RelativeSource TemplatedParent}}"
-                            CommandParameter="{x:Static controls:ThumbRateState.Liked}"
                             Foreground="{TemplateBinding Foreground}">
                             <controls:FluentIcon
                                 x:Name="ThumbsUpButtonIcon"
@@ -41,11 +40,10 @@
                         </controls:Button>
 
                         <controls:Button
+                            x:Name="PART_DislikeButton"
                             Grid.Column="1"
                             Background="Transparent"
                             BorderBrush="Transparent"
-                            Command="{Binding Path=TemplateButtonCommand, Mode=OneWay, RelativeSource={RelativeSource TemplatedParent}}"
-                            CommandParameter="{x:Static controls:ThumbRateState.Disliked}"
                             Foreground="{TemplateBinding Foreground}">
                             <controls:FluentIcon
                                 x:Name="ThumbsDownButtonIcon"

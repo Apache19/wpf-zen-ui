@@ -3,8 +3,6 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-using Wpf.Zen.Ui.Input;
-
 // ReSharper disable once CheckNamespace
 namespace Wpf.Zen.Ui.Controls;
 
@@ -187,14 +185,6 @@ public partial class ContentDialog
         typeof(bool),
         typeof(ContentDialog),
         new PropertyMetadata(true)
-    );
-
-    /// <summary>Identifies the <see cref="TemplateButtonCommand"/> dependency property.</summary>
-    public static readonly DependencyProperty TemplateButtonCommandProperty = DependencyProperty.Register(
-        nameof(TemplateButtonCommand),
-        typeof(IRelayCommand),
-        typeof(ContentDialog),
-        new PropertyMetadata(null)
     );
 
     /// <summary>Identifies the <see cref="Opened"/> routed event.</summary>

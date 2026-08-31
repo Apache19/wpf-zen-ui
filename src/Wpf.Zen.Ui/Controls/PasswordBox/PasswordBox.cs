@@ -4,6 +4,7 @@
 // All Rights Reserved.
 
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Data;
 using System.Windows.Input;
 using Wpf.Zen.Ui.Extensions.Wpf;
@@ -14,12 +15,16 @@ namespace Wpf.Zen.Ui.Controls;
 /// <summary>
 /// The modified password control.
 /// </summary>
+[TemplatePart(Name = RevealButtonPartName, Type = typeof(ButtonBase))]
 public sealed partial class PasswordBox : TextBox
 {
+    private const string RevealButtonPartName = "PART_RevealButton";
+
     private readonly PasswordHelper _passwordHelper;
 
     private bool          _isUpdating;
     private ScrollViewer? _contentHost;
+    private ButtonBase?   _revealButton;
 
     private bool CanClearPassword  => IsEnabled && !IsReadOnly && ClearButtonEnabled;
     private bool CanRevealPassword => IsEnabled && RevealButtonEnabled;
@@ -249,8 +254,25 @@ public sealed partial class PasswordBox : TextBox
     /// <inheritdoc />
     public override void OnApplyTemplate()
     {
+        DetachRevealButton();
         base.OnApplyTemplate();
         _contentHost = GetTemplateChild("PART_ContentHost") as ScrollViewer;
+
+        _revealButton = GetTemplateChild(RevealButtonPartName) as ButtonBase;
+        if (_revealButton is not null)
+        {
+            _revealButton.Click += OnRevealButtonClick;
+        }
+    }
+
+    /// <inheritdoc />
+    protected override void OnTemplateChanged(ControlTemplate oldTemplate, ControlTemplate newTemplate)
+    {
+        // PasswordBox owns an additional part beyond TextBox's clear button. Detach it when the
+        // template is assigned because WPF may defer applying the replacement until layout.
+        DetachRevealButton();
+        _contentHost = null;
+        base.OnTemplateChanged(oldTemplate, newTemplate);
     }
 
     /// <inheritdoc />
@@ -397,22 +419,26 @@ public sealed partial class PasswordBox : TextBox
         RaiseEvent(new RoutedEventArgs(IsPasswordRevealedChangedEvent));
     }
 
-    /// <inheritdoc/>
-    protected override void OnTemplateButtonClick(string? parameter)
+    private void OnRevealButtonClick(object sender, RoutedEventArgs e)
     {
-        if (parameter == "reveal")
+        if (!CanRevealPassword)
         {
-            if (!CanRevealPassword)
-            {
-                CoercePasswordRevealState();
-                return;
-            }
-
-            SetCurrentValue(IsPasswordRevealedProperty, !IsPasswordRevealed);
+            CoercePasswordRevealState();
             return;
         }
 
-        base.OnTemplateButtonClick(parameter);
+        SetCurrentValue(IsPasswordRevealedProperty, !IsPasswordRevealed);
+    }
+
+    private void DetachRevealButton()
+    {
+        if (_revealButton is null)
+        {
+            return;
+        }
+
+        _revealButton.Click -= OnRevealButtonClick;
+        _revealButton = null;
     }
 
     /// <summary>

@@ -4,8 +4,8 @@
 // All Rights Reserved.
 
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
-using Wpf.Zen.Ui.Input;
 
 // ReSharper disable once CheckNamespace
 namespace Wpf.Zen.Ui.Controls;
@@ -13,9 +13,13 @@ namespace Wpf.Zen.Ui.Controls;
 /// <summary>
 /// Extended <see cref="System.Windows.Controls.TextBox"/> with additional parameters like <see cref="PlaceholderText"/>.
 /// </summary>
+[TemplatePart(Name = ClearButtonPartName, Type = typeof(ButtonBase))]
 public class TextBox : System.Windows.Controls.TextBox
 {
+    private const string ClearButtonPartName = "PART_ClearButton";
+
     private readonly TextEditorMouseInputHelper _mouseInputHelper;
+    private ButtonBase? _clearButton;
 
     #region Interaction appearance
 
@@ -532,19 +536,6 @@ public class TextBox : System.Windows.Controls.TextBox
         set => SetValue(AutoSelectProperty, value);
     }
 
-    /// <summary>Identifies the <see cref="TemplateButtonCommand"/> dependency property.</summary>
-    public static readonly DependencyProperty TemplateButtonCommandProperty = DependencyProperty.Register(
-        nameof(TemplateButtonCommand),
-        typeof(IRelayCommand),
-        typeof(TextBox),
-        new PropertyMetadata(null)
-    );
-
-    /// <summary>
-    /// Gets the command triggered when clicking the button.
-    /// </summary>
-    public IRelayCommand TemplateButtonCommand => (IRelayCommand)GetValue(TemplateButtonCommandProperty);
-
     static TextBox()
     {
         DefaultStyleKeyProperty.OverrideMetadata(
@@ -591,7 +582,6 @@ public class TextBox : System.Windows.Controls.TextBox
     {
         _mouseInputHelper = new TextEditorMouseInputHelper(this);
 
-        SetValue(TemplateButtonCommandProperty, new RelayCommand<string>(OnTemplateButtonClick));
         IsPlaceholderVisible = PlaceholderEnabled;
         UpdateVisualBrushes();
 
@@ -727,9 +717,25 @@ public class TextBox : System.Windows.Controls.TextBox
     /// <inheritdoc />
     public override void OnApplyTemplate()
     {
+        DetachClearButton();
         base.OnApplyTemplate();
 
         _mouseInputHelper.OnApplyTemplate(GetTemplateChild("PART_ContentHost") as ScrollViewer);
+
+        _clearButton = GetTemplateChild(ClearButtonPartName) as ButtonBase;
+        if (_clearButton is not null)
+        {
+            _clearButton.Click += OnClearButtonPartClick;
+        }
+    }
+
+    /// <inheritdoc />
+    protected override void OnTemplateChanged(ControlTemplate oldTemplate, ControlTemplate newTemplate)
+    {
+        // The old template can remain instantiated until layout applies the replacement. Detach
+        // immediately so an obsolete clear button cannot continue mutating this editor.
+        DetachClearButton();
+        base.OnTemplateChanged(oldTemplate, newTemplate);
     }
 
     /// <inheritdoc />
@@ -886,12 +892,20 @@ public class TextBox : System.Windows.Controls.TextBox
         }
     }
 
-    /// <summary>
-    /// Triggered by clicking a button in the control template.
-    /// </summary>
-    protected virtual void OnTemplateButtonClick(string? parameter)
+    private void OnClearButtonPartClick(object sender, RoutedEventArgs e)
     {
         OnClearButtonClick();
+    }
+
+    private void DetachClearButton()
+    {
+        if (_clearButton is null)
+        {
+            return;
+        }
+
+        _clearButton.Click -= OnClearButtonPartClick;
+        _clearButton = null;
     }
 
     private static void OnPlaceholderEnabledChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)

@@ -84,9 +84,9 @@
                             x:Name="SuggestionPopup"
                             MinWidth="{TemplateBinding ActualWidth}"
                             MinHeight="{TemplateBinding ActualHeight}"
-                            controls:PopupSlideAnimator.IsEnabled="True"
                             controls:PopupPlacement.IsEnabled="True"
                             controls:PopupShadow.IsEnabled="True"
+                            controls:PopupSlideAnimator.IsEnabled="True"
                             AllowsTransparency="True"
                             Focusable="False"
                             IsOpen="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=IsSuggestionListOpen, Mode=TwoWay}"
@@ -100,7 +100,7 @@
                                 BorderThickness="1"
                                 CornerRadius="8"
                                 SnapsToDevicePixels="True">
-                                <ListView
+                                <ListBox
                                     x:Name="PART_SuggestionsList"
                                     MaxHeight="{TemplateBinding MaxSuggestionListHeight}"
                                     Padding="4"
@@ -113,8 +113,8 @@
                                     KeyboardNavigation.DirectionalNavigation="Cycle"
                                     OverridesDefaultStyle="True"
                                     SelectionMode="Single">
-                                    <ListView.Template>
-                                        <ControlTemplate TargetType="{x:Type ListView}">
+                                    <ListBox.Template>
+                                        <ControlTemplate TargetType="{x:Type ListBox}">
                                             <controls:PassiveScrollViewer
                                                 Padding="{TemplateBinding Padding}"
                                                 CanContentScroll="True"
@@ -123,16 +123,8 @@
                                                 <ItemsPresenter SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
                                             </controls:PassiveScrollViewer>
                                         </ControlTemplate>
-                                    </ListView.Template>
-                                    <ListView.ItemsPanel>
-                                        <ItemsPanelTemplate>
-                                            <VirtualizingStackPanel
-                                                IsItemsHost="True"
-                                                IsVirtualizing="True"
-                                                VirtualizationMode="Recycling" />
-                                        </ItemsPanelTemplate>
-                                    </ListView.ItemsPanel>
-                                </ListView>
+                                    </ListBox.Template>
+                                </ListBox>
                             </Border>
                         </Popup>
                     </Grid>

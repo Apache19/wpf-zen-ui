@@ -88,11 +88,10 @@
                                         </Grid.ColumnDefinitions>
 
                                         <controls:Button
+                                            x:Name="PART_PrimaryButton"
                                             Grid.Column="0"
                                             HorizontalAlignment="Stretch"
                                             Appearance="{TemplateBinding PrimaryButtonAppearance}"
-                                            Command="{Binding RelativeSource={RelativeSource AncestorType={x:Type controls:MessageBox}}, Path=TemplateButtonCommand, Mode=OneTime}"
-                                            CommandParameter="{x:Static controls:MessageBoxButton.Primary}"
                                             Content="{TemplateBinding PrimaryButtonText}"
                                             Icon="{TemplateBinding PrimaryButtonIcon}"
                                             IsDefault="True"
@@ -100,22 +99,20 @@
                                             Visibility="{TemplateBinding IsPrimaryButtonEnabled, Converter={StaticResource BoolToVisibilityConverter}}" />
 
                                         <controls:Button
+                                            x:Name="PART_SecondaryButton"
                                             Grid.Column="2"
                                             HorizontalAlignment="Stretch"
                                             Appearance="{TemplateBinding SecondaryButtonAppearance}"
-                                            Command="{Binding RelativeSource={RelativeSource AncestorType={x:Type controls:MessageBox}}, Path=TemplateButtonCommand, Mode=OneTime}"
-                                            CommandParameter="{x:Static controls:MessageBoxButton.Secondary}"
                                             Content="{TemplateBinding SecondaryButtonText}"
                                             Icon="{TemplateBinding SecondaryButtonIcon}"
                                             IsEnabled="{TemplateBinding IsSecondaryButtonEnabled}"
                                             Visibility="{TemplateBinding IsSecondaryButtonEnabled, Converter={StaticResource BoolToVisibilityConverter}}" />
 
                                         <controls:Button
+                                            x:Name="PART_CloseButton"
                                             Grid.Column="4"
                                             HorizontalAlignment="Stretch"
                                             Appearance="{TemplateBinding CloseButtonAppearance}"
-                                            Command="{Binding RelativeSource={RelativeSource AncestorType={x:Type controls:MessageBox}}, Path=TemplateButtonCommand, Mode=OneTime}"
-                                            CommandParameter="{x:Static controls:MessageBoxButton.Close}"
                                             Content="{TemplateBinding CloseButtonText}"
                                             Icon="{TemplateBinding CloseButtonIcon}"
                                             IsCancel="True" />

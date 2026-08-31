@@ -16,7 +16,6 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using Wpf.Zen.Ui.Controls;
-using Wpf.Zen.Ui.Input;
 
 namespace Wpf.Zen.Ui.UnitTests.Controls.NavigationView;
 
@@ -1655,7 +1654,7 @@ public class NavigationViewTests
             object allowedItem = first;
             object? eventParameter = null;
             object? executedParameter = null;
-            var command = new RelayCommand<object>(
+            var command = new TestCommand(
                 parameter => executedParameter = parameter,
                 parameter => ReferenceEquals(parameter, allowedItem)
             );
@@ -1813,7 +1812,7 @@ public class NavigationViewTests
                 Style = Assert.IsType<Style>(resources[typeof(BreadcrumbBarItem)]),
                 Content = "Folder",
                 CommandParameter = commandParameter,
-                Command = new RelayCommand<object>(parameter =>
+                Command = new TestCommand(parameter =>
                 {
                     Assert.Equal(commandParameter, parameter);
                     invocationOrder.Add("Command");
@@ -2217,6 +2216,23 @@ public class NavigationViewTests
         public void OnNavigationExited() { }
 
         public void FailEntry(Exception exception) => _entryCompletion.SetException(exception);
+    }
+
+    private sealed class TestCommand(
+        Action<object?> execute,
+        Predicate<object?>? canExecute = null
+    ) : ICommand
+    {
+        public event EventHandler? CanExecuteChanged;
+
+        public bool CanExecute(object? parameter) => canExecute?.Invoke(parameter) ?? true;
+
+        public void Execute(object? parameter) => execute(parameter);
+
+        public void NotifyCanExecuteChanged()
+        {
+            CanExecuteChanged?.Invoke(this, EventArgs.Empty);
+        }
     }
 
     private sealed class InputTestNavigationView : Wpf.Zen.Ui.Controls.NavigationView
