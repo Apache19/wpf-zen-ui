@@ -17,9 +17,6 @@
     <system:Double x:Key="TreeViewItemFontSize">14</system:Double>
 
     <Style x:Key="ExpandCollapseToggleButtonStyle" TargetType="{x:Type ToggleButton}">
-        <!--  Universal WPF Zen UI focus  -->
-        <Setter Property="FocusVisualStyle" Value="{DynamicResource {x:Static theming:StyleKeys.DefaultControlFocusVisualStyle}}" />
-        <!--  Universal WPF Zen UI focus  -->
         <Setter Property="Focusable" Value="False" />
         <Setter Property="Foreground" Value="{m:DynamicBrush TextFillPrimary}" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
@@ -72,11 +69,7 @@
         </Setter>
     </Style>
 
-    <!--  todo 这是原生 TreeViewItem 样式  -->
     <Style x:Key="DefaultTreeViewItemStyle" TargetType="{x:Type TreeViewItem}">
-        <!--  Universal WPF Zen UI focus  -->
-        <Setter Property="FocusVisualStyle" Value="{DynamicResource {x:Static theming:StyleKeys.DefaultControlFocusVisualStyle}}" />
-        <!--  Universal WPF Zen UI focus  -->
         <Setter Property="Foreground" Value="{m:DynamicBrush TextFillPrimary}" />
         <Setter Property="Background" Value="{m:DynamicBrush SubtleFillTransparent}" />
         <Setter Property="Padding" Value="4" />

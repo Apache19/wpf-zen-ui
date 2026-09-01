@@ -9,7 +9,6 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Zen.Ui.Controls"
-    xmlns:theming="clr-namespace:Wpf.Zen.Ui.Theming"
     xmlns:m="clr-namespace:Wpf.Zen.Ui.Markup">
 
     <Style x:Key="DefaultTabItemStyle" TargetType="{x:Type TabItem}">
@@ -20,7 +19,6 @@
         <Setter Property="VerticalContentAlignment" Value="Stretch" />
         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
         <Setter Property="Foreground" Value="{m:DynamicBrush TextFillPrimary}" />
-        <Setter Property="FocusVisualStyle" Value="{DynamicResource {x:Static theming:StyleKeys.DefaultControlFocusVisualStyle}}" />
         <Setter Property="KeyboardNavigation.IsTabStop" Value="True" />
         <Setter Property="Focusable" Value="True" />
         <Setter Property="SnapsToDevicePixels" Value="True" />

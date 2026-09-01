@@ -12,7 +12,6 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Zen.Ui.Controls"
-    xmlns:theming="clr-namespace:Wpf.Zen.Ui.Theming"
     xmlns:m="clr-namespace:Wpf.Zen.Ui.Markup">
 
     <Thickness x:Key="HyperlinkButtonPadding">11,5,11,6</Thickness>
@@ -21,9 +20,6 @@
 
     <Style x:Key="DefaultUiHyperlinkButtonStyle" TargetType="{x:Type controls:HyperlinkButton}">
         <Setter Property="IconMargin" Value="{StaticResource HyperlinkButtonIconMargin}" />
-        <!--  Universal WPF Zen UI focus  -->
-        <Setter Property="FocusVisualStyle" Value="{DynamicResource {x:Static theming:StyleKeys.DefaultControlFocusVisualStyle}}" />
-        <!--  Universal WPF Zen UI focus  -->
         <Setter Property="Background" Value="{m:DynamicBrush SubtleFillTransparent}" />
         <Setter Property="Foreground" Value="{m:DynamicBrush AccentTextPrimary}" />
         <Setter Property="BorderThickness" Value="{StaticResource HyperlinkButtonBorderThemeThickness}" />

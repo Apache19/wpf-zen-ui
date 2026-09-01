@@ -179,7 +179,6 @@
     </ControlTemplate>
 
     <Style x:Key="DefaultSliderStyle" TargetType="{x:Type Slider}">
-        <Setter Property="FocusVisualStyle" Value="{DynamicResource {x:Static theming:StyleKeys.DefaultControlFocusVisualStyle}}" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
         <Style.Triggers>
             <Trigger Property="Orientation" Value="Horizontal">

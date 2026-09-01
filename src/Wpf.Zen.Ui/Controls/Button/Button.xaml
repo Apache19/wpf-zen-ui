@@ -24,23 +24,6 @@
         Offset="2 2 2 2"
         PreserveZeroCorners="True" />
 
-    <Style x:Key="UiButtonFocusVisualStyle">
-        <Setter Property="Control.Template">
-            <Setter.Value>
-                <ControlTemplate>
-                    <!--  ReSharper disable once Xaml.BindingWithContextNotResolved  -->
-                    <Border
-                        Margin="-2"
-                        BorderBrush="{m:DynamicBrush KeyboardFocusBorder}"
-                        BorderThickness="1"
-                        CornerRadius="{Binding AdornedElement.CornerRadius, RelativeSource={RelativeSource AncestorType={x:Type Adorner}}, Converter={StaticResource FocusCornerRadiusConverter}}"
-                        IsHitTestVisible="False"
-                        SnapsToDevicePixels="True" />
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
-    </Style>
-
     <ControlTemplate x:Key="UiButtonControlTemplate" TargetType="{x:Type controls:Button}">
         <controls:UiBorder
             x:Name="border"
@@ -96,13 +79,31 @@
     </ControlTemplate>
 
     <Style x:Key="UiButtonStyle" BasedOn="{StaticResource UiButtonAppearanceStyle}" TargetType="{x:Type controls:Button}">
+        <Style.Resources>
+            <!--  按钮的视觉焦点样式特意往外扩了一圈，防止按钮显示强烈背景色时看不清焦点视觉样式  -->
+            <Style x:Key="{x:Static SystemParameters.FocusVisualStyleKey}">
+                <Setter Property="Control.Template">
+                    <Setter.Value>
+                        <ControlTemplate>
+                            <!--  ReSharper disable once Xaml.BindingWithContextNotResolved  -->
+                            <Border
+                                Margin="-2"
+                                BorderBrush="{m:DynamicBrush KeyboardFocusBorder}"
+                                BorderThickness="1"
+                                CornerRadius="{Binding AdornedElement.CornerRadius, RelativeSource={RelativeSource AncestorType={x:Type Adorner}}, Converter={StaticResource FocusCornerRadiusConverter}}"
+                                IsHitTestVisible="False"
+                                SnapsToDevicePixels="True" />
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+        </Style.Resources>
         <Setter Property="Padding" Value="{m:DynamicValue ButtonThemePadding}" />
         <Setter Property="CornerRadius" Value="{m:DynamicValue ControlCornerRadius}" />
         <Setter Property="HorizontalContentAlignment" Value="Center" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="Template" Value="{StaticResource UiButtonControlTemplate}" />
-        <Setter Property="FocusVisualStyle" Value="{StaticResource UiButtonFocusVisualStyle}" />
         <Setter Property="controls:UiBorder.BorderPlacement" Value="Inside" />
         <Setter Property="IconMargin" Value="0,0,8,0" />
     </Style>

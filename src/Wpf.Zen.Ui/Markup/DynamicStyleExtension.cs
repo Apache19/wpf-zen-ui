@@ -68,7 +68,6 @@ internal static class StyleTokenResourceKey
             StyleToken.DefaultUiTextBox           => StyleKeys.DefaultUiTextBoxStyle,
             StyleToken.DefaultRichTextBox         => StyleKeys.DefaultRichTextBoxStyle,
             StyleToken.UiRichTextBox              => StyleKeys.UiRichTextBoxStyle,
-            StyleToken.DefaultControlFocusVisual  => StyleKeys.DefaultControlFocusVisualStyle,
             StyleToken.DefaultScrollViewer        => StyleKeys.DefaultScrollViewerStyle,
             StyleToken.UiDynamicScrollViewer      => StyleKeys.UiDynamicScrollViewerStyle,
             StyleToken.IconInfoBadge              => StyleKeys.IconInfoBadgeStyle,

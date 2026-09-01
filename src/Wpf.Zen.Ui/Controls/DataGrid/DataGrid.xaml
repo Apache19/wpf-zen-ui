@@ -947,7 +947,6 @@
     </Style>
 
     <Style x:Key="DefaultDataGridTextElementStyle" TargetType="{x:Type TextBlock}">
-        <Setter Property="FocusVisualStyle" Value="{DynamicResource {x:Static theming:StyleKeys.DefaultControlFocusVisualStyle}}" />
         <Setter Property="Foreground" Value="{m:DynamicBrush TextFillPrimary}" />
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="HorizontalAlignment" Value="Stretch" />

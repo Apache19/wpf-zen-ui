@@ -13,7 +13,6 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Zen.Ui.Controls"
     xmlns:system="clr-namespace:System;assembly=System.Runtime"
-    xmlns:t="clr-namespace:Wpf.Zen.Ui.Theming"
     xmlns:m="clr-namespace:Wpf.Zen.Ui.Markup">
 
     <Thickness x:Key="CardActionPadding">14,16,14,16</Thickness>
@@ -25,9 +24,6 @@
 
     <Style x:Key="DefaultUiCardActionStyle" TargetType="{x:Type controls:CardAction}">
         <Setter Property="IconMargin" Value="{StaticResource CardActionIconMargin}" />
-        <!--  Universal WPF Zen UI focus  -->
-        <Setter Property="FocusVisualStyle" Value="{DynamicResource {x:Static t:StyleKeys.DefaultControlFocusVisualStyle}}" />
-        <!--  Universal WPF Zen UI focus  -->
         <Setter Property="Background" Value="{m:DynamicBrush CardBackgroundFillDefault}" />
         <Setter Property="Foreground" Value="{m:DynamicBrush TextFillPrimary}" />
         <Setter Property="BorderBrush" Value="{m:DynamicBrush CardStrokeDefault}" />

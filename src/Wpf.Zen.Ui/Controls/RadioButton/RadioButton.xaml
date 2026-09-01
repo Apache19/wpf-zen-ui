@@ -16,7 +16,6 @@
 
     <Style x:Key="{x:Static t:StyleKeys.DefaultRadioButtonStyle}" TargetType="{x:Type RadioButton}">
         <Setter Property="OverridesDefaultStyle" Value="True" />
-        <Setter Property="FocusVisualStyle" Value="{m:DynamicStyle DefaultControlFocusVisual}" />
         <Setter Property="Background" Value="{m:DynamicBrush ControlAltFillSecondary}" />
         <Setter Property="BorderBrush" Value="{m:DynamicBrush ControlStrongStrokeDefault}" />
         <Setter Property="BorderThickness" Value="1" />

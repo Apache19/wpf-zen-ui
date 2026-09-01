@@ -227,7 +227,6 @@
                 Content="{TemplateBinding Header}"
                 ContentTemplate="{TemplateBinding HeaderTemplate}"
                 ContentTemplateSelector="{TemplateBinding HeaderTemplateSelector}"
-                FocusVisualStyle="{m:DynamicStyle DefaultControlFocusVisual}"
                 OverridesDefaultStyle="True"
                 Style="{x:Null}"
                 Template="{StaticResource NavigationViewItemLeftHeaderButtonTemplate}" />
@@ -287,7 +286,6 @@
                 Content="{TemplateBinding Header}"
                 ContentTemplate="{TemplateBinding HeaderTemplate}"
                 ContentTemplateSelector="{TemplateBinding HeaderTemplateSelector}"
-                FocusVisualStyle="{m:DynamicStyle DefaultControlFocusVisual}"
                 OverridesDefaultStyle="True"
                 Style="{x:Null}"
                 Template="{StaticResource NavigationViewItemLeftHeaderButtonTemplate}">

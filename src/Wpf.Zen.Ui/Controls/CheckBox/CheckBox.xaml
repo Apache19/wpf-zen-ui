@@ -17,7 +17,6 @@
 
     <Style x:Key="{x:Static t:StyleKeys.DefaultCheckBoxStyle}" TargetType="{x:Type CheckBox}">
         <Setter Property="OverridesDefaultStyle" Value="True" />
-        <Setter Property="FocusVisualStyle" Value="{DynamicResource {x:Static t:StyleKeys.DefaultControlFocusVisualStyle}}" />
         <Setter Property="Background" Value="{m:DynamicBrush ControlAltFillSecondary}" />
         <Setter Property="BorderBrush" Value="{m:DynamicBrush ControlStrongStrokeDefault}" />
         <Setter Property="BorderThickness" Value="1" />

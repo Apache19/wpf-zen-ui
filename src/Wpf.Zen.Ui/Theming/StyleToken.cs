@@ -30,7 +30,6 @@ public enum StyleToken
     DefaultUiTextBox,
     DefaultRichTextBox,
     UiRichTextBox,
-    DefaultControlFocusVisual,
     DefaultScrollViewer,
     UiDynamicScrollViewer,
     IconInfoBadge,
