@@ -11,6 +11,12 @@
     xmlns:c="clr-namespace:Wpf.Zen.Ui.Converters"
     xmlns:m="clr-namespace:Wpf.Zen.Ui.Markup">
 
+    <!--
+        ThemeManager merges this dictionary into every process-wide resource graph, independently of the selected
+        palette and optional native-control styling. Keep resources here when they must be available through both
+        Application.Resources and the applicationless SystemResources host.
+    -->
+
     <Style x:Key="{x:Static SystemParameters.FocusVisualStyleKey}">
         <Setter Property="Control.Template">
             <Setter.Value>

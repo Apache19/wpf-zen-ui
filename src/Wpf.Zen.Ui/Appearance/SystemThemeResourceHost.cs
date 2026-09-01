@@ -179,11 +179,11 @@ internal sealed class SystemThemeResourceHost
     }
 
     /// <summary>
-    /// Installs <paramref name="activeTheme"/> as the current process-wide WPF theme overlay.
+    /// Installs <paramref name="activeResources"/> as the current process-wide WPF theme overlay.
     /// </summary>
-    /// <param name="activeTheme">
-    /// The fully composed Wpf.Zen.Ui theme dictionary, including semantic colors, optional native-control styles,
-    /// accent resources, and user additions in their final precedence order.
+    /// <param name="activeResources">
+    /// The palette-independent global resources used before theme management is activated, or the fully composed
+    /// Wpf.Zen.Ui theme dictionary after activation.
     /// </param>
     /// <param name="nativeControlStylesChanged">
     /// <see langword="true"/> when implicit native-control type keys were added or removed. Existing native controls
@@ -194,11 +194,11 @@ internal sealed class SystemThemeResourceHost
     /// <see langword="true"/> when installation and invalidation succeeded; otherwise <see langword="false"/>.
     /// On failure the method restores the framework dictionaries before returning.
     /// </returns>
-    internal bool TryApply(ResourceDictionary activeTheme, bool nativeControlStylesChanged)
+    internal bool TryApply(ResourceDictionary activeResources, bool nativeControlStylesChanged)
     {
-        if (activeTheme is null)
+        if (activeResources is null)
         {
-            throw new ArgumentNullException(nameof(activeTheme));
+            throw new ArgumentNullException(nameof(activeResources));
         }
 
         SlotState presentationFrameworkState = default;
@@ -252,9 +252,9 @@ internal sealed class SystemThemeResourceHost
 
             ResourceDictionary presentationFrameworkOverlay = CreateThemeOverlay(
                 _presentationFrameworkBaseDictionary,
-                activeTheme
+                activeResources
             );
-            ResourceDictionary wpfUiOverlay = CreateThemeOverlay(activeTheme);
+            ResourceDictionary wpfUiOverlay = CreateThemeOverlay(activeResources);
 
             lock (themeLock)
             {
@@ -443,14 +443,14 @@ internal sealed class SystemThemeResourceHost
 
     private ResourceDictionary CreateThemeOverlay(
         ResourceDictionary presentationFrameworkBase,
-        ResourceDictionary activeTheme)
+        ResourceDictionary activeResources)
     {
         var overlay = new ResourceDictionary();
 
         // Merged dictionaries are searched in reverse order. The active Wpf.Zen.Ui dictionary therefore overrides native
         // type keys supplied by PresentationFramework while every untouched WPF control keeps its original theme style.
         overlay.MergedDictionaries.Add(presentationFrameworkBase);
-        overlay.MergedDictionaries.Add(activeTheme);
+        overlay.MergedDictionaries.Add(activeResources);
 
         // ResourceDictionary normally receives this flag only while SystemResources parses a theme BAML stream. The
         // flag seals Style/Template values and detaches them from their construction Dispatcher, which is required for
@@ -460,10 +460,10 @@ internal sealed class SystemThemeResourceHost
         return overlay;
     }
 
-    private ResourceDictionary CreateThemeOverlay(ResourceDictionary activeTheme)
+    private ResourceDictionary CreateThemeOverlay(ResourceDictionary activeResources)
     {
         var overlay = new ResourceDictionary();
-        overlay.MergedDictionaries.Add(activeTheme);
+        overlay.MergedDictionaries.Add(activeResources);
 
         // The themed slot contains palette/component resources only. A missing Wpf.Zen.Ui control type key deliberately
         // falls through to the assembly's one normal Generic.xaml dictionary, keeping every ThemeStyle and Template

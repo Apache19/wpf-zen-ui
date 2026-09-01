@@ -34,6 +34,38 @@ namespace Wpf.Zen.Ui.WinFormsHostTests;
 public class ElementHostThemeTests
 {
     /// <summary>
+    /// Verifies that resources required for every theme graph reach WPF's system-resource lookup when a host has no
+    /// <see cref="Application"/>. Focus adorners use this exact lookup path whenever an element retains WPF's sentinel
+    /// default <see cref="FrameworkElement.FocusVisualStyle"/> value.
+    /// </summary>
+    [Fact]
+    public void Initialize_InstallsGlobalFocusVisualStyleWithoutApplicationOrThemeConfiguration()
+    {
+        RunOnStaThread(() =>
+        {
+            EnsureWindowsDirectoryEnvironment();
+            ResetThemeManagerToUnconfiguredState();
+            Assert.Null(Application.Current);
+
+            ThemeManager.Initialize();
+
+            var probe = new Border();
+            Style focusVisualStyle = Assert.IsType<Style>(
+                probe.TryFindResource(SystemParameters.FocusVisualStyleKey)
+            );
+            Setter templateSetter = Assert.IsType<Setter>(
+                Assert.Single(
+                    focusVisualStyle.Setters,
+                    setter => setter is Setter candidate && candidate.Property == Control.TemplateProperty
+                )
+            );
+            var template = Assert.IsType<ControlTemplate>(templateSetter.Value);
+
+            Assert.IsType<Border>(template.LoadContent());
+        });
+    }
+
+    /// <summary>
     /// Verifies that the slim scroll-bar style scopes WPF's button-size resource overrides where the template Track
     /// can resolve them without relying on Application.Resources or on SystemResources accepting system-key
     /// overrides in a themed dictionary.

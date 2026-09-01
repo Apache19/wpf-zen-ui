@@ -26,9 +26,13 @@ public class ThemeManagerTests
         "/Wpf.Zen.Ui;component/Resources/Theme/Dark.xaml",
         UriKind.Relative
     );
+    private static readonly Uri GlobalResourcesUri = new(
+        "/Wpf.Zen.Ui;component/Resources/GlobalResources.xaml",
+        UriKind.Relative
+    );
 
     [Fact]
-    public void Initialize_DoesNotInstallGlobalThemeUntilExplicitConfiguration()
+    public void Initialize_InstallsOnlyPaletteIndependentGlobalResources()
     {
         RunIsolated(() =>
         {
@@ -37,7 +41,11 @@ public class ThemeManagerTests
 
             ThemeManager.Initialize();
 
-            Assert.Empty(Application.Current.Resources.MergedDictionaries);
+            ResourceDictionary globalResources = Assert.Single(
+                Application.Current.Resources.MergedDictionaries
+            );
+            Assert.Equal(GlobalResourcesUri, globalResources.Source);
+            Assert.IsType<Style>(Application.Current.Resources[SystemParameters.FocusVisualStyleKey]);
 
             // The first explicit configuration must apply even though every value equals ThemeManager's defaults.
             ThemeManager.Configure(
@@ -51,10 +59,9 @@ public class ThemeManagerTests
                 null
             );
 
-            Assert.Same(
-                GetThemeDictionary(ThemeVariant.Light),
-                Assert.Single(Application.Current.Resources.MergedDictionaries)
-            );
+            Assert.Equal(2, Application.Current.Resources.MergedDictionaries.Count);
+            Assert.Same(GetThemeDictionary(ThemeVariant.Light), Application.Current.Resources.MergedDictionaries[0]);
+            Assert.Same(globalResources, Application.Current.Resources.MergedDictionaries[1]);
             Assert.False(ContainsMergedSource("/Wpf.Zen.Ui;component/Resources/NativeControlStyles.xaml"));
         });
     }
@@ -71,10 +78,9 @@ public class ThemeManagerTests
             // the global resources even when the supplied values are identical to the manager's current defaults.
             ThemeManager.Configure(ThemePreference.Light, AccentColorSource.Default);
 
-            Assert.Same(
-                GetThemeDictionary(ThemeVariant.Light),
-                Assert.Single(Application.Current.Resources.MergedDictionaries)
-            );
+            Assert.Equal(2, Application.Current.Resources.MergedDictionaries.Count);
+            Assert.Same(GetThemeDictionary(ThemeVariant.Light), Application.Current.Resources.MergedDictionaries[0]);
+            Assert.Equal(GlobalResourcesUri, Application.Current.Resources.MergedDictionaries[1].Source);
             Assert.False(ContainsMergedSource("/Wpf.Zen.Ui;component/Resources/NativeControlStyles.xaml"));
         });
     }
@@ -91,10 +97,9 @@ public class ThemeManagerTests
             options.BeginInit();
             options.EndInit();
 
-            Assert.Same(
-                GetThemeDictionary(ThemeVariant.Light),
-                Assert.Single(Application.Current.Resources.MergedDictionaries)
-            );
+            Assert.Equal(2, Application.Current.Resources.MergedDictionaries.Count);
+            Assert.Same(GetThemeDictionary(ThemeVariant.Light), Application.Current.Resources.MergedDictionaries[0]);
+            Assert.Equal(GlobalResourcesUri, Application.Current.Resources.MergedDictionaries[1].Source);
             Assert.False(ContainsMergedSource("/Wpf.Zen.Ui;component/Resources/NativeControlStyles.xaml"));
         });
     }
@@ -257,6 +262,51 @@ public class ThemeManagerTests
 
             ThemeManager.EnableNativeControlStyling = true;
             Assert.True(ContainsMergedSource("/Wpf.Zen.Ui;component/Resources/NativeControlStyles.xaml"));
+        });
+    }
+
+    [Fact]
+    public void GlobalResources_AreMergedForEveryPaletteAndNativeStylingState()
+    {
+        RunIsolated(() =>
+        {
+            Assert.True(ContainsMergedSource(GlobalResourcesUri.OriginalString));
+            Assert.IsType<Style>(Application.Current!.Resources[SystemParameters.FocusVisualStyleKey]);
+
+            ThemeManager.Preference = ThemePreference.Dark;
+            Assert.True(ContainsMergedSource(GlobalResourcesUri.OriginalString));
+            Assert.IsType<Style>(Application.Current.Resources[SystemParameters.FocusVisualStyleKey]);
+
+            ThemeManager.EnableNativeControlStyling = true;
+            Assert.True(ContainsMergedSource(GlobalResourcesUri.OriginalString));
+            Assert.IsType<Style>(Application.Current.Resources[SystemParameters.FocusVisualStyleKey]);
+
+            var highContrastLight = new List<ResourceDictionary>();
+            var highContrastDark = new List<ResourceDictionary>();
+            var highContrastGlobalResources = new ResourceDictionary { Source = GlobalResourcesUri };
+            ThemeManager.PopulateThemeDictionaries(
+                highContrastLight,
+                highContrastDark,
+                highContrast: true,
+                accentColor: default,
+                nativeControlStyles: null,
+                globalResources: highContrastGlobalResources
+            );
+
+            Assert.Same(
+                highContrastGlobalResources,
+                Assert.Single(
+                    highContrastLight,
+                    dictionary => dictionary.Source == GlobalResourcesUri
+                )
+            );
+            Assert.Same(
+                highContrastGlobalResources,
+                Assert.Single(
+                    highContrastDark,
+                    dictionary => dictionary.Source == GlobalResourcesUri
+                )
+            );
         });
     }
 
@@ -463,7 +513,8 @@ public class ThemeManagerTests
                 normalDark,
                 highContrast: false,
                 accentColor: BuiltInAccent,
-                nativeControlStyles: null
+                nativeControlStyles: null,
+                globalResources: null
             );
 
             Assert.Equal(DarkThemeUri, normalLight[^1].Source);
@@ -476,7 +527,8 @@ public class ThemeManagerTests
                 highContrastDark,
                 highContrast: true,
                 accentColor: default,
-                nativeControlStyles: null
+                nativeControlStyles: null,
+                globalResources: null
             );
 
             Assert.Equal(LightThemeUri, highContrastLight[^1].Source);
@@ -794,10 +846,21 @@ public class ThemeManagerTests
 
     private static bool ContainsMergedSource(string source)
     {
-        var activeDictionary = Application.Current!.Resources.MergedDictionaries[0];
-        return activeDictionary.MergedDictionaries.Any(dictionary =>
-            string.Equals(dictionary.Source?.OriginalString, source, StringComparison.OrdinalIgnoreCase)
-        );
+        return ContainsMergedSource(Application.Current!.Resources, source);
+    }
+
+    private static bool ContainsMergedSource(ResourceDictionary resources, string source)
+    {
+        foreach (ResourceDictionary dictionary in resources.MergedDictionaries)
+        {
+            if (string.Equals(dictionary.Source?.OriginalString, source, StringComparison.OrdinalIgnoreCase)
+                || ContainsMergedSource(dictionary, source))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static void AssertNotification(

@@ -4,6 +4,7 @@
 // All Rights Reserved.
 
 using System.Diagnostics;
+using Wpf.Zen.Ui.Appearance;
 
 namespace Wpf.Zen.Ui.Demo.Console;
 
@@ -19,7 +20,7 @@ public static class Program
             System.Console.WriteLine("Application.Current is null.");
         }
 
-        ThemeManager.Initialize();
+        ThemeManager.Configure(ThemePreference.Dark, AccentColorSource.System, true);
 
         try
         {
