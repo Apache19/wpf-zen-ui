@@ -15,17 +15,8 @@
     xmlns:controls="clr-namespace:Wpf.Zen.Ui.Controls"
     xmlns:converters="clr-namespace:Wpf.Zen.Ui.Converters"
     xmlns:m="clr-namespace:Wpf.Zen.Ui.Markup"
-    xmlns:theming="clr-namespace:Wpf.Zen.Ui.Theming">
+    xmlns:t="clr-namespace:Wpf.Zen.Ui.Theming">
 
-    <Thickness x:Key="ExpanderPadding">11,11,11,11</Thickness>
-    <Thickness x:Key="ExpanderBorderThemeThickness">1</Thickness>
-
-    <!--
-        Header and content share one outline while expanded. Each direction keeps only the outer
-        corners rounded, and the content omits the edge adjacent to the header to avoid a doubled
-        seam. These resources keep that geometry declarative while the animation host remains
-        direction-agnostic.
-    -->
     <converters:CornerRadiusTransformConverter x:Key="ExpanderDownHeaderCornerRadiusConverter" CopyCorners="Top" />
     <converters:CornerRadiusTransformConverter x:Key="ExpanderUpHeaderCornerRadiusConverter" CopyCorners="Bottom" />
     <converters:CornerRadiusTransformConverter x:Key="ExpanderLeftHeaderCornerRadiusConverter" CopyCorners="Right" />
@@ -41,16 +32,9 @@
     <converters:ThicknessTransformConverter x:Key="ExpanderLeftContentBorderThicknessConverter" CopySides="Left,Top,Bottom" />
     <converters:ThicknessTransformConverter x:Key="ExpanderRightContentBorderThicknessConverter" CopySides="Top,Right,Bottom" />
 
-    <!--
-        The same header template serves every direction. Its base chevron points in the expansion
-        direction and the checked animation rotates it by 180 degrees, so no direction-specific
-        animation timelines or duplicate templates are required.
-    -->
     <Style x:Key="ExpanderHeaderToggleButtonStyle" TargetType="{x:Type controls:ToggleButton}">
         <Setter Property="OverridesDefaultStyle" Value="True" />
         <Setter Property="FocusVisualStyle" Value="{m:DynamicStyle DefaultControlFocusVisual}" />
-        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-        <Setter Property="VerticalContentAlignment" Value="Center" />
         <Setter Property="CornerRadius" Value="{Binding Path=(Border.CornerRadius), RelativeSource={RelativeSource AncestorType={x:Type Expander}}}" />
         <Setter Property="Template">
             <Setter.Value>
@@ -63,18 +47,21 @@
                         CornerRadius="{TemplateBinding CornerRadius}"
                         SnapsToDevicePixels="True">
                         <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
                             <ContentPresenter
+                                x:Name="contentPresenter"
                                 Grid.Column="0"
-                                Margin="{TemplateBinding Padding}"
-                                HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
-                                VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
                                 RecognizesAccessKey="True" />
                             <Border
                                 x:Name="chevronBorder"
+                                Grid.Row="0"
                                 Grid.Column="1"
                                 Margin="8"
                                 Padding="8"
@@ -94,6 +81,7 @@
                             </Border>
                         </Grid>
                     </Border>
+
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter TargetName="chevronBorder" Property="Background" Value="{m:DynamicBrush ControlFillSecondary}" />
@@ -111,11 +99,36 @@
                             <Setter TargetName="chevronIcon" Property="Symbol" Value="ChevronUp24" />
                         </DataTrigger>
                         <DataTrigger Binding="{Binding ExpandDirection, RelativeSource={RelativeSource AncestorType={x:Type Expander}}}" Value="Left">
+                            <Setter TargetName="chevronBorder" Property="Grid.Column" Value="0" />
+                            <Setter TargetName="chevronBorder" Property="Grid.ColumnSpan" Value="2" />
+                            <Setter TargetName="contentPresenter" Property="Grid.Row" Value="1" />
+                            <Setter TargetName="contentPresenter" Property="Grid.ColumnSpan" Value="2" />
                             <Setter TargetName="chevronIcon" Property="Symbol" Value="ChevronLeft24" />
+                            <Setter Property="VerticalContentAlignment" Value="Stretch" />
                         </DataTrigger>
                         <DataTrigger Binding="{Binding ExpandDirection, RelativeSource={RelativeSource AncestorType={x:Type Expander}}}" Value="Right">
+                            <Setter TargetName="chevronBorder" Property="Grid.Column" Value="0" />
+                            <Setter TargetName="chevronBorder" Property="Grid.ColumnSpan" Value="2" />
+                            <Setter TargetName="contentPresenter" Property="Grid.Row" Value="1" />
+                            <Setter TargetName="contentPresenter" Property="Grid.ColumnSpan" Value="2" />
                             <Setter TargetName="chevronIcon" Property="Symbol" Value="ChevronRight24" />
+                            <Setter Property="VerticalContentAlignment" Value="Stretch" />
                         </DataTrigger>
+
+                        <MultiDataTrigger>
+                            <MultiDataTrigger.Conditions>
+                                <Condition Binding="{Binding ExpandDirection, RelativeSource={RelativeSource AncestorType={x:Type Expander}}}" Value="Left" />
+                                <Condition Binding="{Binding FlowDirection, RelativeSource={RelativeSource Self}}" Value="RightToLeft" />
+                            </MultiDataTrigger.Conditions>
+                            <Setter TargetName="chevronIcon" Property="Symbol" Value="ChevronRight24" />
+                        </MultiDataTrigger>
+                        <MultiDataTrigger>
+                            <MultiDataTrigger.Conditions>
+                                <Condition Binding="{Binding ExpandDirection, RelativeSource={RelativeSource AncestorType={x:Type Expander}}}" Value="Right" />
+                                <Condition Binding="{Binding FlowDirection, RelativeSource={RelativeSource Self}}" Value="RightToLeft" />
+                            </MultiDataTrigger.Conditions>
+                            <Setter TargetName="chevronIcon" Property="Symbol" Value="ChevronLeft24" />
+                        </MultiDataTrigger>
 
                         <Trigger Property="IsChecked" Value="True">
                             <Trigger.EnterActions>
@@ -147,20 +160,15 @@
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
-
     </Style>
 
-    <!--
-        This template owns only the content surface. ExpanderContentHost is deliberately placed in
-        the outer Expander template, where its delayed Visibility state can also drive the header
-        corner geometry for the entire collapse interval.
-    -->
-    <ControlTemplate x:Key="ExpanderContentControlTemplate" TargetType="{x:Type ContentControl}">
+    <ControlTemplate x:Key="ExpanderContentHostTemplate" TargetType="{x:Type controls:ExpanderContentHost}">
         <Border
-            x:Name="rootBorder"
+            x:Name="PART_ContentSurface"
             Padding="{TemplateBinding Padding}"
             Background="{m:DynamicBrush CardBackgroundFillSecondary}"
-            BorderBrush="{TemplateBinding BorderBrush}">
+            BorderBrush="{TemplateBinding BorderBrush}"
+            SnapsToDevicePixels="True">
             <Border.Style>
                 <Style TargetType="{x:Type Border}">
                     <Setter Property="BorderThickness" Value="{Binding BorderThickness, RelativeSource={RelativeSource AncestorType={x:Type Expander}}, Converter={StaticResource ExpanderDownContentBorderThicknessConverter}}" />
@@ -183,34 +191,27 @@
             </Border.Style>
             <ContentPresenter
                 x:Name="ContentPresenter"
-                Margin="{TemplateBinding Padding}"
                 HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
-                VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
+                VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
         </Border>
     </ControlTemplate>
 
-    <Style x:Key="DefaultExpanderStyle" TargetType="{x:Type Expander}">
+    <Style x:Key="{x:Static t:StyleKeys.DefaultExpanderStyle}" TargetType="{x:Type Expander}">
         <Setter Property="OverridesDefaultStyle" Value="True" />
-        <Setter Property="FocusVisualStyle" Value="{DynamicResource {x:Static theming:StyleKeys.DefaultControlFocusVisualStyle}}" />
+        <Setter Property="FocusVisualStyle" Value="{m:DynamicStyle DefaultControlFocusVisual}" />
         <Setter Property="Background" Value="{m:DynamicBrush CardBackgroundFillDefault}" />
         <Setter Property="BorderBrush" Value="{m:DynamicBrush CardStrokeDefault}" />
-        <Setter Property="BorderThickness" Value="{StaticResource ExpanderBorderThemeThickness}" />
-        <Setter Property="Padding" Value="{StaticResource ExpanderPadding}" />
-        <Setter Property="HorizontalAlignment" Value="Stretch" />
-        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Padding" Value="11" />
         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="VerticalContentAlignment" Value="Stretch" />
         <Setter Property="Border.CornerRadius" Value="{m:DynamicValue ControlCornerRadius}" />
         <Setter Property="IsExpanded" Value="False" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type Expander}">
-                    <!--
-                        DockPanel provides the native Expander placement contract without custom
-                        layout code. The first child (Header) is docked opposite the requested
-                        expansion direction; the last child naturally fills the content side.
-                    -->
                     <DockPanel x:Name="root">
                         <controls:ToggleButton
                             x:Name="headerToggleButton"
@@ -224,24 +225,26 @@
                             ContentTemplateSelector="{TemplateBinding HeaderTemplateSelector}"
                             DockPanel.Dock="Top"
                             IsChecked="{Binding IsExpanded, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
+                            SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"
                             Style="{StaticResource ExpanderHeaderToggleButtonStyle}" />
                         <controls:ExpanderContentHost
                             x:Name="contentHost"
+                            Padding="{TemplateBinding Padding}"
+                            HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                            VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            Content="{TemplateBinding Content}"
+                            ContentStringFormat="{TemplateBinding ContentStringFormat}"
+                            ContentTemplate="{TemplateBinding ContentTemplate}"
+                            ContentTemplateSelector="{TemplateBinding ContentTemplateSelector}"
                             DockPanel.Dock="Bottom"
                             ExpandDirection="{TemplateBinding ExpandDirection}"
                             ExpandDuration="0:0:0.333"
-                            IsExpanded="{TemplateBinding IsExpanded}">
-                            <ContentControl
-                                x:Name="contentControl"
-                                Padding="{TemplateBinding Padding}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                Content="{TemplateBinding Content}"
-                                ContentStringFormat="{TemplateBinding ContentStringFormat}"
-                                ContentTemplate="{TemplateBinding ContentTemplate}"
-                                ContentTemplateSelector="{TemplateBinding ContentTemplateSelector}"
-                                Template="{StaticResource ExpanderContentControlTemplate}" />
-                        </controls:ExpanderContentHost>
+                            Focusable="False"
+                            IsExpanded="{TemplateBinding IsExpanded}"
+                            SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"
+                            Template="{StaticResource ExpanderContentHostTemplate}" />
                     </DockPanel>
 
                     <ControlTemplate.Triggers>
@@ -258,11 +261,6 @@
                             <Setter TargetName="contentHost" Property="DockPanel.Dock" Value="Right" />
                         </Trigger>
 
-                        <!--
-                            Visibility, rather than IsExpanded, is the authoritative visual state.
-                            The host remains Visible while the exit runs, so the header keeps its
-                            two seam-side square corners until the content has actually disappeared.
-                        -->
                         <MultiTrigger>
                             <MultiTrigger.Conditions>
                                 <Condition SourceName="contentHost" Property="Visibility" Value="Visible" />
@@ -301,6 +299,6 @@
         </Setter>
     </Style>
 
-    <Style BasedOn="{StaticResource DefaultExpanderStyle}" TargetType="{x:Type Expander}" />
+    <Style BasedOn="{StaticResource {x:Static t:StyleKeys.DefaultExpanderStyle}}" TargetType="{x:Type Expander}" />
 
 </ResourceDictionary>

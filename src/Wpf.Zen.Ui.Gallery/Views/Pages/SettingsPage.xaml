@@ -76,7 +76,7 @@
             Text="About" />
         <Expander Padding="0">
             <Expander.Header>
-                <Grid Margin="14,16">
+                <Grid Margin="16">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />

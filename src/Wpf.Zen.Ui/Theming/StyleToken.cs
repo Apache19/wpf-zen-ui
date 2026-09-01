@@ -48,6 +48,7 @@ public enum StyleToken
     DefaultStatusBarItem,
     DefaultSeparator,
     UiSeparator,
+    DefaultExpander,
 
     /// <summary>
     /// Identifies the ListView style selected while a WPF Zen UI GridView is active.

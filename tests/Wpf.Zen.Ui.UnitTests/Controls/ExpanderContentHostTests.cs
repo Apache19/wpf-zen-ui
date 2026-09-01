@@ -59,16 +59,21 @@ public class ExpanderContentHostTests
                     var chevron = Assert.IsType<FluentIcon>(
                         header.Template.FindName("chevronIcon", header)
                     );
-                    var contentControl = Assert.IsType<ContentControl>(
-                        expander.Template.FindName("contentControl", expander)
-                    );
-                    contentControl.ApplyTemplate();
-
                     var host = Assert.IsType<ExpanderContentHost>(
                         expander.Template.FindName("contentHost", expander)
                     );
+                    host.ApplyTemplate();
+                    Assert.Same(expander.Content, host.Content);
+                    Assert.Equal(
+                        expander.HorizontalContentAlignment,
+                        host.HorizontalContentAlignment
+                    );
+                    Assert.Equal(
+                        expander.VerticalContentAlignment,
+                        host.VerticalContentAlignment
+                    );
                     var contentBorder = Assert.IsType<Border>(
-                        contentControl.Template.FindName("rootBorder", contentControl)
+                        host.Template.FindName("PART_ContentSurface", host)
                     );
 
                     foreach (var direction in Enum.GetValues<ExpandDirection>())
@@ -197,15 +202,17 @@ public class ExpanderContentHostTests
                     Width = 140D,
                     Height = 90D,
                 };
-                var host = new ExpanderContentHost
-                {
-                    Child = child,
-                    ExpandDirection = direction,
-                    ExpandDuration = TimeSpan.FromMilliseconds(400D),
-                    CollapseDuration = TimeSpan.FromMilliseconds(400D),
-                    HorizontalAlignment = HorizontalAlignment.Left,
-                    VerticalAlignment = VerticalAlignment.Top,
-                };
+                var host = CreateHost(
+                    child,
+                    new ExpanderContentHost
+                    {
+                        ExpandDirection = direction,
+                        ExpandDuration = TimeSpan.FromMilliseconds(400D),
+                        CollapseDuration = TimeSpan.FromMilliseconds(400D),
+                        HorizontalAlignment = HorizontalAlignment.Left,
+                        VerticalAlignment = VerticalAlignment.Top,
+                    }
+                );
                 var window = new Window
                 {
                     Width = 500D,
@@ -223,11 +230,12 @@ public class ExpanderContentHostTests
                     host.IsExpanded = true;
                     PumpDispatcher(TimeSpan.FromMilliseconds(100D));
 
-                    var translation = GetTranslation(child);
+                    var surface = GetContentSurface(host);
+                    var translation = GetTranslation(surface);
                     var openingOffset = GetDirectionalOffset(translation, direction);
                     var fullDistance = direction is ExpandDirection.Left or ExpandDirection.Right
-                        ? child.RenderSize.Width
-                        : child.RenderSize.Height;
+                        ? surface.RenderSize.Width
+                        : surface.RenderSize.Height;
 
                     Assert.Equal(Visibility.Visible, host.Visibility);
                     Assert.InRange(openingOffset, 0.1D, fullDistance - 0.1D);
@@ -283,15 +291,17 @@ public class ExpanderContentHostTests
                     Width = 140D,
                     Height = 100D,
                 };
-                var host = new ExpanderContentHost
-                {
-                    Child = child,
-                    ExpandDirection = ExpandDirection.Down,
-                    ExpandDuration = TimeSpan.FromMilliseconds(1000D),
-                    CollapseDuration = TimeSpan.FromMilliseconds(1000D),
-                    HorizontalAlignment = HorizontalAlignment.Left,
-                    VerticalAlignment = VerticalAlignment.Top,
-                };
+                var host = CreateHost(
+                    child,
+                    new ExpanderContentHost
+                    {
+                        ExpandDirection = ExpandDirection.Down,
+                        ExpandDuration = TimeSpan.FromMilliseconds(1000D),
+                        CollapseDuration = TimeSpan.FromMilliseconds(1000D),
+                        HorizontalAlignment = HorizontalAlignment.Left,
+                        VerticalAlignment = VerticalAlignment.Top,
+                    }
+                );
                 var window = new Window
                 {
                     Width = 500D,
@@ -307,8 +317,9 @@ public class ExpanderContentHostTests
                     host.IsExpanded = true;
                     PumpDispatcher(TimeSpan.FromMilliseconds(500D));
 
-                    var translation = GetTranslation(child);
-                    var progressAtReversal = -translation.Y / child.RenderSize.Height;
+                    var surface = GetContentSurface(host);
+                    var translation = GetTranslation(surface);
+                    var progressAtReversal = -translation.Y / surface.RenderSize.Height;
 
                     // The global cubic mapping places the content near one eighth of its hidden
                     // offset halfway through the linear entrance timeline.
@@ -343,14 +354,16 @@ public class ExpanderContentHostTests
                     Width = 140D,
                     Height = 80D,
                 };
-                var host = new ExpanderContentHost
-                {
-                    Child = child,
-                    ExpandDirection = ExpandDirection.Down,
-                    ExpandDuration = TimeSpan.FromMilliseconds(500D),
-                    HorizontalAlignment = HorizontalAlignment.Left,
-                    VerticalAlignment = VerticalAlignment.Top,
-                };
+                var host = CreateHost(
+                    child,
+                    new ExpanderContentHost
+                    {
+                        ExpandDirection = ExpandDirection.Down,
+                        ExpandDuration = TimeSpan.FromMilliseconds(500D),
+                        HorizontalAlignment = HorizontalAlignment.Left,
+                        VerticalAlignment = VerticalAlignment.Top,
+                    }
+                );
                 var window = new Window
                 {
                     Width = 500D,
@@ -366,13 +379,14 @@ public class ExpanderContentHostTests
                     host.IsExpanded = true;
                     PumpDispatcher(TimeSpan.FromMilliseconds(100D));
 
-                    var translation = GetTranslation(child);
-                    var progressBeforeResize = -translation.Y / child.RenderSize.Height;
+                    var surface = GetContentSurface(host);
+                    var translation = GetTranslation(surface);
+                    var progressBeforeResize = -translation.Y / surface.RenderSize.Height;
 
                     child.Height = 160D;
                     window.UpdateLayout();
 
-                    var progressAfterResize = -translation.Y / child.RenderSize.Height;
+                    var progressAfterResize = -translation.Y / surface.RenderSize.Height;
                     Assert.InRange(
                         Math.Abs(progressAfterResize - progressBeforeResize),
                         0D,
@@ -387,14 +401,39 @@ public class ExpanderContentHostTests
         );
     }
 
-    private static TranslateTransform GetTranslation(UIElement child)
+    private static ExpanderContentHost CreateHost(
+        UIElement content,
+        ExpanderContentHost host)
     {
-        if (child.RenderTransform is TranslateTransform translation)
+        var resources = new ResourceDictionary
+        {
+            Source = new Uri(
+                "/Wpf.Zen.Ui;component/Controls/Expander/Expander.xaml",
+                UriKind.Relative
+            ),
+        };
+
+        host.Content = content;
+        host.Template = Assert.IsType<ControlTemplate>(resources["ExpanderContentHostTemplate"]);
+        return host;
+    }
+
+    private static UIElement GetContentSurface(ExpanderContentHost host)
+    {
+        host.ApplyTemplate();
+        return Assert.IsAssignableFrom<UIElement>(
+            host.Template.FindName("PART_ContentSurface", host)
+        );
+    }
+
+    private static TranslateTransform GetTranslation(UIElement surface)
+    {
+        if (surface.RenderTransform is TranslateTransform translation)
         {
             return translation;
         }
 
-        var group = Assert.IsType<TransformGroup>(child.RenderTransform);
+        var group = Assert.IsType<TransformGroup>(surface.RenderTransform);
         return Assert.IsType<TranslateTransform>(group.Children[^1]);
     }
 

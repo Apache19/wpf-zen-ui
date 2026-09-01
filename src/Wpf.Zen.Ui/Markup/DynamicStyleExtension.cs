@@ -86,6 +86,7 @@ internal static class StyleTokenResourceKey
             StyleToken.DefaultStatusBarItem       => StyleKeys.DefaultStatusBarItemStyle,
             StyleToken.DefaultSeparator           => StyleKeys.DefaultSeparatorStyle,
             StyleToken.UiSeparator                => StyleKeys.UiSeparatorStyle,
+            StyleToken.DefaultExpander            => StyleKeys.DefaultExpanderStyle,
 
             StyleToken.GridViewListView           => StyleKeys.GridViewListViewStyle,
             StyleToken.GridViewItemContainer      => StyleKeys.GridViewItemContainerStyle,

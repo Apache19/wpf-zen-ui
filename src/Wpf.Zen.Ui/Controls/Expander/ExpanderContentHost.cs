@@ -18,15 +18,16 @@ namespace Wpf.Zen.Ui.Controls;
 /// WPF does not measure an element while its <see cref="UIElement.Visibility"/> is
 /// <see cref="Visibility.Collapsed"/>. Consequently, an entrance animation that snapshots
 /// <see cref="FrameworkElement.ActualWidth"/> or <see cref="FrameworkElement.ActualHeight"/>
-/// when expansion is requested can capture zero. This host first makes its child visible behind an
-/// opacity gate, waits for layout, and only then reveals the child from its closed position.
+/// when expansion is requested can capture zero. This host first makes its content surface visible
+/// behind an opacity gate, waits for layout, and only then reveals the surface from its closed
+/// position.
 /// <para>
 /// The animated value is a normalized, linear transition progress: <c>0</c> is fully open and
 /// <c>1</c> is fully closed. A cubic curve is applied only when that progress is converted to a
 /// pixel offset. Keeping time linear means that reversing after half of a configured interval uses
 /// only half of the opposite interval, while the stable cubic mapping keeps the rendered position
-/// continuous. The child's current render size and <see cref="ExpandDirection"/> are applied on
-/// every progress change, so the offset also remains correct when content changes size.
+/// continuous. The content surface's current render size and <see cref="ExpandDirection"/> are
+/// applied on every progress change, so the offset also remains correct when content changes size.
 /// </para>
 /// <para>
 /// <see cref="IsExpanded"/> requests a state transition, while
@@ -34,9 +35,17 @@ namespace Wpf.Zen.Ui.Controls;
 /// visible. A collapse retains the layout slot until the exit completes, then sets the host to
 /// <see cref="Visibility.Collapsed"/>.
 /// </para>
+/// <para>
+/// The control template must provide <c>PART_ContentSurface</c>. The host itself remains stationary
+/// and clips to its layout bounds; only that template part is translated. A template that omits the
+/// part still presents content, but expansion and collapse fall back to immediate state changes.
+/// </para>
 /// </remarks>
-internal sealed class ExpanderContentHost : Decorator
+[TemplatePart(Name = ContentSurfacePartName, Type = typeof(UIElement))]
+internal sealed class ExpanderContentHost : ContentControl
 {
+    private const string ContentSurfacePartName = "PART_ContentSurface";
+
     private const double FullyRevealedProgress   = 0.0d;
     private const double FullyHiddenProgress     = 1.0d;
     private const double MinimumAnimatedDistance = 0.1d;
@@ -50,7 +59,7 @@ internal sealed class ExpanderContentHost : Decorator
         );
 
     private DispatcherOperation? _pendingEntrance;
-    private UIElement?           _animatedChild;
+    private UIElement?           _animatedSurface;
     private Transform?           _originalRenderTransform;
     private TranslateTransform?  _translation;
     private double               _currentRevealProgress = FullyHiddenProgress;
@@ -172,6 +181,25 @@ internal sealed class ExpanderContentHost : Decorator
         set => SetValue(CollapseDurationProperty, value);
     }
 
+    /// <inheritdoc />
+    public override void OnApplyTemplate()
+    {
+        // A ControlTemplate can be replaced while an animation or opacity gate is active. Restore
+        // the outgoing surface before WPF detaches it so transforms supplied by that template are
+        // never left wrapped in the host's private animation transform.
+        RestorePreviousContentSurface();
+        base.OnApplyTemplate();
+
+        if (_isEntrancePending)
+        {
+            GateContentSurfaceUntilEntrance();
+        }
+        else
+        {
+            ApplyTranslation();
+        }
+    }
+
     private static bool IsValidDuration(object? value) =>
         value is TimeSpan duration && duration >= TimeSpan.Zero;
 
@@ -265,7 +293,7 @@ internal sealed class ExpanderContentHost : Decorator
         }
     }
 
-    private void OnAnimatedChildSizeChanged(object sender, SizeChangedEventArgs e)
+    private void OnContentSurfaceSizeChanged(object sender, SizeChangedEventArgs e)
     {
         // RevealProgress is dimensionless. Reapplying its eased value against the new RenderSize
         // preserves the same visible phase when content changes size during a transition.
@@ -280,7 +308,7 @@ internal sealed class ExpanderContentHost : Decorator
         if (Visibility != Visibility.Visible)
         {
             _isEntrancePending = true;
-            GateChildUntilEntrance();
+            GateContentSurfaceUntilEntrance();
 
             // Visibility can synchronously raise IsVisibleChanged. That callback owns scheduling
             // when an ancestor is hidden, while the explicit check covers an already visible tree.
@@ -297,7 +325,7 @@ internal sealed class ExpanderContentHost : Decorator
         if (!IsVisible)
         {
             _isEntrancePending = true;
-            GateChildUntilEntrance();
+            GateContentSurfaceUntilEntrance();
             return;
         }
 
@@ -403,7 +431,7 @@ internal sealed class ExpanderContentHost : Decorator
             }
         );
 
-        RestoreChildOpacity();
+        RestoreContentSurfaceOpacity();
     }
 
     private void StartExpansionFromCurrentProgress(int version)
@@ -432,7 +460,7 @@ internal sealed class ExpanderContentHost : Decorator
             }
         );
 
-        RestoreChildOpacity();
+        RestoreContentSurfaceOpacity();
     }
 
     private void StartProgressAnimation(
@@ -482,62 +510,61 @@ internal sealed class ExpanderContentHost : Decorator
     }
 
     private bool TryGetAnimationState(
-        out UIElement          child,
+        out UIElement          surface,
         out TranslateTransform translation)
     {
-        if (Child is not { } currentChild)
+        if (_animatedSurface is null)
         {
-            child = null!;
-            translation = null!;
-            return false;
-        }
+            if (GetTemplateChild(ContentSurfacePartName) is not UIElement currentSurface)
+            {
+                surface = null!;
+                translation = null!;
+                return false;
+            }
 
-        if (!ReferenceEquals(currentChild, _animatedChild))
-        {
-            RestorePreviousChild();
-
-            _animatedChild = currentChild;
-            _originalRenderTransform = currentChild.RenderTransform;
+            _animatedSurface = currentSurface;
+            _originalRenderTransform = currentSurface.RenderTransform;
             _translation = new TranslateTransform();
 
             if (_originalRenderTransform is null ||
                 ReferenceEquals(_originalRenderTransform, Transform.Identity))
             {
-                currentChild.SetCurrentValue(RenderTransformProperty, _translation);
+                currentSurface.SetCurrentValue(RenderTransformProperty, _translation);
             }
             else
             {
                 // Append the private translation so a transform supplied by the template remains
-                // intact and never needs to expose its values to the animation state machine.
+                // intact and never needs to expose its values to the animation state machine. The
+                // host itself must remain stationary because its bounds are the clipping window.
                 var transforms = new TransformGroup();
                 transforms.Children.Add(_originalRenderTransform);
                 transforms.Children.Add(_translation);
-                currentChild.SetCurrentValue(RenderTransformProperty, transforms);
+                currentSurface.SetCurrentValue(RenderTransformProperty, transforms);
             }
 
-            if (currentChild is FrameworkElement frameworkElement)
+            if (currentSurface is FrameworkElement frameworkElement)
             {
-                frameworkElement.SizeChanged += OnAnimatedChildSizeChanged;
+                frameworkElement.SizeChanged += OnContentSurfaceSizeChanged;
             }
 
-            ApplyTranslation(currentChild, _translation, _currentRevealProgress);
+            ApplyTranslation(currentSurface, _translation, _currentRevealProgress);
         }
 
-        child = _animatedChild;
+        surface = _animatedSurface;
         translation = _translation!;
         return true;
     }
 
     private void ApplyTranslation()
     {
-        if (TryGetAnimationState(out var child, out var translation))
+        if (TryGetAnimationState(out var surface, out var translation))
         {
-            ApplyTranslation(child, translation, _currentRevealProgress);
+            ApplyTranslation(surface, translation, _currentRevealProgress);
         }
     }
 
     private void ApplyTranslation(
-        UIElement          child,
+        UIElement          surface,
         TranslateTransform translation,
         double             progress)
     {
@@ -554,19 +581,19 @@ internal sealed class ExpanderContentHost : Decorator
         switch (ExpandDirection)
         {
             case ExpandDirection.Down:
-                y = -child.RenderSize.Height * offsetFactor;
+                y = -surface.RenderSize.Height * offsetFactor;
                 break;
 
             case ExpandDirection.Up:
-                y = child.RenderSize.Height * offsetFactor;
+                y = surface.RenderSize.Height * offsetFactor;
                 break;
 
             case ExpandDirection.Left:
-                x = child.RenderSize.Width * offsetFactor;
+                x = surface.RenderSize.Width * offsetFactor;
                 break;
 
             case ExpandDirection.Right:
-                x = -child.RenderSize.Width * offsetFactor;
+                x = -surface.RenderSize.Width * offsetFactor;
                 break;
         }
 
@@ -576,21 +603,21 @@ internal sealed class ExpanderContentHost : Decorator
 
     private bool HasAnimatedDistance()
     {
-        if (!TryGetAnimationState(out var child, out _))
+        if (!TryGetAnimationState(out var surface, out _))
         {
             return false;
         }
 
         var distance = ExpandDirection is ExpandDirection.Left or ExpandDirection.Right
-            ? child.RenderSize.Width
-            : child.RenderSize.Height;
+            ? surface.RenderSize.Width
+            : surface.RenderSize.Height;
 
         return distance >= MinimumAnimatedDistance;
     }
 
-    private void GateChildUntilEntrance()
+    private void GateContentSurfaceUntilEntrance()
     {
-        if (!TryGetAnimationState(out var child, out _))
+        if (!TryGetAnimationState(out var surface, out _))
         {
             return;
         }
@@ -599,27 +626,27 @@ internal sealed class ExpanderContentHost : Decorator
 
         if (!_isOpacityGated)
         {
-            _opacityBeforeGate = child.Opacity;
-            child.SetCurrentValue(OpacityProperty, 0.0d);
+            _opacityBeforeGate = surface.Opacity;
+            surface.SetCurrentValue(OpacityProperty, 0.0d);
             _isOpacityGated = true;
         }
     }
 
-    private void RestoreChildOpacity()
+    private void RestoreContentSurfaceOpacity()
     {
-        if (!_isOpacityGated || _animatedChild is null)
+        if (!_isOpacityGated || _animatedSurface is null)
         {
             return;
         }
 
-        _animatedChild.SetCurrentValue(OpacityProperty, _opacityBeforeGate);
+        _animatedSurface.SetCurrentValue(OpacityProperty, _opacityBeforeGate);
         _isOpacityGated = false;
     }
 
     private void CommitOpenVisualState()
     {
         SetRevealProgressImmediately(FullyRevealedProgress);
-        RestoreChildOpacity();
+        RestoreContentSurfaceOpacity();
     }
 
     private void CollapseImmediately()
@@ -630,7 +657,7 @@ internal sealed class ExpanderContentHost : Decorator
         // progress afterwards cannot expose a translated frame and prepares the next entrance.
         SetCurrentValue(VisibilityProperty, Visibility.Collapsed);
         SetRevealProgressImmediately(FullyHiddenProgress);
-        RestoreChildOpacity();
+        RestoreContentSurfaceOpacity();
     }
 
     private void SetRevealProgressImmediately(double progress)
@@ -659,29 +686,29 @@ internal sealed class ExpanderContentHost : Decorator
         _pendingEntrance = null;
     }
 
-    private void RestorePreviousChild()
+    private void RestorePreviousContentSurface()
     {
-        if (_animatedChild is null)
+        if (_animatedSurface is null)
         {
             return;
         }
 
-        if (_animatedChild is FrameworkElement frameworkElement)
+        if (_animatedSurface is FrameworkElement frameworkElement)
         {
-            frameworkElement.SizeChanged -= OnAnimatedChildSizeChanged;
+            frameworkElement.SizeChanged -= OnContentSurfaceSizeChanged;
         }
 
         if (_isOpacityGated)
         {
-            _animatedChild.SetCurrentValue(OpacityProperty, _opacityBeforeGate);
+            _animatedSurface.SetCurrentValue(OpacityProperty, _opacityBeforeGate);
             _isOpacityGated = false;
         }
 
-        _animatedChild.SetCurrentValue(
+        _animatedSurface.SetCurrentValue(
             RenderTransformProperty,
             _originalRenderTransform ?? Transform.Identity
         );
-        _animatedChild = null;
+        _animatedSurface = null;
         _originalRenderTransform = null;
         _translation = null;
     }
