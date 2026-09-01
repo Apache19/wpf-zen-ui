@@ -63,7 +63,6 @@
                             ItemContainerStyleSelector="{TemplateBinding MenuItemContainerStyleSelector}"
                             ItemTemplate="{TemplateBinding MenuItemTemplate}"
                             ItemTemplateSelector="{TemplateBinding MenuItemTemplateSelector}"
-                            KeyboardNavigation.DirectionalNavigation="Contained"
                             Padding="0,0,4,0"
                             ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                             ScrollViewer.VerticalScrollBarVisibility="Auto">
@@ -93,7 +92,6 @@
                             ItemContainerStyleSelector="{TemplateBinding FooterMenuItemContainerStyleSelector}"
                             ItemTemplate="{TemplateBinding FooterMenuItemTemplate}"
                             ItemTemplateSelector="{TemplateBinding FooterMenuItemTemplateSelector}"
-                            KeyboardNavigation.DirectionalNavigation="Contained"
                             ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                             ScrollViewer.VerticalScrollBarVisibility="Disabled">
                             <controls:NavigationViewList.ItemsPanel>

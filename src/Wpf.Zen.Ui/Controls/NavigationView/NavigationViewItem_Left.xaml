@@ -234,7 +234,6 @@
                 x:Name="PART_ItemsPresenter"
                 Grid.Row="1"
                 Grid.IsSharedSizeScope="True"
-                KeyboardNavigation.DirectionalNavigation="Contained"
                 Opacity="0"
                 SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"
                 Visibility="Collapsed" />

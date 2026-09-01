@@ -4,6 +4,7 @@
 // All Rights Reserved.
 
 using System.Windows.Controls;
+using System.Windows.Input;
 
 // ReSharper disable once CheckNamespace
 namespace Wpf.Zen.Ui.Controls;
@@ -12,11 +13,19 @@ namespace Wpf.Zen.Ui.Controls;
 /// Hosts the items displayed by a <see cref="NavigationView"/> or <see cref="NavigationViewItem"/>.
 /// </summary>
 /// <remarks>
+/// <para>
 /// Unlike a general-purpose <see cref="ItemsControl"/>, this control understands that a navigation
 /// menu can contain structural <see cref="UIElement"/> values alongside navigation data. Existing
 /// elements remain their own containers, while non-visual data receives a
 /// <see cref="NavigationViewItem"/> container. This makes the list the root container-generation
 /// boundary and matches the child generation performed by <see cref="NavigationViewItem"/>.
+/// </para>
+/// <para>
+/// The complete list contributes one stop to the surrounding Tab sequence. Tab enters its first
+/// or most recently active item header and the following Tab leaves the list; arrow keys move focus
+/// among the item headers without escaping the list. Applications can replace either standard WPF
+/// keyboard-navigation mode when a specialized host requires different behavior.
+/// </para>
 /// </remarks>
 [StyleTypedProperty(Property = nameof(ItemContainerStyle), StyleTargetType = typeof(NavigationViewItem))]
 public class NavigationViewList : ItemsControl
@@ -44,6 +53,79 @@ public class NavigationViewList : ItemsControl
             typeof(NavigationViewList),
             new FrameworkPropertyMetadata(typeof(NavigationViewList))
         );
+
+        // A navigation menu is a single composite control in the window's Tab sequence. Once lets
+        // WPF enter through the first header on the initial visit (or the active header on a later
+        // visit) and then leave the complete list on the next Tab or Shift+Tab. Contained reserves
+        // the arrow keys for moving among item headers. These are metadata defaults, matching
+        // ListBox, so an application can still replace either policy for a specialized host.
+        KeyboardNavigation.TabNavigationProperty.OverrideMetadata(
+            typeof(NavigationViewList),
+            new FrameworkPropertyMetadata(KeyboardNavigationMode.Once)
+        );
+        KeyboardNavigation.DirectionalNavigationProperty.OverrideMetadata(
+            typeof(NavigationViewList),
+            new FrameworkPropertyMetadata(KeyboardNavigationMode.Contained)
+        );
+    }
+
+    /// <summary>
+    /// Gets a value indicating whether this control, rather than the scrolling host in its template,
+    /// owns keyboard scrolling and directional focus navigation.
+    /// </summary>
+    /// <remarks>
+    /// WPF's <see cref="ScrollViewer"/> otherwise handles arrow keys before the routed event reaches
+    /// the templated parent. Returning <see langword="true"/> is the same contract used by
+    /// <see cref="ListBox"/> and allows <see cref="OnKeyDown(KeyEventArgs)"/> to apply one consistent
+    /// focus model for either built-in scrolling template.
+    /// </remarks>
+    protected override bool HandlesScrolling => true;
+
+    /// <inheritdoc />
+    /// <remarks>
+    /// <see cref="KeyboardNavigation.DirectionalNavigationProperty"/> describes the boundary used
+    /// by WPF's focus search, but an <see cref="ItemsControl"/> does not translate arrow-key input
+    /// into that search. The focused header button raises the key event through its owning
+    /// <see cref="NavigationViewItem"/> first, so hierarchy-specific Left/Right behavior retains
+    /// priority. Any unhandled arrow then reaches this list and moves spatially to the next visible,
+    /// enabled focus target. The <see cref="KeyboardNavigationMode.Contained"/> metadata above keeps
+    /// an edge arrow within the composite list.
+    /// </remarks>
+    protected override void OnKeyDown(KeyEventArgs e)
+    {
+        if (
+            TryGetFocusNavigationDirection(e.Key, out FocusNavigationDirection direction)
+            && Keyboard.FocusedElement is UIElement focusedElement
+            && IsKeyboardFocusWithin
+        )
+        {
+            _ = focusedElement.MoveFocus(new TraversalRequest(direction));
+
+            // Direction keys belong to the composite even at an edge, where Contained correctly
+            // leaves focus on the current header. Letting an unsuccessful edge traversal bubble
+            // would allow an outer ScrollViewer or command binding to reinterpret the same key.
+            e.Handled = true;
+            return;
+        }
+
+        base.OnKeyDown(e);
+    }
+
+    /// <summary>Maps the four spatial arrow keys to WPF focus-navigation directions.</summary>
+    private static bool TryGetFocusNavigationDirection(
+        Key key,
+        out FocusNavigationDirection direction)
+    {
+        direction = key switch
+        {
+            Key.Left => FocusNavigationDirection.Left,
+            Key.Up => FocusNavigationDirection.Up,
+            Key.Right => FocusNavigationDirection.Right,
+            Key.Down => FocusNavigationDirection.Down,
+            _ => default,
+        };
+
+        return key is Key.Left or Key.Up or Key.Right or Key.Down;
     }
 
     /// <summary>
