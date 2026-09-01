@@ -11,18 +11,17 @@
     xmlns:vm="clr-namespace:Wpf.Zen.Ui.Gallery.ViewModels.Pages.Media"
     xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
     Title="WebViewPage"
-    ui:NavigationView.IsNavigationFrameScrollEnabled="True"
-    d:DataContext="{d:DesignInstance vm:WebViewViewModel,
-                                     IsDesignTimeCreatable=False}"
-    d:DesignWidth="800"
     d:Background="{ui:DynamicBrush WindowBackground}"
+    d:DataContext="{d:DesignInstance vm:WebViewViewModel, IsDesignTimeCreatable=False}"
+    d:DesignWidth="800"
+    ui:NavigationView.IsNavigationFrameScrollEnabled="True"
     Foreground="{ui:DynamicBrush TextFillPrimary}"
     mc:Ignorable="d">
 
     <StackPanel Margin="0,0,0,24">
         <controls:ControlExample
             Margin="0"
-            HeaderText="WPF Zen UI symbol icon."
+            HeaderText="A Web browser based on WebView2."
             XamlCode="&lt;wv2:WebView2 Source=&quot;https&quot; /&gt;">
             <wv2:WebView2 MinHeight="300" Source="https://wpfui.thezendev.com" />
         </controls:ControlExample>
@@ -30,6 +29,7 @@
         <ui:HyperlinkButton
             Grid.Row="1"
             Margin="0,8,0,0"
+            HorizontalAlignment="Left"
             Content="Learn more about WebView2 in WPF"
             NavigateUri="https://learn.microsoft.com/en-us/microsoft-edge/webview2/get-started/wpf" />
     </StackPanel>

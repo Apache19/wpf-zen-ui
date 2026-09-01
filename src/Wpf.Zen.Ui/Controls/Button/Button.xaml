@@ -13,7 +13,8 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Zen.Ui.Controls"
     xmlns:converters="clr-namespace:Wpf.Zen.Ui.Converters"
-    xmlns:m="clr-namespace:Wpf.Zen.Ui.Markup">
+    xmlns:m="clr-namespace:Wpf.Zen.Ui.Markup"
+    xmlns:t="clr-namespace:Wpf.Zen.Ui.Theming">
 
     <ResourceDictionary.MergedDictionaries>
         <ResourceDictionary Source="pack://application:,,,/Wpf.Zen.Ui;component/Controls/Button/ButtonAppearance.xaml" />
@@ -78,7 +79,7 @@
         </ControlTemplate.Triggers>
     </ControlTemplate>
 
-    <Style x:Key="UiButtonStyle" BasedOn="{StaticResource UiButtonAppearanceStyle}" TargetType="{x:Type controls:Button}">
+    <Style x:Key="{x:Static t:StyleKeys.UiButtonStyle}" BasedOn="{StaticResource UiButtonAppearanceStyle}" TargetType="{x:Type controls:Button}">
         <Style.Resources>
             <!--  按钮的视觉焦点样式特意往外扩了一圈，防止按钮显示强烈背景色时看不清焦点视觉样式  -->
             <Style x:Key="{x:Static SystemParameters.FocusVisualStyleKey}">
@@ -108,6 +109,6 @@
         <Setter Property="IconMargin" Value="0,0,8,0" />
     </Style>
 
-    <Style BasedOn="{StaticResource UiButtonStyle}" TargetType="{x:Type controls:Button}" />
+    <Style BasedOn="{StaticResource {x:Static t:StyleKeys.UiButtonStyle}}" TargetType="{x:Type controls:Button}" />
 
 </ResourceDictionary>

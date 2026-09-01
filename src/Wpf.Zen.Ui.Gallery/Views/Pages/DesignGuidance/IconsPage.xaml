@@ -34,6 +34,7 @@
             Grid.Row="1"
             Margin="0,4,0,0"
             Padding="0"
+            HorizontalAlignment="Left"
             Content="Find out more about Fluent System Icons"
             NavigateUri="https://github.com/microsoft/fluentui-system-icons" />
         <ui:TextBlock

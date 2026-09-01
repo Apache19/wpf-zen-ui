@@ -12,8 +12,8 @@
     d:Background="{ui:DynamicBrush WindowBackground}"
     d:DataContext="{d:DesignInstance vm:HyperlinkButtonViewModel, IsDesignTimeCreatable=False}"
     d:DesignWidth="800"
-    Foreground="{ui:DynamicBrush TextFillPrimary}"
     ui:NavigationView.IsNavigationFrameScrollEnabled="True"
+    Foreground="{ui:DynamicBrush TextFillPrimary}"
     mc:Ignorable="d">
 
     <StackPanel Margin="0,0,0,24">
@@ -28,6 +28,7 @@
                 </Grid.ColumnDefinitions>
                 <ui:HyperlinkButton
                     Grid.Column="0"
+                    HorizontalAlignment="Left"
                     Content="WPF Zen UI hyperlink"
                     Icon="{ui:FluentIconSource Link24}"
                     IsEnabled="{Binding IsHyperlinkDisabled, Converter={StaticResource BoolInvertConverter}}"
@@ -44,6 +45,7 @@
             HeaderText="WPF Zen UI hyperlink with FontIcon."
             XamlCode="&lt;ui:HyperlinkButton NavigateUri=&quot;https://&quot; /&gt;">
             <ui:HyperlinkButton
+                HorizontalAlignment="Left"
                 Content="WPF Zen UI hyperlink"
                 Icon="{ui:FontIcon '&#x1F308;'}"
                 IsEnabled="{Binding IsHyperlinkDisabled, Converter={StaticResource BoolInvertConverter}}"
@@ -55,6 +57,7 @@
             HeaderText="WPF Zen UI hyperlink with ImageIcon."
             XamlCode="&lt;ui:HyperlinkButton NavigateUri=&quot;https://&quot; /&gt;">
             <ui:HyperlinkButton
+                HorizontalAlignment="Left"
                 Content="WPF Zen UI hyperlink"
                 Icon="{ui:ImageIcon 'pack://application:,,,/Assets/wpfui.png'}"
                 IsEnabled="{Binding IsHyperlinkDisabled, Converter={StaticResource BoolInvertConverter}}"

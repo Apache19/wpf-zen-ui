@@ -16,6 +16,7 @@ namespace Wpf.Zen.Ui.Theming;
 public enum StyleToken
 {
     None,
+    UiButton,
     Menu,
     UiMenu,
     MenuItem,

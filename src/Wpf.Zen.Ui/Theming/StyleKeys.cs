@@ -14,6 +14,7 @@ namespace Wpf.Zen.Ui.Theming;
 /// </remarks>
 public static class StyleKeys
 {
+    public static ComponentResourceKey UiButtonStyle                   { get; } = Create(nameof(UiButtonStyle));
     public static ComponentResourceKey MenuStyle                       { get; } = Create(nameof(MenuStyle));
     public static ComponentResourceKey UiMenuStyle                     { get; } = Create(nameof(UiMenuStyle));
     public static ComponentResourceKey MenuItemStyle                   { get; } = Create(nameof(MenuItemStyle));
