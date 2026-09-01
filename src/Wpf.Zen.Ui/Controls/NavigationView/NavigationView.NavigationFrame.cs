@@ -7,7 +7,6 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Navigation;
 using System.Windows.Threading;
-using Wpf.Zen.Ui.Animations;
 
 // ReSharper disable once CheckNamespace
 namespace Wpf.Zen.Ui.Controls;
@@ -273,30 +272,6 @@ public partial class NavigationView
 
         NotifyContentAboutNavigationExited(content, target, failures);
         ReportNavigationCallbackFailures(failures);
-    }
-
-    /// <summary>
-    /// Applies the configured transition to the control-owned frame.
-    /// </summary>
-    /// <remarks>
-    /// Animating the page itself would replace or hold animation clocks on consumer-owned
-    /// <see cref="UIElement.Opacity"/> and <see cref="UIElement.RenderTransform"/> properties. The
-    /// stable frame is an implementation detail, so animating it produces the same visual result
-    /// without mutating the navigated page.
-    /// </remarks>
-    private void ApplyTransitionEffectToNavigationFrame(
-        NavigationTransitionSettings transitionSettings)
-    {
-        if (transitionSettings.Duration < 1)
-        {
-            return;
-        }
-
-        _ = TransitionAnimationProvider.ApplyTransition(
-            _navigationFrame,
-            transitionSettings.Transition,
-            transitionSettings.Duration
-        );
     }
 
     /// <summary>Resolves page-local overrides against this navigation view's global defaults.</summary>
@@ -711,10 +686,10 @@ public partial class NavigationView
 
     /// <summary>Represents the immutable entrance-animation declaration for one navigation.</summary>
     internal readonly struct NavigationTransitionSettings(
-        Transition transition,
+        NavigationTransition transition,
         int duration)
     {
-        internal Transition Transition { get; } = transition;
+        internal NavigationTransition Transition { get; } = transition;
 
         internal int Duration { get; } = duration;
     }

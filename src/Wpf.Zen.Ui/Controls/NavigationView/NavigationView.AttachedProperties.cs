@@ -3,8 +3,6 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-using Wpf.Zen.Ui.Animations;
-
 // ReSharper disable once CheckNamespace
 namespace Wpf.Zen.Ui.Controls;
 
@@ -14,7 +12,7 @@ namespace Wpf.Zen.Ui.Controls;
 public partial class NavigationView
 {
     private const int DefaultTransitionDuration = 200;
-    private const Transition DefaultTransition = Transition.FadeInWithSlide;
+    private const NavigationTransition DefaultTransition = NavigationTransition.FadeInWithSlide;
 
     /// <summary>
     /// Inheritable presentation context consumed by <see cref="NavigationViewItem"/> containers.
@@ -62,16 +60,16 @@ public partial class NavigationView
     /// to override that default for the destination. The attached value is intentionally not
     /// inherited: a declaration applies to that destination only and cannot accidentally alter
     /// nested content or another navigation scope. The global default is
-    /// <see cref="Animations.Transition.FadeInWithSlide"/>. This property does not invalidate layout
+    /// <see cref="NavigationTransition.FadeInWithSlide"/>. This property does not invalidate layout
     /// or rendering; it is consumed only when a destination is committed.
     /// </remarks>
     public static readonly DependencyProperty TransitionProperty =
         DependencyProperty.RegisterAttached(
             nameof(Transition),
-            typeof(Transition),
+            typeof(NavigationTransition),
             typeof(NavigationView),
             new FrameworkPropertyMetadata(DefaultTransition),
-            value => Enum.IsDefined(typeof(Transition), value)
+            value => Enum.IsDefined(typeof(NavigationTransition), value)
         );
 
     /// <summary>
@@ -80,13 +78,13 @@ public partial class NavigationView
     /// <remarks>
     /// A destination that explicitly declares the attached <c>NavigationView.Transition</c>
     /// property overrides this value for its own navigation. The default is
-    /// <see cref="Animations.Transition.FadeInWithSlide"/>.
+    /// <see cref="NavigationTransition.FadeInWithSlide"/>.
     /// </remarks>
     [Bindable(true)]
     [Category("Appearance")]
-    public Transition Transition
+    public NavigationTransition Transition
     {
-        get => (Transition)GetValue(TransitionProperty);
+        get => (NavigationTransition)GetValue(TransitionProperty);
         set => SetValue(TransitionProperty, value);
     }
 
@@ -94,20 +92,20 @@ public partial class NavigationView
     /// <param name="element">The navigation content root to inspect.</param>
     /// <returns>The transition used when the element becomes the current page.</returns>
     [AttachedPropertyBrowsableForType(typeof(FrameworkElement))]
-    public static Transition GetTransition(DependencyObject element)
+    public static NavigationTransition GetTransition(DependencyObject element)
     {
         if (element is null)
         {
             throw new ArgumentNullException(nameof(element));
         }
 
-        return (Transition)element.GetValue(TransitionProperty);
+        return (NavigationTransition)element.GetValue(TransitionProperty);
     }
 
     /// <summary>Sets the entrance transition declared by <paramref name="element"/>.</summary>
     /// <param name="element">The navigation content root to configure.</param>
     /// <param name="value">The transition to apply when the element becomes current.</param>
-    public static void SetTransition(DependencyObject element, Transition value)
+    public static void SetTransition(DependencyObject element, NavigationTransition value)
     {
         if (element is null)
         {
@@ -125,9 +123,9 @@ public partial class NavigationView
     /// The value is expressed in milliseconds. Set the instance property on a
     /// <see cref="NavigationView"/> to define its default duration, or set the attached property on
     /// a destination to override that value for the destination only. The global default is
-    /// <c>200</c>. Durations below the animation provider's minimum do not start an animation;
-    /// durations above its safety limit are capped by the provider. The property is not inherited
-    /// and does not itself invalidate layout or rendering. The navigation host snapshots it
+    /// <c>200</c>. Durations below ten milliseconds do not start an animation, and durations above
+    /// ten seconds are capped at ten seconds. The property is not inherited and does not itself
+    /// invalidate layout or rendering. The navigation host snapshots it
     /// immediately before navigation and reads it again after WPF commits the destination, so
     /// constructor assignments, bindings resolved by that point, and changes made by a
     /// <see cref="Navigating"/> handler are respected.
