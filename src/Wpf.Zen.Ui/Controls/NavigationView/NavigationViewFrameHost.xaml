@@ -54,6 +54,7 @@
     <Style x:Key="NavigationFrameHostStyle" TargetType="{x:Type ContentControl}">
         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
         <Setter Property="VerticalContentAlignment" Value="Stretch" />
+        <Setter Property="Focusable" Value="False" />
         <Setter Property="Template" Value="{StaticResource NavigationFrameHostTemplate}" />
         <Style.Triggers>
             <DataTrigger Binding="{Binding IsNavigationFrameScrollActive, RelativeSource={RelativeSource AncestorType={x:Type controls:NavigationView}}}" Value="True">
