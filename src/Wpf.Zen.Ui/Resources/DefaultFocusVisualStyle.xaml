@@ -8,6 +8,7 @@
 <ResourceDictionary
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:c="clr-namespace:Wpf.Zen.Ui.Converters"
     xmlns:m="clr-namespace:Wpf.Zen.Ui.Markup"
     xmlns:t="clr-namespace:Wpf.Zen.Ui.Theming">
 
@@ -21,10 +22,11 @@
                         IsHitTestVisible="False"
                         SnapsToDevicePixels="True">
                         <Border.CornerRadius>
-                            <PriorityBinding FallbackValue="4">
+                            <MultiBinding Converter="{c:FocusVisualCornerRadiusConverter FallbackValue=4}">
+                                <Binding Path="AdornedElement" RelativeSource="{RelativeSource AncestorType={x:Type Adorner}}" />
                                 <Binding Path="AdornedElement.CornerRadius" RelativeSource="{RelativeSource AncestorType={x:Type Adorner}}" />
                                 <Binding Path="AdornedElement.(Border.CornerRadius)" RelativeSource="{RelativeSource AncestorType={x:Type Adorner}}" />
-                            </PriorityBinding>
+                            </MultiBinding>
                         </Border.CornerRadius>
                     </Border>
                 </ControlTemplate>
