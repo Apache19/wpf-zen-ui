@@ -72,27 +72,18 @@
         </ControlTemplate.Triggers>
     </ControlTemplate>
 
-    <converters:ThicknessTransformConverter x:Key="IconGridMarginConverter" BaseThickness="2 0 0 0" CopySides="Vertical,Right" />
+    <converters:ThicknessTransformConverter x:Key="IconGridMarginConverter" Minimum="2 0 0 0" CopySides="Vertical,Right" />
 
     <Style x:Key="DefaultTitleBarStyle" TargetType="{x:Type controls:TitleBar}">
-        <Setter Property="Foreground" Value="{m:DynamicBrush TextFillPrimary}" />
-        <Setter Property="Padding" Value="16,4,16,4" />
+        <Setter Property="Padding" Value="16,4,16,4" />     
         <Setter Property="Height" Value="48" />
-        <Setter Property="IconMargin">
-            <Setter.Value>
-                <Binding Path="Padding" RelativeSource="{RelativeSource Self}" />
-            </Setter.Value>
-        </Setter>
-        <Setter Property="Focusable" Value="False" />
-        <Setter Property="IsTabStop" Value="False" />
+        <Setter Property="IconMargin" Value="{Binding Padding, RelativeSource={RelativeSource Self}}" />
         <Setter Property="VerticalContentAlignment" Value="Stretch" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type controls:TitleBar}">
                     <Grid
                         x:Name="MainGrid"
-                        HorizontalAlignment="Stretch"
-                        VerticalAlignment="Stretch"
                         controls:TitleBar.HitTestRole="Caption"
                         Background="{TemplateBinding Background}">
                         <Grid.ColumnDefinitions>
@@ -234,9 +225,9 @@
                 <Setter Property="IconMargin">
                     <Setter.Value>
                         <Binding
+                            Converter="{StaticResource IconGridMarginConverter}"
                             Path="Padding"
-                            RelativeSource="{RelativeSource Self}"
-                            Converter="{StaticResource IconGridMarginConverter}" />
+                            RelativeSource="{RelativeSource Self}" />
                     </Setter.Value>
                 </Setter>
             </Trigger>

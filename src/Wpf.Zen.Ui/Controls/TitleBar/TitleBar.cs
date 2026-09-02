@@ -48,12 +48,14 @@ public class TitleBar : ContentControl
             )
         );
 
-        // Set the default vertical alignment of the TitleBar to Top.
-        // This aligns the control with typical window chrome positioning
-        // and avoids unintended vertical centering when hosted in layout containers.
-        VerticalAlignmentProperty.OverrideMetadata(
+        FocusableProperty.OverrideMetadata(
             typeof(TitleBar),
-            new FrameworkPropertyMetadata(VerticalAlignment.Top)
+            new FrameworkPropertyMetadata(false)
+        );
+
+        IsTabStopProperty.OverrideMetadata(
+            typeof(TitleBar),
+            new FrameworkPropertyMetadata(false)
         );
     }
 
