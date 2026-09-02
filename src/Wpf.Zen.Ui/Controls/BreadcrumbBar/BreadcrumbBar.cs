@@ -27,6 +27,11 @@ namespace Wpf.Zen.Ui.Controls;
 /// segment. A command can therefore disable one path target without disabling the complete bar.
 /// The final segment represents the current location and is never governed by the bar command.
 /// </para>
+/// <para>
+/// The complete breadcrumb path contributes one stop to the surrounding Tab sequence. Tab enters
+/// the first or most recently focused segment and the following Tab leaves the bar; arrow keys move
+/// focus spatially among the segment buttons without escaping the bar.
+/// </para>
 /// </remarks>
 /// <example>
 /// <code lang="xml">
@@ -144,6 +149,20 @@ public class BreadcrumbBar : ItemsControl, ICommandSource
             typeof(BreadcrumbBar),
             new FrameworkPropertyMetadata(typeof(BreadcrumbBar))
         );
+
+        // BreadcrumbBar is a composite control: its template buttons remain independently
+        // focusable for activation, but the complete path must occupy only one place in the
+        // surrounding Tab order. These metadata defaults mirror WPF's ListBox focus contract and
+        // remain replaceable through the standard attached properties when a host needs a
+        // specialized navigation policy.
+        KeyboardNavigation.TabNavigationProperty.OverrideMetadata(
+            typeof(BreadcrumbBar),
+            new FrameworkPropertyMetadata(KeyboardNavigationMode.Once)
+        );
+        KeyboardNavigation.DirectionalNavigationProperty.OverrideMetadata(
+            typeof(BreadcrumbBar),
+            new FrameworkPropertyMetadata(KeyboardNavigationMode.Contained)
+        );
     }
 
     /// <summary>
@@ -157,6 +176,52 @@ public class BreadcrumbBar : ItemsControl, ICommandSource
         AddHandler(BreadcrumbBarItem.ClickEvent, new RoutedEventHandler(OnItemContainerClick));
         ItemContainerGenerator.ItemsChanged += ItemContainerGeneratorOnItemsChanged;
         ItemContainerGenerator.StatusChanged += ItemContainerGeneratorOnStatusChanged;
+    }
+
+    /// <inheritdoc />
+    /// <remarks>
+    /// <see cref="KeyboardNavigation.DirectionalNavigationProperty"/> defines the boundary for
+    /// WPF's focus search, but <see cref="ItemsControl"/> does not initiate that search when an
+    /// arrow key is pressed. The focused template button bubbles unhandled key input to the bar,
+    /// which translates it into spatial focus traversal. WPF consequently handles left-to-right
+    /// and right-to-left layouts from the arranged positions rather than requiring logical index
+    /// reversal here.
+    /// </remarks>
+    protected override void OnKeyDown(KeyEventArgs e)
+    {
+        if (
+            TryGetFocusNavigationDirection(e.Key, out FocusNavigationDirection direction)
+            && Keyboard.FocusedElement is UIElement focusedElement
+            && IsKeyboardFocusWithin
+        )
+        {
+            _ = focusedElement.MoveFocus(new TraversalRequest(direction));
+
+            // Directional input belongs to the composite even at an edge. Contained keeps focus on
+            // the current segment there; marking the event handled prevents an outer scrolling or
+            // command surface from interpreting the same arrow after focus traversal has finished.
+            e.Handled = true;
+            return;
+        }
+
+        base.OnKeyDown(e);
+    }
+
+    /// <summary>Maps the four spatial arrow keys to WPF focus-navigation directions.</summary>
+    private static bool TryGetFocusNavigationDirection(
+        Key key,
+        out FocusNavigationDirection direction)
+    {
+        direction = key switch
+        {
+            Key.Left => FocusNavigationDirection.Left,
+            Key.Up => FocusNavigationDirection.Up,
+            Key.Right => FocusNavigationDirection.Right,
+            Key.Down => FocusNavigationDirection.Down,
+            _ => default,
+        };
+
+        return key is Key.Left or Key.Up or Key.Right or Key.Down;
     }
 
     /// <summary>
