@@ -22,8 +22,31 @@
 
     <converters:CornerRadiusTransformConverter
         x:Key="FocusCornerRadiusConverter"
-        Offset="2 2 2 2"
-        PreserveZeroCorners="True" />
+        PreserveZeroCorners="True"
+        Offset="2 2 2 2" />
+
+    <!--
+        Button's focus ring sits outside its strongly colored surface. This style is applied to the presenter inside
+        the global focus visual, so it does not shadow SystemParameters.FocusVisualStyleKey or alter WPF's implicit
+        focus-style resource lookup. The complete template is intentional: specialized presenter styles are also the
+        extension point for controls whose focus outline is not a rounded rectangle.
+    -->
+    <Style x:Key="UiButtonFocusVisualPresenterStyle" TargetType="{x:Type Control}">
+        <Setter Property="Margin" Value="-2" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type Control}">
+                    <!--  ReSharper disable once Xaml.BindingWithContextNotResolved  -->
+                    <Border
+                        BorderBrush="{m:DynamicBrush KeyboardFocusBorder}"
+                        BorderThickness="1"
+                        CornerRadius="{Binding AdornedElement.CornerRadius, RelativeSource={RelativeSource AncestorType={x:Type Adorner}}, Converter={StaticResource FocusCornerRadiusConverter}}"
+                        IsHitTestVisible="False"
+                        SnapsToDevicePixels="True" />
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
 
     <ControlTemplate x:Key="UiButtonControlTemplate" TargetType="{x:Type controls:Button}">
         <controls:UiBorder
@@ -80,25 +103,6 @@
     </ControlTemplate>
 
     <Style x:Key="{x:Static t:StyleKeys.UiButtonStyle}" BasedOn="{StaticResource UiButtonAppearanceStyle}" TargetType="{x:Type controls:Button}">
-        <Style.Resources>
-            <!--  按钮的视觉焦点样式特意往外扩了一圈，防止按钮显示强烈背景色时看不清焦点视觉样式  -->
-            <Style x:Key="{x:Static SystemParameters.FocusVisualStyleKey}">
-                <Setter Property="Control.Template">
-                    <Setter.Value>
-                        <ControlTemplate>
-                            <!--  ReSharper disable once Xaml.BindingWithContextNotResolved  -->
-                            <Border
-                                Margin="-2"
-                                BorderBrush="{m:DynamicBrush KeyboardFocusBorder}"
-                                BorderThickness="1"
-                                CornerRadius="{Binding AdornedElement.CornerRadius, RelativeSource={RelativeSource AncestorType={x:Type Adorner}}, Converter={StaticResource FocusCornerRadiusConverter}}"
-                                IsHitTestVisible="False"
-                                SnapsToDevicePixels="True" />
-                        </ControlTemplate>
-                    </Setter.Value>
-                </Setter>
-            </Style>
-        </Style.Resources>
         <Setter Property="Padding" Value="{m:DynamicValue ButtonThemePadding}" />
         <Setter Property="CornerRadius" Value="{m:DynamicValue ControlCornerRadius}" />
         <Setter Property="HorizontalContentAlignment" Value="Center" />
@@ -107,6 +111,7 @@
         <Setter Property="Template" Value="{StaticResource UiButtonControlTemplate}" />
         <Setter Property="controls:UiBorder.BorderPlacement" Value="Inside" />
         <Setter Property="IconMargin" Value="0,0,8,0" />
+        <Setter Property="controls:FocusVisual.PresenterStyle" Value="{StaticResource UiButtonFocusVisualPresenterStyle}" />
     </Style>
 
     <Style BasedOn="{StaticResource {x:Static t:StyleKeys.UiButtonStyle}}" TargetType="{x:Type controls:Button}" />

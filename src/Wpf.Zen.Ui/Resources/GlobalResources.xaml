@@ -9,7 +9,8 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:c="clr-namespace:Wpf.Zen.Ui.Converters"
-    xmlns:m="clr-namespace:Wpf.Zen.Ui.Markup">
+    xmlns:m="clr-namespace:Wpf.Zen.Ui.Markup"
+    xmlns:t="clr-namespace:Wpf.Zen.Ui.Theming">
 
     <!--
         ThemeManager merges this dictionary into every process-wide resource graph, independently of the selected
@@ -17,10 +18,15 @@
         Application.Resources and the applicationless SystemResources host.
     -->
 
-    <Style x:Key="{x:Static SystemParameters.FocusVisualStyleKey}">
-        <Setter Property="Control.Template">
+    <!--
+        The focus style selected by WPF remains a single process-wide resource. Per-control variations are applied
+        to this inner presenter instead of shadowing SystemParameters.FocusVisualStyleKey in a control's resources;
+        this preserves FrameworkElement.FindResourceInternal's normal element-to-application lookup chain.
+    -->
+    <Style x:Key="{x:Static t:StyleKeys.DefaultFocusVisualPresenterStyle}" TargetType="{x:Type Control}">
+        <Setter Property="Template">
             <Setter.Value>
-                <ControlTemplate>
+                <ControlTemplate TargetType="{x:Type Control}">
                     <Border
                         BorderBrush="{m:DynamicBrush KeyboardFocusBorder}"
                         BorderThickness="1"
@@ -34,6 +40,23 @@
                             </MultiBinding>
                         </Border.CornerRadius>
                     </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="{x:Static SystemParameters.FocusVisualStyleKey}">
+        <Setter Property="Control.Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type Control}">
+                    <!--
+                        The converter only selects the adorned element's presenter style or this global default. It
+                        deliberately owns no type or geometry policy, and leaves FrameworkElement.FocusVisualStyle
+                        untouched so WPF remains responsible for the implicit focus-style resource lookup.
+                    -->
+                    <Control
+                        IsHitTestVisible="False"
+                        Style="{Binding AdornedElement, RelativeSource={RelativeSource AncestorType={x:Type Adorner}}, Converter={c:FocusVisualPresenterStyleConverter}, ConverterParameter={StaticResource {x:Static t:StyleKeys.DefaultFocusVisualPresenterStyle}}}" />
                 </ControlTemplate>
             </Setter.Value>
         </Setter>

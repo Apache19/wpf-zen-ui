@@ -195,7 +195,7 @@
 
     <Style x:Key="UiRadioMenuItemStyle" TargetType="{x:Type controls:RadioMenuItem}">
         <Setter Property="Background" Value="Transparent" />
-        <Setter Property="FocusVisualStyle" Value="{StaticResource MenuItemFocusVisualStyle}" />
+        <Setter Property="controls:FocusVisual.PresenterStyle" Value="{StaticResource MenuItemFocusVisualStyle}" />
         <Setter Property="Focusable" Value="True" />
         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
@@ -206,7 +206,7 @@
         <Setter Property="Stylus.IsFlicksEnabled" Value="False" />
         <Style.Triggers>
             <Trigger Property="Role" Value="TopLevelItem">
-                <Setter Property="FocusVisualStyle" Value="{StaticResource TopLevelMenuItemFocusVisualStyle}" />
+                <Setter Property="controls:FocusVisual.PresenterStyle" Value="{StaticResource TopLevelMenuItemFocusVisualStyle}" />
                 <Setter Property="Template" Value="{StaticResource RadioMenuItemTopLevelItemTemplate}" />
             </Trigger>
             <Trigger Property="Role" Value="SubmenuItem">

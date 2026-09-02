@@ -14,6 +14,19 @@ namespace Wpf.Zen.Ui.Theming;
 /// </remarks>
 public static class StyleKeys
 {
+    /// <summary>
+    /// Gets the reusable style for the presenter hosted by the global keyboard-focus visual.
+    /// </summary>
+    /// <remarks>
+    /// Use this key as <see cref="Style.BasedOn"/> for a <see cref="FocusVisual.PresenterStyleProperty"/> value when
+    /// the default rounded-rectangle template is suitable and only presenter properties such as margin need to vary.
+    /// Replace <see cref="System.Windows.Controls.Control.Template"/> in the derived style when the focus outline
+    /// must use a different shape.
+    /// </remarks>
+    public static ComponentResourceKey DefaultFocusVisualPresenterStyle { get; } = Create(
+        nameof(DefaultFocusVisualPresenterStyle)
+    );
+
     public static ComponentResourceKey UiButtonStyle                   { get; } = Create(nameof(UiButtonStyle));
     public static ComponentResourceKey MenuStyle                       { get; } = Create(nameof(MenuStyle));
     public static ComponentResourceKey UiMenuStyle                     { get; } = Create(nameof(UiMenuStyle));

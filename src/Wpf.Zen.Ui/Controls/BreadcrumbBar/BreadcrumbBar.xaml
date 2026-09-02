@@ -16,6 +16,7 @@
         <Setter Property="VerticalContentAlignment" Value="Center" />
         <Setter Property="Focusable" Value="False" />
         <Setter Property="IsTabStop" Value="False" />
+        <Setter Property="Padding" Value="4" />
         <Setter Property="Foreground" Value="{m:DynamicBrush TextFillSecondary}" />
         <Setter Property="Template">
             <Setter.Value>
@@ -23,6 +24,7 @@
                     <StackPanel Background="{TemplateBinding Background}" Orientation="Horizontal">
                         <Button
                             x:Name="PART_Button"
+                            Padding="{TemplateBinding Padding}"
                             HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
                             VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
                             Background="Transparent"
@@ -36,11 +38,15 @@
                             OverridesDefaultStyle="True">
                             <Button.Template>
                                 <ControlTemplate TargetType="{x:Type Button}">
-                                    <Border Background="{TemplateBinding Background}" SnapsToDevicePixels="True">
+                                    <Border
+                                        Padding="{TemplateBinding Padding}"
+                                        Background="{TemplateBinding Background}"
+                                        SnapsToDevicePixels="True">
                                         <ContentPresenter
                                             HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
                                             VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
-                                            RecognizesAccessKey="True" />
+                                            RecognizesAccessKey="True"
+                                            SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
                                     </Border>
                                     <ControlTemplate.Triggers>
                                         <Trigger Property="IsMouseOver" Value="True">
@@ -58,27 +64,10 @@
                                     </ControlTemplate.Triggers>
                                 </ControlTemplate>
                             </Button.Template>
-                            <Button.FocusVisualStyle>
-                                <Style>
-                                    <Setter Property="Control.Template">
-                                        <Setter.Value>
-                                            <ControlTemplate>
-                                                <Rectangle
-                                                    Margin="-4"
-                                                    RadiusX="4"
-                                                    RadiusY="4"
-                                                    SnapsToDevicePixels="True"
-                                                    Stroke="{m:DynamicBrush KeyboardFocusBorder}"
-                                                    StrokeThickness="1" />
-                                            </ControlTemplate>
-                                        </Setter.Value>
-                                    </Setter>
-                                </Style>
-                            </Button.FocusVisualStyle>
                         </Button>
                         <controls:FluentIcon
                             x:Name="icon"
-                            Margin="8,0"
+                            Margin="4,0"
                             VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
                             Foreground="{m:DynamicBrush TextFillSecondary}"
                             IsHitTestVisible="False"

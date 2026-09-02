@@ -189,7 +189,6 @@
         <Setter Property="Foreground" Value="{m:DynamicBrush TextFillPrimary}" />
         <Setter Property="Background" Value="{m:DynamicBrush SubtleFillTransparent}" />
         <Setter Property="Padding" Value="4" />
-        <Setter Property="FocusVisualStyle" Value="{StaticResource TreeViewItemFocusVisual}" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
         <Setter Property="Template">
             <Setter.Value>

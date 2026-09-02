@@ -63,7 +63,7 @@
 
     <Style x:Key="PagingBoxButtonStyle" TargetType="{x:Type controls:Button}">
         <Setter Property="OverridesDefaultStyle" Value="True" />
-        <Setter Property="FocusVisualStyle" Value="{StaticResource PagingBoxButtonFocusVisualStyle}" />
+        <Setter Property="controls:FocusVisual.PresenterStyle" Value="{StaticResource PagingBoxButtonFocusVisualStyle}" />
         <Setter Property="HorizontalContentAlignment" Value="Center" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
         <Setter Property="TextBlock.TextAlignment" Value="Center" />
@@ -193,7 +193,7 @@
             BorderThickness="0,0,1,0"
             Content="{Binding Page}"
             CornerRadius="{Binding (Border.CornerRadius), RelativeSource={RelativeSource AncestorType={x:Type controls:PagingBox}}}"
-            FocusVisualStyle="{StaticResource PagingBoxFirstButtonFocusVisualStyle}"
+            controls:FocusVisual.PresenterStyle="{StaticResource PagingBoxFirstButtonFocusVisualStyle}"
             IsEnabled="{Binding IsEnabled}"
             Tag="{Binding Page}">
             <controls:Button.Style>
@@ -216,7 +216,7 @@
             AutomationProperties.Name="{Binding Description}"
             BorderThickness="0,0,0,0"
             CornerRadius="{Binding (Border.CornerRadius), RelativeSource={RelativeSource AncestorType={x:Type controls:PagingBox}}}"
-            FocusVisualStyle="{StaticResource PagingBoxLastButtonFocusVisualStyle}"
+            controls:FocusVisual.PresenterStyle="{StaticResource PagingBoxLastButtonFocusVisualStyle}"
             IsEnabled="{Binding IsEnabled}"
             Tag="{Binding Page}">
             <controls:Button.Style>

@@ -9,7 +9,8 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Zen.Ui.Controls"
-    xmlns:converters="clr-namespace:Wpf.Zen.Ui.Converters">
+    xmlns:converters="clr-namespace:Wpf.Zen.Ui.Converters"
+    xmlns:t="clr-namespace:Wpf.Zen.Ui.Theming">
 
     <ResourceDictionary.MergedDictionaries>
         <!--
@@ -102,10 +103,7 @@
         </ControlTemplate.Triggers>
     </ControlTemplate>
 
-    <Style
-        x:Key="UiDropDownButtonStyle"
-        BasedOn="{StaticResource UiButtonStyle}"
-        TargetType="{x:Type controls:DropDownButton}">
+    <Style x:Key="UiDropDownButtonStyle" BasedOn="{StaticResource {x:Static t:StyleKeys.UiButtonStyle}}" TargetType="{x:Type controls:DropDownButton}">
         <Setter Property="Template" Value="{StaticResource UiDropDownButtonControlTemplate}" />
     </Style>
 

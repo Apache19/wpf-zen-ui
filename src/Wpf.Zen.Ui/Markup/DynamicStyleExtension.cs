@@ -54,6 +54,7 @@ internal static class StyleTokenResourceKey
     {
         return token switch
         {
+            StyleToken.DefaultFocusVisualPresenter => StyleKeys.DefaultFocusVisualPresenterStyle,
             StyleToken.UiButton                   => StyleKeys.UiButtonStyle,
             StyleToken.Menu                       => StyleKeys.MenuStyle,
             StyleToken.UiMenu                     => StyleKeys.UiMenuStyle,

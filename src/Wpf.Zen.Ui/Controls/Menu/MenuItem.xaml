@@ -476,7 +476,7 @@
 
     <Style x:Key="UiMenuItemStyle" TargetType="{x:Type MenuItem}">
         <Setter Property="Background" Value="Transparent" />
-        <Setter Property="FocusVisualStyle" Value="{StaticResource MenuItemFocusVisualStyle}" />
+        <Setter Property="controls:FocusVisual.PresenterStyle" Value="{StaticResource MenuItemFocusVisualStyle}" />
         <Setter Property="Focusable" Value="True" />
         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
@@ -496,12 +496,12 @@
         <Setter Property="Popup.PopupAnimation" Value="Slide" />
         <Style.Triggers>
             <Trigger Property="Role" Value="TopLevelHeader">
-                <Setter Property="FocusVisualStyle" Value="{StaticResource TopLevelMenuItemFocusVisualStyle}" />
+                <Setter Property="controls:FocusVisual.PresenterStyle" Value="{StaticResource TopLevelMenuItemFocusVisualStyle}" />
                 <Setter Property="Grid.IsSharedSizeScope" Value="True" />
                 <Setter Property="Template" Value="{StaticResource {x:Static MenuItem.TopLevelHeaderTemplateKey}}" />
             </Trigger>
             <Trigger Property="Role" Value="TopLevelItem">
-                <Setter Property="FocusVisualStyle" Value="{StaticResource TopLevelMenuItemFocusVisualStyle}" />
+                <Setter Property="controls:FocusVisual.PresenterStyle" Value="{StaticResource TopLevelMenuItemFocusVisualStyle}" />
                 <Setter Property="Template" Value="{StaticResource {x:Static MenuItem.TopLevelItemTemplateKey}}" />
             </Trigger>
             <Trigger Property="Role" Value="SubmenuHeader">
