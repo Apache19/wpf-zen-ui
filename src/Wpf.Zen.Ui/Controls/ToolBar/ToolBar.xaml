@@ -18,36 +18,38 @@
             EnterActions/ExitActions storyboard animates
             (Border.Background).(SolidColorBrush.Opacity).  WPF's
             VerifyPathIsAnimatable requires the intermediate object (Background)
-            to be a non-null DependencyObject.  A null Background will crash at
-            runtime.
+            to be a non-null DependencyObject.
         -->
-        <Setter Property="Background" Value="{m:DynamicBrush ControlFillPrimary}" />
-        <Setter Property="BorderBrush" Value="Transparent" />
+        <Setter Property="Background" Value="{m:DynamicBrush ControlFillSecondary}" />
         <Setter Property="BorderThickness" Value="0" />
-        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="Border.CornerRadius" Value="{m:DynamicValue ControlCornerRadius}" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="Padding" Value="11,6" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type ButtonBase}">
-                    <Border
-                        x:Name="Border"
-                        Padding="12,6"
+                    <controls:UiBorder
+                        x:Name="bd"
+                        Padding="{TemplateBinding Padding}"
                         Background="{TemplateBinding Background}"
                         BorderBrush="{TemplateBinding BorderBrush}"
-                        BorderThickness="{TemplateBinding BorderThickness}">
+                        BorderPlacement="Inside"
+                        BorderThickness="{TemplateBinding BorderThickness}"
+                        CornerRadius="{TemplateBinding Border.CornerRadius}"
+                        SnapsToDevicePixels="True">
                         <ContentPresenter
-                            Margin="2"
                             HorizontalAlignment="Center"
                             VerticalAlignment="Center"
-                            RecognizesAccessKey="True" />
-                    </Border>
+                            RecognizesAccessKey="True"
+                            SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
+                    </controls:UiBorder>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
                             <Trigger.EnterActions>
                                 <BeginStoryboard>
                                     <Storyboard>
                                         <DoubleAnimation
-                                            Storyboard.TargetName="Border"
+                                            Storyboard.TargetName="bd"
                                             Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Opacity)"
                                             From="0.0"
                                             To="1.0"
@@ -59,7 +61,7 @@
                                 <BeginStoryboard>
                                     <Storyboard>
                                         <DoubleAnimation
-                                            Storyboard.TargetName="Border"
+                                            Storyboard.TargetName="bd"
                                             Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Opacity)"
                                             From="1.0"
                                             To="0.0"
@@ -68,15 +70,49 @@
                                 </BeginStoryboard>
                             </Trigger.ExitActions>
                         </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="bd" Property="Background" Value="{m:DynamicBrush ControlFillTertiary}" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Foreground" Value="{m:DynamicBrush TextFillDisabled}" />
+                        </Trigger>
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="ToggleButton.IsChecked" Value="True" />
+                                <Condition Property="IsEnabled" Value="False" />
+                            </MultiTrigger.Conditions>
+                            <Setter TargetName="bd" Property="Background" Value="{m:DynamicBrush ControlFillDisabled}" />
+                        </MultiTrigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
     </Style>
 
+    <Style x:Key="ToolBarToggleButtonBaseStyle" TargetType="{x:Type ToggleButton}">
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="BorderBrush" Value="Transparent" />
+        <Style.Triggers>
+            <Trigger Property="IsChecked" Value="True">
+                <Setter Property="BorderBrush" Value="{m:DynamicBrush AccentStroke}" />
+            </Trigger>
+            <MultiTrigger>
+                <MultiTrigger.Conditions>
+                    <Condition Property="IsChecked" Value="True" />
+                    <Condition Property="IsEnabled" Value="False" />
+                </MultiTrigger.Conditions>
+                <!--  todo: 缺少控件禁用边框色  -->
+                <Setter Property="BorderBrush" Value="{m:DynamicBrush ControlStrokeSecondary}" />
+            </MultiTrigger>
+        </Style.Triggers>
+    </Style>
+
     <Style x:Key="{x:Static ToolBar.ButtonStyleKey}" BasedOn="{StaticResource ToolBarButtonBaseStyle}" TargetType="{x:Type Button}" />
-    <Style x:Key="{x:Static ToolBar.ToggleButtonStyleKey}" BasedOn="{StaticResource ToolBarButtonBaseStyle}" TargetType="{x:Type ToggleButton}" />
-    <Style x:Key="{x:Static ToolBar.CheckBoxStyleKey}" BasedOn="{StaticResource ToolBarButtonBaseStyle}" TargetType="{x:Type CheckBox}" />
+
+    <Style x:Key="{x:Static ToolBar.ToggleButtonStyleKey}" BasedOn="{StaticResource ToolBarToggleButtonBaseStyle}" TargetType="{x:Type ToggleButton}" />
+
+    <Style x:Key="{x:Static ToolBar.CheckBoxStyleKey}" BasedOn="{StaticResource ToolBarToggleButtonBaseStyle}" TargetType="{x:Type CheckBox}" />
+
     <Style x:Key="{x:Static ToolBar.RadioButtonStyleKey}" BasedOn="{StaticResource ToolBarButtonBaseStyle}" TargetType="{x:Type RadioButton}" />
 
     <Style x:Key="{x:Static ToolBar.TextBoxStyleKey}" TargetType="{x:Type TextBox}">
@@ -214,8 +250,8 @@
                                 Style="{StaticResource ToolBarOverflowButtonStyle}">
                                 <Popup
                                     x:Name="OverflowPopup"
-                                    controls:PopupSlideAnimator.IsEnabled="True"
                                     controls:PopupShadow.IsEnabled="True"
+                                    controls:PopupSlideAnimator.IsEnabled="True"
                                     AllowsTransparency="True"
                                     Focusable="False"
                                     IsOpen="{Binding IsOverflowOpen, RelativeSource={RelativeSource TemplatedParent}}"
