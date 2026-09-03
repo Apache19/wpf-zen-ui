@@ -9,13 +9,13 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Zen.Ui.Controls"
-    xmlns:converters="clr-namespace:Wpf.Zen.Ui.Converters"
     xmlns:m="clr-namespace:Wpf.Zen.Ui.Markup">
 
     <Style x:Key="ToolBarButtonBaseStyle" TargetType="{x:Type ButtonBase}">
         <Setter Property="OverridesDefaultStyle" Value="True" />
         <Setter Property="Background" Value="Transparent" />
-        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="BorderBrush" Value="Transparent" />
         <Setter Property="Border.CornerRadius" Value="{m:DynamicValue ControlCornerRadius}" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
         <Setter Property="HorizontalContentAlignment" Value="Center" />
@@ -25,14 +25,63 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type ButtonBase}">
+                    <controls:UiBorder
+                        x:Name="bd"
+                        Padding="{TemplateBinding Padding}"
+                        Background="{TemplateBinding Background}"
+                        BorderBrush="{TemplateBinding BorderBrush}"
+                        BorderPlacement="Inside"
+                        BorderThickness="{TemplateBinding BorderThickness}"
+                        CornerRadius="{TemplateBinding Border.CornerRadius}"
+                        SnapsToDevicePixels="True">
+                        <ContentPresenter
+                            HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                            VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                            RecognizesAccessKey="True"
+                            SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
+                    </controls:UiBorder>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter Property="Background" Value="{m:DynamicBrush ControlFillPrimary}" />
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter Property="Background" Value="{m:DynamicBrush ControlFillTertiary}" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Foreground" Value="{m:DynamicBrush TextFillDisabled}" />
+                        </Trigger>
+                        <Trigger Property="ToggleButton.IsChecked" Value="True">
+                            <Setter Property="BorderBrush" Value="{m:DynamicBrush AccentStroke}" />
+                        </Trigger>
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="ToggleButton.IsChecked" Value="True" />
+                                <Condition Property="IsEnabled" Value="False" />
+                            </MultiTrigger.Conditions>
+                            <Setter Property="Background" Value="{m:DynamicBrush ControlFillDisabled}" />
+                            <Setter Property="BorderBrush" Value="{m:DynamicBrush ControlStrokeSecondary}" />
+                        </MultiTrigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="{x:Static ToolBar.ButtonStyleKey}" BasedOn="{StaticResource ToolBarButtonBaseStyle}" TargetType="{x:Type Button}" />
+
+    <Style x:Key="{x:Static ToolBar.ToggleButtonStyleKey}" BasedOn="{StaticResource ToolBarButtonBaseStyle}" TargetType="{x:Type ToggleButton}" />
+
+    <Style x:Key="{x:Static ToolBar.CheckBoxStyleKey}" BasedOn="{StaticResource ToolBarButtonBaseStyle}" TargetType="{x:Type CheckBox}" />
+
+    <Style x:Key="{x:Static ToolBar.RadioButtonStyleKey}" BasedOn="{StaticResource ToolBarButtonBaseStyle}" TargetType="{x:Type RadioButton}">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type ToggleButton}">
                     <Grid>
-                        <controls:UiBorder
+                        <Border
                             x:Name="bd"
                             Padding="{TemplateBinding Padding}"
                             Background="{TemplateBinding Background}"
-                            BorderBrush="{TemplateBinding BorderBrush}"
-                            BorderPlacement="Inside"
-                            BorderThickness="{TemplateBinding BorderThickness}"
                             CornerRadius="{TemplateBinding Border.CornerRadius}"
                             SnapsToDevicePixels="True">
                             <ContentPresenter
@@ -40,15 +89,15 @@
                                 VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
                                 RecognizesAccessKey="True"
                                 SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
-                        </controls:UiBorder>
+                        </Border>
                         <Border
                             x:Name="radioIndicator"
                             Height="3"
-                            Margin="4,0"
+                            Margin="8,0"
                             VerticalAlignment="Bottom"
                             Background="{m:DynamicBrush AccentSelection}"
                             CornerRadius="1.75"
-                            Visibility="{Binding GroupName, RelativeSource={RelativeSource TemplatedParent}, Converter={converters:NullToVisibilityConverter NullValue=Collapsed, NotNullValue=Visible, TreatEmptyStringAsNull=False}, FallbackValue=Collapsed}" />
+                            Visibility="Collapsed" />
                     </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
@@ -61,17 +110,12 @@
                             <Setter Property="Foreground" Value="{m:DynamicBrush TextFillDisabled}" />
                             <Setter TargetName="radioIndicator" Property="Background" Value="{m:DynamicBrush ControlStrongFillDisabled}" />
                         </Trigger>
-
-                        <Trigger Property="ToggleButton.IsChecked" Value="False">
-                            <Setter TargetName="radioIndicator" Property="Visibility" Value="Collapsed" />
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="radioIndicator" Property="Visibility" Value="Visible" />
                         </Trigger>
-                        <Trigger Property="ToggleButton.IsChecked" Value="{x:Null}">
-                            <Setter TargetName="radioIndicator" Property="Visibility" Value="Collapsed" />
-                        </Trigger>
-
                         <MultiTrigger>
                             <MultiTrigger.Conditions>
-                                <Condition Property="ToggleButton.IsChecked" Value="True" />
+                                <Condition Property="IsChecked" Value="True" />
                                 <Condition Property="IsEnabled" Value="False" />
                             </MultiTrigger.Conditions>
                             <Setter Property="Background" Value="{m:DynamicBrush ControlFillDisabled}" />
@@ -82,63 +126,12 @@
         </Setter>
     </Style>
 
-    <Style x:Key="ToolBarToggleButtonBaseStyle" BasedOn="{StaticResource ToolBarButtonBaseStyle}" TargetType="{x:Type ToggleButton}">
-        <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="BorderBrush" Value="Transparent" />
-        <Style.Triggers>
-            <Trigger Property="IsChecked" Value="True">
-                <Setter Property="BorderBrush" Value="{m:DynamicBrush AccentStroke}" />
-            </Trigger>
-            <MultiTrigger>
-                <MultiTrigger.Conditions>
-                    <Condition Property="IsChecked" Value="True" />
-                    <Condition Property="IsEnabled" Value="False" />
-                </MultiTrigger.Conditions>
-                <!--  todo: 缺少控件禁用边框色  -->
-                <Setter Property="BorderBrush" Value="{m:DynamicBrush ControlStrokeSecondary}" />
-            </MultiTrigger>
-        </Style.Triggers>
-    </Style>
-
-    <Style x:Key="{x:Static ToolBar.ButtonStyleKey}" BasedOn="{StaticResource ToolBarButtonBaseStyle}" TargetType="{x:Type Button}" />
-
-    <Style x:Key="{x:Static ToolBar.ToggleButtonStyleKey}" BasedOn="{StaticResource ToolBarToggleButtonBaseStyle}" TargetType="{x:Type ToggleButton}" />
-
-    <Style x:Key="{x:Static ToolBar.CheckBoxStyleKey}" BasedOn="{StaticResource ToolBarToggleButtonBaseStyle}" TargetType="{x:Type CheckBox}" />
-
-    <Style x:Key="{x:Static ToolBar.RadioButtonStyleKey}" BasedOn="{StaticResource ToolBarToggleButtonBaseStyle}" TargetType="{x:Type RadioButton}">
-        <Setter Property="BorderThickness" Value="0" />
-        <Style.Triggers>
-            <Trigger Property="RadioButton.GroupName" Value="">
-                <Setter Property="BorderThickness" Value="1" />
-                <Setter Property="BorderBrush" Value="Transparent" />
-            </Trigger>
-            <Trigger Property="RadioButton.GroupName" Value="{x:Null}">
-                <Setter Property="BorderThickness" Value="1" />
-                <Setter Property="BorderBrush" Value="Transparent" />
-            </Trigger>
-        </Style.Triggers>
-    </Style>
-
-    <Style x:Key="{x:Static ToolBar.TextBoxStyleKey}" TargetType="{x:Type TextBox}">
-        <Setter Property="KeyboardNavigation.TabNavigation" Value="None" />
-        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-        <Setter Property="AllowDrop" Value="True" />
-        <Setter Property="SnapsToDevicePixels" Value="True" />
-        <Setter Property="Template">
-            <Setter.Value>
-                <ControlTemplate TargetType="{x:Type TextBox}">
-                    <Border
-                        x:Name="Border"
-                        Padding="2"
-                        Background="Transparent"
-                        BorderBrush="Transparent"
-                        BorderThickness="0">
-                        <controls:PassiveScrollViewer x:Name="PART_ContentHost" Margin="0" />
-                    </Border>
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
+    <Style x:Key="{x:Static ToolBar.TextBoxStyleKey}" BasedOn="{m:StaticStyle DefaultTextBox}" TargetType="{x:Type TextBox}">
+        <Setter Property="BorderThickness" Value="0"></Setter>
+        <Setter Property="Margin" Value="2" />
+        <Setter Property="MaxLines" Value="1" />
+        <Setter Property="Padding" Value="6,0" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
     </Style>
 
     <Style x:Key="{x:Static ToolBar.MenuStyleKey}" />
