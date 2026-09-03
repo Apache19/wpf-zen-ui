@@ -19,8 +19,7 @@ public partial class DefaultEditorContextMenu : ResourceDictionary
     {
         // ResourceDictionary.Source constructs this class while its BAML is already being loaded.
         // Calling InitializeComponent here would start a second load into the same dictionary and
-        // fail with "Cannot re-initialize ResourceDictionary instance." This mirrors the existing
-        // ContextMenuLoader dictionary, which is also instantiated through a pack URI.
+        // fail with "Cannot re-initialize ResourceDictionary instance."
     }
 
     private void OnDefaultEditorContextMenuOpened(object sender, RoutedEventArgs e)

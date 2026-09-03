@@ -4,7 +4,6 @@
         <ResourceDictionary Source="pack://application:,,,/Wpf.Zen.Ui;component/Controls/Button/NativeButton.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Zen.Ui;component/Controls/Calendar/Calendar.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Zen.Ui;component/Controls/ContextMenu/ContextMenu.xaml" />
-        <ResourceDictionary Source="pack://application:,,,/Wpf.Zen.Ui;component/Controls/ContextMenu/ContextMenuLoader.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Zen.Ui;component/Controls/ComboBox/ComboBoxItem.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Zen.Ui;component/Controls/ComboBox/NativeComboBox.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Zen.Ui;component/Controls/Expander/Expander.xaml" />
