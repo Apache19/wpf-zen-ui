@@ -80,7 +80,7 @@ public partial class MainWindowViewModel : ViewModel
         {
             Children = new object[]
             {
-                new NavigationItem("Anchor",         typeof(AnchorPage)), new NavigationItem("Button",                  typeof(ButtonPage)),
+                new NavigationItem("Button",         typeof(ButtonPage)),
                 new NavigationItem("DropDownButton", typeof(DropDownButtonPage)), new NavigationItem("HyperlinkButton", typeof(HyperlinkButtonPage)),
                 new NavigationItem("ToggleButton",   typeof(ToggleButtonPage)), new NavigationItem("ToggleSwitch",      typeof(ToggleSwitchPage)),
                 new NavigationItem("CheckBox",       typeof(CheckBoxPage)), new NavigationItem("ComboBox",              typeof(ComboBoxPage)),
@@ -217,7 +217,6 @@ public partial class MainWindowViewModel : ViewModel
         AddPage<AllControlsPage>("All samples");
 
         string basicInput = AddPage<BasicInputPage>("Basic Input", isBreadcrumbVisible: false);
-        AddPage<AnchorPage>("Anchor", basicInput);
         AddPage<ButtonPage>("Button", basicInput);
         AddPage<DropDownButtonPage>("DropDownButton", basicInput);
         AddPage<HyperlinkButtonPage>("HyperlinkButton", basicInput);

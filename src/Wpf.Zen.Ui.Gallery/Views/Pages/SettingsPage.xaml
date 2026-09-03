@@ -126,7 +126,7 @@
                         Foreground="{ui:DynamicBrush TextFillSecondary}"
                         Text="git clone https://github.com/apachezy/wpfui.git" />
                 </Grid>
-                <ui:Anchor
+                <ui:HyperlinkButton
                     Margin="0"
                     Padding="16"
                     HorizontalAlignment="Stretch"
@@ -143,8 +143,8 @@
                         <TextBlock Grid.Column="0" Text="File a bug or request a new sample" />
                         <ui:FluentIcon Grid.Column="1" Symbol="Link24" />
                     </Grid>
-                </ui:Anchor>
-                <ui:Anchor
+                </ui:HyperlinkButton>
+                <ui:HyperlinkButton
                     Margin="0"
                     Padding="16"
                     HorizontalAlignment="Stretch"
@@ -161,7 +161,7 @@
                         <TextBlock Grid.Column="0" Text="Check out the docs" />
                         <ui:FluentIcon Grid.Column="1" Symbol="Link24" />
                     </Grid>
-                </ui:Anchor>
+                </ui:HyperlinkButton>
                 <TextBlock Margin="16" Text="{Binding AppVersion}" />
             </StackPanel>
         </Expander>

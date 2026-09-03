@@ -21,10 +21,6 @@ public class DerivedButtonTests
             () =>
             {
                 Assert.Equal(
-                    typeof(HyperlinkButton),
-                    new AnchorProbe().ExposedDefaultStyleKey
-                );
-                Assert.Equal(
                     typeof(Wpf.Zen.Ui.Controls.ToggleButton),
                     new CalendarDatePickerProbe().ExposedDefaultStyleKey
                 );
@@ -178,7 +174,7 @@ public class DerivedButtonTests
             {
                 var dropDownButton = new DropDownButton();
                 var splitButton = new SplitButton();
-                var anchor = new Anchor();
+                var hyperlinkButton = new HyperlinkButton();
                 var calendarDatePicker = new CalendarDatePicker();
                 var toggleButton = new Wpf.Zen.Ui.Controls.ToggleButton();
                 toggleButton.Icon = new FluentIcon(SymbolRegular.Calendar24);
@@ -196,7 +192,7 @@ public class DerivedButtonTests
                 );
                 root.Children.Add(dropDownButton);
                 root.Children.Add(splitButton);
-                root.Children.Add(anchor);
+                root.Children.Add(hyperlinkButton);
                 root.Children.Add(calendarDatePicker);
                 root.Children.Add(toggleButton);
                 root.Children.Add(button);
@@ -204,7 +200,7 @@ public class DerivedButtonTests
 
                 Assert.True(dropDownButton.ApplyTemplate());
                 Assert.True(splitButton.ApplyTemplate());
-                Assert.True(anchor.ApplyTemplate());
+                Assert.True(hyperlinkButton.ApplyTemplate());
                 Assert.True(calendarDatePicker.ApplyTemplate());
                 Assert.True(toggleButton.ApplyTemplate());
                 Assert.True(button.ApplyTemplate());
@@ -254,11 +250,6 @@ public class DerivedButtonTests
     private static void RunOnStaThread(Action action)
     {
         WpfTestThread.Run(action);
-    }
-
-    private sealed class AnchorProbe : Anchor
-    {
-        public object ExposedDefaultStyleKey => DefaultStyleKey;
     }
 
     private sealed class CalendarDatePickerProbe : CalendarDatePicker

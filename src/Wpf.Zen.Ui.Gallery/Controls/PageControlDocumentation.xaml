@@ -54,7 +54,7 @@
                             CommandParameter="copy"
                             Icon="{ui:FluentIconSource Link24}"
                             ToolTip="Copy link" />
-                        <ui:Anchor
+                        <ui:HyperlinkButton
                             Grid.Column="4"
                             Margin="4,0,0,0"
                             Icon="{ui:FluentIconSource PersonFeedback24}"
