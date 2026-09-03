@@ -186,12 +186,12 @@ public partial class NavigationViewItem : HeaderedItemsControl
     /// <see langword="false"/>.
     /// </summary>
     /// <remarks>
-    /// This state is independent of <see cref="IsActive"/> and includes every realized level below
+    /// This state is independent of <see cref="IsActive"/> and includes every declared level below
     /// the current item, not only its direct children. Built-in Left templates use it to retain an
     /// active indicator on a collapsed branch while avoiding a second indicator when the active
     /// descendant is visible inside an expanded branch. The property is maintained by the semantic
     /// navigation-item tree, so it also remains meaningful while descendants are presented through
-    /// a detached native menu rather than the WPF visual tree. Its metadata does not directly
+    /// a detached native menu or have not generated containers yet. Its metadata does not directly
     /// invalidate measure, arrange, or rendering; templates opt into the state with triggers.
     /// </remarks>
     [Browsable(false)]
@@ -797,32 +797,61 @@ public partial class NavigationViewItem : HeaderedItemsControl
     }
 
     /// <summary>
-    /// Marks this item active without changing the active state of its ancestors, then invokes
+    /// Marks this item active while preserving inline expansion and submenu-open state, then invokes
     /// <see cref="OnActivated"/>.
     /// </summary>
+    /// <remarks>
+    /// Registered items update their navigation entry; unregistered items own local state. This
+    /// method changes activation only and does not navigate, change SelectedItem, or clear other items.
+    /// </remarks>
     public void Activate(NavigationView navigationView)
     {
-        SetValue(IsActivePropertyKey, true);
-
-        if (UsesInlineExpansion && NavigationViewItemParent is NavigationViewItem parentItem)
+        if (NavigationEntry is { } entry)
         {
-            // Inline activation must reveal the selected row. Expansion remains independent from
-            // selection: OnIsActiveChanged propagates descendant state to ancestors without
-            // incorrectly marking those ancestors active.
-            parentItem.SetCurrentValue(IsExpandedProperty, true);
+            entry.Activate(navigationView);
         }
-
-        OnActivated(navigationView);
+        else
+        {
+            ApplyActiveState(navigationView, true);
+        }
     }
 
     /// <summary>
     /// Marks this item inactive without changing the active state of its ancestors, then invokes
     /// <see cref="OnDeactivated"/>.
     /// </summary>
+    /// <remarks>
+    /// Registered items clear their entry's activation, including ancestor summaries. The current
+    /// page and navigation history are unaffected, and container recreation preserves this state.
+    /// </remarks>
     public void Deactivate(NavigationView navigationView)
     {
-        SetValue(IsActivePropertyKey, false);
-        OnDeactivated(navigationView);
+        if (NavigationEntry is { } entry)
+        {
+            entry.Deactivate(navigationView);
+        }
+        else
+        {
+            ApplyActiveState(navigationView, false);
+        }
+    }
+
+    /// <summary>Projects activation without writing back to the owning navigation entry.</summary>
+    /// <remarks>
+    /// Container generation and release use this path so presentation lifetime cannot activate or
+    /// deactivate a semantic item. Hooks observe the completed dependency-property transition.
+    /// </remarks>
+    internal void ApplyActiveState(NavigationView navigationView, bool isActive)
+    {
+        SetValue(IsActivePropertyKey, isActive);
+        if (isActive)
+        {
+            OnActivated(navigationView);
+        }
+        else
+        {
+            OnDeactivated(navigationView);
+        }
     }
 
     /// <summary>
@@ -1353,8 +1382,8 @@ public partial class NavigationViewItem : HeaderedItemsControl
     /// <remarks>
     /// Compact and horizontal modes project descendants into independent MenuItems hosted by
     /// Popup presentation sources, so routed events, inherited properties, and visual ancestry
-    /// cannot reliably describe whether a branch contains the active item. Recomputing from child
-    /// containers keeps the read-only branch state presentation-independent.
+    /// cannot reliably describe whether a branch contains the active item. Registered ancestors
+    /// read entry summaries; standalone ancestors summarize their semantic child containers.
     /// </remarks>
     private static void OnIsActiveChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
@@ -1614,30 +1643,34 @@ public partial class NavigationViewItem : HeaderedItemsControl
     }
 
     /// <summary>
-    /// Recomputes this branch from direct child summaries and propagates an actual change upward.
+    /// Projects the owning entry's branch state, or summarizes children of an unregistered control.
     /// </summary>
     /// <remarks>
-    /// Each child already summarizes its own descendants, which makes an active-state transition
-    /// proportional to tree depth rather than repeatedly walking the complete subtree. Attachment
-    /// and detachment call the same method because active containers can move while unrealized
-    /// branches or an ItemsSource are being regenerated.
+    /// Registered items use the complete source hierarchy regardless of realization. Standalone
+    /// controls propagate changes through their local parents. Attachment and detachment use the
+    /// same boundary so container generation cannot create a competing source of branch state.
     /// </remarks>
-    private void UpdateDescendantActiveState()
+    internal void UpdateDescendantActiveState()
     {
-        bool isDescendantActive = false;
-
-        foreach (NavigationViewItem child in GetNavigationChildren())
+        // Registered containers project the source tree exclusively, including unrealized data.
+        // Only standalone control trees derive state from child containers; combining these two
+        // sources would let a stale visual projection override a committed entry transition.
+        bool isDescendantActive;
+        if (NavigationEntry is { } entry)
         {
-            // Container generation can briefly expose a container while it is being cleared. The
-            // explicit semantic-parent check prevents that stale generator entry from keeping the
-            // former branch active after detachment.
-            if (
-                ReferenceEquals(child._parentItem, this) &&
-                (child.IsActive || child.IsDescendantActive)
-            )
+            isDescendantActive = entry.IsDescendantActive;
+        }
+        else
+        {
+            isDescendantActive = false;
+            foreach (NavigationViewItem child in GetNavigationChildren())
             {
-                isDescendantActive = true;
-                break;
+                // A generator can briefly expose a container while it is being cleared.
+                if (ReferenceEquals(child._parentItem, this) && (child.IsActive || child.IsDescendantActive))
+                {
+                    isDescendantActive = true;
+                    break;
+                }
             }
         }
 
@@ -1699,6 +1732,30 @@ public partial class NavigationViewItem : HeaderedItemsControl
     {
         ApplyTemplate();
         return _headerButton is { IsEnabled: true, Focusable: true } && _headerButton.Focus();
+    }
+
+    /// <summary>Reveals the header row without moving keyboard focus or opening child menus.</summary>
+    /// <remarks>
+    /// An expanded container includes its entire subtree and can exceed the viewport. Requesting
+    /// only the header lets WPF's ScrollViewer.MakeVisible choose the minimum useful scroll. A
+    /// custom template without the header part falls back to the container's bounds.
+    /// </remarks>
+    internal bool TryBringHeaderIntoView()
+    {
+        if (!IsVisible)
+        {
+            return false;
+        }
+
+        ApplyTemplate();
+        FrameworkElement header = _headerButton ?? (FrameworkElement)this;
+        if (!header.IsVisible)
+        {
+            return false;
+        }
+
+        header.BringIntoView();
+        return true;
     }
 
     /// <summary>

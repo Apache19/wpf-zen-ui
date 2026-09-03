@@ -307,6 +307,7 @@ public partial class NavigationView : Control, INavigationHost, INavigationState
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
         RebuildNavigationIndexes();
+        QueueActiveNavigationBranchIntoView();
 
         if (AutoSuggestBox is { } autoSuggestBox)
         {
@@ -327,11 +328,14 @@ public partial class NavigationView : Control, INavigationHost, INavigationState
     /// </summary>
     protected virtual void OnUnloaded(object sender, RoutedEventArgs e)
     {
+        _bringActiveBranchIntoViewOperation?.Abort();
+        _bringActiveBranchIntoViewOperation = null;
+
         // A TitleBar can outlive a NavigationView in the same window. Release the contributed
         // content on detach so the title bar does not retain this control through button handlers.
         ReleaseTitleBarContent();
 
-        ClearRegisteredNavigationItems();
+        CloseRegisteredSubmenuBranches();
 
         if (AutoSuggestBox is not null)
         {
@@ -830,7 +834,10 @@ public partial class NavigationView : Control, INavigationHost, INavigationState
     /// <summary>
     /// Rebuilds presentation-independent entries from an item source and its declared descendants.
     /// </summary>
-    private void AddItemsToNavigationIndexes(IEnumerable items, bool isMenuElement = true)
+    private void AddItemsToNavigationIndexes(
+        IEnumerable items,
+        bool isMenuElement = true,
+        NavigationEntry? parent = null)
     {
         SubscribeToNavigationCollection(items);
 
@@ -851,8 +858,13 @@ public partial class NavigationView : Control, INavigationHost, INavigationState
                 if (_entriesByItem.TryGetValue(item, out NavigationEntry? fallbackEntry))
                 {
                     fallbackEntry.IsMenuElement = isMenuElement;
+                    fallbackEntry.Parent = parent;
                     _entriesSeenDuringRebuild.Add(item);
                     IndexNavigationEntry(fallbackEntry);
+                    if (fallbackEntry.Children is { } fallbackChildren)
+                    {
+                        AddItemsToNavigationIndexes(fallbackChildren, isMenuElement, fallbackEntry);
+                    }
                 }
 
                 continue;
@@ -869,6 +881,7 @@ public partial class NavigationView : Control, INavigationHost, INavigationState
             }
 
             _entriesSeenDuringRebuild.Add(item);
+            entry.Parent = parent;
 
             if (
                 item is INotifyPropertyChanged observableItem
@@ -880,10 +893,8 @@ public partial class NavigationView : Control, INavigationHost, INavigationState
 
             if (item is NavigationViewItem directContainer)
             {
-                entry.Container = directContainer;
-                directContainer.NavigationEntry = entry;
                 directContainer.AttachToNavigationViewHost(this);
-                RegisterNavigationViewItem(directContainer);
+                AttachNavigationItemContainer(entry, directContainer);
             }
 
             if (!string.IsNullOrWhiteSpace(entry.Id))
@@ -903,7 +914,7 @@ public partial class NavigationView : Control, INavigationHost, INavigationState
 
             if (entry.Children is { } children)
             {
-                AddItemsToNavigationIndexes(children, isMenuElement);
+                AddItemsToNavigationIndexes(children, isMenuElement, entry);
             }
         }
     }
@@ -951,9 +962,50 @@ public partial class NavigationView : Control, INavigationHost, INavigationState
         UpdateAutoSuggestBoxSuggestions();
     }
 
-    private void RegisterNavigationViewItem(NavigationViewItem item)
+    /// <summary>Establishes both sides of an entry's current container association.</summary>
+    /// <remarks>
+    /// Source indexing and WPF container preparation share this boundary. Repeated indexing must
+    /// not replay activation hooks, while a newly generated container must reflect entry state.
+    /// </remarks>
+    private void AttachNavigationItemContainer(NavigationEntry entry, NavigationViewItem item)
     {
+        if (entry.Container is { } previousContainer && !ReferenceEquals(previousContainer, item))
+        {
+            DetachNavigationItemContainer(previousContainer);
+        }
+
+        if (item.NavigationEntry is { } previousEntry && !ReferenceEquals(previousEntry, entry))
+        {
+            DetachNavigationItemContainer(item);
+        }
+
+        entry.Container = item;
+        item.NavigationEntry = entry;
         _registeredItems.Add(item);
+        if (item.IsActive != entry.IsActive)
+        {
+            item.ApplyActiveState(this, entry.IsActive);
+        }
+
+        item.UpdateDescendantActiveState();
+    }
+
+    /// <summary>Releases a presentation without changing the entry retained by navigation history.</summary>
+    private void DetachNavigationItemContainer(NavigationViewItem item)
+    {
+        _registeredItems.Remove(item);
+        if (item.NavigationEntry is { } entry && ReferenceEquals(entry.Container, item))
+        {
+            entry.Container = null;
+        }
+
+        item.NavigationEntry = null;
+        if (item.IsActive)
+        {
+            item.ApplyActiveState(this, false);
+        }
+
+        item.UpdateDescendantActiveState();
     }
 
     /// <summary>
@@ -971,64 +1023,50 @@ public partial class NavigationView : Control, INavigationHost, INavigationState
         {
             entry = new NavigationEntry(sourceItem, true)
             {
-                Container = item,
+                Parent = (item.NavigationViewItemParent as NavigationViewItem)?.NavigationEntry,
             };
             _entriesByItem[sourceItem] = entry;
         }
 
-        entry.Container = item;
-        item.NavigationEntry = entry;
-        RegisterNavigationViewItem(item);
+        AttachNavigationItemContainer(entry, item);
 
         // A style may provide navigation metadata for an otherwise arbitrary data object. This
         // fallback is necessarily realization-scoped; INavigationItem remains the path that allows
         // navigation before layout and through collapsed branches.
         IndexNavigationEntry(entry);
 
-        if (ReferenceEquals(_currentEntry, entry))
+        if (entry.IsActive || entry.IsDescendantActive)
         {
-            entry.Activate(this);
+            QueueActiveNavigationBranchIntoView();
         }
 
         UpdateAutoSuggestBoxSuggestions();
     }
 
     /// <summary>Removes a data-generated container before its generator releases or recycles it.</summary>
-    internal void UnregisterGeneratedNavigationItem(NavigationViewItem item)
-    {
-        _registeredItems.Remove(item);
-        if (item.NavigationEntry is { } entry && ReferenceEquals(entry.Container, item))
-        {
-            entry.Container = null;
-        }
+    internal void UnregisterGeneratedNavigationItem(NavigationViewItem item) =>
+        DetachNavigationItemContainer(item);
 
-        item.NavigationEntry = null;
-    }
-
-    private void ClearRegisteredNavigationItems()
+    /// <summary>Closes detached popup presentations while retaining source-owned associations.</summary>
+    /// <remarks>
+    /// Unloaded does not release WPF item containers: reattaching the same visual tree can reuse
+    /// them without another PrepareContainerForItemOverride call. Entry associations and root
+    /// context therefore survive unloading. Only source removal or generator cleanup detaches
+    /// containers; Loaded rebuilds the source index to reconcile changes made while disconnected.
+    /// </remarks>
+    private void CloseRegisteredSubmenuBranches()
     {
         foreach (var item in _registeredItems)
         {
-            // Reset notifications do not expose removed items. Close the previously indexed
-            // roots before discarding the index so a detached ContextMenu cannot remain open. Limiting
-            // recursion to roots avoids walking every descendant subtree repeatedly.
+            // Closing each root also closes its descendants, avoiding repeated subtree walks.
             if (
                 item.NavigationViewItemParent is not NavigationViewItem parentItem
                 || !_registeredItems.Contains(parentItem)
             )
             {
                 item.CloseSubmenuBranch();
-
-                if (!MenuItems.Contains(item) && !FooterMenuItems.Contains(item))
-                {
-                    item.DetachFromNavigationViewHost(this);
-                }
             }
-
-            item.NavigationEntry = null;
         }
-
-        _registeredItems.Clear();
     }
 
     private void OnNavigationItemsSourceCollectionChanged(
@@ -1106,8 +1144,7 @@ public partial class NavigationView : Control, INavigationHost, INavigationState
             if (_entriesByItem[removedItem].Container is { } container)
             {
                 container.CloseSubmenuBranch();
-                container.NavigationEntry = null;
-                _registeredItems.Remove(container);
+                DetachNavigationItemContainer(container);
 
                 if (container.NavigationViewItemParent is null)
                 {
@@ -1120,6 +1157,7 @@ public partial class NavigationView : Control, INavigationHost, INavigationState
 
         IndexUnregisteredNavigationEntries();
         ReconcileNavigationStateAfterIndexRebuild();
+        SynchronizeActiveNavigationBranches();
 
         UpdateRootItemState();
         UpdateAutoSuggestBoxSuggestions();
@@ -1196,11 +1234,8 @@ public partial class NavigationView : Control, INavigationHost, INavigationState
 
         if (ReferenceEquals(sourceItem, container) || container.TargetPageType is not null)
         {
-            entry = new NavigationEntry(container, true)
-            {
-                Container = container,
-            };
-            container.NavigationEntry = entry;
+            entry = new NavigationEntry(container, true);
+            AttachNavigationItemContainer(entry, container);
             _entriesByItem[container] = entry;
             IndexNavigationEntry(entry);
             return true;

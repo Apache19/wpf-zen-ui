@@ -504,6 +504,7 @@ public partial class NavigationView
         }
 
         OnNavigated(pageInstance);
+        QueueActiveNavigationBranchIntoView();
         return true;
     }
 

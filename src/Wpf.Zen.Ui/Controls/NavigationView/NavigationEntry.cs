@@ -26,6 +26,9 @@ internal sealed class NavigationEntry
     {
         Item                         = item;
         IsMenuElement                = isMenuElement;
+        // A direct control can be activated before registration. Adopt that initial state once;
+        // subsequent container associations project the state owned by this entry.
+        IsActive                     = item is NavigationViewItem { IsActive: true };
         LastKnownTargetPageType      = TargetPageType;
         LastKnownNavigationCacheMode = NavigationCacheMode;
     }
@@ -33,6 +36,15 @@ internal sealed class NavigationEntry
     internal object Item { get; }
 
     internal NavigationViewItem? Container { get; set; }
+
+    /// <summary>Gets or sets the source-tree parent, including branches without generated containers.</summary>
+    internal NavigationEntry? Parent { get; set; }
+
+    /// <summary>Gets a value indicating whether this entry is active independently of container realization.</summary>
+    internal bool IsActive { get; private set; }
+
+    /// <summary>Gets or sets a value indicating whether an active descendant exists, even without a container.</summary>
+    internal bool IsDescendantActive { get; set; }
 
     internal bool IsMenuElement { get; set; }
 
@@ -126,7 +138,19 @@ internal sealed class NavigationEntry
         }
     }
 
-    internal void Activate(NavigationView navigationView) => Container?.Activate(navigationView);
+    internal void Activate(NavigationView navigationView) => SetActiveState(navigationView, true);
 
-    internal void Deactivate(NavigationView navigationView) => Container?.Deactivate(navigationView);
+    internal void Deactivate(NavigationView navigationView) => SetActiveState(navigationView, false);
+
+    /// <summary>Commits activation before projecting it into containers and their extension hooks.</summary>
+    /// <remarks>
+    /// Both navigation and public container activation use this entry as the state owner. Container
+    /// release only clears the visual projection, so unrealized items retain their semantic state.
+    /// </remarks>
+    private void SetActiveState(NavigationView navigationView, bool isActive)
+    {
+        IsActive = isActive;
+        navigationView.SynchronizeActiveNavigationBranches();
+        Container?.ApplyActiveState(navigationView, isActive);
+    }
 }
