@@ -16,6 +16,9 @@ internal static class Program
     [STAThread]
     public static void Main()
     {
+        // Embedded WPF controls share the host's selection renderer; configure it before any form is created.
+        WpfCompatibility.EnableModernTextSelectionRendering();
+
         Application.EnableVisualStyles();
         Application.SetCompatibleTextRenderingDefault(false);
 

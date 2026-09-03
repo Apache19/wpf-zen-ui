@@ -3,7 +3,8 @@
   <PropertyGroup>
     <RootNamespace>Wpf.Zen.Ui.Gallery</RootNamespace>
     <OutputType>WinExe</OutputType>
-    <TargetFrameworks>net10.0-windows;net462</TargetFrameworks>
+    <StartupObject>Wpf.Zen.Ui.Gallery.Program</StartupObject>
+    <TargetFrameworks>net10.0-windows;net472</TargetFrameworks>
     <SupportedOSPlatformVersion>7.0</SupportedOSPlatformVersion>
     <UseWPF>true</UseWPF>
     <EnableWindowsTargeting>true</EnableWindowsTargeting>

@@ -51,10 +51,6 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>build; analyzers</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="PolySharp" Condition="'$(TargetFramework)' == 'net462'">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>build; analyzers</IncludeAssets>
-    </PackageReference>
   </ItemGroup>
   <Target Name="AddCommitHashToAssemblyAttributes" BeforeTargets="GetAssemblyAttributes">
     <ItemGroup>

@@ -2,6 +2,7 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
+    <StartupObject>Wpf.Zen.Ui.Demo.Simple.Program</StartupObject>
     <TargetFramework>net472</TargetFramework>
     <UseWPF>true</UseWPF>
     <ApplicationIcon>applicationIcon.ico</ApplicationIcon>

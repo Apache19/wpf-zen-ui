@@ -13,6 +13,9 @@ public static class Program
     [STAThread]
     public static void Main(string[] args)
     {
+        // Configure selection before theme initialization can load WPF text-control resources.
+        WpfCompatibility.EnableModernTextSelectionRendering();
+
         Debug.WriteLine("Args: " + string.Join(", ", args));
 
         if (Application.Current is null)

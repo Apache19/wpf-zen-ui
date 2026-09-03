@@ -1337,7 +1337,7 @@ public class NumberBox : TextBox
     /// </summary>
     private string GetTextAfterInsertion(string insertedText)
     {
-        // Math.Clamp is unavailable on the net462 target. Keep the bounds explicit here rather
+        // Math.Clamp is unavailable on .NET Framework. Keep the bounds explicit here rather
         // than adding a compatibility helper for this single, paste-specific calculation.
         var start  = Math.Min(Math.Max(SelectionStart,  0), Text.Length);
         var length = Math.Min(Math.Max(SelectionLength, 0), Text.Length - start);

@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <PackageId>Wpf.Zen.Ui</PackageId>
-    <TargetFrameworks>net462;net8.0-windows</TargetFrameworks>
+    <TargetFrameworks>net472;net8.0-windows</TargetFrameworks>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Description>WPF Zen UI provides the Fluent experience in your known and loved WPF framework. Intuitive design, themes, navigation and new immersive controls. All natively and effortlessly.</Description>
     <UseWPF>true</UseWPF>
@@ -19,10 +19,6 @@
     <Resource Include="Resources\Fonts\FluentSystemIcons-Filled.ttf" />
     <Resource Include="Resources\Fonts\FluentSystemIcons-Regular.ttf" />
     <Resource Include="Effects\ColorAdjustment.ps" />
-  </ItemGroup>
-
-  <ItemGroup Condition="'$(TargetFramework)' == 'net462'">
-    <PackageReference Include="System.ValueTuple" />
   </ItemGroup>
 
   <ItemGroup>

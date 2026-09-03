@@ -14,7 +14,8 @@
     xmlns:controls="clr-namespace:Wpf.Zen.Ui.Controls"
     xmlns:converters="clr-namespace:Wpf.Zen.Ui.Converters"
     xmlns:m="clr-namespace:Wpf.Zen.Ui.Markup"
-    xmlns:t="clr-namespace:Wpf.Zen.Ui.Theming">
+    xmlns:t="clr-namespace:Wpf.Zen.Ui.Theming"
+    xmlns:ui="clr-namespace:Wpf.Zen.Ui">
 
     <ResourceDictionary.MergedDictionaries>
         <ResourceDictionary Source="pack://application:,,,/Wpf.Zen.Ui;component/Resources/DefaultEditorContextMenu.xaml" />
@@ -231,6 +232,13 @@
         <Setter Property="Validation.ErrorTemplate" Value="{m:DynamicTemplate DefaultValidation}" />
         <Setter Property="ContextMenu" Value="{StaticResource DefaultEditorContextMenu}" />
         <Style.Triggers>
+            <!--
+                The accent brush is intended for the under-text renderer. Without an explicit startup
+                opt-in, leave SelectionBrush unset so WPF retains its normal adorner selection color.
+            -->
+            <DataTrigger Binding="{Binding Source={x:Static ui:WpfCompatibility.IsModernTextSelectionRenderingEnabled}, Mode=OneTime}" Value="True">
+                <Setter Property="SelectionBrush" Value="{m:DynamicBrush AccentTextSecondary}" />
+            </DataTrigger>
             <Trigger Property="IconPlacement" Value="Right">
                 <Setter Property="IconMargin" Value="0,0,10,0" />
             </Trigger>
@@ -250,18 +258,12 @@
                 -->
                 <Setter Property="FocusedBackground" Value="{m:DynamicBrush ControlFillTertiary}" />
             </Trigger>
-
             <MultiTrigger>
                 <MultiTrigger.Conditions>
                     <Condition Property="IsInactiveSelectionHighlightEnabled" Value="true" />
                     <Condition Property="IsSelectionActive" Value="false" />
                 </MultiTrigger.Conditions>
-                <!--
-                    todo: 主题资源中尚未有文本选择色，增加后把这里替换掉
-                    <Setter Property="SelectionBrush" Value="{DynamicResource {x:Static SystemColors.InactiveSelectionHighlightBrushKey}}" />
-                    todo: 旧版.NET Framework 中的 TextBox 没有这个属性，可在控件中引入桥接属性，以便新版 .NET 的 ui:TextBox 能正常工作。
-                    <Setter Property="SelectionTextBrush" Value="{m:DynamicBrush TextFillPrimary}" />
-                -->
+                <Setter Property="SelectionBrush" Value="{m:DynamicBrush SubtleFillSecondary}" />
             </MultiTrigger>
         </Style.Triggers>
     </Style>

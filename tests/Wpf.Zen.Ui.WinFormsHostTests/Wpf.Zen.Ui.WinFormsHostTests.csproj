@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <!--
-      net481 consumes Wpf.Zen.Ui's net462 asset and validates the long-standing .NET Framework SystemResources layout;
+      net481 consumes Wpf.Zen.Ui's net472 asset and validates the long-standing .NET Framework SystemResources layout;
       net10 validates the current open-source WPF implementation. Each target runs in its own process because WPF's
       Application and system-theme caches are AppDomain-wide singletons.
     -->
