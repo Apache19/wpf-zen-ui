@@ -221,6 +221,8 @@ public class PassiveScrollViewerTests
                 };
                 ScrollViewerAssist.SetHideButtons(listBox, true);
                 ScrollViewerAssist.SetOverlayMode(listBox, ScrollViewerOverlayMode.Traditional);
+                PassiveScrollViewer.SetIsSmoothScrollingEnabled(listBox, false);
+                PassiveScrollViewer.SetSmoothScrollDuration(listBox, TimeSpan.FromMilliseconds(180));
 
                 var window = new Window
                 {
@@ -241,6 +243,12 @@ public class PassiveScrollViewerTests
                     );
 
                     Assert.True(ScrollViewerAssist.GetHideButtons(templateScrollViewer));
+                    Assert.False(templateScrollViewer.IsSmoothScrollingEnabled);
+                    Assert.Equal(TimeSpan.FromMilliseconds(180), templateScrollViewer.SmoothScrollDuration);
+                    Assert.True(nestedScrollViewer.IsSmoothScrollingEnabled);
+                    Assert.Equal(TimeSpan.FromMilliseconds(240), nestedScrollViewer.SmoothScrollDuration);
+                    PassiveScrollViewer.SetIsSmoothScrollingEnabled(listBox, true);
+                    Assert.True(templateScrollViewer.IsSmoothScrollingEnabled);
                     Assert.Equal(
                         ScrollViewerOverlayMode.Traditional,
                         ScrollViewerAssist.GetOverlayMode(templateScrollViewer)

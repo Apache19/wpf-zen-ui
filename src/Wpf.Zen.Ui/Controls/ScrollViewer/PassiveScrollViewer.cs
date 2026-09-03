@@ -13,15 +13,17 @@ using Wpf.Zen.Ui.AutomationPeers;
 namespace Wpf.Zen.Ui.Controls;
 
 /// <summary>
-/// A custom ScrollViewer that allows certain mouse events to bubble through when it's inactive.
+/// Provides smooth pixel-based mouse-wheel scrolling and configurable wheel propagation at boundaries.
 /// </summary>
-public class PassiveScrollViewer : ScrollViewer
+/// <remarks>
+/// Uses the template's existing scroll provider; no additional named parts or transforms are required.
+/// Physical content and pixel-scrolling virtualizing panels support smooth scrolling. Item-scrolling
+/// providers retain their native wheel behavior. Keyboard, touch, scrollbar and programmatic scrolling
+/// retain WPF semantics and take precedence over an active wheel motion.
+/// </remarks>
+public partial class PassiveScrollViewer : ScrollViewer
 {
-    private static readonly DependencyProperty[] TemplatedParentAssistProperties =
-    [
-        ScrollViewerAssist.HideButtonsProperty,
-        ScrollViewerAssist.OverlayModeProperty,
-    ];
+    private static readonly DependencyProperty[] TemplatedParentAssistProperties;
 
     /// <summary>Identifies the <see cref="ScrollSpillMode"/> dependency property.</summary>
     /// <remarks>
@@ -36,6 +38,16 @@ public class PassiveScrollViewer : ScrollViewer
             typeof(PassiveScrollViewer),
             new FrameworkPropertyMetadata(ScrollSpillMode.Enabled)
         );
+
+    /// <summary>
+    /// Gets or sets how mouse wheel events are handled when the content cannot scroll further.
+    /// The default is <see cref="Controls.ScrollSpillMode.Enabled"/>.
+    /// </summary>
+    public ScrollSpillMode ScrollSpillMode
+    {
+        get => GetScrollSpillMode(this);
+        set => SetScrollSpillMode(this, value);
+    }
 
     /// <summary>
     /// Identifies the <see cref="HorizontalScrollBarVisibilityThreshold"/> dependency property.
@@ -53,6 +65,20 @@ public class PassiveScrollViewer : ScrollViewer
                 && threshold >= 0.0
         );
 
+    /// <summary>
+    /// Gets or sets the smallest horizontal scroll range that automatic scrollbar visibility treats
+    /// as meaningful. The default is <c>0</c> device-independent pixels.
+    /// </summary>
+    /// <remarks>
+    /// A positive value suppresses rounding overflow in column controls. Explicitly visible scrollbars
+    /// remain visible, and overflow larger than the threshold retains normal WPF scrolling behavior.
+    /// </remarks>
+    public double HorizontalScrollBarVisibilityThreshold
+    {
+        get => (double)GetValue(HorizontalScrollBarVisibilityThresholdProperty);
+        set => SetValue(HorizontalScrollBarVisibilityThresholdProperty, value);
+    }
+
     private static readonly DependencyPropertyKey EffectiveHorizontalScrollBarVisibilityPropertyKey =
         DependencyProperty.RegisterReadOnly(
             nameof(EffectiveHorizontalScrollBarVisibility),
@@ -66,6 +92,15 @@ public class PassiveScrollViewer : ScrollViewer
     /// </summary>
     public static readonly DependencyProperty EffectiveHorizontalScrollBarVisibilityProperty =
         EffectiveHorizontalScrollBarVisibilityPropertyKey.DependencyProperty;
+
+    /// <summary>
+    /// Gets the horizontal scrollbar visibility after applying
+    /// <see cref="HorizontalScrollBarVisibilityThreshold"/> to WPF's computed visibility.
+    /// </summary>
+    public Visibility EffectiveHorizontalScrollBarVisibility
+    {
+        get => (Visibility)GetValue(EffectiveHorizontalScrollBarVisibilityProperty);
+    }
 
     /// <summary>
     /// Sets how the <see cref="PassiveScrollViewer"/> created by an element's control template
@@ -91,42 +126,18 @@ public class PassiveScrollViewer : ScrollViewer
         return (ScrollSpillMode)element.GetValue(ScrollSpillModeProperty);
     }
 
-    /// <summary>
-    /// Gets or sets how mouse wheel events are handled when the content cannot scroll further.
-    /// </summary>
-    public ScrollSpillMode ScrollSpillMode
-    {
-        get => GetScrollSpillMode(this);
-        set => SetScrollSpillMode(this, value);
-    }
-
-    /// <summary>
-    /// Gets or sets the smallest horizontal scroll range that automatic scrollbar visibility treats
-    /// as meaningful. The default is <c>0</c> device-independent pixels.
-    /// </summary>
-    /// <remarks>
-    /// A positive value is useful for column controls whose independently rounded headers, cells,
-    /// borders, and viewport can differ by a fraction of a pixel. It only suppresses automatic
-    /// visibility; an explicitly <see cref="ScrollBarVisibility.Visible"/> scrollbar remains visible,
-    /// and overflow larger than the threshold retains normal WPF scrolling behavior.
-    /// </remarks>
-    public double HorizontalScrollBarVisibilityThreshold
-    {
-        get => (double)GetValue(HorizontalScrollBarVisibilityThresholdProperty);
-        set => SetValue(HorizontalScrollBarVisibilityThresholdProperty, value);
-    }
-
-    /// <summary>
-    /// Gets the horizontal scrollbar visibility after applying
-    /// <see cref="HorizontalScrollBarVisibilityThreshold"/> to WPF's computed visibility.
-    /// </summary>
-    public Visibility EffectiveHorizontalScrollBarVisibility
-    {
-        get => (Visibility)GetValue(EffectiveHorizontalScrollBarVisibilityProperty);
-    }
-
     static PassiveScrollViewer()
     {
+        // The smooth-scrolling properties live in another partial declaration. Initialize this list
+        // after all static field initializers so its contents never depend on partial-file ordering.
+        TemplatedParentAssistProperties =
+        [
+            ScrollViewerAssist.HideButtonsProperty,
+            ScrollViewerAssist.OverlayModeProperty,
+            IsSmoothScrollingEnabledProperty,
+            SmoothScrollDurationProperty,
+        ];
+
         DefaultStyleKeyProperty.OverrideMetadata(
             typeof(PassiveScrollViewer),
             new FrameworkPropertyMetadata(typeof(PassiveScrollViewer))
@@ -139,6 +150,7 @@ public class PassiveScrollViewer : ScrollViewer
     /// </summary>
     public override void OnApplyTemplate()
     {
+        StopSmoothScrolling();
         BindAssistPropertiesToTemplatedParentIfUnset();
         base.OnApplyTemplate();
     }
@@ -151,19 +163,22 @@ public class PassiveScrollViewer : ScrollViewer
     {
         base.OnPropertyChanged(e);
 
-        if (
-            e.Property == ScrollableWidthProperty
+        if (e.Property == IsVisibleProperty || e.Property == IsEnabledProperty
+            || e.Property == ContentProperty || e.Property == CanContentScrollProperty
+            || e.Property == VerticalScrollBarVisibilityProperty || e.Property == ScrollSpillModeProperty)
+        {
+            StopSmoothScrolling();
+        }
+
+        if (e.Property == ScrollableWidthProperty
             || e.Property == ComputedHorizontalScrollBarVisibilityProperty
             || e.Property == HorizontalScrollBarVisibilityProperty
-            || e.Property == HorizontalScrollBarVisibilityThresholdProperty
-        )
+            || e.Property == HorizontalScrollBarVisibilityThresholdProperty)
         {
             UpdateEffectiveHorizontalScrollBarVisibility();
 
-            if (
-                e.Property == HorizontalScrollBarVisibilityProperty
-                || e.Property == HorizontalScrollBarVisibilityThresholdProperty
-            )
+            if (e.Property == HorizontalScrollBarVisibilityProperty
+                || e.Property == HorizontalScrollBarVisibilityThresholdProperty)
             {
                 if (IsHorizontalScrollRangeSuppressed && HorizontalOffset != 0.0)
                 {
@@ -190,10 +205,8 @@ public class PassiveScrollViewer : ScrollViewer
 
         foreach (DependencyProperty property in TemplatedParentAssistProperties)
         {
-            if (
-                DependencyPropertyHelper.GetValueSource(this, property).BaseValueSource
-                != BaseValueSource.Default
-            )
+            if (DependencyPropertyHelper.GetValueSource(this, property).BaseValueSource
+                != BaseValueSource.Default)
             {
                 continue;
             }
@@ -226,13 +239,32 @@ public class PassiveScrollViewer : ScrollViewer
         return new PassiveScrollViewerAutomationPeer(this);
     }
 
+    /// <summary>
+    /// Accumulates vertical wheel input into the current motion, or delegates to the native provider
+    /// when smooth scrolling is unavailable. Boundary propagation uses the pending destination so a
+    /// child does not swallow extra detents while it is still approaching its edge.
+    /// </summary>
+    /// <param name="e">The unhandled wheel input and its signed delta.</param>
     protected override void OnMouseWheel(MouseWheelEventArgs e)
     {
+        if (e.Handled || e.Delta == 0)
+        {
+            return;
+        }
+
         if (ScrollSpillMode == ScrollSpillMode.Native)
         {
+            StopSmoothScrolling();
             base.OnMouseWheel(e);
             return;
         }
+
+        if (TrySmoothMouseWheel(e))
+        {
+            return;
+        }
+
+        StopSmoothScrolling();
 
         // We only care about one question: can the content actually scroll?
         // Either it's too small to overflow, or we've already hit the end.
@@ -257,6 +289,9 @@ public class PassiveScrollViewer : ScrollViewer
     /// </remarks>
     protected override void OnScrollChanged(ScrollChangedEventArgs e)
     {
+        bool wasSmoothScrolling = IsSmoothScrolling;
+        SynchronizeSmoothScrolling(e);
+
         // ScrollContentPresenter keeps the requested offset separately from the computed offset that
         // ScrollViewer exposes. When the extent shrinks, WPF coerces only the computed value into the
         // new range and can restore the stale request when the extent grows again. A simultaneous
@@ -265,7 +300,9 @@ public class PassiveScrollViewer : ScrollViewer
         // range. This both rejects anchoring shifts from growing content and commits a valid replacement
         // for an offset invalidated by shrinking content, including zero when content no longer overflows.
         // Use the public command queue so custom IScrollInfo implementations retain their normal contract.
-        if (e.VerticalChange != 0d
+        // A pixel virtualizing panel can refine its extent during wheel motion. Its current offset
+        // is already reconciled with the motion; restoring the previous frame would undo that scroll.
+        if (!wasSmoothScrolling && e.VerticalChange != 0d
             && (e.ExtentHeightChange != 0d || e.ViewportHeightChange != 0d))
         {
             double offsetBeforeLayoutChange = e.VerticalOffset - e.VerticalChange;
@@ -287,9 +324,7 @@ public class PassiveScrollViewer : ScrollViewer
     private void UpdateEffectiveHorizontalScrollBarVisibility()
     {
         Visibility visibility = ComputedHorizontalScrollBarVisibility;
-        if (
-            IsHorizontalScrollRangeSuppressed
-        )
+        if (IsHorizontalScrollRangeSuppressed)
         {
             visibility = Visibility.Collapsed;
         }

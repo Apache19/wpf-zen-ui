@@ -131,6 +131,12 @@
             x:Name="LayoutMetrics"
             Grid.Row="1"
             Margin="0,0,0,10">
+            <CheckBox
+                x:Name="SmoothScrollingToggle"
+                Margin="0,0,16,8"
+                VerticalAlignment="Center"
+                Content="Smooth scrolling"
+                IsChecked="True" />
             <Border Style="{StaticResource MetricPillStyle}">
                 <TextBlock>
                     <Run Foreground="{ui:DynamicBrush TextFillSecondary}" Text="MODE  " />
@@ -178,6 +184,7 @@
                 and recycle rows instead of being measured to the full catalogue height.
             -->
             <ItemsControl
+                ui:PassiveScrollViewer.IsSmoothScrollingEnabled="{Binding IsChecked, ElementName=SmoothScrollingToggle}"
                 ItemsSource="{Binding Movies, Mode=OneWay}"
                 Loaded="HandleMovieItemsControlLoaded"
                 ScrollViewer.CanContentScroll="True"
