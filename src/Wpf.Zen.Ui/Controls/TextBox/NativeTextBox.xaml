@@ -2,8 +2,7 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Zen.Ui.Controls"
-    xmlns:m="clr-namespace:Wpf.Zen.Ui.Markup"
-    xmlns:t="clr-namespace:Wpf.Zen.Ui.Theming">
+    xmlns:m="clr-namespace:Wpf.Zen.Ui.Markup">
 
     <ResourceDictionary.MergedDictionaries>
         <ResourceDictionary Source="pack://application:,,,/Wpf.Zen.Ui;component/Resources/DefaultEditorContextMenu.xaml" />
@@ -66,7 +65,7 @@
         </ControlTemplate.Triggers>
     </ControlTemplate>
 
-    <Style x:Key="{x:Static t:StyleKeys.DefaultTextBoxStyle}" TargetType="{x:Type TextBox}">
+    <Style TargetType="{x:Type TextBox}">
         <Setter Property="OverridesDefaultStyle" Value="True" />
         <Setter Property="KeyboardNavigation.TabNavigation" Value="None" />
         <Setter Property="AllowDrop" Value="true" />
@@ -100,6 +99,18 @@
         </Style.Triggers>
     </Style>
 
-    <Style BasedOn="{StaticResource {x:Static t:StyleKeys.DefaultTextBoxStyle}}" TargetType="{x:Type TextBox}" />
+    <!--
+        ToolBar.TextBoxStyleKey is based on the native TextBox type style above, so both resources must remain in the
+        same Source-backed dictionary. WPF StaticResource lookup cannot see a sibling dictionary merely because their
+        owner merges that sibling first. Keeping the framework-defined ToolBar role beside its dependency makes this
+        dictionary self-contained in every resource host.
+    -->
+    <Style x:Key="{x:Static ToolBar.TextBoxStyleKey}" BasedOn="{StaticResource {x:Type TextBox}}" TargetType="{x:Type TextBox}">
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Margin" Value="2" />
+        <Setter Property="MaxLines" Value="1" />
+        <Setter Property="Padding" Value="6,0" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
 
 </ResourceDictionary>

@@ -32,7 +32,7 @@ public class ThemeManagerTests
     );
 
     [Fact]
-    public void Initialize_InstallsOnlyPaletteIndependentGlobalResources()
+    public void Initialize_InstallsCompleteThemeAndRepairsApplicationResources()
     {
         RunIsolated(() =>
         {
@@ -41,28 +41,23 @@ public class ThemeManagerTests
 
             ThemeManager.Initialize();
 
-            ResourceDictionary globalResources = Assert.Single(
-                Application.Current.Resources.MergedDictionaries
+            Assert.Equal(2, Application.Current.Resources.MergedDictionaries.Count);
+            Assert.Same(
+                GetThemeDictionary(ThemeVariant.Light),
+                Application.Current.Resources.MergedDictionaries[0]
             );
+            ResourceDictionary globalResources = Application.Current.Resources.MergedDictionaries[1];
             Assert.Equal(GlobalResourcesUri, globalResources.Source);
             Assert.IsType<Style>(Application.Current.Resources[SystemParameters.FocusVisualStyleKey]);
+            Assert.True(ContainsMergedSource("/Wpf.Zen.Ui;component/Resources/NativeControlStyles.xaml"));
 
-            // The first explicit configuration must apply even though every value equals ThemeManager's defaults.
-            ThemeManager.Configure(
-                ThemePreference.Light,
-                AccentColorSource.Default,
-                BuiltInAccent,
-                false,
-                null,
-                null,
-                null,
-                null
-            );
+            Application.Current.Resources = new ResourceDictionary();
+            ThemeManager.Initialize();
 
             Assert.Equal(2, Application.Current.Resources.MergedDictionaries.Count);
             Assert.Same(GetThemeDictionary(ThemeVariant.Light), Application.Current.Resources.MergedDictionaries[0]);
             Assert.Same(globalResources, Application.Current.Resources.MergedDictionaries[1]);
-            Assert.False(ContainsMergedSource("/Wpf.Zen.Ui;component/Resources/NativeControlStyles.xaml"));
+            Assert.True(ContainsMergedSource("/Wpf.Zen.Ui;component/Resources/NativeControlStyles.xaml"));
         });
     }
 
@@ -74,14 +69,14 @@ public class ThemeManagerTests
             Application.Current!.Resources = new ResourceDictionary();
             SetThemeManagementActivationState(0);
 
-            // Calling ThemeManager.Configure is itself an explicit opt-in. The first call must therefore install
-            // the global resources even when the supplied values are identical to the manager's current defaults.
+            // Configure is also an initialization boundary. The first call must therefore install the complete
+            // theme even when the supplied values are identical to the manager's current defaults.
             ThemeManager.Configure(ThemePreference.Light, AccentColorSource.Default);
 
             Assert.Equal(2, Application.Current.Resources.MergedDictionaries.Count);
             Assert.Same(GetThemeDictionary(ThemeVariant.Light), Application.Current.Resources.MergedDictionaries[0]);
             Assert.Equal(GlobalResourcesUri, Application.Current.Resources.MergedDictionaries[1].Source);
-            Assert.False(ContainsMergedSource("/Wpf.Zen.Ui;component/Resources/NativeControlStyles.xaml"));
+            Assert.True(ContainsMergedSource("/Wpf.Zen.Ui;component/Resources/NativeControlStyles.xaml"));
         });
     }
 
@@ -100,7 +95,7 @@ public class ThemeManagerTests
             Assert.Equal(2, Application.Current.Resources.MergedDictionaries.Count);
             Assert.Same(GetThemeDictionary(ThemeVariant.Light), Application.Current.Resources.MergedDictionaries[0]);
             Assert.Equal(GlobalResourcesUri, Application.Current.Resources.MergedDictionaries[1].Source);
-            Assert.False(ContainsMergedSource("/Wpf.Zen.Ui;component/Resources/NativeControlStyles.xaml"));
+            Assert.True(ContainsMergedSource("/Wpf.Zen.Ui;component/Resources/NativeControlStyles.xaml"));
         });
     }
 
@@ -115,7 +110,7 @@ public class ThemeManagerTests
             Assert.Equal(ThemeVariant.Light, ThemeManager.EffectiveTheme);
             Assert.Equal(AccentColorSource.Default, ThemeManager.AccentSource);
             Assert.Equal(BuiltInAccent, ThemeManager.CustomAccentColor);
-            Assert.False(ThemeManager.EnableNativeControlStyling);
+            Assert.True(ContainsMergedSource("/Wpf.Zen.Ui;component/Resources/NativeControlStyles.xaml"));
             Assert.Null(ThemeManager.AdditionalLightThemeUri);
             Assert.Null(ThemeManager.AdditionalDarkThemeUri);
             Assert.Null(ThemeManager.AdditionalHighContrastLightThemeUri);
@@ -182,7 +177,6 @@ public class ThemeManagerTests
                     invalidPreference,
                     AccentColorSource.Default,
                     BuiltInAccent,
-                    true,
                     null,
                     null,
                     null,
@@ -245,28 +239,39 @@ public class ThemeManagerTests
     }
 
     [Fact]
-    public void EnableNativeControlStyling_AddsAndRemovesNativeStyleDictionary()
+    public void NativeControlStyles_RemainInstalledAcrossThemeChanges()
     {
         RunIsolated(() =>
         {
-            Assert.False(ContainsMergedSource("/Wpf.Zen.Ui;component/Resources/NativeControlStyles.xaml"));
-
-            ThemeManager.EnableNativeControlStyling = true;
             Assert.True(ContainsMergedSource("/Wpf.Zen.Ui;component/Resources/NativeControlStyles.xaml"));
 
-            ThemeManager.EnableNativeControlStyling = false;
-            Assert.False(ContainsMergedSource("/Wpf.Zen.Ui;component/Resources/NativeControlStyles.xaml"));
+            ThemeManager.Preference = ThemePreference.Dark;
+            Assert.True(ContainsMergedSource("/Wpf.Zen.Ui;component/Resources/NativeControlStyles.xaml"));
 
-            ThemeManager.EnableNativeControlStyling = false;
-            Assert.False(ContainsMergedSource("/Wpf.Zen.Ui;component/Resources/NativeControlStyles.xaml"));
-
-            ThemeManager.EnableNativeControlStyling = true;
+            ThemeManager.Configure(ThemePreference.Light, AccentColorSource.Default);
             Assert.True(ContainsMergedSource("/Wpf.Zen.Ui;component/Resources/NativeControlStyles.xaml"));
         });
     }
 
     [Fact]
-    public void GlobalResources_AreMergedForEveryPaletteAndNativeStylingState()
+    public void NativeControlStyles_ProvideToolBarTextBoxStyleBasedOnImplicitTextBoxStyle()
+    {
+        RunIsolated(() =>
+        {
+            Style implicitTextBoxStyle = Assert.IsType<Style>(
+                Application.Current!.TryFindResource(typeof(System.Windows.Controls.TextBox))
+            );
+            Style toolBarTextBoxStyle = Assert.IsType<Style>(
+                Application.Current.TryFindResource(System.Windows.Controls.ToolBar.TextBoxStyleKey)
+            );
+
+            Assert.Same(implicitTextBoxStyle, toolBarTextBoxStyle.BasedOn);
+            Assert.Equal(typeof(System.Windows.Controls.TextBox), toolBarTextBoxStyle.TargetType);
+        });
+    }
+
+    [Fact]
+    public void GlobalResources_AreMergedForEveryPalette()
     {
         RunIsolated(() =>
         {
@@ -274,10 +279,6 @@ public class ThemeManagerTests
             Assert.IsType<Style>(Application.Current!.Resources[SystemParameters.FocusVisualStyleKey]);
 
             ThemeManager.Preference = ThemePreference.Dark;
-            Assert.True(ContainsMergedSource(GlobalResourcesUri.OriginalString));
-            Assert.IsType<Style>(Application.Current.Resources[SystemParameters.FocusVisualStyleKey]);
-
-            ThemeManager.EnableNativeControlStyling = true;
             Assert.True(ContainsMergedSource(GlobalResourcesUri.OriginalString));
             Assert.IsType<Style>(Application.Current.Resources[SystemParameters.FocusVisualStyleKey]);
 
@@ -311,34 +312,6 @@ public class ThemeManagerTests
     }
 
     [Fact]
-    public void ConfigureWithoutNativeStyleArgument_PreservesExplicitOptInState()
-    {
-        RunIsolated(() =>
-        {
-            ThemeManager.Configure(
-                ThemePreference.Light,
-                AccentColorSource.Default,
-                enableNativeControlStyling: true
-            );
-
-            ThemeManager.Configure(ThemePreference.Dark, AccentColorSource.System);
-
-            Assert.True(ThemeManager.EnableNativeControlStyling);
-            Assert.True(ContainsMergedSource("/Wpf.Zen.Ui;component/Resources/NativeControlStyles.xaml"));
-
-            ThemeManager.Configure(
-                ThemePreference.Light,
-                AccentColorSource.Default,
-                enableNativeControlStyling: false
-            );
-            ThemeManager.Configure(ThemePreference.Dark);
-
-            Assert.False(ThemeManager.EnableNativeControlStyling);
-            Assert.False(ContainsMergedSource("/Wpf.Zen.Ui;component/Resources/NativeControlStyles.xaml"));
-        });
-    }
-
-    [Fact]
     public void ConfigureFullOverload_AppliesAllSettingsInOneRefresh()
     {
         RunIsolated(() =>
@@ -354,7 +327,6 @@ public class ThemeManagerTests
                     ThemePreference.Dark,
                     AccentColorSource.Custom,
                     customAccent,
-                    false,
                     DarkThemeUri,
                     LightThemeUri,
                     DarkThemeUri,
@@ -366,7 +338,7 @@ public class ThemeManagerTests
                 Assert.Equal(ThemeVariant.Dark, ThemeManager.EffectiveTheme);
                 Assert.Equal(AccentColorSource.Custom, ThemeManager.AccentSource);
                 Assert.Equal(Color.FromRgb(0xAA, 0x51, 0x0C), ThemeManager.CustomAccentColor);
-                Assert.False(ThemeManager.EnableNativeControlStyling);
+                Assert.True(ContainsMergedSource("/Wpf.Zen.Ui;component/Resources/NativeControlStyles.xaml"));
                 Assert.Equal(DarkThemeUri, ThemeManager.AdditionalLightThemeUri);
                 Assert.Equal(LightThemeUri, ThemeManager.AdditionalDarkThemeUri);
                 Assert.Equal(DarkThemeUri, ThemeManager.AdditionalHighContrastLightThemeUri);
@@ -378,7 +350,6 @@ public class ThemeManagerTests
                     ThemePreference.Dark,
                     AccentColorSource.Custom,
                     customAccent,
-                    false,
                     DarkThemeUri,
                     LightThemeUri,
                     DarkThemeUri,
@@ -413,15 +384,14 @@ public class ThemeManagerTests
                 ThemeManager.Configure(
                     ThemePreference.Dark,
                     AccentColorSource.Custom,
-                    Color.FromArgb(0x30, 0x22, 0x66, 0xAA),
-                    false
+                    Color.FromArgb(0x30, 0x22, 0x66, 0xAA)
                 );
 
                 Assert.Equal(1, notificationCount);
                 Assert.Equal(ThemePreference.Dark, ThemeManager.Preference);
                 Assert.Equal(AccentColorSource.Custom, ThemeManager.AccentSource);
                 Assert.Equal(Color.FromRgb(0x22, 0x66, 0xAA), ThemeManager.CustomAccentColor);
-                Assert.False(ThemeManager.EnableNativeControlStyling);
+                Assert.True(ContainsMergedSource("/Wpf.Zen.Ui;component/Resources/NativeControlStyles.xaml"));
                 Assert.Equal(DarkThemeUri, ThemeManager.AdditionalLightThemeUri);
                 Assert.Equal(LightThemeUri, ThemeManager.AdditionalDarkThemeUri);
                 Assert.Equal(LightThemeUri, ThemeManager.AdditionalHighContrastLightThemeUri);
@@ -443,8 +413,7 @@ public class ThemeManagerTests
                 ThemeManager.Configure(
                     ThemePreference.Dark,
                     AccentColorSource.Custom,
-                    Color.FromRgb(0xBB, 0x44, 0x11),
-                    false
+                    Color.FromRgb(0xBB, 0x44, 0x11)
                 );
                 Assert.Equal(2, notificationCount);
             }
@@ -805,7 +774,6 @@ public class ThemeManagerTests
             ThemePreference.Dark,
             AccentColorSource.Default,
             BuiltInAccent,
-            false,
             null,
             null,
             null,
@@ -815,7 +783,6 @@ public class ThemeManagerTests
             ThemePreference.Light,
             AccentColorSource.Default,
             BuiltInAccent,
-            false,
             null,
             null,
             null,

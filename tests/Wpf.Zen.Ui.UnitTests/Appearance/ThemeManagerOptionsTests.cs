@@ -37,14 +37,6 @@ public class ThemeManagerOptionsTests
         Assert.True(GetPrivateFlag(xamlOptions, "_pendingApply"));
     }
 
-    [Fact]
-    public void NativeControlStyling_IsDisabledByDefault()
-    {
-        var options = new ThemeManagerOptions();
-
-        Assert.False(options.EnableNativeControlStyling);
-    }
-
     private static bool GetPrivateFlag(ThemeManagerOptions options, string fieldName)
     {
         var field = typeof(ThemeManagerOptions).GetField(

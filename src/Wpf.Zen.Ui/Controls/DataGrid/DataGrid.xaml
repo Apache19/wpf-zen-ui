@@ -19,13 +19,9 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Zen.Ui.Controls"
-    xmlns:m="clr-namespace:Wpf.Zen.Ui.Markup"
-    xmlns:theming="clr-namespace:Wpf.Zen.Ui.Theming">
+    xmlns:m="clr-namespace:Wpf.Zen.Ui.Markup">
 
     <ResourceDictionary.MergedDictionaries>
-        <ResourceDictionary Source="pack://application:,,,/Wpf.Zen.Ui;component/Controls/CheckBox/CheckBox.xaml" />
-        <ResourceDictionary Source="pack://application:,,,/Wpf.Zen.Ui;component/Controls/ComboBox/ComboBox.xaml" />
-        <ResourceDictionary Source="pack://application:,,,/Wpf.Zen.Ui;component/Controls/TextBox/TextBox.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Zen.Ui;component/Controls/GridView/GridViewHeaderRowIndicator.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Zen.Ui;component/Resources/Typography.xaml" />
     </ResourceDictionary.MergedDictionaries>
@@ -888,15 +884,21 @@
         </Style.Triggers>
     </Style>
 
-    <Style x:Key="DefaultDataGridCheckBoxElementStyle" BasedOn="{StaticResource {x:Static theming:StyleKeys.DefaultCheckBoxStyle}}" TargetType="{x:Type CheckBox}">
+    <!--
+        These explicit column styles contain only DataGrid-specific differences. WPF evaluates a control's ordinary
+        Style and ThemeStyle as separate layers, so the generated editors still receive the current Windows or Zen
+        native template without a BasedOn reference. Keeping the layers independent also prevents native type keys
+        from leaking into Generic.xaml merely to construct the DataGrid defaults.
+    -->
+    <Style x:Key="DefaultDataGridCheckBoxElementStyle" TargetType="{x:Type CheckBox}">
         <Setter Property="HorizontalAlignment" Value="Center" />
     </Style>
 
-    <Style x:Key="DefaultDataGridCheckBoxEditingElementStyle" BasedOn="{StaticResource {x:Static theming:StyleKeys.DefaultCheckBoxStyle}}" TargetType="{x:Type CheckBox}">
+    <Style x:Key="DefaultDataGridCheckBoxEditingElementStyle" TargetType="{x:Type CheckBox}">
         <Setter Property="HorizontalAlignment" Value="Center" />
     </Style>
 
-    <Style x:Key="DefaultDataGridComboBoxElementStyle" BasedOn="{StaticResource {x:Static theming:StyleKeys.DefaultComboBoxStyle}}" TargetType="{x:Type ComboBox}">
+    <Style x:Key="DefaultDataGridComboBoxElementStyle" TargetType="{x:Type ComboBox}">
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="BorderBrush" Value="Transparent" />
         <Setter Property="Margin" Value="0,0,10,0" />
@@ -941,7 +943,7 @@
         </Setter>-->
     </Style>
 
-    <Style x:Key="DefaultDataGridComboBoxEditingElementStyle" BasedOn="{StaticResource {x:Static theming:StyleKeys.DefaultComboBoxStyle}}" TargetType="{x:Type ComboBox}">
+    <Style x:Key="DefaultDataGridComboBoxEditingElementStyle" TargetType="{x:Type ComboBox}">
         <Setter Property="IsDropDownOpen" Value="True" />
         <Setter Property="Margin" Value="2,0,0,0" />
     </Style>
@@ -956,7 +958,7 @@
         <Setter Property="SnapsToDevicePixels" Value="True" />
     </Style>
 
-    <Style x:Key="DefaultDataGridTextEditingElementStyle" BasedOn="{StaticResource {x:Static theming:StyleKeys.DefaultTextBoxStyle}}" TargetType="{x:Type TextBox}" />
+    <Style x:Key="DefaultDataGridTextEditingElementStyle" TargetType="{x:Type TextBox}" />
 
     <Style x:Key="DefaultUiDataGridCellStyle" BasedOn="{StaticResource DefaultDataGridCellStyle}" TargetType="{x:Type DataGridCell}">
         <Setter Property="Padding" Value="0" />

@@ -14,8 +14,7 @@
     xmlns:ani="clr-namespace:Wpf.Zen.Ui.Animations"
     xmlns:controls="clr-namespace:Wpf.Zen.Ui.Controls"
     xmlns:converters="clr-namespace:Wpf.Zen.Ui.Converters"
-    xmlns:m="clr-namespace:Wpf.Zen.Ui.Markup"
-    xmlns:t="clr-namespace:Wpf.Zen.Ui.Theming">
+    xmlns:m="clr-namespace:Wpf.Zen.Ui.Markup">
 
     <ResourceDictionary.MergedDictionaries>
         <ResourceDictionary Source="pack://application:,,,/Wpf.Zen.Ui;component/Resources/DefaultEditorContextMenu.xaml" />
@@ -259,11 +258,9 @@
         </ControlTemplate.Triggers>
     </ControlTemplate>
 
-    <Style x:Key="{x:Static t:StyleKeys.DefaultComboBoxStyle}" BasedOn="{StaticResource ComboBoxBaseStyle}" TargetType="{x:Type ComboBox}">
+    <Style BasedOn="{StaticResource ComboBoxBaseStyle}" TargetType="{x:Type ComboBox}">
         <Setter Property="OverridesDefaultStyle" Value="True" />
         <Setter Property="Template" Value="{StaticResource DefaultComboBoxTemplate}" />
     </Style>
-
-    <Style BasedOn="{StaticResource {x:Static t:StyleKeys.DefaultComboBoxStyle}}" TargetType="{x:Type ComboBox}" />
 
 </ResourceDictionary>

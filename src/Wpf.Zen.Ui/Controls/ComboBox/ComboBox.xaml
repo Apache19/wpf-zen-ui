@@ -282,7 +282,8 @@
 
     <Style x:Key="{x:Static t:StyleKeys.UiComboBoxStyle}" BasedOn="{StaticResource ComboBoxBaseStyle}" TargetType="{x:Type controls:ComboBox}">
         <Setter Property="IconMargin" Value="10,0,0,0" />
-        <Setter Property="ItemContainerStyle" Value="{StaticResource {x:Static t:StyleKeys.DefaultComboBoxItemStyle}}" />
+        <!-- ComboBoxItem.xaml is merged above, so the standard implicit type key is available in this dictionary. -->
+        <Setter Property="ItemContainerStyle" Value="{StaticResource {x:Type ComboBoxItem}}" />
         <Setter Property="Template" Value="{StaticResource UiComboBoxTemplate}" />
         <Setter Property="MouseOverBackground" Value="{m:DynamicBrush ControlFillPrimary}" />
         <Setter Property="FocusedBackground" Value="{m:DynamicBrush ControlFillInputActive}" />

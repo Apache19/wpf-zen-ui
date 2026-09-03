@@ -34,6 +34,73 @@ namespace Wpf.Zen.Ui.WinFormsHostTests;
 public class ElementHostThemeTests
 {
     /// <summary>
+    /// Verifies that ordinary library-control construction does not activate process-wide theme management. A native
+    /// control that already resolved the Windows ThemeStyle must retain it until the host explicitly initializes or
+    /// configures <see cref="ThemeManager"/>.
+    /// </summary>
+    [Fact]
+    public void UsingLibraryControl_DoesNotActivateThemeManagement()
+    {
+        RunOnStaThread(() =>
+        {
+            EnsureWindowsDirectoryEnvironment();
+            ResetThemeManagerToUnconfiguredState();
+            Assert.Null(Application.Current);
+
+            var nativeTextBox = new TextBox { Text = "Before library initialization" };
+            var root = new StackPanel { Children = { nativeTextBox } };
+            using var form = new Forms.Form
+            {
+                ShowInTaskbar = false,
+                StartPosition = Forms.FormStartPosition.Manual,
+                Location = new System.Drawing.Point(-10_000, -10_000),
+                Size = new System.Drawing.Size(240, 120),
+            };
+            using var host = new ElementHost { Dock = Forms.DockStyle.Fill, Child = root };
+            form.Controls.Add(host);
+
+            try
+            {
+                form.Show();
+                Forms.Application.DoEvents();
+                DrainDispatcher();
+                Style windowsThemeStyle = GetThemeStyle(nativeTextBox);
+
+                root.Children.Add(new UiScrollBar());
+                Forms.Application.DoEvents();
+                DrainDispatcher();
+
+                Assert.Null(Application.Current);
+                Assert.Same(windowsThemeStyle, GetThemeStyle(nativeTextBox));
+                _ = nativeTextBox.ApplyTemplate();
+                Assert.Null(nativeTextBox.Template.FindName("FocusIndicator", nativeTextBox));
+                Assert.False(IsThemeManagementActive());
+            }
+            finally
+            {
+                form.Close();
+                Forms.Application.DoEvents();
+                DrainDispatcher();
+            }
+        });
+    }
+
+    private static bool IsThemeManagementActive()
+    {
+        const BindingFlags staticNonPublic = BindingFlags.Static | BindingFlags.NonPublic;
+        FieldInfo activationField = typeof(ThemeManager).GetField(
+                "_themeManagementActivationState",
+                staticNonPublic
+            )
+            ?? throw new MissingFieldException(
+                typeof(ThemeManager).FullName,
+                "_themeManagementActivationState"
+            );
+
+        return (int)activationField.GetValue(null)! != 0;
+    }
+
+    /// <summary>
     /// Verifies that resources required for every theme graph reach WPF's system-resource lookup when a host has no
     /// <see cref="Application"/>. Focus adorners use this exact lookup path whenever an element retains WPF's sentinel
     /// default <see cref="FrameworkElement.FocusVisualStyle"/> value.
@@ -61,7 +128,7 @@ public class ElementHostThemeTests
             );
             var template = Assert.IsType<ControlTemplate>(templateSetter.Value);
 
-            Assert.IsType<Border>(template.LoadContent());
+            Assert.IsType<Control>(template.LoadContent());
         });
     }
 
@@ -162,8 +229,7 @@ public class ElementHostThemeTests
 
             ThemeManager.Configure(
                 ThemePreference.Light,
-                AccentColorSource.Default,
-                enableNativeControlStyling: true
+                AccentColorSource.Default
             );
 
             using var form = new Forms.Form
@@ -409,8 +475,7 @@ public class ElementHostThemeTests
             // every PresentationSource. No root opt-in is present: the system host must detect the new visual island.
             ThemeManager.Configure(
                 ThemePreference.Light,
-                AccentColorSource.Default,
-                enableNativeControlStyling: true
+                AccentColorSource.Default
             );
 
             using var form = new Forms.Form
@@ -537,8 +602,7 @@ public class ElementHostThemeTests
 
                 ThemeManager.Configure(
                     ThemePreference.Dark,
-                    AccentColorSource.Default,
-                    enableNativeControlStyling: true
+                    AccentColorSource.Default
                 );
                 Forms.Application.DoEvents();
                 DrainDispatcher();
@@ -612,8 +676,7 @@ public class ElementHostThemeTests
 
                 ThemeManager.Configure(
                     ThemePreference.Light,
-                    AccentColorSource.Default,
-                    enableNativeControlStyling: true
+                    AccentColorSource.Default
                 );
                 Forms.Application.DoEvents();
                 DrainDispatcher();
@@ -659,8 +722,7 @@ public class ElementHostThemeTests
 
                 ThemeManager.Configure(
                     ThemePreference.Dark,
-                    AccentColorSource.Default,
-                    enableNativeControlStyling: true
+                    AccentColorSource.Default
                 );
                 Forms.Application.DoEvents();
                 DrainDispatcher();
@@ -675,42 +737,6 @@ public class ElementHostThemeTests
                     GetBrushColor(textBox.Background)
                 );
 
-                Style enabledTextBoxThemeStyle = GetThemeStyle(textBox);
-                Style enabledComboBoxThemeStyle = GetThemeStyle(comboBox);
-                Style stableUiComboBoxThemeStyle = GetThemeStyle(uiComboBox);
-                ControlTemplate stableUiComboBoxTemplate = uiComboBox.Template;
-
-                // Unlike a Light/Dark palette switch, changing this option adds or removes native Type keys from
-                // PresentationFramework's themed dictionary. Controls that already exist must therefore make one
-                // real ThemeStyle transition. Wpf.Zen.Ui controls still fall through to the stable Generic.xaml graph.
-                ThemeManager.EnableNativeControlStyling = false;
-                Forms.Application.DoEvents();
-                DrainDispatcher();
-
-                Assert.Null(Application.Current);
-                Assert.False(ThemeManager.EnableNativeControlStyling);
-                Assert.NotSame(enabledTextBoxThemeStyle, GetThemeStyle(textBox));
-                Assert.NotSame(enabledComboBoxThemeStyle, GetThemeStyle(comboBox));
-                Assert.Same(stableUiComboBoxThemeStyle, GetThemeStyle(uiComboBox));
-                Assert.Same(stableUiComboBoxTemplate, uiComboBox.Template);
-                _ = textBox.ApplyTemplate();
-                _ = comboBox.ApplyTemplate();
-                Assert.Null(textBox.Template.FindName("FocusIndicator", textBox));
-                Assert.Null(comboBox.Template.FindName("AccentBorder", comboBox));
-
-                Style systemTextBoxThemeStyle = GetThemeStyle(textBox);
-                Style systemComboBoxThemeStyle = GetThemeStyle(comboBox);
-
-                ThemeManager.EnableNativeControlStyling = true;
-                Forms.Application.DoEvents();
-                DrainDispatcher();
-
-                Assert.Null(Application.Current);
-                Assert.True(ThemeManager.EnableNativeControlStyling);
-                Assert.NotSame(systemTextBoxThemeStyle, GetThemeStyle(textBox));
-                Assert.NotSame(systemComboBoxThemeStyle, GetThemeStyle(comboBox));
-                Assert.Same(stableUiComboBoxThemeStyle, GetThemeStyle(uiComboBox));
-                Assert.Same(stableUiComboBoxTemplate, uiComboBox.Template);
                 _ = textBox.ApplyTemplate();
                 _ = comboBox.ApplyTemplate();
                 Assert.NotNull(textBox.Template.FindName("FocusIndicator", textBox));
@@ -776,7 +802,6 @@ public class ElementHostThemeTests
                 ThemePreference.Light,
                 AccentColorSource.Default,
                 Color.FromRgb(0x00, 0x78, 0xD4),
-                enableNativeControlStyling: true,
                 additionalLightThemeUri: lightPaletteUri,
                 additionalDarkThemeUri: darkPaletteUri,
                 additionalHighContrastLightThemeUri: null,

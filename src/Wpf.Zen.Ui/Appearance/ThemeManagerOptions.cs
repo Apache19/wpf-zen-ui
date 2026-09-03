@@ -95,7 +95,6 @@ public class ThemeManagerOptions : ResourceDictionary, ISupportInitialize
     private ThemePreference _preference = ThemePreference.Light;
     private AccentColorSource _accentSource = AccentColorSource.System;
     private Color _customAccentColor = Color.FromRgb(0x00, 0x78, 0xD4);
-    private bool _enableNativeControlStyling;
     private Uri? _additionalLightThemeSource;
     private Uri? _additionalDarkThemeSource;
     private Uri? _additionalHighContrastLightThemeSource;
@@ -157,26 +156,6 @@ public class ThemeManagerOptions : ResourceDictionary, ISupportInitialize
             if (_customAccentColor != value)
             {
                 _customAccentColor = value;
-                RequestApply();
-            }
-        }
-    }
-
-    /// <summary>
-    /// Gets or sets a value indicating whether to merge implicit styles
-    /// for native WPF controls so they adopt the Fluent UI theme.
-    /// The default value is <c>false</c>. Set this property to <c>true</c> explicitly when the application wants the
-    /// library to replace the platform styles of matching native controls. Merely enabling theme management does not
-    /// opt into that application-wide visual change.
-    /// </summary>
-    public bool EnableNativeControlStyling
-    {
-        get => _enableNativeControlStyling;
-        set
-        {
-            if (_enableNativeControlStyling != value)
-            {
-                _enableNativeControlStyling = value;
                 RequestApply();
             }
         }
@@ -296,9 +275,8 @@ public class ThemeManagerOptions : ResourceDictionary, ISupportInitialize
         base.EndInit();
         _isInitializing = false;
 
-        // The presence of ThemeManagerOptions is itself the consumer's explicit opt-in to theme management. Apply
-        // even when every property equals its CLR default, but keep native-control styling disabled unless the XAML
-        // explicitly enables it; palette installation and replacement of platform control styles are separate choices.
+        // The presence of ThemeManagerOptions is itself a complete declarative configuration request. Apply even
+        // when every property equals its CLR default so a dictionary containing only this object remains meaningful.
         if (_pendingApply)
         {
             _pendingApply = false;
@@ -337,7 +315,6 @@ public class ThemeManagerOptions : ResourceDictionary, ISupportInitialize
             _preference,
             _accentSource,
             _customAccentColor,
-            _enableNativeControlStyling,
             _aLightChanged ? _additionalLightThemeSource : ThemeManager.AdditionalLightThemeUri,
             _aDarkChanged ? _additionalDarkThemeSource : ThemeManager.AdditionalDarkThemeUri,
             _aHcLightChanged ? _additionalHighContrastLightThemeSource : ThemeManager.AdditionalHighContrastLightThemeUri,

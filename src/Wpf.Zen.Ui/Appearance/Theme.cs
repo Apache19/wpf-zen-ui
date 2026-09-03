@@ -11,6 +11,11 @@ namespace Wpf.Zen.Ui;
 /// <summary>
 /// Provides attached properties for controlling theme behavior on individual elements.
 /// </summary>
+/// <remarks>
+/// These properties select or scope resources from the theme graph; they do not initialize that graph. Call
+/// <see cref="ThemeManager.Initialize"/>, use <see cref="ThemeManager.Configure(Appearance.ThemePreference, Appearance.AccentColorSource, System.Windows.Media.Color?)"/>,
+/// or declare <see cref="ThemeManagerOptions"/> before relying on an attached theme request.
+/// </remarks>
 public static class Theme
 {
     static Theme()

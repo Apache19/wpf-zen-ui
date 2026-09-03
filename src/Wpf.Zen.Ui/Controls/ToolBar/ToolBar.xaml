@@ -126,17 +126,16 @@
         </Setter>
     </Style>
 
-    <Style x:Key="{x:Static ToolBar.TextBoxStyleKey}" BasedOn="{m:StaticStyle DefaultTextBox}" TargetType="{x:Type TextBox}">
-        <Setter Property="BorderThickness" Value="0"></Setter>
-        <Setter Property="Margin" Value="2" />
-        <Setter Property="MaxLines" Value="1" />
-        <Setter Property="Padding" Value="6,0" />
-        <Setter Property="VerticalContentAlignment" Value="Center" />
-    </Style>
-
     <Style x:Key="{x:Static ToolBar.MenuStyleKey}" />
 
     <Style x:Key="{x:Static ToolBar.ComboBoxStyleKey}" />
+
+    <!--
+        ToolBar.TextBoxStyleKey is intentionally defined in Controls/TextBox/NativeTextBox.xaml next to the implicit
+        TextBox type style on which it is based. Keep that key in the native TextBox dictionary: WPF cannot
+        resolve a StaticResource from a sibling Source-backed dictionary merely because both dictionaries are
+        merged by the same owner. Do not add a second ToolBar.TextBoxStyleKey definition to this dictionary.
+    -->
 
     <Style x:Key="{x:Static ToolBar.SeparatorStyleKey}" />
 

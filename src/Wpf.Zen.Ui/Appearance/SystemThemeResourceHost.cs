@@ -41,43 +41,43 @@ internal sealed class SystemThemeResourceHost
     private const BindingFlags StaticNonPublic   = BindingFlags.Static | BindingFlags.NonPublic;
     private const BindingFlags InstanceNonPublic = BindingFlags.Instance | BindingFlags.NonPublic;
 
-    private readonly FieldInfo _dictionariesField;
-    private readonly FieldInfo _resourceCacheField;
-    private readonly FieldInfo _themeStyleCacheField;
+    private readonly FieldInfo    _dictionariesField;
+    private readonly FieldInfo    _resourceCacheField;
+    private readonly FieldInfo    _themeStyleCacheField;
     private readonly PropertyInfo _themeDictionaryLockProperty;
-    private readonly MethodInfo _findResourceInternalMethod;
-    private readonly MethodInfo _ensureDictionarySlotMethod;
-    private readonly MethodInfo _invalidateResourcesMethod;
-    private readonly MethodInfo _invalidateOnResourcesChangeMethod;
+    private readonly MethodInfo   _findResourceInternalMethod;
+    private readonly MethodInfo   _ensureDictionarySlotMethod;
+    private readonly MethodInfo   _invalidateResourcesMethod;
+    private readonly MethodInfo   _invalidateOnResourcesChangeMethod;
     private readonly PropertyInfo _catastrophicDictionaryChangeInfoProperty;
     private readonly PropertyInfo _themeChangeInfoProperty;
-    private readonly FieldInfo _themedDictionaryField;
-    private readonly FieldInfo _themedLoadedField;
+    private readonly FieldInfo    _themedDictionaryField;
+    private readonly FieldInfo    _themedLoadedField;
     private readonly PropertyInfo _isThemeDictionaryProperty;
-    private readonly MethodInfo _themeStyleCacheClearMethod;
+    private readonly MethodInfo   _themeStyleCacheClearMethod;
 
-    private object? _presentationFrameworkSlot;
-    private object? _wpfUiSlot;
+    private object?             _presentationFrameworkSlot;
+    private object?             _wpfUiSlot;
     private ResourceDictionary? _presentationFrameworkBaseDictionary;
     private ResourceDictionary? _installedPresentationFrameworkOverlay;
     private ResourceDictionary? _installedWpfUiOverlay;
 
     private SystemThemeResourceHost()
     {
-        Assembly presentationFramework = typeof(FrameworkElement).Assembly;
+        var presentationFramework = typeof(FrameworkElement).Assembly;
 
-        Type systemResourcesType = presentationFramework.GetType(
+        var systemResourcesType = presentationFramework.GetType(
             "System.Windows.SystemResources",
             throwOnError: true
         )!;
 
-        Type resourceDictionariesType = GetRequiredNestedType(
+        var resourceDictionariesType = GetRequiredNestedType(
             systemResourcesType,
             "ResourceDictionaries"
         );
 
-        _dictionariesField = GetRequiredField(systemResourcesType, "_dictionaries", StaticNonPublic);
-        _resourceCacheField = GetRequiredField(systemResourcesType, "_resourceCache", StaticNonPublic);
+        _dictionariesField    = GetRequiredField(systemResourcesType, "_dictionaries", StaticNonPublic);
+        _resourceCacheField   = GetRequiredField(systemResourcesType, "_resourceCache", StaticNonPublic);
         _themeStyleCacheField = GetRequiredField(systemResourcesType, "_themeStyleCache", StaticNonPublic);
         _themeDictionaryLockProperty = GetRequiredProperty(
             systemResourcesType,
@@ -107,11 +107,11 @@ internal sealed class SystemThemeResourceHost
         // colors/settings change. Neither describes Wpf.Zen.Ui replacing an arbitrary palette dictionary. Reuse WPF's
         // own dictionary-change tree walk with its broadest ResourceChangeInfo so DynamicResource expressions inside
         // an unchanged ThemeStyle and ControlTemplate are invalidated without replacing either object.
-        Type treeWalkHelperType = presentationFramework.GetType(
+        var treeWalkHelperType = presentationFramework.GetType(
             "System.Windows.TreeWalkHelper",
             throwOnError: true
         )!;
-        Type resourcesChangeInfoType = presentationFramework.GetType(
+        var resourcesChangeInfoType = presentationFramework.GetType(
             "System.Windows.ResourcesChangeInfo",
             throwOnError: true
         )!;
@@ -150,7 +150,7 @@ internal sealed class SystemThemeResourceHost
             InstanceNonPublic
         );
 
-        Type themeStyleCacheType = _themeStyleCacheField.FieldType;
+        var themeStyleCacheType = _themeStyleCacheField.FieldType;
         _themeStyleCacheClearMethod = GetRequiredMethod(
             themeStyleCacheType,
             nameof(IDictionary.Clear),
@@ -182,19 +182,13 @@ internal sealed class SystemThemeResourceHost
     /// Installs <paramref name="activeResources"/> as the current process-wide WPF theme overlay.
     /// </summary>
     /// <param name="activeResources">
-    /// The palette-independent global resources used before theme management is activated, or the fully composed
-    /// Wpf.Zen.Ui theme dictionary after activation.
-    /// </param>
-    /// <param name="nativeControlStylesChanged">
-    /// <see langword="true"/> when implicit native-control type keys were added or removed. Existing native controls
-    /// must re-evaluate ThemeStyle for this structural transition; ordinary palette switches pass
-    /// <see langword="false"/> so their templates and control state remain intact.
+    /// The fully composed Wpf.Zen.Ui theme dictionary selected by explicit theme-manager initialization.
     /// </param>
     /// <returns>
     /// <see langword="true"/> when installation and invalidation succeeded; otherwise <see langword="false"/>.
     /// On failure the method restores the framework dictionaries before returning.
     /// </returns>
-    internal bool TryApply(ResourceDictionary activeResources, bool nativeControlStylesChanged)
+    internal bool TryApply(ResourceDictionary activeResources)
     {
         if (activeResources is null)
         {
@@ -202,8 +196,8 @@ internal sealed class SystemThemeResourceHost
         }
 
         SlotState presentationFrameworkState = default;
-        SlotState wpfUiState = default;
-        var stateCaptured = false;
+        SlotState wpfUiState                 = default;
+        var       stateCaptured              = false;
 
         try
         {
@@ -212,13 +206,13 @@ internal sealed class SystemThemeResourceHost
             // declares ThemeDictionaryLocation.None, which makes a lookup miss continue into Generic.xaml. Loading
             // Generic.xaml merely to allocate the slot can strand dispatcher-affine values on the first STA that
             // configures ThemeManager and later break otherwise valid multi-STA hosts.
-            object presentationFrameworkSlot = EnsureLoadedDictionarySlot(
+            var presentationFrameworkSlot = EnsureLoadedDictionarySlot(
                 typeof(TextBox).Assembly,
                 typeof(TextBox)
             );
 
-            object themeLock = _themeDictionaryLockProperty.GetValue(null)
-                ?? throw new InvalidOperationException("WPF returned a null theme dictionary lock.");
+            var themeLock = _themeDictionaryLockProperty.GetValue(null)
+                            ?? throw new InvalidOperationException("WPF returned a null theme dictionary lock.");
             object wpfUiSlot;
             lock (themeLock)
             {
@@ -228,9 +222,9 @@ internal sealed class SystemThemeResourceHost
                 wpfUiSlot = EnsureDictionarySlotWithoutLoading(typeof(ThemeVariant).Assembly);
             }
 
-            ResourceDictionary? currentFrameworkDictionary =
+            var currentFrameworkDictionary =
                 _themedDictionaryField.GetValue(presentationFrameworkSlot) as ResourceDictionary;
-            bool frameworkThemeSlotWasReset = !ReferenceEquals(
+            var frameworkThemeSlotWasReset = !ReferenceEquals(
                 currentFrameworkDictionary,
                 _installedPresentationFrameworkOverlay
             );
@@ -250,11 +244,11 @@ internal sealed class SystemThemeResourceHost
                 );
             }
 
-            ResourceDictionary presentationFrameworkOverlay = CreateThemeOverlay(
+            var presentationFrameworkOverlay = CreateThemeOverlay(
                 _presentationFrameworkBaseDictionary,
                 activeResources
             );
-            ResourceDictionary wpfUiOverlay = CreateThemeOverlay(activeResources);
+            var wpfUiOverlay = CreateThemeOverlay(activeResources);
 
             lock (themeLock)
             {
@@ -280,23 +274,14 @@ internal sealed class SystemThemeResourceHost
                 // overlay may already be serving presentation sources on several STA threads.
                 InvalidateThemeStyleResources();
 
-                // A ThemeChangeInfo walk is not sufficient when a Wpf.Zen.Ui control was created before the first
-                // configuration call. Its ThemeStyle comes from Generic.xaml both before and after installation, so
+                // A ThemeChangeInfo walk is not sufficient when a Wpf.Zen.Ui control was created before explicit
+                // theme-manager activation. Its ThemeStyle comes from Generic.xaml both before and after installation, so
                 // WPF retains that Style object and may leave DynamicResource expressions inside it associated with
                 // Generic.xaml's built-in Light dictionary. Replaying an ordinary dictionary change after the style
                 // transition makes those expressions resolve against the newly installed system overlay. Without
                 // this second walk, the first Dark switch updates direct resource references but leaves values such
                 // as FluentWindow.Background and template brushes Light until the next palette switch.
                 InvalidatePaletteResources();
-            }
-            else if (nativeControlStylesChanged)
-            {
-                // EnableNativeControlStyling changes which Type keys exist in PresentationFramework's themed slot.
-                // Resource-reference invalidation alone cannot make an existing control exchange Wpf.Zen.Ui's implicit
-                // ThemeStyle for Windows' original ThemeStyle (or vice versa), so perform the expensive structural
-                // walk only for this explicit switch. The walk covers every current PresentationSource because the
-                // reflected dictionary is process-wide and may be consumed by several ElementHost dispatchers.
-                InvalidateThemeStyleResources();
             }
             else
             {
@@ -340,8 +325,8 @@ internal sealed class SystemThemeResourceHost
 
         try
         {
-            object themeLock = _themeDictionaryLockProperty.GetValue(null)
-                ?? throw new InvalidOperationException("WPF returned a null theme dictionary lock.");
+            var themeLock = _themeDictionaryLockProperty.GetValue(null)
+                            ?? throw new InvalidOperationException("WPF returned a null theme dictionary lock.");
 
             lock (themeLock)
             {
@@ -429,8 +414,8 @@ internal sealed class SystemThemeResourceHost
 
         try
         {
-            object changeInfo = _themeChangeInfoProperty.GetValue(null)
-                ?? throw new InvalidOperationException("WPF returned a null theme-change descriptor.");
+            var changeInfo = _themeChangeInfoProperty.GetValue(null)
+                             ?? throw new InvalidOperationException("WPF returned a null theme-change descriptor.");
             InvalidateRoot(root, changeInfo);
             return true;
         }
@@ -482,26 +467,28 @@ internal sealed class SystemThemeResourceHost
         }
 
         return dictionaries[assembly]
-            ?? throw new InvalidOperationException(
-                $"WPF did not create a theme dictionary slot for '{assembly.GetName().Name}'."
-            );
+               ?? throw new InvalidOperationException(
+                   $"WPF did not create a theme dictionary slot for '{assembly.GetName().Name}'."
+               );
     }
 
     private object EnsureDictionarySlotWithoutLoading(Assembly assembly)
     {
-        object? slot = _ensureDictionarySlotMethod.Invoke(null, [assembly]);
+        var slot = _ensureDictionarySlotMethod.Invoke(null, [assembly]);
         return slot
-            ?? throw new InvalidOperationException(
-                $"WPF did not create a theme dictionary slot for '{assembly.GetName().Name}'."
-            );
+               ?? throw new InvalidOperationException(
+                   $"WPF did not create a theme dictionary slot for '{assembly.GetName().Name}'."
+               );
     }
 
-    private SlotState CaptureSlotState(object slot) =>
-        new(
+    private SlotState CaptureSlotState(object slot)
+    {
+        return new SlotState(
             slot,
             _themedDictionaryField.GetValue(slot) as ResourceDictionary,
             _themedLoadedField.GetValue(slot) is true
         );
+    }
 
     private void SetThemedDictionary(object slot, ResourceDictionary? dictionary, bool loaded)
     {
@@ -518,8 +505,8 @@ internal sealed class SystemThemeResourceHost
 
         resourceCache.Clear();
 
-        object themeStyleCache = _themeStyleCacheField.GetValue(null)
-            ?? throw new InvalidOperationException("WPF returned a null theme-style cache.");
+        var themeStyleCache = _themeStyleCacheField.GetValue(null)
+                              ?? throw new InvalidOperationException("WPF returned a null theme-style cache.");
 
         _ = _themeStyleCacheClearMethod.Invoke(themeStyleCache, null);
     }
@@ -536,19 +523,20 @@ internal sealed class SystemThemeResourceHost
     /// </remarks>
     private void InvalidatePaletteResources()
     {
-        object changeInfo = _catastrophicDictionaryChangeInfoProperty.GetValue(null)
-            ?? throw new InvalidOperationException("WPF returned a null dictionary-change descriptor.");
+        var changeInfo = _catastrophicDictionaryChangeInfoProperty.GetValue(null)
+                         ?? throw new InvalidOperationException("WPF returned a null dictionary-change descriptor.");
 
         InvalidatePresentationSources(changeInfo, "invalidate a secondary dispatcher palette");
     }
 
     /// <summary>
-    /// Re-evaluates ThemeStyle across all connected presentation roots after native-control type keys change.
+    /// Re-evaluates ThemeStyle across all connected presentation roots for first installation or a real Windows
+    /// theme-dictionary replacement.
     /// </summary>
     private void InvalidateThemeStyleResources()
     {
-        object changeInfo = _themeChangeInfoProperty.GetValue(null)
-            ?? throw new InvalidOperationException("WPF returned a null theme-change descriptor.");
+        var changeInfo = _themeChangeInfoProperty.GetValue(null)
+                         ?? throw new InvalidOperationException("WPF returned a null theme-change descriptor.");
 
         InvalidatePresentationSources(changeInfo, "invalidate a secondary dispatcher theme style");
     }
@@ -564,9 +552,9 @@ internal sealed class SystemThemeResourceHost
             }
         }
 
-        foreach (PresentationSource source in sources)
+        foreach (var source in sources)
         {
-            Dispatcher dispatcher = source.Dispatcher;
+            var dispatcher = source.Dispatcher;
             if (dispatcher.CheckAccess())
             {
                 InvalidatePresentationSource(source, changeInfo);
@@ -603,8 +591,10 @@ internal sealed class SystemThemeResourceHost
         InvalidateRoot(root, changeInfo);
     }
 
-    private void InvalidateRoot(FrameworkElement root, object changeInfo) =>
+    private void InvalidateRoot(FrameworkElement root, object changeInfo)
+    {
         _ = _invalidateOnResourcesChangeMethod.Invoke(null, [root, null, changeInfo]);
+    }
 
     /// <summary>
     /// Uses WPF's real theme-change path only while restoring the framework's original themed dictionaries.
@@ -620,8 +610,8 @@ internal sealed class SystemThemeResourceHost
     {
         try
         {
-            object themeLock = _themeDictionaryLockProperty.GetValue(null)
-                ?? throw new InvalidOperationException("WPF returned a null theme dictionary lock.");
+            var themeLock = _themeDictionaryLockProperty.GetValue(null)
+                            ?? throw new InvalidOperationException("WPF returned a null theme dictionary lock.");
 
             lock (themeLock)
             {
@@ -646,45 +636,55 @@ internal sealed class SystemThemeResourceHost
         }
     }
 
-    private static Type GetRequiredNestedType(Type declaringType, string name) =>
-        declaringType.GetNestedType(name, BindingFlags.Public | BindingFlags.NonPublic)
-        ?? throw new MissingMemberException(declaringType.FullName, name);
+    private static Type GetRequiredNestedType(Type declaringType, string name)
+    {
+        return declaringType.GetNestedType(name, BindingFlags.Public | BindingFlags.NonPublic)
+               ?? throw new MissingMemberException(declaringType.FullName, name);
+    }
 
-    private static FieldInfo GetRequiredField(Type declaringType, string name, BindingFlags flags) =>
-        declaringType.GetField(name, flags)
-        ?? throw new MissingFieldException(declaringType.FullName, name);
+    private static FieldInfo GetRequiredField(Type declaringType, string name, BindingFlags flags)
+    {
+        return declaringType.GetField(name, flags)
+               ?? throw new MissingFieldException(declaringType.FullName, name);
+    }
 
     private static PropertyInfo GetRequiredProperty(
-        Type declaringType,
-        string name,
-        BindingFlags flags) =>
-        declaringType.GetProperty(name, flags)
-        ?? throw new MissingMemberException(declaringType.FullName, name);
+        Type         declaringType,
+        string       name,
+        BindingFlags flags)
+    {
+        return declaringType.GetProperty(name, flags)
+               ?? throw new MissingMemberException(declaringType.FullName, name);
+    }
 
     private static MethodInfo GetRequiredMethod(
-        Type declaringType,
-        string name,
-        BindingFlags flags,
-        params Type[] parameterTypes) =>
-        declaringType.GetMethod(name, flags, binder: null, parameterTypes, modifiers: null)
-        ?? throw new MissingMethodException(declaringType.FullName, name);
+        Type          declaringType,
+        string        name,
+        BindingFlags  flags,
+        params Type[] parameterTypes)
+    {
+        return declaringType.GetMethod(name, flags, binder: null, parameterTypes, modifiers: null)
+               ?? throw new MissingMethodException(declaringType.FullName, name);
+    }
 
-    private static bool IsCriticalException(Exception exception) =>
-        exception is OutOfMemoryException
+    private static bool IsCriticalException(Exception exception)
+    {
+        return exception is OutOfMemoryException
             or StackOverflowException
             or AccessViolationException;
+    }
 
     private static void TraceReflectionFailure(string operation, Exception exception)
     {
-        Exception failure = exception;
-        if (exception is TargetInvocationException invocation && invocation.InnerException is { } innerException)
+        var failure = exception;
+        if (exception is TargetInvocationException { InnerException: { } innerException })
         {
             failure = innerException;
         }
 
         Trace.TraceWarning(
             "Wpf.Zen.Ui could not {0} the applicationless SystemResources theme host and will use the "
-                + "Application resource host instead. {1}: {2}",
+            + "Application resource host instead. {1}: {2}",
             operation,
             failure.GetType().Name,
             failure.Message
@@ -692,8 +692,8 @@ internal sealed class SystemThemeResourceHost
     }
 
     private readonly record struct SlotState(
-        object Slot,
+        object              Slot,
         ResourceDictionary? Dictionary,
-        bool Loaded
+        bool                Loaded
     );
 }

@@ -14,8 +14,7 @@
     xmlns:ani="clr-namespace:Wpf.Zen.Ui.Animations"
     xmlns:controls="clr-namespace:Wpf.Zen.Ui.Controls"
     xmlns:converters="clr-namespace:Wpf.Zen.Ui.Converters"
-    xmlns:m="clr-namespace:Wpf.Zen.Ui.Markup"
-    xmlns:t="clr-namespace:Wpf.Zen.Ui.Theming">
+    xmlns:m="clr-namespace:Wpf.Zen.Ui.Markup">
 
     <converters:CornerRadiusTransformConverter x:Key="ExpanderDownHeaderCornerRadiusConverter" CopyCorners="Top" />
     <converters:CornerRadiusTransformConverter x:Key="ExpanderUpHeaderCornerRadiusConverter" CopyCorners="Bottom" />
@@ -196,7 +195,7 @@
         </Border>
     </ControlTemplate>
 
-    <Style x:Key="{x:Static t:StyleKeys.DefaultExpanderStyle}" TargetType="{x:Type Expander}">
+    <Style TargetType="{x:Type Expander}">
         <Setter Property="OverridesDefaultStyle" Value="True" />
         <Setter Property="Background" Value="{m:DynamicBrush CardBackgroundFillDefault}" />
         <Setter Property="BorderBrush" Value="{m:DynamicBrush CardStrokeDefault}" />
@@ -295,7 +294,5 @@
             </Setter.Value>
         </Setter>
     </Style>
-
-    <Style BasedOn="{StaticResource {x:Static t:StyleKeys.DefaultExpanderStyle}}" TargetType="{x:Type Expander}" />
 
 </ResourceDictionary>

@@ -20,7 +20,7 @@ public static class Program
             System.Console.WriteLine("Application.Current is null.");
         }
 
-        ThemeManager.Configure(ThemePreference.Dark, AccentColorSource.System, true);
+        ThemeManager.Configure(ThemePreference.Dark);
 
         try
         {

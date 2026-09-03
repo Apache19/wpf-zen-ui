@@ -13,8 +13,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Zen.Ui.Controls"
     xmlns:converters="clr-namespace:Wpf.Zen.Ui.Converters"
-    xmlns:m="clr-namespace:Wpf.Zen.Ui.Markup"
-    xmlns:t="clr-namespace:Wpf.Zen.Ui.Theming">
+    xmlns:m="clr-namespace:Wpf.Zen.Ui.Markup">
 
     <!--
         The TextViewer has a default padding of 2,0,2,0. To keep the watermark aligned
@@ -204,7 +203,7 @@
         </ControlTemplate.Triggers>
     </ControlTemplate>
 
-    <Style x:Key="{x:Static t:StyleKeys.DefaultDatePickerStyle}" TargetType="{x:Type DatePicker}">
+    <Style TargetType="{x:Type DatePicker}">
         <Setter Property="OverridesDefaultStyle" Value="True" />
         <Setter Property="IsTodayHighlighted" Value="True" />
         <Setter Property="SelectedDateFormat" Value="Short" />
@@ -219,9 +218,7 @@
         <Setter Property="SnapsToDevicePixels" Value="True" />
         <Setter Property="Validation.ErrorTemplate" Value="{m:DynamicTemplate DefaultValidation}" />
         <Setter Property="Template" Value="{StaticResource DefaultDatePickerTemplate}" />
-        <Setter Property="CalendarStyle" Value="{m:DynamicStyle DefaultCalendar}" />
+        <Setter Property="CalendarStyle" Value="{DynamicResource {x:Type Calendar}}" />
     </Style>
-
-    <Style BasedOn="{StaticResource {x:Static t:StyleKeys.DefaultDatePickerStyle}}" TargetType="{x:Type DatePicker}" />
 
 </ResourceDictionary>

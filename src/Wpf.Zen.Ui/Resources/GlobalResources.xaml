@@ -14,7 +14,7 @@
 
     <!--
         ThemeManager merges this dictionary into every process-wide resource graph, independently of the selected
-        palette and optional native-control styling. Keep resources here when they must be available through both
+        palette. Keep resources here when they must be available through both
         Application.Resources and the applicationless SystemResources host.
     -->
 

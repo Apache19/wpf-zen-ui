@@ -8,8 +8,7 @@
 <ResourceDictionary
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:m="clr-namespace:Wpf.Zen.Ui.Markup"
-    xmlns:t="clr-namespace:Wpf.Zen.Ui.Theming">
+    xmlns:m="clr-namespace:Wpf.Zen.Ui.Markup">
 
     <Style x:Key="{x:Static StatusBar.SeparatorStyleKey}" TargetType="{x:Type Separator}">
         <Setter Property="Background" Value="{m:DynamicBrush ControlElevationBorder}" />
@@ -29,7 +28,7 @@
         </Setter>
     </Style>
 
-    <Style x:Key="{x:Static t:StyleKeys.DefaultStatusBarStyle}" TargetType="{x:Type StatusBar}">
+    <Style TargetType="{x:Type StatusBar}">
         <Setter Property="OverridesDefaultStyle" Value="True" />
         <Setter Property="Background" Value="{m:DynamicBrush ControlFillPrimary}" />
         <Setter Property="Foreground" Value="{m:DynamicBrush TextFillPrimary}" />
@@ -52,7 +51,7 @@
         </Setter>
     </Style>
 
-    <Style x:Key="{x:Static t:StyleKeys.DefaultStatusBarItemStyle}" TargetType="{x:Type StatusBarItem}">
+    <Style TargetType="{x:Type StatusBarItem}">
         <Setter Property="OverridesDefaultStyle" Value="True" />
         <Setter Property="Padding" Value="3,0" />
         <Setter Property="Background" Value="Transparent" />
@@ -81,8 +80,5 @@
             </Setter.Value>
         </Setter>
     </Style>
-
-    <Style BasedOn="{StaticResource {x:Static t:StyleKeys.DefaultStatusBarStyle}}" TargetType="{x:Type StatusBar}" />
-    <Style BasedOn="{StaticResource {x:Static t:StyleKeys.DefaultStatusBarItemStyle}}" TargetType="{x:Type StatusBarItem}" />
 
 </ResourceDictionary>
