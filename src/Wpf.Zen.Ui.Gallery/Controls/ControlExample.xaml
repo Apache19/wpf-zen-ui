@@ -40,7 +40,7 @@
 
                         <Expander Grid.Row="2" Header="Source code">
                             <Expander.Style>
-                                <Style BasedOn="{ui:StaticStyle DefaultExpander}" TargetType="{x:Type Expander}">
+                                <Style BasedOn="{StaticResource {x:Type Expander}}" TargetType="{x:Type Expander}">
                                     <Setter Property="Border.CornerRadius" Value="0,0,8,8" />
                                     <Setter Property="HeaderTemplate">
                                         <Setter.Value>

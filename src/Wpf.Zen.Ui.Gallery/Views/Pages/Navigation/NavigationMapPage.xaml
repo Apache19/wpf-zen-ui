@@ -136,6 +136,7 @@
                         <RadioButton Content="{ui:FluentIconSource Check24}" IsChecked="True" />
                         <RadioButton Content="{ui:FluentIconSource Check24}" />
                         <RadioButton Content="{ui:FluentIconSource Check24}" />
+                        <TextBox MinWidth="100" MaxWidth="150" Text="Test"/>
                     </ToolBar>
 
                     <ToolBar
