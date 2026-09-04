@@ -83,7 +83,7 @@
                             x:Name="SuggestionPopup"
                             MinWidth="{TemplateBinding ActualWidth}"
                             MinHeight="{TemplateBinding ActualHeight}"
-                            controls:PopupPlacement.IsEnabled="True"
+                            controls:PopupPlacementTracker.IsEnabled="True"
                             controls:PopupShadow.IsEnabled="True"
                             controls:PopupSlideAnimator.IsEnabled="True"
                             AllowsTransparency="True"
@@ -133,12 +133,12 @@
                             side after measuring available monitor space. These triggers consume the resolved side so
                             the editor and suggestions surface share one silhouette in either vertical direction.
                         -->
-                        <Trigger SourceName="SuggestionPopup" Property="controls:PopupPlacement.ActualPlacement" Value="Bottom">
+                        <Trigger SourceName="SuggestionPopup" Property="controls:PopupPlacementTracker.ActualPlacement" Value="Bottom">
                             <Setter TargetName="PART_TextBox" Property="CornerRadius" Value="4,4,0,0" />
                             <Setter TargetName="SuggestionsBorder" Property="BorderThickness" Value="1,0,1,1" />
                             <Setter TargetName="SuggestionsBorder" Property="CornerRadius" Value="0,0,8,8" />
                         </Trigger>
-                        <Trigger SourceName="SuggestionPopup" Property="controls:PopupPlacement.ActualPlacement" Value="Top">
+                        <Trigger SourceName="SuggestionPopup" Property="controls:PopupPlacementTracker.ActualPlacement" Value="Top">
                             <Setter TargetName="PART_TextBox" Property="CornerRadius" Value="0,0,4,4" />
                             <Setter TargetName="SuggestionsBorder" Property="BorderThickness" Value="1,1,1,0" />
                             <Setter TargetName="SuggestionsBorder" Property="CornerRadius" Value="8,8,0,0" />

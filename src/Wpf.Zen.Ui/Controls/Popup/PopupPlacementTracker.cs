@@ -13,7 +13,7 @@ using Windows.Win32.Foundation;
 namespace Wpf.Zen.Ui.Controls;
 
 /// <summary>
-/// Exposes the actual target-relative direction selected by WPF for a <see cref="Popup"/>.
+/// Tracks and exposes the actual target-relative direction selected by WPF for a <see cref="Popup"/>.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -21,6 +21,7 @@ namespace Wpf.Zen.Ui.Controls;
 /// above its target, for example, when the monitor has insufficient space below it. WPF keeps the selected candidate
 /// private, so this behavior observes the final Popup HWND and compares its physical bounds with the target bounds.
 /// No private WPF members are required.
+/// This tracker observes placement only; it does not select a placement mode or change the Popup's offsets.
 /// </para>
 /// <para>
 /// Set <see cref="IsEnabledProperty"/> on a Popup and bind or trigger against
@@ -34,7 +35,7 @@ namespace Wpf.Zen.Ui.Controls;
 /// placement target is available.
 /// </para>
 /// </remarks>
-public static class PopupPlacement
+public static class PopupPlacementTracker
 {
     #pragma warning disable WPF0061 // Accessor method for attached property should have standard documentation text
 
@@ -45,7 +46,7 @@ public static class PopupPlacement
         DependencyProperty.RegisterAttached(
             "IsEnabled",
             typeof(bool),
-            typeof(PopupPlacement),
+            typeof(PopupPlacementTracker),
             new PropertyMetadata(false, OnIsEnabledChanged)
         );
 
@@ -99,7 +100,7 @@ public static class PopupPlacement
         DependencyProperty.RegisterAttachedReadOnly(
             "ActualPlacement",
             typeof(PopupPlacementDirection),
-            typeof(PopupPlacement),
+            typeof(PopupPlacementTracker),
             new FrameworkPropertyMetadata(
                 PopupPlacementDirection.None,
                 FrameworkPropertyMetadataOptions.Inherits
@@ -134,7 +135,7 @@ public static class PopupPlacement
         DependencyProperty.RegisterAttached(
             "Controller",
             typeof(PlacementController),
-            typeof(PopupPlacement),
+            typeof(PopupPlacementTracker),
             new PropertyMetadata(null)
         );
 

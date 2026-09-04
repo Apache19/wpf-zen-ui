@@ -1,0 +1,11 @@
+<ui:DropDownButton HorizontalAlignment="Left" Content="Status panel" Flyout="{Binding}">
+    <ui:DropDownButton.FlyoutTemplate>
+        <DataTemplate>
+            <StackPanel Width="280">
+                <TextBlock FontWeight="SemiBold" Text="Current operation" />
+                <TextBlock Margin="0,8,0,12" Text="{Binding StatusMessage}" TextWrapping="Wrap" />
+                <ui:Button HorizontalAlignment="Left" Command="{Binding RefreshCommand}" Content="Refresh" />
+            </StackPanel>
+        </DataTemplate>
+    </ui:DropDownButton.FlyoutTemplate>
+</ui:DropDownButton>

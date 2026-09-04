@@ -1,0 +1,9 @@
+<ui:DropDownButton HorizontalAlignment="Left" Content="Quick settings">
+    <ui:DropDownButton.Flyout>
+        <StackPanel Width="280">
+            <TextBlock FontWeight="SemiBold" Text="Quick settings" />
+            <CheckBox Margin="0,12,0,0" Content="Show item details" IsChecked="True" />
+            <TextBlock Margin="0,12,0,0" Text="{Binding StatusMessage}" TextWrapping="Wrap" />
+        </StackPanel>
+    </ui:DropDownButton.Flyout>
+</ui:DropDownButton>

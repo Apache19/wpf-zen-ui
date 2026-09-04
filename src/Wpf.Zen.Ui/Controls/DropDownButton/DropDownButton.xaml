@@ -10,6 +10,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Zen.Ui.Controls"
     xmlns:converters="clr-namespace:Wpf.Zen.Ui.Converters"
+    xmlns:m="clr-namespace:Wpf.Zen.Ui.Markup"
     xmlns:t="clr-namespace:Wpf.Zen.Ui.Theming">
 
     <ResourceDictionary.MergedDictionaries>
@@ -77,7 +78,7 @@
             <Trigger Property="Icon" Value="{x:Null}">
                 <Setter TargetName="iconPresenter" Property="Visibility" Value="Collapsed" />
             </Trigger>
-            <!-- The chevron supplies its own leading gap; do not also reserve a label gap. -->
+            <!--  The chevron supplies its own leading gap; do not also reserve a label gap.  -->
             <Trigger Property="Content" Value="{x:Null}">
                 <Setter TargetName="iconPresenter" Property="Margin" Value="0" />
             </Trigger>
@@ -110,8 +111,50 @@
         </ControlTemplate.Triggers>
     </ControlTemplate>
 
+    <!--
+        The wrapper owns surface chrome only. ContentSource preserves WPF's complete content
+        presentation contract, including implicit templates and inherited context for UI content.
+        This is a ContentControl template, not a Popup template (Popup is not a Control).
+    -->
+    <ControlTemplate x:Key="UiDropDownButtonFlyoutPresenterTemplate" TargetType="{x:Type ContentControl}">
+        <Border
+            Padding="12"
+            Background="{m:DynamicBrush AcrylicBackgroundFillDefault}"
+            BorderBrush="{m:DynamicBrush SurfaceStrokeFlyout}"
+            BorderThickness="1"
+            CornerRadius="{m:DynamicValue PopupCornerRadius}"
+            SnapsToDevicePixels="True">
+            <ContentPresenter
+                HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                ContentSource="Content" />
+        </Border>
+    </ControlTemplate>
+
+    <!--
+        The generated Popup uses this key for both its dynamic Style reference and DefaultStyleKey.
+        Theme defaults therefore survive partial scoped styles and replacement button styles.
+        IsOpen, Child and PlacementTarget belong to the adapter and are not style settings.
+    -->
+    <Style x:Key="{x:Static controls:DropDownButton.FlyoutPopupStyleKey}" TargetType="{x:Type Popup}">
+        <Setter Property="AllowsTransparency" Value="True" />
+        <Setter Property="Placement" Value="Bottom" />
+        <Setter Property="StaysOpen" Value="False" />
+        <Setter Property="VerticalOffset" Value="4" />
+        <Setter Property="PopupAnimation" Value="Fade" />
+        <Setter Property="controls:PopupShadow.IsEnabled" Value="True" />
+        <!-- ActualPlacement remains None unless the Popup window tracker is enabled. -->
+        <Setter Property="controls:PopupPlacementTracker.IsEnabled" Value="True" />
+        <Style.Triggers>
+            <Trigger Property="controls:PopupPlacementTracker.ActualPlacement" Value="Top">
+                <Setter Property="VerticalOffset" Value="-4" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
     <Style x:Key="UiDropDownButtonStyle" BasedOn="{StaticResource {x:Static t:StyleKeys.UiButtonStyle}}" TargetType="{x:Type controls:DropDownButton}">
         <Setter Property="Template" Value="{StaticResource UiDropDownButtonControlTemplate}" />
+        <Setter Property="FlyoutPresenterTemplate" Value="{StaticResource UiDropDownButtonFlyoutPresenterTemplate}" />
     </Style>
 
     <Style BasedOn="{StaticResource UiDropDownButtonStyle}" TargetType="{x:Type controls:DropDownButton}" />

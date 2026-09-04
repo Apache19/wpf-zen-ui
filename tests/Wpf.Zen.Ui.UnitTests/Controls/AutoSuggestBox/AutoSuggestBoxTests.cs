@@ -84,14 +84,14 @@ public class AutoSuggestBoxTests
                 window.Top = SystemParameters.WorkArea.Top + 100D;
                 FlushDispatcher(window);
 
-                Assert.True(PopupPlacement.GetIsEnabled(popup));
+                Assert.True(PopupPlacementTracker.GetIsEnabled(popup));
                 Assert.True(textBox.Focus());
                 textBox.Text = "a";
 
-                Assert.Equal(PopupPlacementDirection.Bottom, PopupPlacement.GetActualPlacement(popup));
+                Assert.Equal(PopupPlacementDirection.Bottom, PopupPlacementTracker.GetActualPlacement(popup));
                 Assert.Equal(
                     PopupPlacementDirection.Bottom,
-                    PopupPlacement.GetActualPlacement(suggestionsBorder)
+                    PopupPlacementTracker.GetActualPlacement(suggestionsBorder)
                 );
                 Assert.Equal(new CornerRadius(4D, 4D, 0D, 0D), textBox.CornerRadius);
                 Assert.Equal(new CornerRadius(0D, 0D, 8D, 8D), suggestionsBorder.CornerRadius);
@@ -99,7 +99,7 @@ public class AutoSuggestBoxTests
 
                 popup.SetCurrentValue(Popup.IsOpenProperty, false);
 
-                Assert.Equal(PopupPlacementDirection.None, PopupPlacement.GetActualPlacement(popup));
+                Assert.Equal(PopupPlacementDirection.None, PopupPlacementTracker.GetActualPlacement(popup));
             }
             finally
             {
@@ -129,7 +129,7 @@ public class AutoSuggestBoxTests
                 Assert.True(textBox.Focus());
                 textBox.Text = "a";
 
-                Assert.Equal(PopupPlacementDirection.Top, PopupPlacement.GetActualPlacement(popup));
+                Assert.Equal(PopupPlacementDirection.Top, PopupPlacementTracker.GetActualPlacement(popup));
                 Assert.Equal(new CornerRadius(0D, 0D, 4D, 4D), textBox.CornerRadius);
                 Assert.Equal(new CornerRadius(8D, 8D, 0D, 0D), suggestionsBorder.CornerRadius);
                 Assert.Equal(new Thickness(1D, 1D, 1D, 0D), suggestionsBorder.BorderThickness);

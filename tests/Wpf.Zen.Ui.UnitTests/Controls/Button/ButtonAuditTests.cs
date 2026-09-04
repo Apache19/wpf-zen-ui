@@ -116,7 +116,7 @@ public class ButtonAuditTests
             button.Flyout = currentMenu;
             oldMenu.RaiseEvent(new RoutedEventArgs(ContextMenu.OpenedEvent, oldMenu));
             Assert.False(button.IsDropDownOpen);
-            currentMenu.RaiseEvent(new RoutedEventArgs(ContextMenu.OpenedEvent, currentMenu));
+            currentMenu.IsOpen = true;
             Assert.True(button.IsDropDownOpen);
             oldMenu.RaiseEvent(new RoutedEventArgs(ContextMenu.ClosedEvent, oldMenu));
             Assert.True(button.IsDropDownOpen);
@@ -341,14 +341,17 @@ public class ButtonAuditTests
     }
 
     [Fact]
-    public void DropDownFlyout_RejectsUnwrappedPanelContent()
+    public void DropDownFlyout_AcceptsUnwrappedPanelAndDataContent()
     {
         WpfTestThread.Run(() =>
         {
             var button = new DropDownButton();
-            Assert.Throws<ArgumentException>(() => button.Flyout = new StackPanel());
-            Assert.Throws<ArgumentException>(() => button.SetValue(DropDownButton.FlyoutProperty, "Content"));
-            Assert.Null(button.Flyout);
+            var panel = new StackPanel();
+            button.Flyout = panel;
+            Assert.Same(panel, button.Flyout);
+            button.SetValue(DropDownButton.FlyoutProperty, "Content");
+            Assert.Equal("Content", button.Flyout);
+            Assert.Null(LogicalTreeHelper.GetParent(panel));
         });
     }
 

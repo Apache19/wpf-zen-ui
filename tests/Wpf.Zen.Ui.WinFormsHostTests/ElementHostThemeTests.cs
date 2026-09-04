@@ -12,6 +12,7 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Documents;
 using System.Windows.Forms.Integration;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
 using Wpf.Zen.Ui.Appearance;
@@ -20,6 +21,7 @@ using Xunit;
 using Forms = System.Windows.Forms;
 using UiAutoSuggestBox = Wpf.Zen.Ui.Controls.AutoSuggestBox;
 using UiComboBox = Wpf.Zen.Ui.Controls.ComboBox;
+using UiDropDownButton = Wpf.Zen.Ui.Controls.DropDownButton;
 using UiFluentWindow = Wpf.Zen.Ui.Controls.FluentWindow;
 using UiNavigationView = Wpf.Zen.Ui.Controls.NavigationView;
 using UiNavigationViewItem = Wpf.Zen.Ui.Controls.NavigationViewItem;
@@ -33,6 +35,85 @@ namespace Wpf.Zen.Ui.WinFormsHostTests;
 /// </summary>
 public class ElementHostThemeTests
 {
+    /// <summary>
+    /// Verifies that generated and explicit drop-down input remains inside its Popup boundary when WPF is hosted
+    /// by WinForms without an <see cref="Application"/> or WPF <see cref="Window"/>.
+    /// </summary>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void DropDownButtonPopup_ContainsWheelAndFocusInsideElementHost(bool explicitPopup)
+    {
+        RunOnStaThread(() =>
+        {
+            EnsureWindowsDirectoryEnvironment();
+            ResetThemeManagerToUnconfiguredState();
+            Assert.Null(Application.Current);
+            ThemeManager.Configure(ThemePreference.Light, AccentColorSource.Default);
+
+            var editor = new TextBox { Width = 120 };
+            var button = new UiDropDownButton
+            {
+                Content = "Options",
+                Flyout = explicitPopup ? (object)new Popup { Child = editor } : editor,
+            };
+            int ownerWheelEvents = 0;
+            button.MouseWheel += (_, _) => ownerWheelEvents++;
+
+            using var form = new Forms.Form
+            {
+                ShowInTaskbar = false,
+                StartPosition = Forms.FormStartPosition.Manual,
+                Location = new System.Drawing.Point(-10_000, -10_000),
+                Size = new System.Drawing.Size(240, 120),
+            };
+            using var host = new ElementHost { Dock = Forms.DockStyle.Fill, Child = button };
+            form.Controls.Add(host);
+
+            try
+            {
+                form.Show();
+                Forms.Application.DoEvents();
+                DrainDispatcher();
+
+                button.IsDropDownOpen = true;
+                Forms.Application.DoEvents();
+                DrainDispatcher();
+
+                Assert.Null(Application.Current);
+                Assert.True(button.IsDropDownOpen);
+                Assert.True(editor.IsKeyboardFocused);
+
+                DependencyObject popupRoot = editor;
+                while (VisualTreeHelper.GetParent(popupRoot) is { } parent)
+                {
+                    popupRoot = parent;
+                }
+
+                Assert.NotSame(editor, popupRoot);
+                var wheelEvent = new MouseWheelEventArgs(
+                    Mouse.PrimaryDevice,
+                    Environment.TickCount,
+                    120
+                )
+                {
+                    RoutedEvent = Mouse.MouseWheelEvent,
+                };
+                Assert.IsAssignableFrom<UIElement>(popupRoot).RaiseEvent(wheelEvent);
+
+                Assert.True(wheelEvent.Handled);
+                Assert.Equal(0, ownerWheelEvents);
+            }
+            finally
+            {
+                button.IsDropDownOpen = false;
+                form.Close();
+                Forms.Application.DoEvents();
+                DrainDispatcher();
+            }
+        });
+    }
+
     /// <summary>
     /// Verifies that ordinary library-control construction does not activate process-wide theme management. A native
     /// control that already resolved the Windows ThemeStyle must retain it until the host explicitly initializes or

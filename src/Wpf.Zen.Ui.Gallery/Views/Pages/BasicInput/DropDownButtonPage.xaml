@@ -12,21 +12,17 @@
     d:Background="{ui:DynamicBrush WindowBackground}"
     d:DataContext="{d:DesignInstance vm:DropDownButtonViewModel, IsDesignTimeCreatable=False}"
     d:DesignWidth="800"
-    Foreground="{ui:DynamicBrush TextFillPrimary}"
     ui:NavigationView.IsNavigationFrameScrollEnabled="True"
+    Foreground="{ui:DynamicBrush TextFillPrimary}"
     mc:Ignorable="d">
 
     <StackPanel Margin="0,0,0,24">
-        <!--  ============================================================  -->
-        <!--  1. DropDownButton with comprehensive flyout menu  -->
-        <!--  ============================================================  -->
         <controls:ControlExample
             Margin="0"
             HeaderText="A DropDownButton with file and edit operations."
             XamlCodeSource="/CodeSamples/BasicInput/DropDownButton_xaml.txt">
             <StackPanel>
                 <ui:DropDownButton
-                    MinWidth="250"
                     HorizontalAlignment="Left"
                     Content="Menu"
                     Icon="{ui:FluentIconSource Fluent24}">
@@ -76,317 +72,6 @@
             </StackPanel>
         </controls:ControlExample>
 
-        <!--  ============================================================  -->
-        <!--  2. Right-click context menu on a control  -->
-        <!--  ============================================================  -->
-        <controls:ControlExample
-            Margin="0,24,0,0"
-            HeaderText="A control with right-click context menu."
-            XamlCodeSource="/CodeSamples/BasicInput/ContextMenu_xaml.txt">
-            <!--  A card-like control with right-click ContextMenu  -->
-            <Border
-                MinWidth="320"
-                Padding="24"
-                Background="{ui:DynamicBrush CardBackgroundFillDefault}"
-                BorderBrush="{ui:DynamicBrush CardStrokeDefault}"
-                BorderThickness="1"
-                CornerRadius="8"
-                Cursor="Hand"
-                Focusable="True"
-                PreviewMouseDown="OnContextMenuCardPreviewMouseDown"
-                ToolTip="Right-click or press Shift+F10 to open context menu">
-                <Border.ContextMenu>
-                    <ContextMenu>
-                        <MenuItem
-                            Command="{Binding CutCommand}"
-                            Header="Cut"
-                            Icon="{ui:FluentIconSource Cut24}"
-                            InputGestureText="Ctrl+X" />
-                        <MenuItem
-                            Command="{Binding CopyCommand}"
-                            Header="Copy"
-                            Icon="{ui:FluentIconSource Copy24}"
-                            InputGestureText="Ctrl+C" />
-                        <MenuItem
-                            Command="{Binding PasteCommand}"
-                            Header="Paste"
-                            Icon="{ui:FluentIconSource ClipboardPaste24}"
-                            InputGestureText="Ctrl+V" />
-                        <MenuItem
-                            Command="{Binding DeleteCommand}"
-                            Header="Delete"
-                            Icon="{ui:FluentIconSource Delete24}"
-                            InputGestureText="Del" />
-                        <Separator />
-                        <MenuItem
-                            Command="{Binding SelectAllCommand}"
-                            Header="Select All"
-                            Icon="{ui:FluentIconSource SelectAllOn24}"
-                            InputGestureText="Ctrl+A" />
-                        <Separator />
-                        <MenuItem
-                            Command="{Binding RefreshCommand}"
-                            Header="Refresh"
-                            Icon="{ui:FluentIconSource ArrowClockwise24}"
-                            InputGestureText="F5" />
-                        <MenuItem
-                            Command="{Binding SettingsCommand}"
-                            Header="Settings..."
-                            Icon="{ui:FluentIconSource Settings24}" />
-                    </ContextMenu>
-                </Border.ContextMenu>
-
-                <StackPanel>
-                    <StackPanel Orientation="Horizontal">
-                        <ui:FluentIcon
-                            VerticalAlignment="Center"
-                            Filled="True"
-                            FontSize="20"
-                            Foreground="{ui:DynamicBrush TextFillSecondary}"
-                            Symbol="Cursor24" />
-                        <TextBlock
-                            Margin="8,0,0,0"
-                            VerticalAlignment="Center"
-                            FontSize="14"
-                            FontWeight="SemiBold"
-                            Text="Interaction Area" />
-                    </StackPanel>
-                    <TextBlock
-                        Margin="0,8,0,0"
-                        FontSize="13"
-                        Foreground="{ui:DynamicBrush TextFillSecondary}"
-                        Text="Right-click here to show context menu."
-                        TextWrapping="Wrap" />
-                </StackPanel>
-            </Border>
-        </controls:ControlExample>
-
-        <!--  ============================================================  -->
-        <!--  3. Very tall menu — DropDownButton with scrolling flyout  -->
-        <!--  ============================================================  -->
-        <controls:ControlExample
-            Margin="0,24,0,0"
-            HeaderText="A DropDownButton with a very long menu to demonstrate scrolling."
-            XamlCodeSource="/CodeSamples/BasicInput/DropDownButtonScrolling_xaml.txt">
-            <StackPanel>
-                <ui:DropDownButton
-                    MinWidth="250"
-                    HorizontalAlignment="Left"
-                    Content="Languages"
-                    Icon="{ui:FluentIconSource Code24}">
-                    <ui:DropDownButton.Flyout>
-                        <ContextMenu>
-                            <MenuItem
-                                Command="{Binding CutCommand}"
-                                Header="C# / .NET"
-                                Icon="{ui:FluentIconSource Code24}" />
-                            <MenuItem Command="{Binding CutCommand}" Header="F#" />
-                            <MenuItem Command="{Binding CutCommand}" Header="Visual Basic" />
-                            <Separator />
-                            <MenuItem Command="{Binding CutCommand}" Header="Rust" />
-                            <MenuItem Command="{Binding CutCommand}" Header="Go" />
-                            <MenuItem Command="{Binding CutCommand}" Header="Zig" />
-                            <Separator />
-                            <MenuItem Command="{Binding CutCommand}" Header="Java" />
-                            <MenuItem Command="{Binding CutCommand}" Header="Kotlin" />
-                            <MenuItem Command="{Binding CutCommand}" Header="Scala" />
-                            <Separator />
-                            <MenuItem
-                                Command="{Binding CutCommand}"
-                                Header="Python"
-                                Icon="{ui:FluentIconSource Code24}" />
-                            <MenuItem Command="{Binding CutCommand}" Header="Ruby" />
-                            <Separator />
-                            <MenuItem
-                                Command="{Binding CutCommand}"
-                                Header="JavaScript"
-                                Icon="{ui:FluentIconSource Code24}" />
-                            <MenuItem Command="{Binding CutCommand}" Header="TypeScript" />
-                            <Separator />
-                            <MenuItem Command="{Binding CutCommand}" Header="HTML / XML" />
-                            <MenuItem Command="{Binding CutCommand}" Header="CSS / SCSS / Less" />
-                            <Separator />
-                            <MenuItem Command="{Binding CutCommand}" Header="SQL / T-SQL" />
-                            <MenuItem Command="{Binding CutCommand}" Header="PowerShell" />
-                            <MenuItem Command="{Binding CutCommand}" Header="Bash / Shell" />
-                            <Separator />
-                            <MenuItem Command="{Binding CutCommand}" Header="Dart" />
-                            <MenuItem Command="{Binding CutCommand}" Header="Swift" />
-                            <MenuItem Command="{Binding CutCommand}" Header="C / C++" />
-                        </ContextMenu>
-                    </ui:DropDownButton.Flyout>
-                </ui:DropDownButton>
-            </StackPanel>
-        </controls:ControlExample>
-
-        <!--  ============================================================  -->
-        <!--  4. Very tall right-click context menu  -->
-        <!--  ============================================================  -->
-        <controls:ControlExample
-            Margin="0,24,0,0"
-            HeaderText="A control with a very long right-click context menu."
-            XamlCodeSource="/CodeSamples/BasicInput/ContextMenuScrolling_xaml.txt">
-            <Border
-                MinWidth="320"
-                Padding="24"
-                Background="{ui:DynamicBrush CardBackgroundFillDefault}"
-                BorderBrush="{ui:DynamicBrush CardStrokeDefault}"
-                BorderThickness="1"
-                CornerRadius="8"
-                Cursor="Hand"
-                Focusable="True"
-                PreviewMouseDown="OnContextMenuCardPreviewMouseDown"
-                ToolTip="Right-click or press Shift+F10 to open a very long scrolling context menu">
-                <Border.ContextMenu>
-                    <ContextMenu>
-                        <MenuItem
-                            Command="{Binding NewCommand}"
-                            Header="New File"
-                            Icon="{ui:FluentIconSource Add24}"
-                            InputGestureText="Ctrl+N" />
-                        <MenuItem
-                            Command="{Binding OpenCommand}"
-                            Header="Open File..."
-                            Icon="{ui:FluentIconSource Open24}"
-                            InputGestureText="Ctrl+O" />
-                        <MenuItem
-                            Command="{Binding OpenCommand}"
-                            Header="Open Folder..."
-                            Icon="{ui:FluentIconSource FolderOpen24}"
-                            InputGestureText="Ctrl+K, Ctrl+O" />
-                        <Separator />
-                        <MenuItem
-                            Command="{Binding SaveCommand}"
-                            Header="Save"
-                            Icon="{ui:FluentIconSource Save24}"
-                            InputGestureText="Ctrl+S" />
-                        <MenuItem
-                            Command="{Binding SaveAsCommand}"
-                            Header="Save As..."
-                            Icon="{ui:FluentIconSource SaveCopy24}"
-                            InputGestureText="Ctrl+Shift+S" />
-                        <MenuItem
-                            Command="{Binding SaveAsCommand}"
-                            Header="Save All"
-                            Icon="{ui:FluentIconSource SaveMultiple24}"
-                            InputGestureText="Ctrl+K, S" />
-                        <Separator />
-                        <MenuItem
-                            Command="{Binding UndoCommand}"
-                            Header="Undo"
-                            Icon="{ui:FluentIconSource ArrowUndo24}"
-                            InputGestureText="Ctrl+Z" />
-                        <MenuItem
-                            Command="{Binding RedoCommand}"
-                            Header="Redo"
-                            Icon="{ui:FluentIconSource ArrowRedo24}"
-                            InputGestureText="Ctrl+Y" />
-                        <Separator />
-                        <MenuItem
-                            Command="{Binding CutCommand}"
-                            Header="Cut"
-                            Icon="{ui:FluentIconSource Cut24}"
-                            InputGestureText="Ctrl+X" />
-                        <MenuItem
-                            Command="{Binding CopyCommand}"
-                            Header="Copy"
-                            Icon="{ui:FluentIconSource Copy24}"
-                            InputGestureText="Ctrl+C" />
-                        <MenuItem
-                            Command="{Binding PasteCommand}"
-                            Header="Paste"
-                            Icon="{ui:FluentIconSource ClipboardPaste24}"
-                            InputGestureText="Ctrl+V" />
-                        <MenuItem
-                            Command="{Binding DeleteCommand}"
-                            Header="Delete"
-                            Icon="{ui:FluentIconSource Delete24}"
-                            InputGestureText="Del" />
-                        <Separator />
-                        <MenuItem
-                            Command="{Binding SelectAllCommand}"
-                            Header="Select All"
-                            Icon="{ui:FluentIconSource SelectAllOn24}"
-                            InputGestureText="Ctrl+A" />
-                        <Separator />
-                        <MenuItem
-                            Command="{Binding CutCommand}"
-                            Header="Find..."
-                            Icon="{ui:FluentIconSource Search24}"
-                            InputGestureText="Ctrl+F" />
-                        <MenuItem
-                            Command="{Binding CutCommand}"
-                            Header="Find in Files..."
-                            Icon="{ui:FluentIconSource SearchSettings20}"
-                            InputGestureText="Ctrl+Shift+F" />
-                        <MenuItem
-                            Command="{Binding CutCommand}"
-                            Header="Replace..."
-                            Icon="{ui:FluentIconSource ArrowSwap24}"
-                            InputGestureText="Ctrl+H" />
-                        <Separator />
-                        <MenuItem
-                            Command="{Binding CutCommand}"
-                            Header="Go to Line..."
-                            Icon="{ui:FluentIconSource NumberSymbol24}"
-                            InputGestureText="Ctrl+G" />
-                        <MenuItem
-                            Command="{Binding CutCommand}"
-                            Header="Go to Symbol..."
-                            Icon="{ui:FluentIconSource Symbols24}"
-                            InputGestureText="Ctrl+T" />
-                        <Separator />
-                        <MenuItem
-                            Command="{Binding CutCommand}"
-                            Header="Toggle Breakpoint"
-                            Icon="{ui:FluentIconSource Circle24}"
-                            InputGestureText="F9" />
-                        <MenuItem
-                            Command="{Binding CutCommand}"
-                            Header="Start Debugging"
-                            Icon="{ui:FluentIconSource Play24}"
-                            InputGestureText="F5" />
-                        <Separator />
-                        <MenuItem
-                            Command="{Binding RefreshCommand}"
-                            Header="Refresh"
-                            Icon="{ui:FluentIconSource ArrowClockwise24}" />
-                        <MenuItem
-                            Command="{Binding SettingsCommand}"
-                            Header="Settings"
-                            Icon="{ui:FluentIconSource Settings24}" />
-                        <Separator />
-                        <MenuItem
-                            Command="{Binding ExitCommand}"
-                            Header="Exit"
-                            Icon="{ui:FluentIconSource DoorArrowRight20}" />
-                    </ContextMenu>
-                </Border.ContextMenu>
-
-                <StackPanel>
-                    <StackPanel Orientation="Horizontal">
-                        <ui:FluentIcon
-                            VerticalAlignment="Center"
-                            Filled="True"
-                            FontSize="20"
-                            Foreground="{ui:DynamicBrush PaletteLightBlue}"
-                            Symbol="List24" />
-                        <TextBlock
-                            Margin="8,0,0,0"
-                            VerticalAlignment="Center"
-                            FontSize="14"
-                            FontWeight="SemiBold"
-                            Text="Scrolling Context Menu" />
-                    </StackPanel>
-                    <TextBlock
-                        Margin="0,8,0,0"
-                        FontSize="13"
-                        Foreground="{ui:DynamicBrush TextFillSecondary}"
-                        Text="Right-click here to show a very long scrolling context menu with many items."
-                        TextWrapping="Wrap" />
-                </StackPanel>
-            </Border>
-        </controls:ControlExample>
         <controls:ControlExample
             Margin="0,24,0,0"
             CsharpCodeSource="/CodeSamples/BasicInput/DropDownButtonPopup_cs.txt"
@@ -398,20 +83,29 @@
                 Content="Display options"
                 Icon="{ui:FluentIconSource Settings24}">
                 <ui:DropDownButton.Flyout>
-                    <Popup AllowsTransparency="True" VerticalOffset="8">
+                    <Popup
+                        ui:PopupShadow.IsEnabled="True"
+                        AllowsTransparency="True"
+                        PopupAnimation="Fade">
                         <Border
                             Width="300"
                             Padding="20"
-                            Background="{ui:DynamicBrush LayerFillDefault}"
-                            BorderBrush="{ui:DynamicBrush CardStrokeDefault}"
+                            Background="{ui:DynamicBrush AcrylicBackgroundFillDefault}"
+                            BorderBrush="{ui:DynamicBrush SurfaceStrokeFlyout}"
                             BorderThickness="1"
                             CornerRadius="8"
                             TextElement.Foreground="{ui:DynamicBrush TextFillPrimary}">
                             <StackPanel>
-                                <TextBlock FontSize="16" FontWeight="SemiBold" Text="Display options" />
+                                <TextBlock
+                                    FontSize="16"
+                                    FontWeight="SemiBold"
+                                    Text="Display options" />
                                 <TextBlock Margin="0,12,0,6" Text="View name" />
                                 <ui:TextBox Text="My workspace" />
-                                <CheckBox Margin="0,12,0,0" Content="Show item details" IsChecked="True" />
+                                <CheckBox
+                                    Margin="0,12,0,0"
+                                    Content="Show item details"
+                                    IsChecked="True" />
                                 <TextBlock
                                     Margin="0,12,0,0"
                                     Foreground="{ui:DynamicBrush TextFillSecondary}"
@@ -425,9 +119,75 @@
                                     Content="Done" />
                             </StackPanel>
                         </Border>
+                        <Popup.Style>
+                            <Style TargetType="{x:Type Popup}">
+                                <Setter Property="VerticalOffset" Value="4" />
+                                <Setter Property="ui:PopupPlacementTracker.IsEnabled" Value="True" />
+                                <Style.Triggers>
+                                    <Trigger Property="ui:PopupPlacementTracker.ActualPlacement" Value="Top">
+                                        <Setter Property="VerticalOffset" Value="-4" />
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Popup.Style>
                     </Popup>
                 </ui:DropDownButton.Flyout>
             </ui:DropDownButton>
+        </controls:ControlExample>
+        <controls:ControlExample
+            Margin="0,24,0,0"
+            HeaderText="Data-driven flyout with a DataTemplate."
+            XamlCodeSource="/CodeSamples/BasicInput/DropDownButtonData_xaml.txt">
+            <ui:DropDownButton
+                HorizontalAlignment="Left"
+                Content="Status panel"
+                Flyout="{Binding}">
+                <ui:DropDownButton.FlyoutTemplate>
+                    <DataTemplate>
+                        <StackPanel Width="280">
+                            <TextBlock FontWeight="SemiBold" Text="Current operation" />
+                            <TextBlock
+                                Margin="0,8,0,12"
+                                Text="{Binding StatusMessage}"
+                                TextWrapping="Wrap" />
+                            <ui:Button
+                                HorizontalAlignment="Left"
+                                Command="{Binding RefreshCommand}"
+                                Content="Refresh" />
+                        </StackPanel>
+                    </DataTemplate>
+                </ui:DropDownButton.FlyoutTemplate>
+            </ui:DropDownButton>
+        </controls:ControlExample>
+        <controls:ControlExample
+            Margin="0,24,0,0"
+            HeaderText="UI content with automatic Popup wrapping."
+            XamlCodeSource="/CodeSamples/BasicInput/DropDownButtonContent_xaml.txt">
+            <ui:DropDownButton HorizontalAlignment="Left" Content="Quick settings">
+                <ui:DropDownButton.Flyout>
+                    <StackPanel Width="280">
+                        <TextBlock FontWeight="SemiBold" Text="Quick settings" />
+                        <CheckBox
+                            Margin="0,12,0,0"
+                            Content="Show item details"
+                            IsChecked="True" />
+                        <TextBlock
+                            Margin="0,12,0,0"
+                            Text="{Binding StatusMessage}"
+                            TextWrapping="Wrap" />
+                    </StackPanel>
+                </ui:DropDownButton.Flyout>
+            </ui:DropDownButton>
+        </controls:ControlExample>
+        <controls:ControlExample
+            Margin="0,24,0,0"
+            HeaderText="Text formatting without a data template."
+            XamlCodeSource="/CodeSamples/BasicInput/DropDownButtonFormat_xaml.txt">
+            <ui:DropDownButton
+                HorizontalAlignment="Left"
+                Content="Operation summary"
+                Flyout="{Binding StatusMessage}"
+                FlyoutStringFormat="Status: {0}" />
         </controls:ControlExample>
     </StackPanel>
 </Page>
