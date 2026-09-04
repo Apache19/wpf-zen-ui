@@ -21,7 +21,7 @@ public enum StyleToken
     /// Identifies the rounded-rectangle presenter used inside the global keyboard-focus visual.
     /// </summary>
     /// <remarks>
-    /// Use this style as the base for a <see cref="FocusVisual.PresenterStyleProperty"/> value when only presenter
+    /// Use this style as the base for a <see cref="Wpf.Zen.Ui.Controls.FocusVisual.PresenterStyleProperty"/> value when only presenter
     /// properties such as margin need to change. A control whose focus outline is not a rounded rectangle may instead
     /// supply a complete <see cref="System.Windows.Controls.Control.Template"/> in its presenter style.
     /// </remarks>

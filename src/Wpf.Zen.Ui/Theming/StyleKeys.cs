@@ -18,7 +18,7 @@ public static class StyleKeys
     /// Gets the reusable style for the presenter hosted by the global keyboard-focus visual.
     /// </summary>
     /// <remarks>
-    /// Use this key as <see cref="Style.BasedOn"/> for a <see cref="FocusVisual.PresenterStyleProperty"/> value when
+    /// Use this key as <see cref="Style.BasedOn"/> for a <see cref="Wpf.Zen.Ui.Controls.FocusVisual.PresenterStyleProperty"/> value when
     /// the default rounded-rectangle template is suitable and only presenter properties such as margin need to vary.
     /// Replace <see cref="System.Windows.Controls.Control.Template"/> in the derived style when the focus outline
     /// must use a different shape.
