@@ -280,8 +280,8 @@ public class PresentationServiceTests
                 var dialog = new ContentDialog
                 {
                     Content = new Border { Width = 2_000D, Height = 2_000D },
-                    DialogMaxWidth = 100D,
-                    DialogMaxHeight = 80D,
+                    MaxWidth = 100D,
+                    MaxHeight = 80D,
                 };
 
                 Task<ContentDialogResult> resultTask = service.ShowAsync(
@@ -290,10 +290,10 @@ public class PresentationServiceTests
                 );
                 DrainDispatcher();
 
-                Assert.Equal(100D, dialog.DialogMaxWidth);
-                Assert.Equal(80D, dialog.DialogMaxHeight);
-                Assert.InRange(dialog.DialogWidth, 0D, dialog.DialogMaxWidth);
-                Assert.InRange(dialog.DialogHeight, 0D, dialog.DialogMaxHeight);
+                Assert.Equal(100D, dialog.MaxWidth);
+                Assert.Equal(80D, dialog.MaxHeight);
+                Assert.InRange(dialog.ActualWidth, 0D, dialog.MaxWidth);
+                Assert.InRange(dialog.ActualHeight, 0D, dialog.MaxHeight);
 
                 dialog.Hide();
                 PumpUntilCompleted(resultTask);

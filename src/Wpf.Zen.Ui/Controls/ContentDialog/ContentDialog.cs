@@ -6,484 +6,435 @@
 using System.Windows.Automation.Peers;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
+using System.Windows.Data;
+using System.Windows.Input;
+using System.Windows.Threading;
 using Wpf.Zen.Ui.AutomationPeers;
 
-// ReSharper disable once CheckNamespace
 namespace Wpf.Zen.Ui.Controls;
 
 /// <summary>
-/// Dialogue displayed inside the application covering its internals, displaying some content.
+/// Presents modal content within an explicitly assigned ContentDialogHost.
+/// Three optional semantic actions occupy the footer; header dismissal reports no choice.
 /// </summary>
 /// <remarks>
-/// The default template exposes primary, secondary and close buttons as optional template parts.
-/// Custom templates may omit buttons they do not present; programmatic dialog operations remain
-/// available when a part is absent.
+/// Standard FrameworkElement sizing applies to the dialog surface. The host owns the overlay,
+/// transitions and presentation scope. Optional button parts receive styles and assist initial focus; custom templates
+/// invoke InvokeActionCommand with a ContentDialogButton parameter and CloseCommand for dismissal.
+/// PART_ContentPresenter identifies the realized content for initial focus, including DataTemplates.
+/// Missing parts degrade to focusing the dialog. No template part is required for ShowAsync/Hide.
 /// </remarks>
-/// <example>
-/// <code lang="xml">
-/// &lt;ContentDialogHost x:Name="RootContentDialogHost" Grid.Row="0" /&gt;
-/// </code>
-/// <code lang="csharp">
-/// var contentDialog = new ContentDialog(RootContentDialogHost);
-///
-/// contentDialog.SetCurrentValue(ContentDialog.TitleProperty, "Hello World");
-/// contentDialog.SetCurrentValue(ContentControl.ContentProperty, "This is a message");
-/// contentDialog.SetCurrentValue(ContentDialog.CloseButtonTextProperty, "Close this dialog");
-///
-/// await contentDialog.ShowAsync(cancellationToken);
-/// </code>
-/// <code lang="csharp">
-/// var contentDialogService = new ContentDialogService();
-/// contentDialogService.Attach(RootContentDialogHost);
-///
-/// await _contentDialogService.ShowSimpleDialogAsync(
-///     new SimpleContentDialogCreateOptions()
-///         {
-///             Title = "The cake?",
-///             Content = "IS A LIE!",
-///             PrimaryButtonText = "Save",
-///             SecondaryButtonText = "Don't Save",
-///             CloseButtonText = "Cancel"
-///         }
-///     );
-/// </code>
-/// </example>
-[TemplatePart(Name = PrimaryButtonPartName, Type = typeof(ButtonBase))]
-[TemplatePart(Name = SecondaryButtonPartName, Type = typeof(ButtonBase))]
-[TemplatePart(Name = CloseButtonPartName, Type = typeof(ButtonBase))]
+[TemplatePart(Name = "PART_PrimaryButton", Type = typeof(ButtonBase))]
+[TemplatePart(Name = "PART_SecondaryButton", Type = typeof(ButtonBase))]
+[TemplatePart(Name = "PART_TertiaryButton", Type = typeof(ButtonBase))]
+[TemplatePart(Name = "PART_CloseButton", Type = typeof(ButtonBase))]
+[TemplatePart(Name = "PART_ContentPresenter", Type = typeof(ContentPresenter))]
 public partial class ContentDialog : ContentControl
 {
-    private const string PrimaryButtonPartName = "PART_PrimaryButton";
-    private const string SecondaryButtonPartName = "PART_SecondaryButton";
-    private const string CloseButtonPartName = "PART_CloseButton";
+    private readonly HashSet<ICommand> _observedCommands = [];
+    private ContentDialogHost? _dialogHost;
+    private TaskCompletionSource<ContentDialogResult>? _completion;
+    private bool _opening;
+    private bool _executingAction;
 
-    private ButtonBase? _primaryButton;
-    private ButtonBase? _secondaryButton;
-    private ButtonBase? _closeButton;
+    /// <summary>Invokes a footer action identified by a ContentDialogButton command parameter.</summary>
+    public static readonly RoutedCommand InvokeActionCommand = new(nameof(InvokeActionCommand), typeof(ContentDialog));
+
+    /// <summary>Dismisses the dialog with None when IsDismissible is true.</summary>
+    public static readonly RoutedCommand CloseCommand = new(nameof(CloseCommand), typeof(ContentDialog));
 
     static ContentDialog()
     {
-        DefaultStyleKeyProperty.OverrideMetadata(
-            typeof(ContentDialog),
-            new FrameworkPropertyMetadata(typeof(ContentDialog))
-        );
+        DefaultStyleKeyProperty.OverrideMetadata(typeof(ContentDialog), new FrameworkPropertyMetadata(typeof(ContentDialog)));
     }
 
-    /// <summary>
-    /// Occurs after the dialog is opened.
-    /// </summary>
-    public event TypedEventHandler<ContentDialog, RoutedEventArgs> Opened
-    {
-        add => AddHandler(OpenedEvent, value);
-        remove => RemoveHandler(OpenedEvent, value);
-    }
-
-    /// <summary>
-    /// Occurs after the dialog starts to close, but before it is closed and before the <see cref="Closed"/> event occurs.
-    /// </summary>
-    /// <remarks>
-    /// <para>
-    /// This event allows cancellation of the close operation by setting
-    /// <see cref="ContentDialogClosingEventArgs.Cancel"/> to <see langword="true"/>.
-    /// </para>
-    /// <para>
-    /// <strong>Important:</strong> The Closing event is only raised for explicit close operations initiated via the
-    /// <see cref="Hide"/> method. It is <em>not</em> raised when the dialog is passively removed from the visual tree,
-    /// such as when:
-    /// </para>
-    /// <list type="bullet">
-    /// <item>Another dialog replaces this one</item>
-    /// <item>The host control or window is disposed</item>
-    /// </list>
-    /// </remarks>
-    public event TypedEventHandler<ContentDialog, ContentDialogClosingEventArgs> Closing
-    {
-        add => AddHandler(ClosingEvent, value);
-        remove => RemoveHandler(ClosingEvent, value);
-    }
-
-    /// <summary>
-    /// Occurs after the dialog is closed.
-    /// </summary>
-    public event TypedEventHandler<ContentDialog, ContentDialogClosedEventArgs> Closed
-    {
-        add => AddHandler(ClosedEvent, value);
-        remove => RemoveHandler(ClosedEvent, value);
-    }
-
-    /// <summary>
-    /// Occurs after the <see cref="ContentDialogButton"/> has been tapped.
-    /// </summary>
-    public event TypedEventHandler<ContentDialog, ContentDialogButtonClickEventArgs> ButtonClicked
-    {
-        add => AddHandler(ButtonClickedEvent, value);
-        remove => RemoveHandler(ButtonClickedEvent, value);
-    }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="ContentDialog"/> class.
-    /// </summary>
+    /// <summary>Initializes a new instance of the <see cref="ContentDialog"/> class. Assign DialogHost before showing it.</summary>
     public ContentDialog()
     {
-        RegisterRuntimeEventHandlers();
+        CommandBindings.Add(new CommandBinding(InvokeActionCommand, OnExecuteAction, OnCanExecuteAction));
+        CommandBindings.Add(new CommandBinding(
+            CloseCommand,
+            (_, e) =>
+            {
+                Hide();
+                e.Handled = true;
+            },
+            (_, e) =>
+            {
+                e.CanExecute = CanInteract && IsDismissible;
+                e.Handled = true;
+            }
+        ));
+        Loaded += OnLoaded;
+        Unloaded += OnUnloaded;
     }
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="ContentDialog"/> class with the specified dialog host.
-    /// </summary>
-    /// <param name="dialogHost">The ContentDialogHost that manages the dialog's display and interaction.</param>
-    /// <exception cref="ArgumentNullException">Thrown if dialogHost is null.</exception>
-    public ContentDialog(ContentDialogHost? dialogHost)
+    /// <summary>Initializes a new instance of the <see cref="ContentDialog"/> class for the specified presentation scope.</summary>
+    public ContentDialog(ContentDialogHost dialogHost)
+        : this()
     {
         DialogHost = dialogHost ?? throw new ArgumentNullException(nameof(dialogHost));
-
-        RegisterRuntimeEventHandlers();
     }
 
-    /// <inheritdoc />
-    /// <remarks>
-    /// Template buttons belong to a replaceable visual tree. Existing handlers are removed before
-    /// resolving the new parts so applying a template repeatedly cannot retain obsolete buttons or
-    /// invoke a dialog action more than once.
-    /// </remarks>
-    public override void OnApplyTemplate()
-    {
-        DetachTemplateButtons();
-        base.OnApplyTemplate();
-
-        _primaryButton = GetTemplateChild(PrimaryButtonPartName) as ButtonBase;
-        _secondaryButton = GetTemplateChild(SecondaryButtonPartName) as ButtonBase;
-        _closeButton = GetTemplateChild(CloseButtonPartName) as ButtonBase;
-
-        if (_primaryButton is not null)
-        {
-            _primaryButton.Click += OnPrimaryButtonClick;
-        }
-
-        if (_secondaryButton is not null)
-        {
-            _secondaryButton.Click += OnSecondaryButtonClick;
-        }
-
-        if (_closeButton is not null)
-        {
-            _closeButton.Click += OnCloseButtonClick;
-        }
-    }
-
-    /// <inheritdoc />
-    protected override void OnTemplateChanged(ControlTemplate oldTemplate, ControlTemplate newTemplate)
-    {
-        // A replacement template is not necessarily applied immediately. Detach here so a retained
-        // old visual cannot complete the dialog while the new visual tree is still pending.
-        DetachTemplateButtons();
-        base.OnTemplateChanged(oldTemplate, newTemplate);
-    }
-
-    private void RegisterRuntimeEventHandlers()
-    {
-        // Avoid registering runtime code that triggers designer behavior or throws exceptions
-        // at design time (to reduce the possibility of designer crashes/rendering failures).
-        if (!DesignerProperties.GetIsInDesignMode(this))
-        {
-            Loaded += static (sender, _) =>
-            {
-                var self = (ContentDialog)sender;
-                self.OnLoadedInternal();
-            };
-
-            Unloaded += static (sender, _) =>
-            {
-                var self = (ContentDialog)sender;
-                self.OnUnloadedInternal();
-            };
-        }
-    }
-
-    private ContentDialogHost? _dialogHost;
-
-    /// <summary>
-    /// Gets or sets <see cref="DialogHost"/> inside of which the dialogue will be placed.
-    /// </summary>
-    /// <exception cref="InvalidOperationException">
-    /// Thrown when attempting to replace an assigned host or to change the host while the dialog is shown.
-    /// </exception>
+    /// <summary>Gets or sets the host. It may be changed between presentations, but not while showing.</summary>
     public ContentDialogHost? DialogHost
     {
         get => _dialogHost;
         set
         {
+            VerifyAccess();
             if (ReferenceEquals(_dialogHost, value))
-            {
                 return;
-            }
 
-            if (_dialogHost is not null)
-            {
-                throw new InvalidOperationException(
-                    "Cannot change DialogHost after it has been assigned."
-                );
-            }
-
-            if (IsShowing)
-            {
-                throw new InvalidOperationException(
-                    "Cannot change DialogHost while the dialog is being shown."
-                );
-            }
+            if (IsOpen)
+                throw new InvalidOperationException("Cannot change DialogHost during a presentation.");
 
             _dialogHost = value;
         }
     }
 
-    protected TaskCompletionSource<ContentDialogResult>? Tcs { get; set; }
+    private bool CanInteract => _completion is { Task.IsCompleted: false } && !_executingAction
+        && ReferenceEquals(_dialogHost?.Content, this);
 
-    // Keep the dialog reserved until ShowAsync has finished removing it from the host and raising
-    // Closed. A completed Task alone is insufficient: a button handler can synchronously call
-    // ShowAsync again before the first invocation's asynchronous finally block has run.
-    private bool IsShowing => Tcs is not null;
+    /// <summary>Connects styles to optional button parts whenever WPF realizes a template.</summary>
+    /// <remarks>
+    /// As with WPF Calendar's generated buttons, the control establishes the style bindings.
+    /// Template authors need only preserve part names; action replacement and nested ButtonStyle
+    /// changes are observed by WPF binding without extra event subscriptions.
+    /// </remarks>
+    public override void OnApplyTemplate()
+    {
+        base.OnApplyTemplate();
+        BindButtonStyle("PART_PrimaryButton", "PrimaryAction.ButtonStyle");
+        BindButtonStyle("PART_SecondaryButton", "SecondaryAction.ButtonStyle");
+        BindButtonStyle("PART_TertiaryButton", "TertiaryAction.ButtonStyle");
+        BindButtonStyle("PART_CloseButton", nameof(CloseButtonStyle));
+    }
+
+    private void BindButtonStyle(string partName, string path)
+    {
+        if (GetTemplateChild(partName) is not ButtonBase button)
+            return;
+
+        // Retain the template's default style when no override is supplied (in particular the
+        // close glyph and accessible name). Missing actions also use this fallback. Capture it
+        // before installing our local binding, which deliberately owns the part's Style property.
+        var fallback = button.Style;
+        button.SetBinding(StyleProperty, new Binding(path)
+        {
+            Source = this,
+            Mode = BindingMode.OneWay,
+            TargetNullValue = fallback,
+            FallbackValue = fallback,
+        });
+    }
 
     /// <summary>
-    /// Shows the dialog
+    /// Shows this dialog until a choice, dismissal, cancellation or host removal completes it.
+    /// The task completes after exit animation and cleanup. Cancellation returns None.
     /// </summary>
-    [System.Diagnostics.CodeAnalysis.SuppressMessage(
-        "WpfAnalyzers.DependencyProperty",
-        "WPF0041:Set mutable dependency properties using SetCurrentValue",
-        Justification = "SetCurrentValue(ContentProperty, ...) will not work"
-    )]
+    /// <remarks>
+    /// Call on the host Dispatcher after it has loaded. A busy host and concurrent reuse of an
+    /// instance are rejected, so unrelated prompts cannot silently discard a user's pending choice.
+    /// Closed is raised while this presentation still reserves the instance; await the returned
+    /// task before reusing it. The cancellation callback never touches WPF objects on a worker thread.
+    /// </remarks>
     public async Task<ContentDialogResult> ShowAsync(CancellationToken cancellationToken = default)
     {
-        if (_dialogHost is null)
-        {
-            throw new InvalidOperationException("DialogHost was not set");
-        }
+        VerifyAccess();
 
-        if (IsShowing)
-        {
-            throw new InvalidOperationException(
-                "This ContentDialog instance is already being shown."
-            );
-        }
+        var host = _dialogHost ?? throw new InvalidOperationException("DialogHost was not set.");
+
+        host.VerifyAccess();
+
+        if (IsOpen)
+            throw new InvalidOperationException("This ContentDialog is already being shown.");
+
+        if (!host.IsLoaded)
+            throw new InvalidOperationException("ContentDialogHost must be loaded before showing a dialog.");
+
+        if (!host.IsVisible)
+            throw new InvalidOperationException("ContentDialogHost must be visible before showing a dialog.");
+
+        if (host.Content is not null)
+            throw new InvalidOperationException("ContentDialogHost is busy. Await the current dialog before showing another.");
+
+        if (Parent is not null || VisualTreeHelper.GetParent(this) is not null)
+            throw new InvalidOperationException("A hosted ContentDialog must not already have a parent.");
 
         if (cancellationToken.IsCancellationRequested)
-        {
             return ContentDialogResult.None;
-        }
 
-        var completionSource = new TaskCompletionSource<ContentDialogResult>(
-            TaskCreationOptions.RunContinuationsAsynchronously
-        );
-        Tcs = completionSource;
+        var completion = new TaskCompletionSource<ContentDialogResult>(TaskCreationOptions.RunContinuationsAsynchronously);
 
-        CancellationTokenRegistration tokenRegistration = cancellationToken.Register(
-            () =>
-            {
-                _ = completionSource.TrySetCanceled(cancellationToken);
-            }
-        );
+        _completion = completion;
+        _opening = false;
 
-        // ContentDialog itself can remain the host's Content after the containing Window or
-        // presentation scope is detached. Listening to the host is therefore required; relying
-        // only on ContentDialog.Unloaded cannot distinguish that case from an active host which
-        // still owns this dialog.
-        void OnDialogHostUnloaded(object sender, RoutedEventArgs args)
-        {
-            _ = completionSource.TrySetResult(ContentDialogResult.None);
-        }
+        SetValue(IsOpenPropertyKey, true);
+        SetValue(IsClosingPropertyKey, false);
 
-        _dialogHost.Unloaded += OnDialogHostUnloaded;
+        // Task completion is thread-safe. All presentation changes resume on the UI Dispatcher.
+        using var registration = cancellationToken.Register(() => completion.TrySetResult(ContentDialogResult.None));
 
-        ContentDialogResult result = ContentDialogResult.None;
-
+        var result = ContentDialogResult.None;
         try
         {
-            _dialogHost.Content = this;
+            RefreshCommandSubscriptions();
 
-            result = await completionSource.Task;
+            host.SetCurrentValue(ContentControl.ContentProperty, this);
 
-            return result;
-        }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-        {
+            // A custom host template can omit its content presenter altogether. Wait until WPF
+            // has had a layout/load opportunity, then release a presentation which cannot be seen.
+            _ = Dispatcher.BeginInvoke(DispatcherPriority.ContextIdle, new Action(() =>
+            {
+                if (ReferenceEquals(_completion, completion) && (!IsLoaded || !IsVisible))
+                    NotifyHostRemoved();
+            }));
+
+            result = await completion.Task;
+
+            SetValue(IsClosingPropertyKey, true);
+
+            CommandManager.InvalidateRequerySuggested();
+
+            await host.CloseDialogAsync(this);
+
             return result;
         }
         finally
         {
-#if NET6_0_OR_GREATER
-            await tokenRegistration.DisposeAsync();
-#else
-            tokenRegistration.Dispose();
-#endif
-
-            _dialogHost.Unloaded -= OnDialogHostUnloaded;
-
+            // An externally replaced dialog must never clear its successor. Cleanup also runs
+            // when an application event handler throws during attachment or animation startup.
             try
             {
-                // DialogHost is a public container. To prevent the new dialog from being closed immediately when
-                // it opens due to the unconditional clearing of the Content upon the closure of the previous dialog,
-                // only clear the DialogHost content if this instance is still the current content.
-                if (ReferenceEquals(_dialogHost.Content, this))
-                {
-                    _dialogHost.Content = null;
-                }
-
-                OnClosed(result);
+                if (ReferenceEquals(host.Content, this))
+                    host.SetCurrentValue(ContentControl.ContentProperty, null);
             }
             finally
             {
-                // Clear only our own operation. Keeping this conditional makes the invariant explicit
-                // for derived implementations which can participate in the completion lifecycle.
-                if (ReferenceEquals(Tcs, completionSource))
+                DetachCommands();
+                try
                 {
-                    Tcs = null;
+                    OnClosed(result);
+                }
+                finally
+                {
+                    _completion = null;
+
+                    SetValue(IsOpenPropertyKey, false);
+                    SetValue(IsClosingPropertyKey, false);
                 }
             }
         }
     }
 
     /// <summary>
-    /// Hides the dialog with result
+    /// Requests non-cancellable closure. The first result wins; repeated calls or calls while
+    /// not showing do nothing. Await ShowAsync to observe completion of the exit transition.
     /// </summary>
     public virtual void Hide(ContentDialogResult result = ContentDialogResult.None)
     {
-        var closingEventArgs = new ContentDialogClosingEventArgs(ClosingEvent, this) { Result = result };
+        VerifyAccess();
 
-        RaiseEvent(closingEventArgs);
+        if (result is not (ContentDialogResult.None or ContentDialogResult.Primary or ContentDialogResult.Secondary or ContentDialogResult.Tertiary))
+            throw new ArgumentOutOfRangeException(nameof(result));
 
-        if (!closingEventArgs.Cancel)
+        if (_completion?.TrySetResult(result) == true)
         {
-            _ = Tcs?.TrySetResult(result);
+            SetValue(IsClosingPropertyKey, true);
+            CommandManager.InvalidateRequerySuggested();
         }
     }
 
-    /// <summary>
-    /// Occurs after ContentPresenter.Content = null
-    /// </summary>
+    /// <summary>Raises the final, non-cancellable lifecycle notification after presentation cleanup.</summary>
     protected virtual void OnClosed(ContentDialogResult result)
     {
-        var closedEventArgs = new ContentDialogClosedEventArgs(ClosedEvent, this) { Result = result };
-
-        RaiseEvent(closedEventArgs);
+        RaiseEvent(new ContentDialogClosedEventArgs(ClosedEvent, this) { Result = result });
     }
 
     /// <summary>
-    /// Invoked when a <see cref="ContentDialogButton"/> is clicked.
+    /// Validates and executes a semantic action. ButtonClicked.Cancel rejects this invocation.
+    /// Commands finish before automatic closure; ClosesDialog=false permits asynchronous validation.
     /// </summary>
-    /// <param name="button">The button that was clicked.</param>
     protected virtual void OnButtonClick(ContentDialogButton button)
     {
-        var buttonClickEventArgs = new ContentDialogButtonClickEventArgs(ButtonClickedEvent, this)
+        var action = GetAction(button);
+
+        if (!CanInteract || action is null || !CanExecute(action))
+            return;
+
+        _executingAction = true;
+
+        var operation = _completion!;
+
+        try
         {
-            Button = button,
+            var args = new ContentDialogButtonClickEventArgs(ButtonClickedEvent, this) { Button = button };
+
+            RaiseEvent(args);
+
+            // Application handlers can replace actions, dismiss the dialog, or pump the Dispatcher.
+            // Only the original, still-active presentation is permitted to execute the captured action.
+            if (args.Cancel || operation != _completion || operation.Task.IsCompleted
+                || !ReferenceEquals(_dialogHost?.Content, this) || !ReferenceEquals(action, GetAction(button)) || !CanExecute(action))
+            {
+                return;
+            }
+
+            if (action.Command is RoutedCommand routed)
+                routed.Execute(action.CommandParameter, this);
+            else
+                action.Command?.Execute(action.CommandParameter);
+
+            if (action.ClosesDialog && ReferenceEquals(operation, _completion))
+            {
+                Hide(button switch
+                {
+                    ContentDialogButton.Primary   => ContentDialogResult.Primary,
+                    ContentDialogButton.Secondary => ContentDialogResult.Secondary,
+                    ContentDialogButton.Tertiary  => ContentDialogResult.Tertiary,
+                    _ => ContentDialogResult.None,
+                });
+            }
+        }
+        finally
+        {
+            _executingAction = false;
+            CommandManager.InvalidateRequerySuggested();
+        }
+    }
+
+    internal void NotifyHostRemoved()
+    {
+        _completion?.TrySetResult(ContentDialogResult.None);
+    }
+
+    private ContentDialogAction? GetAction(ContentDialogButton button) => button switch
+    {
+        ContentDialogButton.Primary   => PrimaryAction,
+        ContentDialogButton.Secondary => SecondaryAction,
+        ContentDialogButton.Tertiary  => TertiaryAction,
+        _ => null,
+    };
+
+    private bool CanExecute(ContentDialogAction action)
+    {
+        if (!action.IsEnabled)
+            return false;
+
+        return action.Command switch
+        {
+            RoutedCommand command when command == InvokeActionCommand || command == CloseCommand => false,
+            RoutedCommand command => command.CanExecute(action.CommandParameter, this),
+            { } command => command.CanExecute(action.CommandParameter),
+            _ => true,
         };
+    }
 
-        RaiseEvent(buttonClickEventArgs);
+    private void OnCanExecuteAction(object sender, CanExecuteRoutedEventArgs e)
+    {
+        e.CanExecute = CanInteract && e.Parameter is ContentDialogButton button
+            && GetAction(button) is { } action && CanExecute(action);
 
-        ContentDialogResult result = button switch
+        e.Handled = true;
+    }
+
+    private void OnExecuteAction(object sender, ExecutedRoutedEventArgs e)
+    {
+        if (e.Parameter is ContentDialogButton button)
+            OnButtonClick(button);
+
+        e.Handled = true;
+    }
+
+    private static void OnActionChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        var dialog = (ContentDialog)d;
+
+        // Freezable subproperty changes also reach this callback. Refresh weak command subscriptions
+        // so replacing a command or changing its CanExecute immediately updates the visible button.
+        if (dialog.IsOpen)
+            dialog.RefreshCommandSubscriptions();
+
+        CommandManager.InvalidateRequerySuggested();
+    }
+
+    private static void OnCommandStateChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        CommandManager.InvalidateRequerySuggested();
+    }
+
+    private void RefreshCommandSubscriptions()
+    {
+        DetachCommands();
+
+        foreach (ContentDialogAction? action in new[] { PrimaryAction, SecondaryAction, TertiaryAction })
         {
-            ContentDialogButton.Primary => ContentDialogResult.Primary,
-            ContentDialogButton.Secondary => ContentDialogResult.Secondary,
-            _ => ContentDialogResult.None,
-        };
-
-        Hide(result);
+            if (action?.Command is { } command && _observedCommands.Add(command))
+            {
+                CanExecuteChangedEventManager.AddHandler(command, OnActionCanExecuteChanged);
+            }
+        }
     }
 
-    private void OnPrimaryButtonClick(object sender, RoutedEventArgs e)
+    private void DetachCommands()
     {
-        OnButtonClick(ContentDialogButton.Primary);
-    }
-
-    private void OnSecondaryButtonClick(object sender, RoutedEventArgs e)
-    {
-        OnButtonClick(ContentDialogButton.Secondary);
-    }
-
-    private void OnCloseButtonClick(object sender, RoutedEventArgs e)
-    {
-        OnButtonClick(ContentDialogButton.Close);
-    }
-
-    private void DetachTemplateButtons()
-    {
-        if (_primaryButton is not null)
+        foreach (ICommand command in _observedCommands)
         {
-            _primaryButton.Click -= OnPrimaryButtonClick;
-            _primaryButton = null;
+            CanExecuteChangedEventManager.RemoveHandler(command, OnActionCanExecuteChanged);
         }
 
-        if (_secondaryButton is not null)
-        {
-            _secondaryButton.Click -= OnSecondaryButtonClick;
-            _secondaryButton = null;
-        }
-
-        if (_closeButton is not null)
-        {
-            _closeButton.Click -= OnCloseButtonClick;
-            _closeButton = null;
-        }
+        _observedCommands.Clear();
     }
 
-    protected override AutomationPeer OnCreateAutomationPeer()
+    private void OnActionCanExecuteChanged(object? sender, EventArgs e)
     {
-        return new ContentDialogAutomationPeer(this);
+        // ICommand implementations may signal from a worker thread. Marshal only the invalidation.
+        if (!Dispatcher.HasShutdownStarted)
+            _ = Dispatcher.BeginInvoke(new Action(CommandManager.InvalidateRequerySuggested));
     }
 
-    private void OnLoadedInternal()
+    private async void OnLoaded(object sender, RoutedEventArgs e)
     {
+        if (_opening || !CanInteract)
+        {
+            return;
+        }
+
+        _opening = true;
+
+        var operation = _completion;
+
         if (!IsFocusInsideDialog())
         {
             SetInitialFocus();
         }
 
-        RaiseEvent(new RoutedEventArgs(OpenedEvent));
-    }
+        await _dialogHost!.OpenDialogAsync(this);
 
-    private void OnUnloadedInternal()
-    {
-        if (!ReferenceEquals(_dialogHost?.Content, this))
+        if (ReferenceEquals(operation, _completion) && CanInteract)
         {
-            if (Tcs is { Task.IsCompleted: false })
-            {
-                _ = Tcs.TrySetResult(ContentDialogResult.None);
-            }
+            RaiseEvent(new RoutedEventArgs(OpenedEvent, this));
         }
     }
 
-    protected override Size MeasureOverride(Size availableSize)
+    private void OnUnloaded(object sender, RoutedEventArgs e)
     {
-        if (!DesignerProperties.GetIsInDesignMode(this))
+        var operation = _completion;
+
+        // Replacing a host template can detach the dialog even while Content still refers to it.
+        // A deferred check lets WPF finish a transient unload/load pair; a genuinely missing
+        // visual must complete the session rather than leaving an invisible modal operation alive.
+        _ = Dispatcher.BeginInvoke(DispatcherPriority.ContextIdle, new Action(() =>
         {
-            if (GetVisualChild(0) is UIElement rootElement)
-            {
-                rootElement.Measure(availableSize);
-                Size desiredSize = rootElement.DesiredSize;
-
-                Size newSize = GetConstrainedDialogSize(desiredSize);
-
-                SetCurrentValue(DialogHeightProperty, newSize.Height);
-                SetCurrentValue(DialogWidthProperty, newSize.Width);
-
-                return desiredSize;
-            }
-        }
-
-        return base.MeasureOverride(availableSize);
+            if (ReferenceEquals(operation, _completion) && !IsLoaded)
+                NotifyHostRemoved();
+        }));
     }
 
-    private Size GetConstrainedDialogSize(Size desiredSize)
+    /// <inheritdoc />
+    protected override AutomationPeer OnCreateAutomationPeer()
     {
-        // TODO: Handle negative values
-        var paddingWidth = Padding.Left + Padding.Right;
-        var paddingHeight = Padding.Top + Padding.Bottom;
-
-        var marginHeight = DialogMargin.Bottom + DialogMargin.Top;
-        var marginWidth = DialogMargin.Left + DialogMargin.Right;
-
-        var width = Math.Min(desiredSize.Width - marginWidth + paddingWidth, DialogMaxWidth);
-        var height = Math.Min(desiredSize.Height - marginHeight + paddingHeight, DialogMaxHeight);
-
-        return new Size(width, height);
+        return new ContentDialogAutomationPeer(this);
     }
 }

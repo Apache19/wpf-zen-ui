@@ -3,26 +3,20 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-// ReSharper disable once CheckNamespace
 namespace Wpf.Zen.Ui.Controls;
 
-/// <summary>
-/// Specifies identifiers to indicate the return value of a <see cref="ContentDialog"/>.
-/// </summary>
+/// <summary>Identifies the completed choice, or None for dismissal without a choice.</summary>
 public enum ContentDialogResult
 {
-    /// <summary>
-    /// No button was tapped.
-    /// </summary>
+    /// <summary>No semantic action.</summary>
     None,
 
-    /// <summary>
-    /// The primary button was tapped by the user.
-    /// </summary>
+    /// <summary>The primary choice.</summary>
     Primary,
 
-    /// <summary>
-    /// The secondary button was tapped by the user.
-    /// </summary>
+    /// <summary>The secondary choice.</summary>
     Secondary,
+
+    /// <summary>The third choice, independent of header dismissal.</summary>
+    Tertiary,
 }

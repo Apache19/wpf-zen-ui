@@ -3,15 +3,16 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-// ReSharper disable once CheckNamespace
+using System.Windows.Controls;
+
 namespace Wpf.Zen.Ui.Controls;
 
-/// <summary>
-/// Partial class <c>ContentDialog.Properties</c>
-/// A partial class of <see cref="ContentDialog"/> specifically for defining its dependency properties.
-/// </summary>
+/// <summary>Defines dialog content, action and lifecycle properties. Template bindings apply visual and layout changes; properties are not inherited.</summary>
+[StyleTypedProperty(Property = nameof(CloseButtonStyle), StyleTargetType = typeof(Button))]
 public partial class ContentDialog
 {
+    #region DP: Title
+
     /// <summary>Identifies the <see cref="Title"/> dependency property.</summary>
     public static readonly DependencyProperty TitleProperty = DependencyProperty.Register(
         nameof(Title),
@@ -19,6 +20,17 @@ public partial class ContentDialog
         typeof(ContentDialog),
         new PropertyMetadata(null)
     );
+
+    /// <summary>Gets or sets the heading content. The default is null; the template measures the heading.</summary>
+    public object? Title
+    {
+        get => (object?)GetValue(TitleProperty);
+        set => SetValue(TitleProperty, value);
+    }
+
+    #endregion
+
+    #region DP: TitleTemplate
 
     /// <summary>Identifies the <see cref="TitleTemplate"/> dependency property.</summary>
     public static readonly DependencyProperty TitleTemplateProperty = DependencyProperty.Register(
@@ -28,392 +40,271 @@ public partial class ContentDialog
         new PropertyMetadata(null)
     );
 
-    /// <summary>Identifies the <see cref="DialogWidth"/> dependency property.</summary>
-    public static readonly DependencyProperty DialogWidthProperty = DependencyProperty.Register(
-        nameof(DialogWidth),
-        typeof(double),
-        typeof(ContentDialog),
-        new PropertyMetadata(double.PositiveInfinity)
-    );
-
-    /// <summary>Identifies the <see cref="DialogHeight"/> dependency property.</summary>
-    public static readonly DependencyProperty DialogHeightProperty = DependencyProperty.Register(
-        nameof(DialogHeight),
-        typeof(double),
-        typeof(ContentDialog),
-        new PropertyMetadata(double.PositiveInfinity)
-    );
-
-    /// <summary>Identifies the <see cref="DialogMaxWidth"/> dependency property.</summary>
-    public static readonly DependencyProperty DialogMaxWidthProperty = DependencyProperty.Register(
-        nameof(DialogMaxWidth),
-        typeof(double),
-        typeof(ContentDialog),
-        new PropertyMetadata(double.PositiveInfinity)
-    );
-
-    /// <summary>Identifies the <see cref="DialogMaxHeight"/> dependency property.</summary>
-    public static readonly DependencyProperty DialogMaxHeightProperty = DependencyProperty.Register(
-        nameof(DialogMaxHeight),
-        typeof(double),
-        typeof(ContentDialog),
-        new PropertyMetadata(double.PositiveInfinity)
-    );
-
-    /// <summary>Identifies the <see cref="DialogMargin"/> dependency property.</summary>
-    public static readonly DependencyProperty DialogMarginProperty = DependencyProperty.Register(
-        nameof(DialogMargin),
-        typeof(Thickness),
-        typeof(ContentDialog)
-    );
-
-    /// <summary>Identifies the <see cref="PrimaryButtonText"/> dependency property.</summary>
-    public static readonly DependencyProperty PrimaryButtonTextProperty = DependencyProperty.Register(
-        nameof(PrimaryButtonText),
-        typeof(string),
-        typeof(ContentDialog),
-        new PropertyMetadata(string.Empty)
-    );
-
-    /// <summary>Identifies the <see cref="SecondaryButtonText"/> dependency property.</summary>
-    public static readonly DependencyProperty SecondaryButtonTextProperty = DependencyProperty.Register(
-        nameof(SecondaryButtonText),
-        typeof(string),
-        typeof(ContentDialog),
-        new PropertyMetadata(string.Empty)
-    );
-
-    /// <summary>Identifies the <see cref="CloseButtonText"/> dependency property.</summary>
-    public static readonly DependencyProperty CloseButtonTextProperty = DependencyProperty.Register(
-        nameof(CloseButtonText),
-        typeof(string),
-        typeof(ContentDialog),
-        new PropertyMetadata("Close")
-    );
-
-    /// <summary>Identifies the <see cref="PrimaryButtonIcon"/> dependency property.</summary>
-    public static readonly DependencyProperty PrimaryButtonIconProperty = DependencyProperty.Register(
-        nameof(PrimaryButtonIcon),
-        typeof(object),
-        typeof(ContentDialog),
-        new PropertyMetadata(null)
-    );
-
-    /// <summary>Identifies the <see cref="SecondaryButtonIcon"/> dependency property.</summary>
-    public static readonly DependencyProperty SecondaryButtonIconProperty = DependencyProperty.Register(
-        nameof(SecondaryButtonIcon),
-        typeof(object),
-        typeof(ContentDialog),
-        new PropertyMetadata(null)
-    );
-
-    /// <summary>Identifies the <see cref="CloseButtonIcon"/> dependency property.</summary>
-    public static readonly DependencyProperty CloseButtonIconProperty = DependencyProperty.Register(
-        nameof(CloseButtonIcon),
-        typeof(object),
-        typeof(ContentDialog),
-        new PropertyMetadata(null)
-    );
-
-    /// <summary>Identifies the <see cref="IsPrimaryButtonEnabled"/> dependency property.</summary>
-    public static readonly DependencyProperty IsPrimaryButtonEnabledProperty = DependencyProperty.Register(
-        nameof(IsPrimaryButtonEnabled),
-        typeof(bool),
-        typeof(ContentDialog),
-        new PropertyMetadata(true)
-    );
-
-    /// <summary>Identifies the <see cref="IsSecondaryButtonEnabled"/> dependency property.</summary>
-    public static readonly DependencyProperty IsSecondaryButtonEnabledProperty = DependencyProperty.Register(
-        nameof(IsSecondaryButtonEnabled),
-        typeof(bool),
-        typeof(ContentDialog),
-        new PropertyMetadata(true)
-    );
-
-    /// <summary>Identifies the <see cref="IsCloseButtonEnabled"/> dependency property.</summary>
-    public static readonly DependencyProperty IsCloseButtonEnabledProperty = DependencyProperty.Register(
-        nameof(IsCloseButtonEnabled),
-        typeof(bool),
-        typeof(ContentDialog),
-        new PropertyMetadata(true)
-    );
-
-    /// <summary>Identifies the <see cref="CloseButtonVisibility"/> dependency property.</summary>
-    public static readonly DependencyProperty CloseButtonVisibilityProperty = DependencyProperty.Register(
-        nameof(CloseButtonVisibility),
-        typeof(Visibility),
-        typeof(ContentDialog),
-        new PropertyMetadata(Visibility.Visible)
-    );
-
-    /// <summary>Identifies the <see cref="PrimaryButtonAppearance"/> dependency property.</summary>
-    public static readonly DependencyProperty PrimaryButtonAppearanceProperty = DependencyProperty.Register(
-        nameof(PrimaryButtonAppearance),
-        typeof(ControlAppearance),
-        typeof(ContentDialog),
-        new PropertyMetadata(ControlAppearance.Accent)
-    );
-
-    /// <summary>Identifies the <see cref="SecondaryButtonAppearance"/> dependency property.</summary>
-    public static readonly DependencyProperty SecondaryButtonAppearanceProperty = DependencyProperty.Register(
-        nameof(SecondaryButtonAppearance),
-        typeof(ControlAppearance),
-        typeof(ContentDialog),
-        new PropertyMetadata(ControlAppearance.Normal)
-    );
-
-    /// <summary>Identifies the <see cref="CloseButtonAppearance"/> dependency property.</summary>
-    public static readonly DependencyProperty CloseButtonAppearanceProperty = DependencyProperty.Register(
-        nameof(CloseButtonAppearance),
-        typeof(ControlAppearance),
-        typeof(ContentDialog),
-        new PropertyMetadata(ControlAppearance.Normal)
-    );
-
-    /// <summary>Identifies the <see cref="DefaultButton"/> dependency property.</summary>
-    public static readonly DependencyProperty DefaultButtonProperty = DependencyProperty.Register(
-        nameof(DefaultButton),
-        typeof(ContentDialogButton),
-        typeof(ContentDialog),
-        new PropertyMetadata(ContentDialogButton.Primary)
-    );
-
-    /// <summary>Identifies the <see cref="IsFooterVisible"/> dependency property.</summary>
-    public static readonly DependencyProperty IsFooterVisibleProperty = DependencyProperty.Register(
-        nameof(IsFooterVisible),
-        typeof(bool),
-        typeof(ContentDialog),
-        new PropertyMetadata(true)
-    );
-
-    /// <summary>Identifies the <see cref="Opened"/> routed event.</summary>
-    public static readonly RoutedEvent OpenedEvent = EventManager.RegisterRoutedEvent(
-        nameof(Opened),
-        RoutingStrategy.Bubble,
-        typeof(TypedEventHandler<ContentDialog, RoutedEventArgs>),
-        typeof(ContentDialog)
-    );
-
-    /// <summary>Identifies the <see cref="Closing"/> routed event.</summary>
-    public static readonly RoutedEvent ClosingEvent = EventManager.RegisterRoutedEvent(
-        nameof(Closing),
-        RoutingStrategy.Bubble,
-        typeof(TypedEventHandler<ContentDialog, ContentDialogClosingEventArgs>),
-        typeof(ContentDialog)
-    );
-
-    /// <summary>Identifies the <see cref="Closed"/> routed event.</summary>
-    public static readonly RoutedEvent ClosedEvent = EventManager.RegisterRoutedEvent(
-        nameof(Closed),
-        RoutingStrategy.Bubble,
-        typeof(TypedEventHandler<ContentDialog, ContentDialogClosedEventArgs>),
-        typeof(ContentDialog)
-    );
-
-    /// <summary>Identifies the <see cref="ButtonClicked"/> routed event.</summary>
-    public static readonly RoutedEvent ButtonClickedEvent = EventManager.RegisterRoutedEvent(
-        nameof(ButtonClicked),
-        RoutingStrategy.Bubble,
-        typeof(TypedEventHandler<ContentDialog, ContentDialogButtonClickEventArgs>),
-        typeof(ContentDialog)
-    );
-
-    /// <summary>
-    /// Gets or sets the title of the <see cref="ContentDialog"/>.
-    /// </summary>
-    public object? Title
-    {
-        get => GetValue(TitleProperty);
-        set => SetValue(TitleProperty, value);
-    }
-
-    /// <summary>
-    /// Gets or sets the title template of the <see cref="ContentDialog"/>.
-    /// </summary>
+    /// <summary>Gets or sets the heading template, which takes precedence over TitleTemplateSelector. Default null lets WPF select the presentation.</summary>
     public DataTemplate? TitleTemplate
     {
         get => (DataTemplate?)GetValue(TitleTemplateProperty);
         set => SetValue(TitleTemplateProperty, value);
     }
 
-    /// <summary>
-    /// Gets or sets the width of the <see cref="ContentDialog"/>.
-    /// </summary>
-    public double DialogWidth
+    #endregion
+
+    #region DP: TitleTemplateSelector
+
+    /// <summary>Identifies the <see cref="TitleTemplateSelector"/> dependency property.</summary>
+    public static readonly DependencyProperty TitleTemplateSelectorProperty = DependencyProperty.Register(
+        nameof(TitleTemplateSelector),
+        typeof(DataTemplateSelector),
+        typeof(ContentDialog),
+        new PropertyMetadata(null)
+    );
+
+    /// <summary>Gets or sets the selector used when TitleTemplate is null. Default null uses WPF's implicit template lookup.</summary>
+    /// <remarks>
+    /// The title ContentPresenter performs selection and remeasures when its presentation changes.
+    /// This property is not inherited and has no coercion or change callback. Discrete animation
+    /// values are forwarded to the presenter in the same way as ordinary property changes.
+    /// Custom templates can use ContentSource="Title" to forward all title presentation properties.
+    /// </remarks>
+    public DataTemplateSelector? TitleTemplateSelector
     {
-        get => (double)GetValue(DialogWidthProperty);
-        set => SetValue(DialogWidthProperty, value);
+        get => (DataTemplateSelector?)GetValue(TitleTemplateSelectorProperty);
+        set => SetValue(TitleTemplateSelectorProperty, value);
     }
 
-    /// <summary>
-    /// Gets or sets the height of the <see cref="ContentDialog"/>.
-    /// </summary>
-    public double DialogHeight
+    #endregion
+
+    #region DP: TitleStringFormat
+
+    /// <summary>Identifies the <see cref="TitleStringFormat"/> dependency property.</summary>
+    public static readonly DependencyProperty TitleStringFormatProperty = DependencyProperty.Register(
+        nameof(TitleStringFormat),
+        typeof(string),
+        typeof(ContentDialog),
+        new PropertyMetadata(null)
+    );
+
+    /// <summary>Gets or sets the composite format used by WPF's default text presentation of Title. Default null applies no explicit format.</summary>
+    /// <remarks>
+    /// A selected or explicit DataTemplate owns its own formatting; UIElement titles are not formatted.
+    /// The title ContentPresenter handles formatting, culture and resulting layout changes.
+    /// This property is not inherited and has no coercion or change callback. Discrete string
+    /// animation values are forwarded to the presenter in the same way as ordinary changes.
+    /// </remarks>
+    public string? TitleStringFormat
     {
-        get => (double)GetValue(DialogHeightProperty);
-        set => SetValue(DialogHeightProperty, value);
+        get => (string?)GetValue(TitleStringFormatProperty);
+        set => SetValue(TitleStringFormatProperty, value);
     }
 
-    /// <summary>
-    /// Gets or sets the max width of the <see cref="ContentDialog"/>.
-    /// </summary>
-    public double DialogMaxWidth
+    #endregion
+
+    #region DP: PrimaryAction
+
+    /// <summary>Identifies the <see cref="PrimaryAction"/> dependency property.</summary>
+    public static readonly DependencyProperty PrimaryActionProperty = DependencyProperty.Register(
+        nameof(PrimaryAction),
+        typeof(ContentDialogAction),
+        typeof(ContentDialog),
+        new PropertyMetadata(null, OnActionChanged)
+    );
+
+    /// <summary>Gets or sets the primary footer action. Null (the default) removes its button from layout. Changes invalidate command availability.</summary>
+    public ContentDialogAction? PrimaryAction
     {
-        get => (double)GetValue(DialogMaxWidthProperty);
-        set => SetValue(DialogMaxWidthProperty, value);
+        get => (ContentDialogAction?)GetValue(PrimaryActionProperty);
+        set => SetValue(PrimaryActionProperty, value);
     }
 
-    /// <summary>
-    /// Gets or sets the max height of the <see cref="ContentDialog"/>.
-    /// </summary>
-    public double DialogMaxHeight
+    #endregion
+
+    #region DP: SecondaryAction
+
+    /// <summary>Identifies the <see cref="SecondaryAction"/> dependency property.</summary>
+    public static readonly DependencyProperty SecondaryActionProperty = DependencyProperty.Register(
+        nameof(SecondaryAction),
+        typeof(ContentDialogAction),
+        typeof(ContentDialog),
+        new PropertyMetadata(null, OnActionChanged)
+    );
+
+    /// <summary>Gets or sets the secondary footer action. Null (the default) removes its button from layout. Changes invalidate command availability.</summary>
+    public ContentDialogAction? SecondaryAction
     {
-        get => (double)GetValue(DialogMaxHeightProperty);
-        set => SetValue(DialogMaxHeightProperty, value);
+        get => (ContentDialogAction?)GetValue(SecondaryActionProperty);
+        set => SetValue(SecondaryActionProperty, value);
     }
 
-    /// <summary>
-    /// Gets or sets the margin of the <see cref="ContentDialog"/>.
-    /// </summary>
-    public Thickness DialogMargin
+    #endregion
+
+    #region DP: TertiaryAction
+
+    /// <summary>Identifies the <see cref="TertiaryAction"/> dependency property.</summary>
+    public static readonly DependencyProperty TertiaryActionProperty = DependencyProperty.Register(
+        nameof(TertiaryAction),
+        typeof(ContentDialogAction),
+        typeof(ContentDialog),
+        new PropertyMetadata(null, OnActionChanged)
+    );
+
+    /// <summary>Gets or sets the tertiary footer action. Null (the default) removes its button from layout. Changes invalidate command availability.</summary>
+    public ContentDialogAction? TertiaryAction
     {
-        get => (Thickness)GetValue(DialogMarginProperty);
-        set => SetValue(DialogMarginProperty, value);
+        get => (ContentDialogAction?)GetValue(TertiaryActionProperty);
+        set => SetValue(TertiaryActionProperty, value);
     }
 
-    /// <summary>
-    /// Gets or sets the text to display on the primary button.
-    /// </summary>
-    public string PrimaryButtonText
-    {
-        get => (string)GetValue(PrimaryButtonTextProperty);
-        set => SetValue(PrimaryButtonTextProperty, value);
-    }
+    #endregion
 
-    /// <summary>
-    /// Gets or sets the text to be displayed on the secondary button.
-    /// </summary>
-    public string SecondaryButtonText
-    {
-        get => (string)GetValue(SecondaryButtonTextProperty);
-        set => SetValue(SecondaryButtonTextProperty, value);
-    }
+    #region DP: DefaultButton
 
-    /// <summary>
-    /// Gets or sets the text to display on the close button.
-    /// </summary>
-    public string CloseButtonText
-    {
-        get => (string)GetValue(CloseButtonTextProperty);
-        set => SetValue(CloseButtonTextProperty, value);
-    }
+    /// <summary>Identifies the <see cref="DefaultButton"/> dependency property.</summary>
+    public static readonly DependencyProperty DefaultButtonProperty = DependencyProperty.Register(
+        nameof(DefaultButton),
+        typeof(ContentDialogButton),
+        typeof(ContentDialog),
+        new PropertyMetadata(ContentDialogButton.None, OnCommandStateChanged),
+        value => value is ContentDialogButton.None or ContentDialogButton.Primary or ContentDialogButton.Secondary or ContentDialogButton.Tertiary
+    );
 
-    /// <summary>
-    /// Gets or sets the content displayed in the primary button's icon slot.
-    /// </summary>
-    public object? PrimaryButtonIcon
-    {
-        get => GetValue(PrimaryButtonIconProperty);
-        set => SetValue(PrimaryButtonIconProperty, value);
-    }
-
-    /// <summary>
-    /// Gets or sets the content displayed in the secondary button's icon slot.
-    /// </summary>
-    public object? SecondaryButtonIcon
-    {
-        get => GetValue(SecondaryButtonIconProperty);
-        set => SetValue(SecondaryButtonIconProperty, value);
-    }
-
-    /// <summary>
-    /// Gets or sets the content displayed in the close button's icon slot.
-    /// </summary>
-    public object? CloseButtonIcon
-    {
-        get => GetValue(CloseButtonIconProperty);
-        set => SetValue(CloseButtonIconProperty, value);
-    }
-
-    /// <summary>
-    /// Gets or sets a value indicating whether the <see cref="ContentDialog"/> primary button is enabled.
-    /// </summary>
-    public bool IsPrimaryButtonEnabled
-    {
-        get => (bool)GetValue(IsPrimaryButtonEnabledProperty);
-        set => SetValue(IsPrimaryButtonEnabledProperty, value);
-    }
-
-    /// <summary>
-    /// Gets or sets a value indicating whether the <see cref="ContentDialog"/> secondary button is enabled.
-    /// </summary>
-    public bool IsSecondaryButtonEnabled
-    {
-        get => (bool)GetValue(IsSecondaryButtonEnabledProperty);
-        set => SetValue(IsSecondaryButtonEnabledProperty, value);
-    }
-
-    /// <summary>
-    /// Gets or sets a value indicating whether the close button is enabled.
-    /// </summary>
-    public bool IsCloseButtonEnabled
-    {
-        get => (bool)GetValue(IsCloseButtonEnabledProperty);
-        set => SetValue(IsCloseButtonEnabledProperty, value);
-    }
-
-    /// <summary>
-    /// Gets or sets the visibility of the close button.
-    /// </summary>
-    public Visibility CloseButtonVisibility
-    {
-        get => (Visibility)GetValue(CloseButtonVisibilityProperty);
-        set => SetValue(CloseButtonVisibilityProperty, value);
-    }
-
-    /// <summary>
-    /// Gets or sets the <see cref="ControlAppearance"/> to apply to the primary button.
-    /// </summary>
-    public ControlAppearance PrimaryButtonAppearance
-    {
-        get => (ControlAppearance)GetValue(PrimaryButtonAppearanceProperty);
-        set => SetValue(PrimaryButtonAppearanceProperty, value);
-    }
-
-    /// <summary>
-    /// Gets or sets the <see cref="ControlAppearance"/> to apply to the secondary button.
-    /// </summary>
-    public ControlAppearance SecondaryButtonAppearance
-    {
-        get => (ControlAppearance)GetValue(SecondaryButtonAppearanceProperty);
-        set => SetValue(SecondaryButtonAppearanceProperty, value);
-    }
-
-    /// <summary>
-    /// Gets or sets the <see cref="ControlAppearance"/> to apply to the close button.
-    /// </summary>
-    public ControlAppearance CloseButtonAppearance
-    {
-        get => (ControlAppearance)GetValue(CloseButtonAppearanceProperty);
-        set => SetValue(CloseButtonAppearanceProperty, value);
-    }
-
-    /// <summary>
-    /// Gets or sets a value that indicates which button on the dialog is the default action.
-    /// </summary>
+    /// <summary>Gets or sets the Enter action. The default is None; disabled or absent actions never fall back to a different choice.</summary>
     public ContentDialogButton DefaultButton
     {
         get => (ContentDialogButton)GetValue(DefaultButtonProperty);
         set => SetValue(DefaultButtonProperty, value);
     }
 
-    /// <summary>
-    /// Gets or sets a value indicating whether the footer buttons are visible.
-    /// </summary>
-    public bool IsFooterVisible
+    #endregion
+
+    #region DP: IsDismissible
+
+    /// <summary>Identifies the <see cref="IsDismissible"/> dependency property.</summary>
+    public static readonly DependencyProperty IsDismissibleProperty = DependencyProperty.Register(
+        nameof(IsDismissible),
+        typeof(bool),
+        typeof(ContentDialog),
+        new PropertyMetadata(true, OnCommandStateChanged)
+    );
+
+    /// <summary>Gets or sets a value indicating whether the header close button, Escape and automation may dismiss the dialog. Default true. This does not prevent Hide, cancellation or removal from the tree.</summary>
+    public bool IsDismissible
     {
-        get => (bool)GetValue(IsFooterVisibleProperty);
-        set => SetValue(IsFooterVisibleProperty, value);
+        get => (bool)GetValue(IsDismissibleProperty);
+        set => SetValue(IsDismissibleProperty, value);
     }
+
+    #endregion
+
+    #region DP: CloseButtonStyle
+
+    /// <summary>Identifies the <see cref="CloseButtonStyle"/> dependency property.</summary>
+    public static readonly DependencyProperty CloseButtonStyleProperty = DependencyProperty.Register(
+        nameof(CloseButtonStyle),
+        typeof(Style),
+        typeof(ContentDialog),
+        new PropertyMetadata(null)
+    );
+
+    /// <summary>Gets or sets the style applied to PART_CloseButton, including localized tooltip and automation name. Default null uses the part's template-supplied style.</summary>
+    /// <remarks>The control binds this property when the template is applied. Custom templates need only retain the optional button part's name; subsequent style changes update it automatically.</remarks>
+    public Style? CloseButtonStyle
+    {
+        get => (Style?)GetValue(CloseButtonStyleProperty);
+        set => SetValue(CloseButtonStyleProperty, value);
+    }
+
+    #endregion
+
+    #region EVENT: Opened
+
+    /// <summary>Identifies the <see cref="Opened"/> routed event.</summary>
+    public static readonly RoutedEvent OpenedEvent = EventManager.RegisterRoutedEvent(
+        nameof(Opened),
+        RoutingStrategy.Bubble,
+        typeof(RoutedEventHandler),
+        typeof(ContentDialog)
+    );
+
+    /// <summary>Occurs once after the dialog is loaded and its entrance transition completes. A dialog dismissed during entrance does not raise this event.</summary>
+    public event RoutedEventHandler Opened
+    {
+        add => AddHandler(OpenedEvent, value);
+        remove => RemoveHandler(OpenedEvent, value);
+    }
+
+    #endregion
+
+    #region EVENT: Closed
+
+    /// <summary>Identifies the <see cref="Closed"/> routed event.</summary>
+    public static readonly RoutedEvent ClosedEvent = EventManager.RegisterRoutedEvent(
+        nameof(Closed),
+        RoutingStrategy.Direct,
+        typeof(EventHandler<ContentDialogClosedEventArgs>),
+        typeof(ContentDialog)
+    );
+
+    /// <summary>Occurs once after presentation cleanup. This direct notification cannot cancel closure. Without an accepted choice, removal and cancellation report None.</summary>
+    /// <remarks>Subscribe on the dialog itself; its parent route no longer exists after removal.</remarks>
+    public event EventHandler<ContentDialogClosedEventArgs> Closed
+    {
+        add => AddHandler(ClosedEvent, value);
+        remove => RemoveHandler(ClosedEvent, value);
+    }
+
+    #endregion
+
+    #region EVENT: ButtonClicked
+
+    /// <summary>Identifies the <see cref="ButtonClicked"/> routed event.</summary>
+    public static readonly RoutedEvent ButtonClickedEvent = EventManager.RegisterRoutedEvent(
+        nameof(ButtonClicked),
+        RoutingStrategy.Bubble,
+        typeof(EventHandler<ContentDialogButtonClickEventArgs>),
+        typeof(ContentDialog)
+    );
+
+    /// <summary>Occurs before a footer action executes. Cancel rejects only this action; it cannot veto Hide or visual-tree removal.</summary>
+    public event EventHandler<ContentDialogButtonClickEventArgs> ButtonClicked
+    {
+        add => AddHandler(ButtonClickedEvent, value);
+        remove => RemoveHandler(ButtonClickedEvent, value);
+    }
+
+    #endregion
+
+    #region DP: IsOpen
+
+    private static readonly DependencyPropertyKey IsOpenPropertyKey = DependencyProperty.RegisterReadOnly(
+        nameof(IsOpen),
+        typeof(bool),
+        typeof(ContentDialog),
+        new PropertyMetadata(false)
+    );
+
+    /// <summary>Identifies the read-only <see cref="IsOpen"/> dependency property.</summary>
+    public static readonly DependencyProperty IsOpenProperty = IsOpenPropertyKey.DependencyProperty;
+
+    /// <summary>Gets a value indicating whether a presentation is reserved, including entrance, exit and Closed notification. Default false; this state does not affect layout.</summary>
+    public bool IsOpen => (bool)GetValue(IsOpenProperty);
+
+    #endregion
+
+    #region DP: IsClosing
+
+    private static readonly DependencyPropertyKey IsClosingPropertyKey = DependencyProperty.RegisterReadOnly(
+        nameof(IsClosing),
+        typeof(bool),
+        typeof(ContentDialog),
+        new PropertyMetadata(false)
+    );
+
+    /// <summary>Identifies the read-only <see cref="IsClosing"/> dependency property.</summary>
+    public static readonly DependencyProperty IsClosingProperty = IsClosingPropertyKey.DependencyProperty;
+
+    /// <summary>Gets a value indicating whether a close result has been accepted and presentation cleanup is pending. Default false; this state does not affect layout.</summary>
+    public bool IsClosing => (bool)GetValue(IsClosingProperty);
+
+    #endregion
+
 }

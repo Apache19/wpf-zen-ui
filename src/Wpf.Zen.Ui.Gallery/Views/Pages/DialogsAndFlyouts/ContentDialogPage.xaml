@@ -18,10 +18,12 @@
 
     <Page.Resources>
         <ResourceDictionary>
-            <StackPanel x:Key="DialogContent">
-                <TextBlock Text="Lorem ipsum dolor sit amet, adipisicing elit." TextWrapping="Wrap" />
-                <CheckBox Content="Upload your content to the cloud." />
-            </StackPanel>
+            <DataTemplate x:Key="DialogContent">
+                <StackPanel>
+                    <TextBlock Text="Lorem ipsum dolor sit amet, adipisicing elit." TextWrapping="Wrap" />
+                    <CheckBox Content="Upload your content to the cloud." />
+                </StackPanel>
+            </DataTemplate>
         </ResourceDictionary>
     </Page.Resources>
 

@@ -1,331 +1,196 @@
-# ContentDialog 开发指南
+# ContentDialog
 
-`ContentDialog` 用于在当前 WPF 界面中请求用户确认、收集少量输入或展示必须处理的信息。
-它是应用视觉树中的模态层，不会创建新的 `Window`。开发者通常通过
-`IContentDialogService` 显示对话框；只有在调用方已经持有宿主引用时，才需要直接调用
-`ContentDialog.ShowAsync()`。
+`ContentDialog` 是当前 WPF 可视树中的模态内容面板；`ContentDialogHost` 负责遮罩、作用域隔离、焦点恢复与过渡动画。它不创建原生窗口，也适用于 HwndSource 和 ElementHost 中的独立区域。
 
-本文示例使用以下 XAML 命名空间：
+## 设计结论
 
-```xml
-xmlns:ui="http://schemas.thezendev.com/wpf/2027"
-```
+- **选择与关闭分开**：底部为可选的 Primary、Secondary、Tertiary 三个操作，右上角为独立关闭入口。第三操作返回 Tertiary，关闭及无选择的取消返回 None。三个操作不必全部出现。这是明确的库内布局契约，并不假设所有平台都必须采用同一种布局。
+- **移除 Closing**：WPF Unloaded 是不可取消的通知，父级移除、窗口销毁不能由子元素阻止。Hide 接受关闭结果，Closed 只通知完成；校验放在操作执行前。
+- **操作定义集中定制**：三个 ContentDialogAction 属性取代成组的文本、图标、外观和启用属性。定义是 Freezable，支持从所属对话框获得 DataContext。ContentTemplate 呈现任意数据；ButtonStyle 定制完整 Button，包括 ControlTemplate、ToolTip、自动化名称和布局。
+- **保留真正的 Button 容器**：任意 DataTemplate 若直接生成整个操作区，默认动作、CanExecute、无障碍及操作身份就会依赖用户模板。当前设计分离内容模板与交互容器；需要改变页脚结构时仍可替换 Dialog.Template。
+- **使用 WPF 原生布局**：采用 Width、Height、MinWidth、MinHeight、MaxWidth、MaxHeight、Margin、Padding，删除 Dialog 前缀尺寸属性及反写尺寸的 MeasureOverride。FrameworkElement.MeasureCore 已负责边距和宽高约束。
+- **动画放在 Host**：Host 在退出完成前保留内容和模态状态，并处理中途卸载或换模板。Dialog 的 RenderTransform、Opacity 不被动画覆盖。遮罩独立淡入淡出，本体淡入、轻微弹性缩放入场和缩小淡出，两者共用过渡时长及完成清理；尚不提供双对话框交叉转场或队列。未来转场仍应由 Host 协调。
 
-## 快速开始
+依赖属性及事件均以 `DP: 名称`、`EVENT: 名称` 分区，标识紧邻 CLR 包装。只接受 ContentDialogHost，已移除无法提供完整生命周期的 ContentPresenter 附加宿主行为。
 
-### 1. 在 Shell 中添加宿主
-
-每个窗口或独立 UI 区域需要一个 `ContentDialogHost`。将它放在根 `Grid` 的最后，使遮罩能够
-覆盖之前声明的内容：
+## 放置宿主
 
 ```xml
-<Window ...>
-    <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" />
-        </Grid.RowDefinitions>
-
-        <ui:TitleBar Grid.Row="0" />
-        <ui:NavigationView
-            x:Name="RootNavigation"
-            Grid.Row="1" />
-
-        <ui:ContentDialogHost
-            x:Name="RootContentDialogHost"
-            Grid.Row="0"
-            Grid.RowSpan="2"
-            IsDisableSiblingsEnabled="True" />
+<Grid>
+    <Grid x:Name="ApplicationContent">
+        <!-- 当前区域的应用内容 -->
     </Grid>
-</Window>
+    <ui:ContentDialogHost x:Name="DialogHost" />
+</Grid>
 ```
 
-`IsDisableSiblingsEnabled="True"` 会在对话框显示时禁用宿主的同级元素，并在关闭后恢复它们
-原来的启用状态。窗口级对话框建议启用此选项，避免用户通过鼠标、快捷键或访问键操作背景
-界面。
+Host 应作为有限尺寸父面板的最后一个同级元素，并跨越需要遮挡的行列。不要放在沿遮罩方向无限测量的 StackPanel 或 ScrollViewer 中。模态作用域为同一父级中的 WPF 内容，不覆盖其它原生窗口。
 
-### 2. 注册并绑定服务
-
-服务实例应与宿主拥有相同的生命周期。使用依赖注入时，通常按窗口或导航作用域注册为
-Scoped，不要注册为 Singleton：
+IsDisableSiblingsEnabled 默认 true，关闭时恢复宿主管理的同级元素；路由命令和访问键也在宿主作用域内隔离。无需禁用同级控件时可设为 false，但应保留 Host 的全区域覆盖和焦点约束。
 
 ```csharp
-services.AddScoped<IContentDialogService, ContentDialogService>();
+var dialogs = new ContentDialogService();
+dialogs.Attach(DialogHost); // 可在 Loaded 前绑定
+// 显示必须在 Host.Loaded 后、Host 的 Dispatcher 线程上进行。
 ```
 
-在 `InitializeComponent()` 之后，将当前作用域中的服务绑定到 XAML 宿主：
+服务显式绑定宿主，不按 Window 做全局查找。每个展示作用域创建一个服务，服务自身不可改绑。
+
+## 三个选择
 
 ```csharp
-public partial class MainWindow
+var dialog = new ContentDialog(DialogHost)
 {
-    private readonly INavigationScope _scope;
-
-    public MainWindow(INavigationScopeFactory scopes)
+    Title = "保存修改？",
+    Content = "请选择如何处理当前修改。",
+    PrimaryAction = new ContentDialogAction
     {
-        InitializeComponent();
-
-        _scope = scopes.Attach(RootNavigation, "main");
-
-        IContentDialogService dialogs = _scope.Services
-            .GetRequiredService<IContentDialogService>();
-        dialogs.Attach(RootContentDialogHost);
-
-        DataContext = _scope.Services.GetRequiredService<MainWindowViewModel>();
-    }
-
-    protected override void OnClosed(EventArgs e)
-    {
-        _scope.Dispose();
-        base.OnClosed(e);
-    }
-}
-```
-
-没有使用 `INavigationScope` 时，为每个窗口或独立区域创建普通 `IServiceScope` 即可，并在该
-区域永久销毁时释放它。
-
-### 3. 从业务代码显示对话框
-
-引入扩展方法命名空间后，视图模型可以直接注入服务：
-
-```csharp
-using Wpf.Zen.Ui.Extensions;
-
-public sealed class EditorViewModel(IContentDialogService dialogs)
-{
-    public async Task<bool> ConfirmSaveAsync(CancellationToken cancellationToken)
-    {
-        ContentDialogResult result = await dialogs.ShowSimpleDialogAsync(
-            new SimpleContentDialogCreateOptions
-            {
-                Title = "保存更改？",
-                Content = "关闭前是否保存当前文档？",
-                PrimaryButtonText = "保存",
-                SecondaryButtonText = "不保存",
-                CloseButtonText = "取消",
-                DefaultButton = ContentDialogButton.Primary,
-            },
-            cancellationToken);
-
-        return result == ContentDialogResult.Primary;
-    }
-}
-```
-
-必须 `await` 显示任务后再继续需要用户选择的业务流程。服务不会维护对话框队列；如果应用的
-多个请求可能同时到达，应在业务层排队或串行化它们。
-
-## 选择合适的调用方式
-
-| 需求 | 推荐入口 |
-| --- | --- |
-| 仅显示消息和一个关闭按钮 | `ShowAlertAsync(...)` |
-| 标题、内容和最多三个标准按钮 | `ShowSimpleDialogAsync(...)` |
-| 自定义内容、按钮外观、事件或数据模板 | 创建 `ContentDialog`，调用服务的 `ShowAsync(...)` |
-| 调用方已经持有 `ContentDialogHost` | 创建带宿主的 `ContentDialog`，直接调用 `ShowAsync(...)` |
-
-### 单按钮提示
-
-```csharp
-await dialogs.ShowAlertAsync(
-    "导出完成",
-    "文件已保存到目标目录。",
-    "确定",
-    cancellationToken);
-```
-
-如果信息不要求用户立即确认，优先考虑非模态的 `Snackbar`；删除确认、未保存更改和必须处理
-的错误更适合 `ContentDialog`。
-
-### 自定义内容
-
-`Content` 是标准 WPF 内容槽，可使用控件、视图模型、`DataTemplate` 和绑定：
-
-```csharp
-var dialog = new ContentDialog
-{
-    Title = "连接设置",
-    Content = connectionEditorViewModel,
-    ContentTemplate = (DataTemplate)resources["ConnectionEditorTemplate"],
-    PrimaryButtonText = "连接",
-    CloseButtonText = "取消",
+        Content = "保存",
+        Appearance = ControlAppearance.Accent,
+    },
+    SecondaryAction = new ContentDialogAction { Content = "不保存" },
+    TertiaryAction = new ContentDialogAction { Content = "取消" },
     DefaultButton = ContentDialogButton.Primary,
 };
-
-ContentDialogResult result = await dialogs.ShowAsync(dialog, cancellationToken);
-```
-
-复杂表单也可以派生 `ContentDialog`，在 XAML 中定义内容和绑定，然后仍通过服务显示：
-
-```csharp
-var dialog = new ConnectionContentDialog
-{
-    DataContext = connectionEditorViewModel,
-};
-
-ContentDialogResult result = await dialogs.ShowAsync(dialog, cancellationToken);
-```
-
-服务会在首次显示时为对话框关联当前宿主。`DialogHost` 一旦赋值便不能更换，因此不要把同一
-对话框实例复用于不同窗口或区域；通常应为每次业务交互创建一个新实例。
-
-## 处理用户选择
-
-`ShowAsync()` 的返回值描述对话框如何结束：
-
-| 返回值 | 触发方式 |
-| --- | --- |
-| `Primary` | 用户激活主按钮，或代码调用 `Hide(ContentDialogResult.Primary)` |
-| `Secondary` | 用户激活次按钮，或代码调用 `Hide(ContentDialogResult.Secondary)` |
-| `None` | 用户激活关闭按钮、调用无参数 `Hide()`、取消显示，或宿主被卸载/内容被替换 |
-
-关闭按钮没有单独的 `ContentDialogResult`，应把 `None` 当作“未确认”分支处理。不要只判断
-`Secondary` 来推断用户拒绝了操作：
-
-```csharp
-if (await dialogs.ShowAsync(dialog, cancellationToken) != ContentDialogResult.Primary)
-{
-    return;
-}
-
-await SaveAsync(cancellationToken);
-```
-
-传入的 `CancellationToken` 用于终止等待和移除对话框。取消会返回 `None`，不会向调用方传播
-`OperationCanceledException`。如果令牌在调用前已经取消，对话框不会显示；如果显示期间宿主
-被卸载（例如窗口关闭），等待任务同样以 `None` 完成。
-
-## 按钮、默认操作与尺寸
-
-常用属性如下：
-
-| 属性 | 用途 |
-| --- | --- |
-| `Title`、`TitleTemplate` | 标题内容及模板 |
-| `Content`、`ContentTemplate` | 主体内容及模板 |
-| `PrimaryButtonText`、`SecondaryButtonText`、`CloseButtonText` | 三个底部按钮的文本 |
-| `PrimaryButtonIcon`、`SecondaryButtonIcon`、`CloseButtonIcon` | 三个按钮的图标内容槽 |
-| `IsPrimaryButtonEnabled`、`IsSecondaryButtonEnabled`、`IsCloseButtonEnabled` | 动态控制按钮是否可用 |
-| `PrimaryButtonAppearance`、`SecondaryButtonAppearance`、`CloseButtonAppearance` | 设置按钮的语义外观 |
-| `CloseButtonVisibility` | 显式控制关闭按钮可见性 |
-| `DefaultButton` | 指定 Enter 键触发的按钮，并参与初始焦点选择 |
-| `IsFooterVisible` | 显示或隐藏整个底部按钮区 |
-| `DialogMaxWidth`、`DialogMaxHeight`、`DialogMargin` | 限制对话框面板的尺寸和外边距 |
-
-主按钮和次按钮的文本为空时，对应按钮不会显示。关闭按钮的显示由
-`CloseButtonVisibility` 控制。`DefaultButton` 应指向一个实际可见且可用的按钮；确认类操作
-通常使用 `Primary`，破坏性操作则应避免让 Enter 键轻易触发。
-
-`DialogMaxWidth` 和 `DialogMaxHeight` 是上限。宿主空间不足时，对话框会进一步收缩，但不会
-为了适应宿主而改写开发者配置的最大值。主体内容较长时，应自行提供 `ScrollViewer` 或适当的
-内容模板。
-
-## 验证输入与关闭事件
-
-对话框公开以下冒泡路由事件：
-
-| 事件 | 时机与用途 |
-| --- | --- |
-| `Opened` | 对话框已加载并完成初始焦点设置 |
-| `ButtonClicked` | 标准按钮被激活，可用于记录具体按钮交互 |
-| `Closing` | 显式关闭前触发，可通过 `Cancel` 阻止关闭 |
-| `Closed` | 显示生命周期结束，宿主内容已清理 |
-
-需要在用户确认前验证表单时，在 `Closing` 中取消主按钮导致的关闭：
-
-```csharp
-dialog.Closing += (_, e) =>
-{
-    if (e.Result == ContentDialogResult.Primary && !viewModel.Validate())
-    {
-        e.Cancel = true;
-        viewModel.ShowValidationErrors();
-    }
-};
-```
-
-`ButtonClicked` 发生在 `Closing` 之前。`Closing` 只针对按钮或 `Hide(...)` 发起的显式关闭；显示
-期间取消、宿主卸载或内容被替换等被动结束不会触发它，但 `ShowAsync()` 仍会完成，随后触发
-`Closed`。
-
-代码也可以主动结束当前对话框：
-
-```csharp
-dialog.Hide(ContentDialogResult.Primary);
-```
-
-同一个 `ContentDialog` 实例不能同时执行两次 `ShowAsync()`；第二次调用会抛出
-`InvalidOperationException`。第一次调用完成并执行完 `Closed` 后，可以在同一宿主上再次显示
-该实例，但按交互创建新实例通常更容易管理状态和事件订阅。
-
-## 不使用依赖注入
-
-调用方天然拥有宿主引用时，可以直接指定宿主：
-
-```csharp
-var dialog = new ContentDialog(RootContentDialogHost)
-{
-    Title = "删除项目？",
-    Content = "此操作无法撤销。",
-    PrimaryButtonText = "删除",
-    CloseButtonText = "取消",
-    PrimaryButtonAppearance = ControlAppearance.Danger,
-};
-
 ContentDialogResult result = await dialog.ShowAsync(cancellationToken);
 ```
 
-`IContentDialogService` 的主要价值是让视图模型和其它业务对象不必持有视图中的宿主引用；它
-不会提供全局宿主查找、并发显示或自动排队能力。
+DefaultButton 默认 None，不覆盖文本编辑器对 Enter 的处理。缺失或禁用默认操作时，不会自动选择另一个按钮。已获得焦点的按钮仍具有 WPF Button 自身的 Enter/Space 行为。
 
-## 宿主范围与多窗口
+PrimaryAction=null 移除按钮；PrimaryAction.IsEnabled=false 只禁用，不隐藏。三个操作都为空时页脚折叠。窄窗口及长文本下页脚允许换行。
 
-`ContentDialogHost` 在元素树中的位置决定遮罩范围。需要覆盖整个 Shell 时，把它作为 Shell
-根面板的直接子元素；只需要覆盖插件或局部工作区时，把它放在该区域的根面板中。
-
-不要把窗口级宿主放进 `NavigationView` 的页面内容或控件模板，否则页面切换或模板重建可能
-中断正在显示的对话框，而且遮罩无法覆盖标题栏、导航面板等 Shell 内容。
-
-`IsDisableSiblingsEnabled` 只会禁用宿主父面板中的实际同级元素，也不会跨越 `Popup`、另一个
-`HwndSource` 或另一个原生窗口。额外的装饰容器会改变这个作用域，因此宿主应与需要禁止输入
-的业务内容共享直接父面板。
-
-每个窗口、WinForms `ElementHost`、`HwndSource` 或独立插件区域应拥有自己的宿主和服务实例：
-
-```text
-Window A / ElementHost A       Window B / plug-in region B
-├─ application content        ├─ application content
-└─ ContentDialogHost A        └─ ContentDialogHost B
-   └─ service A                  └─ service B
+```csharp
+var result = await dialogs.ShowSimpleDialogAsync(new SimpleContentDialogCreateOptions
+{
+    Title = "继续？",
+    Content = "当前任务尚未完成。",
+    PrimaryAction = new ContentDialogAction { Content = "继续" },
+    TertiaryAction = new ContentDialogAction { Content = "返回" },
+});
 ```
 
-服务绑定宿主而不是 `Window`，因此同样适用于 `Window.GetWindow(root)` 返回 `null` 的 UI 树。
-`Attach` 可以在宿主加载前调用；再次传入同一宿主是幂等操作，但尝试改绑其它宿主会抛出
-`InvalidOperationException`。
+ShowAlertAsync(title, message, actionButtonText) 创建一个 Primary 操作，点击返回 Primary；右上角关闭返回 None。
 
-## 常见问题
+## 绑定、数据模板与样式
 
-### 服务提示尚未绑定宿主
+标题使用 `Title`、`TitleTemplate`、`TitleTemplateSelector`、`TitleStringFormat` 四个属性。默认模板通过 `ContentSource="Title"` 交由 WPF ContentPresenter 处理：显式模板优先于选择器；未选中模板时继续隐式模板查找和默认内容呈现。`TitleStringFormat` 用于默认文本呈现，模板自行负责格式化，UIElement 标题不应用格式串。例如 `Title="{Binding Count}" TitleStringFormat="数量：{0:N0}"`。
 
-确保在 `InitializeComponent()` 之后对当前作用域的服务调用了 `Attach(...)`，并确认视图模型
-解析自同一个作用域，而不是应用根容器或另一个窗口的作用域。
+```xml
+<ui:ContentDialog x:Name="EditorDialog" Title="编辑资料">
+    <ui:ContentDialog.PrimaryAction>
+        <ui:ContentDialogAction
+            Content="{Binding SaveCaption}"
+            Command="{Binding SaveCommand}"
+            CommandParameter="{Binding CurrentItem}"
+            Appearance="Accent">
+            <ui:ContentDialogAction.ContentTemplate>
+                <DataTemplate>
+                    <TextBlock Text="{Binding}" FontWeight="SemiBold" />
+                </DataTemplate>
+            </ui:ContentDialogAction.ContentTemplate>
+            <ui:ContentDialogAction.ButtonStyle>
+                <Style TargetType="{x:Type ui:Button}">
+                    <Setter Property="Padding" Value="20,8" />
+                    <Setter Property="ToolTip" Value="保存当前资料" />
+                    <Setter Property="AutomationProperties.Name" Value="保存资料" />
+                </Style>
+            </ui:ContentDialogAction.ButtonStyle>
+        </ui:ContentDialogAction>
+    </ui:ContentDialog.PrimaryAction>
+</ui:ContentDialog>
+```
 
-### 宿主尚未加载
+依赖 DataContext 的定义应为每个对话框单独创建。Dialog 或操作内容若是 UIElement，也只能有一个父级；重复使用视图时优先使用数据对象加 DataTemplate。
 
-只能在 `ContentDialogHost.Loaded` 之后显示。不要在窗口构造函数中过早调用 `ShowAsync()`；可
-在 `Loaded`、导航完成或用户命令中发起显示。
+ContentTemplate 的 DataContext 是操作的 Content。默认模板绑定 Content、Icon、Appearance、Command 等语义属性；ButtonStyle 补充其它属性及整个 Button.Template。样式设置器不能覆盖这些本地绑定，命令应配置在操作定义上。RoutedCommand 以 Dialog 为执行目标，普通 ICommand 收到 CommandParameter。
 
-### 后台线程调用失败
+右上角通过 CloseButtonStyle 定制。例如设置 Content="×"、ToolTip="关闭"、AutomationProperties.Name="关闭对话框"；默认关闭名称为英文，应用可按语言替换样式。
 
-显示操作必须从宿主的 Dispatcher 线程发起。后台任务完成后，通过 UI Dispatcher 切回，再
-调用对话框服务。
+控件在 OnApplyTemplate 中为四个命名按钮部件建立样式绑定。自定义 Dialog.Template 无需重复编写 Style 绑定；替换操作定义、修改 ButtonStyle 或 CloseButtonStyle 均会更新部件。非空样式覆盖部件样式；null 或缺失操作使用模板应用时的部件默认样式，因此清空 CloseButtonStyle 后仍保留默认关闭图标和自动化名称。
 
-### 对话框没有覆盖完整窗口
+## 校验与异步操作
 
-检查宿主是否位于 Shell 根面板、是否跨越所有行列，以及是否为最后声明的子元素。若只禁用
-了少量控件，检查宿主与业务内容是否真的是同一父面板的同级元素。
+调用顺序为：检查 IsEnabled/CanExecute → ButtonClicked → 再次检查当前操作与会话 → Command → 根据 ClosesDialog 关闭。
 
-### 多个显示请求互相替换
+```csharp
+dialog.ButtonClicked += (_, e) =>
+{
+    if (e.Button == ContentDialogButton.Primary && !IsValid())
+    {
+        e.Cancel = true;
+        ShowValidationMessage();
+    }
+};
+```
 
-一个宿主一次只能承载一个对话框，服务不负责排队。等待当前 `ShowAsync()` 完成后再显示下一
-个，或在应用层使用队列/互斥机制协调请求。不要并发显示同一个对话框实例。
+Cancel 只取消当前操作及命令，不阻止 Hide、CancellationToken 或父级移除。Handled 只有普通路由事件语义，不等价于 Cancel。
+
+异步验证设 ClosesDialog=false。ICommand.Execute 返回 void，控件不猜测异步命令何时完成：
+
+```csharp
+dialog.PrimaryAction = new ContentDialogAction
+{
+    Content = "保存",
+    Command = SaveCommand,
+    ClosesDialog = false,
+};
+// SaveCommand 的异步实现中：
+// 禁用操作或通过 CanExecute 表示忙碌，await 保存并处理异常。
+// 成功后回到 UI Dispatcher 调用 dialog.Hide(ContentDialogResult.Primary)。
+// 用户取消或卸载时，业务操作应使用自己的 CancellationToken 停止。
+```
+
+IsDismissible=false 隐藏右上角关闭，禁止 Escape 和 UI Automation 关闭，但不阻止 Hide、取消或卸载。未保存数据必须由业务生命周期管理，不能依赖子控件否决窗口销毁。
+
+## 生命周期与并发
+
+- ShowAsync 只在宿主加载后调用。宿主占用、实例重复显示或已有父级会明确失败。
+- IsOpen 表示会话尚未释放，包括入场、退出和 Closed 通知期间。
+- Opened 每次显示最多一次，在内容加载及入场完成后触发。入场期间关闭则不触发。
+- Hide(result) 接受第一个结果，重复调用不改变结果。IsClosing 表示已接受关闭、尚未完成清理。
+- 显式关闭等退出动画完成后才移除内容、释放模态状态并触发 Closed。await ShowAsync 在清理后返回。
+- CancellationToken（包括显示前已取消）返回 None，不抛出 OperationCanceledException。后台取消只完成线程安全的任务源，WPF 操作仍在 UI Dispatcher 执行。
+- 父级移除 Host、关闭窗口、隐藏宿主、模板不再呈现对话框或外部替换 Content 都会终止未完成显示。外部替换不等退出动画；旧会话不会清空新内容。
+- 第一个接受的结果保持不变；接受选择后发生卸载不会改写选择。
+- Closed 是直接通知，应订阅在 Dialog 自身；父级已被移除，不再冒泡。Closed 中仍不能重入同一实例；等待 ShowAsync 返回再复用。连续显示串行 await，库不自动排队。
+- 会话外可以更换 DialogHost；服务自身仍遵循一次 Attach 的作用域约束。
+
+## 布局、焦点及模板契约
+
+Dialog 默认 MaxWidth=640、MaxHeight=850、Margin=24，可用标准属性覆盖。内容区在有限空间内滚动，标题和页脚保留布局空间。显式 Width、MinWidth 等遵守 WPF 自身优先级；超出宿主的硬性最小尺寸可能被裁切，不会静默改写用户配置。
+
+初始焦点优先进入已实现的内容（包括 DataTemplate 中的输入控件），其次是明确默认按钮或安全可用按钮，最后是对话框自身。危险/警告操作不自动获得初始焦点。Tab 循环，Escape 冒泡处理，让编辑器或 Popup 先消费按键。
+
+自定义 Dialog.Template：
+
+- PART_ContentPresenter（可选 ContentPresenter）帮助查找内容模板中的输入控件。
+- PART_PrimaryButton、PART_SecondaryButton、PART_TertiaryButton、PART_CloseButton 是可选 ButtonBase 部件，控件负责其 Style 绑定，并用可聚焦的 Button 辅助初始焦点。模板可直接设置部件默认样式，供未指定样式覆盖时回退。
+- 标题 ContentPresenter 可用 ContentSource="Title" 自动转发内容、模板、模板选择器和格式串。
+- 操作按钮使用 ContentDialog.InvokeActionCommand，参数为对应 ContentDialogButton。
+- 关闭按钮使用 ContentDialog.CloseCommand。不要依赖无 Command 的 IsCancel，避免触发外层 Window 取消命令。
+- 按钮必须位于 Dialog 命令路由内；部件缺失时程序显示和关闭仍可工作。
+
+自定义 Host.Template：
+
+- PART_TransitionRoot 是可选 FrameworkElement，仅包装对话框内容。
+- Host 独占该部件的 Opacity、RenderTransform、RenderTransformOrigin；Dialog 自身属性不被覆盖。
+- PART_Backdrop 是可选 FrameworkElement，作为本体包装层的同级元素覆盖宿主区域；Host 独占其 Opacity。不要让它包含对话框，否则两层透明度会叠乘。
+- 每个存在的部件独立参与同一过渡；两者均缺失时即时完成。退出动画完成前保留内容及模态隔离，模板根元素应保持可命中（默认使用透明背景），避免淡出期间输入穿透。
+- 卸载、不可见、换模板、关闭动画设置会同时清除两层动画并释放等待任务。入场期间关闭从当前透明度继续淡出。
+- IsAnimationEnabled 默认 true，且尊重 SystemParameters.ClientAreaAnimation；TransitionDuration 默认 220ms，零表示即时完成。
+
+UI Automation 使用 ContentDialog 类名与 Window 模式，优先使用 AutomationProperties.Name，其次标题；不声明未实现的 ScrollItem 模式。
+
+## 验证依据
+
+关键框架行为已对照本地 WPF 源码：
+
+- FrameworkElement.MeasureCore：边距及原生宽高约束。
+- FrameworkElement.UnloadedEvent：不可取消的直接路由通知。
+- Button.OnClick：无 Command 的 IsCancel 可调用 Window.DialogCancelCommand。
+- Button.UpdateIsDefaulted：默认按钮遵循作用域及 AcceptsReturn。
+- Freezable.AddInheritanceContext：非可视定义的绑定上下文。
+- CalendarItem.PopulateGrids、DatePicker.InitializeCalendar：在代码中建立部件样式绑定。
+- ContentPresenter.ContentSource：自动关联内容、模板、模板选择器和格式串，由 WPF 完成呈现与动态更新。
+
+回归测试覆盖三个操作结果、独立关闭、命令可执行性、绑定、模板和样式、显式异步完成、重复请求、外部替换、后台取消、尺寸、焦点、动画中断/完成、复用及无 WPF Window 的 HwndSource。

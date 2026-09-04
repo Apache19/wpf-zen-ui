@@ -7,14 +7,16 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:ui="http://schemas.thezendev.com/wpf/2027"
     Title="Terms of use"
-    d:DesignHeight="1000"
     d:DesignWidth="750"
     d:Background="{ui:DynamicBrush WindowBackground}"
     d:Foreground="{ui:DynamicBrush TextFillPrimary}"
-    CloseButtonText="Close"
-    DialogMaxWidth="750"
+    MaxWidth="750"
+    MaxHeight="500"
     mc:Ignorable="d">
 
+    <ui:ContentDialog.PrimaryAction>
+        <ui:ContentDialogAction Content="Accept" Appearance="Accent" />
+    </ui:ContentDialog.PrimaryAction>
     <ui:ContentDialog.Resources>
         <Style BasedOn="{StaticResource {x:Type ui:ContentDialog}}" TargetType="{x:Type local:TermsOfUseContentDialog}" />
     </ui:ContentDialog.Resources>

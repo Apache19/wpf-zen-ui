@@ -49,7 +49,7 @@ public sealed class ContentDialogAutomationTests : UiTest
 
         await Wait(1, TestContext.Current.CancellationToken);
 
-        // Now exercise each dialog button (Primary, Secondary, Close) and verify
+        // Now exercise each dialog button (Primary, Secondary, Tertiary) and verify
         // the page TextBlock updates according to ContentDialogViewModel.
 
         // Primary -> "Save" -> expect "User saved their work"
@@ -62,9 +62,9 @@ public sealed class ContentDialogAutomationTests : UiTest
         await ClickButtonMatching(["Don't Save", "Do not Save", "Dont Save"]);
         await WaitForText("User did not save their work");
 
-        // Close/Cancel -> "Cancel" -> expect "User cancelled the dialog"
+        // Tertiary -> "Cancel" -> expect "User cancelled the dialog"
         await OpenDialog();
-        await ClickButtonMatching(["Cancel", "Close"]);
+        await ClickButtonMatching(["Cancel"]);
         await WaitForText("User cancelled the dialog");
     }
 

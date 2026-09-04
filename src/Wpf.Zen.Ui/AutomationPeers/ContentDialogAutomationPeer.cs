@@ -50,10 +50,8 @@ internal sealed class ContentDialogAutomationPeer : UIElementAutomationPeer, IWi
         {
             if (Owner is ContentDialog dialog)
             {
-                if (
-                    !dialog.IsLoaded
-                    || dialog.Dispatcher is { HasShutdownFinished: true } or { HasShutdownStarted: true }
-                )
+                if (!dialog.IsLoaded || dialog.IsClosing || !dialog.IsOpen
+                    || dialog.Dispatcher is { HasShutdownFinished: true } or { HasShutdownStarted: true })
                 {
                     return WindowInteractionState.Closing;
                 }
@@ -84,8 +82,7 @@ internal sealed class ContentDialogAutomationPeer : UIElementAutomationPeer, IWi
     /// <inheritdoc/>
     protected override string GetClassNameCore()
     {
-        // "Emulating WinUI3's ContentDialog ClassName"
-        return "Popup";
+        return nameof(ContentDialog);
     }
 
     /// <inheritdoc/>
@@ -93,7 +90,8 @@ internal sealed class ContentDialogAutomationPeer : UIElementAutomationPeer, IWi
     {
         if (Owner is ContentDialog dialog)
         {
-            return dialog.Title as string ?? dialog.Title?.ToString();
+            string name = AutomationProperties.GetName(dialog);
+            return !string.IsNullOrEmpty(name) ? name : dialog.Title?.ToString() ?? string.Empty;
         }
 
         return base.GetNameCore();
@@ -128,7 +126,7 @@ internal sealed class ContentDialogAutomationPeer : UIElementAutomationPeer, IWi
     /// <inheritdoc/>
     protected override bool IsKeyboardFocusableCore()
     {
-        return false;
+        return Owner is ContentDialog { Focusable: true, IsEnabled: true };
     }
 
     /// <summary>
@@ -146,14 +144,13 @@ internal sealed class ContentDialogAutomationPeer : UIElementAutomationPeer, IWi
     /// <returns>An object implementing the requested pattern or <see langword="null"/> when not supported.</returns>
     public override object? GetPattern(PatternInterface pattern)
     {
-        // Include PatternInterface.ScrollItem to align with WinUI3 behavior: WinUI3 exposes this pattern
-        // for dialog-like popups, and exposing it here helps automation clients that rely on that behavior.
-        if (pattern is PatternInterface.Window or PatternInterface.ScrollItem)
+        // A provider must implement the interface associated with every advertised pattern.
+        if (pattern is PatternInterface.Window)
         {
             return this;
         }
 
-        return null;
+        return base.GetPattern(pattern);
     }
 
     /// <summary>
@@ -170,14 +167,11 @@ internal sealed class ContentDialogAutomationPeer : UIElementAutomationPeer, IWi
                 dispatcher.BeginInvoke(
                     () =>
                     {
-                        dialog.Hide();
+                        if (dialog.IsDismissible)
+                            dialog.Hide();
                     },
                     DispatcherPriority.Normal
                 );
-            }
-            else
-            {
-                dialog.Hide();
             }
         }
     }

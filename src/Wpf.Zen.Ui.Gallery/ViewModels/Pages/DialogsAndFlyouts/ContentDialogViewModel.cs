@@ -15,17 +15,19 @@ public partial class ContentDialogViewModel(IContentDialogService contentDialogS
     public partial string DialogResultText { get; set; } = string.Empty;
 
     [RelayCommand]
-    private async Task OnShowDialog(object content)
+    private async Task OnShowDialog(DataTemplate contentTemplate)
     {
-        ContentDialogResult result = await contentDialogService.ShowSimpleDialogAsync(
-            new SimpleContentDialogCreateOptions()
+        ContentDialogResult result = await contentDialogService.ShowAsync(
+            new ContentDialog()
             {
                 Title = "Save your work?",
-                Content = content,
-                PrimaryButtonText = "Save",
-                SecondaryButtonText = "Don't Save",
-                CloseButtonText = "Cancel",
-            }
+                Content = new object(),
+                ContentTemplate = contentTemplate,
+                PrimaryAction = new ContentDialogAction { Content = "Save", Appearance = ControlAppearance.Accent },
+                SecondaryAction = new ContentDialogAction { Content = "Don't Save" },
+                TertiaryAction = new ContentDialogAction { Content = "Cancel" },
+            },
+            CancellationToken.None
         );
 
         DialogResultText = result switch

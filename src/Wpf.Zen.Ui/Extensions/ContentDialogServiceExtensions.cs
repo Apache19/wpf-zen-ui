@@ -18,7 +18,7 @@ public static class ContentDialogServiceExtensions
         this IContentDialogService dialogService,
         string title,
         string message,
-        string closeButtonText,
+        string actionButtonText,
         CancellationToken cancellationToken = default
     )
     {
@@ -26,7 +26,7 @@ public static class ContentDialogServiceExtensions
 
         dialog.SetCurrentValue(ContentDialog.TitleProperty, title);
         dialog.SetCurrentValue(ContentControl.ContentProperty, message);
-        dialog.SetCurrentValue(ContentDialog.CloseButtonTextProperty, closeButtonText);
+        dialog.SetCurrentValue(ContentDialog.PrimaryActionProperty, new ContentDialogAction { Content = actionButtonText });
 
         return dialogService.ShowAsync(dialog, cancellationToken);
     }
@@ -48,9 +48,9 @@ public static class ContentDialogServiceExtensions
         {
             Title = options.Title,
             Content = options.Content,
-            CloseButtonText = options.CloseButtonText,
-            PrimaryButtonText = options.PrimaryButtonText,
-            SecondaryButtonText = options.SecondaryButtonText,
+            TertiaryAction = options.TertiaryAction,
+            PrimaryAction = options.PrimaryAction,
+            SecondaryAction = options.SecondaryAction,
             DefaultButton = options.DefaultButton,
         };
 

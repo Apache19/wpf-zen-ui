@@ -3,196 +3,150 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Zen.Ui.Controls"
     xmlns:converters="clr-namespace:Wpf.Zen.Ui.Converters"
-    xmlns:m="clr-namespace:Wpf.Zen.Ui.Markup"
-    xmlns:t="clr-namespace:Wpf.Zen.Ui.Theming">
+    xmlns:m="clr-namespace:Wpf.Zen.Ui.Markup">
 
-    <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" />
+    <converters:BoolToVisibilityConverter x:Key="DialogBoolToVisibilityConverter" />
 
-    <CornerRadius x:Key="DialogOverlayCornerRadius">8,8,0,0</CornerRadius>
-    <CornerRadius x:Key="DialogFooterCornerRadius">0,0,8,8</CornerRadius>
+    <Style x:Key="ContentDialogCloseButtonStyle" TargetType="{x:Type controls:Button}">
+        <Setter Property="Appearance" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Content" Value="{m:FluentIconSource Dismiss24}" />
+        <Setter Property="FontSize" Value="16" />
+        <Setter Property="Foreground" Value="{m:DynamicBrush TextFillPrimary}" />
+        <Setter Property="MouseOverBackground" Value="#E81123" />
+        <Setter Property="PressedBackground" Value="#A80014" />
+        <Setter Property="Padding" Value="7,6" />
+        <Setter Property="ToolTip" Value="Close" />
+        <Setter Property="AutomationProperties.Name" Value="Close" />
+    </Style>
 
     <ControlTemplate x:Key="DefaultContentDialogTemplate" TargetType="{x:Type controls:ContentDialog}">
-        <Grid
-            x:Name="DialogRootGrid"
-            HorizontalAlignment="Center"
-            VerticalAlignment="Center"
-            UseLayoutRounding="True">
-            <Border
-                MaxWidth="{TemplateBinding DialogWidth}"
-                MaxHeight="{TemplateBinding DialogHeight}"
-                Margin="{TemplateBinding DialogMargin}"
-                VerticalAlignment="Center"
-                Background="{TemplateBinding Background}"
-                BorderBrush="{TemplateBinding BorderBrush}"
-                BorderThickness="{TemplateBinding BorderThickness}"
-                CornerRadius="{TemplateBinding Border.CornerRadius}"
-                Focusable="False"
-                Opacity="1">
-                <Border.Effect>
-                    <DropShadowEffect
-                        BlurRadius="30"
-                        Direction="0"
-                        Opacity="0.4"
-                        ShadowDepth="0"
-                        Color="#202020" />
-                </Border.Effect>
-
-                <Grid Focusable="False">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="*" />
-                        <RowDefinition Height="Auto" />
-                    </Grid.RowDefinitions>
-
-                    <Border Background="{m:DynamicBrush LayerFillAlt}" CornerRadius="{StaticResource DialogOverlayCornerRadius}" />
-
-                    <Grid
-                        Grid.Row="0"
-                        Margin="24,10"
-                        Focusable="False">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="*" />
-                        </Grid.RowDefinitions>
-
-                        <ContentPresenter
-                            Grid.Row="0"
-                            Margin="0,12,0,0"
-                            controls:TextBlock.FontTypography="Subtitle"
-                            Content="{TemplateBinding Title}"
-                            ContentTemplate="{TemplateBinding TitleTemplate}">
-                            <ContentPresenter.Resources>
-                                <Style BasedOn="{StaticResource {x:Type TextBlock}}" TargetType="{x:Type TextBlock}">
-                                    <Setter Property="TextWrapping" Value="WrapWithOverflow" />
-                                </Style>
-                            </ContentPresenter.Resources>
-                        </ContentPresenter>
-
-                        <controls:PassiveScrollViewer
-                            x:Name="PART_ContentScroll"
-                            Grid.Row="1"
-                            Margin="0,20"
-                            Padding="0,0,12,0"
-                            CanContentScroll="{TemplateBinding ScrollViewer.CanContentScroll}"
-                            HorizontalScrollBarVisibility="{TemplateBinding ScrollViewer.HorizontalScrollBarVisibility}"
-                            IsDeferredScrollingEnabled="{TemplateBinding ScrollViewer.IsDeferredScrollingEnabled}"
-                            VerticalScrollBarVisibility="{TemplateBinding ScrollViewer.VerticalScrollBarVisibility}">
-
-                            <ContentPresenter
-                                HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
-                                VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
-                                controls:TextBlock.FontTypography="Body"
-                                Content="{TemplateBinding Content}"
-                                ContentTemplate="{TemplateBinding ContentTemplate}"
-                                ContentTemplateSelector="{TemplateBinding ContentTemplateSelector}">
-                                <ContentPresenter.Resources>
-                                    <Style BasedOn="{StaticResource {x:Type TextBlock}}" TargetType="{x:Type TextBlock}">
-                                        <Setter Property="TextWrapping" Value="WrapWithOverflow" />
-                                    </Style>
-                                </ContentPresenter.Resources>
-                            </ContentPresenter>
-
-                        </controls:PassiveScrollViewer>
-                    </Grid>
-
-                    <Border
-                        Grid.Row="1"
-                        Padding="{TemplateBinding Padding}"
-                        HorizontalAlignment="Stretch"
-                        VerticalAlignment="Bottom"
-                        BorderBrush="{m:DynamicBrush CardStrokeDefault}"
-                        BorderThickness="0,1,0,0"
-                        CornerRadius="{StaticResource DialogFooterCornerRadius}"
-                        Focusable="False"
-                        Visibility="{TemplateBinding IsFooterVisible, Converter={StaticResource BoolToVisibilityConverter}}">
-
-                        <Grid controls:TextBlock.FontTypography="Body">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition x:Name="PrimaryColumn" Width="*" />
-                                <ColumnDefinition x:Name="FirstSpacer" Width="8" />
-                                <ColumnDefinition x:Name="SecondaryColumn" Width="*" />
-                                <ColumnDefinition x:Name="SecondSpacer" Width="8" />
-                                <ColumnDefinition x:Name="CloseColumn" Width="*" />
-                            </Grid.ColumnDefinitions>
-
-                            <controls:Button
-                                x:Name="PART_PrimaryButton"
-                                Grid.Column="0"
-                                HorizontalAlignment="Stretch"
-                                Appearance="{TemplateBinding PrimaryButtonAppearance}"
-                                Content="{TemplateBinding PrimaryButtonText}"
-                                Icon="{TemplateBinding PrimaryButtonIcon}"
-                                IsDefault="{TemplateBinding DefaultButton, Converter={converters:ObjectToBoolConverter TrueValue={x:Static controls:ContentDialogButton.Primary}}}"
-                                IsEnabled="{TemplateBinding IsPrimaryButtonEnabled}"
-                                Visibility="{TemplateBinding IsPrimaryButtonEnabled, Converter={StaticResource BoolToVisibilityConverter}}" />
-
-                            <controls:Button
-                                x:Name="PART_SecondaryButton"
-                                Grid.Column="2"
-                                HorizontalAlignment="Stretch"
-                                Appearance="{TemplateBinding SecondaryButtonAppearance}"
-                                Content="{TemplateBinding SecondaryButtonText}"
-                                Icon="{TemplateBinding SecondaryButtonIcon}"
-                                IsDefault="{TemplateBinding DefaultButton, Converter={converters:ObjectToBoolConverter TrueValue={x:Static controls:ContentDialogButton.Secondary}}}"
-                                IsEnabled="{TemplateBinding IsSecondaryButtonEnabled}"
-                                Visibility="{TemplateBinding IsSecondaryButtonEnabled, Converter={StaticResource BoolToVisibilityConverter}}" />
-
-                            <controls:Button
-                                x:Name="PART_CloseButton"
-                                Grid.Column="4"
-                                HorizontalAlignment="Stretch"
-                                Appearance="{TemplateBinding CloseButtonAppearance}"
-                                Content="{TemplateBinding CloseButtonText}"
-                                Icon="{TemplateBinding CloseButtonIcon}"
-                                IsCancel="True"
-                                IsDefault="{TemplateBinding DefaultButton, Converter={converters:ObjectToBoolConverter TrueValue={x:Static controls:ContentDialogButton.Close}}}"
-                                IsEnabled="{TemplateBinding IsCloseButtonEnabled}"
-                                Visibility="{TemplateBinding CloseButtonVisibility}" />
-                        </Grid>
-                    </Border>
+        <!--  The control itself is the dialog surface; FrameworkElement owns all sizing constraints.  -->
+        <Border
+            Background="{TemplateBinding Background}"
+            BorderBrush="{TemplateBinding BorderBrush}"
+            BorderThickness="{TemplateBinding BorderThickness}"
+            CornerRadius="{TemplateBinding Border.CornerRadius}">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <Grid Margin="24,16,12,8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <ContentPresenter
+                        x:Name="TitlePresenter"
+                        Margin="0,4,12,0"
+                        VerticalAlignment="Center"
+                        controls:TextBlock.FontTypography="Subtitle"
+                        ContentSource="Title">
+                        <ContentPresenter.Resources>
+                            <Style TargetType="{x:Type TextBlock}">
+                                <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+                            </Style>
+                        </ContentPresenter.Resources>
+                    </ContentPresenter>
                 </Grid>
-            </Border>
-        </Grid>
 
+                <controls:PassiveScrollViewer
+                    x:Name="PART_ContentScroll"
+                    Grid.Row="1"
+                    Margin="{TemplateBinding Padding}"
+                    CanContentScroll="{TemplateBinding ScrollViewer.CanContentScroll}"
+                    HorizontalScrollBarVisibility="{TemplateBinding ScrollViewer.HorizontalScrollBarVisibility}"
+                    VerticalScrollBarVisibility="{TemplateBinding ScrollViewer.VerticalScrollBarVisibility}">
+                    <ContentPresenter
+                        x:Name="PART_ContentPresenter"
+                        HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                        VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                        Content="{TemplateBinding Content}"
+                        ContentStringFormat="{TemplateBinding ContentStringFormat}"
+                        ContentTemplate="{TemplateBinding ContentTemplate}"
+                        ContentTemplateSelector="{TemplateBinding ContentTemplateSelector}">
+                        <ContentPresenter.Resources>
+                            <Style TargetType="{x:Type TextBlock}">
+                                <Setter Property="TextWrapping" Value="Wrap" />
+                            </Style>
+                        </ContentPresenter.Resources>
+                    </ContentPresenter>
+                </controls:PassiveScrollViewer>
+
+                <Border
+                    x:Name="Footer"
+                    Grid.Row="2"
+                    Padding="20"
+                    Background="{m:DynamicBrush LayerFillAlt}"
+                    BorderBrush="{m:DynamicBrush CardStrokeDefault}"
+                    BorderThickness="0,1,0,0"
+                    CornerRadius="{Binding Path=(Border.CornerRadius), RelativeSource={RelativeSource TemplatedParent}, Converter={converters:CornerRadiusTransformConverter CopyCorners=Bottom}}">
+                    <!--  WrapPanel retains all choices when localization or a small viewport needs another row.  -->
+                    <controls:AdaptiveUniformGrid
+                        ColumnSpacing="8"
+                        Columns="3"
+                        RowSpacing="8">
+                        <controls:Button
+                            x:Name="PART_PrimaryButton"
+                            Appearance="{Binding PrimaryAction.Appearance, RelativeSource={RelativeSource TemplatedParent}, FallbackValue=Normal}"
+                            Command="{x:Static controls:ContentDialog.InvokeActionCommand}"
+                            CommandParameter="{x:Static controls:ContentDialogButton.Primary}"
+                            Content="{Binding PrimaryAction.Content, RelativeSource={RelativeSource TemplatedParent}}"
+                            ContentTemplate="{Binding PrimaryAction.ContentTemplate, RelativeSource={RelativeSource TemplatedParent}}"
+                            Icon="{Binding PrimaryAction.Icon, RelativeSource={RelativeSource TemplatedParent}}"
+                            IsDefault="{TemplateBinding DefaultButton, Converter={converters:ObjectToBoolConverter TrueValue={x:Static controls:ContentDialogButton.Primary}}}" />
+                        <controls:Button
+                            x:Name="PART_SecondaryButton"
+                            Appearance="{Binding SecondaryAction.Appearance, RelativeSource={RelativeSource TemplatedParent}, FallbackValue=Normal}"
+                            Command="{x:Static controls:ContentDialog.InvokeActionCommand}"
+                            CommandParameter="{x:Static controls:ContentDialogButton.Secondary}"
+                            Content="{Binding SecondaryAction.Content, RelativeSource={RelativeSource TemplatedParent}}"
+                            ContentTemplate="{Binding SecondaryAction.ContentTemplate, RelativeSource={RelativeSource TemplatedParent}}"
+                            Icon="{Binding SecondaryAction.Icon, RelativeSource={RelativeSource TemplatedParent}}"
+                            IsDefault="{TemplateBinding DefaultButton, Converter={converters:ObjectToBoolConverter TrueValue={x:Static controls:ContentDialogButton.Secondary}}}" />
+                        <controls:Button
+                            x:Name="PART_TertiaryButton"
+                            Appearance="{Binding TertiaryAction.Appearance, RelativeSource={RelativeSource TemplatedParent}, FallbackValue=Normal}"
+                            Command="{x:Static controls:ContentDialog.InvokeActionCommand}"
+                            CommandParameter="{x:Static controls:ContentDialogButton.Tertiary}"
+                            Content="{Binding TertiaryAction.Content, RelativeSource={RelativeSource TemplatedParent}}"
+                            ContentTemplate="{Binding TertiaryAction.ContentTemplate, RelativeSource={RelativeSource TemplatedParent}}"
+                            Icon="{Binding TertiaryAction.Icon, RelativeSource={RelativeSource TemplatedParent}}"
+                            IsDefault="{TemplateBinding DefaultButton, Converter={converters:ObjectToBoolConverter TrueValue={x:Static controls:ContentDialogButton.Tertiary}}}" />
+                    </controls:AdaptiveUniformGrid>
+                </Border>
+
+                <!--  A dialog command avoids Button.IsCancel closing the containing native Window.  -->
+                <controls:Button
+                    x:Name="PART_CloseButton"
+                    Grid.Row="0"
+                    Margin="8"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Top"
+                    Command="{x:Static controls:ContentDialog.CloseCommand}"
+                    Style="{StaticResource ContentDialogCloseButtonStyle}"
+                    Visibility="{TemplateBinding IsDismissible, Converter={StaticResource DialogBoolToVisibilityConverter}}" />
+            </Grid>
+        </Border>
         <ControlTemplate.Triggers>
-            <Trigger Property="IsPrimaryButtonEnabled" Value="False">
-                <Setter TargetName="PrimaryColumn" Property="Width" Value="0" />
+            <Trigger Property="PrimaryAction" Value="{x:Null}">
+                <Setter TargetName="PART_PrimaryButton" Property="Visibility" Value="Collapsed" />
             </Trigger>
-            <Trigger Property="IsSecondaryButtonEnabled" Value="False">
-                <Setter TargetName="FirstSpacer" Property="Width" Value="0" />
-                <Setter TargetName="SecondaryColumn" Property="Width" Value="0" />
+            <Trigger Property="SecondaryAction" Value="{x:Null}">
+                <Setter TargetName="PART_SecondaryButton" Property="Visibility" Value="Collapsed" />
+            </Trigger>
+            <Trigger Property="TertiaryAction" Value="{x:Null}">
+                <Setter TargetName="PART_TertiaryButton" Property="Visibility" Value="Collapsed" />
             </Trigger>
             <MultiTrigger>
                 <MultiTrigger.Conditions>
-                    <Condition Property="IsPrimaryButtonEnabled" Value="False" />
-                    <Condition Property="IsSecondaryButtonEnabled" Value="False" />
+                    <Condition Property="PrimaryAction" Value="{x:Null}" />
+                    <Condition Property="SecondaryAction" Value="{x:Null}" />
+                    <Condition Property="TertiaryAction" Value="{x:Null}" />
                 </MultiTrigger.Conditions>
-                <MultiTrigger.Setters>
-                    <Setter TargetName="SecondSpacer" Property="Width" Value="0" />
-                </MultiTrigger.Setters>
-            </MultiTrigger>
-            <Trigger Property="PrimaryButtonText" Value="">
-                <Setter Property="IsPrimaryButtonEnabled" Value="False" />
-            </Trigger>
-            <Trigger Property="SecondaryButtonText" Value="">
-                <Setter Property="IsSecondaryButtonEnabled" Value="False" />
-            </Trigger>
-            <!--
-                If primary button is disabled and the dialog default is not Close,
-                make the CloseButton the default button so Enter activates it.
-            -->
-            <MultiTrigger>
-                <MultiTrigger.Conditions>
-                    <Condition Property="IsPrimaryButtonEnabled" Value="False" />
-                    <Condition Property="DefaultButton" Value="{x:Static controls:ContentDialogButton.Primary}" />
-                </MultiTrigger.Conditions>
-                <Setter TargetName="PART_CloseButton" Property="IsDefault" Value="True" />
-            </MultiTrigger>
-            <MultiTrigger>
-                <MultiTrigger.Conditions>
-                    <Condition Property="IsPrimaryButtonEnabled" Value="False" />
-                    <Condition Property="DefaultButton" Value="{x:Static controls:ContentDialogButton.Secondary}" />
-                </MultiTrigger.Conditions>
-                <Setter TargetName="PART_CloseButton" Property="IsDefault" Value="True" />
+                <Setter TargetName="Footer" Property="Visibility" Value="Collapsed" />
             </MultiTrigger>
         </ControlTemplate.Triggers>
     </ControlTemplate>
@@ -202,24 +156,24 @@
         <Setter Property="Border.CornerRadius" Value="{m:DynamicValue PopupCornerRadius}" />
         <Setter Property="BorderBrush" Value="{m:DynamicBrush SurfaceStrokeDefault}" />
         <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="DialogMargin" Value="35" />
-        <Setter Property="DialogMaxHeight" Value="850" />
-        <Setter Property="DialogMaxWidth" Value="1000" />
-        <Setter Property="Focusable" Value="False" />
+        <Setter Property="Margin" Value="24" />
+        <Setter Property="MaxWidth" Value="640" />
+        <Setter Property="MaxHeight" Value="850" />
+        <Setter Property="HorizontalAlignment" Value="Center" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="Focusable" Value="True" />
         <Setter Property="Foreground" Value="{m:DynamicBrush TextFillPrimary}" />
         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="VerticalContentAlignment" Value="Top" />
         <Setter Property="KeyboardNavigation.ControlTabNavigation" Value="Cycle" />
         <Setter Property="KeyboardNavigation.DirectionalNavigation" Value="Cycle" />
         <Setter Property="KeyboardNavigation.TabNavigation" Value="Cycle" />
-        <Setter Property="Padding" Value="24" />
-        <Setter Property="ScrollViewer.CanContentScroll" Value="True" />
+        <Setter Property="Padding" Value="24,8,24,24" />
+        <Setter Property="ScrollViewer.CanContentScroll" Value="False" />
         <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled" />
-        <Setter Property="ScrollViewer.IsDeferredScrollingEnabled" Value="False" />
         <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
-        <Setter Property="Template" Value="{StaticResource DefaultContentDialogTemplate}" />
         <Setter Property="UseLayoutRounding" Value="True" />
-        <Setter Property="VerticalContentAlignment" Value="Stretch" />
+        <Setter Property="Template" Value="{StaticResource DefaultContentDialogTemplate}" />
     </Style>
-
 </ResourceDictionary>

@@ -5,7 +5,6 @@
 
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
-using UiContentDialog = Wpf.Zen.Ui.Controls.ContentDialog;
 using UiMessageBox = Wpf.Zen.Ui.Controls.MessageBox;
 using UiSnackbar = Wpf.Zen.Ui.Controls.Snackbar;
 using UiTextBox = Wpf.Zen.Ui.Controls.TextBox;
@@ -15,30 +14,6 @@ namespace Wpf.Zen.Ui.UnitTests.Controls;
 
 public class TemplateButtonPartTests
 {
-    [Theory]
-    [InlineData("PART_PrimaryButton", Wpf.Zen.Ui.Controls.ContentDialogButton.Primary)]
-    [InlineData("PART_SecondaryButton", Wpf.Zen.Ui.Controls.ContentDialogButton.Secondary)]
-    [InlineData("PART_CloseButton", Wpf.Zen.Ui.Controls.ContentDialogButton.Close)]
-    public void ContentDialog_TemplateButton_UsesPartIdentity(
-        string partName,
-        Wpf.Zen.Ui.Controls.ContentDialogButton expectedButton
-    )
-    {
-        WpfTestThread.Run(() =>
-        {
-            var dialog = new RecordingContentDialog
-            {
-                Template = CreateTemplate(typeof(UiContentDialog), typeof(Button), partName),
-            };
-
-            Assert.True(dialog.ApplyTemplate());
-            RaiseClick(FindButton(dialog, partName));
-
-            Assert.Equal(expectedButton, dialog.LastButton);
-            Assert.Equal(1, dialog.ClickCount);
-        });
-    }
-
     [Theory]
     [InlineData("PART_PrimaryButton", Wpf.Zen.Ui.Controls.MessageBoxButton.Primary)]
     [InlineData("PART_SecondaryButton", Wpf.Zen.Ui.Controls.MessageBoxButton.Secondary)]
@@ -131,7 +106,6 @@ public class TemplateButtonPartTests
         {
             var controls = new (Control Control, string PartName, Action AssertUnchanged)[]
             {
-                CreateContentDialogCase(),
                 CreateMessageBoxCase(),
                 CreateSnackbarCase(),
                 CreateTextBoxCase(),
@@ -149,15 +123,6 @@ public class TemplateButtonPartTests
                 assertUnchanged();
             }
         });
-    }
-
-    private static (Control Control, string PartName, Action AssertUnchanged) CreateContentDialogCase()
-    {
-        var control = new RecordingContentDialog
-        {
-            Template = CreateTemplate(typeof(UiContentDialog), typeof(Button), "PART_PrimaryButton"),
-        };
-        return (control, "PART_PrimaryButton", () => Assert.Equal(0, control.ClickCount));
     }
 
     private static (Control Control, string PartName, Action AssertUnchanged) CreateMessageBoxCase()
@@ -217,19 +182,6 @@ public class TemplateButtonPartTests
         var root = new FrameworkElementFactory(rootType) { Name = name };
         return new ControlTemplate(targetType) { VisualTree = root };
 #pragma warning restore CS0618
-    }
-
-    private sealed class RecordingContentDialog : UiContentDialog
-    {
-        public int ClickCount { get; private set; }
-
-        public Wpf.Zen.Ui.Controls.ContentDialogButton? LastButton { get; private set; }
-
-        protected override void OnButtonClick(Wpf.Zen.Ui.Controls.ContentDialogButton button)
-        {
-            ClickCount++;
-            LastButton = button;
-        }
     }
 
     private sealed class RecordingMessageBox : UiMessageBox

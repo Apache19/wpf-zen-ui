@@ -3,26 +3,20 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-// ReSharper disable once CheckNamespace
 namespace Wpf.Zen.Ui.Controls;
 
-/// <summary>
-/// Defines constants that specify the default button on a <see cref="ContentDialog"/>.
-/// </summary>
+/// <summary>Identifies a semantic footer action; None disables the default Enter action.</summary>
 public enum ContentDialogButton
 {
-    /// <summary>
-    /// The primary button is the default.
-    /// </summary>
+    /// <summary>No semantic action.</summary>
+    None,
+
+    /// <summary>The primary choice.</summary>
     Primary,
 
-    /// <summary>
-    /// The secondary button is the default.
-    /// </summary>
+    /// <summary>The secondary choice.</summary>
     Secondary,
 
-    /// <summary>
-    /// The close button is the default.
-    /// </summary>
-    Close,
+    /// <summary>The third choice, independent of header dismissal.</summary>
+    Tertiary,
 }

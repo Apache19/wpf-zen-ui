@@ -3,7 +3,6 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Zen.Ui.Controls"
     xmlns:m="clr-namespace:Wpf.Zen.Ui.Markup">
-
     <Style x:Key="DefaultContentDialogHostStyle" TargetType="{x:Type controls:ContentDialogHost}">
         <Setter Property="Background" Value="{m:DynamicBrush SmokeFillDefault}" />
         <Setter Property="Focusable" Value="False" />
@@ -11,24 +10,25 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type controls:ContentDialogHost}">
-                    <Border x:Name="MaskLayer" Background="{TemplateBinding Background}">
-                        <ContentPresenter
-                            Content="{TemplateBinding Content}"
-                            ContentTemplate="{TemplateBinding ContentTemplate}"
-                            ContentTemplateSelector="{TemplateBinding ContentTemplateSelector}" />
-                    </Border>
+                    <Grid x:Name="Overlay" Background="Transparent">
+                        <!-- Keep hit testing active through the fade, and avoid fading the dialog twice. -->
+                        <Border x:Name="PART_Backdrop" Background="{TemplateBinding Background}" />
+                        <!-- Auto-size this wrapper to the surface so the transition pivot is the dialog center. -->
+                        <Border x:Name="PART_TransitionRoot" HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <Border.Effect>
+                                <DropShadowEffect BlurRadius="24" ShadowDepth="4" Opacity="0.16" />
+                            </Border.Effect>
+                            <ContentPresenter Content="{TemplateBinding Content}" />
+                        </Border>
+                    </Grid>
                     <ControlTemplate.Triggers>
-                        <!--  When there's no content, clear the mask background and allow mouse to pass through  -->
                         <Trigger Property="Content" Value="{x:Null}">
-                            <Setter TargetName="MaskLayer" Property="Background" Value="{x:Null}" />
-                            <Setter TargetName="MaskLayer" Property="IsHitTestVisible" Value="False" />
-                            <Setter TargetName="MaskLayer" Property="Visibility" Value="Collapsed" />
+                            <Setter TargetName="Overlay" Property="Visibility" Value="Collapsed" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
     </Style>
-
     <Style BasedOn="{StaticResource DefaultContentDialogHostStyle}" TargetType="{x:Type controls:ContentDialogHost}" />
 </ResourceDictionary>

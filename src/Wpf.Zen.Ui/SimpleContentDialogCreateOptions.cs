@@ -7,42 +7,24 @@ using Wpf.Zen.Ui.Controls;
 
 namespace Wpf.Zen.Ui;
 
-/// <summary>
-/// Set of properties used when creating a new simple content dialog.
-/// </summary>
+/// <summary>Defines the content and optional semantic actions of a simple dialog.</summary>
 public class SimpleContentDialogCreateOptions
 {
-    /// <summary>
-    /// Gets or sets a name at the top of the content dialog.
-    /// </summary>
+    /// <summary>Gets or sets the dialog heading.</summary>
     public required string Title { get; set; }
 
-    /// <summary>
-    /// Gets or sets a message displayed in the content dialog.
-    /// </summary>
+    /// <summary>Gets or sets the message or content model.</summary>
     public required object Content { get; set; }
 
-    /// <summary>
-    /// Gets or sets the name of the button that closes the content dialog.
-    /// </summary>
-    public required string CloseButtonText { get; set; }
+    /// <summary>Gets or sets the primary action; null omits it.</summary>
+    public ContentDialogAction? PrimaryAction { get; set; }
 
-    /// <summary>
-    /// Gets or sets the default text of the primary button at the bottom of the content dialog.
-    /// <para>If not added, or <see cref="string.Empty"/>, it will not be displayed.</para>
-    /// </summary>
-    public string PrimaryButtonText { get; set; } = string.Empty;
+    /// <summary>Gets or sets the secondary action; null omits it.</summary>
+    public ContentDialogAction? SecondaryAction { get; set; }
 
-    /// <summary>
-    /// Gets or sets the default text of the secondary button at the bottom of the content dialog.
-    /// <para>If not added, or <see cref="string.Empty"/>, it will not be displayed.</para>
-    /// </summary>
-    public string SecondaryButtonText { get; set; } = string.Empty;
+    /// <summary>Gets or sets the third action; null omits it.</summary>
+    public ContentDialogAction? TertiaryAction { get; set; }
 
-    /// <summary>
-    /// Gets or sets the button that is activated by default when the user presses the Enter key in the dialog.
-    /// </summary>
-    /// <remarks>Use this property to specify which button receives keyboard focus and is triggered by default
-    /// when the dialog is shown. This can improve usability by guiding users toward the recommended action.</remarks>
-    public ContentDialogButton DefaultButton { get; set; } = ContentDialogButton.Primary;
+    /// <summary>Gets or sets the explicit Enter action. Default None avoids accidental acceptance.</summary>
+    public ContentDialogButton DefaultButton { get; set; } = ContentDialogButton.None;
 }

@@ -33,6 +33,7 @@ internal sealed class ContentDialogHostController
 
     // Previously focused element before the dialog was shown. Restored after dialog is closed.
     private IInputElement? _previousFocusedElement;
+    private IInputElement? _pendingFocusRestore;
 
     // ReSharper disable once ReplaceWithFieldKeyword
     // Backing field for IsDisableSiblingsEnabled property.
@@ -122,14 +123,16 @@ internal sealed class ContentDialogHostController
         }
 
         UnblockHostScopeInput();
-        RestorePreviousFocus();
-
         _dialogActive = false;
+        RestorePreviousFocus();
     }
 
     private void StorePreviousFocus()
     {
-        IInputElement? focused = Keyboard.FocusedElement;
+        // A new dialog can open before the deferred restoration runs. Carry forward the original
+        // application focus instead of recording an element in the just-closed dialog.
+        IInputElement? focused = _pendingFocusRestore ?? Keyboard.FocusedElement;
+        _pendingFocusRestore = null;
         if (IsValidInputElement(focused))
         {
             _previousFocusedElement = focused;
@@ -142,7 +145,10 @@ internal sealed class ContentDialogHostController
 
     private void RestorePreviousFocus()
     {
-        if (_previousFocusedElement != null && _host is DispatcherObject dispatcherObject)
+        IInputElement? target = _previousFocusedElement;
+        _previousFocusedElement = null;
+        _pendingFocusRestore = target;
+        if (target != null && _host is DispatcherObject dispatcherObject)
         {
             _ = dispatcherObject.Dispatcher.BeginInvoke(
                 () =>
@@ -150,13 +156,15 @@ internal sealed class ContentDialogHostController
                     if (
                         dispatcherObject.Dispatcher
                             is { HasShutdownStarted: false, HasShutdownFinished: false }
-                        && IsValidInputElement(_previousFocusedElement)
+                        && !_dialogActive
+                        && ReferenceEquals(_pendingFocusRestore, target)
                     )
                     {
-                        _previousFocusedElement.Focus();
+                        _pendingFocusRestore = null;
+                        if (target is UIElement { IsVisible: true, IsEnabled: true, Focusable: true }
+                            or ContentElement { IsEnabled: true, Focusable: true })
+                            target.Focus();
                     }
-
-                    _previousFocusedElement = null;
                 },
                 DispatcherPriority.Input
             );
