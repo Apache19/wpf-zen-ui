@@ -181,6 +181,36 @@ public class SplitButton : ContentControl, ICommandSource
 
     #endregion
 
+    #region DP: MouseOverForeground
+
+    /// <summary>Identifies the <see cref="MouseOverForeground"/> dependency property.</summary>
+    public static readonly DependencyProperty MouseOverForegroundProperty =
+        Button.MouseOverForegroundProperty.AddOwner(
+            typeof(SplitButton),
+            new FrameworkPropertyMetadata(null)
+        );
+
+    /// <summary>
+    /// Gets or sets the foreground brush used by either enabled, unpressed segment while the
+    /// pointer is over that segment. The default is <see langword="null"/>, which falls back to
+    /// <see cref="Control.Foreground"/>.
+    /// </summary>
+    /// <remarks>
+    /// The default template forwards this brush to both button parts, which resolve hover state
+    /// independently for the primary content and drop-down arrow. This property does not inherit
+    /// or invalidate layout and supports bindings, dynamic resources, and animations. It needs no
+    /// wrapper callback: template bindings deliver changes to each button's state-brush callback.
+    /// </remarks>
+    [Bindable(true)]
+    [Category("Appearance")]
+    public Brush? MouseOverForeground
+    {
+        get => (Brush?)GetValue(MouseOverForegroundProperty);
+        set => SetValue(MouseOverForegroundProperty, value);
+    }
+
+    #endregion
+
     #region DP: MouseOverBackground
 
     /// <summary>Identifies the <see cref="MouseOverBackground"/> dependency property.</summary>

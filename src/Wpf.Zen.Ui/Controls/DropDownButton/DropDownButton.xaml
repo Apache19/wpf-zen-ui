@@ -43,7 +43,7 @@
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
-                <ContentPresenter
+                <controls:IconPresenter
                     x:Name="iconPresenter"
                     Grid.Column="0"
                     Margin="{TemplateBinding IconMargin}"
@@ -76,6 +76,13 @@
         <ControlTemplate.Triggers>
             <Trigger Property="Icon" Value="{x:Null}">
                 <Setter TargetName="iconPresenter" Property="Visibility" Value="Collapsed" />
+            </Trigger>
+            <!-- The chevron supplies its own leading gap; do not also reserve a label gap. -->
+            <Trigger Property="Content" Value="{x:Null}">
+                <Setter TargetName="iconPresenter" Property="Margin" Value="0" />
+            </Trigger>
+            <Trigger Property="Content" Value="">
+                <Setter TargetName="iconPresenter" Property="Margin" Value="0" />
             </Trigger>
             <Trigger Property="IsDropDownArrowVisible" Value="False">
                 <Setter TargetName="DropDownChevron" Property="Visibility" Value="Collapsed" />

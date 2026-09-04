@@ -65,6 +65,7 @@ public class SplitButtonTests
                         Foreground       = Brushes.Coral,
                         MouseOverBackground  = Brushes.DarkBlue,
                         MouseOverBorderBrush = Brushes.DarkCyan,
+                        MouseOverForeground  = Brushes.DarkMagenta,
                         PressedBackground    = Brushes.DarkGray,
                         PressedBorderBrush   = Brushes.DarkGreen,
                         PressedForeground    = Brushes.DarkGoldenrod,
@@ -106,6 +107,10 @@ public class SplitButtonTests
     [Fact]
     public void InteractionBrushProperties_ShareButtonDependencyProperties()
     {
+        Assert.Same(
+            Wpf.Zen.Ui.Controls.Button.MouseOverForegroundProperty,
+            SplitButton.MouseOverForegroundProperty
+        );
         Assert.Same(
             Wpf.Zen.Ui.Controls.Button.MouseOverBackgroundProperty,
             SplitButton.MouseOverBackgroundProperty
@@ -843,6 +848,7 @@ public class SplitButtonTests
         Assert.Same(Brushes.Coral, button.Foreground);
         Assert.Same(Brushes.DarkBlue, button.MouseOverBackground);
         Assert.Same(Brushes.DarkCyan, button.MouseOverBorderBrush);
+        Assert.Same(Brushes.DarkMagenta, button.MouseOverForeground);
         Assert.Same(Brushes.DarkGray, button.PressedBackground);
         Assert.Same(Brushes.DarkGreen, button.PressedBorderBrush);
         Assert.Same(Brushes.DarkGoldenrod, button.PressedForeground);

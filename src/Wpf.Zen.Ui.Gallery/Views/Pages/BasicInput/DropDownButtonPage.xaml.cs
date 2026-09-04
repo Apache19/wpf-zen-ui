@@ -30,4 +30,10 @@ public partial class DropDownButtonPage : INavigableView<DropDownButtonViewModel
             element.Focus();
         }
     }
+
+    private void OnPopupDoneClick(object sender, System.Windows.RoutedEventArgs e)
+    {
+        // Closing through the owner also updates any IsDropDownOpen binding.
+        PopupSettingsButton.SetCurrentValue(DropDownButton.IsDropDownOpenProperty, false);
+    }
 }

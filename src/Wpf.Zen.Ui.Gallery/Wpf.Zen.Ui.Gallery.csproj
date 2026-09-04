@@ -46,6 +46,8 @@
     <Resource Include="Assets\wpfui_full.png" />
     <Resource Include="CodeSamples\Typography\TypographySample_xaml.txt" />
     <Resource Include="CodeSamples\BasicInput\DropDownButton_xaml.txt" />
+    <Resource Include="CodeSamples\BasicInput\DropDownButtonPopup_xaml.txt" />
+    <Resource Include="CodeSamples\BasicInput\DropDownButtonPopup_cs.txt" />
     <Resource Include="CodeSamples\BasicInput\ContextMenu_xaml.txt" />
     <Resource Include="CodeSamples\BasicInput\DropDownButtonScrolling_xaml.txt" />
     <Resource Include="CodeSamples\BasicInput\ContextMenuScrolling_xaml.txt" />

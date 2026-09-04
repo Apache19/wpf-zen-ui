@@ -1,0 +1,4 @@
+private void OnPopupDoneClick(object sender, RoutedEventArgs e)
+{
+    PopupSettingsButton.SetCurrentValue(DropDownButton.IsDropDownOpenProperty, false);
+}

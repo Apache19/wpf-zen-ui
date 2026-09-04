@@ -84,6 +84,15 @@
         <Setter Property="BorderBrush" Value="{m:DynamicBrush CardStrokeDefault}" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="Foreground" Value="{m:DynamicBrush TextFillPrimary}" />
+        <Setter Property="CornerRadius" Value="6" />
+        <!-- Keep the inherited Button palette contract available to item-container styles. -->
+        <Setter Property="MouseOverBackground" Value="{m:DynamicBrush ControlFillSecondary}" />
+        <Setter Property="MouseOverBorderBrush" Value="{m:DynamicBrush ControlElevationBorder}" />
+        <Setter Property="PressedBackground" Value="{m:DynamicBrush ControlFillTertiary}" />
+        <Setter Property="PressedForeground" Value="{m:DynamicBrush TextFillSecondary}" />
+        <Setter Property="DisabledBackground" Value="{m:DynamicBrush ControlFillDisabled}" />
+        <Setter Property="DisabledBorderBrush" Value="{m:DynamicBrush ControlStrokeDefault}" />
+        <Setter Property="DisabledForeground" Value="{m:DynamicBrush TextFillDisabled}" />
         <!--
             Description remains a style-level binding so an application can replace ToolTip locally
             without a control-specific opt-out property. Null descriptions naturally suppress WPF's
@@ -112,10 +121,10 @@
                         <Border
                             x:Name="RootBorder"
                             Padding="{TemplateBinding Padding}"
-                            Background="{TemplateBinding Background}"
-                            BorderBrush="{TemplateBinding BorderBrush}"
+                            Background="{TemplateBinding VisualBackground}"
+                            BorderBrush="{TemplateBinding VisualBorderBrush}"
                             BorderThickness="{TemplateBinding BorderThickness}"
-                            CornerRadius="6"
+                            CornerRadius="{TemplateBinding CornerRadius}"
                             SnapsToDevicePixels="True">
                             <ContentPresenter
                                 HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
@@ -124,7 +133,8 @@
                                 ContentStringFormat="{TemplateBinding ContentStringFormat}"
                                 ContentTemplate="{TemplateBinding ContentTemplate}"
                                 ContentTemplateSelector="{TemplateBinding ContentTemplateSelector}"
-                                RecognizesAccessKey="True" />
+                                RecognizesAccessKey="True"
+                                TextElement.Foreground="{TemplateBinding VisualForeground}" />
                         </Border>
                         <!--
                             Selection, search, and keyboard focus must never change the card's
@@ -137,7 +147,7 @@
                         <Border
                             x:Name="InteractionBorder"
                             BorderThickness="2"
-                            CornerRadius="6"
+                            CornerRadius="{TemplateBinding CornerRadius}"
                             IsHitTestVisible="False"
                             SnapsToDevicePixels="True"
                             Visibility="Collapsed" />
@@ -171,14 +181,6 @@
                         <Trigger Property="IsRoot" Value="False">
                             <Setter TargetName="RootAccent" Property="Visibility" Value="Collapsed" />
                         </Trigger>
-                        <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="RootBorder" Property="Background" Value="{m:DynamicBrush ControlFillSecondary}" />
-                            <Setter TargetName="RootBorder" Property="BorderBrush" Value="{m:DynamicBrush ControlElevationBorder}" />
-                        </Trigger>
-                        <Trigger Property="IsPressed" Value="True">
-                            <Setter TargetName="RootBorder" Property="Background" Value="{m:DynamicBrush ControlFillTertiary}" />
-                            <Setter Property="Foreground" Value="{m:DynamicBrush TextFillSecondary}" />
-                        </Trigger>
                         <Trigger Property="IsLayoutSelected" Value="True">
                             <Setter TargetName="InteractionBorder" Property="BorderBrush" Value="{m:DynamicBrush AccentFillSecondary}" />
                             <Setter TargetName="InteractionBorder" Property="BorderThickness" Value="2" />
@@ -193,7 +195,8 @@
                             <Setter TargetName="SearchMarker" Property="Visibility" Value="Visible" />
                         </Trigger>
                         <Trigger Property="IsCurrentSearchMatch" Value="True">
-                            <Setter TargetName="RootBorder" Property="Background" Value="{m:DynamicBrush SubtleFillSecondary}" />
+                            <!-- Search supplies the normal fill; disabled and pressed colors still win. -->
+                            <Setter Property="Background" Value="{m:DynamicBrush SubtleFillSecondary}" />
                             <Setter TargetName="InteractionBorder" Property="BorderBrush" Value="{m:DynamicBrush AccentFillSecondary}" />
                             <Setter TargetName="InteractionBorder" Property="BorderThickness" Value="2" />
                             <Setter TargetName="InteractionBorder" Property="Visibility" Value="Visible" />
@@ -204,9 +207,6 @@
                             <Setter TargetName="InteractionBorder" Property="Visibility" Value="Visible" />
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter TargetName="RootBorder" Property="Background" Value="{m:DynamicBrush ControlFillDisabled}" />
-                            <Setter TargetName="RootBorder" Property="BorderBrush" Value="{m:DynamicBrush ControlStrokeDefault}" />
-                            <Setter Property="Foreground" Value="{m:DynamicBrush TextFillDisabled}" />
                             <Setter TargetName="RootAccent" Property="Opacity" Value="0.45" />
                             <Setter TargetName="InteractionBorder" Property="Visibility" Value="Collapsed" />
                         </Trigger>

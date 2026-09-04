@@ -1,0 +1,36 @@
+<ui:DropDownButton
+    x:Name="PopupSettingsButton"
+    HorizontalAlignment="Left"
+    Content="Display options"
+    Icon="{ui:FluentIconSource Settings24}">
+    <ui:DropDownButton.Flyout>
+        <Popup AllowsTransparency="True" VerticalOffset="8">
+            <Border
+                Width="300"
+                Padding="20"
+                Background="{ui:DynamicBrush LayerFillDefault}"
+                BorderBrush="{ui:DynamicBrush CardStrokeDefault}"
+                BorderThickness="1"
+                CornerRadius="8"
+                TextElement.Foreground="{ui:DynamicBrush TextFillPrimary}">
+                <StackPanel>
+                    <TextBlock FontSize="16" FontWeight="SemiBold" Text="Display options" />
+                    <TextBlock Margin="0,12,0,6" Text="View name" />
+                    <ui:TextBox Text="My workspace" />
+                    <CheckBox Margin="0,12,0,0" Content="Show item details" IsChecked="True" />
+                    <TextBlock
+                        Margin="0,12,0,0"
+                        Foreground="{ui:DynamicBrush TextFillSecondary}"
+                        Text="Interact with the panel, then click Done or click outside to close."
+                        TextWrapping="Wrap" />
+                    <ui:Button
+                        Margin="0,16,0,0"
+                        HorizontalAlignment="Right"
+                        Appearance="Accent"
+                        Click="OnPopupDoneClick"
+                        Content="Done" />
+                </StackPanel>
+            </Border>
+        </Popup>
+    </ui:DropDownButton.Flyout>
+</ui:DropDownButton>

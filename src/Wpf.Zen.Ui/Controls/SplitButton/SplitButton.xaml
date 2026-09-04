@@ -79,6 +79,7 @@
                             IsTabStop="False"
                             MouseOverBackground="{TemplateBinding MouseOverBackground}"
                             MouseOverBorderBrush="{TemplateBinding MouseOverBorderBrush}"
+                            MouseOverForeground="{TemplateBinding MouseOverForeground}"
                             PressedBackground="{TemplateBinding PressedBackground}"
                             PressedBorderBrush="{TemplateBinding PressedBorderBrush}"
                             PressedForeground="{TemplateBinding PressedForeground}"
@@ -119,6 +120,7 @@
                             IsTabStop="False"
                             MouseOverBackground="{TemplateBinding MouseOverBackground}"
                             MouseOverBorderBrush="{TemplateBinding MouseOverBorderBrush}"
+                            MouseOverForeground="{TemplateBinding MouseOverForeground}"
                             PressedBackground="{TemplateBinding PressedBackground}"
                             PressedBorderBrush="{TemplateBinding PressedBorderBrush}"
                             PressedForeground="{TemplateBinding PressedForeground}">

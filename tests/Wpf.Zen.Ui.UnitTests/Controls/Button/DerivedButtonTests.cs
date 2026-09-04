@@ -238,7 +238,7 @@ public class DerivedButtonTests
                 );
 
                 var clearButton = Assert.IsType<Wpf.Zen.Ui.Controls.Button>(
-                    textBox.Template.FindName("ClearButton", textBox)
+                    textBox.Template.FindName("PART_ClearButton", textBox)
                 );
 
                 Assert.True(clearButton.ApplyTemplate());

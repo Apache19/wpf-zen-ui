@@ -14,6 +14,13 @@ namespace Wpf.Zen.Ui.Controls;
 /// Extends <see cref="System.Windows.Controls.Button"/> with Fluent visual states,
 /// <see cref="Appearance"/>, and an <see cref="Icon"/> slot presented by its default template.
 /// </summary>
+/// <remarks>
+/// The background, border, and foreground are resolved in disabled, pressed, pointer-over,
+/// then normal order. A null state brush falls back to the corresponding normal brush.
+/// Custom templates should bind to <see cref="VisualBackground"/>, <see cref="VisualBorderBrush"/>,
+/// and <see cref="VisualForeground"/>; the default template uses the visual foreground for both
+/// content and icons. Keyboard focus is indicated independently by the focus visual style.
+/// </remarks>
 /// <example>
 /// <code lang="xml">
 /// &lt;ui:Button
@@ -91,6 +98,38 @@ public class Button : System.Windows.Controls.Button
     {
         get => (ControlAppearance)GetValue(AppearanceProperty);
         set => SetValue(AppearanceProperty, value);
+    }
+
+    #endregion
+
+    #region DP: MouseOverForeground
+
+    /// <summary>Identifies the <see cref="MouseOverForeground"/> dependency property.</summary>
+    public static readonly DependencyProperty MouseOverForegroundProperty =
+        DependencyProperty.Register(
+            nameof(MouseOverForeground),
+            typeof(Brush),
+            typeof(Button),
+            new PropertyMetadata(null, OnStateBrushChanged)
+        );
+
+    /// <summary>
+    /// Gets or sets the foreground brush used while the pointer is over an enabled, unpressed
+    /// button. The default is <see langword="null"/>, which falls back to <see cref="Control.Foreground"/>.
+    /// </summary>
+    /// <remarks>
+    /// Changes immediately refresh <see cref="VisualForeground"/>, including updates from bindings,
+    /// dynamic resources, and animations. This property does not inherit or invalidate layout;
+    /// template bindings propagate its resolved value to the text and icon rendering elements.
+    /// It does not replace the normal <see cref="Control.Foreground"/> value. Use a transparent
+    /// brush to suppress foreground painting during hover; null requests the normal brush.
+    /// </remarks>
+    [Bindable(true)]
+    [Category("Appearance")]
+    public Brush? MouseOverForeground
+    {
+        get => (Brush?)GetValue(MouseOverForegroundProperty);
+        set => SetValue(MouseOverForegroundProperty, value);
     }
 
     #endregion
@@ -389,12 +428,20 @@ public class Button : System.Windows.Controls.Button
             nameof(CornerRadius),
             typeof(CornerRadius),
             typeof(Button),
-            new FrameworkPropertyMetadata(default(CornerRadius))
+            new FrameworkPropertyMetadata(default(CornerRadius)),
+            // Reject invalid geometry at the public input rather than failing later when the
+            // template forwards it to a Border (including the keyboard focus outline).
+            value => Border.CornerRadiusProperty.IsValidValue(value)
         );
 
     /// <summary>
     /// Gets or sets a value that represents the degree to which the corners of a <see cref="T:System.Windows.Controls.Border" /> are rounded.
     /// </summary>
+    /// <remarks>
+    /// Each radius must be finite and non-negative, matching WPF Border validation. The default
+    /// is zero; styles may supply another value. Template borders handle layout and rendering
+    /// invalidation when this non-inherited, animatable property changes.
+    /// </remarks>
     [Category("Appearance")]
     public CornerRadius CornerRadius
     {
@@ -558,6 +605,7 @@ public class Button : System.Windows.Controls.Button
         {
             visualBackground  = MouseOverBackground ?? visualBackground;
             visualBorderBrush = MouseOverBorderBrush ?? visualBorderBrush;
+            visualForeground  = MouseOverForeground ?? visualForeground;
         }
 
         SetValue(VisualBackgroundPropertyKey,  visualBackground);

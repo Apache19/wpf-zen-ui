@@ -3,12 +3,6 @@
     If a copy of the MIT was not distributed with this file, You can obtain one at https://opensource.org/licenses/MIT.
     Copyright (C) Leszek Pomianowski and WPF UI Contributors.
     All Rights Reserved.
-    
-    Button and SplitButton have different CLR inheritance hierarchies, but intentionally share the
-    same appearance dependency properties. Keeping their brush setters and triggers in an untyped
-    base style prevents the two controls from silently drifting apart as appearances evolve.
-    Owner-qualified property names are required because an untyped Style has no TargetType from
-    which the XAML loader could infer dependency-property ownership.
 -->
 
 <ResourceDictionary
@@ -111,26 +105,6 @@
                 <Setter Property="controls:Button.MouseOverBorderBrush" Value="{m:DynamicBrush AccentControlElevationBorder}" />
                 <Setter Property="controls:Button.PressedBorderBrush" Value="Transparent" />
             </Trigger>
-
-            <!--
-                Keep the standard properties synchronized for older custom templates that still
-                consume Background/BorderBrush/Foreground. New templates should consume the
-                Visual* outputs, whose disabled resolution also works when these setters lose to a
-                local or parent-template value.
-            -->
-            <Trigger Property="UIElement.IsEnabled" Value="False">
-                <Setter Property="Control.Background" Value="{m:DynamicBrush ControlFillDisabled}" />
-                <Setter Property="Control.BorderBrush" Value="{m:DynamicBrush ControlStrokeDefault}" />
-                <Setter Property="Control.Foreground" Value="{m:DynamicBrush TextFillDisabled}" />
-            </Trigger>
-
-            <MultiTrigger>
-                <MultiTrigger.Conditions>
-                    <Condition Property="controls:Button.Appearance" Value="Transparent" />
-                    <Condition Property="UIElement.IsEnabled" Value="False" />
-                </MultiTrigger.Conditions>
-                <Setter Property="Control.Background" Value="Transparent" />
-            </MultiTrigger>
 
             <!--
                 todo: 高对比度模式应有一套专用色，不使用语义色，否则很难周全
