@@ -113,8 +113,7 @@ public class ThemeManagerTests
             Assert.True(ContainsMergedSource("/Wpf.Zen.Ui;component/Resources/NativeControlStyles.xaml"));
             Assert.Null(ThemeManager.AdditionalLightThemeUri);
             Assert.Null(ThemeManager.AdditionalDarkThemeUri);
-            Assert.Null(ThemeManager.AdditionalHighContrastLightThemeUri);
-            Assert.Null(ThemeManager.AdditionalHighContrastDarkThemeUri);
+            Assert.Null(ThemeManager.AdditionalHighContrastThemeUri);
             Assert.Same(GetThemeDictionary(ThemeVariant.Light), resources.MergedDictionaries[0]);
             Assert.NotNull(resources[BrushKeys.WindowBackgroundBrush]);
         });
@@ -177,7 +176,6 @@ public class ThemeManagerTests
                     invalidPreference,
                     AccentColorSource.Default,
                     BuiltInAccent,
-                    null,
                     null,
                     null,
                     null
@@ -329,8 +327,7 @@ public class ThemeManagerTests
                     customAccent,
                     DarkThemeUri,
                     LightThemeUri,
-                    DarkThemeUri,
-                    LightThemeUri
+                    DarkThemeUri
                 );
 
                 Assert.Equal(1, notificationCount);
@@ -341,8 +338,7 @@ public class ThemeManagerTests
                 Assert.True(ContainsMergedSource("/Wpf.Zen.Ui;component/Resources/NativeControlStyles.xaml"));
                 Assert.Equal(DarkThemeUri, ThemeManager.AdditionalLightThemeUri);
                 Assert.Equal(LightThemeUri, ThemeManager.AdditionalDarkThemeUri);
-                Assert.Equal(DarkThemeUri, ThemeManager.AdditionalHighContrastLightThemeUri);
-                Assert.Equal(LightThemeUri, ThemeManager.AdditionalHighContrastDarkThemeUri);
+                Assert.Equal(DarkThemeUri, ThemeManager.AdditionalHighContrastThemeUri);
 
                 Assert.True(ContainsMergedSource(LightThemeUri.OriginalString));
 
@@ -352,8 +348,7 @@ public class ThemeManagerTests
                     customAccent,
                     DarkThemeUri,
                     LightThemeUri,
-                    DarkThemeUri,
-                    LightThemeUri
+                    DarkThemeUri
                 );
                 Assert.Equal(1, notificationCount);
             }
@@ -372,8 +367,7 @@ public class ThemeManagerTests
             ThemeManager.SetAdditionalThemeUris(
                 DarkThemeUri,
                 LightThemeUri,
-                LightThemeUri,
-                DarkThemeUri
+                LightThemeUri
             );
             var notificationCount = 0;
             EventHandler<ThemeChangedEventArgs> handler = (_, _) => notificationCount++;
@@ -394,8 +388,7 @@ public class ThemeManagerTests
                 Assert.True(ContainsMergedSource("/Wpf.Zen.Ui;component/Resources/NativeControlStyles.xaml"));
                 Assert.Equal(DarkThemeUri, ThemeManager.AdditionalLightThemeUri);
                 Assert.Equal(LightThemeUri, ThemeManager.AdditionalDarkThemeUri);
-                Assert.Equal(LightThemeUri, ThemeManager.AdditionalHighContrastLightThemeUri);
-                Assert.Equal(DarkThemeUri, ThemeManager.AdditionalHighContrastDarkThemeUri);
+                Assert.Equal(LightThemeUri, ThemeManager.AdditionalHighContrastThemeUri);
 
                 ThemeManager.CustomAccentColor = Color.FromRgb(0xBB, 0x44, 0x11);
                 Assert.Equal(2, notificationCount);
@@ -438,21 +431,18 @@ public class ThemeManagerTests
                 ThemeManager.SetAdditionalThemeUris(
                     DarkThemeUri,
                     LightThemeUri,
-                    LightThemeUri,
-                    DarkThemeUri
+                    LightThemeUri
                 );
 
                 Assert.Equal(1, notificationCount);
                 Assert.Equal(DarkThemeUri, ThemeManager.AdditionalLightThemeUri);
                 Assert.Equal(LightThemeUri, ThemeManager.AdditionalDarkThemeUri);
-                Assert.Equal(LightThemeUri, ThemeManager.AdditionalHighContrastLightThemeUri);
-                Assert.Equal(DarkThemeUri, ThemeManager.AdditionalHighContrastDarkThemeUri);
+                Assert.Equal(LightThemeUri, ThemeManager.AdditionalHighContrastThemeUri);
 
                 ThemeManager.SetAdditionalThemeUris(
                     DarkThemeUri,
                     LightThemeUri,
-                    LightThemeUri,
-                    DarkThemeUri
+                    LightThemeUri
                 );
                 Assert.Equal(1, notificationCount);
             }
@@ -471,8 +461,7 @@ public class ThemeManagerTests
             ThemeManager.SetAdditionalThemeUris(
                 DarkThemeUri,
                 LightThemeUri,
-                LightThemeUri,
-                DarkThemeUri
+                LightThemeUri
             );
 
             var normalLight = new List<ResourceDictionary>();
@@ -501,7 +490,48 @@ public class ThemeManagerTests
             );
 
             Assert.Equal(LightThemeUri, highContrastLight[^1].Source);
-            Assert.Equal(DarkThemeUri, highContrastDark[^1].Source);
+            Assert.Equal(LightThemeUri, highContrastDark[^1].Source);
+        });
+    }
+
+    [Fact]
+    public void HighContrastOptions_BatchPreserveAndExplicitlyClearTheSharedExtension()
+    {
+        RunIsolated(() =>
+        {
+            var options = new ThemeManagerOptions();
+            options.BeginInit();
+            options.AdditionalHighContrastThemeSource = LightThemeUri;
+            Assert.Null(ThemeManager.AdditionalHighContrastThemeUri);
+            options.EndInit();
+            Assert.Equal(LightThemeUri, ThemeManager.AdditionalHighContrastThemeUri);
+
+            // An omitted XAML attribute preserves process-wide configuration; x:Null explicitly clears it.
+            const string namespaces = "xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation' "
+                + "xmlns:x='http://schemas.microsoft.com/winfx/2006/xaml' "
+                + "xmlns:ui='clr-namespace:Wpf.Zen.Ui;assembly=Wpf.Zen.Ui'";
+            _ = System.Windows.Markup.XamlReader.Parse($"<ui:ThemeManagerOptions {namespaces} />");
+            Assert.Equal(LightThemeUri, ThemeManager.AdditionalHighContrastThemeUri);
+            _ = System.Windows.Markup.XamlReader.Parse(
+                $"<ui:ThemeManagerOptions {namespaces} AdditionalHighContrastThemeSource='{{x:Null}}' />"
+            );
+            Assert.Null(ThemeManager.AdditionalHighContrastThemeUri);
+
+            var light = new List<ResourceDictionary>();
+            var dark = new List<ResourceDictionary>();
+            ThemeManager.PopulateThemeDictionaries(
+                light,
+                dark,
+                highContrast: true,
+                accentColor: default,
+                nativeControlStyles: null,
+                globalResources: null
+            );
+            Assert.Equal(
+                "/Wpf.Zen.Ui;component/Resources/Theme/HighContrast.xaml",
+                Assert.Single(light).Source.OriginalString
+            );
+            Assert.Equal(Assert.Single(light).Source, Assert.Single(dark).Source);
         });
     }
 
@@ -518,15 +548,13 @@ public class ThemeManagerTests
             {
                 ThemeManager.AdditionalLightThemeUri = DarkThemeUri;
                 ThemeManager.AdditionalDarkThemeUri = LightThemeUri;
-                ThemeManager.AdditionalHighContrastLightThemeUri = LightThemeUri;
-                ThemeManager.AdditionalHighContrastDarkThemeUri = DarkThemeUri;
-                Assert.Equal(4, notificationCount);
+                ThemeManager.AdditionalHighContrastThemeUri = LightThemeUri;
+                Assert.Equal(3, notificationCount);
 
                 ThemeManager.AdditionalLightThemeUri = DarkThemeUri;
                 ThemeManager.AdditionalDarkThemeUri = LightThemeUri;
-                ThemeManager.AdditionalHighContrastLightThemeUri = LightThemeUri;
-                ThemeManager.AdditionalHighContrastDarkThemeUri = DarkThemeUri;
-                Assert.Equal(4, notificationCount);
+                ThemeManager.AdditionalHighContrastThemeUri = LightThemeUri;
+                Assert.Equal(3, notificationCount);
             }
             finally
             {
@@ -557,7 +585,7 @@ public class ThemeManagerTests
             Assert.Equal(ThemeVariant.Dark, ThemeManager.EffectiveTheme);
 
             // A failed refresh records the requested URI, so explicitly clear it before test cleanup.
-            ThemeManager.SetAdditionalThemeUris(null, null, null, null);
+            ThemeManager.SetAdditionalThemeUris(null, null, null);
         });
     }
 
@@ -776,14 +804,12 @@ public class ThemeManagerTests
             BuiltInAccent,
             null,
             null,
-            null,
             null
         );
         ThemeManager.Configure(
             ThemePreference.Light,
             AccentColorSource.Default,
             BuiltInAccent,
-            null,
             null,
             null,
             null

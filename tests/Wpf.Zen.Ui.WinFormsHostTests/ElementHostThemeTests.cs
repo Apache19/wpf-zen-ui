@@ -885,8 +885,7 @@ public class ElementHostThemeTests
                 Color.FromRgb(0x00, 0x78, 0xD4),
                 additionalLightThemeUri: lightPaletteUri,
                 additionalDarkThemeUri: darkPaletteUri,
-                additionalHighContrastLightThemeUri: null,
-                additionalHighContrastDarkThemeUri: null
+                additionalHighContrastThemeUri: null
             );
 
             using var form = new Forms.Form
@@ -926,7 +925,7 @@ public class ElementHostThemeTests
                 form.Close();
                 Forms.Application.DoEvents();
                 DrainDispatcher();
-                ThemeManager.SetAdditionalThemeUris(null, null, null, null);
+                ThemeManager.SetAdditionalThemeUris(null, null, null);
             }
         });
     }

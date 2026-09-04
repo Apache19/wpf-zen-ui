@@ -97,14 +97,12 @@ public class ThemeManagerOptions : ResourceDictionary, ISupportInitialize
     private Color _customAccentColor = Color.FromRgb(0x00, 0x78, 0xD4);
     private Uri? _additionalLightThemeSource;
     private Uri? _additionalDarkThemeSource;
-    private Uri? _additionalHighContrastLightThemeSource;
-    private Uri? _additionalHighContrastDarkThemeSource;
+    private Uri? _additionalHighContrastThemeSource;
 
     // Flags to track whether a URI property was explicitly set (even to null) from XAML
     private bool _aLightChanged;
     private bool _aDarkChanged;
-    private bool _aHcLightChanged;
-    private bool _aHcDarkChanged;
+    private bool _aHighContrastChanged;
 
     /// <summary>
     /// Gets or sets the application's theme preference. The default value is <see cref="ThemePreference.Light"/>,
@@ -208,46 +206,26 @@ public class ThemeManagerOptions : ResourceDictionary, ISupportInitialize
     }
 
     /// <summary>
-    /// Gets or sets an additional resource dictionary URI to merge when a light high contrast theme is active.
+    /// Gets or sets an additional resource dictionary URI to merge whenever system high contrast is active.
+    /// The default is <c>null</c>; explicitly assigning <c>null</c> clears the configured extension.
     /// </summary>
     /// <remarks>
+    /// This extension applies regardless of the requested Light/Dark variant. Use dynamic references to
+    /// semantic <see cref="SystemColors"/> resources to follow the system high contrast palette.
     /// The dictionary should contain only non-structural palette values such as colors, brushes, numbers, and
     /// thicknesses. Do not define styles, control or data templates, event setters, or other resources that require
     /// replacement of the stable theme-style/template graph.
     /// In an applicationless host, use the assembly-scoped keys published by <c>Wpf.Zen.Ui.Theming</c> for process-wide
     /// overrides; ordinary string keys require a normal application, window, or element resource scope.
     /// </remarks>
-    public Uri? AdditionalHighContrastLightThemeSource
+    public Uri? AdditionalHighContrastThemeSource
     {
-        get => _additionalHighContrastLightThemeSource;
+        get => _additionalHighContrastThemeSource;
         set
         {
             // Mark that the property was explicitly set (including explicit x:Null in XAML)
-            _aHcLightChanged = true;
-            _additionalHighContrastLightThemeSource = value;
-
-            RequestApply();
-        }
-    }
-
-    /// <summary>
-    /// Gets or sets an additional resource dictionary URI to merge when a dark high contrast theme is active.
-    /// </summary>
-    /// <remarks>
-    /// The dictionary should contain only non-structural palette values such as colors, brushes, numbers, and
-    /// thicknesses. Do not define styles, control or data templates, event setters, or other resources that require
-    /// replacement of the stable theme-style/template graph.
-    /// In an applicationless host, use the assembly-scoped keys published by <c>Wpf.Zen.Ui.Theming</c> for process-wide
-    /// overrides; ordinary string keys require a normal application, window, or element resource scope.
-    /// </remarks>
-    public Uri? AdditionalHighContrastDarkThemeSource
-    {
-        get => _additionalHighContrastDarkThemeSource;
-        set
-        {
-            // Mark that the property was explicitly set (including explicit x:Null in XAML)
-            _aHcDarkChanged = true;
-            _additionalHighContrastDarkThemeSource = value;
+            _aHighContrastChanged = true;
+            _additionalHighContrastThemeSource = value;
 
             RequestApply();
         }
@@ -317,13 +295,12 @@ public class ThemeManagerOptions : ResourceDictionary, ISupportInitialize
             _customAccentColor,
             _aLightChanged ? _additionalLightThemeSource : ThemeManager.AdditionalLightThemeUri,
             _aDarkChanged ? _additionalDarkThemeSource : ThemeManager.AdditionalDarkThemeUri,
-            _aHcLightChanged ? _additionalHighContrastLightThemeSource : ThemeManager.AdditionalHighContrastLightThemeUri,
-            _aHcDarkChanged ? _additionalHighContrastDarkThemeSource : ThemeManager.AdditionalHighContrastDarkThemeUri
+            _aHighContrastChanged ? _additionalHighContrastThemeSource : ThemeManager.AdditionalHighContrastThemeUri
         );
 
         // Reset explicit-set flags after applying so subsequent merges without that attribute
         // don't unintentionally clear values.
-        _aLightChanged = _aDarkChanged = _aHcLightChanged = _aHcDarkChanged = false;
+        _aLightChanged = _aDarkChanged = _aHighContrastChanged = false;
     }
 
     static ThemeManagerOptions()

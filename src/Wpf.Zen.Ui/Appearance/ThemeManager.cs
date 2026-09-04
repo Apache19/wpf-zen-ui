@@ -94,8 +94,7 @@ public sealed class ThemeManager
 
     private static Uri? _additionalLightThemeUri;
     private static Uri? _additionalDarkThemeUri;
-    private static Uri? _additionalHighContrastLightThemeUri;
-    private static Uri? _additionalHighContrastDarkThemeUri;
+    private static Uri? _additionalHighContrastThemeUri;
 
     private static ThemePreference   _themePreference   = ThemePreference.Light;
     private static AccentColorSource _accentSource      = AccentColorSource.System;
@@ -390,17 +389,13 @@ public sealed class ThemeManager
     /// <param name="darkThemeUri">
     /// The URI of the additional dark theme resource dictionary, or <c>null</c> to clear.
     /// </param>
-    /// <param name="highContrastLightThemeUri">
-    /// The URI of the additional high contrast light theme resource dictionary, or <c>null</c> to clear.
-    /// </param>
-    /// <param name="highContrastDarkThemeUri">
-    /// The URI of the additional high contrast dark theme resource dictionary, or <c>null</c> to clear.
+    /// <param name="highContrastThemeUri">
+    /// The URI of the additional high contrast theme resource dictionary, or <c>null</c> to clear.
     /// </param>
     public static void SetAdditionalThemeUris(
         Uri? lightThemeUri,
         Uri? darkThemeUri,
-        Uri? highContrastLightThemeUri = null,
-        Uri? highContrastDarkThemeUri = null)
+        Uri? highContrastThemeUri = null)
     {
         var changed = false;
 
@@ -416,15 +411,9 @@ public sealed class ThemeManager
             changed = true;
         }
 
-        if (_additionalHighContrastLightThemeUri != highContrastLightThemeUri)
+        if (_additionalHighContrastThemeUri != highContrastThemeUri)
         {
-            _additionalHighContrastLightThemeUri = highContrastLightThemeUri;
-            changed = true;
-        }
-
-        if (_additionalHighContrastDarkThemeUri != highContrastDarkThemeUri)
-        {
-            _additionalHighContrastDarkThemeUri = highContrastDarkThemeUri;
+            _additionalHighContrastThemeUri = highContrastThemeUri;
             changed = true;
         }
 
@@ -516,8 +505,7 @@ public sealed class ThemeManager
     /// </param>
     /// <param name="additionalLightThemeUri">The URI of the additional light theme resource dictionary, or <c>null</c> to clear.</param>
     /// <param name="additionalDarkThemeUri">The URI of the additional dark theme resource dictionary, or <c>null</c> to clear.</param>
-    /// <param name="additionalHighContrastLightThemeUri">The URI of the additional high contrast light theme resource dictionary, or <c>null</c> to clear.</param>
-    /// <param name="additionalHighContrastDarkThemeUri">The URI of the additional high contrast dark theme resource dictionary, or <c>null</c> to clear.</param>
+    /// <param name="additionalHighContrastThemeUri">The URI of the additional high contrast theme resource dictionary, or <c>null</c> to clear.</param>
     /// <example>
     /// <code lang="csharp">
     /// ThemeManager.Configure(
@@ -525,7 +513,8 @@ public sealed class ThemeManager
     ///     accentSource: AccentColorSource.Custom,
     ///     customAccentColor: Color.FromRgb(0x7A, 0x3F, 0xD0),
     ///     additionalLightThemeUri: new Uri("pack://application:,,,/MyApp;component/Themes/Light.xaml"),
-    ///     additionalDarkThemeUri: new Uri("pack://application:,,,/MyApp;component/Themes/Dark.xaml")
+    ///     additionalDarkThemeUri: new Uri("pack://application:,,,/MyApp;component/Themes/Dark.xaml"),
+    ///     additionalHighContrastThemeUri: new Uri("pack://application:,,,/MyApp;component/Themes/HighContrast.xaml")
     /// );
     /// </code>
     /// </example>
@@ -535,8 +524,7 @@ public sealed class ThemeManager
         Color customAccentColor,
         Uri? additionalLightThemeUri,
         Uri? additionalDarkThemeUri,
-        Uri? additionalHighContrastLightThemeUri,
-        Uri? additionalHighContrastDarkThemeUri)
+        Uri? additionalHighContrastThemeUri)
     {
         ValidateThemePreference(preference);
         ValidateAccentSource(accentSource);
@@ -574,15 +562,9 @@ public sealed class ThemeManager
             changed = true;
         }
 
-        if (_additionalHighContrastLightThemeUri != additionalHighContrastLightThemeUri)
+        if (_additionalHighContrastThemeUri != additionalHighContrastThemeUri)
         {
-            _additionalHighContrastLightThemeUri = additionalHighContrastLightThemeUri;
-            changed = true;
-        }
-
-        if (_additionalHighContrastDarkThemeUri != additionalHighContrastDarkThemeUri)
-        {
-            _additionalHighContrastDarkThemeUri = additionalHighContrastDarkThemeUri;
+            _additionalHighContrastThemeUri = additionalHighContrastThemeUri;
             changed = true;
         }
 
@@ -690,60 +672,27 @@ public sealed class ThemeManager
 
     /// <summary>
     /// Gets or sets an additional resource dictionary URI to be merged
-    /// when a light high contrast theme is active.
+    /// whenever system high contrast is active. The default is <c>null</c>; assigning <c>null</c> clears the extension.
     /// </summary>
     /// <remarks>
-    /// High contrast light vs. dark is determined by comparing the relative
-    /// luminance of <see cref="SystemColors.WindowColor"/> and
-    /// <see cref="SystemColors.WindowTextColor"/>.
+    /// The same extension applies for every theme preference. Use dynamic references to semantic
+    /// <see cref="SystemColors"/> resources so colors follow the system high contrast palette rather than
+    /// assuming a light or dark background. Changing the URI refreshes the active theme resources.
     /// The dictionary is a palette extension and should contain only non-structural values such as colors, brushes,
     /// numbers, and thicknesses. Styles, control or data templates, event setters, and other structural resources
     /// are unsupported because theme switching preserves the existing theme-style/template graph.
     /// Applicationless process-wide overrides must use the assembly-scoped keys published by
     /// <c>Wpf.Zen.Ui.Theming</c>; ordinary string keys are not routed through WPF's system-theme dictionaries.
     /// </remarks>
-    public static Uri? AdditionalHighContrastLightThemeUri
+    public static Uri? AdditionalHighContrastThemeUri
     {
-        get => _additionalHighContrastLightThemeUri;
+        get => _additionalHighContrastThemeUri;
         set
         {
-            bool changed = _additionalHighContrastLightThemeUri != value;
+            bool changed = _additionalHighContrastThemeUri != value;
             if (changed)
             {
-                _additionalHighContrastLightThemeUri = value;
-            }
-
-            bool activated = ActivateThemeManagement();
-            if (changed || activated)
-            {
-                RefreshTheme(ThemeChangeSource.Manual);
-            }
-        }
-    }
-
-    /// <summary>
-    /// Gets or sets an additional resource dictionary URI to be merged
-    /// when a dark high contrast theme is active.
-    /// </summary>
-    /// <remarks>
-    /// High contrast light vs. dark is determined by comparing the relative
-    /// luminance of <see cref="SystemColors.WindowColor"/> and
-    /// <see cref="SystemColors.WindowTextColor"/>.
-    /// The dictionary is a palette extension and should contain only non-structural values such as colors, brushes,
-    /// numbers, and thicknesses. Styles, control or data templates, event setters, and other structural resources
-    /// are unsupported because theme switching preserves the existing theme-style/template graph.
-    /// Applicationless process-wide overrides must use the assembly-scoped keys published by
-    /// <c>Wpf.Zen.Ui.Theming</c>; ordinary string keys are not routed through WPF's system-theme dictionaries.
-    /// </remarks>
-    public static Uri? AdditionalHighContrastDarkThemeUri
-    {
-        get => _additionalHighContrastDarkThemeUri;
-        set
-        {
-            bool changed = _additionalHighContrastDarkThemeUri != value;
-            if (changed)
-            {
-                _additionalHighContrastDarkThemeUri = value;
+                _additionalHighContrastThemeUri = value;
             }
 
             bool activated = ActivateThemeManagement();
@@ -1193,8 +1142,7 @@ public sealed class ThemeManager
             accentColor,
             _additionalLightThemeUri,
             _additionalDarkThemeUri,
-            _additionalHighContrastLightThemeUri,
-            _additionalHighContrastDarkThemeUri
+            _additionalHighContrastThemeUri
         );
 
         bool rebuildNormalDictionaries = _normalThemeResourceConfiguration != configuration;
@@ -1319,17 +1267,15 @@ public sealed class ThemeManager
                 darkDictionaries.Add(globalResources);
             }
 
-            if (_additionalHighContrastLightThemeUri != null)
+            // High contrast colors belong to the system palette, independently of the requested Light/Dark
+            // variant. Both paths use the same extension URI at the highest managed palette precedence.
+            if (_additionalHighContrastThemeUri != null)
             {
                 lightDictionaries.Add(
-                    LoadAdditionalResourceDictionary(_additionalHighContrastLightThemeUri)
+                    LoadAdditionalResourceDictionary(_additionalHighContrastThemeUri)
                 );
-            }
-
-            if (_additionalHighContrastDarkThemeUri != null)
-            {
                 darkDictionaries.Add(
-                    LoadAdditionalResourceDictionary(_additionalHighContrastDarkThemeUri)
+                    LoadAdditionalResourceDictionary(_additionalHighContrastThemeUri)
                 );
             }
         }
@@ -1885,10 +1831,9 @@ public sealed class ThemeManager
     private readonly record struct ThemeResourceConfiguration(
         bool HighContrast,
         Color AccentColor,
-        Uri? AdditionalLightThemeUri,
-        Uri? AdditionalDarkThemeUri,
-        Uri? AdditionalHighContrastLightThemeUri,
-        Uri? AdditionalHighContrastDarkThemeUri
+        Uri? LightExtensionUri,
+        Uri? DarkExtensionUri,
+        Uri? HighContrastExtensionUri
     );
 
     private ThemeManager() { }
