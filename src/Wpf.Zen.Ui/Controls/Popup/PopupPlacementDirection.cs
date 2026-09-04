@@ -7,12 +7,13 @@
 namespace Wpf.Zen.Ui.Controls;
 
 /// <summary>
-/// Describes the resolved screen-space side on which a Popup is currently displayed relative to its placement target.
+/// Describes a Popup's selected target-relative candidate side, or an estimated side when candidate state is unavailable.
 /// </summary>
 /// <remarks>
-/// Unlike <see cref="System.Windows.Controls.Primitives.Popup.Placement"/>, this value describes the result after
-/// WPF has evaluated its fallback candidates and constrained the Popup to the monitor bounds. It is intended for
-/// visual-state decisions such as joining the borders of a placement target and its Popup content.
+/// Unlike <see cref="System.Windows.Controls.Primitives.Popup.Placement"/>, this value accounts for WPF's fallback
+/// candidate selection. Candidate sides precede monitor-edge nudging and are logical, not necessarily screen-space
+/// directions after transforms or offsets. <see cref="PopupPlacementTracker.IsPlacementEstimatedProperty"/> identifies
+/// results inferred from final window geometry, including Custom and relative placements.
 /// </remarks>
 public enum PopupPlacementDirection
 {
@@ -22,22 +23,22 @@ public enum PopupPlacementDirection
     None,
 
     /// <summary>
-    /// The Popup is displayed above its placement target.
+    /// The upper candidate side, or an estimated position above the target.
     /// </summary>
     Top,
 
     /// <summary>
-    /// The Popup is displayed below its placement target.
+    /// The lower candidate side, or an estimated position below the target.
     /// </summary>
     Bottom,
 
     /// <summary>
-    /// The Popup is displayed to the left of its placement target.
+    /// The left candidate side, or an estimated position to the left of the target.
     /// </summary>
     Left,
 
     /// <summary>
-    /// The Popup is displayed to the right of its placement target.
+    /// The right candidate side, or an estimated position to the right of the target.
     /// </summary>
     Right,
 
