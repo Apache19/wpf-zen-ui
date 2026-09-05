@@ -718,45 +718,6 @@ public class DropDownButton : Button
         }
     }
 
-    /// <summary>
-    /// Enumerates a logical-child snapshot without acquiring resources that require disposal.
-    /// </summary>
-    /// <remarks>
-    /// WPF logical-tree walkers use IEnumerator without a disposal contract. Implementing that
-    /// interface directly follows WPF's own logical-child enumerators and avoids the disposal
-    /// obligation attached to collection GetEnumerator calls or compiler-generated iterators.
-    /// </remarks>
-    private sealed class LogicalChildrenEnumerator : IEnumerator
-    {
-        private readonly List<object> _children;
-        private int _index = -1;
-
-        /// <summary>Initializes a new instance of the <see cref="LogicalChildrenEnumerator"/> class with a private child snapshot.</summary>
-        public LogicalChildrenEnumerator(List<object> children)
-        {
-            _children = children;
-        }
-
-        /// <summary>Gets the current child, rejecting positions before the first or after the last child.</summary>
-        public object Current => _index >= 0 && _index < _children.Count
-            ? _children[_index]
-            : throw new InvalidOperationException("The enumerator is not positioned on a logical child.");
-
-        /// <summary>Advances to the next child and remains past the end once exhausted.</summary>
-        public bool MoveNext()
-        {
-            if (_index < _children.Count)
-            {
-                _index++;
-            }
-
-            return _index < _children.Count;
-        }
-
-        /// <summary>Restarts enumeration of the same snapshot.</summary>
-        public void Reset() => _index = -1;
-    }
-
     private static bool IsGeneratedContent(object? value)
     {
         return value is not null and not System.Windows.Controls.ContextMenu and not Popup;

@@ -124,6 +124,21 @@ public class ContentDialogTests
         Assert.DoesNotContain(footer, LogicalTreeHelper.GetChildren(dialog).Cast<object>());
     });
 
+    [Fact]
+    public void LogicalChildren_SnapshotsDoNotRequireDisposal() => Run(_ =>
+    {
+        var dialog = new LogicalChildrenDialogProbe
+        {
+            Header = new object(),
+            Content = new object(),
+            Footer = new object(),
+        };
+        var host = new LogicalChildrenHostProbe { Content = new object() };
+
+        Assert.False(dialog.GetLogicalChildren() is IDisposable);
+        Assert.False(host.GetLogicalChildren() is IDisposable);
+    });
+
     [Theory]
     [InlineData("Header")]
     [InlineData("Footer")]
@@ -1105,6 +1120,16 @@ public class ContentDialogTests
     /// theme resource through <c>StaticResource</c>.
     /// </summary>
     private sealed class DerivedDialog : Dialog { }
+
+    private sealed class LogicalChildrenDialogProbe : Dialog
+    {
+        public System.Collections.IEnumerator GetLogicalChildren() => LogicalChildren;
+    }
+
+    private sealed class LogicalChildrenHostProbe : ContentDialogHost
+    {
+        public System.Collections.IEnumerator GetLogicalChildren() => LogicalChildren;
+    }
 
     private sealed class TestCommand(Action execute) : ICommand
     {

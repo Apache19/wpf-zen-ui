@@ -227,7 +227,7 @@ public partial class ContentDialog : HeaderedContentControl
                 children.Add(footer);
             }
 
-            return ((IEnumerable)children).GetEnumerator();
+            return new LogicalChildrenEnumerator(children);
         }
     }
 

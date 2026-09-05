@@ -544,7 +544,7 @@ public partial class ContentDialogHost : ContentControl
                 children.Add(dialog);
             }
 
-            return ((IEnumerable)children).GetEnumerator();
+            return new LogicalChildrenEnumerator(children);
         }
     }
 }
