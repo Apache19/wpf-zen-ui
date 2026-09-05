@@ -21,7 +21,8 @@ public partial class ContentDialog
     {
         ApplyTemplate();
 
-        if (InitialFocus is DependencyObject target && ContentDialogHost.Contains(this, target)
+        if (InitialFocus is DependencyObject target
+            && ContentDialogHost.Contains(this, target)
             && TryFocus(InitialFocus))
         {
             return;
@@ -34,6 +35,7 @@ public partial class ContentDialog
 
         var presenter = GetTemplateChild("PART_ContentPresenter") as ContentPresenter;
         presenter?.ApplyTemplate();
+
         var body = presenter as DependencyObject ?? Content as DependencyObject;
         if (body is IInputElement input && TryFocus(input))
         {
@@ -47,14 +49,19 @@ public partial class ContentDialog
         }
     }
 
-    private static bool CanFocus(DependencyObject element) =>
-        element is UIElement { Focusable: true, IsVisible: true, IsEnabled: true }
-        && element is not Control { IsTabStop: false };
-
-    private static bool TryFocus(IInputElement element) => element switch
+    private static bool CanFocus(DependencyObject element)
     {
-        UIElement ui when CanFocus(ui) => ui.Focus(),
-        ContentElement { Focusable: true, IsEnabled: true } content => content.Focus(),
-        _ => false,
-    };
+        return element is UIElement { Focusable: true, IsVisible: true, IsEnabled: true }
+               && element is not Control { IsTabStop: false };
+    }
+
+    private static bool TryFocus(IInputElement element)
+    {
+        return element switch
+        {
+            UIElement ui when CanFocus(ui)                         => ui.Focus(),
+            ContentElement { Focusable: true, IsEnabled: true } ce => ce.Focus(),
+            _                                                      => false,
+        };
+    }
 }

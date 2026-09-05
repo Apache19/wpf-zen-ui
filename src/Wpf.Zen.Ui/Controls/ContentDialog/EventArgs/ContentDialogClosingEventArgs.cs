@@ -5,17 +5,30 @@
 
 namespace Wpf.Zen.Ui.Controls;
 
-/// <summary>A synchronous close request. Forced cleanup and token cancellation bypass this event.</summary>
+/// <summary
+/// >A synchronous close request.
+/// Forced cleanup and token cancellation bypass this event.
+/// </summary>
 public sealed class ContentDialogClosingEventArgs : RoutedEventArgs
 {
-    /// <summary>Initializes a new instance of the <see cref="ContentDialogClosingEventArgs"/> class. Creates a close notification for the given dialog and routed event.</summary>
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ContentDialogClosingEventArgs"/> class.
+    /// Creates a close notification for the given dialog and routed event.
+    /// </summary>
     public ContentDialogClosingEventArgs(RoutedEvent routedEvent, object source)
-        : base(routedEvent, source) { }
+        : base(routedEvent, source)
+    {
+    }
 
-    /// <summary>Gets the proposed business result; null represents dismissal without a result.</summary>
+    /// <summary>
+    /// Gets the proposed business result; null represents dismissal without a result.
+    /// </summary>
     public object? Result { get; init; }
 
-    /// <summary>Gets or sets a value indicating whether to reject this request. Default false; another request may follow a veto.</summary>
+    /// <summary>
+    /// Gets or sets a value indicating whether to reject this request.
+    /// Default false; another request may follow a veto.
+    /// </summary>
     public bool Cancel { get; set; }
 
     /// <inheritdoc />
@@ -23,8 +36,12 @@ public sealed class ContentDialogClosingEventArgs : RoutedEventArgs
     {
         // Direct dispatch preserves the application exception instead of wrapping DynamicInvoke.
         if (genericHandler is EventHandler<ContentDialogClosingEventArgs> handler)
+        {
             handler(genericTarget, this);
+        }
         else
+        {
             base.InvokeEventHandler(genericHandler, genericTarget);
+        }
     }
 }

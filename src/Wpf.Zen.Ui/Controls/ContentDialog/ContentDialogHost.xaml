@@ -27,19 +27,19 @@
                                                 Storyboard.TargetProperty="Opacity"
                                                 From="0"
                                                 To="1"
-                                                Duration="0:0:0.22" />
+                                                Duration="0:0:0.167" />
                                             <DoubleAnimation
                                                 Storyboard.TargetName="PART_TransitionRoot"
                                                 Storyboard.TargetProperty="Opacity"
                                                 From="0"
                                                 To="1"
-                                                Duration="0:0:0.22" />
+                                                Duration="0:0:0.167" />
                                             <DoubleAnimation
                                                 Storyboard.TargetName="DialogScale"
                                                 Storyboard.TargetProperty="ScaleX"
                                                 From="0.94"
                                                 To="1"
-                                                Duration="0:0:0.22">
+                                                Duration="0:0:0.167">
                                                 <DoubleAnimation.EasingFunction>
                                                     <BackEase Amplitude="0.35" EasingMode="EaseOut" />
                                                 </DoubleAnimation.EasingFunction>
@@ -49,7 +49,7 @@
                                                 Storyboard.TargetProperty="ScaleY"
                                                 From="0.94"
                                                 To="1"
-                                                Duration="0:0:0.22">
+                                                Duration="0:0:0.167">
                                                 <DoubleAnimation.EasingFunction>
                                                     <BackEase Amplitude="0.35" EasingMode="EaseOut" />
                                                 </DoubleAnimation.EasingFunction>
@@ -62,17 +62,17 @@
                                                 Storyboard.TargetName="PART_Backdrop"
                                                 Storyboard.TargetProperty="Opacity"
                                                 To="0"
-                                                Duration="0:0:0.22" />
+                                                Duration="0:0:0.167" />
                                             <DoubleAnimation
                                                 Storyboard.TargetName="PART_TransitionRoot"
                                                 Storyboard.TargetProperty="Opacity"
                                                 To="0"
-                                                Duration="0:0:0.22" />
+                                                Duration="0:0:0.167" />
                                             <DoubleAnimation
                                                 Storyboard.TargetName="DialogScale"
                                                 Storyboard.TargetProperty="ScaleX"
                                                 To="0.97"
-                                                Duration="0:0:0.22">
+                                                Duration="0:0:0.167">
                                                 <DoubleAnimation.EasingFunction>
                                                     <CubicEase EasingMode="EaseIn" />
                                                 </DoubleAnimation.EasingFunction>
@@ -81,7 +81,7 @@
                                                 Storyboard.TargetName="DialogScale"
                                                 Storyboard.TargetProperty="ScaleY"
                                                 To="0.97"
-                                                Duration="0:0:0.22">
+                                                Duration="0:0:0.167">
                                                 <DoubleAnimation.EasingFunction>
                                                     <CubicEase EasingMode="EaseIn" />
                                                 </DoubleAnimation.EasingFunction>

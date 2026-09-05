@@ -28,10 +28,13 @@ public partial class ContentDialog : HeaderedContentControl
 {
     internal ContentDialogHost? Host
     {
-        get; private set;
+        get;
+        private set;
     }
 
-    /// <summary>Requests closure with CommandParameter as the result, regardless of IsDismissible.</summary>
+    /// <summary>
+    /// Requests closure with CommandParameter as the result, regardless of IsDismissible.
+    /// </summary>
     public static readonly RoutedCommand CloseCommand = new(nameof(CloseCommand), typeof(ContentDialog));
 
     /// <summary>Requests user dismissal with a null result when IsDismissible permits it.</summary>
@@ -39,46 +42,72 @@ public partial class ContentDialog : HeaderedContentControl
 
     static ContentDialog()
     {
-        DefaultStyleKeyProperty.OverrideMetadata(typeof(ContentDialog), new FrameworkPropertyMetadata(typeof(ContentDialog)));
+        DefaultStyleKeyProperty.OverrideMetadata(
+            typeof(ContentDialog),
+            new FrameworkPropertyMetadata(typeof(ContentDialog))
+        );
+
         // These defaults are behavioral contracts, so custom templates without the default style
         // still provide a focus fallback and contained tab navigation.
-        FocusableProperty.OverrideMetadata(typeof(ContentDialog), new FrameworkPropertyMetadata(true));
-        KeyboardNavigation.TabNavigationProperty.OverrideMetadata(typeof(ContentDialog), new FrameworkPropertyMetadata(KeyboardNavigationMode.Cycle));
-        KeyboardNavigation.ControlTabNavigationProperty.OverrideMetadata(typeof(ContentDialog), new FrameworkPropertyMetadata(KeyboardNavigationMode.Cycle));
-    }
+        FocusableProperty.OverrideMetadata(
+            typeof(ContentDialog),
+            new FrameworkPropertyMetadata(true)
+        );
 
-    /// <summary>Initializes a new instance of the <see cref="ContentDialog"/> class. The dialog is reusable and initially detached. No host is reserved until ShowAsync.</summary>
-    public ContentDialog()
-    {
-        CommandBindings.Add(new CommandBinding(
-            CloseCommand,
-            (_, e) =>
-            {
-                Close(e.Parameter);
-                e.Handled = true;
-            },
-            (_, e) =>
-            {
-                e.CanExecute = IsOpen && !IsClosing;
-                e.Handled = true;
-            }));
-        CommandBindings.Add(new CommandBinding(
-            DismissCommand,
-            (_, e) =>
-            {
-                Dismiss();
-                e.Handled = true;
-            },
-            (_, e) =>
-            {
-                e.CanExecute = IsOpen && !IsClosing && IsDismissible;
-                e.Handled = true;
-            }));
+        KeyboardNavigation.TabNavigationProperty.OverrideMetadata(
+            typeof(ContentDialog),
+            new FrameworkPropertyMetadata(KeyboardNavigationMode.Cycle)
+        );
+
+        KeyboardNavigation.ControlTabNavigationProperty.OverrideMetadata(
+            typeof(ContentDialog),
+            new FrameworkPropertyMetadata(KeyboardNavigationMode.Cycle)
+        );
     }
 
     /// <summary>
-    /// Requests closure with an application-defined result (null by default). Closing can veto
-    /// the request. The first accepted request wins; calls outside a session do nothing.
+    /// Initializes a new instance of the <see cref="ContentDialog"/> class.
+    /// The dialog is reusable and initially detached. No host is reserved until ShowAsync.
+    /// </summary>
+    public ContentDialog()
+    {
+        CommandBindings.Add(
+            new CommandBinding(
+                CloseCommand,
+                (_, e) =>
+                {
+                    Close(e.Parameter);
+                    e.Handled = true;
+                },
+                (_, e) =>
+                {
+                    e.CanExecute = IsOpen && !IsClosing;
+                    e.Handled = true;
+                }
+            )
+        );
+
+        CommandBindings.Add(
+            new CommandBinding(
+                DismissCommand,
+                (_, e) =>
+                {
+                    Dismiss();
+                    e.Handled = true;
+                },
+                (_, e) =>
+                {
+                    e.CanExecute = IsOpen && !IsClosing && IsDismissible;
+                    e.Handled = true;
+                }
+            )
+        );
+    }
+
+    /// <summary>
+    /// Requests closure with an application-defined result (null by default).
+    /// Closing can veto the request.
+    /// The first accepted request wins; calls outside a session do nothing.
     /// Await business work before calling Close on the UI dispatcher.
     /// </summary>
     public void Close(object? result = null)
@@ -90,24 +119,35 @@ public partial class ContentDialog : HeaderedContentControl
     internal void Dismiss()
     {
         if (IsDismissible)
+        {
             Close();
+        }
     }
 
-    /// <summary>Raises the synchronous veto notification for an ordinary close request.</summary>
-    protected virtual void OnClosing(ContentDialogClosingEventArgs e) => RaiseEvent(e);
+    /// <summary>
+    /// Raises the synchronous veto notification for an ordinary close request.
+    /// </summary>
+    protected virtual void OnClosing(ContentDialogClosingEventArgs e)
+    {
+        RaiseEvent(e);
+    }
 
     internal bool AcceptClose(object? result)
     {
         var args = new ContentDialogClosingEventArgs(ClosingEvent, this) { Result = result };
+
         OnClosing(args);
+
         return !args.Cancel;
     }
 
     internal void Attach(ContentDialogHost host)
     {
         Host = host;
+
         SetValue(IsOpenPropertyKey, true);
         SetValue(IsClosingPropertyKey, false);
+
         CommandManager.InvalidateRequerySuggested();
     }
 
@@ -117,7 +157,10 @@ public partial class ContentDialog : HeaderedContentControl
         CommandManager.InvalidateRequerySuggested();
     }
 
-    internal void NotifyOpened() => RaiseEvent(new RoutedEventArgs(OpenedEvent, this));
+    internal void NotifyOpened()
+    {
+        RaiseEvent(new RoutedEventArgs(OpenedEvent, this));
+    }
 
     internal void NotifyClosed(object? result)
     {
@@ -129,8 +172,10 @@ public partial class ContentDialog : HeaderedContentControl
         finally
         {
             Host = null;
+
             SetValue(IsOpenPropertyKey, false);
             SetValue(IsClosingPropertyKey, false);
+
             CommandManager.InvalidateRequerySuggested();
         }
     }
@@ -143,21 +188,29 @@ public partial class ContentDialog : HeaderedContentControl
     {
         get
         {
-            var children = new List<object>();
+            var children  = new List<object>();
             var inherited = base.LogicalChildren;
+
             if (inherited is not null)
             {
                 while (inherited.MoveNext())
+                {
                     children.Add(inherited.Current);
+                }
             }
 
             if (Footer is { } footer && !children.Any(child => ReferenceEquals(child, footer)))
+            {
                 children.Add(footer);
+            }
+
             return ((IEnumerable)children).GetEnumerator();
         }
     }
 
-    /// <summary>Maintains the same logical ownership contract as HeaderedContentControl.Header.</summary>
+    /// <summary>
+    /// Maintains the same logical ownership contract as HeaderedContentControl.Header.
+    /// </summary>
     protected virtual void OnFooterChanged(object? oldFooter, object? newFooter)
     {
         RemoveLogicalChild(oldFooter);
@@ -165,5 +218,8 @@ public partial class ContentDialog : HeaderedContentControl
     }
 
     /// <inheritdoc />
-    protected override AutomationPeer OnCreateAutomationPeer() => new ContentDialogAutomationPeer(this);
+    protected override AutomationPeer OnCreateAutomationPeer()
+    {
+        return new ContentDialogAutomationPeer(this);
+    }
 }

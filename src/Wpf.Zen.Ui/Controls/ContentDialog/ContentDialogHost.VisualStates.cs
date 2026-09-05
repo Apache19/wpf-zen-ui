@@ -3,7 +3,6 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-using System.Windows.Media.Animation;
 using System.Windows.Threading;
 
 namespace Wpf.Zen.Ui.Controls;
@@ -12,8 +11,8 @@ namespace Wpf.Zen.Ui.Controls;
 public partial class ContentDialogHost
 {
     private const string DialogStatesGroupName = "DialogStates";
-    private const string ClosedStateName = "Closed";
-    private const string OpenedStateName = "Opened";
+    private const string ClosedStateName       = "Closed";
+    private const string OpenedStateName       = "Opened";
 
     /// <summary>
     /// Enters a dialog state and, when transitions are enabled, waits for the template's
@@ -32,9 +31,11 @@ public partial class ContentDialogHost
     {
         FinishTransition();
 
-        VisualStateGroup? group = GetDialogStateGroup();
-        VisualState? targetState = GetState(group, stateName);
-        bool useTransitions = IsAnimationEnabled
+        var group       = GetDialogStateGroup();
+        var targetState = GetState(group, stateName);
+
+        var useTransitions =
+            IsAnimationEnabled
             && SystemParameters.ClientAreaAnimation
             && IsLoaded
             && IsVisible;
@@ -46,55 +47,73 @@ public partial class ContentDialogHost
             return Task.CompletedTask;
         }
 
-        VisualState? previousState = group.CurrentState;
-        VisualTransition? transition = GetTransition(group, previousState, targetState);
-        Storyboard? explicitStoryboard = transition?.Storyboard;
+        var previousState      = group.CurrentState;
+        var transition         = GetTransition(group, previousState, targetState);
+        var explicitStoryboard = transition?.Storyboard;
+
         // When GeneratedDuration is zero, WPF's dynamic transition contains no independently timed
         // visual work. Completion of the explicit storyboard therefore describes the visible end
         // of the whole transition and is a safe fallback if the group notification is lost.
-        bool explicitStoryboardCompletesTransition = explicitStoryboard is not null
+        var explicitStoryboardCompletesTransition =
+            explicitStoryboard is not null
             && transition!.GeneratedDuration.HasTimeSpan
             && transition.GeneratedDuration.TimeSpan == TimeSpan.Zero;
+
         var completion = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-        bool completed = false;
-        bool completionScheduled = false;
-        bool explicitStoryboardCompleted = false;
-        bool stateChangeConfirmed = false;
 
-        void Complete()
+        var completed                   = false;
+        var completionScheduled         = false;
+        var explicitStoryboardCompleted = false;
+        var stateChangeConfirmed        = false;
+
+        group.CurrentStateChanged += OnCurrentStateChanged;
+        if (explicitStoryboardCompletesTransition)
         {
-            if (completed)
-                return;
-
-            completed = true;
-            group.CurrentStateChanged -= OnCurrentStateChanged;
-            if (explicitStoryboard is not null)
-                explicitStoryboard.Completed -= OnExplicitStoryboardCompleted;
-            _finishTransition = null;
-            completion.TrySetResult(true);
+            explicitStoryboard!.Completed += OnExplicitStoryboardCompleted;
         }
 
-        void ScheduleCompletionBoundary()
+        _finishTransition = Finish;
+        try
         {
-            if (completed || completionScheduled)
-                return;
-
-            completionScheduled = true;
-            // Storyboard and VisualStateManager completion callbacks run during a timing-manager
-            // tick. Loaded is the first dispatcher priority after layout/render and before input,
-            // giving WPF one deterministic boundary to settle its controllable clocks without
-            // allowing mouse traffic to starve mandatory dialog cleanup.
-            _ = Dispatcher.BeginInvoke(DispatcherPriority.Loaded, new Action(() =>
+            if (!VisualStateManager.GoToState(this, stateName, true))
             {
-                completionScheduled = false;
-                if (completed)
-                    return;
+                Complete();
+            }
+        }
+        catch
+        {
+            Complete();
+            throw;
+        }
 
-                if (explicitStoryboardCompleted && !stateChangeConfirmed)
-                    Finish();
-                else
-                    Complete();
-            }));
+        return completion.Task;
+
+        void Finish()
+        {
+            if (completed)
+            {
+                return;
+            }
+
+            // VisualStateManager records the destination as CurrentState as soon as a transition
+            // starts. Asking for that state again therefore does not stop its clocks. Briefly enter
+            // the previous stable state without transitions, then snap to the destination. Both
+            // changes occur in one dispatcher turn, so no intermediate frame is rendered.
+            if (previousState is not null && ReferenceEquals(group.CurrentState, targetState))
+            {
+                _ = VisualStateManager.GoToState(this, previousState.Name, false);
+            }
+
+            _ = VisualStateManager.GoToState(this, stateName, false);
+
+            Complete();
+        }
+
+        void OnExplicitStoryboardCompleted(object? sender, EventArgs e)
+        {
+            explicitStoryboardCompleted = true;
+            explicitStoryboard!.Completed -= OnExplicitStoryboardCompleted;
+            ScheduleCompletionBoundary();
         }
 
         void OnCurrentStateChanged(object? sender, VisualStateChangedEventArgs e)
@@ -107,45 +126,62 @@ public partial class ContentDialogHost
             }
         }
 
-        void OnExplicitStoryboardCompleted(object? sender, EventArgs e)
+        void ScheduleCompletionBoundary()
         {
-            explicitStoryboardCompleted = true;
-            explicitStoryboard!.Completed -= OnExplicitStoryboardCompleted;
-            ScheduleCompletionBoundary();
+            if (completed || completionScheduled)
+            {
+                return;
+            }
+
+            completionScheduled = true;
+
+            // Storyboard and VisualStateManager completion callbacks run during a timing-manager
+            // tick. Loaded is the first dispatcher priority after layout/render and before input,
+            // giving WPF one deterministic boundary to settle its controllable clocks without
+            // allowing mouse traffic to starve mandatory dialog cleanup.
+            _ = Dispatcher.BeginInvoke(
+                DispatcherPriority.Loaded,
+                new Action(() =>
+                    {
+                        completionScheduled = false;
+                        if (completed)
+                        {
+                            return;
+                        }
+
+                        if (explicitStoryboardCompleted && !stateChangeConfirmed)
+                        {
+                            Finish();
+                        }
+                        else
+                        {
+                            Complete();
+                        }
+                    }
+                )
+            );
         }
 
-        void Finish()
+        void Complete()
         {
             if (completed)
+            {
                 return;
+            }
 
-            // VisualStateManager records the destination as CurrentState as soon as a transition
-            // starts. Asking for that state again therefore does not stop its clocks. Briefly enter
-            // the previous stable state without transitions, then snap to the destination. Both
-            // changes occur in one dispatcher turn, so no intermediate frame is rendered.
-            if (previousState is not null && ReferenceEquals(group.CurrentState, targetState))
-                _ = VisualStateManager.GoToState(this, previousState.Name, false);
+            completed = true;
 
-            _ = VisualStateManager.GoToState(this, stateName, false);
-            Complete();
+            group.CurrentStateChanged -= OnCurrentStateChanged;
+
+            if (explicitStoryboard is not null)
+            {
+                explicitStoryboard.Completed -= OnExplicitStoryboardCompleted;
+            }
+
+            _finishTransition = null;
+
+            completion.TrySetResult(true);
         }
-
-        group.CurrentStateChanged += OnCurrentStateChanged;
-        if (explicitStoryboardCompletesTransition)
-            explicitStoryboard!.Completed += OnExplicitStoryboardCompleted;
-        _finishTransition = Finish;
-        try
-        {
-            if (!VisualStateManager.GoToState(this, stateName, true))
-                Complete();
-        }
-        catch
-        {
-            Complete();
-            throw;
-        }
-
-        return completion.Task;
     }
 
     /// <summary>
@@ -156,12 +192,22 @@ public partial class ContentDialogHost
     {
         if (VisualTreeHelper.GetChildrenCount(this) == 0
             || VisualTreeHelper.GetChild(this, 0) is not FrameworkElement stateGroupsRoot)
+        {
             return null;
+        }
 
-        foreach (object item in VisualStateManager.GetVisualStateGroups(stateGroupsRoot))
+        var vsg = VisualStateManager.GetVisualStateGroups(stateGroupsRoot);
+        if (vsg is null)
+        {
+            return null;
+        }
+
+        foreach (var item in vsg)
         {
             if (item is VisualStateGroup { Name: DialogStatesGroupName } group)
+            {
                 return group;
+            }
         }
 
         return null;
@@ -170,12 +216,16 @@ public partial class ContentDialogHost
     private static VisualState? GetState(VisualStateGroup? group, string? stateName)
     {
         if (group is null)
+        {
             return null;
+        }
 
-        foreach (object item in group.States)
+        foreach (var item in group.States)
         {
             if (item is VisualState { Name: var name } state && name == stateName)
+            {
                 return state;
+            }
         }
 
         return null;
@@ -188,36 +238,48 @@ public partial class ContentDialogHost
     /// </summary>
     private static VisualTransition? GetTransition(
         VisualStateGroup group,
-        VisualState? fromState,
-        VisualState toState
-    )
+        VisualState?     fromState,
+        VisualState      toState)
     {
-        VisualTransition? best = null;
+        VisualTransition? best              = null;
         VisualTransition? defaultTransition = null;
-        int bestScore = -1;
 
-        foreach (object item in group.Transitions)
+        var bestScore = -1;
+
+        foreach (var item in group.Transitions)
         {
             if (item is not VisualTransition transition)
+            {
                 continue;
+            }
+
             if (transition.From is null && transition.To is null)
             {
                 defaultTransition ??= transition;
                 continue;
             }
 
-            int score = -1;
-            VisualState? transitionFromState = GetState(group, transition.From);
-            VisualState? transitionToState = GetState(group, transition.To);
+            var score               = -1;
+            var transitionFromState = GetState(group, transition.From);
+            var transitionToState   = GetState(group, transition.To);
+
             if (ReferenceEquals(fromState, transitionFromState))
+            {
                 score++;
+            }
             else if (transitionFromState is not null)
+            {
                 continue;
+            }
 
             if (ReferenceEquals(toState, transitionToState))
+            {
                 score += 2;
+            }
             else if (transitionToState is not null)
+            {
                 continue;
+            }
 
             if (score > bestScore)
             {
@@ -229,8 +291,15 @@ public partial class ContentDialogHost
         return best ?? defaultTransition;
     }
 
-    private void FinishTransition() => _finishTransition?.Invoke();
+    private void FinishTransition()
+    {
+        _finishTransition?.Invoke();
+    }
 
-    private static void OnIsAnimationEnabledChanged(DependencyObject d, DependencyPropertyChangedEventArgs e) =>
+    private static void OnIsAnimationEnabledChanged(
+        DependencyObject                   d,
+        DependencyPropertyChangedEventArgs e)
+    {
         ((ContentDialogHost)d).FinishTransition();
+    }
 }
