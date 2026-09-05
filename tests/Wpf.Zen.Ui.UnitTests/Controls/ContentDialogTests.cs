@@ -364,7 +364,7 @@ public class ContentDialogTests
     });
 
     [Fact]
-    public void Focus_UsesExplicitTargetThenBodyRegardlessOfAppearance() => Run(scope =>
+    public void Focus_UsesExplicitTargetThenBody() => Run(scope =>
     {
         var body = new System.Windows.Controls.TextBox();
         var footer = new Wpf.Zen.Ui.Controls.Button { Content = "Delete", Appearance = ControlAppearance.Danger };
@@ -681,6 +681,102 @@ public class ContentDialogTests
         dialog.Close();
         Pump(task);
         Assert.Same(background, Keyboard.FocusedElement);
+    });
+
+    [Fact]
+    public void Focus_ReturnsToAsyncCommandButtonAfterCommandCompletes() => Run(scope =>
+    {
+        var dialog = scope.CreateDialog();
+        dialog.Content = new System.Windows.Controls.TextBox();
+        var command = new CommunityToolkit.Mvvm.Input.AsyncRelayCommand(async () =>
+            await scope.Host.ShowAsync(dialog));
+        var show = new Wpf.Zen.Ui.Controls.Button { Content = "Show", Command = command };
+        scope.Host.Content = show;
+        Drain();
+        Assert.True(show.Focus());
+        command.Execute(null);
+        Drain();
+        Assert.False(show.IsEnabled);
+        Assert.True(dialog.IsKeyboardFocusWithin);
+        dialog.Close();
+        Pump(command.ExecutionTask!);
+        Drain();
+        Assert.True(show.IsEnabled);
+        Assert.Same(show, Keyboard.FocusedElement);
+    });
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Focus_DeferredRestorationPreservesNewFocus(bool openNextDialog) => Run(scope =>
+    {
+        var dialog = scope.CreateDialog();
+        var next = scope.CreateDialog();
+        var chosen = new System.Windows.Controls.TextBox();
+        Task<object?>? nextTask = null;
+        var command = new CommunityToolkit.Mvvm.Input.AsyncRelayCommand(async () =>
+        {
+            await scope.Host.ShowAsync(dialog);
+            if (openNextDialog)
+            {
+                next.Content = chosen;
+                nextTask = scope.Host.ShowAsync(next);
+            }
+            else
+            {
+                Assert.True(chosen.Focus());
+            }
+        });
+        var show = new NativeButton { Content = "Show", Command = command };
+        var body = new StackPanel();
+        body.Children.Add(show);
+        if (!openNextDialog)
+        {
+            body.Children.Add(chosen);
+        }
+
+        scope.Host.Content = body;
+        Drain();
+        Assert.True(show.Focus());
+        command.Execute(null);
+        Drain();
+        dialog.Close();
+        Pump(command.ExecutionTask!);
+        Drain();
+        Assert.Same(chosen, Keyboard.FocusedElement);
+        if (nextTask is not null)
+        {
+            next.Close();
+            Pump(nextTask);
+        }
+    });
+
+    [Theory]
+    [InlineData(ControlAppearance.Danger)]
+    [InlineData(ControlAppearance.Caution)]
+    public void Focus_AutomaticSelectionSkipsRiskyButtons(ControlAppearance appearance) => Run(scope =>
+    {
+        var risky = new Wpf.Zen.Ui.Controls.Button { Content = "Confirm", Appearance = appearance };
+        var safe = new NativeButton { Content = "Other action" };
+        var body = new StackPanel();
+        body.Children.Add(risky);
+        body.Children.Add(safe);
+        var dialog = scope.CreateDialog();
+        dialog.Content = body;
+        var task = scope.Host.ShowAsync(dialog);
+        Drain();
+        Assert.Same(safe, Keyboard.FocusedElement);
+        Assert.True(risky.Focus());
+        dialog.Close();
+        Pump(task);
+
+        body.Children.Clear();
+        dialog.Content = risky;
+        task = scope.Host.ShowAsync(dialog);
+        Drain();
+        Assert.Same(dialog, Keyboard.FocusedElement);
+        dialog.Close();
+        Pump(task);
     });
 
     [Fact]

@@ -9,13 +9,14 @@ using Wpf.Zen.Ui.Extensions.Wpf;
 
 namespace Wpf.Zen.Ui.Controls;
 
-/// <summary>Provides content-first initial focus without interpreting button appearance.</summary>
+/// <summary>Provides content-first initial focus while avoiding destructive actions during automatic selection.</summary>
 public partial class ContentDialog
 {
     /// <summary>
     /// Focuses InitialFocus when it is an enabled, visible dialog descendant; otherwise respects
     /// focus already inside, searches the realized body, and finally focuses the dialog itself.
-    /// Footer appearance never determines focus. The host calls this after templates are realized.
+    /// Automatic selection skips Danger and Caution buttons to avoid accidental activation.
+    /// An explicit InitialFocus remains authoritative. The host calls this after templates are realized.
     /// </summary>
     protected internal virtual void SetInitialFocus()
     {
@@ -37,12 +38,12 @@ public partial class ContentDialog
         presenter?.ApplyTemplate();
 
         var body = presenter as DependencyObject ?? Content as DependencyObject;
-        if (body is IInputElement input && TryFocus(input))
+        if (body is IInputElement input && CanAutomaticallyFocus(body) && TryFocus(input))
         {
             return;
         }
 
-        var first = body.FindDescendant<UIElement>(CanFocus);
+        var first = body.FindDescendant<UIElement>(CanAutomaticallyFocus);
         if (first is null || !TryFocus(first))
         {
             Focus();
@@ -53,6 +54,14 @@ public partial class ContentDialog
     {
         return element is UIElement { Focusable: true, IsVisible: true, IsEnabled: true }
                && element is not Control { IsTabStop: false };
+    }
+
+    // Appearance limits only the automatic choice. Explicit targets and later keyboard navigation
+    // remain available so applications can deliberately focus an action that requires confirmation.
+    private static bool CanAutomaticallyFocus(DependencyObject element)
+    {
+        return CanFocus(element)
+               && element is not Button { Appearance: ControlAppearance.Danger or ControlAppearance.Caution };
     }
 
     private static bool TryFocus(IInputElement element)

@@ -7,6 +7,7 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media.Media3D;
+using System.Windows.Threading;
 
 namespace Wpf.Zen.Ui.Controls;
 
@@ -19,6 +20,7 @@ public partial class ContentDialogHost
     private readonly List<TitleBar>  _isolatedTitleBars = [];
     private          WeakReference<IInputElement>? _focusBeforeDialog;
     private          UIElement?      _inputRoot;
+    private          int             _focusSessionVersion;
 
     /// <summary>
     /// Establishes the modal boundary before the dialog enters the visual tree.
@@ -58,7 +60,8 @@ public partial class ContentDialogHost
     }
 
     /// <summary>
-    /// Releases the modal boundary and restores focus before the public presentation task completes.
+    /// Releases the modal boundary and attempts focus restoration before the public presentation task completes.
+    /// Temporarily unavailable targets receive one deferred retry after task continuations.
     /// </summary>
     private void StopModalInteraction(ContentDialog dialog)
     {
@@ -87,6 +90,7 @@ public partial class ContentDialogHost
 
     private void RememberKeyboardFocus()
     {
+        _focusSessionVersion++;
         _focusBeforeDialog = Keyboard.FocusedElement is { } focused
             ? new WeakReference<IInputElement>(focused)
             : null;
@@ -97,18 +101,40 @@ public partial class ContentDialogHost
         var rememberedFocus = _focusBeforeDialog;
         _focusBeforeDialog = null;
 
-        // Removing the dialog normally leaves keyboard focus on its detached subtree (or clears it). If focus has
-        // deliberately moved to an independent region, preserve that newer user choice instead of stealing it.
-        var currentFocus = Keyboard.FocusedElement;
-        if (currentFocus is not null
-            && !Contains(dialog, currentFocus as DependencyObject))
+        var root = PresentationSource.FromVisual(this)?.RootVisual;
+        if (!CanRestoreFocus())
         {
             return;
         }
 
         if (rememberedFocus?.TryGetTarget(out var target) == true)
         {
-            _ = TryRestoreKeyboardFocus(target);
+            if (TryRestoreKeyboardFocus(target) || Dispatcher.HasShutdownStarted)
+            {
+                return;
+            }
+
+            // An async command commonly disables its invoking button until ShowAsync and its caller finish.
+            // Retry once after normal-priority task continuations and binding updates have re-enabled it.
+            // A new session invalidates this callback even if that session has already closed by then.
+            int version = _focusSessionVersion;
+            _ = Dispatcher.BeginInvoke(DispatcherPriority.ContextIdle, new Action(() =>
+            {
+                if (_session is null && version == _focusSessionVersion && CanRestoreFocus()
+                    && rememberedFocus.TryGetTarget(out var pendingTarget))
+                {
+                    _ = TryRestoreKeyboardFocus(pendingTarget);
+                }
+            }));
+        }
+
+        bool CanRestoreFocus()
+        {
+            // KeyboardDevice.ReevaluateFocusCallback falls back to the presentation root when a focused
+            // subtree is detached. That fallback is not a user focus choice. Preserve all other outside targets.
+            var current = Keyboard.FocusedElement;
+            return current is null || ReferenceEquals(current, root)
+                   || Contains(dialog, current as DependencyObject);
         }
     }
 

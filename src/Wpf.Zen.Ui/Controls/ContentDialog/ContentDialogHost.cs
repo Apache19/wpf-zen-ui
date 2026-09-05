@@ -20,7 +20,8 @@ namespace Wpf.Zen.Ui.Controls;
 /// While a dialog is active, keyboard focus is confined to the dialog and any presentation surfaces it owns;
 /// attempts to focus another element in the same WPF presentation root are cancelled. Focus is remembered before
 /// isolation and restored during synchronous cleanup when the remembered element can still receive focus and the
-/// user has not moved focus to another window.
+/// user has not moved focus to another window. If the target is temporarily unavailable (for example, an async
+/// command still disables its button), one deferred attempt follows task continuations and binding updates.
 /// Templates may provide PART_DialogPresenter as a <see cref="ContentDialogTransitionPresenter"/>.
 /// That part owns presentation animation and is awaited by the host; templates without it retain the
 /// complete modal lifecycle and transition immediately. Keep overlay hit testing active until
