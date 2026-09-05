@@ -8,12 +8,12 @@
     <converters:BoolToVisibilityConverter x:Key="DialogBoolToVisibilityConverter" />
 
     <ControlTemplate x:Key="DefaultContentDialogTemplate" TargetType="{x:Type controls:ContentDialog}">
-        <!--  The control itself is the dialog surface; FrameworkElement owns all sizing constraints.  -->
         <Border
             Background="{TemplateBinding Background}"
             BorderBrush="{TemplateBinding BorderBrush}"
             BorderThickness="{TemplateBinding BorderThickness}"
-            CornerRadius="{TemplateBinding Border.CornerRadius}">
+            CornerRadius="{TemplateBinding Border.CornerRadius}"
+            SnapsToDevicePixels="True">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
@@ -30,7 +30,8 @@
                         Margin="0,4,36,0"
                         VerticalAlignment="Center"
                         controls:TextBlock.FontTypography="Subtitle"
-                        ContentSource="Header">
+                        ContentSource="Header"
+                        SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}">
                         <ContentPresenter.Resources>
                             <Style TargetType="{x:Type TextBlock}">
                                 <Setter Property="TextTrimming" Value="CharacterEllipsis" />
@@ -45,6 +46,7 @@
                     Margin="{TemplateBinding Padding}"
                     CanContentScroll="{TemplateBinding ScrollViewer.CanContentScroll}"
                     HorizontalScrollBarVisibility="{TemplateBinding ScrollViewer.HorizontalScrollBarVisibility}"
+                    ScrollSpillMode="Disabled"
                     VerticalScrollBarVisibility="{TemplateBinding ScrollViewer.VerticalScrollBarVisibility}">
                     <ContentPresenter
                         x:Name="PART_ContentPresenter"
