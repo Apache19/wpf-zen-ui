@@ -4,440 +4,367 @@
 // All Rights Reserved.
 
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media.Media3D;
-using System.Windows.Threading;
-using Wpf.Zen.Ui.Extensions.Wpf;
 
-// ReSharper disable once CheckNamespace
 namespace Wpf.Zen.Ui.Controls;
 
-#pragma warning disable IDE0008 // Use explicit type instead of 'var'
-
 /// <summary>
-/// Controller that manages the runtime behavior of a single <see cref="ContentDialogHost"/> instance.
-/// It handles storing/restoring focus, suppressing input routed through the host's sibling scope,
-/// and disabling/restoring sibling UI elements while a dialog is active.
+/// Owns input, focus containment, and covered-content isolation for one host.
 /// </summary>
-/// <remarks>
-/// This type is internal and intended to be used from the UI thread only. Members are not thread-safe and
-/// callers should invoke its methods on the host Dispatcher.
-/// </remarks>
-internal sealed class ContentDialogHostController
+internal sealed class ContentDialogHostController(ContentDialogHost host)
 {
-    private readonly DependencyObject _host;
-    private readonly HashSet<DependencyObject> _disabledElements = [];
-    private DependencyObject? _inputScope;
-    private bool _siblingsIsDisabled;
-    private bool _dialogActive;
+    private readonly List<UIElement> _disabledElements = [];
+    private readonly List<TitleBar> _isolatedTitleBars = [];
+    private ContentDialog? _dialog;
+    private IInputElement? _previousFocus;
+    private UIElement? _root;
+    private UIElement? _contentRoot;
 
-    // Previously focused element before the dialog was shown. Restored after dialog is closed.
-    private IInputElement? _previousFocusedElement;
-    private IInputElement? _pendingFocusRestore;
-
-    // ReSharper disable once ReplaceWithFieldKeyword
-    // Backing field for IsDisableSiblingsEnabled property.
-    private bool _isDisableSiblingsEnabled;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="ContentDialogHostController"/> class for the specified host element.
-    /// </summary>
-    /// <param name="host">The dependency object that acts as the dialog host (typically a <see cref="ContentDialogHost"/>).</param>
-    public ContentDialogHostController(DependencyObject host)
+    internal void Start(ContentDialog dialog, UIElement contentRoot)
     {
-        _host = host ?? throw new ArgumentNullException(nameof(host));
+        _previousFocus = Keyboard.FocusedElement;
+        _dialog = dialog;
+        _contentRoot = contentRoot;
+        ApplyContentIsolation();
+        _root = PresentationSource.FromVisual(host)?.RootVisual as UIElement;
+        AccessKeyManager.AddAccessKeyPressedHandler(dialog, OnAccessKey);
+        dialog.AddHandler(Keyboard.KeyDownEvent, new KeyEventHandler(OnKeyDown));
+        dialog.AddHandler(TextCompositionManager.TextInputEvent, new TextCompositionEventHandler(OnTextInput));
+        CommandManager.AddCanExecuteHandler(dialog, OnCanExecuteBoundary);
+        CommandManager.AddExecutedHandler(dialog, OnExecutedBoundary);
+        // The root sees explicit CommandTarget routes into covered content, even if those routes
+        // do not pass through the dialog. Independent regions outside this host remain usable.
+        if (_root is not null)
+        {
+            CommandManager.AddPreviewCanExecuteHandler(_root, OnPreviewCanExecute);
+            CommandManager.AddPreviewExecutedHandler(_root, OnPreviewExecuted);
+        }
+
+        InputManager.Current.PreProcessInput += OnPreProcessInput;
     }
 
-    /// <summary>
-    /// Gets or sets a value indicating whether sibling elements of the dialog host should be disabled
-    /// while the dialog is displayed.
-    /// </summary>
-    public bool IsDisableSiblingsEnabled
+    internal void Stop()
     {
-        get => _isDisableSiblingsEnabled;
-        set
+        if (_dialog is not { } dialog)
+            return;
+        _dialog = null;
+        RestoreContentIsolation();
+        AccessKeyManager.RemoveAccessKeyPressedHandler(dialog, OnAccessKey);
+        dialog.RemoveHandler(Keyboard.KeyDownEvent, new KeyEventHandler(OnKeyDown));
+        dialog.RemoveHandler(TextCompositionManager.TextInputEvent, new TextCompositionEventHandler(OnTextInput));
+        CommandManager.RemoveCanExecuteHandler(dialog, OnCanExecuteBoundary);
+        CommandManager.RemoveExecutedHandler(dialog, OnExecutedBoundary);
+        if (_root is not null)
         {
-            if (_isDisableSiblingsEnabled == value)
-            {
-                return;
-            }
+            CommandManager.RemovePreviewCanExecuteHandler(_root, OnPreviewCanExecute);
+            CommandManager.RemovePreviewExecutedHandler(_root, OnPreviewExecuted);
+        }
 
-            _isDisableSiblingsEnabled = value;
-
-            if (!_dialogActive)
-            {
-                return;
-            }
-
-            if (_isDisableSiblingsEnabled && !_siblingsIsDisabled)
-            {
-                DisableHostSiblings();
-            }
-            else if (!_isDisableSiblingsEnabled && _siblingsIsDisabled)
-            {
-                RestoreDialogHostSiblings();
-            }
+        _root = null;
+        InputManager.Current.PreProcessInput -= OnPreProcessInput;
+        var previous = _previousFocus;
+        _previousFocus = null;
+        // Restore synchronously after CurrentDialog clears, before ShowAsync completes. Do not
+        // steal focus back from another independent region that the user deliberately entered.
+        if (Keyboard.FocusedElement is null || Contains(dialog, Keyboard.FocusedElement as DependencyObject))
+        {
+            if (previous is UIElement { IsVisible: true, IsEnabled: true, Focusable: true } ui)
+                ui.Focus();
+            else if (previous is ContentElement { IsEnabled: true, Focusable: true } content)
+                content.Focus();
         }
     }
 
     /// <summary>
-    /// Gets a value indicating whether a dialog is currently active in this ContentDialogHost.
+    /// Updates the template-owned root whose application content must be isolated during presentation.
     /// </summary>
-    public bool IsDialogActive => _dialogActive;
+    /// <remarks>
+    /// A control template can be replaced while a dialog is open. Restoring the old tree before isolating the new
+    /// tree prevents detached content from retaining controller-owned enabled values after it leaves the host.
+    /// </remarks>
+    internal void SetContentRoot(UIElement? contentRoot)
+    {
+        if (ReferenceEquals(_contentRoot, contentRoot))
+            return;
+
+        RestoreContentIsolation();
+        _contentRoot = contentRoot;
+        if (_dialog is not null)
+            ApplyContentIsolation();
+    }
 
     /// <summary>
-    /// Called when a dialog is added to the host. Stores the previously focused element, blocks scope-level input
-    /// and disables siblings (if configured).
+    /// Disables covered application branches while keeping the title-bar window shell operational.
     /// </summary>
-    public void HandleDialogAdded()
+    /// <remarks>
+    /// WPF force-inherits <see cref="UIElement.IsEnabled"/> from the nearest input parent. Disabling the content
+    /// presenter therefore cannot be undone by setting a nested title bar back to true. Instead, the controller
+    /// preserves each visual path from the presenter to a <see cref="TitleBar"/> and disables the sibling branches
+    /// at their highest possible element. User-provided title-bar content has its own switch because it remains
+    /// ordinary client UI; only the caption surface and system buttons form the window shell.
+    /// </remarks>
+    private void ApplyContentIsolation()
     {
-        if (_dialogActive)
+        if (_contentRoot is not { } contentRoot || _disabledElements.Count != 0 || _isolatedTitleBars.Count != 0)
+            return;
+
+        var titleBars = FindTitleBars(contentRoot);
+        if (titleBars.Count == 0)
         {
+            DisableElement(contentRoot);
             return;
         }
 
-        StorePreviousFocus();
-        BlockHostScopeInput();
-
-        if (IsDisableSiblingsEnabled && !_siblingsIsDisabled)
+        var titleBarPaths = new HashSet<DependencyObject>();
+        foreach (var titleBar in titleBars)
         {
-            DisableHostSiblings();
+            DependencyObject? current = titleBar;
+            while (current is not null)
+            {
+                titleBarPaths.Add(current);
+                if (ReferenceEquals(current, contentRoot))
+                    break;
+                current = VisualTreeHelper.GetParent(current);
+            }
         }
 
-        _dialogActive = true;
+        IsolateBranches(contentRoot, titleBarPaths);
     }
 
-    /// <summary>
-    /// Called when a dialog is removed from the host. Restores sibling state, scope input and focus.
-    /// </summary>
-    public void HandleDialogRemoved()
+    private void IsolateBranches(DependencyObject current, HashSet<DependencyObject> titleBarPaths)
     {
-        if (!_dialogActive)
+        if (current is TitleBar titleBar)
         {
+            if (titleBar.IsUserContentEnabled)
+            {
+                titleBar.IsUserContentEnabled = false;
+                _isolatedTitleBars.Add(titleBar);
+            }
+
             return;
         }
 
-        if (_siblingsIsDisabled)
+        if (!titleBarPaths.Contains(current) && current is UIElement element)
         {
-            RestoreDialogHostSiblings();
+            DisableElement(element);
+            return;
         }
 
-        UnblockHostScopeInput();
-        _dialogActive = false;
-        RestorePreviousFocus();
+        int childCount = VisualTreeHelper.GetChildrenCount(current);
+        for (int index = 0; index < childCount; index++)
+            IsolateBranches(VisualTreeHelper.GetChild(current, index), titleBarPaths);
     }
 
-    private void StorePreviousFocus()
+    private void DisableElement(UIElement element)
     {
-        // A new dialog can open before the deferred restoration runs. Carry forward the original
-        // application focus instead of recording an element in the just-closed dialog.
-        IInputElement? focused = _pendingFocusRestore ?? Keyboard.FocusedElement;
-        _pendingFocusRestore = null;
-        if (IsValidInputElement(focused))
-        {
-            _previousFocusedElement = focused;
-        }
-        else
-        {
-            _previousFocusedElement = null;
-        }
+        if (!element.IsEnabled)
+            return;
+
+        // SetCurrentValue preserves bindings and dynamic-resource expressions. The host owns the effective value
+        // for the presentation lifetime and restores it before focus can return to application content.
+        element.SetCurrentValue(UIElement.IsEnabledProperty, false);
+        _disabledElements.Add(element);
     }
 
-    private void RestorePreviousFocus()
+    private void RestoreContentIsolation()
     {
-        IInputElement? target = _previousFocusedElement;
-        _previousFocusedElement = null;
-        _pendingFocusRestore = target;
-        if (target != null && _host is DispatcherObject dispatcherObject)
-        {
-            _ = dispatcherObject.Dispatcher.BeginInvoke(
-                () =>
-                {
-                    if (
-                        dispatcherObject.Dispatcher
-                            is { HasShutdownStarted: false, HasShutdownFinished: false }
-                        && !_dialogActive
-                        && ReferenceEquals(_pendingFocusRestore, target)
-                    )
-                    {
-                        _pendingFocusRestore = null;
-                        if (target is UIElement { IsVisible: true, IsEnabled: true, Focusable: true }
-                            or ContentElement { IsEnabled: true, Focusable: true })
-                            target.Focus();
-                    }
-                },
-                DispatcherPriority.Input
-            );
-        }
-    }
+        foreach (var titleBar in _isolatedTitleBars)
+            titleBar.IsUserContentEnabled = true;
+        _isolatedTitleBars.Clear();
 
-    private static bool IsValidInputElement(IInputElement? element)
-    {
-        return element is UIElement or ContentElement or UIElement3D;
-    }
-
-    private void DisableHostSiblings()
-    {
+        foreach (var element in _disabledElements)
+            element.SetCurrentValue(UIElement.IsEnabledProperty, true);
         _disabledElements.Clear();
-
-        var parent = _host.GetParent();
-        if (parent == null)
-        {
-            return;
-        }
-
-        switch (parent)
-        {
-            case Panel panel:
-            {
-                foreach (var child in panel.Children.OfType<UIElement>())
-                {
-                    DisableNonHostElement(child);
-                }
-
-                break;
-            }
-
-            case ContentControl contentControl:
-            {
-                if (contentControl.Content is DependencyObject content)
-                {
-                    DisableNonHostElement(content);
-                }
-
-                break;
-            }
-
-            case Decorator decorator:
-            {
-                if (decorator.Child is DependencyObject child)
-                {
-                    DisableNonHostElement(child);
-                }
-
-                break;
-            }
-
-            case ItemsControl itemsControl:
-            {
-                foreach (var item in itemsControl.Items)
-                {
-                    var container = itemsControl.ItemContainerGenerator.ContainerFromItem(item);
-                    if (container != null)
-                    {
-                        DisableNonHostElement(container);
-                    }
-                }
-
-                break;
-            }
-
-            case Visual
-            or Visual3D:
-            {
-                var count = VisualTreeHelper.GetChildrenCount(parent);
-                for (var i = 0; i < count; i++)
-                {
-                    var child = VisualTreeHelper.GetChild(parent, i);
-                    DisableNonHostElement(child);
-                }
-
-                break;
-            }
-
-            default:
-            {
-                foreach (var obj in LogicalTreeHelper.GetChildren(parent).OfType<object>())
-                {
-                    if (obj is DependencyObject d)
-                    {
-                        DisableNonHostElement(d);
-                    }
-                }
-
-                break;
-            }
-        }
-
-        _siblingsIsDisabled = true;
     }
 
-    private void RestoreDialogHostSiblings()
+    private static List<TitleBar> FindTitleBars(DependencyObject root)
     {
-        foreach (var obj in _disabledElements)
+        var result = new List<TitleBar>();
+        var pending = new Stack<DependencyObject>();
+        pending.Push(root);
+        while (pending.Count > 0)
         {
-            if (obj is TitleBar titleBar)
+            var current = pending.Pop();
+            if (current is TitleBar titleBar)
             {
-                titleBar.IsUserContentEnabled = true;
+                result.Add(titleBar);
+                // A nested title bar is part of this title bar's user content and must not create another enabled
+                // shell path. IsUserContentEnabled disables that entire application-owned subtree instead.
                 continue;
             }
 
-            switch (obj)
-            {
-                case UIElement ui:
-                    ui.SetCurrentValue(UIElement.IsEnabledProperty, true);
-                    break;
+            int childCount = VisualTreeHelper.GetChildrenCount(current);
+            for (int index = 0; index < childCount; index++)
+                pending.Push(VisualTreeHelper.GetChild(current, index));
+        }
 
-                case FrameworkContentElement fce:
-                    fce.SetCurrentValue(ContentElement.IsEnabledProperty, true);
-                    break;
+        return result;
+    }
+
+    private void OnAccessKey(object sender, AccessKeyPressedEventArgs e)
+    {
+        // Button.UpdateIsDefaulted and AccessKeyManager query the same bubbling event. A focus
+        // scope alone does not isolate access keys. Preserve inner scopes (for example a menu).
+        if (e.Scope is null)
+            e.Scope = _dialog;
+        e.Handled = true;
+    }
+
+    private void OnKeyDown(object sender, KeyEventArgs e)
+    {
+        if (_dialog is not { } dialog)
+            return;
+        // Editors and popup children get the first opportunity to consume keys. At the boundary
+        // use WPF's access-key machinery, preserving IsDefault, disabled targets and AcceptsReturn.
+        // Marking the event here prevents ancestor InputBindings, including plain ICommand, firing.
+        if (e.Key == Key.Escape)
+        {
+            if (dialog.IsDismissible)
+            {
+                if (AccessKeyManager.IsKeyRegistered(dialog, "\x001B"))
+                    AccessKeyManager.ProcessKey(dialog, "\x001B", false);
+                else
+                    dialog.Dismiss();
+            }
+        }
+        else if (e.Key == Key.Enter)
+        {
+            AccessKeyManager.ProcessKey(dialog, "\r", false);
+        }
+        else
+        {
+            // KeyboardNavigation normally runs after routing, but the boundary must mark input
+            // handled before ancestor InputBindings see it. MoveFocus enters the same WPF
+            // navigation engine, including Tab/ControlTab modes and nested Cycle/Once groups.
+            FocusNavigationDirection? direction = e.Key switch
+            {
+                Key.Tab => (Keyboard.Modifiers & ModifierKeys.Shift) != 0
+                    ? FocusNavigationDirection.Previous : FocusNavigationDirection.Next,
+                Key.Left => FocusNavigationDirection.Left,
+                Key.Right => FocusNavigationDirection.Right,
+                Key.Up => FocusNavigationDirection.Up,
+                Key.Down => FocusNavigationDirection.Down,
+                _ => null,
+            };
+            if (direction is { } navigation)
+            {
+                var request = new TraversalRequest(navigation);
+                if (Keyboard.FocusedElement is UIElement element)
+                    element.MoveFocus(request);
+                else if (Keyboard.FocusedElement is FrameworkContentElement content)
+                    content.MoveFocus(request);
             }
         }
 
-        _disabledElements.Clear();
-        _siblingsIsDisabled = false;
+        e.Handled = true;
     }
 
-    private void DisableNonHostElement(DependencyObject? d)
+    private void OnTextInput(object sender, TextCompositionEventArgs e)
     {
-        if (d == null)
-        {
-            return;
-        }
-
-        if (IsPartOfHost(d) || ReferenceEquals(d, _host))
-        {
-            return;
-        }
-
-        // Special handling for the TitleBar
-        if (d is TitleBar titleBar)
-        {
-            // Unlike UIElement.IsEnabled, TitleBar exposes a separate switch for its user
-            // content. Record the title bar only when this controller actually changes that
-            // switch; otherwise closing a dialog would enable content which the application
-            // deliberately kept disabled before the dialog opened.
-            if (!titleBar.IsUserContentEnabled)
-            {
-                return;
-            }
-
-            try
-            {
-                titleBar.IsUserContentEnabled = false;
-                _disabledElements.Add(d);
-            }
-            catch
-            {
-                // Ignore single element disable failure.
-            }
-
-            return;
-        }
-
-        try
-        {
-            switch (d)
-            {
-                case UIElement { IsEnabled: true } ui:
-                    _disabledElements.Add(d);
-                    ui.SetCurrentValue(UIElement.IsEnabledProperty, false);
-                    break;
-
-                case FrameworkContentElement { IsEnabled: true } fce:
-                    _disabledElements.Add(d);
-                    fce.SetCurrentValue(ContentElement.IsEnabledProperty, false);
-                    break;
-            }
-        }
-        catch
-        {
-            // Ignore single element disable failure.
-        }
+        var text = string.IsNullOrEmpty(e.Text) ? e.SystemText : e.Text;
+        if (_dialog is not null && !string.IsNullOrEmpty(text)
+            && System.Globalization.StringInfo.ParseCombiningCharacters(text).Length == 1)
+            AccessKeyManager.ProcessKey(_dialog, text, false);
+        e.Handled = true;
     }
 
-    private void BlockHostScopeInput()
+    private void OnPreProcessInput(object sender, PreProcessInputEventArgs e)
     {
-        if (_inputScope is not null)
-        {
+        if (_dialog is not { } dialog)
             return;
-        }
-
-        // The immediate parent defines the same scope whose children are disabled below. Routed
-        // command and access-key handlers attached here see input from both the dialog and its
-        // siblings. Unlike mutating Window.InputBindings, this remains valid for ElementHost and
-        // HwndSource roots and lets independent plug-in regions share one native/WPF window.
-        DependencyObject? scope = _host.GetParent();
-        if (scope is null)
-        {
-            return;
-        }
-
-        AccessKeyManager.AddAccessKeyPressedHandler(scope, HostAccessKeySuppressHandler);
-        if (scope is UIElement uiScope)
-        {
-            CommandManager.AddPreviewExecutedHandler(uiScope, PreviewExecutedSuppressHandler);
-            CommandManager.AddPreviewCanExecuteHandler(uiScope, PreviewCanExecuteSuppressHandler);
-        }
-
-        _inputScope = scope;
+        if (e.StagingItem.Input is KeyboardFocusChangedEventArgs focus
+            && focus.RoutedEvent == Keyboard.PreviewGotKeyboardFocusEvent
+            && Contains(host, focus.NewFocus as DependencyObject)
+            && !Contains(dialog, focus.NewFocus as DependencyObject))
+            focus.Handled = true;
     }
 
-    private void UnblockHostScopeInput()
+    private bool IsCoveredTarget(object source) => _dialog is { } dialog
+        && source is DependencyObject target && !Contains(dialog, target)
+        && (Contains(host, target) || Contains(dialog, Keyboard.FocusedElement as DependencyObject));
+
+    // Button.OnClick uses this internal WPF command when IsCancel=true and Command=null.
+    // Identify its public command metadata without reflecting Window internals. Unrecognized
+    // commands are still stopped at the dialog boundary, so a framework rename cannot close Window.
+    private static bool IsWindowCancel(ICommand command) =>
+        command is RoutedCommand { OwnerType: var owner, Name: "DialogCancel" } && owner == typeof(Window);
+
+    private void OnPreviewCanExecute(object sender, CanExecuteRoutedEventArgs e)
     {
-        if (_inputScope is not { } scope)
+        if (_dialog is { } dialog && Contains(dialog, e.OriginalSource as DependencyObject) && IsWindowCancel(e.Command))
         {
-            return;
-        }
-
-        AccessKeyManager.RemoveAccessKeyPressedHandler(scope, HostAccessKeySuppressHandler);
-        if (scope is UIElement uiScope)
-        {
-            CommandManager.RemovePreviewExecutedHandler(uiScope, PreviewExecutedSuppressHandler);
-            CommandManager.RemovePreviewCanExecuteHandler(uiScope, PreviewCanExecuteSuppressHandler);
-        }
-
-        _inputScope = null;
-    }
-
-    private bool IsPartOfHost(DependencyObject d)
-    {
-        var current = d;
-        while (current != null)
-        {
-            if (ReferenceEquals(current, _host))
-            {
-                return true;
-            }
-
-            current = current.GetParent();
-        }
-
-        return false;
-    }
-
-    private void HostAccessKeySuppressHandler(object sender, AccessKeyPressedEventArgs e)
-    {
-        var target = e.Target;
-        if (target is null)
-        {
-            return;
-        }
-
-        if (IsPartOfHost(target))
-        {
-            return;
-        }
-
-        e.Target = null;
-    }
-
-    private void PreviewExecutedSuppressHandler(object sender, ExecutedRoutedEventArgs e)
-    {
-        if (e.OriginalSource is DependencyObject d && !IsPartOfHost(d))
-        {
+            // Consume even when non-dismissible; otherwise Window's class binding can handle it.
+            e.CanExecute = true;
             e.Handled = true;
         }
-    }
-
-    private void PreviewCanExecuteSuppressHandler(object sender, CanExecuteRoutedEventArgs e)
-    {
-        if (e.OriginalSource is DependencyObject d && !IsPartOfHost(d))
+        else if (IsCoveredTarget(e.OriginalSource))
         {
             e.CanExecute = false;
             e.Handled = true;
         }
     }
-}
 
-#pragma warning restore IDE0008 // Use explicit type instead of 'var'
+    private void OnPreviewExecuted(object sender, ExecutedRoutedEventArgs e)
+    {
+        if (_dialog is { } dialog && Contains(dialog, e.OriginalSource as DependencyObject) && IsWindowCancel(e.Command))
+        {
+            dialog.Dismiss();
+            e.Handled = true;
+        }
+        else if (IsCoveredTarget(e.OriginalSource))
+        {
+            e.Handled = true;
+        }
+    }
+
+    private void OnCanExecuteBoundary(object sender, CanExecuteRoutedEventArgs e)
+    {
+        // CommandBindings on body/footer/ContentDialog run before this bubbling boundary.
+        e.CanExecute = false;
+        e.Handled = true;
+    }
+
+    private void OnExecutedBoundary(object sender, ExecutedRoutedEventArgs e) => e.Handled = true;
+
+    /// <summary>
+    /// Traverses both ownership and presentation edges. Popup/ContextMenu use PlacementTarget
+    /// because their separate HWND breaks visual ancestry; visited nodes protect malformed cycles.
+    /// </summary>
+    internal static bool Contains(DependencyObject ancestor, DependencyObject? element)
+    {
+        if (element is null)
+            return false;
+        var pending = new Stack<DependencyObject>();
+        var visited = new HashSet<DependencyObject>();
+        pending.Push(element);
+        while (pending.Count > 0)
+        {
+            var current = pending.Pop();
+            if (!visited.Add(current))
+                continue;
+            if (ReferenceEquals(current, ancestor))
+                return true;
+            void Push(DependencyObject? parent)
+            {
+                if (parent is not null)
+                    pending.Push(parent);
+            }
+
+            if (current is Visual or Visual3D)
+                Push(VisualTreeHelper.GetParent(current));
+            Push(LogicalTreeHelper.GetParent(current));
+            if (current is FrameworkElement fe)
+                Push(fe.TemplatedParent);
+            if (current is FrameworkContentElement fce)
+                Push(fce.Parent);
+            if (current is Popup popup)
+                Push(popup.PlacementTarget);
+            if (current is ContextMenu menu)
+                Push(menu.PlacementTarget);
+        }
+
+        return false;
+    }
+}

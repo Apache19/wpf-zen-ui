@@ -29,9 +29,9 @@ public interface IContentDialogService
     /// <summary>Asynchronously shows <paramref name="dialog"/> through the attached host.</summary>
     /// <param name="dialog">The dialog to display.</param>
     /// <param name="cancellationToken">Cancels the dialog operation.</param>
-    /// <returns>A task whose result identifies the button used to close the dialog.</returns>
-    Task<ContentDialogResult> ShowAsync(
+    /// <returns>A task returning the business result or null for dismissal, canceled after cleanup when the token wins.</returns>
+    Task<object?> ShowAsync(
         ContentDialog dialog,
-        CancellationToken cancellationToken
+        CancellationToken cancellationToken = default
     );
 }

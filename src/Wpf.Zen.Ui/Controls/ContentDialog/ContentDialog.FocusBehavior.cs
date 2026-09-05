@@ -9,90 +9,40 @@ using Wpf.Zen.Ui.Extensions.Wpf;
 
 namespace Wpf.Zen.Ui.Controls;
 
-/// <summary>Contains modal focus containment and content-first keyboard initialization.</summary>
+/// <summary>Provides content-first initial focus without interpreting button appearance.</summary>
 public partial class ContentDialog
 {
-    /// <summary>Gets a value indicating whether keyboard focus belongs to the dialog, including logical Popup descendants.</summary>
-    public bool IsFocusInsideDialog()
-    {
-        VerifyAccess();
-        return IsFocusInsideDialogCore(Keyboard.FocusedElement);
-    }
-
-    /// <inheritdoc />
-    protected override void OnPreviewLostKeyboardFocus(KeyboardFocusChangedEventArgs e)
-    {
-        base.OnPreviewLostKeyboardFocus(e);
-
-        // After Content changes, the old visual can remain loaded until the next layout pass.
-        // Only the currently hosted dialog may retain focus; otherwise it would trap its successor.
-        if (IsOpen && ReferenceEquals(_dialogHost?.Content, this) && IsLoaded && IsVisible
-            && e.NewFocus is not null && Window.GetWindow(this) is not { IsActive: false }
-            && !IsFocusInsideDialogCore(e.NewFocus))
-        {
-            e.Handled = true;
-        }
-    }
-
-    /// <inheritdoc />
-    protected override void OnKeyDown(KeyEventArgs e)
-    {
-        base.OnKeyDown(e);
-
-        // Bubble, rather than preview, lets editors and popups consume Escape first.
-        if (!e.Handled && e.Key == Key.Escape && CanInteract && IsDismissible)
-        {
-            Hide();
-            e.Handled = true;
-        }
-    }
-
-    private bool IsFocusInsideDialogCore(IInputElement? element)
-    {
-        for (DependencyObject? current = element as DependencyObject; current is not null; current = current.GetParent())
-        {
-            if (ReferenceEquals(current, this))
-                return true;
-        }
-
-        return false;
-    }
-
     /// <summary>
-    /// Focuses realized user content first, then the explicit default action, another safe action,
-    /// or the dialog itself. No implicit default is assigned when the requested action is unavailable.
+    /// Focuses InitialFocus when it is an enabled, visible dialog descendant; otherwise respects
+    /// focus already inside, searches the realized body, and finally focuses the dialog itself.
+    /// Footer appearance never determines focus. The host calls this after templates are realized.
     /// </summary>
-    protected virtual void SetInitialFocus()
+    protected internal virtual void SetInitialFocus()
     {
         ApplyTemplate();
-
-        // Searching the presenter covers both direct UIElement content (including its root) and
-        // controls created by ContentTemplate; searching only Content misses view-model-driven forms.
+        if (InitialFocus is DependencyObject target && ContentDialogHostController.Contains(this, target)
+            && TryFocus(InitialFocus))
+            return;
+        if (ContentDialogHostController.Contains(this, Keyboard.FocusedElement as DependencyObject))
+            return;
         var presenter = GetTemplateChild("PART_ContentPresenter") as ContentPresenter;
-
         presenter?.ApplyTemplate();
-
-        var content = presenter as DependencyObject ?? Content as DependencyObject;
-        if (content is UIElement element && IsSafelyFocusable(element) && element.Focus())
+        var body = presenter as DependencyObject ?? Content as DependencyObject;
+        if (body is IInputElement input && TryFocus(input))
             return;
-
-        var input = content.FindDescendant<Control>(IsSafelyFocusable);
-        if (input?.Focus() == true)
-            return;
-
-        var buttons = new[] { "PART_PrimaryButton", "PART_SecondaryButton", "PART_TertiaryButton", "PART_CloseButton" }
-            .Select(name => GetTemplateChild(name)).OfType<System.Windows.Controls.Button>()
-            .Where(IsSafelyFocusable).ToArray();
-
-        var button = buttons.FirstOrDefault(b => b.IsDefault) ?? buttons.FirstOrDefault();
-        if (button?.Focus() != true)
+        var first = body.FindDescendant<UIElement>(CanFocus);
+        if (first is null || !TryFocus(first))
             Focus();
     }
 
-    private static bool IsSafelyFocusable(DependencyObject? element)
+    private static bool CanFocus(DependencyObject element) =>
+        element is UIElement { Focusable: true, IsVisible: true, IsEnabled: true }
+        && element is not Control { IsTabStop: false };
+
+    private static bool TryFocus(IInputElement element) => element switch
     {
-        return element is UIElement { Focusable: true, IsVisible: true, IsEnabled: true }
-               && element is not Control { IsTabStop: false }
-               && element is not Button { Appearance: ControlAppearance.Danger or ControlAppearance.Caution };
-    }
+        UIElement ui when CanFocus(ui) => ui.Focus(),
+        ContentElement { Focusable: true, IsEnabled: true } content => content.Focus(),
+        _ => false,
+    };
 }

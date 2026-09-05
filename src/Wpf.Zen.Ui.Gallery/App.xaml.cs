@@ -45,6 +45,7 @@ public partial class App
                 // the scope may be a Window or another independently hosted WPF visual tree.
                 _ = services.AddScoped<ISnackbarService, SnackbarService>();
                 _ = services.AddScoped<IContentDialogService, ContentDialogService>();
+                _ = services.AddScoped<IGalleryDialogService, GalleryDialogService>();
                 _ = services.AddSingleton<WindowsProviderService>();
 
                 // Page types are intentionally not registered. AddNavigation activates concrete

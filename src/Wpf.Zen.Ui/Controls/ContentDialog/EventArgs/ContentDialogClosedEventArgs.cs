@@ -12,6 +12,16 @@ public sealed class ContentDialogClosedEventArgs : RoutedEventArgs
     public ContentDialogClosedEventArgs(RoutedEvent routedEvent, object source)
         : base(routedEvent, source) { }
 
-    /// <summary>Gets the selected action, or None for cancellation or dismissal without a choice.</summary>
-    public required ContentDialogResult Result { get; init; }
+    /// <summary>Gets the application result, or null for cancellation, removal or dismissal.</summary>
+    public object? Result { get; init; }
+
+    /// <inheritdoc />
+    protected override void InvokeEventHandler(Delegate genericHandler, object genericTarget)
+    {
+        // Direct dispatch preserves the application exception instead of wrapping DynamicInvoke.
+        if (genericHandler is EventHandler<ContentDialogClosedEventArgs> handler)
+            handler(genericTarget, this);
+        else
+            base.InvokeEventHandler(genericHandler, genericTarget);
+    }
 }

@@ -16,23 +16,11 @@
     ui:NavigationView.IsNavigationFrameScrollEnabled="True"
     mc:Ignorable="d">
 
-    <Page.Resources>
-        <ResourceDictionary>
-            <DataTemplate x:Key="DialogContent">
-                <StackPanel>
-                    <TextBlock Text="Lorem ipsum dolor sit amet, adipisicing elit." TextWrapping="Wrap" />
-                    <CheckBox Content="Upload your content to the cloud." />
-                </StackPanel>
-            </DataTemplate>
-        </ResourceDictionary>
-    </Page.Resources>
-
     <StackPanel Margin="0,0,0,24">
         <controls:ControlExample HeaderText="ContentDialog">
             <StackPanel Orientation="Horizontal">
                 <ui:Button
                     Command="{Binding ShowDialogCommand}"
-                    CommandParameter="{StaticResource DialogContent}"
                     Content="Show" />
 
                 <ui:TextBlock

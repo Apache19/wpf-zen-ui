@@ -4,6 +4,7 @@
 // All Rights Reserved.
 
 using System.ComponentModel;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Automation;
@@ -24,577 +25,654 @@ namespace Wpf.Zen.Ui.UnitTests.Controls;
 public class ContentDialogTests
 {
     [Fact]
-    public void TitlePresentation_FormatsAndSelectsTemplates_AndUpdatesLive() =>
-        Run(scope =>
-        {
-            var dialog = scope.CreateDialog();
-            dialog.Title = 12;
-            dialog.TitleStringFormat = "Items: {0:D3}";
-            var task = dialog.ShowAsync();
-            Drain();
-            var presenter = (ContentPresenter)dialog.Template.FindName("TitlePresenter", dialog);
-            string Text() => Assert.IsType<System.Windows.Controls.TextBlock>(VisualTreeHelper.GetChild(presenter, 0)).Text;
-            Assert.Equal("Items: 012", Text());
-            dialog.Title = 34;
-            dialog.TitleStringFormat = "Count: {0}";
-            Drain();
-            Assert.Equal("Count: 34", Text());
+    public void DerivedDialog_UsesContentDialogThemeStyleWithoutAnImplicitForwardingStyle() => Run(scope =>
+    {
+        var dialog = new DerivedDialog { Header = "Dialog", Content = "Content" };
+        Task<object?> task = scope.Host.ShowAsync(dialog);
+        Drain();
 
-            DataTemplate Template(string text) => (DataTemplate)XamlReader.Parse(
-                $"""<DataTemplate xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"><TextBlock Text="{text}"/></DataTemplate>""");
-            var selector = new TitleSelector(Template("Selected"));
-            dialog.TitleTemplateSelector = selector;
-            Drain();
-            Assert.Equal("Selected", Text());
-            Assert.Equal(34, selector.Item);
-            Assert.Same(presenter, selector.Container);
-            dialog.TitleTemplate = Template("Explicit");
-            Drain();
-            Assert.Equal("Explicit", Text());
-            dialog.TitleTemplate = null;
-            dialog.TitleTemplateSelector = null;
-            Drain();
-            Assert.Equal("Count: 34", Text());
-            dialog.Hide();
-            Pump(task);
-        });
+        Assert.Equal(
+            BaseValueSource.DefaultStyle,
+            DependencyPropertyHelper.GetValueSource(dialog, Control.TemplateProperty).BaseValueSource
+        );
+        _ = dialog.ApplyTemplate();
+        Assert.NotNull(dialog.Template.FindName("PART_ContentPresenter", dialog));
 
-    [Theory]
-    [InlineData("PART_PrimaryButton")]
-    [InlineData("PART_SecondaryButton")]
-    [InlineData("PART_TertiaryButton")]
-    [InlineData("PART_CloseButton")]
-    public void ButtonStyles_AreWiredByControl_InCustomTemplates(string partName) =>
-        Run(scope =>
-        {
-            var dialog = scope.CreateDialog();
-            var action = new ContentDialogAction { Content = "Action" };
-            void SetAction(ContentDialogAction? value)
-            {
-                dialog.PrimaryAction = value;
-                dialog.SecondaryAction = value;
-                dialog.TertiaryAction = value;
-            }
-
-            void SetStyle(Style? value)
-            {
-                action.ButtonStyle = value;
-                dialog.CloseButtonStyle = value;
-            }
-
-            ControlTemplate Template() => (ControlTemplate)XamlReader.Parse($$"""
-                <ControlTemplate xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-                    xmlns:ui="clr-namespace:Wpf.Zen.Ui.Controls;assembly=Wpf.Zen.Ui"
-                    TargetType="{x:Type ui:ContentDialog}">
-                    <Button x:Name="{{partName}}">
-                        <Button.Style><Style TargetType="Button"><Setter Property="ToolTip" Value="Fallback"/></Style></Button.Style>
-                    </Button>
-                </ControlTemplate>
-                """);
-            SetAction(action);
-            var style = new Style(typeof(NativeButton));
-            style.Setters.Add(new Setter(FrameworkElement.ToolTipProperty, "Override"));
-            SetStyle(style);
-            dialog.Template = Template();
-            var task = dialog.ShowAsync();
-            Drain();
-            Assert.Same(style, Part(dialog, partName).Style);
-            SetStyle(null);
-            Drain();
-            Assert.Equal("Fallback", Part(dialog, partName).ToolTip);
-            action = new ContentDialogAction { ButtonStyle = style };
-            SetAction(action);
-            dialog.CloseButtonStyle = style;
-            Drain();
-            Assert.Same(style, Part(dialog, partName).Style);
-            dialog.Template = Template();
-            Drain();
-            Assert.Same(style, Part(dialog, partName).Style);
-            SetAction(null);
-            dialog.CloseButtonStyle = null;
-            Drain();
-            Assert.Equal("Fallback", Part(dialog, partName).ToolTip);
-            dialog.Hide();
-            Pump(task);
-        });
+        dialog.Close();
+        Pump(task);
+    });
 
     [Fact]
-    public void CloseButtonStyle_ResetRestoresDefaultGlyphAndAccessibleName() =>
-        Run(scope =>
+    public void Footer_HasLogicalOwnershipAndInheritsDataContextBeforePresentation() => Run(scope =>
+    {
+        var dialog = scope.CreateDialog();
+        var footer = new NativeButton();
+        var model = new
         {
-            var dialog = scope.CreateDialog();
-            var task = dialog.ShowAsync();
-            Drain();
-            var button = Part(dialog, "PART_CloseButton");
-            var defaultStyle = button.Style;
-            dialog.CloseButtonStyle = new Style(typeof(NativeButton));
-            Drain();
-            dialog.CloseButtonStyle = null;
-            Drain();
-            Assert.Same(defaultStyle, button.Style);
-            Assert.Equal("×", button.Content);
-            Assert.Equal("Close", AutomationProperties.GetName(button));
-            dialog.Hide();
-            Pump(task);
-        });
+            Label = "Save"
+        };
+        dialog.DataContext = model;
+        footer.SetBinding(ContentControl.ContentProperty, new Binding("Label"));
+        dialog.Footer = footer;
+        Assert.Same(dialog, LogicalTreeHelper.GetParent(footer));
+        Assert.Same(model, footer.DataContext);
+        Drain();
+        Assert.Equal("Save", footer.Content);
+        Assert.Contains(footer, LogicalTreeHelper.GetChildren(dialog).Cast<object>());
+        dialog.Footer = new Border();
+        Assert.Null(LogicalTreeHelper.GetParent(footer));
+        Assert.DoesNotContain(footer, LogicalTreeHelper.GetChildren(dialog).Cast<object>());
+    });
 
     [Theory]
-    [InlineData(true, true)]
-    [InlineData(false, true)]
-    [InlineData(true, false)]
-    [InlineData(false, false)]
-    public void BackdropTransition_SharesCompletionAndCleanup_WithOptionalSurface(bool surface, bool backdrop) =>
-        Run(scope =>
+    [InlineData("Header")]
+    [InlineData("Footer")]
+    public void ContentSlots_FormatAndSelectTemplates(string slot) => Run(scope =>
+    {
+        var dialog = scope.CreateDialog();
+        if (slot == "Header")
         {
-            scope.Host.Template = (ControlTemplate)XamlReader.Parse($$"""
-                <ControlTemplate xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-                    xmlns:ui="clr-namespace:Wpf.Zen.Ui.Controls;assembly=Wpf.Zen.Ui"
-                    TargetType="{x:Type ui:ContentDialogHost}">
-                    <Grid Background="Transparent">
-                        <Border x:Name="{{(backdrop ? "PART_Backdrop" : "UnanimatedBackdrop")}}" Background="Black"/>
-                        <Border x:Name="{{(surface ? "PART_TransitionRoot" : "UnanimatedSurface")}}">
-                            <ContentPresenter Content="{TemplateBinding Content}"/>
-                        </Border>
-                    </Grid>
-                </ControlTemplate>
-                """);
-            scope.Host.IsAnimationEnabled = true;
-            scope.Host.TransitionDuration = TimeSpan.FromSeconds(5);
-            var dialog = scope.CreateDialog();
-            int opened = 0;
-            dialog.Opened += (_, _) => opened++;
-            var task = dialog.ShowAsync();
-            Drain();
-            var shade = (Border)scope.Host.Template.FindName(backdrop ? "PART_Backdrop" : "UnanimatedBackdrop", scope.Host);
-            var root = (Border)scope.Host.Template.FindName(surface ? "PART_TransitionRoot" : "UnanimatedSurface", scope.Host);
-            Assert.Equal(backdrop && SystemParameters.ClientAreaAnimation, shade.HasAnimatedProperties);
-            Assert.Equal(surface && SystemParameters.ClientAreaAnimation, root.HasAnimatedProperties);
-            scope.Host.IsAnimationEnabled = false;
-            Drain();
-            Assert.Equal(1, opened);
-            Assert.Equal(1d, shade.Opacity);
-            Assert.False(shade.HasAnimatedProperties);
-            scope.Host.IsAnimationEnabled = true;
-            dialog.Hide();
-            Drain();
-            if ((surface || backdrop) && SystemParameters.ClientAreaAnimation)
-            {
-                Assert.False(task.IsCompleted);
-                Assert.False(scope.Background.IsEnabled);
-                Assert.Equal(backdrop, shade.HasAnimatedProperties);
-                scope.Host.TransitionDuration = TimeSpan.Zero;
-            }
-
-            Pump(task);
-            Assert.False(shade.HasAnimatedProperties);
-            Assert.False(root.HasAnimatedProperties);
-            Assert.True(scope.Background.IsEnabled);
-        });
-
-    [Theory]
-    [InlineData(ContentDialogButton.Primary, ContentDialogResult.Primary)]
-    [InlineData(ContentDialogButton.Secondary, ContentDialogResult.Secondary)]
-    [InlineData(ContentDialogButton.Tertiary, ContentDialogResult.Tertiary)]
-    public void FooterActions_ExecuteBeforeClose_AndReturnDistinctResults(ContentDialogButton button, ContentDialogResult result) =>
-        Run(scope =>
+            dialog.Header = 12;
+            dialog.HeaderStringFormat = "Items: {0:D3}";
+        }
+        else
         {
-            int executions = 0;
-            var command = new TestCommand(() => executions++);
-            var dialog = scope.CreateDialog();
-            dialog.PrimaryAction = new ContentDialogAction { Content = "Save", Command = command };
-            dialog.SecondaryAction = new ContentDialogAction { Content = "Discard", Command = command };
-            dialog.TertiaryAction = new ContentDialogAction { Content = "Cancel", Command = command };
-            int closed = 0;
-            dialog.Closed += (_, args) =>
-            {
-                closed++;
-                Assert.Equal(result, args.Result);
-                Assert.Equal(1, executions);
-            };
-            Task<ContentDialogResult> task = dialog.ShowAsync();
-            Drain();
-            Invoke(Part(dialog, $"PART_{button}Button"));
+            dialog.Footer = 12;
+            dialog.FooterStringFormat = "Items: {0:D3}";
+        }
+
+        var task = scope.Host.ShowAsync(dialog);
+        Drain();
+        var presenter = (ContentPresenter)dialog.Template.FindName(slot + "Presenter", dialog);
+        string Text() => Assert.IsType<System.Windows.Controls.TextBlock>(VisualTreeHelper.GetChild(presenter, 0)).Text;
+        Assert.Equal("Items: 012", Text());
+        var template = (DataTemplate)XamlReader.Parse("<DataTemplate xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation'><TextBlock Text='Selected'/></DataTemplate>");
+        var selector = new TitleSelector(template);
+        if (slot == "Header")
+            dialog.HeaderTemplateSelector = selector;
+        else
+            dialog.FooterTemplateSelector = selector;
+        Drain();
+        Assert.Equal("Selected", Text());
+        Assert.Equal(12, selector.Item);
+        dialog.Close();
+        Pump(task);
+    });
+
+    [Fact]
+    public void Close_ReturnsBusinessObjectAfterCleanupAndReusesDialog() => Run(scope =>
+    {
+        var dialog = scope.CreateDialog();
+        var result = new object();
+        var closed = 0;
+        dialog.Closed += (_, e) =>
+        {
+            Assert.Null(scope.Host.CurrentDialog);
+            Assert.Null(dialog.Parent);
+            Assert.True(dialog.IsOpen);
+            Assert.Same(result, e.Result);
+            closed++;
+        };
+        for (var i = 0; i < 2; i++)
+        {
+            var task = scope.Host.ShowAsync(dialog);
+            dialog.Close(result);
+            dialog.Close("Ignored");
             Pump(task);
-            Assert.Equal(result, task.Result);
-            Assert.Equal(1, closed);
+            Assert.Same(result, task.Result);
             Assert.False(dialog.IsOpen);
-            Assert.Null(scope.Host.Content);
-            Assert.True(scope.Background.IsEnabled);
-        });
+            Assert.Same(scope.Background, scope.Host.Content);
+        }
+
+        Assert.Equal(2, closed);
+    });
 
     [Fact]
-    public void HeaderDismissal_DoesNotRaiseAction_AndReturnsNone() =>
-        Run(scope =>
+    public void Closing_CanVetoAndRejectsReentrantClose() => Run(scope =>
+    {
+        var dialog = scope.CreateDialog();
+        var calls = 0;
+        dialog.Closing += (_, e) =>
         {
-            var dialog = scope.CreateDialog();
-            dialog.TertiaryAction = new ContentDialogAction { Content = "Third choice" };
-            int actions = 0;
-            dialog.ButtonClicked += (_, _) => actions++;
-            var task = dialog.ShowAsync();
-            Drain();
-            var close = Part(dialog, "PART_CloseButton");
-            var third = Part(dialog, "PART_TertiaryButton");
-            Assert.True(close.TranslatePoint(default(Point), dialog).Y < third.TranslatePoint(default(Point), dialog).Y);
-            Invoke(close);
-            Pump(task);
-            Assert.Equal(ContentDialogResult.None, task.Result);
-            Assert.Equal(0, actions);
-            Assert.True(scope.Window.IsVisible);
-        });
+            calls++;
+            dialog.Close("Reentrant");
+            e.Cancel = calls == 1;
+        };
+        var task = scope.Host.ShowAsync(dialog);
+        dialog.Close("Veto");
+        Assert.False(dialog.IsClosing);
+        dialog.Close("Accepted");
+        Pump(task);
+        Assert.Equal("Accepted", task.Result);
+        Assert.Equal(2, calls);
+    });
 
     [Fact]
-    public void DisabledAction_RemainsVisible_AndTracksCommandAndDefinitionChanges() =>
-        Run(scope =>
-        {
-            var command = new TestCommand(() => { }) { Enabled = false };
-            var action = new ContentDialogAction { Content = "Save", Command = command };
-            var dialog = scope.CreateDialog();
-            dialog.PrimaryAction = action;
-            var task = dialog.ShowAsync();
-            Drain();
-            var button = Part(dialog, "PART_PrimaryButton");
-            Assert.True(button.IsVisible);
-            Assert.False(button.IsEnabled);
-            command.Enabled = true;
-            command.Notify();
-            Drain();
-            Assert.True(button.IsEnabled);
-            action.IsEnabled = false;
-            Drain();
-            Assert.True(button.IsVisible);
-            Assert.False(button.IsEnabled);
-            dialog.PrimaryAction = null;
-            Drain();
-            Assert.Equal(Visibility.Collapsed, button.Visibility);
-            dialog.Hide();
-            Pump(task);
-        });
+    public void NonDismissible_BlocksUserCancellationButAllowsBusinessClose() => Run(scope =>
+    {
+        var dialog = scope.CreateDialog();
+        dialog.IsDismissible = false;
+        var task = scope.Host.ShowAsync(dialog);
+        Drain();
+        Assert.False(Dialog.DismissCommand.CanExecute(null, dialog));
+        Assert.True(Dialog.CloseCommand.CanExecute("Success", dialog));
+        Dialog.CloseCommand.Execute("Success", dialog);
+        Pump(task);
+        Assert.Equal("Success", task.Result);
+    });
 
     [Fact]
-    public void ActionValidation_CanRejectInvocation_WithoutVetoingHide() =>
-        Run(scope =>
-        {
-            int executions = 0;
-            var dialog = scope.CreateDialog();
-            dialog.PrimaryAction = new ContentDialogAction { Content = "Save", Command = new TestCommand(() => executions++) };
-            dialog.ButtonClicked += (_, args) => args.Cancel = true;
-            var task = dialog.ShowAsync();
-            Drain();
-            Invoke(Part(dialog, "PART_PrimaryButton"));
-            Assert.False(task.IsCompleted);
-            Assert.Equal(0, executions);
-            dialog.Hide(ContentDialogResult.Secondary);
-            dialog.Hide(ContentDialogResult.Primary);
-            Pump(task);
-            Assert.Equal(ContentDialogResult.Secondary, task.Result);
-        });
+    public void NativeCancelButton_DismissesEmbeddedDialogWithoutClosingWindow() => Run(scope =>
+    {
+        var cancel = new NativeButton { Content = "Cancel", IsCancel = true };
+        var dialog = scope.CreateDialog();
+        dialog.Footer = cancel;
+        var task = scope.Host.ShowAsync(dialog);
+        Drain();
+        Invoke(cancel);
+        Pump(task);
+        Assert.True(scope.Window.IsVisible);
+        Assert.Null(task.Result);
+    });
 
     [Fact]
-    public void ActionEvent_BubblesWithTheActualAncestorSender() =>
-        Run(scope =>
-        {
-            var dialog = scope.CreateDialog();
-            dialog.PrimaryAction = new ContentDialogAction { Content = "Save" };
-            int notifications = 0;
-            scope.Host.AddHandler(
-                Dialog.ButtonClickedEvent,
-                new EventHandler<ContentDialogButtonClickEventArgs>((sender, args) =>
-                {
-                    Assert.Same(scope.Host, sender);
-                    Assert.Same(dialog, args.Source);
-                    notifications++;
-                    args.Cancel = true;
-                }));
-            var task = dialog.ShowAsync();
-            Drain();
-            Invoke(Part(dialog, "PART_PrimaryButton"));
-            Assert.Equal(1, notifications);
-            Assert.False(task.IsCompleted);
-            dialog.Hide();
-            Pump(task);
-        });
+    public void NativeCancelButton_RespectsNonDismissible() => Run(scope =>
+    {
+        var cancel = new NativeButton { Content = "Cancel", IsCancel = true };
+        var dialog = scope.CreateDialog();
+        dialog.Footer = cancel;
+        dialog.IsDismissible = false;
+        var task = scope.Host.ShowAsync(dialog);
+        Drain();
+        Invoke(cancel);
+        Assert.False(task.IsCompleted);
+        Assert.True(scope.Window.IsVisible);
+        dialog.Close();
+        Pump(task);
+    });
 
     [Fact]
-    public void NonClosingAction_AllowsExplicitCompletionAfterWork() =>
-        Run(scope =>
+    public void TokenCancellation_CancelsTaskAfterCleanupDespiteVeto() => Run(scope =>
+    {
+        using var cancellation = new CancellationTokenSource();
+        var dialog = scope.CreateDialog();
+        dialog.IsDismissible = false;
+        dialog.Closing += (_, _) => throw new InvalidOperationException("Cancellation must bypass Closing");
+        var closed = false;
+        dialog.Closed += (_, _) => closed = true;
+        var task = scope.Host.ShowAsync(dialog, cancellation.Token);
+        Drain();
+        Task.Run(() => cancellation.Cancel()).GetAwaiter().GetResult();
+        Assert.ThrowsAny<OperationCanceledException>(() => Pump(task));
+        Assert.True(task.IsCanceled);
+        Assert.True(closed);
+        Assert.Null(scope.Host.CurrentDialog);
+        Assert.False(dialog.IsOpen);
+    });
+
+    [Fact]
+    public void CloseAndCancellation_FirstAcceptedOutcomeWins() => Run(scope =>
+    {
+        using var cancellation = new CancellationTokenSource();
+        var dialog = scope.CreateDialog();
+        var task = scope.Host.ShowAsync(dialog, cancellation.Token);
+        dialog.Close("Saved");
+        cancellation.Cancel();
+        Pump(task);
+        Assert.Equal("Saved", task.Result);
+    });
+
+    [Fact]
+    public void PreCanceledToken_DoesNotAttachDialog() => Run(scope =>
+    {
+        using var cancellation = new CancellationTokenSource();
+        cancellation.Cancel();
+        var dialog = scope.CreateDialog();
+        var task = scope.Host.ShowAsync(dialog, cancellation.Token);
+        Assert.ThrowsAny<OperationCanceledException>(() => Pump(task));
+        Assert.Null(scope.Host.CurrentDialog);
+        Assert.False(dialog.IsOpen);
+    });
+
+    [Fact]
+    public void BusyHostAndConcurrentInstance_AreRejected() => Run(scope =>
+    {
+        var dialog = scope.CreateDialog();
+        var task = scope.Host.ShowAsync(dialog);
+        Assert.Throws<InvalidOperationException>(() => Pump(scope.Host.ShowAsync(scope.CreateDialog())));
+        Assert.Throws<InvalidOperationException>(() => Pump(scope.Host.ShowAsync(dialog)));
+        dialog.Close();
+        Pump(task);
+    });
+
+    [Fact]
+    public void HostUnload_BypassesVetoAndReleasesSession() => Run(scope =>
+    {
+        var dialog = scope.CreateDialog();
+        dialog.Closing += (_, e) => e.Cancel = true;
+        var task = scope.Host.ShowAsync(dialog);
+        Drain();
+        scope.Window.Content = null;
+        Pump(task);
+        Assert.Null(task.Result);
+        Assert.Null(scope.Host.CurrentDialog);
+        Assert.False(dialog.IsOpen);
+    });
+
+    [Fact]
+    public void MissingRequiredHostPart_RejectsPresentation() => Run(scope =>
+    {
+        scope.Host.Template = new ControlTemplate(typeof(ContentDialogHost));
+        Assert.Throws<InvalidOperationException>(() => Pump(scope.Host.ShowAsync(scope.CreateDialog())));
+        Assert.Null(scope.Host.CurrentDialog);
+    });
+
+    [Fact]
+    public void Host_DisablesOnlyItsContentAndPreservesBindings() => Run(scope =>
+    {
+        var model = new EnableModel();
+        scope.Background.SetBinding(UIElement.IsEnabledProperty, new Binding(nameof(EnableModel.Enabled)) { Source = model });
+        var dialog = scope.CreateDialog();
+        var task = scope.Host.ShowAsync(dialog);
+        Drain();
+        Assert.False(scope.Background.IsEnabled);
+        Assert.True(scope.Host.IsEnabled);
+        model.Enabled = false;
+        dialog.Close();
+        Pump(task);
+        Drain();
+        Assert.False(scope.Background.IsEnabled);
+        Assert.True(BindingOperations.IsDataBound(scope.Background, UIElement.IsEnabledProperty));
+        model.Enabled = true;
+        Drain();
+        Assert.True(scope.Background.IsEnabled);
+    });
+
+    [Fact]
+    public void Focus_UsesExplicitTargetThenBodyRegardlessOfAppearance() => Run(scope =>
+    {
+        var body = new System.Windows.Controls.TextBox();
+        var footer = new Wpf.Zen.Ui.Controls.Button { Content = "Delete", Appearance = ControlAppearance.Danger };
+        var dialog = scope.CreateDialog();
+        dialog.Content = body;
+        dialog.Footer = footer;
+        dialog.InitialFocus = footer;
+        var task = scope.Host.ShowAsync(dialog);
+        Drain();
+        Assert.Same(footer, Keyboard.FocusedElement);
+        dialog.Close();
+        Pump(task);
+        dialog.InitialFocus = null;
+        task = scope.Host.ShowAsync(dialog);
+        Drain();
+        Assert.Same(body, Keyboard.FocusedElement);
+        dialog.Close();
+        Pump(task);
+    });
+
+    [Fact]
+    public void DefaultAndAccessKeys_AreScopedToDialog() => Run(scope =>
+    {
+        var background = new NativeButton { Content = "_Go", IsDefault = true };
+        scope.Host.Content = background;
+        var foreground = new NativeButton { Content = "_Go", IsDefault = true, Command = Dialog.CloseCommand, CommandParameter = "Selected" };
+        var dialog = scope.CreateDialog();
+        dialog.Footer = foreground;
+        var backgroundClicks = 0;
+        background.Click += (_, _) => backgroundClicks++;
+        var task = scope.Host.ShowAsync(dialog);
+        Drain();
+        var query = new AccessKeyPressedEventArgs();
+        foreground.RaiseEvent(query);
+        Assert.Same(dialog, query.Scope);
+        AccessKeyManager.ProcessKey(dialog, "G", false);
+        Pump(task);
+        Assert.Equal("Selected", task.Result);
+        Assert.Equal(0, backgroundClicks);
+    });
+
+    [Fact]
+    public void Escape_AllowsBodyToConsumeFirst() => Run(scope =>
+    {
+        var body = new System.Windows.Controls.TextBox();
+        var dialog = scope.CreateDialog();
+        dialog.Content = body;
+        var task = scope.Host.ShowAsync(dialog);
+        Drain();
+        KeyEventHandler consume = (_, e) => e.Handled = true;
+        body.KeyDown += consume;
+        void Escape() => body.RaiseEvent(new KeyEventArgs(Keyboard.PrimaryDevice, PresentationSource.FromVisual(body), 0, Key.Escape) { RoutedEvent = Keyboard.KeyDownEvent });
+        Escape();
+        Assert.False(task.IsCompleted);
+        body.KeyDown -= consume;
+        Escape();
+        Pump(task);
+    });
+
+    [Fact]
+    public void CommandTarget_IsHonoredInsideDialogAndBlockedOutside() => Run(scope =>
+    {
+        var command = new RoutedCommand();
+        var target = new System.Windows.Controls.TextBox();
+        var footer = new NativeButton { Content = "Run", Command = command, CommandTarget = target };
+        var dialog = scope.CreateDialog();
+        dialog.Content = target;
+        dialog.Footer = footer;
+        var calls = 0;
+        target.CommandBindings.Add(new CommandBinding(command, (_, _) => calls++, (_, e) => e.CanExecute = true));
+        var task = scope.Host.ShowAsync(dialog);
+        Drain();
+        Invoke(footer);
+        Assert.Equal(1, calls);
+        Assert.False(task.IsCompleted);
+        scope.Background.CommandBindings.Add(new CommandBinding(command, (_, _) => calls++, (_, e) => e.CanExecute = true));
+        footer.CommandTarget = scope.Background;
+        Assert.False(command.CanExecute(null, scope.Background));
+        dialog.Close();
+        Pump(task);
+    });
+
+    [Fact]
+    public void CloseButton_UsesDynamicStyleResource() => Run(scope =>
+    {
+        var dialog = scope.CreateDialog();
+        var task = scope.Host.ShowAsync(dialog);
+        Drain();
+        var button = (Wpf.Zen.Ui.Controls.Button)dialog.Template.FindName("PART_CloseButton", dialog);
+        var style = new Style(typeof(Wpf.Zen.Ui.Controls.Button));
+        style.Setters.Add(new Setter(FrameworkElement.ToolTipProperty, "Dismiss localized"));
+        dialog.Resources["ContentDialogCloseButtonStyle"] = style;
+        Drain();
+        Assert.Same(style, button.Style);
+        Assert.Equal("Dismiss localized", button.ToolTip);
+        dialog.Close();
+        Pump(task);
+    });
+
+    [Fact]
+    public void Automation_UsesHeaderAndDismissalPolicy() => Run(scope =>
+    {
+        var dialog = scope.CreateDialog();
+        dialog.Header = "Accessible dialog";
+        var task = scope.Host.ShowAsync(dialog);
+        Drain();
+        var peer = UIElementAutomationPeer.CreatePeerForElement(dialog);
+        Assert.Equal("Accessible dialog", peer.GetName());
+        var provider = Assert.IsAssignableFrom<IWindowProvider>(peer.GetPattern(PatternInterface.Window));
+        Assert.True(provider.IsModal);
+        provider.Close();
+        Pump(task);
+    });
+
+    [Fact]
+    public void CancellationDuringLongEntrance_FinishesImmediately() => Run(scope =>
+    {
+        using var cancellation = new CancellationTokenSource();
+        scope.Host.IsAnimationEnabled = true;
+        scope.Host.TransitionDuration = TimeSpan.FromMinutes(1);
+        var dialog = scope.CreateDialog();
+        var opened = false;
+        dialog.Opened += (_, _) => opened = true;
+        var task = scope.Host.ShowAsync(dialog, cancellation.Token);
+        Drain();
+        cancellation.Cancel();
+        Assert.ThrowsAny<OperationCanceledException>(() => Pump(task));
+        Assert.False(opened);
+        Assert.Null(scope.Host.CurrentDialog);
+    });
+
+    [Fact]
+    public void Focus_IsRestoredBeforeTaskCompletion() => Run(scope =>
+    {
+        var background = new System.Windows.Controls.TextBox();
+        scope.Host.Content = background;
+        Drain();
+        background.Focus();
+        var dialog = scope.CreateDialog();
+        dialog.Content = new System.Windows.Controls.TextBox();
+        var task = scope.Host.ShowAsync(dialog);
+        Drain();
+        Assert.NotSame(background, Keyboard.FocusedElement);
+        dialog.Close();
+        Pump(task);
+        Assert.Same(background, Keyboard.FocusedElement);
+    });
+
+    [Fact]
+    public void Popup_InsideDialogMayReceiveFocusAndCannotFocusCoveredContent() => Run(scope =>
+    {
+        var background = new System.Windows.Controls.TextBox();
+        scope.Host.Content = background;
+        var anchor = new NativeButton { Content = "Popup" };
+        var editor = new System.Windows.Controls.TextBox { Width = 120 };
+        var popup = new System.Windows.Controls.Primitives.Popup { PlacementTarget = anchor, Child = editor, StaysOpen = true };
+        var body = new StackPanel();
+        body.Children.Add(anchor);
+        body.Children.Add(popup);
+        var dialog = scope.CreateDialog();
+        dialog.Content = body;
+        var task = scope.Host.ShowAsync(dialog);
+        Drain();
+        popup.IsOpen = true;
+        Drain();
+        Assert.True(editor.Focus());
+        Assert.False(background.Focus());
+        Assert.Same(editor, Keyboard.FocusedElement);
+        popup.IsOpen = false;
+        dialog.Close();
+        Pump(task);
+    });
+
+    [Fact]
+    public void Enter_UsesNativeDefaultAndMultilineEditorConsumesIt() => Run(scope =>
+    {
+        var editor = new System.Windows.Controls.TextBox { AcceptsReturn = true };
+        var button = new NativeButton { Content = "Save", IsDefault = true, Command = Dialog.CloseCommand, CommandParameter = "Saved" };
+        var dialog = scope.CreateDialog();
+        dialog.Content = editor;
+        dialog.Footer = button;
+        var task = scope.Host.ShowAsync(dialog);
+        Drain();
+        void Enter() => InputManager.Current.ProcessInput(new KeyEventArgs(
+            Keyboard.PrimaryDevice,
+            PresentationSource.FromVisual(editor), Environment.TickCount, Key.Enter)
         {
-            int executions = 0;
-            var dialog = scope.CreateDialog();
-            dialog.PrimaryAction = new ContentDialogAction
+            RoutedEvent = Keyboard.KeyDownEvent
+        });
+        Enter();
+        Assert.False(task.IsCompleted);
+        editor.AcceptsReturn = false;
+        Enter();
+        Pump(task);
+        Assert.Equal("Saved", task.Result);
+    });
+
+    [Fact]
+    public void PlainWindowInputBinding_DoesNotExecuteFromDialog() => Run(scope =>
+    {
+        var calls = 0;
+        scope.Window.InputBindings.Add(new KeyBinding(new TestCommand(() => calls++), Key.F6, ModifierKeys.None));
+        var dialog = scope.CreateDialog();
+        var task = scope.Host.ShowAsync(dialog);
+        Drain();
+        InputManager.Current.ProcessInput(new KeyEventArgs(
+            Keyboard.PrimaryDevice,
+            PresentationSource.FromVisual(dialog), Environment.TickCount, Key.F6)
+        {
+            RoutedEvent = Keyboard.KeyDownEvent
+        });
+        Assert.Equal(0, calls);
+        dialog.Close();
+        Pump(task);
+    });
+
+    [Fact]
+    public void OpenedException_CleansUpAndFaultsTask() => Run(scope =>
+    {
+        var dialog = scope.CreateDialog();
+        dialog.Opened += (_, _) => throw new InvalidOperationException("Opened failed");
+        var task = scope.Host.ShowAsync(dialog);
+        Assert.Throws<InvalidOperationException>(() => Pump(task));
+        Assert.False(dialog.IsOpen);
+        Assert.Null(scope.Host.CurrentDialog);
+    });
+
+    [Fact]
+    public void Tab_NavigatesAndCyclesInsideDialog() => Run(scope =>
+    {
+        var first = new System.Windows.Controls.TextBox();
+        var second = new System.Windows.Controls.TextBox();
+        var body = new StackPanel();
+        body.Children.Add(first);
+        body.Children.Add(second);
+        var dialog = scope.CreateDialog();
+        dialog.Content = body;
+        var task = scope.Host.ShowAsync(dialog);
+        Drain();
+        Assert.Same(first, Keyboard.FocusedElement);
+        InputManager.Current.ProcessInput(new KeyEventArgs(Keyboard.PrimaryDevice,
+            PresentationSource.FromVisual(first), Environment.TickCount, Key.Tab)
+        {
+            RoutedEvent = Keyboard.KeyDownEvent
+        });
+        Assert.Same(second, Keyboard.FocusedElement);
+        for (var i = 0; i < 8; i++)
+        {
+            InputManager.Current.ProcessInput(new KeyEventArgs(Keyboard.PrimaryDevice,
+                PresentationSource.FromVisual(dialog), Environment.TickCount, Key.Tab)
             {
-                Content = "Validate",
-                ClosesDialog = false,
-                Command = new TestCommand(() => executions++),
-            };
-            var task = dialog.ShowAsync();
-            Drain();
-            Invoke(Part(dialog, "PART_PrimaryButton"));
-            Assert.Equal(1, executions);
-            Assert.False(task.IsCompleted);
-            dialog.Hide(ContentDialogResult.Primary);
-            Pump(task);
-        });
+                RoutedEvent = Keyboard.KeyDownEvent
+            });
+            Assert.True(dialog.IsKeyboardFocusWithin);
+        }
+        dialog.Close();
+        Pump(task);
+    });
 
     [Fact]
-    public void ActionBinding_UsesDialogDataContext_AndTemplatesRemainCustomizable() =>
-        Run(scope =>
+    public void DispatcherShutdown_CompletesPublicTaskWithoutAnotherDispatcherTurn()
+    {
+        Task<object?>? task = null;
+        WpfTestThread.Run(() =>
         {
+            SynchronizationContext.SetSynchronizationContext(new DispatcherSynchronizationContext(Dispatcher.CurrentDispatcher));
+            var scope = new Scope();
             var dialog = scope.CreateDialog();
-            dialog.DataContext = new { Caption = "Bound action" };
-            var action = new ContentDialogAction();
-            BindingOperations.SetBinding(action, ContentDialogAction.ContentProperty, new Binding("Caption"));
-            action.ContentTemplate = (DataTemplate)XamlReader.Parse(
-                """<DataTemplate xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"><TextBlock Text="{Binding}" FontStyle="Italic"/></DataTemplate>""");
-            var style = new Style(typeof(Wpf.Zen.Ui.Controls.Button));
-            style.Setters.Add(new Setter(FrameworkElement.ToolTipProperty, "Custom tooltip"));
-            action.ButtonStyle = style;
-            dialog.PrimaryAction = action;
-            var task = dialog.ShowAsync();
+            task = scope.Host.ShowAsync(dialog);
             Drain();
-            var button = Part(dialog, "PART_PrimaryButton");
-            Assert.Equal("Bound action", button.Content);
-            Assert.Same(action.ContentTemplate, button.ContentTemplate);
-            Assert.Equal("Custom tooltip", button.ToolTip);
-            dialog.DataContext = new { Caption = "Updated action" };
-            Drain();
-            Assert.Equal("Updated action", button.Content);
-            dialog.Hide();
-            Pump(task);
+            Dispatcher.CurrentDispatcher.InvokeShutdown();
+            Assert.True(task.IsCompleted);
+            Assert.False(dialog.IsOpen);
+            Assert.Null(scope.Host.CurrentDialog);
         });
+        Assert.Null(task!.GetAwaiter().GetResult());
+    }
 
     [Fact]
-    public void BusyHost_IsRejected_AndExternalRemovalCompletesExactlyOnce() =>
-        Run(scope =>
-        {
-            var dialog = scope.CreateDialog();
-            int closed = 0;
-            dialog.Closed += (_, _) => closed++;
-            var first = dialog.ShowAsync();
-            var second = scope.CreateDialog().ShowAsync();
-            Assert.Throws<InvalidOperationException>(() => second.GetAwaiter().GetResult());
-            Assert.Same(dialog, scope.Host.Content);
-            // Removal is observable even before Loaded has reached the dialog.
-            scope.Host.Content = null;
-            Pump(first);
-            Assert.Equal(ContentDialogResult.None, first.Result);
-            Assert.Equal(1, closed);
-        });
+    public void ClosedException_StillReleasesHostAndDialog() => Run(scope =>
+    {
+        var dialog = scope.CreateDialog();
+        EventHandler<ContentDialogClosedEventArgs> fail = (_, _) => throw new InvalidOperationException("Closed failed");
+        dialog.Closed += fail;
+        var task = scope.Host.ShowAsync(dialog);
+        dialog.Close("Saved");
+        Assert.Throws<InvalidOperationException>(() => Pump(task));
+        Assert.False(dialog.IsOpen);
+        Assert.Null(scope.Host.CurrentDialog);
+        dialog.Closed -= fail;
+        task = scope.Host.ShowAsync(dialog);
+        dialog.Close();
+        Pump(task);
+    });
 
     [Fact]
-    public void ExternalReplacement_DoesNotClearSuccessor() =>
-        Run(scope =>
-        {
-            var first = scope.CreateDialog();
-            var task = first.ShowAsync();
-            var replacement = scope.CreateDialog();
-            scope.Host.Content = replacement;
-            Pump(task);
-            Assert.Same(replacement, scope.Host.Content);
-            scope.Host.Content = null;
-        });
+    public void MissingDialogPresenter_ReleasesInvisibleSession() => Run(scope =>
+    {
+        scope.Host.Template = (ControlTemplate)XamlReader.Parse("""
+            <ControlTemplate xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                xmlns:ui="clr-namespace:Wpf.Zen.Ui.Controls;assembly=Wpf.Zen.Ui"
+                TargetType="{x:Type ui:ContentDialogHost}">
+                <ContentPresenter x:Name="PART_ContentRoot" ContentSource="Content" />
+            </ControlTemplate>
+            """);
+        var task = scope.Host.ShowAsync(scope.CreateDialog());
+        Pump(task);
+        Assert.Null(task.Result);
+        Assert.Null(scope.Host.CurrentDialog);
+        Assert.True(scope.Background.IsEnabled);
+    });
 
     [Fact]
-    public void CancellationFromWorker_CompletesAndAllowsReuse() =>
-        Run(scope =>
-        {
-            using var cancellation = new CancellationTokenSource();
-            var dialog = scope.CreateDialog();
-            var task = dialog.ShowAsync(cancellation.Token);
-            Task.Run(cancellation.Cancel).GetAwaiter().GetResult();
-            Pump(task);
-            Assert.Equal(ContentDialogResult.None, task.Result);
-            var next = dialog.ShowAsync();
-            dialog.Hide(ContentDialogResult.Tertiary);
-            Pump(next);
-            Assert.Equal(ContentDialogResult.Tertiary, next.Result);
-        });
+    public void HostTemplateReplacement_RetainsOneSessionAndLogicalFooter() => Run(scope =>
+    {
+        var dialog = scope.CreateDialog();
+        var footer = new NativeButton { Content = "Close", Command = Dialog.CloseCommand };
+        dialog.Footer = footer;
+        var task = scope.Host.ShowAsync(dialog);
+        Drain();
+        var template = (ControlTemplate)XamlReader.Parse(XamlWriter.Save(scope.Host.Template));
+        scope.Host.Template = template;
+        Drain();
+        Assert.False(task.IsCompleted);
+        Assert.Same(dialog, scope.Host.CurrentDialog);
+        Assert.Same(dialog, footer.Parent);
+        Assert.False(scope.Background.IsEnabled);
+        Invoke(footer);
+        Pump(task);
+    });
 
     [Fact]
-    public void DismissalPolicy_DoesNotPreventProgrammaticClose_AndAutomationIsTruthful() =>
-        Run(scope =>
-        {
-            var dialog = scope.CreateDialog();
-            dialog.IsDismissible = false;
-            dialog.Title = "Title";
-            AutomationProperties.SetName(dialog, "Accessible name");
-            var task = dialog.ShowAsync();
-            Drain();
-            Assert.False(Dialog.CloseCommand.CanExecute(null, dialog));
-            Assert.Equal(Visibility.Collapsed, Part(dialog, "PART_CloseButton").Visibility);
-            var peer = UIElementAutomationPeer.CreatePeerForElement(dialog);
-            Assert.Equal("Accessible name", peer.GetName());
-            Assert.Null(peer.GetPattern(PatternInterface.ScrollItem));
-            Assert.IsAssignableFrom<IWindowProvider>(peer.GetPattern(PatternInterface.Window)).Close();
-            Drain();
-            Assert.False(task.IsCompleted);
-            dialog.Hide();
-            Pump(task);
-        });
+    public void LifecycleEvents_SupportGeneralRoutedEventHandlers() => Run(scope =>
+    {
+        var dialog = scope.CreateDialog();
+        var events = 0;
+        RoutedEventHandler handler = (_, _) => events++;
+        dialog.AddHandler(Dialog.ClosingEvent, handler);
+        dialog.AddHandler(Dialog.ClosedEvent, handler);
+        var task = scope.Host.ShowAsync(dialog);
+        dialog.Close();
+        Pump(task);
+        Assert.Equal(2, events);
+    });
 
     [Fact]
-    public void StandardSizing_ConstrainsLongContent_AndEmptyTemplateIsSafe() =>
-        Run(scope =>
+    public void CallerWithoutSynchronizationContext_StillCompletesOnHostDispatcher() => Run(scope =>
+    {
+        var dialog = scope.CreateDialog();
+        var previous = SynchronizationContext.Current;
+        SynchronizationContext.SetSynchronizationContext(null);
+        Task<object?> task;
+        try
         {
-            var dialog = scope.CreateDialog();
-            dialog.MaxWidth = 340;
-            dialog.MaxHeight = 260;
-            dialog.Content = new Border { Width = 2000, Height = 2000 };
-            var task = dialog.ShowAsync();
-            Drain();
-            Assert.InRange(dialog.ActualWidth, 1, 340);
-            Assert.InRange(dialog.ActualHeight, 1, 260);
-            var scroll = (System.Windows.Controls.ScrollViewer)dialog.Template.FindName("PART_ContentScroll", dialog);
-            Assert.True(scroll.ScrollableHeight > 0);
-            dialog.Template = new ControlTemplate(typeof(Dialog));
-            scope.Window.UpdateLayout();
-            dialog.Hide();
-            Pump(task);
-        });
+            task = scope.Host.ShowAsync(dialog);
+            Assert.Null(SynchronizationContext.Current);
+        }
+        finally
+        {
+            SynchronizationContext.SetSynchronizationContext(previous);
+        }
+        Drain();
+        dialog.Close("Done");
+        Pump(task);
+        Assert.Equal("Done", task.Result);
+        Assert.Null(scope.Host.CurrentDialog);
+    });
 
-    [Fact]
-    public void ContentTemplate_InitialFocusTargetsRealizedInput() =>
-        Run(scope =>
+    private sealed class EnableModel : INotifyPropertyChanged
+    {
+        private bool _enabled = true;
+        public bool Enabled
         {
-            var dialog = scope.CreateDialog();
-            dialog.Content = new object();
-            dialog.ContentTemplate = (DataTemplate)XamlReader.Parse(
-                """<DataTemplate xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"><TextBox Text="Input"/></DataTemplate>""");
-            var task = dialog.ShowAsync();
-            Drain();
-            var presenter = (ContentPresenter)dialog.Template.FindName("PART_ContentPresenter", dialog);
-            var input = (System.Windows.Controls.TextBox)VisualTreeHelper.GetChild(presenter, 0);
-            Assert.True(input.IsKeyboardFocused);
-            dialog.Hide();
-            Pump(task);
-        });
-
-    [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public void ExitTransition_HoldsModalState_AndDetachmentOrRetemplateReleasesWaiter(bool replaceTemplate) =>
-        Run(scope =>
-        {
-            scope.Host.IsAnimationEnabled = true;
-            scope.Host.TransitionDuration = TimeSpan.FromSeconds(5);
-            var dialog = scope.CreateDialog();
-            var task = dialog.ShowAsync();
-            Drain();
-            dialog.Hide(ContentDialogResult.Primary);
-            Drain();
-            if (SystemParameters.ClientAreaAnimation)
+            get => _enabled; set
             {
-                Assert.False(task.IsCompleted);
-                Assert.Same(dialog, scope.Host.Content);
-                Assert.False(scope.Background.IsEnabled);
+                _enabled = value;
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Enabled)));
             }
+        }
 
-            if (replaceTemplate)
-                scope.Host.Template = new ControlTemplate(typeof(ContentDialogHost));
-            else
-                scope.Window.Close();
-            Pump(task);
-            Assert.Null(scope.Host.Content);
-            Assert.True(scope.Background.IsEnabled);
-        });
-
-    [Fact]
-    public void AnimationCompletion_PreservesConsumerTransforms_AndOpenedIsOnce() =>
-        Run(scope =>
-        {
-            scope.Host.IsAnimationEnabled = true;
-            scope.Host.TransitionDuration = TimeSpan.FromMilliseconds(30);
-            var dialog = scope.CreateDialog();
-            var transform = new RotateTransform(2);
-            dialog.RenderTransform = transform;
-            dialog.Opacity = .8;
-            int opened = 0;
-            dialog.Opened += (_, _) =>
-            {
-                opened++;
-                dialog.Hide(ContentDialogResult.Primary);
-            };
-            var task = dialog.ShowAsync();
-            Pump(task);
-            Assert.Equal(1, opened);
-            Assert.Same(transform, dialog.RenderTransform);
-            Assert.Equal(.8, dialog.Opacity);
-        });
-
-    private static NativeButton Part(Dialog dialog, string name) =>
-        Assert.IsAssignableFrom<NativeButton>(dialog.Template.FindName(name, dialog));
-
-    [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public void LosingPresentation_WithoutChangingContent_CompletesTheSession(bool collapseHost) =>
-        Run(scope =>
-        {
-            var dialog = scope.CreateDialog();
-            var task = dialog.ShowAsync();
-            Drain();
-            if (collapseHost)
-                scope.Host.Visibility = Visibility.Collapsed;
-            else
-                scope.Host.Template = new ControlTemplate(typeof(ContentDialogHost));
-            Pump(task);
-            Assert.Equal(ContentDialogResult.None, task.Result);
-            Assert.Null(scope.Host.Content);
-            Assert.True(scope.Background.IsEnabled);
-        });
-
-    [Fact]
-    public void MissingHostPresenter_DoesNotLeaveAnInvisibleSessionPending() =>
-        Run(scope =>
-        {
-            scope.Host.Template = new ControlTemplate(typeof(ContentDialogHost));
-            var task = scope.CreateDialog().ShowAsync();
-            Pump(task);
-            Assert.Equal(ContentDialogResult.None, task.Result);
-        });
-
-    [Fact]
-    public void Escape_CanBeConsumedByContent_BeforeDialogDismissal() =>
-        Run(scope =>
-        {
-            var input = new System.Windows.Controls.TextBox();
-            var dialog = scope.CreateDialog();
-            dialog.Content = input;
-            var task = dialog.ShowAsync();
-            Drain();
-            KeyEventHandler consume = (_, args) => args.Handled = true;
-            input.KeyDown += consume;
-            void Escape() => input.RaiseEvent(new KeyEventArgs(
-                Keyboard.PrimaryDevice,
-                PresentationSource.FromVisual(input),
-                Environment.TickCount,
-                Key.Escape)
-            { RoutedEvent = Keyboard.KeyDownEvent });
-            Escape();
-            Assert.False(task.IsCompleted);
-            input.KeyDown -= consume;
-            Escape();
-            Pump(task);
-            Assert.Equal(ContentDialogResult.None, task.Result);
-        });
-
-    [Fact]
-    public void DefaultButton_DoesNotFallBackToAnotherChoice() =>
-        Run(scope =>
-        {
-            var dialog = scope.CreateDialog();
-            dialog.DefaultButton = ContentDialogButton.Primary;
-            dialog.PrimaryAction = new ContentDialogAction { Content = "Unavailable", IsEnabled = false };
-            dialog.TertiaryAction = new ContentDialogAction { Content = "Cancel" };
-            var task = dialog.ShowAsync();
-            Drain();
-            Assert.False(Part(dialog, "PART_PrimaryButton").IsEnabled);
-            Assert.False(Part(dialog, "PART_TertiaryButton").IsDefault);
-            Assert.False(Part(dialog, "PART_CloseButton").IsDefault);
-            dialog.Hide();
-            Pump(task);
-        });
+        public event PropertyChangedEventHandler? PropertyChanged;
+    }
 
     private static void Invoke(NativeButton button)
     {
@@ -635,7 +713,10 @@ public class ContentDialogTests
     {
         public ContentDialogHost Host { get; } = new() { IsAnimationEnabled = false };
         public Border Background { get; } = new();
-        public Window Window { get; }
+        public Window Window
+        {
+            get;
+        }
 
         public Scope()
         {
@@ -644,7 +725,7 @@ public class ContentDialogTests
             {
                 Source = new Uri("pack://application:,,,/Wpf.Zen.Ui;component/Themes/Generic.xaml"),
             });
-            root.Children.Add(Background);
+            Host.Content = Background;
             root.Children.Add(Host);
             Window = new Window
             {
@@ -660,7 +741,7 @@ public class ContentDialogTests
             Drain();
         }
 
-        public Dialog CreateDialog() => new(Host) { Title = "Dialog", Content = "Content" };
+        public Dialog CreateDialog() => new() { Header = "Dialog", Content = "Content" };
         public void Dispose()
         {
             Window.Close();
@@ -670,8 +751,14 @@ public class ContentDialogTests
 
     private sealed class TitleSelector(DataTemplate template) : DataTemplateSelector
     {
-        public object? Item { get; private set; }
-        public DependencyObject? Container { get; private set; }
+        public object? Item
+        {
+            get; private set;
+        }
+        public DependencyObject? Container
+        {
+            get; private set;
+        }
         public override DataTemplate SelectTemplate(object item, DependencyObject container)
         {
             Item = item;
@@ -679,6 +766,13 @@ public class ContentDialogTests
             return template;
         }
     }
+
+    /// <summary>
+    /// Represents an application-defined dialog whose inherited default style key must continue to select the library's
+    /// <see cref="Dialog" /> theme style. Application subclasses should not need an implicit style that forwards to a
+    /// theme resource through <c>StaticResource</c>.
+    /// </summary>
+    private sealed class DerivedDialog : Dialog { }
 
     private sealed class TestCommand(Action execute) : ICommand
     {

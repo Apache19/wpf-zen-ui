@@ -3,10 +3,13 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Controls;
 using System.Windows.Interop;
+using System.Windows.Media;
 using System.Windows.Threading;
 using Wpf.Zen.Ui.Controls;
 
@@ -120,7 +123,7 @@ public class PresentationServiceTests
     }
 
     [Fact]
-    public void ContentDialogService_UsesAttachedHostAndDisablesActualSiblings()
+    public void ContentDialogService_UsesAttachedHostAndDisablesCoveredContent()
     {
         WpfTestThread.Run(() =>
         {
@@ -141,25 +144,120 @@ public class PresentationServiceTests
 
                 var service = new ContentDialogService();
                 service.Attach(dialogHost);
-                // A dialog may be associated explicitly before it is passed to the service. The
-                // service must accept the same host without trying to assign it a second time.
-                var dialog = new ContentDialog(dialogHost);
+                var dialog = new ContentDialog();
 
-                Task<ContentDialogResult> resultTask = service.ShowAsync(
+                Task<object?> resultTask = service.ShowAsync(
                     dialog,
                     CancellationToken.None
                 );
 
-                Assert.Same(dialog, dialogHost.Content);
+                DrainDispatcher();
+                Assert.Same(dialog, dialogHost.CurrentDialog);
                 Assert.False(applicationContent.IsEnabled);
 
-                dialog.Hide(ContentDialogResult.Primary);
+                dialog.Close("Saved");
                 PumpUntilCompleted(resultTask);
 
                 Assert.True(resultTask.IsCompletedSuccessfully);
                 // ReSharper disable once AsyncApostle.AsyncWait
-                Assert.Equal(ContentDialogResult.Primary, resultTask.Result);
-                Assert.Null(dialogHost.Content);
+                Assert.Equal("Saved", resultTask.Result);
+                Assert.Null(dialogHost.CurrentDialog);
+                DrainDispatcher();
+                Assert.True(applicationContent.IsEnabled);
+            }
+            finally
+            {
+                window.Close();
+            }
+        });
+    }
+
+    [Fact]
+    public void ContentDialog_PreservesTitleBarWindowShellAndDisablesItsUserContent()
+    {
+        WpfTestThread.Run(() =>
+        {
+            SynchronizationContext.SetSynchronizationContext(
+                new DispatcherSynchronizationContext(Dispatcher.CurrentDispatcher)
+            );
+
+            var titleBarContent = new System.Windows.Controls.Button();
+            var titleBarLeftContent = new System.Windows.Controls.Button();
+            var titleBar = new Wpf.Zen.Ui.Controls.TitleBar
+            {
+                Content = titleBarContent,
+                LeftContent = titleBarLeftContent,
+            };
+            var applicationContent = new Border();
+            var page = new Grid();
+            page.Children.Add(titleBar);
+            page.Children.Add(applicationContent);
+
+            var dialogHost = new ContentDialogHost
+            {
+                Content = page,
+                IsAnimationEnabled = false,
+            };
+            var root = new Grid();
+            root.Resources.MergedDictionaries.Add(
+                new ResourceDictionary
+                {
+                    Source = new Uri(
+                        "pack://application:,,,/Wpf.Zen.Ui;component/Themes/Generic.xaml"
+                    ),
+                }
+            );
+            root.Children.Add(dialogHost);
+            Window window = CreateHiddenWindow(root);
+
+            try
+            {
+                window.Show();
+                DrainDispatcher();
+
+                var service = new ContentDialogService();
+                service.Attach(dialogHost);
+                var dialog = new ContentDialog();
+                Task<object?> resultTask = service.ShowAsync(dialog, CancellationToken.None);
+
+                DrainDispatcher();
+
+                Assert.True(titleBar.IsEnabled);
+                Assert.False(titleBar.IsUserContentEnabled);
+                Assert.False(titleBarContent.IsEnabled);
+                Assert.False(titleBarLeftContent.IsEnabled);
+                Assert.False(applicationContent.IsEnabled);
+
+                var captionButtons = FindVisualDescendants<TitleBarButton>(titleBar).ToArray();
+                Assert.NotEmpty(captionButtons);
+                Assert.All(captionButtons, button => Assert.True(button.IsEnabled));
+                TitleBarButton closeButton = Assert.Single(
+                    captionButtons,
+                    button =>
+                        Wpf.Zen.Ui.Controls.TitleBar.GetHitTestRole(button)
+                        == TitleBarHitTestRole.CloseButton
+                );
+                Point closeButtonCenter = closeButton
+                    .TransformToAncestor(root)
+                    .Transform(new Point(closeButton.ActualWidth / 2D, closeButton.ActualHeight / 2D));
+                DependencyObject? hitElement =
+                    Wpf.Zen.Ui.Controls.FluentWindow.FindTitleBarHitTestElement(
+                        root,
+                        closeButtonCenter
+                    );
+                Assert.NotNull(hitElement);
+                Assert.Equal(
+                    TitleBarHitTestRole.CloseButton,
+                    Wpf.Zen.Ui.Controls.TitleBar.GetHitTestRole(hitElement)
+                );
+                Assert.True(ContentDialogHostController.Contains(closeButton, hitElement));
+
+                dialog.Close();
+                PumpUntilCompleted(resultTask);
+
+                Assert.True(titleBar.IsUserContentEnabled);
+                Assert.True(titleBarContent.IsEnabled);
+                Assert.True(titleBarLeftContent.IsEnabled);
                 Assert.True(applicationContent.IsEnabled);
             }
             finally
@@ -189,11 +287,11 @@ public class PresentationServiceTests
                 service.Attach(dialogHost);
                 var dialog = new ContentDialog();
 
-                Task<ContentDialogResult> firstShow = service.ShowAsync(
+                Task<object?> firstShow = service.ShowAsync(
                     dialog,
                     CancellationToken.None
                 );
-                Task<ContentDialogResult> secondShow = service.ShowAsync(
+                Task<object?> secondShow = service.ShowAsync(
                     dialog,
                     CancellationToken.None
                 );
@@ -202,23 +300,23 @@ public class PresentationServiceTests
                     () => secondShow.GetAwaiter().GetResult()
                 );
 
-                dialog.Hide(ContentDialogResult.Primary);
+                dialog.Close("Saved");
                 PumpUntilCompleted(firstShow);
 
                 // ReSharper disable once AsyncApostle.AsyncWait
-                Assert.Equal(ContentDialogResult.Primary, firstShow.Result);
+                Assert.Equal("Saved", firstShow.Result);
 
                 // Reuse remains supported after the complete close lifecycle has released the
                 // instance; only overlapping presentations are rejected.
-                Task<ContentDialogResult> thirdShow = service.ShowAsync(
+                Task<object?> thirdShow = service.ShowAsync(
                     dialog,
                     CancellationToken.None
                 );
-                dialog.Hide(ContentDialogResult.Secondary);
+                dialog.Close("Discarded");
                 PumpUntilCompleted(thirdShow);
 
                 // ReSharper disable once AsyncApostle.AsyncWait
-                Assert.Equal(ContentDialogResult.Secondary, thirdShow.Result);
+                Assert.Equal("Discarded", thirdShow.Result);
             }
             finally
             {
@@ -242,7 +340,7 @@ public class PresentationServiceTests
 
             var service = new ContentDialogService();
             service.Attach(dialogHost);
-            Task<ContentDialogResult> resultTask = service.ShowAsync(
+            Task<object?> resultTask = service.ShowAsync(
                 new ContentDialog(),
                 CancellationToken.None
             );
@@ -254,8 +352,8 @@ public class PresentationServiceTests
             PumpUntilCompleted(resultTask);
 
             // ReSharper disable once AsyncApostle.AsyncWait
-            Assert.Equal(ContentDialogResult.None, resultTask.Result);
-            Assert.Null(dialogHost.Content);
+            Assert.Null(resultTask.Result);
+            Assert.Null(dialogHost.CurrentDialog);
         });
     }
 
@@ -284,7 +382,7 @@ public class PresentationServiceTests
                     MaxHeight = 80D,
                 };
 
-                Task<ContentDialogResult> resultTask = service.ShowAsync(
+                Task<object?> resultTask = service.ShowAsync(
                     dialog,
                     CancellationToken.None
                 );
@@ -295,51 +393,8 @@ public class PresentationServiceTests
                 Assert.InRange(dialog.ActualWidth, 0D, dialog.MaxWidth);
                 Assert.InRange(dialog.ActualHeight, 0D, dialog.MaxHeight);
 
-                dialog.Hide();
+                dialog.Close();
                 PumpUntilCompleted(resultTask);
-            }
-            finally
-            {
-                window.Close();
-            }
-        });
-    }
-
-    [Fact]
-    public void ContentDialogHost_PreservesDisabledTitleBarContent()
-    {
-        WpfTestThread.Run(() =>
-        {
-            SynchronizationContext.SetSynchronizationContext(
-                new DispatcherSynchronizationContext(Dispatcher.CurrentDispatcher)
-            );
-
-            var titleBar = new TitleBar { IsUserContentEnabled = false };
-            var dialogHost = new ContentDialogHost { IsDisableSiblingsEnabled = true };
-            var root = new Grid();
-            _ = root.Children.Add(titleBar);
-            _ = root.Children.Add(dialogHost);
-            var window = CreateHiddenWindow(root);
-
-            try
-            {
-                window.Show();
-                DrainDispatcher();
-
-                var service = new ContentDialogService();
-                service.Attach(dialogHost);
-                var dialog = new ContentDialog();
-                Task<ContentDialogResult> resultTask = service.ShowAsync(
-                    dialog,
-                    CancellationToken.None
-                );
-
-                Assert.False(titleBar.IsUserContentEnabled);
-
-                dialog.Hide();
-                PumpUntilCompleted(resultTask);
-
-                Assert.False(titleBar.IsUserContentEnabled);
             }
             finally
             {
@@ -359,12 +414,13 @@ public class PresentationServiceTests
 
             var applicationContent = new Border();
             var snackbarPresenter = new SnackbarPresenter();
-            var dialogHost = new ContentDialogHost { IsDisableSiblingsEnabled = true };
+            var dialogHost = new ContentDialogHost { IsAnimationEnabled = false };
             var root = new Grid();
-            _ = root.Children.Add(applicationContent);
+            dialogHost.Content = applicationContent;
             _ = root.Children.Add(snackbarPresenter);
             _ = root.Children.Add(dialogHost);
 
+            root.Resources.MergedDictionaries.Add(new ResourceDictionary { Source = new Uri("pack://application:,,,/Wpf.Zen.Ui;component/Themes/Generic.xaml") });
             var parameters = new HwndSourceParameters("PresentationServiceTests")
             {
                 Width = 240,
@@ -395,19 +451,21 @@ public class PresentationServiceTests
             var dialogService = new ContentDialogService();
             dialogService.Attach(dialogHost);
             var dialog = new ContentDialog();
-            Task<ContentDialogResult> resultTask = dialogService.ShowAsync(
+            Task<object?> resultTask = dialogService.ShowAsync(
                 dialog,
                 CancellationToken.None
             );
 
-            Assert.Same(dialog, dialogHost.Content);
+            DrainDispatcher();
+            Assert.Same(dialog, dialogHost.CurrentDialog);
             Assert.False(applicationContent.IsEnabled);
 
-            dialog.Hide(ContentDialogResult.Secondary);
+            dialog.Close("Discarded");
             PumpUntilCompleted(resultTask);
 
             // ReSharper disable once AsyncApostle.AsyncWait
-            Assert.Equal(ContentDialogResult.Secondary, resultTask.Result);
+            Assert.Equal("Discarded", resultTask.Result);
+            DrainDispatcher();
             Assert.True(applicationContent.IsEnabled);
         });
     }
@@ -421,12 +479,13 @@ public class PresentationServiceTests
     {
         var applicationContent = new Border();
         var snackbarPresenter = new SnackbarPresenter();
-        var dialogHost = new ContentDialogHost { IsDisableSiblingsEnabled = true };
+        var dialogHost = new ContentDialogHost { IsAnimationEnabled = false };
         var root = new Grid();
-        _ = root.Children.Add(applicationContent);
+        dialogHost.Content = applicationContent;
         _ = root.Children.Add(snackbarPresenter);
         _ = root.Children.Add(dialogHost);
 
+        root.Resources.MergedDictionaries.Add(new ResourceDictionary { Source = new Uri("pack://application:,,,/Wpf.Zen.Ui;component/Themes/Generic.xaml") });
         Window window = CreateHiddenWindow(root);
 
         return (window, applicationContent, snackbarPresenter, dialogHost);
@@ -483,5 +542,20 @@ public class PresentationServiceTests
         );
         Dispatcher.PushFrame(frame);
         task.GetAwaiter().GetResult();
+    }
+
+    private static IEnumerable<T> FindVisualDescendants<T>(DependencyObject root)
+        where T : DependencyObject
+    {
+        int childCount = VisualTreeHelper.GetChildrenCount(root);
+        for (int index = 0; index < childCount; index++)
+        {
+            DependencyObject child = VisualTreeHelper.GetChild(root, index);
+            if (child is T match)
+                yield return match;
+
+            foreach (T descendant in FindVisualDescendants<T>(child))
+                yield return descendant;
+        }
     }
 }

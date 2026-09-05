@@ -43,22 +43,21 @@ xmlns:ui="http://schemas.thezendev.com/wpf/2027"
 Presenter 的父容器和布局属性共同决定 Snackbar 的覆盖范围与位置。不要把它放进导航页面：
 页面切换会卸载 Presenter、清空当前通知和等待队列；它也无法覆盖页面之外的 Shell 区域。
 
-如果 Shell 同时使用 `ContentDialogHost`，两者都应是根面板末尾的显式子元素：
+如果 Shell 同时使用 `ContentDialogHost`，将页面与 SnackbarPresenter 放入 Host.Content：
 
 ```xml
-<ui:ContentDialogHost
-    x:Name="RootContentDialogHost"
-    Grid.RowSpan="2"
-    IsDisableSiblingsEnabled="True" />
-<ui:SnackbarPresenter
-    x:Name="RootSnackbarPresenter"
-    Grid.RowSpan="2"
-    HorizontalAlignment="Right"
-    VerticalAlignment="Bottom" />
+<ui:ContentDialogHost x:Name="RootContentDialogHost">
+    <Grid>
+        <local:ApplicationView />
+        <ui:SnackbarPresenter x:Name="RootSnackbarPresenter"
+                              HorizontalAlignment="Right"
+                              VerticalAlignment="Bottom" />
+    </Grid>
+</ui:ContentDialogHost>
 ```
 
-启用 `IsDisableSiblingsEnabled` 的 `ContentDialogHost` 会在模态期间禁用同级 Presenter，避免
-Snackbar 在对话框打开时接受交互。应用仍应避免在需要用户立即处理模态内容时发送无关通知。
+Host 会在模态期间禁用自己的普通内容分支，Snackbar 因而不能接受交互；只有 `TitleBar` 的拖动区域与系统窗口按钮作为窗口外壳保持可用。
+应用仍应避免在需要用户立即处理模态内容时发送无关通知。
 
 ## 使用表示作用域服务
 

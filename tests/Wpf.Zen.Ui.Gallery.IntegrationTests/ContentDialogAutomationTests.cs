@@ -49,20 +49,19 @@ public sealed class ContentDialogAutomationTests : UiTest
 
         await Wait(1, TestContext.Current.CancellationToken);
 
-        // Now exercise each dialog button (Primary, Secondary, Tertiary) and verify
+        // Now exercise each composed footer button and verify
         // the page TextBlock updates according to ContentDialogViewModel.
 
-        // Primary -> "Save" -> expect "User saved their work"
-        await OpenDialog();
+        // "Save" -> expect "User saved their work"
         await ClickButtonMatching(["Save"]);
         await WaitForText("User saved their work");
 
-        // Secondary -> "Don't Save" -> expect "User did not save their work"
+        // "Don't Save" -> expect "User did not save their work"
         await OpenDialog();
         await ClickButtonMatching(["Don't Save", "Do not Save", "Dont Save"]);
         await WaitForText("User did not save their work");
 
-        // Tertiary -> "Cancel" -> expect "User cancelled the dialog"
+        // "Cancel" -> expect "User cancelled the dialog"
         await OpenDialog();
         await ClickButtonMatching(["Cancel"]);
         await WaitForText("User cancelled the dialog");
@@ -124,7 +123,7 @@ public sealed class ContentDialogAutomationTests : UiTest
 
     private Task OpenDialog()
     {
-        // ensure dialog opened by clicking Show
+        // Open a fresh dialog after the previous result has reached the page.
         var showButton = FindFirst(c => c.ByText("Show"));
         if (showButton == null)
         {
@@ -164,7 +163,7 @@ public sealed class ContentDialogAutomationTests : UiTest
 
     /// <summary>
     /// Finds and clicks a button matching one of the provided candidate texts.
-    /// If no direct match is found, falls back to clicking the last available button in the window.
+    /// Fails when no matching button exists, so a layout regression cannot invoke an unrelated action.
     /// </summary>
     /// <param name="candidates">Array of acceptable button texts (first match is used).</param>
     /// <returns>A task that waits a short time after clicking to allow UI to settle.</returns>
@@ -178,15 +177,6 @@ public sealed class ContentDialogAutomationTests : UiTest
             if (btn != null)
             {
                 break;
-            }
-        }
-
-        if (btn == null)
-        {
-            var buttons = MainWindow?.FindAllDescendants(cf => cf.ByControlType(ControlType.Button));
-            if (buttons is { Length: > 0 })
-            {
-                btn = buttons.Last();
             }
         }
 

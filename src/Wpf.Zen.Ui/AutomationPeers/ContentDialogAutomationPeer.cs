@@ -91,7 +91,7 @@ internal sealed class ContentDialogAutomationPeer : UIElementAutomationPeer, IWi
         if (Owner is ContentDialog dialog)
         {
             string name = AutomationProperties.GetName(dialog);
-            return !string.IsNullOrEmpty(name) ? name : dialog.Title?.ToString() ?? string.Empty;
+            return !string.IsNullOrEmpty(name) ? name : dialog.Header?.ToString() ?? string.Empty;
         }
 
         return base.GetNameCore();
@@ -168,7 +168,7 @@ internal sealed class ContentDialogAutomationPeer : UIElementAutomationPeer, IWi
                     () =>
                     {
                         if (dialog.IsDismissible)
-                            dialog.Hide();
+                            dialog.Dismiss();
                     },
                     DispatcherPriority.Normal
                 );

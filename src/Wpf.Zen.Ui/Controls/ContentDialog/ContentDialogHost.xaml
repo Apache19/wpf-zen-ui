@@ -10,19 +10,22 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type controls:ContentDialogHost}">
-                    <Grid x:Name="Overlay" Background="Transparent">
-                        <!-- Keep hit testing active through the fade, and avoid fading the dialog twice. -->
-                        <Border x:Name="PART_Backdrop" Background="{TemplateBinding Background}" />
-                        <!-- Auto-size this wrapper to the surface so the transition pivot is the dialog center. -->
-                        <Border x:Name="PART_TransitionRoot" HorizontalAlignment="Center" VerticalAlignment="Center">
-                            <Border.Effect>
-                                <DropShadowEffect BlurRadius="24" ShadowDepth="4" Opacity="0.16" />
-                            </Border.Effect>
-                            <ContentPresenter Content="{TemplateBinding Content}" />
-                        </Border>
+                    <Grid>
+                        <ContentPresenter x:Name="PART_ContentRoot" ContentSource="Content" />
+                        <Grid x:Name="Overlay" Background="Transparent">
+                            <!-- Keep hit testing active through the fade, and avoid fading the dialog twice. -->
+                            <Border x:Name="PART_Backdrop" Background="{TemplateBinding Background}" />
+                            <!-- Auto-size this wrapper to the surface so the transition pivot is the dialog center. -->
+                            <Border x:Name="PART_TransitionRoot" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <Border.Effect>
+                                    <DropShadowEffect BlurRadius="24" ShadowDepth="4" Opacity="0.16" />
+                                </Border.Effect>
+                                <ContentPresenter Content="{TemplateBinding CurrentDialog}" />
+                            </Border>
+                        </Grid>
                     </Grid>
                     <ControlTemplate.Triggers>
-                        <Trigger Property="Content" Value="{x:Null}">
+                        <Trigger Property="CurrentDialog" Value="{x:Null}">
                             <Setter TargetName="Overlay" Property="Visibility" Value="Collapsed" />
                         </Trigger>
                     </ControlTemplate.Triggers>

@@ -50,7 +50,7 @@ public class ContentDialogService : IContentDialogService
     }
 
     /// <inheritdoc />
-    public Task<ContentDialogResult> ShowAsync(
+    public Task<object?> ShowAsync(
         ContentDialog dialog,
         CancellationToken cancellationToken
     )
@@ -62,19 +62,7 @@ public class ContentDialogService : IContentDialogService
 
         ContentDialogHost dialogHost = GetHostForPresentation();
 
-        if (dialog.DialogHost is not null && !ReferenceEquals(dialog.DialogHost, dialogHost))
-        {
-            throw new InvalidOperationException(
-                "The ContentDialog is already associated with a different host."
-            );
-        }
-
-        if (dialog.DialogHost is null)
-        {
-            dialog.DialogHost = dialogHost;
-        }
-
-        return dialog.ShowAsync(cancellationToken);
+        return dialogHost.ShowAsync(dialog, cancellationToken);
     }
 
     private ContentDialogHost GetHostForPresentation()

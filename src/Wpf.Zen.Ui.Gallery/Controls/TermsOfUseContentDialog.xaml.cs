@@ -3,27 +3,35 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-using System.Windows.Controls;
 using Wpf.Zen.Ui.Controls;
+using Wpf.Zen.Ui.Gallery.Models;
 
 namespace Wpf.Zen.Ui.Gallery.Controls;
 
+/// <summary>Presents agreement data and focuses the input when validation fails.</summary>
 public partial class TermsOfUseContentDialog : ContentDialog
 {
+    /// <summary>Initializes a new instance of the <see cref="TermsOfUseContentDialog"/> class from XAML.</summary>
     public TermsOfUseContentDialog()
     {
         InitializeComponent();
     }
 
-    protected override void OnButtonClick(ContentDialogButton button)
+    private void OnAcceptClick(object sender, RoutedEventArgs e)
     {
-        if (CheckBox.IsChecked != false)
+        if (DataContext is not TermsOfUseDialogData data)
         {
-            base.OnButtonClick(button);
             return;
         }
 
-        TextBlock.SetCurrentValue(VisibilityProperty, Visibility.Visible);
+        if (data.TryAccept())
+        {
+            Close(true);
+            return;
+        }
+
+        // Focus is a view concern; validation state is supplied by the bound data.
         _ = CheckBox.Focus();
+        CheckBox.BringIntoView();
     }
 }

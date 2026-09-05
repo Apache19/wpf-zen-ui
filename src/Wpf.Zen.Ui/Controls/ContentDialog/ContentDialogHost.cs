@@ -3,52 +3,58 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
+using System.Collections;
 using System.Windows.Controls;
-using System.Windows.Media.Animation;
+using System.Windows.Threading;
 
 namespace Wpf.Zen.Ui.Controls;
 
-/// <summary>Owns one modal presentation scope, its backdrop, input isolation and transitions.</summary>
+/// <summary>Wraps ordinary Content and owns one modal dialog session above it.</summary>
 /// <remarks>
-/// Place last in a finite-sized parent panel, alongside the content to cover. Only ContentDialog
-/// content is accepted. ShowAsync rejects a busy host. Direct Content replacement is an external
-/// removal and immediately completes the old dialog with None.
-/// PART_TransitionRoot is an optional FrameworkElement wrapping only the dialog presenter.
-/// The host owns that part's Opacity and RenderTransform, never the dialog's transforms.
-/// PART_Backdrop is an optional sibling FrameworkElement covering the presentation scope; the host
-/// owns its Opacity. It must not contain the dialog, or their opacity animations would multiply.
-/// Each part animates independently when present. Without either part, with animations disabled,
-/// or when detached, transitions complete immediately. The template must retain hit testing
-/// throughout the fade so pointer input cannot reach the covered content before cleanup.
+/// ShowAsync rejects a busy, hidden or unloaded host and an already parented dialog. Its task
+/// completes only after transitions, logical detachment, input release and Closed notification.
+/// Token cancellation cancels the task; host removal returns null unless a result already won.
+/// Templates must present Content in PART_ContentRoot and CurrentDialog in a separate overlay.
+/// PART_ContentRoot (UIElement) is required for isolating the covered region; missing it rejects
+/// presentation. The host disables branches below that part while preserving any TitleBar shell.
+/// Optional PART_TransitionRoot and
+/// PART_Backdrop animate independently. Their opacity and the transition root's transform belong to the host. Keep overlay hit testing active
+/// until CurrentDialog becomes null, including the exit transition.
 /// </remarks>
+[TemplatePart(Name = "PART_ContentRoot", Type = typeof(UIElement))]
 [TemplatePart(Name = "PART_TransitionRoot", Type = typeof(FrameworkElement))]
 [TemplatePart(Name = "PART_Backdrop", Type = typeof(FrameworkElement))]
-public class ContentDialogHost : ContentControl
+public partial class ContentDialogHost : ContentControl
 {
     private readonly ContentDialogHostController _controller;
     private FrameworkElement? _transitionRoot;
     private FrameworkElement? _backdrop;
     private ScaleTransform? _scale;
+    private UIElement? _contentRoot;
     private Action? _finishTransition;
+    private Session? _session;
 
-    #region DP: IsDisableSiblingsEnabled
-
-    /// <summary>Identifies the <see cref="IsDisableSiblingsEnabled"/> dependency property.</summary>
-    public static readonly DependencyProperty IsDisableSiblingsEnabledProperty = DependencyProperty.Register(
-        nameof(IsDisableSiblingsEnabled),
-        typeof(bool),
-        typeof(ContentDialogHost),
-        new PropertyMetadata(true, OnIsDisableSiblingsEnabledChanged)
-    );
-
-    /// <summary>Gets or sets a value indicating whether application siblings are disabled during presentation. Default true. Changing it updates input isolation immediately; no layout or inheritance effect.</summary>
-    public bool IsDisableSiblingsEnabled
+    private sealed class Session(ContentDialog dialog, CancellationToken cancellationToken)
     {
-        get => (bool)GetValue(IsDisableSiblingsEnabledProperty);
-        set => SetValue(IsDisableSiblingsEnabledProperty, value);
+        internal ContentDialog Dialog { get; } = dialog;
+        internal CancellationToken CancellationToken { get; } = cancellationToken;
+        // Outcome arbitrates the first close/cancel request; Finished is the public task and is
+        // completed only by synchronous cleanup. Dispatcher shutdown cannot strand its continuation.
+        internal TaskCompletionSource<object?> Outcome { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        internal TaskCompletionSource<object?> Finished { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        internal CancellationTokenRegistration Registration { get; set; }
+        internal bool IsCleanedUp { get; set; }
+        internal bool IsRequestingClose { get; set; }
     }
 
-    #endregion
+    private static readonly DependencyPropertyKey CurrentDialogPropertyKey = DependencyProperty.RegisterReadOnly(
+        nameof(CurrentDialog), typeof(ContentDialog), typeof(ContentDialogHost), new PropertyMetadata(null));
+
+    /// <summary>Identifies the read-only CurrentDialog property for template presentation.</summary>
+    public static readonly DependencyProperty CurrentDialogProperty = CurrentDialogPropertyKey.DependencyProperty;
+
+    /// <summary>Gets the currently presented dialog, including transitions, or null when idle.</summary>
+    public ContentDialog? CurrentDialog => (ContentDialog?)GetValue(CurrentDialogProperty);
 
     #region DP: IsAnimationEnabled
 
@@ -92,34 +98,237 @@ public class ContentDialogHost : ContentControl
     static ContentDialogHost()
     {
         DefaultStyleKeyProperty.OverrideMetadata(typeof(ContentDialogHost), new FrameworkPropertyMetadata(typeof(ContentDialogHost)));
-        ContentProperty.OverrideMetadata(typeof(ContentDialogHost), new FrameworkPropertyMetadata(null, null, CoerceContent));
     }
 
-    /// <summary>Initializes a new instance of the <see cref="ContentDialogHost"/> class. Input isolation begins when content is attached.</summary>
+    /// <summary>Initializes a new instance of the <see cref="ContentDialogHost"/> class. The host is initially idle; Content remains the ordinary page throughout each session.</summary>
     public ContentDialogHost()
     {
-        _controller = new ContentDialogHostController(this) { IsDisableSiblingsEnabled = true };
-        Loaded += (_, _) =>
+        _controller = new ContentDialogHostController(this);
+        Unloaded += (_, _) => ForceEnd();
+        IsVisibleChanged += (_, _) => { if (!IsVisible) ForceEnd(); };
+    }
+
+    /// <summary>Shows a dialog and returns its business result, or null for user dismissal/removal.</summary>
+    /// <param name="dialog">An unparented dialog on the host dispatcher.</param>
+    /// <param name="cancellationToken">Cancels the task after cleanup, bypassing Closing and IsDismissible.</param>
+    /// <returns>The result after all presentation resources have been released.</returns>
+    public Task<object?> ShowAsync(ContentDialog dialog, CancellationToken cancellationToken = default)
+    {
+        // Validation failures are represented by the returned task, just like presentation failures.
+        try
         {
-            if (Content is ContentDialog)
-                _controller.HandleDialogAdded();
-        };
-        Unloaded += (_, _) =>
-        {
-            // Unloaded cannot be vetoed. Release animation waiters and modal state even when
-            // WPF retains Content while removing the host's entire presentation source.
-            (Content as ContentDialog)?.NotifyHostRemoved();
-            FinishTransition();
-            _controller.HandleDialogRemoved();
-        };
-        IsVisibleChanged += (_, _) =>
-        {
-            if (!IsVisible)
+            VerifyAccess();
+            if (dialog is null)
+                throw new ArgumentNullException(nameof(dialog));
+            dialog.VerifyAccess();
+            if (_session is not null || dialog.IsOpen)
+                throw new InvalidOperationException("The host or dialog is already in use. Await the current presentation before reuse.");
+            if (!IsLoaded || !IsVisible)
+                throw new InvalidOperationException("ContentDialogHost must be loaded and visible.");
+            if (dialog.Parent is not null || VisualTreeHelper.GetParent(dialog) is not null)
+                throw new InvalidOperationException("The dialog must not already have a parent.");
+            cancellationToken.ThrowIfCancellationRequested();
+            ApplyTemplate();
+            if (_contentRoot is not { } contentRoot)
+                throw new InvalidOperationException("The host template must provide PART_ContentRoot.");
+
+            var session = new Session(dialog, cancellationToken);
+            _session = session;
+            // HwndSource/interop callers can be on the correct UI thread without a WPF
+            // SynchronizationContext. Capture Dispatcher explicitly for our awaits, then restore
+            // the caller's context; presentation cleanup must never resume on the thread pool.
+            var previousContext = SynchronizationContext.Current;
+            try
             {
-                (Content as ContentDialog)?.NotifyHostRemoved();
+                SynchronizationContext.SetSynchronizationContext(new DispatcherSynchronizationContext(Dispatcher));
+                _ = PresentAsync(session, contentRoot);
+            }
+            finally
+            {
+                SynchronizationContext.SetSynchronizationContext(previousContext);
+            }
+
+            return session.Finished.Task;
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            return Task.FromCanceled<object?>(cancellationToken);
+        }
+        catch (Exception exception)
+        {
+            return Task.FromException<object?>(exception);
+        }
+    }
+
+    private async Task PresentAsync(Session session, UIElement contentRoot)
+    {
+        var dialog = session.Dialog;
+        Exception? failure = null;
+        try
+        {
+            Dispatcher.ShutdownStarted += OnDispatcherShutdown;
+            // The worker callback only arbitrates the outcome and schedules UI work. It never
+            // waits for Dispatcher, so disposing the registration during cleanup cannot deadlock.
+            session.Registration = session.CancellationToken.Register(() =>
+            {
+                if (session.Outcome.TrySetCanceled(session.CancellationToken) && !Dispatcher.HasShutdownStarted)
+                {
+                    _ = Dispatcher.BeginInvoke(new Action(() =>
+                    {
+                        if (IsActive(session))
+                            FinishTransition();
+                    }));
+                }
+            });
+            dialog.Attach(this);
+            if (!IsActive(session))
+                return;
+            _controller.Start(dialog, contentRoot);
+            AddLogicalChild(dialog);
+            if (!IsActive(session))
+                return;
+            SetValue(CurrentDialogPropertyKey, dialog);
+            if (!IsActive(session))
+                return;
+            dialog.Unloaded += OnDialogUnloaded;
+            // Let data templates and Loaded finish before focus and entrance. Missing presenters
+            // release the session instead of leaving an invisible modal operation pending.
+            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ContextIdle);
+            if (!IsActive(session))
+                return;
+            if (!dialog.IsLoaded || !dialog.IsVisible)
+                session.Outcome.TrySetResult(null);
+            if (!session.Outcome.Task.IsCompleted)
+            {
+                dialog.SetInitialFocus();
+                if (!IsActive(session))
+                    return;
+                if (!session.Outcome.Task.IsCompleted)
+                    await AnimateAsync(true);
+                if (!IsActive(session))
+                    return;
+                if (!session.Outcome.Task.IsCompleted)
+                    dialog.NotifyOpened();
+            }
+
+            await session.Outcome.Task;
+            if (!IsActive(session))
+                return;
+            dialog.MarkClosing();
+            await AnimateAsync(false);
+        }
+        catch (OperationCanceledException) when (session.Outcome.Task.IsCanceled)
+        {
+            // Cleanup below completes the public task with the original cancellation token.
+        }
+        catch (Exception exception)
+        {
+            failure = exception;
+        }
+        finally
+        {
+            CompleteSession(session, failure);
+        }
+    }
+
+    private bool IsActive(Session session) => ReferenceEquals(_session, session) && !session.IsCleanedUp;
+
+    /// <summary>
+    /// Performs all WPF cleanup synchronously. Unload and Dispatcher shutdown use this same path
+    /// instead of relying on an async continuation that may never run after the UI thread exits.
+    /// </summary>
+    private void CompleteSession(Session session, Exception? failure = null)
+    {
+        if (!IsActive(session))
+            return;
+        session.IsCleanedUp = true;
+        var dialog = session.Dialog;
+        object? result = session.Outcome.Task.Status == TaskStatus.RanToCompletion ? session.Outcome.Task.Result : null;
+        try
+        {
+            dialog.MarkClosing();
+            FinishTransition();
+            Dispatcher.ShutdownStarted -= OnDispatcherShutdown;
+#pragma warning disable IDISP007 // The host creates and owns this session's cancellation registration.
+            session.Registration.Dispose();
+#pragma warning restore IDISP007
+            dialog.Unloaded -= OnDialogUnloaded;
+            try
+            {
+                SetValue(CurrentDialogPropertyKey, null);
+                RemoveLogicalChild(dialog);
+            }
+            finally
+            {
+                // Keep the reservation through Closed, but release input before restoring focus.
+                // Nested finally blocks also release the session if an application focus handler throws.
+                try
+                {
+                    _controller.Stop();
+                }
+                finally
+                {
+                    dialog.NotifyClosed(result);
+                }
+            }
+        }
+        catch (Exception exception)
+        {
+            failure ??= exception;
+        }
+        finally
+        {
+            _session = null;
+            if (failure is not null)
+                session.Finished.TrySetException(failure);
+            else if (session.Outcome.Task.IsCanceled)
+                session.Finished.TrySetCanceled(session.CancellationToken);
+            else
+                session.Finished.TrySetResult(result);
+        }
+    }
+
+    private void OnDispatcherShutdown(object? sender, EventArgs e) => ForceEnd();
+
+    internal void RequestClose(ContentDialog dialog, object? result)
+    {
+        var session = _session;
+        if (session is null || session.Dialog != dialog || session.Outcome.Task.IsCompleted || session.IsRequestingClose)
+            return;
+        session.IsRequestingClose = true;
+        try
+        {
+            if (dialog.AcceptClose(result) && ReferenceEquals(_session, session)
+                && session.Outcome.TrySetResult(result))
+            {
+                dialog.MarkClosing();
                 FinishTransition();
             }
-        };
+        }
+        finally
+        {
+            session.IsRequestingClose = false;
+        }
+    }
+
+    private void ForceEnd()
+    {
+        if (_session is { } session)
+        {
+            session.Outcome.TrySetResult(null);
+            CompleteSession(session);
+        }
+    }
+
+    private void OnDialogUnloaded(object sender, RoutedEventArgs e)
+    {
+        var session = _session;
+        // Template replacement may transiently detach the dialog. Check after WPF's load pass.
+        _ = Dispatcher.BeginInvoke(DispatcherPriority.ContextIdle, new Action(() =>
+        {
+            if (session is not null && ReferenceEquals(_session, session) && !session.Dialog.IsLoaded)
+                ForceEnd();
+        }));
     }
 
     /// <inheritdoc />
@@ -127,6 +336,8 @@ public class ContentDialogHost : ContentControl
     {
         FinishTransition();
         base.OnApplyTemplate();
+        _contentRoot = GetTemplateChild("PART_ContentRoot") as UIElement;
+        _controller.SetContentRoot(_contentRoot);
         _transitionRoot = GetTemplateChild("PART_TransitionRoot") as FrameworkElement;
         _backdrop = GetTemplateChild("PART_Backdrop") as FrameworkElement;
         _backdrop?.SetCurrentValue(OpacityProperty, 1d);
@@ -138,134 +349,39 @@ public class ContentDialogHost : ContentControl
             _transitionRoot.SetCurrentValue(RenderTransformOriginProperty, new Point(.5, .5));
             _transitionRoot.SetCurrentValue(RenderTransformProperty, _scale);
         }
+
+        if (_session is not null && GetTemplateChild("PART_ContentRoot") is not UIElement)
+            ForceEnd();
     }
 
     /// <inheritdoc />
     protected override void OnTemplateChanged(ControlTemplate oldTemplate, ControlTemplate newTemplate)
     {
-        // An obsolete animation tree may never tick again, so finish its waiter before replacing it.
         FinishTransition();
+        _controller.SetContentRoot(null);
+        _contentRoot = null;
         _transitionRoot = null;
         _backdrop = null;
         _scale = null;
         base.OnTemplateChanged(oldTemplate, newTemplate);
     }
 
-    /// <inheritdoc />
-    protected override void OnContentChanged(object oldContent, object newContent)
+    /// <summary>Gets the logical children, including the presented dialog alongside ordinary Content.</summary>
+    protected override IEnumerator LogicalChildren
     {
-        FinishTransition();
-        _transitionRoot?.SetCurrentValue(OpacityProperty, 1d);
-        _backdrop?.SetCurrentValue(OpacityProperty, 1d);
-        _scale?.SetCurrentValue(ScaleTransform.ScaleXProperty, 1d);
-        _scale?.SetCurrentValue(ScaleTransform.ScaleYProperty, 1d);
-        if (oldContent is ContentDialog oldDialog && !ReferenceEquals(oldContent, newContent))
-            oldDialog.NotifyHostRemoved();
+        get
+        {
+            var children = new List<object>();
+            var inherited = base.LogicalChildren;
+            if (inherited is not null)
+            {
+                while (inherited.MoveNext())
+                    children.Add(inherited.Current);
+            }
 
-        if (oldContent is null && newContent is not null)
-            _controller.HandleDialogAdded();
-        try
-        {
-            base.OnContentChanged(oldContent, newContent);
-        }
-        finally
-        {
-            if (newContent is null)
-                _controller.HandleDialogRemoved();
+            if (CurrentDialog is { } dialog)
+                children.Add(dialog);
+            return ((IEnumerable)children).GetEnumerator();
         }
     }
-
-    internal Task OpenDialogAsync(ContentDialog dialog)
-    {
-        ApplyTemplate();
-        return ReferenceEquals(Content, dialog) ? AnimateAsync(true) : Task.CompletedTask;
-    }
-
-    internal Task CloseDialogAsync(ContentDialog dialog) =>
-        ReferenceEquals(Content, dialog) ? AnimateAsync(false) : Task.CompletedTask;
-
-    private Task AnimateAsync(bool opening)
-    {
-        // Capture both current opacities before finishing an interrupted entrance. A close request
-        // must fade from what is actually visible, not jump to the entrance's completed pose.
-        // Consumer properties remain untouched; SnapshotAndReplace prevents accumulating clocks.
-        double fromOpacity = opening ? 0 : _transitionRoot?.Opacity ?? 1;
-        double fromBackdropOpacity = opening ? 0 : _backdrop?.Opacity ?? 1;
-        double fromScale = opening ? .94 : _scale?.ScaleX ?? 1;
-        FinishTransition();
-        var root = _transitionRoot;
-        var scale = _scale;
-        var backdrop = _backdrop;
-        double endOpacity = opening ? 1 : 0;
-        double endScale = opening ? 1 : .97;
-
-        // Use the same final pose for normal completion and disabled/interrupted transitions.
-        // This also supports custom templates that supply just one of the optional parts.
-        void SetFinalPose()
-        {
-            root?.SetCurrentValue(OpacityProperty, endOpacity);
-            backdrop?.SetCurrentValue(OpacityProperty, endOpacity);
-            scale?.SetCurrentValue(ScaleTransform.ScaleXProperty, endScale);
-            scale?.SetCurrentValue(ScaleTransform.ScaleYProperty, endScale);
-        }
-
-        if ((root is null && backdrop is null) || !IsLoaded || !IsVisible
-            || !IsAnimationEnabled || !SystemParameters.ClientAreaAnimation || TransitionDuration == TimeSpan.Zero)
-        {
-            SetFinalPose();
-            return Task.CompletedTask;
-        }
-
-        var completion = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-        var opacity = new DoubleAnimation(fromOpacity, endOpacity, new Duration(TransitionDuration));
-        var backdropOpacity = new DoubleAnimation(fromBackdropOpacity, endOpacity, new Duration(TransitionDuration));
-        var size = new DoubleAnimation(fromScale, endScale, new Duration(TransitionDuration))
-        {
-            EasingFunction = opening
-                ? new BackEase { Amplitude = .35, EasingMode = EasingMode.EaseOut }
-                : new CubicEase { EasingMode = EasingMode.EaseIn },
-        };
-        bool completed = false;
-        void Complete()
-        {
-            if (completed)
-                return;
-            completed = true;
-            _finishTransition = null;
-            // Keep the final exit pose until Content is removed; restoring opacity here could
-            // flash the dialog between animation completion and the asynchronous close continuation.
-            // Clearing clocks prevents them from later mutating a reused host.
-            root?.BeginAnimation(OpacityProperty, null);
-            backdrop?.BeginAnimation(OpacityProperty, null);
-            scale?.BeginAnimation(ScaleTransform.ScaleXProperty, null);
-            scale?.BeginAnimation(ScaleTransform.ScaleYProperty, null);
-            SetFinalPose();
-            completion.TrySetResult(true);
-        }
-
-        _finishTransition = Complete;
-        // All clocks have the same duration. One completion releases the shared presentation
-        // waiter and removes every clock, including when only the backdrop exists in a template.
-        (root is not null ? opacity : backdropOpacity).Completed += (_, _) => Complete();
-        root?.BeginAnimation(OpacityProperty, opacity);
-        backdrop?.BeginAnimation(OpacityProperty, backdropOpacity);
-        scale?.BeginAnimation(ScaleTransform.ScaleXProperty, size);
-        scale?.BeginAnimation(ScaleTransform.ScaleYProperty, size);
-        return completion.Task;
-    }
-
-    private void FinishTransition() => _finishTransition?.Invoke();
-
-    private static object? CoerceContent(DependencyObject d, object? value)
-    {
-        if (value is not null and not ContentDialog)
-            throw new ArgumentException("ContentDialogHost only accepts ContentDialog content.");
-        return value;
-    }
-
-    private static void OnIsDisableSiblingsEnabledChanged(DependencyObject d, DependencyPropertyChangedEventArgs e) =>
-        ((ContentDialogHost)d)._controller.IsDisableSiblingsEnabled = (bool)e.NewValue;
-
-    private static void OnAnimationSettingChanged(DependencyObject d, DependencyPropertyChangedEventArgs e) =>
-        ((ContentDialogHost)d).FinishTransition();
 }

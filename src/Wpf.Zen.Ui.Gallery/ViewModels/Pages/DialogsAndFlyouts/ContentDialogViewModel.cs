@@ -3,45 +3,36 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-using Wpf.Zen.Ui.Controls;
-using Wpf.Zen.Ui.Extensions;
-using Wpf.Zen.Ui.Gallery.Controls;
+using Wpf.Zen.Ui.Gallery.Models;
+using Wpf.Zen.Ui.Gallery.Services.Contracts;
 
 namespace Wpf.Zen.Ui.Gallery.ViewModels.Pages.DialogsAndFlyouts;
 
-public partial class ContentDialogViewModel(IContentDialogService contentDialogService) : ViewModel
+/// <summary>Drives the dialog examples through application data and typed results.</summary>
+/// <param name="dialogService">Application dialog operations for this navigation scope.</param>
+public partial class ContentDialogViewModel(IGalleryDialogService dialogService) : ViewModel
 {
+    /// <summary>Gets or sets the description of the most recent save decision.</summary>
     [ObservableProperty]
-    public partial string DialogResultText { get; set; } = string.Empty;
+    public partial string DialogResultText { get; private set; } = string.Empty;
 
     [RelayCommand]
-    private async Task OnShowDialog(DataTemplate contentTemplate)
+    private async Task ShowDialogAsync()
     {
-        ContentDialogResult result = await contentDialogService.ShowAsync(
-            new ContentDialog()
-            {
-                Title = "Save your work?",
-                Content = new object(),
-                ContentTemplate = contentTemplate,
-                PrimaryAction = new ContentDialogAction { Content = "Save", Appearance = ControlAppearance.Accent },
-                SecondaryAction = new ContentDialogAction { Content = "Don't Save" },
-                TertiaryAction = new ContentDialogAction { Content = "Cancel" },
-            },
-            CancellationToken.None
-        );
+        var data   = new SaveWorkDialogData();
+        var result = await dialogService.ShowSaveWorkAsync(data).ConfigureAwait(true);
 
         DialogResultText = result switch
         {
-            ContentDialogResult.Primary => "User saved their work",
-            ContentDialogResult.Secondary => "User did not save their work",
-            _ => "User cancelled the dialog",
+            SaveWorkChoice.Save    => "User saved their work",
+            SaveWorkChoice.Discard => "User did not save their work",
+            _                      => "User cancelled the dialog",
         };
     }
 
     [RelayCommand]
-    private async Task OnShowSignInContentDialog()
+    private async Task ShowSignInContentDialogAsync()
     {
-        var termsOfUseContentDialog = new TermsOfUseContentDialog();
-        _ = await contentDialogService.ShowAsync(termsOfUseContentDialog, CancellationToken.None);
+        _ = await dialogService.ShowTermsOfUseAsync(new TermsOfUseDialogData()).ConfigureAwait(true);
     }
 }
