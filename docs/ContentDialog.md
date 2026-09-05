@@ -83,6 +83,36 @@ SaveWorkChoice? choice = await dialogService.ShowSaveWorkAsync(data);
 
 正文和页脚定义在 XAML 中，输入控件通过双向绑定更新数据，按钮通过 `CloseCommand` 返回业务枚举。视图模型不接收 DataTemplate、控件或资源键。条款校验状态由数据对象提供，验证失败后的焦点移动由视图负责。
 
+## 生命周期感知
+
+对话框视图或视图模型可以实现 `IContentDialogAware`，无需订阅控件事件即可在打开时启动异步操作、在关闭时释放展示状态：
+
+```csharp
+public sealed class DetailsViewModel : IContentDialogAware
+{
+    public async Task OnDialogOpenedAsync(CancellationToken cancellationToken)
+    {
+        var details = await LoadDetailsAsync(cancellationToken);
+        cancellationToken.ThrowIfCancellationRequested();
+        // 更新绑定属性；可恢复的业务错误应在这里处理。
+        Details = details;
+    }
+
+    public void OnDialogClosed(object? result)
+    {
+        // 此时打开通知的令牌已经取消，可以释放本次展示的订阅等状态。
+    }
+}
+```
+
+宿主在内容加载并完成入场后，依次检查 Dialog、Dialog.DataContext、直接 Content 及 Content 为 FrameworkElement 时的 DataContext，按对象引用去重，再调用 `OnDialogOpenedAsync`，最后触发 `Opened`。不遍历 Header、Footer 或 DataTemplate 生成的后代。通知对象在打开时固定；更换 Content 或 DataContext 不会改变本次关闭通知的接收者。
+
+每次展示使用独立的 CancellationToken。普通关闭被接受时立即取消该令牌；`Closing` 否决关闭时不取消。外部 Token 取消、宿主隐藏或卸载、Dispatcher 关闭也会取消。逻辑脱离并释放输入后，已接收打开通知的对象会收到一次 `OnDialogClosed(result)`，随后触发 `Closed`、完成 `ShowAsync`。入场完成前已关闭的展示不会调用感知接口。
+
+打开任务不阻塞交互、关闭或下一次展示。取消是协作式的：实现应传递令牌，并在更新状态前检查取消，避免忽略取消的旧任务覆盖新数据。关闭通知可能在打开任务结束前到达；它不能否决关闭，也不能在其中立即复用仍被保留的对话框。
+
+框架观察打开任务的异常：由本次令牌取消产生的 OperationCanceledException 被正常吸收；其他异常在会话结果尚未确定时结束展示并使 `ShowAsync` 失败。结果确定后才到达的异常仅写入 Trace，不影响已完成结果或下一次展示。关闭回调或令牌取消回调抛出异常时仍会继续清理、通知其他参与者，并使 `ShowAsync` 失败。
+
 ## 关闭协议
 
 | 入口 | 结果与策略 |

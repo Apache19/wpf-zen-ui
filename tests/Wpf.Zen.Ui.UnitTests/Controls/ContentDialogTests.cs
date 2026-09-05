@@ -23,7 +23,7 @@ using NativeButton = System.Windows.Controls.Button;
 
 namespace Wpf.Zen.Ui.UnitTests.Controls;
 
-public class ContentDialogTests
+public partial class ContentDialogTests
 {
     [Fact]
     public void DefaultTemplate_KeepsDismissButtonAboveHeaderAndOwnsShellAppearance() => Run(scope =>

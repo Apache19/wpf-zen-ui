@@ -38,6 +38,8 @@ namespace Wpf.Zen.Ui.Controls;
 /// This control does not create a native window or establish modality by itself. Call
 /// <see cref="ContentDialogHost.ShowAsync"/> to start a presentation session; the host owns input
 /// isolation, focus restoration and transitions for that session.
+/// Implement <see cref="IContentDialogAware"/> on the dialog or its view model to receive
+/// presentation notifications and a cancellation token for asynchronous opening work.
 /// </para>
 /// <para>
 /// <c>PART_ContentPresenter</c> is optional and identifies realized body content for initial-focus

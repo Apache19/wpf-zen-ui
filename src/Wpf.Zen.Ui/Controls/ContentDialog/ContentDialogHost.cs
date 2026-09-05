@@ -50,6 +50,13 @@ public partial class ContentDialogHost : ContentControl
 
         internal CancellationTokenRegistration Registration { get; set; }
 
+        // Each presentation owns its work token and the recipients actually entered. Neither
+        // DataContext replacement nor reuse of the dialog may redirect an earlier lifecycle.
+        internal CancellationTokenSource LifecycleCancellation { get; } = new();
+        internal List<IContentDialogAware> LifecycleTargets { get; } = [];
+        internal bool IsLifecycleCancelled { get; set; }
+        internal Exception? LifecycleFailure { get; set; }
+
         // Synchronous shutdown cannot await Outcome. Cache the accepted business result so the
         // same cleanup path can preserve it when unloading wins the race with the async worker.
         internal object? OutcomeResult { get; set; }
@@ -315,7 +322,11 @@ public partial class ContentDialogHost : ContentControl
 
                 if (!session.Outcome.Task.IsCompleted)
                 {
-                    dialog.NotifyOpened();
+                    StartDialogLifecycle(session);
+                    if (IsActive(session) && !session.Outcome.Task.IsCompleted)
+                    {
+                        dialog.NotifyOpened();
+                    }
                 }
             }
 
@@ -366,6 +377,7 @@ public partial class ContentDialogHost : ContentControl
 
         try
         {
+            CancelDialogLifecycle(session);
             dialog.MarkClosing();
 
             AbortTransition();
@@ -394,6 +406,7 @@ public partial class ContentDialogHost : ContentControl
                 }
                 finally
                 {
+                    EndDialogLifecycle(session, result);
                     dialog.NotifyClosed(result);
                 }
             }
@@ -404,7 +417,12 @@ public partial class ContentDialogHost : ContentControl
         }
         finally
         {
+#pragma warning disable IDISP007 // This host owns the per-presentation cancellation source.
+            session.LifecycleCancellation.Dispose();
+#pragma warning restore IDISP007
             _session = null;
+
+            failure ??= session.LifecycleFailure;
 
             if (failure is not null)
             {
@@ -447,6 +465,12 @@ public partial class ContentDialogHost : ContentControl
                 && session.Outcome.TrySetResult(result))
             {
                 session.OutcomeResult = result;
+                CancelDialogLifecycle(session);
+                if (!IsActive(session))
+                {
+                    return;
+                }
+
                 dialog.MarkClosing();
                 RedirectTransitionToClosed();
             }
