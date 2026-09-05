@@ -175,7 +175,7 @@ public class ContentDialogTests
     });
 
     [Fact]
-    public void Close_ReturnsBusinessObjectAfterCleanupAndReusesDialog() => Run(scope =>
+    public void Close_ReturnsBusinessObjectAfterCleanupAndReusesDialog() => Run(async scope =>
     {
         var dialog = scope.CreateDialog();
         var result = new object();
@@ -194,7 +194,7 @@ public class ContentDialogTests
             dialog.Close(result);
             dialog.Close("Ignored");
             Pump(task);
-            Assert.Same(result, task.Result);
+            Assert.Same(result, await task);
             Assert.False(dialog.IsOpen);
             Assert.Same(scope.Background, scope.Host.Content);
         }
@@ -203,7 +203,7 @@ public class ContentDialogTests
     });
 
     [Fact]
-    public void Closing_CanVetoAndRejectsReentrantClose() => Run(scope =>
+    public void Closing_CanVetoAndRejectsReentrantClose() => Run(async scope =>
     {
         var dialog = scope.CreateDialog();
         var calls = 0;
@@ -218,12 +218,12 @@ public class ContentDialogTests
         Assert.False(dialog.IsClosing);
         dialog.Close("Accepted");
         Pump(task);
-        Assert.Equal("Accepted", task.Result);
+        Assert.Equal("Accepted", await task);
         Assert.Equal(2, calls);
     });
 
     [Fact]
-    public void NonDismissible_BlocksUserCancellationButAllowsBusinessClose() => Run(scope =>
+    public void NonDismissible_BlocksUserCancellationButAllowsBusinessClose() => Run(async scope =>
     {
         var dialog = scope.CreateDialog();
         dialog.IsDismissible = false;
@@ -233,11 +233,11 @@ public class ContentDialogTests
         Assert.True(Dialog.CloseCommand.CanExecute("Success", dialog));
         Dialog.CloseCommand.Execute("Success", dialog);
         Pump(task);
-        Assert.Equal("Success", task.Result);
+        Assert.Equal("Success", await task);
     });
 
     [Fact]
-    public void NativeCancelButton_DismissesEmbeddedDialogWithoutClosingWindow() => Run(scope =>
+    public void NativeCancelButton_DismissesEmbeddedDialogWithoutClosingWindow() => Run(async scope =>
     {
         var cancel = new NativeButton { Content = "Cancel", IsCancel = true };
         var dialog = scope.CreateDialog();
@@ -247,7 +247,7 @@ public class ContentDialogTests
         Invoke(cancel);
         Pump(task);
         Assert.True(scope.Window.IsVisible);
-        Assert.Null(task.Result);
+        Assert.Null(await task);
     });
 
     [Fact]
@@ -286,7 +286,7 @@ public class ContentDialogTests
     });
 
     [Fact]
-    public void CloseAndCancellation_FirstAcceptedOutcomeWins() => Run(scope =>
+    public void CloseAndCancellation_FirstAcceptedOutcomeWins() => Run(async scope =>
     {
         using var cancellation = new CancellationTokenSource();
         var dialog = scope.CreateDialog();
@@ -294,7 +294,7 @@ public class ContentDialogTests
         dialog.Close("Saved");
         cancellation.Cancel();
         Pump(task);
-        Assert.Equal("Saved", task.Result);
+        Assert.Equal("Saved", await task);
     });
 
     [Fact]
@@ -321,7 +321,7 @@ public class ContentDialogTests
     });
 
     [Fact]
-    public void HostUnload_BypassesVetoAndReleasesSession() => Run(scope =>
+    public void HostUnload_BypassesVetoAndReleasesSession() => Run(async scope =>
     {
         var dialog = scope.CreateDialog();
         dialog.Closing += (_, e) => e.Cancel = true;
@@ -329,7 +329,7 @@ public class ContentDialogTests
         Drain();
         scope.Window.Content = null;
         Pump(task);
-        Assert.Null(task.Result);
+        Assert.Null(await task);
         Assert.Null(scope.Host.CurrentDialog);
         Assert.False(dialog.IsOpen);
     });
@@ -386,7 +386,7 @@ public class ContentDialogTests
     });
 
     [Fact]
-    public void DefaultAndAccessKeys_AreScopedToDialog() => Run(scope =>
+    public void DefaultAndAccessKeys_AreScopedToDialog() => Run(async scope =>
     {
         var background = new NativeButton { Content = "_Go", IsDefault = true };
         scope.Host.Content = background;
@@ -402,7 +402,7 @@ public class ContentDialogTests
         Assert.Same(dialog, query.Scope);
         AccessKeyManager.ProcessKey(dialog, "G", false);
         Pump(task);
-        Assert.Equal("Selected", task.Result);
+        Assert.Equal("Selected", await task);
         Assert.Equal(0, backgroundClicks);
     });
 
@@ -448,7 +448,7 @@ public class ContentDialogTests
     });
 
     [Fact]
-    public void DefaultTemplate_RendersFunctionalDismissButton() => Run(scope =>
+    public void DefaultTemplate_RendersFunctionalDismissButton() => Run(async scope =>
     {
         var dialog = scope.CreateDialog();
         var task = scope.Host.ShowAsync(dialog);
@@ -460,7 +460,7 @@ public class ContentDialogTests
         Assert.Equal("Close", button.ToolTip);
         Invoke(button);
         Pump(task);
-        Assert.Null(task.Result);
+        Assert.Null(await task);
     });
 
     [Fact]
@@ -638,7 +638,7 @@ public class ContentDialogTests
     });
 
     [Fact]
-    public void CloseDuringLongEntrance_RedirectsFromCurrentPoseWithoutOpenedEvent() => Run(scope =>
+    public void CloseDuringLongEntrance_RedirectsFromCurrentPoseWithoutOpenedEvent() => Run(async scope =>
     {
         scope.Host.Template = CreateHostTemplateWithDurations("0:1:0", "0:0:0.01");
         scope.Host.IsAnimationEnabled = true;
@@ -661,7 +661,7 @@ public class ContentDialogTests
         Pump(task);
 
         Assert.False(opened);
-        Assert.Equal("Closed during entrance", task.Result);
+        Assert.Equal("Closed during entrance", await task);
         Assert.Null(scope.Host.CurrentDialog);
         Assert.True(scope.Background.IsEnabled);
     });
@@ -761,7 +761,7 @@ public class ContentDialogTests
     });
 
     [Fact]
-    public void Enter_UsesNativeDefaultAndMultilineEditorConsumesIt() => Run(scope =>
+    public void Enter_UsesNativeDefaultAndMultilineEditorConsumesIt() => Run(async scope =>
     {
         var editor = new System.Windows.Controls.TextBox { AcceptsReturn = true };
         var button = new NativeButton { Content = "Save", IsDefault = true, Command = Dialog.CloseCommand, CommandParameter = "Saved" };
@@ -781,7 +781,7 @@ public class ContentDialogTests
         editor.AcceptsReturn = false;
         Enter();
         Pump(task);
-        Assert.Equal("Saved", task.Result);
+        Assert.Equal("Saved", await task);
     });
 
     [Fact]
@@ -847,7 +847,7 @@ public class ContentDialogTests
     });
 
     [Fact]
-    public void DispatcherShutdown_CompletesPublicTaskWithoutAnotherDispatcherTurn()
+    public async Task DispatcherShutdown_CompletesPublicTaskWithoutAnotherDispatcherTurn()
     {
         Task<object?>? task = null;
         WpfTestThread.Run(() =>
@@ -862,7 +862,7 @@ public class ContentDialogTests
             Assert.False(dialog.IsOpen);
             Assert.Null(scope.Host.CurrentDialog);
         });
-        Assert.Null(task!.GetAwaiter().GetResult());
+        Assert.Null(await task!);
     }
 
     [Fact]
@@ -883,7 +883,7 @@ public class ContentDialogTests
     });
 
     [Fact]
-    public void MissingDialogPresenter_ReleasesInvisibleSession() => Run(scope =>
+    public void MissingDialogPresenter_ReleasesInvisibleSession() => Run(async scope =>
     {
         scope.Host.Template = (ControlTemplate)XamlReader.Parse("""
             <ControlTemplate xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -895,13 +895,13 @@ public class ContentDialogTests
             """);
         var task = scope.Host.ShowAsync(scope.CreateDialog());
         Pump(task);
-        Assert.Null(task.Result);
+        Assert.Null(await task);
         Assert.Null(scope.Host.CurrentDialog);
         Assert.True(scope.Background.IsEnabled);
     });
 
     [Fact]
-    public void TemplateWithoutTransitionPresenter_PreservesLifecycleAndTransitionsImmediately() => Run(scope =>
+    public void TemplateWithoutTransitionPresenter_PreservesLifecycleAndTransitionsImmediately() => Run(async scope =>
     {
         scope.Host.Template = (ControlTemplate)XamlReader.Parse("""
             <ControlTemplate xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -926,7 +926,7 @@ public class ContentDialogTests
         dialog.Close("No transition presenter");
         Pump(task);
 
-        Assert.Equal("No transition presenter", task.Result);
+        Assert.Equal("No transition presenter", await task);
         Assert.Null(scope.Host.CurrentDialog);
         Assert.True(scope.Background.IsEnabled);
     });
@@ -965,7 +965,7 @@ public class ContentDialogTests
     });
 
     [Fact]
-    public void CallerWithoutSynchronizationContext_StillCompletesOnHostDispatcher() => Run(scope =>
+    public void CallerWithoutSynchronizationContext_StillCompletesOnHostDispatcher() => Run(async scope =>
     {
         var dialog = scope.CreateDialog();
         var previous = SynchronizationContext.Current;
@@ -983,7 +983,7 @@ public class ContentDialogTests
         Drain();
         dialog.Close("Done");
         Pump(task);
-        Assert.Equal("Done", task.Result);
+        Assert.Equal("Done", await task);
         Assert.Null(scope.Host.CurrentDialog);
     });
 
@@ -1014,6 +1014,13 @@ public class ContentDialogTests
         SynchronizationContext.SetSynchronizationContext(new DispatcherSynchronizationContext(Dispatcher.CurrentDispatcher));
         using var scope = new Scope();
         action(scope);
+    });
+
+    private static void Run(Func<Scope, Task> action) => WpfTestThread.Run(async () =>
+    {
+        SynchronizationContext.SetSynchronizationContext(new DispatcherSynchronizationContext(Dispatcher.CurrentDispatcher));
+        using var scope = new Scope();
+        await action(scope);
     });
 
     private static void Drain()

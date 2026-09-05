@@ -25,4 +25,21 @@ public class WpfTestThreadTests
         Assert.NotNull(dispatcher);
         Assert.True(dispatcher.HasShutdownFinished);
     }
+
+    /// <summary>
+    /// Ensures asynchronous test delegates can suspend for dispatcher work without leaving their STA thread.
+    /// </summary>
+    [Fact]
+    public void Run_PumpsDispatcherForAsyncDelegate()
+    {
+        WpfTestThread.Run(async () =>
+        {
+            int threadId = Environment.CurrentManagedThreadId;
+            Dispatcher dispatcher = Dispatcher.CurrentDispatcher;
+
+            await dispatcher.InvokeAsync(() => { }, DispatcherPriority.Background);
+
+            Assert.Equal(threadId, Environment.CurrentManagedThreadId);
+        });
+    }
 }

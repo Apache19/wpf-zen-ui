@@ -49,6 +49,10 @@ public partial class ContentDialogHost : ContentControl
 
         internal CancellationTokenRegistration Registration { get; set; }
 
+        // Synchronous shutdown cannot await Outcome. Cache the accepted business result so the
+        // same cleanup path can preserve it when unloading wins the race with the async worker.
+        internal object? OutcomeResult { get; set; }
+
         internal bool IsCleanedUp       { get; set; }
         internal bool IsRequestingClose { get; set; }
     }
@@ -212,6 +216,7 @@ public partial class ContentDialogHost : ContentControl
     private async Task PresentAsync(Session session, UIElement contentRoot)
     {
         var        dialog  = session.Dialog;
+        object?    result  = null;
         Exception? failure = null;
 
         try
@@ -313,7 +318,7 @@ public partial class ContentDialogHost : ContentControl
                 }
             }
 
-            await session.Outcome.Task.ConfigureAwait(true);
+            result = await session.Outcome.Task.ConfigureAwait(true);
 
             if (!IsActive(session))
             {
@@ -334,7 +339,7 @@ public partial class ContentDialogHost : ContentControl
         }
         finally
         {
-            CompleteSession(session, failure);
+            CompleteSession(session, result, failure);
         }
     }
 
@@ -347,7 +352,7 @@ public partial class ContentDialogHost : ContentControl
     /// Performs all WPF cleanup synchronously. Unload and Dispatcher shutdown use this same path
     /// instead of relying on an async continuation that may never run after the UI thread exits.
     /// </summary>
-    private void CompleteSession(Session session, Exception? failure = null)
+    private void CompleteSession(Session session, object? result, Exception? failure = null)
     {
         if (!IsActive(session))
         {
@@ -357,7 +362,6 @@ public partial class ContentDialogHost : ContentControl
         session.IsCleanedUp = true;
 
         var dialog = session.Dialog;
-        var result = session.Outcome.Task.Status == TaskStatus.RanToCompletion ? session.Outcome.Task.Result : null;
 
         try
         {
@@ -441,6 +445,7 @@ public partial class ContentDialogHost : ContentControl
                 && ReferenceEquals(_session, session)
                 && session.Outcome.TrySetResult(result))
             {
+                session.OutcomeResult = result;
                 dialog.MarkClosing();
                 RedirectTransitionToClosed();
             }
@@ -456,7 +461,7 @@ public partial class ContentDialogHost : ContentControl
         if (_session is { } session)
         {
             session.Outcome.TrySetResult(null);
-            CompleteSession(session);
+            CompleteSession(session, session.OutcomeResult);
         }
     }
 

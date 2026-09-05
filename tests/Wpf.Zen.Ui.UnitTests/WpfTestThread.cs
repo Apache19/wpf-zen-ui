@@ -5,6 +5,7 @@
 
 using System.Runtime.ExceptionServices;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Threading;
 
 namespace Wpf.Zen.Ui.UnitTests;
@@ -66,6 +67,51 @@ internal static class WpfTestThread
         if (exception is not null)
         {
             ExceptionDispatchInfo.Capture(exception).Throw();
+        }
+    }
+
+    /// <summary>
+    /// Executes an asynchronous WPF test delegate on a fresh STA thread and keeps its dispatcher
+    /// processing messages until the delegate has completed.
+    /// </summary>
+    /// <param name="action">The asynchronous WPF test work to execute.</param>
+    public static void Run(Func<Task> action)
+    {
+        ArgumentNullException.ThrowIfNull(action);
+
+        Run(() => RunAsyncAction(action));
+    }
+
+    /// <summary>
+    /// Pumps the owning dispatcher while an asynchronous test is suspended so continuations that
+    /// captured the WPF synchronization context can resume on the same STA thread.
+    /// </summary>
+    private static void RunAsyncAction(Func<Task> action)
+    {
+        Dispatcher dispatcher = Dispatcher.CurrentDispatcher;
+        SynchronizationContext? previousContext = SynchronizationContext.Current;
+        try
+        {
+            SynchronizationContext.SetSynchronizationContext(
+                new DispatcherSynchronizationContext(dispatcher)
+            );
+
+            Task task = action();
+            if (!task.IsCompleted)
+            {
+                var frame = new DispatcherFrame();
+                _ = task.ContinueWith(
+                    _ => dispatcher.BeginInvoke(new Action(() => frame.Continue = false)),
+                    TaskScheduler.Default
+                );
+                Dispatcher.PushFrame(frame);
+            }
+
+            task.GetAwaiter().GetResult();
+        }
+        finally
+        {
+            SynchronizationContext.SetSynchronizationContext(previousContext);
         }
     }
 

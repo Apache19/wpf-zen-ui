@@ -125,7 +125,7 @@ public class PresentationServiceTests
     [Fact]
     public void ContentDialogService_UsesAttachedHostAndDisablesCoveredContent()
     {
-        WpfTestThread.Run(() =>
+        WpfTestThread.Run(async () =>
         {
             // A running WPF application installs this context before UI event handlers execute.
             // The isolated STA helper intentionally does not run Dispatcher.Run, so install the
@@ -159,8 +159,7 @@ public class PresentationServiceTests
                 PumpUntilCompleted(resultTask);
 
                 Assert.True(resultTask.IsCompletedSuccessfully);
-                // ReSharper disable once AsyncApostle.AsyncWait
-                Assert.Equal("Saved", resultTask.Result);
+                Assert.Equal("Saved", await resultTask);
                 Assert.Null(dialogHost.CurrentDialog);
                 DrainDispatcher();
                 Assert.True(applicationContent.IsEnabled);
@@ -270,7 +269,7 @@ public class PresentationServiceTests
     [Fact]
     public void ContentDialog_CannotShowTheSameInstanceConcurrently()
     {
-        WpfTestThread.Run(() =>
+        WpfTestThread.Run(async () =>
         {
             SynchronizationContext.SetSynchronizationContext(
                 new DispatcherSynchronizationContext(Dispatcher.CurrentDispatcher)
@@ -303,8 +302,7 @@ public class PresentationServiceTests
                 dialog.Close("Saved");
                 PumpUntilCompleted(firstShow);
 
-                // ReSharper disable once AsyncApostle.AsyncWait
-                Assert.Equal("Saved", firstShow.Result);
+                Assert.Equal("Saved", await firstShow);
 
                 // Reuse remains supported after the complete close lifecycle has released the
                 // instance; only overlapping presentations are rejected.
@@ -315,8 +313,7 @@ public class PresentationServiceTests
                 dialog.Close("Discarded");
                 PumpUntilCompleted(thirdShow);
 
-                // ReSharper disable once AsyncApostle.AsyncWait
-                Assert.Equal("Discarded", thirdShow.Result);
+                Assert.Equal("Discarded", await thirdShow);
             }
             finally
             {
@@ -328,7 +325,7 @@ public class PresentationServiceTests
     [Fact]
     public void ContentDialog_CompletesWhenItsHostIsUnloaded()
     {
-        WpfTestThread.Run(() =>
+        WpfTestThread.Run(async () =>
         {
             SynchronizationContext.SetSynchronizationContext(
                 new DispatcherSynchronizationContext(Dispatcher.CurrentDispatcher)
@@ -351,8 +348,7 @@ public class PresentationServiceTests
             window.Close();
             PumpUntilCompleted(resultTask);
 
-            // ReSharper disable once AsyncApostle.AsyncWait
-            Assert.Null(resultTask.Result);
+            Assert.Null(await resultTask);
             Assert.Null(dialogHost.CurrentDialog);
         });
     }
@@ -406,7 +402,7 @@ public class PresentationServiceTests
     [Fact]
     public void PresentationServices_WorkInHwndSourceWithoutWpfWindow()
     {
-        WpfTestThread.Run(() =>
+        WpfTestThread.Run(async () =>
         {
             SynchronizationContext.SetSynchronizationContext(
                 new DispatcherSynchronizationContext(Dispatcher.CurrentDispatcher)
@@ -463,8 +459,7 @@ public class PresentationServiceTests
             dialog.Close("Discarded");
             PumpUntilCompleted(resultTask);
 
-            // ReSharper disable once AsyncApostle.AsyncWait
-            Assert.Equal("Discarded", resultTask.Result);
+            Assert.Equal("Discarded", await resultTask);
             DrainDispatcher();
             Assert.True(applicationContent.IsEnabled);
         });
