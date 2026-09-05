@@ -25,6 +25,16 @@ namespace Wpf.Zen.Ui.Controls;
 /// behavior.
 /// </para>
 /// <para>
+/// The default template deliberately supplies a standard three-region dialog composition.
+/// <see cref="HeaderPadding"/>, inherited <see cref="Control.Padding"/> and
+/// <see cref="FooterPadding"/> control the surrounding space for those regions, while
+/// <see cref="CornerRadius"/> describes the shell shape and the body is scrollable so its header
+/// and footer remain fixed under a height constraint. Use
+/// <see cref="ContentDialogActionBar"/> for a conventional collection of footer actions. Arbitrary
+/// slot content remains supported; layouts that cross region boundaries should replace the
+/// control template.
+/// </para>
+/// <para>
 /// This control does not create a native window or establish modality by itself. Call
 /// <see cref="ContentDialogHost.ShowAsync"/> to start a presentation session; the host owns input
 /// isolation, focus restoration and transitions for that session.

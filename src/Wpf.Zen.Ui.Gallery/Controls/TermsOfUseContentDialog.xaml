@@ -15,12 +15,13 @@
     mc:Ignorable="d">
 
     <ui:ContentDialog.Footer>
-        <ui:Button
-            MaxWidth="200"
-            Margin="20"
-            Appearance="Accent"
-            Click="OnAcceptClick"
-            Content="Accept" />
+        <ui:ContentDialogActionBar>
+            <ui:Button
+                MaxWidth="200"
+                Appearance="Accent"
+                Click="OnAcceptClick"
+                Content="Accept" />
+        </ui:ContentDialogActionBar>
     </ui:ContentDialog.Footer>
     <ui:ContentDialog.Resources>
         <BooleanToVisibilityConverter x:Key="AgreementErrorVisibility" />

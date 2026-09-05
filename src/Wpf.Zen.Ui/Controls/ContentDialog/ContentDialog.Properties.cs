@@ -13,6 +13,102 @@ namespace Wpf.Zen.Ui.Controls;
 /// </summary>
 public partial class ContentDialog
 {
+    #region DP: CornerRadius
+
+    /// <summary>
+    /// Identifies the <see cref="CornerRadius"/> dependency property.
+    /// </summary>
+    /// <remarks>
+    /// The property reuses WPF's <see cref="Border.CornerRadiusProperty"/> validation, which
+    /// rejects negative and non-finite radii. It affects the visual shell through template
+    /// bindings and does not otherwise change the dialog's desired size.
+    /// </remarks>
+    public static readonly DependencyProperty CornerRadiusProperty =
+        Border.CornerRadiusProperty.AddOwner(
+            typeof(ContentDialog),
+            new FrameworkPropertyMetadata(default(CornerRadius))
+        );
+
+    /// <summary>
+    /// Gets or sets the radius applied to the standard dialog shell and its footer background.
+    /// The default is supplied by the active control theme.
+    /// </summary>
+    /// <remarks>
+    /// The default template copies the bottom two radii to the footer so its background follows
+    /// the outer shell. A replacement template may consume this property differently.
+    /// </remarks>
+    public CornerRadius CornerRadius
+    {
+        get => (CornerRadius)GetValue(CornerRadiusProperty);
+        set => SetValue(CornerRadiusProperty, value);
+    }
+
+    #endregion
+
+    #region DP: HeaderPadding
+
+    /// <summary>
+    /// Identifies the <see cref="HeaderPadding"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty HeaderPaddingProperty = DependencyProperty.Register(
+        nameof(HeaderPadding),
+        typeof(Thickness),
+        typeof(ContentDialog),
+        new FrameworkPropertyMetadata(
+            new Thickness(0),
+            FrameworkPropertyMetadataOptions.AffectsMeasure
+        )
+    );
+
+    /// <summary>
+    /// Gets or sets the space between the standard dialog shell and the header content. The default
+    /// is 24 pixels on the left, 20 on top, 48 on the right, and 8 on the bottom.
+    /// </summary>
+    /// <remarks>
+    /// The larger right inset reserves the independent top-right dismiss surface without vertically
+    /// aligning arbitrary header content to that button. This value affects layout, does not inherit,
+    /// can be animated, and is consumed only by templates that bind it.
+    /// </remarks>
+    public Thickness HeaderPadding
+    {
+        get => (Thickness)GetValue(HeaderPaddingProperty);
+        set => SetValue(HeaderPaddingProperty, value);
+    }
+
+    #endregion
+
+    #region DP: FooterPadding
+
+    /// <summary>
+    /// Identifies the <see cref="FooterPadding"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty FooterPaddingProperty = DependencyProperty.Register(
+        nameof(FooterPadding),
+        typeof(Thickness),
+        typeof(ContentDialog),
+        new FrameworkPropertyMetadata(
+            new Thickness(0),
+            FrameworkPropertyMetadataOptions.AffectsMeasure
+        )
+    );
+
+    /// <summary>
+    /// Gets or sets the space between the standard footer chrome and <see cref="Footer"/>. The
+    /// default is 20 pixels on every side.
+    /// </summary>
+    /// <remarks>
+    /// Footer content owns only its internal composition; this property lets the dialog template
+    /// consistently own the surrounding footer spacing. It affects layout, does not inherit, can
+    /// be animated, and is consumed only by templates that bind it.
+    /// </remarks>
+    public Thickness FooterPadding
+    {
+        get => (Thickness)GetValue(FooterPaddingProperty);
+        set => SetValue(FooterPaddingProperty, value);
+    }
+
+    #endregion
+
     #region DP: Footer
 
     /// <summary>
@@ -197,6 +293,44 @@ public partial class ContentDialog
 
     #endregion
 
+    #region DP: IsOpen
+
+    private static readonly DependencyPropertyKey IsOpenPropertyKey =
+        DependencyProperty.RegisterReadOnly(
+            nameof(IsOpen),
+            typeof(bool),
+            typeof(ContentDialog),
+            new PropertyMetadata(false)
+        );
+
+    /// <summary>Identifies the <see cref="IsOpen"/> dependency property.</summary>
+    public static readonly DependencyProperty IsOpenProperty = IsOpenPropertyKey.DependencyProperty;
+
+    /// <summary>
+    /// Gets a value indicating whether a presentation is reserved, including entrance, exit and Closed notification.
+    /// Default false; this state does not affect layout.
+    /// </summary>
+    public bool IsOpen => (bool)GetValue(IsOpenProperty);
+
+    #endregion
+
+    #region DP: IsClosing
+
+    private static readonly DependencyPropertyKey IsClosingPropertyKey = DependencyProperty.RegisterReadOnly(
+        nameof(IsClosing),
+        typeof(bool),
+        typeof(ContentDialog),
+        new PropertyMetadata(false)
+    );
+
+    /// <summary>Identifies the <see cref="IsClosing"/> dependency property.</summary>
+    public static readonly DependencyProperty IsClosingProperty = IsClosingPropertyKey.DependencyProperty;
+
+    /// <summary>Gets a value indicating whether a close result has been accepted and presentation cleanup is pending. Default false; this state does not affect layout.</summary>
+    public bool IsClosing => (bool)GetValue(IsClosingProperty);
+
+    #endregion
+
     #region EVENT: Closing
 
     /// <summary>
@@ -266,44 +400,6 @@ public partial class ContentDialog
         add => AddHandler(ClosedEvent, value);
         remove => RemoveHandler(ClosedEvent, value);
     }
-
-    #endregion
-
-    #region DP: IsOpen
-
-    private static readonly DependencyPropertyKey IsOpenPropertyKey =
-        DependencyProperty.RegisterReadOnly(
-            nameof(IsOpen),
-            typeof(bool),
-            typeof(ContentDialog),
-            new PropertyMetadata(false)
-        );
-
-    /// <summary>Identifies the <see cref="IsOpen"/> dependency property.</summary>
-    public static readonly DependencyProperty IsOpenProperty = IsOpenPropertyKey.DependencyProperty;
-
-    /// <summary>
-    /// Gets a value indicating whether a presentation is reserved, including entrance, exit and Closed notification.
-    /// Default false; this state does not affect layout.
-    /// </summary>
-    public bool IsOpen => (bool)GetValue(IsOpenProperty);
-
-    #endregion
-
-    #region DP: IsClosing
-
-    private static readonly DependencyPropertyKey IsClosingPropertyKey = DependencyProperty.RegisterReadOnly(
-        nameof(IsClosing),
-        typeof(bool),
-        typeof(ContentDialog),
-        new PropertyMetadata(false)
-    );
-
-    /// <summary>Identifies the <see cref="IsClosing"/> dependency property.</summary>
-    public static readonly DependencyProperty IsClosingProperty = IsClosingPropertyKey.DependencyProperty;
-
-    /// <summary>Gets a value indicating whether a close result has been accepted and presentation cleanup is pending. Default false; this state does not affect layout.</summary>
-    public bool IsClosing => (bool)GetValue(IsClosingProperty);
 
     #endregion
 }

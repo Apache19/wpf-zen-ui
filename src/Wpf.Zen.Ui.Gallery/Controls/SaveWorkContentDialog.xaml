@@ -12,11 +12,7 @@
     </StackPanel>
 
     <ui:ContentDialog.Footer>
-        <ui:AdaptiveUniformGrid
-            Margin="20"
-            ColumnSpacing="8"
-            Columns="3"
-            RowSpacing="8">
+        <ui:ContentDialogActionBar>
             <ui:Button
                 Appearance="Accent"
                 Command="{x:Static ui:ContentDialog.CloseCommand}"
@@ -31,7 +27,7 @@
                 Command="{x:Static ui:ContentDialog.DismissCommand}"
                 Content="Cancel"
                 IsCancel="True" />
-        </ui:AdaptiveUniformGrid>
+        </ui:ContentDialogActionBar>
     </ui:ContentDialog.Footer>
 
 </ui:ContentDialog>

@@ -26,6 +26,65 @@ namespace Wpf.Zen.Ui.UnitTests.Controls;
 public class ContentDialogTests
 {
     [Fact]
+    public void DefaultTemplate_KeepsDismissButtonAboveHeaderAndOwnsShellAppearance() => Run(scope =>
+    {
+        var dialog = scope.CreateDialog();
+        dialog.CornerRadius = new CornerRadius(4D, 8D, 12D, 16D);
+        dialog.Footer = new ContentDialogActionBar
+        {
+            Items =
+            {
+                new NativeButton { Content = "Close" },
+            },
+        };
+
+        Task<object?> task = scope.Host.ShowAsync(dialog);
+        Drain();
+        dialog.UpdateLayout();
+
+        var header = Assert.IsType<ContentPresenter>(
+            dialog.Template.FindName("HeaderPresenter", dialog)
+        );
+        var dismiss = Assert.IsType<Wpf.Zen.Ui.Controls.Button>(
+            dialog.Template.FindName("DismissButton", dialog)
+        );
+        var footer = Assert.IsType<Border>(dialog.Template.FindName("Footer", dialog));
+        var shell = Assert.IsType<Border>(VisualTreeHelper.GetChild(dialog, 0));
+
+        Point headerOrigin = header.TranslatePoint(default, dialog);
+        Point dismissOrigin = dismiss.TranslatePoint(default, dialog);
+        Assert.True(
+            dismissOrigin.Y < headerOrigin.Y,
+            $"The dismiss surface ({dismissOrigin.Y}) must remain above the header baseline ({headerOrigin.Y})."
+        );
+        Assert.Equal(new Thickness(24D, 20D, 48D, 8D), dialog.HeaderPadding);
+        Assert.Equal(new Thickness(20D), dialog.FooterPadding);
+        Assert.Equal(dialog.FooterPadding, footer.Padding);
+        Assert.Equal(dialog.CornerRadius, shell.CornerRadius);
+        Assert.Equal(new CornerRadius(0D, 0D, 12D, 16D), footer.CornerRadius);
+
+        dialog.Close();
+        Pump(task);
+    });
+
+    [Fact]
+    public void CornerRadius_IsAValidatedLocalXamlProperty() => Run(_ =>
+    {
+        var dialog = Assert.IsType<Dialog>(XamlReader.Parse("""
+            <ui:ContentDialog
+                xmlns:ui="http://schemas.thezendev.com/wpf/2027"
+                CornerRadius="4,8,12,16" />
+            """));
+
+        Assert.Equal(new CornerRadius(4D, 8D, 12D, 16D), dialog.CornerRadius);
+        Assert.Equal(
+            BaseValueSource.Local,
+            DependencyPropertyHelper.GetValueSource(dialog, Dialog.CornerRadiusProperty).BaseValueSource
+        );
+        Assert.Throws<ArgumentException>(() => dialog.CornerRadius = new CornerRadius(-1D));
+    });
+
+    [Fact]
     public void DerivedDialog_UsesContentDialogThemeStyleWithoutAnImplicitForwardingStyle() => Run(scope =>
     {
         var dialog = new DerivedDialog { Header = "Dialog", Content = "Content" };

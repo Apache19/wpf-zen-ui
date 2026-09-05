@@ -10,23 +10,37 @@
 | 正文 | 继承的 `Content`、`ContentTemplate`、`ContentTemplateSelector`、`ContentStringFormat` |
 | 页脚 | `Footer`、`FooterTemplate`、`FooterTemplateSelector`、`FooterStringFormat` |
 
-Footer 与 Header 一样维护逻辑子节点。直接放入的元素可继承 DataContext、查找资源并参与逻辑树遍历；更换 Footer 会解除旧节点的所有权。显式 DataTemplate 优先于选择器；格式串用于 WPF 默认的文本呈现。Footer 为 null 时默认模板折叠页脚。
+Footer 与 Header 一样维护逻辑子节点。直接放入的元素可继承 DataContext、查找资源并参与逻辑树遍历；更换 Footer 会解除旧节点的所有权。显式 DataTemplate 优先于选择器；格式串用于 WPF 默认的文本呈现。Footer 为 null 时默认模板折叠页脚。默认模板拥有页脚背景、分隔线和 `FooterPadding`，Footer 内容只需声明内部构成。
 
-按钮直接使用 WPF Button 或库内 Button，自行拥有 Style、Appearance、Icon、Command、CommandParameter、CommandTarget、CanExecute 和自动化属性。页脚布局由调用方声明，也可以组合复选框、帮助链接、进度条，或用 ItemsControl 生成动态按钮。
+按钮直接使用 WPF Button 或库内 Button，自行拥有 Style、Appearance、Icon、Command、CommandParameter、CommandTarget、CanExecute 和自动化属性。标准按钮区使用 `ContentDialogActionBar`：它是完整的 `ItemsControl`，既可直接添加元素，也支持 `ItemsSource`、ItemTemplate/Selector、ItemStringFormat 和 ItemContainerStyle/Selector。默认 `AdaptiveUniformGrid` 每行最多放置 3 项，间距为 8；不完整行中的项目平分整行宽度。可通过 `Columns`、`RowSpacing`、`ColumnSpacing` 和 `IsRowStretchEnabled` 调整，或替换 ItemsPanel。Footer 仍可直接放入任意元素，用于组合复选框、帮助链接、进度条或完全不同的布局。
 
 ```xml
 <ui:ContentDialog x:Class="MyApp.DeleteDialog" Header="删除文件">
     <TextBlock Text="删除后无法恢复。" />
     <ui:ContentDialog.Footer>
-        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-            <ui:Button Content="取消" Margin="0,0,8,0"
+        <ui:ContentDialogActionBar>
+            <ui:Button Content="取消"
                        Command="{x:Static ui:ContentDialog.DismissCommand}" />
             <ui:Button Content="删除" Appearance="Danger"
                        Command="{x:Static ui:ContentDialog.CloseCommand}"
                        CommandParameter="{x:Static local:DeleteChoice.Delete}" />
-        </StackPanel>
+        </ui:ContentDialogActionBar>
     </ui:ContentDialog.Footer>
 </ui:ContentDialog>
+```
+
+数据驱动的按钮集合使用普通 ItemsControl 写法；数据对象决定内容和命令参数，模板中的 Button 继续拥有交互语义：
+
+```xml
+<ui:ContentDialogActionBar ItemsSource="{Binding Actions}">
+    <ui:ContentDialogActionBar.ItemTemplate>
+        <DataTemplate>
+            <ui:Button Content="{Binding Text}"
+                       Command="{x:Static ui:ContentDialog.CloseCommand}"
+                       CommandParameter="{Binding Result}" />
+        </DataTemplate>
+    </ui:ContentDialogActionBar.ItemTemplate>
+</ui:ContentDialogActionBar>
 ```
 
 示例中的 `ui` 对应库的 XAML 命名空间，`local` 对应应用业务枚举所在的命名空间。
@@ -106,6 +120,8 @@ private async Task SaveAsync()
 焦点归属识别同时检查视觉树、逻辑树及 Popup/ContextMenu 的 PlacementTarget。弹出内容可获得焦点，不能将焦点移到被覆盖的页面。ContextMenu 等保留 WPF 自身的内部访问键范围和输入处理；跨弹出树的命令应按 WPF 规则显式设置 CommandTarget 指向对话框内的目标，不依赖控件转发业务命令。
 
 ## 模板与动画
+
+`ContentDialog` 的默认模板是带明确视觉取舍的标准对话框布局，而不是任意布局生成器。Header、Content 和 Footer 决定各区域内部的内容；需要跨区域排版时替换 ControlTemplate。`HeaderPadding`、继承的 `Padding`、`FooterPadding` 分别控制三个区域的外壳间距，`CornerRadius` 控制对话框外壳圆角，默认模板会把其中两个底部圆角同步给 Footer 背景。正文默认由 PassiveScrollViewer 包裹，使对话框受到 MaxHeight 限制时仍固定标题和操作区；ScrollViewer 附加属性可配置其滚动行为。右上角关闭按钮独立贴近外壳顶部，标题使用更低的默认起始位置，并通过 HeaderPadding 的右侧空间避免重叠，不会根据任意 Header 内容与按钮做垂直对齐。
 
 - Dialog 的 `PART_ContentPresenter` 是可选的正文 ContentPresenter，用于定位 DataTemplate 实现的初始焦点。自定义模板缺少它时搜索直接 Content，再退到 Dialog。
 - Host 的 `PART_ContentRoot` 是必需的 UIElement，只能包裹普通页面。Host 在该部件下隔离被覆盖内容；标题栏窗口外壳保持启用，标题栏用户内容与其它页面分支被禁用。缺少该部件时拒绝展示。

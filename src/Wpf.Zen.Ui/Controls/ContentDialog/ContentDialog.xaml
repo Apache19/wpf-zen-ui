@@ -7,12 +7,37 @@
 
     <converters:BoolToVisibilityConverter x:Key="DialogBoolToVisibilityConverter" />
 
+    <Style TargetType="{x:Type controls:ContentDialogActionBar}">
+        <Setter Property="Focusable" Value="False" />
+        <Setter Property="IsTabStop" Value="False" />
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="VerticalContentAlignment" Value="Stretch" />
+        <Setter Property="ItemsPanel">
+            <Setter.Value>
+                <ItemsPanelTemplate>
+                    <controls:AdaptiveUniformGrid
+                        ColumnSpacing="{Binding ColumnSpacing, RelativeSource={RelativeSource AncestorType={x:Type controls:ContentDialogActionBar}}}"
+                        Columns="{Binding Columns, RelativeSource={RelativeSource AncestorType={x:Type controls:ContentDialogActionBar}}}"
+                        IsRowStretchEnabled="{Binding IsRowStretchEnabled, RelativeSource={RelativeSource AncestorType={x:Type controls:ContentDialogActionBar}}}"
+                        RowSpacing="{Binding RowSpacing, RelativeSource={RelativeSource AncestorType={x:Type controls:ContentDialogActionBar}}}" />
+                </ItemsPanelTemplate>
+            </Setter.Value>
+        </Setter>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type controls:ContentDialogActionBar}">
+                    <ItemsPresenter SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <ControlTemplate x:Key="DefaultContentDialogTemplate" TargetType="{x:Type controls:ContentDialog}">
         <Border
             Background="{TemplateBinding Background}"
             BorderBrush="{TemplateBinding BorderBrush}"
             BorderThickness="{TemplateBinding BorderThickness}"
-            CornerRadius="{TemplateBinding Border.CornerRadius}"
+            CornerRadius="{TemplateBinding CornerRadius}"
             SnapsToDevicePixels="True">
             <Grid>
                 <Grid.RowDefinitions>
@@ -20,15 +45,13 @@
                     <RowDefinition Height="*" />
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
-                <Grid Margin="24,16,12,8">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
+                <!--
+                    HeaderPadding establishes the title baseline independently from the dismiss
+                    surface. In particular, the default title begins lower than the top-right
+                    button instead of being vertically centered against it.
+                -->
+                <Border Padding="{TemplateBinding HeaderPadding}">
                     <ContentPresenter
-                        x:Name="HeaderPresenter"
-                        Margin="0,4,36,0"
-                        VerticalAlignment="Center"
                         controls:TextBlock.FontTypography="Subtitle"
                         ContentSource="Header"
                         SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}">
@@ -38,7 +61,7 @@
                             </Style>
                         </ContentPresenter.Resources>
                     </ContentPresenter>
-                </Grid>
+                </Border>
 
                 <controls:PassiveScrollViewer
                     x:Name="PART_ContentScroll"
@@ -67,16 +90,16 @@
                 <Border
                     x:Name="Footer"
                     Grid.Row="2"
+                    Padding="{TemplateBinding FooterPadding}"
                     Background="{m:DynamicBrush LayerFillAlt}"
                     BorderBrush="{m:DynamicBrush CardStrokeDefault}"
                     BorderThickness="0,1,0,0"
-                    CornerRadius="{Binding Path=(Border.CornerRadius), RelativeSource={RelativeSource TemplatedParent}, Converter={converters:CornerRadiusTransformConverter CopyCorners=Bottom}}">
-                    <ContentPresenter x:Name="FooterPresenter" ContentSource="Footer" />
+                    CornerRadius="{Binding CornerRadius, RelativeSource={RelativeSource TemplatedParent}, Converter={converters:CornerRadiusTransformConverter CopyCorners=Bottom}}">
+                    <ContentPresenter ContentSource="Footer" />
                 </Border>
 
                 <!--  A dialog command avoids Button.IsCancel closing the containing native Window.  -->
                 <controls:Button
-                    x:Name="DismissButton"
                     Grid.Row="0"
                     Margin="8"
                     HorizontalAlignment="Right"
@@ -97,7 +120,9 @@
                             <Setter Property="Padding" Value="7,6" />
                             <Setter Property="Focusable" Value="False" />
                             <Setter Property="IsTabStop" Value="False" />
+                            <Setter Property="ToolTip" Value="Close" />
                             <Setter Property="AutomationProperties.AutomationId" Value="DismissButton" />
+                            <Setter Property="AutomationProperties.Name" Value="Close" />
                         </Style>
                     </controls:Button.Style>
                 </controls:Button>
@@ -112,27 +137,25 @@
 
     <Style x:Key="{x:Type controls:ContentDialog}" TargetType="{x:Type controls:ContentDialog}">
         <Setter Property="Background" Value="{m:DynamicBrush SolidBackgroundFillBase}" />
-        <Setter Property="Border.CornerRadius" Value="{m:DynamicValue PopupCornerRadius}" />
+        <Setter Property="CornerRadius" Value="{m:DynamicValue PopupCornerRadius}" />
         <Setter Property="BorderBrush" Value="{m:DynamicBrush SurfaceStrokeDefault}" />
         <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="Margin" Value="24" />
         <Setter Property="MaxWidth" Value="640" />
         <Setter Property="MaxHeight" Value="850" />
-        <Setter Property="HorizontalAlignment" Value="Center" />
-        <Setter Property="VerticalAlignment" Value="Center" />
-        <Setter Property="Focusable" Value="True" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
         <Setter Property="Foreground" Value="{m:DynamicBrush TextFillPrimary}" />
+        <Setter Property="HeaderPadding" Value="24,20,48,8" />
         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
         <Setter Property="VerticalContentAlignment" Value="Top" />
         <Setter Property="KeyboardNavigation.ControlTabNavigation" Value="Cycle" />
         <Setter Property="KeyboardNavigation.DirectionalNavigation" Value="Cycle" />
         <Setter Property="KeyboardNavigation.TabNavigation" Value="Cycle" />
         <Setter Property="Padding" Value="24,8,24,24" />
+        <Setter Property="FooterPadding" Value="20" />
         <Setter Property="ScrollViewer.CanContentScroll" Value="False" />
         <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled" />
         <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
-        <Setter Property="UseLayoutRounding" Value="True" />
         <Setter Property="Template" Value="{StaticResource DefaultContentDialogTemplate}" />
     </Style>
 </ResourceDictionary>
