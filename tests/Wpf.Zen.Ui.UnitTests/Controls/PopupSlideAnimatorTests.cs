@@ -593,7 +593,8 @@ public class PopupSlideAnimatorTests
                         ),
                     }
                 );
-                root.Children.Add(flyout);
+                var target = new Border { Width = 100, Height = 32 };
+                root.Children.Add(target);
 
                 var window = new Window
                 {
@@ -608,12 +609,12 @@ public class PopupSlideAnimatorTests
                     window.Show();
                     window.Dispatcher.Invoke(static () => { }, DispatcherPriority.ApplicationIdle);
 
-                    flyout.Show();
+                    flyout.ShowAt(target);
                     window.Dispatcher.Invoke(static () => { }, DispatcherPriority.ApplicationIdle);
                     Thread.Sleep(250);
                     window.Dispatcher.Invoke(static () => { }, DispatcherPriority.ApplicationIdle);
 
-                    var popup = Assert.IsType<Popup>(flyout.Template.FindName("PART_Popup", flyout));
+                    var popup = Assert.IsType<Popup>(LogicalTreeHelper.GetParent(flyout));
                     var popupChild = Assert.IsAssignableFrom<Visual>(popup.Child);
                     var popupSource = Assert.IsType<HwndSource>(PresentationSource.FromVisual(popupChild));
                     var popupRoot = Assert.IsAssignableFrom<UIElement>(popupSource.RootVisual);

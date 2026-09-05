@@ -9,13 +9,4 @@ public partial class FlyoutViewModel : ViewModel
 {
     [ObservableProperty]
     public partial bool IsFlyoutOpen { get; set; } = false;
-
-    [RelayCommand]
-    private void OnButtonClick(object sender)
-    {
-        if (!IsFlyoutOpen)
-        {
-            IsFlyoutOpen = true;
-        }
-    }
 }

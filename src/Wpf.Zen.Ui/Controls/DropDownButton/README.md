@@ -7,6 +7,7 @@
 | Flyout 值 | 呈现方式 |
 | --- | --- |
 | `null` | 无弹出内容；展开请求回到 false |
+| `Flyout` | 直接打开其独立宿主；未设置 PlacementTarget 时默认使用按钮，定位和外观由 Flyout 自身配置 |
 | `ContextMenu` | 直接打开，保留菜单的选择、命令、键盘及关闭机制 |
 | `Popup` | 直接打开，保留调用方的 Child、样式和显式属性 |
 | 数据对象 | 自动建立 Popup → ContentControl → ContentPresenter，使用 WPF 数据模板机制 |
@@ -16,7 +17,9 @@
 
 `FlyoutStringFormat` 是复合格式串，不是 Binding 的 StringFormat。只在 WPF 最终将内容渲染为文本时生效；模板内的文本格式应在模板内设置。动态改变格式时，对未指定显式模板的数据内容重新应用包装模板，以刷新 WPF 缓存的格式化文本；Popup 实例和内容对象保持不变。
 
-以上呈现属性对原生 ContextMenu / Popup 无效。需要菜单语义时使用 ContextMenu，普通弹出面板不会自动获得菜单项选择、选项点击关闭等行为。
+以上呈现属性对显式 Flyout、原生 ContextMenu / Popup 无效。需要菜单语义时使用 ContextMenu，普通弹出面板不会自动获得菜单项选择、选项点击关闭等行为。
+
+显式 Flyout 不作为按钮的逻辑子元素，也不会再包装一层 Popup；打开期间通过 PlacementTarget 继承 DataContext 和资源。关闭的资源实例如需数据，应使用显式绑定源。更换 Flyout 时会关闭旧面板，并清除按钮提供的默认目标；调用方设置的目标、样式和绑定保持不变。打开期间切换到另一个呈现源的目标会替换 Flyout 的私有宿主，使原生窗口归属随目标更新。
 
 ## 数据驱动用法
 

@@ -2,6 +2,7 @@ S_OK
 SetWindowThemeAttribute
 GetDpiForWindow
 GetForegroundWindow
+GetAncestor
 IsWindowVisible
 GetWindow
 SetWindowLong

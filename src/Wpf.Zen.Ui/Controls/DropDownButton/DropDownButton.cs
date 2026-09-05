@@ -11,16 +11,17 @@ using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Threading;
 using Wpf.Zen.Ui.AutomationPeers;
+using ContentFlyout = Wpf.Zen.Ui.Controls.Flyout;
 
 // ReSharper disable once CheckNamespace
 namespace Wpf.Zen.Ui.Controls;
 
 /// <summary>
-/// A command button that opens a native ContextMenu/Popup or presents arbitrary content in a Popup.
+/// A command button that opens a Flyout, native ContextMenu/Popup or arbitrary content in a Popup.
 /// </summary>
 /// <remarks>
 /// Content and its template properties describe the button label; Flyout and its template properties
-/// independently describe the drop-down. Native flyouts retain their own presentation behavior;
+/// independently describe the drop-down. Explicit Flyout and native flyouts retain their own presentation behavior;
 /// ContextMenu keeps WPF menu input semantics, while Popup receives the same initial focus traversal
 /// as generated content.
 /// Other values use a ContentControl and WPF's content presentation pipeline, including implicit data
@@ -93,7 +94,9 @@ public class DropDownButton : Button
     /// <summary>Gets or sets the native flyout, data object, or UI content. The default is null.</summary>
     /// <remarks>
     /// Supports binding, does not inherit, and does not affect button layout. Changes update or replace
-    /// the flyout host. Native ContextMenu and Popup values bypass all Flyout presentation properties.
+    /// the flyout host. Explicit Flyout, ContextMenu and Popup values bypass all Flyout presentation properties.
+    /// An explicit Flyout owns its popup and inherits through PlacementTarget while open. An unset
+    /// target defaults to this button; placement and surface configuration remain owned by the Flyout.
     /// When opening native flyouts, unset placement defaults to this button and Bottom; unset Popup
     /// StaysOpen defaults to false. Explicit values, styles, and bindings are retained.
     /// Explicit Popups become logical children and must not belong to another owner. ContextMenu
@@ -346,6 +349,20 @@ public class DropDownButton : Button
     private static object? CoerceFlyout(DependencyObject d, object? value)
     {
         var button = (DropDownButton)d;
+        if (value is ContentFlyout explicitFlyout)
+        {
+            // A Flyout owns its private Popup just as ContextMenu does; never wrap it in a second
+            // generated host. Reject ancestry cycles before adopting the independent surface.
+            if (IsLogicalAncestor(explicitFlyout, button) || explicitFlyout.IsAncestorOf(button)
+                || (LogicalTreeHelper.GetParent(explicitFlyout) is { } flyoutParent
+                    && (flyoutParent is not Popup popup || !ReferenceEquals(popup.Child, explicitFlyout))))
+            {
+                throw new InvalidOperationException("A Flyout must be independent of the button's content tree.");
+            }
+
+            return value;
+        }
+
         if (value is ContextMenu || value is not DependencyObject content)
         {
             return value;
@@ -410,6 +427,12 @@ public class DropDownButton : Button
         // replacement's state or keep this button subscribed to a detached flyout.
         switch (oldValue)
         {
+            case ContentFlyout panel:
+                panel.RemoveHandler(ContentFlyout.OpenedEvent, new RoutedEventHandler(OnContentFlyoutStateChanged));
+                panel.RemoveHandler(ContentFlyout.ClosedEvent, new RoutedEventHandler(OnContentFlyoutStateChanged));
+                panel.Hide();
+                ReleaseDefaultPlacementTarget(panel, ContentFlyout.PlacementTargetProperty);
+                break;
             case ContextMenu menu:
                 menu.RemoveHandler(ContextMenu.OpenedEvent, new RoutedEventHandler(OnContextMenuOpened));
                 menu.RemoveHandler(ContextMenu.ClosedEvent, new RoutedEventHandler(OnContextMenuClosed));
@@ -429,6 +452,10 @@ public class DropDownButton : Button
 
         switch (newValue)
         {
+            case ContentFlyout panel:
+                panel.AddHandler(ContentFlyout.OpenedEvent, new RoutedEventHandler(OnContentFlyoutStateChanged), true);
+                panel.AddHandler(ContentFlyout.ClosedEvent, new RoutedEventHandler(OnContentFlyoutStateChanged), true);
+                break;
             case ContextMenu menu:
                 // Presentation state must stay synchronized even when application handlers
                 // mark the routed notification handled before this adapter receives it.
@@ -455,10 +482,19 @@ public class DropDownButton : Button
         {
             UpdateDropDownStateFromFlyout(newValue switch
             {
+                ContentFlyout panel => panel.IsOpen,
                 ContextMenu menu => menu.IsOpen,
                 Popup popup => popup.IsOpen,
                 _ => false,
             });
+        }
+    }
+
+    private void OnContentFlyoutStateChanged(object sender, RoutedEventArgs e)
+    {
+        if (ReferenceEquals(sender, Flyout) && sender is ContentFlyout panel)
+        {
+            UpdateDropDownStateFromFlyout(panel.IsOpen);
         }
     }
 
@@ -557,6 +593,22 @@ public class DropDownButton : Button
 
         switch (Flyout)
         {
+            case ContentFlyout panel:
+                if (currentValue && DependencyPropertyHelper.GetValueSource(
+                        panel, ContentFlyout.PlacementTargetProperty).BaseValueSource == BaseValueSource.Default)
+                {
+                    panel.SetCurrentValue(ContentFlyout.PlacementTargetProperty, this);
+                }
+
+                panel.SetCurrentValue(ContentFlyout.IsOpenProperty, currentValue);
+                // An unavailable target rejects opening without producing a native Opened/Closed.
+                if (ReferenceEquals(Flyout, panel))
+                {
+                    UpdateDropDownStateFromFlyout(panel.IsOpen);
+                }
+
+                break;
+
             case ContextMenu menu:
                 if (currentValue)
                 {
@@ -720,7 +772,7 @@ public class DropDownButton : Button
 
     private static bool IsGeneratedContent(object? value)
     {
-        return value is not null and not System.Windows.Controls.ContextMenu and not Popup;
+        return value is not null and not System.Windows.Controls.ContextMenu and not Popup and not ContentFlyout;
     }
 
     /// <summary>Builds a content host independent of the button's replaceable visual template.</summary>
