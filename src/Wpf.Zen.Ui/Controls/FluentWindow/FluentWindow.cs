@@ -668,6 +668,16 @@ public partial class FluentWindow : Window
             }
         }
 
+        // Native hit testing can reenter while Unloaded handlers remove modal content and the
+        // HWND hook is still installed. PointFromScreen requires a connected PresentationSource;
+        // once detached, leave the message to the native window procedure instead of touching WPF.
+        if (PresentationSource.FromVisual(this) is null)
+        {
+            _pendingCaptionButton = null;
+            handled = false;
+            return IntPtr.Zero;
+        }
+
         var localPoint = PointFromScreen(screenPoint);
         if (
             localPoint.X < 0
