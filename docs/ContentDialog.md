@@ -105,7 +105,7 @@ private async Task SaveAsync()
 
 焦点归属识别同时检查视觉树、逻辑树及 Popup/ContextMenu 的 PlacementTarget。弹出内容可获得焦点，不能将焦点移到被覆盖的页面。ContextMenu 等保留 WPF 自身的内部访问键范围和输入处理；跨弹出树的命令应按 WPF 规则显式设置 CommandTarget 指向对话框内的目标，不依赖控件转发业务命令。
 
-## 模板、样式与动画
+## 模板与动画
 
 - Dialog 的 `PART_ContentPresenter` 是可选的正文 ContentPresenter，用于定位 DataTemplate 实现的初始焦点。自定义模板缺少它时搜索直接 Content，再退到 Dialog。
 - Host 的 `PART_ContentRoot` 是必需的 UIElement，只能包裹普通页面。Host 在该部件下隔离被覆盖内容；标题栏窗口外壳保持启用，标题栏用户内容与其它页面分支被禁用。缺少该部件时拒绝展示。
@@ -129,7 +129,5 @@ private async Task SaveAsync()
 ```
 
 需要改变遮罩、阴影、旋转轴或布局结构时，为 `ContentDialogTransitionPresenter` 提供自定义模板并保留所需模板部件；无需定义 VisualState 或 Storyboard。需要逐帧协调额外的纯渲染效果时，可以派生 Presenter 并重写 `ApplyTransitionVisuals`。若自定义整个 Host 模板，应将上述过渡属性通过 TemplateBinding 转发给 `PART_DialogPresenter`，以便 Host 上的配置继续生效。
-
-默认 Dialog 模板以 DynamicResource 引用字符串资源键 `ContentDialogCloseButtonStyle`（TargetType 为库内 Button）。可在 Dialog.Resources 或应用资源中覆盖，定制标题关闭按钮的样式、ToolTip 与 AutomationProperties.Name，无需复制模板或设置本地 Style Binding。页脚按钮则直接设置自身 Style。
 
 标准 Width、Height、Min/MaxWidth、Min/MaxHeight、Margin 和 Padding 控制布局。对话框自动化名称优先使用 AutomationProperties.Name，否则使用 Header 的文本；自动化暴露 Window 模式与对话框语义。

@@ -12,16 +12,29 @@ using Wpf.Zen.Ui.AutomationPeers;
 namespace Wpf.Zen.Ui.Controls;
 
 /// <summary>
-/// A composable dialog with standard Header and Content slots and a logical Footer slot.
-/// Buttons are ordinary WPF controls; the dialog only negotiates closure and carries a result.
-/// Use <see cref="ContentDialogHost.ShowAsync"/> to present it in a modal region.
+/// Represents reusable dialog content that a <see cref="ContentDialogHost"/> presents within its
+/// modal scope.
 /// </summary>
 /// <remarks>
-/// PART_ContentPresenter is optional and identifies realized body content for initial focus.
-/// Without it, direct Content is searched, then the dialog itself receives focus.
-/// Custom templates should present Header, Content and Footer with their matching ContentSource.
-/// The default template uses the dynamic ContentDialogCloseButtonStyle resource for its dismiss
-/// button; override that resource to customize its glyph, tooltip and accessible name.
+/// <para>
+/// The inherited <see cref="HeaderedContentControl.Header"/> and
+/// <see cref="ContentControl.Content"/> properties provide the heading and body slots;
+/// <see cref="Footer"/> provides a logically owned slot for application-defined actions or
+/// supplementary content. The dialog coordinates close requests and carries their result, while
+/// the controls placed in these slots retain their normal WPF styling, commanding and automation
+/// behavior.
+/// </para>
+/// <para>
+/// This control does not create a native window or establish modality by itself. Call
+/// <see cref="ContentDialogHost.ShowAsync"/> to start a presentation session; the host owns input
+/// isolation, focus restoration and transitions for that session.
+/// </para>
+/// <para>
+/// <c>PART_ContentPresenter</c> is optional and identifies realized body content for initial-focus
+/// discovery. If it is absent, the control searches direct content and finally focuses itself.
+/// Custom templates should present the Header, Content and Footer slots through their corresponding
+/// content-source properties.
+/// </para>
 /// </remarks>
 [TemplatePart(Name = "PART_ContentPresenter", Type = typeof(ContentPresenter))]
 public partial class ContentDialog : HeaderedContentControl

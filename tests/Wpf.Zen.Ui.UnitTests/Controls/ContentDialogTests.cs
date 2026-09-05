@@ -374,20 +374,19 @@ public class ContentDialogTests
     });
 
     [Fact]
-    public void CloseButton_UsesDynamicStyleResource() => Run(scope =>
+    public void DefaultTemplate_RendersFunctionalDismissButton() => Run(scope =>
     {
         var dialog = scope.CreateDialog();
         var task = scope.Host.ShowAsync(dialog);
         Drain();
-        var button = (Wpf.Zen.Ui.Controls.Button)dialog.Template.FindName("PART_CloseButton", dialog);
-        var style = new Style(typeof(Wpf.Zen.Ui.Controls.Button));
-        style.Setters.Add(new Setter(FrameworkElement.ToolTipProperty, "Dismiss localized"));
-        dialog.Resources["ContentDialogCloseButtonStyle"] = style;
-        Drain();
-        Assert.Same(style, button.Style);
-        Assert.Equal("Dismiss localized", button.ToolTip);
-        dialog.Close();
+        var button = (Wpf.Zen.Ui.Controls.Button)dialog.Template.FindName("DismissButton", dialog);
+
+        Assert.NotNull(button.Style);
+        Assert.NotNull(button.Content);
+        Assert.Equal("Close", button.ToolTip);
+        Invoke(button);
         Pump(task);
+        Assert.Null(task.Result);
     });
 
     [Fact]

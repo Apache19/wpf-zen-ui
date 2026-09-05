@@ -7,22 +7,6 @@
 
     <converters:BoolToVisibilityConverter x:Key="DialogBoolToVisibilityConverter" />
 
-    <Style x:Key="ContentDialogCloseButtonStyle" TargetType="{x:Type controls:Button}">
-        <Setter Property="Appearance" Value="Transparent" />
-        <Setter Property="BorderThickness" Value="0" />
-        <Setter Property="Content" Value="{m:FluentIconSource Dismiss24}" />
-        <Setter Property="FontSize" Value="16" />
-        <Setter Property="Foreground" Value="{m:DynamicBrush TextFillPrimary}" />
-        <Setter Property="MouseOverForeground" Value="White" />
-        <Setter Property="PressedForeground" Value="White" />
-        <Setter Property="MouseOverBackground" Value="#E81123" />
-        <Setter Property="PressedBackground" Value="#A80014" />
-        <Setter Property="Padding" Value="7,6" />
-        <Setter Property="ToolTip" Value="Close" />
-        <Setter Property="Focusable" Value="False" />
-        <Setter Property="IsTabStop" Value="False" />
-    </Style>
-
     <ControlTemplate x:Key="DefaultContentDialogTemplate" TargetType="{x:Type controls:ContentDialog}">
         <!--  The control itself is the dialog surface; FrameworkElement owns all sizing constraints.  -->
         <Border
@@ -90,14 +74,31 @@
 
                 <!--  A dialog command avoids Button.IsCancel closing the containing native Window.  -->
                 <controls:Button
-                    x:Name="PART_CloseButton"
+                    x:Name="DismissButton"
                     Grid.Row="0"
                     Margin="8"
                     HorizontalAlignment="Right"
                     VerticalAlignment="Top"
                     Command="{x:Static controls:ContentDialog.DismissCommand}"
-                    Style="{DynamicResource ContentDialogCloseButtonStyle}"
-                    Visibility="{TemplateBinding IsDismissible, Converter={StaticResource DialogBoolToVisibilityConverter}}" />
+                    Visibility="{TemplateBinding IsDismissible, Converter={StaticResource DialogBoolToVisibilityConverter}}">
+                    <controls:Button.Style>
+                        <Style TargetType="{x:Type controls:Button}">
+                            <Setter Property="Appearance" Value="Transparent" />
+                            <Setter Property="BorderThickness" Value="0" />
+                            <Setter Property="Content" Value="{m:FluentIconSource Dismiss24}" />
+                            <Setter Property="FontSize" Value="16" />
+                            <Setter Property="Foreground" Value="{m:DynamicBrush TextFillPrimary}" />
+                            <Setter Property="MouseOverForeground" Value="White" />
+                            <Setter Property="PressedForeground" Value="White" />
+                            <Setter Property="MouseOverBackground" Value="#E81123" />
+                            <Setter Property="PressedBackground" Value="#A80014" />
+                            <Setter Property="Padding" Value="7,6" />
+                            <Setter Property="Focusable" Value="False" />
+                            <Setter Property="IsTabStop" Value="False" />
+                            <Setter Property="AutomationProperties.AutomationId" Value="DismissButton" />
+                        </Style>
+                    </controls:Button.Style>
+                </controls:Button>
             </Grid>
         </Border>
         <ControlTemplate.Triggers>
