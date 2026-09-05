@@ -198,10 +198,22 @@ public partial class ContentDialog : HeaderedContentControl
         {
             Host = null;
 
-            SetValue(IsOpenPropertyKey, false);
-            SetValue(IsClosingPropertyKey, false);
-
-            CommandManager.InvalidateRequerySuggested();
+            try
+            {
+                SetValue(IsOpenPropertyKey, false);
+            }
+            finally
+            {
+                // Property observers may throw; both read-only flags must still leave the session.
+                try
+                {
+                    SetValue(IsClosingPropertyKey, false);
+                }
+                finally
+                {
+                    CommandManager.InvalidateRequerySuggested();
+                }
+            }
         }
     }
 

@@ -9,23 +9,21 @@ using System.Windows.Threading;
 
 namespace Wpf.Zen.Ui.Controls;
 
-/// <summary>Wraps ordinary Content and owns one modal dialog session above it.</summary>
+/// <summary>
+/// Displays a modal <see cref="ContentDialog"/> over its content without creating a separate window.
+/// </summary>
 /// <remarks>
-/// ShowAsync rejects a busy, hidden or unloaded host and an already parented dialog. Its task
-/// completes only after transitions, logical detachment, input release and Closed notification.
-/// Token cancellation cancels the task; host removal returns null unless a result already won.
-/// Templates must present Content in PART_ContentRoot and CurrentDialog in a separate overlay.
-/// PART_ContentRoot (UIElement) is required for isolating the covered region; missing it rejects
-/// presentation. The host disables branches below that part while preserving any TitleBar shell.
-/// While a dialog is active, keyboard focus is confined to the dialog and any presentation surfaces it owns;
-/// attempts to focus another element in the same WPF presentation root are cancelled. Focus is remembered before
-/// isolation and restored during synchronous cleanup when the remembered element can still receive focus and the
-/// user has not moved focus to another window. If the target is temporarily unavailable (for example, an async
-/// command still disables its button), one deferred attempt follows task continuations and binding updates.
-/// Templates may provide PART_DialogPresenter as a <see cref="ContentDialogTransitionPresenter"/>.
-/// That part owns presentation animation and is awaited by the host; templates without it retain the
-/// complete modal lifecycle and transition immediately. Keep overlay hit testing active until
-/// CurrentDialog becomes null, including the exit transition.
+/// <para>
+/// Wrap the page or region to cover in <see cref="ContentControl.Content"/> and call
+/// <see cref="ShowAsync"/> to display a dialog and await its result. Each host displays one dialog
+/// at a time and supports cancellation and configurable opening and closing animations.
+/// </para>
+/// <para>
+/// While a dialog is open, the host disables interaction with the covered content while preserving
+/// title bar window controls. It keeps keyboard focus within the dialog and its owned surfaces,
+/// and attempts to restore the previous focus when the dialog closes. Hiding or unloading the host
+/// ends the active dialog.
+/// </para>
 /// </remarks>
 [TemplatePart(Name = "PART_ContentRoot", Type = typeof(UIElement))]
 [TemplatePart(Name = "PART_DialogPresenter", Type = typeof(ContentDialogTransitionPresenter))]
@@ -63,6 +61,14 @@ public partial class ContentDialogHost : ContentControl
 
         internal bool IsCleanedUp       { get; set; }
         internal bool IsRequestingClose { get; set; }
+        internal bool IsAvailabilityCheckPending { get; set; }
+
+        // These belong to the occurrence, not the host: a callback may pump Dispatcher after
+        // cleanup and start another presentation before the old isolation traversal unwinds.
+        internal Dictionary<DependencyObject, ContentDialogInputIsolation> InputIsolation { get; } = [];
+        internal bool IsUpdatingIsolation   { get; set; }
+        internal bool NeedsIsolationRefresh { get; set; }
+        internal DispatcherOperation? IsolationRefreshOperation { get; set; }
     }
 
     #region DP: CurrentDialog
@@ -81,7 +87,10 @@ public partial class ContentDialogHost : ContentControl
     public static readonly DependencyProperty CurrentDialogProperty =
         CurrentDialogPropertyKey.DependencyProperty;
 
-    /// <summary>Gets the currently presented dialog, including transitions, or null when idle.</summary>
+    /// <summary>
+    /// Gets the currently displayed dialog, or <see langword="null"/> when no dialog is displayed.
+    /// </summary>
+    /// <remarks>The dialog remains current throughout its opening and closing animations.</remarks>
     public ContentDialog? CurrentDialog
     {
         get => (ContentDialog?)GetValue(CurrentDialogProperty);
@@ -101,10 +110,12 @@ public partial class ContentDialogHost : ContentControl
         );
 
     /// <summary>
-    /// Gets or sets a value indicating whether host transitions are enabled.
-    /// Default true; system client-area animation settings are also honored.
-    /// Turning it off finishes an active transition immediately.
+    /// Gets or sets a value indicating whether dialog opening and closing animations are enabled.
     /// </summary>
+    /// <remarks>
+    /// The default is <see langword="true"/>. Animations also respect the system animation settings.
+    /// Setting this property to <see langword="false"/> immediately finishes any active animation.
+    /// </remarks>
     public bool IsAnimationEnabled
     {
         get => (bool)GetValue(IsAnimationEnabledProperty);
@@ -123,7 +134,6 @@ public partial class ContentDialogHost : ContentControl
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ContentDialogHost"/> class.
-    /// The host is initially idle; Content remains the ordinary page throughout each session.
     /// </summary>
     public ContentDialogHost()
     {
@@ -139,17 +149,25 @@ public partial class ContentDialogHost : ContentControl
     }
 
     /// <summary>
-    /// Shows a dialog and returns its business result, or null for user dismissal/removal.
+    /// Displays a dialog over the host's content and asynchronously waits for it to close.
     /// </summary>
     /// <param name="dialog">
-    /// An unparented dialog on the host dispatcher.
+    /// The dialog to display. It must belong to the host's UI thread, have no parent and not already be open.
     /// </param>
     /// <param name="cancellationToken">
-    /// Cancels the task after cleanup, bypassing Closing and IsDismissible.
+    /// A token that cancels the operation and closes the dialog without raising
+    /// <see cref="ContentDialog.Closing"/>, regardless of <see cref="ContentDialog.IsDismissible"/>.
     /// </param>
     /// <returns>
-    /// The result after all presentation resources have been released.
+    /// A task that completes when the dialog has fully closed and the host is ready for reuse.
+    /// Its result is the value supplied when closing, or <see langword="null"/> for dismissal.
+    /// Token cancellation cancels the task.
     /// </returns>
+    /// <remarks>
+    /// The host must be loaded, visible and not already displaying a dialog. Hiding or unloading
+    /// the host ends the operation with <see langword="null"/>, unless a result has already been accepted.
+    /// Invalid arguments or an unavailable host are reported through the returned task.
+    /// </remarks>
     public Task<object?> ShowAsync(ContentDialog dialog, CancellationToken cancellationToken = default)
     {
         // Validation failures are represented by the returned task, just like presentation failures.
@@ -259,7 +277,13 @@ public partial class ContentDialogHost : ContentControl
                 return;
             }
 
-            StartModalInteraction(dialog, contentRoot);
+            StartModalInteraction(session, contentRoot);
+
+            if (!IsActive(session))
+            {
+                return;
+            }
+
             AddLogicalChild(dialog);
 
             if (!IsActive(session))
@@ -267,14 +291,15 @@ public partial class ContentDialogHost : ContentControl
                 return;
             }
 
+            dialog.Unloaded += OnDialogUnloaded;
+            dialog.IsVisibleChanged += OnDialogIsVisibleChanged;
+
             SetValue(CurrentDialogPropertyKey, dialog);
 
             if (!IsActive(session))
             {
                 return;
             }
-
-            dialog.Unloaded += OnDialogUnloaded;
 
             // Let data templates and Loaded finish before focus and entrance. Loaded priority is
             // deliberately used instead of an idle priority: WPF services it after layout/render
@@ -372,69 +397,74 @@ public partial class ContentDialogHost : ContentControl
         }
 
         session.IsCleanedUp = true;
+        // Settle an otherwise pending outcome before calling application cleanup. Late opening
+        // failures are then traced by the observer rather than faulting an abandoned private task.
+        session.Outcome.TrySetResult(result);
 
         var dialog = session.Dialog;
 
-        try
-        {
-            CancelDialogLifecycle(session);
-            dialog.MarkClosing();
+        // Every operation below can lead to application callbacks, including DP notifications,
+        // focus restoration and virtual presenter methods. A failure must not skip later releases.
+        // Keep the reservation through all callbacks so nested dispatcher frames cannot reuse it.
 
-            AbortTransition();
+        CancelDialogLifecycle(session);
 
-            Dispatcher.ShutdownStarted -= OnDispatcherShutdown;
+        Cleanup(dialog.MarkClosing);
+        Cleanup(AbortTransition);
+
+        Dispatcher.ShutdownStarted -= OnDispatcherShutdown;
+
+        dialog.Unloaded         -= OnDialogUnloaded;
+        dialog.IsVisibleChanged -= OnDialogIsVisibleChanged;
 
 #pragma warning disable IDISP007 // The host creates and owns this session's cancellation registration.
-            session.Registration.Dispose();
+        Cleanup(session.Registration.Dispose);
 #pragma warning restore IDISP007
+        Cleanup(() => SetValue(CurrentDialogPropertyKey, null));
+        Cleanup(() => RemoveLogicalChild(dialog));
+        Cleanup(() => StopModalInteraction(session));
 
-            dialog.Unloaded -= OnDialogUnloaded;
+        EndDialogLifecycle(session, result);
 
+        Cleanup(() => dialog.NotifyClosed(result));
+#pragma warning disable IDISP007 // This host owns the per-presentation cancellation source.
+        Cleanup(session.LifecycleCancellation.Dispose);
+#pragma warning restore IDISP007
+        _session = null;
+
+        failure ??= session.LifecycleFailure;
+
+        // Forced removal can run before the async presentation worker observes an opening fault.
+        // Preserve an already accepted failure just as OutcomeResult preserves an accepted choice.
+        if (failure is null && session.Outcome.Task.IsFaulted)
+        {
+            failure = session.Outcome.Task.Exception!.InnerException;
+        }
+
+        if (failure is not null)
+        {
+            session.Finished.TrySetException(failure);
+        }
+        else if (session.Outcome.Task.IsCanceled)
+        {
+            session.Finished.TrySetCanceled(session.CancellationToken);
+        }
+        else
+        {
+            session.Finished.TrySetResult(result);
+        }
+
+        return;
+
+        void Cleanup(Action release)
+        {
             try
             {
-                SetValue(CurrentDialogPropertyKey, null);
-
-                RemoveLogicalChild(dialog);
+                release();
             }
-            finally
+            catch (Exception exception)
             {
-                // Keep the reservation through Closed, but release input before restoring focus.
-                // Nested finally blocks also release the session if an application focus handler throws.
-                try
-                {
-                    StopModalInteraction(dialog);
-                }
-                finally
-                {
-                    EndDialogLifecycle(session, result);
-                    dialog.NotifyClosed(result);
-                }
-            }
-        }
-        catch (Exception exception)
-        {
-            failure ??= exception;
-        }
-        finally
-        {
-#pragma warning disable IDISP007 // This host owns the per-presentation cancellation source.
-            session.LifecycleCancellation.Dispose();
-#pragma warning restore IDISP007
-            _session = null;
-
-            failure ??= session.LifecycleFailure;
-
-            if (failure is not null)
-            {
-                session.Finished.TrySetException(failure);
-            }
-            else if (session.Outcome.Task.IsCanceled)
-            {
-                session.Finished.TrySetCanceled(session.CancellationToken);
-            }
-            else
-            {
-                session.Finished.TrySetResult(result);
+                failure ??= exception;
             }
         }
     }
@@ -492,7 +522,30 @@ public partial class ContentDialogHost : ContentControl
 
     private void OnDialogUnloaded(object sender, RoutedEventArgs e)
     {
+        CheckDialogAvailabilityAfterLayout();
+    }
+
+    private void OnDialogIsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
+    {
+        if (!(bool)e.NewValue)
+        {
+            CheckDialogAvailabilityAfterLayout();
+        }
+    }
+
+    /// <summary>
+    /// Ends a session whose surface remains unloaded or hidden after layout. Template replacement
+    /// can briefly change both states, so never force cleanup from the property notification itself.
+    /// </summary>
+    private void CheckDialogAvailabilityAfterLayout()
+    {
         var session = _session;
+        if (session is null || !IsActive(session) || session.IsAvailabilityCheckPending)
+        {
+            return;
+        }
+
+        session.IsAvailabilityCheckPending = true;
 
         // Template replacement may transiently detach the dialog. Loaded priority provides a
         // post-layout check without allowing continuous input to postpone mandatory cleanup.
@@ -500,9 +553,9 @@ public partial class ContentDialogHost : ContentControl
             DispatcherPriority.Loaded,
             new Action(() =>
                 {
-                    if (session is not null
-                        && ReferenceEquals(_session, session)
-                        && !session.Dialog.IsLoaded)
+                    session.IsAvailabilityCheckPending = false;
+                    if (IsActive(session)
+                        && (!session.Dialog.IsLoaded || !session.Dialog.IsVisible))
                     {
                         ForceEnd();
                     }
@@ -512,6 +565,14 @@ public partial class ContentDialogHost : ContentControl
     }
 
     /// <inheritdoc />
+    /// <remarks>
+    /// Custom templates must place <see cref="ContentControl.Content"/> in a <see cref="UIElement"/>
+    /// named <c>PART_ContentRoot</c> and display <see cref="CurrentDialog"/> in a separate overlay.
+    /// Without the content root, the host cannot display dialogs. The optional
+    /// <c>PART_DialogPresenter</c>, of type <see cref="ContentDialogTransitionPresenter"/>, enables
+    /// animations; without it, dialogs open and close immediately. The overlay must block input to
+    /// covered content until <see cref="CurrentDialog"/> becomes <see langword="null"/>.
+    /// </remarks>
     public override void OnApplyTemplate()
     {
         // The outgoing presenter may own a controllable clock whose completion is awaited by the
@@ -553,7 +614,7 @@ public partial class ContentDialogHost : ContentControl
         base.OnTemplateChanged(oldTemplate, newTemplate);
     }
 
-    /// <summary>Gets the logical children, including the presented dialog alongside ordinary Content.</summary>
+    /// <summary>Gets the host's content and any currently displayed dialog as logical children.</summary>
     protected override IEnumerator LogicalChildren
     {
         get

@@ -4,7 +4,6 @@
 // All Rights Reserved.
 
 using System.Windows.Controls;
-using System.Windows.Media;
 using System.Windows.Media.Animation;
 
 namespace Wpf.Zen.Ui.Controls;
@@ -265,10 +264,14 @@ public class ContentDialogTransitionPresenter : Control
     /// <inheritdoc />
     public override void OnApplyTemplate()
     {
-        // WPF can replace a template while its element tree still has active animation storage.
-        // Release our clock and restore the outgoing part's transform before base detaches it. The
-        // awaiting host is released as well; the host synchronizes the replacement presenter to its
-        // current lifecycle state without replaying an entrance.
+        // The presenter can be retemplated independently of its host. Resolve an interrupted
+        // transition to its requested endpoint before releasing the waiter; the new surfaces must
+        // match that completed transition even when Host.OnApplyTemplate is never called.
+        if (_transitionCompletion is not null)
+        {
+            _stablePose = _isOpenTarget ? StablePose.Open : StablePose.Closed;
+        }
+
         CancelActiveTransition();
         RestoreTemplateParts();
 

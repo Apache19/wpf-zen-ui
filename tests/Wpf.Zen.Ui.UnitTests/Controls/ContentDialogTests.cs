@@ -42,12 +42,9 @@ public partial class ContentDialogTests
         Drain();
         dialog.UpdateLayout();
 
-        var header = Assert.IsType<ContentPresenter>(
-            dialog.Template.FindName("HeaderPresenter", dialog)
-        );
-        var dismiss = Assert.IsType<Wpf.Zen.Ui.Controls.Button>(
-            dialog.Template.FindName("DismissButton", dialog)
-        );
+        var header = FindDialogTemplateElement<ContentPresenter>(dialog, element => element.ContentSource == "Header");
+        var dismiss = FindDialogTemplateElement<Wpf.Zen.Ui.Controls.Button>(
+            dialog, element => AutomationProperties.GetAutomationId(element) == "DismissButton");
         var footer = Assert.IsType<Border>(dialog.Template.FindName("Footer", dialog));
         var shell = Assert.IsType<Border>(VisualTreeHelper.GetChild(dialog, 0));
 
@@ -158,7 +155,7 @@ public partial class ContentDialogTests
 
         var task = scope.Host.ShowAsync(dialog);
         Drain();
-        var presenter = (ContentPresenter)dialog.Template.FindName(slot + "Presenter", dialog);
+        var presenter = FindDialogTemplateElement<ContentPresenter>(dialog, element => element.ContentSource == slot);
         string Text() => Assert.IsType<System.Windows.Controls.TextBlock>(VisualTreeHelper.GetChild(presenter, 0)).Text;
         Assert.Equal("Items: 012", Text());
         var template = (DataTemplate)XamlReader.Parse("<DataTemplate xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation'><TextBlock Text='Selected'/></DataTemplate>");
@@ -453,7 +450,8 @@ public partial class ContentDialogTests
         var dialog = scope.CreateDialog();
         var task = scope.Host.ShowAsync(dialog);
         Drain();
-        var button = (Wpf.Zen.Ui.Controls.Button)dialog.Template.FindName("DismissButton", dialog);
+        var button = FindDialogTemplateElement<Wpf.Zen.Ui.Controls.Button>(
+            dialog, element => AutomationProperties.GetAutomationId(element) == "DismissButton");
 
         Assert.NotNull(button.Style);
         Assert.NotNull(button.Content);

@@ -16,8 +16,6 @@ namespace Wpf.Zen.Ui.Controls;
 /// </summary>
 public partial class ContentDialogHost
 {
-    private readonly List<UIElement> _disabledElements  = [];
-    private readonly List<TitleBar>  _isolatedTitleBars = [];
     private          WeakReference<IInputElement>? _focusBeforeDialog;
     private          UIElement?      _inputRoot;
     private          int             _focusSessionVersion;
@@ -30,13 +28,12 @@ public partial class ContentDialogHost
     /// effect of changing <see cref="UIElement.IsEnabled"/>. The weak reference follows WPF's own menu focus
     /// restoration pattern: removing application content while a dialog is open must not keep that content alive.
     /// </remarks>
-    private void StartModalInteraction(ContentDialog dialog, UIElement contentRoot)
+    private void StartModalInteraction(Session session, UIElement contentRoot)
     {
+        var dialog = session.Dialog;
         RememberKeyboardFocus();
 
         _contentRoot = contentRoot;
-
-        ApplyContentIsolation();
 
         _inputRoot = PresentationSource.FromVisual(this)?.RootVisual as UIElement;
 
@@ -57,16 +54,25 @@ public partial class ContentDialogHost
         }
 
         InputManager.Current.PreProcessInput += OnPreProcessInput;
+        LayoutUpdated += OnIsolationLayoutUpdated;
+
+        // Install all subscriptions before coercion can call application code. Reentrant cleanup
+        // can now remove everything, and there is no initialization work after this callback boundary.
+        ApplyContentIsolation(session);
     }
 
     /// <summary>
     /// Releases the modal boundary and attempts focus restoration before the public presentation task completes.
     /// Temporarily unavailable targets receive one deferred retry after task continuations.
     /// </summary>
-    private void StopModalInteraction(ContentDialog dialog)
+    private void StopModalInteraction(Session session)
     {
-        RestoreContentIsolation();
-
+        var dialog = session.Dialog;
+        // Unhook global input before restoring properties: application IsEnabledChanged handlers
+        // may throw or pump Dispatcher, but must not retain this host through InputManager.
+        LayoutUpdated -= OnIsolationLayoutUpdated;
+        session.IsolationRefreshOperation?.Abort();
+        session.IsolationRefreshOperation = null;
         AccessKeyManager.RemoveAccessKeyPressedHandler(dialog, OnAccessKey);
 
         dialog.RemoveHandler(Keyboard.KeyDownEvent, new KeyEventHandler(OnKeyDown));
@@ -85,7 +91,14 @@ public partial class ContentDialogHost
 
         InputManager.Current.PreProcessInput -= OnPreProcessInput;
 
-        RestoreKeyboardFocus(dialog);
+        try
+        {
+            RestoreContentIsolation(session);
+        }
+        finally
+        {
+            RestoreKeyboardFocus(dialog);
+        }
     }
 
     private void RememberKeyboardFocus()
@@ -150,8 +163,8 @@ public partial class ContentDialogHost
     /// Updates the template-owned root whose application content must be isolated during presentation.
     /// </summary>
     /// <remarks>
-    /// A control template can be replaced while a dialog is open. Restoring the old tree before isolating the new
-    /// tree prevents detached content from retaining host-owned enabled values after it leaves the template.
+    /// A control template can be replaced while a dialog is open. Reconciliation constrains its new
+    /// branches and releases outgoing leases so detached content does not retain modal coercion.
     /// </remarks>
     private void SetContentRoot(UIElement? contentRoot)
     {
@@ -160,11 +173,10 @@ public partial class ContentDialogHost
             return;
         }
 
-        RestoreContentIsolation();
         _contentRoot = contentRoot;
-        if (_session is not null)
+        if (_session is { } session && IsActive(session))
         {
-            ApplyContentIsolation();
+            RefreshContentIsolation(session);
         }
     }
 
@@ -177,93 +189,174 @@ public partial class ContentDialogHost
     /// each visual path from the presenter to a <see cref="TitleBar"/> and disables sibling branches at their highest
     /// possible element. User-provided title-bar content remains ordinary client UI and is isolated separately.
     /// </remarks>
-    private void ApplyContentIsolation()
+    private void ApplyContentIsolation(Session session)
     {
-        if (_contentRoot is not { } contentRoot || _disabledElements.Count != 0 || _isolatedTitleBars.Count != 0)
+        if (!IsActive(session))
         {
             return;
         }
 
-        var titleBars = FindTitleBars(contentRoot);
-        if (titleBars.Count == 0)
+        if (session.IsUpdatingIsolation)
         {
-            DisableElement(contentRoot);
+            session.NeedsIsolationRefresh = true;
             return;
         }
 
-        var titleBarPaths = new HashSet<DependencyObject>();
-        foreach (var titleBar in titleBars)
+        session.NeedsIsolationRefresh = false;
+        session.IsUpdatingIsolation = true;
+        try
         {
-            DependencyObject? current = titleBar;
-            while (current is not null)
+            // Snapshot the tree before invoking any property callbacks. LayoutUpdated is WPF's
+            // public post-layout notification for template realization and arbitrary descendant
+            // changes. Reconcile only changed branches; stable layouts never recoerce properties.
+            var targets = new HashSet<DependencyObject>();
+            if (_contentRoot is { } contentRoot)
             {
-                titleBarPaths.Add(current);
-                if (ReferenceEquals(current, contentRoot))
+                var titleBarPaths = new HashSet<DependencyObject>();
+                foreach (var titleBar in FindTitleBars(contentRoot))
                 {
-                    break;
+                    DependencyObject? current = titleBar;
+                    while (current is not null)
+                    {
+                        titleBarPaths.Add(current);
+                        if (ReferenceEquals(current, contentRoot))
+                        {
+                            break;
+                        }
+
+                        current = VisualTreeHelper.GetParent(current);
+                    }
                 }
 
-                current = VisualTreeHelper.GetParent(current);
+                CollectIsolationTargets(contentRoot, titleBarPaths, targets);
+            }
+
+            // Constrain incoming branches first, so switching between a whole-root constraint and
+            // title-bar paths does not briefly enable client content during property callbacks.
+            foreach (var target in targets)
+            {
+                if (!IsActive(session))
+                {
+                    return;
+                }
+
+                if (!session.InputIsolation.ContainsKey(target))
+                {
+                    var property  = target is TitleBar ? TitleBar.IsUserContentEnabledProperty : IsEnabledProperty;
+                    var isolation = new ContentDialogInputIsolation(target, property);
+
+                    session.InputIsolation.Add(target, isolation);
+                    isolation.Activate();
+                }
+            }
+
+            foreach (var target in session.InputIsolation.Keys.Where(target => !targets.Contains(target)).ToArray())
+            {
+                if (!IsActive(session))
+                {
+                    return;
+                }
+
+                var isolation = session.InputIsolation[target];
+                session.InputIsolation.Remove(target);
+                isolation.Release();
             }
         }
+        finally
+        {
+            session.IsUpdatingIsolation = false;
 
-        IsolateBranches(contentRoot, titleBarPaths);
+            if (IsActive(session) && session.NeedsIsolationRefresh && session.IsolationRefreshOperation is null)
+            {
+                // An application callback can rebuild and lay out the tree while this snapshot is
+                // being applied. Defer one fresh snapshot until it unwinds instead of dropping that
+                // change or recursively coercing the same branch from its IsEnabledChanged handler.
+                session.IsolationRefreshOperation = Dispatcher.BeginInvoke(
+                    DispatcherPriority.Loaded,
+                    new Action(() =>
+                        {
+                            session.IsolationRefreshOperation = null;
+                            RefreshContentIsolation(session);
+                        }
+                    )
+                );
+            }
+        }
     }
 
-    private void IsolateBranches(DependencyObject current, HashSet<DependencyObject> titleBarPaths)
+    private static void CollectIsolationTargets(
+        DependencyObject current,
+        HashSet<DependencyObject> titleBarPaths,
+        HashSet<DependencyObject> targets)
     {
-        if (current is TitleBar titleBar)
+        if (current is TitleBar)
         {
-            if (titleBar.IsUserContentEnabled)
-            {
-                titleBar.IsUserContentEnabled = false;
-                _isolatedTitleBars.Add(titleBar);
-            }
-
+            targets.Add(current);
             return;
         }
 
         if (!titleBarPaths.Contains(current) && current is UIElement element)
         {
-            DisableElement(element);
+            targets.Add(element);
             return;
         }
 
         int childCount = VisualTreeHelper.GetChildrenCount(current);
         for (int index = 0; index < childCount; index++)
         {
-            IsolateBranches(VisualTreeHelper.GetChild(current, index), titleBarPaths);
+            CollectIsolationTargets(VisualTreeHelper.GetChild(current, index), titleBarPaths, targets);
         }
     }
 
-    private void DisableElement(UIElement element)
+    private void OnIsolationLayoutUpdated(object? sender, EventArgs e)
     {
-        if (!element.IsEnabled)
+        if (_session is not { } session || !IsActive(session))
         {
             return;
         }
 
-        // SetCurrentValue preserves bindings and dynamic-resource expressions. The host owns the effective value
-        // for the presentation lifetime and restores it before focus can return to application content.
-        element.SetCurrentValue(IsEnabledProperty, false);
-        _disabledElements.Add(element);
+        RefreshContentIsolation(session);
     }
 
-    private void RestoreContentIsolation()
+    /// <summary>Contains failures from template/layout callbacks outside the presentation worker.</summary>
+    private void RefreshContentIsolation(Session session)
     {
-        foreach (var titleBar in _isolatedTitleBars)
+        try
         {
-            titleBar.IsUserContentEnabled = true;
+            ApplyContentIsolation(session);
+        }
+        catch (Exception exception)
+        {
+            // Layout callbacks are outside PresentAsync's try/catch. Report failure through the
+            // session task while synchronously releasing every already established constraint.
+            CompleteSession(session, session.OutcomeResult, exception);
+        }
+    }
+
+    private static void RestoreContentIsolation(Session session)
+    {
+        var isolation = session.InputIsolation.Values.ToArray();
+
+        session.InputIsolation.Clear();
+
+        Exception? failure = null;
+
+        foreach (var lease in isolation)
+        {
+            try
+            {
+                lease.Release();
+            }
+            catch (Exception exception)
+            {
+                failure ??= exception;
+            }
         }
 
-        _isolatedTitleBars.Clear();
-
-        foreach (var element in _disabledElements)
+        if (failure is not null)
         {
-            element.SetCurrentValue(IsEnabledProperty, true);
+            System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(failure).Throw();
         }
-
-        _disabledElements.Clear();
     }
 
     private static List<TitleBar> FindTitleBars(DependencyObject root)

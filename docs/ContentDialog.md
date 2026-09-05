@@ -65,7 +65,9 @@ if (result is DeleteChoice.Delete)
 
 Host 应获得有限的布局空间，避免在遮罩方向被 StackPanel 或 ScrollViewer 无限测量。只有它包裹的 WPF 内容属于模态范围；其它区域可独立使用。原生子窗口仍受 WPF airspace 限制，覆盖层不是原生窗口的全局模态机制。
 
-默认模板在展示期间禁用被覆盖的普通内容分支；`SetCurrentValue` 保留这些分支上的 IsEnabled 绑定与动态资源表达式。若内容树包含 `TitleBar`，Host 会保留通向标题栏的窗口外壳路径，使拖动区域和最小化、最大化、还原、关闭按钮继续工作，同时通过 `IsUserContentEnabled` 禁用标题栏中的 `Content` 与 `LeftContent`。来自对话框的键盘输入和未处理路由命令在边界停止，窗口级 InputBindings 不会在对话框处理之后继续触发；显式路由命令目标位于被覆盖区域时也会被拒绝。区域之外的独立 UI 不受影响。
+默认模板在展示期间通过独立的强制值约束禁用被覆盖的普通内容分支，不替换 IsEnabled 的绑定、动态资源或应用动画。展示期间这些值可以继续更新；最后一个隔离约束释放后，WPF 重新计算当前业务值，不强制恢复为 true。若内容树包含 `TitleBar`，Host 会保留通向标题栏的窗口外壳路径，使拖动区域和最小化、最大化、还原、关闭按钮继续工作，同时通过 `IsUserContentEnabled` 禁用标题栏中的 `Content` 与 `LeftContent`。活动会话在布局完成时重新核对分支，因此新增内容、Host.Content 替换和模板重建都会更新隔离范围，移出的分支会释放约束。来自对话框的键盘输入和未处理路由命令在边界停止，窗口级 InputBindings 不会在对话框处理之后继续触发；显式路由命令目标位于被覆盖区域时也会被拒绝。
+
+隔离保留 WPF 和派生控件原有的属性强制值逻辑，并使用 WPF 内部的最终强制值入口覆盖清除本地值等路径。该入口的反射访问经过缓存，不修改应用类型的属性元数据；若运行时不提供这一能力，ShowAsync 在完成清理后返回失败任务。SetCurrentValue 遵循 WPF 本身的强制值语义。约束属于具体实例并支持多个宿主的独立持有；清理会先解除全局输入订阅，再逐项释放约束，即使应用的 IsEnabledChanged 或焦点回调抛出异常，也会继续释放其他分支并结束会话。
 
 `IContentDialogService` 仍可用于依赖注入，每个作用域调用一次 `Attach(DialogHost)`，随后 `ShowAsync(dialog, token)` 直接委托给 Host。它不保存 Dialog 的宿主关联，也不创建另一套展示会话。
 
@@ -121,9 +123,11 @@ public sealed class DetailsViewModel : IContentDialogAware
 | `DismissCommand`、标题关闭、Escape、UI Automation 关闭 | IsDismissible=true 时请求关闭，结果为 null |
 | `Closing` | 同步设置 Cancel=true 可否决一次普通关闭；再次请求可重新校验 |
 | CancellationToken | 不触发 Closing；完成清理后任务进入 Canceled，可捕获 OperationCanceledException |
-| Host 卸载、隐藏、Dispatcher 关闭或对话框确实离开可视树 | 强制释放会话与输入订阅，不可否决；尚无结果时返回 null |
+| Host 卸载、隐藏、Dispatcher 关闭，或对话框在布局后仍未加载／不可见 | 强制释放会话与输入订阅，不可否决；尚无结果时返回 null |
 
 第一个已接受的结果或 Token 取消胜出。Closing 内递归调用 Close 不会产生第二次请求；普通关闭被否决后仍可继续交互。Token 取消和宿主清理不能被业务校验阻止。
+
+已显示的 Dialog 设置为 Hidden 或 Collapsed，会在布局后的可见性核查中结束会话，避免保留没有可操作对话框的遮罩。模板替换造成的暂时卸载或隐藏，在同一轮布局后恢复时不会结束会话。异步可见性核查属于原会话，不会关闭后续复用的实例。
 
 `Opened` 在内容已加载并完成入场后触发；入场中已关闭时不触发。`Closed` 是对话框自身的直接事件，在逻辑脱离和输入释放之后触发。其 Result 为业务结果或 null；通过 ShowAsync 的任务区分用户取消和 Token 取消。Closed 期间实例仍被保留，事件返回后才可重新显示，返回任务也在此后结束。
 
@@ -160,6 +164,7 @@ private async Task SaveAsync()
 - Host 的 `PART_DialogPresenter` 是可选的 `ContentDialogTransitionPresenter`。默认模板通过它呈现 CurrentDialog；自定义 Host 模板可以省略该部件并自行呈现 CurrentDialog，此时 Host 保留完整会话语义并即时完成过渡。
 - `ContentDialogTransitionPresenter` 模板中的 `PART_DialogRoot` 与 `PART_Backdrop` 均为可选 UIElement。前者只包裹 Dialog，Presenter 在保留模板原有 RenderTransform 的前提下附加私有缩放；后者独立绘制遮罩，避免对 Dialog 叠加两次透明度。缺少其中一个只会关闭对应视觉效果，两个都缺少时过渡即时完成。
 - 覆盖层应在 CurrentDialog 非 null 时保持命中测试，直到退场清理完成。Presenter 使用单一可控 AnimationClock 同步驱动遮罩透明度、Dialog 透明度与缩放；快速关闭会从当前画面反向退场，不先跳到完全打开。关闭动画或系统关闭客户区动画时直接完成过渡；Token 取消、卸载和 Dispatcher 关闭会同步移除时钟并重置，不依赖后续 UI 调度。Host 模板替换会同步新 Presenter 到当前会话状态，不重播入场。
+- 单独替换 Presenter.Template 时，正在进行的过渡会完成到其目标状态，新模板直接使用该状态：入场到完全可见，退场到关闭。此行为由 Presenter 自身保证，不依赖 Host 重新应用模板，也不重复触发 Opened。
 
 `IsAnimationEnabled` 默认 true。`OpenDuration` 与 `CloseDuration` 默认都是 167ms，零表示即时过渡，负数被拒绝；`OpeningScale` 默认 0.94，`ClosingScale` 默认 0.97，必须是有限正数。`OpeningEasingFunction` 与 `ClosingEasingFunction` 只作用于缩放，透明度保持线性。动画不会改写 Dialog 自身的 Opacity 或 RenderTransform。
 
