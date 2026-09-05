@@ -406,39 +406,68 @@ public class ContentDialogTests
     });
 
     [Fact]
-    public void FirstPresentation_RequestsOpenedVisualStateOnce() => Run(scope =>
+    public void DefaultTemplate_UsesDedicatedTransitionPresenterWithoutDialogVisualStates() => Run(scope =>
     {
-        scope.Host.IsAnimationEnabled = false;
         _ = scope.Host.ApplyTemplate();
         var stateGroupsRoot = Assert.IsAssignableFrom<FrameworkElement>(VisualTreeHelper.GetChild(scope.Host, 0));
-        var dialogStates = VisualStateManager
-            .GetVisualStateGroups(stateGroupsRoot)
-            .OfType<VisualStateGroup>()
-            .Single(group => group.Name == "DialogStates");
-        var openedTransitions = 0;
-        dialogStates.CurrentStateChanging += (_, e) =>
-        {
-            if (e.NewState?.Name == "Opened")
-                openedTransitions++;
-        };
+        Assert.DoesNotContain(
+            VisualStateManager.GetVisualStateGroups(stateGroupsRoot).Cast<object>(),
+            item => item is VisualStateGroup { Name: "DialogStates" }
+        );
+        Assert.IsType<ContentDialogTransitionPresenter>(
+            scope.Host.Template.FindName("PART_DialogPresenter", scope.Host)
+        );
 
         var dialog = scope.CreateDialog();
-        bool opened = false;
-        dialog.Opened += (_, _) => opened = true;
+        var openedCount = 0;
+        dialog.Opened += (_, _) => openedCount++;
         var task = scope.Host.ShowAsync(dialog);
         Drain();
 
-        Assert.True(opened);
-        Assert.Equal(1, openedTransitions);
+        Assert.Equal(1, openedCount);
         dialog.Close();
         Pump(task);
+    });
+
+    [Fact]
+    public void TransitionSettings_AreForwardedToDefaultPresenter() => Run(scope =>
+    {
+        var openingEasing = new QuadraticEase();
+        var closingEasing = new SineEase();
+        scope.Host.OpenDuration = TimeSpan.FromMilliseconds(311);
+        scope.Host.CloseDuration = TimeSpan.FromMilliseconds(419);
+        scope.Host.OpeningScale = 0.82d;
+        scope.Host.ClosingScale = 0.91d;
+        scope.Host.OpeningEasingFunction = openingEasing;
+        scope.Host.ClosingEasingFunction = closingEasing;
+        _ = scope.Host.ApplyTemplate();
+
+        var presenter = Assert.IsType<ContentDialogTransitionPresenter>(
+            scope.Host.Template.FindName("PART_DialogPresenter", scope.Host)
+        );
+        Assert.Equal(scope.Host.OpenDuration, presenter.OpenDuration);
+        Assert.Equal(scope.Host.CloseDuration, presenter.CloseDuration);
+        Assert.Equal(scope.Host.OpeningScale, presenter.OpeningScale);
+        Assert.Equal(scope.Host.ClosingScale, presenter.ClosingScale);
+        Assert.Same(openingEasing, presenter.OpeningEasingFunction);
+        Assert.Same(closingEasing, presenter.ClosingEasingFunction);
+    });
+
+    [Fact]
+    public void TransitionSettings_RejectNegativeDurationsAndInvalidScales() => Run(scope =>
+    {
+        Assert.Throws<ArgumentException>(() => scope.Host.OpenDuration = TimeSpan.FromTicks(-1));
+        Assert.Throws<ArgumentException>(() => scope.Host.CloseDuration = TimeSpan.FromTicks(-1));
+        Assert.Throws<ArgumentException>(() => scope.Host.OpeningScale = 0.0d);
+        Assert.Throws<ArgumentException>(() => scope.Host.ClosingScale = double.NaN);
+        Assert.Throws<ArgumentException>(() => scope.Host.ClosingScale = double.PositiveInfinity);
     });
 
     [Fact]
     public void InputTraffic_DoesNotStarvePresentationOrContentRestoration() => Run(scope =>
     {
         const int starvationLimit = 500;
-        scope.Host.Template = CreateHostTemplateWithEntranceDuration("0");
+        scope.Host.Template = CreateHostTemplateWithDurations("0", "0");
         scope.Host.IsAnimationEnabled = true;
         var dialog = scope.CreateDialog();
         var opened = false;
@@ -497,16 +526,12 @@ public class ContentDialogTests
     });
 
     [Fact]
-    public void RepeatedExplicitExitCompletion_ReleasesContentWhenStateGroupNotificationIsMissing() => Run(scope =>
+    public void RepeatedAnimatedExit_ReleasesContentAndPresenterClocks() => Run(scope =>
     {
-        _ = scope.Host.ApplyTemplate();
-        var stateGroupsRoot = Assert.IsAssignableFrom<FrameworkElement>(VisualTreeHelper.GetChild(scope.Host, 0));
-        VisualStateManager.SetCustomVisualStateManager(stateGroupsRoot, new StoryboardOnlyExitVisualStateManager());
+        scope.Host.Template = CreateHostTemplateWithDurations("0", "0:0:0.001");
+        scope.Host.IsAnimationEnabled = true;
         for (var iteration = 0; iteration < 20; iteration++)
         {
-            // Keep opening immediate, then enable only the exit transition so the custom manager
-            // can model WPF losing CurrentStateChanged after the visual clock finishes.
-            scope.Host.IsAnimationEnabled = false;
             var dialog = scope.CreateDialog();
             var task = scope.Host.ShowAsync(dialog);
             Drain();
@@ -514,7 +539,6 @@ public class ContentDialogTests
             Assert.Same(dialog, scope.Host.CurrentDialog);
             Assert.False(scope.Background.IsEnabled);
 
-            scope.Host.IsAnimationEnabled = true;
             dialog.Close();
             Pump(task);
 
@@ -527,7 +551,7 @@ public class ContentDialogTests
     public void CancellationDuringLongEntrance_FinishesImmediately() => Run(scope =>
     {
         using var cancellation = new CancellationTokenSource();
-        scope.Host.Template = CreateHostTemplateWithEntranceDuration("0:1:0");
+        scope.Host.Template = CreateHostTemplateWithDurations("0:1:0", "0");
         scope.Host.IsAnimationEnabled = true;
         var dialog = scope.CreateDialog();
         var opened = false;
@@ -538,6 +562,35 @@ public class ContentDialogTests
         Assert.ThrowsAny<OperationCanceledException>(() => Pump(task));
         Assert.False(opened);
         Assert.Null(scope.Host.CurrentDialog);
+    });
+
+    [Fact]
+    public void CloseDuringLongEntrance_RedirectsFromCurrentPoseWithoutOpenedEvent() => Run(scope =>
+    {
+        scope.Host.Template = CreateHostTemplateWithDurations("0:1:0", "0:0:0.01");
+        scope.Host.IsAnimationEnabled = true;
+        var dialog = scope.CreateDialog();
+        var opened = false;
+        dialog.Opened += (_, _) => opened = true;
+        var task = scope.Host.ShowAsync(dialog);
+        Drain();
+
+        Assert.False(opened);
+        var presenter = Assert.IsType<ContentDialogTransitionPresenter>(
+            scope.Host.Template.FindName("PART_DialogPresenter", scope.Host)
+        );
+        var dialogRoot = Assert.IsAssignableFrom<UIElement>(
+            presenter.Template.FindName("PART_DialogRoot", presenter)
+        );
+        var opacityBeforeClose = dialogRoot.Opacity;
+        dialog.Close("Closed during entrance");
+        Assert.Equal(opacityBeforeClose, dialogRoot.Opacity, precision: 10);
+        Pump(task);
+
+        Assert.False(opened);
+        Assert.Equal("Closed during entrance", task.Result);
+        Assert.Null(scope.Host.CurrentDialog);
+        Assert.True(scope.Background.IsEnabled);
     });
 
     [Fact]
@@ -775,6 +828,37 @@ public class ContentDialogTests
     });
 
     [Fact]
+    public void TemplateWithoutTransitionPresenter_PreservesLifecycleAndTransitionsImmediately() => Run(scope =>
+    {
+        scope.Host.Template = (ControlTemplate)XamlReader.Parse("""
+            <ControlTemplate xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                xmlns:ui="clr-namespace:Wpf.Zen.Ui.Controls;assembly=Wpf.Zen.Ui"
+                TargetType="{x:Type ui:ContentDialogHost}">
+                <Grid>
+                    <ContentPresenter x:Name="PART_ContentRoot" ContentSource="Content" />
+                    <ContentPresenter Content="{TemplateBinding CurrentDialog}" />
+                </Grid>
+            </ControlTemplate>
+            """);
+        scope.Host.IsAnimationEnabled = true;
+        var dialog = scope.CreateDialog();
+        var opened = false;
+        dialog.Opened += (_, _) => opened = true;
+        var task = scope.Host.ShowAsync(dialog);
+        Drain();
+
+        Assert.True(opened);
+        Assert.False(task.IsCompleted);
+        dialog.Close("No transition presenter");
+        Pump(task);
+
+        Assert.Equal("No transition presenter", task.Result);
+        Assert.Null(scope.Host.CurrentDialog);
+        Assert.True(scope.Background.IsEnabled);
+    });
+
+    [Fact]
     public void HostTemplateReplacement_RetainsOneSessionAndLogicalFooter() => Run(scope =>
     {
         var dialog = scope.CreateDialog();
@@ -880,32 +964,21 @@ public class ContentDialogTests
         task.GetAwaiter().GetResult();
     }
 
-    private static ControlTemplate CreateHostTemplateWithEntranceDuration(string duration) =>
+    private static ControlTemplate CreateHostTemplateWithDurations(
+        string openDuration,
+        string closeDuration) =>
         (ControlTemplate)XamlReader.Parse($$"""
             <ControlTemplate xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                 xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                 xmlns:ui="clr-namespace:Wpf.Zen.Ui.Controls;assembly=Wpf.Zen.Ui"
                 TargetType="{x:Type ui:ContentDialogHost}">
                 <Grid>
-                    <VisualStateManager.VisualStateGroups>
-                        <VisualStateGroup x:Name="DialogStates">
-                            <VisualStateGroup.Transitions>
-                                <VisualTransition From="Closed" To="Opened" GeneratedDuration="{{duration}}" />
-                            </VisualStateGroup.Transitions>
-                            <VisualState x:Name="Closed">
-                                <Storyboard>
-                                    <DoubleAnimation Storyboard.TargetName="DialogPresenter" Storyboard.TargetProperty="Opacity" To="0" Duration="0" />
-                                </Storyboard>
-                            </VisualState>
-                            <VisualState x:Name="Opened">
-                                <Storyboard>
-                                    <DoubleAnimation Storyboard.TargetName="DialogPresenter" Storyboard.TargetProperty="Opacity" To="1" Duration="0" />
-                                </Storyboard>
-                            </VisualState>
-                        </VisualStateGroup>
-                    </VisualStateManager.VisualStateGroups>
                     <ContentPresenter x:Name="PART_ContentRoot" ContentSource="Content" />
-                    <ContentPresenter x:Name="DialogPresenter" Content="{TemplateBinding CurrentDialog}" />
+                    <ui:ContentDialogTransitionPresenter
+                        x:Name="PART_DialogPresenter"
+                        CloseDuration="{{closeDuration}}"
+                        Dialog="{TemplateBinding CurrentDialog}"
+                        OpenDuration="{{openDuration}}" />
                 </Grid>
             </ControlTemplate>
             """);
@@ -965,40 +1038,6 @@ public class ContentDialogTests
             Item = item;
             Container = container;
             return template;
-        }
-    }
-
-    /// <summary>
-    /// Completes the explicit exit storyboard but intentionally omits the group state notification.
-    /// This models the WPF failure mode guarded by ContentDialogHost's explicit-clock observation.
-    /// </summary>
-    private sealed class StoryboardOnlyExitVisualStateManager : VisualStateManager
-    {
-        protected override bool GoToStateCore(
-            FrameworkElement control,
-            FrameworkElement stateGroupsRoot,
-            string stateName,
-            VisualStateGroup group,
-            VisualState state,
-            bool useTransitions
-        )
-        {
-            // WPF invokes a custom manager even for state names absent from this template.
-            if (group is null || state is null)
-                return false;
-
-            if (useTransitions && stateName == "Closed")
-            {
-                var transition = group.Transitions
-                    .OfType<VisualTransition>()
-                    .Single(item => item.From == "Opened" && item.To == "Closed");
-                Storyboard storyboard = Assert.IsType<Storyboard>(transition.Storyboard);
-                storyboard.Begin(stateGroupsRoot, HandoffBehavior.SnapshotAndReplace, true);
-                storyboard.SkipToFill(stateGroupsRoot);
-                return true;
-            }
-
-            return base.GoToStateCore(control, stateGroupsRoot, stateName, group, state, useTransitions);
         }
     }
 

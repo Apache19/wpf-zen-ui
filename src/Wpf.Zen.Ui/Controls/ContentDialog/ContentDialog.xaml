@@ -96,7 +96,7 @@
                     HorizontalAlignment="Right"
                     VerticalAlignment="Top"
                     Command="{x:Static controls:ContentDialog.DismissCommand}"
-                    Style="{StaticResource ContentDialogCloseButtonStyle}"
+                    Style="{DynamicResource ContentDialogCloseButtonStyle}"
                     Visibility="{TemplateBinding IsDismissible, Converter={StaticResource DialogBoolToVisibilityConverter}}" />
             </Grid>
         </Border>

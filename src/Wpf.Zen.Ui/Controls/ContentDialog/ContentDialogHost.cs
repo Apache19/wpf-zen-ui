@@ -21,19 +21,18 @@ namespace Wpf.Zen.Ui.Controls;
 /// attempts to focus another element in the same WPF presentation root are cancelled. Focus is remembered before
 /// isolation and restored during synchronous cleanup when the remembered element can still receive focus and the
 /// user has not moved focus to another window.
-/// Templates may provide a DialogStates visual-state group containing Closed and Opened states.
-/// Transitions between those states own all presentation animation; the host waits for their
-/// completion without assuming targets, durations, or easing. Keep overlay hit testing active until
+/// Templates may provide PART_DialogPresenter as a <see cref="ContentDialogTransitionPresenter"/>.
+/// That part owns presentation animation and is awaited by the host; templates without it retain the
+/// complete modal lifecycle and transition immediately. Keep overlay hit testing active until
 /// CurrentDialog becomes null, including the exit transition.
 /// </remarks>
 [TemplatePart(Name = "PART_ContentRoot", Type = typeof(UIElement))]
-[TemplateVisualState(GroupName = "DialogStates", Name = "Closed")]
-[TemplateVisualState(GroupName = "DialogStates", Name = "Opened")]
+[TemplatePart(Name = "PART_DialogPresenter", Type = typeof(ContentDialogTransitionPresenter))]
 public partial class ContentDialogHost : ContentControl
 {
-    private UIElement? _contentRoot;
-    private Action?    _finishTransition;
-    private Session?   _session;
+    private UIElement?                        _contentRoot;
+    private ContentDialogTransitionPresenter? _dialogPresenter;
+    private Session?                         _session;
 
     private sealed class Session(ContentDialog dialog, CancellationToken cancellationToken)
     {
@@ -231,7 +230,7 @@ public partial class ContentDialogHost : ContentControl
                                 {
                                     if (IsActive(session))
                                     {
-                                        FinishTransition();
+                                        AbortTransition();
                                     }
                                 }
                             )
@@ -300,7 +299,7 @@ public partial class ContentDialogHost : ContentControl
 
                 if (!session.Outcome.Task.IsCompleted)
                 {
-                    await GoToDialogStateAsync(OpenedStateName).ConfigureAwait(true);
+                    await OpenDialogAsync().ConfigureAwait(true);
                 }
 
                 if (!IsActive(session))
@@ -323,7 +322,7 @@ public partial class ContentDialogHost : ContentControl
 
             dialog.MarkClosing();
 
-            await GoToDialogStateAsync(ClosedStateName).ConfigureAwait(true);
+            await CloseDialogAsync().ConfigureAwait(true);
         }
         catch (OperationCanceledException) when (session.Outcome.Task.IsCanceled)
         {
@@ -364,7 +363,7 @@ public partial class ContentDialogHost : ContentControl
         {
             dialog.MarkClosing();
 
-            FinishTransition();
+            AbortTransition();
 
             Dispatcher.ShutdownStarted -= OnDispatcherShutdown;
 
@@ -377,10 +376,6 @@ public partial class ContentDialogHost : ContentControl
             try
             {
                 SetValue(CurrentDialogPropertyKey, null);
-
-                // Cancellation and host removal bypass the exit transition. Reset the template to
-                // its stable idle pose so a reused host always starts from Closed.
-                _ = VisualStateManager.GoToState(this, ClosedStateName, false);
 
                 RemoveLogicalChild(dialog);
             }
@@ -447,7 +442,7 @@ public partial class ContentDialogHost : ContentControl
                 && session.Outcome.TrySetResult(result))
             {
                 dialog.MarkClosing();
-                FinishTransition();
+                RedirectTransitionToClosed();
             }
         }
         finally
@@ -489,20 +484,28 @@ public partial class ContentDialogHost : ContentControl
     /// <inheritdoc />
     public override void OnApplyTemplate()
     {
-        FinishTransition();
+        // The outgoing presenter may own a controllable clock whose completion is awaited by the
+        // session worker. Reset it before WPF detaches the old template so no animation storage or
+        // continuation can remain tied to an unreachable visual tree.
+        AbortTransition();
+        _dialogPresenter = null;
 
         base.OnApplyTemplate();
 
         SetContentRoot(GetTemplateChild("PART_ContentRoot") as UIElement);
+        _dialogPresenter = GetTemplateChild("PART_DialogPresenter") as ContentDialogTransitionPresenter;
 
-        // Applying a template must establish a stable pose without a transition. In particular,
-        // template initialization must not count as an entrance; the presentation pipeline is the
-        // sole place that requests Opened, so a cold-start dialog cannot replay its animation.
-        _ = VisualStateManager.GoToState(
-            this,
-            _session is null || _session.Dialog.IsClosing ? ClosedStateName : OpenedStateName,
-            false
-        );
+        // Applying a template must establish a stable pose without a transition. Template
+        // initialization must not count as an entrance; the presentation pipeline is the sole place
+        // that starts one, so a cold-start dialog cannot replay its animation.
+        if (_session is null || _session.Dialog.IsClosing)
+        {
+            _dialogPresenter?.Reset();
+        }
+        else
+        {
+            _dialogPresenter?.SnapTo(isOpen: true);
+        }
 
         if (_session is not null && GetTemplateChild("PART_ContentRoot") is not UIElement)
         {
@@ -513,7 +516,8 @@ public partial class ContentDialogHost : ContentControl
     /// <inheritdoc />
     protected override void OnTemplateChanged(ControlTemplate oldTemplate, ControlTemplate newTemplate)
     {
-        FinishTransition();
+        AbortTransition();
+        _dialogPresenter = null;
         SetContentRoot(null);
 
         base.OnTemplateChanged(oldTemplate, newTemplate);

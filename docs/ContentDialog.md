@@ -109,11 +109,26 @@ private async Task SaveAsync()
 
 - Dialog 的 `PART_ContentPresenter` 是可选的正文 ContentPresenter，用于定位 DataTemplate 实现的初始焦点。自定义模板缺少它时搜索直接 Content，再退到 Dialog。
 - Host 的 `PART_ContentRoot` 是必需的 UIElement，只能包裹普通页面。Host 在该部件下隔离被覆盖内容；标题栏窗口外壳保持启用，标题栏用户内容与其它页面分支被禁用。缺少该部件时拒绝展示。
-- `PART_TransitionRoot` 是可选 FrameworkElement，只包裹 CurrentDialog，Host 拥有其 Opacity、RenderTransform 和 RenderTransformOrigin。
-- `PART_Backdrop` 是可选 FrameworkElement，覆盖整个范围，与过渡根并列。Host 拥有其 Opacity，避免对 Dialog 叠加两次透明度。
-- 覆盖层应在 CurrentDialog 非 null 时保持命中测试，直到退场清理完成。缺少动画部件、关闭动画或系统关闭客户区动画时直接完成过渡。切换模板或动画设置会释放当前动画等待。卸载和 Dispatcher 关闭使用同步清理路径，公开任务不依赖后续 UI 调度才能结束。
+- Host 的 `PART_DialogPresenter` 是可选的 `ContentDialogTransitionPresenter`。默认模板通过它呈现 CurrentDialog；自定义 Host 模板可以省略该部件并自行呈现 CurrentDialog，此时 Host 保留完整会话语义并即时完成过渡。
+- `ContentDialogTransitionPresenter` 模板中的 `PART_DialogRoot` 与 `PART_Backdrop` 均为可选 UIElement。前者只包裹 Dialog，Presenter 在保留模板原有 RenderTransform 的前提下附加私有缩放；后者独立绘制遮罩，避免对 Dialog 叠加两次透明度。缺少其中一个只会关闭对应视觉效果，两个都缺少时过渡即时完成。
+- 覆盖层应在 CurrentDialog 非 null 时保持命中测试，直到退场清理完成。Presenter 使用单一可控 AnimationClock 同步驱动遮罩透明度、Dialog 透明度与缩放；快速关闭会从当前画面反向退场，不先跳到完全打开。关闭动画或系统关闭客户区动画时直接完成过渡；Token 取消、卸载和 Dispatcher 关闭会同步移除时钟并重置，不依赖后续 UI 调度。Host 模板替换会同步新 Presenter 到当前会话状态，不重播入场。
 
-`IsAnimationEnabled` 默认 true，`TransitionDuration` 默认 220ms，零表示即时过渡，负数被拒绝。动画不会改写 Dialog 自身的 Opacity 或 RenderTransform。
+`IsAnimationEnabled` 默认 true。`OpenDuration` 与 `CloseDuration` 默认都是 167ms，零表示即时过渡，负数被拒绝；`OpeningScale` 默认 0.94，`ClosingScale` 默认 0.97，必须是有限正数。`OpeningEasingFunction` 与 `ClosingEasingFunction` 只作用于缩放，透明度保持线性。动画不会改写 Dialog 自身的 Opacity 或 RenderTransform。
+
+常规动画定制直接设置 Host 上的语义属性：
+
+```xml
+<ui:ContentDialogHost
+    x:Name="DialogHost"
+    OpenDuration="0:0:0.2"
+    CloseDuration="0:0:0.12"
+    OpeningScale="0.9"
+    ClosingScale="0.98">
+    <local:EditorView />
+</ui:ContentDialogHost>
+```
+
+需要改变遮罩、阴影、旋转轴或布局结构时，为 `ContentDialogTransitionPresenter` 提供自定义模板并保留所需模板部件；无需定义 VisualState 或 Storyboard。需要逐帧协调额外的纯渲染效果时，可以派生 Presenter 并重写 `ApplyTransitionVisuals`。若自定义整个 Host 模板，应将上述过渡属性通过 TemplateBinding 转发给 `PART_DialogPresenter`，以便 Host 上的配置继续生效。
 
 默认 Dialog 模板以 DynamicResource 引用字符串资源键 `ContentDialogCloseButtonStyle`（TargetType 为库内 Button）。可在 Dialog.Resources 或应用资源中覆盖，定制标题关闭按钮的样式、ToolTip 与 AutomationProperties.Name，无需复制模板或设置本地 Style Binding。页脚按钮则直接设置自身 Style。
 

@@ -3,6 +3,42 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Zen.Ui.Controls"
     xmlns:m="clr-namespace:Wpf.Zen.Ui.Markup">
+    <!--
+        This presenter is the complete visual-transition boundary. Its named parts expose stable
+        rendering surfaces, while timing, interruption, and completion remain owned by the control.
+        A replacement template may omit either part to disable only that visual effect.
+    -->
+    <Style x:Key="DefaultContentDialogTransitionPresenterStyle" TargetType="{x:Type controls:ContentDialogTransitionPresenter}">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type controls:ContentDialogTransitionPresenter}">
+                    <!--  A transparent background keeps the modal surface hit-testable during exit.  -->
+                    <Grid Background="Transparent">
+                        <Border x:Name="PART_Backdrop" Background="{TemplateBinding Backdrop}" />
+                        <!--
+                            Auto-size the wrapper to the dialog so RenderTransformOrigin remains the
+                            center of the presented surface rather than the center of the host.
+                        -->
+                        <Border
+                            x:Name="PART_DialogRoot"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            RenderTransformOrigin="0.5,0.5">
+                            <Border.Effect>
+                                <DropShadowEffect
+                                    BlurRadius="24"
+                                    Opacity="0.16"
+                                    ShadowDepth="4" />
+                            </Border.Effect>
+                            <ContentPresenter Content="{TemplateBinding Dialog}" />
+                        </Border>
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    <Style BasedOn="{StaticResource DefaultContentDialogTransitionPresenterStyle}" TargetType="{x:Type controls:ContentDialogTransitionPresenter}" />
+
     <Style x:Key="DefaultContentDialogHostStyle" TargetType="{x:Type controls:ContentDialogHost}">
         <Setter Property="Background" Value="{m:DynamicBrush SmokeFillDefault}" />
         <Setter Property="Focusable" Value="False" />
@@ -11,125 +47,21 @@
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type controls:ContentDialogHost}">
                     <Grid>
-                        <!--
-                            DialogStates is the complete presentation-animation contract. State
-                            storyboards hold stable poses; VisualTransitions own all timing and
-                            easing so an application can replace the template without cooperating
-                            with imperative animation code in ContentDialogHost.
-                        -->
-                        <VisualStateManager.VisualStateGroups>
-                            <VisualStateGroup x:Name="DialogStates">
-                                <VisualStateGroup.Transitions>
-                                    <VisualTransition From="Closed" To="Opened">
-                                        <Storyboard>
-                                            <DoubleAnimation
-                                                Storyboard.TargetName="PART_Backdrop"
-                                                Storyboard.TargetProperty="Opacity"
-                                                From="0"
-                                                To="1"
-                                                Duration="0:0:0.167" />
-                                            <DoubleAnimation
-                                                Storyboard.TargetName="PART_TransitionRoot"
-                                                Storyboard.TargetProperty="Opacity"
-                                                From="0"
-                                                To="1"
-                                                Duration="0:0:0.167" />
-                                            <DoubleAnimation
-                                                Storyboard.TargetName="DialogScale"
-                                                Storyboard.TargetProperty="ScaleX"
-                                                From="0.94"
-                                                To="1"
-                                                Duration="0:0:0.167">
-                                                <DoubleAnimation.EasingFunction>
-                                                    <BackEase Amplitude="0.35" EasingMode="EaseOut" />
-                                                </DoubleAnimation.EasingFunction>
-                                            </DoubleAnimation>
-                                            <DoubleAnimation
-                                                Storyboard.TargetName="DialogScale"
-                                                Storyboard.TargetProperty="ScaleY"
-                                                From="0.94"
-                                                To="1"
-                                                Duration="0:0:0.167">
-                                                <DoubleAnimation.EasingFunction>
-                                                    <BackEase Amplitude="0.35" EasingMode="EaseOut" />
-                                                </DoubleAnimation.EasingFunction>
-                                            </DoubleAnimation>
-                                        </Storyboard>
-                                    </VisualTransition>
-                                    <VisualTransition From="Opened" To="Closed">
-                                        <Storyboard>
-                                            <DoubleAnimation
-                                                Storyboard.TargetName="PART_Backdrop"
-                                                Storyboard.TargetProperty="Opacity"
-                                                To="0"
-                                                Duration="0:0:0.167" />
-                                            <DoubleAnimation
-                                                Storyboard.TargetName="PART_TransitionRoot"
-                                                Storyboard.TargetProperty="Opacity"
-                                                To="0"
-                                                Duration="0:0:0.167" />
-                                            <DoubleAnimation
-                                                Storyboard.TargetName="DialogScale"
-                                                Storyboard.TargetProperty="ScaleX"
-                                                To="0.97"
-                                                Duration="0:0:0.167">
-                                                <DoubleAnimation.EasingFunction>
-                                                    <CubicEase EasingMode="EaseIn" />
-                                                </DoubleAnimation.EasingFunction>
-                                            </DoubleAnimation>
-                                            <DoubleAnimation
-                                                Storyboard.TargetName="DialogScale"
-                                                Storyboard.TargetProperty="ScaleY"
-                                                To="0.97"
-                                                Duration="0:0:0.167">
-                                                <DoubleAnimation.EasingFunction>
-                                                    <CubicEase EasingMode="EaseIn" />
-                                                </DoubleAnimation.EasingFunction>
-                                            </DoubleAnimation>
-                                        </Storyboard>
-                                    </VisualTransition>
-                                </VisualStateGroup.Transitions>
-                                <VisualState x:Name="Closed">
-                                    <Storyboard>
-                                        <DoubleAnimation Storyboard.TargetName="PART_Backdrop" Storyboard.TargetProperty="Opacity" To="0" Duration="0" />
-                                        <DoubleAnimation Storyboard.TargetName="PART_TransitionRoot" Storyboard.TargetProperty="Opacity" To="0" Duration="0" />
-                                        <DoubleAnimation Storyboard.TargetName="DialogScale" Storyboard.TargetProperty="ScaleX" To="0.97" Duration="0" />
-                                        <DoubleAnimation Storyboard.TargetName="DialogScale" Storyboard.TargetProperty="ScaleY" To="0.97" Duration="0" />
-                                    </Storyboard>
-                                </VisualState>
-                                <VisualState x:Name="Opened">
-                                    <Storyboard>
-                                        <DoubleAnimation Storyboard.TargetName="PART_Backdrop" Storyboard.TargetProperty="Opacity" To="1" Duration="0" />
-                                        <DoubleAnimation Storyboard.TargetName="PART_TransitionRoot" Storyboard.TargetProperty="Opacity" To="1" Duration="0" />
-                                        <DoubleAnimation Storyboard.TargetName="DialogScale" Storyboard.TargetProperty="ScaleX" To="1" Duration="0" />
-                                        <DoubleAnimation Storyboard.TargetName="DialogScale" Storyboard.TargetProperty="ScaleY" To="1" Duration="0" />
-                                    </Storyboard>
-                                </VisualState>
-                            </VisualStateGroup>
-                        </VisualStateManager.VisualStateGroups>
                         <ContentPresenter x:Name="PART_ContentRoot" ContentSource="Content" />
-                        <Grid x:Name="Overlay" Background="Transparent">
-                            <!-- Keep hit testing active through the fade, and avoid fading the dialog twice. -->
-                            <Border x:Name="PART_Backdrop" Background="{TemplateBinding Background}" />
-                            <!-- Auto-size this wrapper to the surface so the transition pivot is the dialog center. -->
-                            <Border
-                                x:Name="PART_TransitionRoot"
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                RenderTransformOrigin="0.5,0.5">
-                                <Border.RenderTransform>
-                                    <ScaleTransform x:Name="DialogScale" ScaleX="1" ScaleY="1" />
-                                </Border.RenderTransform>
-                                <Border.Effect>
-                                    <DropShadowEffect BlurRadius="24" ShadowDepth="4" Opacity="0.16" />
-                                </Border.Effect>
-                                <ContentPresenter Content="{TemplateBinding CurrentDialog}" />
-                            </Border>
-                        </Grid>
+                        <controls:ContentDialogTransitionPresenter
+                            x:Name="PART_DialogPresenter"
+                            Backdrop="{TemplateBinding Background}"
+                            CloseDuration="{TemplateBinding CloseDuration}"
+                            ClosingEasingFunction="{TemplateBinding ClosingEasingFunction}"
+                            ClosingScale="{TemplateBinding ClosingScale}"
+                            Dialog="{TemplateBinding CurrentDialog}"
+                            OpenDuration="{TemplateBinding OpenDuration}"
+                            OpeningEasingFunction="{TemplateBinding OpeningEasingFunction}"
+                            OpeningScale="{TemplateBinding OpeningScale}" />
                     </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="CurrentDialog" Value="{x:Null}">
-                            <Setter TargetName="Overlay" Property="Visibility" Value="Collapsed" />
+                            <Setter TargetName="PART_DialogPresenter" Property="Visibility" Value="Collapsed" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
