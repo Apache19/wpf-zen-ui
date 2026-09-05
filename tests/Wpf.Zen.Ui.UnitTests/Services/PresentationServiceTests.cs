@@ -250,7 +250,7 @@ public class PresentationServiceTests
                     TitleBarHitTestRole.CloseButton,
                     Wpf.Zen.Ui.Controls.TitleBar.GetHitTestRole(hitElement)
                 );
-                Assert.True(ContentDialogHostController.Contains(closeButton, hitElement));
+                Assert.True(ContentDialogHost.Contains(closeButton, hitElement));
 
                 dialog.Close();
                 PumpUntilCompleted(resultTask);

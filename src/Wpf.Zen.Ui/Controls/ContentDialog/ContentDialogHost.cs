@@ -17,6 +17,10 @@ namespace Wpf.Zen.Ui.Controls;
 /// Templates must present Content in PART_ContentRoot and CurrentDialog in a separate overlay.
 /// PART_ContentRoot (UIElement) is required for isolating the covered region; missing it rejects
 /// presentation. The host disables branches below that part while preserving any TitleBar shell.
+/// While a dialog is active, keyboard focus is confined to the dialog and any presentation surfaces it owns;
+/// attempts to focus another element in the same WPF presentation root are cancelled. Focus is remembered before
+/// isolation and restored during synchronous cleanup when the remembered element can still receive focus and the
+/// user has not moved focus to another window.
 /// Templates may provide a DialogStates visual-state group containing Closed and Opened states.
 /// Transitions between those states own all presentation animation; the host waits for their
 /// completion without assuming targets, durations, or easing. Keep overlay hit testing active until
@@ -27,7 +31,6 @@ namespace Wpf.Zen.Ui.Controls;
 [TemplateVisualState(GroupName = "DialogStates", Name = "Opened")]
 public partial class ContentDialogHost : ContentControl
 {
-    private readonly ContentDialogHostController _controller;
     private UIElement? _contentRoot;
     private Action? _finishTransition;
     private Session? _session;
@@ -81,7 +84,6 @@ public partial class ContentDialogHost : ContentControl
     /// <summary>Initializes a new instance of the <see cref="ContentDialogHost"/> class. The host is initially idle; Content remains the ordinary page throughout each session.</summary>
     public ContentDialogHost()
     {
-        _controller = new ContentDialogHostController(this);
         Unloaded += (_, _) => ForceEnd();
         IsVisibleChanged += (_, _) => { if (!IsVisible) ForceEnd(); };
     }
@@ -161,7 +163,7 @@ public partial class ContentDialogHost : ContentControl
             dialog.Attach(this);
             if (!IsActive(session))
                 return;
-            _controller.Start(dialog, contentRoot);
+            StartModalInteraction(dialog, contentRoot);
             AddLogicalChild(dialog);
             if (!IsActive(session))
                 return;
@@ -253,7 +255,7 @@ public partial class ContentDialogHost : ContentControl
                 // Nested finally blocks also release the session if an application focus handler throws.
                 try
                 {
-                    _controller.Stop();
+                    StopModalInteraction(dialog);
                 }
                 finally
                 {
@@ -326,8 +328,7 @@ public partial class ContentDialogHost : ContentControl
     {
         FinishTransition();
         base.OnApplyTemplate();
-        _contentRoot = GetTemplateChild("PART_ContentRoot") as UIElement;
-        _controller.SetContentRoot(_contentRoot);
+        SetContentRoot(GetTemplateChild("PART_ContentRoot") as UIElement);
         // Applying a template must establish a stable pose without a transition. In particular,
         // template initialization must not count as an entrance; the presentation pipeline is the
         // sole place that requests Opened, so a cold-start dialog cannot replay its animation.
@@ -345,8 +346,7 @@ public partial class ContentDialogHost : ContentControl
     protected override void OnTemplateChanged(ControlTemplate oldTemplate, ControlTemplate newTemplate)
     {
         FinishTransition();
-        _controller.SetContentRoot(null);
-        _contentRoot = null;
+        SetContentRoot(null);
         base.OnTemplateChanged(oldTemplate, newTemplate);
     }
 

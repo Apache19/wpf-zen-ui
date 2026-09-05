@@ -558,6 +558,58 @@ public class ContentDialogTests
     });
 
     [Fact]
+    public void Focus_GuardBlocksIndependentRegionInTheSamePresentationRoot() => Run(scope =>
+    {
+        var background = new System.Windows.Controls.TextBox();
+        var independent = new System.Windows.Controls.TextBox();
+        var popupEditor = new System.Windows.Controls.TextBox();
+        var popup = new System.Windows.Controls.Primitives.Popup
+        {
+            PlacementTarget = independent,
+            Child = popupEditor,
+            StaysOpen = true,
+        };
+        scope.Host.Content = background;
+        ((Panel)scope.Window.Content).Children.Add(independent);
+        ((Panel)scope.Window.Content).Children.Add(popup);
+        Drain();
+        background.Focus();
+        var dialog = scope.CreateDialog();
+        var editor = new System.Windows.Controls.TextBox();
+        dialog.Content = editor;
+        var task = scope.Host.ShowAsync(dialog);
+        Drain();
+        Assert.Same(editor, Keyboard.FocusedElement);
+        Assert.False(independent.Focus());
+        Assert.Same(editor, Keyboard.FocusedElement);
+        popup.IsOpen = true;
+        Drain();
+        Assert.False(popupEditor.Focus());
+        Assert.Same(editor, Keyboard.FocusedElement);
+        popup.IsOpen = false;
+        dialog.Close();
+        Pump(task);
+        Assert.Same(background, Keyboard.FocusedElement);
+    });
+
+    [Fact]
+    public void Focus_RestorationIgnoresRememberedElementThatCanNoLongerReceiveFocus() => Run(scope =>
+    {
+        var background = new System.Windows.Controls.TextBox();
+        scope.Host.Content = background;
+        Drain();
+        background.Focus();
+        var dialog = scope.CreateDialog();
+        dialog.Content = new System.Windows.Controls.TextBox();
+        var task = scope.Host.ShowAsync(dialog);
+        Drain();
+        background.Focusable = false;
+        dialog.Close();
+        Pump(task);
+        Assert.NotSame(background, Keyboard.FocusedElement);
+    });
+
+    [Fact]
     public void Popup_InsideDialogMayReceiveFocusAndCannotFocusCoveredContent() => Run(scope =>
     {
         var background = new System.Windows.Controls.TextBox();

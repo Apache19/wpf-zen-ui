@@ -20,19 +20,31 @@ public partial class ContentDialog
     protected internal virtual void SetInitialFocus()
     {
         ApplyTemplate();
-        if (InitialFocus is DependencyObject target && ContentDialogHostController.Contains(this, target)
+
+        if (InitialFocus is DependencyObject target && ContentDialogHost.Contains(this, target)
             && TryFocus(InitialFocus))
+        {
             return;
-        if (ContentDialogHostController.Contains(this, Keyboard.FocusedElement as DependencyObject))
+        }
+
+        if (ContentDialogHost.Contains(this, Keyboard.FocusedElement as DependencyObject))
+        {
             return;
+        }
+
         var presenter = GetTemplateChild("PART_ContentPresenter") as ContentPresenter;
         presenter?.ApplyTemplate();
         var body = presenter as DependencyObject ?? Content as DependencyObject;
         if (body is IInputElement input && TryFocus(input))
+        {
             return;
+        }
+
         var first = body.FindDescendant<UIElement>(CanFocus);
         if (first is null || !TryFocus(first))
+        {
             Focus();
+        }
     }
 
     private static bool CanFocus(DependencyObject element) =>
