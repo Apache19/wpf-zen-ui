@@ -14,6 +14,37 @@ namespace Wpf.Zen.Ui.UnitTests.Controls;
 
 public class AdaptiveUniformGridTests
 {
+    [Theory]
+    [InlineData(Visibility.Visible)]
+    [InlineData(Visibility.Hidden)]
+    public void RuntimeCollapsedChild_ReflowsItsRowThroughLayoutQueue(Visibility restoredVisibility)
+    {
+        WpfTestThread.Run(() =>
+        {
+            var panel = CreatePanel(6);
+            Layout(panel, new Size(320, 110));
+
+            // Let WPF process the Visibility notification using the previous layout constraint;
+            // explicitly invalidating or measuring the panel would hide a missing notification.
+            panel.Children[1].Visibility = Visibility.Collapsed;
+            panel.UpdateLayout();
+
+            AssertSlot(panel, 0, new Rect(0, 0, 155, 50));
+            AssertSlot(panel, 2, new Rect(165, 0, 155, 50));
+            AssertSlot(panel, 3, new Rect(0, 60, 100, 50));
+            AssertSlot(panel, 5, new Rect(220, 60, 100, 50));
+
+            panel.Children[1].Visibility = restoredVisibility;
+            panel.UpdateLayout();
+
+            AssertSlot(panel, 0, new Rect(0, 0, 100, 50));
+            AssertSlot(panel, 1, new Rect(110, 0, 100, 50));
+            AssertSlot(panel, 2, new Rect(220, 0, 100, 50));
+            Assert.True(panel.IsMeasureValid);
+            Assert.True(panel.IsArrangeValid);
+        });
+    }
+
     [Fact]
     public void PartialRows_KeepMembershipAndDivideWidthWithFixedSpacing()
     {
