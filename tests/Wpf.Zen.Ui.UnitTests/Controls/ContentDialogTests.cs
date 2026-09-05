@@ -15,6 +15,7 @@ using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Markup;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
 using System.Windows.Threading;
 using Wpf.Zen.Ui.Controls;
 using Dialog = Wpf.Zen.Ui.Controls.ContentDialog;
@@ -405,11 +406,129 @@ public class ContentDialogTests
     });
 
     [Fact]
+    public void FirstPresentation_RequestsOpenedVisualStateOnce() => Run(scope =>
+    {
+        scope.Host.IsAnimationEnabled = false;
+        _ = scope.Host.ApplyTemplate();
+        var stateGroupsRoot = Assert.IsAssignableFrom<FrameworkElement>(VisualTreeHelper.GetChild(scope.Host, 0));
+        var dialogStates = VisualStateManager
+            .GetVisualStateGroups(stateGroupsRoot)
+            .OfType<VisualStateGroup>()
+            .Single(group => group.Name == "DialogStates");
+        var openedTransitions = 0;
+        dialogStates.CurrentStateChanging += (_, e) =>
+        {
+            if (e.NewState?.Name == "Opened")
+                openedTransitions++;
+        };
+
+        var dialog = scope.CreateDialog();
+        bool opened = false;
+        dialog.Opened += (_, _) => opened = true;
+        var task = scope.Host.ShowAsync(dialog);
+        Drain();
+
+        Assert.True(opened);
+        Assert.Equal(1, openedTransitions);
+        dialog.Close();
+        Pump(task);
+    });
+
+    [Fact]
+    public void InputTraffic_DoesNotStarvePresentationOrContentRestoration() => Run(scope =>
+    {
+        const int starvationLimit = 500;
+        scope.Host.Template = CreateHostTemplateWithEntranceDuration("0");
+        scope.Host.IsAnimationEnabled = true;
+        var dialog = scope.CreateDialog();
+        var opened = false;
+        var openInputOperations = 0;
+        dialog.Opened += (_, _) => opened = true;
+
+        void KeepInputBusyUntilOpened()
+        {
+            openInputOperations++;
+            if (!opened && openInputOperations < starvationLimit)
+            {
+                _ = Dispatcher.CurrentDispatcher.BeginInvoke(
+                    DispatcherPriority.Input,
+                    new Action(KeepInputBusyUntilOpened)
+                );
+            }
+        }
+
+        _ = Dispatcher.CurrentDispatcher.BeginInvoke(
+            DispatcherPriority.Input,
+            new Action(KeepInputBusyUntilOpened)
+        );
+        var task = scope.Host.ShowAsync(dialog);
+        Drain();
+
+        Assert.True(opened);
+        Assert.True(openInputOperations < starvationLimit, "Input work starved dialog presentation.");
+        Assert.False(scope.Background.IsEnabled);
+
+        var closed = false;
+        var closeInputOperations = 0;
+        dialog.Closed += (_, _) => closed = true;
+
+        void KeepInputBusyUntilClosed()
+        {
+            closeInputOperations++;
+            if (!closed && closeInputOperations < starvationLimit)
+            {
+                _ = Dispatcher.CurrentDispatcher.BeginInvoke(
+                    DispatcherPriority.Input,
+                    new Action(KeepInputBusyUntilClosed)
+                );
+            }
+        }
+
+        _ = Dispatcher.CurrentDispatcher.BeginInvoke(
+            DispatcherPriority.Input,
+            new Action(KeepInputBusyUntilClosed)
+        );
+        dialog.Close();
+        Pump(task);
+
+        Assert.True(closed);
+        Assert.True(closeInputOperations < starvationLimit, "Input work starved dialog cleanup.");
+        Assert.True(scope.Background.IsEnabled);
+    });
+
+    [Fact]
+    public void RepeatedExplicitExitCompletion_ReleasesContentWhenStateGroupNotificationIsMissing() => Run(scope =>
+    {
+        _ = scope.Host.ApplyTemplate();
+        var stateGroupsRoot = Assert.IsAssignableFrom<FrameworkElement>(VisualTreeHelper.GetChild(scope.Host, 0));
+        VisualStateManager.SetCustomVisualStateManager(stateGroupsRoot, new StoryboardOnlyExitVisualStateManager());
+        for (var iteration = 0; iteration < 20; iteration++)
+        {
+            // Keep opening immediate, then enable only the exit transition so the custom manager
+            // can model WPF losing CurrentStateChanged after the visual clock finishes.
+            scope.Host.IsAnimationEnabled = false;
+            var dialog = scope.CreateDialog();
+            var task = scope.Host.ShowAsync(dialog);
+            Drain();
+            Assert.False(task.IsCompleted);
+            Assert.Same(dialog, scope.Host.CurrentDialog);
+            Assert.False(scope.Background.IsEnabled);
+
+            scope.Host.IsAnimationEnabled = true;
+            dialog.Close();
+            Pump(task);
+
+            Assert.Null(scope.Host.CurrentDialog);
+            Assert.True(scope.Background.IsEnabled);
+        }
+    });
+
+    [Fact]
     public void CancellationDuringLongEntrance_FinishesImmediately() => Run(scope =>
     {
         using var cancellation = new CancellationTokenSource();
+        scope.Host.Template = CreateHostTemplateWithEntranceDuration("0:1:0");
         scope.Host.IsAnimationEnabled = true;
-        scope.Host.TransitionDuration = TimeSpan.FromMinutes(1);
         var dialog = scope.CreateDialog();
         var opened = false;
         dialog.Opened += (_, _) => opened = true;
@@ -709,6 +828,36 @@ public class ContentDialogTests
         task.GetAwaiter().GetResult();
     }
 
+    private static ControlTemplate CreateHostTemplateWithEntranceDuration(string duration) =>
+        (ControlTemplate)XamlReader.Parse($$"""
+            <ControlTemplate xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                xmlns:ui="clr-namespace:Wpf.Zen.Ui.Controls;assembly=Wpf.Zen.Ui"
+                TargetType="{x:Type ui:ContentDialogHost}">
+                <Grid>
+                    <VisualStateManager.VisualStateGroups>
+                        <VisualStateGroup x:Name="DialogStates">
+                            <VisualStateGroup.Transitions>
+                                <VisualTransition From="Closed" To="Opened" GeneratedDuration="{{duration}}" />
+                            </VisualStateGroup.Transitions>
+                            <VisualState x:Name="Closed">
+                                <Storyboard>
+                                    <DoubleAnimation Storyboard.TargetName="DialogPresenter" Storyboard.TargetProperty="Opacity" To="0" Duration="0" />
+                                </Storyboard>
+                            </VisualState>
+                            <VisualState x:Name="Opened">
+                                <Storyboard>
+                                    <DoubleAnimation Storyboard.TargetName="DialogPresenter" Storyboard.TargetProperty="Opacity" To="1" Duration="0" />
+                                </Storyboard>
+                            </VisualState>
+                        </VisualStateGroup>
+                    </VisualStateManager.VisualStateGroups>
+                    <ContentPresenter x:Name="PART_ContentRoot" ContentSource="Content" />
+                    <ContentPresenter x:Name="DialogPresenter" Content="{TemplateBinding CurrentDialog}" />
+                </Grid>
+            </ControlTemplate>
+            """);
+
     private sealed class Scope : IDisposable
     {
         public ContentDialogHost Host { get; } = new() { IsAnimationEnabled = false };
@@ -764,6 +913,40 @@ public class ContentDialogTests
             Item = item;
             Container = container;
             return template;
+        }
+    }
+
+    /// <summary>
+    /// Completes the explicit exit storyboard but intentionally omits the group state notification.
+    /// This models the WPF failure mode guarded by ContentDialogHost's explicit-clock observation.
+    /// </summary>
+    private sealed class StoryboardOnlyExitVisualStateManager : VisualStateManager
+    {
+        protected override bool GoToStateCore(
+            FrameworkElement control,
+            FrameworkElement stateGroupsRoot,
+            string stateName,
+            VisualStateGroup group,
+            VisualState state,
+            bool useTransitions
+        )
+        {
+            // WPF invokes a custom manager even for state names absent from this template.
+            if (group is null || state is null)
+                return false;
+
+            if (useTransitions && stateName == "Closed")
+            {
+                var transition = group.Transitions
+                    .OfType<VisualTransition>()
+                    .Single(item => item.From == "Opened" && item.To == "Closed");
+                Storyboard storyboard = Assert.IsType<Storyboard>(transition.Storyboard);
+                storyboard.Begin(stateGroupsRoot, HandoffBehavior.SnapshotAndReplace, true);
+                storyboard.SkipToFill(stateGroupsRoot);
+                return true;
+            }
+
+            return base.GoToStateCore(control, stateGroupsRoot, stateName, group, state, useTransitions);
         }
     }
 

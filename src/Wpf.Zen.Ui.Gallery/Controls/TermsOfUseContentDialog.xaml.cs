@@ -32,6 +32,5 @@ public partial class TermsOfUseContentDialog : ContentDialog
 
         // Focus is a view concern; validation state is supplied by the bound data.
         _ = CheckBox.Focus();
-        CheckBox.BringIntoView();
     }
 }

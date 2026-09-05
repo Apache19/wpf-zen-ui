@@ -17,19 +17,17 @@ namespace Wpf.Zen.Ui.Controls;
 /// Templates must present Content in PART_ContentRoot and CurrentDialog in a separate overlay.
 /// PART_ContentRoot (UIElement) is required for isolating the covered region; missing it rejects
 /// presentation. The host disables branches below that part while preserving any TitleBar shell.
-/// Optional PART_TransitionRoot and
-/// PART_Backdrop animate independently. Their opacity and the transition root's transform belong to the host. Keep overlay hit testing active
-/// until CurrentDialog becomes null, including the exit transition.
+/// Templates may provide a DialogStates visual-state group containing Closed and Opened states.
+/// Transitions between those states own all presentation animation; the host waits for their
+/// completion without assuming targets, durations, or easing. Keep overlay hit testing active until
+/// CurrentDialog becomes null, including the exit transition.
 /// </remarks>
 [TemplatePart(Name = "PART_ContentRoot", Type = typeof(UIElement))]
-[TemplatePart(Name = "PART_TransitionRoot", Type = typeof(FrameworkElement))]
-[TemplatePart(Name = "PART_Backdrop", Type = typeof(FrameworkElement))]
+[TemplateVisualState(GroupName = "DialogStates", Name = "Closed")]
+[TemplateVisualState(GroupName = "DialogStates", Name = "Opened")]
 public partial class ContentDialogHost : ContentControl
 {
     private readonly ContentDialogHostController _controller;
-    private FrameworkElement? _transitionRoot;
-    private FrameworkElement? _backdrop;
-    private ScaleTransform? _scale;
     private UIElement? _contentRoot;
     private Action? _finishTransition;
     private Session? _session;
@@ -63,7 +61,7 @@ public partial class ContentDialogHost : ContentControl
         nameof(IsAnimationEnabled),
         typeof(bool),
         typeof(ContentDialogHost),
-        new PropertyMetadata(true, OnAnimationSettingChanged)
+        new PropertyMetadata(true, OnIsAnimationEnabledChanged)
     );
 
     /// <summary>Gets or sets a value indicating whether host transitions are enabled. Default true; system client-area animation settings are also honored. Turning it off finishes an active transition immediately.</summary>
@@ -71,26 +69,6 @@ public partial class ContentDialogHost : ContentControl
     {
         get => (bool)GetValue(IsAnimationEnabledProperty);
         set => SetValue(IsAnimationEnabledProperty, value);
-    }
-
-    #endregion
-
-    #region DP: TransitionDuration
-
-    /// <summary>Identifies the <see cref="TransitionDuration"/> dependency property.</summary>
-    public static readonly DependencyProperty TransitionDurationProperty = DependencyProperty.Register(
-        nameof(TransitionDuration),
-        typeof(TimeSpan),
-        typeof(ContentDialogHost),
-        new PropertyMetadata(TimeSpan.FromMilliseconds(220), OnAnimationSettingChanged),
-        value => (TimeSpan)value >= TimeSpan.Zero
-    );
-
-    /// <summary>Gets or sets the transition duration. Default 220 ms; zero finishes immediately. Negative durations are rejected. Changing it finishes the current transition.</summary>
-    public TimeSpan TransitionDuration
-    {
-        get => (TimeSpan)GetValue(TransitionDurationProperty);
-        set => SetValue(TransitionDurationProperty, value);
     }
 
     #endregion
@@ -191,9 +169,17 @@ public partial class ContentDialogHost : ContentControl
             if (!IsActive(session))
                 return;
             dialog.Unloaded += OnDialogUnloaded;
-            // Let data templates and Loaded finish before focus and entrance. Missing presenters
-            // release the session instead of leaving an invisible modal operation pending.
-            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ContextIdle);
+            // Let data templates and Loaded finish before focus and entrance. Loaded priority is
+            // deliberately used instead of an idle priority: WPF services it after layout/render
+            // but before input, so a stream of mouse or keyboard messages cannot starve the first
+            // presentation. Missing presenters release the session instead of leaving an invisible
+            // modal operation pending.
+            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Loaded);
+            // Awaiting a DispatcherOperation installs a synchronization context carrying that
+            // operation's priority. Do not let Loaded leak into the remaining lifecycle; subsequent
+            // awaits are lifecycle work rather than part of WPF's layout/Loaded pass and resume at
+            // the dispatcher's normal priority.
+            SynchronizationContext.SetSynchronizationContext(new DispatcherSynchronizationContext(Dispatcher));
             if (!IsActive(session))
                 return;
             if (!dialog.IsLoaded || !dialog.IsVisible)
@@ -204,7 +190,7 @@ public partial class ContentDialogHost : ContentControl
                 if (!IsActive(session))
                     return;
                 if (!session.Outcome.Task.IsCompleted)
-                    await AnimateAsync(true);
+                    await GoToDialogStateAsync(OpenedStateName);
                 if (!IsActive(session))
                     return;
                 if (!session.Outcome.Task.IsCompleted)
@@ -215,7 +201,7 @@ public partial class ContentDialogHost : ContentControl
             if (!IsActive(session))
                 return;
             dialog.MarkClosing();
-            await AnimateAsync(false);
+            await GoToDialogStateAsync(ClosedStateName);
         }
         catch (OperationCanceledException) when (session.Outcome.Task.IsCanceled)
         {
@@ -256,6 +242,9 @@ public partial class ContentDialogHost : ContentControl
             try
             {
                 SetValue(CurrentDialogPropertyKey, null);
+                // Cancellation and host removal bypass the exit transition. Reset the template to
+                // its stable idle pose so a reused host always starts from Closed.
+                _ = VisualStateManager.GoToState(this, ClosedStateName, false);
                 RemoveLogicalChild(dialog);
             }
             finally
@@ -323,8 +312,9 @@ public partial class ContentDialogHost : ContentControl
     private void OnDialogUnloaded(object sender, RoutedEventArgs e)
     {
         var session = _session;
-        // Template replacement may transiently detach the dialog. Check after WPF's load pass.
-        _ = Dispatcher.BeginInvoke(DispatcherPriority.ContextIdle, new Action(() =>
+        // Template replacement may transiently detach the dialog. Loaded priority provides a
+        // post-layout check without allowing continuous input to postpone mandatory cleanup.
+        _ = Dispatcher.BeginInvoke(DispatcherPriority.Loaded, new Action(() =>
         {
             if (session is not null && ReferenceEquals(_session, session) && !session.Dialog.IsLoaded)
                 ForceEnd();
@@ -338,17 +328,14 @@ public partial class ContentDialogHost : ContentControl
         base.OnApplyTemplate();
         _contentRoot = GetTemplateChild("PART_ContentRoot") as UIElement;
         _controller.SetContentRoot(_contentRoot);
-        _transitionRoot = GetTemplateChild("PART_TransitionRoot") as FrameworkElement;
-        _backdrop = GetTemplateChild("PART_Backdrop") as FrameworkElement;
-        _backdrop?.SetCurrentValue(OpacityProperty, 1d);
-        _scale = null;
-        if (_transitionRoot is not null)
-        {
-            _scale = new ScaleTransform(1, 1);
-            _transitionRoot.SetCurrentValue(OpacityProperty, 1d);
-            _transitionRoot.SetCurrentValue(RenderTransformOriginProperty, new Point(.5, .5));
-            _transitionRoot.SetCurrentValue(RenderTransformProperty, _scale);
-        }
+        // Applying a template must establish a stable pose without a transition. In particular,
+        // template initialization must not count as an entrance; the presentation pipeline is the
+        // sole place that requests Opened, so a cold-start dialog cannot replay its animation.
+        _ = VisualStateManager.GoToState(
+            this,
+            _session is null || _session.Dialog.IsClosing ? ClosedStateName : OpenedStateName,
+            false
+        );
 
         if (_session is not null && GetTemplateChild("PART_ContentRoot") is not UIElement)
             ForceEnd();
@@ -360,9 +347,6 @@ public partial class ContentDialogHost : ContentControl
         FinishTransition();
         _controller.SetContentRoot(null);
         _contentRoot = null;
-        _transitionRoot = null;
-        _backdrop = null;
-        _scale = null;
         base.OnTemplateChanged(oldTemplate, newTemplate);
     }
 
