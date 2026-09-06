@@ -319,15 +319,22 @@ public class TitleBar : ContentControl
 
     #region IsUserContentEnabled
 
+    // The key remains private so neither consumers nor cooperating library components can replace
+    // this framework-maintained state with a local value. ContentDialogInputIsolation constrains
+    // the effective value through WPF coercion and therefore needs only the DependencyProperty.
+    private static readonly DependencyPropertyKey IsUserContentEnabledPropertyKey =
+        DependencyProperty.RegisterReadOnly(
+            nameof(IsUserContentEnabled),
+            typeof(bool),
+            typeof(TitleBar),
+            new PropertyMetadata(true)
+        );
+
     /// <summary>
-    /// Identifies the <see cref="IsUserContentEnabled"/> dependency property.
+    /// Identifies the read-only <see cref="IsUserContentEnabled"/> dependency property.
     /// </summary>
-    internal static readonly DependencyProperty IsUserContentEnabledProperty = DependencyProperty.Register(
-        nameof(IsUserContentEnabled),
-        typeof(bool),
-        typeof(TitleBar),
-        new PropertyMetadata(true)
-    );
+    internal static readonly DependencyProperty IsUserContentEnabledProperty =
+        IsUserContentEnabledPropertyKey.DependencyProperty;
 
     /// <summary>
     /// Gets a value indicating whether user-provided content is enabled.
@@ -337,11 +344,9 @@ public class TitleBar : ContentControl
     /// Exposing this behavior publicly has no meaningful use case, as consumers are expected
     /// to manage the enabled state of their own content directly.
     /// </summary>
-    public bool IsUserContentEnabled
-    {
-        get => (bool)GetValue(IsUserContentEnabledProperty);
-        internal set => SetValue(IsUserContentEnabledProperty, value);
-    }
+    [Browsable(false)]
+    [ReadOnly(true)]
+    public bool IsUserContentEnabled => (bool)GetValue(IsUserContentEnabledProperty);
 
     #endregion
 
