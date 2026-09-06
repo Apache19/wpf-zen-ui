@@ -1,0 +1,92 @@
+<ui:ContentDialog
+    x:Class="Wpf.Zen.Ui.Gallery.Views.Dialogs.LoginDialog"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:ui="http://schemas.thezendev.com/wpf/2027"
+    xmlns:vm="clr-namespace:Wpf.Zen.Ui.Gallery.ViewModels.Dialogs"
+    Width="450"
+    Padding="20,32,20,24"
+    d:DataContext="{d:DesignInstance vm:LoginDialogViewModel}"
+    AutomationProperties.Name="Demo sign in"
+    mc:Ignorable="d">
+
+    <StackPanel>
+        <Border
+            Width="56"
+            Height="56"
+            Background="{ui:DynamicBrush TextFillPrimary}"
+            CornerRadius="28">
+            <ui:FluentIcon
+                Filled="True"
+                FontSize="36"
+                Foreground="{ui:DynamicBrush SolidBackgroundFillBase}"
+                Symbol="ShieldPerson20" />
+        </Border>
+        <TextBlock
+            Margin="0,16,0,4"
+            HorizontalAlignment="Center"
+            FontSize="24"
+            Text="Sign in" />
+        <TextBlock
+            HorizontalAlignment="Center"
+            FontSize="12"
+            Foreground="{ui:DynamicBrush TextFillSecondary}"
+            Text="GALLERY DEMO · NOT CONNECTED TO INTERNET" />
+
+        <Border
+            Margin="0,24,0,0"
+            Padding="20"
+            Background="{ui:DynamicBrush LayerFillAlt}"
+            BorderBrush="{ui:DynamicBrush CardStrokeDefault}"
+            BorderThickness="1"
+            CornerRadius="8">
+            <StackPanel>
+                <TextBlock Margin="0,0,0,8" Text="Username or email address" />
+                <ui:TextBox
+                    AutomationProperties.Name="Demo username"
+                    Icon="{ui:FluentIconSource Person24}"
+                    Text="{Binding UserName, UpdateSourceTrigger=PropertyChanged}" />
+                <TextBlock Margin="0,16,0,8" Text="Password" />
+                <ui:PasswordBox
+                    AutomationProperties.Name="Demo password"
+                    Icon="{ui:FluentIconSource LockClosed24}"
+                    Password="{Binding Password, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                <ui:InfoBar
+                    Margin="0,12,0,0"
+                    d:Content="Error message"
+                    Content="{Binding ErrorMessage}"
+                    CornerRadius="6"
+                    Severity="Error" />
+                <ui:Button
+                    Margin="0,20,0,0"
+                    Appearance="Success"
+                    Command="{Binding SignInCommand}"
+                    Content="Sign in"
+                    FontWeight="SemiBold"
+                    IsDefault="True" />
+            </StackPanel>
+        </Border>
+
+        <Border
+            Margin="0,16,0,0"
+            Padding="8"
+            BorderBrush="{ui:DynamicBrush CardStrokeDefault}"
+            BorderThickness="1"
+            CornerRadius="8">
+            <TextBlock TextAlignment="Center" TextWrapping="Wrap">
+                Demo account:<Run FontWeight="SemiBold">octocat</Run>
+                <LineBreak />
+                Password:<Run FontWeight="SemiBold">demo</Run>
+            </TextBlock>
+        </Border>
+        <TextBlock
+            Margin="0,16,0,0"
+            FontSize="12"
+            Foreground="{ui:DynamicBrush TextFillSecondary}"
+            Text="Local UI simulation only. Do not enter real credentials."
+            TextAlignment="Center"
+            TextWrapping="Wrap" />
+    </StackPanel>
+</ui:ContentDialog>

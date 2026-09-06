@@ -121,6 +121,37 @@ public sealed class ContentDialogAutomationTests : UiTest
             );
     }
 
+    [Fact]
+    public async Task MessageBoxDialog_Should_Return_Primary_Result()
+    {
+        await Wait(2, TestContext.Current.CancellationToken);
+
+        var parentNav = FindFirst(c => c.ByText("Dialogs & flyouts"));
+        parentNav.Should().NotBeNull();
+        parentNav.Click();
+        await Wait(1, TestContext.Current.CancellationToken);
+
+        var childNav = FindFirst(c => c.ByText("ContentDialog"));
+        if (childNav == null)
+        {
+            parentNav.Click();
+            await Wait(1, TestContext.Current.CancellationToken);
+            childNav = FindFirst(c => c.ByText("ContentDialog"));
+        }
+
+        childNav.Should().NotBeNull();
+        childNav.Click();
+        await Wait(1, TestContext.Current.CancellationToken);
+
+        var informationButton = FindFirst(c => c.ByText("Information"));
+        informationButton.Should().NotBeNull();
+        informationButton.AsButton().Click();
+        await Wait(1, TestContext.Current.CancellationToken);
+
+        await ClickButtonMatching(["Got it"]);
+        await WaitForText("Information dialog result: Primary");
+    }
+
     private Task OpenDialog()
     {
         // Open a fresh dialog after the previous result has reached the page.

@@ -21,58 +21,61 @@
             Modifiers="Control" />
     </ui:FluentWindow.InputBindings>
 
-    <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" />
-        </Grid.RowDefinitions>
+    <!-- Cover the complete WPF surface, including navigation, while a dialog is open. -->
+    <ui:ContentDialogHost>
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
 
-        <ui:TitleBar
-            x:Name="TitleBar"
-            Title="WPF Zen UI - Console Demo"
-            Grid.Row="0" />
+            <ui:TitleBar
+                x:Name="TitleBar"
+                Title="WPF Zen UI - Console Demo"
+                Grid.Row="0" />
 
-        <ui:NavigationView
-            x:Name="RootNavigation"
-            Grid.Row="1"
-            TitleBar="{Binding ElementName=TitleBar}">
+            <ui:NavigationView
+                x:Name="RootNavigation"
+                Grid.Row="1"
+                TitleBar="{Binding ElementName=TitleBar}">
 
-            <ui:NavigationView.AutoSuggestBox>
-                <ui:AutoSuggestBox
-                    x:Name="AutoSuggestBox"
-                    Icon="{ui:FluentIconSource Search24}"
-                    PlaceholderText="Search" />
-            </ui:NavigationView.AutoSuggestBox>
+                <ui:NavigationView.AutoSuggestBox>
+                    <ui:AutoSuggestBox
+                        x:Name="AutoSuggestBox"
+                        Icon="{ui:FluentIconSource Search24}"
+                        PlaceholderText="Search" />
+                </ui:NavigationView.AutoSuggestBox>
 
-            <ui:NavigationView.Header>
-                <ui:BreadcrumbBar
-                    Margin="42,32,0,0"
-                    FontSize="28"
-                    FontWeight="DemiBold" />
-            </ui:NavigationView.Header>
+                <ui:NavigationView.Header>
+                    <ui:BreadcrumbBar
+                        Margin="42,32,0,0"
+                        FontSize="28"
+                        FontWeight="DemiBold" />
+                </ui:NavigationView.Header>
 
-            <ui:NavigationView.MenuItems>
-                <ui:NavigationViewItem
-                    Icon="{ui:FluentIconSource Home24}"
-                    Header="Dashboard"
-                    NavigationCacheMode="Evictable"
-                    TargetPageType="{x:Type pages:DashboardPage}" />
-                <ui:NavigationViewItem
-                    Icon="{ui:FluentIconSource DataHistogram24}"
-                    Header="Data"
-                    NavigationCacheMode="Evictable"
-                    TargetPageType="{x:Type pages:DataPage}" />
-            </ui:NavigationView.MenuItems>
+                <ui:NavigationView.MenuItems>
+                    <ui:NavigationViewItem
+                        Icon="{ui:FluentIconSource Home24}"
+                        Header="Dashboard"
+                        NavigationCacheMode="Evictable"
+                        TargetPageType="{x:Type pages:DashboardPage}" />
+                    <ui:NavigationViewItem
+                        Icon="{ui:FluentIconSource DataHistogram24}"
+                        Header="Data"
+                        NavigationCacheMode="Evictable"
+                        TargetPageType="{x:Type pages:DataPage}" />
+                </ui:NavigationView.MenuItems>
 
-            <ui:NavigationView.FooterMenuItems>
-                <ui:NavigationViewItem
-                    Icon="{ui:FluentIconSource Settings24}"
-                    Header="Settings"
-                    NavigationCacheMode="Evictable"
-                    TargetPageType="{x:Type pages:SettingsPage}" />
-            </ui:NavigationView.FooterMenuItems>
+                <ui:NavigationView.FooterMenuItems>
+                    <ui:NavigationViewItem
+                        Icon="{ui:FluentIconSource Settings24}"
+                        Header="Settings"
+                        NavigationCacheMode="Evictable"
+                        TargetPageType="{x:Type pages:SettingsPage}" />
+                </ui:NavigationView.FooterMenuItems>
 
-        </ui:NavigationView>
+            </ui:NavigationView>
 
-    </Grid>
+        </Grid>
+    </ui:ContentDialogHost>
 </ui:FluentWindow>

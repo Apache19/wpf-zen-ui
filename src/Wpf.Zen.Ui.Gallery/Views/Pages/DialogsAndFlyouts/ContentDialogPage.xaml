@@ -12,30 +12,73 @@
     d:Background="{ui:DynamicBrush WindowBackground}"
     d:DataContext="{d:DesignInstance vm:ContentDialogViewModel, IsDesignTimeCreatable=False}"
     d:DesignWidth="850"
-    Foreground="{ui:DynamicBrush TextFillPrimary}"
     ui:NavigationView.IsNavigationFrameScrollEnabled="True"
+    Foreground="{ui:DynamicBrush TextFillPrimary}"
     mc:Ignorable="d">
+
+    <Page.Resources>
+        <Style TargetType="{x:Type ui:Button}">
+            <Setter Property="MinWidth" Value="150" />
+        </Style>
+    </Page.Resources>
 
     <StackPanel Margin="0,0,0,24">
         <controls:ControlExample HeaderText="ContentDialog">
             <StackPanel Orientation="Horizontal">
-                <ui:Button
-                    Command="{Binding ShowDialogCommand}"
-                    Content="Show" />
+                <ui:Button Command="{Binding ShowSaveWorkDialogCommand}" Content="Show" />
 
-                <ui:TextBlock
-                    Margin="15,0,0,0"
-                    VerticalAlignment="Center"
-                    FontSize="14"
-                    Text="{Binding DialogResultText}" />
+                <StackPanel Margin="15,0,0,0" VerticalAlignment="Center">
+                    <ui:TextBlock FontSize="14" Text="{Binding DialogResultText}" />
+                    <ui:TextBlock FontSize="12" Text="{Binding SaveWorkDetailsText}" />
+                </StackPanel>
             </StackPanel>
         </controls:ControlExample>
 
         <controls:ControlExample Margin="0,36,0,0" HeaderText="Terms of Use ContentDialog example">
             <ui:Button
                 HorizontalAlignment="Left"
-                Command="{Binding ShowSignInContentDialogCommand}"
+                Command="{Binding ShowTermsOfUseDialogCommand}"
                 Content="Show" />
+        </controls:ControlExample>
+
+        <controls:ControlExample Margin="0,36,0,0" HeaderText="Reusable message-box dialogs">
+            <StackPanel>
+                <WrapPanel>
+                    <ui:Button
+                        Margin="0,0,8,8"
+                        Command="{Binding ShowInformationMessageBoxCommand}"
+                        Content="Information" />
+                    <ui:Button
+                        Margin="0,0,8,8"
+                        Command="{Binding ShowConfirmationMessageBoxCommand}"
+                        Content="Confirmation" />
+                    <ui:Button
+                        Margin="0,0,0,8"
+                        Command="{Binding ShowDestructiveMessageBoxCommand}"
+                        Content="Destructive" />
+                </WrapPanel>
+
+                <ui:TextBlock
+                    Margin="0,8,0,0"
+                    FontSize="14"
+                    Text="{Binding MessageBoxResultText}" />
+            </StackPanel>
+        </controls:ControlExample>
+        <controls:ControlExample Margin="0,36,0,0" HeaderText="Custom login dialog">
+            <StackPanel>
+                <TextBlock
+                    Margin="0,0,0,12"
+                    Text="A content-only template with no header or footer. The view model validates a local demo account."
+                    TextWrapping="Wrap" />
+                <ui:Button
+                    HorizontalAlignment="Left"
+                    Command="{Binding ShowLoginCommand}"
+                    Content="Sign in" />
+                <TextBlock
+                    Margin="0,12,0,0"
+                    Text="{Binding LoginResultText}"
+                    TextWrapping="Wrap" />
+            </StackPanel>
         </controls:ControlExample>
     </StackPanel>
 </Page>

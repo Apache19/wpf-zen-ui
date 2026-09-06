@@ -3,38 +3,117 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-using Wpf.Zen.Ui.Gallery.Controls;
 using Wpf.Zen.Ui.Gallery.Models;
 using Wpf.Zen.Ui.Gallery.Services.Contracts;
+using Wpf.Zen.Ui.Gallery.ViewModels.Dialogs;
+using Wpf.Zen.Ui.Gallery.Views.Dialogs;
 
 namespace Wpf.Zen.Ui.Gallery.Services;
 
-/// <summary>Maps Gallery dialog data to XAML views using the scoped content dialog presenter.</summary>
-/// <param name="contentDialogService">Presenter attached to the current navigation scope.</param>
-public sealed class GalleryDialogService(IContentDialogService contentDialogService) : IGalleryDialogService
+/// <summary>
+/// Maps immutable Gallery dialog requests to presentation-scoped view models and XAML views.
+/// </summary>
+/// <param name="cds">Presenter attached to the current navigation scope.</param>
+public sealed class GalleryDialogService(IContentDialogService cds) : IGalleryDialogService
 {
     /// <inheritdoc />
-    public async Task<SaveWorkChoice?> ShowSaveWorkAsync(SaveWorkDialogData data, CancellationToken cancellationToken = default)
+    public async Task<LoginDialogResult?> ShowLoginAsync(CancellationToken ct = default)
     {
-        if (data is null)
+        var viewModel = new LoginDialogViewModel();
+        var view      = new LoginDialog { DataContext = viewModel };
+
+        // Adapt the view model's completion signal here so it never needs a reference to WPF controls.
+        viewModel.SignInCompleted += Complete;
+        try
         {
-            throw new ArgumentNullException(nameof(data));
+            return (LoginDialogResult?)await cds.ShowAsync(view, ct).ConfigureAwait(true);
+        }
+        finally
+        {
+            // Also clear bindings after cancellation or host teardown, not only successful sign-in.
+            viewModel.SignInCompleted -= Complete;
+            viewModel.Password = string.Empty;
         }
 
-        // Each request receives a fresh view: host ownership and focus state belong to one session.
-        object? result = await contentDialogService.ShowAsync(new SaveWorkContentDialog { DataContext = data }, cancellationToken);
-        return (SaveWorkChoice?)result;
+        void Complete(LoginDialogResult result)
+        {
+            view.Close(result);
+        }
     }
 
     /// <inheritdoc />
-    public async Task<bool> ShowTermsOfUseAsync(TermsOfUseDialogData data, CancellationToken cancellationToken = default)
+    public async Task<SaveWorkDialogResult?> ShowSaveWorkAsync(
+        SaveWorkDialogOptions options,
+        CancellationToken ct = default)
     {
-        if (data is null)
+        if (options is null)
         {
-            throw new ArgumentNullException(nameof(data));
+            throw new ArgumentNullException(nameof(options));
         }
 
-        object? result = await contentDialogService.ShowAsync(new TermsOfUseContentDialog { DataContext = data }, cancellationToken);
+        var viewModel = new SaveWorkDialogViewModel(options);
+        var view      = new SaveWorkDialog { DataContext = viewModel };
+
+        if (options.MaxWidth is { } maxWidth)
+        {
+            view.MaxWidth = maxWidth;
+        }
+
+        // Both the view and its mutable binding state belong to one host session. Only immutable
+        // input and a completed business result cross this service boundary.
+        var result = await cds.ShowAsync(view, ct).ConfigureAwait(true);
+
+        return result is SaveWorkChoice choice
+            ? new SaveWorkDialogResult(choice, viewModel.UploadToCloud)
+            : null;
+    }
+
+    /// <inheritdoc />
+    public async Task<bool> ShowTermsOfUseAsync(
+        TermsOfUseDialogOptions options,
+        CancellationToken ct = default)
+    {
+        if (options is null)
+        {
+            throw new ArgumentNullException(nameof(options));
+        }
+
+        var viewModel = new TermsOfUseDialogViewModel(options);
+        var view      = new TermsOfUseDialog { DataContext = viewModel };
+
+        if (options.MaxWidth is { } maxWidth)
+        {
+            view.MaxWidth = maxWidth;
+        }
+
+        object? result = await cds.ShowAsync(view, ct).ConfigureAwait(true);
         return result is true;
+    }
+
+    /// <inheritdoc />
+    public async Task<MessageBoxDialogResult> ShowMessageBoxAsync(
+        MessageBoxDialogOptions options,
+        CancellationToken ct = default)
+    {
+        if (options is null)
+        {
+            throw new ArgumentNullException(nameof(options));
+        }
+
+        var viewModel = new MessageBoxDialogViewModel(options);
+        var view      = new MessageBoxDialog { DataContext = viewModel };
+
+        if (options.MaxWidth is { } maxWidth)
+        {
+            view.MaxWidth = maxWidth;
+        }
+
+        object? result = await cds.ShowAsync(view, ct).ConfigureAwait(true);
+
+        // A null host result represents top-right dismissal or host teardown. Cancellation remains
+        // distinct because ContentDialogHost propagates it by cancelling the returned task.
+        return result is MessageBoxDialogResult typedResult
+            ? typedResult
+            : MessageBoxDialogResult.Dismissed;
     }
 }

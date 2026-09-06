@@ -1,14 +1,22 @@
 <ui:ContentDialog
-    x:Class="Wpf.Zen.Ui.Gallery.Controls.SaveWorkContentDialog"
+    x:Class="Wpf.Zen.Ui.Gallery.Views.Dialogs.SaveWorkDialog"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:dialogs="clr-namespace:Wpf.Zen.Ui.Gallery.ViewModels.Dialogs"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:models="clr-namespace:Wpf.Zen.Ui.Gallery.Models"
     xmlns:ui="http://schemas.thezendev.com/wpf/2027"
-    Header="Save your work?">
+    d:DataContext="{d:DesignInstance dialogs:SaveWorkDialogViewModel, IsDesignTimeCreatable=False}"
+    Header="{Binding Title}"
+    mc:Ignorable="d">
 
     <StackPanel>
-        <TextBlock Text="Lorem ipsum dolor sit amet, adipisicing elit." TextWrapping="Wrap" />
-        <CheckBox Content="Upload your content to the cloud." IsChecked="{Binding UploadToCloud, Mode=TwoWay}" />
+        <TextBlock Text="{Binding Message}" TextWrapping="Wrap" />
+        <CheckBox
+            Margin="0,12,0,0"
+            Content="{Binding UploadToCloudText}"
+            IsChecked="{Binding UploadToCloud, Mode=TwoWay}" />
     </StackPanel>
 
     <ui:ContentDialog.Footer>
@@ -29,5 +37,4 @@
                 IsCancel="True" />
         </ui:ContentDialogActionBar>
     </ui:ContentDialog.Footer>
-
 </ui:ContentDialog>
