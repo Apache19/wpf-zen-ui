@@ -62,11 +62,7 @@
                                 TextWrapping="WrapWithOverflow" />
                         </StackPanel>
                     </ui:CardControl.Header>
-                    <ui:ToggleSwitch
-                        HorizontalContentAlignment="Left"
-                        IsEnabled="True"
-                        OffContent="Off"
-                        OnContent="On" />
+                    <ui:ToggleSwitch IsEnabled="True" />
                 </ui:CardControl>
             </Grid>
         </controls:ControlExample>

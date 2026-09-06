@@ -4,54 +4,161 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Zen.Ui.Gallery.Controls"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:local="clr-namespace:Wpf.Zen.Ui.Gallery.Views.Pages.BasicInput"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:system="clr-namespace:System;assembly=System.Runtime"
     xmlns:ui="http://schemas.thezendev.com/wpf/2027"
     xmlns:vm="clr-namespace:Wpf.Zen.Ui.Gallery.ViewModels.Pages.BasicInput"
     Title="ToggleSwitchPage"
     controls:PageControlDocumentation.DocumentationType="{x:Type ui:ToggleSwitch}"
-    d:DataContext="{d:DesignInstance vm:ToggleSwitchViewModel,
-                                     IsDesignTimeCreatable=False}"
-    d:DesignWidth="800"
     d:Background="{ui:DynamicBrush WindowBackground}"
-    Foreground="{ui:DynamicBrush TextFillPrimary}"
+    d:DataContext="{d:DesignInstance vm:ToggleSwitchViewModel, IsDesignTimeCreatable=False}"
+    d:DesignWidth="800"
     ui:NavigationView.IsNavigationFrameScrollEnabled="True"
+    Foreground="{ui:DynamicBrush TextFillPrimary}"
     mc:Ignorable="d">
+
+    <Page.Resources>
+        <!--
+            These styles replace only the two visual parts. ToggleSwitch continues to calculate and
+            animate the thumb endpoints, including the wider pressed thumb, so the skin contains no
+            storyboard and no position constants.
+        -->
+        <Style x:Key="SkeuomorphicSwitchTrackStyle" TargetType="{x:Type ui:ToggleSwitchPart}">
+            <Setter Property="Width" Value="58" />
+            <Setter Property="Height" Value="30" />
+            <Setter Property="Background" Value="#FF5A6068" />
+            <Setter Property="BorderBrush" Value="#FF25282C" />
+            <Setter Property="CheckedBackground" Value="#FF638A45" />
+            <Setter Property="CheckedBorderBrush" Value="#FF314A22" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="15" />
+            <Setter Property="IsHitTestVisible" Value="False" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type ui:ToggleSwitchPart}">
+                        <Grid>
+                            <Border
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="{TemplateBinding CornerRadius}">
+                                <Border.Effect>
+                                    <DropShadowEffect
+                                        BlurRadius="5"
+                                        Direction="270"
+                                        Opacity="0.55"
+                                        ShadowDepth="2" />
+                                </Border.Effect>
+                            </Border>
+                            <Border
+                                Background="{TemplateBinding CheckedBackground}"
+                                BorderBrush="{TemplateBinding CheckedBorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="{TemplateBinding CornerRadius}"
+                                Opacity="{TemplateBinding TransitionProgress}" />
+                            <Border
+                                Margin="2"
+                                BorderBrush="#55FFFFFF"
+                                BorderThickness="1"
+                                CornerRadius="13" />
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsPointerOver" Value="True">
+                    <Setter Property="BorderBrush" Value="#FF181A1D" />
+                </Trigger>
+                <Trigger Property="IsEnabled" Value="False">
+                    <Setter Property="Opacity" Value="0.45" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="SkeuomorphicSwitchThumbStyle" TargetType="{x:Type ui:ToggleSwitchPart}">
+            <Setter Property="Width" Value="24" />
+            <Setter Property="Height" Value="24" />
+            <Setter Property="Margin" Value="3" />
+            <Setter Property="Background" Value="#FFF2EEE3" />
+            <Setter Property="BorderBrush" Value="#FFB8B2A5" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="12" />
+            <Setter Property="IsHitTestVisible" Value="False" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type ui:ToggleSwitchPart}">
+                        <Border
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="{TemplateBinding CornerRadius}">
+                            <Border.Effect>
+                                <DropShadowEffect
+                                    BlurRadius="4"
+                                    Direction="270"
+                                    Opacity="0.6"
+                                    ShadowDepth="2" />
+                            </Border.Effect>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsPointerOver" Value="True">
+                    <Setter Property="Background" Value="#FFFFFFFF" />
+                </Trigger>
+                <Trigger Property="IsPressed" Value="True">
+                    <Setter Property="Width" Value="28" />
+                    <Setter Property="Margin" Value="3" />
+                </Trigger>
+                <Trigger Property="IsEnabled" Value="False">
+                    <Setter Property="Opacity" Value="0.65" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </Page.Resources>
 
     <StackPanel Margin="0,0,0,24">
         <controls:ControlExample
             Margin="0"
-            HeaderText="WPF Zen UI toggle switch."
-            XamlCode="&lt;ui:ToggleSwitch OffContent=&quot;Off&quot; OnContent=&quot;On&quot;  /&gt;">
+            HeaderText="A ToggleSwitch with application content arranged outside the control."
+            XamlCode="&lt;StackPanel Orientation=&quot;Horizontal&quot;&gt;&#x0a;    &lt;TextBlock Margin=&quot;0,0,8,0&quot; Text=&quot;Wi-Fi&quot; /&gt;&#x0a;    &lt;ui:ToggleSwitch /&gt;&#x0a;&lt;/StackPanel&gt;">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
-                <ui:ToggleSwitch
-                    Grid.Column="0"
-                    IsEnabled="{Binding IsToggleSwitchDisabled, Converter={StaticResource BoolInvertConverter}}"
-                    OffContent="Off"
-                    OnContent="On" />
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock
+                        Margin="0,0,4,0"
+                        VerticalAlignment="Center"
+                        Text="Wi-Fi" />
+                    <ui:ToggleSwitch IsEnabled="{Binding IsToggleSwitchDisabled, Converter={StaticResource BoolInvertConverter}}" />
+                </StackPanel>
                 <CheckBox
                     Grid.Column="1"
-                    IsChecked="{Binding IsToggleSwitchDisabled}"
-                    Content="Disable switch" />
+                    Content="Disable switch"
+                    IsChecked="{Binding IsToggleSwitchDisabled}" />
             </Grid>
         </controls:ControlExample>
 
         <controls:ControlExample
             Margin="0,32,0,0"
-            HeaderText="ToggleSwitch with ContentPlacement property."
-            XamlCode="&lt;ui:ToggleSwitch Content=&quot;Label on Right&quot; ContentPlacement=&quot;Right&quot; /&gt;&#10; &lt;ui:ToggleSwitch Content=&quot;Label on Left&quot; ContentPlacement=&quot;Left&quot; /&gt;">
-            <StackPanel>
-                <ui:ToggleSwitch
-                    Margin="0,0,0,8"
-                    Content="Content on Right"
-                    ContentPlacement="Right" />
-                <ui:ToggleSwitch Content="Content on Left" ContentPlacement="Left" />
-            </StackPanel>
+            HeaderText="Content layout remains ordinary application layout."
+            XamlCode="&lt;Grid&gt;&#x0a;    &lt;TextBlock Text=&quot;Use compact mode&quot; /&gt;&#x0a;    &lt;ui:ToggleSwitch HorizontalAlignment=&quot;Right&quot; /&gt;&#x0a;&lt;/Grid&gt;">
+            <Grid Width="280" HorizontalAlignment="Left">
+                <TextBlock VerticalAlignment="Center" Text="Use compact mode" />
+                <ui:ToggleSwitch HorizontalAlignment="Right" />
+            </Grid>
+        </controls:ControlExample>
+
+        <controls:ControlExample
+            Margin="0,32,0,0"
+            HeaderText="A custom two-part skin; thumb motion is still supplied by ToggleSwitch."
+            XamlCode="&lt;ui:ToggleSwitch&#x0a;    TrackStyle=&quot;{StaticResource SkeuomorphicSwitchTrackStyle}&quot;&#x0a;    ThumbStyle=&quot;{StaticResource SkeuomorphicSwitchThumbStyle}&quot; /&gt;">
+            <ui:ToggleSwitch
+                ThumbStyle="{StaticResource SkeuomorphicSwitchThumbStyle}"
+                TrackStyle="{StaticResource SkeuomorphicSwitchTrackStyle}"
+                TransitionDuration="0:0:0.24" />
         </controls:ControlExample>
     </StackPanel>
 </Page>

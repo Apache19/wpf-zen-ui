@@ -86,19 +86,13 @@
                                     Grid.Row="0"
                                     Grid.RowSpan="2"
                                     Grid.Column="1"
-                                    Margin="0,0,16,0"
-                                    OffContent="Off"
-                                    OnContent="On" />
+                                    Margin="0,0,16,0" />
                             </Grid>
                         </Grid>
                     </Expander.Header>
                     <StackPanel>
                         <ui:CardControl Padding="20,10,20,10" Header="This is an item">
-                            <ui:ToggleSwitch
-                                HorizontalContentAlignment="Left"
-                                IsEnabled="True"
-                                OffContent="Off"
-                                OnContent="On" />
+                            <ui:ToggleSwitch IsEnabled="True" />
                         </ui:CardControl>
                         <ui:CardControl
                             Margin="0,0.5,0,0"

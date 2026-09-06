@@ -45,12 +45,19 @@
                     ItemsSource="{Binding ThemeList}"
                     SelectedValue="{Binding SelectedPreference}"
                     SelectedValuePath="Preference" />
-                <ui:ToggleSwitch
-                    Margin="0,10,4,0"
-                    HorizontalAlignment="Right"
-                    Content="System accent color"
-                    ContentPlacement="Left"
-                    IsChecked="{Binding UseSystemAccent}" />
+                <Grid Margin="0,10,4,0" HorizontalAlignment="Right">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock
+                        Margin="0,0,8,0"
+                        VerticalAlignment="Center"
+                        Text="System accent color" />
+                    <ui:ToggleSwitch
+                        Grid.Column="1"
+                        IsChecked="{Binding UseSystemAccent}" />
+                </Grid>
             </StackPanel>
 
         </ui:CardControl>
