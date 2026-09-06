@@ -332,7 +332,7 @@ public partial class ContentDialogTests
     [Theory]
     [InlineData(Visibility.Hidden)]
     [InlineData(Visibility.Collapsed)]
-    public void DialogVisibility_HidingEndsSessionAndAllowsReuse(Visibility visibility) => Run(scope =>
+    public void DialogVisibility_HidingEndsSessionAndAllowsReuse(Visibility visibility) => Run(async scope =>
     {
         var dialog = scope.CreateDialog();
         int closed = 0;
@@ -341,7 +341,7 @@ public partial class ContentDialogTests
         Drain();
         dialog.Visibility = visibility;
         Pump(task);
-        Assert.Null(task.Result);
+        Assert.Null(await task);
         Assert.Equal(1, closed);
         Assert.True(scope.Background.IsEnabled);
         Assert.Null(dialog.Parent);
@@ -352,7 +352,7 @@ public partial class ContentDialogTests
         dialog.Close("accepted");
         dialog.Visibility = visibility;
         Pump(next);
-        Assert.Equal("accepted", next.Result);
+        Assert.Equal("accepted", await next);
         Assert.Equal(2, closed);
     });
 
@@ -373,7 +373,7 @@ public partial class ContentDialogTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public void PresenterTemplateReplacement_CompletesRequestedTransition(bool closing) => Run(scope =>
+    public void PresenterTemplateReplacement_CompletesRequestedTransition(bool closing) => Run(async scope =>
     {
         scope.Host.IsAnimationEnabled = true;
         scope.Host.OpenDuration = closing ? TimeSpan.Zero : TimeSpan.FromSeconds(30);
@@ -409,7 +409,7 @@ public partial class ContentDialogTests
         if (closing)
         {
             Pump(task);
-            Assert.Equal("accepted", task.Result);
+            Assert.Equal("accepted", await task);
         }
         else
         {
