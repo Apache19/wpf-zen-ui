@@ -19,9 +19,10 @@ public static class StyleKeys
     /// </summary>
     /// <remarks>
     /// Use this key as <see cref="Style.BasedOn"/> for a <see cref="Wpf.Zen.Ui.Controls.FocusVisual.PresenterStyleProperty"/> value when
-    /// the default rounded-rectangle template is suitable and only presenter properties such as margin need to vary.
-    /// Replace <see cref="System.Windows.Controls.Control.Template"/> in the derived style when the focus outline
-    /// must use a different shape.
+    /// the default rounded-rectangle template is suitable and only
+    /// <see cref="Wpf.Zen.Ui.Controls.FocusVisualPresenter"/> properties such as margin need to vary. Replace
+    /// <see cref="System.Windows.Controls.Control.Template"/> in the derived style when the focus outline must use a
+    /// different shape.
     /// </remarks>
     public static ComponentResourceKey DefaultFocusVisualPresenterStyle { get; } = Create(
         nameof(DefaultFocusVisualPresenterStyle)

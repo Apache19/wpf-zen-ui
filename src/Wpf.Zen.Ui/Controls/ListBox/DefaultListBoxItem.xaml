@@ -4,10 +4,10 @@
     xmlns:controls="clr-namespace:Wpf.Zen.Ui.Controls"
     xmlns:m="clr-namespace:Wpf.Zen.Ui.Markup">
 
-    <Style x:Key="ListBoxItemFocusVisualStyle">
-        <Setter Property="Control.Template">
+    <Style x:Key="ListBoxItemFocusVisualStyle" TargetType="{x:Type controls:FocusVisualPresenter}">
+        <Setter Property="Template">
             <Setter.Value>
-                <ControlTemplate>
+                <ControlTemplate TargetType="{x:Type controls:FocusVisualPresenter}">
                     <Rectangle
                         SnapsToDevicePixels="True"
                         Stroke="{m:DynamicBrush KeyboardFocusBorder}"

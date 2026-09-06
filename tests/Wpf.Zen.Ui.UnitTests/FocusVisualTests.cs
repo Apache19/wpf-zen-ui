@@ -3,11 +3,9 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-using System.Globalization;
 using System.Linq;
 using System.Windows.Controls;
 using Wpf.Zen.Ui.Controls;
-using Wpf.Zen.Ui.Converters;
 using Wpf.Zen.Ui.Theming;
 using UiButton = Wpf.Zen.Ui.Controls.Button;
 
@@ -48,7 +46,7 @@ public class FocusVisualTests
                 Application.Current.TryFindResource(StyleKeys.DefaultFocusVisualPresenterStyle)
             );
 
-            Assert.Equal(typeof(Control), presenterStyle.TargetType);
+            Assert.Equal(typeof(FocusVisualPresenter), presenterStyle.TargetType);
             Assert.Contains(
                 presenterStyle.Setters,
                 setter => setter is Setter { Property: var property } && property == Control.TemplateProperty
@@ -57,31 +55,24 @@ public class FocusVisualTests
     }
 
     [Fact]
-    public void PresenterStyleConverter_SelectsCustomStyleOrGlobalFallback()
+    public void Presenter_SelectsCustomStyleAndRestoresItsDefaultStyle()
     {
         WpfTestThread.Run(() =>
         {
-            var converter = new FocusVisualPresenterStyleConverter();
-            var defaultPresenterStyle = new Style(typeof(Control));
-            var customPresenterStyle = new Style(typeof(Control));
+            var defaultPresenterStyle = new Style(typeof(FocusVisualPresenter));
+            var customPresenterStyle  = new Style(typeof(FocusVisualPresenter));
             var adornedElement = new Border();
+            var presenter      = new FocusVisualPresenter { Style = defaultPresenterStyle };
 
-            var fallbackResult = converter.Convert(
-                adornedElement,
-                typeof(Style),
-                defaultPresenterStyle,
-                CultureInfo.InvariantCulture
-            );
+            presenter.SetAdornedElement(adornedElement);
             FocusVisual.SetPresenterStyle(adornedElement, customPresenterStyle);
-            var customResult = converter.Convert(
-                adornedElement,
-                typeof(Style),
-                defaultPresenterStyle,
-                CultureInfo.InvariantCulture
-            );
 
-            Assert.Same(defaultPresenterStyle, fallbackResult);
-            Assert.Same(customPresenterStyle, customResult);
+            Assert.Same(customPresenterStyle, presenter.Style);
+
+            FocusVisual.SetPresenterStyle(adornedElement, null);
+
+            Assert.Same(defaultPresenterStyle, presenter.Style);
+            presenter.SetAdornedElement(null);
         });
     }
 
@@ -100,7 +91,7 @@ public class FocusVisualTests
                 setter => setter.Property == FocusVisual.PresenterStyleProperty
             );
             var presenterStyle = Assert.IsType<Style>(presenterSetter.Value);
-            Assert.Equal(typeof(Control), presenterStyle.TargetType);
+            Assert.Equal(typeof(FocusVisualPresenter), presenterStyle.TargetType);
             Assert.Contains(
                 presenterStyle.Setters,
                 setter =>

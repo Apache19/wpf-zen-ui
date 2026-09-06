@@ -37,11 +37,11 @@
         </Setter>
     </Style>
 
-    <Style x:Key="TopLevelMenuItemFocusVisualStyle">
-        <Setter Property="Control.Margin" Value="4,4" />
-        <Setter Property="Control.Template">
+    <Style x:Key="TopLevelMenuItemFocusVisualStyle" TargetType="{x:Type controls:FocusVisualPresenter}">
+        <Setter Property="Margin" Value="4,4" />
+        <Setter Property="Template">
             <Setter.Value>
-                <ControlTemplate>
+                <ControlTemplate TargetType="{x:Type controls:FocusVisualPresenter}">
                     <Rectangle
                         RadiusX="4"
                         RadiusY="4"
@@ -53,8 +53,11 @@
         </Setter>
     </Style>
 
-    <Style x:Key="MenuItemFocusVisualStyle" BasedOn="{StaticResource TopLevelMenuItemFocusVisualStyle}">
-        <Setter Property="Control.Margin" Value="4,1" />
+    <Style
+        x:Key="MenuItemFocusVisualStyle"
+        BasedOn="{StaticResource TopLevelMenuItemFocusVisualStyle}"
+        TargetType="{x:Type controls:FocusVisualPresenter}">
+        <Setter Property="Margin" Value="4,1" />
     </Style>
 
     <!--  TopLevelHeader  -->

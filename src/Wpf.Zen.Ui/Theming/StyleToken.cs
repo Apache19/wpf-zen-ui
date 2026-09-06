@@ -22,8 +22,9 @@ public enum StyleToken
     /// </summary>
     /// <remarks>
     /// Use this style as the base for a <see cref="Wpf.Zen.Ui.Controls.FocusVisual.PresenterStyleProperty"/> value when only presenter
-    /// properties such as margin need to change. A control whose focus outline is not a rounded rectangle may instead
-    /// supply a complete <see cref="System.Windows.Controls.Control.Template"/> in its presenter style.
+    /// properties such as margin need to change. The style targets
+    /// <see cref="Wpf.Zen.Ui.Controls.FocusVisualPresenter"/>. A control whose focus outline is not a rounded rectangle
+    /// may instead supply a complete <see cref="System.Windows.Controls.Control.Template"/> in its presenter style.
     /// </remarks>
     DefaultFocusVisualPresenter,
 

@@ -23,6 +23,7 @@ using UiAutoSuggestBox = Wpf.Zen.Ui.Controls.AutoSuggestBox;
 using UiComboBox = Wpf.Zen.Ui.Controls.ComboBox;
 using UiDropDownButton = Wpf.Zen.Ui.Controls.DropDownButton;
 using UiFluentWindow = Wpf.Zen.Ui.Controls.FluentWindow;
+using UiFocusVisualPresenter = Wpf.Zen.Ui.Controls.FocusVisualPresenter;
 using UiNavigationView = Wpf.Zen.Ui.Controls.NavigationView;
 using UiNavigationViewItem = Wpf.Zen.Ui.Controls.NavigationViewItem;
 using UiScrollBar = Wpf.Zen.Ui.Controls.UiScrollBar;
@@ -209,7 +210,7 @@ public class ElementHostThemeTests
             );
             var template = Assert.IsType<ControlTemplate>(templateSetter.Value);
 
-            Assert.IsType<Control>(template.LoadContent());
+            Assert.IsType<UiFocusVisualPresenter>(template.LoadContent());
         });
     }
 
