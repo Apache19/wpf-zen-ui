@@ -34,6 +34,9 @@ namespace Wpf.Zen.Ui.Controls;
 /// <see cref="DismissedVisibility"/>, so its margin and other layout properties obey normal WPF
 /// visibility semantics. <see cref="IsAutoVisibilityEnabled"/> can additionally derive visibility
 /// from whether the title or body contains a value.
+/// Dismissal preserves both content slots and does not clear their bound source values.
+/// Automatic redisplay requires an effective title or body value change; see
+/// <see cref="IsAutoVisibilityEnabled"/> for repeated-message binding guidance.
 /// </para>
 /// <para>
 /// <see cref="IsClosable"/> controls the built-in user-dismiss action. The default template
@@ -145,6 +148,7 @@ public class InfoBar : ContentControl
     /// presence of title or body content.
     /// </summary>
     /// <remarks>
+    /// <para>
     /// The default value is <see langword="true"/>. The control becomes
     /// <see cref="Visibility.Visible"/> when either <see cref="Title"/> or
     /// <see cref="ContentControl.Content"/> has content, and changes to
@@ -153,6 +157,22 @@ public class InfoBar : ContentControl
     /// objects remain valid content. Enabling this behavior evaluates the current values
     /// immediately. Disabling it leaves the current visibility unchanged and returns subsequent
     /// visibility control to the application.
+    /// </para>
+    /// <para>
+    /// Automatic visibility is reevaluated when the effective value of either content slot
+    /// changes. Assigning the same value does not reliably produce a WPF property-change callback,
+    /// and a view-model setter may suppress same-value change notifications entirely. Changing
+    /// properties within the existing content object can update its bound presentation without
+    /// changing the slot itself, so it does not automatically redisplay a dismissed notification.
+    /// </para>
+    /// <para>
+    /// To display the same text again through a binding, application code can first clear the
+    /// source message to null or an empty string, then assign the message again, notifying the
+    /// binding of both changes. The cleared value must reach the target before the message is
+    /// restored; deferred or asynchronous binding transfers may otherwise observe only the final
+    /// value. Clearing is the application's choice: dismissing this control only changes
+    /// visibility and never clears its title, content or their bound source values.
+    /// </para>
     /// </remarks>
     [Bindable(true)]
     [Category("Behavior")]

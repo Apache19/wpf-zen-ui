@@ -15,11 +15,6 @@
 
     <converters:DoubleToDoubleConverter x:Key="IconSizeConverter" Add="2" />
 
-    <!--
-        Kept as a separate public customization seam through CloseButtonStyle. Applications can
-        replace this style without copying the InfoBar template. InfoBar applies it to the named
-        part from OnApplyTemplate so custom templates do not need to duplicate a TemplateBinding.
-    -->
     <Style x:Key="DefaultInfoBarCloseButtonStyle" TargetType="{x:Type primitives:ButtonBase}">
         <Setter Property="Padding" Value="4" />
         <Setter Property="controls:Button.Appearance" Value="Transparent" />
@@ -31,7 +26,7 @@
     <Style TargetType="{x:Type controls:InfoBar}">
         <Setter Property="IconMargin" Value="0,0,12,-6" />
         <Setter Property="Background" Value="{m:DynamicBrush ControlFillPrimary}" />
-        <Setter Property="Padding" Value="12,10" />
+        <Setter Property="Padding" Value="12,10,8,10" />
         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
         <Setter Property="VerticalContentAlignment" Value="Stretch" />
         <Setter Property="BorderBrush" Value="{m:DynamicBrush CardStrokeDefault}" />
