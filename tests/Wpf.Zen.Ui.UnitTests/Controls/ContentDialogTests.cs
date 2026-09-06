@@ -879,6 +879,38 @@ public partial class ContentDialogTests
     });
 
     [Fact]
+    public void TextInput_ReleasesKeyForCharacterTranslationWithoutBubblingToWindow() => Run(scope =>
+    {
+        var calls = 0;
+        scope.Window.KeyDown += (_, _) => calls++;
+        var editor = new System.Windows.Controls.TextBox();
+        var dialog = scope.CreateDialog();
+        dialog.Content = editor;
+        var task = scope.Host.ShowAsync(dialog);
+        Drain();
+        Assert.Same(editor, Keyboard.FocusedElement);
+
+        var key = new KeyEventArgs(
+            Keyboard.PrimaryDevice,
+            PresentationSource.FromVisual(editor),
+            Environment.TickCount,
+            Key.A)
+        {
+            RoutedEvent = Keyboard.KeyDownEvent,
+        };
+        // HwndSource needs this result to be false before it permits WM_CHAR translation.
+        Assert.False(InputManager.Current.ProcessInput(key));
+        Assert.False(key.Handled);
+        Assert.Equal(0, calls);
+        TextCompositionManager.StartComposition(new TextComposition(InputManager.Current, editor, "a"));
+        Drain();
+        Assert.Equal("a", editor.Text);
+
+        dialog.Close();
+        Pump(task);
+    });
+
+    [Fact]
     public void PlainWindowInputBinding_DoesNotExecuteFromDialog() => Run(scope =>
     {
         var calls = 0;

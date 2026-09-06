@@ -16,7 +16,8 @@ public partial class ContentDialog
     /// Focuses InitialFocus when it is an enabled, visible dialog descendant; otherwise respects
     /// focus already inside, searches the realized body, and finally focuses the dialog itself.
     /// Automatic selection skips Danger and Caution buttons to avoid accidental activation.
-    /// An explicit InitialFocus remains authoritative. The host calls this after templates are realized.
+    /// An explicit InitialFocus remains authoritative, including targets outside the Tab order and 3D elements.
+    /// The host calls this after templates are realized.
     /// </summary>
     protected internal virtual void SetInitialFocus()
     {
@@ -53,7 +54,7 @@ public partial class ContentDialog
     private static bool CanFocus(DependencyObject element)
     {
         return element is UIElement { Focusable: true, IsVisible: true, IsEnabled: true }
-               && element is not Control { IsTabStop: false };
+               or UIElement3D { Focusable: true, IsVisible: true, IsEnabled: true };
     }
 
     // Appearance limits only the automatic choice. Explicit targets and later keyboard navigation
@@ -61,14 +62,20 @@ public partial class ContentDialog
     private static bool CanAutomaticallyFocus(DependencyObject element)
     {
         return CanFocus(element)
+               && KeyboardNavigation.GetIsTabStop(element)
                && element is not Button { Appearance: ControlAppearance.Danger or ControlAppearance.Caution };
     }
 
+    /// <summary>
+    /// Applies an explicit focus request without treating Tab participation as focus eligibility.
+    /// WPF permits programmatic focus on IsTabStop=false elements; only automatic discovery skips them.
+    /// </summary>
     private static bool TryFocus(IInputElement element)
     {
         return element switch
         {
             UIElement ui when CanFocus(ui)                         => ui.Focus(),
+            UIElement3D ui3D when CanFocus(ui3D)                   => ui3D.Focus(),
             ContentElement { Focusable: true, IsEnabled: true } ce => ce.Focus(),
             _                                                      => false,
         };

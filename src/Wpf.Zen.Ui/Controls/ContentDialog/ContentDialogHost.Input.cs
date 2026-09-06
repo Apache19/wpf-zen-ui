@@ -3,6 +3,7 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
+using System.Runtime.CompilerServices;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
@@ -16,9 +17,10 @@ namespace Wpf.Zen.Ui.Controls;
 /// </summary>
 public partial class ContentDialogHost
 {
-    private          WeakReference<IInputElement>? _focusBeforeDialog;
-    private          UIElement?      _inputRoot;
-    private          int             _focusSessionVersion;
+    private WeakReference<IInputElement>? _focusBeforeDialog;
+    private UIElement? _inputRoot;
+    private int _focusSessionVersion;
+    private ConditionalWeakTable<KeyEventArgs, object> _keysAwaitingPostProcessing = new();
 
     /// <summary>
     /// Establishes the modal boundary before the dialog enters the visual tree.
@@ -54,6 +56,7 @@ public partial class ContentDialogHost
         }
 
         InputManager.Current.PreProcessInput += OnPreProcessInput;
+        InputManager.Current.PostProcessInput += OnPostProcessInput;
         LayoutUpdated += OnIsolationLayoutUpdated;
 
         // Install all subscriptions before coercion can call application code. Reentrant cleanup
@@ -90,6 +93,8 @@ public partial class ContentDialogHost
         _inputRoot = null;
 
         InputManager.Current.PreProcessInput -= OnPreProcessInput;
+        InputManager.Current.PostProcessInput -= OnPostProcessInput;
+        _keysAwaitingPostProcessing = new();
 
         try
         {
@@ -411,13 +416,17 @@ public partial class ContentDialogHost
         // InputBindings, including bindings backed by a plain ICommand.
         if (e.Key == Key.Escape)
         {
-            if (dialog.IsDismissible)
+            var scope = GetAccessKeyScope(e.OriginalSource, "\x001B", dialog);
+            bool isDialogScope = ReferenceEquals(scope, dialog);
+
+            // IsDismissible constrains this dialog, not cancellation owned by a nested scope.
+            if (!isDialogScope || dialog.IsDismissible)
             {
-                if (AccessKeyManager.IsKeyRegistered(dialog, "\x001B"))
+                if (AccessKeyManager.IsKeyRegistered(scope, "\x001B"))
                 {
-                    AccessKeyManager.ProcessKey(dialog, "\x001B", false);
+                    AccessKeyManager.ProcessKey(scope, "\x001B", false);
                 }
-                else
+                else if (isDialogScope)
                 {
                     dialog.Dismiss();
                 }
@@ -425,40 +434,33 @@ public partial class ContentDialogHost
         }
         else if (e.Key == Key.Enter)
         {
-            AccessKeyManager.ProcessKey(dialog, "\r", false);
+            AccessKeyManager.ProcessKey(GetAccessKeyScope(e.OriginalSource, "\r", dialog), "\r", false);
         }
         else
         {
-            // KeyboardNavigation normally runs after routing, but the boundary must mark input handled before
-            // ancestor InputBindings see it. MoveFocus enters WPF's navigation engine, including nested groups.
-            FocusNavigationDirection? direction = e.Key switch
-            {
-                Key.Tab => (Keyboard.Modifiers & ModifierKeys.Shift) != 0
-                    ? FocusNavigationDirection.Previous
-                    : FocusNavigationDirection.Next,
-
-                Key.Left  => FocusNavigationDirection.Left,
-                Key.Right => FocusNavigationDirection.Right,
-                Key.Up    => FocusNavigationDirection.Up,
-                Key.Down  => FocusNavigationDirection.Down,
-                _         => null,
-            };
-
-            if (direction is { } navigation)
-            {
-                var request = new TraversalRequest(navigation);
-                if (Keyboard.FocusedElement is UIElement element)
-                {
-                    element.MoveFocus(request);
-                }
-                else if (Keyboard.FocusedElement is FrameworkContentElement content)
-                {
-                    content.MoveFocus(request);
-                }
-            }
+            // Handled isolates ancestor InputBindings only for the duration of routing. HwndSource
+            // needs the released result for character translation; KeyboardNavigation needs it for
+            // Tab/arrows, keyboard focus visuals and navigation from UIElement3D or hosted content.
+            // Let WPF process these keys after routing instead of reproducing part of its navigation.
+            // Weak keys also cover events raised directly without an InputManager staging item.
+            _keysAwaitingPostProcessing.GetValue(e, static _ => new object());
         }
 
         e.Handled = true;
+    }
+
+    /// <summary>
+    /// Allows native character translation and keyboard navigation after isolating the bubbling key route.
+    /// Keys consumed by editors, dismissal or default buttons are never registered here.
+    /// </summary>
+    private void OnPostProcessInput(object sender, ProcessInputEventArgs e)
+    {
+        if (e.StagingItem.Input is KeyEventArgs key && _keysAwaitingPostProcessing.Remove(key))
+        {
+            // InputManager reads the final Handled value after post-processing. Releasing it here
+            // does not reroute the event or give ancestor InputBindings another opportunity to run.
+            key.Handled = false;
+        }
     }
 
     private void OnTextInput(object sender, TextCompositionEventArgs e)
@@ -469,10 +471,24 @@ public partial class ContentDialogHost
             && !string.IsNullOrEmpty(text)
             && StringInfo.ParseCombiningCharacters(text).Length == 1)
         {
-            AccessKeyManager.ProcessKey(dialog, text, false);
+            AccessKeyManager.ProcessKey(GetAccessKeyScope(e.OriginalSource, text, dialog), text, false);
         }
 
         e.Handled = true;
+    }
+
+    /// <summary>
+    /// Resolves the originating access-key scope through the same routed query used by WPF.
+    /// </summary>
+    private static object GetAccessKeyScope(object source, string key, ContentDialog dialog)
+    {
+        // Focus scopes and access-key scopes are independent. Query the source before invoking
+        // AccessKeyManager's scope-based API so nested menus/composites keep their own targets.
+        // OnAccessKey supplies the dialog boundary when no descendant claims the query. A source
+        // that cannot raise input events also falls back to the dialog, never the active Window.
+        var query = new AccessKeyPressedEventArgs(key);
+        (source as IInputElement)?.RaiseEvent(query);
+        return query.Scope ?? dialog;
     }
 
     private void OnPreProcessInput(object sender, PreProcessInputEventArgs e)

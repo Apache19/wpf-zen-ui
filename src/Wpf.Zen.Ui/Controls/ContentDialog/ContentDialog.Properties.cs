@@ -246,7 +246,7 @@ public partial class ContentDialog
 
     /// <summary>
     /// Gets or sets the initial focus target. Default null searches body content, skipping Danger and Caution buttons.
-    /// An explicit target may select these buttons.
+    /// An explicit target may select these buttons, elements outside the Tab order, or focusable 3D elements.
     /// Targets outside the dialog or unavailable targets are ignored.
     /// </summary>
     /// <remarks>

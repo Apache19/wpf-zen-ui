@@ -40,65 +40,63 @@
             CornerRadius="{TemplateBinding CornerRadius}"
             SnapsToDevicePixels="True">
             <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="*" />
-                    <RowDefinition Height="Auto" />
-                </Grid.RowDefinitions>
-                <!--
-                    HeaderPadding establishes the title baseline independently from the dismiss
-                    surface. In particular, the default title begins lower than the top-right
-                    button instead of being vertically centered against it.
-                -->
-                <Border Padding="{TemplateBinding HeaderPadding}">
-                    <ContentPresenter
-                        controls:TextBlock.FontTypography="Subtitle"
-                        ContentSource="Header"
-                        SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}">
-                        <ContentPresenter.Resources>
-                            <Style TargetType="{x:Type TextBlock}">
-                                <Setter Property="TextTrimming" Value="CharacterEllipsis" />
-                            </Style>
-                        </ContentPresenter.Resources>
-                    </ContentPresenter>
-                </Border>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
 
-                <controls:PassiveScrollViewer
-                    x:Name="PART_ContentScroll"
-                    Grid.Row="1"
-                    Margin="{TemplateBinding Padding}"
-                    CanContentScroll="{TemplateBinding ScrollViewer.CanContentScroll}"
-                    HorizontalScrollBarVisibility="{TemplateBinding ScrollViewer.HorizontalScrollBarVisibility}"
-                    ScrollSpillMode="Disabled"
-                    VerticalScrollBarVisibility="{TemplateBinding ScrollViewer.VerticalScrollBarVisibility}">
-                    <ContentPresenter
-                        x:Name="PART_ContentPresenter"
-                        HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
-                        VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
-                        Content="{TemplateBinding Content}"
-                        ContentStringFormat="{TemplateBinding ContentStringFormat}"
-                        ContentTemplate="{TemplateBinding ContentTemplate}"
-                        ContentTemplateSelector="{TemplateBinding ContentTemplateSelector}">
-                        <ContentPresenter.Resources>
-                            <Style TargetType="{x:Type TextBlock}">
-                                <Setter Property="TextWrapping" Value="Wrap" />
-                            </Style>
-                        </ContentPresenter.Resources>
-                    </ContentPresenter>
-                </controls:PassiveScrollViewer>
+                    <Border x:Name="headerBorder" Padding="{TemplateBinding HeaderPadding}">
+                        <ContentPresenter
+                            controls:TextBlock.FontTypography="Subtitle"
+                            ContentSource="Header"
+                            SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}">
+                            <ContentPresenter.Resources>
+                                <Style TargetType="{x:Type TextBlock}">
+                                    <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+                                </Style>
+                            </ContentPresenter.Resources>
+                        </ContentPresenter>
+                    </Border>
 
-                <Border
-                    x:Name="Footer"
-                    Grid.Row="2"
-                    Padding="{TemplateBinding FooterPadding}"
-                    Background="{m:DynamicBrush LayerFillAlt}"
-                    BorderBrush="{m:DynamicBrush CardStrokeDefault}"
-                    BorderThickness="0,1,0,0"
-                    CornerRadius="{Binding CornerRadius, RelativeSource={RelativeSource TemplatedParent}, Converter={converters:CornerRadiusTransformConverter CopyCorners=Bottom}}">
-                    <ContentPresenter ContentSource="Footer" />
-                </Border>
+                    <controls:PassiveScrollViewer
+                        x:Name="PART_ContentScroll"
+                        Grid.Row="1"
+                        Margin="{TemplateBinding Padding}"
+                        CanContentScroll="{TemplateBinding ScrollViewer.CanContentScroll}"
+                        HorizontalScrollBarVisibility="{TemplateBinding ScrollViewer.HorizontalScrollBarVisibility}"
+                        ScrollSpillMode="Disabled"
+                        VerticalScrollBarVisibility="{TemplateBinding ScrollViewer.VerticalScrollBarVisibility}">
+                        <ContentPresenter
+                            x:Name="PART_ContentPresenter"
+                            HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                            VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                            Content="{TemplateBinding Content}"
+                            ContentStringFormat="{TemplateBinding ContentStringFormat}"
+                            ContentTemplate="{TemplateBinding ContentTemplate}"
+                            ContentTemplateSelector="{TemplateBinding ContentTemplateSelector}">
+                            <ContentPresenter.Resources>
+                                <Style TargetType="{x:Type TextBlock}">
+                                    <Setter Property="TextWrapping" Value="Wrap" />
+                                </Style>
+                            </ContentPresenter.Resources>
+                        </ContentPresenter>
+                    </controls:PassiveScrollViewer>
 
-                <!--  A dialog command avoids Button.IsCancel closing the containing native Window.  -->
+                    <Border
+                        x:Name="footerBorder"
+                        Grid.Row="2"
+                        Padding="{TemplateBinding FooterPadding}"
+                        Background="{m:DynamicBrush LayerFillAlt}"
+                        BorderBrush="{m:DynamicBrush CardStrokeDefault}"
+                        BorderThickness="0,1,0,0"
+                        CornerRadius="{Binding CornerRadius, RelativeSource={RelativeSource TemplatedParent}, Converter={converters:CornerRadiusTransformConverter CopyCorners=Bottom}}">
+                        <ContentPresenter ContentSource="Footer" />
+                    </Border>
+                </Grid>
+
+                <!--  对话框右上角的关闭按钮  -->
                 <controls:Button
                     Grid.Row="0"
                     Margin="8"
@@ -120,7 +118,6 @@
                             <Setter Property="Padding" Value="7,6" />
                             <Setter Property="Focusable" Value="False" />
                             <Setter Property="IsTabStop" Value="False" />
-                            <Setter Property="ToolTip" Value="Close" />
                             <Setter Property="AutomationProperties.AutomationId" Value="DismissButton" />
                             <Setter Property="AutomationProperties.Name" Value="Close" />
                         </Style>
@@ -129,8 +126,11 @@
             </Grid>
         </Border>
         <ControlTemplate.Triggers>
+            <Trigger Property="Header" Value="{x:Null}">
+                <Setter TargetName="headerBorder" Property="Visibility" Value="Collapsed" />
+            </Trigger>
             <Trigger Property="Footer" Value="{x:Null}">
-                <Setter TargetName="Footer" Property="Visibility" Value="Collapsed" />
+                <Setter TargetName="footerBorder" Property="Visibility" Value="Collapsed" />
             </Trigger>
         </ControlTemplate.Triggers>
     </ControlTemplate>
