@@ -1,7 +1,6 @@
 <FileList>
   <File Reference="Wpf.Zen.Ui.dll">
     <ToolboxItems UIFramework="WPF" VSCategory="WPF Zen UI" BlendCategory="WPF Zen UI">
-      <Item Type="Wpf.Zen.Ui.Controls.Arc" />
       <Item Type="Wpf.Zen.Ui.Controls.AutoSuggestBox" />
       <Item Type="Wpf.Zen.Ui.Controls.Badge" />
       <Item Type="Wpf.Zen.Ui.Controls.BreadcrumbBar" />

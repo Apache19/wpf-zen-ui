@@ -9,177 +9,164 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Windows.Controls;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using Wpf.Zen.Ui.Controls;
 
 namespace Wpf.Zen.Ui.UnitTests.Controls;
 
 /// <summary>
-/// Verifies the layout and visual-state contracts of <see cref="ProgressRing"/>.
+/// Verifies the range, drawing and animation contracts of <see cref="ProgressRing"/>.
 /// </summary>
 public class ProgressRingTests
 {
     [Fact]
-    public void Arrange_WithRectangularBounds_KeepsEveryArcCircularAfterResize()
+    public void Render_WithRectangularBounds_DrawsCenteredCircleAndUpdatesOnResize()
     {
         RunOnStaThread(
             () =>
             {
                 var ring = CreateRing(120, 60);
-                using var host = new TestWindowHost(ring);
+                ring.Background = Brushes.Red;
+                ring.Foreground = Brushes.Blue;
+                ring.Value = 50;
 
-                ring.UpdateLayout();
-                Arc[] arcs = FindVisualDescendants<Arc>(ring).ToArray();
+                Render(ring);
+                GeometryDrawing[] drawings = GetGeometryDrawings(ring);
 
-                Assert.Equal(3, arcs.Length);
-                Assert.All(
-                    arcs.Where(arc => arc.Visibility == Visibility.Visible),
-                    arc => Assert.Equal(new Size(60, 60), arc.RenderSize)
-                );
-                Assert.All(arcs, arc => Assert.Equal(7.5d, arc.StrokeThickness));
+                Assert.Equal(2, drawings.Length);
+                AssertEllipse(drawings[0], Brushes.Red, new Point(60, 30), 26.25d, 7.5d);
+                Assert.Equal(7.5d, drawings[1].Pen!.Thickness);
+                Assert.Equal(Colors.Blue, GetPenColor(drawings[1]));
 
-                // Resize while the animated arc owns the foreground layer. This reproduces the
-                // original failure without restarting the indeterminate state or its storyboard.
-                ring.IsIndeterminate = true;
                 ring.Width = 40;
                 ring.Height = 100;
-                ring.UpdateLayout();
+                Render(ring);
+                drawings = GetGeometryDrawings(ring);
 
                 Assert.Equal(new Size(40, 100), ring.RenderSize);
-                Assert.Equal(arcs, FindVisualDescendants<Arc>(ring).ToArray());
-                Assert.All(
-                    arcs.Where(arc => arc.Visibility == Visibility.Visible),
-                    arc => Assert.Equal(new Size(40, 40), arc.RenderSize)
-                );
-                Assert.All(arcs, arc => Assert.Equal(5.0d, arc.StrokeThickness));
+                AssertEllipse(drawings[0], Brushes.Red, new Point(20, 50), 17.5d, 5.0d);
+                Assert.Equal(5.0d, drawings[1].Pen!.Thickness);
 
                 ring.StrokeThickness = 3;
-                ring.UpdateLayout();
+                Render(ring);
+                drawings = GetGeometryDrawings(ring);
 
-                Assert.All(arcs, arc => Assert.Equal(3.0d, arc.StrokeThickness));
+                AssertEllipse(drawings[0], Brushes.Red, new Point(20, 50), 18.5d, 3.0d);
+                Assert.Equal(3.0d, drawings[1].Pen!.Thickness);
             }
         );
     }
 
     [Fact]
-    public void IsIndeterminate_ChangesArcStateWithoutReplacingTemplateVisuals()
-    {
-        RunOnStaThread(
-            () =>
-            {
-                var ring = CreateRing(80, 50);
-
-                Arrange(ring);
-                var determinateArc = Assert.IsType<Arc>(
-                    ring.Template.FindName("PART_DeterminateArc", ring)
-                );
-                var indeterminateArc = Assert.IsType<Arc>(
-                    ring.Template.FindName("IndeterminateArc", ring)
-                );
-
-                ring.IsIndeterminate = true;
-                ring.UpdateLayout();
-
-                Assert.Same(determinateArc, ring.Template.FindName("PART_DeterminateArc", ring));
-                Assert.Same(indeterminateArc, ring.Template.FindName("IndeterminateArc", ring));
-                Assert.Equal(Visibility.Collapsed, determinateArc.Visibility);
-                Assert.Equal(Visibility.Visible, indeterminateArc.Visibility);
-                Assert.Equal(new Size(50, 50), indeterminateArc.RenderSize);
-
-                ring.IsIndeterminate = false;
-                ring.UpdateLayout();
-
-                Assert.Same(determinateArc, ring.Template.FindName("PART_DeterminateArc", ring));
-                Assert.Equal(Visibility.Visible, determinateArc.Visibility);
-                Assert.Equal(Visibility.Collapsed, indeterminateArc.Visibility);
-            }
-        );
-    }
-
-    [Fact]
-    public void Arc_EndAngleChange_RebuildsRenderedGeometryWithoutAnotherLayoutPass()
-    {
-        RunOnStaThread(
-            () =>
-            {
-                var arc = new Arc
-                {
-                    EndAngle = 90,
-                    Stroke = Brushes.Black,
-                    StrokeThickness = 4,
-                };
-                arc.Measure(new Size(60, 60));
-                arc.Arrange(new Rect(0, 0, 60, 60));
-
-                Rect firstBounds = arc.RenderedGeometry.Bounds;
-                arc.EndAngle = 270;
-                Rect secondBounds = arc.RenderedGeometry.Bounds;
-
-                Assert.NotEqual(firstBounds, secondBounds);
-            }
-        );
-    }
-
-    [Fact]
-    public void Arc_SweepDirection_SelectsComplementaryPathWithoutChangingEndpoints()
-    {
-        RunOnStaThread(
-            () =>
-            {
-                var arc = new Arc
-                {
-                    StartAngle = 0,
-                    EndAngle = 90,
-                    Stroke = Brushes.Black,
-                    StrokeThickness = 2,
-                };
-                arc.Measure(new Size(100, 100));
-                arc.Arrange(new Rect(0, 0, 100, 100));
-
-                Rect clockwiseBounds = arc.RenderedGeometry.Bounds;
-                arc.SweepDirection = SweepDirection.Counterclockwise;
-                Rect counterclockwiseBounds = arc.RenderedGeometry.Bounds;
-
-                Assert.True(clockwiseBounds.Width < 55);
-                Assert.True(clockwiseBounds.Height < 55);
-                Assert.True(counterclockwiseBounds.Width > 95);
-                Assert.True(counterclockwiseBounds.Height > 95);
-            }
-        );
-    }
-
-    [Fact]
-    public void DeterminateRange_CoercesValueAndOwnsTheDerivedArcAngle()
+    public void DeterminateRange_RendersEmptyPartialAndCompleteStates()
     {
         RunOnStaThread(
             () =>
             {
                 var ring = CreateRing(60, 60);
-                var arc = Assert.IsType<Arc>(ring.Template.FindName("PART_DeterminateArc", ring));
-
+                ring.Foreground = Brushes.Blue;
                 ring.Minimum = 20;
                 ring.Maximum = 60;
+
+                ring.Value = 20;
+                Render(ring);
+                Assert.Empty(GetGeometryDrawings(ring));
+
                 ring.Value = 40;
-                Assert.Equal(180.0d, arc.EndAngle);
+                Render(ring);
+                GeometryDrawing partial = Assert.Single(GetGeometryDrawings(ring));
+                Assert.IsType<StreamGeometry>(partial.Geometry);
+                Assert.Equal(Colors.Blue, GetPenColor(partial));
 
                 ring.Value = 100;
                 Assert.Equal(60.0d, ring.Value);
-                Assert.Equal(360.0d, arc.EndAngle);
+                Render(ring);
+                Assert.IsType<EllipseGeometry>(Assert.Single(GetGeometryDrawings(ring)).Geometry);
 
                 ring.Minimum = 80;
                 Assert.Equal(80.0d, ring.Maximum);
                 Assert.Equal(80.0d, ring.Value);
-                Assert.Equal(0.0d, arc.EndAngle);
+                Render(ring);
+                Assert.Empty(GetGeometryDrawings(ring));
             }
         );
     }
 
     [Fact]
-    public void PublicApi_DoesNotExposeDerivedOrDuplicateVisualState()
+    public void PartialIndicator_UsesConfiguredLineCap()
+    {
+        RunOnStaThread(
+            () =>
+            {
+                var ring = CreateRing(60, 60);
+                ring.Foreground = Brushes.Blue;
+                ring.Value = 25;
+                ring.StrokeLineCap = PenLineCap.Square;
+
+                Render(ring);
+                Pen pen = Assert.Single(GetGeometryDrawings(ring)).Pen!;
+
+                Assert.Equal(PenLineCap.Square, pen.StartLineCap);
+                Assert.Equal(PenLineCap.Square, pen.EndLineCap);
+            }
+        );
+    }
+
+    [Fact]
+    public void IsIndeterminate_UsesInternalAnimationWithoutTemplateParts()
+    {
+        RunOnStaThread(
+            () =>
+            {
+                var ring = CreateRing(80, 50);
+                ring.Foreground = Brushes.Blue;
+                ring.Value = 100;
+
+                using var host = new TestWindowHost(ring);
+                Render(ring);
+                Assert.IsType<EllipseGeometry>(Assert.Single(GetGeometryDrawings(ring)).Geometry);
+
+                ring.IsIndeterminate = true;
+                Render(ring);
+
+                Assert.True(ring.HasAnimatedProperties);
+                Assert.IsType<StreamGeometry>(Assert.Single(GetGeometryDrawings(ring)).Geometry);
+                Assert.Null(ring.Template.FindName("PART_DeterminateArc", ring));
+                Assert.Null(ring.Template.FindName("IndeterminateArc", ring));
+
+                ring.IsIndeterminate = false;
+                Render(ring);
+
+                Assert.False(ring.HasAnimatedProperties);
+                Assert.IsType<EllipseGeometry>(Assert.Single(GetGeometryDrawings(ring)).Geometry);
+            }
+        );
+    }
+
+    [Fact]
+    public void BrushMetadata_InvalidatesDirectRendering()
+    {
+        RuntimeHelpers.RunClassConstructor(typeof(ProgressRing).TypeHandle);
+
+        var backgroundMetadata = Assert.IsType<FrameworkPropertyMetadata>(
+            ProgressRing.BackgroundProperty.GetMetadata(typeof(ProgressRing))
+        );
+        var foregroundMetadata = Assert.IsType<FrameworkPropertyMetadata>(
+            ProgressRing.ForegroundProperty.GetMetadata(typeof(ProgressRing))
+        );
+
+        Assert.True(backgroundMetadata.AffectsRender);
+        Assert.True(foregroundMetadata.AffectsRender);
+        Assert.True(foregroundMetadata.Inherits);
+    }
+
+    [Fact]
+    public void PublicApi_DoesNotExposeArcOrDerivedVisualState()
     {
         const BindingFlags declaredPublic =
             BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly;
 
-        Assert.Null(typeof(Arc).GetProperty("IsLargeArc", declaredPublic));
+        Assert.Null(typeof(ProgressRing).Assembly.GetType("Wpf.Zen.Ui.Controls.Arc"));
         Assert.Null(typeof(ProgressRing).GetProperty("Progress", declaredPublic));
         Assert.Null(typeof(ProgressRing).GetProperty("EndAngle", declaredPublic));
         Assert.Null(typeof(ProgressRing).GetProperty("IndeterminateAngle", declaredPublic));
@@ -225,29 +212,67 @@ public class ProgressRingTests
         return ring;
     }
 
-    private static void Arrange(FrameworkElement element)
+    private static void Render(ProgressRing ring)
     {
-        element.Measure(new Size(element.Width, element.Height));
-        element.Arrange(new Rect(0, 0, element.Width, element.Height));
-        element.UpdateLayout();
+        var width = (int)ring.Width;
+        var height = (int)ring.Height;
+
+        ring.Measure(new Size(width, height));
+        ring.Arrange(new Rect(0, 0, width, height));
+        ring.UpdateLayout();
+
+        // Rendering into a bitmap commits the retained OnRender drawing even when a test does not
+        // attach the control to a presentation source.
+        var bitmap = new RenderTargetBitmap(width, height, 96.0d, 96.0d, PixelFormats.Pbgra32);
+        bitmap.Render(ring);
     }
 
-    private static IEnumerable<T> FindVisualDescendants<T>(DependencyObject parent)
-        where T : DependencyObject
+    private static GeometryDrawing[] GetGeometryDrawings(Visual visual)
     {
-        for (var index = 0; index < VisualTreeHelper.GetChildrenCount(parent); index++)
-        {
-            DependencyObject child = VisualTreeHelper.GetChild(parent, index);
-            if (child is T match)
-            {
-                yield return match;
-            }
+        DrawingGroup? drawing = VisualTreeHelper.GetDrawing(visual);
+        return drawing is null ? [] : EnumerateGeometryDrawings(drawing).ToArray();
+    }
 
-            foreach (T descendant in FindVisualDescendants<T>(child))
+    private static IEnumerable<GeometryDrawing> EnumerateGeometryDrawings(Drawing drawing)
+    {
+        if (drawing is GeometryDrawing geometryDrawing)
+        {
+            yield return geometryDrawing;
+        }
+
+        if (drawing is not DrawingGroup group)
+        {
+            yield break;
+        }
+
+        foreach (Drawing child in group.Children)
+        {
+            foreach (GeometryDrawing descendant in EnumerateGeometryDrawings(child))
             {
                 yield return descendant;
             }
         }
+    }
+
+    private static void AssertEllipse(
+        GeometryDrawing drawing,
+        SolidColorBrush brush,
+        Point           center,
+        double          radius,
+        double          strokeThickness)
+    {
+        var ellipse = Assert.IsType<EllipseGeometry>(drawing.Geometry);
+
+        Assert.Equal(center, ellipse.Center);
+        Assert.Equal(radius, ellipse.RadiusX, 10);
+        Assert.Equal(radius, ellipse.RadiusY, 10);
+        Assert.Equal(brush.Color, GetPenColor(drawing));
+        Assert.Equal(strokeThickness, drawing.Pen!.Thickness, 10);
+    }
+
+    private static Color GetPenColor(GeometryDrawing drawing)
+    {
+        return Assert.IsType<SolidColorBrush>(drawing.Pen!.Brush).Color;
     }
 
     private static Uri CreateThemeUri()
@@ -263,8 +288,8 @@ public class ProgressRingTests
     private static void RunOnStaThread(Action action) => WpfTestThread.Run(action);
 
     /// <summary>
-    /// Connects layout tests to a presentation source so <see cref="FrameworkElement.UpdateLayout"/>
-    /// processes invalidations exactly as it does in an application window.
+    /// Connects animation tests to a presentation source so WPF creates and advances clocks under
+    /// the same loaded-state contract used by an application window.
     /// </summary>
     private sealed class TestWindowHost : IDisposable
     {

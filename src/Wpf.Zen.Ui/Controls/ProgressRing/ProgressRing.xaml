@@ -14,78 +14,16 @@
     <Style TargetType="{x:Type controls:ProgressRing}">
         <Setter Property="Height" Value="60" />
         <Setter Property="Width" Value="60" />
-        <Setter Property="Focusable" Value="False" />
         <Setter Property="Foreground" Value="{m:DynamicBrush AccentFillSecondary}" />
         <Setter Property="Template">
             <Setter.Value>
+                <!--
+                    ProgressRing owns its geometry and renders beneath the template visual tree.
+                    The empty root preserves the normal Control template contract without exposing
+                    presentation details as parts that custom templates would need to reproduce.
+                -->
                 <ControlTemplate TargetType="{x:Type controls:ProgressRing}">
-                    <!--
-                        Arc builds its geometry from the arranged width and height. Giving it the
-                        template's rectangular bounds would therefore produce an ellipse. The
-                        dedicated panel centers every Arc at the shorter actual side during the same
-                        arrange pass, so resizing and size animation cannot leave the geometry one
-                        pass behind.
-                    -->
-                    <controls:ProgressRingPanel StrokeThickness="{TemplateBinding StrokeThickness}">
-                        <controls:Arc
-                            EndAngle="360"
-                            StartAngle="0"
-                            Stroke="{TemplateBinding Background}"
-                            StrokeEndLineCap="{TemplateBinding StrokeLineCap}"
-                            StrokeStartLineCap="{TemplateBinding StrokeLineCap}" />
-
-                        <controls:Arc
-                            x:Name="PART_DeterminateArc"
-                            EndAngle="0"
-                            StartAngle="0"
-                            Stroke="{TemplateBinding Foreground}"
-                            StrokeEndLineCap="{TemplateBinding StrokeLineCap}"
-                            StrokeStartLineCap="{TemplateBinding StrokeLineCap}" />
-
-                        <controls:Arc
-                            x:Name="IndeterminateArc"
-                            EndAngle="100"
-                            RenderTransformOrigin="0.5,0.5"
-                            StartAngle="0"
-                            Stroke="{TemplateBinding Foreground}"
-                            StrokeEndLineCap="{TemplateBinding StrokeLineCap}"
-                            StrokeStartLineCap="{TemplateBinding StrokeLineCap}"
-                            Visibility="Collapsed">
-                            <controls:Arc.RenderTransform>
-                                <RotateTransform />
-                            </controls:Arc.RenderTransform>
-                        </controls:Arc>
-                    </controls:ProgressRingPanel>
-                    <ControlTemplate.Triggers>
-                        <Trigger Property="IsIndeterminate" Value="True">
-                            <Setter TargetName="PART_DeterminateArc" Property="Visibility" Value="Collapsed" />
-                            <Setter TargetName="IndeterminateArc" Property="Visibility" Value="Visible" />
-                            <Trigger.EnterActions>
-                                <BeginStoryboard x:Name="IndeterminateStoryboard">
-                                    <Storyboard>
-                                        <DoubleAnimation
-                                            Storyboard.TargetName="IndeterminateArc"
-                                            Storyboard.TargetProperty="(UIElement.RenderTransform).(RotateTransform.Angle)"
-                                            To="360"
-                                            Duration="0:0:2"
-                                            RepeatBehavior="Forever" />
-                                        <DoubleAnimation
-                                            Storyboard.TargetName="IndeterminateArc"
-                                            Storyboard.TargetProperty="EndAngle"
-                                            AutoReverse="True"
-                                            From="100"
-                                            To="320"
-                                            Duration="0:0:5"
-                                            RepeatBehavior="Forever" />
-                                    </Storyboard>
-                                </BeginStoryboard>
-                            </Trigger.EnterActions>
-                            <Trigger.ExitActions>
-                                <!-- Removing the clocks restores the template-bound base values. -->
-                                <StopStoryboard BeginStoryboardName="IndeterminateStoryboard" />
-                            </Trigger.ExitActions>
-                        </Trigger>
-                    </ControlTemplate.Triggers>
+                    <Grid Background="Transparent" />
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
