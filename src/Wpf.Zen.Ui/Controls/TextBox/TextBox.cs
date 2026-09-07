@@ -363,17 +363,25 @@ public class TextBox : System.Windows.Controls.TextBox
     /// <summary>Identifies the <see cref="IconPlacement"/> dependency property.</summary>
     public static readonly DependencyProperty IconPlacementProperty = DependencyProperty.Register(
         nameof(IconPlacement),
-        typeof(ElementPlacement),
+        typeof(TextBoxIconPlacement),
         typeof(TextBox),
-        new PropertyMetadata(ElementPlacement.Left)
+        new PropertyMetadata(TextBoxIconPlacement.Left),
+        static value => value is TextBoxIconPlacement placement
+                     && Enum.IsDefined(typeof(TextBoxIconPlacement), placement)
     );
 
     /// <summary>
-    /// Gets or sets which side the icon should be placed on.
+    /// Gets or sets which horizontal side of the editable text area contains the icon.
     /// </summary>
-    public ElementPlacement IconPlacement
+    /// <remarks>
+    /// The default is <see cref="TextBoxIconPlacement.Left"/>. Changing this property rearranges
+    /// the icon in the control template but does not otherwise invalidate the editor's content.
+    /// </remarks>
+    [Bindable(true)]
+    [Category("Appearance")]
+    public TextBoxIconPlacement IconPlacement
     {
-        get => (ElementPlacement)GetValue(IconPlacementProperty);
+        get => (TextBoxIconPlacement)GetValue(IconPlacementProperty);
         set => SetValue(IconPlacementProperty, value);
     }
 

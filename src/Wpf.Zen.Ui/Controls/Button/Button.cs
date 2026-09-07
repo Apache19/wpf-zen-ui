@@ -78,6 +78,36 @@ public class Button : System.Windows.Controls.Button
 
     #endregion
 
+    #region DP: IconPlacement
+
+    /// <summary>Identifies the <see cref="IconPlacement"/> dependency property.</summary>
+    public static readonly DependencyProperty IconPlacementProperty = DependencyProperty.Register(
+        nameof(IconPlacement),
+        typeof(ButtonIconPlacement),
+        typeof(Button),
+        new PropertyMetadata(ButtonIconPlacement.Left),
+        static value => value is ButtonIconPlacement placement
+                     && Enum.IsDefined(typeof(ButtonIconPlacement), placement)
+    );
+
+    /// <summary>
+    /// Gets or sets where the icon is arranged relative to the button's content.
+    /// </summary>
+    /// <remarks>
+    /// The default is <see cref="ButtonIconPlacement.Left"/>. The default style also chooses an
+    /// axis-appropriate <see cref="IconMargin"/> for each placement. A local IconMargin value takes
+    /// precedence when an application needs different spacing.
+    /// </remarks>
+    [Bindable(true)]
+    [Category("Appearance")]
+    public ButtonIconPlacement IconPlacement
+    {
+        get => (ButtonIconPlacement)GetValue(IconPlacementProperty);
+        set => SetValue(IconPlacementProperty, value);
+    }
+
+    #endregion
+
     #region DP: Appearance
 
     /// <summary>Identifies the <see cref="Appearance"/> dependency property.</summary>

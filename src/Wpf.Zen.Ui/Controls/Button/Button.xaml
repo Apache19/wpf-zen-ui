@@ -57,29 +57,24 @@
             BorderThickness="{TemplateBinding BorderThickness}"
             CornerRadius="{TemplateBinding CornerRadius}"
             SnapsToDevicePixels="True">
-            <Grid HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="*" />
-                </Grid.ColumnDefinitions>
+            <DockPanel HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}">
                 <controls:IconPresenter
                     x:Name="iconPresenter"
-                    Grid.Column="0"
                     Margin="{TemplateBinding IconMargin}"
-                    VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
                     Content="{TemplateBinding Icon}"
+                    DockPanel.Dock="Left"
                     Focusable="False"
                     SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"
                     TextElement.FontSize="{TemplateBinding FontSize, Converter={converters:DoubleToDoubleConverter Add=1}}"
                     TextElement.Foreground="{TemplateBinding VisualForeground}" />
                 <ContentPresenter
-                    Grid.Column="1"
-                    VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
                     Focusable="False"
                     RecognizesAccessKey="True"
                     SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"
                     TextElement.Foreground="{TemplateBinding VisualForeground}" />
-            </Grid>
+            </DockPanel>
         </controls:UiBorder>
         <ControlTemplate.Triggers>
             <Trigger Property="Icon" Value="{x:Null}">
@@ -91,6 +86,15 @@
             </Trigger>
             <Trigger Property="Content" Value="">
                 <Setter TargetName="iconPresenter" Property="Margin" Value="0" />
+            </Trigger>
+            <Trigger Property="IconPlacement" Value="Top">
+                <Setter TargetName="iconPresenter" Property="DockPanel.Dock" Value="Top" />
+            </Trigger>
+            <Trigger Property="IconPlacement" Value="Right">
+                <Setter TargetName="iconPresenter" Property="DockPanel.Dock" Value="Right" />
+            </Trigger>
+            <Trigger Property="IconPlacement" Value="Bottom">
+                <Setter TargetName="iconPresenter" Property="DockPanel.Dock" Value="Bottom" />
             </Trigger>
             <Trigger Property="Appearance" Value="Normal">
                 <Setter TargetName="border" Property="BorderPlacement" Value="Outside" />
@@ -111,6 +115,17 @@
         <Setter Property="controls:UiBorder.BorderPlacement" Value="Inside" />
         <Setter Property="IconMargin" Value="0,0,8,0" />
         <Setter Property="controls:FocusVisual.PresenterStyle" Value="{StaticResource UiButtonFocusVisualPresenterStyle}" />
+        <Style.Triggers>
+            <Trigger Property="IconPlacement" Value="Top">
+                <Setter Property="IconMargin" Value="0,0,0,4" />
+            </Trigger>
+            <Trigger Property="IconPlacement" Value="Right">
+                <Setter Property="IconMargin" Value="8,0,0,0" />
+            </Trigger>
+            <Trigger Property="IconPlacement" Value="Bottom">
+                <Setter Property="IconMargin" Value="0,4,0,0" />
+            </Trigger>
+        </Style.Triggers>
     </Style>
 
     <Style BasedOn="{StaticResource {x:Static t:StyleKeys.UiButtonStyle}}" TargetType="{x:Type controls:Button}" />
