@@ -588,8 +588,15 @@ public class FlyoutTests
     {
         WpfTestThread.Run(() =>
         {
-            var panel = new Flyout { Content = "Details", Placement = PlacementMode.Top };
-            var button = new DropDownButton { Content = "Open", Flyout = panel };
+            var panel = new Flyout
+            {
+                Width = 80D,
+                Content = "Details",
+                Placement = PlacementMode.Bottom,
+                HorizontalAlignment = HorizontalAlignment.Right,
+                HorizontalOffset = 5D,
+            };
+            var button = new DropDownButton { Width = 140D, Content = "Open", Flyout = panel };
             WithWindow(
                 button,
                 panel,
@@ -600,7 +607,17 @@ public class FlyoutTests
                     var popup = GetPopup(panel);
                     Assert.Same(panel, popup.Child);
                     Assert.Same(button, popup.PlacementTarget);
-                    Assert.Equal(PlacementMode.Top, popup.Placement);
+                    Assert.Equal(PlacementMode.Bottom, popup.Placement);
+                    Assert.Equal(
+                        new Rect(
+                            button.RenderSize.Width - panel.RenderSize.Width,
+                            0D,
+                            panel.RenderSize.Width,
+                            button.RenderSize.Height
+                        ),
+                        popup.PlacementRectangle
+                    );
+                    Assert.Equal(5D, popup.HorizontalOffset);
                     panel.Hide();
                     Pump();
                     Assert.False(button.IsDropDownOpen);

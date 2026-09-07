@@ -34,6 +34,9 @@ namespace Wpf.Zen.Ui.Controls;
 /// Replacing ordinary content preserves the open panel; switching native flyouts closes and detaches
 /// the previous host and adopts the new native flyout's state. Generated panels support Escape, F4,
 /// Alt+Down/Up and cyclic Tab navigation; they do not acquire ContextMenu item/command semantics.
+/// Configure alignment on an explicit Popup, ContextMenu or Flyout itself. For ordinary content hosted in the
+/// generated Popup, set HorizontalAlignment or VerticalAlignment through <see cref="FlyoutPopupStyle"/>; offsets in
+/// the same style are applied after that alignment.
 /// </remarks>
 [StyleTypedProperty(Property = nameof(FlyoutPopupStyle), StyleTargetType = typeof(Popup))]
 public class DropDownButton : Button
@@ -239,7 +242,9 @@ public class DropDownButton : Button
     /// The default is null, which dynamically resolves FlyoutPopupStyleKey through normal WPF resource lookup.
     /// A non-null value overrides that resource reference; returning to null restores it. The independent
     /// theme style supplies default setters in either case, unless the applied style sets OverridesDefaultStyle.
-    /// Target Popup to configure placement, offsets, sizing, animation, or StaysOpen.
+    /// Target Popup to configure placement, alignment, offsets, sizing, animation, or StaysOpen. HorizontalAlignment
+    /// applies to Top and Bottom placement, while VerticalAlignment applies to Left and Right placement; offsets are
+    /// applied after the resulting alignment.
     /// Child, PlacementTarget and IsOpen are owned by this control and must not be configured by the style.
     /// Validation rejects a style whose target type cannot be applied to Popup.
     /// Supports binding; does not inherit or affect button layout. Changes propagate to the generated

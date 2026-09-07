@@ -19,6 +19,7 @@
     <Page.Resources>
         <Style TargetType="{x:Type ui:Flyout}">
             <Setter Property="Placement" Value="Bottom" />
+            <Setter Property="HorizontalAlignment" Value="Center" />
             <Setter Property="ui:PopupSlideAnimator.IsEnabled" Value="True" />
             <Setter Property="ui:PopupPlacementGap.Vertical" Value="4" />
         </Style>
@@ -69,7 +70,7 @@
                 Content="Options"
                 IsDropDownOpen="{Binding IsFlyoutOpen}">
                 <ui:DropDownButton.Flyout>
-                    <ui:Flyout>
+                    <ui:Flyout HorizontalAlignment="Left">
                         <StackPanel Width="260">
                             <TextBlock FontWeight="SemiBold" Text="Panel content, not a menu" />
                             <CheckBox Margin="0,12,0,0" Content="Show details" />
@@ -88,7 +89,7 @@
                 <TextBlock Margin="0,0,0,8" Text="Destination" />
                 <ui:TextBox
                     x:Name="DestinationTextBox"
-                    Width="300"
+                    Width="350"
                     HorizontalAlignment="Left"
                     ui:FlyoutService.ShowOnFocusOrClick="True"
                     PlaceholderText="Focus or click here to choose a destination">

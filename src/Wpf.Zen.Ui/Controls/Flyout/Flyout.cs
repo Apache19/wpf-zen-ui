@@ -36,6 +36,12 @@ namespace Wpf.Zen.Ui.Controls;
 /// use an explicit binding source.
 /// </para>
 /// <para>
+/// For Top and Bottom placement, <see cref="FrameworkElement.HorizontalAlignment"/> aligns the panel within the
+/// target bounds. For Left and Right placement, <see cref="FrameworkElement.VerticalAlignment"/> performs the
+/// corresponding vertical alignment; Relative and Center use both axes. HorizontalOffset and VerticalOffset are
+/// applied after alignment. Stretch retains WPF's native placement on that axis.
+/// </para>
+/// <para>
 /// Opening requires a loaded, visible, enabled target connected to a presentation source; invalid requests
 /// reset <see cref="IsOpen"/> to <see langword="false"/>. <see cref="Key.Escape"/>, <see cref="Key.F4"/>,
 /// and Alt+Up or Alt+Down dismiss the panel. By default, opening moves focus into the panel and Tab cycles

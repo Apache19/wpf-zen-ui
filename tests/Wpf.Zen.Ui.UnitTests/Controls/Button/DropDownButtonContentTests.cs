@@ -25,6 +25,48 @@ namespace Wpf.Zen.Ui.UnitTests.Controls.ButtonControl;
 public class DropDownButtonContentTests
 {
     [Fact]
+    public void GeneratedPopupStyleAppliesAlignmentAndOffsetRelativeToButton()
+    {
+        WpfTestThread.Run(() =>
+        {
+            var button = CreateButton(new Border { Width = 40D, Height = 20D });
+            button.Width = 120D;
+            button.FlyoutPopupStyle = new Style(typeof(Popup))
+            {
+                Setters =
+                {
+                    new Setter(FrameworkElement.HorizontalAlignmentProperty, HorizontalAlignment.Right),
+                    new Setter(Popup.HorizontalOffsetProperty, 7D),
+                    new Setter(Popup.VerticalOffsetProperty, 3D),
+                    new Setter(PopupPlacementGap.VerticalProperty, 0D),
+                },
+            };
+
+            WithWindow(button, () =>
+            {
+                button.IsDropDownOpen = true;
+                Drain();
+
+                var popup = GetPopup(button);
+                var popupContent = popup.Child;
+                Assert.Equal(
+                    new Rect(
+                        button.RenderSize.Width - popupContent.RenderSize.Width,
+                        0D,
+                        popupContent.RenderSize.Width,
+                        button.RenderSize.Height
+                    ),
+                    popup.PlacementRectangle
+                );
+                Assert.Equal(7D, popup.HorizontalOffset);
+                Assert.Equal(3D, popup.VerticalOffset);
+
+                button.IsDropDownOpen = false;
+            });
+        });
+    }
+
+    [Fact]
     public void PopupStyle_HasThemeDefaultsWithoutButtonStyleOrResourceImports()
     {
         WpfTestThread.Run(() =>

@@ -4,6 +4,8 @@
 // All Rights Reserved.
 
 using System.Windows.Controls.Primitives;
+using System.Windows.Data;
+using NativeContextMenu = System.Windows.Controls.ContextMenu;
 
 // ReSharper disable once CheckNamespace
 namespace Wpf.Zen.Ui.Controls;
@@ -73,7 +75,7 @@ public static class PopupPlacementGap
     private static readonly DependencyProperty ControllerProperty =
         DependencyProperty.RegisterAttached(
             "Controller",
-            typeof(PlacementGapController),
+            typeof(PlacementRectangleController),
             typeof(PopupPlacementGap),
             new PropertyMetadata(null)
         );
@@ -94,68 +96,120 @@ public static class PopupPlacementGap
             return;
         }
 
-        if ((double)e.NewValue <= 0D)
+        if (d.GetValue(ControllerProperty) is not PlacementRectangleController controller)
         {
-            if (d.GetValue(ControllerProperty) is PlacementGapController previousController)
+            if ((double)e.NewValue <= 0D)
             {
-                previousController.Detach();
-                d.ClearValue(ControllerProperty);
+                return;
             }
 
-            return;
+            controller = new PlacementRectangleController(d);
+            d.SetCurrentValue(ControllerProperty, controller);
+            controller.Attach();
         }
 
-        if (d.GetValue(ControllerProperty) is PlacementGapController controller)
-        {
-            controller.UpdatePlacementRectangle();
-            return;
-        }
+        controller.IsGapEnabled = (double)e.NewValue > 0D;
+        controller.UpdatePlacementRectangle();
 
-        controller = new PlacementGapController(d);
-        d.SetCurrentValue(ControllerProperty, controller);
-        controller.Attach();
+        ReleaseControllerIfUnused(d, controller);
     }
 
     /// <summary>
-    /// Maintains an expanded placement rectangle while preserving the caller's unexpanded value for restoration.
+    /// Enables the standard alignment-property contribution for a Popup, ContextMenu or Flyout.
     /// </summary>
-    private sealed class PlacementGapController
+    /// <remarks>
+    /// Alignment and placement gaps both transform PlacementRectangle. Keeping them in one controller preserves the
+    /// consumer's authored rectangle and prevents the two transformations from treating each other's effective value
+    /// as new input.
+    /// </remarks>
+    internal static void SetAlignmentEnabled(DependencyObject owner, bool isEnabled)
     {
-        private readonly DependencyObject             _owner;
-        private readonly Popup?                       _popup;
-        private readonly Flyout?                      _flyout;
-        private readonly DependencyPropertyDescriptor _placementRectangleDescriptor;
-        private readonly DependencyPropertyDescriptor _placementTargetDescriptor;
-        private readonly DependencyPropertyDescriptor _placementDescriptor;
+        if (owner is not Popup and not NativeContextMenu and not Flyout)
+        {
+            return;
+        }
 
-        private UIElement?            _observedTarget;
-        private TargetLayoutObserver? _targetLayoutObserver;
-        private Rect                  _basePlacementRectangle;
-        private Rect                  _appliedPlacementRectangle;
-        private bool                  _hasAppliedPlacementRectangle;
-        private bool                  _isApplyingPlacementRectangle;
+        if (owner.GetValue(ControllerProperty) is not PlacementRectangleController controller)
+        {
+            if (!isEnabled)
+            {
+                return;
+            }
 
-        public PlacementGapController(DependencyObject owner)
+            controller = new PlacementRectangleController(owner);
+            owner.SetCurrentValue(ControllerProperty, controller);
+            controller.Attach();
+        }
+
+        controller.IsAlignmentEnabled = isEnabled;
+        controller.UpdatePlacementRectangle();
+
+        ReleaseControllerIfUnused(owner, controller);
+    }
+
+    private static void ReleaseControllerIfUnused(
+        DependencyObject owner,
+        PlacementRectangleController controller)
+    {
+        if (controller.IsGapEnabled || controller.IsAlignmentEnabled)
+        {
+            return;
+        }
+
+        controller.Detach();
+        owner.ClearValue(ControllerProperty);
+    }
+
+    /// <summary>
+    /// Composes placement-rectangle features while preserving the caller's unmodified value for restoration.
+    /// </summary>
+    private sealed class PlacementRectangleController
+    {
+        private readonly DependencyObject       _owner;
+        private readonly Popup?                 _popup;
+        private readonly Flyout?                _flyout;
+        private readonly NativeContextMenu?     _contextMenu;
+        private readonly DependencyProperty     _placementRectangleProperty;
+        private readonly DependencyProperty     _placementProperty;
+        private readonly List<PropertyObserver> _propertyObservers = new();
+        private readonly DependencyProperty     _placementTargetProperty;
+
+        private UIElement?      _observedTarget;
+        private LayoutObserver? _targetLayoutObserver;
+        private UIElement?      _observedContent;
+        private LayoutObserver? _contentLayoutObserver;
+        private Rect            _basePlacementRectangle;
+        private Rect            _appliedPlacementRectangle;
+        private bool            _hasAppliedPlacementRectangle;
+        private bool            _isApplyingPlacementRectangle;
+
+        public PlacementRectangleController(DependencyObject owner)
         {
             _owner  = owner;
             _popup  = owner as Popup;
             _flyout = owner as Flyout;
+            _contextMenu = owner as NativeContextMenu;
 
-            var ownerType = owner.GetType();
-            _placementRectangleDescriptor = DependencyPropertyDescriptor.FromProperty(
-                Popup.PlacementRectangleProperty,
-                ownerType
-            );
+            _placementRectangleProperty = _contextMenu is not null
+                ? NativeContextMenu.PlacementRectangleProperty
+                : Popup.PlacementRectangleProperty;
 
-            _placementTargetDescriptor = DependencyPropertyDescriptor.FromProperty(
-                _popup is not null ? Popup.PlacementTargetProperty : Flyout.PlacementTargetProperty,
-                ownerType
-            );
+            _placementProperty = _contextMenu is not null
+                ? NativeContextMenu.PlacementProperty
+                : Popup.PlacementProperty;
 
-            _placementDescriptor = DependencyPropertyDescriptor.FromProperty(Popup.PlacementProperty, ownerType);
+            _placementTargetProperty = _popup is not null
+                ? Popup.PlacementTargetProperty
+                : _contextMenu is not null
+                    ? NativeContextMenu.PlacementTargetProperty
+                    : Flyout.PlacementTargetProperty;
 
-            _basePlacementRectangle = (Rect)owner.GetValue(Popup.PlacementRectangleProperty);
+            _basePlacementRectangle = (Rect)owner.GetValue(_placementRectangleProperty);
         }
+
+        public bool IsGapEnabled { get; set; }
+
+        public bool IsAlignmentEnabled { get; set; }
 
         public void Attach()
         {
@@ -163,12 +217,27 @@ public static class PopupPlacementGap
             {
                 _popup.Opened += OnPopupOpened;
             }
+            else if (_contextMenu is not null)
+            {
+                _contextMenu.Opened += OnPopupOpened;
+            }
 
-            _placementRectangleDescriptor.AddValueChanged(_owner, OnPlacementRectangleChanged);
-            _placementTargetDescriptor.AddValueChanged(_owner, OnPlacementTargetChanged);
-            _placementDescriptor.AddValueChanged(_owner, OnPlacementChanged);
+            // Binding directly to dependency properties uses WPF's weak dependency-source notifications.
+            // A cached DependencyPropertyDescriptor would retain the owner even if this popup never opens.
+            Observe(_placementRectangleProperty, OnPlacementRectangleChanged);
+            Observe(_placementTargetProperty, OnPlacementTargetChanged);
+            Observe(_placementProperty, OnPlacementChanged);
+
+            if (_popup is not null)
+            {
+                Observe(Popup.ChildProperty, OnPopupChildChanged);
+            }
+
+            Observe(FrameworkElement.HorizontalAlignmentProperty, OnAlignmentChanged);
+            Observe(FrameworkElement.VerticalAlignmentProperty, OnAlignmentChanged);
 
             RefreshObservedTarget();
+            RefreshObservedContent();
             UpdatePlacementRectangle();
         }
 
@@ -178,13 +247,26 @@ public static class PopupPlacementGap
             {
                 _popup.Opened -= OnPopupOpened;
             }
+            else if (_contextMenu is not null)
+            {
+                _contextMenu.Opened -= OnPopupOpened;
+            }
 
-            _placementRectangleDescriptor.RemoveValueChanged(_owner, OnPlacementRectangleChanged);
-            _placementTargetDescriptor.RemoveValueChanged(_owner, OnPlacementTargetChanged);
-            _placementDescriptor.RemoveValueChanged(_owner, OnPlacementChanged);
+            foreach (var observer in _propertyObservers)
+            {
+                observer.Detach();
+            }
+
+            _propertyObservers.Clear();
 
             SetObservedTarget(null);
+            SetObservedContent(null);
             RestoreBasePlacementRectangle();
+        }
+
+        private void Observe(DependencyProperty property, EventHandler callback)
+        {
+            _propertyObservers.Add(new PropertyObserver(_owner, property, callback));
         }
 
         private void OnPopupOpened(object? sender, EventArgs e)
@@ -192,6 +274,7 @@ public static class PopupPlacementGap
             // An implicit target or a template-bound explicit target may only be available when opening begins.
             // Refreshing here still precedes the deferred placement pass caused by changing PlacementRectangle.
             RefreshObservedTarget();
+            RefreshObservedContent();
             UpdatePlacementRectangle();
         }
 
@@ -202,9 +285,9 @@ public static class PopupPlacementGap
                 return;
             }
 
-            // Treat a binding, style or direct assignment as a new unexpanded contract. Reapply the gap immediately
-            // so WPF never performs a later layout pass with a one-sided or stale anchor rectangle.
-            _basePlacementRectangle = (Rect)_owner.GetValue(Popup.PlacementRectangleProperty);
+            // Treat a binding, style or direct assignment as a new unmodified contract. Reapply all active placement
+            // contributions immediately so WPF never performs a later pass with stale geometry.
+            _basePlacementRectangle = (Rect)_owner.GetValue(_placementRectangleProperty);
             UpdatePlacementRectangle();
         }
 
@@ -219,15 +302,24 @@ public static class PopupPlacementGap
             UpdatePlacementRectangle();
         }
 
-        private void OnTargetLayoutUpdated()
+        private void OnPopupChildChanged(object? sender, EventArgs e)
         {
-            // Rect.Empty means "use the target's render bounds". Once expanded, the effective property is concrete,
-            // so keep it synchronized explicitly after target layout. Equality checks below make the global layout
-            // notification cheap when the target's size did not change.
-            if (_basePlacementRectangle == Rect.Empty)
-            {
-                UpdatePlacementRectangle();
-            }
+            RefreshObservedContent();
+            UpdatePlacementRectangle();
+        }
+
+        private void OnAlignmentChanged(object? sender, EventArgs e)
+        {
+            // Instance-level observation leaves FrameworkElement's metadata available to application-defined Popup
+            // subclasses and composes with any metadata callbacks that those subclasses install themselves.
+            UpdatePlacementRectangle();
+        }
+
+        private void OnObservedLayoutUpdated()
+        {
+            // An implicit target rectangle and every alignment contribution depend on current render sizes. Equality
+            // checks below keep this global layout notification cheap when neither target nor content size changed.
+            UpdatePlacementRectangle();
         }
 
         private void RefreshObservedTarget()
@@ -235,6 +327,7 @@ public static class PopupPlacementGap
             SetObservedTarget(
                 _popup?.PlacementTarget
                 ?? _flyout?.PlacementTarget
+                ?? _contextMenu?.PlacementTarget
                 ?? (_popup is not null ? VisualTreeHelper.GetParent(_popup) as UIElement : null)
             );
         }
@@ -253,53 +346,186 @@ public static class PopupPlacementGap
 
             if (_observedTarget is not null)
             {
-                _targetLayoutObserver = new TargetLayoutObserver(_observedTarget, this);
+                _targetLayoutObserver = new LayoutObserver(_observedTarget, this);
             }
+        }
+
+        private void RefreshObservedContent()
+        {
+            // Flyout itself is the Child of its private Popup. Observing the surface keeps alignment synchronized after
+            // its first popup-window measure as well as after template, content, width or height changes.
+            SetObservedContent(_popup?.Child ?? (UIElement?)_contextMenu ?? _flyout);
+        }
+
+        private void SetObservedContent(UIElement? content)
+        {
+            if (ReferenceEquals(_observedContent, content))
+            {
+                return;
+            }
+
+            _contentLayoutObserver?.Detach();
+            _observedContent = content;
+            _contentLayoutObserver = content is null ? null : new LayoutObserver(content, this);
         }
 
         public void UpdatePlacementRectangle()
         {
-            var gap = GetVertical(_owner);
-            var placement = (PlacementMode)_owner.GetValue(Popup.PlacementProperty);
-            if (gap <= 0D || placement is not (PlacementMode.Top or PlacementMode.Bottom))
+            var placement = (PlacementMode)_owner.GetValue(_placementProperty);
+            var appliesGap = IsGapEnabled && (placement is PlacementMode.Top or PlacementMode.Bottom);
+
+            var horizontalAlignment = (HorizontalAlignment)_owner.GetValue(
+                FrameworkElement.HorizontalAlignmentProperty
+            );
+
+            var verticalAlignment = (VerticalAlignment)_owner.GetValue(
+                FrameworkElement.VerticalAlignmentProperty
+            );
+
+            var appliesHorizontalAlignment = IsAlignmentEnabled
+                && horizontalAlignment != HorizontalAlignment.Stretch
+                && (placement is PlacementMode.Top or PlacementMode.Bottom or PlacementMode.Relative or PlacementMode.Center);
+
+            var appliesVerticalAlignment = IsAlignmentEnabled
+                && verticalAlignment != VerticalAlignment.Stretch
+                && (placement is PlacementMode.Left or PlacementMode.Right or PlacementMode.Relative or PlacementMode.Center);
+
+            if (!appliesGap && !appliesHorizontalAlignment && !appliesVerticalAlignment)
             {
                 RestoreBasePlacementRectangle();
                 return;
             }
 
-            Rect expandedRectangle;
-            if (_basePlacementRectangle == Rect.Empty)
+            var observedTarget = _observedTarget;
+            if (_basePlacementRectangle == Rect.Empty && observedTarget is null)
             {
-                if (_observedTarget is null)
+                RestoreBasePlacementRectangle();
+                return;
+            }
+
+            var effectiveRectangle = _basePlacementRectangle == Rect.Empty
+                ? new Rect(
+                    0D,
+                    0D,
+                    observedTarget!.RenderSize.Width,
+                    observedTarget.RenderSize.Height
+                )
+                : _basePlacementRectangle;
+
+            if (appliesGap)
+            {
+                var gap = GetVertical(_owner);
+                effectiveRectangle.Y -= gap;
+                effectiveRectangle.Height += gap * 2D;
+            }
+
+            if (_observedContent is not null && (appliesHorizontalAlignment || appliesVerticalAlignment))
+            {
+                var contentSize = GetContentSizeInTargetCoordinates();
+                if (appliesHorizontalAlignment)
                 {
-                    return;
+                    effectiveRectangle.X += GetAlignmentOffset(
+                        effectiveRectangle.Width,
+                        contentSize.Width,
+                        horizontalAlignment
+                    );
+
+                    effectiveRectangle.Width = contentSize.Width;
                 }
 
-                expandedRectangle = new Rect(
-                    0D,
-                    -gap,
-                    _observedTarget.RenderSize.Width,
-                    _observedTarget.RenderSize.Height + (gap * 2D)
-                );
-            }
-            else
-            {
-                expandedRectangle = new Rect(
-                    _basePlacementRectangle.X,
-                    _basePlacementRectangle.Y - gap,
-                    _basePlacementRectangle.Width,
-                    _basePlacementRectangle.Height + (gap * 2D)
-                );
+                if (appliesVerticalAlignment)
+                {
+                    effectiveRectangle.Y += GetAlignmentOffset(
+                        effectiveRectangle.Height,
+                        contentSize.Height,
+                        verticalAlignment
+                    );
+
+                    effectiveRectangle.Height = contentSize.Height;
+                }
             }
 
-            if (_hasAppliedPlacementRectangle && _appliedPlacementRectangle == expandedRectangle)
+            if (_hasAppliedPlacementRectangle && _appliedPlacementRectangle == effectiveRectangle)
             {
                 return;
             }
 
-            SetPlacementRectangle(expandedRectangle);
-            _appliedPlacementRectangle    = expandedRectangle;
+            SetPlacementRectangle(effectiveRectangle);
+
+            _appliedPlacementRectangle    = effectiveRectangle;
             _hasAppliedPlacementRectangle = true;
+        }
+
+        /// <summary>
+        /// Converts popup-content extents into the coordinate system consumed by PlacementRectangle.
+        /// </summary>
+        private Size GetContentSizeInTargetCoordinates()
+        {
+            var content = _observedContent!;
+            var size    = content.RenderSize;
+            var target  = _observedTarget;
+
+            if (target is null
+                || PresentationSource.FromVisual(target) is null
+                || PresentationSource.FromVisual(content) is null)
+            {
+                // Before the popup HWND exists there is no shared coordinate space. Opening and layout notifications
+                // replace this provisional size once WPF has applied the popup's actual transforms and monitor DPI.
+                return size;
+            }
+
+            try
+            {
+                // Popup.GetChildInterestPoints and GetPlacementTargetInterestPoints transform the two surfaces
+                // independently. In particular, a standalone popup does not inherit the target's LayoutTransform.
+                // Screen coordinates bridge their HWNDs; subtracting the origin removes placement/animation offsets
+                // so moving the popup cannot feed its position back into the alignment calculation.
+                var origin = target.PointFromScreen(content.PointToScreen(default));
+                var x      = target.PointFromScreen(content.PointToScreen(new Point(size.Width, 0D))) - origin;
+                var y      = target.PointFromScreen(content.PointToScreen(new Point(0D, size.Height))) - origin;
+
+                var width  = Math.Abs(x.X) + Math.Abs(y.X);
+                var height = Math.Abs(x.Y) + Math.Abs(y.Y);
+
+                if (!double.IsNaN(width) && !double.IsInfinity(width)
+                    && !double.IsNaN(height) && !double.IsInfinity(height))
+                {
+                    return new Size(width, height);
+                }
+            }
+            catch (InvalidOperationException)
+            {
+                // A disconnected visual or a singular target transform has no inverse screen mapping. Keep the
+                // provisional local size; a later valid layout recomputes it without interrupting popup lifecycle.
+            }
+
+            return size;
+        }
+
+        private static double GetAlignmentOffset(
+            double targetLength,
+            double popupLength,
+            HorizontalAlignment alignment)
+        {
+            return alignment switch
+            {
+                HorizontalAlignment.Center => (targetLength - popupLength) / 2D,
+                HorizontalAlignment.Right  => targetLength - popupLength,
+                _                          => 0D,
+            };
+        }
+
+        private static double GetAlignmentOffset(
+            double targetLength,
+            double popupLength,
+            VerticalAlignment alignment)
+        {
+            return alignment switch
+            {
+                VerticalAlignment.Center => (targetLength - popupLength) / 2D,
+                VerticalAlignment.Bottom => targetLength - popupLength,
+                _                        => 0D,
+            };
         }
 
         private void RestoreBasePlacementRectangle()
@@ -321,7 +547,7 @@ public static class PopupPlacementGap
             {
                 // SetCurrentValue keeps a consumer's binding expression installed. A later source update is observed
                 // as a new base rectangle and expanded again rather than being silently disconnected by the behavior.
-                _owner.SetCurrentValue(Popup.PlacementRectangleProperty, value);
+                _owner.SetCurrentValue(_placementRectangleProperty, value);
             }
             finally
             {
@@ -330,22 +556,74 @@ public static class PopupPlacementGap
         }
 
         /// <summary>
-        /// Observes target layout without letting a long-lived target retain a resource-owned Popup.
+        /// Receives dependency-property changes without registering the owner in a global descriptor cache.
+        /// </summary>
+        /// <remarks>
+        /// The controller owns these binding targets. WPF holds their dependency links weakly, so the entire
+        /// controller/owner graph can be collected even for an unopened popup. An explicit DP path avoids CLR
+        /// PropertyDescriptor subscriptions. Detaching clears the binding before releasing the callback.
+        /// </remarks>
+        private sealed class PropertyObserver : DependencyObject
+        {
+            private static readonly DependencyProperty ValueProperty = DependencyProperty.Register(
+                "Value", typeof(object), typeof(PropertyObserver), new PropertyMetadata(null, OnValueChanged));
+
+            private EventHandler? _callback;
+
+            /// <summary>
+            /// Initializes a new instance of the <see cref="PropertyObserver"/> class.
+            /// Establishes a one-way DP observation without notifying the controller during the initial transfer.
+            /// </summary>
+            /// <param name="source">The popup surface whose dependency property is observed.</param>
+            /// <param name="property">The dependency property, supplied directly to avoid CLR property lookup.</param>
+            /// <param name="callback">Receives subsequent effective-value changes on the owning dispatcher.</param>
+            public PropertyObserver(DependencyObject source, DependencyProperty property, EventHandler callback)
+            {
+                // Initial transfer establishes the baseline; it must not call into a partially attached controller.
+                BindingOperations.SetBinding(this, ValueProperty, new Binding
+                {
+                    Source = source,
+                    Path = new PropertyPath(property),
+                    Mode = BindingMode.OneWay,
+                });
+
+                _callback = callback;
+            }
+
+            /// <summary>
+            /// Stops observation without invoking the controller while the binding value is cleared.
+            /// </summary>
+            public void Detach()
+            {
+                _callback = null;
+                BindingOperations.ClearBinding(this, ValueProperty);
+            }
+
+            private static void OnValueChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+            {
+                var observer = (PropertyObserver)d;
+                observer._callback?.Invoke(observer, EventArgs.Empty);
+            }
+        }
+
+        /// <summary>
+        /// Observes target or popup-content layout without letting that element retain a resource-owned Popup.
         /// </summary>
         /// <remarks>
         /// UIElement.LayoutUpdated does not have a dedicated public weak-event manager. The observer is strongly held
         /// by the target but keeps only a weak reference to the placement controller; it removes itself when either
         /// the controller explicitly detaches or a later layout discovers that the controller was collected.
         /// </remarks>
-        private sealed class TargetLayoutObserver
+        private sealed class LayoutObserver
         {
-            private readonly WeakReference<PlacementGapController> _controller;
+            private readonly WeakReference<PlacementRectangleController> _controller;
             private UIElement? _target;
 
-            public TargetLayoutObserver(UIElement target, PlacementGapController controller)
+            public LayoutObserver(UIElement target, PlacementRectangleController controller)
             {
                 _target     = target;
-                _controller = new WeakReference<PlacementGapController>(controller);
+                _controller = new WeakReference<PlacementRectangleController>(controller);
+
                 target.LayoutUpdated += OnLayoutUpdated;
             }
 
@@ -364,7 +642,7 @@ public static class PopupPlacementGap
             {
                 if (_controller.TryGetTarget(out var controller))
                 {
-                    controller.OnTargetLayoutUpdated();
+                    controller.OnObservedLayoutUpdated();
                     return;
                 }
 

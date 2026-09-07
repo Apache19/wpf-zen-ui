@@ -26,6 +26,7 @@ internal static class LibraryInitializer
     static LibraryInitializer()
     {
         TextBlock.InitializeMetadata();
+        PopupAlignment.Initialize();
         PopupDismissal.Initialize();
     }
 
