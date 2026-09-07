@@ -20,8 +20,9 @@ namespace Wpf.Zen.Ui.Controls;
 /// </para>
 /// <para>
 /// While a dialog is open, the host disables interaction with the covered content while preserving
-/// title bar window controls. It keeps keyboard focus within the dialog and its owned surfaces,
-/// and attempts to restore the previous focus when the dialog closes. Hiding or unloading the host
+/// title bar window controls. Within this host, keyboard focus is restricted to the dialog and its
+/// owned surfaces; other hosts and independent regions remain available. The host attempts to
+/// restore the previous focus when the dialog closes. Hiding or unloading the host
 /// ends the active dialog.
 /// </para>
 /// </remarks>
@@ -32,6 +33,7 @@ public partial class ContentDialogHost : ContentControl
     private UIElement?                        _contentRoot;
     private ContentDialogTransitionPresenter? _dialogPresenter;
     private Session?                         _session;
+    private bool                             _isPreparingPresentation;
 
     private sealed class Session(ContentDialog dialog, CancellationToken cancellationToken)
     {
@@ -170,6 +172,7 @@ public partial class ContentDialogHost : ContentControl
     /// </remarks>
     public Task<object?> ShowAsync(ContentDialog dialog, CancellationToken cancellationToken = default)
     {
+        bool ownsPreparation = false;
         // Validation failures are represented by the returned task, just like presentation failures.
         try
         {
@@ -182,26 +185,28 @@ public partial class ContentDialogHost : ContentControl
 
             dialog.VerifyAccess();
 
-            if (_session is not null || dialog.IsOpen)
+            if (_isPreparingPresentation)
             {
                 throw new InvalidOperationException(
-                    "The host or dialog is already in use. Await the current presentation before reuse."
+                    "The host is preparing a dialog presentation."
                 );
             }
 
-            if (!IsLoaded || !IsVisible)
-            {
-                throw new InvalidOperationException("ContentDialogHost must be loaded and visible.");
-            }
-
-            if (dialog.Parent is not null || VisualTreeHelper.GetParent(dialog) is not null)
-            {
-                throw new InvalidOperationException("The dialog must not already have a parent.");
-            }
-
+            VerifyPresentationAvailable(dialog);
             cancellationToken.ThrowIfCancellationRequested();
 
+            // ApplyTemplate invokes application overrides and can pump Dispatcher. Reserve the
+            // host before entering those callbacks, without publishing an incomplete Session that
+            // template replacement or unload could attempt to clean up. Only the owning call may
+            // release this guard, including when a nested ShowAsync is rejected.
+            _isPreparingPresentation = ownsPreparation = true;
             ApplyTemplate();
+
+            // Template callbacks may hide the host, cancel the request, or attach the dialog to
+            // another host. The reservation protects this host only; all other preconditions must
+            // still hold before the session acquires logical ownership and input isolation.
+            VerifyPresentationAvailable(dialog);
+            cancellationToken.ThrowIfCancellationRequested();
 
             if (_contentRoot is not { } contentRoot)
             {
@@ -236,6 +241,37 @@ public partial class ContentDialogHost : ContentControl
         catch (Exception exception)
         {
             return Task.FromException<object?>(exception);
+        }
+        finally
+        {
+            if (ownsPreparation)
+            {
+                _isPreparingPresentation = false;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Checks mutable presentation prerequisites before and after template callbacks. This method
+    /// does not acquire ownership; the preparation guard and Session provide that reservation.
+    /// </summary>
+    private void VerifyPresentationAvailable(ContentDialog dialog)
+    {
+        if (_session is not null || dialog.IsOpen)
+        {
+            throw new InvalidOperationException(
+                "The host or dialog is already in use. Await the current presentation before reuse."
+            );
+        }
+
+        if (!IsLoaded || !IsVisible)
+        {
+            throw new InvalidOperationException("ContentDialogHost must be loaded and visible.");
+        }
+
+        if (dialog.Parent is not null || VisualTreeHelper.GetParent(dialog) is not null)
+        {
+            throw new InvalidOperationException("The dialog must not already have a parent.");
         }
     }
 

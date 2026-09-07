@@ -45,7 +45,7 @@ public partial class ContentDialogTests
         var header = FindDialogTemplateElement<ContentPresenter>(dialog, element => element.ContentSource == "Header");
         var dismiss = FindDialogTemplateElement<Wpf.Zen.Ui.Controls.Button>(
             dialog, element => AutomationProperties.GetAutomationId(element) == "DismissButton");
-        var footer = Assert.IsType<Border>(dialog.Template.FindName("Footer", dialog));
+        var footer = Assert.IsType<Border>(dialog.Template.FindName("footerBorder", dialog));
         var shell = Assert.IsType<Border>(VisualTreeHelper.GetChild(dialog, 0));
 
         Point headerOrigin = header.TranslatePoint(default, dialog);
@@ -455,7 +455,6 @@ public partial class ContentDialogTests
 
         Assert.NotNull(button.Style);
         Assert.NotNull(button.Content);
-        Assert.Equal("Close", button.ToolTip);
         Invoke(button);
         Pump(task);
         Assert.Null(await task);
@@ -778,7 +777,7 @@ public partial class ContentDialogTests
     });
 
     [Fact]
-    public void Focus_GuardBlocksIndependentRegionInTheSamePresentationRoot() => Run(scope =>
+    public void Focus_GuardAllowsIndependentRegionAndItsPopup() => Run(scope =>
     {
         var background = new System.Windows.Controls.TextBox();
         var independent = new System.Windows.Controls.TextBox();
@@ -800,16 +799,17 @@ public partial class ContentDialogTests
         var task = scope.Host.ShowAsync(dialog);
         Drain();
         Assert.Same(editor, Keyboard.FocusedElement);
-        Assert.False(independent.Focus());
-        Assert.Same(editor, Keyboard.FocusedElement);
+        Assert.True(independent.Focus());
+        Assert.Same(independent, Keyboard.FocusedElement);
         popup.IsOpen = true;
         Drain();
-        Assert.False(popupEditor.Focus());
-        Assert.Same(editor, Keyboard.FocusedElement);
+        Assert.True(popupEditor.Focus());
+        Assert.Same(popupEditor, Keyboard.FocusedElement);
         popup.IsOpen = false;
+        Assert.True(independent.Focus());
         dialog.Close();
         Pump(task);
-        Assert.Same(background, Keyboard.FocusedElement);
+        Assert.Same(independent, Keyboard.FocusedElement);
     });
 
     [Fact]

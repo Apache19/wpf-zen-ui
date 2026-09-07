@@ -493,7 +493,7 @@ public partial class ContentDialogHost
 
     private void OnPreProcessInput(object sender, PreProcessInputEventArgs e)
     {
-        if (_session?.Dialog is not { } dialog || _inputRoot is not { } inputRoot)
+        if (_session?.Dialog is not { } dialog)
         {
             return;
         }
@@ -501,23 +501,33 @@ public partial class ContentDialogHost
         // PreviewGotKeyboardFocus is the cancellable half of WPF's focus transaction. Observing it through
         // InputManager is intentional: a Popup or ContextMenu has a separate presentation source, so an event
         // handler on the dialog's visual tree cannot see every focus transfer. Contains follows placement ownership,
-        // allowing surfaces opened by the dialog while rejecting every other target in this presentation root.
-        // A target in another Window has a different root and remains available when the application switches away.
+        // allowing surfaces opened by the dialog while rejecting covered targets within this host.
+        // Other hosts and independent regions remain focusable, even in the same presentation root;
+        // otherwise two concurrent hosts would veto each other's dialog focus transactions.
         if (e.StagingItem.Input is KeyboardFocusChangedEventArgs focus
             && focus.RoutedEvent == Keyboard.PreviewGotKeyboardFocusEvent
-            && Contains(inputRoot, focus.NewFocus as DependencyObject)
+            && Contains(this, focus.NewFocus as DependencyObject)
             && !Contains(dialog, focus.NewFocus as DependencyObject))
         {
             focus.Handled = true;
         }
     }
 
-    private bool IsCoveredTarget(object source)
+    /// <summary>
+    /// Blocks covered targets, and ancestor targets that would bypass the dialog's bubbling
+    /// command boundary while the dialog or one of its owned popups has keyboard focus.
+    /// </summary>
+    private bool IsBlockedCommandTarget(object source)
     {
         return _session?.Dialog is { } dialog
                && source is DependencyObject target && !Contains(dialog, target)
                && (Contains(this, target)
-                   || Contains(dialog, Keyboard.FocusedElement as DependencyObject));
+                   // An explicit Window or ancestor target starts its route above the dialog,
+                   // so the dialog's own command handlers cannot stop it. Limit this additional
+                   // guard to ancestors and dialog-owned focus: sibling regions must remain
+                   // usable, including their window commands after focus moves outside.
+                   || (Contains(target, this)
+                       && Contains(dialog, Keyboard.FocusedElement as DependencyObject)));
     }
 
     // Button.OnClick uses this internal WPF command when IsCancel=true and Command=null. Identify its public command
@@ -539,7 +549,7 @@ public partial class ContentDialogHost
             e.CanExecute = true;
             e.Handled = true;
         }
-        else if (IsCoveredTarget(e.OriginalSource))
+        else if (IsBlockedCommandTarget(e.OriginalSource))
         {
             e.CanExecute = false;
             e.Handled = true;
@@ -555,7 +565,7 @@ public partial class ContentDialogHost
             dialog.Dismiss();
             e.Handled = true;
         }
-        else if (IsCoveredTarget(e.OriginalSource))
+        else if (IsBlockedCommandTarget(e.OriginalSource))
         {
             e.Handled = true;
         }
