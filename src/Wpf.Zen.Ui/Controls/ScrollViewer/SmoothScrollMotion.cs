@@ -7,7 +7,7 @@
 namespace Wpf.Zen.Ui.Controls;
 
 /// <summary>
-/// Maintains a one-dimensional, critically damped wheel motion in device-independent pixels.
+/// Maintains a one-dimensional, critically damped scrolling motion in device-independent pixels.
 /// The analytic solution is independent of frame rate and remains stable after a delayed frame.
 /// </summary>
 internal sealed class SmoothScrollMotion(double position)
@@ -20,7 +20,7 @@ internal sealed class SmoothScrollMotion(double position)
 
     /// <summary>
     /// Accumulates distance without resetting forward velocity. A direction reversal discards queued
-    /// travel and velocity so opposite wheel input takes effect immediately instead of fighting inertia.
+    /// travel and velocity so opposite input takes effect immediately instead of fighting inertia.
     /// Returns false when the destination is already at the requested boundary.
     /// </summary>
     internal bool MoveBy(double distance, double maximum)

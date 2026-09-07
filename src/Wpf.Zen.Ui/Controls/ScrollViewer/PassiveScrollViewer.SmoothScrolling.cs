@@ -1,4 +1,4 @@
-// This Source Code Form is subject to the terms of the MIT License.
+﻿// This Source Code Form is subject to the terms of the MIT License.
 // If a copy of the MIT was not distributed with this file, You can obtain one at https://opensource.org/licenses/MIT.
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
@@ -11,7 +11,7 @@ using System.Windows.Input;
 
 namespace Wpf.Zen.Ui.Controls;
 
-/// <summary>Contains the frame-driven wheel motion and native-input handoff behavior.</summary>
+/// <summary>Contains frame-driven wheel, keyboard and scrollbar motion together with native-input handoff behavior.</summary>
 public partial class PassiveScrollViewer
 {
     /// <summary>Identifies the <see cref="IsSmoothScrollingEnabled"/> dependency property.</summary>
@@ -30,8 +30,10 @@ public partial class PassiveScrollViewer
         );
 
     /// <summary>
-    /// Gets or sets a value indicating whether vertical mouse-wheel input uses continuous pixel motion. The default is
-    /// <see langword="true"/>. System client-area animation preferences and native spill mode take precedence.
+    /// Gets or sets a value indicating whether mouse-wheel input, keyboard scrolling and template
+    /// scrollbar line/page buttons use continuous pixel motion. The default is <see langword="true"/>.
+    /// System client-area animation preferences take precedence; native spill mode bypasses animation
+    /// for the wheel only.
     /// </summary>
     /// <remarks>
     /// This property does not inherit, is not animated, and does not itself invalidate layout. A template
@@ -45,7 +47,7 @@ public partial class PassiveScrollViewer
         set => SetValue(IsSmoothScrollingEnabledProperty, value);
     }
 
-    /// <summary>Configures smooth wheel scrolling for an element's template-owned viewer.</summary>
+    /// <summary>Configures smooth scrolling for an element's template-owned viewer.</summary>
     /// <param name="element">The viewer or template owner to configure.</param>
     /// <param name="value">Whether smooth scrolling is enabled.</param>
     public static void SetIsSmoothScrollingEnabled(DependencyObject element, bool value)
@@ -83,7 +85,7 @@ public partial class PassiveScrollViewer
         );
 
     /// <summary>
-    /// Gets or sets the approximate time to cover 99% of an isolated wheel step, defaulting to 240 ms.
+    /// Gets or sets the approximate time to cover 99% of an isolated input step, defaulting to 240 ms.
     /// Valid values range from 1 ms to 10 seconds; smaller values produce a firmer response.
     /// </summary>
     /// <remarks>
@@ -97,7 +99,7 @@ public partial class PassiveScrollViewer
         set => SetValue(SmoothScrollDurationProperty, value);
     }
 
-    /// <summary>Configures the wheel response time for an element's template-owned viewer.</summary>
+    /// <summary>Configures the smooth-scroll response time for an element's template-owned viewer.</summary>
     /// <param name="element">The viewer or template owner to configure.</param>
     /// <param name="value">A response time between 1 ms and 10 seconds.</param>
     public static void SetSmoothScrollDuration(DependencyObject element, TimeSpan value)
@@ -105,7 +107,7 @@ public partial class PassiveScrollViewer
         element.SetValue(SmoothScrollDurationProperty, value);
     }
 
-    /// <summary>Gets the wheel response time; the default is 240 ms.</summary>
+    /// <summary>Gets the smooth-scroll response time; the default is 240 ms.</summary>
     /// <param name="element">The viewer or template owner to query.</param>
     /// <returns>The configured damping response time.</returns>
     [AttachedPropertyBrowsableForType(typeof(DependencyObject))]
@@ -114,12 +116,18 @@ public partial class PassiveScrollViewer
         return (TimeSpan)element.GetValue(SmoothScrollDurationProperty);
     }
 
+    // ScrollViewer's pixel-based built-in providers use its internal _scrollLineDelta constant.
+    // Repeating that stable 16-DIP contract avoids reflection on every target framework while keeping
+    // intercepted line commands equivalent to the native command that they replace.
+    private const double ScrollLineDelta = 16d;
+
     private SmoothScrollMotion? _smoothMotion;
     private IScrollInfo?        _smoothScrollInfo;
+    private Orientation         _smoothScrollOrientation;
     private TimeSpan?           _lastSmoothScrollRenderingTime;
     private double              _lastSmoothScrollOffset;
 
-    /// <summary>Gets a value indicating whether this viewer owns a rendering subscription and wheel motion.</summary>
+    /// <summary>Gets a value indicating whether this viewer owns a rendering subscription and smooth motion.</summary>
     internal bool IsSmoothScrolling => _smoothMotion is not null;
 
     /// <summary>
@@ -137,45 +145,52 @@ public partial class PassiveScrollViewer
     }
 
     /// <summary>
-    /// Gets a value indicating whether the current provider accepts continuous vertical offsets in device-independent pixels.
-    /// Override for a custom pixel-based IScrollInfo; never return true for a provider that rounds to items.
+    /// Gets a value indicating whether the current provider accepts continuous offsets in
+    /// device-independent pixels along <paramref name="orientation"/>. Override for a custom
+    /// pixel-based <see cref="IScrollInfo"/>; never return <see langword="true"/> for an axis that
+    /// rounds offsets to items.
     /// </summary>
     /// <remarks>
     /// IScrollInfo does not expose its coordinate units. Known providers are checked through public APIs;
-    /// unknown providers conservatively retain native wheel behavior. No CanContentScroll value is changed.
+    /// unknown providers conservatively retain native scrolling behavior. No CanContentScroll value is changed.
     /// </remarks>
-    protected virtual bool SupportsSmoothScrolling
+    /// <param name="orientation">The axis whose offset units are being queried.</param>
+    /// <returns>
+    /// <see langword="true"/> when fractional offsets are safe on the requested axis; otherwise,
+    /// <see langword="false"/>.
+    /// </returns>
+    protected virtual bool SupportsSmoothScrolling(Orientation orientation)
     {
-        get
+        if (ScrollInfo is ScrollContentPresenter)
         {
-            if (ScrollInfo is ScrollContentPresenter)
-            {
-                return true;
-            }
-
-            if (ScrollInfo is VirtualizingWrapPanel vwp)
-            {
-                return vwp.ActualScrollUnit == ScrollUnit.Pixel;
-            }
-
-            if (ScrollInfo is VirtualizingStackPanel vsp)
-            {
-                return vsp.Orientation == Orientation.Horizontal
-                       || (ItemsControl.GetItemsOwner(vsp) is { } owner
-                           && VirtualizingPanel.GetScrollUnit(owner) == ScrollUnit.Pixel);
-            }
-
-            if (ScrollInfo is StackPanel sp)
-            {
-                return sp.Orientation == Orientation.Horizontal;
-            }
-
-            return false;
+            return true;
         }
+
+        if (ScrollInfo is VirtualizingWrapPanel vwp)
+        {
+            return vwp.ActualScrollUnit == ScrollUnit.Pixel;
+        }
+
+        if (ScrollInfo is VirtualizingStackPanel vsp)
+        {
+            // A stack panel's cross axis is always measured in pixels. Its stacking axis only
+            // accepts fractional offsets when the owning ItemsControl selects pixel scroll units.
+            bool isCrossAxis = vsp.Orientation != orientation;
+            return isCrossAxis
+                   || (ItemsControl.GetItemsOwner(vsp) is { } owner
+                       && VirtualizingPanel.GetScrollUnit(owner) == ScrollUnit.Pixel);
+        }
+
+        if (ScrollInfo is StackPanel sp)
+        {
+            return sp.Orientation != orientation;
+        }
+
+        return false;
     }
 
     /// <summary>
-    /// Gets a value indicating whether system preferences permit wheel animation. The default respects Windows client-area
+    /// Gets a value indicating whether system preferences permit scroll animation. The default respects Windows client-area
     /// animations. An override can apply an application's own reduced-motion preference as well.
     /// </summary>
     protected virtual bool AreScrollAnimationsEnabled => SystemParameters.ClientAreaAnimation;
@@ -190,8 +205,37 @@ public partial class PassiveScrollViewer
     /// <inheritdoc />
     protected override void OnPreviewKeyDown(KeyEventArgs e)
     {
-        StopSmoothScrolling();
+        // Descendant input can be consumed before bubbling reaches this viewer. Cancel its
+        // pending motion here without claiming the key; repeated viewer-owned scroll keys keep
+        // their destination so press-and-hold input continues to accumulate.
+        if (!ReferenceEquals(e.OriginalSource, this)
+            || !TryGetKeyboardScrollStep(e, out _, out _))
+        {
+            StopSmoothScrolling();
+        }
+
         base.OnPreviewKeyDown(e);
+    }
+
+    /// <inheritdoc />
+    protected override void OnKeyDown(KeyEventArgs e)
+    {
+        if (e.Handled)
+        {
+            return;
+        }
+
+        // Replace the base ScrollViewer operation only during bubbling. Text editors and nested
+        // viewers must have the first opportunity to consume their own navigation keys.
+        if (TryGetKeyboardScrollStep(e, out Orientation orientation, out double distance)
+            && TryAccumulateSmoothScrolling(orientation, distance, out _))
+        {
+            e.Handled = true;
+            return;
+        }
+
+        StopSmoothScrolling();
+        base.OnKeyDown(e);
     }
 
     /// <inheritdoc />
@@ -218,24 +262,22 @@ public partial class PassiveScrollViewer
         return -(double)delta / Mouse.MouseWheelDeltaForOneLine * (lines < 0 ? viewport : lines * 16d);
     }
 
-    private bool CanRunSmoothScrolling
+    private bool CanRunSmoothScrolling(Orientation orientation)
     {
-        get =>
-            IsSmoothScrollingEnabled && IsLoaded && IsVisible && IsEnabled
-            && ScrollSpillMode != ScrollSpillMode.Native && AreScrollAnimationsEnabled
-            && ScrollInfo is { CanVerticallyScroll: true } && SupportsSmoothScrolling;
+        return IsSmoothScrollingEnabled && IsLoaded && IsVisible && IsEnabled
+               && AreScrollAnimationsEnabled
+               && ScrollInfo is { } scrollInfo
+               && (orientation == Orientation.Vertical
+                   ? scrollInfo.CanVerticallyScroll
+                   : scrollInfo.CanHorizontallyScroll)
+               && SupportsSmoothScrolling(orientation);
     }
 
     private bool TrySmoothMouseWheel(MouseWheelEventArgs e)
     {
-        if (!CanRunSmoothScrolling)
+        if (!CanRunSmoothScrolling(Orientation.Vertical))
         {
             return false;
-        }
-
-        if (_smoothScrollInfo != ScrollInfo)
-        {
-            StopSmoothScrolling();
         }
 
         var distance = GetSmoothWheelDistance(e.Delta, SystemParameters.WheelScrollLines, ViewportHeight);
@@ -246,24 +288,60 @@ public partial class PassiveScrollViewer
             return true;
         }
 
-        var motion = _smoothMotion ?? new SmoothScrollMotion(VerticalOffset);
-        if (!motion.MoveBy(distance, ScrollableHeight))
+        if (!TryAccumulateSmoothScrolling(Orientation.Vertical, distance, out bool moved))
+        {
+            return false;
+        }
+
+        if (!moved)
         {
             e.Handled = ScrollSpillMode == ScrollSpillMode.Disabled;
             return true;
         }
 
-        if (_smoothMotion is null)
+        e.Handled = true;
+        return true;
+    }
+
+    /// <summary>
+    /// Adds an input step to the active axis. Repeated-button ticks extend the pending destination
+    /// instead of restarting the response, which keeps press-and-hold scrolling continuous.
+    /// </summary>
+    private bool TryAccumulateSmoothScrolling(
+        Orientation orientation,
+        double distance,
+        out bool moved
+    )
+    {
+        moved = false;
+        if (!CanRunSmoothScrolling(orientation))
+        {
+            return false;
+        }
+
+        if (_smoothScrollInfo != ScrollInfo
+            || (_smoothMotion is not null && _smoothScrollOrientation != orientation))
+        {
+            StopSmoothScrolling();
+        }
+
+        double offset  = orientation == Orientation.Vertical ? VerticalOffset : HorizontalOffset;
+        double maximum = orientation == Orientation.Vertical ? ScrollableHeight : ScrollableWidth;
+
+        var motion = _smoothMotion ?? new SmoothScrollMotion(offset);
+        moved = motion.MoveBy(distance, maximum);
+
+        if (_smoothMotion is null && moved)
         {
             _smoothMotion                  = motion;
             _smoothScrollInfo              = ScrollInfo;
-            _lastSmoothScrollOffset        = VerticalOffset;
+            _smoothScrollOrientation       = orientation;
+            _lastSmoothScrollOffset        = offset;
             _lastSmoothScrollRenderingTime = null;
 
             CompositionTarget.Rendering += OnSmoothScrollRendering;
         }
 
-        e.Handled = true;
         return true;
     }
 
@@ -314,7 +392,7 @@ public partial class PassiveScrollViewer
             return;
         }
 
-        if (!CanRunSmoothScrolling || _smoothScrollInfo != ScrollInfo)
+        if (!CanRunSmoothScrolling(_smoothScrollOrientation) || _smoothScrollInfo != ScrollInfo)
         {
             StopSmoothScrolling();
             return;
@@ -324,7 +402,7 @@ public partial class PassiveScrollViewer
         var continues = motion.Advance(elapsed, SmoothScrollDuration);
 
         _lastSmoothScrollOffset = motion.Position;
-        _smoothScrollInfo!.SetVerticalOffset(motion.Position);
+        SetSmoothScrollOffset(motion.Position);
 
         // Keep ownership until ScrollChanged acknowledges the final write. The provider may still
         // measure a new extent in this frame, so the final request must still participate in range
@@ -346,7 +424,7 @@ public partial class PassiveScrollViewer
             return;
         }
 
-        if (_smoothScrollInfo != ScrollInfo || !CanRunSmoothScrolling)
+        if (_smoothScrollInfo != ScrollInfo || !CanRunSmoothScrolling(_smoothScrollOrientation))
         {
             StopSmoothScrolling();
             return;
@@ -354,14 +432,23 @@ public partial class PassiveScrollViewer
 
         // Pixel virtualizing panels may round layout coordinates. Keep subpixel motion state
         // between frames, but permit one physical pixel of layout rounding in provider feedback.
-        var tolerance = UseLayoutRounding ? 1 / VisualTreeHelper.GetDpi(this).DpiScaleY : 0.01;
-        if (e.ExtentHeightChange != 0 || e.ViewportHeightChange != 0)
+        bool vertical = _smoothScrollOrientation == Orientation.Vertical;
+        double offset = vertical ? e.VerticalOffset : e.HorizontalOffset;
+        double offsetChange = vertical ? e.VerticalChange : e.HorizontalChange;
+        double extentChange = vertical ? e.ExtentHeightChange : e.ExtentWidthChange;
+        double viewportChange = vertical ? e.ViewportHeightChange : e.ViewportWidthChange;
+        double maximum = vertical ? ScrollableHeight : ScrollableWidth;
+        double dpiScale = vertical
+            ? VisualTreeHelper.GetDpi(this).DpiScaleY
+            : VisualTreeHelper.GetDpi(this).DpiScaleX;
+        var tolerance = UseLayoutRounding ? 1 / dpiScale : 0.01;
+        if (extentChange != 0 || viewportChange != 0)
         {
             // ScrollChanged batches programmatic offsets with layout changes. An unrelated offset
             // must take ownership even when the extent changes at the same time. IScrollInfo cannot
             // identify the writer; unexpected anchoring shifts also end motion conservatively so
             // we never pull content back toward a destination from a different coordinate frame.
-            if (Math.Abs(e.VerticalOffset - Math.Min(_lastSmoothScrollOffset, ScrollableHeight)) > tolerance)
+            if (Math.Abs(offset - Math.Min(_lastSmoothScrollOffset, maximum)) > tolerance)
             {
                 StopSmoothScrolling();
                 return;
@@ -370,12 +457,12 @@ public partial class PassiveScrollViewer
             // Feedback within tolerance acknowledges the request; it is not a new motion origin.
             // Feeding rounded offsets back into the integrator would discard fractional progress
             // whenever a virtualizing panel refines its extent. Only removed range changes motion.
-            motion.ClampToRange(ScrollableHeight);
+            motion.ClampToRange(maximum);
             _lastSmoothScrollOffset = motion.Position;
         }
         else
         {
-            if (e.VerticalChange != 0 && Math.Abs(e.VerticalOffset - _lastSmoothScrollOffset) > tolerance)
+            if (offsetChange != 0 && Math.Abs(offset - _lastSmoothScrollOffset) > tolerance)
             {
                 StopSmoothScrolling();
             }
@@ -385,7 +472,7 @@ public partial class PassiveScrollViewer
         {
             // Commit a coerced physical request as well as its displayed value, so cancelled
             // motion cannot leave the presenter's old out-of-range request waiting for growth.
-            _smoothScrollInfo?.SetVerticalOffset(motion.Position);
+            SetSmoothScrollOffset(motion.Position);
             StopSmoothScrolling();
         }
     }
@@ -402,7 +489,198 @@ public partial class PassiveScrollViewer
 
     private void OnSmoothScrollCommand(object sender, ExecutedRoutedEventArgs e)
     {
+        if (TryGetSmoothScrollCommandStep(e, out Orientation orientation, out double distance)
+            && TryAccumulateSmoothScrolling(orientation, distance, out _))
+        {
+            // Handling the preview event prevents ScrollViewer's class command handler from
+            // issuing the corresponding immediate IScrollInfo Line*/Page* operation. A Thumb uses
+            // ScrollTo*/DeferScrollTo* commands and therefore deliberately remains direct-manipulation.
+            e.Handled = true;
+            return;
+        }
+
         StopSmoothScrolling();
+    }
+
+    /// <summary>
+    /// Converts line/page commands raised by this viewer or its template scrollbars. Restricting the
+    /// source prevents a nested scrolling surface's preview command from being claimed by an ancestor.
+    /// Component page commands are included because WPF registers them as keyboard-facing aliases.
+    /// </summary>
+    private bool TryGetSmoothScrollCommandStep(
+        ExecutedRoutedEventArgs e,
+        out Orientation orientation,
+        out double distance
+    )
+    {
+        orientation = Orientation.Vertical;
+        distance = 0;
+
+        double line = ScrollLineDelta;
+        if (e.Command == ScrollBar.LineUpCommand)
+        {
+            orientation = Orientation.Vertical;
+            distance = -line;
+        }
+        else if (e.Command == ScrollBar.LineDownCommand)
+        {
+            orientation = Orientation.Vertical;
+            distance = line;
+        }
+        else if (e.Command == ScrollBar.PageUpCommand
+                 || e.Command == ComponentCommands.ScrollPageUp)
+        {
+            orientation = Orientation.Vertical;
+            distance = -ViewportHeight;
+        }
+        else if (e.Command == ScrollBar.PageDownCommand
+                 || e.Command == ComponentCommands.ScrollPageDown)
+        {
+            orientation = Orientation.Vertical;
+            distance = ViewportHeight;
+        }
+        else if (e.Command == ScrollBar.LineLeftCommand)
+        {
+            orientation = Orientation.Horizontal;
+            distance = -line;
+        }
+        else if (e.Command == ScrollBar.LineRightCommand)
+        {
+            orientation = Orientation.Horizontal;
+            distance = line;
+        }
+        else if (e.Command == ScrollBar.PageLeftCommand)
+        {
+            orientation = Orientation.Horizontal;
+            distance = -ViewportWidth;
+        }
+        else if (e.Command == ScrollBar.PageRightCommand)
+        {
+            orientation = Orientation.Horizontal;
+            distance = ViewportWidth;
+        }
+        else
+        {
+            return false;
+        }
+
+        // Unrelated commands never need a source-tree lookup. Only this viewer and its own
+        // template scrollbar visuals are eligible; content elements retain native command routing.
+        return ReferenceEquals(e.OriginalSource, this)
+               || (e.OriginalSource is DependencyObject source
+                   && TryFindOwningTemplateScrollBar(source, out ScrollBar scrollBar)
+                   && scrollBar.Orientation == orientation);
+    }
+
+    /// <summary>
+    /// Maps the keys for which WPF's ScrollViewer performs scrolling. Arrow keys are intercepted only
+    /// when the viewer itself owns keyboard focus; arrows raised by descendants must remain available
+    /// to WPF's directional focus-navigation algorithm. Page and edge keys are eligible only after
+    /// descendant handlers have left the bubbling event unhandled.
+    /// </summary>
+    private bool TryGetKeyboardScrollStep(
+        KeyEventArgs e,
+        out Orientation orientation,
+        out double distance
+    )
+    {
+        orientation = Orientation.Vertical;
+        distance = 0;
+
+        if ((e.KeyboardDevice.Modifiers & ModifierKeys.Alt) != 0
+            || TemplatedParent is Control)
+        {
+            // A template-owning control may implement its own keyboard scrolling through
+            // Control.HandlesScrolling. That protected-internal contract is not publicly queryable
+            // on another Control instance, so retaining native routing is the safe fallback.
+            return false;
+        }
+
+        bool viewerOwnsKey = ReferenceEquals(e.OriginalSource, this);
+        switch (e.Key)
+        {
+            case Key.Left when viewerOwnsKey:
+                orientation = Orientation.Horizontal;
+                distance = FlowDirection == FlowDirection.RightToLeft ? ScrollLineDelta : -ScrollLineDelta;
+                return true;
+            case Key.Right when viewerOwnsKey:
+                orientation = Orientation.Horizontal;
+                distance = FlowDirection == FlowDirection.RightToLeft ? -ScrollLineDelta : ScrollLineDelta;
+                return true;
+            case Key.Up when viewerOwnsKey:
+                distance = -ScrollLineDelta;
+                return true;
+            case Key.Down when viewerOwnsKey:
+                distance = ScrollLineDelta;
+                return true;
+            case Key.PageUp:
+                distance = -ViewportHeight;
+                return true;
+            case Key.PageDown:
+                distance = ViewportHeight;
+                return true;
+            case Key.Home:
+                if ((e.KeyboardDevice.Modifiers & ModifierKeys.Control) != 0)
+                {
+                    distance = -ScrollableHeight;
+                }
+                else
+                {
+                    orientation = Orientation.Horizontal;
+                    distance = -ScrollableWidth;
+                }
+
+                return true;
+            case Key.End:
+                if ((e.KeyboardDevice.Modifiers & ModifierKeys.Control) != 0)
+                {
+                    distance = ScrollableHeight;
+                }
+                else
+                {
+                    orientation = Orientation.Horizontal;
+                    distance = ScrollableWidth;
+                }
+
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    private bool TryFindOwningTemplateScrollBar(
+        DependencyObject source,
+        out ScrollBar scrollBar
+    )
+    {
+        DependencyObject? current = source;
+        // ContentElement is a valid routed-command source, but is not accepted by GetParent.
+        // Such sources cannot be template scrollbar visuals and fall back to native routing.
+        while (current is Visual && current != this)
+        {
+            if (current is ScrollBar candidate)
+            {
+                scrollBar = candidate;
+                return ReferenceEquals(candidate.TemplatedParent, this);
+            }
+
+            current = VisualTreeHelper.GetParent(current);
+        }
+
+        scrollBar = null!;
+        return false;
+    }
+
+    private void SetSmoothScrollOffset(double offset)
+    {
+        if (_smoothScrollOrientation == Orientation.Vertical)
+        {
+            _smoothScrollInfo?.SetVerticalOffset(offset);
+        }
+        else
+        {
+            _smoothScrollInfo?.SetHorizontalOffset(offset);
+        }
     }
 
     /// <summary>

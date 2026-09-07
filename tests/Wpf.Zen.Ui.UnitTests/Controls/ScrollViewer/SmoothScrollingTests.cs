@@ -1,10 +1,12 @@
-// This Source Code Form is subject to the terms of the MIT License.
+﻿// This Source Code Form is subject to the terms of the MIT License.
 // If a copy of the MIT was not distributed with this file, You can obtain one at https://opensource.org/licenses/MIT.
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
 using System.Linq;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
+using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
@@ -201,6 +203,250 @@ public class SmoothScrollingTests
     }
 
     [Theory]
+    [InlineData(Orientation.Vertical, false, 1)]
+    [InlineData(Orientation.Vertical, false, 4)]
+    [InlineData(Orientation.Vertical, true, 1)]
+    [InlineData(Orientation.Vertical, true, 3)]
+    [InlineData(Orientation.Horizontal, false, 1)]
+    [InlineData(Orientation.Horizontal, false, 4)]
+    [InlineData(Orientation.Horizontal, true, 1)]
+    [InlineData(Orientation.Horizontal, true, 3)]
+    public void Viewer_TemplateScrollBarLineAndPageRepeatsAccumulateSmoothMotion(
+        Orientation orientation,
+        bool page,
+        int repetitions
+    )
+    {
+        WpfTestThread.Run(() =>
+        {
+            var viewer = new TestViewer
+            {
+                Content = new Border { Width = 2000, Height = 2000 },
+                HorizontalScrollBarVisibility = ScrollBarVisibility.Visible,
+                VerticalScrollBarVisibility = ScrollBarVisibility.Visible,
+            };
+            WithWindow(viewer, () =>
+            {
+                string partName = orientation == Orientation.Vertical
+                    ? "PART_VerticalScrollBar"
+                    : "PART_HorizontalScrollBar";
+                var scrollBar = Assert.IsAssignableFrom<ScrollBar>(
+                    viewer.Template.FindName(partName, viewer)
+                );
+                scrollBar.ApplyTemplate();
+
+                RepeatButton source;
+                RoutedCommand command;
+                if (page)
+                {
+                    var track = Assert.IsType<Track>(scrollBar.Template.FindName("PART_Track", scrollBar));
+                    source = Assert.IsType<RepeatButton>(track.IncreaseRepeatButton);
+                    command = orientation == Orientation.Vertical
+                        ? ScrollBar.PageDownCommand
+                        : ScrollBar.PageRightCommand;
+                }
+                else
+                {
+                    string buttonName = orientation == Orientation.Vertical ? "DownButton" : "RightButton";
+                    source = Assert.IsType<RepeatButton>(scrollBar.Template.FindName(buttonName, scrollBar));
+                    command = orientation == Orientation.Vertical
+                        ? ScrollBar.LineDownCommand
+                        : ScrollBar.LineRightCommand;
+                }
+
+                double viewport = orientation == Orientation.Vertical
+                    ? viewer.ViewportHeight
+                    : viewer.ViewportWidth;
+                for (int repeat = 0; repeat < repetitions; repeat++)
+                {
+                    command.Execute(null, source);
+                }
+
+                Assert.True(viewer.IsSmoothScrolling);
+                Assert.Equal(0, orientation == Orientation.Vertical
+                    ? viewer.VerticalOffset
+                    : viewer.HorizontalOffset);
+
+                Advance(viewer, 1000);
+                double expected = (page ? viewport : 16d) * repetitions;
+                Assert.Equal(
+                    expected,
+                    orientation == Orientation.Vertical
+                        ? viewer.VerticalOffset
+                        : viewer.HorizontalOffset,
+                    6
+                );
+                Assert.False(viewer.IsSmoothScrolling);
+            });
+        });
+    }
+
+    [Fact]
+    public void Viewer_KeyboardScrollBarCommandUsesSmoothMotion()
+    {
+        WpfTestThread.Run(() => WithViewer(viewer =>
+        {
+            ScrollBar.LineDownCommand.Execute(null, viewer);
+
+            Assert.True(viewer.IsSmoothScrolling);
+            Assert.Equal(0, viewer.VerticalOffset);
+
+            Advance(viewer, 1000);
+            Assert.False(viewer.IsSmoothScrolling);
+            Assert.Equal(16, viewer.VerticalOffset, 6);
+        }));
+    }
+
+    [Theory]
+    [InlineData(Key.Down, Orientation.Vertical, 16d, 1)]
+    [InlineData(Key.Down, Orientation.Vertical, 64d, 4)]
+    [InlineData(Key.Right, Orientation.Horizontal, 16d, 1)]
+    [InlineData(Key.Right, Orientation.Horizontal, 64d, 4)]
+    [InlineData(Key.PageDown, Orientation.Vertical, -1d, 1)]
+    [InlineData(Key.PageDown, Orientation.Vertical, -1d, 3)]
+    public void Viewer_KeyboardScrollRepeatsAccumulateSmoothMotion(
+        Key key,
+        Orientation orientation,
+        double expectedDistance,
+        int repetitions
+    )
+    {
+        WpfTestThread.Run(() =>
+        {
+            var viewer = new TestViewer
+            {
+                Content = new Border { Width = 2000, Height = 2000 },
+                HorizontalScrollBarVisibility = ScrollBarVisibility.Visible,
+                VerticalScrollBarVisibility = ScrollBarVisibility.Visible,
+            };
+            WithWindow(viewer, () =>
+            {
+                double viewport = orientation == Orientation.Vertical
+                    ? viewer.ViewportHeight
+                    : viewer.ViewportWidth;
+                for (int repeat = 0; repeat < repetitions; repeat++)
+                {
+                    Assert.True(viewer.Key(key).Handled);
+                }
+
+                Assert.True(viewer.IsSmoothScrolling);
+                Assert.Equal(0, orientation == Orientation.Vertical
+                    ? viewer.VerticalOffset
+                    : viewer.HorizontalOffset);
+
+                Advance(viewer, 1000);
+                double expected = expectedDistance < 0
+                    ? viewport * repetitions
+                    : expectedDistance;
+                Assert.Equal(
+                    expected,
+                    orientation == Orientation.Vertical
+                        ? viewer.VerticalOffset
+                        : viewer.HorizontalOffset,
+                    6
+                );
+                Assert.False(viewer.IsSmoothScrolling);
+            });
+        });
+    }
+
+    [Theory]
+    [InlineData(Key.PageUp)]
+    [InlineData(Key.PageDown)]
+    [InlineData(Key.Home)]
+    [InlineData(Key.End)]
+    public void Viewer_DescendantNavigationKeysRemainAvailable(Key key)
+    {
+        WpfTestThread.Run(() =>
+        {
+            var child = new System.Windows.Controls.TextBox { Width = 2000, Height = 2000 };
+            var viewer = new TestViewer
+            {
+                Content = child,
+                HorizontalScrollBarVisibility = ScrollBarVisibility.Visible,
+            };
+            WithWindow(viewer, () =>
+            {
+                viewer.ScrollToVerticalOffset(300);
+                viewer.ScrollToHorizontalOffset(300);
+                viewer.UpdateLayout();
+                bool reachedChild = false;
+                child.AddHandler(UIElement.KeyDownEvent, new KeyEventHandler((_, e) =>
+                {
+                    reachedChild = true;
+                    e.Handled = true;
+                }), true);
+
+                var args = new KeyEventArgs(Keyboard.PrimaryDevice,
+                    PresentationSource.FromVisual(child), 0, key)
+                { RoutedEvent = UIElement.PreviewKeyDownEvent };
+                child.RaiseEvent(args);
+                Assert.False(args.Handled);
+                args.RoutedEvent = UIElement.KeyDownEvent;
+                child.RaiseEvent(args);
+
+                Assert.True(reachedChild);
+                Assert.False(viewer.IsSmoothScrolling);
+                Assert.Equal(300, viewer.VerticalOffset);
+                Assert.Equal(300, viewer.HorizontalOffset);
+            });
+        });
+    }
+
+    [Fact]
+    public void Viewer_NestedViewerOwnsPageKey()
+    {
+        WpfTestThread.Run(() =>
+        {
+            var inner = new TestViewer
+            {
+                Content = new Border { Height = 2000 },
+                Height = 500,
+            };
+            var outer = new TestViewer { Content = inner };
+            WithWindow(outer, () =>
+            {
+                Assert.True(inner.Key(Key.PageDown).Handled);
+                Assert.True(inner.IsSmoothScrolling);
+                Assert.False(outer.IsSmoothScrolling);
+                Advance(inner, 1000);
+                Assert.Equal(inner.ViewportHeight, inner.VerticalOffset, 6);
+                Assert.Equal(0, outer.VerticalOffset);
+            });
+        });
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Viewer_ContentElementCommandsRetainNativeRouting(bool scrollingCommand)
+    {
+        WpfTestThread.Run(() =>
+        {
+            var link = new Hyperlink(new Run("link"));
+            var text = new System.Windows.Controls.TextBlock { Height = 2000 };
+            text.Inlines.Add(link);
+            var viewer = new TestViewer { Content = text };
+            WithWindow(viewer, () =>
+            {
+                RoutedCommand command = scrollingCommand ? ScrollBar.PageDownCommand : new RoutedCommand();
+                bool executed = false;
+                link.CommandBindings.Add(new CommandBinding(command, (_, e) =>
+                {
+                    executed = true;
+                    e.Handled = true;
+                }));
+
+                command.Execute(null, link);
+
+                Assert.True(executed);
+                Assert.False(viewer.IsSmoothScrolling);
+                Assert.Equal(0, viewer.VerticalOffset);
+            });
+        });
+    }
+
+    [Theory]
     [InlineData(ScrollSpillMode.Enabled, false)]
     [InlineData(ScrollSpillMode.Disabled, true)]
     public void Viewer_UsesPendingBoundaryForSpillAndAcceptsReverseInput(ScrollSpillMode mode, bool handled)
@@ -275,7 +521,7 @@ public class SmoothScrollingTests
                     viewer.InvokePreviewMouseDown();
                     break;
                 case "key":
-                    viewer.InvokePreviewKeyDown();
+                    viewer.Key(Key.A);
                     break;
                 case "bringIntoView":
                     ((FrameworkElement)viewer.Content).BringIntoView(new Rect(0, 300, 10, 10));
@@ -626,6 +872,22 @@ public class SmoothScrollingTests
 
         public void InvokePreviewMouseDown() => OnPreviewMouseDown(new MouseButtonEventArgs(Mouse.PrimaryDevice, 0, MouseButton.Left));
 
-        public void InvokePreviewKeyDown() => OnPreviewKeyDown(new KeyEventArgs(Keyboard.PrimaryDevice, PresentationSource.FromVisual(this), 0, Key.Down));
+        public KeyEventArgs Key(Key key)
+        {
+            var args = new KeyEventArgs(
+                Keyboard.PrimaryDevice,
+                PresentationSource.FromVisual(this),
+                0,
+                key
+            )
+            {
+                RoutedEvent = PreviewKeyDownEvent,
+                Source = this,
+            };
+            RaiseEvent(args);
+            args.RoutedEvent = UIElement.KeyDownEvent;
+            RaiseEvent(args);
+            return args;
+        }
     }
 }

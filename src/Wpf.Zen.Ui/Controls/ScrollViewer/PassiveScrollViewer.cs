@@ -13,13 +13,15 @@ using Wpf.Zen.Ui.AutomationPeers;
 namespace Wpf.Zen.Ui.Controls;
 
 /// <summary>
-/// Provides smooth pixel-based mouse-wheel scrolling and configurable wheel propagation at boundaries.
+/// Provides smooth pixel-based wheel, keyboard and scrollbar-button scrolling, with configurable wheel
+/// propagation at boundaries.
 /// </summary>
 /// <remarks>
 /// Uses the template's existing scroll provider; no additional named parts or transforms are required.
 /// Physical content and pixel-scrolling virtualizing panels support smooth scrolling. Item-scrolling
-/// providers retain their native wheel behavior. Keyboard, touch, scrollbar and programmatic scrolling
-/// retain WPF semantics and take precedence over an active wheel motion.
+/// providers retain their native behavior. Keyboard scrolling and a template scrollbar's line and page
+/// buttons accumulate smooth motion on the applicable axis. Touch, thumb dragging and programmatic
+/// scrolling retain WPF semantics and take precedence over active motion.
 /// </remarks>
 public partial class PassiveScrollViewer : ScrollViewer
 {
