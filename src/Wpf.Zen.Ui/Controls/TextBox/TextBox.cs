@@ -358,6 +358,8 @@ public class TextBox : System.Windows.Controls.TextBox
 
     #endregion
 
+    #region DP: IconPlacement
+
     /// <summary>Identifies the <see cref="IconPlacement"/> dependency property.</summary>
     public static readonly DependencyProperty IconPlacementProperty = DependencyProperty.Register(
         nameof(IconPlacement),
@@ -374,6 +376,10 @@ public class TextBox : System.Windows.Controls.TextBox
         get => (ElementPlacement)GetValue(IconPlacementProperty);
         set => SetValue(IconPlacementProperty, value);
     }
+
+    #endregion
+
+    #region DP: PlaceholderText
 
     /// <summary>Identifies the <see cref="PlaceholderText"/> dependency property.</summary>
     public static readonly DependencyProperty PlaceholderTextProperty = DependencyProperty.Register(
@@ -392,6 +398,10 @@ public class TextBox : System.Windows.Controls.TextBox
         set => SetValue(PlaceholderTextProperty, value);
     }
 
+    #endregion
+
+    #region DP: PlaceholderEnabled
+
     /// <summary>Identifies the <see cref="PlaceholderEnabled"/> dependency property.</summary>
     public static readonly DependencyProperty PlaceholderEnabledProperty = DependencyProperty.Register(
         nameof(PlaceholderEnabled),
@@ -409,12 +419,14 @@ public class TextBox : System.Windows.Controls.TextBox
         set => SetValue(PlaceholderEnabledProperty, value);
     }
 
-    // ReSharper disable once MemberCanBePrivate.Global for IsPlaceholderVisiblePropertyKey
+    #endregion
+
+    #region Read-Only DP: IsPlaceholderVisible
 
     /// <summary>
     /// Identifies the <see cref="IsPlaceholderVisible"/> dependency property.
     /// </summary>
-    protected static readonly DependencyPropertyKey IsPlaceholderVisiblePropertyKey =
+    private static readonly DependencyPropertyKey IsPlaceholderVisiblePropertyKey =
         DependencyProperty.RegisterReadOnly(
             nameof(IsPlaceholderVisible),
             typeof(bool),
@@ -435,6 +447,10 @@ public class TextBox : System.Windows.Controls.TextBox
         protected set => SetValue(IsPlaceholderVisiblePropertyKey, value);
     }
 
+    #endregion
+
+    #region DP: ClearButtonEnabled
+
     /// <summary>Identifies the <see cref="ClearButtonEnabled"/> dependency property.</summary>
     public static readonly DependencyProperty ClearButtonEnabledProperty = DependencyProperty.Register(
         nameof(ClearButtonEnabled),
@@ -452,12 +468,14 @@ public class TextBox : System.Windows.Controls.TextBox
         set => SetValue(ClearButtonEnabledProperty, value);
     }
 
-    // ReSharper disable once MemberCanBePrivate.Global for IsClearButtonVisiblePropertyKey
+    #endregion
+
+    #region Read-Only DP: IsClearButtonVisible
 
     /// <summary>
     /// Identifies the <see cref="IsClearButtonVisible"/> dependency property.
     /// </summary>
-    protected static readonly DependencyPropertyKey IsClearButtonVisiblePropertyKey =
+    private static readonly DependencyPropertyKey IsClearButtonVisiblePropertyKey =
         DependencyProperty.RegisterReadOnly(
             nameof(IsClearButtonVisible),
             typeof(bool),
@@ -478,6 +496,10 @@ public class TextBox : System.Windows.Controls.TextBox
         protected set => SetValue(IsClearButtonVisiblePropertyKey, value);
     }
 
+    #endregion
+
+    #region DP: IsFocusIndicatorVisible
+
     /// <summary>Identifies the <see cref="IsFocusIndicatorVisible"/> dependency property.</summary>
     public static readonly DependencyProperty IsFocusIndicatorVisibleProperty = DependencyProperty.Register(
         nameof(IsFocusIndicatorVisible),
@@ -495,22 +517,32 @@ public class TextBox : System.Windows.Controls.TextBox
         set => SetValue(IsFocusIndicatorVisibleProperty, value);
     }
 
+    #endregion
+
+    #region DP: UseTextBlockAppearance
+
     /// <summary>Identifies the <see cref="UseTextBlockAppearance"/> dependency property.</summary>
     public static readonly DependencyProperty UseTextBlockAppearanceProperty = DependencyProperty.Register(
         nameof(UseTextBlockAppearance),
         typeof(bool),
         typeof(TextBox),
-        new PropertyMetadata(false)
+        new PropertyMetadata(false, OnUseTextBlockAppearanceChanged)
     );
 
     /// <summary>
     /// Gets or sets a value indicating whether the control should use a plain selectable text appearance.
+    /// When enabled, <see cref="TextBoxBase.IsReadOnly"/> is coerced to <see langword="true"/>
+    /// so the displayed text remains selectable and copyable but cannot be edited.
     /// </summary>
     public bool UseTextBlockAppearance
     {
         get => (bool)GetValue(UseTextBlockAppearanceProperty);
         set => SetValue(UseTextBlockAppearanceProperty, value);
     }
+
+    #endregion
+
+    #region DP: AutoSelect
 
     /// <summary>Identifies the <see cref="AutoSelect"/> dependency property.</summary>
     public static readonly DependencyProperty AutoSelectProperty = DependencyProperty.Register(
@@ -535,6 +567,8 @@ public class TextBox : System.Windows.Controls.TextBox
         get => (bool)GetValue(AutoSelectProperty);
         set => SetValue(AutoSelectProperty, value);
     }
+
+    #endregion
 
     static TextBox()
     {
@@ -573,6 +607,15 @@ public class TextBox : System.Windows.Controls.TextBox
                 CoerceForeground
             )
         );
+
+        IsReadOnlyProperty.OverrideMetadata(
+            typeof(TextBox),
+            new FrameworkPropertyMetadata(
+                false,
+                null,
+                static (d, baseValue) => ((TextBox)d).UseTextBlockAppearance || baseValue is true
+            )
+        );
     }
 
     /// <summary>
@@ -594,6 +637,7 @@ public class TextBox : System.Windows.Controls.TextBox
             new QueryCursorEventHandler(OnTextBoxQueryCursor),
             handledEventsToo: true
         );
+
         IsEnabledChanged += OnTextBoxIsEnabledChanged;
     }
 
@@ -634,6 +678,16 @@ public class TextBox : System.Windows.Controls.TextBox
         }
 
         return baseValue!;
+    }
+
+    private static void OnUseTextBlockAppearanceChanged(
+        DependencyObject d,
+        DependencyPropertyChangedEventArgs e)
+    {
+        // The read-only contract belongs to the control rather than its default style. Re-coercing
+        // exposes the caller's original IsReadOnly base value again when the appearance is disabled,
+        // without replacing a local value, binding, style setter, or inherited value.
+        d.CoerceValue(IsReadOnlyProperty);
     }
 
     /// <inheritdoc />

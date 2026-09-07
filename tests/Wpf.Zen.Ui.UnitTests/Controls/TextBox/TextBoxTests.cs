@@ -16,6 +16,46 @@ namespace Wpf.Zen.Ui.UnitTests.Controls;
 public class TextBoxTests
 {
     [Fact]
+    public void UseTextBlockAppearance_WithCustomStyle_ForcesReadOnlyAndRestoresBaseValue()
+    {
+        RunOnStaThread(
+            () =>
+            {
+                var textBox = new UiTextBox
+                {
+                    Style = new Style(typeof(UiTextBox)),
+                    IsReadOnly = false,
+                    UseTextBlockAppearance = true,
+                };
+
+                Assert.True(textBox.IsReadOnly);
+
+                textBox.IsReadOnly = false;
+                Assert.True(textBox.IsReadOnly);
+
+                textBox.UseTextBlockAppearance = false;
+                Assert.False(textBox.IsReadOnly);
+            }
+        );
+    }
+
+    [Fact]
+    public void UseTextBlockAppearance_WhenBaseValueIsReadOnly_DoesNotMakeTextBoxEditable()
+    {
+        RunOnStaThread(
+            () =>
+            {
+                var textBox = new UiTextBox { IsReadOnly = true };
+
+                textBox.UseTextBlockAppearance = true;
+                textBox.UseTextBlockAppearance = false;
+
+                Assert.True(textBox.IsReadOnly);
+            }
+        );
+    }
+
+    [Fact]
     public void AutoSelect_WhenKeyboardFocusIsReceived_SelectsAllText()
     {
         RunOnStaThread(
