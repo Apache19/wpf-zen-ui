@@ -19,13 +19,8 @@
     <Page.Resources>
         <Style TargetType="{x:Type ui:Flyout}">
             <Setter Property="Placement" Value="Bottom" />
-            <Setter Property="ui:PopupPlacementTracker.IsEnabled" Value="True" />
-            <Setter Property="VerticalOffset" Value="4" />
-            <Style.Triggers>
-                <Trigger Property="ui:PopupPlacementTracker.ActualPlacement" Value="Top">
-                    <Setter Property="VerticalOffset" Value="-4" />
-                </Trigger>
-            </Style.Triggers>
+            <Setter Property="ui:PopupSlideAnimator.IsEnabled" Value="True" />
+            <Setter Property="ui:PopupPlacementGap.Vertical" Value="4" />
         </Style>
         <!--  An attached Flyout can remain in resources and be shared by multiple owners.  -->
         <ui:Flyout x:Key="DetailsFlyout" Placement="Top">
@@ -122,13 +117,7 @@
                             </StackPanel>
                             <ui:Flyout.Style>
                                 <Style TargetType="{x:Type ui:Flyout}">
-                                    <Setter Property="ui:PopupPlacementTracker.IsEnabled" Value="True" />
-                                    <Setter Property="VerticalOffset" Value="4" />
-                                    <Style.Triggers>
-                                        <Trigger Property="ui:PopupPlacementTracker.ActualPlacement" Value="Top">
-                                            <Setter Property="VerticalOffset" Value="-4" />
-                                        </Trigger>
-                                    </Style.Triggers>
+                                    <Setter Property="ui:PopupPlacementGap.Vertical" Value="4" />
                                 </Style>
                             </ui:Flyout.Style>
                         </ui:Flyout>

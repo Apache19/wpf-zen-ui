@@ -160,6 +160,7 @@
             <!--  Drop-down popup. Shadow is rendered via PopupShadow; animation is handled by PopupSlideAnimator.  -->
             <Popup
                 x:Name="Popup"
+                controls:PopupPlacementGap.Vertical="1"
                 controls:PopupPlacementTracker.IsEnabled="True"
                 controls:PopupShadow.IsEnabled="True"
                 controls:PopupSlideAnimator.IsEnabled="True"
@@ -194,13 +195,6 @@
             </Popup>
         </Grid>
         <ControlTemplate.Triggers>
-            <Trigger SourceName="Popup" Property="controls:PopupPlacementTracker.ActualPlacement" Value="Bottom">
-                <Setter TargetName="Popup" Property="VerticalOffset" Value="1" />
-            </Trigger>
-            <Trigger SourceName="Popup" Property="controls:PopupPlacementTracker.ActualPlacement" Value="Top">
-                <Setter TargetName="Popup" Property="VerticalOffset" Value="-1" />
-            </Trigger>
-
             <Trigger Property="VerticalContentAlignment" Value="Stretch">
                 <Setter TargetName="IconPresenter" Property="Margin" Value="{Binding Padding, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource IconTopPaddingConverter}}" />
             </Trigger>

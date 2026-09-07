@@ -26,6 +26,11 @@ namespace Wpf.Zen.Ui.Controls;
 /// This tracker observes placement only; it does not select a placement mode or change the Popup's offsets.
 /// </para>
 /// <para>
+/// Do not use <see cref="ActualPlacementProperty"/> to reverse <see cref="Popup.VerticalOffset"/>. Offset changes are
+/// placement inputs and can make WPF choose the other candidate again, producing an endless feedback loop near a
+/// monitor edge. Use <see cref="PopupPlacementGap.VerticalProperty"/> for equal target spacing on both sides.
+/// </para>
+/// <para>
 /// Set <see cref="IsEnabledProperty"/> on a Popup and bind or trigger against
 /// <see cref="ActualPlacementProperty"/>. The result is updated after opening and whenever the Popup HWND moves. The
 /// read-only property inherits through the Popup's logical content tree, allowing Popup content to consume the same

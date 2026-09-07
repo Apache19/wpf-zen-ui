@@ -97,6 +97,7 @@ public class FlyoutTests
             var second = new Button { Content = "Second" };
             var root = new StackPanel { Children = { first, second } };
             var flyout = new Flyout { Content = "Details", Placement = PlacementMode.Top, VerticalOffset = -4 };
+            PopupPlacementGap.SetVertical(flyout, 6D);
             WithWindow(
                 root,
                 flyout,
@@ -111,6 +112,11 @@ public class FlyoutTests
                     Assert.Same(flyout, popup.Child);
                     Assert.Equal(PlacementMode.Top, popup.Placement);
                     Assert.Equal(-4D, popup.VerticalOffset);
+                    Assert.Equal(6D, PopupPlacementGap.GetVertical(flyout));
+                    Assert.Equal(
+                        new Rect(0D, -6D, first.RenderSize.Width, first.RenderSize.Height + 12D),
+                        popup.PlacementRectangle
+                    );
                     Assert.Equal(before, root.DesiredSize);
                     Assert.Equal(2, root.Children.Count);
 

@@ -140,16 +140,11 @@
         <Setter Property="AllowsTransparency" Value="True" />
         <Setter Property="Placement" Value="Bottom" />
         <Setter Property="StaysOpen" Value="False" />
-        <Setter Property="VerticalOffset" Value="4" />
+        <Setter Property="controls:PopupPlacementGap.Vertical" Value="4" />
         <Setter Property="PopupAnimation" Value="Fade" />
         <Setter Property="controls:PopupShadow.IsEnabled" Value="True" />
         <!-- ActualPlacement remains None unless the Popup window tracker is enabled. -->
         <Setter Property="controls:PopupPlacementTracker.IsEnabled" Value="True" />
-        <Style.Triggers>
-            <Trigger Property="controls:PopupPlacementTracker.ActualPlacement" Value="Top">
-                <Setter Property="VerticalOffset" Value="-4" />
-            </Trigger>
-        </Style.Triggers>
     </Style>
 
     <Style x:Key="UiDropDownButtonStyle" BasedOn="{StaticResource {x:Static t:StyleKeys.UiButtonStyle}}" TargetType="{x:Type controls:DropDownButton}">

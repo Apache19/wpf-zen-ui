@@ -39,7 +39,8 @@ public class DropDownButtonContentTests
             Assert.Null(button.FlyoutPopupStyle);
             Assert.True(popup.AllowsTransparency);
             Assert.False(popup.StaysOpen);
-            Assert.Equal(4D, popup.VerticalOffset);
+            Assert.Equal(0D, popup.VerticalOffset);
+            Assert.Equal(4D, PopupPlacementGap.GetVertical(popup));
             Assert.True(PopupPlacementTracker.GetIsEnabled(popup));
 
             // Explicit style setters must coexist with independent theme defaults, without BasedOn.
@@ -49,7 +50,8 @@ public class DropDownButtonContentTests
             };
             Assert.Equal(19D, popup.HorizontalOffset);
             Assert.True(popup.AllowsTransparency);
-            Assert.Equal(4D, popup.VerticalOffset);
+            Assert.Equal(0D, popup.VerticalOffset);
+            Assert.Equal(4D, PopupPlacementGap.GetVertical(popup));
         });
     }
 

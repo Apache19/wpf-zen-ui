@@ -121,13 +121,7 @@
                         </Border>
                         <Popup.Style>
                             <Style TargetType="{x:Type Popup}">
-                                <Setter Property="VerticalOffset" Value="4" />
-                                <Setter Property="ui:PopupPlacementTracker.IsEnabled" Value="True" />
-                                <Style.Triggers>
-                                    <Trigger Property="ui:PopupPlacementTracker.ActualPlacement" Value="Top">
-                                        <Setter Property="VerticalOffset" Value="-4" />
-                                    </Trigger>
-                                </Style.Triggers>
+                                <Setter Property="ui:PopupPlacementGap.Vertical" Value="4" />
                             </Style>
                         </Popup.Style>
                     </Popup>

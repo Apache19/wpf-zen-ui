@@ -139,6 +139,7 @@
             <!--  Drop-down popup. Shadow is rendered via PopupShadow; animation is handled by PopupSlideAnimator.  -->
             <Popup
                 x:Name="Popup"
+                controls:PopupPlacementGap.Vertical="1"
                 controls:PopupPlacementTracker.IsEnabled="True"
                 controls:PopupShadow.IsEnabled="True"
                 controls:PopupSlideAnimator.IsEnabled="True"
@@ -147,8 +148,7 @@
                 IsOpen="{TemplateBinding IsDropDownOpen}"
                 Placement="{TemplateBinding Popup.Placement}"
                 PlacementTarget="{Binding ElementName=ContentBorder}"
-                PopupAnimation="{TemplateBinding Popup.PopupAnimation}"
-                VerticalOffset="1">
+                PopupAnimation="{TemplateBinding Popup.PopupAnimation}">
                 <Border
                     x:Name="DropDownBorder"
                     MinWidth="{TemplateBinding ActualWidth}"
@@ -174,13 +174,6 @@
             </Popup>
         </Grid>
         <ControlTemplate.Triggers>
-            <Trigger SourceName="Popup" Property="controls:PopupPlacementTracker.ActualPlacement" Value="Bottom">
-                <Setter TargetName="Popup" Property="VerticalOffset" Value="1" />
-            </Trigger>
-            <Trigger SourceName="Popup" Property="controls:PopupPlacementTracker.ActualPlacement" Value="Top">
-                <Setter TargetName="Popup" Property="VerticalOffset" Value="-1" />
-            </Trigger>
-
             <Trigger Property="IsDropDownOpen" Value="True">
                 <Trigger.EnterActions>
                     <BeginStoryboard>
