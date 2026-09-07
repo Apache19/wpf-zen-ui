@@ -4,12 +4,29 @@
 // All Rights Reserved.
 
 using System.Windows.Media;
+using ButtonIconPlacement = Wpf.Zen.Ui.Controls.ButtonIconPlacement;
 using UiButton = Wpf.Zen.Ui.Controls.Button;
 
 namespace Wpf.Zen.Ui.UnitTests.Controls;
 
 public class ButtonTests
 {
+    [Fact]
+    public void IconPlacement_DefaultsToLeftAndRejectsUndefinedValues()
+    {
+        RunOnStaThread(
+            () =>
+            {
+                var button = new UiButton();
+
+                Assert.Equal(ButtonIconPlacement.Left, button.IconPlacement);
+                Assert.Throws<ArgumentException>(
+                    () => button.IconPlacement = (ButtonIconPlacement)int.MaxValue
+                );
+            }
+        );
+    }
+
     [Fact]
     public void VisualBrushes_FallBackToStandardBrushes()
     {

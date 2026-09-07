@@ -193,7 +193,7 @@ public class PasswordBoxTests
                 var passwordBox = new UiPasswordBox
                 {
                     Password = "secret",
-                    ClearButtonEnabled = false,
+                    IsClearButtonEnabled = false,
                 };
 
                 ClickTemplateButton(passwordBox, "PART_ClearButton");

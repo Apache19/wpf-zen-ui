@@ -21,6 +21,38 @@ namespace Wpf.Zen.Ui.UnitTests.Controls.ButtonControl;
 public class ButtonAuditTests
 {
     [Theory]
+    [InlineData(ButtonIconPlacement.Left, Dock.Left, 0, 0, 8, 0)]
+    [InlineData(ButtonIconPlacement.Top, Dock.Top, 0, 0, 0, 8)]
+    [InlineData(ButtonIconPlacement.Right, Dock.Right, 8, 0, 0, 0)]
+    [InlineData(ButtonIconPlacement.Bottom, Dock.Bottom, 0, 8, 0, 0)]
+    public void DefaultTemplate_ArrangesIconAndDefaultGapForPlacement(
+        ButtonIconPlacement placement,
+        Dock expectedDock,
+        double left,
+        double top,
+        double right,
+        double bottom)
+    {
+        WpfTestThread.Run(() =>
+        {
+            var button = new UiButton
+            {
+                Content = "Content",
+                Icon = new Border { Width = 12, Height = 12 },
+                IconPlacement = placement,
+            };
+
+            ApplyTheme(button);
+
+            var presenter = Assert.IsType<IconPresenter>(
+                button.Template.FindName("iconPresenter", button));
+            Assert.Equal(expectedDock, DockPanel.GetDock(presenter));
+            Assert.Equal(new Thickness(left, top, right, bottom), presenter.Margin);
+            Assert.Equal(button.IconMargin, presenter.Margin);
+        });
+    }
+
+    [Theory]
     [InlineData(ControlAppearance.Normal)]
     [InlineData(ControlAppearance.Accent)]
     [InlineData(ControlAppearance.Transparent)]

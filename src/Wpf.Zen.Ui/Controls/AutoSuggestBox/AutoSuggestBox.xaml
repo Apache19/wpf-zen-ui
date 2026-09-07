@@ -71,7 +71,7 @@
                             Grid.Row="0"
                             HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
                             VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
-                            ClearButtonEnabled="{TemplateBinding ClearButtonEnabled}"
+                            IsClearButtonEnabled="{TemplateBinding IsClearButtonEnabled}"
                             Icon="{TemplateBinding Icon}"
                             IconMargin="{TemplateBinding IconMargin}"
                             IconPlacement="Right"

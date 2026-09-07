@@ -7,6 +7,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using TextBoxIconPlacement = Wpf.Zen.Ui.Controls.TextBoxIconPlacement;
 using UiTextBox = Wpf.Zen.Ui.Controls.TextBox;
 
 // ReSharper disable once CheckNamespace
@@ -15,6 +16,23 @@ namespace Wpf.Zen.Ui.UnitTests.Controls;
 [Collection(nameof(KeyboardFocusTestCollection))]
 public class TextBoxTests
 {
+    [Fact]
+    public void IconPlacement_UsesTextBoxSpecificHorizontalContract()
+    {
+        RunOnStaThread(
+            () =>
+            {
+                var textBox = new UiTextBox();
+
+                Assert.Equal(TextBoxIconPlacement.Left, textBox.IconPlacement);
+                Assert.Equal(typeof(TextBoxIconPlacement), UiTextBox.IconPlacementProperty.PropertyType);
+                Assert.Throws<ArgumentException>(
+                    () => textBox.IconPlacement = (TextBoxIconPlacement)int.MaxValue
+                );
+            }
+        );
+    }
+
     [Fact]
     public void UseTextBlockAppearance_WithCustomStyle_ForcesReadOnlyAndRestoresBaseValue()
     {

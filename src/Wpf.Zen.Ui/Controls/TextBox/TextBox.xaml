@@ -129,7 +129,7 @@
                             BorderThickness="0"
                             Focusable="False"
                             Icon="{m:FluentIconSource Dismiss24}"
-                            IsEnabled="{TemplateBinding ClearButtonEnabled}"
+                            IsEnabled="{TemplateBinding IsClearButtonEnabled}"
                             IsTabStop="False" />
                     </Border>
                 </Grid>
@@ -166,7 +166,7 @@
             <Trigger Property="IsClearButtonVisible" Value="False">
                 <Setter TargetName="ClearButtonContainer" Property="Visibility" Value="Collapsed" />
             </Trigger>
-            <Trigger Property="ClearButtonEnabled" Value="False">
+            <Trigger Property="IsClearButtonEnabled" Value="False">
                 <Setter TargetName="ClearButtonContainer" Property="Visibility" Value="Collapsed" />
             </Trigger>
             <Trigger Property="IsReadOnly" Value="True">
@@ -191,7 +191,7 @@
             </MultiTrigger>
             <Trigger Property="IsEnabled" Value="False">
                 <Setter TargetName="PlaceholderTextBox" Property="Opacity" Value="0.5" />
-                <Setter Property="ClearButtonEnabled" Value="False" />
+                <Setter Property="IsClearButtonEnabled" Value="False" />
             </Trigger>
         </ControlTemplate.Triggers>
     </ControlTemplate>

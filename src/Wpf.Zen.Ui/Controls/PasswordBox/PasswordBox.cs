@@ -26,7 +26,7 @@ public sealed partial class PasswordBox : TextBox
     private ScrollViewer? _contentHost;
     private ButtonBase?   _revealButton;
 
-    private bool CanClearPassword  => IsEnabled && !IsReadOnly && ClearButtonEnabled;
+    private bool CanClearPassword  => IsEnabled && !IsReadOnly && IsClearButtonEnabled;
     private bool CanRevealPassword => IsEnabled && RevealButtonEnabled;
 
     #region DP PasswordProperty,PasswordCharProperty,IsPasswordRevealedProperty,RevealButtonEnabledProperty
@@ -327,7 +327,7 @@ public sealed partial class PasswordBox : TextBox
 
         if (e.Property == IsEnabledProperty
             || e.Property == IsReadOnlyProperty
-            || e.Property == ClearButtonEnabledProperty)
+            || e.Property == IsClearButtonEnabledProperty)
         {
             UpdateClearButtonVisibility();
         }

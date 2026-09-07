@@ -375,7 +375,7 @@
                         AutomationProperties.Name="{TemplateBinding CurrentPageInputAutomationName}"
                         Background="Transparent"
                         BorderThickness="0"
-                        ClearButtonEnabled="False"
+                        IsClearButtonEnabled="False"
                         CornerRadius="0"
                         DisabledBackground="Transparent"
                         IsEnabled="{TemplateBinding CanChangeCurrentPage}"

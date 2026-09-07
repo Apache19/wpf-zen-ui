@@ -166,7 +166,7 @@
                             Padding="8,0"
                             VerticalContentAlignment="Center"
                             BorderThickness="0"
-                            ClearButtonEnabled="False"
+                            IsClearButtonEnabled="False"
                             Maximum="64"
                             Minimum="4"
                             SmallStep="4"

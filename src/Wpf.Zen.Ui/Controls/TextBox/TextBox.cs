@@ -457,11 +457,11 @@ public class TextBox : System.Windows.Controls.TextBox
 
     #endregion
 
-    #region DP: ClearButtonEnabled
+    #region DP: IsClearButtonEnabled
 
-    /// <summary>Identifies the <see cref="ClearButtonEnabled"/> dependency property.</summary>
-    public static readonly DependencyProperty ClearButtonEnabledProperty = DependencyProperty.Register(
-        nameof(ClearButtonEnabled),
+    /// <summary>Identifies the <see cref="IsClearButtonEnabled"/> dependency property.</summary>
+    public static readonly DependencyProperty IsClearButtonEnabledProperty = DependencyProperty.Register(
+        nameof(IsClearButtonEnabled),
         typeof(bool),
         typeof(TextBox),
         new PropertyMetadata(true)
@@ -470,10 +470,10 @@ public class TextBox : System.Windows.Controls.TextBox
     /// <summary>
     /// Gets or sets a value indicating whether to enable the clear button.
     /// </summary>
-    public bool ClearButtonEnabled
+    public bool IsClearButtonEnabled
     {
-        get => (bool)GetValue(ClearButtonEnabledProperty);
-        set => SetValue(ClearButtonEnabledProperty, value);
+        get => (bool)GetValue(IsClearButtonEnabledProperty);
+        set => SetValue(IsClearButtonEnabledProperty, value);
     }
 
     #endregion
@@ -919,7 +919,7 @@ public class TextBox : System.Windows.Controls.TextBox
     /// </summary>
     protected void RevealClearButton()
     {
-        if (ClearButtonEnabled && IsKeyboardFocusWithin)
+        if (IsClearButtonEnabled && IsKeyboardFocusWithin)
         {
             bool shouldShowClearButton = Text.Length > 0;
 
@@ -937,7 +937,7 @@ public class TextBox : System.Windows.Controls.TextBox
     /// </summary>
     protected void HideClearButton()
     {
-        if (ClearButtonEnabled && !IsKeyboardFocusWithin && IsClearButtonVisible)
+        if (IsClearButtonEnabled && !IsKeyboardFocusWithin && IsClearButtonVisible)
         {
             IsClearButtonVisible = false;
         }

@@ -196,7 +196,7 @@
                             BorderThickness="0"
                             Focusable="False"
                             Icon="{m:FluentIconSource Dismiss24}"
-                            IsEnabled="{TemplateBinding ClearButtonEnabled}"
+                            IsEnabled="{TemplateBinding IsClearButtonEnabled}"
                             IsTabStop="False" />
 
                         <!--
@@ -305,7 +305,7 @@
                 <Setter TargetName="PART_ClearButton" Property="Margin" Value="0" />
                 <Setter TargetName="PART_ClearButton" Property="Visibility" Value="Collapsed" />
             </Trigger>
-            <Trigger Property="ClearButtonEnabled" Value="False">
+            <Trigger Property="IsClearButtonEnabled" Value="False">
                 <Setter TargetName="PART_ClearButton" Property="Margin" Value="0" />
                 <Setter TargetName="PART_ClearButton" Property="Visibility" Value="Collapsed" />
             </Trigger>
@@ -343,7 +343,7 @@
                 <Setter TargetName="ContentBorder" Property="Background" Value="{m:DynamicBrush ControlFillDisabled}" />
                 <Setter TargetName="ContentBorder" Property="BorderBrush" Value="{m:DynamicBrush ControlStrokeDefault}" />
                 <Setter TargetName="FocusIndicator" Property="BorderBrush" Value="{m:DynamicBrush ControlStrokeDefault}" />
-                <Setter Property="ClearButtonEnabled" Value="False" />
+                <Setter Property="IsClearButtonEnabled" Value="False" />
                 <Setter TargetName="PlaceholderTextBox" Property="Foreground" Value="{m:DynamicBrush TextFillDisabled}" />
                 <Setter Property="Foreground" Value="{m:DynamicBrush TextFillDisabled}" />
                 <Setter Property="SpinButtonPlacementMode" Value="Hidden" />

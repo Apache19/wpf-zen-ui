@@ -264,13 +264,13 @@ public class AutoSuggestBox : ItemsControl
 
     #endregion
 
-    #region DP: ClearButtonEnabled
+    #region DP: IsClearButtonEnabled
 
     /// <summary>
-    /// Identifies the <see cref="ClearButtonEnabled"/> dependency property.
+    /// Identifies the <see cref="IsClearButtonEnabled"/> dependency property.
     /// </summary>
-    public static readonly DependencyProperty ClearButtonEnabledProperty = DependencyProperty.Register(
-        nameof(ClearButtonEnabled),
+    public static readonly DependencyProperty IsClearButtonEnabledProperty = DependencyProperty.Register(
+        nameof(IsClearButtonEnabled),
         typeof(bool),
         typeof(AutoSuggestBox),
         new PropertyMetadata(false)
@@ -279,10 +279,10 @@ public class AutoSuggestBox : ItemsControl
     /// <summary>
     /// Gets or sets a value indicating whether to show the clear button when <see cref="AutoSuggestBox"/> is focused.
     /// </summary>
-    public bool ClearButtonEnabled
+    public bool IsClearButtonEnabled
     {
-        get => (bool)GetValue(ClearButtonEnabledProperty);
-        set => SetValue(ClearButtonEnabledProperty, value);
+        get => (bool)GetValue(IsClearButtonEnabledProperty);
+        set => SetValue(IsClearButtonEnabledProperty, value);
     }
 
     #endregion
