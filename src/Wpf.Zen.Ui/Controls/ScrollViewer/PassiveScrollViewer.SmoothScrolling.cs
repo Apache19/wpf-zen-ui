@@ -3,7 +3,6 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-using System.Diagnostics;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
@@ -117,7 +116,7 @@ public partial class PassiveScrollViewer
 
     private SmoothScrollMotion? _smoothMotion;
     private IScrollInfo?        _smoothScrollInfo;
-    private long                _lastSmoothScrollTimestamp;
+    private TimeSpan?           _lastSmoothScrollRenderingTime;
     private double              _lastSmoothScrollOffset;
 
     /// <summary>Gets a value indicating whether this viewer owns a rendering subscription and wheel motion.</summary>
@@ -256,10 +255,10 @@ public partial class PassiveScrollViewer
 
         if (_smoothMotion is null)
         {
-            _smoothMotion              = motion;
-            _smoothScrollInfo          = ScrollInfo;
-            _lastSmoothScrollOffset    = VerticalOffset;
-            _lastSmoothScrollTimestamp = Stopwatch.GetTimestamp();
+            _smoothMotion                  = motion;
+            _smoothScrollInfo              = ScrollInfo;
+            _lastSmoothScrollOffset        = VerticalOffset;
+            _lastSmoothScrollRenderingTime = null;
 
             CompositionTarget.Rendering += OnSmoothScrollRendering;
         }
@@ -270,12 +269,37 @@ public partial class PassiveScrollViewer
 
     private void OnSmoothScrollRendering(object? sender, EventArgs e)
     {
-        var timestamp = Stopwatch.GetTimestamp();
-        var elapsed   = TimeSpan.FromSeconds((double)(timestamp - _lastSmoothScrollTimestamp) / Stopwatch.Frequency);
+        AdvanceSmoothScrollingTo(((RenderingEventArgs)e).RenderingTime);
+    }
 
-        _lastSmoothScrollTimestamp = timestamp;
+    /// <summary>
+    /// Advances on WPF's presentation clock, so time spent in layout before the callback does not
+    /// perturb frame spacing. The first frame establishes the clock origin; input timestamps belong
+    /// to a different clock and must not be subtracted from presentation timestamps.
+    /// </summary>
+    internal void AdvanceSmoothScrollingTo(TimeSpan renderingTime)
+    {
+        if (_smoothMotion is null)
+        {
+            return;
+        }
 
-        AdvanceSmoothScrolling(elapsed);
+        var previousTime = _lastSmoothScrollRenderingTime;
+        if (previousTime is null)
+        {
+            _lastSmoothScrollRenderingTime = renderingTime;
+            return;
+        }
+
+        // Multiple callbacks for the same presentation must not write another offset. Ignore an
+        // older timestamp as well, without moving the baseline back and counting time twice.
+        if (renderingTime <= previousTime.Value)
+        {
+            return;
+        }
+
+        _lastSmoothScrollRenderingTime = renderingTime;
+        AdvanceSmoothScrolling(renderingTime - previousTime.Value);
     }
 
     /// <summary>
@@ -303,8 +327,8 @@ public partial class PassiveScrollViewer
         _smoothScrollInfo!.SetVerticalOffset(motion.Position);
 
         // Keep ownership until ScrollChanged acknowledges the final write. The provider may still
-        // measure a new extent in this frame; releasing here would let layout anchoring undo the
-        // final movement. If rounding produces no ScrollChanged, the next frame releases instead.
+        // measure a new extent in this frame, so the final request must still participate in range
+        // reconciliation. If rounding produces no ScrollChanged, the next frame releases instead.
         if (!continues && previousPosition == motion.Position)
         {
             StopSmoothScrolling();
@@ -343,8 +367,11 @@ public partial class PassiveScrollViewer
                 return;
             }
 
-            motion.Reconcile(e.VerticalOffset, ScrollableHeight);
-            _lastSmoothScrollOffset = e.VerticalOffset;
+            // Feedback within tolerance acknowledges the request; it is not a new motion origin.
+            // Feeding rounded offsets back into the integrator would discard fractional progress
+            // whenever a virtualizing panel refines its extent. Only removed range changes motion.
+            motion.ClampToRange(ScrollableHeight);
+            _lastSmoothScrollOffset = motion.Position;
         }
         else
         {

@@ -48,12 +48,12 @@ internal sealed class SmoothScrollMotion(double position)
     }
 
     /// <summary>
-    /// Reconciles layout anchoring and changing extent estimates while keeping the remaining target
-    /// within the new range. Removed content cannot leave a hidden out-of-range destination behind.
+    /// Clamps continuous position and destination to the available range without importing layout
+    /// rounding into the motion. Removed content cannot leave an out-of-range destination behind.
     /// </summary>
-    internal void Reconcile(double position, double maximum)
+    internal void ClampToRange(double maximum)
     {
-        Position = Clamp(position, maximum);
+        Position = Clamp(Position, maximum);
         Target   = Clamp(Target, maximum);
 
         if ((Target - Position) * Velocity <= 0)

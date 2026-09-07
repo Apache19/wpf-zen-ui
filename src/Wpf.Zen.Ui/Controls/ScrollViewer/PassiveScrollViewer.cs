@@ -283,30 +283,30 @@ public partial class PassiveScrollViewer : ScrollViewer
     /// </summary>
     /// <param name="e">Data describing the scrolling-state change.</param>
     /// <remarks>
-    /// When a shrinking content area reduces the vertical scroll range, the coerced vertical offset
-    /// is committed permanently instead of being used only for the current layout pass. This prevents
-    /// a previously requested, now out-of-range offset from returning if the content grows again.
+    /// When a physical content presenter's scroll range shrinks past the current vertical offset,
+    /// the coerced boundary is committed permanently instead of being used only for the current
+    /// layout pass. This prevents a stale request from returning if the content grows again.
+    /// Other providers retain their own offset persistence and anchoring semantics.
     /// </remarks>
     protected override void OnScrollChanged(ScrollChangedEventArgs e)
     {
         bool wasSmoothScrolling = IsSmoothScrolling;
         SynchronizeSmoothScrolling(e);
 
-        // ScrollContentPresenter keeps the requested offset separately from the computed offset that
-        // ScrollViewer exposes. When the extent shrinks, WPF coerces only the computed value into the
-        // new range and can restore the stale request when the extent grows again. A simultaneous
-        // extent/viewport change and vertical movement identifies a layout adjustment rather than an
-        // isolated user scroll. Recover the offset from before that adjustment and clamp it to the new
-        // range. This both rejects anchoring shifts from growing content and commits a valid replacement
-        // for an offset invalidated by shrinking content, including zero when content no longer overflows.
-        // Use the public command queue so custom IScrollInfo implementations retain their normal contract.
-        // A pixel virtualizing panel can refine its extent during wheel motion. Its current offset
-        // is already reconciled with the motion; restoring the previous frame would undo that scroll.
-        if (!wasSmoothScrolling && e.VerticalChange != 0d
-            && (e.ExtentHeightChange != 0d || e.ViewportHeightChange != 0d))
+        // ScrollContentPresenter retains its requested offset when layout coerces the displayed
+        // offset. Commit the new boundary after a range reduction so later growth cannot restore
+        // the stale request. Other providers own their anchoring and offset persistence semantics.
+        // ScrollChanged batches explicit scroll commands with size changes: their coexistence does
+        // not justify restoring the previous offset. Only a move from beyond the new range to its
+        // boundary requires this correction. Write directly before notifying listeners so no queued
+        // correction can subsequently overwrite a listener's legitimate scroll request.
+        if (!wasSmoothScrolling && ScrollInfo is ScrollContentPresenter presenter
+            && e.VerticalChange < 0d
+            && e.ExtentHeightChange - e.ViewportHeightChange < 0d
+            && e.VerticalOffset == ScrollableHeight
+            && e.VerticalOffset - e.VerticalChange > ScrollableHeight)
         {
-            double offsetBeforeLayoutChange = e.VerticalOffset - e.VerticalChange;
-            ScrollToVerticalOffset(Math.Min(Math.Max(offsetBeforeLayoutChange, 0d), ScrollableHeight));
+            presenter.SetVerticalOffset(e.VerticalOffset);
         }
 
         // ScrollContentPresenter keeps an independent requested offset. Commit zero for a

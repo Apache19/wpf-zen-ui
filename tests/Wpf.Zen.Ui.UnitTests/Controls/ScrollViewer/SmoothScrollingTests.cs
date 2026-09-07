@@ -67,10 +67,10 @@ public class SmoothScrollingTests
         Assert.True(motion.MoveBy(1000, 200));
         Assert.False(motion.MoveBy(48, 200));
         motion.Advance(TimeSpan.FromMilliseconds(16), Response);
-        motion.Reconcile(100, 100);
+        motion.ClampToRange(100);
         Assert.False(motion.Advance(TimeSpan.FromMilliseconds(16), Response));
         Assert.Equal(100, motion.Target);
-        motion.Reconcile(100, 1000);
+        motion.ClampToRange(1000);
         Assert.Equal(100, motion.Target);
     }
 
@@ -83,6 +83,51 @@ public class SmoothScrollingTests
     public void WheelDistance_RespectsDeltaMagnitudeAndWindowsPreference(int delta, int lines, double viewport, double expected)
     {
         Assert.Equal(expected, PassiveScrollViewer.GetSmoothWheelDistance(delta, lines, viewport));
+    }
+
+    [Fact]
+    public void Viewer_PresentationClockIgnoresDuplicateFramesAndResetsAfterCancellation()
+    {
+        WpfTestThread.Run(() => WithViewer(viewer =>
+        {
+            viewer.Wheel(-120);
+            viewer.AdvanceSmoothScrollingTo(TimeSpan.FromSeconds(10));
+            Assert.Equal(0, viewer.VerticalOffset);
+            viewer.AdvanceSmoothScrollingTo(TimeSpan.FromSeconds(10) + TimeSpan.FromMilliseconds(16));
+            viewer.UpdateLayout();
+            double firstOffset = viewer.VerticalOffset;
+            Assert.True(firstOffset > 0);
+
+            viewer.AdvanceSmoothScrollingTo(TimeSpan.FromSeconds(10) + TimeSpan.FromMilliseconds(16));
+            viewer.AdvanceSmoothScrollingTo(TimeSpan.FromSeconds(9));
+            viewer.UpdateLayout();
+            Assert.Equal(firstOffset, viewer.VerticalOffset);
+
+            viewer.InvokePreviewMouseDown();
+            viewer.Wheel(-120);
+            viewer.AdvanceSmoothScrollingTo(TimeSpan.FromSeconds(20));
+            viewer.UpdateLayout();
+            Assert.Equal(firstOffset, viewer.VerticalOffset);
+            viewer.AdvanceSmoothScrollingTo(TimeSpan.FromSeconds(20) + TimeSpan.FromMilliseconds(16));
+            viewer.UpdateLayout();
+            Assert.Equal(firstOffset * 2, viewer.VerticalOffset, 8);
+        }));
+    }
+
+    [Theory]
+    [InlineData(2500d)]
+    [InlineData(1500d)]
+    public void Viewer_SizeChangeDoesNotUndoBatchedProgrammaticScroll(double height)
+    {
+        WpfTestThread.Run(() => WithViewer(viewer =>
+        {
+            viewer.ScrollToVerticalOffset(100);
+            viewer.UpdateLayout();
+            ((Border)viewer.Content).Height = height;
+            viewer.ScrollToVerticalOffset(300);
+            viewer.UpdateLayout();
+            Assert.Equal(300, viewer.VerticalOffset);
+        }));
     }
 
     [Fact]
@@ -434,11 +479,20 @@ public class SmoothScrollingTests
             {
                 var viewer = FindDescendant<TestViewer>(items)!;
                 var panel = FindDescendant<VirtualizingStackPanel>(items)!;
+                var expectedMotion = new SmoothScrollMotion(viewer.VerticalOffset);
                 for (int input = 0; input < 40; input++)
                 {
+                    expectedMotion.MoveBy(
+                        PassiveScrollViewer.GetSmoothWheelDistance(-30, SystemParameters.WheelScrollLines, viewer.ViewportHeight),
+                        viewer.ScrollableHeight);
+                    expectedMotion.Advance(TimeSpan.FromMilliseconds(16), Response);
                     viewer.Wheel(-30);
                     Advance(viewer, 16);
                     Assert.True(viewer.IsSmoothScrolling);
+                    // Extent refinement may round the displayed offset, but must not accumulate
+                    // rounding error in the continuous trajectory across successive frames.
+                    double tolerance = rounding ? 0.51 / VisualTreeHelper.GetDpi(viewer).DpiScaleY : 0.01;
+                    Assert.InRange(viewer.VerticalOffset, expectedMotion.Position - tolerance, expectedMotion.Position + tolerance);
                 }
 
                 // A rounded final write can produce no ScrollChanged. One extra frame must still
