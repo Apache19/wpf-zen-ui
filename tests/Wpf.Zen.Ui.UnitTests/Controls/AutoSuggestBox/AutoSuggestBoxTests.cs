@@ -11,9 +11,12 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Data;
 using System.Windows.Input;
+using System.Windows.Interop;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
 using System.Windows.Threading;
 using Wpf.Zen.Ui.Controls;
+using Wpf.Zen.Ui.Interop;
 using NativeButton = System.Windows.Controls.Button;
 using NativeListBox = System.Windows.Controls.ListBox;
 using NativeListBoxItem = System.Windows.Controls.ListBoxItem;
@@ -98,8 +101,87 @@ public class AutoSuggestBoxTests
                 Assert.Equal(new Thickness(1D, 0D, 1D, 1D), suggestionsBorder.BorderThickness);
 
                 popup.SetCurrentValue(Popup.IsOpenProperty, false);
+                FlushDispatcher(window);
 
                 Assert.Equal(PopupPlacementDirection.None, PopupPlacementTracker.GetActualPlacement(popup));
+            }
+            finally
+            {
+                popup.SetCurrentValue(Popup.IsOpenProperty, false);
+                FlushDispatcher(window);
+                window.Close();
+            }
+        });
+    }
+
+    [Fact]
+    public void DefaultPopup_WhenFinalLayoutFitsBelow_UsesDownwardSlideNearMonitorEdge()
+    {
+        RunOnStaThread(() =>
+        {
+            var (window, autoSuggestBox, textBox, popup) = CreateLoadedDefaultControl();
+
+            try
+            {
+                autoSuggestBox.Height = 32D;
+                autoSuggestBox.VerticalAlignment = VerticalAlignment.Bottom;
+                autoSuggestBox.Margin = new Thickness(0D, 0D, 0D, 100D);
+                window.Left = SystemParameters.WorkArea.Left + 100D;
+                window.Top = SystemParameters.WorkArea.Top + 100D;
+                FlushDispatcher(window);
+
+                Assert.True(textBox.Focus());
+                textBox.Text = "a";
+                FlushDispatcher(window);
+
+                var initialPopupRoot = GetPopupRoot(popup);
+                var popupHeightInPixels =
+                    initialPopupRoot.PointToScreen(new Point(0D, initialPopupRoot.RenderSize.Height)).Y -
+                    initialPopupRoot.PointToScreen(default).Y;
+
+                popup.SetCurrentValue(Popup.IsOpenProperty, false);
+                FlushDispatcher(window);
+
+                var targetBottom = autoSuggestBox.PointToScreen(
+                    new Point(0D, autoSuggestBox.ActualHeight)
+                ).Y;
+                var monitorBounds = UnsafeNativeMethods.GetMonitorBounds(
+                    new Rect(autoSuggestBox.PointToScreen(default), new Size(1D, 1D))
+                );
+
+                // The closed template restores the border's two vertical strokes. Put that provisional surface one
+                // stroke beyond the monitor while leaving the final one-stroke Bottom template an exact fit. WPF
+                // first selects Top, then selects Bottom after ActualPlacement applies the final border geometry.
+                window.Top += (
+                    monitorBounds.Bottom - popupHeightInPixels - targetBottom
+                ) / VisualTreeHelper.GetDpi(window).DpiScaleY;
+                FlushDispatcher(window);
+
+                PopupSlideAnimator.SetAnimationSettings(
+                    popup,
+                    new PopupAnimationSettings { Duration = 10_000D }
+                );
+                autoSuggestBox.SetCurrentValue(AutoSuggestBox.IsSuggestionListOpenProperty, true);
+                FlushDispatcher(window);
+
+                var popupRoot = GetPopupRoot(popup);
+                var animationLayer = Assert.IsAssignableFrom<UIElement>(
+                    Assert.IsType<Decorator>(VisualTreeHelper.GetChild(popupRoot, 0)).Child
+                );
+                var transform = Assert.IsType<TranslateTransform>(animationLayer.RenderTransform);
+
+                Assert.Equal(PopupPlacementDirection.Bottom, PopupPlacementTracker.GetActualPlacement(popup));
+                Assert.InRange(
+                    Math.Abs(
+                        popupRoot.PointToScreen(default).Y -
+                        autoSuggestBox.PointToScreen(
+                            new Point(0D, autoSuggestBox.ActualHeight)
+                        ).Y
+                    ),
+                    0D,
+                    1.1D
+                );
+                Assert.InRange(transform.Y, -90D, -1D);
             }
             finally
             {
@@ -945,6 +1027,13 @@ public class AutoSuggestBoxTests
         }
 
         return null;
+    }
+
+    private static UIElement GetPopupRoot(Popup popup)
+    {
+        return Assert.IsAssignableFrom<UIElement>(
+            (PresentationSource.FromVisual((Visual)popup.Child) as HwndSource)?.RootVisual
+        );
     }
 
     private static ControlTemplate CreateControlTemplate()

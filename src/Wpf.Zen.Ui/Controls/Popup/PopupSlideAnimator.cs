@@ -672,6 +672,21 @@ public static class PopupSlideAnimator
                 return;
             }
 
+            // WM_SHOWWINDOW occurs before Popup.Opened and before the first queued render/layout pass. An Opened
+            // handler or an ActualPlacement trigger can change the Popup's desired size in that interval, causing
+            // WPF to run UpdatePosition again and select the opposite candidate. Re-read the cached candidate bit at
+            // the last possible point before attaching the replacement clock; otherwise the HWND can finish below
+            // its target while the content still animates with the provisional above-target direction.
+            if (TryGetAnimateFromBottom(popup, out var animateFromBottom))
+            {
+                startOffset = animateFromBottom ? Math.Abs(startOffset) : -Math.Abs(startOffset);
+
+                if (animation != null)
+                {
+                    animation.SetCurrentValue(DoubleAnimation.FromProperty, startOffset);
+                }
+            }
+
             if (animation == null)
             {
                 translateTransform.SetCurrentValue(TranslateTransform.YProperty, 0D);

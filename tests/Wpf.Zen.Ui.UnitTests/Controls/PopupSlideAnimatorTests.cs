@@ -371,6 +371,68 @@ public class PopupSlideAnimatorTests
     }
 
     [Fact]
+    public void PlacementChangedAfterShowWindow_UsesFinalDirectionWhenDeferredAnimationStarts()
+    {
+        RunOnStaThread(
+            () =>
+            {
+                var placementTarget = new Border { Width = 120D, Height = 32D };
+                var popupChild = new Border { Width = 160D, Height = 120D };
+                var window = new Window
+                {
+                    Width = 420D,
+                    Height = 420D,
+                    Left = 100D,
+                    Top = 100D,
+                    ShowInTaskbar = false,
+                    Content = placementTarget,
+                };
+                var popup = new Popup
+                {
+                    AllowsTransparency = true,
+                    Child = popupChild,
+                    Placement = PlacementMode.Top,
+                    PlacementTarget = placementTarget,
+                    PopupAnimation = PopupAnimation.Slide,
+                };
+
+                PopupSlideAnimator.SetAnimationSettings(
+                    popup,
+                    new PopupAnimationSettings { Duration = 10_000D }
+                );
+
+                // PopupSlideAnimator intercepts WM_SHOWWINDOW before Popup.Opened. Changing placement here models
+                // the template/layout correction that occurs when an actual-placement trigger changes Popup size.
+                // The deferred clock must use this final WPF candidate instead of the pre-Opened direction.
+                popup.Opened += (_, _) => popup.Placement = PlacementMode.Bottom;
+
+                try
+                {
+                    window.Show();
+                    window.UpdateLayout();
+                    popup.IsOpen = true;
+                    window.Dispatcher.Invoke(static () => { }, DispatcherPriority.ApplicationIdle);
+
+                    var popupRoot = Assert.IsAssignableFrom<UIElement>(
+                        (PresentationSource.FromVisual(popupChild) as HwndSource)?.RootVisual
+                    );
+                    Assert.True(
+                        popupRoot.PointToScreen(default).Y >=
+                        placementTarget.PointToScreen(new Point(0D, placementTarget.ActualHeight)).Y
+                    );
+                    Assert.InRange(GetCurrentOffset(popupChild), -90D, -1D);
+                }
+                finally
+                {
+                    popup.IsOpen = false;
+                    window.Dispatcher.Invoke(static () => { }, DispatcherPriority.ApplicationIdle);
+                    window.Close();
+                }
+            }
+        );
+    }
+
+    [Fact]
     public void ProgrammaticCloseThenReopen_ReusesWpfPopupLifecycleAndRestartsSlide()
     {
         RunOnStaThread(
