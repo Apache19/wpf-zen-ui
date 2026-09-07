@@ -11,7 +11,8 @@ namespace Wpf.Zen.Ui.Controls;
 
 /// <summary>
 /// Provides a styleable visual part for a <see cref="ToggleSwitch"/> and exposes the owning
-/// switch's interaction state as trigger-friendly read-only dependency properties.
+/// switch's orientation and interaction state as trigger-friendly read-only dependency
+/// properties.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -128,6 +129,34 @@ public class ToggleSwitchPart : Control
         get => (Brush?)GetValue(CheckedBorderBrushProperty);
         set => SetValue(CheckedBorderBrushProperty, value);
     }
+
+    #endregion
+
+    #region Read-Only DP: Orientation
+
+    private static readonly DependencyPropertyKey OrientationPropertyKey =
+        DependencyProperty.RegisterReadOnly(
+            nameof(Orientation),
+            typeof(Orientation),
+            typeof(ToggleSwitchPart),
+            new FrameworkPropertyMetadata(Orientation.Horizontal)
+        );
+
+    /// <summary>Identifies the <see cref="Orientation"/> dependency property.</summary>
+    public static readonly DependencyProperty OrientationProperty =
+        OrientationPropertyKey.DependencyProperty;
+
+    /// <summary>
+    /// Gets the axis selected by the owning switch. The default is
+    /// <see cref="System.Windows.Controls.Orientation.Horizontal"/>.
+    /// </summary>
+    /// <remarks>
+    /// The value does not rotate or arrange the part by itself. It is exposed so track and thumb
+    /// styles can select direction-specific dimensions and geometry with ordinary property
+    /// triggers. The owning <see cref="ToggleSwitch"/> updates it when this instance is a named
+    /// template part; a standalone part retains the horizontal default.
+    /// </remarks>
+    public Orientation Orientation => (Orientation)GetValue(OrientationProperty);
 
     #endregion
 
@@ -252,8 +281,16 @@ public class ToggleSwitchPart : Control
     /// This internal entry point keeps the read-only dependency-property keys private to the part
     /// while allowing <see cref="ToggleSwitch"/> to publish one coherent state to both visuals.
     /// </remarks>
-    internal void SetOwnerState(bool? isChecked, bool isPointerOver, bool isPressed)
+    internal void SetOwnerState(
+        Orientation orientation,
+        bool? isChecked,
+        bool isPointerOver,
+        bool isPressed)
     {
+        // Publish orientation first. A style may combine it with an interaction state (for
+        // example, a vertical pressed thumb), and this order prevents that trigger from briefly
+        // evaluating against the previous axis while the snapshot is refreshed.
+        SetValue(OrientationPropertyKey, orientation);
         SetValue(IsCheckedPropertyKey, isChecked);
         SetValue(IsPointerOverPropertyKey, isPointerOver);
         SetValue(IsPressedPropertyKey, isPressed);

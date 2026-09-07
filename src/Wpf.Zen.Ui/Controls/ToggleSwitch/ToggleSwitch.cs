@@ -24,17 +24,19 @@ namespace Wpf.Zen.Ui.Controls;
 /// The default template contains <c>PART_Track</c> and <c>PART_Thumb</c>. Their appearances are
 /// supplied by <see cref="TrackStyle"/> and <see cref="ThumbStyle"/>. Both default parts are
 /// <see cref="ToggleSwitchPart"/> instances, so a replacement style can react to
-/// <see cref="ToggleSwitchPart.IsChecked"/>, <see cref="ToggleSwitchPart.IsPointerOver"/>,
-/// <see cref="ToggleSwitchPart.IsPressed"/>, and <see cref="UIElement.IsEnabled"/> with ordinary
-/// property triggers.
+/// <see cref="ToggleSwitchPart.Orientation"/>, <see cref="ToggleSwitchPart.IsChecked"/>,
+/// <see cref="ToggleSwitchPart.IsPointerOver"/>, <see cref="ToggleSwitchPart.IsPressed"/>, and
+/// <see cref="UIElement.IsEnabled"/> with ordinary property triggers.
 /// </para>
 /// <para>
 /// The control owns the thumb motion. It measures the resting thumb position relative to the
 /// track, mirrors that position across the selected axis, and moves the thumb between both
-/// endpoints. Consequently, changing track size, thumb size, margin, orientation, or flow
-/// direction does not require new pixel coordinates or storyboards. A completely custom control
-/// template may use any <see cref="FrameworkElement"/> for either named part; using
-/// <see cref="ToggleSwitchPart"/> additionally provides the convenient state properties.
+/// endpoints. A horizontal switch places the checked thumb at its logical end; a vertical switch
+/// places it at the top, matching the conventional up-is-on physical-switch metaphor.
+/// Consequently, changing track size, thumb size, margin, orientation, or flow direction does not
+/// require new pixel coordinates or storyboards. A completely custom control template may use any
+/// <see cref="FrameworkElement"/> for either named part; using <see cref="ToggleSwitchPart"/>
+/// additionally provides the convenient state properties.
 /// </para>
 /// <para>
 /// <see cref="TransitionProgress"/> is the shared eased timeline for every visual effect. The
@@ -194,7 +196,7 @@ public class ToggleSwitch : System.Windows.Controls.Primitives.ToggleButton
             typeof(ToggleSwitch),
             new FrameworkPropertyMetadata(
                 Orientation.Horizontal,
-                OnGeometryPropertyChanged
+                OnOrientationChanged
             ),
             ValidateOrientation
         );
@@ -204,9 +206,12 @@ public class ToggleSwitch : System.Windows.Controls.Primitives.ToggleButton
     /// <see cref="Orientation.Horizontal"/>.
     /// </summary>
     /// <remarks>
-    /// This property does not rotate either visual part. A vertical skin should also give its
-    /// track and thumb suitable dimensions through <see cref="TrackStyle"/> and
-    /// <see cref="ThumbStyle"/>. Changing the value reapplies the current position immediately.
+    /// This property does not rotate either visual part. Instead, the selected value is published
+    /// to each default <see cref="ToggleSwitchPart"/>, allowing <see cref="TrackStyle"/> and
+    /// <see cref="ThumbStyle"/> to select suitable geometry. The built-in styles provide both
+    /// horizontal and vertical forms. In horizontal mode, checked is the logical end (right in a
+    /// left-to-right layout); in vertical mode, checked is the top and unchecked is the bottom.
+    /// Changing the value reapplies the current position immediately.
     /// </remarks>
     public Orientation Orientation
     {
@@ -258,7 +263,7 @@ public class ToggleSwitch : System.Windows.Controls.Primitives.ToggleButton
             typeof(ToggleSwitch),
             new FrameworkPropertyMetadata(
                 CreateDefaultEasingFunction(),
-                OnGeometryPropertyChanged
+                OnTransitionEasingFunctionChanged
             )
         );
 
@@ -417,11 +422,24 @@ public class ToggleSwitch : System.Windows.Controls.Primitives.ToggleButton
         toggleSwitch.PublishProgress();
     }
 
-    private static void OnGeometryPropertyChanged(
+    private static void OnTransitionEasingFunctionChanged(
         DependencyObject d,
         DependencyPropertyChangedEventArgs e)
     {
         ((ToggleSwitch)d).PublishProgress();
+    }
+
+    private static void OnOrientationChanged(
+        DependencyObject d,
+        DependencyPropertyChangedEventArgs e)
+    {
+        var toggleSwitch = (ToggleSwitch)d;
+
+        // Orientation participates in part styles as well as thumb positioning. Publish the new
+        // snapshot before recalculating the transform so a style-driven size change can invalidate
+        // layout and the SizeChanged callbacks can refine the endpoint with final dimensions.
+        toggleSwitch.UpdatePartStates();
+        toggleSwitch.PublishProgress();
     }
 
     private static void OnIsAnimationEnabledChanged(
@@ -468,8 +486,8 @@ public class ToggleSwitch : System.Windows.Controls.Primitives.ToggleButton
 
     private void UpdatePartStates()
     {
-        _trackStatePart?.SetOwnerState(IsChecked, IsMouseOver, IsPressed);
-        _thumbStatePart?.SetOwnerState(IsChecked, IsMouseOver, IsPressed);
+        _trackStatePart?.SetOwnerState(Orientation, IsChecked, IsMouseOver, IsPressed);
+        _thumbStatePart?.SetOwnerState(Orientation, IsChecked, IsMouseOver, IsPressed);
     }
 
     private void TransitionTo(double targetProgress)
@@ -647,8 +665,15 @@ public class ToggleSwitch : System.Windows.Controls.Primitives.ToggleButton
             var restingY = transformedOrigin.Y - _thumbTranslation.Y;
             var travel = _track.RenderSize.Height - _thumb.RenderSize.Height - (2.0d * restingY);
 
+            // WPF's positive Y axis points downward, but a vertical switch follows the familiar
+            // physical convention that up means on. TransitionProgress remains a logical
+            // unchecked-to-checked timeline for track effects and animation; only its spatial
+            // projection is reversed so false, null, and true map to bottom, center, and top.
             _thumbTranslation.SetCurrentValue(TranslateTransform.XProperty, 0.0d);
-            _thumbTranslation.SetCurrentValue(TranslateTransform.YProperty, travel * progress);
+            _thumbTranslation.SetCurrentValue(
+                TranslateTransform.YProperty,
+                travel * (CheckedProgress - progress)
+            );
         }
     }
 

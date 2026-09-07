@@ -55,6 +55,10 @@
             </Setter.Value>
         </Setter>
         <Style.Triggers>
+            <Trigger Property="Orientation" Value="Vertical">
+                <Setter Property="Width" Value="20" />
+                <Setter Property="Height" Value="40" />
+            </Trigger>
             <MultiTrigger>
                 <MultiTrigger.Conditions>
                     <Condition Property="IsPointerOver" Value="True" />
@@ -123,11 +127,24 @@
             </MultiTrigger>
             <MultiTrigger>
                 <MultiTrigger.Conditions>
+                    <Condition Property="Orientation" Value="Horizontal" />
                     <Condition Property="IsPressed" Value="True" />
                     <Condition Property="IsEnabled" Value="True" />
                 </MultiTrigger.Conditions>
                 <Setter Property="Width" Value="17" />
                 <Setter Property="Height" Value="14" />
+                <Setter Property="Margin" Value="3" />
+                <Setter Property="CornerRadius" Value="7" />
+            </MultiTrigger>
+            <MultiTrigger>
+                <MultiTrigger.Conditions>
+                    <Condition Property="Orientation" Value="Vertical" />
+                    <Condition Property="IsPressed" Value="True" />
+                    <Condition Property="IsEnabled" Value="True" />
+                </MultiTrigger.Conditions>
+                <!-- The pressed thumb stretches along its active travel axis. -->
+                <Setter Property="Width" Value="14" />
+                <Setter Property="Height" Value="17" />
                 <Setter Property="Margin" Value="3" />
                 <Setter Property="CornerRadius" Value="7" />
             </MultiTrigger>

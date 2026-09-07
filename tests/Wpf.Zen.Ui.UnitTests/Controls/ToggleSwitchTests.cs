@@ -103,7 +103,7 @@ public class ToggleSwitchTests
                 var track = Assert.IsType<ToggleSwitchPart>(
                     toggleSwitch.Template.FindName(ToggleSwitch.TrackPartName, toggleSwitch)
                 );
-                var checkedVisual = Assert.IsType<Border>(
+                var checkedVisual = Assert.IsAssignableFrom<Border>(
                     track.Template.FindName("CheckedVisual", track)
                 );
 
@@ -114,6 +114,63 @@ public class ToggleSwitchTests
 
                 toggleSwitch.IsChecked = true;
                 Assert.Equal(1.0d, checkedVisual.Opacity);
+            }
+            finally
+            {
+                window.Close();
+            }
+        });
+    }
+
+    [Fact]
+    public void DefaultStyle_AdaptsTrackAndPressedThumbGeometryToOrientation()
+    {
+        WpfTestThread.Run(() =>
+        {
+            var toggleSwitch = new ToggleSwitch { IsAnimationEnabled = false };
+            var window = new Window
+            {
+                Width = 120.0d,
+                Height = 120.0d,
+                ShowInTaskbar = false,
+                Content = toggleSwitch,
+            };
+
+            try
+            {
+                window.Show();
+                window.UpdateLayout();
+
+                var track = Assert.IsType<ToggleSwitchPart>(
+                    toggleSwitch.Template.FindName(ToggleSwitch.TrackPartName, toggleSwitch)
+                );
+                var thumb = Assert.IsType<ToggleSwitchPart>(
+                    toggleSwitch.Template.FindName(ToggleSwitch.ThumbPartName, toggleSwitch)
+                );
+
+                Assert.Equal(Orientation.Horizontal, track.Orientation);
+                Assert.Equal(40.0d, track.ActualWidth);
+                Assert.Equal(20.0d, track.ActualHeight);
+
+                toggleSwitch.Orientation = Orientation.Vertical;
+                window.UpdateLayout();
+
+                Assert.Equal(Orientation.Vertical, track.Orientation);
+                Assert.Equal(Orientation.Vertical, thumb.Orientation);
+                Assert.Equal(20.0d, track.ActualWidth);
+                Assert.Equal(40.0d, track.ActualHeight);
+
+                thumb.SetOwnerState(Orientation.Vertical, false, false, true);
+                window.UpdateLayout();
+
+                Assert.Equal(14.0d, thumb.ActualWidth);
+                Assert.Equal(17.0d, thumb.ActualHeight);
+
+                thumb.SetOwnerState(Orientation.Horizontal, false, false, true);
+                window.UpdateLayout();
+
+                Assert.Equal(17.0d, thumb.ActualWidth);
+                Assert.Equal(14.0d, thumb.ActualHeight);
             }
             finally
             {
@@ -148,18 +205,26 @@ public class ToggleSwitchTests
     }
 
     [Fact]
-    public void VerticalTemplate_ComputesTravelOnVerticalAxis()
+    public void VerticalTemplate_MapsUncheckedCenterAndCheckedFromBottomToTop()
     {
         WpfTestThread.Run(() =>
         {
             var toggleSwitch = CreateArrangedSwitch(horizontal: false);
             var thumb = GetPart(toggleSwitch, ToggleSwitch.ThumbPartName);
+            var translation = GetOwnedTranslation(thumb);
+
+            Assert.Equal(0.0d, translation.X, precision: 6);
+            Assert.Equal(20.0d, translation.Y, precision: 6);
+
+            toggleSwitch.IsThreeState = true;
+            toggleSwitch.IsChecked = null;
+
+            Assert.Equal(10.0d, translation.Y, precision: 6);
 
             toggleSwitch.IsChecked = true;
 
-            var translation = GetOwnedTranslation(thumb);
             Assert.Equal(0.0d, translation.X, precision: 6);
-            Assert.Equal(20.0d, translation.Y, precision: 6);
+            Assert.Equal(0.0d, translation.Y, precision: 6);
         });
     }
 
@@ -254,7 +319,7 @@ public class ToggleSwitchTests
                 var track = Assert.IsType<ToggleSwitchPart>(
                     toggleSwitch.Template.FindName(ToggleSwitch.TrackPartName, toggleSwitch)
                 );
-                var checkedVisual = Assert.IsType<Border>(
+                var checkedVisual = Assert.IsAssignableFrom<Border>(
                     track.Template.FindName("CheckedVisual", track)
                 );
                 Assert.Equal(progressBeforeReversal, track.TransitionProgress, precision: 6);
@@ -347,7 +412,7 @@ public class ToggleSwitchTests
 
     private static ControlTemplate ParseTemplate(bool horizontal, bool includeScaleTransform)
     {
-        var trackWidth  = horizontal ? 40 : 20;
+        var trackWidth = horizontal ? 40 : 20;
         var trackHeight = horizontal ? 20 : 40;
         var transform = includeScaleTransform
             ? "<ui:ToggleSwitchPart.RenderTransform><ScaleTransform ScaleX=\"0.9\" ScaleY=\"0.9\" /></ui:ToggleSwitchPart.RenderTransform>"
