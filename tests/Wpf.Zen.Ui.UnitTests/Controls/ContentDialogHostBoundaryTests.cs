@@ -3,6 +3,7 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Controls;
@@ -16,10 +17,11 @@ namespace Wpf.Zen.Ui.UnitTests.Controls;
 public partial class ContentDialogTests
 {
     [Fact]
-    public void Preparation_RejectsEveryReentrantShowAndReleasesReservation() => Run(scope =>
+    public void Preparation_RejectsEveryReentrantShowAndReleasesReservation() => Run(async scope =>
     {
         var host = CreatePreparationHost(scope);
         var nested = new Dialog();
+        List<Task<object?>> rejectedTasks = [];
         host.TemplateApplied = () =>
         {
             // A rejected nested call must not release the outer call's preparation guard.
@@ -27,7 +29,7 @@ public partial class ContentDialogTests
             {
                 var rejected = host.ShowAsync(nested);
                 Assert.True(rejected.IsFaulted);
-                Assert.Throws<InvalidOperationException>(() => rejected.GetAwaiter().GetResult());
+                rejectedTasks.Add(rejected);
                 Assert.False(nested.IsOpen);
             }
         };
@@ -35,16 +37,20 @@ public partial class ContentDialogTests
         var dialog = new Dialog();
         var task = host.ShowAsync(dialog);
         Drain();
+        foreach (Task<object?> rejected in rejectedTasks)
+        {
+            await Assert.ThrowsAsync<InvalidOperationException>(() => rejected);
+        }
+
         Assert.Same(dialog, host.CurrentDialog);
         dialog.Close("accepted");
-        Pump(task);
-        Assert.Equal("accepted", task.Result);
+        Assert.Equal("accepted", await task);
         Assert.Null(dialog.Parent);
         Assert.True(((Border)host.Content).IsEnabled);
         var next = host.ShowAsync(nested);
         Drain();
         nested.Close();
-        Pump(next);
+        await next;
     });
 
     [Theory]
@@ -52,7 +58,7 @@ public partial class ContentDialogTests
     [InlineData("hide")]
     [InlineData("parent")]
     [InlineData("cancel")]
-    public void Preparation_RevalidatesAfterCallbacksAndAllowsRetry(string action) => Run(scope =>
+    public void Preparation_RevalidatesAfterCallbacksAndAllowsRetry(string action) => Run(async scope =>
     {
         var host = CreatePreparationHost(scope);
         var dialog = new Dialog();
@@ -84,7 +90,7 @@ public partial class ContentDialogTests
         }
         else
         {
-            Assert.Throws<InvalidOperationException>(() => rejected.GetAwaiter().GetResult());
+            await Assert.ThrowsAsync<InvalidOperationException>(() => rejected);
         }
 
         Assert.False(dialog.IsOpen);
@@ -97,11 +103,11 @@ public partial class ContentDialogTests
         Drain();
         Assert.Same(dialog, host.CurrentDialog);
         dialog.Close();
-        Pump(retry);
+        await retry;
     });
 
     [Fact]
-    public void SiblingHosts_KeepFocusCommandsAndCleanupIndependent() => Run(scope =>
+    public void SiblingHosts_KeepFocusCommandsAndCleanupIndependent() => Run(async scope =>
     {
         var firstBackground = new TextBox();
         scope.Host.Content = firstBackground;
@@ -134,13 +140,13 @@ public partial class ContentDialogTests
         Assert.False(secondBackground.Focus());
         Assert.True(secondEditor.Focus());
         first.Close();
-        Pump(firstTask);
+        await firstTask;
         Assert.Same(secondEditor, Keyboard.FocusedElement);
         Assert.True(firstBackground.IsEnabled);
         Assert.False(secondBackground.IsEnabled);
         Assert.False(secondTask.IsCompleted);
         second.Close();
-        Pump(secondTask);
+        await secondTask;
         Assert.True(secondBackground.IsEnabled);
     });
 
@@ -149,7 +155,7 @@ public partial class ContentDialogTests
     [InlineData("root", false)]
     [InlineData("host", false)]
     [InlineData("window", true)]
-    public void AncestorCommands_AreBlockedOnlyWhileDialogOwnsFocus(string targetKind, bool usePopup) => Run(scope =>
+    public void AncestorCommands_AreBlockedOnlyWhileDialogOwnsFocus(string targetKind, bool usePopup) => Run(async scope =>
     {
         var root = (Panel)scope.Window.Content;
         var independent = new TextBox();
@@ -209,7 +215,7 @@ public partial class ContentDialogTests
             }
 
             dialog.Close();
-            Pump(task);
+            await task;
             int before = calls;
             Assert.True(command.CanExecute(null, target));
             command.Execute(null, target);
@@ -222,7 +228,7 @@ public partial class ContentDialogTests
     });
 
     [Fact]
-    public void IndependentCommandTarget_RemainsUsableWhileDialogHasFocus() => Run(scope =>
+    public void IndependentCommandTarget_RemainsUsableWhileDialogHasFocus() => Run(async scope =>
     {
         var independent = new TextBox();
         ((Panel)scope.Window.Content).Children.Add(independent);
@@ -241,7 +247,7 @@ public partial class ContentDialogTests
         command.Execute(null, independent);
         Assert.Equal(1, calls);
         dialog.Close();
-        Pump(task);
+        await task;
     });
 
     private static PreparationHost CreatePreparationHost(Scope scope)

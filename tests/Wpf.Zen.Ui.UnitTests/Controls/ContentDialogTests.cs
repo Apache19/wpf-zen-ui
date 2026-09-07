@@ -264,7 +264,7 @@ public partial class ContentDialogTests
     });
 
     [Fact]
-    public void TokenCancellation_CancelsTaskAfterCleanupDespiteVeto() => Run(scope =>
+    public void TokenCancellation_CancelsTaskAfterCleanupDespiteVeto() => Run(async scope =>
     {
         using var cancellation = new CancellationTokenSource();
         var dialog = scope.CreateDialog();
@@ -274,8 +274,8 @@ public partial class ContentDialogTests
         dialog.Closed += (_, _) => closed = true;
         var task = scope.Host.ShowAsync(dialog, cancellation.Token);
         Drain();
-        Task.Run(() => cancellation.Cancel()).GetAwaiter().GetResult();
-        Assert.ThrowsAny<OperationCanceledException>(() => Pump(task));
+        await Task.Run(() => cancellation.Cancel());
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => task);
         Assert.True(task.IsCanceled);
         Assert.True(closed);
         Assert.Null(scope.Host.CurrentDialog);

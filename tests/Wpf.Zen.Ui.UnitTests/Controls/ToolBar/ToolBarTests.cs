@@ -53,7 +53,7 @@ public class ToolBarTests
     }
 
     [Fact]
-    public void ToggleButtonStyle_HidesRadioIndicator()
+    public void ToggleButtonStyle_OmitsRadioIndicator()
     {
         WpfTestThread.Run(
             () =>
@@ -67,11 +67,7 @@ public class ToolBarTests
 
                 Assert.True(toggleButton.ApplyTemplate());
 
-                var indicator = Assert.IsType<Border>(
-                    toggleButton.Template.FindName("radioIndicator", toggleButton)
-                );
-
-                Assert.Equal(Visibility.Collapsed, indicator.Visibility);
+                Assert.Null(toggleButton.Template.FindName("radioIndicator", toggleButton));
             }
         );
     }

@@ -60,7 +60,13 @@ public class FlyoutTests
             {
                 Pump();
                 Assert.Null(Window.GetWindow(anchor));
-                Assert.True(SetForegroundWindow(host.Handle));
+                // Focus restoration is intentionally conditional on the native owner remaining foreground. Windows
+                // may deny foreground activation to unattended runners, in which case that contract cannot be
+                // exercised in this process and treating the environmental restriction as a product failure is wrong.
+                Assert.SkipUnless(
+                    SetForegroundWindow(host.Handle),
+                    "Windows denied the test process permission to activate its native host."
+                );
                 Pump();
                 anchor.Focus();
                 flyout.ShowAt(anchor);

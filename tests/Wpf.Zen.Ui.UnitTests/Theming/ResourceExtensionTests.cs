@@ -157,7 +157,12 @@ public class ResourceExtensionTests
         Assert.NotNull(contentProperty);
         Assert.Equal(tokenProperty.Name, contentProperty!.Name);
 
-        var constructor = Assert.Single(extensionType.GetConstructors(BindingFlags.Public | BindingFlags.Instance));
+        var constructors = extensionType.GetConstructors(BindingFlags.Public | BindingFlags.Instance);
+        Assert.Contains(constructors, constructor => constructor.GetParameters().Length == 0);
+        var constructor = Assert.Single(
+            constructors,
+            candidate => candidate.GetParameters() is [{ ParameterType: var type }] && type == tokenType
+        );
         var parameter = Assert.Single(constructor.GetParameters());
         Assert.Equal(tokenType, parameter.ParameterType);
     }

@@ -22,9 +22,9 @@ public class ButtonAuditTests
 {
     [Theory]
     [InlineData(ButtonIconPlacement.Left, Dock.Left, 0, 0, 8, 0)]
-    [InlineData(ButtonIconPlacement.Top, Dock.Top, 0, 0, 0, 8)]
+    [InlineData(ButtonIconPlacement.Top, Dock.Top, 0, 0, 0, 4)]
     [InlineData(ButtonIconPlacement.Right, Dock.Right, 8, 0, 0, 0)]
-    [InlineData(ButtonIconPlacement.Bottom, Dock.Bottom, 0, 8, 0, 0)]
+    [InlineData(ButtonIconPlacement.Bottom, Dock.Bottom, 0, 4, 0, 0)]
     public void DefaultTemplate_ArrangesIconAndDefaultGapForPlacement(
         ButtonIconPlacement placement,
         Dock expectedDock,

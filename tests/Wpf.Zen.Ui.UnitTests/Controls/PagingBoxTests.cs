@@ -329,11 +329,11 @@ namespace Wpf.Zen.Ui.UnitTests.Controls
                     CurrentPage = 2,
                     PageCount = 3,
                     Command = command,
-                    Template = CreateTemplate(typeof(ButtonBase), "PART_PreviousButton")
+                    Template = CreateTemplate(typeof(System.Windows.Controls.Button), "PART_PreviousButton")
                 };
 
                 Assert.True(control.ApplyTemplate());
-                var oldButton = Assert.IsType<ButtonBase>(
+                var oldButton = Assert.IsType<System.Windows.Controls.Button>(
                     control.Template.FindName("PART_PreviousButton", control));
                 oldButton.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent, oldButton));
                 Assert.Equal([1], command.ExecutedParameters);
@@ -379,7 +379,7 @@ namespace Wpf.Zen.Ui.UnitTests.Controls
         public void AutomationPeer_RangeValueChangeMethodsUseDoubleValues()
         {
             var peerType = typeof(PagingBoxControl).Assembly.GetType(
-                "Mining_EntClient.Presentation.AutomationPeers.PagingBoxAutomationPeer",
+                "Wpf.Zen.Ui.Controls.PagingBoxAutomationPeer",
                 throwOnError: true)!;
 
             var currentPageMethod = peerType.GetMethod(

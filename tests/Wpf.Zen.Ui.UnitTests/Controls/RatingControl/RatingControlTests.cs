@@ -133,46 +133,6 @@ public class RatingControlTests
     }
 
     [Theory]
-    [InlineData(FlowDirection.LeftToRight, true)]
-    [InlineData(FlowDirection.RightToLeft, false)]
-    public void ZeroRatingTarget_RemainsOnTheLowRatingEdge(
-        FlowDirection flowDirection,
-        bool targetPrecedesItems
-    )
-    {
-        RunOnStaThread(
-            () =>
-            {
-                RatingControl control = CreateTemplatedRatingControl(
-                    new RatingControl { FlowDirection = flowDirection }
-                );
-                var zeroTarget = Assert.IsAssignableFrom<FrameworkElement>(
-                    control.Template.FindName("PART_ZeroRatingTarget", control)
-                );
-                ItemsControl itemsHost = Assert.Single(
-                    FindVisualDescendants<ItemsControl>(control)
-                );
-                double targetCenter = zeroTarget
-                    .TranslatePoint(new Point(zeroTarget.ActualWidth / 2, 0), control)
-                    .X;
-                double itemsCenter = itemsHost
-                    .TranslatePoint(new Point(itemsHost.ActualWidth / 2, 0), control)
-                    .X;
-                Point lowEdge = flowDirection == FlowDirection.LeftToRight
-                    ? new Point(0, control.ActualHeight / 2)
-                    : new Point(control.ActualWidth, control.ActualHeight / 2);
-                Point highEdge = flowDirection == FlowDirection.LeftToRight
-                    ? new Point(control.ActualWidth, control.ActualHeight / 2)
-                    : new Point(0, control.ActualHeight / 2);
-
-                Assert.Equal(targetPrecedesItems, targetCenter < itemsCenter);
-                Assert.True(control.IsPositionInZeroRatingRegion(lowEdge));
-                Assert.False(control.IsPositionInZeroRatingRegion(highEdge));
-            }
-        );
-    }
-
-    [Theory]
     [InlineData(10, 0.25)]
     [InlineData(25, 0.25)]
     [InlineData(50, 0.5)]

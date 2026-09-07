@@ -149,11 +149,11 @@ public class AutoSuggestBoxTests
                     new Rect(autoSuggestBox.PointToScreen(default), new Size(1D, 1D))
                 );
 
-                // The closed template restores the border's two vertical strokes. Put that provisional surface one
-                // stroke beyond the monitor while leaving the final one-stroke Bottom template an exact fit. WPF
-                // first selects Top, then selects Bottom after ActualPlacement applies the final border geometry.
+                // The closed template restores the border's two vertical strokes. Keep one physical pixel of room
+                // for the final one-stroke Bottom template; an exact monitor-edge equality is not stable because
+                // WPF rounds the target and Popup HWND independently when converting DIPs to device coordinates.
                 window.Top += (
-                    monitorBounds.Bottom - popupHeightInPixels - targetBottom
+                    monitorBounds.Bottom - popupHeightInPixels - targetBottom - 1D
                 ) / VisualTreeHelper.GetDpi(window).DpiScaleY;
                 FlushDispatcher(window);
 
