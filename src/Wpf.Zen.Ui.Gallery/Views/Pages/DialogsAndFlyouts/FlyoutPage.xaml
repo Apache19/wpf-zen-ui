@@ -17,74 +17,50 @@
     mc:Ignorable="d">
 
     <Page.Resources>
-        <!--  Resources do not occupy layout space. ShowAt chooses the anchor at the time of opening.  -->
-        <ui:Flyout
-            x:Key="DetailsFlyout"
-            Placement="Top">
+        <Style TargetType="{x:Type ui:Flyout}">
+            <Setter Property="Placement" Value="Bottom" />
+            <Setter Property="ui:PopupPlacementTracker.IsEnabled" Value="True" />
+            <Setter Property="VerticalOffset" Value="4" />
+            <Style.Triggers>
+                <Trigger Property="ui:PopupPlacementTracker.ActualPlacement" Value="Top">
+                    <Setter Property="VerticalOffset" Value="-4" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+        <!--  An attached Flyout can remain in resources and be shared by multiple owners.  -->
+        <ui:Flyout x:Key="DetailsFlyout" Placement="Top">
             <StackPanel Width="280">
-                <TextBlock FontWeight="SemiBold" Text="An independent content flyout" />
+                <TextBlock FontWeight="SemiBold" Text="A reusable attached flyout" />
                 <TextBlock
                     Margin="0,8,0,12"
-                    Text="This panel opens above the element passed to ShowAt. Escape or an outside click closes it."
+                    Text="This panel opens above whichever attached owner was focused or clicked. Escape or an outside click closes it."
                     TextWrapping="Wrap" />
-                <ui:TextBox Text="You can edit content here" />
-                <ui:Button
-                    Margin="0,12,0,0"
-                    HorizontalAlignment="Right"
-                    Click="OnCloseDetailsClick"
-                    Content="Done" />
-            </StackPanel>
-            <ui:Flyout.Style>
-                <Style TargetType="{x:Type ui:Flyout}">
-                    <Setter Property="VerticalOffset" Value="4" />
-                    <Style.Triggers>
-                        <Trigger Property="ui:PopupPlacementTracker.ActualPlacement" Value="Top">
-                            <Setter Property="VerticalOffset" Value="-4" />
-                        </Trigger>
-                    </Style.Triggers>
-                </Style>
-            </ui:Flyout.Style>
-        </ui:Flyout>
-        <ui:Flyout x:Key="TextSelectionFlyout" Placement="Bottom">
-            <ui:Flyout.Style>
-                <Style TargetType="{x:Type ui:Flyout}">
-                    <Setter Property="VerticalOffset" Value="4" />
-                    <Style.Triggers>
-                        <Trigger Property="ui:PopupPlacementTracker.ActualPlacement" Value="Top">
-                            <Setter Property="VerticalOffset" Value="-4" />
-                        </Trigger>
-                    </Style.Triggers>
-                </Style>
-            </ui:Flyout.Style>
-            <StackPanel Width="260">
-                <TextBlock Margin="0,0,0,8" FontWeight="SemiBold" Text="Choose a destination" />
-                <ui:Button Margin="0,4,0,0" HorizontalAlignment="Stretch" Click="OnDestinationClick" Content="Beijing" />
-                <ui:Button Margin="0,4,0,0" HorizontalAlignment="Stretch" Click="OnDestinationClick" Content="Shanghai" />
-                <ui:Button Margin="0,4,0,0" HorizontalAlignment="Stretch" Click="OnDestinationClick" Content="Hangzhou" />
+                <ui:TextBox Text="Right-click to open the editor menu" />
             </StackPanel>
         </ui:Flyout>
     </Page.Resources>
 
     <StackPanel Margin="0,0,0,24">
         <controls:ControlExample
-            CsharpCode="((Flyout)Resources[&quot;DetailsFlyout&quot;]).ShowAt(target);"
-            HeaderText="Open a Flyout above an explicit target."
-            XamlCode="&lt;ui:Flyout x:Key=&quot;DetailsFlyout&quot; Placement=&quot;Top&quot; /&gt;">
+            CsharpCode="FlyoutService.ShowAttachedFlyout(target); // Optional manual trigger"
+            HeaderText="Attach one reusable Flyout to different owners."
+            XamlCode="&lt;Page.Resources&gt;&#xA;    &lt;ui:Flyout x:Key=&quot;DetailsFlyout&quot; Placement=&quot;Top&quot; /&gt;&#xA;&lt;/Page.Resources&gt;&#xA;&#xA;&lt;ui:Button&#xA;    ui:FlyoutService.AttachedFlyout=&quot;{StaticResource DetailsFlyout}&quot;&#xA;    ui:FlyoutService.ShowOnFocusOrClick=&quot;True&quot;&#xA;    Content=&quot;Open above this button&quot; /&gt;">
             <StackPanel>
                 <ui:Button
                     HorizontalAlignment="Left"
-                    Click="OnShowDetailsClick"
+                    ui:FlyoutService.AttachedFlyout="{StaticResource DetailsFlyout}"
+                    ui:FlyoutService.ShowOnFocusOrClick="True"
                     Content="Open above this button" />
                 <Border
                     Margin="0,20,0,0"
                     Padding="16"
                     HorizontalAlignment="Left"
+                    ui:FlyoutService.AttachedFlyout="{StaticResource DetailsFlyout}"
+                    ui:FlyoutService.ShowOnFocusOrClick="True"
                     Background="{ui:DynamicBrush SubtleFillSecondary}"
                     CornerRadius="8"
-                    Focusable="True"
-                    KeyDown="OnAnchorKeyDown"
-                    MouseLeftButtonUp="OnAnchorMouseLeftButtonUp">
-                    <TextBlock Text="Click this card, or focus it and press Enter, to use a different anchor." />
+                    Focusable="True">
+                    <TextBlock Text="Click or focus this card to open the same Flyout above a different owner." />
                 </Border>
             </StackPanel>
         </controls:ControlExample>
@@ -98,7 +74,7 @@
                 Content="Options"
                 IsDropDownOpen="{Binding IsFlyoutOpen}">
                 <ui:DropDownButton.Flyout>
-                    <ui:Flyout Placement="Bottom" VerticalOffset="4">
+                    <ui:Flyout>
                         <StackPanel Width="260">
                             <TextBlock FontWeight="SemiBold" Text="Panel content, not a menu" />
                             <CheckBox Margin="0,12,0,0" Content="Show details" />
@@ -110,20 +86,57 @@
         </controls:ControlExample>
         <controls:ControlExample
             Margin="0,24,0,0"
-            HeaderText="Focus a TextBox and select a value from a Flyout."
-            XamlCode="&lt;ui:TextBox GotKeyboardFocus=&quot;OnDestinationGotKeyboardFocus&quot; /&gt;&#xA;&lt;!-- Declare the selection Flyout in Page.Resources. --&gt;"
-            CsharpCode="// Open after keyboard focus settles; ignore focus returning from the Flyout.&#xA;flyout.ShowAt(DestinationTextBox);&#xA;// When an option is clicked:&#xA;DestinationTextBox.SetCurrentValue(TextBox.TextProperty, selectedValue);&#xA;flyout.Hide();">
+            CsharpCode="// Keyboard focus or a completed primary click opens the Flyout.&#xA;// Focus moves to its first focusable child; repeated clicks do not toggle it.&#xA;FlyoutService.ShowAttachedFlyout(target); // Optional manual trigger"
+            HeaderText="Open an attached Flyout from keyboard focus or a primary click."
+            XamlCode="&lt;ui:TextBox ui:FlyoutService.ShowOnFocusOrClick=&quot;True&quot;&gt;&#xA;    &lt;ui:FlyoutService.AttachedFlyout&gt;&#xA;        &lt;ui:Flyout&gt;&#xA;            &lt;!-- Suggestion content --&gt;&#xA;        &lt;/ui:Flyout&gt;&#xA;    &lt;/ui:FlyoutService.AttachedFlyout&gt;&#xA;&lt;/ui:TextBox&gt;">
             <StackPanel>
                 <TextBlock Margin="0,0,0,8" Text="Destination" />
                 <ui:TextBox
                     x:Name="DestinationTextBox"
                     Width="300"
                     HorizontalAlignment="Left"
-                    GotKeyboardFocus="OnDestinationGotKeyboardFocus"
-                    PlaceholderText="Focus here to choose a destination" />
+                    ui:FlyoutService.ShowOnFocusOrClick="True"
+                    PlaceholderText="Focus or click here to choose a destination">
+                    <ui:FlyoutService.AttachedFlyout>
+                        <ui:Flyout>
+                            <StackPanel Width="260">
+                                <TextBlock
+                                    Margin="0,0,0,8"
+                                    FontWeight="SemiBold"
+                                    Text="Choose a destination" />
+                                <ui:Button
+                                    Margin="0,4,0,0"
+                                    HorizontalAlignment="Stretch"
+                                    Click="OnDestinationClick"
+                                    Content="Beijing" />
+                                <ui:Button
+                                    Margin="0,4,0,0"
+                                    HorizontalAlignment="Stretch"
+                                    Click="OnDestinationClick"
+                                    Content="Shanghai" />
+                                <ui:Button
+                                    Margin="0,4,0,0"
+                                    HorizontalAlignment="Stretch"
+                                    Click="OnDestinationClick"
+                                    Content="Hangzhou" />
+                            </StackPanel>
+                            <ui:Flyout.Style>
+                                <Style TargetType="{x:Type ui:Flyout}">
+                                    <Setter Property="ui:PopupPlacementTracker.IsEnabled" Value="True" />
+                                    <Setter Property="VerticalOffset" Value="4" />
+                                    <Style.Triggers>
+                                        <Trigger Property="ui:PopupPlacementTracker.ActualPlacement" Value="Top">
+                                            <Setter Property="VerticalOffset" Value="-4" />
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </ui:Flyout.Style>
+                        </ui:Flyout>
+                    </ui:FlyoutService.AttachedFlyout>
+                </ui:TextBox>
                 <TextBlock
                     Margin="0,8,0,0"
-                    Text="Choose with a click, or use Tab and Enter. The selected value remains editable. Move focus away and back to choose again."
+                    Text="Focus moves into the panel when it opens. A repeated owner click leaves it open; press Escape, click outside, or move focus away to close it."
                     TextWrapping="Wrap" />
             </StackPanel>
         </controls:ControlExample>

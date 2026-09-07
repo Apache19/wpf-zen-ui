@@ -19,8 +19,9 @@ namespace Wpf.Zen.Ui.Controls;
 /// </summary>
 /// <remarks>
 /// <para>
-/// Declare the flyout in resources or assign it to <see cref="DropDownButton.Flyout"/>. Open it
-/// with <see cref="ShowAt"/>, or set <see cref="PlacementTarget"/> and <see cref="IsOpen"/>.
+/// Declare the flyout in resources, attach it with <see cref="FlyoutService"/>, or assign it to
+/// <see cref="DropDownButton.Flyout"/>. Open it with <see cref="ShowAt"/>, or set
+/// <see cref="PlacementTarget"/> and <see cref="IsOpen"/>.
 /// </para>
 /// <para>
 /// A flyout owns a private <see cref="Popup"/> and therefore must not be added to a <see cref="Panel"/>
@@ -37,11 +38,13 @@ namespace Wpf.Zen.Ui.Controls;
 /// <para>
 /// Opening requires a loaded, visible, enabled target connected to a presentation source; invalid requests
 /// reset <see cref="IsOpen"/> to <see langword="false"/>. <see cref="Key.Escape"/>, <see cref="Key.F4"/>,
-/// and Alt+Up or Alt+Down dismiss the panel, while Tab cycles focus within it. Unloading, hiding, disabling
-/// the target, or deactivating its owner closes the panel even when <see cref="StaysOpen"/> is
-/// <see langword="true"/>. Targets hosted directly in <see cref="HwndSource"/> are monitored through their
-/// native top-level activation instead of <see cref="Window"/> events. Closing restores focus only when the
-/// owner remains active and focus is still within the panel.
+/// and Alt+Up or Alt+Down dismiss the panel. By default, opening moves focus into the panel and Tab cycles
+/// there; <see cref="FocusOnOpen"/> can instead keep an editor target active without losing those dismissal
+/// keys. Unloading, hiding, disabling the target, or deactivating its owner closes the panel even when
+/// <see cref="StaysOpen"/> is <see langword="true"/>. Targets hosted directly in <see cref="HwndSource"/>
+/// are monitored through their native top-level activation instead of <see cref="Window"/> events. Closing
+/// restores focus only when the owner remains active and focus is still within the panel. Standard WPF
+/// context menus inside the content remain available from both mouse and keyboard gestures.
 /// </para>
 /// <para>
 /// Use <see cref="ContextMenu"/> for menu items and submenus. <see cref="Flyout"/> does not adapt native
@@ -110,8 +113,8 @@ public class Flyout : ContentControl
 
         AddHandler(ButtonBase.ClickEvent, new RoutedEventHandler((_, e) => e.Handled = true));
 
-        MouseDown  += (_, e) => e.Handled = true;
-        MouseUp    += (_, e) => e.Handled = true;
+        MouseDown  += OnMouseButton;
+        MouseUp    += OnMouseButton;
         MouseWheel += (_, e) => e.Handled = true;
     }
 
@@ -146,6 +149,40 @@ public class Flyout : ContentControl
     {
         get => (bool)GetValue(IsOpenProperty);
         set => SetValue(IsOpenProperty, value);
+    }
+
+    #endregion
+
+    #region DP: FocusOnOpen
+
+    /// <summary>
+    /// Identifies the <see cref="FocusOnOpen"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty FocusOnOpenProperty =
+        DependencyProperty.Register(
+            nameof(FocusOnOpen),
+            typeof(bool),
+            typeof(Flyout),
+            new FrameworkPropertyMetadata(true)
+        );
+
+    /// <summary>
+    /// Gets or sets a value indicating whether opening the panel moves keyboard focus to its first
+    /// focusable descendant.
+    /// The default is <see langword="true"/>.
+    /// </summary>
+    /// <remarks>
+    /// This property controls only the initial focus transfer and does not inherit or affect layout.
+    /// Set it to <see langword="false"/> for suggestion and inspector surfaces that must remain visible
+    /// while the user continues typing in <see cref="PlacementTarget"/>. In that mode the target still
+    /// receives Escape, F4, and Alt+Up or Alt+Down dismissal handling while the flyout is open. Interactive
+    /// content remains available to the mouse, but applications must provide an explicit keyboard path into
+    /// the panel when its content also needs keyboard interaction.
+    /// </remarks>
+    public bool FocusOnOpen
+    {
+        get => (bool)GetValue(FocusOnOpenProperty);
+        set => SetValue(FocusOnOpenProperty, value);
     }
 
     #endregion
@@ -481,6 +518,37 @@ public class Flyout : ContentControl
     {
         base.OnKeyDown(e);
 
+        HandleKey(e, suppressNavigationKeys: true);
+    }
+
+    /// <summary>
+    /// Keeps non-menu mouse input inside the detached popup route without suppressing WPF's
+    /// process-wide context-menu gesture.
+    /// </summary>
+    private static void OnMouseButton(object sender, MouseButtonEventArgs e)
+    {
+        // PopupControlService raises ContextMenuOpening from an unhandled right-button MouseUp in
+        // InputManager.PostProcessInput. Marking that event handled disables mouse context menus for
+        // every editor hosted here even though the Menu key still works. Right-button events do not
+        // activate ButtonBase, so they can safely complete their ordinary WPF route.
+        if (e.ChangedButton != MouseButton.Right)
+        {
+            e.Handled = true;
+        }
+    }
+
+    private void OnTargetPreviewKeyDown(object sender, KeyEventArgs e)
+    {
+        // FocusOnOpen=false deliberately leaves the keyboard route in the placement target's HWND.
+        // Mirror the panel's dismissal keys there so a non-activating flyout is not mouse-only to close.
+        if (!FocusOnOpen && IsOpen)
+        {
+            HandleKey(e, suppressNavigationKeys: false);
+        }
+    }
+
+    private void HandleKey(KeyEventArgs e, bool suppressNavigationKeys)
+    {
         if (e.Handled)
         {
             return;
@@ -494,7 +562,8 @@ public class Flyout : ContentControl
             Hide();
             e.Handled = true;
         }
-        else if (e.Key is Key.Left or Key.Right or Key.Up or Key.Down
+        else if (suppressNavigationKeys
+                 && e.Key is Key.Left or Key.Right or Key.Up or Key.Down
                  or Key.PageUp or Key.PageDown or Key.Home or Key.End)
         {
             // Text editors and inner ScrollViewers already had their opportunity to handle these.
@@ -717,7 +786,8 @@ public class Flyout : ContentControl
             return;
         }
 
-        var movedFocus = MoveFocus(new TraversalRequest(FocusNavigationDirection.First));
+        var movedFocus = !FocusOnOpen
+                         || MoveFocus(new TraversalRequest(FocusNavigationDirection.First));
 
         // Both focus attempts invoke application handlers synchronously.
         // A close, reopen or retarget ends this opening's work; it must
@@ -727,7 +797,7 @@ public class Flyout : ContentControl
             return;
         }
 
-        if (!movedFocus)
+        if (FocusOnOpen && !movedFocus)
         {
             Focus();
         }
@@ -778,6 +848,7 @@ public class Flyout : ContentControl
         _observedTarget.Unloaded         += OnTargetUnloaded;
         _observedTarget.IsVisibleChanged += OnTargetAvailabilityChanged;
         _observedTarget.IsEnabledChanged += OnTargetAvailabilityChanged;
+        _observedTarget.PreviewKeyDown   += OnTargetPreviewKeyDown;
 
         _ownerWindow = Window.GetWindow(_observedTarget);
 
@@ -882,6 +953,7 @@ public class Flyout : ContentControl
             _observedTarget.Unloaded         -= OnTargetUnloaded;
             _observedTarget.IsVisibleChanged -= OnTargetAvailabilityChanged;
             _observedTarget.IsEnabledChanged -= OnTargetAvailabilityChanged;
+            _observedTarget.PreviewKeyDown   -= OnTargetPreviewKeyDown;
             _observedTarget = null;
         }
 

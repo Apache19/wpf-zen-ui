@@ -27,6 +27,10 @@ public class FlyoutTests
     [return: System.Runtime.InteropServices.MarshalAs(System.Runtime.InteropServices.UnmanagedType.Bool)]
     private static extern bool SetForegroundWindow(IntPtr window);
 
+    [System.Runtime.InteropServices.DllImport("user32.dll")]
+    [return: System.Runtime.InteropServices.MarshalAs(System.Runtime.InteropServices.UnmanagedType.Bool)]
+    private static extern bool GetCursorPos(out NativePoint point);
+
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
@@ -274,6 +278,302 @@ public class FlyoutTests
                     Assert.False(flyout.IsOpen);
                     Assert.True(anchor.IsKeyboardFocused);
                 });
+        });
+    }
+
+    [Fact]
+    public void MouseInputBoundary_PreservesRightButtonForWpfContextMenuService()
+    {
+        WpfTestThread.Run(() =>
+        {
+            var anchor = new Button { Content = "Anchor" };
+            var editor = new TextBox { Text = "Right-click me" };
+            var flyout = new Flyout { Content = editor };
+            WithWindow(anchor, flyout, () =>
+            {
+                flyout.ShowAt(anchor);
+                Pump();
+
+                var rightButton = new MouseButtonEventArgs(
+                    Mouse.PrimaryDevice,
+                    Environment.TickCount,
+                    MouseButton.Right
+                )
+                {
+                    RoutedEvent = Mouse.MouseUpEvent,
+                    Source = editor,
+                };
+                editor.RaiseEvent(rightButton);
+
+                // PopupControlService observes MouseUp later in InputManager.PostProcessInput. The
+                // flyout boundary must leave this event available so TextBox can create its standard menu.
+                Assert.False(rightButton.Handled);
+            });
+        });
+    }
+
+    [Fact]
+    public void FocusOnOpenFalse_PreservesEditorFocusAndHandlesDismissalKeysAtTarget()
+    {
+        WpfTestThread.Run(() =>
+        {
+            var editor = new TextBox { Text = "Keep editing" };
+            var flyout = new Flyout
+            {
+                Content = new Button { Content = "Suggestion" },
+                FocusOnOpen = false,
+            };
+            WithWindow(editor, flyout, () =>
+            {
+                Window.GetWindow(editor)!.Activate();
+                editor.Focus();
+                flyout.ShowAt(editor);
+                Pump();
+
+                Assert.True(editor.IsKeyboardFocused);
+                Assert.False(flyout.IsKeyboardFocusWithin);
+
+                var left = new KeyEventArgs(
+                    Keyboard.PrimaryDevice,
+                    PresentationSource.FromVisual(editor)!,
+                    0,
+                    Key.Left
+                )
+                {
+                    RoutedEvent = Keyboard.PreviewKeyDownEvent,
+                };
+                editor.RaiseEvent(left);
+                Assert.False(left.Handled);
+
+                var escape = new KeyEventArgs(
+                    Keyboard.PrimaryDevice,
+                    PresentationSource.FromVisual(editor)!,
+                    0,
+                    Key.Escape
+                )
+                {
+                    RoutedEvent = Keyboard.PreviewKeyDownEvent,
+                };
+                editor.RaiseEvent(escape);
+                Pump();
+
+                Assert.True(escape.Handled);
+                Assert.False(flyout.IsOpen);
+                Assert.True(editor.IsKeyboardFocused);
+            });
+        });
+    }
+
+    [Fact]
+    public void FlyoutService_ManagesFocusScopeWithoutApplicationEventCoordination()
+    {
+        WpfTestThread.Run(() =>
+        {
+            var editor = new TextBox { Text = "Editor" };
+            var other = new Button { Content = "Other" };
+            var root = new StackPanel { Children = { editor, other } };
+            var flyout = new Flyout
+            {
+                Content = new Button { Content = "Suggestion" },
+                FocusOnOpen = false,
+            };
+            FlyoutService.SetAttachedFlyout(editor, flyout);
+            FlyoutService.SetShowOnFocusOrClick(editor, true);
+
+            WithWindow(root, flyout, () =>
+            {
+                Window.GetWindow(editor)!.Activate();
+                editor.Focus();
+                Pump();
+
+                Assert.True(flyout.IsOpen);
+                Assert.Same(editor, flyout.PlacementTarget);
+                Assert.True(editor.IsKeyboardFocused);
+
+                other.Focus();
+                Pump();
+
+                Assert.True(other.IsKeyboardFocused);
+                Assert.False(flyout.IsOpen);
+            });
+        });
+    }
+
+    [Fact]
+    public void FlyoutService_PrimaryClickReopensFocusedOwnerWithoutTogglingOpenFlyout()
+    {
+        WpfTestThread.Run(() =>
+        {
+            var editor = new TextBox
+            {
+                Width = 220,
+                HorizontalAlignment = HorizontalAlignment.Left,
+                Text = "Editor",
+            };
+            var outside = new Border
+            {
+                Width = 80,
+                Height = 80,
+                HorizontalAlignment = HorizontalAlignment.Right,
+                Background = Brushes.Transparent,
+            };
+            var root = new Grid { Children = { editor, outside } };
+            var flyout = new Flyout
+            {
+                Content = new Button { Content = "Suggestion" },
+                FocusOnOpen = false,
+            };
+            var openedCount = 0;
+            flyout.Opened += (_, _) => openedCount++;
+            FlyoutService.SetAttachedFlyout(editor, flyout);
+            FlyoutService.SetShowOnFocusOrClick(editor, true);
+
+            WithWindow(root, flyout, () =>
+            {
+                Window.GetWindow(editor)!.Activate();
+                editor.Focus();
+                Pump();
+
+                Assert.True(flyout.IsOpen);
+                Assert.Equal(1, openedCount);
+                flyout.Hide();
+                Pump();
+                Assert.True(editor.IsKeyboardFocused);
+
+                RaiseMouseButton(editor, Mouse.PreviewMouseDownEvent, MouseButton.Left);
+                Pump();
+
+                // Opening during mouse-down would leave the TextBox's selection capture in place.
+                // The service waits for the completed click before creating the Popup.
+                Assert.False(flyout.IsOpen);
+
+                RaiseMouseButton(editor, Mouse.MouseUpEvent, MouseButton.Left);
+                Pump();
+
+                Assert.True(flyout.IsOpen);
+                Assert.Equal(2, openedCount);
+                Assert.NotNull(Mouse.Captured);
+
+                RaiseMouseButton(editor, Mouse.MouseUpEvent, MouseButton.Left);
+                Pump();
+
+                Assert.True(flyout.IsOpen);
+                Assert.Equal(2, openedCount);
+
+                var window = Window.GetWindow(editor)!;
+                MoveElementUnderCursor(window, outside);
+                var popupCapture = Assert.IsAssignableFrom<UIElement>(Mouse.Captured);
+                popupCapture.RaiseEvent(
+                    RaiseMouseButtonArgs(
+                        popupCapture,
+                        Mouse.PreviewMouseDownEvent,
+                        MouseButton.Left
+                    )
+                );
+                Pump();
+
+                Assert.False(flyout.IsOpen);
+                Assert.True(editor.IsKeyboardFocused);
+
+                var rightButton = RaiseMouseButton(editor, Mouse.MouseUpEvent, MouseButton.Right);
+                Pump();
+
+                Assert.False(rightButton.Handled);
+                Assert.False(flyout.IsOpen);
+                Assert.Equal(2, openedCount);
+            });
+        });
+    }
+
+    [Fact]
+    public void FlyoutService_FocusedPanelRemainsOpenAndEscapeDoesNotReopenIt()
+    {
+        WpfTestThread.Run(() =>
+        {
+            var editor = new TextBox { Text = "Editor" };
+            var option = new Button { Content = "Suggestion" };
+            var other = new Button { Content = "Other" };
+            var root = new StackPanel { Children = { editor, other } };
+            var flyout = new Flyout { Content = option };
+            FlyoutService.SetAttachedFlyout(editor, flyout);
+            FlyoutService.SetShowOnFocusOrClick(editor, true);
+
+            WithWindow(root, flyout, () =>
+            {
+                Window.GetWindow(editor)!.Activate();
+                editor.Focus();
+                Pump();
+
+                Assert.True(flyout.IsOpen);
+                Assert.True(option.IsKeyboardFocused);
+
+                other.Focus();
+                Pump();
+
+                Assert.True(other.IsKeyboardFocused);
+                Assert.False(flyout.IsOpen);
+
+                editor.Focus();
+                Pump();
+
+                Assert.True(flyout.IsOpen);
+                Assert.True(option.IsKeyboardFocused);
+
+                var escape = new KeyEventArgs(
+                    Keyboard.PrimaryDevice,
+                    PresentationSource.FromVisual(option)!,
+                    0,
+                    Key.Escape
+                )
+                {
+                    RoutedEvent = Keyboard.KeyDownEvent,
+                };
+                option.RaiseEvent(escape);
+                Pump();
+
+                Assert.True(escape.Handled);
+                Assert.False(flyout.IsOpen);
+                Assert.True(editor.IsKeyboardFocused);
+            });
+        });
+    }
+
+    [Fact]
+    public void FlyoutService_NestedContextMenuRemainsInsideManagedFocusScope()
+    {
+        WpfTestThread.Run(() =>
+        {
+            var editor = new TextBox { Text = "Owner" };
+            var menuItem = new MenuItem { Header = "Copy" };
+            var contextMenu = new ContextMenu { Items = { menuItem } };
+            var panelEditor = new TextBox
+            {
+                Text = "Panel editor",
+                ContextMenu = contextMenu,
+            };
+            var flyout = new Flyout { Content = panelEditor };
+            FlyoutService.SetAttachedFlyout(editor, flyout);
+            FlyoutService.SetShowOnFocusOrClick(editor, true);
+
+            WithWindow(editor, flyout, () =>
+            {
+                Window.GetWindow(editor)!.Activate();
+                editor.Focus();
+                Pump();
+
+                Assert.True(panelEditor.IsKeyboardFocused);
+                contextMenu.PlacementTarget = panelEditor;
+                contextMenu.IsOpen = true;
+                Pump();
+                menuItem.Focus();
+                Pump();
+
+                Assert.True(menuItem.IsKeyboardFocused);
+                Assert.True(flyout.IsOpen);
+
+                contextMenu.IsOpen = false;
+                Pump();
+            });
         });
     }
 
@@ -584,6 +884,57 @@ public class FlyoutTests
     }
 
     private static Popup GetPopup(Flyout flyout) => Assert.IsType<Popup>(LogicalTreeHelper.GetParent(flyout));
+
+    private static MouseButtonEventArgs RaiseMouseButton(
+        UIElement target,
+        RoutedEvent routedEvent,
+        MouseButton button
+    )
+    {
+        var mouseEvent = RaiseMouseButtonArgs(target, routedEvent, button);
+        target.RaiseEvent(mouseEvent);
+        return mouseEvent;
+    }
+
+    private static MouseButtonEventArgs RaiseMouseButtonArgs(
+        UIElement target,
+        RoutedEvent routedEvent,
+        MouseButton button
+    )
+    {
+        return new MouseButtonEventArgs(Mouse.PrimaryDevice, Environment.TickCount, button)
+        {
+            RoutedEvent = routedEvent,
+            Source = target,
+        };
+    }
+
+    private static void MoveElementUnderCursor(Window window, FrameworkElement element)
+    {
+        Assert.True(GetCursorPos(out NativePoint cursorPosition));
+        Point topLeft = element.PointToScreen(default);
+        DpiScale dpi = VisualTreeHelper.GetDpi(element);
+        window.Left +=
+            (cursorPosition.X - topLeft.X - (element.ActualWidth * dpi.DpiScaleX / 2D))
+            / dpi.DpiScaleX;
+        window.Top +=
+            (cursorPosition.Y - topLeft.Y - (element.ActualHeight * dpi.DpiScaleY / 2D))
+            / dpi.DpiScaleY;
+        Pump();
+
+        Assert.True(GetCursorPos(out cursorPosition));
+        Point localPosition = element.PointFromScreen(
+            new Point(cursorPosition.X, cursorPosition.Y)
+        );
+        Assert.True(new Rect(element.RenderSize).Contains(localPosition));
+    }
+
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
+    private struct NativePoint
+    {
+        public int X;
+        public int Y;
+    }
 
     private static void Pump() => Dispatcher.CurrentDispatcher.Invoke(() => { }, DispatcherPriority.ApplicationIdle);
 
