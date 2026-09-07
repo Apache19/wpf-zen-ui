@@ -9,6 +9,12 @@ using Wpf.Zen.Ui.Controls;
 
 namespace Wpf.Zen.Ui.Gallery.Controls;
 
+/// <summary>
+/// Displays documentation and source links for pages reported by a navigation view.
+/// The template invokes <see cref="TemplateButtonCommand"/> with doc, xaml, c#, or theme;
+/// no named template parts are required. Navigation is observed only while loaded,
+/// and a missing navigation view is supported for designer and binding initialization.
+/// </summary>
 public class PageControlDocumentation : Control
 {
     public static readonly DependencyProperty ShowProperty = DependencyProperty.RegisterAttached(
@@ -54,8 +60,19 @@ public class PageControlDocumentation : Control
         nameof(NavigationView),
         typeof(NavigationView),
         typeof(PageControlDocumentation),
-        new FrameworkPropertyMetadata(null)
+        new FrameworkPropertyMetadata(null, OnNavigationViewChanged)
     );
+
+    /// <summary>
+    /// Gets or sets the navigation view whose page links are displayed. The default is
+    /// <see langword="null"/>; an unresolved binding leaves the control disconnected.
+    /// Changes reconnect navigation events only while the control is loaded.
+    /// </summary>
+    public NavigationView? NavigationView
+    {
+        get => (NavigationView?)GetValue(NavigationViewProperty);
+        set => SetValue(NavigationViewProperty, value);
+    }
 
     /// <summary>Identifies the <see cref="IsDocumentationLinkVisible"/> dependency property.</summary>
     public static readonly DependencyProperty IsDocumentationLinkVisibleProperty =
@@ -66,6 +83,13 @@ public class PageControlDocumentation : Control
             new FrameworkPropertyMetadata(Visibility.Collapsed)
         );
 
+    /// <summary>Gets or sets the visibility of the documentation link; defaults to collapsed.</summary>
+    public Visibility IsDocumentationLinkVisible
+    {
+        get => (Visibility)GetValue(IsDocumentationLinkVisibleProperty);
+        set => SetValue(IsDocumentationLinkVisibleProperty, value);
+    }
+
     /// <summary>Identifies the <see cref="TemplateButtonCommand"/> dependency property.</summary>
     public static readonly DependencyProperty TemplateButtonCommandProperty = DependencyProperty.Register(
         nameof(TemplateButtonCommand),
@@ -74,20 +98,10 @@ public class PageControlDocumentation : Control
         new PropertyMetadata(null)
     );
 
-    public NavigationView? NavigationView
-    {
-        get => (NavigationView?)GetValue(NavigationViewProperty);
-        set => SetValue(NavigationViewProperty, value);
-    }
-
-    public Visibility IsDocumentationLinkVisible
-    {
-        get => (Visibility)GetValue(IsDocumentationLinkVisibleProperty);
-        set => SetValue(IsDocumentationLinkVisibleProperty, value);
-    }
-
+    /// <summary>Gets the command used by template buttons to open page links or switch themes.</summary>
     public ICommand TemplateButtonCommand => (ICommand)GetValue(TemplateButtonCommandProperty);
 
+    /// <summary>Initializes template commands and manages navigation observation through load events.</summary>
     public PageControlDocumentation()
     {
         Loaded   += static (sender, _) => ((PageControlDocumentation)sender).OnLoaded();
@@ -100,21 +114,48 @@ public class PageControlDocumentation : Control
     }
 
     private FrameworkElement? _page;
+    private NavigationView? _subscribedNavigationView;
 
-    private void OnLoaded()
+    private static void OnNavigationViewChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
-        if (NavigationView is null)
+        var control = (PageControlDocumentation)d;
+        if (control.IsLoaded)
         {
-            throw new ArgumentNullException(nameof(NavigationView));
+            control.UpdateNavigationSubscription((NavigationView?)e.NewValue);
         }
-
-        NavigationView.Navigated += NavigationViewOnNavigated;
     }
 
-    private void OnUnloaded()
+    // ElementName bindings can be unresolved in the designer or during tree changes.
+    // Loaded starts observation; the property callback handles bindings resolved later.
+    private void OnLoaded() => UpdateNavigationSubscription(NavigationView);
+
+    private void OnUnloaded() => UpdateNavigationSubscription(null);
+
+    /// <summary>
+    /// Switches the event source and clears page state belonging to the previous source.
+    /// </summary>
+    private void UpdateNavigationSubscription(NavigationView? navigationView)
     {
-        NavigationView!.Navigated -= NavigationViewOnNavigated;
-        _page                     =  null;
+        if (ReferenceEquals(_subscribedNavigationView, navigationView))
+        {
+            return;
+        }
+
+        // Unloaded is dispatched after detachment, when the binding may already have
+        // changed. Unsubscribe from the actual event source, not the current DP value.
+        if (_subscribedNavigationView is not null)
+        {
+            _subscribedNavigationView.Navigated -= NavigationViewOnNavigated;
+        }
+
+        _subscribedNavigationView = navigationView;
+        _page = null;
+        SetCurrentValue(IsDocumentationLinkVisibleProperty, Visibility.Collapsed);
+
+        if (_subscribedNavigationView is not null)
+        {
+            _subscribedNavigationView.Navigated += NavigationViewOnNavigated;
+        }
     }
 
     private void NavigationViewOnNavigated(NavigationView sender, NavigatedEventArgs args)
