@@ -269,7 +269,10 @@ public sealed class SoftKeyboardKey
 {
     /// <summary>Initializes a new instance of the <see cref="SoftKeyboardKey"/> class.</summary>
     /// <param name="kind">The semantic action performed by the key.</param>
-    /// <param name="label">The short label displayed on the key.</param>
+    /// <param name="content">
+    /// The content displayed on the key. Strings are rendered as ordinary text; data objects such
+    /// as <see cref="IconSource"/> are resolved through WPF data templates.
+    /// </param>
     /// <param name="automationName">The descriptive name exposed to UI Automation.</param>
     /// <param name="key">The WPF virtual key for <see cref="SoftKeyboardKeyKind.VirtualKey"/>.</param>
     /// <param name="text">The Unicode value for <see cref="SoftKeyboardKeyKind.Text"/>.</param>
@@ -278,7 +281,7 @@ public sealed class SoftKeyboardKey
     /// <param name="alternates">Optional long-press Unicode alternatives.</param>
     public SoftKeyboardKey(
         SoftKeyboardKeyKind kind,
-        string label,
+        object content,
         string automationName,
         Key key = Key.None,
         string? text = null,
@@ -287,9 +290,14 @@ public sealed class SoftKeyboardKey
         IEnumerable<string>? alternates = null
     )
     {
-        if (string.IsNullOrWhiteSpace(label))
+        if (content is null)
         {
-            throw new ArgumentException("A key label is required.", nameof(label));
+            throw new ArgumentNullException(nameof(content));
+        }
+
+        if (content is string textContent && string.IsNullOrWhiteSpace(textContent))
+        {
+            throw new ArgumentException("Text key content cannot be empty.", nameof(content));
         }
 
         if (string.IsNullOrWhiteSpace(automationName))
@@ -303,7 +311,7 @@ public sealed class SoftKeyboardKey
         }
 
         Kind = kind;
-        Label = label;
+        Content = content;
         AutomationName = automationName;
         Key = key;
         Text = text;
@@ -315,8 +323,14 @@ public sealed class SoftKeyboardKey
     /// <summary>Gets the action performed by the key.</summary>
     public SoftKeyboardKeyKind Kind { get; }
 
-    /// <summary>Gets the short visual label.</summary>
-    public string Label { get; }
+    /// <summary>Gets the visual content presented on the key.</summary>
+    /// <remarks>
+    /// This slot is designed for reusable presentation data rather than a shared visual element.
+    /// Values such as <see cref="FluentIconSource"/> allow the keyboard's content presenter to
+    /// create an independent visual for every key. Custom layout providers may supply their own
+    /// data objects together with an implicit <see cref="System.Windows.DataTemplate"/>.
+    /// </remarks>
+    public object Content { get; }
 
     /// <summary>Gets the descriptive UI Automation name.</summary>
     public string AutomationName { get; }

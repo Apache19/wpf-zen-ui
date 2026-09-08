@@ -20,6 +20,21 @@ namespace Wpf.Zen.Ui.Controls;
 /// </remarks>
 public sealed class DefaultSoftKeyboardLayoutProvider : ISoftKeyboardLayoutProvider
 {
+    // Icon sources are immutable presentation data. Sharing them avoids rebuilding identical
+    // descriptors whenever Shift or the requested surface regenerates the layout; the implicit
+    // FluentIconSource data template still creates an independent visual for every key button.
+    private static readonly FluentIconSource ShiftIcon = new(SymbolRegular.KeyboardShift24);
+    private static readonly FluentIconSource ShiftOnceIcon = new(SymbolRegular.KeyboardShiftUppercase24);
+    private static readonly FluentIconSource ShiftLockedIcon = new(SymbolRegular.KeyboardShiftUppercase24, filled: true);
+    private static readonly FluentIconSource BackspaceIcon = new(SymbolRegular.Backspace24);
+    private static readonly FluentIconSource EmojiIcon = new(SymbolRegular.Emoji24);
+    private static readonly FluentIconSource InputMethodsIcon = new(SymbolRegular.Keyboard24);
+    private static readonly FluentIconSource MoveLeftIcon = new(SymbolRegular.ArrowLeft24);
+    private static readonly FluentIconSource MoveRightIcon = new(SymbolRegular.ArrowRight24);
+    private static readonly FluentIconSource SpaceIcon = new(SymbolRegular.Spacebar24);
+    private static readonly FluentIconSource EnterIcon = new(SymbolRegular.ArrowEnterLeft24);
+    private static readonly FluentIconSource CloseIcon = new(SymbolRegular.ChevronDown24);
+
     private static readonly Key[][] LetterRows =
     [
         [Key.Q, Key.W, Key.E, Key.R, Key.T, Key.Y, Key.U, Key.I, Key.O, Key.P],
@@ -109,9 +124,9 @@ public sealed class DefaultSoftKeyboardLayoutProvider : ISoftKeyboardLayoutProvi
             2,
             new SoftKeyboardRow(
             [
-                new SoftKeyboardKey(SoftKeyboardKeyKind.Shift, "⇧", "Shift", width: 1.35d),
+                new SoftKeyboardKey(SoftKeyboardKeyKind.Shift, GetShiftContent(context.ShiftState), "Shift", width: 1.35d),
                 .. rows[2].Keys,
-                new SoftKeyboardKey(SoftKeyboardKeyKind.VirtualKey, "⌫", "Backspace", Key.Back, width: 1.35d),
+                new SoftKeyboardKey(SoftKeyboardKeyKind.VirtualKey, BackspaceIcon, "Backspace", Key.Back, width: 1.35d),
             ])
         );
         rows.RemoveAt(3);
@@ -119,16 +134,16 @@ public sealed class DefaultSoftKeyboardLayoutProvider : ISoftKeyboardLayoutProvi
         var bottom = new List<SoftKeyboardKey>
         {
             new(SoftKeyboardKeyKind.ChangeDisplayMode, "&123", "Numbers and symbols", displayMode: SoftKeyboardDisplayMode.Symbols, width: 1.3d),
-            new(SoftKeyboardKeyKind.ChangeDisplayMode, "☺", "Emoji", displayMode: SoftKeyboardDisplayMode.Emoji),
-            new(SoftKeyboardKeyKind.InputMethods, "⌨", "Input methods"),
-            new(SoftKeyboardKeyKind.VirtualKey, "←", "Move cursor left", Key.Left),
-            new(SoftKeyboardKeyKind.VirtualKey, "space", "Space", Key.Space, width: 3d),
-            new(SoftKeyboardKeyKind.VirtualKey, "→", "Move cursor right", Key.Right),
+            new(SoftKeyboardKeyKind.ChangeDisplayMode, EmojiIcon, "Emoji", displayMode: SoftKeyboardDisplayMode.Emoji),
+            new(SoftKeyboardKeyKind.InputMethods, InputMethodsIcon, "Input methods"),
+            new(SoftKeyboardKeyKind.VirtualKey, MoveLeftIcon, "Move cursor left", Key.Left),
+            new(SoftKeyboardKeyKind.VirtualKey, SpaceIcon, "Space", Key.Space, width: 3d),
+            new(SoftKeyboardKeyKind.VirtualKey, MoveRightIcon, "Move cursor right", Key.Right),
         };
 
         AddInputScopeKey(bottom, context.InputScope);
-        bottom.Add(new SoftKeyboardKey(SoftKeyboardKeyKind.VirtualKey, "↵", "Enter", Key.Enter, width: 1.4d));
-        bottom.Add(new SoftKeyboardKey(SoftKeyboardKeyKind.Close, "⌄", "Close keyboard"));
+        bottom.Add(new SoftKeyboardKey(SoftKeyboardKeyKind.VirtualKey, EnterIcon, "Enter", Key.Enter, width: 1.4d));
+        bottom.Add(new SoftKeyboardKey(SoftKeyboardKeyKind.Close, CloseIcon, "Close keyboard"));
         rows.Add(new SoftKeyboardRow(bottom));
 
         return new SoftKeyboardLayout(rows);
@@ -147,11 +162,11 @@ public sealed class DefaultSoftKeyboardLayoutProvider : ISoftKeyboardLayoutProvi
             new SoftKeyboardRow(
             [
                 new SoftKeyboardKey(SoftKeyboardKeyKind.ChangeDisplayMode, "ABC", "Letters", displayMode: SoftKeyboardDisplayMode.Letters, width: 1.4d),
-                new SoftKeyboardKey(SoftKeyboardKeyKind.VirtualKey, "⌫", "Backspace", Key.Back, width: 1.4d),
-                new SoftKeyboardKey(SoftKeyboardKeyKind.VirtualKey, "←", "Move cursor left", Key.Left),
-                new SoftKeyboardKey(SoftKeyboardKeyKind.VirtualKey, "→", "Move cursor right", Key.Right),
-                new SoftKeyboardKey(SoftKeyboardKeyKind.VirtualKey, "↵", "Enter", Key.Enter, width: 1.4d),
-                new SoftKeyboardKey(SoftKeyboardKeyKind.Close, "⌄", "Close keyboard"),
+                new SoftKeyboardKey(SoftKeyboardKeyKind.VirtualKey, BackspaceIcon, "Backspace", Key.Back, width: 1.4d),
+                new SoftKeyboardKey(SoftKeyboardKeyKind.VirtualKey, MoveLeftIcon, "Move cursor left", Key.Left),
+                new SoftKeyboardKey(SoftKeyboardKeyKind.VirtualKey, MoveRightIcon, "Move cursor right", Key.Right),
+                new SoftKeyboardKey(SoftKeyboardKeyKind.VirtualKey, EnterIcon, "Enter", Key.Enter, width: 1.4d),
+                new SoftKeyboardKey(SoftKeyboardKeyKind.Close, CloseIcon, "Close keyboard"),
             ])
         );
         return new SoftKeyboardLayout(rows);
@@ -166,18 +181,30 @@ public sealed class DefaultSoftKeyboardLayoutProvider : ISoftKeyboardLayoutProvi
             new SoftKeyboardRow(
             [
                 new SoftKeyboardKey(SoftKeyboardKeyKind.ChangeDisplayMode, "ABC", "Letters", displayMode: SoftKeyboardDisplayMode.Letters, width: 1.4d),
-                new SoftKeyboardKey(SoftKeyboardKeyKind.ChangeDisplayMode, "☺", "Emoji", displayMode: SoftKeyboardDisplayMode.Emoji),
-                new SoftKeyboardKey(SoftKeyboardKeyKind.InputMethods, "⌨", "Input methods"),
-                new SoftKeyboardKey(SoftKeyboardKeyKind.VirtualKey, "←", "Move cursor left", Key.Left),
-                new SoftKeyboardKey(SoftKeyboardKeyKind.VirtualKey, "space", "Space", Key.Space, width: 2.5d),
-                new SoftKeyboardKey(SoftKeyboardKeyKind.VirtualKey, "→", "Move cursor right", Key.Right),
-                new SoftKeyboardKey(SoftKeyboardKeyKind.VirtualKey, "⌫", "Backspace", Key.Back, width: 1.4d),
-                new SoftKeyboardKey(SoftKeyboardKeyKind.VirtualKey, "↵", "Enter", Key.Enter, width: 1.4d),
-                new SoftKeyboardKey(SoftKeyboardKeyKind.Close, "⌄", "Close keyboard"),
+                new SoftKeyboardKey(SoftKeyboardKeyKind.ChangeDisplayMode, EmojiIcon, "Emoji", displayMode: SoftKeyboardDisplayMode.Emoji),
+                new SoftKeyboardKey(SoftKeyboardKeyKind.InputMethods, InputMethodsIcon, "Input methods"),
+                new SoftKeyboardKey(SoftKeyboardKeyKind.VirtualKey, MoveLeftIcon, "Move cursor left", Key.Left),
+                new SoftKeyboardKey(SoftKeyboardKeyKind.VirtualKey, SpaceIcon, "Space", Key.Space, width: 2.5d),
+                new SoftKeyboardKey(SoftKeyboardKeyKind.VirtualKey, MoveRightIcon, "Move cursor right", Key.Right),
+                new SoftKeyboardKey(SoftKeyboardKeyKind.VirtualKey, BackspaceIcon, "Backspace", Key.Back, width: 1.4d),
+                new SoftKeyboardKey(SoftKeyboardKeyKind.VirtualKey, EnterIcon, "Enter", Key.Enter, width: 1.4d),
+                new SoftKeyboardKey(SoftKeyboardKeyKind.Close, CloseIcon, "Close keyboard"),
             ])
         );
         return new SoftKeyboardLayout(rows);
     }
+
+    /// <summary>
+    /// Selects a key-cap description that distinguishes inactive, one-shot, and locked Shift
+    /// without placing stateful visual elements in the immutable layout model.
+    /// </summary>
+    private static FluentIconSource GetShiftContent(SoftKeyboardShiftState shiftState) => shiftState switch
+    {
+        SoftKeyboardShiftState.Off    => ShiftIcon,
+        SoftKeyboardShiftState.Once   => ShiftOnceIcon,
+        SoftKeyboardShiftState.Locked => ShiftLockedIcon,
+        _ => throw new ArgumentOutOfRangeException(nameof(shiftState)),
+    };
 
     private static SoftKeyboardKey CreateTextKey(string value) =>
         new(SoftKeyboardKeyKind.Text, value, value, text: value);

@@ -1192,6 +1192,110 @@ public class SoftKeyboardTests
     }
 
     [Fact]
+    public void KeyContent_AcceptsPresentationDataAndRejectsMissingTextContent()
+    {
+        var content = new FluentIconSource(SymbolRegular.Backspace24);
+        var key = new SoftKeyboardKey(
+            SoftKeyboardKeyKind.VirtualKey,
+            content,
+            "Backspace",
+            Key.Back
+        );
+
+        Assert.Same(content, key.Content);
+        Assert.Throws<ArgumentNullException>(() =>
+            new SoftKeyboardKey(SoftKeyboardKeyKind.Text, null!, "Missing", text: "x"));
+        Assert.Throws<ArgumentException>(() =>
+            new SoftKeyboardKey(SoftKeyboardKeyKind.Text, " ", "Missing", text: "x"));
+    }
+
+    [Fact]
+    public void LayoutProvider_UsesFluentIconSourcesForSpecialKeyCaps()
+    {
+        SoftKeyboardLayout layout = DefaultSoftKeyboardLayoutProvider.Default.CreateLayout(
+            new SoftKeyboardLayoutContext(
+                CultureInfo.GetCultureInfo("en-US"),
+                InputScopeNameValue.Default,
+                SoftKeyboardDisplayMode.Letters,
+                SoftKeyboardShiftState.Off
+            )
+        );
+        SoftKeyboardLayout lockedLayout = DefaultSoftKeyboardLayoutProvider.Default.CreateLayout(
+            new SoftKeyboardLayoutContext(
+                CultureInfo.GetCultureInfo("en-US"),
+                InputScopeNameValue.Default,
+                SoftKeyboardDisplayMode.Letters,
+                SoftKeyboardShiftState.Locked
+            )
+        );
+        IReadOnlyList<SoftKeyboardKey> keys = layout.Rows.SelectMany(row => row.Keys).ToArray();
+        IReadOnlyList<SoftKeyboardKey> lockedKeys = lockedLayout.Rows.SelectMany(row => row.Keys).ToArray();
+
+        Assert.Equal(
+            SymbolRegular.KeyboardShift24,
+            Assert.IsType<FluentIconSource>(Assert.Single(keys, key => key.Kind == SoftKeyboardKeyKind.Shift).Content).Symbol
+        );
+        Assert.Equal(
+            SymbolRegular.Backspace24,
+            Assert.IsType<FluentIconSource>(Assert.Single(keys, key => key.Key == Key.Back).Content).Symbol
+        );
+        Assert.Equal(
+            SymbolRegular.ArrowLeft24,
+            Assert.IsType<FluentIconSource>(Assert.Single(keys, key => key.Key == Key.Left).Content).Symbol
+        );
+        Assert.Equal(
+            SymbolRegular.ArrowRight24,
+            Assert.IsType<FluentIconSource>(Assert.Single(keys, key => key.Key == Key.Right).Content).Symbol
+        );
+        Assert.Equal(
+            SymbolRegular.ArrowEnterLeft24,
+            Assert.IsType<FluentIconSource>(Assert.Single(keys, key => key.Key == Key.Enter).Content).Symbol
+        );
+
+        FluentIconSource lockedShift = Assert.IsType<FluentIconSource>(
+            Assert.Single(lockedKeys, key => key.Kind == SoftKeyboardKeyKind.Shift).Content
+        );
+        Assert.Equal(SymbolRegular.KeyboardShiftUppercase24, lockedShift.Symbol);
+        Assert.True(lockedShift.Filled);
+    }
+
+    [Fact]
+    public void GeneratedSpecialKey_UsesTheImplicitFluentIconTemplateAndKeyboardIconSize()
+    {
+        WpfApplicationTestHost.Run(() =>
+        {
+            var keyboard = new SoftKeyboard { IsOpen = true };
+            var window = new Window
+            {
+                Content = keyboard,
+                Width = 700,
+                Height = 500,
+                ShowInTaskbar = false,
+            };
+
+            try
+            {
+                window.Show();
+                window.UpdateLayout();
+                SoftKeyboardKey backspace = FindKey(keyboard, Key.Back);
+                Wpf.Zen.Ui.Controls.Button button = Assert.Single(
+                    Descendants<Wpf.Zen.Ui.Controls.Button>(keyboard),
+                    item => ReferenceEquals(item.DataContext, backspace)
+                );
+                FluentIcon icon = Assert.Single(Descendants<FluentIcon>(button));
+
+                Assert.Same(backspace.Content, button.Content);
+                Assert.Equal(SymbolRegular.Backspace24, icon.Symbol);
+                Assert.Equal(20d, icon.IconSize);
+            }
+            finally
+            {
+                window.Close();
+            }
+        });
+    }
+
+    [Fact]
     public void SurfaceTransition_CancelsActiveCompositionWithEscape()
     {
         WpfApplicationTestHost.Run(() =>

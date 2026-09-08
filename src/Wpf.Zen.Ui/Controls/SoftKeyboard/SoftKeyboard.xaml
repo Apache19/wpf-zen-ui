@@ -26,6 +26,12 @@
         <Setter Property="IsTabStop" Value="False" />
         <Setter Property="HorizontalContentAlignment" Value="Center" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
+        <!--
+            IconSize is inherited only by compatible icon visuals created beneath the content
+            presenter. Text key caps retain the keyboard's normal FontSize, while icon-backed key
+            caps receive a consistent optical size independent of the selected icon family.
+        -->
+        <Setter Property="controls:IconPresenter.IconSize" Value="20" />
     </Style>
 
     <Style x:Key="SoftKeyboardCandidateButtonStyle" BasedOn="{StaticResource SoftKeyboardKeyButtonStyle}" TargetType="{x:Type controls:Button}">
@@ -49,7 +55,7 @@
                 <ControlTemplate TargetType="{x:Type controls:SoftKeyboard}">
                     <Border
                         x:Name="KeyboardRoot"
-                        MinWidth="320"
+                        MinWidth="160"
                         Padding="6"
                         Background="{m:DynamicBrush SolidBackgroundFillSecondary}"
                         BorderBrush="{m:DynamicBrush ControlStrokeDefault}"
@@ -175,7 +181,7 @@
                                                 <DataTemplate DataType="{x:Type controls:SoftKeyboardKey}">
                                                     <controls:Button
                                                         AutomationProperties.Name="{Binding AutomationName}"
-                                                        Content="{Binding Label}"
+                                                        Content="{Binding Content}"
                                                         Style="{StaticResource SoftKeyboardKeyButtonStyle}" />
                                                 </DataTemplate>
                                             </ItemsControl.ItemTemplate>
