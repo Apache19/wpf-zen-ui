@@ -60,7 +60,10 @@ public sealed class DefaultSoftKeyboardLayoutProvider : ISoftKeyboardLayoutProvi
             throw new ArgumentNullException(nameof(context));
         }
 
-        if (context.DisplayMode == SoftKeyboardDisplayMode.Numbers || IsNumericScope(context.InputScope))
+        // InputScope supplies the initial layout only. Explicit Letters/Symbols requests must
+        // remain reachable even when the editor advertises numeric input.
+        if (context.DisplayMode == SoftKeyboardDisplayMode.Numbers
+            || (context.DisplayMode == SoftKeyboardDisplayMode.Automatic && IsNumericScope(context.InputScope)))
         {
             return CreateNumberLayout(context.InputScope);
         }

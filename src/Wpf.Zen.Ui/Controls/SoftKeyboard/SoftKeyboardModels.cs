@@ -37,6 +37,9 @@ public enum SoftKeyboardAutoHideMode
 /// <summary>Identifies the surface currently presented by a <see cref="SoftKeyboard"/>.</summary>
 public enum SoftKeyboardDisplayMode
 {
+    /// <summary>Chooses the initial key surface from the active editor input scope.</summary>
+    Automatic,
+
     /// <summary>Displays alphabetic keys for the active Windows keyboard layout.</summary>
     Letters,
 

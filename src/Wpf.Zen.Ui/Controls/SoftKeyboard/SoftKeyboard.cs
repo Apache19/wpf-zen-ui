@@ -61,6 +61,9 @@ public class SoftKeyboard : Control
     private Window? _window;
     private SoftKeyboardKey? _heldKey;
     private SoftKeyboardEmoji? _heldEmoji;
+    private TextComposition? _activeTextComposition;
+    private IInputElement? _compositionTarget;
+    private bool _compositionCancellationRequested;
     private SoftKeyboardInputMethod? _preferredImeInputMethod;
     private DispatcherTimer? _holdTimer;
     private DispatcherTimer? _repeatTimer;
@@ -105,6 +108,8 @@ public class SoftKeyboard : Control
         Loaded += OnLoaded;
         Unloaded += OnUnloaded;
         IsVisibleChanged += OnIsVisibleChanged;
+        IsEnabledChanged += OnIsEnabledChanged;
+        AddHandler(Mouse.LostMouseCaptureEvent, new MouseEventHandler(OnLostMouseCapture), true);
         RefreshEmoji();
         RebuildLayout();
     }
@@ -256,13 +261,16 @@ public class SoftKeyboard : Control
         nameof(EmojiSearchText),
         typeof(string),
         typeof(SoftKeyboard),
-        new PropertyMetadata(string.Empty, OnEmojiFilterChanged)
+        new PropertyMetadata(string.Empty, OnEmojiFilterChanged, static (_, value) => value ?? string.Empty)
     );
 
     /// <summary>
     /// Gets or sets text used to filter Emoji by their invariant searchable names.
     /// </summary>
-    /// <remarks>The default is an empty string. The property does not record or persist search text.</remarks>
+    /// <remarks>
+    /// The default is an empty string. Null values, including binding results, are coerced to empty
+    /// before filtering. Changes rebuild the Emoji collection; search text is not persisted.
+    /// </remarks>
     [Bindable(true)]
     [Category("Behavior")]
     public string EmojiSearchText
@@ -307,13 +315,13 @@ public class SoftKeyboard : Control
             nameof(DisplayMode),
             typeof(SoftKeyboardDisplayMode),
             typeof(SoftKeyboard),
-            new PropertyMetadata(SoftKeyboardDisplayMode.Letters, OnLayoutContextChanged)
+            new PropertyMetadata(SoftKeyboardDisplayMode.Automatic, OnDisplayModeChanged)
         );
 
     /// <summary>Identifies the read-only <see cref="DisplayMode"/> dependency property.</summary>
     public static readonly DependencyProperty DisplayModeProperty = DisplayModePropertyKey.DependencyProperty;
 
-    /// <summary>Gets the keyboard surface currently displayed.</summary>
+    /// <summary>Gets the requested surface. The default, Automatic, follows the active editor input scope.</summary>
     public SoftKeyboardDisplayMode DisplayMode => (SoftKeyboardDisplayMode)GetValue(DisplayModeProperty);
 
     private static readonly DependencyPropertyKey ShiftStatePropertyKey =
@@ -523,7 +531,14 @@ public class SoftKeyboard : Control
     /// <summary>Gets the alternatives offered for the currently held key or Emoji.</summary>
     public ReadOnlyObservableCollection<string> AlternateValues { get; }
 
-    /// <summary>Changes the visible keyboard surface.</summary>
+    /// <summary>Changes the visible keyboard surface and ends any pending long-press gesture.</summary>
+    /// <remarks>
+    /// Explicit letter, number, and symbol surfaces override the editor input scope. Automatic
+    /// chooses from that scope again. A new active editor resets the mode to Automatic.
+    /// Emoji and input-method surfaces release native candidate suppression because their
+    /// templates hide the candidate bar. If the active input method owns unconfirmed composition
+    /// text, the control asks it to cancel that text before crossing the surface boundary.
+    /// </remarks>
     /// <param name="displayMode">The surface to display.</param>
     public void ShowDisplayMode(SoftKeyboardDisplayMode displayMode)
     {
@@ -532,6 +547,15 @@ public class SoftKeyboard : Control
             throw new ArgumentOutOfRangeException(nameof(displayMode));
         }
 
+        if (displayMode != DisplayMode && !TryCancelActiveComposition())
+        {
+            // Direct-text surfaces must not be entered while a TIP still owns mutable pre-edit
+            // text. Keeping the current surface is the only non-destructive fallback when Windows
+            // cannot accept the Escape request.
+            return;
+        }
+
+        CancelHeldKey();
         SetValue(DisplayModePropertyKey, displayMode);
         CloseAlternates();
 
@@ -559,6 +583,14 @@ public class SoftKeyboard : Control
         {
             ISoftKeyboardTargetAdapter? focusedAdapter = GetAdapter(focusedElement);
             bool isEditableTarget = focusedAdapter?.CanReceiveInput(focusedElement) == true;
+            if (isEditableTarget && ReferenceEquals(focusedElement, _compositionTarget))
+            {
+                // A composition can survive temporary application deactivation or an external
+                // focus move. GotKeyboardFocus is the first point at which Escape can again be
+                // routed safely to its original editor.
+                _ = TryCancelActiveComposition(focusedElement);
+            }
+
             if (Target is null && isEditableTarget)
             {
                 SetValue(ActiveTargetPropertyKey, focusedElement);
@@ -592,6 +624,7 @@ public class SoftKeyboard : Control
         // local suppression marker immediately, but do not request TryShow for another window or
         // scope—the new focus owner and Windows input policy must decide what UI it needs.
         ReleaseSystemKeyboardSuppression(tryRestore: false);
+        _platform.Candidates.ReleasePresentation(this);
     }
 
     internal void OnSessionInputLanguageChanged()
@@ -599,6 +632,39 @@ public class SoftKeyboard : Control
         RebuildLayout();
         RefreshInputMethods();
         RefreshImeState();
+    }
+
+    /// <summary>
+    /// Tracks the WPF composition associated with the active editor without taking ownership of it.
+    /// </summary>
+    /// <remarks>
+    /// Candidate UI lifetime is not a reliable composition signal: a TIP can temporarily expose no
+    /// candidates while its pre-edit range remains mutable. The matching final TextInput event ends
+    /// this observation. Cancellation itself is still delegated to the TIP through Escape.
+    /// </remarks>
+    internal void OnSessionTextComposition(TextCompositionEventArgs eventArgs)
+    {
+        TextComposition composition = eventArgs.TextComposition;
+        IInputElement? compositionSource = eventArgs.Source as IInputElement;
+        if (eventArgs.RoutedEvent is not null
+            && (eventArgs.RoutedEvent == TextCompositionManager.PreviewTextInputStartEvent
+                || eventArgs.RoutedEvent == TextCompositionManager.PreviewTextInputUpdateEvent))
+        {
+            if (ReferenceEquals(compositionSource, ActiveTarget))
+            {
+                _activeTextComposition = composition;
+                _compositionTarget = compositionSource;
+                _compositionCancellationRequested = false;
+            }
+
+            return;
+        }
+
+        if (eventArgs.RoutedEvent == TextCompositionManager.PreviewTextInputEvent
+            && ReferenceEquals(composition, _activeTextComposition))
+        {
+            ClearActiveComposition();
+        }
     }
 
     internal void ReplaceCandidates(
@@ -667,6 +733,7 @@ public class SoftKeyboard : Control
         }
         else
         {
+            _ = keyboard.TryCancelActiveComposition();
             keyboard.CancelHeldKey();
             keyboard.CloseAlternates();
             keyboard._platform.Candidates.ReleasePresentation(keyboard);
@@ -677,20 +744,37 @@ public class SoftKeyboard : Control
 
     private static void OnTargetChanged(DependencyObject dependencyObject, DependencyPropertyChangedEventArgs eventArgs)
     {
-        ((SoftKeyboard)dependencyObject).ResolveTarget();
+        var keyboard = (SoftKeyboard)dependencyObject;
+        if (eventArgs.NewValue is IInputElement newTarget
+            && keyboard.ActiveTarget is IInputElement oldTarget
+            && !ReferenceEquals(oldTarget, newTarget))
+        {
+            _ = keyboard.TryCancelActiveComposition(oldTarget);
+        }
+
+        keyboard.ResolveTarget();
     }
 
     private static void OnTargetAdapterChanged(DependencyObject dependencyObject, DependencyPropertyChangedEventArgs eventArgs)
     {
-        ((SoftKeyboard)dependencyObject).ResolveTarget();
+        var keyboard = (SoftKeyboard)dependencyObject;
+        _ = keyboard.TryCancelActiveComposition();
+        keyboard.ResolveTarget();
     }
 
     private static void OnTargetScopeChanged(DependencyObject dependencyObject, DependencyPropertyChangedEventArgs eventArgs)
     {
         var keyboard = (SoftKeyboard)dependencyObject;
+        if (keyboard.ActiveTarget is IInputElement activeTarget
+            && activeTarget is DependencyObject activeTargetObject
+            && !keyboard.IsWithinEffectiveScope(activeTargetObject))
+        {
+            _ = keyboard.TryCancelActiveComposition(activeTarget);
+        }
+
         keyboard.ResolveTarget();
 
-        if (keyboard.ActiveTarget is DependencyObject activeTarget && !keyboard.IsWithinEffectiveScope(activeTarget))
+        if (keyboard.ActiveTarget is DependencyObject resolvedTarget && !keyboard.IsWithinEffectiveScope(resolvedTarget))
         {
             keyboard.SetValue(ActiveTargetPropertyKey, null);
         }
@@ -699,7 +783,21 @@ public class SoftKeyboard : Control
     private static void OnActiveTargetChanged(DependencyObject dependencyObject, DependencyPropertyChangedEventArgs eventArgs)
     {
         var keyboard = (SoftKeyboard)dependencyObject;
+        if (eventArgs.OldValue is IInputElement oldTarget
+            && !ReferenceEquals(oldTarget, eventArgs.NewValue)
+            && ReferenceEquals(keyboard._compositionTarget, oldTarget))
+        {
+            // GotKeyboardFocus can report the new editor only after Windows has moved focus. At that
+            // point injecting Escape would target the new editor, so discard only our observation;
+            // WPF and TSF own composition cleanup for an external focus transition.
+            keyboard.ClearActiveComposition();
+        }
+
+        // A different editor starts with its semantic input scope; explicit navigation applies
+        // only while that editor remains the target.
+        keyboard.SetValue(DisplayModePropertyKey, SoftKeyboardDisplayMode.Automatic);
         keyboard.RebuildLayout();
+        keyboard._platform.Candidates.ReleasePresentation(keyboard);
         if (eventArgs.NewValue is null)
         {
             keyboard.ReleaseSystemKeyboardSuppression(tryRestore: false);
@@ -707,6 +805,22 @@ public class SoftKeyboard : Control
         else
         {
             keyboard.RequestSystemKeyboardHide();
+        }
+    }
+
+    private static void OnDisplayModeChanged(DependencyObject dependencyObject, DependencyPropertyChangedEventArgs eventArgs)
+    {
+        var keyboard = (SoftKeyboard)dependencyObject;
+        keyboard.RebuildLayout();
+        // A visible keyboard can contain a collapsed candidate bar. Release native UI ownership
+        // as part of the mode transition, without waiting for another input or timer callback.
+        if (keyboard.CanPresentCandidates)
+        {
+            keyboard._platform.Candidates.Refresh(keyboard);
+        }
+        else
+        {
+            keyboard._platform.Candidates.ReleasePresentation(keyboard);
         }
     }
 
@@ -748,6 +862,7 @@ public class SoftKeyboard : Control
         // Unloading commonly means the Window/Page itself is going away. Showing a system keyboard
         // for a disappearing HWND would be intrusive and can target the next foreground window, so
         // only discard this control's suppression ownership here.
+        _ = TryCancelActiveComposition();
         ReleaseSystemKeyboardSuppression(tryRestore: false);
         _session?.Unregister(this);
         _platform.Candidates.Unregister(this);
@@ -763,12 +878,14 @@ public class SoftKeyboard : Control
         CancelHeldKey();
         CloseAlternates();
         ReplaceCandidates(Array.Empty<SoftKeyboardCandidate>(), SoftKeyboardCandidatePresentationState.None);
+        ClearActiveComposition();
     }
 
     private void OnIsVisibleChanged(object sender, DependencyPropertyChangedEventArgs eventArgs)
     {
         if (!IsVisible)
         {
+            _ = TryCancelActiveComposition();
             CancelHeldKey();
             CloseAlternates();
             _platform.Candidates.ReleasePresentation(this);
@@ -790,7 +907,12 @@ public class SoftKeyboard : Control
     {
         if (IsOpen)
         {
+            // Deactivation occurs after the HWND has lost foreground ownership, when SendInput is
+            // no longer safe. Cancel any composition that survived the app switch now, then let the
+            // queued refresh either reacquire a still-valid TSF element or observe its cancellation.
+            _ = TryCancelActiveComposition();
             RequestSystemKeyboardHide();
+            QueueCandidateBridgeRefresh();
         }
     }
 
@@ -799,6 +921,7 @@ public class SoftKeyboard : Control
         if (eventArgs.IsImeStateChanged || eventArgs.IsImeConversionModeChanged)
         {
             RefreshImeState();
+            _platform.Candidates.Refresh(this);
         }
     }
 
@@ -809,6 +932,7 @@ public class SoftKeyboard : Control
         CancelHeldKey();
         CloseAlternates();
         ReleaseSystemKeyboardSuppression(tryRestore: false);
+        _platform.Candidates.ReleasePresentation(this);
     }
 
     private void OnButtonClick(object sender, RoutedEventArgs eventArgs)
@@ -857,6 +981,10 @@ public class SoftKeyboard : Control
                 {
                     ShowDisplayMode(mode);
                 }
+                else if (button.Tag is SoftKeyboardKeyKind.Close)
+                {
+                    CloseKeyboard();
+                }
                 else if (button.Tag is SoftKeyboardKeyKind.ToggleIme)
                 {
                     ToggleIme();
@@ -870,7 +998,8 @@ public class SoftKeyboard : Control
 
     private void MoveCandidatePage(int delta)
     {
-        if ((delta < 0 && !CanGoToPreviousCandidatePage)
+        if (!CanPresentCandidates
+            || (delta < 0 && !CanGoToPreviousCandidatePage)
             || (delta > 0 && !CanGoToNextCandidatePage)
             || !PrepareTargetForInput())
         {
@@ -883,7 +1012,8 @@ public class SoftKeyboard : Control
 
     private void OnPreviewMouseDown(object sender, MouseButtonEventArgs eventArgs)
     {
-        if (eventArgs.ChangedButton != MouseButton.Left
+        if (!IsEnabled || !IsOpen || !IsVisible
+            || eventArgs.ChangedButton != MouseButton.Left
             || eventArgs.OriginalSource is not DependencyObject source
             || FindButton(source) is not { } button)
         {
@@ -928,7 +1058,7 @@ public class SoftKeyboard : Control
     private void OnHoldTimerTick(object? sender, EventArgs eventArgs)
     {
         _holdTimer?.Stop();
-        if (_heldKey is null && _heldEmoji is null)
+        if (!IsEnabled || !IsOpen || !IsVisible || (_heldKey is null && _heldEmoji is null))
         {
             return;
         }
@@ -967,7 +1097,7 @@ public class SoftKeyboard : Control
 
     private void OnRepeatTimerTick(object? sender, EventArgs eventArgs)
     {
-        if (_heldKey is null || !IsRepeatable(_heldKey) || !IsOpen || !IsWindowForeground())
+        if (_heldKey is null || !IsRepeatable(_heldKey) || !IsOpen || !IsEnabled || !IsVisible || !IsWindowForeground())
         {
             CancelHeldKey();
             return;
@@ -1010,7 +1140,7 @@ public class SoftKeyboard : Control
                 ToggleIme();
                 break;
             case SoftKeyboardKeyKind.Close:
-                SetCurrentValue(IsOpenProperty, false);
+                CloseKeyboard();
                 break;
         }
     }
@@ -1034,6 +1164,11 @@ public class SoftKeyboard : Control
 
     private void ToggleIme()
     {
+        RunAfterActiveCompositionCancellation(ToggleImeCore);
+    }
+
+    private void ToggleImeCore()
+    {
         // IME state belongs to the focused TSF document, so target validation and focus restoration
         // must happen before reading or changing WPF's Dispatcher-scoped InputMethod.Current.
         ShowDisplayMode(SoftKeyboardDisplayMode.Letters);
@@ -1049,6 +1184,7 @@ public class SoftKeyboard : Control
             if (_platform.InputMethods.TrySetImeState(InputMethodState.Off))
             {
                 SetValue(ImeStatePropertyKey, InputMethodState.Off);
+                _platform.Candidates.ReleasePresentation(this);
                 ReplaceCandidates([], SoftKeyboardCandidatePresentationState.None);
             }
         }
@@ -1096,6 +1232,13 @@ public class SoftKeyboard : Control
             return false;
         }
 
+        // KEYEVENTF_UNICODE bypasses the active TIP. Escape is queued first so mutable pre-edit
+        // text cannot be interleaved with Emoji, symbols, or long-press alternatives.
+        if (!TryCancelActiveComposition())
+        {
+            return false;
+        }
+
         bool sent = _platform.Input.SendUnicode(text);
         if (sent)
         {
@@ -1110,7 +1253,8 @@ public class SoftKeyboard : Control
     {
         IInputElement? target = Target ?? ActiveTarget;
         ISoftKeyboardTargetAdapter? adapter = target is null ? null : GetAdapter(target);
-        if (target is null
+        if (!IsLoaded || !IsEnabled || !IsVisible || !IsOpen
+            || target is null
             || target is not DependencyObject targetObject
             || adapter is null
             || !IsWithinEffectiveScope(targetObject)
@@ -1130,7 +1274,8 @@ public class SoftKeyboard : Control
         // This also retries the normal focus path, where WPF may have created TextServicesHost only
         // after the GotKeyboardFocus preprocessing callback completed.
         _platform.Candidates.Refresh(this);
-        return IsWindowForeground();
+        // Focus callbacks can disable, hide, or invalidate the editor or keyboard synchronously.
+        return IsSystemKeyboardSuppressionRequired;
     }
 
     private void QueueCandidateBridgeRefresh()
@@ -1278,9 +1423,18 @@ public class SoftKeyboard : Control
     private void RefreshImeState()
     {
         SetValue(ImeStatePropertyKey, _platform.InputMethods.GetImeState());
+        if (IsLoaded && !CanPresentCandidates)
+        {
+            _platform.Candidates.ReleasePresentation(this);
+        }
     }
 
     private void ActivateInputMethod(SoftKeyboardInputMethod inputMethod)
+    {
+        RunAfterActiveCompositionCancellation(() => ActivateInputMethodCore(inputMethod));
+    }
+
+    private void ActivateInputMethodCore(SoftKeyboardInputMethod inputMethod)
     {
         if (_platform.InputMethods.TryActivate(inputMethod))
         {
@@ -1345,7 +1499,7 @@ public class SoftKeyboard : Control
     {
         // The TSF bridge replaces this handler with an active candidate behavior object. Retaining
         // the candidate click path here keeps the template independent from COM callback lifetimes.
-        if (_session is not null && _platform.Candidates.TryCommit(this, candidate.Index))
+        if (_session is not null && CanPresentCandidates && _platform.Candidates.TryCommit(this, candidate.Index))
         {
             ReplaceCandidates(Array.Empty<SoftKeyboardCandidate>(), SoftKeyboardCandidatePresentationState.None);
         }
@@ -1440,6 +1594,7 @@ public class SoftKeyboard : Control
         get
         {
             if (!IsLoaded
+                || !IsEnabled
                 || !IsVisible
                 || !IsOpen
                 || ActiveTarget is not DependencyObject targetObject
@@ -1497,6 +1652,154 @@ public class SoftKeyboard : Control
         }
 
         return IsWindowForeground();
+    }
+
+    /// <summary>
+    /// Gets a value indicating whether the live editor and visible surface can own candidates.
+    /// Remembered targets may restore focus for a key, but must never capture another editor's IME UI.
+    /// </summary>
+    internal bool CanPresentCandidates =>
+        DisplayMode is not (SoftKeyboardDisplayMode.Emoji or SoftKeyboardDisplayMode.InputMethods)
+        && ImeState == InputMethodState.On
+        && ActiveInputMethod is not null
+        && IsSystemKeyboardSuppressionRequired;
+
+    private void OnIsEnabledChanged(object sender, DependencyPropertyChangedEventArgs eventArgs)
+    {
+        if (!IsEnabled)
+        {
+            _ = TryCancelActiveComposition();
+            CancelHeldKey();
+            CloseAlternates();
+            _platform.Candidates.ReleasePresentation(this);
+            ReleaseSystemKeyboardSuppression(tryRestore: true);
+        }
+        else if (IsLoaded && IsOpen)
+        {
+            _platform.Candidates.Refresh(this);
+            RequestSystemKeyboardHide();
+        }
+    }
+
+    /// <summary>
+    /// Asks the active TIP to discard its mutable pre-edit transaction by sending Escape to the
+    /// editor that originated the matching WPF composition.
+    /// </summary>
+    /// <remarks>
+    /// TSF TerminateComposition only removes the composing property and may preserve or commit the
+    /// covered text. Escape retains the input method's own cancellation semantics (for example,
+    /// Microsoft Pinyin removes its unconfirmed phonetic text). The request is sent only while the
+    /// originating editor still owns keyboard focus and its Window owns the foreground; otherwise
+    /// SendInput could affect another target.
+    /// </remarks>
+    private bool TryCancelActiveComposition(IInputElement? expectedTarget = null)
+    {
+        if (_activeTextComposition is null || _compositionTarget is null)
+        {
+            return true;
+        }
+
+        if (_compositionCancellationRequested)
+        {
+            // Escape is already ahead of any directly injected text in the Win32 input queue.
+            return true;
+        }
+
+        IInputElement target = expectedTarget ?? _compositionTarget;
+        if (!ReferenceEquals(target, _compositionTarget))
+        {
+            return true;
+        }
+
+        if (!ReferenceEquals(Keyboard.FocusedElement, target)
+            || !IsWindowForeground()
+            || !_platform.Input.SendVirtualKey(Key.Escape, shift: false))
+        {
+            return false;
+        }
+
+        // SendInput preserves packet order, so a directly following Unicode packet cannot overtake
+        // Escape. Retain the WPF composition until its final event; if the TIP ignores the request,
+        // reset the guard after input processing so the next semantic boundary can retry safely.
+        _compositionCancellationRequested = true;
+        TextComposition requestedComposition = _activeTextComposition;
+        _ = Dispatcher.BeginInvoke(
+            DispatcherPriority.ContextIdle,
+            new Action(() =>
+            {
+                if (ReferenceEquals(_activeTextComposition, requestedComposition))
+                {
+                    _compositionCancellationRequested = false;
+                }
+            })
+        );
+        return true;
+    }
+
+    /// <summary>
+    /// Defers an operation that mutates TSF input-method state until WPF has observed the requested
+    /// cancellation completing.
+    /// </summary>
+    /// <remarks>
+    /// SendInput only places Escape in the foreground thread's input queue; it does not process the
+    /// key before returning. Changing the active TIP or its open compartment in the same callback
+    /// could therefore run ahead of cancellation and cause the outgoing TIP to preserve raw text.
+    /// ContextIdle runs after ordinary input dispatch. If no final composition event arrives, the
+    /// operation is deliberately abandoned instead of converting uncertain pre-edit text.
+    /// </remarks>
+    private void RunAfterActiveCompositionCancellation(Action operation)
+    {
+        if (_activeTextComposition is null)
+        {
+            operation();
+            return;
+        }
+
+        if (!TryCancelActiveComposition())
+        {
+            return;
+        }
+
+        _ = Dispatcher.BeginInvoke(
+            DispatcherPriority.ContextIdle,
+            new Action(() =>
+            {
+                // A still-active composition means either the TIP ignored Escape or a fresh
+                // composition has already started. Neither case is safe for changing TSF state.
+                if (_activeTextComposition is not null)
+                {
+                    return;
+                }
+
+                operation();
+            })
+        );
+    }
+
+    private void ClearActiveComposition()
+    {
+        _activeTextComposition = null;
+        _compositionTarget = null;
+        _compositionCancellationRequested = false;
+    }
+
+    private void CloseKeyboard()
+    {
+        if (TryCancelActiveComposition())
+        {
+            SetCurrentValue(IsOpenProperty, false);
+        }
+    }
+
+    private void OnLostMouseCapture(object sender, MouseEventArgs eventArgs)
+    {
+        // ButtonBase releases capture before raising Click on ordinary MouseUp. Preserve the
+        // completed gesture's click suppression marker, but terminate any still-held gesture.
+        if (_heldKey is not null || _heldEmoji is not null)
+        {
+            CancelHeldKey();
+            CloseAlternates();
+        }
     }
 
     private void CancelHeldKey(bool keepRepeatMarker = false)

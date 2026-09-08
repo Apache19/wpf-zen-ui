@@ -236,7 +236,15 @@ internal static class SoftKeyboardTsfCandidateBridge
 
             try
             {
-                return _activeBehavior.SetSelection(index) >= 0 && _activeBehavior.FinalizeCandidate() >= 0;
+                if (!ValidateActiveCandidate())
+                {
+                    return false;
+                }
+
+                // SetSelection can synchronously dispatch TSF callbacks and invalidate ownership.
+                return _activeBehavior!.SetSelection(index) >= 0
+                    && ValidateActiveCandidate()
+                    && _activeBehavior!.FinalizeCandidate() >= 0;
             }
             catch (Exception exception) when (IsUnavailable(exception))
             {
@@ -265,6 +273,11 @@ internal static class SoftKeyboardTsfCandidateBridge
 
             try
             {
+                if (!ValidateActiveCandidate())
+                {
+                    return false;
+                }
+
                 // TSF owns the page boundaries. Selecting the first item on an adjacent page asks
                 // the TIP to move its current page without committing text; FinalizeCandidate is
                 // deliberately reserved for an actual candidate-button invocation.
@@ -483,7 +496,12 @@ internal static class SoftKeyboardTsfCandidateBridge
 
             try
             {
-                if (_activeBehavior.GetCount(out uint count) < 0
+                if (!ValidateActiveCandidate())
+                {
+                    return;
+                }
+
+                if (_activeBehavior!.GetCount(out uint count) < 0
                     || _activeBehavior.GetSelection(out uint selection) < 0)
                 {
                     RestoreNativeCandidate();
@@ -602,12 +620,29 @@ internal static class SoftKeyboardTsfCandidateBridge
                 .Select(reference => reference.Target as SoftKeyboard)
                 .Where(CanEmbedCandidates)
                 .ToArray();
-            return available.LastOrDefault(keyboard => ReferenceEquals(keyboard!.ActiveTarget, Keyboard.FocusedElement))
-                ?? available.LastOrDefault();
+            return available.LastOrDefault();
         }
 
         private static bool CanEmbedCandidates(SoftKeyboard? keyboard) =>
-            keyboard is { IsLoaded: true, IsVisible: true, IsOpen: true, ActiveTarget: not null };
+            keyboard?.CanPresentCandidates == true;
+
+        /// <summary>
+        /// Revalidates both managed target ownership and the TSF document before reading or committing.
+        /// Focus and visibility can change without ending a TIP-owned composition.
+        /// </summary>
+        private bool ValidateActiveCandidate()
+        {
+            if (CanEmbedCandidates(_activeKeyboard)
+                && _activeBehavior is ITfCandidateListUIElement candidate
+                && MatchesFocusedDocument(candidate))
+            {
+                return true;
+            }
+
+            RestoreNativeCandidate();
+            ClearActiveCandidate();
+            return false;
+        }
 
         private void RestoreNativeCandidate()
         {

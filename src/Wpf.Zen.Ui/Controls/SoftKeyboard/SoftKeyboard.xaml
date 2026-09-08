@@ -80,6 +80,7 @@
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
                                 <ScrollViewer
+                                    Focusable="False"
                                     HorizontalScrollBarVisibility="Auto"
                                     VerticalScrollBarVisibility="Disabled">
                                     <ItemsControl
@@ -185,6 +186,7 @@
 
                             <ScrollViewer
                                 x:Name="EmojiScroller"
+                                Focusable="False"
                                 Grid.Row="2"
                                 HorizontalScrollBarVisibility="Disabled"
                                 VerticalScrollBarVisibility="Auto"
@@ -210,6 +212,7 @@
 
                             <ScrollViewer
                                 x:Name="InputMethodScroller"
+                                Focusable="False"
                                 Grid.Row="2"
                                 MaxHeight="230"
                                 VerticalScrollBarVisibility="Auto"
@@ -260,6 +263,17 @@
                             </ScrollViewer>
 
                             <StackPanel Grid.Row="3" HorizontalAlignment="Center" Orientation="Horizontal">
+                                <!-- Navigation is independent from IME state and remains available on every surface. -->
+                                <controls:Button
+                                    AutomationProperties.Name="Return to letters"
+                                    Content="← ABC"
+                                    Tag="{x:Static controls:SoftKeyboardDisplayMode.Letters}"
+                                    Style="{StaticResource SoftKeyboardKeyButtonStyle}" />
+                                <controls:Button
+                                    AutomationProperties.Name="Close keyboard"
+                                    Content="⌄"
+                                    Tag="{x:Static controls:SoftKeyboardKeyKind.Close}"
+                                    Style="{StaticResource SoftKeyboardKeyButtonStyle}" />
                                 <controls:Button
                                     Margin="2"
                                     Padding="12,4"
