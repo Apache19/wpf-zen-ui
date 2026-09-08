@@ -18,7 +18,7 @@
 
     <StackPanel Margin="0,0,0,24">
         <controls:ControlExample HeaderText="Embedded keyboard with automatic target tracking." XamlCode="&lt;ui:SoftKeyboard IsOpen=&quot;True&quot; TargetScope=&quot;{Binding ElementName=FormScope}&quot; /&gt;">
-            <Grid x:Name="FormScope" MinWidth="560">
+            <Grid x:Name="FormScope">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="10" />

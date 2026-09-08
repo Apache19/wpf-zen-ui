@@ -20,8 +20,7 @@
     <Style x:Key="SoftKeyboardKeyButtonStyle" TargetType="{x:Type controls:Button}">
         <Setter Property="MinWidth" Value="0" />
         <Setter Property="MinHeight" Value="44" />
-        <Setter Property="Margin" Value="2" />
-        <Setter Property="Padding" Value="10,5" />
+        <Setter Property="Padding" Value="0" />
         <Setter Property="Focusable" Value="False" />
         <Setter Property="IsTabStop" Value="False" />
         <Setter Property="HorizontalContentAlignment" Value="Center" />
@@ -36,7 +35,8 @@
 
     <Style x:Key="SoftKeyboardCandidateButtonStyle" BasedOn="{StaticResource SoftKeyboardKeyButtonStyle}" TargetType="{x:Type controls:Button}">
         <Setter Property="MinHeight" Value="38" />
-        <Setter Property="Padding" Value="14,4" />
+        <Setter Property="Padding" Value="8,4" />
+        <Setter Property="FontSize" Value="16" />
         <Setter Property="Background" Value="Transparent" />
         <Style.Triggers>
             <DataTrigger Binding="{Binding IsSelected}" Value="True">
@@ -46,6 +46,10 @@
     </Style>
 
     <Style x:Key="{x:Static t:StyleKeys.UiSoftKeyboardStyle}" TargetType="{x:Type controls:SoftKeyboard}">
+        <Setter Property="Background" Value="{m:DynamicBrush SolidBackgroundFillSecondary}" />
+        <Setter Property="BorderBrush" Value="{m:DynamicBrush ControlStrokeDefault}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Padding" Value="6" />
         <Setter Property="Focusable" Value="False" />
         <Setter Property="IsTabStop" Value="False" />
         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
@@ -55,18 +59,17 @@
                 <ControlTemplate TargetType="{x:Type controls:SoftKeyboard}">
                     <Border
                         x:Name="KeyboardRoot"
-                        MinWidth="160"
-                        Padding="6"
-                        Background="{m:DynamicBrush SolidBackgroundFillSecondary}"
-                        BorderBrush="{m:DynamicBrush ControlStrokeDefault}"
-                        BorderThickness="1"
-                        CornerRadius="8"
+                        Padding="{TemplateBinding Padding}"
+                        Background="{TemplateBinding Background}"
+                        BorderBrush="{TemplateBinding BorderBrush}"
+                        BorderThickness="{TemplateBinding BorderThickness}"
+                        CornerRadius="{TemplateBinding CornerRadius}"
                         RenderTransformOrigin="0.5,1"
                         SnapsToDevicePixels="True">
                         <Border.RenderTransform>
                             <TranslateTransform />
                         </Border.RenderTransform>
-                        <Grid MaxWidth="720">
+                        <Grid >
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
@@ -89,9 +92,7 @@
                                     Focusable="False"
                                     HorizontalScrollBarVisibility="Auto"
                                     VerticalScrollBarVisibility="Disabled">
-                                    <ItemsControl
-                                        x:Name="PART_Candidates"
-                                        ItemsSource="{Binding Candidates, RelativeSource={RelativeSource TemplatedParent}}">
+                                    <ItemsControl x:Name="PART_Candidates" ItemsSource="{Binding Candidates, RelativeSource={RelativeSource TemplatedParent}}">
                                         <ItemsControl.ItemsPanel>
                                             <ItemsPanelTemplate>
                                                 <StackPanel Orientation="Horizontal" />
@@ -164,36 +165,47 @@
                                 </ItemsControl>
                             </Border>
 
+                            <!--
+                                A single panel owns both row and column layout. Placement lives on
+                                item containers because an ItemsPanel receives those containers as
+                                its direct children; button Margin is intentionally not part of the
+                                keyboard spacing contract.
+                            -->
                             <ItemsControl
-                                x:Name="PART_KeyRows"
+                                x:Name="PART_Keys"
                                 Grid.Row="2"
                                 HorizontalContentAlignment="Stretch"
-                                ItemsSource="{Binding CurrentLayout.Rows, RelativeSource={RelativeSource TemplatedParent}}">
+                                ItemsSource="{Binding CurrentLayout.Keys, RelativeSource={RelativeSource TemplatedParent}}"
+                                VerticalContentAlignment="Stretch">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <controls:SoftKeyboardPanel
+                                            RowSpacing="{Binding RowSpacing, RelativeSource={RelativeSource AncestorType={x:Type controls:SoftKeyboard}}}"
+                                            ColumnSpacing="{Binding ColumnSpacing, RelativeSource={RelativeSource AncestorType={x:Type controls:SoftKeyboard}}}" />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemContainerStyle>
+                                    <Style TargetType="{x:Type ContentPresenter}">
+                                        <Setter Property="HorizontalAlignment" Value="Stretch" />
+                                        <Setter Property="VerticalAlignment" Value="Stretch" />
+                                        <Setter Property="controls:SoftKeyboardPanel.Row" Value="{Binding Row}" />
+                                        <Setter Property="controls:SoftKeyboardPanel.WidthWeight" Value="{Binding WidthWeight}" />
+                                    </Style>
+                                </ItemsControl.ItemContainerStyle>
                                 <ItemsControl.ItemTemplate>
-                                    <DataTemplate DataType="{x:Type controls:SoftKeyboardRow}">
-                                        <ItemsControl HorizontalAlignment="Stretch" ItemsSource="{Binding Keys}">
-                                            <ItemsControl.ItemsPanel>
-                                                <ItemsPanelTemplate>
-                                                    <controls:SoftKeyboardRowPanel />
-                                                </ItemsPanelTemplate>
-                                            </ItemsControl.ItemsPanel>
-                                            <ItemsControl.ItemTemplate>
-                                                <DataTemplate DataType="{x:Type controls:SoftKeyboardKey}">
-                                                    <controls:Button
-                                                        AutomationProperties.Name="{Binding AutomationName}"
-                                                        Content="{Binding Content}"
-                                                        Style="{StaticResource SoftKeyboardKeyButtonStyle}" />
-                                                </DataTemplate>
-                                            </ItemsControl.ItemTemplate>
-                                        </ItemsControl>
+                                    <DataTemplate DataType="{x:Type controls:SoftKeyboardKey}">
+                                        <controls:Button
+                                            AutomationProperties.Name="{Binding AutomationName}"
+                                            Content="{Binding Content}"
+                                            Style="{StaticResource SoftKeyboardKeyButtonStyle}" />
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>
 
                             <ScrollViewer
                                 x:Name="EmojiScroller"
-                                Focusable="False"
                                 Grid.Row="2"
+                                Focusable="False"
                                 HorizontalScrollBarVisibility="Disabled"
                                 VerticalScrollBarVisibility="Auto"
                                 Visibility="Collapsed">
@@ -218,9 +230,9 @@
 
                             <ScrollViewer
                                 x:Name="InputMethodScroller"
-                                Focusable="False"
                                 Grid.Row="2"
                                 MaxHeight="230"
+                                Focusable="False"
                                 VerticalScrollBarVisibility="Auto"
                                 Visibility="Collapsed">
                                 <ItemsControl x:Name="PART_InputMethods" ItemsSource="{Binding InputMethods, RelativeSource={RelativeSource TemplatedParent}}">
@@ -268,18 +280,21 @@
                                 </ItemsControl>
                             </ScrollViewer>
 
-                            <StackPanel Grid.Row="3" HorizontalAlignment="Center" Orientation="Horizontal">
-                                <!-- Navigation is independent from IME state and remains available on every surface. -->
+                            <StackPanel
+                                Grid.Row="3"
+                                HorizontalAlignment="Center"
+                                Orientation="Horizontal">
+                                <!--  Navigation is independent from IME state and remains available on every surface.  -->
                                 <controls:Button
                                     AutomationProperties.Name="Return to letters"
                                     Content="← ABC"
-                                    Tag="{x:Static controls:SoftKeyboardDisplayMode.Letters}"
-                                    Style="{StaticResource SoftKeyboardKeyButtonStyle}" />
+                                    Style="{StaticResource SoftKeyboardKeyButtonStyle}"
+                                    Tag="{x:Static controls:SoftKeyboardDisplayMode.Letters}" />
                                 <controls:Button
                                     AutomationProperties.Name="Close keyboard"
                                     Content="⌄"
-                                    Tag="{x:Static controls:SoftKeyboardKeyKind.Close}"
-                                    Style="{StaticResource SoftKeyboardKeyButtonStyle}" />
+                                    Style="{StaticResource SoftKeyboardKeyButtonStyle}"
+                                    Tag="{x:Static controls:SoftKeyboardKeyKind.Close}" />
                                 <controls:Button
                                     Margin="2"
                                     Padding="12,4"
@@ -289,19 +304,21 @@
                                     Tag="{x:Static controls:SoftKeyboardKeyKind.ToggleIme}">
                                     <controls:Button.Style>
                                         <Style BasedOn="{StaticResource SoftKeyboardKeyButtonStyle}" TargetType="{x:Type controls:Button}">
-                                            <!-- The label describes the mode reached by invoking the key. -->
+                                            <!--  The label describes the mode reached by invoking the key.  -->
                                             <Setter Property="Content" Value="ABC" />
                                             <Style.Triggers>
-                                            <DataTrigger Binding="{Binding ImeState, RelativeSource={RelativeSource TemplatedParent}}" Value="Off">
-                                                <Setter Property="Content" Value="IME" />
-                                            </DataTrigger>
-                                            <!-- ImeState alone cannot distinguish an open TIP from an ordinary
-                                                 keyboard layout. With no active TSF profile, the action is to
-                                                 enter IME mode even if Windows reports a stale open compartment. -->
-                                            <DataTrigger Binding="{Binding ActiveInputMethod, RelativeSource={RelativeSource TemplatedParent}}" Value="{x:Null}">
-                                                <Setter Property="Content" Value="IME" />
-                                            </DataTrigger>
-                                        </Style.Triggers>
+                                                <DataTrigger Binding="{Binding ImeState, RelativeSource={RelativeSource TemplatedParent}}" Value="Off">
+                                                    <Setter Property="Content" Value="IME" />
+                                                </DataTrigger>
+                                                <!--
+                                                    ImeState alone cannot distinguish an open TIP from an ordinary
+                                                    keyboard layout. With no active TSF profile, the action is to
+                                                    enter IME mode even if Windows reports a stale open compartment.
+                                                -->
+                                                <DataTrigger Binding="{Binding ActiveInputMethod, RelativeSource={RelativeSource TemplatedParent}}" Value="{x:Null}">
+                                                    <Setter Property="Content" Value="IME" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
                                         </Style>
                                     </controls:Button.Style>
                                 </controls:Button>
@@ -325,7 +342,7 @@
                         </Grid>
                     </Border>
                     <ControlTemplate.Triggers>
-                        <!-- Closing remains immediate so the IsOpen=false measurement contract stays exactly zero. -->
+                        <!--  Closing remains immediate so the IsOpen=false measurement contract stays exactly zero.  -->
                         <Trigger Property="IsOpen" Value="False">
                             <Setter TargetName="KeyboardRoot" Property="Visibility" Value="Collapsed" />
                         </Trigger>
@@ -383,12 +400,12 @@
                         </Trigger>
                         <Trigger Property="DisplayMode" Value="Emoji">
                             <Setter TargetName="CandidateBar" Property="Visibility" Value="Collapsed" />
-                            <Setter TargetName="PART_KeyRows" Property="Visibility" Value="Collapsed" />
+                            <Setter TargetName="PART_Keys" Property="Visibility" Value="Collapsed" />
                             <Setter TargetName="EmojiScroller" Property="Visibility" Value="Visible" />
                         </Trigger>
                         <Trigger Property="DisplayMode" Value="InputMethods">
                             <Setter TargetName="CandidateBar" Property="Visibility" Value="Collapsed" />
-                            <Setter TargetName="PART_KeyRows" Property="Visibility" Value="Collapsed" />
+                            <Setter TargetName="PART_Keys" Property="Visibility" Value="Collapsed" />
                             <Setter TargetName="InputMethodScroller" Property="Visibility" Value="Visible" />
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">

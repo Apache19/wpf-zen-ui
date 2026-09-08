@@ -94,7 +94,7 @@ public sealed class DefaultSoftKeyboardLayoutProvider : ISoftKeyboardLayoutProvi
     private static SoftKeyboardLayout CreateLetterLayout(SoftKeyboardLayoutContext context)
     {
         var shifted = context.ShiftState is SoftKeyboardShiftState.Once or SoftKeyboardShiftState.Locked;
-        var rows = new List<SoftKeyboardRow>();
+        var rows = new List<IReadOnlyList<SoftKeyboardKey>>();
 
         foreach (var keyRow in LetterRows)
         {
@@ -117,36 +117,32 @@ public sealed class DefaultSoftKeyboardLayoutProvider : ISoftKeyboardLayoutProvi
                     alternates: alternates
                 );
             });
-            rows.Add(new SoftKeyboardRow(keys));
+            rows.Add(keys.ToArray());
         }
 
-        rows.Insert(
-            2,
-            new SoftKeyboardRow(
-            [
-                new SoftKeyboardKey(SoftKeyboardKeyKind.Shift, GetShiftContent(context.ShiftState), "Shift", width: 1.35d),
-                .. rows[2].Keys,
-                new SoftKeyboardKey(SoftKeyboardKeyKind.VirtualKey, BackspaceIcon, "Backspace", Key.Back, width: 1.35d),
-            ])
-        );
-        rows.RemoveAt(3);
+        rows[2] =
+        [
+            new SoftKeyboardKey(SoftKeyboardKeyKind.Shift, GetShiftContent(context.ShiftState), "Shift", widthWeight: 1.35d),
+            .. rows[2],
+            new SoftKeyboardKey(SoftKeyboardKeyKind.VirtualKey, BackspaceIcon, "Backspace", Key.Back, widthWeight: 1.35d),
+        ];
 
         var bottom = new List<SoftKeyboardKey>
         {
-            new(SoftKeyboardKeyKind.ChangeDisplayMode, "&123", "Numbers and symbols", displayMode: SoftKeyboardDisplayMode.Symbols, width: 1.3d),
+            new(SoftKeyboardKeyKind.ChangeDisplayMode, "&123", "Numbers and symbols", displayMode: SoftKeyboardDisplayMode.Symbols, widthWeight: 1.3d),
             new(SoftKeyboardKeyKind.ChangeDisplayMode, EmojiIcon, "Emoji", displayMode: SoftKeyboardDisplayMode.Emoji),
             new(SoftKeyboardKeyKind.InputMethods, InputMethodsIcon, "Input methods"),
             new(SoftKeyboardKeyKind.VirtualKey, MoveLeftIcon, "Move cursor left", Key.Left),
-            new(SoftKeyboardKeyKind.VirtualKey, SpaceIcon, "Space", Key.Space, width: 3d),
+            new(SoftKeyboardKeyKind.VirtualKey, SpaceIcon, "Space", Key.Space, widthWeight: 3d),
             new(SoftKeyboardKeyKind.VirtualKey, MoveRightIcon, "Move cursor right", Key.Right),
         };
 
         AddInputScopeKey(bottom, context.InputScope);
-        bottom.Add(new SoftKeyboardKey(SoftKeyboardKeyKind.VirtualKey, EnterIcon, "Enter", Key.Enter, width: 1.4d));
+        bottom.Add(new SoftKeyboardKey(SoftKeyboardKeyKind.VirtualKey, EnterIcon, "Enter", Key.Enter, widthWeight: 1.4d));
         bottom.Add(new SoftKeyboardKey(SoftKeyboardKeyKind.Close, CloseIcon, "Close keyboard"));
-        rows.Add(new SoftKeyboardRow(bottom));
+        rows.Add(bottom);
 
-        return new SoftKeyboardLayout(rows);
+        return CreateLayout(rows);
     }
 
     private static SoftKeyboardLayout CreateNumberLayout(InputScopeNameValue scope)
@@ -156,42 +152,40 @@ public sealed class DefaultSoftKeyboardLayoutProvider : ISoftKeyboardLayoutProvi
             : [["7", "8", "9"], ["4", "5", "6"], ["1", "2", "3"], ["-", "0", CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator]];
 
         var rows = values
-            .Select(row => new SoftKeyboardRow(row.Select(CreateTextKey)))
+            .Select(row => (IReadOnlyList<SoftKeyboardKey>)row.Select(CreateTextKey).ToArray())
             .ToList();
-        rows.Add(
-            new SoftKeyboardRow(
-            [
-                new SoftKeyboardKey(SoftKeyboardKeyKind.ChangeDisplayMode, "ABC", "Letters", displayMode: SoftKeyboardDisplayMode.Letters, width: 1.4d),
-                new SoftKeyboardKey(SoftKeyboardKeyKind.VirtualKey, BackspaceIcon, "Backspace", Key.Back, width: 1.4d),
-                new SoftKeyboardKey(SoftKeyboardKeyKind.VirtualKey, MoveLeftIcon, "Move cursor left", Key.Left),
-                new SoftKeyboardKey(SoftKeyboardKeyKind.VirtualKey, MoveRightIcon, "Move cursor right", Key.Right),
-                new SoftKeyboardKey(SoftKeyboardKeyKind.VirtualKey, EnterIcon, "Enter", Key.Enter, width: 1.4d),
-                new SoftKeyboardKey(SoftKeyboardKeyKind.Close, CloseIcon, "Close keyboard"),
-            ])
-        );
-        return new SoftKeyboardLayout(rows);
+        IReadOnlyList<SoftKeyboardKey> commandRow =
+        [
+            new SoftKeyboardKey(SoftKeyboardKeyKind.ChangeDisplayMode, "ABC", "Letters", displayMode: SoftKeyboardDisplayMode.Letters, widthWeight: 1.4d),
+            new SoftKeyboardKey(SoftKeyboardKeyKind.VirtualKey, BackspaceIcon, "Backspace", Key.Back, widthWeight: 1.4d),
+            new SoftKeyboardKey(SoftKeyboardKeyKind.VirtualKey, MoveLeftIcon, "Move cursor left", Key.Left),
+            new SoftKeyboardKey(SoftKeyboardKeyKind.VirtualKey, MoveRightIcon, "Move cursor right", Key.Right),
+            new SoftKeyboardKey(SoftKeyboardKeyKind.VirtualKey, EnterIcon, "Enter", Key.Enter, widthWeight: 1.4d),
+            new SoftKeyboardKey(SoftKeyboardKeyKind.Close, CloseIcon, "Close keyboard"),
+        ];
+        rows.Add(commandRow);
+        return CreateLayout(rows);
     }
 
     private static SoftKeyboardLayout CreateSymbolLayout()
     {
         var rows = SymbolRows
-            .Select(row => new SoftKeyboardRow(row.Select(CreateTextKey)))
+            .Select(row => (IReadOnlyList<SoftKeyboardKey>)row.Select(CreateTextKey).ToArray())
             .ToList();
-        rows.Add(
-            new SoftKeyboardRow(
-            [
-                new SoftKeyboardKey(SoftKeyboardKeyKind.ChangeDisplayMode, "ABC", "Letters", displayMode: SoftKeyboardDisplayMode.Letters, width: 1.4d),
-                new SoftKeyboardKey(SoftKeyboardKeyKind.ChangeDisplayMode, EmojiIcon, "Emoji", displayMode: SoftKeyboardDisplayMode.Emoji),
-                new SoftKeyboardKey(SoftKeyboardKeyKind.InputMethods, InputMethodsIcon, "Input methods"),
-                new SoftKeyboardKey(SoftKeyboardKeyKind.VirtualKey, MoveLeftIcon, "Move cursor left", Key.Left),
-                new SoftKeyboardKey(SoftKeyboardKeyKind.VirtualKey, SpaceIcon, "Space", Key.Space, width: 2.5d),
-                new SoftKeyboardKey(SoftKeyboardKeyKind.VirtualKey, MoveRightIcon, "Move cursor right", Key.Right),
-                new SoftKeyboardKey(SoftKeyboardKeyKind.VirtualKey, BackspaceIcon, "Backspace", Key.Back, width: 1.4d),
-                new SoftKeyboardKey(SoftKeyboardKeyKind.VirtualKey, EnterIcon, "Enter", Key.Enter, width: 1.4d),
-                new SoftKeyboardKey(SoftKeyboardKeyKind.Close, CloseIcon, "Close keyboard"),
-            ])
-        );
-        return new SoftKeyboardLayout(rows);
+        IReadOnlyList<SoftKeyboardKey> commandRow =
+        [
+            new SoftKeyboardKey(SoftKeyboardKeyKind.ChangeDisplayMode, "ABC", "Letters", displayMode: SoftKeyboardDisplayMode.Letters, widthWeight: 1.4d),
+            new SoftKeyboardKey(SoftKeyboardKeyKind.ChangeDisplayMode, EmojiIcon, "Emoji", displayMode: SoftKeyboardDisplayMode.Emoji),
+            new SoftKeyboardKey(SoftKeyboardKeyKind.InputMethods, InputMethodsIcon, "Input methods"),
+            new SoftKeyboardKey(SoftKeyboardKeyKind.VirtualKey, MoveLeftIcon, "Move cursor left", Key.Left),
+            new SoftKeyboardKey(SoftKeyboardKeyKind.VirtualKey, SpaceIcon, "Space", Key.Space, widthWeight: 2.5d),
+            new SoftKeyboardKey(SoftKeyboardKeyKind.VirtualKey, MoveRightIcon, "Move cursor right", Key.Right),
+            new SoftKeyboardKey(SoftKeyboardKeyKind.VirtualKey, BackspaceIcon, "Backspace", Key.Back, widthWeight: 1.4d),
+            new SoftKeyboardKey(SoftKeyboardKeyKind.VirtualKey, EnterIcon, "Enter", Key.Enter, widthWeight: 1.4d),
+            new SoftKeyboardKey(SoftKeyboardKeyKind.Close, CloseIcon, "Close keyboard"),
+        ];
+        rows.Add(commandRow);
+        return CreateLayout(rows);
     }
 
     /// <summary>
@@ -208,6 +202,16 @@ public sealed class DefaultSoftKeyboardLayoutProvider : ISoftKeyboardLayoutProvi
 
     private static SoftKeyboardKey CreateTextKey(string value) =>
         new(SoftKeyboardKeyKind.Text, value, value, text: value);
+
+    /// <summary>
+    /// Flattens readable provider-local row literals into the public per-key placement model.
+    /// </summary>
+    /// <remarks>
+    /// Row collections are only an implementation convenience here; consumers receive one flat
+    /// sequence and can create that sequence directly without constructing structural row objects.
+    /// </remarks>
+    private static SoftKeyboardLayout CreateLayout(IEnumerable<IReadOnlyList<SoftKeyboardKey>> rows) =>
+        new(rows.SelectMany(static (keys, row) => keys.Select(key => key.WithRow(row))));
 
     private static bool IsNumericScope(InputScopeNameValue scope) =>
         scope is InputScopeNameValue.Number

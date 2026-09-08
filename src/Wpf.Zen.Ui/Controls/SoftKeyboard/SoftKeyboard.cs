@@ -31,12 +31,14 @@ namespace Wpf.Zen.Ui.Controls;
 /// loaded on the same Dispatcher.
 /// </para>
 /// <para>
-/// The default template provides optional <c>PART_PreviousCandidatePageButton</c> and
-/// <c>PART_NextCandidatePageButton</c> parts. Custom templates may omit them, while the read-only
-/// candidate page properties remain available for a replacement paging surface.
+/// The default template provides a <c>PART_Keys</c> items surface whose containers pass each key's
+/// row and width weight to <see cref="SoftKeyboardPanel"/>. It also provides optional
+/// <c>PART_PreviousCandidatePageButton</c> and <c>PART_NextCandidatePageButton</c> parts. Custom
+/// templates may omit the paging parts, while the read-only candidate page properties remain
+/// available for a replacement paging surface.
 /// </para>
 /// </remarks>
-[TemplatePart(Name = KeyRowsPartName, Type = typeof(ItemsControl))]
+[TemplatePart(Name = KeysPartName, Type = typeof(ItemsControl))]
 [TemplatePart(Name = CandidatesPartName, Type = typeof(ItemsControl))]
 [TemplatePart(Name = PreviousCandidatePageButtonPartName, Type = typeof(ButtonBase))]
 [TemplatePart(Name = NextCandidatePageButtonPartName, Type = typeof(ButtonBase))]
@@ -44,7 +46,7 @@ namespace Wpf.Zen.Ui.Controls;
 [TemplatePart(Name = InputMethodsPartName, Type = typeof(ItemsControl))]
 public class SoftKeyboard : Control
 {
-    private const string KeyRowsPartName = "PART_KeyRows";
+    private const string KeysPartName = "PART_Keys";
     private const string CandidatesPartName = "PART_Candidates";
     private const string PreviousCandidatePageButtonPartName = "PART_PreviousCandidatePageButton";
     private const string NextCandidatePageButtonPartName = "PART_NextCandidatePageButton";
@@ -115,6 +117,68 @@ public class SoftKeyboard : Control
     }
 
     #region Dependency properties
+
+    /// <summary>Identifies the <see cref="CornerRadius"/> dependency property.</summary>
+    public static readonly DependencyProperty CornerRadiusProperty = Border.CornerRadiusProperty.AddOwner(
+        typeof(SoftKeyboard),
+        new FrameworkPropertyMetadata(new CornerRadius(8))
+    );
+
+    /// <summary>Gets or sets the outer surface corner radii. The default is 8 DIP.</summary>
+    /// <remarks>
+    /// The default template forwards this value to its border, which performs the required
+    /// layout and rendering invalidation. The value is not inherited and supports animation;
+    /// WPF's Border validation rejects negative or non-finite radii.
+    /// </remarks>
+    public CornerRadius CornerRadius
+    {
+        get => (CornerRadius)GetValue(CornerRadiusProperty);
+        set => SetValue(CornerRadiusProperty, value);
+    }
+
+    /// <summary>Identifies the <see cref="RowSpacing"/> dependency property.</summary>
+    public static readonly DependencyProperty RowSpacingProperty = SoftKeyboardPanel.RowSpacingProperty.AddOwner(
+        typeof(SoftKeyboard),
+        new FrameworkPropertyMetadata(4D, FrameworkPropertyMetadataOptions.AffectsMeasure)
+    );
+
+    /// <summary>
+    /// Gets or sets the requested distance between adjacent key rows. The default is 4 DIP.
+    /// </summary>
+    /// <remarks>
+    /// The default template forwards this value to its <see cref="SoftKeyboardPanel"/>. The panel
+    /// may reduce the effective gap under an exceptionally small finite height so it never lays out
+    /// a row beyond the keyboard's assigned bounds.
+    /// </remarks>
+    [Bindable(true)]
+    [Category("Layout")]
+    public double RowSpacing
+    {
+        get => (double)GetValue(RowSpacingProperty);
+        set => SetValue(RowSpacingProperty, value);
+    }
+
+    /// <summary>Identifies the <see cref="ColumnSpacing"/> dependency property.</summary>
+    public static readonly DependencyProperty ColumnSpacingProperty = SoftKeyboardPanel.ColumnSpacingProperty.AddOwner(
+        typeof(SoftKeyboard),
+        new FrameworkPropertyMetadata(4D, FrameworkPropertyMetadataOptions.AffectsMeasure)
+    );
+
+    /// <summary>
+    /// Gets or sets the requested distance between adjacent keys in a row. The default is 4 DIP.
+    /// </summary>
+    /// <remarks>
+    /// The default template forwards this value to its <see cref="SoftKeyboardPanel"/>. The panel
+    /// may reduce the effective gap under an exceptionally small finite width so the final key slot
+    /// remains inside the keyboard's assigned bounds.
+    /// </remarks>
+    [Bindable(true)]
+    [Category("Layout")]
+    public double ColumnSpacing
+    {
+        get => (double)GetValue(ColumnSpacingProperty);
+        set => SetValue(ColumnSpacingProperty, value);
+    }
 
     /// <summary>Identifies the <see cref="IsOpen"/> dependency property.</summary>
     public static readonly DependencyProperty IsOpenProperty = DependencyProperty.Register(
@@ -227,7 +291,7 @@ public class SoftKeyboard : Control
         new PropertyMetadata(DefaultSoftKeyboardLayoutProvider.Default, OnLayoutContextChanged)
     );
 
-    /// <summary>Gets or sets the provider that creates key rows for the active input context.</summary>
+    /// <summary>Gets or sets the provider that creates positioned keys for the active input context.</summary>
     [Bindable(true)]
     [Category("Behavior")]
     public ISoftKeyboardLayoutProvider LayoutProvider
@@ -571,6 +635,23 @@ public class SoftKeyboard : Control
 
     /// <inheritdoc />
     protected override AutomationPeer OnCreateAutomationPeer() => new SoftKeyboardAutomationPeer(this);
+
+    /// <summary>Ends gestures belonging to the previous visual tree when the template changes.</summary>
+    /// <remarks>
+    /// A theme or application can replace the template without unloading the control. Timers and
+    /// alternate values belong to the pressed key's visual lifetime and must not survive that
+    /// replacement, even when the old button never acquired mouse capture. Cleanup runs at
+    /// template change rather than OnApplyTemplate because an empty template creates no tree
+    /// and does not receive that callback.
+    /// </remarks>
+    /// <param name="oldTemplate">The previous template, or null.</param>
+    /// <param name="newTemplate">The replacement template, or null.</param>
+    protected override void OnTemplateChanged(ControlTemplate oldTemplate, ControlTemplate newTemplate)
+    {
+        CancelHeldKey();
+        CloseAlternates();
+        base.OnTemplateChanged(oldTemplate, newTemplate);
+    }
 
     internal void OnSessionFocusChanged(IInputElement? focusedElement, bool touchOrPenInitiated)
     {
@@ -988,6 +1069,12 @@ public class SoftKeyboard : Control
                 else if (button.Tag is SoftKeyboardKeyKind.ToggleIme)
                 {
                     ToggleIme();
+                }
+                else
+                {
+                    // Replacement templates may contain application commands. Only consume
+                    // actions owned by the keyboard so those Click events can reach the host.
+                    return;
                 }
 
                 break;

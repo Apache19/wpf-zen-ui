@@ -226,31 +226,18 @@ public interface ISoftKeyboardTargetAdapter
     bool TryFocus(IInputElement target);
 }
 
-/// <summary>Represents one immutable keyboard layout.</summary>
+/// <summary>Represents one immutable, flat collection of positioned keyboard keys.</summary>
+/// <remarks>
+/// A layout deliberately exposes no row-container hierarchy. Each <see cref="SoftKeyboardKey"/>
+/// carries its own logical <see cref="SoftKeyboardKey.Row"/> and relative
+/// <see cref="SoftKeyboardKey.WidthWeight"/>, allowing <see cref="SoftKeyboardPanel"/> to measure and
+/// arrange the entire surface as one layout authority.
+/// </remarks>
 public sealed class SoftKeyboardLayout
 {
     /// <summary>Initializes a new instance of the <see cref="SoftKeyboardLayout"/> class.</summary>
-    /// <param name="rows">Rows in visual order.</param>
-    public SoftKeyboardLayout(IEnumerable<SoftKeyboardRow> rows)
-    {
-        if (rows is null)
-        {
-            throw new ArgumentNullException(nameof(rows));
-        }
-
-        Rows = new ReadOnlyCollection<SoftKeyboardRow>(rows.ToArray());
-    }
-
-    /// <summary>Gets the keyboard rows in visual order.</summary>
-    public IReadOnlyList<SoftKeyboardRow> Rows { get; }
-}
-
-/// <summary>Represents one immutable row of keys.</summary>
-public sealed class SoftKeyboardRow
-{
-    /// <summary>Initializes a new instance of the <see cref="SoftKeyboardRow"/> class.</summary>
-    /// <param name="keys">Keys in reading order.</param>
-    public SoftKeyboardRow(IEnumerable<SoftKeyboardKey> keys)
+    /// <param name="keys">Positioned keys in reading order.</param>
+    public SoftKeyboardLayout(IEnumerable<SoftKeyboardKey> keys)
     {
         if (keys is null)
         {
@@ -260,7 +247,9 @@ public sealed class SoftKeyboardRow
         Keys = new ReadOnlyCollection<SoftKeyboardKey>(keys.ToArray());
     }
 
-    /// <summary>Gets the keys in reading order.</summary>
+    /// <summary>
+    /// Gets the positioned keys in reading order. Items with the same row identifier retain this order.
+    /// </summary>
     public IReadOnlyList<SoftKeyboardKey> Keys { get; }
 }
 
@@ -277,7 +266,11 @@ public sealed class SoftKeyboardKey
     /// <param name="key">The WPF virtual key for <see cref="SoftKeyboardKeyKind.VirtualKey"/>.</param>
     /// <param name="text">The Unicode value for <see cref="SoftKeyboardKeyKind.Text"/>.</param>
     /// <param name="displayMode">The destination for <see cref="SoftKeyboardKeyKind.ChangeDisplayMode"/>.</param>
-    /// <param name="width">The relative width of the key within its row.</param>
+    /// <param name="row">
+    /// The nonnegative logical row identifier. Identifiers group and order keys; skipped identifiers
+    /// do not reserve empty visual rows.
+    /// </param>
+    /// <param name="widthWeight">The positive relative width of the key within its logical row.</param>
     /// <param name="alternates">Optional long-press Unicode alternatives.</param>
     public SoftKeyboardKey(
         SoftKeyboardKeyKind kind,
@@ -286,7 +279,8 @@ public sealed class SoftKeyboardKey
         Key key = Key.None,
         string? text = null,
         SoftKeyboardDisplayMode displayMode = SoftKeyboardDisplayMode.Letters,
-        double width = 1d,
+        int row = 0,
+        double widthWeight = 1d,
         IEnumerable<string>? alternates = null
     )
     {
@@ -305,9 +299,14 @@ public sealed class SoftKeyboardKey
             throw new ArgumentException("An automation name is required.", nameof(automationName));
         }
 
-        if (double.IsNaN(width) || double.IsInfinity(width) || width <= 0)
+        if (row < 0)
         {
-            throw new ArgumentOutOfRangeException(nameof(width));
+            throw new ArgumentOutOfRangeException(nameof(row));
+        }
+
+        if (double.IsNaN(widthWeight) || double.IsInfinity(widthWeight) || widthWeight <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(widthWeight));
         }
 
         Kind = kind;
@@ -316,7 +315,8 @@ public sealed class SoftKeyboardKey
         Key = key;
         Text = text;
         DisplayMode = displayMode;
-        Width = width;
+        Row = row;
+        WidthWeight = widthWeight;
         Alternates = new ReadOnlyCollection<string>((alternates ?? Array.Empty<string>()).ToArray());
     }
 
@@ -344,11 +344,22 @@ public sealed class SoftKeyboardKey
     /// <summary>Gets the destination surface selected by a display-mode key.</summary>
     public SoftKeyboardDisplayMode DisplayMode { get; }
 
-    /// <summary>Gets the relative width within the containing row.</summary>
-    public double Width { get; }
+    /// <summary>
+    /// Gets the nonnegative logical row identifier consumed by the default keyboard item-container style.
+    /// </summary>
+    public int Row { get; }
+
+    /// <summary>Gets the positive relative width within the key's logical row.</summary>
+    public double WidthWeight { get; }
 
     /// <summary>Gets the long-press Unicode alternatives.</summary>
     public IReadOnlyList<string> Alternates { get; }
+
+    // The default provider declares human-readable row literals, then flattens them into the public
+    // placement contract. Cloning preserves model immutability and prevents a shared key instance
+    // from acquiring mutable layout state when it is reused by provider helpers.
+    internal SoftKeyboardKey WithRow(int row) =>
+        new(Kind, Content, AutomationName, Key, Text, DisplayMode, row, WidthWeight, Alternates);
 }
 
 /// <summary>Represents one candidate supplied by the active Windows input method.</summary>

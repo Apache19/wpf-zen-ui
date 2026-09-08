@@ -46,6 +46,15 @@
 ShowDisplayMode(Letters)、ShowDisplayMode(Symbols) 等显式请求优先于输入作用域；
 因此数字键面的 ABC 可正常返回字母。切换到另一个编辑器时重新使用 Automatic。
 
+`SoftKeyboardLayout` 是扁平的 `Keys` 集合，不再要求布局提供器创建行容器。每个
+`SoftKeyboardKey` 通过 `Row` 声明逻辑分组，通过 `WidthWeight` 声明在该组内的相对宽度；
+跳过的 Row 编号不会制造空白行。默认模板由单个 `SoftKeyboardPanel` 同时负责所有键的测量、
+行列间距和最终排列，因此不会出现水平间距属于行面板、垂直间距却依赖按钮 Margin 的分裂契约。
+
+`RowSpacing` 和 `ColumnSpacing` 可直接在 `SoftKeyboard` 上设置，默认均为 4 DIP。空间不足时，
+面板先压缩有效间距，再把剩余尺寸按行和权重分配；极小尺寸下键位可收缩到零，但最后一个布局槽
+不会越过面板边界。面板默认启用 `ClipToBounds`，防止自定义键帽的最小尺寸或变换逃出键区。
+
 公共工具栏始终提供独立的 ← ABC 返回键与关闭键，包括 Emoji 和输入法选择页面。
 ← ABC 返回键只切换键面，不改变 IME 状态；IME 切换按钮单独控制输入模式。
 EmojiSearchText 的 null 绑定结果会强制为空字符串，表示不限制搜索。
@@ -123,4 +132,14 @@ Emoji 模型包含分类、可搜索名称和肤色变体；`EmojiCategory` 与 
 `StyleKeys.UiSoftKeyboardStyle` 派生样式。控件向 UI Automation 暴露 Expand/Collapse，键帽
 使用具备名称和 Invoke 行为的标准按钮 peer，同时始终保持不可聚焦。
 
-长按在键盘禁用、隐藏、卸载、窗口失活或鼠标捕获中断时结束；普通松手仍保留正确的单击抑制行为。
+可直接设置 `Background`、`BorderBrush`、`BorderThickness`、`Padding`、`CornerRadius`、
+`RowSpacing` 和 `ColumnSpacing`
+定制外层表面，无需复制控件模板。默认内边距为 6 DIP、边框厚度为 1 DIP、圆角为 8 DIP；
+背景和边框画刷继续随主题更新，显式设置属性时使用应用提供的值。
+
+替换模板可复用 `SoftKeyboardPanel`，并在它的直接子元素上设置附加属性 `Row` 与
+`WidthWeight`。有限宽度下键区按比例收缩；无限宽度测量（例如水平 StackPanel）下按最大单位
+权重需求预留空间，避免排列时普通键被较宽的功能键挤压。折叠键不占权重、间距或行高。
+
+自定义模板中的应用按钮若未使用软键盘模型或动作 Tag，其 Click 事件继续向宿主冒泡。
+长按在键盘禁用、隐藏、卸载、替换模板、窗口失活或鼠标捕获中断时结束；普通松手仍保留正确的单击抑制行为。

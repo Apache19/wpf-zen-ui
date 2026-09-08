@@ -38,8 +38,10 @@ public class SoftKeyboardTests
             Assert.False(keyboard.IsTabStop);
             Assert.Equal(SoftKeyboardAutoShowMode.Disabled, keyboard.AutoShowMode);
             Assert.Equal(SoftKeyboardAutoHideMode.FocusLeavesScope, keyboard.AutoHideMode);
+            Assert.Equal(4, keyboard.RowSpacing);
+            Assert.Equal(4, keyboard.ColumnSpacing);
             Assert.True(metadata.BindsTwoWayByDefault);
-            Assert.NotEmpty(keyboard.CurrentLayout.Rows);
+            Assert.NotEmpty(keyboard.CurrentLayout.Keys);
         });
     }
 
@@ -66,11 +68,11 @@ public class SoftKeyboardTests
                 )
             );
 
-            Assert.Contains(phone.Rows.SelectMany(row => row.Keys), key => key.Text == "+");
-            Assert.Contains(phone.Rows.SelectMany(row => row.Keys), key => key.Text == "0");
-            Assert.Contains(phone.Rows.SelectMany(row => row.Keys), key => key.Key == Key.Left);
-            Assert.Contains(phone.Rows.SelectMany(row => row.Keys), key => key.Key == Key.Right);
-            Assert.Contains(symbols.Rows.SelectMany(row => row.Keys), key => key.Text == "$");
+            Assert.Contains(phone.Keys, key => key.Text == "+");
+            Assert.Contains(phone.Keys, key => key.Text == "0");
+            Assert.Contains(phone.Keys, key => key.Key == Key.Left);
+            Assert.Contains(phone.Keys, key => key.Key == Key.Right);
+            Assert.Contains(symbols.Keys, key => key.Text == "$");
         });
     }
 
@@ -813,7 +815,7 @@ public class SoftKeyboardTests
             Assert.Equal(SoftKeyboardSystemKeyboardSuppressionState.Unavailable, keyboard.SystemKeyboardSuppressionState);
             keyboard.ShowDisplayMode(SoftKeyboardDisplayMode.Symbols);
             Assert.Equal(SoftKeyboardDisplayMode.Symbols, keyboard.DisplayMode);
-            Assert.NotEmpty(keyboard.CurrentLayout.Rows);
+            Assert.NotEmpty(keyboard.CurrentLayout.Keys);
             window.Close();
         });
     }
@@ -996,10 +998,10 @@ public class SoftKeyboardTests
     }
 
     private static SoftKeyboardKey FindKey(SoftKeyboard keyboard, Key key) =>
-        keyboard.CurrentLayout.Rows.SelectMany(row => row.Keys).First(item => item.Key == key);
+        keyboard.CurrentLayout.Keys.First(item => item.Key == key);
 
     private static SoftKeyboardKey FindKey(SoftKeyboard keyboard, SoftKeyboardKeyKind kind) =>
-        keyboard.CurrentLayout.Rows.SelectMany(row => row.Keys).First(item => item.Kind == kind);
+        keyboard.CurrentLayout.Keys.First(item => item.Kind == kind);
 
     [Fact]
     public void NullEmojiSearchBinding_IsCoercedToEmpty()
@@ -1038,11 +1040,11 @@ public class SoftKeyboardTests
                 window.Show();
                 Assert.True(editor.Focus());
                 Assert.Equal(SoftKeyboardDisplayMode.Automatic, keyboard.DisplayMode);
-                Assert.DoesNotContain(keyboard.CurrentLayout.Rows.SelectMany(row => row.Keys), key => key.Key == Key.A);
+                Assert.DoesNotContain(keyboard.CurrentLayout.Keys, key => key.Key == Key.A);
                 InvokeKey(keyboard, FindKey(keyboard, SoftKeyboardKeyKind.ChangeDisplayMode));
                 Assert.NotNull(FindKey(keyboard, Key.A));
                 keyboard.ShowDisplayMode(SoftKeyboardDisplayMode.Symbols);
-                Assert.Contains(keyboard.CurrentLayout.Rows.SelectMany(row => row.Keys), key => key.Text == "$");
+                Assert.Contains(keyboard.CurrentLayout.Keys, key => key.Text == "$");
             }
             finally
             {
@@ -1228,8 +1230,8 @@ public class SoftKeyboardTests
                 SoftKeyboardShiftState.Locked
             )
         );
-        IReadOnlyList<SoftKeyboardKey> keys = layout.Rows.SelectMany(row => row.Keys).ToArray();
-        IReadOnlyList<SoftKeyboardKey> lockedKeys = lockedLayout.Rows.SelectMany(row => row.Keys).ToArray();
+        IReadOnlyList<SoftKeyboardKey> keys = layout.Keys;
+        IReadOnlyList<SoftKeyboardKey> lockedKeys = lockedLayout.Keys;
 
         Assert.Equal(
             SymbolRegular.KeyboardShift24,
