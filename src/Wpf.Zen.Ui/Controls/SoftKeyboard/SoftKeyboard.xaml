@@ -1,0 +1,384 @@
+<!--
+    This Source Code Form is subject to the terms of the MIT License.
+    If a copy of the MIT was not distributed with this file, You can obtain one at https://opensource.org/licenses/MIT.
+    Copyright (C) Leszek Pomianowski and WPF UI Contributors.
+    All Rights Reserved.
+-->
+
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="clr-namespace:Wpf.Zen.Ui.Controls"
+    xmlns:m="clr-namespace:Wpf.Zen.Ui.Markup"
+    xmlns:t="clr-namespace:Wpf.Zen.Ui.Theming">
+
+    <!--
+        Keyboard buttons deliberately remain outside the tab sequence. Their Click routed events
+        bubble to SoftKeyboard, allowing the control to retain the editor as Keyboard.FocusedElement
+        while preserving normal Button UI Automation Invoke behavior.
+    -->
+    <Style x:Key="SoftKeyboardKeyButtonStyle" TargetType="{x:Type controls:Button}">
+        <Setter Property="MinWidth" Value="0" />
+        <Setter Property="MinHeight" Value="44" />
+        <Setter Property="Margin" Value="2" />
+        <Setter Property="Padding" Value="10,5" />
+        <Setter Property="Focusable" Value="False" />
+        <Setter Property="IsTabStop" Value="False" />
+        <Setter Property="HorizontalContentAlignment" Value="Center" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+
+    <Style x:Key="SoftKeyboardCandidateButtonStyle" BasedOn="{StaticResource SoftKeyboardKeyButtonStyle}" TargetType="{x:Type controls:Button}">
+        <Setter Property="MinHeight" Value="38" />
+        <Setter Property="Padding" Value="14,4" />
+        <Setter Property="Background" Value="Transparent" />
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                <Setter Property="FontWeight" Value="SemiBold" />
+            </DataTrigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style x:Key="{x:Static t:StyleKeys.UiSoftKeyboardStyle}" TargetType="{x:Type controls:SoftKeyboard}">
+        <Setter Property="Focusable" Value="False" />
+        <Setter Property="IsTabStop" Value="False" />
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="VerticalContentAlignment" Value="Stretch" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type controls:SoftKeyboard}">
+                    <Border
+                        x:Name="KeyboardRoot"
+                        MinWidth="320"
+                        Padding="6"
+                        Background="{m:DynamicBrush SolidBackgroundFillSecondary}"
+                        BorderBrush="{m:DynamicBrush ControlStrokeDefault}"
+                        BorderThickness="1"
+                        CornerRadius="8"
+                        RenderTransformOrigin="0.5,1"
+                        SnapsToDevicePixels="True">
+                        <Border.RenderTransform>
+                            <TranslateTransform />
+                        </Border.RenderTransform>
+                        <Grid MaxWidth="720">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+
+                            <Grid
+                                x:Name="CandidateBar"
+                                Grid.Row="0"
+                                MinHeight="44"
+                                AutomationProperties.Name="Input method candidates">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <ScrollViewer
+                                    HorizontalScrollBarVisibility="Auto"
+                                    VerticalScrollBarVisibility="Disabled">
+                                    <ItemsControl
+                                        x:Name="PART_Candidates"
+                                        ItemsSource="{Binding Candidates, RelativeSource={RelativeSource TemplatedParent}}">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <StackPanel Orientation="Horizontal" />
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate DataType="{x:Type controls:SoftKeyboardCandidate}">
+                                                <controls:Button
+                                                    AutomationProperties.Name="{Binding Text}"
+                                                    Content="{Binding Text}"
+                                                    Style="{StaticResource SoftKeyboardCandidateButtonStyle}" />
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </ScrollViewer>
+                                <TextBlock
+                                    x:Name="CandidatePageText"
+                                    Grid.Column="1"
+                                    Margin="8,0,4,0"
+                                    VerticalAlignment="Center"
+                                    AutomationProperties.Name="Candidate page">
+                                    <Run Text="{Binding CandidatePageNumber, RelativeSource={RelativeSource TemplatedParent}, Mode=OneWay}" />
+                                    <Run Text="/" />
+                                    <Run Text="{Binding CandidatePageCount, RelativeSource={RelativeSource TemplatedParent}, Mode=OneWay}" />
+                                </TextBlock>
+                                <controls:Button
+                                    x:Name="PART_PreviousCandidatePageButton"
+                                    Grid.Column="2"
+                                    MinWidth="44"
+                                    MinHeight="44"
+                                    AutomationProperties.Name="Previous candidate page"
+                                    Content="&#x2039;"
+                                    FontSize="20"
+                                    IsEnabled="{Binding CanGoToPreviousCandidatePage, RelativeSource={RelativeSource TemplatedParent}}"
+                                    Style="{StaticResource SoftKeyboardCandidateButtonStyle}" />
+                                <controls:Button
+                                    x:Name="PART_NextCandidatePageButton"
+                                    Grid.Column="3"
+                                    MinWidth="44"
+                                    MinHeight="44"
+                                    AutomationProperties.Name="Next candidate page"
+                                    Content="&#x203A;"
+                                    FontSize="20"
+                                    IsEnabled="{Binding CanGoToNextCandidatePage, RelativeSource={RelativeSource TemplatedParent}}"
+                                    Style="{StaticResource SoftKeyboardCandidateButtonStyle}" />
+                            </Grid>
+
+                            <Border
+                                x:Name="AlternatePanel"
+                                Grid.Row="1"
+                                Margin="2"
+                                Padding="4"
+                                Background="{m:DynamicBrush SolidBackgroundFillTertiary}"
+                                CornerRadius="6"
+                                Visibility="Collapsed">
+                                <ItemsControl ItemsSource="{Binding AlternateValues, RelativeSource={RelativeSource TemplatedParent}}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <StackPanel HorizontalAlignment="Center" Orientation="Horizontal" />
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <controls:Button
+                                                AutomationProperties.Name="{Binding}"
+                                                Content="{Binding}"
+                                                Style="{StaticResource SoftKeyboardKeyButtonStyle}" />
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </Border>
+
+                            <ItemsControl
+                                x:Name="PART_KeyRows"
+                                Grid.Row="2"
+                                HorizontalContentAlignment="Stretch"
+                                ItemsSource="{Binding CurrentLayout.Rows, RelativeSource={RelativeSource TemplatedParent}}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate DataType="{x:Type controls:SoftKeyboardRow}">
+                                        <ItemsControl HorizontalAlignment="Stretch" ItemsSource="{Binding Keys}">
+                                            <ItemsControl.ItemsPanel>
+                                                <ItemsPanelTemplate>
+                                                    <controls:SoftKeyboardRowPanel />
+                                                </ItemsPanelTemplate>
+                                            </ItemsControl.ItemsPanel>
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate DataType="{x:Type controls:SoftKeyboardKey}">
+                                                    <controls:Button
+                                                        AutomationProperties.Name="{Binding AutomationName}"
+                                                        Content="{Binding Label}"
+                                                        Style="{StaticResource SoftKeyboardKeyButtonStyle}" />
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+
+                            <ScrollViewer
+                                x:Name="EmojiScroller"
+                                Grid.Row="2"
+                                HorizontalScrollBarVisibility="Disabled"
+                                VerticalScrollBarVisibility="Auto"
+                                Visibility="Collapsed">
+                                <ItemsControl x:Name="PART_Emoji" ItemsSource="{Binding Emojis, RelativeSource={RelativeSource TemplatedParent}}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <WrapPanel HorizontalAlignment="Center" />
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate DataType="{x:Type controls:SoftKeyboardEmoji}">
+                                            <controls:Button
+                                                AutomationProperties.Name="{Binding Name}"
+                                                Content="{Binding Text}"
+                                                FontFamily="Segoe UI Emoji"
+                                                FontSize="20"
+                                                Style="{StaticResource SoftKeyboardKeyButtonStyle}" />
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+
+                            <ScrollViewer
+                                x:Name="InputMethodScroller"
+                                Grid.Row="2"
+                                MaxHeight="230"
+                                VerticalScrollBarVisibility="Auto"
+                                Visibility="Collapsed">
+                                <ItemsControl x:Name="PART_InputMethods" ItemsSource="{Binding InputMethods, RelativeSource={RelativeSource TemplatedParent}}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate DataType="{x:Type controls:SoftKeyboardInputMethod}">
+                                            <controls:Button
+                                                MinHeight="44"
+                                                Margin="2"
+                                                Padding="12,6"
+                                                HorizontalContentAlignment="Left"
+                                                AutomationProperties.Name="{Binding DisplayName}"
+                                                Focusable="False"
+                                                IsTabStop="False">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <TextBlock
+                                                        Width="20"
+                                                        Margin="0,0,4,0"
+                                                        Text="✓">
+                                                        <TextBlock.Style>
+                                                            <Style TargetType="{x:Type TextBlock}">
+                                                                <Setter Property="Visibility" Value="Collapsed" />
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding IsActive}" Value="True">
+                                                                        <Setter Property="Visibility" Value="Visible" />
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </TextBlock.Style>
+                                                    </TextBlock>
+                                                    <TextBlock Text="{Binding DisplayName}">
+                                                        <TextBlock.Style>
+                                                            <Style TargetType="{x:Type TextBlock}">
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding IsActive}" Value="True">
+                                                                        <Setter Property="FontWeight" Value="SemiBold" />
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </TextBlock.Style>
+                                                    </TextBlock>
+                                                </StackPanel>
+                                            </controls:Button>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+
+                            <StackPanel Grid.Row="3" HorizontalAlignment="Center" Orientation="Horizontal">
+                                <controls:Button
+                                    Margin="2"
+                                    Padding="12,4"
+                                    AutomationProperties.Name="Toggle IME and direct letters"
+                                    Focusable="False"
+                                    IsTabStop="False"
+                                    Tag="{x:Static controls:SoftKeyboardKeyKind.ToggleIme}">
+                                    <controls:Button.Style>
+                                        <Style BasedOn="{StaticResource SoftKeyboardKeyButtonStyle}" TargetType="{x:Type controls:Button}">
+                                            <!-- The label describes the mode reached by invoking the key. -->
+                                            <Setter Property="Content" Value="ABC" />
+                                            <Style.Triggers>
+                                            <DataTrigger Binding="{Binding ImeState, RelativeSource={RelativeSource TemplatedParent}}" Value="Off">
+                                                <Setter Property="Content" Value="IME" />
+                                            </DataTrigger>
+                                            <!-- ImeState alone cannot distinguish an open TIP from an ordinary
+                                                 keyboard layout. With no active TSF profile, the action is to
+                                                 enter IME mode even if Windows reports a stale open compartment. -->
+                                            <DataTrigger Binding="{Binding ActiveInputMethod, RelativeSource={RelativeSource TemplatedParent}}" Value="{x:Null}">
+                                                <Setter Property="Content" Value="IME" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                        </Style>
+                                    </controls:Button.Style>
+                                </controls:Button>
+                                <controls:Button
+                                    Margin="2"
+                                    Padding="12,4"
+                                    AutomationProperties.Name="Emoji"
+                                    Content="☺"
+                                    Focusable="False"
+                                    IsTabStop="False"
+                                    Tag="{x:Static controls:SoftKeyboardDisplayMode.Emoji}" />
+                                <controls:Button
+                                    Margin="2"
+                                    Padding="12,4"
+                                    AutomationProperties.Name="Input methods"
+                                    Content="🌐"
+                                    Focusable="False"
+                                    IsTabStop="False"
+                                    Tag="{x:Static controls:SoftKeyboardDisplayMode.InputMethods}" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <!-- Closing remains immediate so the IsOpen=false measurement contract stays exactly zero. -->
+                        <Trigger Property="IsOpen" Value="False">
+                            <Setter TargetName="KeyboardRoot" Property="Visibility" Value="Collapsed" />
+                        </Trigger>
+                        <Trigger Property="IsOpen" Value="True">
+                            <Trigger.EnterActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation
+                                            Storyboard.TargetName="KeyboardRoot"
+                                            Storyboard.TargetProperty="Opacity"
+                                            From="0"
+                                            To="1"
+                                            Duration="0:0:0.12" />
+                                        <DoubleAnimation
+                                            Storyboard.TargetName="KeyboardRoot"
+                                            Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
+                                            From="10"
+                                            To="0"
+                                            Duration="0:0:0.12" />
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.EnterActions>
+                        </Trigger>
+                        <!--
+                            Candidate creation and composition updates are transient. Keep the bar's
+                            44-DIP layout slot while an embeddable IME is active so every keystroke
+                            does not move the key rows. Only candidate-specific navigation disappears
+                            while the reserved surface is empty.
+                        -->
+                        <Trigger Property="HasCandidates" Value="False">
+                            <Setter TargetName="CandidatePageText" Property="Visibility" Value="Collapsed" />
+                            <Setter TargetName="PART_PreviousCandidatePageButton" Property="Visibility" Value="Collapsed" />
+                            <Setter TargetName="PART_NextCandidatePageButton" Property="Visibility" Value="Collapsed" />
+                        </Trigger>
+                        <Trigger Property="ImeState" Value="Off">
+                            <Setter TargetName="CandidateBar" Property="Visibility" Value="Collapsed" />
+                        </Trigger>
+                        <Trigger Property="ImeState" Value="DoNotCare">
+                            <Setter TargetName="CandidateBar" Property="Visibility" Value="Collapsed" />
+                        </Trigger>
+                        <Trigger Property="ActiveInputMethod" Value="{x:Null}">
+                            <Setter TargetName="CandidateBar" Property="Visibility" Value="Collapsed" />
+                        </Trigger>
+                        <Trigger Property="ActiveTarget" Value="{x:Null}">
+                            <Setter TargetName="CandidateBar" Property="Visibility" Value="Collapsed" />
+                        </Trigger>
+                        <Trigger Property="CandidatePresentationState" Value="NativeFallback">
+                            <Setter TargetName="CandidateBar" Property="Visibility" Value="Collapsed" />
+                        </Trigger>
+                        <Trigger Property="CandidatePresentationState" Value="Unavailable">
+                            <Setter TargetName="CandidateBar" Property="Visibility" Value="Collapsed" />
+                        </Trigger>
+                        <Trigger Property="IsAlternatePopupOpen" Value="True">
+                            <Setter TargetName="AlternatePanel" Property="Visibility" Value="Visible" />
+                        </Trigger>
+                        <Trigger Property="DisplayMode" Value="Emoji">
+                            <Setter TargetName="CandidateBar" Property="Visibility" Value="Collapsed" />
+                            <Setter TargetName="PART_KeyRows" Property="Visibility" Value="Collapsed" />
+                            <Setter TargetName="EmojiScroller" Property="Visibility" Value="Visible" />
+                        </Trigger>
+                        <Trigger Property="DisplayMode" Value="InputMethods">
+                            <Setter TargetName="CandidateBar" Property="Visibility" Value="Collapsed" />
+                            <Setter TargetName="PART_KeyRows" Property="Visibility" Value="Collapsed" />
+                            <Setter TargetName="InputMethodScroller" Property="Visibility" Value="Visible" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="KeyboardRoot" Property="Opacity" Value="0.55" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style BasedOn="{StaticResource {x:Static t:StyleKeys.UiSoftKeyboardStyle}}" TargetType="{x:Type controls:SoftKeyboard}" />
+</ResourceDictionary>

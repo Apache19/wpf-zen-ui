@@ -43,6 +43,9 @@ public static class StyleKeys
     public static ComponentResourceKey UiBreadcrumbBarItemStyle        { get; } = Create(nameof(UiBreadcrumbBarItemStyle));
     public static ComponentResourceKey UiSeparatorStyle                { get; } = Create(nameof(UiSeparatorStyle));
 
+    /// <summary>Gets the reusable Fluent style for the embedded <see cref="Controls.SoftKeyboard"/>.</summary>
+    public static ComponentResourceKey UiSoftKeyboardStyle             { get; } = Create(nameof(UiSoftKeyboardStyle));
+
     /// <summary>
     /// Gets the theme-routing key for the ListView style used while a WPF Zen UI GridView is active.
     /// </summary>

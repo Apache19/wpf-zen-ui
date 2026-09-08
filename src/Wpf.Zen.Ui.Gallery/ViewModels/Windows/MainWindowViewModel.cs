@@ -159,6 +159,7 @@ public partial class MainWindowViewModel : ViewModel
             Children = new object[]
             {
                 new NavigationItem("AutoSuggestBox", typeof(AutoSuggestBoxPage)), new NavigationItem("NumberBox", typeof(NumberBoxPage)),
+                new NavigationItem("SoftKeyboard", typeof(SoftKeyboardPage)),
                 new NavigationItem("PasswordBox",    typeof(PasswordBoxPage)), new NavigationItem("RichTextBox",  typeof(RichTextBoxPage)),
                 new NavigationItem("Label",          typeof(LabelPage)), new NavigationItem("TextBlock",          typeof(TextBlockPage)),
                 new NavigationItem("TextBox",        typeof(TextBoxPage)),
@@ -288,6 +289,7 @@ public partial class MainWindowViewModel : ViewModel
         string text = AddPage<TextPage>("Text", isBreadcrumbVisible: false);
         AddPage<AutoSuggestBoxPage>("AutoSuggestBox", text);
         AddPage<NumberBoxPage>("NumberBox", text);
+        AddPage<SoftKeyboardPage>("SoftKeyboard", text);
         AddPage<PasswordBoxPage>("PasswordBox", text);
         AddPage<RichTextBoxPage>("RichTextBox", text);
         AddPage<LabelPage>("Label", text);

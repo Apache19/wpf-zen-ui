@@ -69,6 +69,7 @@ internal static class StyleTokenResourceKey
             StyleToken.UiBreadcrumbBar            => StyleKeys.UiBreadcrumbBarStyle,
             StyleToken.UiBreadcrumbBarItem        => StyleKeys.UiBreadcrumbBarItemStyle,
             StyleToken.UiSeparator                => StyleKeys.UiSeparatorStyle,
+            StyleToken.UiSoftKeyboard             => StyleKeys.UiSoftKeyboardStyle,
 
             StyleToken.GridViewListView           => StyleKeys.GridViewListViewStyle,
             StyleToken.GridViewItemContainer      => StyleKeys.GridViewItemContainerStyle,
