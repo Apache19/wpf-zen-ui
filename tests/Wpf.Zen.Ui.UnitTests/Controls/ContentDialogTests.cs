@@ -81,6 +81,97 @@ public partial class ContentDialogTests
         Assert.Throws<ArgumentException>(() => dialog.CornerRadius = new CornerRadius(-1D));
     });
 
+    [Theory]
+    [InlineData(ContentDialogSizingMode.Auto, HorizontalAlignment.Center, VerticalAlignment.Center, false, false)]
+    [InlineData(ContentDialogSizingMode.StretchWidth, HorizontalAlignment.Stretch, VerticalAlignment.Center, true, false)]
+    [InlineData(ContentDialogSizingMode.StretchHeight, HorizontalAlignment.Center, VerticalAlignment.Stretch, false, true)]
+    [InlineData(ContentDialogSizingMode.Stretch, HorizontalAlignment.Stretch, VerticalAlignment.Stretch, true, true)]
+    public void SizingMode_StretchesOnlyRequestedAxesAndPreservesHostPadding(
+        ContentDialogSizingMode mode,
+        HorizontalAlignment expectedHorizontalAlignment,
+        VerticalAlignment expectedVerticalAlignment,
+        bool stretchesWidth,
+        bool stretchesHeight) => Run(scope =>
+    {
+        var dialog = scope.CreateDialog();
+        dialog.SizingMode = mode;
+        var task = scope.Host.ShowAsync(dialog);
+        Drain();
+        dialog.UpdateLayout();
+
+        var presenter = Assert.IsType<ContentDialogTransitionPresenter>(
+            scope.Host.Template.FindName("PART_DialogPresenter", scope.Host)
+        );
+        var dialogRoot = Assert.IsType<Border>(
+            presenter.Template.FindName("PART_DialogRoot", presenter)
+        );
+
+        Assert.Equal(expectedHorizontalAlignment, dialogRoot.HorizontalAlignment);
+        Assert.Equal(expectedVerticalAlignment, dialogRoot.VerticalAlignment);
+        Assert.Equal(stretchesWidth, double.IsPositiveInfinity(dialog.MaxWidth));
+        Assert.Equal(stretchesHeight, double.IsPositiveInfinity(dialog.MaxHeight));
+
+        if (stretchesWidth)
+        {
+            Assert.Equal(
+                dialogRoot.ActualWidth - dialogRoot.Padding.Left - dialogRoot.Padding.Right,
+                dialog.ActualWidth
+            );
+        }
+        else
+        {
+            Assert.True(dialog.ActualWidth < presenter.ActualWidth - 48D);
+        }
+
+        if (stretchesHeight)
+        {
+            Assert.Equal(
+                dialogRoot.ActualHeight - dialogRoot.Padding.Top - dialogRoot.Padding.Bottom,
+                dialog.ActualHeight
+            );
+        }
+        else
+        {
+            Assert.True(dialog.ActualHeight < presenter.ActualHeight - 48D);
+        }
+
+        dialog.Close();
+        Pump(task);
+    });
+
+    [Fact]
+    public void SizingMode_IsValidatedAndParsesFromXaml() => Run(_ =>
+    {
+        var dialog = Assert.IsType<Dialog>(XamlReader.Parse("""
+            <ui:ContentDialog
+                xmlns:ui="http://schemas.thezendev.com/wpf/2027"
+                SizingMode="StretchHeight" />
+            """));
+
+        Assert.Equal(ContentDialogSizingMode.StretchHeight, dialog.SizingMode);
+        Assert.Throws<ArgumentException>(() => dialog.SizingMode = (ContentDialogSizingMode)42);
+    });
+
+    [Fact]
+    public void StretchSizing_RespectsExplicitMaximums() => Run(scope =>
+    {
+        var dialog = scope.CreateDialog();
+        dialog.SizingMode = ContentDialogSizingMode.Stretch;
+        dialog.MaxWidth = 320D;
+        dialog.MaxHeight = 240D;
+        var task = scope.Host.ShowAsync(dialog);
+        Drain();
+        dialog.UpdateLayout();
+
+        Assert.Equal(320D, dialog.MaxWidth);
+        Assert.Equal(240D, dialog.MaxHeight);
+        Assert.Equal(320D, dialog.ActualWidth);
+        Assert.Equal(240D, dialog.ActualHeight);
+
+        dialog.Close();
+        Pump(task);
+    });
+
     [Fact]
     public void DerivedDialog_UsesContentDialogThemeStyleWithoutAnImplicitForwardingStyle() => Run(scope =>
     {

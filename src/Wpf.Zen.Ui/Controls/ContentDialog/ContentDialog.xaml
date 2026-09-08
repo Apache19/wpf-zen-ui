@@ -157,5 +157,22 @@
         <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
         <Setter Property="Template" Value="{StaticResource DefaultContentDialogTemplate}" />
+        <Style.Triggers>
+            <!--
+                Infinity restores FrameworkElement's native maximum on a stretched axis. These are
+                style-trigger values rather than local values so an application-supplied MaxWidth or
+                MaxHeight remains authoritative under WPF dependency-property precedence.
+            -->
+            <Trigger Property="SizingMode" Value="StretchWidth">
+                <Setter Property="MaxWidth" Value="Infinity" />
+            </Trigger>
+            <Trigger Property="SizingMode" Value="StretchHeight">
+                <Setter Property="MaxHeight" Value="Infinity" />
+            </Trigger>
+            <Trigger Property="SizingMode" Value="Stretch">
+                <Setter Property="MaxWidth" Value="Infinity" />
+                <Setter Property="MaxHeight" Value="Infinity" />
+            </Trigger>
+        </Style.Triggers>
     </Style>
 </ResourceDictionary>

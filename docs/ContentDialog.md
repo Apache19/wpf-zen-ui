@@ -45,6 +45,27 @@ Footer 与 Header 一样维护逻辑子节点。直接放入的元素可继承 D
 
 示例中的 `ui` 对应库的 XAML 命名空间，`local` 对应应用业务枚举所在的命名空间。
 
+## 尺寸模式
+
+`SizingMode` 明确表达对话框是自动使用自身期望尺寸，还是占用宿主提供的大型工作区。默认值 `Auto` 使用内容或显式配置的尺寸，将对话框居中，并保留主题的 `MaxWidth=640`、`MaxHeight=850`。大型表单可选择以下模式：
+
+| 模式 | 宽度 | 高度 |
+| --- | --- | --- |
+| `Auto` | 自动尺寸并居中，受主题上限约束 | 自动尺寸并居中，受主题上限约束 |
+| `StretchWidth` | 拉伸至可用宽度 | 自动尺寸并居中，受主题上限约束 |
+| `StretchHeight` | 自动尺寸并居中，受主题上限约束 | 拉伸至可用高度 |
+| `Stretch` | 拉伸至可用宽度 | 拉伸至可用高度 |
+
+```xml
+<ui:ContentDialog
+    Header="编辑详细资料"
+    SizingMode="StretchHeight">
+    <local:LargeForm />
+</ui:ContentDialog>
+```
+
+拉伸的是 Host 默认模板中保留 24 像素外边距之后的可用区域，不会让对话框贴住宿主边缘。模式仅解除对应轴上的主题默认上限；对话框显式设置的 `Width`、`Height`、`MaxWidth` 或 `MaxHeight` 仍按 WPF 属性优先级生效，因此可在拉伸模式下继续施加业务尺寸上限。这里的 `Auto` 是对话框的尺寸策略；`MaxWidth`、`MaxHeight` 本身不接受自动长度，默认模板会在拉伸轴上使用 WPF 原生的正无穷最大值。
+
 ## 显示与模态范围
 
 ```xml
@@ -166,7 +187,7 @@ private async Task SaveAsync()
 - Dialog 的 `PART_ContentPresenter` 是可选的正文 ContentPresenter，用于定位 DataTemplate 实现的初始焦点。自定义模板缺少它时搜索直接 Content，再退到 Dialog。
 - Host 的 `PART_ContentRoot` 是必需的 UIElement，只能包裹普通页面。Host 在该部件下隔离被覆盖内容；标题栏窗口外壳保持启用，标题栏用户内容与其它页面分支被禁用。缺少该部件时拒绝展示。
 - Host 的 `PART_DialogPresenter` 是可选的 `ContentDialogTransitionPresenter`。默认模板通过它呈现 CurrentDialog；自定义 Host 模板可以省略该部件并自行呈现 CurrentDialog，此时 Host 保留完整会话语义并即时完成过渡。
-- `ContentDialogTransitionPresenter` 模板中的 `PART_DialogRoot` 与 `PART_Backdrop` 均为可选 UIElement。前者只包裹 Dialog，Presenter 在保留模板原有 RenderTransform 的前提下附加私有缩放；后者独立绘制遮罩，避免对 Dialog 叠加两次透明度。缺少其中一个只会关闭对应视觉效果，两个都缺少时过渡即时完成。
+- `ContentDialogTransitionPresenter` 模板中的 `PART_DialogRoot` 与 `PART_Backdrop` 均为可选 UIElement。前者只包裹 Dialog，Presenter 在保留模板原有 RenderTransform 的前提下附加私有缩放；默认模板根据 `DialogSizingMode` 在对应轴上拉伸该部件。后者独立绘制遮罩，避免对 Dialog 叠加两次透明度。缺少其中一个只会关闭对应视觉效果，两个都缺少时过渡即时完成。
 - 覆盖层应在 CurrentDialog 非 null 时保持命中测试，直到退场清理完成。Presenter 使用单一可控 AnimationClock 同步驱动遮罩透明度、Dialog 透明度与缩放；快速关闭会从当前画面反向退场，不先跳到完全打开。关闭动画或系统关闭客户区动画时直接完成过渡；Token 取消、卸载和 Dispatcher 关闭会同步移除时钟并重置，不依赖后续 UI 调度。Host 模板替换会同步新 Presenter 到当前会话状态，不重播入场。
 - 单独替换 Presenter.Template 时，正在进行的过渡会完成到其目标状态，新模板直接使用该状态：入场到完全可见，退场到关闭。此行为由 Presenter 自身保证，不依赖 Host 重新应用模板，也不重复触发 Opened。
 
@@ -185,6 +206,6 @@ private async Task SaveAsync()
 </ui:ContentDialogHost>
 ```
 
-需要改变遮罩、阴影、旋转轴或布局结构时，为 `ContentDialogTransitionPresenter` 提供自定义模板并保留所需模板部件；无需定义 VisualState 或 Storyboard。需要逐帧协调额外的纯渲染效果时，可以派生 Presenter 并重写 `ApplyTransitionVisuals`。若自定义整个 Host 模板，应将上述过渡属性通过 TemplateBinding 转发给 `PART_DialogPresenter`，以便 Host 上的配置继续生效。
+需要改变遮罩、阴影、旋转轴或布局结构时，为 `ContentDialogTransitionPresenter` 提供自定义模板并保留所需模板部件；无需定义 VisualState 或 Storyboard。需要逐帧协调额外的纯渲染效果时，可以派生 Presenter 并重写 `ApplyTransitionVisuals`。若自定义整个 Host 模板，应将上述过渡属性通过 TemplateBinding 转发给 `PART_DialogPresenter`，并将 `CurrentDialog.SizingMode` 绑定到 Presenter 的 `DialogSizingMode`，以便 Host 上的动画配置与 Dialog 上的尺寸模式继续生效。
 
 标准 Width、Height、Min/MaxWidth、Min/MaxHeight、Margin 和 Padding 控制布局。对话框自动化名称优先使用 AutomationProperties.Name，否则使用 Header 的文本；自动化暴露 Window 模式与对话框语义。

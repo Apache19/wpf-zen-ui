@@ -36,6 +36,23 @@
                             <ContentPresenter Content="{TemplateBinding Dialog}" />
                         </Border>
                     </Grid>
+                    <ControlTemplate.Triggers>
+                        <!--
+                            Stretch the presentation wrapper only on the requested axes. Its padding
+                            remains part of the full host-sized slot and therefore preserves the
+                            dialog's 24-pixel safe area in every sizing mode.
+                        -->
+                        <Trigger Property="DialogSizingMode" Value="StretchWidth">
+                            <Setter TargetName="PART_DialogRoot" Property="HorizontalAlignment" Value="Stretch" />
+                        </Trigger>
+                        <Trigger Property="DialogSizingMode" Value="StretchHeight">
+                            <Setter TargetName="PART_DialogRoot" Property="VerticalAlignment" Value="Stretch" />
+                        </Trigger>
+                        <Trigger Property="DialogSizingMode" Value="Stretch">
+                            <Setter TargetName="PART_DialogRoot" Property="HorizontalAlignment" Value="Stretch" />
+                            <Setter TargetName="PART_DialogRoot" Property="VerticalAlignment" Value="Stretch" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
@@ -58,6 +75,7 @@
                             ClosingEasingFunction="{TemplateBinding ClosingEasingFunction}"
                             ClosingScale="{TemplateBinding ClosingScale}"
                             Dialog="{TemplateBinding CurrentDialog}"
+                            DialogSizingMode="{Binding CurrentDialog.SizingMode, RelativeSource={RelativeSource TemplatedParent}}"
                             OpenDuration="{TemplateBinding OpenDuration}"
                             OpeningEasingFunction="{TemplateBinding OpeningEasingFunction}"
                             OpeningScale="{TemplateBinding OpeningScale}" />

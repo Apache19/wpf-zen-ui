@@ -45,6 +45,50 @@ public partial class ContentDialog
 
     #endregion
 
+    #region DP: SizingMode
+
+    /// <summary>
+    /// Identifies the <see cref="SizingMode"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty SizingModeProperty = DependencyProperty.Register(
+        nameof(SizingMode),
+        typeof(ContentDialogSizingMode),
+        typeof(ContentDialog),
+        new FrameworkPropertyMetadata(ContentDialogSizingMode.Auto),
+        static value => value is ContentDialogSizingMode.Auto
+            or ContentDialogSizingMode.Stretch
+            or ContentDialogSizingMode.StretchWidth
+            or ContentDialogSizingMode.StretchHeight
+    );
+
+    /// <summary>
+    /// Gets or sets which dimensions of the dialog consume the space available inside the host.
+    /// The default is <see cref="ContentDialogSizingMode.Auto"/>.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// The default template keeps its outer host padding in every mode. Stretching therefore fills
+    /// the usable dialog area rather than covering the host edge-to-edge.
+    /// </para>
+    /// <para>
+    /// A stretched axis is not limited by the theme's default maximum of 640 by 850 device-independent
+    /// pixels. Explicit local width, height, or maximum-size values have higher WPF property-value
+    /// precedence and remain effective, which permits a large dialog to opt into stretching while
+    /// retaining an application-specific limit.
+    /// </para>
+    /// <para>
+    /// Custom <see cref="ContentDialog"/> and <see cref="ContentDialogTransitionPresenter"/>
+    /// templates should consume this property when they replace the standard sizing surfaces.
+    /// </para>
+    /// </remarks>
+    public ContentDialogSizingMode SizingMode
+    {
+        get => (ContentDialogSizingMode)GetValue(SizingModeProperty);
+        set => SetValue(SizingModeProperty, value);
+    }
+
+    #endregion
+
     #region DP: HeaderPadding
 
     /// <summary>
