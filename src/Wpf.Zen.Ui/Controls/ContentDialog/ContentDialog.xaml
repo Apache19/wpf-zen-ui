@@ -33,10 +33,11 @@
     </Style>
 
     <ControlTemplate x:Key="DefaultContentDialogTemplate" TargetType="{x:Type controls:ContentDialog}">
-        <Border
+        <controls:ClippingBorder
             Background="{TemplateBinding Background}"
             BorderBrush="{TemplateBinding BorderBrush}"
             BorderThickness="{TemplateBinding BorderThickness}"
+            ClipContent="True"
             CornerRadius="{TemplateBinding CornerRadius}"
             SnapsToDevicePixels="True">
             <Grid>
@@ -124,7 +125,7 @@
                     </controls:Button.Style>
                 </controls:Button>
             </Grid>
-        </Border>
+        </controls:ClippingBorder>
         <ControlTemplate.Triggers>
             <Trigger Property="Header" Value="{x:Null}">
                 <Setter TargetName="headerBorder" Property="Visibility" Value="Collapsed" />
