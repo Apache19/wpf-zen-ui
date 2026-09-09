@@ -27,7 +27,7 @@
 
 键盘及默认键帽均不可获得键盘焦点。每次输入前都会重新验证目标、作用域、前台 HWND、
 启用/只读状态和焦点。普通键通过虚拟键进入 WPF 原有的命令、选区、撤销、死键和 TSF/IME
-管线；Emoji 和不能映射为虚拟键的 Unicode 序列使用 Unicode `SendInput`。
+管线；符号和长按变体使用 Unicode `SendInput`。默认不包含 Emoji 目录、搜索或面板。
 
 ## 目标与自动开关
 
@@ -40,28 +40,79 @@
 编辑器可实现 `ISoftKeyboardTargetAdapter`；行业专用布局可实现
 `ISoftKeyboardLayoutProvider` 并返回不可变布局模型。
 
-## 布局与页面导航
+## 布局、声明与扩展
 
-默认的 DisplayMode 为 Automatic，按当前编辑器的 InputScope 自动选择字母或数字键面。
-ShowDisplayMode(Letters)、ShowDisplayMode(Symbols) 等显式请求优先于输入作用域；
-因此数字键面的 ABC 可正常返回字母。切换到另一个编辑器时重新使用 Automatic。
+默认布局始终使用四行。字母行采用十键首行、错位九键次行及对称 Shift/Backspace 第三行；
+底行包含符号切换、输入状态、逗号、左右方向、空格、句号、输入法菜单和 Enter。
+符号面提供 `Symbols` / `MoreSymbols` 两页，按原生输入状态选择英文或全角标点。
+数字键面把命令安排在右侧，也保持四行。日文原生输入在第二行提供 `ー・` 键，长按选择 `・`。
+符号面也保留地球菜单键，以便在任何默认布局中直接选择输入法。
 
-`SoftKeyboardLayout` 是扁平的 `Keys` 集合，不再要求布局提供器创建行容器。每个
-`SoftKeyboardKey` 通过 `Row` 声明逻辑分组，通过 `WidthWeight` 声明在该组内的相对宽度；
-跳过的 Row 编号不会制造空白行。默认模板由单个 `SoftKeyboardPanel` 同时负责所有键的测量、
-行列间距和最终排列，因此不会出现水平间距属于行面板、垂直间距却依赖按钮 Margin 的分裂契约。
+`Automatic` 根据当前编辑器的 `InputScope` 选择字母或数字布局；显式选择 `Letters`、
+`Numbers`、`Symbols`、`MoreSymbols` 优先于输入作用域。更换编辑器时恢复 `Automatic`。
+切换输入状态保留当前符号页，不会自动跳回字母页。关闭由应用设置 `IsOpen=false`；
+默认模板没有额外工具栏、输入法选择页或关闭按钮。
 
-`RowSpacing` 和 `ColumnSpacing` 可直接在 `SoftKeyboard` 上设置，默认均为 4 DIP。空间不足时，
-面板先压缩有效间距，再把剩余尺寸按行和权重分配；极小尺寸下键位可收缩到零，但最后一个布局槽
-不会越过面板边界。面板默认启用 `ClipToBounds`，防止自定义键帽的最小尺寸或变换逃出键区。
+`SoftKeyboardLayoutDefinition` 可直接作为 `LayoutProvider` 在 XAML 中声明布局：
 
-公共工具栏始终提供独立的 ← ABC 返回键与关闭键，包括 Emoji 和输入法选择页面。
-← ABC 返回键只切换键面，不改变 IME 状态；IME 切换按钮单独控制输入模式。
-EmojiSearchText 的 null 绑定结果会强制为空字符串，表示不限制搜索。
+```xaml
+<ui:SoftKeyboard IsOpen="True">
+    <ui:SoftKeyboard.LayoutProvider>
+        <ui:SoftKeyboardLayoutDefinition ColumnCount="10">
+            <ui:SoftKeyboardRowDefinition Offset="1">
+                <ui:SoftKeyboardKeyDefinition Text="a" Span="2" />
+                <ui:SoftKeyboardKeyDefinition Text="b" Span="2" />
+                <ui:SoftKeyboardKeyDefinition Kind="VirtualKey" Key="Back"
+                    Content="⌫" AutomationName="退格" Span="4" />
+            </ui:SoftKeyboardRowDefinition>
+            <ui:SoftKeyboardRowDefinition>
+                <ui:SoftKeyboardKeyDefinition Kind="ToggleIme" Content="A/文"
+                    AutomationName="切换输入状态" />
+                <ui:SoftKeyboardKeyDefinition Kind="VirtualKey" Key="Space"
+                    Content="空格" Span="6" />
+                <ui:SoftKeyboardKeyDefinition Kind="InputMethods" Content="语言"
+                    AutomationName="选择输入法" />
+            </ui:SoftKeyboardRowDefinition>
+        </ui:SoftKeyboardLayoutDefinition>
+    </ui:SoftKeyboard.LayoutProvider>
+</ui:SoftKeyboard>
+```
+
+定义对象是配置，不是可变的运行时键树。配置完成后再赋给控件；每次 `CreateLayout` 都生成独立的
+不可变快照。`SoftKeyboardKeyDefinition.Alternates` 可声明长按字符串，`Content` 可使用图标源
+或交给隐式 DataTemplate 呈现的键帽数据，因此“;:”等多字符键帽不必改变输入动作。
+
+动态布局实现 `ISoftKeyboardLayoutProvider`，根据 `SoftKeyboardLayoutContext` 中的
+`Culture`、`InputScope`、`DisplayMode`、`ShiftState`、`ImeState` 和 `InputMethod`
+选择声明定义或生成布局。`InputMethod` 提供 ClassId、ProfileId 和 LanguageId，允许按具体
+输入法定制键帽、增删按键和替换整行。提供器必须返回有效布局；异常或 null 会回退到默认布局。
+默认提供器按当前 Windows HKL 解码虚拟字母键，不应把显示文字直接当成输入法组合文本。
+
+运行时 `SoftKeyboardLayout.Keys` 是不可变的扁平集合，每键显式指定 `Row`、`Column`、
+`ColumnSpan`。所有行共享 `ColumnCount`，短行不会被拉伸；跳过的 Row 编号不预留空行。
+默认使用 20 个半键列，普通键占 2 列。`SoftKeyboardPanel` 统一负责测量和排列，
+`RowSpacing` / `ColumnSpacing` 默认均为 4 DIP。布局提供器应避免重叠并保持各状态的行数一致。
+极小容器下间距和键位会缩小；触摸使用应为键盘提供足够空间。
+
+对于没有遵循 WPF open/conversion compartment 约定的输入法，可设置
+`InputStateAdapter`（`ISoftKeyboardInputStateAdapter`），实现状态读取和模式写入。
+控件继续负责取消组合、恢复焦点、选择 profile 和定期复查；适配器只处理模式语义。
+写入失败不会伪造开启状态，读取异常会显示未知状态，且不会再通过另一套 API 重复写入。
+
+## 常驻头部与长按浮层
+
+`HeaderHeight` 默认 48 DIP，最小 44 DIP。无候选、输入法关闭、无目标、原生候选回退以及
+切换符号页都不会改变这个保留高度。候选占用头部；无候选时展示 `HeaderContent` 和
+`HeaderContentTemplate`，可以放置提示、快捷内容等。不要用动态内容重新计算头部高度。
+
+长按有 `Alternates` 的键，在该键上方打开 `PART_AlternatePopup`。松开原键后点击变体提交，
+点击外部关闭；原键不会额外输入。浮层不参与键盘测量，关闭、隐藏、卸载、禁用和替换模板都会清理它。
+Popup 使用不可聚焦按钮保留编辑器焦点，长按初始松手后才启用外部点击关闭，避免立即误关闭。
+自定义模板可以省略该可选部件，此时保留普通按键输入。
 
 ## IME 候选与输入法
 
-默认模板底部标为 `ABC` / `IME` 的按钮是输入模式开关：输入法打开时点击会切到直接字母输入，再次点击会恢复
+布局内标为 `A` / `中` / `日` / `한` 的键是输入模式开关：输入法打开时点击会切到直接字母输入，再次点击会恢复
 当前输入法；切换不会把键盘焦点移出编辑器。如果当前是普通英文键盘布局，控件会先激活本次
 会话上次使用的 TIP；首次使用则优先选择与应用 UI 区域设置匹配的已启用 TIP。微软拼音的
 “中/英”状态同时受 TSF open 和 conversion compartment 控制，控件会一起更新，避免出现属性
@@ -84,23 +135,23 @@ EmojiSearchText 的 null 绑定结果会强制为空字符串，表示不限制�
 
 不支持可控制候选的输入法继续显示原生候选窗。可通过 `CandidatePresentationState` 区分
 `Embedded`、`NativeFallback` 和 `Unavailable`；当前分页由 `CandidatePageNumber` 与
-`CandidatePageCount` 公开。输入法面板使用公开 TSF profile API 枚举和切换已启用 profile，
+`CandidatePageCount` 公开。地球键打开的 ContextMenu 使用公开 TSF profile API 枚举和切换已启用 profile，
 不调用系统语言切换浮层；COM 不可用时退回 WPF 输入语言列表。
 
 候选栏的视觉、分页、点击上屏均由控件内置，但候选词内容来自用户当前选择的 Windows 输入法。
 控件不会另带拼音词库或记录用户输入，这样可以继续使用系统输入法的词频、专业词库和隐私设置。
 候选栏同时提供不可聚焦的上一页、下一页触摸按钮；按钮按输入法通过 TSF 声明的分页边界移动
 选择，但不会提交候选，首尾页会自动禁用无效方向。
-输入法已开启且当前字母键面支持内嵌候选时，候选栏会保留固定的最小高度；暂时没有候选只会
-隐藏页码和翻页按钮，不会让键区上下跳动。IME 关闭、没有活动编辑目标、进入 Emoji/输入法选择
-界面，或输入法只能使用原生候选窗时，候选栏才整体折叠。
+候选接管要求目标仍在作用域内、可编辑并保持键盘焦点，宿主仍在前台。
+禁用键盘、离开目标作用域时释放内嵌候选并尝试恢复原生候选窗。读取、翻页和提交前还会核对
+TSF 当前焦点文档，不能借用其他编辑器的候选。
 
-候选接管要求目标仍在作用域内、可编辑并保持键盘焦点，宿主仍在前台，且当前键面支持显示候选。
-切换到 Emoji 或输入法选择页、禁用键盘、离开目标作用域时会释放内嵌候选并尝试恢复原生候选窗。
-读取、翻页和提交前还会核对 TSF 当前焦点文档，不能借用其他编辑器的候选。
+输入状态通过 WPF 的 StateChanged、焦点和输入语言事件即时同步；控件拥有前台编辑焦点时，
+还每秒复查配置和状态，覆盖同语言输入法切换没有语言变更事件的情况。复查只读取系统状态，
+不会主动切换用户输入法。输入法菜单打开期间暂时保留目标作用域，选择前先恢复编辑器焦点。
 
 候选展示与 TSF 组合文本是两个独立生命周期。控件通过 WPF 文本组合事件跟踪当前编辑器的预编辑
-事务；切换键面、切换输入法、关闭键盘或插入 Emoji、符号和长按替代字符等直接 Unicode 文本前，
+事务；切换键面、切换输入法、关闭键盘或插入符号和长按替代字符等直接 Unicode 文本前，
 会先向仍保持焦点的输入法发送 Esc。这样由输入法按自身语义删除尚未确认的组合文本，而不是使用
 可能保留拼音字母的 Enter，也不会用仅结束组合标记、但可能留下组合范围文字的强制终止方式。
 控件仅在目标仍有键盘焦点且窗口位于前台时发送取消键，避免把 Esc 泄漏给其他编辑器或应用。
@@ -127,13 +178,9 @@ EmojiSearchText 的 null 绑定结果会强制为空字符串，表示不限制�
 库继续提供 `net472` 和 `net8.0-windows` 构建。旧系统以及 WinRT、COM 或 WPF 内部成员不兼容
 时只关闭对应增强能力，不影响基础输入和应用稳定性。
 
-## Emoji、样式与可访问性
+## 样式与可访问性
 
-Emoji 模型包含分类、可搜索名称和肤色变体；`EmojiCategory` 与 `EmojiSearchText` 可用于过滤。
-最近使用项只保留在当前控件实例内，不持久化、不传输。字符和 Emoji 长按均可显示变体。
-
-默认模板支持 Light、Dark、High Contrast、DPI 和触摸命中尺寸，约 320 DIP 起可用，并在宽屏
-限制键区宽度。可通过 `{ui:DynamicStyle UiSoftKeyboard}` 或
+默认模板支持 Light、Dark、High Contrast、DPI 和触摸命中尺寸。键区填满提供的宽度；应用应根据触摸尺寸要求设置容器大小。可通过 `{ui:DynamicStyle UiSoftKeyboard}` 或
 `StyleKeys.UiSoftKeyboardStyle` 派生样式。控件向 UI Automation 暴露 Expand/Collapse，键帽
 使用具备名称和 Invoke 行为的标准按钮 peer，同时始终保持不可聚焦。
 
@@ -143,8 +190,24 @@ Emoji 模型包含分类、可搜索名称和肤色变体；`EmojiCategory` 与 
 背景和边框画刷继续随主题更新，显式设置属性时使用应用提供的值。
 
 替换模板可复用 `SoftKeyboardPanel`，并在它的直接子元素上设置附加属性 `Row` 与
-`WidthWeight`。有限宽度下键区按比例收缩；无限宽度测量（例如水平 StackPanel）下按最大单位
-权重需求预留空间，避免排列时普通键被较宽的功能键挤压。折叠键不占权重、间距或行高。
+`Column`、`ColumnSpan`。有限宽度下键区按比例收缩；无限宽度测量（例如水平 StackPanel）下按最大单位
+列宽需求预留空间，避免排列时普通键被较宽的功能键挤压。默认布局不使用状态相关的折叠键。
 
 自定义模板中的应用按钮若未使用软键盘模型或动作 Tag，其 Click 事件继续向宿主冒泡。
 长按在键盘禁用、隐藏、卸载、替换模板、窗口失活或鼠标捕获中断时结束；普通松手仍保留正确的单击抑制行为。
+
+## 验证
+
+运行定向自动测试（项目使用 xUnit v3 进程内运行器）：
+
+```powershell
+dotnet build tests/Wpf.Zen.Ui.UnitTests/Wpf.Zen.Ui.UnitTests.csproj
+& tests/Wpf.Zen.Ui.UnitTests/bin/Debug/net10.0-windows/Wpf.Zen.Ui.UnitTests.exe -class '*SoftKeyboard*'
+```
+
+自动测试覆盖声明式 XAML、快照隔离、四行布局边界、符号页面、日文变体、系统状态回读、
+适配器失败、固定头部、菜单生命周期、浮层定位与单次提交、候选分页、组合取消以及目标隔离。
+`GeneratedLetterButton_ClickInsertsThroughWindowsInputStream` 和
+`InstalledMicrosoftPinyin_PublishesCandidatesToEmbeddedSurfaceWhenAvailable` 是显式集成测试，
+需要可激活前台窗口的交互桌面；后者还需要启用微软拼音。可在满足条件的桌面使用
+`-explicit on -method '*测试方法名'` 单独运行，避免无人值守测试向用户桌面注入按键。

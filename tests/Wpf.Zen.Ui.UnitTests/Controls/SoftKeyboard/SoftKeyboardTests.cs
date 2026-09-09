@@ -70,8 +70,8 @@ public class SoftKeyboardTests
 
             Assert.Contains(phone.Keys, key => key.Text == "+");
             Assert.Contains(phone.Keys, key => key.Text == "0");
-            Assert.Contains(phone.Keys, key => key.Key == Key.Left);
-            Assert.Contains(phone.Keys, key => key.Key == Key.Right);
+            Assert.Contains(phone.Keys, key => key.Kind == SoftKeyboardKeyKind.ToggleIme);
+            Assert.Contains(phone.Keys, key => key.Kind == SoftKeyboardKeyKind.InputMethods);
             Assert.Contains(symbols.Keys, key => key.Text == "$");
         });
     }
@@ -177,7 +177,8 @@ public class SoftKeyboardTests
         });
     }
 
-    [Fact]
+    // Real SendInput requires an interactive foreground desktop, just like the installed-IME test.
+    [Fact(Explicit = true)]
     public void GeneratedLetterButton_ClickInsertsThroughWindowsInputStream()
     {
         WpfApplicationTestHost.Run(() =>
@@ -270,18 +271,15 @@ public class SoftKeyboardTests
             );
             Assert.NotEmpty(keyboard.Candidates);
 
-            keyboard.ShowDisplayMode(SoftKeyboardDisplayMode.Emoji);
+            keyboard.ShowDisplayMode(SoftKeyboardDisplayMode.Symbols);
             PumpDispatcher();
             PumpDispatcher();
             Assert.Equal(string.Empty, editor.Text);
             Assert.False(keyboard.HasCandidates);
 
-            SoftKeyboardEmoji emoji = keyboard.Emojis.First();
-            typeof(SoftKeyboard)
-                .GetMethod("InsertEmoji", BindingFlags.Instance | BindingFlags.NonPublic)!
-                .Invoke(keyboard, [emoji]);
+            InvokeKey(keyboard, keyboard.CurrentLayout.Keys.First(key => key.Text == "1"));
             PumpDispatcher();
-            Assert.Equal(emoji.Text, editor.Text);
+            Assert.Equal("1", editor.Text);
 
             keyboard.ShowDisplayMode(SoftKeyboardDisplayMode.Letters);
             InvokeKey(keyboard, FindKey(keyboard, Key.N));
@@ -317,7 +315,7 @@ public class SoftKeyboardTests
                 .Invoke(keyboard, [candidate]);
             PumpDispatcher();
 
-            Assert.Equal(emoji.Text + candidate.Text, editor.Text);
+            Assert.Equal("1" + candidate.Text, editor.Text);
             Assert.False(keyboard.HasCandidates);
             window.Close();
         });
@@ -355,15 +353,15 @@ public class SoftKeyboardTests
 
             Wpf.Zen.Ui.Controls.Button button = Assert.Single(
                 Descendants<Wpf.Zen.Ui.Controls.Button>(keyboard),
-                item => Equals(item.Tag, SoftKeyboardKeyKind.ToggleIme)
+                item => item.DataContext is SoftKeyboardKey { Kind: SoftKeyboardKeyKind.ToggleIme }
             );
             button.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent, button));
 
             Assert.Equal(InputMethodState.Off, keyboard.ImeState);
-            Assert.Equal(SoftKeyboardDisplayMode.Letters, keyboard.DisplayMode);
+            Assert.Equal(SoftKeyboardDisplayMode.Automatic, keyboard.DisplayMode);
             Assert.Same(editor, Keyboard.FocusedElement);
 
-            button.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent, button));
+            InvokeKey(keyboard, FindKey(keyboard, SoftKeyboardKeyKind.ToggleIme));
             Assert.Equal(InputMethodState.On, keyboard.ImeState);
             window.Close();
         });
@@ -429,7 +427,7 @@ public class SoftKeyboardTests
 
             Wpf.Zen.Ui.Controls.Button button = Assert.Single(
                 Descendants<Wpf.Zen.Ui.Controls.Button>(keyboard),
-                item => Equals(item.Tag, SoftKeyboardKeyKind.ToggleIme)
+                item => item.DataContext is SoftKeyboardKey { Kind: SoftKeyboardKeyKind.ToggleIme }
             );
             button.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent, button));
 
@@ -607,7 +605,7 @@ public class SoftKeyboardTests
             var previous = Assert.IsType<Wpf.Zen.Ui.Controls.Button>(
                 keyboard.Template.FindName("PART_PreviousCandidatePageButton", keyboard)
             );
-            Assert.Equal(Visibility.Visible, candidateBar.Visibility);
+            Assert.Equal(Visibility.Hidden, candidateBar.Visibility);
             Assert.True(candidateBar.ActualHeight >= 44d);
             Assert.Equal(Visibility.Collapsed, previous.Visibility);
             double emptyHeight = keyboard.ActualHeight;
@@ -619,12 +617,12 @@ public class SoftKeyboardTests
 
             keyboard.ReplaceCandidates([], SoftKeyboardCandidatePresentationState.None);
             window.UpdateLayout();
-            Assert.Equal(Visibility.Visible, candidateBar.Visibility);
+            Assert.Equal(Visibility.Hidden, candidateBar.Visibility);
             Assert.Equal(emptyHeight, keyboard.ActualHeight);
 
             Wpf.Zen.Ui.Controls.Button imeToggle = Assert.Single(
                 Descendants<Wpf.Zen.Ui.Controls.Button>(keyboard),
-                button => Equals(button.Tag, SoftKeyboardKeyKind.ToggleIme)
+                button => button.DataContext is SoftKeyboardKey { Kind: SoftKeyboardKeyKind.ToggleIme }
             );
             imeToggle.RaiseEvent(
                 new RoutedEventArgs(
@@ -632,7 +630,9 @@ public class SoftKeyboardTests
                     imeToggle
                 )
             );
-            Assert.Equal(Visibility.Collapsed, candidateBar.Visibility);
+            window.UpdateLayout();
+            Assert.Equal(Visibility.Hidden, candidateBar.Visibility);
+            Assert.Equal(emptyHeight, keyboard.ActualHeight);
             window.Close();
         });
     }
@@ -753,23 +753,6 @@ public class SoftKeyboardTests
             Assert.Same(editor, keyboard.ActiveTarget);
             Assert.True(candidates.RefreshCount > refreshCountBeforeFocus);
             window.Close();
-        });
-    }
-
-    [Fact]
-    public void EmojiFilter_IsCategoryAndSearchAwareWithoutPersistence()
-    {
-        WpfTestThread.Run(() =>
-        {
-            var keyboard = new SoftKeyboard
-            {
-                EmojiCategory = SoftKeyboardEmojiCategory.Food,
-                EmojiSearchText = "pizza",
-            };
-
-            SoftKeyboardEmoji emoji = Assert.Single(keyboard.Emojis);
-            Assert.Equal("🍕", emoji.Text);
-            Assert.Equal(SoftKeyboardEmojiCategory.Food, emoji.Category);
         });
     }
 
@@ -1063,6 +1046,120 @@ public class SoftKeyboardTests
         });
     }
 
+    [Fact]
+    public void ExternalInputStateChange_RebuildsSymbolsWithoutChangingSurfaceOrHeight()
+    {
+        WpfApplicationTestHost.Run(() =>
+        {
+            var keyboard = new SoftKeyboard(CreateServices(out _, out _, out _, out var methods)) { IsOpen = true };
+            var window = new Window { Content = keyboard, Width = 720, SizeToContent = SizeToContent.Height, ShowInTaskbar = false };
+            try
+            {
+                window.Show();
+                keyboard.ShowDisplayMode(SoftKeyboardDisplayMode.MoreSymbols);
+                window.UpdateLayout();
+                double height = keyboard.ActualHeight;
+                Assert.Contains(keyboard.CurrentLayout.Keys, key => key.Text == "【");
+                methods.TrySetImeState(InputMethodState.Off);
+                typeof(SoftKeyboard).GetMethod("RefreshImeState", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(keyboard, null);
+                window.UpdateLayout();
+                Assert.Equal(SoftKeyboardDisplayMode.MoreSymbols, keyboard.DisplayMode);
+                Assert.Contains(keyboard.CurrentLayout.Keys, key => key.Text == "[");
+                Assert.Equal(height, keyboard.ActualHeight);
+                foreach (SoftKeyboardDisplayMode mode in Enum.GetValues<SoftKeyboardDisplayMode>())
+                {
+                    keyboard.ShowDisplayMode(mode);
+                    window.UpdateLayout();
+                    Assert.Equal(height, keyboard.ActualHeight);
+                }
+            }
+            finally
+            {
+                window.Close();
+            }
+        });
+    }
+
+    [Fact]
+    public void AlternatePopup_IsAnchoredAndCommitsOnceWithoutResizingKeyboard()
+    {
+        WpfApplicationTestHost.Run(() =>
+        {
+            var keyboard = new SoftKeyboard(CreateServices(out var input, out _, out _)) { IsOpen = true };
+            var editor = new System.Windows.Controls.TextBox();
+            var root = new StackPanel();
+            root.Children.Add(editor);
+            root.Children.Add(keyboard);
+            keyboard.Target = editor;
+            var window = new Window { Content = root, Width = 720, SizeToContent = SizeToContent.Height, ShowInTaskbar = false };
+            try
+            {
+                window.Show();
+                editor.Focus();
+                window.UpdateLayout();
+                double height = keyboard.ActualHeight;
+                var key = FindKey(keyboard, Key.E);
+                var button = Descendants<Wpf.Zen.Ui.Controls.Button>(keyboard).Single(item => ReferenceEquals(item.DataContext, key));
+                typeof(SoftKeyboard).GetField("_heldKey", BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(keyboard, key);
+                typeof(SoftKeyboard).GetField("_heldButton", BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(keyboard, button);
+                typeof(SoftKeyboard).GetMethod("OnHoldTimerTick", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(keyboard, [null, EventArgs.Empty]);
+                var popup = (System.Windows.Controls.Primitives.Popup)keyboard.Template.FindName("PART_AlternatePopup", keyboard);
+                ((FrameworkElement)popup.Child).UpdateLayout();
+                Assert.True(popup.IsOpen);
+                Assert.Same(button, popup.PlacementTarget);
+                Assert.Same(editor, Keyboard.FocusedElement);
+                window.UpdateLayout();
+                Assert.Equal(height, keyboard.ActualHeight);
+                button.RaiseEvent(new MouseButtonEventArgs(Mouse.PrimaryDevice, Environment.TickCount, MouseButton.Left)
+                {
+                    RoutedEvent = Mouse.PreviewMouseUpEvent,
+                });
+                PumpDispatcher();
+                Assert.True(popup.IsOpen);
+                Assert.False(popup.StaysOpen);
+                var alternate = Descendants<Wpf.Zen.Ui.Controls.Button>(popup.Child).First(item => Equals(item.DataContext, "é"));
+                alternate.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent, alternate));
+                Assert.False(popup.IsOpen);
+                Assert.False(keyboard.IsAlternatePopupOpen);
+                Assert.Empty(keyboard.AlternateValues);
+                Assert.Equal("Text:é", Assert.Single(input.Operations));
+            }
+            finally
+            {
+                window.Close();
+            }
+        });
+    }
+
+    [Fact]
+    public void InputMethodMenu_LeavesLayoutInPlaceAndClosesWithKeyboard()
+    {
+        WpfApplicationTestHost.Run(() =>
+        {
+            var keyboard = new SoftKeyboard(CreateServices(out _, out _, out _)) { IsOpen = true };
+            var window = new Window { Content = keyboard, Width = 720, SizeToContent = SizeToContent.Height, ShowInTaskbar = false };
+            try
+            {
+                window.Show();
+                window.UpdateLayout();
+                var layout = keyboard.CurrentLayout;
+                double height = keyboard.ActualHeight;
+                keyboard.ShowInputMethodMenu();
+                var menu = (System.Windows.Controls.ContextMenu)typeof(SoftKeyboard).GetField("_inputMethodMenu", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(keyboard)!;
+                Assert.True(menu.IsOpen);
+                Assert.Single(menu.Items);
+                Assert.Same(layout, keyboard.CurrentLayout);
+                Assert.Equal(height, keyboard.ActualHeight);
+                keyboard.IsOpen = false;
+                Assert.False(menu.IsOpen);
+            }
+            finally
+            {
+                window.Close();
+            }
+        });
+    }
+
     private static SoftKeyboardPlatformServices CreateServices(
         out RecordingInputBackend input,
         out FakeCandidateBackend candidates,
@@ -1095,22 +1192,6 @@ public class SoftKeyboardTests
         keyboard.CurrentLayout.Keys.First(item => item.Kind == kind);
 
     [Fact]
-    public void NullEmojiSearchBinding_IsCoercedToEmpty()
-    {
-        WpfTestThread.Run(() =>
-        {
-            var keyboard = new SoftKeyboard(CreateServices(out _, out _, out _));
-            System.Windows.Data.BindingOperations.SetBinding(
-                keyboard,
-                SoftKeyboard.EmojiSearchTextProperty,
-                new System.Windows.Data.Binding("Search") { Source = new { Search = (string?)null } }
-            );
-            Assert.Equal(string.Empty, keyboard.EmojiSearchText);
-            Assert.NotEmpty(keyboard.Emojis);
-        });
-    }
-
-    [Fact]
     public void NumericScope_ExplicitLettersAndSymbolsOverrideAutomaticLayout()
     {
         WpfApplicationTestHost.Run(() =>
@@ -1135,7 +1216,7 @@ public class SoftKeyboardTests
                 InvokeKey(keyboard, FindKey(keyboard, SoftKeyboardKeyKind.ChangeDisplayMode));
                 Assert.NotNull(FindKey(keyboard, Key.A));
                 keyboard.ShowDisplayMode(SoftKeyboardDisplayMode.Symbols);
-                Assert.Contains(keyboard.CurrentLayout.Keys, key => key.Text == "$");
+                Assert.Contains(keyboard.CurrentLayout.Keys, key => key.Text == "#");
             }
             finally
             {
@@ -1145,9 +1226,8 @@ public class SoftKeyboardTests
     }
 
     [Theory]
-    [InlineData(SoftKeyboardDisplayMode.Emoji)]
-    [InlineData(SoftKeyboardDisplayMode.InputMethods)]
-    public void AuxiliarySurface_ReleasesCandidatesAndProvidesPureNavigation(SoftKeyboardDisplayMode mode)
+    [InlineData(SoftKeyboardDisplayMode.Symbols)]
+    public void SymbolSurface_PreservesCandidateRegionAndProvidesPureNavigation(SoftKeyboardDisplayMode mode)
     {
         WpfApplicationTestHost.Run(() =>
         {
@@ -1169,14 +1249,14 @@ public class SoftKeyboardTests
                 int released = candidates.ReleasePresentationCount;
                 keyboard.ShowDisplayMode(mode);
                 window.UpdateLayout();
-                Assert.False(keyboard.CanPresentCandidates);
-                Assert.False(keyboard.HasCandidates);
-                Assert.True(candidates.ReleasePresentationCount > released);
+                Assert.True(keyboard.CanPresentCandidates);
+                Assert.True(keyboard.HasCandidates);
+                Assert.Equal(released, candidates.ReleasePresentationCount);
                 InputMethodState imeState = keyboard.ImeState;
                 int activations = inputMethods.ActivationCount;
                 var back = Assert.Single(
                     Descendants<Wpf.Zen.Ui.Controls.Button>(keyboard),
-                    button => button.IsVisible && button.Tag is SoftKeyboardDisplayMode.Letters);
+                    button => button.IsVisible && button.DataContext is SoftKeyboardKey { Kind: SoftKeyboardKeyKind.ChangeDisplayMode, DisplayMode: SoftKeyboardDisplayMode.Letters });
                 back.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent, back));
                 Assert.Equal(SoftKeyboardDisplayMode.Letters, keyboard.DisplayMode);
                 Assert.Equal(imeState, keyboard.ImeState);
@@ -1185,10 +1265,7 @@ public class SoftKeyboardTests
 
                 keyboard.ShowDisplayMode(mode);
                 window.UpdateLayout();
-                var close = Assert.Single(
-                    Descendants<Wpf.Zen.Ui.Controls.Button>(keyboard),
-                    button => button.IsVisible && button.Tag is SoftKeyboardKeyKind.Close);
-                close.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent, close));
+                keyboard.IsOpen = false;
                 Assert.False(keyboard.IsOpen);
             }
             finally
@@ -1412,9 +1489,9 @@ public class SoftKeyboardTests
                 );
                 _ = TextCompositionManager.StartComposition(composition);
 
-                keyboard.ShowDisplayMode(SoftKeyboardDisplayMode.Emoji);
+                keyboard.ShowDisplayMode(SoftKeyboardDisplayMode.Symbols);
 
-                Assert.Equal(SoftKeyboardDisplayMode.Emoji, keyboard.DisplayMode);
+                Assert.Equal(SoftKeyboardDisplayMode.Symbols, keyboard.DisplayMode);
                 Assert.Contains((Key.Escape, false), input.VirtualKeys);
                 composition.Complete();
             }
@@ -1663,6 +1740,60 @@ public class SoftKeyboardTests
         {
             ShowCount++;
             return true;
+        }
+    }
+
+    [Fact]
+    public void CustomInputStateAdapter_RejectsWritesWithoutInventingStateAndDegradesOnFailure()
+    {
+        WpfApplicationTestHost.Run(() =>
+        {
+            var adapter = new TestInputStateAdapter();
+            var keyboard = new SoftKeyboard(CreateServices(out _, out _, out _))
+            {
+                IsOpen = true,
+                InputStateAdapter = adapter,
+            };
+            var editor = new System.Windows.Controls.TextBox();
+            var root = new StackPanel();
+            root.Children.Add(editor);
+            root.Children.Add(keyboard);
+            keyboard.Target = editor;
+            var window = new Window { Content = root, ShowInTaskbar = false };
+            try
+            {
+                window.Show();
+                editor.Focus();
+                Assert.Equal(InputMethodState.Off, keyboard.ImeState);
+                InvokeKey(keyboard, FindKey(keyboard, SoftKeyboardKeyKind.ToggleIme));
+                Assert.Equal(InputMethodState.On, adapter.LastRequest);
+                Assert.Equal(InputMethodState.Off, keyboard.ImeState);
+                adapter.ThrowOnRead = true;
+                typeof(SoftKeyboard).GetMethod("RefreshImeState", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(keyboard, null);
+                Assert.Equal(InputMethodState.DoNotCare, keyboard.ImeState);
+                keyboard.InputStateAdapter = null;
+                Assert.Equal(InputMethodState.On, keyboard.ImeState);
+            }
+            finally
+            {
+                window.Close();
+            }
+        });
+    }
+
+    private sealed class TestInputStateAdapter : ISoftKeyboardInputStateAdapter
+    {
+        internal bool ThrowOnRead { get; set; }
+
+        internal InputMethodState LastRequest { get; private set; }
+
+        public InputMethodState GetState(SoftKeyboardInputMethod? inputMethod) =>
+            ThrowOnRead ? throw new InvalidOperationException("Unavailable") : InputMethodState.Off;
+
+        public bool TrySetState(SoftKeyboardInputMethod? inputMethod, InputMethodState state)
+        {
+            LastRequest = state;
+            return false;
         }
     }
 

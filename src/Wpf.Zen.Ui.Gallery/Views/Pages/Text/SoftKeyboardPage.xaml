@@ -33,7 +33,7 @@
 
                 <ui:TextBox
                     x:Name="NameEditor"
-                    MinWidth="320" InputScope="TelephoneNumber"
+                    MinWidth="320"
                     HorizontalAlignment="Left"
                     PlaceholderText="Name or IME composition" />
                 <ui:PasswordBox
@@ -58,6 +58,7 @@
                     Grid.Row="8"
                     AutoShowMode="TouchAndPen"
                     IsOpen="True"
+                    HeaderContent="Ready to type — hold a letter for alternatives"
                     TargetScope="{Binding ElementName=FormScope}" />
             </Grid>
         </controls:ControlExample>

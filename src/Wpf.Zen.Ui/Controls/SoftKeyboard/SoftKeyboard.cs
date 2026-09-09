@@ -32,7 +32,7 @@ namespace Wpf.Zen.Ui.Controls;
 /// </para>
 /// <para>
 /// The default template provides a <c>PART_Keys</c> items surface whose containers pass each key's
-/// row and width weight to <see cref="SoftKeyboardPanel"/>. It also provides optional
+/// row, column and column span to <see cref="SoftKeyboardPanel"/>. It also provides optional
 /// <c>PART_PreviousCandidatePageButton</c> and <c>PART_NextCandidatePageButton</c> parts. Custom
 /// templates may omit the paging parts, while the read-only candidate page properties remain
 /// available for a replacement paging surface.
@@ -42,27 +42,20 @@ namespace Wpf.Zen.Ui.Controls;
 [TemplatePart(Name = CandidatesPartName, Type = typeof(ItemsControl))]
 [TemplatePart(Name = PreviousCandidatePageButtonPartName, Type = typeof(ButtonBase))]
 [TemplatePart(Name = NextCandidatePageButtonPartName, Type = typeof(ButtonBase))]
-[TemplatePart(Name = EmojiPartName, Type = typeof(ItemsControl))]
-[TemplatePart(Name = InputMethodsPartName, Type = typeof(ItemsControl))]
-public class SoftKeyboard : Control
+public partial class SoftKeyboard : Control
 {
     private const string KeysPartName = "PART_Keys";
     private const string CandidatesPartName = "PART_Candidates";
     private const string PreviousCandidatePageButtonPartName = "PART_PreviousCandidatePageButton";
     private const string NextCandidatePageButtonPartName = "PART_NextCandidatePageButton";
-    private const string EmojiPartName = "PART_Emoji";
-    private const string InputMethodsPartName = "PART_InputMethods";
 
     private readonly ObservableCollection<SoftKeyboardCandidate> _candidates = [];
     private readonly ObservableCollection<SoftKeyboardInputMethod> _inputMethods = [];
-    private readonly ObservableCollection<SoftKeyboardEmoji> _emojis = [];
     private readonly ObservableCollection<string> _alternateValues = [];
-    private readonly LinkedList<SoftKeyboardEmoji> _recentEmoji = [];
     private readonly SoftKeyboardPlatformServices _platform;
     private SoftKeyboardDispatcherSession? _session;
     private Window? _window;
     private SoftKeyboardKey? _heldKey;
-    private SoftKeyboardEmoji? _heldEmoji;
     private TextComposition? _activeTextComposition;
     private IInputElement? _compositionTarget;
     private bool _compositionCancellationRequested;
@@ -103,7 +96,6 @@ public class SoftKeyboard : Control
         _platform = platform ?? throw new ArgumentNullException(nameof(platform));
         Candidates = new ReadOnlyObservableCollection<SoftKeyboardCandidate>(_candidates);
         InputMethods = new ReadOnlyObservableCollection<SoftKeyboardInputMethod>(_inputMethods);
-        Emojis = new ReadOnlyObservableCollection<SoftKeyboardEmoji>(_emojis);
         AlternateValues = new ReadOnlyObservableCollection<string>(_alternateValues);
 
         AddHandler(ButtonBase.ClickEvent, new RoutedEventHandler(OnButtonClick));
@@ -114,7 +106,6 @@ public class SoftKeyboard : Control
         IsVisibleChanged += OnIsVisibleChanged;
         IsEnabledChanged += OnIsEnabledChanged;
         AddHandler(Mouse.LostMouseCaptureEvent, new MouseEventHandler(OnLostMouseCapture), true);
-        RefreshEmoji();
         RebuildLayout();
     }
 
@@ -323,46 +314,6 @@ public class SoftKeyboard : Control
         set => SetValue(TargetAdapterProperty, value);
     }
 
-    /// <summary>Identifies the <see cref="EmojiSearchText"/> dependency property.</summary>
-    public static readonly DependencyProperty EmojiSearchTextProperty = DependencyProperty.Register(
-        nameof(EmojiSearchText),
-        typeof(string),
-        typeof(SoftKeyboard),
-        new PropertyMetadata(string.Empty, OnEmojiFilterChanged, static (_, value) => value ?? string.Empty)
-    );
-
-    /// <summary>
-    /// Gets or sets text used to filter Emoji by their invariant searchable names.
-    /// </summary>
-    /// <remarks>
-    /// The default is an empty string. Null values, including binding results, are coerced to empty
-    /// before filtering. Changes rebuild the Emoji collection; search text is not persisted.
-    /// </remarks>
-    [Bindable(true)]
-    [Category("Behavior")]
-    public string EmojiSearchText
-    {
-        get => (string)GetValue(EmojiSearchTextProperty);
-        set => SetValue(EmojiSearchTextProperty, value ?? string.Empty);
-    }
-
-    /// <summary>Identifies the <see cref="EmojiCategory"/> dependency property.</summary>
-    public static readonly DependencyProperty EmojiCategoryProperty = DependencyProperty.Register(
-        nameof(EmojiCategory),
-        typeof(SoftKeyboardEmojiCategory?),
-        typeof(SoftKeyboard),
-        new PropertyMetadata(null, OnEmojiFilterChanged)
-    );
-
-    /// <summary>Gets or sets the Emoji category to display, or <see langword="null"/> to display all categories.</summary>
-    [Bindable(true)]
-    [Category("Behavior")]
-    public SoftKeyboardEmojiCategory? EmojiCategory
-    {
-        get => (SoftKeyboardEmojiCategory?)GetValue(EmojiCategoryProperty);
-        set => SetValue(EmojiCategoryProperty, value);
-    }
-
     private static readonly DependencyPropertyKey ActiveTargetPropertyKey =
         DependencyProperty.RegisterReadOnly(
             nameof(ActiveTarget),
@@ -439,7 +390,7 @@ public class SoftKeyboard : Control
             nameof(ImeState),
             typeof(InputMethodState),
             typeof(SoftKeyboard),
-            new PropertyMetadata(InputMethodState.DoNotCare)
+            new PropertyMetadata(InputMethodState.DoNotCare, OnLayoutContextChanged)
         );
 
     /// <summary>Identifies the read-only <see cref="ImeState"/> dependency property.</summary>
@@ -592,18 +543,14 @@ public class SoftKeyboard : Control
     /// <summary>Gets the enabled Windows input methods.</summary>
     public ReadOnlyObservableCollection<SoftKeyboardInputMethod> InputMethods { get; }
 
-    /// <summary>Gets the Emoji entries shown by the default Emoji surface.</summary>
-    public ReadOnlyObservableCollection<SoftKeyboardEmoji> Emojis { get; }
-
-    /// <summary>Gets the alternatives offered for the currently held key or Emoji.</summary>
+    /// <summary>Gets the alternatives offered for the currently held key.</summary>
     public ReadOnlyObservableCollection<string> AlternateValues { get; }
 
     /// <summary>Changes the visible keyboard surface and ends any pending long-press gesture.</summary>
     /// <remarks>
     /// Explicit letter, number, and symbol surfaces override the editor input scope. Automatic
     /// chooses from that scope again. A new active editor resets the mode to Automatic.
-    /// Emoji and input-method surfaces release native candidate suppression because their
-    /// templates hide the candidate bar. If the active input method owns unconfirmed composition
+    /// If the active input method owns unconfirmed composition
     /// text, the control asks it to cancel that text before crossing the surface boundary.
     /// </remarks>
     /// <param name="displayMode">The surface to display.</param>
@@ -624,16 +571,7 @@ public class SoftKeyboard : Control
 
         CancelHeldKey();
         SetValue(DisplayModePropertyKey, displayMode);
-        CloseAlternates();
-
-        if (displayMode == SoftKeyboardDisplayMode.InputMethods)
-        {
-            RefreshInputMethods();
-        }
-        else if (displayMode == SoftKeyboardDisplayMode.Emoji)
-        {
-            RefreshEmoji();
-        }
+        CloseFlyouts();
     }
 
     /// <inheritdoc />
@@ -652,12 +590,17 @@ public class SoftKeyboard : Control
     protected override void OnTemplateChanged(ControlTemplate oldTemplate, ControlTemplate newTemplate)
     {
         CancelHeldKey();
-        CloseAlternates();
+        CloseFlyouts();
         base.OnTemplateChanged(oldTemplate, newTemplate);
     }
 
     internal void OnSessionFocusChanged(IInputElement? focusedElement, bool touchOrPenInitiated)
     {
+        if (_inputMethodMenu?.IsOpen == true)
+        {
+            return;
+        }
+
         if (!IsLoaded)
         {
             return;
@@ -689,7 +632,9 @@ public class SoftKeyboard : Control
 
             if (IsOpen)
             {
+                RefreshInputMethods();
                 RefreshImeState();
+                QueueInputMethodStateRefresh();
                 RequestSystemKeyboardHide();
                 _platform.Candidates.Refresh(this);
                 QueueCandidateBridgeRefresh();
@@ -713,9 +658,10 @@ public class SoftKeyboard : Control
 
     internal void OnSessionInputLanguageChanged()
     {
-        RebuildLayout();
         RefreshInputMethods();
         RefreshImeState();
+        RebuildLayout();
+        QueueInputMethodStateRefresh();
     }
 
     /// <summary>
@@ -819,7 +765,7 @@ public class SoftKeyboard : Control
         {
             _ = keyboard.TryCancelActiveComposition();
             keyboard.CancelHeldKey();
-            keyboard.CloseAlternates();
+            keyboard.CloseFlyouts();
             keyboard._platform.Candidates.ReleasePresentation(keyboard);
             keyboard.ReplaceCandidates(Array.Empty<SoftKeyboardCandidate>(), SoftKeyboardCandidatePresentationState.None);
             keyboard.ReleaseSystemKeyboardSuppression(tryRestore: true);
@@ -867,6 +813,10 @@ public class SoftKeyboard : Control
     private static void OnActiveTargetChanged(DependencyObject dependencyObject, DependencyPropertyChangedEventArgs eventArgs)
     {
         var keyboard = (SoftKeyboard)dependencyObject;
+        // A gesture belongs to the editor that was active when it started. Never let a held
+        // Backspace or an unselected variant continue into a newly focused document.
+        keyboard.CancelHeldKey();
+        keyboard.CloseFlyouts();
         if (eventArgs.OldValue is IInputElement oldTarget
             && !ReferenceEquals(oldTarget, eventArgs.NewValue)
             && ReferenceEquals(keyboard._compositionTarget, oldTarget))
@@ -896,8 +846,8 @@ public class SoftKeyboard : Control
     {
         var keyboard = (SoftKeyboard)dependencyObject;
         keyboard.RebuildLayout();
-        // A visible keyboard can contain a collapsed candidate bar. Release native UI ownership
-        // as part of the mode transition, without waiting for another input or timer callback.
+        // The header always reserves space, but native candidate ownership still depends on the
+        // live editor and IME state. Reevaluate it immediately after a surface transition.
         if (keyboard.CanPresentCandidates)
         {
             keyboard._platform.Candidates.Refresh(keyboard);
@@ -913,17 +863,13 @@ public class SoftKeyboard : Control
         ((SoftKeyboard)dependencyObject).RebuildLayout();
     }
 
-    private static void OnEmojiFilterChanged(DependencyObject dependencyObject, DependencyPropertyChangedEventArgs eventArgs)
-    {
-        ((SoftKeyboard)dependencyObject).RefreshEmoji();
-    }
-
     private void OnLoaded(object sender, RoutedEventArgs eventArgs)
     {
         _session = SoftKeyboardDispatcherSession.GetForCurrentDispatcher();
         _session.Register(this);
         _platform.Candidates.Register(this);
         InputMethod.Current.StateChanged += OnInputMethodStateChanged;
+        StartInputStateObservation();
         _window = Window.GetWindow(this);
         if (_window is not null)
         {
@@ -951,6 +897,7 @@ public class SoftKeyboard : Control
         _session?.Unregister(this);
         _platform.Candidates.Unregister(this);
         InputMethod.Current.StateChanged -= OnInputMethodStateChanged;
+        _inputStateTimer?.Stop();
         _session = null;
         if (_window is not null)
         {
@@ -960,7 +907,7 @@ public class SoftKeyboard : Control
         }
 
         CancelHeldKey();
-        CloseAlternates();
+        CloseFlyouts();
         ReplaceCandidates(Array.Empty<SoftKeyboardCandidate>(), SoftKeyboardCandidatePresentationState.None);
         ClearActiveComposition();
     }
@@ -971,7 +918,7 @@ public class SoftKeyboard : Control
         {
             _ = TryCancelActiveComposition();
             CancelHeldKey();
-            CloseAlternates();
+            CloseFlyouts();
             _platform.Candidates.ReleasePresentation(this);
             ReleaseSystemKeyboardSuppression(tryRestore: true);
             return;
@@ -995,6 +942,7 @@ public class SoftKeyboard : Control
             // no longer safe. Cancel any composition that survived the app switch now, then let the
             // queued refresh either reacquire a still-valid TSF element or observe its cancellation.
             _ = TryCancelActiveComposition();
+            QueueInputMethodStateRefresh();
             RequestSystemKeyboardHide();
             QueueCandidateBridgeRefresh();
         }
@@ -1014,7 +962,7 @@ public class SoftKeyboard : Control
         // SendInput targets the foreground thread. Ending every pending gesture here prevents a
         // held key from continuing into another process during an Alt+Tab or tablet app switch.
         CancelHeldKey();
-        CloseAlternates();
+        CloseFlyouts();
         ReleaseSystemKeyboardSuppression(tryRestore: false);
         _platform.Candidates.ReleasePresentation(this);
     }
@@ -1037,6 +985,7 @@ public class SoftKeyboard : Control
         switch (button.DataContext)
         {
             case SoftKeyboardKey key:
+                _heldButton = button;
                 InvokeKey(key);
                 break;
             case SoftKeyboardCandidate candidate:
@@ -1045,12 +994,9 @@ public class SoftKeyboard : Control
             case SoftKeyboardInputMethod inputMethod:
                 ActivateInputMethod(inputMethod);
                 break;
-            case SoftKeyboardEmoji emoji:
-                InsertEmoji(emoji);
-                break;
             case string alternate when IsAlternatePopupOpen:
                 _ = TrySendText(alternate);
-                CloseAlternates();
+                CloseFlyouts();
                 break;
             default:
                 if (button.Name == PreviousCandidatePageButtonPartName)
@@ -1105,18 +1051,14 @@ public class SoftKeyboard : Control
         if (!IsEnabled || !IsOpen || !IsVisible
             || eventArgs.ChangedButton != MouseButton.Left
             || eventArgs.OriginalSource is not DependencyObject source
-            || FindButton(source) is not { } button)
+            || FindButton(source) is not { DataContext: SoftKeyboardKey } button)
         {
             return;
         }
 
+        CloseFlyouts();
+        _heldButton = button;
         _heldKey = button.DataContext as SoftKeyboardKey;
-        _heldEmoji = button.DataContext as SoftKeyboardEmoji;
-        if (_heldKey is null && _heldEmoji is null)
-        {
-            return;
-        }
-
         _didRepeatOrOpenAlternates = false;
         _suppressClickItem = null;
         _holdTimer ??= new DispatcherTimer(DispatcherPriority.Input)
@@ -1137,24 +1079,35 @@ public class SoftKeyboard : Control
                 && FindButton(hit)?.DataContext is string alternate)
             {
                 _ = TrySendText(alternate);
-                CloseAlternates();
+                CloseFlyouts();
             }
 
-            _suppressClickItem = (object?)_heldKey ?? _heldEmoji;
+            _suppressClickItem = _heldKey;
             CancelHeldKey(keepRepeatMarker: true);
+            if (_alternatePopup?.IsOpen == true)
+            {
+                // ButtonBase releases its capture after this preview event; defer Popup capture
+                // until that release has completed to make the next outside click dismiss it.
+                _ = Dispatcher.BeginInvoke(DispatcherPriority.Input, new Action(() =>
+                {
+                    if (_alternatePopup?.IsOpen == true)
+                    {
+                        _alternatePopup.SetCurrentValue(Popup.StaysOpenProperty, false);
+                    }
+                }));
+            }
         }
     }
 
     private void OnHoldTimerTick(object? sender, EventArgs eventArgs)
     {
         _holdTimer?.Stop();
-        if (!IsEnabled || !IsOpen || !IsVisible || (_heldKey is null && _heldEmoji is null))
+        if (!IsEnabled || !IsOpen || !IsVisible || _heldKey is null)
         {
             return;
         }
 
         IReadOnlyList<string> alternates = _heldKey?.Alternates
-            ?? _heldEmoji?.Alternates
             ?? Array.Empty<string>();
         if (alternates.Count > 0)
         {
@@ -1164,8 +1117,7 @@ public class SoftKeyboard : Control
                 _alternateValues.Add(alternate);
             }
 
-            _didRepeatOrOpenAlternates = true;
-            SetValue(IsAlternatePopupOpenPropertyKey, true);
+            _didRepeatOrOpenAlternates = OpenAlternates();
             return;
         }
 
@@ -1224,7 +1176,7 @@ public class SoftKeyboard : Control
                 ShowDisplayMode(key.DisplayMode);
                 break;
             case SoftKeyboardKeyKind.InputMethods:
-                ShowDisplayMode(SoftKeyboardDisplayMode.InputMethods);
+                ShowInputMethodMenu();
                 break;
             case SoftKeyboardKeyKind.ToggleIme:
                 ToggleIme();
@@ -1261,19 +1213,17 @@ public class SoftKeyboard : Control
     {
         // IME state belongs to the focused TSF document, so target validation and focus restoration
         // must happen before reading or changing WPF's Dispatcher-scoped InputMethod.Current.
-        ShowDisplayMode(SoftKeyboardDisplayMode.Letters);
         if (!PrepareTargetForInput())
         {
             return;
         }
 
         RefreshInputMethods();
-        InputMethodState current = _platform.InputMethods.GetImeState();
+        InputMethodState current = ReadInputState();
         if (current == InputMethodState.On)
         {
-            if (_platform.InputMethods.TrySetImeState(InputMethodState.Off))
+            if (TryChangeInputState(InputMethodState.Off))
             {
-                SetValue(ImeStatePropertyKey, InputMethodState.Off);
                 _platform.Candidates.ReleasePresentation(this);
                 ReplaceCandidates([], SoftKeyboardCandidatePresentationState.None);
             }
@@ -1285,16 +1235,16 @@ public class SoftKeyboard : Control
             // TIP first, preferring the one most recently observed in this keyboard session.
             SoftKeyboardInputMethod? inputMethod = ActiveInputMethod ?? FindPreferredImeInputMethod();
             if (inputMethod is not null
-                && (ActiveInputMethod is not null || _platform.InputMethods.TryActivate(inputMethod))
-                && _platform.InputMethods.TrySetImeState(InputMethodState.On))
+                && (ActiveInputMethod is not null || _platform.InputMethods.TryActivate(inputMethod)))
             {
                 _preferredImeInputMethod = inputMethod;
                 SetValue(ActiveInputMethodPropertyKey, inputMethod);
-                SetValue(ImeStatePropertyKey, InputMethodState.On);
-                QueueInputMethodStateRefresh();
+                _ = TryChangeInputState(InputMethodState.On);
             }
         }
 
+        RefreshImeState();
+        QueueInputMethodStateRefresh();
         RequestSystemKeyboardHide();
     }
 
@@ -1323,7 +1273,7 @@ public class SoftKeyboard : Control
         }
 
         // KEYEVENTF_UNICODE bypasses the active TIP. Escape is queued first so mutable pre-edit
-        // text cannot be interleaved with Emoji, symbols, or long-press alternatives.
+        // text cannot be interleaved with symbols or long-press alternatives.
         if (!TryCancelActiveComposition())
         {
             return false;
@@ -1484,7 +1434,8 @@ public class SoftKeyboard : Control
         {
             SetValue(
                 CurrentLayoutPropertyKey,
-                LayoutProvider.CreateLayout(new SoftKeyboardLayoutContext(culture, inputScope, DisplayMode, ShiftState))
+                LayoutProvider.CreateLayout(new SoftKeyboardLayoutContext(culture, inputScope, DisplayMode, ShiftState, ImeState, ActiveInputMethod))
+                    ?? throw new InvalidOperationException("A layout provider must return a layout.")
             );
         }
         catch (Exception exception) when (exception is not OutOfMemoryException)
@@ -1494,7 +1445,7 @@ public class SoftKeyboard : Control
             SetValue(
                 CurrentLayoutPropertyKey,
                 DefaultSoftKeyboardLayoutProvider.Default.CreateLayout(
-                    new SoftKeyboardLayoutContext(culture, inputScope, DisplayMode, ShiftState)
+                    new SoftKeyboardLayoutContext(culture, inputScope, DisplayMode, ShiftState, ImeState, ActiveInputMethod)
                 )
             );
         }
@@ -1503,7 +1454,13 @@ public class SoftKeyboard : Control
     private void RefreshInputMethods()
     {
         _platform.InputMethods.Refresh(_inputMethods, out SoftKeyboardInputMethod? active);
+        SoftKeyboardInputMethod? previous = ActiveInputMethod;
         SetValue(ActiveInputMethodPropertyKey, active);
+        if (previous?.ProfileId != active?.ProfileId || previous?.ClassId != active?.ClassId || previous?.LanguageId != active?.LanguageId)
+        {
+            RebuildLayout();
+        }
+
         if (active is not null)
         {
             _preferredImeInputMethod = active;
@@ -1512,7 +1469,7 @@ public class SoftKeyboard : Control
 
     private void RefreshImeState()
     {
-        SetValue(ImeStatePropertyKey, _platform.InputMethods.GetImeState());
+        SetValue(ImeStatePropertyKey, ReadInputState());
         if (IsLoaded && !CanPresentCandidates)
         {
             _platform.Candidates.ReleasePresentation(this);
@@ -1529,10 +1486,9 @@ public class SoftKeyboard : Control
         if (_platform.InputMethods.TryActivate(inputMethod))
         {
             _preferredImeInputMethod = inputMethod;
-            _ = _platform.InputMethods.TrySetImeState(InputMethodState.On);
             RefreshInputMethods();
+            _ = TryChangeInputState(InputMethodState.On);
             RefreshImeState();
-            SetValue(DisplayModePropertyKey, SoftKeyboardDisplayMode.Letters);
             RebuildLayout();
             QueueInputMethodStateRefresh();
         }
@@ -1592,53 +1548,6 @@ public class SoftKeyboard : Control
         if (_session is not null && CanPresentCandidates && _platform.Candidates.TryCommit(this, candidate.Index))
         {
             ReplaceCandidates(Array.Empty<SoftKeyboardCandidate>(), SoftKeyboardCandidatePresentationState.None);
-        }
-    }
-
-    private void InsertEmoji(SoftKeyboardEmoji emoji)
-    {
-        if (!TrySendText(emoji.Text))
-        {
-            return;
-        }
-
-        LinkedListNode<SoftKeyboardEmoji>? existing = _recentEmoji.Find(emoji);
-        if (existing is not null)
-        {
-            _recentEmoji.Remove(existing);
-        }
-
-        _recentEmoji.AddFirst(emoji);
-        while (_recentEmoji.Count > 16)
-        {
-            _recentEmoji.RemoveLast();
-        }
-    }
-
-    private void RefreshEmoji()
-    {
-        _emojis.Clear();
-        string search = EmojiSearchText.Trim();
-        bool MatchesSearch(SoftKeyboardEmoji emoji) =>
-            search.Length == 0 || emoji.Name.IndexOf(search, StringComparison.OrdinalIgnoreCase) >= 0;
-        bool Matches(SoftKeyboardEmoji emoji) =>
-            (EmojiCategory is null || emoji.Category == EmojiCategory)
-            && MatchesSearch(emoji);
-
-        if (EmojiCategory is null or SoftKeyboardEmojiCategory.Recent)
-        {
-            foreach (SoftKeyboardEmoji recent in _recentEmoji.Where(MatchesSearch))
-            {
-                _emojis.Add(recent);
-            }
-        }
-
-        if (EmojiCategory != SoftKeyboardEmojiCategory.Recent)
-        {
-            foreach (SoftKeyboardEmoji emoji in SoftKeyboardEmojiCatalog.Items.Where(Matches))
-            {
-                _emojis.Add(emoji);
-            }
         }
     }
 
@@ -1801,8 +1710,7 @@ public class SoftKeyboard : Control
     /// Remembered targets may restore focus for a key, but must never capture another editor's IME UI.
     /// </summary>
     internal bool CanPresentCandidates =>
-        DisplayMode is not (SoftKeyboardDisplayMode.Emoji or SoftKeyboardDisplayMode.InputMethods)
-        && ImeState == InputMethodState.On
+        ImeState == InputMethodState.On
         && ActiveInputMethod is not null
         && IsSystemKeyboardSuppressionRequired;
 
@@ -1812,7 +1720,7 @@ public class SoftKeyboard : Control
         {
             _ = TryCancelActiveComposition();
             CancelHeldKey();
-            CloseAlternates();
+            CloseFlyouts();
             _platform.Candidates.ReleasePresentation(this);
             ReleaseSystemKeyboardSuppression(tryRestore: true);
         }
@@ -1937,10 +1845,10 @@ public class SoftKeyboard : Control
     {
         // ButtonBase releases capture before raising Click on ordinary MouseUp. Preserve the
         // completed gesture's click suppression marker, but terminate any still-held gesture.
-        if (_heldKey is not null || _heldEmoji is not null)
+        if (_heldKey is not null)
         {
             CancelHeldKey();
-            CloseAlternates();
+            CloseFlyouts();
         }
     }
 
@@ -1949,7 +1857,6 @@ public class SoftKeyboard : Control
         _holdTimer?.Stop();
         _repeatTimer?.Stop();
         _heldKey = null;
-        _heldEmoji = null;
         if (!keepRepeatMarker)
         {
             _didRepeatOrOpenAlternates = false;
@@ -1957,10 +1864,19 @@ public class SoftKeyboard : Control
         }
     }
 
-    private void CloseAlternates()
+    private void CloseFlyouts()
     {
+        if (_alternatePopup is not null)
+        {
+            _alternatePopup.SetCurrentValue(Popup.IsOpenProperty, false);
+        }
+
         SetValue(IsAlternatePopupOpenPropertyKey, false);
         _alternateValues.Clear();
+        if (_inputMethodMenu is not null)
+        {
+            _inputMethodMenu.SetCurrentValue(ContextMenu.IsOpenProperty, false);
+        }
     }
 
     private static ButtonBase? FindButton(DependencyObject source)

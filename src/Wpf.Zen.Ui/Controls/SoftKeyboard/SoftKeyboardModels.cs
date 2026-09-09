@@ -49,11 +49,8 @@ public enum SoftKeyboardDisplayMode
     /// <summary>Displays punctuation and symbol keys.</summary>
     Symbols,
 
-    /// <summary>Displays the built-in Emoji catalogue.</summary>
-    Emoji,
-
-    /// <summary>Displays the enabled Windows input methods.</summary>
-    InputMethods,
+    /// <summary>Displays the second page of punctuation and symbols.</summary>
+    MoreSymbols,
 }
 
 /// <summary>Describes the virtual Shift modifier maintained by a <see cref="SoftKeyboard"/>.</summary>
@@ -109,7 +106,7 @@ public enum SoftKeyboardKeyKind
     /// <summary>Sends a virtual key using the active Windows keyboard layout.</summary>
     VirtualKey,
 
-    /// <summary>Inserts a Unicode string, used for symbols, alternates, and Emoji sequences.</summary>
+    /// <summary>Inserts a Unicode string, used for symbols and key alternatives.</summary>
     Text,
 
     /// <summary>Changes the keyboard's Shift state.</summary>
@@ -118,7 +115,7 @@ public enum SoftKeyboardKeyKind
     /// <summary>Changes the visible keyboard surface.</summary>
     ChangeDisplayMode,
 
-    /// <summary>Opens the embedded input-method picker.</summary>
+    /// <summary>Opens the input-method context menu.</summary>
     InputMethods,
 
     /// <summary>Toggles the active input method between native composition and direct alphanumeric input.</summary>
@@ -126,37 +123,6 @@ public enum SoftKeyboardKeyKind
 
     /// <summary>Closes the keyboard.</summary>
     Close,
-}
-
-/// <summary>Groups Emoji entries on the built-in Emoji surface.</summary>
-public enum SoftKeyboardEmojiCategory
-{
-    /// <summary>Recently inserted Emoji, retained only for the current process.</summary>
-    Recent,
-
-    /// <summary>Faces and emotional gestures.</summary>
-    Smileys,
-
-    /// <summary>People, hands, and body gestures.</summary>
-    People,
-
-    /// <summary>Animals and nature.</summary>
-    Animals,
-
-    /// <summary>Food and drink.</summary>
-    Food,
-
-    /// <summary>Activities and celebrations.</summary>
-    Activities,
-
-    /// <summary>Travel and places.</summary>
-    Travel,
-
-    /// <summary>Objects and tools.</summary>
-    Objects,
-
-    /// <summary>Symbols and marks.</summary>
-    Symbols,
 }
 
 /// <summary>
@@ -169,17 +135,23 @@ public sealed class SoftKeyboardLayoutContext
     /// <param name="inputScope">The semantic input scope requested by the active editor.</param>
     /// <param name="displayMode">The surface requested by the keyboard.</param>
     /// <param name="shiftState">The current virtual Shift state.</param>
+    /// <param name="imeState">The observed native/direct input state; unknown by default.</param>
+    /// <param name="inputMethod">The active profile, allowing language- and vendor-specific layouts.</param>
     public SoftKeyboardLayoutContext(
         CultureInfo culture,
         InputScopeNameValue inputScope,
         SoftKeyboardDisplayMode displayMode,
-        SoftKeyboardShiftState shiftState
+        SoftKeyboardShiftState shiftState,
+        InputMethodState imeState = InputMethodState.DoNotCare,
+        SoftKeyboardInputMethod? inputMethod = null
     )
     {
         Culture = culture ?? throw new ArgumentNullException(nameof(culture));
         InputScope = inputScope;
         DisplayMode = displayMode;
         ShiftState = shiftState;
+        ImeState = imeState;
+        InputMethod = inputMethod;
     }
 
     /// <summary>Gets the culture of the active Windows input language.</summary>
@@ -193,6 +165,12 @@ public sealed class SoftKeyboardLayoutContext
 
     /// <summary>Gets the current virtual Shift state.</summary>
     public SoftKeyboardShiftState ShiftState { get; }
+
+    /// <summary>Gets the observed native/direct input state, never an optimistic toggle request.</summary>
+    public InputMethodState ImeState { get; }
+
+    /// <summary>Gets the active profile identity, or null when Windows exposes none.</summary>
+    public SoftKeyboardInputMethod? InputMethod { get; }
 }
 
 /// <summary>Creates keyboard layouts for a <see cref="SoftKeyboard"/>.</summary>
@@ -439,50 +417,6 @@ public sealed class SoftKeyboardCandidate
 
     /// <summary>Gets a value indicating whether the input method currently selects this candidate.</summary>
     public bool IsSelected { get; }
-}
-
-/// <summary>Describes one Unicode Emoji sequence offered by a <see cref="SoftKeyboard"/>.</summary>
-public sealed class SoftKeyboardEmoji
-{
-    /// <summary>Initializes a new instance of the <see cref="SoftKeyboardEmoji"/> class.</summary>
-    /// <param name="text">The Unicode sequence inserted when selected.</param>
-    /// <param name="name">The searchable and accessible description.</param>
-    /// <param name="category">The visual category.</param>
-    /// <param name="alternates">Optional long-press variants such as skin tones.</param>
-    public SoftKeyboardEmoji(
-        string text,
-        string name,
-        SoftKeyboardEmojiCategory category,
-        IEnumerable<string>? alternates = null
-    )
-    {
-        if (string.IsNullOrEmpty(text))
-        {
-            throw new ArgumentException("Emoji text is required.", nameof(text));
-        }
-
-        if (string.IsNullOrWhiteSpace(name))
-        {
-            throw new ArgumentException("An Emoji name is required.", nameof(name));
-        }
-
-        Text = text;
-        Name = name;
-        Category = category;
-        Alternates = new ReadOnlyCollection<string>((alternates ?? Array.Empty<string>()).ToArray());
-    }
-
-    /// <summary>Gets the Unicode sequence.</summary>
-    public string Text { get; }
-
-    /// <summary>Gets the searchable and accessible description.</summary>
-    public string Name { get; }
-
-    /// <summary>Gets the visual category.</summary>
-    public SoftKeyboardEmojiCategory Category { get; }
-
-    /// <summary>Gets the long-press variants.</summary>
-    public IReadOnlyList<string> Alternates { get; }
 }
 
 /// <summary>Describes one enabled Windows input method or keyboard layout.</summary>
