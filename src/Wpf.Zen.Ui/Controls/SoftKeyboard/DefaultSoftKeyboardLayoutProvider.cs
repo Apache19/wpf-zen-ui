@@ -20,6 +20,10 @@ namespace Wpf.Zen.Ui.Controls;
 /// </remarks>
 public sealed class DefaultSoftKeyboardLayoutProvider : ISoftKeyboardLayoutProvider
 {
+    // Two logical columns form the nominal width of an ordinary character key. The half-key
+    // granularity makes physical-row staggering and 1.5-key command caps exactly representable.
+    private const int DefaultColumnCount = 20;
+
     // Icon sources are immutable presentation data. Sharing them avoids rebuilding identical
     // descriptors whenever Shift or the requested surface regenerates the layout; the implicit
     // FluentIconSource data template still creates an independent visual for every key button.
@@ -120,29 +124,41 @@ public sealed class DefaultSoftKeyboardLayoutProvider : ISoftKeyboardLayoutProvi
             rows.Add(keys.ToArray());
         }
 
-        rows[2] =
+        IReadOnlyList<SoftKeyboardKey> thirdRow =
         [
-            new SoftKeyboardKey(SoftKeyboardKeyKind.Shift, GetShiftContent(context.ShiftState), "Shift", widthWeight: 1.35d),
+            new SoftKeyboardKey(SoftKeyboardKeyKind.Shift, GetShiftContent(context.ShiftState), "Shift"),
             .. rows[2],
-            new SoftKeyboardKey(SoftKeyboardKeyKind.VirtualKey, BackspaceIcon, "Backspace", Key.Back, widthWeight: 1.35d),
+            new SoftKeyboardKey(SoftKeyboardKeyKind.VirtualKey, BackspaceIcon, "Backspace", Key.Back),
         ];
 
         var bottom = new List<SoftKeyboardKey>
         {
-            new(SoftKeyboardKeyKind.ChangeDisplayMode, "&123", "Numbers and symbols", displayMode: SoftKeyboardDisplayMode.Symbols, widthWeight: 1.3d),
+            new(SoftKeyboardKeyKind.ChangeDisplayMode, "&123", "Numbers and symbols", displayMode: SoftKeyboardDisplayMode.Symbols),
             new(SoftKeyboardKeyKind.ChangeDisplayMode, EmojiIcon, "Emoji", displayMode: SoftKeyboardDisplayMode.Emoji),
             new(SoftKeyboardKeyKind.InputMethods, InputMethodsIcon, "Input methods"),
             new(SoftKeyboardKeyKind.VirtualKey, MoveLeftIcon, "Move cursor left", Key.Left),
-            new(SoftKeyboardKeyKind.VirtualKey, SpaceIcon, "Space", Key.Space, widthWeight: 3d),
+            new(SoftKeyboardKeyKind.VirtualKey, SpaceIcon, "Space", Key.Space),
             new(SoftKeyboardKeyKind.VirtualKey, MoveRightIcon, "Move cursor right", Key.Right),
         };
 
         AddInputScopeKey(bottom, context.InputScope);
-        bottom.Add(new SoftKeyboardKey(SoftKeyboardKeyKind.VirtualKey, EnterIcon, "Enter", Key.Enter, widthWeight: 1.4d));
+        bottom.Add(new SoftKeyboardKey(SoftKeyboardKeyKind.VirtualKey, EnterIcon, "Enter", Key.Enter));
         bottom.Add(new SoftKeyboardKey(SoftKeyboardKeyKind.Close, CloseIcon, "Close keyboard"));
-        rows.Add(bottom);
 
-        return CreateLayout(rows);
+        var positionedKeys = new List<SoftKeyboardKey>();
+        AddPositionedRow(positionedKeys, rows[0], 0, 0, 2);
+        AddPositionedRow(positionedKeys, rows[1], 1, 1, 2);
+        AddPositionedRow(positionedKeys, thirdRow, 2, 0, [2, 2, 2, 2, 2, 2, 2, 2, 4]);
+        AddPositionedRow(
+            positionedKeys,
+            bottom,
+            3,
+            0,
+            bottom.Count == 9
+                ? [2, 2, 2, 2, 4, 2, 2, 2, 2]
+                : [2, 2, 2, 2, 2, 2, 2, 2, 2, 2]
+        );
+        return new SoftKeyboardLayout(positionedKeys, DefaultColumnCount);
     }
 
     private static SoftKeyboardLayout CreateNumberLayout(InputScopeNameValue scope)
@@ -151,41 +167,55 @@ public sealed class DefaultSoftKeyboardLayoutProvider : ISoftKeyboardLayoutProvi
             ? [["1", "2", "3"], ["4", "5", "6"], ["7", "8", "9"], ["+", "0", "#"]]
             : [["7", "8", "9"], ["4", "5", "6"], ["1", "2", "3"], ["-", "0", CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator]];
 
-        var rows = values
+        IReadOnlyList<IReadOnlyList<SoftKeyboardKey>> rows = values
             .Select(row => (IReadOnlyList<SoftKeyboardKey>)row.Select(CreateTextKey).ToArray())
             .ToList();
         IReadOnlyList<SoftKeyboardKey> commandRow =
         [
-            new SoftKeyboardKey(SoftKeyboardKeyKind.ChangeDisplayMode, "ABC", "Letters", displayMode: SoftKeyboardDisplayMode.Letters, widthWeight: 1.4d),
-            new SoftKeyboardKey(SoftKeyboardKeyKind.VirtualKey, BackspaceIcon, "Backspace", Key.Back, widthWeight: 1.4d),
+            new SoftKeyboardKey(SoftKeyboardKeyKind.ChangeDisplayMode, "ABC", "Letters", displayMode: SoftKeyboardDisplayMode.Letters),
+            new SoftKeyboardKey(SoftKeyboardKeyKind.VirtualKey, BackspaceIcon, "Backspace", Key.Back),
             new SoftKeyboardKey(SoftKeyboardKeyKind.VirtualKey, MoveLeftIcon, "Move cursor left", Key.Left),
             new SoftKeyboardKey(SoftKeyboardKeyKind.VirtualKey, MoveRightIcon, "Move cursor right", Key.Right),
-            new SoftKeyboardKey(SoftKeyboardKeyKind.VirtualKey, EnterIcon, "Enter", Key.Enter, widthWeight: 1.4d),
+            new SoftKeyboardKey(SoftKeyboardKeyKind.VirtualKey, EnterIcon, "Enter", Key.Enter),
             new SoftKeyboardKey(SoftKeyboardKeyKind.Close, CloseIcon, "Close keyboard"),
         ];
-        rows.Add(commandRow);
-        return CreateLayout(rows);
+
+        var keys = new List<SoftKeyboardKey>();
+        for (var row = 0; row < rows.Count; row++)
+        {
+            // Eighteen occupied columns centered inside twenty columns keep the three-key number pad
+            // broad without introducing a separate panel sizing mode.
+            AddPositionedRow(keys, rows[row], row, 1, 6);
+        }
+
+        AddPositionedRow(keys, commandRow, rows.Count, 0, [3, 3, 3, 3, 4, 4]);
+        return new SoftKeyboardLayout(keys, DefaultColumnCount);
     }
 
     private static SoftKeyboardLayout CreateSymbolLayout()
     {
-        var rows = SymbolRows
+        IReadOnlyList<IReadOnlyList<SoftKeyboardKey>> rows = SymbolRows
             .Select(row => (IReadOnlyList<SoftKeyboardKey>)row.Select(CreateTextKey).ToArray())
             .ToList();
         IReadOnlyList<SoftKeyboardKey> commandRow =
         [
-            new SoftKeyboardKey(SoftKeyboardKeyKind.ChangeDisplayMode, "ABC", "Letters", displayMode: SoftKeyboardDisplayMode.Letters, widthWeight: 1.4d),
+            new SoftKeyboardKey(SoftKeyboardKeyKind.ChangeDisplayMode, "ABC", "Letters", displayMode: SoftKeyboardDisplayMode.Letters),
             new SoftKeyboardKey(SoftKeyboardKeyKind.ChangeDisplayMode, EmojiIcon, "Emoji", displayMode: SoftKeyboardDisplayMode.Emoji),
             new SoftKeyboardKey(SoftKeyboardKeyKind.InputMethods, InputMethodsIcon, "Input methods"),
             new SoftKeyboardKey(SoftKeyboardKeyKind.VirtualKey, MoveLeftIcon, "Move cursor left", Key.Left),
-            new SoftKeyboardKey(SoftKeyboardKeyKind.VirtualKey, SpaceIcon, "Space", Key.Space, widthWeight: 2.5d),
+            new SoftKeyboardKey(SoftKeyboardKeyKind.VirtualKey, SpaceIcon, "Space", Key.Space),
             new SoftKeyboardKey(SoftKeyboardKeyKind.VirtualKey, MoveRightIcon, "Move cursor right", Key.Right),
-            new SoftKeyboardKey(SoftKeyboardKeyKind.VirtualKey, BackspaceIcon, "Backspace", Key.Back, widthWeight: 1.4d),
-            new SoftKeyboardKey(SoftKeyboardKeyKind.VirtualKey, EnterIcon, "Enter", Key.Enter, widthWeight: 1.4d),
+            new SoftKeyboardKey(SoftKeyboardKeyKind.VirtualKey, BackspaceIcon, "Backspace", Key.Back),
+            new SoftKeyboardKey(SoftKeyboardKeyKind.VirtualKey, EnterIcon, "Enter", Key.Enter),
             new SoftKeyboardKey(SoftKeyboardKeyKind.Close, CloseIcon, "Close keyboard"),
         ];
-        rows.Add(commandRow);
-        return CreateLayout(rows);
+
+        var keys = new List<SoftKeyboardKey>();
+        AddPositionedRow(keys, rows[0], 0, 0, 2);
+        AddPositionedRow(keys, rows[1], 1, 1, 2);
+        AddPositionedRow(keys, rows[2], 2, 2, 2);
+        AddPositionedRow(keys, commandRow, 3, 0, [3, 2, 2, 2, 3, 2, 2, 2, 2]);
+        return new SoftKeyboardLayout(keys, DefaultColumnCount);
     }
 
     /// <summary>
@@ -204,14 +234,51 @@ public sealed class DefaultSoftKeyboardLayoutProvider : ISoftKeyboardLayoutProvi
         new(SoftKeyboardKeyKind.Text, value, value, text: value);
 
     /// <summary>
-    /// Flattens readable provider-local row literals into the public per-key placement model.
+    /// Places equal-width keys consecutively while retaining row literals as the readable source of
+    /// the default layout.
     /// </summary>
-    /// <remarks>
-    /// Row collections are only an implementation convenience here; consumers receive one flat
-    /// sequence and can create that sequence directly without constructing structural row objects.
-    /// </remarks>
-    private static SoftKeyboardLayout CreateLayout(IEnumerable<IReadOnlyList<SoftKeyboardKey>> rows) =>
-        new(rows.SelectMany(static (keys, row) => keys.Select(key => key.WithRow(row))));
+    private static void AddPositionedRow(
+        List<SoftKeyboardKey> destination,
+        IReadOnlyList<SoftKeyboardKey> keys,
+        int row,
+        int startColumn,
+        int columnSpan
+    )
+    {
+        AddPositionedRow(destination, keys, row, startColumn, Enumerable.Repeat(columnSpan, keys.Count));
+    }
+
+    /// <summary>
+    /// Places a row with explicit spans. Keeping this conversion at the provider boundary leaves the
+    /// public model flat while making wide command caps and half-key offsets exact layout data.
+    /// </summary>
+    private static void AddPositionedRow(
+        List<SoftKeyboardKey> destination,
+        IReadOnlyList<SoftKeyboardKey> keys,
+        int row,
+        int startColumn,
+        IEnumerable<int> columnSpans
+    )
+    {
+        int column = startColumn;
+        using IEnumerator<int> spans = columnSpans.GetEnumerator();
+        foreach (SoftKeyboardKey key in keys)
+        {
+            if (!spans.MoveNext())
+            {
+                throw new ArgumentException("Every key in a row requires a column span.", nameof(columnSpans));
+            }
+
+            int columnSpan = spans.Current;
+            destination.Add(key.WithPlacement(row, column, columnSpan));
+            column = checked(column + columnSpan);
+        }
+
+        if (spans.MoveNext())
+        {
+            throw new ArgumentException("A row cannot contain more column spans than keys.", nameof(columnSpans));
+        }
+    }
 
     private static bool IsNumericScope(InputScopeNameValue scope) =>
         scope is InputScopeNameValue.Number

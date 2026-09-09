@@ -33,7 +33,7 @@
 
                 <ui:TextBox
                     x:Name="NameEditor"
-                    MinWidth="320"
+                    MinWidth="320" InputScope="TelephoneNumber"
                     HorizontalAlignment="Left"
                     PlaceholderText="Name or IME composition" />
                 <ui:PasswordBox

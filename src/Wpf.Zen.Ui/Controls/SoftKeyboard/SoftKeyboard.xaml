@@ -180,6 +180,7 @@
                                 <ItemsControl.ItemsPanel>
                                     <ItemsPanelTemplate>
                                         <controls:SoftKeyboardPanel
+                                            ColumnCount="{Binding CurrentLayout.ColumnCount, RelativeSource={RelativeSource AncestorType={x:Type controls:SoftKeyboard}}}"
                                             RowSpacing="{Binding RowSpacing, RelativeSource={RelativeSource AncestorType={x:Type controls:SoftKeyboard}}}"
                                             ColumnSpacing="{Binding ColumnSpacing, RelativeSource={RelativeSource AncestorType={x:Type controls:SoftKeyboard}}}" />
                                     </ItemsPanelTemplate>
@@ -189,7 +190,8 @@
                                         <Setter Property="HorizontalAlignment" Value="Stretch" />
                                         <Setter Property="VerticalAlignment" Value="Stretch" />
                                         <Setter Property="controls:SoftKeyboardPanel.Row" Value="{Binding Row}" />
-                                        <Setter Property="controls:SoftKeyboardPanel.WidthWeight" Value="{Binding WidthWeight}" />
+                                        <Setter Property="controls:SoftKeyboardPanel.Column" Value="{Binding Column}" />
+                                        <Setter Property="controls:SoftKeyboardPanel.ColumnSpan" Value="{Binding ColumnSpan}" />
                                     </Style>
                                 </ItemsControl.ItemContainerStyle>
                                 <ItemsControl.ItemTemplate>

@@ -226,31 +226,75 @@ public interface ISoftKeyboardTargetAdapter
     bool TryFocus(IInputElement target);
 }
 
-/// <summary>Represents one immutable, flat collection of positioned keyboard keys.</summary>
+/// <summary>Represents one immutable, flat collection of keys positioned on a shared logical grid.</summary>
 /// <remarks>
 /// A layout deliberately exposes no row-container hierarchy. Each <see cref="SoftKeyboardKey"/>
-/// carries its own logical <see cref="SoftKeyboardKey.Row"/> and relative
-/// <see cref="SoftKeyboardKey.WidthWeight"/>, allowing <see cref="SoftKeyboardPanel"/> to measure and
-/// arrange the entire surface as one layout authority.
+/// carries its own <see cref="SoftKeyboardKey.Row"/>, <see cref="SoftKeyboardKey.Column"/>, and
+/// <see cref="SoftKeyboardKey.ColumnSpan"/>. Every row shares <see cref="ColumnCount"/>, so omitted
+/// leading or trailing cells remain empty instead of stretching a shorter row across the surface.
 /// </remarks>
 public sealed class SoftKeyboardLayout
 {
     /// <summary>Initializes a new instance of the <see cref="SoftKeyboardLayout"/> class.</summary>
     /// <param name="keys">Positioned keys in reading order.</param>
-    public SoftKeyboardLayout(IEnumerable<SoftKeyboardKey> keys)
+    /// <param name="columnCount">
+    /// The positive number of equal-width logical columns, or <see langword="null"/> to infer the
+    /// smallest count containing every key. An empty inferred layout uses one column.
+    /// </param>
+    /// <remarks>
+    /// Supplying the count explicitly lets a layout reserve empty trailing columns. Every key must
+    /// fit completely inside the declared grid; overlapping keys are permitted so specialized
+    /// providers can intentionally layer content.
+    /// </remarks>
+    public SoftKeyboardLayout(IEnumerable<SoftKeyboardKey> keys, int? columnCount = null)
     {
         if (keys is null)
         {
             throw new ArgumentNullException(nameof(keys));
         }
 
-        Keys = new ReadOnlyCollection<SoftKeyboardKey>(keys.ToArray());
+        if (columnCount is <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(columnCount));
+        }
+
+        SoftKeyboardKey[] keyArray = keys.ToArray();
+        if (keyArray.Any(static key => key is null))
+        {
+            throw new ArgumentException("A keyboard layout cannot contain a null key.", nameof(keys));
+        }
+
+        long requiredColumnCount64 = keyArray.Length == 0
+            ? 1L
+            : keyArray.Max(static key => (long)key.Column + key.ColumnSpan);
+        if (requiredColumnCount64 > int.MaxValue)
+        {
+            throw new ArgumentException("A key placement exceeds the supported logical grid range.", nameof(keys));
+        }
+
+        int requiredColumnCount = (int)requiredColumnCount64;
+        int resolvedColumnCount = columnCount ?? requiredColumnCount;
+        if (requiredColumnCount > resolvedColumnCount)
+        {
+            throw new ArgumentException(
+                "Every key must fit inside the declared logical column count.",
+                nameof(columnCount)
+            );
+        }
+
+        Keys = new ReadOnlyCollection<SoftKeyboardKey>(keyArray);
+        ColumnCount = resolvedColumnCount;
     }
 
     /// <summary>
     /// Gets the positioned keys in reading order. Items with the same row identifier retain this order.
     /// </summary>
     public IReadOnlyList<SoftKeyboardKey> Keys { get; }
+
+    /// <summary>
+    /// Gets the number of equal-width logical columns shared by every row in the layout.
+    /// </summary>
+    public int ColumnCount { get; }
 }
 
 /// <summary>Describes one immutable key shown by a <see cref="SoftKeyboard"/>.</summary>
@@ -270,7 +314,8 @@ public sealed class SoftKeyboardKey
     /// The nonnegative logical row identifier. Identifiers group and order keys; skipped identifiers
     /// do not reserve empty visual rows.
     /// </param>
-    /// <param name="widthWeight">The positive relative width of the key within its logical row.</param>
+    /// <param name="column">The zero-based logical column at which the key begins.</param>
+    /// <param name="columnSpan">The positive number of logical columns occupied by the key.</param>
     /// <param name="alternates">Optional long-press Unicode alternatives.</param>
     public SoftKeyboardKey(
         SoftKeyboardKeyKind kind,
@@ -280,7 +325,8 @@ public sealed class SoftKeyboardKey
         string? text = null,
         SoftKeyboardDisplayMode displayMode = SoftKeyboardDisplayMode.Letters,
         int row = 0,
-        double widthWeight = 1d,
+        int column = 0,
+        int columnSpan = 1,
         IEnumerable<string>? alternates = null
     )
     {
@@ -304,9 +350,14 @@ public sealed class SoftKeyboardKey
             throw new ArgumentOutOfRangeException(nameof(row));
         }
 
-        if (double.IsNaN(widthWeight) || double.IsInfinity(widthWeight) || widthWeight <= 0)
+        if (column < 0)
         {
-            throw new ArgumentOutOfRangeException(nameof(widthWeight));
+            throw new ArgumentOutOfRangeException(nameof(column));
+        }
+
+        if (columnSpan <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(columnSpan));
         }
 
         Kind = kind;
@@ -316,7 +367,8 @@ public sealed class SoftKeyboardKey
         Text = text;
         DisplayMode = displayMode;
         Row = row;
-        WidthWeight = widthWeight;
+        Column = column;
+        ColumnSpan = columnSpan;
         Alternates = new ReadOnlyCollection<string>((alternates ?? Array.Empty<string>()).ToArray());
     }
 
@@ -349,17 +401,24 @@ public sealed class SoftKeyboardKey
     /// </summary>
     public int Row { get; }
 
-    /// <summary>Gets the positive relative width within the key's logical row.</summary>
-    public double WidthWeight { get; }
+    /// <summary>
+    /// Gets the zero-based logical column at which the key begins. Keys are not automatically flowed
+    /// after one another; layout providers assign this coordinate explicitly.
+    /// </summary>
+    public int Column { get; }
+
+    /// <summary>
+    /// Gets the positive number of equal-width logical columns occupied by the key.
+    /// </summary>
+    public int ColumnSpan { get; }
 
     /// <summary>Gets the long-press Unicode alternatives.</summary>
     public IReadOnlyList<string> Alternates { get; }
 
-    // The default provider declares human-readable row literals, then flattens them into the public
-    // placement contract. Cloning preserves model immutability and prevents a shared key instance
-    // from acquiring mutable layout state when it is reused by provider helpers.
-    internal SoftKeyboardKey WithRow(int row) =>
-        new(Kind, Content, AutomationName, Key, Text, DisplayMode, row, WidthWeight, Alternates);
+    // Provider helpers position semantic key descriptions by cloning them. This keeps the public
+    // model immutable and prevents a shared key instance from acquiring mutable placement state.
+    internal SoftKeyboardKey WithPlacement(int row, int column, int columnSpan) =>
+        new(Kind, Content, AutomationName, Key, Text, DisplayMode, row, column, columnSpan, Alternates);
 }
 
 /// <summary>Represents one candidate supplied by the active Windows input method.</summary>

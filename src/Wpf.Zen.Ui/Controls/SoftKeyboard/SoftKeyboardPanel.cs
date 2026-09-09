@@ -9,27 +9,24 @@ using System.Windows.Controls;
 namespace Wpf.Zen.Ui.Controls;
 
 /// <summary>
-/// Arranges a flat collection of keyboard items into weighted rows while retaining authority over
-/// both axes of the final layout.
+/// Arranges keyboard items on a shared, uniformly sized logical grid.
 /// </summary>
 /// <remarks>
 /// <para>
-/// Direct children select a logical row through <see cref="RowProperty"/> and a relative share of
-/// that row through <see cref="WidthWeightProperty"/>. Row identifiers are grouping keys rather
-/// than absolute coordinates: populated rows are ordered by identifier and gaps in the identifiers
-/// do not create empty visual rows. Children within a row retain collection order.
+/// Direct children select a logical row through <see cref="RowProperty"/> and a horizontal slot
+/// through <see cref="ColumnProperty"/> and <see cref="ColumnSpanProperty"/>. All rows use the same
+/// <see cref="ColumnCount"/>, so an unoccupied column remains real space instead of being distributed
+/// among the populated keys. This is what permits naturally staggered keyboard rows.
 /// </para>
 /// <para>
-/// All populated rows receive the same height. Each row independently divides its remaining width
-/// according to child weights after subtracting <see cref="ColumnSpacing"/>. This lets a single
-/// items control describe a complete keyboard without nested row containers or button margins.
+/// Row identifiers are grouping keys rather than absolute coordinates: populated rows are ordered by
+/// identifier and gaps in the identifiers do not create empty visual rows. All populated rows receive
+/// the same height.
 /// </para>
 /// <para>
-/// When the available extent is smaller than the requested gaps, the effective gaps contract before
-/// item slots reach zero. This is intentional: a layout panel must not arrange its final child or row
-/// beyond the bounds assigned by its parent. <see cref="UIElement.ClipToBounds"/> also defaults to
-/// <see langword="true"/> so a child's minimum size or custom rendering cannot escape the keyboard
-/// surface when the host becomes exceptionally small.
+/// <see cref="ColumnSpacing"/> is a grid gutter. A key that spans multiple columns also spans the
+/// gutters between those columns, matching WPF <see cref="Grid"/> span geometry and CSS grid tracks.
+/// Under an undersized finite constraint, gutters contract before tracks reach zero.
 /// </para>
 /// <para>
 /// The panel is non-virtualizing. When used as an <see cref="ItemsControl.ItemsPanel"/>, set the
@@ -49,6 +46,29 @@ public sealed class SoftKeyboardPanel : Panel
             typeof(SoftKeyboardPanel),
             new FrameworkPropertyMetadata(true)
         );
+    }
+
+    /// <summary>Identifies the <see cref="ColumnCount"/> dependency property.</summary>
+    public static readonly DependencyProperty ColumnCountProperty = DependencyProperty.Register(
+        nameof(ColumnCount),
+        typeof(int),
+        typeof(SoftKeyboardPanel),
+        new FrameworkPropertyMetadata(1, FrameworkPropertyMetadataOptions.AffectsMeasure),
+        static value => value is int count && count > 0
+    );
+
+    /// <summary>
+    /// Gets or sets the number of equal-width logical columns shared by every row. The default is one.
+    /// </summary>
+    /// <remarks>
+    /// Empty leading and trailing columns deliberately reserve space. Child columns and spans that
+    /// exceed this count are clamped to the last available columns, following WPF Grid's defensive
+    /// treatment of placement values when its definition count is smaller than requested.
+    /// </remarks>
+    public int ColumnCount
+    {
+        get => (int)GetValue(ColumnCountProperty);
+        set => SetValue(ColumnCountProperty, value);
     }
 
     /// <summary>Identifies the <see cref="RowSpacing"/> dependency property.</summary>
@@ -83,11 +103,11 @@ public sealed class SoftKeyboardPanel : Panel
     );
 
     /// <summary>
-    /// Gets or sets the requested distance between adjacent items in each row. The default is 4 DIP.
+    /// Gets or sets the requested gutter between adjacent logical columns. The default is 4 DIP.
     /// </summary>
     /// <remarks>
     /// The value must be finite and nonnegative. Under an undersized finite constraint, the panel
-    /// reduces the effective spacing just enough to keep every item slot inside its final bounds.
+    /// reduces the effective gutter just enough to keep every track inside its final bounds.
     /// </remarks>
     public double ColumnSpacing
     {
@@ -124,41 +144,70 @@ public sealed class SoftKeyboardPanel : Panel
         element.SetValue(RowProperty, value);
     }
 
-    /// <summary>Identifies the attached relative-width property.</summary>
-    public static readonly DependencyProperty WidthWeightProperty = DependencyProperty.RegisterAttached(
-        "WidthWeight",
-        typeof(double),
+    /// <summary>Identifies the attached zero-based logical column property.</summary>
+    public static readonly DependencyProperty ColumnProperty = DependencyProperty.RegisterAttached(
+        "Column",
+        typeof(int),
         typeof(SoftKeyboardPanel),
         new FrameworkPropertyMetadata(
-            1D,
+            0,
             FrameworkPropertyMetadataOptions.AffectsParentMeasure
                 | FrameworkPropertyMetadataOptions.AffectsParentArrange
         ),
-        static value => value is double weight && weight > 0D && !double.IsInfinity(weight)
+        static value => value is int column && column >= 0
     );
 
-    /// <summary>Gets the positive relative width assigned to an item container.</summary>
+    /// <summary>Gets the zero-based logical column assigned to an item container.</summary>
     /// <param name="element">The direct child of a <see cref="SoftKeyboardPanel"/>.</param>
-    /// <returns>The width weight. The default is one.</returns>
-    public static double GetWidthWeight(DependencyObject element)
+    /// <returns>The logical column. The default is zero.</returns>
+    public static int GetColumn(DependencyObject element)
     {
-        return (double)element.GetValue(WidthWeightProperty);
+        return (int)element.GetValue(ColumnProperty);
     }
 
-    /// <summary>Assigns a positive, finite relative width to an item container.</summary>
+    /// <summary>Assigns a zero-based logical column to an item container.</summary>
     /// <param name="element">The direct child of a <see cref="SoftKeyboardPanel"/>.</param>
-    /// <param name="value">The width weight.</param>
-    public static void SetWidthWeight(DependencyObject element, double value)
+    /// <param name="value">The logical column.</param>
+    public static void SetColumn(DependencyObject element, int value)
     {
-        element.SetValue(WidthWeightProperty, value);
+        element.SetValue(ColumnProperty, value);
+    }
+
+    /// <summary>Identifies the attached logical column-span property.</summary>
+    public static readonly DependencyProperty ColumnSpanProperty = DependencyProperty.RegisterAttached(
+        "ColumnSpan",
+        typeof(int),
+        typeof(SoftKeyboardPanel),
+        new FrameworkPropertyMetadata(
+            1,
+            FrameworkPropertyMetadataOptions.AffectsParentMeasure
+                | FrameworkPropertyMetadataOptions.AffectsParentArrange
+        ),
+        static value => value is int span && span > 0
+    );
+
+    /// <summary>Gets the positive number of logical columns occupied by an item container.</summary>
+    /// <param name="element">The direct child of a <see cref="SoftKeyboardPanel"/>.</param>
+    /// <returns>The logical column span. The default is one.</returns>
+    public static int GetColumnSpan(DependencyObject element)
+    {
+        return (int)element.GetValue(ColumnSpanProperty);
+    }
+
+    /// <summary>Assigns a positive logical column span to an item container.</summary>
+    /// <param name="element">The direct child of a <see cref="SoftKeyboardPanel"/>.</param>
+    /// <param name="value">The logical column span.</param>
+    public static void SetColumnSpan(DependencyObject element, int value)
+    {
+        element.SetValue(ColumnSpanProperty, value);
     }
 
     /// <summary>
-    /// Measures every populated row against the same height and each item against its weighted share
-    /// of the available row width.
+    /// Measures children against their shared grid slots and derives the smallest uniform track that
+    /// satisfies every child's desired width.
     /// </summary>
     /// <param name="availableSize">The size offered by the parent; either dimension may be infinite.</param>
-    /// <returns>The desired size of all populated rows and internal spacing.</returns>
+    /// <returns>The desired size of the complete logical grid and populated rows.</returns>
     protected override Size MeasureOverride(Size availableSize)
     {
         BuildRows();
@@ -170,40 +219,33 @@ public sealed class SoftKeyboardPanel : Panel
 
         double rowSpacing = GetEffectiveSpacing(availableSize.Height, _rows.Count, RowSpacing);
         double rowHeight = GetSharedExtent(availableSize.Height, _rows.Count, rowSpacing);
-        double desiredWidth = 0D;
+        double columnSpacing = GetEffectiveSpacing(availableSize.Width, ColumnCount, ColumnSpacing);
+        double trackWidth = GetSharedExtent(availableSize.Width, ColumnCount, columnSpacing);
+        double desiredTrackWidth = 0D;
         double desiredRowHeight = 0D;
 
         foreach (RowLayout row in _rows)
         {
-            double columnSpacing = GetEffectiveSpacing(availableSize.Width, row.Children.Count, ColumnSpacing);
-            double usableWidth = GetUsableExtent(availableSize.Width, row.Children.Count, columnSpacing);
-            WeightDistribution weights = GetWeightDistribution(row.Children);
-            double desiredUnitWidth = 0D;
-
             foreach (UIElement child in row.Children)
             {
-                double normalizedWeight = GetWidthWeight(child) / weights.Scale;
-                double width = double.IsInfinity(usableWidth)
-                    ? double.PositiveInfinity
-                    : usableWidth * normalizedWeight / weights.Total;
+                GridPlacement placement = GetPlacement(child);
+                double width = GetSpannedExtent(trackWidth, placement.ColumnSpan, columnSpacing);
                 child.Measure(new Size(width, rowHeight));
-                desiredUnitWidth = Math.Max(desiredUnitWidth, child.DesiredSize.Width / normalizedWeight);
+                desiredTrackWidth = Math.Max(
+                    desiredTrackWidth,
+                    GetRequiredTrackExtent(child.DesiredSize.Width, placement.ColumnSpan, columnSpacing)
+                );
                 desiredRowHeight = Math.Max(desiredRowHeight, child.DesiredSize.Height);
             }
-
-            desiredWidth = Math.Max(
-                desiredWidth,
-                GetTotalExtent(desiredUnitWidth * weights.Total, row.Children.Count, columnSpacing)
-            );
         }
 
         return new Size(
-            desiredWidth,
+            GetTotalExtent(desiredTrackWidth * ColumnCount, ColumnCount, columnSpacing),
             GetTotalExtent(desiredRowHeight * _rows.Count, _rows.Count, rowSpacing)
         );
     }
 
-    /// <summary>Arranges the measured grouping without allowing accumulated gaps to exceed the final size.</summary>
+    /// <summary>Arranges every child in the slot addressed by its row, column, and span.</summary>
     /// <param name="finalSize">The size allocated by the parent.</param>
     /// <returns>The allocated size.</returns>
     protected override Size ArrangeOverride(Size finalSize)
@@ -219,32 +261,25 @@ public sealed class SoftKeyboardPanel : Panel
 
         double rowSpacing = GetEffectiveSpacing(finalSize.Height, _rows.Count, RowSpacing);
         double rowHeight = GetSharedExtent(finalSize.Height, _rows.Count, rowSpacing);
+        double columnSpacing = GetEffectiveSpacing(finalSize.Width, ColumnCount, ColumnSpacing);
+        double trackWidth = GetSharedExtent(finalSize.Width, ColumnCount, columnSpacing);
+        double columnPitch = trackWidth + columnSpacing;
         double y = 0D;
 
         for (var rowIndex = 0; rowIndex < _rows.Count; rowIndex++)
         {
             RowLayout row = _rows[rowIndex];
-            double columnSpacing = GetEffectiveSpacing(finalSize.Width, row.Children.Count, ColumnSpacing);
-            double usableWidth = GetUsableExtent(finalSize.Width, row.Children.Count, columnSpacing);
-            WeightDistribution weights = GetWeightDistribution(row.Children);
-            double x = 0D;
-            double remainingWidth = usableWidth;
-            double remainingWeight = weights.Total;
             double height = rowIndex == _rows.Count - 1 ? Math.Max(0D, finalSize.Height - y) : rowHeight;
 
-            for (var childIndex = 0; childIndex < row.Children.Count; childIndex++)
+            foreach (UIElement child in row.Children)
             {
-                UIElement child = row.Children[childIndex];
-                double weight = GetWidthWeight(child) / weights.Scale;
-                // Give the final item the exact remainder. This prevents floating-point accumulation
-                // from placing its right edge a fraction beyond the panel's authoritative boundary.
-                double width = childIndex == row.Children.Count - 1
-                    ? remainingWidth
-                    : remainingWidth * weight / remainingWeight;
-                child.Arrange(new Rect(x, y, Math.Max(0D, width), height));
-                x += width + columnSpacing;
-                remainingWidth -= width;
-                remainingWeight -= weight;
+                GridPlacement placement = GetPlacement(child);
+                double x = placement.Column * columnPitch;
+                double width = Math.Min(
+                    GetSpannedExtent(trackWidth, placement.ColumnSpan, columnSpacing),
+                    Math.Max(0D, finalSize.Width - x)
+                );
+                child.Arrange(new Rect(x, y, width, height));
             }
 
             y += rowHeight + rowSpacing;
@@ -283,6 +318,18 @@ public sealed class SoftKeyboardPanel : Panel
             : Math.Max(0D, available - (spacing * Math.Max(0, count - 1)));
     }
 
+    private static double GetSpannedExtent(double trackWidth, int columnSpan, double spacing)
+    {
+        return double.IsInfinity(trackWidth)
+            ? double.PositiveInfinity
+            : Math.Max(0D, (trackWidth * columnSpan) + (spacing * (columnSpan - 1)));
+    }
+
+    private static double GetRequiredTrackExtent(double desiredWidth, int columnSpan, double spacing)
+    {
+        return Math.Max(0D, desiredWidth - (spacing * (columnSpan - 1))) / columnSpan;
+    }
+
     private static double GetTotalExtent(double contentExtent, int count, double spacing)
     {
         return count == 0
@@ -290,13 +337,14 @@ public sealed class SoftKeyboardPanel : Panel
             : Math.Min(double.MaxValue, contentExtent + (spacing * (count - 1)));
     }
 
-    // Relative weights are scale invariant. Normalizing by the largest value keeps the sum finite
-    // even when a custom layout legitimately combines several values near double.MaxValue.
-    private static WeightDistribution GetWeightDistribution(IReadOnlyList<UIElement> children)
+    private GridPlacement GetPlacement(UIElement child)
     {
-        double scale = children.Max(GetWidthWeight);
-        double total = children.Sum(child => GetWidthWeight(child) / scale);
-        return new WeightDistribution(scale, total);
+        // WPF Grid clamps an out-of-range index to its final definition and then clamps the span to
+        // the remaining definitions. Mirroring that behavior keeps direct panel use resilient while
+        // SoftKeyboardLayout performs strict validation for the normal data-driven path.
+        int column = Math.Min(GetColumn(child), ColumnCount - 1);
+        int columnSpan = Math.Min(GetColumnSpan(child), ColumnCount - column);
+        return new GridPlacement(column, columnSpan);
     }
 
     private void BuildRows()
@@ -353,5 +401,5 @@ public sealed class SoftKeyboardPanel : Panel
         public List<UIElement> Children { get; } = [];
     }
 
-    private readonly record struct WeightDistribution(double Scale, double Total);
+    private readonly record struct GridPlacement(int Column, int ColumnSpan);
 }

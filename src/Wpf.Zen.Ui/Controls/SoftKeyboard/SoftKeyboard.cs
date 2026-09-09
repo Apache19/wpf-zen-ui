@@ -165,12 +165,13 @@ public class SoftKeyboard : Control
     );
 
     /// <summary>
-    /// Gets or sets the requested distance between adjacent keys in a row. The default is 4 DIP.
+    /// Gets or sets the requested gutter between adjacent logical key columns. The default is 4 DIP.
     /// </summary>
     /// <remarks>
-    /// The default template forwards this value to its <see cref="SoftKeyboardPanel"/>. The panel
-    /// may reduce the effective gap under an exceptionally small finite width so the final key slot
-    /// remains inside the keyboard's assigned bounds.
+    /// The default template forwards this value to its <see cref="SoftKeyboardPanel"/>. Adjacent key
+    /// caps remain separated by one gutter, while a key spanning several columns also covers their
+    /// intervening gutters. The panel may reduce the effective gutter under an exceptionally small
+    /// finite width so the final key slot remains inside the keyboard's assigned bounds.
     /// </remarks>
     [Bindable(true)]
     [Category("Layout")]
