@@ -73,6 +73,8 @@ public class SoftKeyboard : Control
     private object? _suppressClickItem;
     private int _lastShiftClickTick;
     private int _lastInputPaneHideTick;
+    private DispatcherOperation? _inputPaneHideOperation;
+    private DispatcherTimer? _inputPaneHideTimer;
     private bool _systemKeyboardHiddenByThisControl;
 
     static SoftKeyboard()
@@ -1648,6 +1650,31 @@ public class SoftKeyboard : Control
             return;
         }
 
+        // UIElement.Focus calls TipTsfHelper.Show AFTER Keyboard.Focus has raised GotKeyboardFocus.
+        // A hide inside that event alone loses to WPF's subsequent show. Background also runs after
+        // the Input-priority operation that TipTsfHelper queues when dispatcher processing is disabled.
+        // Coalesce requests, but never throttle away this final hide when editors change quickly.
+        if (_inputPaneHideOperation is null)
+        {
+            _inputPaneHideOperation = Dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() =>
+            {
+                _inputPaneHideOperation = null;
+                HideSystemKeyboardIfRequired();
+            }));
+        }
+
+        // Windows can finish its own focus tracking asynchronously, after WPF's dispatcher work.
+        // Keep a low-frequency guard only for a live foreground editor. TryHide is advisory, so a
+        // successful request is not a permanent policy and must not disable subsequent checks.
+        _inputPaneHideTimer ??= new DispatcherTimer(
+            TimeSpan.FromMilliseconds(250),
+            DispatcherPriority.Background,
+            OnInputPaneHideTimerTick,
+            Dispatcher
+        );
+
+        _inputPaneHideTimer.Start();
+
         int now = Environment.TickCount;
         int elapsed = unchecked(now - _lastInputPaneHideTick);
         if (_lastInputPaneHideTick != 0 && elapsed is >= 0 and < 250)
@@ -1656,6 +1683,21 @@ public class SoftKeyboard : Control
         }
 
         _lastInputPaneHideTick = now;
+
+        HideSystemKeyboardIfRequired();
+    }
+
+    /// <summary>
+    /// Rechecks ownership at execution time so deferred work cannot hide another editor's input UI.
+    /// No global Windows setting, WPF AppContext switch, or input-method state is changed.
+    /// </summary>
+    private void HideSystemKeyboardIfRequired()
+    {
+        if (!IsSystemKeyboardSuppressionRequired)
+        {
+            ReleaseSystemKeyboardSuppression(tryRestore: false);
+            return;
+        }
 
         Window? window = _window ?? Window.GetWindow(this);
         IntPtr handle = window is null ? IntPtr.Zero : new WindowInteropHelper(window).Handle;
@@ -1666,7 +1708,15 @@ public class SoftKeyboard : Control
         }
 
         SetValue(SystemKeyboardSuppressionStatePropertyKey, result);
+        if (result == SoftKeyboardSystemKeyboardSuppressionState.Unavailable)
+        {
+            // Unsupported WinRT platforms should not repeatedly attempt activation. A later focus
+            // or visibility transition may retry; ordinary Windows rejection remains recoverable.
+            _inputPaneHideTimer?.Stop();
+        }
     }
+
+    private void OnInputPaneHideTimerTick(object? sender, EventArgs eventArgs) => HideSystemKeyboardIfRequired();
 
     /// <summary>
     /// Gets a value indicating whether this control currently has enough live context to suppress
@@ -1703,6 +1753,10 @@ public class SoftKeyboard : Control
     /// </summary>
     private void ReleaseSystemKeyboardSuppression(bool tryRestore)
     {
+        _inputPaneHideOperation?.Abort();
+        _inputPaneHideOperation = null;
+        _inputPaneHideTimer?.Stop();
+
         bool shouldRestore = tryRestore
             && _systemKeyboardHiddenByThisControl
             && (_session?.IsSystemKeyboardSuppressionRequiredByOther(this) != true)

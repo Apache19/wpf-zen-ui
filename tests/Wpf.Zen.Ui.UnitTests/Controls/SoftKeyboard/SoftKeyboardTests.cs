@@ -912,6 +912,97 @@ public class SoftKeyboardTests
     }
 
     [Fact]
+    public void InputPaneSuppression_HidesAgainAfterFocusReturnsAndAfterDelayedSystemShow()
+    {
+        WpfApplicationTestHost.Run(() =>
+        {
+            var services = CreateServices(out _, out _, out FakeInputPaneBackend pane);
+            var firstEditor = new System.Windows.Controls.TextBox();
+            var secondEditor = new System.Windows.Controls.TextBox();
+            var keyboard = new SoftKeyboard(services) { IsOpen = true };
+            var root = new StackPanel();
+            root.Children.Add(firstEditor);
+            root.Children.Add(secondEditor);
+            root.Children.Add(keyboard);
+            var window = new Window { Content = root, ShowInTaskbar = false };
+            try
+            {
+                window.Show();
+                window.UpdateLayout();
+                Assert.True(firstEditor.Focus());
+                int immediateHideCount = pane.HideCount;
+
+                // Model UIElement.Focus's Show after GotKeyboardFocus and a second fast focus move.
+                // The deferred hide must survive the immediate-request throttle.
+                Assert.True(secondEditor.Focus());
+                pane.IsVisible = true;
+                PumpDispatcher();
+                Assert.False(pane.IsVisible);
+                Assert.True(pane.HideCount > immediateHideCount);
+
+                // Windows focus tracking can finish even later, with no further WPF input events.
+                pane.IsVisible = true;
+                for (int attempt = 0; attempt < 10 && pane.IsVisible; attempt++)
+                {
+                    PumpDispatcher();
+                }
+
+                Assert.False(pane.IsVisible);
+                keyboard.IsOpen = false;
+                int finalHideCount = pane.HideCount;
+                pane.IsVisible = true;
+                PumpDispatcher();
+                PumpDispatcher();
+                PumpDispatcher();
+                Assert.True(pane.IsVisible);
+                Assert.Equal(finalHideCount, pane.HideCount);
+            }
+            finally
+            {
+                window.Close();
+            }
+        });
+    }
+
+    [Fact]
+    public void InputPaneSuppression_DeferredRequestCannotEscapeItsScope()
+    {
+        WpfApplicationTestHost.Run(() =>
+        {
+            var services = CreateServices(out _, out _, out FakeInputPaneBackend pane);
+            var editor = new System.Windows.Controls.TextBox();
+            var outsideEditor = new System.Windows.Controls.TextBox();
+            var scope = new StackPanel();
+            var keyboard = new SoftKeyboard(services) { IsOpen = true, TargetScope = scope };
+            scope.Children.Add(editor);
+            scope.Children.Add(keyboard);
+            var root = new StackPanel();
+            root.Children.Add(scope);
+            root.Children.Add(outsideEditor);
+            var window = new Window { Content = root, ShowInTaskbar = false };
+            try
+            {
+                window.Show();
+                window.UpdateLayout();
+                Assert.True(editor.Focus());
+                Assert.True(outsideEditor.Focus());
+                int hideCount = pane.HideCount;
+                pane.IsVisible = true;
+                PumpDispatcher();
+                PumpDispatcher();
+                PumpDispatcher();
+                Assert.True(pane.IsVisible);
+                Assert.Equal(hideCount, pane.HideCount);
+                Assert.Equal(0, pane.ShowCount);
+            }
+            finally
+            {
+                window.Close();
+            }
+        });
+    }
+
+    [Fact]
     public void DefaultTemplate_ClosedMeasuresZeroAndGeneratedKeysRemainNonFocusable()
     {
         WpfApplicationTestHost.Run(() =>
@@ -1548,6 +1639,8 @@ public class SoftKeyboardTests
 
     private sealed class FakeInputPaneBackend : ISoftKeyboardInputPaneBackend
     {
+        internal bool IsVisible { get; set; }
+
         internal SoftKeyboardSystemKeyboardSuppressionState Result { get; set; } =
             SoftKeyboardSystemKeyboardSuppressionState.Hidden;
 
@@ -1558,6 +1651,11 @@ public class SoftKeyboardTests
         public SoftKeyboardSystemKeyboardSuppressionState TryHide(IntPtr host)
         {
             HideCount++;
+            if (Result == SoftKeyboardSystemKeyboardSuppressionState.Hidden)
+            {
+                IsVisible = false;
+            }
+
             return Result;
         }
 
