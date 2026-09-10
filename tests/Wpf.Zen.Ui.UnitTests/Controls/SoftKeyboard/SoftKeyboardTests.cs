@@ -111,6 +111,65 @@ public class SoftKeyboardTests
         });
     }
 
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    [InlineData(true, true)]
+    public void Backspace_WithLatchedShift_SendsUnmodifiedKeyAndPreservesShift(bool locked, bool composing)
+    {
+        WpfApplicationTestHost.Run(() =>
+        {
+            var keyboard = new SoftKeyboard(CreateServices(out var input, out _, out _)) { IsOpen = true };
+            var editor = new System.Windows.Controls.TextBox();
+            var root = new StackPanel();
+            root.Children.Add(editor);
+            root.Children.Add(keyboard);
+            keyboard.Target = editor;
+            var window = new Window { Content = root, Width = 700, Height = 500, ShowInTaskbar = false };
+            TextComposition? composition = null;
+            try
+            {
+                window.Show();
+                Assert.True(editor.Focus());
+                InvokeKey(keyboard, FindKey(keyboard, SoftKeyboardKeyKind.Shift));
+                if (locked)
+                {
+                    InvokeKey(keyboard, FindKey(keyboard, SoftKeyboardKeyKind.Shift));
+                }
+
+                var expectedShift = locked ? SoftKeyboardShiftState.Locked : SoftKeyboardShiftState.Once;
+                Assert.Equal(expectedShift, keyboard.ShiftState);
+                if (composing)
+                {
+                    composition = new TextComposition(
+                        InputManager.Current, editor, string.Empty, TextCompositionAutoComplete.Off);
+                    _ = TextCompositionManager.StartComposition(composition);
+                }
+
+                // Repeated requests must also remain unmodified, without inserting Escape or
+                // consuming the casing latch when the IME owns the current text transaction.
+                InvokeKey(keyboard, FindKey(keyboard, Key.Back));
+                InvokeKey(keyboard, FindKey(keyboard, Key.Back));
+
+                Assert.Equal([(Key.Back, false), (Key.Back, false)], input.VirtualKeys);
+                Assert.Equal(expectedShift, keyboard.ShiftState);
+                Assert.Same(editor, Keyboard.FocusedElement);
+
+                composition?.Complete();
+                composition = null;
+                InvokeKey(keyboard, FindKey(keyboard, Key.A));
+                Assert.Equal((Key.A, true), input.VirtualKeys.Last());
+                Assert.Equal(locked ? SoftKeyboardShiftState.Locked : SoftKeyboardShiftState.Off, keyboard.ShiftState);
+            }
+            finally
+            {
+                composition?.Complete();
+                window.Close();
+            }
+        });
+    }
+
     [Fact]
     public void HeldNavigationKey_RepeatsWithoutMovingFocusToKeyboard()
     {

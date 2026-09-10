@@ -1392,7 +1392,12 @@ public partial class SoftKeyboard : Control
         switch (key.Kind)
         {
             case SoftKeyboardKeyKind.VirtualKey:
-                var shifted = ShiftState is SoftKeyboardShiftState.Once or SoftKeyboardShiftState.Locked;
+                // Backspace edits the TIP's pre-edit text as well as committed editor text.
+                // Microsoft Pinyin does not handle Shift+Backspace like plain Backspace during
+                // composition, so the surface's latched Shift must not modify this key. Keep
+                // the latch intact so the next character still uses the requested casing.
+                var shifted = key.Key != Key.Back
+                    && ShiftState is SoftKeyboardShiftState.Once or SoftKeyboardShiftState.Locked;
                 if (TrySendVirtualKey(key.Key, shifted)
                     && ShiftState == SoftKeyboardShiftState.Once
                     && IsCharacterKey(key.Key))
