@@ -32,7 +32,7 @@
                 Foreground="{m:DynamicBrush TextPlaceholder}"
                 IsHitTestVisible="False"
                 Opacity="0" />
-            <controls:PassiveScrollViewer
+            <controls:UiScrollViewer
                 x:Name="PART_ContentHost"
                 Grid.Column="0"
                 controls:ScrollViewerAssist.OverlayMode="Traditional"

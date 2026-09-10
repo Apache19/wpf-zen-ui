@@ -65,14 +65,14 @@
                         </Border>
 
                         <!--  Header above  -->
-                        <controls:PassiveScrollViewer
+                        <controls:UiScrollViewer
                             Grid.Row="1"
                             CanContentScroll="{TemplateBinding ScrollViewer.CanContentScroll}"
                             Focusable="False"
                             HorizontalScrollBarVisibility="{TemplateBinding ScrollViewer.HorizontalScrollBarVisibility}"
                             VerticalScrollBarVisibility="{TemplateBinding ScrollViewer.VerticalScrollBarVisibility}">
                             <ItemsPresenter SnapsToDevicePixels="{TemplateBinding UIElement.SnapsToDevicePixels}" />
-                        </controls:PassiveScrollViewer>
+                        </controls:UiScrollViewer>
                     </Grid>
                 </ControlTemplate>
             </Setter.Value>

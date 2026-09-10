@@ -24,15 +24,15 @@
             BorderBrush="{TemplateBinding BorderBrush}"
             BorderThickness="{TemplateBinding BorderThickness}"
             SnapsToDevicePixels="True">
-            <controls:PassiveScrollViewer
+            <controls:UiScrollViewer
                 x:Name="PART_ContentHost"
                 CanContentScroll="{TemplateBinding ScrollViewer.CanContentScroll}"
                 Focusable="False"
                 HorizontalScrollBarVisibility="{TemplateBinding ScrollViewer.HorizontalScrollBarVisibility}"
-                ScrollSpillMode="{TemplateBinding controls:PassiveScrollViewer.ScrollSpillMode}"
+                ScrollSpillMode="{TemplateBinding controls:UiScrollViewer.ScrollSpillMode}"
                 VerticalScrollBarVisibility="{TemplateBinding ScrollViewer.VerticalScrollBarVisibility}">
                 <ItemsPresenter SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
-            </controls:PassiveScrollViewer>
+            </controls:UiScrollViewer>
         </Border>
         <ControlTemplate.Triggers>
             <Trigger Property="IsEnabled" Value="False">
@@ -47,7 +47,7 @@
         automation. GridLength star allocation is orthogonal and is attached once to the outer
         ScrollViewer in GridViewTemplate; it must not be duplicated by every realized row.
     -->
-    <ControlTemplate x:Key="GridViewScrollViewerTemplate" TargetType="{x:Type controls:PassiveScrollViewer}">
+    <ControlTemplate x:Key="GridViewScrollViewerTemplate" TargetType="{x:Type controls:UiScrollViewer}">
         <Grid Background="{TemplateBinding Background}" SnapsToDevicePixels="True">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
@@ -146,16 +146,16 @@
     </ControlTemplate>
 
     <!--
-        GridView-scoped style for the inner PassiveScrollViewer. It is self-contained: the template,
+        GridView-scoped style for the inner UiScrollViewer. It is self-contained: the template,
         intrinsic constants, and templated-parent routing are all declared here so a custom
-        GridViewTemplate only needs a one-liner <controls:PassiveScrollViewer Style="{m:StaticStyle GridViewScrollViewer}">.
+        GridViewTemplate only needs a one-liner <controls:UiScrollViewer Style="{m:StaticStyle GridViewScrollViewer}">.
 
-        This style is MEANT ONLY for a PassiveScrollViewer placed inside a ListView ControlTemplate
+        This style is MEANT ONLY for a UiScrollViewer placed inside a ListView ControlTemplate
         whose active View is a WPF Zen UI GridView. The TemplatedParent bindings resolve against the
         hosting ListView. Using this style anywhere else will produce silent binding errors and
         is unsupported — pick the generic DefaultScrollBarStyle or a local style instead.
     -->
-    <Style x:Key="{x:Static t:StyleKeys.GridViewScrollViewerStyle}" TargetType="{x:Type controls:PassiveScrollViewer}">
+    <Style x:Key="{x:Static t:StyleKeys.GridViewScrollViewerStyle}" TargetType="{x:Type controls:UiScrollViewer}">
         <Setter Property="Focusable" Value="False" />
         <Setter Property="HorizontalScrollBarVisibilityThreshold" Value="1" />
         <Setter Property="controls:GridViewColumnSizing.LeadingContentWidth" Value="12" />
@@ -164,7 +164,7 @@
         <Setter Property="CanContentScroll" Value="{Binding (ScrollViewer.CanContentScroll), RelativeSource={RelativeSource TemplatedParent}}" />
         <Setter Property="HorizontalScrollBarVisibility" Value="{Binding (ScrollViewer.HorizontalScrollBarVisibility), RelativeSource={RelativeSource TemplatedParent}}" />
         <Setter Property="VerticalScrollBarVisibility" Value="{Binding (ScrollViewer.VerticalScrollBarVisibility), RelativeSource={RelativeSource TemplatedParent}}" />
-        <Setter Property="ScrollSpillMode" Value="{Binding (controls:PassiveScrollViewer.ScrollSpillMode), RelativeSource={RelativeSource TemplatedParent}}" />
+        <Setter Property="ScrollSpillMode" Value="{Binding (controls:UiScrollViewer.ScrollSpillMode), RelativeSource={RelativeSource TemplatedParent}}" />
         <Setter Property="Template" Value="{StaticResource GridViewScrollViewerTemplate}" />
     </Style>
 
@@ -177,9 +177,9 @@
             ClipContent="True"
             CornerRadius="{TemplateBinding Border.CornerRadius}"
             SnapsToDevicePixels="True">
-            <controls:PassiveScrollViewer Style="{StaticResource {x:Static t:StyleKeys.GridViewScrollViewerStyle}}">
+            <controls:UiScrollViewer Style="{StaticResource {x:Static t:StyleKeys.GridViewScrollViewerStyle}}">
                 <ItemsPresenter SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
-            </controls:PassiveScrollViewer>
+            </controls:UiScrollViewer>
         </controls:ClippingBorder>
         <ControlTemplate.Triggers>
             <Trigger Property="IsEnabled" Value="False">
@@ -198,7 +198,7 @@
         <Setter Property="ScrollViewer.CanContentScroll" Value="True" />
         <Setter Property="ScrollViewer.PanningMode" Value="Both" />
         <Setter Property="Stylus.IsFlicksEnabled" Value="False" />
-        <Setter Property="controls:PassiveScrollViewer.ScrollSpillMode" Value="Disabled" />
+        <Setter Property="controls:UiScrollViewer.ScrollSpillMode" Value="Disabled" />
         <Setter Property="Template" Value="{StaticResource DefaultListViewTemplate}" />
         <Style.Triggers>
             <!--

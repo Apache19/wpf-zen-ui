@@ -13,7 +13,7 @@ namespace Wpf.Zen.Ui.Controls;
 /// <summary>
 /// Contains frame-driven wheel, keyboard and scrollbar motion together with native-input handoff behavior.
 /// </summary>
-public partial class PassiveScrollViewer
+public partial class UiScrollViewer
 {
     /// <summary>
     /// Identifies the <see cref="IsSmoothScrollingEnabled"/> dependency property.
@@ -22,7 +22,7 @@ public partial class PassiveScrollViewer
         = DependencyProperty.RegisterAttached(
             nameof(IsSmoothScrollingEnabled),
             typeof(bool),
-            typeof(PassiveScrollViewer),
+            typeof(UiScrollViewer),
             new FrameworkPropertyMetadata(
                 true,
                 FrameworkPropertyMetadataOptions.None,
@@ -78,7 +78,7 @@ public partial class PassiveScrollViewer
         = DependencyProperty.RegisterAttached(
             nameof(SmoothScrollDuration),
             typeof(TimeSpan),
-            typeof(PassiveScrollViewer),
+            typeof(UiScrollViewer),
             new FrameworkPropertyMetadata(
                 TimeSpan.FromMilliseconds(240),
                 FrameworkPropertyMetadataOptions.None,
@@ -142,10 +142,10 @@ public partial class PassiveScrollViewer
     internal bool IsSmoothScrolling => _smoothMotion is not null;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="PassiveScrollViewer"/> class with input handoff
+    /// Initializes a new instance of the <see cref="UiScrollViewer"/> class with input handoff
     /// and rendering-subscription lifetime management.
     /// </summary>
-    public PassiveScrollViewer()
+    public UiScrollViewer()
     {
         Unloaded += OnSmoothScrollingUnloaded;
 
@@ -261,7 +261,7 @@ public partial class PassiveScrollViewer
 
     private static void OnSmoothScrollingSettingChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
-        if (d is PassiveScrollViewer viewer)
+        if (d is UiScrollViewer viewer)
         {
             viewer.StopSmoothScrolling();
         }

@@ -21,20 +21,20 @@
         attached properties on the list.
     -->
     <ControlTemplate x:Key="DefaultNavigationViewListControlTemplate" TargetType="{x:Type controls:NavigationViewList}">
-        <controls:PassiveScrollViewer
+        <controls:UiScrollViewer
             x:Name="ScrollViewer"
             CanContentScroll="{TemplateBinding ScrollViewer.CanContentScroll}"
             Focusable="False"
             HorizontalScrollBarVisibility="{TemplateBinding ScrollViewer.HorizontalScrollBarVisibility}"
             Padding="{TemplateBinding Padding}"
-            ScrollSpillMode="{TemplateBinding controls:PassiveScrollViewer.ScrollSpillMode}"
+            ScrollSpillMode="{TemplateBinding controls:UiScrollViewer.ScrollSpillMode}"
             VerticalScrollBarVisibility="{TemplateBinding ScrollViewer.VerticalScrollBarVisibility}">
             <ItemsPresenter SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
-        </controls:PassiveScrollViewer>
+        </controls:UiScrollViewer>
     </ControlTemplate>
 
     <!--
-        DynamicScrollViewer must occupy the same template position as PassiveScrollViewer. Placing
+        DynamicScrollViewer must occupy the same template position as UiScrollViewer. Placing
         it around NavigationViewList would make the entire control its content, preventing the
         ItemsPanel from becoming ScrollViewer's IScrollInfo implementation when logical scrolling
         is enabled.
@@ -46,7 +46,7 @@
             Focusable="False"
             HorizontalScrollBarVisibility="{TemplateBinding ScrollViewer.HorizontalScrollBarVisibility}"
             Padding="{TemplateBinding Padding}"
-            ScrollSpillMode="{TemplateBinding controls:PassiveScrollViewer.ScrollSpillMode}"
+            ScrollSpillMode="{TemplateBinding controls:UiScrollViewer.ScrollSpillMode}"
             VerticalScrollBarVisibility="{TemplateBinding ScrollViewer.VerticalScrollBarVisibility}">
             <ItemsPresenter SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
         </controls:DynamicScrollViewer>

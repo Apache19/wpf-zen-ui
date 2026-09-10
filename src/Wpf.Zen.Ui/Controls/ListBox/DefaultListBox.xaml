@@ -11,12 +11,12 @@
             BorderThickness="{TemplateBinding BorderThickness}"
             CornerRadius="{TemplateBinding Border.CornerRadius}"
             SnapsToDevicePixels="true">
-            <controls:PassiveScrollViewer
+            <controls:UiScrollViewer
                 Padding="{TemplateBinding Padding}"
                 Focusable="false"
-                ScrollSpillMode="{TemplateBinding controls:PassiveScrollViewer.ScrollSpillMode}">
+                ScrollSpillMode="{TemplateBinding controls:UiScrollViewer.ScrollSpillMode}">
                 <ItemsPresenter SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
-            </controls:PassiveScrollViewer>
+            </controls:UiScrollViewer>
         </Border>
         <ControlTemplate.Triggers>
             <MultiTrigger>
@@ -38,7 +38,7 @@
         <Setter Property="ScrollViewer.PanningMode" Value="Both" />
         <Setter Property="Stylus.IsFlicksEnabled" Value="False" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
-        <Setter Property="controls:PassiveScrollViewer.ScrollSpillMode" Value="Disabled" />
+        <Setter Property="controls:UiScrollViewer.ScrollSpillMode" Value="Disabled" />
         <Setter Property="Template" Value="{StaticResource DefaultListBoxTemplate}" />
     </Style>
 

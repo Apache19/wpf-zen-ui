@@ -15,8 +15,8 @@ using UiDataGrid = Wpf.Zen.Ui.Controls.DataGrid;
 using UiListItemContainerStyleSelector = Wpf.Zen.Ui.Controls.ListItemContainerStyleSelector;
 using UiListView = Wpf.Zen.Ui.Controls.ListView;
 using UiListViewItem = Wpf.Zen.Ui.Controls.ListViewItem;
-using UiPassiveScrollViewer = Wpf.Zen.Ui.Controls.PassiveScrollViewer;
 using UiScrollBar = Wpf.Zen.Ui.Controls.UiScrollBar;
+using UiScrollViewer = Wpf.Zen.Ui.Controls.UiScrollViewer;
 
 namespace Wpf.Zen.Ui.UnitTests.Controls;
 
@@ -198,8 +198,8 @@ public class ListViewAndDataGridTests
             Arrange(listView, 400, 160);
 
             Assert.True(listView.IsGrouping);
-            var scrollViewer = Assert.IsType<UiPassiveScrollViewer>(
-                FindVisualChild<UiPassiveScrollViewer>(listView)
+            var scrollViewer = Assert.IsType<UiScrollViewer>(
+                FindVisualChild<UiScrollViewer>(listView)
             );
             Assert.Equal(isVirtualizingWhenGrouping, scrollViewer.CanContentScroll);
         });
@@ -228,8 +228,8 @@ public class ListViewAndDataGridTests
             Arrange(dataGrid, 400, 160);
 
             Assert.True(dataGrid.IsGrouping);
-            var scrollViewer = Assert.IsType<UiPassiveScrollViewer>(
-                FindVisualChild<UiPassiveScrollViewer>(dataGrid)
+            var scrollViewer = Assert.IsType<UiScrollViewer>(
+                FindVisualChild<UiScrollViewer>(dataGrid)
             );
             Assert.Equal(isVirtualizingWhenGrouping, scrollViewer.CanContentScroll);
         });
@@ -479,8 +479,8 @@ public class ListViewAndDataGridTests
                 window.Show();
                 dataGrid.UpdateLayout();
 
-                var scrollViewer = Assert.IsType<UiPassiveScrollViewer>(
-                    FindVisualChild<UiPassiveScrollViewer>(dataGrid)
+                var scrollViewer = Assert.IsType<UiScrollViewer>(
+                    FindVisualChild<UiScrollViewer>(dataGrid)
                 );
                 var scrollBar = Assert.IsType<UiScrollBar>(
                     scrollViewer.Template.FindName("PART_VerticalScrollBar", scrollViewer)
@@ -549,8 +549,8 @@ public class ListViewAndDataGridTests
                 gripper.RaiseEvent(new DragCompletedEventArgs(80d, 0d, false) { RoutedEvent = Thumb.DragCompletedEvent });
                 window.Dispatcher.Invoke(static () => { }, System.Windows.Threading.DispatcherPriority.ApplicationIdle);
 
-                var scrollViewer = Assert.IsType<UiPassiveScrollViewer>(
-                    FindVisualChild<UiPassiveScrollViewer>(dataGrid)
+                var scrollViewer = Assert.IsType<UiScrollViewer>(
+                    FindVisualChild<UiScrollViewer>(dataGrid)
                 );
                 Assert.Equal(0d, scrollViewer.ScrollableWidth, 6);
             }
@@ -692,8 +692,8 @@ public class ListViewAndDataGridTests
             {
                 window.Show();
                 window.Dispatcher.Invoke(static () => { }, System.Windows.Threading.DispatcherPriority.ApplicationIdle);
-                var scrollViewer = Assert.IsType<UiPassiveScrollViewer>(
-                    FindVisualChild<UiPassiveScrollViewer>(dataGrid)
+                var scrollViewer = Assert.IsType<UiScrollViewer>(
+                    FindVisualChild<UiScrollViewer>(dataGrid)
                 );
                 var horizontalScrollBar = Assert.IsType<UiScrollBar>(
                     scrollViewer.Template.FindName("PART_HorizontalScrollBar", scrollViewer)

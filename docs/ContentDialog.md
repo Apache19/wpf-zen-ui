@@ -182,7 +182,7 @@ private async Task SaveAsync()
 
 ## 模板与动画
 
-`ContentDialog` 的默认模板是带明确视觉取舍的标准对话框布局，而不是任意布局生成器。Header、Content 和 Footer 决定各区域内部的内容；需要跨区域排版时替换 ControlTemplate。`HeaderPadding`、继承的 `Padding`、`FooterPadding` 分别控制三个区域的外壳间距，`CornerRadius` 控制对话框外壳圆角，默认模板会把其中两个底部圆角同步给 Footer 背景。正文默认由 PassiveScrollViewer 包裹，使对话框受到 MaxHeight 限制时仍固定标题和操作区；ScrollViewer 附加属性可配置其滚动行为。右上角关闭按钮独立贴近外壳顶部，标题使用更低的默认起始位置，并通过 HeaderPadding 的右侧空间避免重叠，不会根据任意 Header 内容与按钮做垂直对齐。
+`ContentDialog` 的默认模板是带明确视觉取舍的标准对话框布局，而不是任意布局生成器。Header、Content 和 Footer 决定各区域内部的内容；需要跨区域排版时替换 ControlTemplate。`HeaderPadding`、继承的 `Padding`、`FooterPadding` 分别控制三个区域的外壳间距，`CornerRadius` 控制对话框外壳圆角，默认模板会把其中两个底部圆角同步给 Footer 背景。正文默认由 UiScrollViewer 包裹，使对话框受到 MaxHeight 限制时仍固定标题和操作区；ScrollViewer 附加属性可配置其滚动行为。右上角关闭按钮独立贴近外壳顶部，标题使用更低的默认起始位置，并通过 HeaderPadding 的右侧空间避免重叠，不会根据任意 Header 内容与按钮做垂直对齐。
 
 - Dialog 的 `PART_ContentPresenter` 是可选的正文 ContentPresenter，用于定位 DataTemplate 实现的初始焦点。自定义模板缺少它时搜索直接 Content，再退到 Dialog。
 - Host 的 `PART_ContentRoot` 是必需的 UIElement，只能包裹普通页面。Host 在该部件下隔离被覆盖内容；标题栏窗口外壳保持启用，标题栏用户内容与其它页面分支被禁用。缺少该部件时拒绝展示。

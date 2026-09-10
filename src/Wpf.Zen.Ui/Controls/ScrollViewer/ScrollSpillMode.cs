@@ -7,7 +7,7 @@
 namespace Wpf.Zen.Ui.Controls;
 
 /// <summary>
-/// Defines how <see cref="PassiveScrollViewer"/> handles mouse wheel events that cannot scroll its own content.
+/// Defines how <see cref="UiScrollViewer"/> handles mouse wheel events that cannot scroll its own content.
 /// </summary>
 public enum ScrollSpillMode
 {

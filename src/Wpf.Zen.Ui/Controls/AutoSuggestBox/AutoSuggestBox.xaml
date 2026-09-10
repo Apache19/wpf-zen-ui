@@ -114,13 +114,13 @@
                                     SelectionMode="Single">
                                     <ListBox.Template>
                                         <ControlTemplate TargetType="{x:Type ListBox}">
-                                            <controls:PassiveScrollViewer
+                                            <controls:UiScrollViewer
                                                 Padding="{TemplateBinding Padding}"
                                                 CanContentScroll="True"
                                                 Focusable="false"
                                                 ScrollSpillMode="Disabled">
                                                 <ItemsPresenter SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
-                                            </controls:PassiveScrollViewer>
+                                            </controls:UiScrollViewer>
                                         </ControlTemplate>
                                     </ListBox.Template>
                                 </ListBox>

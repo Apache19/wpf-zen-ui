@@ -132,7 +132,7 @@
                 MaxHeight="238"
                 d:ItemsSource="{d:SampleData ItemCount=10}"
                 d:SelectedIndex="4"
-                ui:PassiveScrollViewer.ScrollSpillMode="Disabled"
+                ui:UiScrollViewer.ScrollSpillMode="Disabled"
                 BorderThickness="1"
                 ItemsSource="{Binding BasicListViewItems, Mode=TwoWay}"
                 ScrollViewer.CanContentScroll="False">

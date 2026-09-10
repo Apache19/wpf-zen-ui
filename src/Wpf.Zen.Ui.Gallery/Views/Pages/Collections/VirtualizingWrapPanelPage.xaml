@@ -184,7 +184,7 @@
                 and recycle rows instead of being measured to the full catalogue height.
             -->
             <ItemsControl
-                ui:PassiveScrollViewer.IsSmoothScrollingEnabled="{Binding IsChecked, ElementName=SmoothScrollingToggle}"
+                ui:UiScrollViewer.IsSmoothScrollingEnabled="{Binding IsChecked, ElementName=SmoothScrollingToggle}"
                 ItemsSource="{Binding Movies, Mode=OneWay}"
                 Loaded="HandleMovieItemsControlLoaded"
                 ScrollViewer.CanContentScroll="True"
@@ -195,13 +195,13 @@
                 VirtualizingPanel.VirtualizationMode="Recycling">
                 <ItemsControl.Template>
                     <ControlTemplate TargetType="{x:Type ItemsControl}">
-                        <ui:PassiveScrollViewer
+                        <ui:UiScrollViewer
                             Padding="0,0,12,0"
                             CanContentScroll="True"
                             HorizontalScrollBarVisibility="Disabled"
                             VerticalScrollBarVisibility="Auto">
                             <ItemsPresenter SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
-                        </ui:PassiveScrollViewer>
+                        </ui:UiScrollViewer>
                     </ControlTemplate>
                 </ItemsControl.Template>
                 <ItemsControl.ItemsPanel>

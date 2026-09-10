@@ -18,7 +18,7 @@ namespace Wpf.Zen.Ui.Controls;
 [DefaultEvent(nameof(ScrollChanged))]
 [TemplatePart(Name = PartVerticalScrollBar, Type = typeof(ScrollBar))]
 [TemplatePart(Name = PartHorizontalScrollBar, Type = typeof(ScrollBar))]
-public sealed class DynamicScrollViewer : PassiveScrollViewer
+public sealed class DynamicScrollViewer : UiScrollViewer
 {
     private const string PartVerticalScrollBar = "PART_VerticalScrollBar";
     private const string PartHorizontalScrollBar = "PART_HorizontalScrollBar";

@@ -37,7 +37,7 @@ public class SmoothScrollingTests
                 Assert.True(first > 0);
                 viewer.Wheel(-120);
                 Advance(viewer, 1000);
-                double step = PassiveScrollViewer.GetSmoothWheelDistance(
+                double step = UiScrollViewer.GetSmoothWheelDistance(
                     -120,
                     SystemParameters.WheelScrollLines,
                     viewer.ViewportWidth);
@@ -157,7 +157,7 @@ public class SmoothScrollingTests
             };
             System.Windows.Controls.ScrollViewer.SetVerticalScrollBarVisibility(items, ScrollBarVisibility.Disabled);
             System.Windows.Controls.ScrollViewer.SetHorizontalScrollBarVisibility(items, ScrollBarVisibility.Hidden);
-            PassiveScrollViewer.SetIsHorizontalMouseWheelEnabled(items, true);
+            UiScrollViewer.SetIsHorizontalMouseWheelEnabled(items, true);
             VirtualizingPanel.SetScrollUnit(items, unit);
             WithWindow(items, () =>
             {
@@ -169,7 +169,7 @@ public class SmoothScrollingTests
                 Assert.True(viewer.HorizontalOffset > 0);
                 Assert.Equal(0, viewer.VerticalOffset);
                 Assert.InRange(FindDescendant<VirtualizingStackPanel>(items)!.Children.Count, 1, 100);
-                PassiveScrollViewer.SetIsHorizontalMouseWheelEnabled(items, false);
+                UiScrollViewer.SetIsHorizontalMouseWheelEnabled(items, false);
                 Assert.False(viewer.IsHorizontalMouseWheelEnabled);
             });
         });
@@ -283,7 +283,7 @@ public class SmoothScrollingTests
     [InlineData(-120, 0, 200, 0)]
     public void WheelDistance_RespectsDeltaMagnitudeAndWindowsPreference(int delta, int lines, double viewport, double expected)
     {
-        Assert.Equal(expected, PassiveScrollViewer.GetSmoothWheelDistance(delta, lines, viewport));
+        Assert.Equal(expected, UiScrollViewer.GetSmoothWheelDistance(delta, lines, viewport));
     }
 
     [Fact]
@@ -336,7 +336,7 @@ public class SmoothScrollingTests
     {
         WpfTestThread.Run(() => WithViewer(viewer =>
         {
-            double step = PassiveScrollViewer.GetSmoothWheelDistance(-120, SystemParameters.WheelScrollLines, viewer.ViewportHeight);
+            double step = UiScrollViewer.GetSmoothWheelDistance(-120, SystemParameters.WheelScrollLines, viewer.ViewportHeight);
             viewer.Wheel(-30);
             viewer.Wheel(-30);
             viewer.Wheel(-30);
@@ -394,7 +394,7 @@ public class SmoothScrollingTests
             Assert.True(changes > 1);
             Assert.False(viewer.IsSmoothScrolling);
             Assert.Equal(
-                PassiveScrollViewer.GetSmoothWheelDistance(-120, SystemParameters.WheelScrollLines, viewer.ViewportHeight),
+                UiScrollViewer.GetSmoothWheelDistance(-120, SystemParameters.WheelScrollLines, viewer.ViewportHeight),
                 viewer.VerticalOffset,
                 6
             );
@@ -763,7 +763,7 @@ public class SmoothScrollingTests
             Advance(viewer, 1000);
             Assert.False(viewer.IsSmoothScrolling);
             Assert.Equal(
-                PassiveScrollViewer.GetSmoothWheelDistance(-120, SystemParameters.WheelScrollLines, viewer.ViewportHeight),
+                UiScrollViewer.GetSmoothWheelDistance(-120, SystemParameters.WheelScrollLines, viewer.ViewportHeight),
                 viewer.VerticalOffset,
                 6
             );
@@ -928,7 +928,7 @@ public class SmoothScrollingTests
                 for (int input = 0; input < 40; input++)
                 {
                     expectedMotion.MoveBy(
-                        PassiveScrollViewer.GetSmoothWheelDistance(-30, SystemParameters.WheelScrollLines, viewer.ViewportHeight),
+                        UiScrollViewer.GetSmoothWheelDistance(-30, SystemParameters.WheelScrollLines, viewer.ViewportHeight),
                         viewer.ScrollableHeight);
                     expectedMotion.Advance(TimeSpan.FromMilliseconds(16), Response);
                     viewer.Wheel(-30);
@@ -994,7 +994,7 @@ public class SmoothScrollingTests
         });
     }
 
-    private static void Advance(PassiveScrollViewer viewer, double milliseconds)
+    private static void Advance(UiScrollViewer viewer, double milliseconds)
     {
         viewer.AdvanceSmoothScrolling(TimeSpan.FromMilliseconds(milliseconds));
         viewer.UpdateLayout();
@@ -1052,7 +1052,7 @@ public class SmoothScrollingTests
         return null;
     }
 
-    public sealed class TestViewer : PassiveScrollViewer
+    public sealed class TestViewer : UiScrollViewer
     {
         public bool AllowAnimations { get; set; } = true;
 

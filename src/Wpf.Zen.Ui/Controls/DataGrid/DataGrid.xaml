@@ -783,12 +783,12 @@
                         BorderThickness="{TemplateBinding BorderThickness}"
                         CornerRadius="{TemplateBinding Border.CornerRadius}"
                         SnapsToDevicePixels="True">
-                        <controls:PassiveScrollViewer
+                        <controls:UiScrollViewer
                             x:Name="DG_ScrollViewer"
                             Focusable="False"
                             HorizontalScrollBarVisibilityThreshold="1">
-                            <controls:PassiveScrollViewer.Template>
-                                <ControlTemplate TargetType="{x:Type controls:PassiveScrollViewer}">
+                            <controls:UiScrollViewer.Template>
+                                <ControlTemplate TargetType="{x:Type controls:UiScrollViewer}">
                                     <Grid>
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="Auto" />
@@ -853,9 +853,9 @@
                                         </Grid>
                                     </Grid>
                                 </ControlTemplate>
-                            </controls:PassiveScrollViewer.Template>
+                            </controls:UiScrollViewer.Template>
                             <ItemsPresenter SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
-                        </controls:PassiveScrollViewer>
+                        </controls:UiScrollViewer>
                         <VisualStateManager.VisualStateGroups>
                             <VisualStateGroup x:Name="CommonStates">
                                 <VisualState x:Name="Disabled">

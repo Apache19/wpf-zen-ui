@@ -123,7 +123,7 @@
                     BorderThickness="1"
                     CornerRadius="8"
                     SnapsToDevicePixels="True">
-                    <controls:PassiveScrollViewer
+                    <controls:UiScrollViewer
                         CanContentScroll="False"
                         HorizontalScrollBarVisibility="Disabled"
                         ScrollSpillMode="Disabled"
@@ -133,7 +133,7 @@
                             IsItemsHost="True"
                             KeyboardNavigation.DirectionalNavigation="Cycle"
                             SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
-                    </controls:PassiveScrollViewer>
+                    </controls:UiScrollViewer>
                 </Border>
             </Popup>
         </Grid>
@@ -428,7 +428,7 @@
                     BorderThickness="1"
                     CornerRadius="8"
                     SnapsToDevicePixels="True">
-                    <controls:PassiveScrollViewer
+                    <controls:UiScrollViewer
                         CanContentScroll="False"
                         Focusable="False"
                         HorizontalScrollBarVisibility="Disabled"
@@ -438,7 +438,7 @@
                             Grid.IsSharedSizeScope="True"
                             IsItemsHost="True"
                             KeyboardNavigation.DirectionalNavigation="Cycle" />
-                    </controls:PassiveScrollViewer>
+                    </controls:UiScrollViewer>
                 </Border>
             </Popup>
         </Grid>

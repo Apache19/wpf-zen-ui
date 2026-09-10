@@ -267,7 +267,7 @@
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type controls:NavigationMapView}">
                     <Border Background="{TemplateBinding Background}" SnapsToDevicePixels="True">
-                        <controls:PassiveScrollViewer
+                        <controls:UiScrollViewer
                             x:Name="PART_ScrollViewer"
                             Padding="{TemplateBinding Padding}"
                             CanContentScroll="False"
@@ -286,7 +286,7 @@
                                 </Grid.LayoutTransform>
                                 <ItemsPresenter SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
                             </Grid>
-                        </controls:PassiveScrollViewer>
+                        </controls:UiScrollViewer>
                     </Border>
                 </ControlTemplate>
             </Setter.Value>

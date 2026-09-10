@@ -64,7 +64,7 @@
         <ResourceDictionary Source="pack://application:,,,/Wpf.Zen.Ui;component/Controls/RatingControl/RatingControl.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Zen.Ui;component/Controls/Placeholder/PlaceholderControl.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Zen.Ui;component/Controls/RichTextBox/RichTextBox.xaml" />
-        <ResourceDictionary Source="pack://application:,,,/Wpf.Zen.Ui;component/Controls/ScrollViewer/PassiveScrollViewer.xaml" />
+        <ResourceDictionary Source="pack://application:,,,/Wpf.Zen.Ui;component/Controls/ScrollViewer/UiScrollViewer.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Zen.Ui;component/Controls/ScrollViewer/UiScrollBar.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Zen.Ui;component/Controls/ScrollViewer/DynamicScrollViewer.xaml" />
         <ResourceDictionary Source="pack://application:,,,/Wpf.Zen.Ui;component/Controls/Separator/Separator.xaml" />

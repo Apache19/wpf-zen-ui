@@ -15,7 +15,7 @@
     </ResourceDictionary.MergedDictionaries>
 
     <ControlTemplate x:Key="RichTextBoxTextBlockAppearanceTemplate" TargetType="{x:Type RichTextBox}">
-        <controls:PassiveScrollViewer
+        <controls:UiScrollViewer
             x:Name="PART_ContentHost"
             Margin="-2,0"
             Focusable="false"

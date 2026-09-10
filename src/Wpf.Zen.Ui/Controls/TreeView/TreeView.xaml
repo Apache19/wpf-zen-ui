@@ -33,13 +33,13 @@
                         BorderBrush="{TemplateBinding BorderBrush}"
                         BorderThickness="{TemplateBinding BorderThickness}"
                         CornerRadius="4">
-                        <controls:PassiveScrollViewer
+                        <controls:UiScrollViewer
                             x:Name="ItemsPresenterScrollViewer"
                             CanContentScroll="False"
                             HorizontalScrollBarVisibility="{TemplateBinding ScrollViewer.HorizontalScrollBarVisibility}"
                             VerticalScrollBarVisibility="{TemplateBinding ScrollViewer.VerticalScrollBarVisibility}">
                             <ItemsPresenter Margin="{TemplateBinding Padding}" />
-                        </controls:PassiveScrollViewer>
+                        </controls:UiScrollViewer>
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="VirtualizingPanel.IsVirtualizing" Value="True">

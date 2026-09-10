@@ -49,14 +49,14 @@
                         ClipToBounds="True"
                         CornerRadius="8"
                         SnapsToDevicePixels="True">
-                        <controls:PassiveScrollViewer
+                        <controls:UiScrollViewer
                             CanContentScroll="False"
                             Focusable="False"
                             HorizontalScrollBarVisibility="Disabled"
                             ScrollSpillMode="Disabled"
                             VerticalScrollBarVisibility="Auto">
                             <ItemsPresenter KeyboardNavigation.DirectionalNavigation="Cycle" />
-                        </controls:PassiveScrollViewer>
+                        </controls:UiScrollViewer>
                     </Border>
                 </ControlTemplate>
             </Setter.Value>

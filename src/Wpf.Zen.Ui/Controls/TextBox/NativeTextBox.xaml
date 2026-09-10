@@ -26,7 +26,7 @@
                         VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
                         Foreground="{m:DynamicBrush TextPlaceholder}" />
 
-                    <controls:PassiveScrollViewer
+                    <controls:UiScrollViewer
                         x:Name="PART_ContentHost"
                         controls:ScrollViewerAssist.OverlayMode="Traditional"
                         Focusable="false"

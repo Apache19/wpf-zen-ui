@@ -21,7 +21,7 @@ public static class ScrollViewerAssist
     /// The default value is <see langword="false"/>. When set on a <see cref="ScrollViewer"/>,
     /// the line-decrement and line-increment buttons in both scroll bars are collapsed while the
     /// track and thumb remain available. The property may also be set on a control whose template
-    /// creates a <see cref="PassiveScrollViewer"/>. Unless the viewer has its own value, it obtains
+    /// creates a <see cref="UiScrollViewer"/>. Unless the viewer has its own value, it obtains
     /// this setting from the template owner in the same way that WPF forwards its standard
     /// scrolling attached properties.
     /// </remarks>
@@ -78,7 +78,7 @@ public static class ScrollViewerAssist
     /// <remarks>
     /// The default value is <see cref="ScrollViewerOverlayMode.Overlay"/>. The property can be set
     /// directly on a <see cref="ScrollViewer"/> or on a control whose template creates a
-    /// <see cref="PassiveScrollViewer"/>. Unless that viewer has its own value, it obtains the mode
+    /// <see cref="UiScrollViewer"/>. Unless that viewer has its own value, it obtains the mode
     /// from the template owner without allowing the setting to leak into independently nested
     /// scrolling controls in the owner's content.
     /// </remarks>

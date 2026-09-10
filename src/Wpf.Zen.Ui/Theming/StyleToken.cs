@@ -59,14 +59,14 @@ public enum StyleToken
     GridViewColumnHeader,
 
     /// <summary>
-    /// Identifies the self-contained default style for the inner <see cref="Controls.PassiveScrollViewer"/>
+    /// Identifies the self-contained default style for the inner <see cref="Controls.UiScrollViewer"/>
     /// used by a WPF Zen UI GridView template. The style bundles the scroll-viewer template, intrinsic
     /// constants, and templated-parent routing so developers can replace only the outer chrome of
     /// <c>GridViewTemplate</c> (for example, to add rounded-corners clipping) while referencing the
     /// library's complete header, content, and scroll-bar layout with a single style reference.
     /// </summary>
     /// <remarks>
-    /// This token is scoped exclusively to the <see cref="Controls.PassiveScrollViewer"/> inside a
+    /// This token is scoped exclusively to the <see cref="Controls.UiScrollViewer"/> inside a
     /// <c>GridViewTemplate</c>. The style's <c>TemplatedParent</c> bindings resolve against the
     /// hosting <see cref="System.Windows.Controls.ListView"/>; applying it elsewhere will cause
     /// silent binding failures. For general-purpose scroll-viewer customization, use a local style instead.

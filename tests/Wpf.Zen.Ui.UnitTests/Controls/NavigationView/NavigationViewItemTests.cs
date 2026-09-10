@@ -357,7 +357,7 @@ public class NavigationViewItemTests
             var content = new StackPanel();
             content.Children.Add(new Border { Height = 100 });
             content.Children.Add(parent);
-            var scrollViewer = new PassiveScrollViewer
+            var scrollViewer = new UiScrollViewer
             {
                 Width = 240,
                 Height = 120,

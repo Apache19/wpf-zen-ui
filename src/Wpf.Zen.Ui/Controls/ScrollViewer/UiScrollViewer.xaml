@@ -14,6 +14,6 @@
         <ResourceDictionary Source="pack://application:,,,/Wpf.Zen.Ui;component/Controls/ScrollViewer/ScrollViewerBaseStyle.xaml" />
     </ResourceDictionary.MergedDictionaries>
 
-    <Style BasedOn="{StaticResource ScrollViewerBaseStyle}" TargetType="{x:Type controls:PassiveScrollViewer}" />
+    <Style BasedOn="{StaticResource ScrollViewerBaseStyle}" TargetType="{x:Type controls:UiScrollViewer}" />
 
 </ResourceDictionary>

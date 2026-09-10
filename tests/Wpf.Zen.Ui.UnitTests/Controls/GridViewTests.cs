@@ -21,8 +21,8 @@ using UiGridView = Wpf.Zen.Ui.Controls.GridView;
 using UiGridViewColumn = Wpf.Zen.Ui.Controls.GridViewColumn;
 using UiListView = Wpf.Zen.Ui.Controls.ListView;
 using UiListViewItem = Wpf.Zen.Ui.Controls.ListViewItem;
-using UiPassiveScrollViewer = Wpf.Zen.Ui.Controls.PassiveScrollViewer;
 using UiScrollBar = Wpf.Zen.Ui.Controls.UiScrollBar;
+using UiScrollViewer = Wpf.Zen.Ui.Controls.UiScrollViewer;
 
 namespace Wpf.Zen.Ui.UnitTests.Controls;
 
@@ -396,8 +396,8 @@ public class GridViewTests
                 window.Dispatcher.Invoke(static () => { }, DispatcherPriority.ApplicationIdle);
                 listView.UpdateLayout();
 
-                var scrollViewer = Assert.IsType<UiPassiveScrollViewer>(
-                    FindVisualChild<UiPassiveScrollViewer>(listView)
+                var scrollViewer = Assert.IsType<UiScrollViewer>(
+                    FindVisualChild<UiScrollViewer>(listView)
                 );
                 var scrollBar = Assert.IsType<UiScrollBar>(
                     scrollViewer.Template.FindName("PART_VerticalScrollBar", scrollViewer)
@@ -459,8 +459,8 @@ public class GridViewTests
                 window.Show();
                 listView.UpdateLayout();
 
-                var scrollViewer = Assert.IsType<UiPassiveScrollViewer>(
-                    FindVisualChild<UiPassiveScrollViewer>(listView)
+                var scrollViewer = Assert.IsType<UiScrollViewer>(
+                    FindVisualChild<UiScrollViewer>(listView)
                 );
                 var scrollBar = Assert.IsType<UiScrollBar>(
                     scrollViewer.Template.FindName("PART_HorizontalScrollBar", scrollViewer)
@@ -588,8 +588,8 @@ public class GridViewTests
                 window.Show();
                 AssertColumnsFillViewport(listView, view);
 
-                var scrollViewer = Assert.IsType<UiPassiveScrollViewer>(
-                    FindVisualChild<UiPassiveScrollViewer>(listView)
+                var scrollViewer = Assert.IsType<UiScrollViewer>(
+                    FindVisualChild<UiScrollViewer>(listView)
                 );
                 var publishedScrollableWidths = new List<double>();
                 scrollViewer.ScrollChanged += (_, _) =>
@@ -974,8 +974,8 @@ public class GridViewTests
         listView.UpdateLayout();
         listView.Dispatcher.Invoke(static () => { }, DispatcherPriority.ApplicationIdle);
         listView.UpdateLayout();
-        var scrollViewer = Assert.IsType<UiPassiveScrollViewer>(
-            FindVisualChild<UiPassiveScrollViewer>(listView)
+        var scrollViewer = Assert.IsType<UiScrollViewer>(
+            FindVisualChild<UiScrollViewer>(listView)
         );
         double totalColumnWidth = view.Columns
             .Cast<NativeGridViewColumn>()

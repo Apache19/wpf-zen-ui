@@ -1,11 +1,11 @@
 # 平滑滚动与虚拟化
 
-`PassiveScrollViewer` 默认对支持像素偏移的内容启用纵向鼠标滚轮平滑滚动，`DynamicScrollViewer` 同样具备此能力。
+`UiScrollViewer` 默认对支持像素偏移的内容启用纵向鼠标滚轮平滑滚动，`DynamicScrollViewer` 同样具备此能力。
 
 ```xml
-<ui:PassiveScrollViewer SmoothScrollDuration="0:0:0.240">
+<ui:UiScrollViewer SmoothScrollDuration="0:0:0.240">
     <!-- 普通内容 -->
-</ui:PassiveScrollViewer>
+</ui:UiScrollViewer>
 ```
 
 `IsSmoothScrollingEnabled="False"` 可以关闭平滑滚动。Windows 关闭客户端区域动画时会自动使用原生行为；`ScrollSpillMode="Native"` 也完全遵循原生滚轮行为。
@@ -41,15 +41,15 @@
     VirtualizingPanel.IsVirtualizing="True"
     VirtualizingPanel.VirtualizationMode="Recycling"
     VirtualizingPanel.ScrollUnit="Pixel"
-    ui:PassiveScrollViewer.IsSmoothScrollingEnabled="True"
-    ui:PassiveScrollViewer.SmoothScrollDuration="0:0:0.240" />
+    ui:UiScrollViewer.IsSmoothScrollingEnabled="True"
+    ui:UiScrollViewer.SmoothScrollDuration="0:0:0.240" />
 ```
 
-上述写法需要使用本库含 `PassiveScrollViewer` 的控件样式。平滑滚动配置会从模板所属控件传给内部视图；直接设置在视图及其样式上的值优先，配置不通过属性继承影响内容中的独立嵌套视图。
+上述写法需要使用本库含 `UiScrollViewer` 的控件样式。平滑滚动配置会从模板所属控件传给内部视图；直接设置在视图及其样式上的值优先，配置不通过属性继承影响内容中的独立嵌套视图。
 
 不要为平滑滚动把虚拟化列表的 `CanContentScroll` 改为 `False`：这会把滚动职责交给外层内容呈现器，失去面板所需的有效虚拟化视口。控件不会擅自修改该属性或 `VirtualizingPanel.ScrollUnit`。
 
-自定义像素 `IScrollInfo` 可以通过派生 `PassiveScrollViewer` 并覆写 `SupportsSmoothScrolling` 明确声明支持。该提供程序必须接受连续 DIP 偏移，正确限制范围并通知 `ScrollOwner`；不能对按项取整的提供程序返回 `true`。
+自定义像素 `IScrollInfo` 可以通过派生 `UiScrollViewer` 并覆写 `SupportsSmoothScrolling` 明确声明支持。该提供程序必须接受连续 DIP 偏移，正确限制范围并通知 `ScrollOwner`；不能对按项取整的提供程序返回 `true`。
 
 Gallery 的 **VirtualizingWrapPanel / Movie library** 页面提供 **Smooth scrolling** 开关，可以在同一份虚拟化内容上直接对比。
 

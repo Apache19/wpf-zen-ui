@@ -114,7 +114,7 @@
                         Visibility="Hidden">
                         <controls:TextBox.Template>
                             <ControlTemplate TargetType="{x:Type TextBox}">
-                                <controls:PassiveScrollViewer
+                                <controls:UiScrollViewer
                                     x:Name="PART_ContentHost"
                                     controls:ScrollViewerAssist.OverlayMode="Traditional"
                                     Focusable="false"
@@ -181,7 +181,7 @@
                     BorderThickness="1"
                     CornerRadius="{m:DynamicValue PopupCornerRadius}"
                     SnapsToDevicePixels="True">
-                    <controls:PassiveScrollViewer
+                    <controls:UiScrollViewer
                         Margin="0"
                         HorizontalScrollBarVisibility="{TemplateBinding ScrollViewer.HorizontalScrollBarVisibility}"
                         SnapsToDevicePixels="True"
@@ -190,7 +190,7 @@
                             x:Name="ItemsPresenter"
                             KeyboardNavigation.DirectionalNavigation="Contained"
                             SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
-                    </controls:PassiveScrollViewer>
+                    </controls:UiScrollViewer>
                 </Border>
             </Popup>
         </Grid>

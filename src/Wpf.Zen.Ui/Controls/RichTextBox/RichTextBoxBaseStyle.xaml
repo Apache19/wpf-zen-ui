@@ -16,7 +16,7 @@
             BorderThickness="{TemplateBinding BorderThickness}"
             CornerRadius="{TemplateBinding Border.CornerRadius}"
             SnapsToDevicePixels="True">
-            <controls:PassiveScrollViewer
+            <controls:UiScrollViewer
                 x:Name="PART_ContentHost"
                 controls:ScrollViewerAssist.OverlayMode="Traditional"
                 Focusable="false"

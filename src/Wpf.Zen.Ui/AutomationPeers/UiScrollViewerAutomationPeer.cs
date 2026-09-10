@@ -11,33 +11,33 @@ using Wpf.Zen.Ui.Controls;
 namespace Wpf.Zen.Ui.AutomationPeers;
 
 /// <summary>
-/// Exposes <see cref="PassiveScrollViewer"/> scrolling to UI Automation while honoring its
+/// Exposes <see cref="UiScrollViewer"/> scrolling to UI Automation while honoring its
 /// horizontal visibility threshold.
 /// </summary>
 /// <remarks>
 /// WPF's native <see cref="ScrollViewerAutomationPeer"/> considers every positive difference
-/// between extent and viewport scrollable. <see cref="PassiveScrollViewer"/> deliberately treats a
+/// between extent and viewport scrollable. <see cref="UiScrollViewer"/> deliberately treats a
 /// configured sub-threshold range as rounding noise and commits its offset to zero, so reporting
 /// that raw range would offer automation clients an operation that can never take effect. This peer
 /// keeps vertical behavior native and changes only the suppressed horizontal range.
 /// </remarks>
-public sealed class PassiveScrollViewerAutomationPeer : ScrollViewerAutomationPeer, IScrollProvider
+public sealed class UiScrollViewerAutomationPeer : ScrollViewerAutomationPeer, IScrollProvider
 {
     private bool _lastHorizontallyScrollable;
     private double _lastHorizontalScrollPercent;
     private double _lastHorizontalViewSize;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="PassiveScrollViewerAutomationPeer"/> class.
+    /// Initializes a new instance of the <see cref="UiScrollViewerAutomationPeer"/> class.
     /// </summary>
     /// <param name="owner">The viewer represented by this automation peer.</param>
-    public PassiveScrollViewerAutomationPeer(PassiveScrollViewer owner)
+    public UiScrollViewerAutomationPeer(UiScrollViewer owner)
         : base(owner)
     {
         SynchronizeHorizontalScrollState();
     }
 
-    private PassiveScrollViewer ScrollOwner => (PassiveScrollViewer)Owner;
+    private UiScrollViewer ScrollOwner => (UiScrollViewer)Owner;
 
     bool IScrollProvider.HorizontallyScrollable => IsHorizontallyScrollable;
 

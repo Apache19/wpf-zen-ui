@@ -99,7 +99,7 @@
                         IsHitTestVisible="False"
                         Text="{TemplateBinding PlaceholderText}" />
 
-                    <controls:PassiveScrollViewer
+                    <controls:UiScrollViewer
                         x:Name="PART_ContentHost"
                         Grid.Column="1"
                         controls:ScrollViewerAssist.OverlayMode="Traditional"
@@ -201,7 +201,7 @@
             A text-selection-only TextBox should subtract the CaretElement.BidiCaretIndicatorWidth margin,
             since there is no caret to worry about being clipped.
         -->
-        <controls:PassiveScrollViewer
+        <controls:UiScrollViewer
             x:Name="PART_ContentHost"
             Margin="-2,0"
             Focusable="false"

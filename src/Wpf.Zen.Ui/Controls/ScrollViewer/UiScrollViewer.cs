@@ -23,7 +23,7 @@ namespace Wpf.Zen.Ui.Controls;
 /// buttons accumulate smooth motion on the applicable axis. Touch, thumb dragging and programmatic
 /// scrolling retain WPF semantics and take precedence over active motion.
 /// </remarks>
-public partial class PassiveScrollViewer : ScrollViewer
+public partial class UiScrollViewer : ScrollViewer
 {
     private static readonly DependencyProperty[] TemplatedParentAssistProperties;
 
@@ -34,7 +34,7 @@ public partial class PassiveScrollViewer : ScrollViewer
         = DependencyProperty.RegisterAttached(
             nameof(IsHorizontalMouseWheelEnabled),
             typeof(bool),
-            typeof(PassiveScrollViewer),
+            typeof(UiScrollViewer),
             new FrameworkPropertyMetadata(
                 false,
                 OnSmoothScrollingSettingChanged
@@ -102,7 +102,7 @@ public partial class PassiveScrollViewer : ScrollViewer
         = DependencyProperty.RegisterAttached(
             nameof(ScrollSpillMode),
             typeof(ScrollSpillMode),
-            typeof(PassiveScrollViewer),
+            typeof(UiScrollViewer),
             new FrameworkPropertyMetadata(ScrollSpillMode.Enabled)
         );
 
@@ -123,7 +123,7 @@ public partial class PassiveScrollViewer : ScrollViewer
         = DependencyProperty.Register(
             nameof(HorizontalScrollBarVisibilityThreshold),
             typeof(double),
-            typeof(PassiveScrollViewer),
+            typeof(UiScrollViewer),
             new FrameworkPropertyMetadata(0.0),
             static value => value is double threshold
                             && !double.IsNaN(threshold)
@@ -149,7 +149,7 @@ public partial class PassiveScrollViewer : ScrollViewer
         = DependencyProperty.RegisterReadOnly(
             nameof(EffectiveHorizontalScrollBarVisibility),
             typeof(Visibility),
-            typeof(PassiveScrollViewer),
+            typeof(UiScrollViewer),
             new FrameworkPropertyMetadata(Visibility.Collapsed)
         );
 
@@ -169,7 +169,7 @@ public partial class PassiveScrollViewer : ScrollViewer
     }
 
     /// <summary>
-    /// Sets how the <see cref="PassiveScrollViewer"/> created by an element's control template
+    /// Sets how the <see cref="UiScrollViewer"/> created by an element's control template
     /// handles mouse-wheel input that cannot scroll its own content.
     /// </summary>
     /// <param name="element">The element whose scrolling policy is being configured.</param>
@@ -192,7 +192,7 @@ public partial class PassiveScrollViewer : ScrollViewer
         return (ScrollSpillMode)element.GetValue(ScrollSpillModeProperty);
     }
 
-    static PassiveScrollViewer()
+    static UiScrollViewer()
     {
         // The smooth-scrolling properties live in another partial declaration. Initialize this list
         // after all static field initializers so its contents never depend on partial-file ordering.
@@ -206,8 +206,8 @@ public partial class PassiveScrollViewer : ScrollViewer
         ];
 
         DefaultStyleKeyProperty.OverrideMetadata(
-            typeof(PassiveScrollViewer),
-            new FrameworkPropertyMetadata(typeof(PassiveScrollViewer))
+            typeof(UiScrollViewer),
+            new FrameworkPropertyMetadata(typeof(UiScrollViewer))
         );
     }
 
@@ -284,7 +284,7 @@ public partial class PassiveScrollViewer : ScrollViewer
 
             // ScrollViewer.OnPreApplyTemplate conditionally binds WPF's own scrolling attached
             // properties to the templated parent. WPF's helper is internal and only handles its
-            // fixed property list, so PassiveScrollViewer reproduces that contract for the
+            // fixed property list, so UiScrollViewer reproduces that contract for the
             // library-specific settings. A value supplied directly by the viewer or its style
             // intentionally wins. Property inheritance is not used because it would continue into
             // the owner's content and unintentionally configure independently nested viewers.
@@ -303,7 +303,7 @@ public partial class PassiveScrollViewer : ScrollViewer
     /// <returns>A threshold-aware scroll provider for this viewer.</returns>
     protected override AutomationPeer OnCreateAutomationPeer()
     {
-        return new PassiveScrollViewerAutomationPeer(this);
+        return new UiScrollViewerAutomationPeer(this);
     }
 
     /// <summary>
@@ -436,9 +436,9 @@ public partial class PassiveScrollViewer : ScrollViewer
     /// </summary>
     internal bool HasScrollInfo => ScrollInfo is not null;
 
-    private PassiveScrollViewerAutomationPeer? GetExistingAutomationPeer()
+    private UiScrollViewerAutomationPeer? GetExistingAutomationPeer()
     {
-        return UIElementAutomationPeer.FromElement(this) as PassiveScrollViewerAutomationPeer;
+        return UIElementAutomationPeer.FromElement(this) as UiScrollViewerAutomationPeer;
     }
 
     /// <summary>

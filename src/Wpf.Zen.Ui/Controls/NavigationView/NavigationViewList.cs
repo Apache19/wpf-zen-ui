@@ -130,7 +130,7 @@ public class NavigationViewList : ItemsControl
 
     /// <summary>
     /// Gets or sets a value indicating whether the list template uses a
-    /// <see cref="DynamicScrollViewer"/> instead of a <see cref="PassiveScrollViewer"/>.
+    /// <see cref="DynamicScrollViewer"/> instead of a <see cref="UiScrollViewer"/>.
     /// </summary>
     /// <remarks>
     /// The default is <see langword="false"/>. This property changes only the scrolling host used

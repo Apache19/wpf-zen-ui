@@ -16,7 +16,7 @@ using Wpf.Zen.Ui.Controls;
 
 namespace Wpf.Zen.Ui.UnitTests.Controls.ScrollViewer;
 
-public class PassiveScrollViewerTests
+public class UiScrollViewerTests
 {
     [Fact]
     public void ScrollSpillModeEnabled_DoesNotHandleMouseWheelAtScrollBoundary()
@@ -87,7 +87,7 @@ public class PassiveScrollViewerTests
         RunOnStaThread(
             () =>
             {
-                var scrollViewer = new TestPassiveScrollViewer();
+                var scrollViewer = new TestUiScrollViewer();
 
                 Assert.Equal(ScrollSpillMode.Enabled, scrollViewer.ScrollSpillMode);
             }
@@ -102,14 +102,14 @@ public class PassiveScrollViewerTests
             {
                 var templateOwner = new System.Windows.Controls.ListBox();
 
-                PassiveScrollViewer.SetScrollSpillMode(
+                UiScrollViewer.SetScrollSpillMode(
                     templateOwner,
                     ScrollSpillMode.Disabled
                 );
 
                 Assert.Equal(
                     ScrollSpillMode.Disabled,
-                    PassiveScrollViewer.GetScrollSpillMode(templateOwner)
+                    UiScrollViewer.GetScrollSpillMode(templateOwner)
                 );
             }
         );
@@ -136,12 +136,12 @@ public class PassiveScrollViewerTests
                 {
                     Style = Assert.IsType<Style>(resources["DefaultListBoxStyle"]),
                 };
-                PassiveScrollViewer.SetScrollSpillMode(listBox, ScrollSpillMode.Enabled);
+                UiScrollViewer.SetScrollSpillMode(listBox, ScrollSpillMode.Enabled);
 
                 Assert.True(listBox.ApplyTemplate());
 
-                var scrollViewer = Assert.IsType<PassiveScrollViewer>(
-                    FindVisualDescendant<PassiveScrollViewer>(listBox)
+                var scrollViewer = Assert.IsType<UiScrollViewer>(
+                    FindVisualDescendant<UiScrollViewer>(listBox)
                 );
                 Assert.Equal(ScrollSpillMode.Enabled, scrollViewer.ScrollSpillMode);
             }
@@ -154,7 +154,7 @@ public class PassiveScrollViewerTests
         RunOnStaThread(
             () =>
             {
-                var scrollViewer = new PassiveScrollViewer
+                var scrollViewer = new UiScrollViewer
                 {
                     Width = 100d,
                     Height = 100d,
@@ -213,7 +213,7 @@ public class PassiveScrollViewerTests
                         )
                     ),
                 };
-                var nestedScrollViewer = new PassiveScrollViewer();
+                var nestedScrollViewer = new UiScrollViewer();
                 var listBox = new System.Windows.Controls.ListBox
                 {
                     ItemsSource = new[] { nestedScrollViewer },
@@ -221,8 +221,8 @@ public class PassiveScrollViewerTests
                 };
                 ScrollViewerAssist.SetHideButtons(listBox, true);
                 ScrollViewerAssist.SetOverlayMode(listBox, ScrollViewerOverlayMode.Traditional);
-                PassiveScrollViewer.SetIsSmoothScrollingEnabled(listBox, false);
-                PassiveScrollViewer.SetSmoothScrollDuration(listBox, TimeSpan.FromMilliseconds(180));
+                UiScrollViewer.SetIsSmoothScrollingEnabled(listBox, false);
+                UiScrollViewer.SetSmoothScrollDuration(listBox, TimeSpan.FromMilliseconds(180));
 
                 var window = new Window
                 {
@@ -238,8 +238,8 @@ public class PassiveScrollViewerTests
                     window.Show();
                     listBox.UpdateLayout();
 
-                    var templateScrollViewer = Assert.IsType<PassiveScrollViewer>(
-                        FindVisualDescendant<PassiveScrollViewer>(listBox)
+                    var templateScrollViewer = Assert.IsType<UiScrollViewer>(
+                        FindVisualDescendant<UiScrollViewer>(listBox)
                     );
 
                     Assert.True(ScrollViewerAssist.GetHideButtons(templateScrollViewer));
@@ -247,7 +247,7 @@ public class PassiveScrollViewerTests
                     Assert.Equal(TimeSpan.FromMilliseconds(180), templateScrollViewer.SmoothScrollDuration);
                     Assert.True(nestedScrollViewer.IsSmoothScrollingEnabled);
                     Assert.Equal(TimeSpan.FromMilliseconds(240), nestedScrollViewer.SmoothScrollDuration);
-                    PassiveScrollViewer.SetIsSmoothScrollingEnabled(listBox, true);
+                    UiScrollViewer.SetIsSmoothScrollingEnabled(listBox, true);
                     Assert.True(templateScrollViewer.IsSmoothScrollingEnabled);
                     Assert.Equal(
                         ScrollViewerOverlayMode.Traditional,
@@ -300,7 +300,7 @@ public class PassiveScrollViewerTests
             () =>
             {
                 var content = new Border { Width = 100d, Height = 400d };
-                var scrollViewer = new TestPassiveScrollViewer
+                var scrollViewer = new TestUiScrollViewer
                 {
                     Width = 100d,
                     Height = 100d,
@@ -353,7 +353,7 @@ public class PassiveScrollViewerTests
             () =>
             {
                 var content = new Border { Width = 100d, Height = 500d };
-                var scrollViewer = new TestPassiveScrollViewer
+                var scrollViewer = new TestUiScrollViewer
                 {
                     Width = 100d,
                     Height = 100d,
@@ -403,7 +403,7 @@ public class PassiveScrollViewerTests
         RunOnStaThread(
             () =>
             {
-                var scrollViewer = new PassiveScrollViewer
+                var scrollViewer = new UiScrollViewer
                 {
                     Content = new Border { Height = 50d, Width = 100.5d },
                     Height = 80d,
@@ -426,7 +426,7 @@ public class PassiveScrollViewerTests
                     scrollViewer.UpdateLayout();
 
                     Assert.InRange(scrollViewer.ScrollableWidth, 0.01d, 1d);
-                    var peer = new PassiveScrollViewerAutomationPeer(scrollViewer);
+                    var peer = new UiScrollViewerAutomationPeer(scrollViewer);
                     var provider = Assert.IsAssignableFrom<IScrollProvider>(
                         peer.GetPattern(PatternInterface.Scroll)
                     );
@@ -484,9 +484,9 @@ public class PassiveScrollViewerTests
         Assert.Equal(0d, incrementButton.ActualHeight);
     }
 
-    private static void WithScrollableViewer(ScrollSpillMode mode, Action<TestPassiveScrollViewer> action)
+    private static void WithScrollableViewer(ScrollSpillMode mode, Action<TestUiScrollViewer> action)
     {
-        var scrollViewer = new TestPassiveScrollViewer
+        var scrollViewer = new TestUiScrollViewer
         {
             Width = 100d,
             Height = 100d,
@@ -547,7 +547,7 @@ public class PassiveScrollViewerTests
         return null;
     }
 
-    private sealed class TestPassiveScrollViewer : PassiveScrollViewer
+    private sealed class TestUiScrollViewer : UiScrollViewer
     {
         public void InvokeOnMouseWheel(MouseWheelEventArgs e)
         {

@@ -46,7 +46,7 @@ public class NavigationViewTests
     }
 
     [Fact]
-    public void NavigationViewList_DefaultTemplate_HostsItemsPresenterInPassiveScrollViewer()
+    public void NavigationViewList_DefaultTemplate_HostsItemsPresenterInUiScrollViewer()
     {
         RunOnStaThread(() =>
         {
@@ -55,7 +55,7 @@ public class NavigationViewTests
             {
                 Style = Assert.IsType<Style>(resources[typeof(NavigationViewList)]),
             };
-            PassiveScrollViewer.SetScrollSpillMode(
+            UiScrollViewer.SetScrollSpillMode(
                 navigationViewList,
                 ScrollSpillMode.Disabled
             );
@@ -71,7 +71,7 @@ public class NavigationViewTests
 
             Assert.True(navigationViewList.ApplyTemplate());
 
-            var scrollViewer = Assert.IsType<PassiveScrollViewer>(
+            var scrollViewer = Assert.IsType<UiScrollViewer>(
                 navigationViewList.Template.FindName("ScrollViewer", navigationViewList)
             );
             Assert.IsType<ItemsPresenter>(scrollViewer.Content);
@@ -155,7 +155,7 @@ public class NavigationViewTests
                 window.Show();
                 DrainDispatcher();
 
-                var scrollViewer = Assert.IsAssignableFrom<PassiveScrollViewer>(
+                var scrollViewer = Assert.IsAssignableFrom<UiScrollViewer>(
                     navigationViewList.Template.FindName("ScrollViewer", navigationViewList)
                 );
 

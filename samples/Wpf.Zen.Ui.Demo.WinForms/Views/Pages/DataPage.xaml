@@ -25,9 +25,9 @@
             VirtualizingPanel.VirtualizationMode="Recycling">
             <ItemsControl.Template>
                 <ControlTemplate>
-                    <ui:PassiveScrollViewer Padding="16">
+                    <ui:UiScrollViewer Padding="16">
                         <ItemsPresenter SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
-                    </ui:PassiveScrollViewer>
+                    </ui:UiScrollViewer>
                 </ControlTemplate>
             </ItemsControl.Template>
             <ItemsControl.ItemTemplate>

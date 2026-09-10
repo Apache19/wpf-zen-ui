@@ -61,7 +61,7 @@
                         </ContentPresenter>
                     </Border>
 
-                    <controls:PassiveScrollViewer
+                    <controls:UiScrollViewer
                         x:Name="PART_ContentScroll"
                         Grid.Row="1"
                         Margin="{TemplateBinding Padding}"
@@ -83,7 +83,7 @@
                                 </Style>
                             </ContentPresenter.Resources>
                         </ContentPresenter>
-                    </controls:PassiveScrollViewer>
+                    </controls:UiScrollViewer>
 
                     <Border
                         x:Name="footerBorder"
