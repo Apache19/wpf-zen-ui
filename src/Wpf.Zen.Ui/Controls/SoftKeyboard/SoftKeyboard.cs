@@ -77,46 +77,77 @@ public partial class SoftKeyboard : Control
             typeof(SoftKeyboard),
             new FrameworkPropertyMetadata(typeof(SoftKeyboard))
         );
-        FocusableProperty.OverrideMetadata(typeof(SoftKeyboard), new FrameworkPropertyMetadata(false));
+
+        FocusableProperty.OverrideMetadata(
+            typeof(SoftKeyboard),
+            new FrameworkPropertyMetadata(false)
+        );
+
         KeyboardNavigation.IsTabStopProperty.OverrideMetadata(
             typeof(SoftKeyboard),
             new FrameworkPropertyMetadata(false)
         );
     }
 
-    /// <summary>Initializes a new instance of the <see cref="SoftKeyboard"/> class.</summary>
+    /// <summary>
+    /// Initializes a new instance of the <see cref="SoftKeyboard"/> class.
+    /// </summary>
     public SoftKeyboard()
         : this(SoftKeyboardPlatformServices.Default)
     {
     }
 
-    /// <summary>Initializes a new instance of the <see cref="SoftKeyboard"/> class with replaceable platform boundaries.</summary>
+    /// <summary>
+    /// Initializes a new instance of the <see cref="SoftKeyboard"/> class with replaceable platform boundaries.
+    /// </summary>
     /// <param name="platform">The native service boundary.</param>
     internal SoftKeyboard(SoftKeyboardPlatformServices platform)
     {
         _platform = platform ?? throw new ArgumentNullException(nameof(platform));
-        Candidates = new ReadOnlyObservableCollection<SoftKeyboardCandidate>(_candidates);
+
+        Candidates   = new ReadOnlyObservableCollection<SoftKeyboardCandidate>(_candidates);
         InputMethods = new ReadOnlyObservableCollection<SoftKeyboardInputMethod>(_inputMethods);
 
-        AddHandler(ButtonBase.ClickEvent, new RoutedEventHandler(OnButtonClick));
-        AddHandler(SoftKeyboardKeyControl.InteractionStartedEvent, new RoutedEventHandler(OnKeyInteractionStarted));
-        AddHandler(SoftKeyboardKeyControl.InputRequestedEvent, new EventHandler<SoftKeyboardInputRequestedEventArgs>(OnKeyInputRequested));
-        Loaded += OnLoaded;
+        AddHandler(
+            ButtonBase.ClickEvent,
+            new RoutedEventHandler(OnButtonClick)
+        );
+
+        AddHandler(
+            SoftKeyboardKeyControl.InteractionStartedEvent,
+            new RoutedEventHandler(OnKeyInteractionStarted)
+        );
+
+        AddHandler(
+            SoftKeyboardKeyControl.InputRequestedEvent,
+            new EventHandler<SoftKeyboardInputRequestedEventArgs>(OnKeyInputRequested)
+        );
+
+        Loaded   += OnLoaded;
         Unloaded += OnUnloaded;
+
         IsVisibleChanged += OnIsVisibleChanged;
         IsEnabledChanged += OnIsEnabledChanged;
+
         RebuildLayout();
     }
 
     #region Dependency properties
 
-    /// <summary>Identifies the <see cref="CornerRadius"/> dependency property.</summary>
-    public static readonly DependencyProperty CornerRadiusProperty = Border.CornerRadiusProperty.AddOwner(
-        typeof(SoftKeyboard),
-        new FrameworkPropertyMetadata(new CornerRadius(8))
-    );
+    #region DP: CornerRadius
 
-    /// <summary>Gets or sets the outer surface corner radii. The default is 8 DIP.</summary>
+    /// <summary>
+    /// Identifies the <see cref="CornerRadius"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty CornerRadiusProperty
+        = Border.CornerRadiusProperty.AddOwner(
+            typeof(SoftKeyboard),
+            new FrameworkPropertyMetadata(new CornerRadius(8))
+        );
+
+    /// <summary>
+    /// Gets or sets the outer surface corner radii. The default is 8 DIP.
+    /// </summary>
     /// <remarks>
     /// The default template forwards this value to its border, which performs the required
     /// layout and rendering invalidation. The value is not inherited and supports animation;
@@ -128,11 +159,21 @@ public partial class SoftKeyboard : Control
         set => SetValue(CornerRadiusProperty, value);
     }
 
-    /// <summary>Identifies the <see cref="RowSpacing"/> dependency property.</summary>
-    public static readonly DependencyProperty RowSpacingProperty = SoftKeyboardPanel.RowSpacingProperty.AddOwner(
-        typeof(SoftKeyboard),
-        new FrameworkPropertyMetadata(4D, FrameworkPropertyMetadataOptions.AffectsMeasure)
-    );
+    #endregion
+
+    #region DP: RowSpacing
+
+    /// <summary>
+    /// Identifies the <see cref="RowSpacing"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty RowSpacingProperty
+        = SoftKeyboardPanel.RowSpacingProperty.AddOwner(
+            typeof(SoftKeyboard),
+            new FrameworkPropertyMetadata(
+                4D,
+                FrameworkPropertyMetadataOptions.AffectsMeasure
+            )
+        );
 
     /// <summary>
     /// Gets or sets the requested distance between adjacent key rows. The default is 4 DIP.
@@ -150,11 +191,21 @@ public partial class SoftKeyboard : Control
         set => SetValue(RowSpacingProperty, value);
     }
 
-    /// <summary>Identifies the <see cref="ColumnSpacing"/> dependency property.</summary>
-    public static readonly DependencyProperty ColumnSpacingProperty = SoftKeyboardPanel.ColumnSpacingProperty.AddOwner(
-        typeof(SoftKeyboard),
-        new FrameworkPropertyMetadata(4D, FrameworkPropertyMetadataOptions.AffectsMeasure)
-    );
+    #endregion
+
+    #region DP: ColumnSpacing
+
+    /// <summary>
+    /// Identifies the <see cref="ColumnSpacing"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty ColumnSpacingProperty
+        = SoftKeyboardPanel.ColumnSpacingProperty.AddOwner(
+            typeof(SoftKeyboard),
+            new FrameworkPropertyMetadata(
+                4D,
+                FrameworkPropertyMetadataOptions.AffectsMeasure
+            )
+        );
 
     /// <summary>
     /// Gets or sets the requested gutter between adjacent logical key columns. The default is 4 DIP.
@@ -173,22 +224,31 @@ public partial class SoftKeyboard : Control
         set => SetValue(ColumnSpacingProperty, value);
     }
 
-    /// <summary>Identifies the <see cref="IsOpen"/> dependency property.</summary>
-    public static readonly DependencyProperty IsOpenProperty = DependencyProperty.Register(
-        nameof(IsOpen),
-        typeof(bool),
-        typeof(SoftKeyboard),
-        new FrameworkPropertyMetadata(
-            false,
-            FrameworkPropertyMetadataOptions.BindsTwoWayByDefault,
-            OnIsOpenChanged
-        )
-    );
+    #endregion
+
+    #region DP: IsOpen
+
+    /// <summary>
+    /// Identifies the <see cref="IsOpen"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty IsOpenProperty
+        = DependencyProperty.Register(
+            nameof(IsOpen),
+            typeof(bool),
+            typeof(SoftKeyboard),
+            new FrameworkPropertyMetadata(
+                false,
+                FrameworkPropertyMetadataOptions.BindsTwoWayByDefault,
+                OnIsOpenChanged
+            )
+        );
 
     /// <summary>
     /// Gets or sets a value indicating whether the keyboard surface is open and participates in layout.
     /// </summary>
-    /// <remarks>The default is <see langword="false"/>. The closed default template measures to zero.</remarks>
+    /// <remarks>
+    /// The default is <see langword="false"/>. The closed default template measures to zero.
+    /// </remarks>
     [Bindable(true)]
     [Category("Behavior")]
     public bool IsOpen
@@ -197,13 +257,20 @@ public partial class SoftKeyboard : Control
         set => SetValue(IsOpenProperty, value);
     }
 
-    /// <summary>Identifies the <see cref="Target"/> dependency property.</summary>
-    public static readonly DependencyProperty TargetProperty = DependencyProperty.Register(
-        nameof(Target),
-        typeof(IInputElement),
-        typeof(SoftKeyboard),
-        new PropertyMetadata(null, OnTargetChanged)
-    );
+    #endregion
+
+    #region DP: Target
+
+    /// <summary>
+    /// Identifies the <see cref="Target"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty TargetProperty
+        = DependencyProperty.Register(
+            nameof(Target),
+            typeof(IInputElement),
+            typeof(SoftKeyboard),
+            new PropertyMetadata(null, OnTargetChanged)
+        );
 
     /// <summary>
     /// Gets or sets an editor that remains the keyboard's explicit input target.
@@ -220,18 +287,27 @@ public partial class SoftKeyboard : Control
         set => SetValue(TargetProperty, value);
     }
 
-    /// <summary>Identifies the <see cref="TargetScope"/> dependency property.</summary>
-    public static readonly DependencyProperty TargetScopeProperty = DependencyProperty.Register(
-        nameof(TargetScope),
-        typeof(DependencyObject),
-        typeof(SoftKeyboard),
-        new PropertyMetadata(null, OnTargetScopeChanged)
-    );
+    #endregion
+
+    #region DP: TargetScope
+
+    /// <summary>
+    /// Identifies the <see cref="TargetScope"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty TargetScopeProperty
+        = DependencyProperty.Register(
+            nameof(TargetScope),
+            typeof(DependencyObject),
+            typeof(SoftKeyboard),
+            new PropertyMetadata(null, OnTargetScopeChanged)
+        );
 
     /// <summary>
     /// Gets or sets the visual or logical subtree whose editors belong to this keyboard.
     /// </summary>
-    /// <remarks>A <see langword="null"/> value uses the containing <see cref="Window"/>.</remarks>
+    /// <remarks>
+    /// A <see langword="null"/> value uses the containing <see cref="Window"/>.
+    /// </remarks>
     [Bindable(true)]
     [Category("Behavior")]
     public DependencyObject? TargetScope
@@ -240,16 +316,26 @@ public partial class SoftKeyboard : Control
         set => SetValue(TargetScopeProperty, value);
     }
 
-    /// <summary>Identifies the <see cref="AutoShowMode"/> dependency property.</summary>
-    public static readonly DependencyProperty AutoShowModeProperty = DependencyProperty.Register(
-        nameof(AutoShowMode),
-        typeof(SoftKeyboardAutoShowMode),
-        typeof(SoftKeyboard),
-        new PropertyMetadata(SoftKeyboardAutoShowMode.Disabled),
-        static value => value is SoftKeyboardAutoShowMode mode && Enum.IsDefined(typeof(SoftKeyboardAutoShowMode), mode)
-    );
+    #endregion
 
-    /// <summary>Gets or sets which editor-focus transitions open the keyboard automatically.</summary>
+    #region DP: AutoShowMode
+
+    /// <summary>
+    /// Identifies the <see cref="AutoShowMode"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty AutoShowModeProperty
+        = DependencyProperty.Register(
+            nameof(AutoShowMode),
+            typeof(SoftKeyboardAutoShowMode),
+            typeof(SoftKeyboard),
+            new PropertyMetadata(SoftKeyboardAutoShowMode.Disabled),
+            static value => value is SoftKeyboardAutoShowMode mode
+                            && Enum.IsDefined(typeof(SoftKeyboardAutoShowMode), mode)
+        );
+
+    /// <summary>
+    /// Gets or sets which editor-focus transitions open the keyboard automatically.
+    /// </summary>
     [Bindable(true)]
     [Category("Behavior")]
     public SoftKeyboardAutoShowMode AutoShowMode
@@ -258,16 +344,26 @@ public partial class SoftKeyboard : Control
         set => SetValue(AutoShowModeProperty, value);
     }
 
-    /// <summary>Identifies the <see cref="AutoHideMode"/> dependency property.</summary>
-    public static readonly DependencyProperty AutoHideModeProperty = DependencyProperty.Register(
-        nameof(AutoHideMode),
-        typeof(SoftKeyboardAutoHideMode),
-        typeof(SoftKeyboard),
-        new PropertyMetadata(SoftKeyboardAutoHideMode.FocusLeavesScope),
-        static value => value is SoftKeyboardAutoHideMode mode && Enum.IsDefined(typeof(SoftKeyboardAutoHideMode), mode)
-    );
+    #endregion
 
-    /// <summary>Gets or sets when an automatically opened keyboard closes.</summary>
+    #region DP: AutoHideMode
+
+    /// <summary>
+    /// Identifies the <see cref="AutoHideMode"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty AutoHideModeProperty
+        = DependencyProperty.Register(
+            nameof(AutoHideMode),
+            typeof(SoftKeyboardAutoHideMode),
+            typeof(SoftKeyboard),
+            new PropertyMetadata(SoftKeyboardAutoHideMode.FocusLeavesScope),
+            static value => value is SoftKeyboardAutoHideMode mode
+                            && Enum.IsDefined(typeof(SoftKeyboardAutoHideMode), mode)
+        );
+
+    /// <summary>
+    /// Gets or sets when an automatically opened keyboard closes.
+    /// </summary>
     [Bindable(true)]
     [Category("Behavior")]
     public SoftKeyboardAutoHideMode AutoHideMode
@@ -276,30 +372,52 @@ public partial class SoftKeyboard : Control
         set => SetValue(AutoHideModeProperty, value);
     }
 
-    /// <summary>Identifies the <see cref="LayoutProvider"/> dependency property.</summary>
-    public static readonly DependencyProperty LayoutProviderProperty = DependencyProperty.Register(
-        nameof(LayoutProvider),
-        typeof(ISoftKeyboardLayoutProvider),
-        typeof(SoftKeyboard),
-        new PropertyMetadata(DefaultSoftKeyboardLayoutProvider.Default, OnLayoutContextChanged)
-    );
+    #endregion
 
-    /// <summary>Gets or sets the provider that creates positioned keys for the active input context.</summary>
+    #region DP: LayoutProvider
+
+    /// <summary>
+    /// Identifies the <see cref="LayoutProvider"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty LayoutProviderProperty
+        = DependencyProperty.Register(
+            nameof(LayoutProvider),
+            typeof(ISoftKeyboardLayoutProvider),
+            typeof(SoftKeyboard),
+            new PropertyMetadata(
+                DefaultSoftKeyboardLayoutProvider.Default,
+                OnLayoutContextChanged
+            )
+        );
+
+    /// <summary>
+    /// Gets or sets the provider that creates positioned keys for the active input context.
+    /// </summary>
     [Bindable(true)]
     [Category("Behavior")]
     public ISoftKeyboardLayoutProvider LayoutProvider
     {
         get => (ISoftKeyboardLayoutProvider)GetValue(LayoutProviderProperty);
-        set => SetValue(LayoutProviderProperty, value ?? throw new ArgumentNullException(nameof(value)));
+        set => SetValue(
+            LayoutProviderProperty,
+            value ?? throw new ArgumentNullException(nameof(value))
+        );
     }
 
-    /// <summary>Identifies the <see cref="TargetAdapter"/> dependency property.</summary>
-    public static readonly DependencyProperty TargetAdapterProperty = DependencyProperty.Register(
-        nameof(TargetAdapter),
-        typeof(ISoftKeyboardTargetAdapter),
-        typeof(SoftKeyboard),
-        new PropertyMetadata(null, OnTargetAdapterChanged)
-    );
+    #endregion
+
+    #region DP: TargetAdapter
+
+    /// <summary>
+    /// Identifies the <see cref="TargetAdapter"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty TargetAdapterProperty
+        = DependencyProperty.Register(
+            nameof(TargetAdapter),
+            typeof(ISoftKeyboardTargetAdapter),
+            typeof(SoftKeyboard),
+            new PropertyMetadata(null, OnTargetAdapterChanged)
+        );
 
     /// <summary>
     /// Gets or sets an optional adapter for a custom editor. Built-in WPF text editors remain supported
@@ -313,87 +431,162 @@ public partial class SoftKeyboard : Control
         set => SetValue(TargetAdapterProperty, value);
     }
 
-    private static readonly DependencyPropertyKey ActiveTargetPropertyKey =
-        DependencyProperty.RegisterReadOnly(
+    #endregion
+
+    #region Read-Only DP: ActiveTarget
+
+    private static readonly DependencyPropertyKey ActiveTargetPropertyKey
+        = DependencyProperty.RegisterReadOnly(
             nameof(ActiveTarget),
             typeof(IInputElement),
             typeof(SoftKeyboard),
             new PropertyMetadata(null, OnActiveTargetChanged)
         );
 
-    /// <summary>Identifies the read-only <see cref="ActiveTarget"/> dependency property.</summary>
-    public static readonly DependencyProperty ActiveTargetProperty = ActiveTargetPropertyKey.DependencyProperty;
+    /// <summary>
+    /// Identifies the <see cref="ActiveTarget"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty ActiveTargetProperty
+        = ActiveTargetPropertyKey.DependencyProperty;
 
-    /// <summary>Gets the editor to which the next key will be delivered.</summary>
-    public IInputElement? ActiveTarget => (IInputElement?)GetValue(ActiveTargetProperty);
+    /// <summary>
+    /// Gets the editor to which the next key will be delivered.
+    /// </summary>
+    public IInputElement? ActiveTarget
+    {
+        get => (IInputElement?)GetValue(ActiveTargetProperty);
+    }
 
-    private static readonly DependencyPropertyKey DisplayModePropertyKey =
-        DependencyProperty.RegisterReadOnly(
+    #endregion
+
+    #region Read-Only DP: DisplayMode
+
+    private static readonly DependencyPropertyKey DisplayModePropertyKey
+        = DependencyProperty.RegisterReadOnly(
             nameof(DisplayMode),
             typeof(SoftKeyboardDisplayMode),
             typeof(SoftKeyboard),
-            new PropertyMetadata(SoftKeyboardDisplayMode.Automatic, OnDisplayModeChanged)
+            new PropertyMetadata(
+                SoftKeyboardDisplayMode.Automatic,
+                OnDisplayModeChanged
+            )
         );
 
-    /// <summary>Identifies the read-only <see cref="DisplayMode"/> dependency property.</summary>
-    public static readonly DependencyProperty DisplayModeProperty = DisplayModePropertyKey.DependencyProperty;
+    /// <summary>
+    /// Identifies the <see cref="DisplayMode"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty DisplayModeProperty
+        = DisplayModePropertyKey.DependencyProperty;
 
-    /// <summary>Gets the requested surface. The default, Automatic, follows the active editor input scope.</summary>
-    public SoftKeyboardDisplayMode DisplayMode => (SoftKeyboardDisplayMode)GetValue(DisplayModeProperty);
+    /// <summary>
+    /// Gets the requested surface. The default, Automatic, follows the active editor input scope.
+    /// </summary>
+    public SoftKeyboardDisplayMode DisplayMode
+    {
+        get => (SoftKeyboardDisplayMode)GetValue(DisplayModeProperty);
+    }
 
-    private static readonly DependencyPropertyKey ShiftStatePropertyKey =
-        DependencyProperty.RegisterReadOnly(
+    #endregion
+
+    #region Read-Only DP: ShiftState
+
+    private static readonly DependencyPropertyKey ShiftStatePropertyKey
+        = DependencyProperty.RegisterReadOnly(
             nameof(ShiftState),
             typeof(SoftKeyboardShiftState),
             typeof(SoftKeyboard),
-            new PropertyMetadata(SoftKeyboardShiftState.Off, OnLayoutContextChanged)
+            new PropertyMetadata(
+                SoftKeyboardShiftState.Off,
+                OnLayoutContextChanged
+            )
         );
 
-    /// <summary>Identifies the read-only <see cref="ShiftState"/> dependency property.</summary>
-    public static readonly DependencyProperty ShiftStateProperty = ShiftStatePropertyKey.DependencyProperty;
+    /// <summary>
+    /// Identifies the <see cref="ShiftState"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty ShiftStateProperty
+        = ShiftStatePropertyKey.DependencyProperty;
 
-    /// <summary>Gets the virtual Shift state.</summary>
-    public SoftKeyboardShiftState ShiftState => (SoftKeyboardShiftState)GetValue(ShiftStateProperty);
+    /// <summary>
+    /// Gets the virtual Shift state.
+    /// </summary>
+    public SoftKeyboardShiftState ShiftState
+    {
+        get => (SoftKeyboardShiftState)GetValue(ShiftStateProperty);
+    }
 
-    private static readonly DependencyPropertyKey CurrentLayoutPropertyKey =
-        DependencyProperty.RegisterReadOnly(
+    #endregion
+
+    #region Read-Only DP: CurrentLayout
+
+    private static readonly DependencyPropertyKey CurrentLayoutPropertyKey
+        = DependencyProperty.RegisterReadOnly(
             nameof(CurrentLayout),
             typeof(SoftKeyboardLayout),
             typeof(SoftKeyboard),
             new PropertyMetadata(null)
         );
 
-    /// <summary>Identifies the read-only <see cref="CurrentLayout"/> dependency property.</summary>
-    public static readonly DependencyProperty CurrentLayoutProperty = CurrentLayoutPropertyKey.DependencyProperty;
+    /// <summary>
+    /// Identifies the <see cref="CurrentLayout"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty CurrentLayoutProperty
+        = CurrentLayoutPropertyKey.DependencyProperty;
 
-    /// <summary>Gets the immutable key layout currently rendered by the default template.</summary>
-    public SoftKeyboardLayout CurrentLayout => (SoftKeyboardLayout)GetValue(CurrentLayoutProperty);
+    /// <summary>
+    /// Gets the immutable key layout currently rendered by the default template.
+    /// </summary>
+    public SoftKeyboardLayout CurrentLayout
+    {
+        get => (SoftKeyboardLayout)GetValue(CurrentLayoutProperty);
+    }
 
-    private static readonly DependencyPropertyKey ActiveInputMethodPropertyKey =
-        DependencyProperty.RegisterReadOnly(
+    #endregion
+
+    #region Read-Only DP: ActiveInputMethod
+
+    private static readonly DependencyPropertyKey ActiveInputMethodPropertyKey
+        = DependencyProperty.RegisterReadOnly(
             nameof(ActiveInputMethod),
             typeof(SoftKeyboardInputMethod),
             typeof(SoftKeyboard),
             new PropertyMetadata(null)
         );
 
-    /// <summary>Identifies the read-only <see cref="ActiveInputMethod"/> dependency property.</summary>
-    public static readonly DependencyProperty ActiveInputMethodProperty = ActiveInputMethodPropertyKey.DependencyProperty;
+    /// <summary>
+    /// Identifies the <see cref="ActiveInputMethod"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty ActiveInputMethodProperty
+        = ActiveInputMethodPropertyKey.DependencyProperty;
 
-    /// <summary>Gets the active Windows input method when profile enumeration is available.</summary>
-    public SoftKeyboardInputMethod? ActiveInputMethod =>
-        (SoftKeyboardInputMethod?)GetValue(ActiveInputMethodProperty);
+    /// <summary>
+    /// Gets the active Windows input method when profile enumeration is available.
+    /// </summary>
+    public SoftKeyboardInputMethod? ActiveInputMethod
+    {
+        get => (SoftKeyboardInputMethod?)GetValue(ActiveInputMethodProperty);
+    }
 
-    private static readonly DependencyPropertyKey ImeStatePropertyKey =
-        DependencyProperty.RegisterReadOnly(
+    #endregion
+
+    #region Read-Only DP: ImeState
+
+    private static readonly DependencyPropertyKey ImeStatePropertyKey
+        = DependencyProperty.RegisterReadOnly(
             nameof(ImeState),
             typeof(InputMethodState),
             typeof(SoftKeyboard),
-            new PropertyMetadata(InputMethodState.DoNotCare, OnLayoutContextChanged)
+            new PropertyMetadata(
+                InputMethodState.DoNotCare,
+                OnLayoutContextChanged
+            )
         );
 
-    /// <summary>Identifies the read-only <see cref="ImeState"/> dependency property.</summary>
-    public static readonly DependencyProperty ImeStateProperty = ImeStatePropertyKey.DependencyProperty;
+    /// <summary>
+    /// Identifies the <see cref="ImeState"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty ImeStateProperty
+        = ImeStatePropertyKey.DependencyProperty;
 
     /// <summary>
     /// Gets whether the active Windows input method is composing native text or passing through
@@ -404,120 +597,202 @@ public partial class SoftKeyboard : Control
     /// expose a controllable open state. The default template's ABC button requests the opposite
     /// state and leaves this value unchanged when the input method rejects the request.
     /// </remarks>
-    public InputMethodState ImeState => (InputMethodState)GetValue(ImeStateProperty);
+    public InputMethodState ImeState
+    {
+        get => (InputMethodState)GetValue(ImeStateProperty);
+    }
 
-    private static readonly DependencyPropertyKey CandidatePresentationStatePropertyKey =
-        DependencyProperty.RegisterReadOnly(
+    #endregion
+
+    #region Read-Only DP: CandidatePresentationState
+
+    private static readonly DependencyPropertyKey CandidatePresentationStatePropertyKey
+        = DependencyProperty.RegisterReadOnly(
             nameof(CandidatePresentationState),
             typeof(SoftKeyboardCandidatePresentationState),
             typeof(SoftKeyboard),
-            new PropertyMetadata(SoftKeyboardCandidatePresentationState.None)
+            new PropertyMetadata(
+                SoftKeyboardCandidatePresentationState.None
+            )
         );
 
-    /// <summary>Identifies the read-only <see cref="CandidatePresentationState"/> dependency property.</summary>
-    public static readonly DependencyProperty CandidatePresentationStateProperty =
-        CandidatePresentationStatePropertyKey.DependencyProperty;
+    /// <summary>
+    /// Identifies the <see cref="CandidatePresentationState"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty CandidatePresentationStateProperty
+        = CandidatePresentationStatePropertyKey.DependencyProperty;
 
     /// <summary>Gets how the active input method's candidate UI is being presented.</summary>
-    public SoftKeyboardCandidatePresentationState CandidatePresentationState =>
-        (SoftKeyboardCandidatePresentationState)GetValue(CandidatePresentationStateProperty);
+    public SoftKeyboardCandidatePresentationState CandidatePresentationState
+    {
+        get => (SoftKeyboardCandidatePresentationState)GetValue(CandidatePresentationStateProperty);
+    }
 
-    private static readonly DependencyPropertyKey SystemKeyboardSuppressionStatePropertyKey =
-        DependencyProperty.RegisterReadOnly(
+    #endregion
+
+    #region Read-Only DP: SystemKeyboardSuppressionState
+
+    private static readonly DependencyPropertyKey SystemKeyboardSuppressionStatePropertyKey
+        = DependencyProperty.RegisterReadOnly(
             nameof(SystemKeyboardSuppressionState),
             typeof(SoftKeyboardSystemKeyboardSuppressionState),
             typeof(SoftKeyboard),
-            new PropertyMetadata(SoftKeyboardSystemKeyboardSuppressionState.NotRequested)
+            new PropertyMetadata(
+                SoftKeyboardSystemKeyboardSuppressionState.NotRequested
+            )
         );
 
-    /// <summary>Identifies the read-only <see cref="SystemKeyboardSuppressionState"/> dependency property.</summary>
-    public static readonly DependencyProperty SystemKeyboardSuppressionStateProperty =
-        SystemKeyboardSuppressionStatePropertyKey.DependencyProperty;
+    /// <summary>
+    /// Identifies the <see cref="SystemKeyboardSuppressionState"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty SystemKeyboardSuppressionStateProperty
+        = SystemKeyboardSuppressionStatePropertyKey.DependencyProperty;
 
-    /// <summary>Gets the result of the most recent Windows input-pane hide request.</summary>
-    public SoftKeyboardSystemKeyboardSuppressionState SystemKeyboardSuppressionState =>
-        (SoftKeyboardSystemKeyboardSuppressionState)GetValue(SystemKeyboardSuppressionStateProperty);
+    /// <summary>
+    /// Gets the result of the most recent Windows input-pane hide request.
+    /// </summary>
+    public SoftKeyboardSystemKeyboardSuppressionState SystemKeyboardSuppressionState
+    {
+        get => (SoftKeyboardSystemKeyboardSuppressionState)GetValue(SystemKeyboardSuppressionStateProperty);
+    }
 
-    private static readonly DependencyPropertyKey HasCandidatesPropertyKey =
-        DependencyProperty.RegisterReadOnly(
+    #endregion
+
+    #region Read-Only DP: HasCandidates
+
+    private static readonly DependencyPropertyKey HasCandidatesPropertyKey
+        = DependencyProperty.RegisterReadOnly(
             nameof(HasCandidates),
             typeof(bool),
             typeof(SoftKeyboard),
             new PropertyMetadata(false)
         );
 
-    /// <summary>Identifies the read-only <see cref="HasCandidates"/> dependency property.</summary>
-    public static readonly DependencyProperty HasCandidatesProperty = HasCandidatesPropertyKey.DependencyProperty;
+    /// <summary>
+    /// Identifies the <see cref="HasCandidates"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty HasCandidatesProperty
+        = HasCandidatesPropertyKey.DependencyProperty;
 
-    /// <summary>Gets a value indicating whether the embedded candidate list contains values.</summary>
-    public bool HasCandidates => (bool)GetValue(HasCandidatesProperty);
+    /// <summary>
+    /// Gets a value indicating whether the embedded candidate list contains values.
+    /// </summary>
+    public bool HasCandidates
+    {
+        get => (bool)GetValue(HasCandidatesProperty);
+    }
 
-    private static readonly DependencyPropertyKey CandidatePageNumberPropertyKey =
-        DependencyProperty.RegisterReadOnly(
+    #endregion
+
+    #region Read-Only DP: CandidatePageNumber
+
+    private static readonly DependencyPropertyKey CandidatePageNumberPropertyKey
+        = DependencyProperty.RegisterReadOnly(
             nameof(CandidatePageNumber),
             typeof(uint),
             typeof(SoftKeyboard),
             new PropertyMetadata(0U)
         );
 
-    /// <summary>Identifies the read-only <see cref="CandidatePageNumber"/> dependency property.</summary>
-    public static readonly DependencyProperty CandidatePageNumberProperty =
-        CandidatePageNumberPropertyKey.DependencyProperty;
+    /// <summary>
+    /// Identifies the <see cref="CandidatePageNumber"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty CandidatePageNumberProperty
+        = CandidatePageNumberPropertyKey.DependencyProperty;
 
     /// <summary>
     /// Gets the one-based page number reported by the active candidate UI, or zero when no page is active.
     /// </summary>
-    public uint CandidatePageNumber => (uint)GetValue(CandidatePageNumberProperty);
+    public uint CandidatePageNumber
+    {
+        get => (uint)GetValue(CandidatePageNumberProperty);
+    }
 
-    private static readonly DependencyPropertyKey CandidatePageCountPropertyKey =
-        DependencyProperty.RegisterReadOnly(
+    #endregion
+
+    #region Read-Only DP: CandidatePageCount
+
+    private static readonly DependencyPropertyKey CandidatePageCountPropertyKey
+        = DependencyProperty.RegisterReadOnly(
             nameof(CandidatePageCount),
             typeof(uint),
             typeof(SoftKeyboard),
             new PropertyMetadata(0U)
         );
 
-    /// <summary>Identifies the read-only <see cref="CandidatePageCount"/> dependency property.</summary>
-    public static readonly DependencyProperty CandidatePageCountProperty = CandidatePageCountPropertyKey.DependencyProperty;
+    /// <summary>
+    /// Identifies the <see cref="CandidatePageCount"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty CandidatePageCountProperty
+        = CandidatePageCountPropertyKey.DependencyProperty;
 
-    /// <summary>Gets the number of pages reported by the active candidate UI, or zero when inactive.</summary>
-    public uint CandidatePageCount => (uint)GetValue(CandidatePageCountProperty);
+    /// <summary>
+    /// Gets the number of pages reported by the active candidate UI, or zero when inactive.
+    /// </summary>
+    public uint CandidatePageCount
+    {
+        get => (uint)GetValue(CandidatePageCountProperty);
+    }
 
-    private static readonly DependencyPropertyKey CanGoToPreviousCandidatePagePropertyKey =
-        DependencyProperty.RegisterReadOnly(
+    #endregion
+
+    #region Read-Only DP: CanGoToPreviousCandidatePage
+
+    private static readonly DependencyPropertyKey CanGoToPreviousCandidatePagePropertyKey
+        = DependencyProperty.RegisterReadOnly(
             nameof(CanGoToPreviousCandidatePage),
             typeof(bool),
             typeof(SoftKeyboard),
             new PropertyMetadata(false)
         );
 
-    /// <summary>Identifies the read-only <see cref="CanGoToPreviousCandidatePage"/> dependency property.</summary>
-    public static readonly DependencyProperty CanGoToPreviousCandidatePageProperty =
-        CanGoToPreviousCandidatePagePropertyKey.DependencyProperty;
+    /// <summary>
+    /// Identifies the <see cref="CanGoToPreviousCandidatePage"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty CanGoToPreviousCandidatePageProperty
+        = CanGoToPreviousCandidatePagePropertyKey.DependencyProperty;
 
     /// <summary>
     /// Gets a value indicating whether the active input method exposes a previous candidate page.
     /// </summary>
-    /// <remarks>The value is <see langword="false"/> when no embedded candidate list is active.</remarks>
-    public bool CanGoToPreviousCandidatePage => (bool)GetValue(CanGoToPreviousCandidatePageProperty);
+    /// <remarks>
+    /// The value is <see langword="false"/> when no embedded candidate list is active.
+    /// </remarks>
+    public bool CanGoToPreviousCandidatePage
+    {
+        get => (bool)GetValue(CanGoToPreviousCandidatePageProperty);
+    }
 
-    private static readonly DependencyPropertyKey CanGoToNextCandidatePagePropertyKey =
-        DependencyProperty.RegisterReadOnly(
+    #endregion
+
+    #region Read-Only DP: CanGoToNextCandidatePage
+
+    private static readonly DependencyPropertyKey CanGoToNextCandidatePagePropertyKey
+        = DependencyProperty.RegisterReadOnly(
             nameof(CanGoToNextCandidatePage),
             typeof(bool),
             typeof(SoftKeyboard),
             new PropertyMetadata(false)
         );
 
-    /// <summary>Identifies the read-only <see cref="CanGoToNextCandidatePage"/> dependency property.</summary>
-    public static readonly DependencyProperty CanGoToNextCandidatePageProperty =
-        CanGoToNextCandidatePagePropertyKey.DependencyProperty;
+    /// <summary>
+    /// Identifies the <see cref="CanGoToNextCandidatePage"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty CanGoToNextCandidatePageProperty
+        = CanGoToNextCandidatePagePropertyKey.DependencyProperty;
 
     /// <summary>
     /// Gets a value indicating whether the active input method exposes a following candidate page.
     /// </summary>
-    /// <remarks>The value is <see langword="false"/> when no embedded candidate list is active.</remarks>
-    public bool CanGoToNextCandidatePage => (bool)GetValue(CanGoToNextCandidatePageProperty);
+    /// <remarks>
+    /// The value is <see langword="false"/> when no embedded candidate list is active.
+    /// </remarks>
+    public bool CanGoToNextCandidatePage
+    {
+        get => (bool)GetValue(CanGoToNextCandidatePageProperty);
+    }
+
+    #endregion
 
     #endregion
 
@@ -556,7 +831,10 @@ public partial class SoftKeyboard : Control
     }
 
     /// <inheritdoc />
-    protected override AutomationPeer OnCreateAutomationPeer() => new SoftKeyboardAutomationPeer(this);
+    protected override AutomationPeer OnCreateAutomationPeer()
+    {
+        return new SoftKeyboardAutomationPeer(this);
+    }
 
     /// <summary>Ends gestures belonging to the previous visual tree when the template changes.</summary>
     /// <remarks>
@@ -571,6 +849,7 @@ public partial class SoftKeyboard : Control
     {
         CancelKeyInteraction();
         CloseFlyouts();
+
         base.OnTemplateChanged(oldTemplate, newTemplate);
     }
 
@@ -586,10 +865,11 @@ public partial class SoftKeyboard : Control
             return;
         }
 
-        if (focusedElement is DependencyObject dependencyObject && IsWithinEffectiveScope(dependencyObject))
+        if (focusedElement is DependencyObject dpObj && IsWithinEffectiveScope(dpObj))
         {
-            ISoftKeyboardTargetAdapter? focusedAdapter = GetAdapter(focusedElement);
-            bool isEditableTarget = focusedAdapter?.CanReceiveInput(focusedElement) == true;
+            var focusedAdapter   = GetAdapter(focusedElement);
+            var isEditableTarget = focusedAdapter?.CanReceiveInput(focusedElement) == true;
+
             if (isEditableTarget && ReferenceEquals(focusedElement, _compositionTarget))
             {
                 // A composition can survive temporary application deactivation or an external
@@ -603,8 +883,9 @@ public partial class SoftKeyboard : Control
                 SetValue(ActiveTargetPropertyKey, focusedElement);
             }
 
-            bool shouldOpen = AutoShowMode == SoftKeyboardAutoShowMode.AnyFocus
-                || (AutoShowMode == SoftKeyboardAutoShowMode.TouchAndPen && touchOrPenInitiated);
+            var shouldOpen = AutoShowMode == SoftKeyboardAutoShowMode.AnyFocus
+                             || (AutoShowMode == SoftKeyboardAutoShowMode.TouchAndPen && touchOrPenInitiated);
+
             if (shouldOpen && isEditableTarget)
             {
                 SetCurrentValue(IsOpenProperty, true);
@@ -654,8 +935,9 @@ public partial class SoftKeyboard : Control
     /// </remarks>
     internal void OnSessionTextComposition(TextCompositionEventArgs eventArgs)
     {
-        TextComposition composition = eventArgs.TextComposition;
-        IInputElement? compositionSource = eventArgs.Source as IInputElement;
+        var composition       = eventArgs.TextComposition;
+        var compositionSource = eventArgs.Source as IInputElement;
+
         if (eventArgs.RoutedEvent is not null
             && (eventArgs.RoutedEvent == TextCompositionManager.PreviewTextInputStartEvent
                 || eventArgs.RoutedEvent == TextCompositionManager.PreviewTextInputUpdateEvent))
@@ -692,12 +974,14 @@ public partial class SoftKeyboard : Control
         uint pageCount = 0
     )
     {
-        SoftKeyboardCandidate[] snapshot = candidates.ToArray();
-        bool sameCandidates = snapshot.Length == _candidates.Count;
-        for (int index = 0; sameCandidates && index < snapshot.Length; index++)
+        var snapshot       = candidates.ToArray();
+        var sameCandidates = snapshot.Length == _candidates.Count;
+
+        for (var index = 0; sameCandidates && index < snapshot.Length; index++)
         {
-            SoftKeyboardCandidate current = _candidates[index];
-            SoftKeyboardCandidate replacement = snapshot[index];
+            var current     = _candidates[index];
+            var replacement = snapshot[index];
+
             sameCandidates = current.Index == replacement.Index
                 && current.Text == replacement.Text
                 && current.IsSelected == replacement.IsSelected;
@@ -718,7 +1002,7 @@ public partial class SoftKeyboard : Control
         if (!sameCandidates)
         {
             _candidates.Clear();
-            foreach (SoftKeyboardCandidate candidate in snapshot)
+            foreach (var candidate in snapshot)
             {
                 _candidates.Add(candidate);
             }
@@ -735,11 +1019,13 @@ public partial class SoftKeyboard : Control
     private static void OnIsOpenChanged(DependencyObject dependencyObject, DependencyPropertyChangedEventArgs eventArgs)
     {
         var keyboard = (SoftKeyboard)dependencyObject;
+
         SoftKeyboardAutomationPeer.RaiseIsOpenChanged(
             keyboard,
             (bool)eventArgs.OldValue,
             (bool)eventArgs.NewValue
         );
+
         if ((bool)eventArgs.NewValue)
         {
             keyboard.ResolveTarget();
@@ -763,8 +1049,9 @@ public partial class SoftKeyboard : Control
     private static void OnTargetChanged(DependencyObject dependencyObject, DependencyPropertyChangedEventArgs eventArgs)
     {
         var keyboard = (SoftKeyboard)dependencyObject;
+
         if (eventArgs.NewValue is IInputElement newTarget
-            && keyboard.ActiveTarget is IInputElement oldTarget
+            && keyboard.ActiveTarget is { } oldTarget
             && !ReferenceEquals(oldTarget, newTarget))
         {
             _ = keyboard.TryCancelActiveComposition(oldTarget);
@@ -783,7 +1070,7 @@ public partial class SoftKeyboard : Control
     private static void OnTargetScopeChanged(DependencyObject dependencyObject, DependencyPropertyChangedEventArgs eventArgs)
     {
         var keyboard = (SoftKeyboard)dependencyObject;
-        if (keyboard.ActiveTarget is IInputElement activeTarget
+        if (keyboard.ActiveTarget is { } activeTarget
             && activeTarget is DependencyObject activeTargetObject
             && !keyboard.IsWithinEffectiveScope(activeTargetObject))
         {
@@ -801,10 +1088,12 @@ public partial class SoftKeyboard : Control
     private static void OnActiveTargetChanged(DependencyObject dependencyObject, DependencyPropertyChangedEventArgs eventArgs)
     {
         var keyboard = (SoftKeyboard)dependencyObject;
+
         // A gesture belongs to the editor that was active when it started. Never let a held
         // Backspace or an unselected variant continue into a newly focused document.
         keyboard.CancelKeyInteraction();
         keyboard.CloseFlyouts();
+
         if (eventArgs.OldValue is IInputElement oldTarget
             && !ReferenceEquals(oldTarget, eventArgs.NewValue)
             && ReferenceEquals(keyboard._compositionTarget, oldTarget))
@@ -820,6 +1109,7 @@ public partial class SoftKeyboard : Control
         keyboard.SetValue(DisplayModePropertyKey, SoftKeyboardDisplayMode.Automatic);
         keyboard.RebuildLayout();
         keyboard._platform.Candidates.ReleasePresentation(keyboard);
+
         if (eventArgs.NewValue is null)
         {
             keyboard.ReleaseSystemKeyboardSuppression(tryRestore: false);
@@ -834,6 +1124,7 @@ public partial class SoftKeyboard : Control
     {
         var keyboard = (SoftKeyboard)dependencyObject;
         keyboard.RebuildLayout();
+
         // The header always reserves space, but native candidate ownership still depends on the
         // live editor and IME state. Reevaluate it immediately after a surface transition.
         if (keyboard.CanPresentCandidates)
@@ -855,18 +1146,26 @@ public partial class SoftKeyboard : Control
     {
         _session = SoftKeyboardDispatcherSession.GetForCurrentDispatcher();
         _session.Register(this);
+
         _platform.Candidates.Register(this);
+
+        // todo: InputMethod.Current 有可能是空的
         InputMethod.Current.StateChanged += OnInputMethodStateChanged;
+
         StartInputStateObservation();
+
+        // todo: 在没有 Window 的环境下（例如 WinForms/HostElement），如何让此机制生效？
         _window = Window.GetWindow(this);
+
         if (_window is not null)
         {
-            _window.Activated += OnWindowActivated;
+            _window.Activated   += OnWindowActivated;
             _window.Deactivated += OnWindowDeactivated;
         }
 
         ResolveTarget();
         RefreshImeState();
+
         if (IsOpen)
         {
             RequestSystemKeyboardHide();
@@ -880,13 +1179,18 @@ public partial class SoftKeyboard : Control
         // Unloading commonly means the Window/Page itself is going away. Showing a system keyboard
         // for a disappearing HWND would be intrusive and can target the next foreground window, so
         // only discard this control's suppression ownership here.
+
         _ = TryCancelActiveComposition();
         ReleaseSystemKeyboardSuppression(tryRestore: false);
         _session?.Unregister(this);
         _platform.Candidates.Unregister(this);
+
         InputMethod.Current.StateChanged -= OnInputMethodStateChanged;
+
         _inputStateTimer?.Stop();
+
         _session = null;
+
         if (_window is not null)
         {
             _window.Activated -= OnWindowActivated;
@@ -896,7 +1200,12 @@ public partial class SoftKeyboard : Control
 
         CancelKeyInteraction();
         CloseFlyouts();
-        ReplaceCandidates(Array.Empty<SoftKeyboardCandidate>(), SoftKeyboardCandidatePresentationState.None);
+
+        ReplaceCandidates(
+            Array.Empty<SoftKeyboardCandidate>(),
+            SoftKeyboardCandidatePresentationState.None
+        );
+
         ClearActiveComposition();
     }
 
@@ -967,9 +1276,11 @@ public partial class SoftKeyboard : Control
             case SoftKeyboardCandidate candidate:
                 CommitCandidate(candidate);
                 break;
+
             case SoftKeyboardInputMethod inputMethod:
                 ActivateInputMethod(inputMethod);
                 break;
+
             default:
                 if (button.Name == PreviousCandidatePageButtonPartName)
                 {
@@ -1046,6 +1357,7 @@ public partial class SoftKeyboard : Control
     private void OnKeyInputRequested(object? sender, SoftKeyboardInputRequestedEventArgs eventArgs)
     {
         eventArgs.Handled = true;
+
         if (eventArgs.OriginalSource is not SoftKeyboardKeyControl keyControl
             || !ReferenceEquals(_activeKeyControl, keyControl)
             || !ReferenceEquals(keyControl.Key, eventArgs.Key)
@@ -1080,7 +1392,7 @@ public partial class SoftKeyboard : Control
         switch (key.Kind)
         {
             case SoftKeyboardKeyKind.VirtualKey:
-                bool shifted = ShiftState is SoftKeyboardShiftState.Once or SoftKeyboardShiftState.Locked;
+                var shifted = ShiftState is SoftKeyboardShiftState.Once or SoftKeyboardShiftState.Locked;
                 if (TrySendVirtualKey(key.Key, shifted)
                     && ShiftState == SoftKeyboardShiftState.Once
                     && IsCharacterKey(key.Key))
@@ -1089,6 +1401,7 @@ public partial class SoftKeyboard : Control
                 }
 
                 break;
+
             case SoftKeyboardKeyKind.Text:
                 if (TrySendText(key.Text ?? string.Empty) && ShiftState == SoftKeyboardShiftState.Once)
                 {
@@ -1096,18 +1409,23 @@ public partial class SoftKeyboard : Control
                 }
 
                 break;
+
             case SoftKeyboardKeyKind.Shift:
                 ToggleShift();
                 break;
+
             case SoftKeyboardKeyKind.ChangeDisplayMode:
                 ShowDisplayMode(key.DisplayMode);
                 break;
+
             case SoftKeyboardKeyKind.InputMethods:
                 ShowInputMethodMenu();
                 break;
+
             case SoftKeyboardKeyKind.ToggleIme:
                 ToggleIme();
                 break;
+
             case SoftKeyboardKeyKind.Close:
                 CloseKeyboard();
                 break;
@@ -1116,18 +1434,20 @@ public partial class SoftKeyboard : Control
 
     private void ToggleShift()
     {
-        int now = Environment.TickCount;
-        int elapsed = unchecked(now - _lastShiftClickTick);
+        var now = Environment.TickCount;
+        var elapsed = unchecked(now - _lastShiftClickTick);
+
         _lastShiftClickTick = now;
 
-        SoftKeyboardShiftState next = ShiftState == SoftKeyboardShiftState.Once
-            && elapsed is >= 0 and <= 500
+        var next = ShiftState == SoftKeyboardShiftState.Once
+                   && elapsed is >= 0 and <= 500
             ? SoftKeyboardShiftState.Locked
             : ShiftState switch
             {
                 SoftKeyboardShiftState.Off => SoftKeyboardShiftState.Once,
                 _ => SoftKeyboardShiftState.Off,
             };
+
         SetValue(ShiftStatePropertyKey, next);
     }
 
@@ -1146,7 +1466,8 @@ public partial class SoftKeyboard : Control
         }
 
         RefreshInputMethods();
-        InputMethodState current = ReadInputState();
+
+        var current = ReadInputState();
         if (current == InputMethodState.On)
         {
             if (TryChangeInputState(InputMethodState.Off))
@@ -1160,7 +1481,7 @@ public partial class SoftKeyboard : Control
             // ImeState only controls the already active text service. If the process currently uses
             // an ordinary English keyboard layout, setting it to On is a no-op. Activate an enabled
             // TIP first, preferring the one most recently observed in this keyboard session.
-            SoftKeyboardInputMethod? inputMethod = ActiveInputMethod ?? FindPreferredImeInputMethod();
+            var inputMethod = ActiveInputMethod ?? FindPreferredImeInputMethod();
             if (inputMethod is not null
                 && (ActiveInputMethod is not null || _platform.InputMethods.TryActivate(inputMethod)))
             {
@@ -1182,7 +1503,7 @@ public partial class SoftKeyboard : Control
             return false;
         }
 
-        bool sent = _platform.Input.SendVirtualKey(key, shift);
+        var sent = _platform.Input.SendVirtualKey(key, shift);
         if (sent)
         {
             QueueCandidateBridgeRefresh();
@@ -1206,7 +1527,7 @@ public partial class SoftKeyboard : Control
             return false;
         }
 
-        bool sent = _platform.Input.SendUnicode(text);
+        var sent = _platform.Input.SendUnicode(text);
         if (sent)
         {
             QueueCandidateBridgeRefresh();
@@ -1218,8 +1539,9 @@ public partial class SoftKeyboard : Control
 
     private bool PrepareTargetForInput()
     {
-        IInputElement? target = Target ?? ActiveTarget;
-        ISoftKeyboardTargetAdapter? adapter = target is null ? null : GetAdapter(target);
+        var target = Target ?? ActiveTarget;
+        var adapter = target is null ? null : GetAdapter(target);
+
         if (!IsLoaded || !IsEnabled || !IsVisible || !IsOpen
             || target is null
             || target is not DependencyObject targetObject
@@ -1237,10 +1559,12 @@ public partial class SoftKeyboard : Control
         }
 
         SetValue(ActiveTargetPropertyKey, target);
+
         // The candidate sink must be advised before the injected key can open a TSF candidate UI.
         // This also retries the normal focus path, where WPF may have created TextServicesHost only
         // after the GotKeyboardFocus preprocessing callback completed.
         _platform.Candidates.Refresh(this);
+
         // Focus callbacks can disable, hide, or invalidate the editor or keyboard synchronously.
         return IsSystemKeyboardSuppressionRequired;
     }
@@ -1265,13 +1589,13 @@ public partial class SoftKeyboard : Control
 
     private bool IsWindowForeground()
     {
-        Window? window = _window ?? Window.GetWindow(this);
+        var window = _window ?? Window.GetWindow(this);
         if (window is null)
         {
             return false;
         }
 
-        IntPtr host = new WindowInteropHelper(window).Handle;
+        var host = new WindowInteropHelper(window).Handle;
         return _platform.Input.IsHostForeground(host);
     }
 
@@ -1279,10 +1603,10 @@ public partial class SoftKeyboard : Control
     {
         if (Target is not null)
         {
-            bool valid = Target is DependencyObject targetObject
-                && IsWithinEffectiveScope(targetObject)
-                && GetAdapter(Target) is { } targetAdapter
-                && targetAdapter.CanReceiveInput(Target);
+            var valid = Target is DependencyObject targetObject
+                        && IsWithinEffectiveScope(targetObject)
+                        && GetAdapter(Target) is { } targetAdapter
+                        && targetAdapter.CanReceiveInput(Target);
             SetValue(ActiveTargetPropertyKey, valid ? Target : null);
             return;
         }
@@ -1313,7 +1637,7 @@ public partial class SoftKeyboard : Control
 
     private bool IsWithinEffectiveScope(DependencyObject element)
     {
-        DependencyObject? scope = GetEffectiveScope();
+        var scope = GetEffectiveScope();
         if (scope is null)
         {
             return false;
@@ -1324,7 +1648,7 @@ public partial class SoftKeyboard : Control
             return true;
         }
 
-        for (DependencyObject? current = element; current is not null; current = GetParent(current))
+        for (var current = element; current is not null; current = GetParent(current))
         {
             if (ReferenceEquals(current, scope))
             {
@@ -1339,7 +1663,7 @@ public partial class SoftKeyboard : Control
     {
         if (element is Visual or Visual3D)
         {
-            DependencyObject? visualParent = VisualTreeHelper.GetParent(element);
+            var visualParent = VisualTreeHelper.GetParent(element);
             if (visualParent is not null)
             {
                 return visualParent;
@@ -1352,11 +1676,11 @@ public partial class SoftKeyboard : Control
     private void RebuildLayout()
     {
         CancelKeyInteraction();
-        ISoftKeyboardTargetAdapter? adapter = ActiveTarget is null ? null : GetAdapter(ActiveTarget);
-        InputScopeNameValue inputScope = ActiveTarget is not null && adapter is not null
+        var adapter = ActiveTarget is null ? null : GetAdapter(ActiveTarget);
+        var inputScope = ActiveTarget is not null && adapter is not null
             ? adapter.GetInputScope(ActiveTarget)
             : InputScopeNameValue.Default;
-        CultureInfo culture = InputLanguageManager.Current.CurrentInputLanguage;
+        var culture = InputLanguageManager.Current.CurrentInputLanguage;
 
         try
         {
@@ -1381,10 +1705,15 @@ public partial class SoftKeyboard : Control
 
     private void RefreshInputMethods()
     {
-        _platform.InputMethods.Refresh(_inputMethods, out SoftKeyboardInputMethod? active);
-        SoftKeyboardInputMethod? previous = ActiveInputMethod;
+        _platform.InputMethods.Refresh(_inputMethods, out var active);
+
+        var previous = ActiveInputMethod;
+
         SetValue(ActiveInputMethodPropertyKey, active);
-        if (previous?.ProfileId != active?.ProfileId || previous?.ClassId != active?.ClassId || previous?.LanguageId != active?.LanguageId)
+
+        if (previous?.ProfileId != active?.ProfileId
+            || previous?.ClassId != active?.ClassId
+            || previous?.LanguageId != active?.LanguageId)
         {
             RebuildLayout();
         }
@@ -1424,13 +1753,14 @@ public partial class SoftKeyboard : Control
 
     private SoftKeyboardInputMethod? FindPreferredImeInputMethod()
     {
-        SoftKeyboardInputMethod? remembered = _preferredImeInputMethod is null
+        var remembered = _preferredImeInputMethod is null
             ? null
             : _inputMethods.FirstOrDefault(inputMethod =>
                 inputMethod.ClassId == _preferredImeInputMethod.ClassId
                 && inputMethod.ProfileId == _preferredImeInputMethod.ProfileId
                 && inputMethod.LanguageId == _preferredImeInputMethod.LanguageId
             );
+
         if (remembered is not null)
         {
             return remembered;
@@ -1440,8 +1770,9 @@ public partial class SoftKeyboard : Control
         // UI culture, then its formatting culture, before falling back to Windows enumeration order.
         // This makes a Chinese application select Microsoft Pinyin without hard-coding a vendor or
         // preventing Japanese, Korean, and third-party profiles from using the same control.
-        ushort uiLanguage = unchecked((ushort)CultureInfo.CurrentUICulture.LCID);
-        ushort formattingLanguage = unchecked((ushort)CultureInfo.CurrentCulture.LCID);
+        var uiLanguage = unchecked((ushort)CultureInfo.CurrentUICulture.LCID);
+        var formattingLanguage = unchecked((ushort)CultureInfo.CurrentCulture.LCID);
+
         return _inputMethods.FirstOrDefault(inputMethod => SamePrimaryLanguage(inputMethod.LanguageId, uiLanguage))
             ?? _inputMethods.FirstOrDefault(inputMethod => SamePrimaryLanguage(inputMethod.LanguageId, formattingLanguage))
             ?? _inputMethods.FirstOrDefault();
@@ -1466,8 +1797,10 @@ public partial class SoftKeyboard : Control
         );
     }
 
-    private static bool SamePrimaryLanguage(ushort left, ushort right) =>
-        (left & 0x03FF) == (right & 0x03FF);
+    private static bool SamePrimaryLanguage(ushort left, ushort right)
+    {
+        return (left & 0x03FF) == (right & 0x03FF);
+    }
 
     private void CommitCandidate(SoftKeyboardCandidate candidate)
     {
@@ -1512,8 +1845,8 @@ public partial class SoftKeyboard : Control
 
         _inputPaneHideTimer.Start();
 
-        int now = Environment.TickCount;
-        int elapsed = unchecked(now - _lastInputPaneHideTick);
+        var now = Environment.TickCount;
+        var elapsed = unchecked(now - _lastInputPaneHideTick);
         if (_lastInputPaneHideTick != 0 && elapsed is >= 0 and < 250)
         {
             return;
@@ -1536,9 +1869,9 @@ public partial class SoftKeyboard : Control
             return;
         }
 
-        Window? window = _window ?? Window.GetWindow(this);
-        IntPtr handle = window is null ? IntPtr.Zero : new WindowInteropHelper(window).Handle;
-        SoftKeyboardSystemKeyboardSuppressionState result = _platform.InputPane.TryHide(handle);
+        var window = _window ?? Window.GetWindow(this);
+        var handle = window is null ? IntPtr.Zero : new WindowInteropHelper(window).Handle;
+        var result = _platform.InputPane.TryHide(handle);
         if (result == SoftKeyboardSystemKeyboardSuppressionState.Hidden)
         {
             _systemKeyboardHiddenByThisControl = true;
@@ -1594,13 +1927,14 @@ public partial class SoftKeyboard : Control
         _inputPaneHideOperation = null;
         _inputPaneHideTimer?.Stop();
 
-        bool shouldRestore = tryRestore
-            && _systemKeyboardHiddenByThisControl
-            && (_session?.IsSystemKeyboardSuppressionRequiredByOther(this) != true)
-            && CanRestoreSystemKeyboard();
+        var shouldRestore = tryRestore
+                            && _systemKeyboardHiddenByThisControl
+                            && (_session?.IsSystemKeyboardSuppressionRequiredByOther(this) != true)
+                            && CanRestoreSystemKeyboard();
 
         _systemKeyboardHiddenByThisControl = false;
         _lastInputPaneHideTick = 0;
+
         SetValue(
             SystemKeyboardSuppressionStatePropertyKey,
             SoftKeyboardSystemKeyboardSuppressionState.NotRequested
@@ -1611,8 +1945,9 @@ public partial class SoftKeyboard : Control
             return;
         }
 
-        Window? window = _window ?? Window.GetWindow(this);
-        IntPtr handle = window is null ? IntPtr.Zero : new WindowInteropHelper(window).Handle;
+        var window = _window ?? Window.GetWindow(this);
+        var handle = window is null ? IntPtr.Zero : new WindowInteropHelper(window).Handle;
+
         _ = _platform.InputPane.TryShow(handle);
     }
 
@@ -1637,10 +1972,13 @@ public partial class SoftKeyboard : Control
     /// Gets a value indicating whether the live editor and visible surface can own candidates.
     /// Remembered targets may restore focus for a key, but must never capture another editor's IME UI.
     /// </summary>
-    internal bool CanPresentCandidates =>
-        ImeState == InputMethodState.On
-        && ActiveInputMethod is not null
-        && IsSystemKeyboardSuppressionRequired;
+    internal bool CanPresentCandidates
+    {
+        get =>
+            ImeState == InputMethodState.On
+            && ActiveInputMethod is not null
+            && IsSystemKeyboardSuppressionRequired;
+    }
 
     private void OnIsEnabledChanged(object sender, DependencyPropertyChangedEventArgs eventArgs)
     {
@@ -1683,7 +2021,7 @@ public partial class SoftKeyboard : Control
             return true;
         }
 
-        IInputElement target = expectedTarget ?? _compositionTarget;
+        var target = expectedTarget ?? _compositionTarget;
         if (!ReferenceEquals(target, _compositionTarget))
         {
             return true;
@@ -1700,7 +2038,7 @@ public partial class SoftKeyboard : Control
         // Escape. Retain the WPF composition until its final event; if the TIP ignores the request,
         // reset the guard after input processing so the next semantic boundary can retry safely.
         _compositionCancellationRequested = true;
-        TextComposition requestedComposition = _activeTextComposition;
+        var requestedComposition = _activeTextComposition;
         _ = Dispatcher.BeginInvoke(
             DispatcherPriority.ContextIdle,
             new Action(() =>
@@ -1773,7 +2111,7 @@ public partial class SoftKeyboard : Control
     {
         // Clear ownership before calling the child: closing its popup may synchronously raise
         // routed/lifecycle events. The child alone owns timers, capture and submission suppression.
-        SoftKeyboardKeyControl? keyControl = _activeKeyControl;
+        var keyControl = _activeKeyControl;
         _activeKeyControl = null;
         keyControl?.CancelInteraction();
     }
@@ -1787,6 +2125,8 @@ public partial class SoftKeyboard : Control
         }
     }
 
-    private static bool IsCharacterKey(Key key) => key is >= Key.A and <= Key.Z;
-
+    private static bool IsCharacterKey(Key key)
+    {
+        return key is >= Key.A and <= Key.Z;
+    }
 }
