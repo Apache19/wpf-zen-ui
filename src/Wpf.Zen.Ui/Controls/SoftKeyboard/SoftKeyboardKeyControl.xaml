@@ -9,6 +9,7 @@
     xmlns:m="clr-namespace:Wpf.Zen.Ui.Markup"
     xmlns:t="clr-namespace:Wpf.Zen.Ui.Theming">
 
+    <!--  todo: 键帽不同于普通按钮控件，周围的空白应该能够交互  -->
     <Style x:Key="{x:Static t:StyleKeys.UiSoftKeyboardKeyControlStyle}" TargetType="{x:Type controls:SoftKeyboardKeyControl}">
         <Setter Property="MinHeight" Value="44" />
         <Setter Property="Focusable" Value="False" />

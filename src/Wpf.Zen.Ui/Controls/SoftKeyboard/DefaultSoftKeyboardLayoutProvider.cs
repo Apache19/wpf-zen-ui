@@ -9,6 +9,8 @@ using System.Windows.Input;
 // ReSharper disable once CheckNamespace
 namespace Wpf.Zen.Ui.Controls;
 
+// todo: 应增加适合输入网址和电子邮件地址的键盘布局
+
 /// <summary>
 /// Creates the standard touch-oriented layout used by <see cref="SoftKeyboard"/>.
 /// </summary>
