@@ -34,6 +34,8 @@ public sealed class DefaultSoftKeyboardLayoutProvider : ISoftKeyboardLayoutProvi
     private static readonly FluentIconSource InputMethodsIcon = new(SymbolRegular.Globe24);
     private static readonly FluentIconSource MoveLeftIcon = new(SymbolRegular.ArrowLeft24);
     private static readonly FluentIconSource MoveRightIcon = new(SymbolRegular.ArrowRight24);
+    private static readonly FluentIconSource PreviousSymbolsIcon = new(SymbolRegular.CaretLeft24, filled: true);
+    private static readonly FluentIconSource MoreSymbolsIcon = new(SymbolRegular.CaretRight24, filled: true);
     private static readonly FluentIconSource SpaceIcon = new(SymbolRegular.Spacebar24);
     private static readonly FluentIconSource EnterIcon = new(SymbolRegular.ArrowEnterLeft24);
 
@@ -194,7 +196,7 @@ public sealed class DefaultSoftKeyboardLayoutProvider : ISoftKeyboardLayoutProvi
         };
         IReadOnlyList<SoftKeyboardKey> thirdRow =
         [
-            new(SoftKeyboardKeyKind.ChangeDisplayMode, more ? "◂" : "▸", more ? "Previous symbols" : "More symbols", displayMode: more ? SoftKeyboardDisplayMode.Symbols : SoftKeyboardDisplayMode.MoreSymbols),
+            new(SoftKeyboardKeyKind.ChangeDisplayMode, more ? PreviousSymbolsIcon : MoreSymbolsIcon, more ? "Previous symbols" : "More symbols", displayMode: more ? SoftKeyboardDisplayMode.Symbols : SoftKeyboardDisplayMode.MoreSymbols),
             .. third.Select(CreateTextKey),
             new(SoftKeyboardKeyKind.VirtualKey, BackspaceIcon, "Backspace", Key.Back),
         ];

@@ -53,8 +53,11 @@ public class SoftKeyboardDefinitionTests
             more ? SoftKeyboardDisplayMode.MoreSymbols : SoftKeyboardDisplayMode.Symbols, native));
         Assert.Equal(second, string.Join(" ", layout.Keys.Where(key => key.Row == 1).Select(key => key.Text)));
         Assert.Equal(third, string.Join(" ", layout.Keys.Where(key => key.Row == 2 && key.Kind == SoftKeyboardKeyKind.Text).Select(key => key.Text)));
-        Assert.Contains(layout.Keys, key => key.Kind == SoftKeyboardKeyKind.ChangeDisplayMode
+        var pageKey = Assert.Single(layout.Keys, key => key.Kind == SoftKeyboardKeyKind.ChangeDisplayMode
             && key.DisplayMode == (more ? SoftKeyboardDisplayMode.Symbols : SoftKeyboardDisplayMode.MoreSymbols));
+        var icon = Assert.IsType<FluentIconSource>(pageKey.Content);
+        Assert.Equal(more ? SymbolRegular.CaretLeft24 : SymbolRegular.CaretRight24, icon.Symbol);
+        Assert.True(icon.Filled);
     }
 
     [Fact]
