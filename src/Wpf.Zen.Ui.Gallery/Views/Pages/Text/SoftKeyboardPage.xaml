@@ -17,9 +17,7 @@
     mc:Ignorable="d">
 
     <StackPanel Margin="0,0,0,24">
-        <controls:ControlExample
-            HeaderText="Embedded keyboard with automatic target tracking and input-scope-aware layouts."
-            XamlCode="&lt;ui:TextBox InputScope=&quot;TelephoneNumber&quot; /&gt;&#xA;&lt;ui:TextBox InputScope=&quot;Number&quot; /&gt;&#xA;&lt;ui:TextBox InputScope=&quot;EmailSmtpAddress&quot; /&gt;&#xA;&lt;ui:SoftKeyboard IsOpen=&quot;True&quot; TargetScope=&quot;{Binding ElementName=FormScope}&quot; /&gt;">
+        <controls:ControlExample HeaderText="Embedded keyboard with automatic target tracking and input-scope-aware layouts." XamlCode="&lt;ui:TextBox InputScope=&quot;TelephoneNumber&quot; /&gt;&#xA;&lt;ui:TextBox InputScope=&quot;Number&quot; /&gt;&#xA;&lt;ui:TextBox InputScope=&quot;EmailSmtpAddress&quot; /&gt;&#xA;&lt;ui:SoftKeyboard IsOpen=&quot;True&quot; TargetScope=&quot;{Binding ElementName=FormScope}&quot; /&gt;">
             <Grid x:Name="FormScope">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
@@ -88,9 +86,10 @@
                 <ui:SoftKeyboard
                     x:Name="Keyboard"
                     Grid.Row="6"
+                    AutoHideMode="Manual"
                     AutoShowMode="TouchAndPen"
-                    IsOpen="True"
                     HeaderContent="Ready to type — hold a letter for alternatives"
+                    IsOpen="True"
                     TargetScope="{Binding ElementName=FormScope}" />
             </Grid>
         </controls:ControlExample>

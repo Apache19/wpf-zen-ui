@@ -1,8 +1,3 @@
-// This Source Code Form is subject to the terms of the MIT License.
-// If a copy of the MIT was not distributed with this file, You can obtain one at https://opensource.org/licenses/MIT.
-// Copyright (C) Leszek Pomianowski and WPF UI Contributors.
-// All Rights Reserved.
-
 using System.Windows.Controls;
 
 // ReSharper disable once CheckNamespace
@@ -48,14 +43,22 @@ public sealed class SoftKeyboardPanel : Panel
         );
     }
 
-    /// <summary>Identifies the <see cref="ColumnCount"/> dependency property.</summary>
-    public static readonly DependencyProperty ColumnCountProperty = DependencyProperty.Register(
-        nameof(ColumnCount),
-        typeof(int),
-        typeof(SoftKeyboardPanel),
-        new FrameworkPropertyMetadata(1, FrameworkPropertyMetadataOptions.AffectsMeasure),
-        static value => value is int count && count > 0
-    );
+    #region DP: ColumnCount
+
+    /// <summary>
+    /// Identifies the <see cref="ColumnCount"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty ColumnCountProperty
+        = DependencyProperty.Register(
+            nameof(ColumnCount),
+            typeof(int),
+            typeof(SoftKeyboardPanel),
+            new FrameworkPropertyMetadata(
+                1,
+                FrameworkPropertyMetadataOptions.AffectsMeasure
+            ),
+            static value => value is > 0
+        );
 
     /// <summary>
     /// Gets or sets the number of equal-width logical columns shared by every row. The default is one.
@@ -71,14 +74,24 @@ public sealed class SoftKeyboardPanel : Panel
         set => SetValue(ColumnCountProperty, value);
     }
 
-    /// <summary>Identifies the <see cref="RowSpacing"/> dependency property.</summary>
-    public static readonly DependencyProperty RowSpacingProperty = DependencyProperty.Register(
-        nameof(RowSpacing),
-        typeof(double),
-        typeof(SoftKeyboardPanel),
-        new FrameworkPropertyMetadata(4D, FrameworkPropertyMetadataOptions.AffectsMeasure),
-        IsValidSpacing
-    );
+    #endregion
+
+    #region DP: RowSpacing
+
+    /// <summary>
+    /// Identifies the <see cref="RowSpacing"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty RowSpacingProperty
+        = DependencyProperty.Register(
+            nameof(RowSpacing),
+            typeof(double),
+            typeof(SoftKeyboardPanel),
+            new FrameworkPropertyMetadata(
+                4D,
+                FrameworkPropertyMetadataOptions.AffectsMeasure
+            ),
+            IsValidSpacing
+        );
 
     /// <summary>
     /// Gets or sets the requested distance between adjacent populated rows. The default is 4 DIP.
@@ -93,14 +106,24 @@ public sealed class SoftKeyboardPanel : Panel
         set => SetValue(RowSpacingProperty, value);
     }
 
-    /// <summary>Identifies the <see cref="ColumnSpacing"/> dependency property.</summary>
-    public static readonly DependencyProperty ColumnSpacingProperty = DependencyProperty.Register(
-        nameof(ColumnSpacing),
-        typeof(double),
-        typeof(SoftKeyboardPanel),
-        new FrameworkPropertyMetadata(4D, FrameworkPropertyMetadataOptions.AffectsMeasure),
-        IsValidSpacing
-    );
+    #endregion
+
+    #region DP: ColumnSpacing
+
+    /// <summary>
+    /// Identifies the <see cref="ColumnSpacing"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty ColumnSpacingProperty
+        = DependencyProperty.Register(
+            nameof(ColumnSpacing),
+            typeof(double),
+            typeof(SoftKeyboardPanel),
+            new FrameworkPropertyMetadata(
+                4D,
+                FrameworkPropertyMetadataOptions.AffectsMeasure
+            ),
+            IsValidSpacing
+        );
 
     /// <summary>
     /// Gets or sets the requested gutter between adjacent logical columns. The default is 4 DIP.
@@ -115,126 +138,192 @@ public sealed class SoftKeyboardPanel : Panel
         set => SetValue(ColumnSpacingProperty, value);
     }
 
-    /// <summary>Identifies the attached row-group property.</summary>
-    public static readonly DependencyProperty RowProperty = DependencyProperty.RegisterAttached(
-        "Row",
-        typeof(int),
-        typeof(SoftKeyboardPanel),
-        new FrameworkPropertyMetadata(
-            0,
-            FrameworkPropertyMetadataOptions.AffectsParentMeasure
-                | FrameworkPropertyMetadataOptions.AffectsParentArrange
-        ),
-        static value => value is int row && row >= 0
-    );
+    #endregion
 
-    /// <summary>Gets the nonnegative logical row identifier assigned to an item container.</summary>
-    /// <param name="element">The direct child of a <see cref="SoftKeyboardPanel"/>.</param>
+    #region Attached-DP: Row
+
+    /// <summary>
+    /// Identifies the attached row-group property.
+    /// </summary>
+    public static readonly DependencyProperty RowProperty
+        = DependencyProperty.RegisterAttached(
+            "Row",
+            typeof(int),
+            typeof(SoftKeyboardPanel),
+            new FrameworkPropertyMetadata(
+                0,
+                FrameworkPropertyMetadataOptions.AffectsParentMeasure
+                | FrameworkPropertyMetadataOptions.AffectsParentArrange
+            ),
+            static value => value is >= 0
+        );
+
+    /// <summary>
+    /// Gets the nonnegative logical row identifier assigned to an item container.
+    /// </summary>
+    /// <param name="element">
+    /// The direct child of a <see cref="SoftKeyboardPanel"/>.
+    /// </param>
     /// <returns>The logical row identifier. The default is zero.</returns>
+    [AttachedPropertyBrowsableForType(typeof(DependencyObject))]
     public static int GetRow(DependencyObject element)
     {
         return (int)element.GetValue(RowProperty);
     }
 
-    /// <summary>Assigns a nonnegative logical row identifier to an item container.</summary>
-    /// <param name="element">The direct child of a <see cref="SoftKeyboardPanel"/>.</param>
-    /// <param name="value">The logical row identifier.</param>
+    /// <summary>
+    /// Assigns a nonnegative logical row identifier to an item container.
+    /// </summary>
+    /// <param name="element">
+    /// The direct child of a <see cref="SoftKeyboardPanel"/>.
+    /// </param>
+    /// <param name="value">
+    /// The logical row identifier.
+    /// </param>
     public static void SetRow(DependencyObject element, int value)
     {
         element.SetValue(RowProperty, value);
     }
 
-    /// <summary>Identifies the attached zero-based logical column property.</summary>
-    public static readonly DependencyProperty ColumnProperty = DependencyProperty.RegisterAttached(
-        "Column",
-        typeof(int),
-        typeof(SoftKeyboardPanel),
-        new FrameworkPropertyMetadata(
-            0,
-            FrameworkPropertyMetadataOptions.AffectsParentMeasure
-                | FrameworkPropertyMetadataOptions.AffectsParentArrange
-        ),
-        static value => value is int column && column >= 0
-    );
+    #endregion
 
-    /// <summary>Gets the zero-based logical column assigned to an item container.</summary>
-    /// <param name="element">The direct child of a <see cref="SoftKeyboardPanel"/>.</param>
-    /// <returns>The logical column. The default is zero.</returns>
+    #region Attached-DP: Column
+
+    /// <summary>
+    /// Identifies the attached zero-based logical column property.
+    /// </summary>
+    public static readonly DependencyProperty ColumnProperty
+        = DependencyProperty.RegisterAttached(
+            "Column",
+            typeof(int),
+            typeof(SoftKeyboardPanel),
+            new FrameworkPropertyMetadata(
+                0,
+                FrameworkPropertyMetadataOptions.AffectsParentMeasure
+                | FrameworkPropertyMetadataOptions.AffectsParentArrange
+            ),
+            static value => value is >= 0
+        );
+
+    /// <summary>
+    /// Gets the zero-based logical column assigned to an item container.
+    /// </summary>
+    /// <param name="element">
+    /// The direct child of a <see cref="SoftKeyboardPanel"/>.
+    /// </param>
+    /// <returns>
+    /// The logical column. The default is zero.
+    /// </returns>
+    [AttachedPropertyBrowsableForType(typeof(DependencyObject))]
     public static int GetColumn(DependencyObject element)
     {
         return (int)element.GetValue(ColumnProperty);
     }
 
-    /// <summary>Assigns a zero-based logical column to an item container.</summary>
-    /// <param name="element">The direct child of a <see cref="SoftKeyboardPanel"/>.</param>
-    /// <param name="value">The logical column.</param>
+    /// <summary>
+    /// Assigns a zero-based logical column to an item container.
+    /// </summary>
+    /// <param name="element">
+    /// The direct child of a <see cref="SoftKeyboardPanel"/>.
+    /// </param>
+    /// <param name="value">
+    /// The logical column.
+    /// </param>
     public static void SetColumn(DependencyObject element, int value)
     {
         element.SetValue(ColumnProperty, value);
     }
 
-    /// <summary>Identifies the attached logical column-span property.</summary>
-    public static readonly DependencyProperty ColumnSpanProperty = DependencyProperty.RegisterAttached(
-        "ColumnSpan",
-        typeof(int),
-        typeof(SoftKeyboardPanel),
-        new FrameworkPropertyMetadata(
-            1,
-            FrameworkPropertyMetadataOptions.AffectsParentMeasure
-                | FrameworkPropertyMetadataOptions.AffectsParentArrange
-        ),
-        static value => value is int span && span > 0
-    );
+    #endregion
 
-    /// <summary>Gets the positive number of logical columns occupied by an item container.</summary>
-    /// <param name="element">The direct child of a <see cref="SoftKeyboardPanel"/>.</param>
-    /// <returns>The logical column span. The default is one.</returns>
+    #region Attached-DP: ColumnSpan
+
+    /// <summary>
+    /// Identifies the attached logical column-span property.
+    /// </summary>
+    public static readonly DependencyProperty ColumnSpanProperty
+        = DependencyProperty.RegisterAttached(
+            "ColumnSpan",
+            typeof(int),
+            typeof(SoftKeyboardPanel),
+            new FrameworkPropertyMetadata(
+                1,
+                FrameworkPropertyMetadataOptions.AffectsParentMeasure
+                | FrameworkPropertyMetadataOptions.AffectsParentArrange
+            ),
+            static value => value is > 0
+        );
+
+    /// <summary>
+    /// Gets the positive number of logical columns occupied by an item container.
+    /// </summary>
+    /// <param name="element">
+    /// The direct child of a <see cref="SoftKeyboardPanel"/>.
+    /// </param>
+    /// <returns>
+    /// The logical column span. The default is one.
+    /// </returns>
+    [AttachedPropertyBrowsableForType(typeof(DependencyObject))]
     public static int GetColumnSpan(DependencyObject element)
     {
         return (int)element.GetValue(ColumnSpanProperty);
     }
 
-    /// <summary>Assigns a positive logical column span to an item container.</summary>
-    /// <param name="element">The direct child of a <see cref="SoftKeyboardPanel"/>.</param>
-    /// <param name="value">The logical column span.</param>
+    /// <summary>
+    /// Assigns a positive logical column span to an item container.
+    /// </summary>
+    /// <param name="element">
+    /// The direct child of a <see cref="SoftKeyboardPanel"/>.
+    /// </param>
+    /// <param name="value"> The logical column span.</param>
     public static void SetColumnSpan(DependencyObject element, int value)
     {
         element.SetValue(ColumnSpanProperty, value);
     }
 
+    #endregion
+
     /// <summary>
     /// Measures children against their shared grid slots and derives the smallest uniform track that
     /// satisfies every child's desired width.
     /// </summary>
-    /// <param name="availableSize">The size offered by the parent; either dimension may be infinite.</param>
-    /// <returns>The desired size of the complete logical grid and populated rows.</returns>
+    /// <param name="availableSize">
+    /// The size offered by the parent; either dimension may be infinite.
+    /// </param>
+    /// <returns>
+    /// The desired size of the complete logical grid and populated rows.
+    /// </returns>
     protected override Size MeasureOverride(Size availableSize)
     {
         BuildRows();
         MeasureCollapsedChildren();
+
         if (_rows.Count == 0)
         {
             return default;
         }
 
-        double rowSpacing = GetEffectiveSpacing(availableSize.Height, _rows.Count, RowSpacing);
-        double rowHeight = GetSharedExtent(availableSize.Height, _rows.Count, rowSpacing);
-        double columnSpacing = GetEffectiveSpacing(availableSize.Width, ColumnCount, ColumnSpacing);
-        double trackWidth = GetSharedExtent(availableSize.Width, ColumnCount, columnSpacing);
-        double desiredTrackWidth = 0D;
-        double desiredRowHeight = 0D;
+        var rowSpacing        = GetEffectiveSpacing(availableSize.Height, _rows.Count, RowSpacing);
+        var rowHeight         = GetSharedExtent(availableSize.Height, _rows.Count, rowSpacing);
+        var columnSpacing     = GetEffectiveSpacing(availableSize.Width, ColumnCount, ColumnSpacing);
+        var trackWidth        = GetSharedExtent(availableSize.Width, ColumnCount, columnSpacing);
+        var desiredTrackWidth = 0D;
+        var desiredRowHeight  = 0D;
 
-        foreach (RowLayout row in _rows)
+        foreach (var row in _rows)
         {
-            foreach (UIElement child in row.Children)
+            foreach (var child in row.Children)
             {
-                GridPlacement placement = GetPlacement(child);
-                double width = GetSpannedExtent(trackWidth, placement.ColumnSpan, columnSpacing);
+                var placement = GetPlacement(child);
+                var width     = GetSpannedExtent(trackWidth, placement.ColumnSpan, columnSpacing);
+
                 child.Measure(new Size(width, rowHeight));
+
                 desiredTrackWidth = Math.Max(
                     desiredTrackWidth,
                     GetRequiredTrackExtent(child.DesiredSize.Width, placement.ColumnSpan, columnSpacing)
                 );
+
                 desiredRowHeight = Math.Max(desiredRowHeight, child.DesiredSize.Height);
             }
         }
@@ -245,7 +334,9 @@ public sealed class SoftKeyboardPanel : Panel
         );
     }
 
-    /// <summary>Arranges every child in the slot addressed by its row, column, and span.</summary>
+    /// <summary>
+    /// Arranges every child in the slot addressed by its row, column, and span.
+    /// </summary>
     /// <param name="finalSize">The size allocated by the parent.</param>
     /// <returns>The allocated size.</returns>
     protected override Size ArrangeOverride(Size finalSize)
@@ -254,31 +345,34 @@ public sealed class SoftKeyboardPanel : Panel
         // for keyboard-sized collections and guarantees that arrangement never consumes stale groups.
         BuildRows();
         ArrangeCollapsedChildren();
+
         if (_rows.Count == 0)
         {
             return finalSize;
         }
 
-        double rowSpacing = GetEffectiveSpacing(finalSize.Height, _rows.Count, RowSpacing);
-        double rowHeight = GetSharedExtent(finalSize.Height, _rows.Count, rowSpacing);
-        double columnSpacing = GetEffectiveSpacing(finalSize.Width, ColumnCount, ColumnSpacing);
-        double trackWidth = GetSharedExtent(finalSize.Width, ColumnCount, columnSpacing);
-        double columnPitch = trackWidth + columnSpacing;
-        double y = 0D;
+        var rowSpacing    = GetEffectiveSpacing(finalSize.Height, _rows.Count, RowSpacing);
+        var rowHeight     = GetSharedExtent(finalSize.Height, _rows.Count, rowSpacing);
+        var columnSpacing = GetEffectiveSpacing(finalSize.Width, ColumnCount, ColumnSpacing);
+        var trackWidth    = GetSharedExtent(finalSize.Width, ColumnCount, columnSpacing);
+        var columnPitch   = trackWidth + columnSpacing;
+        var y             = 0D;
 
         for (var rowIndex = 0; rowIndex < _rows.Count; rowIndex++)
         {
-            RowLayout row = _rows[rowIndex];
-            double height = rowIndex == _rows.Count - 1 ? Math.Max(0D, finalSize.Height - y) : rowHeight;
+            var row    = _rows[rowIndex];
+            var height = rowIndex == _rows.Count - 1 ? Math.Max(0D, finalSize.Height - y) : rowHeight;
 
-            foreach (UIElement child in row.Children)
+            foreach (var child in row.Children)
             {
-                GridPlacement placement = GetPlacement(child);
-                double x = placement.Column * columnPitch;
-                double width = Math.Min(
+                var placement = GetPlacement(child);
+                var x         = placement.Column * columnPitch;
+
+                var width = Math.Min(
                     GetSpannedExtent(trackWidth, placement.ColumnSpan, columnSpacing),
                     Math.Max(0D, finalSize.Width - x)
                 );
+
                 child.Arrange(new Rect(x, y, width, height));
             }
 
@@ -288,8 +382,10 @@ public sealed class SoftKeyboardPanel : Panel
         return finalSize;
     }
 
-    private static bool IsValidSpacing(object? value) =>
-        value is double spacing && spacing >= 0D && !double.IsInfinity(spacing);
+    private static bool IsValidSpacing(object? value)
+    {
+        return value is double spacing and >= 0D && !double.IsInfinity(spacing);
+    }
 
     private static double GetEffectiveSpacing(double available, int count, double requested)
     {
@@ -342,8 +438,9 @@ public sealed class SoftKeyboardPanel : Panel
         // WPF Grid clamps an out-of-range index to its final definition and then clamps the span to
         // the remaining definitions. Mirroring that behavior keeps direct panel use resilient while
         // SoftKeyboardLayout performs strict validation for the normal data-driven path.
-        int column = Math.Min(GetColumn(child), ColumnCount - 1);
-        int columnSpan = Math.Min(GetColumnSpan(child), ColumnCount - column);
+        var column     = Math.Min(GetColumn(child), ColumnCount - 1);
+        var columnSpan = Math.Min(GetColumnSpan(child), ColumnCount - column);
+
         return new GridPlacement(column, columnSpan);
     }
 
@@ -358,8 +455,9 @@ public sealed class SoftKeyboardPanel : Panel
                 continue;
             }
 
-            int rowId = GetRow(child);
-            RowLayout? row = _rows.FirstOrDefault(candidate => candidate.Id == rowId);
+            var rowId = GetRow(child);
+            var row   = _rows.FirstOrDefault(candidate => candidate.Id == rowId);
+
             if (row is null)
             {
                 row = new RowLayout(rowId);
@@ -389,7 +487,7 @@ public sealed class SoftKeyboardPanel : Panel
         {
             if (child.Visibility == Visibility.Collapsed)
             {
-                child.Arrange(default(Rect));
+                child.Arrange(default);
             }
         }
     }

@@ -82,10 +82,10 @@
                                 ContentTemplate="{TemplateBinding HeaderContentTemplate}" />
                             <Grid
                                 x:Name="CandidateBar"
-                                ClipToBounds="True"
                                 Grid.Row="0"
                                 MinHeight="44"
-                                AutomationProperties.Name="Input method candidates">
+                                AutomationProperties.Name="Input method candidates"
+                                ClipToBounds="True">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="Auto" />
@@ -154,14 +154,14 @@
                                 x:Name="PART_Keys"
                                 Grid.Row="1"
                                 HorizontalContentAlignment="Stretch"
-                                ItemsSource="{Binding CurrentLayout.Keys, RelativeSource={RelativeSource TemplatedParent}}"
-                                VerticalContentAlignment="Stretch">
+                                VerticalContentAlignment="Stretch"
+                                ItemsSource="{Binding CurrentLayout.Keys, RelativeSource={RelativeSource TemplatedParent}}">
                                 <ItemsControl.ItemsPanel>
                                     <ItemsPanelTemplate>
                                         <controls:SoftKeyboardPanel
                                             ColumnCount="{Binding CurrentLayout.ColumnCount, RelativeSource={RelativeSource AncestorType={x:Type controls:SoftKeyboard}}}"
-                                            RowSpacing="{Binding RowSpacing, RelativeSource={RelativeSource AncestorType={x:Type controls:SoftKeyboard}}}"
-                                            ColumnSpacing="{Binding ColumnSpacing, RelativeSource={RelativeSource AncestorType={x:Type controls:SoftKeyboard}}}" />
+                                            ColumnSpacing="{Binding ColumnSpacing, RelativeSource={RelativeSource AncestorType={x:Type controls:SoftKeyboard}}}"
+                                            RowSpacing="{Binding RowSpacing, RelativeSource={RelativeSource AncestorType={x:Type controls:SoftKeyboard}}}" />
                                     </ItemsPanelTemplate>
                                 </ItemsControl.ItemsPanel>
                                 <ItemsControl.ItemContainerStyle>

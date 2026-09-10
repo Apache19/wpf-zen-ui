@@ -99,6 +99,7 @@ public sealed class DefaultSoftKeyboardLayoutProvider : ISoftKeyboardLayoutProvi
             {
                 string label = KeyboardLayoutLabels.GetLabel(key, shifted);
                 IEnumerable<string>? alternates = null;
+
                 if (Alternates.TryGetValue(key, out var variants))
                 {
                     alternates = shifted
@@ -114,35 +115,65 @@ public sealed class DefaultSoftKeyboardLayoutProvider : ISoftKeyboardLayoutProvi
                     alternates: alternates
                 );
             });
+
             rows.Add(keys.ToArray());
         }
 
         IReadOnlyList<SoftKeyboardKey> thirdRow =
         [
-            new SoftKeyboardKey(SoftKeyboardKeyKind.Shift, GetShiftContent(context.ShiftState), "Shift"),
+            new (SoftKeyboardKeyKind.Shift, GetShiftContent(context.ShiftState), "Shift"),
             .. rows[2],
-            new SoftKeyboardKey(SoftKeyboardKeyKind.VirtualKey, BackspaceIcon, "Backspace", Key.Back, isRepeatEnabled: true),
+            new (SoftKeyboardKeyKind.VirtualKey, BackspaceIcon, "Backspace", Key.Back, isRepeatEnabled: true),
         ];
 
         bool native = context.ImeState == InputMethodState.On;
+
+        // 第四排
         IReadOnlyList<SoftKeyboardKey> bottom =
         [
-            new(SoftKeyboardKeyKind.ChangeDisplayMode, "&123", "Numbers and symbols", displayMode: SoftKeyboardDisplayMode.Symbols),
+            // 数字和符号面板切换键
+            new(SoftKeyboardKeyKind.ChangeDisplayMode, "123", "Numbers and symbols", displayMode: SoftKeyboardDisplayMode.Symbols),
+
+            // 输入法开关
             CreateImeKey(context),
             CreateTextKey(native ? "，" : ","),
+
             new(SoftKeyboardKeyKind.VirtualKey, MoveLeftIcon, "Move cursor left", Key.Left, isRepeatEnabled: true),
             new(SoftKeyboardKeyKind.VirtualKey, SpaceIcon, "Space", Key.Space),
             new(SoftKeyboardKeyKind.VirtualKey, MoveRightIcon, "Move cursor right", Key.Right, isRepeatEnabled: true),
+
             CreateTextKey(native ? "。" : "."),
+
+            // 输入法选择键（地球）
             new(SoftKeyboardKeyKind.InputMethods, InputMethodsIcon, "Input methods"),
+
+            // 回车键
             new(SoftKeyboardKeyKind.VirtualKey, EnterIcon, "Enter", Key.Enter),
         ];
 
         var positionedKeys = new List<SoftKeyboardKey>();
+
         AddPositionedRow(positionedKeys, rows[0], 0, 0, 2);
+
         if (native && context.Culture.TwoLetterISOLanguageName == "ja")
         {
-            AddPositionedRow(positionedKeys, [.. rows[1], new(SoftKeyboardKeyKind.Text, "ー・", "Long vowel mark and middle dot", text: "ー", alternates: ["・"])], 1, 0, 2);
+            AddPositionedRow(
+                positionedKeys,
+                [
+                    ..
+                    rows[1],
+                    new SoftKeyboardKey(
+                        SoftKeyboardKeyKind.Text,
+                        "ー・",
+                        "Long vowel mark and middle dot",
+                        text: "ー",
+                        alternates: ["・"]
+                    )
+                ],
+                row: 1,
+                startColumn: 0,
+                columnSpan: 2
+            );
         }
         else
         {
@@ -151,6 +182,7 @@ public sealed class DefaultSoftKeyboardLayoutProvider : ISoftKeyboardLayoutProvi
 
         AddPositionedRow(positionedKeys, thirdRow, 2, 0, [2, 2, 2, 2, 2, 2, 2, 2, 4]);
         AddPositionedRow(positionedKeys, bottom, 3, 0, [2, 2, 2, 2, 4, 2, 2, 2, 2]);
+
         return new SoftKeyboardLayout(positionedKeys, DefaultColumnCount);
     }
 
