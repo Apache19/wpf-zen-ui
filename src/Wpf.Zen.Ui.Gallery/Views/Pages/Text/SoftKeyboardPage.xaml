@@ -17,11 +17,11 @@
     mc:Ignorable="d">
 
     <StackPanel Margin="0,0,0,24">
-        <controls:ControlExample HeaderText="Embedded keyboard with automatic target tracking." XamlCode="&lt;ui:SoftKeyboard IsOpen=&quot;True&quot; TargetScope=&quot;{Binding ElementName=FormScope}&quot; /&gt;">
+        <controls:ControlExample
+            HeaderText="Embedded keyboard with automatic target tracking and input-scope-aware layouts."
+            XamlCode="&lt;ui:TextBox InputScope=&quot;TelephoneNumber&quot; /&gt;&#xA;&lt;ui:TextBox InputScope=&quot;Number&quot; /&gt;&#xA;&lt;ui:TextBox InputScope=&quot;EmailSmtpAddress&quot; /&gt;&#xA;&lt;ui:SoftKeyboard IsOpen=&quot;True&quot; TargetScope=&quot;{Binding ElementName=FormScope}&quot; /&gt;">
             <Grid x:Name="FormScope">
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="10" />
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="10" />
                     <RowDefinition Height="Auto" />
@@ -31,31 +31,63 @@
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
 
-                <ui:TextBox
-                    x:Name="NameEditor"
-                    MinWidth="320"
-                    HorizontalAlignment="Left"
-                    PlaceholderText="Name or IME composition" />
-                <ui:PasswordBox
-                    Grid.Row="2"
-                    MinWidth="320"
-                    HorizontalAlignment="Left"
-                    PlaceholderText="Password" />
+                <WrapPanel>
+                    <ui:TextBox
+                        Width="260"
+                        Margin="0,0,12,10"
+                        InputScope="Default"
+                        PlaceholderText="Text / IME composition" />
+                    <ui:TextBox
+                        Width="260"
+                        Margin="0,0,12,10"
+                        InputScope="TelephoneNumber"
+                        PlaceholderText="Telephone number" />
+                    <ui:TextBox
+                        Width="260"
+                        Margin="0,0,12,10"
+                        InputScope="Number"
+                        PlaceholderText="Decimal number" />
+                    <ui:TextBox
+                        Width="260"
+                        Margin="0,0,12,10"
+                        InputScope="Digits"
+                        PlaceholderText="Digits" />
+                    <ui:TextBox
+                        Width="260"
+                        Margin="0,0,12,10"
+                        InputScope="CurrencyAmount"
+                        PlaceholderText="Currency amount" />
+                    <ui:TextBox
+                        Width="260"
+                        Margin="0,0,12,10"
+                        InputScope="EmailSmtpAddress"
+                        PlaceholderText="Email address" />
+                    <ui:TextBox
+                        Width="260"
+                        Margin="0,0,12,10"
+                        InputScope="Url"
+                        PlaceholderText="Website URL" />
+                    <ui:PasswordBox
+                        Width="260"
+                        Margin="0,0,12,10"
+                        PlaceholderText="Password" />
+                </WrapPanel>
+
                 <ui:RichTextBox
-                    Grid.Row="4"
+                    Grid.Row="2"
                     Width="480"
                     Height="80"
                     HorizontalAlignment="Left" />
 
                 <CheckBox
-                    Grid.Row="6"
+                    Grid.Row="4"
                     HorizontalAlignment="Left"
                     Content="Keyboard open"
                     IsChecked="{Binding IsOpen, ElementName=Keyboard, Mode=TwoWay}" />
 
                 <ui:SoftKeyboard
                     x:Name="Keyboard"
-                    Grid.Row="8"
+                    Grid.Row="6"
                     AutoShowMode="TouchAndPen"
                     IsOpen="True"
                     HeaderContent="Ready to type — hold a letter for alternatives"
