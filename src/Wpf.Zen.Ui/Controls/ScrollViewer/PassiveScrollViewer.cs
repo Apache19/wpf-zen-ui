@@ -27,14 +27,79 @@ public partial class PassiveScrollViewer : ScrollViewer
 {
     private static readonly DependencyProperty[] TemplatedParentAssistProperties;
 
-    /// <summary>Identifies the <see cref="ScrollSpillMode"/> dependency property.</summary>
+    /// <summary>
+    /// Identifies the <see cref="IsHorizontalMouseWheelEnabled"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty IsHorizontalMouseWheelEnabledProperty
+        = DependencyProperty.RegisterAttached(
+            nameof(IsHorizontalMouseWheelEnabled),
+            typeof(bool),
+            typeof(PassiveScrollViewer),
+            new FrameworkPropertyMetadata(
+                false,
+                OnSmoothScrollingSettingChanged
+            )
+        );
+
+    /// <summary>
+    /// Gets or sets a value indicating whether ordinary wheel input scrolls horizontally when vertical scrolling is
+    /// unavailable and a meaningful horizontal range exists. The default is <see langword="false"/>.
+    /// </summary>
+    /// <remarks>
+    /// Reaching a vertical boundary does not select the horizontal axis. Downward wheel input
+    /// increases the horizontal offset; upward input decreases it. Pixel providers use the existing
+    /// smooth-scrolling settings, while item providers retain their native horizontal wheel steps.
+    /// <see cref="Controls.ScrollSpillMode.Native"/> takes precedence over this setting.
+    /// This property does not inherit or invalidate layout/rendering and has no coercion. It can be
+    /// animated discretely; every effective change cancels active smooth motion. A template-owned
+    /// viewer obtains its owner's value unless the viewer's template, style or local value overrides it.
+    /// No additional template parts are required.
+    /// </remarks>
+    public bool IsHorizontalMouseWheelEnabled
+    {
+        get => GetIsHorizontalMouseWheelEnabled(this);
+        set => SetIsHorizontalMouseWheelEnabled(this, value);
+    }
+
+    /// <summary>
+    /// Configures horizontal wheel fallback for a viewer or its template owner.
+    /// </summary>
+    /// <param name="element">
+    /// The viewer or template owner to configure.
+    /// </param>
+    /// <param name="value">
+    /// Whether ordinary wheel input may select the horizontal axis.
+    /// </param>
+    public static void SetIsHorizontalMouseWheelEnabled(DependencyObject element, bool value)
+    {
+        element.SetValue(IsHorizontalMouseWheelEnabledProperty, value);
+    }
+
+    /// <summary>
+    /// Gets horizontal wheel fallback for a viewer or its template owner.
+    /// </summary>
+    /// <param name="element">
+    /// The viewer or template owner to query.
+    /// </param>
+    /// <returns>
+    /// The configured value, or <see langword="false"/> when unset.
+    /// </returns>
+    [AttachedPropertyBrowsableForType(typeof(DependencyObject))]
+    public static bool GetIsHorizontalMouseWheelEnabled(DependencyObject element)
+    {
+        return (bool)element.GetValue(IsHorizontalMouseWheelEnabledProperty);
+    }
+
+    /// <summary>
+    /// Identifies the <see cref="ScrollSpillMode"/> dependency property.
+    /// </summary>
     /// <remarks>
     /// The property is attached so a control can configure the scrolling host hidden inside its
     /// template. Templates must forward the value explicitly; it deliberately does not inherit
     /// through the element tree because nested scrolling surfaces can require different policies.
     /// </remarks>
-    public static readonly DependencyProperty ScrollSpillModeProperty =
-        DependencyProperty.RegisterAttached(
+    public static readonly DependencyProperty ScrollSpillModeProperty
+        = DependencyProperty.RegisterAttached(
             nameof(ScrollSpillMode),
             typeof(ScrollSpillMode),
             typeof(PassiveScrollViewer),
@@ -54,17 +119,16 @@ public partial class PassiveScrollViewer : ScrollViewer
     /// <summary>
     /// Identifies the <see cref="HorizontalScrollBarVisibilityThreshold"/> dependency property.
     /// </summary>
-    public static readonly DependencyProperty HorizontalScrollBarVisibilityThresholdProperty =
-        DependencyProperty.Register(
+    public static readonly DependencyProperty HorizontalScrollBarVisibilityThresholdProperty
+        = DependencyProperty.Register(
             nameof(HorizontalScrollBarVisibilityThreshold),
             typeof(double),
             typeof(PassiveScrollViewer),
             new FrameworkPropertyMetadata(0.0),
-            static value =>
-                value is double threshold
-                && !double.IsNaN(threshold)
-                && !double.IsInfinity(threshold)
-                && threshold >= 0.0
+            static value => value is double threshold
+                            && !double.IsNaN(threshold)
+                            && !double.IsInfinity(threshold)
+                            && threshold >= 0.0
         );
 
     /// <summary>
@@ -81,8 +145,8 @@ public partial class PassiveScrollViewer : ScrollViewer
         set => SetValue(HorizontalScrollBarVisibilityThresholdProperty, value);
     }
 
-    private static readonly DependencyPropertyKey EffectiveHorizontalScrollBarVisibilityPropertyKey =
-        DependencyProperty.RegisterReadOnly(
+    private static readonly DependencyPropertyKey EffectiveHorizontalScrollBarVisibilityPropertyKey
+        = DependencyProperty.RegisterReadOnly(
             nameof(EffectiveHorizontalScrollBarVisibility),
             typeof(Visibility),
             typeof(PassiveScrollViewer),
@@ -92,8 +156,8 @@ public partial class PassiveScrollViewer : ScrollViewer
     /// <summary>
     /// Identifies the <see cref="EffectiveHorizontalScrollBarVisibility"/> dependency property.
     /// </summary>
-    public static readonly DependencyProperty EffectiveHorizontalScrollBarVisibilityProperty =
-        EffectiveHorizontalScrollBarVisibilityPropertyKey.DependencyProperty;
+    public static readonly DependencyProperty EffectiveHorizontalScrollBarVisibilityProperty
+        = EffectiveHorizontalScrollBarVisibilityPropertyKey.DependencyProperty;
 
     /// <summary>
     /// Gets the horizontal scrollbar visibility after applying
@@ -138,6 +202,7 @@ public partial class PassiveScrollViewer : ScrollViewer
             ScrollViewerAssist.OverlayModeProperty,
             IsSmoothScrollingEnabledProperty,
             SmoothScrollDurationProperty,
+            IsHorizontalMouseWheelEnabledProperty,
         ];
 
         DefaultStyleKeyProperty.OverrideMetadata(
@@ -154,6 +219,7 @@ public partial class PassiveScrollViewer : ScrollViewer
     {
         StopSmoothScrolling();
         BindAssistPropertiesToTemplatedParentIfUnset();
+
         base.OnApplyTemplate();
     }
 
@@ -165,9 +231,12 @@ public partial class PassiveScrollViewer : ScrollViewer
     {
         base.OnPropertyChanged(e);
 
-        if (e.Property == IsVisibleProperty || e.Property == IsEnabledProperty
-            || e.Property == ContentProperty || e.Property == CanContentScrollProperty
-            || e.Property == VerticalScrollBarVisibilityProperty || e.Property == ScrollSpillModeProperty)
+        if (e.Property == IsVisibleProperty
+            || e.Property == IsEnabledProperty
+            || e.Property == ContentProperty
+            || e.Property == CanContentScrollProperty
+            || e.Property == VerticalScrollBarVisibilityProperty
+            || e.Property == ScrollSpillModeProperty)
         {
             StopSmoothScrolling();
         }
@@ -205,7 +274,7 @@ public partial class PassiveScrollViewer : ScrollViewer
             return;
         }
 
-        foreach (DependencyProperty property in TemplatedParentAssistProperties)
+        foreach (var property in TemplatedParentAssistProperties)
         {
             if (DependencyPropertyHelper.GetValueSource(this, property).BaseValueSource
                 != BaseValueSource.Default)
@@ -222,11 +291,7 @@ public partial class PassiveScrollViewer : ScrollViewer
             BindingOperations.SetBinding(
                 this,
                 property,
-                new Binding
-                {
-                    Path = new PropertyPath(property),
-                    RelativeSource = RelativeSource.TemplatedParent,
-                }
+                new Binding { Path = new PropertyPath(property), RelativeSource = RelativeSource.TemplatedParent, }
             );
         }
     }
@@ -242,7 +307,7 @@ public partial class PassiveScrollViewer : ScrollViewer
     }
 
     /// <summary>
-    /// Accumulates vertical wheel input into the current motion, or delegates to the native provider
+    /// Selects the available wheel axis and accumulates input, or delegates to the native provider
     /// when smooth scrolling is unavailable. Boundary propagation uses the pending destination so a
     /// child does not swallow extra detents while it is still approaching its edge.
     /// </summary>
@@ -261,23 +326,42 @@ public partial class PassiveScrollViewer : ScrollViewer
             return;
         }
 
-        if (TrySmoothMouseWheel(e))
+        var orientation = GetMouseWheelOrientation();
+        if (TrySmoothMouseWheel(e, orientation))
         {
             return;
         }
 
         StopSmoothScrolling();
 
-        // We only care about one question: can the content actually scroll?
-        // Either it's too small to overflow, or we've already hit the end.
-        // ScrollBar visibility is the native control's own business — not ours.
-        if (IsContentSmallerThanViewport || HasReachedEndOfScrolling(e))
+        var maximum = orientation == Orientation.Horizontal ? ScrollableWidth : ScrollableHeight;
+        var offset  = orientation == Orientation.Horizontal ? HorizontalOffset : VerticalOffset;
+
+        if (maximum <= 0 || (e.Delta > 0 ? offset <= 0 : offset >= maximum))
         {
             e.Handled = ScrollSpillMode == ScrollSpillMode.Disabled;
             return;
         }
 
-        base.OnMouseWheel(e);
+        if (orientation == Orientation.Horizontal)
+        {
+            // The provider owns pixel/item units and native step sizes. ScrollViewer's base wheel
+            // handler only calls the vertical methods, so horizontal fallback must dispatch here.
+            if (e.Delta < 0)
+            {
+                ScrollInfo.MouseWheelRight();
+            }
+            else
+            {
+                ScrollInfo.MouseWheelLeft();
+            }
+
+            e.Handled = true;
+        }
+        else
+        {
+            base.OnMouseWheel(e);
+        }
     }
 
     /// <summary>
@@ -292,7 +376,7 @@ public partial class PassiveScrollViewer : ScrollViewer
     /// </remarks>
     protected override void OnScrollChanged(ScrollChangedEventArgs e)
     {
-        bool wasSmoothScrolling = IsSmoothScrolling;
+        var wasSmoothScrolling = IsSmoothScrolling;
         SynchronizeSmoothScrolling(e);
 
         // ScrollContentPresenter retains its requested offset when layout coerces the displayed
@@ -303,10 +387,10 @@ public partial class PassiveScrollViewer : ScrollViewer
         // boundary requires this correction. Write directly before notifying listeners so no queued
         // correction can subsequently overwrite a listener's legitimate scroll request.
         if (!wasSmoothScrolling && ScrollInfo is ScrollContentPresenter presenter
-            && e.VerticalChange < 0d
-            && e.ExtentHeightChange - e.ViewportHeightChange < 0d
-            && e.VerticalOffset == ScrollableHeight
-            && e.VerticalOffset - e.VerticalChange > ScrollableHeight)
+                                && e.VerticalChange < 0d
+                                && e.ExtentHeightChange - e.ViewportHeightChange < 0d
+                                && e.VerticalOffset == ScrollableHeight
+                                && e.VerticalOffset - e.VerticalChange > ScrollableHeight)
         {
             presenter.SetVerticalOffset(e.VerticalOffset);
         }
@@ -325,7 +409,7 @@ public partial class PassiveScrollViewer : ScrollViewer
 
     private void UpdateEffectiveHorizontalScrollBarVisibility()
     {
-        Visibility visibility = ComputedHorizontalScrollBarVisibility;
+        var visibility = ComputedHorizontalScrollBarVisibility;
         if (IsHorizontalScrollRangeSuppressed)
         {
             visibility = Visibility.Collapsed;
@@ -357,18 +441,21 @@ public partial class PassiveScrollViewer : ScrollViewer
         return UIElementAutomationPeer.FromElement(this) as PassiveScrollViewerAutomationPeer;
     }
 
-    private bool IsContentSmallerThanViewport
+    /// <summary>
+    /// Chooses from available ranges, never from the current offset. A vertical boundary must retain
+    /// its axis so nested viewers can receive spill input instead of unexpectedly moving sideways.
+    /// Hidden scrollbars still allow scrolling; only Disabled and provider capability prohibit it.
+    /// </summary>
+    private Orientation GetMouseWheelOrientation()
     {
-        get => ScrollableHeight <= 0;
-    }
-
-    private bool HasReachedEndOfScrolling(MouseWheelEventArgs e)
-    {
-        var isScrollingUp = e.Delta > 0;
-        var isScrollingDown = e.Delta < 0;
-        var isTopOfViewport = VerticalOffset == 0;
-        var isBottomOfViewport = VerticalOffset >= ScrollableHeight;
-
-        return (isScrollingUp && isTopOfViewport) || (isScrollingDown && isBottomOfViewport);
+        return IsHorizontalMouseWheelEnabled
+               && ScrollInfo is { CanHorizontallyScroll: true } provider
+               && HorizontalScrollBarVisibility != ScrollBarVisibility.Disabled
+               && ScrollableWidth > 0
+               && !IsHorizontalScrollRangeSuppressed
+               && (VerticalScrollBarVisibility == ScrollBarVisibility.Disabled
+                   || !provider.CanVerticallyScroll || ScrollableHeight <= 0)
+            ? Orientation.Horizontal
+            : Orientation.Vertical;
     }
 }

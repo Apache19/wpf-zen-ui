@@ -1,4 +1,4 @@
-﻿// This Source Code Form is subject to the terms of the MIT License.
+// This Source Code Form is subject to the terms of the MIT License.
 // If a copy of the MIT was not distributed with this file, You can obtain one at https://opensource.org/licenses/MIT.
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
@@ -17,6 +17,205 @@ namespace Wpf.Zen.Ui.UnitTests.Controls.ScrollViewer;
 public class SmoothScrollingTests
 {
     private static readonly TimeSpan Response = TimeSpan.FromMilliseconds(240);
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void HorizontalWheel_UsesSelectedAxisAndHonorsSmoothSetting(bool smooth)
+    {
+        WpfTestThread.Run(() => WithViewer(viewer =>
+        {
+            ConfigureHorizontalWheel(viewer);
+            viewer.IsSmoothScrollingEnabled = smooth;
+            Assert.True(viewer.Wheel(-120).Handled);
+            Assert.Equal(smooth, viewer.IsSmoothScrolling);
+            if (smooth)
+            {
+                Assert.Equal(0, viewer.HorizontalOffset);
+                Advance(viewer, 16);
+                double first = viewer.HorizontalOffset;
+                Assert.True(first > 0);
+                viewer.Wheel(-120);
+                Advance(viewer, 1000);
+                double step = PassiveScrollViewer.GetSmoothWheelDistance(
+                    -120,
+                    SystemParameters.WheelScrollLines,
+                    viewer.ViewportWidth);
+                Assert.Equal(Math.Min(step * 2, viewer.ScrollableWidth), viewer.HorizontalOffset, 6);
+            }
+            else
+            {
+                viewer.UpdateLayout();
+                Assert.True(viewer.HorizontalOffset > 0);
+            }
+
+            double beforeReversal = viewer.HorizontalOffset;
+            Assert.True(viewer.Wheel(120).Handled);
+            Advance(viewer, 1000);
+            Assert.True(viewer.HorizontalOffset < beforeReversal);
+            Assert.Equal(0, viewer.VerticalOffset);
+        }));
+    }
+
+    [Theory]
+    [InlineData(ScrollSpillMode.Enabled, false)]
+    [InlineData(ScrollSpillMode.Disabled, true)]
+    public void HorizontalWheel_PendingBoundaryUsesSpillPolicy(ScrollSpillMode mode, bool handled)
+    {
+        WpfTestThread.Run(() => WithViewer(viewer =>
+        {
+            ConfigureHorizontalWheel(viewer);
+            viewer.ScrollSpillMode = mode;
+            Assert.True(viewer.Wheel(-120000).Handled);
+            Assert.Equal(0, viewer.HorizontalOffset);
+            Assert.Equal(handled, viewer.Wheel(-120).Handled);
+            Assert.True(viewer.IsSmoothScrolling);
+            Advance(viewer, 1000);
+            Assert.Equal(viewer.ScrollableWidth, viewer.HorizontalOffset);
+            Assert.Equal(handled, viewer.Wheel(-120).Handled);
+        }));
+    }
+
+    [Fact]
+    public void HorizontalWheel_DefaultNativeAndSuppressedRangesDoNotRedirect()
+    {
+        WpfTestThread.Run(() => WithViewer(viewer =>
+        {
+            Assert.False(viewer.IsHorizontalMouseWheelEnabled);
+            ConfigureHorizontalWheel(viewer);
+            viewer.IsHorizontalMouseWheelEnabled = false;
+            viewer.Wheel(-120);
+            Advance(viewer, 1000);
+            Assert.Equal(0, viewer.HorizontalOffset);
+
+            viewer.IsHorizontalMouseWheelEnabled = true;
+            viewer.ScrollSpillMode = ScrollSpillMode.Native;
+            Assert.True(viewer.Wheel(-120).Handled);
+            Advance(viewer, 1000);
+            Assert.Equal(0, viewer.HorizontalOffset);
+
+            viewer.ScrollSpillMode = ScrollSpillMode.Enabled;
+            viewer.HorizontalScrollBarVisibility = ScrollBarVisibility.Auto;
+            viewer.HorizontalScrollBarVisibilityThreshold = 10000;
+            viewer.UpdateLayout();
+            Assert.False(viewer.Wheel(-120).Handled);
+            Assert.False(viewer.IsSmoothScrolling);
+            Assert.Equal(0, viewer.HorizontalOffset);
+        }));
+    }
+
+    [Fact]
+    public void HorizontalWheel_VerticalRangeRetainsPriorityAtBoundary()
+    {
+        WpfTestThread.Run(() => WithViewer(viewer =>
+        {
+            ConfigureHorizontalWheel(viewer);
+            viewer.VerticalScrollBarVisibility = ScrollBarVisibility.Hidden;
+            ((Border)viewer.Content).Height = 2000;
+            viewer.UpdateLayout();
+            viewer.Wheel(-120);
+            Advance(viewer, 1000);
+            Assert.True(viewer.VerticalOffset > 0);
+            Assert.Equal(0, viewer.HorizontalOffset);
+            viewer.ScrollToBottom();
+            viewer.UpdateLayout();
+            Assert.False(viewer.Wheel(-120).Handled);
+            Advance(viewer, 1000);
+            Assert.Equal(0, viewer.HorizontalOffset);
+
+            ((Border)viewer.Content).Height = 50;
+            viewer.UpdateLayout();
+            Assert.True(viewer.Wheel(-120).Handled);
+            Advance(viewer, 16);
+            Assert.True(viewer.HorizontalOffset > 0);
+            viewer.IsHorizontalMouseWheelEnabled = false;
+            Assert.False(viewer.IsSmoothScrolling);
+        }));
+    }
+
+    [Theory]
+    [InlineData(ScrollUnit.Pixel, true)]
+    [InlineData(ScrollUnit.Item, false)]
+    public void HorizontalWheel_VirtualizedItemsRespectProviderUnitsAndOwnerSetting(ScrollUnit unit, bool smooth)
+    {
+        WpfTestThread.Run(() =>
+        {
+            var viewerFactory = new FrameworkElementFactory(typeof(TestViewer));
+            viewerFactory.SetValue(System.Windows.Controls.ScrollViewer.CanContentScrollProperty, true);
+            viewerFactory.AppendChild(new FrameworkElementFactory(typeof(ItemsPresenter)));
+            var panelFactory = new FrameworkElementFactory(typeof(VirtualizingStackPanel));
+            panelFactory.SetValue(VirtualizingStackPanel.OrientationProperty, Orientation.Horizontal);
+            var items = new System.Windows.Controls.ListBox
+            {
+                Template = new ControlTemplate(typeof(System.Windows.Controls.ListBox)) { VisualTree = viewerFactory },
+                ItemsPanel = new ItemsPanelTemplate(panelFactory),
+                ItemsSource = Enumerable.Range(0, 2000).ToArray(),
+                ItemContainerStyle = new Style(typeof(System.Windows.Controls.ListBoxItem))
+                {
+                    Setters = { new Setter(FrameworkElement.WidthProperty, 40d) },
+                },
+            };
+            System.Windows.Controls.ScrollViewer.SetVerticalScrollBarVisibility(items, ScrollBarVisibility.Disabled);
+            System.Windows.Controls.ScrollViewer.SetHorizontalScrollBarVisibility(items, ScrollBarVisibility.Hidden);
+            PassiveScrollViewer.SetIsHorizontalMouseWheelEnabled(items, true);
+            VirtualizingPanel.SetScrollUnit(items, unit);
+            WithWindow(items, () =>
+            {
+                var viewer = FindDescendant<TestViewer>(items)!;
+                Assert.True(viewer.IsHorizontalMouseWheelEnabled);
+                Assert.True(viewer.Wheel(-120).Handled);
+                Assert.Equal(smooth, viewer.IsSmoothScrolling);
+                Advance(viewer, 1000);
+                Assert.True(viewer.HorizontalOffset > 0);
+                Assert.Equal(0, viewer.VerticalOffset);
+                Assert.InRange(FindDescendant<VirtualizingStackPanel>(items)!.Children.Count, 1, 100);
+                PassiveScrollViewer.SetIsHorizontalMouseWheelEnabled(items, false);
+                Assert.False(viewer.IsHorizontalMouseWheelEnabled);
+            });
+        });
+    }
+
+    private static void ConfigureHorizontalWheel(TestViewer viewer)
+    {
+        viewer.IsHorizontalMouseWheelEnabled = true;
+        viewer.VerticalScrollBarVisibility = ScrollBarVisibility.Disabled;
+        viewer.HorizontalScrollBarVisibility = ScrollBarVisibility.Hidden;
+        viewer.Content = new Border { Width = 2000, Height = 50 };
+        viewer.UpdateLayout();
+    }
+
+    [Theory]
+    [InlineData(ScrollSpillMode.Enabled, true)]
+    [InlineData(ScrollSpillMode.Disabled, false)]
+    public void HorizontalWheel_BubblesToVerticalParentAtPendingBoundary(ScrollSpillMode mode, bool parentMoves)
+    {
+        WpfTestThread.Run(() =>
+        {
+            var child = new TestViewer { Height = 100, ScrollSpillMode = mode };
+            ConfigureHorizontalWheel(child);
+            var content = new StackPanel();
+            content.Children.Add(child);
+            content.Children.Add(new Border { Height = 2000 });
+            var parent = new TestViewer
+            {
+                Content = content,
+                VerticalScrollBarVisibility = ScrollBarVisibility.Hidden,
+            };
+            WithWindow(parent, () =>
+            {
+                child.Wheel(-120000);
+                Assert.True(child.IsSmoothScrolling);
+                Assert.Equal(0, child.HorizontalOffset);
+                ((Border)child.Content).RaiseEvent(new MouseWheelEventArgs(Mouse.PrimaryDevice, 0, -120)
+                {
+                    RoutedEvent = UIElement.MouseWheelEvent,
+                });
+                Assert.Equal(parentMoves, parent.IsSmoothScrolling);
+                Advance(parent, 1000);
+                Assert.Equal(parentMoves, parent.VerticalOffset > 0);
+            });
+        });
+    }
 
     [Fact]
     public void Motion_PreservesVelocityAcrossDetentsAndClearsItOnReversal()
