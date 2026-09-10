@@ -43,8 +43,8 @@ public enum StyleToken
     UiBreadcrumbBarItem,
     UiSeparator,
 
-    /// <summary>Identifies the default Fluent style for the embedded soft keyboard.</summary>
     UiSoftKeyboard,
+    UiSoftKeyboardKeyControl,
 
     /// <summary>
     /// Identifies the ListView style selected while a WPF Zen UI GridView is active.

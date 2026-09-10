@@ -9,12 +9,9 @@ using System.Windows.Input;
 
 namespace Wpf.Zen.Ui.Controls;
 
-/// <summary>Owns transient surfaces independently of the measured key and header regions.</summary>
-[TemplatePart(Name = "PART_AlternatePopup", Type = typeof(Popup))]
+/// <summary>Provides header presentation and the keyboard-wide input-method menu.</summary>
 public partial class SoftKeyboard
 {
-    private ButtonBase? _heldButton;
-    private Popup? _alternatePopup;
     private ContextMenu? _inputMethodMenu;
 
     /// <summary>Identifies the header content property.</summary>
@@ -55,52 +52,6 @@ public partial class SoftKeyboard
         set => SetValue(HeaderHeightProperty, value);
     }
 
-    /// <summary>Connects the optional PART_AlternatePopup after a template has created its visual tree.</summary>
-    /// <remarks>Omitting this part disables long-press alternatives without affecting ordinary key input.</remarks>
-    public override void OnApplyTemplate()
-    {
-        if (_alternatePopup is not null)
-        {
-            _alternatePopup.SetCurrentValue(Popup.IsOpenProperty, false);
-            _alternatePopup.Closed -= OnAlternatePopupClosed;
-            _alternatePopup.RemoveHandler(ButtonBase.ClickEvent, new RoutedEventHandler(OnButtonClick));
-        }
-
-        base.OnApplyTemplate();
-        _alternatePopup = GetTemplateChild("PART_AlternatePopup") as Popup;
-        if (_alternatePopup is not null)
-        {
-            _alternatePopup.Closed += OnAlternatePopupClosed;
-            // Popup has a separate presentation source. Handle selection here rather than relying
-            // on the host control being in the routed event path of a replacement template.
-            _alternatePopup.AddHandler(ButtonBase.ClickEvent, new RoutedEventHandler(OnButtonClick));
-        }
-    }
-
-    private bool OpenAlternates()
-    {
-        if (_alternatePopup is null)
-        {
-            _alternateValues.Clear();
-            return false;
-        }
-
-        _alternatePopup.SetCurrentValue(Popup.PlacementTargetProperty, _heldButton ?? (UIElement)this);
-        SetValue(IsAlternatePopupOpenPropertyKey, true);
-        // Keep the originating ButtonBase capture until release. Auto-close capture would treat
-        // that release below the popup as an outside click and immediately dismiss the variants.
-        _alternatePopup.SetCurrentValue(Popup.StaysOpenProperty, true);
-        _alternatePopup.SetCurrentValue(Popup.IsOpenProperty, true);
-        return true;
-    }
-
-    private void OnAlternatePopupClosed(object? sender, EventArgs eventArgs)
-    {
-        SetValue(IsAlternatePopupOpenPropertyKey, false);
-        _alternateValues.Clear();
-        _heldButton = null;
-    }
-
     /// <summary>Opens the installed input-method menu without replacing or resizing the keyboard.</summary>
     /// <remarks>The menu is anchored to the last invoked key. Selection restores editor focus before activation.</remarks>
     public void ShowInputMethodMenu()
@@ -110,10 +61,11 @@ public partial class SoftKeyboard
             return;
         }
 
-        RunAfterActiveCompositionCancellation(OpenInputMethodMenuCore);
+        UIElement anchor = _inputMethodMenuAnchor ?? this;
+        RunAfterActiveCompositionCancellation(() => OpenInputMethodMenuCore(anchor));
     }
 
-    private void OpenInputMethodMenuCore()
+    private void OpenInputMethodMenuCore(UIElement anchor)
     {
         if (!IsLoaded || !IsOpen || !IsEnabled || !IsVisible)
         {
@@ -122,7 +74,7 @@ public partial class SoftKeyboard
 
         CloseFlyouts();
         RefreshInputMethods();
-        var menu = new ContextMenu { PlacementTarget = _heldButton ?? (UIElement)this, Placement = PlacementMode.Top };
+        var menu = new ContextMenu { PlacementTarget = anchor, Placement = PlacementMode.Top };
         foreach (SoftKeyboardInputMethod inputMethod in InputMethods)
         {
             var item = new MenuItem { Header = inputMethod.DisplayName, IsCheckable = true, IsChecked = inputMethod.IsActive };

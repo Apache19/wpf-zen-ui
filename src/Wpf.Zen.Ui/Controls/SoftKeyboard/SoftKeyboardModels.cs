@@ -301,6 +301,7 @@ public sealed class SoftKeyboardKey
     /// <param name="column">The zero-based logical column at which the key begins.</param>
     /// <param name="columnSpan">The positive number of logical columns occupied by the key.</param>
     /// <param name="alternates">Optional long-press Unicode alternatives.</param>
+    /// <param name="isRepeatEnabled">Whether holding this key repeats its primary action. Defaults to false; alternatives take precedence.</param>
     public SoftKeyboardKey(
         SoftKeyboardKeyKind kind,
         object content,
@@ -311,7 +312,8 @@ public sealed class SoftKeyboardKey
         int row = 0,
         int column = 0,
         int columnSpan = 1,
-        IEnumerable<string>? alternates = null
+        IEnumerable<string>? alternates = null,
+        bool isRepeatEnabled = false
     )
     {
         if (content is null)
@@ -354,6 +356,7 @@ public sealed class SoftKeyboardKey
         Column = column;
         ColumnSpan = columnSpan;
         Alternates = new ReadOnlyCollection<string>((alternates ?? Array.Empty<string>()).ToArray());
+        IsRepeatEnabled = isRepeatEnabled;
     }
 
     /// <summary>Gets the action performed by the key.</summary>
@@ -399,10 +402,13 @@ public sealed class SoftKeyboardKey
     /// <summary>Gets the long-press Unicode alternatives.</summary>
     public IReadOnlyList<string> Alternates { get; }
 
+    /// <summary>Gets whether the key permits repeated primary requests while held. The layout provider owns this policy.</summary>
+    public bool IsRepeatEnabled { get; }
+
     // Provider helpers position semantic key descriptions by cloning them. This keeps the public
     // model immutable and prevents a shared key instance from acquiring mutable placement state.
     internal SoftKeyboardKey WithPlacement(int row, int column, int columnSpan) =>
-        new(Kind, Content, AutomationName, Key, Text, DisplayMode, row, column, columnSpan, Alternates);
+        new(Kind, Content, AutomationName, Key, Text, DisplayMode, row, column, columnSpan, Alternates, IsRepeatEnabled);
 }
 
 /// <summary>Represents one candidate supplied by the active Windows input method.</summary>

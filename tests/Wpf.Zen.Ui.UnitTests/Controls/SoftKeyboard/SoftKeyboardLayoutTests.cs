@@ -26,19 +26,17 @@ public class SoftKeyboardLayoutTests
             {
                 window.Show();
                 window.UpdateLayout();
-                var heldKey = typeof(SoftKeyboard).GetField("_heldKey", BindingFlags.Instance | BindingFlags.NonPublic)!;
-                heldKey.SetValue(keyboard, new SoftKeyboardKey(
-                    SoftKeyboardKeyKind.Text, "a", "a", text: "a", alternates: ["á"]));
-                typeof(SoftKeyboard).GetMethod("OnHoldTimerTick", BindingFlags.Instance | BindingFlags.NonPublic)!
-                    .Invoke(keyboard, [null, System.EventArgs.Empty]);
-                Assert.True(keyboard.IsAlternatePopupOpen);
+                var cap = FindVisualDescendant<SoftKeyboardKeyControl>(keyboard)!;
+                cap.Key = new SoftKeyboardKey(SoftKeyboardKeyKind.Text, "a", "a", text: "a", alternates: ["á"]);
+                cap.BeginPress();
+                cap.AdvanceHold();
+                Assert.True(cap.IsAlternatePopupOpen);
 
                 keyboard.Template = new ControlTemplate(typeof(SoftKeyboard));
                 keyboard.ApplyTemplate();
 
-                Assert.Null(heldKey.GetValue(keyboard));
-                Assert.False(keyboard.IsAlternatePopupOpen);
-                Assert.Empty(keyboard.AlternateValues);
+                Assert.False(cap.IsPressed);
+                Assert.False(cap.IsAlternatePopupOpen);
             }
             finally
             {
@@ -208,9 +206,9 @@ public class SoftKeyboardLayoutTests
         Assert.Equal(20, layout.ColumnCount);
         Assert.Equal((0, 0, 2), (q.Row, q.Column, q.ColumnSpan));
         Assert.Equal((1, 1, 2), (a.Row, a.Column, a.ColumnSpan));
-        Assert.Equal((2, 0, 3), (shift.Row, shift.Column, shift.ColumnSpan));
-        Assert.Equal((2, 3, 2), (z.Row, z.Column, z.ColumnSpan));
-        Assert.Equal((2, 17, 3), (backspace.Row, backspace.Column, backspace.ColumnSpan));
+        Assert.Equal((2, 0, 2), (shift.Row, shift.Column, shift.ColumnSpan));
+        Assert.Equal((2, 2, 2), (z.Row, z.Column, z.ColumnSpan));
+        Assert.Equal((2, 16, 4), (backspace.Row, backspace.Column, backspace.ColumnSpan));
     }
 
     [Fact]

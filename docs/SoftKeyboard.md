@@ -42,7 +42,7 @@
 
 ## 布局生成与扩展
 
-默认布局始终使用四行。字母行采用十键首行、错位九键次行及对称 Shift/Backspace 第三行；
+默认布局始终使用四行。字母行采用十键首行、错位九键次行及带 Shift/Backspace 的第三行；
 底行包含符号切换、输入状态、逗号、左右方向、空格、句号、输入法菜单和 Enter。
 符号面提供 `Symbols` / `MoreSymbols` 两页，按原生输入状态选择英文或全角标点。
 数字键面把命令安排在右侧，也保持四行。日文原生输入在第二行提供 `ー・` 键，长按选择 `・`。
@@ -81,10 +81,25 @@
 切换符号页都不会改变这个保留高度。候选占用头部；无候选时展示 `HeaderContent` 和
 `HeaderContentTemplate`，可以放置提示、快捷内容等。不要用动态内容重新计算头部高度。
 
-长按有 `Alternates` 的键，在该键上方打开 `PART_AlternatePopup`。松开原键后点击变体提交，
+键帽由独立的 `SoftKeyboardKeyControl` 呈现，通过 `Key` 接收不可变的 `SoftKeyboardKey`。
+布局提供器负责键帽内容、动作、`Alternates` 和 `IsRepeatEnabled`；键帽负责按下状态、
+短按、重复、长按展开、变体选择和取消。键帽不持有编辑器、不读取 IME，也不调用 `SendInput`。
+
+长按有 `Alternates` 的键，在键帽自身模板的 `PART_AlternatePopup` 中展示变体。
+可以移动到变体上松手，也可以松开原键后点击变体提交，
 点击外部关闭；原键不会额外输入。浮层不参与键盘测量，关闭、隐藏、卸载、禁用和替换模板都会清理它。
 Popup 使用不可聚焦按钮保留编辑器焦点，长按初始松手后才启用外部点击关闭，避免立即误关闭。
-自定义模板可以省略该可选部件，此时保留普通按键输入。
+自定义键帽模板可以省略该可选部件，此时保留普通按键输入。变体按钮的 `DataContext` 是对应字符串。
+
+键帽通过冒泡的 `InputRequested` 事件提交请求：`Key` 表示原按键，`AlternateText` 为 null
+表示主动作，否则表示选中的 Unicode 变体。`Invoke()` 和 UI Automation 也走同一请求入口。
+键盘执行每次请求时仍校验目标、焦点和输入状态。键帽可单独使用，由宿主处理请求。
+
+`InteractionStarted` 通知键盘取消其它键帽的交互；键盘关闭、切换布局、目标变化或窗口失活时，
+通过 `CancelInteraction()` 取消活动键帽。键盘不操作键帽的计时器、捕获和浮层。
+键帽依据 WPF 提升后的鼠标事件支持鼠标、笔和主触点，当前采用单活动手势，不提供多指组合键。
+重复默认关闭，由布局模型显式启用；内置布局仅为退格和方向键启用重复。
+变体优先于重复，重复之后松手不会再触发主动作。重复频率与初始延时采用系统键盘设置。
 
 ## IME 候选与输入法
 
@@ -158,7 +173,9 @@ TSF 当前焦点文档，不能借用其他编辑器的候选。
 
 默认模板支持 Light、Dark、High Contrast、DPI 和触摸命中尺寸。键区填满提供的宽度；应用应根据触摸尺寸要求设置容器大小。可通过 `{ui:DynamicStyle UiSoftKeyboard}` 或
 `StyleKeys.UiSoftKeyboardStyle` 派生样式。控件向 UI Automation 暴露 Expand/Collapse，键帽
-使用具备名称和 Invoke 行为的标准按钮 peer，同时始终保持不可聚焦。
+使用专用的 `SoftKeyboardKeyControlAutomationPeer` 提供名称和 Invoke，同时默认保持不可聚焦。
+键帽可通过 `{ui:DynamicStyle UiSoftKeyboardKeyControl}` 或 `StyleKeys.UiSoftKeyboardKeyControlStyle`
+派生样式，独立替换键帽和变体浮层模板。
 
 可直接设置 `Background`、`BorderBrush`、`BorderThickness`、`Padding`、`CornerRadius`、
 `RowSpacing` 和 `ColumnSpacing`
@@ -169,7 +186,8 @@ TSF 当前焦点文档，不能借用其他编辑器的候选。
 `Column`、`ColumnSpan`。有限宽度下键区按比例收缩；无限宽度测量（例如水平 StackPanel）下按最大单位
 列宽需求预留空间，避免排列时普通键被较宽的功能键挤压。默认布局不使用状态相关的折叠键。
 
-自定义模板中的应用按钮若未使用软键盘模型或动作 Tag，其 Click 事件继续向宿主冒泡。
+自定义键区使用 `SoftKeyboardKeyControl` 并绑定 `Key`，键盘不把普通 Button 的 `DataContext`
+解释为按键。候选及页面按钮仍由键盘处理；应用按钮若未使用候选模型或动作 Tag，其 Click 事件继续向宿主冒泡。
 长按在键盘禁用、隐藏、卸载、替换模板、窗口失活或鼠标捕获中断时结束；普通松手仍保留正确的单击抑制行为。
 
 ## 验证
@@ -183,7 +201,7 @@ dotnet build tests/Wpf.Zen.Ui.UnitTests/Wpf.Zen.Ui.UnitTests.csproj
 
 自动测试覆盖布局模型、四行布局边界、符号页面、日文变体、系统状态回读、
 适配器失败、固定头部、菜单生命周期、浮层定位与单次提交、候选分页、组合取消以及目标隔离。
-`GeneratedLetterButton_ClickInsertsThroughWindowsInputStream` 和
+`GeneratedLetterKey_InvokeInsertsThroughWindowsInputStream` 和
 `InstalledMicrosoftPinyin_PublishesCandidatesToEmbeddedSurfaceWhenAvailable` 是显式集成测试，
 需要可激活前台窗口的交互桌面；后者还需要启用微软拼音。可在满足条件的桌面使用
 `-explicit on -method '*测试方法名'` 单独运行，避免无人值守测试向用户桌面注入按键。

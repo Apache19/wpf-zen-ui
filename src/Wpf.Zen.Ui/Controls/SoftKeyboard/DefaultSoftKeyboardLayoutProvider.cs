@@ -121,7 +121,7 @@ public sealed class DefaultSoftKeyboardLayoutProvider : ISoftKeyboardLayoutProvi
         [
             new SoftKeyboardKey(SoftKeyboardKeyKind.Shift, GetShiftContent(context.ShiftState), "Shift"),
             .. rows[2],
-            new SoftKeyboardKey(SoftKeyboardKeyKind.VirtualKey, BackspaceIcon, "Backspace", Key.Back),
+            new SoftKeyboardKey(SoftKeyboardKeyKind.VirtualKey, BackspaceIcon, "Backspace", Key.Back, isRepeatEnabled: true),
         ];
 
         bool native = context.ImeState == InputMethodState.On;
@@ -130,9 +130,9 @@ public sealed class DefaultSoftKeyboardLayoutProvider : ISoftKeyboardLayoutProvi
             new(SoftKeyboardKeyKind.ChangeDisplayMode, "&123", "Numbers and symbols", displayMode: SoftKeyboardDisplayMode.Symbols),
             CreateImeKey(context),
             CreateTextKey(native ? "，" : ","),
-            new(SoftKeyboardKeyKind.VirtualKey, MoveLeftIcon, "Move cursor left", Key.Left),
+            new(SoftKeyboardKeyKind.VirtualKey, MoveLeftIcon, "Move cursor left", Key.Left, isRepeatEnabled: true),
             new(SoftKeyboardKeyKind.VirtualKey, SpaceIcon, "Space", Key.Space),
-            new(SoftKeyboardKeyKind.VirtualKey, MoveRightIcon, "Move cursor right", Key.Right),
+            new(SoftKeyboardKeyKind.VirtualKey, MoveRightIcon, "Move cursor right", Key.Right, isRepeatEnabled: true),
             CreateTextKey(native ? "。" : "."),
             new(SoftKeyboardKeyKind.InputMethods, InputMethodsIcon, "Input methods"),
             new(SoftKeyboardKeyKind.VirtualKey, EnterIcon, "Enter", Key.Enter),
@@ -168,7 +168,7 @@ public sealed class DefaultSoftKeyboardLayoutProvider : ISoftKeyboardLayoutProvi
 
         // Numeric input uses the same four tracks as letters and symbols. Commands occupy a
         // fourth column so input-scope changes cannot add a fifth row to the keyboard.
-        keys.Add(new(SoftKeyboardKeyKind.VirtualKey, BackspaceIcon, "Backspace", Key.Back, row: 0, column: 15, columnSpan: 5));
+        keys.Add(new(SoftKeyboardKeyKind.VirtualKey, BackspaceIcon, "Backspace", Key.Back, row: 0, column: 15, columnSpan: 5, isRepeatEnabled: true));
         keys.Add(CreateImeKey(context).WithPlacement(1, 15, 5));
         keys.Add(new(SoftKeyboardKeyKind.InputMethods, InputMethodsIcon, "Input methods", row: 2, column: 15, columnSpan: 5));
         keys.Add(new(SoftKeyboardKeyKind.ChangeDisplayMode, "ABC", "Letters", displayMode: SoftKeyboardDisplayMode.Letters, row: 3, column: 15, columnSpan: 2));
@@ -198,7 +198,7 @@ public sealed class DefaultSoftKeyboardLayoutProvider : ISoftKeyboardLayoutProvi
         [
             new(SoftKeyboardKeyKind.ChangeDisplayMode, more ? PreviousSymbolsIcon : MoreSymbolsIcon, more ? "Previous symbols" : "More symbols", displayMode: more ? SoftKeyboardDisplayMode.Symbols : SoftKeyboardDisplayMode.MoreSymbols),
             .. third.Select(CreateTextKey),
-            new(SoftKeyboardKeyKind.VirtualKey, BackspaceIcon, "Backspace", Key.Back),
+            new(SoftKeyboardKeyKind.VirtualKey, BackspaceIcon, "Backspace", Key.Back, isRepeatEnabled: true),
         ];
         IReadOnlyList<SoftKeyboardKey> bottom =
         [

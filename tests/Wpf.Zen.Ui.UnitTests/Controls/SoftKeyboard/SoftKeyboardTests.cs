@@ -128,16 +128,11 @@ public class SoftKeyboardTests
             window.Show();
             Assert.True(editor.Focus());
 
-            SoftKeyboardKey left = FindKey(keyboard, Key.Left);
-            typeof(SoftKeyboard)
-                .GetField("_heldKey", BindingFlags.Instance | BindingFlags.NonPublic)!
-                .SetValue(keyboard, left);
-            typeof(SoftKeyboard)
-                .GetMethod("OnHoldTimerTick", BindingFlags.Instance | BindingFlags.NonPublic)!
-                .Invoke(keyboard, [null, EventArgs.Empty]);
-            typeof(SoftKeyboard)
-                .GetMethod("OnRepeatTimerTick", BindingFlags.Instance | BindingFlags.NonPublic)!
-                .Invoke(keyboard, [null, EventArgs.Empty]);
+            window.UpdateLayout();
+            var cap = FindCap(keyboard, Key.Left);
+            cap.BeginPress();
+            cap.AdvanceHold();
+            cap.AdvanceHold();
 
             Assert.Equal([(Key.Left, false), (Key.Left, false)], input.VirtualKeys);
             Assert.Same(editor, Keyboard.FocusedElement);
@@ -147,7 +142,7 @@ public class SoftKeyboardTests
     }
 
     [Fact]
-    public void GeneratedLetterButton_ClickRoutesInputWithoutTakingEditorFocus()
+    public void GeneratedLetterKey_InvokeRoutesInputWithoutTakingEditorFocus()
     {
         WpfApplicationTestHost.Run(() =>
         {
@@ -165,11 +160,11 @@ public class SoftKeyboardTests
             Assert.True(editor.Focus());
 
             SoftKeyboardKey letter = FindKey(keyboard, Key.A);
-            Wpf.Zen.Ui.Controls.Button button = Assert.Single(
-                Descendants<Wpf.Zen.Ui.Controls.Button>(keyboard),
+            SoftKeyboardKeyControl button = Assert.Single(
+                Descendants<SoftKeyboardKeyControl>(keyboard),
                 item => ReferenceEquals(item.DataContext, letter)
             );
-            button.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent, button));
+            button.Invoke();
 
             Assert.Equal((Key.A, false), Assert.Single(input.VirtualKeys));
             Assert.Same(editor, Keyboard.FocusedElement);
@@ -179,7 +174,7 @@ public class SoftKeyboardTests
 
     // Real SendInput requires an interactive foreground desktop, just like the installed-IME test.
     [Fact(Explicit = true)]
-    public void GeneratedLetterButton_ClickInsertsThroughWindowsInputStream()
+    public void GeneratedLetterKey_InvokeInsertsThroughWindowsInputStream()
     {
         WpfApplicationTestHost.Run(() =>
         {
@@ -204,11 +199,11 @@ public class SoftKeyboardTests
             );
 
             SoftKeyboardKey letter = FindKey(keyboard, Key.A);
-            Wpf.Zen.Ui.Controls.Button button = Assert.Single(
-                Descendants<Wpf.Zen.Ui.Controls.Button>(keyboard),
+            SoftKeyboardKeyControl button = Assert.Single(
+                Descendants<SoftKeyboardKeyControl>(keyboard),
                 item => ReferenceEquals(item.DataContext, letter)
             );
-            button.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent, button));
+            button.Invoke();
             PumpDispatcher();
 
             Assert.Equal(Key.A, receivedKey);
@@ -333,7 +328,7 @@ public class SoftKeyboardTests
     }
 
     [Fact]
-    public void AbcButton_TogglesImeStateWithoutTakingEditorFocus()
+    public void ImeKey_TogglesImeStateWithoutTakingEditorFocus()
     {
         WpfApplicationTestHost.Run(() =>
         {
@@ -351,11 +346,11 @@ public class SoftKeyboardTests
             Assert.True(editor.Focus());
             Assert.Equal(InputMethodState.On, keyboard.ImeState);
 
-            Wpf.Zen.Ui.Controls.Button button = Assert.Single(
-                Descendants<Wpf.Zen.Ui.Controls.Button>(keyboard),
+            SoftKeyboardKeyControl button = Assert.Single(
+                Descendants<SoftKeyboardKeyControl>(keyboard),
                 item => item.DataContext is SoftKeyboardKey { Kind: SoftKeyboardKeyKind.ToggleIme }
             );
-            button.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent, button));
+            button.Invoke();
 
             Assert.Equal(InputMethodState.Off, keyboard.ImeState);
             Assert.Equal(SoftKeyboardDisplayMode.Automatic, keyboard.DisplayMode);
@@ -407,7 +402,7 @@ public class SoftKeyboardTests
     }
 
     [Fact]
-    public void AbcButton_ActivatesEnabledTipBeforeOpeningImeFromDirectKeyboardLayout()
+    public void ImeKey_ActivatesEnabledTipBeforeOpeningImeFromDirectKeyboardLayout()
     {
         WpfApplicationTestHost.Run(() =>
         {
@@ -425,11 +420,11 @@ public class SoftKeyboardTests
             window.UpdateLayout();
             Assert.True(editor.Focus());
 
-            Wpf.Zen.Ui.Controls.Button button = Assert.Single(
-                Descendants<Wpf.Zen.Ui.Controls.Button>(keyboard),
+            SoftKeyboardKeyControl button = Assert.Single(
+                Descendants<SoftKeyboardKeyControl>(keyboard),
                 item => item.DataContext is SoftKeyboardKey { Kind: SoftKeyboardKeyKind.ToggleIme }
             );
-            button.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent, button));
+            button.Invoke();
 
             Assert.Equal(1, inputMethods.ActivationCount);
             Assert.Equal(InputMethodState.On, keyboard.ImeState);
@@ -449,17 +444,13 @@ public class SoftKeyboardTests
             try
             {
                 window.Show();
-                SoftKeyboardKey key = FindKey(keyboard, Key.A);
-                typeof(SoftKeyboard)
-                    .GetField("_heldKey", BindingFlags.Instance | BindingFlags.NonPublic)!
-                    .SetValue(keyboard, key);
-                typeof(SoftKeyboard)
-                    .GetMethod("OnHoldTimerTick", BindingFlags.Instance | BindingFlags.NonPublic)!
-                    .Invoke(keyboard, [null, EventArgs.Empty]);
-
-                Assert.True(keyboard.IsAlternatePopupOpen);
-                Assert.Contains("á", keyboard.AlternateValues);
-                Assert.Contains("ä", keyboard.AlternateValues);
+                window.UpdateLayout();
+                var cap = FindCap(keyboard, Key.A);
+                cap.BeginPress();
+                cap.AdvanceHold();
+                Assert.True(cap.IsAlternatePopupOpen);
+                Assert.Contains("á", cap.Key!.Alternates);
+                Assert.Contains("ä", cap.Key.Alternates);
             }
             finally
             {
@@ -620,16 +611,11 @@ public class SoftKeyboardTests
             Assert.Equal(Visibility.Hidden, candidateBar.Visibility);
             Assert.Equal(emptyHeight, keyboard.ActualHeight);
 
-            Wpf.Zen.Ui.Controls.Button imeToggle = Assert.Single(
-                Descendants<Wpf.Zen.Ui.Controls.Button>(keyboard),
+            SoftKeyboardKeyControl imeToggle = Assert.Single(
+                Descendants<SoftKeyboardKeyControl>(keyboard),
                 button => button.DataContext is SoftKeyboardKey { Kind: SoftKeyboardKeyKind.ToggleIme }
             );
-            imeToggle.RaiseEvent(
-                new RoutedEventArgs(
-                    System.Windows.Controls.Primitives.ButtonBase.ClickEvent,
-                    imeToggle
-                )
-            );
+            imeToggle.Invoke();
             window.UpdateLayout();
             Assert.Equal(Visibility.Hidden, candidateBar.Visibility);
             Assert.Equal(emptyHeight, keyboard.ActualHeight);
@@ -1008,7 +994,7 @@ public class SoftKeyboardTests
             window.UpdateLayout();
             Assert.True(keyboard.ActualHeight >= 44d);
             Assert.All(
-                Descendants<Wpf.Zen.Ui.Controls.Button>(keyboard),
+                Descendants<SoftKeyboardKeyControl>(keyboard),
                 button =>
                 {
                     Assert.False(button.Focusable);
@@ -1098,30 +1084,26 @@ public class SoftKeyboardTests
                 editor.Focus();
                 window.UpdateLayout();
                 double height = keyboard.ActualHeight;
-                var key = FindKey(keyboard, Key.E);
-                var button = Descendants<Wpf.Zen.Ui.Controls.Button>(keyboard).Single(item => ReferenceEquals(item.DataContext, key));
-                typeof(SoftKeyboard).GetField("_heldKey", BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(keyboard, key);
-                typeof(SoftKeyboard).GetField("_heldButton", BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(keyboard, button);
-                typeof(SoftKeyboard).GetMethod("OnHoldTimerTick", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(keyboard, [null, EventArgs.Empty]);
-                var popup = (System.Windows.Controls.Primitives.Popup)keyboard.Template.FindName("PART_AlternatePopup", keyboard);
+                PumpDispatcher();
+                window.UpdateLayout();
+                var button = FindCap(keyboard, Key.E);
+                button.BeginPress();
+                button.AdvanceHold();
+                var popup = (System.Windows.Controls.Primitives.Popup)button.Template.FindName("PART_AlternatePopup", button);
                 ((FrameworkElement)popup.Child).UpdateLayout();
                 Assert.True(popup.IsOpen);
                 Assert.Same(button, popup.PlacementTarget);
                 Assert.Same(editor, Keyboard.FocusedElement);
                 window.UpdateLayout();
                 Assert.Equal(height, keyboard.ActualHeight);
-                button.RaiseEvent(new MouseButtonEventArgs(Mouse.PrimaryDevice, Environment.TickCount, MouseButton.Left)
-                {
-                    RoutedEvent = Mouse.PreviewMouseUpEvent,
-                });
+                button.CompletePress(true);
                 PumpDispatcher();
                 Assert.True(popup.IsOpen);
                 Assert.False(popup.StaysOpen);
                 var alternate = Descendants<Wpf.Zen.Ui.Controls.Button>(popup.Child).First(item => Equals(item.DataContext, "é"));
                 alternate.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent, alternate));
                 Assert.False(popup.IsOpen);
-                Assert.False(keyboard.IsAlternatePopupOpen);
-                Assert.Empty(keyboard.AlternateValues);
+                Assert.False(button.IsAlternatePopupOpen);
                 Assert.Equal("Text:é", Assert.Single(input.Operations));
             }
             finally
@@ -1255,9 +1237,9 @@ public class SoftKeyboardTests
                 InputMethodState imeState = keyboard.ImeState;
                 int activations = inputMethods.ActivationCount;
                 var back = Assert.Single(
-                    Descendants<Wpf.Zen.Ui.Controls.Button>(keyboard),
+                    Descendants<SoftKeyboardKeyControl>(keyboard),
                     button => button.IsVisible && button.DataContext is SoftKeyboardKey { Kind: SoftKeyboardKeyKind.ChangeDisplayMode, DisplayMode: SoftKeyboardDisplayMode.Letters });
-                back.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent, back));
+                back.Invoke();
                 Assert.Equal(SoftKeyboardDisplayMode.Letters, keyboard.DisplayMode);
                 Assert.Equal(imeState, keyboard.ImeState);
                 Assert.Equal(activations, inputMethods.ActivationCount);
@@ -1293,10 +1275,10 @@ public class SoftKeyboardTests
             {
                 window.Show();
                 Assert.True(editor.Focus());
-                typeof(SoftKeyboard).GetField("_heldKey", BindingFlags.Instance | BindingFlags.NonPublic)!
-                    .SetValue(keyboard, FindKey(keyboard, Key.Back));
-                typeof(SoftKeyboard).GetMethod("OnHoldTimerTick", BindingFlags.Instance | BindingFlags.NonPublic)!
-                    .Invoke(keyboard, [null, EventArgs.Empty]);
+                window.UpdateLayout();
+                var cap = FindCap(keyboard, Key.Back);
+                cap.BeginPress();
+                cap.AdvanceHold();
                 int count = input.VirtualKeys.Count;
                 if (disable)
                 {
@@ -1305,14 +1287,13 @@ public class SoftKeyboardTests
                 }
                 else
                 {
-                    keyboard.RaiseEvent(new MouseEventArgs(Mouse.PrimaryDevice, Environment.TickCount)
+                    cap.RaiseEvent(new MouseEventArgs(Mouse.PrimaryDevice, Environment.TickCount)
                     {
                         RoutedEvent = Mouse.LostMouseCaptureEvent,
                     });
                 }
 
-                typeof(SoftKeyboard).GetMethod("OnRepeatTimerTick", BindingFlags.Instance | BindingFlags.NonPublic)!
-                    .Invoke(keyboard, [null, EventArgs.Empty]);
+                cap.AdvanceHold();
                 Assert.Equal(count, input.VirtualKeys.Count);
             }
             finally
@@ -1448,8 +1429,8 @@ public class SoftKeyboardTests
                 window.Show();
                 window.UpdateLayout();
                 SoftKeyboardKey backspace = FindKey(keyboard, Key.Back);
-                Wpf.Zen.Ui.Controls.Button button = Assert.Single(
-                    Descendants<Wpf.Zen.Ui.Controls.Button>(keyboard),
+                SoftKeyboardKeyControl button = Assert.Single(
+                    Descendants<SoftKeyboardKeyControl>(keyboard),
                     item => ReferenceEquals(item.DataContext, backspace)
                 );
                 FluentIcon icon = Assert.Single(Descendants<FluentIcon>(button));
@@ -1734,6 +1715,62 @@ public class SoftKeyboardTests
             .GetMethod("InvokeKey", BindingFlags.Instance | BindingFlags.NonPublic)!
             .Invoke(keyboard, [key]);
     }
+
+    [Theory]
+    [InlineData("nextKey")]
+    [InlineData("target")]
+    [InlineData("layout")]
+    [InlineData("close")]
+    [InlineData("deactivate")]
+    public void KeyboardContextChange_CancelsKeyOwnedAlternatives(string change)
+    {
+        WpfApplicationTestHost.Run(() =>
+        {
+            var keyboard = new SoftKeyboard(CreateServices(out var input, out _, out _)) { IsOpen = true };
+            var editor = new System.Windows.Controls.TextBox();
+            var other = new System.Windows.Controls.TextBox();
+            var root = new StackPanel();
+            root.Children.Add(editor);
+            root.Children.Add(other);
+            root.Children.Add(keyboard);
+            keyboard.Target = editor;
+            var window = new Window { Content = root, Width = 700, Height = 500, ShowInTaskbar = false };
+            try
+            {
+                window.Show();
+                editor.Focus();
+                PumpDispatcher();
+                window.UpdateLayout();
+                var cap = FindCap(keyboard, Key.E);
+                cap.BeginPress();
+                cap.AdvanceHold();
+                Assert.True(cap.IsAlternatePopupOpen);
+                switch (change)
+                {
+                    case "nextKey": FindCap(keyboard, Key.A).BeginPress(); break;
+                    case "target": keyboard.Target = other; break;
+                    case "layout": keyboard.ShowDisplayMode(SoftKeyboardDisplayMode.Symbols); break;
+                    case "close": keyboard.IsOpen = false; break;
+                    case "deactivate":
+                        typeof(SoftKeyboard).GetMethod("OnWindowDeactivated", BindingFlags.Instance | BindingFlags.NonPublic)!
+                            .Invoke(keyboard, [window, EventArgs.Empty]);
+                        break;
+                }
+
+                cap.SelectAlternative("é");
+                cap.CompletePress(true);
+                Assert.False(cap.IsAlternatePopupOpen);
+                Assert.Empty(input.Operations);
+            }
+            finally
+            {
+                window.Close();
+            }
+        });
+    }
+
+    private static SoftKeyboardKeyControl FindCap(SoftKeyboard keyboard, Key key) =>
+        Descendants<SoftKeyboardKeyControl>(keyboard).Single(cap => cap.Key?.Key == key);
 
     private static IEnumerable<T> Descendants<T>(DependencyObject root)
         where T : DependencyObject

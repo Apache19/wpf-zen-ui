@@ -13,11 +13,10 @@
     xmlns:t="clr-namespace:Wpf.Zen.Ui.Theming">
 
     <!--
-        Keyboard buttons deliberately remain outside the tab sequence. Their Click routed events
-        bubble to SoftKeyboard, allowing the control to retain the editor as Keyboard.FocusedElement
-        while preserving normal Button UI Automation Invoke behavior.
+        Candidate and header buttons remain outside the tab sequence. Key caps have their own
+        control/template and report semantic input requests rather than Button Click events.
     -->
-    <Style x:Key="SoftKeyboardKeyButtonStyle" TargetType="{x:Type controls:Button}">
+    <Style x:Key="SoftKeyboardButtonStyle" TargetType="{x:Type controls:Button}">
         <Setter Property="MinWidth" Value="0" />
         <Setter Property="MinHeight" Value="44" />
         <Setter Property="Padding" Value="0" />
@@ -33,7 +32,7 @@
         <Setter Property="controls:IconPresenter.IconSize" Value="20" />
     </Style>
 
-    <Style x:Key="SoftKeyboardCandidateButtonStyle" BasedOn="{StaticResource SoftKeyboardKeyButtonStyle}" TargetType="{x:Type controls:Button}">
+    <Style x:Key="SoftKeyboardCandidateButtonStyle" BasedOn="{StaticResource SoftKeyboardButtonStyle}" TargetType="{x:Type controls:Button}">
         <Setter Property="MinHeight" Value="38" />
         <Setter Property="Padding" Value="8,4" />
         <Setter Property="FontSize" Value="16" />
@@ -145,39 +144,6 @@
                                     Style="{StaticResource SoftKeyboardCandidateButtonStyle}" />
                             </Grid>
 
-                            <!-- Popup is optional and never contributes to the keyboard's desired size. -->
-                            <Popup
-                                x:Name="PART_AlternatePopup"
-                                AllowsTransparency="True"
-                                Focusable="False"
-                                Placement="Top"
-                                StaysOpen="False">
-                                <Border
-                                    Margin="2"
-                                    Padding="4"
-                                    Background="{m:DynamicBrush SolidBackgroundFillTertiary}"
-                                    BorderBrush="{TemplateBinding BorderBrush}"
-                                    BorderThickness="1"
-                                    CornerRadius="6">
-                                    <ItemsControl ItemsSource="{Binding AlternateValues, RelativeSource={RelativeSource TemplatedParent}}">
-                                        <ItemsControl.ItemsPanel>
-                                            <ItemsPanelTemplate>
-                                                <WrapPanel MaxWidth="440" HorizontalAlignment="Center" />
-                                            </ItemsPanelTemplate>
-                                        </ItemsControl.ItemsPanel>
-                                        <ItemsControl.ItemTemplate>
-                                            <DataTemplate>
-                                                <controls:Button
-                                                    MinWidth="44"
-                                                    AutomationProperties.Name="{Binding}"
-                                                    Content="{Binding}"
-                                                    Style="{StaticResource SoftKeyboardKeyButtonStyle}" />
-                                            </DataTemplate>
-                                        </ItemsControl.ItemTemplate>
-                                    </ItemsControl>
-                                </Border>
-                            </Popup>
-
                             <!--
                                 A single panel owns both row and column layout. Placement lives on
                                 item containers because an ItemsPanel receives those containers as
@@ -209,10 +175,10 @@
                                 </ItemsControl.ItemContainerStyle>
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate DataType="{x:Type controls:SoftKeyboardKey}">
-                                        <controls:Button
+                                        <controls:SoftKeyboardKeyControl
+                                            Key="{Binding}"
                                             AutomationProperties.Name="{Binding AutomationName}"
-                                            Content="{Binding Content}"
-                                            Style="{StaticResource SoftKeyboardKeyButtonStyle}" />
+                                            Content="{Binding Content}" />
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>

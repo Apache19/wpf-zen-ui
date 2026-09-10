@@ -38,6 +38,9 @@ namespace Wpf.Zen.Ui.Controls;
 /// <c>PART_PreviousCandidatePageButton</c> and <c>PART_NextCandidatePageButton</c> parts. Custom
 /// templates may omit the paging parts, while the read-only candidate page properties remain
 /// available for a replacement paging surface.
+/// Keys use <see cref="SoftKeyboardKeyControl"/> with its Key property bound to the layout item.
+/// Each cap owns its gesture and alternative popup; this control only coordinates cancellation
+/// and executes semantic input requests against the active editor.
 /// </para>
 /// </remarks>
 [TemplatePart(Name = KeysPartName, Type = typeof(ItemsControl))]
@@ -53,19 +56,15 @@ public partial class SoftKeyboard : Control
 
     private readonly ObservableCollection<SoftKeyboardCandidate> _candidates = [];
     private readonly ObservableCollection<SoftKeyboardInputMethod> _inputMethods = [];
-    private readonly ObservableCollection<string> _alternateValues = [];
     private readonly SoftKeyboardPlatformServices _platform;
     private SoftKeyboardDispatcherSession? _session;
     private Window? _window;
-    private SoftKeyboardKey? _heldKey;
     private TextComposition? _activeTextComposition;
     private IInputElement? _compositionTarget;
     private bool _compositionCancellationRequested;
     private SoftKeyboardInputMethod? _preferredImeInputMethod;
-    private DispatcherTimer? _holdTimer;
-    private DispatcherTimer? _repeatTimer;
-    private bool _didRepeatOrOpenAlternates;
-    private object? _suppressClickItem;
+    private SoftKeyboardKeyControl? _activeKeyControl;
+    private UIElement? _inputMethodMenuAnchor;
     private int _lastShiftClickTick;
     private int _lastInputPaneHideTick;
     private DispatcherOperation? _inputPaneHideOperation;
@@ -98,16 +97,14 @@ public partial class SoftKeyboard : Control
         _platform = platform ?? throw new ArgumentNullException(nameof(platform));
         Candidates = new ReadOnlyObservableCollection<SoftKeyboardCandidate>(_candidates);
         InputMethods = new ReadOnlyObservableCollection<SoftKeyboardInputMethod>(_inputMethods);
-        AlternateValues = new ReadOnlyObservableCollection<string>(_alternateValues);
 
         AddHandler(ButtonBase.ClickEvent, new RoutedEventHandler(OnButtonClick));
-        AddHandler(Mouse.PreviewMouseDownEvent, new MouseButtonEventHandler(OnPreviewMouseDown), true);
-        AddHandler(Mouse.PreviewMouseUpEvent, new MouseButtonEventHandler(OnPreviewMouseUp), true);
+        AddHandler(SoftKeyboardKeyControl.InteractionStartedEvent, new RoutedEventHandler(OnKeyInteractionStarted));
+        AddHandler(SoftKeyboardKeyControl.InputRequestedEvent, new EventHandler<SoftKeyboardInputRequestedEventArgs>(OnKeyInputRequested));
         Loaded += OnLoaded;
         Unloaded += OnUnloaded;
         IsVisibleChanged += OnIsVisibleChanged;
         IsEnabledChanged += OnIsEnabledChanged;
-        AddHandler(Mouse.LostMouseCaptureEvent, new MouseEventHandler(OnLostMouseCapture), true);
         RebuildLayout();
     }
 
@@ -522,21 +519,6 @@ public partial class SoftKeyboard : Control
     /// <remarks>The value is <see langword="false"/> when no embedded candidate list is active.</remarks>
     public bool CanGoToNextCandidatePage => (bool)GetValue(CanGoToNextCandidatePageProperty);
 
-    private static readonly DependencyPropertyKey IsAlternatePopupOpenPropertyKey =
-        DependencyProperty.RegisterReadOnly(
-            nameof(IsAlternatePopupOpen),
-            typeof(bool),
-            typeof(SoftKeyboard),
-            new PropertyMetadata(false)
-        );
-
-    /// <summary>Identifies the read-only <see cref="IsAlternatePopupOpen"/> dependency property.</summary>
-    public static readonly DependencyProperty IsAlternatePopupOpenProperty =
-        IsAlternatePopupOpenPropertyKey.DependencyProperty;
-
-    /// <summary>Gets a value indicating whether long-press alternatives are visible.</summary>
-    public bool IsAlternatePopupOpen => (bool)GetValue(IsAlternatePopupOpenProperty);
-
     #endregion
 
     /// <summary>Gets the candidates supplied by the current TSF input method.</summary>
@@ -544,9 +526,6 @@ public partial class SoftKeyboard : Control
 
     /// <summary>Gets the enabled Windows input methods.</summary>
     public ReadOnlyObservableCollection<SoftKeyboardInputMethod> InputMethods { get; }
-
-    /// <summary>Gets the alternatives offered for the currently held key.</summary>
-    public ReadOnlyObservableCollection<string> AlternateValues { get; }
 
     /// <summary>Changes the visible keyboard surface and ends any pending long-press gesture.</summary>
     /// <remarks>
@@ -571,7 +550,7 @@ public partial class SoftKeyboard : Control
             return;
         }
 
-        CancelHeldKey();
+        CancelKeyInteraction();
         SetValue(DisplayModePropertyKey, displayMode);
         CloseFlyouts();
     }
@@ -581,9 +560,8 @@ public partial class SoftKeyboard : Control
 
     /// <summary>Ends gestures belonging to the previous visual tree when the template changes.</summary>
     /// <remarks>
-    /// A theme or application can replace the template without unloading the control. Timers and
-    /// alternate values belong to the pressed key's visual lifetime and must not survive that
-    /// replacement, even when the old button never acquired mouse capture. Cleanup runs at
+    /// A theme or application can replace the template without unloading the control. The active
+    /// key's interaction must not survive that replacement, even without mouse capture. Cleanup runs at
     /// template change rather than OnApplyTemplate because an empty template creates no tree
     /// and does not receive that callback.
     /// </remarks>
@@ -591,7 +569,7 @@ public partial class SoftKeyboard : Control
     /// <param name="newTemplate">The replacement template, or null.</param>
     protected override void OnTemplateChanged(ControlTemplate oldTemplate, ControlTemplate newTemplate)
     {
-        CancelHeldKey();
+        CancelKeyInteraction();
         CloseFlyouts();
         base.OnTemplateChanged(oldTemplate, newTemplate);
     }
@@ -774,7 +752,7 @@ public partial class SoftKeyboard : Control
         else
         {
             _ = keyboard.TryCancelActiveComposition();
-            keyboard.CancelHeldKey();
+            keyboard.CancelKeyInteraction();
             keyboard.CloseFlyouts();
             keyboard._platform.Candidates.ReleasePresentation(keyboard);
             keyboard.ReplaceCandidates(Array.Empty<SoftKeyboardCandidate>(), SoftKeyboardCandidatePresentationState.None);
@@ -825,7 +803,7 @@ public partial class SoftKeyboard : Control
         var keyboard = (SoftKeyboard)dependencyObject;
         // A gesture belongs to the editor that was active when it started. Never let a held
         // Backspace or an unselected variant continue into a newly focused document.
-        keyboard.CancelHeldKey();
+        keyboard.CancelKeyInteraction();
         keyboard.CloseFlyouts();
         if (eventArgs.OldValue is IInputElement oldTarget
             && !ReferenceEquals(oldTarget, eventArgs.NewValue)
@@ -916,7 +894,7 @@ public partial class SoftKeyboard : Control
             _window = null;
         }
 
-        CancelHeldKey();
+        CancelKeyInteraction();
         CloseFlyouts();
         ReplaceCandidates(Array.Empty<SoftKeyboardCandidate>(), SoftKeyboardCandidatePresentationState.None);
         ClearActiveComposition();
@@ -927,7 +905,7 @@ public partial class SoftKeyboard : Control
         if (!IsVisible)
         {
             _ = TryCancelActiveComposition();
-            CancelHeldKey();
+            CancelKeyInteraction();
             CloseFlyouts();
             _platform.Candidates.ReleasePresentation(this);
             ReleaseSystemKeyboardSuppression(tryRestore: true);
@@ -971,7 +949,7 @@ public partial class SoftKeyboard : Control
     {
         // SendInput targets the foreground thread. Ending every pending gesture here prevents a
         // held key from continuing into another process during an Alt+Tab or tablet app switch.
-        CancelHeldKey();
+        CancelKeyInteraction();
         CloseFlyouts();
         ReleaseSystemKeyboardSuppression(tryRestore: false);
         _platform.Candidates.ReleasePresentation(this);
@@ -984,29 +962,13 @@ public partial class SoftKeyboard : Control
             return;
         }
 
-        if (_didRepeatOrOpenAlternates && ReferenceEquals(button.DataContext, _suppressClickItem))
-        {
-            _didRepeatOrOpenAlternates = false;
-            _suppressClickItem = null;
-            eventArgs.Handled = true;
-            return;
-        }
-
         switch (button.DataContext)
         {
-            case SoftKeyboardKey key:
-                _heldButton = button;
-                InvokeKey(key);
-                break;
             case SoftKeyboardCandidate candidate:
                 CommitCandidate(candidate);
                 break;
             case SoftKeyboardInputMethod inputMethod:
                 ActivateInputMethod(inputMethod);
-                break;
-            case string alternate when IsAlternatePopupOpen:
-                _ = TrySendText(alternate);
-                CloseFlyouts();
                 break;
             default:
                 if (button.Name == PreviousCandidatePageButtonPartName)
@@ -1056,106 +1018,61 @@ public partial class SoftKeyboard : Control
         RequestSystemKeyboardHide();
     }
 
-    private void OnPreviewMouseDown(object sender, MouseButtonEventArgs eventArgs)
+    private void OnKeyInteractionStarted(object sender, RoutedEventArgs eventArgs)
     {
-        if (!IsEnabled || !IsOpen || !IsVisible
-            || eventArgs.ChangedButton != MouseButton.Left
-            || eventArgs.OriginalSource is not DependencyObject source
-            || FindButton(source) is not { DataContext: SoftKeyboardKey } button)
+        if (eventArgs.OriginalSource is not SoftKeyboardKeyControl keyControl)
         {
             return;
         }
 
-        CloseFlyouts();
-        _heldButton = button;
-        _heldKey = button.DataContext as SoftKeyboardKey;
-        _didRepeatOrOpenAlternates = false;
-        _suppressClickItem = null;
-        _holdTimer ??= new DispatcherTimer(DispatcherPriority.Input)
+        eventArgs.Handled = true;
+        if (!ReferenceEquals(_activeKeyControl, keyControl))
         {
-            Interval = TimeSpan.FromMilliseconds(GetInitialRepeatDelay()),
-        };
-        _holdTimer.Tick -= OnHoldTimerTick;
-        _holdTimer.Tick += OnHoldTimerTick;
-        _holdTimer.Start();
-    }
+            CancelKeyInteraction();
+        }
 
-    private void OnPreviewMouseUp(object sender, MouseButtonEventArgs eventArgs)
-    {
-        if (eventArgs.ChangedButton == MouseButton.Left)
+        _activeKeyControl = keyControl;
+        if (_inputMethodMenu is not null)
         {
-            if (IsAlternatePopupOpen
-                && InputHitTest(eventArgs.GetPosition(this)) is DependencyObject hit
-                && FindButton(hit)?.DataContext is string alternate)
-            {
-                _ = TrySendText(alternate);
-                CloseFlyouts();
-            }
+            _inputMethodMenu.SetCurrentValue(ContextMenu.IsOpenProperty, false);
+        }
 
-            _suppressClickItem = _heldKey;
-            CancelHeldKey(keepRepeatMarker: true);
-            if (_alternatePopup?.IsOpen == true)
-            {
-                // ButtonBase releases its capture after this preview event; defer Popup capture
-                // until that release has completed to make the next outside click dismiss it.
-                _ = Dispatcher.BeginInvoke(DispatcherPriority.Input, new Action(() =>
-                {
-                    if (_alternatePopup?.IsOpen == true)
-                    {
-                        _alternatePopup.SetCurrentValue(Popup.StaysOpenProperty, false);
-                    }
-                }));
-            }
+        if (!IsOpen || !IsEnabled || !IsVisible)
+        {
+            CancelKeyInteraction();
         }
     }
 
-    private void OnHoldTimerTick(object? sender, EventArgs eventArgs)
+    private void OnKeyInputRequested(object? sender, SoftKeyboardInputRequestedEventArgs eventArgs)
     {
-        _holdTimer?.Stop();
-        if (!IsEnabled || !IsOpen || !IsVisible || _heldKey is null)
+        eventArgs.Handled = true;
+        if (eventArgs.OriginalSource is not SoftKeyboardKeyControl keyControl
+            || !ReferenceEquals(_activeKeyControl, keyControl)
+            || !ReferenceEquals(keyControl.Key, eventArgs.Key)
+            || !IsOpen || !IsEnabled || !IsVisible)
         {
             return;
         }
 
-        IReadOnlyList<string> alternates = _heldKey?.Alternates
-            ?? Array.Empty<string>();
-        if (alternates.Count > 0)
+        // The key owns the gesture, but each request still crosses the keyboard's normal
+        // target/focus/IME validation boundary. No editor reference is stored on a key cap.
+        _inputMethodMenuAnchor = keyControl;
+        try
         {
-            _alternateValues.Clear();
-            foreach (string alternate in alternates)
+            if (eventArgs.AlternateText is string text)
             {
-                _alternateValues.Add(alternate);
+                if (TrySendText(text) && ShiftState == SoftKeyboardShiftState.Once)
+                    SetValue(ShiftStatePropertyKey, SoftKeyboardShiftState.Off);
             }
-
-            _didRepeatOrOpenAlternates = OpenAlternates();
-            return;
+            else
+            {
+                InvokeKey(eventArgs.Key);
+            }
         }
-
-        if (_heldKey is null || !IsRepeatable(_heldKey))
+        finally
         {
-            return;
+            _inputMethodMenuAnchor = null;
         }
-
-        _didRepeatOrOpenAlternates = true;
-        InvokeKey(_heldKey);
-        _repeatTimer ??= new DispatcherTimer(DispatcherPriority.Input)
-        {
-            Interval = TimeSpan.FromMilliseconds(GetRepeatInterval()),
-        };
-        _repeatTimer.Tick -= OnRepeatTimerTick;
-        _repeatTimer.Tick += OnRepeatTimerTick;
-        _repeatTimer.Start();
-    }
-
-    private void OnRepeatTimerTick(object? sender, EventArgs eventArgs)
-    {
-        if (_heldKey is null || !IsRepeatable(_heldKey) || !IsOpen || !IsEnabled || !IsVisible || !IsWindowForeground())
-        {
-            CancelHeldKey();
-            return;
-        }
-
-        InvokeKey(_heldKey);
     }
 
     private void InvokeKey(SoftKeyboardKey key)
@@ -1434,6 +1351,7 @@ public partial class SoftKeyboard : Control
 
     private void RebuildLayout()
     {
+        CancelKeyInteraction();
         ISoftKeyboardTargetAdapter? adapter = ActiveTarget is null ? null : GetAdapter(ActiveTarget);
         InputScopeNameValue inputScope = ActiveTarget is not null && adapter is not null
             ? adapter.GetInputScope(ActiveTarget)
@@ -1729,7 +1647,7 @@ public partial class SoftKeyboard : Control
         if (!IsEnabled)
         {
             _ = TryCancelActiveComposition();
-            CancelHeldKey();
+            CancelKeyInteraction();
             CloseFlyouts();
             _platform.Candidates.ReleasePresentation(this);
             ReleaseSystemKeyboardSuppression(tryRestore: true);
@@ -1851,70 +1769,24 @@ public partial class SoftKeyboard : Control
         }
     }
 
-    private void OnLostMouseCapture(object sender, MouseEventArgs eventArgs)
+    private void CancelKeyInteraction()
     {
-        // ButtonBase releases capture before raising Click on ordinary MouseUp. Preserve the
-        // completed gesture's click suppression marker, but terminate any still-held gesture.
-        if (_heldKey is not null)
-        {
-            CancelHeldKey();
-            CloseFlyouts();
-        }
-    }
-
-    private void CancelHeldKey(bool keepRepeatMarker = false)
-    {
-        _holdTimer?.Stop();
-        _repeatTimer?.Stop();
-        _heldKey = null;
-        if (!keepRepeatMarker)
-        {
-            _didRepeatOrOpenAlternates = false;
-            _suppressClickItem = null;
-        }
+        // Clear ownership before calling the child: closing its popup may synchronously raise
+        // routed/lifecycle events. The child alone owns timers, capture and submission suppression.
+        SoftKeyboardKeyControl? keyControl = _activeKeyControl;
+        _activeKeyControl = null;
+        keyControl?.CancelInteraction();
     }
 
     private void CloseFlyouts()
     {
-        if (_alternatePopup is not null)
-        {
-            _alternatePopup.SetCurrentValue(Popup.IsOpenProperty, false);
-        }
-
-        SetValue(IsAlternatePopupOpenPropertyKey, false);
-        _alternateValues.Clear();
+        CancelKeyInteraction();
         if (_inputMethodMenu is not null)
         {
             _inputMethodMenu.SetCurrentValue(ContextMenu.IsOpenProperty, false);
         }
     }
 
-    private static ButtonBase? FindButton(DependencyObject source)
-    {
-        for (DependencyObject? current = source; current is not null; current = GetParent(current))
-        {
-            if (current is ButtonBase button)
-            {
-                return button;
-            }
-        }
-
-        return null;
-    }
-
-    private static bool IsRepeatable(SoftKeyboardKey key) =>
-        key.Kind == SoftKeyboardKeyKind.VirtualKey
-        && key.Key is Key.Back or Key.Delete or Key.Left or Key.Right or Key.Up or Key.Down;
-
     private static bool IsCharacterKey(Key key) => key is >= Key.A and <= Key.Z;
 
-    private static double GetInitialRepeatDelay() => (SystemParameters.KeyboardDelay + 1) * 250d;
-
-    private static double GetRepeatInterval()
-    {
-        // Win32 exposes speed as 0..31. Its documented effective range is approximately
-        // 2.5..30 repeats per second, so this interpolation follows the user's system setting.
-        double repeatsPerSecond = 2.5d + (SystemParameters.KeyboardSpeed * 27.5d / 31d);
-        return 1000d / repeatsPerSecond;
-    }
 }
