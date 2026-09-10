@@ -174,10 +174,16 @@ public sealed class SoftKeyboardLayoutContext
 }
 
 /// <summary>Creates keyboard layouts for a <see cref="SoftKeyboard"/>.</summary>
+/// <remarks>
+/// Providers own language- and input-method-specific key selection, placement, labels and actions.
+/// The keyboard requests a complete snapshot when its input context changes; providers should use
+/// that context to resolve Shift, display pages and IME modes together. The visual template only
+/// presents the resulting keys and does not interpret language rules or select layout variants.
+/// </remarks>
 public interface ISoftKeyboardLayoutProvider
 {
     /// <summary>Creates an immutable layout for the supplied input context.</summary>
-    /// <param name="context">The active language, scope, display mode, and Shift state.</param>
+    /// <param name="context">The active language, input scope, display mode, Shift state, IME state and input-method profile.</param>
     /// <returns>A complete keyboard layout.</returns>
     SoftKeyboardLayout CreateLayout(SoftKeyboardLayoutContext context);
 }

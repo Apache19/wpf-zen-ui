@@ -6,42 +6,12 @@
 using System.Globalization;
 using System.Linq;
 using System.Windows.Input;
-using System.Windows.Markup;
 using Wpf.Zen.Ui.Controls;
 
 namespace Wpf.Zen.Ui.UnitTests.Controls.SoftKeyboardControl;
 
-public class SoftKeyboardDefinitionTests
+public class DefaultSoftKeyboardLayoutProviderTests
 {
-    [Fact]
-    public void XamlDefinition_BuildsImmutablePositionedKeysAndVariants()
-    {
-        WpfTestThread.Run(() =>
-        {
-            var definition = (SoftKeyboardLayoutDefinition)XamlReader.Parse("""
-                <ui:SoftKeyboardLayoutDefinition xmlns:ui="clr-namespace:Wpf.Zen.Ui.Controls;assembly=Wpf.Zen.Ui"
-                    xmlns:sys="clr-namespace:System;assembly=System.Runtime" ColumnCount="10">
-                    <ui:SoftKeyboardRowDefinition Offset="1">
-                        <ui:SoftKeyboardKeyDefinition Text="e" Span="3">
-                            <sys:String>é</sys:String>
-                            <sys:String>ë</sys:String>
-                        </ui:SoftKeyboardKeyDefinition>
-                        <ui:SoftKeyboardKeyDefinition Kind="VirtualKey" Key="Back" Content="⌫" AutomationName="Backspace" Span="4" />
-                    </ui:SoftKeyboardRowDefinition>
-                </ui:SoftKeyboardLayoutDefinition>
-                """);
-            var layout = definition.CreateLayout(Context(SoftKeyboardDisplayMode.Letters));
-            Assert.Equal(10, layout.ColumnCount);
-            Assert.Equal((0, 1, 3), (layout.Keys[0].Row, layout.Keys[0].Column, layout.Keys[0].ColumnSpan));
-            Assert.Equal(4, layout.Keys[1].Column);
-            Assert.Equal(Key.Back, layout.Keys[1].Key);
-            definition.Rows[0].Keys[0].Alternates.Clear();
-            Assert.Equal(new[] { "é", "ë" }, layout.Keys[0].Alternates);
-            definition.Rows[0].Keys[1].Span = 20;
-            Assert.Throws<System.ArgumentException>(() => definition.CreateLayout(Context(SoftKeyboardDisplayMode.Letters)));
-        });
-    }
-
     [Theory]
     [InlineData(false, false, "! @ # $ % & _ - = +", "; : ( ) / ' \"")]
     [InlineData(false, true, "% [ ] { } < > € £ ¥", "* ` ° × ÷ ~ |")]

@@ -40,7 +40,7 @@
 编辑器可实现 `ISoftKeyboardTargetAdapter`；行业专用布局可实现
 `ISoftKeyboardLayoutProvider` 并返回不可变布局模型。
 
-## 布局、声明与扩展
+## 布局生成与扩展
 
 默认布局始终使用四行。字母行采用十键首行、错位九键次行及对称 Shift/Backspace 第三行；
 底行包含符号切换、输入状态、逗号、左右方向、空格、句号、输入法菜单和 Enter。
@@ -53,40 +53,16 @@
 切换输入状态保留当前符号页，不会自动跳回字母页。关闭由应用设置 `IsOpen=false`；
 默认模板没有额外工具栏、输入法选择页或关闭按钮。
 
-`SoftKeyboardLayoutDefinition` 可直接作为 `LayoutProvider` 在 XAML 中声明布局：
-
-```xaml
-<ui:SoftKeyboard IsOpen="True">
-    <ui:SoftKeyboard.LayoutProvider>
-        <ui:SoftKeyboardLayoutDefinition ColumnCount="10">
-            <ui:SoftKeyboardRowDefinition Offset="1">
-                <ui:SoftKeyboardKeyDefinition Text="a" Span="2" />
-                <ui:SoftKeyboardKeyDefinition Text="b" Span="2" />
-                <ui:SoftKeyboardKeyDefinition Kind="VirtualKey" Key="Back"
-                    Content="⌫" AutomationName="退格" Span="4" />
-            </ui:SoftKeyboardRowDefinition>
-            <ui:SoftKeyboardRowDefinition>
-                <ui:SoftKeyboardKeyDefinition Kind="ToggleIme" Content="A/文"
-                    AutomationName="切换输入状态" />
-                <ui:SoftKeyboardKeyDefinition Kind="VirtualKey" Key="Space"
-                    Content="空格" Span="6" />
-                <ui:SoftKeyboardKeyDefinition Kind="InputMethods" Content="语言"
-                    AutomationName="选择输入法" />
-            </ui:SoftKeyboardRowDefinition>
-        </ui:SoftKeyboardLayoutDefinition>
-    </ui:SoftKeyboard.LayoutProvider>
-</ui:SoftKeyboard>
-```
-
-定义对象是配置，不是可变的运行时键树。配置完成后再赋给控件；每次 `CreateLayout` 都生成独立的
-不可变快照。`SoftKeyboardKeyDefinition.Alternates` 可声明长按字符串，`Content` 可使用图标源
-或交给隐式 DataTemplate 呈现的键帽数据，因此“;:”等多字符键帽不必改变输入动作。
-
-动态布局实现 `ISoftKeyboardLayoutProvider`，根据 `SoftKeyboardLayoutContext` 中的
+自定义布局实现 `ISoftKeyboardLayoutProvider`，根据 `SoftKeyboardLayoutContext` 中的
 `Culture`、`InputScope`、`DisplayMode`、`ShiftState`、`ImeState` 和 `InputMethod`
-选择声明定义或生成布局。`InputMethod` 提供 ClassId、ProfileId 和 LanguageId，允许按具体
+在代码中生成当前状态对应的完整布局。`InputMethod` 提供 ClassId、ProfileId 和 LanguageId，允许按具体
 输入法定制键帽、增删按键和替换整行。提供器必须返回有效布局；异常或 null 会回退到默认布局。
 默认提供器按当前 Windows HKL 解码虚拟字母键，不应把显示文字直接当成输入法组合文本。
+
+布局逻辑由提供器负责，包括语言规则、状态切换、键帽、输入动作和键位计算。
+控件在输入上下文变化时重新请求完整布局；提供器应根据上下文处理 Shift、符号页和 IME 模式，
+避免返回与当前状态不符的固定键面。XAML 模板只负责呈现生成的按键、候选和浮层，
+不承担语言布局规则。默认提供器的四行键面是内置策略，并非所有语言布局的通用实现。
 
 运行时 `SoftKeyboardLayout.Keys` 是不可变的扁平集合，每键显式指定 `Row`、`Column`、
 `ColumnSpan`。所有行共享 `ColumnCount`，短行不会被拉伸；跳过的 Row 编号不预留空行。
@@ -205,7 +181,7 @@ dotnet build tests/Wpf.Zen.Ui.UnitTests/Wpf.Zen.Ui.UnitTests.csproj
 & tests/Wpf.Zen.Ui.UnitTests/bin/Debug/net10.0-windows/Wpf.Zen.Ui.UnitTests.exe -class '*SoftKeyboard*'
 ```
 
-自动测试覆盖声明式 XAML、快照隔离、四行布局边界、符号页面、日文变体、系统状态回读、
+自动测试覆盖布局模型、四行布局边界、符号页面、日文变体、系统状态回读、
 适配器失败、固定头部、菜单生命周期、浮层定位与单次提交、候选分页、组合取消以及目标隔离。
 `GeneratedLetterButton_ClickInsertsThroughWindowsInputStream` 和
 `InstalledMicrosoftPinyin_PublishesCandidatesToEmbeddedSurfaceWhenAvailable` 是显式集成测试，
