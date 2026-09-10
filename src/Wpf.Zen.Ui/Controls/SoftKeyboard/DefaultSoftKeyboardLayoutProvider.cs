@@ -147,7 +147,7 @@ public sealed class DefaultSoftKeyboardLayoutProvider : ISoftKeyboardLayoutProvi
             AddPositionedRow(positionedKeys, rows[1], 1, 1, 2);
         }
 
-        AddPositionedRow(positionedKeys, thirdRow, 2, 0, [3, 2, 2, 2, 2, 2, 2, 2, 3]);
+        AddPositionedRow(positionedKeys, thirdRow, 2, 0, [2, 2, 2, 2, 2, 2, 2, 2, 4]);
         AddPositionedRow(positionedKeys, bottom, 3, 0, [2, 2, 2, 2, 4, 2, 2, 2, 2]);
         return new SoftKeyboardLayout(positionedKeys, DefaultColumnCount);
     }

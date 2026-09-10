@@ -77,7 +77,7 @@ internal sealed class SoftKeyboardDispatcherSession
         if (input is TextCompositionEventArgs compositionArgs)
         {
             // Composition events are observed at the Dispatcher boundary because the keyboard is
-            // deliberately not an ancestor of its editor. Tracking the WPF composition object lets
+            // deliberately not an ancestor of its editor. Tracking the editor's composition events lets
             // a surface transition send Escape only while a TIP-owned pre-edit transaction exists;
             // blindly sending Escape would leak a cancellation command into the host application.
             ForEachKeyboard(keyboard => keyboard.OnSessionTextComposition(compositionArgs));

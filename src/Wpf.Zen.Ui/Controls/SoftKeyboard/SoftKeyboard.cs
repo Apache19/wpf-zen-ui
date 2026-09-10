@@ -7,7 +7,9 @@ using System.Collections.ObjectModel;
 using System.Windows.Automation.Peers;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
+using System.Windows.Documents;
 using System.Windows.Input;
+using System.Windows.Media.Media3D;
 using System.Windows.Threading;
 using Wpf.Zen.Ui.AutomationPeers;
 
@@ -690,8 +692,16 @@ public partial class SoftKeyboard : Control
             return;
         }
 
+        // TextStore.RaiseCompositionEvents creates a separate FrameworkTextComposition (including
+        // FrameworkRichTextComposition) for every start/update/end record. Its final event belongs
+        // to the editor's composition stream, not to the object retained from the previous record.
+        // Match that stream by source and framework type; ordinary TextComposition instances still
+        // require identity so unrelated direct text input cannot end a pending composition.
         if (eventArgs.RoutedEvent == TextCompositionManager.PreviewTextInputEvent
-            && ReferenceEquals(composition, _activeTextComposition))
+            && ReferenceEquals(compositionSource, _compositionTarget)
+            && (ReferenceEquals(composition, _activeTextComposition)
+                || (composition is FrameworkTextComposition
+                    && _activeTextComposition is FrameworkTextComposition)))
         {
             ClearActiveComposition();
         }
@@ -1410,7 +1420,7 @@ public partial class SoftKeyboard : Control
 
     private static DependencyObject? GetParent(DependencyObject element)
     {
-        if (element is Visual or System.Windows.Media.Media3D.Visual3D)
+        if (element is Visual or Visual3D)
         {
             DependencyObject? visualParent = VisualTreeHelper.GetParent(element);
             if (visualParent is not null)

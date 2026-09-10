@@ -1620,6 +1620,81 @@ public class SoftKeyboardTests
         });
     }
 
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    [InlineData(true, true)]
+    public void ImeToggle_CompletesWhenTextStoreUsesDifferentCompositionObjects(bool richText, bool unrelatedCompletion)
+    {
+        WpfApplicationTestHost.Run(() =>
+        {
+            var keyboard = new SoftKeyboard(CreateServices(out var input, out _, out _)) { IsOpen = true };
+            System.Windows.Controls.Primitives.TextBoxBase editor = richText
+                ? new System.Windows.Controls.RichTextBox()
+                : new System.Windows.Controls.TextBox();
+            var root = new StackPanel();
+            root.Children.Add(editor);
+            root.Children.Add(keyboard);
+            keyboard.Target = editor;
+            var window = new Window { Content = root, Width = 700, Height = 500, ShowInTaskbar = false };
+
+            // TextStore creates a new framework composition for each event record. Its constructors
+            // are internal, so reproduce that event contract here without requiring an installed TIP.
+            void Observe(RoutedEvent routedEvent, IInputElement source)
+            {
+                Type type = richText
+                    ? typeof(System.Windows.Documents.FrameworkRichTextComposition)
+                    : typeof(System.Windows.Documents.FrameworkTextComposition);
+                var composition = (TextComposition)Activator.CreateInstance(
+                    type,
+                    BindingFlags.Instance | BindingFlags.NonPublic,
+                    null,
+                    [InputManager.Current, source, new object()],
+                    null)!;
+                keyboard.OnSessionTextComposition(new TextCompositionEventArgs(Keyboard.PrimaryDevice, composition)
+                {
+                    RoutedEvent = routedEvent,
+                    Source = source,
+                });
+            }
+
+            try
+            {
+                window.Show();
+                Assert.True(editor.Focus());
+                Observe(TextCompositionManager.PreviewTextInputStartEvent, editor);
+                Observe(TextCompositionManager.PreviewTextInputUpdateEvent, editor);
+                InvokeKey(keyboard, FindKey(keyboard, SoftKeyboardKeyKind.ToggleIme));
+                Assert.Contains((Key.Escape, false), input.VirtualKeys);
+                Assert.Equal(InputMethodState.On, keyboard.ImeState);
+
+                if (unrelatedCompletion)
+                {
+                    // A final event from another editor must not release the pending cancellation.
+                    Observe(TextCompositionManager.PreviewTextInputEvent, new System.Windows.Controls.RichTextBox());
+                    PumpDispatcher();
+                    Assert.Equal(InputMethodState.On, keyboard.ImeState);
+                    InvokeKey(keyboard, FindKey(keyboard, SoftKeyboardKeyKind.ToggleIme));
+                }
+
+                Observe(TextCompositionManager.PreviewTextInputEvent, editor);
+                PumpDispatcher();
+                Assert.Equal(InputMethodState.Off, keyboard.ImeState);
+                Assert.Same(editor, Keyboard.FocusedElement);
+
+                InvokeKey(keyboard, FindKey(keyboard, SoftKeyboardKeyKind.ToggleIme));
+                Assert.Equal(InputMethodState.On, keyboard.ImeState);
+                InvokeKey(keyboard, FindKey(keyboard, SoftKeyboardKeyKind.ToggleIme));
+                Assert.Equal(InputMethodState.Off, keyboard.ImeState);
+            }
+            finally
+            {
+                window.Close();
+            }
+        });
+    }
+
     [Fact]
     public void WindowReactivation_QueuesCandidateBridgeRefresh()
     {
