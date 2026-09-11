@@ -24,6 +24,49 @@ namespace Wpf.Zen.Ui.UnitTests.Controls.SoftKeyboardControl;
 public class SoftKeyboardTests
 {
     [Fact]
+    public void CandidateSelection_ScrollsInBothDirectionsWithoutMovingEditorFocus()
+    {
+        WpfApplicationTestHost.Run(() =>
+        {
+            var services = CreateServices(out _, out _, out _);
+            var editor = new System.Windows.Controls.TextBox();
+            var keyboard = new SoftKeyboard(services) { IsOpen = true, Target = editor };
+            var root = new StackPanel();
+            root.Children.Add(editor);
+            root.Children.Add(keyboard);
+            var window = new Window { Content = root, Width = 640, ShowInTaskbar = false };
+            try
+            {
+                window.Show();
+                Assert.True(editor.Focus());
+                foreach (var selectedIndex in new[] { 19, 0 })
+                {
+                    keyboard.ReplaceCandidates(
+                        Enumerable.Range(0, 20).Select(index =>
+                            new SoftKeyboardCandidate((uint)index, $"Candidate {index}", index == selectedIndex)),
+                        SoftKeyboardCandidatePresentationState.Embedded);
+                    window.UpdateLayout();
+                    PumpDispatcher();
+                    window.UpdateLayout();
+
+                    var items = (ItemsControl)keyboard.Template.FindName("PART_Candidates", keyboard);
+                    var container = (FrameworkElement)items.ItemContainerGenerator.ContainerFromIndex(selectedIndex);
+                    var viewer = Descendants<DynamicScrollViewer>(keyboard).Single(view => view.Content == items);
+                    var bounds = container.TransformToAncestor(items).TransformBounds(new Rect(container.RenderSize));
+                    Assert.True(viewer.ScrollableWidth > 0);
+                    Assert.True(bounds.Left >= viewer.HorizontalOffset - 1);
+                    Assert.True(bounds.Right <= viewer.HorizontalOffset + viewer.ViewportWidth + 1);
+                    Assert.Same(editor, Keyboard.FocusedElement);
+                }
+            }
+            finally
+            {
+                window.Close();
+            }
+        });
+    }
+
+    [Fact]
     public void Defaults_AreClosedManualAndNonFocusable()
     {
         WpfTestThread.Run(() =>

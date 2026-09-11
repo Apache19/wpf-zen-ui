@@ -38,6 +38,9 @@ namespace Wpf.Zen.Ui.Controls;
 /// <c>PART_PreviousCandidatePageButton</c> and <c>PART_NextCandidatePageButton</c> parts. Custom
 /// templates may omit the paging parts, while the read-only candidate page properties remain
 /// available for a replacement paging surface.
+/// The optional <c>PART_Candidates</c> surface should generate non-virtualized item containers
+/// inside a ScrollViewer to automatically reveal the selected candidate without taking editor focus.
+/// Templates without that surface retain candidate data but provide their own visibility behavior.
 /// Keys use <see cref="SoftKeyboardKeyControl"/> with its Key property bound to the layout item.
 /// Each cap owns its gesture and alternative popup; this control only coordinates cancellation
 /// and executes semantic input requests against the active editor.
@@ -847,10 +850,64 @@ public partial class SoftKeyboard : Control
     /// <param name="newTemplate">The replacement template, or null.</param>
     protected override void OnTemplateChanged(ControlTemplate oldTemplate, ControlTemplate newTemplate)
     {
+        LayoutUpdated -= OnCandidateLayoutUpdated;
         CancelKeyInteraction();
         CloseFlyouts();
 
         base.OnTemplateChanged(oldTemplate, newTemplate);
+    }
+
+    /// <summary>Schedules candidate visibility after the replacement template has generated its items.</summary>
+    public override void OnApplyTemplate()
+    {
+        base.OnApplyTemplate();
+        QueueSelectedCandidateIntoView();
+    }
+
+    /// <summary>
+    /// Waits for item generation and arrangement without forcing a synchronous layout during TSF updates.
+    /// Repeated updates share one request and always use the latest candidate snapshot.
+    /// </summary>
+    private void QueueSelectedCandidateIntoView()
+    {
+        LayoutUpdated -= OnCandidateLayoutUpdated;
+        if (_candidates.Any(candidate => candidate.IsSelected))
+        {
+            LayoutUpdated += OnCandidateLayoutUpdated;
+        }
+    }
+
+    private void OnCandidateLayoutUpdated(object? sender, EventArgs eventArgs)
+    {
+        if (GetTemplateChild(CandidatesPartName) is not ItemsControl items)
+        {
+            // Custom templates may omit the candidate surface entirely.
+            LayoutUpdated -= OnCandidateLayoutUpdated;
+            return;
+        }
+
+        for (var index = 0; index < _candidates.Count; index++)
+        {
+            if (!_candidates[index].IsSelected)
+            {
+                continue;
+            }
+
+            if (items.ItemContainerGenerator.ContainerFromIndex(index) is not FrameworkElement container
+                || !container.IsArrangeValid)
+            {
+                return;
+            }
+
+            // Candidates cannot take keyboard focus from the editor. Request scrolling explicitly;
+            // WPF's enclosing ScrollViewer computes the required offset from the arranged container.
+            // Remove the handler first because scrolling itself schedules another layout pass.
+            LayoutUpdated -= OnCandidateLayoutUpdated;
+            container.BringIntoView();
+            return;
+        }
+
+        LayoutUpdated -= OnCandidateLayoutUpdated;
     }
 
     internal void OnSessionFocusChanged(IInputElement? focusedElement, bool touchOrPenInitiated)
@@ -1014,6 +1071,7 @@ public partial class SoftKeyboard : Control
         SetValue(CanGoToPreviousCandidatePagePropertyKey, pageNumber > 1);
         SetValue(CanGoToNextCandidatePagePropertyKey, pageNumber > 0 && pageNumber < pageCount);
         SetValue(CandidatePresentationStatePropertyKey, presentationState);
+        QueueSelectedCandidateIntoView();
     }
 
     private static void OnIsOpenChanged(DependencyObject dependencyObject, DependencyPropertyChangedEventArgs eventArgs)
@@ -1166,6 +1224,8 @@ public partial class SoftKeyboard : Control
         ResolveTarget();
         RefreshImeState();
 
+        QueueSelectedCandidateIntoView();
+
         if (IsOpen)
         {
             RequestSystemKeyboardHide();
@@ -1176,6 +1236,7 @@ public partial class SoftKeyboard : Control
 
     private void OnUnloaded(object sender, RoutedEventArgs eventArgs)
     {
+        LayoutUpdated -= OnCandidateLayoutUpdated;
         // Unloading commonly means the Window/Page itself is going away. Showing a system keyboard
         // for a disappearing HWND would be intrusive and can target the next foreground window, so
         // only discard this control's suppression ownership here.
