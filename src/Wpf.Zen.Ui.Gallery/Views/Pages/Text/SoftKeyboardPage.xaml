@@ -4,11 +4,12 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:Wpf.Zen.Ui.Gallery.Controls"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:keyboard="http://schemas.thezendev.com/wpf/2027/virtual-input"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:ui="http://schemas.thezendev.com/wpf/2027"
     xmlns:vm="clr-namespace:Wpf.Zen.Ui.Gallery.ViewModels.Pages.Text"
     Title="SoftKeyboardPage"
-    controls:PageControlDocumentation.DocumentationType="{x:Type ui:SoftKeyboard}"
+    controls:PageControlDocumentation.DocumentationType="{x:Type keyboard:SoftKeyboard}"
     d:Background="{ui:DynamicBrush WindowBackground}"
     d:DataContext="{d:DesignInstance vm:SoftKeyboardViewModel, IsDesignTimeCreatable=False}"
     d:DesignWidth="900"
@@ -17,7 +18,7 @@
     mc:Ignorable="d">
 
     <StackPanel Margin="0,0,0,24">
-        <controls:ControlExample HeaderText="Embedded keyboard with automatic target tracking and input-scope-aware layouts." XamlCode="&lt;ui:TextBox InputScope=&quot;TelephoneNumber&quot; /&gt;&#xA;&lt;ui:TextBox InputScope=&quot;Number&quot; /&gt;&#xA;&lt;ui:TextBox InputScope=&quot;EmailSmtpAddress&quot; /&gt;&#xA;&lt;ui:SoftKeyboard IsOpen=&quot;True&quot; TargetScope=&quot;{Binding ElementName=FormScope}&quot; /&gt;">
+        <controls:ControlExample HeaderText="Embedded keyboard with automatic target tracking and input-scope-aware layouts." XamlCode="&lt;ui:TextBox InputScope=&quot;TelephoneNumber&quot; /&gt;&#xA;&lt;ui:TextBox InputScope=&quot;Number&quot; /&gt;&#xA;&lt;ui:TextBox InputScope=&quot;EmailSmtpAddress&quot; /&gt;&#xA;&lt;keyboard:SoftKeyboard IsOpen=&quot;True&quot; TargetScope=&quot;{Binding ElementName=FormScope}&quot; /&gt;">
             <Grid x:Name="FormScope">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
@@ -83,7 +84,7 @@
                     Content="Keyboard open"
                     IsChecked="{Binding IsOpen, ElementName=Keyboard, Mode=TwoWay}" />
 
-                <ui:SoftKeyboard
+                <keyboard:SoftKeyboard
                     x:Name="Keyboard"
                     Grid.Row="6"
                     AutoHideMode="Manual"

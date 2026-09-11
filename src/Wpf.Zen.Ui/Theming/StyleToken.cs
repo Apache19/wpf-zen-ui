@@ -43,9 +43,6 @@ public enum StyleToken
     UiBreadcrumbBarItem,
     UiSeparator,
 
-    UiSoftKeyboard,
-    UiSoftKeyboardKeyControl,
-
     /// <summary>
     /// Identifies the ListView style selected while a WPF Zen UI GridView is active.
     /// </summary>

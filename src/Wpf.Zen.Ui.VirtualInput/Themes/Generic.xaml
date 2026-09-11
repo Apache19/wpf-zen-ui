@@ -1,0 +1,384 @@
+<!--
+    This Source Code Form is subject to the terms of the MIT License.
+    If a copy of the MIT was not distributed with this file, You can obtain one at https://opensource.org/licenses/MIT.
+    Copyright (C) Leszek Pomianowski and WPF UI Contributors.
+    All Rights Reserved.
+-->
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="http://schemas.thezendev.com/wpf/2027"
+    xmlns:keyboard="clr-namespace:Wpf.Zen.Ui.VirtualInput.Controls"
+    xmlns:layouts="clr-namespace:Wpf.Zen.Ui.VirtualInput.Layouts">
+
+    <Style TargetType="{x:Type keyboard:SoftKeyboardCandidateItem}">
+        <Setter Property="Padding" Value="12,5" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Border.CornerRadius" Value="6" />
+        <Setter Property="HorizontalContentAlignment" Value="Center" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type keyboard:SoftKeyboardCandidateItem}">
+                    <Grid SnapsToDevicePixels="True">
+                        <Border
+                            x:Name="border"
+                            Padding="{TemplateBinding Padding}"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="{TemplateBinding Border.CornerRadius}">
+                            <ContentPresenter
+                                HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
+                        </Border>
+                        <Border
+                            x:Name="indicator"
+                            Width="3"
+                            Height="14"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
+                            Background="{controls:DynamicBrush AccentSelection}"
+                            CornerRadius="1.75"
+                            Visibility="Collapsed" />
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter TargetName="indicator" Property="Visibility" Value="Visible" />
+                            <Setter Property="Background" Value="{controls:DynamicBrush ControlFillSecondary}" />
+                        </Trigger>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter Property="Background" Value="{controls:DynamicBrush ControlFillPrimary}" />
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter Property="Background" Value="{controls:DynamicBrush ControlFillTertiary}" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Foreground" Value="{controls:DynamicBrush TextFillDisabled}" />
+                            <Setter TargetName="indicator" Property="Background" Value="{controls:DynamicBrush ControlStrongFillDisabled}" />
+                        </Trigger>
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="IsSelected" Value="True" />
+                                <Condition Property="IsEnabled" Value="False" />
+                            </MultiTrigger.Conditions>
+                            <Setter Property="Background" Value="{controls:DynamicBrush ControlFillDisabled}" />
+                        </MultiTrigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style TargetType="{x:Type keyboard:SoftKeyboardCandidateList}">
+        <Setter Property="Focusable" Value="False" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type keyboard:SoftKeyboardCandidateList}">
+                    <controls:DynamicScrollViewer
+                        controls:ScrollViewerAssist.HideButtons="True"
+                        Focusable="False"
+                        HorizontalScrollBarVisibility="Auto"
+                        IsHorizontalMouseWheelEnabled="True"
+                        ScrollSpillMode="Disabled"
+                        VerticalScrollBarVisibility="Disabled">
+                        <ContentPresenter x:Name="PART_ItemsHost" />
+                    </controls:DynamicScrollViewer>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+
+    <!--  todo: 键帽不同于普通按钮控件，周围的空白应该能够交互，所以需要把面板的间隙去掉，让键帽自己包一圈可交互的空白区域  -->
+    <Style TargetType="{x:Type keyboard:SoftKeyboardKeyControl}">
+        <Setter Property="MinHeight" Value="52" />
+        <Setter Property="Focusable" Value="False" />
+        <Setter Property="IsTabStop" Value="False" />
+        <Setter Property="HorizontalContentAlignment" Value="Center" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="Background" Value="{controls:DynamicBrush ControlFillSecondary}" />
+        <Setter Property="Foreground" Value="{controls:DynamicBrush TextFillPrimary}" />
+        <Setter Property="BorderBrush" Value="{controls:DynamicBrush ControlStrokeDefault}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="controls:IconPresenter.IconSize" Value="20" />
+        <Setter Property="Content" Value="{Binding Key.Content, RelativeSource={RelativeSource Self}}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type keyboard:SoftKeyboardKeyControl}">
+                    <Grid>
+                        <Border
+                            Padding="{TemplateBinding Padding}"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="4">
+                            <!--
+                                Separate rows keep preview text clear of both text and icon caps.
+                                Only the provider-selected hint is shown; the popup retains all alternatives.
+                            -->
+                            <StackPanel HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}">
+                                <TextBlock
+                                    x:Name="AlternateHint"
+                                    HorizontalAlignment="Center"
+                                    FontSize="10"
+                                    IsHitTestVisible="False"
+                                    Text="{Binding Key.AlternateHint, RelativeSource={RelativeSource TemplatedParent}}" />
+                                <ContentPresenter
+                                    HorizontalAlignment="Center"
+                                    Content="{TemplateBinding Content}"
+                                    ContentTemplate="{TemplateBinding ContentTemplate}"
+                                    ContentTemplateSelector="{TemplateBinding ContentTemplateSelector}" />
+                            </StackPanel>
+                        </Border>
+                        <!--
+                            The key owns this optional surface. It lives outside measurement and
+                            reports selections through the key's semantic request event.
+                        -->
+                        <Popup
+                            x:Name="PART_AlternatePopup"
+                            HorizontalAlignment="Center"
+                            AllowsTransparency="True"
+                            Focusable="False"
+                            Placement="Top"
+                            StaysOpen="True">
+                            <Border
+                                Margin="2"
+                                Padding="4"
+                                Background="{controls:DynamicBrush SolidBackgroundFillTertiary}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="1"
+                                CornerRadius="6">
+                                <ItemsControl ItemsSource="{Binding Key.Alternates, RelativeSource={RelativeSource TemplatedParent}}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <WrapPanel MaxWidth="440" HorizontalAlignment="Center" />
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <controls:Button
+                                                MinWidth="44"
+                                                MinHeight="44"
+                                                AutomationProperties.Name="{Binding}"
+                                                Content="{Binding}"
+                                                Focusable="False"
+                                                IsTabStop="False" />
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </Border>
+                        </Popup>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <DataTrigger Binding="{Binding Key.AlternateHint, RelativeSource={RelativeSource Self}}" Value="{x:Null}">
+                            <Setter TargetName="AlternateHint" Property="Visibility" Value="Collapsed" />
+                        </DataTrigger>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter Property="Background" Value="{controls:DynamicBrush ControlFillPrimary}" />
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter Property="Background" Value="{controls:DynamicBrush ControlFillTertiary}" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.5" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="SoftKeyboardToolButtonStyle" TargetType="{x:Type controls:Button}">
+        <Setter Property="Focusable" Value="False" />
+        <Setter Property="IsTabStop" Value="False" />
+        <Setter Property="Padding" Value="8,4" />
+        <Setter Property="FontSize" Value="16" />
+        <Setter Property="Appearance" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+    </Style>
+
+    <Style TargetType="{x:Type keyboard:SoftKeyboard}">
+        <Setter Property="Background" Value="{controls:DynamicBrush SolidBackgroundFillSecondary}" />
+        <Setter Property="BorderBrush" Value="{controls:DynamicBrush ControlStrokeDefault}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Padding" Value="6" />
+        <Setter Property="FontSize" Value="18" />
+        <Setter Property="Focusable" Value="False" />
+        <Setter Property="IsTabStop" Value="False" />
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="VerticalContentAlignment" Value="Stretch" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type keyboard:SoftKeyboard}">
+                    <Border
+                        x:Name="KeyboardRoot"
+                        Padding="{TemplateBinding Padding}"
+                        Background="{TemplateBinding Background}"
+                        BorderBrush="{TemplateBinding BorderBrush}"
+                        BorderThickness="{TemplateBinding BorderThickness}"
+                        CornerRadius="{TemplateBinding CornerRadius}"
+                        RenderTransformOrigin="0.5,1"
+                        SnapsToDevicePixels="True">
+                        <Border.RenderTransform>
+                            <TranslateTransform />
+                        </Border.RenderTransform>
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+
+                            <DockPanel Grid.Row="0" Margin="0,0,0,4">
+                                <!--
+                                    候选栏左边的设置按钮，常驻，可撑起候选栏高度
+                                    将来为其实现弹出菜单用来设置软键盘参数
+                                -->
+                                <controls:Button
+                                    Padding="10,8"
+                                    Content="{controls:FluentIconSource Settings24}"
+                                    DockPanel.Dock="Left"
+                                    FontSize="18"
+                                    Style="{StaticResource SoftKeyboardToolButtonStyle}" />
+
+                                <Grid>
+                                    <!--  候选栏 填充剩余空间  -->
+                                    <DockPanel
+                                        x:Name="CandidateBar"
+                                        Margin="4,0,0,0"
+                                        AutomationProperties.Name="Input method candidates"
+                                        ClipToBounds="True">
+
+                                        <!--  下一页按钮 停靠最右  -->
+                                        <controls:Button
+                                            x:Name="PART_NextCandidatePageButton"
+                                            AutomationProperties.Name="Next candidate page"
+                                            DockPanel.Dock="Right"
+                                            FontSize="20"
+                                            IsEnabled="{Binding CanGoToNextCandidatePage, RelativeSource={RelativeSource TemplatedParent}}">
+                                            <controls:Button.Style>
+                                                <Style BasedOn="{StaticResource SoftKeyboardToolButtonStyle}" TargetType="{x:Type controls:Button}">
+                                                    <Setter Property="Content" Value="{controls:FluentIconSource ChevronRight24}" />
+                                                    <Style.Triggers>
+                                                        <Trigger Property="FlowDirection" Value="RightToLeft">
+                                                            <Setter Property="Content" Value="{controls:FluentIconSource ChevronLeft24}" />
+                                                        </Trigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </controls:Button.Style>
+                                        </controls:Button>
+
+                                        <!--  上一页按钮 停靠在下一页按钮左边  -->
+                                        <controls:Button
+                                            x:Name="PART_PreviousCandidatePageButton"
+                                            Margin="4,0"
+                                            AutomationProperties.Name="Previous candidate page"
+                                            DockPanel.Dock="Right"
+                                            FontSize="20"
+                                            IsEnabled="{Binding CanGoToPreviousCandidatePage, RelativeSource={RelativeSource TemplatedParent}}">
+                                            <controls:Button.Style>
+                                                <Style BasedOn="{StaticResource SoftKeyboardToolButtonStyle}" TargetType="{x:Type controls:Button}">
+                                                    <Setter Property="Content" Value="{controls:FluentIconSource ChevronLeft24}" />
+                                                    <Style.Triggers>
+                                                        <Trigger Property="FlowDirection" Value="RightToLeft">
+                                                            <Setter Property="Content" Value="{controls:FluentIconSource ChevronRight24}" />
+                                                        </Trigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </controls:Button.Style>
+                                        </controls:Button>
+
+                                        <!--  候选词列表 填充剩余空间  -->
+                                        <keyboard:SoftKeyboardCandidateList
+                                            x:Name="PART_Candidates"
+                                            Candidates="{Binding Candidates, RelativeSource={RelativeSource TemplatedParent}}"
+                                            SelectedCandidateIndex="{Binding SelectedCandidateIndex, RelativeSource={RelativeSource TemplatedParent}}" />
+                                    </DockPanel>
+                                </Grid>
+                            </DockPanel>
+
+                            <ItemsControl
+                                x:Name="PART_Keys"
+                                Grid.Row="1"
+                                HorizontalContentAlignment="Stretch"
+                                VerticalContentAlignment="Stretch"
+                                ItemsSource="{Binding CurrentLayout.Keys, RelativeSource={RelativeSource TemplatedParent}}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <!--  todo: 应该把间距拿掉，让键帽自己把空白留出来且能交互，防止触摸到空白处没有反应  -->
+                                        <keyboard:SoftKeyboardPanel
+                                            ColumnCount="{Binding CurrentLayout.ColumnCount, RelativeSource={RelativeSource AncestorType={x:Type keyboard:SoftKeyboard}}}"
+                                            ColumnSpacing="{Binding ColumnSpacing, RelativeSource={RelativeSource AncestorType={x:Type keyboard:SoftKeyboard}}}"
+                                            RowSpacing="{Binding RowSpacing, RelativeSource={RelativeSource AncestorType={x:Type keyboard:SoftKeyboard}}}" />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemContainerStyle>
+                                    <Style TargetType="{x:Type ContentPresenter}">
+                                        <Setter Property="HorizontalAlignment" Value="Stretch" />
+                                        <Setter Property="VerticalAlignment" Value="Stretch" />
+                                        <Setter Property="keyboard:SoftKeyboardPanel.Row" Value="{Binding Row}" />
+                                        <Setter Property="keyboard:SoftKeyboardPanel.Column" Value="{Binding Column}" />
+                                        <Setter Property="keyboard:SoftKeyboardPanel.ColumnSpan" Value="{Binding ColumnSpan}" />
+                                    </Style>
+                                </ItemsControl.ItemContainerStyle>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate DataType="{x:Type layouts:SoftKeyboardKey}">
+                                        <keyboard:SoftKeyboardKeyControl
+                                            Key="{Binding}"
+                                            AutomationProperties.Name="{Binding AutomationName}"
+                                            Content="{Binding Content}" />
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </Grid>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <!--  Closing remains immediate so the IsOpen=false measurement contract stays exactly zero.  -->
+                        <Trigger Property="IsOpen" Value="False">
+                            <Setter TargetName="KeyboardRoot" Property="Visibility" Value="Collapsed" />
+                        </Trigger>
+                        <Trigger Property="IsOpen" Value="True">
+                            <Trigger.EnterActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation
+                                            Storyboard.TargetName="KeyboardRoot"
+                                            Storyboard.TargetProperty="Opacity"
+                                            From="0"
+                                            To="1"
+                                            Duration="0:0:0.12" />
+                                        <DoubleAnimation
+                                            Storyboard.TargetName="KeyboardRoot"
+                                            Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
+                                            From="10"
+                                            To="0"
+                                            Duration="0:0:0.12" />
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.EnterActions>
+                        </Trigger>
+                        <!--
+                            Candidate creation and composition updates are transient. Keep the bar's
+                            fixed header slot for every input state so every keystroke
+                            does not move the key rows. Only candidate-specific navigation disappears
+                            while the reserved surface is empty.
+                        -->
+
+                        <Trigger Property="HasCandidates" Value="False">
+                            <Setter TargetName="CandidateBar" Property="Visibility" Value="Hidden" />
+                            <Setter TargetName="PART_PreviousCandidatePageButton" Property="Visibility" Value="Collapsed" />
+                            <Setter TargetName="PART_NextCandidatePageButton" Property="Visibility" Value="Collapsed" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="KeyboardRoot" Property="Opacity" Value="0.55" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+</ResourceDictionary>

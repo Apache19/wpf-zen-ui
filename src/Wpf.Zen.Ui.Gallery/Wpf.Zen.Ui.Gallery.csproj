@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <RootNamespace>Wpf.Zen.Ui.Gallery</RootNamespace>
@@ -32,6 +32,7 @@
     <ProjectReference Include="..\Wpf.Zen.Ui.DependencyInjection\Wpf.Zen.Ui.DependencyInjection.csproj" />
 
     <ProjectReference Include="..\Wpf.Zen.Ui.Tray\Wpf.Zen.Ui.Tray.csproj" />
+    <ProjectReference Include="..\Wpf.Zen.Ui.VirtualInput\Wpf.Zen.Ui.VirtualInput.csproj" />
     <ProjectReference Include="..\Wpf.Zen.Ui\Wpf.Zen.Ui.csproj" />
   </ItemGroup>
 

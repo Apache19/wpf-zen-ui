@@ -3,9 +3,17 @@
 `SoftKeyboard` 是可参与 WPF 布局、保持编辑器焦点的软键盘控件，适合平板、Kiosk、POS
 和需要让键盘稳定占据 Page、ContentDialog 或表单指定区域的应用。
 
+软键盘位于独立的 `Wpf.Zen.Ui.VirtualInput` 程序集。XAML 使用专属 XML 命名空间，C# API
+则按职责分布在 `Wpf.Zen.Ui.VirtualInput.Controls`、`.Layouts`、`.Layouts.Providers`、`.Input`
+与 `.Theming` 中；
+通用 `Wpf.Zen.Ui` 程序集不再自动加载软键盘的类型和主题资源。
+
 ## 基本用法
 
 ```xaml
+<Window
+    xmlns:ui="http://schemas.thezendev.com/wpf/2023/xaml"
+    xmlns:keyboard="http://schemas.thezendev.com/wpf/2027/virtual-input">
 <Grid x:Name="FormScope">
     <Grid.RowDefinitions>
         <RowDefinition Height="*" />
@@ -17,12 +25,13 @@
         <ui:PasswordBox PlaceholderText="密码" />
     </StackPanel>
 
-    <ui:SoftKeyboard
+    <keyboard:SoftKeyboard
         Grid.Row="1"
         AutoShowMode="TouchAndPen"
         IsOpen="{Binding IsKeyboardOpen}"
         TargetScope="{Binding ElementName=FormScope}" />
 </Grid>
+</Window>
 ```
 
 键盘及默认键帽均不可获得键盘焦点。每次输入前都会重新验证目标、作用域、前台 HWND、
@@ -308,11 +317,21 @@ TSF 当前焦点文档，不能借用其他编辑器的候选。
 
 ## 样式与可访问性
 
-默认模板支持 Light、Dark、High Contrast、DPI 和触摸命中尺寸。键区填满提供的宽度；应用应根据触摸尺寸要求设置容器大小。可通过 `{ui:DynamicStyle UiSoftKeyboard}` 或
-`StyleKeys.UiSoftKeyboardStyle` 派生样式。控件向 UI Automation 暴露 Expand/Collapse，键帽
+默认模板支持 Light、Dark、High Contrast、DPI 和触摸命中尺寸。键区填满提供的宽度；应用应根据触摸尺寸要求设置容器大小。
+派生控件样式时，以 `SoftKeyboardStyleKeys.SoftKeyboardStyle` 为 `BasedOn` 资源键；该键属于
+软键盘程序集，不会进入通用 UI 程序集的 `StyleKeys` 或 `DynamicStyle` 枚举。控件向 UI Automation 暴露 Expand/Collapse，键帽
 使用专用的 `SoftKeyboardKeyControlAutomationPeer` 提供名称和 Invoke，同时默认保持不可聚焦。
-键帽可通过 `{ui:DynamicStyle UiSoftKeyboardKeyControl}` 或 `StyleKeys.UiSoftKeyboardKeyControlStyle`
-派生样式，独立替换键帽和变体浮层模板。
+键帽使用 `SoftKeyboardStyleKeys.KeyControlStyle` 派生样式，可独立替换键帽和变体浮层模板。
+
+```xaml
+<Style
+    BasedOn="{StaticResource {x:Static keyboard:SoftKeyboardStyleKeys.SoftKeyboardStyle}}"
+    TargetType="{x:Type keyboard:SoftKeyboard}">
+    <!-- 应用级定制 -->
+</Style>
+```
+
+`SoftKeyboardStyleKeys` 也通过软键盘 XML 命名空间公开，因此这里可以与控件共用 `keyboard` 前缀。
 
 可直接设置 `Background`、`BorderBrush`、`BorderThickness`、`Padding`、`CornerRadius`、
 `RowSpacing` 和 `ColumnSpacing`

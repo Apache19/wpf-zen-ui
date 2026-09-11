@@ -32,6 +32,7 @@
     <Platform Solution="*|x64" Project="x64" />
     <Platform Solution="*|x86" Project="x86" />
   </Project>
+  <Project Path="src/Wpf.Zen.Ui.VirtualInput/Wpf.Zen.Ui.VirtualInput.csproj" Id="2a7eae45-2e0c-46fc-98d0-489612341222" />
 
   <Project Path="src/Wpf.Zen.Ui.Tray/Wpf.Zen.Ui.Tray.csproj" />
   <Project Path="src/Wpf.Zen.Ui/Wpf.Zen.Ui.csproj" />

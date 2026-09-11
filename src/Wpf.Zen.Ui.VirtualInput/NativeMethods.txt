@@ -1,0 +1,6 @@
+GetAncestor
+GetForegroundWindow
+GetKeyboardLayout
+MapVirtualKeyEx
+SendInput
+ToUnicodeEx
