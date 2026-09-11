@@ -43,21 +43,146 @@ public class SoftKeyboardTests
                 {
                     keyboard.ReplaceCandidates(
                         Enumerable.Range(0, 20).Select(index =>
-                            new SoftKeyboardCandidate((uint)index, $"Candidate {index}", index == selectedIndex)),
-                        SoftKeyboardCandidatePresentationState.Embedded);
+                            new SoftKeyboardCandidate((uint)index, $"Candidate {index}")),
+                        SoftKeyboardCandidatePresentationState.Embedded,
+                    selectedCandidateIndex: (uint)selectedIndex);
                     window.UpdateLayout();
                     PumpDispatcher();
                     window.UpdateLayout();
 
-                    var items = (ItemsControl)keyboard.Template.FindName("PART_Candidates", keyboard);
+                    var items = Descendants<ItemsControl>((SoftKeyboardCandidateList)keyboard.Template.FindName("PART_Candidates", keyboard)).Single();
                     var container = (FrameworkElement)items.ItemContainerGenerator.ContainerFromIndex(selectedIndex);
-                    var viewer = Descendants<DynamicScrollViewer>(keyboard).Single(view => view.Content == items);
-                    var bounds = container.TransformToAncestor(items).TransformBounds(new Rect(container.RenderSize));
+                    var viewer = Descendants<DynamicScrollViewer>((SoftKeyboardCandidateList)keyboard.Template.FindName("PART_Candidates", keyboard)).Single();
+                    var viewport = Descendants<System.Windows.Controls.ScrollContentPresenter>(viewer).First();
+                    var bounds = container.TransformToAncestor(viewport).TransformBounds(new Rect(container.RenderSize));
                     Assert.True(viewer.ScrollableWidth > 0);
-                    Assert.True(bounds.Left >= viewer.HorizontalOffset - 1);
-                    Assert.True(bounds.Right <= viewer.HorizontalOffset + viewer.ViewportWidth + 1);
+                    Assert.True(bounds.Left >= -1);
+                    Assert.True(bounds.Right <= viewer.ViewportWidth + 1);
                     Assert.Same(editor, Keyboard.FocusedElement);
                 }
+            }
+            finally
+            {
+                window.Close();
+            }
+        });
+    }
+
+    [Fact]
+    public void CandidateList_OperatesIndependentlyAndClearsReplacedContainers()
+    {
+        WpfApplicationTestHost.Run(() =>
+        {
+            var candidates = new ObservableCollection<SoftKeyboardCandidate>(
+                Enumerable.Range(100, 20).Select(index => new SoftKeyboardCandidate((uint)index, $"Candidate {index}")));
+            var list = new SoftKeyboardCandidateList { Candidates = candidates, SelectedCandidateIndex = 119 };
+            var window = new Window { Content = list, Width = 320, Height = 120, ShowInTaskbar = false };
+            try
+            {
+                window.Show();
+                window.UpdateLayout();
+                PumpDispatcher();
+                window.UpdateLayout();
+                var container = (SoftKeyboardCandidateItem)Descendants<ItemsControl>(list).Single().ItemContainerGenerator.ContainerFromIndex(19);
+                Assert.True(container.IsSelected);
+                Assert.False(container.Focusable);
+                Assert.True(Descendants<DynamicScrollViewer>(list).Single().HorizontalOffset > 0);
+
+                var calls = 0;
+                list.CandidateInvoked += (_, e) =>
+                {
+                    calls++;
+                    Assert.Same(candidates[19], e.Candidate);
+                };
+                container.Content = "Presentation override";
+                var peer = UIElementAutomationPeer.CreatePeerForElement(container)!;
+                Assert.Equal("Candidate 119", peer.GetName());
+                ((IInvokeProvider)peer.GetPattern(PatternInterface.Invoke)!).Invoke();
+                PumpDispatcher();
+                Assert.Equal(1, calls);
+                Assert.Equal(119U, list.SelectedCandidateIndex);
+
+                list.SelectedCandidateIndex = 100;
+                window.UpdateLayout();
+                PumpDispatcher();
+                Assert.Same(container, Descendants<ItemsControl>(list).Single().ItemContainerGenerator.ContainerFromIndex(19));
+                Assert.False(container.IsSelected);
+                Assert.True(((SoftKeyboardCandidateItem)Descendants<ItemsControl>(list).Single().ItemContainerGenerator.ContainerFromIndex(0)).IsSelected);
+
+                list.Template = new ControlTemplate(typeof(SoftKeyboardCandidateList));
+                window.UpdateLayout();
+                list.ClearValue(Control.TemplateProperty);
+                window.UpdateLayout();
+                PumpDispatcher();
+                Assert.True(((SoftKeyboardCandidateItem)Descendants<ItemsControl>(list).Single().ItemContainerGenerator.ContainerFromIndex(0)).IsSelected);
+
+                list.Visibility = Visibility.Collapsed;
+                list.SelectedCandidateIndex = 119;
+                window.UpdateLayout();
+                PumpDispatcher();
+                list.Visibility = Visibility.Visible;
+                window.UpdateLayout();
+                PumpDispatcher();
+                window.UpdateLayout();
+                var viewer = Descendants<DynamicScrollViewer>(list).Single();
+                Assert.True(viewer.HorizontalOffset > 0);
+
+                // Collapse only the internal surface: the list remains loaded and visible, so recovery
+                // must complete the pending request rather than rely on the list's visibility callback.
+                var host = Descendants<ItemsControl>(list).Single();
+                host.Visibility = Visibility.Collapsed;
+                list.SelectedCandidateIndex = 100;
+                window.UpdateLayout();
+                PumpDispatcher();
+                host.Visibility = Visibility.Visible;
+                window.UpdateLayout();
+                PumpDispatcher();
+                window.UpdateLayout();
+                Assert.Equal(0, viewer.HorizontalOffset);
+
+                var current = (SoftKeyboardCandidateItem)host.ItemContainerGenerator.ContainerFromIndex(0);
+                candidates.Clear();
+                window.UpdateLayout();
+                PumpDispatcher();
+                Assert.False(current.IsSelected);
+                current.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent, current));
+                Assert.Equal(1, calls);
+            }
+            finally
+            {
+                window.Close();
+            }
+        });
+    }
+
+    [Fact]
+    public void CandidateHighlightUpdate_PreservesItemsAndContainers()
+    {
+        WpfApplicationTestHost.Run(() =>
+        {
+            var keyboard = new SoftKeyboard(CreateServices(out _, out _, out _)) { IsOpen = true };
+            var window = new Window { Content = keyboard, Width = 640, ShowInTaskbar = false };
+            try
+            {
+                window.Show();
+                keyboard.ReplaceCandidates(
+                    [new SoftKeyboardCandidate(40, "first"), new SoftKeyboardCandidate(41, "second")],
+                    SoftKeyboardCandidatePresentationState.Embedded,
+                    selectedCandidateIndex: 40);
+                window.UpdateLayout();
+                var list = (SoftKeyboardCandidateList)keyboard.Template.FindName("PART_Candidates", keyboard);
+                var first = keyboard.Candidates[0];
+                var container = (SoftKeyboardCandidateItem)Descendants<ItemsControl>(list).Single().ItemContainerGenerator.ContainerFromIndex(0);
+
+                keyboard.ReplaceCandidates(
+                    [new SoftKeyboardCandidate(40, "first"), new SoftKeyboardCandidate(41, "second")],
+                    SoftKeyboardCandidatePresentationState.Embedded,
+                    selectedCandidateIndex: 41);
+                window.UpdateLayout();
+                Assert.Same(first, keyboard.Candidates[0]);
+                Assert.Same(container, Descendants<ItemsControl>(list).Single().ItemContainerGenerator.ContainerFromIndex(0));
+                Assert.False(container.IsSelected);
+                Assert.True(((SoftKeyboardCandidateItem)Descendants<ItemsControl>(list).Single().ItemContainerGenerator.ContainerFromIndex(1)).IsSelected);
             }
             finally
             {
@@ -694,12 +819,13 @@ public class SoftKeyboardTests
             window.UpdateLayout();
             Assert.True(editor.Focus());
 
-            var candidateBar = Assert.IsType<Grid>(keyboard.Template.FindName("CandidateBar", keyboard));
+            var candidateBar = Assert.IsType<DockPanel>(keyboard.Template.FindName("CandidateBar", keyboard));
             var previous = Assert.IsType<Wpf.Zen.Ui.Controls.Button>(
                 keyboard.Template.FindName("PART_PreviousCandidatePageButton", keyboard)
             );
             Assert.Equal(Visibility.Hidden, candidateBar.Visibility);
-            Assert.True(candidateBar.ActualHeight >= 44d);
+            // The persistent settings button reserves the row even when the candidate surface is empty.
+            Assert.True(((FrameworkElement)candidateBar.Parent).ActualHeight > 0);
             Assert.Equal(Visibility.Collapsed, previous.Visibility);
             double emptyHeight = keyboard.ActualHeight;
 
@@ -742,9 +868,9 @@ public class SoftKeyboardTests
             candidates.Publish(keyboard, 1, 1, "first", "second");
             window.UpdateLayout();
             SoftKeyboardCandidate firstItem = keyboard.Candidates[0];
-            Wpf.Zen.Ui.Controls.Button firstButton = Assert.Single(
-                Descendants<Wpf.Zen.Ui.Controls.Button>(keyboard),
-                button => ReferenceEquals(button.DataContext, firstItem)
+            SoftKeyboardCandidateItem firstButton = Assert.Single(
+                Descendants<SoftKeyboardCandidateItem>(keyboard),
+                button => ReferenceEquals(button.Candidate, firstItem)
             );
 
             Assert.True(editor.Focus());
@@ -755,11 +881,21 @@ public class SoftKeyboardTests
             Assert.Same(
                 firstButton,
                 Assert.Single(
-                    Descendants<Wpf.Zen.Ui.Controls.Button>(keyboard),
-                    button => ReferenceEquals(button.DataContext, firstItem)
+                    Descendants<SoftKeyboardCandidateItem>(keyboard),
+                    button => ReferenceEquals(button.Candidate, firstItem)
                 )
             );
 
+            // Sharing data does not make an unrelated list the keyboard's candidate surface.
+            var unrelatedList = new SoftKeyboardCandidateList { Candidates = keyboard.Candidates };
+            keyboard.RaiseEvent(new SoftKeyboardCandidateInvokedEventArgs(unrelatedList, firstItem));
+            Assert.Null(candidates.LastCommittedIndex);
+            var candidateList = (SoftKeyboardCandidateList)keyboard.Template.FindName("PART_Candidates", keyboard);
+            // A different enumerable of the same current candidate objects remains a valid presentation.
+            candidateList.Candidates = keyboard.Candidates.ToArray();
+            window.UpdateLayout();
+            firstButton = Descendants<SoftKeyboardCandidateItem>(candidateList).Single(button => button.Candidate == firstItem);
+            firstButton.Content = "Custom caption";
             firstButton.RaiseEvent(
                 new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent, firstButton)
             );
@@ -2097,10 +2233,11 @@ public class SoftKeyboardTests
         internal void Publish(SoftKeyboard keyboard, uint pageNumber, uint pageCount, params string[] values)
         {
             keyboard.ReplaceCandidates(
-                values.Select((value, index) => new SoftKeyboardCandidate((uint)index, value, index == 0)),
+                values.Select((value, index) => new SoftKeyboardCandidate((uint)index, value)),
                 SoftKeyboardCandidatePresentationState.Embedded,
                 pageNumber,
-                pageCount
+                pageCount,
+                values.Length > 0 ? 0U : null
             );
         }
     }

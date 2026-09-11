@@ -21,69 +21,6 @@
         <Setter Property="BorderThickness" Value="0" />
     </Style>
 
-    <Style x:Key="SoftKeyboardCandidateButtonStyle" TargetType="{x:Type Button}">
-        <Setter Property="OverridesDefaultStyle" Value="True" />
-        <Setter Property="Focusable" Value="False" />
-        <Setter Property="IsTabStop" Value="False" />
-        <Setter Property="Padding" Value="12,5" />
-        <Setter Property="BorderThickness" Value="0" />
-        <Setter Property="Background" Value="Transparent" />
-        <Setter Property="Border.CornerRadius" Value="6" />
-        <Setter Property="Template">
-            <Setter.Value>
-                <ControlTemplate TargetType="{x:Type Button}">
-                    <Grid>
-                        <Border
-                            x:Name="border"
-                            Padding="{TemplateBinding Padding}"
-                            Background="{TemplateBinding Background}"
-                            BorderBrush="{TemplateBinding BorderBrush}"
-                            BorderThickness="{TemplateBinding BorderThickness}"
-                            CornerRadius="{TemplateBinding Border.CornerRadius}"
-                            SnapsToDevicePixels="True">
-                            <ContentPresenter
-                                HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
-                                VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
-                                SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
-                        </Border>
-                        <Border
-                            x:Name="indicator"
-                            Width="3"
-                            Height="12"
-                            HorizontalAlignment="Left"
-                            VerticalAlignment="Center"
-                            Background="{m:DynamicBrush AccentSelection}"
-                            CornerRadius="1.75"
-                            Visibility="Collapsed" />
-                    </Grid>
-                    <ControlTemplate.Triggers>
-                        <DataTrigger Binding="{Binding IsSelected}" Value="True">
-                            <Setter TargetName="indicator" Property="Visibility" Value="Visible" />
-                            <Setter Property="Background" Value="{m:DynamicBrush ControlFillSecondary}" />
-                        </DataTrigger>
-                        <Trigger Property="IsMouseOver" Value="True">
-                            <Setter Property="Background" Value="{m:DynamicBrush ControlFillPrimary}" />
-                        </Trigger>
-                        <Trigger Property="IsPressed" Value="True">
-                            <Setter Property="Background" Value="{m:DynamicBrush ControlFillTertiary}" />
-                        </Trigger>
-                        <Trigger Property="IsEnabled" Value="False">
-                            <Setter Property="Foreground" Value="{m:DynamicBrush TextFillDisabled}" />
-                            <Setter TargetName="indicator" Property="Background" Value="{m:DynamicBrush ControlStrongFillDisabled}" />
-                        </Trigger>
-                        <MultiDataTrigger>
-                            <MultiDataTrigger.Conditions>
-                                <Condition Binding="{Binding IsSelected}" Value="True" />
-                                <Condition Binding="{Binding IsEnabled, RelativeSource={RelativeSource TemplatedParent}}" Value="False" />
-                            </MultiDataTrigger.Conditions>
-                            <Setter Property="Background" Value="{m:DynamicBrush ControlFillDisabled}" />
-                        </MultiDataTrigger>
-                    </ControlTemplate.Triggers>
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
-    </Style>
-
     <Style x:Key="{x:Static t:StyleKeys.UiSoftKeyboardStyle}" TargetType="{x:Type controls:SoftKeyboard}">
         <Setter Property="Background" Value="{m:DynamicBrush SolidBackgroundFillSecondary}" />
         <Setter Property="BorderBrush" Value="{m:DynamicBrush ControlStrokeDefault}" />
@@ -116,7 +53,10 @@
                             </Grid.RowDefinitions>
 
                             <DockPanel Grid.Row="0" Margin="0,0,0,4">
-                                <!--  候选栏左边的设置按钮，常驻，可撑起候选栏高度  -->
+                                <!--
+                                    候选栏左边的设置按钮，常驻，可撑起候选栏高度
+                                    将来为其实现弹出菜单用来设置软键盘参数
+                                -->
                                 <controls:Button
                                     Padding="10,8"
                                     Content="{m:FluentIconSource Settings24}"
@@ -171,29 +111,10 @@
                                     </controls:Button>
 
                                     <!--  候选词列表 填充剩余空间  -->
-                                    <controls:DynamicScrollViewer
-                                        controls:ScrollViewerAssist.HideButtons="True"
-                                        Focusable="False"
-                                        HorizontalScrollBarVisibility="Auto"
-                                        IsHorizontalMouseWheelEnabled="True"
-                                        ScrollSpillMode="Disabled"
-                                        VerticalScrollBarVisibility="Disabled">
-                                        <ItemsControl x:Name="PART_Candidates" ItemsSource="{Binding Candidates, RelativeSource={RelativeSource TemplatedParent}}">
-                                            <ItemsControl.ItemsPanel>
-                                                <ItemsPanelTemplate>
-                                                    <StackPanel Orientation="Horizontal" />
-                                                </ItemsPanelTemplate>
-                                            </ItemsControl.ItemsPanel>
-                                            <ItemsControl.ItemTemplate>
-                                                <DataTemplate DataType="{x:Type controls:SoftKeyboardCandidate}">
-                                                    <Button
-                                                        AutomationProperties.Name="{Binding Text}"
-                                                        Content="{Binding Text}"
-                                                        Style="{StaticResource SoftKeyboardCandidateButtonStyle}" />
-                                                </DataTemplate>
-                                            </ItemsControl.ItemTemplate>
-                                        </ItemsControl>
-                                    </controls:DynamicScrollViewer>
+                                    <controls:SoftKeyboardCandidateList
+                                        x:Name="PART_Candidates"
+                                        Candidates="{Binding Candidates, RelativeSource={RelativeSource TemplatedParent}}"
+                                        SelectedCandidateIndex="{Binding SelectedCandidateIndex, RelativeSource={RelativeSource TemplatedParent}}" />
                                 </DockPanel>
                             </DockPanel>
 

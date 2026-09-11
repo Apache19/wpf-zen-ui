@@ -526,7 +526,7 @@ internal static class SoftKeyboardTsfCandidateBridge
                 {
                     if (_activeBehavior.GetString(index, out string? text) >= 0 && text is not null)
                     {
-                        candidates.Add(new SoftKeyboardCandidate(index, text, index == selection));
+                        candidates.Add(new SoftKeyboardCandidate(index, text));
                     }
                 }
 
@@ -534,7 +534,8 @@ internal static class SoftKeyboardTsfCandidateBridge
                     candidates,
                     SoftKeyboardCandidatePresentationState.Embedded,
                     pageNumber,
-                    pageCount
+                    pageCount,
+                    selection
                 );
             }
             catch (Exception exception) when (IsUnavailable(exception))

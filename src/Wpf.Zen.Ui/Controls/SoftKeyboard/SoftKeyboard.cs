@@ -38,16 +38,15 @@ namespace Wpf.Zen.Ui.Controls;
 /// <c>PART_PreviousCandidatePageButton</c> and <c>PART_NextCandidatePageButton</c> parts. Custom
 /// templates may omit the paging parts, while the read-only candidate page properties remain
 /// available for a replacement paging surface.
-/// The optional <c>PART_Candidates</c> surface should generate non-virtualized item containers
-/// inside a ScrollViewer to automatically reveal the selected candidate without taking editor focus.
-/// Templates without that surface retain candidate data but provide their own visibility behavior.
+/// The optional <c>PART_Candidates</c> list binds Candidates and SelectedCandidateIndex.
+/// It owns containers and scrolling and reports CandidateInvoked without taking editor focus.
 /// Keys use <see cref="SoftKeyboardKeyControl"/> with its Key property bound to the layout item.
 /// Each cap owns its gesture and alternative popup; this control only coordinates cancellation
 /// and executes semantic input requests against the active editor.
 /// </para>
 /// </remarks>
 [TemplatePart(Name = KeysPartName, Type = typeof(ItemsControl))]
-[TemplatePart(Name = CandidatesPartName, Type = typeof(ItemsControl))]
+[TemplatePart(Name = CandidatesPartName, Type = typeof(SoftKeyboardCandidateList))]
 [TemplatePart(Name = PreviousCandidatePageButtonPartName, Type = typeof(ButtonBase))]
 [TemplatePart(Name = NextCandidatePageButtonPartName, Type = typeof(ButtonBase))]
 public partial class SoftKeyboard : Control
@@ -107,6 +106,8 @@ public partial class SoftKeyboard : Control
     internal SoftKeyboard(SoftKeyboardPlatformServices platform)
     {
         _platform = platform ?? throw new ArgumentNullException(nameof(platform));
+
+        AddHandler(SoftKeyboardCandidateList.CandidateInvokedEvent, new EventHandler<SoftKeyboardCandidateInvokedEventArgs>(OnCandidateInvoked));
 
         Candidates   = new ReadOnlyObservableCollection<SoftKeyboardCandidate>(_candidates);
         InputMethods = new ReadOnlyObservableCollection<SoftKeyboardInputMethod>(_inputMethods);
@@ -802,6 +803,16 @@ public partial class SoftKeyboard : Control
     /// <summary>Gets the candidates supplied by the current TSF input method.</summary>
     public ReadOnlyObservableCollection<SoftKeyboardCandidate> Candidates { get; }
 
+    private static readonly DependencyPropertyKey SelectedCandidateIndexPropertyKey = DependencyProperty.RegisterReadOnly(
+        nameof(SelectedCandidateIndex), typeof(uint?), typeof(SoftKeyboard), new PropertyMetadata(null));
+
+    /// <summary>Identifies the read-only <see cref="SelectedCandidateIndex"/> dependency property.</summary>
+    public static readonly DependencyProperty SelectedCandidateIndexProperty = SelectedCandidateIndexPropertyKey.DependencyProperty;
+
+    /// <summary>Gets the input method's current candidate index, or null when none is current.</summary>
+    /// <remarks>This is a backend index, not a position within the visible page. Changes update presentation only.</remarks>
+    public uint? SelectedCandidateIndex => (uint?)GetValue(SelectedCandidateIndexProperty);
+
     /// <summary>Gets the enabled Windows input methods.</summary>
     public ReadOnlyObservableCollection<SoftKeyboardInputMethod> InputMethods { get; }
 
@@ -850,64 +861,10 @@ public partial class SoftKeyboard : Control
     /// <param name="newTemplate">The replacement template, or null.</param>
     protected override void OnTemplateChanged(ControlTemplate oldTemplate, ControlTemplate newTemplate)
     {
-        LayoutUpdated -= OnCandidateLayoutUpdated;
         CancelKeyInteraction();
         CloseFlyouts();
 
         base.OnTemplateChanged(oldTemplate, newTemplate);
-    }
-
-    /// <summary>Schedules candidate visibility after the replacement template has generated its items.</summary>
-    public override void OnApplyTemplate()
-    {
-        base.OnApplyTemplate();
-        QueueSelectedCandidateIntoView();
-    }
-
-    /// <summary>
-    /// Waits for item generation and arrangement without forcing a synchronous layout during TSF updates.
-    /// Repeated updates share one request and always use the latest candidate snapshot.
-    /// </summary>
-    private void QueueSelectedCandidateIntoView()
-    {
-        LayoutUpdated -= OnCandidateLayoutUpdated;
-        if (_candidates.Any(candidate => candidate.IsSelected))
-        {
-            LayoutUpdated += OnCandidateLayoutUpdated;
-        }
-    }
-
-    private void OnCandidateLayoutUpdated(object? sender, EventArgs eventArgs)
-    {
-        if (GetTemplateChild(CandidatesPartName) is not ItemsControl items)
-        {
-            // Custom templates may omit the candidate surface entirely.
-            LayoutUpdated -= OnCandidateLayoutUpdated;
-            return;
-        }
-
-        for (var index = 0; index < _candidates.Count; index++)
-        {
-            if (!_candidates[index].IsSelected)
-            {
-                continue;
-            }
-
-            if (items.ItemContainerGenerator.ContainerFromIndex(index) is not FrameworkElement container
-                || !container.IsArrangeValid)
-            {
-                return;
-            }
-
-            // Candidates cannot take keyboard focus from the editor. Request scrolling explicitly;
-            // WPF's enclosing ScrollViewer computes the required offset from the arranged container.
-            // Remove the handler first because scrolling itself schedules another layout pass.
-            LayoutUpdated -= OnCandidateLayoutUpdated;
-            container.BringIntoView();
-            return;
-        }
-
-        LayoutUpdated -= OnCandidateLayoutUpdated;
     }
 
     internal void OnSessionFocusChanged(IInputElement? focusedElement, bool touchOrPenInitiated)
@@ -1028,8 +985,8 @@ public partial class SoftKeyboard : Control
         IEnumerable<SoftKeyboardCandidate> candidates,
         SoftKeyboardCandidatePresentationState presentationState,
         uint pageNumber = 0,
-        uint pageCount = 0
-    )
+        uint pageCount = 0,
+        uint? selectedCandidateIndex = null)
     {
         var snapshot       = candidates.ToArray();
         var sameCandidates = snapshot.Length == _candidates.Count;
@@ -1040,8 +997,7 @@ public partial class SoftKeyboard : Control
             var replacement = snapshot[index];
 
             sameCandidates = current.Index == replacement.Index
-                && current.Text == replacement.Text
-                && current.IsSelected == replacement.IsSelected;
+                && current.Text == replacement.Text;
         }
 
         // Some TIPs do not raise UpdateUIElement reliably, so the bridge polls while composing.
@@ -1051,7 +1007,8 @@ public partial class SoftKeyboard : Control
         if (sameCandidates
             && CandidatePresentationState == presentationState
             && CandidatePageNumber == pageNumber
-            && CandidatePageCount == pageCount)
+            && CandidatePageCount == pageCount
+            && SelectedCandidateIndex == selectedCandidateIndex)
         {
             return;
         }
@@ -1065,13 +1022,13 @@ public partial class SoftKeyboard : Control
             }
         }
 
+        SetValue(SelectedCandidateIndexPropertyKey, selectedCandidateIndex);
         SetValue(HasCandidatesPropertyKey, _candidates.Count > 0);
         SetValue(CandidatePageNumberPropertyKey, pageNumber);
         SetValue(CandidatePageCountPropertyKey, pageCount);
         SetValue(CanGoToPreviousCandidatePagePropertyKey, pageNumber > 1);
         SetValue(CanGoToNextCandidatePagePropertyKey, pageNumber > 0 && pageNumber < pageCount);
         SetValue(CandidatePresentationStatePropertyKey, presentationState);
-        QueueSelectedCandidateIntoView();
     }
 
     private static void OnIsOpenChanged(DependencyObject dependencyObject, DependencyPropertyChangedEventArgs eventArgs)
@@ -1224,8 +1181,6 @@ public partial class SoftKeyboard : Control
         ResolveTarget();
         RefreshImeState();
 
-        QueueSelectedCandidateIntoView();
-
         if (IsOpen)
         {
             RequestSystemKeyboardHide();
@@ -1236,7 +1191,6 @@ public partial class SoftKeyboard : Control
 
     private void OnUnloaded(object sender, RoutedEventArgs eventArgs)
     {
-        LayoutUpdated -= OnCandidateLayoutUpdated;
         // Unloading commonly means the Window/Page itself is going away. Showing a system keyboard
         // for a disappearing HWND would be intrusive and can target the next foreground window, so
         // only discard this control's suppression ownership here.
@@ -1334,10 +1288,6 @@ public partial class SoftKeyboard : Control
 
         switch (button.DataContext)
         {
-            case SoftKeyboardCandidate candidate:
-                CommitCandidate(candidate);
-                break;
-
             case SoftKeyboardInputMethod inputMethod:
                 ActivateInputMethod(inputMethod);
                 break;
@@ -1868,11 +1818,21 @@ public partial class SoftKeyboard : Control
         return (left & 0x03FF) == (right & 0x03FF);
     }
 
+    private void OnCandidateInvoked(object? sender, SoftKeyboardCandidateInvokedEventArgs eventArgs)
+    {
+        // Ownership is the current template part, independent of how its candidate data is bound.
+        if (eventArgs.OriginalSource is SoftKeyboardCandidateList list && ReferenceEquals(list, GetTemplateChild(CandidatesPartName)))
+        {
+            CommitCandidate(eventArgs.Candidate);
+            eventArgs.Handled = true;
+        }
+    }
+
     private void CommitCandidate(SoftKeyboardCandidate candidate)
     {
-        // The TSF bridge replaces this handler with an active candidate behavior object. Retaining
-        // the candidate click path here keeps the template independent from COM callback lifetimes.
-        if (_session is not null && CanPresentCandidates && _platform.Candidates.TryCommit(this, candidate.Index))
+        // Reject containers retained from an obsolete page before sending a native index.
+        if (_session is not null && CanPresentCandidates && _candidates.Contains(candidate)
+            && _platform.Candidates.TryCommit(this, candidate.Index))
         {
             ReplaceCandidates(Array.Empty<SoftKeyboardCandidate>(), SoftKeyboardCandidatePresentationState.None);
         }

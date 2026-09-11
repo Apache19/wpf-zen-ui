@@ -426,11 +426,13 @@ public sealed class SoftKeyboardKey
 /// <summary>Represents one candidate supplied by the active Windows input method.</summary>
 public sealed class SoftKeyboardCandidate
 {
-    internal SoftKeyboardCandidate(uint index, string text, bool isSelected)
+    /// <summary>Initializes a new instance of the <see cref="SoftKeyboardCandidate"/> class.</summary>
+    /// <param name="index">The input method index, not the page-relative position.</param>
+    /// <param name="text">The candidate text.</param>
+    public SoftKeyboardCandidate(uint index, string text)
     {
         Index = index;
-        Text = text;
-        IsSelected = isSelected;
+        Text = text ?? throw new ArgumentNullException(nameof(text));
     }
 
     /// <summary>Gets the zero-based candidate index understood by the input method.</summary>
@@ -438,9 +440,6 @@ public sealed class SoftKeyboardCandidate
 
     /// <summary>Gets the candidate text.</summary>
     public string Text { get; }
-
-    /// <summary>Gets a value indicating whether the input method currently selects this candidate.</summary>
-    public bool IsSelected { get; }
 }
 
 /// <summary>Describes one enabled Windows input method or keyboard layout.</summary>
