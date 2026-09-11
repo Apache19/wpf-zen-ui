@@ -3,6 +3,10 @@ SetWindowThemeAttribute
 GetDpiForWindow
 GetForegroundWindow
 GetAncestor
+SendInput
+GetKeyboardLayout
+MapVirtualKeyEx
+ToUnicodeEx
 IsWindowVisible
 GetWindow
 SetWindowLong

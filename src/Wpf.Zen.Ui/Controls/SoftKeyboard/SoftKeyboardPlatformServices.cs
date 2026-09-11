@@ -5,6 +5,9 @@
 
 using System.Collections.ObjectModel;
 using System.Windows.Input;
+using Windows.Win32;
+using Windows.Win32.Foundation;
+using Windows.Win32.UI.WindowsAndMessaging;
 
 // ReSharper disable once CheckNamespace
 namespace Wpf.Zen.Ui.Controls;
@@ -54,11 +57,11 @@ internal sealed class SoftKeyboardPlatformServices
 
         public bool IsHostForeground(IntPtr host)
         {
-            IntPtr foreground = SoftKeyboardNativeMethods.GetForegroundWindow();
+            HWND foreground = PInvoke.GetForegroundWindow();
             return host != IntPtr.Zero
-                && foreground != IntPtr.Zero
-                && SoftKeyboardNativeMethods.GetAncestor(host, SoftKeyboardNativeMethods.GaRoot)
-                    == SoftKeyboardNativeMethods.GetAncestor(foreground, SoftKeyboardNativeMethods.GaRoot);
+                && !foreground.IsNull
+                && PInvoke.GetAncestor((HWND)host, GET_ANCESTOR_FLAGS.GA_ROOT)
+                    == PInvoke.GetAncestor(foreground, GET_ANCESTOR_FLAGS.GA_ROOT);
         }
     }
 

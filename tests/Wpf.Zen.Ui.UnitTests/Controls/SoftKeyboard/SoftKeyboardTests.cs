@@ -382,7 +382,7 @@ public class SoftKeyboardTests
 
         Assert.Equal(
             expectedSize,
-            System.Runtime.InteropServices.Marshal.SizeOf<SoftKeyboardNativeMethods.Input>()
+            System.Runtime.InteropServices.Marshal.SizeOf<Windows.Win32.UI.Input.KeyboardAndMouse.INPUT>()
         );
     }
 

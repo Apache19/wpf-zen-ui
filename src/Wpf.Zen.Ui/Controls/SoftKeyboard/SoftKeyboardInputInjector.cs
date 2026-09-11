@@ -5,6 +5,8 @@
 
 using System.Runtime.InteropServices;
 using System.Windows.Input;
+using Windows.Win32;
+using Windows.Win32.UI.Input.KeyboardAndMouse;
 
 // ReSharper disable once CheckNamespace
 namespace Wpf.Zen.Ui.Controls;
@@ -27,13 +29,14 @@ internal static class SoftKeyboardInputInjector
             return false;
         }
 
-        var inputs = new List<SoftKeyboardNativeMethods.Input>(shift ? 4 : 2);
+        var inputs = new List<INPUT>(shift ? 4 : 2);
         if (shift)
         {
             inputs.Add(CreateVirtualKeyInput(KeyInterop.VirtualKeyFromKey(Key.LeftShift), false, false));
         }
 
         bool extended = IsExtendedKey(key);
+
         inputs.Add(CreateVirtualKeyInput(virtualKey, false, extended));
         inputs.Add(CreateVirtualKeyInput(virtualKey, true, extended));
 
@@ -52,7 +55,7 @@ internal static class SoftKeyboardInputInjector
             return false;
         }
 
-        var inputs = new List<SoftKeyboardNativeMethods.Input>(text.Length * 2);
+        var inputs = new List<INPUT>(text.Length * 2);
         foreach (char character in text)
         {
             inputs.Add(CreateUnicodeInput(character, false));
@@ -62,53 +65,53 @@ internal static class SoftKeyboardInputInjector
         return Send(inputs);
     }
 
-    private static bool Send(IReadOnlyCollection<SoftKeyboardNativeMethods.Input> inputCollection)
+    private static bool Send(IReadOnlyCollection<INPUT> inputCollection)
     {
         var inputs = inputCollection.ToArray();
-        uint sent = SoftKeyboardNativeMethods.SendInput(
-            (uint)inputs.Length,
-            inputs,
-            Marshal.SizeOf(typeof(SoftKeyboardNativeMethods.Input))
-        );
+
+        // INPUT includes the complete native union, whose size differs between x86 and x64.
+        uint sent = PInvoke.SendInput(inputs, Marshal.SizeOf<INPUT>());
 
         return sent == inputs.Length;
     }
 
-    private static SoftKeyboardNativeMethods.Input CreateVirtualKeyInput(int virtualKey, bool isKeyUp, bool isExtended)
+    private static INPUT CreateVirtualKeyInput(int virtualKey, bool isKeyUp, bool isExtended)
     {
-        return new SoftKeyboardNativeMethods.Input
+        return new INPUT
         {
-            Type = SoftKeyboardNativeMethods.InputKeyboard,
-            Data = new SoftKeyboardNativeMethods.InputUnion
+            type = INPUT_TYPE.INPUT_KEYBOARD,
+            Anonymous = new INPUT._Anonymous_e__Union
             {
-                Keyboard = new SoftKeyboardNativeMethods.KeyboardInput
+                ki = new KEYBDINPUT
                 {
-                    VirtualKey = (ushort)virtualKey,
-                    Flags = (isKeyUp ? SoftKeyboardNativeMethods.KeyEventKeyUp : 0)
-                        | (isExtended ? SoftKeyboardNativeMethods.KeyEventExtendedKey : 0),
+                    wVk = (VIRTUAL_KEY)virtualKey,
+                    dwFlags = (isKeyUp ? KEYBD_EVENT_FLAGS.KEYEVENTF_KEYUP : 0)
+                              | (isExtended ? KEYBD_EVENT_FLAGS.KEYEVENTF_EXTENDEDKEY : 0),
                 },
             },
         };
     }
 
-    private static SoftKeyboardNativeMethods.Input CreateUnicodeInput(char character, bool isKeyUp)
+    private static INPUT CreateUnicodeInput(char character, bool isKeyUp)
     {
-        return new SoftKeyboardNativeMethods.Input
+        return new INPUT
         {
-            Type = SoftKeyboardNativeMethods.InputKeyboard,
-            Data = new SoftKeyboardNativeMethods.InputUnion
+            type = INPUT_TYPE.INPUT_KEYBOARD,
+            Anonymous = new INPUT._Anonymous_e__Union
             {
-                Keyboard = new SoftKeyboardNativeMethods.KeyboardInput
+                ki = new KEYBDINPUT
                 {
-                    ScanCode = character,
-                    Flags = SoftKeyboardNativeMethods.KeyEventUnicode
-                        | (isKeyUp ? SoftKeyboardNativeMethods.KeyEventKeyUp : 0),
+                    wScan = character,
+                    dwFlags = KEYBD_EVENT_FLAGS.KEYEVENTF_UNICODE
+                              | (isKeyUp ? KEYBD_EVENT_FLAGS.KEYEVENTF_KEYUP : 0),
                 },
             },
         };
     }
 
-    private static bool IsExtendedKey(Key key) =>
-        key is Key.Left or Key.Right or Key.Up or Key.Down or Key.Delete or Key.Insert
+    private static bool IsExtendedKey(Key key)
+    {
+        return key is Key.Left or Key.Right or Key.Up or Key.Down or Key.Delete or Key.Insert
             or Key.Home or Key.End or Key.PageUp or Key.PageDown;
+    }
 }

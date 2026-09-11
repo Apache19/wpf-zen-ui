@@ -3,8 +3,9 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-using System.Text;
 using System.Windows.Input;
+using Windows.Win32;
+using Windows.Win32.UI.Input.KeyboardAndMouse;
 
 // ReSharper disable once CheckNamespace
 namespace Wpf.Zen.Ui.Controls;
@@ -91,13 +92,14 @@ public sealed class DefaultSoftKeyboardLayoutProvider : ISoftKeyboardLayoutProvi
     private static SoftKeyboardLayout CreateLetterLayout(SoftKeyboardLayoutContext context)
     {
         var shifted = context.ShiftState is SoftKeyboardShiftState.Once or SoftKeyboardShiftState.Locked;
-        var rows = new List<IReadOnlyList<SoftKeyboardKey>>();
+        var rows    = new List<IReadOnlyList<SoftKeyboardKey>>();
 
         foreach (var keyRow in LetterRows)
         {
             var keys = keyRow.Select(key =>
             {
                 var label = KeyboardLayoutLabels.GetLabel(key, shifted);
+
                 IEnumerable<string>? alternates = null;
 
                 if (Alternates.TryGetValue(key, out var variants))
@@ -108,48 +110,85 @@ public sealed class DefaultSoftKeyboardLayoutProvider : ISoftKeyboardLayoutProvi
                 }
 
                 return new SoftKeyboardKey(
-                    SoftKeyboardKeyKind.VirtualKey,
-                    label,
-                    label,
-                    key,
-                    alternates: alternates
+                    kind:           SoftKeyboardKeyKind.VirtualKey,
+                    content:        label,
+                    automationName: label,
+                    key:            key,
+                    alternates:     alternates
                 );
             });
 
-            rows.Add(keys.ToArray());
+            rows.Add([.. keys]);
         }
 
         IReadOnlyList<SoftKeyboardKey> thirdRow =
         [
-            new (SoftKeyboardKeyKind.Shift, GetShiftContent(context.ShiftState), "Shift"),
-            .. rows[2],
-            new (SoftKeyboardKeyKind.VirtualKey, BackspaceIcon, "Backspace", Key.Back, isRepeatEnabled: true),
+            new(
+                kind:           SoftKeyboardKeyKind.Shift,
+                content:        GetShiftContent(context.ShiftState),
+                automationName: "Shift"
+            ),
+
+            ..
+            rows[2],
+
+            new(
+                kind:            SoftKeyboardKeyKind.VirtualKey,
+                content:         BackspaceIcon,
+                automationName:  "Backspace",
+                key:             Key.Back,
+                isRepeatEnabled: true
+            ),
         ];
 
-        var native = context.ImeState == InputMethodState.On;
+        var native  = context.ImeState == InputMethodState.On;
         var address = context.InputScope is InputScopeNameValue.Url or InputScopeNameValue.EmailSmtpAddress;
 
         // 第四排
         var bottom = address ? CreateAddressBottomRow(context) :
         [
             // 数字和符号面板切换键
-            new(SoftKeyboardKeyKind.ChangeDisplayMode, "123", "Numbers and symbols", displayMode: SoftKeyboardDisplayMode.Symbols),
+            new SoftKeyboardKey(
+                SoftKeyboardKeyKind.ChangeDisplayMode,
+                "123",
+                "Numbers and symbols",
+                displayMode: SoftKeyboardDisplayMode.Symbols
+            ),
 
             // 输入法开关
             CreateImeKey(context),
             CreateTextKey(native ? "，" : ","),
 
-            new(SoftKeyboardKeyKind.VirtualKey, MoveLeftIcon, "Move cursor left", Key.Left, isRepeatEnabled: true),
-            new(SoftKeyboardKeyKind.VirtualKey, SpaceIcon, "Space", Key.Space),
-            new(SoftKeyboardKeyKind.VirtualKey, MoveRightIcon, "Move cursor right", Key.Right, isRepeatEnabled: true),
+            new SoftKeyboardKey(
+                SoftKeyboardKeyKind.VirtualKey,
+                MoveLeftIcon,
+                "Move cursor left",
+                Key.Left,
+                isRepeatEnabled: true
+            ),
+
+            new SoftKeyboardKey(
+                SoftKeyboardKeyKind.VirtualKey,
+                SpaceIcon,
+                "Space",
+                Key.Space
+            ),
+
+            new SoftKeyboardKey(
+                SoftKeyboardKeyKind.VirtualKey,
+                MoveRightIcon,
+                "Move cursor right",
+                Key.Right,
+                isRepeatEnabled: true
+            ),
 
             CreateTextKey(native ? "。" : "."),
 
             // 输入法选择键
-            new(SoftKeyboardKeyKind.InputMethods, InputMethodsIcon, "Input methods"),
+            new SoftKeyboardKey(SoftKeyboardKeyKind.InputMethods, InputMethodsIcon, "Input methods"),
 
             // 回车键
-            new(SoftKeyboardKeyKind.VirtualKey, EnterIcon, "Enter", Key.Enter),
+            new SoftKeyboardKey(SoftKeyboardKeyKind.VirtualKey, EnterIcon, "Enter", Key.Enter),
         ];
 
         var positionedKeys = new List<SoftKeyboardKey>();
@@ -187,9 +226,9 @@ public sealed class DefaultSoftKeyboardLayoutProvider : ISoftKeyboardLayoutProvi
         // URL shortcuts use ten ordinary-width keys; email retains a double-width space key.
         AddPositionedRow(positionedKeys, bottom, 3, 0, context.InputScope switch
         {
-            InputScopeNameValue.Url => [2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
+            InputScopeNameValue.Url              => [2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
             InputScopeNameValue.EmailSmtpAddress => [2, 2, 2, 4, 2, 2, 2, 2, 2],
-            _ => [2, 2, 2, 2, 4, 2, 2, 2, 2],
+            _                                    => [2, 2, 2, 2, 4, 2, 2, 2, 2],
         });
 
         return new SoftKeyboardLayout(positionedKeys, DefaultColumnCount);
@@ -207,91 +246,277 @@ public sealed class DefaultSoftKeyboardLayoutProvider : ISoftKeyboardLayoutProvi
         // Shift and native punctuation mode. In particular, http must not append :// implicitly.
         return
         [
-            new(SoftKeyboardKeyKind.ChangeDisplayMode, "123", "Numbers and symbols", displayMode: SoftKeyboardDisplayMode.Symbols),
-            CreateImeKey(context),
-            url
-                ? new(SoftKeyboardKeyKind.Text, "http", "http", text: "http", alternates: ["https"], alternateHint: "https")
-                : CreateTextKey("@"),
-            .. url ? new[] { CreateTextKey(":") } : Array.Empty<SoftKeyboardKey>(),
-            new(SoftKeyboardKeyKind.VirtualKey, SpaceIcon, "Space", Key.Space),
-            new(
-                SoftKeyboardKeyKind.Text,
-                ".com",
-                ".com",
-                text: ".com",
-                alternates: [".net", ".org", ".edu", ".gov", ".cn", ".uk", ".de", ".jp", ".io", ".co"],
-                alternateHint: ".net"
+            new SoftKeyboardKey(
+                kind:           SoftKeyboardKeyKind.ChangeDisplayMode,
+                content:        "123",
+                automationName: "Numbers and symbols",
+                displayMode:    SoftKeyboardDisplayMode.Symbols
             ),
-            new(SoftKeyboardKeyKind.Text, ".", "Period", text: ".", alternates: ["?"], alternateHint: "?"),
+
+            CreateImeKey(context: context),
+
+            url
+                ? new SoftKeyboardKey(
+                    kind:           SoftKeyboardKeyKind.Text,
+                    content:        "http",
+                    automationName: "http",
+                    text:           "http",
+                    alternates:     ["https"],
+                    alternateHint:  "https"
+                )
+                : CreateTextKey("@"),
+
+            ..
+
+            url ? new[] { CreateTextKey(":") } : Array.Empty<SoftKeyboardKey>(),
+
+            new SoftKeyboardKey(
+                kind:           SoftKeyboardKeyKind.VirtualKey,
+                content:        SpaceIcon,
+                automationName: "Space",
+                key:            Key.Space
+            ),
+
+            new SoftKeyboardKey(
+                kind:           SoftKeyboardKeyKind.Text,
+                content:        ".com",
+                automationName: ".com",
+                text:           ".com",
+                alternates:     [".net", ".org", ".edu", ".gov", ".cn", ".uk", ".de", ".jp", ".io", ".co"],
+                alternateHint:  ".net"
+            ),
+
+            new SoftKeyboardKey(
+                kind:           SoftKeyboardKeyKind.Text,
+                content:        ".",
+                automationName: "Period",
+                text:           ".",
+                alternates:     ["?"],
+                alternateHint:  "?"
+            ),
+
             CreateTextKey(url ? "/" : "-"),
-            new(SoftKeyboardKeyKind.InputMethods, InputMethodsIcon, "Input methods"),
-            new(SoftKeyboardKeyKind.VirtualKey, EnterIcon, "Enter", Key.Enter),
+
+            new SoftKeyboardKey(
+                kind:           SoftKeyboardKeyKind.InputMethods,
+                content:        InputMethodsIcon,
+                automationName: "Input methods"
+            ),
+
+            new SoftKeyboardKey(
+                kind:           SoftKeyboardKeyKind.VirtualKey,
+                content:        EnterIcon,
+                automationName: "Enter",
+                key:            Key.Enter
+            ),
         ];
     }
 
     private static SoftKeyboardLayout CreateNumberLayout(SoftKeyboardLayoutContext context)
     {
         var scope = context.InputScope;
+
         string[][] values = IsTelephoneScope(scope)
-            ? [["1", "2", "3"], ["4", "5", "6"], ["7", "8", "9"], ["+", "0", "#"]]
-            : [["7", "8", "9"], ["4", "5", "6"], ["1", "2", "3"], ["-", "0", context.Culture.NumberFormat.NumberDecimalSeparator]];
+            ?
+            [
+                ["1", "2", "3"],
+                ["4", "5", "6"],
+                ["7", "8", "9"],
+                ["+", "0", "#"]
+            ]
+            :
+            [
+                ["7", "8", "9"],
+                ["4", "5", "6"],
+                ["1", "2", "3"],
+                ["-", "0", context.Culture.NumberFormat.NumberDecimalSeparator]
+            ];
+
         var keys = new List<SoftKeyboardKey>();
+
         for (var row = 0; row < 4; row++)
         {
-            AddPositionedRow(keys, values[row].Select(CreateTextKey).ToArray(), row, 0, 5);
+            AddPositionedRow(
+                destination: keys,
+                keys:        values[row].Select(CreateTextKey).ToArray(),
+                row:         row,
+                startColumn: 0,
+                columnSpan:  5
+            );
         }
 
         // Numeric input uses the same four tracks as letters and symbols. Commands occupy a
         // fourth column so input-scope changes cannot add a fifth row to the keyboard.
-        keys.Add(new(SoftKeyboardKeyKind.VirtualKey, BackspaceIcon, "Backspace", Key.Back, row: 0, column: 15, columnSpan: 5, isRepeatEnabled: true));
+        keys.Add(
+            new SoftKeyboardKey(
+                kind:            SoftKeyboardKeyKind.VirtualKey,
+                content:         BackspaceIcon,
+                automationName:  "Backspace",
+                key:             Key.Back,
+                row:             0,
+                column:          15,
+                columnSpan:      5,
+                isRepeatEnabled: true
+            )
+        );
+
         keys.Add(CreateImeKey(context).WithPlacement(1, 15, 5));
-        keys.Add(new(SoftKeyboardKeyKind.InputMethods, InputMethodsIcon, "Input methods", row: 2, column: 15, columnSpan: 5));
-        keys.Add(new(SoftKeyboardKeyKind.ChangeDisplayMode, "ABC", "Letters", displayMode: SoftKeyboardDisplayMode.Letters, row: 3, column: 15, columnSpan: 2));
-        keys.Add(new(SoftKeyboardKeyKind.VirtualKey, EnterIcon, "Enter", Key.Enter, row: 3, column: 17, columnSpan: 3));
+
+        keys.Add(
+            new SoftKeyboardKey(
+                kind:           SoftKeyboardKeyKind.InputMethods,
+                content:        InputMethodsIcon,
+                automationName: "Input methods",
+                row:            2,
+                column:         15,
+                columnSpan:     5
+            )
+        );
+
+        keys.Add(
+            new SoftKeyboardKey(
+                kind:           SoftKeyboardKeyKind.ChangeDisplayMode,
+                content:        "ABC",
+                automationName: "Letters",
+                displayMode:    SoftKeyboardDisplayMode.Letters,
+                row:            3,
+                column:         15,
+                columnSpan:     2
+            )
+        );
+
+        keys.Add(
+            new SoftKeyboardKey(
+                kind:           SoftKeyboardKeyKind.VirtualKey,
+                content:        EnterIcon,
+                automationName: "Enter",
+                key:            Key.Enter,
+                row:            3,
+                column:         17,
+                columnSpan:     3
+            )
+        );
+
         return new SoftKeyboardLayout(keys, DefaultColumnCount);
     }
 
     private static SoftKeyboardLayout CreateSymbolLayout(SoftKeyboardLayoutContext context)
     {
         var native = context.ImeState == InputMethodState.On;
-        var more = context.DisplayMode == SoftKeyboardDisplayMode.MoreSymbols;
+        var more   = context.DisplayMode == SoftKeyboardDisplayMode.MoreSymbols;
+
         string[] second = (native, more) switch
         {
             (false, false) => ["!", "@", "#", "$", "%", "&", "_", "-", "=", "+"],
-            (false, true) => ["%", "[", "]", "{", "}", "<", ">", "€", "£", "¥"],
-            (true, false) => ["！", "@", "#", "￥", "%", "&", "_", "-", "=", "+"],
-            (true, true) => ["、", "【", "】", "｛", "｝", "〈", "〉", "*", "…", "•"],
+            (false, true ) => ["%", "[", "]", "{", "}", "<", ">", "€", "£", "¥"],
+            (true,  false) => ["！", "@", "#", "￥", "%", "&", "_", "-", "=", "+"],
+            (true,  true ) => ["、", "【", "】", "｛", "｝", "〈", "〉", "*", "…", "•"],
         };
+
         string[] third = (native, more) switch
         {
             (false, false) => [";", ":", "(", ")", "/", "'", "\""],
-            (false, true) => ["*", "`", "°", "×", "÷", "~", "|"],
-            (true, false) => ["/", "；", "：", "“", "”", "（", "）"],
-            (true, true) => ["µ", "½", "｜", "©", "¶", "°", "~"],
+            (false, true ) => ["*", "`", "°", "×", "÷", "~", "|"],
+            (true,  false) => ["/", "；", "：", "“", "”", "（", "）"],
+            (true,  true ) => ["µ", "½", "｜", "©", "¶", "°", "~"],
         };
+
         IReadOnlyList<SoftKeyboardKey> thirdRow =
         [
-            new(SoftKeyboardKeyKind.ChangeDisplayMode, more ? PreviousSymbolsIcon : MoreSymbolsIcon, more ? "Previous symbols" : "More symbols", displayMode: more ? SoftKeyboardDisplayMode.Symbols : SoftKeyboardDisplayMode.MoreSymbols),
-            .. third.Select(CreateTextKey),
-            new(SoftKeyboardKeyKind.VirtualKey, BackspaceIcon, "Backspace", Key.Back, isRepeatEnabled: true),
+            new(
+                kind:           SoftKeyboardKeyKind.ChangeDisplayMode,
+                content:        more ? PreviousSymbolsIcon : MoreSymbolsIcon,
+                automationName: more ? "Previous symbols" : "More symbols",
+                displayMode:    more ? SoftKeyboardDisplayMode.Symbols : SoftKeyboardDisplayMode.MoreSymbols
+            ),
+
+            .. third.Select(selector: CreateTextKey),
+
+            new(
+                kind:            SoftKeyboardKeyKind.VirtualKey,
+                content:         BackspaceIcon,
+                automationName:  "Backspace",
+                key:             Key.Back,
+                isRepeatEnabled: true
+            ),
         ];
+
         IReadOnlyList<SoftKeyboardKey> bottom =
         [
-            new(SoftKeyboardKeyKind.ChangeDisplayMode, "ABC", "Letters", displayMode: SoftKeyboardDisplayMode.Letters),
-            CreateImeKey(context),
-            CreateTextKey(native ? "，" : ","),
-            new(SoftKeyboardKeyKind.VirtualKey, SpaceIcon, "Space", Key.Space),
-            CreateTextKey(native ? "。" : "."),
-            CreateTextKey(more ? (native ? "^" : "\\") : (native ? "？" : "?")),
-            new(SoftKeyboardKeyKind.InputMethods, InputMethodsIcon, "Input methods"),
-            new(SoftKeyboardKeyKind.VirtualKey, EnterIcon, "Enter", Key.Enter),
+            new(
+                kind:           SoftKeyboardKeyKind.ChangeDisplayMode,
+                content:        "ABC",
+                automationName: "Letters",
+                displayMode:    SoftKeyboardDisplayMode.Letters
+            ),
+
+            CreateImeKey(context: context),
+            CreateTextKey(value: native ? "，" : ","),
+
+            new(
+                kind:           SoftKeyboardKeyKind.VirtualKey,
+                content:        SpaceIcon,
+                automationName: "Space",
+                key:            Key.Space
+            ),
+
+            CreateTextKey(value: native ? "。" : "."),
+
+            CreateTextKey(
+                value: more
+                    ? native ? "^" : "\\"
+                    : native ? "？" : "?"
+            ),
+
+            new(
+                kind:           SoftKeyboardKeyKind.InputMethods,
+                content:        InputMethodsIcon,
+                automationName: "Input methods"
+            ),
+
+            new(
+                kind:           SoftKeyboardKeyKind.VirtualKey,
+                content:        EnterIcon,
+                automationName: "Enter",
+                key:            Key.Enter
+            ),
         ];
+
         var keys = new List<SoftKeyboardKey>();
-        AddPositionedRow(keys, "1234567890".Select(c => CreateTextKey(c.ToString())).ToArray(), 0, 0, 2);
-        AddPositionedRow(keys, second.Select(CreateTextKey).ToArray(), 1, 0, 2);
-        AddPositionedRow(keys, thirdRow, 2, 0, [3, 2, 2, 2, 2, 2, 2, 2, 3]);
-        AddPositionedRow(keys, bottom, 3, 0, [2, 2, 2, 6, 2, 2, 2, 2]);
-        return new SoftKeyboardLayout(keys, DefaultColumnCount);
+
+        AddPositionedRow(
+            destination: keys,
+            keys: [.. "1234567890".Select(selector: c => CreateTextKey(value: c.ToString()))],
+            row: 0,
+            startColumn: 0,
+            columnSpan: 2
+        );
+
+        AddPositionedRow(
+            destination: keys,
+            keys: [.. second.Select(selector: CreateTextKey)],
+            row: 1,
+            startColumn: 0,
+            columnSpan: 2
+        );
+
+        AddPositionedRow(
+            destination: keys,
+            keys: thirdRow,
+            row: 2,
+            startColumn: 0,
+            columnSpans: [3, 2, 2, 2, 2, 2, 2, 2, 3]
+        );
+
+        AddPositionedRow(
+            destination: keys,
+            keys: bottom,
+            row: 3,
+            startColumn: 0,
+            columnSpans: [2, 2, 2, 6, 2, 2, 2, 2]
+        );
+
+        return new SoftKeyboardLayout(keys: keys, columnCount: DefaultColumnCount);
     }
 
     // The cap reports the current state. Latin A is culture-neutral; native modes use familiar
@@ -299,8 +524,8 @@ public sealed class DefaultSoftKeyboardLayoutProvider : ISoftKeyboardLayoutProvi
     private static SoftKeyboardKey CreateImeKey(SoftKeyboardLayoutContext context)
     {
         return new SoftKeyboardKey(
-            SoftKeyboardKeyKind.ToggleIme,
-            context.ImeState != InputMethodState.On
+            kind: SoftKeyboardKeyKind.ToggleIme,
+            content: context.ImeState != InputMethodState.On
                 ? "A"
                 : context.Culture.TwoLetterISOLanguageName switch
                 {
@@ -309,7 +534,7 @@ public sealed class DefaultSoftKeyboardLayoutProvider : ISoftKeyboardLayoutProvi
                     "ko" => "한",
                     _ => "文",
                 },
-            context.ImeState == InputMethodState.On
+            automationName: context.ImeState == InputMethodState.On
                 ? "Native input; switch to direct input"
                 : "Direct input; enable input method");
     }
@@ -358,6 +583,7 @@ public sealed class DefaultSoftKeyboardLayoutProvider : ISoftKeyboardLayoutProvi
     {
         var column = startColumn;
         using var spans = columnSpans.GetEnumerator();
+
         foreach (var key in keys)
         {
             if (!spans.MoveNext())
@@ -399,37 +625,43 @@ public sealed class DefaultSoftKeyboardLayoutProvider : ISoftKeyboardLayoutProvi
     /// </summary>
     private static class KeyboardLayoutLabels
     {
-        internal static string GetLabel(Key key, bool shifted)
+        internal static unsafe string GetLabel(Key key, bool shifted)
         {
-            var virtualKey = KeyInterop.VirtualKeyFromKey(key);
-            var layout     = SoftKeyboardNativeMethods.GetKeyboardLayout(0);
-            var state      = new byte[256];
+            var   virtualKey = KeyInterop.VirtualKeyFromKey(key);
+            var   layout     = PInvoke.GetKeyboardLayout(0);
+            byte* state      = stackalloc byte[256];
+
+            new Span<byte>(state, 256).Clear();
 
             if (shifted)
             {
                 state[0x10] = 0x80;
             }
 
-            var buffer = new StringBuilder(8);
+            const int bufferLength = 8;
+            char*     buffer       = stackalloc char[bufferLength];
 
-            var scanCode = SoftKeyboardNativeMethods.MapVirtualKeyEx(
+            var scanCode = PInvoke.MapVirtualKeyEx(
                 (uint)virtualKey,
-                SoftKeyboardNativeMethods.MapVkToVsc,
+                MAP_VIRTUAL_KEY_TYPE.MAPVK_VK_TO_VSC,
                 layout
             );
+
             // Flag 4 (Windows 10 1607+) preserves the keyboard buffer: painting a cap must
             // never consume a hardware dead key or manufacture a composition transition.
-            var length = SoftKeyboardNativeMethods.ToUnicodeEx(
+            // GetKeyboardLayout returns a borrowed HKL. The pointer overload accepts it directly
+            // and keeps both buffers scoped to this call without wrapping the layout in an owning handle.
+            var length = PInvoke.ToUnicodeEx(
                 (uint)virtualKey,
                 scanCode,
                 state,
                 buffer,
-                buffer.Capacity,
+                bufferLength,
                 4,
                 layout
             );
 
-            if (length != 1 || buffer.Length == 0 || char.IsControl(buffer[0]))
+            if (length != 1 || char.IsControl(buffer[0]))
             {
                 var fallback = key.ToString();
                 return shifted ? fallback.ToUpperInvariant() : fallback.ToLowerInvariant();
