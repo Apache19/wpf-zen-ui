@@ -67,6 +67,7 @@ public partial class SoftKeyboard : Control
     private SoftKeyboardInputMethod? _preferredImeInputMethod;
     private SoftKeyboardKeyControl? _activeKeyControl;
     private UIElement? _inputMethodMenuAnchor;
+    private int _inputOperationVersion;
     private int _lastShiftClickTick;
     private int _lastInputPaneHideTick;
     private DispatcherOperation? _inputPaneHideOperation;
@@ -107,10 +108,13 @@ public partial class SoftKeyboard : Control
     {
         _platform = platform ?? throw new ArgumentNullException(nameof(platform));
 
-        AddHandler(SoftKeyboardCandidateList.CandidateInvokedEvent, new EventHandler<SoftKeyboardCandidateInvokedEventArgs>(OnCandidateInvoked));
+        AddHandler(
+            SoftKeyboardCandidateList.CandidateInvokedEvent,
+            new EventHandler<SoftKeyboardCandidateInvokedEventArgs>(OnCandidateInvoked)
+        );
 
-        Candidates   = new ReadOnlyObservableCollection<SoftKeyboardCandidate>(_candidates);
-        InputMethods = new ReadOnlyObservableCollection<SoftKeyboardInputMethod>(_inputMethods);
+        Candidates   = [with(_candidates)];
+        InputMethods = [with(_inputMethods)];
 
         AddHandler(
             ButtonBase.ClickEvent,
@@ -397,6 +401,12 @@ public partial class SoftKeyboard : Control
     /// <summary>
     /// Gets or sets the provider that creates positioned keys for the active input context.
     /// </summary>
+    /// <remarks>
+    /// Defaults to DefaultSoftKeyboardLayoutProvider.Default. Returning null delegates to the
+    /// built-in provider; use CompositeSoftKeyboardLayoutProvider for ordered partial overrides.
+    /// Replacing this non-inherited property cancels key interactions and rebuilds the surface.
+    /// LayoutError exposes provider failures while a usable built-in layout is retained.
+    /// </remarks>
     [Bindable(true)]
     [Category("Behavior")]
     public ISoftKeyboardLayoutProvider LayoutProvider
@@ -463,31 +473,36 @@ public partial class SoftKeyboard : Control
 
     #endregion
 
-    #region Read-Only DP: DisplayMode
+    #region Read-Only DP: Page
 
-    private static readonly DependencyPropertyKey DisplayModePropertyKey
+    private static readonly DependencyPropertyKey PagePropertyKey
         = DependencyProperty.RegisterReadOnly(
-            nameof(DisplayMode),
-            typeof(SoftKeyboardDisplayMode),
+            nameof(Page),
+            typeof(string),
             typeof(SoftKeyboard),
             new PropertyMetadata(
-                SoftKeyboardDisplayMode.Automatic,
-                OnDisplayModeChanged
+                SoftKeyboardPages.Automatic,
+                OnPageChanged
             )
         );
 
     /// <summary>
-    /// Identifies the <see cref="DisplayMode"/> dependency property.
+    /// Identifies the <see cref="Page"/> dependency property.
     /// </summary>
-    public static readonly DependencyProperty DisplayModeProperty
-        = DisplayModePropertyKey.DependencyProperty;
+    public static readonly DependencyProperty PageProperty
+        = PagePropertyKey.DependencyProperty;
 
     /// <summary>
     /// Gets the requested surface. The default, Automatic, follows the active editor input scope.
     /// </summary>
-    public SoftKeyboardDisplayMode DisplayMode
+    /// <remarks>
+    /// Page identifiers are case-sensitive and extensible. Changes rebuild the key surface; the
+    /// property does not inherit and cannot be animated. An unhandled page falls back to Automatic
+    /// and records a LayoutError, keeping navigation state consistent with the displayed layout.
+    /// </remarks>
+    public string Page
     {
-        get => (SoftKeyboardDisplayMode)GetValue(DisplayModeProperty);
+        get => (string)GetValue(PageProperty);
     }
 
     #endregion
@@ -798,40 +813,62 @@ public partial class SoftKeyboard : Control
 
     #endregion
 
+    #region Read-Only DP: SelectedCandidateIndex
+
+    private static readonly DependencyPropertyKey SelectedCandidateIndexPropertyKey
+        = DependencyProperty.RegisterReadOnly(
+            nameof(SelectedCandidateIndex),
+            typeof(uint?),
+            typeof(SoftKeyboard),
+            new PropertyMetadata(null)
+        );
+
+    /// <summary>
+    /// Identifies the <see cref="SelectedCandidateIndex"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty SelectedCandidateIndexProperty
+        = SelectedCandidateIndexPropertyKey.DependencyProperty;
+
+    /// <summary>
+    /// Gets the input method's current candidate index, or null when none is current.
+    /// </summary>
+    /// <remarks>
+    /// This is a backend index, not a position within the visible page. Changes update presentation only.
+    /// </remarks>
+    public uint? SelectedCandidateIndex => (uint?)GetValue(SelectedCandidateIndexProperty);
+
     #endregion
 
-    /// <summary>Gets the candidates supplied by the current TSF input method.</summary>
+    #endregion
+
+    /// <summary>
+    /// Gets the candidates supplied by the current TSF input method.
+    /// </summary>
     public ReadOnlyObservableCollection<SoftKeyboardCandidate> Candidates { get; }
-
-    private static readonly DependencyPropertyKey SelectedCandidateIndexPropertyKey = DependencyProperty.RegisterReadOnly(
-        nameof(SelectedCandidateIndex), typeof(uint?), typeof(SoftKeyboard), new PropertyMetadata(null));
-
-    /// <summary>Identifies the read-only <see cref="SelectedCandidateIndex"/> dependency property.</summary>
-    public static readonly DependencyProperty SelectedCandidateIndexProperty = SelectedCandidateIndexPropertyKey.DependencyProperty;
-
-    /// <summary>Gets the input method's current candidate index, or null when none is current.</summary>
-    /// <remarks>This is a backend index, not a position within the visible page. Changes update presentation only.</remarks>
-    public uint? SelectedCandidateIndex => (uint?)GetValue(SelectedCandidateIndexProperty);
 
     /// <summary>Gets the enabled Windows input methods.</summary>
     public ReadOnlyObservableCollection<SoftKeyboardInputMethod> InputMethods { get; }
 
-    /// <summary>Changes the visible keyboard surface and ends any pending long-press gesture.</summary>
+    /// <summary>
+    /// Changes the visible keyboard surface and ends any pending long-press gesture.
+    /// </summary>
     /// <remarks>
     /// Explicit letter, number, and symbol surfaces override the editor input scope. Automatic
     /// chooses from that scope again. A new active editor resets the mode to Automatic.
     /// If the active input method owns unconfirmed composition
     /// text, the control asks it to cancel that text before crossing the surface boundary.
     /// </remarks>
-    /// <param name="displayMode">The surface to display.</param>
-    public void ShowDisplayMode(SoftKeyboardDisplayMode displayMode)
+    /// <param name="page">The surface to display.</param>
+    public void ShowPage(string page)
     {
-        if (!Enum.IsDefined(typeof(SoftKeyboardDisplayMode), displayMode))
+        VerifyAccess();
+
+        if (string.IsNullOrWhiteSpace(page))
         {
-            throw new ArgumentOutOfRangeException(nameof(displayMode));
+            throw new ArgumentOutOfRangeException(nameof(page));
         }
 
-        if (displayMode != DisplayMode && !TryCancelActiveComposition())
+        if (page != Page && !TryCancelActiveComposition())
         {
             // Direct-text surfaces must not be entered while a TIP still owns mutable pre-edit
             // text. Keeping the current surface is the only non-destructive fallback when Windows
@@ -840,7 +877,7 @@ public partial class SoftKeyboard : Control
         }
 
         CancelKeyInteraction();
-        SetValue(DisplayModePropertyKey, displayMode);
+        SetValue(PagePropertyKey, page);
         CloseFlyouts();
     }
 
@@ -1052,6 +1089,7 @@ public partial class SoftKeyboard : Control
         }
         else
         {
+            keyboard._inputOperationVersion++;
             _ = keyboard.TryCancelActiveComposition();
             keyboard.CancelKeyInteraction();
             keyboard.CloseFlyouts();
@@ -1079,7 +1117,10 @@ public partial class SoftKeyboard : Control
     {
         var keyboard = (SoftKeyboard)dependencyObject;
         _ = keyboard.TryCancelActiveComposition();
+        keyboard._inputOperationVersion++;
         keyboard.ResolveTarget();
+        // The adapter can change the input scope without changing editor identity.
+        keyboard.RebuildLayout();
     }
 
     private static void OnTargetScopeChanged(DependencyObject dependencyObject, DependencyPropertyChangedEventArgs eventArgs)
@@ -1104,6 +1145,8 @@ public partial class SoftKeyboard : Control
     {
         var keyboard = (SoftKeyboard)dependencyObject;
 
+        keyboard._inputOperationVersion++;
+
         // A gesture belongs to the editor that was active when it started. Never let a held
         // Backspace or an unselected variant continue into a newly focused document.
         keyboard.CancelKeyInteraction();
@@ -1121,7 +1164,7 @@ public partial class SoftKeyboard : Control
 
         // A different editor starts with its semantic input scope; explicit navigation applies
         // only while that editor remains the target.
-        keyboard.SetValue(DisplayModePropertyKey, SoftKeyboardDisplayMode.Automatic);
+        keyboard.SetValue(PagePropertyKey, SoftKeyboardPages.Automatic);
         keyboard.RebuildLayout();
         keyboard._platform.Candidates.ReleasePresentation(keyboard);
 
@@ -1135,7 +1178,7 @@ public partial class SoftKeyboard : Control
         }
     }
 
-    private static void OnDisplayModeChanged(DependencyObject dependencyObject, DependencyPropertyChangedEventArgs eventArgs)
+    private static void OnPageChanged(DependencyObject dependencyObject, DependencyPropertyChangedEventArgs eventArgs)
     {
         var keyboard = (SoftKeyboard)dependencyObject;
         keyboard.RebuildLayout();
@@ -1164,7 +1207,7 @@ public partial class SoftKeyboard : Control
 
         _platform.Candidates.Register(this);
 
-        // todo: InputMethod.Current 有可能是空的
+        // Loaded runs on this control's dispatcher; WPF creates InputMethod.Current for that dispatcher.
         InputMethod.Current.StateChanged += OnInputMethodStateChanged;
 
         StartInputStateObservation();
@@ -1191,6 +1234,8 @@ public partial class SoftKeyboard : Control
 
     private void OnUnloaded(object sender, RoutedEventArgs eventArgs)
     {
+        _inputOperationVersion++;
+
         // Unloading commonly means the Window/Page itself is going away. Showing a system keyboard
         // for a disappearing HWND would be intrusive and can target the next foreground window, so
         // only discard this control's suppression ownership here.
@@ -1228,6 +1273,7 @@ public partial class SoftKeyboard : Control
     {
         if (!IsVisible)
         {
+            _inputOperationVersion++;
             _ = TryCancelActiveComposition();
             CancelKeyInteraction();
             CloseFlyouts();
@@ -1271,6 +1317,8 @@ public partial class SoftKeyboard : Control
 
     private void OnWindowDeactivated(object? sender, EventArgs eventArgs)
     {
+        _inputOperationVersion++;
+
         // SendInput targets the foreground thread. Ending every pending gesture here prevents a
         // held key from continuing into another process during an Alt+Tab or tablet app switch.
         CancelKeyInteraction();
@@ -1301,9 +1349,9 @@ public partial class SoftKeyboard : Control
                 {
                     MoveCandidatePage(1);
                 }
-                else if (button.Tag is SoftKeyboardDisplayMode mode)
+                else if (button.Tag is SoftKeyboardKey { Kind: SoftKeyboardKeyKind.ChangePage } navigation)
                 {
-                    ShowDisplayMode(mode);
+                    ShowPage(navigation.Page);
                 }
                 else if (button.Tag is SoftKeyboardKeyKind.Close)
                 {
@@ -1430,8 +1478,8 @@ public partial class SoftKeyboard : Control
                 ToggleShift();
                 break;
 
-            case SoftKeyboardKeyKind.ChangeDisplayMode:
-                ShowDisplayMode(key.DisplayMode);
+            case SoftKeyboardKeyKind.ChangePage:
+                ShowPage(key.Page);
                 break;
 
             case SoftKeyboardKeyKind.InputMethods:
@@ -1444,6 +1492,10 @@ public partial class SoftKeyboard : Control
 
             case SoftKeyboardKeyKind.Close:
                 CloseKeyboard();
+                break;
+
+            case SoftKeyboardKeyKind.Custom:
+                ExecuteCustomAction(key.Action!);
                 break;
         }
     }
@@ -1687,36 +1739,6 @@ public partial class SoftKeyboard : Control
         }
 
         return LogicalTreeHelper.GetParent(element);
-    }
-
-    private void RebuildLayout()
-    {
-        CancelKeyInteraction();
-        var adapter = ActiveTarget is null ? null : GetAdapter(ActiveTarget);
-        var inputScope = ActiveTarget is not null && adapter is not null
-            ? adapter.GetInputScope(ActiveTarget)
-            : InputScopeNameValue.Default;
-        var culture = InputLanguageManager.Current.CurrentInputLanguage;
-
-        try
-        {
-            SetValue(
-                CurrentLayoutPropertyKey,
-                LayoutProvider.CreateLayout(new SoftKeyboardLayoutContext(culture, inputScope, DisplayMode, ShiftState, ImeState, ActiveInputMethod))
-                    ?? throw new InvalidOperationException("A layout provider must return a layout.")
-            );
-        }
-        catch (Exception exception) when (exception is not OutOfMemoryException)
-        {
-            // A consumer-supplied provider must not prevent the keyboard from closing or from exposing
-            // diagnostics. Falling back also keeps templates from receiving a null layout.
-            SetValue(
-                CurrentLayoutPropertyKey,
-                DefaultSoftKeyboardLayoutProvider.Default.CreateLayout(
-                    new SoftKeyboardLayoutContext(culture, inputScope, DisplayMode, ShiftState, ImeState, ActiveInputMethod)
-                )
-            );
-        }
     }
 
     private void RefreshInputMethods()
@@ -2010,6 +2032,7 @@ public partial class SoftKeyboard : Control
     {
         if (!IsEnabled)
         {
+            _inputOperationVersion++;
             _ = TryCancelActiveComposition();
             CancelKeyInteraction();
             CloseFlyouts();
@@ -2102,10 +2125,21 @@ public partial class SoftKeyboard : Control
             return;
         }
 
+        // Completion may arrive after a target switch, close/reopen or unload/reload. A version
+        // also rejects a round trip back to the same editor; identity alone cannot detect that.
+        var operationVersion = _inputOperationVersion;
+        var operationTarget = ActiveTarget;
         _ = Dispatcher.BeginInvoke(
             DispatcherPriority.ContextIdle,
             new Action(() =>
             {
+                if (operationVersion != _inputOperationVersion
+                    || !ReferenceEquals(operationTarget, ActiveTarget)
+                    || !ReferenceEquals(operationTarget, Keyboard.FocusedElement))
+                {
+                    return;
+                }
+
                 // A still-active composition means either the TIP ignored Escape or a fresh
                 // composition has already started. Neither case is safe for changing TSF state.
                 if (_activeTextComposition is not null)

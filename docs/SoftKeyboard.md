@@ -44,16 +44,17 @@
 
 默认布局始终使用四行。字母行采用十键首行、错位九键次行及带 Shift/Backspace 的第三行；
 底行包含符号切换、输入状态、逗号、左右方向、空格、句号、输入法菜单和 Enter。
-符号面提供 `Symbols` / `MoreSymbols` 两页，按原生输入状态选择英文或全角标点。
+符号面提供 `Symbols` / `MoreSymbols` 两页，分别采用通用、中文和日文符号规则。
+只有相应语言且 IME 开启时才使用中文或日文符号；韩文及未知语言不会套用中文标点。
 数字键面把命令安排在右侧，也保持四行。日文原生输入在第二行提供 `ー` 键，键帽提示并可长按选择 `・`。
 符号面也保留地球菜单键，以便在任何默认布局中直接选择输入法。
 
 `Automatic` 根据当前编辑器的 `InputScope` 选择字母、网址、邮箱或数字布局。
-`InputScope="Url"` 的字母底行为 `& 中 http : ␣ .com . / 切 ↵`，空格与普通键等宽；
-`InputScope="EmailSmtpAddress"` 的字母底行为 `& 中 @ ␣ .com . - 切 ↵`。
-这里的“中”沿用当前输入模式标识，“切”使用地球图标打开输入法菜单，`&` 打开数字符号页。
+`InputScope="Url"` 的字母底行为 `123 中 http : ␣ .com . / 切 ↵`，空格与普通键等宽；
+`InputScope="EmailSmtpAddress"` 的字母底行为 `123 中 @ ␣ .com . - 切 ↵`。
+这里的“中”沿用当前输入模式标识，“切”使用地球图标打开输入法菜单，`123` 打开数字符号页。
 `http` 按字面输入，长按选择 `https`，不会自动追加 `://`；`.com` 长按提供
-`.net`、`.org`、`.edu`、`.gov`、`.cn`、`.uk`、`.de`、`.jp`、`.io`、`.co`。
+`.net`、`.org`、`.edu`、`.gov`，以及输入语言对应的一个地区域名（例如 `.cn`、`.jp`、`.uk`）。
 句号键同时显示主内容 `.` 和变体提示 `?`，长按输入 ASCII 问号。
 地址快捷键始终输入半角字面文本，不随 Shift 或 IME 模式改为全角标点。
 显式 `Letters` 仍按网址/邮箱作用域提供快捷键，因此从符号页返回时保留专用布局；
@@ -61,16 +62,135 @@
 切换输入状态保留当前符号页，不会自动跳回字母页。关闭由应用设置 `IsOpen=false`；
 默认模板没有额外工具栏、输入法选择页或关闭按钮。
 
-自定义布局实现 `ISoftKeyboardLayoutProvider`，根据 `SoftKeyboardLayoutContext` 中的
-`Culture`、`InputScope`、`DisplayMode`、`ShiftState`、`ImeState` 和 `InputMethod`
-在代码中生成当前状态对应的完整布局。`InputMethod` 提供 ClassId、ProfileId 和 LanguageId，允许按具体
-输入法定制键帽、增删按键和替换整行。提供器必须返回有效布局；异常或 null 会回退到默认布局。
-默认提供器按当前 Windows HKL 解码虚拟字母键，不应把显示文字直接当成输入法组合文本。
+`ISoftKeyboardLayoutProvider.CreateLayout` 只需处理自己负责的上下文，不负责时返回 `null`。
+`CompositeSoftKeyboardLayoutProvider` 按声明顺序查询，首个非 null 布局胜出，空布局也是有效结果。
+建议依次注册特定 TSF profile、特定地区/语言、通用默认提供器。异常表示实现缺陷，不作为“不匹配”吞掉。
+`SoftKeyboardLayoutRule` 将匹配条件与构建函数组合成一个小提供器，适合只扩展一个页面或一种输入法。
 
-布局逻辑由提供器负责，包括语言规则、状态切换、键帽、输入动作和键位计算。
-控件在输入上下文变化时重新请求完整布局；提供器应根据上下文处理 Shift、符号页和 IME 模式，
-避免返回与当前状态不符的固定键面。XAML 模板只负责呈现生成的按键、候选和浮层，
-不承担语言布局规则。默认提供器的四行键面是内置策略，并非所有语言布局的通用实现。
+上下文包含只读 `Culture`、`InputScope`、字符串 `Page`、`ShiftState`、`ImeState`、`InputMethod`
+及一次性捕获的借用 `KeyboardLayoutHandle`。`InputMethod` 提供 ClassId、ProfileId 和 LanguageId，
+可精确匹配输入法厂商与 profile。默认键帽按这个 HKL 解码，不应把显示文字当成输入法组合文本。
+提供器不得在构建中更改焦点、输入语言或控件状态，也不要缓存编辑器；应用自己的数据变化后调用 `RefreshLayout()`。
+
+`SoftKeyboardPages` 提供内置页面常量，页面集合不是封闭枚举。自定义页面使用如 `sample:kaomoji` 的
+有命名空间的字符串，通过 `ShowPage()` 或 `SoftKeyboardKey.Navigate()` 导航。自定义页面同样遵守
+组合取消和切换编辑器时恢复 `Automatic` 的规则；切换 Shift、输入状态或 profile 会重新解析当前页面。
+
+```csharp
+keyboard.LayoutProvider = new CompositeSoftKeyboardLayoutProvider(
+    new SoftKeyboardLayoutRule(
+        context => context.Culture.TwoLetterISOLanguageName == "ja"
+            && context.Page == "sample:kaomoji",
+        context => new SoftKeyboardLayoutBuilder(6)
+            .AddRow(0, new[]
+            {
+                SoftKeyboardKey.FromText("(^_^)"),
+                SoftKeyboardKey.FromText("(T_T)"),
+                SoftKeyboardKey.FromText("m(_ _)m"),
+            }, columnSpan: 2)
+            .AddRow(1, new[]
+            {
+                SoftKeyboardKey.Navigate(SoftKeyboardPages.Letters, "ABC", "返回字母"),
+                SoftKeyboardKey.Navigate(SoftKeyboardPages.Symbols, "123", "返回符号"),
+            }, new[] { 3, 3 })
+            .Build()),
+    DefaultSoftKeyboardLayoutProvider.Default);
+
+// 在日语输入环境中打开；其他环境不匹配时恢复内置 Automatic 页面。
+keyboard.ShowPage("sample:kaomoji");
+```
+
+控件在自定义提供器返回 null 后尝试内置提供器。仍无匹配时，`Page` 与布局一起恢复到 `Automatic`，
+避免显示字母但仍处在不存在的页面。`LayoutError` 暴露未匹配页面或提供器异常；下一次成功解析后清空。
+因此只实现一小块布局即可使用控件，无需复制默认实现或写异常回退代码。
+
+默认实现的职责划分如下：
+
+| 部分 | 职责 |
+| --- | --- |
+| DefaultSoftKeyboardLayoutProvider | 先选择完整语言组合，再回退到 Standard；不抢先分配数字或地址页 |
+| Japanese / ChineseSoftKeyboardLayoutProvider | 各自拥有完整场景、页面与输入模式的路由，明确决定哪些布局复用通用实现 |
+| StandardSoftKeyboardLayoutProvider | 可独立复用的通用布局组合，不是语言实现必须继承的基类 |
+| Url / Email / NumberSoftKeyboardLayoutProvider | 各自负责完整键盘页的匹配、全部键位和网格结构 |
+| Letter / SymbolKeyboardLayout | 可选的紧凑布局生成函数，不承担语言或地址场景选择 |
+| CompactKeyboardRepertoire | 上述生成函数可选的符号素材，不是语言提供器的接口或约束 |
+| PhysicalKeyboardKeys / AddressKeyboardKeys | 可选的未定位字母键、地址字面快捷键与地区域名；不拥有页面结构 |
+| KeyboardLayoutLabels | Windows HKL 键帽解析，不改变死键状态 |
+| SoftKeyboardLayoutBuilder | 行、错位、宽度换算及不可变快照 |
+| SoftKeyboard | 目标校验、页面与 Shift 状态、输入和组合生命周期 |
+| KeyControl / Panel / XAML | 按键交互、测量排列、视觉呈现 |
+
+### 完整接管地址场景或某种语言
+
+`Culture` / `InputMethod` 表示输入环境，`InputScope` 表示编辑场景，`Page` 表示场景中的当前页面。
+它们是独立匹配条件，没有“语言只能换符号”或“URL 只能换底行”的限制，也没有由框架隐式决定的匹配优先级。
+组合顺序就是明确的优先级，匹配后返回的布局就是最终完整快照，不会再追加默认字母行或功能栏。
+
+例如，下面的方法接收已经实现的独立提供器，将日语的 URL、邮箱、符号、主输入页面分别接管：
+
+```csharp
+static ISoftKeyboardLayoutProvider ComposeJapanese(
+    ISoftKeyboardLayoutProvider urlLayouts,
+    ISoftKeyboardLayoutProvider emailLayouts,
+    ISoftKeyboardLayoutProvider symbolLayouts,
+    ISoftKeyboardLayoutProvider inputLayouts)
+{
+    var japanese = new CompositeSoftKeyboardLayoutProvider(
+        new SoftKeyboardLayoutRule(
+            c => c.InputScope == InputScopeNameValue.Url,
+            urlLayouts.CreateLayout),
+        new SoftKeyboardLayoutRule(
+            c => c.InputScope == InputScopeNameValue.EmailSmtpAddress,
+            emailLayouts.CreateLayout),
+        new SoftKeyboardLayoutRule(
+            c => c.Page is SoftKeyboardPages.Symbols or SoftKeyboardPages.MoreSymbols,
+            symbolLayouts.CreateLayout),
+        new SoftKeyboardLayoutRule(
+            c => c.Page is SoftKeyboardPages.Automatic or SoftKeyboardPages.Letters,
+            inputLayouts.CreateLayout),
+        JapaneseSoftKeyboardLayoutProvider.Default);
+
+    return new CompositeSoftKeyboardLayoutProvider(
+        new SoftKeyboardLayoutRule(
+            c => c.Culture.TwoLetterISOLanguageName == "ja",
+            japanese.CreateLayout),
+        DefaultSoftKeyboardLayoutProvider.Default);
+}
+```
+
+这里 URL/邮箱规则没有限定 `Page`，因此它们收到该场景的所有页面请求，既可以提供自己的主输入页、
+符号页和自定义工具页，也可以返回 null，把某一页委托给后续的日语规则。地址规则排在符号规则之前，
+所以“日语 URL 符号页”优先由 `urlLayouts` 处理；如果希望所有场景共享日语符号页，将符号规则放在前面即可。
+自定义页面同样在相应分支中注册，不受内置两页符号的限制。示例的主输入规则没有排除数字 InputScope，
+因此也可以完整接管数字编辑器的 Automatic 页；是否委托默认数字页由 `inputLayouts` 自己决定。
+
+如果希望跨所有语言接管 URL，则把作用域规则直接放到最外层：
+
+```csharp
+keyboard.LayoutProvider = new CompositeSoftKeyboardLayoutProvider(
+    new SoftKeyboardLayoutRule(
+        c => c.InputScope == InputScopeNameValue.Url,
+        urlLayouts.CreateLayout),
+    DefaultSoftKeyboardLayoutProvider.Default);
+```
+
+特定厂商输入法也采用相同组合方式：在语言分支之前加入匹配 `InputMethod.ClassId` 和 `ProfileId` 的规则。
+嵌套组合始终传递原始上下文，保留输入场景、页面、模式和 profile；不用伪装成普通文本上下文来复用其他提供器。
+
+内置 URL/邮箱提供器目前只接管自己场景中的 Automatic/Letters 整页，明确将其他页面交还给所在语言组合。
+这是这两个内置实现的策略，不是地址场景的接口限制。它们分别组装所有四行，只复用未定位的字母键与少量字面快捷键。
+即使默认页面恰好共享四行形状，也可以独立修改 URL 的首行、邮箱的命令键或整个网格，不需要修改普通字母布局。
+
+日语符号页包含 `「」`、`『』`、`・`、`※`、`〒` 等独立数据。这是库的紧凑布局，
+不声称逐键复刻 Win11 触摸键盘；假名/滑行输入、候选算法、所有厂商的转换模式不由布局层实现。
+需要不同网格、更多页面或不同功能时，直接注册独立提供器，无需修改公共符号网格或核心控件。
+
+普通键优先使用内置 `VirtualKey`、`Text`、`ChangePage` 等语义。特有功能实现 `ISoftKeyboardKeyAction`，
+通过 `SoftKeyboardKey.FromAction()` 放入布局；动作获得短生命周期的 `SoftKeyboardActionContext`，
+可用 `TrySendKey()`、`TrySendText()`、`ShowPage()` 和 `RefreshLayout()`。每次输入重新校验目标，
+Unicode 输入仍经过组合取消；成功字符输入会消耗一次性 Shift。虚拟键的 Shift 参数由动作明确指定。
+动作只能同步执行，上下文返回后失效；不得绕过此入口直接写编辑器或从提供器注入输入。
+自定义动作本身的异常按普通应用回调传播，不作为布局错误处理。输入法状态读写仍由 `InputStateAdapter` 负责。
 
 运行时 `SoftKeyboardLayout.Keys` 是不可变的扁平集合，每键显式指定 `Row`、`Column`、
 `ColumnSpan`。所有行共享 `ColumnCount`，短行不会被拉伸；跳过的 Row 编号不预留空行。
@@ -161,6 +281,8 @@ TSF 当前焦点文档，不能借用其他编辑器的候选。
 会先向仍保持焦点的输入法发送 Esc。这样由输入法按自身语义删除尚未确认的组合文本，而不是使用
 可能保留拼音字母的 Enter，也不会用仅结束组合标记、但可能留下组合范围文字的强制终止方式。
 控件仅在目标仍有键盘焦点且窗口位于前台时发送取消键，避免把 Esc 泄漏给其他编辑器或应用。
+等待组合取消后执行的输入法操作属于发起时的输入会话。目标更换、关闭、隐藏、禁用、卸载或窗口
+失活会使待执行操作失效；恢复原状态也不会复活旧操作。执行前还会核对原目标是否仍保持焦点。
 
 ## 系统键盘与兼容性
 

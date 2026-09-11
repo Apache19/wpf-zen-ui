@@ -188,14 +188,14 @@ public class SoftKeyboardLayoutTests
     [Fact]
     public void DefaultLetterLayout_UsesHalfKeyTracksForNaturalStaggerAndWideCommandCaps()
     {
-        SoftKeyboardLayout layout = DefaultSoftKeyboardLayoutProvider.Default.CreateLayout(
+        SoftKeyboardLayout layout = Assert.IsType<SoftKeyboardLayout>(DefaultSoftKeyboardLayoutProvider.Default.CreateLayout(
             new SoftKeyboardLayoutContext(
                 System.Globalization.CultureInfo.GetCultureInfo("en-US"),
                 System.Windows.Input.InputScopeNameValue.Default,
-                SoftKeyboardDisplayMode.Letters,
+                SoftKeyboardPages.Letters,
                 SoftKeyboardShiftState.Off
             )
-        );
+        ));
 
         SoftKeyboardKey q = Assert.Single(layout.Keys, key => key.Key == System.Windows.Input.Key.Q);
         SoftKeyboardKey a = Assert.Single(layout.Keys, key => key.Key == System.Windows.Input.Key.A);

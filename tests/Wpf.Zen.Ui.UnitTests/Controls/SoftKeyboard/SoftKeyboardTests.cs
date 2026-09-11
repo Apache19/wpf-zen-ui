@@ -24,6 +24,220 @@ namespace Wpf.Zen.Ui.UnitTests.Controls.SoftKeyboardControl;
 public class SoftKeyboardTests
 {
     [Fact]
+    public void KeyModels_RejectMissingInputPayloadsButAllowLabeledWhitespace()
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+            new SoftKeyboardKey(SoftKeyboardKeyKind.VirtualKey, "Key", "Key"));
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+            new SoftKeyboardKey(SoftKeyboardKeyKind.VirtualKey, "Key", "Key", key: (Key)int.MaxValue));
+        Assert.Throws<ArgumentException>(() =>
+            new SoftKeyboardKey(SoftKeyboardKeyKind.Text, "Text", "Text"));
+        Assert.Throws<ArgumentException>(() =>
+            new SoftKeyboardKey(SoftKeyboardKeyKind.Text, "Text", "Text", text: ""));
+        foreach (var invalid in new string[] { null!, "" })
+        {
+            Assert.Throws<ArgumentException>(() =>
+                new SoftKeyboardKey(SoftKeyboardKeyKind.Text, "Text", "Text", text: "x", alternates: [invalid]));
+        }
+
+        var whitespace = new SoftKeyboardKey(SoftKeyboardKeyKind.Text, "Space", "Space", text: " ", alternates: ["\t"]);
+        Assert.Equal(" ", whitespace.Text);
+        Assert.Equal("\t", Assert.Single(whitespace.Alternates));
+    }
+
+    [Theory]
+    [InlineData("target")]
+    [InlineData("targetRoundTrip")]
+    [InlineData("closeRoundTrip")]
+    [InlineData("disableRoundTrip")]
+    [InlineData("hideRoundTrip")]
+    public void DeferredImeToggle_IsDiscardedWhenItsInputSessionEnds(string change)
+    {
+        WpfApplicationTestHost.Run(() =>
+        {
+            var keyboard = new SoftKeyboard(CreateServices(out _, out _, out _)) { IsOpen = true };
+            var editor = new System.Windows.Controls.TextBox();
+            var other = new System.Windows.Controls.TextBox();
+            var root = new StackPanel();
+            root.Children.Add(editor);
+            root.Children.Add(other);
+            root.Children.Add(keyboard);
+            keyboard.Target = editor;
+            var window = new Window { Content = root, Width = 700, Height = 500, ShowInTaskbar = false };
+            try
+            {
+                window.Show();
+                Assert.True(editor.Focus());
+                var composition = new TextComposition(InputManager.Current, editor, string.Empty, TextCompositionAutoComplete.Off);
+                _ = TextCompositionManager.StartComposition(composition);
+                InvokeKey(keyboard, new SoftKeyboardKey(SoftKeyboardKeyKind.ToggleIme, "IME", "Toggle IME"));
+                composition.Complete();
+                switch (change)
+                {
+                    case "target":
+                    case "targetRoundTrip":
+                        keyboard.Target = other;
+                        Assert.True(other.Focus());
+                        if (change == "targetRoundTrip")
+                        {
+                            keyboard.Target = editor;
+                            Assert.True(editor.Focus());
+                        }
+
+                        break;
+                    case "closeRoundTrip":
+                        keyboard.IsOpen = false;
+                        keyboard.IsOpen = true;
+                        break;
+                    case "disableRoundTrip":
+                        keyboard.IsEnabled = false;
+                        keyboard.IsEnabled = true;
+                        break;
+                    case "hideRoundTrip":
+                        keyboard.Visibility = Visibility.Hidden;
+                        keyboard.Visibility = Visibility.Visible;
+                        break;
+                }
+
+                PumpDispatcher();
+                Assert.Equal(InputMethodState.On, keyboard.ImeState);
+            }
+            finally
+            {
+                window.Close();
+            }
+        });
+    }
+
+    [Fact]
+    public void ReplacingTargetAdapter_RebuildsScopeForTheSameEditor()
+    {
+        WpfApplicationTestHost.Run(() =>
+        {
+            var editor = new System.Windows.Controls.TextBox();
+            var keyboard = new SoftKeyboard(CreateServices(out _, out _, out _)) { IsOpen = true, Target = editor };
+            var root = new StackPanel();
+            root.Children.Add(editor);
+            root.Children.Add(keyboard);
+            var window = new Window { Content = root, Width = 700, ShowInTaskbar = false };
+            try
+            {
+                window.Show();
+                Assert.True(editor.Focus());
+                InputScopeNameValue? scope = null;
+                keyboard.LayoutProvider = new SoftKeyboardLayoutRule(_ => true, context =>
+                {
+                    scope = context.InputScope;
+                    return new SoftKeyboardLayout([]);
+                });
+                keyboard.TargetAdapter = new NumberScopeAdapter();
+                Assert.Same(editor, keyboard.ActiveTarget);
+                Assert.Equal(InputScopeNameValue.Number, scope);
+                keyboard.TargetAdapter = null;
+                Assert.Equal(InputScopeNameValue.Default, scope);
+            }
+            finally
+            {
+                window.Close();
+            }
+        });
+    }
+
+    private sealed class NumberScopeAdapter : ISoftKeyboardTargetAdapter
+    {
+        public bool IsSupported(IInputElement target) => target is System.Windows.Controls.TextBox;
+        public bool CanReceiveInput(IInputElement target) => true;
+        public InputScopeNameValue GetInputScope(IInputElement target) => InputScopeNameValue.Number;
+        public bool TryFocus(IInputElement target) => ReferenceEquals(Keyboard.Focus(target), target);
+    }
+
+    [Fact]
+    public void HeaderProperties_ArePresentedAndCandidateUpdatesPreserveHeight()
+    {
+        WpfApplicationTestHost.Run(() =>
+        {
+            var template = new DataTemplate { VisualTree = new FrameworkElementFactory(typeof(System.Windows.Controls.TextBlock)) };
+            var keyboard = new SoftKeyboard(CreateServices(out _, out _, out _))
+            {
+                IsOpen = true, HeaderHeight = 80, HeaderContent = "Ready", HeaderContentTemplate = template,
+            };
+            var window = new Window { Content = keyboard, Width = 700, Height = 500, ShowInTaskbar = false };
+            try
+            {
+                window.Show();
+                window.UpdateLayout();
+                var presenter = (ContentPresenter)keyboard.Template.FindName("IdleHeader", keyboard);
+                var keys = (ItemsControl)keyboard.Template.FindName("PART_Keys", keyboard);
+                Assert.Equal("Ready", presenter.Content);
+                Assert.Same(template, presenter.ContentTemplate);
+                Assert.True(presenter.IsVisible);
+                var before = keys.TranslatePoint(default, keyboard).Y;
+                keyboard.ReplaceCandidates([new SoftKeyboardCandidate(0, "Candidate")], SoftKeyboardCandidatePresentationState.Embedded);
+                window.UpdateLayout();
+                Assert.False(presenter.IsVisible);
+                Assert.Equal(before, keys.TranslatePoint(default, keyboard).Y);
+                keyboard.HeaderHeight = 100;
+                window.UpdateLayout();
+                Assert.Equal(before + 20, keys.TranslatePoint(default, keyboard).Y);
+                keyboard.ReplaceCandidates([], SoftKeyboardCandidatePresentationState.None);
+                window.UpdateLayout();
+                Assert.True(presenter.IsVisible);
+            }
+            finally
+            {
+                window.Close();
+            }
+        });
+    }
+
+    [Fact]
+    public void CustomAction_UsesGuardedInputAndExpiresAfterInvocation()
+    {
+        WpfApplicationTestHost.Run(() =>
+        {
+            var keyboard = new SoftKeyboard(CreateServices(out var input, out _, out _)) { IsOpen = true };
+            var editor = new System.Windows.Controls.TextBox();
+            keyboard.Target = editor;
+            var root = new StackPanel();
+            root.Children.Add(editor);
+            root.Children.Add(keyboard);
+            var window = new Window { Content = root, Width = 700, Height = 500, ShowInTaskbar = false };
+            var action = new CapturingKeyboardAction();
+            var key = SoftKeyboardKey.FromAction(action, "Fn", "Custom input");
+            var invoke = typeof(SoftKeyboard).GetMethod("InvokeKey", BindingFlags.Instance | BindingFlags.NonPublic)!;
+            try
+            {
+                window.Show();
+                Assert.True(editor.Focus());
+                invoke.Invoke(keyboard, [key]);
+                Assert.Equal(1, action.Calls);
+                Assert.Contains("Text:custom", input.Operations);
+                Assert.Throws<InvalidOperationException>(() => action.Context!.TrySendText("late"));
+                editor.IsReadOnly = true;
+                invoke.Invoke(keyboard, [key]);
+                Assert.Equal(1, action.Calls);
+            }
+            finally
+            {
+                window.Close();
+            }
+        });
+    }
+
+    private sealed class CapturingKeyboardAction : ISoftKeyboardKeyAction
+    {
+        internal int Calls { get; private set; }
+        internal SoftKeyboardActionContext? Context { get; private set; }
+
+        public void Execute(SoftKeyboardActionContext context)
+        {
+            Calls++;
+            Context = context;
+            Assert.True(context.TrySendText("custom"));
+        }
+    }
+
+    [Fact]
     public void CandidateSelection_ScrollsInBothDirectionsWithoutMovingEditorFocus()
     {
         WpfApplicationTestHost.Run(() =>
@@ -214,27 +428,27 @@ public class SoftKeyboardTests
     }
 
     [Fact]
-    public void LayoutProvider_UsesInputScopeAndDisplayMode()
+    public void LayoutProvider_UsesInputScopeAndPage()
     {
         WpfTestThread.Run(() =>
         {
             ISoftKeyboardLayoutProvider provider = DefaultSoftKeyboardLayoutProvider.Default;
-            var phone = provider.CreateLayout(
+            var phone = Assert.IsType<SoftKeyboardLayout>(provider.CreateLayout(
                 new SoftKeyboardLayoutContext(
                     CultureInfo.GetCultureInfo("en-US"),
                     InputScopeNameValue.TelephoneNumber,
-                    SoftKeyboardDisplayMode.Automatic,
+                    SoftKeyboardPages.Automatic,
                     SoftKeyboardShiftState.Off
                 )
-            );
-            var symbols = provider.CreateLayout(
+            ));
+            var symbols = Assert.IsType<SoftKeyboardLayout>(provider.CreateLayout(
                 new SoftKeyboardLayoutContext(
                     CultureInfo.GetCultureInfo("en-US"),
                     InputScopeNameValue.Default,
-                    SoftKeyboardDisplayMode.Symbols,
+                    SoftKeyboardPages.Symbols,
                     SoftKeyboardShiftState.Off
                 )
-            );
+            ));
 
             Assert.Contains(phone.Keys, key => key.Text == "+");
             Assert.Contains(phone.Keys, key => key.Text == "0");
@@ -493,7 +707,7 @@ public class SoftKeyboardTests
             );
             Assert.NotEmpty(keyboard.Candidates);
 
-            keyboard.ShowDisplayMode(SoftKeyboardDisplayMode.Symbols);
+            keyboard.ShowPage(SoftKeyboardPages.Symbols);
             PumpDispatcher();
             PumpDispatcher();
             Assert.Equal(string.Empty, editor.Text);
@@ -503,7 +717,7 @@ public class SoftKeyboardTests
             PumpDispatcher();
             Assert.Equal("1", editor.Text);
 
-            keyboard.ShowDisplayMode(SoftKeyboardDisplayMode.Letters);
+            keyboard.ShowPage(SoftKeyboardPages.Letters);
             InvokeKey(keyboard, FindKey(keyboard, Key.N));
             InvokeKey(keyboard, FindKey(keyboard, Key.I));
             PumpDispatcher();
@@ -580,7 +794,7 @@ public class SoftKeyboardTests
             button.Invoke();
 
             Assert.Equal(InputMethodState.Off, keyboard.ImeState);
-            Assert.Equal(SoftKeyboardDisplayMode.Automatic, keyboard.DisplayMode);
+            Assert.Equal(SoftKeyboardPages.Automatic, keyboard.Page);
             Assert.Same(editor, Keyboard.FocusedElement);
 
             InvokeKey(keyboard, FindKey(keyboard, SoftKeyboardKeyKind.ToggleIme));
@@ -1020,8 +1234,8 @@ public class SoftKeyboardTests
             Assert.True(editor.Focus());
 
             Assert.Equal(SoftKeyboardSystemKeyboardSuppressionState.Unavailable, keyboard.SystemKeyboardSuppressionState);
-            keyboard.ShowDisplayMode(SoftKeyboardDisplayMode.Symbols);
-            Assert.Equal(SoftKeyboardDisplayMode.Symbols, keyboard.DisplayMode);
+            keyboard.ShowPage(SoftKeyboardPages.Symbols);
+            Assert.Equal(SoftKeyboardPages.Symbols, keyboard.Page);
             Assert.NotEmpty(keyboard.CurrentLayout.Keys);
             window.Close();
         });
@@ -1276,23 +1490,29 @@ public class SoftKeyboardTests
         WpfApplicationTestHost.Run(() =>
         {
             var keyboard = new SoftKeyboard(CreateServices(out _, out _, out _, out var methods)) { IsOpen = true };
+            // This test exercises Chinese native punctuation, independently of the test machine's
+            // installed/current keyboard language. State and page changes still come from the control.
+            keyboard.LayoutProvider = new SoftKeyboardLayoutRule(_ => true, context =>
+                DefaultSoftKeyboardLayoutProvider.Default.CreateLayout(new(
+                    CultureInfo.GetCultureInfo("zh-CN"), context.InputScope, context.Page,
+                    context.ShiftState, context.ImeState, context.InputMethod, context.KeyboardLayoutHandle)));
             var window = new Window { Content = keyboard, Width = 720, SizeToContent = SizeToContent.Height, ShowInTaskbar = false };
             try
             {
                 window.Show();
-                keyboard.ShowDisplayMode(SoftKeyboardDisplayMode.MoreSymbols);
+                keyboard.ShowPage(SoftKeyboardPages.MoreSymbols);
                 window.UpdateLayout();
                 double height = keyboard.ActualHeight;
                 Assert.Contains(keyboard.CurrentLayout.Keys, key => key.Text == "【");
                 methods.TrySetImeState(InputMethodState.Off);
                 typeof(SoftKeyboard).GetMethod("RefreshImeState", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(keyboard, null);
                 window.UpdateLayout();
-                Assert.Equal(SoftKeyboardDisplayMode.MoreSymbols, keyboard.DisplayMode);
+                Assert.Equal(SoftKeyboardPages.MoreSymbols, keyboard.Page);
                 Assert.Contains(keyboard.CurrentLayout.Keys, key => key.Text == "[");
                 Assert.Equal(height, keyboard.ActualHeight);
-                foreach (SoftKeyboardDisplayMode mode in Enum.GetValues<SoftKeyboardDisplayMode>())
+                foreach (string mode in SoftKeyboardPages.BuiltInPages)
                 {
-                    keyboard.ShowDisplayMode(mode);
+                    keyboard.ShowPage(mode);
                     window.UpdateLayout();
                     Assert.Equal(height, keyboard.ActualHeight);
                 }
@@ -1431,11 +1651,11 @@ public class SoftKeyboardTests
             {
                 window.Show();
                 Assert.True(editor.Focus());
-                Assert.Equal(SoftKeyboardDisplayMode.Automatic, keyboard.DisplayMode);
+                Assert.Equal(SoftKeyboardPages.Automatic, keyboard.Page);
                 Assert.DoesNotContain(keyboard.CurrentLayout.Keys, key => key.Key == Key.A);
-                InvokeKey(keyboard, FindKey(keyboard, SoftKeyboardKeyKind.ChangeDisplayMode));
+                InvokeKey(keyboard, FindKey(keyboard, SoftKeyboardKeyKind.ChangePage));
                 Assert.NotNull(FindKey(keyboard, Key.A));
-                keyboard.ShowDisplayMode(SoftKeyboardDisplayMode.Symbols);
+                keyboard.ShowPage(SoftKeyboardPages.Symbols);
                 Assert.Contains(keyboard.CurrentLayout.Keys, key => key.Text == "#");
             }
             finally
@@ -1446,8 +1666,8 @@ public class SoftKeyboardTests
     }
 
     [Theory]
-    [InlineData(SoftKeyboardDisplayMode.Symbols)]
-    public void SymbolSurface_PreservesCandidateRegionAndProvidesPureNavigation(SoftKeyboardDisplayMode mode)
+    [InlineData(SoftKeyboardPages.Symbols)]
+    public void SymbolSurface_PreservesCandidateRegionAndProvidesPureNavigation(string mode)
     {
         WpfApplicationTestHost.Run(() =>
         {
@@ -1467,7 +1687,7 @@ public class SoftKeyboardTests
                 Assert.True(editor.Focus());
                 candidates.Publish(keyboard, 1, 1, "candidate");
                 int released = candidates.ReleasePresentationCount;
-                keyboard.ShowDisplayMode(mode);
+                keyboard.ShowPage(mode);
                 window.UpdateLayout();
                 Assert.True(keyboard.CanPresentCandidates);
                 Assert.True(keyboard.HasCandidates);
@@ -1476,14 +1696,14 @@ public class SoftKeyboardTests
                 int activations = inputMethods.ActivationCount;
                 var back = Assert.Single(
                     Descendants<SoftKeyboardKeyControl>(keyboard),
-                    button => button.IsVisible && button.DataContext is SoftKeyboardKey { Kind: SoftKeyboardKeyKind.ChangeDisplayMode, DisplayMode: SoftKeyboardDisplayMode.Letters });
+                    button => button.IsVisible && button.DataContext is SoftKeyboardKey { Kind: SoftKeyboardKeyKind.ChangePage, Page: SoftKeyboardPages.Letters });
                 back.Invoke();
-                Assert.Equal(SoftKeyboardDisplayMode.Letters, keyboard.DisplayMode);
+                Assert.Equal(SoftKeyboardPages.Letters, keyboard.Page);
                 Assert.Equal(imeState, keyboard.ImeState);
                 Assert.Equal(activations, inputMethods.ActivationCount);
                 Assert.Same(editor, Keyboard.FocusedElement);
 
-                keyboard.ShowDisplayMode(mode);
+                keyboard.ShowPage(mode);
                 window.UpdateLayout();
                 keyboard.IsOpen = false;
                 Assert.False(keyboard.IsOpen);
@@ -1601,22 +1821,22 @@ public class SoftKeyboardTests
     [Fact]
     public void LayoutProvider_UsesFluentIconSourcesForSpecialKeyCaps()
     {
-        SoftKeyboardLayout layout = DefaultSoftKeyboardLayoutProvider.Default.CreateLayout(
+        SoftKeyboardLayout layout = Assert.IsType<SoftKeyboardLayout>(DefaultSoftKeyboardLayoutProvider.Default.CreateLayout(
             new SoftKeyboardLayoutContext(
                 CultureInfo.GetCultureInfo("en-US"),
                 InputScopeNameValue.Default,
-                SoftKeyboardDisplayMode.Letters,
+                SoftKeyboardPages.Letters,
                 SoftKeyboardShiftState.Off
             )
-        );
-        SoftKeyboardLayout lockedLayout = DefaultSoftKeyboardLayoutProvider.Default.CreateLayout(
+        ));
+        SoftKeyboardLayout lockedLayout = Assert.IsType<SoftKeyboardLayout>(DefaultSoftKeyboardLayoutProvider.Default.CreateLayout(
             new SoftKeyboardLayoutContext(
                 CultureInfo.GetCultureInfo("en-US"),
                 InputScopeNameValue.Default,
-                SoftKeyboardDisplayMode.Letters,
+                SoftKeyboardPages.Letters,
                 SoftKeyboardShiftState.Locked
             )
-        );
+        ));
         IReadOnlyList<SoftKeyboardKey> keys = layout.Keys;
         IReadOnlyList<SoftKeyboardKey> lockedKeys = lockedLayout.Keys;
 
@@ -1708,9 +1928,9 @@ public class SoftKeyboardTests
                 );
                 _ = TextCompositionManager.StartComposition(composition);
 
-                keyboard.ShowDisplayMode(SoftKeyboardDisplayMode.Symbols);
+                keyboard.ShowPage(SoftKeyboardPages.Symbols);
 
-                Assert.Equal(SoftKeyboardDisplayMode.Symbols, keyboard.DisplayMode);
+                Assert.Equal(SoftKeyboardPages.Symbols, keyboard.Page);
                 Assert.Contains((Key.Escape, false), input.VirtualKeys);
                 composition.Complete();
             }
@@ -1737,7 +1957,7 @@ public class SoftKeyboardTests
             {
                 window.Show();
                 Assert.True(editor.Focus());
-                keyboard.ShowDisplayMode(SoftKeyboardDisplayMode.Symbols);
+                keyboard.ShowPage(SoftKeyboardPages.Symbols);
                 input.Operations.Clear();
                 var composition = new TextComposition(
                     InputManager.Current,
@@ -1987,7 +2207,7 @@ public class SoftKeyboardTests
                 {
                     case "nextKey": FindCap(keyboard, Key.A).BeginPress(); break;
                     case "target": keyboard.Target = other; break;
-                    case "layout": keyboard.ShowDisplayMode(SoftKeyboardDisplayMode.Symbols); break;
+                    case "layout": keyboard.ShowPage(SoftKeyboardPages.Symbols); break;
                     case "close": keyboard.IsOpen = false; break;
                     case "deactivate":
                         typeof(SoftKeyboard).GetMethod("OnWindowDeactivated", BindingFlags.Instance | BindingFlags.NonPublic)!
