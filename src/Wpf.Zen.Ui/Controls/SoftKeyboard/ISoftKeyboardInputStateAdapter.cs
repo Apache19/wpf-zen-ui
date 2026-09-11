@@ -7,7 +7,9 @@ using System.Windows.Input;
 
 namespace Wpf.Zen.Ui.Controls;
 
-/// <summary>Adapts a text service whose native/direct mode does not follow WPF's standard IME compartments.</summary>
+/// <summary>
+/// Adapts a text service whose native/direct mode does not follow WPF's standard IME compartments.
+/// </summary>
 /// <remarks>
 /// The default keyboard combines the open and Native conversion flags. Applications can supply
 /// this adapter for vendor-specific state APIs without replacing key injection, TSF candidate
@@ -17,14 +19,28 @@ namespace Wpf.Zen.Ui.Controls;
 /// </remarks>
 public interface ISoftKeyboardInputStateAdapter
 {
-    /// <summary>Reads the current native/direct mode for the active profile.</summary>
-    /// <param name="inputMethod">The observed profile, or null when no profile is exposed.</param>
-    /// <returns>On for native input, Off for direct input, or DoNotCare when state is unavailable.</returns>
+    /// <summary>
+    /// Reads the current native/direct mode for the active profile.
+    /// </summary>
+    /// <param name="inputMethod">
+    /// The observed profile, or null when no profile is exposed.
+    /// </param>
+    /// <returns>
+    /// On for native input, Off for direct input, or DoNotCare when state is unavailable.
+    /// </returns>
     InputMethodState GetState(SoftKeyboardInputMethod? inputMethod);
 
-    /// <summary>Requests a native/direct transition after the keyboard has cancelled composition and restored editor focus.</summary>
-    /// <param name="inputMethod">The active profile; may be null when Windows exposes no identity.</param>
-    /// <param name="state">On or Off; the keyboard never requests DoNotCare.</param>
-    /// <returns>Whether the request was accepted. Displayed state is always read back separately.</returns>
+    /// <summary>
+    /// Requests a native/direct transition after the keyboard has cancelled composition and restored editor focus.
+    /// </summary>
+    /// <param name="inputMethod">
+    /// The active profile; may be null when Windows exposes no identity.
+    /// </param>
+    /// <param name="state">
+    /// On or Off; the keyboard never requests DoNotCare.
+    /// </param>
+    /// <returns>
+    /// Whether the request was accepted. Displayed state is always read back separately.
+    /// </returns>
     bool TrySetState(SoftKeyboardInputMethod? inputMethod, InputMethodState state);
 }

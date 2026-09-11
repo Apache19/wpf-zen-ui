@@ -5,7 +5,9 @@
 
 namespace Wpf.Zen.Ui.Controls;
 
-/// <summary>Queries independent providers in declaration order until one accepts the context.</summary>
+/// <summary>
+/// Queries independent providers in declaration order until one accepts the context.
+/// </summary>
 /// <remarks>
 /// First non-null result wins, including an intentionally empty layout. Put vendor/profile overrides
 /// before regional rules and general defaults. Exceptions indicate provider defects and propagate to

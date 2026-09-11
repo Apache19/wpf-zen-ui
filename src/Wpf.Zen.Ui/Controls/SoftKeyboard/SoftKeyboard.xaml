@@ -52,7 +52,7 @@
                                 <RowDefinition Height="*" />
                             </Grid.RowDefinitions>
 
-                            <DockPanel Grid.Row="0" Height="{TemplateBinding HeaderHeight}" Margin="0,0,0,4">
+                            <DockPanel Grid.Row="0" Margin="0,0,0,4">
                                 <!--
                                     候选栏左边的设置按钮，常驻，可撑起候选栏高度
                                     将来为其实现弹出菜单用来设置软键盘参数
@@ -65,12 +65,6 @@
                                     Style="{StaticResource SoftKeyboardToolButtonStyle}" />
 
                                 <Grid>
-                                    <ContentPresenter
-                                        x:Name="IdleHeader"
-                                        Content="{TemplateBinding HeaderContent}"
-                                        ContentTemplate="{TemplateBinding HeaderContentTemplate}"
-                                        VerticalAlignment="Center"
-                                        Visibility="Collapsed" />
                                     <!--  候选栏 填充剩余空间  -->
                                     <DockPanel
                                         x:Name="CandidateBar"
@@ -194,7 +188,6 @@
                         -->
 
                         <Trigger Property="HasCandidates" Value="False">
-                            <Setter TargetName="IdleHeader" Property="Visibility" Value="Visible" />
                             <Setter TargetName="CandidateBar" Property="Visibility" Value="Hidden" />
                             <Setter TargetName="PART_PreviousCandidatePageButton" Property="Visibility" Value="Collapsed" />
                             <Setter TargetName="PART_NextCandidatePageButton" Property="Visibility" Value="Collapsed" />

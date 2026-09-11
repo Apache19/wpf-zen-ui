@@ -25,12 +25,19 @@ public sealed class UrlSoftKeyboardLayoutProvider : ISoftKeyboardLayoutProvider
     /// <inheritdoc />
     public SoftKeyboardLayout? CreateLayout(SoftKeyboardLayoutContext context)
     {
-        if (context is null) throw new ArgumentNullException(nameof(context));
+        if (context is null)
+        {
+            throw new ArgumentNullException(nameof(context));
+        }
+
         if (context.InputScope != InputScopeNameValue.Url
             || context.Page is not (SoftKeyboardPages.Automatic or SoftKeyboardPages.Letters))
+        {
             return null;
+        }
 
         var rows = PhysicalKeyboardKeys.CreateRows(context);
+
         // Explicit geometry belongs to this page even when some other built-in pages use the same
         // arrangement. Changing another page's row composition must not implicitly alter this one.
         return new SoftKeyboardLayoutBuilder(20)

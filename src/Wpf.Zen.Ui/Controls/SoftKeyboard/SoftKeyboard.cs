@@ -116,11 +116,14 @@ public partial class SoftKeyboard : Control
         Candidates   = [with(_candidates)];
         InputMethods = [with(_inputMethods)];
 
+        // todo: 按钮事件是哪些按钮的事件？
         AddHandler(
             ButtonBase.ClickEvent,
             new RoutedEventHandler(OnButtonClick)
         );
 
+        // todo: 键帽的交互逻辑分摊到了软键盘里了？
+        //       分析评估，键帽是否可以处理交互。
         AddHandler(
             SoftKeyboardKeyControl.InteractionStartedEvent,
             new RoutedEventHandler(OnKeyInteractionStarted)
@@ -887,7 +890,9 @@ public partial class SoftKeyboard : Control
         return new SoftKeyboardAutomationPeer(this);
     }
 
-    /// <summary>Ends gestures belonging to the previous visual tree when the template changes.</summary>
+    /// <summary>
+    /// Ends gestures belonging to the previous visual tree when the template changes.
+    /// </summary>
     /// <remarks>
     /// A theme or application can replace the template without unloading the control. The active
     /// key's interaction must not survive that replacement, even without mouse capture. Cleanup runs at
@@ -916,7 +921,7 @@ public partial class SoftKeyboard : Control
             return;
         }
 
-        if (focusedElement is DependencyObject dpObj && IsWithinEffectiveScope(dpObj))
+        if (focusedElement is DependencyObject d && IsWithinEffectiveScope(d))
         {
             var focusedAdapter   = GetAdapter(focusedElement);
             var isEditableTarget = focusedAdapter?.CanReceiveInput(focusedElement) == true;
@@ -984,14 +989,14 @@ public partial class SoftKeyboard : Control
     /// candidates while its pre-edit range remains mutable. The matching final TextInput event ends
     /// this observation. Cancellation itself is still delegated to the TIP through Escape.
     /// </remarks>
-    internal void OnSessionTextComposition(TextCompositionEventArgs eventArgs)
+    internal void OnSessionTextComposition(TextCompositionEventArgs args)
     {
-        var composition       = eventArgs.TextComposition;
-        var compositionSource = eventArgs.Source as IInputElement;
+        var composition       = args.TextComposition;
+        var compositionSource = args.Source as IInputElement;
 
-        if (eventArgs.RoutedEvent is not null
-            && (eventArgs.RoutedEvent == TextCompositionManager.PreviewTextInputStartEvent
-                || eventArgs.RoutedEvent == TextCompositionManager.PreviewTextInputUpdateEvent))
+        if (args.RoutedEvent is not null
+            && (args.RoutedEvent == TextCompositionManager.PreviewTextInputStartEvent
+                || args.RoutedEvent == TextCompositionManager.PreviewTextInputUpdateEvent))
         {
             if (ReferenceEquals(compositionSource, ActiveTarget))
             {
@@ -1008,7 +1013,7 @@ public partial class SoftKeyboard : Control
         // to the editor's composition stream, not to the object retained from the previous record.
         // Match that stream by source and framework type; ordinary TextComposition instances still
         // require identity so unrelated direct text input cannot end a pending composition.
-        if (eventArgs.RoutedEvent == TextCompositionManager.PreviewTextInputEvent
+        if (args.RoutedEvent == TextCompositionManager.PreviewTextInputEvent
             && ReferenceEquals(compositionSource, _compositionTarget)
             && (ReferenceEquals(composition, _activeTextComposition)
                 || (composition is FrameworkTextComposition
@@ -1068,17 +1073,17 @@ public partial class SoftKeyboard : Control
         SetValue(CandidatePresentationStatePropertyKey, presentationState);
     }
 
-    private static void OnIsOpenChanged(DependencyObject dependencyObject, DependencyPropertyChangedEventArgs eventArgs)
+    private static void OnIsOpenChanged(DependencyObject d, DependencyPropertyChangedEventArgs args)
     {
-        var keyboard = (SoftKeyboard)dependencyObject;
+        var keyboard = (SoftKeyboard)d;
 
         SoftKeyboardAutomationPeer.RaiseIsOpenChanged(
             keyboard,
-            (bool)eventArgs.OldValue,
-            (bool)eventArgs.NewValue
+            (bool)args.OldValue,
+            (bool)args.NewValue
         );
 
-        if ((bool)eventArgs.NewValue)
+        if ((bool)args.NewValue)
         {
             keyboard.ResolveTarget();
             keyboard.RebuildLayout();
@@ -1090,20 +1095,21 @@ public partial class SoftKeyboard : Control
         else
         {
             keyboard._inputOperationVersion++;
+
             _ = keyboard.TryCancelActiveComposition();
             keyboard.CancelKeyInteraction();
             keyboard.CloseFlyouts();
             keyboard._platform.Candidates.ReleasePresentation(keyboard);
-            keyboard.ReplaceCandidates(Array.Empty<SoftKeyboardCandidate>(), SoftKeyboardCandidatePresentationState.None);
+            keyboard.ReplaceCandidates([], SoftKeyboardCandidatePresentationState.None);
             keyboard.ReleaseSystemKeyboardSuppression(tryRestore: true);
         }
     }
 
-    private static void OnTargetChanged(DependencyObject dependencyObject, DependencyPropertyChangedEventArgs eventArgs)
+    private static void OnTargetChanged(DependencyObject d, DependencyPropertyChangedEventArgs args)
     {
-        var keyboard = (SoftKeyboard)dependencyObject;
+        var keyboard = (SoftKeyboard)d;
 
-        if (eventArgs.NewValue is IInputElement newTarget
+        if (args.NewValue is IInputElement newTarget
             && keyboard.ActiveTarget is { } oldTarget
             && !ReferenceEquals(oldTarget, newTarget))
         {
@@ -1113,21 +1119,25 @@ public partial class SoftKeyboard : Control
         keyboard.ResolveTarget();
     }
 
-    private static void OnTargetAdapterChanged(DependencyObject dependencyObject, DependencyPropertyChangedEventArgs eventArgs)
+    private static void OnTargetAdapterChanged(DependencyObject d, DependencyPropertyChangedEventArgs args)
     {
-        var keyboard = (SoftKeyboard)dependencyObject;
+        var keyboard = (SoftKeyboard)d;
+
         _ = keyboard.TryCancelActiveComposition();
+
         keyboard._inputOperationVersion++;
+
         keyboard.ResolveTarget();
+
         // The adapter can change the input scope without changing editor identity.
         keyboard.RebuildLayout();
     }
 
-    private static void OnTargetScopeChanged(DependencyObject dependencyObject, DependencyPropertyChangedEventArgs eventArgs)
+    private static void OnTargetScopeChanged(DependencyObject d, DependencyPropertyChangedEventArgs args)
     {
-        var keyboard = (SoftKeyboard)dependencyObject;
-        if (keyboard.ActiveTarget is { } activeTarget
-            && activeTarget is DependencyObject activeTargetObject
+        var keyboard = (SoftKeyboard)d;
+
+        if (keyboard.ActiveTarget is { } activeTarget and DependencyObject activeTargetObject
             && !keyboard.IsWithinEffectiveScope(activeTargetObject))
         {
             _ = keyboard.TryCancelActiveComposition(activeTarget);
@@ -1135,15 +1145,16 @@ public partial class SoftKeyboard : Control
 
         keyboard.ResolveTarget();
 
-        if (keyboard.ActiveTarget is DependencyObject resolvedTarget && !keyboard.IsWithinEffectiveScope(resolvedTarget))
+        if (keyboard.ActiveTarget is DependencyObject resolvedTarget
+            && !keyboard.IsWithinEffectiveScope(resolvedTarget))
         {
             keyboard.SetValue(ActiveTargetPropertyKey, null);
         }
     }
 
-    private static void OnActiveTargetChanged(DependencyObject dependencyObject, DependencyPropertyChangedEventArgs eventArgs)
+    private static void OnActiveTargetChanged(DependencyObject d, DependencyPropertyChangedEventArgs args)
     {
-        var keyboard = (SoftKeyboard)dependencyObject;
+        var keyboard = (SoftKeyboard)d;
 
         keyboard._inputOperationVersion++;
 
@@ -1152,8 +1163,8 @@ public partial class SoftKeyboard : Control
         keyboard.CancelKeyInteraction();
         keyboard.CloseFlyouts();
 
-        if (eventArgs.OldValue is IInputElement oldTarget
-            && !ReferenceEquals(oldTarget, eventArgs.NewValue)
+        if (args.OldValue is IInputElement oldTarget
+            && !ReferenceEquals(oldTarget, args.NewValue)
             && ReferenceEquals(keyboard._compositionTarget, oldTarget))
         {
             // GotKeyboardFocus can report the new editor only after Windows has moved focus. At that
@@ -1168,7 +1179,7 @@ public partial class SoftKeyboard : Control
         keyboard.RebuildLayout();
         keyboard._platform.Candidates.ReleasePresentation(keyboard);
 
-        if (eventArgs.NewValue is null)
+        if (args.NewValue is null)
         {
             keyboard.ReleaseSystemKeyboardSuppression(tryRestore: false);
         }
@@ -1178,9 +1189,10 @@ public partial class SoftKeyboard : Control
         }
     }
 
-    private static void OnPageChanged(DependencyObject dependencyObject, DependencyPropertyChangedEventArgs eventArgs)
+    private static void OnPageChanged(DependencyObject d, DependencyPropertyChangedEventArgs args)
     {
-        var keyboard = (SoftKeyboard)dependencyObject;
+        var keyboard = (SoftKeyboard)d;
+
         keyboard.RebuildLayout();
 
         // The header always reserves space, but native candidate ownership still depends on the
@@ -1195,18 +1207,19 @@ public partial class SoftKeyboard : Control
         }
     }
 
-    private static void OnLayoutContextChanged(DependencyObject dependencyObject, DependencyPropertyChangedEventArgs eventArgs)
+    private static void OnLayoutContextChanged(DependencyObject d, DependencyPropertyChangedEventArgs args)
     {
-        ((SoftKeyboard)dependencyObject).RebuildLayout();
+        ((SoftKeyboard)d).RebuildLayout();
     }
 
-    private void OnLoaded(object sender, RoutedEventArgs eventArgs)
+    private void OnLoaded(object sender, RoutedEventArgs args)
     {
         _session = SoftKeyboardDispatcherSession.GetForCurrentDispatcher();
         _session.Register(this);
 
         _platform.Candidates.Register(this);
 
+        // todo: InputMethod.Current 有可能为 null
         // Loaded runs on this control's dispatcher; WPF creates InputMethod.Current for that dispatcher.
         InputMethod.Current.StateChanged += OnInputMethodStateChanged;
 
@@ -1232,7 +1245,7 @@ public partial class SoftKeyboard : Control
         }
     }
 
-    private void OnUnloaded(object sender, RoutedEventArgs eventArgs)
+    private void OnUnloaded(object sender, RoutedEventArgs args)
     {
         _inputOperationVersion++;
 
@@ -1241,10 +1254,14 @@ public partial class SoftKeyboard : Control
         // only discard this control's suppression ownership here.
 
         _ = TryCancelActiveComposition();
+
         ReleaseSystemKeyboardSuppression(tryRestore: false);
+
         _session?.Unregister(this);
+
         _platform.Candidates.Unregister(this);
 
+        // todo: InputMethod.Current 有可能为 null
         InputMethod.Current.StateChanged -= OnInputMethodStateChanged;
 
         _inputStateTimer?.Stop();
@@ -1260,25 +1277,22 @@ public partial class SoftKeyboard : Control
 
         CancelKeyInteraction();
         CloseFlyouts();
-
-        ReplaceCandidates(
-            Array.Empty<SoftKeyboardCandidate>(),
-            SoftKeyboardCandidatePresentationState.None
-        );
-
+        ReplaceCandidates([], SoftKeyboardCandidatePresentationState.None);
         ClearActiveComposition();
     }
 
-    private void OnIsVisibleChanged(object sender, DependencyPropertyChangedEventArgs eventArgs)
+    private void OnIsVisibleChanged(object sender, DependencyPropertyChangedEventArgs args)
     {
         if (!IsVisible)
         {
             _inputOperationVersion++;
+
             _ = TryCancelActiveComposition();
             CancelKeyInteraction();
             CloseFlyouts();
             _platform.Candidates.ReleasePresentation(this);
             ReleaseSystemKeyboardSuppression(tryRestore: true);
+
             return;
         }
 
@@ -1292,7 +1306,7 @@ public partial class SoftKeyboard : Control
         }
     }
 
-    private void OnWindowActivated(object? sender, EventArgs eventArgs)
+    private void OnWindowActivated(object? sender, EventArgs args)
     {
         if (IsOpen)
         {
@@ -1306,16 +1320,16 @@ public partial class SoftKeyboard : Control
         }
     }
 
-    private void OnInputMethodStateChanged(object sender, InputMethodStateChangedEventArgs eventArgs)
+    private void OnInputMethodStateChanged(object sender, InputMethodStateChangedEventArgs args)
     {
-        if (eventArgs.IsImeStateChanged || eventArgs.IsImeConversionModeChanged)
+        if (args.IsImeStateChanged || args.IsImeConversionModeChanged)
         {
             RefreshImeState();
             _platform.Candidates.Refresh(this);
         }
     }
 
-    private void OnWindowDeactivated(object? sender, EventArgs eventArgs)
+    private void OnWindowDeactivated(object? sender, EventArgs args)
     {
         _inputOperationVersion++;
 
@@ -1327,9 +1341,9 @@ public partial class SoftKeyboard : Control
         _platform.Candidates.ReleasePresentation(this);
     }
 
-    private void OnButtonClick(object sender, RoutedEventArgs eventArgs)
+    private void OnButtonClick(object sender, RoutedEventArgs args)
     {
-        if (eventArgs.OriginalSource is not ButtonBase button)
+        if (args.OriginalSource is not ButtonBase button)
         {
             return;
         }
@@ -1348,7 +1362,7 @@ public partial class SoftKeyboard : Control
                 else if (button.Name == NextCandidatePageButtonPartName)
                 {
                     MoveCandidatePage(1);
-                }
+                } // todo: 用 Tag 来传递数据很不明智。
                 else if (button.Tag is SoftKeyboardKey { Kind: SoftKeyboardKeyKind.ChangePage } navigation)
                 {
                     ShowPage(navigation.Page);
@@ -1371,7 +1385,7 @@ public partial class SoftKeyboard : Control
                 break;
         }
 
-        eventArgs.Handled = true;
+        args.Handled = true;
     }
 
     private void MoveCandidatePage(int delta)
@@ -1388,14 +1402,14 @@ public partial class SoftKeyboard : Control
         RequestSystemKeyboardHide();
     }
 
-    private void OnKeyInteractionStarted(object sender, RoutedEventArgs eventArgs)
+    private void OnKeyInteractionStarted(object sender, RoutedEventArgs args)
     {
-        if (eventArgs.OriginalSource is not SoftKeyboardKeyControl keyControl)
+        if (args.OriginalSource is not SoftKeyboardKeyControl keyControl)
         {
             return;
         }
 
-        eventArgs.Handled = true;
+        args.Handled = true;
         if (!ReferenceEquals(_activeKeyControl, keyControl))
         {
             CancelKeyInteraction();
@@ -1413,13 +1427,13 @@ public partial class SoftKeyboard : Control
         }
     }
 
-    private void OnKeyInputRequested(object? sender, SoftKeyboardInputRequestedEventArgs eventArgs)
+    private void OnKeyInputRequested(object? sender, SoftKeyboardInputRequestedEventArgs args)
     {
-        eventArgs.Handled = true;
+        args.Handled = true;
 
-        if (eventArgs.OriginalSource is not SoftKeyboardKeyControl keyControl
+        if (args.OriginalSource is not SoftKeyboardKeyControl keyControl
             || !ReferenceEquals(_activeKeyControl, keyControl)
-            || !ReferenceEquals(keyControl.Key, eventArgs.Key)
+            || !ReferenceEquals(keyControl.Key, args.Key)
             || !IsOpen || !IsEnabled || !IsVisible)
         {
             return;
@@ -1430,14 +1444,14 @@ public partial class SoftKeyboard : Control
         _inputMethodMenuAnchor = keyControl;
         try
         {
-            if (eventArgs.AlternateText is string text)
+            if (args.AlternateText is string text)
             {
                 if (TrySendText(text) && ShiftState == SoftKeyboardShiftState.Once)
                     SetValue(ShiftStatePropertyKey, SoftKeyboardShiftState.Off);
             }
             else
             {
-                InvokeKey(eventArgs.Key);
+                InvokeKey(args.Key);
             }
         }
         finally
@@ -1457,6 +1471,7 @@ public partial class SoftKeyboard : Control
                 // the latch intact so the next character still uses the requested casing.
                 var shifted = key.Key != Key.Back
                     && ShiftState is SoftKeyboardShiftState.Once or SoftKeyboardShiftState.Locked;
+
                 if (TrySendVirtualKey(key.Key, shifted)
                     && ShiftState == SoftKeyboardShiftState.Once
                     && IsCharacterKey(key.Key))
@@ -1495,6 +1510,7 @@ public partial class SoftKeyboard : Control
                 break;
 
             case SoftKeyboardKeyKind.Custom:
+                // todo: 这里能这么笃定地确定 Action 一定非空？
                 ExecuteCustomAction(key.Action!);
                 break;
         }
@@ -1502,7 +1518,7 @@ public partial class SoftKeyboard : Control
 
     private void ToggleShift()
     {
-        var now = Environment.TickCount;
+        var now     = Environment.TickCount;
         var elapsed = unchecked(now - _lastShiftClickTick);
 
         _lastShiftClickTick = now;
@@ -1675,6 +1691,7 @@ public partial class SoftKeyboard : Control
                         && IsWithinEffectiveScope(targetObject)
                         && GetAdapter(Target) is { } targetAdapter
                         && targetAdapter.CanReceiveInput(Target);
+
             SetValue(ActiveTargetPropertyKey, valid ? Target : null);
             return;
         }
@@ -1701,7 +1718,10 @@ public partial class SoftKeyboard : Control
             : null;
     }
 
-    private DependencyObject? GetEffectiveScope() => TargetScope ?? _window ?? Window.GetWindow(this);
+    private DependencyObject? GetEffectiveScope()
+    {
+        return TargetScope ?? _window ?? Window.GetWindow(this);
+    }
 
     private bool IsWithinEffectiveScope(DependencyObject element)
     {
@@ -1840,13 +1860,13 @@ public partial class SoftKeyboard : Control
         return (left & 0x03FF) == (right & 0x03FF);
     }
 
-    private void OnCandidateInvoked(object? sender, SoftKeyboardCandidateInvokedEventArgs eventArgs)
+    private void OnCandidateInvoked(object? sender, SoftKeyboardCandidateInvokedEventArgs args)
     {
         // Ownership is the current template part, independent of how its candidate data is bound.
-        if (eventArgs.OriginalSource is SoftKeyboardCandidateList list && ReferenceEquals(list, GetTemplateChild(CandidatesPartName)))
+        if (args.OriginalSource is SoftKeyboardCandidateList list && ReferenceEquals(list, GetTemplateChild(CandidatesPartName)))
         {
-            CommitCandidate(eventArgs.Candidate);
-            eventArgs.Handled = true;
+            CommitCandidate(args.Candidate);
+            args.Handled = true;
         }
     }
 
@@ -1934,7 +1954,7 @@ public partial class SoftKeyboard : Control
         }
     }
 
-    private void OnInputPaneHideTimerTick(object? sender, EventArgs eventArgs) => HideSystemKeyboardIfRequired();
+    private void OnInputPaneHideTimerTick(object? sender, EventArgs args) => HideSystemKeyboardIfRequired();
 
     /// <summary>
     /// Gets a value indicating whether this control currently has enough live context to suppress
@@ -2028,7 +2048,7 @@ public partial class SoftKeyboard : Control
             && IsSystemKeyboardSuppressionRequired;
     }
 
-    private void OnIsEnabledChanged(object sender, DependencyPropertyChangedEventArgs eventArgs)
+    private void OnIsEnabledChanged(object sender, DependencyPropertyChangedEventArgs args)
     {
         if (!IsEnabled)
         {

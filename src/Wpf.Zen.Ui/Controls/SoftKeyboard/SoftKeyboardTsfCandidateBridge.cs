@@ -6,8 +6,6 @@
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using System.Windows.Controls;
-using System.Windows.Input;
 using System.Windows.Threading;
 
 // ReSharper disable once CheckNamespace
@@ -28,12 +26,19 @@ internal static class SoftKeyboardTsfCandidateBridge
 {
     private static readonly ConditionalWeakTable<Dispatcher, CandidateSession> Sessions = new();
 
-    internal static void Register(SoftKeyboard keyboard) =>
-        Sessions.GetValue(keyboard.Dispatcher, static dispatcher => new CandidateSession(dispatcher)).Register(keyboard);
+    internal static void Register(SoftKeyboard keyboard)
+    {
+        var session = Sessions.GetValue(
+            keyboard.Dispatcher,
+            static dispatcher => new CandidateSession(dispatcher)
+        );
+
+        session.Register(keyboard);
+    }
 
     internal static void Unregister(SoftKeyboard keyboard)
     {
-        if (Sessions.TryGetValue(keyboard.Dispatcher, out CandidateSession? session))
+        if (Sessions.TryGetValue(keyboard.Dispatcher, out var session))
         {
             session.Unregister(keyboard);
         }
@@ -41,7 +46,7 @@ internal static class SoftKeyboardTsfCandidateBridge
 
     internal static void Refresh(SoftKeyboard keyboard)
     {
-        if (Sessions.TryGetValue(keyboard.Dispatcher, out CandidateSession? session))
+        if (Sessions.TryGetValue(keyboard.Dispatcher, out var session))
         {
             session.Refresh(keyboard);
         }
@@ -49,19 +54,23 @@ internal static class SoftKeyboardTsfCandidateBridge
 
     internal static void ReleasePresentation(SoftKeyboard keyboard)
     {
-        if (Sessions.TryGetValue(keyboard.Dispatcher, out CandidateSession? session))
+        if (Sessions.TryGetValue(keyboard.Dispatcher, out var session))
         {
             session.ReleasePresentation(keyboard);
         }
     }
 
-    internal static bool TryCommit(SoftKeyboard keyboard, uint index) =>
-        Sessions.TryGetValue(keyboard.Dispatcher, out CandidateSession? session)
-        && session.TryCommit(keyboard, index);
+    internal static bool TryCommit(SoftKeyboard keyboard, uint index)
+    {
+        return Sessions.TryGetValue(keyboard.Dispatcher, out var session)
+               && session.TryCommit(keyboard, index);
+    }
 
-    internal static bool TryMovePage(SoftKeyboard keyboard, int delta) =>
-        Sessions.TryGetValue(keyboard.Dispatcher, out CandidateSession? session)
-        && session.TryMovePage(keyboard, delta);
+    internal static bool TryMovePage(SoftKeyboard keyboard, int delta)
+    {
+        return Sessions.TryGetValue(keyboard.Dispatcher, out var session)
+               && session.TryMovePage(keyboard, delta);
+    }
 
     [ComVisible(true)]
     [ClassInterface(ClassInterfaceType.None)]
@@ -93,13 +102,16 @@ internal static class SoftKeyboardTsfCandidateBridge
         internal CandidateSession(Dispatcher dispatcher)
         {
             _dispatcher = dispatcher;
+
             _candidatePollTimer = new DispatcherTimer(
                 TimeSpan.FromMilliseconds(75),
                 DispatcherPriority.Input,
                 OnCandidatePollTimerTick,
                 dispatcher
             );
+
             _candidatePollTimer.Stop();
+
             dispatcher.ShutdownStarted += OnDispatcherShutdown;
         }
 
@@ -128,6 +140,7 @@ internal static class SoftKeyboardTsfCandidateBridge
         internal void ReleasePresentation(SoftKeyboard keyboard)
         {
             _dispatcher.VerifyAccess();
+
             if (!ReferenceEquals(_activeKeyboard, keyboard))
             {
                 keyboard.ReplaceCandidates([], SoftKeyboardCandidatePresentationState.None);
@@ -143,7 +156,10 @@ internal static class SoftKeyboardTsfCandidateBridge
 
         internal void Unregister(SoftKeyboard keyboard)
         {
-            _keyboards.RemoveAll(reference => !reference.IsAlive || ReferenceEquals(reference.Target, keyboard));
+            _keyboards.RemoveAll(
+                reference => !reference.IsAlive || ReferenceEquals(reference.Target, keyboard)
+            );
+
             if (ReferenceEquals(_activeKeyboard, keyboard))
             {
                 RestoreNativeCandidate();
@@ -159,6 +175,7 @@ internal static class SoftKeyboardTsfCandidateBridge
         internal void EnsureConnected()
         {
             _dispatcher.VerifyAccess();
+
             if (_source is not null || _reflectionUnavailable)
             {
                 return;
@@ -166,7 +183,8 @@ internal static class SoftKeyboardTsfCandidateBridge
 
             try
             {
-                object? manager = WpfTextServicesAccessor.TryGetThreadManager();
+                var manager = WpfTextServicesAccessor.TryGetThreadManager();
+
                 if (manager is null)
                 {
                     manager = TryCreateUiLessThreadManager();
@@ -184,17 +202,22 @@ internal static class SoftKeyboardTsfCandidateBridge
                 _threadManager = manager as ITfThreadMgr;
                 _elementManager = manager as ITfUIElementMgr;
                 _source = manager as ITfSource;
+
                 if (_threadManager is null || _elementManager is null || _source is null)
                 {
                     _reflectionUnavailable = true;
+
                     SetUnavailableState();
                     Disconnect();
+
                     return;
                 }
 
-                Guid sinkId = UIElementSinkId;
+                var sinkId = UIElementSinkId;
+
                 _sinkPointer = Marshal.GetComInterfaceForObject(this, typeof(ISoftKeyboardTsfUIElementSink));
-                int result = _source.AdviseSink(ref sinkId, _sinkPointer, out uint cookie);
+
+                var result = _source.AdviseSink(ref sinkId, _sinkPointer, out var cookie);
                 if (result < 0)
                 {
                     Marshal.ThrowExceptionForHR(result);
@@ -204,12 +227,14 @@ internal static class SoftKeyboardTsfCandidateBridge
 
                 // Profile changes within the same language need not raise WPF's InputLanguageChanged
                 // event. A second sink keeps the embedded picker and key labels synchronized.
-                Guid profileSinkId = ActiveLanguageProfileSinkId;
+                var profileSinkId = ActiveLanguageProfileSinkId;
+
                 _profileSinkPointer = Marshal.GetComInterfaceForObject(
                     this,
                     typeof(ISoftKeyboardTsfActiveLanguageProfileNotifySink)
                 );
-                if (_source.AdviseSink(ref profileSinkId, _profileSinkPointer, out uint profileCookie) < 0)
+
+                if (_source.AdviseSink(ref profileSinkId, _profileSinkPointer, out var profileCookie) < 0)
                 {
                     _ = Marshal.Release(_profileSinkPointer);
                     _profileSinkPointer = IntPtr.Zero;
@@ -243,8 +268,8 @@ internal static class SoftKeyboardTsfCandidateBridge
 
                 // SetSelection can synchronously dispatch TSF callbacks and invalidate ownership.
                 return _activeBehavior!.SetSelection(index) >= 0
-                    && ValidateActiveCandidate()
-                    && _activeBehavior!.FinalizeCandidate() >= 0;
+                       && ValidateActiveCandidate()
+                       && _activeBehavior!.FinalizeCandidate() >= 0;
             }
             catch (Exception exception) when (IsUnavailable(exception))
             {
@@ -265,7 +290,7 @@ internal static class SoftKeyboardTsfCandidateBridge
                 return false;
             }
 
-            int targetPage = checked((int)_activePageNumber - 1 + delta);
+            var targetPage = checked((int)_activePageNumber - 1 + delta);
             if (targetPage < 0 || targetPage >= _activePageStarts.Length)
             {
                 return false;
@@ -302,8 +327,8 @@ internal static class SoftKeyboardTsfCandidateBridge
         {
             try
             {
-                SoftKeyboard? keyboard = FindActiveKeyboard();
-                if (keyboard is null || !TryGetCandidate(elementId, out ITfCandidateListUIElement? candidate))
+                var keyboard = FindActiveKeyboard();
+                if (keyboard is null || !TryGetCandidate(elementId, out var candidate))
                 {
                     // pbShow is an in/out value. Explicitly opt into the TIP's native UI whenever
                     // no visible keyboard can own this element instead of relying on its input.
@@ -311,7 +336,8 @@ internal static class SoftKeyboardTsfCandidateBridge
                     return 0;
                 }
 
-                if (candidate is not ITfCandidateListUIElementBehavior behavior || !MatchesFocusedDocument(candidate))
+                if (candidate is not ITfCandidateListUIElementBehavior behavior
+                    || !MatchesFocusedDocument(candidate))
                 {
                     show = 1;
                     keyboard.ReplaceCandidates([], SoftKeyboardCandidatePresentationState.NativeFallback);
@@ -320,11 +346,15 @@ internal static class SoftKeyboardTsfCandidateBridge
                 }
 
                 ClearActiveCandidate();
+
                 _activeKeyboard = keyboard;
                 _activeBehavior = behavior;
                 _activeElementId = elementId;
+
                 show = 0;
+
                 _candidatePollTimer.Start();
+
                 UpdateCandidateSnapshot();
             }
             catch (Exception exception) when (IsUnavailable(exception))
@@ -358,7 +388,7 @@ internal static class SoftKeyboardTsfCandidateBridge
 
         int ISoftKeyboardTsfActiveLanguageProfileNotifySink.OnActivated(ref Guid classId, ref Guid profileId, int activated)
         {
-            foreach (SoftKeyboard? keyboard in _keyboards.Select(reference => reference.Target as SoftKeyboard))
+            foreach (var keyboard in _keyboards.Select(reference => reference.Target as SoftKeyboard))
             {
                 if (keyboard is { IsLoaded: true })
                 {
@@ -372,7 +402,9 @@ internal static class SoftKeyboardTsfCandidateBridge
         private bool TryGetCandidate(uint elementId, out ITfCandidateListUIElement? candidate)
         {
             candidate = null;
-            if (_elementManager is null || _elementManager.GetUIElement(elementId, out object? element) < 0)
+
+            if (_elementManager is null
+                || _elementManager.GetUIElement(elementId, out var element) < 0)
             {
                 return false;
             }
@@ -394,13 +426,14 @@ internal static class SoftKeyboardTsfCandidateBridge
                 return;
             }
 
-            SoftKeyboard? keyboard = FindActiveKeyboard();
+            var keyboard = FindActiveKeyboard();
             if (keyboard is null || _elementManager is null)
             {
                 return;
             }
 
             object? enumeratorObject = null;
+
             try
             {
                 if (_elementManager.EnumUIElements(out enumeratorObject) < 0
@@ -409,9 +442,9 @@ internal static class SoftKeyboardTsfCandidateBridge
                     return;
                 }
 
-                while (enumerator.Next(1, out object? element, out uint fetched) >= 0 && fetched == 1)
+                while (enumerator.Next(1, out var element, out var fetched) >= 0 && fetched == 1)
                 {
-                    bool retained = false;
+                    var retained = false;
                     try
                     {
                         if (element is not ITfCandidateListUIElement candidate
@@ -433,10 +466,13 @@ internal static class SoftKeyboardTsfCandidateBridge
                         // presentation without deactivating WPF's ThreadManager or invalidating its
                         // TextStore client id.
                         ClearActiveCandidate();
+
                         _activeKeyboard = keyboard;
                         _activeBehavior = behavior;
                         _activeElementId = uint.MaxValue;
+
                         retained = true;
+
                         if (behavior.Show(0) < 0)
                         {
                             RestoreNativeCandidate();
@@ -473,12 +509,13 @@ internal static class SoftKeyboardTsfCandidateBridge
         {
             object? candidateDocument = null;
             object? focusedDocument = null;
+
             try
             {
                 return _threadManager is not null
-                    && candidate.GetDocumentMgr(out candidateDocument) >= 0
-                    && _threadManager.GetFocus(out focusedDocument) >= 0
-                    && HaveSameComIdentity(candidateDocument, focusedDocument);
+                       && candidate.GetDocumentMgr(out candidateDocument) >= 0
+                       && _threadManager.GetFocus(out focusedDocument) >= 0
+                       && HaveSameComIdentity(candidateDocument, focusedDocument);
             }
             finally
             {
@@ -501,8 +538,8 @@ internal static class SoftKeyboardTsfCandidateBridge
                     return;
                 }
 
-                if (_activeBehavior!.GetCount(out uint count) < 0
-                    || _activeBehavior.GetSelection(out uint selection) < 0)
+                if (_activeBehavior!.GetCount(out var count) < 0
+                    || _activeBehavior.GetSelection(out var selection) < 0)
                 {
                     RestoreNativeCandidate();
                     ClearActiveCandidate();
@@ -512,19 +549,22 @@ internal static class SoftKeyboardTsfCandidateBridge
                 GetCandidatePageRange(
                     _activeBehavior,
                     count,
-                    out uint firstIndex,
-                    out uint endIndex,
-                    out uint pageNumber,
-                    out uint pageCount,
-                    out uint[] pageStarts
+                    out var firstIndex,
+                    out var endIndex,
+                    out var pageNumber,
+                    out var pageCount,
+                    out var pageStarts
                 );
+
                 _activePageNumber = pageNumber;
                 _activePageStarts = pageStarts;
-                uint visibleEnd = firstIndex + Math.Min(endIndex - firstIndex, 256U);
+
+                var visibleEnd = firstIndex + Math.Min(endIndex - firstIndex, 256U);
                 var candidates = new List<SoftKeyboardCandidate>(checked((int)(visibleEnd - firstIndex)));
-                for (uint index = firstIndex; index < visibleEnd; index++)
+
+                for (var index = firstIndex; index < visibleEnd; index++)
                 {
-                    if (_activeBehavior.GetString(index, out string? text) >= 0 && text is not null)
+                    if (_activeBehavior.GetString(index, out var text) >= 0 && text is not null)
                     {
                         candidates.Add(new SoftKeyboardCandidate(index, text));
                     }
@@ -552,14 +592,14 @@ internal static class SoftKeyboardTsfCandidateBridge
             out uint endIndex,
             out uint pageNumber,
             out uint pageCount,
-            out uint[] pageStarts
-        )
+            out uint[] pageStarts)
         {
             firstIndex = 0;
             endIndex = candidateCount;
             pageNumber = candidateCount == 0 ? 0U : 1U;
             pageCount = candidateCount == 0 ? 0U : 1U;
             pageStarts = candidateCount == 0 ? [] : [0U];
+
             if (candidateCount == 0)
             {
                 return;
@@ -568,14 +608,14 @@ internal static class SoftKeyboardTsfCandidateBridge
             // A page cannot begin more often than there are candidates. The cap protects the UI
             // thread from a malformed third-party TIP reporting an unbounded candidate count; the
             // fallback still exposes candidates even when page metadata cannot be trusted.
-            uint capacity = Math.Min(candidateCount, 4096U);
-            IntPtr indices = Marshal.AllocCoTaskMem(checked((int)capacity * sizeof(uint)));
+            var capacity = Math.Min(candidateCount, 4096U);
+            var indices = Marshal.AllocCoTaskMem(checked((int)capacity * sizeof(uint)));
             try
             {
-                if (behavior.GetPageIndex(indices, capacity, out uint nativePageCount) < 0
+                if (behavior.GetPageIndex(indices, capacity, out var nativePageCount) < 0
                     || nativePageCount == 0
                     || nativePageCount > capacity
-                    || behavior.GetCurrentPage(out uint currentPage) < 0
+                    || behavior.GetCurrentPage(out var currentPage) < 0
                     || currentPage >= nativePageCount
                     || currentPage >= capacity)
                 {
@@ -584,11 +624,13 @@ internal static class SoftKeyboardTsfCandidateBridge
 
                 var nativePageStarts = new uint[nativePageCount];
                 uint previousStart = 0;
+
                 for (uint page = 0; page < nativePageCount; page++)
                 {
-                    uint pageStart = unchecked(
+                    var pageStart = unchecked(
                         (uint)Marshal.ReadInt32(indices, checked((int)page * sizeof(uint)))
                     );
+
                     if (pageStart >= candidateCount || (page > 0 && pageStart <= previousStart))
                     {
                         return;
@@ -598,10 +640,12 @@ internal static class SoftKeyboardTsfCandidateBridge
                     previousStart = pageStart;
                 }
 
-                uint start = nativePageStarts[currentPage];
-                uint end = currentPage + 1U < nativePageCount
+                var start = nativePageStarts[currentPage];
+
+                var end = currentPage + 1U < nativePageCount
                     ? nativePageStarts[currentPage + 1U]
                     : candidateCount;
+
                 firstIndex = start;
                 endIndex = end;
                 pageNumber = currentPage + 1U;
@@ -617,15 +661,19 @@ internal static class SoftKeyboardTsfCandidateBridge
         private SoftKeyboard? FindActiveKeyboard()
         {
             _keyboards.RemoveAll(reference => !reference.IsAlive);
+
             var available = _keyboards
                 .Select(reference => reference.Target as SoftKeyboard)
                 .Where(CanEmbedCandidates)
                 .ToArray();
+
             return available.LastOrDefault();
         }
 
-        private static bool CanEmbedCandidates(SoftKeyboard? keyboard) =>
-            keyboard?.CanPresentCandidates == true;
+        private static bool CanEmbedCandidates(SoftKeyboard? keyboard)
+        {
+            return keyboard?.CanPresentCandidates == true;
+        }
 
         /// <summary>
         /// Revalidates both managed target ownership and the TSF document before reading or committing.
@@ -659,20 +707,24 @@ internal static class SoftKeyboardTsfCandidateBridge
 
         private void ClearActiveCandidate()
         {
-            SoftKeyboard? keyboard = _activeKeyboard;
+            var keyboard = _activeKeyboard;
+
             _candidatePollTimer.Stop();
+
             ReleaseComReference(_activeBehavior);
+
             _activeBehavior = null;
             _activeKeyboard = null;
             _activeElementId = 0;
             _activePageStarts = [];
             _activePageNumber = 0;
+
             keyboard?.ReplaceCandidates([], SoftKeyboardCandidatePresentationState.None);
         }
 
         private void SetUnavailableState()
         {
-            foreach (SoftKeyboard? keyboard in _keyboards.Select(reference => reference.Target as SoftKeyboard))
+            foreach (var keyboard in _keyboards.Select(reference => reference.Target as SoftKeyboard))
             {
                 keyboard?.ReplaceCandidates([], SoftKeyboardCandidatePresentationState.Unavailable);
             }
@@ -682,6 +734,7 @@ internal static class SoftKeyboardTsfCandidateBridge
         {
             RestoreNativeCandidate();
             ClearActiveCandidate();
+
             if (_source is not null && _cookie != 0)
             {
                 try
@@ -708,6 +761,7 @@ internal static class SoftKeyboardTsfCandidateBridge
 
             _cookie = 0;
             _profileCookie = 0;
+
             if (_sinkPointer != IntPtr.Zero)
             {
                 _ = Marshal.Release(_sinkPointer);
@@ -723,7 +777,9 @@ internal static class SoftKeyboardTsfCandidateBridge
             _source = null;
             _elementManager = null;
             _threadManager = null;
-            if (_ownsUiLessActivation && _threadManagerObject is ITfThreadMgr ownedActivation)
+
+            if (_ownsUiLessActivation
+                && _threadManagerObject is ITfThreadMgr ownedActivation)
             {
                 try
                 {
@@ -737,6 +793,7 @@ internal static class SoftKeyboardTsfCandidateBridge
             }
 
             _ownsUiLessActivation = false;
+
             // TSF returns one COM identity for the calling thread. WPF can therefore hold the same
             // RCW after its TextStore initializes. Never call ReleaseComObject on that shared RCW;
             // dropping our managed reference lets the runtime release it only after WPF is done.
@@ -747,8 +804,9 @@ internal static class SoftKeyboardTsfCandidateBridge
         {
             try
             {
-                Type? managerType = Type.GetTypeFromCLSID(ThreadManagerClassId, throwOnError: false);
-                object? manager = managerType is null ? null : Activator.CreateInstance(managerType);
+                var managerType = Type.GetTypeFromCLSID(ThreadManagerClassId, throwOnError: false);
+                var manager = managerType is null ? null : Activator.CreateInstance(managerType);
+
                 if (manager is null)
                 {
                     return null;
@@ -809,8 +867,8 @@ internal static class SoftKeyboardTsfCandidateBridge
                 return false;
             }
 
-            IntPtr leftIdentity = IntPtr.Zero;
-            IntPtr rightIdentity = IntPtr.Zero;
+            var leftIdentity = IntPtr.Zero;
+            var rightIdentity = IntPtr.Zero;
             try
             {
                 leftIdentity = Marshal.GetIUnknownForObject(left);
@@ -831,8 +889,9 @@ internal static class SoftKeyboardTsfCandidateBridge
             }
         }
 
-        private static bool IsUnavailable(Exception exception) =>
-            exception is ArgumentException
+        private static bool IsUnavailable(Exception exception)
+        {
+            return exception is ArgumentException
                 or COMException
                 or InvalidCastException
                 or InvalidOperationException
@@ -840,6 +899,7 @@ internal static class SoftKeyboardTsfCandidateBridge
                 or PlatformNotSupportedException
                 or TargetInvocationException
                 or TypeLoadException;
+        }
 
         private static void ReleaseComReference(object? value)
         {
@@ -872,8 +932,7 @@ internal static class SoftKeyboardTsfCandidateBridge
                 exception is TargetInvocationException
                     or TypeLoadException
                     or MemberAccessException
-                    or InvalidOperationException
-            )
+                    or InvalidOperationException)
             {
                 return null;
             }
@@ -884,21 +943,27 @@ internal static class SoftKeyboardTsfCandidateBridge
             // These members are cached once because candidate updates can be frequent. Merely reading
             // the thread-local store does not instantiate TextServicesHost; a null host means WPF has
             // no active TSF text store and the bridge must retain native candidate presentation.
-            Type? editorType = typeof(TextBox).Assembly.GetType("System.Windows.Documents.TextEditor");
-            PropertyInfo? storeProperty = editorType?.GetProperty(
+            var editorType = typeof(TextBox).Assembly.GetType("System.Windows.Documents.TextEditor");
+
+            var storeProperty = editorType?.GetProperty(
                 "_ThreadLocalStore",
                 BindingFlags.Static | BindingFlags.NonPublic
             );
-            Type? storeType = typeof(TextBox).Assembly.GetType("System.Windows.Documents.TextEditorThreadLocalStore");
-            PropertyInfo? hostProperty = storeType?.GetProperty(
+
+            var storeType = typeof(TextBox).Assembly.GetType("System.Windows.Documents.TextEditorThreadLocalStore");
+
+            var hostProperty = storeType?.GetProperty(
                 "TextServicesHost",
                 BindingFlags.Instance | BindingFlags.NonPublic
             );
-            Type? hostType = typeof(TextBox).Assembly.GetType("System.Windows.Documents.TextServicesHost");
-            PropertyInfo? managerProperty = hostType?.GetProperty(
+
+            var hostType = typeof(TextBox).Assembly.GetType("System.Windows.Documents.TextServicesHost");
+
+            var managerProperty = hostType?.GetProperty(
                 "ThreadManager",
                 BindingFlags.Instance | BindingFlags.NonPublic
             );
+
             if (storeProperty is null || hostProperty is null || managerProperty is null)
             {
                 return null;
@@ -906,8 +971,9 @@ internal static class SoftKeyboardTsfCandidateBridge
 
             return () =>
             {
-                object? store = storeProperty.GetValue(null, null);
-                object? host = store is null ? null : hostProperty.GetValue(store, null);
+                var store = storeProperty.GetValue(null, null);
+                var host = store is null ? null : hostProperty.GetValue(store, null);
+
                 return host is null ? null : managerProperty.GetValue(host, null);
             };
         }
@@ -930,11 +996,20 @@ internal static class SoftKeyboardTsfCandidateBridge
     [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
     private interface ITfUIElementMgr
     {
-        [PreserveSig] int BeginUIElement([MarshalAs(UnmanagedType.IUnknown)] object element, ref int show, out uint elementId);
-        [PreserveSig] int UpdateUIElement(uint elementId);
-        [PreserveSig] int EndUIElement(uint elementId);
-        [PreserveSig] int GetUIElement(uint elementId, [MarshalAs(UnmanagedType.IUnknown)] out object? element);
-        [PreserveSig] int EnumUIElements([MarshalAs(UnmanagedType.IUnknown)] out object? enumerator);
+        [PreserveSig]
+        int BeginUIElement([MarshalAs(UnmanagedType.IUnknown)] object element, ref int show, out uint elementId);
+
+        [PreserveSig]
+        int UpdateUIElement(uint elementId);
+
+        [PreserveSig]
+        int EndUIElement(uint elementId);
+
+        [PreserveSig]
+        int GetUIElement(uint elementId, [MarshalAs(UnmanagedType.IUnknown)] out object? element);
+
+        [PreserveSig]
+        int EnumUIElements([MarshalAs(UnmanagedType.IUnknown)] out object? enumerator);
     }
 
     [ComImport]
@@ -942,10 +1017,17 @@ internal static class SoftKeyboardTsfCandidateBridge
     [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
     private interface IEnumTfUIElements
     {
-        [PreserveSig] int Clone(out IEnumTfUIElements enumerator);
-        [PreserveSig] int Next(uint count, [MarshalAs(UnmanagedType.IUnknown)] out object? element, out uint fetched);
-        [PreserveSig] int Reset();
-        [PreserveSig] int Skip(uint count);
+        [PreserveSig]
+        int Clone(out IEnumTfUIElements enumerator);
+
+        [PreserveSig]
+        int Next(uint count, [MarshalAs(UnmanagedType.IUnknown)] out object? element, out uint fetched);
+
+        [PreserveSig]
+        int Reset();
+
+        [PreserveSig]
+        int Skip(uint count);
     }
 
     [ComImport]
@@ -953,11 +1035,20 @@ internal static class SoftKeyboardTsfCandidateBridge
     [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
     private interface ITfThreadMgr
     {
-        [PreserveSig] int Activate(out uint clientId);
-        [PreserveSig] int Deactivate();
-        [PreserveSig] int CreateDocumentMgr([MarshalAs(UnmanagedType.IUnknown)] out object? documentManager);
-        [PreserveSig] int EnumDocumentMgrs([MarshalAs(UnmanagedType.IUnknown)] out object? enumerator);
-        [PreserveSig] int GetFocus([MarshalAs(UnmanagedType.IUnknown)] out object? documentManager);
+        [PreserveSig]
+        int Activate(out uint clientId);
+
+        [PreserveSig]
+        int Deactivate();
+
+        [PreserveSig]
+        int CreateDocumentMgr([MarshalAs(UnmanagedType.IUnknown)] out object? documentManager);
+
+        [PreserveSig]
+        int EnumDocumentMgrs([MarshalAs(UnmanagedType.IUnknown)] out object? enumerator);
+
+        [PreserveSig]
+        int GetFocus([MarshalAs(UnmanagedType.IUnknown)] out object? documentManager);
     }
 
     // ITfThreadMgrEx inherits the full ITfThreadMgr vtable. Unused slots are intentionally retained
@@ -967,19 +1058,48 @@ internal static class SoftKeyboardTsfCandidateBridge
     [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
     private interface ITfThreadMgrEx
     {
-        [PreserveSig] int Activate(out uint clientId);
-        [PreserveSig] int Deactivate();
-        [PreserveSig] int CreateDocumentMgr([MarshalAs(UnmanagedType.IUnknown)] out object? documentManager);
-        [PreserveSig] int EnumDocumentMgrs([MarshalAs(UnmanagedType.IUnknown)] out object? enumerator);
-        [PreserveSig] int GetFocus([MarshalAs(UnmanagedType.IUnknown)] out object? documentManager);
-        [PreserveSig] int SetFocus([MarshalAs(UnmanagedType.IUnknown)] object documentManager);
-        [PreserveSig] int AssociateFocus(IntPtr window, [MarshalAs(UnmanagedType.IUnknown)] object? newDocumentManager, [MarshalAs(UnmanagedType.IUnknown)] out object? previousDocumentManager);
-        [PreserveSig] int IsThreadFocus(out int isFocused);
-        [PreserveSig] int GetFunctionProvider(in Guid classId, [MarshalAs(UnmanagedType.IUnknown)] out object? provider);
-        [PreserveSig] int EnumFunctionProviders([MarshalAs(UnmanagedType.IUnknown)] out object? enumerator);
-        [PreserveSig] int GetGlobalCompartment([MarshalAs(UnmanagedType.IUnknown)] out object? compartmentManager);
-        [PreserveSig] int ActivateEx(out uint clientId, uint flags);
-        [PreserveSig] int GetActiveFlags(out uint flags);
+        [PreserveSig]
+        int Activate(out uint clientId);
+
+        [PreserveSig]
+        int Deactivate();
+
+        [PreserveSig]
+        int CreateDocumentMgr([MarshalAs(UnmanagedType.IUnknown)] out object? documentManager);
+
+        [PreserveSig]
+        int EnumDocumentMgrs([MarshalAs(UnmanagedType.IUnknown)] out object? enumerator);
+
+        [PreserveSig]
+        int GetFocus([MarshalAs(UnmanagedType.IUnknown)] out object? documentManager);
+
+        [PreserveSig]
+        int SetFocus([MarshalAs(UnmanagedType.IUnknown)] object documentManager);
+
+        [PreserveSig]
+        int AssociateFocus(
+            IntPtr window,
+            [MarshalAs(UnmanagedType.IUnknown)] object? newDocumentManager,
+            [MarshalAs(UnmanagedType.IUnknown)] out object? previousDocumentManager
+        );
+
+        [PreserveSig]
+        int IsThreadFocus(out int isFocused);
+
+        [PreserveSig]
+        int GetFunctionProvider(in Guid classId, [MarshalAs(UnmanagedType.IUnknown)] out object? provider);
+
+        [PreserveSig]
+        int EnumFunctionProviders([MarshalAs(UnmanagedType.IUnknown)] out object? enumerator);
+
+        [PreserveSig]
+        int GetGlobalCompartment([MarshalAs(UnmanagedType.IUnknown)] out object? compartmentManager);
+
+        [PreserveSig]
+        int ActivateEx(out uint clientId, uint flags);
+
+        [PreserveSig]
+        int GetActiveFlags(out uint flags);
     }
 
     [ComImport]
@@ -987,18 +1107,41 @@ internal static class SoftKeyboardTsfCandidateBridge
     [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
     private interface ITfCandidateListUIElement
     {
-        [PreserveSig] int GetDescription([MarshalAs(UnmanagedType.BStr)] out string? description);
-        [PreserveSig] int GetGuid(out Guid guid);
-        [PreserveSig] int Show(int show);
-        [PreserveSig] int IsShown(out int show);
-        [PreserveSig] int GetUpdatedFlags(out uint flags);
-        [PreserveSig] int GetDocumentMgr([MarshalAs(UnmanagedType.IUnknown)] out object? documentManager);
-        [PreserveSig] int GetCount(out uint count);
-        [PreserveSig] int GetSelection(out uint index);
-        [PreserveSig] int GetString(uint index, [MarshalAs(UnmanagedType.BStr)] out string? text);
-        [PreserveSig] int GetPageIndex(IntPtr indices, uint size, out uint pageCount);
-        [PreserveSig] int SetPageIndex(IntPtr indices, uint pageCount);
-        [PreserveSig] int GetCurrentPage(out uint page);
+        [PreserveSig]
+        int GetDescription([MarshalAs(UnmanagedType.BStr)] out string? description);
+
+        [PreserveSig]
+        int GetGuid(out Guid guid);
+
+        [PreserveSig]
+        int Show(int show);
+
+        [PreserveSig]
+        int IsShown(out int show);
+
+        [PreserveSig]
+        int GetUpdatedFlags(out uint flags);
+
+        [PreserveSig]
+        int GetDocumentMgr([MarshalAs(UnmanagedType.IUnknown)] out object? documentManager);
+
+        [PreserveSig]
+        int GetCount(out uint count);
+
+        [PreserveSig]
+        int GetSelection(out uint index);
+
+        [PreserveSig]
+        int GetString(uint index, [MarshalAs(UnmanagedType.BStr)] out string? text);
+
+        [PreserveSig]
+        int GetPageIndex(IntPtr indices, uint size, out uint pageCount);
+
+        [PreserveSig]
+        int SetPageIndex(IntPtr indices, uint pageCount);
+
+        [PreserveSig]
+        int GetCurrentPage(out uint page);
     }
 
     [ComImport]
@@ -1006,21 +1149,50 @@ internal static class SoftKeyboardTsfCandidateBridge
     [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
     private interface ITfCandidateListUIElementBehavior
     {
-        [PreserveSig] int GetDescription([MarshalAs(UnmanagedType.BStr)] out string? description);
-        [PreserveSig] int GetGuid(out Guid guid);
-        [PreserveSig] int Show(int show);
-        [PreserveSig] int IsShown(out int show);
-        [PreserveSig] int GetUpdatedFlags(out uint flags);
-        [PreserveSig] int GetDocumentMgr([MarshalAs(UnmanagedType.IUnknown)] out object? documentManager);
-        [PreserveSig] int GetCount(out uint count);
-        [PreserveSig] int GetSelection(out uint index);
-        [PreserveSig] int GetString(uint index, [MarshalAs(UnmanagedType.BStr)] out string? text);
-        [PreserveSig] int GetPageIndex(IntPtr indices, uint size, out uint pageCount);
-        [PreserveSig] int SetPageIndex(IntPtr indices, uint pageCount);
-        [PreserveSig] int GetCurrentPage(out uint page);
-        [PreserveSig] int SetSelection(uint index);
-        [PreserveSig] int FinalizeCandidate();
-        [PreserveSig] int Abort();
+        [PreserveSig]
+        int GetDescription([MarshalAs(UnmanagedType.BStr)] out string? description);
+
+        [PreserveSig]
+        int GetGuid(out Guid guid);
+
+        [PreserveSig]
+        int Show(int show);
+
+        [PreserveSig]
+        int IsShown(out int show);
+
+        [PreserveSig]
+        int GetUpdatedFlags(out uint flags);
+
+        [PreserveSig]
+        int GetDocumentMgr([MarshalAs(UnmanagedType.IUnknown)] out object? documentManager);
+
+        [PreserveSig]
+        int GetCount(out uint count);
+
+        [PreserveSig]
+        int GetSelection(out uint index);
+
+        [PreserveSig]
+        int GetString(uint index, [MarshalAs(UnmanagedType.BStr)] out string? text);
+
+        [PreserveSig]
+        int GetPageIndex(IntPtr indices, uint size, out uint pageCount);
+
+        [PreserveSig]
+        int SetPageIndex(IntPtr indices, uint pageCount);
+
+        [PreserveSig]
+        int GetCurrentPage(out uint page);
+
+        [PreserveSig]
+        int SetSelection(uint index);
+
+        [PreserveSig]
+        int FinalizeCandidate();
+
+        [PreserveSig]
+        int Abort();
     }
 }
 

@@ -21,7 +21,7 @@ internal static class SymbolKeyboardLayout
         [
             new(
                 kind:           SoftKeyboardKeyKind.ChangePage,
-                content:        more ? PreviousSymbolsIcon : MoreSymbolsIcon,
+                content:        more ? PrevSymbolsIcon : MoreSymbolsIcon,
                 automationName: more ? "Previous symbols" : "More symbols",
                 page:    more ? SoftKeyboardPages.Symbols : SoftKeyboardPages.MoreSymbols
             ),

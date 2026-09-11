@@ -152,45 +152,6 @@ public class SoftKeyboardTests
     }
 
     [Fact]
-    public void HeaderProperties_ArePresentedAndCandidateUpdatesPreserveHeight()
-    {
-        WpfApplicationTestHost.Run(() =>
-        {
-            var template = new DataTemplate { VisualTree = new FrameworkElementFactory(typeof(System.Windows.Controls.TextBlock)) };
-            var keyboard = new SoftKeyboard(CreateServices(out _, out _, out _))
-            {
-                IsOpen = true, HeaderHeight = 80, HeaderContent = "Ready", HeaderContentTemplate = template,
-            };
-            var window = new Window { Content = keyboard, Width = 700, Height = 500, ShowInTaskbar = false };
-            try
-            {
-                window.Show();
-                window.UpdateLayout();
-                var presenter = (ContentPresenter)keyboard.Template.FindName("IdleHeader", keyboard);
-                var keys = (ItemsControl)keyboard.Template.FindName("PART_Keys", keyboard);
-                Assert.Equal("Ready", presenter.Content);
-                Assert.Same(template, presenter.ContentTemplate);
-                Assert.True(presenter.IsVisible);
-                var before = keys.TranslatePoint(default, keyboard).Y;
-                keyboard.ReplaceCandidates([new SoftKeyboardCandidate(0, "Candidate")], SoftKeyboardCandidatePresentationState.Embedded);
-                window.UpdateLayout();
-                Assert.False(presenter.IsVisible);
-                Assert.Equal(before, keys.TranslatePoint(default, keyboard).Y);
-                keyboard.HeaderHeight = 100;
-                window.UpdateLayout();
-                Assert.Equal(before + 20, keys.TranslatePoint(default, keyboard).Y);
-                keyboard.ReplaceCandidates([], SoftKeyboardCandidatePresentationState.None);
-                window.UpdateLayout();
-                Assert.True(presenter.IsVisible);
-            }
-            finally
-            {
-                window.Close();
-            }
-        });
-    }
-
-    [Fact]
     public void CustomAction_UsesGuardedInputAndExpiresAfterInvocation()
     {
         WpfApplicationTestHost.Run(() =>

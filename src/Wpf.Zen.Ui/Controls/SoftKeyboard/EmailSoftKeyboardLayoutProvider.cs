@@ -8,7 +8,9 @@ using static Wpf.Zen.Ui.Controls.KeyboardLayoutParts;
 
 namespace Wpf.Zen.Ui.Controls;
 
-/// <summary>Creates the complete built-in email address entry page.</summary>
+/// <summary>
+/// Creates the complete built-in email address entry page.
+/// </summary>
 /// <remarks>
 /// Owns every key and its placement. Physical letter keys and address literals are optional reusable
 /// material, not a base layout to patch. Handles Automatic and Letters for its input scope; other
@@ -17,7 +19,9 @@ namespace Wpf.Zen.Ui.Controls;
 /// </remarks>
 public sealed class EmailSoftKeyboardLayoutProvider : ISoftKeyboardLayoutProvider
 {
-    /// <summary>Gets the shared, stateless provider.</summary>
+    /// <summary>
+    /// Gets the shared, stateless provider.
+    /// </summary>
     public static EmailSoftKeyboardLayoutProvider Default { get; } = new();
 
     /// <inheritdoc />
@@ -60,7 +64,8 @@ public sealed class EmailSoftKeyboardLayoutProvider : ISoftKeyboardLayoutProvide
                         isRepeatEnabled: true
                     ),
                 ],
-                [2, 2, 2, 2, 2, 2, 2, 2, 4])
+                [2, 2, 2, 2, 2, 2, 2, 2, 4]
+            )
             .AddRow(
                 3,
                 [
@@ -96,7 +101,8 @@ public sealed class EmailSoftKeyboardLayoutProvider : ISoftKeyboardLayoutProvide
                         Key.Enter
                     ),
                 ],
-                [2, 2, 2, 4, 2, 2, 2, 2, 2])
+                [2, 2, 2, 4, 2, 2, 2, 2, 2]
+            )
             .Build();
     }
 }

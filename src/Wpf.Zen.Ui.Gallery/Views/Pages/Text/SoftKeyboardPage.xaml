@@ -88,7 +88,6 @@
                     Grid.Row="6"
                     AutoHideMode="Manual"
                     AutoShowMode="TouchAndPen"
-                    HeaderContent="Ready to type — hold a letter for alternatives"
                     IsOpen="True"
                     TargetScope="{Binding ElementName=FormScope}" />
             </Grid>

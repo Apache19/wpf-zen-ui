@@ -8,19 +8,30 @@ using System.Windows.Threading;
 
 namespace Wpf.Zen.Ui.Controls;
 
-/// <summary>Synchronizes native input mode without transferring ownership of the editor document.</summary>
+/// <summary>
+/// Synchronizes native input mode without transferring ownership of the editor document.
+/// </summary>
 public partial class SoftKeyboard
 {
     private DispatcherTimer? _inputStateTimer;
 
-    /// <summary>Identifies the optional input-state adapter dependency property.</summary>
-    public static readonly DependencyProperty InputStateAdapterProperty = DependencyProperty.Register(
-        nameof(InputStateAdapter),
-        typeof(ISoftKeyboardInputStateAdapter),
-        typeof(SoftKeyboard),
-        new PropertyMetadata(null, static (owner, _) => ((SoftKeyboard)owner).RefreshImeState()));
+    /// <summary>
+    /// Identifies the <see cref="InputStateAdapter"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty InputStateAdapterProperty
+        = DependencyProperty.Register(
+            nameof(InputStateAdapter),
+            typeof(ISoftKeyboardInputStateAdapter),
+            typeof(SoftKeyboard),
+            new PropertyMetadata(
+                null,
+                static (owner, _) => ((SoftKeyboard)owner).RefreshImeState()
+            )
+        );
 
-    /// <summary>Gets or sets the adapter for nonstandard text-service mode APIs. Defaults to null, using WPF state.</summary>
+    /// <summary>
+    /// Gets or sets the adapter for nonstandard text-service mode APIs. Defaults to null, using WPF state.
+    /// </summary>
     /// <remarks>
     /// This property is not inherited or animated. Changing it re-reads state and may regenerate
     /// the layout. Adapter exceptions degrade to unknown state or a rejected write; a failed
@@ -36,8 +47,12 @@ public partial class SoftKeyboard
     {
         try
         {
-            InputMethodState state = InputStateAdapter?.GetState(ActiveInputMethod) ?? _platform.InputMethods.GetImeState();
-            return state is InputMethodState.On or InputMethodState.Off ? state : InputMethodState.DoNotCare;
+            var state = InputStateAdapter?.GetState(ActiveInputMethod)
+                        ?? _platform.InputMethods.GetImeState();
+
+            return state is InputMethodState.On or InputMethodState.Off
+                ? state
+                : InputMethodState.DoNotCare;
         }
         catch (Exception exception) when (exception is not OutOfMemoryException)
         {
@@ -49,7 +64,8 @@ public partial class SoftKeyboard
     {
         try
         {
-            return InputStateAdapter?.TrySetState(ActiveInputMethod, state) ?? _platform.InputMethods.TrySetImeState(state);
+            return InputStateAdapter?.TrySetState(ActiveInputMethod, state)
+                   ?? _platform.InputMethods.TrySetImeState(state);
         }
         catch (Exception exception) when (exception is not OutOfMemoryException)
         {

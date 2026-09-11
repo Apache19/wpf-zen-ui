@@ -35,18 +35,34 @@ public sealed class SoftKeyboardCandidateList : Control
 
     static SoftKeyboardCandidateList()
     {
-        DefaultStyleKeyProperty.OverrideMetadata(typeof(SoftKeyboardCandidateList), new FrameworkPropertyMetadata(typeof(SoftKeyboardCandidateList)));
-        FocusableProperty.OverrideMetadata(typeof(SoftKeyboardCandidateList), new FrameworkPropertyMetadata(false));
-        KeyboardNavigation.IsTabStopProperty.OverrideMetadata(typeof(SoftKeyboardCandidateList), new FrameworkPropertyMetadata(false));
+        DefaultStyleKeyProperty.OverrideMetadata(
+            typeof(SoftKeyboardCandidateList),
+            new FrameworkPropertyMetadata(typeof(SoftKeyboardCandidateList))
+        );
+
+        FocusableProperty.OverrideMetadata(
+            typeof(SoftKeyboardCandidateList),
+            new FrameworkPropertyMetadata(false)
+        );
+
+        IsTabStopProperty.OverrideMetadata(
+            typeof(SoftKeyboardCandidateList),
+            new FrameworkPropertyMetadata(false)
+        );
     }
 
-    /// <summary>Initializes a new instance of the <see cref="SoftKeyboardCandidateList"/> class.</summary>
+    /// <summary>
+    /// Initializes a new instance of the <see cref="SoftKeyboardCandidateList"/> class.
+    /// </summary>
     public SoftKeyboardCandidateList()
     {
         _itemsHost = new CandidateItemsHost(this);
+
         AddHandler(ButtonBase.ClickEvent, new RoutedEventHandler(OnItemClick));
+
         Loaded += (_, _) => QueueReveal();
         Unloaded += (_, _) => CancelReveal();
+
         IsVisibleChanged += (_, _) =>
         {
             if (IsVisible)
@@ -60,14 +76,20 @@ public sealed class SoftKeyboardCandidateList : Control
         };
     }
 
-    /// <summary>Identifies the <see cref="Candidates"/> dependency property.</summary>
-    public static readonly DependencyProperty CandidatesProperty = DependencyProperty.Register(
-        nameof(Candidates),
-        typeof(IEnumerable<SoftKeyboardCandidate>),
-        typeof(SoftKeyboardCandidateList),
-        new PropertyMetadata(null, OnCandidatesChanged));
+    /// <summary>
+    /// Identifies the <see cref="Candidates"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty CandidatesProperty
+        = DependencyProperty.Register(
+            nameof(Candidates),
+            typeof(IEnumerable<SoftKeyboardCandidate>),
+            typeof(SoftKeyboardCandidateList),
+            new PropertyMetadata(null, OnCandidatesChanged)
+        );
 
-    /// <summary>Gets or sets the candidate page supplied by the input method; the default is null.</summary>
+    /// <summary>
+    /// Gets or sets the candidate page supplied by the input method; the default is null.
+    /// </summary>
     /// <remarks>
     /// Observable sources update through WPF collection views. Plain enumerables update when replaced.
     /// The source must contain non-null candidates with unique backend indices. This property is not
@@ -79,14 +101,20 @@ public sealed class SoftKeyboardCandidateList : Control
         set => SetValue(CandidatesProperty, value);
     }
 
-    /// <summary>Identifies the <see cref="SelectedCandidateIndex"/> dependency property.</summary>
-    public static readonly DependencyProperty SelectedCandidateIndexProperty = DependencyProperty.Register(
-        nameof(SelectedCandidateIndex),
-        typeof(uint?),
-        typeof(SoftKeyboardCandidateList),
-        new PropertyMetadata(null, OnSelectedCandidateIndexChanged));
+    /// <summary>
+    /// Identifies the <see cref="SelectedCandidateIndex"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty SelectedCandidateIndexProperty
+        = DependencyProperty.Register(
+            nameof(SelectedCandidateIndex),
+            typeof(uint?),
+            typeof(SoftKeyboardCandidateList),
+            new PropertyMetadata(null, OnSelectedCandidateIndexChanged)
+        );
 
-    /// <summary>Gets or sets the input method's current backend index, or null when none is current.</summary>
+    /// <summary>
+    /// Gets or sets the input method's current backend index, or null when none is current.
+    /// </summary>
     /// <remarks>
     /// Defaults to null and is not a page-relative position. An index outside the current page selects
     /// no container. Changes update appearance and scrolling only; they never invoke a candidate.
@@ -98,14 +126,20 @@ public sealed class SoftKeyboardCandidateList : Control
         set => SetValue(SelectedCandidateIndexProperty, value);
     }
 
-    /// <summary>Identifies the bubbling <see cref="CandidateInvoked"/> event.</summary>
-    public static readonly RoutedEvent CandidateInvokedEvent = EventManager.RegisterRoutedEvent(
-        nameof(CandidateInvoked),
-        RoutingStrategy.Bubble,
-        typeof(EventHandler<SoftKeyboardCandidateInvokedEventArgs>),
-        typeof(SoftKeyboardCandidateList));
+    /// <summary>
+    /// Identifies the <see cref="CandidateInvoked"/> routed event.
+    /// </summary>
+    public static readonly RoutedEvent CandidateInvokedEvent
+        = EventManager.RegisterRoutedEvent(
+            nameof(CandidateInvoked),
+            RoutingStrategy.Bubble,
+            typeof(EventHandler<SoftKeyboardCandidateInvokedEventArgs>),
+            typeof(SoftKeyboardCandidateList)
+        );
 
-    /// <summary>Occurs when a current generated container is invoked; its host validates and commits the request.</summary>
+    /// <summary>
+    /// Occurs when a current generated container is invoked; its host validates and commits the request.
+    /// </summary>
     public event EventHandler<SoftKeyboardCandidateInvokedEventArgs> CandidateInvoked
     {
         add => AddHandler(CandidateInvokedEvent, value);
@@ -116,7 +150,9 @@ public sealed class SoftKeyboardCandidateList : Control
     public override void OnApplyTemplate()
     {
         base.OnApplyTemplate();
+
         _presenter = GetTemplateChild(ItemsHostPartName) as ContentPresenter;
+
         if (_presenter is not null)
         {
             _presenter.SetCurrentValue(ContentPresenter.ContentProperty, _itemsHost);
@@ -129,6 +165,7 @@ public sealed class SoftKeyboardCandidateList : Control
     protected override void OnTemplateChanged(ControlTemplate oldTemplate, ControlTemplate newTemplate)
     {
         CancelReveal();
+
         if (_presenter is not null)
         {
             // The same internal items surface is reused, but cannot belong to two visual parents.
@@ -160,8 +197,13 @@ public sealed class SoftKeyboardCandidateList : Control
         list.QueueReveal();
     }
 
-    private void UpdateSelection(SoftKeyboardCandidateItem container) =>
-        container.SetIsSelected(SelectedCandidateIndex.HasValue && container.Candidate?.Index == SelectedCandidateIndex);
+    private void UpdateSelection(SoftKeyboardCandidateItem container)
+    {
+        container.SetIsSelected(
+            SelectedCandidateIndex.HasValue
+            && container.Candidate?.Index == SelectedCandidateIndex
+        );
+    }
 
     private void OnItemClick(object sender, RoutedEventArgs e)
     {
@@ -180,10 +222,14 @@ public sealed class SoftKeyboardCandidateList : Control
     private void QueueReveal()
     {
         CancelReveal();
-        if (SelectedCandidateIndex.HasValue && IsLoaded && IsVisible && _presenter is not null)
+        if (SelectedCandidateIndex.HasValue
+            && IsLoaded && IsVisible && _presenter is not null)
         {
             _revealPending = true;
-            _revealOperation = Dispatcher.BeginInvoke(DispatcherPriority.Loaded, new Action(RevealCurrentCandidate));
+            _revealOperation = Dispatcher.BeginInvoke(
+                DispatcherPriority.Loaded,
+                new Action(RevealCurrentCandidate)
+            );
         }
     }
 
@@ -191,7 +237,8 @@ public sealed class SoftKeyboardCandidateList : Control
     {
         _revealOperation?.Abort();
         _revealOperation = null;
-        _revealPending = false;
+        _revealPending   = false;
+
         StopWaitingForLayout();
     }
 
@@ -204,11 +251,15 @@ public sealed class SoftKeyboardCandidateList : Control
         }
     }
 
-    private void OnPendingLayoutUpdated(object? sender, EventArgs e) => RevealCurrentCandidate();
+    private void OnPendingLayoutUpdated(object? sender, EventArgs e)
+    {
+        RevealCurrentCandidate();
+    }
 
     private void RevealCurrentCandidate()
     {
         _revealOperation = null;
+
         if (!_revealPending || !IsLoaded || !IsVisible || _presenter is null)
         {
             CancelReveal();
@@ -217,7 +268,8 @@ public sealed class SoftKeyboardCandidateList : Control
 
         for (var index = 0; index < _itemsHost.Items.Count; index++)
         {
-            if (_itemsHost.Items[index] is not SoftKeyboardCandidate candidate || candidate.Index != SelectedCandidateIndex)
+            if (_itemsHost.Items[index] is not SoftKeyboardCandidate candidate ||
+                candidate.Index != SelectedCandidateIndex)
             {
                 continue;
             }
@@ -261,17 +313,25 @@ public sealed class SoftKeyboardCandidateList : Control
         }
 
         /// <inheritdoc />
-        protected override bool IsItemItsOwnContainerOverride(object item) => false;
+        protected override bool IsItemItsOwnContainerOverride(object item)
+        {
+            return false;
+        }
 
         /// <inheritdoc />
-        protected override DependencyObject GetContainerForItemOverride() => new SoftKeyboardCandidateItem();
+        protected override DependencyObject GetContainerForItemOverride()
+        {
+            return new SoftKeyboardCandidateItem();
+        }
 
         /// <inheritdoc />
         protected override void PrepareContainerForItemOverride(DependencyObject element, object item)
         {
             base.PrepareContainerForItemOverride(element, item);
+
             var container = (SoftKeyboardCandidateItem)element;
             container.SetCandidate((SoftKeyboardCandidate)item);
+
             _owner.UpdateSelection(container);
             _owner.QueueReveal();
         }
@@ -280,8 +340,10 @@ public sealed class SoftKeyboardCandidateList : Control
         protected override void ClearContainerForItemOverride(DependencyObject element, object item)
         {
             var container = (SoftKeyboardCandidateItem)element;
+
             container.SetCandidate(null);
             container.SetIsSelected(false);
+
             if (container.IsMouseCaptured)
             {
                 container.ReleaseMouseCapture();

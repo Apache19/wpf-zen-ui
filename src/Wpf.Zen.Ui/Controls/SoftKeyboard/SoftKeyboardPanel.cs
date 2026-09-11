@@ -303,10 +303,11 @@ public sealed class SoftKeyboardPanel : Panel
             return default;
         }
 
-        var rowSpacing        = GetEffectiveSpacing(availableSize.Height, _rows.Count, RowSpacing);
-        var rowHeight         = GetSharedExtent(availableSize.Height, _rows.Count, rowSpacing);
-        var columnSpacing     = GetEffectiveSpacing(availableSize.Width, ColumnCount, ColumnSpacing);
-        var trackWidth        = GetSharedExtent(availableSize.Width, ColumnCount, columnSpacing);
+        var rowSpacing    = GetEffectiveSpacing(availableSize.Height, _rows.Count, RowSpacing);
+        var rowHeight     = GetSharedExtent(availableSize.Height, _rows.Count, rowSpacing);
+        var columnSpacing = GetEffectiveSpacing(availableSize.Width, ColumnCount, ColumnSpacing);
+        var trackWidth    = GetSharedExtent(availableSize.Width, ColumnCount, columnSpacing);
+
         var desiredTrackWidth = 0D;
         var desiredRowHeight  = 0D;
 

@@ -3,20 +3,34 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
+using System.Windows.Input;
+
 namespace Wpf.Zen.Ui.Controls;
 
-/// <summary>Resolves layout snapshots and publishes recoverable layout diagnostics.</summary>
+/// <summary>
+/// Resolves layout snapshots and publishes recoverable layout diagnostics.
+/// </summary>
 public partial class SoftKeyboard
 {
     private bool _isRebuildingLayout;
 
-    private static readonly DependencyPropertyKey LayoutErrorPropertyKey = DependencyProperty.RegisterReadOnly(
-        nameof(LayoutError), typeof(Exception), typeof(SoftKeyboard), new PropertyMetadata(null));
+    private static readonly DependencyPropertyKey LayoutErrorPropertyKey
+        = DependencyProperty.RegisterReadOnly(
+            nameof(LayoutError),
+            typeof(Exception),
+            typeof(SoftKeyboard),
+            new PropertyMetadata(null)
+        );
 
-    /// <summary>Identifies the read-only <see cref="LayoutError"/> dependency property.</summary>
-    public static readonly DependencyProperty LayoutErrorProperty = LayoutErrorPropertyKey.DependencyProperty;
+    /// <summary>
+    /// Identifies the <see cref="LayoutError"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty LayoutErrorProperty
+        = LayoutErrorPropertyKey.DependencyProperty;
 
-    /// <summary>Gets the last layout failure, or null after successful resolution.</summary>
+    /// <summary>
+    /// Gets the last layout failure, or null after successful resolution.
+    /// </summary>
     /// <remarks>
     /// Default is null. A provider exception or an unhandled page records the reason before a built-in
     /// fallback is displayed. This diagnostic does not inherit or affect layout itself and cannot be
@@ -24,7 +38,9 @@ public partial class SoftKeyboard
     /// </remarks>
     public Exception? LayoutError => (Exception?)GetValue(LayoutErrorProperty);
 
-    /// <summary>Requests a new immutable layout snapshot after application-owned data changes.</summary>
+    /// <summary>
+    /// Requests a new immutable layout snapshot after application-owned data changes.
+    /// </summary>
     /// <remarks>
     /// Call on the owning dispatcher. This cancels held-key interactions before replacing their data.
     /// Providers must not call this while constructing a layout; recursive construction is ignored.
@@ -37,19 +53,37 @@ public partial class SoftKeyboard
 
     private void RebuildLayout()
     {
-        if (_isRebuildingLayout) return;
+        if (_isRebuildingLayout)
+        {
+            return;
+        }
+
         _isRebuildingLayout = true;
+
         try
         {
             CancelKeyInteraction();
+
             var adapter = ActiveTarget is null ? null : GetAdapter(ActiveTarget);
+
             var inputScope = ActiveTarget is not null && adapter is not null
                 ? adapter.GetInputScope(ActiveTarget)
-                : System.Windows.Input.InputScopeNameValue.Default;
-            var culture = System.Windows.Input.InputLanguageManager.Current.CurrentInputLanguage;
-            var context = new SoftKeyboardLayoutContext(culture, inputScope, Page, ShiftState, ImeState, ActiveInputMethod);
+                : InputScopeNameValue.Default;
+
+            var culture = InputLanguageManager.Current.CurrentInputLanguage;
+
+            var context = new SoftKeyboardLayoutContext(
+                culture,
+                inputScope,
+                Page,
+                ShiftState,
+                ImeState,
+                ActiveInputMethod
+            );
+
             SoftKeyboardLayout? layout = null;
-            Exception? error = null;
+            Exception?          error  = null;
+
             try
             {
                 layout = LayoutProvider.CreateLayout(context);
@@ -61,13 +95,24 @@ public partial class SoftKeyboard
             }
 
             layout ??= DefaultSoftKeyboardLayoutProvider.Default.CreateLayout(context);
+
             if (layout is null)
             {
                 error ??= new InvalidOperationException($"No layout provider handles page '{Page}'.");
+
                 // Normalize navigation state with the displayed fallback. The callback may request
                 // rebuilding, but the guard prevents a recursive provider call during publication.
                 SetValue(PagePropertyKey, SoftKeyboardPages.Automatic);
-                context = new SoftKeyboardLayoutContext(culture, inputScope, Page, ShiftState, ImeState, ActiveInputMethod);
+
+                context = new SoftKeyboardLayoutContext(
+                    culture,
+                    inputScope,
+                    Page,
+                    ShiftState,
+                    ImeState,
+                    ActiveInputMethod
+                );
+
                 layout = DefaultSoftKeyboardLayoutProvider.Default.CreateLayout(context)!;
             }
 

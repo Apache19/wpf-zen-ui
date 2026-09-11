@@ -30,7 +30,9 @@ public sealed class StandardSoftKeyboardLayoutProvider : ISoftKeyboardLayoutProv
         )
     );
 
-    /// <summary>Gets the shared, stateless standard composition.</summary>
+    /// <summary>
+    /// Gets the shared, stateless standard composition.
+    /// </summary>
     public static StandardSoftKeyboardLayoutProvider Default { get; } = new();
 
     /// <inheritdoc />

@@ -5,7 +5,9 @@
 
 namespace Wpf.Zen.Ui.Controls;
 
-/// <summary>Selects a complete language composition, then falls back to the standard keyboard.</summary>
+/// <summary>
+/// Selects a complete language composition, then falls back to the standard keyboard.
+/// </summary>
 /// <remarks>
 /// Language selection precedes every input-scope and page decision, including numbers and addresses.
 /// A language provider owns its complete routing tree and may use any geometry, page set or action.
@@ -20,7 +22,9 @@ public sealed class DefaultSoftKeyboardLayoutProvider : ISoftKeyboardLayoutProvi
         StandardSoftKeyboardLayoutProvider.Default
     );
 
-    /// <summary>Gets the shared, stateless default composition.</summary>
+    /// <summary>
+    /// Gets the shared, stateless default composition.
+    /// </summary>
     public static DefaultSoftKeyboardLayoutProvider Default { get; } = new();
 
     /// <inheritdoc />

@@ -32,8 +32,7 @@ internal sealed class SoftKeyboardPlatformServices
         ISoftKeyboardInputBackend input,
         ISoftKeyboardInputPaneBackend inputPane,
         ISoftKeyboardInputMethodBackend inputMethods,
-        ISoftKeyboardCandidateBackend candidates
-    )
+        ISoftKeyboardCandidateBackend candidates)
     {
         Input = input ?? throw new ArgumentNullException(nameof(input));
         InputPane = inputPane ?? throw new ArgumentNullException(nameof(inputPane));
@@ -51,9 +50,15 @@ internal sealed class SoftKeyboardPlatformServices
 
     private sealed class WindowsInputBackend : ISoftKeyboardInputBackend
     {
-        public bool SendVirtualKey(Key key, bool shift) => SoftKeyboardInputInjector.SendVirtualKey(key, shift);
+        public bool SendVirtualKey(Key key, bool shift)
+        {
+            return SoftKeyboardInputInjector.SendVirtualKey(key, shift);
+        }
 
-        public bool SendUnicode(string text) => SoftKeyboardInputInjector.SendUnicode(text);
+        public bool SendUnicode(string text)
+        {
+            return SoftKeyboardInputInjector.SendUnicode(text);
+        }
 
         public bool IsHostForeground(IntPtr host)
         {
@@ -67,28 +72,48 @@ internal sealed class SoftKeyboardPlatformServices
 
     private sealed class WindowsInputPaneBackend : ISoftKeyboardInputPaneBackend
     {
-        public SoftKeyboardSystemKeyboardSuppressionState TryHide(IntPtr host) =>
-            SystemInputPaneController.TryHide(host);
+        public SoftKeyboardSystemKeyboardSuppressionState TryHide(IntPtr host)
+        {
+            return SystemInputPaneController.TryHide(host);
+        }
 
-        public bool TryShow(IntPtr host) => SystemInputPaneController.TryShow(host);
+        public bool TryShow(IntPtr host)
+        {
+            return SystemInputPaneController.TryShow(host);
+        }
     }
 
     private sealed class TsfCandidateBackend : ISoftKeyboardCandidateBackend
     {
-        public void Register(SoftKeyboard keyboard) => SoftKeyboardTsfCandidateBridge.Register(keyboard);
+        public void Register(SoftKeyboard keyboard)
+        {
+            SoftKeyboardTsfCandidateBridge.Register(keyboard);
+        }
 
-        public void Unregister(SoftKeyboard keyboard) => SoftKeyboardTsfCandidateBridge.Unregister(keyboard);
+        public void Unregister(SoftKeyboard keyboard)
+        {
+            SoftKeyboardTsfCandidateBridge.Unregister(keyboard);
+        }
 
-        public void Refresh(SoftKeyboard keyboard) => SoftKeyboardTsfCandidateBridge.Refresh(keyboard);
+        public void Refresh(SoftKeyboard keyboard)
+        {
+            SoftKeyboardTsfCandidateBridge.Refresh(keyboard);
+        }
 
-        public void ReleasePresentation(SoftKeyboard keyboard) =>
+        public void ReleasePresentation(SoftKeyboard keyboard)
+        {
             SoftKeyboardTsfCandidateBridge.ReleasePresentation(keyboard);
+        }
 
-        public bool TryMovePage(SoftKeyboard keyboard, int delta) =>
-            SoftKeyboardTsfCandidateBridge.TryMovePage(keyboard, delta);
+        public bool TryMovePage(SoftKeyboard keyboard, int delta)
+        {
+            return SoftKeyboardTsfCandidateBridge.TryMovePage(keyboard, delta);
+        }
 
-        public bool TryCommit(SoftKeyboard keyboard, uint index) =>
-            SoftKeyboardTsfCandidateBridge.TryCommit(keyboard, index);
+        public bool TryCommit(SoftKeyboard keyboard, uint index)
+        {
+            return SoftKeyboardTsfCandidateBridge.TryCommit(keyboard, index);
+        }
     }
 }
 

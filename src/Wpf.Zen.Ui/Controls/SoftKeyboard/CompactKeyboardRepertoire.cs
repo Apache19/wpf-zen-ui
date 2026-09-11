@@ -5,20 +5,24 @@
 
 namespace Wpf.Zen.Ui.Controls;
 
-/// <summary>Optional literal repertoire for the built-in compact letter and symbol renderers.</summary>
-/// <remarks>This data has no matching or fallback responsibilities. A language provider may choose
-/// these renderers or generate completely different layouts without constructing a repertoire.</remarks>
+/// <summary>
+/// Optional literal repertoire for the built-in compact letter and symbol renderers.
+/// </summary>
+/// <remarks>
+/// This data has no matching or fallback responsibilities. A language provider may choose
+/// these renderers or generate completely different layouts without constructing a repertoire.
+/// </remarks>
 internal sealed class CompactKeyboardRepertoire
 {
-    internal string Comma { get; init; } = ",";
-    internal string Period { get; init; } = ".";
-    internal string SymbolsTail { get; init; } = "?";
-    internal string MoreSymbolsTail { get; init; } = "\\";
-    internal SoftKeyboardKey? ExtraLetterKey { get; init; }
-    internal string[] SymbolsSecond { get; init; } = ["!", "@", "#", "$", "%", "&", "_", "-", "=", "+"];
-    internal string[] SymbolsThird { get; init; } = [";", ":", "(", ")", "/", "'", "\""];
-    internal string[] MoreSymbolsSecond { get; init; } = ["%", "[", "]", "{", "}", "<", ">", "€", "£", "¥"];
-    internal string[] MoreSymbolsThird { get; init; } = ["*", "`", "°", "×", "÷", "~", "|"];
+    internal string           Comma             { get; init; } = ",";
+    internal string           Period            { get; init; } = ".";
+    internal string           SymbolsTail       { get; init; } = "?";
+    internal string           MoreSymbolsTail   { get; init; } = "\\";
+    internal SoftKeyboardKey? ExtraLetterKey    { get; init; }
+    internal string[]         SymbolsSecond     { get; init; } = ["!", "@", "#", "$", "%", "&", "_", "-", "=", "+"];
+    internal string[]         SymbolsThird      { get; init; } = [";", ":", "(", ")", "/", "'", "\""];
+    internal string[]         MoreSymbolsSecond { get; init; } = ["%", "[", "]", "{", "}", "<", ">", "€", "£", "¥"];
+    internal string[]         MoreSymbolsThird  { get; init; } = ["*", "`", "°", "×", "÷", "~", "|"];
 
     internal static CompactKeyboardRepertoire General { get; } = new();
 }

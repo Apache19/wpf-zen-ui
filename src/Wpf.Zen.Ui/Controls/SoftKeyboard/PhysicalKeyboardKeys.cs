@@ -8,9 +8,13 @@ using static Wpf.Zen.Ui.Controls.KeyboardLayoutParts;
 
 namespace Wpf.Zen.Ui.Controls;
 
-/// <summary>Creates optional unpositioned physical-letter key material for compact layouts.</summary>
-/// <remarks>Consumers choose their own row placement, commands and geometry. This factory neither
-/// selects an input scope nor owns an address, language or page layout.</remarks>
+/// <summary>
+/// Creates optional unpositioned physical-letter key material for compact layouts.
+/// </summary>
+/// <remarks>
+/// Consumers choose their own row placement, commands and geometry. This factory neither
+/// selects an input scope nor owns an address, language or page layout.
+/// </remarks>
 internal static class PhysicalKeyboardKeys
 {
     private static readonly Key[][] LetterRows =

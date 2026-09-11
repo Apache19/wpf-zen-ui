@@ -29,17 +29,25 @@ internal sealed class SoftKeyboardDispatcherSession
     private SoftKeyboardDispatcherSession(Dispatcher dispatcher)
     {
         _dispatcher = dispatcher;
+
         InputManager.Current.PreProcessInput += OnPreProcessInput;
         InputLanguageManager.Current.InputLanguageChanged += OnInputLanguageChanged;
+
         dispatcher.ShutdownStarted += OnDispatcherShutdownStarted;
     }
 
-    internal static SoftKeyboardDispatcherSession GetForCurrentDispatcher() =>
-        Sessions.GetValue(Dispatcher.CurrentDispatcher, static dispatcher => new SoftKeyboardDispatcherSession(dispatcher));
+    internal static SoftKeyboardDispatcherSession GetForCurrentDispatcher()
+    {
+        return Sessions.GetValue(
+            Dispatcher.CurrentDispatcher,
+            static dispatcher => new SoftKeyboardDispatcherSession(dispatcher)
+        );
+    }
 
     internal void Register(SoftKeyboard keyboard)
     {
         RemoveDeadReferences();
+
         if (_keyboards.Any(reference => ReferenceEquals(reference.Target, keyboard)))
         {
             return;
@@ -64,6 +72,7 @@ internal sealed class SoftKeyboardDispatcherSession
     internal bool IsSystemKeyboardSuppressionRequiredByOther(SoftKeyboard owner)
     {
         RemoveDeadReferences();
+
         return _keyboards.Any(reference =>
             reference.Target is SoftKeyboard keyboard
             && !ReferenceEquals(keyboard, owner)
@@ -71,9 +80,9 @@ internal sealed class SoftKeyboardDispatcherSession
         );
     }
 
-    private void OnPreProcessInput(object sender, PreProcessInputEventArgs eventArgs)
+    private void OnPreProcessInput(object sender, PreProcessInputEventArgs args)
     {
-        InputEventArgs input = eventArgs.StagingItem.Input;
+        var input = args.StagingItem.Input;
         if (input is TextCompositionEventArgs compositionArgs)
         {
             // Composition events are observed at the Dispatcher boundary because the keyboard is
@@ -89,14 +98,19 @@ internal sealed class SoftKeyboardDispatcherSession
             return;
         }
 
-        if (input.RoutedEvent != Keyboard.GotKeyboardFocusEvent || input is not KeyboardFocusChangedEventArgs focusArgs)
+        if (input.RoutedEvent != Keyboard.GotKeyboardFocusEvent
+            || input is not KeyboardFocusChangedEventArgs focusArgs)
         {
             return;
         }
 
-        int elapsed = unchecked(Environment.TickCount - _lastTouchOrPenTick);
-        bool touchOrPenInitiated = elapsed >= 0 && elapsed <= 1000;
-        ForEachKeyboard(keyboard => keyboard.OnSessionFocusChanged(focusArgs.NewFocus, touchOrPenInitiated));
+        var elapsed = unchecked(Environment.TickCount - _lastTouchOrPenTick);
+        var touchOrPenInitiated = elapsed is >= 0 and <= 1000;
+
+        ForEachKeyboard(keyboard => keyboard.OnSessionFocusChanged(
+                focusArgs.NewFocus, touchOrPenInitiated
+            )
+        );
     }
 
     private void OnInputLanguageChanged(object sender, InputLanguageEventArgs eventArgs)
@@ -108,13 +122,15 @@ internal sealed class SoftKeyboardDispatcherSession
     {
         InputManager.Current.PreProcessInput -= OnPreProcessInput;
         InputLanguageManager.Current.InputLanguageChanged -= OnInputLanguageChanged;
+
         _dispatcher.ShutdownStarted -= OnDispatcherShutdownStarted;
+
         _keyboards.Clear();
     }
 
     private void ForEachKeyboard(Action<SoftKeyboard> action)
     {
-        foreach (WeakReference reference in _keyboards.ToArray())
+        foreach (var reference in _keyboards.ToArray())
         {
             if (reference.Target is SoftKeyboard keyboard)
             {

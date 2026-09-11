@@ -24,9 +24,20 @@ public sealed class SoftKeyboardCandidateItem : ButtonBase
 {
     static SoftKeyboardCandidateItem()
     {
-        DefaultStyleKeyProperty.OverrideMetadata(typeof(SoftKeyboardCandidateItem), new FrameworkPropertyMetadata(typeof(SoftKeyboardCandidateItem)));
-        FocusableProperty.OverrideMetadata(typeof(SoftKeyboardCandidateItem), new FrameworkPropertyMetadata(false));
-        KeyboardNavigation.IsTabStopProperty.OverrideMetadata(typeof(SoftKeyboardCandidateItem), new FrameworkPropertyMetadata(false));
+        DefaultStyleKeyProperty.OverrideMetadata(
+            typeof(SoftKeyboardCandidateItem),
+            new FrameworkPropertyMetadata(typeof(SoftKeyboardCandidateItem))
+        );
+
+        FocusableProperty.OverrideMetadata(
+            typeof(SoftKeyboardCandidateItem),
+            new FrameworkPropertyMetadata(false)
+        );
+
+        KeyboardNavigation.IsTabStopProperty.OverrideMetadata(
+            typeof(SoftKeyboardCandidateItem),
+            new FrameworkPropertyMetadata(false)
+        );
     }
 
     // Only the list creates containers. The public type exists so applications can style its template.
@@ -42,20 +53,38 @@ public sealed class SoftKeyboardCandidateItem : ButtonBase
         SetCurrentValue(ContentProperty, candidate?.Text);
     }
 
-    private static readonly DependencyPropertyKey IsSelectedPropertyKey = DependencyProperty.RegisterReadOnly(
-        nameof(IsSelected), typeof(bool), typeof(SoftKeyboardCandidateItem), new PropertyMetadata(false));
+    private static readonly DependencyPropertyKey IsSelectedPropertyKey
+        = DependencyProperty.RegisterReadOnly(
+            nameof(IsSelected),
+            typeof(bool),
+            typeof(SoftKeyboardCandidateItem),
+            new PropertyMetadata(false)
+        );
 
-    /// <summary>Identifies the read-only <see cref="IsSelected"/> dependency property.</summary>
-    public static readonly DependencyProperty IsSelectedProperty = IsSelectedPropertyKey.DependencyProperty;
+    /// <summary>
+    /// Identifies the <see cref="IsSelected"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty IsSelectedProperty
+        = IsSelectedPropertyKey.DependencyProperty;
 
-    /// <summary>Gets a value indicating whether the owning list identifies this container as the input method's current candidate.</summary>
-    /// <remarks>Defaults to false; not inherited or animated by callers. Template triggers update appearance without changing layout.</remarks>
+    /// <summary>
+    /// Gets a value indicating whether the owning list identifies this container as the input method's current candidate.
+    /// </summary>
+    /// <remarks>
+    /// Defaults to false; not inherited or animated by callers. Template triggers update appearance without changing layout.
+    /// </remarks>
     public bool IsSelected => (bool)GetValue(IsSelectedProperty);
 
-    internal void SetIsSelected(bool value) => SetValue(IsSelectedPropertyKey, value);
+    internal void SetIsSelected(bool value)
+    {
+        SetValue(IsSelectedPropertyKey, value);
+    }
 
     /// <inheritdoc />
-    protected override AutomationPeer OnCreateAutomationPeer() => new SoftKeyboardCandidateItemAutomationPeer(this);
+    protected override AutomationPeer OnCreateAutomationPeer()
+    {
+        return new SoftKeyboardCandidateItemAutomationPeer(this);
+    }
 
     internal void Invoke()
     {

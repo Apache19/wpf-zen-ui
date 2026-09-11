@@ -7,7 +7,9 @@ using System.Windows.Input;
 
 namespace Wpf.Zen.Ui.Controls;
 
-/// <summary>Coordinates custom key execution with the standard input validation boundary.</summary>
+/// <summary>
+/// Coordinates custom key execution with the standard input validation boundary.
+/// </summary>
 public partial class SoftKeyboard
 {
     private void ExecuteCustomAction(ISoftKeyboardKeyAction action)

@@ -34,7 +34,9 @@ public sealed class JapaneseSoftKeyboardLayoutProvider : ISoftKeyboardLayoutProv
         StandardSoftKeyboardLayoutProvider.Default
     );
 
-    /// <summary>Gets the shared, stateless japanese composition.</summary>
+    /// <summary>
+    /// Gets the shared, stateless japanese composition.
+    /// </summary>
     public static JapaneseSoftKeyboardLayoutProvider Default { get; } = new();
 
     /// <inheritdoc />

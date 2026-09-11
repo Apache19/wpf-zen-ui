@@ -12,11 +12,11 @@ internal static class JapaneseKeyboardRepertoire
 {
     internal static CompactKeyboardRepertoire Value { get; } = new()
     {
-        Comma = "、",
-        Period = "。",
-        SymbolsTail = "？",
+        Comma           = "、",
+        Period          = "。",
+        SymbolsTail     = "？",
         MoreSymbolsTail = "〜",
-        ExtraLetterKey = new SoftKeyboardKey(
+        ExtraLetterKey  = new SoftKeyboardKey(
             SoftKeyboardKeyKind.Text,
             "ー",
             "Long vowel mark and middle dot",
@@ -24,9 +24,9 @@ internal static class JapaneseKeyboardRepertoire
             alternates: ["・"],
             alternateHint: "・"
         ),
-        SymbolsSecond = ["！", "？", "＠", "＃", "￥", "％", "＆", "＊", "ー", "＝"],
-        SymbolsThird = ["「", "」", "（", "）", "・", "：", "；"],
+        SymbolsSecond     = ["！", "？", "＠", "＃", "￥", "％", "＆", "＊", "ー", "＝"],
+        SymbolsThird      = ["「", "」", "（", "）", "・", "：", "；"],
         MoreSymbolsSecond = ["『", "』", "【", "】", "〈", "〉", "《", "》", "〔", "〕"],
-        MoreSymbolsThird = ["［", "］", "｛", "｝", "…", "※", "〒"],
+        MoreSymbolsThird  = ["［", "］", "｛", "｝", "…", "※", "〒"],
     };
 }

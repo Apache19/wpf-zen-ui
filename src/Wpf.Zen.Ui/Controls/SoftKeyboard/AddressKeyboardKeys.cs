@@ -5,7 +5,9 @@
 
 namespace Wpf.Zen.Ui.Controls;
 
-/// <summary>Supplies optional literal address keys; consumers own all page geometry.</summary>
+/// <summary>
+/// Supplies optional literal address keys; consumers own all page geometry.
+/// </summary>
 internal static class AddressKeyboardKeys
 {
     internal static SoftKeyboardKey Domain(CultureInfo culture) => new(

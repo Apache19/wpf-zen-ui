@@ -3,7 +3,6 @@
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
 
-using System.Collections;
 using System.Collections.ObjectModel;
 using System.Runtime.InteropServices;
 using System.Windows.Input;
@@ -22,12 +21,16 @@ namespace Wpf.Zen.Ui.Controls;
 internal sealed class TsfInputMethodService : ISoftKeyboardInputMethodBackend
 {
     private const uint ProfileTypeInputProcessor = 0x0001;
-    private const uint ActivateForProcess = 0x10000000;
+    private const uint ActivateForProcess        = 0x10000000;
+
     private static readonly Guid ProfilesClassId = new("33C53A50-F456-4884-B049-85FD643ECFED");
 
-    public void Refresh(ObservableCollection<SoftKeyboardInputMethod> destination, out SoftKeyboardInputMethod? active)
+    public void Refresh(
+        ObservableCollection<SoftKeyboardInputMethod> destination,
+        out SoftKeyboardInputMethod? active)
     {
         active = null;
+
         var profiles = TryEnumerateProfiles();
         if (profiles.Count == 0)
         {
@@ -35,7 +38,13 @@ internal sealed class TsfInputMethodService : ISoftKeyboardInputMethodBackend
         }
 
         destination.Clear();
-        foreach (SoftKeyboardInputMethod profile in profiles.OrderBy(static profile => profile.DisplayName, StringComparer.CurrentCulture))
+
+        var sorted = profiles.OrderBy(
+            static profile => profile.DisplayName,
+            StringComparer.CurrentCulture
+        );
+
+        foreach (var profile in sorted)
         {
             destination.Add(profile);
             if (profile.IsActive)
@@ -61,16 +70,19 @@ internal sealed class TsfInputMethodService : ISoftKeyboardInputMethodBackend
         }
 
         ITfInputProcessorProfiles? profiles = null;
+
         try
         {
             profiles = CreateProfiles();
+
             if (profiles is null)
             {
                 return false;
             }
 
-            Guid classId = profile.ClassId;
-            Guid profileId = profile.ProfileId;
+            var classId = profile.ClassId;
+            var profileId = profile.ProfileId;
+
             if (profiles.ChangeCurrentLanguage(profile.LanguageId) != 0)
             {
                 return false;
@@ -82,7 +94,7 @@ internal sealed class TsfInputMethodService : ISoftKeyboardInputMethodBackend
             // keyboard layout is active does not select Microsoft Pinyin (or any other TIP).
             if (profiles is ITfInputProcessorProfileMgr profileManager)
             {
-                int result = profileManager.ActivateProfile(
+                var result = profileManager.ActivateProfile(
                     ProfileTypeInputProcessor,
                     profile.LanguageId,
                     in classId,
@@ -90,6 +102,7 @@ internal sealed class TsfInputMethodService : ISoftKeyboardInputMethodBackend
                     IntPtr.Zero,
                     ActivateForProcess
                 );
+
                 if (result == 0)
                 {
                     return true;
@@ -115,7 +128,8 @@ internal sealed class TsfInputMethodService : ISoftKeyboardInputMethodBackend
     {
         try
         {
-            InputMethodState openState = InputMethod.Current.ImeState;
+            // todo: InputMethod.Current 可能为 null
+            var openState = InputMethod.Current.ImeState;
             if (openState != InputMethodState.On)
             {
                 return openState;
@@ -124,7 +138,7 @@ internal sealed class TsfInputMethodService : ISoftKeyboardInputMethodBackend
             // Microsoft Pinyin can keep the TSF keyboard-open compartment set while its own
             // Chinese/English mode is alphanumeric. For this control, "IME" means native
             // composition is active, so expose the combined state that matches what users see.
-            ImeConversionModeValues conversionMode = InputMethod.Current.ImeConversionMode;
+            var conversionMode = InputMethod.Current.ImeConversionMode;
             return (conversionMode & ImeConversionModeValues.Native) != 0
                 ? InputMethodState.On
                 : InputMethodState.Off;
@@ -152,9 +166,11 @@ internal sealed class TsfInputMethodService : ISoftKeyboardInputMethodBackend
             // the open compartment: activating a TIP establishes that profile's current preferences,
             // including full/half shape and Roman input, and the keyboard must not replace them with
             // its own policy.
-            ImeConversionModeValues currentMode = InputMethod.Current.ImeConversionMode;
-            ImeConversionModeValues targetMode = GetConversionModeForImeState(currentMode, state);
+            var currentMode = InputMethod.Current.ImeConversionMode; // todo: InputMethod.Current 可能为 null
+            var targetMode = GetConversionModeForImeState(currentMode, state);
+
             InputMethod.Current.ImeState = state;
+
             SetConversionMode(targetMode, state);
             return true;
         }
@@ -180,10 +196,9 @@ internal sealed class TsfInputMethodService : ISoftKeyboardInputMethodBackend
     /// </remarks>
     internal static ImeConversionModeValues GetConversionModeForImeState(
         ImeConversionModeValues currentMode,
-        InputMethodState state
-    )
+        InputMethodState state)
     {
-        ImeConversionModeValues result = currentMode & ~ImeConversionModeValues.DoNotCare;
+        var result = currentMode & ~ImeConversionModeValues.DoNotCare;
         if (state == InputMethodState.On)
         {
             return (result & ~ImeConversionModeValues.Alphanumeric) | ImeConversionModeValues.Native;
@@ -199,10 +214,10 @@ internal sealed class TsfInputMethodService : ISoftKeyboardInputMethodBackend
     /// </summary>
     private static void SetConversionMode(ImeConversionModeValues targetMode, InputMethodState state)
     {
-        bool useFullShape = (targetMode & ImeConversionModeValues.FullShape) != 0;
-        ImeConversionModeValues primaryMode = state == InputMethodState.On
-            ? ImeConversionModeValues.Native
-                | (useFullShape ? ImeConversionModeValues.FullShape : 0)
+        var useFullShape = (targetMode & ImeConversionModeValues.FullShape) != 0;
+
+        var primaryMode = state == InputMethodState.On
+            ? ImeConversionModeValues.Native | (useFullShape ? ImeConversionModeValues.FullShape : 0)
             : useFullShape
                 ? ImeConversionModeValues.FullShape
                 : ImeConversionModeValues.Alphanumeric;
@@ -212,7 +227,7 @@ internal sealed class TsfInputMethodService : ISoftKeyboardInputMethodBackend
         // primary modes (Native, Native|FullShape, FullShape, or Alphanumeric). Apply that canonical
         // mode first, then restore auxiliary preferences. A single combined write such as
         // Native|Roman can otherwise leave a stale FullShape bit behind in the native compartment.
-        InputMethod.Current.ImeConversionMode = primaryMode;
+        InputMethod.Current.ImeConversionMode = primaryMode; // todo: InputMethod.Current 可能为 null
         if (targetMode != primaryMode)
         {
             InputMethod.Current.ImeConversionMode = targetMode;
@@ -222,41 +237,53 @@ internal sealed class TsfInputMethodService : ISoftKeyboardInputMethodBackend
     private static List<SoftKeyboardInputMethod> TryEnumerateProfiles()
     {
         var result = new List<SoftKeyboardInputMethod>();
+
         ITfInputProcessorProfiles? profiles = null;
-        IntPtr languagesPointer = IntPtr.Zero;
+
+        var languagesPointer = IntPtr.Zero;
 
         try
         {
             profiles = CreateProfiles();
-            if (profiles is null || profiles.GetLanguageList(out languagesPointer, out uint languageCount) < 0)
+            if (profiles is null
+                || profiles.GetLanguageList(out languagesPointer, out var languageCount) < 0)
             {
                 return result;
             }
 
             for (var languageIndex = 0; languageIndex < languageCount; languageIndex++)
             {
-                ushort languageId = unchecked((ushort)Marshal.ReadInt16(languagesPointer, languageIndex * sizeof(ushort)));
-                if (profiles.EnumLanguageProfiles(languageId, out IEnumTfLanguageProfiles enumerator) < 0)
+                var languageId = unchecked(
+                    (ushort)Marshal.ReadInt16(
+                        languagesPointer,
+                        languageIndex * sizeof(ushort)
+                    )
+                );
+
+                if (profiles.EnumLanguageProfiles(languageId, out var enumerator) < 0)
                 {
                     continue;
                 }
 
                 try
                 {
-                    while (enumerator.Next(1, out TfLanguageProfile nativeProfile, out uint fetched) >= 0 && fetched == 1)
+                    while (enumerator.Next(1, out var nativeProfile, out var fetched) >= 0
+                        && fetched == 1)
                     {
-                        if (profiles.IsEnabledLanguageProfile(
-                                in nativeProfile.ClassId,
-                                nativeProfile.LanguageId,
-                                in nativeProfile.ProfileId,
-                                out int enabled
-                            ) < 0
-                            || enabled == 0)
+                        var r = profiles.IsEnabledLanguageProfile(
+                            in nativeProfile.ClassId,
+                            nativeProfile.LanguageId,
+                            in nativeProfile.ProfileId,
+                            out var enabled
+                        );
+
+                        if (r < 0 || enabled == 0)
                         {
                             continue;
                         }
 
-                        string description = GetDescription(profiles, in nativeProfile);
+                        var description = GetDescription(profiles, in nativeProfile);
+
                         result.Add(
                             new SoftKeyboardInputMethod(
                                 nativeProfile.ClassId,
@@ -294,13 +321,14 @@ internal sealed class TsfInputMethodService : ISoftKeyboardInputMethodBackend
     private static List<SoftKeyboardInputMethod> EnumerateWpfLanguages()
     {
         var result = new List<SoftKeyboardInputMethod>();
-        CultureInfo current = InputLanguageManager.Current.CurrentInputLanguage;
-        if (InputLanguageManager.Current.AvailableInputLanguages is not IEnumerable languages)
+        var current = InputLanguageManager.Current.CurrentInputLanguage;
+
+        if (InputLanguageManager.Current.AvailableInputLanguages is not { } languages)
         {
             return result;
         }
 
-        foreach (object? value in languages)
+        foreach (var value in languages)
         {
             if (value is not CultureInfo culture)
             {
@@ -323,13 +351,14 @@ internal sealed class TsfInputMethodService : ISoftKeyboardInputMethodBackend
 
     private static string GetDescription(ITfInputProcessorProfiles profiles, in TfLanguageProfile profile)
     {
-        if (profiles.GetLanguageProfileDescription(
-                in profile.ClassId,
-                profile.LanguageId,
-                in profile.ProfileId,
-                out string? description
-            ) >= 0
-            && !string.IsNullOrWhiteSpace(description))
+        var r = profiles.GetLanguageProfileDescription(
+            in profile.ClassId,
+            profile.LanguageId,
+            in profile.ProfileId,
+            out var description
+        );
+
+        if (r >= 0 && !string.IsNullOrWhiteSpace(description))
         {
             return description!;
         }
@@ -346,18 +375,20 @@ internal sealed class TsfInputMethodService : ISoftKeyboardInputMethodBackend
 
     private static ITfInputProcessorProfiles? CreateProfiles()
     {
-        Type? profilesType = Type.GetTypeFromCLSID(ProfilesClassId, throwOnError: false);
+        var profilesType = Type.GetTypeFromCLSID(ProfilesClassId, throwOnError: false);
         return profilesType is null
             ? null
             : Activator.CreateInstance(profilesType) as ITfInputProcessorProfiles;
     }
 
-    private static bool IsUnavailable(Exception exception) =>
-        exception is COMException
+    private static bool IsUnavailable(Exception exception)
+    {
+        return exception is COMException
             or InvalidCastException
             or InvalidOperationException
             or PlatformNotSupportedException
             or TypeLoadException;
+    }
 
     private static void ReleaseComObject(object? value)
     {
@@ -383,11 +414,11 @@ internal sealed class TsfInputMethodService : ISoftKeyboardInputMethodBackend
     [StructLayout(LayoutKind.Sequential)]
     private struct TfLanguageProfile
     {
-        internal Guid ClassId;
+        internal Guid   ClassId;
         internal ushort LanguageId;
-        internal Guid CategoryId;
-        internal int IsActive;
-        internal Guid ProfileId;
+        internal Guid   CategoryId;
+        internal int    IsActive;
+        internal Guid   ProfileId;
     }
 
     [Guid("3D61BF11-AC5F-42C8-A4CB-931BCC28C744")]
@@ -422,7 +453,16 @@ internal sealed class TsfInputMethodService : ISoftKeyboardInputMethodBackend
         int Unregister(in Guid classId);
 
         [PreserveSig]
-        int AddLanguageProfile(in Guid classId, ushort languageId, in Guid profileId, IntPtr description, uint descriptionLength, IntPtr iconFile, uint iconFileLength, uint iconIndex);
+        int AddLanguageProfile(
+            in Guid classId,
+            ushort languageId,
+            in Guid profileId,
+            IntPtr description,
+            uint descriptionLength,
+            IntPtr iconFile,
+            uint iconFileLength,
+            uint iconIndex
+        );
 
         [PreserveSig]
         int RemoveLanguageProfile(in Guid classId, ushort languageId, in Guid profileId);
@@ -443,7 +483,12 @@ internal sealed class TsfInputMethodService : ISoftKeyboardInputMethodBackend
         int GetActiveLanguageProfile(in Guid classId, out ushort languageId, out Guid profileId);
 
         [PreserveSig]
-        int GetLanguageProfileDescription(in Guid classId, ushort languageId, in Guid profileId, [MarshalAs(UnmanagedType.BStr)] out string? description);
+        int GetLanguageProfileDescription(
+            in Guid classId,
+            ushort languageId,
+            in Guid profileId,
+            [MarshalAs(UnmanagedType.BStr)] out string? description
+        );
 
         [PreserveSig]
         int GetCurrentLanguage(out ushort languageId);
@@ -478,13 +523,34 @@ internal sealed class TsfInputMethodService : ISoftKeyboardInputMethodBackend
     private interface ITfInputProcessorProfileMgr
     {
         [PreserveSig]
-        int ActivateProfile(uint profileType, ushort languageId, in Guid classId, in Guid profileId, IntPtr keyboardLayout, uint flags);
+        int ActivateProfile(
+            uint profileType,
+            ushort languageId,
+            in Guid classId,
+            in Guid profileId,
+            IntPtr keyboardLayout,
+            uint flags
+        );
 
         [PreserveSig]
-        int DeactivateProfile(uint profileType, ushort languageId, in Guid classId, in Guid profileId, IntPtr keyboardLayout, uint flags);
+        int DeactivateProfile(
+            uint profileType,
+            ushort languageId,
+            in Guid classId,
+            in Guid profileId,
+            IntPtr keyboardLayout,
+            uint flags
+        );
 
         [PreserveSig]
-        int GetProfile(uint profileType, ushort languageId, in Guid classId, in Guid profileId, IntPtr keyboardLayout, IntPtr profile);
+        int GetProfile(
+            uint profileType,
+            ushort languageId,
+            in Guid classId,
+            in Guid profileId,
+            IntPtr keyboardLayout,
+            IntPtr profile
+        );
 
         [PreserveSig]
         int EnumProfiles(ushort languageId, out IntPtr enumerator);
@@ -493,7 +559,20 @@ internal sealed class TsfInputMethodService : ISoftKeyboardInputMethodBackend
         int ReleaseInputProcessor(in Guid classId, uint flags);
 
         [PreserveSig]
-        int RegisterProfile(in Guid classId, ushort languageId, in Guid profileId, IntPtr description, uint descriptionLength, IntPtr iconFile, uint iconFileLength, uint iconIndex, IntPtr substituteKeyboardLayout, uint preferredLayout, int enabledByDefault, uint flags);
+        int RegisterProfile(
+            in Guid classId,
+            ushort languageId,
+            in Guid profileId,
+            IntPtr description,
+            uint descriptionLength,
+            IntPtr iconFile,
+            uint iconFileLength,
+            uint iconIndex,
+            IntPtr substituteKeyboardLayout,
+            uint preferredLayout,
+            int enabledByDefault,
+            uint flags
+        );
 
         [PreserveSig]
         int UnregisterProfile(in Guid classId, ushort languageId, in Guid profileId, uint flags);

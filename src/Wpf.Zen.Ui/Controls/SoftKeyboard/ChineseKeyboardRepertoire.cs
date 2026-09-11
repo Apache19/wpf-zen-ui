@@ -10,13 +10,13 @@ internal static class ChineseKeyboardRepertoire
 {
     internal static CompactKeyboardRepertoire Value { get; } = new()
     {
-        Comma = "，",
-        Period = "。",
-        SymbolsTail = "？",
-        MoreSymbolsTail = "^",
-        SymbolsSecond = ["！", "@", "#", "￥", "%", "&", "_", "-", "=", "+"],
-        SymbolsThird = ["/", "；", "：", "“", "”", "（", "）"],
+        Comma             = "，",
+        Period            = "。",
+        SymbolsTail       = "？",
+        MoreSymbolsTail   = "^",
+        SymbolsSecond     = ["！", "@", "#", "￥", "%", "&", "_", "-", "=", "+"],
+        SymbolsThird      = ["/", "；", "：", "“", "”", "（", "）"],
         MoreSymbolsSecond = ["、", "【", "】", "｛", "｝", "〈", "〉", "*", "…", "•"],
-        MoreSymbolsThird = ["µ", "½", "｜", "©", "¶", "°", "~"],
+        MoreSymbolsThird  = ["µ", "½", "｜", "©", "¶", "°", "~"],
     };
 }

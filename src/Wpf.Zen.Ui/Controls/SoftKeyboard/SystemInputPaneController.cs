@@ -4,6 +4,7 @@
 // All Rights Reserved.
 
 using System.Runtime.InteropServices;
+using Windows.Win32;
 
 // ReSharper disable once CheckNamespace
 namespace Wpf.Zen.Ui.Controls;
@@ -20,14 +21,15 @@ namespace Wpf.Zen.Ui.Controls;
 internal static class SystemInputPaneController
 {
     private const string InputPaneRuntimeClass = "Windows.UI.ViewManagement.InputPane";
-    private const int TryShowVTableSlot = 6;
-    private const int TryHideVTableSlot = 7;
+    private const int    TryShowVTableSlot     = 6;
+    private const int    TryHideVTableSlot     = 7;
+
     private static readonly Guid InputPaneInteropId = new("75CF2C57-9195-4931-8332-F0B409E916AF");
-    private static readonly Guid InputPane2Id = new("8A6B3F26-7090-4793-944C-C3F2CDE26276");
+    private static readonly Guid InputPane2Id       = new("8A6B3F26-7090-4793-944C-C3F2CDE26276");
 
     internal static SoftKeyboardSystemKeyboardSuppressionState TryHide(IntPtr window)
     {
-        if (!TryInvoke(window, TryHideVTableSlot, out bool accepted))
+        if (!TryInvoke(window, TryHideVTableSlot, out var accepted))
         {
             return SoftKeyboardSystemKeyboardSuppressionState.Unavailable;
         }
@@ -47,8 +49,10 @@ internal static class SystemInputPaneController
     /// lifecycle. Windows remains authoritative and can reject the request when a physical keyboard,
     /// user setting, or input policy says the touch keyboard is inappropriate.
     /// </remarks>
-    internal static bool TryShow(IntPtr window) =>
-        TryInvoke(window, TryShowVTableSlot, out bool accepted) && accepted;
+    internal static bool TryShow(IntPtr window)
+    {
+        return TryInvoke(window, TryShowVTableSlot, out var accepted) && accepted;
+    }
 
     /// <summary>
     /// Invokes one of the two parameterless IInputPane2 visibility methods by SDK vtable slot.
@@ -56,19 +60,20 @@ internal static class SystemInputPaneController
     private static bool TryInvoke(IntPtr window, int methodSlot, out bool accepted)
     {
         accepted = false;
+
         if (window == IntPtr.Zero)
         {
             return false;
         }
 
-        IntPtr className = IntPtr.Zero;
-        IntPtr factoryPointer = IntPtr.Zero;
-        IntPtr panePointer = IntPtr.Zero;
-        bool shouldUninitialize = false;
+        var className = IntPtr.Zero;
+        var factoryPointer = IntPtr.Zero;
+        var panePointer = IntPtr.Zero;
+        var shouldUninitialize = false;
 
         try
         {
-            int initializeResult = NativeMethods.RoInitialize(ROInitType.SingleThreaded);
+            var initializeResult = NativeMethods.RoInitialize(ROInitType.SingleThreaded);
             if (initializeResult >= 0)
             {
                 shouldUninitialize = true;
@@ -79,18 +84,42 @@ internal static class SystemInputPaneController
             }
 
             ThrowIfFailed(
-                NativeMethods.WindowsCreateString(InputPaneRuntimeClass, InputPaneRuntimeClass.Length, out className)
+                NativeMethods.WindowsCreateString(
+                    InputPaneRuntimeClass,
+                    InputPaneRuntimeClass.Length,
+                    out className
+                )
             );
-            Guid interopId = InputPaneInteropId;
-            ThrowIfFailed(NativeMethods.RoGetActivationFactory(className, ref interopId, out factoryPointer));
 
-            Guid inputPane2Id = InputPane2Id;
-            GetForWindowDelegate getForWindow = GetVTableMethod<GetForWindowDelegate>(factoryPointer, 6);
-            ThrowIfFailed(getForWindow(factoryPointer, window, ref inputPane2Id, out panePointer));
+            var interopId = InputPaneInteropId;
 
-            TryShowOrHideDelegate operation = GetVTableMethod<TryShowOrHideDelegate>(panePointer, methodSlot);
-            ThrowIfFailed(operation(panePointer, out byte operationAccepted));
+            ThrowIfFailed(
+                NativeMethods.RoGetActivationFactory(
+                    className,
+                    ref interopId,
+                    out factoryPointer
+                )
+            );
+
+            var inputPane2Id = InputPane2Id;
+
+            var getForWindow = GetVTableMethod<GetForWindowDelegate>(factoryPointer, 6);
+
+            ThrowIfFailed(
+                getForWindow(
+                    factoryPointer,
+                    window,
+                    ref inputPane2Id,
+                    out panePointer
+                )
+            );
+
+            var operation = GetVTableMethod<TryShowOrHideDelegate>(panePointer, methodSlot);
+
+            ThrowIfFailed(operation(panePointer, out var operationAccepted));
+
             accepted = operationAccepted != 0;
+
             return true;
         }
         catch (Exception exception) when (IsUnavailable(exception))
@@ -141,18 +170,21 @@ internal static class SystemInputPaneController
             throw new COMException("The WinRT activation returned a null interface pointer.");
         }
 
-        IntPtr vtable = Marshal.ReadIntPtr(instance);
-        IntPtr method = Marshal.ReadIntPtr(vtable, checked(slot * IntPtr.Size));
+        var vtable = Marshal.ReadIntPtr(instance);
+        var method = Marshal.ReadIntPtr(vtable, checked(slot * IntPtr.Size));
+
         return Marshal.GetDelegateForFunctionPointer<TDelegate>(method);
     }
 
-    private static bool IsUnavailable(Exception exception) =>
-        exception is COMException
+    private static bool IsUnavailable(Exception exception)
+    {
+        return exception is COMException
             or DllNotFoundException
             or EntryPointNotFoundException
             or InvalidCastException
             or PlatformNotSupportedException
             or TypeLoadException;
+    }
 
     private static class HResults
     {
