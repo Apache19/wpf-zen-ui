@@ -282,7 +282,7 @@ public sealed class DefaultSoftKeyboardLayoutProvider : ISoftKeyboardLayoutProvi
                 content:        ".com",
                 automationName: ".com",
                 text:           ".com",
-                alternates:     [".net", ".org", ".edu", ".gov", ".cn", ".uk", ".de", ".jp", ".io", ".co"],
+                alternates:     GetDomainAlternates(context.Culture),
                 alternateHint:  ".net"
             ),
 
@@ -310,6 +310,40 @@ public sealed class DefaultSoftKeyboardLayoutProvider : ISoftKeyboardLayoutProvi
                 key:            Key.Enter
             ),
         ];
+    }
+
+    /// <summary>
+    /// Keeps common domain shortcuts and adds at most one country suffix for the active input language.
+    /// </summary>
+    private static IEnumerable<string> GetDomainAlternates(CultureInfo culture)
+    {
+        yield return ".net";
+        yield return ".org";
+        yield return ".edu";
+        yield return ".gov";
+
+        string countryCode;
+        try
+        {
+            // The context follows the input language, not the application's UI or formatting culture.
+            // Custom providers may supply a neutral culture; use its default specific region. An
+            // invariant or unresolvable culture has no country shortcut, leaving the common ones usable.
+            var regionalCulture = culture.IsNeutralCulture
+                ? CultureInfo.CreateSpecificCulture(culture.Name)
+                : culture;
+
+            countryCode = new RegionInfo(regionalCulture.Name).TwoLetterISORegionName;
+        }
+        catch (ArgumentException)
+        {
+            yield break;
+        }
+
+        // Macro-regions (such as 419) are not country domains. The UK's domain uses UK rather than GB.
+        if (countryCode.Length == 2)
+        {
+            yield return countryCode == "GB" ? ".uk" : "." + countryCode.ToLowerInvariant();
+        }
     }
 
     private static SoftKeyboardLayout CreateNumberLayout(SoftKeyboardLayoutContext context)
