@@ -19,6 +19,34 @@ namespace Wpf.Zen.Ui.UnitTests.Controls.SoftKeyboardControl;
 public class SoftKeyboardKeyControlTests
 {
     [Fact]
+    public void AlternateHint_IsPresentedSeparatelyAndDoesNotChangeSubmittedText()
+    {
+        WithCap((cap, requests, _) =>
+        {
+            cap.Key = new SoftKeyboardKey(SoftKeyboardKeyKind.Text, ".", "Period", text: ".",
+                alternates: ["?", "!"], alternateHint: "?");
+            cap.UpdateLayout();
+            var hint = Assert.IsType<System.Windows.Controls.TextBlock>(cap.Template.FindName("AlternateHint", cap));
+            Assert.Equal("?", hint.Text);
+            Assert.Equal(Visibility.Visible, hint.Visibility);
+            Assert.Equal(".", cap.Content);
+            cap.Invoke();
+            Assert.Equal(".", Assert.Single(requests).Key.Text);
+            Assert.Null(requests[0].AlternateText);
+            requests.Clear();
+            cap.BeginPress();
+            cap.AdvanceHold();
+            cap.SelectAlternative("!");
+            Assert.Equal("!", Assert.Single(requests).AlternateText);
+
+            cap.Key = new SoftKeyboardKey(SoftKeyboardKeyKind.Text, "x", "x", text: "x");
+            cap.UpdateLayout();
+            Assert.Equal(Visibility.Collapsed, hint.Visibility);
+            Assert.Equal("x", cap.Content);
+        });
+    }
+
+    [Fact]
     public void ShortPress_SubmitsOneRequestWithoutAKeyboardOrFocusChange()
     {
         WithCap((cap, requests, editor) =>

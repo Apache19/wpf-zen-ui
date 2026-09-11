@@ -11,7 +11,7 @@
 
     <!--  todo: 键帽不同于普通按钮控件，周围的空白应该能够交互  -->
     <Style x:Key="{x:Static t:StyleKeys.UiSoftKeyboardKeyControlStyle}" TargetType="{x:Type controls:SoftKeyboardKeyControl}">
-        <Setter Property="MinHeight" Value="44" />
+        <Setter Property="MinHeight" Value="52" />
         <Setter Property="Focusable" Value="False" />
         <Setter Property="IsTabStop" Value="False" />
         <Setter Property="HorizontalContentAlignment" Value="Center" />
@@ -32,12 +32,23 @@
                             BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="{TemplateBinding BorderThickness}"
                             CornerRadius="4">
-                            <ContentPresenter
+                            <!-- Separate rows keep preview text clear of both text and icon caps.
+                                 Only the provider-selected hint is shown; the popup retains all alternatives. -->
+                            <StackPanel
                                 HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
-                                VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
-                                Content="{TemplateBinding Content}"
-                                ContentTemplate="{TemplateBinding ContentTemplate}"
-                                ContentTemplateSelector="{TemplateBinding ContentTemplateSelector}" />
+                                VerticalAlignment="{TemplateBinding VerticalContentAlignment}">
+                                <TextBlock
+                                    x:Name="AlternateHint"
+                                    HorizontalAlignment="Center"
+                                    FontSize="10"
+                                    IsHitTestVisible="False"
+                                    Text="{Binding Key.AlternateHint, RelativeSource={RelativeSource TemplatedParent}}" />
+                                <ContentPresenter
+                                    HorizontalAlignment="Center"
+                                    Content="{TemplateBinding Content}"
+                                    ContentTemplate="{TemplateBinding ContentTemplate}"
+                                    ContentTemplateSelector="{TemplateBinding ContentTemplateSelector}" />
+                            </StackPanel>
                         </Border>
                         <!--
                             The key owns this optional surface. It lives outside measurement and
@@ -79,6 +90,9 @@
                         </Popup>
                     </Grid>
                     <ControlTemplate.Triggers>
+                        <DataTrigger Binding="{Binding Key.AlternateHint, RelativeSource={RelativeSource Self}}" Value="{x:Null}">
+                            <Setter TargetName="AlternateHint" Property="Visibility" Value="Collapsed" />
+                        </DataTrigger>
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter Property="Background" Value="{m:DynamicBrush ControlFillPrimary}" />
                         </Trigger>

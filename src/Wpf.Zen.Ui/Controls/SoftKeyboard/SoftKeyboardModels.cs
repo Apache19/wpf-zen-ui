@@ -40,7 +40,7 @@ public enum SoftKeyboardDisplayMode
     /// <summary>Chooses the initial key surface from the active editor input scope.</summary>
     Automatic,
 
-    /// <summary>Displays alphabetic keys for the active Windows keyboard layout.</summary>
+    /// <summary>Displays alphabetic keys for the active Windows keyboard layout, with URL or email shortcuts when requested by the editor input scope.</summary>
     Letters,
 
     /// <summary>Displays decimal and common numeric keys.</summary>
@@ -302,6 +302,7 @@ public sealed class SoftKeyboardKey
     /// <param name="columnSpan">The positive number of logical columns occupied by the key.</param>
     /// <param name="alternates">Optional long-press Unicode alternatives.</param>
     /// <param name="isRepeatEnabled">Whether holding this key repeats its primary action. Defaults to false; alternatives take precedence.</param>
+    /// <param name="alternateHint">Optional key-cap text previewing selected alternatives; null hides the hint. This is presentation only and does not define selectable values.</param>
     public SoftKeyboardKey(
         SoftKeyboardKeyKind kind,
         object content,
@@ -313,7 +314,8 @@ public sealed class SoftKeyboardKey
         int column = 0,
         int columnSpan = 1,
         IEnumerable<string>? alternates = null,
-        bool isRepeatEnabled = false
+        bool isRepeatEnabled = false,
+        string? alternateHint = null
     )
     {
         if (content is null)
@@ -357,6 +359,7 @@ public sealed class SoftKeyboardKey
         ColumnSpan = columnSpan;
         Alternates = new ReadOnlyCollection<string>((alternates ?? Array.Empty<string>()).ToArray());
         IsRepeatEnabled = isRepeatEnabled;
+        AlternateHint = string.IsNullOrWhiteSpace(alternateHint) ? null : alternateHint;
     }
 
     /// <summary>Gets the action performed by the key.</summary>
@@ -402,13 +405,22 @@ public sealed class SoftKeyboardKey
     /// <summary>Gets the long-press Unicode alternatives.</summary>
     public IReadOnlyList<string> Alternates { get; }
 
+    /// <summary>Gets the optional preview displayed above the primary key content; defaults to null.</summary>
+    /// <remarks>
+    /// Providers may preview only a subset of alternatives to keep caps readable. The default template
+    /// reserves a separate text row when this hint is present, so it cannot overlap the primary content.
+    /// The hint never changes the primary action or the complete long-press list in <see cref="Alternates"/>.
+    /// Whitespace-only hints are normalized to null. Custom templates may omit this presentation slot.
+    /// </remarks>
+    public string? AlternateHint { get; }
+
     /// <summary>Gets whether the key permits repeated primary requests while held. The layout provider owns this policy.</summary>
     public bool IsRepeatEnabled { get; }
 
     // Provider helpers position semantic key descriptions by cloning them. This keeps the public
     // model immutable and prevents a shared key instance from acquiring mutable placement state.
     internal SoftKeyboardKey WithPlacement(int row, int column, int columnSpan) =>
-        new(Kind, Content, AutomationName, Key, Text, DisplayMode, row, column, columnSpan, Alternates, IsRepeatEnabled);
+        new(Kind, Content, AutomationName, Key, Text, DisplayMode, row, column, columnSpan, Alternates, IsRepeatEnabled, AlternateHint);
 }
 
 /// <summary>Represents one candidate supplied by the active Windows input method.</summary>

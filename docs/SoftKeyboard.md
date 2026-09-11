@@ -45,11 +45,19 @@
 默认布局始终使用四行。字母行采用十键首行、错位九键次行及带 Shift/Backspace 的第三行；
 底行包含符号切换、输入状态、逗号、左右方向、空格、句号、输入法菜单和 Enter。
 符号面提供 `Symbols` / `MoreSymbols` 两页，按原生输入状态选择英文或全角标点。
-数字键面把命令安排在右侧，也保持四行。日文原生输入在第二行提供 `ー・` 键，长按选择 `・`。
+数字键面把命令安排在右侧，也保持四行。日文原生输入在第二行提供 `ー` 键，键帽提示并可长按选择 `・`。
 符号面也保留地球菜单键，以便在任何默认布局中直接选择输入法。
 
-`Automatic` 根据当前编辑器的 `InputScope` 选择字母或数字布局；显式选择 `Letters`、
-`Numbers`、`Symbols`、`MoreSymbols` 优先于输入作用域。更换编辑器时恢复 `Automatic`。
+`Automatic` 根据当前编辑器的 `InputScope` 选择字母、网址、邮箱或数字布局。
+`InputScope="Url"` 的字母底行为 `& 中 http : ␣ .com . / 切 ↵`，空格与普通键等宽；
+`InputScope="EmailSmtpAddress"` 的字母底行为 `& 中 @ ␣ .com . - 切 ↵`。
+这里的“中”沿用当前输入模式标识，“切”使用地球图标打开输入法菜单，`&` 打开数字符号页。
+`http` 按字面输入，长按选择 `https`，不会自动追加 `://`；`.com` 长按提供
+`.net`、`.org`、`.edu`、`.gov`、`.cn`、`.uk`、`.de`、`.jp`、`.io`、`.co`。
+句号键同时显示主内容 `.` 和变体提示 `?`，长按输入 ASCII 问号。
+地址快捷键始终输入半角字面文本，不随 Shift 或 IME 模式改为全角标点。
+显式 `Letters` 仍按网址/邮箱作用域提供快捷键，因此从符号页返回时保留专用布局；
+显式 `Numbers`、`Symbols`、`MoreSymbols` 优先于输入作用域。更换编辑器时恢复 `Automatic`。
 切换输入状态保留当前符号页，不会自动跳回字母页。关闭由应用设置 `IsOpen=false`；
 默认模板没有额外工具栏、输入法选择页或关闭按钮。
 
@@ -84,6 +92,11 @@
 键帽由独立的 `SoftKeyboardKeyControl` 呈现，通过 `Key` 接收不可变的 `SoftKeyboardKey`。
 布局提供器负责键帽内容、动作、`Alternates` 和 `IsRepeatEnabled`；键帽负责按下状态、
 短按、重复、长按展开、变体选择和取消。键帽不持有编辑器、不读取 IME，也不调用 `SendInput`。
+
+`SoftKeyboardKey.AlternateHint` 是可选的变体提示文字，默认 null；默认模板在主内容上方单独一行显示，
+避免文字或图标重叠。提供器可只显示部分变体，例如 `.com` 的提示为 `.net`。
+通过构造参数 `alternateHint: "?"` 配置提示，通过 `alternates: ["?"]` 配置实际长按列表；
+提示仅负责展示，不参与输入或变体选择，空白提示自动隐藏。自定义模板可绑定 `Key.AlternateHint`。
 
 长按有 `Alternates` 的键，在键帽自身模板的 `PART_AlternatePopup` 中展示变体。
 可以移动到变体上松手，也可以松开原键后点击变体提交，

@@ -70,6 +70,7 @@ internal static class SoftKeyboardInputInjector
             inputs,
             Marshal.SizeOf(typeof(SoftKeyboardNativeMethods.Input))
         );
+
         return sent == inputs.Length;
     }
 
