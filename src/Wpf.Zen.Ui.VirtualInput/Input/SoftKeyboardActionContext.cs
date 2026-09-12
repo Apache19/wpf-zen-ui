@@ -1,4 +1,4 @@
-﻿// This Source Code Form is subject to the terms of the MIT License.
+// This Source Code Form is subject to the terms of the MIT License.
 // If a copy of the MIT was not distributed with this file, You can obtain one at https://opensource.org/licenses/MIT.
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
@@ -11,8 +11,8 @@ namespace Wpf.Zen.Ui.VirtualInput.Input;
 /// Provides short-lived input and navigation services for a custom key action.
 /// </summary>
 /// <remarks>
-/// Every input call revalidates the target. Unicode input cancels active composition; virtual input
-/// follows the Windows IME pipeline. Expired contexts throw instead of typing into a later editor.
+/// Every input call revalidates the target. TrySendText cancels active composition; virtual keys and
+/// TrySendJapaneseKana preserve the IME pipeline. Expired contexts throw instead of typing into a later editor.
 /// This object is dispatcher-affine and is not an asynchronous input channel.
 /// </remarks>
 public sealed class SoftKeyboardActionContext
@@ -80,6 +80,26 @@ public sealed class SoftKeyboardActionContext
     internal void Expire()
     {
         _keyboard = null;
+    }
+
+    /// <summary>
+    /// Enters a kana through the Japanese IME's standard kana keyboard mode.
+    /// </summary>
+    /// <param name="kana">One supported hiragana character or the long-vowel mark.</param>
+    /// <returns>Whether the active target and input stream accepted the packets.</returns>
+    /// <remarks>
+    /// Requires Japanese native input mode. Selects full-width hiragana and kana-key input rather
+    /// than Roman-key input, then sends the current Windows layout's matching keys. The IME continues
+    /// to own composition and conversion. Its kana-key mode remains active after the request.
+    /// </remarks>
+    public bool TrySendJapaneseKana(string kana)
+    {
+        if (string.IsNullOrEmpty(kana))
+        {
+            throw new ArgumentException("Input text is required.", nameof(kana));
+        }
+
+        return GetKeyboard().SendJapaneseKana(kana);
     }
 
     private SoftKeyboard GetKeyboard()

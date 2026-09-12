@@ -291,7 +291,8 @@ internal sealed class TsfInputMethodService : ISoftKeyboardInputMethodBackend
                                 nativeProfile.ProfileId,
                                 nativeProfile.LanguageId,
                                 description,
-                                nativeProfile.IsActive != 0
+                                nativeProfile.IsActive != 0,
+                                nativeProfile.IsActive != 0 ? TsfTouchLayoutQuery.Query(nativeProfile.ClassId) : null
                             )
                         );
                     }

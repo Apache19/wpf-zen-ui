@@ -15,8 +15,8 @@ namespace Wpf.Zen.Ui.VirtualInput.Layouts.Providers;
 /// </remarks>
 public sealed class SoftKeyboardLayoutBuilder
 {
-    private readonly List<SoftKeyboardKey> _keys = new();
-    private readonly int                   _columnCount;
+    private readonly List<SoftKeyboardKey> _keys = [];
+    private readonly int _columnCount;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="SoftKeyboardLayoutBuilder"/> class.
@@ -148,7 +148,9 @@ public sealed class SoftKeyboardLayoutBuilder
         return this;
     }
 
-    /// <summary>Creates an immutable snapshot of all successfully added keys.</summary>
+    /// <summary>
+    /// Creates an immutable snapshot of all successfully added keys.
+    /// </summary>
     /// <returns>A layout that does not share mutable collections with this builder.</returns>
     public SoftKeyboardLayout Build()
     {

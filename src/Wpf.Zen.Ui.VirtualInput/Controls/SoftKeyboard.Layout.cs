@@ -71,6 +71,9 @@ public partial class SoftKeyboard
                 : InputScopeNameValue.Default;
 
             var culture = InputLanguageManager.Current.CurrentInputLanguage;
+            var supplementalLayout = ReadSupplementalSelection();
+
+            SetValue(SelectedSupplementalLayoutPropertyKey, supplementalLayout);
 
             var context = new SoftKeyboardLayoutContext(
                 culture,
@@ -78,7 +81,8 @@ public partial class SoftKeyboard
                 Page,
                 ShiftState,
                 ImeState,
-                ActiveInputMethod
+                ActiveInputMethod,
+                supplementalLayout: supplementalLayout
             );
 
             SoftKeyboardLayout? layout = null;
@@ -110,7 +114,8 @@ public partial class SoftKeyboard
                     Page,
                     ShiftState,
                     ImeState,
-                    ActiveInputMethod
+                    ActiveInputMethod,
+                    supplementalLayout: supplementalLayout
                 );
 
                 layout = DefaultSoftKeyboardLayoutProvider.Default.CreateLayout(context)!;
@@ -118,6 +123,8 @@ public partial class SoftKeyboard
 
             SetValue(CurrentLayoutPropertyKey, layout);
             SetValue(LayoutErrorPropertyKey, error);
+
+            UpdateSettingsContext(context);
         }
         finally
         {

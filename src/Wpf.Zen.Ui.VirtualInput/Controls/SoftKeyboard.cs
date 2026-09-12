@@ -47,6 +47,7 @@ namespace Wpf.Zen.Ui.VirtualInput.Controls;
 [TemplatePart(Name = CandidatesPartName, Type = typeof(SoftKeyboardCandidateList))]
 [TemplatePart(Name = PreviousCandidatePageButtonPartName, Type = typeof(ButtonBase))]
 [TemplatePart(Name = NextCandidatePageButtonPartName, Type = typeof(ButtonBase))]
+[TemplatePart(Name = SettingsButtonPartName, Type = typeof(Wpf.Zen.Ui.Controls.DropDownButton))]
 public partial class SoftKeyboard : Control
 {
     private const string KeysPartName                        = "PART_Keys";
@@ -106,6 +107,8 @@ public partial class SoftKeyboard : Control
     internal SoftKeyboard(SoftKeyboardPlatformServices platform)
     {
         _platform = platform ?? throw new ArgumentNullException(nameof(platform));
+
+        InitializeSettings();
 
         AddHandler(
             SoftKeyboardCandidateList.CandidateInvokedEvent,
@@ -235,6 +238,7 @@ public partial class SoftKeyboard : Control
     private void CloseFlyouts()
     {
         CancelKeyInteraction();
+        SettingsMenu?.SetCurrentValue(ContextMenu.IsOpenProperty, false);
 
         if (_inputMethodMenu is not null)
         {

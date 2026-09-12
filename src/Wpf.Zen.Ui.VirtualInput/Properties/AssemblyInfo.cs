@@ -14,3 +14,4 @@ using System.Windows.Markup;
 [assembly: XmlnsDefinition("http://schemas.thezendev.com/wpf/2027/virtual-input", "Wpf.Zen.Ui.VirtualInput.Input")]
 [assembly: XmlnsDefinition("http://schemas.thezendev.com/wpf/2027/virtual-input", "Wpf.Zen.Ui.VirtualInput.Layouts")]
 [assembly: XmlnsDefinition("http://schemas.thezendev.com/wpf/2027/virtual-input", "Wpf.Zen.Ui.VirtualInput.Layouts.Providers")]
+[assembly: XmlnsDefinition("http://schemas.thezendev.com/wpf/2027/virtual-input", "Wpf.Zen.Ui.VirtualInput.Settings")]

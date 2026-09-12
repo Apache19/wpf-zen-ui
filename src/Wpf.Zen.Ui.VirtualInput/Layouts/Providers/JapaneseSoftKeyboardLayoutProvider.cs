@@ -21,6 +21,7 @@ public sealed class JapaneseSoftKeyboardLayoutProvider : ISoftKeyboardLayoutProv
         UrlSoftKeyboardLayoutProvider.Default,
         EmailSoftKeyboardLayoutProvider.Default,
         NumberSoftKeyboardLayoutProvider.Default,
+        SupplementalSoftKeyboardLayoutProvider.Default,
         new SoftKeyboardLayoutRule(
             context => context.ImeState == System.Windows.Input.InputMethodState.On
                 && context.Page is SoftKeyboardPages.Automatic or SoftKeyboardPages.Letters,

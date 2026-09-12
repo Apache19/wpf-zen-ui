@@ -16,7 +16,7 @@ public partial class SoftKeyboard
 {
     internal void OnSessionFocusChanged(IInputElement? focusedElement, bool touchOrPenInitiated)
     {
-        if (_inputMethodMenu?.IsOpen == true)
+        if (_inputMethodMenu?.IsOpen == true || SettingsMenu?.IsOpen == true)
         {
             return;
         }
@@ -69,8 +69,7 @@ public partial class SoftKeyboard
             return;
         }
 
-        if (AutoHideMode == SoftKeyboardAutoHideMode.FocusLeavesScope
-            && AutoShowMode != SoftKeyboardAutoShowMode.Disabled)
+        if (AutoHideMode == SoftKeyboardAutoHideMode.FocusLeavesScope)
         {
             SetCurrentValue(IsOpenProperty, false);
         }

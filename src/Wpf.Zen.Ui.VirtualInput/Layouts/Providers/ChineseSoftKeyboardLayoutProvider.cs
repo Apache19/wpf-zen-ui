@@ -23,6 +23,7 @@ public sealed class ChineseSoftKeyboardLayoutProvider : ISoftKeyboardLayoutProvi
         UrlSoftKeyboardLayoutProvider.Default,
         EmailSoftKeyboardLayoutProvider.Default,
         NumberSoftKeyboardLayoutProvider.Default,
+        SupplementalSoftKeyboardLayoutProvider.Default,
         new SoftKeyboardLayoutRule(
             context => context.ImeState == InputMethodState.On
                 && context.Page is SoftKeyboardPages.Automatic or SoftKeyboardPages.Letters,

@@ -233,14 +233,14 @@
                             </Grid.RowDefinitions>
 
                             <DockPanel Grid.Row="0" Margin="0,0,0,4">
-                                <!--
-                                    候选栏左边的设置按钮，常驻，可撑起候选栏高度
-                                    将来为其实现弹出菜单用来设置软键盘参数
-                                -->
-                                <controls:Button
+                                <!--  The button owns popup behavior; the keyboard supplies policy-generated menu data.  -->
+                                <controls:DropDownButton
+                                    x:Name="PART_SettingsButton"
                                     Padding="10,8"
+                                    AutomationProperties.Name="键盘设置"
                                     Content="{controls:FluentIconSource Settings24}"
                                     DockPanel.Dock="Left"
+                                    Flyout="{Binding SettingsMenu, RelativeSource={RelativeSource TemplatedParent}}"
                                     FontSize="18"
                                     Style="{StaticResource SoftKeyboardToolButtonStyle}" />
 

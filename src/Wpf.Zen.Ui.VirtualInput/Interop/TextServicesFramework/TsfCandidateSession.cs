@@ -19,6 +19,7 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink,
     private static readonly Guid UIElementSinkId             = new("EA1EA136-19DF-11D7-A6D2-00065B84435C");
     private static readonly Guid ActiveLanguageProfileSinkId = new("B246CB75-A93E-4652-BF8C-B3FE0CFD7E57");
     private static readonly Guid ThreadManagerClassId        = new("529A9E6B-6587-4F23-AB9E-9C7D683E3C50");
+    private static readonly Guid WeaselCandidateElementId    = new("36C3C795-7159-45AA-AB12-30229A51DBD3");
 
     private readonly Dispatcher          _dispatcher;
     private readonly List<WeakReference> _keyboards = [];
@@ -39,6 +40,10 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink,
     private uint             _activePageNumber;
     private bool             _reflectionUnavailable;
     private bool             _ownsUiLessActivation;
+    private string[]?        _pendingKeyCommit;
+    private int              _keyCommitSentAt;
+    private IInputElement?   _keyCommitTarget;
+    private int              _keyCommitVersion;
 
     internal TsfCandidateSession(Dispatcher dispatcher)
     {
@@ -208,6 +213,59 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink,
                 return false;
             }
 
+            if (_activeBehavior!.GetCount(out var count) < 0 || index >= count)
+            {
+                return false;
+            }
+
+            if (_activeBehavior.GetGuid(out var elementType) == 0
+                && elementType == WeaselCandidateElementId)
+            {
+                // Weasel's Behavior.SetSelection changes only UI highlight and Finalize destroys
+                // its window without committing the engine (rime/weasel, WeaselTSF/CandidateList.cpp).
+                // Its published list is the current engine page (GetPageIndex returns [0]).
+                // A number selects that page-relative candidate in one engine operation, without
+                // intermediate highlights. This adapter assumes the standard 1-9 selection keys;
+                // custom Rime key bindings are not described by the TSF candidate interface.
+                if (!TryGetCandidateNumberKey(index, count, out var key))
+                {
+                    return false;
+                }
+
+                ObserveKeyCommit();
+
+                if (_pendingKeyCommit is not null)
+                {
+                    return true;
+                }
+
+                if (!ValidateActiveCandidate())
+                {
+                    return false;
+                }
+
+                var strings = ReadCandidateStrings(count);
+                if (strings is null)
+                {
+                    return false;
+                }
+
+                _pendingKeyCommit = strings;
+                _keyCommitTarget  = keyboard.ActiveTarget;
+                _keyCommitVersion = keyboard.CandidateInteractionVersion;
+                _keyCommitSentAt  = Environment.TickCount;
+
+                // Install the guard before SendInput: TSF callbacks may run synchronously.
+                if (keyboard.SendCandidateNavigationKey(key))
+                {
+                    return true;
+                }
+
+                _pendingKeyCommit = null;
+
+                return false;
+            }
+
             // SetSelection can synchronously dispatch TSF callbacks and invalidate ownership.
             return _activeBehavior!.SetSelection(index) >= 0
                 && ValidateActiveCandidate()
@@ -243,6 +301,16 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink,
             if (!ValidateActiveCandidate())
             {
                 return false;
+            }
+
+            if (_activeBehavior.GetGuid(out var elementType) == 0 && elementType == WeaselCandidateElementId)
+            {
+                // SetSelection also leaves Weasel's engine behind when paging. Keep engine and
+                // displayed selection synchronized so a later click cannot confirm stale UI state.
+                _pendingKeyCommit = null;
+
+                return keyboard.SendCandidateNavigationKey(delta > 0
+                    ? System.Windows.Input.Key.PageDown : System.Windows.Input.Key.PageUp);
             }
 
             // TSF owns the page boundaries. Selecting the first item on an adjacent page asks
@@ -281,7 +349,8 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink,
             }
 
             if (candidate is not ITfCandidateListUIElementBehavior behavior
-                || !MatchesFocusedDocument(candidate))
+                || !MatchesFocusedDocument(candidate)
+                || !ShouldEmbedCandidate(keyboard, behavior))
             {
                 show = 1;
                 keyboard.ReplaceCandidates([], SoftKeyboardCandidatePresentationState.NativeFallback);
@@ -315,6 +384,7 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink,
         if (elementId == _activeElementId)
         {
             UpdateCandidateSnapshot();
+            ObserveKeyCommit();
         }
 
         return 0;
@@ -397,7 +467,8 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink,
                         continue;
                     }
 
-                    if (element is not ITfCandidateListUIElementBehavior behavior)
+                    if (element is not ITfCandidateListUIElementBehavior behavior
+                        || !ShouldEmbedCandidate(keyboard, behavior))
                     {
                         keyboard.ReplaceCandidates([], SoftKeyboardCandidatePresentationState.NativeFallback);
                         continue;
@@ -624,6 +695,27 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink,
         return keyboard?.CanPresentCandidates == true;
     }
 
+    private static bool ShouldEmbedCandidate(SoftKeyboard keyboard, ITfCandidateListUIElementBehavior behavior)
+    {
+        if (behavior.GetGuid(out var elementType) < 0)
+        {
+            return false;
+        }
+
+        return ShouldEmbedCandidate(keyboard.CandidateMode, elementType);
+    }
+
+    // Weasel's CCandidateList combines candidates and non-inline pre-edit in one native window.
+    // Its QueryInterface exposes neither reading information nor the private preedit string;
+    // hiding this element can therefore erase the user's only preview. Decide before BeginUIElement
+    // returns: Weasel creates the native window only when pbShow is true, and later Show(true) alone
+    // cannot undo that decision reliably. Explicit Embedded remains available for inline-preedit users.
+    internal static bool ShouldEmbedCandidate(SoftKeyboardCandidateMode mode, Guid elementType)
+    {
+        return mode != SoftKeyboardCandidateMode.Native
+            && (mode == SoftKeyboardCandidateMode.Embedded || elementType != WeaselCandidateElementId);
+    }
+
     /// <summary>
     /// Revalidates both managed target ownership and the TSF document before reading or committing.
     /// Focus and visibility can change without ending a TIP-owned composition.
@@ -656,9 +748,13 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink,
 
     private void ClearActiveCandidate()
     {
+        _pendingKeyCommit  = null;
+        _keyCommitTarget   = null;
+
         var keyboard = _activeKeyboard;
 
         _candidatePollTimer.Stop();
+        _candidatePollTimer.Interval = TimeSpan.FromMilliseconds(75);
 
         ReleaseComReference(_activeBehavior);
 
@@ -800,6 +896,94 @@ internal sealed class TsfCandidateSession : ISoftKeyboardTsfUIElementSink,
         // Poll only while such an element is embedded; the timer stops as soon as the element
         // becomes invalid, the composition is committed, or the keyboard session is released.
         UpdateCandidateSnapshot();
+        ObserveKeyCommit();
+    }
+
+    private string[]? ReadCandidateStrings(uint count)
+    {
+        if (_activeBehavior is null || count > 256)
+        {
+            return null;
+        }
+
+        var strings = new string[count];
+
+        for (uint i = 0; i < count; i++)
+        {
+            if (_activeBehavior.GetString(i, out var value) < 0 || value is null)
+            {
+                return null;
+            }
+
+            strings[i] = value;
+        }
+
+        return strings;
+    }
+
+    /// <summary>
+    /// Maps the current Weasel page to its standard number shortcuts; never guesses beyond 1-9.
+    /// </summary>
+    internal static bool TryGetCandidateNumberKey(uint index, uint count, out System.Windows.Input.Key key)
+    {
+        key = System.Windows.Input.Key.None;
+        if (count is 0 or > 9 || index >= count)
+        {
+            return false;
+        }
+
+        key = System.Windows.Input.Key.D1 + (int)index;
+        return true;
+    }
+
+    // A key is sent once, never retried or followed by Space. Keep duplicate clicks blocked until
+    // the list changes or ends. A timeout reports missing acknowledgement without guessing whether
+    // the engine ignored the number or is still processing it; later UI changes release the guard.
+    private void ObserveKeyCommit()
+    {
+        var pending  = _pendingKeyCommit;
+        var keyboard = _activeKeyboard;
+
+        if (pending is null || keyboard is null)
+        {
+            return;
+        }
+
+        try
+        {
+            if (!ReferenceEquals(keyboard.ActiveTarget, _keyCommitTarget)
+                || keyboard.CandidateInteractionVersion != _keyCommitVersion
+                || !ValidateActiveCandidate() || _activeBehavior!.GetCount(out var count) < 0
+                || ReadCandidateStrings(count) is not { } strings)
+            {
+                _pendingKeyCommit = null;
+
+                keyboard.SetCandidateCommitError(
+                    "Candidate ownership or its input target changed during submission."
+                );
+
+                return;
+            }
+
+            if (!pending.SequenceEqual(strings))
+            {
+                // Selecting one syllable can leave the remaining syllables composing in the same
+                // UI element. The new list starts a new click cycle without sending another key.
+                _pendingKeyCommit = null;
+                return;
+            }
+
+            if (unchecked((uint)(Environment.TickCount - _keyCommitSentAt)) > 750)
+            {
+                keyboard.SetCandidateCommitError("The input method did not acknowledge the candidate number key; check its selection key bindings.");
+            }
+        }
+        catch (Exception exception) when (IsUnavailable(exception))
+        {
+            _pendingKeyCommit = null;
+            RestoreNativeCandidate();
+            ClearActiveCandidate();
+        }
     }
 
     private void OnDispatcherShutdown(object? sender, EventArgs eventArgs)

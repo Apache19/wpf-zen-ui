@@ -13,7 +13,8 @@ namespace Wpf.Zen.Ui.VirtualInput.Layouts;
 /// The keyboard requests a complete snapshot when its input context changes; providers should use
 /// that context to resolve Shift, display pages and IME modes together. Return null to decline a context;
 /// use CompositeSoftKeyboardLayoutProvider to reuse other providers without copying their layouts.
-/// The visual template only presents the resulting keys and does not interpret language rules or select layout variants.
+/// The visual template only presents the resulting keys and does not interpret language rules or select layout
+/// variants.
 /// </remarks>
 public interface ISoftKeyboardLayoutProvider
 {

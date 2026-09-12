@@ -1,4 +1,4 @@
-﻿// This Source Code Form is subject to the terms of the MIT License.
+// This Source Code Form is subject to the terms of the MIT License.
 // If a copy of the MIT was not distributed with this file, You can obtain one at https://opensource.org/licenses/MIT.
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
@@ -68,10 +68,12 @@ public sealed class SoftKeyboardCandidateItem : ButtonBase
         = IsSelectedPropertyKey.DependencyProperty;
 
     /// <summary>
-    /// Gets a value indicating whether the owning list identifies this container as the input method's current candidate.
+    /// Gets a value indicating whether the owning list identifies this container as the input method's
+    /// current candidate.
     /// </summary>
     /// <remarks>
-    /// Defaults to false; not inherited or animated by callers. Template triggers update appearance without changing layout.
+    /// Defaults to false; not inherited or animated by callers. Template triggers update appearance without
+    /// changing layout.
     /// </remarks>
     public bool IsSelected => (bool)GetValue(IsSelectedProperty);
 

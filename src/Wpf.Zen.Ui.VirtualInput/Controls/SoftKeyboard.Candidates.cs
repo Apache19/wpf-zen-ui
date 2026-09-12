@@ -12,6 +12,82 @@ namespace Wpf.Zen.Ui.VirtualInput.Controls;
 /// </summary>
 public partial class SoftKeyboard
 {
+    #region DP: CandidateMode
+
+    /// <summary>
+    /// Identifies the <see cref="CandidateMode"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty CandidateModeProperty
+        = DependencyProperty.Register(
+            nameof(CandidateMode),
+            typeof(SoftKeyboardCandidateMode),
+            typeof(SoftKeyboard),
+            new PropertyMetadata(
+                SoftKeyboardCandidateMode.Automatic,
+                (d, _) => ((SoftKeyboard)d).RefreshSettings()
+            ),
+            static value => value is SoftKeyboardCandidateMode.Automatic
+                or SoftKeyboardCandidateMode.Native
+                or SoftKeyboardCandidateMode.Embedded
+        );
+
+    /// <summary>
+    /// Gets or sets the presentation policy for the next candidate UI element.
+    /// </summary>
+    /// <remarks>
+    /// Does not inherit or animate. An already embedded element retains its owner until it ends:
+    /// some IMEs only create their native window when BeginUIElement returns show=true, so changing
+    /// ownership midway cannot reliably restore the preview. Finish or cancel the current input
+    /// normally for a policy change to take full effect. Automatic is a compatibility policy,
+    /// not a claim that TSF offers a universal complete-integration capability flag.
+    /// </remarks>
+    public SoftKeyboardCandidateMode CandidateMode
+    {
+        get => (SoftKeyboardCandidateMode)GetValue(CandidateModeProperty);
+        set => SetValue(CandidateModeProperty, value);
+    }
+
+    #endregion
+
+    #region Read-Only DP: CandidateCommitError
+
+    private static readonly DependencyPropertyKey CandidateCommitErrorPropertyKey
+        = DependencyProperty.RegisterReadOnly(
+            nameof(CandidateCommitError),
+            typeof(string),
+            typeof(SoftKeyboard),
+            new PropertyMetadata(null)
+        );
+
+    /// <summary>
+    /// Identifies the <see cref="CandidateCommitError"/> dependency property.
+    /// </summary>
+    public static readonly DependencyProperty CandidateCommitErrorProperty
+        = CandidateCommitErrorPropertyKey.DependencyProperty;
+
+    /// <summary>
+    /// Gets the last failed candidate request's reason, or null when no failure has been reported.
+    /// </summary>
+    /// <remarks>
+    /// Does not inherit or affect layout. A new click clears the diagnostic; null is not proof of committed text.
+    /// </remarks>
+    public string? CandidateCommitError => (string?)GetValue(CandidateCommitErrorProperty);
+
+    #endregion
+
+    internal void SetCandidateCommitError(string? reason)
+    {
+        SetValue(CandidateCommitErrorPropertyKey, reason);
+    }
+
+    internal int CandidateInteractionVersion { get; private set; }
+
+    internal bool SendCandidateNavigationKey(System.Windows.Input.Key key)
+    {
+        // Both paging and number selection must retain foreground, editor and input ownership.
+        return TrySendVirtualKey(key, false);
+    }
+
     internal void ReplaceCandidates(
         IEnumerable<SoftKeyboardCandidate>     candidates,
         SoftKeyboardCandidatePresentationState presentationState,
@@ -96,9 +172,13 @@ public partial class SoftKeyboard
     {
         // Reject containers retained from an obsolete page before sending a native index.
         if (_session is not null && CanPresentCandidates && _candidates.Contains(candidate)
-            && _platform.Candidates.TryCommit(this, candidate.Index))
+            && PrepareTargetForInput() && _candidates.Contains(candidate))
         {
-            ReplaceCandidates([], SoftKeyboardCandidatePresentationState.None);
+            SetCandidateCommitError(null);
+
+            // A successful HRESULT or queued key is not a composition-end notification. Keep the
+            // snapshot until TSF actually changes it, including multi-segment candidate conversion.
+            _ = _platform.Candidates.TryCommit(this, candidate.Index);
         }
     }
 }

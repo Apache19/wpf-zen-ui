@@ -21,6 +21,8 @@ public partial class SoftKeyboard
             return;
         }
 
+        CandidateInteractionVersion++;
+
         switch (button.DataContext)
         {
             case SoftKeyboardInputMethod inputMethod:
@@ -28,7 +30,14 @@ public partial class SoftKeyboard
                 break;
 
             default:
-                if (button.Name == PreviousCandidatePageButtonPartName)
+                if (button.Name == SettingsButtonPartName)
+                {
+                    // DropDownButton opens its Flyout after raising Click. Prepare the data while
+                    // editor focus still belongs to the text store; the button owns popup state.
+                    CloseFlyouts();
+                    RefreshSettings();
+                }
+                else if (button.Name == PreviousCandidatePageButtonPartName)
                 {
                     MoveCandidatePage(-1);
                 }
@@ -85,6 +94,8 @@ public partial class SoftKeyboard
 
         args.Handled = true;
 
+        CandidateInteractionVersion++;
+
         if (!ReferenceEquals(_activeKeyControl, keyControl))
         {
             CancelKeyInteraction();
@@ -93,6 +104,7 @@ public partial class SoftKeyboard
         _activeKeyControl = keyControl;
 
         _inputMethodMenu?.SetCurrentValue(ContextMenu.IsOpenProperty, false);
+        SettingsMenu?.SetCurrentValue(ContextMenu.IsOpenProperty, false);
 
         if (!IsOpen || !IsEnabled || !IsVisible)
         {
@@ -121,8 +133,14 @@ public partial class SoftKeyboard
         {
             if (args.AlternateText is { } text)
             {
-                if (TrySendText(text) && ShiftState == SoftKeyboardShiftState.Once)
+                if (args.Key.Action is ISoftKeyboardAlternateKeyAction alternateAction)
+                {
+                    ExecuteCustomAction(alternateAction, text);
+                }
+                else if (TrySendText(text) && ShiftState == SoftKeyboardShiftState.Once)
+                {
                     SetValue(ShiftStatePropertyKey, SoftKeyboardShiftState.Off);
+                }
             }
             else
             {

@@ -1,4 +1,4 @@
-﻿// This Source Code Form is subject to the terms of the MIT License.
+// This Source Code Form is subject to the terms of the MIT License.
 // If a copy of the MIT was not distributed with this file, You can obtain one at https://opensource.org/licenses/MIT.
 // Copyright (C) Leszek Pomianowski and WPF UI Contributors.
 // All Rights Reserved.
@@ -19,13 +19,18 @@ internal static class KeyboardLayoutLabels
         return PInvoke.GetKeyboardLayout(0);
     }
 
-    internal static unsafe string GetLabel(Key key, bool shifted, IntPtr keyboardLayoutHandle)
+    internal static unsafe string GetLabel(Key key, bool shifted, IntPtr keyboardLayoutHandle, bool kana = false)
     {
         var   virtualKey = KeyInterop.VirtualKeyFromKey(key);
         HKL   layout     = new(keyboardLayoutHandle);
         byte* state      = stackalloc byte[256];
 
         new Span<byte>(state, 256).Clear();
+
+        if (kana)
+        {
+            state[0x15] = 1;
+        }
 
         if (shifted)
         {

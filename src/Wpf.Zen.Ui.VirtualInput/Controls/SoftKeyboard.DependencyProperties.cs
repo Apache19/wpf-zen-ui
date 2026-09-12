@@ -9,7 +9,9 @@ using Wpf.Zen.Ui.VirtualInput.AutomationPeers;
 
 namespace Wpf.Zen.Ui.VirtualInput.Controls;
 
-/// <summary>Defines the control's dependency-property surface and property-change invariants.</summary>
+/// <summary>
+/// Defines the control's dependency-property surface and property-change invariants.
+/// </summary>
 public partial class SoftKeyboard
 {
     #region Dependency properties
@@ -208,9 +210,12 @@ public partial class SoftKeyboard
             nameof(AutoShowMode),
             typeof(SoftKeyboardAutoShowMode),
             typeof(SoftKeyboard),
-            new PropertyMetadata(SoftKeyboardAutoShowMode.Disabled),
+            new PropertyMetadata(
+                SoftKeyboardAutoShowMode.Disabled,
+                (d, _) => ((SoftKeyboard)d).RefreshSettings()
+            ),
             static value => value is SoftKeyboardAutoShowMode mode
-                            && Enum.IsDefined(typeof(SoftKeyboardAutoShowMode), mode)
+                && Enum.IsDefined(typeof(SoftKeyboardAutoShowMode), mode)
         );
 
     /// <summary>
@@ -236,13 +241,16 @@ public partial class SoftKeyboard
             nameof(AutoHideMode),
             typeof(SoftKeyboardAutoHideMode),
             typeof(SoftKeyboard),
-            new PropertyMetadata(SoftKeyboardAutoHideMode.FocusLeavesScope),
+            new PropertyMetadata(
+                SoftKeyboardAutoHideMode.FocusLeavesScope,
+                (d, _) => ((SoftKeyboard)d).RefreshSettings()
+            ),
             static value => value is SoftKeyboardAutoHideMode mode
-                            && Enum.IsDefined(typeof(SoftKeyboardAutoHideMode), mode)
+                && Enum.IsDefined(typeof(SoftKeyboardAutoHideMode), mode)
         );
 
     /// <summary>
-    /// Gets or sets when an automatically opened keyboard closes.
+    /// Gets or sets when the keyboard closes, independently of its automatic opening policy.
     /// </summary>
     [Bindable(true)]
     [Category("Behavior")]
@@ -513,7 +521,9 @@ public partial class SoftKeyboard
     public static readonly DependencyProperty CandidatePresentationStateProperty
         = CandidatePresentationStatePropertyKey.DependencyProperty;
 
-    /// <summary>Gets how the active input method's candidate UI is being presented.</summary>
+    /// <summary>
+    /// Gets how the active input method's candidate UI is being presented.
+    /// </summary>
     public SoftKeyboardCandidatePresentationState CandidatePresentationState
     {
         get => (SoftKeyboardCandidatePresentationState)GetValue(CandidatePresentationStateProperty);

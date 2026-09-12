@@ -12,7 +12,7 @@ namespace Wpf.Zen.Ui.VirtualInput.Controls;
 /// </summary>
 public partial class SoftKeyboard
 {
-    private void ExecuteCustomAction(ISoftKeyboardKeyAction action)
+    private void ExecuteCustomAction(ISoftKeyboardKeyAction action, string? alternative = null)
     {
         if (!PrepareTargetForInput())
         {
@@ -22,7 +22,15 @@ public partial class SoftKeyboard
         var context = new SoftKeyboardActionContext(this);
         try
         {
-            action.Execute(context);
+            if (alternative is not null
+                && action is ISoftKeyboardAlternateKeyAction alternateAction)
+            {
+                alternateAction.ExecuteAlternate(context, alternative);
+            }
+            else
+            {
+                action.Execute(context);
+            }
         }
         finally
         {
@@ -56,5 +64,41 @@ public partial class SoftKeyboard
         }
 
         return sent;
+    }
+
+    // todo: 通用模块里不应有专项功能，职责边界不清晰
+    internal bool SendJapaneseKana(string kana)
+    {
+        if (!PrepareTargetForInput() || ImeState != InputMethodState.On
+            || ActiveInputMethod is not { LanguageId: 0x0411 })
+        {
+            return false;
+        }
+
+        var window = Window.GetWindow(this);
+        var keys = JapaneseImeInput.GetKanaKeys(kana, KeyboardLayoutLabels.GetCurrentLayout());
+
+        if (keys.Length == 0)
+        {
+            return false;
+        }
+
+        if (window is null || !JapaneseImeInput.TryEnableKanaMode(new WindowInteropHelper(window).Handle))
+        {
+            return false;
+        }
+
+        foreach (var (key, shift) in keys)
+        {
+            if (!_platform.Input.SendVirtualKey(key, shift))
+            {
+                return false;
+            }
+        }
+
+        QueueCandidateBridgeRefresh();
+        RequestSystemKeyboardHide();
+
+        return true;
     }
 }

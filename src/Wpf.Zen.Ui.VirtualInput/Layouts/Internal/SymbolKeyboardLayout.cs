@@ -8,7 +8,9 @@ using static Wpf.Zen.Ui.VirtualInput.Layouts.Internal.KeyboardLayoutParts;
 
 namespace Wpf.Zen.Ui.VirtualInput.Layouts.Internal;
 
-/// <summary>Arranges the built-in two-page symbol grid from language-specific literal data.</summary>
+/// <summary>
+/// Arranges the built-in two-page symbol grid from language-specific literal data.
+/// </summary>
 internal static class SymbolKeyboardLayout
 {
     internal static SoftKeyboardLayout Create(SoftKeyboardLayoutContext context, CompactKeyboardRepertoire repertoire)

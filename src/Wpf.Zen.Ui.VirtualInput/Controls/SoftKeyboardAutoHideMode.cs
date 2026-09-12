@@ -6,7 +6,7 @@
 namespace Wpf.Zen.Ui.VirtualInput.Controls;
 
 /// <summary>
-/// Specifies when an automatically opened <see cref="SoftKeyboard"/> closes.
+/// Specifies when a <see cref="SoftKeyboard"/> closes, independently of its opening policy.
 /// </summary>
 public enum SoftKeyboardAutoHideMode
 {

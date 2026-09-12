@@ -15,13 +15,15 @@ public sealed class SoftKeyboardInputMethod
         Guid profileId,
         ushort languageId,
         string displayName,
-        bool isActive)
+        bool isActive,
+        SoftKeyboardTouchLayoutPreference? touchLayoutPreference = null)
     {
         ClassId     = classId;
         ProfileId   = profileId;
         LanguageId  = languageId;
         DisplayName = displayName;
         IsActive    = isActive;
+        TouchLayoutPreference = touchLayoutPreference;
     }
 
     /// <summary>
@@ -48,6 +50,14 @@ public sealed class SoftKeyboardInputMethod
     /// Gets a value indicating whether this profile was active when the list was refreshed.
     /// </summary>
     public bool IsActive { get; }
+
+    /// <summary>
+    /// Gets the active TIP's preferred Windows touch layout, or null when querying is unavailable.
+    /// </summary>
+    /// <remarks>
+    /// Only active profiles are queried. Unknown identifiers remain available to application layout policies.
+    /// </remarks>
+    public SoftKeyboardTouchLayoutPreference? TouchLayoutPreference { get; }
 
     /// <inheritdoc />
     public override string ToString()

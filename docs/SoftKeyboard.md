@@ -5,7 +5,7 @@
 
 软键盘位于独立的 `Wpf.Zen.Ui.VirtualInput` 程序集。XAML 使用专属 XML 命名空间，C# API
 则按职责分布在 `Wpf.Zen.Ui.VirtualInput.Controls`、`.Layouts`、`.Layouts.Providers`、`.Input`
-与 `.Theming` 中；
+与 `.Settings`、`.Theming` 中；
 通用 `Wpf.Zen.Ui` 程序集不再自动加载软键盘的类型和主题资源。
 
 ## 基本用法
@@ -36,7 +36,8 @@
 
 键盘及默认键帽均不可获得键盘焦点。每次输入前都会重新验证目标、作用域、前台 HWND、
 启用/只读状态和焦点。普通键通过虚拟键进入 WPF 原有的命令、选区、撤销、死键和 TSF/IME
-管线；符号和长按变体使用 Unicode `SendInput`。默认不包含 Emoji 目录、搜索或面板。
+管线；普通符号和长按变体使用 Unicode `SendInput`，日语假名及其变体使用 IME 按键组合。
+默认不包含 Emoji 目录、搜索或面板。
 
 ## 目标与自动开关
 
@@ -44,6 +45,7 @@
 - `TargetScope` 为空时使用所在 `Window`。
 - `AutoShowMode="TouchAndPen"` 仅响应触摸或笔引发的焦点变化；`AnyFocus` 响应任意焦点来源。
 - `AutoHideMode="FocusLeavesScope"` 在焦点离开表单或对话框区域时关闭；`Manual` 由应用控制。
+- 打开、关闭策略独立，手动打开也可以配合自动关闭。
 
 内置适配器支持 WPF `TextBox`、`RichTextBox`、`PasswordBox` 及其库内派生控件。其它 WPF
 编辑器可实现 `ISoftKeyboardTargetAdapter`；行业专用布局可实现
@@ -51,7 +53,7 @@
 
 ## 布局生成与扩展
 
-默认布局始终使用四行。字母行采用十键首行、错位九键次行及带 Shift/Backspace 的第三行；
+标准布局使用四行；附加语言面板可以采用自己的行列结构。标准字母行采用十键首行、错位九键次行及带 Shift/Backspace 的第三行；
 底行包含符号切换、输入状态、逗号、左右方向、空格、句号、输入法菜单和 Enter。
 符号面提供 `Symbols` / `MoreSymbols` 两页，分别采用通用、中文和日文符号规则。
 只有相应语言且 IME 开启时才使用中文或日文符号；韩文及未知语言不会套用中文标点。
@@ -77,7 +79,8 @@
 `SoftKeyboardLayoutRule` 将匹配条件与构建函数组合成一个小提供器，适合只扩展一个页面或一种输入法。
 
 上下文包含只读 `Culture`、`InputScope`、字符串 `Page`、`ShiftState`、`ImeState`、`InputMethod`
-及一次性捕获的借用 `KeyboardLayoutHandle`。`InputMethod` 提供 ClassId、ProfileId 和 LanguageId，
+及一次性捕获的借用 `KeyboardLayoutHandle`、独立于 Page 的 `SupplementalLayout`。
+`InputMethod` 提供 ClassId、ProfileId、LanguageId 和可空的 `TouchLayoutPreference`，
 可精确匹配输入法厂商与 profile。默认键帽按这个 HKL 解码，不应把显示文字当成输入法组合文本。
 提供器不得在构建中更改焦点、输入语言或控件状态，也不要缓存编辑器；应用自己的数据变化后调用 `RefreshLayout()`。
 
@@ -191,12 +194,12 @@ keyboard.LayoutProvider = new CompositeSoftKeyboardLayoutProvider(
 即使默认页面恰好共享四行形状，也可以独立修改 URL 的首行、邮箱的命令键或整个网格，不需要修改普通字母布局。
 
 日语符号页包含 `「」`、`『』`、`・`、`※`、`〒` 等独立数据。这是库的紧凑布局，
-不声称逐键复刻 Win11 触摸键盘；假名/滑行输入、候选算法、所有厂商的转换模式不由布局层实现。
+不声称逐键复刻 Win11 触摸键盘；附加假名面板独立实现，滑行输入和候选算法不由布局层实现。
 需要不同网格、更多页面或不同功能时，直接注册独立提供器，无需修改公共符号网格或核心控件。
 
 普通键优先使用内置 `VirtualKey`、`Text`、`ChangePage` 等语义。特有功能实现 `ISoftKeyboardKeyAction`，
 通过 `SoftKeyboardKey.FromAction()` 放入布局；动作获得短生命周期的 `SoftKeyboardActionContext`，
-可用 `TrySendKey()`、`TrySendText()`、`ShowPage()` 和 `RefreshLayout()`。每次输入重新校验目标，
+可用 `TrySendKey()`、`TrySendText()`、`TrySendJapaneseKana()`、`ShowPage()` 和 `RefreshLayout()`。每次输入重新校验目标，
 Unicode 输入仍经过组合取消；成功字符输入会消耗一次性 Shift。虚拟键的 Shift 参数由动作明确指定。
 动作只能同步执行，上下文返回后失效；不得绕过此入口直接写编辑器或从提供器注入输入。
 自定义动作本身的异常按普通应用回调传播，不作为布局错误处理。输入法状态读写仍由 `InputStateAdapter` 负责。
@@ -214,9 +217,8 @@ Unicode 输入仍经过组合取消；成功字符输入会消耗一次性 Shift
 
 ## 常驻头部与长按浮层
 
-`HeaderHeight` 默认 48 DIP，最小 44 DIP。无候选、输入法关闭、无目标、原生候选回退以及
-切换符号页都不会改变这个保留高度。候选占用头部；无候选时展示 `HeaderContent` 和
-`HeaderContentTemplate`，可以放置提示、快捷内容等。不要用动态内容重新计算头部高度。
+头部左侧的设置 `DropDownButton` 常驻并保留头部高度，右侧显示候选和分页按钮。
+无候选、输入法关闭或原生候选回退时，候选区域隐藏，不会把整个头部折叠。
 
 键帽由独立的 `SoftKeyboardKeyControl` 呈现，通过 `Key` 接收不可变的 `SoftKeyboardKey`。
 布局提供器负责键帽内容、动作、`Alternates` 和 `IsRepeatEnabled`；键帽负责按下状态、
@@ -234,7 +236,8 @@ Popup 使用不可聚焦按钮保留编辑器焦点，长按初始松手后才�
 自定义键帽模板可以省略该可选部件，此时保留普通按键输入。变体按钮的 `DataContext` 是对应字符串。
 
 键帽通过冒泡的 `InputRequested` 事件提交请求：`Key` 表示原按键，`AlternateText` 为 null
-表示主动作，否则表示选中的 Unicode 变体。`Invoke()` 和 UI Automation 也走同一请求入口。
+表示主动作，否则表示选中的变体字符串。动作实现 `ISoftKeyboardAlternateKeyAction` 时，变体由该动作处理；
+其他变体继续走字面 Unicode 输入。`Invoke()` 和 UI Automation 也走同一请求入口。
 键盘执行每次请求时仍校验目标、焦点和输入状态。键帽可单独使用，由宿主处理请求。
 
 `InteractionStarted` 通知键盘取消其它键帽的交互；键盘关闭、切换布局、目标变化或窗口失活时，
@@ -260,13 +263,44 @@ Popup 使用不可聚焦按钮保留编辑器焦点，长按初始松手后才�
 的 TextStore、DocumentManager 与 client id。TextStore 已存在时，控件通过缓存且可降级的
 反射读取 WPF 的 `TextServicesHost.ThreadManager`，不会替换或重建 WPF 文本管线。
 仅在键盘打开、候选属于 TSF 当前焦点文档且输入法实现
-`ITfCandidateListUIElementBehavior` 时接管候选；点击候选会调用 `SetSelection` 与 `Finalize`。
+`ITfCandidateListUIElementBehavior` 且符合 `CandidateMode` 策略时接管候选；标准提交调用 `SetSelection` 与 `Finalize`。
 若 TIP 在 sink 订阅前已打开候选，控件还会从同一个 `ITfUIElementMgr` 发现该候选，并仅在候选
 存续期间短时同步其内容。微软拼音支持这组标准 UIElement 接口，可使用内嵌候选栏。
 
+`CandidateMode` 默认 `Automatic`，设置菜单的“候选显示”可选择自动、输入法浮窗（`Native`）、
+键盘内嵌尝试（`Embedded`）。策略属于当前控件实例，不会修改输入法配置；已接管的候选元素保持其
+呈现方式直到结束，避免切换设置时丢弃正在输入的内容。完成或取消当前组合后，新策略完整生效。
+
+自动策略通过固定候选 GUID 识别小狼毫并保留其原生浮窗。小狼毫关闭 `inline_preedit` 时，拼音预编辑
+保存在它自己的浮窗中，WPF 文档可能只得到占位空格。它的候选接口不提供该字符串，也不实现
+`ITfReadingInformationUIElement`；隐藏浮窗会同时隐藏唯一的拼音预览。WPF `TextStore.OnUpdateComposition`
+从文档组合范围读取文字，反射同一范围不能恢复输入法没有写入的内容。
+源码依据：[小狼毫候选实现](https://github.com/rime/weasel/blob/master/WeaselTSF/CandidateList.cpp)、
+[组合文本实现](https://github.com/rime/weasel/blob/master/WeaselTSF/Composition.cpp)。
+
+需要内嵌小狼毫时，用户可自行启用输入法的 `style/inline_preedit: true`，重新部署配置后选择 `Embedded`。
+配置说明见[小狼毫定制文档](https://github.com/rime/weasel/wiki/Weasel-%E5%AE%9A%E5%88%B6%E5%8C%96)。
+控件不会改写用户的 Rime 配置。此显式模式下，小狼毫的标准行为接口只改变 UI 高亮／关闭 UI，
+没有相应的引擎提交操作；其集成接口的 `OnKeyDown` 同样没有实现选词。
+因此对当前页 1–9 项候选，点击第 N 项只发送一次数字键 N，由输入法引擎直接完成选择，
+不经过逐项高亮移动，也不追加 Space。此适配依赖 Rime 的标准数字选词绑定，
+不会把其他输入法的全局候选索引直接当作页内数字，也不会为超过 9 项的页面猜测快捷键。
+数字键发送前核验编辑器和候选所有权，发送后保留候选快照以阻止重复点击；
+新候选列表或 UI 元素结束后允许下一次选择，支持部分转换后的连续选词。
+750ms 未观察到候选变化时报告诊断，但不重发数字或补空格，以免重复提交。
+自定义 Rime 方案若重绑定数字键，需要额外适配；
+失败原因可从 `CandidateCommitError` 读取。该适配不访问小狼毫内部对象或进程通信协议。
+任何提交路径都以 TSF 后续通知决定候选显示，不因为 HRESULT 成功或按键入队就提前清空候选栏。
+
 只有 `SoftKeyboard` 已打开且实际可见时才隐藏输入法的原生候选窗。关闭键盘，或折叠键盘及其
-任意祖先（例如 Page、ContentDialog 的键盘区域）时，会先恢复原生候选窗再释放内嵌候选；若
-组合输入仍在继续，键盘重新显示后会立即发现同一个 TSF 候选并恢复内嵌呈现，无需再按一次键。
+任意祖先（例如 Page、ContentDialog 的键盘区域）时，会先尝试恢复原生候选窗再释放内嵌候选；若
+组合输入仍在继续，键盘重新显示后可重新发现仍存续且符合策略的 TSF 候选。
+原生恢复依赖 TIP 正确实现 Show；小狼毫仅在 BeginUIElement 允许显示时创建原生窗口，
+因此自动策略从元素开始时就不接管它，而非等到隐藏后才尝试补救。
+
+公开 TSF 的 UIElement 能力类别与 QueryInterface 能用于协商接口，但不保证其实现完整。
+`ITfIntegratableCandidateListUIElement` 也不是“完美兼容”的认证。没有找到系统触摸键盘完整判定流程的
+公开契约；本库采用明确的已知兼容性规则，不声称复刻系统内部策略。
 
 不支持可控制候选的输入法继续显示原生候选窗。可通过 `CandidatePresentationState` 区分
 `Embedded`、`NativeFallback` 和 `Unavailable`；当前分页由 `CandidatePageNumber` 与
@@ -361,3 +395,117 @@ dotnet build tests/Wpf.Zen.Ui.UnitTests/Wpf.Zen.Ui.UnitTests.csproj
 `InstalledMicrosoftPinyin_PublishesCandidatesToEmbeddedSurfaceWhenAvailable` 是显式集成测试，
 需要可激活前台窗口的交互桌面；后者还需要启用微软拼音。可在满足条件的桌面使用
 `-explicit on -method '*测试方法名'` 单独运行，避免无人值守测试向用户桌面注入按键。
+
+## 动态设置与附加布局
+
+默认模板的 `PART_SettingsButton` 是 `Wpf.Zen.Ui.Controls.DropDownButton`，`Flyout` 绑定每个键盘独享的
+`SettingsMenu`。菜单和菜单项保持不可聚焦，适合触摸／鼠标操作，避免切走编辑器的 TSF 文档。
+自定义模板可直接使用 `SettingsItems` 数据建立自己的呈现方式，也可省略设置按钮，保留程序化 API。
+
+默认菜单结构为：
+
+- 键盘开关
+  - 自动打开（`AnyFocus`）／手动打开（`Disabled`），独立单选组
+  - 分隔线
+  - 自动关闭（`FocusLeavesScope`）／手动关闭（`Manual`），独立单选组
+- 有附加面板时才显示分隔线和“键盘布局”子菜单，使用 `RadioMenuItem`
+
+原有 `TouchAndPen` 策略仍可通过属性设置；它不等同于菜单中的 `AnyFocus`，此时两个打开选项均不冒充选中。
+
+设置引擎由以下部分组成：
+
+| API | 用途 |
+| --- | --- |
+| `SettingsProvider` / `ISoftKeyboardSettingsProvider` | 从不可变状态快照生成菜单树，可组合默认策略或整体替换 |
+| `SoftKeyboardSettingsContext` | 提供布局上下文、自动开关策略与当前 `AvailableLayouts` |
+| `SoftKeyboardSetting` | 菜单数据；`Header`、`Icon`、`ItemStyle` 为呈现槽，`Children` 为子级，`RadioGroup`、`IsChecked` 为单选状态，`Apply` 为动作 |
+| `SettingsItems` | 当前只读可观察菜单树，方便应用自定义呈现 |
+| `RefreshSettings()` / `SettingsError` | 刷新外部策略数据；提供器或呈现数据出错时回退默认菜单并保留诊断 |
+| `SelectSupplementalLayout(id)` / `SelectedSupplementalLayout` | 验证、选择并读取当前输入法的附加布局选择 |
+
+开关属性改变、输入法／模式／页面等相关状态改变和菜单打开时刷新设置；相同的原生轮询结果不会重复销毁菜单容器。
+单选组按菜单实例隔离，多个键盘互不干扰。默认动作使用 `SetCurrentValue`，不会移除宿主对开关属性的绑定。
+策略的生成方法不能更改键盘状态；自定义 `Apply` 动作作为普通应用回调执行，异常按普通回调传播。
+
+```csharp
+using Wpf.Zen.Ui.VirtualInput.Settings;
+
+public sealed class AppKeyboardSettings : ISoftKeyboardSettingsProvider
+{
+    public IEnumerable<SoftKeyboardSetting> CreateSettings(SoftKeyboardSettingsContext context)
+    {
+        foreach (var item in DefaultSoftKeyboardSettingsProvider.Default.CreateSettings(context))
+        {
+            yield return item.Id == "keyboard"
+                ? item with
+                {
+                    Header = "打开与关闭",
+                    Icon = new Wpf.Zen.Ui.Controls.FluentIconSource(
+                        Wpf.Zen.Ui.Controls.SymbolRegular.Settings24)
+                }
+                : item;
+        }
+
+        yield return new SoftKeyboardSetting("app.refresh", "刷新布局", k => k.RefreshLayout());
+    }
+}
+
+// keyboard.SettingsProvider = new AppKeyboardSettings();
+```
+
+图标应优先提供 `IconSource` 等数据，默认菜单为每项创建独立的内容呈现器，并支持隐式 `DataTemplate`。
+`ItemStyle` 应匹配该项实际生成的 `MenuItem`、`RadioMenuItem` 或 `Separator` 类型。
+
+布局查询使用 `ITfFnGetPreferredTouchKeyboardLayout.GetLayout`，只获取布局类型及标识，不获取系统面板的几何和行为。
+查询失败或输入法不实现接口时，`TouchLayoutPreference` 为 null；未知标识保留给自定义策略，不伪造系统支持。
+现代微软注音在部分桌面环境不导出这项旧接口，因此内置策略另有精确的 ClassId + ProfileId 回退，
+不会仅凭 `zh-TW` 或显示名称把仓颉、大易等输入法识别为注音。
+
+- 日语默认维持标准键盘，设置中可选“50音”或“12键”。50音包含五十音网格与功能行；12键为四行三列假名组，加一行功能键。
+- 12键短按输入主音，长按选择同组其他音；同时提供小字、浊音和半浊音。复用现有长按浮层，不实现 Win11 专有的 flick／滑行手势。
+- 日语附加面板输入时明确使用全角平假名／假名按键模式，IME 的此模式在输入后继续保留。
+  按键由 Windows 当前 HKL 的假名转换表反查，支持 101／106 键配置差异，组合与候选仍由 IME 负责。
+- 识别为标准台湾注音时，默认选择 41 个注音／声调键，加一行功能键；IME 关闭后显示字母键盘，重新开启恢复注音。
+- 注音功能行的 `↓` 是普通方向键，只按输入法当时的状态请求选字／导航，不能保证出现内嵌候选。
+  控件只能呈现输入法实际通过 TSF 发布的候选，不能凭空生成候选或靠补方向键模拟系统触摸键盘的候选行为。
+  [微软注音说明](https://support.microsoft.com/zh-tw/windows/hardware/input-devices/microsoft-traditional-chinese-ime)
+  描述输入法自己的窗口和按键语义，不证明自定义软键盘能接管候选。
+  本机测试限定 Profile `B2F9C502-1742-11D4-9790-0080C882687E`，输入 `ㄋㄧˇ` 后再按 Down；
+  单独输入 `ㄋ`，以及此时按 Down，均复现没有候选的现象；此阶段与已转换汉字的选字列表不同。
+  额外检查公开查询渠道：本机微软注音的 `GetFunctionProvider` 返回 `0x80040503`，
+  TSF 系统提供器对 `ITfFnSearchCandidateProvider` 和 `ITfFnGetLinguisticAlternates` 均返回 `E_NOINTERFACE`。
+  因而当前实现尚不能提供系统触摸键盘那样的未完成音节实时候选，问题未解决。
+  这些结果限于本机版本，也不足以确认系统触摸键盘具体使用哪个内部接口。
+- 附加选择与数字／符号 `Page` 分开，临时进入符号页再返回时仍保留所选面板；网址、邮箱、自动数字作用域保留专用布局。
+- 布局选择按 `(LanguageId, ClassId, ProfileId)` 保存在当前控件实例内，切换输入法后再切回来可恢复。
+  控件不自动写入配置文件或注册表；需要跨启动持久化时由应用存储，并在对应输入法激活后调用选择 API。
+
+### 验证入口
+
+普通测试直接运行编译后的 xUnit 测试程序，避免仓库现有 .NET 10 / VSTest 配置冲突：
+
+```powershell
+dotnet build tests/Wpf.Zen.Ui.UnitTests/Wpf.Zen.Ui.UnitTests.csproj -p:GeneratePackageOnBuild=false
+& tests/Wpf.Zen.Ui.UnitTests/bin/Debug/net10.0-windows/Wpf.Zen.Ui.UnitTests.exe -class 'Wpf.Zen.Ui.UnitTests.VirtualInput.*'
+```
+
+`SoftKeyboardNativeImeTests` 是显式启用的前台测试，会在自己的 WPF 窗口使用本机已安装的输入法；
+普通测试不会注入这些真实输入。启用方式：
+
+```powershell
+$env:WPF_ZEN_NATIVE_IME_TESTS = '1'
+$runner = 'tests/Wpf.Zen.Ui.UnitTests/bin/Debug/net10.0-windows/Wpf.Zen.Ui.UnitTests.exe'
+$imeCases = & $runner -class '*SoftKeyboardNativeImeTests' -preEnumerateTheories -list tests -noLogo -noColor
+foreach ($imeCase in $imeCases) {
+    if ($imeCase -like 'Wpf.Zen.Ui.UnitTests.*') {
+        & $runner -preEnumerateTheories -displayName $imeCase -noLogo -noColor
+    }
+}
+Remove-Item Env:WPF_ZEN_NATIVE_IME_TESTS
+```
+
+各原生用例独立进程执行，隔离输入法在文档关闭和配置切换后的状态。当前同进程连续切换用例
+曾出现延迟输入进入后续编辑器的失败，不能将其结果当作独立会话的验证结果。
+
+本机验证覆盖小狼毫非首候选提交、微软日语两种面板的组合与浊音／半浊音／小字输入、微软注音、
+真实 DropDownButton 菜单开关，以及切换输入法后恢复布局选择。第三方自定义方案及其他 Windows/IME 版本仍需要各自验证。

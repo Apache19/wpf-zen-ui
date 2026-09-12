@@ -7,7 +7,9 @@ using System.Collections.ObjectModel;
 
 namespace Wpf.Zen.Ui.VirtualInput.Layouts;
 
-/// <summary>Represents one immutable, flat collection of keys positioned on a shared logical grid.</summary>
+/// <summary>
+/// Represents one immutable, flat collection of keys positioned on a shared logical grid.
+/// </summary>
 /// <remarks>
 /// A layout deliberately exposes no row-container hierarchy. Each <see cref="SoftKeyboardKey"/>
 /// carries its own <see cref="SoftKeyboardKey.Row"/>, <see cref="SoftKeyboardKey.Column"/>, and
@@ -16,7 +18,9 @@ namespace Wpf.Zen.Ui.VirtualInput.Layouts;
 /// </remarks>
 public sealed class SoftKeyboardLayout
 {
-    /// <summary>Initializes a new instance of the <see cref="SoftKeyboardLayout"/> class.</summary>
+    /// <summary>
+    /// Initializes a new instance of the <see cref="SoftKeyboardLayout"/> class.
+    /// </summary>
     /// <param name="keys">Positioned keys in reading order.</param>
     /// <param name="columnCount">
     /// The positive number of equal-width logical columns, or <see langword="null"/> to infer the
@@ -42,7 +46,10 @@ public sealed class SoftKeyboardLayout
         var keyArray = keys.ToArray();
         if (keyArray.Any(static key => key is null))
         {
-            throw new ArgumentException("A keyboard layout cannot contain a null key.", nameof(keys));
+            throw new ArgumentException(
+                "A keyboard layout cannot contain a null key.",
+                nameof(keys)
+            );
         }
 
         var requiredColumnCount64 = keyArray.Length == 0
@@ -51,7 +58,10 @@ public sealed class SoftKeyboardLayout
 
         if (requiredColumnCount64 > int.MaxValue)
         {
-            throw new ArgumentException("A key placement exceeds the supported logical grid range.", nameof(keys));
+            throw new ArgumentException(
+                "A key placement exceeds the supported logical grid range.",
+                nameof(keys)
+            );
         }
 
         var requiredColumnCount = (int)requiredColumnCount64;
@@ -65,7 +75,7 @@ public sealed class SoftKeyboardLayout
             );
         }
 
-        Keys = new ReadOnlyCollection<SoftKeyboardKey>(keyArray);
+        Keys        = new ReadOnlyCollection<SoftKeyboardKey>(keyArray);
         ColumnCount = resolvedColumnCount;
     }
 

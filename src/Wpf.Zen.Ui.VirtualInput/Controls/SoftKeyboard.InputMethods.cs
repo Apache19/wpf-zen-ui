@@ -23,7 +23,8 @@ public partial class SoftKeyboard
 
         if (previous?.ProfileId != active?.ProfileId
             || previous?.ClassId != active?.ClassId
-            || previous?.LanguageId != active?.LanguageId)
+            || previous?.LanguageId != active?.LanguageId
+            || previous?.TouchLayoutPreference != active?.TouchLayoutPreference)
         {
             RebuildLayout();
         }
