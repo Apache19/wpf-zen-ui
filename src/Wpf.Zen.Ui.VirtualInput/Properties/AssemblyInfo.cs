@@ -4,12 +4,9 @@
 // All Rights Reserved.
 
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using System.Windows.Markup;
 
-[assembly: ComVisible(false)]
 [assembly: ThemeInfo(ResourceDictionaryLocation.None, ResourceDictionaryLocation.SourceAssembly)]
-[assembly: Guid("cc9f95ee-957a-4e47-a72f-b37f1856c8d8")]
 [assembly: InternalsVisibleTo("Wpf.Zen.Ui.UnitTests")]
 
 [assembly: XmlnsPrefix("http://schemas.thezendev.com/wpf/2027/virtual-input", "keyboard")]

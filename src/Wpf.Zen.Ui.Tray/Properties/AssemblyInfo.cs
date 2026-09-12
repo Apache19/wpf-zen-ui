@@ -7,9 +7,7 @@ using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Markup;
 
-[assembly: ComVisible(false)]
 [assembly: ThemeInfo(ResourceDictionaryLocation.None, ResourceDictionaryLocation.SourceAssembly)]
-[assembly: Guid("34110309-22b4-4fc0-9461-606cd63fb1fc")]
 
 [assembly: XmlnsPrefix("http://schemas.thezendev.com/wpf/2027/tray", "tray")]
 [assembly: XmlnsDefinition("http://schemas.thezendev.com/wpf/2027/tray", "Wpf.Zen.Ui.Tray.Controls")]
